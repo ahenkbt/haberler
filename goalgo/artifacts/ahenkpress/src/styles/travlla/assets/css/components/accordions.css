@@ -1,0 +1,18 @@
+.tab-content.active {
+    @apply block duration-500;
+}
+.accordion-content {
+    @apply max-h-0 overflow-hidden duration-500; 
+}
+.accordion-box .myAccordion .accordion-button{
+    @apply text-start !text-white font-display;
+}
+.accordion-box .myAccordion .accordion-content {
+    @apply max-h-0 overflow-hidden duration-500;
+}
+.accordion-header.open span i:before{
+	@apply content-['\f107'] duration-500;
+}
+.accordion-header.open span{
+	@apply text-citrusyellow;
+}

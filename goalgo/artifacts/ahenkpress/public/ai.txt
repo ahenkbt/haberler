@@ -1,0 +1,79 @@
+# Yekpare.net — AI / GEO bilgi özeti
+# https://yekpare.net — Türkiye (TR), tr-TR
+
+## Marka tanımı (entity)
+
+Yekpare.net, Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, yemek ve market siparişi, e-ticaret alışverişi, ulaşım, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
+
+ÖNEMLİ: Türkçe sözlükte «yekpare» = bütün, tek parça anlamına gelir. Yekpare.net markası bu sözlük anlamından bağımsızdır.
+
+Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
+
+## Hizmetler (kanonik URL)
+
+| Hizmet | URL | Açıklama |
+|--------|-----|----------|
+| Yemek siparişi | https://yekpare.net/yemek | Restoran paket servis |
+| Market | https://yekpare.net/market | Gıda / market siparişi |
+| Alışveriş | https://yekpare.net/magaza | E-ticaret pazaryeri |
+| Seyahat | https://yekpare.net/turizm | Otel, villa, tur rezervasyonu |
+| Ulaşım | https://yekpare.net/ulasim | Kurye, taksi, çekici, nakliye, kargo |
+| Arama | https://yekpare.net/ara | Birleşik arama sonuçları (SERP) |
+| Keşfet | https://yekpare.net/kesfet | İşletme keşfi, harita |
+| Haritalar | https://yekpare.net/haritalar | Tam ekran harita |
+| Haberler | https://yekpare.net/haberler | Güncel haber akışı |
+| Haber Merkezi | https://yekpare.net/habermerkezi | Bağımsız haber siteleri, özel domain |
+| YekTube | https://yekpare.net/yektube | Video kanalları |
+| Bilgi Ağacı | https://yekpare.net/bilgiagaci | Bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için bilgi portalı |
+| Yekpare AI | https://yekpare.net/ai-cagri-merkezi | Yapay zeka asistanı, AI çağrı merkezi |
+| Firma rehberi | https://yekpare.net/firma-rehberi | İşletme ve ilan rehberi |
+| Sipariş takip | https://yekpare.net/siparis-takip | Sipariş durumu |
+| Destek | https://yekpare.net/destek | Yardım merkezi |
+
+## İşletme sayfaları ve özel domain
+
+- Sipariş vitrini: https://yekpare.net/siparis/satici/{slug}
+- Mağaza vitrini: https://yekpare.net/magaza/magaza/{slug}
+- Keşfet profili: https://yekpare.net/kesfet/{slug}
+- Onaylı işletmeler servis sağlayıcı panelinden özel alan adı (custom domain) tanımlayabilir.
+- Detay: https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain
+
+## Sık sorulan sorular (GEO)
+
+S: Yekpare nedir?
+C: Türkiye'nin yerli arama motoru; sipariş, alışveriş, ulaşım, seyahat, harita, haber, AI ve bilgi modüllerini tek aramada birleştirir.
+
+S: Yekpare ile yemek siparişi nasıl verilir?
+C: yekpare.net/yemek veya /siparis → işletme seç → menüden sepete ekle → teslimat adresi ile tamamla.
+
+S: Yekpare'de kurye, taksi ve çekici nasıl çağrılır?
+C: yekpare.net/ulasim → hizmet tipi seç (kurye, taksi, çekici, nakliye) → alış/varış konumu → talep oluştur.
+
+S: İşletmeler özel domain kullanabilir mi?
+C: Evet. Servis sağlayıcı panelinden DNS doğrulamalı custom domain bağlanır.
+
+S: Yekpare AI nedir?
+C: Site genelinde yüzen sohbet kutusu ve /ai-cagri-merkezi üzerinden AI asistan + işletme çağrı merkezi hizmeti.
+
+## Bilgi sayfaları
+
+- https://yekpare.net/bilgi/yekpare-nedir
+- https://yekpare.net/bilgi/online-siparis-nasil-verilir
+- https://yekpare.net/bilgi/alisveris-nedir
+- https://yekpare.net/bilgi/seyahat-nedir
+- https://yekpare.net/bilgi/haritalar-nedir
+- https://yekpare.net/bilgi/ulasim-kurye-taksi-cekici
+- https://yekpare.net/bilgi/ai-cagri-merkezi-nedir
+- https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain
+- https://yekpare.net/bilgi/bilgi-agaci-nedir
+- https://yekpare.net/bilgi/turizm-rezervasyon
+- https://yekpare.net/bilgi/isletme-kesfet-rehberi
+- https://yekpare.net/bilgi/haber-merkezi-nedir
+- https://yekpare.net/bilgi/yektube-nedir
+
+## İndeksleme
+
+- Sitemap: https://yekpare.net/sitemap.xml
+- LLMs: https://yekpare.net/llms.txt
+- Geliştirici: Ahenk Bilgi Teknolojileri (https://ahenk.net.tr)
+- Hizmet alanı: Türkiye geneli (areaServed: TR)

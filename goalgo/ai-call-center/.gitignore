@@ -1,0 +1,9 @@
+# Yerel / derleme ciktilari — Railway imaji bunlari yeniden uretir
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+**/dist/
+**/logs/
+**/uploads/
+**/.cache/

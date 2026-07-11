@@ -1,0 +1,51 @@
+/*---------------------------
+** Cookie alert css
+---------------------------*/
+
+.cookie-consent {
+    position: fixed;
+    background-color: #262938;
+    bottom: 0px;
+    width: 100%;
+    padding: 15px 0px;
+    z-index: 10000000000;
+    color: #fff;
+}
+
+.cookie-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+button.cookie-consent__agree {
+    padding: 5px 16px;
+    border: none;
+    background-color: #25D06F;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+span.cookie-consent__message {
+    background-color: transparent !important;
+    color: #fff;
+    font-size: 14px;
+}
+
+@media only screen and (max-width: 991px) {
+    .cookie-container {
+        display: block;
+        text-align: center;
+    }
+
+    button.cookie-consent__agree {
+        margin-top: 15px;
+    }
+
+    span.cookie-consent__message {
+        line-height: 20px;
+        display: block;
+    }
+}

@@ -1,0 +1,96 @@
+/**
+ * HM haber vitrinleri — mobil kabuk: yatay kaydırma, iOS rubber-band lacivert boşluk,
+ * Video TV immersive sabit üst şerit.
+ */
+
+@media (max-width: 1023px) {
+  html:has(.hm-vitrin-root),
+  body:has(.hm-vitrin-root) {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    max-width: 100%;
+    width: 100%;
+    background-color: #ffffff;
+  }
+
+  /* Yekpare gece teması HM vitrinde body arka planını laciverte boyamasın (açılış / PTR). */
+  html:has(.hm-vitrin-root)[data-yekpare-theme="night"] body,
+  html:has(.hm-vitrin-root)[data-home-theme="night"] body,
+  html:has(.hm-vitrin-root)[data-yekpare-theme="day"] body,
+  html:has(.hm-vitrin-root)[data-home-theme="day"] body {
+    background-color: #ffffff !important;
+  }
+
+  .sade-public-root:has(.hm-vitrin-root) {
+    overflow-x: clip;
+    max-width: 100%;
+    width: 100%;
+    background-color: var(--hm-page-bg, #ffffff);
+  }
+
+  .sade-public-root:has(.hm-vitrin-root) > main {
+    overflow-x: clip;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .hm-vitrin-root {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    max-width: 100%;
+    width: 100%;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  /* Tam genişlik breakout — mobilde 100vw yatay taşmayı tetikler. */
+  .sade-public-hero-stage,
+  .sade-public-hero-full-bleed {
+    max-width: 100%;
+    width: 100%;
+    margin-inline: 0;
+  }
+
+  [data-hm-vitrin-theme="corporate"][data-hm-header-chrome="full"] .vkv-corporate-home > .vkv-content-grid {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Video TV mobil: dış sayfa kaymasın; üst şerit sabit kalsın. */
+@media (max-width: 767px) {
+  .hm-vitrin-root[data-hm-video-tv-immersive="true"] {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-chrome-stack {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-vitrin-main--video-tv-immersive {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-top: var(--hm-video-tv-chrome-height, 3.25rem);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-embed {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: calc(100dvh - var(--hm-video-tv-chrome-height, 3.25rem));
+    max-height: calc(100dvh - var(--hm-video-tv-chrome-height, 3.25rem));
+  }
+}

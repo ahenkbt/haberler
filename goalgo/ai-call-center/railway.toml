@@ -1,0 +1,25 @@
+# Railway — Yekpare AI Call (AgentLabs)
+# Root Directory (GitHub repo kökü goalgo-yazilim ise): goalgo/ai-call-center
+#
+# Zorunlu Variables:
+#   DATABASE_URL     → PostgreSQL (ayrı servis; bu Node servisiyle link)
+#                    Örn: ${{Postgres.DATABASE_URL}} — postgres-ai-call servisinden
+#   (isteğe bağlı) DATABASE_SSL=true — TLS zorunlu ortamlar için
+#   VITE_DEFAULT_LOCALE=tr — varsayılan arayüz dili (build zamanı; redeploy gerekir)
+#   PLATFORM_DEFAULT_LOCALE=tr — seed / platform dilleri için varsayılan (isteğe bağlı)
+#   SESSION_SECRET   → openssl rand -base64 48
+#   JWT_SECRET       → openssl rand -base64 48
+#   APP_URL          → Bu servisin public URL (sonda / yok), örn. https://yekpare-call.up.railway.app
+#   TWILIO_* / ELEVENLABS_* → Kampanya için (panelden de eklenebilir)
+#
+# goalgo API servisi (ayrı): AGENTLABS_URL = bu servisin APP_URL değeri
+# Vercel Production: AGENTLABS_URL = aynı URL (Edge vekili)
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "sh scripts/railway-start.sh"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 600

@@ -1,0 +1,124 @@
+/* Ported from Sellzy apps/web/src/app/globals.css — scoped to .sellzy-theme */
+.sellzy-theme {
+  --radius: 0.625rem;
+  --background: #ffffff;
+  --foreground: #212b36;
+  --card: #ffffff;
+  --card-foreground: #212b36;
+  --primary: #05535c;
+  --primary-foreground: #ffffff;
+  --secondary: #3366ff;
+  --muted: #f9fafb;
+  --muted-foreground: #919eab;
+  --warning: #ffc107;
+  --warning-light: #ffe16a;
+  --primary-light: #078178;
+  --primary-dark: #005249;
+  --primary-darker: #04535c;
+  --icon-bg: #c8fad6;
+  --border: rgba(145, 158, 171, 0.24);
+  --color-sellzy-teal: #0ea5e9;
+  --color-light-bg: #ffffff;
+  --color-light-divider: #dfe3e8;
+  --color-light-primary-text: #212529;
+  --color-light-secondary-text: #495057;
+  --color-warning-lighter: #fff7cd;
+  --color-warning-dark: #b78103;
+  --color-primary-lighter: #caf8e4;
+  --color-success: #54d62c;
+  --shadow-dark-z-24: 0px 24px 48px 0px rgba(0, 0, 0, 0.12);
+  font-family: "Public Sans", system-ui, sans-serif;
+  color: var(--foreground);
+  background: #ffffff;
+}
+
+.sellzy-theme .bg-primary { background-color: var(--primary); }
+.sellzy-theme .bg-primary-light { background-color: var(--primary-light); }
+.sellzy-theme .bg-primary-darker { background-color: var(--primary-darker); }
+.sellzy-theme .bg-primary-dark { background-color: var(--primary-dark); }
+.sellzy-theme .bg-warning { background-color: var(--warning); }
+.sellzy-theme .bg-warning-lighter { background-color: var(--color-warning-lighter); }
+.sellzy-theme .text-primary { color: var(--primary); }
+.sellzy-theme .text-primary-foreground { color: var(--primary-foreground); }
+.sellzy-theme .text-light-primary-text { color: var(--color-light-primary-text); }
+.sellzy-theme .text-light-secondary-text { color: var(--color-light-secondary-text); }
+.sellzy-theme .text-warning-dark { color: var(--color-warning-dark); }
+.sellzy-theme .text-muted-foreground { color: var(--muted-foreground); }
+.sellzy-theme .text-foreground { color: var(--foreground); }
+.sellzy-theme .border-border { border-color: var(--border); }
+.sellzy-theme .border-light-divider { border-color: var(--color-light-divider); }
+.sellzy-theme .shadow-dark-z-24 { box-shadow: var(--shadow-dark-z-24); }
+
+.sellzy-theme button { cursor: pointer; }
+
+.sellzy-theme .topHeaderNavBtn {
+  font-size: 0.875rem;
+  font-weight: 100;
+  color: color-mix(in srgb, var(--primary-foreground) 90%, transparent);
+  position: relative;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-right: 1px solid color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+  transition: color 0.3s ease-in-out;
+}
+.sellzy-theme .topHeaderNavBtn:hover { color: var(--primary-foreground); }
+
+.sellzy-theme .hoverEffect { transition: all 0.3s ease-in-out; }
+
+.sellzy-theme .main-menu > ul {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+@media (min-width: 1280px) {
+  .sellzy-theme .main-menu > ul { display: flex; }
+}
+.sellzy-theme .main-menu > ul > li { position: relative; }
+.sellzy-theme .main-menu > ul > li > a {
+  padding: 1.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--foreground);
+}
+.sellzy-theme .main-menu > ul > li:hover > a { color: var(--primary); }
+
+@keyframes sellzyFadeInDown {
+  0% { opacity: 0; transform: translate3d(0, -100%, 0); }
+  100% { opacity: 1; transform: translateZ(0); }
+}
+@keyframes sellzyFadeInUp {
+  0% { opacity: 0; transform: translate3d(0, 50px, 0); }
+  100% { opacity: 1; transform: translateZ(0); }
+}
+.sellzy-theme .animate-fadeInDown { animation: sellzyFadeInDown 700ms ease-in-out; }
+.sellzy-theme .animate-fadeInUp { animation: sellzyFadeInUp 700ms ease-in-out; }
+
+html[data-yekpare-theme="night"] .sellzy-theme,
+html[data-home-theme="night"] .sellzy-theme,
+.yekpare-chrome-shell[data-yekpare-theme="night"] .sellzy-theme,
+.yekpare-chrome-shell[data-home-theme="night"] .sellzy-theme {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --color-light-bg: #020617;
+  --color-light-primary-text: #f1f5f9;
+  --color-light-secondary-text: #cbd5e1;
+  --color-light-divider: rgba(148, 163, 184, 0.24);
+  background: #020617;
+  color: #f1f5f9;
+}
+
+html[data-yekpare-theme="night"] .sellzy-theme .magaza-hero__body > div,
+html[data-home-theme="night"] .sellzy-theme .magaza-hero__body > div {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.82);
+  color: #f1f5f9;
+}

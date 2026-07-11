@@ -1,0 +1,2735 @@
+/* /haritalar (Kesfet harita) — Yekpare Sade map chrome; harita tile renkleri değiştirilmez */
+
+/* Masaüstü /haritalar: header altında tam viewport harita; sayfa kaydırması yok */
+.haritalar-map-shell {
+  --yekpare-haritalar-header-offset: 13.5rem;
+  --yekpare-haritalar-map-chrome: 9rem;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  .haritalar-map-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+}
+
+/* Header: SearchEngineHeader sticky (5100) — harita katmanları (≤1004) üstünde, modal (≥10080) altında */
+.haritalar-map-shell > header.seh-sticky,
+.haritalar-map-shell > .seh-root--sticky-hero > header.seh-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5100;
+  flex-shrink: 0;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+.haritalar-map-shell > header.seh-sticky .module-subnav__item,
+.haritalar-map-shell > header.seh-sticky .seh-category-pill,
+.haritalar-map-shell > header.seh-sticky .seh-category-scroll,
+.haritalar-map-shell > header.seh-sticky .seh-apps-tile,
+.haritalar-map-shell > header.seh-sticky .seh-utilities-menu-item,
+.haritalar-map-shell > header.seh-sticky .seh-logo {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.haritalar-map-main {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.haritalar-fullscreen-page {
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  .haritalar-fullscreen-page {
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+.haritalar-desktop-chrome {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.haritalar-desktop-chrome .haritalar-map-stage {
+  flex: 1 1 auto;
+  min-height: max(12rem, calc(100vh - var(--yekpare-haritalar-header-offset) - var(--yekpare-haritalar-map-chrome)));
+  isolation: isolate;
+  z-index: 0;
+}
+
+@supports (height: 100dvh) {
+  .haritalar-desktop-chrome .haritalar-map-stage {
+    min-height: max(12rem, calc(100dvh - var(--yekpare-haritalar-header-offset) - var(--yekpare-haritalar-map-chrome)));
+  }
+}
+
+/* Leaflet katmanları harita sahnesi içinde kalsın; site header üstünde görünmesin */
+.haritalar-map-stage .leaflet-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/*
+ * Tailwind preflight img { max-width:100%; height:auto } karoları küçültür;
+ * zoom/pan sonrası karolar arasında boşluk (kırılma) oluşur.
+ */
+.haritalar-map-stage .leaflet-container img.leaflet-tile,
+.haritalar-map-stage .leaflet-container img.leaflet-marker-icon,
+.haritalar-map-stage .leaflet-container img.leaflet-marker-shadow,
+.haritalar-map-stage .leaflet-container img.leaflet-image-layer {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Subpixel rendering — karolar arası ince çizgi boşluklarını kapat */
+.haritalar-map-stage .leaflet-tile-pane img.leaflet-tile {
+  outline: 1px solid transparent;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Önbellek / katman değişiminde leaflet-tile-loaded kaçarsa gri zemin kalmasın */
+.haritalar-map-stage .leaflet-tile-pane img.leaflet-tile.leaflet-tile-loaded {
+  visibility: visible;
+}
+
+/* Leaflet popup/tooltip: tile ustunde, site header (5100) altinda; sol ray (1002) ile cakismayi pin konumu sinirlar */
+.haritalar-map-stage .leaflet-popup-pane {
+  z-index: 680;
+}
+
+.haritalar-map-stage .leaflet-tooltip-pane {
+  z-index: 670;
+}
+
+.haritalar-map-stage .leaflet-marker-pane {
+  z-index: 660;
+}
+
+.haritalar-map-stage .leaflet-shadow-pane {
+  z-index: 650;
+}
+
+.haritalar-map-stage .leaflet-overlay-pane {
+  z-index: 400;
+}
+
+.haritalar-map-stage .leaflet-map-pane {
+  z-index: 200;
+}
+
+.haritalar-map-stage .leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  box-shadow: 0 8px 28px rgba(15, 118, 110, 0.16);
+}
+
+.haritalar-map-stage .leaflet-popup-content {
+  margin: 10px 12px;
+}
+
+.haritalar-fullscreen-page {
+  width: 100%;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.sade-public-page.haritalar-desktop-chrome {
+  position: relative;
+}
+
+.haritalar-map-topbar {
+  isolation: isolate;
+}
+
+.haritalar-map-brand-anchor {
+  position: absolute;
+  left: 1.25rem;
+  top: 0.875rem;
+  z-index: 3;
+  display: none;
+}
+
+.haritalar-fullscreen-page .haritalar-map-brand-anchor {
+  display: block;
+}
+
+.haritalar-fullscreen-page .haritalar-map-topbar__controls,
+.haritalar-fullscreen-page .haritalar-map-topbar__categories {
+  box-sizing: border-box;
+  padding-left: max(12.75rem, calc(env(safe-area-inset-left, 0px) + 12.75rem));
+}
+
+.haritalar-map-brand {
+  min-width: 7.25rem;
+  min-height: 3rem;
+  justify-content: flex-start;
+  color: inherit;
+  text-decoration: none;
+}
+
+.haritalar-fullscreen-page .haritalar-map-brand {
+  min-width: 10.5rem;
+  min-height: 3.75rem;
+  gap: 0.7rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 1.15rem;
+}
+
+.haritalar-fullscreen-page .haritalar-map-brand__mark {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.95rem;
+  font-size: 1rem;
+}
+
+.haritalar-fullscreen-page .haritalar-map-brand__text p:first-child {
+  font-size: 0.95rem;
+  line-height: 1.05;
+}
+
+.haritalar-fullscreen-page .haritalar-map-brand__text p:last-child {
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.haritalar-map-brand:hover,
+.haritalar-map-brand:focus-visible {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: #fff;
+  outline: none;
+}
+
+.haritalar-map-brand:focus-visible {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18), 0 4px 16px rgba(15, 118, 110, 0.12) !important;
+}
+
+.haritalar-map-brand__mark {
+  flex: 0 0 auto;
+}
+
+.haritalar-map-brand__text {
+  min-width: 0;
+}
+
+@supports (height: 100dvh) {
+  .haritalar-fullscreen-page {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+}
+
+/* Sol harita rayı — çekmece ve üst arama/kategori barlarıyla çakışmaz */
+.haritalar-map-rail-anchor {
+  left: 0.75rem;
+  transition: left 0.18s ease, transform 0.18s ease;
+}
+
+.haritalar-map-rail-anchor.is-panel-open {
+  left: calc(4.25rem + 372px);
+}
+
+.haritalar-map-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  box-shadow: 0 4px 18px rgba(15, 118, 110, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.haritalar-map-rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  width: 4.75rem;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.125rem;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  background: transparent;
+  color: #334155;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  overflow: hidden;
+  transition: width 0.15s ease, background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+}
+
+.haritalar-map-rail-btn:hover,
+.haritalar-map-rail-btn:focus-visible {
+  background: #ecfdf5;
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #0284c7;
+  outline: none;
+}
+
+.haritalar-map-rail-btn.is-active {
+  width: 4.75rem;
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(15, 118, 110, 0.32);
+}
+
+.haritalar-map-rail-btn:hover,
+.haritalar-map-rail-btn:focus-visible {
+  width: 4.75rem;
+}
+
+.haritalar-map-rail-btn .rail-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.haritalar-map-rail-btn .rail-label {
+  max-width: 4.25rem;
+  opacity: 1;
+  white-space: nowrap;
+  transition: max-width 0.15s ease, opacity 0.12s ease;
+}
+
+.haritalar-map-rail-btn:hover .rail-label,
+.haritalar-map-rail-btn:focus-visible .rail-label,
+.haritalar-map-rail-btn.is-active .rail-label {
+  max-width: 4rem;
+  opacity: 1;
+}
+
+.haritalar-map-left-panel {
+  border-radius: 0.875rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(15, 118, 110, 0.16);
+  width: 360px;
+  max-width: calc(100% - 5.5rem);
+  max-height: calc(100% - 1.5rem);
+  min-height: 0;
+}
+
+.haritalar-map-left-panel > * {
+  min-height: 0;
+}
+
+/* Viewport-fixed: stacking context / harita overlay (≤1004) ve site header üstünde tıklanabilir kalır. */
+.haritalar-map-left-panel--floating {
+  position: fixed;
+  z-index: 10076;
+  top: max(0.75rem, env(safe-area-inset-top, 0px));
+  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  left: calc(4.5rem + 0.75rem);
+  width: min(360px, calc(100vw - 6rem));
+  max-width: min(360px, calc(100vw - 6rem));
+  max-height: none;
+  pointer-events: auto;
+}
+
+/* Sağdaki Süre / Güzergah hızlı tuşu — panel header altında kalmaması için sağda açılır. */
+.haritalar-map-left-panel--floating-right {
+  left: auto;
+  right: calc(0.75rem + 2.75rem + 0.75rem);
+  width: min(340px, calc(100vw - 5.5rem));
+  max-width: min(340px, calc(100vw - 5.5rem));
+}
+
+@media (max-width: 640px) {
+  .haritalar-map-left-panel--floating-right {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-width: none;
+  }
+}
+
+.haritalar-map-left-panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10070;
+  border: 0;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: default;
+}
+
+.haritalar-map-left-panel__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.18);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.haritalar-map-panel-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.haritalar-map-panel-close:hover,
+.haritalar-map-panel-close:focus-visible {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.22);
+  outline: none;
+}
+
+.haritalar-map-panel-close--on-dark {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+}
+
+.haritalar-map-panel-close--on-dark:hover,
+.haritalar-map-panel-close--on-dark:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.haritalar-map-panel-close--inline-header {
+  position: relative;
+  z-index: 3;
+}
+
+.haritalar-map-slim-sidebar {
+  width: 4.5rem;
+  background: rgba(248, 253, 251, 0.96);
+  border-right: 1px solid rgba(16, 185, 129, 0.16);
+  box-shadow: 4px 0 18px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0.375rem;
+  gap: 0.5rem;
+}
+
+.haritalar-map-slim-sidebar__menu {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.haritalar-map-slim-sidebar__menu:hover,
+.haritalar-map-slim-sidebar__menu:focus-visible {
+  background: rgba(15, 118, 110, 0.09);
+  color: #0284c7;
+  outline: none;
+}
+
+.haritalar-map-slim-sidebar__item,
+.haritalar-map-slim-sidebar__place {
+  width: 100%;
+  min-height: 3.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: #334155;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.haritalar-map-slim-sidebar__item:hover,
+.haritalar-map-slim-sidebar__item:focus-visible,
+.haritalar-map-slim-sidebar__place:hover,
+.haritalar-map-slim-sidebar__place:focus-visible {
+  background: rgba(15, 118, 110, 0.08);
+  color: #0284c7;
+  outline: none;
+}
+
+.haritalar-map-slim-sidebar__item span:first-child {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.haritalar-map-slim-sidebar__item--compact {
+  min-height: 2.9rem;
+  font-size: 0.64rem;
+}
+
+.haritalar-map-slim-sidebar__item--compact span:first-child {
+  font-size: 1rem;
+}
+
+.haritalar-map-slim-sidebar__divider {
+  width: calc(100% - 1rem);
+  height: 1px;
+  background: rgba(15, 118, 110, 0.14);
+  margin: 0.25rem 0;
+}
+
+.haritalar-map-slim-sidebar__recent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.haritalar-map-slim-sidebar__place {
+  min-height: 4.25rem;
+  overflow: hidden;
+}
+
+.haritalar-map-slim-sidebar__place img,
+.haritalar-map-slim-sidebar__place > span:first-child {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f7f0;
+  box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.12);
+}
+
+.haritalar-map-slim-sidebar__place span:last-child {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.haritalar-map-slim-sidebar__spacer {
+  flex: 1 1 auto;
+}
+
+.haritalar-expanded-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: #fff;
+  color: #2f3437;
+  scrollbar-width: thin;
+}
+
+.haritalar-side-menu-panel {
+  width: clamp(16rem, 28vw, 22rem);
+  max-width: calc(100vw - 1rem);
+  max-height: 100dvh;
+  min-height: 0;
+  /* Viewport-fixed so close control stays above haritalar-map-main isolation (z:0) and site headers. */
+  z-index: 10075;
+}
+
+.haritalar-side-menu-scrim {
+  left: min(calc(100vw - 1rem), clamp(17.5rem, 82vw, 27.5rem));
+  z-index: 10070;
+}
+
+.haritalar-expanded-menu__section {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.haritalar-expanded-menu__row {
+  width: 100%;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1.05rem;
+  padding: 0.5rem 1.125rem;
+  border: 0;
+  background: transparent;
+  color: #303236;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.haritalar-expanded-menu__row:hover,
+.haritalar-expanded-menu__row:focus-visible {
+  background: rgba(15, 118, 110, 0.07);
+  color: #0284c7;
+  outline: none;
+}
+
+.haritalar-expanded-menu__icon {
+  width: 1.5rem;
+  min-width: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #5f6368;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.haritalar-expanded-menu__switch {
+  width: 2.5rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: #e2f5f4;
+  padding: 0.125rem;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s ease;
+}
+
+.haritalar-expanded-menu__switch span {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: #94a3b8;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.haritalar-expanded-menu__switch.is-on {
+  background: #d7f4f1;
+}
+
+.haritalar-expanded-menu__switch.is-on span {
+  transform: translateX(1.25rem);
+  background: #07889b;
+}
+
+.haritalar-map-quick-controls {
+  right: 0.75rem;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  transition: right 0.18s ease;
+}
+
+.haritalar-map-quick-controls.is-panel-open {
+  right: 0.75rem;
+}
+
+.haritalar-map-quick-scroll {
+  max-height: 100%;
+  align-items: flex-end;
+  overscroll-behavior: contain;
+  padding-block: 0.125rem;
+  scrollbar-width: none;
+}
+
+.haritalar-map-quick-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.haritalar-map-quick-btn {
+  width: 2.75rem;
+  justify-content: center;
+  gap: 0;
+  padding: 0.5rem 0.625rem;
+  overflow: hidden;
+  transition: width 0.15s ease, background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+}
+
+.haritalar-map-quick-btn:hover,
+.haritalar-map-quick-btn:focus-visible,
+.haritalar-map-quick-btn[aria-pressed="true"] {
+  width: 6.25rem;
+  gap: 0.375rem;
+  outline: none;
+}
+
+.haritalar-map-quick-btn .quick-label {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.15s ease, opacity 0.12s ease;
+}
+
+.haritalar-map-layers-trigger {
+  position: relative;
+}
+
+.haritalar-layer-count {
+  position: absolute;
+  right: -0.25rem;
+  top: -0.25rem;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f97316;
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+}
+
+.haritalar-layers-panel,
+.haritalar-layers-sheet {
+  color: #1f2937;
+}
+
+.haritalar-layers-sheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 74dvh;
+  touch-action: pan-y;
+}
+
+.haritalar-layers-panel__body {
+  max-height: calc(100dvh - 8rem);
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.haritalar-layers-sheet .haritalar-layers-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+.haritalar-location-card__media {
+  min-height: 9rem;
+  flex-shrink: 0;
+}
+
+.haritalar-location-card__count {
+  min-height: 1.25rem;
+}
+
+.haritalar-layers-section-title {
+  margin-bottom: 0.55rem;
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.haritalar-layer-grid,
+.haritalar-map-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.haritalar-layer-grid--tools {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.haritalar-layer-option,
+.haritalar-map-type-card {
+  min-height: 5.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1rem;
+  background: rgba(248, 250, 252, 0.92);
+  color: #334155;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.6rem 0.45rem;
+  text-align: center;
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.haritalar-layer-option:hover,
+.haritalar-layer-option:focus-visible,
+.haritalar-map-type-card:hover,
+.haritalar-map-type-card:focus-visible {
+  border-color: rgba(15, 118, 110, 0.3);
+  background: #ecfdf5;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.haritalar-layer-option.is-active,
+.haritalar-map-type-card.is-active {
+  border-color: rgba(15, 118, 110, 0.5);
+  background: linear-gradient(135deg, rgba(209, 250, 229, 0.96), rgba(204, 251, 241, 0.94));
+  box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.08), 0 6px 18px rgba(15, 118, 110, 0.12);
+  color: #0284c7;
+}
+
+.haritalar-layer-option.is-unavailable {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.haritalar-layer-option__icon,
+.haritalar-map-type-card__preview {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2fe, #d1fae5);
+  color: #0284c7;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.haritalar-layer-option__label,
+.haritalar-map-type-card__label {
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.haritalar-layer-option__hint,
+.haritalar-map-type-card__hint {
+  max-width: 100%;
+  color: #64748b;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.haritalar-mobile-layer-carousel {
+  display: flex;
+  gap: 0.55rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.haritalar-mobile-layer-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.haritalar-mobile-layer-chip {
+  min-width: 5.5rem;
+  min-height: 4rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1rem;
+  background: #f8fafc;
+  color: #475569;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+}
+
+.haritalar-mobile-layer-chip.is-active {
+  border-color: rgba(15, 118, 110, 0.48);
+  background: #ecfdf5;
+  color: #0284c7;
+}
+
+.yekpare-measure-tooltip {
+  border-color: rgba(15, 118, 110, 0.35) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0284c7 !important;
+  font-weight: 900 !important;
+}
+
+.haritalar-map-quick-btn:hover .quick-label,
+.haritalar-map-quick-btn:focus-visible .quick-label,
+.haritalar-map-quick-btn[aria-pressed="true"] .quick-label,
+.haritalar-map-quick-btn[aria-expanded="true"] .quick-label {
+  max-width: 5rem;
+  opacity: 1;
+}
+
+.haritalar-locate-anchor {
+  left: min(64%, calc(100% - 7rem));
+  bottom: clamp(4.75rem, 9vh, 6.5rem);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.haritalar-locate-anchor.is-nav-mode {
+  bottom: clamp(8.5rem, 18vh, 13.75rem);
+}
+
+.haritalar-locate-anchor > * {
+  pointer-events: auto;
+}
+
+.yekpare-business-emoji-marker {
+  background: transparent;
+  border: 0;
+}
+
+.yekpare-business-emoji-marker__bubble {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 2px solid rgba(15, 118, 110, 0.9);
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.32);
+  font-size: 17px;
+  line-height: 1;
+  transform: translateY(0);
+}
+
+.yekpare-business-emoji-marker__bubble.is-selected {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.42);
+  transform: scale(1.12);
+}
+
+.haritalar-locate-btn {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.haritalar-locate-btn[data-state="locating"] {
+  animation: yekpare-locate-pulse 1.2s ease-in-out infinite;
+}
+
+.haritalar-locate-btn[data-compact="true"] {
+  width: 2.75rem;
+  justify-content: center;
+  gap: 0;
+  padding-inline: 0.625rem;
+}
+
+.haritalar-locate-btn[data-compact="true"] .locate-label {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.16s ease, opacity 0.12s ease;
+}
+
+.haritalar-locate-btn[data-compact="true"]:hover,
+.haritalar-locate-btn[data-compact="true"]:focus-visible {
+  width: 7.25rem;
+  gap: 0.375rem;
+}
+
+.haritalar-locate-btn[data-compact="true"]:hover .locate-label,
+.haritalar-locate-btn[data-compact="true"]:focus-visible .locate-label {
+  max-width: 5.5rem;
+  opacity: 1;
+}
+
+.yekpare-user-location-marker {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+}
+
+.yekpare-user-location-marker::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(16, 185, 129, 0.2);
+  animation: yekpare-user-ring 1.8s ease-out infinite;
+}
+
+.yekpare-user-location-marker span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #0284c7;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(15, 118, 110, 0.34);
+}
+
+@keyframes yekpare-locate-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes yekpare-user-ring {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.haritalar-map-stage .leaflet-tooltip {
+  max-width: 220px;
+  white-space: normal;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.14);
+}
+
+.haritalar-map-mobile-rail-wrap {
+  top: 15.75rem;
+  left: 0.75rem;
+  display: none;
+  pointer-events: none;
+  transition: top 0.18s ease, transform 0.18s ease;
+}
+
+.haritalar-map-mobile-rail {
+  flex-direction: column;
+  max-height: calc(100dvh - 17rem);
+  overflow-y: auto;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+
+.haritalar-map-mobile-rail::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .haritalar-map-shell {
+    --yekpare-haritalar-header-offset: 8.75rem;
+    --yekpare-haritalar-map-chrome: 5.5rem;
+  }
+
+  .haritalar-map-mobile-rail-wrap {
+    display: block;
+    top: 5.25rem;
+  }
+
+  .haritalar-map-mobile-rail-wrap.is-panel-open {
+    top: 5.25rem;
+  }
+
+  .haritalar-map-mobile-rail .haritalar-map-rail-btn {
+    width: 4.75rem;
+    min-height: 3rem;
+  }
+
+  .haritalar-map-mobile-rail .haritalar-map-rail-btn:hover,
+  .haritalar-map-mobile-rail .haritalar-map-rail-btn:focus-visible,
+  .haritalar-map-mobile-rail .haritalar-map-rail-btn.is-active {
+    width: 4.75rem;
+  }
+
+  .haritalar-map-quick-controls.is-mobile,
+  .haritalar-map-quick-controls.is-mobile.is-panel-open {
+    right: 0.75rem;
+    top: 5.25rem;
+    bottom: 5.5rem;
+  }
+
+  .haritalar-map-quick-controls.is-mobile.is-layers-open .haritalar-map-quick-scroll {
+    overflow: visible;
+    max-height: none;
+    pointer-events: none;
+  }
+
+  .haritalar-map-quick-controls.is-mobile.is-layers-open .haritalar-map-layers-trigger {
+    pointer-events: auto;
+  }
+
+  .haritalar-layers-sheet {
+    z-index: 1007;
+  }
+
+  .haritalar-map-quick-btn:hover,
+  .haritalar-map-quick-btn:focus-visible,
+  .haritalar-map-quick-btn[aria-pressed="true"] {
+    width: 5.75rem;
+  }
+
+  .haritalar-layers-panel__body {
+    max-height: calc(74dvh - 7rem);
+  }
+
+  .haritalar-layer-grid,
+  .haritalar-map-type-grid {
+    grid-template-columns: repeat(3, minmax(4.75rem, 1fr));
+  }
+
+  .haritalar-locate-anchor,
+  .haritalar-locate-anchor.is-nav-mode {
+    left: 50%;
+    bottom: 5.25rem;
+  }
+
+  .haritalar-locate-anchor.is-nav-mode {
+    bottom: 8.5rem;
+  }
+
+  .haritalar-map-brand-anchor {
+    left: 0.75rem;
+    top: 0.625rem;
+  }
+
+  .haritalar-fullscreen-page .haritalar-map-topbar__controls,
+  .haritalar-fullscreen-page .haritalar-map-topbar__categories {
+    padding-left: 5.75rem;
+  }
+
+  .haritalar-side-menu-panel {
+    width: min(calc(100vw - 1rem), clamp(17.5rem, 82vw, 27.5rem));
+  }
+
+  .haritalar-map-brand {
+    min-width: 3rem;
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
+  }
+
+  .haritalar-fullscreen-page .haritalar-map-brand,
+  .haritalar-map-brand {
+    min-width: 3.5rem;
+    min-height: 3rem;
+    padding: 0.5rem 0.625rem;
+    gap: 0.4rem;
+  }
+
+  .haritalar-fullscreen-page .haritalar-map-brand__mark,
+  .haritalar-map-brand__mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.8rem;
+  }
+
+  .haritalar-fullscreen-page .haritalar-map-brand__text p:first-child {
+    font-size: 0.8rem;
+  }
+
+  .haritalar-fullscreen-page .haritalar-map-brand__text p:last-child {
+    font-size: 0.62rem;
+  }
+
+  .sade-public-page .leaflet-popup-content-wrapper {
+    max-width: min(18rem, calc(100vw - 2rem));
+  }
+}
+
+.sade-public-page .leaflet-control-zoom a {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0284c7 !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+.sade-public-page .leaflet-control-zoom a:hover {
+  background: #ecfdf5 !important;
+  color: #028347 !important;
+}
+
+.sade-public-page .leaflet-bar {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.12) !important;
+}
+
+.sade-public-page .leaflet-routing-container {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 1px solid rgba(16, 185, 129, 0.22) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(15, 118, 110, 0.12) !important;
+  color: #0f172a !important;
+  backdrop-filter: blur(8px);
+}
+
+.sade-public-page .leaflet-routing-alt {
+  background: #f4fbf7 !important;
+  border-top: 1px solid rgba(16, 185, 129, 0.15) !important;
+}
+
+.sade-public-page .leaflet-routing-alt:hover,
+.sade-public-page .leaflet-routing-alt.minimized:hover {
+  background: #ecfdf5 !important;
+}
+
+.sade-public-page .leaflet-routing-alt h2,
+.sade-public-page .leaflet-routing-alt h3 {
+  color: #0284c7 !important;
+}
+
+.sade-public-page .leaflet-routing-geocoders input {
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border-radius: 8px !important;
+}
+
+/* Final override: the left rail is no longer part of the map UI. */
+.haritalar-map-rail-anchor,
+.haritalar-map-mobile-rail-wrap {
+  display: none !important;
+}
+
+/* ── Haber haritası ── */
+.haber-haritasi-sondakika-ticker--toolbar {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.08), rgba(190, 18, 60, 0.06));
+}
+
+.haber-haritasi-sondakika-ticker__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.72), rgba(190, 18, 60, 0.55));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.haber-haritasi-sondakika-ticker__inner--toolbar {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  box-shadow: none;
+  min-height: 2.5rem;
+}
+
+.haritalar-map-topbar__ticker .haber-haritasi-sondakika-ticker__inner {
+  margin: 0;
+}
+
+.haber-haritasi-sondakika-ticker__label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #fecdd3;
+}
+
+.haber-haritasi-sondakika-ticker__marquee {
+  animation: haber-haritasi-ticker-scroll 240s linear infinite;
+}
+
+.haber-haritasi-sondakika-ticker--overlay .haber-haritasi-sondakika-ticker__marquee {
+  animation-duration: 240s;
+}
+
+.haber-haritasi-sondakika-ticker__marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes haber-haritasi-ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.hm-map-marker-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.hm-map-marker-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid #1d4ed8;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.hm-map-marker-pin--with-news {
+  border-color: #e11d48;
+}
+
+.hm-map-marker-pin--with-video {
+  border-color: #7c3aed;
+}
+
+.hm-map-marker-flag-emoji {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.hm-map-marker-news-badge {
+  max-width: 148px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: rgba(190, 18, 60, 0.92);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(190, 18, 60, 0.35);
+  pointer-events: auto;
+}
+
+.hm-map-marker-news-badge__kicker {
+  display: block;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.hm-map-marker-news-badge__text {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.hm-map-marker-content-badge {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  max-width: 160px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.hm-map-marker-content-badge--news {
+  background: linear-gradient(135deg, #e11d48, #be123c);
+}
+
+.hm-map-marker-content-badge--video {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+}
+
+.hm-map-marker-content-badge__thumb {
+  display: block;
+  width: 36px;
+  min-width: 36px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+}
+
+.hm-map-marker-content-badge__play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  min-width: 22px;
+  font-size: 10px;
+  opacity: 0.95;
+}
+
+.hm-map-marker-content-badge__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.hm-map-marker-content-badge__kicker {
+  display: block;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.hm-map-marker-content-badge__text {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* Haber haritası alt şerit — kompakt yatay kart listesi (~120–160px) */
+.hm-map-city-news-panel {
+  max-height: 10rem;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .hm-map-city-news-panel {
+    max-height: 10.5rem;
+  }
+}
+
+.hm-map-city-news-panel__header {
+  min-height: 2rem;
+}
+
+.hm-map-city-news-panel__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 999px;
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  background: rgba(255, 255, 255, 0.96);
+  color: #0284c7;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.hm-map-city-news-panel__nav-btn:hover,
+.hm-map-city-news-panel__nav-btn:focus-visible {
+  background: #e0f2fe;
+  border-color: rgba(14, 165, 233, 0.45);
+  color: #0369a1;
+  outline: none;
+}
+
+.hm-map-city-news-panel__all-link {
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  background: rgba(255, 241, 242, 0.92);
+  padding: 0.25rem 0.625rem;
+  font-size: 10px;
+  font-weight: 800;
+  color: #be123c;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.hm-map-city-news-panel__all-link:hover,
+.hm-map-city-news-panel__all-link:focus-visible {
+  background: #ffe4e6;
+  border-color: rgba(244, 63, 94, 0.35);
+  outline: none;
+}
+
+.hm-map-city-news-panel__all-link--video {
+  border-color: rgba(124, 58, 237, 0.22);
+  background: rgba(245, 243, 255, 0.92);
+  color: #6d28d9;
+}
+
+.hm-map-city-news-panel__all-link--video:hover,
+.hm-map-city-news-panel__all-link--video:focus-visible {
+  background: #ede9fe;
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.hm-map-city-news-panel__all-link--compact {
+  font-size: 11px;
+  padding: 0.2rem 0;
+  border: 0;
+  background: transparent;
+  color: #0284c7;
+}
+
+.hm-map-city-news-panel__strip {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hm-map-city-news-panel__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.hm-map-city-news-panel__card {
+  display: flex;
+  flex: 0 0 auto;
+  width: min(15.5rem, 72vw);
+  min-height: 4.25rem;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hm-map-city-news-panel__card:hover,
+.hm-map-city-news-panel__card:focus-visible {
+  border-color: rgba(244, 63, 94, 0.32);
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.1);
+  outline: none;
+}
+
+.hm-map-city-news-panel__card--video:hover,
+.hm-map-city-news-panel__card--video:focus-visible {
+  border-color: rgba(124, 58, 237, 0.32);
+}
+
+.hm-map-city-news-panel__thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 3.75rem;
+  height: 3.375rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e0f2fe, #ecfdf5);
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.12);
+}
+
+.hm-map-city-news-panel__thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.hm-map-city-news-panel__thumb-emoji,
+.hm-map-city-news-panel__thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.hm-map-city-news-panel__play-badge {
+  position: absolute;
+  right: 0.2rem;
+  bottom: 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(91, 33, 182, 0.88);
+  color: #fff;
+  font-size: 0.45rem;
+  line-height: 1;
+}
+
+.hm-map-city-news-panel__body {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.hm-map-city-news-panel__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.hm-map-city-news-panel__tag {
+  flex-shrink: 0;
+  max-width: 5.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.35rem;
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hm-map-city-news-panel__tag--video {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
+.hm-map-city-news-panel__tag--clickable {
+  cursor: pointer;
+  border: 0;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.hm-map-city-news-panel__tag--clickable:hover {
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.25);
+  transform: translateY(-1px);
+}
+
+.hm-map-city-news-panel__time {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.hm-map-city-news-panel__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.hm-map-city-news-panel__card:hover .hm-map-city-news-panel__title,
+.hm-map-city-news-panel__card:focus-visible .hm-map-city-news-panel__title {
+  color: #0369a1;
+}
+
+.hm-map-city-news-panel__card--video:hover .hm-map-city-news-panel__title,
+.hm-map-city-news-panel__card--video:focus-visible .hm-map-city-news-panel__title {
+  color: #5b21b6;
+}
+
+/* ── Haber haritası: şeffaf son dakika + overlay kart ── */
+.haber-haritasi-sondakika-ticker--overlay {
+  pointer-events: none;
+}
+
+.haber-haritasi-sondakika-ticker--overlay .haber-haritasi-sondakika-ticker__inner {
+  margin: 0.65rem 0.75rem 0;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.82), rgba(255, 241, 242, 0.78));
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.haber-haritasi-sondakika-ticker--overlay .haber-haritasi-sondakika-ticker__label {
+  color: #be123c;
+}
+
+.haber-haritasi-sondakika-ticker--overlay .haber-haritasi-sondakika-ticker__inner button,
+.haber-haritasi-sondakika-ticker--overlay .haber-haritasi-sondakika-ticker__inner a {
+  color: #0f172a !important;
+}
+
+.haber-haritasi-sondakika-ticker--overlay .haber-haritasi-sondakika-ticker__more {
+  color: #0369a1 !important;
+}
+
+.haber-haritasi-news-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1010;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.haber-haritasi-news-overlay__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.28);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.haber-haritasi-news-overlay__card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 249, 255, 0.96));
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+  pointer-events: auto;
+}
+
+.haber-haritasi-news-overlay--full-article {
+  align-items: center;
+  padding: 1rem 0.75rem 1.25rem;
+}
+
+.haber-haritasi-news-overlay__card--full-article {
+  width: min(560px, 100%);
+  max-height: min(82vh, 720px);
+}
+
+.haber-haritasi-news-overlay--video-box {
+  align-items: center;
+}
+
+.haber-haritasi-news-overlay__card--video-box {
+  width: min(640px, 100%);
+  max-height: min(86vh, 760px);
+}
+
+.haber-haritasi-news-overlay__card--video-box .haber-haritasi-news-overlay__embed {
+  border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.haber-haritasi-news-overlay__loading {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.haber-haritasi-news-overlay__spot {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.haber-haritasi-news-overlay__article-body {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+}
+
+.haber-haritasi-news-overlay__footer {
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.haber-haritasi-news-overlay__source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #0369a1;
+  text-decoration: none;
+}
+
+.haber-haritasi-news-overlay__source-link:hover {
+  color: #0c4a6e;
+  text-decoration: underline;
+}
+
+.haber-haritasi-news-overlay__source-footnote {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.haber-haritasi-news-overlay__close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+  color: #334155;
+}
+
+.haber-haritasi-news-overlay__media {
+  min-height: 160px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 1.25rem 1.25rem 0 0;
+  position: relative;
+}
+
+.haber-haritasi-news-overlay__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.haber-haritasi-news-overlay__body {
+  padding: 1rem 1rem 1.1rem;
+}
+
+.haber-haritasi-news-overlay__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-bottom: 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.haber-haritasi-news-overlay__tag {
+  border-radius: 9999px;
+  background: #ffe4e6;
+  color: #be123c;
+  padding: 0.15rem 0.55rem;
+}
+
+.haber-haritasi-news-overlay__tag--video {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.haber-haritasi-news-overlay__title {
+  margin: 0 0 0.55rem;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.haber-haritasi-news-overlay__excerpt {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.haber-haritasi-news-overlay__source {
+  margin: 0 0 0.85rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.haber-haritasi-news-overlay__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.haber-haritasi-news-overlay__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  text-decoration: none;
+}
+
+.haber-haritasi-news-overlay__cta--video {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+}
+
+.haber-haritasi-news-overlay__cta--news {
+  background: linear-gradient(135deg, #e11d48, #be123c);
+}
+
+.haber-haritasi-news-overlay__cta--external {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.haber-haritasi-news-overlay__card--video-embed {
+  max-width: min(520px, calc(100vw - 24px));
+}
+
+.haber-haritasi-news-overlay__embed {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  border-radius: 14px 14px 0 0;
+  overflow: hidden;
+}
+
+.haber-haritasi-news-overlay__embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.haber-haritasi-news-overlay__location-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.haber-haritasi-news-overlay__location-btn:hover {
+  color: #be123c;
+}
+
+.haber-haritasi-news-overlay__location-links {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.haber-haritasi-news-overlay__location-links-title {
+  margin: 0 0 0.5rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.haber-haritasi-news-overlay__location-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.haber-haritasi-news-overlay__location-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+  padding: 0.35rem 0.65rem;
+  font-size: 11px;
+  font-weight: 800;
+  color: #be123c;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.haber-haritasi-news-overlay__location-link:hover {
+  background: #ffe4e6;
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.haber-haritasi-pin--callout-only {
+  background: transparent;
+  border: 0;
+}
+
+.haber-haritasi-pin--callout-only .hm-map-marker-content-badge {
+  filter: drop-shadow(0 6px 16px rgba(15, 23, 42, 0.18));
+}
+
+.hm-map-city-news-panel__card[type="button"] {
+  cursor: pointer;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
+/* ── Newsmap tam ekran (Yekpare + HM) ── */
+.kesfet-newsmap-page.haritalar-desktop-chrome {
+  --yekpare-haritalar-map-chrome: 0px;
+  --yekpare-haritalar-header-offset: 0px;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.haritalar-map-shell .kesfet-newsmap-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.hm-vitrin-main--haritalar-embed,
+.hm-haritalar-embed {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hm-vitrin-main--haritalar-embed .kesfet-newsmap-page,
+.hm-haritalar-embed .kesfet-newsmap-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.haritalar-map-stage--newsmap {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  flex: 1 1 auto;
+  min-height: max(16rem, calc(100dvh - 7.5rem));
+}
+
+.haritalar-map-shell .haritalar-map-stage--newsmap {
+  min-height: max(16rem, calc(100dvh - 13.5rem));
+}
+
+.hm-vitrin-main--haritalar-embed .haritalar-map-stage--newsmap {
+  min-height: max(16rem, calc(100dvh - 9.5rem));
+}
+
+.haber-haritasi-newsmap-chips-row {
+  pointer-events: none;
+}
+
+.haritalar-map-slim-sidebar--compact {
+  width: auto;
+  padding: 0.5rem;
+  background: transparent;
+  border-right: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.kesfet-newsmap-page .haritalar-map-slim-sidebar--compact {
+  top: 0.65rem;
+  bottom: auto;
+  height: auto;
+}
+
+.kesfet-newsmap-page .haritalar-map-slim-sidebar--compact .haritalar-map-slim-sidebar__menu {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.14);
+}
+
+.haber-haritasi-newsmap-toolbar--search-only {
+  max-width: 100%;
+}
+
+.kesfet-newsmap-page .haber-haritasi-newsmap-chips-row {
+  padding-left: 3.25rem;
+  top: 0.65rem;
+}
+
+.hm-map-city-news-panel__kind-tabs button[aria-selected="true"] {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.hm-map-city-news-panel__header {
+  flex-wrap: wrap;
+}
+
+.haber-haritasi-newsmap-chips .flex.items-center {
+  backdrop-filter: blur(12px);
+}
+
+.hm-map-city-news-panel__lang-tabs button[aria-selected="true"] {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.haber-haritasi-newsmap-bottom-panel {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1003;
+  border-top: 1px solid rgba(255, 255, 255, 0.72) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.96)) !important;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 -10px 32px rgba(15, 23, 42, 0.1) !important;
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+}
+
+.hm-map-marker-pin {
+  position: relative;
+}
+
+.hm-map-marker-pin__count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #e11d48, #be123c);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.125rem;
+  text-align: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(190, 18, 60, 0.35);
+  pointer-events: none;
+}
+
+.haber-haritasi-pin--with-video .hm-map-marker-pin__count {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+}
+
+.haber-haritasi-newsmap-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.newsmap-location-search {
+  position: relative;
+  flex: 0 1 220px;
+  min-width: 160px;
+  max-width: 280px;
+  z-index: 10120;
+  overflow: visible;
+}
+
+.newsmap-location-search__field {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.08);
+}
+
+.newsmap-location-search__icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.newsmap-location-search__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+}
+
+.newsmap-location-search__input::placeholder {
+  color: #94a3b8;
+}
+
+.newsmap-location-search__clear {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.15rem;
+}
+
+.newsmap-location-search__spinner {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid rgba(2, 132, 199, 0.2);
+  border-top-color: #0284c7;
+  border-radius: 9999px;
+  animation: newsmap-search-spin 0.7s linear infinite;
+}
+
+@keyframes newsmap-search-spin {
+  to { transform: rotate(360deg); }
+}
+
+.newsmap-location-search__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10130;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.newsmap-location-search__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.newsmap-location-search__option:hover {
+  background: #f0f9ff;
+}
+
+.newsmap-location-search__option-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: #0284c7;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.newsmap-location-search__option-label {
+  line-height: 1.35;
+}
+
+/* ── Newsmap location city card (yekpare /map pattern) ── */
+.newsmap-location-panel {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 42%, #ecfdf5 100%);
+}
+
+.newsmap-location-panel__card {
+  border-radius: 0;
+  background: transparent;
+}
+
+.newsmap-location-panel__header {
+  padding: 0.85rem 1rem 0.65rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 58%, #f0fdf4 100%);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.12);
+}
+
+.newsmap-location-panel__header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.newsmap-location-panel__city {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.newsmap-location-panel__country {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.newsmap-location-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.newsmap-location-panel__weather {
+  max-width: 9.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.28rem 0.62rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #047857;
+  box-shadow: 0 1px 6px rgba(16, 185, 129, 0.12);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.newsmap-location-panel__hero-media,
+.newsmap-location-panel__hero-placeholder {
+  background: radial-gradient(circle at 30% 30%, #bbf7d0 0, #ecfdf5 36%, #e0f2fe 100%);
+}
+
+.newsmap-location-panel__hero-nav {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.45);
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.newsmap-location-panel__hero-nav--prev {
+  left: 0.5rem;
+}
+
+.newsmap-location-panel__hero-nav--next {
+  right: 0.5rem;
+}
+
+.newsmap-location-panel__hero-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.newsmap-location-panel__hero-dot {
+  height: 0.35rem;
+  width: 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  transition: width 0.15s ease, background 0.15s ease;
+}
+
+.newsmap-location-panel__hero-dot--active {
+  width: 1rem;
+  background: #fff;
+}
+
+.newsmap-location-panel__tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(248, 250, 252, 0.95);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.newsmap-location-panel__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.newsmap-location-panel__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.38rem 0.72rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.newsmap-location-panel__tab:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #047857;
+}
+
+.newsmap-location-panel__tab--active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.28);
+}
+
+.newsmap-location-panel__tab-badge {
+  min-width: 1.1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 0.05rem 0.35rem;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.newsmap-location-panel__tab--active .newsmap-location-panel__tab-badge {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.newsmap-location-panel__body {
+  min-height: 0;
+}
+
+.newsmap-location-panel__info-scroll {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.newsmap-location-panel__wiki {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.newsmap-location-panel__wiki-label {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #047857;
+}
+
+.newsmap-location-panel__wiki-title {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.newsmap-location-panel__wiki-summary {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.newsmap-location-panel__wiki-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.newsmap-location-panel__wiki-link,
+.newsmap-location-panel__bilgi-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.32rem 0.72rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.newsmap-location-panel__wiki-link {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.newsmap-location-panel__wiki-link:hover {
+  background: #d1fae5;
+}
+
+.newsmap-location-panel__bilgi-link {
+  color: #4338ca;
+  background: #eef2ff;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+}
+
+.newsmap-location-panel__bilgi-link:hover {
+  background: #e0e7ff;
+}
+
+@media (max-width: 640px) {
+  .haber-haritasi-newsmap-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .newsmap-location-search {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+}
+
+.haber-haritasi-news-preview {
+  position: absolute;
+  left: 50%;
+  bottom: 5.5rem;
+  z-index: 1005;
+  transform: translateX(-50%);
+  width: min(92vw, 360px);
+  pointer-events: none;
+}
+
+.haber-haritasi-news-preview__card {
+  position: relative;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(14, 165, 233, 0.18);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  pointer-events: auto;
+}
+
+.haber-haritasi-news-preview__card--clickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.haber-haritasi-news-preview__card--clickable:hover {
+  border-color: rgba(14, 165, 233, 0.35);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+}
+
+.haber-haritasi-news-preview__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  border: none;
+  background: rgba(241, 245, 249, 0.95);
+  border-radius: 9999px;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.haber-haritasi-news-preview__thumb {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 0.75rem;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  position: relative;
+  background-color: #e2e8f0;
+}
+
+.haber-haritasi-news-preview__thumb--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.haber-haritasi-news-preview__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.28);
+  color: #fff;
+  font-size: 1rem;
+}
+
+.haber-haritasi-news-preview__body {
+  min-width: 0;
+  flex: 1;
+  padding-right: 1.25rem;
+}
+
+.haber-haritasi-news-preview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.haber-haritasi-news-preview__tag {
+  color: #e11d48;
+}
+
+.haber-haritasi-news-preview__tag--video {
+  color: #7c3aed;
+}
+
+.haber-haritasi-news-preview__title {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #0f172a;
+  margin: 0 0 0.4rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.haber-haritasi-news-preview__cta {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0284c7;
+  cursor: pointer;
+}
+
+.haber-haritasi-news-preview__cta--video {
+  color: #7c3aed;
+}
+
+.haritalar-map-mobile-menu-trigger {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.75rem;
+  z-index: 1004;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.96);
+  color: #334155;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.haritalar-map-mobile-menu-trigger:hover,
+.haritalar-map-mobile-menu-trigger:focus-visible {
+  background: #ecfdf5;
+  color: #0284c7;
+  outline: none;
+}
+
+.kesfet-newsmap-page .haritalar-map-mobile-menu-trigger {
+  top: 3.35rem;
+  left: 0.65rem;
+  z-index: 10130;
+}
+
+.kesfet-newsmap-page .haritalar-side-menu-panel {
+  z-index: 10135;
+}
+
+.kesfet-newsmap-page .haritalar-side-menu-scrim {
+  z-index: 10132;
+}
+
+.haber-haritasi-bilgi-marker__pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border: 2px solid #fff;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1;
+}
+
+.haber-haritasi-bilgi-marker__icon {
+  font-style: normal;
+  font-weight: 800;
+}
+
+.haber-haritasi-bilgi-marker__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.haber-haritasi-bilgi-preview__tag {
+  background: rgba(5, 150, 105, 0.12);
+  color: #047857;
+}
+
+.haber-haritasi-bilgi-preview__thumb {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  color: #047857;
+  font-size: 1.5rem;
+}
+
+.haber-haritasi-bilgi-preview__excerpt {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #475569;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.haber-haritasi-bilgi-preview__excerpt--muted {
+  color: #94a3b8;
+}
+
+.haber-haritasi-bilgi-preview__cta {
+  display: inline-flex;
+  color: #047857;
+  text-decoration: none;
+}

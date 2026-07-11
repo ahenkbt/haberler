@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Örnek Döner Salonu",
+    "city": "Ankara",
+    "district": "Çankaya",
+    "address": "Örnek Mah. Örnek Cad. No:1",
+    "phone": "+903121234567",
+    "website": "https://example.com",
+    "lat": 39.92,
+    "lng": 32.85,
+    "googleImportKind": "manual",
+    "description": "Excel → JSON → panel içe aktarma örneği"
+  }
+]

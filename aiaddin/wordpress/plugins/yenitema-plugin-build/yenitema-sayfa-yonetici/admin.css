@@ -1,0 +1,146 @@
+/* VKV Sayfa Yönetici Admin CSS */
+.vkvsy-wrap { max-width: 1240px; }
+
+/* ── Header ── */
+.vkvsy-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(135deg, #8B1A1A, #0D0B0B);
+  padding: 18px 24px; margin: 20px 0 0; border-radius: 4px 4px 0 0;
+}
+.vkvsy-header-sol { display: flex; align-items: center; gap: 14px; }
+.vkvsy-logo { font-size: 2rem; }
+.vkvsy-baslik { color: #fff !important; font-size: 1.4rem !important; margin: 0 !important; padding: 0 !important; }
+.vkvsy-altyazi { color: rgba(255,255,255,.5); font-size: 11px; margin: 2px 0 0 !important; }
+
+/* ── Tabs ── */
+.vkvsy-tabs {
+  display: flex; gap: 0; background: #fff;
+  border-bottom: 2px solid #8B1A1A; overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,.06);
+}
+.vkvsy-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 12px 18px; font-size: 12.5px; font-weight: 600;
+  color: #4a5568; text-decoration: none; white-space: nowrap;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  transition: all .18s;
+}
+.vkvsy-tab:hover { color: #8B1A1A; }
+.vkvsy-tab.aktif { color: #8B1A1A; border-bottom-color: #8B1A1A; background: #FFF8F5; }
+
+/* ── Kart ── */
+.vkvsy-card {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-top: none; padding: 28px; margin-bottom: 0;
+}
+.vkvsy-kart-baslik {
+  font-size: 15px !important; font-weight: 700 !important;
+  color: #1e293b; margin: 0 0 20px !important; padding: 0 !important;
+  border-bottom: 1px solid #f1f5f9; padding-bottom: 12px !important;
+}
+
+/* ── Renk Grid ── */
+.vkvsy-renk-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-bottom: 24px;
+}
+.vkvsy-renk-kart {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 4px;
+}
+.vkvsy-renk-onizleme {
+  width: 44px; height: 44px; border-radius: 4px; flex-shrink: 0;
+  border: 2px solid rgba(0,0,0,.1); box-shadow: inset 0 1px 3px rgba(0,0,0,.15);
+}
+.vkvsy-renk-bilgi { flex: 1; min-width: 0; }
+.vkvsy-renk-ad { display: block; font-size: 12.5px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+.vkvsy-renk-acik { display: block; font-size: 10.5px; color: #94a3b8; margin-bottom: 8px; }
+.vkvsy-renk-kart .wp-color-result { height: 30px !important; border-radius: 2px !important; }
+
+/* ── Palet butonlar ── */
+.vkvsy-palet-btn {
+  font-size: 12px !important; padding: 6px 14px !important;
+  height: auto !important; border-radius: 20px !important;
+}
+
+/* ── Modül Liste ── */
+.vkvsy-modul-liste { display: flex; flex-direction: column; gap: 8px; }
+.vkvsy-modul-item {
+  display: flex; align-items: center; gap: 14px;
+  background: #fff; border: 1px solid #e2e8f0; padding: 14px 16px;
+  border-radius: 4px; cursor: default; transition: all .18s;
+}
+.vkvsy-modul-item:hover { border-color: #8B1A1A; box-shadow: 0 2px 8px rgba(139,26,26,.08); }
+.vkvsy-modul-item.gizli { opacity: .5; background: #f8fafc; }
+.vkvsy-modul-item.ui-sortable-helper {
+  box-shadow: 0 8px 24px rgba(0,0,0,.15) !important;
+  border-color: #8B1A1A !important; background: #fff !important;
+}
+.vkvsy-modul-handle {
+  cursor: grab; font-size: 18px; color: #cbd5e1; user-select: none;
+  padding: 0 4px; flex-shrink: 0;
+}
+.vkvsy-modul-handle:active { cursor: grabbing; }
+.vkvsy-modul-ikon { font-size: 1.4rem; flex-shrink: 0; }
+.vkvsy-modul-bilgi { flex: 1; }
+.vkvsy-modul-bilgi strong { display: block; font-size: 13px; color: #1e293b; margin-bottom: 2px; }
+.vkvsy-modul-bilgi span { font-size: 11.5px; color: #94a3b8; }
+.vkvsy-modul-eylem { flex-shrink: 0; }
+.vkvsy-toggle-btn { font-size: 12px !important; }
+.vkvsy-toggle-btn.aktif { background: #f0fdf4 !important; border-color: #16a34a !important; color: #16a34a !important; }
+
+/* ── Hızlı Erişim Item ── */
+.vkvsy-hizli-item input { border-radius: 2px !important; }
+.vkvsy-sil-btn { background: #fff5f5 !important; border-color: #fecaca !important; color: #dc2626 !important; }
+
+/* ── Şablon Tablo ── */
+.vkvsy-sablon-tablo-wrap { overflow-x: auto; }
+.vkvsy-sablon-tablo code { background: #f1f5f9; padding: 2px 6px; border-radius: 2px; font-size: 12px; }
+
+/* ── Yeni Şablon Form ── */
+.vkvsy-form-row { margin-bottom: 16px; }
+.vkvsy-form-label { display: block; font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.vkvsy-blok-secim-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;
+}
+.vkvsy-blok-kart {
+  display: flex; cursor: pointer; background: #f8fafc;
+  border: 2px solid #e2e8f0; border-radius: 4px; overflow: hidden;
+  transition: all .18s; position: relative;
+}
+.vkvsy-blok-kart:hover { border-color: #8B1A1A; }
+.vkvsy-blok-kart input[type="checkbox"] { position: absolute; top: 8px; left: 8px; }
+.vkvsy-blok-kart input[type="checkbox"]:checked + .vkvsy-blok-icerik { background: #FFF8F5; }
+.vkvsy-blok-kart:has(input:checked) { border-color: #8B1A1A; background: #FFF8F5; }
+.vkvsy-blok-icerik { padding: 14px 14px 14px 32px; flex: 1; }
+.vkvsy-blok-em { font-size: 1.6rem; margin-bottom: 6px; }
+.vkvsy-blok-ad { font-size: 12.5px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+.vkvsy-blok-acik { font-size: 11px; color: #94a3b8; line-height: 1.4; }
+
+/* ── Eylem Çubuğu ── */
+.vkvsy-action-bar {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;
+}
+.vkvsy-msg { font-size: 12.5px; font-weight: 600; }
+.vkvsy-msg.basari { color: #16a34a; }
+.vkvsy-msg.hata { color: #dc2626; }
+
+/* ── Footer ── */
+.vkvsy-footer {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-top: none;
+  padding: 10px 24px; font-size: 11px; color: #94a3b8;
+  border-radius: 0 0 4px 4px;
+}
+
+/* ── CodeMirror boyut ── */
+.CodeMirror { height: 520px !important; font-size: 13px !important; }
+
+@media (max-width: 1100px) {
+  .vkvsy-renk-grid { grid-template-columns: repeat(2, 1fr); }
+  .vkvsy-blok-secim-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .vkvsy-renk-grid { grid-template-columns: 1fr; }
+  .vkvsy-blok-secim-grid { grid-template-columns: 1fr; }
+}

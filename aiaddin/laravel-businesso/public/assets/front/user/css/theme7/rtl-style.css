@@ -1,0 +1,177 @@
+
+.navbar-brand {
+    margin-left: 1rem;
+    margin-right: 0;
+}
+.header-area.header-area-4 .navigation::before {
+    right: 0;
+    left: auto;
+}
+.header-area.header-area-4 .navigation .navbar .navbar-nav .nav-item {
+    margin-right: 0px;
+    margin-left: 24px;
+}
+.header-area.header-area-4 .navigation .navbar .navbar-search-toggler ul li:first-child a {
+    margin-left: 0px;
+    margin-right: 10px;
+}
+.ml-auto, .mx-auto {
+    margin-left: 0!important;
+    margin-right: auto!important;
+}
+.navigation .navbar .navbar-nav .nav-item .sub-menu{
+    left: auto;
+    right: 0;
+}
+.navigation .navbar .navbar-nav .nav-item a > i {
+    margin-left: 0px;
+    margin-right: 5px;
+}
+.header-area.header-area-4 .navigation .navbar .navbar-search-toggler ul li a {
+    margin-left: 0px;
+    margin-right: 62px;
+}
+.header-area .header-top .header-top-item .header-top-info ul li {
+    margin-right: 35px;
+    margin-left: 0px;
+}
+.header-area.header-area-4 .header-top::before {
+    left: auto;
+    right: 0;
+}
+.header-area .header-top .header-top-item .header-top-info ul li i {
+    margin-right: 0;
+    margin-left: 10px;
+}
+.banner-area.banner-area-4 .banner-overlay .banner-content ul li a i {
+    padding-left: 0px;
+    padding-right: 10px;
+}
+.about-us-area .about-content::before {
+    left: auto;
+    right: -30px;
+}
+.about-us-area .about-content .title::after,
+.about-us-area .about-content .title::before {
+    left: auto;
+    right: 0;
+}
+.about-us-area .about-content p {
+    padding-right: 0px;
+    padding-left: 65px;
+}
+.about-us-area .about-features p {
+    padding-right: 0px;
+    padding-left: 45px;
+}
+.video-area .video-content {
+    margin-left: 0px;
+    margin-right: -30px;
+}
+.video-area .video-thumb {
+    margin-right: 0px;
+    margin-left: -60px;
+}
+.video-area .video-dot {
+    right: auto;
+    left: 30px;
+}
+.our-services-4-area .single-services .services-thumb i {
+    left: auto;
+    right: 10px;
+}
+.team-4-area .single-team .team-content ul li a {
+    margin-right:0px;
+    margin-left: 13px;
+}
+.faq-area::before {
+    left: 0;
+    right: auto;
+}
+.faq-area .faq-clients-item .clients-active p {
+    padding-right: 0px;
+    padding-left: 35px;
+}
+.faq-area .faq-clients-item .clients-active .slick-dots {
+    right: 0;
+    left: auto;
+}
+.faq-area .faq-clients-item .clients-active .slick-dots li button {
+    margin-right: 0px;
+    margin-left: 10px;
+}
+.faq-area .faq-clients-item .clients-active .clients-user .clients-info {
+    padding-left: 0px;
+    padding-right: 20px;
+}
+.faq-area .faq-clients-item {
+    margin-right: 0px;
+    margin-left: 205px;
+}
+.faq-area .faq-item {
+    margin-left: 190px;
+    margin-right: 0px;
+}
+.faq-area .faq-item .faq-accordion .accordion .card .card-header a {
+    padding: 0px 30px 0px 0px;
+}
+.faq-area .faq-item .faq-accordion .accordion .card .card-header a i {
+    padding-left: 20px;
+    padding-right: 0px;
+}
+.quote-area .quote-thumb {
+    text-align: left;
+}
+.quote-area .quote-form .input-box input,
+.quote-area .quote-form .input-box textarea {
+    padding-left: 0px;
+    padding-right: 30px;
+}
+@media (min-width: 768px){
+    .text-md-right {
+        text-align: left!important;
+    }
+}
+.blog-4-area .section-title-4.text-left{
+    text-align: right!important;
+}
+.blog-4-area .single-blog .blog-content ul li {
+    margin-left: 20px;
+    margin-right: 0px;
+}
+.blog-4-area .single-blog .blog-content ul li i {
+    padding-right: 0px;
+    padding-left: 6px;
+}
+.blog-4-area .single-blog .blog-content a i {
+    padding-left: 0px;
+    padding-right: 8px;
+}
+.footer-3-area .footer-item .footer-title .title::before {
+    right: 0;
+    left: auto;
+}
+.footer-3-area .footer-item .footer-form .input-box input {
+    padding-right: 30px;
+    padding-left: 0px;
+}
+.footer-3-area .footer-item .footer-social ul > li > a {
+    margin-left: 8px;
+    margin-right: 0px;
+}
+.footer-3-area .footer-last ul li a {
+    margin-right: 16px;
+    margin-left: 0px;
+}
+
+.footer-3-area,
+.blog-4-area,
+.quote-area,
+.faq-area,
+.team-4-area,
+.our-services-4-area,
+.video-area,
+.about-us-area,
+.header-area{
+    text-align: right;
+}

@@ -1,0 +1,228 @@
+/* Video TV Admin CSS */
+.vtv-wrap { max-width: 1200px; }
+.vtv-wrap * { box-sizing: border-box; }
+.vtv-hdr { margin-bottom: 20px; }
+.vtv-hdr h1 { font-size: 21px; font-weight: 700; color: #0A1628; margin-bottom: 4px; }
+.vtv-hdr p { color: #6B7280; font-size: 13px; }
+.vtv-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 9px; padding: 22px; margin-bottom: 18px; }
+.vtv-ch { font-size: 15px; font-weight: 700; color: #0A1628; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.vtv-bdg { background: #EFF6FF; color: #1D4ED8; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.vtv-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+.vtv-fg { display: flex; flex-direction: column; gap: 4px; }
+.vtv-fg-wide { grid-column: span 2; }
+.vtv-fg-check { grid-column: span 2; }
+.vtv-fg label { font-size: 11px; font-weight: 700; color: #374151; letter-spacing: .3px; text-transform: uppercase; }
+.vtv-fg input, .vtv-fg select, .vtv-fg textarea { padding: 8px 11px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 13px; color: #111; outline: none; width: 100%; transition: border-color .18s; font-family: inherit; }
+.vtv-fg input:focus, .vtv-fg select:focus { border-color: #3B82F6; box-shadow: 0 0 0 2px rgba(59,130,246,.12); }
+.vtv-check-label { display: flex !important; align-items: center; gap: 7px; font-size: 13px !important; text-transform: none !important; letter-spacing: 0 !important; color: #374151 !important; cursor: pointer; }
+.vtv-check-label input { width: auto !important; }
+.vtv-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.vtv-tbl th { background: #F9FAFB; padding: 9px 13px; text-align: left; font-size: 11px; font-weight: 700; color: #6B7280; letter-spacing: .5px; text-transform: uppercase; border-bottom: 1px solid #E5E7EB; }
+.vtv-tbl td { padding: 9px 13px; border-bottom: 1px solid #F3F4F6; color: #111; vertical-align: middle; }
+.vtv-tbl tr:last-child td { border-bottom: none; }
+.vtv-tbl tr:hover td { background: #F9FAFB; }
+.vtv-toggle { padding: 4px 12px; font-size: 11px; font-weight: 700; border: 1px solid; border-radius: 20px; cursor: pointer; background: none; transition: all .18s; }
+.vtv-aktif { color: #15803D; border-color: #86EFAC; }
+.vtv-aktif:hover { background: #F0FDF4; }
+.vtv-pasif { color: #9CA3AF; border-color: #E5E7EB; }
+.vtv-pasif:hover { background: #F9FAFB; }
+.vtv-refresh { background: #EFF6FF !important; color: #1D4ED8 !important; border-color: #BFDBFE !important; }
+/* ========== PREMIUM VIDEO GRID — 3 sütun sabit ========== */
+.vtv-vgrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 6px;
+}
+@media (max-width: 1100px) { .vtv-vgrid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; } }
+@media (max-width: 720px)  { .vtv-vgrid { grid-template-columns: 1fr; gap: 14px; } }
+
+.vtv-vc {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 14px rgba(15,23,42,.05);
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s, border-color .22s;
+    display: flex;
+    flex-direction: column;
+}
+.vtv-vc:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(15,23,42,.12), 0 2px 6px rgba(15,23,42,.06);
+    border-color: #CBD5E1;
+}
+
+.vtv-vt {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+    overflow: hidden;
+}
+.vtv-vt::after {
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%);
+    pointer-events:none;
+}
+.vtv-vt img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+}
+.vtv-vc:hover .vtv-vt img { transform: scale(1.06); }
+
+.vtv-dur {
+    position: absolute; bottom: 9px; right: 9px;
+    background: rgba(0,0,0,.85); color:#fff;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 5px;
+    backdrop-filter: blur(4px);
+    letter-spacing:.2px;
+    z-index:2;
+}
+.vtv-plat {
+    position: absolute; top: 10px; left: 10px;
+    font-size: 10px; font-weight: 800;
+    padding: 4px 8px; border-radius: 5px;
+    color: #fff; letter-spacing: .6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    z-index:2;
+}
+
+.vtv-vi {
+    padding: 14px 16px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.vtv-vtl {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 38px;
+    letter-spacing: -0.1px;
+}
+.vtv-vm {
+    font-size: 12px;
+    color: #64748B;
+    font-weight: 500;
+}
+
+/* Aksiyon barı kart altına yapışık, premium görünüm */
+.vtv-vi > div:last-child {
+    margin-top: auto !important;
+    padding-top: 12px;
+    border-top: 1px solid #F1F5F9;
+    display: flex;
+    gap: 8px !important;
+    align-items: center;
+}
+
+/* ÖNE ÇIKAR KUTUSU — premium altın */
+.vtv-star {
+    flex: 1;
+    padding: 8px 12px !important;
+    background: linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);
+    border: 1px solid #FCD34D;
+    color: #92400E;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .18s;
+    box-shadow: 0 1px 2px rgba(217,119,6,.08);
+    letter-spacing: .2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    line-height: 1;
+}
+.vtv-star:hover {
+    background: linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%);
+    border-color: #F59E0B;
+    box-shadow: 0 4px 12px rgba(245,158,11,.25);
+    transform: translateY(-1px);
+}
+.vtv-star.on {
+    background: linear-gradient(135deg,#F59E0B 0%,#D97706 100%);
+    border-color: #D97706;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(217,119,6,.4);
+}
+.vtv-star.on:hover {
+    background: linear-gradient(135deg,#D97706 0%,#B45309 100%);
+}
+
+/* Manşet & Hikaye işaretle butonları */
+.vtv-flag {
+    flex: 1;
+    padding: 8px 10px !important;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .18s;
+    line-height: 1;
+}
+.vtv-flag-man {
+    background: linear-gradient(135deg,#FEE2E2 0%,#FECACA 100%);
+    border: 1px solid #FCA5A5;
+    color: #B91C1C;
+}
+.vtv-flag-man:hover {
+    background: linear-gradient(135deg,#FECACA 0%,#FCA5A5 100%);
+    border-color: #EF4444;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239,68,68,.25);
+}
+.vtv-flag-man.on {
+    background: linear-gradient(135deg,#EF4444 0%,#B91C1C 100%);
+    border-color: #B91C1C;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(185,28,28,.4);
+}
+.vtv-flag-hik {
+    background: linear-gradient(135deg,#EDE9FE 0%,#DDD6FE 100%);
+    border: 1px solid #C4B5FD;
+    color: #6D28D9;
+}
+.vtv-flag-hik:hover {
+    background: linear-gradient(135deg,#DDD6FE 0%,#C4B5FD 100%);
+    border-color: #8B5CF6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139,92,246,.25);
+}
+.vtv-flag-hik.on {
+    background: linear-gradient(135deg,#8B5CF6 0%,#6D28D9 100%);
+    border-color: #6D28D9;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(109,40,217,.4);
+}
+
+/* Sil butonu — daha küçük, ikincil */
+.vtv-del-v {
+    padding: 8px 12px !important;
+    background: #fff;
+    border: 1px solid #FECACA;
+    color: #DC2626;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .18s;
+    line-height: 1;
+}
+.vtv-del-v:hover {
+    background: #FEF2F2;
+    border-color: #F87171;
+    box-shadow: 0 2px 8px rgba(220,38,38,.18);
+    transform: translateY(-1px);
+}
+@media (max-width: 768px) { .vtv-form-grid { grid-template-columns: 1fr; } .vtv-fg-wide, .vtv-fg-check { grid-column: span 1; } }

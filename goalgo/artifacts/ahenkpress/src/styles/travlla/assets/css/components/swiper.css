@@ -1,0 +1,265 @@
+.swiper-button-next, .swiper-button-prev {
+    @apply size-14 !mx-2.5 mb-3.5 !mt-0 text-white bg-citrusyellow transition-all duration-500 ease-in-out rounded-full;
+}
+.swiper-button-prev {
+    @apply left-0 ;
+}
+.swiper-button-next {
+   @apply right-0 ;
+}
+.swiper-button-prev .swiper-navigation-icon {
+    @apply left-0 w-[10px];
+}
+.swiper-button-next .swiper-navigation-icon {
+   @apply right-0 w-[10px];
+}
+.reviewtwo-slider .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.reviewtwo-slider .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+.reviewtwo-slider .swiper-button-next, .reviewtwo-slider .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.reviewtwo-slider .swiper-button-next, .reviewtwo-slider .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.reviewtwo-slider .swiper-button-next:after, .reviewtwo-slider .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.trvpopdes .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.trvpopdes .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+.trvpopdes .swiper-button-next, .trvpopdes .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trvpopdes .swiper-button-next, .trvpopdes .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trvpopdes .swiper-button-next:after, .trvpopdes .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.trv-tsmo-banner .swiper-button-next, .trv-tsmo-banner .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trv-tsmo-banner .swiper-button-next, .trv-tsmo-banner .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trv-tsmo-banner .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.trv-tsmo-banner .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+.trv-tsmo-banner .swiper-button-next:after, .trv-tsmo-banner .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.trv-rate-review .swiper-button-next, .trv-rate-review .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trv-rate-review .swiper-button-next, .trv-rate-review .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trv-rate-review .swiper-button-prev {
+    @apply !left-[calc(50%_-_70px)];
+}
+.trv-rate-review .swiper-button-next {
+    @apply !right-[calc(50%_-_70px)];
+}
+.trv-rate-review .swiper-button-next:after, .trv-rate-review .swiper-button-prev:after {
+   @apply !text-base !py-2.5 !px-3;
+}
+.trv-rate-review .swiper-button-next:after, .trv-rate-review .swiper-button-prev:after {
+   @apply !text-base !py-2.5 !px-3;
+}
+.pro-filtr-cate-bx .swiper-button-next:after, .pro-filtr-cate-bx .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+
+.trv-testi-stories-images .swiper-button-next:after, .trv-testi-stories-images .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3 ;
+}
+.trv-visa-filter-bx .swiper-button-next:after, .trv-visa-filter-bx .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.swiper-button-next:hover, .swiper-button-prev:hover {
+    @apply bg-white text-citrusyellow shadow-[0px_5px_10px_rgba(0,0,0,0.2)];
+}
+.trv-tours-st1 .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.trv-tours-st1 .swiper-button-next, .trv-tours-st1 .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+
+.trv-tours-st1 .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+
+.trv-tours-st1 .swiper-button-next, .trv-tours-st1 .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+
+.trv-tours-st1 .swiper-button-next:after, .trv-tours-st1 .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.trv-tours-st1 .swiper-button-next:hover, .trv-tours-st1 .swiper-button-prev:hover {
+    @apply bg-white text-citrusyellow shadow-[0px_5px_10px_rgba(0,0,0,0.2)];
+}
+
+.testimonial-content-sld .testimonial-content-sld-control{
+	@apply absolute right-90 bottom-6.25 w-35 h-15;
+}
+
+
+.testimonial-content-sld .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.testimonial-content-sld .swiper-button-next, .testimonial-content-sld .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+
+.testimonial-content-sld .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+
+.testimonial-content-sld .swiper-button-next, .testimonial-content-sld .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+
+.testimonial-content-sld .swiper-button-next:after, .testimonial-content-sld .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.testimonial-content-sld .swiper-button-next:hover, .testimonial-content-sld .swiper-button-prev:hover {
+    @apply bg-white text-citrusyellow shadow-[0px_5px_10px_rgba(0,0,0,0.2)];
+}
+.testimonial-thum-sld .swiper-slide.swiper-slide-visible.swiper-slide-fully-visible.swiper-slide-active.swiper-slide-thumb-active img, .testimonial-thum-sld .swiper-slide.swiper-slide-visible.swiper-slide-fully-visible.swiper-slide-active img {
+    @apply 2xl:ml-[30%];
+}
+@media (max-width: 991px) {
+    .testimonial-content-sld .testimonial-content-sld-control {
+        @apply h-auto static;
+    }
+
+    .testimonial-content-sld .testimonial-content-sld-control ,.swiper-button-next .testimonial-content-sld-control .testimonial-content-sld .swiper-button-prev {
+        @apply mt-0;
+    }
+	.testimonial-content-sld .swiper-button-prev {
+		@apply left-0 !top-1/2;
+	}
+	.testimonial-content-sld .swiper-button-next {
+	   @apply right-0 !top-1/2;
+	}
+}
+.trv-lat-blog-st2 .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.trv-lat-blog-st2 .swiper-button-next, .trv-lat-blog-st2 .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+
+.trv-lat-blog-st2 .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+
+.trv-lat-blog-st2 .swiper-button-next, .trv-lat-blog-st2 .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+
+.trv-lat-blog-st2 .swiper-button-next:after, .trv-lat-blog-st2 .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.trv-lat-blog-st2 .swiper-button-next:hover, .trv-lat-blog-st2 .swiper-button-prev:hover {
+    @apply bg-white text-citrusyellow shadow-[0px_5px_10px_rgba(0,0,0,0.2)];
+}
+.trv_ad-slider .swiper-pagination.trv-ad-paging .swiper-pagination-bullet{
+	@apply !scale-none border-2 !size-[14px];
+}
+.swiper-pagination-bullet {
+    @apply size-3.5 my-1.5 mx-1 opacity-100 rounded-full duration-500 bg-white border border-primary;
+}
+
+
+.swiper-pagination-bullet.swiper-pagination-bullet-active {
+    @apply bg-citrusyellow border border-citrusyellow;
+}
+
+
+
+.swiper-pagination-bullets-dynamic {
+    @apply overflow-hidden;
+}
+.trv-tr-cat-swiper .swiper-slide.swiper-slide-active {
+    @apply rotate-[0deg] scale-[1];
+}
+
+.trv-tour-guide .swiper-button-prev {
+    @apply left-[calc(50%_-_70px)];
+}
+.trv-tour-guide .swiper-button-next, .trv-tour-guide .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trv-tour-guide .swiper-button-next {
+    @apply right-[calc(50%_-_70px)];
+}
+.trv-tour-guide .swiper-button-next, .trv-tour-guide .swiper-button-prev {
+    @apply bottom-0 top-auto;
+}
+.trv-tour-guide .swiper-button-next:after, .trv-tour-guide .swiper-button-prev:after {
+   @apply !text-base py-2.5 px-3;
+}
+.trv-tour-guide .swiper-button-next:hover, .trv-tour-guide .swiper-button-prev:hover {
+    @apply bg-white text-citrusyellow shadow-[0px_5px_10px_rgba(0,0,0,0.2)];
+}
+.non-swiper-slide {
+    @apply hidden;
+}
+
+.trv-mf-tour-swiper .swiper-button-next , .trv-mf-tour-swiper .swiper-button-prev{
+	@apply top-[44%];
+}
+.swiper-pagination {
+    @apply mt-7.5 flex !justify-center !items-center !w-full;
+}
+
+/* default bullet */
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border: 1px solid var(--color-primary); /* primary */
+  opacity: 1;
+  transition: all 0.3s ease;
+  
+}
+
+/* active main dot */
+.swiper-pagination-bullet-active {
+  background: #f59e0b; /* citrusyellow */
+  border-color: #f59e0b;
+  transform: scale(1.2);
+ 
+}
+
+/* dynamic scaling */
+.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {
+  transform: scale(0.4);
+}
+
+.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-main {
+  transform: scale(1);
+}
+
+.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev,
+.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next {
+  transform: scale(0.7);
+}
+
+.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev-prev,
+.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next-next {
+  transform: scale(0.4);
+}

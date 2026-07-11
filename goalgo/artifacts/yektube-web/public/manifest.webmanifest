@@ -1,0 +1,34 @@
+{
+  "id": "/yp/",
+  "name": "Yektube",
+  "short_name": "Yektube",
+  "description": "Yektube v2 — video platformu",
+  "start_url": "/yp/",
+  "scope": "/yp/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "any",
+  "lang": "tr",
+  "categories": ["entertainment", "video", "music"],
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "icons": [
+    {
+      "src": "/yp/yektube-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/yp/yektube-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

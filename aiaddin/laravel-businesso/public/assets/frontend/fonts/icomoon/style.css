@@ -1,0 +1,47 @@
+@font-face {
+  font-family: 'icomoon';
+  src:
+    url('fonts/icomoon.ttf?8i5tv') format('truetype'),
+    url('fonts/icomoon.woff?8i5tv') format('woff'),
+    url('fonts/icomoon.svg?8i5tv#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="ico-"], [class*=" ico-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ico-launch:before {
+  content: "\e900";
+}
+.ico-layers:before {
+  content: "\e901";
+}
+.ico-setting:before {
+  content: "\e902";
+}
+.ico-software:before {
+  content: "\e903";
+}
+.ico-template:before {
+  content: "\e904";
+}
+.ico-badge-check:before {
+  content: "\e905";
+}
+.ico-cube:before {
+  content: "\e906";
+}

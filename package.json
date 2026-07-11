@@ -1,0 +1,12 @@
+{
+  "name": "goalgo-yazilim",
+  "private": true,
+  "packageManager": "pnpm@9.15.5",
+  "scripts": {
+    "build:web": "pnpm --dir goalgo run build:web",
+    "build:netlify": "node scripts/netlify-root-build.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
+  }
+}

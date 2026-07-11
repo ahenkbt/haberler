@@ -1,0 +1,280 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "corepack enable && corepack prepare pnpm@9.15.5 --activate && cd goalgo && NPM_CONFIG_PRODUCTION=false pnpm install --frozen-lockfile --prod=false",
+  "buildCommand": "cd goalgo && pnpm run build:vercel",
+  "outputDirectory": "goalgo/artifacts/ahenkpress/dist/public",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.yektube.com" }],
+      "destination": "https://yektube.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp/",
+      "permanent": true
+    },
+    {
+      "source": "/yektube-v2",
+      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "destination": "/yp",
+      "permanent": false
+    },
+    {
+      "source": "/yektube-v2/:path((?!assets/)(?!.*\\.[^/]+$).*)",
+      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "destination": "/yp/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/yektube",
+      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "destination": "/yp",
+      "permanent": false
+    },
+    {
+      "source": "/yektube/:path*",
+      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "destination": "/yp/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/v2",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp",
+      "permanent": true
+    },
+    {
+      "source": "/v2/:path*",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/tr",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp",
+      "permanent": true
+    },
+    {
+      "source": "/tr/:path*",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/yeklive",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yek-gonder",
+      "permanent": true
+    },
+    {
+      "source": "/yeklive/:path*",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yek-gonder/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/yektube-v2",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp/",
+      "permanent": true
+    },
+    {
+      "source": "/yektube-v2/:path((?!assets/)(?!.*\\.[^/]+$).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!yp|tr|muzik|cocuk|canli|yek-gonder|yeklive|hesabim|studio|yektube-v2|api|assets|.*\\..*).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yp/:path*",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" },
+        { "key": "X-Yekpare-Frontend", "value": "ahenkpress-vercel" }
+      ]
+    },
+    {
+      "source": "/maps/place/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" },
+        { "key": "X-Yekpare-Frontend", "value": "ahenkpress-vercel" }
+      ]
+    },
+    {
+      "source": "/((?!api/|assets/|.*\\..*).*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" },
+        { "key": "X-Yekpare-Frontend", "value": "ahenkpress-vercel" }
+      ]
+    },
+    {
+      "source": "/(.*\\.xml)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    }
+  ],
+  "functions": {
+    "api/career/apply.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "api/career/admin/**/*.js": {
+      "memory": 512,
+      "maxDuration": 20
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/video/youtube-stream/:path*",
+      "destination": "https://goalgo-production.up.railway.app/api/video/youtube-stream/:path*"
+    },
+    {
+      "source": "/api/video/youtube-engagement/:path*",
+      "destination": "https://goalgo-production.up.railway.app/api/video/youtube-engagement/:path*"
+    },
+    {
+      "source": "/api/video/youtube-comments/:path*",
+      "destination": "https://goalgo-production.up.railway.app/api/video/youtube-comments/:path*"
+    },
+    {
+      "source": "/api/video/shorts",
+      "destination": "https://goalgo-production.up.railway.app/api/video/shorts"
+    },
+    {
+      "source": "/api/map/scrape",
+      "destination": "https://goalgo-production.up.railway.app/api/map/scrape"
+    },
+    {
+      "source": "/api/map/scrape-gmaps",
+      "destination": "https://goalgo-production.up.railway.app/api/map/scrape-gmaps"
+    },
+    {
+      "source": "/api/map/admin/scrape-places-job/:path*",
+      "destination": "https://goalgo-production.up.railway.app/api/map/admin/scrape-places-job/:path*"
+    },
+    {
+      "source": "/api/map/admin/scrape-gmaps-job/:path*",
+      "destination": "https://goalgo-production.up.railway.app/api/map/admin/scrape-gmaps-job/:path*"
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yp",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yp/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/muzik",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/muzik/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/cocuk",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/cocuk/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/canli",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/canli/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yek-gonder",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yek-gonder/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/hesabim",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/hesabim/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/studio",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/studio/:path((?!.*\\.).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yp",
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yp/:path((?!.*\\.).*)",
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yektube-v2",
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yektube-v2/",
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/yektube-v2/:path((?!.*\\.).*)",
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/:path((?!api/|assets/|yektube-v2|.*\\..*).*)",
+      "has": [{ "type": "host", "value": "yektube.com" }],
+      "destination": "/yektube-v2/index.html"
+    },
+    {
+      "source": "/maps/place/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api/|assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

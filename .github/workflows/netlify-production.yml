@@ -1,0 +1,76 @@
+# Netlify frontend (yekpare.netlify.app + custom domains).
+# Requires GitHub secrets: NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID
+# Optional: RENDER_API_ORIGIN or API_ORIGIN (defaults to https://goalgo-y7ze.onrender.com)
+# Optional: AGENTLABS_URL (call.yekpare.net)
+name: Netlify Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "goalgo/artifacts/ahenkpress/**"
+      - "goalgo/artifacts/yektube-web/**"
+      - "goalgo/scripts/copy-yektube-build.mjs"
+      - "goalgo/scripts/netlify-build.mjs"
+      - "goalgo/scripts/write-netlify-redirects.mjs"
+      - "goalgo/scripts/generate-public-sitemap.mjs"
+      - "scripts/netlify-root-build.mjs"
+      - "netlify.toml"
+      - "netlify/edge-functions/**"
+      - "package.json"
+      - ".github/workflows/netlify-production.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: netlify-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check Netlify secrets
+        id: netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Netlify deploy (NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID not set). Trigger deploy manually in Netlify UI."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v6
+        if: steps.netlify.outputs.enabled == 'true'
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        if: steps.netlify.outputs.enabled == 'true'
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install and build
+        if: steps.netlify.outputs.enabled == 'true'
+        env:
+          API_ORIGIN: ${{ secrets.RENDER_API_ORIGIN || secrets.API_ORIGIN || secrets.RAILWAY_API_ORIGIN || 'https://goalgo-y7ze.onrender.com' }}
+          RENDER_API_ORIGIN: ${{ secrets.RENDER_API_ORIGIN || secrets.API_ORIGIN || secrets.RAILWAY_API_ORIGIN || 'https://goalgo-y7ze.onrender.com' }}
+          AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || 'https://call.yekpare.net' }}
+          NPM_CONFIG_PRODUCTION: "false"
+        run: pnpm run build:netlify
+
+      - name: Deploy to Netlify
+        if: steps.netlify.outputs.enabled == 'true'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npm i -g netlify-cli@23
+          netlify deploy --prod --dir=artifacts/ahenkpress/dist/public --site="$NETLIFY_SITE_ID" --message="GitHub Actions production deploy"

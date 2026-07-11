@@ -1,0 +1,91 @@
+
+
+@media (max-width: 1199px){
+    .skill-section .skill-text {
+        padding-left: 0;
+    }
+    .about-text {
+        padding-right: 60px;
+    }
+    .about-tile-gallery{
+        -webkit-transform: translateX(60px);
+        transform: translateX(60px);
+    }
+    .advanced-tab .tab-content .tab-text-block.left-image .block-text,
+    .faq-section .faq-content{
+        padding-right: 0px;
+    }
+}
+@media (max-width: 991px) {
+    .about-text {
+      padding-left: 0;
+      padding-right: 0px;
+    }
+    footer .widget.newsletter-widget .newsletter-form button {
+        position: relative;
+    }
+    footer .widget.newsletter-widget .newsletter-form {
+        padding-right: 0px;
+        padding-left: 0px;
+    }
+    .wcu-section.box-style .wcu-inner::before, .wcu-section.box-style .wcu-inner::after{
+        display: none;
+    }
+    header .header-topbar .contact-info li{
+        margin-left: 10px;
+    }
+    .about-text-two{
+        padding-right: 0px;
+    }
+    .testimonial-section-two .testimonial-quote-icon{
+        right: 80px;
+    }
+    .working-process-section .process-video .video {
+        left: auto;
+        right: 50%;
+        -webkit-transform: translateX(50%);
+        transform: translateX(50%);
+    }
+    .advanced-tab .tab-content .tab-text-block.left-image .block-text,
+    .faq-section .faq-content{
+        padding-right: 0px;
+    }
+}
+@media (max-width: 767px){
+    .breadcrumb-section .breadcrumb-text ul li a {
+        padding-left: 5px;
+    }
+    .blog-loop.standard-blog .single-post-box .post-meta ul li{
+        margin-left: 15px;
+    }
+    .user-dashbord .user-profile-details .order-details .progress-area-step .progress-steps li .progress-title{
+        padding-left: 0px;
+        padding-right: 20px;
+    }
+    .user-dashbord .user-profile-details .order-details .progress-area-step .progress-steps li:after{
+        left: auto;
+        right: 15px;
+    }
+}
+
+@media (max-width: 575px){
+    .banner-section .search-wrap {
+        left: 20px;
+    }
+    .testimonial-section .testimonial-img {
+        right: 30px;
+    }
+    .comment-template .comment-list li .children li{
+        margin-right: 50px;
+    }
+    .comment-template .comment-list li{
+        padding-right: 0px;
+    }
+    .shop-details-wrap .product-details .product-details-tab .product-review .review-list li .children{
+        margin-left: 0px;
+        margin-right: -50px;
+    }
+    .shop-details-wrap .product-details .product-details-tab .product-review .review-list li{
+        padding-right: 75px;
+    }
+}

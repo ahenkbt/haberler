@@ -1,0 +1,79 @@
+# LEGACY — Production API is on Render (https://goalgo-y7ze.onrender.com), not Railway.
+# This workflow only runs when RAILWAY_TOKEN + RAILWAY_SERVICE_ID secrets are set; otherwise it skips.
+# Render deploy: GitHub hook on main OR Render dashboard → Manual Deploy (no GH Actions workflow).
+# Deploy Goalgo API (Servis A) to Railway on push to main.
+# Requires GitHub secrets (repo → Settings → Secrets → Actions):
+#   RAILWAY_TOKEN        — Project token from Railway → Project Settings → Tokens
+#   RAILWAY_SERVICE_ID   — Goalgo API service UUID or name (e.g. goalgo)
+# Optional:
+#   RAILWAY_ENVIRONMENT  — environment name (default: production)
+#   RAILWAY_PUBLIC_URL   — e.g. https://goalgo-production.up.railway.app (post-deploy health check)
+#
+# If secrets are missing, the job exits successfully with a notice.
+name: Railway Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "goalgo/**"
+      - ".github/workflows/railway-production.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: railway-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+      RAILWAY_ENVIRONMENT: ${{ secrets.RAILWAY_ENVIRONMENT || 'production' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Skip when Railway secrets are missing
+        id: gate
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_SERVICE_ID" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Railway deploy (RAILWAY_TOKEN / RAILWAY_SERVICE_ID not set). Redeploy from Railway dashboard or add secrets."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy Goalgo API (goalgo/)
+        if: steps.gate.outputs.enabled == 'true'
+        working-directory: goalgo
+        run: |
+          railway up --ci \
+            --service="$RAILWAY_SERVICE_ID" \
+            --environment="$RAILWAY_ENVIRONMENT"
+
+      - name: Verify /api/healthz git SHA
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          RAILWAY_PUBLIC_URL: ${{ secrets.RAILWAY_PUBLIC_URL }}
+        run: |
+          if [ -z "$RAILWAY_PUBLIC_URL" ]; then
+            echo "::notice::RAILWAY_PUBLIC_URL not set — skip post-deploy health check."
+            exit 0
+          fi
+          base="${RAILWAY_PUBLIC_URL%/}"
+          expected="$(git rev-parse HEAD | cut -c1-12)"
+          for attempt in 1 2 3 4 5 6; do
+            body="$(wget -qO- "${base}/api/healthz" 2>/dev/null || true)"
+            live="$(printf '%s' "$body" | sed -n 's/.*"railwayGitSha":"\([^"]*\)".*/\1/p')"
+            echo "attempt ${attempt}: live=${live:-unknown} expected=${expected}"
+            if [ -n "$live" ] && [ "$live" = "$expected" ]; then
+              echo "Deploy verified: railwayGitSha matches main."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::warning::healthz railwayGitSha still not ${expected}. Check Railway deploy logs."
+          exit 1

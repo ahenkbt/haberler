@@ -1,0 +1,219 @@
+    @import "tailwindcss";
+
+/* BASE CSS */
+@import "./base/global.css";
+@import "./base/grid.css";
+@import "./base/base.css";
+@import "../icons/fontawesome/css/all.min.css";
+@import "../icons/feather/css/feather.css";
+@import "../icons/flaticon/flaticon.css";
+@import "../icons/line-awesome/css/line-awesome.min.css";
+@import "../icons/themify-icons/css/themify-icons.css";
+
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/effect-fade";
+@import "swiper/css/thumbs";
+/* LAYOUT CSS */
+@import "./layout/header/header.css"; 
+
+@import "./components/component.css";
+@import "./components/homepages.css";
+@import "./components/accordions.css";
+@import "./components/btn.css";
+@import "./components/swiper.css";
+@import "./abstract/variable.css";
+
+
+/* CUSTOM THEME */
+@theme {
+
+    --spacing: .25rem;
+
+    /* FONT FAMILY */
+    --font-display: "Kaushan Script", "cursive";
+    --font-title: "Afacad", "sans-serif";
+    --font-base: "Figtree", "sans-serif";
+    --font-inter: "Inter", "sans-serif";
+
+    /* COLORS */
+    --color-bodycolor: var(--body-color);
+    --color-body-bg: var(--body-bgcolor);
+    --color-heading: var(--heading-color);
+    --color-light: var(--light);
+
+    --color-primary: var(--primary);
+    --color-secondary: var(--secondary);
+    --color-lightturquoise:#EFFFFF;
+    --color-emeraldblue:#066168;
+    --color-citrusyellow:#FFAA0D;
+    --color-citrusyellowlight:rgba(255, 170, 13, 0.32);
+    --color-paleaqua:#DBEEEE;
+    --color-aquamist:#7FC7CE;
+    --color-caribbeanblue:#1DB7BE;
+	--color-eggshell:#FFF8EB;
+    --color-eggshelllight:rgba(255, 170, 13, 0.16);
+    --color-caribbeanlight:rgba(6, 97, 104, 0.3098039216);
+    --color-bluelight:rgba(41, 137, 145, 0.1);
+    --color-amber:rgba(255, 170, 13, 0.1);
+    --color-aquagray:rgba(6, 97, 104, 0.2);
+	--color-middlegray:#8b8b8b;
+	--color-gray:#6b6b83;
+	--color-skyblue:#53A4C0;
+	--color-darkcyan:#066168;
+	--color-input:#9d9d9d;
+	--color-darkgray:#545454;
+	--color-cyangreen:rgba(6, 97, 104, 0.2);
+	--color-filter: brightness(0)_saturate(100%)_invert(28%)_sepia(17%)_saturate(3758%)_hue-rotate(146deg)_brightness(94%)_contrast(95%);
+
+    /* FONTSIZE */
+    --text-tiny: 10px;
+    --text-2xs: 13px;
+    --text-15: 15px;
+    --text-17: 17px;
+    --text-46: 46px;
+	--text-22: 22px;
+	--text-26: 26px;
+	--text-28: 28px;
+    --text-34: 34px;
+    --text-32: 32px;
+    --text-36: 36px;
+    --text-38: 38px;
+    --text-40: 40px;
+    --text-42: 42px;
+    --text-48: 48px;
+    --text-50: 50px;
+    --text-52: 52px;
+    --text-58: 58px;
+    --text-60: 60px;
+    --text-70: 70px;
+    --text-74: 74px;
+    --text-75: 75px;
+	--text-76: 76px;
+	--text-82: 82px;
+	--text-80: 80px;
+	--text-83: 83px;
+	--text-90: 90px;
+	--text-95: 95px;
+	--text-98: 98px;
+	--text-25xl: 100px;
+	--text-30xl: 120px;
+	--text-32xl: 130px;
+	--text-35xl: 140px;
+	--text-40xl: 160px;
+	--text-45xl: 180px;
+	--text-50xl: 200px;
+	--text-50xxl: 260px;
+	--text-60xl: 240px;
+	--text-62xl: 250px;
+
+    /* BREAKPOINTS */
+    --breakpoint-*: initial;
+    --breakpoint-xs: 425px;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-2lg: 1024px;
+    --breakpoint-xl: 1199px;
+    --breakpoint-xxl: 1281px;
+    --breakpoint-2xl: 1400px;
+    --breakpoint-2xxl: 1481px;
+    --breakpoint-3xl: 1681px;
+    --breakpoint-4xl: 1800px;
+	
+	--max-breakpoint-sm: 575px;
+    --max-breakpoint-md: 768px;
+    --max-breakpoint-lg: 991px;
+    --max-breakpoint-xl: 1199px;
+    --max-breakpoint-2xl: 1480px;
+    --max-breakpoint-3xl: 1680px;
+    --max-breakpoint-4xl: 1800px;
+
+    /* BACKGROUND IMAGE */
+    --background-image-check: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    
+    /* GRADIENT */
+	
+    --bg1-gradient: 0deg, rgba(0, 0, 0, 0.56) 0%, rgba(255, 255, 255, 0) 90%;
+    --bg2-gradient: to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.76) 73%;
+    --bg3-gradient: 180deg, #FFFFFF 24.65%, #E0E0E0 100%;
+    --bg4-gradient: 180deg, rgba(12, 192, 206, 0) 40%, #066168 100%;
+    --st-blue-gradient: to bottom, rgb(83, 164, 192) 45%, rgb(255, 255, 255) 100%;
+    --st-pink-gradient: to bottom, rgb(255, 162, 182) 55%, rgb(255, 255, 255) 100%;
+    --st-green-gradient: to bottom, rgb(6, 97, 104) 46%, rgb(255, 255, 255) 100%;
+    --heading-gradient: 90deg, rgba(255, 170, 13, 0.1) 0%, rgba(6, 97, 104, 0.2) 100%;
+	--st-paleaqua-gradient: 90deg, rgba(255, 170, 13, 0.1) 0%, rgba(6, 97, 104, 0.2) 100%;
+	--st-paleaqua-gradient: 90deg, rgba(255, 170, 13, 0.1) 0%, rgba(6, 97, 104, 0.2) 100%;
+	--cyangreen-gradient: 90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.08) 100%;
+	--black-gradient: 180deg, rgba(255, 255, 255, 0) 0%, rgba(160, 160, 160, 0) 37%, rgba(113, 113, 113, 0) 48%, rgba(60, 60, 60, 0.4666666667) 62%, rgba(37, 37, 37, 0.6705882353) 83%, #000000 100%;
+	--black-gradient2: 270deg, rgba(255, 255, 255, 0) 0%, rgba(160, 160, 160, 0) 37%, rgba(113, 113, 113, 0) 48%, rgba(60, 60, 60, 0.4666666667) 62%, rgba(37, 37, 37, 0.6705882353) 83%, #000000 100%;
+											
+
+
+    /* SHADOW */
+    --shadow-1: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    --shadow-2: 0px 4px 10px rgba(0, 0, 0, 0.25);
+    --shadow-step-bx1: 0px 28px 36px rgba(41, 137, 145, 0.2);
+    --shadow-step-bx4: 0px 15px 8px -4px rgba(0, 0, 0, 0.05);
+    --shadow-circle-bx2: 0px 27px 35.9px rgba(41, 137, 145, 0.2);
+    --shadow-guide-bx1: 0px 18px 18px rgba(0, 106, 114, 0.1);
+    --shadow-video-icon: 0 5px 10px 0 rgba(255, 255, 255, 0.5);
+    --shadow-trv-content: 0px 18px 18px rgba(0, 106, 114, 0.15);
+    --shadow-header: 0px 10px 30px 5px rgba(41, 137, 145, 0.13);
+    --shadow-trv-content3: 0px 18px 18px rgba(0, 106, 114, 0.15);
+    
+    --bld-num-drop-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+    /* Z-INDEX */
+    --z-index-1: 1;
+    --z-index-2: 2;
+    --z-index-4: 4;
+    --z-index-5: 5;
+    --z-index-9: 9;
+    --z-index-99: 99;
+    --z-index-999: 999;
+    --z-index-9999: 9999;
+    --z-index-99999: 99999;
+    --z-index-999999: 999999;
+
+    /*  BORDER RADIUS*/
+    --radius-2lg: 10px;
+    --radius-xxl: 15px;
+    --radius-xxxl: 16px;
+    --radius-2xl: 20px;
+    --radius-2xxl: 25px;
+    --radius-3xl: 30px;
+    --radius-3xxl: 35px;
+    --radius-4xl: 40px;
+    --radius-4xxl: 45px;
+    --radius-5xl: 50px;
+    --radius-6xl: 60px;
+    --radius-8xl: 80px;
+    --radius-25xl: 100px;
+    --radius-27xl: 110px;
+	--radius-50xl: 200px;
+
+    /* ANIMATIONS */
+	
+	--animate-slide-left: slide-left 5s linear infinite alternate-reverse both;
+	--animate-rotate-90-br-cw: rotate-90-br-cw 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate-reverse both;
+	--animate-rotate-center: rotate-center 10s linear infinite both;
+	--animate-slide-top2: slide-top2 20s linear infinite alternate-reverse;
+	--animate-slide-top: slide-top 8s linear infinite alternate-reverse;
+	--animate-ripple-video: ripple-video 3s infinite;
+	--animate-scale-up-center: scale-up-center 2s linear infinite alternate-reverse both;
+	--animate-slide-left: slide-left 7s linear infinite alternate-reverse both;
+	--animate-smooth-up-down: smooth-up-down 10s linear infinite alternate-reverse both;
+	--animate-smooth-up-down2: smooth-up-down2 5s linear infinite alternate-reverse both;
+	--animate-spinZ: spinZ 20s linear infinite;
+	--animate-spin: spin 2400ms linear infinite;
+	--animate-slide-right: slide-right 50s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+	--animate-slide-top-fast: slide-top-fast 1.5s ease-in-out infinite alternate-reverse both;
+	--animate-error-ballonanimation: error-ballonanimation 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate-reverse both;
+	--animate-error-header-scroll-animation: 0.95s ease 0s normal forwards 1 running header-scroll-animation;
+	--animate-moveCloud: moveCloud 20s linear infinite;
+	--animate-fadeIn: fadeIn 0.5s ease;
+	--animate-zoom-in-zoom-out: zoom-in-zoom-out 15s linear infinite;
+	--animate-marquee: marquee 40s linear infinite;
+	--animate-marquee-cs: marquee-cs 30s linear infinite;
+}

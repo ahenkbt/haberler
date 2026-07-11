@@ -1,0 +1,9 @@
+**/node_modules
+**/.env
+**/.env.*
+**/dist
+**/logs
+**/.git
+**/uploads
+**/*.md
+!AgentLabs-Package/AgentLabs-v5.3.8/README.md

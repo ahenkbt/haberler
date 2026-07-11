@@ -1,0 +1,76 @@
+# Production is deployed by Vercel Git integration (GitHub app). This workflow is an
+# optional CLI backup when VERCEL_* secrets are configured; otherwise it exits successfully.
+name: Vercel Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: goalgo
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Optional CLI backup (skip without secrets)
+        id: vercel_cli
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping optional Vercel CLI backup (secrets not set). Production uses Vercel Git integration."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v6
+        if: steps.vercel_cli.outputs.enabled == 'true'
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        if: steps.vercel_cli.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install dependencies
+        if: steps.vercel_cli.outputs.enabled == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Production build (ahenkpress / Vercel)
+        if: steps.vercel_cli.outputs.enabled == 'true'
+        run: pnpm run build:vercel
+
+      - name: Deploy to Vercel Production
+        if: steps.vercel_cli.outputs.enabled == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npm i -g vercel@39
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
+
+      - name: Upload Linux Yektube bundle
+        if: steps.vercel_cli.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: yektube-linux-public-deploy
+          path: goalgo/artifacts/yektube-web/dist
+          if-no-files-found: warn

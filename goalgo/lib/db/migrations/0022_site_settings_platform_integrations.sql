@@ -1,0 +1,9 @@
+-- Platform CallMeBot, SMTP (e-posta), Gemini / DeepSeek API alanları
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS admin_callmebot_api_key TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS smtp_host TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS smtp_port TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS smtp_user TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS smtp_pass TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS smtp_from TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS gemini_api_key TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS deepseek_api_key TEXT;

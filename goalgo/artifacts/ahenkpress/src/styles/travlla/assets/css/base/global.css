@@ -1,0 +1,34 @@
+body {
+	@apply text-bodycolor bg-body-bg font-base leading-[1.5] font-normal p-0 m-0 overflow-x-hidden text-sm;
+}
+h1, h2, h3, h4, h5, h6 {
+    @apply font-title text-heading leading-[1.2] font-medium;
+}
+section, article, aside, details, figcaption, figure, footer, header, hgroup, main, menu, nav, summary {
+    @apply block;
+}
+
+h2 {
+	@apply font-bold;
+}
+
+a {
+	@apply duration-500;
+}
+
+.image-filter {
+	@apply invert sepia-21 saturate-4469 hue-rotate-154 brightness-93 contrast-95;
+}
+.image-filter-2 {
+	@apply invert-12 sepia-96 saturate-4615 hue-rotate-176 brightness-92 contrast-95;
+}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}

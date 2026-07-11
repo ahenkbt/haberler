@@ -1,0 +1,28 @@
+@import "./subnav.css";
+
+/* Legacy hub (unused route) */
+.tz-hub {
+  min-height: 100vh;
+  background: #fff;
+  color: #346065;
+  font-family: "Figtree", system-ui, sans-serif;
+}
+
+.tz-hub__hero-inner {
+  text-align: center;
+}
+
+.tz-hub__hero-inner .tz-hub__kicker {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0284c7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tz-hub__grid {
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin: 0 auto;
+  padding: 1.5rem var(--yekpare-content-padding-x, 1rem) 2.5rem;
+}

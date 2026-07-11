@@ -1,0 +1,5 @@
+# Repo root — local dump / scrape artifacts (do not commit)
+/vendor-*.json
+/resp_*.json
+/tmp-*
+/n*.json

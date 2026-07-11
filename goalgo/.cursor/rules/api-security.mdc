@@ -1,0 +1,30 @@
+---
+description: API security rules for Express routes (P0 production readiness)
+globs: goalgo/artifacts/api-server/src/**/*.ts
+alwaysApply: false
+---
+
+# API security (Yekpare)
+
+## Auth on mutating/admin endpoints
+
+- **Never** expose `POST */migrate`, `DELETE`, `PUT`, `PATCH` admin CRUD without `denyUnlessAdminMaintenance(req, res, scope)` or the correct JWT/session guard.
+- Pattern reference: `POST /api/delivery/migrate` in `routes/delivery.ts` (protected).
+
+## IDOR
+
+- Order/PII reads must verify ownership: session user, signed tracking token, or OTP — not only `orderNumber` or sequential `id`.
+- Do not return full PII on public GET without auth.
+
+## SQL
+
+- Use Drizzle tagged templates or parameterized queries. **Never** build SQL with string concatenation for user input (`sql.raw` + `${status}`).
+
+## Webhooks
+
+- Stripe: verify signature with `constructEvent` on raw body (already mounted before JSON parser).
+- Third-party webhooks (e.g. Geliver): require HMAC/secret header validation before updating orders.
+
+## HTML / XSS
+
+- Sanitize user HTML with `sanitizeHtml` before `dangerouslySetInnerHTML` on the frontend; sanitize ad slots server-side when stored.

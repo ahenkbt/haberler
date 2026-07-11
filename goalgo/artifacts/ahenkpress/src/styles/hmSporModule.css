@@ -1,0 +1,274 @@
+.hm-spor-module {
+  --hm-spor-green: #4caf50;
+  --hm-spor-headline: #8b1538;
+  margin-bottom: 1.5rem;
+}
+
+.hm-spor-module-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .hm-spor-module-inner {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .hm-spor-module-news {
+    flex: 1 1 68%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hm-spor-module-news-panel {
+    flex: 1 1 auto;
+  }
+
+  .hm-spor-module-standings {
+    flex: 0 0 32%;
+    max-width: 360px;
+    align-self: stretch;
+    min-height: 100%;
+  }
+}
+
+.hm-spor-module-tab {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--hm-spor-green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border-radius: 4px 4px 0 0;
+  text-decoration: none;
+}
+
+.hm-spor-module-tab:hover {
+  opacity: 0.92;
+}
+
+.hm-spor-module-news-panel {
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid var(--hm-spor-green);
+  background: #fff;
+  padding: 12px;
+}
+
+.hm-spor-module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hm-spor-module-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.hm-spor-module-card:hover h3 {
+  text-decoration: underline;
+}
+
+.hm-spor-module-thumb {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #f3f4f6;
+  aspect-ratio: 16 / 10;
+}
+
+.hm-spor-module-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hm-spor-module-card h3 {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--hm-spor-headline);
+}
+
+.hm-spor-module-standings {
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--hm-spor-green);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.hm-spor-module-standings-leagues {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 0;
+}
+
+.hm-spor-module-standings-league {
+  flex: 1 1 0;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+}
+
+.hm-spor-module-standings-league.is-active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.hm-spor-module-standings-head {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px 8px 8px;
+}
+
+.hm-spor-module-standings-tab {
+  flex: 1 1 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+}
+
+.hm-spor-module-standings-tab.is-active {
+  background: #fff;
+  color: var(--hm-spor-green);
+}
+
+.hm-spor-module-standings-body {
+  background: #fff;
+  color: #111827;
+  padding: 0 8px 8px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.hm-spor-module-standings-table-wrap {
+  flex: 1 1 auto;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 0 0 8px 8px;
+}
+
+@media (min-width: 900px) {
+  .hm-spor-module-standings-table-wrap {
+    max-height: none;
+  }
+}
+
+.hm-spor-module-standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.hm-spor-module-standings-table th,
+.hm-spor-module-standings-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+}
+
+.hm-spor-module-standings-table th {
+  font-weight: 700;
+  color: #6b7280;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.hm-spor-module-standings-table td:first-child,
+.hm-spor-module-standings-table th:first-child {
+  width: 28px;
+  text-align: center;
+}
+
+.hm-spor-module-standings-table td:nth-child(3),
+.hm-spor-module-standings-table th:nth-child(3),
+.hm-spor-module-standings-table td:nth-child(4),
+.hm-spor-module-standings-table th:nth-child(4) {
+  width: 36px;
+  text-align: center;
+}
+
+.hm-spor-module-standings-table tbody tr:nth-child(-n + 3) td:first-child {
+  font-weight: 800;
+  color: var(--hm-spor-green);
+}
+
+.hm-spor-module-fixtures {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 0;
+}
+
+.hm-spor-module-fixture {
+  padding: 8px 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.hm-spor-module-fixture:last-child {
+  border-bottom: none;
+}
+
+.hm-spor-module-fixture-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hm-spor-module-fixture-vs {
+  flex-shrink: 0;
+  min-width: 42px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--hm-spor-green);
+}
+
+.hm-spor-module-fixture-meta {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.hm-spor-module-standings-meta {
+  padding: 6px 4px 0;
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: right;
+}
+
+.hm-spor-module-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.hm-spor-module-empty--compact {
+  padding: 16px 8px;
+}

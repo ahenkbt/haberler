@@ -1,0 +1,53 @@
+﻿*************
+***WEB-OFİSİ  Dernek & Belediye & Vakıf Sitesi V7 (Sınırsız Dil) KURULUM ÖNEMLİ UYARI LİSANSLI VE PATENTLİ YAZILIMDIR.!***
+*************
+
+
+-- FTP --
+
+Yüklenecek Dosyalar İçerisindeki Tüm Dosyaları FTP'nize Yükleyin.
+
+
+
+--DATABASE KURULUMU--
+
+Sitenizin kontrol panelinden (cpanel,directadmin,plesk)  veritabanınızı oluşturup, SQL Klasürünün içinde bulunan veritabani.sql i phpmyadmin'e yükledikten sonra
+Yüklenecek Dosyalar Klasürünün İçerisinde Yer Alan _class/baglan.php Dosyasına veri tabanı bilgilerinizi giriniz.
+
+$host = 'localhost'; // Linux sunucularda değiştirmeyiniz
+$data = 'vtadi'; // Veri tabanı Adını Yazın.
+$user = 'kladi'; // Veri tabanı Kullanıcı adını yazın
+$pass = 'sifre'; // Veri tabanı Şifrenizi Yazın
+
+
+----------- KURULUM BİTTİ --------------------
+
+
+-- ADMİN PANEL GİRİŞ --
+
+http://www.siteadresi.com/yonetim
+Kullanıcı Adı: admin
+Şifre: demo
+
+Admin Paneline Giriş Yaptıktan Sonra site Ayarları Kısmından Kullanıcı Adı ve  şifrenizi lütfen değiştiriniz.
+
+
+--SİTE AYARLARI--
+Yukardaki işlemleri başarılı bir şekilde yaptiktan sonra  "Site Yönetimi" Menüsü altındaki "Site Ayarları'na" tıklayınız.Bu kısımda "Site URL" bölümüne muttlaka
+sitenizin kululduğu adresi yazınız. (Aksi taktirde siteniz çalışmaz)
+
+--MAİL AYARLARI--
+"Site Yönetimi Menüsü altındaki "Mail Ayarları" butonuna tıklayınız ve gerekli bilgileri yazınız (Aksi taktirde iletişim formunuz ve yorum bölümünüz çalışmaz.)
+
+--------------------------------------------------------------------------------------------------------------------------
+
+NOT: LİSANS KODU WEB OFİSİ ÜYE PANELİNİZDE WEB PAKETLERİ KISMINDA YER ALMAKTADIR.
+
+*************
+***GÜLE GÜLE KULLANIN - İYİ GÜNLER***
+*************
+
+www.web-ofisi.com
+
+Msn: info@web-ofisi.com
+Tel: 0850 304 83 50

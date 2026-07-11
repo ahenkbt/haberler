@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Yektube" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="Türkiye'nin video platformu — Yektube ile izleyin, keşfedin ve paylaşın." />
+    <meta name="geo.region" content="TR" />
+    <meta name="geo.placename" content="Türkiye" />
+    <meta name="content-language" content="tr" />
+    <link rel="manifest" href="/yektube-v2/manifest.webmanifest" />
+    <script>
+      (function () {
+        var link = document.querySelector('link[rel="manifest"]');
+        if (!link) return;
+        var host = location.hostname.replace(/^www\./i, "");
+        if (host === "yekpare.net" || location.pathname.indexOf("/yp") === 0) {
+          link.setAttribute("href", "/yp/manifest.webmanifest");
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/png" href="/yektube-v2/yektube-icon.png" />
+    <link rel="apple-touch-icon" href="/yektube-v2/yektube-icon.png" />
+    <link rel="apple-touch-startup-image" href="/yektube-v2/yektube-icon.png" />
+    <title>Yektube</title>
+    <script>
+      (function () {
+        var host = location.hostname.replace(/^www\./i, "");
+        if (host === "yektube.com") {
+          var p = location.pathname.replace(/\/+$/, "") || "/";
+          if (p === "/") {
+            location.replace("/yp/" + location.search + location.hash);
+            return;
+          }
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) {
+                r.unregister();
+              });
+            });
+          }
+          if ("caches" in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) {
+                if (k.indexOf("yektube") !== -1) caches.delete(k);
+              });
+            });
+          }
+          if (location.pathname === "/yp") {
+            history.replaceState(null, "", "/yp/" + location.search + location.hash);
+          }
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        var host = location.hostname.replace(/^www\./i, "");
+        if (host !== "yektube.com") return;
+        if (sessionStorage.getItem("yektube-mirror-active") === "1") return;
+        var mirror = "https://yekpare.net";
+        var redirected = false;
+        function mirrorPath() {
+          var p = location.pathname.replace(/\/+$/, "") || "/";
+          return p === "/" ? "/yp" : location.pathname;
+        }
+        function go() {
+          if (redirected || window.__YEKTUBE_READY__) return;
+          redirected = true;
+          sessionStorage.setItem("yektube-mirror-active", "1");
+          location.replace(mirror + mirrorPath() + location.search + location.hash);
+        }
+        var deadline = setTimeout(go, 18000);
+        function probe() {
+          fetch("/api/healthz", { cache: "no-store" })
+            .then(function (r) {
+              if (!r.ok || r.headers.get("x-yekpare-api-degraded") === "1") throw new Error("bad");
+              return r.json();
+            })
+            .then(function (d) {
+              if (d && d.status === "ok") {
+                clearTimeout(deadline);
+                sessionStorage.removeItem("yektube-mirror-active");
+              }
+            })
+            .catch(function () {});
+        }
+        probe();
+        setTimeout(probe, 4000);
+        setTimeout(probe, 9000);
+        window.__YEKTUBE_CANCEL_MIRROR__ = function () {
+          clearTimeout(deadline);
+          sessionStorage.removeItem("yektube-mirror-active");
+        };
+        window.__YEKTUBE_READY__ = false;
+      })();
+    </script>
+    <script>
+      (function () {
+        var KEY = "yektube-v2:theme";
+        var pref = "light";
+        try {
+          var s = localStorage.getItem(KEY);
+          if (s === "light" || s === "dark") pref = s;
+          else if (s === "auto") pref = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        } catch (e) {}
+        var dark = pref === "dark";
+        document.documentElement.dataset.ytTheme = dark ? "dark" : "light";
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#0f0f0f" : "#ffffff");
+      })();
+    </script>
+    <script type="module" crossorigin src="/yektube-v2/assets/index-DY9zYfzz.js"></script>
+    <link rel="stylesheet" crossorigin href="/yektube-v2/assets/index-BSe8vU3-.css">
+  </head>
+  <body class="antialiased">
+    <noscript>
+      <p style="padding: 2rem; font-family: system-ui, sans-serif; text-align: center">
+        Yektube için JavaScript gerekli. Alternatif:
+        <a href="https://yekpare.net/yp/">https://yekpare.net/yp/</a>
+      </p>
+    </noscript>
+    <div id="root">
+      <div
+        style="
+          display: flex;
+          min-height: 100dvh;
+          align-items: center;
+          justify-content: center;
+          font-family: system-ui, sans-serif;
+          color: #606060;
+          background: #fff;
+        "
+      >
+        Yektube yükleniyor…
+      </div>
+    </div>
+  </body>
+</html>

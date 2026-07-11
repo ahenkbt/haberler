@@ -1,0 +1,2 @@
+ALTER TABLE authors ADD COLUMN IF NOT EXISTS pw_reset_token TEXT;
+ALTER TABLE authors ADD COLUMN IF NOT EXISTS pw_reset_expires_at TIMESTAMP;

@@ -1,0 +1,217 @@
+/* 6amMart rental — araç kiralama modülü */
+.sixam-rental-yekpare {
+  font-family: system-ui, sans-serif;
+}
+
+.sixam-rental-header {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+.sixam-rental-header__top {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sixam-rental-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: #fff;
+}
+
+.sixam-rental-brand__mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  color: #0ea5e9;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.sixam-rental-brand strong {
+  display: block;
+}
+
+.sixam-rental-brand small {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.sixam-rental-header__links {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.sixam-rental-header__links a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.sixam-rental-hero {
+  background: linear-gradient(180deg, #ecfdf3, #fff);
+  padding: 2rem 1rem;
+}
+
+.sixam-rental-hero__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.sixam-rental-kicker {
+  color: #0ea5e9;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sixam-rental-hero h1 {
+  margin: 0.5rem 0;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  color: #0f172a;
+}
+
+.sixam-rental-search {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.65rem;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 12px 32px rgba(3, 157, 85, 0.12);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .sixam-rental-search {
+    grid-template-columns: 1.2fr repeat(3, 1fr) auto;
+  }
+}
+
+.sixam-rental-search label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.sixam-rental-search input,
+.sixam-rental-search select {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.sixam-rental-search button {
+  border: 0;
+  border-radius: 0.75rem;
+  background: #0ea5e9;
+  color: #fff;
+  font-weight: 800;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+}
+
+.sixam-rental-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: grid;
+  gap: 2rem;
+}
+
+.sixam-rental-main h2 {
+  font-size: 1.125rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+}
+
+.sixam-rental-quick {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.sixam-rental-quick-card {
+  background: #0f172a;
+  color: #fff;
+  border-radius: 1rem;
+  overflow: hidden;
+  text-decoration: none;
+  padding-bottom: 0.65rem;
+}
+
+.sixam-rental-quick-card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+.sixam-rental-quick-card strong,
+.sixam-rental-quick-card small {
+  display: block;
+  padding: 0 0.65rem;
+  font-size: 0.75rem;
+}
+
+.sixam-rental-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.sixam-rental-cats {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.sixam-rental-cats button {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sixam-rental-skeleton {
+  height: 120px;
+  border-radius: 1rem;
+  background: #e2e8f0;
+}
+
+.sixam-rental-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.8125rem;
+}
+
+.sixam-rental-footer a {
+  color: #0ea5e9;
+  font-weight: 700;
+  text-decoration: none;
+}

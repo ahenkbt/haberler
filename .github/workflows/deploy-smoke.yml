@@ -1,0 +1,45 @@
+name: Deploy Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      web_origin:
+        description: WEB_ORIGIN (Netlify)
+        required: true
+        default: https://yekpare.net
+      api_origin:
+        description: API_ORIGIN (Render)
+        required: false
+        default: https://goalgo-y7ze.onrender.com
+      call_origin:
+        description: CALL_ORIGIN (PBX / call center)
+        required: false
+        default: ""
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: goalgo
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Post-deploy smoke checks
+        env:
+          WEB_ORIGIN: ${{ inputs.web_origin }}
+          API_ORIGIN: ${{ inputs.api_origin }}
+          CALL_ORIGIN: ${{ inputs.call_origin }}
+        run: |
+          args=(--web "$WEB_ORIGIN")
+          if [ -n "$API_ORIGIN" ]; then args+=(--api "$API_ORIGIN"); fi
+          if [ -n "$CALL_ORIGIN" ]; then args+=(--call "$CALL_ORIGIN"); fi
+          pnpm run deploy:smoke -- "${args[@]}"

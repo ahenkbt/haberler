@@ -1,0 +1,1303 @@
+[data-vendor-theme="foodmart"] .vendor-theme-topbar {
+  background: #f7fff9;
+  border-bottom: 1px solid rgba(59, 183, 126, 0.18);
+  color: #253d4e;
+  padding: 18px 0;
+}
+
+.vendor-theme-nav-link {
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.78;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.vendor-theme-nav-link:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-hero {
+  background:
+    radial-gradient(circle at 88% 22%, rgba(255, 196, 63, 0.42), transparent 0 20%, transparent 21%),
+    radial-gradient(circle at 72% 72%, rgba(59, 183, 126, 0.26), transparent 0 24%, transparent 25%),
+    linear-gradient(135deg, #e6f3fb 0%, #fff9eb 100%);
+  background-size: cover;
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-hero-overlay {
+  background:
+    url("/vendor-themes/foodmart/FoodMart-1.0.0/images/gift.svg") no-repeat right 12% center / min(24vw, 250px),
+    radial-gradient(circle at 78% 20%, rgba(255, 196, 63, 0.32), transparent 30%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(230, 243, 251, 0.82) 55%, rgba(255, 249, 235, 0.50));
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-hero > img {
+  inset: auto 5% 0 auto;
+  width: min(24vw, 250px);
+  height: min(58%, 280px);
+  object-fit: contain;
+  object-position: right center;
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-title,
+[data-vendor-theme="foodmart"] .vendor-theme-hero p {
+  color: #253d4e;
+  text-shadow: none;
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-badge {
+  background: #ffd166 !important;
+  color: #253d4e;
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-hero .max-w-6xl {
+  max-width: 1600px;
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-body {
+  background:
+    linear-gradient(180deg, #f7fff9 0, #ffffff 260px),
+    radial-gradient(circle at 8% 18%, rgba(59, 183, 126, 0.10), transparent 28%);
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-body aside > div,
+[data-vendor-theme="foodmart"] .vendor-theme-body .rounded-xl {
+  border-radius: 22px;
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-body .grid .group {
+  border: 1px solid rgba(59, 183, 126, 0.14);
+  border-radius: 22px;
+  box-shadow: 0 12px 30px rgba(37, 61, 78, 0.08);
+}
+
+[data-vendor-theme="foodmart"] .vendor-theme-body .grid .group:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 45px rgba(37, 61, 78, 0.12);
+}
+
+[data-vendor-theme="foodmart"] .ecom-storefront {
+  background:
+    radial-gradient(circle at 4% 10%, rgba(255, 196, 63, 0.10), transparent 0 18%, transparent 19%),
+    radial-gradient(circle at 95% 22%, rgba(59, 183, 126, 0.10), transparent 0 22%, transparent 23%),
+    #ffffff;
+}
+
+[data-vendor-theme="sellzy-store"] .vendor-theme-topbar,
+[data-vendor-theme="nest-market"] .vendor-theme-topbar,
+[data-vendor-theme="pixio-shop"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-shop"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-gadget"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-electro"] .vendor-theme-topbar,
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-topbar,
+[data-vendor-theme="listinghub-shop"] .vendor-theme-topbar {
+  background: #fff;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  padding: 16px 0;
+}
+
+[data-vendor-theme="sellzy-store"] .vendor-theme-hero {
+  background: radial-gradient(circle at 82% 18%, rgba(16, 185, 129, 0.24), transparent 28%), linear-gradient(135deg, #ecfdf5, #ffffff 58%, #fefce8);
+}
+
+[data-vendor-theme="sellzy-store"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(255,255,255,0.96), rgba(236,253,245,0.78));
+}
+
+[data-vendor-theme="sellzy-store"] .vendor-theme-title,
+[data-vendor-theme="sellzy-store"] .vendor-theme-hero p {
+  color: #0f172a;
+  text-shadow: none;
+}
+
+[data-vendor-theme="sellzy-store"] .vendor-theme-badge {
+  background: #d1fae5 !important;
+  color: #047857;
+}
+
+[data-vendor-theme="sellzy-store"] .vendor-theme-body {
+  background: #f8fafc;
+}
+
+[data-vendor-theme="nest-market"] .vendor-theme-hero {
+  background: radial-gradient(circle at 74% 28%, rgba(59, 183, 126, 0.26), transparent 30%), linear-gradient(135deg, #f7fee7, #ffffff);
+}
+
+[data-vendor-theme="nest-market"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(255,255,255,0.94), rgba(247,254,231,0.76));
+}
+
+[data-vendor-theme="nest-market"] .vendor-theme-title,
+[data-vendor-theme="nest-market"] .vendor-theme-hero p {
+  color: #253d4e;
+  text-shadow: none;
+}
+
+[data-vendor-theme="pixio-shop"] .vendor-theme-hero {
+  background: linear-gradient(135deg, #111827, #7c2d12);
+}
+
+[data-vendor-theme="pixio-shop"] .vendor-theme-hero-overlay {
+  background: radial-gradient(circle at 80% 24%, rgba(251, 146, 60, 0.34), transparent 32%), linear-gradient(90deg, rgba(17,24,39,0.92), rgba(124,45,18,0.62));
+}
+
+[data-vendor-theme="pixio-shop"] .vendor-theme-body {
+  background: #fff7ed;
+}
+
+[data-vendor-theme="kartify-shop"] .vendor-theme-hero {
+  background: linear-gradient(135deg, #eef2ff, #ffffff);
+}
+
+[data-vendor-theme="kartify-shop"] .vendor-theme-hero-overlay {
+  background: radial-gradient(circle at 76% 20%, rgba(79, 70, 229, 0.24), transparent 32%), linear-gradient(90deg, rgba(255,255,255,0.95), rgba(238,242,255,0.76));
+}
+
+[data-vendor-theme="kartify-shop"] .vendor-theme-title,
+[data-vendor-theme="kartify-shop"] .vendor-theme-hero p {
+  color: #1e1b4b;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-gadget"] .vendor-theme-hero {
+  background: linear-gradient(135deg, #dbeafe, #ffffff 52%, #e0f2fe);
+}
+
+[data-vendor-theme="kartify-gadget"] .vendor-theme-hero-overlay {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(37, 99, 235, 0.28), transparent 32%),
+    linear-gradient(90deg, rgba(255,255,255,0.96), rgba(219,234,254,0.76));
+}
+
+[data-vendor-theme="kartify-gadget"] .vendor-theme-title,
+[data-vendor-theme="kartify-gadget"] .vendor-theme-hero p {
+  color: #172554;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-gadget"] .vendor-theme-badge {
+  background: #dbeafe !important;
+  color: #1d4ed8;
+}
+
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-topbar {
+  background: #111827;
+  color: #fff7ed;
+  border-bottom: 0;
+}
+
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-hero {
+  background:
+    radial-gradient(circle at 82% 18%, rgba(251, 146, 60, 0.32), transparent 30%),
+    linear-gradient(135deg, #fff7ed, #ffffff 48%, #ffedd5);
+}
+
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(255,247,237,0.96), rgba(255,237,213,0.64));
+}
+
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-title,
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-hero p {
+  color: #431407;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-badge {
+  background: #111827 !important;
+  color: #fff7ed;
+}
+
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-hero {
+  background:
+    radial-gradient(circle at 76% 20%, rgba(101, 163, 13, 0.24), transparent 32%),
+    linear-gradient(135deg, #f7fee7, #ffffff 58%, #ecfccb);
+}
+
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(255,255,255,0.94), rgba(247,254,231,0.78));
+}
+
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-title,
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-hero p {
+  color: #365314;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-badge {
+  background: #d9f99d !important;
+  color: #365314;
+}
+
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-topbar {
+  background: #12071f;
+  color: #f5f3ff;
+  border-bottom: 1px solid rgba(167, 139, 250, 0.22);
+}
+
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-hero {
+  background: linear-gradient(135deg, #111827, #312e81 54%, #7c3aed);
+}
+
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-hero-overlay {
+  background:
+    radial-gradient(circle at 82% 22%, rgba(216, 180, 254, 0.32), transparent 34%),
+    linear-gradient(90deg, rgba(17,24,39,0.94), rgba(49,46,129,0.64));
+}
+
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-title {
+  color: #ffffff;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-badge {
+  background: rgba(216, 180, 254, 0.18) !important;
+  border: 1px solid rgba(216, 180, 254, 0.56);
+  color: #f5f3ff;
+}
+
+[data-vendor-theme="kartify-electro"] .vendor-theme-topbar {
+  background: #020617;
+  color: #e0f2fe;
+  border-bottom: 1px solid rgba(14, 165, 233, 0.24);
+}
+
+[data-vendor-theme="kartify-electro"] .vendor-theme-hero {
+  background:
+    radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.36), transparent 34%),
+    linear-gradient(135deg, #020617, #0f172a 58%, #075985);
+}
+
+[data-vendor-theme="kartify-electro"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(2,6,23,0.95), rgba(15,23,42,0.58), rgba(14,165,233,0.16));
+}
+
+[data-vendor-theme="kartify-electro"] .vendor-theme-title {
+  color: #f8fafc;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-electro"] .vendor-theme-badge {
+  background: #0ea5e9 !important;
+  color: #020617;
+}
+
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-hero {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(251, 207, 232, 0.56), transparent 26%),
+    radial-gradient(circle at 82% 20%, rgba(186, 230, 253, 0.48), transparent 30%),
+    linear-gradient(135deg, #fff1f2, #ffffff 52%, #fdf2f8);
+}
+
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(255,255,255,0.94), rgba(253,242,248,0.72));
+}
+
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-title,
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-hero p {
+  color: #831843;
+  text-shadow: none;
+}
+
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-badge {
+  background: #fbcfe8 !important;
+  color: #831843;
+}
+
+[data-vendor-theme="listinghub-shop"] .vendor-theme-hero {
+  background: linear-gradient(135deg, #0f172a, #0369a1);
+}
+
+[data-vendor-theme="listinghub-shop"] .vendor-theme-hero-overlay {
+  background: radial-gradient(circle at 82% 20%, rgba(14, 165, 233, 0.34), transparent 34%), linear-gradient(90deg, rgba(15,23,42,0.94), rgba(3,105,161,0.72));
+}
+
+[data-vendor-theme="listinghub-shop"] .ecom-shop-layout {
+  display: block;
+}
+
+[data-vendor-theme="listinghub-shop"] .ecom-category-sidebar {
+  display: none !important;
+}
+
+[data-vendor-theme="sellzy-store"] .ecom-product-card,
+[data-vendor-theme="nest-market"] .ecom-product-card,
+[data-vendor-theme="pixio-shop"] .ecom-product-card,
+[data-vendor-theme="kartify-shop"] .ecom-product-card,
+[data-vendor-theme="kartify-gadget"] .ecom-product-card,
+[data-vendor-theme="kartify-mega-mart"] .ecom-product-card,
+[data-vendor-theme="kartify-organic-store"] .ecom-product-card,
+[data-vendor-theme="kartify-style-tech"] .ecom-product-card,
+[data-vendor-theme="kartify-electro"] .ecom-product-card,
+[data-vendor-theme="kartify-baby-shop"] .ecom-product-card,
+[data-vendor-theme="listinghub-shop"] .ecom-product-card {
+  border-radius: 22px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-vendor-theme="sellzy-store"] .ecom-product-card:hover,
+[data-vendor-theme="nest-market"] .ecom-product-card:hover,
+[data-vendor-theme="pixio-shop"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-shop"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-gadget"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-mega-mart"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-organic-store"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-style-tech"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-electro"] .ecom-product-card:hover,
+[data-vendor-theme="kartify-baby-shop"] .ecom-product-card:hover,
+[data-vendor-theme="listinghub-shop"] .ecom-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-vendor-theme="pixio-shop"] .ecom-product-card {
+  border-radius: 10px !important;
+}
+
+[data-vendor-theme="kartify-shop"] .ecom-product-card {
+  background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+}
+
+[data-vendor-theme="kartify-gadget"] .vendor-theme-body,
+[data-vendor-theme="kartify-gadget"] .ecom-storefront {
+  background: #f8fbff !important;
+}
+
+[data-vendor-theme="kartify-gadget"] .ecom-product-card {
+  background: linear-gradient(180deg, #ffffff, #eff6ff) !important;
+}
+
+[data-vendor-theme="kartify-mega-mart"] .vendor-theme-body,
+[data-vendor-theme="kartify-mega-mart"] .ecom-storefront {
+  background: #fff7ed !important;
+}
+
+[data-vendor-theme="kartify-mega-mart"] .ecom-product-grid {
+  gap: 18px;
+}
+
+[data-vendor-theme="kartify-mega-mart"] .ecom-product-card {
+  border-radius: 16px !important;
+}
+
+[data-vendor-theme="kartify-organic-store"] .vendor-theme-body,
+[data-vendor-theme="kartify-organic-store"] .ecom-storefront {
+  background: #f7fee7 !important;
+}
+
+[data-vendor-theme="kartify-organic-store"] .ecom-product-card {
+  border-color: rgba(101, 163, 13, 0.18) !important;
+  box-shadow: 0 16px 38px rgba(54, 83, 20, 0.08) !important;
+}
+
+[data-vendor-theme="kartify-style-tech"] .vendor-theme-body,
+[data-vendor-theme="kartify-style-tech"] .ecom-storefront {
+  background: #f5f3ff !important;
+}
+
+[data-vendor-theme="kartify-style-tech"] .ecom-product-card {
+  border-radius: 12px !important;
+  border-color: rgba(124, 58, 237, 0.16) !important;
+}
+
+[data-vendor-theme="kartify-electro"] .vendor-theme-body,
+[data-vendor-theme="kartify-electro"] .ecom-storefront {
+  background: #eef6ff !important;
+}
+
+[data-vendor-theme="kartify-electro"] .ecom-category-sidebar {
+  display: none !important;
+}
+
+[data-vendor-theme="kartify-electro"] .ecom-shop-layout {
+  display: block;
+}
+
+[data-vendor-theme="kartify-electro"] .ecom-product-card {
+  background: linear-gradient(180deg, #ffffff, #f0f9ff) !important;
+}
+
+[data-vendor-theme="kartify-baby-shop"] .vendor-theme-body,
+[data-vendor-theme="kartify-baby-shop"] .ecom-storefront {
+  background: #fdf2f8 !important;
+}
+
+[data-vendor-theme="kartify-baby-shop"] .ecom-product-card {
+  border-radius: 28px !important;
+  border-color: rgba(244, 114, 182, 0.18) !important;
+}
+
+[data-vendor-theme="listinghub-shop"] .ecom-product-grid {
+  grid-template-columns: 1fr !important;
+}
+
+@media (min-width: 900px) {
+  [data-vendor-theme="listinghub-shop"] .ecom-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+[data-vendor-theme="foodmart"] .ecom-vendor-info,
+[data-vendor-theme="foodmart"] .ecom-store-tabs {
+  border-color: #f3f3f3;
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+[data-vendor-theme="foodmart"] .ecom-shop-layout {
+  max-width: 1600px;
+  align-items: flex-start;
+  padding-top: 32px;
+  gap: 28px;
+}
+
+[data-vendor-theme="foodmart"] .ecom-category-sidebar {
+  width: 300px;
+  min-width: 280px;
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  [data-vendor-theme="foodmart"] .ecom-category-sidebar {
+    display: block !important;
+  }
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion {
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 5px 22px rgba(0, 0, 0, 0.08);
+  top: 96px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion > div:first-child {
+  background: #222222;
+  padding: 18px 20px;
+  color: #fff;
+  font-family: "Nunito", "Open Sans", system-ui, sans-serif;
+  font-size: 18px;
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion > div:first-child span {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion > div:last-child {
+  padding: 8px 0;
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion button {
+  min-height: 48px;
+  color: #555;
+  font-size: 15px;
+  font-weight: 700;
+  padding-left: 20px !important;
+  padding-right: 18px !important;
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion button:hover {
+  background: #fff9eb;
+  color: #222;
+}
+
+[data-vendor-theme="foodmart"] .store-category-accordion button.bg-blue-600,
+[data-vendor-theme="foodmart"] .store-category-accordion .bg-blue-50 {
+  background: #ffc43f !important;
+  color: #222 !important;
+}
+
+[data-vendor-theme="foodmart"] .ecom-products-column {
+  background: transparent;
+}
+
+[data-vendor-theme="foodmart"] .ecom-search-bar input {
+  min-height: 56px;
+  border: 0;
+  border-radius: 18px;
+  background: #f8f8f8;
+  box-shadow: inset 0 0 0 1px #f0f0f0;
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-grid {
+  gap: 22px;
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-card {
+  padding: 16px;
+  border: 1px solid #fbfbfb !important;
+  border-radius: 18px !important;
+  background: #fff;
+  box-shadow: 0 5px 22px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-card > div:first-child {
+  border-radius: 14px;
+  background: #f9f9f9;
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-card .ecom-product-image {
+  display: block !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  max-height: 220px !important;
+  overflow: hidden !important;
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-card .ecom-product-image-img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+@media (max-width: 767px) {
+  [data-vendor-theme="foodmart"] .ecom-storefront,
+  [data-vendor-theme="foodmart"] .vendor-theme-body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-shop-layout {
+    padding-top: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-products-column {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100%;
+    min-width: 0;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card {
+    display: grid !important;
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: stretch;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    padding: 8px !important;
+    border-radius: 16px !important;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card .ecom-product-image {
+    width: 112px !important;
+    min-width: 112px !important;
+    height: 112px !important;
+    max-height: 112px !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card .ecom-product-image-img {
+    transform: none !important;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card > div:nth-child(2) {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 4px 4px 4px 10px !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card p,
+  [data-vendor-theme="foodmart"] .ecom-product-card h4 {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card h4 {
+    font-size: 12.5px;
+    line-height: 1.2;
+  }
+
+  [data-vendor-theme="foodmart"] .ecom-product-card button.bg-blue-600 {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 32px;
+    margin-top: auto;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-card h4 {
+  color: #333;
+  font-family: "Nunito", "Open Sans", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+[data-vendor-theme="foodmart"] .ecom-product-card button.bg-blue-600 {
+  background: #ffc43f !important;
+  color: #222;
+  border-radius: 12px;
+  min-height: 38px;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-topbar {
+  background: #111;
+  color: #aaa;
+  padding: 10px 0;
+  border-bottom: 0;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-hero {
+  min-height: 440px;
+  background:
+    radial-gradient(circle at 82% 52%, rgba(232, 40, 26, 0.24), transparent 0 22%, transparent 23%),
+    linear-gradient(135deg, #17110f 0%, #231513 58%, #0c0807 100%);
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-hero-overlay {
+  background:
+    radial-gradient(circle at 78% 52%, rgba(246, 166, 35, 0.22), transparent 0 27%, transparent 28%),
+    linear-gradient(90deg, rgba(26, 26, 26, 0.96), rgba(26, 26, 26, 0.72) 46%, rgba(26, 26, 26, 0.24));
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-hero > img {
+  inset: 0 0 0 auto;
+  width: min(38vw, 480px);
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.82;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-title {
+  max-width: 720px;
+  color: #fff;
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-size: clamp(2.8rem, 5.6vw, 4.9rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-badge {
+  background: rgba(232, 40, 26, 0.14) !important;
+  border: 1px solid rgba(246, 166, 35, 0.9);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-body {
+  background: #fff8f0;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-body .bg-white {
+  background: #fff !important;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-body .rounded-xl {
+  border-radius: 18px;
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-body button,
+[data-vendor-theme="sarab"] .vendor-theme-body a {
+  border-radius: 999px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-storefront {
+  background: #fff8f0 !important;
+}
+
+[data-vendor-theme="sarab"] .restaurant-info-bar {
+  background: #ffffff !important;
+  border-bottom: 0;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+}
+
+[data-vendor-theme="sarab"] .restaurant-info-bar .max-w-4xl,
+[data-vendor-theme="sarab"] .restaurant-menu-layout {
+  max-width: 1240px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-layout {
+  padding-top: 22px;
+  gap: 22px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-category-sidebar {
+  width: 260px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-sarab-categories {
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgba(26, 17, 15, 0.10);
+  top: 92px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+[data-vendor-theme="sarab"] .restaurant-sarab-categories > div:first-child {
+  background: linear-gradient(135deg, #17110f, #2a1815);
+  padding: 16px 18px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-sarab-categories > div:first-child span {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+[data-vendor-theme="sarab"] .restaurant-sarab-categories button {
+  min-height: 46px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+[data-vendor-theme="sarab"] .restaurant-sarab-categories button.bg-blue-600,
+[data-vendor-theme="sarab"] .restaurant-sarab-categories .bg-blue-50 {
+  background: linear-gradient(135deg, #e8281a, #c01e12) !important;
+  color: #fff !important;
+}
+
+[data-vendor-theme="sarab"] .restaurant-sarab-categories button:hover {
+  background: #fff1e4;
+  color: #1a1a1a;
+}
+
+[data-vendor-theme="sarab"] .restaurant-category-tabs {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+}
+
+[data-vendor-theme="sarab"] .restaurant-category-tabs button {
+  border: 0;
+  background: #fef0dc !important;
+  color: #1a1a1a !important;
+  padding: 11px 18px;
+  font-weight: 800;
+}
+
+[data-vendor-theme="sarab"] .restaurant-category-tabs button.bg-orange-500 {
+  background: linear-gradient(135deg, #e8281a, #c01e12) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 22px rgba(232, 40, 26, 0.28);
+}
+
+[data-vendor-theme="sarab"] .restaurant-section-title {
+  border: 0;
+  color: #1a1a1a;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 26px;
+  font-weight: 900;
+  position: relative;
+  padding-bottom: 14px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-section-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 58px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e8281a, #f6a623);
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-list {
+  gap: 20px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-card {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 10px 30px rgba(26, 17, 15, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 46px rgba(26, 17, 15, 0.12);
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #e8281a, #f6a623);
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-card .font-semibold {
+  color: #1a1a1a;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-card .font-bold {
+  color: #e8281a;
+  font-size: 16px;
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-image {
+  width: 82px;
+  height: 82px;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
+}
+
+[data-vendor-theme="sarab"] .restaurant-menu-card button.bg-orange-500 {
+  background: linear-gradient(135deg, #e8281a, #c01e12) !important;
+  box-shadow: 0 8px 22px rgba(232, 40, 26, 0.28);
+}
+
+[data-vendor-theme="restaurantly"],
+[data-vendor-theme="delfood"],
+[data-vendor-theme="klassy-cafe"],
+[data-vendor-theme="tasteit"],
+[data-vendor-theme="kusina"] {
+  --restaurant-accent: var(--vendor-accent);
+}
+
+[data-vendor-theme="restaurantly"] .vendor-theme-topbar,
+[data-vendor-theme="tasteit"] .vendor-theme-topbar {
+  background: #080706;
+  color: #f7ead2;
+  border-bottom: 1px solid rgba(205, 164, 94, 0.26);
+}
+
+[data-vendor-theme="restaurantly"] .vendor-theme-hero {
+  min-height: 500px;
+  background:
+    radial-gradient(circle at 78% 43%, rgba(205, 164, 94, 0.22), transparent 0 25%, transparent 26%),
+    linear-gradient(135deg, #080706, #19130d 58%, #3b2b17);
+}
+
+[data-vendor-theme="restaurantly"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(8, 7, 6, 0.94), rgba(8, 7, 6, 0.48), rgba(8, 7, 6, 0.14));
+}
+
+[data-vendor-theme="restaurantly"] .vendor-theme-title,
+[data-vendor-theme="tasteit"] .vendor-theme-title {
+  color: #fff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(3rem, 6vw, 5.4rem);
+  line-height: 0.96;
+}
+
+[data-vendor-theme="restaurantly"] .vendor-theme-badge {
+  background: rgba(205, 164, 94, 0.16) !important;
+  border: 1px solid rgba(205, 164, 94, 0.75);
+  color: #fff8e8;
+}
+
+[data-vendor-theme="restaurantly"] .vendor-theme-body,
+[data-vendor-theme="restaurantly"] .restaurant-storefront {
+  background: #0f0d0a !important;
+}
+
+[data-vendor-theme="restaurantly"] .restaurant-info-bar,
+[data-vendor-theme="restaurantly"] .restaurant-menu-card,
+[data-vendor-theme="restaurantly"] .restaurant-sarab-categories,
+[data-vendor-theme="tasteit"] .restaurant-info-bar,
+[data-vendor-theme="tasteit"] .restaurant-menu-card,
+[data-vendor-theme="tasteit"] .restaurant-sarab-categories {
+  background: #15120e !important;
+  color: #f6ead8;
+  border: 1px solid rgba(205, 164, 94, 0.18) !important;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.22);
+}
+
+[data-vendor-theme="restaurantly"] .restaurant-section-title,
+[data-vendor-theme="tasteit"] .restaurant-section-title {
+  color: #f7ead2;
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+[data-vendor-theme="restaurantly"] .restaurant-menu-card .font-semibold,
+[data-vendor-theme="tasteit"] .restaurant-menu-card .font-semibold {
+  color: #fff;
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+[data-vendor-theme="restaurantly"] .restaurant-section-title::after,
+[data-vendor-theme="restaurantly"] .restaurant-sarab-categories .bg-blue-50,
+[data-vendor-theme="restaurantly"] .restaurant-sarab-categories button.bg-blue-600 {
+  background: #cda45e !important;
+  color: #0f0d0a !important;
+}
+
+[data-vendor-theme="restaurantly"] .restaurant-menu-card .font-bold {
+  color: #cda45e !important;
+}
+
+[data-vendor-theme="delfood"] .vendor-theme-topbar {
+  background: #ff5a00;
+  color: #fff;
+  border-bottom: 0;
+}
+
+[data-vendor-theme="delfood"] .vendor-theme-hero {
+  min-height: 470px;
+  background:
+    radial-gradient(circle at 78% 45%, rgba(255, 255, 255, 0.38), transparent 0 24%, transparent 25%),
+    linear-gradient(135deg, #ff5a00 0%, #ff8f1f 58%, #ffe2b8 100%);
+}
+
+[data-vendor-theme="delfood"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(255, 90, 0, 0.90), rgba(255, 143, 31, 0.38), rgba(255, 255, 255, 0.12));
+}
+
+[data-vendor-theme="delfood"] .vendor-theme-title {
+  color: #14100d;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 900;
+  line-height: 0.98;
+}
+
+[data-vendor-theme="delfood"] .vendor-theme-badge {
+  background: #14100d !important;
+  color: #fff;
+}
+
+[data-vendor-theme="delfood"] .vendor-theme-body,
+[data-vendor-theme="delfood"] .restaurant-storefront {
+  background: #fff7ed !important;
+}
+
+[data-vendor-theme="delfood"] .restaurant-sarab-categories > div:first-child,
+[data-vendor-theme="delfood"] .restaurant-menu-card::before,
+[data-vendor-theme="delfood"] .restaurant-section-title::after,
+[data-vendor-theme="delfood"] .restaurant-menu-card button.bg-orange-500,
+[data-vendor-theme="delfood"] .restaurant-sarab-categories button.bg-blue-600 {
+  background: linear-gradient(135deg, #ff5a00, #14100d) !important;
+}
+
+[data-vendor-theme="klassy-cafe"] .vendor-theme-topbar {
+  background: #ffffff;
+  color: #2a2a2a;
+  border-bottom: 1px solid rgba(251, 88, 73, 0.18);
+}
+
+[data-vendor-theme="klassy-cafe"] .vendor-theme-hero {
+  min-height: 470px;
+  background:
+    linear-gradient(90deg, #fb5849 0 42%, transparent 42%),
+    linear-gradient(135deg, #fff7f3, #ffffff);
+}
+
+[data-vendor-theme="klassy-cafe"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(251, 88, 73, 0.90) 0 42%, rgba(255, 247, 243, 0.72) 42%, rgba(255,255,255,0.12));
+}
+
+[data-vendor-theme="klassy-cafe"] .vendor-theme-title {
+  color: #fff;
+  font-family: "Georgia", serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  line-height: 0.98;
+}
+
+[data-vendor-theme="klassy-cafe"] .vendor-theme-badge {
+  background: #fff !important;
+  color: #fb5849;
+}
+
+[data-vendor-theme="klassy-cafe"] .vendor-theme-body,
+[data-vendor-theme="klassy-cafe"] .restaurant-storefront {
+  background: #fff7f3 !important;
+}
+
+[data-vendor-theme="klassy-cafe"] .restaurant-sarab-categories > div:first-child,
+[data-vendor-theme="klassy-cafe"] .restaurant-menu-card::before,
+[data-vendor-theme="klassy-cafe"] .restaurant-section-title::after,
+[data-vendor-theme="klassy-cafe"] .restaurant-menu-card button.bg-orange-500,
+[data-vendor-theme="klassy-cafe"] .restaurant-sarab-categories button.bg-blue-600 {
+  background: #fb5849 !important;
+}
+
+[data-vendor-theme="tasteit"] .vendor-theme-hero {
+  min-height: 510px;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(229, 43, 52, 0.22), transparent 0 24%, transparent 25%),
+    linear-gradient(180deg, #161616, #2b1717 72%, #e52b34);
+}
+
+[data-vendor-theme="tasteit"] .vendor-theme-hero-overlay {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.62));
+}
+
+[data-vendor-theme="tasteit"] .vendor-theme-body,
+[data-vendor-theme="tasteit"] .restaurant-storefront {
+  background: #111 !important;
+}
+
+[data-vendor-theme="tasteit"] .restaurant-sarab-categories > div:first-child,
+[data-vendor-theme="tasteit"] .restaurant-menu-card::before,
+[data-vendor-theme="tasteit"] .restaurant-section-title::after,
+[data-vendor-theme="tasteit"] .restaurant-menu-card button.bg-orange-500,
+[data-vendor-theme="tasteit"] .restaurant-sarab-categories button.bg-blue-600 {
+  background: #e52b34 !important;
+}
+
+[data-vendor-theme="kusina"] .vendor-theme-topbar {
+  background: #f8f6ed;
+  color: #2f3d18;
+  border-bottom: 1px solid rgba(143, 179, 57, 0.28);
+}
+
+[data-vendor-theme="kusina"] .vendor-theme-hero {
+  min-height: 480px;
+  background:
+    linear-gradient(90deg, #f8f6ed 0 55%, rgba(47, 61, 24, 0.92) 55%),
+    linear-gradient(135deg, #f8f6ed, #dce9bd);
+}
+
+[data-vendor-theme="kusina"] .vendor-theme-hero-overlay {
+  background: linear-gradient(90deg, rgba(248, 246, 237, 0.88), rgba(248, 246, 237, 0.36), rgba(47, 61, 24, 0.34));
+}
+
+[data-vendor-theme="kusina"] .vendor-theme-title {
+  color: #2f3d18;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: clamp(2.9rem, 5.7vw, 4.8rem);
+  font-weight: 900;
+}
+
+[data-vendor-theme="kusina"] .vendor-theme-badge {
+  background: #8fb339 !important;
+  color: #fff;
+}
+
+[data-vendor-theme="kusina"] .vendor-theme-body,
+[data-vendor-theme="kusina"] .restaurant-storefront {
+  background: #f8f6ed !important;
+}
+
+[data-vendor-theme="kusina"] .restaurant-sarab-categories > div:first-child,
+[data-vendor-theme="kusina"] .restaurant-menu-card::before,
+[data-vendor-theme="kusina"] .restaurant-section-title::after,
+[data-vendor-theme="kusina"] .restaurant-menu-card button.bg-orange-500,
+[data-vendor-theme="kusina"] .restaurant-sarab-categories button.bg-blue-600 {
+  background: #8fb339 !important;
+}
+
+[data-vendor-theme="delfood"] .restaurant-menu-card,
+[data-vendor-theme="klassy-cafe"] .restaurant-menu-card,
+[data-vendor-theme="kusina"] .restaurant-menu-card {
+  border: 0 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 14px 38px rgba(20, 16, 13, 0.08);
+}
+
+[data-vendor-theme="delfood"] .restaurant-sarab-categories,
+[data-vendor-theme="klassy-cafe"] .restaurant-sarab-categories,
+[data-vendor-theme="kusina"] .restaurant-sarab-categories {
+  border: 0;
+  box-shadow: 0 16px 40px rgba(20, 16, 13, 0.10);
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-topbar {
+  background: #ffffff;
+  color: #4a3424;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(191, 146, 90, 0.20);
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-hero {
+  min-height: 520px;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(246, 227, 199, 0.35), transparent 0 24%, transparent 25%),
+    linear-gradient(135deg, #f6e3c7 0, #bf925a 38%, #24180f 100%);
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(36, 24, 15, 0.68), rgba(36, 24, 15, 0.10)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(30, 20, 10, 0.62));
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-title {
+  max-width: 760px;
+  color: #ffffff;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 800;
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-badge {
+  background: #ffffff !important;
+  color: #4a3424;
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-body {
+  background: #fff9f1;
+}
+
+[data-vendor-theme="vacation-rental"] .tourism-storefront {
+  background: #fff9f1 !important;
+}
+
+[data-vendor-theme="vacation-rental"] .tourism-site-layout,
+[data-vendor-theme="carbook"] .tourism-site-layout {
+  max-width: 1180px;
+  padding-top: 36px;
+}
+
+[data-vendor-theme="vacation-rental"] .tourism-gallery-card,
+[data-vendor-theme="vacation-rental"] .tourism-info-card,
+[data-vendor-theme="vacation-rental"] .tourism-booking-card {
+  border: 0 !important;
+  border-radius: 28px !important;
+  box-shadow: 0 20px 60px rgba(74, 52, 36, 0.12) !important;
+}
+
+[data-vendor-theme="vacation-rental"] .tourism-booking-card button.bg-cyan-600,
+[data-vendor-theme="vacation-rental"] .tourism-booking-card .bg-cyan-600 {
+  background: #bf925a !important;
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-topbar {
+  background: #0b1514;
+  color: #d9fff1;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(1, 210, 142, 0.25);
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-hero {
+  min-height: 520px;
+  background:
+    radial-gradient(circle at 72% 30%, rgba(1, 210, 142, 0.32), transparent 0 24%, transparent 25%),
+    linear-gradient(135deg, #061916 0, #0d2f2a 48%, #01d28e 100%);
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(6, 25, 22, 0.92), rgba(6, 25, 22, 0.36)),
+    linear-gradient(135deg, rgba(1, 210, 142, 0.40), rgba(0, 0, 0, 0.72));
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-title {
+  max-width: 760px;
+  color: #ffffff;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 800;
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-badge {
+  background: rgba(1, 210, 142, 0.16) !important;
+  color: #d9fff1;
+  border: 1px solid rgba(1, 210, 142, 0.50);
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-body {
+  background: #f3fbf8;
+}
+
+[data-vendor-theme="carbook"] .tourism-storefront {
+  background: #f3fbf8 !important;
+}
+
+[data-vendor-theme="carbook"] .tourism-gallery-card,
+[data-vendor-theme="carbook"] .tourism-info-card,
+[data-vendor-theme="carbook"] .tourism-booking-card {
+  border: 0 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 44px rgba(6, 25, 22, 0.12) !important;
+}
+
+[data-vendor-theme="carbook"] .tourism-booking-card button.bg-cyan-600,
+[data-vendor-theme="carbook"] .tourism-booking-card .bg-cyan-600 {
+  background: #01d28e !important;
+  color: #061916 !important;
+}
+
+.vendor-theme-hero {
+  min-height: 300px;
+}
+
+@media (min-width: 768px) {
+  .vendor-theme-hero {
+    min-height: 420px;
+  }
+}
+
+[data-vendor-standalone="1"] .vendor-theme-body {
+  background: #fff;
+}
+
+.vendor-theme-root .vendor-theme-body {
+  min-height: 60vh;
+}
+
+.vendor-theme-root .bg-blue-600,
+.vendor-theme-root .bg-orange-500,
+.vendor-theme-root .hover\:bg-blue-700:hover,
+.vendor-theme-root .hover\:bg-orange-600:hover {
+  background-color: var(--vendor-accent) !important;
+  color: var(--vendor-accent-contrast, #ffffff) !important;
+}
+
+.vendor-theme-root .text-blue-600,
+.vendor-theme-root .text-orange-500 {
+  color: var(--vendor-accent) !important;
+}
+
+.vendor-theme-root .focus\:border-blue-400:focus {
+  border-color: var(--vendor-accent) !important;
+}
+
+.vendor-theme-root .shadow-sm {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.vendor-theme-footer {
+  color: #1f2937;
+  background: #ffffff;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+[data-vendor-theme="sarab"] .vendor-theme-footer {
+  color: #f8ead7;
+  background: #111111;
+  border-top: 0;
+}
+
+[data-vendor-theme="carbook"] .vendor-theme-footer {
+  color: #d9fff1;
+  background: #061916;
+  border-top: 0;
+}
+
+[data-vendor-theme="vacation-rental"] .vendor-theme-footer {
+  color: #4a3424;
+  background: #fff9f1;
+}

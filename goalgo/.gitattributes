@@ -1,0 +1,5 @@
+goalgo-kaynak-kodu.tar.gz filter=lfs diff=lfs merge=lfs -text
+attached_assets/Alladdin_1777628529328.zip filter=lfs diff=lfs merge=lfs -text
+attached_assets/SQL_MODE-EMLAKV924-Z007_FULL_LISANS-3000TL_1777633236086.zip filter=lfs diff=lfs merge=lfs -text
+attached_assets/New_Owners_1777659232636.zip filter=lfs diff=lfs merge=lfs -text
+attached_assets/bookingcore4.0.2_1777670934625.zip filter=lfs diff=lfs merge=lfs -text

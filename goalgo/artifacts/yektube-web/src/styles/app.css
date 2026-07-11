@@ -1,0 +1,374 @@
+@import "tailwindcss";
+
+@theme {
+  --color-yt-bg: #ffffff;
+  --color-yt-surface: #ffffff;
+  --color-yt-surface-muted: #f4f4f5;
+  --color-yt-surface-hover: #f2f2f2;
+  --color-yt-surface-active: #e4e4e7;
+  --color-yt-text: #0f0f0f;
+  --color-yt-muted: #606060;
+  --color-yt-border: #e5e5e5;
+  --color-yt-chip: #f2f2f2;
+  --color-yt-chip-active: #0f0f0f;
+  --color-yt-chip-active-text: #ffffff;
+  --color-yt-avatar: #e4e4e7;
+  --color-yt-avatar-text: #3f3f46;
+  --color-yt-skeleton: #e4e4e7;
+  --color-yt-thumb: #18181b;
+  --color-yt-input-bg: #f4f4f5;
+  --color-yt-input-border: #e4e4e7;
+  --color-yt-primary: #0f0f0f;
+  --color-yt-primary-text: #ffffff;
+  --color-yt-primary-hover: #272727;
+  --color-yt-accent-subtle: #71717a;
+}
+
+[data-yt-theme="dark"] {
+  --color-yt-bg: #0f0f0f;
+  --color-yt-surface: #0f0f0f;
+  --color-yt-surface-muted: #212121;
+  --color-yt-surface-hover: #272727;
+  --color-yt-surface-active: #3f3f3f;
+  --color-yt-text: #f1f1f1;
+  --color-yt-muted: #aaaaaa;
+  --color-yt-border: #3f3f3f;
+  --color-yt-chip: #272727;
+  --color-yt-chip-active: #f1f1f1;
+  --color-yt-chip-active-text: #0f0f0f;
+  --color-yt-avatar: #3f3f3f;
+  --color-yt-avatar-text: #e4e4e7;
+  --color-yt-skeleton: #3f3f3f;
+  --color-yt-thumb: #272727;
+  --color-yt-input-bg: #121212;
+  --color-yt-input-border: #3f3f3f;
+  --color-yt-primary: #f1f1f1;
+  --color-yt-primary-text: #0f0f0f;
+  --color-yt-primary-hover: #d4d4d8;
+  --color-yt-accent-subtle: #a1a1aa;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-yt-bg);
+  color: var(--color-yt-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.yt-app-bg {
+  background: var(--color-yt-bg);
+  color: var(--color-yt-text);
+}
+
+.yt-panel {
+  background: var(--color-yt-surface);
+}
+
+.yt-panel-muted {
+  background: var(--color-yt-surface-muted);
+}
+
+.yt-panel-hover:hover {
+  background: var(--color-yt-surface-hover);
+}
+
+.yt-row-hover:hover {
+  background: var(--color-yt-surface-hover);
+}
+
+.yt-nav-active {
+  background: var(--color-yt-surface-active);
+}
+
+.yt-avatar {
+  background: var(--color-yt-avatar);
+  color: var(--color-yt-avatar-text);
+}
+
+.yt-skeleton {
+  background: var(--color-yt-skeleton);
+}
+
+.yt-input {
+  background: var(--color-yt-input-bg);
+  border-color: var(--color-yt-input-border);
+}
+
+.yt-btn-primary {
+  background: var(--color-yt-primary);
+  color: var(--color-yt-primary-text);
+}
+
+.yt-btn-primary:hover:not(:disabled) {
+  background: var(--color-yt-primary-hover);
+}
+
+.yt-mobile-shell {
+  height: 100dvh;
+  height: 100svh;
+  --yt-mobile-sticky-top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+}
+
+.yt-embed-top-chrome {
+  position: relative;
+  z-index: 40;
+  background: var(--color-yt-surface);
+}
+
+.yt-embed-subheader {
+  border-top: 1px solid var(--color-yt-border);
+  background: var(--color-yt-surface);
+}
+
+/* HM Video TV — logo arkası şeffaf, sol menü alanını doldurur */
+.yt-hm-brand-logo-wrap {
+  background: transparent !important;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.yt-hm-brand-logo {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 2.5rem;
+  max-height: 2.5rem;
+  object-fit: contain;
+  object-position: left center;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Canlı TV — playlist düzeni (Yektube = HM embed, yalnızca logo farklı) */
+.yt-live-playlist-page {
+  padding-bottom: 1.5rem;
+}
+
+.yt-live-playlist-inner {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1400px;
+}
+
+.yt-top-bar {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.yt-top-bar__row {
+  height: 2.5rem;
+  min-height: 2.5rem;
+  max-height: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .yt-top-bar {
+    padding-top: 0;
+  }
+}
+
+.yt-bottom-nav {
+  box-sizing: border-box;
+  min-height: 3.25rem;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Yektube Studio — yekpare temasından izole, yüksek kontrastlı admin kontrolleri */
+[data-yektube-admin] button.yt-admin-btn,
+[data-yektube-admin] button.yt-admin-tab,
+[data-yektube-admin] button.yt-admin-filter,
+[data-yektube-admin] button.yt-admin-icon-btn {
+  -webkit-text-fill-color: currentColor;
+}
+[data-yektube-admin] .yt-admin-btn-label {
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+/* Koyu admin teması (embed değil) */
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-btn--primary,
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-btn--primary * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) button.yt-admin-btn--secondary,
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-btn--secondary *,
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-btn--secondary .yt-admin-btn-label {
+  color: #f4f4f5 !important;
+  -webkit-text-fill-color: #f4f4f5 !important;
+  stroke: #f4f4f5 !important;
+}
+/* Açık embed admin — ayrıntılar adminEmbedLight.css içinde */
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-btn--primary,
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-btn--primary *,
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-btn--primary .yt-admin-btn-label {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+[data-yektube-admin][data-yektube-admin-embed="true"] button.yt-admin-btn--secondary,
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-btn--secondary *,
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-btn--secondary .yt-admin-btn-label {
+  color: #18181b !important;
+  -webkit-text-fill-color: #18181b !important;
+  stroke: #18181b !important;
+}
+[data-yektube-admin] .yt-admin-btn--danger,
+[data-yektube-admin] .yt-admin-btn--danger * {
+  color: #fecaca !important;
+  stroke: #fecaca !important;
+}
+[data-yektube-admin] .yt-admin-btn--ghost,
+[data-yektube-admin] .yt-admin-btn--ghost * {
+  color: #52525b !important;
+  stroke: #52525b !important;
+}
+[data-yektube-admin] .yt-admin-btn--ghost:hover,
+[data-yektube-admin] .yt-admin-btn--ghost:hover * {
+  color: #18181b !important;
+  stroke: #18181b !important;
+}
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-tab:not(.yt-admin-tab--active) {
+  color: #f4f4f5 !important;
+}
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-tab--active {
+  color: #ffffff !important;
+}
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-tab:not(.yt-admin-tab--active) {
+  color: #3f3f46 !important;
+  -webkit-text-fill-color: #3f3f46 !important;
+}
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-tab--active {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-filter {
+  color: #3f3f46 !important;
+}
+[data-yektube-admin]:not([data-yektube-admin-embed="true"]) .yt-admin-filter--active {
+  color: #ffffff !important;
+}
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-filter:not(.yt-admin-filter--active) {
+  color: #3f3f46 !important;
+  -webkit-text-fill-color: #3f3f46 !important;
+}
+[data-yektube-admin][data-yektube-admin-embed="true"] .yt-admin-filter--active {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+[data-yektube-admin] .yt-admin-icon-btn {
+  color: #52525b !important;
+  stroke: #52525b !important;
+}
+[data-yektube-admin] .yt-admin-icon-btn:hover {
+  color: #18181b !important;
+  stroke: #18181b !important;
+}
+[data-yektube-admin] .yt-admin-toggle {
+  color: #e4e4e7 !important;
+  stroke: #e4e4e7 !important;
+}
+[data-yektube-admin] .yt-admin-toggle--active {
+  color: #fcd34d !important;
+  stroke: #fcd34d !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.kids-page img {
+  border-radius: 1rem;
+}
+
+/* Müzik — sidebar kapalı tam genişlik; oynatıcı altta sabit */
+.yt-music-layout {
+  width: 100%;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
+.yt-music-layout main {
+  contain: inline-size;
+}
+
+.yt-shorts-reel {
+  scroll-snap-type: y mandatory;
+  contain: layout style;
+}
+
+.yt-shorts-scroller {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+.yt-shorts-scroller section {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  contain: layout paint;
+}
+
+/* Oynatıcı — tam ekranda da marka görünür kalır; YouTube iframe filigranı gizlenir */
+.yt-player-wrap:fullscreen .yt-brand-shield,
+.yt-player-wrap:fullscreen [aria-label="Yektube"] {
+  display: block;
+}
+
+.yt-iframe-crop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.yt-iframe-crop > div {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.yt-brand-shield {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  z-index: 12;
+  width: 168px;
+  height: 64px;
+  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.96) 45%);
+  pointer-events: none;
+}
+
+.yt-iframe-crop iframe,
+.yt-iframe-crop > div iframe {
+  pointer-events: none;
+}
+
+.yt-player-wrap iframe {
+  border: 0;
+}

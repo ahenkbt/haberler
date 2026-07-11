@@ -1,0 +1,8 @@
+# Repo kökü = `aiaddin` (GitHub ahenkbt/aiaddin). Root Directory Railway'de BOŞ bırakılabilir.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/healthz"
+healthcheckTimeout = 900

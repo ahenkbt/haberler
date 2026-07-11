@@ -1,0 +1,9 @@
+{
+  "name": "Örnek Widget Modülü",
+  "version": "1.0.0",
+  "description": "AhenkPress modül geliştirme için örnek şablon. Kendi modülünüzü oluşturmak için bu yapıyı kullanın.",
+  "author": "AhenkPress",
+  "icon": "🔌",
+  "requires": "5.1",
+  "homepage": "https://ahenkpress.com/moduller"
+}

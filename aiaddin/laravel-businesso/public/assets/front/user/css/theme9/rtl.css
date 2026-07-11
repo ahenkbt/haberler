@@ -1,0 +1,381 @@
+@media (min-width: 1200px) {
+    .offset-xl-1 {
+        margin-left: 0%;
+        margin-right: 8.333333%;
+    }
+    .offset-xl-3 {
+        margin-left: 0%;
+        margin-right: 25%;
+    }
+}
+@media (min-width: 992px) {
+    .offset-lg-1 {
+        margin-left: 0%;
+        margin-right: 8.333333%;
+    }
+}
+input,
+select,
+textarea,
+.nice-select {
+    padding: 0 30px 0 45px;
+}
+.menu-right-area .search-wrap .search-form {
+    right: auto;
+    left: 0;
+}
+.header-menu-area .logo {
+    padding-left: 0px;
+    padding-right: 80px;
+}
+.header-top-area .top-contact-info li {
+    margin-right: 0px;
+    margin-left: 30px;
+}
+.header-top-area .top-contact-info i {
+    margin-right: 0px;
+    margin-left: 10px;
+}
+.header-top-area .top-social-icon li,
+.header-top-area .top-menu li {
+    margin-left: 0px;
+    margin-right: 18px;
+}
+.header-top-area .top-social-icon {
+    margin-left: 0px;
+    margin-right: 40px;
+}
+.header-top-area .top-right {
+    text-align: left !important;
+}
+.menu-right-area .lag-select .lag-img {
+    left: auto;
+    right: 15px;
+}
+.menu-right-area .lag-select .lag-option {
+    left: auto;
+    right: 65px;
+}
+.menu-right-area .quote-btn {
+    margin-right: 0px;
+    margin-left: -70px;
+}
+.menu-right-area .main-menu li.have-submenu::after {
+    right: auto;
+    left: 0;
+}
+.main-menu ul li .mega-wrap-menu,
+.menu-right-area .main-menu li .mega-menu,
+.menu-right-area .main-menu li .submenu {
+    left: auto;
+    right: 0;
+    text-align: right;
+}
+.menu-right-area .main-menu li .submenu li {
+    text-align: right;
+}
+.btn i {
+    margin-left: 0px;
+    margin-right: 6px;
+}
+.menu-right-area .main-menu li.have-submenu {
+    padding-right: 0px;
+    padding-left: 15px;
+}
+.menu-right-area .main-menu li a {
+    margin-left: 0px;
+    margin-right: 20px;
+}
+.menu-right-area .main-menu li .submenu li.have-submenu::after {
+    right: auto;
+    left: 15px;
+    content: '\f104';
+}
+.menu-right-area .main-menu li .submenu li .submenu {
+    left: -200px;
+    right: auto;
+}
+.menu-right-area .main-menu li .submenu li.have-submenu {
+    padding-right: 0;
+    padding-left: 0px;
+}
+.input-wrap i {
+    left: 25px;
+    right: auto;
+}
+.nice-select {
+    text-align: right !important;
+}
+.nice-select:after {
+    right: auto;
+    left: 30px;
+}
+.nice-select .option {
+    text-align: right;
+}
+.tile-gallery {
+    padding-right: 0px;
+    padding-left: 30px;
+}
+.tile-gallery .tile-gallery-content {
+    right: auto;
+    left: 0;
+}
+.section-title span.title-top.with-border::before {
+    left: auto;
+    right: -58px;
+}
+.latest-room::after {
+    left: auto;
+    right: 0;
+}
+.room-arrows span.slick-arrow.next {
+    margin-left: 0px;
+    margin-right: 10px;
+}
+.single-room .room-desc .room-cat {
+    left: auto;
+    right: 45px;
+}
+.latest-room .section-title {
+    padding-left: 0px;
+    padding-right: 20px;
+}
+.single-room .room-desc {
+    padding: 50px 40px 50px 22px;
+}
+.single-service-box a.read-more i {
+    margin-left: 0px;
+    margin-right: 6px;
+}
+.cta-section .video-icon {
+    text-align: left !important;
+}
+.feature-left .feature-list li .feature-icon {
+    left: auto;
+    right: 0;
+}
+.feature-left .feature-list li {
+    padding-left: 0px;
+    padding-right: 90px;
+}
+.feedback-section .feadback-slide .single-feedback-box::after {
+    right: auto;
+    left: 50px;
+}
+.feedback-section .feadback-slide .single-feedback-box .feedback-author::before,
+.feedback-section .feadback-slide .single-feedback-box::before {
+    left: auto;
+    right: 0;
+}
+.feedback-section .feadback-slide .single-feedback-box .feedback-author {
+    padding-left: 0px;
+    padding-right: 65px;
+}
+footer ul.social-icons li a {
+    margin-right: 0px;
+    margin-left: 10px;
+}
+footer .footer-bottom .footer-nav li {
+    margin-right: 0px;
+    margin-left: 25px;
+}
+.text-left {
+    text-align: right !important;
+}
+.text-right {
+    text-align: left !important;
+}
+.menu-right-area .lag-select .nice-select::after {
+    left: 0;
+    right: auto;
+}
+.single-latest-post .latest-post-desc .post-date i {
+    margin-right: 0px;
+    margin-left: 10px;
+}
+a.read-more i {
+    margin-left: 0px;
+    margin-right: 10px;
+}
+.sidebar-wrap .widget.recent-news li .recent-post-desc {
+    padding-left: 0px;
+    padding-right: 20px;
+}
+.sidebar-wrap .widget.search-widget form button {
+    right: auto;
+    left: 25px;
+}
+.sidebar-wrap .widget .widget-title::after,
+.sidebar-wrap .widget .widget-title::before {
+    left: auto;
+    right: 0;
+}
+.sidebar-wrap .widget .widget-title::after {
+    left: auto;
+    right: 17px;
+}
+.sidebar-wrap .widget.popular-tag .tag-wrap a {
+    margin-left: 10px;
+    margin-right: 0px;
+}
+.entry-content blockquote {
+    padding-left: 0px;
+    padding-right: 35px;
+}
+.entry-content blockquote::before {
+    left: auto;
+    right: 0;
+}
+.coupon_box .form_group .filled-btn {
+    right: auto;
+    left: 0;
+}
+.single_input_label:before,
+.single_input_label:after {
+    left: auto;
+    right: 0;
+}
+.single_radio span,
+.single_checkbox span {
+    margin-left: 0px;
+    margin-right: 30px;
+}
+.entry-meta li {
+    margin-right: 0px;
+    margin-left: 30px;
+}
+.entry-meta li i {
+    margin-right: 0px;
+    margin-left: 8px;
+}
+.filter-view ul li {
+    margin-right: 0px;
+    margin-left: 15px;
+}
+.sidebar-wrap .widget.fillter-widget .checkboxes label {
+    padding-left: 0px;
+    padding-right: 15px;
+}
+.sidebar-wrap .widget.fillter-widget .checkboxes label::before {
+    left: auto;
+    right: -18px;
+}
+.single-room .room-desc .room-info li {
+    margin-right: 0px;
+    margin-left: 30px;
+}
+.single-room .room-desc .room-info i {
+    margin-right: 0px;
+    margin-left: 10px;
+}
+.rooms-warp .pagination-wrap,
+.rooms-warp,
+.room-details-wrapper,
+.gallery-warp,
+.hero-section,
+footer .footer-bottom,
+footer .footer-top,
+.feedback-section,
+.wcu-section,
+.cta-section,
+.service-section,
+.latest-room,
+.welcome-section,
+.booking-section .booking-form-wrap,
+.header-menu-area,
+.header-top-area {
+    text-align: right;
+}
+.single-room .rate {
+    right: auto;
+    left: 30px;
+}
+.rate .rating {
+    float: left;
+}
+.sidebar-wrap .widget.fillter-widget .checkboxes label::after {
+    left: auto;
+    right: -14px;
+}
+.sidebar-wrap .widget.category-widget ul li::before {
+    margin-right: 0;
+    margin-left: 10px;
+}
+.packages-post-item .rate {
+    right: auto;
+    left: 20px;
+}
+.widget.information-widget .rate {
+    right: auto;
+    left: 15px;
+}
+footer .widget.footer-widget .recent-post li::before {
+    left: auto;
+    right: 0;
+}
+footer .widget.footer-widget .recent-post li {
+    padding-left: 0;
+    padding-right: 20px;
+}
+.search-widget ul.categories li a {
+    padding-left: 0;
+    padding-right: 15px;
+}
+.featured-packages .post-meta strong {
+    float: right;
+    margin-left: 7px;
+}
+.featured-packages .post-meta span {
+    float: right;
+}
+.featured-packages .post-meta i {
+    float: right;
+}
+.ma-package-section.featured-packages .packages-post-item .post-thumbnail {
+    margin-right: 0;
+    margin-left: 15px;
+}
+.ma-package-section.featured-packages .packages-post-item .entry-content h3.title {
+    text-align: right;
+}
+.ma-package-section .packages-post-item .entry-content .post-meta ul li span i {
+    margin-right: 0;
+    margin-left: 10px;
+    margin-top: 7px;
+}
+.menu-right-area .lang-select .lang-option {
+    right: auto;
+    left: 0;
+}
+.menu-right-area .lang-select .lang-img {
+    right: auto;
+    left: 92px;
+}
+nav.main-menu {
+    margin-right: 0;
+    margin-left: 180px;
+}
+.mean-container .mean-nav ul li a {
+    text-align: right;
+    display: block;
+    float: right;
+}
+.mean-container .mean-nav ul li a.mean-expand {
+    right: auto;
+    left: 0;
+}
+.menu-right-area .lang-select .nice-select::after {
+    right: auto;
+    left: 0;
+}
+.custom-page-content {
+    text-align: right;
+}
+.room-details-wrapper .price-option-table ul .single-price-option span.title span.amount {
+    float: left;
+}
+.room-details-wrapper .price-option-table ul .single-price-option span.title {
+    padding-left: 0px;
+    padding-right: 7px;
+}

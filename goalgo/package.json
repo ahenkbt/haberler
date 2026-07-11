@@ -1,0 +1,64 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "node -e \"const fs=require('fs'); for (const f of ['package-lock.json','yarn.lock']) { try { fs.unlinkSync(f); } catch {} } const ua=process.env.npm_config_user_agent||''; if(!ua.startsWith('pnpm/')) { console.error('Use pnpm instead'); process.exit(1); }\"",
+    "start": "pnpm --filter @workspace/api-server run start",
+    "build:web": "pnpm --filter @workspace/ahenkpress... install --frozen-lockfile --prod=false && pnpm --filter @workspace/ahenkpress... run build",
+    "build:web:full": "pnpm run build:yektube && node scripts/copy-yektube-build.mjs && pnpm run build:web",
+    "build:vercel": "node scripts/vercel-build.mjs",
+    "build:netlify": "node scripts/netlify-build.mjs",
+    "dev:api": "pnpm --filter @workspace/api-server run dev",
+    "dev:pbx": "pnpm --filter @workspace/pbx-gateway run dev",
+    "dev:web": "pnpm --filter @workspace/ahenkpress run dev",
+    "dev:yektube": "pnpm --filter @workspace/yektube-web run dev",
+    "build:yektube": "pnpm --filter @workspace/yektube-web... install --frozen-lockfile --prod=false && pnpm --filter @workspace/yektube-web... run build",
+    "db:migrate": "pnpm --filter @workspace/api-server run db:migrate",
+    "deploy:smoke": "node scripts/deploy-smoke.mjs",
+    "smoke:wiki": "node scripts/smoke-wiki-resolution.mjs",
+    "security:check": "node scripts/security-regression-check.mjs",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "typecheck:libs": "tsc --build --force",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "test": "pnpm --filter @workspace/api-server run test"
+  },
+  "private": true,
+  "packageManager": "pnpm@9.15.5",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.893.0",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.60.2",
+    "lightningcss-win32-x64-msvc": "^1.32.0",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "brace-expansion@>=2.0.0 <2.0.3": ">=2.0.3",
+      "picomatch": "4.0.4",
+      "yaml@>=2.0.0 <2.8.3": ">=2.8.3",
+      "path-to-regexp@>=8.0.0 <8.4.0": ">=8.4.0",
+      "lodash@>=4.0.0 <=4.17.23": ">=4.18.0",
+      "lodash@<=4.17.23": ">=4.18.0",
+      "postcss@<8.5.10": ">=8.5.10",
+      "fast-uri@<=3.1.0": ">=3.1.1",
+      "fast-uri@<=3.1.1": ">=3.1.2",
+      "protobufjs@<=7.5.5": ">=7.5.6",
+      "basic-ftp@<=5.3.0": ">=5.3.1",
+      "fast-xml-builder@<=1.1.6": ">=1.1.7",
+      "fast-xml-builder@=1.1.5": ">=1.1.6",
+      "ws@>=8.0.0 <8.20.1": ">=8.20.1",
+      "protobufjs@<=7.5.7": ">=7.5.8",
+      "@tootallnate/once@<2.0.1": ">=2.0.1",
+      "uuid@<11.1.1": ">=11.1.1",
+      "qs@>=6.11.1 <=6.15.1": ">=6.15.2"
+    }
+  }
+}

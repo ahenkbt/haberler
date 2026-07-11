@@ -1,0 +1,5 @@
+# API klasörü - sadece /api/cart/*.php'ye izin ver
+<Files "*.php">
+    Order allow,deny
+    Allow from all
+</Files>

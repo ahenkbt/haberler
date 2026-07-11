@@ -1,0 +1,50 @@
+/*
+Theme Name: YENITEMA
+Theme URI: https://vatankahramanlari.org
+Author: DERVAK Teknik Ekip
+Description: Türkiye'nin önde gelen vakıf ve dernekleri için ultra-premium, çok siteli WordPress teması. VKD (sehitgazi.org.tr), VKV, TÜKAV ve DSV (dunyasaglik.org) için tek tıkla kurulum desteği.
+Version: 2.1.0
+License: GNU General Public License v2 or later
+Text Domain: yenitema
+Tags: custom-menu, featured-images, full-width-template, translation-ready, security-hardened, premium-design
+*/
+
+/* ─── TEMA CSS DEĞİŞKENLERİ ─────────────────────────────────── */
+/* RENK DEĞİŞKENLERİ DERVAK eklentisi tarafından dinamik olarak ayarlanır.
+   Bu blokta sadece renk dışı değişkenler tanımlanır. */
+:root {
+  /* Varsayılan renkler — eklenti tarafından override edilir */
+  --cr: #8B1A1A;
+  --cr2: #6B1010;
+  --cr3: #C53030;
+  --altin: #B45309;
+  --altin2: #D97706;
+  --dk: #0D0B0B;
+  --dk2: #1A1210;
+  --bg: #FFF8F5;
+  --sin: #FECACA;
+  --yz: #1C1010;
+  --yz2: #4B3030;
+  --yz3: #9A7070;
+
+  /* Tipografi */
+  --fh: 'Oswald', sans-serif;
+  --fm: 'Open Sans', system-ui, sans-serif;
+
+  /* Boşluk sistemi */
+  --sp-1: 4px;  --sp-2: 8px;   --sp-3: 12px;
+  --sp-4: 16px; --sp-5: 20px;  --sp-6: 24px;
+  --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* Maksimum genişlikler */
+  --max-w:      1200px;
+  --max-w-wide: 1400px;
+  --max-w-sm:   720px;
+}
+
+/* ─── SIFIRLA ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: var(--fm); color: var(--yz); background: #fff; }
+img { max-width: 100%; height: auto; }
+a { color: var(--cr); }

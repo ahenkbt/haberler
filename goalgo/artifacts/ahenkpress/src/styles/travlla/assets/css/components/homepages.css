@@ -1,0 +1,70 @@
+.trv-banner-1-rain-effect .drop {
+    @apply absolute bottom-full w-3.75 h-30 pointer-events-none;
+}
+.trv-banner-1-rain-effect .drop {
+    animation: drop 2s linear infinite;
+}
+.trv-banner-1-rain-effect .stem {
+    @apply w-1.5 h-3/5 rounded-br-xl rounded-bl-xl ml-1.75 bg-[linear-gradient(to_bottom,rgba(255,255,255,0),rgba(255,255,255,0.25))];
+}
+.trv-banner-1-rain-effect .stem {
+    animation: stem 0.5s linear infinite;
+}
+.trv-banner-1-rain-effect .rain.back-row {
+    @apply hidden z-1 bottom-15 opacity-50;
+}
+.trv-icon-bx-st1 .trv-icon-bx-media img {
+    filter: brightness(0) saturate(100%) invert(12%) sepia(96%) saturate(4615%) hue-rotate(176deg) brightness(92%) contrast(95%);
+}
+.video-section {
+    @apply relative z-1;
+}
+.video-section a {
+    @apply block size-34.5 absolute left-1/2 top-1/2 -translate-1/2 rounded-full border border-white;
+}
+.play-now-video .icon {
+    @apply absolute left-1/2 top-1/2 size-16.25 text-center leading-16.25 bg-white/30 backdrop-blur-[5px] text-white z-1 text-lg pl-1.25 block -translate-1/2 origin-center rounded-full shadow-[0_5px_10px_0_rgba(255,255,255,0.5)];
+}
+.play-now-video .ripple {
+    @apply absolute top-1/2 left-1/2 size-16.25 -translate-1/2 rounded-full origin-center shadow-[0_0_0_0_rgb(255,255,255)] z-1 animate-ripple-video;
+}
+.play-now-video .ripple:before {
+    @apply content-[''] top-1/2 left-1/2 size-16.25 -translate-1/2 origin-center rounded-full shadow-[0_0_0_0_rgb(255,255,255)] z-1 absolute [animation-delay:0.9s] animate-ripple-video;
+}
+.play-now-video .ripple:after {
+   @apply content-[''] absolute top-1/2 left-1/2 size-16.25 -translate-1/2 origin-center rounded-full shadow-[0_0_0_0_rgb(255,255,255)] z-1
+	[animation-delay:0.6s] animate-ripple-video;
+}
+.white-shadow.play-now-video .icon {
+    @apply absolute left-1/2 top-1/2 size-16.25 text-center leading-16.25 bg-white/30 backdrop-blur-[5px] text-white z-1 text-lg pl-1.25 block -translate-1/2 origin-center rounded-full shadow-[0_5px_10px_0_rgba(255,255,255,0.5)];
+}
+.white-shadow.play-now-video .ripple {
+    @apply absolute top-1/2 left-1/2 size-16.25 -translate-1/2 rounded-full origin-center bg-[rgba(255,255,255,0.3)] shadow-[0_5px_10px_0_rgba(255,255,255,0.5)] z-1 animate-ripple-video;
+}
+.white-shadow.play-now-video .ripple:before {
+    @apply content-[''] top-1/2 left-1/2 size-16.25 -translate-1/2 origin-center rounded-full !shadow-[0_0_0_0_rgb(255,255,255)] z-1 absolute [animation-delay:0.9s] animate-ripple-video;
+}
+.white-shadow.play-now-video .ripple:after {
+   @apply content-['']  top-1/2 left-1/2 size-16.25 -translate-1/2 origin-center rounded-full !shadow-[0_0_0_0_rgb(255,255,255)] z-1 absolute [animation-delay:0.6s] animate-ripple-video;
+}
+.img-bg-shade {
+    @apply absolute size-100 left-12.5 top-50 bg-caribbeanblue [filter:blur(100px)] -z-1 animate-scale-up-center ;
+}
+.emblem span {
+   @apply p-1.5 absolute inline-block inset-0 uppercase text-sm;
+    transition: all 0.5s cubic-bezier(0, 0, 0, 1);
+}
+.blog-youtube-vide iframe {
+    @apply w-full h-107.5 block;
+}
+
+.animate-title {
+   animation: text-fade-up 1s forwards ease;
+}
+.animate-away {
+   animation: text-fade-away 300ms forwards ease;
+}
+
+.trv-filter-content.active{
+	@apply block;
+}

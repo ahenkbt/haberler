@@ -1,0 +1,43 @@
+# Eski haber/logo/banner görsellerini Render diske taşır.
+# Gerekli GitHub secret: ADMIN_MAINTENANCE_SECRET
+name: media-migrate-to-disk
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Batch başına kayıt limiti"
+        required: false
+        default: "150"
+      batches:
+        description: "Kaç batch çalıştırılsın"
+        required: false
+        default: "25"
+      dry_run:
+        description: "Yalnızca dry-run (true/false)"
+        required: false
+        default: "false"
+
+permissions: {}
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Migrate media batches to site disk
+        env:
+          ADMIN_MAINTENANCE_SECRET: ${{ secrets.ADMIN_MAINTENANCE_SECRET }}
+          API_ORIGIN: https://yekpare.net
+        run: |
+          set -euo pipefail
+          if [ -z "${ADMIN_MAINTENANCE_SECRET:-}" ]; then
+            echo "ADMIN_MAINTENANCE_SECRET GitHub secret tanımlı değil"
+            exit 1
+          fi
+          LIMIT="${{ github.event.inputs.limit }}"
+          BATCHES="${{ github.event.inputs.batches }}"
+          DRY="${{ github.event.inputs.dry_run }}"
+          EXTRA=""
+          if [ "$DRY" = "true" ]; then EXTRA="--dry-run"; fi
+          node goalgo/scripts/migrate-media-to-disk.mjs --limit "$LIMIT" --batches "$BATCHES" $EXTRA

@@ -1,0 +1,14 @@
+---
+description: Yekpare monorepo tech stack and repo layout
+alwaysApply: true
+---
+
+# Yekpare stack (do not assume Next.js)
+
+- **Backend:** `artifacts/api-server` — Node.js, Express 5, TypeScript, Drizzle ORM, PostgreSQL (Render prod; `render.yaml`)
+- **Frontend:** `artifacts/ahenkpress` — React 18, Vite, wouter (not React Router), TanStack Query, **Netlify prod** (`netlify.toml`, `netlify-production.yml`)
+- **DB migrations:** `lib/db/migrations/` + `meta/_journal.json` (Drizzle) — not Prisma
+- **Deploy (prod):** Netlify frontend + Render API (`https://goalgo-y7ze.onrender.com`). `railway.toml` / `vercel.json` yalnızca eski/alternatif ortam; agent'lara Railway/Vercel dashboard önerme.
+- **Auth:** express-session + PostgreSQL store; JWT Bearer for shop/courier/driver; admin via `denyUnlessAdminMaintenance`
+
+When editing routes, prefer existing patterns in the same file. Minimize diff scope — security fixes should not refactor unrelated code.

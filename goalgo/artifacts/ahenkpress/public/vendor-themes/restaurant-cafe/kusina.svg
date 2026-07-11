@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Kusina theme preview">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8f6ed"/>
+      <stop offset=".55" stop-color="#e9f0d8"/>
+      <stop offset="1" stop-color="#8fb339"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#g)"/>
+  <rect x="650" y="0" width="550" height="900" fill="#2f3d18" opacity=".88"/>
+  <path d="M806 494c170-112 190-278 92-350-126 92-144 246-92 350z" fill="#8fb339"/>
+  <path d="M798 500c76-78 122-184 120-318" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity=".55"/>
+  <text x="82" y="310" fill="#2f3d18" font-family="Georgia,serif" font-size="108" font-weight="700">Kusina</text>
+  <text x="88" y="395" fill="#5e7527" font-family="Arial,sans-serif" font-size="35" font-weight="800">Healthy and natural foods</text>
+  <rect x="88" y="470" width="235" height="62" rx="31" fill="#8fb339"/>
+  <text x="138" y="511" fill="#ffffff" font-family="Arial,sans-serif" font-size="23" font-weight="800">FRESH MENU</text>
+</svg>

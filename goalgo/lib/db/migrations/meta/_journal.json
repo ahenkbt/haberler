@@ -1,0 +1,867 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1777425046710,
+      "tag": "0000_init_full_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777426046710,
+      "tag": "0001_delivery_vendors_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777427046710,
+      "tag": "0002_map_business_slug_popular_region",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777428046710,
+      "tag": "0003_site_settings_main_nav_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777429046710,
+      "tag": "0004_site_settings_branding",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777430046710,
+      "tag": "0005_seri_ilanlar_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777431046710,
+      "tag": "0006_site_settings_maps",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777432046710,
+      "tag": "0007_delivery_order_status_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777433046710,
+      "tag": "0008_stripe_webhook_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777434046710,
+      "tag": "0009_tr_address_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777435046710,
+      "tag": "0010_featured_promotions_home_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777436046710,
+      "tag": "0011_map_layer_config_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777437046710,
+      "tag": "0012_drop_seri_ilanlar_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1777438046710,
+      "tag": "0013_cleanup_legacy_modules_and_map_orphans",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1777439046710,
+      "tag": "0014_driver_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1777440046710,
+      "tag": "0015_yekpare_faz0_service_catalog_transport_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1777441046710,
+      "tag": "0016_vendor_revenue_commission",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777442046710,
+      "tag": "0017_geliver_integration",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1777443046710,
+      "tag": "0018_vendor_tr_payment_gateways",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777444046710,
+      "tag": "0019_geliver_sender_mahalle",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777445046710,
+      "tag": "0020_geliver_organization_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777446046710,
+      "tag": "0021_delivery_customer_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1777447046710,
+      "tag": "0022_site_settings_platform_integrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777448046710,
+      "tag": "0023_platform_support_and_consumer_legal",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1777449046710,
+      "tag": "0024_footer_legal_contact_broadcasts",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1777450046710,
+      "tag": "0025_mailbox_announcements_marketing",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1777451046710,
+      "tag": "0026_vendor_blog",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1777452046710,
+      "tag": "0027_provider_membership_pricing",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1777453046710,
+      "tag": "0028_vendor_about_html",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1777454046710,
+      "tag": "0029_drop_stk_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1777455046710,
+      "tag": "0030_hm_news_sites",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1777456046710,
+      "tag": "0031_news_site_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1777457046710,
+      "tag": "0032_authors_hm_site_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1777458046710,
+      "tag": "0033_rss_download_images_default_false",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1777459046710,
+      "tag": "0034_rss_campaigns_hm_site_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1777460046710,
+      "tag": "0035_panel_admin_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1777461046710,
+      "tag": "0036_authors_email_password",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1777462046710,
+      "tag": "0037_authors_pw_reset",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1777463046710,
+      "tag": "0038_ensure_blog_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1777464046710,
+      "tag": "0039_site_contact_hm_site",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1777465046710,
+      "tag": "0040_news_rss_source_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1777466046710,
+      "tag": "0041_hm_makale_rss_yekpare_editor_news",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1777467046710,
+      "tag": "0042_ensure_panel_admin_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1777468046710,
+      "tag": "0043_categories_exclusive_site",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1777469046710,
+      "tag": "0044_hm_ai_jobs_result_news_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1777470046710,
+      "tag": "0045_hm_ai_jobs_post_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1777471046710,
+      "tag": "0046_categories_sort_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1777472046710,
+      "tag": "0047_ai_settings_preferred_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1777473046710,
+      "tag": "0048_hm_site_seo_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1777474046710,
+      "tag": "0049_vkd_template_pages_layout",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1777475046710,
+      "tag": "0050_vkd_hakkimizda_full_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1777476046710,
+      "tag": "0051_vkd_clean_template_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1777477046710,
+      "tag": "0052_vkd_corporate_menu",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1777478046710,
+      "tag": "0053_vkd_page_content_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1777479046710,
+      "tag": "0054_vkd_kahraman_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1777480046710,
+      "tag": "0055_vkd_menu_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1777481046710,
+      "tag": "0056_vkd_canakkale_sehitleri",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1777482046710,
+      "tag": "0057_vkd_msb_sehitler",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1777483046710,
+      "tag": "0058_dedupe_news_authors_rss",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1777484046710,
+      "tag": "0059_call_center_subscription",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1777485046710,
+      "tag": "0060_hm_site_domain2",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1777486046710,
+      "tag": "0061_hm_site_domain3",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1777487046710,
+      "tag": "0061_rss_campaign_haberler_scrape",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1777488046710,
+      "tag": "0062_hm_donation_single_band",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1777489046710,
+      "tag": "0063_hm_donation_footer_purge",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1777490046710,
+      "tag": "0064_legal_pages_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1777491046710,
+      "tag": "0065_footer_info_links_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1777492046710,
+      "tag": "0066_ecommerce_product_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1777493046710,
+      "tag": "0067_vendor_storefront_themes",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1777494046710,
+      "tag": "0068_vendor_domain_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1777495046710,
+      "tag": "0069_transport_provider_panels",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1777496046710,
+      "tag": "0070_homepage_storefront_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1777497046710,
+      "tag": "0071_map_platform_features",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1777498046710,
+      "tag": "0072_turizm_cms",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1777499046710,
+      "tag": "0073_yatport_rentals",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1777500046710,
+      "tag": "0074_yacht_listing_extras",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1777501046710,
+      "tag": "0075_site_members_tier_express_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1777502046710,
+      "tag": "0076_vip_service_vehicles",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1777503046710,
+      "tag": "0077_map_cities_image_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1777504046710,
+      "tag": "0078_otomotiv_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1777505046710,
+      "tag": "0079_otomotiv_listings_phase2",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1777506046710,
+      "tag": "0080_otomotiv_service_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1777507046710,
+      "tag": "0081_sigorta_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1777508046710,
+      "tag": "0082_etkinlik_event_cache",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1777509046710,
+      "tag": "0083_etkinlik_venue_map_business",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1777510046710,
+      "tag": "0084_turizm_blog_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1777511046710,
+      "tag": "0085_public_news_submissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1777512046710,
+      "tag": "0086_yektube_youtube_api_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1777513046710,
+      "tag": "0087_videos_embed_allowed",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1777514046710,
+      "tag": "0088_yektube_member_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1777515046710,
+      "tag": "0089_videos_seo_meta",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1777516046710,
+      "tag": "0090_pbx_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1777517046710,
+      "tag": "0090_yektube_member_prefs_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1777518046710,
+      "tag": "0091_pbx_hybrid",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1777519046710,
+      "tag": "0092_ai_call_native",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1777520046710,
+      "tag": "0093_career_applications",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1777521046710,
+      "tag": "0094_hm_site_mailbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1777522046710,
+      "tag": "0095_global_map_news_feeds",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1777523046710,
+      "tag": "0096_global_map_news_feeds_geo",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1777524046710,
+      "tag": "0097_portal_rss_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1777525046710,
+      "tag": "0098_news_site_only_owner",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1777526046710,
+      "tag": "0099_news_site_overrides",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1777527046710,
+      "tag": "0100_category_aliases",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1777528046710,
+      "tag": "0101_category_scope_data_ops",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1777529046710,
+      "tag": "0102_rss_retag_orphan_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1777530046710,
+      "tag": "0103_portal_rss_item_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1777531046710,
+      "tag": "0104_transport_requests_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1777532046710,
+      "tag": "0105_p1_perf_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1777533046710,
+      "tag": "0106_paytr_webhook_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1777534046710,
+      "tag": "0107_pbx_verimor",
+      "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1777535046710,
+      "tag": "0108_pbx_verimor_softphone",
+      "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1777536046710,
+      "tag": "0109_pbx_campaign_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1777537046710,
+      "tag": "0110_pbx_dispositions",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1777538046710,
+      "tag": "0111_portal_rss_ai_meta",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "7",
+      "when": 1777539046710,
+      "tag": "0112_global_news_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1777541046710,
+      "tag": "0113_foreign_dunya_rss_to_global",
+      "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1777542046710,
+      "tag": "0114_news_food_recipe",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1777543046710,
+      "tag": "0115_pbx_settings_seed_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1777544046710,
+      "tag": "0116_pbx_3cx",
+      "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1777548046710,
+      "tag": "0117_news_slug_redirects",
+      "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1777550046710,
+      "tag": "0118_news_tepe_manset",
+      "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1777551046710,
+      "tag": "0119_portal_rss_shared_pool_dedupe",
+      "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1777552046710,
+      "tag": "0120_rss_news_unified_pool",
+      "breakpoints": true
+    }
+  ]
+}

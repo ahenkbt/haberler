@@ -1,0 +1,252 @@
+/* Gezi Seyahat — hero + destination vitrin (scoped) */
+.gezi-seyahat-site {
+  --gezi-hero-bg: url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80");
+}
+
+.gezi-seyahat-subnav .gezi-seyahat-brand {
+  font-family: "Kaushan Script", cursive;
+  font-size: 1.15rem;
+  color: var(--trv-citrus);
+  margin-right: 0.5rem;
+  white-space: nowrap;
+}
+
+.gezi-seyahat-site .trv-gezi-hero {
+  position: relative;
+  min-height: clamp(480px, 68vh, 720px);
+  overflow: hidden;
+  background: var(--trv-primary) var(--gezi-hero-bg) center/cover no-repeat;
+}
+
+.gezi-seyahat-site .trv-gezi-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 97, 104, 0.55) 0%, rgba(6, 97, 104, 0.25) 45%, rgba(239, 255, 255, 0.92) 100%);
+  z-index: 1;
+}
+
+.gezi-seyahat-site .trv-gezi-hero__body {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: clamp(3rem, 10vw, 6rem) 1rem 8rem;
+}
+
+.gezi-seyahat-site .trv-gezi-kicker {
+  display: block;
+  font-family: "Kaushan Script", cursive;
+  font-size: clamp(1.75rem, 4vw, 3.5rem);
+  color: var(--trv-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.gezi-seyahat-site .trv-gezi-title {
+  margin: 0;
+  font-family: "Figtree", sans-serif;
+  font-size: clamp(3rem, 11vw, 6.5rem);
+  font-weight: 900;
+  line-height: 0.82;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffaa0d 0%, #85d200 45%, #fff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.35));
+}
+
+.gezi-seyahat-site .trv-gezi-search-dock {
+  position: relative;
+  z-index: 5;
+  margin: -4.5rem auto 0;
+  max-width: 920px;
+  padding: 0 1rem 2rem;
+}
+
+.gezi-seyahat-site .trv-gezi-search-card {
+  background: #fff;
+  border-radius: 1.75rem;
+  border: 1px solid rgba(6, 97, 104, 0.15);
+  box-shadow: 0 24px 70px rgba(6, 97, 104, 0.18);
+  padding: 1rem 1.25rem;
+}
+
+.gezi-seyahat-site .trv-gezi-search-row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .gezi-seyahat-site .trv-gezi-search-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+.gezi-seyahat-site .trv-dest-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.gezi-seyahat-site .trv-dest-filter button {
+  border: 1px solid var(--trv-primary);
+  background: transparent;
+  color: var(--trv-primary);
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.gezi-seyahat-site .trv-dest-filter button.active,
+.gezi-seyahat-site .trv-dest-filter button:hover {
+  background: var(--trv-primary);
+  color: #fff;
+}
+
+.gezi-seyahat-site .trv-country-card {
+  display: grid;
+  gap: 1rem;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(6, 97, 104, 0.1);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gezi-seyahat-site .trv-country-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 55px rgba(6, 97, 104, 0.16);
+}
+
+.gezi-seyahat-site .trv-country-card__media {
+  position: relative;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.gezi-seyahat-site .trv-country-card__media img {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.gezi-seyahat-site .trv-country-card:hover .trv-country-card__media img {
+  transform: scale(1.06);
+}
+
+.gezi-seyahat-site .trv-country-card__flag {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.gezi-seyahat-site .trv-country-card__body {
+  padding: 1rem 1.25rem 1.35rem;
+}
+
+.gezi-seyahat-site .trv-country-card__body h3 {
+  margin: 0 0 0.35rem;
+  font-family: "Afacad", sans-serif;
+  font-size: 1.5rem;
+  color: var(--trv-heading);
+}
+
+.gezi-seyahat-site .trv-dest-chip-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.gezi-seyahat-site .trv-dest-chip {
+  position: relative;
+  border-radius: 1.35rem;
+  overflow: hidden;
+  min-height: 280px;
+  display: block;
+  text-decoration: none;
+  color: #fff;
+  box-shadow: 0 14px 36px rgba(6, 97, 104, 0.12);
+}
+
+.gezi-seyahat-site .trv-dest-chip img {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.gezi-seyahat-site .trv-dest-chip:hover img {
+  transform: scale(1.05);
+}
+
+.gezi-seyahat-site .trv-dest-chip__meta {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1.25rem;
+  background: linear-gradient(180deg, transparent, rgba(6, 97, 104, 0.92));
+}
+
+.gezi-seyahat-site .trv-dest-chip__meta h4 {
+  margin: 0 0 0.25rem;
+  font-family: "Afacad", sans-serif;
+  font-size: 1.35rem;
+}
+
+.gezi-seyahat-site .trv-dest-chip__meta p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.92;
+}
+
+.gezi-seyahat-site .trv-feature-step {
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(6, 97, 104, 0.06);
+  border: 6px solid #fff;
+  box-shadow: 0 12px 30px rgba(6, 97, 104, 0.08);
+}
+
+.gezi-seyahat-site .trv-feature-step .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: var(--trv-citrus);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.gezi-seyahat-site .trv-trend-section {
+  position: relative;
+  padding: 3rem 0;
+  background: #fff;
+  border-top: 1px solid rgba(6, 97, 104, 0.12);
+}
+
+.gezi-seyahat-site .trv-trend-layout {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 1100px) {
+  .gezi-seyahat-site .trv-trend-layout {
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    align-items: start;
+  }
+}

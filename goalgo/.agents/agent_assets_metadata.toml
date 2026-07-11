@@ -1,0 +1,26 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "wKm6w4oruwXMT7ArS_WQ2"
+uri = "file://ahenkpress.tar.gz"
+type = "unspecified"
+title = "AhenkPress — Kaynak Kodu (tar.gz)"
+
+[[outputs]]
+id = "xcCpMiYXfcYUO0-UL4sU6"
+uri = "file://ahenkpress-latest.zip"
+type = "unspecified"
+title = "AhenkPress — Son Kaynak Kodu (0.9 MB)"
+
+[[outputs]]
+id = "cFjxj6GRfQoy0QCNc3BBD"
+uri = "file://API_DOKUMANTASYONU.md"
+type = "text"
+title = "AhenkPress Mobil API Dokümantasyonu"
+
+[[outputs]]
+id = "HLYO5XJz9YkGvlYVi4m5E"
+uri = "file://goalgo-kaynak-kodu.tar.gz"
+type = "unspecified"
+title = "Goalgo - Kaynak Kodu (KURULUM.md dahil)"

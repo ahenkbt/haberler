@@ -1,0 +1,49 @@
+{
+  "dataSyncVersion": 1,
+  "recordCount": 49455,
+  "batchCount": 20,
+  "chunkSize": 2500,
+  "provinceCount": 281,
+  "topProvinces": [
+    {
+      "province": "BURSA",
+      "count": 2896
+    },
+    {
+      "province": "BALIKESİR",
+      "count": 2691
+    },
+    {
+      "province": "KONYA",
+      "count": 2427
+    },
+    {
+      "province": "KASTAMONU",
+      "count": 2202
+    },
+    {
+      "province": "MANİSA",
+      "count": 2095
+    },
+    {
+      "province": "DENİZLİ",
+      "count": 2045
+    },
+    {
+      "province": "ÇANAKKALE",
+      "count": 1803
+    },
+    {
+      "province": "ANKARA",
+      "count": 1728
+    },
+    {
+      "province": "İSTANBUL",
+      "count": 1690
+    },
+    {
+      "province": "İZMİR",
+      "count": 1685
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aiaddin Haber Merkezi — Çoklu haber sitesi altyapısı</title>
+    <meta
+      name="description"
+      content="Aiaddin Haber Merkezi: haber siteleri kayıtları ve API burada; Yekpare portalı ayrı. Ayrı veritabanı, Railway API, isteğe bağlı Vercel ön yüz."
+    />
+    <meta property="og:title" content="Aiaddin Haber Merkezi" />
+    <meta property="og:description" content="Çoklu haber sitesi kontrol planı ve API." />
+    <meta property="og:site_name" content="Aiaddin" />
+    <meta name="theme-color" content="#0b1020" />
+    <link rel="stylesheet" href="/css/aiaddin.css" />
+    <link rel="canonical" href="https://aiaddin.net/" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="brand">
+        <div class="brand-mark">
+          <div>
+            <strong>Aiaddin</strong>
+            <span>Haber Merkezi</span>
+          </div>
+        </div>
+        <span class="pill">API + ayrı Postgres</span>
+      </header>
+
+      <section class="hero">
+        <h1>Çoklu haber sitesi için merkezi kayıt ve API</h1>
+        <p class="lead">
+          Bu alan adı (<strong>aiaddin.net</strong>) Haber Merkezi ürününün vitrin ve yönetim girişidir. Asıl REST API
+          Railway üzerinde çalışır; veritabanı Yekpare (Goalgo) veritabanından bağımsızdır.
+        </p>
+      </section>
+
+      <div class="grid cols-2">
+        <article class="card">
+          <h2>Railway</h2>
+          <p>
+            <code>haber-merkezi</code> Docker imajı: migrasyon + API. Sağlık ucu
+            <code>/healthz</code>. Operatör uçları <code>/v1/operator/…</code> (Bearer
+            <code>OPERATOR_API_KEYS</code>).
+          </p>
+        </article>
+        <article class="card">
+          <h2>Yekpare.net</h2>
+          <p>
+            Portal ve mevcut haber vitrinleri ayrı projede kalır. Sonraki fazda Yekpare sunucusu, panelden yaptığınız
+            işlemleri bu API’ye güvenli proxy ile iletecek; tarayıcıya gizli anahtar verilmez.
+          </p>
+        </article>
+        <article class="card">
+          <h2>Vercel</h2>
+          <p>
+            Bu statik sayfa Vercel’de yayınlanabilir. Domain olarak <strong>aiaddin.net</strong> bağlayın; kök dizin
+            olarak repo içinde <code>haber-merkezi</code> seçin.
+          </p>
+        </article>
+        <article class="card">
+          <h2>Mevcut haber siteleri</h2>
+          <p>
+            Örn. <strong>ankarasehirgazetesi.com</strong> hâlâ Yekpare ön yüz derlemesine gider; Haber Merkezi deploy’u
+            onları tek başına taşımaz. Taşıma ve çift kayıt önleme için yol haritasına bakın.
+          </p>
+        </article>
+      </div>
+
+      <section class="steps">
+        <h2>Sizin sıradaki adımlar</h2>
+        <ol>
+          <li>
+            <strong>Vercel:</strong> Proje → Root <code>haber-merkezi</code> → Production domain:
+            <code>aiaddin.net</code> (DNS’te CNAME/A yönergelerini uygulayın).
+          </li>
+          <li>
+            <strong>Railway:</strong> Ayrı servis + ayrı Postgres; değişkenler
+            <code>DATABASE_URL</code>, <code>OPERATOR_API_KEYS</code>, <code>NODE_ENV=production</code>.
+          </li>
+          <li>
+            <strong>Yekpare (Goalgo):</strong> Aynı repo; deploy sonrası özel alan siteleri önceki gibi çalışır. Haber
+            Merkezi entegrasyonu ayrı commit/faz ile gelir.
+          </li>
+          <li>Detaylı faz listesi: repoda <code>haber-merkezi/docs/AIADDIN_YOL_HARITASI.md</code></li>
+        </ol>
+      </section>
+
+      <footer>
+        Aiaddin Haber Merkezi — kod: <code>haber-merkezi/</code> · Bu sayfa statiktir; yönetim arayüzü sonraki sürümlerde
+        eklenecektir.
+      </footer>
+    </div>
+  </body>
+</html>

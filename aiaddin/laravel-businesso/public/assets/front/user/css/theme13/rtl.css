@@ -1,0 +1,214 @@
+.header_v1 .brand_logo {
+	text-align: right;
+}
+
+.top_header .top-right .info {
+	margin-left: 0px;
+	margin-right: 25px;
+}
+
+.header_navigation .nav-container .main-menu ul li .mega-menu,
+.header_navigation .nav-container .main-menu ul li .sub-menu {
+	left: auto;
+	right: 0;
+	text-align: right;
+}
+
+.header_search .form_group .form_control {
+	padding-left: 0px;
+	padding-right: 45px;
+}
+
+.header_search .form_group .fa-search {
+	left: auto;
+	right: 17px;
+}
+
+.olima_sidebar .widget_box.featured_post .single_post .post_content {
+	margin-left: 0px;
+	margin-right: 20px;
+}
+
+.latest_post_v1 .grid_item .post_content .post_meta span {
+	margin-right: 0px;
+	margin-left: 10px;
+}
+
+.post_meta span:before {
+	margin-right: 0px;
+	margin-left: 10px;
+}
+
+.vagetarian_v1 .button_box {
+	float: left;
+}
+
+.post_tag {
+	left: auto;
+	right: 0;
+}
+
+.post_tag a {
+	margin-right: 0px;
+	margin-left: 5px;
+}
+
+.features_post_v2 .grid_item.grid_post_big .post_img .date {
+	left: auto;
+	right: 40px;
+}
+
+.vagetarian_v1 .grid_item .post_img .post_overlay .post_content,
+.trending_v1 .grid_item .post_img .post_overlay .post_content {
+	left: auto;
+	right: 20px;
+}
+
+.vagetarian_v1 .grid_item .post_img .post_overlay .post_content .post_meta span,
+.trending_v1 .grid_item .post_img .post_overlay .post_content .post_meta span {
+	margin-right: 0px;
+	margin-left: 15px;
+}
+
+.footer_v1 .widget_box.useful_link_widget .widget_link li {
+	margin-right: 0px;
+	margin-left: 30px;
+}
+
+.footer_v1 .widget_box.useful_link_widget .social_link li {
+	margin-right: 0px;
+	margin-left: 20px;
+}
+
+.olima_place_v1 .place_row .place_about_box .place_count_box .single_count {
+	margin-right: 0px;
+	margin-left: 29px;
+}
+
+.olima_place_v1 .place_row .place_about_box .place_count_box .single_count:after {
+	right: auto;
+	left: -15px;
+}
+
+.olima_sidebar .widget_box.place_widget_box ul li a i {
+	margin-right: 0px;
+	margin-left: 10px;
+	float: left;
+}
+
+.blog_v1 .grid_item .post_content {
+	margin-left: 0px;
+	margin-right: -50px;
+}
+
+.blog_v1 .grid_item .post_content .post_meta span {
+	margin-right: 0px;
+	margin-left: 30px;
+}
+
+.top_header .top-right .search-nav {
+	margin-left: 0px;
+	margin-right: 25px;
+}
+
+/* shop */
+.olima_sidebar .widget_box.category_widget_2 ul li a span {
+	float: left;
+}
+
+.olima_sidebar .widget_box.tags_widget ul li {
+	margin-right: 0px;
+	margin-left: 10px;
+}
+
+.olima_sidebar .widget_box.color_widget .single_checkbox {
+	margin-right: 0px;
+	margin-left: 7px;
+}
+
+.olima_pagination ul li {
+	margin-left: 8px;
+	margin-right: 0px;
+}
+
+.nice-select .list li,
+.nice-select {
+	text-align: right !important;
+}
+
+.nice-select:after {
+	left: 0;
+	right: auto;
+}
+
+.nice-select:after {
+	right: auto;
+	left: 12px;
+}
+
+.nice-select {
+	padding-left: 30px;
+	padding-right: 18px;
+}
+
+.header_navigation .nav-container .main-menu ul li .sub-menu li .sub-menu {
+	left: auto;
+	right: 100%;
+}
+
+.blog_v1,
+.footer_v1,
+.vagetarian_v1 .grid_item,
+.vagetarian_v1,
+.latest_post_v1 {
+	text-align: right;
+}
+
+.header_search .form_group .form_control,
+.product_search .form_group .form_control {
+	padding-left: 0;
+	padding-right: 45px;
+}
+
+@media only screen and (max-width: 1366px) {
+	.olima_place_v1 .place_row .place_about_box .place_count_box .single_count {
+		margin-left: 20px;
+	}
+}
+
+@media (max-width: 767px) {
+	.blog_v1 .grid_item .post_content {
+		margin-right: 0px;
+	}
+
+	.blog_v1 .grid_item .post_content .post_meta span {
+		margin-left: 5px;
+	}
+}
+
+.hero_post_v1 .arrow.next {
+	right: unset;
+	left: 18%;
+}
+
+.hero_post_v1 .arrow.prev {
+	left: unset;
+	right: 18%;
+}
+
+.hero_post_v1 .arrow span {
+	display: flex;
+	align-items: center;
+}
+
+.hero_post_v1 .arrow span i {
+	transform: rotateZ(180deg);
+}
+
+
+.grid_item_v2:hover .post_tag{
+    visibility: visible;
+    opacity: 1;
+    right: 10px;
+		
+}

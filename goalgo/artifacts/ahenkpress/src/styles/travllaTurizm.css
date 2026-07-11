@@ -1,0 +1,920 @@
+/* Travlla travel theme — scoped under .trv-yekpare (Yekpare Turizm) */
+@import url("https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Figtree:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Kaushan+Script&display=swap");
+@import "../styles/travlla/assets/icons/fontawesome/css/all.min.css";
+@import "../styles/travlla/assets/icons/line-awesome/css/line-awesome.min.css";
+@import "../styles/travlla/assets/icons/flaticon/flaticon.css";
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
+@import "flatpickr/dist/flatpickr.min.css";
+@import "nouislider/dist/nouislider.css";
+
+.trv-yekpare {
+  --trv-primary: #066168;
+  --trv-secondary: #85d200;
+  --trv-citrus: #ffaa0d;
+  --trv-body: #346065;
+  --trv-bg: #efffff;
+  --trv-light: #dbeeee;
+  --trv-heading: #066168;
+  --trv-white: #fff;
+  --trv-darkgray: #545454;
+  --trv-eggshell: #fff8eb;
+  font-family: "Figtree", system-ui, sans-serif;
+  color: var(--trv-body);
+  background: var(--trv-bg);
+  line-height: 1.6;
+}
+
+.trv-yekpare * {
+  box-sizing: border-box;
+}
+
+.trv-yekpare .container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin-inline: auto;
+  padding-inline: var(--yekpare-content-padding-x, 1rem);
+}
+
+.trv-yekpare .section-full {
+  width: 100%;
+}
+
+.trv-yekpare .site-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--trv-secondary);
+  color: #111;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.85rem 1.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+  white-space: nowrap;
+}
+
+.trv-yekpare .site-button:hover {
+  transform: translateY(-2px);
+  color: var(--trv-white);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.trv-yekpare .site-button.outline {
+  background: transparent;
+  color: var(--trv-primary);
+  border: 2px solid var(--trv-secondary);
+  padding: 0.55rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+.trv-yekpare .site-button.outline:hover {
+  color: var(--trv-citrus);
+  border-color: var(--trv-white);
+}
+
+.trv-yekpare .site-button.btn-white {
+  background: var(--trv-white);
+  color: var(--trv-primary);
+}
+
+/* ── Hero (Home1) ── */
+.trv-yekpare .trv-hero {
+  position: relative;
+  min-height: clamp(520px, 72vh, 760px);
+  overflow: hidden;
+  border-radius: 0 0 2rem 2rem;
+}
+
+.trv-yekpare .trv-hero video,
+.trv-yekpare .trv-hero .trv-hero-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trv-yekpare .trv-hero-overlay {
+  position: relative;
+  z-index: 2;
+  min-height: inherit;
+  margin: clamp(0.5rem, 2vw, 2rem);
+  border-radius: 1.5rem;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 4vw, 4rem);
+  color: var(--trv-white);
+}
+
+.trv-yekpare .trv-hero-kicker {
+  font-family: "Kaushan Script", cursive;
+  font-size: clamp(1.5rem, 3vw, 3rem);
+  color: #7fc7ce;
+  margin-bottom: 0.25rem;
+}
+
+.trv-yekpare .trv-hero-title {
+  font-family: "Kaushan Script", cursive;
+  font-size: clamp(3.5rem, 12vw, 7.5rem);
+  line-height: 0.95;
+  margin: 0;
+  color: var(--trv-white);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.25);
+}
+
+.trv-yekpare .trv-hero-sub {
+  max-width: 28rem;
+  margin: 1.25rem 0 1.75rem;
+  font-size: 1.05rem;
+  opacity: 0.95;
+}
+
+/* ── Search bar ── */
+.trv-yekpare .trv-search-wrap {
+  margin-top: -3.5rem;
+  position: relative;
+  z-index: 5;
+  padding-bottom: 2rem;
+}
+
+.trv-yekpare .trv-search-card {
+  background: var(--trv-white);
+  border-radius: 1.5rem;
+  box-shadow: 0 18px 50px rgba(6, 97, 104, 0.15);
+  padding: 1rem;
+}
+
+.trv-yekpare .trv-search-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.trv-yekpare .trv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.trv-yekpare .trv-field label {
+  font-family: "Afacad", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--trv-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trv-yekpare .trv-field input,
+.trv-yekpare .trv-field select {
+  width: 100%;
+  border: 1px solid rgba(6, 97, 104, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  color: var(--trv-heading);
+  background: #f8fdfd;
+}
+
+.trv-yekpare .trv-search-submit {
+  align-self: end;
+  width: 100%;
+}
+
+/* ── Section headings ── */
+.trv-yekpare .trv-section-head {
+  text-align: center;
+  max-width: 42rem;
+  margin: 0 auto 2.5rem;
+}
+
+.trv-yekpare .trv-section-head h2 {
+  font-family: "Afacad", sans-serif;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  color: var(--trv-heading);
+  margin: 0 0 0.5rem;
+}
+
+.trv-yekpare .trv-section-head h2 .accent {
+  color: var(--trv-citrus);
+}
+
+.trv-yekpare .trv-section-head p {
+  margin: 0;
+  color: var(--trv-body);
+}
+
+/* ── Destination card ── */
+.trv-yekpare .trv-dest-card {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  min-height: 320px;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.trv-yekpare .trv-dest-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  min-height: 320px;
+  transition: transform 0.5s ease;
+}
+
+.trv-yekpare .trv-dest-card:hover img {
+  transform: scale(1.06);
+}
+
+.trv-yekpare .trv-dest-card .trv-dest-meta {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(180deg, transparent, rgba(6, 97, 104, 0.88));
+  color: var(--trv-white);
+}
+
+.trv-yekpare .trv-dest-card h3 {
+  margin: 0 0 0.25rem;
+  font-family: "Afacad", sans-serif;
+  font-size: 1.5rem;
+}
+
+.trv-yekpare .trv-dest-card span {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* ── Tour card (grid) ── */
+.trv-yekpare .trv-tour-card {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  group: true;
+}
+
+.trv-yekpare .trv-tour-card .trv-tour-media {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+}
+
+.trv-yekpare .trv-tour-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.trv-yekpare .trv-tour-card:hover img {
+  transform: scale(1.05);
+}
+
+.trv-yekpare .trv-tour-card .trv-tour-bottom {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.9rem 1.25rem;
+  background: rgba(6, 97, 104, 0.08);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.35s ease;
+}
+
+.trv-yekpare .trv-tour-card .trv-tour-hover {
+  position: absolute;
+  inset: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: rgba(6, 97, 104, 0.72);
+  backdrop-filter: blur(6px);
+  color: var(--trv-white);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: all 0.35s ease;
+}
+
+.trv-yekpare .trv-tour-card:hover .trv-tour-hover {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.trv-yekpare .trv-tour-card:hover .trv-tour-bottom {
+  opacity: 0;
+}
+
+.trv-yekpare .trv-tour-price {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--trv-white);
+}
+
+.trv-yekpare .trv-stars {
+  color: var(--trv-citrus);
+}
+
+/* ── Inner banner ── */
+.trv-yekpare .trv-inner-banner {
+  position: relative;
+  min-height: 220px;
+  background:
+    linear-gradient(180deg, rgba(6, 97, 104, 0.15), rgba(239, 255, 255, 0.95)),
+    url("https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1600&q=80") center/cover;
+  display: flex;
+  align-items: flex-end;
+  padding: 3.5rem 0 2rem;
+}
+
+.trv-yekpare .trv-inner-banner h1 {
+  font-family: "Afacad", sans-serif;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  color: var(--trv-heading);
+  margin: 0 0 0.5rem;
+}
+
+.trv-yekpare .trv-breadcrumb {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: var(--trv-primary);
+}
+
+.trv-yekpare .trv-breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.trv-yekpare .trv-breadcrumb li + li::before {
+  content: "›";
+  margin-right: 0.35rem;
+  opacity: 0.6;
+}
+
+/* ── Listing layout ── */
+.trv-yekpare .trv-listing-layout {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  padding: 2rem 0 3rem;
+}
+
+@media (min-width: 992px) {
+  .trv-yekpare .trv-listing-layout {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+.trv-yekpare .trv-sidebar {
+  position: sticky;
+  top: 5.5rem;
+  align-self: start;
+  background: var(--trv-white);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 12px 30px rgba(6, 97, 104, 0.08);
+}
+
+.trv-yekpare .trv-sidebar h3 {
+  margin: 0 0 1rem;
+  font-family: "Afacad", sans-serif;
+  color: var(--trv-heading);
+}
+
+.trv-yekpare .trv-filter-group {
+  margin-bottom: 1rem;
+}
+
+.trv-yekpare .trv-filter-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--trv-primary);
+  margin-bottom: 0.35rem;
+}
+
+.trv-yekpare .trv-tour-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* ── Detail page ── */
+.trv-yekpare .trv-detail-layout {
+  display: grid;
+  gap: 1.5rem;
+  padding: 2rem 0 3rem;
+}
+
+@media (min-width: 992px) {
+  .trv-yekpare .trv-detail-layout {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+.trv-yekpare .trv-detail-panel {
+  background: var(--trv-white);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 10px 28px rgba(6, 97, 104, 0.08);
+}
+
+.trv-yekpare .trv-gallery-main {
+  width: 100%;
+  height: clamp(240px, 42vw, 420px);
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.trv-yekpare .trv-gallery-thumbs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+
+.trv-yekpare .trv-gallery-thumbs button {
+  border: 2px solid transparent;
+  border-radius: 0.65rem;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  flex: 0 0 72px;
+  height: 56px;
+}
+
+.trv-yekpare .trv-gallery-thumbs button.active {
+  border-color: var(--trv-primary);
+}
+
+.trv-yekpare .trv-gallery-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trv-yekpare .trv-booking-card {
+  position: sticky;
+  top: 5.5rem;
+  background: var(--trv-white);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 14px 36px rgba(6, 97, 104, 0.12);
+}
+
+.trv-yekpare .trv-booking-card .trv-price-lg {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--trv-primary);
+}
+
+.trv-yekpare .trv-itinerary {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trv-yekpare .trv-itinerary li {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(6, 97, 104, 0.1);
+}
+
+.trv-yekpare .trv-itinerary .day {
+  font-weight: 800;
+  color: var(--trv-citrus);
+}
+
+.trv-yekpare .trv-review {
+  border: 1px solid rgba(6, 97, 104, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f8fdfd;
+}
+
+/* ── Steps / counters ── */
+.trv-yekpare .trv-steps {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  padding: 2.5rem 0;
+}
+
+.trv-yekpare .trv-step-card {
+  background: var(--trv-white);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(6, 97, 104, 0.08);
+}
+
+.trv-yekpare .trv-step-card .num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--trv-citrus);
+}
+
+/* ── Places ticker ── */
+.trv-yekpare .trv-places-ticker {
+  background: var(--trv-eggshell);
+  padding: 1.5rem 0;
+  overflow: hidden;
+}
+
+.trv-yekpare .trv-place-pill {
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.trv-yekpare .trv-place-pill .count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--trv-primary);
+  background: var(--trv-white);
+  border: 1px solid rgba(6, 97, 104, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.trv-yekpare .trv-place-pill .name {
+  display: block;
+  font-family: "Kaushan Script", cursive;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  color: var(--trv-primary);
+  text-decoration: none;
+  margin-top: 0.35rem;
+}
+
+.trv-yekpare .trv-place-pill .name.highlight {
+  color: var(--trv-citrus);
+}
+
+/* ── Testimonials ── */
+.trv-yekpare .trv-testimonial {
+  background: var(--trv-white);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 0 10px 28px rgba(6, 97, 104, 0.08);
+  height: 100%;
+}
+
+.trv-yekpare .trv-testimonial .quote {
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+/* ── Pagination ── */
+.trv-yekpare .trv-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 2rem;
+}
+
+.trv-yekpare .trv-pagination button,
+.trv-yekpare .trv-pagination a {
+  min-width: 44px;
+  height: 44px;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(6, 97, 104, 0.15);
+  background: var(--trv-white);
+  color: var(--trv-primary);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.trv-yekpare .trv-pagination .active {
+  background: var(--trv-primary);
+  color: var(--trv-white);
+  border-color: var(--trv-primary);
+}
+
+/* ── Swiper nav inside theme ── */
+.trv-yekpare .swiper-button-next,
+.trv-yekpare .swiper-button-prev {
+  color: var(--trv-primary);
+}
+
+.trv-yekpare .swiper-pagination-bullet-active {
+  background: var(--trv-primary);
+}
+
+.trv-yekpare .trv-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--trv-body);
+}
+
+.trv-yekpare .trv-cta-band {
+  margin: 2rem 0 3rem;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--trv-primary), #1db7be);
+  color: var(--trv-white);
+}
+
+.trv-yekpare .trv-cta-band h3 {
+  margin: 0 0 0.5rem;
+  font-family: "Afacad", sans-serif;
+  font-size: 1.75rem;
+}
+
+/* ── Turlar modülü içi alt menü (global AppNav altında) ── */
+.trv-yekpare .trv-subnav {
+  background: var(--trv-white);
+  border-bottom: 1px solid var(--trv-light);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.trv-yekpare .trv-subnav__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.trv-yekpare .trv-subnav__inner::-webkit-scrollbar {
+  display: none;
+}
+
+.trv-yekpare .trv-subnav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--trv-body);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.trv-yekpare .trv-subnav__link:hover {
+  background: var(--trv-light);
+  color: var(--trv-primary);
+}
+
+.trv-yekpare .trv-subnav__link--active {
+  background: var(--trv-primary);
+  color: var(--trv-white);
+}
+
+/* ── Legacy Travlla site header (kaldırıldı; stil referansı) ── */
+.trv-yekpare .trv-site-header {
+  background: var(--trv-primary);
+  color: var(--trv-white);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.trv-yekpare .trv-site-header__bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0.65rem 1rem;
+}
+
+.trv-yekpare .trv-site-header__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--trv-white);
+  flex-shrink: 0;
+}
+
+.trv-yekpare .trv-site-header__mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--trv-secondary);
+  color: #111;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.trv-yekpare .trv-site-header__logo strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.trv-yekpare .trv-site-header__logo small {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.trv-yekpare .trv-site-header__nav {
+  display: none;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+@media (min-width: 1100px) {
+  .trv-yekpare .trv-site-header__nav {
+    display: flex;
+  }
+}
+
+.trv-yekpare .trv-site-header__nav a {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+}
+
+.trv-yekpare .trv-site-header__nav a.active,
+.trv-yekpare .trv-site-header__nav a:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--trv-white);
+}
+
+.trv-yekpare .trv-site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.trv-yekpare .trv-site-header__cta {
+  display: inline-flex;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--trv-secondary);
+  color: #111 !important;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.trv-yekpare .trv-site-header__cta.outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: var(--trv-white) !important;
+}
+
+.trv-yekpare .trv-site-header__toggle {
+  display: inline-flex;
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+}
+
+@media (min-width: 1100px) {
+  .trv-yekpare .trv-site-header__toggle {
+    display: none;
+  }
+}
+
+.trv-yekpare .trv-site-header__mobile {
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem 0.75rem;
+  gap: 0.35rem;
+}
+
+.trv-yekpare .trv-site-header__mobile a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.trv-yekpare .trv-site-footer {
+  background: #055a60;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: auto;
+}
+
+.trv-yekpare .trv-site-footer__grid {
+  display: grid;
+  gap: 1.5rem;
+  padding: 2.5rem 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.trv-yekpare .trv-site-footer__brand {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.trv-yekpare .trv-site-footer h4 {
+  margin: 0 0 0.65rem;
+  font-family: "Afacad", sans-serif;
+}
+
+.trv-yekpare .trv-site-footer a {
+  display: block;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+}
+
+.trv-yekpare .trv-site-footer__copy {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+}
+
+.trv-yekpare .trv-static-card {
+  background: var(--trv-white);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 24px rgba(6, 97, 104, 0.08);
+}
+
+.trv-yekpare .trv-gallery-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.trv-yekpare .trv-gallery-item img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.trv-yekpare .trv-faq-item {
+  background: var(--trv-white);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.trv-yekpare .trv-pricing-grid,
+.trv-yekpare .trv-team-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.trv-yekpare .trv-pricing-card,
+.trv-yekpare .trv-team-card {
+  background: var(--trv-white);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 8px 24px rgba(6, 97, 104, 0.08);
+}
+
+.trv-yekpare .trv-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--trv-white);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.trv-yekpare .trv-compare-table th,
+.trv-yekpare .trv-compare-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--trv-light);
+  text-align: left;
+}

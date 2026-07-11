@@ -1,0 +1,43 @@
+﻿name: Goalgo CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: goalgo
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run security:check
+      - run: pnpm --filter @workspace/api-server run build
+      - name: Run Vercel production build
+        id: vercel_build
+        continue-on-error: true
+        run: pnpm run build:vercel
+      - name: Upload Linux Yektube bundle (same Vite env as Vercel)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yektube-linux-public
+          path: goalgo/artifacts/yektube-web/dist
+          if-no-files-found: warn
+      - name: Require successful Vercel build
+        if: steps.vercel_build.outcome != 'success'
+        run: exit 1

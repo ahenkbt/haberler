@@ -1,0 +1,85 @@
+.custom-select {
+    position: relative;
+}
+
+.custom-select .select-selected {
+    @apply py-1.5 text-sm text-left text-[#545454] duration-300 w-full cursor-pointer;
+}
+.select-selected span {
+    display: none;
+}
+
+.select-selected:after {
+    content: "\e842";
+    font-family: "feather";
+    position: absolute;
+    right: 0px;
+    left: 97px;
+    width: 8px;
+    height: 8px;
+    transition: .3s all;
+}
+.select-items {
+    background-color: white;
+}
+
+.select-items {
+    position: absolute;
+    width: 100%;
+    z-index: 99;
+    max-height: 320px;
+    overflow-y: auto;
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0px);
+    min-width: 200px;
+    scrollbar-width: thin;
+    transition: .3s all;
+    padding: 10px 0;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+    right: 0;
+    border-radius: 0.375rem;
+    margin-top: 4px;
+}
+
+.holiday-banner .select-items {
+	 right: -60px;
+}
+
+
+.custom-select.right .select-items {
+    right: auto;
+    left: 0;
+}
+
+.select-item {
+    padding: 4px 20px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.select-item:hover,
+.select-item.active {
+    background-color: var(--color-light);
+    color: var(--color-primary);
+}
+
+.select-items.select-hide {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+}
+
+.custom-select.style-1 .select-selected {
+    @apply text-primary font-bold text-xl font-title;
+}
+.custom-select.style-1 .select-selected:after {
+    @apply left-auto text-input font-normal;
+}
+.custom-select.full-select .select-selected:after {
+    @apply left-auto right-2.5 font-light -top-2 text-xl;
+}
+.box-filter .select-items{
+	@apply !-top-47.25;
+}

@@ -1,0 +1,1188 @@
+/* Video TV - Frontend CSS v1.0 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
+
+.vtv-app {
+  --bg0: transparent;        /* Sitenin arka planını kullan */
+  --bg1: #ffffff;            /* Sidebar / kart paneli */
+  --bg2: #ffffff;            /* Video kartı */
+  --bg3: #f9fafb;            /* Hover yüzeyi */
+  --bg4: #f3f4f6;            /* Aktif/seçili yüzey */
+  --bd:  #e5e7eb;            /* Standart kenarlık */
+  --bd2: #d1d5db;            /* Vurgulu kenarlık */
+  --t1:  #0f0f0f;            /* Ana metin (YouTube siyahı) */
+  --t2:  #606060;            /* İkincil metin */
+  --t3:  #909090;            /* Gri etiket */
+  --acc: #cc0000;            /* YouTube kırmızısı */
+  --acc2:#ff0000;
+  --gold:#F59E0B;
+  --grn: #10B981;
+  --blu: #065fd4;            /* YouTube mavisi */
+  --rad: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow:    0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,.14);
+  background: var(--bg0);
+  color: var(--t1);
+  font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
+  min-height: 600px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+.vtv-app * { box-sizing: border-box; margin: 0; padding: 0; }
+.vtv-app a { color: inherit; text-decoration: none; }
+.vtv-app button { font-family: inherit; cursor: pointer; }
+
+/* ===== TOP BAR (Branded dark) ===== */
+.vtv-topbar {
+  display: flex; align-items: center; gap: 14px;
+  background: #0f0f0f;
+  padding: 10px 22px;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid #2a2a2a;
+  flex-wrap: wrap;
+}
+.vtv-topbar-left { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.vtv-menu-toggle {
+  display: flex; flex-direction: column; gap: 4px;
+  background: none; border: none; padding: 8px; cursor: pointer; border-radius: 50%;
+  transition: background .15s;
+}
+.vtv-menu-toggle:hover { background: rgba(255,255,255,.1); }
+.vtv-menu-toggle span { display: block; width: 18px; height: 2px; background: #fff; border-radius: 1px; transition: all .2s; }
+.vtv-logo, .vtv-app .vtv-logo, .vtv-app a.vtv-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Inter','Roboto',sans-serif;
+  font-size: 20px; font-weight: 700; letter-spacing: -.5px; color: #fff !important;
+  white-space: nowrap; text-decoration: none !important;
+}
+.vtv-logo:hover { color: #fff !important; opacity: .9; }
+.vtv-logo-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 22px; background: var(--acc); color: #fff;
+  font-size: 12px; border-radius: 6px; padding-left: 2px;
+}
+
+/* Search */
+.vtv-search-wrap { flex: 1; min-width: 200px; max-width: 560px; margin: 0 auto; }
+.vtv-search-form {
+  display: flex; align-items: center;
+  background: #232323; border-radius: 999px; overflow: hidden;
+  border: 1px solid #3a3a3a; transition: all .15s;
+}
+.vtv-search-form:focus-within { border-color: var(--blu); background: #fff; box-shadow: 0 0 0 3px rgba(6,95,212,.18); }
+.vtv-search-form:focus-within .vtv-search-input { color: var(--t1); }
+.vtv-search-form:focus-within .vtv-search-icon { color: var(--t2); }
+.vtv-search-icon { padding: 0 10px 0 18px; color: #aaa; font-size: 14px; }
+.vtv-search-input { flex: 1; background: none; border: none; outline: none; color: #fff; font-size: 14px; padding: 11px 6px; font-family: inherit; }
+.vtv-search-input::placeholder { color: #aaa; }
+.vtv-search-btn {
+  padding: 10px 22px; background: var(--acc); color: #fff; border: none;
+  font-size: 13px; font-weight: 600; transition: opacity .2s; white-space: nowrap;
+  border-radius: 0 999px 999px 0;
+}
+.vtv-search-btn:hover { opacity: .85; }
+.vtv-topbar-right { display: flex; gap: 8px; flex-shrink: 0; }
+.vtv-nav-btn {
+  padding: 8px 16px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  color: #fff; border-radius: 999px; font-size: 13px; font-weight: 500; transition: all .15s;
+}
+.vtv-nav-btn:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.3); }
+
+/* ===== MAIN WRAPPER ===== */
+.vtv-main-wrap { display: flex; min-height: 560px; }
+
+/* ===== SIDEBAR (YouTube-style) ===== */
+.vtv-sidebar {
+  width: 240px; min-width: 240px;
+  background: transparent;
+  border-right: 1px solid var(--bd);
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: var(--bd2) transparent;
+  flex-shrink: 0;
+  transition: width .25s, min-width .25s;
+  padding: 12px 8px;
+}
+.vtv-sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; padding: 0; border: 0; }
+.vtv-sidebar::-webkit-scrollbar { width: 6px; }
+.vtv-sidebar::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 3px; }
+.vtv-sb-section { padding: 8px 0; border-bottom: 1px solid var(--bd); }
+.vtv-sb-section:last-child { border-bottom: none; }
+.vtv-sb-head { padding: 10px 14px 6px; font-size: 11px; font-weight: 600; color: var(--t2); letter-spacing: .8px; text-transform: uppercase; }
+.vtv-sb-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; font-size: 14px; font-weight: 500; color: var(--t1);
+  transition: all .14s; border-radius: 10px; margin: 1px 4px;
+}
+.vtv-sb-link:hover { background: var(--bg4); }
+.vtv-sb-link.vtv-sb-active { background: var(--bg4); font-weight: 600; }
+.vtv-sb-link.vtv-sb-active::before { content: ''; position: absolute; left: 0; }
+.vtv-sb-link span { font-size: 18px; flex-shrink: 0; }
+.vtv-sb-kat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.vtv-sb-daha {
+  color: var(--blu); font-weight: 600; font-size: 13px;
+  justify-content: center; background: var(--bg3); border: 1px solid var(--bd);
+}
+.vtv-sb-daha:hover { background: rgba(6,95,212,.08); border-color: var(--blu); }
+.vtv-sb-loading { padding: 10px 14px; font-size: 12px; color: var(--t3); }
+
+/* ===== CONTENT ===== */
+.vtv-content { flex: 1; overflow-y: auto; overflow-x: hidden; min-width: 0; }
+
+/* ===== SPINNER ===== */
+.vtv-spinner { display: flex; justify-content: center; align-items: center; min-height: 200px; }
+.vtv-spin { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,.1); border-top-color: var(--acc); border-radius: 50%; animation: vtv-spin .7s linear infinite; }
+@keyframes vtv-spin { to { transform: rotate(360deg); } }
+
+/* ===== HERO / BANNER ===== */
+.vtv-hero {
+  position: relative; height: 420px; overflow: hidden;
+  background: linear-gradient(135deg, #0A0A0F 0%, #1a1020 100%);
+}
+.vtv-hero-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  filter: brightness(.45);
+}
+.vtv-hero-grad {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,.9) 0%, rgba(0,0,0,.3) 60%, transparent 100%),
+              linear-gradient(to top, rgba(0,0,0,.8) 0%, transparent 40%);
+}
+.vtv-hero-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  height: 100%; padding: 40px 40px 36px;
+  max-width: 600px;
+}
+.vtv-hero-badge {
+  display: inline-block; background: var(--acc); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 3px; margin-bottom: 10px;
+}
+.vtv-hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 46px; line-height: 1.05; letter-spacing: .5px;
+  color: #fff; margin-bottom: 10px; text-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.vtv-hero-desc { font-size: 14px; color: rgba(255,255,255,.7); line-height: 1.6; margin-bottom: 20px; max-width: 460px; }
+.vtv-hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.vtv-hero-play {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; color: #000;
+  font-weight: 700; font-size: 14px;
+  padding: 11px 26px; border: none; border-radius: 4px;
+  transition: background .2s;
+}
+.vtv-hero-play:hover { background: rgba(255,255,255,.85); }
+.vtv-hero-info {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(109,109,110,.7); color: #fff;
+  font-weight: 600; font-size: 14px;
+  padding: 11px 26px; border: none; border-radius: 4px;
+  transition: background .2s;
+}
+.vtv-hero-info:hover { background: rgba(109,109,110,.9); }
+.vtv-hero-indicators {
+  position: absolute; bottom: 16px; right: 24px; z-index: 3;
+  display: flex; gap: 5px;
+}
+.vtv-hero-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,.35); cursor: pointer; transition: all .2s;
+  border: none;
+}
+.vtv-hero-dot.on { background: var(--acc); width: 18px; border-radius: 3px; }
+
+/* ===== ROW SECTIONS ===== */
+.vtv-section { padding: 20px 24px 8px; }
+.vtv-section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.vtv-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; letter-spacing: .5px; color: var(--t1);
+  display: flex; align-items: center; gap: 8px;
+}
+.vtv-section-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px; font-weight: 700; color: var(--acc);
+  background: rgba(229,9,20,.15);
+  padding: 2px 8px; border-radius: 10px; letter-spacing: .5px;
+}
+.vtv-section-more { font-size: 12px; color: var(--t3); cursor: pointer; transition: color .15s; }
+.vtv-section-more:hover { color: var(--acc2); }
+
+/* Video Scroll Row */
+.vtv-row-wrap { position: relative; }
+.vtv-row {
+  display: flex; gap: 10px;
+  overflow-x: auto; padding-bottom: 10px;
+  scrollbar-width: thin; scrollbar-color: var(--bg4) transparent;
+}
+.vtv-row::-webkit-scrollbar { height: 3px; }
+.vtv-row::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+/* Video Card */
+.vtv-vcard {
+  flex-shrink: 0; width: 200px; cursor: pointer;
+  border-radius: var(--rad); overflow: hidden;
+  background: var(--bg2);
+  transition: transform .22s, box-shadow .22s;
+  position: relative;
+  border: 1px solid transparent;
+}
+.vtv-vcard:hover { transform: scale(1.04) translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--bd2); z-index: 5; }
+.vtv-vcard-lg { width: 260px; }
+.vtv-vcard-sm { width: 160px; }
+.vtv-vthumb { position: relative; aspect-ratio: 16/9; overflow: hidden; background: #000; }
+.vtv-vthumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.vtv-vcard:hover .vtv-vthumb img { transform: scale(1.08); }
+.vtv-vplay {
+  position: absolute; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s;
+}
+.vtv-vplay span { width: 44px; height: 44px; background: rgba(229,9,20,.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; padding-left: 3px; }
+.vtv-vcard:hover .vtv-vplay { opacity: 1; }
+.vtv-vdur {
+  position: absolute; bottom: 5px; right: 6px;
+  background: rgba(0,0,0,.85); color: #fff;
+  font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px;
+}
+.vtv-vplat {
+  position: absolute; top: 5px; left: 6px;
+  font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 3px; color: #fff;
+}
+.vtv-one-star {
+  position: absolute; top: 5px; right: 6px;
+  font-size: 14px; color: var(--gold); filter: drop-shadow(0 1px 2px rgba(0,0,0,.8));
+}
+.vtv-vinfo { padding: 9px 10px 11px; }
+.vtv-vtitle {
+  font-size: 12.5px; font-weight: 600; color: var(--t1); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 5px;
+}
+.vtv-vmeta { font-size: 11px; color: var(--t3); }
+
+/* ===== GRID (karma) ===== */
+.vtv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; padding: 0 24px 24px; }
+.vtv-grid .vtv-vcard { width: 100%; flex-shrink: unset; }
+
+/* ===== KANAL DETAY (Netflix stili) ===== */
+.vtv-channel-hero {
+  position: relative; height: 340px;
+  background: var(--bg2);
+  overflow: hidden;
+}
+.vtv-channel-bg { position: absolute; inset: 0; background-size: cover; background-position: center top; filter: brightness(.3) blur(2px); transform: scale(1.05); }
+.vtv-channel-grad { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg0) 0%, transparent 50%); }
+.vtv-channel-info {
+  position: relative; z-index: 2;
+  display: flex; align-items: flex-end; gap: 24px;
+  height: 100%; padding: 0 40px 32px;
+}
+.vtv-channel-logo {
+  width: 100px; height: 100px; border-radius: 12px;
+  background: var(--bg3); border: 3px solid rgba(255,255,255,.2);
+  overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--t2);
+}
+.vtv-channel-logo img { width: 100%; height: 100%; object-fit: cover; }
+.vtv-channel-meta { flex: 1; }
+.vtv-channel-name { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: .5px; color: #fff; margin-bottom: 6px; }
+.vtv-channel-desc { font-size: 13px; color: var(--t2); line-height: 1.6; max-width: 500px; margin-bottom: 14px; }
+.vtv-channel-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+.vtv-channel-stat { text-align: center; }
+.vtv-channel-stat-n { font-size: 20px; font-weight: 700; color: var(--acc); line-height: 1; }
+.vtv-channel-stat-l { font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .5px; }
+.vtv-channel-actions { display: flex; gap: 8px; margin-top: 14px; }
+.vtv-btn-red { padding: 9px 22px; background: var(--acc); color: #fff; border: none; border-radius: 4px; font-weight: 700; font-size: 13px; transition: background .2s; }
+.vtv-btn-red:hover { background: #b0070f; }
+.vtv-btn-ghost { padding: 9px 22px; background: rgba(255,255,255,.15); color: #fff; border: none; border-radius: 4px; font-weight: 600; font-size: 13px; transition: background .2s; }
+.vtv-btn-ghost:hover { background: rgba(255,255,255,.25); }
+
+/* ===== ARAMA ===== */
+.vtv-search-results { padding: 24px; }
+.vtv-search-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--t2); margin-bottom: 20px; }
+.vtv-search-title span { color: var(--t1); }
+.vtv-search-ext { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.vtv-ext-btn {
+  display: flex; align-items: center; gap: 6px; padding: 8px 18px;
+  border-radius: 20px; font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; transition: all .2s; text-decoration: none;
+}
+.vtv-ext-yt  { background: #FF0000; color: #fff; }
+.vtv-ext-yt:hover { background: #CC0000; }
+.vtv-ext-dm  { background: #003CB4; color: #fff; }
+.vtv-ext-dm:hover { background: #002A80; }
+
+/* ===== TÜM LISTE ===== */
+.vtv-all-list { padding: 24px; }
+.vtv-all-section { margin-bottom: 32px; }
+.vtv-all-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--t1); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--bd); }
+.vtv-channel-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+.vtv-ch-card {
+  background: var(--bg2); border-radius: var(--rad); padding: 16px;
+  border: 1px solid var(--bd); cursor: pointer;
+  transition: all .22s; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.vtv-ch-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--bd2); }
+.vtv-ch-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--t2); }
+.vtv-ch-name { font-size: 13px; font-weight: 600; color: var(--t1); line-height: 1.3; }
+.vtv-ch-meta { font-size: 11px; color: var(--t3); }
+
+/* ===== MODAL ===== */
+.vtv-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.vtv-modal-overlay { position: absolute; inset: 0; background: rgba(15,15,15,.78); backdrop-filter: blur(4px); }
+.vtv-modal-box {
+  position: relative; z-index: 1;
+  background: #fff;
+  border-radius: 14px; overflow: hidden;
+  width: 90%; max-width: 880px;
+  border: 1px solid var(--bd);
+  box-shadow: 0 24px 64px rgba(0,0,0,.35);
+}
+.vtv-modal-close {
+  position: absolute; top: 12px; right: 14px; z-index: 10;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,0,0,.7); border: none; color: #fff;
+  font-size: 14px; cursor: pointer; transition: background .2s;
+}
+.vtv-modal-close:hover { background: var(--acc); }
+.vtv-modal-player { aspect-ratio: 16/9; background: #000; }
+.vtv-modal-player iframe { width: 100%; height: 100%; border: none; display: block; }
+.vtv-modal-info { padding: 18px 22px 22px; }
+.vtv-modal-title { font-size: 17px; font-weight: 700; color: var(--t1); margin-bottom: 6px; line-height: 1.3; }
+.vtv-modal-meta { font-size: 12px; color: var(--t3); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.vtv-modal-ch { font-weight: 600; color: var(--t2); }
+.vtv-empty { padding: 40px; text-align: center; color: var(--t3); font-size: 14px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .vtv-sidebar { position: absolute; top: 0; left: 0; bottom: 0; z-index: 50; transform: translateX(-100%); transition: transform .25s; width: 220px; min-width: 220px; }
+  .vtv-sidebar.open { transform: translateX(0); }
+  .vtv-hero { height: 280px; }
+  .vtv-hero-title { font-size: 30px; }
+  .vtv-hero-content { padding: 24px 20px 24px; }
+  .vtv-vcard { width: 160px; }
+  .vtv-vcard-lg { width: 200px; }
+}
+@media (max-width: 600px) {
+  .vtv-topbar-right { display: none; }
+  .vtv-search-wrap { max-width: 100%; }
+  .vtv-grid { grid-template-columns: repeat(2, 1fr); }
+  .vtv-vcard { width: 140px; }
+}
+
+/* ===== HOŞGELDİNİZ + KANAL TANITIM ===== */
+.vtv-welcome-section {
+  display: flex;
+  gap: 28px;
+  padding: 32px 24px 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.vtv-welcome-left {
+  flex-shrink: 0;
+  min-width: 180px;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+.vtv-welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--acc);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 4px 12px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+.vtv-welcome-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--t1);
+}
+.vtv-welcome-sub {
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+}
+.vtv-welcome-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+.vtv-ws {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.vtv-ws span {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--acc);
+  line-height: 1;
+}
+.vtv-ws {
+  font-size: 10px;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* Netflix film kapağı kartlar */
+.vtv-welcome-cards {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+  align-items: flex-start;
+}
+.vtv-welcome-cards::-webkit-scrollbar { height: 3px; }
+.vtv-welcome-cards::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.vtv-showcase-card {
+  flex-shrink: 0;
+  width: 180px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg2);
+  cursor: pointer;
+  border: 1px solid var(--bd);
+  transition: transform .25s, box-shadow .25s, border-color .25s;
+  position: relative;
+}
+.vtv-showcase-card:hover {
+  transform: scale(1.05) translateY(-5px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--bd2);
+  z-index: 10;
+}
+
+/* Poster alanı */
+.vtv-sc-poster {
+  position: relative;
+  height: 200px;
+  background: var(--bg3);
+  overflow: hidden;
+}
+.vtv-sc-banner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s;
+}
+.vtv-sc-banner-stretch { object-fit: contain; background: var(--bg3); }
+.vtv-showcase-card:hover .vtv-sc-banner { transform: scale(1.08); }
+.vtv-sc-poster-grad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.1) 50%, transparent 100%);
+}
+
+/* Logo üst sol */
+.vtv-sc-logo-wrap {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.6);
+  border: 1.5px solid rgba(255,255,255,.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vtv-sc-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.vtv-sc-logo-fallback {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  color: var(--t2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Platform rozeti */
+.vtv-sc-plat {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #fff;
+  letter-spacing: .5px;
+}
+
+/* Kart alt bilgi */
+.vtv-sc-info {
+  padding: 10px 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vtv-sc-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--t1);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.vtv-sc-desc {
+  font-size: 11px;
+  color: var(--t3);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.vtv-sc-meta {
+  font-size: 11px;
+  color: var(--t3);
+  font-style: italic;
+}
+.vtv-sc-btn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--acc2);
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.vtv-showcase-card:hover .vtv-sc-btn { opacity: 1; }
+
+/* Kanal hero - açıklama toggle */
+.vtv-channel-desc {
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+  max-width: 520px;
+  margin-bottom: 14px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .vtv-welcome-section { flex-direction: column; }
+  .vtv-welcome-left { max-width: 100%; }
+  .vtv-showcase-card { width: 150px; }
+  .vtv-sc-poster { height: 160px; }
+}
+
+/* ===== SAYFA İÇİ VİDEO OYNATICI ===== */
+.vtv-player-page { padding: 0; }
+
+.vtv-pp-back {
+  padding: 14px 20px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid var(--bd);
+  background: var(--bg1);
+}
+.vtv-pp-back-btn {
+  padding: 7px 16px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--bd);
+  color: var(--t2);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: inherit;
+}
+.vtv-pp-back-btn:hover { background: rgba(255,255,255,.14); color: var(--t1); }
+
+/* İki sütun: ana oynatıcı + sağ kenar çubuğu */
+.vtv-pp-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 0;
+  align-items: flex-start;
+  min-height: 500px;
+}
+
+/* SOL: Oynatıcı */
+.vtv-pp-main { border-right: 1px solid var(--bd); }
+
+.vtv-pp-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.vtv-pp-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.vtv-pp-info {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--bd);
+}
+.vtv-pp-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--t1);
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+.vtv-pp-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.vtv-pp-ch {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t2);
+  background: rgba(255,255,255,.06);
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+.vtv-pp-plat {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: .5px;
+}
+
+/* Alt: karma grid */
+.vtv-pp-karma { padding: 18px 20px 24px; }
+.vtv-pp-karma-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  color: var(--t1);
+  margin-bottom: 14px;
+  letter-spacing: .3px;
+}
+.vtv-pp-karma-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.vtv-mini-card {
+  background: var(--bg2);
+  border-radius: 7px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform .2s, border-color .2s;
+}
+.vtv-mini-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.12); }
+.vtv-mini-thumb {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: #000;
+  overflow: hidden;
+}
+.vtv-mini-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s; }
+.vtv-mini-card:hover .vtv-mini-thumb img { transform: scale(1.06); }
+.vtv-mini-info { padding: 7px 9px 9px; }
+.vtv-mini-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--t1);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+.vtv-mini-meta { font-size: 10px; color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* SAĞ: Benzer içerikler */
+.vtv-pp-side {
+  background: var(--bg2);
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+  position: sticky;
+  top: 60px;
+}
+.vtv-pp-side::-webkit-scrollbar { width: 3px; }
+.vtv-pp-side::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+.vtv-pp-side-title {
+  padding: 14px 16px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--t2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bd);
+}
+.vtv-side-card {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background .16s, border-color .16s;
+}
+.vtv-side-card:hover { background: var(--bg3); border-left-color: var(--acc); }
+.vtv-side-thumb {
+  position: relative;
+  width: 100px;
+  min-width: 100px;
+  aspect-ratio: 16/9;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #000;
+}
+.vtv-side-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vtv-side-play {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .18s;
+}
+.vtv-side-play span { font-size: 18px; color: #fff; }
+.vtv-side-card:hover .vtv-side-play { opacity: 1; }
+.vtv-side-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.vtv-side-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--t1);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.vtv-side-meta { font-size: 11px; color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .vtv-pp-layout { grid-template-columns: 1fr; }
+  .vtv-pp-side { max-height: 400px; position: static; border-top: 1px solid var(--bd); }
+  .vtv-pp-karma-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .vtv-pp-karma-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== SOSYAL MEDYA PAYLAŞ BUTONU ===== */
+.vtv-share-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: var(--bg2);
+  border-top: 1px solid var(--bd);
+  flex-wrap: wrap;
+}
+.vtv-share-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--t3);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+.vtv-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .18s;
+  color: #fff;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.vtv-share-wa   { background: #25D366; }
+.vtv-share-wa:hover   { background: #1da851; }
+.vtv-share-x    { background: #000; border: 1px solid #333; }
+.vtv-share-x:hover    { background: #222; }
+.vtv-share-fb   { background: #1877F2; }
+.vtv-share-fb:hover   { background: #1565d8; }
+.vtv-share-tg   { background: #2CA5E0; }
+.vtv-share-tg:hover   { background: #1a8cc7; }
+.vtv-share-copy { background: var(--bg4); color: var(--t2); border: 1px solid var(--bd); }
+.vtv-share-copy:hover { background: var(--bg3); color: var(--t1); }
+.vtv-share-link-wrap {
+  flex: 1;
+  min-width: 200px;
+}
+.vtv-share-link-input {
+  width: 100%;
+  padding: 6px 12px;
+  background: var(--bg0);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  color: var(--t3);
+  font-size: 11px;
+  font-family: monospace;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .18s;
+}
+.vtv-share-link-input:focus { border-color: var(--acc2); color: var(--t2); }
+
+@media (max-width: 600px) {
+  .vtv-share-bar { padding: 12px 16px; gap: 6px; }
+  .vtv-share-btn { padding: 5px 10px; font-size: 11px; }
+  .vtv-share-link-wrap { min-width: 100%; }
+}
+
+/* ===== KANAL SEKME SİSTEMİ ===== */
+.vtv-ch-tabs-wrap {
+  margin: 0;
+  background: var(--bg1);
+  border-top: 1px solid var(--bd);
+}
+.vtv-ch-tabs-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--bd);
+  padding: 0 20px;
+}
+.vtv-ch-tab {
+  padding: 13px 20px;
+  border: none;
+  background: none;
+  color: var(--t2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.vtv-ch-tab:hover { color: var(--t1); background: rgba(255,255,255,.04); }
+.vtv-ch-tab.on { color: var(--t1); border-bottom-color: var(--acc); }
+.vtv-ch-tab-content { padding: 20px; min-height: 120px; }
+.vtv-ch-tab-loading { color: var(--t3); font-size: 13px; padding: 24px 0; text-align: center; }
+.vtv-ch-tab-empty { color: var(--t3); font-size: 13px; padding: 24px 0; }
+.vtv-ch-video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.vtv-ch-video-grid .vtv-vcard { width: 100%; flex-shrink: unset; }
+
+/* ===== PLAYLIST GRID ===== */
+.vtv-pl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+.vtv-pl-card {
+  background: var(--bg2);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--bd);
+  transition: transform .2s, border-color .2s;
+}
+.vtv-pl-card:hover { transform: translateY(-3px); border-color: var(--acc); }
+.vtv-pl-thumb {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: var(--bg3);
+  overflow: hidden;
+}
+.vtv-pl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vtv-pl-thumb-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+.vtv-pl-count {
+  position: absolute; bottom: 0; right: 0;
+  background: rgba(0,0,0,.75); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 4px 0 0 0;
+}
+.vtv-pl-info { padding: 8px 10px 10px; }
+.vtv-pl-name { font-size: 12.5px; font-weight: 600; color: var(--t1); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ===== DİZİ SEZON ===== */
+.vtv-sezon-wrap { margin-bottom: 24px; }
+.vtv-sezon-hdr {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--bd);
+}
+.vtv-sezon-badge {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: .5px; color: var(--t1);
+}
+.vtv-sezon-cnt { font-size: 11px; color: var(--t3); }
+
+/* ===== PLAYLIST DETAY ===== */
+.vtv-pl-detail {}
+.vtv-pl-back-btn {
+  background: rgba(255,255,255,.08); border: 1px solid var(--bd);
+  color: var(--t2); padding: 6px 14px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  margin-bottom: 14px; font-family: inherit; transition: all .18s;
+}
+.vtv-pl-back-btn:hover { background: rgba(255,255,255,.14); color: var(--t1); }
+.vtv-pl-detail-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.vtv-pl-detail-name { font-size: 15px; font-weight: 700; color: var(--t1); }
+.vtv-pl-detail-cnt { font-size: 11px; color: var(--t3); }
+.vtv-pl-sezon { font-size: 12px; color: var(--acc2); font-weight: 600; margin-bottom: 12px; }
+.vtv-pl-video-list { display: flex; flex-direction: column; gap: 6px; }
+.vtv-pl-vitem {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px; border-radius: 7px;
+  cursor: pointer; transition: background .16s;
+  border: 1px solid transparent;
+}
+.vtv-pl-vitem:hover { background: var(--bg3); border-color: var(--bd); }
+.vtv-pl-vnum { font-size: 11px; color: var(--t3); min-width: 22px; padding-top: 3px; font-weight: 700; text-align: right; }
+.vtv-pl-vthumb {
+  position: relative; width: 96px; min-width: 96px;
+  aspect-ratio: 16/9; border-radius: 5px; overflow: hidden; background: #000;
+}
+.vtv-pl-vthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vtv-pl-vinfo { flex: 1; min-width: 0; }
+.vtv-pl-vtitle { font-size: 13px; font-weight: 600; color: var(--t1); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vtv-pl-vbolum { font-size: 11px; font-weight: 700; color: var(--acc2); margin-top: 3px; }
+.vtv-pl-vmeta { font-size: 11px; color: var(--t3); margin-top: 3px; }
+
+/* ===== VİDEO AÇIKLAMA ===== */
+.vtv-pp-desc-wrap { margin-top: 4px; }
+.vtv-pp-desc-loading { color: var(--t3); font-size: 12px; padding: 10px 20px; }
+.vtv-pp-desc { padding: 14px 20px 16px; background: var(--bg2); border-top: 1px solid var(--bd); }
+.vtv-pp-desc-title { font-size: 11px; font-weight: 700; color: var(--t3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.vtv-pp-desc-text { font-size: 13px; color: var(--t2); line-height: 1.7; white-space: pre-line; }
+.vtv-desc-toggle { background: none; border: none; color: var(--acc2); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 0; font-family: inherit; }
+.vtv-desc-toggle:hover { color: var(--t1); }
+
+/* ===== SIDEBAR GÜNCELLEMELER ===== */
+/* Sınırsız yükseklik - scroll */
+.vtv-pp-side {
+  max-height: none !important;
+  height: 100%;
+  overflow-y: auto;
+  position: sticky;
+  top: 60px;
+  max-height: calc(100vh - 80px) !important;
+}
+.vtv-side-cnt { font-size: 11px; color: var(--t3); font-weight: 400; margin-left: 6px; }
+.vtv-side-empty { color: var(--t3); font-size: 12px; padding: 16px; }
+
+/* ===== KARMA BÖLÜMÜ KALDIR ===== */
+.vtv-pp-karma { display: none !important; }
+
+/* ===== KATEGORİ TABLARI (Kanallar sayfası) ===== */
+.vtv-kanallar-page { padding: 0 0 32px; }
+.vtv-kanallar-hdr { padding: 20px 24px 12px; }
+.vtv-kanallar-hdr h2 { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--t1); margin:0; letter-spacing:.5px; }
+
+.vtv-kat-tabs {
+  display: flex; gap: 4px; overflow-x: auto; padding: 0 20px 12px;
+  scrollbar-width: thin; scrollbar-color: var(--bg4) transparent; flex-wrap: nowrap;
+}
+.vtv-kat-tabs::-webkit-scrollbar { height: 3px; }
+.vtv-kat-tab {
+  flex-shrink: 0; padding: 7px 16px; border-radius: 20px;
+  background: var(--bg3); border: 1px solid var(--bd);
+  color: var(--t2); font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .18s;
+  display: flex; align-items: center; gap: 5px;
+}
+.vtv-kat-tab:hover { background: var(--bg4); color: var(--t1); }
+.vtv-kat-tab.on { background: var(--acc); border-color: var(--acc); color: #fff; }
+.vtv-kat-cnt { font-size: 11px; opacity: .75; background: rgba(0,0,0,.2); padding: 1px 6px; border-radius: 8px; }
+.vtv-kat-panel { display: none; padding: 0 20px; }
+.vtv-kat-panel.on { display: block; }
+
+/* ===== KANAL GRID (Logo + isim) ===== */
+.vtv-kanal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+.vtv-kanal-kart {
+  background: var(--bg2); border-radius: 10px; overflow: hidden;
+  cursor: pointer; border: 1px solid var(--bd);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+  display: flex; flex-direction: column;
+}
+.vtv-kanal-kart:hover { transform: translateY(-3px); border-color: var(--acc2); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.vtv-kanal-kart-logo {
+  width: 100%; aspect-ratio: 1; background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.vtv-kanal-kart-logo img { width: 100%; height: 100%; object-fit: cover; }
+.vtv-kanal-kart-init {
+  font-family:'Bebas Neue',sans-serif; font-size: 36px;
+  color: var(--t2); display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+.vtv-kanal-kart-info { padding: 10px 12px 12px; }
+.vtv-kanal-kart-isim { font-size: 13px; font-weight: 700; color: var(--t1); line-height: 1.3; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vtv-kanal-kart-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--t3); flex-wrap: wrap; }
+.vtv-kanal-kart-plat { color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 800; }
+
+/* ===== KATEGORİ SAYFASI ===== */
+.vtv-kat-page { padding: 20px; }
+.vtv-kat-hero { display: flex; align-items: center; gap: 16px; padding: 20px 0 16px; border-bottom: 1px solid var(--bd); margin-bottom: 20px; border-radius: 8px; }
+.vtv-kat-title { font-family:'Bebas Neue',sans-serif; font-size: 32px; letter-spacing: .5px; }
+.vtv-kat-sub-title { font-family:'Bebas Neue',sans-serif; font-size: 18px; color: var(--t2); margin-bottom: 12px; letter-spacing: .3px; }
+
+/* ===== SHORTS ===== */
+.vtv-shorts-wrap { padding: 0 0 32px; }
+.vtv-shorts-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 20px 24px 16px;
+  font-family:'Bebas Neue',sans-serif; font-size: 24px; color: var(--t1); letter-spacing: .5px;
+}
+.vtv-shorts-icon { font-size: 28px; }
+.vtv-shorts-feed {
+  display: flex; flex-direction: column; align-items: center; gap: 32px;
+  padding: 0 20px;
+}
+.vtv-short-item {
+  width: 100%; max-width: 400px;
+  background: var(--bg2); border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--bd);
+}
+.vtv-short-frame {
+  position: relative;
+  aspect-ratio: 9/16;
+  background: #000;
+}
+.vtv-short-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+.vtv-short-info { padding: 12px 16px 14px; }
+.vtv-short-title { font-size: 14px; font-weight: 700; color: var(--t1); margin-bottom: 4px; }
+.vtv-short-meta { font-size: 12px; color: var(--t3); margin-bottom: 10px; }
+
+/* ===== CANLI TV ===== */
+.vtv-canli-wrap { padding: 0 0 32px; }
+.vtv-canli-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 20px 24px 16px;
+  font-family:'Bebas Neue',sans-serif; font-size: 22px; color: var(--t1);
+}
+.vtv-canli-live {
+  background: #FF0000; color: #fff; font-size: 11px; font-weight: 800;
+  padding: 3px 10px; border-radius: 12px; animation: vtv-blink 1.5s infinite;
+  font-family: inherit;
+}
+@keyframes vtv-blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.vtv-canli-player-wrap { display: grid; grid-template-columns: 1fr auto; gap: 0; }
+.vtv-canli-frame { position: relative; aspect-ratio: 16/9; background: #000; }
+.vtv-canli-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+.vtv-canli-info { padding: 14px 20px; background: var(--bg2); border-bottom: 1px solid var(--bd); }
+.vtv-canli-isim { font-size: 16px; font-weight: 700; color: var(--t1); }
+.vtv-canli-list {
+  display: flex; overflow-x: auto; gap: 8px; padding: 16px 20px;
+  scrollbar-width: thin; background: var(--bg2); border-top: 1px solid var(--bd);
+}
+.vtv-canli-item {
+  flex-shrink: 0; width: 120px; padding: 10px; border-radius: 8px;
+  cursor: pointer; background: var(--bg3); border: 1px solid transparent;
+  transition: all .18s; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.vtv-canli-item:hover, .vtv-canli-item-on { border-color: var(--acc); background: var(--bg4); }
+.vtv-canli-logo { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; background: var(--bg0); display: flex; align-items: center; justify-content: center; }
+.vtv-canli-logo img { width: 100%; height: 100%; object-fit: contain; }
+.vtv-canli-logo span { font-family:'Bebas Neue',sans-serif; font-size: 18px; color: var(--t2); }
+.vtv-canli-item-info { text-align: center; }
+.vtv-canli-item-isim { font-size: 11px; font-weight: 600; color: var(--t1); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vtv-canli-badge { font-size: 10px; color: #FF0000; font-weight: 800; margin-top: 2px; }
+
+/* ===== SİDEBAR LOGO ===== */
+.vtv-sb-logo { width: 22px; height: 22px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: var(--bg3); }
+.vtv-sb-logo img { width: 100%; height: 100%; object-fit: cover; }
+.vtv-sb-init { width: 22px; height: 22px; border-radius: 4px; background: var(--bg4); color: var(--t2); font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* Admin - Canli TV tip desteği */
+@media (max-width: 900px) {
+  .vtv-kanallar-hdr h2 { font-size: 20px; }
+  .vtv-kanal-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .vtv-short-item { max-width: 100%; }
+  .vtv-canli-player-wrap { grid-template-columns: 1fr; }
+}
+
+/* Canlı nav butonu */
+.vtv-nav-live { color: #FF4444 !important; animation: vtv-live-pulse 2s infinite; }
+@keyframes vtv-live-pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+/* ================================================
+   AHENK HABER TEMA ENTEGRASYONU
+   Tema CSS değişkenlerini önceliklendiriyor
+   ================================================ */
+
+/* Tema ile uyumlu köşe yarıçapı */
+.vtv-app {
+    border-radius: 12px;
+    font-family: var(--font, 'Segoe UI', Tahoma, Arial, sans-serif) !important;
+}
+
+/* Tema renk değişkenlerini kullan */
+.vtv-app { --acc: var(--renk-ana, #CC0000); }
+
+/* Ahenk tema başlık çubuğuna uyum */
+.vtv-topbar {
+    background: linear-gradient(to right, rgba(0,0,0,.97), rgba(0,0,0,.92)) !important;
+}
+
+/* Sidebar scroll bar */
+.vtv-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.15) !important;
+}
+
+/* Mobil uyum */
+@media (max-width: 768px) {
+    .vtv-app { border-radius: 0; min-height: 500px; }
+    .vtv-topbar { flex-wrap: wrap; gap: 8px !important; padding: 10px 12px !important; }
+    .vtv-search-wrap { order: 3; min-width: 100% !important; }
+    .vtv-topbar-right { display: none; }
+    .vtv-sidebar { width: 0 !important; min-width: 0 !important; overflow: hidden; }
+    .vtv-card-grid { grid-template-columns: repeat(2,1fr) !important; }
+}
+
+/* Tema admin bar ile uyum */
+body.admin-bar .vtv-app .vtv-topbar { position: sticky; top: 32px !important; }
+@media (max-width: 782px) {
+    body.admin-bar .vtv-app .vtv-topbar { top: 46px !important; }
+}

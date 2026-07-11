@@ -1,0 +1,83 @@
+.loading-area {
+    @apply !size-full !fixed !left-0 !top-0 !z-99999 !overflow-hidden;
+}
+.loading-area .loading-box {
+    @apply !size-full !bg-white !absolute !left-0 !top-0 !opacity-100 !z-9999;
+}
+.loading-area .loading-pic {
+    @apply !w-full !absolute !top-1/2 !left-1/2 !z-9999 !text-center !-translate-1/2;
+}
+.loader {
+    @apply !absolute !m-auto !inset-0 !size-[87.5px];
+}
+.loader {
+	animation: rotate5123 2.4s linear infinite !important;
+}
+.loader .white {
+    @apply inset-0 !bg-white !opacity-0;
+}
+.loader .white {
+    animation: flash 2.4s linear infinite;
+}
+.loader .dot {
+    position: absolute;
+    margin: auto;
+    width: 2.4em;
+    height: 2.4em;
+    border-radius: 100%;
+    transition: all 1s ease;
+}
+.loader .dot:nth-child(2) {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: #FF4444;
+    animation: dotsY 2.4s linear infinite;
+}
+.loader .dot:nth-child(3) {
+    left: 0;
+    right: 0;
+    top: 0;
+    background: #FFBB33;
+    animation: dotsX 2.4s linear infinite;
+}
+.loader .dot:nth-child(4) {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: #99CC00;
+    animation: dotsY 2.4s linear infinite;
+}	
+.loader .dot:nth-child(5) {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #33B5E5;
+    animation: dotsX 2.4s linear infinite;
+}
+.cursor {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
+    margin-top: -20px;
+    border-radius: 50%;
+    border: 2px solid #443935;
+    transition: 0.3s;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1000;
+}
+.cursor2 {
+    position: fixed;
+    width: 4px;
+    height: 4px;
+    margin-left: -20px;
+    margin-top: -20px;
+    border-radius: 50%;
+    background-color: #066168;
+    transform: translate(-50%, -50%);
+    transition: 0.1s;
+    pointer-events: none;
+    z-index: 1000;
+}

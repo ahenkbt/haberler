@@ -1,0 +1,54 @@
+.site-button {
+    @apply outline-none text-black font-medium py-3.75 px-7.5 relative overflow-hidden cursor-pointer inline-flex bg-secondary border-0 text-lg duration-500 whitespace-nowrap  rounded-full;
+}
+.site-button.butn-bg-shape:after {
+    @apply content-[''] bg-white h-40 opacity-0 absolute -top-12.5 rotate-[35deg] w-10;
+}
+.site-button.butn-bg-shape:after {
+	transition: all 3000ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+.site-button.butn-bg-shape:after {
+    @apply -left-full;
+}
+.site-button:hover, .site-button:active {
+    @apply -translate-y-0.75 text-white shadow-[0_10px_20px_0_rgba(0,0,0,0.3)]; 
+}
+.site-button.butn-bg-shape:hover:after {
+    @apply left-[200%] opacity-60;
+}
+.site-button.outline {
+    @apply bg-transparent text-primary rounded-full border-2 border-secondary py-2 px-6.25 text-sm;
+}
+.site-button.outline:after {
+    @apply content-[''] bg-secondary h-40 opacity-0 absolute -top-12.5 rotate-[35deg] duration-[900ms] w-10;
+}
+.site-button.outline:after {
+    @apply -left-full;
+}
+.site-button.outline:hover {
+	@apply text-citrusyellow border-white;
+}
+.site-button.outline:hover::after {
+    @apply left-[200%] opacity-60;
+}
+.site-button:hover, .site-button:active {
+    @apply -translate-y-0.75 text-white shadow-[0_10px_20px_0_rgba(0,0,0,0.3)];
+}
+button.scroltop {
+    @apply size-10 bg-[#1d1b18] border-none fixed right-3.75 bottom-3.75 uppercase m-0 p-0 cursor-pointer text-center z-999 !text-white;
+}
+button.scroltop span {
+    @apply block text-2xl;
+}
+.site-button.btn-white {
+    @apply text-primary bg-white;
+}
+.site-button.btn-white.butn-bg-shape:after {
+    @apply content-[''] bg-secondary h-40 opacity-0 absolute -top-12.5 rotate-[35deg] w-10;
+}
+.site-button.btn-white.butn-bg-shape:after {
+	transition: all 3000ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+.site-button.btn-white.butn-bg-shape:hover:after {
+    @apply opacity-60;
+}

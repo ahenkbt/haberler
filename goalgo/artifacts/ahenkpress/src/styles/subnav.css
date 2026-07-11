@@ -1,0 +1,236 @@
+/* Shared module sub-navigation — transparent glass (Turizm/Seyahat referans) */
+.module-subnav,
+.otomotiv-subnav,
+.turizm-subnav {
+  position: relative;
+  z-index: 3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .module-subnav,
+  .otomotiv-subnav,
+  .turizm-subnav {
+    background: rgba(255, 255, 255, 0.32);
+  }
+}
+
+.module-subnav--sticky,
+.otomotiv-subnav--sticky,
+.turizm-subnav--sticky {
+  position: sticky;
+  top: var(--yekpare-header-offset, 128px);
+  z-index: 35;
+}
+
+/* Hero içi cam şerit — sticky değil; açık hero zemininde okunaklı koyu metin */
+.module-subnav--hero-glass,
+.turizm-subnav--hero-glass,
+.otomotiv-subnav--hero-glass {
+  position: relative;
+  top: auto;
+  z-index: 4;
+  flex-shrink: 0;
+  border-bottom-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .module-subnav--hero-glass,
+  .turizm-subnav--hero-glass,
+  .otomotiv-subnav--hero-glass {
+    background: rgba(255, 255, 255, 0.38);
+    backdrop-filter: blur(12px);
+  }
+}
+
+.module-subnav--hero-glass.module-subnav--sticky,
+.turizm-subnav--hero-glass.turizm-subnav--sticky,
+.otomotiv-subnav--hero-glass.otomotiv-subnav--sticky {
+  position: relative;
+  top: auto;
+}
+
+.module-subnav--hero-glass .module-subnav__item:not(.module-subnav__item--active),
+.turizm-subnav--hero-glass .turizm-subnav__item:not(.turizm-subnav__item--active),
+.otomotiv-subnav--hero-glass .otomotiv-subnav__item:not(.otomotiv-subnav__item--active) {
+  color: #475569;
+}
+
+.sade-public-hero-surface--with-subnav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sade-public-hero-surface--with-subnav > .magaza-hero__body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+}
+
+.module-subnav__inner,
+.otomotiv-subnav__inner,
+.turizm-subnav__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin: 0 auto;
+  padding: 0.7rem var(--yekpare-content-padding-x, 1rem);
+}
+
+.module-subnav__item,
+.otomotiv-subnav__item,
+.turizm-subnav__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 0 0 auto;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  color: #697488;
+  border: 1px solid transparent;
+  background: transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.module-subnav__icon,
+.otomotiv-subnav__icon,
+.turizm-subnav__icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.module-subnav__item:hover,
+.otomotiv-subnav__item:hover,
+.turizm-subnav__item:hover {
+  color: #1e3a5f;
+  background: rgba(238, 244, 255, 0.72);
+  border-color: rgba(199, 217, 245, 0.85);
+}
+
+.module-subnav__item--active,
+.otomotiv-subnav__item--active,
+.turizm-subnav__item--active {
+  background: #1e3a5f;
+  color: #fff;
+  border-color: #1e3a5f;
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.28);
+}
+
+.module-subnav__item--active .module-subnav__icon,
+.module-subnav__item--active .otomotiv-subnav__icon,
+.module-subnav__item--active .turizm-subnav__icon,
+.otomotiv-subnav__item--active .otomotiv-subnav__icon,
+.turizm-subnav__item--active .turizm-subnav__icon {
+  opacity: 1;
+  color: #fff;
+}
+
+.module-subnav--panel,
+.otomotiv-subnav--panel,
+.turizm-subnav--panel {
+  border-bottom: none;
+  border-radius: 0 0 12px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.module-subnav--panel .module-subnav__inner,
+.module-subnav--panel .otomotiv-subnav__inner,
+.module-subnav--panel .turizm-subnav__inner,
+.otomotiv-subnav--panel .otomotiv-subnav__inner,
+.turizm-subnav--panel .turizm-subnav__inner {
+  padding: 0.85rem 1rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.module-subnav--panel .module-subnav__inner::-webkit-scrollbar,
+.module-subnav--panel .otomotiv-subnav__inner::-webkit-scrollbar,
+.module-subnav--panel .turizm-subnav__inner::-webkit-scrollbar,
+.otomotiv-subnav--panel .otomotiv-subnav__inner::-webkit-scrollbar,
+.turizm-subnav--panel .turizm-subnav__inner::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .module-subnav__inner,
+  .otomotiv-subnav__inner,
+  .turizm-subnav__inner {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .module-subnav__inner::-webkit-scrollbar,
+  .otomotiv-subnav__inner::-webkit-scrollbar,
+  .turizm-subnav__inner::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .module-subnav__inner,
+  .turizm-subnav__inner {
+    padding: 0.65rem 0.75rem;
+    gap: 0.4rem;
+  }
+
+  .module-subnav__item,
+  .turizm-subnav__item {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8125rem;
+  }
+
+  .module-subnav__icon,
+  .turizm-subnav__icon {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+html[data-yekpare-theme="night"] .module-subnav__item,
+html[data-yekpare-theme="night"] .otomotiv-subnav__item,
+html[data-yekpare-theme="night"] .turizm-subnav__item,
+html[data-home-theme="night"] .module-subnav__item,
+html[data-home-theme="night"] .otomotiv-subnav__item,
+html[data-home-theme="night"] .turizm-subnav__item {
+  color: #e2e8f0;
+}
+
+html[data-yekpare-theme="night"] .module-subnav__item:hover,
+html[data-yekpare-theme="night"] .otomotiv-subnav__item:hover,
+html[data-yekpare-theme="night"] .turizm-subnav__item:hover,
+html[data-home-theme="night"] .module-subnav__item:hover,
+html[data-home-theme="night"] .otomotiv-subnav__item:hover,
+html[data-home-theme="night"] .turizm-subnav__item:hover {
+  color: #f1f5f9;
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+html[data-yekpare-theme="night"] .module-subnav,
+html[data-yekpare-theme="night"] .otomotiv-subnav,
+html[data-yekpare-theme="night"] .turizm-subnav,
+html[data-home-theme="night"] .module-subnav,
+html[data-home-theme="night"] .otomotiv-subnav,
+html[data-home-theme="night"] .turizm-subnav {
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+}

@@ -1,0 +1,63 @@
+Options -Indexes
+Options +FollowSymLinks
+
+RewriteEngine On
+
+# ─── HTTPS Yönlendirme (SSL varsa yorum kaldırın) ─────────────────────────
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ─── www → non-www (varsa yorum kaldırın) ─────────────────────────────────
+# RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+# RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+# ─── 1. Gerçek dosya/klasörlere doğrudan erişim ───────────────────────────
+# Bu kural HER ZAMAN en başta olmalı: install.php, admin/login.php,
+# admin/index.php, index.php, config.php gibi gerçek dosyaları
+# mod_rewrite'ın işlemesini engeller.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ─── 2. Özel rotalar ──────────────────────────────────────────────────────
+
+# Sepet API: /api/cart/add, /api/cart/remove vb.
+RewriteRule ^api/cart/(.*)$ /api/cart.php [QSA,L]
+
+# Genel API: /api/?action=... → /api/index.php
+RewriteRule ^api/?$ /api/index.php [QSA,L]
+
+# Ürün detay sayfası: /urun/urun-slug
+RewriteRule ^urun/([a-z0-9\-_%]+)/?$ /index.php?url=urun&slug=$1 [QSA,L]
+
+# Mağaza: /magaza
+RewriteRule ^magaza/?$ /index.php?url=magaza [QSA,L]
+
+# ─── 3. Catch-all: Geri kalan her şeyi index.php'ye yönlendir ────────────
+RewriteRule ^(.*)$ /index.php?url=$1 [QSA,L]
+
+# ─── PHP Ayarları ─────────────────────────────────────────────────────────
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 32M
+    php_value post_max_size 35M
+    php_value max_execution_time 300
+    php_value memory_limit 256M
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 32M
+    php_value post_max_size 35M
+    php_value max_execution_time 300
+    php_value memory_limit 256M
+</IfModule>
+
+# ─── Güvenlik ─────────────────────────────────────────────────────────────
+<FilesMatch "\.(env|log|sql|bak|backup)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# config.php'ye dışarıdan erişimi engelle
+<FilesMatch "^config\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

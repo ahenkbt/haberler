@@ -1,0 +1,102 @@
+# Yekpare — Render Blueprint (API + Call Center + PostgreSQL)
+# Kurulum: Render Dashboard → New → Blueprint → bu repo + render.yaml
+# Monorepo: API docker context = goalgo/, call center = goalgo/ai-call-center/
+#
+# Netlify (yekpare.net) /api/* vekili bu API servisinin public URL'sine gider.
+# Build env: RENDER_API_ORIGIN veya API_ORIGIN (GitHub Actions netlify-production.yml)
+
+databases:
+  - name: goalgo-main
+    plan: basic-256mb
+    databaseName: goalgo
+    user: goalgo
+
+  - name: goalgo-yektube
+    plan: basic-256mb
+    databaseName: yektube
+    user: yektube
+
+  - name: goalgo-news
+    plan: basic-256mb
+    databaseName: goalgo_news
+    user: goalgo_news
+
+  - name: goalgo-ai-call
+    plan: basic-256mb
+    databaseName: ai_call
+    user: ai_call
+
+services:
+  # ── Servis A: Goalgo API ──
+  - type: web
+    name: goalgo-api
+    runtime: docker
+    rootDir: goalgo
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /api/healthz
+    disk:
+      name: goalgo-media
+      mountPath: /app/data/media-uploads
+      sizeGB: 10
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: goalgo-main
+          property: connectionString
+      - key: YEKTUBE_DATABASE_URL
+        fromDatabase:
+          name: goalgo-yektube
+          property: connectionString
+      - key: YEKTUBE_DB_READ
+        value: yektube
+      - key: YEKTUBE_DB_WRITE
+        value: yektube
+      - key: NEWS_DATABASE_URL
+        fromDatabase:
+          name: goalgo-news
+          property: connectionString
+      - key: NEWS_DB_READ
+        value: main
+      - key: NEWS_DB_WRITE
+        value: main
+      - key: USE_NATIVE_AI_CALL
+        value: "true"
+      - key: AGENTLABS_URL
+        fromService:
+          name: goalgo-call
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # ── Servis B: Yekpare AI Call (AgentLabs) ──
+  - type: web
+    name: goalgo-call
+    runtime: docker
+    rootDir: goalgo/ai-call-center
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: goalgo-ai-call
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: VITE_DEFAULT_LOCALE
+        value: tr
+      - key: VITE_APP_NAME
+        value: Yekpare AI Call
+      - key: APP_URL
+        fromService:
+          name: goalgo-call
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL

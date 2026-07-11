@@ -1,0 +1,52 @@
+@media only screen and (min-width: 992px) and (max-width: 1200px){
+    .header-area.header-area-4 .navigation .navbar .navbar-search-toggler ul li a {
+        margin-right: 15px;
+    }
+    .header-area.header-area-4 .navigation .navbar .navbar-nav .nav-item {
+        margin-right: 0px;
+        margin-left: 12px;
+    }
+    .blog-4-area .single-blog .blog-content ul li{
+        margin-left: 10px;
+    }
+    .faq-area .faq-clients-item,
+    .faq-area .faq-item{
+        margin-left: 0;
+    }
+}
+@media only screen and (min-width: 768px) and (max-width: 991px){
+    .faq-area .faq-clients-item,
+    .faq-area .faq-item{
+        margin-left: 0;
+    }
+    .video-area .video-thumb{
+        margin-left: 0;
+    }
+}
+
+@media only screen and (max-width: 991px){
+    .navigation .navbar .navbar-nav .nav-item .sub-menu {
+        text-align: right;
+    }
+}
+@media (max-width: 767px){
+    .about-us-area .about-content p{
+        padding-left: 0;
+    }
+    .faq-area .faq-clients-item,
+    .faq-area .faq-item{
+        margin-left: 0;
+    }
+    .video-area .video-thumb{
+        margin-left: 0;
+    }
+    .faq-area .faq-item .faq-accordion .accordion .card .card-header a.collapsed {
+        padding: 15px 20px 15px 0px;
+    }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px){
+    .faq-area .faq-item {
+        margin-left: 0;
+    }
+}

@@ -1,0 +1,15 @@
+# Laravel (Businesso / installable kaynağı)
+laravel-businesso/vendor/
+laravel-businesso/node_modules/
+laravel-businesso/.env
+laravel-businesso/.env.*
+!laravel-businesso/.env.example
+laravel-businesso/storage/logs/*.log
+laravel-businesso/storage/framework/cache/data/**
+laravel-businesso/storage/framework/sessions/**
+laravel-businesso/storage/framework/views/**
+laravel-businesso/bootstrap/cache/*.php
+
+# Genel
+**/.DS_Store
+Thumbs.db

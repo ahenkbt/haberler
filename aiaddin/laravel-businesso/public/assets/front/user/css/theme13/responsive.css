@@ -1,0 +1,43 @@
+/* Large Device */
+@media only screen and (min-width: 992px) and (max-width : 1199px) {
+    h3 {
+        font-size: 20px;
+    }
+
+    .section_title h2 {
+        font-size: 36px;
+    }
+}
+
+/* Small Devices, Tablets */
+@media only screen and (max-width : 991px) {
+    h3 {
+        font-size: 24px;
+    }
+
+    .olima_footer .post_img img {
+        max-width: 100px;
+    }
+
+    .section_title h2 {
+        font-size: 32px;
+    }
+}
+
+/* Small Devices, Tablets */
+@media only screen and (max-width : 767px) {
+    h2 {
+        font-size: 30px;
+    }
+}
+
+/* Mobile Devices, Tablets */
+@media only screen and (max-width: 359px) {
+    h2 {
+        font-size: 24px;
+    }
+
+    h3 {
+        font-size: 20px;
+    }
+}

@@ -1,0 +1,219 @@
+{
+  "name": "AnkaraHaber",
+  "slug": "ankara-haber",
+  "version": "2.0.0",
+  "description": "Profesyonel haber portalı teması. Swiper manşet slider, son dakika ticker, köşe yazarları, finans bandı, ikon bant, Video TV, son haberler, sitene ekle, AI destekli içerik akışı, tam responsive tasarım.",
+  "author": "AhenkPress",
+  "screenshot": "assets/images/screenshot.png",
+  "site_types": [
+    "news",
+    "store",
+    "blog",
+    "corporate"
+  ],
+  "features": [
+    "breaking-news",
+    "swiper-slider",
+    "columnist",
+    "dark-mode",
+    "responsive",
+    "search",
+    "video-tv",
+    "ai-content",
+    "shop",
+    "cart",
+    "checkout",
+    "stripe"
+  ],
+  "menus": {
+    "main-nav": "Ana Navigasyon",
+    "footer-menu": "Footer Menüsü",
+    "top-bar": "Üst Bar"
+  },
+  "widget_areas": {
+    "sidebar": "Sağ Kenar Çubuğu",
+    "footer-1": "Footer Bölge 1",
+    "footer-2": "Footer Bölge 2",
+    "footer-3": "Footer Bölge 3"
+  },
+  "routes": {
+    "video-tv": "templates/video-tv.php",
+    "son-haberler": "templates/son-haberler.php",
+    "sitene-ekle": "templates/sitene-ekle.php",
+    "tum-haberler": "templates/tum-haberler.php",
+    "yazarlar": "templates/yazarlar.php",
+    "magaza": "templates/shop.php",
+    "sepet": "templates/cart.php",
+    "odeme": "templates/checkout.php",
+    "odeme/stripe": "templates/stripe-payment.php",
+    "odeme/tamamlandi": "templates/order-complete.php",
+    "urun": "templates/product.php"
+  },
+  "settings": {
+    "logo_text1": {
+      "label": "Logo Metin 1",
+      "type": "text",
+      "default": "ANKARA"
+    },
+    "logo_text2": {
+      "label": "Logo Metin 2",
+      "type": "text",
+      "default": "HABER"
+    },
+    "logo_img": {
+      "label": "Logo Görseli (URL)",
+      "type": "text",
+      "default": ""
+    },
+    "theme_renk_ana": {
+      "label": "Ana Renk",
+      "type": "color",
+      "default": "#CC0000"
+    },
+    "theme_renk_navbar": {
+      "label": "Navbar Rengi",
+      "type": "color",
+      "default": "#1a1a1a"
+    },
+    "theme_renk_ustbar": {
+      "label": "Üst Bar Rengi",
+      "type": "color",
+      "default": "#CC0000"
+    },
+    "theme_renk_sd": {
+      "label": "Son Dakika Bant Rengi",
+      "type": "color",
+      "default": "#CC0000"
+    },
+    "theme_renk_footer": {
+      "label": "Footer Rengi",
+      "type": "color",
+      "default": "#1a1a1a"
+    },
+    "theme_manset_count": {
+      "label": "Manşet Sayısı",
+      "type": "number",
+      "default": "5"
+    },
+    "theme_surmanset_count": {
+      "label": "Sürmanşet Sayısı",
+      "type": "number",
+      "default": "4"
+    },
+    "theme_manset_height": {
+      "label": "Manşet Yüksekliği (px)",
+      "type": "number",
+      "default": "460"
+    },
+    "theme_ana_kategoriler": {
+      "label": "Ana Kategoriler (virgülle slug)",
+      "type": "text",
+      "default": "gundem,ekonomi,dunya,spor"
+    },
+    "theme_reklam_ustbant": {
+      "label": "Üst Bant Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_reklam_icerik": {
+      "label": "İçerik Arası Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_reklam_footer": {
+      "label": "Footer Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_reklam_skyscraper_sol": {
+      "label": "Sol Skyscraper Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_reklam_skyscraper_sag": {
+      "label": "Sağ Skyscraper Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_reklam_haber_ust": {
+      "label": "Haber İçi Üst Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_reklam_haber_alt": {
+      "label": "Haber İçi Alt Reklam",
+      "type": "textarea",
+      "default": ""
+    },
+    "theme_ikon_bant": {
+      "label": "İkon Bant (1=açık)",
+      "type": "number",
+      "default": "1"
+    },
+    "theme_finans_bant": {
+      "label": "Finans Bandı (1=açık)",
+      "type": "number",
+      "default": "0"
+    },
+    "footer_aciklama": {
+      "label": "Footer Açıklaması",
+      "type": "textarea",
+      "default": ""
+    },
+    "iletisim_adres": {
+      "label": "Adres",
+      "type": "text",
+      "default": ""
+    },
+    "iletisim_tel": {
+      "label": "Telefon",
+      "type": "text",
+      "default": ""
+    },
+    "iletisim_email": {
+      "label": "E-posta",
+      "type": "text",
+      "default": ""
+    },
+    "sosyal_facebook": {
+      "label": "Facebook URL",
+      "type": "text",
+      "default": ""
+    },
+    "sosyal_twitter": {
+      "label": "Twitter/X URL",
+      "type": "text",
+      "default": ""
+    },
+    "sosyal_instagram": {
+      "label": "Instagram URL",
+      "type": "text",
+      "default": ""
+    },
+    "sosyal_youtube": {
+      "label": "YouTube URL",
+      "type": "text",
+      "default": ""
+    },
+    "sosyal_telegram": {
+      "label": "Telegram URL",
+      "type": "text",
+      "default": ""
+    },
+    "ga_code": {
+      "label": "Google Analytics Kodu",
+      "type": "text",
+      "default": ""
+    },
+    "head_code": {
+      "label": "<head> Ek Kod",
+      "type": "textarea",
+      "default": ""
+    },
+    "footer_code": {
+      "label": "Footer Ek Kod",
+      "type": "textarea",
+      "default": ""
+    }
+  }
+}

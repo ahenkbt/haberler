@@ -1,0 +1,131 @@
+/* ============================================================
+   AHENK HABER EKLENTİSİ - Admin CSS
+   ============================================================ */
+
+/* ── Genel Wrap ────────────────────────────────────────────── */
+.ahp-wrap { max-width: 1100px; }
+.ahp-wrap * { box-sizing: border-box; }
+
+/* ── Header ────────────────────────────────────────────────── */
+.ahp-header { background: #1a1a1a; color: #fff; padding: 20px 24px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+.ahp-logo-text { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; flex-shrink: 0; }
+.ahp-kirmizi { background: #CC0000; color: #fff; padding: 2px 8px; border-radius: 4px; margin-right: 2px; }
+.ahp-header h1 { color: #fff; font-size: 20px; margin: 0; padding: 0; border: none; }
+.ahp-aciklama { color: rgba(255,255,255,0.6); margin: 4px 0 0; font-size: 13px; }
+
+/* ── Bildirimler ────────────────────────────────────────────── */
+.ahp-notice { padding: 14px 18px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
+.ahp-notice--info    { background: #e3f2fd; border-left: 4px solid #1976D2; color: #0d47a1; }
+.ahp-notice--success { background: #e8f5e9; border-left: 4px solid #2E7D32; color: #1b5e20; }
+.ahp-notice--hata    { background: #ffebee; border-left: 4px solid #CC0000; color: #b71c1c; }
+
+/* ── Durum Grid ─────────────────────────────────────────────── */
+.ahp-durum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.ahp-durum-kart { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 14px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ahp-durum-kart--tamam    { border-color: #2E7D32; background: #f1f8f1; }
+.ahp-durum-kart--bekliyor { border-color: #e0e0e0; }
+.ahp-kart--tamam    { border-color: #2E7D32 !important; background: #f1f8f1 !important; }
+.ahp-kart--bekliyor { }
+.ahp-durum-kart strong { font-size: 13px; }
+.ahp-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #f5f5f5; color: #666; }
+
+/* ── Form ───────────────────────────────────────────────────── */
+.ahp-form { }
+.ahp-bolum { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px 24px; }
+.ahp-bolum h2 { font-size: 16px; font-weight: 700; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0; }
+
+/* ── Seçenek Kartları ───────────────────────────────────────── */
+.ahp-secenekler-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.ahp-secenek-kart { display: flex; gap: 10px; align-items: flex-start; border: 2px solid #e0e0e0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all .15s; background: #fafafa; }
+.ahp-secenek-kart:hover { border-color: #CC0000; background: #fff; }
+.ahp-secenek-kart input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; }
+.ahp-secenek-ic { display: flex; flex-direction: column; gap: 3px; }
+.ahp-s-ikon { font-size: 18px; }
+.ahp-secenek-ic strong { font-size: 13px; }
+.ahp-s-acik { font-size: 11px; color: #888; line-height: 1.4; }
+.ahp-secenek--tamam { border-color: #2E7D32; background: #f1f8f1; }
+.ahp-form-alt { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.ahp-not { font-size: 12px; color: #888; }
+
+/* ── Büyük Buton ────────────────────────────────────────────── */
+.ahp-btn-buyuk { padding: 10px 24px !important; font-size: 15px !important; height: auto !important; border-radius: 6px !important; }
+
+/* ── Hızlı Araçlar ──────────────────────────────────────────── */
+.ahp-hizli-araçlar { margin-top: 16px; }
+.ahp-arac-listesi { display: flex; gap: 10px; flex-wrap: wrap; }
+.ahp-arac-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 2px solid #e0e0e0; background: #fff; color: #333; text-decoration: none; transition: all .15s; }
+.ahp-arac-btn:hover { background: #f0f0f0; color: #333; }
+.ahp-arac-btn--kirmizi { background: #CC0000 !important; color: #fff !important; border-color: #CC0000 !important; }
+.ahp-arac-btn--kirmizi:hover { background: #A00000 !important; color: #fff !important; }
+.ahp-arac-btn--mavi { background: #1A4A8A !important; color: #fff !important; border-color: #1A4A8A !important; }
+.ahp-arac-btn--mavi:hover { background: #133875 !important; color: #fff !important; }
+.ahp-arac-btn--mor { background: #7B1FA2 !important; color: #fff !important; border-color: #7B1FA2 !important; }
+
+/* ── İki Sütun ──────────────────────────────────────────────── */
+.ahp-iki-sutun { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+/* ── Panel ───────────────────────────────────────────────────── */
+.ahp-panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; }
+.ahp-panel-baslik { background: #f9f9f9; border-bottom: 2px solid #e0e0e0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 14px; border-top: 3px solid #e0e0e0; }
+.ahp-panel-icerik { padding: 8px 0; max-height: 500px; overflow-y: auto; }
+.ahp-sayac { background: #e0e0e0; color: #555; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+.ahp-sayac--kirmizi { background: #ffebee; color: #CC0000; }
+.ahp-sayac--mor     { background: #f3e5f5; color: #7B1FA2; }
+.ahp-bos { padding: 20px; color: #aaa; text-align: center; font-size: 13px; }
+
+/* ── Haber Satırı ───────────────────────────────────────────── */
+.ahp-haber-satiri { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; transition: background .1s; }
+.ahp-haber-satiri:hover { background: #fafafa; }
+.ahp-haber-satiri:last-child { border-bottom: none; }
+.ahp-haber-satiri-sol { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.ahp-haber-satiri-sag { display: flex; gap: 4px; flex-shrink: 0; }
+.ahp-mini-resim { width: 48px; height: 36px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.ahp-haber-satiri-sol div { display: flex; flex-direction: column; min-width: 0; }
+.ahp-haber-satiri-sol strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ahp-tarih { font-size: 11px; color: #aaa; }
+.ahp-sd-badge { background: #CC0000; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
+.ahp-mini-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; font-size: 14px; background: #f5f5f5; color: #555; text-decoration: none; border: 1px solid #e0e0e0; transition: all .15s; }
+.ahp-mini-btn:hover { background: #e0e0e0; color: #333; }
+.ahp-mini-btn--kirmizi { background: #ffebee; color: #CC0000; border-color: #ffcdd2; }
+.ahp-mini-btn--kirmizi:hover { background: #CC0000; color: #fff; }
+
+/* ── Tablo Toggle ───────────────────────────────────────────── */
+.ahp-toggle-link { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #f5f5f5; color: #888; border: 1px solid #e0e0e0; text-decoration: none; transition: all .15s; }
+.ahp-toggle-link:hover { background: #1A4A8A; color: #fff; border-color: #1A4A8A; }
+.ahp-toggle-link--aktif    { background: #e3f2fd; color: #1A4A8A; border-color: #90CAF9; }
+.ahp-toggle-link--aktif-sd { background: #ffebee; color: #CC0000; border-color: #FFCDD2; }
+.ahp-mini-rozet { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+.ahp-mini-rozet--mavi    { background: #e3f2fd; color: #1A4A8A; }
+.ahp-mini-rozet--kirmizi { background: #ffebee; color: #CC0000; }
+
+/* ── Yazar Satırı ───────────────────────────────────────────── */
+.ahp-yazar-satiri { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #f0f0f0; }
+.ahp-yazar-satiri:last-child { border-bottom: none; }
+.ahp-yazar-foto { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #e0e0e0; }
+.ahp-yazar-bilgi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ahp-yazar-bilgi strong { font-size: 13px; }
+.ahp-yazar-unvan  { font-size: 11px; color: #CC0000; font-weight: 600; }
+.ahp-yazar-kose   { font-size: 11px; color: #7B1FA2; font-style: italic; }
+.ahp-yazar-sosyal { font-size: 11px; color: #1DA1F2; }
+.ahp-yazar-aksiyonlar { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.ahp-sira-rozet { background: #f5f5f5; color: #888; font-size: 11px; font-weight: 800; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #e0e0e0; }
+.ahp-ku-satiri { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid #f0f0f0; }
+.ahp-ku-satiri:last-child { border-bottom: none; }
+.ahp-ku-satiri--aktif { background: #f3e5f5; }
+.ahp-btn-ekle  { color: #7B1FA2 !important; border-color: #CE93D8 !important; }
+.ahp-btn-kaldir { color: #CC0000 !important; border-color: #FFCDD2 !important; }
+.ahp-tablo td { vertical-align: middle; }
+
+/* ── Toggle Button (Post Listesinde) ────────────────────────── */
+.ahp-toggle-btn { background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 18px; transition: all .2s; line-height: 1; }
+.ahp-toggle-btn:hover { background: #f0f0f0; transform: scale(1.2); }
+.ahp-toggle--aktif { filter: drop-shadow(0 0 3px rgba(204,0,0,0.4)); }
+
+/* ── Kısa Kod Widget ────────────────────────────────────────── */
+.ahp-kose-yazarlar-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+.ahp-kose-yazar-kart { text-align: center; }
+.ahp-kose-yazar-kart a { color: inherit; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ahp-kose-yazar-kart img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e0e0; }
+.ahp-kose-yazar-kart strong { font-size: 13px; }
+.ahp-unvan  { font-size: 11px; color: #888; }
+.ahp-kose-b { font-size: 11px; color: #7B1FA2; font-style: italic; }

@@ -1,0 +1,191 @@
+/** Editör iframe — Yektube Studio açık tema (HM embed) */
+[data-yektube-admin-embed="true"] {
+  background-color: #fff;
+  color: #18181b;
+}
+
+[data-yektube-admin-embed="true"] .bg-zinc-950,
+[data-yektube-admin-embed="true"] .bg-zinc-900,
+[data-yektube-admin-embed="true"] .bg-zinc-900\/80,
+[data-yektube-admin-embed="true"] .bg-zinc-900\/60,
+[data-yektube-admin-embed="true"] .bg-zinc-900\/50,
+[data-yektube-admin-embed="true"] .bg-zinc-950\/90 {
+  background-color: #fff !important;
+}
+
+[data-yektube-admin-embed="true"] .bg-zinc-800,
+[data-yektube-admin-embed="true"] .bg-zinc-800\/80,
+[data-yektube-admin-embed="true"] .hover\:bg-zinc-800:hover,
+[data-yektube-admin-embed="true"] .hover\:bg-zinc-800\/80:hover,
+[data-yektube-admin-embed="true"] .hover\:bg-zinc-900:hover,
+[data-yektube-admin-embed="true"] .hover\:bg-zinc-900\/80:hover {
+  background-color: #f4f4f5 !important;
+}
+
+[data-yektube-admin-embed="true"] .from-zinc-900,
+[data-yektube-admin-embed="true"] .to-zinc-950 {
+  --tw-gradient-from: #fff var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: #fafafa var(--tw-gradient-to-position) !important;
+}
+
+[data-yektube-admin-embed="true"] .text-white,
+[data-yektube-admin-embed="true"] .text-zinc-100,
+[data-yektube-admin-embed="true"] .text-zinc-200,
+[data-yektube-admin-embed="true"] .text-zinc-300,
+[data-yektube-admin-embed="true"] .hover\:text-white:hover {
+  color: #18181b !important;
+}
+
+[data-yektube-admin-embed="true"] .text-zinc-400,
+[data-yektube-admin-embed="true"] .text-zinc-500,
+[data-yektube-admin-embed="true"] .text-zinc-600 {
+  color: #71717a !important;
+}
+
+[data-yektube-admin-embed="true"] .border-zinc-800,
+[data-yektube-admin-embed="true"] .border-zinc-800\/80,
+[data-yektube-admin-embed="true"] .border-zinc-700,
+[data-yektube-admin-embed="true"] .border-zinc-600,
+[data-yektube-admin-embed="true"] .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e4e4e7 !important;
+}
+
+[data-yektube-admin-embed="true"] input,
+[data-yektube-admin-embed="true"] select,
+[data-yektube-admin-embed="true"] textarea {
+  background-color: #fff !important;
+  color: #18181b !important;
+  border-color: #d4d4d8 !important;
+}
+
+[data-yektube-admin-embed="true"] input::placeholder,
+[data-yektube-admin-embed="true"] textarea::placeholder {
+  color: #a1a1aa !important;
+}
+
+/* Admin düğmeleri — embed temada yazı her zaman okunur (yekpare .text-white override'ından muaf) */
+[data-yektube-admin-embed="true"] button.yt-admin-btn,
+[data-yektube-admin-embed="true"] button.yt-admin-btn .yt-admin-btn-label,
+[data-yektube-admin-embed="true"] button.yt-admin-btn svg {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-indent: 0 !important;
+  letter-spacing: normal !important;
+}
+
+[data-yektube-admin-embed="true"] button.yt-admin-btn--primary,
+[data-yektube-admin-embed="true"] button.yt-admin-btn--primary *,
+[data-yektube-admin-embed="true"] button.yt-admin-btn--primary .yt-admin-btn-label {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+[data-yektube-admin-embed="true"] button.yt-admin-btn--secondary,
+[data-yektube-admin-embed="true"] button.yt-admin-btn--secondary *,
+[data-yektube-admin-embed="true"] button.yt-admin-btn--secondary .yt-admin-btn-label {
+  background-color: #fff !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+  -webkit-text-fill-color: #18181b !important;
+  stroke: #18181b !important;
+}
+
+[data-yektube-admin-embed="true"] button.yt-admin-btn--secondary:hover {
+  background-color: #f4f4f5 !important;
+  border-color: #a1a1aa !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-btn--secondary,
+[data-yektube-admin-embed="true"] .yt-admin-btn--secondary .yt-admin-btn-label {
+  background-color: #fff !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+  -webkit-text-fill-color: #18181b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-btn--secondary:hover {
+  background-color: #f4f4f5 !important;
+  border-color: #a1a1aa !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-btn--ghost {
+  color: #52525b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-btn--ghost:hover {
+  background-color: #f4f4f5 !important;
+  color: #18181b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-tab:not(.yt-admin-tab--active) {
+  background-color: #fff !important;
+  border-color: #d4d4d8 !important;
+  color: #52525b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-tab:not(.yt-admin-tab--active):hover {
+  background-color: #f4f4f5 !important;
+  border-color: #a1a1aa !important;
+  color: #18181b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-filter:not(.yt-admin-filter--active) {
+  background-color: #f4f4f5 !important;
+  color: #52525b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-icon-btn {
+  color: #52525b !important;
+}
+
+[data-yektube-admin-embed="true"] .yt-admin-icon-btn:hover {
+  background-color: #f4f4f5 !important;
+  color: #18181b !important;
+}
+
+/* Tüm admin düğmeleri — yekpare tema override'larına karşı son söz */
+[data-yektube-admin][data-yektube-admin-embed="true"] button.yt-admin-btn,
+[data-yektube-admin][data-yektube-admin-embed="true"] button.yt-admin-btn *:not(svg) {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  max-width: none !important;
+  width: auto !important;
+  overflow: visible !important;
+  text-indent: 0 !important;
+  letter-spacing: normal !important;
+  clip: auto !important;
+  clip-path: none !important;
+}
+
+[data-yektube-admin][data-yektube-admin-embed="true"] button.yt-admin-btn svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+[data-yektube-admin-embed="true"] thead.bg-zinc-900 {
+  background-color: #fafafa !important;
+}
+
+[data-yektube-admin-embed="true"] tbody.bg-zinc-950 {
+  background-color: #fff !important;
+}
+
+[data-yektube-admin-embed="true"] .bg-zinc-950\/60 {
+  background-color: #f8fafc !important;
+}
+
+[data-yektube-admin-embed="true"] .border-zinc-800.bg-zinc-950\/60,
+[data-yektube-admin-embed="true"] .border-zinc-800.bg-zinc-900 {
+  border-color: #e4e4e7 !important;
+}

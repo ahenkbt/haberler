@@ -1,0 +1,10 @@
+# Yerel / alt-klasör deploy: kök `laravel-businesso` ise bu dosya kullanılır.
+# GitHub `ahenkbt/aiaddin` + Railway (repo kökü): üst dizindeki `../railway.toml` + `../Dockerfile` kullanın.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# İlk kurulumda veritabanı için bir kez: railway run php artisan migrate --force
+healthcheckPath = "/healthz"
+healthcheckTimeout = 900

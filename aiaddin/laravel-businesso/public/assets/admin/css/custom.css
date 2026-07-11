@@ -1,0 +1,907 @@
+/* Helper class starts */
+.rtl {
+    direction: rtl !important;
+}
+
+.ltr {
+    direction: ltr !important;
+}
+
+.min-w-250 {
+    min-width: 250px;
+}
+
+.max-w-130 {
+    max-width: 130px;
+}
+
+.fw-150 {
+    width: 150px;
+}
+
+/* Helper class ends */
+
+/* sider navbar css over write start */
+.sidebar.sidebar-style-2 .nav .nav-item .selected > a {
+    background: rgba(199, 199, 199, 0.2);
+}
+
+/* sider navbar css over write end */
+
+/* bootstrap image thumbnail customize start */
+.img-thumbnail {
+    max-width: 400px;
+    height: 100%;
+}
+
+/* bootstrap image thumbnail customize end */
+
+/* select2 CSS */
+.select2-container--default .select2-selection--single {
+    height: 45px;
+}
+
+.select2-container--default
+    .select2-selection--single
+    .select2-selection__rendered {
+    line-height: 42px;
+    padding-left: 20px;
+}
+
+.select2-container--default
+    .select2-selection--single
+    .select2-selection__arrow
+    b {
+    border-color: #fff transparent transparent transparent;
+    margin-top: 6px;
+}
+
+.select2-container {
+    width: 100% !important;
+}
+
+/* image table preview for dropzone edit form start */
+#imgtable .trdb {
+    display: inline-block;
+    position: relative;
+    margin-right: 15px;
+}
+
+#imgtable .trdb button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0px 5px;
+}
+
+#imgtable .trdb td {
+    padding: 0px !important;
+}
+
+.dropzone {
+    padding: 45px 40px 45px !important;
+}
+
+/* image table preview for dropzone edit form end */
+
+/* iconpicker input field start */
+.iconpicker-popover.popover
+    .popover-title
+    input[type="search"].iconpicker-search {
+    direction: ltr !important;
+}
+
+/* iconpicker input field end */
+
+/* request loader css start */
+.request-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: #0000007a;
+    z-index: 10000;
+    display: none;
+}
+
+.request-loader img {
+    position: fixed;
+    display: none;
+    width: 80px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.request-loader.show {
+    display: block;
+}
+
+.request-loader.show img {
+    display: block;
+}
+
+/* request loader css end */
+
+/* summernote css starts */
+.note-editor.note-frame .note-btn.note-image-btn,
+.note-editor.note-frame .note-btn.note-video-btn,
+.note-editor.note-frame .note-btn.note-link-btn {
+    border: 1px solid #31ce36 !important;
+    background: #31ce36 !important;
+}
+
+.sn-checkbox-open-in-new-window.form-check [type="checkbox"]:checked,
+.sn-checkbox-open-in-new-window.form-check [type="checkbox"]:not(:checked) {
+    left: 30px;
+}
+
+.form-check.sn-checkbox-open-in-new-window {
+    padding-left: 30px;
+}
+
+.sn-checkbox-use-protocol.form-check [type="checkbox"]:checked,
+.sn-checkbox-use-protocol.form-check [type="checkbox"]:not(:checked) {
+    left: 30px;
+}
+
+.form-check.sn-checkbox-use-protocol {
+    padding-left: 30px;
+}
+
+.form-check.sn-checkbox-use-protocol {
+    display: none;
+}
+
+.sn-checkbox-open-in-new-window.form-check {
+    display: none;
+}
+
+/* summernote css ends */
+
+/* summernote rtl css starts */
+.note-editor.note-frame .note-editing-area .note-editable.rtl {
+    text-align: right !important;
+}
+
+/* summernote rtl css ends */
+
+.list-group .list-group-item {
+    display: block;
+}
+
+#myEditor li.list-group-item {
+    cursor: move;
+    border-left-width: 1px;
+    border-right-width: 1px;
+}
+
+.custom-file-label::after {
+    color: #fff;
+    background-color: #1a2035;
+    border-left: 1px solid #2f374b;
+}
+
+label.custom-file-label {
+    background-color: #1a2035;
+    border: 1px solid #2f374b;
+}
+
+.logo-header .logo .navbar-brand {
+    max-width: 100px;
+}
+
+.dropdown-item button.deletebtn {
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: #212529;
+    padding: 0;
+}
+
+/* START: CSS for Summernote Content */
+.note-editor.note-frame .note-editing-area .note-editable article,
+.note-editor.note-frame .note-editing-area .note-editable aside,
+.note-editor.note-frame .note-editing-area .note-editable details,
+.note-editor.note-frame .note-editing-area .note-editable figcaption,
+.note-editor.note-frame .note-editing-area .note-editable figure,
+.note-editor.note-frame .note-editing-area .note-editable footer,
+.note-editor.note-frame .note-editing-area .note-editable header,
+.note-editor.note-frame .note-editing-area .note-editable hgroup,
+.note-editor.note-frame .note-editing-area .note-editable menu,
+.note-editor.note-frame .note-editing-area .note-editable nav,
+.note-editor.note-frame .note-editing-area .note-editable section {
+    display: block;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable i,
+.note-editor.note-frame .note-editing-area .note-editable span,
+.note-editor.note-frame .note-editing-area .note-editable a {
+    display: inline;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-inline-start: 40px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable ol {
+    display: block;
+    list-style-type: decimal;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-inline-start: 40px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable th,
+.note-editor.note-frame .note-editing-area .note-editable td {
+    font-size: 14px;
+    border-top-width: 0px;
+    border-bottom: 1px solid;
+    border-color: #ebedf2 !important;
+    padding: 0 25px !important;
+    height: 60px;
+    vertical-align: middle !important;
+    color: #000;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable a:hover,
+.note-editor.note-frame .note-editing-area .note-editable a:focus {
+    color: inherit;
+    text-decoration: none;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable a:focus,
+.note-editor.note-frame .note-editing-area .note-editable input:focus,
+.note-editor.note-frame .note-editing-area .note-editable textarea:focus,
+.note-editor.note-frame .note-editing-area .note-editable button:focus {
+    text-decoration: none;
+    outline: none;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h1,
+.note-editor.note-frame .note-editing-area .note-editable h2,
+.note-editor.note-frame .note-editing-area .note-editable h3,
+.note-editor.note-frame .note-editing-area .note-editable h4 {
+    font-weight: 700;
+}
+
+/* END: CSS for Summernote Content */
+
+/* START:  CSS to match with frontend (brought frontend 'style.css' file) */
+.note-editor.note-frame .note-editing-area .note-editable h1,
+.note-editor.note-frame .note-editing-area .note-editable h2,
+.note-editor.note-frame .note-editing-area .note-editable h3,
+.note-editor.note-frame .note-editing-area .note-editable h4,
+.note-editor.note-frame .note-editing-area .note-editable h5,
+.note-editor.note-frame .note-editing-area .note-editable h6 {
+    font-family: "Poppins", sans-serif;
+    color: #222f5a;
+    margin: 0px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h1 {
+    font-size: 50px;
+    line-height: 65px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h2 {
+    font-size: 40px;
+    line-height: 50px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h3 {
+    font-size: 30px;
+    line-height: 40px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h4 {
+    font-size: 22px;
+    line-height: 30px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h5 {
+    font-size: 20px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable h6 {
+    font-size: 16px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable p {
+    color: #565872;
+    margin: 0px;
+}
+
+.note-editor.note-frame .note-editing-area .note-editable body {
+    font-family: "Rubik", sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    color: #565872;
+    font-size: 16px;
+    line-height: 30px;
+    overflow-x: hidden;
+}
+
+/* END:  CSS to match with frontend (brought frontend 'style.css' file) */
+
+.w-100 {
+    width: 100%;
+}
+
+.mw-100 {
+    max-width: 100%;
+}
+
+.showImage {
+    position: relative;
+    display: inline-block;
+}
+
+.showImage .remove-image {
+    position: absolute;
+    font-weight: 700;
+    top: -23px;
+    right: -17px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.showImage .remove-image i:hover {
+    color: #fff;
+    transition: 0.3s;
+    -webkit-transition: 0.3s;
+    -moz-transition: 0.3s;
+    -ms-transition: 0.3s;
+    -o-transition: 0.3s;
+}
+
+.showImage .remove-image i:hover {
+    color: #ff3737;
+}
+
+a.card.card-stats {
+    text-decoration: none;
+}
+
+/* Jquery Timepicker */
+
+.ui-timepicker-container.ui-timepicker-no-scrollbar.ui-timepicker-standard {
+    position: absolute;
+    max-height: 230px;
+    overflow-y: scroll;
+    max-width: 160px;
+    overflow-x: hidden;
+}
+
+.ui-timepicker-container.ui-timepicker-no-scrollbar.ui-timepicker-standard {
+    z-index: 10000 !important;
+}
+
+.ui-menu .ui-menu-item a {
+    display: block;
+    text-align: center;
+}
+
+ul.ui-timepicker-viewport {
+    padding: 0;
+}
+
+/* Buy plan checkout CSS */
+.card-pricing .specification-list li span {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.thumb-preview {
+    max-width: 350px;
+    border-radius: 10px;
+    padding: 5px;
+    background-color: #f1f1f1;
+}
+
+.thumb-preview img {
+    width: 100%;
+}
+
+/* datepicker */
+
+.datepicker td,
+.datepicker th {
+    color: #000 !important;
+}
+
+.datepicker td.active,
+.datepicker th.active {
+    color: #fff !important;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #17d909;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #17d909;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.dropdown-menu button.deletebtn {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    display: block;
+    padding-left: 25px;
+}
+
+/* chart css */
+.chartjs-size-monitor {
+    position: absolute;
+    inset: 0px;
+    overflow: hidden;
+    pointer-events: none;
+    visibility: hidden;
+    z-index: -1;
+}
+
+.chartjs-size-monitor-expand {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+    visibility: hidden;
+    z-index: -1;
+}
+
+/* Form Builder CSS */
+body[data-background-color="dark"] .ui-state-default.ui-sortable-handle,
+body[data-background-color="dark"] .ui-state-default.ui-state-disabled {
+    border: 1px solid rgba(181, 181, 181, 0.1) !important;
+    background: #202940;
+    cursor: move;
+}
+
+div#sortable form {
+    cursor: all-scroll;
+}
+
+.select2-container--default .select2-selection--single {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    height: calc(2.25rem + 2px);
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+/* spartan  */
+
+.vcrd-none {
+    display: none;
+}
+
+/* Custom accordion */
+.custom-accordion {
+    position: relative;
+}
+
+.custom-accordion .caret {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transition: transform 0.3s;
+}
+
+.custom-accordion .accordion-btn {
+    width: 100%;
+    background: rgba(199, 199, 199, 0.3);
+    text-align: start;
+    position: relative;
+}
+
+.custom-accordion
+    .accordion-btn[data-toggle="collapse"][aria-expanded="true"]
+    .caret {
+    transform: rotate(-180deg);
+}
+
+.custom-accordion .version-body {
+    padding: 10px;
+    border-radius: 0 0 5px 5px;
+    border: 1px solid rgba(181, 181, 181, 0.1);
+    background: rgba(199, 199, 199, 0.1);
+}
+
+.js-repeater-item {
+    padding: 20px 20px 0;
+    border-radius: 5px;
+    border: 1px solid rgba(181, 181, 181, 0.2);
+    background: rgba(199, 199, 199, 0.05);
+    box-shadow: 2px 6px 15px 0 rgb(69 65 78 / 10%);
+}
+
+.js-repeater-item {
+    margin-bottom: 20px;
+}
+
+.js-repeater-item .text-warning {
+    margin-bottom: 0;
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: normal;
+}
+
+body[data-background-color="dark"] .custom-accordion .accordion-btn {
+    background: rgba(199, 199, 199, 0.2);
+    color: #fff;
+}
+
+body[data-background-color="dark"] .custom-accordion .version-body {
+    border: 1px solid rgba(181, 181, 181, 0.1);
+    background: #202940;
+}
+
+body[data-background-color="dark"] .js-repeater-item {
+    border: 1px solid rgba(181, 181, 181, 0.2);
+    background: rgba(199, 199, 199, 0.05);
+    box-shadow: 2px 6px 15px 0 rgb(69 65 78 / 10%);
+}
+
+.sidebar.sidebar-style-2 .nav .nav-item a:hover,
+.sidebar.sidebar-style-2 .nav .nav-item a:focus,
+.sidebar.sidebar-style-2
+    .nav
+    .nav-item
+    a[data-toggle="collapse"][aria-expanded="true"],
+.sidebar.sidebar-style-2 .nav .nav-item .active a {
+    background: rgba(199, 199, 199, 0.5);
+}
+
+body[data-background-color="dark"]
+    .sidebar.sidebar-style-2
+    .nav
+    .nav-item
+    a:hover,
+body[data-background-color="dark"]
+    .sidebar.sidebar-style-2
+    .nav
+    .nav-item
+    a:focus,
+body[data-background-color="dark"]
+    .sidebar.sidebar-style-2
+    .nav
+    .nav-item
+    a[data-toggle="collapse"][aria-expanded="true"],
+body[data-background-color="dark"]
+    .sidebar.sidebar-style-2
+    .nav
+    .nav-item
+    .active
+    a {
+    background: rgba(199, 199, 199, 0.2);
+}
+
+/* .select2-container--default {
+    display: block;
+    width: 100%;
+    height: calc(2.25rem + 2px);
+    padding: 0.375rem 0.75rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+} */
+
+.select2-container .select2-selection--single,
+.select2-container--default
+    .select2-selection--single
+    .select2-selection__rendered {
+    height: calc(2.25rem + 2px) !important;
+    line-height: 33px !important;
+}
+
+.custom-accordion .version {
+    border: 1px solid #0000003a;
+    margin-bottom: 20px;
+}
+
+body[data-background-color="dark"] .custom-accordion .version {
+    border-color: rgba(181, 181, 181, 0.1) !important;
+}
+
+.custom-accordion .version .accordion-btn {
+    color: #212529;
+    background-color: transparent;
+}
+
+body[data-background-color="dark"] .custom-accordion .version .accordion-btn {
+    color: #fff;
+    background-color: transparent;
+}
+
+.custom-accordion .version-header button:hover {
+    text-decoration: none !important;
+}
+
+.custom-accordion .version-header button[aria-expanded="true"] {
+    background-color: #6861ce !important;
+    color: #fff;
+}
+
+.custom-accordion .version-header button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: capitalize;
+    text-align: left;
+    padding: 12px 30px;
+}
+
+.code-box {
+    max-height: 500px;
+    overflow: hidden;
+    overflow-y: scroll;
+}
+
+.ui-sortable-handle .ui-state-default {
+    cursor: move;
+}
+/* 
+.card-pricing2 .month,
+.card-pricing2 .amount {
+    font-size: 20px !important;
+} */
+
+#aiLoader {
+    font-size: 14px;
+}
+#aiLoaderText .dots {
+    display: inline-block;
+    width: 20px;
+}
+
+.ai-hover-pages li {
+    list-style: none;
+}
+
+/* AI Website Setup visibility */
+.ai-setup-hidden {
+    display: none;
+}
+
+.ai-setup-visible {
+    display: block;
+}
+
+/* tooltip Styling */
+.tooltip-inner strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 6px;
+}
+
+.tooltip-inner {
+    max-width: 400px;
+    background: #fff;
+    color: #0C0528;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    border-radius: 10px;
+    opacity: 1 !important;
+}
+
+/* AI main line added by rakib */
+.pricing-content .ai-hover-wrapper {
+    cursor: help;
+    transition: 0.2s ease;
+}
+
+.pricing-content .ai-hover-wrapper .ai-engine {
+    font-weight: 500;
+}
+.pricing-content .ai-hover-wrapper .ai-info {
+    float: right;
+    margin-inline-end: 15px;
+    transform: translateY(3px);
+}
+
+/* AI details list under the line */
+.ai-hover-pages {
+    margin: 6px 0 10px 0px;
+    padding: 0;
+    display: none;
+    padding-inline-start: 30px;
+}
+.ai-hover-pages li {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+.ai-hover-pages li i {
+    opacity: 0.95;
+}
+
+/* Tooltip container */
+.tooltip .tooltip-inner {
+    max-width: 380px;
+    text-align: left;
+    padding: 14px 14px;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #0C0528;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 1 !important;
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+
+/* Tooltip arrow color */
+.tooltip.bs-tooltip-top .arrow::before {
+    border-top-color: #fff !important;
+}
+.tooltip.bs-tooltip-bottom .arrow::before {
+    border-bottom-color: #fff !important;
+}
+.tooltip.bs-tooltip-start .arrow::before {
+    border-left-color: #fff !important;
+}
+.tooltip.bs-tooltip-end .arrow::before {
+    border-right-color: #fff !important;
+}
+
+
+
+/* Tooltip content UI */
+.ai-tt__title {
+    font-weight: 800;
+    font-size: 14px;
+    margin-bottom: 6px;
+    text-align: center;
+}
+.ai-tt__desc {
+    opacity: 0.9;
+    margin-bottom: 10px;
+}
+.ai-tt__sub {
+    margin-top: 10px;
+    font-weight: 800;
+    font-size: 13px;
+    opacity: 0.95;
+    text-align: start;
+}
+.ai-tt__pill {
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #EAEAEA;
+    font-weight: 800;
+    text-align: start;
+    width: max-content;
+}
+.ai-tt__pages {
+    margin: 8px 0 0 0;
+    padding: 0;
+    list-style: none;
+}
+.ai-tt__pages li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px dashed #EAEAEA;
+}
+.ai-tt__pages li:first-child {
+    border-top: 0;
+}
+.ai-tt__pages i {
+    opacity: 0.95;
+    margin-top: 2px;
+}
+.ai-tt__pages span {
+    opacity: 0.95;
+}
+
+
+/* tooltip dark css */
+/* Tooltip arrow color */
+body[data-background-color="dark"]  .tooltip .tooltip-inner {
+    background: #1a2035;
+    color: rgb(185, 183, 183);
+}
+body[data-background-color="dark"] .tooltip.bs-tooltip-top .arrow::before {
+    border-top-color: #1a2035 !important;
+}
+body[data-background-color="dark"] .tooltip.bs-tooltip-bottom .arrow::before {
+    border-bottom-color: #1a2035 !important;
+}
+body[data-background-color="dark"] .tooltip.bs-tooltip-start .arrow::before {
+    border-left-color: #1a2035 !important;
+}
+body[data-background-color="dark"] .tooltip.bs-tooltip-end .arrow::before {
+    border-right-color: #1a2035 !important;
+}
+body[data-background-color="dark"] .ai-tt__pages li{
+    border-color: grey;
+}
+

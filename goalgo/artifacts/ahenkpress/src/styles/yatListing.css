@@ -1,0 +1,481 @@
+/* SafeRota-style yat kiralama liste sayfası */
+
+.yat-list {
+  background: #f5f7fb;
+  padding-bottom: 2.5rem;
+}
+
+.yat-list__wrap {
+  max-width: var(--bc-content-max);
+  margin: 0 auto;
+  padding: 1rem var(--bc-content-px);
+}
+
+.yat-list__head {
+  margin-bottom: 1.25rem;
+}
+
+.yat-list__head h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 800;
+  color: #1a2b48;
+}
+
+.yat-list__count {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #697488;
+}
+
+.yat-list__layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .yat-list__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.yat-list__filters {
+  position: sticky;
+  top: 1rem;
+  background: #fff;
+  border: 1px solid #e8ecf2;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 12px rgba(26, 43, 72, 0.06);
+}
+
+.yat-list__filters h2 {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a2b48;
+}
+
+.yat-filter-group {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.yat-filter-group:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.yat-filter-group label,
+.yat-filter-group > span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #697488;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.yat-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #1a2b48;
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.yat-filter-check input {
+  accent-color: #5191fa;
+}
+
+.yat-filter-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.yat-filter-row input,
+.yat-filter-group input[type="number"],
+.yat-filter-group select {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.875rem;
+}
+
+.yat-filter-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.yat-filter-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.yat-filter-counter button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.yat-filter-counter span {
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 700;
+  color: #1a2b48;
+}
+
+.yat-filter-apply {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #5191fa;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.yat-filter-apply:hover {
+  background: #3d7de8;
+}
+
+.yat-list__main {
+  min-width: 0;
+}
+
+.yat-sort-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  background: #fff;
+  border: 1px solid #e8ecf2;
+  border-radius: 12px;
+  padding: 0.35rem;
+}
+
+.yat-sort-tab {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  background: transparent;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #697488;
+  cursor: pointer;
+}
+
+.yat-sort-tab--active {
+  background: #5191fa;
+  color: #fff;
+}
+
+.yat-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.yat-cards__full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .yat-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.yat-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e8ecf2;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 14px rgba(26, 43, 72, 0.05);
+  transition: box-shadow 0.2s;
+  min-width: 0;
+}
+
+.yat-card:hover {
+  box-shadow: 0 6px 24px rgba(26, 43, 72, 0.1);
+}
+
+.yat-card__media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: #e8ecf2;
+}
+
+.yat-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.yat-card__media-nav {
+  position: absolute;
+  bottom: 0.65rem;
+  right: 0.65rem;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.yat-card__media-nav button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font-weight: 700;
+  color: #1a2b48;
+}
+
+.yat-card__fav {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #697488;
+}
+
+.yat-card__fav--on {
+  color: #ff4d6d;
+  fill: #ff4d6d;
+}
+
+.yat-card__body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 0.75rem;
+}
+
+.yat-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a2b48;
+}
+
+.yat-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.yat-card__loc {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #697488;
+  margin: 0 0 0.65rem;
+}
+
+.yat-card__specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.yat-card__spec {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+.yat-card__captain {
+  font-size: 0.8rem;
+  color: #2d6a4f;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.yat-card__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.yat-card__price strong {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #5191fa;
+  line-height: 1.1;
+}
+
+.yat-card__price span {
+  font-size: 0.8rem;
+  color: #697488;
+}
+
+.yat-card__badge {
+  display: inline-block;
+  background: #fff7e6;
+  color: #ad6800;
+  border: 1px solid #ffe7ba;
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.yat-promo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #1a2b48 0%, #2d4a7a 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.yat-promo-banner__team {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.yat-promo-banner__avatars {
+  display: flex;
+}
+
+.yat-promo-banner__avatars span {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #5191fa;
+  border: 2px solid #fff;
+  margin-left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.yat-promo-banner__avatars span:first-child {
+  margin-left: 0;
+}
+
+.yat-promo-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #5191fa;
+  color: #fff;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.yat-promo-banner__cta:hover {
+  background: #3d7de8;
+}
+
+.yat-list__empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: #fff;
+  border-radius: 12px;
+  color: #697488;
+}
+
+.yat-list__skeleton {
+  height: 200px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #eef1f6 25%, #f8f9fc 50%, #eef1f6 75%);
+  background-size: 200% 100%;
+  animation: yat-shimmer 1.2s infinite;
+}
+
+@keyframes yat-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.yat-filter-mobile-btn {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+@media (max-width: 960px) {
+  .yat-list__filters--desktop {
+    display: none;
+  }
+  .yat-filter-mobile-btn {
+    display: inline-flex;
+    margin-bottom: 0.75rem;
+  }
+  .yat-list__filters--mobile {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: flex-end;
+  }
+  .yat-list__filters--mobile .yat-list__filters {
+    position: static;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+.yat-list__filters--mobile[hidden] {
+  display: none;
+}

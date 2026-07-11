@@ -1,0 +1,109 @@
+RewriteEngine on
+ErrorDocument 404 /404.html
+RewriteRule ^([a-zA-Z0-9\-_]+).html$ index.php?sayfa=$1 [L,QSA]
+RewriteRule ^([a-zA-Z0-9\-_]+)(/?)$ index.php?sayfa=$1 [L,QSA]
+RewriteRule ^icerik/(.*).html$ index.php?sayfa=icerik&id=$1 [L,QSA]
+RewriteRule ^icerik/(.*?)$ index.php?sayfa=icerik&id=$1 [L,QSA]
+RewriteRule ^haber-kategori/(.*).html$ index.php?sayfa=haber-kategori&id=$1 [L,QSA]
+RewriteRule ^haber-kategori/(.*?)$ index.php?sayfa=haber-kategori&id=$1 [L,QSA]
+RewriteRule ^haber/(.*).html$ index.php?sayfa=haber&id=$1 [L,QSA]
+RewriteRule ^haber/(.*?)$ index.php?sayfa=haber&id=$1 [L,QSA]
+RewriteRule ^haber-kategori-(.*)/(.*).html$ index.php?sayfa=haber-kategori&id=$1&s=$2 [L,QSA]
+RewriteRule ^haber-kategori-(.*?)/(.*?)$ index.php?sayfa=haber-kategori&id=$1&s=$2 [L,QSA]
+RewriteRule ^haberler/(.*).html$ index.php?sayfa=haberler&s=$1 [L,QSA]
+RewriteRule ^haberler/(.*?)$ index.php?sayfa=haberler&s=$1 [L,QSA]
+RewriteRule ^proje-kategori/(.*).html$ index.php?sayfa=proje-kategori&id=$1 [L,QSA]
+RewriteRule ^proje-kategori/(.*?)$ index.php?sayfa=proje-kategori&id=$1 [L,QSA]
+RewriteRule ^proje/(.*).html$ index.php?sayfa=proje&id=$1 [L,QSA]
+RewriteRule ^proje/(.*?)$ index.php?sayfa=proje&id=$1 [L,QSA]
+RewriteRule ^proje-kategori-(.*)/(.*).html$ index.php?sayfa=proje-kategori&id=$1&s=$2 [L,QSA]
+RewriteRule ^proje-kategori-(.*?)/(.*?)$ index.php?sayfa=proje-kategori&id=$1&s=$2 [L,QSA]
+RewriteRule ^projeler/(.*).html$ index.php?sayfa=projeler&s=$1 [L,QSA]
+RewriteRule ^projeler/(.*?)$ index.php?sayfa=projeler&s=$1 [L,QSA]
+RewriteRule ^hizmetler/(.*).html$ index.php?sayfa=hizmetler&s=$1 [L,QSA]
+RewriteRule ^hizmetler/(.*?)$ index.php?sayfa=hizmetler&s=$1 [L,QSA]
+RewriteRule ^hizmet/(.*).html$ index.php?sayfa=hizmet&id=$1 [L,QSA]
+RewriteRule ^hizmet/(.*?)$ index.php?sayfa=hizmet&id=$1 [L,QSA]
+RewriteRule ^birimler/(.*).html$ index.php?sayfa=birimler&s=$1 [L,QSA]
+RewriteRule ^birimler/(.*?)$ index.php?sayfa=birimler&s=$1 [L,QSA]
+RewriteRule ^birim/(.*).html$ index.php?sayfa=birim&id=$1 [L,QSA]
+RewriteRule ^birim/(.*?)$ index.php?sayfa=birim&id=$1 [L,QSA]
+RewriteRule ^foto-galeri/(.*).html$ index.php?sayfa=foto-galeri&s=$1 [L,QSA]
+RewriteRule ^foto-galeri/(.*?)$ index.php?sayfa=foto-galeri&s=$1 [L,QSA]
+RewriteRule ^foto/(.*).html$ index.php?sayfa=foto&id=$1 [L,QSA]
+RewriteRule ^foto/(.*?)$ index.php?sayfa=foto&id=$1 [L,QSA]
+RewriteRule ^video-galeri/(.*).html$ index.php?sayfa=video-galeri&s=$1 [L,QSA]
+RewriteRule ^video-galeri/(.*?)$ index.php?sayfa=video-galeri&s=$1 [L,QSA]
+RewriteRule ^video/(.*).html$ index.php?sayfa=video&id=$1 [L,QSA]
+RewriteRule ^video/(.*?)$ index.php?sayfa=video&id=$1 [L,QSA]
+RewriteRule ^etkinlikler/(.*).html$ index.php?sayfa=etkinlikler&s=$1 [L,QSA]
+RewriteRule ^etkinlikler/(.*?)$ index.php?sayfa=etkinlikler&s=$1 [L,QSA]
+RewriteRule ^etkinlik/(.*).html$ index.php?sayfa=etkinlik&id=$1 [L,QSA]
+RewriteRule ^etkinlik/(.*?)$ index.php?sayfa=etkinlik&id=$1 [L,QSA]
+RewriteRule ^duyurular/(.*).html$ index.php?sayfa=duyurular&s=$1 [L,QSA]
+RewriteRule ^duyurular/(.*?)$ index.php?sayfa=duyurular&s=$1 [L,QSA]
+RewriteRule ^duyuru/(.*).html$ index.php?sayfa=duyuru&id=$1 [L,QSA]
+RewriteRule ^duyuru/(.*?)$ index.php?sayfa=duyuru&id=$1 [L,QSA]
+RewriteRule ^ihaleler/(.*).html$ index.php?sayfa=ihaleler&s=$1 [L,QSA]
+RewriteRule ^ihaleler/(.*?)$ index.php?sayfa=ihaleler&s=$1 [L,QSA]
+RewriteRule ^ihale/(.*).html$ index.php?sayfa=ihale&id=$1 [L,QSA]
+RewriteRule ^ihale/(.*?)$ index.php?sayfa=ihale&id=$1 [L,QSA]
+RewriteRule ^ilanlar/(.*).html$ index.php?sayfa=ilanlar&s=$1 [L,QSA]
+RewriteRule ^ilanlar/(.*?)$ index.php?sayfa=ilanlar&s=$1 [L,QSA]
+RewriteRule ^ilan/(.*).html$ index.php?sayfa=ilan&id=$1 [L,QSA]
+RewriteRule ^ilan/(.*?)$ index.php?sayfa=ilan&id=$1 [L,QSA]
+RewriteRule ^meclis-kararlari/(.*).html$ index.php?sayfa=meclis-kararlari&s=$1 [L,QSA]
+RewriteRule ^meclis-kararlari/(.*?)$ index.php?sayfa=meclis-kararlari&s=$1 [L,QSA]
+RewriteRule ^karar/(.*).html$ index.php?sayfa=karar&id=$1 [L,QSA]
+RewriteRule ^karar/(.*?)$ index.php?sayfa=karar&id=$1 [L,QSA]
+RewriteRule ^faaliyet-raporlari/(.*).html$ index.php?sayfa=faaliyet-raporlari&s=$1 [L,QSA]
+RewriteRule ^faaliyet-raporlari/(.*?)$ index.php?sayfa=faaliyet-raporlari&s=$1 [L,QSA]
+RewriteRule ^rapor/(.*).html$ index.php?sayfa=rapor&id=$1 [L,QSA]
+RewriteRule ^rapor/(.*?)$ index.php?sayfa=rapor&id=$1 [L,QSA]
+RewriteRule ^profil-kategori/(.*).html$ index.php?sayfa=profil-kategori&id=$1 [L,QSA]
+RewriteRule ^profil-kategori/(.*?)$ index.php?sayfa=profil-kategori&id=$1 [L,QSA]
+RewriteRule ^profil/(.*).html$ index.php?sayfa=profil&id=$1 [L,QSA]
+RewriteRule ^profil/(.*?)$ index.php?sayfa=profil&id=$1 [L,QSA]
+RewriteRule ^profil-kategori-(.*)/(.*).html$ index.php?sayfa=profil-kategori&id=$1&s=$2 [L,QSA]
+RewriteRule ^profil-kategori-(.*?)/(.*?)$ index.php?sayfa=profil-kategori&id=$1&s=$2 [L,QSA]
+RewriteRule ^aidat-odeme/(.*).html$ index.php?sayfa=aidat-odeme&id=$1 [L,QSA]
+RewriteRule ^aidat-odeme/(.*?)$ index.php?sayfa=aidat-odeme&id=$1 [L,QSA]
+RewriteRule ^sitemap.xml$ sitemap.php [NC,L]
+# php -- END cPanel-generated handler, do not edit
+
+# BEGIN cPanel-generated php ini directives, do not edit
+# Manual editing of this file may result in unexpected behavior.
+# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
+# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
+<IfModule php7_module>
+   php_flag display_errors Off
+   php_value max_execution_time 600
+   php_value max_input_time -1
+   php_value max_input_vars 1000
+   php_value memory_limit 128M
+   php_value post_max_size 128M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/tmp"
+   php_value upload_max_filesize 128M
+   php_flag zlib.output_compression Off
+</IfModule>
+<IfModule lsapi_module>
+   php_flag display_errors Off
+   php_value max_execution_time 600
+   php_value max_input_time -1
+   php_value max_input_vars 1000
+   php_value memory_limit 128M
+   php_value post_max_size 128M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/tmp"
+   php_value upload_max_filesize 128M
+   php_flag zlib.output_compression Off
+</IfModule>
+# END cPanel-generated php ini directives, do not edit
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php73” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php73 .php .php7 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

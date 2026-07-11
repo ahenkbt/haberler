@@ -1,0 +1,12 @@
+.noUi-target {
+    @apply !h-2 !bg-primary !border-0 shadow-none;
+}
+.noUi-handle {
+    @apply !size-3.75 !bg-citrusyellow !rounded-full !shadow-none !border-0 !-top-1 !-right-3;
+}
+.noUi-handle:after, .noUi-handle:before {
+    @apply !hidden;
+}
+.noUi-connect {
+    @apply !bg-citrusyellow;
+}

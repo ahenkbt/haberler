@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AhenkPress - Haber Sitesi"
+version = "1.0.0"
+id = "artifacts/ahenkpress"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23574
+
+[services.development]
+run = "pnpm --filter @workspace/ahenkpress run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ahenkpress", "run", "build" ]
+publicDir = "artifacts/ahenkpress/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23574"
+BASE_PATH = "/"

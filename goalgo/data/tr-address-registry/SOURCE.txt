@@ -1,0 +1,3 @@
+Türkiye il / ilçe / mahalle / sokak JSONL (81 il klasörü + iller.jsonl).
+import-tr-address-data.mjs ile uyumlu klasör yapısı.
+Kaynak: NVI tabanlı açık veri setleri (ör. melihozkara/il-ilce-mahalle-sokak-veritabani biçimi).

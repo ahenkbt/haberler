@@ -1,0 +1,496 @@
+/*
+ * Ziyaretçi tam-site açık/koyu — vitrin tema CSS'inin üstüne uygulanır.
+ * `data-hm-visitor-theme` yalnızca explicit localStorage tercihinde set edilir.
+ */
+
+/* ─── Tam viewport: html/body (contained kenar boşlukları dahil) ─── */
+html[data-hm-visitor-theme="dark"],
+body[data-hm-visitor-theme="dark"] {
+  color-scheme: dark;
+  background-color: #0f172a !important;
+  color: #e2e8f0;
+}
+
+html[data-hm-visitor-theme="light"],
+body[data-hm-visitor-theme="light"] {
+  color-scheme: light;
+  background-color: #ffffff !important;
+  color: #111827;
+}
+
+/* React mount öncesi boş #root — yalnızca koyu zemin görünmesin */
+html[data-hm-visitor-theme="dark"] #root,
+body[data-hm-visitor-theme="dark"] #root {
+  min-height: 100dvh;
+  min-height: 100vh;
+}
+
+html[data-hm-visitor-theme="dark"] .sade-public-root,
+body[data-hm-visitor-theme="dark"] .sade-public-root,
+html[data-hm-visitor-theme="light"] .sade-public-root,
+body[data-hm-visitor-theme="light"] .sade-public-root {
+  background-color: transparent !important;
+}
+
+/* Meta API beklerken iskelet — koyu zeminde görünür */
+html[data-hm-visitor-theme="dark"] .hm-nested-loading-shell,
+body[data-hm-visitor-theme="dark"] .hm-nested-loading-shell {
+  background-color: #0f172a !important;
+  color: #e2e8f0;
+}
+
+html[data-hm-visitor-theme="dark"] .hm-nested-loading-shell .text-slate-700,
+html[data-hm-visitor-theme="dark"] .hm-nested-loading-shell .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html[data-hm-visitor-theme="dark"] .hm-nested-loading-shell .border-slate-200,
+html[data-hm-visitor-theme="dark"] .hm-nested-loading-shell .bg-white {
+  background-color: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-root,
+[data-hm-visitor-theme="dark"] .hm-site-header-band--contained-outer,
+[data-hm-visitor-theme="dark"] .hm-news-nav-strip--contained-outer,
+[data-hm-visitor-theme="dark"] .hm-public-site-footer--contained-outer,
+[data-hm-visitor-theme="dark"] .hm-son-dakika-chrome--contained,
+[data-hm-visitor-theme="dark"] .hm-bilgi-agaci-chrome--contained {
+  background-color: var(--hm-page-bg, #0f172a) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-main,
+[data-hm-visitor-theme="dark"] .hm-vitrin-main .hm-vitrin-home {
+  background-color: var(--hm-page-bg, #0f172a) !important;
+  color: var(--hm-site-body-text, #e2e8f0);
+}
+
+[data-hm-visitor-theme="light"] .hm-vitrin-main,
+[data-hm-visitor-theme="light"] .hm-vitrin-main .hm-vitrin-home {
+  background-color: var(--hm-page-bg, #ffffff) !important;
+  color: var(--hm-site-body-text, #111827);
+}
+
+[data-hm-visitor-theme="dark"] .hm-public-site-footer {
+  --hm-footer-bg: #0b1220;
+  --hm-footer-text: rgba(226, 232, 240, 0.88);
+  --hm-footer-heading: #f8fafc;
+  --hm-footer-link: rgba(248, 250, 252, 0.92);
+  --hm-footer-link-hover: #f8fafc;
+  background: var(--hm-footer-bg) !important;
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--hm-footer-text) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-public-site-footer :where(h1, h2, h3, h4, h5, h6, p, li, span, small, a, button) {
+  color: inherit;
+}
+
+[data-hm-visitor-theme="dark"] .hm-public-site-footer :where(a:hover, button:hover) {
+  color: var(--hm-footer-link-hover) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-yekpare-kategoriler-kutusu,
+[data-hm-visitor-theme="dark"] .hm-yekpare-kategori-kutusu,
+[data-hm-visitor-theme="dark"] .hm-category-box,
+[data-hm-visitor-theme="dark"] .hm-vitrin-category-panel {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-yekpare-kategoriler-kutusu :where(h1, h2, h3, h4, a, strong),
+[data-hm-visitor-theme="dark"] .hm-yekpare-kategori-kutusu :where(h1, h2, h3, h4, a, strong),
+[data-hm-visitor-theme="dark"] .hm-category-box :where(h1, h2, h3, h4, a, strong),
+[data-hm-visitor-theme="dark"] .hm-vitrin-category-panel :where(h1, h2, h3, h4, a, strong) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-ad-slot-strip :where(.bg-zinc-50, .bg-white) {
+  background-color: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-hm-visitor-theme="light"] .hm-public-site-footer,
+[data-hm-visitor-theme="light"] .hm-public-site-footer__inner {
+  background:
+    radial-gradient(circle at 12% 0%, var(--hm-section-accent-glow, transparent), transparent 26rem),
+    var(--hm-footer-bg, var(--hm-nav-strip-bg, var(--hm-header-bg, #0f172a))) !important;
+  color: var(--hm-footer-text, rgba(226, 232, 240, 0.92)) !important;
+}
+
+[data-hm-visitor-theme="light"][data-hm-site-layout="contained"] .hm-public-site-footer--contained-outer,
+[data-hm-visitor-theme="light"][data-hm-corporate-layout="contained"] .hm-public-site-footer--contained-outer {
+  background: transparent !important;
+  border-top-color: transparent !important;
+}
+
+/* Vitrin tema beyaz zemin kurallarını geçersiz kıl */
+[data-hm-visitor-theme="dark"][data-hm-vitrin-theme].hm-vitrin-root,
+[data-hm-visitor-theme="dark"][data-hm-vitrin-theme] .hm-vitrin-root,
+[data-hm-visitor-theme="dark"][data-hm-vitrin-theme] .hm-vitrin-home,
+[data-hm-visitor-theme="dark"] .hm-vitrin-root[data-hm-vitrin-theme],
+[data-hm-visitor-theme="dark"] .hm-vitrin-root [data-hm-vitrin-theme] .hm-vitrin-home {
+  --hm-page-bg: #0f172a;
+  --hm-page-muted: #1e293b;
+  --hm-card-bg: #1e293b;
+  --hm-card-border: rgba(255, 255, 255, 0.1);
+  background-color: var(--hm-page-bg) !important;
+  color: var(--hm-site-body-text, #e2e8f0);
+}
+
+[data-hm-visitor-theme="light"][data-hm-vitrin-theme].hm-vitrin-root,
+[data-hm-visitor-theme="light"][data-hm-vitrin-theme] .hm-vitrin-root,
+[data-hm-visitor-theme="light"][data-hm-vitrin-theme] .hm-vitrin-home,
+[data-hm-visitor-theme="light"] .hm-vitrin-root[data-hm-vitrin-theme],
+[data-hm-visitor-theme="light"] .hm-vitrin-root [data-hm-vitrin-theme] .hm-vitrin-home {
+  --hm-page-bg: #ffffff;
+  --hm-page-muted: #f8fafc;
+  background-color: var(--hm-page-bg) !important;
+  color: var(--hm-site-body-text, #111827);
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-home :where(section, article, aside, .rounded-lg, .rounded-xl, .rounded-2xl):not([class*="bg-red"]):not([class*="bg-blue"]):not([class*="from-"]) {
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-hm-visitor-theme="dark"] .hm-news-list-page,
+[data-hm-visitor-theme="dark"] .hm-category-detail-page,
+[data-hm-visitor-theme="dark"] .hm-article-detail-page {
+  background-color: var(--hm-page-bg, #0f172a) !important;
+  color: var(--hm-site-body-text, #e2e8f0);
+}
+
+[data-hm-visitor-theme="dark"] :where(.hm-news-list-page, .hm-category-detail-page, .hm-article-detail-page) :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] :where(.hm-news-list-page, .hm-category-detail-page, .hm-article-detail-page) :where(.text-gray-700, .text-slate-700, .text-zinc-700, .text-gray-600, .text-slate-600, .text-zinc-600, .text-gray-500, .text-slate-500) {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+/* ─── Kart / panel — vitrin tema !important kurallarının üstüne ─── */
+[data-hm-visitor-theme="dark"] .hm-vitrin-sidebar-panel,
+[data-hm-visitor-theme="dark"] .hm-vitrin-latest-panel,
+[data-hm-visitor-theme="dark"] .hm-vitrin-card {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-sidebar-panel :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800, .text-zinc-800),
+[data-hm-visitor-theme="dark"] .hm-vitrin-sidebar-panel :where(h1, h2, h3, h4, strong, a, span):not([class*="text-white"]),
+[data-hm-visitor-theme="dark"] .hm-vitrin-latest-panel :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800),
+[data-hm-visitor-theme="dark"] .hm-vitrin-card :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-sidebar-panel :where(.text-gray-700, .text-slate-700, .text-zinc-700, .text-gray-600, .text-slate-600, .text-zinc-600, .text-gray-500, .text-slate-500, .text-zinc-500),
+[data-hm-visitor-theme="dark"] .hm-vitrin-latest-panel :where(.text-gray-700, .text-slate-700, .text-gray-600, .text-slate-600, .text-gray-500, .text-slate-500),
+[data-hm-visitor-theme="dark"] .hm-vitrin-card :where(.text-gray-700, .text-slate-700, .text-gray-600, .text-slate-600, .text-gray-500, .text-slate-500) {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-latest-panel > :not(:first-child) {
+  border-top-color: var(--hm-latest-divide, rgba(255, 255, 255, 0.08)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-featured-category-tabs button:not(.is-active) {
+  background: var(--hm-card-bg, #1e293b) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+/* ─── Köşe yazarları ─── */
+[data-hm-visitor-theme="dark"] .hm-classic-authors-strip,
+[data-hm-visitor-theme="dark"] .hm-classic-authors {
+  color: var(--hm-site-body-text, #e2e8f0);
+}
+
+[data-hm-visitor-theme="dark"] .vkv-author-name,
+[data-hm-visitor-theme="dark"] .vkv-nsc-title,
+[data-hm-visitor-theme="dark"] .vkv-cat-card h4,
+[data-hm-visitor-theme="dark"] .vkv-latest-body h3 {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .vkv-author-title:not(.vkv-author-title--article) {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] .vkv-author-title--article {
+  color: var(--hm-site-body-text, #cbd5e1) !important;
+}
+
+[data-hm-visitor-theme="dark"] .vkv-author-card {
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+/* ─── Classic / portal haber kutuları (sabit #fff arka plan) ─── */
+[data-hm-visitor-theme="dark"] .hm-classic-widget,
+[data-hm-visitor-theme="dark"] .hm-classic-compact-card,
+[data-hm-visitor-theme="dark"] .hm-classic-ad,
+[data-hm-visitor-theme="dark"] .hm-classic-empty-panel {
+  background: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-classic-feature-card:not(:has(.hm-classic-feature-shade)) {
+  background: var(--hm-card-bg, #1e293b) !important;
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-classic-text-row strong,
+[data-hm-visitor-theme="dark"] .hm-classic-author-row strong {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-classic-author-row em,
+[data-hm-visitor-theme="dark"] .hm-classic-text-row span:first-child {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-classic-author-row {
+  border-bottom-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-classic-cat-links a {
+  background: var(--hm-page-muted, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-home :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-zinc-50),
+[data-hm-visitor-theme="dark"] .hm-vitrin-main :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-zinc-50),
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-zinc-50) {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-home :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800, .text-zinc-800),
+[data-hm-visitor-theme="dark"] .hm-vitrin-main :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800),
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800, .text-zinc-800) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-home :where(.text-gray-700, .text-slate-700, .text-zinc-700, .text-gray-600, .text-slate-600, .text-zinc-600),
+[data-hm-visitor-theme="dark"] .hm-vitrin-main :where(.text-gray-700, .text-slate-700, .text-gray-600, .text-slate-600),
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.text-gray-700, .text-slate-700, .text-zinc-700, .text-gray-600, .text-slate-600, .text-zinc-600) {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-home :where(.border-gray-200, .border-slate-200, .border-zinc-200),
+[data-hm-visitor-theme="dark"] .hm-vitrin-main :where(.border-gray-200, .border-slate-200, .border-zinc-200),
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.border-gray-200, .border-slate-200, .border-zinc-200, .border-slate-100) {
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+/* Vitrin + header — koyu modda asla gizlenmesin (localStorage/bootstrap sonrası) */
+[data-hm-visitor-theme] .hm-vitrin-root,
+[data-hm-visitor-theme] .hm-vitrin-root .hm-vitrin-home,
+[data-hm-visitor-theme] .hm-vitrin-root .hm-vitrin-main,
+[data-hm-visitor-theme] .hm-vitrin-root .hm-site-header-band,
+[data-hm-visitor-theme] .hm-vitrin-root .hm-news-nav-strip {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* ─── Haber detay — sağ sidebar (Son haberler, reklam, köşe yazarları) ─── */
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-zinc-50, .bg-sky-50, .bg-amber-50) {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar,
+[data-hm-visitor-theme="dark"] .hm-article-sidebar-panel,
+[data-hm-visitor-theme="dark"] .hm-article-latest-panel,
+[data-hm-visitor-theme="dark"] .hm-article-popular-panel,
+[data-hm-visitor-theme="dark"] .hm-article-authors-panel {
+  color: var(--hm-site-body-text, #e2e8f0);
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar-panel,
+[data-hm-visitor-theme="dark"] .hm-article-latest-panel,
+[data-hm-visitor-theme="dark"] .hm-article-popular-panel,
+[data-hm-visitor-theme="dark"] .hm-article-authors-panel {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar :where(.bg-white, .bg-slate-50, .bg-sky-50, .bg-amber-50, .bg-amber-100) {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar-panel > :first-child,
+[data-hm-visitor-theme="dark"] .hm-article-latest-panel > :first-child,
+[data-hm-visitor-theme="dark"] .hm-article-popular-panel > :first-child,
+[data-hm-visitor-theme="dark"] .hm-article-authors-panel > :first-child {
+  background-color: var(--hm-page-muted, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-ad-slot,
+[data-hm-visitor-theme="dark"] .hm-article-ad-slot--placeholder {
+  background-color: var(--hm-page-muted, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar :where(.divide-slate-100, .divide-amber-100) > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.08)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar :where(.text-slate-900, .text-gray-900, .text-slate-800, .text-gray-800),
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.text-slate-900, .text-gray-900, .text-slate-800, .text-gray-800) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-slate-400, .text-gray-500, .text-gray-600),
+[data-hm-visitor-theme="dark"] .hm-article-detail-page :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-gray-500, .text-gray-600) {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar :where(.border-slate-100, .border-slate-200, .border-sky-100, .border-amber-100, .border-amber-200) {
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-sidebar a.group:hover :where(.group-hover\:text-sky-700) {
+  color: #7dd3fc !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-detail-page article :where(.bg-white, .border-slate-100) {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+/* Haber detay gövdesi — yekpare-news-body + Tailwind prose */
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body,
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body.yekpare-news-body,
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body :where(p, li, td, th, dd, dt, blockquote, figcaption, .yekpare-news-body-chunk, .yekpare-news-body-chunk p) {
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body.prose :where(p, li, ol, ul, td, th, blockquote, figcaption) {
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body.prose :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body :where(.text-slate-800, .text-slate-700, .text-slate-600, .text-gray-700, .text-gray-600) {
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-article-detail-page .hm-article-body p.yekpare-hm-attribution {
+  border-top-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+/* Ahenk Haber — beyaz kart adaları; koyu ziyaretçi modunda da koyu metin */
+[data-hm-visitor-theme="dark"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-block {
+  --hm-ahenk-surface: #ffffff;
+  --hm-ahenk-surface-muted: #fafafa;
+  --hm-ahenk-heading: #1a1a1a;
+  --hm-ahenk-body: #333333;
+  --hm-ahenk-muted: #666666;
+  --hm-ahenk-meta: #888888;
+  background: var(--hm-ahenk-surface) !important;
+  color: var(--hm-ahenk-body) !important;
+}
+
+[data-hm-visitor-theme="dark"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-section-head {
+  background: var(--hm-ahenk-surface-muted) !important;
+}
+
+[data-hm-visitor-theme="dark"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-block :where(
+  .hm-ahenk-quad-card,
+  .hm-ahenk-spor-card,
+  .hm-ahenk-ekonomi-card,
+  .hm-ahenk-gundem-main,
+  .hm-ahenk-gundem-side-row,
+  .hm-ahenk-dunya-main,
+  .hm-ahenk-dunya-row,
+  .hm-ahenk-gunun-sesi-hero,
+  .hm-ahenk-list-row,
+  .hm-ahenk-popular-row,
+  .hm-ahenk-author-row
+) {
+  color: var(--hm-ahenk-body) !important;
+}
+
+[data-hm-visitor-theme="dark"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-block :where(
+  .hm-ahenk-quad-card h3,
+  .hm-ahenk-spor-card h3,
+  .hm-ahenk-ekonomi-card h3,
+  .hm-ahenk-gundem-main-body h3,
+  .hm-ahenk-gundem-side-row h4,
+  .hm-ahenk-dunya-main h3,
+  .hm-ahenk-dunya-row h4,
+  .hm-ahenk-gunun-sesi-body h3,
+  .hm-ahenk-list-row h3,
+  .hm-ahenk-popular-row h3,
+  .hm-ahenk-author-row strong
+) {
+  color: var(--hm-ahenk-heading) !important;
+}
+
+[data-hm-visitor-theme="dark"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-block :where(
+  .hm-ahenk-gundem-main-body p,
+  .hm-ahenk-gunun-sesi-body p
+) {
+  color: var(--hm-ahenk-muted) !important;
+}
+
+[data-hm-visitor-theme="dark"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-block :where(.hm-ahenk-meta, .hm-ahenk-author-row small, .hm-ahenk-empty) {
+  color: var(--hm-ahenk-meta) !important;
+}
+
+[data-hm-visitor-theme="light"] [data-hm-vitrin-theme="ahenkhaber"] .hm-ahenk-block {
+  background: #ffffff !important;
+  color: #333333 !important;
+}
+
+/* ─── Koyu ziyaretçi: vitrin kart + classic kategori grid metinleri ─── */
+[data-hm-visitor-theme="dark"] .hm-vitrin-home .hm-vitrin-card,
+[data-hm-visitor-theme="dark"] .hm-vitrin-main .hm-vitrin-card,
+[data-hm-visitor-theme="dark"] :where(.hm-news-list-page, .hm-category-detail-page) .hm-vitrin-card {
+  background-color: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-card :where(.hm-vitrin-card__title, h1, h2, h3, h4, h5, h6, strong, a:not([class*="text-white"])),
+[data-hm-visitor-theme="dark"] .hm-vitrin-card :where(.text-gray-900, .text-slate-900, .text-zinc-900, .text-gray-800, .text-slate-800, .text-zinc-800) {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] .hm-vitrin-card :where(.hm-vitrin-card__meta, .hm-vitrin-card__summary, p:not(.hm-vitrin-card__title), span:not(.hm-vitrin-card__title), em, small, time, li),
+[data-hm-visitor-theme="dark"] .hm-vitrin-card :where(.text-gray-700, .text-slate-700, .text-zinc-700, .text-gray-600, .text-slate-600, .text-zinc-600, .text-gray-500, .text-slate-500, .text-zinc-500, .text-gray-400, .text-slate-400, .text-zinc-400) {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-compact-card,
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-feature-card:not(:has(.hm-classic-feature-shade)) {
+  background: var(--hm-card-bg, #1e293b) !important;
+  color: var(--hm-site-body-text, #e2e8f0) !important;
+}
+
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-compact-card h3,
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-feature-card:not(:has(.hm-classic-feature-shade)) h3,
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-section-head h2 {
+  color: var(--hm-site-heading, #f8fafc) !important;
+}
+
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-compact-card time,
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-social-widget a {
+  color: var(--hm-site-body-muted, #94a3b8) !important;
+}
+
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-widget,
+[data-hm-visitor-theme="dark"] :where([data-hm-vitrin-theme="classic"], [data-hm-vitrin-theme="portal3"]) .hm-classic-social-widget {
+  background: var(--hm-card-bg, #1e293b) !important;
+  border-color: var(--hm-card-border, rgba(255, 255, 255, 0.1)) !important;
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@workspace/yektube-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm exec vite --config vite.config.ts --host 0.0.0.0",
+    "build": "pnpm exec vite build --config vite.config.ts",
+    "serve": "pnpm exec vite preview --config vite.config.ts --host 0.0.0.0",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "catalog:",
+    "@workspace/yektube-core": "workspace:*",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-window": "catalog:",
+    "tailwind-merge": "catalog:",
+    "wouter": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/react-window": "^1.8.8",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "~5.9.2",
+    "vite": "catalog:",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}

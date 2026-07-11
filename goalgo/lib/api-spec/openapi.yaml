@@ -1,0 +1,949 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: AhenkPress news platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: news
+  - name: categories
+  - name: authors
+  - name: rss
+  - name: video
+  - name: modules
+  - name: ads
+  - name: finance
+  - name: settings
+  - name: dashboard
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Admin dashboard overview
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+
+  /news:
+    get:
+      operationId: listNews
+      tags: [news]
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [all, published, draft] } }
+        - { name: categorySlug, in: query, schema: { type: string } }
+        - { name: siteId, in: query, schema: { type: integer } }
+        - { name: authorId, in: query, schema: { type: integer } }
+        - { name: isEditorManual, in: query, schema: { type: string, enum: [true, false] }, description: "true = yalnızca panelden manuel eklenen haberler" }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NewsList" }
+    post:
+      operationId: createNews
+      tags: [news]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewsInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/News" }
+
+  /news/featured:
+    get:
+      operationId: listFeaturedNews
+      tags: [news]
+      summary: Manşet (featured) headlines for the slider
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/News" }
+
+  /news/breaking:
+    get:
+      operationId: listBreakingNews
+      tags: [news]
+      summary: Son dakika ticker items
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/News" }
+
+  /news/popular:
+    get:
+      operationId: listPopularNews
+      tags: [news]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/News" }
+
+  /news/by-category/{categorySlug}:
+    get:
+      operationId: listNewsByCategory
+      tags: [news]
+      parameters:
+        - { name: categorySlug, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/News" }
+
+  /news/{id}:
+    get:
+      operationId: getNews
+      tags: [news]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/News" }
+    put:
+      operationId: updateNews
+      tags: [news]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewsInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/News" }
+    delete:
+      operationId: deleteNews
+      tags: [news]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      parameters:
+        - name: siteId
+          in: query
+          required: false
+          schema: { type: integer }
+          description: HM site vitrininde — bu siteye özel + genel kategorileri döndürür.
+        - name: siteIds
+          in: query
+          required: false
+          schema: { type: string }
+          description: Virgülle ayrılmış HM site id'leri (RSS kampanyası gibi çoklu hedef).
+        - name: scope
+          in: query
+          required: false
+          schema: { type: string, enum: [admin] }
+          description: admin + panel oturumu — tüm kategoriler (siteye özel dahil).
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Category" }
+    post:
+      operationId: createCategory
+      tags: [categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+
+  /categories/{id}:
+    put:
+      operationId: updateCategory
+      tags: [categories]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "404": { description: Not found }
+        "409": { description: Slug conflict }
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /authors:
+    get:
+      operationId: listAuthors
+      tags: [authors]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Author" }
+    post:
+      operationId: createAuthor
+      tags: [authors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthorInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Author" }
+
+  /rss/campaigns:
+    get:
+      operationId: listRssCampaigns
+      tags: [rss]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssCampaignList" }
+    post:
+      operationId: createRssCampaign
+      tags: [rss]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RssCampaignInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssCampaign" }
+
+  /rss/campaigns/{id}:
+    get:
+      operationId: getRssCampaign
+      tags: [rss]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssCampaign" }
+    put:
+      operationId: updateRssCampaign
+      tags: [rss]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RssCampaignInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssCampaign" }
+    delete:
+      operationId: deleteRssCampaign
+      tags: [rss]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /rss/campaigns/{id}/run:
+    post:
+      operationId: runRssCampaign
+      tags: [rss]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK (senkron — geriye dönük uyumluluk)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssRunResult" }
+        "202":
+          description: Kabul edildi — kampanya arka planda çalışıyor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssRunResult" }
+
+  /rss/campaigns/{id}/toggle:
+    post:
+      operationId: toggleRssCampaign
+      tags: [rss]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RssCampaign" }
+
+  /rss/logs:
+    get:
+      operationId: listRssLogs
+      tags: [rss]
+      parameters:
+        - { name: campaignId, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RssLog" }
+
+  /video/sources:
+    get:
+      operationId: listVideoSources
+      tags: [video]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/VideoSource" }
+    post:
+      operationId: createVideoSource
+      tags: [video]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VideoSourceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VideoSource" }
+
+  /video/sources/{id}:
+    delete:
+      operationId: deleteVideoSource
+      tags: [video]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /video/sources/{id}/toggle:
+    post:
+      operationId: toggleVideoSource
+      tags: [video]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VideoSource" }
+
+  /video/presets:
+    get:
+      operationId: listVideoPresets
+      tags: [video]
+      summary: Pre-loaded popular Turkish YouTube channels
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/VideoPreset" }
+
+  /modules:
+    get:
+      operationId: listModules
+      tags: [modules]
+      summary: Homepage modules with order and enabled flags
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HomepageModule" }
+    put:
+      operationId: updateModules
+      tags: [modules]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateModulesRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HomepageModule" }
+
+  /ads:
+    get:
+      operationId: listAds
+      tags: [ads]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdSlot" }
+    put:
+      operationId: updateAds
+      tags: [ads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateAdsRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdSlot" }
+
+  /finance:
+    get:
+      operationId: listFinanceItems
+      tags: [finance]
+      summary: Currency / gold / market ticker items
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FinanceItem" }
+
+  /settings:
+    get:
+      operationId: getSiteSettings
+      tags: [settings]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteSettings" }
+    put:
+      operationId: updateSiteSettings
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SiteSettingsInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteSettings" }
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status: { type: string }
+      required: [status]
+
+    DashboardSummary:
+      type: object
+      required: [totalNews, publishedNews, draftNews, totalCategories, totalAuthors, totalCampaigns, activeCampaigns, totalAddedByRss, totalVideoSources, recentNews]
+      properties:
+        totalNews: { type: integer }
+        publishedNews: { type: integer }
+        draftNews: { type: integer }
+        totalCategories: { type: integer }
+        totalAuthors: { type: integer }
+        totalCampaigns: { type: integer }
+        activeCampaigns: { type: integer }
+        totalAddedByRss: { type: integer }
+        totalVideoSources: { type: integer }
+        recentNews:
+          type: array
+          items: { $ref: "#/components/schemas/News" }
+
+    News:
+      type: object
+      required: [id, title, slug, status, categorySlug, categoryName, createdAt, views]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        spot: { type: string, nullable: true }
+        content: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        categoryId: { type: integer, nullable: true }
+        categorySlug: { type: string }
+        categoryName: { type: string }
+        categoryColor: { type: string, nullable: true }
+        authorId: { type: integer, nullable: true }
+        authorName: { type: string, nullable: true }
+        status: { type: string, enum: [published, draft] }
+        isFeatured: { type: boolean }
+        isBreaking: { type: boolean }
+        views: { type: integer }
+        tags:
+          type: array
+          items: { type: string }
+        isEditorManual: { type: boolean, description: "Panelden manuel eklenen haber" }
+        contentKind: { type: string, enum: [news, makale], description: "makale = HM köşe tablosundan üretilen vitrin yanıtı" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    NewsInput:
+      type: object
+      required: [title, categorySlug, status]
+      properties:
+        title: { type: string }
+        slug: { type: string, nullable: true }
+        spot: { type: string, nullable: true }
+        content: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        categorySlug: { type: string }
+        authorId: { type: integer, nullable: true }
+        status: { type: string, enum: [published, draft] }
+        isFeatured: { type: boolean }
+        isBreaking: { type: boolean }
+        tags:
+          type: array
+          items: { type: string }
+
+    NewsList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/News" }
+        total: { type: integer }
+
+    Category:
+      type: object
+      required: [id, name, slug, color, newsCount]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        color: { type: string }
+        newsCount: { type: integer }
+        exclusiveSiteId: { type: integer, nullable: true, description: HM sitesine özel kategori }
+
+    CategoryInput:
+      type: object
+      required: [name, slug, color]
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        color: { type: string }
+        exclusiveSiteId: { type: integer, nullable: true, description: Yalnızca bu HM sitesinde listelensin }
+
+    Author:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        title: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+
+    AuthorInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        title: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+
+    RssCampaign:
+      type: object
+      required: [id, name, active, postType, categorySlug, intervalMinutes, addedCount, feeds, sourceType, translateEnabled, downloadImages, headline, dailyLimit, daysWindow, minWords, includeYekpareHaber]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        active: { type: boolean }
+        postType: { type: string, enum: [news, blog, column] }
+        categorySlug: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        feeds:
+          type: array
+          items: { type: string }
+        sourceType: { type: string, enum: [rss, html, haberler, youtube_channel, youtube_playlist, youtube_video] }
+        intervalMinutes: { type: integer }
+        daysWindow: { type: integer }
+        dailyLimit: { type: integer }
+        downloadImages: { type: boolean }
+        headline: { type: boolean }
+        breakingKeywords:
+          type: array
+          items: { type: string }
+        minWords: { type: integer }
+        translateEnabled: { type: boolean }
+        sourceLang: { type: string, nullable: true }
+        targetLang: { type: string, nullable: true }
+        translateEngine: { type: string, nullable: true }
+        addedCount: { type: integer }
+        lastRunAt: { type: string, format: date-time, nullable: true }
+        hmSiteIds:
+          type: array
+          items: { type: integer }
+          description: HM haber sitesi hedefleri
+        includeYekpareHaber:
+          type: boolean
+          description: true ise RSS kayıtları merkez Yekpare haber akışına da yazılır
+        haberlerFilterByTags:
+          type: boolean
+          description: true ise Haberler.com listesinde yalnızca tags ile eşleşen başlıklar kazınır
+
+    RssCampaignInput:
+      type: object
+      required: [name, postType, categorySlug, sourceType, intervalMinutes, feeds]
+      properties:
+        name: { type: string }
+        active: { type: boolean }
+        postType: { type: string, enum: [news, blog, column] }
+        categorySlug: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        feeds:
+          type: array
+          items: { type: string }
+        sourceType: { type: string, enum: [rss, html, haberler, youtube_channel, youtube_playlist, youtube_video] }
+        intervalMinutes: { type: integer }
+        daysWindow: { type: integer }
+        dailyLimit: { type: integer }
+        downloadImages: { type: boolean }
+        headline: { type: boolean }
+        breakingKeywords:
+          type: array
+          items: { type: string }
+        minWords: { type: integer }
+        translateEnabled: { type: boolean }
+        sourceLang: { type: string, nullable: true }
+        targetLang: { type: string, nullable: true }
+        translateEngine: { type: string, nullable: true }
+        hmSiteIds:
+          type: array
+          items: { type: integer }
+          description: HM haber sitesi hedefleri
+        includeYekpareHaber: { type: boolean }
+        haberlerFilterByTags: { type: boolean }
+
+    RssCampaignList:
+      type: object
+      required: [items, totalActive, totalAdded, nextRunAt]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/RssCampaign" }
+        totalActive: { type: integer }
+        totalAdded: { type: integer }
+        nextRunAt: { type: string, nullable: true }
+
+    RssRunResult:
+      type: object
+      required: [added, skipped, errors]
+      properties:
+        accepted: { type: boolean, description: true ise işlem arka planda sürüyor }
+        added: { type: integer }
+        skipped: { type: integer }
+        errors: { type: integer }
+        message: { type: string }
+
+    RssLog:
+      type: object
+      required: [id, campaignId, campaignName, level, action, message, createdAt]
+      properties:
+        id: { type: integer }
+        campaignId: { type: integer }
+        campaignName: { type: string }
+        level: { type: string, enum: [success, error, warning, info] }
+        action: { type: string }
+        message: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    VideoSource:
+      type: object
+      required: [id, name, platform, sourceType, channelId, categorySlug, active, isLive]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        platform: { type: string, enum: [youtube, dailymotion, instagram, tiktok] }
+        sourceType: { type: string, enum: [channel, playlist, podcast, video, live] }
+        channelId: { type: string }
+        url: { type: string, nullable: true }
+        logoUrl: { type: string, nullable: true }
+        categorySlug: { type: string }
+        active: { type: boolean }
+        isLive: { type: boolean }
+        videoCount: { type: integer }
+
+    VideoSourceInput:
+      type: object
+      required: [name, platform, sourceType, channelId, categorySlug]
+      properties:
+        name: { type: string }
+        platform: { type: string, enum: [youtube, dailymotion, instagram, tiktok] }
+        sourceType: { type: string, enum: [channel, playlist, podcast, video, live] }
+        channelId: { type: string }
+        url: { type: string, nullable: true }
+        logoUrl: { type: string, nullable: true }
+        categorySlug: { type: string }
+        active: { type: boolean }
+        isLive: { type: boolean }
+        useYoutubeApi:
+          type: boolean
+          description: "true ise YouTube Data API; false ise RSS + HTML kazıma (en fazla 50 video)"
+
+    VideoPreset:
+      type: object
+      required: [name, channelId, category]
+      properties:
+        name: { type: string }
+        channelId: { type: string }
+        category: { type: string }
+        logoUrl: { type: string, nullable: true }
+
+    HomepageModule:
+      type: object
+      required: [id, key, name, description, enabled, position]
+      properties:
+        id: { type: integer }
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        enabled: { type: boolean }
+        position: { type: integer }
+        accentColor: { type: string, nullable: true }
+
+    UpdateModulesRequest:
+      type: object
+      required: [modules]
+      properties:
+        modules:
+          type: array
+          items: { $ref: "#/components/schemas/HomepageModuleInput" }
+
+    UpdateAdsRequest:
+      type: object
+      required: [slots]
+      properties:
+        slots:
+          type: array
+          items: { $ref: "#/components/schemas/AdSlotInput" }
+
+    HomepageModuleInput:
+      type: object
+      required: [id, enabled, position]
+      properties:
+        id: { type: integer }
+        enabled: { type: boolean }
+        position: { type: integer }
+
+    AdSlot:
+      type: object
+      required: [id, slotKey, name, description, html, enabled]
+      properties:
+        id: { type: integer }
+        slotKey: { type: string }
+        name: { type: string }
+        description: { type: string }
+        html: { type: string }
+        enabled: { type: boolean }
+
+    AdSlotInput:
+      type: object
+      required: [id, html, enabled]
+      properties:
+        id: { type: integer }
+        html: { type: string }
+        enabled: { type: boolean }
+
+    FinanceItem:
+      type: object
+      required: [symbol, label, value, change, direction]
+      properties:
+        symbol: { type: string }
+        label: { type: string }
+        value: { type: string }
+        change: { type: string }
+        direction: { type: string, enum: [up, down, flat] }
+
+    SiteSettings:
+      type: object
+      required: [siteName, tagline, logoText1, logoText2, primaryColor, secondaryColor, navbarBg, navbarText, breakingBg, financeBg]
+      properties:
+        siteName: { type: string }
+        tagline: { type: string }
+        logoText1: { type: string }
+        logoText2: { type: string }
+        primaryColor: { type: string }
+        secondaryColor: { type: string }
+        navbarBg: { type: string }
+        navbarText: { type: string }
+        breakingBg: { type: string }
+        financeBg: { type: string }
+        footerText: { type: string }
+        copyrightText: { type: string }
+        address: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        whatsapp: { type: string, nullable: true }
+        facebook: { type: string, nullable: true }
+        twitter: { type: string, nullable: true }
+        instagram: { type: string, nullable: true }
+        youtube: { type: string, nullable: true }
+        telegram: { type: string, nullable: true }
+        mainNavJson: { type: string, nullable: true, description: "JSON dizi — ana menü sırası (örn. [\"haberler\",\"yektube\"])" }
+        logoUrl: { type: string, nullable: true, description: "Üst logo görseli tam URL veya / ile başlayan yol" }
+        footerNavJson: { type: string, nullable: true, description: "Footer menü anahtar dizisi (mainNavJson ile aynı format)" }
+        modulesEnabledJson: { type: string, nullable: true, description: "Modül açık/kapalı JSON nesnesi" }
+        homeSectionsJson: { type: string, nullable: true, description: "Anasayfa blokları [{id,enabled}]" }
+        newsLayoutJson:
+          { type: string, nullable: true, description: "Yekpare /haberler vitrin düzeni (NewsSiteLayoutPrefs JSON)" }
+        homepageDesignJson:
+          { type: string, nullable: true, description: "Yekpare / landing vitrin düzeni (YekpareLandingDesign JSON)" }
+        mapsGoogleBrowserKey:
+          { type: string, nullable: true, description: "Google Maps JS API tarayıcı anahtarı (referrer kısıtlı)" }
+        mapsGoogleEnabled:
+          { type: boolean, description: "true ise Geocoder önce Google; hata/kota → OSM" }
+        homeRecentBusinessLimit:
+          { type: integer, description: "Anasayfa son işletmeler listesi uzunluğu (5–30)" }
+
+    SiteSettingsInput:
+      type: object
+      properties:
+        siteName: { type: string }
+        tagline: { type: string }
+        logoText1: { type: string }
+        logoText2: { type: string }
+        primaryColor: { type: string }
+        secondaryColor: { type: string }
+        navbarBg: { type: string }
+        navbarText: { type: string }
+        breakingBg: { type: string }
+        financeBg: { type: string }
+        footerText: { type: string }
+        copyrightText: { type: string }
+        address: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        whatsapp: { type: string, nullable: true }
+        facebook: { type: string, nullable: true }
+        twitter: { type: string, nullable: true }
+        instagram: { type: string, nullable: true }
+        youtube: { type: string, nullable: true }
+        telegram: { type: string, nullable: true }
+        mainNavJson: { type: string, nullable: true }
+        logoUrl: { type: string, nullable: true }
+        footerNavJson: { type: string, nullable: true }
+        modulesEnabledJson: { type: string, nullable: true }
+        homeSectionsJson: { type: string, nullable: true }
+        newsLayoutJson: { type: string, nullable: true }
+        homepageDesignJson: { type: string, nullable: true }
+        mapsGoogleBrowserKey: { type: string, nullable: true }
+        mapsGoogleEnabled: { type: boolean }
+        homeRecentBusinessLimit: { type: integer, description: "Anasayfa son işletmeler (5–30)" }
+        publicThemeKey:
+          type: string
+          description: "Public tema anahtarı (yalnızca yekpare-sade desteklenir)"

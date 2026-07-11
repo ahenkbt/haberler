@@ -1,0 +1,327 @@
+body {
+    text-align: right;
+}
+
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_length {
+    float: right;
+}
+
+.user-sidebar .menu-item-has-children>a::after,
+.dataTables_wrapper .dataTables_paginate,
+div.dataTables_wrapper div.dataTables_filter {
+    float: left;
+}
+
+.user-dashbord .card-box:after {
+    right: auto;
+    left: 10px;
+}
+
+.user-area-section .user-form .form_group .btn {
+    margin-left: 10px;
+    margin-right: 0px;
+}
+
+.user-area-section .user-form .form_checkbox .single-checkbox {
+    margin-right: 0px;
+    margin-left: 15px;
+}
+
+/* div.table-responsive>div.dataTables_wrapper>div.row>div[class^="col-"]:last-child {
+    padding-right: 15px;
+    padding-left: 0;
+} */
+
+div.dataTables_wrapper div.dataTables_filter input {
+    margin-left: unset;
+    margin-right: 0.5em;
+}
+
+.breadcrumb-section .breadcrumb-text ul li a::after {
+    right: unset;
+    left: -18px;
+}
+
+.shop-top-bar .product-search button {
+    right: unset;
+    left: 0;
+}
+
+.course-details-area .course-details-sidebar .course-sidebar-btns ul li i {
+    padding-right: unset;
+    padding-left: 5px;
+}
+
+.course-wrapper-video .course-videos-wrapper {
+    margin-left: unset;
+    margin-right: 20%;
+}
+
+.course-navigation .navigation-container .course-nav-right {
+    text-align: left;
+}
+
+.discussion-wrapper span.span,
+.quiz-content-box span.span {
+    left: unset;
+    right: 0;
+}
+
+.course-nav-left a.prev i,
+.course-nav-right a.certificate i {
+    margin-right: unset;
+    margin-left: 10px;
+}
+
+.course-videos-area .course-videos-sidebar .course-video-nav .course-section ul.list li a::before {
+    margin-right: unset;
+    margin-left: 10px;
+}
+
+.absolute-counter {
+    right: unset;
+    left: 10%;
+}
+
+.progress-bar-style {
+    right: unset;
+    left: -18px;
+}
+
+.nusafe-sidebar .widget-box:before {
+    left: unset;
+    right: -1.5px;
+}
+
+.donation-form .form_group span {
+    left: unset;
+    right: 0;
+}
+
+.anonymous_user input {
+    margin-right: unset;
+    margin-left: 5px;
+}
+
+.causes-single-section input:not([type='file']),
+.causes-single-section textarea {
+    padding: 0 25px;
+}
+
+.donation-form input.amount_input {
+    padding-inline-start: 70px;
+}
+
+.course-details-items .instructor-box .thumb {
+    margin-right: unset;
+    margin-left: 25px;
+}
+
+.course-title-area .course-title-content .course-info ul li i {
+    margin-right: unset;
+    margin-left: 5px;
+}
+.single-room .room-desc .room-info i {
+    margin-right: unset;
+    margin-left: 7px;
+}
+.sidebar-wrap .widget.fillter-widget .checkboxes label::before{
+    left: unset;
+    right: -18px;
+}
+.sidebar-wrap .widget.fillter-widget .checkboxes label::after{
+    left: unset;
+    right: -14px;
+}
+.sidebar-wrap .widget.fillter-widget .checkboxes label{
+    padding-left: unset;
+    padding-right: 15px;
+}
+.rooms-warp .sidebar-wrap .widget .widget-title::after, .rooms-warp .sidebar-wrap .widget .widget-title::before{
+    left: unset;
+    right: 0;
+}
+.rooms-warp .sidebar-wrap .widget .widget-title::after{
+    left: unset;
+    right: 17px;
+}
+.mfp-image-holder .mfp-close, .mfp-iframe-holder .mfp-close{
+    text-align: left;
+}
+.sidebar-wrap :is(input[type='text'], input[type='email'], input[type='url'], input[type='number'], input[type='tel'], input[type='password'], select, textarea, .nice-select){
+    padding: 0 30px 0 45px;
+}
+.sidebar-wrap .input-wrap i{
+    right: unset;
+    left: 25px;
+}
+.sidebar .widget.cat-widget ul li a span,
+.room-details-wrapper .price-option-table ul .single-price-option span.title span.amount{
+    float: left;
+}
+.sidebar .widget.search-widget form button,
+.review-content ul.review-value::after{
+    right: unset;
+    left: 0;
+}
+.entry-meta li i{
+    margin-right: unset;
+    margin-left: 8px;
+}
+.post-details-wrap .post-meta ul li,
+.entry-meta li{
+    margin-right: unset;
+    margin-left: 30px;
+}
+.sidebar .widget.recent-post-widget .single-post .date i,
+.post-details-wrap .post-meta ul li i{
+    margin-right: unset;
+    margin-left: 10px;
+}
+
+.sidebar .widget.search-widget form input{
+    padding-left: 100px;
+    padding-right: 40px;
+}
+.input-group .icon{
+    right: unset;
+    left: 25px;
+}
+.shop-top-bar .product-search input{
+    padding-left: 50px;
+    padding-right: 25px;
+}
+.shop-sidebar .widget .widget-title::before{
+    left: unset;
+    right: 0;
+}
+.shop-sidebar .widget .widget-title::after{
+    left: unset;
+    right: 18px;
+}
+.form-check{
+    padding-left: unset;
+    padding-right: 1.25rem;
+}
+.form-check-input{
+    margin-left: unset;
+    margin-right: -1.25rem;
+}
+.faq-section .faq-loop.accordion .card .card-header h6 span.icons{
+    right: unset;
+    left: 30px;
+}
+table.dataTable thead th, table.dataTable thead td, table.dataTable tfoot th, table.dataTable tfoot td{
+    text-align: right;
+}
+.job-list-area-section .single-job p i{
+    margin-right: unset;
+    margin-left: 5px;
+}
+.widget-box .info-list li span, .widget-box .category-list li a span{
+    float: left;
+}
+.nice-select {
+    text-align: right !important;
+}
+.nice-select:after{
+    right: unset !important;
+    left: 12px;
+}
+.course-title-area .course-title-content .course-rating p{
+    padding: 0 10px 0 30px;
+}
+.curriculum-accordion .card .card-body .play-list li a i{
+    margin-right: unset;
+    margin-left: 10px;
+}
+.course-title-area .course-title-content .course-info ul li{
+    margin-right: unset;
+    margin-left: 30px;
+}
+.course-title-area .course-title-content .course-rating ul li span i{
+    margin-right: unset;
+    margin-left: 5px;
+}
+.course-details-area .course-details-items .course-thumb .tab-btns ul li a i{
+    padding-right: unset;
+    padding-left: 5px;
+}
+.curriculum-accordion .card .card-body .play-list li a span.time{
+    float: left;
+}
+.radio_common-2 li input[type="radio"]+label span{
+    margin-right: unset;
+    margin-left: 10px;
+}
+.single-courses .courses-content .courses-info .price span.pre-price{
+    margin-left: unset;
+    margin-right: 3px;
+}
+.download-box button span i{
+    margin-right: unset;
+    margin-left: 10px;
+}
+.nice-select .option{
+    text-align: right !important;
+    padding-right: 18px;
+    padding-left: 29px;
+}
+.modal button.close{
+    right: unset;
+    left: 0;
+    border-radius: 5px 0 5px 0;
+}
+.checkout-area-section .bottom .cart-total .cart-total-table li span.col{
+    float: right;
+}
+a#cartIcon{
+    right: unset;
+    left: 0;
+}
+.single-room .room-desc .room-info li{
+    margin-left: 20px !important;
+}
+div.table-responsive > div.dataTables_wrapper > div.row > div[class^="col-"]:first-child{
+    padding-left: 15px;
+    padding-right: 0;
+}
+.mr-2 {
+    margin-right: unset !important;
+    margin-left: 0.5rem!important;
+}
+.course-details-items .reviews-item .thumb{
+    margin-right: unset;
+    margin-left: 20px;
+}
+.comment-area .comment-list li{
+    padding-left: unset;
+    padding-right: 100px;
+}
+.comment-area .comment-list li .comment-user{
+    left: unset;
+    right: 0;
+}
+footer .widget.footer-widget .recent-post li::before {
+    content: "\f100";
+}
+
+.shop-details-wrap .product-details .product-details-tab .product-review .review-list li{
+    padding-left: unset;
+    padding-right: 110px;
+}
+.shop-details-wrap .product-details .product-details-tab .product-review .review-list li .review-thumb{
+    left: unset;
+    right: 0;
+}
+header .header-nav .nav-container .language-selection .language-list {
+left: unset;
+    right: 0;
+
+}
+header .header-nav .nav-container .language-selection .language-list li a {
+    
+    padding: 5px 15px 5px 0px;
+    
+}

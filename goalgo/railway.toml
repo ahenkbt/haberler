@@ -1,0 +1,26 @@
+# Railway: servis kök dizini bu repo içinde `goalgo` klasörü olmalı (GitHub kökü üst klasörse Root Directory = goalgo).
+# Kökte tam adı `Dockerfile` olmalı — Railway bunu otomatik seçer, Railpack kilidini aşar.
+#
+# Zorunlu / önemli Variables (Railway panel → Variables):
+#   DATABASE_URL  → PostgreSQL servisi ile linklenince çoğunlukla otomatik gelir (yoksa DATABASE_PRIVATE_URL).
+#   SESSION_SECRET → Üretimde güçlü rastgele dize (min. 16 karakter).
+#   SKIP_DB_MIGRATE=1 → migrate atlanır; DATABASE_URL yine zorunlu.
+#   USE_NATIVE_AI_CALL → varsayılan true (yerel AI Call); Railway'de eklemeniz gerekmez.
+# Migrasyon: `start:with-migrate` → önce db-migrate tamamlanır, sonra HTTP dinleyicisi açılır.
+# Acil: SKIP_DB_MIGRATE=1 yalnızca migrate script’inde.
+#
+# Detaylı adımlar: docs/BULUT_KURULUM.md
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Migrasyon + API aynı süreçte (Railway preDeploy + start ayrımından kaynaklanan “migrate tamam → crashed” senaryolarını önler).
+startCommand = "pnpm --filter @workspace/api-server run start:with-migrate"
+healthcheckPath = "/api/healthz"
+# `start:with-migrate` önce db:migrate çalıştırır; çok uzun migrasyonlar için tampon.
+healthcheckTimeout = 600
+# Eski replika yeni sağlıklı olana kadar kısa süre hizmet vermeye devam eder (Railway zero-downtime).
+overlapSeconds = 45
+# SIGTERM sonrası açık bağlantıların kapanması için süre (SIGKILL öncesi).
+drainingSeconds = 20

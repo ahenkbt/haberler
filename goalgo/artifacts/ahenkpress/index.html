@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!-- Google Search Console — yekpare.net kök (Genel Ayarlar); HM sitelerinde edge middleware site kodunu enjekte eder -->
+    <meta name="google-site-verification" content="VgFguI_O9BcZbc8mGpSo4TlgB3OlnHyUa_gchDPIG3c" data-yekpare-verification="portal" />
+
+    <!-- Primary Meta Tags -->
+    <title>Yekpare — Türkiye'nin Yerli Arama Motoru</title>
+    <script>
+      (function () {
+        try {
+          var LS_META = "hm-nested-meta:v1:";
+          var LS_DOMAIN = "hm-domain-slug:v1:";
+          var LS_HYBRID = "hm-home-hybrid-v1:";
+          var SS_META_BY_DOMAIN = "hm-meta-by-domain:ss:v1:";
+          var SS_META_BY_DOMAIN_MAX = 60000;
+          var MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+          var HYBRID_MAX_AGE = 3 * 60 * 60 * 1000;
+          function normSlug(raw) {
+            return String(raw || "")
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, "-")
+              .replace(/[^a-z0-9-]/g, "")
+              .replace(/-+/g, "-")
+              .replace(/^-|-$/g, "");
+          }
+          function readLs(key) {
+            try {
+              var raw = localStorage.getItem(key);
+              if (!raw) return null;
+              var parsed = JSON.parse(raw);
+              var at = typeof parsed.updatedAt === "number" ? parsed.updatedAt : 0;
+              if (Date.now() - at > MAX_AGE) return null;
+              return parsed;
+            } catch (e) {
+              return null;
+            }
+          }
+          function layoutJson(layout) {
+            if (!layout) return null;
+            if (typeof layout === "string") {
+              try {
+                return JSON.parse(layout);
+              } catch (e) {
+                return null;
+              }
+            }
+            return typeof layout === "object" ? layout : null;
+          }
+          function iconFromLayout(layout) {
+            var j = layoutJson(layout);
+            if (!j) return null;
+            var fav = typeof j.faviconUrl === "string" ? j.faviconUrl.trim() : "";
+            if (fav) return fav;
+            var logo = typeof j.logoUrl === "string" ? j.logoUrl.trim() : "";
+            if (logo) return logo;
+            var legacy = typeof j.logo === "string" ? j.logo.trim() : "";
+            return legacy || null;
+          }
+          function applyLayoutEarlyAttrs(layout) {
+            var j = layoutJson(layout);
+            if (!j) return;
+            var root = document.documentElement;
+            var theme = typeof j.hmVitrinTheme === "string" ? j.hmVitrinTheme.trim().toLowerCase() : "";
+            if (theme) root.setAttribute("data-hm-vitrin-theme-early", theme);
+            var manset = typeof j.mansetVariant === "string" ? j.mansetVariant.trim().toLowerCase() : "";
+            if (manset) root.setAttribute("data-hm-manset-variant-early", manset);
+          }
+          function absIcon(href) {
+            if (!href) return null;
+            if (/^https?:\/\//i.test(href)) return href;
+            if (href.indexOf("//") === 0) return "https:" + href;
+            return location.origin + (href.charAt(0) === "/" ? href : "/" + href);
+          }
+          function setFavicon(href) {
+            var icon = absIcon(href);
+            if (!icon) return;
+            function upsert(rel, sizes, id) {
+              var el = document.querySelector('link[data-hm-early="' + id + '"]');
+              if (!el) {
+                el = document.createElement("link");
+                el.setAttribute("data-hm-early", id);
+                el.rel = rel;
+                document.head.appendChild(el);
+              }
+              el.href = icon;
+              if (sizes) el.setAttribute("sizes", sizes);
+              el.type = "image/png";
+            }
+            upsert("icon", "192x192", "icon-192");
+            upsert("icon", "48x48", "icon-48");
+            upsert("apple-touch-icon", "180x180", "apple-touch");
+          }
+          function clearPortalVerificationMeta() {
+            document.head
+              .querySelectorAll('meta[data-yekpare-verification="portal"], meta[name="google-site-verification"]')
+              .forEach(function (el) {
+                el.remove();
+              });
+          }
+          function upsertVerificationMeta(name, content) {
+            if (!name || !content) return;
+            var n = String(name || "").trim();
+            var c = String(content || "").trim();
+            if (!n || !c) return;
+            if (!/^[a-zA-Z0-9._:-]{1,80}$/.test(n)) return;
+            clearPortalVerificationMeta();
+            document.head.querySelectorAll('meta[data-hm-verification="1"]').forEach(function (el) {
+              if (el.getAttribute("name") === n) el.remove();
+            });
+            var el = document.createElement("meta");
+            el.setAttribute("name", n);
+            el.setAttribute("content", c);
+            el.setAttribute("data-hm-verification", "1");
+            document.head.appendChild(el);
+          }
+          function applyVerification(meta) {
+            if (!meta) return;
+            var v = meta.seoVerification;
+            if (!v || typeof v !== "object") return;
+            clearPortalVerificationMeta();
+            var google = typeof v.googleSiteVerification === "string" ? v.googleSiteVerification.trim() : "";
+            var bing = typeof v.bingSiteVerification === "string" ? v.bingSiteVerification.trim() : "";
+            var yandex = typeof v.yandexVerification === "string" ? v.yandexVerification.trim() : "";
+            if (google) upsertVerificationMeta("google-site-verification", google);
+            if (bing) upsertVerificationMeta("msvalidate.01", bing);
+            if (yandex) upsertVerificationMeta("yandex-verification", yandex);
+            var custom = v.customMetaTags;
+            if (Array.isArray(custom)) {
+              for (var i = 0; i < custom.length; i++) {
+                var t = custom[i];
+                if (!t || typeof t !== "object") continue;
+                var nm = typeof t.name === "string" ? t.name.trim() : "";
+                var ct = typeof t.content === "string" ? t.content.trim() : "";
+                if (nm && ct) upsertVerificationMeta(nm, ct);
+              }
+            }
+          }
+          function setHmManifest(domainHint) {
+            var host = location.hostname.replace(/^www\./, "");
+            var qHost = domainHint || host;
+            var m = document.querySelector('link[rel="manifest"]');
+            if (!m) {
+              m = document.createElement("link");
+              m.rel = "manifest";
+              document.head.appendChild(m);
+            }
+            m.href = "/api/hm/pwa-manifest.json?domain=" + encodeURIComponent(qHost);
+            m.setAttribute("data-hm-early", "manifest");
+          }
+          function clearPortalJsonLd() {
+            document.head.querySelectorAll('script[data-yekpare-portal-jsonld="1"]').forEach(function (el) {
+              el.remove();
+            });
+          }
+          function applyMeta(meta, slugHint) {
+            if (!meta) return false;
+            var slug = normSlug(slugHint || meta.slug || "");
+            if (!slug || normSlug(meta.slug || "") !== slug) return false;
+            var name = String(meta.displayName || "").trim();
+            if (!name) {
+              name = slug
+                .split("-")
+                .filter(Boolean)
+                .map(function (w) {
+                  return w.charAt(0).toUpperCase() + w.slice(1);
+                })
+                .join(" ");
+            }
+            var desc =
+              String(meta.description || "").trim() ||
+              name + " güncel haberler, duyurular ve köşe yazıları";
+            var title = name + " — Haber";
+            var icon = absIcon(iconFromLayout(meta.layout));
+            var shareImage = icon || location.origin.replace(/\/+$/, "") + "/apple-touch-icon.png";
+            var canonicalUrl = location.origin.replace(/\/+$/, "") + (location.pathname || "/");
+            function upsertCanonical(href) {
+              var el = document.querySelector('link[rel="canonical"]');
+              if (!el) {
+                el = document.createElement("link");
+                el.rel = "canonical";
+                document.head.appendChild(el);
+              }
+              el.href = href;
+            }
+            function upsertOg(prop, content) {
+              var el = document.querySelector('meta[property="' + prop + '"]');
+              if (!el) {
+                el = document.createElement("meta");
+                el.setAttribute("property", prop);
+                document.head.appendChild(el);
+              }
+              el.setAttribute("content", content);
+            }
+            function upsertName(nameKey, content) {
+              var el = document.querySelector('meta[name="' + nameKey + '"]');
+              if (!el) {
+                el = document.createElement("meta");
+                el.setAttribute("name", nameKey);
+                document.head.appendChild(el);
+              }
+              el.setAttribute("content", content);
+            }
+            document.title = title;
+            upsertCanonical(canonicalUrl);
+            upsertName("description", desc.slice(0, 320));
+            upsertOg("og:site_name", name);
+            upsertOg("og:title", title);
+            upsertOg("og:description", desc.slice(0, 300));
+            upsertOg("og:url", canonicalUrl);
+            upsertOg("og:image", shareImage);
+            upsertName("twitter:title", title);
+            upsertName("twitter:description", desc.slice(0, 200));
+            upsertName("twitter:image", shareImage);
+            upsertName("geo.region", "TR");
+            upsertName("geo.placename", "Türkiye");
+            setFavicon(iconFromLayout(meta.layout));
+            setHmManifest(meta.domain || location.hostname.replace(/^www\./, ""));
+            clearPortalJsonLd();
+            applyLayoutEarlyAttrs(meta.layout);
+            applyVerification(meta);
+            return true;
+          }
+          function readHybridCache(siteId) {
+            if (!siteId) return null;
+            try {
+              var raw = localStorage.getItem(LS_HYBRID + siteId);
+              if (!raw) return null;
+              var parsed = JSON.parse(raw);
+              if (!parsed || !Array.isArray(parsed.items) || typeof parsed.savedAt !== "number") return null;
+              if (Date.now() - parsed.savedAt > HYBRID_MAX_AGE) return null;
+              return parsed;
+            } catch (e) {
+              return null;
+            }
+          }
+          function writeHybridCache(siteId, items) {
+            if (!siteId || !items || !items.length) return;
+            try {
+              var payload = { savedAt: Date.now(), items: items.slice(0, 120) };
+              localStorage.setItem(LS_HYBRID + siteId, JSON.stringify(payload));
+              sessionStorage.setItem(LS_HYBRID + siteId, JSON.stringify(payload));
+            } catch (e) {}
+          }
+          function isHmHomePath() {
+            var p = (location.pathname || "").replace(/\/+$/, "") || "/";
+            return p === "/" || /^\/tr\/[^/]+$/i.test(p) || /^\/hm\/[^/]+$/i.test(p);
+          }
+          function prefetchHmHomeHybrid(opts) {
+            var siteId = opts && opts.siteId ? Number(opts.siteId) : 0;
+            var slug = opts && opts.slug ? normSlug(opts.slug) : "";
+            if (!siteId && !slug) return;
+            if (siteId > 0) {
+              var cached = readHybridCache(siteId);
+              if (cached && cached.items && cached.items.length) {
+                window.__YEKPARE_HM_HOME_HYBRID__ = {
+                  siteId: siteId,
+                  savedAt: cached.savedAt,
+                  items: cached.items,
+                };
+              }
+            }
+            if (!isHmHomePath()) return;
+            var qs =
+              siteId > 0
+                ? "siteId=" + encodeURIComponent(String(siteId))
+                : "slug=" + encodeURIComponent(slug);
+            var url =
+              "/api/news/hybrid?" +
+              qs +
+              "&limit=100&offset=0&rssScope=all&dbFirst=1";
+            fetch(url)
+              .then(function (r) {
+                return r.ok ? r.json() : null;
+              })
+              .then(function (data) {
+                if (!data || !Array.isArray(data.items) || !data.items.length) return;
+                var resolvedId = Number(data.siteId || siteId);
+                if (!resolvedId || !Number.isFinite(resolvedId)) return;
+                var payload = { siteId: resolvedId, savedAt: Date.now(), items: data.items };
+                window.__YEKPARE_HM_HOME_HYBRID__ = payload;
+                writeHybridCache(resolvedId, data.items);
+              })
+              .catch(function () {});
+          }
+          function writeDomainSlug(hostKey, slug) {
+            if (!hostKey || !slug) return;
+            var payload = { slug: slug, updatedAt: Date.now() };
+            var apex = String(hostKey || "")
+              .toLowerCase()
+              .replace(/^www\./, "");
+            try {
+              localStorage.setItem(LS_DOMAIN + hostKey, JSON.stringify(payload));
+              if (apex && apex !== hostKey) {
+                localStorage.setItem(LS_DOMAIN + apex, JSON.stringify(payload));
+              }
+              if (apex) {
+                localStorage.setItem(LS_DOMAIN + "www." + apex, JSON.stringify(payload));
+              }
+            } catch (e) {}
+          }
+          function writeMetaCache(slug, meta) {
+            if (!slug || !meta) return;
+            try {
+              localStorage.setItem(
+                LS_META + slug,
+                JSON.stringify({ data: meta, updatedAt: Date.now() }),
+              );
+            } catch (e) {}
+          }
+          function readSsMetaByDomain(hostKey) {
+            if (!hostKey) return undefined;
+            try {
+              var raw = sessionStorage.getItem(SS_META_BY_DOMAIN + hostKey);
+              if (!raw) return undefined;
+              var parsed = JSON.parse(raw);
+              if (!parsed || typeof parsed.savedAt !== "number") return undefined;
+              if (Date.now() - parsed.savedAt > SS_META_BY_DOMAIN_MAX) return undefined;
+              return parsed.data === undefined ? null : parsed.data;
+            } catch (e) {
+              return undefined;
+            }
+          }
+          function writeSsMetaByDomain(hostKey, meta) {
+            if (!hostKey) return;
+            try {
+              sessionStorage.setItem(
+                SS_META_BY_DOMAIN + hostKey,
+                JSON.stringify({ data: meta, savedAt: Date.now() }),
+              );
+            } catch (e) {}
+          }
+          function applyHmDomainMeta(hostKey, meta) {
+            if (!meta || !meta.slug) return;
+            var slug = normSlug(meta.slug);
+            if (!slug) return;
+            window.__YEKPARE_HM_DOMAIN_BOOT__ = {
+              host: hostKey,
+              domain: meta.domain || hostKey,
+              slug: slug,
+              savedAt: Date.now(),
+            };
+            writeDomainSlug(hostKey, slug);
+            writeMetaCache(slug, meta);
+            writeSsMetaByDomain(hostKey, meta);
+            if (applyMeta(meta, slug)) {
+              if (meta.id) {
+                prefetchHmHomeHybrid({ siteId: meta.id, slug: slug });
+              } else {
+                prefetchHmHomeHybrid({ slug: slug });
+              }
+            }
+          }
+          function prefetchHmDomainMeta(hostKey) {
+            if (!hostKey) return;
+            var ssCached = readSsMetaByDomain(hostKey);
+            if (ssCached) {
+              applyHmDomainMeta(hostKey, ssCached);
+              return;
+            }
+            if (ssCached === null) return;
+            var boot = window.__YEKPARE_HM_DOMAIN_BOOT__;
+            if (boot && boot.slug) {
+              var bootHost = String(boot.host || boot.domain || "")
+                .toLowerCase()
+                .replace(/^www\./, "");
+              var hostNorm = String(hostKey || "")
+                .toLowerCase()
+                .replace(/^www\./, "");
+              if (!bootHost || bootHost === hostNorm) return;
+            }
+            var url = "/api/hm/meta/by-domain?domain=" + encodeURIComponent(hostKey);
+            fetch(url)
+              .then(function (r) {
+                if (r.status === 404) {
+                  writeSsMetaByDomain(hostKey, null);
+                  return null;
+                }
+                return r.ok ? r.json() : null;
+              })
+              .then(function (meta) {
+                if (!meta) return;
+                applyHmDomainMeta(hostKey, meta);
+              })
+              .catch(function () {});
+          }
+
+          var p = (location.pathname || "").replace(/\/+$/, "") || "/";
+          var tr = p.match(/^\/tr\/([^/?#]+)/i);
+          var hm = p.match(/^\/hm\/([^/?#]+)/i);
+          var seg = tr ? tr[1] : hm ? hm[1] : null;
+          if (seg) {
+            clearPortalVerificationMeta();
+            var slug = normSlug(decodeURIComponent(seg));
+            var cached = readLs(LS_META + slug);
+            if (applyMeta(cached && cached.data, slug)) {
+              if (cached && cached.data && cached.data.id) {
+                prefetchHmHomeHybrid({ siteId: cached.data.id, slug: slug });
+              } else {
+                prefetchHmHomeHybrid({ slug: slug });
+              }
+              return;
+            }
+            prefetchHmHomeHybrid({ slug: slug });
+            var label = decodeURIComponent(seg).replace(/-/g, " ");
+            document.title = label + " — Haber";
+            var og0 = document.querySelector('meta[property="og:site_name"]');
+            if (og0) og0.setAttribute("content", label);
+            var ap0 = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (ap0) ap0.setAttribute("content", label);
+            return;
+          }
+
+          var host = (location.hostname || "").toLowerCase().split(":")[0];
+          var portal =
+            !host ||
+            host === "yekpare.net" ||
+            host === "www.yekpare.net" ||
+            host === "turknet.app" ||
+            host === "www.turknet.app" ||
+            host === "localhost" ||
+            host === "127.0.0.1" ||
+            host.indexOf(".vercel.app") !== -1;
+          if (!portal) {
+            clearPortalVerificationMeta();
+            var dom = readLs(LS_DOMAIN + host);
+            var domSlug = dom && dom.slug ? normSlug(dom.slug) : "";
+            if (domSlug) {
+              var domMeta = readLs(LS_META + domSlug);
+              if (applyMeta(domMeta && domMeta.data, domSlug)) {
+                if (domMeta && domMeta.data && domMeta.data.id) {
+                  prefetchHmHomeHybrid({ siteId: domMeta.data.id, slug: domSlug });
+                } else {
+                  prefetchHmHomeHybrid({ slug: domSlug });
+                }
+              } else {
+                prefetchHmHomeHybrid({ slug: domSlug });
+              }
+            } else {
+              prefetchHmDomainMeta(host);
+            }
+            var human = host.replace(/^www\./, "");
+            var earlyCanonical = location.origin.replace(/\/+$/, "") + "/";
+            document.title = human + " — Haber";
+            var canon = document.querySelector('link[rel="canonical"]');
+            if (canon) canon.href = earlyCanonical;
+            var ogUrl = document.querySelector('meta[property="og:url"]');
+            if (ogUrl) ogUrl.setAttribute("content", earlyCanonical);
+            var og2 = document.querySelector('meta[property="og:site_name"]');
+            if (og2) og2.setAttribute("content", human);
+            var ap2 = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (ap2) ap2.setAttribute("content", human);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="title" content="Yekpare — Türkiye'nin Yerli Arama Motoru" />
+    <meta name="description" content="Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmetleri tek aramada keşfedin." />
+    <meta name="keywords" content="Yekpare, haber, yektube, harita, keşfet, yemek siparişi, market, alışveriş, magaza, turizm, seyahat, firma rehberi, Türkiye" />
+    <meta name="author" content="Ahenk Bilgi Teknolojileri" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Turkish" />
+    <meta name="revisit-after" content="3 days" />
+    <meta name="geo.region" content="TR" />
+    <meta name="geo.placename" content="Türkiye" />
+    <meta name="geo.position" content="39.0;35.0" />
+    <meta name="ICBM" content="39.0, 35.0" />
+    <link rel="canonical" href="https://yekpare.net/" />
+    <link rel="alternate" hreflang="tr-TR" href="https://yekpare.net/" />
+    <link rel="alternate" hreflang="x-default" href="https://yekpare.net/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://yekpare.net/" />
+    <meta property="og:title" content="Yekpare — Türkiye'nin Yerli Arama Motoru" />
+    <meta property="og:description" content="Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmetleri tek aramada keşfedin." />
+    <meta property="og:image" content="https://yekpare.net/opengraph.jpg" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:site_name" content="Yekpare" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://yekpare.net/" />
+    <meta name="twitter:title" content="Yekpare — Türkiye'nin Yerli Arama Motoru" />
+    <meta name="twitter:description" content="Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmetleri tek aramada keşfedin." />
+    <meta name="twitter:image" content="https://yekpare.net/opengraph.jpg" />
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Yekpare" />
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="/icon-192.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs" />
+    <link rel="alternate" type="text/plain" href="/ai.txt" title="AI Knowledge" />
+
+    <!-- Structured Data: Organization + WebSite + Services (GEO — Türkiye) -->
+    <script type="application/ld+json" data-yekpare-portal-jsonld="1">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://yekpare.net/#organization",
+          "name": "Yekpare",
+          "alternateName": ["Yekpare Arama Motoru", "Yekpare.net", "yekpare.net"],
+          "url": "https://yekpare.net",
+          "logo": { "@type": "ImageObject", "url": "https://yekpare.net/icon-512.png" },
+          "description": "Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş, firma rehberi ve turizm hizmetlerini tek aramada keşfedin.",
+          "areaServed": { "@type": "Country", "name": "Türkiye" },
+          "address": { "@type": "PostalAddress", "addressCountry": "TR" },
+          "foundingLocation": { "@type": "Place", "name": "Türkiye" },
+          "parentOrganization": { "@type": "Organization", "name": "Ahenk Bilgi Teknolojileri", "url": "https://ahenk.net.tr" },
+          "knowsAbout": ["online yemek siparişi", "market siparişi", "e-ticaret alışveriş", "turizm rezervasyonu", "kurye ve taksi", "çekici ve nakliye", "harita ve işletme keşfi", "haber portalı", "haber merkezi", "işletme özel domain", "ansiklopedi", "yapay zeka asistanı", "ai çağrı merkezi"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://yekpare.net/#website",
+          "name": "Yekpare",
+          "alternateName": "Yekpare Arama Motoru",
+          "url": "https://yekpare.net",
+          "inLanguage": "tr-TR",
+          "publisher": { "@id": "https://yekpare.net/#organization" },
+          "about": { "@id": "https://yekpare.net/#organization" },
+          "potentialAction": [
+            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/ara?q={search_term_string}" }, "query-input": "required name=search_term_string" },
+            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/haberler?q={search_term_string}" }, "query-input": "required name=search_term_string" },
+            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/kesfet?q={search_term_string}" }, "query-input": "required name=search_term_string" }
+          ]
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/yemek#service",
+          "name": "Yemek Siparişi",
+          "serviceType": "FoodDelivery",
+          "url": "https://yekpare.net/yemek",
+          "description": "Restoran ve paket servis işletmelerinden online yemek siparişi.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/magaza#service",
+          "name": "Alışveriş",
+          "serviceType": "OnlineStore",
+          "url": "https://yekpare.net/magaza",
+          "description": "Çok satıcılı e-ticaret pazaryeri ve mağaza vitrinleri.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/turizm#service",
+          "name": "Seyahat ve Turizm",
+          "serviceType": "TravelAgency",
+          "url": "https://yekpare.net/turizm",
+          "description": "Otel, villa, tur ve araç kiralama rezervasyon ilanları.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/kesfet#service",
+          "name": "Keşfet ve Haritalar",
+          "serviceType": "LocalBusinessDirectory",
+          "url": "https://yekpare.net/kesfet",
+          "description": "Harita üzerinden işletme keşfi ve konum arama.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/haberler#service",
+          "name": "Haberler",
+          "serviceType": "NewsMediaOrganization",
+          "url": "https://yekpare.net/haberler",
+          "description": "Güncel haber akışı ve haber merkezi siteleri.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/ansiklopedi#service",
+          "name": "Bilgi Ağacı",
+          "serviceType": "EducationalOrganization",
+          "url": "https://yekpare.net/ansiklopedi",
+          "description": "Ansiklopedi ve bilgi ağacı içerik portalı.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/market#service",
+          "name": "Market Siparişi",
+          "serviceType": "GroceryDelivery",
+          "url": "https://yekpare.net/market",
+          "description": "Market ve gıda ürünleri online siparişi.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/haritalar#service",
+          "name": "Haritalar",
+          "serviceType": "MapService",
+          "url": "https://yekpare.net/haritalar",
+          "description": "Tam ekran interaktif harita ve konum arama.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/ulasim#service",
+          "name": "Ulaşım",
+          "serviceType": "DeliveryService",
+          "url": "https://yekpare.net/ulasim",
+          "description": "Kurye, taksi, ortak yolculuk, çekici, nakliyat ve kargo talepleri.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/ai-cagri-merkezi#service",
+          "name": "Yekpare AI",
+          "serviceType": "CustomerService",
+          "url": "https://yekpare.net/ai-cagri-merkezi",
+          "description": "Yapay zeka asistanı ve işletmeler için AI çağrı merkezi.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/habermerkezi#service",
+          "name": "Haber Merkezi",
+          "serviceType": "NewsMediaOrganization",
+          "url": "https://yekpare.net/habermerkezi",
+          "description": "Bağımsız haber siteleri; özel domain ile white-label yayın.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://yekpare.net/yektube#service",
+          "name": "YekTube",
+          "serviceType": "VideoObject",
+          "url": "https://yekpare.net/yektube",
+          "description": "Video kanalları, canlı TV ve haber videoları.",
+          "provider": { "@id": "https://yekpare.net/#organization" },
+          "areaServed": { "@type": "Country", "name": "Türkiye" }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Structured Data: WebApplication (arama motoru) -->
+    <script type="application/ld+json" data-yekpare-portal-jsonld="1">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Yekpare",
+      "applicationCategory": "SearchApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "url": "https://yekpare.net",
+      "description": "Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmet araması.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
+      "areaServed": "TR",
+      "publisher": { "@type": "Organization", "name": "Ahenk Bilgi Teknolojileri", "url": "https://ahenk.net.tr" }
+    }
+    </script>
+
+    <!-- FAQPage JSON-LD: yalnızca /bilgi/* sayfalarında (pageSeo applyYekpareEntityGraph); anasayfada görünür SSS yok -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=latin,latin-ext&display=swap" rel="stylesheet">
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      (function () {
+        var RELOAD_KEY = "hm-chunk-reload-once";
+        function reloadOnce() {
+          try {
+            if (!sessionStorage.getItem(RELOAD_KEY)) {
+              sessionStorage.setItem(RELOAD_KEY, "1");
+              location.reload();
+            }
+          } catch (e) {
+            location.reload();
+          }
+        }
+        window.addEventListener("vite:preloadError", function (e) {
+          e.preventDefault();
+          reloadOnce();
+        });
+        window.addEventListener("error", function (e) {
+          var msg = String((e && e.message) || "");
+          if (
+            msg.indexOf("Failed to fetch dynamically imported module") !== -1 ||
+            msg.indexOf("Importing a module script failed") !== -1 ||
+            msg.indexOf("error loading dynamically imported module") !== -1
+          ) {
+            reloadOnce();
+          }
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>

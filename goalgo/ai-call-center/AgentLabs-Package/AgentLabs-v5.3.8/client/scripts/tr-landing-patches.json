@@ -1,0 +1,1270 @@
+{
+  "features": "Özellikler",
+  "useCases": "Kullanım Alanları",
+  "pricing": {
+    "title": "Basit,",
+    "titleHighlight": "Şeffaf",
+    "titleEnd": "Fiyatlandırma",
+    "description": "Ücretsiz başlayın, hazır olduğunuzda yükseltin",
+    "monthly": "Aylık",
+    "yearly": "Yıllık",
+    "save20": "%20 tasarruf",
+    "popular": "Popüler",
+    "free": "Ücretsiz",
+    "perMonth": "/ay",
+    "perYear": "/yıl",
+    "getStarted": "Hemen Başla",
+    "startFreeTrial": "Ücretsiz Denemeyi Başlat",
+    "guarantee": "Tüm planlarda 14 gün para iade garantisi. Ücretsiz plan için kredi kartı gerekmez.",
+    "features": {
+      "aiAgent": "{{count}} Yapay Zeka Ajanı",
+      "aiAgents": "{{count}} Yapay Zeka Ajanları",
+      "unlimitedAgents": "Sınırsız Yapay Zeka Ajanları",
+      "campaign": "{{count}} Kampanya",
+      "campaigns": "{{count}} Kampanyalar",
+      "unlimitedCampaigns": "Sınırsız Kampanyalar",
+      "maxContacts": "Max. {{count}} Kişiler pro Kampanya",
+      "contactsPerCampaign": "{{count}} Kişiler/Kampanya",
+      "unlimitedContacts": "Sınırsız Kişiler",
+      "flowAutomation": "{{count}} Flow-Automatisierung",
+      "flowAutomations": "{{count}} Flow-Automatisierungen",
+      "unlimitedFlows": "Sınırsız Flow-Automatisierungen",
+      "knowledgeBase": "{{count}} Bilgi Bankası",
+      "knowledgeBases": "{{count}} Bilgi Bankaları",
+      "unlimitedKnowledgeBases": "Sınırsız Bilgi Bankaları",
+      "webhook": "{{count}} Webhook",
+      "webhooks": "{{count}} Webhook",
+      "unlimitedWebhooks": "Sınırsız Webhook",
+      "phoneNumber": "{{count}} Telefon Numarası",
+      "phoneNumbers": "{{count}} Telefon Numarları",
+      "unlimitedPhoneNumbers": "Sınırsız Telefon Numarları",
+      "purchaseNumbers": "Eigene Telefon Numarları kaufen",
+      "systemPhone": "Vom System zugewiesene Telefon Numarası",
+      "freeCredits": "{{count}} ücretsiz kredi",
+      "creditCalling": "Guthaben-basiertes Telefonieren",
+      "prioritySupport": "Öncelikli destek",
+      "chooseLlm": "LLM modelinizi seçin",
+      "advancedAnalytics": "Gelişmiş analitik"
+    }
+  },
+  "customers": "Kunden",
+  "poweredBy": "Unterstützt von ElevenLabs & Twilio AI",
+  "heroTitle1": "Optimieren Sie Ihre",
+  "heroTitle2": "Anrufoperationen",
+  "heroTitle3": "mit Voice-Yapay Zeka Ajanları",
+  "heroSubtitle": "Entdecken Sie die neue Art, produktionsreife Yapay Zeka Ses Ajanları im großen Maßstab zu erstellen, bereitzustellen und zu überwachen.",
+  "tryForFree": "Ücretsiz Deneyin",
+  "watchDemo": "Demoyu İzle",
+  "noCreditCard": "Kredi kartı gerekmez",
+  "freePlanForever": "Ücretsizer Plan für immer",
+  "setupMinutes": "5 dakikada kurulum",
+  "aiTechnology": "yapay zeka destekli Technologie",
+  "builtForFuture": "Für die Zukunft der Kommunikation gebaut",
+  "experienceTech": "Erleben Sie modernste KI-Technologie, die die Geschäftskommunikation transformiert",
+  "advancedAI": "Fortschrittliche KI-Intelligenz",
+  "advancedAIDesc": "Natürliches Sprachverständnis durch modernste Sprachmodelle",
+  "humanLikeVoices": "İnsan benzeri Stimmen",
+  "humanLikeVoicesDesc": "Ultrarealistsche Sprachsynthese, die natürlich und ansprechend klingt",
+  "realTimeProcessing": "Echtzeit-Verar—tung",
+  "realTimeProcessingDesc": "Sofortige Reaktionszeiten mit Latenzzeiten unter einer Sekunde für flüssige Gespräche",
+  "howItWorks": "Nasıl çalışır",
+  "getStartedSteps": "Starten Sie in drei einfachen Schritten",
+  "build": "Oluştur",
+  "buildDesc": "Nutzen Sie unseren intuitiven Agenten-Builder, um mühelos benutzerdefinierte Voice-KI-Anrufer mit professionellen Vorlagen zu erstellen.",
+  "deploy": "Yayınla",
+  "deployDesc": "Stellen Sie Ihre Agenten für KI-Telefonanrufe, Kampanyalar und automatisierte Outreach mit nur einem Klick bereit.",
+  "monitor": "İzle",
+  "monitorDesc": "Verfolgen Sie Erfolgsraten, Anrufmetriken und Benutzerstimmung über umfassende Echtzeit-Analyse-Dashboards.",
+  "powerfulFeatures": "Leistungsstarke Yapay Zeka Ses Ajanları-Özellikler",
+  "everythingYouNeed": "Alles, was Sie brauchen, um Yapay Zeka Ses Ajanları zu erstellen, bereitzustellen und zu verwalten",
+  "autoSyncKnowledge": "Auto-Sync Bilgi Bankası",
+  "autoSyncKnowledgeDesc": "Ihre Yapay Zeka Ajanları bleiben mühelos auf dem neuesten Stand, indem sie direkt mit der Bilgi Bankası Ihres Unternehmens synchronisieren. Keine manuellen Aktualisierungen erforderlich.",
+  "callTransfer": "Leistungsstarke Anrufweiterleitungsfunktion",
+  "callTransferDesc": "Richten Sie einfach warme Weiterleitungen mit Übergabenachrichten ein, damit der nächste Agent immer vorbereitet ist.",
+  "easyAppointment": "Einfache Terminbuchung",
+  "easyAppointmentDesc": "Lassen Sie Ihre Yapay zeka telefon ajanları in Sekunden Meetings mit natürlicher Dil planen.",
+  "realTimeAnalytics": "Echtzeit-Analysen",
+  "realTimeAnalyticsDesc": "Verfolgen Sie Anrufmetriken, Erfolgsraten und Kundenstimmung über umfassende Dashboards.",
+  "naturalVoice": "Natürliche Sprachkonversationen",
+  "naturalVoiceDesc": "İnsan benzeri KI-Stimmen von ElevenLabs liefern nahtlose, natürliche Gespräche, die Kunden lieben.",
+  "intelligentLead": "Intelligente Lead-Bewertung",
+  "intelligentLeadDesc": "Klassifizieren Sie Leads automatisch als heiß, warm, kalt oder verloren basierend auf Gesprächsanalyse und Stimmung.",
+  "transformInteraction": "Transformieren Sie jede Kundeninteraktion",
+  "discoverUseCases": "Entdecken Sie, wie Yapay Zeka Ses Ajanları Ihre Geschäftskommunikation verbessern",
+  "receptionist": "Rezeptionist",
+  "receptionistDesc": "Bear—ten Sie eingehende Anrufe, beantworten Sie FAQs und leiten Sie Anrufe an die richtige Abteilung weiter",
+  "appointmentSetter": "Terminplaner",
+  "appointmentSetterDesc": "Planen Sie automatisch Meetings mit qualifizierten Interessenten",
+  "leadQualification": "Lead-Qualifizierung",
+  "leadQualificationDesc": "Prüfen und qualifizieren Sie Leads, bevor Sie sie an Ihr Satışsteam weitergeben",
+  "survey": "Umfrage",
+  "surveyDesc": "Sammeln Sie Kundenfeedback und Erkenntnisse im großen Maßstab",
+  "customerService": "Kundenservice",
+  "customerServiceDesc": "Bieten Sie 24/7 Destek und lösen Sie häufige Kundenprobleme",
+  "navbar": {
+    "features": "Özellikler",
+    "useCases": "Kullanım Alanları",
+    "pricing": "Fiyatlandırma",
+    "integrations": "Entegrasyonlar",
+    "blog": "Blog",
+    "contact": "İletişim",
+    "login": "GİRİŞ YAP",
+    "language": "Dil"
+  },
+  "hero": {
+    "badge": "Kodsuz Yapay Zeka Ses Motoru",
+    "headline": "YAPAY ZEKA SES AJANLARI",
+    "rotatingWords": {
+      "sales": "Satış",
+      "support": "Destek",
+      "outreach": "Erişim",
+      "appointments": "Randevu"
+    },
+    "subheadline": "Giden ve gelen aramaları yöneten, toplantı planlayan ve 7/24 işlem yapan insan benzeri yapay zeka ses ajanları oluşturun.",
+    "humanLike": "İnsan benzeri",
+    "statsProductivity": "Verimlilik",
+    "statsScalability": "Ölçeklenebilirlik",
+    "getStarted": "HEMEN BAŞLA",
+    "freeTrial": "14 Gün Ücretsiz Deneme",
+    "freeCredit": "Ücretsiz 10$ Kredi"
+  },
+  "footer": {
+    "product": "Ürün",
+    "resources": "Kaynaklar",
+    "contactTitle": "İletişim",
+    "newsletter": "Bültenimize abone olun",
+    "emailPlaceholder": "E-postanızı girin",
+    "thankYou": "Abone olduğunuz için teşekkürler!",
+    "thankYouDesc": "En son güncellemelerimizi ve ipuçlarımızı alacaksınız.",
+    "copyright": "Tüm hakları saklıdır.",
+    "privacy": "Gizlilik",
+    "terms": "Şartlar",
+    "cookies": "Çerezler",
+    "features": "Özellikler",
+    "useCases": "Kullanım Alanları",
+    "pricing": "Fiyatlandırma",
+    "integrations": "Entegrasyonlar",
+    "blog": "Blog",
+    "contact": "İletişim",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Hizmet Şartları"
+  },
+  "featureSection": {
+    "title": "Sizin için 7/24 çalışan yapay zeka ses asistanları oluşturun",
+    "capabilities": {
+      "bookMeetings": "Toplantı Planla",
+      "conductInterviews": "Mülakat Yap",
+      "coldCallProspects": "Soğuk Arama",
+      "offerSupport": "Destek Sun"
+    },
+    "feature1": {
+      "title": "İnsan benzeri Sprachagenten",
+      "description": "Oluştur Sie einfach Ihren Yapay Zeka Ajanları, indem Sie ihm einen Namen geben, Dil und Akzent auswählen und ihn für Aufgaben einrichten:",
+      "bullet1": "Yapay Zeka Ajanları sofort mit Ihren Daten trainieren",
+      "bullet2": "Schnelle Bereitstellung mit No-Code-Plattform",
+      "bullet3": "Kundeninteraktionen automatisieren"
+    },
+    "feature2": {
+      "title": "Lassen Sie KI Ihre Anrufe übernehmen",
+      "description": "Bear—ten Sie ausgehende Anrufe, beantworten Sie eingehende Anrufe und planen Sie Randevular rund um die Uhr. Wählen Sie Ihre Liste oder laden Sie Kişiler hoch, richten Sie einen Zeitplan ein und los geht's!",
+      "bullet1": "Giden Aramalar",
+      "bullet2": "Gelen Aramalar"
+    },
+    "feature3": {
+      "title": "Engagieren & Konvertieren",
+      "description": "Verbinden Sie sich mit Kunden auf die menschlichste Art und Weise, automatisieren Sie Aufgaben und verbessern Sie Ihre Erişim.",
+      "bullet1": "Lead-Qualifizierung und Follow-ups automatisieren",
+      "bullet2": "Event-Teilnahme mit KI-Einladungen steigern",
+      "bullet3": "24/7 KI-Kundenservice-Lösungen bereitstellen",
+      "bullet4": "KI für automatisierte Bewerberinterviews nutzen"
+    },
+    "mockup": {
+      "language": "Deutsch (Deutschland)",
+      "voice": "Stimme: Brian",
+      "stability": "Stabilität",
+      "speed": "Geschwindigkeit",
+      "diarization": "Diarisierung",
+      "createAgent": "Ajan Oluştur",
+      "selectAgent": "Ajan Seç",
+      "outboundCall": "Giden Arama",
+      "startDate": "Start: 01.05.24",
+      "endDate": "Ende: 20.05.24",
+      "selectList": "Liste Seç",
+      "collectContactDetails": "İletişimdaten erfassen",
+      "bookAppointments": "Randevu Al",
+      "qualifyLeads": "Potansiyel Müşteri Değerlendir"
+    },
+    "getStarted": "HEMEN BAŞLA",
+    "freeTrial": "14 Gün Ücretsiz Deneme",
+    "freeCredit": "Ücretsiz 10$ Kredi"
+  },
+  "actionCards": {
+    "title": "Görevleri ve Eylemleri Otomatikleştirin",
+    "description": "Konfigurieren Sie die Yapay Zeka Ajanları, um verschiedene Aufgaben und Aktionen zu automatisieren, wie:",
+    "cards": {
+      "sms": "SMS-Nachrichten sofort während Telefonaten an Kunden senden",
+      "transfer": "Anrufe an einen menschlichen Agenten weiterleiten oder übertragen",
+      "webhooks": "Kundendaten erfassen & Aktionen mit Zapier und Webhook automatisieren",
+      "email": "E-Mails mühelos während oder nach einem Anruf senden",
+      "whatsapp": "WhatsApp-Nachrichten während Telefonaten an Kunden senden",
+      "appointments": "Randevular planen und Kalendereinladungen während des Anrufs senden"
+    },
+    "getStarted": "HEMEN BAŞLA",
+    "freeTrial": "14 Gün Ücretsiz Deneme",
+    "freeCredit": "Ücretsiz 10$ Kredi"
+  },
+  "technology": {
+    "badge": "Üstün Teknoloji",
+    "title": "Eşsiz Performans",
+    "benefits": {
+      "cutCosts": "Kosten senken und Zeit — der Einstellung von Satışsmitar—tern sparen",
+      "millionCalls": "1 Million Anrufe pro Minute starten",
+      "reduceAttrition": "Fluktuation und Wartezeiten reduzieren"
+    },
+    "features": {
+      "autopilot": {
+        "title": "Anrufe auf Autopilot",
+        "description": "Automatisch SMS, E-Mails, Kalendereinladungen und mehr senden"
+      },
+      "voiceCustomization": {
+        "title": "Stimmanpassung",
+        "description": "Sprechgeschwindigkeit, Tempo und Geduldstufe mühelos anpassen"
+      },
+      "sentimentAnalysis": {
+        "title": "Stimmungsanalyse",
+        "description": "CX mit fortgeschrittener Stimmungsanalyse und Sprachmanagement verbessern"
+      },
+      "diarization": {
+        "title": "Diarisierung",
+        "description": "Unterbrechungen bewältigen und Gesprächsenden erkennen"
+      },
+      "globalConversations": {
+        "title": "Globale Gespräche",
+        "description": "Mit Ihren Kunden in über 30 Diln kommunizieren"
+      },
+      "realTimeBookings": {
+        "title": "Echtzeit-Buchungen",
+        "description": "Echtzeit-Verfügbarkeit ermitteln und Randevular sofort planen"
+      }
+    },
+    "getStarted": "HEMEN BAŞLA",
+    "freeTrial": "14 Gün Ücretsiz Deneme",
+    "freeCredit": "Ücretsiz 10$ Kredi"
+  },
+  "featuresShowcase": {
+    "title": "Güçlü ses bağlantısı:",
+    "titleHighlight": "yapay zeka destekli görüşmeler",
+    "description": "Yapay Zeka Ajanları, die sich weltweit mit Kunden durch zuverlässige, hochwertige Sprachinteraktionen verbinden – alles unterstützt durch Premium-Anrufinfrastruktur.",
+    "globalReach": "Küresel Erişim",
+    "reliableCalls": "Güvenilir Aramalar",
+    "aiAutomation": "Yapay Zeka ve Otomasyon",
+    "features": {
+      "seamlessInbound": {
+        "title": "Nahtlose eingehende Anrufe in über 100 Ländern",
+        "description": "Verwenden Sie lokale Telefon Numarları in über 100 Ländern, damit Kunden Sie leicht erreichen können."
+      },
+      "directConnectivity": {
+        "title": "Direkte Konnektivität ohne Komplexität",
+        "description": "Rufen Sie Kunden in über 100 Ländern an und eliminieren Sie die Notwendigkeit, mehrere Telekommunikationsanbieter zu verwalten."
+      },
+      "verifiedNumbers": {
+        "title": "Große Auswahl an verifizierten Geschäftsnummern",
+        "description": "Wählen Sie lokale, gebührenfreie oder Mobilnummern in über 100 Ländern, um Vertrauen aufzubauen und nahtloses Telefonieren zu gewährleisten."
+      },
+      "highQuality": {
+        "title": "Hochwertige Sprachanrufe mit niedriger Latenz",
+        "description": "Anruflatenz unter 500ms mit regionalen Points of Presence (PoPs) auf fünf Kontinenten."
+      },
+      "intelligentRouting": {
+        "title": "Intelligentes Anruf-Routing",
+        "description": "Echtzeit-datengesteuerte Routing-Engine wählt dynamisch den besten Anrufpfad basierend auf mehreren Faktoren, einschließlich Latenz, Jitter und MOS."
+      },
+      "directCarrier": {
+        "title": "Direkte Carrier-Konnektivität für schnelleren Anrufaufbau",
+        "description": "Ihre Sprachanrufe werden über One-Hop-In-Land-Carrier zugestellt, um minimale Latenz zu gewährleisten."
+      },
+      "knowledgeBase": {
+        "title": "Intelligente Bilgi Bankası (RAG)",
+        "description": "Laden Sie Dokumente hoch, um Ihren Yapay Zeka Ajanları kontextuelles Wissen für genauere, informiertere Gespräche zu geben."
+      },
+      "flowBuilder": {
+        "title": "Flow-Builder",
+        "description": "Visueller Drag-and-Drop-Builder zum Oluştur geskripteter Gesprächspfade mit bedingter Logik."
+      },
+      "multiLanguage": {
+        "title": "Mehrsprachige Unterstützung",
+        "description": "Bedienen Sie Kunden in 11 Diln mit automatischer Erkennung und nahtlosem Wechsel."
+      }
+    }
+  },
+  "useCasesSection": {
+    "title": "Kullanım Alanları",
+    "description": "Erfahren Sie, wie globale Teams unsere Plattform nutzen, um Wachstum und Verimlilik zu steigern",
+    "useCaseLabel": "Kullanım alanı",
+    "industryLabel": "Sektör",
+    "languageLabel": "Dil",
+    "functionLabel": "İşlev",
+    "cases": {
+      "saas": {
+        "title": "SaaS-Unternehmen in den USA",
+        "description": "Erleben Sie einen Wendepunkt in der SaaS-Sektör, als Emma ein SaaS-Abonnement für 997$/yıl an einen Nutzer in den USA verkaufte",
+        "industry": "SaaS",
+        "language": "Englisch (USA)",
+        "function": "Outbound-Satış"
+      },
+      "university": {
+        "title": "Universität in Singapur",
+        "description": "Entdecken Sie, wie eine Universität in Singapur KI nutzt, um Führungskräfte für Geschäftsprogramme zu qualifizieren und einzuladen",
+        "industry": "Bildung",
+        "language": "Englisch (Chinesisch)",
+        "function": "Terminbuchung"
+      },
+      "automotive": {
+        "title": "Automobilunternehmen in Brasilien",
+        "description": "Erfahren Sie, wie Hugo ein Auto-Ortungsgerät an seinen Vater verkaufte, mit yapay zeka desteklin Satışsassistenten auf dem brasilianischen Automobilmarkt",
+        "industry": "Automobil",
+        "language": "Portugiesisch (BR)",
+        "function": "Terminbuchung"
+      },
+      "support": {
+        "title": "Kundensupport in Indien",
+        "description": "Sehen Sie, wie ein Tech-Unternehmen seinen 24/7-Kundensupport mit Yapay Zeka Ses Ajanları automatisierte, die Anfragen auf Hindi und Englisch bear—ten",
+        "industry": "Technologie",
+        "language": "Hindi/Englisch",
+        "function": "Kundensupport"
+      },
+      "ecommerce": {
+        "title": "E-Commerce in Großbritannien",
+        "description": "Erfahren Sie, wie ein E-Commerce-Unternehmen die Bestellbestätigungen um 40% steigerte mit yapay zeka desteklin ausgehenden Anrufen",
+        "industry": "E-Commerce",
+        "language": "Englisch (UK)",
+        "function": "Bestellbestätigung"
+      },
+      "healthcare": {
+        "title": "Gesundheitswesen in Deutschland",
+        "description": "Entdecken Sie, wie ein Gesundheitsdienstleister Randevularrinnerungen automatisierte und Nichterscheinen um 60% reduzierte",
+        "industry": "Gesundheitswesen",
+        "language": "Deutsch",
+        "function": "Randevularrinnerungen"
+      }
+    }
+  },
+  "testimonials": {
+    "title": "Müşterilerimiz ne diyor",
+    "subtitle": "Müşteri iletişimini dönüştürmek için {{appName}} kullanan binlerce işletmeye katılın",
+    "at": "—",
+    "quotes": {
+      "jennifer": {
+        "quote": "{{appName}} hat unseren Kundenservice-Workflow revolutioniert. Die Umstellung von manuellen Anrufen auf KI hat früher Stunden gedauert.",
+        "highlight": "Jetzt dauert es nur 30 Sekunden mit perfekten Ergebnissen.",
+        "author": "Jennifer Kim",
+        "role": "Marketing-Managerin",
+        "company": "TechStartup Inc"
+      },
+      "lisa": {
+        "quote": "Unser Callcenter brauchte Automatisierung für ausgehende Kampanyalar. {{appName}} versteht unsere Bedürfnisse perfekt.",
+        "highlight": "Saubere, professionelle Ergebnisse, die jedes Mal wunderbar funktionieren.",
+        "author": "Lisa Rodriguez",
+        "role": "Markenmanagerin",
+        "company": "Fashion Forward"
+      },
+      "mike": {
+        "quote": "Als Satışsleiter erspart mir {{appName}} die ständige Schulung von Agenten zu Skripten.",
+        "highlight": "Perfekte Anrufqualität jedes Mal, von Leads bis Abschlüssen!",
+        "author": "Mike Johnson",
+        "role": "Inhaber",
+        "company": "PrintPerfect Solutions"
+      },
+      "robert": {
+        "quote": "Unser Destek-Team brauchte KI-Unterstützung für hohes Aufkommen. {{appName}} hat dieses Problem vollständig gelöst.",
+        "highlight": "Perfekte Antworten auf Kundenanfragen.",
+        "author": "Robert Garcia",
+        "role": "Webentwickler",
+        "company": "PixelPerfect"
+      },
+      "tom": {
+        "quote": "Enterprise-KI-Anrufe erfordern perfekte Agenten, und {{appName}} liefert jedes Mal. Kein manuelles Training mehr.",
+        "highlight": "Klare Gespräche und perfekte Kundenbetreuung.",
+        "author": "Tom Williams",
+        "role": "Schildergeschäft-Inhaber",
+        "company": "CustomSigns Pro"
+      },
+      "amanda": {
+        "quote": "Kundenanfragen kommen in verschiedenen Formen, aber wir brauchen konsistente Antworten für Zuverlässigkeit. Die KI von {{appName}} ist einfach die beste.",
+        "highlight": "Erhält die Servicequalität — perfekten Antworten.",
+        "author": "Amanda Thompson",
+        "role": "Customer Success",
+        "company": "ServiceFirst Ltd"
+      },
+      "james": {
+        "quote": "{{appName}} sieht auf jeder Bildschirmgröße perfekt aus. Essentiell für moderne Kundenbindung.",
+        "highlight": "ROI hat sich im ersten ay amortisiert.",
+        "author": "James Patterson",
+        "role": "Creative Lead",
+        "company": "Ad Agency Plus"
+      },
+      "maria": {
+        "quote": "Unsere Erişim brauchte automatisierte Anrufe zur Lead-Generierung. {{appName}} hat das komplett gelöst.",
+        "highlight": "Unsere Konversionsrate um 80% gesteigert.",
+        "author": "Maria Gonzalez",
+        "role": "Inhaberin",
+        "company": "Custom Apparel Co"
+      },
+      "rachel": {
+        "quote": "Die Erstellung von Üründemos erfordert perfekte KI-Stimmen. {{appName}} macht das für unser Team mühelos.",
+        "highlight": "Vom Konzept zur Demo in Sekunden, nicht Stunden.",
+        "author": "Rachel Green",
+        "role": "Üründesignerin",
+        "company": "StartupFlow"
+      },
+      "carlos": {
+        "quote": "Markenkonsistenz über alle Kanäle erfordert Yapay Zeka Ajanları. {{appName}} macht das für unser Team mühelos.",
+        "highlight": "Professionelle Qualitätsanrufe für jede Kampanya.",
+        "author": "Carlos Rivera",
+        "role": "Marketing-Direktor",
+        "company": "BrandFirst Agency"
+      },
+      "sarah": {
+        "quote": "Als Creative Director suche ich immer nach Wegen, unseren Output zu verbessern. {{appName}} liefert perfekt.",
+        "highlight": "Unsere Verimlilik ist dramatisch gestiegen.",
+        "author": "Sarah Martinez",
+        "role": "Creative Director",
+        "company": "BrandCraft Studio"
+      },
+      "david": {
+        "quote": "{{appName}} hat unserem Team mehr als 10 Stunden pro Woche — Kundenanrufen gespart. Essentiell für jedes wachsende Unternehmen.",
+        "highlight": "Unseren gesamten Satışsprozess beschleunigt.",
+        "author": "David Chen",
+        "role": "Operations Manager",
+        "company": "ScaleUp Ventures"
+      }
+    }
+  },
+  "integrations": {
+    "title": "Entegrasyonlar",
+    "description": "Favori araçlarınıza bağlanın ve {{appName}} deneyiminizi geliştirin."
+  },
+  "contact": {
+    "badge": "İletişime Geçin",
+    "title": "Aramalarınızı dönüştürmeye hazır mısınız?",
+    "description": "{{appName}} yapay zeka ses ajanları hakkında sorularınız mı var? Kişiselleştirilmiş demo ister misiniz? Ekibimiz çağrı operasyonlarınızı otomatikleştirmenize yardımcı olur.",
+    "emailLabel": "Bize yazın",
+    "trustResponseTime": "24 saat içinde yanıt veriyoruz",
+    "trustCustomerCount": "Dünya genelinde 2.500+ işletme tarafından güveniliyor",
+    "trustConsultation": "Ücretsiz danışmanlık ve kişiselleştirilmiş demo",
+    "trustNoCommitment": "Taahhüt gerekmez",
+    "form": {
+      "nameLabel": "Name *",
+      "namePlaceholder": "Adınız soyadınız",
+      "emailLabel": "E-Mail *",
+      "emailPlaceholder": "sie@unternehmen.de",
+      "companyLabel": "Unternehmen",
+      "companyPlaceholder": "Şirket adınız (isteğe bağlı)",
+      "messageLabel": "Nachricht *",
+      "messagePlaceholder": "İhtiyaçlarınızı anlatın...",
+      "submit": "Mesaj Gönder",
+      "sending": "Gönderiliyor...",
+      "privacyNotice": "Verileriniz güvende. Bilgilerinizi asla paylaşmayız."
+    },
+    "toast": {
+      "successTitle": "Mesajınız başarıyla gönderildi!",
+      "successDescription": "24 saat içinde size dönüş yapacağız.",
+      "errorTitle": "Mesaj gönderilemedi",
+      "errorDescription": "Lütfen daha sonra tekrar deneyin."
+    },
+    "validation": {
+      "nameMin": "Name muss mindestens 2 Zeichen haben",
+      "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "messageMin": "Nachricht muss mindestens 10 Zeichen haben"
+    }
+  },
+  "cta": {
+    "title": "Çağrı operasyonlarınızı dönüştürmeye hazır mısınız?",
+    "description": "Aramaları otomatikleştirmek, potansiyel müşterileri değerlendirmek ve müşteri memnuniyetini artırmak için yapay zeka ses ajanları kullanan binlerce işletmeye katılın",
+    "button": "Ücretsiz Başlayın",
+    "trustMessage": "Kredi kartı gerekmez • 5 dakikada kurulum • Sonsuza kadar ücretsiz plan"
+  },
+  "featuresPage": {
+    "seo": {
+      "title": "Özellikler - Yapay Zeka Ses Ajanı Platformu",
+      "description": "Yapay zeka ses ajanı platformumuzun tüm güçlü özelliklerini keşfedin. Akış oluşturucu, çoklu motor desteği, kampanya yönetimi ve daha fazlası."
+    },
+    "hero": {
+      "badge": "Kodsuz Yapay Zeka Ses Motoru",
+      "title": "Sorunsuz çalışan yapay zeka ajanları",
+      "subtitle": "Kod yok. Tahmin yok. Müşteri aramalarını doğal ve akıllıca yöneten yapay zeka ses ajanlarını oluşturun, yayınlayın ve yönetin.",
+      "startFreeTrial": "Ücretsiz Deneyin",
+      "contactSales": "Satış Ekibiyle İletişim"
+    },
+    "agentTypes": {
+      "title": "Wählen Sie Ihren Yapay Zeka Ajanlarıtyp",
+      "subtitle": "Oluştur Sie den perfekten Sprachagenten für Ihren Kullanım alanı mit unseren drei leistungsstarken Agententypen",
+      "natural": {
+        "title": "Natürliche Yapay Zeka Ajanları",
+        "description": "LLM-gestützte offene Gespräche mit konfigurierbaren Prompts, Persönlichkeit und intelligenten Antworten, die sich an jedes Szenario anpassen.",
+        "features": {
+          "openEnded": "Offene Gespräche",
+          "personality": "Anpassbare Persönlichkeit",
+          "rag": "RAG-Wissensintegration",
+          "multiLang": "Mehrsprachige Unterstützung"
+        }
+      },
+      "flow": {
+        "title": "Flow-basierte Agenten",
+        "description": "Visuelle knotenbasierte Gesprächsabläufe mit bedingter Verzweigung, perfekt für strukturierte Interaktionen wie Umfragen und Randevular.",
+        "features": {
+          "dragDrop": "Drag-and-Drop-Builder",
+          "conditional": "Bedingte Logik",
+          "api": "API-Entegrasyonlar",
+          "templates": "Vorlagenbibliothek"
+        }
+      },
+      "incoming": {
+        "title": "Eingehende Anruf-Agenten",
+        "description": "Bear—ten Sie eingehende Anrufe über gekaufte Telefon Numarları und bieten Sie 24/7 automatisierten Kundensupport mit menschenähnlichen Antworten.",
+        "features": {
+          "availability": "24/7 Verfügbarkeit",
+          "routing": "Intelligentes Anruf-Routing",
+          "queue": "Warteschlangenverwaltung",
+          "transfer": "Option zur menschlichen Weiterleitung"
+        }
+      }
+    },
+    "useCases": {
+      "title": "Einsatzbereite Yapay Zeka Ajanları für jeden Bedarf",
+      "subtitle": "Stellen Sie vorgefertigte Agenten bereit oder passen Sie sie für Ihre spezifischen Workflows an",
+      "leadQualification": {
+        "title": "Lead-Qualifizierungs-Agent",
+        "description": "Erfassen Sie eingehende Leads, qualifizieren Sie sie in Echtzeit mit intelligenter Verzweigungslogik und leiten Sie kaufbereite Interessenten an Ihr Satışsteam weiter."
+      },
+      "appointmentBooking": {
+        "title": "Terminbuchungs-Agent",
+        "description": "Lassen Sie Kunden Randevular per Telefon vereinbaren, mit Echtzeit-Verfügbarkeit, die mit Ihrem Kalendersystem synchronisiert ist."
+      },
+      "customerSupport": {
+        "title": "Kundensupport-Agent",
+        "description": "Bear—ten Sie Bestellstatus, Versand-Updates und Ürünanfragen rund um die Uhr mit sofortigen, genauen Antworten."
+      },
+      "surveyFeedback": {
+        "title": "Umfrage- & Feedback-Agent",
+        "description": "Sammeln Sie Kundenfeedback durch natürliche Gespräche und verbessern Sie kontinuierlich Ihre CSAT-Werte."
+      },
+      "paymentReminder": {
+        "title": "Zahlungserinnerungs-Agent",
+        "description": "Automatisieren Sie Zahlungserinnerungsanrufe mit personalisierten Erinnerungen und einfachen Zahlungsoptionen."
+      },
+      "techSupport": {
+        "title": "Technischer Destek-Agent",
+        "description": "Beheben Sie häufige Anfragen mit Ihrer Bilgi Bankası und leiten Sie komplexe Fälle an Menschen weiter."
+      }
+    },
+    "howItWorks": {
+      "title": "Yapay Zeka Ajanları in Minuten live schalten",
+      "subtitle": "Unsere geführte Einrichtung hilft Ihnen, produktionsreife Agenten ohne Code zu erstellen, zu testen und zu starten",
+      "step1": {
+        "number": "01",
+        "title": "Ihren Agenten erstellen",
+        "description": "Wählen Sie zwischen natürlichen oder Flow-basierten Agenten. Konfigurieren Sie Stimme, Persönlichkeit und Gesprächsziele mit unserer intuitiven Oberfläche."
+      },
+      "step2": {
+        "number": "02",
+        "title": "Ihr Wissen hinzufügen",
+        "description": "Laden Sie Dokumente, URLs oder Text hoch, um Ihren Agenten zu trainieren. Unser RAG-System sorgt für genaue, kontextbezogene Antworten jedes Mal."
+      },
+      "step3": {
+        "number": "03",
+        "title": "Kampanyalar starten",
+        "description": "Importieren Sie Kişiler, planen Sie Kampanyalar und lassen Sie Ihre Yapay Zeka Ajanları Tausende von Anrufen gleichzeitig mit Echtzeit-Tracking bear—ten."
+      }
+    },
+    "capabilities": {
+      "title": "Für jede Kundeninteraktion gebaut",
+      "subtitle": "Enterprise-fähige Özellikler für KI-Sprachautomatisierung im großen Maßstab",
+      "categories": {
+        "aiVoice": "KI & Dil",
+        "telephony": "Telefonie",
+        "campaignManagement": "Kampanyalarmanagement",
+        "integrationSecurity": "Integration & Sicherheit"
+      },
+      "items": {
+        "elevenLabs": {
+          "title": "ElevenLabs-Integration",
+          "desc": "Ultrarealistsche KI-Stimmen mit emotionaler Bandbreite"
+        },
+        "openai": {
+          "title": "OpenAI Realtime API",
+          "desc": "Konversations-KI mit niedriger Latenz mit GPT-4"
+        },
+        "languages": {
+          "title": "30+ Diln",
+          "desc": "Küresel Erişim mit nativer Sprachunterstützung"
+        },
+        "personalities": {
+          "title": "Anpassbare Persönlichkeiten",
+          "desc": "Ton, Stil und Gesprächsansatz konfigurieren"
+        },
+        "twilio": {
+          "title": "Twilio-Integration",
+          "desc": "Enterprise-fähige Telefonie-Infrastruktur"
+        },
+        "countries": {
+          "title": "100+ Länder",
+          "desc": "Lokale Nummern in über 100 Ländern kaufen, inkl. Indien"
+        },
+        "callTransfer": {
+          "title": "Anrufweiterleitung",
+          "desc": "Nahtlose Übergabe an menschliche Agenten — Bedarf"
+        },
+        "recording": {
+          "title": "Anrufaufzeichnung",
+          "desc": "Vollständige Transkription und Gesprächsanalyse"
+        },
+        "bulkCampaigns": {
+          "title": "Massenkampagnen",
+          "desc": "Tausende gleichzeitige Anrufe bear—ten"
+        },
+        "scheduling": {
+          "title": "Intelligente Planung",
+          "desc": "Zeitzonenbewusste Kampanyalarplanung"
+        },
+        "retryLogic": {
+          "title": "Wiederholungslogik",
+          "desc": "Automatische Wiederholung — unbeantworteten Anrufen"
+        },
+        "analytics": {
+          "title": "Echtzeit-Analysen",
+          "desc": "Leistung und Konversionen live verfolgen"
+        },
+        "webhooks": {
+          "title": "Webhook",
+          "desc": "Echtzeit-Ereignisbenachrichtigungen an Ihre Systeme"
+        },
+        "security": {
+          "title": "Enterprise-Sicherheit",
+          "desc": "SOC2-konform mit verschlüsselten Daten"
+        },
+        "knowledgeBase": {
+          "title": "Bilgi Bankası",
+          "desc": "RAG-gestütztes Dokumentenverständnis"
+        },
+        "humanHandoff": {
+          "title": "Menschliche Übergabe",
+          "desc": "Intelligentes Routing an Destek-Teams"
+        }
+      }
+    },
+    "integrations": {
+      "title": "Verbinden Sie die Tools, die Ihr Unternehmen nutzt",
+      "subtitle": "Nahtlose Integration mit Ihrem CRM, Kalender, Helpdesk und mehr über Webhook und APIs",
+      "footerText": "Plus benutzerdefinierte Entegrasyonlar über REST API und Webhook"
+    },
+    "knowledgeBase": {
+      "badge": "Bilgi Bankası",
+      "title": "Gespräche, die genau bleiben",
+      "description": "Yapay Zeka Ajanları passen sich an Ihre Markenstimme an und ziehen Antworten aus Ihrer aktuellen Bilgi Bankası. Laden Sie PDFs, Dokumente oder URLs hoch und beobachten Sie, wie Ihre Agenten sofort zu Experten werden.",
+      "features": {
+        "processing": "Automatische Dokumentenverar—tung und Chunking",
+        "rag": "RAG-gestützte Kontextinjektion während Anrufen",
+        "realTime": "Echtzeit-Updates ohne Neutraining"
+      }
+    },
+    "humanHandoff": {
+      "badge": "Mensch in der Schleife",
+      "title": "Nahtlose Übergabe — Bedarf",
+      "description": "Leiten Sie Gespräche einfach an das richtige Destek-Team weiter, wenn menschliche Hilfe benötigt wird. Intelligente Erkennung sorgt dafür, dass komplexe Anfragen persönliche Aufmerksamkeit erhalten.",
+      "features": {
+        "escalation": "Intelligente Eskalationsauslöser",
+        "context": "Vollständige Gesprächskontextübertragung",
+        "routing": "Routing nach Team, Fähigkeit oder benutzerdefinierten Regeln"
+      }
+    },
+    "cta": {
+      "title": "Jetzt mit dem Aufbau Ihres Yapay Zeka Ajanları beginnen",
+      "subtitle": "Keine Einrichtungsgebühren, kein Coding erforderlich. In Minuten loslegen.",
+      "startFreeTrial": "Ücretsiz Deneyin",
+      "contactSales": "Satış Ekibiyle İletişim"
+    }
+  },
+  "useCasesPage": {
+    "seoTitle": "Kullanım Alanları - Yapay Zeka Ses Ajanı Platformu",
+    "seoDescription": "Entdecken Sie, wie Unternehmen Yapay Zeka Ses Ajanları für Satış, Destek, Randevular, Umfragen, Inkasso, Broadcasts und mehr nutzen.",
+    "hero": {
+      "badge": "11 Leistungsstarke Kullanım Alanları",
+      "title": "Transformieren Sie Ihr Unternehmen mit",
+      "titleHighlight": "Yapay Zeka Ses Ajanları",
+      "subtitle": "Von ausgehenden Satışskampagnen bis zu Notfallbenachrichtigungen – entdecken Sie, wie unsere Yapay Zeka Ses Ajanları Ihre Kommunikation automatisieren und Ihre Geschäftsabläufe skalieren können."
+    },
+    "platformFeatures": {
+      "countries": "100+ Länder",
+      "countriesDesc": "Telefon Numarları weltweit",
+      "languages": "30+ Diln",
+      "languagesDesc": "Mehrsprachige KI-Stimmen",
+      "realTime": "Echtzeit",
+      "realTimeDesc": "Sofortige Anrufverar—tung",
+      "enterprise": "Enterprise",
+      "enterpriseDesc": "Sicherheit & Compliance"
+    },
+    "industries": {
+      "saas": "SaaS & Technologie",
+      "healthcare": "Gesundheitswesen",
+      "education": "Bildung",
+      "ecommerce": "E-Commerce",
+      "automotive": "Automobil",
+      "financial": "Finanzdienstleistungen",
+      "realEstate": "Immobilien",
+      "hr": "HR & Recruiting"
+    },
+    "getStartedFree": "Ücretsiz Başlayın",
+    "useCases": {
+      "outboundSales": {
+        "badge": "Am beliebtesten",
+        "subtitle": "MASSENANRUFE",
+        "title": "Ausgehende Satışskampagnen",
+        "description": "Starten Sie großangelegte ausgehende Kampanyalar mit natürlichen Yapay Zeka Ajanları, die Potansiyel Müşteri Değerlendir, Einwände behandeln und automatisch Toplantı Planla. Skalieren Sie Ihr Satışsteam unbegrenzt.",
+        "features": {
+          "bulk": "Massenanrufe mit gleichzeitiger Anrufverwaltung",
+          "natural": "Natürliche KI-Gespräche mit Persönlichkeitsanpassung",
+          "leadQual": "Echtzeit-Lead-Qualifizierung und -Bewertung",
+          "meeting": "Automatische Terminplanung in Ihrem Kalender",
+          "crm": "CRM-Integration über Webhook"
+        },
+        "stats": {
+          "callsDaily": "Mehr Anrufe täglich",
+          "conversion": "Höhere Konversion",
+          "costReduction": "Kostenreduzierung",
+          "campaign": "Kampanya läuft"
+        }
+      },
+      "appointment": {
+        "subtitle": "FLOW-AGENTEN",
+        "title": "Terminplanung & Erinnerungen",
+        "description": "Stellen Sie Flow-basierte Yapay Zeka Ajanları bereit, die Terminbuchungen bear—ten, automatisierte Erinnerungen senden und Nichterscheinen mit intelligenten Follow-ups drastisch reduzieren.",
+        "features": {
+          "visual": "Visueller Flow-Builder für Buchungsgespräche",
+          "automated": "Automatisierte Bestätigungs- und Erinnerungsanrufe",
+          "rescheduling": "Umterminierung und Stornierungsbear—tung",
+          "timezone": "Multi-Zeitzonen-Unterstützung",
+          "calendar": "Kalendersynchronisation mit Google, Outlook und mehr"
+        },
+        "stats": {
+          "noShows": "Weniger Nichterscheinen",
+          "bookingRate": "Buchungsrate",
+          "automated": "Automatisiert",
+          "setupTime": "Einrichtungszeit"
+        }
+      },
+      "support": {
+        "subtitle": "EINGEHENDE AGENTEN",
+        "title": "Kundensupport-Hotline",
+        "description": "Bear—ten Sie eingehende Anrufe rund um die Uhr mit Yapay Zeka Ajanları, die von Ihrer Bilgi Bankası unterstützt werden. Lösen Sie Anfragen sofort, eskalieren Sie — Bedarf und verpassen Sie nie einen Kundenanruf.",
+        "features": {
+          "incoming": "Eingehende Anrufbear—tung auf gekauften Nummern",
+          "knowledge": "Bilgi Bankası-Integration für genaue Antworten",
+          "escalation": "Intelligente Eskalation an menschliche Agenten",
+          "multiLang": "Mehrsprachige Unterstützung (30+ Diln)",
+          "transcript": "Echtzeit-Transkription und Stimmungsverfolgung"
+        },
+        "stats": {
+          "resolution": "Lösungsrate",
+          "waitTime": "Wartezeit",
+          "languages": "Diln",
+          "uptime": "Verfügbarkeit"
+        }
+      },
+      "survey": {
+        "subtitle": "STRUKTURIERTE FLOWS",
+        "title": "Umfragen & Feedback-Sammlung",
+        "description": "Sammeln Sie wertvolles Kundenfeedback durch ansprechende Sprachgespräche. Erzielen Sie höhere Antwortraten als E-Mail-Umfragen mit natürlicher, konversationeller Datenerfassung.",
+        "features": {
+          "question": "Frageknoten mit bedingter Verzweigung",
+          "analytics": "Echtzeit-Antwortanalysen",
+          "sentiment": "Stimmungsanalyse während der Anrufe",
+          "export": "Automatischer Datenexport und Berichterstattung",
+          "types": "CSAT, NPS und benutzerdefinierte Umfragetypen"
+        },
+        "stats": {
+          "responseRate": "Antwortrate",
+          "completion": "Abschluss",
+          "analytics": "Analysen",
+          "reporting": "Berichterstattung"
+        }
+      },
+      "payment": {
+        "subtitle": "MEHRSPRACHIG",
+        "title": "Zahlungen & Inkasso",
+        "description": "Automatisieren Sie Zahlungserinnerungen und Inkasso mit professionellen, konformen KI-Anrufen. Bieten Sie Zahlungspläne an, verfolgen Sie Zusagen und verbessern Sie die Beitreibungsraten.",
+        "features": {
+          "gentle": "Freundliche, professionelle Zahlungserinnerungen",
+          "multiLang": "Mehrsprachige Unterstützung für globale Reichweite",
+          "negotiation": "Zahlungsplan-Verhandlungsflows",
+          "tracking": "Zahlungsversprechen-Tracking",
+          "compliance": "Eingebaute regulatorische Compliance"
+        },
+        "stats": {
+          "collections": "Mehr Inkasso",
+          "compliant": "Konform",
+          "costSavings": "Kosteneinsparungen",
+          "languages": "Diln"
+        }
+      },
+      "leadQualification": {
+        "subtitle": "KAMPAGNENAUTOMATISIERUNG",
+        "title": "Lead-Qualifizierung & Nurturing",
+        "description": "Qualifizieren Sie Leads im großen Maßstab mit yapay zeka desteklin Gesprächen. Pflegen Sie Interessenten durch automatisierte Follow-ups und synchronisieren Sie alles über Webhook mit Ihrem CRM.",
+        "features": {
+          "scoring": "Intelligente Lead-Bewertung während Anrufen",
+          "followUp": "Automatisierte Follow-up-Kampanyalar",
+          "webhook": "Webhook-Integration mit Ihrem CRM",
+          "criteria": "Benutzerdefinierte Qualifizierungskriterien",
+          "alerts": "Hot-Lead-Alarme und Benachrichtigungen"
+        },
+        "stats": {
+          "qualifiedLeads": "Qualifizierte Leads",
+          "timeSaved": "Zeitersparnis",
+          "crmSync": "CRM-Sync",
+          "followUps": "Follow-ups"
+        }
+      },
+      "broadcast": {
+        "badge": "Neue İşlev",
+        "subtitle": "AUDIO-KNOTEN",
+        "title": "Interaktive Sprach-Broadcasts",
+        "description": "Senden Sie vorab aufgezeichnete Audio-Nachrichten an Tausende von Kişilern und lassen Sie dann KI personalisierte Antworten und Follow-up-Gespräche bear—ten.",
+        "features": {
+          "audio": "Audio-Knoten für vorab aufgezeichnete Nachrichten",
+          "aiPowered": "yapay zeka destekli Antwortbear—tung",
+          "mass": "Massen-Broadcast-Özellikler",
+          "personalized": "Personalisierte Follow-up-Gespräche",
+          "tracking": "Zustellungsverfolgung und Analysen"
+        },
+        "stats": {
+          "callsHour": "Anrufe/Stunde",
+          "deliveryRate": "Zustellrate",
+          "audioFiles": "Audio-Dateien",
+          "followUps": "Follow-ups"
+        }
+      },
+      "training": {
+        "subtitle": "AUDIO + Q&A",
+        "title": "Schulungs- & Onboarding-Anrufe",
+        "description": "Liefern Sie konsistente Schulungsinhalte über Audio-Wiedergabe und lassen Sie dann KI Fragen bear—ten und das Verständnis mit interaktiven Q&A-Sitzungen überprüfen.",
+        "features": {
+          "playback": "Audio-Wiedergabe für Schulungsinhalte",
+          "qa": "yapay zeka desteklis Q&A nach der Schulung",
+          "verification": "Verständnisprüfungs-Flows",
+          "progress": "Fortschrittsverfolgung und Berichterstattung",
+          "scalable": "Skalierbar auf Tausende von Mitar—tern"
+        },
+        "stats": {
+          "completion": "Abschluss",
+          "consistent": "Konsistent",
+          "timeSaved": "Zeitersparnis",
+          "assessment": "Bewertung"
+        }
+      },
+      "announcements": {
+        "subtitle": "BROADCAST + KI",
+        "title": "Ürünankündigungen",
+        "description": "Kündigen Sie neue Ürüne, Özellikler oder Updates mit professionellen Audio-Broadcasts an. Yapay Zeka Ajanları bear—ten Fragen und sammeln Feedback in Echtzeit.",
+        "features": {
+          "professional": "Professionelle Audio-Ankündigungen",
+          "questions": "yapay zeka destekli Fragenbear—tung",
+          "feedback": "Echtzeit-Feedback-Sammlung",
+          "targeting": "Gezielte Zielgruppensegmentierung",
+          "analytics": "Engagement-Analytics-Dashboard"
+        },
+        "stats": {
+          "listenRate": "Zuhörrate",
+          "engagement": "Engagement",
+          "feedback": "Feedback",
+          "delivery": "Zustellung"
+        }
+      },
+      "events": {
+        "subtitle": "AUDIO + FLOW",
+        "title": "Event-Erinnerungen & RSVP",
+        "description": "Senden Sie personalisierte Event-Einladungen mit Audio-Nachrichten und bear—ten Sie RSVPs über strukturierte Flow-Agenten. Perfekt für Konferenzen, Webinare und Meetings.",
+        "features": {
+          "invitations": "Audio-Einladungen mit persönlicher Note",
+          "rsvp": "Flow-basierte RSVP-Bear—tung",
+          "reminders": "Automatisierte Erinnerungssequenzen",
+          "attendee": "Teilnehmerlisten-Verwaltung",
+          "calendar": "Kalender-Integration"
+        },
+        "stats": {
+          "rsvpRate": "RSVP-Rate",
+          "attendance": "Höhere Teilnahme",
+          "reminders": "Erinnerungen",
+          "calendars": "Kalender"
+        }
+      },
+      "emergency": {
+        "subtitle": "PRIORITÄTS-ALARME",
+        "title": "Notfall-Benachrichtigungen",
+        "description": "Senden Sie kritische Audio-Alarme mit Prioritätszustellung und verfolgen Sie Bestätigungen in Echtzeit. Essentiell für Sicherheit und zeitkritische Kommunikation.",
+        "features": {
+          "priority": "Prioritäts-Audio-Alarmzustellung",
+          "acknowledgment": "Bestätigungsverfolgung",
+          "escalation": "Eskalation — Nicht-Antworten",
+          "multichannel": "Multi-Kanal-Fallback-Optionen",
+          "compliance": "Compliance- und Audit-Protokollierung"
+        },
+        "stats": {
+          "deliveryRate": "Zustellrate",
+          "alertTime": "Alarmzeit",
+          "tracked": "Verfolgt",
+          "escalation": "Eskalation"
+        }
+      }
+    },
+    "statsSection": {
+      "title": "Vertraut von wachsenden Unternehmen",
+      "subtitle": "Schließen Sie sich Tausenden von Unternehmen an, die ihre Abläufe mit Yapay Zeka Ses Ajanları skalieren",
+      "callsMade": "Getätigte Anrufe",
+      "businesses": "Unternehmen",
+      "uptime": "Verfügbarkeit",
+      "languages": "Diln"
+    },
+    "ctaSection": {
+      "badge": "Heute kostenlos starten",
+      "title": "Bereit, Ihre",
+      "titleHighlight": "Sprachoperationen zu skalieren?",
+      "subtitle": "Schließen Sie sich Tausenden von Unternehmen an, die Yapay Zeka Ses Ajanları nutzen, um Anrufe zu automatisieren, die Kundenerfahrung zu verbessern und Wachstum zu fördern.",
+      "startFreeTrial": "Ücretsiz Deneyin",
+      "viewPricing": "Fiyatlandırma ansehen",
+      "trustMessage": "Kredi kartı gerekmez • 14 Tage kostenlos testen • Jederzeit kündbar"
+    }
+  },
+  "pricingPage": {
+    "seo": {
+      "title": "Fiyatlandırma - Yapay Zeka Ses Ajanı Platformu",
+      "description": "Basit, transparente Fiyatlandırma für Yapay Zeka Ses Ajanları. Starten Sie kostenlos, upgraden Sie wenn Sie mehr brauchen."
+    },
+    "hero": {
+      "title": "Basit,",
+      "titleHighlight": "Şeffaf",
+      "titleEnd": "Fiyatlandırma",
+      "subtitle": "Ücretsiz başlayın, hazır olduğunuzda yükseltin"
+    },
+    "billing": {
+      "monthly": "Aylık",
+      "yearly": "Yıllık",
+      "save20": "20% — jährlicher Abrechnung sparen",
+      "billedAnnually": "Yıllıke Abrechnung (20% Ersparnis)",
+      "perMonth": "/ay",
+      "perYear": "/yıl"
+    },
+    "plans": {
+      "mostPopular": "Am beliebtesten",
+      "free": "Ücretsiz",
+      "forGrowingBusinesses": "Für wachsende Unternehmen",
+      "perfectForTrying": "Perfekt zum Ausprobieren der Plattform",
+      "startFree": "Ücretsiz Başlayın",
+      "startProTrial": "Pro-Testversion starten"
+    },
+    "features": {
+      "minutesPerMonth": "{{count}} Minuten/ay",
+      "unlimitedMinutes": "Sınırsız Minuten",
+      "aiAgent": "{{count}} Yapay Zeka Ajanı",
+      "aiAgents": "{{count}} Yapay Zeka Ajanları",
+      "unlimitedAgents": "Sınırsız Yapay Zeka Ajanları",
+      "basicVoiceSelection": "Basis-Stimmauswahl",
+      "allPremiumVoices": "Alle Premium-Stimmen",
+      "emailSupport": "E-Mail-Destek",
+      "prioritySupport": "Öncelikli destek",
+      "analyticsDashboard": "Analytics-Dashboard",
+      "advancedAnalytics": "Gelişmiş analitik",
+      "flowBuilder": "Flow-Builder",
+      "apiAccess": "API-Zugang",
+      "webhookIntegrations": "Webhook-Entegrasyonlar",
+      "customIntegrations": "Benutzerdefinierte Entegrasyonlar",
+      "chooseLlm": "Choose LLM Model",
+      "includedCredits": "{{count}} Included Credits",
+      "maxContacts": "{{count}} Max Contacts",
+      "ownPhoneNumbers": "Own Phone Numbers",
+      "sipTrunkAccess": "SIP Trunk Access",
+      "systemAssignedPhone": "System Assigned Phone",
+      "unlimitedWidgets": "Unlimited Widgets",
+      "websiteWidget": "Website Widget"
+    },
+    "comparison": {
+      "title": "Pläne vergleichen",
+      "subtitle": "Sehen Sie, was in jedem Plan enthalten ist",
+      "feature": "İşlev",
+      "free": "Ücretsiz",
+      "pro": "Pro",
+      "callMinutes": "Anrufminuten",
+      "aiAgents": "Yapay Zeka Ajanları",
+      "phoneNumbers": "Telefon Numarları",
+      "flowBuilder": "Flow-Builder",
+      "knowledgeBase": "Bilgi Bankası",
+      "webhookIntegrations": "Webhook-Entegrasyonlar",
+      "apiAccess": "API-Zugang",
+      "prioritySupport": "Öncelikli destek",
+      "customVoices": "Benutzerdefinierte Stimmen",
+      "teamMembers": "Teammitglieder",
+      "limited": "Begrenzt",
+      "fullAccess": "Vollzugriff",
+      "included": "Enthalten",
+      "unlimited": "Sınırsız",
+      "document": "{{count}} Dokument",
+      "documents": "{{count}} Dokumente",
+      "campaign": "Campaign",
+      "campaigns": "Campaigns",
+      "contacts": "Contacts",
+      "contactsPerCampaign": "Contacts per Campaign",
+      "month": "month",
+      "yes": "Yes"
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "subtitle": "Alles, was Sie über unsere Fiyatlandırma wissen müssen",
+      "questions": {
+        "trial": {
+          "question": "Wie funktioniert die 14-tägige kostenlose Testversion?",
+          "answer": "Sie erhalten vollen Zugriff auf alle Pro-Özellikler für 14 Tage. Kredi kartı gerekmez. Nach der Testversion können Sie Pro weiter nutzen oder auf unseren kostenlosen Plan wechseln."
+        },
+        "cancel": {
+          "question": "Kann ich mein Abonnement jederzeit kündigen?",
+          "answer": "Ja, Sie können Ihr Abonnement jederzeit kündigen. Ihr Zugang bleibt bis zum Ende des aktuellen Abrechnungszeitraums bestehen."
+        },
+        "payment": {
+          "question": "Welche Zahlungsmethoden akzeptieren Sie?",
+          "answer": "Wir akzeptieren alle gängigen Kreditkarten (Visa, Mastercard, Amex), PayPal und in ausgewählten Regionen lokale Zahlungsmethoden wie Razorpay (Indien), Paystack (Afrika) und MercadoPago (Lateinamerika)."
+        },
+        "discount": {
+          "question": "Bieten Sie Rabatte für jährliche Abrechnung?",
+          "answer": "Ja! Yıllıke Abrechnung bietet 20% Rabatt im Vergleich zur monatlichen Abrechnung. İletişimieren Sie unser Satışsteam für Enterprise-Fiyatlandırma."
+        },
+        "limits": {
+          "question": "Was passiert, wenn ich meine Limits im kostenlosen Plan überschreite?",
+          "answer": "Sie erhalten eine Benachrichtigung, wenn Sie sich Ihren Limits nähern. Sie können jederzeit auf Pro upgraden, um die Plattform ohne Unterbrechung weiter zu nutzen."
+        },
+        "switch": {
+          "question": "Kann ich zwischen Plänen wechseln?",
+          "answer": "Ja, Sie können Ihren Plan jederzeit upgraden oder downgraden. Beim Upgrade haben Sie sofortigen Zugang zu neuen Özellikler. Beim Downgrade werden Änderungen zum nächsten Abrechnungszyklus wirksam."
+        }
+      }
+    },
+    "cta": {
+      "title": "Bereit loszulegen?",
+      "subtitle": "Beginnen Sie heute mit dem Aufbau Ihrer Yapay Zeka Ses Ajanları",
+      "startFreeTrial": "Ücretsiz Deneyin",
+      "contactSales": "Satış Ekibiyle İletişim"
+    }
+  },
+  "integrationsPage": {
+    "seo": {
+      "title": "Entegrasyonlar - Yapay Zeka Ses Ajanı Platformu",
+      "description": "Verbinden Sie Ihre Yapay Zeka Ses Ajanları mit Twilio, Plivo, OpenAI, ElevenLabs, Zapier und mehr."
+    },
+    "hero": {
+      "badge": "Leistungsstarke Entegrasyonlar",
+      "title": "Verbinden Sie sich mit Ihren",
+      "titleHighlight": "Lieblings-Tools",
+      "subtitle": "Integrieren Sie Yapay Zeka Ses Ajanları nahtlos in Ihren bestehenden Tech-Stack. Von Telefonie-Anbietern bis zu CRMs – wir haben Sie abgedeckt."
+    },
+    "categories": {
+      "telephony": "Telefonie",
+      "aiLlm": "KI/LLM",
+      "voice": "Dil",
+      "automation": "Automatisierung",
+      "developer": "Entwickler",
+      "communication": "Kommunikation",
+      "crm": "CRM"
+    },
+    "integrations": {
+      "twilio": {
+        "name": "Twilio",
+        "description": "Globaler Telefonie-Anbieter für Sprachanrufe, SMS und Telefon Numarlarıverwaltung."
+      },
+      "plivo": {
+        "name": "Plivo",
+        "description": "Alternativer Telefonie-Anbieter mit hervorragender Abdeckung in Indien und internationalen Märkten."
+      },
+      "openai": {
+        "name": "OpenAI",
+        "description": "Fortgeschrittene KI-Modelle für natürliches Sprachverständnis und Echtzeit-Sprachgespräche."
+      },
+      "elevenlabs": {
+        "name": "ElevenLabs",
+        "description": "Premium-Sprachsynthese mit ultrarealistischen, menschenähnlichen Stimmen in mehreren Diln."
+      },
+      "zapier": {
+        "name": "Zapier",
+        "description": "Verbindung mit über 5.000 Apps zur Automatisierung von Workflows, die durch Anrufereignisse ausgelöst werden."
+      },
+      "webhooks": {
+        "name": "Webhook",
+        "description": "Echtzeit-Ereignisbenachrichtigungen für Anrufstatus, Transkripte und benutzerdefinierte Aktionen."
+      },
+      "slack": {
+        "name": "Slack",
+        "description": "Erhalten Sie Echtzeit-Benachrichtigungen und Zusammenfassungen von Anrufen direkt in Ihren Slack-Kanälen."
+      },
+      "hubspot": {
+        "name": "HubSpot",
+        "description": "Synchronisieren Sie Anrufdaten, aktualisieren Sie Kişiler und protokollieren Sie Aktivitäten in Ihrem HubSpot-CRM."
+      },
+      "salesforce": {
+        "name": "Salesforce",
+        "description": "Enterprise-CRM-Integration für Anrufprotokollierung, Lead-Updates und Automatisierung."
+      },
+      "restApi": {
+        "name": "REST API",
+        "description": "Vollständiger programmatischer Zugriff auf alle Plattformfunktionen über unsere umfassende REST API."
+      }
+    },
+    "api": {
+      "badge": "Entwickler-API",
+      "title": "Vollständiger API-Zugang",
+      "description": "Oluştur Sie benutzerdefinierte Entegrasyonlar und automatisieren Sie Ihre Workflows mit unserer umfassenden REST API. Vollständige Dokumentation enthalten.",
+      "features": {
+        "createAgents": "Yapay Zeka Ajanları programmatisch erstellen und verwalten",
+        "launchCampaigns": "Anrufkampagnen starten und steuern",
+        "accessCallStatus": "Echtzeit-Anrufstatus und Transkripte abrufen",
+        "manageContacts": "Kişiler und Telefon Numarları verwalten",
+        "configureWebhooks": "Webhook für Ereignisbenachrichtigungen konfigurieren",
+        "generateAnalytics": "Analysen und Berichte generieren"
+      },
+      "viewDocs": "API-Dokumentation ansehen"
+    },
+    "webhooks": {
+      "badge": "Echtzeit-Webhook",
+      "title": "Ereignisgesteuerte Architektur",
+      "description": "Erhalten Sie Echtzeit-Benachrichtigungen für alle Anrufereignisse. Oluştur Sie reaktive Workflows, die sofort auf Kundeninteraktionen reagieren.",
+      "availableEvents": "Verfügbare Webhook-Ereignisse",
+      "events": {
+        "callStarted": "call.started - Wenn ein Anruf beginnt",
+        "callCompleted": "call.completed - Wenn ein Anruf mit vollständigem Transkript endet",
+        "callFailed": "call.failed - Wenn eine Verbindung fehlschlägt",
+        "campaignStarted": "campaign.started - Wenn eine Kampanya beginnt",
+        "campaignCompleted": "campaign.completed - Wenn alle Anrufe abgeschlossen sind",
+        "appointmentBooked": "appointment.booked - Wenn ein Termin gebucht wird"
+      },
+      "features": {
+        "hmac": "HMAC-SHA256 Signaturverifizierung",
+        "retry": "Automatische Wiederholung mit exponentiellem Backoff",
+        "logs": "Zustellprotokolle und Debugging-Tools"
+      }
+    },
+    "cta": {
+      "title": "Bereit zur Integration?",
+      "subtitle": "Beginnen Sie heute mit dem Aufbau mit unserer API. Vollständige Dokumentation enthalten.",
+      "startFreeTrial": "Ücretsiz Deneyin",
+      "viewDocumentation": "Dokumentation ansehen"
+    }
+  },
+  "blogPage": {
+    "badge": "Kaynaklar & Einblicke",
+    "title": "Blog & Kaynaklar",
+    "subtitle": "Bleiben Sie mit den neuesten Yapay Zeka Ses Ajanları-Strategien, Fallstudien und Ürün-Updates auf dem Laufenden, um Ihre Geschäftskommunikation zu transformieren.",
+    "categories": {
+      "all": "Alle",
+      "aiTechnology": "KI-Technologie",
+      "caseStudies": "Fallstudien",
+      "productUpdates": "Ürün-Updates"
+    },
+    "searchPlaceholder": "Artikel suchen...",
+    "readArticle": "Artikel lesen",
+    "noArticlesFound": "Keine Artikel gefunden, die Ihren Kriterien entsprechen.",
+    "clearFilters": "Filter löschen",
+    "newsletter": {
+      "title": "Bleiben Sie auf dem Laufenden",
+      "subtitle": "Erhalten Sie die neuesten Einblicke in KI-Sprachtechnologie wöchentlich in Ihren Posteingang.",
+      "emailPlaceholder": "E-postanızı girin",
+      "subscribe": "Abonnieren",
+      "disclaimer": "Kein Spam. Jederzeit abbestellbar."
+    }
+  },
+  "blogPost": {
+    "backToBlog": "Zurück zum Blog",
+    "shareArticle": "Artikel teilen",
+    "bookmarkArticle": "Artikel merken",
+    "readMore": "Mehr lesen",
+    "relatedArticles": {
+      "title": "Verwandte Artikel",
+      "subtitle": "Entdecken Sie weitere unserer neuesten Einblicke und Updates"
+    },
+    "viewAllArticles": "Alle Artikel ansehen",
+    "notFound": {
+      "title": "Artikel nicht gefunden",
+      "description": "Der angeforderte Artikel konnte nicht gefunden werden.",
+      "message": "Der Artikel, den Sie suchen, existiert nicht."
+    }
+  },
+  "contactPage": {
+    "badge": "Wir freuen uns von Ihnen zu hören",
+    "title": "İletişimieren Sie uns",
+    "subtitle": "Haben Sie Fragen zu unseren Yapay Zeka Ses Ajanları? Möchten Sie eine personalisierte Demo? Unser Team hilft Ihnen gerne, Ihre Anrufoperationen zu transformieren.",
+    "form": {
+      "title": "Senden Sie uns eine Nachricht",
+      "subtitle": "Füllen Sie das Formular aus und wir melden uns in Kürze — Ihnen.",
+      "labels": {
+        "name": "Name *",
+        "email": "E-Mail *",
+        "company": "Unternehmen",
+        "phone": "Telefon",
+        "message": "Nachricht *"
+      },
+      "placeholders": {
+        "name": "Adınız soyadınız",
+        "email": "sie@unternehmen.de",
+        "company": "Ihr Firmenname",
+        "phone": "+49 (0) 123 456789",
+        "message": "İhtiyaçlarınızı anlatın..."
+      },
+      "submit": "Mesaj Gönder",
+      "submitting": "Gönderiliyor...",
+      "privacyNotice": "Verileriniz güvende. Bilgilerinizi asla paylaşmayız.",
+      "successTitle": "Mesajınız başarıyla gönderildi!",
+      "successDescription": "24 saat içinde size dönüş yapacağız.",
+      "errorTitle": "Failed to send message",
+      "errorDescription": "Please try again later or contact us directly."
+    },
+    "validation": {
+      "nameMinLength": "Name muss mindestens 2 Zeichen haben",
+      "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "messageMinLength": "Nachricht muss mindestens 10 Zeichen haben"
+    },
+    "contactInfo": {
+      "title": "İletişiminformationen",
+      "subtitle": "İletişimieren Sie uns direkt über einen dieser Kanäle.",
+      "labels": {
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "address": "Adresse",
+        "officeHours": "Geschäftszeiten"
+      }
+    },
+    "mapPlaceholder": {
+      "title": "Admin HQ",
+      "location": "San Francisco, Kalifornien"
+    },
+    "faq": {
+      "badge": "Häufig gestellte Fragen",
+      "title": "Häufige Fragen",
+      "subtitle": "Finden Sie schnelle Antworten auf häufig gestellte Fragen zu unseren Diensten.",
+      "questions": {
+        "responseTime": {
+          "question": "Wie ist die typische Antwortzeit für Destek-Anfragen?",
+          "answer": "Unser Destek-Team antwortet in der Regel innerhalb von 24 Stunden an Werktagen. Für dringende Angelegenheiten bieten wir Enterprise-Kunden Öncelikli destek mit Antwortzeiten unter 2 Stunden."
+        },
+        "scheduleDemo": {
+          "question": "Kann ich eine Demo der Yapay Zeka Ses Ajanları vereinbaren?",
+          "answer": "Auf jeden Fall! Füllen Sie das İletişimformular mit Ihren Anforderungen aus und unser Team wird sich melden, um eine personalisierte Demo zu vereinbaren. Sie können auch mit unserer kostenlosen Testversion beginnen, um die Plattform selbst zu erleben."
+        },
+        "customIntegrations": {
+          "question": "Bieten Sie benutzerdefinierte Entegrasyonlar für Enterprise-Kunden an?",
+          "answer": "Ja, wir bieten maßgeschneiderte Integrationslösungen für Enterprise-Kunden. Unser Team kann mit Ihrer bestehenden Infrastruktur ar—ten, um eine nahtlose Integration mit Ihrem CRM, Telefoniesystemen und anderen Geschäfts-Tools sicherzustellen."
+        },
+        "paymentMethods": {
+          "question": "Welche Zahlungsmethoden akzeptieren Sie?",
+          "answer": "Wir akzeptieren alle gängigen Kreditkarten (Visa, MasterCard, American Express) sowie ACH-Überweisungen und Banküberweisungen für jährliche Enterprise-Verträge. Alle Zahlungen werden sicher über Stripe abgewickelt."
+        }
+      },
+      "moreQuestions": "Haben Sie noch Fragen? Wir sind hier um zu helfen.",
+      "contactSupport": "Destek kontaktieren"
+    }
+  }
+}

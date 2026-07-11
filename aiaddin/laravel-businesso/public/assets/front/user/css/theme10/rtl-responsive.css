@@ -1,0 +1,200 @@
+@media only screen and (min-width: 1200px) and (max-width: 1600px) {
+    .community-area .community-thumb {
+        right: 800px;
+    }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+    .header-area .header-top .header-logo form {
+        margin-right: 20px;
+    }
+
+    .header-area .header-top .trial-btns a {
+        margin-right: 12px;
+    }
+
+    .header-area.header-area-3 .header-btns form {
+        margin-right: 20px;
+    }
+
+    .banner-area.banner-area-2 .banner-content .title::before {
+        right: 300px;
+    }
+
+    .single-courses .courses-content ul li {
+        margin-left: 10px;
+    }
+
+    .testimonials-area .testimonials-active .slick-arrow.prev {
+        right: 0;
+    }
+
+    .testimonials-area .testimonials-active .slick-arrow.next {
+        left: 0;
+    }
+
+    .community-area .community-thumb {
+        right: 600px;
+    }
+
+    .course-grid-area .course-grid .course-grid-top .course-info ul li {
+        margin-left: 0;
+    }
+
+    .course-grid-area .single-courses .courses-content ul li {
+        margin-left: 10px;
+    }
+
+    .course-grid-area .single-course-list .courses-content ul li {
+        margin-left: 10px;
+    }
+
+    .course-title-area .course-title-content .course-rating p {
+        padding: 0 5px 0 10px;
+    }
+}
+
+@media only screen and (max-width: 991px) {
+    .navbar-item .menu-btns ul li {
+        margin-right: 20px;
+        margin-left: 0px;
+    }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+    .header-area .header-top .header-logo form {
+        margin-right: 20px;
+    }
+
+    .header-area .header-top .header-btns ul li a {
+        margin-right: 30px;
+    }
+
+    .banner-area.banner-area-2 .banner-content .title::before {
+        right: 200px;
+    }
+
+    .advance-courses-area .section-title.section-title-2 p {
+        padding: 0 0px 46px 130px;
+    }
+
+    .single-courses .courses-content ul li {
+        margin-left: 12px;
+    }
+
+    .course-grid-area .single-courses .courses-content ul li {
+        margin-left: 12px;
+    }
+
+    .course-grid-area .single-course-list .courses-content ul li {
+        margin-left: 12px;
+    }
+}
+
+@media (max-width: 767px) {
+    .navbar-item .menu-icon ul li a {
+        margin-right: 15px;
+    }
+
+    .dream-course-area .dream-course-content .dream-course-search .input-box i {
+        right: -30px;
+        left: auto;
+    }
+
+    .dream-course-area .dream-course-content .dream-course-search .input-box input {
+        padding-right: 0px;
+    }
+
+    .single-courses .courses-content ul li {
+        margin-left: 12px;
+    }
+
+    .community-area .community-content .input-box input {
+        padding-right: 15px;
+    }
+
+    .course-grid-area .course-grid .course-grid-top .course-filter .nice-select {
+        margin-left: 10px;
+    }
+
+    .course-grid-area .course-grid .course-grid-top .course-filter .input-box input {
+        padding-right: 15px;
+        margin-right: 0px;
+    }
+
+    .course-grid-area .single-courses .courses-content ul li {
+        margin-left: 12px;
+    }
+
+    .course-grid-area .single-course-list .courses-content ul li {
+        margin-left: 12px;
+    }
+
+    .course-title-area .course-title-content .course-title-content-title p {
+        padding-left: 0;
+    }
+
+    .course-details-area .course-details-items .course-details-item .course-text p {
+        margin-left: 0;
+    }
+
+    .course-details-area .course-details-items .course-learner-slide .course-learner-item .course-learner-content {
+        padding-right: 0;
+    }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+    .navbar-item .menu-icon ul li a {
+        margin-right: 10px;
+    }
+
+    .navigation .navbar .navbar-item .menu-btns ul li {
+        margin-right: 30px;
+        margin-left: 0px;
+    }
+
+    .navigation.navigation-2::before {
+        right: -105px;
+    }
+
+    .banner-area.banner-area-2 .banner-content .title::before {
+        right: 100px;
+    }
+
+    .dream-course-area .dream-course-content .dream-course-search .input-box i {
+        right: -25px;
+    }
+
+    .dream-course-area .dream-course-content .dream-course-search .input-box input {
+        padding-right: 10px;
+    }
+
+    .community-area .community-content .input-box button {
+        left: 33px;
+        right: auto;
+    }
+
+    .course-grid-area .course-grid .course-grid-top .course-filter .nice-select {
+        margin-left: 0;
+    }
+
+    .course-grid-area .course-grid .course-grid-top .course-filter .input-box input {
+        padding-right: 15px;
+        margin-right: 10px;
+    }
+
+    .course-title-area .course-title-content .course-title-content-title p {
+        padding-left: 0;
+    }
+
+    .course-details-area .course-details-items .course-learner-slide .course-learner-item .course-learner-content {
+        padding-right: 30px;
+    }
+}
+
+@media (max-width: 575px) {
+    .community-area .community-content .input-box button {
+        right: auto;
+        left: 50%;
+    }
+}

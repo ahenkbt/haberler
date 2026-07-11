@@ -1,0 +1,9 @@
+# Railway: Root Directory = `haber-merkezi` (bu dosyanın olduğu klasör)
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "pnpm run start:with-migrate"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 120

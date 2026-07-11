@@ -1,0 +1,1382 @@
+/* Bilgi Ağacı — bağımsız ansiklopedi sitesi */
+@import url("https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Figtree:wght@400;500;600;700;800&family=Kaushan+Script&display=swap");
+
+.bilgi-agaci-site {
+  --ba-primary: #38bdf8;
+  --ba-primary-dark: #0284c7;
+  --ba-citrus: #f59e0b;
+  --ba-mint: #e0f2fe;
+  --ba-heading: #0c4a6e;
+  --ba-body: #334155;
+  --ba-hero-bg: url("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1920&q=80");
+  font-family: "Figtree", system-ui, sans-serif;
+  color: var(--ba-body);
+  background: linear-gradient(180deg, var(--ba-mint) 0%, #f8fafc 28rem, #fff 100%);
+  overflow-x: clip;
+}
+
+.bilgi-agaci-brandbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  box-shadow: 0 8px 24px rgba(6, 78, 59, 0.06);
+}
+
+.bilgi-agaci-brandbar__inner {
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin-inline: auto;
+  padding: 0.65rem var(--yekpare-content-padding-x, 1rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.bilgi-agaci-brandbar__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Kaushan Script", cursive;
+  font-size: 1.35rem;
+  color: var(--ba-primary);
+  text-decoration: none;
+}
+
+.bilgi-agaci-brandbar__nav {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: min(100%, 82rem);
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.1rem 0 0.25rem;
+  scroll-padding-inline: 0.25rem;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bilgi-agaci-brandbar__link {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ba-body);
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.bilgi-agaci-brandbar__link:hover,
+.bilgi-agaci-brandbar__link--active {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--ba-primary-dark);
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  max-width: none;
+  margin-inline: auto;
+  border-radius: 0;
+  min-height: clamp(470px, 66vh, 720px);
+  background: var(--ba-primary) var(--ba-hero-bg) center/cover no-repeat;
+  box-shadow: 0 32px 110px rgba(6, 78, 59, 0.24);
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(2, 44, 34, 0.68) 0%, rgba(56, 189, 248, 0.36) 50%, rgba(6, 78, 59, 0.86) 100%);
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero::after {
+  content: "";
+  position: absolute;
+  left: -6rem;
+  right: -6rem;
+  bottom: -2.25rem;
+  height: 7rem;
+  border-radius: 999px 999px 0 0;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero__body {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: clamp(4.25rem, 10vw, 7rem) clamp(1rem, 4vw, 3rem) clamp(6rem, 12vw, 9rem);
+  color: #fff;
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero__kicker {
+  display: block;
+  font-family: "Kaushan Script", cursive;
+  font-size: clamp(1.5rem, 3.5vw, 2.75rem);
+  color: #a5f3fc;
+  margin-bottom: 0.35rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero__title {
+  margin: 0;
+  font-family: "Figtree", sans-serif;
+  font-size: clamp(3.25rem, 12vw, 8rem);
+  font-weight: 900;
+  line-height: 0.78;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff 0%, #a5f3fc 40%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bilgi-agaci-site .bilgi-agaci-hero__sub {
+  margin: 1rem auto 0;
+  max-width: 36rem;
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  font-weight: 600;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bilgi-agaci-site .bilgi-agaci-search-dock {
+  position: relative;
+  z-index: 5;
+  margin: -4.5rem auto 0;
+  max-width: 62rem;
+  padding: 0 1rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-search-card {
+  background: #fff;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  box-shadow: 0 24px 70px rgba(2, 44, 34, 0.18);
+  padding: 0.85rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-search-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .bilgi-agaci-site .bilgi-agaci-search-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-radius: 999px;
+  }
+}
+
+.bilgi-agaci-site .bilgi-agaci-search-input {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 1.25rem;
+  background: #e0f2fe;
+}
+
+@media (min-width: 640px) {
+  .bilgi-agaci-site .bilgi-agaci-search-input {
+    border-radius: 999px;
+  }
+}
+
+.bilgi-agaci-site .bilgi-agaci-search-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+}
+
+.bilgi-agaci-site .bilgi-agaci-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 1.25rem;
+  padding: 0.95rem 1.75rem;
+  background: var(--ba-primary);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .bilgi-agaci-site .bilgi-agaci-search-btn {
+    border-radius: 999px;
+  }
+}
+
+.bilgi-agaci-site .bilgi-agaci-pill-row,
+.bilgi-agaci-detail-page .bilgi-agaci-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-pill,
+.bilgi-agaci-detail-page .bilgi-agaci-pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.14);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+}
+
+.bilgi-agaci-site .bilgi-agaci-section {
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin-inline: auto;
+  padding: 2.5rem var(--yekpare-content-padding-x, 1rem);
+}
+
+.bilgi-agaci-site .bilgi-agaci-section-after-search {
+  padding-top: 1.75rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-section-head {
+  text-align: center;
+  max-width: 42rem;
+  margin: 0 auto 2rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-section-head .eyebrow {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ba-primary);
+}
+
+.bilgi-agaci-site .bilgi-agaci-section-head h2 {
+  margin: 0.5rem 0 0.75rem;
+  font-family: "Afacad", sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: var(--ba-heading);
+  line-height: 1.1;
+}
+
+.bilgi-agaci-site .bilgi-agaci-section-head p {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  border-radius: 1.65rem;
+  background: #fff;
+  padding: 0.9rem;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 26px 70px rgba(56, 189, 248, 0.18);
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card--featured {
+  grid-column: span 1;
+}
+
+@media (min-width: 1024px) {
+  .bilgi-agaci-site .bilgi-agaci-cat-card--featured {
+    grid-column: span 2;
+    min-height: auto;
+  }
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__frame {
+  position: relative;
+  overflow: hidden;
+  min-height: 245px;
+  border-radius: 1.25rem;
+  background: #e2e8f0;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__frame img {
+  width: 100%;
+  height: 100%;
+  min-height: 245px;
+  object-fit: cover;
+  transition: transform 0.55s ease, filter 0.35s ease;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card:hover .bilgi-agaci-cat-card__frame img {
+  transform: scale(1.05);
+  filter: saturate(1.05) contrast(1.05);
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0.08) 0%, rgba(2, 44, 34, 0.72) 100%);
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__quick {
+  position: absolute;
+  z-index: 2;
+  top: 1rem;
+  left: 1rem;
+  display: grid;
+  place-items: center;
+  width: 3.35rem;
+  height: 3.35rem;
+  border-radius: 1rem;
+  background: var(--ba-citrus);
+  color: #064e3b;
+  opacity: 0;
+  transform: translateX(-1rem);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card:hover .bilgi-agaci-cat-card__quick {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__name {
+  position: absolute;
+  z-index: 2;
+  left: 100%;
+  bottom: 1rem;
+  transform: translateX(0);
+  display: block;
+  white-space: nowrap;
+  border-radius: 1rem 0 0 1rem;
+  background: var(--ba-primary);
+  padding: 0.9rem 2rem;
+  font-family: "Afacad", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  transition: transform 0.32s ease, opacity 0.32s ease;
+  opacity: 0;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card:hover .bilgi-agaci-cat-card__name {
+  opacity: 1;
+  transform: translateX(-100%);
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__badge {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #e0f2fe;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ba-primary);
+  margin-bottom: 0.45rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #e0f2fe;
+  font-size: 1.35rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__footer {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1.05rem 0.35rem 0.25rem;
+  background: #fff;
+}
+
+.bilgi-agaci-site .bilgi-agaci-cat-card__footer p {
+  margin: 0;
+  color: #475569;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 1.35rem;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 60px rgba(56, 189, 248, 0.18);
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__media {
+  position: relative;
+  min-height: 180px;
+  overflow: hidden;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__media img {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  object-fit: cover;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__emoji {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 1.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__body {
+  padding: 1.1rem 1.2rem 1.25rem;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__body h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__body p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.bilgi-agaci-site .bilgi-agaci-topic-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ba-primary);
+}
+
+.bilgi-agaci-site .bilgi-agaci-panel {
+  border-radius: 1.75rem;
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.07);
+  padding: 1.5rem;
+}
+
+.bilgi-agaci-mini-footer {
+  margin-top: 2rem;
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  background: #fff;
+  padding: 1.5rem var(--yekpare-content-padding-x, 1rem);
+}
+
+.bilgi-agaci-mini-footer__inner {
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bilgi-agaci-mini-footer__inner p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.bilgi-agaci-mini-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bilgi-agaci-mini-footer__links a {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ba-primary);
+  text-decoration: none;
+}
+
+.bilgi-agaci-mini-footer__links a:hover {
+  text-decoration: underline;
+}
+
+/* Category pages — each Bilgi Ağacı topic is a standalone visual destination */
+.bilgi-category-page {
+  padding-bottom: 3rem;
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(245, 158, 11, 0.12), transparent 26rem),
+    linear-gradient(180deg, #e0f2fe 0%, #ffffff 28rem);
+}
+
+/* HM editör vitrin: kapak hero yok — doğrudan vitrin grid'i */
+.bilgi-category-page--hm {
+  background: #fff;
+}
+
+.bilgi-category-page--hm .bilgi-category-section {
+  padding-top: 1.25rem;
+}
+
+.bilgi-agaci-site[data-hm-embedded] .bilgi-category-section-head h2 {
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+}
+
+/* HM vitrin: kapak hero + arama bandı yok — kategori şeridi üst kromda */
+.bilgi-agaci-site[data-hm-embedded] .bilgi-agaci-hero,
+.bilgi-agaci-site[data-hm-embedded] .bilgi-agaci-search-dock {
+  display: none;
+}
+
+.bilgi-agaci-site[data-hm-embedded] .ansiklopedi-home--hm {
+  background: #fff;
+}
+
+.bilgi-agaci-site[data-hm-embedded] .ansiklopedi-home--hm > .bilgi-agaci-section:first-of-type {
+  padding-top: 1.25rem;
+}
+
+.bilgi-category-hero {
+  --ba-category-gradient: linear-gradient(135deg, #064e3b 0%, #38bdf8 100%);
+  position: relative;
+  min-height: clamp(560px, 72vh, 820px);
+  overflow: hidden;
+  background: #064e3b;
+}
+
+.bilgi-category-hero__media {
+  position: absolute;
+  inset: 0;
+}
+
+.bilgi-category-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.08) contrast(1.05);
+}
+
+.bilgi-category-hero__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 20%, rgba(245, 158, 11, 0.28), transparent 22rem),
+    var(--ba-category-gradient),
+    linear-gradient(90deg, rgba(2, 44, 34, 0.92), rgba(2, 44, 34, 0.42));
+  opacity: 0.88;
+}
+
+.bilgi-category-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin-inline: auto;
+  padding: clamp(3rem, 8vw, 6.5rem) var(--yekpare-content-padding-x, 1rem) clamp(6.5rem, 11vw, 9rem);
+  color: #fff;
+}
+
+.bilgi-category-hero__layout {
+  display: grid;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.75fr);
+}
+
+.bilgi-category-hero__copy {
+  min-width: 0;
+}
+
+.bilgi-category-hero__back {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.45rem 0.95rem;
+  color: #bae6fd;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.bilgi-category-hero__script {
+  display: block;
+  margin-top: 2.25rem;
+  font-family: "Kaushan Script", cursive;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  color: #bef264;
+}
+
+.bilgi-category-hero h1 {
+  margin: 0.1rem 0 0;
+  max-width: 52rem;
+  font-family: "Figtree", system-ui, sans-serif;
+  font-size: clamp(4rem, 13vw, 9rem);
+  font-weight: 900;
+  line-height: 0.78;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bilgi-category-hero p {
+  margin: 1.15rem 0 0;
+  max-width: 44rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.bilgi-category-hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.bilgi-category-hero__stats span {
+  display: grid;
+  min-width: 8.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.85rem 1rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.76rem;
+  font-weight: 800;
+  backdrop-filter: blur(10px);
+}
+
+.bilgi-category-hero__stats strong {
+  color: #fff;
+  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  line-height: 1.1;
+}
+
+.bilgi-category-hero__spotlight {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 30px 90px rgba(2, 44, 34, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.bilgi-category-hero__spotlight-image {
+  position: relative;
+  min-height: clamp(220px, 24vw, 340px);
+  overflow: hidden;
+}
+
+.bilgi-category-hero__spotlight-image img {
+  width: 100%;
+  height: 100%;
+  min-height: clamp(220px, 24vw, 340px);
+  object-fit: cover;
+}
+
+.bilgi-category-hero__spotlight-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 20%, rgba(2, 44, 34, 0.58) 100%);
+}
+
+.bilgi-category-hero__spotlight-body {
+  padding: 1.25rem;
+}
+
+.bilgi-category-hero__spotlight-body > span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  padding: 0.35rem 0.75rem;
+  color: #bae6fd;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.bilgi-category-hero__spotlight-body h2 {
+  margin: 0.8rem 0 1rem;
+  font-family: "Afacad", system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3.15rem);
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.bilgi-category-hero__spotlight-body div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bilgi-category-hero__spotlight-body a {
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.5rem 0.8rem;
+  color: #064e3b;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.bilgi-category-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 46rem;
+  margin-top: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.55rem 0.65rem 0.55rem 1.1rem;
+  color: #38bdf8;
+  box-shadow: 0 22px 60px rgba(2, 44, 34, 0.22);
+}
+
+.bilgi-category-search input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  font-weight: 700;
+  outline: none;
+}
+
+.bilgi-category-search button {
+  border: 0;
+  border-radius: 999px;
+  background: #84cc16;
+  color: #064e3b;
+  padding: 0.8rem 1.35rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bilgi-category-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.65rem;
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin: -2.25rem auto 0;
+  padding: 0 var(--yekpare-content-padding-x, 1rem) 0.45rem;
+  position: relative;
+  z-index: 4;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-padding-inline: var(--yekpare-content-padding-x, 1rem);
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bilgi-category-tabs a {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.72rem 1rem;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+}
+
+.bilgi-category-tabs a.active {
+  background: #38bdf8;
+  color: #fff;
+}
+
+.bilgi-category-section,
+.bilgi-category-empty {
+  max-width: var(--yekpare-content-max-width, 1440px);
+  margin-inline: auto;
+  padding: 3.5rem var(--yekpare-content-padding-x, 1rem) 0;
+}
+
+.bilgi-category-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 0.75fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.bilgi-category-showcase__lead,
+.bilgi-category-showcase__tile {
+  overflow: hidden;
+  border-radius: 1.75rem;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.1);
+}
+
+.bilgi-category-showcase__lead {
+  background:
+    radial-gradient(circle at 85% 10%, rgba(245, 158, 11, 0.22), transparent 15rem),
+    linear-gradient(135deg, #064e3b 0%, #38bdf8 100%);
+  padding: clamp(1.35rem, 3vw, 2.2rem);
+  color: #fff;
+}
+
+.bilgi-category-showcase__lead span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.bilgi-category-showcase__lead h2 {
+  margin: 1.2rem 0 0.75rem;
+  max-width: 34rem;
+  font-family: "Afacad", system-ui, sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  font-weight: 800;
+  line-height: 0.9;
+}
+
+.bilgi-category-showcase__lead p {
+  margin: 0;
+  max-width: 36rem;
+  color: rgba(255, 255, 255, 0.84);
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.bilgi-category-showcase__tile {
+  position: relative;
+  min-height: 280px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.bilgi-category-showcase__tile img {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.bilgi-category-showcase__tile:hover img {
+  transform: scale(1.06);
+}
+
+.bilgi-category-showcase__tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0.08) 0%, rgba(2, 44, 34, 0.78) 100%);
+}
+
+.bilgi-category-showcase__tile span,
+.bilgi-category-showcase__tile strong {
+  position: absolute;
+  z-index: 2;
+}
+
+.bilgi-category-showcase__tile span {
+  top: 1rem;
+  right: 1rem;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.bilgi-category-showcase__tile strong {
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  font-family: "Afacad", system-ui, sans-serif;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.bilgi-category-section-head {
+  margin-bottom: 1.5rem;
+}
+
+.bilgi-category-empty h1 {
+  margin: 0.5rem 0 1rem;
+  font-family: "Afacad", system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: #064e3b;
+}
+
+.bilgi-category-primary-link {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #fff;
+  padding: 0.8rem 1.2rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.bilgi-category-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 1.25rem;
+}
+
+.bilgi-category-topic-card {
+  overflow: hidden;
+  border-radius: 1.65rem;
+  background: #fff;
+  color: inherit;
+  padding: 0.85rem;
+  text-decoration: none;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.bilgi-category-topic-card--featured {
+  grid-column: span 2;
+}
+
+.bilgi-category-topic-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 26px 70px rgba(56, 189, 248, 0.18);
+}
+
+.bilgi-category-topic-card__image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  min-height: 220px;
+  background: #e2e8f0;
+}
+
+.bilgi-category-topic-card__image img {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.bilgi-category-topic-card:hover .bilgi-category-topic-card__image img {
+  transform: scale(1.06);
+}
+
+.bilgi-category-topic-card__image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 35%, rgba(2, 44, 34, 0.72) 100%);
+}
+
+.bilgi-category-topic-card__image span {
+  position: absolute;
+  z-index: 2;
+  right: 1rem;
+  bottom: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.bilgi-category-topic-card__body {
+  padding: 1.1rem 0.35rem 0.25rem;
+}
+
+.bilgi-category-topic-card__body p {
+  margin: 0 0 0.4rem;
+  color: #38bdf8;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bilgi-category-topic-card__body h3 {
+  margin: 0;
+  color: #0f172a;
+  font-family: "Afacad", system-ui, sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.bilgi-category-topic-card__body span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.8rem;
+  color: #38bdf8;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+/* Bilgi Ağacı detail — visual article hero and map handoff */
+.bilgi-agaci-detail-page {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(245, 158, 11, 0.12), transparent 24rem),
+    radial-gradient(circle at 88% 8%, rgba(56, 189, 248, 0.12), transparent 25rem),
+    linear-gradient(180deg, #e0f2fe 0%, #f8fafc 22rem, #ffffff 100%);
+  overflow-x: clip;
+}
+
+.wiki-detail-card {
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 2rem;
+  background: #fff;
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.1);
+}
+
+.wiki-detail-hero {
+  position: relative;
+  min-height: clamp(360px, 44vw, 540px);
+  overflow: hidden;
+  border-radius: 2rem 2rem 0 0;
+  background: #064e3b;
+}
+
+.wiki-detail-hero__bg {
+  position: absolute;
+  inset: 0;
+}
+
+.wiki-detail-hero__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.wiki-detail-hero__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 75% 15%, rgba(245, 158, 11, 0.28), transparent 20rem),
+    linear-gradient(90deg, rgba(2, 44, 34, 0.92) 0%, rgba(56, 189, 248, 0.62) 48%, rgba(2, 44, 34, 0.38) 100%);
+}
+
+.wiki-detail-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 58rem;
+  padding: clamp(2rem, 6vw, 4.5rem);
+  color: #fff;
+}
+
+.wiki-detail-hero__breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  padding: 0.45rem 0.95rem;
+  color: #bae6fd;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-decoration: none;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.wiki-detail-hero__content h1 {
+  margin: 1.25rem 0 0;
+  font-family: "Afacad", "Figtree", system-ui, sans-serif;
+  font-size: clamp(2.4rem, 7vw, 5.6rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.wiki-detail-hero__content p {
+  margin: 1rem 0 0;
+  max-width: 46rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.bilgi-agaci-detail-page .bilgi-agaci-pill-row {
+  justify-content: flex-start;
+  max-width: 46rem;
+}
+
+.wiki-detail-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+}
+
+.wiki-detail-map-cta,
+.wiki-detail-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.wiki-detail-map-cta {
+  background: #f59e0b;
+  color: #064e3b;
+}
+
+.wiki-detail-share-btn {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+}
+
+.wiki-detail-map-cta:hover,
+.wiki-detail-share-btn:hover {
+  transform: translateY(-1px);
+}
+
+.wiki-detail-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  background: #f8fafc;
+  padding: 0.95rem clamp(1.25rem, 3vw, 2rem);
+}
+
+.wiki-detail-toolbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  color: #475569;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.wiki-detail-toolbar strong,
+.wiki-detail-toolbar em {
+  border-radius: 999px;
+  background: #e0f2fe;
+  padding: 0.3rem 0.7rem;
+  color: #0284c7;
+  font-style: normal;
+  font-size: 0.78rem;
+}
+
+.wiki-detail-toolbar a {
+  color: #38bdf8;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.wiki-detail-actions-strip {
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(245, 158, 11, 0.16), transparent 18rem),
+    linear-gradient(135deg, rgba(236, 253, 245, 0.92), rgba(255, 255, 255, 0.96));
+  padding: 1rem clamp(1.25rem, 3vw, 2rem);
+}
+
+.wiki-detail-actions-strip__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.wiki-detail-discover-primary,
+.wiki-detail-glass-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.55rem;
+  border-radius: 999px;
+  padding: 0.68rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.wiki-detail-discover-primary {
+  background: linear-gradient(135deg, #38bdf8 0%, #f59e0b 100%);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(56, 189, 248, 0.2);
+}
+
+.wiki-detail-glass-actions {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.wiki-detail-glass-action {
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(255, 255, 255, 0.58);
+  color: #064e3b;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.wiki-detail-discover-primary:hover,
+.wiki-detail-glass-action:hover {
+  transform: translateY(-1px);
+}
+
+.wiki-detail-glass-action:hover {
+  border-color: rgba(56, 189, 248, 0.34);
+  box-shadow: 0 10px 24px rgba(56, 189, 248, 0.1);
+}
+
+.wiki-detail-actions-strip__note {
+  margin: 0.65rem 0 0;
+  color: #0284c7;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .bilgi-agaci-brandbar__inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bilgi-agaci-brandbar__nav {
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: 0.35rem;
+  }
+
+  .bilgi-agaci-brandbar__link {
+    padding: 0.42rem 0.78rem;
+    font-size: 0.76rem;
+  }
+
+  .bilgi-agaci-site .bilgi-agaci-hero {
+    border-radius: 0;
+    min-height: 430px;
+  }
+
+  .bilgi-agaci-site .bilgi-agaci-search-card {
+    border-radius: 1.5rem;
+  }
+
+  .wiki-detail-card,
+  .wiki-detail-hero {
+    border-radius: 1.35rem 1.35rem 0 0;
+  }
+
+  .wiki-detail-actions-strip__inner,
+  .wiki-detail-glass-actions,
+  .wiki-detail-discover-primary,
+  .wiki-detail-glass-action {
+    width: 100%;
+  }
+
+  .bilgi-category-search {
+    grid-template-columns: auto minmax(0, 1fr);
+    border-radius: 1.35rem;
+  }
+
+  .bilgi-category-search button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1024px) {
+  .bilgi-category-hero__layout,
+  .bilgi-category-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .bilgi-category-hero__spotlight {
+    max-width: 42rem;
+  }
+
+  .bilgi-category-topic-card--featured {
+    grid-column: span 1;
+  }
+}

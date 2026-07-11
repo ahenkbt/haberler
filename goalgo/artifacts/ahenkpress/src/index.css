@@ -1,0 +1,1934 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+/* Leaflet tiles must not inherit Tailwind preflight img sizing (causes tile gaps). */
+.leaflet-container img.leaflet-tile,
+.leaflet-container img.leaflet-marker-icon,
+.leaflet-container img.leaflet-marker-shadow,
+.leaflet-container img.leaflet-image-layer {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* LIGHT MODE */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --card-border: 214.3 31.8% 91.4%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --popover-border: 214.3 31.8% 91.4%;
+
+  --primary: 346.8 77.2% 49.8%;
+  --primary-foreground: 355.7 100% 97.3%;
+  --primary-border: 346.8 77.2% 49.8%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary-border: 214.3 31.8% 91.4%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted-border: 214.3 31.8% 91.4%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent-border: 214.3 31.8% 91.4%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --destructive-border: 0 84.2% 60.2%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 346.8 77.2% 49.8%;
+
+  --sidebar: 226 25% 12%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 226 25% 12%;
+  --sidebar-primary: 346.8 77.2% 49.8%;
+  --sidebar-primary-foreground: 355.7 100% 97.3%;
+  --sidebar-accent: 226 25% 18%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 346.8 77.2% 49.8%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --card-border: 217.2 32.6% 17.5%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --popover-border: 217.2 32.6% 17.5%;
+
+  --primary: 346.8 77.2% 49.8%;
+  --primary-foreground: 355.7 100% 97.3%;
+  --primary-border: 346.8 77.2% 49.8%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --secondary-border: 217.2 32.6% 17.5%;
+
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --muted-border: 217.2 32.6% 17.5%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --accent-border: 217.2 32.6% 17.5%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --destructive-border: 0 62.8% 30.6%;
+
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 346.8 77.2% 49.8%;
+
+  --sidebar: 226 25% 12%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-primary: 346.8 77.2% 49.8%;
+  --sidebar-primary-foreground: 355.7 100% 97.3%;
+  --sidebar-accent: 226 25% 18%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 346.8 77.2% 49.8%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /*
+   * Editor pages can be opened on custom news domains that also load public-site
+   * theme CSS. Keep the management UI on a predictable light palette so form
+   * labels, values and helper text never inherit white-on-white colors.
+   */
+  .hm-editor-panel {
+    color: #0f172a;
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --input: 214.3 31.8% 91.4%;
+  }
+
+  .hm-editor-panel label,
+  .hm-editor-panel input,
+  .hm-editor-panel textarea,
+  .hm-editor-panel select,
+  .hm-editor-panel [role="textbox"],
+  .hm-editor-panel [data-slot="select-trigger"],
+  .hm-editor-panel [data-slot="select-value"] {
+    color: #0f172a !important;
+  }
+
+  .hm-editor-panel input,
+  .hm-editor-panel textarea,
+  .hm-editor-panel select,
+  .hm-editor-panel [data-slot="select-trigger"] {
+    background-color: #ffffff !important;
+  }
+
+  .hm-editor-panel input::placeholder,
+  .hm-editor-panel textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+  }
+
+  .hm-editor-panel :where(h1, h2, h3, h4, h5, h6, p, div, span, strong, small, th, td, code, label, a) {
+    color: inherit;
+  }
+
+  .hm-editor-panel :where(th, td, p, label, code, [data-slot="select-value"]) {
+    color: #0f172a !important;
+  }
+
+  .hm-editor-panel :where(.text-slate-400, .text-slate-500, .text-slate-600, .text-muted-foreground) {
+    color: #475569 !important;
+  }
+
+  .hm-editor-panel :where(.text-slate-700, .text-slate-800, .text-slate-900) {
+    color: #0f172a !important;
+  }
+
+  .hm-editor-mode [role="dialog"] {
+    color: #0f172a;
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+  }
+
+  .hm-editor-mode [role="dialog"] :where(h1, h2, h3, h4, h5, h6, p, div, span, strong, small, label, input, textarea, code) {
+    color: #0f172a !important;
+  }
+
+  .hm-editor-mode [role="dialog"] :where(.text-slate-400, .text-slate-500, .text-slate-600, .text-muted-foreground) {
+    color: #475569 !important;
+  }
+
+  .hm-editor-mode [role="dialog"] :where(input, textarea, select) {
+    background-color: #ffffff !important;
+  }
+
+  /*
+   * Admin yönetim paneli: açık arka planda sol menü alt bağlantıları ve sağ sayfa
+   * metinleri okunaklı kalsın (text-muted-foreground / gri tonları siyaha yakın).
+   */
+  .admin-panel {
+    color: #111827;
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --muted-foreground: 215 16% 35%;
+  }
+
+  .admin-panel label,
+  .admin-panel input,
+  .admin-panel textarea,
+  .admin-panel select,
+  .admin-panel [role="textbox"],
+  .admin-panel [data-slot="select-trigger"],
+  .admin-panel [data-slot="select-value"] {
+    color: #111827 !important;
+  }
+
+  .admin-panel input,
+  .admin-panel textarea,
+  .admin-panel select,
+  .admin-panel [data-slot="select-trigger"] {
+    background-color: #ffffff !important;
+  }
+
+  .admin-panel :where(h1, h2, h3, h4, h5, h6, p, div, span, strong, small, th, td, code, label, a, li) {
+    color: inherit;
+  }
+
+  .admin-panel :where(th, td, p, label, code, [data-slot="select-value"], .text-sm, .text-xs) {
+    color: #111827;
+  }
+
+  .admin-panel :where(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-400, .text-slate-500, .text-slate-600, .text-muted-foreground) {
+    color: #374151 !important;
+  }
+
+  .admin-panel :where(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900) {
+    color: #111827 !important;
+  }
+
+  .admin-panel main :where(p, span, li, dd, dt, small):not([class*="text-white"]):not([class*="text-red"]):not([class*="text-amber"]):not([class*="text-emerald"]) {
+    color: #1f2937;
+  }
+}
+
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
+
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {}
+
+  .no-default-active-elevate {}
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+/* ── Wikipedia inline content styles (drawer) ── */
+.wiki-content p { margin-bottom: 0.75rem; }
+.wiki-content p:last-child { margin-bottom: 0; }
+.wiki-content a[href] {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-decoration-color: #bfdbfe;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.wiki-content a[href]:hover { color: #1d4ed8; text-decoration-color: #93c5fd; }
+.wiki-content b, .wiki-content strong { font-weight: 600; color: #111827; }
+.wiki-content h2 { font-size: 0.875rem; font-weight: 700; color: #111827; margin: 0.75rem 0 0.25rem; }
+.wiki-content h3 { font-size: 0.8125rem; font-weight: 600; color: #374151; margin: 0.5rem 0 0.25rem; }
+
+/* ── Wikipedia full-page article styles ── */
+.wiki-article p { margin-bottom: 1rem; line-height: 1.75; }
+.wiki-article p:last-child { margin-bottom: 0; }
+.wiki-article a[href^="/ansiklopedi/"],
+.wiki-article a[href^="/bilgiagaci/"] {
+  color: #0ea5e9;
+  text-decoration: underline;
+  text-decoration-color: #99f6e4;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.wiki-article a[href^="/ansiklopedi/"]:hover,
+.wiki-article a[href^="/bilgiagaci/"]:hover {
+  color: #0d9488;
+  text-decoration-color: #2dd4bf;
+}
+.wiki-article b, .wiki-article strong { font-weight: 700; }
+.wiki-article h2 {
+  font-size: 1.25rem; font-weight: 700; color: #111827;
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0f2fe;
+}
+.wiki-article h3 {
+  font-size: 1.05rem; font-weight: 600; color: #1f2937;
+  margin: 1.5rem 0 0.5rem;
+}
+.wiki-article ul, .wiki-article ol { margin: 0.75rem 0 1rem 1.5rem; }
+.wiki-article li { margin-bottom: 0.35rem; line-height: 1.65; }
+.wiki-article ul li { list-style-type: disc; }
+.wiki-article ol li { list-style-type: decimal; }
+.wiki-article img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+.wiki-article figure.wiki-figure {
+  margin: 1.25rem 0;
+  max-width: 100%;
+}
+.wiki-article figure.wiki-figure img {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.wiki-article figcaption {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* ── Rich HTML content layout (encyclopedia, news, CMS) ── */
+.yekpare-rich-content {
+  display: flow-root;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  line-height: 1.75;
+}
+.yekpare-rich-content p,
+.yekpare-rich-content li,
+.yekpare-rich-content blockquote {
+  margin-bottom: 1.15em;
+  line-height: 1.75;
+}
+.yekpare-rich-content p:last-child,
+.yekpare-rich-content li:last-child {
+  margin-bottom: 0;
+}
+.yekpare-rich-content > div:not([class]) {
+  margin-bottom: 1.15em;
+  line-height: 1.75;
+}
+.yekpare-rich-content br + br {
+  display: block;
+  margin-top: 0.65em;
+  content: "";
+}
+.yekpare-rich-content > *:first-child {
+  margin-top: 0;
+}
+
+/* Haber / köşe makale gövdesi — okunabilir paragraf aralığı */
+.yekpare-news-body {
+  max-width: 68ch;
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: #334155;
+}
+.yekpare-news-body.yekpare-news-body--column {
+  max-width: none;
+}
+.yekpare-news-body p {
+  margin-bottom: 1.25em;
+  line-height: 1.8;
+}
+.yekpare-news-body p:last-child {
+  margin-bottom: 0;
+}
+.yekpare-news-body p.yekpare-hm-attribution {
+  margin-top: 2rem;
+  margin-bottom: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #64748b;
+  max-width: none;
+}
+.yekpare-news-body h2,
+.yekpare-news-body h3,
+.yekpare-news-body h4 {
+  margin-top: 1.75em;
+  margin-bottom: 0.75em;
+  line-height: 1.35;
+  color: #0f172a;
+}
+.yekpare-news-body ul,
+.yekpare-news-body ol {
+  margin: 1em 0 1.25em;
+  padding-left: 1.5em;
+}
+.yekpare-news-body li + li {
+  margin-top: 0.35em;
+}
+.yekpare-news-body blockquote {
+  margin: 1.25em 0;
+  padding: 0.75em 1em;
+}
+.yekpare-news-body > div:not([class]),
+.yekpare-news-body .yekpare-news-body-chunk > div:not([class]) {
+  margin-bottom: 1.25em;
+  line-height: 1.8;
+}
+.yekpare-news-body br + br {
+  display: block;
+  margin-top: 0.75em;
+  content: "";
+}
+.yekpare-news-body .yekpare-news-body-chunk {
+  display: contents;
+}
+
+/* Headings clear floats so body text regains full readable width */
+.yekpare-rich-content h2,
+.yekpare-rich-content h3,
+.yekpare-rich-content h4 {
+  clear: both;
+}
+.yekpare-rich-content img,
+.yekpare-rich-content video,
+.yekpare-rich-content iframe {
+  max-width: 100%;
+  height: auto;
+}
+.yekpare-rich-content figure {
+  max-width: 100%;
+  margin: 1.25rem 0;
+}
+/* Infobox only — float aside for news/CMS; wikitable/data tables stay full width */
+.yekpare-rich-content:not(.wiki-article) table.infobox {
+  width: auto;
+  max-width: min(100%, 300px);
+  float: right;
+  clear: right;
+  margin: 0 0 1.25rem 1.25rem;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #fff;
+}
+.yekpare-rich-content table.wikitable,
+.yekpare-rich-content:not(.wiki-article) table:not(.infobox) {
+  float: none;
+  clear: both;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.25rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  display: block;
+}
+.yekpare-rich-content table.wikitable thead,
+.yekpare-rich-content table.wikitable tbody,
+.yekpare-rich-content:not(.wiki-article) table:not(.infobox) thead,
+.yekpare-rich-content:not(.wiki-article) table:not(.infobox) tbody {
+  display: table;
+  width: 100%;
+}
+.yekpare-rich-content table th,
+.yekpare-rich-content table td {
+  border: 1px solid #f3f4f6;
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.yekpare-rich-content table th {
+  background: #f9fafb;
+  font-weight: 600;
+  text-align: left;
+}
+@media (max-width: 640px) {
+  .yekpare-rich-content:not(.wiki-article) table.infobox {
+    float: none;
+    clear: both;
+    max-width: 100%;
+    width: 100%;
+    margin: 0 0 1.25rem;
+  }
+}
+
+/* ── Bilgi Ağacı wiki article — readable layout (infobox aside, no float rail) ── */
+.wiki-article-page {
+  width: 100%;
+  max-width: none;
+  overflow-x: clip;
+}
+
+.wiki-detail-main {
+  min-width: 0;
+  width: 100%;
+}
+
+.wiki-detail-body {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.wiki-detail-aside {
+  width: 100%;
+}
+
+/* Article body grid: readable main column + optional infobox aside */
+.wiki-article-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+}
+
+.wiki-article-main {
+  min-width: 0;
+  width: 100%;
+  max-width: 52rem;
+}
+
+.wiki-infobox-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  width: 100%;
+  order: -1;
+}
+
+.wiki-infobox-card {
+  border: 1px solid #bae6fd;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  padding: 0.35rem;
+  box-shadow: 0 1px 3px rgba(56, 189, 248, 0.08);
+  overflow-x: auto;
+}
+
+@media (min-width: 1024px) {
+  .wiki-article-layout:has(.wiki-infobox-aside) {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 2rem;
+  }
+
+  .wiki-article-layout:has(.wiki-infobox-aside) .wiki-article-main {
+    max-width: none;
+  }
+
+  .wiki-infobox-aside {
+    order: 0;
+    position: sticky;
+    top: 5.5rem;
+    max-width: 320px;
+  }
+}
+
+/* Horizontal section pills — replaces left TOC sidebar */
+.wiki-section-nav {
+  border: 1px solid #bae6fd;
+  border-radius: 0.875rem;
+  background: #f8fafc;
+  padding: 0.75rem;
+}
+
+.wiki-section-nav-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0284c7;
+  margin: 0 0 0.5rem;
+}
+
+.wiki-section-nav-scroll {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 7.5rem;
+  overflow-y: auto;
+  padding-bottom: 0.15rem;
+}
+
+.wiki-section-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid #bae6fd;
+  background: #fff;
+  color: #0c4a6e;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.wiki-section-pill:hover {
+  background: #e0f2fe;
+  border-color: #67e8f9;
+  color: #0284c7;
+}
+
+.wiki-section-pill-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #334155;
+  border-color: #e2e8f0;
+}
+
+.yekpare-rich-content.wiki-article {
+  display: flow-root;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.yekpare-rich-content.wiki-article pre,
+.yekpare-rich-content.wiki-article .mw-code {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Infobox tables — rendered in aside card; never float inside article body */
+.yekpare-rich-content.wiki-article table.infobox,
+.yekpare-rich-content.wiki-article table[class*="infobox"],
+.yekpare-rich-content.wiki-article table.wiki-infobox-table,
+.wiki-infobox-card table {
+  float: none !important;
+  clear: both !important;
+  display: table;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  border: none;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+
+.yekpare-rich-content.wiki-article table.infobox img,
+.yekpare-rich-content.wiki-article table[class*="infobox"] img,
+.wiki-infobox-card table img {
+  display: block;
+  width: auto;
+  max-width: min(100%, 220px);
+  height: auto;
+  max-height: 180px;
+  object-fit: contain;
+  margin-inline: auto;
+}
+
+.yekpare-rich-content.wiki-article table.infobox th,
+.yekpare-rich-content.wiki-article table[class*="infobox"] th,
+.wiki-infobox-card table th {
+  background: #e0f2fe;
+  color: #0c4a6e;
+  text-align: center;
+}
+
+/* Legacy float classes from Wikipedia HTML — neutralize in article body */
+.yekpare-rich-content.wiki-article .tright,
+.yekpare-rich-content.wiki-article .floatright,
+.yekpare-rich-content.wiki-article .tleft,
+.yekpare-rich-content.wiki-article .floatleft,
+.yekpare-rich-content.wiki-article .thumb {
+  float: none !important;
+  clear: both !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 1rem 0 !important;
+}
+
+/* Wikitables and data tables — full width */
+.yekpare-rich-content.wiki-article table.wikitable,
+.yekpare-rich-content.wiki-article table:not(.infobox):not([class*="infobox"]) {
+  float: none;
+  clear: both;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.25rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.yekpare-rich-content.wiki-article table.wikitable thead,
+.yekpare-rich-content.wiki-article table.wikitable tbody,
+.yekpare-rich-content.wiki-article table:not(.infobox):not([class*="infobox"]) thead,
+.yekpare-rich-content.wiki-article table:not(.infobox):not([class*="infobox"]) tbody {
+  display: table;
+  width: 100%;
+}
+
+/* Body thumbnails — never float; stack or grid between paragraphs */
+.yekpare-rich-content.wiki-article figure.wiki-figure {
+  float: none;
+  clear: both;
+  display: block;
+  width: fit-content;
+  max-width: min(100%, 520px);
+  margin: 1.25rem auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.yekpare-rich-content.wiki-article figure.wiki-figure img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 320px;
+  height: auto;
+  object-fit: contain;
+  margin: 0;
+  border-radius: 0.375rem;
+}
+
+.yekpare-rich-content.wiki-article figure.wiki-figure figcaption {
+  margin-top: 0.35rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* 3+ consecutive figures collapse into a responsive gallery row */
+.yekpare-rich-content.wiki-article figure.wiki-figure + figure.wiki-figure + figure.wiki-figure,
+.yekpare-rich-content.wiki-article figure.wiki-figure + figure.wiki-figure + figure.wiki-figure ~ figure.wiki-figure {
+  display: inline-block;
+  vertical-align: top;
+  width: calc(33.333% - 0.67rem);
+  min-width: 160px;
+  max-width: 280px;
+  margin: 0 0.75rem 0.75rem 0;
+}
+
+.yekpare-rich-content.wiki-article > img,
+.yekpare-rich-content.wiki-article p img {
+  float: none;
+  clear: both;
+  display: block;
+  width: auto;
+  max-width: min(100%, 520px);
+  max-height: 320px;
+  height: auto;
+  object-fit: contain;
+  margin: 1rem auto;
+  border-radius: 0.375rem;
+}
+
+.yekpare-rich-content.wiki-article h2 {
+  clear: both;
+  scroll-margin-top: 6rem;
+}
+
+.yekpare-rich-content.wiki-article h3,
+.yekpare-rich-content.wiki-article h4 {
+  clear: both;
+  scroll-margin-top: 6rem;
+}
+
+@media (max-width: 640px) {
+  .wiki-infobox-aside {
+    order: -1;
+    max-width: 100%;
+  }
+
+  .yekpare-rich-content.wiki-article figure.wiki-figure,
+  .yekpare-rich-content.wiki-article figure.wiki-figure + figure.wiki-figure + figure.wiki-figure,
+  .yekpare-rich-content.wiki-article figure.wiki-figure + figure.wiki-figure + figure.wiki-figure ~ figure.wiki-figure,
+  .yekpare-rich-content.wiki-article > img,
+  .yekpare-rich-content.wiki-article p img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 1rem;
+  }
+}
+
+/* Daily homepage feed cards */
+.ansiklopedi-home {
+  width: 100%;
+  max-width: none;
+  overflow-x: clip;
+}
+
+.wiki-daily-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wiki-daily-secondary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .wiki-daily-secondary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.wiki-daily-card {
+  border: 1px solid #bae6fd;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%);
+  padding: 1.125rem;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  height: 100%;
+}
+
+.wiki-daily-card-featured {
+  padding: 1.25rem 1.375rem;
+  border-color: #a5f3fc;
+  box-shadow: 0 1px 3px rgba(56, 189, 248, 0.08);
+}
+
+.wiki-daily-featured-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .wiki-daily-featured-grid {
+    grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+  }
+}
+
+.wiki-daily-featured-body {
+  min-width: 0;
+}
+
+.wiki-daily-media {
+  overflow: hidden;
+  border-radius: 0.625rem;
+  border: 1px solid #e5e7eb;
+  background: #f1f5f9;
+  aspect-ratio: 16 / 10;
+  max-height: 168px;
+  width: 100%;
+}
+
+.wiki-daily-media-featured {
+  max-height: 200px;
+}
+
+@media (min-width: 768px) {
+  .wiki-daily-media-featured {
+    max-width: 280px;
+  }
+}
+
+.wiki-daily-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wiki-daily-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wiki-daily-card h3 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0284c7;
+}
+
+.wiki-daily-card p,
+.wiki-daily-card li {
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.wiki-daily-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.wiki-daily-card a {
+  color: #0284c7;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wiki-daily-card a:hover {
+  text-decoration: underline;
+}
+
+/* Yekpare Sade — subtle horizontal rail scrollbar (tabs, category chips, product rails) */
+.yekpare-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 212, 191, 0.22) rgba(45, 212, 191, 0.06);
+}
+
+.yekpare-scrollbar::-webkit-scrollbar {
+  height: 5px;
+}
+
+.yekpare-scrollbar::-webkit-scrollbar-track {
+  background: rgba(45, 212, 191, 0.06);
+  border-radius: 999px;
+}
+
+.yekpare-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0%, rgba(45, 212, 191, 0.26) 100%);
+  border-radius: 999px;
+}
+
+.yekpare-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.88) 0%, rgba(45, 212, 191, 0.38) 100%);
+}
+
+/* Homepage Bilgi Ağacı band — same horizontal card as featured daily item */
+.wiki-daily-band-tabs {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.wiki-daily-band-brand {
+  gap: 0;
+  line-height: 1;
+}
+
+.wiki-daily-band-brand-icon {
+  display: inline-flex;
+  font-size: 1em;
+  line-height: 1;
+}
+
+.wiki-daily-tab {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.42);
+  color: #475569;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.wiki-daily-tab:hover {
+  background: rgba(255, 255, 255, 0.58);
+  color: #0f172a;
+}
+
+.wiki-daily-tab--active {
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(255, 255, 255, 0.72);
+  color: #38bdf8;
+  box-shadow: 0 1px 4px rgba(56, 189, 248, 0.12);
+}
+
+@media (max-width: 767px) {
+  .wiki-daily-band .wiki-daily-card,
+  .wiki-daily-band .wiki-daily-card-featured {
+    padding: 0.75rem 0.875rem;
+    gap: 0.5rem;
+  }
+
+  .wiki-daily-band .wiki-daily-featured-grid {
+    gap: 0.625rem;
+  }
+
+  .wiki-daily-band .wiki-daily-media,
+  .wiki-daily-band .wiki-daily-media-featured {
+    aspect-ratio: 16 / 9;
+    max-height: 170px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .wiki-daily-band .wiki-daily-excerpt {
+    -webkit-line-clamp: 2;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .wiki-daily-band .wiki-daily-card h3 {
+    font-size: 0.625rem;
+  }
+
+  /* Sol alttaki Yekpare AI baloncuğu ile çakışmayı azalt */
+  .wiki-daily-band {
+    padding-bottom: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.wiki-daily-band .wiki-daily-card {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wiki-daily-band .wiki-daily-featured-grid-with-media {
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .wiki-daily-band .wiki-daily-featured-grid-with-media {
+    grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+    align-items: stretch;
+  }
+}
+
+.wiki-daily-band .wiki-daily-media-featured {
+  display: block;
+  text-decoration: none;
+}
+
+.wiki-daily-band .wiki-daily-title-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.wiki-daily-band .wiki-daily-excerpt {
+  -webkit-line-clamp: 3;
+}
+
+.wiki-daily-band .wiki-daily-detail-cta {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.wiki-daily-band .wiki-daily-detail-cta:hover {
+  text-decoration: underline;
+}
+
+.wiki-daily-band .wiki-daily-list-item {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Ansiklopedi landing — horizontal media cards (featured + secondary grid) */
+.ansiklopedi-home .wiki-daily-card-media,
+.ansiklopedi-home .wiki-daily-card-featured {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.ansiklopedi-home .wiki-daily-featured-grid-with-media {
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .ansiklopedi-home .wiki-daily-featured-grid-with-media {
+    grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .ansiklopedi-home .wiki-daily-featured-grid-compact.wiki-daily-featured-grid-with-media {
+    grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+  }
+}
+
+.ansiklopedi-home .wiki-daily-media-featured,
+.ansiklopedi-home .wiki-daily-media-compact {
+  display: block;
+  text-decoration: none;
+}
+
+.ansiklopedi-home .wiki-daily-media-compact {
+  aspect-ratio: 16 / 10;
+  max-height: 168px;
+}
+
+@media (min-width: 768px) {
+  .ansiklopedi-home .wiki-daily-media-compact {
+    aspect-ratio: 4 / 3;
+    max-height: 140px;
+    max-width: 180px;
+    width: 100%;
+    height: auto;
+  }
+}
+
+.ansiklopedi-home .wiki-daily-title-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.ansiklopedi-home .wiki-daily-secondary-grid .wiki-daily-excerpt {
+  -webkit-line-clamp: 3;
+}
+
+.ansiklopedi-home .wiki-daily-detail-cta {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.ansiklopedi-home .wiki-daily-detail-cta:hover {
+  text-decoration: underline;
+}
+
+/* ── Keşfet premium animations ── */
+@keyframes gold-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes premium-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(245,158,11,0.0),
+      0 0 0 2.5px #f59e0b,
+      0 0 0 4.5px rgba(245,158,11,0.18),
+      0 6px 22px rgba(245,158,11,0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 0 rgba(245,158,11,0.0),
+      0 0 0 2.5px #fbbf24,
+      0 0 0 5.5px rgba(251,191,36,0.28),
+      0 8px 32px rgba(245,158,11,0.42);
+  }
+}
+@keyframes biz-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes border-glow {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.biz-card-premium { animation: premium-pulse 2.8s ease-in-out infinite; }
+.biz-card-enter   { animation: biz-rise 0.22s cubic-bezier(0.34,1.56,0.64,1) both; }
+.gold-shimmer-text {
+  background: linear-gradient(90deg, #92400e 0%, #f59e0b 25%, #fde68a 45%, #fbbf24 55%, #f59e0b 75%, #92400e 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 2.8s linear infinite;
+}
+.open-dot { animation: dot-blink 2s ease-in-out infinite; }
+.animate-fade-in { animation: fade-in 0.2s ease-out both; }
+
+/* Premium card shimmer overlay */
+.biz-card-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.biz-card-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.22) 50%, transparent 62%);
+  animation: shimmer-slide 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Premium badge pulse */
+@keyframes badge-pop {
+  0%, 100% { transform: scale(1) rotate(-6deg); }
+  50%       { transform: scale(1.18) rotate(-6deg); }
+}
+.premium-badge {
+  animation: badge-pop 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Ultra premium chip active glow */
+@keyframes chip-glow {
+  0%, 100% { box-shadow: 0 4px 22px rgba(99,102,241,0.60), 0 0 0 1px rgba(255,255,255,0.20); }
+  50%       { box-shadow: 0 4px 28px rgba(99,102,241,0.80), 0 0 12px rgba(168,85,247,0.40), 0 0 0 1px rgba(255,255,255,0.25); }
+}
+
+/* Glass card lift on hover — subtle elevation */
+.biz-card-enter {
+  will-change: transform;
+}
+
+/* Premium gradient text — indigo */
+.indigo-shimmer-text {
+  background: linear-gradient(90deg, #312e81 0%, #4f46e5 30%, #818cf8 50%, #4f46e5 70%, #312e81 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 3.5s linear infinite;
+}
+
+/* Son Dakika ticker marquee */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Yekpare Sade chrome — canonical content width aligned with header (§6) */
+:root {
+  --yekpare-content-max-width: 1440px;
+  --yekpare-content-padding-x: 1rem;
+}
+
+.yekpare-page-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--yekpare-content-max-width);
+  margin-inline: auto;
+  padding-inline: var(--yekpare-content-padding-x);
+}
+
+/* Google Places widget (Autocomplete) — üstte kalsın: modal, harita, mobil bar */
+.pac-container {
+  z-index: 2147483646 !important;
+}
+
+/* Public Sade/marketplace surface: contrast-safe buttons without touching admin/editor. */
+.sade-public-root .sade-public-page {
+  background: #ffffff;
+}
+.sade-public-root .sade-public-page a[class*="bg-[#0ea5e9]"],
+.sade-public-root .sade-public-page button[class*="bg-[#0ea5e9]"] {
+  color: #fff !important;
+}
+.sade-public-root .sade-public-page a.services-cta-on-teal,
+.sade-public-root .sade-public-page button.services-cta-on-teal {
+  color: #0284c7 !important;
+  background: #fff !important;
+}
+.sade-public-root .sade-public-page a.services-cta-ghost-on-teal,
+.sade-public-root .sade-public-page button.services-cta-ghost-on-teal {
+  color: #fff !important;
+}
+.sade-public-root .sade-public-page a[class*="bg-[#e61e25]"],
+.sade-public-root .sade-public-page button[class*="bg-[#e61e25]"],
+.sade-public-root .sade-public-page a[class*="bg-red-"],
+.sade-public-root .sade-public-page button[class*="bg-red-"],
+.sade-public-root .sade-public-page a[class*="bg-indigo-"],
+.sade-public-root .sade-public-page button[class*="bg-indigo-"],
+.sade-public-root .sade-public-page a[class*="bg-blue-"],
+.sade-public-root .sade-public-page button[class*="bg-blue-"],
+.sade-public-root .sade-public-page a[class*="bg-green-"],
+.sade-public-root .sade-public-page button[class*="bg-green-"],
+.sade-public-root .sade-public-page a[class*="bg-slate-9"],
+.sade-public-root .sade-public-page button[class*="bg-slate-9"],
+.sade-public-root .sade-public-page .btn-primary {
+  color: #fff !important;
+}
+.sade-public-root .sade-public-page a[class*="bg-amber-"],
+.sade-public-root .sade-public-page button[class*="bg-amber-"],
+.sade-public-root .sade-public-page a[class*="bg-[#f7b91e]"],
+.sade-public-root .sade-public-page button[class*="bg-[#f7b91e]"] {
+  color: #172554 !important;
+}
+
+/* Root landing — beyaz CTA yeşil bant üzerinde kalıtılan text-white rengini ezmesin */
+.sixam-native a.landing-cta-light,
+.sixam-native button.landing-cta-light,
+.sade-public-root .sade-public-page a.landing-cta-light,
+.sade-public-root .sade-public-page button.landing-cta-light {
+  color: #38bdf8 !important;
+}
+.sixam-native a.landing-cta-light .landing-cta-label,
+.sixam-native button.landing-cta-light .landing-cta-label,
+.sade-public-root .sade-public-page a.landing-cta-light .landing-cta-label,
+.sade-public-root .sade-public-page button.landing-cta-light .landing-cta-label {
+  color: inherit;
+}
+.sixam-native a.landing-cta-green,
+.sixam-native button.landing-cta-green,
+.sade-public-root .sade-public-page a.landing-cta-green,
+.sade-public-root .sade-public-page button.landing-cta-green {
+  color: #fff !important;
+}
+
+/* Sade hero + CTA — anasayfa ile aynı krem-yeşil gradient + blur + alt fade. */
+.sixam-native,
+.sade-public-page,
+.sade-public-root .sade-public-page {
+  --sade-public-page-bg: #ffffff;
+}
+
+/* Alt menü / modül nav sonrası tam genişlik hero bandı — turizm referansı */
+.sade-public-hero-stage {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100vw;
+  margin-inline: calc(50% - 50vw);
+}
+
+.sade-public-hero-surface,
+.sade-public-root .sade-public-page .sade-public-hero {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  border-bottom: none;
+  background: linear-gradient(115deg, #f0f9ff 0%, #e0f2fe 48%, #ede9fe 100%);
+  color: #0f172a;
+}
+
+/* Viewport genişliği — üst yekpare-page-container içinde kalan hero arka planları için */
+.sade-public-hero-full-bleed {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* Modül hero içerik oranı — anasayfa Hero ile aynı band (desktop ~310px, mobil ~240px+) */
+.sade-public-hero-inner {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: clamp(240px, 28vw, 310px);
+  padding-block: clamp(2rem, 4vw, 2.5rem);
+}
+
+/* /haberler hero uzantısı — kategori nav altında sıkı; standart hero min-height/padding yok */
+.sade-public-hero-inner--compact {
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+/* Yalnızca cam alt menü — gradient kısa band, fade beyaz gövdeye */
+.sade-public-hero-surface--subnav-only {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: clamp(64px, 8vw, 92px);
+  padding-bottom: clamp(14px, 3vw, 26px);
+  background: linear-gradient(115deg, #fff8db 0%, #e0f2fe 38%, #f5f3ff 68%, #ffffff 100%);
+}
+.sade-public-hero-surface--subnav-only::before {
+  opacity: 0.42;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
+}
+.sade-public-hero-surface--subnav-only::after {
+  height: clamp(36px, 6vw, 64px);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 42%, transparent) 45%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 78%, transparent) 72%,
+    var(--sade-public-page-bg, #ffffff) 100%
+  );
+}
+
+/* YekTube anasayfa — içerik bloğu yok; standart hero geçiş yüksekliği, alt nav üstte */
+.sade-public-hero-surface--yektube-band {
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(240px, 28vw, 310px);
+  padding-bottom: 0;
+}
+
+.yektube-home-content-lift {
+  position: relative;
+  z-index: 3;
+  margin-top: clamp(-168px, -16vw, -112px);
+}
+
+/* Yektube — orijinal anasayfa: açık zemin + köşe glow; kartlar/sidebar beyaz kalır */
+.yektube-page-surface {
+  --sade-public-page-bg: #f8fafc;
+  background-color: #f8fafc;
+  position: relative;
+  isolation: isolate;
+}
+
+.yektube-page-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 6%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(circle at 6% 18%, rgba(250, 204, 21, 0.18), transparent 28%),
+    linear-gradient(180deg, #f0f9ff 0%, #f8fafc 38%, #f8fafc 100%);
+}
+
+.yektube-page-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.yektube-page-surface .yektube-shell-body,
+.yektube-page-surface .yektube-shell-main:not(.yektube-shell-main--shorts) {
+  background: transparent;
+}
+
+.yektube-standalone-root {
+  min-height: 100dvh;
+}
+
+.yektube-standalone-root .yektube-page-surface {
+  min-height: 0;
+  flex: 1;
+}
+
+/* YouTube mobil arayüzü */
+.yektube-page--yt-mobile {
+  background: #fff;
+  color: #0f0f0f;
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-top {
+  height: 48px;
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-chips {
+  top: var(--yektube-yt-mobile-top, 48px);
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-chips [role="tablist"] {
+  border-bottom: none;
+  gap: 0.5rem;
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-chips button[role="tab"] {
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  padding: 6px 12px;
+  text-transform: none;
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-chips button[role="tab"][aria-selected="true"] {
+  background: #0f0f0f;
+  color: #fff;
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-chips button[role="tab"][aria-selected="false"] {
+  background: #f2f2f2;
+  color: #0f0f0f;
+}
+
+.yektube-page--yt-mobile .yektube-yt-mobile-bottom {
+  height: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.yektube-page--yt-mobile .yektube-shell-main--shorts {
+  min-height: calc(100dvh - 3.5rem - env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.yektube-shorts-reel .yektube-shell-main--shorts {
+  background: #000;
+}
+
+@media (max-width: 1023px) {
+  .yektube-standalone-root .yektube-shell-main--shorts {
+    min-height: calc(100dvh - 7rem);
+  }
+}
+
+.hm-vitrin-root .yektube-page--hm-embed .yektube-home-content-lift {
+  margin-top: 0;
+}
+
+.hm-vitrin-root .yektube-page--hm-embed .sade-public-hero-surface--yektube-band {
+  display: none;
+}
+
+.sade-public-hero-surface--compact::after {
+  height: clamp(52px, 18%, 96px);
+}
+
+/* YekTube hoşgeldin — standart hero oranı, önceki aşırı sıkıştırma geri alındı */
+.sade-public-hero-inner--yektube {
+  min-height: clamp(168px, 22vw, 248px);
+  padding-block: clamp(1.25rem, 3.2vw, 2rem);
+}
+.sade-public-hero-surface::before,
+.sade-public-root .sade-public-page .sade-public-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(45, 212, 191, 0.18), transparent 28%),
+    radial-gradient(circle at 8% 24%, rgba(250, 204, 21, 0.24), transparent 24%);
+}
+.sade-public-hero-surface::after,
+.sade-public-root .sade-public-page .sade-public-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: clamp(88px, 34%, 240px);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 10%, transparent) 26%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 32%, transparent) 46%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 52%, transparent) 64%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 72%, transparent) 80%,
+    color-mix(in srgb, var(--sade-public-page-bg, #ffffff) 88%, transparent) 92%,
+    var(--sade-public-page-bg, #ffffff) 100%
+  );
+}
+.sade-public-hero-surface > *,
+.sade-public-root .sade-public-page .sade-public-hero > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Hero altı gövde başlangıcı — anasayfa kompakt ritim (Tailwind: pt-3/md:pt-4/lg:pt-5). */
+.sade-public-post-hero-body {
+  box-sizing: border-box;
+}
+.sixam-native > .sade-public-post-hero-body:first-of-type,
+.sixam-native > main.sade-public-post-hero-body:first-of-type,
+.sixam-native > div.sade-public-post-hero-body:first-of-type,
+.sade-public-page > .sade-public-post-hero-body:first-of-type,
+.sade-public-page > main.sade-public-post-hero-body:first-of-type,
+.sade-public-page > section.sade-public-post-hero-body:first-of-type,
+.sade-public-page > div.sade-public-post-hero-body:first-of-type {
+  margin-top: 0;
+}
+.bc-yekpare.bc-home > .bc-home-promos + .bc-home-section {
+  padding-top: 0.75rem;
+}
+.lh-kesfet .sade-public-hero-stage + .lh-section,
+.lh-kesfet .sade-public-hero-stage ~ .lh-section.lh-section-glass:first-of-type {
+  padding-top: 0.75rem;
+}
+.sade-public-root .sade-public-page .sade-btn-primary,
+.sade-public-root .sade-public-page a.sade-btn-primary,
+.sade-public-root .sade-public-page button.sade-btn-primary {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+  border-color: #0ea5e9;
+}
+.sade-public-root .sade-public-page .sade-btn-primary:hover,
+.sade-public-root .sade-public-page a.sade-btn-primary:hover,
+.sade-public-root .sade-public-page button.sade-btn-primary:hover {
+  background: #0284c7 !important;
+}
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] {
+  background: #f0f9ff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #bae6fd;
+}
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .text-white,
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] h1,
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] h2,
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] p {
+  color: #0f172a !important;
+}
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .text-slate-300,
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .text-white\/75 {
+  color: #475569 !important;
+}
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .text-red-200,
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .text-red-400 {
+  color: #0284c7 !important;
+}
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .bg-red-600,
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="red-950"] .bg-\[\#e61e25\] {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+}
+.sade-public-root .sade-public-page [class*="text-[#e61e25]"],
+.sade-public-root .sade-public-page [class*="hover:text-[#e61e25]"]:hover,
+.sade-public-root .sade-public-page [class*="group-hover:text-[#e61e25]"] .group:hover {
+  color: #0ea5e9;
+}
+.sade-public-root .sade-public-page a[class*="bg-[#e61e25]"],
+.sade-public-root .sade-public-page button[class*="bg-[#e61e25]"],
+.sade-public-root .sade-public-page [class*="hover:bg-[#c9181e]"]:hover,
+.sade-public-root .sade-public-page [class*="hover:bg-[#c91920]"]:hover {
+  background-color: #0ea5e9 !important;
+}
+.sade-public-root .sade-public-page [class*="border-[#e61e25]"] {
+  border-color: #67e8f9 !important;
+}
+.sade-public-root .sade-public-page [class*="from-slate-950"][class*="to-red-950"] {
+  background: linear-gradient(90deg, #e0f2fe, #e0f2fe) !important;
+  color: #0f172a !important;
+}
+
+/* Haber editörü — inline foto galeri önizleme */
+.news-tiptap-editor .ap-news-gallery {
+  margin: 1rem 0;
+  border: 1px dashed hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  background: hsl(var(--muted) / 0.35);
+}
+.news-tiptap-editor .ap-news-gallery__viewport--editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 0.35rem;
+}
+.news-tiptap-editor .ap-news-gallery__img {
+  width: 100%;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
+/* Kültür Portalı — gömülü iframe (mobilde ortalı, taşmasız) */
+.hm-culture-portal-frame {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.hm-culture-portal-iframe-shell {
+  width: 100%;
+  overflow: hidden;
+}
+
+.hm-culture-portal-iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+  background: #fff;
+  height: calc(100vh + 700px);
+  min-height: 1320px;
+  margin-top: -150px;
+}
+
+@media (max-width: 1023px) {
+  .hm-culture-portal-frame {
+    height: min(calc(100dvh - 7.5rem), calc(1460px * (100vw - 1rem) / 1280));
+    min-height: 420px;
+  }
+
+  .hm-culture-portal-iframe-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hm-culture-portal-iframe {
+    position: absolute;
+    left: 50%;
+    top: -130px;
+    width: 1280px;
+    max-width: none;
+    height: 1600px;
+    min-height: 1600px;
+    margin-top: 0;
+    transform: translateX(-50%) scale(calc((100vw - 1rem) / 1280));
+    transform-origin: top center;
+  }
+}
+
+/* Global Yekpare night shell — beats Tailwind base body background on all routes */
+html[data-yekpare-theme="night"],
+html[data-home-theme="night"] {
+  color-scheme: dark;
+}
+
+html[data-yekpare-theme="night"] body,
+html[data-home-theme="night"] body,
+body[data-yekpare-theme="night"],
+body[data-home-theme="night"] {
+  background-color: #020617 !important;
+  color: #f1f5f9;
+}
+
+html[data-yekpare-theme="night"] .sade-public-hero-surface,
+html[data-home-theme="night"] .sade-public-hero-surface {
+  background: linear-gradient(115deg, #0f172a 0%, #1e293b 48%, #0f172a 100%);
+  color: #f1f5f9;
+}
+
+html[data-yekpare-theme="night"] .sade-public-root .sade-public-page,
+html[data-home-theme="night"] .sade-public-root .sade-public-page,
+html[data-yekpare-theme="night"] .sixam-native,
+html[data-home-theme="night"] .sixam-native {
+  --sade-public-page-bg: #020617;
+}
+
+/* Türkçe: CSS `text-transform: uppercase` İ/i/ı/ş bozar — nav/kategori etiketleri JS ile formatlanır. */
+html[lang="tr"] :is(
+  .hm-news-nav-pill,
+  .hm-news-nav-dropdown-trigger,
+  .hm-news-nav-dropdown-btn,
+  .hm-news-cat-menu-tile-label,
+  .hm-mobile-bottom-nav__item span
+) {
+  text-transform: none !important;
+}
+
+/* Tailwind `uppercase` — Türkçe metinlerde JS locale kullanılmalı; CSS dönüşümü devre dışı. */
+html[lang="tr"] .uppercase {
+  text-transform: none !important;
+}

@@ -1,0 +1,76 @@
+# Deploy Yekpare AI Call / AgentLabs (Servis B) to Railway on push to main.
+# Requires GitHub secrets:
+#   RAILWAY_TOKEN              — Project token (same project as API or separate)
+#   RAILWAY_CALL_SERVICE_ID    — Call center service UUID (e.g. goalgo-call)
+# Optional:
+#   RAILWAY_ENVIRONMENT        — default: production
+#   RAILWAY_CALL_PUBLIC_URL    — e.g. https://call.yekpare.net (post-deploy health check)
+#
+# Root directory for this service: goalgo/ai-call-center (see railway.toml)
+name: Railway Call Center Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "goalgo/ai-call-center/**"
+      - "goalgo/scripts/sync-plugins.ps1"
+      - "goalgo/scripts/git-add-ai-call-center.ps1"
+      - ".github/workflows/railway-call-center-production.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: railway-call-center
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_CALL_SERVICE_ID: ${{ secrets.RAILWAY_CALL_SERVICE_ID }}
+      RAILWAY_ENVIRONMENT: ${{ secrets.RAILWAY_ENVIRONMENT || 'production' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Skip when Railway call secrets are missing
+        id: gate
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_CALL_SERVICE_ID" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Railway call deploy (RAILWAY_TOKEN / RAILWAY_CALL_SERVICE_ID not set)."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy AI Call Center (goalgo/ai-call-center)
+        if: steps.gate.outputs.enabled == 'true'
+        working-directory: goalgo/ai-call-center
+        run: |
+          railway up --ci \
+            --service="$RAILWAY_CALL_SERVICE_ID" \
+            --environment="$RAILWAY_ENVIRONMENT"
+
+      - name: Verify /api/health
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          RAILWAY_CALL_PUBLIC_URL: ${{ secrets.RAILWAY_CALL_PUBLIC_URL }}
+        run: |
+          if [ -z "$RAILWAY_CALL_PUBLIC_URL" ]; then
+            echo "::notice::RAILWAY_CALL_PUBLIC_URL not set — skip post-deploy health check."
+            exit 0
+          fi
+          base="${RAILWAY_CALL_PUBLIC_URL%/}"
+          for attempt in 1 2 3 4 5; do
+            code="$(wget -qO- --server-response "${base}/api/health" 2>&1 | awk '/HTTP\// {print $2}' | tail -1 || true)"
+            echo "attempt ${attempt}: HTTP ${code:-unknown}"
+            if [ "$code" = "200" ]; then
+              echo "Call center health OK."
+              exit 0
+            fi
+            sleep 25
+          done
+          echo "::warning::Call center /api/health not 200. Check Railway deploy logs."
+          exit 1

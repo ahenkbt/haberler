@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Klasik alan adları",
+    "slug": "ornek-klasik",
+    "address": "Örnek Mah. No:1",
+    "city": "Ankara",
+    "district": "Çankaya",
+    "phone": "+903121234567",
+    "lat": 39.92,
+    "lng": 32.86,
+    "googleImportKind": "manual"
+  },
+  {
+    "restaurantName": "Yemek platformu export benzeri isim alanı",
+    "branchName": "Kızılay Şubesi",
+    "city": "Ankara",
+    "district": "Çankaya",
+    "address": "Atatürk Bulvarı",
+    "phone": "03121112233",
+    "coordinates": { "lat": 39.918, "lng": 32.854 },
+    "googlePlaceId": "",
+    "googleImportKind": "manual"
+  },
+  {
+    "restaurant": {
+      "title": "İç içe restaurant nesnesi",
+      "il": "İstanbul",
+      "ilce": "Kadıköy",
+      "adres": "Bahariye Cd.",
+      "telefon": "+902161234567",
+      "latitude": 40.99,
+      "longitude": 29.02
+    },
+    "googleImportKind": "manual"
+  }
+]

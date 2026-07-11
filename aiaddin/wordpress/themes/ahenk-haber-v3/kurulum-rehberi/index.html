@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ahenk Haber v3 — Kurulum Rehberi</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px}
+  a{color:#CC0000;text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* LAYOUT */
+  .rehber-sarici{display:flex;min-height:100vh}
+  .sidebar-nav{width:260px;flex-shrink:0;background:#1a1a1a;color:#fff;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .icerik-alan{flex:1;padding:32px 40px;max-width:860px}
+
+  /* SIDEBAR */
+  .sb-logo{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sb-logo .sb-baslik{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:4px}
+  .sb-logo .sb-versiyon{display:inline-block;background:linear-gradient(to right,#CC0000,#8B0000);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px}
+  .sb-tema-adi{font-size:20px;font-weight:900;color:#fff;margin:6px 0 0;line-height:1.2}
+  .sb-menu{list-style:none;padding:12px 0}
+  .sb-menu li a{display:flex;align-items:center;gap:10px;padding:9px 20px;color:rgba(255,255,255,.75);font-size:13px;font-weight:600;transition:.2s;border-left:3px solid transparent}
+  .sb-menu li a:hover,.sb-menu li a.aktif{color:#fff;background:rgba(255,255,255,.07);border-left-color:#CC0000;text-decoration:none}
+  .sb-menu li a .sb-ikon{width:18px;text-align:center;font-size:13px}
+  .sb-bolum-baslik{padding:14px 20px 4px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35)}
+  .sb-badge{background:#CC0000;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:auto}
+
+  /* İÇERİK */
+  .bolum{margin-bottom:48px;scroll-margin-top:24px}
+  .bolum-baslik{font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:20px;padding-bottom:10px;border-bottom:3px solid #CC0000;display:flex;align-items:center;gap:10px}
+  .bolum-baslik .b-ikon{width:36px;height:36px;background:linear-gradient(to right,#CC0000,#8B0000);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0}
+  h3.alt-baslik{font-size:16px;font-weight:800;color:#333;margin:20px 0 10px;padding-left:12px;border-left:3px solid #CC0000}
+  p{line-height:1.75;color:#444;margin-bottom:12px}
+  ul.madde{padding-left:0;list-style:none;margin-bottom:16px}
+  ul.madde li{padding:5px 0 5px 24px;position:relative;color:#444;line-height:1.6;border-bottom:1px solid #f5f5f5}
+  ul.madde li:last-child{border-bottom:none}
+  ul.madde li::before{content:'✓';position:absolute;left:0;color:#CC0000;font-weight:900;font-size:13px}
+  ol.adim{padding-left:0;list-style:none;counter-reset:adim;margin-bottom:16px}
+  ol.adim li{padding:10px 0 10px 50px;position:relative;color:#444;line-height:1.6;border-bottom:1px solid #f0f0f0;counter-increment:adim}
+  ol.adim li::before{content:counter(adim);position:absolute;left:0;top:8px;width:32px;height:32px;background:linear-gradient(to right,#CC0000,#8B0000);color:#fff;border-radius:50%;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:32px}
+  ol.adim li strong{color:#1a1a1a;font-size:14px}
+
+  /* KARTLAR */
+  .kart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+  .kart{background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-top:3px solid #CC0000}
+  .kart-ikon{font-size:24px;margin-bottom:10px}
+  .kart-baslik{font-size:14px;font-weight:800;color:#1a1a1a;margin-bottom:6px}
+  .kart-metin{font-size:12px;color:#666;line-height:1.6}
+
+  /* ÖZELLIK TABLOSU */
+  table.ozellik-tablo{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+  table.ozellik-tablo th{background:linear-gradient(to right,#CC0000,#8B0000);color:#fff;padding:10px 14px;text-align:left;font-weight:700}
+  table.ozellik-tablo td{padding:9px 14px;border-bottom:1px solid #f0f0f0}
+  table.ozellik-tablo tr:nth-child(even) td{background:#fafafa}
+  table.ozellik-tablo tr:hover td{background:#fff3f3}
+  .evet{color:#2e7d32;font-weight:700}
+  .hayir{color:#999}
+  .yeni-rozet{background:#CC0000;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px}
+
+  /* UYARI KUTULARI */
+  .bilgi-kutusu{border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.6}
+  .bilgi-kutusu .bk-ikon{font-size:18px;flex-shrink:0;margin-top:1px}
+  .bk-mavi{background:#e3f2fd;border-left:4px solid #1976D2}
+  .bk-yesil{background:#e8f5e9;border-left:4px solid #2e7d32}
+  .bk-sari{background:#fff8e1;border-left:4px solid #f57c00}
+  .bk-kirmizi{background:#ffebee;border-left:4px solid #c62828}
+
+  /* KOD BLOĞU */
+  .kod-blok{background:#1e1e1e;color:#d4d4d4;border-radius:8px;padding:16px 20px;margin-bottom:16px;font-family:'Courier New',monospace;font-size:12px;line-height:1.7;overflow-x:auto;position:relative}
+  .kod-blok .kd-baslik{color:#888;font-size:11px;margin-bottom:8px;border-bottom:1px solid #333;padding-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+  .kd-yorum{color:#6A9955}
+  .kd-deger{color:#CE9178}
+  .kd-anahtar{color:#9CDCFE}
+
+  /* RENK ÖRNEKLERİ */
+  .renk-grid{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+  .renk-kutu{border-radius:8px;padding:12px 16px;color:#fff;font-size:12px;font-weight:700;min-width:120px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .renk-kutu small{display:block;font-weight:400;opacity:.8;margin-top:2px;font-size:10px}
+
+  /* ADIM NUMARALARI (büyük kurulum) */
+  .buyuk-adim{background:#fff;border-radius:10px;padding:20px 24px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;gap:18px;align-items:flex-start;border-left:4px solid #CC0000}
+  .buyuk-adim-numara{width:40px;height:40px;background:linear-gradient(to right,#CC0000,#8B0000);border-radius:50%;color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .buyuk-adim-icerik h4{font-size:15px;font-weight:800;color:#1a1a1a;margin-bottom:6px}
+  .buyuk-adim-icerik p{font-size:13px;color:#555;margin:0;line-height:1.6}
+  .buyuk-adim-icerik .yol{font-size:12px;background:#f5f5f5;border-radius:4px;padding:3px 10px;display:inline-block;margin-top:8px;font-family:monospace;color:#CC0000;font-weight:700}
+
+  /* HEADER */
+  .rehber-header{background:linear-gradient(135deg,#CC0000,#8B0000);color:#fff;padding:32px 40px;border-radius:12px;margin-bottom:36px;position:relative;overflow:hidden}
+  .rehber-header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05)}
+  .rehber-header h1{font-size:28px;font-weight:900;margin-bottom:8px;position:relative}
+  .rehber-header p{opacity:.85;font-size:14px;position:relative;margin:0}
+  .rhdr-meta{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+  .rhdr-badge{background:rgba(255,255,255,.15);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700}
+
+  /* RESPONSIVE */
+  @media(max-width:768px){
+    .rehber-sarici{flex-direction:column}
+    .sidebar-nav{width:100%;height:auto;position:static}
+    .sb-menu{display:flex;flex-wrap:wrap;padding:8px}
+    .sb-menu li a{padding:6px 12px;font-size:12px;border-left:none;border-bottom:2px solid transparent}
+    .icerik-alan{padding:20px}
+    .kart-grid{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="rehber-sarici">
+
+<!-- ══ SOL NAVİGASYON ══════════════════════════════════ -->
+<nav class="sidebar-nav">
+  <div class="sb-logo">
+    <div class="sb-baslik">Kurulum Rehberi</div>
+    <div class="sb-tema-adi">Ahenk Haber</div>
+    <span class="sb-versiyon">v3.0 — Birportal Uyumlu</span>
+  </div>
+  <ul class="sb-menu">
+    <li><span class="sb-bolum-baslik">BAŞLANGIÇ</span></li>
+    <li><a href="#gereksinimler" class="aktif"><span class="sb-ikon">⚙</span> Gereksinimler</a></li>
+    <li><a href="#kurulum"><span class="sb-ikon">📦</span> Tema Kurulumu</a></li>
+    <li><a href="#ilk-ayarlar"><span class="sb-ikon">🚀</span> İlk Ayarlar</a></li>
+
+    <li><span class="sb-bolum-baslik">RENK SİSTEMİ</span></li>
+    <li><a href="#renkler"><span class="sb-ikon">🎨</span> Gradient Renkler <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#birportal-renkler"><span class="sb-ikon">🌈</span> Birportal Paleti</a></li>
+
+    <li><span class="sb-bolum-baslik">ÖZELLİKLER</span></li>
+    <li><a href="#moduller"><span class="sb-ikon">📋</span> Modüller</a></li>
+    <li><a href="#hikaye"><span class="sb-ikon">📷</span> Hikaye/Story <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#tab-menu"><span class="sb-ikon">📑</span> Tab Menü <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#trend"><span class="sb-ikon">🔥</span> Trend Haberler <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#video"><span class="sb-ikon">🎬</span> Video Galerisi <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#mega-menu"><span class="sb-ikon">🧭</span> Mega Menü <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#sticky-nav"><span class="sb-ikon">📌</span> Sabit Navbar <span class="sb-badge">YENİ</span></a></li>
+    <li><a href="#sayac"><span class="sb-ikon">📊</span> Sayaç <span class="sb-badge">YENİ</span></a></li>
+
+    <li><span class="sb-bolum-baslik">İÇERİK</span></li>
+    <li><a href="#kategoriler"><span class="sb-ikon">📂</span> Kategoriler</a></li>
+    <li><a href="#haberler"><span class="sb-ikon">📰</span> Haber Ekleme</a></li>
+    <li><a href="#yazarlar-rehber"><span class="sb-ikon">✍</span> Yazarlar</a></li>
+    <li><a href="#reklam"><span class="sb-ikon">💰</span> Reklam Alanları</a></li>
+
+    <li><span class="sb-bolum-baslik">MENÜ & SAYFA</span></li>
+    <li><a href="#menuler"><span class="sb-ikon">☰</span> Menüler</a></li>
+    <li><a href="#ozel-sayfalar"><span class="sb-ikon">📄</span> Özel Sayfalar</a></li>
+
+    <li><span class="sb-bolum-baslik">ÖZELLESTIRME</span></li>
+    <li><a href="#footer-sosyal"><span class="sb-ikon">🌐</span> Footer Sosyal Bar</a></li>
+    <li><a href="#sss"><span class="sb-ikon">❓</span> S.S.S.</a></li>
+  </ul>
+</nav>
+
+<!-- ══ ANA İÇERİK ══════════════════════════════════════ -->
+<main class="icerik-alan">
+
+  <!-- HEADER -->
+  <div class="rehber-header">
+    <h1>🗞 Ahenk Haber — Kurulum Rehberi</h1>
+    <p>Profesyonel WordPress haber portalı. Birportal tüm özellikleri dahil.</p>
+    <div class="rhdr-meta">
+      <span class="rhdr-badge">📦 v3.0</span>
+      <span class="rhdr-badge">🌈 Gradient Renk Sistemi</span>
+      <span class="rhdr-badge">📷 Hikaye/Story</span>
+      <span class="rhdr-badge">📑 Tab Menü</span>
+      <span class="rhdr-badge">🔥 Trend Haberler</span>
+      <span class="rhdr-badge">🎬 Video Galerisi</span>
+      <span class="rhdr-badge">🧭 Mega Menü</span>
+      <span class="rhdr-badge">📌 Sabit Navbar</span>
+    </div>
+  </div>
+
+  <!-- ─── GEREKSİNİMLER ────────────────────────────────── -->
+  <section class="bolum" id="gereksinimler">
+    <h2 class="bolum-baslik"><div class="b-ikon">⚙</div> Sistem Gereksinimleri</h2>
+    <div class="kart-grid">
+      <div class="kart"><div class="kart-ikon">🐘</div><div class="kart-baslik">PHP 7.4+</div><div class="kart-metin">PHP 8.0 veya 8.1 önerilir. cPanel → PHP Sürümü menüsünden değiştirin.</div></div>
+      <div class="kart"><div class="kart-ikon">🔵</div><div class="kart-baslik">WordPress 5.6+</div><div class="kart-metin">WordPress 6.x ile tam uyumlu. Önerilen sürüm 6.4+</div></div>
+      <div class="kart"><div class="kart-ikon">🗄</div><div class="kart-baslik">MySQL 5.7+</div><div class="kart-metin">MariaDB 10.4+ da desteklenir. cPanel hosting yeterlidir.</div></div>
+      <div class="kart"><div class="kart-ikon">📁</div><div class="kart-baslik">256MB Bellek</div><div class="kart-metin">wp-config.php dosyasında <code>WP_MEMORY_LIMIT</code> değeri 256M olmalı.</div></div>
+      <div class="kart"><div class="kart-ikon">🔐</div><div class="kart-baslik">cPanel Erişimi</div><div class="kart-metin">Dosya Yöneticisi veya FTP erişimi kurulum için yeterlidir.</div></div>
+      <div class="kart"><div class="kart-ikon">🌐</div><div class="kart-baslik">SSL Sertifikası</div><div class="kart-metin">HTTPS zorunlu değil ama önerilir. Let's Encrypt ücretsiz SSL kullanılabilir.</div></div>
+    </div>
+  </section>
+
+  <!-- ─── TEMA KURULUMU ────────────────────────────────── -->
+  <section class="bolum" id="kurulum">
+    <h2 class="bolum-baslik"><div class="b-ikon">📦</div> Tema Kurulumu</h2>
+
+    <h3 class="alt-baslik">Yöntem 1: WordPress Yönetim Paneli (Önerilen)</h3>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">1</div>
+      <div class="buyuk-adim-icerik"><h4>ZIP Dosyasını Hazırlayın</h4><p><code>ahenk-haber-v3.zip</code> dosyasının yolunu belirleyin. İçinde doğrudan tema dosyaları olmalıdır, <strong>iç içe klasör olmamalıdır</strong>.</p></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">2</div>
+      <div class="buyuk-adim-icerik"><h4>Temalar Menüsüne Gidin</h4><p>WordPress Admin → Görünüm → Temalar → Yeni Ekle → Tema Yükle</p><div class="yol">WordPress Admin → Görünüm → Temalar → Yeni Ekle</div></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">3</div>
+      <div class="buyuk-adim-icerik"><h4>ZIP'i Yükleyin</h4><p>"Tema Yükle" butonuna tıklayıp ZIP dosyasını seçin, ardından "Şimdi Yükle" deyin.</p></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">4</div>
+      <div class="buyuk-adim-icerik"><h4>Etkinleştirin</h4><p>Yükleme tamamlandıktan sonra <strong>"Etkinleştir"</strong> butonuna tıklayın. Yeni yazılar oluşturulacak ve tema aktif hale gelecektir.</p></div>
+    </div>
+
+    <h3 class="alt-baslik">Yöntem 2: cPanel Dosya Yöneticisi (SSH Erişimi Gerektirmez)</h3>
+    <ol class="adim">
+      <li><strong>cPanel → Dosya Yöneticisi</strong>'ni açın.</li>
+      <li><code>public_html/wp-content/themes/</code> klasörüne gidin.</li>
+      <li>ZIP dosyasını bu klasöre <strong>Yükle</strong> butonuyla yükleyin.</li>
+      <li>Yüklenen ZIP üzerine sağ tıklayın → <strong>Çıkart</strong> seçin.</li>
+      <li>WordPress Admin → Görünüm → Temalar'dan <strong>Etkinleştir</strong>.</li>
+    </ol>
+
+    <div class="bilgi-kutusu bk-sari">
+      <span class="bk-ikon">⚠️</span>
+      <div>Eski tema varsa devre dışı bırakmadan önce widget ve menü ayarlarınızı not alın. Tema değişince bazı widget konumları sıfırlanabilir.</div>
+    </div>
+  </section>
+
+  <!-- ─── İLK AYARLAR ──────────────────────────────────── -->
+  <section class="bolum" id="ilk-ayarlar">
+    <h2 class="bolum-baslik"><div class="b-ikon">🚀</div> İlk Ayarlar (Kurulum Sonrası)</h2>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">1</div>
+      <div class="buyuk-adim-icerik"><h4>Kalıcı Bağlantıları Yenileyin</h4><p>Ayarlar → Kalıcı Bağlantılar → <strong>Değişiklikleri Kaydet</strong> butonuna tıklayın. Bu işlem CPT URL'lerini aktif eder.</p><div class="yol">Ayarlar → Kalıcı Bağlantılar → Kaydet</div></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">2</div>
+      <div class="buyuk-adim-icerik"><h4>Temel Renkleri Ayarlayın</h4><p>Görünüm → Özelleştir → 🎨 Renkler & Gradientler bölümünden sitenizin kurumsal renklerini girin.</p><div class="yol">Görünüm → Özelleştir → Ahenk Haber → Renkler & Gradientler</div></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">3</div>
+      <div class="buyuk-adim-icerik"><h4>Logo / Site Başlığı</h4><p>Görünüm → Özelleştir → Site Kimliği bölümünden logo yükleyin veya Özelleştir → Ahenk Haber → Genel bölümünden metin logo yazılarını değiştirin.</p></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">4</div>
+      <div class="buyuk-adim-icerik"><h4>Kategoriler Oluşturun</h4><p>Haberler → Haber Kategorileri menüsünden anasayfada görünmesini istediğiniz kategorileri ekleyin. Her kategoriye renk atamayı unutmayın.</p><div class="yol">Haberler → Haber Kategorileri → Yeni Ekle</div></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">5</div>
+      <div class="buyuk-adim-icerik"><h4>Navbar Kategorilerini Ayarlayın</h4><p>Görünüm → Özelleştir → Ahenk Haber → Navbar bölümünden navbar kategori slug'larını virgülle ayrılmış girin.</p><div class="yol">gundem,ankara,dunya,spor</div></div>
+    </div>
+    <div class="buyuk-adim">
+      <div class="buyuk-adim-numara">6</div>
+      <div class="buyuk-adim-icerik"><h4>Anasayfa Olarak Ayarlayın</h4><p>Ayarlar → Okuma → Ön sayfa seçeneğini <strong>"Son yazılarınız"</strong> veya Front Page Şablonu için bir sayfa oluşturun.</p></div>
+    </div>
+
+    <div class="bilgi-kutusu bk-yesil">
+      <span class="bk-ikon">✅</span>
+      <div>Tüm bu adımları tamamladıktan sonra WordPress Admin → <strong>Ahenk Haber → Kurulum Rehberi</strong> menüsünden bu rehbere her zaman ulaşabilirsiniz.</div>
+    </div>
+  </section>
+
+  <!-- ─── RENK SİSTEMİ ─────────────────────────────────── -->
+  <section class="bolum" id="renkler">
+    <h2 class="bolum-baslik"><div class="b-ikon">🎨</div> Gradient Renk Sistemi <span class="yeni-rozet">YENİ v3</span></h2>
+    <p>Ahenk Haber v3, Birportal'ın gradient renk sistemini tam olarak destekler. Her bölüm için ayrı sol→sağ gradient çifti tanımlayabilirsiniz.</p>
+
+    <h3 class="alt-baslik">Renk Kontrol Yeri</h3>
+    <div class="kod-blok">
+      <div class="kd-baslik">WordPress Özelleştirici Yolu</div>
+      <span class="kd-yorum"># Görünüm → Özelleştir → Ahenk Haber → 🎨 Renkler & Gradientler</span>
+    </div>
+
+    <table class="ozellik-tablo">
+      <tr><th>Ayar Adı</th><th>Nerede Kullanılır</th><th>Varsayılan</th></tr>
+      <tr><td>Header Gradient — Sol</td><td>Header, Navbar, İkon Bant, Hikaye Halkası, Manşet Rozetleri</td><td style="color:#CC0000;font-weight:700">#CC0000</td></tr>
+      <tr><td>Header Gradient — Sağ</td><td>Yukarıdakiler ile birlikte gradient oluşturur</td><td style="color:#8B0000;font-weight:700">#8B0000</td></tr>
+      <tr><td>Bileşen Bar Gradient — Sol</td><td>Tab Menü başlıkları, İkon Bant arka planı</td><td style="color:#1A4A8A;font-weight:700">#1A4A8A</td></tr>
+      <tr><td>Bileşen Bar Gradient — Sağ</td><td>Yukarıdaki ile gradient çifti</td><td style="color:#0d2d5a;font-weight:700">#0d2d5a</td></tr>
+      <tr><td>Tab Grup 3 Gradient — Sol/Sağ</td><td>3. tab grubu başlıkları için ayrı gradient</td><td style="color:#7B1FA2;font-weight:700">#7B1FA2 / #4A148C</td></tr>
+      <tr><td>Footer Arkaplan</td><td>Footer tüm arka plan rengi</td><td>#1a1a1a</td></tr>
+      <tr><td>Footer Hover Rengi</td><td>Footer link hover rengi, footer başlıkları</td><td>#CC0000</td></tr>
+    </table>
+
+    <h3 class="alt-baslik">Örnek Renk Paletleri</h3>
+    <div class="renk-grid">
+      <div class="renk-kutu" style="background:linear-gradient(to right,#CC0000,#8B0000)">Kırmızı (Varsayılan)<small>#CC0000 → #8B0000</small></div>
+      <div class="renk-kutu" style="background:linear-gradient(to right,#5f3eb6,#424fb5)">Mor (Birportal)<small>#5f3eb6 → #424fb5</small></div>
+      <div class="renk-kutu" style="background:linear-gradient(to right,#1565C0,#0d3b7a)">Lacivert<small>#1565C0 → #0d3b7a</small></div>
+      <div class="renk-kutu" style="background:linear-gradient(to right,#1B5E20,#0a3d10)">Yeşil<small>#1B5E20 → #0a3d10</small></div>
+      <div class="renk-kutu" style="background:linear-gradient(to right,#E65100,#BF360C)">Turuncu<small>#E65100 → #BF360C</small></div>
+      <div class="renk-kutu" style="background:linear-gradient(to right,#880E4F,#560027)">Bordo<small>#880E4F → #560027</small></div>
+    </div>
+  </section>
+
+  <!-- ─── BİRPORTAL RENKLERİ ────────────────────────────── -->
+  <section class="bolum" id="birportal-renkler">
+    <h2 class="bolum-baslik"><div class="b-ikon">🌈</div> Birportal Orijinal Paleti</h2>
+    <p>Birportal temasının orijinal renk değerlerini kullanmak isterseniz aşağıdaki değerleri Özelleştirici'ye girin:</p>
+    <div class="kod-blok">
+      <div class="kd-baslik">Birportal Renk Değerleri — Özelleştirici'ye Girin</div>
+      <span class="kd-anahtar">Header Gradient Sol:</span>   <span class="kd-deger">#5f3eb6</span><br>
+      <span class="kd-anahtar">Header Gradient Sağ:</span>   <span class="kd-deger">#424fb5</span><br>
+      <span class="kd-anahtar">Bileşen Bar Sol:</span>        <span class="kd-deger">#bc4cae</span><br>
+      <span class="kd-anahtar">Bileşen Bar Sağ:</span>        <span class="kd-deger">#fd3a5c</span><br>
+      <span class="kd-anahtar">Tab Grup 3 Sol:</span>         <span class="kd-deger">#a222b2</span><br>
+      <span class="kd-anahtar">Tab Grup 3 Sağ:</span>         <span class="kd-deger">#5d199d</span><br>
+      <span class="kd-anahtar">Seçim Rengi:</span>             <span class="kd-deger">rgba(69,77,181,.9)</span><br>
+      <span class="kd-anahtar">Footer Arkaplan:</span>        <span class="kd-deger">#312c4c</span>
+    </div>
+  </section>
+
+  <!-- ─── MODÜLLER ─────────────────────────────────────── -->
+  <section class="bolum" id="moduller">
+    <h2 class="bolum-baslik"><div class="b-ikon">📋</div> Anasayfa Modülleri</h2>
+    <p>Görünüm → Özelleştir → Ahenk Haber → Anasayfa Modülleri bölümünden açıp kapatabilirsiniz:</p>
+    <table class="ozellik-tablo">
+      <tr><th>Modül</th><th>Açıklama</th><th>Durum</th></tr>
+      <tr><td>İkon Bant</td><td>Header altı altı ikonlu servis bandı</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>Trend Haberler <span class="yeni-rozet">YENİ</span></td><td>Progress çubuklu trend haberler listesi</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>Video Galerisi <span class="yeni-rozet">YENİ</span></td><td>4'lü video kartları grid</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>Hikaye/Story <span class="yeni-rozet">YENİ</span></td><td>Kategori bazlı hikaye daireleri</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>Tab Menü <span class="yeni-rozet">YENİ</span></td><td>4 kategorili tab içerik sistemi</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>Mega Menü <span class="yeni-rozet">YENİ</span></td><td>Kategori alt menüleri</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>Sabit Navbar <span class="yeni-rozet">YENİ</span></td><td>Scroll'da fixed olan navbar</td><td class="evet">Varsayılan AÇIK</td></tr>
+      <tr><td>İstatistik Sayacı <span class="yeni-rozet">YENİ</span></td><td>Animasyonlu rakam sayacı</td><td class="hayir">Varsayılan KAPALI</td></tr>
+      <tr><td>Yazarlar Bölümü</td><td>Anasayfada yazar kartları</td><td class="hayir">Varsayılan KAPALI</td></tr>
+    </table>
+  </section>
+
+  <!-- ─── HİKAYE / STORY ───────────────────────────────── -->
+  <section class="bolum" id="hikaye">
+    <h2 class="bolum-baslik"><div class="b-ikon">📷</div> Hikaye / Story Sistemi <span class="yeni-rozet">YENİ v3</span></h2>
+    <p>Birportal'ın hikaye sisteminden ilham alınarak geliştirilmiştir. Finans bandının hemen altında gradient arka planlı kategori daireleri gösterir.</p>
+    <ol class="adim">
+      <li><strong>Modülü Etkinleştirin</strong> — Anasayfa Modülleri → "Hikaye / Story Sistemi Göster" kutusunu işaretleyin.</li>
+      <li><strong>Kategorileri Ayarlayın</strong> — Özelleştir → Ahenk Haber → Hikaye / Story → "Hikaye Kategorileri" alanına virgülle ayrılmış slug girin: <code>gundem,spor,dunya,teknoloji</code></li>
+      <li><strong>Kategori Görselleri</strong> — Her kategori için en son haberin öne çıkan görseli otomatik kullanılır. Kategorilere öne çıkan haber ekleyin.</li>
+    </ol>
+    <div class="bilgi-kutusu bk-mavi">
+      <span class="bk-ikon">ℹ️</span>
+      <div>Hikaye dairelerindeki gradient çerçeve rengi <strong>Header Gradient Sol/Sağ</strong> renk çifti ile otomatik senkronize olur. Rengi değişince hikaye halkası da değişir.</div>
+    </div>
+  </section>
+
+  <!-- ─── TAB MENÜ ─────────────────────────────────────── -->
+  <section class="bolum" id="tab-menu">
+    <h2 class="bolum-baslik"><div class="b-ikon">📑</div> Tab Menü Sistemi <span class="yeni-rozet">YENİ v3</span></h2>
+    <p>Birportal'ın tab menü sisteminin WordPress uyumlu versiyonu. Ana içerik alanının altında 4 kategorili tab sistemi oluşturur.</p>
+    <ol class="adim">
+      <li><strong>Modülü Etkinleştirin</strong> — Anasayfa Modülleri → "Özel Tab Menü Göster"</li>
+      <li><strong>Kategori Slug'larını Girin</strong> — Özelleştir → Ahenk Haber → Tab Menü bölümünden her tab için bir kategori slug girin.</li>
+      <li><strong>Tab Renkleri</strong> — Tab arka planı Bileşen Bar Gradient'i, 3. tab ise Tab Grup 3 Gradient'ini otomatik kullanır.</li>
+    </ol>
+    <div class="kod-blok">
+      <div class="kd-baslik">Örnek Tab Ayarı</div>
+      <span class="kd-anahtar">Tab 1:</span> <span class="kd-deger">gundem</span><br>
+      <span class="kd-anahtar">Tab 2:</span> <span class="kd-deger">spor</span><br>
+      <span class="kd-anahtar">Tab 3:</span> <span class="kd-deger">ekonomi</span><br>
+      <span class="kd-anahtar">Tab 4:</span> <span class="kd-deger">teknoloji</span>
+    </div>
+  </section>
+
+  <!-- ─── TREND HABERLER ───────────────────────────────── -->
+  <section class="bolum" id="trend">
+    <h2 class="bolum-baslik"><div class="b-ikon">🔥</div> Trend Haberler <span class="yeni-rozet">YENİ v3</span></h2>
+    <p>Yorum sayısına göre sıralanmış haberler, gradient progress çubukları ile görsel bir trending liste oluşturur.</p>
+    <ul class="madde">
+      <li>Özelleştir → Ahenk Haber → Trend Haberler → "Kaç Trend Haber" ve "Başlık" ayarlanabilir.</li>
+      <li>Sıralama tamamen otomatik: <strong>yorum sayısı en fazla</strong> olan haberler üste çıkar.</li>
+      <li>Her haberin yanındaki progress çubuğu, birinci haberden itibaren azalan oranda gösterilir.</li>
+      <li><strong>/trendler</strong> slug'ı için ayrı bir tam sayfa şablonu mevcuttur (<code>trendler.php</code>). Sayfayı bu şablona atayın.</li>
+    </ul>
+  </section>
+
+  <!-- ─── VİDEO ────────────────────────────────────────── -->
+  <section class="bolum" id="video">
+    <h2 class="bolum-baslik"><div class="b-ikon">🎬</div> Video Galerisi <span class="yeni-rozet">YENİ v3</span></h2>
+    <ol class="adim">
+      <li><strong>Video kategorisi oluşturun</strong> — Örneğin slug: <code>video</code></li>
+      <li><strong>Kategori slug'ını girin</strong> — Özelleştir → Ahenk Haber → Video Galerisi → "Video Kategorisi Slug"</li>
+      <li><strong>Haber eklerken</strong> video URL alanını doldurun (<code>_video_url</code> custom meta). Video rozeti otomatik görünür.</li>
+    </ol>
+  </section>
+
+  <!-- ─── MEGA MENÜ ────────────────────────────────────── -->
+  <section class="bolum" id="mega-menu">
+    <h2 class="bolum-baslik"><div class="b-ikon">🧭</div> Mega Menü <span class="yeni-rozet">YENİ v3</span></h2>
+    <p>Navbar'da üst kategori üzerine gelindiğinde alt kategoriler dropdown menü olarak görünür.</p>
+    <ul class="madde">
+      <li>Görünüm → Menüler → "Ana Navigasyon Menü" konumuna menü atayın.</li>
+      <li>Alt menü öğelerini sürükleyerek üst öğenin altına indirin.</li>
+      <li>Dropdown border-top rengi Header Gradient Sol rengiyle otomatik senkronize olur.</li>
+    </ul>
+    <div class="bilgi-kutusu bk-sari">
+      <span class="bk-ikon">⚠️</span>
+      <div>WordPress menü sistemi ile çalışır. Kategorileri doğrudan menüye eklemek yerine "Özel Bağlantı" veya "Kategori" olarak ekleyin ve alt menü oluşturun.</div>
+    </div>
+  </section>
+
+  <!-- ─── SABİT NAVBAR ─────────────────────────────────── -->
+  <section class="bolum" id="sticky-nav">
+    <h2 class="bolum-baslik"><div class="b-ikon">📌</div> Sabit (Sticky) Navbar <span class="yeni-rozet">YENİ v3</span></h2>
+    <p>Sayfa aşağı kaydırılınca navbar ekranın üstüne yapışır ve her zaman görünür kalır. Birportal'ın fixedMenu sistemi gibi çalışır.</p>
+    <ul class="madde">
+      <li>Anasayfa Modülleri → "Sabit (Sticky) Navbar" kutusunu işaretleyin.</li>
+      <li>Animasyon: Navbar yapışınca üstten <strong>slideDown</strong> animasyonu ile kayar.</li>
+      <li>Gölge otomatik eklenir, z-index 9990'dır (popup'ların altında kalır).</li>
+    </ul>
+  </section>
+
+  <!-- ─── KATEGORİLER ──────────────────────────────────── -->
+  <section class="bolum" id="kategoriler">
+    <h2 class="bolum-baslik"><div class="b-ikon">📂</div> Kategori Ayarları</h2>
+    <ol class="adim">
+      <li><strong>Haber Kategorisi Oluşturun</strong> — Haberler → Haber Kategorileri → "Yeni Ekle". Slug kısmına kısa İngilizce slug girin (boşluksuz, tire ile): <code>son-dakika</code></li>
+      <li><strong>Kategori Rengi Atayın</strong> — Kategori düzenleme ekranında "Kategori Rengi" alanından renk seçin. Bu renk manşet rozetlerinde, kategori başlıklarında kullanılır.</li>
+      <li><strong>Navbar'a Ekleyin</strong> — Özelleştir → Navbar → Kategori Slug'larına virgülle ekleyin.</li>
+      <li><strong>Anasayfa'ya Ekleyin</strong> — Özelleştir → Anasayfa Kategoriler → 1-4 arası kategoriler için slug girin.</li>
+    </ol>
+    <div class="bilgi-kutusu bk-mavi">
+      <span class="bk-ikon">ℹ️</span>
+      <div>Tema hem <code>haber-kategorisi</code> custom taxonomy'sini hem de standart WordPress <code>category</code>'yi destekler. Her ikisi de çalışır.</div>
+    </div>
+  </section>
+
+  <!-- ─── HABERLER ─────────────────────────────────────── -->
+  <section class="bolum" id="haberler">
+    <h2 class="bolum-baslik"><div class="b-ikon">📰</div> Haber Ekleme</h2>
+    <table class="ozellik-tablo">
+      <tr><th>Alan</th><th>Konum</th><th>Açıklama</th></tr>
+      <tr><td>Öne Çıkan Görsel</td><td>Haber Editörü (Sağ Panel)</td><td>900×500px önerilir. Manşet slider için kullanılır.</td></tr>
+      <tr><td>Haber Spotu</td><td>Custom Field: <code>_haber_spot</code></td><td>Haberin özet giriş cümlesi. Anasayfada görünür.</td></tr>
+      <tr><td>Son Dakika</td><td>Custom Field: <code>_son_dakika</code> = 1</td><td>Son dakika bandında görünür.</td></tr>
+      <tr><td>Manşet Haberi</td><td>Custom Field: <code>_manset_haberi</code> = 1</td><td>Ana slider'da görünür (5 haber).</td></tr>
+      <tr><td>Video URL</td><td>Custom Field: <code>_video_url</code></td><td>YouTube/Vimeo URL. Video rozeti görünür.</td></tr>
+      <tr><td>Okuma Süresi</td><td>Custom Field: <code>_okuma_suresi</code></td><td>Dakika. Boş bırakılırsa otomatik hesaplanır.</td></tr>
+    </table>
+    <div class="bilgi-kutusu bk-yesil">
+      <span class="bk-ikon">💡</span>
+      <div><strong>ACF (Advanced Custom Fields) eklentisi</strong> kullanıyorsanız bu alanları görsel form olarak yönetebilirsiniz. Aksi halde Haber Editörü → Özel Alanlar bölümünden manuel girilebilir.</div>
+    </div>
+  </section>
+
+  <!-- ─── YAZARLAR ─────────────────────────────────────── -->
+  <section class="bolum" id="yazarlar-rehber">
+    <h2 class="bolum-baslik"><div class="b-ikon">✍</div> Yazarlar Sayfası</h2>
+    <ol class="adim">
+      <li>WordPress Admin → Sayfalar → Yeni Ekle → Başlık: "Yazarlar"</li>
+      <li>Sayfa şablonu olarak <strong>yazarlar.php</strong>'yi kullanmak için <code>template-yazarlar</code> şablonunu atayın veya sayfa slug'ını <code>yazarlar</code> yapın.</li>
+      <li>Her yazar profiline <strong>Kullanıcılar → Profil</strong>'den Biyografi, Unvan (<code>yazar_unvani</code>), Facebook/Twitter meta alanı ekleyin.</li>
+    </ol>
+    <div class="bilgi-kutusu bk-mavi">
+      <span class="bk-ikon">ℹ️</span>
+      <div>Yazar sayfasında avatar görüntülemek için <strong>Gravatar</strong> hesabı veya <strong>Simple Local Avatars</strong> eklentisi önerilir.</div>
+    </div>
+  </section>
+
+  <!-- ─── REKLAM ALANLARI ──────────────────────────────── -->
+  <section class="bolum" id="reklam">
+    <h2 class="bolum-baslik"><div class="b-ikon">💰</div> Reklam Alanları</h2>
+    <p>WordPress Admin → <strong>Ahenk Haber → Reklam</strong> sekmesinden tüm alanları yönetin:</p>
+    <table class="ozellik-tablo">
+      <tr><th>Alan</th><th>Boyut</th><th>Konum</th></tr>
+      <tr><td>Header Reklam</td><td>728×90</td><td>Logo sağında</td></tr>
+      <tr><td>Manşet Altı Reklam</td><td>970×90</td><td>Manşet slider'ın hemen altı</td></tr>
+      <tr><td>Sidebar Reklam</td><td>300×250</td><td>Sidebar üstü</td></tr>
+      <tr><td>Haber İçi Reklam</td><td>Serbest</td><td>Haber içeriği ortasında</td></tr>
+      <tr><td>Footer Reklam</td><td>Serbest</td><td>Footer üstü</td></tr>
+      <tr><td>Mobil Alt Reklam</td><td>320×50</td><td>Mobil sayfanın en altı</td></tr>
+    </table>
+    <div class="bilgi-kutusu bk-sari">
+      <span class="bk-ikon">⚠️</span>
+      <div>Reklam alanlarına <strong>doğrudan AdSense kodu</strong> veya <strong>img/iframe embed</strong> yapıştırabilirsiniz. wp_kses_post filtresi uygulanır.</div>
+    </div>
+  </section>
+
+  <!-- ─── MENÜLER ──────────────────────────────────────── -->
+  <section class="bolum" id="menuler">
+    <h2 class="bolum-baslik"><div class="b-ikon">☰</div> Menüler</h2>
+    <p>Görünüm → Menüler'den aşağıdaki konumlara menü atayın:</p>
+    <table class="ozellik-tablo">
+      <tr><th>Konum</th><th>Kullanım</th></tr>
+      <tr><td>Ana Navigasyon Menü</td><td>Navbar ana menüsü (mega menü destekli)</td></tr>
+      <tr><td>Üst Utility Menü</td><td>Header üstü küçük linkler</td></tr>
+      <tr><td>Footer Menü</td><td>Footer alt kısım hızlı linkler</td></tr>
+    </table>
+    <div class="bilgi-kutusu bk-mavi">
+      <span class="bk-ikon">ℹ️</span>
+      <div>Ana menüye menü atanmamışsa tema, Özelleştir → Navbar bölümündeki kategori slug'larından otomatik menü oluşturur.</div>
+    </div>
+  </section>
+
+  <!-- ─── ÖZEL SAYFALAR ────────────────────────────────── -->
+  <section class="bolum" id="ozel-sayfalar">
+    <h2 class="bolum-baslik"><div class="b-ikon">📄</div> Özel Sayfalar</h2>
+    <p>Bu slug'larla sayfa oluşturmanız önerilir (tema bu slug'lara özel davranır):</p>
+    <table class="ozellik-tablo">
+      <tr><th>Sayfa Slug</th><th>Açıklama</th><th>Şablon</th></tr>
+      <tr><td><code>kunye</code></td><td>Künye bilgileri (Header sol link)</td><td>page.php</td></tr>
+      <tr><td><code>iletisim</code></td><td>İletişim sayfası</td><td>page-iletisim.php</td></tr>
+      <tr><td><code>yazarlar</code></td><td>Tüm yazarlar (yazar kartları)</td><td>yazarlar.php</td></tr>
+      <tr><td><code>trendler</code></td><td>Trend haberler listesi</td><td>trendler.php</td></tr>
+      <tr><td><code>rehber</code></td><td>Şehir rehberi / tavsiyeler</td><td>page.php</td></tr>
+    </table>
+  </section>
+
+  <!-- ─── FOOTER SOSYAL BAR ────────────────────────────── -->
+  <section class="bolum" id="footer-sosyal">
+    <h2 class="bolum-baslik"><div class="b-ikon">🌐</div> Footer Sosyal Bar</h2>
+    <p>Birportal'ın <code>.fSocial</code> bölümünün Ahenk Haber uyarlaması. Footer'ın hemen üstünde gradient arka planlı sosyal medya bar görünür.</p>
+    <ol class="adim">
+      <li><strong>Sosyal medya URL'lerini girin</strong> — Özelleştir → Ahenk Haber → Sosyal Medya bölümünden.</li>
+      <li><strong>Bar başlığını değiştirin</strong> — Özelleştir → Footer Sosyal Bar → "Sosyal Bar Başlık"</li>
+      <li><strong>Otomatik görünüm</strong> — En az bir sosyal medya URL'si girildiğinde bar otomatik görünür, tüm URL'ler boşsa bar gizlenir.</li>
+    </ol>
+  </section>
+
+  <!-- ─── S.S.S. ────────────────────────────────────────── -->
+  <section class="bolum" id="sss">
+    <h2 class="bolum-baslik"><div class="b-ikon">❓</div> Sık Sorulan Sorular</h2>
+
+    <h3 class="alt-baslik">Manşette haber çıkmıyor?</h3>
+    <p>Haberi düzenleyin, Custom Field → <code>_manset_haberi</code> = <strong>1</strong> ekleyin. En fazla 5 manşet haberi gösterilir.</p>
+
+    <h3 class="alt-baslik">Son Dakika bandı çalışmıyor?</h3>
+    <p>Custom Field → <code>_son_dakika</code> = <strong>1</strong> eklenmiş haber olması gerekir.</p>
+
+    <h3 class="alt-baslik">Hikaye daireleri görünmüyor?</h3>
+    <p>Modülü etkinleştirdiğinizden emin olun. Hikaye kategorilerinde en az 1 haber ve o haberde öne çıkan görsel olmalıdır.</p>
+
+    <h3 class="alt-baslik">Gradient renkler uygulanmıyor?</h3>
+    <p><code>inc/color.php</code> dosyasının tema klasöründe olduğunu kontrol edin. Tema aktifleştirildikten sonra Özelleştirici'yi bir kez açıp kapatın.</p>
+
+    <h3 class="alt-baslik">Finans bandı değerleri boş kalıyor?</h3>
+    <p>ExchangeRate API'ye (ücretsiz) isteği varsayılan yapılandırma gönderir. Hosting CORS kısıtlaması varsa değerler yüklenemeyebilir. API proxy eklentisi kullanabilirsiniz.</p>
+
+    <h3 class="alt-baslik">Tab menü çalışmıyor?</h3>
+    <p>JavaScript hatası olabilir. Tarayıcı konsolunu (F12) açın ve hata mesajını kontrol edin. jQuery ile çakışma yaşanıyorsa <code>assets/js/main.js</code> dosyasını inceleyin.</p>
+
+    <h3 class="alt-baslik">Sabit navbar çalışmıyor?</h3>
+    <p>Anasayfa Modülleri'nden "Sabit (Sticky) Navbar" seçeneğinin işaretli olduğundan emin olun. Cache eklentisi varsa cache'i temizleyin.</p>
+
+    <div class="bilgi-kutusu bk-yesil" style="margin-top:24px">
+      <span class="bk-ikon">📞</span>
+      <div><strong>Destek için:</strong> <a href="https://ahenk.net.tr" target="_blank">ahenk.net.tr</a> adresinden iletişime geçin. Tema versiyonu ve sorununuzu belirtin.</div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<script>
+/* Aktif section tracking */
+var sbLinks = document.querySelectorAll('.sb-menu a');
+var sections = document.querySelectorAll('.bolum[id]');
+var observer = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){
+      sbLinks.forEach(function(l){ l.classList.remove('aktif'); });
+      var link = document.querySelector('.sb-menu a[href="#'+e.target.id+'"]');
+      if(link) link.classList.add('aktif');
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+sections.forEach(function(s){ observer.observe(s); });
+
+/* Smooth scroll */
+sbLinks.forEach(function(l){
+  l.addEventListener('click', function(e){
+    var href = this.getAttribute('href');
+    if(href && href.startsWith('#')){
+      e.preventDefault();
+      var target = document.querySelector(href);
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  });
+});
+</script>
+</body>
+</html>

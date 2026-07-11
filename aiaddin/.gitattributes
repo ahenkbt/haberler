@@ -1,0 +1,3 @@
+# Linux container: shebang için LF zorunlu
+docker-entrypoint.sh text eol=lf
+laravel-businesso/docker-entrypoint.sh text eol=lf

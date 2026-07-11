@@ -1,0 +1,26 @@
+{
+  "pageUpdates": [
+    {
+      "id": "wp-template-kunye",
+      "title": "Künye",
+      "slug": "kunye",
+      "bodyHtml": "<div class=\"hm-vkd-page-root\">\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap\">\n<style>.hm-vkd-page-root{--r:#8C1A2E;--g:#C9A84C;--dk:#0D1117;--t1:#1A1F28;--t2:#4A5568;font-family:'Nunito Sans',sans-serif;background:#FAFAF8;color:var(--t1);line-height:1.7}\n.kn-hero{background:linear-gradient(135deg,var(--dk),#2D1010);padding:72px 24px;text-align:center;color:#fff;border-bottom:4px solid var(--g)}\n.kn-hero h1{font-family:'Merriweather',serif;font-size:clamp(2rem,4vw,2.8rem);margin:0 0 12px}\n.kn-wrap{max-width:900px;margin:0 auto;padding:48px 24px 80px}\n.kn-card{background:#fff;border:1px solid #E4E0D8;border-radius:8px;padding:28px;margin-bottom:20px}\n.kn-card h2{font-size:1.1rem;color:var(--r);margin:0 0 12px;font-weight:800}\n.kn-card p,.kn-card li{font-size:14px;color:var(--t2);margin:0 0 8px}\n.kn-card ul{padding-left:18px;margin:0}</style>\n<section class=\"kn-hero\"><h1>Künye</h1><p style=\"opacity:.85;max-width:640px;margin:0 auto\">Vatan Kahramanları Derneği resmi web sitesi yayın ve iletişim bilgileri</p></section>\n<div class=\"kn-wrap\">\n<div class=\"kn-card\"><h2>Yayın Sahibi</h2><p><strong>Vatan Kahramanları Derneği</strong></p><p>Resmi web sitesi: vatankahramanlari.org</p></div>\n<div class=\"kn-card\"><h2>İletişim</h2><p>Genel iletişim ve başvurular için <a href=\"/iletisim\" style=\"color:var(--r);font-weight:700\">İletişim</a> sayfasını kullanabilirsiniz.</p></div>\n<div class=\"kn-card\"><h2>Yayın İlkeleri</h2><ul><li>Şehit, gazi ve kahramanlık kültürünü saygı ve doğruluk çerçevesinde yansıtmak</li><li>Kurumsal faaliyetleri şeffaf biçimde kamuoyuyla paylaşmak</li><li>Toplumsal dayanışma ve vefa bilincini güçlendirmek</li></ul></div>\n</div>\n</div>",
+      "enabled": true,
+      "fullWidth": false,
+      "importSource": "wordpress-template",
+      "sourceName": "kunye-stub",
+      "importedAt": "2026-07-04T17:20:00.000Z"
+    },
+    {
+      "id": "wp-template-vakif",
+      "title": "Vakfımız",
+      "slug": "vakif",
+      "bodyHtml": "<div class=\"hm-vkd-page-root\">\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap\">\n<style>.hm-vkd-page-root{--r:#8C1A2E;--g:#C9A84C;--dk:#0D1117;--t1:#1A1F28;--t2:#4A5568;font-family:'Nunito Sans',sans-serif;background:#FAFAF8;color:var(--t1);line-height:1.7}\n.vk-hero{background:linear-gradient(135deg,var(--dk),#2D1010);padding:72px 24px;text-align:center;color:#fff;border-bottom:4px solid var(--g)}\n.vk-hero h1{font-family:'Merriweather',serif;font-size:clamp(2rem,4vw,2.8rem);margin:0 0 12px}\n.vk-wrap{max-width:1100px;margin:0 auto;padding:48px 24px 80px}\n.vk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}\n.vk-card{background:#fff;border:1px solid #E4E0D8;border-radius:8px;padding:24px}\n.vk-card h3{font-size:1rem;color:var(--r);margin:0 0 10px;font-weight:800}\n.vk-card p{font-size:14px;color:var(--t2);margin:0;line-height:1.75}</style>\n<section class=\"vk-hero\"><h1>Vakfımız</h1><p style=\"opacity:.85;max-width:720px;margin:0 auto\">Şehit ve gazi yakınlarına yönelik sosyal, insani ve kültürel destek faaliyetleri</p></section>\n<div class=\"vk-wrap\">\n<div class=\"vk-grid\">\n<div class=\"vk-card\"><h3>Misyon</h3><p>Şehit ve gazi ailelerine, kahramanlık kültürünü yaşatmaya ve toplumsal dayanışmayı güçlendirmeye yönelik sürdürülebilir destek sunmak.</p></div>\n<div class=\"vk-card\"><h3>Faaliyet Alanları</h3><p>Sosyal hizmetler, insani yardım, eğitim ve burs programları, hukuk ve savunuculuk, uluslararası işbirlikleri.</p></div>\n<div class=\"vk-card\"><h3>Destek</h3><p>Bağış ve gönüllülük programlarımıza <a href=\"/bagis\" style=\"color:var(--r);font-weight:700\">Bağış</a> sayfasından veya <a href=\"/iletisim\" style=\"color:var(--r);font-weight:700\">İletişim</a> kanallarımızdan ulaşabilirsiniz.</p></div>\n</div>\n</div>\n</div>",
+      "enabled": true,
+      "fullWidth": false,
+      "importSource": "wordpress-template",
+      "sourceName": "vakif-stub",
+      "importedAt": "2026-07-04T17:20:00.000Z"
+    }
+  ]
+}
