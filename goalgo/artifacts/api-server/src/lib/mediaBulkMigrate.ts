@@ -64,7 +64,7 @@ async function writeExactLocalFile(fname: string, buf: Buffer): Promise<void> {
   await writeFile(join(root, fname), buf);
 }
 
-/** Eksik `/api/media/uploads/…` dosyasını legacy Railway veya canlı vekilden diske kopyalar. */
+/** Eksik `/api/media/uploads/…` dosyasını yalnızca LEGACY_MEDIA_ORIGIN varsa çeker. */
 export async function importMissingUploadFile(fname: string): Promise<boolean> {
   if (!fname || fname.includes("..")) return false;
   if (await mediaObjectExists(fname)) return true;

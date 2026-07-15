@@ -287,6 +287,11 @@ async function fixZone(name) {
 
   const live = await probeWorkerLive(name);
   console.log(`[fix] live probe ${name}:`, JSON.stringify(live));
+  if (live.cfChallenge) {
+    console.warn(
+      `[fix] WARN ${name} Cloudflare Challenge (Bot Fight / under_attack) — Worker çalışmıyor; security gevşetildi, 30–60sn sonra tekrar dene`,
+    );
+  }
   if (live.viaNetlify) {
     console.warn(`[fix] WARN ${name} still hitting Netlify — route/DNS rebind may need 1–2 min`);
   }
