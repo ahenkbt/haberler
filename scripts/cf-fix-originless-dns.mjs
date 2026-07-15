@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: re-run with GitHub CLOUDFLARE_API_TOKEN
+ * trigger: re-run DNS fix 2026-07-15T16:53Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
