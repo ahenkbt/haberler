@@ -40,9 +40,12 @@ async function rssIntegrationModeForFeed(feedId: string): Promise<HmRssIntegrati
   return "portal";
 }
 
-/** Kutu içi RSS ve site-içi «anlık» mod — kalıcı DB havuzuna yazılmaz / okunmaz. */
+/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi feed’ler her zaman DB’de (çok instance / cold start). */
 export async function shouldSkipRssDbForFeed(feedId: string): Promise<boolean> {
   if (isBoxScopeFeedId(feedId)) return true;
+  // Site içi RSS: layout «live» olsa bile portal_rss_items’a yaz/oku —
+  // aksi halde bellek/Redis boşken vitrin sürekli RSS’siz kalır.
+  if (isSiteScopeFeedId(feedId)) return false;
   const mode = await rssIntegrationModeForFeed(feedId);
   return mode === "live";
 }

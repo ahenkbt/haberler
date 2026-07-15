@@ -39,38 +39,46 @@ describe("hybrid-news foreign RSS filters", () => {
     expect(feeds.map((feed) => feed.id)).toEqual(["gmn-1"]);
   });
 
-  it("filters cached RSS items using feed geo metadata", () => {
+  it("keeps HM site-configured feeds even when slug looks domestic", () => {
+    const feeds = filterForeignOnlyPortalHybridRssFeeds([
+      {
+        id: "hm-1-site-turkiye",
+        categorySlug: "turkiye",
+        label: "Türkiye",
+        url: "https://www.ntv.com.tr/turkiye.rss",
+        enabled: true,
+        maxItems: 10,
+      },
+      {
+        id: "turkiye",
+        categorySlug: "turkiye",
+        label: "Merkez TR",
+        url: "https://www.ntv.com.tr/turkiye.rss",
+        enabled: true,
+        maxItems: 10,
+        countryCode: "TR",
+      },
+    ]);
+    expect(feeds.map((feed) => feed.id)).toEqual(["hm-1-site-turkiye"]);
+  });
+
+  it("keeps cached items from HM site feed ids", () => {
     const items = filterForeignOnlyPortalRssItems(
       [
         {
-          id: "rss:1",
-          title: "Ankara",
-          link: "https://example.com/tr",
+          id: "rss:site",
+          title: "Site haber",
+          link: "https://example.com/a",
           spot: "",
           imageUrl: null,
-          publishedAt: "2026-07-04T10:00:00.000Z",
-          titleKey: "ankara",
-          feedId: "tr-feed",
+          publishedAt: "2026-07-15T10:00:00.000Z",
+          titleKey: "site",
+          feedId: "hm-1-site-turkiye",
           categorySlug: "turkiye",
         },
-        {
-          id: "rss:2",
-          title: "Athens update",
-          link: "https://example.com/gr",
-          spot: "",
-          imageUrl: null,
-          publishedAt: "2026-07-04T10:00:00.000Z",
-          titleKey: "athens",
-          feedId: "gr-feed",
-          categorySlug: "global",
-        },
       ],
-      {
-        "tr-feed": { countryCode: "TR", regionKey: "tr-turkiye" },
-        "gr-feed": { countryCode: "GR", regionKey: "gr-atina" },
-      },
+      { "hm-1-site-turkiye": { countryCode: "TR", regionKey: null } },
     );
-
-    expect(items.map((item) => item.id)).toEqual(["rss:2"]);
+    expect(items.map((item) => item.id)).toEqual(["rss:site"]);
   });
 });

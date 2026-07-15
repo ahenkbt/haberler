@@ -1734,6 +1734,8 @@ export default function EditorVitrinAyarlari() {
             onSave={() =>
               void commit({
                 ...p,
+                // Feed kaydı Site içi RSS’i açar — aksi halde API RSS birleştirmez / warm etmez.
+                hybridRssEnabled: true,
                 ...saveRssRows(rssRows, siteRssRows),
               })
             }

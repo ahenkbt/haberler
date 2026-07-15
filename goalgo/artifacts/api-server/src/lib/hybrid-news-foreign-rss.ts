@@ -1,6 +1,11 @@
 import type { PortalHybridRssFeedConfig } from "./portal-hybrid-config.js";
 import type { PortalRssItem } from "./portal-rss-fetch.js";
 
+/** Editörün vitrininde tanımlı site/kutu feed id’leri — yabancı-only filtreden muaf. */
+export function isHmConfiguredSiteRssFeedId(feedId: string): boolean {
+  return /^hm-\d+-(site|box)-/i.test(String(feedId ?? "").trim());
+}
+
 /** Yekpare / NTV vb. yerel kategori akışları — editör ve haritada DB'den gelir, RSS'ten değil. */
 const TURKISH_DOMESTIC_RSS_CATEGORY_SLUGS = new Set([
   "turkiye",
@@ -42,15 +47,17 @@ function isForeignHybridRssGeo(countryCode: string, regionKey: string): boolean 
   return false;
 }
 
-/** Editör / newsmap — yalnızca yurtdışı RSS feed'leri (TR + yerel kategoriler hariç). */
+/** Editör / newsmap — yalnızca yurtdışı RSS (TR yerel hariç). Site/kutu feed’leri muaf. */
 export function filterForeignOnlyPortalHybridRssFeeds(
   feeds: PortalHybridRssFeedConfig[],
 ): PortalHybridRssFeedConfig[] {
   return feeds.filter((feed) => {
+    const feedId = String(feed.id ?? "").trim();
+    if (isHmConfiguredSiteRssFeedId(feedId)) return true;
+
     const cc = normalizeHybridRssCountryCode(feed.countryCode);
     const regionKey = String(feed.regionKey ?? "").trim().toLowerCase();
     const slug = normalizeHybridRssCategorySlug(feed.categorySlug);
-    const feedId = String(feed.id ?? "").trim();
 
     if (cc === "TR" || cc === "CY") return false;
     if (regionKey.startsWith("tr-")) return false;
@@ -70,13 +77,15 @@ type PortalRssGeoLookup = Record<
   } | null
 >;
 
-/** RSS önbellek satırları — Türkiye / Türkçe yerel akışları editör DB'sinden gelir. */
+/** RSS önbellek satırları — site içi feed muaf; TR yerel yekpare havuzu elenir. */
 export function filterForeignOnlyPortalRssItems(
   items: PortalRssItem[],
   feedGeoById: PortalRssGeoLookup = {},
 ): PortalRssItem[] {
   return items.filter((item) => {
     const feedId = String(item.feedId ?? "").trim();
+    if (isHmConfiguredSiteRssFeedId(feedId)) return true;
+
     const geo = feedGeoById[feedId];
     const cc = normalizeHybridRssCountryCode(geo?.countryCode);
     const regionKey = String(geo?.regionKey ?? "").trim().toLowerCase();
