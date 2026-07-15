@@ -1,7 +1,8 @@
 /**
  * Geçici: trafik → Render (SPA + API).
- * Eski Netlify Service Worker / cache için TEK SEFERLIK purge.
- * Clear-Site-Data her HTML'de kalırsa hm_editor_jwt / HM domain cache silinir → editör siteleri kırılır.
+ * Eski Netlify Service Worker / cache için TEK SEFERLIK purge (JS boot + cookie).
+ * Clear-Site-Data HTML yanıtlarında kullanılmaz — Chrome navigasyonu ERR_FAILED
+ * ile düşürüp cookie yazılmadan döngüye sokabiliyor (yekpare.net/admin).
  */
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
@@ -282,9 +283,9 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
       "x-yekpare-frontend": "cloudflare-render-proxy",
       "x-yekpare-hm-redirect": slug,
     };
-    // HM alanlarında 308 sırasında da edge/browser cache temizliği
+    // HM alanlarında 308: cookie işaretle (Clear-Site-Data YOK —
+    // Chrome document navigasyonunda ERR_FAILED üretebiliyor).
     if (needsForcePurge(incoming.hostname) && !cookieHas(request, FORCE_PURGE_COOKIE)) {
-      headers["clear-site-data"] = '"cache"';
       headers["set-cookie"] =
         `${FORCE_PURGE_COOKIE}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
       headers["x-yekpare-purge"] = "hm-force-redirect";
@@ -335,11 +336,10 @@ export default {
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {
         out.set("cache-control", "no-store, max-age=0, must-revalidate");
-        // Cookie hayatta kalır (Clear-Site-Data "cookies" kullanılmıyor).
-        // Storage temizliği SADECE ilk yüklemede — aksi halde hm_editor_jwt silinir.
-        // FORCE_PURGE_HOSTS için ayrı cookie sürümü → talep edilen alanlarda yeniden temizlenir.
+        // Eski Netlify SW temizliği: yalnızca JS boot + cookie.
+        // Clear-Site-Data HTML navigasyonunda Chrome'da ERR_FAILED yapabiliyor
+        // (özellikle /admin); cookie de yazılamadan döngü oluşuyor.
         if (oneShotPurge) {
-          out.set("clear-site-data", '"cache", "storage"');
           out.append(
             "set-cookie",
             `${purgeCookie}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`,
