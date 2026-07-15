@@ -3,3 +3,5 @@
 /resp_*.json
 /tmp-*
 /n*.json
+# Cloudflare / Netlify root publish copy (scripts/*-root-build.mjs)
+/artifacts/
