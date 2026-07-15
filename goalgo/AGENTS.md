@@ -26,8 +26,8 @@
 - Frontend: `artifacts/ahenkpress` — React, Vite, wouter
 - Migrations: `lib/db/migrations/` + `meta/_journal.json` (Prisma yok)
 - Auth guard: `denyUnlessAdminMaintenance` — `src/lib/admin-guard.ts`
-- **Deploy (prod):** Netlify (frontend: yekpare.net, ankarasehirgazetesi.com, HM editör siteleri) + Render API (`https://goalgo-y7ze.onrender.com`). Detay: `docs/NETLIFY-RENDER-KURULUM-RAPORU.md`
-- **Redeploy:** `main` merge → Netlify: GitHub Actions `netlify-production.yml` (frontend path değiştiyse); Render: dashboard **Manual Deploy** veya repo GitHub hook (otomatik). Railway/Vercel workflow'ları prod değildir — secret yoksa sessizce atlanır.
+- **Deploy (prod):** Cloudflare Workers (SPA Assets + API Container) + **Neon** Postgres. Detay: `docs/CLOUDFLARE-NEON-KURULUM.md`
+- **Redeploy:** `main` merge → GitHub Actions `cloudflare-production.yml` (`CLOUDFLARE_*`, `DATABASE_URL`, `SESSION_SECRET`). Render/Netlify/Railway/Vercel prod değildir.
 
 ---
 

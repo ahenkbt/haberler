@@ -1,9 +1,8 @@
-# Yekpare — Render Blueprint (API + Call Center + PostgreSQL)
-# Kurulum: Render Dashboard → New → Blueprint → bu repo + render.yaml
-# Monorepo: API docker context = goalgo/, call center = goalgo/ai-call-center/
+# LEGACY — Render Blueprint (kullanılmıyor).
+# Prod stack: Neon Postgres + Cloudflare Workers/Containers + GitHub Actions.
+# Bakınız: goalgo/docs/CLOUDFLARE-NEON-KURULUM.md
 #
-# Netlify (yekpare.net) /api/* vekili bu API servisinin public URL'sine gider.
-# Build env: RENDER_API_ORIGIN veya API_ORIGIN (GitHub Actions netlify-production.yml)
+# Bu dosya geriye dönük referans için saklanır; yeni kurulumlarda Render kullanmayın.
 
 databases:
   - name: goalgo-main

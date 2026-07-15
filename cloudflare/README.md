@@ -1,5 +1,9 @@
-# Cloudflare Worker (Yekpare ön yüz)
+# Cloudflare Worker (Yekpare)
 
-Netlify edge + `_redirects` karşılığı. Build çıktısı `../artifacts/ahenkpress/dist/public`.
+- SPA: Workers Static Assets  
+- API: Cloudflare Containers → **Neon** Postgres  
+- CI: GitHub Actions `cloudflare-production.yml`
 
-Kurulum: [goalgo/docs/CLOUDFLARE-RENDER-KURULUM.md](../goalgo/docs/CLOUDFLARE-RENDER-KURULUM.md)
+Kurulum: [goalgo/docs/CLOUDFLARE-NEON-KURULUM.md](../goalgo/docs/CLOUDFLARE-NEON-KURULUM.md)
+
+Secrets (asla commit etme): `DATABASE_URL`, `SESSION_SECRET`

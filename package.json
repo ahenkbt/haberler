@@ -9,6 +9,10 @@
     "deploy:cloudflare": "pnpm run build:cloudflare && npx wrangler deploy"
   },
   "dependencies": {
+    "@cloudflare/containers": "^0.3.7",
     "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.86.0"
   }
 }

@@ -1,26 +1,12 @@
-# Render ücretsiz/başlangıç planı boşta kalınca uykuya geçer; soğuk başlangıç 30-60 sn sürer
-# ve yekpare.net "Sunucuya şu an ulaşılamıyor" uyarısı gösterir. Bu iş API'yi sıcak tutar.
+# LEGACY — Render kaldırıldı (Neon + Cloudflare Containers).
+# Bu workflow bilerek devre dışı; silinebilir.
 name: render-keepalive
 
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
-permissions: {}
-
 jobs:
-  ping:
+  skip:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
     steps:
-      - name: Ping Render API healthz
-        run: |
-          set +e
-          for url in \
-            "https://goalgo-y7ze.onrender.com/api/healthz/live" \
-            "https://yekpare.net/api/healthz/live"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$url")
-            echo "$url -> $code"
-          done
-          exit 0
+      - run: echo "Render keepalive disabled — stack is Neon + Cloudflare."

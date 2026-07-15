@@ -1,9 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { resolveApiOrigin } from "./resolve-api-origin.mjs";
 
+const apiOrigin = resolveApiOrigin(); // Cloudflare: boş = aynı origin /api → Container
+
 const env = {
   ...process.env,
-  VITE_PUBLIC_API_ORIGIN: resolveApiOrigin(),
+  // Boş string aynı-origin; harici URL yalnızca API_ORIGIN verilirse
+  VITE_PUBLIC_API_ORIGIN: apiOrigin,
   VITE_YEKTUBE_V2_ENABLED: "true",
   VITE_YEKTUBE_DEDICATED_HOSTS: "yektube.com",
   VITE_YEKTUBE_DEDICATED_PATH: "/yp",

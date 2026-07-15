@@ -13,9 +13,11 @@ function parseConfiguredApiOrigin(): string | null {
   }
 }
 
-/** Üretimde build env ile verilir; yoksa Render kökü (eski Railway adresi artık kullanılmaz). */
-const PRODUCTION_API_ORIGIN_FALLBACK =
-  (import.meta.env.VITE_PUBLIC_API_ORIGIN?.trim() || "https://goalgo-y7ze.onrender.com").replace(/\/+$/, "");
+/** Üretimde build env ile verilir; boş = aynı origin `/api` (Cloudflare Worker + Container). */
+const PRODUCTION_API_ORIGIN_FALLBACK = (import.meta.env.VITE_PUBLIC_API_ORIGIN?.trim() || "").replace(
+  /\/+$/,
+  "",
+);
 
 /**
  * HM / mağaza özel alanında doğrudan Railway çağrısı için API kökü.
@@ -33,7 +35,10 @@ export function resolveExternalApiOrigin(): string | null {
       /* ignore */
     }
   }
-  if (import.meta.env.PROD) return PRODUCTION_API_ORIGIN_FALLBACK.replace(/\/+$/, "");
+  if (import.meta.env.PROD) {
+    const fallback = PRODUCTION_API_ORIGIN_FALLBACK.replace(/\/+$/, "");
+    return fallback || null;
+  }
   return null;
 }
 

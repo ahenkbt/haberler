@@ -5,3 +5,4 @@
 /n*.json
 # Cloudflare / Netlify root publish copy (scripts/*-root-build.mjs)
 /artifacts/
+node_modules/

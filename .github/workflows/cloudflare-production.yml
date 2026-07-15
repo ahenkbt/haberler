@@ -1,6 +1,10 @@
-# Cloudflare Workers Static Assets (haberler) — Render API vekili.
-# Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
-# Optional: RENDER_API_ORIGIN / API_ORIGIN, AGENTLABS_URL
+# Cloudflare Workers + Containers (API) + Neon Postgres
+# Secrets:
+#   CLOUDFLARE_API_TOKEN
+#   CLOUDFLARE_ACCOUNT_ID
+#   DATABASE_URL          (Neon connection string)
+#   SESSION_SECRET        (min 16 chars)
+# Optional: AGENTLABS_URL
 name: Cloudflare Production Deploy
 
 on:
@@ -10,15 +14,19 @@ on:
     paths:
       - "goalgo/artifacts/ahenkpress/**"
       - "goalgo/artifacts/yektube-web/**"
+      - "goalgo/artifacts/api-server/**"
+      - "goalgo/lib/**"
+      - "goalgo/Dockerfile.cloudflare"
       - "goalgo/scripts/copy-yektube-build.mjs"
       - "goalgo/scripts/cloudflare-build.mjs"
-      - "goalgo/scripts/netlify-build.mjs"
       - "goalgo/scripts/write-netlify-redirects.mjs"
       - "goalgo/scripts/generate-public-sitemap.mjs"
+      - "goalgo/scripts/resolve-api-origin.mjs"
       - "scripts/cloudflare-root-build.mjs"
       - "cloudflare/**"
       - "wrangler.toml"
       - "package.json"
+      - "pnpm-lock.yaml"
       - ".github/workflows/cloudflare-production.yml"
   workflow_dispatch:
 
@@ -32,18 +40,25 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Check Cloudflare secrets
+      - name: Check Cloudflare + Neon secrets
         id: cf
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Cloudflare deploy (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set)."
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deploy (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID missing)."
+            exit 0
           fi
+          if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::error::DATABASE_URL and SESSION_SECRET GitHub secrets are required (Neon + session)."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v6
         if: steps.cf.outputs.enabled == 'true'
@@ -55,20 +70,41 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: goalgo/pnpm-lock.yaml
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            goalgo/pnpm-lock.yaml
 
-      - name: Install and build
+      - name: Install root deps (wrangler / containers)
+        if: steps.cf.outputs.enabled == 'true'
+        run: pnpm install
+
+      - name: Build SPA
         if: steps.cf.outputs.enabled == 'true'
         env:
-          API_ORIGIN: ${{ secrets.RENDER_API_ORIGIN || secrets.API_ORIGIN || secrets.RAILWAY_API_ORIGIN || 'https://goalgo-y7ze.onrender.com' }}
-          RENDER_API_ORIGIN: ${{ secrets.RENDER_API_ORIGIN || secrets.API_ORIGIN || secrets.RAILWAY_API_ORIGIN || 'https://goalgo-y7ze.onrender.com' }}
-          AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || 'https://call.yekpare.net' }}
+          # Same-origin: boş API_ORIGIN → Worker Container /api
+          API_ORIGIN: ""
           NPM_CONFIG_PRODUCTION: "false"
+          AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
         run: pnpm run build:cloudflare
 
-      - name: Deploy to Cloudflare
+      - name: Sync Worker secrets (Neon)
         if: steps.cf.outputs.enabled == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler@4 deploy
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
+        run: |
+          printf '%s' "$DATABASE_URL" | pnpm exec wrangler secret put DATABASE_URL
+          printf '%s' "$SESSION_SECRET" | pnpm exec wrangler secret put SESSION_SECRET
+          if [ -n "$AGENTLABS_URL" ]; then
+            printf '%s' "$AGENTLABS_URL" | pnpm exec wrangler secret put AGENTLABS_URL
+          fi
+
+      - name: Deploy Worker + Container to Cloudflare
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy

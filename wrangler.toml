@@ -1,24 +1,43 @@
-# Yekpare frontend — Cloudflare Workers Static Assets (Render API vekili).
-# Dashboard (Workers Builds / Pages):
-#   Build command:  corepack enable && corepack prepare pnpm@9.15.5 --activate && pnpm run build:cloudflare
-#   Deploy command: npx wrangler deploy
-#   Output dir:     (wrangler.toml [assets].directory — ayrı UI alanı gerekmez)
+# Yekpare — Cloudflare Workers Static Assets + Containers (Neon Postgres)
+# Stack: Neon (DB) + GitHub Actions (CI) + Cloudflare (SPA + API container)
+# Render / Railway kullanılmaz.
 #
-# Ortam değişkenleri (Production):
-#   RENDER_API_ORIGIN=https://goalgo-y7ze.onrender.com
-#   AGENTLABS_URL=https://call.yekpare.net   (opsiyonel)
-#   VITE_PORTAL_HOSTS=...                    (opsiyonel; build + runtime)
+# Secrets (repoya yazma — wrangler secret / GitHub Actions):
+#   DATABASE_URL=postgresql://…@….neon.tech/neondb?sslmode=require
+#   SESSION_SECRET=<min 16 karakter>
+#
+# Dashboard / CI:
+#   Build:  corepack enable && corepack prepare pnpm@9.15.5 --activate && pnpm run build:cloudflare
+#   Deploy: npx wrangler deploy
+#   Docker GHA'da gerekli (Container image build)
 
 name = "haberler"
 compatibility_date = "2025-07-15"
 main = "cloudflare/worker.js"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "artifacts/ahenkpress/dist/public"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Edge vekil (API / sitemap / OG / Yektube path) önce çalışsın
 run_worker_first = true
 
+[[containers]]
+class_name = "ApiContainer"
+image = "./goalgo/Dockerfile.cloudflare"
+max_instances = 3
+instance_type = "standard-1"
+
+[[durable_objects.bindings]]
+name = "API_CONTAINER"
+class_name = "ApiContainer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ApiContainer"]
+
 [vars]
-RENDER_API_ORIGIN = "https://goalgo-y7ze.onrender.com"
+# Non-secret vars only. DATABASE_URL / SESSION_SECRET → wrangler secret put
+YEKTUBE_DB_READ = "main"
+NEWS_DB_READ = "main"
+USE_NATIVE_AI_CALL = "true"
