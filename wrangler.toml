@@ -65,12 +65,3 @@ custom_domain = true
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
-
-# Apex için Worker route yedeği (DNS oluştuktan sonra)
-[[routes]]
-pattern = "ankarasehirgazetesi.com/*"
-zone_name = "ankarasehirgazetesi.com"
-
-[[routes]]
-pattern = "www.ankarasehirgazetesi.com/*"
-zone_name = "ankarasehirgazetesi.com"
