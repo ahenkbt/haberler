@@ -5,13 +5,18 @@
  */
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
-/** Genel tek seferlik Netlify SW temizliği */
-const PURGE_COOKIE = "__yekpare_sw_purged";
 /**
- * Kullanıcı talebiyle yeniden önbellek temizlenecek HM alanları.
- * Cookie sürümü artırılınca bu hostlarda Clear-Site-Data + SW purge bir kez daha çalışır.
+ * Cookie sürümü — artırınca tüm ziyaretçilerde Netlify SW yeniden temizlenir.
+ * (Eski cookie ile purge atlanınca /tr/vkd Netlify 404 görünmeye devam ediyordu.)
+ */
+const PURGE_COOKIE = "__yekpare_sw_purged_v20260715c";
+/**
+ * HM + portal: bir kez daha agresif Clear-Site-Data.
  */
 const FORCE_PURGE_HOSTS = new Set([
+  "yekpare.net",
+  "www.yekpare.net",
+  "haberler.ahenkbt.workers.dev",
   "vatanhaber.net",
   "www.vatanhaber.net",
   "vatankahramanlari.org",
@@ -21,7 +26,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "ankarahabergundemi.com",
   "www.ankarahabergundemi.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715b";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715c";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -86,7 +91,15 @@ function purgeBootScript(cookieName) {
         return Promise.all(keys.map(function (k) { return caches.delete(k); }));
       });
     }).then(function () {
-      try { localStorage.removeItem('nf_'); } catch (_) {}
+      try {
+        // Netlify / eski HM cache anahtarlarını temizle
+        var rm = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && (k.indexOf('nf_') === 0 || k.indexOf('netlify') !== -1)) rm.push(k);
+        }
+        rm.forEach(function (k) { localStorage.removeItem(k); });
+      } catch (_) {}
       var u = new URL(location.href);
       if (!u.searchParams.has('_cf_purge')) {
         u.searchParams.set('_cf_purge', '1');
@@ -105,7 +118,10 @@ function purgeBootScript(cookieName) {
 `;
 }
 
-/** Purge sonrası: sadece yeni SW register'ı engelle, storage'a dokunma. */
+/**
+ * Her HTML'de: yeni SW register engelle + kalan Netlify SW'yi unregister et.
+ * Clear-Site-Data yapmaz (editör JWT korunur); sadece SW katmanını öldürür.
+ */
 const SW_BLOCK_BOOT = `
 <script>
 (function () {
@@ -115,6 +131,24 @@ const SW_BLOCK_BOOT = `
       return Promise.reject(new Error('sw-disabled-cf-render'));
     };
   } catch (_) {}
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    if (!regs || !regs.length) return;
+    return Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+      if (!window.caches) return;
+      return caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      });
+    }).then(function () {
+      // Kontrollü bir kez yenile — Netlify "Site not found" SW yanıtını düşür
+      try {
+        var u = new URL(location.href);
+        if (!u.searchParams.has('_sw_kill')) {
+          u.searchParams.set('_sw_kill', '1');
+          location.replace(u.toString());
+        }
+      } catch (_) {}
+    });
+  }).catch(function () {});
 })();
 </script>
 `;
