@@ -44,14 +44,13 @@ export type MediaMigrateResult = {
   details: Array<{ table: string; id: number | string; from: string; to?: string; ok: boolean; error?: string }>;
 };
 
+/** Eksik dosya için opsiyonel dış origin — Railway varsayılanı yok. */
 function legacyMediaOrigin(): string | null {
   const raw = process.env.LEGACY_MEDIA_ORIGIN;
-  if (raw != null) {
-    const t = raw.trim();
-    if (!t || t === "0" || t === "false" || t === "off") return null;
-    return t.replace(/\/+$/, "");
-  }
-  return "https://goalgo-production.up.railway.app";
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (!t || t === "0" || t === "false" || t === "off") return null;
+  return t.replace(/\/+$/, "");
 }
 
 export function parseUploadFname(url: string): string | null {
@@ -71,19 +70,15 @@ export async function importMissingUploadFile(fname: string): Promise<boolean> {
   if (await mediaObjectExists(fname)) return true;
 
   const legacy = legacyMediaOrigin();
-  const renderOrigin = String(process.env.RENDER_EXTERNAL_URL ?? "")
-    .trim()
-    .replace(/\/+$/, "");
-  // yekpare.net adayı yok: DNS flap / Netlify sertifikası TLS hatası + CF challenge üretiyor.
-  const candidates = [
-    legacy ? `${legacy}/api/media/uploads/${fname}` : null,
-    renderOrigin ? `${renderOrigin}/api/media/uploads/${fname}` : null,
-    `https://goalgo-y7ze.onrender.com/api/media/uploads/${fname}`,
-    `https://goalgo-production.up.railway.app/api/media/uploads/${fname}`,
-  ].filter(Boolean) as string[];
-  const uniqueCandidates = [...new Set(candidates)];
+  // Sadece açıkça verilen legacy origin. Railway / yekpare.net adayı yok.
+  const candidates = legacy ? [`${legacy}/api/media/uploads/${fname}`] : [];
 
-  for (const url of uniqueCandidates) {
+  if (!candidates.length) {
+    logger.info({ fname }, "[media-migrate] no LEGACY_MEDIA_ORIGIN — skip remote import");
+    return false;
+  }
+
+  for (const url of candidates) {
     try {
       const res = await fetch(url, {
         redirect: "follow",
