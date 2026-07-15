@@ -12,8 +12,9 @@ export const PORTAL_ALIAS_HOSTS = [
   "turkiye.li",
   "getirsepeti.com.tr",
   "ahenk.net.tr",
-  "turk.eco",
-  "www.turk.eco",
+  // turk.eco → HM editör sitesi (slug: ha); portal alias OLMAYIP Worker soft-redirect ile bağlanır.
+  // Cloudflare Workers geçici üretim URL (Worker → Render)
+  "haberler.ahenkbt.workers.dev",
 ] as const;
 
 export const PORTAL_SITE_NAME = "Yekpare";

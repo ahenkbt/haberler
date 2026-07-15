@@ -11,7 +11,9 @@
     "build:cloudflare": "node scripts/cloudflare-root-build.mjs",
     "deploy:cloudflare": "pnpm exec wrangler deploy",
     "cf:dashboard-deploy": "pnpm exec wrangler deploy",
-    "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs"
+    "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs",
+    "cf:purge-hm-cache": "node scripts/cf-purge-hm-cache.mjs",
+    "cf:fix-hm-dns": "node scripts/cf-fix-originless-dns.mjs"
   },
   "dependencies": {
     "pg": "^8.20.0"

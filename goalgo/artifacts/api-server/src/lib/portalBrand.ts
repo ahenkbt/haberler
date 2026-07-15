@@ -11,6 +11,8 @@ export const PORTAL_ALIAS_HOSTS = [
   "turkiye.li",
   "getirsepeti.com.tr",
   "ahenk.net.tr",
+  // Cloudflare Workers geçici üretim URL (Worker → Render)
+  "haberler.ahenkbt.workers.dev",
 ] as const;
 
 export const PORTAL_SITE_NAME = "Yekpare";
@@ -43,6 +45,7 @@ export function isPortalHostname(host: string | null | undefined): boolean {
   if ((LEGACY_PORTAL_HOSTS as readonly string[]).includes(h)) return true;
   if ((PORTAL_ALIAS_HOSTS as readonly string[]).includes(h)) return true;
   if (h.endsWith(".vercel.app")) return true;
+  if (h.endsWith(".workers.dev")) return true;
   if (parsePortalExtraHosts().includes(h)) return true;
   return false;
 }

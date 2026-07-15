@@ -22,3 +22,81 @@ zone_name = "yekpare.net"
 [[routes]]
 pattern = "www.yekpare.net"
 custom_domain = true
+
+# HM editör siteleri (Cloudflare zone olanlar → Worker → Render)
+[[routes]]
+pattern = "ankarahabergundemi.com/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "turk.eco/*"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "turk.eco"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "www.turk.eco/*"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "www.turk.eco"
+zone_name = "turk.eco"
+
+# Error 1016: zone Cloudflare'de aktif (SOA var) ama A/AAAA yok.
+# custom_domain DNS + Worker bağlar. (Diğer HM alanları zone/API yoksa deploy'u düşürmesin diye burada yok.)
+[[routes]]
+pattern = "ankarasehirgazetesi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com"
+custom_domain = true
+
+# VKD: elde A 192.0.2.1 Proxied varsa custom_domain reddedilir (100117).
+# Zone route Worker'ı origin yapar → Error 522 kalkar.
+[[routes]]
+pattern = "vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org"
+zone_name = "vatankahramanlari.org"
+
+# vatanhaber: hold kalkınca zone Active olur. A 192.0.2.1 Proxied + zone route (522 önler).
+[[routes]]
+pattern = "vatanhaber.net/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net"
+zone_name = "vatanhaber.net"

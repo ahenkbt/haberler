@@ -25,9 +25,11 @@ export function createMiddlewareSeoVerification(deps) {
       h === "turkiye.li" ||
       h === "getirsepeti.com.tr" ||
       h === "ahenk.net.tr" ||
+      h === "haberler.ahenkbt.workers.dev" ||
       h === "localhost" ||
       h === "127.0.0.1" ||
       h.indexOf(".vercel.app") !== -1 ||
+      h.indexOf(".workers.dev") !== -1 ||
       parsePortalExtraHosts().includes(h)
     );
   }

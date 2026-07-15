@@ -160,7 +160,7 @@ export function buildCorsOptions(): CorsOptions {
 
         const host = normalizePortalHostKey(new URL(origin).hostname);
 
-        if (host.endsWith(".vercel.app")) {
+        if (host.endsWith(".vercel.app") || host.endsWith(".workers.dev")) {
 
           callback(null, true);
 

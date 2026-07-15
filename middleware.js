@@ -381,9 +381,11 @@ function createMiddlewareSeoVerification(deps) {
       h === "turkiye.li" ||
       h === "getirsepeti.com.tr" ||
       h === "ahenk.net.tr" ||
+      h === "haberler.ahenkbt.workers.dev" ||
       h === "localhost" ||
       h === "127.0.0.1" ||
       h.indexOf(".vercel.app") !== -1 ||
+      h.indexOf(".workers.dev") !== -1 ||
       parsePortalExtraHostsSeo().includes(h)
     );
   }
@@ -1104,9 +1106,11 @@ function isDefaultPortalHost(host) {
     h === "turkiye.li" ||
     h === "getirsepeti.com.tr" ||
     h === "ahenk.net.tr" ||
+    h === "haberler.ahenkbt.workers.dev" ||
     h === "localhost" ||
     h === "127.0.0.1" ||
     h.endsWith(".vercel.app") ||
+    h.endsWith(".workers.dev") ||
     parsePortalExtraHosts().includes(h)
   );
 }
@@ -1116,7 +1120,13 @@ function isLocalOrPreviewHost(host) {
     .toLowerCase()
     .replace(/^www\./, "")
     .split(":")[0];
-  return !h || h === "localhost" || h === "127.0.0.1" || h.endsWith(".vercel.app");
+  return (
+    !h ||
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h.endsWith(".vercel.app") ||
+    h.endsWith(".workers.dev")
+  );
 }
 
 function isYektubeSurfacePath(pathname) {
