@@ -66,12 +66,20 @@ custom_domain = true
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
 
-# VKD: DNS A 192.0.2.1 var ama Worker Custom Domain yok → Error 522.
-# Custom Domain bağlanınca Worker origin olur, 522 kalkar.
+# VKD: elde A 192.0.2.1 Proxied varsa custom_domain reddedilir (100117).
+# Zone route Worker'ı origin yapar → Error 522 kalkar.
+[[routes]]
+pattern = "vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
 [[routes]]
 pattern = "vatankahramanlari.org"
-custom_domain = true
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
 
 [[routes]]
 pattern = "www.vatankahramanlari.org"
-custom_domain = true
+zone_name = "vatankahramanlari.org"

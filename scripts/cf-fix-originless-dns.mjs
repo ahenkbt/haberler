@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: attach VKD custom domain 2026-07-15T17:09Z
+ * trigger: VKD zone routes + A 192.0.2.1 2026-07-15T17:24Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -97,7 +97,45 @@ async function attachCustomDomain(hostname) {
     method: "PUT",
     body: { hostname, service: SCRIPT, environment: "production" },
   });
+  const err = r.json?.errors?.[0];
+  // 100117: elle A/AAAA var — zone Workers Route yeterli, custom_domain şart değil
+  if (!r.ok && err?.code === 100117) {
+    console.log(`[fix] workers/domains ${hostname} skip (external DNS; use zone routes)`);
+    return true;
+  }
   console.log(`[fix] workers/domains ${hostname} ok=${r.ok}`, JSON.stringify(r.json?.errors || r.json?.result || {}));
+  return r.ok;
+}
+
+/** Proxied A 192.0.2.1 — Worker originless IPv4 (522 = Worker route yokken bu IP'ye gidilir). */
+async function ensureProxiedOriginlessA(zoneId, zoneName, name, fqdn) {
+  const list = await cf(
+    `/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`,
+  );
+  const records = list.json?.result || [];
+  for (const rec of records) {
+    if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
+    if (rec.type === "A" && String(rec.content) === "192.0.2.1") {
+      if (!rec.proxied) {
+        await cf(`/zones/${zoneId}/dns_records/${rec.id}`, {
+          method: "PATCH",
+          body: { proxied: true },
+        });
+        console.log(`[fix] proxied A 192.0.2.1 ${fqdn}`);
+      } else {
+        console.log(`[fix] already A 192.0.2.1 proxied ${fqdn}`);
+      }
+      return;
+    }
+  }
+  const created = await cf(`/zones/${zoneId}/dns_records`, {
+    method: "POST",
+    body: { type: "A", name, content: "192.0.2.1", proxied: true, ttl: 1 },
+  });
+  console.log(
+    `[fix] create A 192.0.2.1 ${fqdn} ok=${created.ok}`,
+    JSON.stringify(created.json?.errors || {}),
+  );
 }
 
 async function createZoneIfMissing(name) {
@@ -125,6 +163,8 @@ async function fixZone(name) {
   console.log(`[fix] zone id=${zone.id} status=${zone.status}`);
   await ensureAaaa100(zone.id, name, "@", name);
   await ensureAaaa100(zone.id, name, "www", `www.${name}`);
+  await ensureProxiedOriginlessA(zone.id, name, "@", name);
+  await ensureProxiedOriginlessA(zone.id, name, "www", `www.${name}`);
   await ensureRoutes(zone.id, name);
   await attachCustomDomain(name);
   await attachCustomDomain(`www.${name}`);
