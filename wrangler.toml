@@ -83,3 +83,20 @@ zone_name = "vatankahramanlari.org"
 [[routes]]
 pattern = "www.vatankahramanlari.org"
 zone_name = "vatankahramanlari.org"
+
+# vatanhaber: hold kalkınca zone Active olur. A 192.0.2.1 Proxied + zone route (522 önler).
+[[routes]]
+pattern = "vatanhaber.net/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net"
+zone_name = "vatanhaber.net"
