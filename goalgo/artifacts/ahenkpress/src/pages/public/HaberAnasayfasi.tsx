@@ -1947,8 +1947,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     [featured, allItems],
   );
   const centerMansetSliderItems = useMemo(() => {
-    // Orta manşet: her zaman en son eklenenler. Bundle/featured manşet etiketi buraya girmez
-    // (tepe manşet isFeatured’e özel). Prod bundle eski olsa bile client doğru havuzu kurar.
+    // Orta (site) manşet: isSiteManset varsa onlar; yoksa en son eklenenler.
+    // Bundle/featured manşet etiketi buraya girmez (tepe manşet isFeatured’e özel).
     const pool = filterNewsItemsWithCoverImage(
       buildCenterMansetSliderPool({
         manualItems: [],

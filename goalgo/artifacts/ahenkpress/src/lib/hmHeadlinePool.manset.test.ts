@@ -9,6 +9,7 @@ describe("manset pools", () => {
     id: 1,
     title: "Eski manşet",
     isFeatured: true,
+    isSiteManset: false,
     createdAt: "2026-06-01T10:00:00.000Z",
     imageUrl: "/api/media/uploads/a.webp",
   };
@@ -16,6 +17,7 @@ describe("manset pools", () => {
     id: 2,
     title: "Yeni haber A",
     isFeatured: false,
+    isSiteManset: false,
     createdAt: "2026-07-15T12:00:00.000Z",
     imageUrl: "/api/media/uploads/b.webp",
   };
@@ -23,8 +25,17 @@ describe("manset pools", () => {
     id: 3,
     title: "Yeni haber B",
     isFeatured: false,
+    isSiteManset: false,
     createdAt: "2026-07-15T11:00:00.000Z",
     imageUrl: "/api/media/uploads/c.webp",
+  };
+  const siteMansetPinned = {
+    id: 4,
+    title: "Site manşet sabit",
+    isFeatured: false,
+    isSiteManset: true,
+    createdAt: "2026-07-10T09:00:00.000Z",
+    imageUrl: "/api/media/uploads/d.webp",
   };
   const rss = {
     id: "rss:1",
@@ -42,7 +53,7 @@ describe("manset pools", () => {
     expect(pool.map((x) => x.id)).toEqual([1]);
   });
 
-  it("normal manşet en son eklenenleri seçer (featured / RSS hariç)", () => {
+  it("site manşet seçilmemişse en son eklenenleri seçer (featured / RSS hariç)", () => {
     const pool = buildCenterMansetSliderPool({
       manualItems: [featuredOld],
       latestItems: [latestA, latestB, featuredOld, rss],
@@ -51,5 +62,15 @@ describe("manset pools", () => {
     expect(pool.map((x) => x.id)).toEqual([2, 3]);
     expect(pool.every((x) => x.isFeatured !== true)).toBe(true);
     expect(pool.every((x) => x.source !== "rss")).toBe(true);
+  });
+
+  it("site manşet işaretliyse yalnızca onları gösterir", () => {
+    const pool = buildCenterMansetSliderPool({
+      manualItems: [siteMansetPinned],
+      latestItems: [latestA, latestB, featuredOld, siteMansetPinned, rss],
+      limit: 5,
+    });
+    expect(pool.map((x) => x.id)).toEqual([4]);
+    expect(pool.every((x) => x.isSiteManset === true)).toBe(true);
   });
 });

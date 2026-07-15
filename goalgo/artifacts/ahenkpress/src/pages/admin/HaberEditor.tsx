@@ -194,6 +194,7 @@ export default function HaberEditor() {
     senderPhone: "",
     status: "draft" as "published" | "draft",
     isFeatured: false,
+    isSiteManset: false,
     isBreaking: false,
     siteOnly: false,
     isFoodRecipe: false,
@@ -221,6 +222,7 @@ export default function HaberEditor() {
         senderPhone: "",
         status: "draft",
         isFeatured: false,
+        isSiteManset: false,
         isBreaking: false,
         siteOnly: false,
         isFoodRecipe: false,
@@ -244,6 +246,7 @@ export default function HaberEditor() {
       senderPhone: news.senderPhone || "",
       status: news.status || "draft",
       isFeatured: !!news.isFeatured,
+      isSiteManset: !!(news as News & { isSiteManset?: boolean }).isSiteManset,
       isBreaking: !!news.isBreaking,
       siteOnly: !!(news as News & { siteOnly?: boolean }).siteOnly,
       isFoodRecipe: !!(news as News & { isFoodRecipe?: boolean }).isFoodRecipe,
@@ -365,6 +368,7 @@ export default function HaberEditor() {
       senderPhone: form.senderPhone || undefined,
       status: form.status,
       isFeatured: isAuthorHm ? false : form.isFeatured,
+      isSiteManset: isAuthorHm ? false : form.isSiteManset,
       isBreaking: isAuthorHm ? false : form.isBreaking,
       isFoodRecipe: form.isFoodRecipe,
       foodRecipeCategorySlug: form.isFoodRecipe ? form.foodRecipeCategorySlug || undefined : undefined,
@@ -628,8 +632,18 @@ export default function HaberEditor() {
             {!isAuthorHm ? (
               <>
                 <div className="flex items-center justify-between">
-                  <Label>Manşet (Öne Çıkan)</Label>
+                  <div>
+                    <Label>Tepe manşet</Label>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Yalnızca üst manşet bandında</p>
+                  </div>
                   <Switch checked={form.isFeatured} onCheckedChange={(v) => setForm({ ...form, isFeatured: v })} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Site manşet</Label>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Alt manşet slider; seçilmezse en güncel haberler</p>
+                  </div>
+                  <Switch checked={form.isSiteManset} onCheckedChange={(v) => setForm({ ...form, isSiteManset: v })} />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Son Dakika Bandı</Label>

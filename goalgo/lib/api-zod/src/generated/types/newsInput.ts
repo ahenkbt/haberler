@@ -20,7 +20,7 @@ export interface NewsInput {
   senderPhone?: string | null;
   status: NewsInputStatus;
   isFeatured?: boolean;
-  isTepeManset?: boolean;
+  isSiteManset?: boolean;
   isBreaking?: boolean;
   isFoodRecipe?: boolean;
   foodRecipeCategorySlug?: string | null;

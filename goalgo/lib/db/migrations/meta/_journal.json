@@ -862,6 +862,13 @@
       "when": 1777552046710,
       "tag": "0120_rss_news_unified_pool",
       "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "7",
+      "when": 1777553046710,
+      "tag": "0121_news_site_manset",
+      "breakpoints": true
     }
   ]
 }
