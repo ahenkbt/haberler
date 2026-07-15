@@ -230,6 +230,10 @@ async function relaxZoneSecurity(zoneId, zoneName) {
     ["security_level", "essentially_off"],
     ["browser_check", "off"],
     ["challenge_ttl", 1800],
+    // Bozuk IPv6 / QUIC → Chrome ERR_FAILED; AAAA reklamını kapatmayı dene
+    ["ipv6", "off"],
+    ["http3", "off"],
+    ["0rtt_enabled", "off"],
   ];
   for (const [setting, value] of settings) {
     const r = await cf(`/zones/${zoneId}/settings/${setting}`, {
