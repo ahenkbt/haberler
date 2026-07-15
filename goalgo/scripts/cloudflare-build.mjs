@@ -14,7 +14,7 @@ const env = {
   VITE_YEKTUBE_PORTAL_SURFACE_HOSTS: "yekpare.net",
   VITE_PORTAL_HOSTS:
     process.env.VITE_PORTAL_HOSTS ||
-    "goalgo.org,turkiye.li,getirsepeti.com.tr,ahenk.net.tr,turk.eco,www.turk.eco",
+    "goalgo.org,turkiye.li,getirsepeti.com.tr,ahenk.net.tr,turk.eco,www.turk.eco,haberler.ahenkbt.workers.dev",
 };
 
 function run(cmd, args) {

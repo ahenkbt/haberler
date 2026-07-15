@@ -14,6 +14,8 @@ export const PORTAL_ALIAS_HOSTS = [
   "ahenk.net.tr",
   "turk.eco",
   "www.turk.eco",
+  // Cloudflare Workers geçici üretim URL (Worker → Render)
+  "haberler.ahenkbt.workers.dev",
 ] as const;
 
 export const PORTAL_SITE_NAME = "Yekpare";

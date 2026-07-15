@@ -13,7 +13,7 @@ export function isKnownHmCustomHost(host: string): boolean {
   return !!resolveHmDomainSlugHint(host);
 }
 
-/** Yapılandırılmış kanonik portal hostları (yekpare.net, turknet.app, VITE_PORTAL_HOSTS, localhost, *.vercel.app, *.netlify.app). */
+/** Yapılandırılmış kanonik portal hostları (yekpare.net, turknet.app, VITE_PORTAL_HOSTS, localhost, *.vercel.app, *.netlify.app, *.workers.dev). */
 export function isConfiguredPortalHost(host: string): boolean {
   const h = normalizeHostKey(host);
   if (!h || h === "localhost" || h === "127.0.0.1") return true;
@@ -22,6 +22,7 @@ export function isConfiguredPortalHost(host: string): boolean {
   if ((PORTAL_ALIAS_HOSTS as readonly string[]).includes(h)) return true;
   if (h.endsWith(".vercel.app")) return true;
   if (h.endsWith(".netlify.app")) return true;
+  if (h.endsWith(".workers.dev")) return true;
   const extra = String(import.meta.env.VITE_PORTAL_HOSTS ?? "")
     .split(",")
     .map((s) => s.trim().toLowerCase().replace(/^www\./, ""))
