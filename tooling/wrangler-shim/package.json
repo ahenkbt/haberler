@@ -1,0 +1,11 @@
+{
+  "name": "wrangler",
+  "version": "4.86.0",
+  "private": true,
+  "bin": {
+    "wrangler": "./bin.mjs"
+  },
+  "dependencies": {
+    "wrangler-upstream": "npm:wrangler@4.86.0"
+  }
+}

@@ -1,20 +1,24 @@
-# Geçici production: Worker → Render (SPA+API). Docker/SPA build YOK.
-# Workers Builds: Deploy = npx wrangler deploy
-
+# Geçici: Worker → Render. Netlify origin tamamen by-pass.
 name = "haberler"
 compatibility_date = "2025-07-15"
 main = "cloudflare/worker.js"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
+account_id = "16f5b996194174624e7969a3658bd2bb"
 
 [vars]
 API_ORIGIN = "https://goalgo-y7ze.onrender.com"
 
-# custom_domain=true → Cloudflare DNS kaydını da yönetir (www için kritik)
+# Apex: zone route (mevcut DNS ile uyumlu — custom_domain A/CNAME çakışması yapmaz)
+[[routes]]
+pattern = "yekpare.net/*"
+zone_name = "yekpare.net"
+
 [[routes]]
 pattern = "yekpare.net"
-custom_domain = true
+zone_name = "yekpare.net"
 
+# www: DNS yoksa custom_domain kaydı oluşturur
 [[routes]]
 pattern = "www.yekpare.net"
 custom_domain = true

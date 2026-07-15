@@ -1,57 +1,12 @@
-# Yekpare frontend — repo kökünden build (Netlify UI base=/ ile uyumlu).
-# Backend Render'da; /api/* build sırasında _redirects ile vekillenir.
+# Netlify kapatıldı — yanlışlıkla build olsa bile Cloudflare'e yönlendir.
+# Üretim: Cloudflare Worker → Render (goalgo-y7ze.onrender.com)
 
 [build]
-  command = "corepack enable && corepack prepare pnpm@9.15.5 --activate && pnpm run build:netlify"
-  publish = "artifacts/ahenkpress/dist/public"
+  command = "mkdir -p dist && printf '%s\\n' '<!DOCTYPE html><meta http-equiv=\"refresh\" content=\"0;url=https://yekpare.net/\"><title>Moved</title><p><a href=\"https://yekpare.net/\">yekpare.net</a></p>' > dist/index.html"
+  publish = "dist"
 
-[build.environment]
-  NODE_VERSION = "20"
-  NPM_CONFIG_PRODUCTION = "false"
-  # Monorepo'da yayımlanmayan legacy dosyalar (aiaddin/wordpress) AIza anahtarı içeriyor; site build çıktısında değil.
-  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
-
-# Kariyer Functions (pg bağımlılıkları) deploy'u düşürüyordu; /api/career/* Railway vekiline gider.
-# Site canlı olduktan sonra Functions tekrar eklenebilir.
-
-[[edge_functions]]
-  path = "/*.xml"
-  function = "sitemap-proxy"
-
-[[edge_functions]]
-  path = "/*"
-  function = "social-og-html"
-
-[[headers]]
-  for = "/"
-  [headers.values]
-    Cache-Control = "no-store, max-age=0, must-revalidate"
-    X-Yekpare-Frontend = "ahenkpress-netlify"
-
-[[headers]]
-  for = "/maps/place/*"
-  [headers.values]
-    Cache-Control = "no-store, max-age=0, must-revalidate"
-    X-Yekpare-Frontend = "ahenkpress-netlify"
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cache-Control = "no-store, max-age=0, must-revalidate"
-    X-Yekpare-Frontend = "ahenkpress-netlify"
-
-[[headers]]
-  for = "/*.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
-
-[[headers]]
-  for = "/yp/sw.js"
-  [headers.values]
-    Service-Worker-Allowed = "/yp/"
-
-[[headers]]
-  for = "/yektube-v2/sw.js"
-  [headers.values]
-    Service-Worker-Allowed = "/yp/"
+[[redirects]]
+  from = "/*"
+  to = "https://yekpare.net/:splat"
+  status = 301
+  force = true

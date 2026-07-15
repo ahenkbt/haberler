@@ -10,12 +10,13 @@
     "build:netlify": "node scripts/netlify-root-build.mjs",
     "build:cloudflare": "node scripts/cloudflare-root-build.mjs",
     "deploy:cloudflare": "pnpm exec wrangler deploy",
-    "cf:dashboard-deploy": "pnpm exec wrangler deploy"
+    "cf:dashboard-deploy": "pnpm exec wrangler deploy",
+    "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs"
   },
   "dependencies": {
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "wrangler": "4.86.0"
+    "wrangler": "file:./tooling/wrangler-shim"
   }
 }
