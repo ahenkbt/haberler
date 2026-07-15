@@ -4,9 +4,13 @@ name: Fix HM Originless DNS
 
 on:
   workflow_dispatch:
+  schedule:
+    # Route/DNS flake sonrası otomatik toparlanma (Netlify 404 / 1016 / 522)
+    - cron: "*/20 * * * *"
   push:
     branches:
       - cursor/cloudflare-pages-render-bcc3
+      - cursor/hm-traffic-stability-bcc3
       - main
     paths:
       - "scripts/cf-fix-originless-dns.mjs"
