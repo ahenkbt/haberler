@@ -22,8 +22,12 @@ export const HM_HOME_HEADLINE_SLIDER_MIN = 15;
 export const HM_HOME_FEATURED_STRIP_ITEM_COUNT = 6;
 /** leadListSidebar: 1 büyük + 6 liste. */
 export const HM_LEAD_LIST_SIDEBAR_TOTAL = 7;
-/** Esen «Günün Öne Çıkanları»: 1 büyük manşet + 6 küçük kutu. */
-export const HM_ESEN_LEAD_PACK_TOTAL = 7;
+/** Esen «Günün Öne Çıkanları» sol metin listesi. */
+export const HM_ESEN_LEAD_PACK_LEFT_COUNT = 6;
+/** Esen «Günün Öne Çıkanları» sağ kart ızgarası (4×2). */
+export const HM_ESEN_LEAD_PACK_RIGHT_COUNT = 8;
+/** @deprecated HM_ESEN_LEAD_PACK_LEFT_COUNT + HM_ESEN_LEAD_PACK_RIGHT_COUNT kullanın. */
+export const HM_ESEN_LEAD_PACK_TOTAL = HM_ESEN_LEAD_PACK_LEFT_COUNT + HM_ESEN_LEAD_PACK_RIGHT_COUNT;
 /** Split manşet: slider yanında 2×2 yan haber kutusu. */
 export const HM_MANSET_SPLIT_SIDE_COUNT = 4;
 /** Split manşet yan ızgarası satır sayısı (2×2). */

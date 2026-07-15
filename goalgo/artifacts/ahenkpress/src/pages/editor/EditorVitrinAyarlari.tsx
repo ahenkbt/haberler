@@ -131,6 +131,7 @@ const NEWS_HOME_MODULE_LABELS: Record<(typeof HM_NEWS_HOME_MODULE_ORDER)[number]
   ahenkPopulerHaberler: formatHmNewsModuleEditorLabel("ahenkPopulerHaberler", "Popüler Haberler"),
   portal3ThemeBlock: formatHmNewsModuleEditorLabel("portal3ThemeBlock", "Gazete vitrini bloğu"),
   esenThemeBlock: formatHmNewsModuleEditorLabel("esenThemeBlock", "MANŞET HABER"),
+  esenLeadPack: formatHmNewsModuleEditorLabel("esenLeadPack", "Günün Öne Çıkanları"),
   featuredCategoryStrip: formatHmNewsModuleEditorLabel("featuredCategoryStrip", "Kategori vitrini"),
   yekpareKategorilerKutusu: formatHmNewsModuleEditorLabel("yekpareKategorilerKutusu", "Yekpare Kategoriler Kutusu"),
   leadListSidebar: formatHmNewsModuleEditorLabel("leadListSidebar", "Büyük haber + sağ liste bloğu"),
@@ -1147,6 +1148,18 @@ export default function EditorVitrinAyarlari() {
               onChange={(c) => {
                 if (!guardThemeModuleEnable("esenThemeBlock", c === true)) return;
                 toggleDefaultOn("hmNewsEsenThemeBlockEnabled", c);
+              }}
+            />
+            ) : null}
+            {showNewsEditorModule("esenLeadPack") ? (
+            <ToggleRow
+              id="hm-news-esen-lead-pack"
+              label={NEWS_HOME_MODULE_LABELS.esenLeadPack}
+              checked={resolveHmNewsHomeModuleEnabled(p, "esenLeadPack")}
+              disabled={themeModuleToggleDisabled("esenLeadPack", resolveHmNewsHomeModuleEnabled(p, "esenLeadPack"))}
+              onChange={(c) => {
+                if (!guardThemeModuleEnable("esenLeadPack", c === true)) return;
+                toggleHmNewsEditorModule("esenLeadPack", c === true);
               }}
             />
             ) : null}

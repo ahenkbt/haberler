@@ -636,6 +636,8 @@ export type NewsSiteLayoutPrefs = {
   hmNewsPortal3ThemeBlockEnabled?: boolean;
   /** HABER teması: MANŞET HABER kutusu (yalnızca manuel haberler); tanımsızsa kapalı kabul edilir. */
   hmNewsEsenThemeBlockEnabled?: boolean;
+  /** Gül teması: Günün Öne Çıkanları (sol liste + sağ 4×2 son haberler); tanımsızsa tema varsayılanı. */
+  hmNewsEsenLeadPackEnabled?: boolean;
   /** HABER teması: renkli kategori şeridi; tanımsızsa kapalı kabul edilir. */
   hmNewsFeaturedCategoryStripEnabled?: boolean;
   /** HABER teması: Yekpare Kategoriler Kutusu (yekpare.net/haberler grid); tanımsızsa kapalı kabul edilir. */
@@ -803,6 +805,7 @@ export const HM_NEWS_HOME_MODULE_ORDER = [
   "ahenkPopulerHaberler",
   "portal3ThemeBlock",
   "esenThemeBlock",
+  "esenLeadPack",
   "featuredCategoryStrip",
   "yekpareKategorilerKutusu",
   "leadListSidebar",
@@ -852,7 +855,7 @@ const HM_NEWS_THEME_DEFAULT_MODULES: Partial<Record<HmVitrinThemeId, HmNewsHomeM
   default: ["yekpareKategorilerKutusu", "recentVideosSidebar"],
   classic: ["yekpareKategorilerKutusu", "recentVideosSidebar", "featuredCategoryStrip"],
   portal3: ["portal3ThemeBlock", "yekpareKategorilerKutusu", "recentVideosSidebar"],
-  esen: ["esenThemeBlock"],
+  esen: ["esenThemeBlock", "esenLeadPack"],
   renkli: ["featuredCategoryStrip"],
   ahenkhaber: [
     "ahenkIconCategoryRow",
@@ -889,6 +892,7 @@ const HM_NEWS_THEME_MODULE_TOGGLE_KEYS: Partial<Record<HmNewsHomeModuleId, keyof
   ahenkPopulerHaberler: "hmNewsAhenkPopulerHaberlerEnabled",
   portal3ThemeBlock: "hmNewsPortal3ThemeBlockEnabled",
   esenThemeBlock: "hmNewsEsenThemeBlockEnabled",
+  esenLeadPack: "hmNewsEsenLeadPackEnabled",
   featuredCategoryStrip: "hmNewsFeaturedCategoryStripEnabled",
   yekpareKategorilerKutusu: "hmNewsYekpareKategorilerKutusuEnabled",
   leadListSidebar: "hmNewsLeadListSidebarEnabled",
@@ -925,6 +929,7 @@ export const HM_NEWS_VITRIN_TOGGLE_MODULE_LABELS: Partial<Record<HmNewsHomeModul
   ahenkPopulerHaberler: "Popüler Haberler",
   portal3ThemeBlock: "Yekpare Haberler",
   esenThemeBlock: "MANŞET HABER",
+  esenLeadPack: "Günün Öne Çıkanları",
   featuredCategoryStrip: "Kategori Vitrini",
   yekpareKategorilerKutusu: "Yekpare Kategoriler Kutusu",
   leadListSidebar: "Öne Çıkan Haber Dosyası",
@@ -995,6 +1000,7 @@ export const HM_NEWS_MODULE_THEME_MAP: Partial<Record<HmNewsHomeModuleId, HmVitr
   ahenkPopulerHaberler: ["ahenkhaber"],
   portal3ThemeBlock: ["portal3"],
   esenThemeBlock: ["esen"],
+  esenLeadPack: ["esen"],
   featuredCategoryStrip: ["classic", "renkli", "modern"],
   yekpareKategorilerKutusu: ["news", "sumbul"],
   yemekHaber: ["sumbul", "news"],
@@ -1128,6 +1134,7 @@ export function resolveHmNewsHomeModuleEnabled(
     | "hmNewsAhenkPopulerHaberlerEnabled"
     | "hmNewsPortal3ThemeBlockEnabled"
     | "hmNewsEsenThemeBlockEnabled"
+    | "hmNewsEsenLeadPackEnabled"
     | "hmNewsFeaturedCategoryStripEnabled"
     | "hmNewsYekpareKategorilerKutusuEnabled"
     | "hmNewsLeadListSidebarEnabled"
@@ -1150,6 +1157,7 @@ export function resolveHmNewsHomeModuleEnabled(
     ahenkPopulerHaberler: p.hmNewsAhenkPopulerHaberlerEnabled,
     portal3ThemeBlock: p.hmNewsPortal3ThemeBlockEnabled,
     esenThemeBlock: p.hmNewsEsenThemeBlockEnabled,
+    esenLeadPack: p.hmNewsEsenLeadPackEnabled,
     featuredCategoryStrip: p.hmNewsFeaturedCategoryStripEnabled,
     yekpareKategorilerKutusu: p.hmNewsYekpareKategorilerKutusuEnabled,
     leadListSidebar: p.hmNewsLeadListSidebarEnabled,
@@ -2545,6 +2553,7 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmAllowCrossSiteManualNews: true,
   hmNewsPortal3ThemeBlockEnabled: false,
   hmNewsEsenThemeBlockEnabled: false,
+  hmNewsEsenLeadPackEnabled: false,
   hmNewsFeaturedCategoryStripEnabled: false,
   hmNewsYekpareKategorilerKutusuEnabled: false,
   hmNewsLeadListSidebarEnabled: false,
@@ -2985,6 +2994,7 @@ export function parseNewsSiteLayoutFromJson(
     const newsPwaInstallEnabledRaw = (j as { hmNewsPwaInstallEnabled?: unknown }).hmNewsPwaInstallEnabled;
     const newsPortal3ThemeBlockEnabledRaw = (j as { hmNewsPortal3ThemeBlockEnabled?: unknown }).hmNewsPortal3ThemeBlockEnabled;
     const newsEsenThemeBlockEnabledRaw = (j as { hmNewsEsenThemeBlockEnabled?: unknown }).hmNewsEsenThemeBlockEnabled;
+    const newsEsenLeadPackEnabledRaw = (j as { hmNewsEsenLeadPackEnabled?: unknown }).hmNewsEsenLeadPackEnabled;
     const newsFeaturedCategoryStripEnabledRaw = (j as { hmNewsFeaturedCategoryStripEnabled?: unknown }).hmNewsFeaturedCategoryStripEnabled;
     const newsYekpareKategorilerKutusuEnabledRaw = (j as { hmNewsYekpareKategorilerKutusuEnabled?: unknown }).hmNewsYekpareKategorilerKutusuEnabled;
     const newsLeadListSidebarEnabledRaw = (j as { hmNewsLeadListSidebarEnabled?: unknown }).hmNewsLeadListSidebarEnabled;
@@ -3257,6 +3267,7 @@ export function parseNewsSiteLayoutFromJson(
         "portal3ThemeBlock",
       ),
       hmNewsEsenThemeBlockEnabled: normalizeThemeDefaultHiddenToggle(newsEsenThemeBlockEnabledRaw, hmVitrinTheme, "esenThemeBlock"),
+      hmNewsEsenLeadPackEnabled: normalizeThemeDefaultHiddenToggle(newsEsenLeadPackEnabledRaw, hmVitrinTheme, "esenLeadPack"),
       hmNewsFeaturedCategoryStripEnabled: normalizeThemeDefaultHiddenToggle(
         newsFeaturedCategoryStripEnabledRaw,
         hmVitrinTheme,
