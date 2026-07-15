@@ -48,10 +48,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping deploy (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID missing)."
+            echo "::notice::Skipping deploy (CLOUDFLARE_API_TOKEN missing)."
             exit 0
+          fi
+          # ACCOUNT_ID secret boş kalabiliyor; Worker account sabiti
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "CLOUDFLARE_ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
           fi
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
@@ -91,7 +95,7 @@ jobs:
         if: steps.cf.outputs.enabled == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
@@ -106,5 +110,5 @@ jobs:
         if: steps.cf.outputs.enabled == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
         run: pnpm exec wrangler deploy

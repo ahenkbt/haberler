@@ -1,0 +1,74 @@
+# Production API: https://goalgo-y7ze.onrender.com
+# Site içi RSS hotfix (main) Render’a düşmeden canlıda rss:0 kalır.
+#
+# Secret (zorunlu):
+#   RENDER_DEPLOY_HOOK — Render Dashboard → goalgo-y7ze → Settings → Deploy Hook URL
+#
+# Hook yoksa job skip eder (başarısız sayılmaz); Manual Deploy gerekir.
+name: Render Production Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "goalgo/artifacts/api-server/**"
+      - "goalgo/lib/**"
+      - "goalgo/Dockerfile"
+      - "goalgo/package.json"
+      - "goalgo/pnpm-lock.yaml"
+      - ".github/workflows/render-production.yml"
+
+concurrency:
+  group: render-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::notice::RENDER_DEPLOY_HOOK missing — Render Dashboard → goalgo-y7ze → Manual Deploy (Clear build cache + Deploy)."
+            echo "::notice::Site içi RSS fix (main) canlı API’ye ancak Render redeploy sonrası girer."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/render-hook.json -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK")
+          echo "hook HTTP $code"
+          head -c 400 /tmp/render-hook.json || true
+          echo
+          if [ "$code" != "200" ] && [ "$code" != "201" ] && [ "$code" != "202" ]; then
+            echo "::error::Render deploy hook failed ($code)"
+            exit 1
+          fi
+
+      - name: Wait for hybrid RSS smoke (best-effort)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "No hook — skip smoke wait."
+            exit 0
+          fi
+          echo "Waiting for Render roll-out..."
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            sleep 20
+            body=$(curl -sS --max-time 90 \
+              "https://goalgo-y7ze.onrender.com/api/news/hybrid?limit=20&siteId=1&rssScope=all&dbFirst=1" || true)
+            rss=$(printf '%s' "$body" | sed -n 's/.*"rss":\([0-9][0-9]*\).*/\1/p' | head -1)
+            echo "attempt $i rss=${rss:-?}"
+            if [ -n "$rss" ] && [ "$rss" -gt 0 ]; then
+              ok=1
+              break
+            fi
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::warning::hybrid sources.rss still 0 after wait — check Render deploy logs."
+          else
+            echo "Site içi RSS smoke OK (sources.rss>0)."
+          fi

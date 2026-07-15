@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: always-PUT rebind + counter Workers Builds overwrite 2026-07-15T19:21Z
+ * trigger: edge RSS fill + public dig DNS probe 2026-07-15T19:30Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -167,6 +167,21 @@ async function createZoneIfMissing(name) {
   return r.json?.result || null;
 }
 
+async function publicDnsProbe(fqdn) {
+  try {
+    const { Resolver } = await import("node:dns/promises");
+    const r = new Resolver();
+    r.setServers(["1.1.1.1", "8.8.8.8"]);
+    const [a, aaaa] = await Promise.all([
+      r.resolve4(fqdn).catch(() => []),
+      r.resolve6(fqdn).catch(() => []),
+    ]);
+    return { a, aaaa };
+  } catch (e) {
+    return { a: [], aaaa: [], err: String(e?.message || e) };
+  }
+}
+
 async function fixZone(name) {
   console.log(`\n===== ${name} =====`);
   let zone = await getZone(name);
@@ -181,11 +196,33 @@ async function fixZone(name) {
   await ensureProxiedOriginlessA(zone.id, name, "@", name);
   await ensureProxiedOriginlessA(zone.id, name, "www", `www.${name}`);
   const dnsList = await cf(`/zones/${zone.id}/dns_records?per_page=100`);
+  if (!dnsList.ok) {
+    console.log(
+      `[fix] DNS LIST FAIL (token Zone DNS Edit yok) status=${dnsList.status}`,
+      JSON.stringify(dnsList.json?.errors || {}),
+    );
+  }
   const dnsRows = (dnsList.json?.result || []).filter((r) => ["A", "AAAA", "CNAME"].includes(r.type));
   console.log(
-    `[fix] dns summary`,
-    dnsRows.map((r) => `${r.type} ${r.name}→${r.content} proxied=${r.proxied}`).join(" | ") || "(empty)",
+    `[fix] dns api summary`,
+    dnsRows.map((r) => `${r.type} ${r.name}→${r.content} proxied=${r.proxied}`).join(" | ") || "(empty/unreadable)",
   );
+  for (const fqdn of [name, `www.${name}`]) {
+    const dig = await publicDnsProbe(fqdn);
+    const answers = [...(dig.a || []), ...(dig.aaaa || [])];
+    console.log(
+      `[fix] public dig ${fqdn}:`,
+      answers.length ? answers.join(", ") : "NO A/AAAA (zone boş veya yanlış hesap)",
+    );
+    if (!answers.length) {
+      console.warn(
+        `[fix] ACTION: Cloudflare DNS’te ${fqdn} için Proxied A → 192.0.2.1 (veya AAAA 100::) kaydı YOK.`,
+      );
+      console.warn(
+        `[fix] Dashboard’da kayıt görürseniz farklı Cloudflare hesabındasınız — NS: becky/keanu.ns.cloudflare.com olan zone’u kontrol edin (zone id=${zone.id}).`,
+      );
+    }
+  }
   await ensureRoutes(zone.id, name);
   await attachCustomDomain(name);
   await attachCustomDomain(`www.${name}`);
