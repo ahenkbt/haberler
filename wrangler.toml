@@ -65,3 +65,6 @@ custom_domain = true
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
+
+# Zone whois CF NS'te ama hesapta yoksa deploy düşebilir — ayrı commit ile deneriz.
+# vatankahramanlari.org / vatanhaber.net → cf-fix-originless-dns.mjs + CLOUDFLARE_API_TOKEN

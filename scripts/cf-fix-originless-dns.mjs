@@ -141,10 +141,11 @@ async function tryWranglerDeploy() {
     const upstreamPkg = dirname(require.resolve("wrangler-upstream/package.json"));
     const bin = join(upstreamPkg, "bin", "wrangler.js");
     console.log("\n[fix] wrangler deploy (custom_domain)...");
+    const root = join(dirname(fileURLToPath(import.meta.url)), "..");
     const r = spawnSync(process.execPath, [bin, "deploy"], {
       stdio: "inherit",
       env: process.env,
-      cwd: join(dirname(new URL(import.meta.url).pathname), ".."),
+      cwd: root,
     });
     console.log("[fix] wrangler deploy status", r.status);
   } catch (e) {
@@ -154,7 +155,14 @@ async function tryWranglerDeploy() {
 
 async function main() {
   if (!token()) {
-    console.warn("[fix] NO CLOUDFLARE_API_TOKEN — trying wrangler deploy only");
+    console.warn("[fix] NO CLOUDFLARE_API_TOKEN — cannot create zones/DNS via API.");
+    console.warn("[fix] Dashboard (zorunlu adımlar):");
+    console.warn("  1) Cloudflare → Add site: vatankahramanlari.org");
+    console.warn("  2) DNS → AAAA @ / www → 100:: (Proxied)");
+    console.warn("  3) Workers → haberler → Custom domains → add hostnames");
+    console.warn("  4) vatanhaber.net: Squarespace Domains'te clientHold kaldır");
+    console.warn("     sonra aynı 1–3 adımları");
+    console.warn("  GitHub secret: CLOUDFLARE_API_TOKEN (Zone DNS Edit + Workers Routes)");
     await tryWranglerDeploy();
     return;
   }
