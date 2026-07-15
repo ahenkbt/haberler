@@ -10,19 +10,11 @@ workers_dev = true
 [vars]
 API_ORIGIN = "https://goalgo-y7ze.onrender.com"
 
-# Cloudflare zone yekpare.net → Worker (Netlify origin'i ezer)
-[[routes]]
-pattern = "yekpare.net/*"
-zone_name = "yekpare.net"
-
-[[routes]]
-pattern = "www.yekpare.net/*"
-zone_name = "yekpare.net"
-
+# custom_domain=true → Cloudflare DNS kaydını da yönetir (www için kritik)
 [[routes]]
 pattern = "yekpare.net"
-zone_name = "yekpare.net"
+custom_domain = true
 
 [[routes]]
 pattern = "www.yekpare.net"
-zone_name = "yekpare.net"
+custom_domain = true
