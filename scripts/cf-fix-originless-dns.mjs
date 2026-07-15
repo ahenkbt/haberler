@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: edge RSS fill + public dig DNS probe 2026-07-15T19:30Z
+ * trigger: emergency rebind 522/netlify/asg 2026-07-15T20:06Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
