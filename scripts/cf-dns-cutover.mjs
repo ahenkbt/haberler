@@ -104,36 +104,58 @@ async function attachWorkerHostname(auth, hostname) {
   return r.ok;
 }
 
-async function ensureWwwDns(auth, zoneId, zoneName) {
-  const list = await cf(`/zones/${zoneId}/dns_records?name=www.${zoneName}&per_page=50`, auth);
-  const existing = list.json?.result || [];
-  if (existing.length) {
-    for (const rec of existing) {
-      if (!rec.proxied && ["A", "AAAA", "CNAME"].includes(rec.type)) {
+/**
+ * Originless Worker DNS — proxied AAAA 100:: (IPv6 discard).
+ * Error 1016 = Cloudflare zone var ama çözümleyen A/AAAA/CNAME yok.
+ */
+async function ensureOriginlessDns(auth, zoneId, zoneName) {
+  const targets = [
+    { name: "@", fqdn: zoneName },
+    { name: "www", fqdn: `www.${zoneName}` },
+  ];
+  for (const { name, fqdn } of targets) {
+    const list = await cf(
+      `/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`,
+      auth,
+    );
+    const records = list.json?.result || [];
+    let hasProxied = false;
+    for (const rec of records) {
+      if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
+      const content = String(rec.content || "").toLowerCase();
+      const broken =
+        content.includes("netlify") ||
+        content.includes("ntl.") ||
+        content.includes("invalid") ||
+        content.includes("park");
+      if (broken) {
+        await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE", ...auth });
+        console.log(`[cutover] deleted broken ${rec.type} ${rec.name} → ${rec.content}`);
+        continue;
+      }
+      if (!rec.proxied) {
         await cf(
           `/zones/${zoneId}/dns_records/${rec.id}`,
           { method: "PATCH", body: { proxied: true }, ...auth },
         );
-        console.log(`[cutover] proxied existing ${rec.type} ${rec.name}`);
+        console.log(`[cutover] proxied ${rec.type} ${rec.name}`);
       }
+      hasProxied = true;
     }
-    return;
+    if (hasProxied) {
+      console.log(`[cutover] DNS ok ${fqdn}`);
+      continue;
+    }
+    const created = await cf(`/zones/${zoneId}/dns_records`, {
+      method: "POST",
+      body: { type: "AAAA", name, content: "100::", proxied: true, ttl: 1 },
+      ...auth,
+    });
+    console.log(
+      `[cutover] AAAA 100:: ${fqdn} ok=${created.ok}`,
+      JSON.stringify(created.json?.errors || { id: created.json?.result?.id }),
+    );
   }
-  const created = await cf(`/zones/${zoneId}/dns_records`, {
-    method: "POST",
-    body: { type: "CNAME", name: "www", content: zoneName, proxied: true, ttl: 1 },
-    ...auth,
-  });
-  if (created.ok) {
-    console.log(`[cutover] created www CNAME`);
-    return;
-  }
-  const aaaa = await cf(`/zones/${zoneId}/dns_records`, {
-    method: "POST",
-    body: { type: "AAAA", name: "www", content: "100::", proxied: true, ttl: 1 },
-    ...auth,
-  });
-  console.log(`[cutover] www AAAA ok=${aaaa.ok}`, JSON.stringify(aaaa.json?.errors || {}));
 }
 
 async function purgeNetlify(auth, zoneId, zoneName) {
@@ -200,7 +222,7 @@ async function cutoverZone(auth, zoneName) {
   }
   console.log(`[cutover] zone ${zoneName}=${zoneId}`);
   await purgeNetlify(auth, zoneId, zoneName);
-  await ensureWwwDns(auth, zoneId, zoneName);
+  await ensureOriginlessDns(auth, zoneId, zoneName);
   await ensureRoutes(auth, zoneId, zoneName);
   await attachWorkerHostname(auth, zoneName);
   await attachWorkerHostname(auth, `www.${zoneName}`);

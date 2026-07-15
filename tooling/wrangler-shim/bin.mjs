@@ -30,6 +30,11 @@ if (isDeploy && !args.includes("--dry-run")) {
   if ((pur.status ?? 1) !== 0) {
     console.warn("[wrangler-shim] HM cache purge script failed (non-fatal)");
   }
+  const fixDns = join(root, "scripts", "cf-fix-originless-dns.mjs");
+  const fix = spawnSync(process.execPath, [fixDns], { stdio: "inherit", env: process.env });
+  if ((fix.status ?? 1) !== 0) {
+    console.warn("[wrangler-shim] originless DNS fix failed (non-fatal)");
+  }
 }
 
 process.exit(0);

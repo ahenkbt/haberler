@@ -55,3 +55,30 @@ zone_name = "turk.eco"
 [[routes]]
 pattern = "www.turk.eco"
 zone_name = "turk.eco"
+
+# --- Error 1016 fix: originless Worker Custom Domains ---
+# Zone Cloudflare'de ama A/AAAA yok → CF Origin DNS error.
+# custom_domain DNS + sertifika oluşturur; AAAA 100:: cutover yedeği.
+[[routes]]
+pattern = "ankarasehirgazetesi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "vatankahramanlari.org"
+custom_domain = true
+
+[[routes]]
+pattern = "www.vatankahramanlari.org"
+custom_domain = true
+
+[[routes]]
+pattern = "vatanhaber.net"
+custom_domain = true
+
+[[routes]]
+pattern = "www.vatanhaber.net"
+custom_domain = true

@@ -1,0 +1,67 @@
+# Error 1016 / ERR_FAILED — HM alanları için originless DNS + Worker custom domain
+# Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+name: Fix HM Originless DNS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/cloudflare-pages-render-bcc3
+      - main
+    paths:
+      - "scripts/cf-fix-originless-dns.mjs"
+      - "scripts/cf-dns-cutover.mjs"
+      - "wrangler.toml"
+      - "cloudflare/worker.js"
+      - ".github/workflows/cf-fix-hm-dns.yml"
+
+concurrency:
+  group: cf-fix-hm-dns
+  cancel-in-progress: false
+
+jobs:
+  fix-dns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check CF token
+        id: cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::error::CLOUDFLARE_API_TOKEN missing — add GitHub secret to fix Error 1016 DNS."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
+          else
+            echo "ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
+          fi
+
+      - uses: pnpm/action-setup@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install wrangler
+        if: steps.cf.outputs.enabled == 'true'
+        run: pnpm install
+
+      - name: Fix originless DNS + attach Worker
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
+        run: node scripts/cf-fix-originless-dns.mjs
