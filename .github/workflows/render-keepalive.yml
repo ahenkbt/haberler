@@ -19,7 +19,10 @@ jobs:
           for url in \
             "https://goalgo-y7ze.onrender.com/api/healthz/live" \
             "https://goalgo-y7ze.onrender.com/api/healthz" \
-            "https://yekpare.net/api/healthz/live"; do
+            "https://yekpare.net/api/healthz/live" \
+            "https://ankarahabergundemi.com/" \
+            "https://ankarasehirgazetesi.com/" \
+            "https://vatanhaber.net/"; do
             code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$url")
             echo "$url -> $code"
           done

@@ -18,7 +18,88 @@ zone_name = "yekpare.net"
 pattern = "yekpare.net"
 zone_name = "yekpare.net"
 
-# www: DNS yoksa custom_domain kaydı oluşturur
 [[routes]]
 pattern = "www.yekpare.net"
 custom_domain = true
+
+# HM editör siteleri (Cloudflare zone → Worker → Render)
+[[routes]]
+pattern = "ankarahabergundemi.com/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "turk.eco/*"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "turk.eco"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "www.turk.eco/*"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "www.turk.eco"
+zone_name = "turk.eco"
+
+# Error 1016: zone aktif ama origin yok — custom_domain Worker DNS oluşturur
+[[routes]]
+pattern = "ankarasehirgazetesi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatanhaber.net/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net"
+zone_name = "vatanhaber.net"

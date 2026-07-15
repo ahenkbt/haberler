@@ -27,7 +27,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "ankarahabergundemi.com",
   "www.ankarahabergundemi.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715c";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715e";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -247,6 +247,47 @@ function proxyInit(request, origin, incoming) {
   return init;
 }
 
+function isStaticAssetPath(pathname) {
+  return (
+    /\.(js|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif)(\?|$)/i.test(pathname) ||
+    pathname.startsWith("/assets/") ||
+    pathname.includes("/public/assets/")
+  );
+}
+
+function upstreamCfCacheOptions(pathname, method) {
+  if (method !== "GET" && method !== "HEAD") {
+    return { cacheTtl: 0, cacheEverything: false };
+  }
+  if (isStaticAssetPath(pathname)) {
+    return { cacheTtl: 86400, cacheEverything: true };
+  }
+  if (pathname.startsWith("/api/hm/meta/")) {
+    return { cacheTtl: 120, cacheEverything: true };
+  }
+  return { cacheTtl: 0, cacheEverything: false };
+}
+
+async function fetchUpstreamWithRetry(url, init, cfOpts, retries = 2) {
+  let lastErr = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const res = await fetch(url, { ...init, cf: cfOpts });
+      if ([502, 503, 504].includes(res.status) && attempt < retries) {
+        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr || new Error("upstream_unavailable");
+}
+
 /**
  * Edge soft-redirect: HM özel alan kökü → /tr/{slug}
  * (Vercel middleware CF Worker yolunda çalışmadığı için Worker'da tekrarlanır.)
@@ -321,17 +362,25 @@ export default {
     const purgeCookie = purgeCookieName(incoming.hostname);
 
     try {
-      // Edge cache (varsa) bu istek için bypass
-      const upstream = await fetch(target.toString(), {
-        ...proxyInit(request, origin, incoming),
-        cf: { cacheTtl: 0, cacheEverything: false },
-      });
+      const cfOpts = upstreamCfCacheOptions(incoming.pathname, request.method);
+      const upstream = await fetchUpstreamWithRetry(
+        target.toString(),
+        proxyInit(request, origin, incoming),
+        cfOpts,
+      );
       const out = new Headers(upstream.headers);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
       out.set("x-yekpare-frontend", "cloudflare-render-proxy");
       out.set("x-yekpare-upstream", origin);
-      out.set("cdn-cache-control", "no-store");
+      if (isStaticAssetPath(incoming.pathname)) {
+        out.set("cdn-cache-control", "public, max-age=86400");
+        if (!out.get("cache-control")) {
+          out.set("cache-control", "public, max-age=86400, immutable");
+        }
+      } else {
+        out.set("cdn-cache-control", "no-store");
+      }
 
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {

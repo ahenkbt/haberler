@@ -1,9 +1,7 @@
 /**
- * Error 1016 / ERR_FAILED: Cloudflare zone var, origin DNS yok.
- * Proxied AAAA 100:: + Worker route/custom domain.
+ * Error 1016 / Netlify 404 / 522: Worker route rebind + originless DNS + script upload.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: chrome ERR_FAILED Clear-Site-Data fix deploy 2026-07-15T18:56Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -46,20 +44,45 @@ async function getZone(name) {
   return r.json?.result?.[0] || null;
 }
 
-async function ensureAaaa100(zoneId, zoneName, name, fqdn) {
+function isNetlifyOrigin(content) {
+  const c = String(content || "").toLowerCase();
+  return c.includes("netlify") || c.includes("ntl.") || c.includes("netlifyglobalcdn");
+}
+
+function isWorkerDnsRecord(rec) {
+  const content = String(rec.content || "").trim().toLowerCase();
+  const type = String(rec.type || "").toLowerCase();
+  return type === "worker" || content === SCRIPT || content === `${SCRIPT}.workers.dev`;
+}
+
+async function purgeNetlifyDns(zoneId, fqdn) {
+  const list = await cf(
+    `/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`,
+  );
+  for (const rec of list.json?.result || []) {
+    if (isNetlifyOrigin(rec.content)) {
+      await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE" });
+      console.log(`[fix] deleted netlify ${rec.type} ${rec.name} → ${rec.content}`);
+    }
+  }
+}
+
+async function ensureOriginlessDns(zoneId, zoneName, name, fqdn) {
+  await purgeNetlifyDns(zoneId, fqdn);
+
   const list = await cf(
     `/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`,
   );
   const records = list.json?.result || [];
+
+  if (records.some(isWorkerDnsRecord)) {
+    console.log(`[fix] worker dns record ok ${fqdn}`);
+    return;
+  }
+
   for (const rec of records) {
     if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
-    const content = String(rec.content || "").toLowerCase();
-    if (content.includes("netlify") || content.includes("ntl.")) {
-      await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE" });
-      console.log(`[fix] deleted ${rec.type} ${rec.name}`);
-      continue;
-    }
-    if (rec.type === "AAAA" && content === "100::") {
+    if (rec.type === "AAAA" && String(rec.content).toLowerCase() === "100::") {
       if (!rec.proxied) {
         await cf(`/zones/${zoneId}/dns_records/${rec.id}`, {
           method: "PATCH",
@@ -69,16 +92,32 @@ async function ensureAaaa100(zoneId, zoneName, name, fqdn) {
       console.log(`[fix] already AAAA 100:: ${fqdn}`);
       return;
     }
-    if (rec.proxied) {
+    if (rec.type === "A" && String(rec.content) === "192.0.2.1" && rec.proxied) {
+      console.log(`[fix] already A 192.0.2.1 proxied ${fqdn}`);
+      return;
+    }
+    if (rec.proxied && !isNetlifyOrigin(rec.content)) {
       console.log(`[fix] keep ${rec.type} ${fqdn} → ${rec.content}`);
       return;
     }
   }
-  const created = await cf(`/zones/${zoneId}/dns_records`, {
+
+  const aaaa = await cf(`/zones/${zoneId}/dns_records`, {
     method: "POST",
     body: { type: "AAAA", name, content: "100::", proxied: true, ttl: 1 },
   });
-  console.log(`[fix] create AAAA 100:: ${fqdn} ok=${created.ok}`, JSON.stringify(created.json?.errors || {}));
+  if (aaaa.ok) {
+    console.log(`[fix] create AAAA 100:: ${fqdn}`);
+    return;
+  }
+  const a = await cf(`/zones/${zoneId}/dns_records`, {
+    method: "POST",
+    body: { type: "A", name, content: "192.0.2.1", proxied: true, ttl: 1 },
+  });
+  console.log(
+    `[fix] create A 192.0.2.1 ${fqdn} ok=${a.ok}`,
+    JSON.stringify(a.json?.errors || aaaa.json?.errors || {}),
+  );
 }
 
 async function ensureRoutes(zoneId, zoneName) {
@@ -88,16 +127,14 @@ async function ensureRoutes(zoneId, zoneName) {
   for (const pattern of [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`]) {
     const row = byPattern.get(pattern);
     if (row?.id) {
-      // Force-rebind: route var ama script boş/eski → Error 522 / Netlify 404
-      if (String(row.script || "") !== SCRIPT) {
-        const r = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, {
-          method: "PUT",
-          body: { pattern, script: SCRIPT },
-        });
-        console.log(`[fix] rebind ${pattern} → ${SCRIPT} ok=${r.ok}`, JSON.stringify(r.json?.errors || {}));
-      } else {
-        console.log(`[fix] route ok ${pattern} → ${SCRIPT}`);
-      }
+      const r = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, {
+        method: "PUT",
+        body: { pattern, script: SCRIPT },
+      });
+      console.log(
+        `[fix] rebind ${pattern} → ${SCRIPT} (was:${row.script || "∅"}) ok=${r.ok}`,
+        JSON.stringify(r.json?.errors || {}),
+      );
       continue;
     }
     const r = await cf(`/zones/${zoneId}/workers/routes`, {
@@ -114,44 +151,15 @@ async function attachCustomDomain(hostname) {
     body: { hostname, service: SCRIPT, environment: "production" },
   });
   const err = r.json?.errors?.[0];
-  // 100117: elle A/AAAA var — zone Workers Route yeterli, custom_domain şart değil
   if (!r.ok && err?.code === 100117) {
-    console.log(`[fix] workers/domains ${hostname} skip (external DNS; use zone routes)`);
+    console.log(`[fix] workers/domains ${hostname} skip (external DNS; zone routes)`);
     return true;
   }
-  console.log(`[fix] workers/domains ${hostname} ok=${r.ok}`, JSON.stringify(r.json?.errors || r.json?.result || {}));
-  return r.ok;
-}
-
-/** Proxied A 192.0.2.1 — Worker originless IPv4 (522 = Worker route yokken bu IP'ye gidilir). */
-async function ensureProxiedOriginlessA(zoneId, zoneName, name, fqdn) {
-  const list = await cf(
-    `/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`,
-  );
-  const records = list.json?.result || [];
-  for (const rec of records) {
-    if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
-    if (rec.type === "A" && String(rec.content) === "192.0.2.1") {
-      if (!rec.proxied) {
-        await cf(`/zones/${zoneId}/dns_records/${rec.id}`, {
-          method: "PATCH",
-          body: { proxied: true },
-        });
-        console.log(`[fix] proxied A 192.0.2.1 ${fqdn}`);
-      } else {
-        console.log(`[fix] already A 192.0.2.1 proxied ${fqdn}`);
-      }
-      return;
-    }
-  }
-  const created = await cf(`/zones/${zoneId}/dns_records`, {
-    method: "POST",
-    body: { type: "A", name, content: "192.0.2.1", proxied: true, ttl: 1 },
-  });
   console.log(
-    `[fix] create A 192.0.2.1 ${fqdn} ok=${created.ok}`,
-    JSON.stringify(created.json?.errors || {}),
+    `[fix] workers/domains ${hostname} ok=${r.ok}`,
+    JSON.stringify(r.json?.errors || r.json?.result || {}),
   );
+  return r.ok;
 }
 
 async function createZoneIfMissing(name) {
@@ -168,6 +176,37 @@ async function createZoneIfMissing(name) {
   return r.json?.result || null;
 }
 
+async function publicDnsProbe(fqdn) {
+  try {
+    const res = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(fqdn)}&type=A`,
+      { headers: { accept: "application/dns-json" } },
+    );
+    const json = await res.json().catch(() => ({}));
+    const answers = (json.Answer || []).map((a) => a.data).filter(Boolean);
+    return answers;
+  } catch (e) {
+    return { err: String(e?.message || e) };
+  }
+}
+
+async function probeWorkerLive(hostname) {
+  try {
+    const res = await fetch(`https://${hostname}/`, {
+      method: "HEAD",
+      redirect: "manual",
+      signal: AbortSignal.timeout(15000),
+    });
+    const viaWorker =
+      res.headers.get("x-yekpare-frontend") === "cloudflare-render-proxy" ||
+      res.headers.get("x-yekpare-upstream") != null;
+    const viaNetlify = res.headers.get("x-nf-request-id") != null;
+    return { status: res.status, viaWorker, viaNetlify };
+  } catch (e) {
+    return { status: 0, err: String(e?.message || e) };
+  }
+}
+
 async function fixZone(name) {
   console.log(`\n===== ${name} =====`);
   let zone = await getZone(name);
@@ -177,19 +216,32 @@ async function fixZone(name) {
     return false;
   }
   console.log(`[fix] zone id=${zone.id} status=${zone.status}`);
-  await ensureAaaa100(zone.id, name, "@", name);
-  await ensureAaaa100(zone.id, name, "www", `www.${name}`);
-  await ensureProxiedOriginlessA(zone.id, name, "@", name);
-  await ensureProxiedOriginlessA(zone.id, name, "www", `www.${name}`);
+  await ensureOriginlessDns(zone.id, name, "@", name);
+  await ensureOriginlessDns(zone.id, name, "www", `www.${name}`);
+  await ensureRoutes(zone.id, name);
+  await attachCustomDomain(name);
+  await attachCustomDomain(`www.${name}`);
+
   const dnsList = await cf(`/zones/${zone.id}/dns_records?per_page=100`);
-  const dnsRows = (dnsList.json?.result || []).filter((r) => ["A", "AAAA", "CNAME"].includes(r.type));
+  const dnsRows = (dnsList.json?.result || []).filter((r) =>
+    ["A", "AAAA", "CNAME", "Worker"].includes(r.type),
+  );
   console.log(
     `[fix] dns summary`,
     dnsRows.map((r) => `${r.type} ${r.name}→${r.content} proxied=${r.proxied}`).join(" | ") || "(empty)",
   );
-  await ensureRoutes(zone.id, name);
-  await attachCustomDomain(name);
-  await attachCustomDomain(`www.${name}`);
+
+  for (const fqdn of [name, `www.${name}`]) {
+    const answers = await publicDnsProbe(fqdn);
+    console.log(`[fix] public dig ${fqdn}:`, Array.isArray(answers) && answers.length ? answers.join(", ") : "NO A");
+  }
+
+  const live = await probeWorkerLive(name);
+  console.log(`[fix] live probe ${name}:`, JSON.stringify(live));
+  if (live.viaNetlify) {
+    console.warn(`[fix] WARN ${name} still hitting Netlify — route/DNS rebind may need 1–2 min`);
+  }
+
   const purge = await cf(`/zones/${zone.id}/purge_cache`, {
     method: "POST",
     body: { purge_everything: true },
@@ -220,15 +272,8 @@ async function uploadWorkerScriptViaApi() {
     ],
   };
   const form = new FormData();
-  form.set(
-    "metadata",
-    new Blob([JSON.stringify(metadata)], { type: "application/json" }),
-  );
-  form.set(
-    "worker.js",
-    new Blob([source], { type: "application/javascript+module" }),
-    "worker.js",
-  );
+  form.set("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.set("worker.js", new Blob([source], { type: "application/javascript+module" }), "worker.js");
 
   const t = token();
   if (!t) {
@@ -248,7 +293,6 @@ async function uploadWorkerScriptViaApi() {
 }
 
 async function tryWranglerDeploy() {
-  // Prefer API upload — no wrangler resolution / shim recursion issues.
   if (await uploadWorkerScriptViaApi()) return true;
 
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -261,23 +305,9 @@ async function tryWranglerDeploy() {
   } catch {
     /* ignore */
   }
-  // pnpm may hoist under .pnpm
-  const pnpmStore = join(root, "node_modules", ".pnpm");
-  if (existsSync(pnpmStore)) {
-    try {
-      const { readdirSync } = await import("node:fs");
-      for (const name of readdirSync(pnpmStore)) {
-        if (!name.startsWith("wrangler@")) continue;
-        const bin = join(pnpmStore, name, "node_modules", "wrangler", "bin", "wrangler.js");
-        if (existsSync(bin)) candidates.push(bin);
-      }
-    } catch {
-      /* ignore */
-    }
-  }
   const resolved = candidates.find((p) => existsSync(p));
   if (!resolved) {
-    console.log("[fix] wrangler deploy skip — binary not found", candidates);
+    console.log("[fix] wrangler deploy skip — binary not found");
     return false;
   }
   console.log("\n[fix] wrangler deploy fallback...", resolved);
@@ -292,14 +322,7 @@ async function tryWranglerDeploy() {
 
 async function main() {
   if (!token()) {
-    console.warn("[fix] NO CLOUDFLARE_API_TOKEN — cannot create zones/DNS via API.");
-    console.warn("[fix] Dashboard (zorunlu adımlar):");
-    console.warn("  1) Cloudflare → Add site: vatankahramanlari.org");
-    console.warn("  2) DNS → AAAA @ / www → 100:: (Proxied)");
-    console.warn("  3) Workers → haberler → Custom domains → add hostnames");
-    console.warn("  4) vatanhaber.net: Squarespace Domains'te clientHold kaldır");
-    console.warn("     sonra aynı 1–3 adımları");
-    console.warn("  GitHub secret: CLOUDFLARE_API_TOKEN (Zone DNS Edit + Workers Routes)");
+    console.warn("[fix] NO CLOUDFLARE_API_TOKEN — cannot fix DNS/routes via API.");
     await tryWranglerDeploy();
     return;
   }
@@ -310,7 +333,7 @@ async function main() {
   console.log(`\n[fix] zones fixed: ${ok}/${ZONES.length}`);
   const deployed = await tryWranglerDeploy();
   if (!deployed) {
-    console.error("[fix] FATAL: Worker script deploy failed — Chrome ERR_FAILED fix not live");
+    console.error("[fix] FATAL: Worker script deploy failed");
     process.exitCode = 1;
   }
 }
