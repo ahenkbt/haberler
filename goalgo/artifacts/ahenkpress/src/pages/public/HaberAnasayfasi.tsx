@@ -2949,9 +2949,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           yekparePoolReceiveEnabled: hmYekparePoolReceiveEnabled,
           mansetFallbackItems: mansetTaggedSideFallbackItems,
         });
-        const heroSideWidenPools = siteId != null ? ([] as const) : ([moduleSectionSourcePool, latestNewsPool, popular] as const);
+        // HM sitelerde de yerel son haberlerle yan kart doldur (yekpare/manşet havuzu boş kalabiliyor).
+        const heroSideWidenPools = [moduleSectionSourcePool, latestNewsPool, popular, classicLatestMini] as const;
         const heroSideSourcePool = sortNewsByRecency(
-          mergeUniqueNews(headlineSidePool, ...(siteId != null ? [] : heroSideWidenPools)),
+          mergeUniqueNews(headlineSidePool, ...heroSideWidenPools),
         );
         const mansetSideResolve =
           effectiveMansetVariant === "center-trio" || effectiveMansetVariant === "slider-side-band"
@@ -4113,20 +4114,27 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const esenVideoModuleEnabled = mediaDarkModulesEnabled;
     const esenLeadPackEnabled = resolveHmNewsHomeModuleEnabled(layoutPrefs, "esenLeadPack");
     const headlineRest = classicHeadlinePool.slice(1);
+    // Manşet (hero) önce yer kaplar; lead-pack aynı dedupe havuzunu manşetten SONRA kullanmalı.
+    // Bu yüzden burada rememberModuleItems çağırmıyoruz — hero render sırasında claim eder.
     const leadPackBasePool = sortNewsByRecency(
       mergeUniqueNews(latestNewsPool, bandNewsItems, allItems, classicLatestMini, headlineRest.slice(4)).filter(
         isHeadlineFreshEnough,
       ),
     );
-    const leadPackColumns = pickCategoryAwareNewsColumns(
+    // Slider manşetindeki haberleri lead-pack'ten düş (sol/sağ manşet kartları da hero tarafında ayrı seçilir).
+    const leadPackPoolExcludingSlider = excludeHeadlineSliderItems(
       leadPackBasePool,
+      classicHeadlineSliderItems,
+    );
+    const leadPackUnused = homeNewsDedupe.filterUnused(leadPackPoolExcludingSlider);
+    const leadPackColumns = pickCategoryAwareNewsColumns(
+      leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider,
       HM_ESEN_LEAD_PACK_LEFT_COUNT,
       HM_ESEN_LEAD_PACK_RIGHT_COUNT,
       featuredCategorySlug,
       homeCategoryMatchContext,
-      leadPackBasePool,
+      leadPackPoolExcludingSlider,
     );
-    rememberModuleItems([...leadPackColumns.left, ...leadPackColumns.right]);
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
     const esenTodayHighlightItems = pickSidebarNews(todayHighlightMini, 6);
     const esenBottomWidgetNews =
@@ -4369,7 +4377,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       yekparePoolReceiveEnabled: hmYekparePoolReceiveEnabled,
       mansetFallbackItems: mansetTaggedSideFallbackItems,
     });
-    const classicSideWidenPools = siteId != null ? ([] as const) : ([moduleSectionSourcePool, latestNewsPool, popular] as const);
+    const classicSideWidenPools = [moduleSectionSourcePool, latestNewsPool, popular, classicLatestMini] as const;
     const classicSideSourcePool = sortNewsByRecency(
       mergeUniqueNews(
         classicMansetSidePrimaryPool.length > 0 ? classicMansetSidePrimaryPool : classicBelowHeroPool,
