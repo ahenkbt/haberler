@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: chrome ERR_FAILED Clear-Site-Data fix deploy 2026-07-15T18:56Z
+ * trigger: always-PUT rebind + counter Workers Builds overwrite 2026-07-15T19:21Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -88,16 +88,15 @@ async function ensureRoutes(zoneId, zoneName) {
   for (const pattern of [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`]) {
     const row = byPattern.get(pattern);
     if (row?.id) {
-      // Force-rebind: route var ama script boş/eski → Error 522 / Netlify 404
-      if (String(row.script || "") !== SCRIPT) {
-        const r = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, {
-          method: "PUT",
-          body: { pattern, script: SCRIPT },
-        });
-        console.log(`[fix] rebind ${pattern} → ${SCRIPT} ok=${r.ok}`, JSON.stringify(r.json?.errors || {}));
-      } else {
-        console.log(`[fix] route ok ${pattern} → ${SCRIPT}`);
-      }
+      // Her zaman PUT — script “haberler” görünse bile binding flake’i 522/Netlify404 yapıyor
+      const r = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, {
+        method: "PUT",
+        body: { pattern, script: SCRIPT },
+      });
+      console.log(
+        `[fix] rebind ${pattern} → ${SCRIPT} (was:${row.script || "∅"}) ok=${r.ok}`,
+        JSON.stringify(r.json?.errors || {}),
+      );
       continue;
     }
     const r = await cf(`/zones/${zoneId}/workers/routes`, {
