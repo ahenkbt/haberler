@@ -59,6 +59,17 @@ jobs:
         if: steps.cf.outputs.enabled == 'true'
         run: pnpm install
 
+      - name: Deploy Worker proxy (haberler → Render)
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
+        run: |
+          # Use real wrangler (not the local shim — shim re-enters DNS fix).
+          UPSTREAM="$(node -e "const {createRequire}=require('module');const {dirname,join}=require('path');const r=createRequire(require('path').join(process.cwd(),'tooling/wrangler-shim/package.json'));process.stdout.write(join(dirname(r.resolve('wrangler-upstream/package.json')),'bin/wrangler.js'))")"
+          echo "wrangler bin=$UPSTREAM"
+          node "$UPSTREAM" deploy
+
       - name: Fix originless DNS + attach Worker
         if: steps.cf.outputs.enabled == 'true'
         env:

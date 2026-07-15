@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: mass 522/NXDOMAIN/Netlify404 flap 2026-07-15T18:33Z
+ * trigger: chrome ERR_FAILED Clear-Site-Data fix deploy 2026-07-15T18:56Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -185,21 +185,50 @@ async function fixZone(name) {
 }
 
 async function tryWranglerDeploy() {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const candidates = [];
   try {
-    const require = createRequire(import.meta.url);
+    const require = createRequire(join(root, "tooling/wrangler-shim/package.json"));
     const upstreamPkg = dirname(require.resolve("wrangler-upstream/package.json"));
-    const bin = join(upstreamPkg, "bin", "wrangler.js");
-    console.log("\n[fix] wrangler deploy (custom_domain)...");
-    const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-    const r = spawnSync(process.execPath, [bin, "deploy"], {
-      stdio: "inherit",
-      env: process.env,
-      cwd: root,
-    });
-    console.log("[fix] wrangler deploy status", r.status);
-  } catch (e) {
-    console.log("[fix] wrangler deploy skip", e.message);
+    candidates.push(join(upstreamPkg, "bin", "wrangler.js"));
+  } catch {
+    /* ignore */
   }
+  try {
+    const require = createRequire(join(root, "package.json"));
+    const shimPkg = dirname(require.resolve("wrangler/package.json"));
+    // Prefer real upstream over local shim (shim re-enters this script after deploy).
+    const nested = join(shimPkg, "node_modules", "wrangler-upstream", "bin", "wrangler.js");
+    candidates.push(nested);
+  } catch {
+    /* ignore */
+  }
+  candidates.push(join(root, "node_modules", "wrangler-upstream", "bin", "wrangler.js"));
+
+  const bin = candidates.find((p) => {
+    try {
+      return !!createRequire(p);
+    } catch {
+      return false;
+    }
+  });
+
+  // Existence check without require() of the bin itself
+  const { existsSync } = await import("node:fs");
+  const resolved = candidates.find((p) => existsSync(p));
+  if (!resolved) {
+    console.log("[fix] wrangler deploy skip — wrangler-upstream binary not found", candidates);
+    return false;
+  }
+
+  console.log("\n[fix] wrangler deploy (upstream, no shim hooks)...", resolved);
+  const r = spawnSync(process.execPath, [resolved, "deploy"], {
+    stdio: "inherit",
+    env: { ...process.env, WRANGLER_SEND_METRICS: "false" },
+    cwd: root,
+  });
+  console.log("[fix] wrangler deploy status", r.status);
+  return (r.status ?? 1) === 0;
 }
 
 async function main() {
