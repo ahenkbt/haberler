@@ -62,8 +62,8 @@ async function newsRowBelongsToSite(
       siteId,
     );
   }
-  // Yekpare merkez havuzu (site_id NULL): haber siteleri YAYINLANMIŞ global haberi görüntüleyebilir.
-  if (row.status === "published") return true;
+  // Haber siteleri: merkez satır yalnızca özel kategori (exclusiveSiteId) ile bu siteye aitse.
+  // Canlı havuz sızıntısı / yanlış slug için “her yayınlanmış merkez benimdir” kuralı kaldırıldı.
   if (row.categoryId == null) return false;
   const [readCat, mainCat] = await Promise.all([
     readDb
@@ -93,7 +93,8 @@ export async function resolveNewsArticleBySlug(
     isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
   }
 
-  const numericId = parseInt(String(rawSlug), 10);
+  // Yalnızca tamamen sayısal id — "15-temmuz-..." parseInt ile 15'e düşüp yanlış haber açıyordu.
+  const numericId = /^\d+$/.test(String(rawSlug).trim()) ? parseInt(String(rawSlug).trim(), 10) : NaN;
   let row: typeof newsTable.$inferSelect | undefined;
 
   if (!Number.isNaN(numericId)) {
@@ -113,7 +114,9 @@ export async function resolveNewsArticleBySlug(
       .where(and(eq(newsTable.slug, rawSlug), eq(newsTable.siteId, siteId!)))
       .limit(1);
   }
-  if (!row && !isCorporate) {
+  // HM site: global slug fallback yok — başka sitenin / merkez çakışması yanlış haber üretir.
+  // Portal (siteId yok): eski davranış.
+  if (!row && !siteScoped) {
     [row] = await readDb.select().from(newsTable).where(eq(newsTable.slug, rawSlug));
   }
 
@@ -153,7 +156,7 @@ export async function resolveNewsArticleBySlug(
         .where(and(eq(newsTable.slug, rawSlug), eq(newsTable.siteId, siteId!)))
         .limit(1);
     }
-    if (!row && !isCorporate) {
+    if (!row && !siteScoped) {
       [row] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, rawSlug));
     }
   }

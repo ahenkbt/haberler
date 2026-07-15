@@ -67,7 +67,7 @@ import {
   isGlobalNewsCategoryEnabledOnSite,
   isHmGlobalNewsCategorySlug,
 } from "../lib/hm-global-news-category.js";
-import { filterCorporatePublicNewsItems } from "../lib/hm-corporate-news-policy.js";
+import { filterCorporatePublicNewsItems, centralNewsRowVisibleOnHmEditorSite, isExternalManualEditorNewsForSite } from "../lib/hm-corporate-news-policy.js";
 import { findNewsSlugByRssSourceLink, isPortalRssSyncToNewsEnabled } from "../lib/portal-rss-auto-import.js";
 import { importPortalRssNewsByCategoryBatch } from "../lib/portal-rss-category-import.js";
 import { getActiveHmNewsSiteBySlugCompat } from "../lib/hm-site-compat.js";
@@ -523,6 +523,10 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
   const yekparePoolOnly =
     String(req.query.yekparePool ?? "").trim() === "1" ||
     String(req.query.yekparePool ?? "").trim() === "true";
+  /** Editör havuz tarama — public anasayfa canlı merkez getirmez. */
+  const poolBrowse =
+    String(req.query.poolBrowse ?? "").trim() === "1" ||
+    String(req.query.poolBrowse ?? "").trim() === "true";
 
   /**
    * Editör sitesi (box hariç): Site içi RSS açıksa site feed'leri; kapalıysa Yekpare
@@ -564,7 +568,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
 
       const loadDbResult = async () => {
         if (yekparePoolOnly && siteId != null) {
-          if (hmAccess?.isCorporate) {
+          if (hmAccess?.isCorporate || hmAccess?.yekparePoolReceiveEnabled === false) {
+            return { items: [], total: 0 };
+          }
+          // Public: canlı merkez yok. Editör onay paneli poolBrowse=1 ister.
+          if (!poolBrowse) {
             return { items: [], total: 0 };
           }
           const portal = await loadPortalDbNews({ categorySlug, q, limit: dbLimit, offset: 0 });
@@ -581,6 +589,16 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
               return false;
             });
           }
+          items = items.filter((item) => {
+            if (!centralNewsRowVisibleOnHmEditorSite(item, siteId)) return false;
+            if (
+              hmAccess?.allowCrossSiteManualNews === false &&
+              isExternalManualEditorNewsForSite(item, siteId)
+            ) {
+              return false;
+            }
+            return true;
+          });
           items = await applyNewsSiteOverrides(items, siteId);
           items = filterHiddenPoolNewsItems(items, hmAccess?.hiddenPoolNewsIds);
           items = await enrichSerializedNewsListImages(items);
