@@ -1,12 +1,26 @@
-# LEGACY — Render kaldırıldı (Neon + Cloudflare Containers).
-# Bu workflow bilerek devre dışı; silinebilir.
+# Geçici: Render API sıcak tut (Neon/CF cutover tamamlanana kadar)
 name: render-keepalive
 
 on:
+  schedule:
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
+permissions: {}
+
 jobs:
-  skip:
+  ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
-      - run: echo "Render keepalive disabled — stack is Neon + Cloudflare."
+      - name: Ping Render API healthz
+        run: |
+          set +e
+          for url in \
+            "https://goalgo-y7ze.onrender.com/api/healthz/live" \
+            "https://goalgo-y7ze.onrender.com/api/healthz" \
+            "https://yekpare.net/api/healthz/live"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$url")
+            echo "$url -> $code"
+          done
+          exit 0

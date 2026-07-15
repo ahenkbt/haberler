@@ -1,24 +1,28 @@
-# Yekpare — Cloudflare Workers Static Assets
-# Workers Builds (dashboard): Deploy = npx wrangler deploy  (Build boş)
-# SPA build: package.json postinstall → scripts/cf-workers-ci-prepare.mjs (WORKERS_CI=1)
-# Node: .nvmrc = 22; wrangler pinned for Node 20 fallback
-#
-# /api → API_ORIGIN (vars). Containers ayrı oturumda eklenecek (Docker gerekir).
+# Geçici production: Worker → Render (SPA+API). Docker/SPA build YOK.
+# Workers Builds: Deploy = npx wrangler deploy
 
 name = "haberler"
 compatibility_date = "2025-07-15"
 main = "cloudflare/worker.js"
 compatibility_flags = ["nodejs_compat"]
-
-[assets]
-directory = "artifacts/ahenkpress/dist/public"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-run_worker_first = true
+workers_dev = true
 
 [vars]
-# Canlı API (Render hâlâ healthz=200). Neon cutover: API host Neon'a bağlanınca güncelle.
 API_ORIGIN = "https://goalgo-y7ze.onrender.com"
-YEKTUBE_DB_READ = "main"
-NEWS_DB_READ = "main"
-USE_NATIVE_AI_CALL = "true"
+
+# Cloudflare zone yekpare.net → Worker (Netlify origin'i ezer)
+[[routes]]
+pattern = "yekpare.net/*"
+zone_name = "yekpare.net"
+
+[[routes]]
+pattern = "www.yekpare.net/*"
+zone_name = "yekpare.net"
+
+[[routes]]
+pattern = "yekpare.net"
+zone_name = "yekpare.net"
+
+[[routes]]
+pattern = "www.yekpare.net"
+zone_name = "yekpare.net"
