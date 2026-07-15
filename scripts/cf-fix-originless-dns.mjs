@@ -83,9 +83,23 @@ async function ensureAaaa100(zoneId, zoneName, name, fqdn) {
 
 async function ensureRoutes(zoneId, zoneName) {
   const list = await cf(`/zones/${zoneId}/workers/routes`);
-  const have = new Set((list.json?.result || []).map((r) => r.pattern));
+  const existing = list.json?.result || [];
+  const byPattern = new Map(existing.map((r) => [r.pattern, r]));
   for (const pattern of [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`]) {
-    if (have.has(pattern)) continue;
+    const row = byPattern.get(pattern);
+    if (row?.id) {
+      // Force-rebind: route var ama script boş/eski → Error 522 / Netlify 404
+      if (String(row.script || "") !== SCRIPT) {
+        const r = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, {
+          method: "PUT",
+          body: { pattern, script: SCRIPT },
+        });
+        console.log(`[fix] rebind ${pattern} → ${SCRIPT} ok=${r.ok}`, JSON.stringify(r.json?.errors || {}));
+      } else {
+        console.log(`[fix] route ok ${pattern} → ${SCRIPT}`);
+      }
+      continue;
+    }
     const r = await cf(`/zones/${zoneId}/workers/routes`, {
       method: "POST",
       body: { pattern, script: SCRIPT },
