@@ -42,13 +42,14 @@ describe("manset pools", () => {
     expect(pool.map((x) => x.id)).toEqual([1]);
   });
 
-  it("normal manşet en son eklenenleri seçer (featured şartı yok)", () => {
+  it("normal manşet en son eklenenleri seçer (featured / RSS hariç)", () => {
     const pool = buildCenterMansetSliderPool({
       manualItems: [featuredOld],
       latestItems: [latestA, latestB, featuredOld, rss],
       limit: 5,
     });
-    expect(pool.map((x) => x.id)).toEqual([2, 3, 1]);
+    expect(pool.map((x) => x.id)).toEqual([2, 3]);
+    expect(pool.every((x) => x.isFeatured !== true)).toBe(true);
     expect(pool.every((x) => x.source !== "rss")).toBe(true);
   });
 });

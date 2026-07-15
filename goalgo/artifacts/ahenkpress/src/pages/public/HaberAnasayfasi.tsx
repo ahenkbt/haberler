@@ -102,7 +102,6 @@ import {
   buildHomeHeroDedupeSeedItems,
   buildHomeMansetSideHeadlineSeedItems,
   buildManualHeadlineOnlyPool,
-  buildMansetHeadlineOnlyPool,
   buildTepeMansetPool,
   buildRssAwareHeadlinePool,
   createHeadlineVisitSeed,
@@ -1948,32 +1947,36 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     [featured, allItems],
   );
   const centerMansetSliderItems = useMemo(() => {
-    let pool: any[];
-    if (useHmHomeBundle && asArray(hmHomeBundle?.centerHeadlines).length > 0) {
-      // Bundle orta manşet = en son eklenenler (featured/Manşet etiketi değil).
-      pool = asArray(hmHomeBundle?.centerHeadlines);
-    } else {
-      pool = buildCenterMansetSliderPool({
-        manualItems: featured,
+    // Orta manşet: her zaman en son eklenenler. Bundle/featured manşet etiketi buraya girmez
+    // (tepe manşet isFeatured’e özel). Prod bundle eski olsa bile client doğru havuzu kurar.
+    const pool = filterNewsItemsWithCoverImage(
+      buildCenterMansetSliderPool({
+        manualItems: [],
         latestItems: allItems,
         categorySlug: mansetCategorySlug,
-        limit: HM_HOME_HEADLINE_SLIDER_MIN,
-      });
-    }
-    pool = filterNewsItemsWithCoverImage(pool);
+        limit: HM_HOME_HEADLINE_SLIDER_LIMIT,
+      }),
+    );
     return tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
-  }, [featured, allItems, mansetCategorySlug, useHmHomeBundle, hmHomeBundle?.centerHeadlines, tepeMansetActive, tepeMansetItems]);
+  }, [allItems, mansetCategorySlug, tepeMansetActive, tepeMansetItems]);
   const mansetTaggedSideFallbackItems = useMemo(
-    () => buildMansetHeadlineOnlyPool({ manualItems: featured, latestItems: allItems }),
-    [featured, allItems],
+    () =>
+      sortNewsByRecency(
+        mergeUniqueNews(allItems).filter(
+          (item) =>
+            !isRssHybridItem(item) &&
+            (item as { isFeatured?: boolean }).isFeatured !== true,
+        ),
+      ),
+    [allItems],
   );
   const sliderNews = useMemo(() => {
     let pool: any[];
     if (!newsSliderEnabled) return [];
     if (activeTab) {
-      pool = sortNewsByRecency(allItems.filter(isHeadlineFreshEnough)).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
+      pool = sortNewsByRecency(allItems).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
     } else if (siteId != null) {
-      // HM editör siteleri: normal manşet = en son eklenen haberler (RSS manşet karışmaz).
+      // HM editör siteleri: normal manşet = en son eklenen haberler (RSS / isFeatured yok).
       pool = centerMansetSliderItems;
     } else {
       pool = buildRssAwareHeadlinePool({
@@ -1999,13 +2002,24 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       pool.push(n);
     };
 
-    const manualSide = mergeUniqueNews(featured, allItems)
-      .filter((item) => !isRssHybridItem(item))
-      .filter(isHeadlineFreshEnough)
+    // Yan kartlar: yeniden eskiye; manşet etiketli (tepe) haberler dahil edilmez.
+    const sideSource =
+      siteId != null
+        ? sortNewsByRecency(
+            mergeUniqueNews(allItems).filter(
+              (item) =>
+                !isRssHybridItem(item) &&
+                (item as { isFeatured?: boolean }).isFeatured !== true,
+            ),
+          )
+        : mergeUniqueNews(featured, allItems).filter((item) => !isRssHybridItem(item)).filter(isHeadlineFreshEnough);
+    sideSource
       .filter((item) => !homeNewsAliasKeys(item).some((key) => slideKeys.has(key)))
-      .slice(0, 2);
-    manualSide.forEach(push);
-    mergeUniqueNews(siteId != null ? breaking : [], allItems, featured).filter(isHeadlineFreshEnough).forEach(push);
+      .slice(0, 6)
+      .forEach(push);
+    if (siteId == null) {
+      mergeUniqueNews(breaking, allItems, featured).filter(isHeadlineFreshEnough).forEach(push);
+    }
     const trimmed = pool.slice(0, 6);
     return tepeMansetActive ? excludeHeadlineSliderItems(trimmed, tepeMansetItems) : trimmed;
   }, [sliderNews, allItems, featured, breaking, siteId, tepeMansetActive, tepeMansetItems]);
