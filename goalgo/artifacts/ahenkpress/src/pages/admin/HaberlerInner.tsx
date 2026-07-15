@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { Search, Plus, Edit2, Trash2, Tags, Eye, Star, Zap } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Tags, Eye, Star, Zap, PanelsTopLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -46,7 +46,10 @@ type AdminDisplayRow =
   | { kind: "news"; news: News }
   | { kind: "rss-cache"; item: RssCacheAdminItem };
 
-async function patchHmNewsFlags(id: number, body: { isFeatured?: boolean; isBreaking?: boolean }) {
+async function patchHmNewsFlags(
+  id: number,
+  body: { isFeatured?: boolean; isSiteManset?: boolean; isBreaking?: boolean },
+) {
   const t = readHmJwt();
   if (!t) throw new Error("Oturum yok");
   const r = await fetch(apiUrl(`/api/hm/editor/news/${id}/flags`), {
@@ -59,7 +62,7 @@ async function patchHmNewsFlags(id: number, body: { isFeatured?: boolean; isBrea
 
 async function bulkPatchHmNewsFlags(
   ids: number[],
-  body: { isFeatured?: boolean; isBreaking?: boolean },
+  body: { isFeatured?: boolean; isSiteManset?: boolean; isBreaking?: boolean },
 ) {
   const t = readHmJwt();
   if (!t) throw new Error("Oturum yok");
@@ -435,7 +438,7 @@ export function HaberlerInner({
 
   const toggleNewsFlag = async (
     news: News,
-    field: "isFeatured" | "isBreaking",
+    field: "isFeatured" | "isSiteManset" | "isBreaking",
     value: boolean,
   ) => {
     if (!showHmNewsFlags) return;
@@ -460,6 +463,8 @@ export function HaberlerInner({
     const flagBulkActions = new Set([
       "featured-on",
       "featured-off",
+      "site-manset-on",
+      "site-manset-off",
       "breaking-on",
       "breaking-off",
     ]);
@@ -469,9 +474,11 @@ export function HaberlerInner({
         alert("Lütfen en az bir kayıt seçin.");
         return;
       }
-      const patch: { isFeatured?: boolean; isBreaking?: boolean } = {};
+      const patch: { isFeatured?: boolean; isSiteManset?: boolean; isBreaking?: boolean } = {};
       if (bulkAction === "featured-on") patch.isFeatured = true;
       if (bulkAction === "featured-off") patch.isFeatured = false;
+      if (bulkAction === "site-manset-on") patch.isSiteManset = true;
+      if (bulkAction === "site-manset-off") patch.isSiteManset = false;
       if (bulkAction === "breaking-on") patch.isBreaking = true;
       if (bulkAction === "breaking-off") patch.isBreaking = false;
       setBulkLoading(true);
@@ -729,8 +736,10 @@ export function HaberlerInner({
               <SelectItem value="action">Toplu İşlem</SelectItem>
               {showHmNewsFlags ? (
                 <>
-                  <SelectItem value="featured-on">Manşete ekle</SelectItem>
-                  <SelectItem value="featured-off">Manşetten çıkar</SelectItem>
+                  <SelectItem value="featured-on">Tepe manşete ekle</SelectItem>
+                  <SelectItem value="featured-off">Tepe manşetten çıkar</SelectItem>
+                  <SelectItem value="site-manset-on">Site manşete ekle</SelectItem>
+                  <SelectItem value="site-manset-off">Site manşetten çıkar</SelectItem>
                   <SelectItem value="breaking-on">Son dakikaya ekle</SelectItem>
                   <SelectItem value="breaking-off">Son dakikadan çıkar</SelectItem>
                 </>
@@ -897,11 +906,19 @@ export function HaberlerInner({
                             : " · merkez"}
                         </Badge>
                       ) : null}
-                      {showHmNewsFlags && (news.isFeatured || news.isBreaking) ? (
+                      {showHmNewsFlags &&
+                      (news.isFeatured ||
+                        (news as News & { isSiteManset?: boolean }).isSiteManset ||
+                        news.isBreaking) ? (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {news.isFeatured ? (
                             <Badge className="text-[10px] font-bold uppercase tracking-wide bg-amber-400 text-amber-950 hover:bg-amber-400 border-0">
-                              MANŞET
+                              TEPE MANŞET
+                            </Badge>
+                          ) : null}
+                          {(news as News & { isSiteManset?: boolean }).isSiteManset ? (
+                            <Badge className="text-[10px] font-bold uppercase tracking-wide bg-sky-700 text-white hover:bg-sky-700 border-0">
+                              SITE MANŞET
                             </Badge>
                           ) : null}
                           {news.isBreaking ? (
@@ -954,11 +971,35 @@ export function HaberlerInner({
                             variant="ghost"
                             size="icon"
                             disabled={flagBusyId === news.id}
-                            title={news.isFeatured ? "Manşetten çıkar" : "Manşete ekle"}
+                            title={news.isFeatured ? "Tepe manşetten çıkar" : "Tepe manşete ekle"}
                             onClick={() => void toggleNewsFlag(news, "isFeatured", !news.isFeatured)}
                             className={news.isFeatured ? "text-amber-600 hover:text-amber-700" : "text-slate-400"}
                           >
                             <Star className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={flagBusyId === news.id}
+                            title={
+                              (news as News & { isSiteManset?: boolean }).isSiteManset
+                                ? "Site manşetten çıkar"
+                                : "Site manşete ekle"
+                            }
+                            onClick={() =>
+                              void toggleNewsFlag(
+                                news,
+                                "isSiteManset",
+                                !(news as News & { isSiteManset?: boolean }).isSiteManset,
+                              )
+                            }
+                            className={
+                              (news as News & { isSiteManset?: boolean }).isSiteManset
+                                ? "text-sky-700 hover:text-sky-800"
+                                : "text-slate-400"
+                            }
+                          >
+                            <PanelsTopLeft className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="ghost"

@@ -114,22 +114,24 @@ async function loadFeaturedForSite(
   return excludeKoseFromEditorialNewsList(ranked.map((e) => e.item));
 }
 
-/** Editör manuel haberler — isFeatured=false, yekpare havuz kopyası hariç. */
+/** Editör manuel haberler — yekpare havuz kopyası hariç (tepe/site bayrakları dahil). */
 async function loadManualEditorNewsForSite(
   siteId: number,
   limit: number,
   categorySlug?: string | null,
   corporateStrict = false,
+  opts?: { siteMansetOnly?: boolean; excludeFeatured?: boolean },
 ): Promise<SerializedNewsListItem[]> {
   const ctx = await loadNewsContext();
   const readDb = getNewsDbForRead();
   const hiddenCategoryIds = await getHmHiddenCategoryIds(siteId);
   const conds: SQL[] = [
-    eq(newsTable.isFeatured, false),
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
     or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
   ];
+  if (opts?.siteMansetOnly) conds.push(eq(newsTable.isSiteManset, true));
+  if (opts?.excludeFeatured) conds.push(eq(newsTable.isFeatured, false));
   if (hiddenCategoryIds.length > 0) {
     conds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
   }
@@ -140,7 +142,7 @@ async function loadManualEditorNewsForSite(
     .select(newsListSelectFields)
     .from(newsTable)
     .where(and(...conds))
-    .orderBy(desc(newsTable.updatedAt), desc(newsTable.createdAt))
+    .orderBy(desc(newsTable.createdAt), desc(newsTable.updatedAt))
     .limit(limit);
 
   return excludeKoseFromEditorialNewsList(rows.map((r) => serializeNewsListItem(r, ctx)));
@@ -158,7 +160,11 @@ function sortNewsItemsByAddDate(items: SerializedNewsListItem[]): SerializedNews
   return [...items].sort((a, b) => newsItemAddDateMs(b) - newsItemAddDateMs(a));
 }
 
-/** Orta manşet: en son eklenenler; `isFeatured` (tepe) hariç — yeniden eskiye. */
+/**
+ * Orta (site) manşet:
+ * 1) `isSiteManset` işaretli haberler varsa yalnızca onlar
+ * 2) yoksa en son eklenenler (`isFeatured` tepe manşet hariç)
+ */
 function buildCenterHeadlinesFromItems(
   _featured: SerializedNewsListItem[],
   manual: SerializedNewsListItem[],
@@ -168,8 +174,12 @@ function buildCenterHeadlinesFromItems(
   const slug = normalizeCategorySlug(categorySlug);
   const filterCat = (items: SerializedNewsListItem[]) =>
     slug ? items.filter((item) => itemMatchesCategorySlug(item, slug)) : items;
-  const latestOnly = filterCat(manual).filter((item) => item.isFeatured !== true);
-  const latest = sortNewsItemsByAddDate(latestOnly);
+  const scoped = filterCat(manual);
+  const siteManset = scoped.filter((item) => (item as { isSiteManset?: boolean }).isSiteManset === true);
+  const pool = siteManset.length > 0
+    ? siteManset
+    : scoped.filter((item) => item.isFeatured !== true);
+  const latest = sortNewsItemsByAddDate(pool);
   const target = Math.min(Math.max(limit, 1), 30);
   return latest.slice(0, target);
 }
@@ -256,16 +266,20 @@ export async function buildHmHomeBundle(
   const layout = parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null);
   const corporateStrict = isHmCorporateLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
-  let [featured, manualEditor, breaking, popular] = await Promise.all([
+  let [featured, siteMansetEditor, latestEditor, breaking, popular] = await Promise.all([
     loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict),
-    loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict),
+    loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { siteMansetOnly: true }),
+    loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { excludeFeatured: true }),
     loadBreakingForSite(siteId, corporateStrict),
     loadPopularForSite(siteId, 12, corporateStrict),
   ]);
+  let manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
   if (corporateStrict) {
     const corpOpts = { siteSlug };
     featured = filterCorporatePublicNewsItems(featured, corpOpts);
-    manualEditor = filterCorporatePublicNewsItems(manualEditor, corpOpts);
+    siteMansetEditor = filterCorporatePublicNewsItems(siteMansetEditor, corpOpts);
+    latestEditor = filterCorporatePublicNewsItems(latestEditor, corpOpts);
+    manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
     breaking = filterCorporatePublicNewsItems(breaking, corpOpts);
     popular = filterCorporatePublicNewsItems(popular, corpOpts);
   }

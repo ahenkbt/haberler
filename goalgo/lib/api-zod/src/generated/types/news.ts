@@ -26,7 +26,7 @@ export interface News {
   senderPhone?: string | null;
   status: NewsStatus;
   isFeatured?: boolean;
-  isTepeManset?: boolean;
+  isSiteManset?: boolean;
   isBreaking?: boolean;
   views: number;
   tags?: string[];

@@ -232,9 +232,21 @@ export function filterHeadlineItemsByCategorySlug<T>(
   });
 }
 
+/** Editör SITE MANŞET etiketi (`isSiteManset`) — RSS / yekpare havuz kopyası hariç. */
+export function isHmSiteMansetNewsItem(n: unknown): boolean {
+  const item = n as { isSiteManset?: boolean | null };
+  if (item.isSiteManset !== true) return false;
+  return isHmEditorManualNewsItem(n);
+}
+
+export function filterHmSiteMansetNews<T>(items: readonly T[]): T[] {
+  return items.filter(isHmSiteMansetNewsItem);
+}
+
 /**
- * Orta (normal) manşet slider: en son eklenen editör/DB haberleri —
- * `isFeatured` (tepe manşet) ve RSS / yekpare hariç; yeniden eskiye.
+ * Orta (site) manşet slider:
+ * — `isSiteManset` işaretli haberler varsa yalnızca onlar
+ * — yoksa en son eklenen editör/DB haberleri (`isFeatured` tepe manşet ve RSS / yekpare hariç)
  */
 export function buildCenterMansetSliderPool(opts: {
   manualItems: unknown[];
@@ -243,15 +255,15 @@ export function buildCenterMansetSliderPool(opts: {
   limit?: number;
 }): any[] {
   const limit = opts.limit ?? HM_HOME_HEADLINE_SLIDER_MIN;
-  const latestFirst = mergeUniqueNews(
+  const merged = mergeUniqueNews(
     filterHmEditorManualNews(opts.latestItems),
     filterHmEditorManualNews(opts.manualItems),
-  ).filter(
-    (item) =>
-      !isRssHybridItem(item) &&
-      !isYekparePoolNewsItem(item) &&
-      (item as { isFeatured?: boolean }).isFeatured !== true,
-  );
+  ).filter((item) => !isRssHybridItem(item) && !isYekparePoolNewsItem(item));
+  const siteManset = filterHmSiteMansetNews(merged);
+  const latestFirst =
+    siteManset.length > 0
+      ? siteManset
+      : merged.filter((item) => (item as { isFeatured?: boolean }).isFeatured !== true);
   const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
   const pool = sortNewsByRecency(scoped);
   return dedupeHeadlineSliderItems(pool.slice(0, limit));

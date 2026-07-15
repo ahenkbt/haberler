@@ -11,7 +11,9 @@ import type { News } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-async function patchFlags(id: number, body: { isFeatured?: boolean; isBreaking?: boolean }) {
+type NewsFlagField = "isFeatured" | "isSiteManset" | "isBreaking";
+
+async function patchFlags(id: number, body: Partial<Record<NewsFlagField, boolean>>) {
   const t = readHmJwt();
   if (!t) throw new Error("Oturum yok");
   const r = await fetch(apiUrl(`/api/hm/editor/news/${id}/flags`), {
@@ -22,6 +24,8 @@ async function patchFlags(id: number, body: { isFeatured?: boolean; isBreaking?:
   if (!r.ok) throw new Error(await r.text());
   return r.json() as Promise<News>;
 }
+
+type NewsWithSiteManset = News & { isSiteManset?: boolean };
 
 export default function EditorManset() {
   const { toast } = useToast();
@@ -37,13 +41,13 @@ export default function EditorManset() {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (!r.ok) throw new Error(await r.text());
-      return r.json() as Promise<{ items: News[]; total: number }>;
+      return r.json() as Promise<{ items: NewsWithSiteManset[]; total: number }>;
     },
   });
 
   const items = (q.data?.items ?? []).filter((n) => n.status === "published");
 
-  const toggle = async (n: News, field: "isFeatured" | "isBreaking", value: boolean) => {
+  const toggle = async (n: NewsWithSiteManset, field: NewsFlagField, value: boolean) => {
     setBusyId(n.id);
     try {
       await patchFlags(n.id, { [field]: value });
@@ -62,11 +66,11 @@ export default function EditorManset() {
 
   return (
     <EditorLayout title="Slider ve Bant Yönetimi">
-      <div className="max-w-4xl space-y-4">
+      <div className="max-w-5xl space-y-4">
         <p className="text-sm text-slate-600">
-          <strong>Tepe manşet</strong> yalnızca <strong>Manşette göster</strong> işaretli haberleri gösterir.
-          Orta (normal) manşet slider en son eklenen haberlerle dolar. <strong>Son dakika</strong> bandı ayrı bayraktır.
-          Üstteki manuel kurumsal slider (Genel Ayarlar) ayrıdır.
+          <strong>Tepe manşet</strong> yalnızca <strong>Manşet</strong> işaretli haberleri gösterir.
+          <strong> Site manşet</strong> işaretlenirse alt (orta) slider’da bu haberler çıkar; hiç işaret
+          yoksa en son eklenen güncel haberler dolar. <strong>Son dakika</strong> bandı ayrı bayraktır.
         </p>
 
         <div className="rounded-md border bg-white overflow-x-auto">
@@ -74,21 +78,22 @@ export default function EditorManset() {
             <TableHeader>
               <TableRow className="bg-slate-50/80">
                 <TableHead>Başlık</TableHead>
-                <TableHead className="w-[120px] text-center">Manşet</TableHead>
-                <TableHead className="w-[120px] text-center">Son dakika</TableHead>
+                <TableHead className="w-[110px] text-center">Tepe manşet</TableHead>
+                <TableHead className="w-[110px] text-center">Site manşet</TableHead>
+                <TableHead className="w-[110px] text-center">Son dakika</TableHead>
                 <TableHead className="w-[100px]">Tarih</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {q.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-slate-500">
+                  <TableCell colSpan={5} className="text-center py-10 text-slate-500">
                     Yükleniyor…
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-slate-500">
+                  <TableCell colSpan={5} className="text-center py-10 text-slate-500">
                     Yayında haber yok. Önce <strong>Haberler</strong> bölümünden içerik yayınlayın.
                   </TableCell>
                 </TableRow>
@@ -102,7 +107,10 @@ export default function EditorManset() {
                           {n.categoryName}
                         </Badge>
                         {n.isFeatured ? (
-                          <Badge className="text-[10px] bg-amber-600">Manşet</Badge>
+                          <Badge className="text-[10px] bg-amber-600">Tepe</Badge>
+                        ) : null}
+                        {n.isSiteManset ? (
+                          <Badge className="text-[10px] bg-sky-700">Site</Badge>
                         ) : null}
                         {n.isBreaking ? (
                           <Badge className="text-[10px] bg-orange-600">Son dakika</Badge>
@@ -114,6 +122,13 @@ export default function EditorManset() {
                         checked={!!n.isFeatured}
                         disabled={busyId === n.id}
                         onCheckedChange={(c) => void toggle(n, "isFeatured", !!c)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={!!n.isSiteManset}
+                        disabled={busyId === n.id}
+                        onCheckedChange={(c) => void toggle(n, "isSiteManset", !!c)}
                       />
                     </TableCell>
                     <TableCell className="text-center">

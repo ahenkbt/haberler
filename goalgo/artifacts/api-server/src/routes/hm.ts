@@ -3590,6 +3590,7 @@ router.post("/hm/author/news", async (req, res): Promise<void> => {
       authorId: ctx.authorId,
       status: data.status,
       isFeatured: false,
+      isSiteManset: false,
       isBreaking: false,
       tags,
       siteId: ctx.siteId,
@@ -3646,6 +3647,7 @@ router.put("/hm/author/news/:id", async (req, res): Promise<void> => {
       authorId: ctx.authorId,
       status: data.status,
       isFeatured: existing.isFeatured,
+      isSiteManset: existing.isSiteManset,
       isBreaking: existing.isBreaking,
       tags,
       siteId: ctx.siteId,
@@ -3755,6 +3757,7 @@ router.post("/hm/public/sites/:slug/news-submissions", async (req, res): Promise
     authorId: null,
     status: "draft",
     isFeatured: false,
+    isSiteManset: false,
     isBreaking: false,
     tags: ["haber-gonder"],
     siteId: site.id,
@@ -3952,6 +3955,7 @@ router.post("/hm/editor/pool/news/:id/publish", async (req, res): Promise<void> 
       authorId: null,
       status: "published",
       isFeatured: false,
+      isSiteManset: false,
       isBreaking: false,
       tags: src.tags ?? [],
       views: 0,
@@ -4011,6 +4015,7 @@ router.post("/hm/editor/news", async (req, res): Promise<void> => {
       senderPhone: data.senderPhone ?? null,
       status: data.status,
       isFeatured: data.isFeatured ?? false,
+      isSiteManset: data.isSiteManset ?? false,
       isBreaking: data.isBreaking ?? false,
       tags,
       siteId: ctx.siteId,
@@ -4043,15 +4048,19 @@ router.patch("/hm/editor/news/:id/flags", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Haber bulunamadı" });
     return;
   }
-  const body = req.body as { isFeatured?: unknown; isBreaking?: unknown };
+  const body = req.body as { isFeatured?: unknown; isSiteManset?: unknown; isBreaking?: unknown };
   const patch: Partial<typeof newsTable.$inferInsert> = {};
   if (typeof body.isFeatured === "boolean") {
     patch.isFeatured = body.isFeatured;
     if (body.isFeatured) patch.isEditorManual = true;
   }
+  if (typeof body.isSiteManset === "boolean") {
+    patch.isSiteManset = body.isSiteManset;
+    if (body.isSiteManset) patch.isEditorManual = true;
+  }
   if (typeof body.isBreaking === "boolean") patch.isBreaking = body.isBreaking;
   if (Object.keys(patch).length === 0) {
-    res.status(400).json({ error: "isFeatured veya isBreaking gerekli" });
+    res.status(400).json({ error: "isFeatured, isSiteManset veya isBreaking gerekli" });
     return;
   }
   const newsCtx = await loadNewsContext();
@@ -4066,7 +4075,7 @@ router.patch("/hm/editor/news/:id/flags", async (req, res): Promise<void> => {
 router.post("/hm/editor/news/bulk-flags", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
-  const body = req.body as { ids?: unknown; isFeatured?: unknown; isBreaking?: unknown };
+  const body = req.body as { ids?: unknown; isFeatured?: unknown; isSiteManset?: unknown; isBreaking?: unknown };
   const ids = body.ids;
   if (!Array.isArray(ids) || ids.length === 0) {
     res.status(400).json({ error: "ids dizisi gerekli" });
@@ -4082,9 +4091,13 @@ router.post("/hm/editor/news/bulk-flags", async (req, res): Promise<void> => {
     patch.isFeatured = body.isFeatured;
     if (body.isFeatured) patch.isEditorManual = true;
   }
+  if (typeof body.isSiteManset === "boolean") {
+    patch.isSiteManset = body.isSiteManset;
+    if (body.isSiteManset) patch.isEditorManual = true;
+  }
   if (typeof body.isBreaking === "boolean") patch.isBreaking = body.isBreaking;
   if (Object.keys(patch).length === 0) {
-    res.status(400).json({ error: "isFeatured veya isBreaking gerekli" });
+    res.status(400).json({ error: "isFeatured, isSiteManset veya isBreaking gerekli" });
     return;
   }
   const updated = await dualWriteUpdate(newsTable, patch, and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.id, numIds)));
@@ -4180,6 +4193,7 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
       senderPhone: data.senderPhone ?? null,
       status: data.status,
       isFeatured: data.isFeatured ?? false,
+      isSiteManset: data.isSiteManset ?? false,
       isBreaking: data.isBreaking ?? false,
       tags,
       siteId: ctx.siteId,
