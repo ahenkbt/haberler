@@ -64,9 +64,9 @@ export default function EditorManset() {
     <EditorLayout title="Slider ve Bant Yönetimi">
       <div className="max-w-4xl space-y-4">
         <p className="text-sm text-slate-600">
-          Kurumsal vitrinde <strong>haber manşeti</strong> (büyük slider + yan kutular) yalnızca{" "}
-          <strong>Manşette göster</strong> işaretli haberlerle dolar; işaret yoksa en son haberler gösterilir. Üstteki{" "}
-          <strong>manuel kurumsal slider</strong> (Genel Ayarlar) ayrıdır. <strong>Son dakika</strong> bandı ayrı bayraktır.
+          <strong>Tepe manşet</strong> yalnızca <strong>Manşette göster</strong> işaretli haberleri gösterir.
+          Orta (normal) manşet slider en son eklenen haberlerle dolar. <strong>Son dakika</strong> bandı ayrı bayraktır.
+          Üstteki manuel kurumsal slider (Genel Ayarlar) ayrıdır.
         </p>
 
         <div className="rounded-md border bg-white overflow-x-auto">
