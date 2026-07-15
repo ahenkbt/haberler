@@ -105,7 +105,6 @@ import {
   buildMansetHeadlineOnlyPool,
   buildTepeMansetPool,
   buildRssAwareHeadlinePool,
-  filterHmMansetNews,
   createHeadlineVisitSeed,
   createHomeNewsDedupeTracker,
   excludeHeadlineSliderItems,
@@ -2033,7 +2032,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const centerMansetSliderItems = useMemo(() => {
     let pool: any[];
     if (useHmHomeBundle && asArray(hmHomeBundle?.centerHeadlines).length > 0) {
-      pool = filterHmMansetNews(asArray(hmHomeBundle?.centerHeadlines));
+      // Bundle orta manşet = en son eklenenler (featured/Manşet etiketi değil).
+      pool = asArray(hmHomeBundle?.centerHeadlines);
     } else {
       pool = buildCenterMansetSliderPool({
         manualItems: featured,
@@ -2054,7 +2054,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     if (!newsSliderEnabled) return [];
     if (activeTab) {
       pool = sortNewsByRecency(allItems.filter(isHeadlineFreshEnough)).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
-    } else if (siteId != null && !rssHeadlineEnabled) {
+    } else if (siteId != null) {
+      // HM editör siteleri: normal manşet = en son eklenen haberler (RSS manşet karışmaz).
       pool = centerMansetSliderItems;
     } else {
       pool = buildRssAwareHeadlinePool({
