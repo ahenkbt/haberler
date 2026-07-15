@@ -7,7 +7,12 @@ import {
   resolveTurkishProvinceWikiTitle,
   TR_PROVINCE_NAMES_81,
 } from "../lib/turkishProvinces.js";
-import { slugToWikiTitle, turkishWikiTitleCandidates } from "../lib/wikiSlugTitle.js";
+import {
+  isRejectedWikiArticleSlug,
+  sanitizeWikiArticleSlugParam,
+  slugToWikiTitle,
+  turkishWikiTitleCandidates,
+} from "../lib/wikiSlugTitle.js";
 import { toWikiAsciiSlug, wikiAsciiSlugKey } from "../lib/wikiAsciiSlug.js";
 import { WORLD_COUNTRIES } from "../lib/worldCountries.js";
 import { BILGI_AGACI_STATIC_TOPICS } from "../lib/bilgiAgaciSeedTopics.js";
@@ -1917,15 +1922,6 @@ function writeWikiArticleNegativeCache(title: string, lang: WikiLang): void {
   wikiArticleNegativeCache.set(key, { value: true, expiresAt: Date.now() + WIKI_NEGATIVE_CACHE_TTL_MS });
 }
 
-/** Kötü slug — upstream'e gitmeden hızlı 404 (boşluk, ?, boş). */
-function isRejectedWikiArticleSlug(raw: string): boolean {
-  const trimmed = String(raw ?? "").trim();
-  if (!trimmed) return true;
-  if (trimmed.includes("?") || /%3[fF]/.test(trimmed)) return true;
-  if (/\s/.test(trimmed)) return true;
-  return false;
-}
-
 function respondWikiArticleNotFound(
   res: import("express").Response,
   requestedTitle: string,
@@ -1947,7 +1943,8 @@ router.get("/wiki/article/:title", async (req, res): Promise<void> => {
   try {
     const rawTitle = Array.isArray(req.params.title) ? req.params.title[0] : req.params.title;
     const lang = parseWikiLang(req.query.lang as string | undefined);
-    const requestedTitle = decodeWikiTitleParam(rawTitle ?? "");
+    const sanitizedRaw = sanitizeWikiArticleSlugParam(rawTitle ?? "");
+    const requestedTitle = decodeWikiTitleParam(sanitizedRaw);
 
     if (isRejectedWikiArticleSlug(rawTitle ?? "")) {
       respondWikiArticleNotFound(res, requestedTitle || rawTitle || "", lang, {

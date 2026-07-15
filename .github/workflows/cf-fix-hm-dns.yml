@@ -11,6 +11,7 @@ on:
     branches:
       - cursor/cloudflare-pages-render-bcc3
       - cursor/hm-traffic-stability-bcc3
+      - cursor/wiki-slug-media-fix-bcc3
       - main
     paths:
       - "scripts/cf-fix-originless-dns.mjs"

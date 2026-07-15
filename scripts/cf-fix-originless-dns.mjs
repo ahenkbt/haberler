@@ -131,11 +131,17 @@ async function ensureRoutes(zoneId, zoneName) {
         method: "PUT",
         body: { pattern, script: SCRIPT },
       });
+      if (r.ok) {
+        console.log(
+          `[fix] rebind ${pattern} → ${SCRIPT} (was:${row.script || "∅"}) ok=true`,
+        );
+        continue;
+      }
       console.log(
-        `[fix] rebind ${pattern} → ${SCRIPT} (was:${row.script || "∅"}) ok=${r.ok}`,
+        `[fix] rebind ${pattern} failed, recreate`,
         JSON.stringify(r.json?.errors || {}),
       );
-      continue;
+      await cf(`/zones/${zoneId}/workers/routes/${row.id}`, { method: "DELETE" });
     }
     const r = await cf(`/zones/${zoneId}/workers/routes`, {
       method: "POST",
@@ -201,10 +207,61 @@ async function probeWorkerLive(hostname) {
       res.headers.get("x-yekpare-frontend") === "cloudflare-render-proxy" ||
       res.headers.get("x-yekpare-upstream") != null;
     const viaNetlify = res.headers.get("x-nf-request-id") != null;
-    return { status: res.status, viaWorker, viaNetlify };
+    const cfChallenge =
+      res.status === 403 &&
+      (res.headers.get("cf-mitigated") === "challenge" ||
+        String(res.headers.get("content-security-policy") || "").includes("challenges.cloudflare.com"));
+    return {
+      status: res.status,
+      viaWorker,
+      viaNetlify,
+      cfChallenge,
+      cfMitigated: res.headers.get("cf-mitigated") || null,
+    };
   } catch (e) {
     return { status: 0, err: String(e?.message || e) };
   }
+}
+
+/** yekpare.net "Just a moment..." — Bot Fight / under_attack Worker'a hiç ulaşmıyor. */
+async function relaxZoneSecurity(zoneId, zoneName) {
+  const settings = [
+    ["bot_fight_mode", "off"],
+    ["security_level", "essentially_off"],
+    ["browser_check", "off"],
+    ["challenge_ttl", 1800],
+    // Bozuk IPv6 / QUIC → Chrome ERR_FAILED; AAAA reklamını kapatmayı dene
+    ["ipv6", "off"],
+    ["http3", "off"],
+    ["0rtt_enabled", "off"],
+  ];
+  for (const [setting, value] of settings) {
+    const r = await cf(`/zones/${zoneId}/settings/${setting}`, {
+      method: "PATCH",
+      body: { value },
+    });
+    console.log(
+      `[fix] ${zoneName} setting ${setting}=${JSON.stringify(value)} ok=${r.ok}`,
+      JSON.stringify(r.json?.errors || r.json?.result?.value || {}),
+    );
+  }
+
+  // Super Bot Fight Mode (ücretli hesaplarda) — varsa kapat
+  const sbm = await cf(`/zones/${zoneId}/bot_management`, {
+    method: "PUT",
+    body: {
+      fight_mode: false,
+      sbfm_definitely_automated: "allow",
+      sbfm_likely_automated: "allow",
+      sbfm_verified_bots: "allow",
+      optimize_wordpress: false,
+      suppress_session_score: false,
+    },
+  });
+  console.log(
+    `[fix] ${zoneName} bot_management ok=${sbm.ok}`,
+    JSON.stringify(sbm.json?.errors || sbm.json?.success || {}),
+  );
 }
 
 async function fixZone(name) {
@@ -221,6 +278,8 @@ async function fixZone(name) {
   await ensureRoutes(zone.id, name);
   await attachCustomDomain(name);
   await attachCustomDomain(`www.${name}`);
+  // Önce güvenlik gevşet — Challenge açıkken Worker probe hep 403 döner.
+  await relaxZoneSecurity(zone.id, name);
 
   const dnsList = await cf(`/zones/${zone.id}/dns_records?per_page=100`);
   const dnsRows = (dnsList.json?.result || []).filter((r) =>
@@ -238,6 +297,15 @@ async function fixZone(name) {
 
   const live = await probeWorkerLive(name);
   console.log(`[fix] live probe ${name}:`, JSON.stringify(live));
+  if (live.cfChallenge) {
+    console.warn(
+      `[fix] WARN ${name} Cloudflare Challenge — GitHub token Zone Settings yetkisi yoksa Dashboard'dan kapatın:\n` +
+        `  Security → Settings → Bot Fight Mode = Off\n` +
+        `  Security → Settings → Security Level = Essentially Off / Medium\n` +
+        `  Under Attack Mode = Off\n` +
+        `Token'a ekleyin: Zone Settings Write, Zone WAF Write, Zone DNS Edit`,
+    );
+  }
   if (live.viaNetlify) {
     console.warn(`[fix] WARN ${name} still hitting Netlify — route/DNS rebind may need 1–2 min`);
   }

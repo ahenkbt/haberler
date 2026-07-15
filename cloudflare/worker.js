@@ -27,7 +27,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "ankarahabergundemi.com",
   "www.ankarahabergundemi.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715e";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715f";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -349,8 +349,46 @@ export default {
           "cache-control": "no-store, max-age=0, must-revalidate",
           "x-yekpare-frontend": "cloudflare-render-proxy",
           "x-yekpare-sw": "kill-switch",
+          // SW güncellemesi için Alt-Svc yok
         },
       });
+    }
+
+    // Kullanıcı ERR_FAILED ise: /__sw_reset → Clear-Site-Data (yalnız bu path)
+    if (incoming.pathname === "/__sw_reset" || incoming.pathname === "/__sw_reset/") {
+      return new Response(
+        `<!doctype html><meta charset="utf-8"><title>Yekpare reset</title>
+<body style="font-family:system-ui;max-width:36rem;margin:3rem auto;padding:0 1rem">
+<h1>Önbellek temizlendi</h1>
+<p>Service Worker / site verisi sıfırlandı. <a href="/">Ana sayfaya dön</a></p>
+<script>
+(async function () {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch (_) {}
+  try {
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch (_) {}
+  setTimeout(function () { location.replace('/'); }, 400);
+})();
+</script></body>`,
+        {
+          status: 200,
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            "cache-control": "no-store",
+            "clear-site-data": '"cache", "cookies", "storage"',
+            "x-yekpare-frontend": "cloudflare-render-proxy",
+            "x-yekpare-purge": "sw-reset-path",
+          },
+        },
+      );
     }
 
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);
@@ -371,6 +409,9 @@ export default {
       const out = new Headers(upstream.headers);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
+      // Chrome ERR_FAILED: bozuk Netlify SW + HTTP/3(QUIC)/IPv6 happy-eyeballs.
+      // Alt-Svc'yi sil → istemci HTTP/2'ye düşer.
+      out.delete("alt-svc");
       out.set("x-yekpare-frontend", "cloudflare-render-proxy");
       out.set("x-yekpare-upstream", origin);
       if (isStaticAssetPath(incoming.pathname)) {

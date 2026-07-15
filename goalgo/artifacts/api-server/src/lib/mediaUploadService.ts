@@ -159,16 +159,13 @@ export async function saveMediaBuffer(
   return { fname, url: publicUploadUrl(fname) };
 }
 
-const DEFAULT_LEGACY_MEDIA_ORIGIN = "https://goalgo-production.up.railway.app";
-
+/** Sadece LEGACY_MEDIA_ORIGIN env ile; Railway’e varsayılan yönlendirme yok. */
 function legacyMediaOrigin(): string | null {
   const raw = process.env.LEGACY_MEDIA_ORIGIN;
-  if (raw != null) {
-    const t = raw.trim();
-    if (!t || t === "0" || t === "false" || t === "off") return null;
-    return t.replace(/\/+$/, "");
-  }
-  return DEFAULT_LEGACY_MEDIA_ORIGIN;
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (!t || t === "0" || t === "false" || t === "off") return null;
+  return t.replace(/\/+$/, "");
 }
 
 export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | null> {
