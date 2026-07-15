@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: re-attach all HM Worker routes after 522 flap 2026-07-15T18:07Z
+ * trigger: mass 522/NXDOMAIN/Netlify404 flap 2026-07-15T18:33Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -17,6 +17,7 @@ const SCRIPT = "haberler";
 const ZONES = [
   "yekpare.net",
   "ankarasehirgazetesi.com",
+  "ankarahabergundemi.com",
   "vatankahramanlari.org",
   "vatanhaber.net",
 ];
@@ -166,6 +167,12 @@ async function fixZone(name) {
   await ensureAaaa100(zone.id, name, "www", `www.${name}`);
   await ensureProxiedOriginlessA(zone.id, name, "@", name);
   await ensureProxiedOriginlessA(zone.id, name, "www", `www.${name}`);
+  const dnsList = await cf(`/zones/${zone.id}/dns_records?per_page=100`);
+  const dnsRows = (dnsList.json?.result || []).filter((r) => ["A", "AAAA", "CNAME"].includes(r.type));
+  console.log(
+    `[fix] dns summary`,
+    dnsRows.map((r) => `${r.type} ${r.name}→${r.content} proxied=${r.proxied}`).join(" | ") || "(empty)",
+  );
   await ensureRoutes(zone.id, name);
   await attachCustomDomain(name);
   await attachCustomDomain(`www.${name}`);
