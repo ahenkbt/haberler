@@ -5,7 +5,23 @@
  */
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
+/** Genel tek seferlik Netlify SW temizliği */
 const PURGE_COOKIE = "__yekpare_sw_purged";
+/**
+ * Kullanıcı talebiyle yeniden önbellek temizlenecek HM alanları.
+ * Cookie sürümü artırılınca bu hostlarda Clear-Site-Data + SW purge bir kez daha çalışır.
+ */
+const FORCE_PURGE_HOSTS = new Set([
+  "vatanhaber.net",
+  "www.vatanhaber.net",
+  "vatankahramanlari.org",
+  "www.vatankahramanlari.org",
+  "ankarasehirgazetesi.com",
+  "www.ankarasehirgazetesi.com",
+  "ankarahabergundemi.com",
+  "www.ankarahabergundemi.com",
+]);
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715b";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -45,15 +61,17 @@ self.addEventListener('fetch', (e) => {
 `;
 
 /** Tek seferlik SW unregister (+ gerektiğinde bir reload). Cookie ile tekrarlanmaz. */
-const PURGE_BOOT = `
+function purgeBootScript(cookieName) {
+  return `
 <script>
 (function () {
   if (!('serviceWorker' in navigator)) return;
   var done = false;
+  var COOKIE = ${JSON.stringify(cookieName)};
   function hasPurgeCookie() {
     try {
       return document.cookie.split(';').some(function (c) {
-        return c.trim().indexOf('${PURGE_COOKIE}=1') === 0;
+        return c.trim().indexOf(COOKIE + '=1') === 0;
       });
     } catch (_) { return false; }
   }
@@ -85,6 +103,7 @@ const PURGE_BOOT = `
 })();
 </script>
 `;
+}
 
 /** Purge sonrası: sadece yeni SW register'ı engelle, storage'a dokunma. */
 const SW_BLOCK_BOOT = `
@@ -113,9 +132,9 @@ function isSwPath(pathname) {
   );
 }
 
-function hasPurgeCookie(request) {
+function cookieHas(request, name) {
   const raw = request.headers.get("cookie") || "";
-  return new RegExp(`(?:^|;\\s*)${PURGE_COOKIE}=1(?:;|$)`).test(raw);
+  return new RegExp(`(?:^|;\\s*)${name}=1(?:;|$)`).test(raw);
 }
 
 function normalizeHost(host) {
@@ -124,6 +143,23 @@ function normalizeHost(host) {
     .split(":")[0]
     .replace(/^www\./, "")
     .trim();
+}
+
+function needsForcePurge(hostname) {
+  const h = String(hostname || "").toLowerCase().split(":")[0];
+  return FORCE_PURGE_HOSTS.has(h) || FORCE_PURGE_HOSTS.has(h.replace(/^www\./, ""));
+}
+
+/** true → Clear-Site-Data + purge boot; false → atla */
+function shouldOneShotPurge(request, hostname) {
+  if (needsForcePurge(hostname)) {
+    return !cookieHas(request, FORCE_PURGE_COOKIE);
+  }
+  return !cookieHas(request, PURGE_COOKIE);
+}
+
+function purgeCookieName(hostname) {
+  return needsForcePurge(hostname) ? FORCE_PURGE_COOKIE : PURGE_COOKIE;
 }
 
 function isPortalHost(host) {
@@ -135,13 +171,13 @@ function isPortalHost(host) {
   return false;
 }
 
-function rewriteHtml(html, { oneShotPurge }) {
+function rewriteHtml(html, { oneShotPurge, purgeCookie }) {
   let out = html;
   out = out.replace(
     /navigator\.serviceWorker\.register\s*\(\s*['`][^'"`]+['`]\s*\)[^;]*;?/g,
     "/* sw register stripped */;",
   );
-  const boot = oneShotPurge ? PURGE_BOOT : SW_BLOCK_BOOT;
+  const boot = oneShotPurge ? purgeBootScript(purgeCookie) : SW_BLOCK_BOOT;
   if (out.includes("<head>")) {
     out = out.replace(
       "<head>",
@@ -205,15 +241,21 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
     const slug = String(meta?.slug || "").trim();
     if (!slug) return null;
     const loc = `${incoming.origin}/tr/${encodeURIComponent(slug)}`;
-    return new Response(null, {
-      status: 308,
-      headers: {
-        location: loc,
-        "cache-control": "no-store",
-        "x-yekpare-frontend": "cloudflare-render-proxy",
-        "x-yekpare-hm-redirect": slug,
-      },
-    });
+    const headers = {
+      location: loc,
+      "cache-control": "no-store",
+      "cdn-cache-control": "no-store",
+      "x-yekpare-frontend": "cloudflare-render-proxy",
+      "x-yekpare-hm-redirect": slug,
+    };
+    // HM alanlarında 308 sırasında da edge/browser cache temizliği
+    if (needsForcePurge(incoming.hostname) && !cookieHas(request, FORCE_PURGE_COOKIE)) {
+      headers["clear-site-data"] = '"cache"';
+      headers["set-cookie"] =
+        `${FORCE_PURGE_COOKIE}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
+      headers["x-yekpare-purge"] = "hm-force-redirect";
+    }
+    return new Response(null, { status: 308, headers });
   } catch {
     return null;
   }
@@ -240,28 +282,38 @@ export default {
 
     const origin = upstreamOrigin(env);
     const target = new URL(incoming.pathname + incoming.search, origin);
-    const oneShotPurge = !hasPurgeCookie(request);
+    const oneShotPurge = shouldOneShotPurge(request, incoming.hostname);
+    const purgeCookie = purgeCookieName(incoming.hostname);
 
     try {
-      const upstream = await fetch(target.toString(), proxyInit(request, origin, incoming));
+      // Edge cache (varsa) bu istek için bypass
+      const upstream = await fetch(target.toString(), {
+        ...proxyInit(request, origin, incoming),
+        cf: { cacheTtl: 0, cacheEverything: false },
+      });
       const out = new Headers(upstream.headers);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
       out.set("x-yekpare-frontend", "cloudflare-render-proxy");
       out.set("x-yekpare-upstream", origin);
+      out.set("cdn-cache-control", "no-store");
 
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {
         out.set("cache-control", "no-store, max-age=0, must-revalidate");
         // Cookie hayatta kalır (Clear-Site-Data "cookies" kullanılmıyor).
         // Storage temizliği SADECE ilk yüklemede — aksi halde hm_editor_jwt silinir.
+        // FORCE_PURGE_HOSTS için ayrı cookie sürümü → talep edilen alanlarda yeniden temizlenir.
         if (oneShotPurge) {
           out.set("clear-site-data", '"cache", "storage"');
           out.append(
             "set-cookie",
-            `${PURGE_COOKIE}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`,
+            `${purgeCookie}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`,
           );
-          out.set("x-yekpare-purge", "netlify-sw-once");
+          out.set(
+            "x-yekpare-purge",
+            needsForcePurge(incoming.hostname) ? "hm-force-once" : "netlify-sw-once",
+          );
         } else {
           out.set("x-yekpare-purge", "skipped");
         }
@@ -269,7 +321,7 @@ export default {
           return new Response(null, { status: upstream.status, headers: out });
         }
         const html = await upstream.text();
-        return new Response(rewriteHtml(html, { oneShotPurge }), {
+        return new Response(rewriteHtml(html, { oneShotPurge, purgeCookie }), {
           status: upstream.status,
           headers: out,
         });

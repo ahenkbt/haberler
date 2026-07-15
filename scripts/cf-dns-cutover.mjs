@@ -164,6 +164,34 @@ async function ensureRoutes(auth, zoneId, zoneName) {
   }
 }
 
+async function purgeZoneCache(auth, zoneId, zoneName) {
+  const everything = await cf(`/zones/${zoneId}/purge_cache`, {
+    method: "POST",
+    body: { purge_everything: true },
+    ...auth,
+  });
+  console.log(
+    `[cutover] purge_everything ${zoneName} ok=${everything.ok}`,
+    JSON.stringify(everything.json?.errors || everything.json?.result || {}),
+  );
+
+  const urls = [];
+  for (const host of [zoneName, `www.${zoneName}`]) {
+    for (const path of ["/", "/sw.js", "/index.html", "/tr"]) {
+      urls.push(`https://${host}${path}`);
+    }
+  }
+  const r = await cf(`/zones/${zoneId}/purge_cache`, {
+    method: "POST",
+    body: { files: urls },
+    ...auth,
+  });
+  console.log(
+    `[cutover] purge_files ${zoneName} count=${urls.length} ok=${r.ok}`,
+    JSON.stringify(r.json?.errors || r.json?.result || {}),
+  );
+}
+
 async function cutoverZone(auth, zoneName) {
   const zoneId = await getZoneId(auth, zoneName);
   if (!zoneId) {
@@ -176,6 +204,7 @@ async function cutoverZone(auth, zoneName) {
   await ensureRoutes(auth, zoneId, zoneName);
   await attachWorkerHostname(auth, zoneName);
   await attachWorkerHostname(auth, `www.${zoneName}`);
+  await purgeZoneCache(auth, zoneId, zoneName);
   return true;
 }
 
@@ -209,6 +238,10 @@ async function main() {
     "yekpare.net",
     "ankarahabergundemi.com",
     "turk.eco",
+    // Önbellek temizliği talep edilen HM alanları (zone varsa purge)
+    "vatanhaber.net",
+    "vatankahramanlari.org",
+    "ankarasehirgazetesi.com",
   ];
   for (const name of zones) {
     await cutoverZone(auth, name);
@@ -228,6 +261,8 @@ async function main() {
     "www.suhaberajansi.com",
     "vatanhaber.net",
     "www.vatanhaber.net",
+    "ankarahabergundemi.com",
+    "www.ankarahabergundemi.com",
   ]) {
     await attachWorkerHostname(auth, host);
   }
