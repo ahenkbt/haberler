@@ -660,7 +660,33 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       };
 
       const [dbResult, rssBundle] = await Promise.all([loadDbResult(), loadCachedRssBundle()]);
-      const { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
+      let { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
+
+      // Site içi RSS açıkken soğuk cache: doğrudan warm (8s saatlik bg cooldown atlanır).
+      if (
+        includeCachedRss &&
+        mapRssItems.length === 0 &&
+        hmAccess?.hybridRssEnabled === true &&
+        !hmAccess.isCorporate
+      ) {
+        try {
+          const scopeForFeeds = editorPool ? "all" : rssScope;
+          let warmFeeds = await loadPortalHybridRssFeeds(editorPool ? siteId! : siteId, scopeForFeeds);
+          if (editorPool) warmFeeds = warmFeeds.filter((feed) => !isBoxScopeFeedId(feed.id));
+          if (!foreignOnlyRss) {
+            await Promise.race([
+              warmPortalRssCacheIfEmpty(warmFeeds),
+              new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+            ]);
+            const warmed = await loadCachedRssBundle();
+            mapRssItems = warmed.mapRssItems;
+            mapFeedLabels = warmed.mapFeedLabels;
+            mapFeedGeoById = warmed.mapFeedGeoById;
+          }
+        } catch {
+          /* warm best-effort */
+        }
+      }
 
       // İçerik koruması: istenen kategori SPOR ise siyaset sızıntısını (DB + harita RSS) at.
       const merged = mergeHybridNews({
@@ -837,6 +863,17 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     const allowHmLiveRss = siteId != null && (hmAccess?.hybridRssEnabled === true || boxLive);
     if (includeRss && rssOnly && boxLive) {
       await warmPortalRssCacheIfEmpty(feeds);
+    } else if (includeRss && allowHmLiveRss && !boxLive) {
+      // Site içi RSS: boş cache’te isteği bekleterek doldur (bg cooldown atlanır).
+      const cachedProbe = await getPortalRssCachedItemsForFeeds(activeFeeds, categorySlug);
+      if (cachedProbe.length === 0) {
+        await Promise.race([
+          warmPortalRssCacheIfEmpty(feeds),
+          new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+        ]);
+      } else {
+        triggerPortalRssWarmIfEmpty(feeds, siteId, allowHmLiveRss);
+      }
     } else if (includeRss) {
       triggerPortalRssWarmIfEmpty(feeds, siteId, allowHmLiveRss);
     }
