@@ -184,8 +184,61 @@ async function fixZone(name) {
   return true;
 }
 
-async function tryWranglerDeploy() {
+async function uploadWorkerScriptViaApi() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const { readFileSync, existsSync } = await import("node:fs");
+  const workerPath = join(root, "cloudflare", "worker.js");
+  if (!existsSync(workerPath)) {
+    console.log("[fix] worker.js missing", workerPath);
+    return false;
+  }
+  const source = readFileSync(workerPath);
+  const metadata = {
+    main_module: "worker.js",
+    compatibility_date: "2025-07-15",
+    compatibility_flags: ["nodejs_compat"],
+    bindings: [
+      {
+        type: "plain_text",
+        name: "API_ORIGIN",
+        text: process.env.API_ORIGIN || "https://goalgo-y7ze.onrender.com",
+      },
+    ],
+  };
+  const form = new FormData();
+  form.set(
+    "metadata",
+    new Blob([JSON.stringify(metadata)], { type: "application/json" }),
+  );
+  form.set(
+    "worker.js",
+    new Blob([source], { type: "application/javascript+module" }),
+    "worker.js",
+  );
+
+  const t = token();
+  if (!t) {
+    console.log("[fix] worker upload skip — no token");
+    return false;
+  }
+  console.log("\n[fix] Workers API upload script", SCRIPT, `(${source.length} bytes)`);
+  const res = await fetch(`${API}/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${t}` },
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  const ok = res.ok && json.success !== false;
+  console.log(`[fix] worker upload ok=${ok} status=${res.status}`, JSON.stringify(json?.errors || json?.result?.id || {}));
+  return ok;
+}
+
+async function tryWranglerDeploy() {
+  // Prefer API upload — no wrangler resolution / shim recursion issues.
+  if (await uploadWorkerScriptViaApi()) return true;
+
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const { existsSync } = await import("node:fs");
   const candidates = [];
   try {
     const require = createRequire(join(root, "tooling/wrangler-shim/package.json"));
@@ -194,37 +247,29 @@ async function tryWranglerDeploy() {
   } catch {
     /* ignore */
   }
-  try {
-    const require = createRequire(join(root, "package.json"));
-    const shimPkg = dirname(require.resolve("wrangler/package.json"));
-    // Prefer real upstream over local shim (shim re-enters this script after deploy).
-    const nested = join(shimPkg, "node_modules", "wrangler-upstream", "bin", "wrangler.js");
-    candidates.push(nested);
-  } catch {
-    /* ignore */
-  }
-  candidates.push(join(root, "node_modules", "wrangler-upstream", "bin", "wrangler.js"));
-
-  const bin = candidates.find((p) => {
+  // pnpm may hoist under .pnpm
+  const pnpmStore = join(root, "node_modules", ".pnpm");
+  if (existsSync(pnpmStore)) {
     try {
-      return !!createRequire(p);
+      const { readdirSync } = await import("node:fs");
+      for (const name of readdirSync(pnpmStore)) {
+        if (!name.startsWith("wrangler@")) continue;
+        const bin = join(pnpmStore, name, "node_modules", "wrangler", "bin", "wrangler.js");
+        if (existsSync(bin)) candidates.push(bin);
+      }
     } catch {
-      return false;
+      /* ignore */
     }
-  });
-
-  // Existence check without require() of the bin itself
-  const { existsSync } = await import("node:fs");
+  }
   const resolved = candidates.find((p) => existsSync(p));
   if (!resolved) {
-    console.log("[fix] wrangler deploy skip — wrangler-upstream binary not found", candidates);
+    console.log("[fix] wrangler deploy skip — binary not found", candidates);
     return false;
   }
-
-  console.log("\n[fix] wrangler deploy (upstream, no shim hooks)...", resolved);
+  console.log("\n[fix] wrangler deploy fallback...", resolved);
   const r = spawnSync(process.execPath, [resolved, "deploy"], {
     stdio: "inherit",
-    env: { ...process.env, WRANGLER_SEND_METRICS: "false" },
+    env: { ...process.env, WRANGLER_SEND_METRICS: "false", CF_SKIP_POST_DEPLOY: "1" },
     cwd: root,
   });
   console.log("[fix] wrangler deploy status", r.status);
@@ -249,7 +294,11 @@ async function main() {
     if (await fixZone(z)) ok += 1;
   }
   console.log(`\n[fix] zones fixed: ${ok}/${ZONES.length}`);
-  await tryWranglerDeploy();
+  const deployed = await tryWranglerDeploy();
+  if (!deployed) {
+    console.error("[fix] FATAL: Worker script deploy failed — Chrome ERR_FAILED fix not live");
+    process.exitCode = 1;
+  }
 }
 
 main().catch((e) => {
