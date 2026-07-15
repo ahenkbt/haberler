@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: vatanhaber.net zone routes after clientHold lift 2026-07-15T17:45Z
+ * trigger: vatanhaber 522 reattach 2026-07-15T18:05Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
