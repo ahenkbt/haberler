@@ -131,11 +131,17 @@ async function ensureRoutes(zoneId, zoneName) {
         method: "PUT",
         body: { pattern, script: SCRIPT },
       });
+      if (r.ok) {
+        console.log(
+          `[fix] rebind ${pattern} → ${SCRIPT} (was:${row.script || "∅"}) ok=true`,
+        );
+        continue;
+      }
       console.log(
-        `[fix] rebind ${pattern} → ${SCRIPT} (was:${row.script || "∅"}) ok=${r.ok}`,
+        `[fix] rebind ${pattern} failed, recreate`,
         JSON.stringify(r.json?.errors || {}),
       );
-      continue;
+      await cf(`/zones/${zoneId}/workers/routes/${row.id}`, { method: "DELETE" });
     }
     const r = await cf(`/zones/${zoneId}/workers/routes`, {
       method: "POST",
@@ -289,7 +295,11 @@ async function fixZone(name) {
   console.log(`[fix] live probe ${name}:`, JSON.stringify(live));
   if (live.cfChallenge) {
     console.warn(
-      `[fix] WARN ${name} Cloudflare Challenge (Bot Fight / under_attack) — Worker çalışmıyor; security gevşetildi, 30–60sn sonra tekrar dene`,
+      `[fix] WARN ${name} Cloudflare Challenge — GitHub token Zone Settings yetkisi yoksa Dashboard'dan kapatın:\n` +
+        `  Security → Settings → Bot Fight Mode = Off\n` +
+        `  Security → Settings → Security Level = Essentially Off / Medium\n` +
+        `  Under Attack Mode = Off\n` +
+        `Token'a ekleyin: Zone Settings Write, Zone WAF Write, Zone DNS Edit`,
     );
   }
   if (live.viaNetlify) {
