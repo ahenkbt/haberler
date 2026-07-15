@@ -100,9 +100,7 @@ async function newsRowBelongsToSite(
       siteId,
     );
   }
-  // Yekpare merkez havuzu (site_id NULL): editör siteleri YAYINLANMIŞ global haberi
-  // görüntüleyebilir (kesinleşmiş model). Okunma sayacı tek/ortak newsTable.views.
-  if (row.status === "published") return true;
+  // Haber siteleri: yalnızca exclusive kategori ile bu siteye ait merkez satırlar.
   if (row.categoryId == null) return false;
   const [readCat, mainCat] = await Promise.all([
     readDb
@@ -986,7 +984,8 @@ router.get("/news/:id", async (req, res): Promise<void> => {
     isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
   }
 
-  const numericId = parseInt(String(raw), 10);
+  // Yalnızca tamamen sayısal id — "15-temmuz-..." → 15 yanlış eşleşmesini önle.
+  const numericId = /^\d+$/.test(String(raw).trim()) ? parseInt(String(raw).trim(), 10) : NaN;
   let row: typeof newsTable.$inferSelect | undefined;
 
   if (!Number.isNaN(numericId)) {
@@ -1012,7 +1011,7 @@ router.get("/news/:id", async (req, res): Promise<void> => {
       .limit(1);
   }
 
-  if (!row && !isCorporate) {
+  if (!row && !siteScoped) {
     [row] = await readDb
       .select()
       .from(newsTable)
@@ -1048,7 +1047,7 @@ router.get("/news/:id", async (req, res): Promise<void> => {
         .where(and(eq(newsTable.slug, String(raw)), eq(newsTable.siteId, siteId)))
         .limit(1);
     }
-    if (!row && !isCorporate) {
+    if (!row && !siteScoped) {
       [row] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, String(raw)));
     }
   }

@@ -303,7 +303,7 @@ export async function loadPortalDbNews(opts: {
   };
 }
 
-/** HM editör sitesi havuz seçenekleri — kurumsal sitede merkez Yekpare havuzu kapalı. */
+/** HM editör sitesi havuz seçenekleri — public vitrinde merkez canlı birleşmez (onaylı yerel kopya gerekir). */
 export function resolveEditorScopedPoolOpts(hmAccess: {
   isCorporate: boolean;
   activatedCategorySlugs: string[];
@@ -316,14 +316,17 @@ export function resolveEditorScopedPoolOpts(hmAccess: {
   hiddenPoolNewsIds: number[];
   excludeCentralPool: boolean;
   allowCrossSiteManualNews: boolean;
+  yekparePoolReceiveEnabled: boolean;
 } {
   const poolReceiveOff = hmAccess.yekparePoolReceiveEnabled === false;
   return {
     activatedSlugs: hmAccess.activatedCategorySlugs,
     activationDefault: hmAccess.isCorporate ? "none" : "all",
     hiddenPoolNewsIds: hmAccess.hiddenPoolNewsIds,
-    excludeCentralPool: hmAccess.isCorporate || poolReceiveOff,
-    allowCrossSiteManualNews: hmAccess.allowCrossSiteManualNews,
+    // Public hybrid: asla merkez canlı merge — havuz alımı açıksa bile taslak/onay gerekir.
+    excludeCentralPool: true,
+    allowCrossSiteManualNews: hmAccess.isCorporate ? false : !poolReceiveOff && hmAccess.allowCrossSiteManualNews,
+    yekparePoolReceiveEnabled: hmAccess.isCorporate ? false : !poolReceiveOff,
   };
 }
 
@@ -369,7 +372,9 @@ export async function loadEditorScopedDbNews(opts: {
     let items = dedupeEditorScopedDbNewsItems(editor.items, opts.siteId);
     items = items.filter((item) => {
       const ref = String(item.rssSourceUrl ?? "").trim();
-      return !ref.startsWith("yekpare-hm-pool:") && !ref.startsWith("yekpare-hm-sync:");
+      // Sync merkez kopyaları yerel sitede olmamalı; onaylı havuz kopyaları (pool:) kalsın.
+      if (ref.startsWith("yekpare-hm-sync:")) return false;
+      return true;
     });
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
     const wantSlug = String(opts.categorySlug ?? "").trim().toLowerCase();

@@ -147,6 +147,8 @@ export async function fetchHybridNewsListResult(opts: {
   newsmap?: boolean;
   /** Editör Yekpare havuzu — yalnızca merkez havuz (site_id NULL) + RSS. */
   yekparePool?: boolean;
+  /** Editör onay paneli — public değil; canlı merkez tarama. */
+  poolBrowse?: boolean;
   /** true = tam RSS+DB birleşimi (yavaş). Varsayılan: hızlı DB-first. */
   dbFirst?: boolean;
   fullHybrid?: boolean;
@@ -168,6 +170,7 @@ export async function fetchHybridNewsListResult(opts: {
     opts.rssOnly !== true &&
     (opts.dbFirst === true || opts.dbFirst !== false);
   if (opts.yekparePool) qs.set("yekparePool", "1");
+  if (opts.poolBrowse) qs.set("poolBrowse", "1");
   if (useDbFirst) qs.set("dbFirst", "1");
   if (opts.newsmap) qs.set("newsmap", "1");
   if (opts.global) {
@@ -208,6 +211,8 @@ export async function fetchHybridNewsList(opts: {
   newsmap?: boolean;
   /** Editör Yekpare havuzu — yalnızca merkez havuz (site_id NULL) + RSS. */
   yekparePool?: boolean;
+  /** Editör onay paneli — public değil. */
+  poolBrowse?: boolean;
   dbFirst?: boolean;
   fullHybrid?: boolean;
   signal?: AbortSignal;

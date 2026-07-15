@@ -206,12 +206,9 @@ export function isYekparePoolNewsItem(n: unknown): boolean {
   return rssUrl.startsWith("yekpare-hm-pool:");
 }
 
-/** Yekpare havuz adayları — önce `yekpare-hm-pool:` ref, yoksa tüm girdi; eklenme tarihine göre. */
+/** Yekpare havuz adayları — yalnızca onaylı `yekpare-hm-pool:` kopyaları (canlı merkez yok). */
 export function buildYekparePoolSortedCandidates<T>(items: readonly T[]): T[] {
-  const yekpareOnly = sortNewsByRecency(
-    mergeUniqueNews(items.filter(isYekparePoolNewsItem)) as T[],
-  );
-  return yekpareOnly.length > 0 ? yekpareOnly : sortNewsByRecency([...items]);
+  return sortNewsByRecency(mergeUniqueNews(items.filter(isYekparePoolNewsItem)) as T[]);
 }
 
 /** Manşet kategori filtresi — slug / ad eşleşmesi (basit). */
