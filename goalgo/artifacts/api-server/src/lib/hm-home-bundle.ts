@@ -158,7 +158,7 @@ function sortNewsItemsByAddDate(items: SerializedNewsListItem[]): SerializedNews
   return [...items].sort((a, b) => newsItemAddDateMs(b) - newsItemAddDateMs(a));
 }
 
-/** Orta manşet: en son eklenen manuel/DB haberler — tepe manşet `isFeatured` ile ayrı. */
+/** Orta manşet: en son eklenenler; `isFeatured` (tepe) hariç — yeniden eskiye. */
 function buildCenterHeadlinesFromItems(
   _featured: SerializedNewsListItem[],
   manual: SerializedNewsListItem[],
@@ -168,7 +168,8 @@ function buildCenterHeadlinesFromItems(
   const slug = normalizeCategorySlug(categorySlug);
   const filterCat = (items: SerializedNewsListItem[]) =>
     slug ? items.filter((item) => itemMatchesCategorySlug(item, slug)) : items;
-  const latest = sortNewsItemsByAddDate(filterCat(manual));
+  const latestOnly = filterCat(manual).filter((item) => item.isFeatured !== true);
+  const latest = sortNewsItemsByAddDate(latestOnly);
   const target = Math.min(Math.max(limit, 1), 30);
   return latest.slice(0, target);
 }

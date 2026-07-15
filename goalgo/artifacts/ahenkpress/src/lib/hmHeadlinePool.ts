@@ -234,7 +234,7 @@ export function filterHeadlineItemsByCategorySlug<T>(
 
 /**
  * Orta (normal) manşet slider: en son eklenen editör/DB haberleri —
- * `isFeatured` şartı yok (tepe manşet manşet etiketine özel kalır); RSS / yekpare yok.
+ * `isFeatured` (tepe manşet) ve RSS / yekpare hariç; yeniden eskiye.
  */
 export function buildCenterMansetSliderPool(opts: {
   manualItems: unknown[];
@@ -246,10 +246,33 @@ export function buildCenterMansetSliderPool(opts: {
   const latestFirst = mergeUniqueNews(
     filterHmEditorManualNews(opts.latestItems),
     filterHmEditorManualNews(opts.manualItems),
-  ).filter((item) => !isRssHybridItem(item) && !isYekparePoolNewsItem(item));
+  ).filter(
+    (item) =>
+      !isRssHybridItem(item) &&
+      !isYekparePoolNewsItem(item) &&
+      (item as { isFeatured?: boolean }).isFeatured !== true,
+  );
   const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
   const pool = sortNewsByRecency(scoped);
   return dedupeHeadlineSliderItems(pool.slice(0, limit));
+}
+
+/** Yan manşet: manşet etiketi yerine en son eklenenler (tepe/orta tekrarı hariç). */
+export function buildLatestNewsSideFallbackPool<T>(opts: {
+  items: readonly T[];
+  sliderItems: readonly T[];
+  tepeMansetItems?: readonly T[];
+}): T[] {
+  const excludeFrom = mergeUniqueNews(opts.sliderItems, opts.tepeMansetItems ?? []);
+  const latestPool = sortNewsByRecency(
+    mergeUniqueNews(opts.items).filter(
+      (item) =>
+        !isRssHybridItem(item) &&
+        !isYekparePoolNewsItem(item) &&
+        (item as { isFeatured?: boolean }).isFeatured !== true,
+    ),
+  );
+  return excludeHeadlineSliderItems(latestPool as T[], excludeFrom);
 }
 
 /** Yekpare havuz yan kartları: önce son dakika (`isBreaking`), sonra en güncel. */
@@ -492,7 +515,7 @@ export function buildHeadlineSidePrimaryPool<T>(opts: {
       sliderItems: excludeSlider,
     });
   } else {
-    primary = buildMansetTaggedSideFallbackPool({
+    primary = buildLatestNewsSideFallbackPool({
       items: opts.mansetFallbackItems ?? [],
       sliderItems: opts.sliderItems,
       tepeMansetItems: opts.tepeMansetActive ? opts.tepeMansetItems : [],
