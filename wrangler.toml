@@ -66,5 +66,12 @@ custom_domain = true
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
 
-# Zone whois CF NS'te ama hesapta yoksa deploy düşebilir — ayrı commit ile deneriz.
-# vatankahramanlari.org / vatanhaber.net → cf-fix-originless-dns.mjs + CLOUDFLARE_API_TOKEN
+# VKD: DNS A 192.0.2.1 var ama Worker Custom Domain yok → Error 522.
+# Custom Domain bağlanınca Worker origin olur, 522 kalkar.
+[[routes]]
+pattern = "vatankahramanlari.org"
+custom_domain = true
+
+[[routes]]
+pattern = "www.vatankahramanlari.org"
+custom_domain = true
