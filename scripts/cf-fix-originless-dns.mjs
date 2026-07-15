@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: vatanhaber 522 reattach 2026-07-15T18:05Z
+ * trigger: re-attach all HM Worker routes after 522 flap 2026-07-15T18:07Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -15,6 +15,7 @@ const API = "https://api.cloudflare.com/client/v4";
 const SCRIPT = "haberler";
 
 const ZONES = [
+  "yekpare.net",
   "ankarasehirgazetesi.com",
   "vatankahramanlari.org",
   "vatanhaber.net",
