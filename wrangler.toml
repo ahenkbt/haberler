@@ -56,9 +56,8 @@ zone_name = "turk.eco"
 pattern = "www.turk.eco"
 zone_name = "turk.eco"
 
-# --- Error 1016 fix: originless Worker Custom Domains ---
-# Zone Cloudflare'de ama A/AAAA yok → CF Origin DNS error.
-# custom_domain DNS + sertifika oluşturur; AAAA 100:: cutover yedeği.
+# Error 1016: zone Cloudflare'de aktif (SOA var) ama A/AAAA yok.
+# custom_domain DNS + Worker bağlar. (Diğer HM alanları zone/API yoksa deploy'u düşürmesin diye burada yok.)
 [[routes]]
 pattern = "ankarasehirgazetesi.com"
 custom_domain = true
@@ -67,18 +66,11 @@ custom_domain = true
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
 
+# Apex için Worker route yedeği (DNS oluştuktan sonra)
 [[routes]]
-pattern = "vatankahramanlari.org"
-custom_domain = true
+pattern = "ankarasehirgazetesi.com/*"
+zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
-pattern = "www.vatankahramanlari.org"
-custom_domain = true
-
-[[routes]]
-pattern = "vatanhaber.net"
-custom_domain = true
-
-[[routes]]
-pattern = "www.vatanhaber.net"
-custom_domain = true
+pattern = "www.ankarasehirgazetesi.com/*"
+zone_name = "ankarasehirgazetesi.com"
