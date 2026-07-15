@@ -150,8 +150,8 @@ async function purgeNetlify(auth, zoneId, zoneName) {
   console.log(`[cutover] ${zoneName}: purged ${n} Netlify records`);
 }
 
-async function ensureRoutes(auth, zoneId) {
-  const patterns = ["yekpare.net/*", "yekpare.net", "www.yekpare.net/*", "www.yekpare.net"];
+async function ensureRoutes(auth, zoneId, zoneName) {
+  const patterns = [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`];
   const list = await cf(`/zones/${zoneId}/workers/routes`, auth);
   const have = new Set((list.json?.result || []).map((r) => r.pattern));
   for (const pattern of patterns) {
@@ -162,6 +162,21 @@ async function ensureRoutes(auth, zoneId) {
     );
     console.log(`[cutover] route ${pattern} ok=${r.ok}`, JSON.stringify(r.json?.errors || {}));
   }
+}
+
+async function cutoverZone(auth, zoneName) {
+  const zoneId = await getZoneId(auth, zoneName);
+  if (!zoneId) {
+    console.log(`[cutover] zone not found: ${zoneName}`);
+    return false;
+  }
+  console.log(`[cutover] zone ${zoneName}=${zoneId}`);
+  await purgeNetlify(auth, zoneId, zoneName);
+  await ensureWwwDns(auth, zoneId, zoneName);
+  await ensureRoutes(auth, zoneId, zoneName);
+  await attachWorkerHostname(auth, zoneName);
+  await attachWorkerHostname(auth, `www.${zoneName}`);
+  return true;
 }
 
 async function main() {
@@ -189,25 +204,47 @@ async function main() {
     return;
   }
 
-  const yekpare = await getZoneId(auth, "yekpare.net");
-  if (yekpare) {
-    await purgeNetlify(auth, yekpare, "yekpare.net");
-    await ensureWwwDns(auth, yekpare, "yekpare.net");
-    await ensureRoutes(auth, yekpare);
-  } else {
-    console.log("[cutover] yekpare.net zone not found");
+  // Portal + Cloudflare zone'u olan HM editör siteleri
+  const zones = [
+    "yekpare.net",
+    "ankarahabergundemi.com",
+    "turk.eco",
+  ];
+  for (const name of zones) {
+    await cutoverZone(auth, name);
   }
 
-  // Custom hostnames on Worker (requires zone ownership)
-  for (const host of ["www.yekpare.net", "yekpare.net", "ankarasehirgazetesi.com", "www.ankarasehirgazetesi.com", "turknet.app", "www.turknet.app"]) {
+  // Extra hostnames (Netlify NS / pending)
+  for (const host of [
+    "ankarasehirgazetesi.com",
+    "www.ankarasehirgazetesi.com",
+    "turknet.app",
+    "www.turknet.app",
+    "vatankahramanlari.org",
+    "www.vatankahramanlari.org",
+    "tukav.org",
+    "www.tukav.org",
+    "suhaberajansi.com",
+    "www.suhaberajansi.com",
+    "vatanhaber.net",
+    "www.vatanhaber.net",
+  ]) {
     await attachWorkerHostname(auth, host);
   }
 
-  // Try create pending zones for Netlify NS domains
-  for (const name of ["ankarasehirgazetesi.com", "turknet.app"]) {
+  // Try create pending zones for Netlify NS / broken DNS domains
+  for (const name of [
+    "ankarasehirgazetesi.com",
+    "turknet.app",
+    "vatankahramanlari.org",
+    "tukav.org",
+    "suhaberajansi.com",
+    "vatanhaber.net",
+  ]) {
     const id = await getZoneId(auth, name);
     if (id) {
       console.log(`[cutover] zone exists ${name}=${id}`);
+      await cutoverZone(auth, name);
       continue;
     }
     const r = await cf(

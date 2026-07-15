@@ -22,3 +22,36 @@ zone_name = "yekpare.net"
 [[routes]]
 pattern = "www.yekpare.net"
 custom_domain = true
+
+# HM editör siteleri (Cloudflare zone olanlar → Worker → Render)
+[[routes]]
+pattern = "ankarahabergundemi.com/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "turk.eco/*"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "turk.eco"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "www.turk.eco/*"
+zone_name = "turk.eco"
+
+[[routes]]
+pattern = "www.turk.eco"
+zone_name = "turk.eco"
