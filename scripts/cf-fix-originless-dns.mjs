@@ -3,7 +3,7 @@
  * Proxied AAAA 100:: + Worker route/custom domain.
  *
  * CLOUDFLARE_API_TOKEN=... node scripts/cf-fix-originless-dns.mjs
- * trigger: re-run DNS fix 2026-07-15T16:53Z
+ * trigger: attach VKD custom domain 2026-07-15T17:09Z
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
