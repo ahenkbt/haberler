@@ -1,17 +1,9 @@
-# Yekpare — Cloudflare Workers Static Assets + Containers (Neon Postgres)
-# Stack: Neon (DB) + GitHub Actions (CI) + Cloudflare (SPA + API container)
-# Render / Railway kullanılmaz.
+# Yekpare — Cloudflare Workers Static Assets
+# Workers Builds (dashboard): Deploy = npx wrangler deploy  (Build boş)
+# SPA build: package.json postinstall → scripts/cf-workers-ci-prepare.mjs (WORKERS_CI=1)
+# Node: .nvmrc = 22; wrangler pinned for Node 20 fallback
 #
-# Secrets (repoya yazma — wrangler secret / GitHub Actions):
-#   DATABASE_URL=postgresql://…@….neon.tech/neondb?sslmode=require
-#   SESSION_SECRET=<min 16 karakter>
-#
-# Dashboard (Workers Builds) — Node 22 zorunlu (wrangler 4.111+):
-#   Environment: NODE_VERSION=22
-#   Build command:  (boş bırakılabilir)
-#   Deploy command: pnpm run cf:dashboard-deploy
-#   (= SPA build + wrangler deploy; Docker Container image için gerekir)
-# Tercihen CI: GitHub Actions cloudflare-production.yml (Docker hazır)
+# /api → API_ORIGIN (vars). Containers ayrı oturumda eklenecek (Docker gerekir).
 
 name = "haberler"
 compatibility_date = "2025-07-15"
@@ -24,22 +16,9 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = true
 
-[[containers]]
-class_name = "ApiContainer"
-image = "./goalgo/Dockerfile.cloudflare"
-max_instances = 3
-instance_type = "standard-1"
-
-[[durable_objects.bindings]]
-name = "API_CONTAINER"
-class_name = "ApiContainer"
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["ApiContainer"]
-
 [vars]
-# Non-secret vars only. DATABASE_URL / SESSION_SECRET → wrangler secret put
+# Canlı API (Render hâlâ healthz=200). Neon cutover: API host Neon'a bağlanınca güncelle.
+API_ORIGIN = "https://goalgo-y7ze.onrender.com"
 YEKTUBE_DB_READ = "main"
 NEWS_DB_READ = "main"
 USE_NATIVE_AI_CALL = "true"
