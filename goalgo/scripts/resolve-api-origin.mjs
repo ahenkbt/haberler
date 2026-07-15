@@ -1,4 +1,4 @@
-/** Netlify build / _redirects — backend kök URL (Render öncelikli). */
+/** Netlify / Cloudflare build — backend kök URL (Render öncelikli). */
 export function resolveApiOrigin() {
   return String(
     process.env.API_ORIGIN ??

@@ -1,0 +1,74 @@
+# Cloudflare Workers Static Assets (haberler) — Render API vekili.
+# Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# Optional: RENDER_API_ORIGIN / API_ORIGIN, AGENTLABS_URL
+name: Cloudflare Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "goalgo/artifacts/ahenkpress/**"
+      - "goalgo/artifacts/yektube-web/**"
+      - "goalgo/scripts/copy-yektube-build.mjs"
+      - "goalgo/scripts/cloudflare-build.mjs"
+      - "goalgo/scripts/netlify-build.mjs"
+      - "goalgo/scripts/write-netlify-redirects.mjs"
+      - "goalgo/scripts/generate-public-sitemap.mjs"
+      - "scripts/cloudflare-root-build.mjs"
+      - "cloudflare/**"
+      - "wrangler.toml"
+      - "package.json"
+      - ".github/workflows/cloudflare-production.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check Cloudflare secrets
+        id: cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Cloudflare deploy (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set)."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install and build
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          API_ORIGIN: ${{ secrets.RENDER_API_ORIGIN || secrets.API_ORIGIN || secrets.RAILWAY_API_ORIGIN || 'https://goalgo-y7ze.onrender.com' }}
+          RENDER_API_ORIGIN: ${{ secrets.RENDER_API_ORIGIN || secrets.API_ORIGIN || secrets.RAILWAY_API_ORIGIN || 'https://goalgo-y7ze.onrender.com' }}
+          AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || 'https://call.yekpare.net' }}
+          NPM_CONFIG_PRODUCTION: "false"
+        run: pnpm run build:cloudflare
+
+      - name: Deploy to Cloudflare
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler@4 deploy

@@ -9,6 +9,7 @@
     "build:web:full": "pnpm run build:yektube && node scripts/copy-yektube-build.mjs && pnpm run build:web",
     "build:vercel": "node scripts/vercel-build.mjs",
     "build:netlify": "node scripts/netlify-build.mjs",
+    "build:cloudflare": "node scripts/cloudflare-build.mjs",
     "dev:api": "pnpm --filter @workspace/api-server run dev",
     "dev:pbx": "pnpm --filter @workspace/pbx-gateway run dev",
     "dev:web": "pnpm --filter @workspace/ahenkpress run dev",

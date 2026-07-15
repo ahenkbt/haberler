@@ -1,0 +1,24 @@
+# Yekpare frontend — Cloudflare Workers Static Assets (Render API vekili).
+# Dashboard (Workers Builds / Pages):
+#   Build command:  corepack enable && corepack prepare pnpm@9.15.5 --activate && pnpm run build:cloudflare
+#   Deploy command: npx wrangler deploy
+#   Output dir:     (wrangler.toml [assets].directory — ayrı UI alanı gerekmez)
+#
+# Ortam değişkenleri (Production):
+#   RENDER_API_ORIGIN=https://goalgo-y7ze.onrender.com
+#   AGENTLABS_URL=https://call.yekpare.net   (opsiyonel)
+#   VITE_PORTAL_HOSTS=...                    (opsiyonel; build + runtime)
+
+name = "haberler"
+compatibility_date = "2025-07-15"
+main = "cloudflare/worker.js"
+
+[assets]
+directory = "artifacts/ahenkpress/dist/public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# Edge vekil (API / sitemap / OG / Yektube path) önce çalışsın
+run_worker_first = true
+
+[vars]
+RENDER_API_ORIGIN = "https://goalgo-y7ze.onrender.com"
