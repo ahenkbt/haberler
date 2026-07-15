@@ -1,175 +1,234 @@
 /**
- * Workers Builds deploy sonrası: yekpare DNS'ten Netlify izlerini temizle, www ekle,
- * mümkünse Netlify NS'li domainler için Cloudflare zone oluştur.
- * Token: CLOUDFLARE_API_TOKEN (Workers Builds inject) veya wrangler config.
+ * Post-deploy: Netlify temizliği + www + Worker domains API
  */
-import { readFileSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { createRequire } from "node:module";
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "16f5b996194174624e7969a3658bd2bb";
 const API = "https://api.cloudflare.com/client/v4";
+const SCRIPT = "haberler";
 
-function loadToken() {
-  if (process.env.CLOUDFLARE_API_TOKEN) return process.env.CLOUDFLARE_API_TOKEN;
-  if (process.env.CF_API_TOKEN) return process.env.CF_API_TOKEN;
-  const candidates = [
-    join(homedir(), ".wrangler", "config", "default.toml"),
-    join(homedir(), ".config", ".wrangler", "config", "default.toml"),
-    "/opt/buildhome/.config/.wrangler/config/default.toml",
-    "/opt/buildhome/.wrangler/config/default.toml",
-  ];
-  for (const p of candidates) {
-    if (!existsSync(p)) continue;
-    const text = readFileSync(p, "utf8");
-    const m =
-      text.match(/oauth_token\s*=\s*"([^"]+)"/) ||
-      text.match(/api_token\s*=\s*"([^"]+)"/) ||
-      text.match(/CLOUDFLARE_API_TOKEN\s*=\s*"([^"]+)"/);
-    if (m?.[1]) return m[1];
+function findTokenFiles(dir, depth = 0, out = []) {
+  if (depth > 4 || !existsSync(dir)) return out;
+  let entries = [];
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
   }
-  return "";
+  for (const e of entries) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) findTokenFiles(p, depth + 1, out);
+    else if (/\.(toml|json|jsonc)$/i.test(e.name) || e.name === "config") out.push(p);
+  }
+  return out;
 }
 
-async function cf(path, { method = "GET", body } = {}, token) {
+function loadToken() {
+  for (const key of ["CLOUDFLARE_API_TOKEN", "CF_API_TOKEN", "CLOUDFLARE_API_KEY"]) {
+    if (process.env[key]) {
+      console.log(`[cutover] token from env ${key}`);
+      return { token: process.env[key], email: process.env.CLOUDFLARE_EMAIL || "" };
+    }
+  }
+  const roots = [
+    join(homedir(), ".wrangler"),
+    join(homedir(), ".config", ".wrangler"),
+    join(homedir(), ".config", "wrangler"),
+    "/opt/buildhome/.config/.wrangler",
+    "/opt/buildhome/.wrangler",
+    "/opt/buildhome/.config/wrangler",
+  ];
+  for (const root of roots) {
+    for (const p of findTokenFiles(root)) {
+      try {
+        const text = readFileSync(p, "utf8");
+        const oauth = text.match(/oauth_token\s*=\s*"([^"]+)"/);
+        const api = text.match(/api_token\s*=\s*"([^"]+)"/);
+        const email = text.match(/email\s*=\s*"([^"]+)"/);
+        if (oauth?.[1] || api?.[1]) {
+          console.log(`[cutover] token from file ${p}`);
+          return { token: (oauth || api)[1], email: email?.[1] || "" };
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return { token: "", email: "" };
+}
+
+async function cf(path, { method = "GET", body, token, email } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (email && process.env.CLOUDFLARE_API_KEY) {
+    headers["X-Auth-Email"] = email;
+    headers["X-Auth-Key"] = process.env.CLOUDFLARE_API_KEY;
+  } else {
+    headers.Authorization = `Bearer ${token}`;
+  }
   const res = await fetch(`${API}${path}`, {
     method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => ({}));
   return { ok: res.ok && json.success !== false, status: res.status, json };
 }
 
-async function getZoneId(token, name) {
-  const r = await cf(`/zones?name=${encodeURIComponent(name)}&account.id=${ACCOUNT_ID}`, {}, token);
+async function getZoneId(auth, name) {
+  const r = await cf(`/zones?name=${encodeURIComponent(name)}&account.id=${ACCOUNT_ID}`, auth);
   return r.json?.result?.[0]?.id || null;
 }
 
-async function purgeNetlifyRecords(token, zoneId, zoneName) {
-  const r = await cf(`/zones/${zoneId}/dns_records?per_page=100`, {}, token);
-  const records = r.json?.result || [];
-  let deleted = 0;
-  for (const rec of records) {
-    const content = String(rec.content || "").toLowerCase();
-    const name = String(rec.name || "").toLowerCase();
-    const isNetlify =
-      content.includes("netlify") ||
-      content.includes("nsone.net") ||
-      name.includes("netlify") ||
-      (rec.type === "CNAME" && content.includes("ntl."));
-    if (!isNetlify) continue;
-    // Keep MX/TXT mail; only kill host / www / alias pointing at Netlify
-    if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
-    console.log(`[cutover] delete ${rec.type} ${rec.name} → ${rec.content}`);
-    await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE" }, token);
-    deleted++;
-  }
-  console.log(`[cutover] ${zoneName}: removed ${deleted} Netlify DNS record(s)`);
+async function attachWorkerHostname(auth, hostname) {
+  // Workers Domains (custom domains) API
+  const r = await cf(
+    `/accounts/${ACCOUNT_ID}/workers/domains`,
+    {
+      method: "PUT",
+      body: {
+        hostname,
+        service: SCRIPT,
+        environment: "production",
+      },
+      ...auth,
+    },
+  );
+  console.log(
+    `[cutover] workers/domains ${hostname} status=${r.status} ok=${r.ok}`,
+    JSON.stringify(r.json?.errors || r.json?.result || r.json?.messages || {}),
+  );
+  return r.ok;
 }
 
-async function ensureWww(token, zoneId, zoneName) {
-  // Proxied CNAME www → apex (Worker routes catch it) OR AAAA 100::
-  const list = await cf(`/zones/${zoneId}/dns_records?name=www.${zoneName}`, {}, token);
+async function ensureWwwDns(auth, zoneId, zoneName) {
+  const list = await cf(`/zones/${zoneId}/dns_records?name=www.${zoneName}&per_page=50`, auth);
   const existing = list.json?.result || [];
   if (existing.length) {
-    console.log(`[cutover] www.${zoneName} already has DNS`);
+    for (const rec of existing) {
+      if (!rec.proxied && ["A", "AAAA", "CNAME"].includes(rec.type)) {
+        await cf(
+          `/zones/${zoneId}/dns_records/${rec.id}`,
+          { method: "PATCH", body: { proxied: true }, ...auth },
+        );
+        console.log(`[cutover] proxied existing ${rec.type} ${rec.name}`);
+      }
+    }
     return;
   }
-  const body = {
-    type: "CNAME",
-    name: "www",
-    content: zoneName,
-    proxied: true,
-    ttl: 1,
-  };
-  const created = await cf(`/zones/${zoneId}/dns_records`, { method: "POST", body }, token);
+  const created = await cf(`/zones/${zoneId}/dns_records`, {
+    method: "POST",
+    body: { type: "CNAME", name: "www", content: zoneName, proxied: true, ttl: 1 },
+    ...auth,
+  });
   if (created.ok) {
-    console.log(`[cutover] created proxied CNAME www.${zoneName} → ${zoneName}`);
-  } else {
-    // fallback originless A record for Worker/custom domain
-    const a = await cf(
-      `/zones/${zoneId}/dns_records`,
-      { method: "POST", body: { type: "AAAA", name: "www", content: "100::", proxied: true, ttl: 1 } },
-      token,
-    );
-    console.log(`[cutover] www AAAA fallback ok=${a.ok}`, JSON.stringify(a.json?.errors || []));
-  }
-}
-
-async function ensureWorkerRoute(token, zoneId, pattern, script = "haberler") {
-  const list = await cf(`/zones/${zoneId}/workers/routes`, {}, token);
-  const routes = list.json?.result || [];
-  if (routes.some((r) => r.pattern === pattern)) {
-    console.log(`[cutover] route exists ${pattern}`);
+    console.log(`[cutover] created www CNAME`);
     return;
   }
-  const r = await cf(
-    `/zones/${zoneId}/workers/routes`,
-    { method: "POST", body: { pattern, script } },
-    token,
-  );
-  console.log(`[cutover] route ${pattern} ok=${r.ok}`, JSON.stringify(r.json?.errors || r.json?.result || {}));
+  const aaaa = await cf(`/zones/${zoneId}/dns_records`, {
+    method: "POST",
+    body: { type: "AAAA", name: "www", content: "100::", proxied: true, ttl: 1 },
+    ...auth,
+  });
+  console.log(`[cutover] www AAAA ok=${aaaa.ok}`, JSON.stringify(aaaa.json?.errors || {}));
 }
 
-async function tryCreateZone(token, name) {
-  const existing = await getZoneId(token, name);
-  if (existing) {
-    console.log(`[cutover] zone already exists ${name} ${existing}`);
-    return existing;
+async function purgeNetlify(auth, zoneId, zoneName) {
+  const r = await cf(`/zones/${zoneId}/dns_records?per_page=100`, auth);
+  let n = 0;
+  for (const rec of r.json?.result || []) {
+    const content = String(rec.content || "").toLowerCase();
+    if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
+    if (!(content.includes("netlify") || content.includes("ntl.") || content.includes("netlify.app"))) continue;
+    await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE", ...auth });
+    console.log(`[cutover] deleted Netlify ${rec.type} ${rec.name}`);
+    n++;
   }
-  const r = await cf(
-    `/zones`,
-    {
-      method: "POST",
-      body: { name, account: { id: ACCOUNT_ID }, type: "full", jump_start: true },
-    },
-    token,
-  );
-  if (r.ok) {
-    const id = r.json.result?.id;
-    const ns = r.json.result?.name_servers || [];
-    console.log(`[cutover] created zone ${name} id=${id} ns=${ns.join(",")}`);
-    return id;
+  console.log(`[cutover] ${zoneName}: purged ${n} Netlify records`);
+}
+
+async function ensureRoutes(auth, zoneId) {
+  const patterns = ["yekpare.net/*", "yekpare.net", "www.yekpare.net/*", "www.yekpare.net"];
+  const list = await cf(`/zones/${zoneId}/workers/routes`, auth);
+  const have = new Set((list.json?.result || []).map((r) => r.pattern));
+  for (const pattern of patterns) {
+    if (have.has(pattern)) continue;
+    const r = await cf(
+      `/zones/${zoneId}/workers/routes`,
+      { method: "POST", body: { pattern, script: SCRIPT }, ...auth },
+    );
+    console.log(`[cutover] route ${pattern} ok=${r.ok}`, JSON.stringify(r.json?.errors || {}));
   }
-  console.log(`[cutover] zone create ${name} failed`, JSON.stringify(r.json?.errors || r.json));
-  return null;
 }
 
 async function main() {
-  const token = loadToken();
-  if (!token) {
-    console.warn("[cutover] no Cloudflare API token in env/config — skip DNS cutover");
+  console.log(
+    "[cutover] auth-related env keys:",
+    Object.keys(process.env)
+      .filter((k) => /CLOUD|CF_|WRANGLER|TOKEN|API_KEY|AUTH/i.test(k))
+      .join(", ") || "(none)",
+  );
+
+  // Confirm wrangler auth works in this process
+  try {
+    const require = createRequire(import.meta.url);
+    const upstreamPkg = join(require.resolve("wrangler-upstream/package.json"), "..");
+    const bin = join(upstreamPkg, "bin", "wrangler.js");
+    const who = spawnSync(process.execPath, [bin, "whoami"], { encoding: "utf8", env: process.env });
+    console.log("[cutover] wrangler whoami status", who.status, (who.stdout || who.stderr || "").slice(0, 300));
+  } catch (e) {
+    console.log("[cutover] whoami skip", e.message);
+  }
+
+  const auth = loadToken();
+  if (!auth.token) {
+    console.warn("[cutover] NO TOKEN — cannot edit DNS. Worker deploy already done.");
     return;
   }
-  console.log("[cutover] token found, running DNS cutover…");
 
-  for (const zoneName of ["yekpare.net", "goalgo.org", "aiaddin.net"]) {
-    const zoneId = await getZoneId(token, zoneName);
-    if (!zoneId) {
-      console.log(`[cutover] zone not in account: ${zoneName}`);
-      continue;
-    }
-    await purgeNetlifyRecords(token, zoneId, zoneName);
-    if (zoneName === "yekpare.net") {
-      await ensureWww(token, zoneId, zoneName);
-      await ensureWorkerRoute(token, zoneId, "yekpare.net/*");
-      await ensureWorkerRoute(token, zoneId, "www.yekpare.net/*");
-      await ensureWorkerRoute(token, zoneId, "yekpare.net");
-      await ensureWorkerRoute(token, zoneId, "www.yekpare.net");
-    }
+  const yekpare = await getZoneId(auth, "yekpare.net");
+  if (yekpare) {
+    await purgeNetlify(auth, yekpare, "yekpare.net");
+    await ensureWwwDns(auth, yekpare, "yekpare.net");
+    await ensureRoutes(auth, yekpare);
+  } else {
+    console.log("[cutover] yekpare.net zone not found");
   }
 
-  // Netlify NS domains — zone create (pending until NS update at registrar)
-  for (const pending of ["ankarasehirgazetesi.com", "turknet.app"]) {
-    await tryCreateZone(token, pending);
+  // Custom hostnames on Worker (requires zone ownership)
+  for (const host of ["www.yekpare.net", "yekpare.net", "ankarasehirgazetesi.com", "www.ankarasehirgazetesi.com", "turknet.app", "www.turknet.app"]) {
+    await attachWorkerHostname(auth, host);
+  }
+
+  // Try create pending zones for Netlify NS domains
+  for (const name of ["ankarasehirgazetesi.com", "turknet.app"]) {
+    const id = await getZoneId(auth, name);
+    if (id) {
+      console.log(`[cutover] zone exists ${name}=${id}`);
+      continue;
+    }
+    const r = await cf(
+      `/zones`,
+      {
+        method: "POST",
+        body: { name, account: { id: ACCOUNT_ID }, jump_start: true, type: "full" },
+        ...auth,
+      },
+    );
+    console.log(
+      `[cutover] create zone ${name} ok=${r.ok}`,
+      JSON.stringify({
+        errors: r.json?.errors,
+        ns: r.json?.result?.name_servers,
+        id: r.json?.result?.id,
+      }),
+    );
   }
 }
 
 main().catch((e) => {
-  console.warn("[cutover] error", e);
-  process.exit(0);
+  console.warn("[cutover] fatal", e);
 });
