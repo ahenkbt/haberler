@@ -18,6 +18,36 @@ export function slugToWikiTitle(slug: string): string {
   return s.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * /api/wiki/article/:title parametresini temizler.
+ * Botların gönderdiği boşluk / sondaki ?.!… / %20 varyantlarını kabul edilebilir slug'a çevirir.
+ */
+export function sanitizeWikiArticleSlugParam(raw: string): string {
+  let s = String(raw ?? "").trim();
+  for (let i = 0; i < 2; i++) {
+    if (!/%[0-9A-Fa-f]{2}/.test(s)) break;
+    try {
+      const next = decodeURIComponent(s);
+      if (next === s) break;
+      s = next;
+    } catch {
+      break;
+    }
+  }
+  s = s.replace(/(?:\.\.\.|…|[.?!])+$/u, "").trim();
+  s = s.replace(/\s+/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+  return s;
+}
+
+/** Upstream'e gitmeden reddedilecek gerçekten bozuk slug'lar. */
+export function isRejectedWikiArticleSlug(raw: string): boolean {
+  const s = sanitizeWikiArticleSlugParam(raw);
+  if (!s) return true;
+  if (s.includes("?") || s.includes("#") || /%3[fF]/.test(s)) return true;
+  if (/[\/\\]/.test(s)) return true;
+  return false;
+}
+
 function hasTurkishChars(s: string): boolean {
   return /[ğüşıöçĞÜŞİÖÇ]/.test(s);
 }

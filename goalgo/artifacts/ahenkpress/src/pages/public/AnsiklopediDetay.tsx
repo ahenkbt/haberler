@@ -284,10 +284,19 @@ export default function AnsiklopediDetay() {
         return true;
       };
 
+      /** Boşluklu başlıklar sunucuda underscore slug'a çevrilir; encode öncesi sabitle. */
+      const wikiArticlePathTitle = (titleForApi: string) =>
+        String(titleForApi ?? "")
+          .trim()
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_");
+
       const loadArticlePayload = async (titleForApi: string) => {
         try {
+          const pathTitle = wikiArticlePathTitle(titleForApi);
+          if (!pathTitle) return null;
           const res = await fetch(
-            `${API}/wiki/article/${encodeURIComponent(titleForApi)}?lang=${wikiLang}&searchFallback=1`,
+            `${API}/wiki/article/${encodeURIComponent(pathTitle)}?lang=${wikiLang}&searchFallback=1`,
           );
           return await res.json();
         } catch {
@@ -297,8 +306,10 @@ export default function AnsiklopediDetay() {
 
       const tryLoadResolvedArticle = async (resolvedTitle: string): Promise<boolean> => {
         try {
+          const pathTitle = wikiArticlePathTitle(resolvedTitle);
+          if (!pathTitle) return false;
           const payload = await fetch(
-            `${API}/wiki/article/${encodeURIComponent(resolvedTitle)}?lang=${wikiLang}&searchFallback=1`,
+            `${API}/wiki/article/${encodeURIComponent(pathTitle)}?lang=${wikiLang}&searchFallback=1`,
           ).then((r) => r.json());
           if (payload?.success && payload.data?.html?.trim() && applyPayload(payload)) {
             return true;
@@ -393,7 +404,8 @@ export default function AnsiklopediDetay() {
           const provinceData = await loadArticlePayload(province);
           if (provinceData?.success && provinceData.data?.html?.trim() && applyPayload(provinceData)) return true;
         }
-        for (const titleForApi of apiCandidates) {
+        // Sunucu zaten Türkçe aday genişletmesi yapıyor; istemci fan-out'unu sınırla.
+        for (const titleForApi of apiCandidates.slice(0, 6)) {
           const d = await loadArticlePayload(titleForApi);
           if (d?.success && d.data?.html?.trim() && applyPayload(d)) return true;
         }

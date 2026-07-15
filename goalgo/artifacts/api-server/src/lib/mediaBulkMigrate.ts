@@ -71,13 +71,19 @@ export async function importMissingUploadFile(fname: string): Promise<boolean> {
   if (await mediaObjectExists(fname)) return true;
 
   const legacy = legacyMediaOrigin();
+  const renderOrigin = String(process.env.RENDER_EXTERNAL_URL ?? "")
+    .trim()
+    .replace(/\/+$/, "");
+  // yekpare.net adayı yok: DNS flap / Netlify sertifikası TLS hatası + CF challenge üretiyor.
   const candidates = [
     legacy ? `${legacy}/api/media/uploads/${fname}` : null,
-    `https://yekpare.net/api/media/uploads/${fname}`,
+    renderOrigin ? `${renderOrigin}/api/media/uploads/${fname}` : null,
+    `https://goalgo-y7ze.onrender.com/api/media/uploads/${fname}`,
     `https://goalgo-production.up.railway.app/api/media/uploads/${fname}`,
   ].filter(Boolean) as string[];
+  const uniqueCandidates = [...new Set(candidates)];
 
-  for (const url of candidates) {
+  for (const url of uniqueCandidates) {
     try {
       const res = await fetch(url, {
         redirect: "follow",
