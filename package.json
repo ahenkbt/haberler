@@ -2,17 +2,21 @@
   "name": "goalgo-yazilim",
   "private": true,
   "packageManager": "pnpm@9.15.5",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build:web": "pnpm --dir goalgo run build:web",
     "build:netlify": "node scripts/netlify-root-build.mjs",
     "build:cloudflare": "node scripts/cloudflare-root-build.mjs",
-    "deploy:cloudflare": "pnpm run build:cloudflare && npx wrangler deploy"
+    "deploy:cloudflare": "pnpm run build:cloudflare && pnpm exec wrangler deploy",
+    "cf:dashboard-deploy": "pnpm run deploy:cloudflare"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "wrangler": "^4.86.0"
+    "wrangler": "^4.111.0"
   }
 }

@@ -6,10 +6,12 @@
 #   DATABASE_URL=postgresql://…@….neon.tech/neondb?sslmode=require
 #   SESSION_SECRET=<min 16 karakter>
 #
-# Dashboard / CI:
-#   Build:  corepack enable && corepack prepare pnpm@9.15.5 --activate && pnpm run build:cloudflare
-#   Deploy: npx wrangler deploy
-#   Docker GHA'da gerekli (Container image build)
+# Dashboard (Workers Builds) — Node 22 zorunlu (wrangler 4.111+):
+#   Environment: NODE_VERSION=22
+#   Build command:  (boş bırakılabilir)
+#   Deploy command: pnpm run cf:dashboard-deploy
+#   (= SPA build + wrangler deploy; Docker Container image için gerekir)
+# Tercihen CI: GitHub Actions cloudflare-production.yml (Docker hazır)
 
 name = "haberler"
 compatibility_date = "2025-07-15"

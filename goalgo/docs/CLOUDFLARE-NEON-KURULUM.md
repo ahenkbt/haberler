@@ -65,9 +65,17 @@ gh secret set CLOUDFLARE_ACCOUNT_ID -b"$CLOUDFLARE_ACCOUNT_ID"
 
 | Alan | Değer |
 |------|--------|
-| Build command | `corepack enable && corepack prepare pnpm@9.15.5 --activate && pnpm install && pnpm run build:cloudflare` |
-| Deploy command | `npx wrangler deploy` |
-| Node | `20` |
+| **Environment → `NODE_VERSION`** | `22` (zorunlu — wrangler 4.111+ Node 20’de çöker) |
+| Build command | *(boş)* veya `echo skip` |
+| Deploy command | `pnpm run cf:dashboard-deploy` |
+| Root directory | *(repo kökü)* |
+
+**Yanlış (log’daki hata):** yalnız `npx wrangler deploy` + Node 20 →  
+`Wrangler requires at least Node.js v22.0.0. You are using v20.20.2`
+
+**Ayrıca:** Deploy’dan önce SPA build şart (`cf:dashboard-deploy` bunu yapar). Build boş + sadece `wrangler deploy` → “no static files” hatası.
+
+Container image için build ortamında **Docker** gerekir. CF Builds’te Docker yoksa deploy’u **GitHub Actions** ile yapın (aşağıda).
 
 İlk deploy’dan önce secrets:
 
