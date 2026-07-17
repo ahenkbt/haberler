@@ -93,31 +93,55 @@ export async function resolveNewsArticleBySlug(
     isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
   }
 
-  // Yalnızca tamamen sayısal id — "15-temmuz-..." parseInt ile 15'e düşüp yanlış haber açıyordu.
-  const numericId = /^\d+$/.test(String(rawSlug).trim()) ? parseInt(String(rawSlug).trim(), 10) : NaN;
+  // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." parseInt ile yanlış id'ye düşmesin.
+  const slugKey = String(rawSlug ?? "").trim();
+  const numericId = /^\d+$/.test(slugKey) ? parseInt(slugKey, 10) : NaN;
   let row: typeof newsTable.$inferSelect | undefined;
+
+  const acceptRowForSlug = (candidate: typeof newsTable.$inferSelect | undefined) => {
+    if (!candidate) return undefined;
+    // Saf sayısal id isteği değilse slug birebir uyuşmalı (eski parseInt sızıntısına karşı).
+    if (Number.isNaN(numericId) && String(candidate.slug ?? "").trim() !== slugKey) return undefined;
+    return candidate;
+  };
 
   if (!Number.isNaN(numericId)) {
     [row] = await readDb.select().from(newsTable).where(eq(newsTable.id, numericId));
+    // Site kapsamındaysa önce bu siteye ait satırı tercih et.
+    if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
+      row = undefined;
+    }
   }
   if (!row && siteScoped) {
-    [row] = await readDb
+    const [siteLocal] = await readDb
       .select()
       .from(newsTable)
-      .where(and(eq(newsTable.slug, rawSlug), await newsSiteScopeCondition(readDb, siteId!)))
+      .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId!)))
       .limit(1);
+    row = acceptRowForSlug(siteLocal);
+  }
+  if (!row && siteScoped) {
+    const [scoped] = await readDb
+      .select()
+      .from(newsTable)
+      .where(and(eq(newsTable.slug, slugKey), await newsSiteScopeCondition(readDb, siteId!)))
+      .orderBy(sql`case when ${newsTable.siteId} = ${siteId!} then 0 else 1 end`)
+      .limit(1);
+    row = acceptRowForSlug(scoped);
   }
   if (!row && siteScoped && isCorporate) {
-    [row] = await readDb
+    const [corp] = await readDb
       .select()
       .from(newsTable)
-      .where(and(eq(newsTable.slug, rawSlug), eq(newsTable.siteId, siteId!)))
+      .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId!)))
       .limit(1);
+    row = acceptRowForSlug(corp);
   }
   // HM site: global slug fallback yok — başka sitenin / merkez çakışması yanlış haber üretir.
   // Portal (siteId yok): eski davranış.
   if (!row && !siteScoped) {
-    [row] = await readDb.select().from(newsTable).where(eq(newsTable.slug, rawSlug));
+    const [portalRow] = await readDb.select().from(newsTable).where(eq(newsTable.slug, slugKey));
+    row = acceptRowForSlug(portalRow);
   }
 
   let mak: typeof hmMakalelerTable.$inferSelect | undefined;
@@ -125,14 +149,14 @@ export async function resolveNewsArticleBySlug(
     const [m] = await readDb
       .select()
       .from(hmMakalelerTable)
-      .where(and(eq(hmMakalelerTable.slug, rawSlug), eq(hmMakalelerTable.siteId, siteId!)))
+      .where(and(eq(hmMakalelerTable.slug, slugKey), eq(hmMakalelerTable.siteId, siteId!)))
       .limit(1);
     if (m && m.status === "published") mak = m;
     if (!mak) {
       const [mainM] = await mainDb
         .select()
         .from(hmMakalelerTable)
-        .where(and(eq(hmMakalelerTable.slug, rawSlug), eq(hmMakalelerTable.siteId, siteId!)))
+        .where(and(eq(hmMakalelerTable.slug, slugKey), eq(hmMakalelerTable.siteId, siteId!)))
         .limit(1);
       if (mainM && mainM.status === "published") mak = mainM;
     }
@@ -141,23 +165,38 @@ export async function resolveNewsArticleBySlug(
   if (!row && !mak) {
     if (!Number.isNaN(numericId)) {
       [row] = await mainDb.select().from(newsTable).where(eq(newsTable.id, numericId));
+      if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
+        row = undefined;
+      }
     }
     if (!row && siteScoped) {
-      [row] = await mainDb
+      const [siteLocal] = await mainDb
         .select()
         .from(newsTable)
-        .where(and(eq(newsTable.slug, rawSlug), await newsSiteScopeCondition(mainDb as NewsReadDb, siteId!)))
+        .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId!)))
         .limit(1);
+      row = acceptRowForSlug(siteLocal);
+    }
+    if (!row && siteScoped) {
+      const [scoped] = await mainDb
+        .select()
+        .from(newsTable)
+        .where(and(eq(newsTable.slug, slugKey), await newsSiteScopeCondition(mainDb as NewsReadDb, siteId!)))
+        .orderBy(sql`case when ${newsTable.siteId} = ${siteId!} then 0 else 1 end`)
+        .limit(1);
+      row = acceptRowForSlug(scoped);
     }
     if (!row && siteScoped && isCorporate) {
-      [row] = await mainDb
+      const [corp] = await mainDb
         .select()
         .from(newsTable)
-        .where(and(eq(newsTable.slug, rawSlug), eq(newsTable.siteId, siteId!)))
+        .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId!)))
         .limit(1);
+      row = acceptRowForSlug(corp);
     }
     if (!row && !siteScoped) {
-      [row] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, rawSlug));
+      const [portalRow] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, slugKey));
+      row = acceptRowForSlug(portalRow);
     }
   }
 

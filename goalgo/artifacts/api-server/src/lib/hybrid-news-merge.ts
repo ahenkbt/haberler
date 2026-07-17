@@ -330,6 +330,18 @@ export function resolveEditorScopedPoolOpts(hmAccess: {
   };
 }
 
+/** Havuz alımı kapalıysa onaylı `yekpare-hm-pool:` kopyaları da vitrinden düşer. */
+export function filterPoolCopiesWhenReceiveDisabled<T>(
+  items: T[],
+  yekparePoolReceiveEnabled?: boolean,
+): T[] {
+  if (yekparePoolReceiveEnabled !== false) return items;
+  return items.filter((item) => {
+    const ref = String((item as { rssSourceUrl?: string | null }).rssSourceUrl ?? "").trim();
+    return !ref.startsWith("yekpare-hm-pool:");
+  });
+}
+
 /**
  * Editör sitesi okuma havuzu (kesinleşmiş model):
  *  - Yekpare merkez havuzu (news.site_id NULL, yayınlanmış) — etkin kategorilere göre,
@@ -357,9 +369,15 @@ export async function loadEditorScopedDbNews(opts: {
   excludeCentralPool?: boolean;
   /** false: başka HM sitelerinden manuel sync/pool haberleri bu sitede gösterilmez. */
   allowCrossSiteManualNews?: boolean;
+  /**
+   * false: Yekpare havuz alımı kapalı — onaylı `yekpare-hm-pool:` kopyaları da listelenmez.
+   * true/undefined: editör panelden «sitede yayınla» ile eklenen havuz kopyaları kalır.
+   */
+  yekparePoolReceiveEnabled?: boolean;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   const fetchLimit = opts.limit + opts.offset + 100;
   const excludeCentralPool = opts.excludeCentralPool === true;
+  const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
   const [portal, editor] = await Promise.all([
     excludeCentralPool
@@ -372,8 +390,10 @@ export async function loadEditorScopedDbNews(opts: {
     let items = dedupeEditorScopedDbNewsItems(editor.items, opts.siteId);
     items = items.filter((item) => {
       const ref = String(item.rssSourceUrl ?? "").trim();
-      // Sync merkez kopyaları yerel sitede olmamalı; onaylı havuz kopyaları (pool:) kalsın.
+      // Sync merkez kopyaları yerel sitede olmamalı.
       if (ref.startsWith("yekpare-hm-sync:")) return false;
+      // Havuz alımı kapalıysa onaylı havuz kopyaları da gelmesin.
+      if (!poolReceiveEnabled && ref.startsWith("yekpare-hm-pool:")) return false;
       return true;
     });
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
@@ -435,6 +455,7 @@ export async function loadEditorScopedDbNews(opts: {
     [...editor.items, ...filterHiddenPoolNewsItems(portalItems, opts.hiddenPoolNewsIds)],
     opts.siteId,
   );
+  items = filterPoolCopiesWhenReceiveDisabled(items, opts.yekparePoolReceiveEnabled);
   items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
   const wantSlug = String(opts.categorySlug ?? "").trim().toLowerCase();
   if (wantSlug === HM_GLOBAL_NEWS_CATEGORY_SLUG) {

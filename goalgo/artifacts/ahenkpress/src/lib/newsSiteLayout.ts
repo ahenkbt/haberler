@@ -2049,7 +2049,8 @@ export function resolveHmUnifiedRssFeedRows(
 export function resolveHmBreakingRssFeedRows(
   p?: Pick<NewsSiteLayoutPrefs, "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels" | "hmNewsSiteRssFeedRows"> | null,
 ): HmBreakingRssFeedRow[] {
-  return resolveHmUnifiedRssFeedRows(p);
+  // Kutu içi RSS — site içi satırlarla birleştirilmez.
+  return resolveHmBreakingRssFeedRowsOnly(p);
 }
 
 export function resolveHmSiteRssFeedRows(
@@ -2058,7 +2059,8 @@ export function resolveHmSiteRssFeedRows(
     "hmNewsSiteRssFeedRows" | "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels"
   > | null,
 ): HmBreakingRssFeedRow[] {
-  return resolveHmUnifiedRssFeedRows(p);
+  // Site içi RSS — yalnızca hmNewsSiteRssFeedRows.
+  return resolveHmSiteRssFeedRowsOnly(p);
 }
 
 export function saveUnifiedHmRssFeedRows(rows: HmBreakingRssFeedRow[]): {

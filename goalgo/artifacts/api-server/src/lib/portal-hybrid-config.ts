@@ -214,6 +214,11 @@ function normalizeHmBreakingRssRows(
     });
   }
 
+  // Site içi RSS: boş liste = kaynak yok. Kutu (box) legacy kırılım feed’lerine düşmesin.
+  if (out.length === 0 && scope === "site") {
+    return out;
+  }
+
   if (out.length === 0) {
     const legacyMap =
       legacyFeeds && typeof legacyFeeds === "object" && !Array.isArray(legacyFeeds)
@@ -278,12 +283,12 @@ export async function loadPortalHybridRssFeeds(
     const boxRows = () =>
       normalizeHmBreakingRssRows(layout.hmNewsBreakingRssFeedRows, layout.hmNewsBreakingRssFeeds, id, "box", categorySlugLookup);
     const siteRows = () =>
-      normalizeHmBreakingRssRows(layout.hmNewsSiteRssFeedRows, layout.hmNewsBreakingRssFeeds, id, "site", categorySlugLookup);
+      // Site scope: yalnızca hmNewsSiteRssFeedRows — kutu feed’leri / legacy breaking fallback karışmaz.
+      normalizeHmBreakingRssRows(layout.hmNewsSiteRssFeedRows, null, id, "site", categorySlugLookup);
     const portalLayoutRows = () => hmPortalRssRowsFromLayout(layout, id, categorySlugLookup);
-    if (scope === "box") return mergeHmScopedRssRows(boxRows(), portalLayoutRows());
-    const siteWithBoxRows = () => mergeHmScopedRssRows(mergeHmScopedRssRows(siteRows(), boxRows()), portalLayoutRows());
-    if (scope === "all") return siteWithBoxRows();
-    return siteWithBoxRows();
+    if (scope === "box") return mergeHmScopedRssRows(boxRows(), []);
+    if (scope === "site") return mergeHmScopedRssRows(siteRows(), portalLayoutRows());
+    return mergeHmScopedRssRows(mergeHmScopedRssRows(siteRows(), boxRows()), portalLayoutRows());
   }
 
   const [row] = await db.select({ newsLayoutJson: siteSettingsTable.newsLayoutJson }).from(siteSettingsTable).limit(1);

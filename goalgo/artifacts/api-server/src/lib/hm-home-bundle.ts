@@ -7,11 +7,16 @@ import {
   serializeNewsListItem,
   type SerializedNewsListItem,
 } from "./serializers.js";
-import { getHmHiddenCategoryIds } from "./hm-public-layout.js";
+import { getHmHiddenCategoryIds, yekparePoolReceiveEnabledFromLayout } from "./hm-public-layout.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { parseHmLayoutJson, isHmCorporateLayout } from "./hm-editor-categories.js";
-import { strictCorporateSiteNewsScopeSql, filterCorporatePublicNewsItems } from "./hm-corporate-news-policy.js";
+import {
+  strictCorporateSiteNewsScopeSql,
+  filterCorporatePublicNewsItems,
+  excludeYekparePoolNewsSql,
+} from "./hm-corporate-news-policy.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
+import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
@@ -182,7 +187,11 @@ function buildCenterHeadlinesFromItems(
   return latest.slice(0, target);
 }
 
-async function loadBreakingForSite(siteId: number, corporateStrict = false): Promise<SerializedNewsListItem[]> {
+async function loadBreakingForSite(
+  siteId: number,
+  corporateStrict = false,
+  poolReceiveEnabled = true,
+): Promise<SerializedNewsListItem[]> {
   const ctx = await loadNewsContext();
   const readDb = getNewsDbForRead();
   const hiddenCategoryIds = await getHmHiddenCategoryIds(siteId);
@@ -191,6 +200,7 @@ async function loadBreakingForSite(siteId: number, corporateStrict = false): Pro
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
   ];
+  if (!poolReceiveEnabled) conds.push(excludeYekparePoolNewsSql());
   if (hiddenCategoryIds.length > 0) {
     conds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
   }
@@ -201,19 +211,35 @@ async function loadBreakingForSite(siteId: number, corporateStrict = false): Pro
     .orderBy(desc(newsTable.createdAt))
     .limit(15);
   if (rows.length > 0) {
-    return excludeKoseFromEditorialNewsList(rows.map((r) => serializeNewsListItem(r, ctx)));
+    return filterPoolCopiesWhenReceiveDisabled(
+      excludeKoseFromEditorialNewsList(rows.map((r) => serializeNewsListItem(r, ctx))),
+      poolReceiveEnabled,
+    );
   }
 
+  const fallbackConds: SQL[] = [
+    eq(newsTable.status, "published"),
+    await newsSiteScopeCondition(readDb, siteId, corporateStrict),
+  ];
+  if (!poolReceiveEnabled) fallbackConds.push(excludeYekparePoolNewsSql());
   const fallback = await readDb
     .select(newsListSelectFields)
     .from(newsTable)
-    .where(and(eq(newsTable.status, "published"), await newsSiteScopeCondition(readDb, siteId, corporateStrict)))
+    .where(and(...fallbackConds))
     .orderBy(desc(newsTable.createdAt))
     .limit(15);
-  return fallback.map((r) => serializeNewsListItem(r, ctx));
+  return filterPoolCopiesWhenReceiveDisabled(
+    fallback.map((r) => serializeNewsListItem(r, ctx)),
+    poolReceiveEnabled,
+  );
 }
 
-async function loadPopularForSite(siteId: number, limit: number, corporateStrict = false): Promise<SerializedNewsListItem[]> {
+async function loadPopularForSite(
+  siteId: number,
+  limit: number,
+  corporateStrict = false,
+  poolReceiveEnabled = true,
+): Promise<SerializedNewsListItem[]> {
   const ctx = await loadNewsContext();
   const readDb = getNewsDbForRead();
   const hiddenCategoryIds = await getHmHiddenCategoryIds(siteId);
@@ -221,9 +247,12 @@ async function loadPopularForSite(siteId: number, limit: number, corporateStrict
     hiddenCategoryIds.length > 0
       ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
       : undefined;
-  const newsWhere = hiddenCond
-    ? and(eq(newsTable.status, "published"), await newsSiteScopeCondition(readDb, siteId, corporateStrict), hiddenCond)
-    : and(eq(newsTable.status, "published"), await newsSiteScopeCondition(readDb, siteId, corporateStrict));
+  const newsWhere = and(
+    eq(newsTable.status, "published"),
+    await newsSiteScopeCondition(readDb, siteId, corporateStrict),
+    hiddenCond,
+    poolReceiveEnabled ? undefined : excludeYekparePoolNewsSql(),
+  );
   const newsRows = await readDb
     .select(newsListSelectFields)
     .from(newsTable)
@@ -241,7 +270,10 @@ async function loadPopularForSite(siteId: number, limit: number, corporateStrict
     ...makRows.map((m) => serializeHmMakaleListItem(m, ctx)),
   ];
   merged.sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
-  return excludeKoseFromEditorialNewsList(merged.slice(0, limit) as SerializedNewsListItem[]);
+  return filterPoolCopiesWhenReceiveDisabled(
+    excludeKoseFromEditorialNewsList(merged.slice(0, limit) as SerializedNewsListItem[]),
+    poolReceiveEnabled,
+  );
 }
 
 export type HmHomeBundle = {
@@ -263,13 +295,14 @@ export async function buildHmHomeBundle(
   const site = await getHmNewsSiteByIdCompat(siteId);
   const layout = parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null);
   const corporateStrict = isHmCorporateLayout(layout);
+  const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
   let [featured, siteMansetEditor, latestEditor, breaking, popular] = await Promise.all([
     loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict),
     loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { siteMansetOnly: true }),
     loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { excludeFeatured: true }),
-    loadBreakingForSite(siteId, corporateStrict),
-    loadPopularForSite(siteId, 12, corporateStrict),
+    loadBreakingForSite(siteId, corporateStrict, poolReceiveEnabled),
+    loadPopularForSite(siteId, 12, corporateStrict, poolReceiveEnabled),
   ]);
   let manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
   if (corporateStrict) {
