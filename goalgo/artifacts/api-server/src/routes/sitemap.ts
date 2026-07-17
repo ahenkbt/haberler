@@ -342,14 +342,45 @@ async function loadPortalPoolCategoryArticles(catSlug: string, limit = 2000): Pr
     .then((rows) => rows.map(mapJoinedNewsSitemapRow));
 }
 
+async function resolveHmSitemapCategoryRow(
+  siteId: number,
+  siteSlug: string,
+  catSlug: string,
+): Promise<{ id: number; slug: string; name: string | null } | null> {
+  const slug = String(catSlug ?? "").trim().toLowerCase();
+  if (!slug) return null;
+  const site = String(siteSlug ?? "").trim().toLowerCase();
+  const clean = site ? deriveCleanCategorySlug(slug, site).toLowerCase() : slug;
+  const candidates = [...new Set([slug, clean, site ? `${site}-${slug}` : "", site ? `${site}-${clean}` : ""].filter(Boolean))];
+  if (candidates.length === 0) return null;
+
+  const rows = await db
+    .select({
+      id: categoriesTable.id,
+      slug: categoriesTable.slug,
+      name: categoriesTable.name,
+      exclusiveSiteId: categoriesTable.exclusiveSiteId,
+    })
+    .from(categoriesTable)
+    .where(inArray(categoriesTable.slug, candidates));
+
+  const exclusive = rows.find((row) => row.exclusiveSiteId === siteId);
+  if (exclusive) return { id: exclusive.id, slug: exclusive.slug, name: exclusive.name };
+  const global = rows.find((row) => row.exclusiveSiteId == null);
+  if (global) return { id: global.id, slug: global.slug, name: global.name };
+  const any = rows[0];
+  return any ? { id: any.id, slug: any.slug, name: any.name } : null;
+}
+
 async function loadHmCategorySitemapArticles(
   siteId: number,
   catSlug: string,
   limit = 2000,
+  siteSlug = "",
 ): Promise<NewsSitemapRow[]> {
   const slug = String(catSlug ?? "").trim().toLowerCase();
   if (!slug) return [];
-  const [cat] = await db.select().from(categoriesTable).where(eq(categoriesTable.slug, slug)).limit(1);
+  const cat = await resolveHmSitemapCategoryRow(siteId, siteSlug, slug);
   if (!cat) return [];
 
   const siteArticles: NewsSitemapRow[] = await db
@@ -363,9 +394,12 @@ async function loadHmCategorySitemapArticles(
     .limit(limit)
     .then((rows) => rows.map(mapJoinedNewsSitemapRow));
 
-  if (!HM_PORTAL_POOL_SITEMAP_CATEGORIES.has(slug)) return siteArticles;
+  const portalSlug = (deriveCleanCategorySlug(slug, siteSlug) || slug).toLowerCase();
+  if (!HM_PORTAL_POOL_SITEMAP_CATEGORIES.has(slug) && !HM_PORTAL_POOL_SITEMAP_CATEGORIES.has(portalSlug)) {
+    return siteArticles;
+  }
 
-  const portalArticles = await loadPortalPoolCategoryArticles(slug, limit);
+  const portalArticles = await loadPortalPoolCategoryArticles(portalSlug, limit);
   const seen = new Set(siteArticles.map((row) => row.slug));
   const merged: NewsSitemapRow[] = [...siteArticles];
   for (const row of portalArticles) {
@@ -458,7 +492,7 @@ async function resolveHmSitemapCategorySlugs(site: HmSiteSitemapRow): Promise<st
   const activeGlobal = resolveHmPublicActiveGlobalSlugs(layout, globalSlugs);
   for (const catSlug of activeGlobal) {
     if (hidden.has(catSlug) || isPortalCategorySitemapAliasSlug(catSlug)) continue;
-    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 5));
+    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 5, site.slug));
     if (articles.length > 0) slugSet.add(catSlug);
   }
 
@@ -471,7 +505,7 @@ async function resolveHmSitemapCategorySlugs(site: HmSiteSitemapRow): Promise<st
 
   const verified = new Set<string>();
   for (const catSlug of slugSet) {
-    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 1));
+    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 1, site.slug));
     if (articles.length > 0) verified.add(catSlug);
   }
   return [...verified].sort((a, b) => a.localeCompare(b, "tr"));
@@ -605,12 +639,12 @@ router.get("/news-hm/:hmSlug/:catFile", async (req, res): Promise<void> => {
       sendUrlset(res, "");
       return;
     }
-    const [cat] = await db.select().from(categoriesTable).where(eq(categoriesTable.slug, catSlug));
+    const cat = await resolveHmSitemapCategoryRow(site.id, site.slug, catSlug);
     if (!cat) {
       sendUrlset(res, "");
       return;
     }
-    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 2000));
+    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 2000, site.slug));
 
     const pubName = `${site.displayName || site.slug} — ${cat.name ?? catSlug}`;
     if (articles.length === 0) {

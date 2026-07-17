@@ -2027,13 +2027,20 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const bandNewsItems = useMemo(() => asArray((latestBandRaw as { items?: unknown })?.items), [latestBandRaw]);
   const tepeMansetItems = useMemo(() => {
     if (!tepeMansetEnabled) return [];
+    const bundleFeatured = asArray(hmHomeBundle?.featured).filter(
+      (x) => x?.isFeatured === true && !isBlogCategoryNews(x) && !isKoseArticle(x),
+    );
+    // Strict API öncelikli; gecikmede / boşta bundle featured ile tepe boş kalmasın.
+    const source = tepeFeaturedStrict.length > 0 ? tepeFeaturedStrict : bundleFeatured;
     const pool = buildTepeMansetPool({
-      items: tepeFeaturedStrict,
+      items: source,
       limit: HM_TEPE_MANSET_ITEM_COUNT,
     });
     const withCover = filterNewsItemsWithCoverImage(pool);
-    return withCover.slice(0, HM_TEPE_MANSET_ITEM_COUNT);
-  }, [tepeMansetEnabled, tepeFeaturedStrict]);
+    // Kapak filtresi tümünü düşürürse yine de başlık göster (boş tepe olmasın).
+    const picked = withCover.length > 0 ? withCover : pool;
+    return picked.slice(0, HM_TEPE_MANSET_ITEM_COUNT);
+  }, [tepeMansetEnabled, tepeFeaturedStrict, hmHomeBundle]);
   const tepeMansetActive = tepeMansetEnabled && tepeMansetItems.length > 0;
   const manualHeadlinePool = useMemo(
     () => buildManualHeadlineOnlyPool({ manualItems: featured, latestItems: allItems, limit: HM_HOME_HEADLINE_SLIDER_LIMIT }),

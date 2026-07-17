@@ -163,7 +163,7 @@ function sortNewsItemsByAddDate(items: SerializedNewsListItem[]): SerializedNews
 /**
  * Orta (site) manşet:
  * 1) `isSiteManset` işaretli haberler varsa yalnızca onlar
- * 2) yoksa en son eklenenler (`isFeatured` tepe manşet hariç)
+ * 2) yoksa en son eklenenler (`isFeatured` burada elenmez — tepe ayırımı istemcide)
  */
 function buildCenterHeadlinesFromItems(
   _featured: SerializedNewsListItem[],
@@ -176,9 +176,7 @@ function buildCenterHeadlinesFromItems(
     slug ? items.filter((item) => itemMatchesCategorySlug(item, slug)) : items;
   const scoped = filterCat(manual);
   const siteManset = scoped.filter((item) => (item as { isSiteManset?: boolean }).isSiteManset === true);
-  const pool = siteManset.length > 0
-    ? siteManset
-    : scoped.filter((item) => item.isFeatured !== true);
+  const pool = siteManset.length > 0 ? siteManset : scoped;
   const latest = sortNewsItemsByAddDate(pool);
   const target = Math.min(Math.max(limit, 1), 30);
   return latest.slice(0, target);

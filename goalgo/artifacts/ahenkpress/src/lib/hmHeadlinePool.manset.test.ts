@@ -53,15 +53,15 @@ describe("manset pools", () => {
     expect(pool.map((x) => x.id)).toEqual([1]);
   });
 
-  it("site manşet seçilmemişse en son eklenenleri seçer (featured / RSS hariç)", () => {
+  it("site manşet seçilmemişse son haberleri seçer (RSS hariç; isFeatured aday kalır)", () => {
     const pool = buildCenterMansetSliderPool({
       manualItems: [featuredOld],
       latestItems: [latestA, latestB, featuredOld, rss],
       limit: 5,
     });
-    expect(pool.map((x) => x.id)).toEqual([2, 3]);
-    expect(pool.every((x) => x.isFeatured !== true)).toBe(true);
+    expect(pool.map((x) => x.id)).toEqual([2, 3, 1]);
     expect(pool.every((x) => x.source !== "rss")).toBe(true);
+    expect(pool.some((x) => x.isFeatured === true)).toBe(true);
   });
 
   it("site manşet işaretliyse yalnızca onları gösterir", () => {
