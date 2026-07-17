@@ -135,12 +135,19 @@ export function pickModuleSectionCategoryItems<
       picked.push(item);
     }
   }
-  if (picked.length === 0 && sectionPool.length > 0) {
-    const fallback = dedupeCategoryBoxItems([...sectionPool]);
-    const firstUnused = fallback.find(
-      (item) => !globalDedupe?.has(item) && !moduleDedupe.has(item),
+  // Hero seed / üst modüller tüm taze havuzu claim ettiyse bile kutu boş kalmasın.
+  if (picked.length < targetLimit && sectionPool.length > 0) {
+    const seen = new Set(
+      picked.map((item) => categoryBoxItemKey(item as Parameters<typeof categoryBoxItemKey>[0])),
     );
-    if (firstUnused) picked.push(firstUnused);
+    const reusePool = dedupeCategoryBoxItems(deferSimilarNewsItems([...sectionPool]));
+    for (const item of reusePool) {
+      if (picked.length >= targetLimit) break;
+      const key = categoryBoxItemKey(item as Parameters<typeof categoryBoxItemKey>[0]);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      picked.push(item);
+    }
   }
   rememberPickedItems(picked, moduleDedupe, globalDedupe);
   return picked;
@@ -211,10 +218,15 @@ export function ensureNewsBoxItems<
     seen.add(key);
     out.push(item);
   }
-  if (out.length === 0) {
-    const fallback = dedupeCategoryBoxItems([...pool]);
-    const firstUnused = fallback.find((item) => !globalDedupe?.has(item));
-    if (firstUnused) out.push(firstUnused);
+  // Kullanılmamış aday kalmasa da (manşet seed büyümesi) kutuyu doldur — boş beyaz alan olmasın.
+  if (out.length < limit) {
+    for (const item of poolSorted) {
+      if (out.length >= limit) break;
+      const key = categoryBoxItemKey(item as Parameters<typeof categoryBoxItemKey>[0]);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
   }
   const result = out.slice(0, limit);
   globalDedupe?.rememberMany(result);
