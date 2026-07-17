@@ -324,6 +324,97 @@ function rewriteSitemapOrigins(xml, publicOrigin) {
   return out;
 }
 
+/**
+ * GSC video sitemap: player_loc / content_loc <loc> ile aynı olamaz.
+ * Render eski API hâlâ player_loc=loc yazıyorsa edge’de YouTube embed’e çevir;
+ * watch?v= content_loc satırlarını kaldır (gerçek medya dosyası değil).
+ */
+function rewriteYektubeVideoSitemapXml(xml) {
+  return String(xml || "").replace(/<url>([\s\S]*?)<\/url>/g, (block) => {
+    const locM = /<loc>\s*([^<]+?)\s*<\/loc>/i.exec(block);
+    const playerM =
+      /<video:player_loc([^>]*)>\s*([^<]+?)\s*<\/video:player_loc>/i.exec(block);
+    const contentM =
+      /<video:content_loc>\s*https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([^<&\s]+)\s*<\/video:content_loc>/i.exec(
+        block,
+      );
+    let next = block;
+    const loc = locM ? locM[1].trim() : "";
+    const player = playerM ? playerM[2].trim() : "";
+    let videoId = contentM ? decodeURIComponent(contentM[1].trim()) : "";
+    if (!videoId && loc) {
+      // .../title-slug-{youtubeId} — YouTube id genelde 11 karakter
+      const seg = loc.split("/").pop() || "";
+      const idM = /(?:^|-)([A-Za-z0-9_-]{11})$/.exec(seg);
+      if (idM) videoId = idM[1];
+    }
+    if (playerM && loc && player === loc && videoId) {
+      const embed = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}`;
+      next = next.replace(
+        /<video:player_loc([^>]*)>\s*[^<]+?\s*<\/video:player_loc>/i,
+        `<video:player_loc$1>${embed}</video:player_loc>`,
+      );
+    }
+    // watch?v= content_loc gerçek medya dosyası değil — kaldır
+    next = next.replace(
+      /\n?\s*<video:content_loc>\s*https?:\/\/(?:www\.)?youtube\.com\/watch\?v=[^<]+<\/video:content_loc>/gi,
+      "",
+    );
+    return next;
+  });
+}
+
+/** Bare /sitemap → /sitemap.xml (GSC «bilinmiyor» HTML girişini kes). */
+function redirectBareSitemapPath(request, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const path = incoming.pathname.replace(/\/+$/, "") || "/";
+  if (path !== "/sitemap") return null;
+  return new Response(null, {
+    status: 301,
+    headers: {
+      location: `${incoming.origin}/sitemap.xml`,
+      "cache-control": "public, max-age=86400",
+      "x-yekpare-frontend": "cloudflare-sitemap-redirect",
+    },
+  });
+}
+
+/** HM + portal: robots.txt Sitemap satırı ziyaret edilen köke bağlanır (statik yekpare.net ezilmesin). */
+function serveDynamicRobotsTxt(request, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const path = incoming.pathname.replace(/\/+$/, "") || "/";
+  if (path !== "/robots.txt") return null;
+  const origin = incoming.origin.replace(/\/+$/, "");
+  const body = [
+    "User-agent: *",
+    "Allow: /",
+    "",
+    `Sitemap: ${origin}/sitemap.xml`,
+    "",
+    "Disallow: /admin/",
+    "Disallow: /api/admin/",
+    "Disallow: /uye/",
+    "Disallow: /editor/",
+    "Disallow: /hesabim/",
+    "Disallow: /siparislerim/",
+    "Disallow: /isletme-paneli/",
+    "Disallow: /firma-rehberi-paneli/",
+    "Disallow: /servis-saglayici-paneli/",
+    "Disallow: /turizm-paneli/",
+    "Disallow: /ulasim-paneli/",
+    "Disallow: /magaza/sepet",
+    "Disallow: /magaza/odeme",
+    "Disallow: /odeme",
+    "",
+  ].join("\n");
+  const headers = new Headers({
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "public, max-age=3600",
+    "x-yekpare-frontend": "cloudflare-robots",
+  });
+  return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
+}
+
 async function proxyRootSitemap(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const pathOnly = incoming.pathname.replace(/\/+$/, "") || "/";
@@ -351,7 +442,10 @@ async function proxyRootSitemap(request, env, incoming) {
     if (!upstream.ok || (!ct.includes("xml") && !ct.includes("text/plain"))) {
       return null;
     }
-    const text = rewriteSitemapOrigins(await upstream.text(), incoming.origin);
+    let text = rewriteSitemapOrigins(await upstream.text(), incoming.origin);
+    if (/^\/yektube-videos-\d+\.xml$/i.test(pathOnly) || /yektube-videos-\d+/i.test(apiPath)) {
+      text = rewriteYektubeVideoSitemapXml(text);
+    }
     const headers = new Headers({
       "content-type": "application/xml; charset=utf-8",
       "x-content-type-options": "nosniff",
@@ -360,6 +454,9 @@ async function proxyRootSitemap(request, env, incoming) {
       "x-yekpare-frontend": "cloudflare-sitemap-proxy",
       "x-yekpare-sitemap-api": apiPath,
     });
+    if (/yektube-videos/i.test(pathOnly)) {
+      headers.set("x-yekpare-video-sitemap-rewrite", "1");
+    }
     if (request.method === "HEAD") {
       headers.set("content-length", String(new TextEncoder().encode(text).byteLength));
       return new Response(null, { status: 200, headers });
@@ -873,6 +970,12 @@ export default {
 
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);
     if (hmRedirect) return hmRedirect;
+
+    const bareSitemap = redirectBareSitemapPath(request, incoming);
+    if (bareSitemap) return bareSitemap;
+
+    const robotsTxt = serveDynamicRobotsTxt(request, incoming);
+    if (robotsTxt) return robotsTxt;
 
     const ogHtml = await socialPreviewOgHtml(request, env, incoming);
     if (ogHtml) return ogHtml;
