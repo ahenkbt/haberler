@@ -106,6 +106,9 @@ export async function buildYektubeVideoSitemapXml(baseOrigin: string, page: numb
       `${displayTitle} — ${channelName} | Yektube Türkiye`
     ).slice(0, 2048);
     const loc = yektubeWatchPath(origin, row.sourceId!, channelName, row.videoId, row.title);
+    // GSC: player_loc / content_loc <loc> ile aynı olamaz; YouTube için embed player kullanılır.
+    // content_loc yalnızca gerçek medya dosyası içindir — watch?v= URL’leri yazılmaz.
+    const playerLoc = `https://www.youtube.com/embed/${encodeURIComponent(row.videoId)}`;
     const thumb = row.thumbnail?.trim();
     const pubIso = resolveVideoPublicationIso(row);
     if (!thumb || !pubIso) continue;
@@ -119,8 +122,7 @@ export async function buildYektubeVideoSitemapXml(baseOrigin: string, page: numb
       `      <video:thumbnail_loc>${escXml(thumb)}</video:thumbnail_loc>`,
       `      <video:title>${escXml(displayTitle)}</video:title>`,
       `      <video:description>${escXml(displayDesc)}</video:description>`,
-      `      <video:player_loc allow_embed="yes">${escXml(loc)}</video:player_loc>`,
-      `      <video:content_loc>${escXml(`https://www.youtube.com/watch?v=${encodeURIComponent(row.videoId)}`)}</video:content_loc>`,
+      `      <video:player_loc allow_embed="yes">${escXml(playerLoc)}</video:player_loc>`,
       `      <video:publication_date>${pubIso}</video:publication_date>`,
       `      <video:family_friendly>yes</video:family_friendly>`,
       `      <video:requires_subscription>no</video:requires_subscription>`,

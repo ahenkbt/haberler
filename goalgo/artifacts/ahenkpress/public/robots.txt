@@ -38,6 +38,7 @@ Allow: /
 # AI knowledge: /ai.txt
 # Entity page: /bilgi/yekpare-nedir
 
+# Not: Cloudflare Worker robots.txt’i host’a göre yeniden yazar (HM → kendi /sitemap.xml).
 Sitemap: https://yekpare.net/sitemap.xml
 
 # Admin ve üye alanları
