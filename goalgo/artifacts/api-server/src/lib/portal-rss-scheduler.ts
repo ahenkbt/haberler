@@ -1,5 +1,6 @@
 import type { Logger } from "pino";
 import {
+  isHybridRssEnabledInLayout,
   loadPortalHybridRssFeeds,
   type PortalHybridRssFeedConfig,
 } from "./portal-hybrid-config.js";
@@ -15,16 +16,18 @@ import {
   msUntilNextRssScheduledSlot,
   shouldRunRssAutomationTick,
 } from "./rss-automation-control.js";
+import { listActiveHmNewsSitesByUpdatedCompat } from "./hm-site-compat.js";
+import { parseHmLayoutRecord } from "./hm-layout-json.js";
 
 /**
- * Yekpare merkez (portal) hibrit RSS beslemelerini ARKA PLANDA periyodik yeniler ve
- * kalıcı DB havuzuna (portal_rss_items, site_id NULL) UPSERT eder. Böylece:
+ * Yekpare merkez (portal) + Site içi RSS açık editör sitelerinin hibrit RSS
+ * beslemelerini ARKA PLANDA periyodik yeniler ve kalıcı DB havuzuna
+ * (portal_rss_items) UPSERT eder. Böylece:
  *  - yekpare.net/haberler ve editör siteleri sayfa açılışında CANLI RSS BEKLEMEZ,
  *  - kategori kutuları / manşet / SON HABERLER DB'den hızlı okur.
  *
- * Kesinleşmiş model: site-içi RSS YALNIZCA Yekpare admin tarafında tanımlanır.
- * Editör siteleri kendi genel RSS'ini çekmez; bu zamanlayıcı editör beslemelerini
- * taramaz. "Kutu içi RSS" (box scope) DB'ye yazılmaz — o widget canlı kalır.
+ * Site içi RSS (`hybridRssEnabled`): zamanlayıcı o sitenin `hm-*-site-*` feed’lerini
+ * de tarar. "Kutu içi RSS" (box scope) DB'ye yazılmaz — o widget canlı kalır.
  *
  * Otomatik çalışma: admin «RSS otomasyonu» (günde 3× — 01:00, 09:00, 18:00 TR) veya RSS_AUTOMATION=1.
  * Manuel: POST /api/admin/portal-rss/refresh.
@@ -105,7 +108,21 @@ export function startPortalRssScheduler(log: Logger, intervalMs = 60 * 60_000): 
       await withHardTimeout(
         withPgAdvisoryLock(PG_ADVISORY_LOCKS.PORTAL_RSS, async () => {
           const portalFeeds = await loadPortalHybridRssFeeds();
-          const feeds = dedupeFeeds(portalFeeds);
+          const siteFeeds: PortalHybridRssFeedConfig[] = [];
+          try {
+            const sites = await listActiveHmNewsSitesByUpdatedCompat();
+            for (const site of sites) {
+              const layout = parseHmLayoutRecord(site.layoutJson != null ? String(site.layoutJson) : null);
+              if (!isHybridRssEnabledInLayout(layout)) continue;
+              const feedsForSite = await loadPortalHybridRssFeeds(site.id, "site");
+              for (const feed of feedsForSite) {
+                if (!isBoxScopeFeedId(feed.id)) siteFeeds.push(feed);
+              }
+            }
+          } catch (e) {
+            log.debug({ err: e }, "[portal-rss] editör site feed listesi atlandı");
+          }
+          const feeds = dedupeFeeds([...portalFeeds, ...siteFeeds]);
           if (!feeds.length) return;
 
           // Yalnızca eksik/eski/vadesi gelmiş beslemeleri yenile — DB doluysa gereksiz istek yok.
@@ -153,8 +170,15 @@ export function startPortalRssScheduler(log: Logger, intervalMs = 60 * 60_000): 
           }
 
           log.info(
-            { reason, portalFeeds: portalFeeds.length, refreshed: target.length, stored, failed },
-            "Portal hibrit RSS DB havuzu yenilendi",
+            {
+              reason,
+              portalFeeds: portalFeeds.length,
+              siteFeeds: siteFeeds.length,
+              refreshed: target.length,
+              stored,
+              failed,
+            },
+            "Portal + site hibrit RSS DB havuzu yenilendi",
           );
         }),
         TICK_HARD_TIMEOUT_MS,

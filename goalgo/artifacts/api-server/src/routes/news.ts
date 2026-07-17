@@ -47,10 +47,18 @@ import {
   reclassifyTurkishNewsOutOfGlobalAll,
 } from "../lib/reclassifyNonTurkishNewsToGlobal.js";
 import { recategorizeMisclassifiedSporBatch } from "../lib/recategorizeMisclassifiedSpor.js";
-import { loadEditorScopedDbNews, resolveEditorScopedPoolOpts } from "../lib/hybrid-news-merge.js";
+import {
+  filterPoolCopiesWhenReceiveDisabled,
+  loadEditorScopedDbNews,
+  resolveEditorScopedPoolOpts,
+} from "../lib/hybrid-news-merge.js";
 import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
 import { filterGlobalCategoryNewsItems, HM_GLOBAL_NEWS_CATEGORY_SLUG } from "../lib/hm-global-news-category.js";
-import { filterCorporatePublicNewsItems, centralNewsRowBelongsToCorporateSite } from "../lib/hm-corporate-news-policy.js";
+import {
+  filterCorporatePublicNewsItems,
+  centralNewsRowBelongsToCorporateSite,
+  excludeYekparePoolNewsSql,
+} from "../lib/hm-corporate-news-policy.js";
 import { isHmCorporateLayout, parseHmLayoutJson } from "../lib/hm-editor-categories.js";
 import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat.js";
 
@@ -521,10 +529,16 @@ router.get("/news/breaking", async (req, res): Promise<void> => {
   const conds: SQL[] = [eq(newsTable.isBreaking, true), eq(newsTable.status, "published")];
   if (scoped) conds.push(await newsSiteScopeCondition(readDb, siteId));
   else conds.push(isNull(newsTable.siteId));
+  let poolReceiveEnabled: boolean | undefined;
   if (scoped) {
     const hiddenCategoryIds = await getHmHiddenCategoryIds(siteId);
     if (hiddenCategoryIds.length > 0) {
       conds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
+    }
+    const hmAccess = await resolveHmHybridRssAccess(siteId);
+    poolReceiveEnabled = hmAccess?.yekparePoolReceiveEnabled;
+    if (poolReceiveEnabled === false) {
+      conds.push(excludeYekparePoolNewsSql());
     }
   }
   const rows = await getNewsDbForRead()
@@ -533,7 +547,7 @@ router.get("/news/breaking", async (req, res): Promise<void> => {
     .where(and(...conds))
     .orderBy(desc(newsTable.createdAt))
     .limit(15);
-  res.json(rows.map((r) => serializeNewsListItem(r, ctx)));
+  res.json(filterPoolCopiesWhenReceiveDisabled(rows.map((r) => serializeNewsListItem(r, ctx)), poolReceiveEnabled));
 });
 
 router.get("/news/popular", async (req, res): Promise<void> => {
@@ -546,14 +560,20 @@ router.get("/news/popular", async (req, res): Promise<void> => {
   const limit = Math.min(Number(req.query.limit ?? 10) || 10, 30);
 
   if (Number.isFinite(siteId) && siteId > 0) {
+    const hmAccess = await resolveHmHybridRssAccess(siteId);
     const hiddenCategoryIds = await getHmHiddenCategoryIds(siteId);
     const hiddenCond =
       hiddenCategoryIds.length > 0
         ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
         : undefined;
-    const newsWhere = hiddenCond
-      ? and(eq(newsTable.status, "published"), await newsSiteScopeCondition(getNewsDbForRead(), siteId), hiddenCond)
-      : and(eq(newsTable.status, "published"), await newsSiteScopeCondition(getNewsDbForRead(), siteId));
+    const scopeCond = await newsSiteScopeCondition(getNewsDbForRead(), siteId);
+    const poolCond = hmAccess?.yekparePoolReceiveEnabled === false ? excludeYekparePoolNewsSql() : undefined;
+    const newsWhere = and(
+      eq(newsTable.status, "published"),
+      scopeCond,
+      hiddenCond,
+      poolCond,
+    );
     const newsRows = await getNewsDbForRead()
       .select(newsListSelectFields)
       .from(newsTable)
@@ -571,7 +591,9 @@ router.get("/news/popular", async (req, res): Promise<void> => {
       ...makRows.map((m) => serializeHmMakaleListItem(m, ctx)),
     ];
     merged.sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
-    res.json(merged.slice(0, limit));
+    res.json(
+      filterPoolCopiesWhenReceiveDisabled(merged.slice(0, limit), hmAccess?.yekparePoolReceiveEnabled),
+    );
     return;
   }
 
@@ -984,38 +1006,59 @@ router.get("/news/:id", async (req, res): Promise<void> => {
     isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
   }
 
-  // Yalnızca tamamen sayısal id — "15-temmuz-..." → 15 yanlış eşleşmesini önle.
-  const numericId = /^\d+$/.test(String(raw).trim()) ? parseInt(String(raw).trim(), 10) : NaN;
+  // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." → yanlış id olmasın.
+  const slugKey = String(raw ?? "").trim();
+  const numericId = /^\d+$/.test(slugKey) ? parseInt(slugKey, 10) : NaN;
   let row: typeof newsTable.$inferSelect | undefined;
+  const acceptRowForSlug = (candidate: typeof newsTable.$inferSelect | undefined) => {
+    if (!candidate) return undefined;
+    if (Number.isNaN(numericId) && String(candidate.slug ?? "").trim() !== slugKey) return undefined;
+    return candidate;
+  };
 
   if (!Number.isNaN(numericId)) {
     [row] = await readDb
       .select()
       .from(newsTable)
       .where(eq(newsTable.id, numericId));
+    if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
+      row = undefined;
+    }
   }
 
   if (!row && siteScoped) {
-    [row] = await readDb
+    const [siteLocal] = await readDb
       .select()
       .from(newsTable)
-      .where(and(eq(newsTable.slug, String(raw)), await newsSiteScopeCondition(readDb, siteId)))
+      .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
       .limit(1);
+    row = acceptRowForSlug(siteLocal);
+  }
+
+  if (!row && siteScoped) {
+    const [scoped] = await readDb
+      .select()
+      .from(newsTable)
+      .where(and(eq(newsTable.slug, slugKey), await newsSiteScopeCondition(readDb, siteId)))
+      .limit(1);
+    row = acceptRowForSlug(scoped);
   }
 
   if (!row && siteScoped && isCorporate) {
-    [row] = await readDb
+    const [corp] = await readDb
       .select()
       .from(newsTable)
-      .where(and(eq(newsTable.slug, String(raw)), eq(newsTable.siteId, siteId)))
+      .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
       .limit(1);
+    row = acceptRowForSlug(corp);
   }
 
   if (!row && !siteScoped) {
-    [row] = await readDb
+    const [portalRow] = await readDb
       .select()
       .from(newsTable)
-      .where(eq(newsTable.slug, String(raw)));
+      .where(eq(newsTable.slug, slugKey));
+    row = acceptRowForSlug(portalRow);
   }
 
   let mak: typeof hmMakalelerTable.$inferSelect | undefined;
@@ -1023,14 +1066,14 @@ router.get("/news/:id", async (req, res): Promise<void> => {
     const [m] = await getNewsDbForRead()
       .select()
       .from(hmMakalelerTable)
-      .where(and(eq(hmMakalelerTable.slug, String(raw)), eq(hmMakalelerTable.siteId, siteId)))
+      .where(and(eq(hmMakalelerTable.slug, slugKey), eq(hmMakalelerTable.siteId, siteId)))
       .limit(1);
     if (m && m.status === "published") mak = m;
     if (!mak) {
       const [mainM] = await mainDb
         .select()
         .from(hmMakalelerTable)
-        .where(and(eq(hmMakalelerTable.slug, String(raw)), eq(hmMakalelerTable.siteId, siteId)))
+        .where(and(eq(hmMakalelerTable.slug, slugKey), eq(hmMakalelerTable.siteId, siteId)))
         .limit(1);
       if (mainM && mainM.status === "published") mak = mainM;
     }
@@ -1039,16 +1082,29 @@ router.get("/news/:id", async (req, res): Promise<void> => {
   if (!row && !mak) {
     if (!Number.isNaN(numericId)) {
       [row] = await mainDb.select().from(newsTable).where(eq(newsTable.id, numericId));
+      if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
+        row = undefined;
+      }
     }
-    if (!row && siteScoped && isCorporate) {
-      [row] = await mainDb
+    if (!row && siteScoped) {
+      const [siteLocal] = await mainDb
         .select()
         .from(newsTable)
-        .where(and(eq(newsTable.slug, String(raw)), eq(newsTable.siteId, siteId)))
+        .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
         .limit(1);
+      row = acceptRowForSlug(siteLocal);
+    }
+    if (!row && siteScoped && isCorporate) {
+      const [corp] = await mainDb
+        .select()
+        .from(newsTable)
+        .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
+        .limit(1);
+      row = acceptRowForSlug(corp);
     }
     if (!row && !siteScoped) {
-      [row] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, String(raw)));
+      const [portalRow] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, slugKey));
+      row = acceptRowForSlug(portalRow);
     }
   }
 
