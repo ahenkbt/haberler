@@ -306,6 +306,21 @@ function rewriteYektubeSpaPath(pathname) {
   return null;
 }
 
+/** HM anasayfa haber API'leri — soğuk Render'ı edge cache ile kes. */
+function isCacheableHmNewsApi(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  return (
+    p.startsWith("/api/hm/meta/") ||
+    p === "/api/hm/home-bundle" ||
+    p === "/api/news" ||
+    p === "/api/news/hybrid" ||
+    p === "/api/news/featured" ||
+    p === "/api/news/breaking" ||
+    p === "/api/categories" ||
+    p === "/api/authors"
+  );
+}
+
 function upstreamCfCacheOptions(pathname, method) {
   if (method !== "GET" && method !== "HEAD") {
     return { cacheTtl: 0, cacheEverything: false };
@@ -313,7 +328,7 @@ function upstreamCfCacheOptions(pathname, method) {
   if (isStaticAssetPath(pathname)) {
     return { cacheTtl: 86400, cacheEverything: true };
   }
-  if (pathname.startsWith("/api/hm/meta/")) {
+  if (isCacheableHmNewsApi(pathname)) {
     return { cacheTtl: 120, cacheEverything: true };
   }
   return { cacheTtl: 0, cacheEverything: false };
@@ -360,7 +375,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
           "x-forwarded-host": incoming.host,
           "x-forwarded-proto": "https",
         },
-        cf: { cacheTtl: 60, cacheEverything: false },
+        cf: { cacheTtl: 120, cacheEverything: true },
       },
     );
     if (!metaRes.ok) return null;
@@ -370,8 +385,8 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
     const loc = `${incoming.origin}/tr/${encodeURIComponent(slug)}`;
     const headers = {
       location: loc,
-      "cache-control": "no-store",
-      "cdn-cache-control": "no-store",
+      "cache-control": "public, max-age=60",
+      "cdn-cache-control": "public, max-age=120",
       "x-yekpare-frontend": "cloudflare-render-proxy",
       "x-yekpare-hm-redirect": slug,
     };
@@ -560,6 +575,15 @@ export default {
         if (!out.get("cache-control")) {
           out.set("cache-control", "public, max-age=86400, immutable");
         }
+      } else if (isCacheableHmNewsApi(upstreamPath)) {
+        // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
+        if (!out.get("cache-control")) {
+          out.set(
+            "cache-control",
+            "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+          );
+        }
+        out.set("cdn-cache-control", "public, max-age=120, stale-while-revalidate=300");
       } else {
         out.set("cdn-cache-control", "no-store");
       }

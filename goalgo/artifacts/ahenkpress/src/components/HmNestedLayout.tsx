@@ -392,9 +392,10 @@ export function HmNestedLayout({
     queryKey: ["hm-nested-meta", slug, hostKey, needsFreshMeta ? "full" : "slim"],
     queryFn: () => loadHmNestedMeta(slug, needsFreshMeta),
     enabled: slug.length > 0,
-    staleTime: 0,
-    refetchOnMount: indexLandingGate && isHomeRoot ? "always" : needsFreshMeta ? "always" : true,
-    refetchOnWindowFocus: true,
+    // Anasayfa ilk boyamasını meta refetch ile bloklamayın; layout event ile invalidate edilir.
+    staleTime: indexLandingGate && isHomeRoot ? 5 * 60 * 1000 : needsFreshMeta ? 0 : 60 * 1000,
+    refetchOnMount: needsFreshMeta ? "always" : true,
+    refetchOnWindowFocus: needsFreshMeta,
     retry: 1,
     retryDelay: 1500,
   });
