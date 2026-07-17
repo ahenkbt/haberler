@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, rmSync, unlinkSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const goalgo = "goalgo";
@@ -26,6 +26,14 @@ run("pnpm", ["run", "build:cloudflare"], goalgo);
 rmSync(distDest, { recursive: true, force: true });
 mkdirSync(distDest, { recursive: true });
 cpSync(distSrc, distDest, { recursive: true });
+
+// Netlify `_redirects` CF Assets'te infinite-loop hatası veriyor (code 100324).
+// SPA fallback: wrangler not_found_handling; /yp rewrite: worker.js.
+const redirectsPath = join(distDest, "_redirects");
+if (existsSync(redirectsPath)) {
+  unlinkSync(redirectsPath);
+  console.log("cloudflare-root-build: removed _redirects (Worker handles routing)");
+}
 
 // Cloudflare Workers Static Assets — SPA fallback /api proxy worker'da; _headers cache yardımcı
 writeFileSync(

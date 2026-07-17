@@ -24,6 +24,6 @@ function run(cmd, args) {
 
 run("pnpm", ["run", "build:web:full"]);
 run("node", ["scripts/generate-public-sitemap.mjs", "artifacts/ahenkpress/dist/public"]);
-// _redirects Workers asset-first + worker.js ile birlikte yedek; CF Pages uyumu için bırakılır
-run("node", ["scripts/write-netlify-redirects.mjs", "artifacts/ahenkpress/dist/public"]);
-console.log("cloudflare-deploy-rev=20260715-worker-assets-render");
+// Netlify _redirects CF Assets'te infinite-loop (100324) üretir; Worker SPA/yp rewrite kullanır.
+// Dosyayı yazma — sadece Netlify/legacy yollar için write-netlify-redirects ayrı tutulur.
+console.log("cloudflare-deploy-rev=20260717-worker-assets-no-redirects");
