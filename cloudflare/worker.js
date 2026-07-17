@@ -606,12 +606,17 @@ function isSocialPreviewBot(request) {
 }
 
 function isOgProxySkipPath(pathname) {
+  const p = String(pathname || "");
   return (
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/assets/") ||
-    pathname.startsWith("/_next/") ||
-    pathname.startsWith("/yektube-v2/") ||
-    pathname.startsWith("/yp/") ||
+    p.startsWith("/api") ||
+    p.startsWith("/assets/") ||
+    p.startsWith("/_next/") ||
+    p.startsWith("/yektube-v2/") ||
+    p.startsWith("/yp/") ||
+    // Googlebot sitemap tararken OG HTML dönmesin (HM custom domain)
+    /\.xml$/i.test(p) ||
+    p === "/robots.txt" ||
+    p === "/sitemap.xml" ||
     isStaticAssetPath(pathname)
   );
 }
