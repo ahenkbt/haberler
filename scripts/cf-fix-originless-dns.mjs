@@ -332,10 +332,11 @@ async function main() {
     if (await fixZone(z)) ok += 1;
   }
   console.log(`\n[fix] zones fixed: ${ok}/${ZONES.length}`);
-  // Schedule cron only repairs DNS/routes. Redeploying Worker from main every
-  // 20 minutes overwrote newer production Worker scripts (e.g. social OG fix).
-  if (process.env.CF_FIX_SKIP_WORKER_DEPLOY === "1") {
-    console.log("[fix] skip worker deploy (DNS-only mode)");
+  // Worker + SPA Assets deploy yalnızca Cloudflare Production workflow'da.
+  // Burada script-only API upload ASSETS bağını düşürüp production'ı bozuyordu;
+  // cron/push DNS-only kalır (CF_FIX_FORCE_WORKER_DEPLOY=1 ile istisna).
+  if (process.env.CF_FIX_FORCE_WORKER_DEPLOY !== "1") {
+    console.log("[fix] skip worker deploy (DNS-only; use cloudflare-production for Worker+Assets)");
     return;
   }
   const deployed = await tryWranglerDeploy();
