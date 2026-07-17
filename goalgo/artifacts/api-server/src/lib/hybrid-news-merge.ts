@@ -331,12 +331,15 @@ export function resolveEditorScopedPoolOpts(hmAccess: {
 }
 
 /** Havuz alımı kapalıysa onaylı `yekpare-hm-pool:` kopyaları da vitrinden düşer. */
-export function filterPoolCopiesWhenReceiveDisabled<T extends { rssSourceUrl?: string | null }>(
+export function filterPoolCopiesWhenReceiveDisabled<T>(
   items: T[],
   yekparePoolReceiveEnabled?: boolean,
 ): T[] {
   if (yekparePoolReceiveEnabled !== false) return items;
-  return items.filter((item) => !String(item.rssSourceUrl ?? "").trim().startsWith("yekpare-hm-pool:"));
+  return items.filter((item) => {
+    const ref = String((item as { rssSourceUrl?: string | null }).rssSourceUrl ?? "").trim();
+    return !ref.startsWith("yekpare-hm-pool:");
+  });
 }
 
 /**
