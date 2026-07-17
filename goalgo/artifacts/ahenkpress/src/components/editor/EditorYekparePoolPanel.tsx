@@ -20,8 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Pencil, RotateCcw, Search, Trash2 } from "lucide-react";
+import { Loader2, Pencil, RotateCcw, Search, Trash2, CheckSquare } from "lucide-react";
 import { Link } from "wouter";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ALL_CATEGORIES_VALUE = "__all__";
 const YEKPARE_PAGE_SIZE = 40;
@@ -66,18 +67,37 @@ function poolArticleId(item: HomeHybridNewsItem): number | null {
 
 function PoolRow({
   item,
+  selected,
+  onSelect,
   onEdit,
   onDelete,
+  onApprove,
+  onDraft,
   deleting,
+  busy,
 }: {
   item: HomeHybridNewsItem;
+  selected: boolean;
+  onSelect: (item: HomeHybridNewsItem, checked: boolean) => void;
   onEdit: (item: HomeHybridNewsItem) => void;
   onDelete: (item: HomeHybridNewsItem) => void;
+  onApprove: (item: HomeHybridNewsItem) => void;
+  onDraft: (item: HomeHybridNewsItem) => void;
   deleting: boolean;
+  busy: boolean;
 }) {
   const articleId = poolArticleId(item);
   return (
     <div className="flex items-center gap-3 p-3">
+      {articleId != null ? (
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(c) => onSelect(item, c === true)}
+          aria-label="Seç"
+        />
+      ) : (
+        <span className="w-4" />
+      )}
       {item.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={item.imageUrl} alt="" className="h-14 w-20 rounded object-cover shrink-0 bg-slate-100" />
@@ -102,9 +122,16 @@ function PoolRow({
           )}
         </div>
       </div>
-      <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+      <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:justify-end">
         {articleId != null ? (
           <>
+            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => onDraft(item)}>
+              Taslak al
+            </Button>
+            <Button type="button" size="sm" disabled={busy} className="gap-1.5" onClick={() => onApprove(item)}>
+              <CheckSquare className="w-3.5 h-3.5" />
+              Onayla / Yayınla
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -113,7 +140,7 @@ function PoolRow({
               onClick={() => onEdit(item)}
             >
               <Pencil className="w-3.5 h-3.5" />
-              Bu sitede düzenle
+              Düzenle
             </Button>
             <Button
               type="button"
@@ -124,7 +151,7 @@ function PoolRow({
               onClick={() => onDelete(item)}
             >
               {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-              Siteden kaldır
+              Gizle
             </Button>
           </>
         ) : (
@@ -195,6 +222,8 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [busy, setBusy] = useState(false);
 
   const {
     data,
@@ -214,6 +243,7 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
         offset: pageParam as number,
         rssScope: "all",
         yekparePool: true,
+        poolBrowse: true,
         q: search || undefined,
         ...(categorySlug ? { categorySlug } : {}),
       }),
@@ -333,11 +363,11 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
     const articleId = poolArticleId(item);
     if (articleId == null) return;
     const label = String(item.title ?? "Haber").slice(0, 80);
-    if (!confirm(`«${label}» bu siteden kaldırılsın mı? Merkez Yekpare havuzundan silinmez.`)) return;
+    if (!confirm(`«${label}» bu siteden gizlensin mi? Merkez havuzdan silinmez.`)) return;
     setDeletingId(articleId);
     try {
       await hmFetchJson(`/api/hm/editor/yekpare-pool/${articleId}`, { method: "DELETE" });
-      toast({ title: "Haber siteden kaldırıldı" });
+      toast({ title: "Haber siteden gizlendi" });
       await refetch();
       setRefreshKey((k) => k + 1);
     } catch (e) {
@@ -351,12 +381,91 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
     }
   };
 
+  const publishOne = async (item: HomeHybridNewsItem, status: "draft" | "published") => {
+    const articleId = poolArticleId(item);
+    if (articleId == null) return;
+    setBusy(true);
+    try {
+      await hmFetchJson(`/api/hm/editor/pool/news/${articleId}/publish`, {
+        method: "POST",
+        body: JSON.stringify({ status }),
+      });
+      toast({
+        title: status === "published" ? "Sitenizde yayınlandı" : "Taslak olarak alındı",
+        description: String(item.title ?? "").slice(0, 120),
+      });
+      await refetch();
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      toast({
+        title: "İşlem başarısız",
+        description: e instanceof Error ? e.message.slice(0, 300) : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const publishSelected = async (status: "draft" | "published") => {
+    const ids = [...selectedIds];
+    if (!ids.length) {
+      toast({ title: "Önce haber seçin", variant: "destructive" });
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await hmFetchJson<{ count?: number }>(`/api/hm/editor/pool/news/bulk-publish`, {
+        method: "POST",
+        body: JSON.stringify({ ids, status }),
+      });
+      toast({
+        title: status === "published" ? "Toplu yayınlandı" : "Toplu taslak alındı",
+        description: `${r?.count ?? ids.length} haber`,
+      });
+      setSelectedIds(new Set());
+      await refetch();
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      toast({
+        title: "Toplu işlem başarısız",
+        description: e instanceof Error ? e.message.slice(0, 300) : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleSelect = (item: HomeHybridNewsItem, checked: boolean) => {
+    const id = poolArticleId(item);
+    if (id == null) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const rowProps = (item: HomeHybridNewsItem) => ({
+    item,
+    selected: selectedIds.has(poolArticleId(item) ?? -1),
+    onSelect: toggleSelect,
+    onEdit: (row: HomeHybridNewsItem) => void openEdit(row),
+    onDelete: (row: HomeHybridNewsItem) => void removeFromSite(row),
+    onApprove: (row: HomeHybridNewsItem) => void publishOne(row, "published"),
+    onDraft: (row: HomeHybridNewsItem) => void publishOne(row, "draft"),
+    deleting: deletingId === poolArticleId(item),
+    busy,
+  });
+
   return (
     <div className="space-y-4" key={refreshKey}>
       <p className="text-sm text-slate-600">
-        Aktif Yekpare kategorilerinden gelen ortak haberler. Düzenleme yalnızca{" "}
-        <strong>sizin sitenizde</strong> geçerli override kaydıdır; merkez havuz ve diğer siteler değişmez.
-        Kategori aç/kapa:{" "}
+        Yekpare / diğer sitelerden gelen aday haberler. Public sitede{" "}
+        <strong>otomatik yayınlanmaz</strong> — önce taslak alın veya onaylayın. Override yalnızca sizin
+        sitenizde geçerlidir.{" "}
         <Link href="/editor/kategoriler" className="font-semibold text-red-600 hover:underline">
           Kategoriler
         </Link>
@@ -394,6 +503,23 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
             Ara
           </Button>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={busy || selectedIds.size === 0}
+          onClick={() => void publishSelected("draft")}
+        >
+          Seçilenleri taslak al ({selectedIds.size})
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={busy || selectedIds.size === 0}
+          onClick={() => void publishSelected("published")}
+        >
+          Seçilenleri onayla ({selectedIds.size})
+        </Button>
         {categoryOptions.length === 0 ? (
           <p className="text-xs text-amber-700">Aktif Yekpare kategorisi yok — Kategoriler sayfasından açın.</p>
         ) : null}
@@ -417,27 +543,13 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
               </div>
               <div className="divide-y">
                 {items.map((item) => (
-                  <PoolRow
-                    key={item.id}
-                    item={item}
-                    onEdit={(row) => void openEdit(row)}
-                    onDelete={(row) => void removeFromSite(row)}
-                    deleting={deletingId === poolArticleId(item)}
-                  />
+                  <PoolRow key={item.id} {...rowProps(item)} />
                 ))}
               </div>
             </div>
           ))
         ) : (
-          poolItems.map((item) => (
-            <PoolRow
-              key={item.id}
-              item={item}
-              onEdit={(row) => void openEdit(row)}
-              onDelete={(row) => void removeFromSite(row)}
-              deleting={deletingId === poolArticleId(item)}
-            />
-          ))
+          poolItems.map((item) => <PoolRow key={item.id} {...rowProps(item)} />)
         )}
         {hasNextPage ? (
           <div className="p-3 text-center">
