@@ -115,7 +115,8 @@ import {
   HM_HOME_HEADLINE_SLIDER_LIMIT,
   HM_HOME_HEADLINE_SLIDER_MIN,
   HM_LEAD_LIST_SIDEBAR_TOTAL,
-  HM_ESEN_LEAD_PACK_TOTAL,
+  HM_ESEN_LEAD_PACK_LEFT_COUNT,
+  HM_ESEN_LEAD_PACK_RIGHT_COUNT,
   HM_MANSET_SPLIT_SIDE_COUNT,
   HM_MANSET_FULL_NUMBERED_SIDE_COUNT,
   resolveFullNumberedSideCount,
@@ -230,6 +231,7 @@ const ESEN_NATIVE_HOME_MODULES = new Set<HmNewsHomeModuleId>([
   "hero",
   "mansetAd",
   "authorsStrip",
+  "esenLeadPack",
 ]);
 
 /** Klasik / Portal3 tema gövdesinde zaten özel render edilen modüller. */
@@ -397,6 +399,45 @@ function padNewsItemsToLimit<T>(
   const result = out.slice(0, limit);
   dedupe?.rememberMany(result);
   return result;
+}
+
+/** Kategori seçiliyken yalnızca eşleşen haberler; «Tümü»nde eksik slotlar havuzdan doldurulur. */
+function pickCategoryAwareNewsColumns<T>(
+  pool: readonly T[],
+  leftCount: number,
+  rightCount: number,
+  categorySlug: string,
+  matchContext: HmHomeCategoryMatchContext | undefined,
+  backfillPool?: readonly T[],
+): { left: T[]; right: T[] } {
+  const filtered = categorySlug
+    ? pool.filter((item) => newsMatchesCategory(item, categorySlug, matchContext))
+    : pool;
+  const primary = sortNewsByRecency(filtered);
+  const widen = sortNewsByRecency(
+    mergeUniqueNews([...primary], [...(backfillPool ?? pool)]) as T[],
+  );
+  const seen = new Set<string>();
+  const take = (source: readonly T[], limit: number, allowBackfill: boolean): T[] => {
+    const out: T[] = [];
+    const pushFrom = (list: readonly T[]) => {
+      for (const item of list) {
+        if (out.length >= limit) break;
+        if (isItemAliasSeen(item, seen)) continue;
+        rememberItemAliasKeys(item, seen);
+        out.push(item);
+      }
+    };
+    pushFrom(source);
+    if (allowBackfill && out.length < limit) {
+      pushFrom(widen);
+    }
+    return out;
+  };
+  const allowBackfill = !categorySlug;
+  const left = take(primary, leftCount, allowBackfill);
+  const right = take(primary, rightCount, allowBackfill);
+  return { left, right };
 }
 
 function cssToken(value: string): string {
@@ -2949,9 +2990,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           yekparePoolReceiveEnabled: hmYekparePoolReceiveEnabled,
           mansetFallbackItems: mansetTaggedSideFallbackItems,
         });
-        const heroSideWidenPools = siteId != null ? ([] as const) : ([moduleSectionSourcePool, latestNewsPool, popular] as const);
+        // HM sitelerde de yerel son haberlerle yan kart doldur (yekpare/manşet havuzu boş kalabiliyor).
+        const heroSideWidenPools = [moduleSectionSourcePool, latestNewsPool, popular, classicLatestMini] as const;
         const heroSideSourcePool = sortNewsByRecency(
-          mergeUniqueNews(headlineSidePool, ...(siteId != null ? [] : heroSideWidenPools)),
+          mergeUniqueNews(headlineSidePool, ...heroSideWidenPools),
         );
         const mansetSideResolve =
           effectiveMansetVariant === "center-trio" || effectiveMansetVariant === "slider-side-band"
@@ -4111,30 +4153,43 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   if (isEsenTheme) {
     const esenVideoModuleEnabled = mediaDarkModulesEnabled;
+    const esenLeadPackEnabled = resolveHmNewsHomeModuleEnabled(layoutPrefs, "esenLeadPack");
     const headlineRest = classicHeadlinePool.slice(1);
-    const belowHeroPool = mergeUniqueNews(classicLatestMini, headlineRest.slice(4), latestNewsPool, bandNewsItems)
-      .filter(isHeadlineFreshEnough);
-    const belowHeroItems = pickAndPadModuleItems(
-      featuredCategorySlug
-        ? belowHeroPool.filter((item) => newsMatchesCategory(item, featuredCategorySlug, homeCategoryMatchContext))
-        : belowHeroPool,
-      HM_ESEN_LEAD_PACK_TOTAL,
-      belowHeroPool,
-      { exactLimit: true },
+    // Manşet (hero) önce yer kaplar; lead-pack aynı dedupe havuzunu manşetten SONRA kullanmalı.
+    // Bu yüzden burada rememberModuleItems çağırmıyoruz — hero render sırasında claim eder.
+    const leadPackBasePool = sortNewsByRecency(
+      mergeUniqueNews(latestNewsPool, bandNewsItems, allItems, classicLatestMini, headlineRest.slice(4)).filter(
+        isHeadlineFreshEnough,
+      ),
     );
-    rememberModuleItems(belowHeroItems);
+    // Slider manşetindeki haberleri lead-pack'ten düş (sol/sağ manşet kartları da hero tarafında ayrı seçilir).
+    const leadPackPoolExcludingSlider = excludeHeadlineSliderItems(
+      leadPackBasePool,
+      classicHeadlineSliderItems,
+    );
+    const leadPackUnused = homeNewsDedupe.filterUnused(leadPackPoolExcludingSlider);
+    const leadPackColumns = pickCategoryAwareNewsColumns(
+      leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider,
+      HM_ESEN_LEAD_PACK_LEFT_COUNT,
+      HM_ESEN_LEAD_PACK_RIGHT_COUNT,
+      featuredCategorySlug,
+      homeCategoryMatchContext,
+      leadPackPoolExcludingSlider,
+    );
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
     const esenTodayHighlightItems = pickSidebarNews(todayHighlightMini, 6);
     const esenBottomWidgetNews =
-      homeNewsDedupe.filterUnused(belowHeroPool)[0]
+      homeNewsDedupe.filterUnused(leadPackBasePool)[0]
       ?? homeNewsDedupe.filterUnused(headlineRest)[0]
-      ?? belowHeroPool.find((n) => !homeNewsDedupe.has(n))
+      ?? leadPackBasePool.find((n) => !homeNewsDedupe.has(n))
       ?? null;
     const videoItems = pickAndPadModuleItems(
       sortNewsByRecency(mergeUniqueNews(headlineRest.slice(8), classicLatestMini, latestNewsPool)),
       6,
     );
-    const hasEsenContent = belowHeroItems.length > 0 || classicHeadlinePool.length > 0;
+    const hasEsenLeadPackContent =
+      esenLeadPackEnabled && (leadPackColumns.left.length > 0 || leadPackColumns.right.length > 0);
+    const hasEsenContent = hasEsenLeadPackContent || classicHeadlinePool.length > 0;
     return (
       <div
         className="hm-vitrin-home hm-esen-home min-h-screen"
@@ -4218,8 +4273,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                 <div className="hm-esen-ad hm-esen-ad--wide" dangerouslySetInnerHTML={{ __html: mansetBelowHtmlDisplay }} />
               ) : null}
 
-              {belowHeroPool.length > 0 ? (
-                <section className="hm-esen-lead-pack">
+              {esenLeadPackEnabled && leadPackBasePool.length > 0 ? (
+                <section className="hm-esen-lead-pack" data-hm-home-module="esenLeadPack">
                   <ClassicSectionTitle title="Günün Öne Çıkanları" href={tumHaberlerHref} accent={accent} />
                   <FeaturedCategoryTabs
                     tabs={tabStripCats}
@@ -4227,29 +4282,36 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                     accent={accent}
                     onSelect={setFeaturedCategorySlug}
                   />
-                  {belowHeroItems.length > 0 ? (
+                  {hasEsenLeadPackContent ? (
                     <div className="hm-esen-lead-pack-grid">
-                      {belowHeroItems[0] ? <ClassicFeatureCard n={belowHeroItems[0]} accent={accent} hmCategoryColors={hmCat} large /> : null}
-                      {belowHeroItems.length > 1 ? (
-                        <div className="hm-esen-lead-pack-small">
-                          {belowHeroItems.slice(1).map((n, index) => (
+                      {leadPackColumns.left.length > 0 ? (
+                        <ClassicTextList
+                          title="Gündemde Öne Çıkanlar"
+                          items={leadPackColumns.left}
+                          accent={accent}
+                          href={tumHaberlerHref}
+                        />
+                      ) : (
+                        <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
+                          {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
+                        </div>
+                      )}
+                      {leadPackColumns.right.length > 0 ? (
+                        <div className="hm-esen-lead-pack-right-grid">
+                          {leadPackColumns.right.map((n, index) => (
                             <ClassicCompactCard key={n.id ?? n.slug ?? index} n={n} accent={accent} hmCategoryColors={hmCat} />
                           ))}
                         </div>
-                      ) : null}
-                    </div>
-                  ) : siteHasAnyNews ? (
-                    <div className="hm-esen-lead-pack-grid">
-                      {pickAndPadModuleItems(belowHeroPool, HM_ESEN_LEAD_PACK_TOTAL, belowHeroPool, { exactLimit: true }).map((n, index) => (
-                        index === 0 ? (
-                          <ClassicFeatureCard key={n.id ?? n.slug ?? index} n={n} accent={accent} hmCategoryColors={hmCat} large />
-                        ) : (
-                          <ClassicCompactCard key={n.id ?? n.slug ?? index} n={n} accent={accent} hmCategoryColors={hmCat} />
-                        )
-                      ))}
+                      ) : (
+                        <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
+                          {featuredCategorySlug ? "Bu kategoride kart gösterilecek haber yok." : "Son haberler yükleniyor…"}
+                        </div>
+                      )}
                     </div>
                   ) : homeNewsBootstrapping ? (
                     <HmNewsInlinePulse className="max-w-md" />
+                  ) : featuredCategorySlug ? (
+                    <div className="hm-classic-empty-panel">Seçilen kategoride henüz haber yok.</div>
                   ) : null}
                 </section>
               ) : null}
@@ -4270,8 +4332,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               ) : null}
 
               <section className="hm-esen-bottom-widgets">
-                {esenSidebarPopularItems.length > 0 ? <ClassicTextList title="Gündemde Öne Çıkanlar" items={esenSidebarPopularItems} accent={accent} href={tumHaberlerHref} /> : null}
-                {esenTodayHighlightItems.length > 0 ? (
+                {esenSidebarPopularItems.length > 0 && !esenLeadPackEnabled ? (
+                  <ClassicTextList title="Gündemde Öne Çıkanlar" items={esenSidebarPopularItems} accent={accent} href={tumHaberlerHref} />
+                ) : null}
+                {!esenLeadPackEnabled && esenTodayHighlightItems.length > 0 ? (
                   <ClassicTextList title="Günün Öne Çıkanları" items={esenTodayHighlightItems} accent="#2563eb" href={tumHaberlerHref} />
                 ) : null}
                 {esenBottomWidgetNews ? (
@@ -4354,7 +4418,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       yekparePoolReceiveEnabled: hmYekparePoolReceiveEnabled,
       mansetFallbackItems: mansetTaggedSideFallbackItems,
     });
-    const classicSideWidenPools = siteId != null ? ([] as const) : ([moduleSectionSourcePool, latestNewsPool, popular] as const);
+    const classicSideWidenPools = [moduleSectionSourcePool, latestNewsPool, popular, classicLatestMini] as const;
     const classicSideSourcePool = sortNewsByRecency(
       mergeUniqueNews(
         classicMansetSidePrimaryPool.length > 0 ? classicMansetSidePrimaryPool : classicBelowHeroPool,
@@ -4390,15 +4454,17 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           newsMatchesCategory(item, featuredCategorySlug, homeCategoryMatchContext),
         )
       : featuredStripUnused;
-    const latestStripItems = pickAndPadModuleItems(
-      featuredCategorySlug
-        ? featuredCategoryPool
-        : featuredCategoryPool.length > 0
-          ? featuredCategoryPool
-          : featuredStripUnused,
-      HM_HOME_FEATURED_STRIP_ITEM_COUNT,
-      featuredStripBasePool,
-    );
+    const latestStripItems = featuredCategorySlug
+      ? pickHomeModuleNewsItems(
+          homeNewsDedupe,
+          sortNewsByRecency(featuredCategoryPool),
+          { limit: HM_HOME_FEATURED_STRIP_ITEM_COUNT },
+        )
+      : pickAndPadModuleItems(
+          featuredCategoryPool.length > 0 ? featuredCategoryPool : featuredStripUnused,
+          HM_HOME_FEATURED_STRIP_ITEM_COUNT,
+          featuredStripBasePool,
+        );
     const editorialItems = pickAndPadModuleItems(classicBelowHeroPool, 6);
     const classicCategoryBoxDedupe = createCategoryBoxModuleDedupeTracker();
     const classicCategorySectionsDisplay = ensureNewsBoxSections(

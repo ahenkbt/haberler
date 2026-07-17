@@ -22,8 +22,12 @@ export const HM_HOME_HEADLINE_SLIDER_MIN = 15;
 export const HM_HOME_FEATURED_STRIP_ITEM_COUNT = 6;
 /** leadListSidebar: 1 büyük + 6 liste. */
 export const HM_LEAD_LIST_SIDEBAR_TOTAL = 7;
-/** Esen «Günün Öne Çıkanları»: 1 büyük manşet + 6 küçük kutu. */
-export const HM_ESEN_LEAD_PACK_TOTAL = 7;
+/** Esen «Günün Öne Çıkanları» sol metin listesi. */
+export const HM_ESEN_LEAD_PACK_LEFT_COUNT = 6;
+/** Esen «Günün Öne Çıkanları» sağ kart ızgarası (4×2). */
+export const HM_ESEN_LEAD_PACK_RIGHT_COUNT = 8;
+/** @deprecated HM_ESEN_LEAD_PACK_LEFT_COUNT + HM_ESEN_LEAD_PACK_RIGHT_COUNT kullanın. */
+export const HM_ESEN_LEAD_PACK_TOTAL = HM_ESEN_LEAD_PACK_LEFT_COUNT + HM_ESEN_LEAD_PACK_RIGHT_COUNT;
 /** Split manşet: slider yanında 2×2 yan haber kutusu. */
 export const HM_MANSET_SPLIT_SIDE_COUNT = 4;
 /** Split manşet yan ızgarası satır sayısı (2×2). */
@@ -456,7 +460,7 @@ export function hasEnoughNewsForHeroSideHeadlines(
   return candidates.length >= Math.min(sideCount, Math.max(0, pool.length - 1));
 }
 
-/** Manşet yan kart havuzu — yekpare son dakika veya manşet etiketi yedek; portal legacy. */
+/** Manşet yan kart havuzu — yekpare / manşet etiketi + site son haber yedek. */
 export function buildHeadlineSidePrimaryPool<T>(opts: {
   siteId?: number | null;
   sliderItems: readonly T[];
@@ -481,19 +485,32 @@ export function buildHeadlineSidePrimaryPool<T>(opts: {
     opts.tepeMansetActive ? (opts.tepeMansetItems ?? []) : [],
   );
 
-  let raw: T[];
+  let primary: T[];
   if (opts.yekparePoolReceiveEnabled !== false) {
-    raw = buildYekparePoolSideCandidatePool({
+    primary = buildYekparePoolSideCandidatePool({
       yekparePoolItems: opts.yekparePoolItems ?? [],
       sliderItems: excludeSlider,
     });
   } else {
-    raw = buildMansetTaggedSideFallbackPool({
+    primary = buildMansetTaggedSideFallbackPool({
       items: opts.mansetFallbackItems ?? [],
       sliderItems: opts.sliderItems,
       tepeMansetItems: opts.tepeMansetActive ? opts.tepeMansetItems : [],
     }) as T[];
   }
+
+  // HM sitelerde yekpare/manşet havuzu ince kalırsa sol-sağ kartlar boş görünmesin:
+  // site son haberleri + manşet etiketli yedek ile doldur (slider tekrarı yok).
+  const mansetTagged = buildMansetTaggedSideFallbackPool({
+    items: (opts.mansetFallbackItems ?? opts.legacySidePool) as T[],
+    sliderItems: opts.sliderItems,
+    tepeMansetItems: opts.tepeMansetActive ? (opts.tepeMansetItems as T[]) : [],
+  }) as T[];
+  const siteLatest = excludeHeadlineSliderItems(
+    sortNewsByRecency(mergeUniqueNews(opts.legacySidePool) as T[]),
+    excludeSlider,
+  ) as T[];
+  const raw = mergeUniqueNews(primary, mansetTagged, siteLatest) as T[];
 
   return opts.tepeMansetActive
     ? excludeHeadlineSliderItems(raw, opts.tepeMansetItems ?? [])
