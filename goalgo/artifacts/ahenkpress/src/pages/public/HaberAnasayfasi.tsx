@@ -100,7 +100,6 @@ import {
   buildCenterMansetSliderPool,
   buildHeadlineSidePrimaryPool,
   buildHomeHeroDedupeSeedItems,
-  buildHomeMansetSideHeadlineSeedItems,
   buildManualHeadlineOnlyPool,
   buildTepeMansetPool,
   buildRssAwareHeadlinePool,
@@ -242,6 +241,8 @@ const CLASSIC_NATIVE_HOME_MODULES = new Set<HmNewsHomeModuleId>([
   "authorsStrip",
   "homeMiddleAd",
   "recentVideosSidebar",
+  /** Klasik gövdede «Öne Çıkanlar» olarak özel render; ikinci kez boş vitrin üretmesin. */
+  "featuredCategoryStrip",
 ]);
 
 /** Klasik / portal3 üst bant — kayıtlı sıra ne olursa olsun sabit sıra (tepeManset hero öncesi). */
@@ -373,7 +374,11 @@ function isItemAliasSeen(item: unknown, seen: Set<string>): boolean {
   return homeNewsAliasKeys(item as Parameters<typeof homeNewsAliasKeys>[0]).some((key) => seen.has(key));
 }
 
-/** Havuzdan eksik kalan slotları doldurur; manşet/üst blok dedupe havuzunu ihlal etmez. */
+/**
+ * Havuzdan eksik kalan slotları doldurur.
+ * Önce kullanılmamış haberler; yetmezse (hero seed büyüyünce) tekrar kullanılabilir —
+ * Kategori Vitrini / Öne Çıkan Haber Dosyası boşalmasın.
+ */
 function padNewsItemsToLimit<T>(
   items: readonly T[],
   pool: readonly T[],
@@ -393,6 +398,12 @@ function padNewsItemsToLimit<T>(
   for (const item of backfill) {
     if (out.length >= limit) break;
     push(item, false);
+  }
+  if (out.length < limit) {
+    for (const item of pool) {
+      if (out.length >= limit) break;
+      push(item, true);
+    }
   }
   const result = out.slice(0, limit);
   dedupe?.rememberMany(result);
@@ -2653,80 +2664,19 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     }));
   }, [CAT_SECTIONS, accent, classicCategorySections, layoutPrefs.hmYekpareKategorilerKutusuSlugs, yekpareCategoryBoxCount]);
 
-  const homeMansetSideSeedItems = useMemo(() => {
-    const heroSliderNews = classicHeadlineSliderItems;
-    if (heroSliderNews.length === 0) return [];
-    const legacyHeadlineSidePool = sortNewsByRecency(
-      mergeUniqueNews(
-        sliderSide,
-        latestNewsPool,
-        allItems,
-        bandNewsItems,
-        popular,
-        siteId != null ? breaking : [],
-      ).filter(isHeadlineFreshEnough),
-    );
-    const headlineSidePool = buildHeadlineSidePrimaryPool({
-      siteId,
-      sliderItems: heroSliderNews,
-      tepeMansetItems,
-      tepeMansetActive,
-      yekparePoolItems: yekparePoolSideItems,
-      legacySidePool: legacyHeadlineSidePool,
-      yekparePoolReceiveEnabled: hmYekparePoolReceiveEnabled,
-      mansetFallbackItems: mansetTaggedSideFallbackItems,
-    });
-    const heroSideWidenPools =
-      siteId != null ? ([] as const) : ([classicHeadlinePool, latestNewsPool, popular] as const);
-    const heroSideCount = resolveMansetSideCount(effectiveMansetVariant);
-    const mansetSideResolve =
-      effectiveMansetVariant === "center-trio" || effectiveMansetVariant === "slider-side-band"
-        ? resolveCenterTrioSideHeadlines
-        : resolveSplitSideHeadlines;
-    return buildHomeMansetSideHeadlineSeedItems({
-      pool: headlineSidePool,
-      widenPools: heroSideWidenPools,
-      sliderItems: heroSliderNews,
-      sideCount: heroSideCount,
-      resolve: mansetSideResolve,
-    });
-  }, [
-    classicHeadlineSliderItems,
-    sliderSide,
-    latestNewsPool,
-    allItems,
-    bandNewsItems,
-    popular,
-    breaking,
-    siteId,
-    tepeMansetItems,
-    tepeMansetActive,
-    yekparePoolSideItems,
-    classicHeadlinePool,
-    effectiveMansetVariant,
-    hmYekparePoolReceiveEnabled,
-    mansetTaggedSideFallbackItems,
-  ]);
-
   const homeHeroSeedItems = useMemo(
     () =>
       buildHomeHeroDedupeSeedItems({
+        // Yalnızca görünür tepe + orta manşet. Yan kart / son dakika / side havuzu
+        // seed'e konursa veri geldikçe tracker şişiyor ve alt modüller (Kategori Vitrini,
+        // Öne Çıkan Haber Dosyası) ilk boyamada dolup sonra boşalıyor.
         tepeMansetItems: tepeMansetActive ? tepeMansetItems : [],
         sliderItems: classicHeadlineSliderItems,
-        sideHeadlineItems: homeMansetSideSeedItems,
-        breakingItems: effectiveNewsBandEnabled ? breaking : [],
-        sonDakikaItems: bandNewsItems,
-        extraItems: sliderSide,
       }),
     [
       tepeMansetActive,
       tepeMansetItems,
       classicHeadlineSliderItems,
-      homeMansetSideSeedItems,
-      sliderSide,
-      effectiveNewsBandEnabled,
-      breaking,
-      bandNewsItems,
     ],
   );
   const moduleSectionSourcePool = useMemo(() => {
@@ -3446,9 +3396,15 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         if (!resolveHmNewsHomeModuleEnabled(layoutPrefs, "leadListSidebar")) return null;
         const categorySlug = moduleCategorySlug("leadListSidebar");
         const categoryTag = moduleCategoryTitle(categorySlug);
-        const leadListPool = sortNewsByRecency(
-          mergeUniqueNews(moduleSectionSourcePool, featured, latestNewsPool, classicHeadlinePool, popular).filter(isHeadlineFreshEnough),
+        const leadListMerged = mergeUniqueNews(
+          moduleSectionSourcePool,
+          featured,
+          latestNewsPool,
+          classicHeadlinePool,
+          popular,
         );
+        const leadListFresh = sortNewsByRecency(leadListMerged.filter(isHeadlineFreshEnough));
+        const leadListPool = leadListFresh.length > 0 ? leadListFresh : sortNewsByRecency(leadListMerged);
         const blockItemsRaw = selectModuleItems(
           "leadListSidebar",
           leadListPool,
@@ -3457,7 +3413,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         const blockItems =
           blockItemsRaw.length > 0
             ? blockItemsRaw
-            : ensureNewsBoxItems([], leadListPool.length > 0 ? leadListPool : moduleSectionSourcePool, HM_LEAD_LIST_SIDEBAR_TOTAL, homeNewsDedupe);
+            : ensureNewsBoxItems(
+                [],
+                leadListPool.length > 0 ? leadListPool : moduleSectionSourcePool,
+                HM_LEAD_LIST_SIDEBAR_TOTAL,
+                homeNewsDedupe,
+              );
         rememberModuleItems(blockItems);
         const { lead, listItems } = splitCategoryBoxItems(blockItems, HM_LEAD_LIST_SIDEBAR_TOTAL - 1);
         if (!lead && listItems.length === 0 && homeNewsBootstrapping) {
@@ -3469,7 +3430,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
             />
           );
         }
-        if (!lead && listItems.length === 0 && moduleSectionSourcePool.length === 0) {
+        if (!lead && listItems.length === 0) {
           return <HmNewsModuleEmpty title="Öne Çıkan Haber Dosyası" className="hm-vitrin-card" moduleId="leadListSidebar" />;
         }
         return (
@@ -3997,7 +3958,21 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           featuredCategoryStripSections,
           activeTab ? 1 : HM_HOME_CATEGORY_BOX_MAX,
         );
-        const visibleSections = sections.filter((section) => (section.items?.length ?? 0) > 0);
+        let visibleSections = sections.filter((section) => (section.items?.length ?? 0) > 0);
+        if (visibleSections.length === 0 && siteHasAnyNews) {
+          // Kategori eşleşmesi / dedupe tüm kutuları boş bıraktıysa global havuzdan göster.
+          const fallbackItems = pickAndPadModuleItems(
+            moduleSectionSourcePool,
+            activeTab ? 1 : HM_HOME_CATEGORY_BOX_MAX,
+            moduleSectionSourcePool,
+          );
+          visibleSections = fallbackItems.map((item: any, index: number) => ({
+            title: String(item?.categoryName || item?.categorySlug || "Haber"),
+            slug: hmCategorySlug(item?.categorySlug, item?.categoryName) || `haber-${index}`,
+            color: accent,
+            items: [item],
+          }));
+        }
         if (visibleSections.length === 0 && homeNewsBootstrapping) {
           return (
             <HmNewsModuleSkeleton
@@ -4007,10 +3982,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
             />
           );
         }
-        if (visibleSections.length === 0 && !siteHasAnyNews) {
+        if (visibleSections.length === 0) {
           return <HmNewsModuleEmpty title="Kategori Vitrini" className="hm-news-featured-strip" moduleId="featuredCategoryStrip" />;
         }
-        if (visibleSections.length === 0) return null;
         return (
           <section className="hm-news-featured-strip mb-6" data-hm-home-module="featuredCategoryStrip">
             <SectionHead title="Kategori Vitrini" color={accent} href={tumHaberlerHref} />

@@ -754,15 +754,17 @@ export function resolveClassicTopGridState(input: ClassicTopGridStateInput): str
 }
 
 /**
- * Modül haber seçimi: anasayfa blokları arasında global dedupe — daha önce manşet veya
- * üst modülde kullanılan haber tekrar seçilmez (blok kısa kalabilir).
+ * Modül haber seçimi: anasayfa blokları arasında global dedupe — önce kullanılmamış
+ * haberler. Kullanılmamış havuz yetmezse (hero seed büyüdüğünde) aynı haberlerle
+ * doldurulur; vitrin/dosya blokları boş kalmaz.
  */
 export function pickHomeModuleNewsItems<T>(
   tracker: HomeNewsDedupeTracker,
   sortedItems: readonly T[],
-  opts?: { limit?: number; minItems?: number },
+  opts?: { limit?: number; minItems?: number; allowReuseBackfill?: boolean },
 ): T[] {
   const limit = opts?.limit;
+  const allowReuseBackfill = opts?.allowReuseBackfill !== false;
   const unused = tracker.filterUnused(sortedItems);
   const seen = new Set<string>();
   const pushUnique = (out: T[], item: T) => {
@@ -774,6 +776,12 @@ export function pickHomeModuleNewsItems<T>(
   for (const item of unused) {
     if (typeof limit === "number" && out.length >= limit) break;
     pushUnique(out, item);
+  }
+  if (allowReuseBackfill && typeof limit === "number" && out.length < limit) {
+    for (const item of sortedItems) {
+      if (out.length >= limit) break;
+      pushUnique(out, item);
+    }
   }
   tracker.rememberMany(out);
   return out;
