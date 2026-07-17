@@ -103,3 +103,20 @@ zone_name = "vatanhaber.net"
 [[routes]]
 pattern = "www.vatanhaber.net"
 zone_name = "vatanhaber.net"
+
+# Su Haber Ajansı — zone Cloudflare'de; A/AAAA boş → Worker custom_domain
+[[routes]]
+pattern = "suhaberajansi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.suhaberajansi.com"
+custom_domain = true
+
+[[routes]]
+pattern = "suhaberajansi.com/*"
+zone_name = "suhaberajansi.com"
+
+[[routes]]
+pattern = "www.suhaberajansi.com/*"
+zone_name = "suhaberajansi.com"

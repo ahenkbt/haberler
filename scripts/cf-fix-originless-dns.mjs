@@ -18,6 +18,7 @@ const ZONES = [
   "ankarahabergundemi.com",
   "vatankahramanlari.org",
   "vatanhaber.net",
+  "suhaberajansi.com",
 ];
 
 function token() {
