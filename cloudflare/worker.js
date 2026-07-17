@@ -30,7 +30,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "suhaberajansi.com",
   "www.suhaberajansi.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717a";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717b";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -268,6 +268,108 @@ function isApiPath(pathname) {
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
+/** Kök sitemap .xml → /api/sitemap/* (Googlebot HTML SPA almasın). */
+function rootSitemapApiPath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  if (p === "/sitemap.xml") return "/api/sitemap/index.xml";
+  const mHmCat = /^\/news-hm\/([^/]+)\/([^/]+)\.xml$/i.exec(p);
+  if (mHmCat) return `/api/sitemap/news-hm/${mHmCat[1]}/${mHmCat[2]}.xml`;
+  const mCat = /^\/news-yekpare-cat-(.+)\.xml$/i.exec(p);
+  if (mCat) return `/api/sitemap/news-yekpare-cat-${mCat[1]}.xml`;
+  const mHmMakale = /^\/news-hm-([^/]+)-makale\.xml$/i.exec(p);
+  if (mHmMakale) return `/api/sitemap/news-hm-${mHmMakale[1]}-makale.xml`;
+  const mHmYazarlar = /^\/news-hm-([^/]+)-yazarlar\.xml$/i.exec(p);
+  if (mHmYazarlar) return `/api/sitemap/news-hm-${mHmYazarlar[1]}-yazarlar.xml`;
+  const mHmSayfalar = /^\/news-hm-([^/]+)-sayfalar\.xml$/i.exec(p);
+  if (mHmSayfalar) return `/api/sitemap/news-hm-${mHmSayfalar[1]}-sayfalar.xml`;
+  const mHm = /^\/news-hm-(.+)\.xml$/i.exec(p);
+  if (mHm) return `/api/sitemap/news-hm-${mHm[1]}.xml`;
+  const mProducts = /^\/products-(\d+)\.xml$/i.exec(p);
+  if (mProducts) return `/api/sitemap/products-${mProducts[1]}.xml`;
+  const mYektubeVideos = /^\/yektube-videos-(\d+)\.xml$/i.exec(p);
+  if (mYektubeVideos) return `/api/sitemap/yektube-videos-${mYektubeVideos[1]}.xml`;
+  const known = new Set([
+    "/news-yekpare.xml",
+    "/news.xml",
+    "/businesses.xml",
+    "/sarisayfalar.xml",
+    "/otomotiv.xml",
+    "/vendors-siparis.xml",
+    "/vendors-alisveris.xml",
+    "/vendors-magaza.xml",
+    "/turizm.xml",
+    "/bilgiagaci.xml",
+    "/vendor-blogs.xml",
+    "/authors.xml",
+    "/yektube-static.xml",
+  ]);
+  if (p === "/ansiklopedi.xml") return "/api/sitemap/bilgiagaci.xml";
+  if (known.has(p)) return `/api/sitemap${p}`;
+  return null;
+}
+
+const SITEMAP_LEAK_ORIGINS = [
+  "https://goalgo-production.up.railway.app",
+  "http://goalgo-production.up.railway.app",
+  "https://goalgo-y7ze.onrender.com",
+  "http://goalgo-y7ze.onrender.com",
+];
+
+function rewriteSitemapOrigins(xml, publicOrigin) {
+  const canonical = String(publicOrigin || "").replace(/\/+$/, "");
+  let out = String(xml || "");
+  for (const bad of SITEMAP_LEAK_ORIGINS) {
+    if (out.includes(bad)) out = out.split(bad).join(canonical);
+  }
+  return out;
+}
+
+async function proxyRootSitemap(request, env, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const pathOnly = incoming.pathname.replace(/\/+$/, "") || "/";
+  if (!pathOnly.endsWith(".xml")) return null;
+  // Statik asset XML'ler (sitemap-static) CF Assets'ten gelsin
+  if (pathOnly === "/sitemap-static.xml" || pathOnly === "/browserconfig.xml") return null;
+  const apiPath = rootSitemapApiPath(pathOnly);
+  if (!apiPath) return null;
+
+  const origin = upstreamOrigin(env);
+  const targetUrl = `${origin}${apiPath}${incoming.search}`;
+  try {
+    const upstream = await fetch(targetUrl, {
+      method: request.method === "HEAD" ? "GET" : request.method,
+      headers: {
+        accept: "application/xml, text/xml, */*",
+        "x-forwarded-host": incoming.host,
+        "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
+        "user-agent": request.headers.get("user-agent") || "yekpare-sitemap-proxy",
+      },
+      cf: { cacheTtl: 300, cacheEverything: true },
+      redirect: "manual",
+    });
+    const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
+    if (!upstream.ok || (!ct.includes("xml") && !ct.includes("text/plain"))) {
+      return null;
+    }
+    const text = rewriteSitemapOrigins(await upstream.text(), incoming.origin);
+    const headers = new Headers({
+      "content-type": "application/xml; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "cache-control":
+        upstream.headers.get("cache-control") || "public, max-age=1800, stale-while-revalidate=86400",
+      "x-yekpare-frontend": "cloudflare-sitemap-proxy",
+      "x-yekpare-sitemap-api": apiPath,
+    });
+    if (request.method === "HEAD") {
+      headers.set("content-length", String(new TextEncoder().encode(text).byteLength));
+      return new Response(null, { status: 200, headers });
+    }
+    return new Response(text, { status: 200, headers });
+  } catch {
+    return null;
+  }
+}
+
 /** CF Assets'ten HTML yanıtını SW purge boot ile sar. */
 async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname }) {
   const out = new Headers(assetResp.headers);
@@ -307,6 +409,11 @@ async function tryServeAssets(request, env, incoming) {
   const purgeCookie = purgeCookieName(incoming.hostname);
   const yektubeRewrite = rewriteYektubeSpaPath(incoming.pathname);
   const assetReq = yektubeRewrite ? withAssetPath(request, yektubeRewrite) : request;
+
+  // .xml sitemap yollarını SPA index.html'e düşürme — proxy kaçırırsa boş XML yerine HTML olmasın
+  if (incoming.pathname.toLowerCase().endsWith(".xml") && !isStaticAssetPath(incoming.pathname)) {
+    return null;
+  }
 
   let assetResp = await env.ASSETS.fetch(assetReq);
   if (
@@ -634,6 +741,9 @@ export default {
 
     const ogHtml = await socialPreviewOgHtml(request, env, incoming);
     if (ogHtml) return ogHtml;
+
+    const sitemapXml = await proxyRootSitemap(request, env, incoming);
+    if (sitemapXml) return sitemapXml;
 
     const fromAssets = await tryServeAssets(request, env, incoming);
     if (fromAssets) return fromAssets;

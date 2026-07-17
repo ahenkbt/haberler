@@ -243,7 +243,11 @@ export function filterHmSiteMansetNews<T>(items: readonly T[]): T[] {
 /**
  * Orta (site) manşet slider:
  * — `isSiteManset` işaretli haberler varsa yalnızca onlar
- * — yoksa en son eklenen editör/DB haberleri (`isFeatured` tepe manşet ve RSS / yekpare hariç)
+ * — yoksa en son eklenen editör/DB haberleri (RSS / yekpare hariç)
+ *
+ * `isFeatured` burada elenmez: tepe manşet aktifken üst katmanda
+ * `excludeHeadlineSliderItems` ile ayrılır. Aksi halde tepe boşken manşet
+ * haberleri hem tepede hem ortada kayboluyordu.
  */
 export function buildCenterMansetSliderPool(opts: {
   manualItems: unknown[];
@@ -257,10 +261,7 @@ export function buildCenterMansetSliderPool(opts: {
     filterHmEditorManualNews(opts.manualItems),
   ).filter((item) => !isRssHybridItem(item) && !isYekparePoolNewsItem(item));
   const siteManset = filterHmSiteMansetNews(merged);
-  const latestFirst =
-    siteManset.length > 0
-      ? siteManset
-      : merged.filter((item) => (item as { isFeatured?: boolean }).isFeatured !== true);
+  const latestFirst = siteManset.length > 0 ? siteManset : merged;
   const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
   const pool = sortNewsByRecency(scoped);
   return dedupeHeadlineSliderItems(pool.slice(0, limit));
