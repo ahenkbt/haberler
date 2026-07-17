@@ -80,9 +80,40 @@ function redirectSocialPreviewToOgHtml(req: Request, res: Response): boolean {
   return true;
 }
 
+/** /yp ve Yektube yüzeyleri — portal index yerine Yektube SPA. */
+function isYektubeSpaPath(pathname: string): boolean {
+  const raw = String(pathname || "/") || "/";
+  const last = raw.split("/").pop() || "";
+  if (last.includes(".") && !/\.html?$/i.test(last)) return false;
+  const p = raw.replace(/\/+$/, "") || "/";
+  return (
+    p === "/yp" ||
+    p.startsWith("/yp/") ||
+    p === "/muzik" ||
+    p.startsWith("/muzik/") ||
+    p === "/cocuk" ||
+    p.startsWith("/cocuk/") ||
+    p === "/canli" ||
+    p.startsWith("/canli/") ||
+    p === "/yek-gonder" ||
+    p.startsWith("/yek-gonder/") ||
+    p === "/yeklive" ||
+    p.startsWith("/yeklive/") ||
+    p === "/hesabim" ||
+    p.startsWith("/hesabim/") ||
+    p === "/studio" ||
+    p.startsWith("/studio/") ||
+    p === "/yektube" ||
+    p.startsWith("/yektube/") ||
+    p === "/yektube-v2" ||
+    p.startsWith("/yektube-v2/")
+  );
+}
+
 export function setupFrontendStatic(app: Express): boolean {
   const frontendDist = resolveFrontendDist();
   const indexHtml = path.join(frontendDist, "index.html");
+  const yektubeIndexHtml = path.join(frontendDist, "yektube-v2", "index.html");
 
   if (!existsSync(indexHtml)) {
     logger.warn(
@@ -109,8 +140,16 @@ export function setupFrontendStatic(app: Express): boolean {
 
     if (redirectSocialPreviewToOgHtml(req, res)) return;
 
+    const pathOnly = String(req.path || "/");
+    const useYektube =
+      existsSync(yektubeIndexHtml) && isYektubeSpaPath(pathOnly);
+    const file = useYektube ? yektubeIndexHtml : indexHtml;
+
     res.setHeader("Cache-Control", "no-store, max-age=0");
-    res.sendFile(indexHtml, (err) => {
+    if (useYektube) {
+      res.setHeader("x-yekpare-yektube-rewrite", "/yektube-v2/index.html");
+    }
+    res.sendFile(file, (err) => {
       if (err) next(err);
     });
   };

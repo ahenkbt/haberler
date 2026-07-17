@@ -255,6 +255,57 @@ function isStaticAssetPath(pathname) {
   );
 }
 
+/**
+ * /yp ve Yektube yüzeyleri → yektube-v2/index.html
+ * (Vercel/Netlify rewrite'ları CF Worker → Render yolunda çalışmıyor;
+ *  aksi halde portal SPA /yp'yi vendor short-path sanıp beyaz ekran veriyor.)
+ */
+function rewriteYektubeSpaPath(pathname) {
+  const raw = String(pathname || "/") || "/";
+  const noQuery = raw.split("?")[0] || "/";
+
+  const ypStaticMap = {
+    "/yp/sw.js": "/yektube-v2/sw.js",
+    "/yp/manifest.webmanifest": "/yektube-v2/manifest.webmanifest",
+    "/yp/yektube-icon.png": "/yektube-v2/yektube-icon.png",
+    "/yp/yektube-logo.png": "/yektube-v2/yektube-logo.png",
+    "/yp/yektube-video-tv-logo.png": "/yektube-v2/yektube-video-tv-logo.png",
+    "/yp/offline.html": "/yektube-v2/offline.html",
+  };
+  if (ypStaticMap[noQuery]) return ypStaticMap[noQuery];
+
+  // Gerçek dosya uzantılı asset'leri (js/css/png…) rewrite etme
+  const last = noQuery.split("/").pop() || "";
+  if (last.includes(".") && !/\.html?$/i.test(last)) return null;
+
+  const p = noQuery.replace(/\/+$/, "") || "/";
+  if (
+    p === "/yp" ||
+    p.startsWith("/yp/") ||
+    p === "/muzik" ||
+    p.startsWith("/muzik/") ||
+    p === "/cocuk" ||
+    p.startsWith("/cocuk/") ||
+    p === "/canli" ||
+    p.startsWith("/canli/") ||
+    p === "/yek-gonder" ||
+    p.startsWith("/yek-gonder/") ||
+    p === "/yeklive" ||
+    p.startsWith("/yeklive/") ||
+    p === "/hesabim" ||
+    p.startsWith("/hesabim/") ||
+    p === "/studio" ||
+    p.startsWith("/studio/") ||
+    p === "/yektube" ||
+    p.startsWith("/yektube/") ||
+    p === "/yektube-v2" ||
+    p.startsWith("/yektube-v2/")
+  ) {
+    return "/yektube-v2/index.html";
+  }
+  return null;
+}
+
 function upstreamCfCacheOptions(pathname, method) {
   if (method !== "GET" && method !== "HEAD") {
     return { cacheTtl: 0, cacheEverything: false };
@@ -483,12 +534,14 @@ export default {
     if (ogHtml) return ogHtml;
 
     const origin = upstreamOrigin(env);
-    const target = new URL(incoming.pathname + incoming.search, origin);
+    const yektubeRewrite = rewriteYektubeSpaPath(incoming.pathname);
+    const upstreamPath = yektubeRewrite || incoming.pathname;
+    const target = new URL(upstreamPath + incoming.search, origin);
     const oneShotPurge = shouldOneShotPurge(request, incoming.hostname);
     const purgeCookie = purgeCookieName(incoming.hostname);
 
     try {
-      const cfOpts = upstreamCfCacheOptions(incoming.pathname, request.method);
+      const cfOpts = upstreamCfCacheOptions(upstreamPath, request.method);
       const upstream = await fetchUpstreamWithRetry(
         target.toString(),
         proxyInit(request, origin, incoming),
@@ -499,6 +552,9 @@ export default {
       out.delete("transfer-encoding");
       out.set("x-yekpare-frontend", "cloudflare-render-proxy");
       out.set("x-yekpare-upstream", origin);
+      if (yektubeRewrite) {
+        out.set("x-yekpare-yektube-rewrite", yektubeRewrite);
+      }
       if (isStaticAssetPath(incoming.pathname)) {
         out.set("cdn-cache-control", "public, max-age=86400");
         if (!out.get("cache-control")) {
