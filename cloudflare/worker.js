@@ -549,6 +549,136 @@ async function fetchUpstreamWithRetry(url, init, cfOpts, retries = 2) {
 }
 
 /**
+ * Render eski kodu: parseInt("2026-yili-...") → id 2026 (yanlış haber).
+ * Edge’de slug uyuşmazlığını yakala; listeden doğru id’yi bulup bundle’ı yeniden çek.
+ */
+function parseNewsSlugApiRequest(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  let m = /^\/api\/news\/page-bundle\/([^/]+)\/?$/.exec(p);
+  if (m) {
+    return { kind: "page-bundle", slug: decodeURIComponent(m[1]) };
+  }
+  m = /^\/api\/news\/([^/]+)\/?$/.exec(p);
+  if (!m) return null;
+  const seg = decodeURIComponent(m[1]);
+  // Statik alt yollar — dokunma.
+  if (
+    seg === "hybrid" ||
+    seg === "featured" ||
+    seg === "breaking" ||
+    seg === "popular" ||
+    seg === "by-category" ||
+    seg === "hm-nearest-slug" ||
+    seg === "deleted-redirect" ||
+    seg === "page-bundle" ||
+    seg === "tepe-featured" ||
+    seg.startsWith("hm-")
+  ) {
+    return null;
+  }
+  return { kind: "news", slug: seg };
+}
+
+async function resolveNewsIdByExactSlug(origin, init, slug, siteId) {
+  const want = String(slug || "").trim();
+  if (!want) return null;
+  const qs = new URLSearchParams({ limit: "120" });
+  if (siteId) qs.set("siteId", String(siteId));
+  try {
+    const res = await fetch(`${origin}/api/news?${qs}`, {
+      ...init,
+      method: "GET",
+      cf: { cacheTtl: 30, cacheEverything: true },
+    });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    const items = Array.isArray(data) ? data : data?.items || data?.news || [];
+    const hit = items.find((it) => String(it?.slug || "").trim() === want);
+    const id = hit?.id != null ? Number(hit.id) : NaN;
+    return Number.isFinite(id) && id > 0 ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+async function maybeRepairMismatchedNewsJson(origin, init, method, incoming, upstreamPath, upstreamRes) {
+  if (method !== "GET" && method !== "HEAD") return null;
+  if (upstreamRes.status !== 200 && upstreamRes.status !== 404) return null;
+  const parsed = parseNewsSlugApiRequest(upstreamPath);
+  if (!parsed) return null;
+  const slug = parsed.slug;
+  // Saf sayısal id isteği — bilinçli id lookup; dokunma.
+  if (/^\d+$/.test(slug)) return null;
+
+  const ct = String(upstreamRes.headers.get("content-type") || "").toLowerCase();
+  if (!ct.includes("application/json")) return null;
+
+  let body;
+  try {
+    body = await upstreamRes.clone().json();
+  } catch {
+    return null;
+  }
+
+  const article =
+    parsed.kind === "page-bundle"
+      ? body?.article
+      : body && typeof body === "object" && body.slug != null
+        ? body
+        : null;
+  const gotSlug = article ? String(article.slug || "").trim() : "";
+  // Yanlış haber (slug uyuşmuyor) veya boş sonuç — listeden id bul.
+  if (gotSlug && gotSlug === slug) return null;
+
+  const siteIdRaw = incoming.searchParams.get("siteId");
+  const siteIdNum =
+    siteIdRaw != null && String(siteIdRaw).trim() !== ""
+      ? parseInt(String(siteIdRaw), 10)
+      : NaN;
+  const fixedId = await resolveNewsIdByExactSlug(
+    origin,
+    init,
+    slug,
+    Number.isFinite(siteIdNum) && siteIdNum > 0 ? String(siteIdNum) : "",
+  );
+  if (!fixedId) return null;
+
+  const repairUrl =
+    parsed.kind === "page-bundle"
+      ? new URL(`/api/news/page-bundle/${fixedId}${incoming.search}`, origin)
+      : new URL(`/api/news/${fixedId}${incoming.search}`, origin);
+  try {
+    const repaired = await fetch(repairUrl.toString(), {
+      ...init,
+      method: "GET",
+      cf: { cacheTtl: 0, cacheEverything: false },
+    });
+    if (!repaired.ok) return null;
+    const repairedBody = await repaired.json().catch(() => null);
+    const repairedArticle =
+      parsed.kind === "page-bundle" ? repairedBody?.article : repairedBody;
+    if (!repairedArticle || String(repairedArticle.slug || "").trim() !== slug) {
+      return null;
+    }
+    const headers = new Headers(repaired.headers);
+    headers.delete("content-encoding");
+    headers.delete("transfer-encoding");
+    headers.set("content-type", "application/json; charset=utf-8");
+    headers.set("x-yekpare-slug-repair", "1");
+    headers.set("x-yekpare-slug-repair-id", String(fixedId));
+    headers.set("cache-control", "public, max-age=30, s-maxage=60");
+    headers.set("x-yekpare-frontend", "cloudflare-render-proxy");
+    headers.set("x-yekpare-upstream", origin);
+    return new Response(JSON.stringify(repairedBody), {
+      status: 200,
+      headers,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Edge soft-redirect: HM özel alan kökü → /tr/{slug}
  * (Vercel middleware CF Worker yolunda çalışmadığı için Worker'da tekrarlanır.)
  */
@@ -762,11 +892,21 @@ export default {
 
     try {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, request.method);
+      const proxyOpts = proxyInit(request, origin, incoming);
       const upstream = await fetchUpstreamWithRetry(
         target.toString(),
-        proxyInit(request, origin, incoming),
+        proxyOpts,
         cfOpts,
       );
+      const repaired = await maybeRepairMismatchedNewsJson(
+        origin,
+        proxyOpts,
+        request.method,
+        incoming,
+        upstreamPath,
+        upstream,
+      );
+      if (repaired) return repaired;
       const out = new Headers(upstream.headers);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
