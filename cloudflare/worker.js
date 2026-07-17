@@ -1,6 +1,7 @@
 /**
- * Geçici: trafik → Render (SPA + API).
- * Eski Netlify Service Worker / cache için TEK SEFERLIK purge (JS boot + cookie).
+ * SPA → Workers Static Assets (ASSETS); /api → Render.
+ * ASSETS yoksa (eski deploy) tüm trafik Render'a proxy edilir.
+ * Eski Netlify SW / cache için TEK SEFERLIK purge (JS boot + cookie).
  * Clear-Site-Data HTML yanıtlarında kullanılmaz — Chrome navigasyonu ERR_FAILED
  * ile düşürüp cookie yazılmadan döngüye sokabiliyor (yekpare.net/admin).
  */
@@ -10,7 +11,7 @@ const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
  * Cookie sürümü — artırınca tüm ziyaretçilerde Netlify SW yeniden temizlenir.
  * (Eski cookie ile purge atlanınca /tr/vkd Netlify 404 görünmeye devam ediyordu.)
  */
-const PURGE_COOKIE = "__yekpare_sw_purged_v20260715c";
+const PURGE_COOKIE = "__yekpare_sw_purged_v20260717a";
 /**
  * HM + portal: bir kez daha agresif Clear-Site-Data.
  */
@@ -29,7 +30,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "suhaberajansi.com",
   "www.suhaberajansi.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260715e";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717a";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -218,7 +219,7 @@ function rewriteHtml(html, { oneShotPurge, purgeCookie }) {
   if (out.includes("<head>")) {
     out = out.replace(
       "<head>",
-      `<head>\n<meta name="x-yekpare-origin" content="cloudflare-render">\n${boot}`,
+      `<head>\n<meta name="x-yekpare-origin" content="cloudflare-assets">\n${boot}`,
     );
   } else if (out.includes("<body")) {
     out = out.replace(/<body[^>]*>/, (m) => `${m}\n${boot}`);
@@ -255,6 +256,90 @@ function isStaticAssetPath(pathname) {
     pathname.startsWith("/assets/") ||
     pathname.includes("/public/assets/")
   );
+}
+
+function withAssetPath(request, pathname) {
+  const url = new URL(request.url);
+  url.pathname = pathname;
+  return new Request(url.toString(), request);
+}
+
+function isApiPath(pathname) {
+  return pathname === "/api" || pathname.startsWith("/api/");
+}
+
+/** CF Assets'ten HTML yanıtını SW purge boot ile sar. */
+async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname }) {
+  const out = new Headers(assetResp.headers);
+  out.delete("content-encoding");
+  out.delete("transfer-encoding");
+  out.set("x-yekpare-frontend", "cloudflare-assets");
+  out.set("cache-control", "no-store, max-age=0, must-revalidate");
+  out.set("cdn-cache-control", "no-store");
+  if (oneShotPurge) {
+    out.append(
+      "set-cookie",
+      `${purgeCookie}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`,
+    );
+    out.set(
+      "x-yekpare-purge",
+      needsForcePurge(hostname) ? "hm-force-once" : "netlify-sw-once",
+    );
+  } else {
+    out.set("x-yekpare-purge", "skipped");
+  }
+  if (request.method === "HEAD") {
+    return new Response(null, { status: assetResp.status, headers: out });
+  }
+  const html = await assetResp.text();
+  return new Response(rewriteHtml(html, { oneShotPurge, purgeCookie }), {
+    status: assetResp.status,
+    headers: out,
+  });
+}
+
+/** SPA + statik: ASSETS; yoksa null (Render proxy'ye düş). */
+async function tryServeAssets(request, env, incoming) {
+  if (!env.ASSETS) return null;
+  if (isApiPath(incoming.pathname)) return null;
+
+  const oneShotPurge = shouldOneShotPurge(request, incoming.hostname);
+  const purgeCookie = purgeCookieName(incoming.hostname);
+  const yektubeRewrite = rewriteYektubeSpaPath(incoming.pathname);
+  const assetReq = yektubeRewrite ? withAssetPath(request, yektubeRewrite) : request;
+
+  let assetResp = await env.ASSETS.fetch(assetReq);
+  if (
+    assetResp.status === 404 &&
+    request.method === "GET" &&
+    !isStaticAssetPath(incoming.pathname)
+  ) {
+    assetResp = await env.ASSETS.fetch(withAssetPath(request, "/index.html"));
+  }
+
+  const ct = String(assetResp.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("text/html")) {
+    return respondAssetHtml(request, assetResp, {
+      oneShotPurge,
+      purgeCookie,
+      hostname: incoming.hostname,
+    });
+  }
+
+  if (isStaticAssetPath(incoming.pathname) || assetResp.ok) {
+    const out = new Headers(assetResp.headers);
+    out.set("x-yekpare-frontend", "cloudflare-assets");
+    if (isStaticAssetPath(incoming.pathname)) {
+      out.set("cdn-cache-control", "public, max-age=86400");
+      if (!out.get("cache-control")) {
+        out.set("cache-control", "public, max-age=86400, immutable");
+      }
+    }
+    if (yektubeRewrite) out.set("x-yekpare-yektube-rewrite", yektubeRewrite);
+    return new Response(assetResp.body, { status: assetResp.status, headers: out });
+  }
+
+  return null;
 }
 
 /**
@@ -549,6 +634,9 @@ export default {
 
     const ogHtml = await socialPreviewOgHtml(request, env, incoming);
     if (ogHtml) return ogHtml;
+
+    const fromAssets = await tryServeAssets(request, env, incoming);
+    if (fromAssets) return fromAssets;
 
     const origin = upstreamOrigin(env);
     const yektubeRewrite = rewriteYektubeSpaPath(incoming.pathname);

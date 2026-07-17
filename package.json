@@ -8,9 +8,10 @@
   "scripts": {
     "build:web": "pnpm --dir goalgo run build:web",
     "build:netlify": "node scripts/netlify-root-build.mjs",
+    "postinstall": "node scripts/cf-workers-ci-prepare.mjs",
     "build:cloudflare": "node scripts/cloudflare-root-build.mjs",
-    "deploy:cloudflare": "pnpm exec wrangler deploy",
-    "cf:dashboard-deploy": "pnpm exec wrangler deploy",
+    "deploy:cloudflare": "pnpm run build:cloudflare && pnpm exec wrangler deploy",
+    "cf:dashboard-deploy": "pnpm run deploy:cloudflare",
     "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs"
   },
   "dependencies": {
