@@ -45,6 +45,8 @@ export interface News {
   senderPhone?: string | null;
   status: NewsStatus;
   isFeatured?: boolean;
+  /** Site (alt) manşet slider */
+  isSiteManset?: boolean;
   isBreaking?: boolean;
   views: number;
   tags?: string[];
@@ -90,6 +92,8 @@ export interface NewsInput {
   senderPhone?: string | null;
   status: NewsInputStatus;
   isFeatured?: boolean;
+  /** Site (alt) manşet slider */
+  isSiteManset?: boolean;
   isBreaking?: boolean;
   tags?: string[];
 }

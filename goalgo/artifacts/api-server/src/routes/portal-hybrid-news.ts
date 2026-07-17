@@ -660,7 +660,33 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       };
 
       const [dbResult, rssBundle] = await Promise.all([loadDbResult(), loadCachedRssBundle()]);
-      const { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
+      let { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
+
+      // Site içi RSS açıkken soğuk cache: doğrudan warm (8s saatlik bg cooldown atlanır).
+      if (
+        includeCachedRss &&
+        mapRssItems.length === 0 &&
+        hmAccess?.hybridRssEnabled === true &&
+        !hmAccess.isCorporate
+      ) {
+        try {
+          const scopeForFeeds = editorPool ? "all" : rssScope;
+          let warmFeeds = await loadPortalHybridRssFeeds(editorPool ? siteId! : siteId, scopeForFeeds);
+          if (editorPool) warmFeeds = warmFeeds.filter((feed) => !isBoxScopeFeedId(feed.id));
+          if (!foreignOnlyRss) {
+            await Promise.race([
+              warmPortalRssCacheIfEmpty(warmFeeds),
+              new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+            ]);
+            const warmed = await loadCachedRssBundle();
+            mapRssItems = warmed.mapRssItems;
+            mapFeedLabels = warmed.mapFeedLabels;
+            mapFeedGeoById = warmed.mapFeedGeoById;
+          }
+        } catch {
+          /* warm best-effort */
+        }
+      }
 
       // dbFirst: RSS ısınmasını istek yolunda BEKLEME (eskiden 12s'ye kadar blokluyordu).
       // Aşağıdaki triggerPortalRssWarmIfEmpty arka planda doldurur; bir sonraki istek cache'ten alır.

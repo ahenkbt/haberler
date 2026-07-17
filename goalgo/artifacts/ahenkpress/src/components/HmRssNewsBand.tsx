@@ -603,14 +603,20 @@ export function HmRssNewsBand({
         </div>
       ) : filtered.length > 0 ? (
         <div className={`hm-rss-news-band__grid${showGridRefreshing ? " opacity-80 transition-opacity" : ""}`}>
-          {filtered.map((item) => {
+          {filtered.map((item, index) => {
             const catColor = resolveCategoryColor(item, accent, hmCategoryColors);
             const excerpt = newsExcerpt(item);
             const isRss = isRssNewsItem(item);
             const cardContent = (
               <>
                 <div className="hm-rss-news-band__media">
-                  <HmNewsImage src={resolveNewsItemImageUrl(item)} alt={item.title} className="hm-rss-news-band__img" loading="lazy" />
+                  <HmNewsImage
+                    src={resolveNewsItemImageUrl(item)}
+                    alt={item.title}
+                    className="hm-rss-news-band__img"
+                    loading={index < 8 ? "eager" : "lazy"}
+                    priority={index < 8}
+                  />
                   {item.categoryName ? (
                     <span className="hm-rss-news-band__badge" style={{ background: catColor }}>
                       {item.categoryName}

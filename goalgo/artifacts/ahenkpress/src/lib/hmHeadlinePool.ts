@@ -228,9 +228,21 @@ export function filterHeadlineItemsByCategorySlug<T>(
   });
 }
 
+/** Editör SITE MANŞET etiketi (`isSiteManset`) — RSS / yekpare havuz kopyası hariç. */
+export function isHmSiteMansetNewsItem(n: unknown): boolean {
+  const item = n as { isSiteManset?: boolean | null };
+  if (item.isSiteManset !== true) return false;
+  return isHmEditorManualNewsItem(n);
+}
+
+export function filterHmSiteMansetNews<T>(items: readonly T[]): T[] {
+  return items.filter(isHmSiteMansetNewsItem);
+}
+
 /**
- * Orta manşet slider: yalnızca editör «Manşet» (`isFeatured`) etiketli haberler —
- * tepe manşet ile aynı sıkı kural; RSS / yekpare yedeklemesi yok.
+ * Orta (site) manşet slider:
+ * — `isSiteManset` işaretli haberler varsa yalnızca onlar
+ * — yoksa en son eklenen editör/DB haberleri (`isFeatured` tepe manşet ve RSS / yekpare hariç)
  */
 export function buildCenterMansetSliderPool(opts: {
   manualItems: unknown[];
@@ -239,13 +251,36 @@ export function buildCenterMansetSliderPool(opts: {
   limit?: number;
 }): any[] {
   const limit = opts.limit ?? HM_HOME_HEADLINE_SLIDER_MIN;
-  const manualAll = mergeUniqueNews(
-    filterHmEditorManualNews(opts.manualItems),
+  const merged = mergeUniqueNews(
     filterHmEditorManualNews(opts.latestItems),
-  );
-  const scoped = filterHeadlineItemsByCategorySlug(manualAll, opts.categorySlug);
-  const pool = sortNewsByRecency(filterHmMansetNews(scoped));
+    filterHmEditorManualNews(opts.manualItems),
+  ).filter((item) => !isRssHybridItem(item) && !isYekparePoolNewsItem(item));
+  const siteManset = filterHmSiteMansetNews(merged);
+  const latestFirst =
+    siteManset.length > 0
+      ? siteManset
+      : merged.filter((item) => (item as { isFeatured?: boolean }).isFeatured !== true);
+  const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
+  const pool = sortNewsByRecency(scoped);
   return dedupeHeadlineSliderItems(pool.slice(0, limit));
+}
+
+/** Yan manşet: manşet etiketi yerine en son eklenenler (tepe/orta tekrarı hariç). */
+export function buildLatestNewsSideFallbackPool<T>(opts: {
+  items: readonly T[];
+  sliderItems: readonly T[];
+  tepeMansetItems?: readonly T[];
+}): T[] {
+  const excludeFrom = mergeUniqueNews(opts.sliderItems, opts.tepeMansetItems ?? []);
+  const latestPool = sortNewsByRecency(
+    mergeUniqueNews(opts.items).filter(
+      (item) =>
+        !isRssHybridItem(item) &&
+        !isYekparePoolNewsItem(item) &&
+        (item as { isFeatured?: boolean }).isFeatured !== true,
+    ),
+  );
+  return excludeHeadlineSliderItems(latestPool as T[], excludeFrom);
 }
 
 /** Yekpare havuz yan kartları: önce son dakika (`isBreaking`), sonra en güncel. */
@@ -488,7 +523,7 @@ export function buildHeadlineSidePrimaryPool<T>(opts: {
       sliderItems: excludeSlider,
     });
   } else {
-    raw = buildMansetTaggedSideFallbackPool({
+    raw = buildLatestNewsSideFallbackPool({
       items: opts.mansetFallbackItems ?? [],
       sliderItems: opts.sliderItems,
       tepeMansetItems: opts.tepeMansetActive ? opts.tepeMansetItems : [],

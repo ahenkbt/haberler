@@ -64,6 +64,13 @@
       "when": 1782000000000,
       "tag": "0008_location_wiki_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782001000000,
+      "tag": "0009_news_site_manset",
+      "breakpoints": true
     }
   ]
 }
