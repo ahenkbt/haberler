@@ -331,6 +331,12 @@ async function main() {
     if (await fixZone(z)) ok += 1;
   }
   console.log(`\n[fix] zones fixed: ${ok}/${ZONES.length}`);
+  // Schedule cron only repairs DNS/routes. Redeploying Worker from main every
+  // 20 minutes overwrote newer production Worker scripts (e.g. social OG fix).
+  if (process.env.CF_FIX_SKIP_WORKER_DEPLOY === "1") {
+    console.log("[fix] skip worker deploy (DNS-only mode)");
+    return;
+  }
   const deployed = await tryWranglerDeploy();
   if (!deployed) {
     console.error("[fix] FATAL: Worker script deploy failed");
