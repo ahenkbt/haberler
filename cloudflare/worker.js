@@ -337,6 +337,129 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
   }
 }
 
+/** WhatsApp / Facebook / Telegram vb. — JS çalıştırmaz, SPA index.html OG'sini okur. */
+function isSocialPreviewBot(request) {
+  const ua = String(request.headers.get("user-agent") ?? "").toLowerCase();
+  return /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|pinterest|bingbot|googlebot|duckduckbot|yandexbot|gptbot|chatgpt-user|claudebot|anthropic-ai|perplexitybot|google-extended|applebot|cohere-ai|bytespider|meta-externalagent|amazonbot/.test(
+    ua,
+  );
+}
+
+function isOgProxySkipPath(pathname) {
+  return (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/assets/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/yektube-v2/") ||
+    pathname.startsWith("/yp/") ||
+    isStaticAssetPath(pathname)
+  );
+}
+
+/** Portal paylaşım yolları (middleware / Netlify edge ile aynı). */
+function isPortalOgSharePath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  if (
+    p === "/kesfet" ||
+    p === "/haberler" ||
+    p === "/siparis" ||
+    p === "/alisveris" ||
+    p === "/turizm" ||
+    p === "/bilgiagaci" ||
+    p === "/ansiklopedi" ||
+    p === "/magaza"
+  ) {
+    return true;
+  }
+  if (p.startsWith("/bilgi/")) return true;
+  if (p.startsWith("/bilgiagaci/") || p.startsWith("/ansiklopedi/")) return true;
+  if (/^\/haberler\/rss\/[^/]+$/.test(p)) return true;
+  if (/^\/(?:yp|yektube-v2)?\/kanal\/[^/]+\/[^/]+$/.test(p)) return true;
+  if (/^\/kanal\/[^/]+\/[^/]+$/.test(p)) return true;
+  if (/^\/(siparis\/satici|alisveris\/magaza|magaza\/magaza)\/[^/]+\/blog(?:\/[^/]+)?$/.test(p)) {
+    return true;
+  }
+  return (
+    /^\/siparis\/satici\/[^/]+$/.test(p) ||
+    /^\/alisveris\/magaza\/[^/]+$/.test(p) ||
+    /^\/magaza\/magaza\/[^/]+$/.test(p) ||
+    /^\/magaza\/urun\/[^/]+$/.test(p) ||
+    /^\/kesfet\/[^/]+$/.test(p) ||
+    /^\/haber\/[^/]+$/.test(p) ||
+    /^\/turizm\/[^/]+\/[^/]+$/.test(p)
+  );
+}
+
+async function fetchHmSlugForHost(apiOrigin, host) {
+  const h = normalizeHost(host);
+  if (!h || isPortalHost(h)) return null;
+  try {
+    const res = await fetch(
+      `${apiOrigin}/api/hm/meta/by-domain?domain=${encodeURIComponent(h)}`,
+      {
+        headers: { accept: "application/json" },
+        cf: { cacheTtl: 60, cacheEverything: false },
+      },
+    );
+    if (!res.ok) return null;
+    const meta = await res.json().catch(() => null);
+    const slug = String(meta?.slug ?? meta?.data?.slug ?? "").trim();
+    return slug || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sosyal önizleme botları: SPA index.html (yekpare.net OG) yerine
+ * /api/public/og-html ile haber başlık/açıklama/görsel döndür.
+ * (Vercel middleware / Netlify edge CF Worker yolunda çalışmadığı için burada tekrarlanır.)
+ */
+async function socialPreviewOgHtml(request, env, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (!isSocialPreviewBot(request)) return null;
+  if (isOgProxySkipPath(incoming.pathname)) return null;
+
+  const host = (incoming.hostname || "").toLowerCase();
+  const cleanPath = incoming.pathname.replace(/\/+$/, "") || "/";
+  const apiOrigin = upstreamOrigin(env);
+  const isHmSlugPath = /^\/tr\/[^/]+(?:\/.*)?$/.test(cleanPath);
+  const hmBound = !isPortalHost(host) ? Boolean(await fetchHmSlugForHost(apiOrigin, host)) : false;
+  const isCustomHmDomainPath = hmBound;
+  const isPortalSharePath = (isPortalHost(host) || !hmBound) && isPortalOgSharePath(cleanPath);
+  if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath) return null;
+
+  const target = new URL("/api/public/og-html", apiOrigin);
+  target.searchParams.set("path", cleanPath);
+  target.searchParams.set("origin", incoming.origin);
+
+  try {
+    const upstream = await fetch(target.toString(), {
+      headers: {
+        accept: "text/html",
+        "user-agent": request.headers.get("user-agent") ?? "",
+        "x-forwarded-host": incoming.host,
+        "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
+      },
+      cf: { cacheTtl: 0, cacheEverything: false },
+    });
+    if (!upstream.ok) return null;
+    const headers = new Headers(upstream.headers);
+    headers.delete("content-encoding");
+    headers.delete("transfer-encoding");
+    headers.set("cache-control", "public, max-age=300, s-maxage=300");
+    headers.set("cdn-cache-control", "public, max-age=300");
+    headers.set("x-yekpare-frontend", "cloudflare-render-proxy");
+    headers.set("x-yekpare-og", "social-preview");
+    if (request.method === "HEAD") {
+      return new Response(null, { status: upstream.status, headers });
+    }
+    return new Response(upstream.body, { status: upstream.status, headers });
+  } catch {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const incoming = new URL(request.url);
@@ -355,6 +478,9 @@ export default {
 
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);
     if (hmRedirect) return hmRedirect;
+
+    const ogHtml = await socialPreviewOgHtml(request, env, incoming);
+    if (ogHtml) return ogHtml;
 
     const origin = upstreamOrigin(env);
     const target = new URL(incoming.pathname + incoming.search, origin);
