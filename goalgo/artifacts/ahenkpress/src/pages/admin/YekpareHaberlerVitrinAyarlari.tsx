@@ -93,6 +93,7 @@ const NEWS_HOME_MODULE_LABELS: Record<(typeof HM_NEWS_HOME_MODULE_ORDER)[number]
   ahenkPopulerHaberler: "Popüler Haberler",
   portal3ThemeBlock: "Yekpare Haberler",
   esenThemeBlock: "MANŞET HABER",
+  esenLeadPack: "Günün Öne Çıkanları",
   featuredCategoryStrip: "Kategori vitrini",
   yekpareKategorilerKutusu: "Yekpare Kategoriler Kutusu",
   leadListSidebar: "Büyük haber + sağ liste bloğu",

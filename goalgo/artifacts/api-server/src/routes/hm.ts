@@ -3590,6 +3590,7 @@ router.post("/hm/author/news", async (req, res): Promise<void> => {
       authorId: ctx.authorId,
       status: data.status,
       isFeatured: false,
+      isSiteManset: false,
       isBreaking: false,
       tags,
       siteId: ctx.siteId,
@@ -3646,6 +3647,7 @@ router.put("/hm/author/news/:id", async (req, res): Promise<void> => {
       authorId: ctx.authorId,
       status: data.status,
       isFeatured: existing.isFeatured,
+      isSiteManset: existing.isSiteManset,
       isBreaking: existing.isBreaking,
       tags,
       siteId: ctx.siteId,
@@ -3755,6 +3757,7 @@ router.post("/hm/public/sites/:slug/news-submissions", async (req, res): Promise
     authorId: null,
     status: "draft",
     isFeatured: false,
+    isSiteManset: false,
     isBreaking: false,
     tags: ["haber-gonder"],
     siteId: site.id,
@@ -3926,18 +3929,130 @@ router.get("/hm/editor/pool/news", async (req, res): Promise<void> => {
   });
 });
 
+router.post("/hm/editor/pool/news/bulk-publish", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  if (await denyHmEditorYekparePoolIfCorporate(ctx.siteId, res)) return;
+  const hmAccess = await resolveHmHybridRssAccess(ctx.siteId);
+  if (!hmAccess || hmAccess.yekparePoolReceiveEnabled === false) {
+    res.status(403).json({ error: "Yekpare havuz alımı bu sitede kapalı" });
+    return;
+  }
+  const idsRaw = (req.body as { ids?: unknown })?.ids;
+  const ids = Array.isArray(idsRaw)
+    ? idsRaw.map((x) => parseInt(String(x), 10)).filter((n) => Number.isFinite(n) && n > 0)
+    : [];
+  if (!ids.length) {
+    res.status(400).json({ error: "ids gerekli" });
+    return;
+  }
+  const wantStatus =
+    String((req.body as { status?: string })?.status ?? "draft").trim().toLowerCase() === "published"
+      ? "published"
+      : "draft";
+  const newsCtx = await loadNewsContext();
+  const items: unknown[] = [];
+  for (const id of ids.slice(0, 50)) {
+    const [src] = await newsReadDb().select().from(newsTable).where(eq(newsTable.id, id));
+    if (!src || src.status !== "published") continue;
+    if (src.siteId != null && src.siteId === ctx.siteId) continue;
+    const poolRef =
+      src.siteId != null ? `yekpare-hm-pool:${src.siteId}:${src.id}` : `yekpare-hm-pool:0:${src.id}`;
+    const [existing] = await newsReadDb()
+      .select()
+      .from(newsTable)
+      .where(and(eq(newsTable.siteId, ctx.siteId), eq(newsTable.rssSourceUrl, poolRef)))
+      .limit(1);
+    if (existing) {
+      if (wantStatus === "published" && existing.status !== "published") {
+        const [updated] = await dualWriteUpdate(
+          newsTable,
+          { status: "published" },
+          eq(newsTable.id, existing.id),
+        );
+        items.push(serializeNews(updated ?? existing, newsCtx));
+      } else {
+        items.push(serializeNews(existing, newsCtx));
+      }
+      continue;
+    }
+    const categoryId = await cloneCategoryIdForHmTarget(src.categoryId, ctx.siteId);
+    const slug = makeHmCopySlug(src.slug || src.title, ctx.siteId, src.id);
+    const [created] = await dualWriteInsert(newsTable, {
+      title: src.title,
+      slug,
+      spot: src.spot,
+      content: src.content,
+      imageUrl: src.imageUrl,
+      categoryId,
+      authorId: null,
+      status: wantStatus,
+      isFeatured: false,
+      isBreaking: false,
+      tags: src.tags ?? [],
+      views: 0,
+      isAiGenerated: false,
+      siteId: ctx.siteId,
+      isEditorManual: false,
+      rssSourceUrl: poolRef,
+    });
+    if (created) items.push(serializeNews(created, newsCtx));
+  }
+  if (wantStatus === "published" && items.length) {
+    triggerHmYekpareSyncForSite(ctx.siteId);
+  }
+  res.json({ items, count: items.length, status: wantStatus });
+});
+
 router.post("/hm/editor/pool/news/:id/publish", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   if (await denyHmEditorYekparePoolIfCorporate(ctx.siteId, res)) return;
+  const hmAccess = await resolveHmHybridRssAccess(ctx.siteId);
+  if (!hmAccess || hmAccess.yekparePoolReceiveEnabled === false) {
+    res.status(403).json({ error: "Yekpare havuz alımı bu sitede kapalı" });
+    return;
+  }
   const id = parseInt(String(req.params.id ?? ""), 10);
   if (!Number.isFinite(id) || id <= 0) {
     res.status(400).json({ error: "Geçersiz haber id" });
     return;
   }
+  const wantStatus =
+    String((req.body as { status?: string })?.status ?? "draft").trim().toLowerCase() === "published"
+      ? "published"
+      : "draft";
   const [src] = await newsReadDb().select().from(newsTable).where(eq(newsTable.id, id));
-  if (!src || src.status !== "published" || src.siteId == null || src.siteId === ctx.siteId) {
+  if (!src || src.status !== "published") {
     res.status(404).json({ error: "Havuz haberi bulunamadı" });
+    return;
+  }
+  if (src.siteId != null && src.siteId === ctx.siteId) {
+    res.status(400).json({ error: "Bu haber zaten kendi sitenizde" });
+    return;
+  }
+  const poolRef =
+    src.siteId != null
+      ? `yekpare-hm-pool:${src.siteId}:${src.id}`
+      : `yekpare-hm-pool:0:${src.id}`;
+  const [existing] = await newsReadDb()
+    .select()
+    .from(newsTable)
+    .where(and(eq(newsTable.siteId, ctx.siteId), eq(newsTable.rssSourceUrl, poolRef)))
+    .limit(1);
+  if (existing) {
+    if (wantStatus === "published" && existing.status !== "published") {
+      const [updated] = await dualWriteUpdate(
+        newsTable,
+        { status: "published" },
+        eq(newsTable.id, existing.id),
+      );
+      const newsCtx = await loadNewsContext();
+      res.json(serializeNews(updated ?? existing, newsCtx));
+      return;
+    }
+    const newsCtx = await loadNewsContext();
+    res.json(serializeNews(existing, newsCtx));
     return;
   }
   const categoryId = await cloneCategoryIdForHmTarget(src.categoryId, ctx.siteId);
@@ -3950,21 +4065,24 @@ router.post("/hm/editor/pool/news/:id/publish", async (req, res): Promise<void> 
       imageUrl: src.imageUrl,
       categoryId,
       authorId: null,
-      status: "published",
+      status: wantStatus,
       isFeatured: false,
+      isSiteManset: false,
       isBreaking: false,
       tags: src.tags ?? [],
       views: 0,
       isAiGenerated: false,
       siteId: ctx.siteId,
       isEditorManual: false,
-      rssSourceUrl: `yekpare-hm-pool:${src.siteId}:${src.id}`,
+      rssSourceUrl: poolRef,
     });
   if (!created) {
     res.status(500).json({ error: "Haber kopyalanamadı" });
     return;
   }
-  triggerHmYekpareSyncForSite(ctx.siteId);
+  if (wantStatus === "published") {
+    triggerHmYekpareSyncForSite(ctx.siteId);
+  }
   const newsCtx = await loadNewsContext();
   res.status(201).json(serializeNews(created, newsCtx));
 });
@@ -4011,6 +4129,7 @@ router.post("/hm/editor/news", async (req, res): Promise<void> => {
       senderPhone: data.senderPhone ?? null,
       status: data.status,
       isFeatured: data.isFeatured ?? false,
+      isSiteManset: data.isSiteManset ?? false,
       isBreaking: data.isBreaking ?? false,
       tags,
       siteId: ctx.siteId,
@@ -4043,15 +4162,19 @@ router.patch("/hm/editor/news/:id/flags", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Haber bulunamadı" });
     return;
   }
-  const body = req.body as { isFeatured?: unknown; isBreaking?: unknown };
+  const body = req.body as { isFeatured?: unknown; isSiteManset?: unknown; isBreaking?: unknown };
   const patch: Partial<typeof newsTable.$inferInsert> = {};
   if (typeof body.isFeatured === "boolean") {
     patch.isFeatured = body.isFeatured;
     if (body.isFeatured) patch.isEditorManual = true;
   }
+  if (typeof body.isSiteManset === "boolean") {
+    patch.isSiteManset = body.isSiteManset;
+    if (body.isSiteManset) patch.isEditorManual = true;
+  }
   if (typeof body.isBreaking === "boolean") patch.isBreaking = body.isBreaking;
   if (Object.keys(patch).length === 0) {
-    res.status(400).json({ error: "isFeatured veya isBreaking gerekli" });
+    res.status(400).json({ error: "isFeatured, isSiteManset veya isBreaking gerekli" });
     return;
   }
   const newsCtx = await loadNewsContext();
@@ -4066,7 +4189,7 @@ router.patch("/hm/editor/news/:id/flags", async (req, res): Promise<void> => {
 router.post("/hm/editor/news/bulk-flags", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
-  const body = req.body as { ids?: unknown; isFeatured?: unknown; isBreaking?: unknown };
+  const body = req.body as { ids?: unknown; isFeatured?: unknown; isSiteManset?: unknown; isBreaking?: unknown };
   const ids = body.ids;
   if (!Array.isArray(ids) || ids.length === 0) {
     res.status(400).json({ error: "ids dizisi gerekli" });
@@ -4082,9 +4205,13 @@ router.post("/hm/editor/news/bulk-flags", async (req, res): Promise<void> => {
     patch.isFeatured = body.isFeatured;
     if (body.isFeatured) patch.isEditorManual = true;
   }
+  if (typeof body.isSiteManset === "boolean") {
+    patch.isSiteManset = body.isSiteManset;
+    if (body.isSiteManset) patch.isEditorManual = true;
+  }
   if (typeof body.isBreaking === "boolean") patch.isBreaking = body.isBreaking;
   if (Object.keys(patch).length === 0) {
-    res.status(400).json({ error: "isFeatured veya isBreaking gerekli" });
+    res.status(400).json({ error: "isFeatured, isSiteManset veya isBreaking gerekli" });
     return;
   }
   const updated = await dualWriteUpdate(newsTable, patch, and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.id, numIds)));
@@ -4180,6 +4307,7 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
       senderPhone: data.senderPhone ?? null,
       status: data.status,
       isFeatured: data.isFeatured ?? false,
+      isSiteManset: data.isSiteManset ?? false,
       isBreaking: data.isBreaking ?? false,
       tags,
       siteId: ctx.siteId,

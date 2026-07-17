@@ -2228,7 +2228,10 @@ export default function EditorGenelAyarlari() {
               <Label htmlFor="hm-yekpare-pool-receive" className="font-semibold text-slate-800">
                 Yekpare Haber Havuzu — haber alımı
               </Label>
-              <p className="text-[11px] text-slate-500 mt-0.5">Kapalıyken merkez havuzdan haber çekilmez.</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Açıkken editör «Yekpare havuzu»ndan taslak alıp onaylayabilir. Kapalıyken başka site
+                haberi public vitrinde çıkmaz; otomatik canlı birleşim yoktur.
+              </p>
             </div>
             <Switch
               id="hm-yekpare-pool-receive"

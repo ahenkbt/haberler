@@ -74,6 +74,7 @@ function EditorNewsSubmissionsPanel() {
           authorId: news.authorId ?? undefined,
           status: "published",
           isFeatured: news.isFeatured ?? false,
+          isSiteManset: (news as SubmittedNews & { isSiteManset?: boolean }).isSiteManset ?? false,
           isBreaking: news.isBreaking ?? false,
           tags: news.tags ?? ["haber-gonder"],
           senderFullName: news.senderFullName ?? undefined,

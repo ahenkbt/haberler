@@ -575,7 +575,8 @@ components:
         authorId: { type: integer, nullable: true }
         authorName: { type: string, nullable: true }
         status: { type: string, enum: [published, draft] }
-        isFeatured: { type: boolean }
+        isFeatured: { type: boolean, description: "Tepe manşet" }
+        isSiteManset: { type: boolean, description: "Site (alt) manşet slider" }
         isBreaking: { type: boolean }
         views: { type: integer }
         tags:
@@ -598,7 +599,8 @@ components:
         categorySlug: { type: string }
         authorId: { type: integer, nullable: true }
         status: { type: string, enum: [published, draft] }
-        isFeatured: { type: boolean }
+        isFeatured: { type: boolean, description: "Tepe manşet" }
+        isSiteManset: { type: boolean, description: "Site (alt) manşet slider" }
         isBreaking: { type: boolean }
         tags:
           type: array

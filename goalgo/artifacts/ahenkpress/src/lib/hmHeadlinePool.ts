@@ -22,8 +22,12 @@ export const HM_HOME_HEADLINE_SLIDER_MIN = 15;
 export const HM_HOME_FEATURED_STRIP_ITEM_COUNT = 6;
 /** leadListSidebar: 1 büyük + 6 liste. */
 export const HM_LEAD_LIST_SIDEBAR_TOTAL = 7;
-/** Esen «Günün Öne Çıkanları»: 1 büyük manşet + 6 küçük kutu. */
-export const HM_ESEN_LEAD_PACK_TOTAL = 7;
+/** Esen «Günün Öne Çıkanları» sol metin listesi. */
+export const HM_ESEN_LEAD_PACK_LEFT_COUNT = 6;
+/** Esen «Günün Öne Çıkanları» sağ kart ızgarası (4×2). */
+export const HM_ESEN_LEAD_PACK_RIGHT_COUNT = 8;
+/** @deprecated HM_ESEN_LEAD_PACK_LEFT_COUNT + HM_ESEN_LEAD_PACK_RIGHT_COUNT kullanın. */
+export const HM_ESEN_LEAD_PACK_TOTAL = HM_ESEN_LEAD_PACK_LEFT_COUNT + HM_ESEN_LEAD_PACK_RIGHT_COUNT;
 /** Split manşet: slider yanında 2×2 yan haber kutusu. */
 export const HM_MANSET_SPLIT_SIDE_COUNT = 4;
 /** Split manşet yan ızgarası satır sayısı (2×2). */
@@ -202,12 +206,9 @@ export function isYekparePoolNewsItem(n: unknown): boolean {
   return rssUrl.startsWith("yekpare-hm-pool:");
 }
 
-/** Yekpare havuz adayları — önce `yekpare-hm-pool:` ref, yoksa tüm girdi; eklenme tarihine göre. */
+/** Yekpare havuz adayları — yalnızca onaylı `yekpare-hm-pool:` kopyaları (canlı merkez yok). */
 export function buildYekparePoolSortedCandidates<T>(items: readonly T[]): T[] {
-  const yekpareOnly = sortNewsByRecency(
-    mergeUniqueNews(items.filter(isYekparePoolNewsItem)) as T[],
-  );
-  return yekpareOnly.length > 0 ? yekpareOnly : sortNewsByRecency([...items]);
+  return sortNewsByRecency(mergeUniqueNews(items.filter(isYekparePoolNewsItem)) as T[]);
 }
 
 /** Manşet kategori filtresi — slug / ad eşleşmesi (basit). */
@@ -228,9 +229,21 @@ export function filterHeadlineItemsByCategorySlug<T>(
   });
 }
 
+/** Editör SITE MANŞET etiketi (`isSiteManset`) — RSS / yekpare havuz kopyası hariç. */
+export function isHmSiteMansetNewsItem(n: unknown): boolean {
+  const item = n as { isSiteManset?: boolean | null };
+  if (item.isSiteManset !== true) return false;
+  return isHmEditorManualNewsItem(n);
+}
+
+export function filterHmSiteMansetNews<T>(items: readonly T[]): T[] {
+  return items.filter(isHmSiteMansetNewsItem);
+}
+
 /**
- * Orta manşet slider: yalnızca editör «Manşet» (`isFeatured`) etiketli haberler —
- * tepe manşet ile aynı sıkı kural; RSS / yekpare yedeklemesi yok.
+ * Orta (site) manşet slider:
+ * — `isSiteManset` işaretli haberler varsa yalnızca onlar
+ * — yoksa en son eklenen editör/DB haberleri (`isFeatured` tepe manşet ve RSS / yekpare hariç)
  */
 export function buildCenterMansetSliderPool(opts: {
   manualItems: unknown[];
@@ -239,13 +252,36 @@ export function buildCenterMansetSliderPool(opts: {
   limit?: number;
 }): any[] {
   const limit = opts.limit ?? HM_HOME_HEADLINE_SLIDER_MIN;
-  const manualAll = mergeUniqueNews(
-    filterHmEditorManualNews(opts.manualItems),
+  const merged = mergeUniqueNews(
     filterHmEditorManualNews(opts.latestItems),
-  );
-  const scoped = filterHeadlineItemsByCategorySlug(manualAll, opts.categorySlug);
-  const pool = sortNewsByRecency(filterHmMansetNews(scoped));
+    filterHmEditorManualNews(opts.manualItems),
+  ).filter((item) => !isRssHybridItem(item) && !isYekparePoolNewsItem(item));
+  const siteManset = filterHmSiteMansetNews(merged);
+  const latestFirst =
+    siteManset.length > 0
+      ? siteManset
+      : merged.filter((item) => (item as { isFeatured?: boolean }).isFeatured !== true);
+  const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
+  const pool = sortNewsByRecency(scoped);
   return dedupeHeadlineSliderItems(pool.slice(0, limit));
+}
+
+/** Yan manşet: manşet etiketi yerine en son eklenenler (tepe/orta tekrarı hariç). */
+export function buildLatestNewsSideFallbackPool<T>(opts: {
+  items: readonly T[];
+  sliderItems: readonly T[];
+  tepeMansetItems?: readonly T[];
+}): T[] {
+  const excludeFrom = mergeUniqueNews(opts.sliderItems, opts.tepeMansetItems ?? []);
+  const latestPool = sortNewsByRecency(
+    mergeUniqueNews(opts.items).filter(
+      (item) =>
+        !isRssHybridItem(item) &&
+        !isYekparePoolNewsItem(item) &&
+        (item as { isFeatured?: boolean }).isFeatured !== true,
+    ),
+  );
+  return excludeHeadlineSliderItems(latestPool as T[], excludeFrom);
 }
 
 /** Yekpare havuz yan kartları: önce son dakika (`isBreaking`), sonra en güncel. */
@@ -456,7 +492,7 @@ export function hasEnoughNewsForHeroSideHeadlines(
   return candidates.length >= Math.min(sideCount, Math.max(0, pool.length - 1));
 }
 
-/** Manşet yan kart havuzu — yekpare son dakika veya manşet etiketi yedek; portal legacy. */
+/** Manşet yan kart havuzu — yekpare / manşet etiketi + site son haber yedek. */
 export function buildHeadlineSidePrimaryPool<T>(opts: {
   siteId?: number | null;
   sliderItems: readonly T[];
@@ -481,19 +517,32 @@ export function buildHeadlineSidePrimaryPool<T>(opts: {
     opts.tepeMansetActive ? (opts.tepeMansetItems ?? []) : [],
   );
 
-  let raw: T[];
+  let primary: T[];
   if (opts.yekparePoolReceiveEnabled !== false) {
-    raw = buildYekparePoolSideCandidatePool({
+    primary = buildYekparePoolSideCandidatePool({
       yekparePoolItems: opts.yekparePoolItems ?? [],
       sliderItems: excludeSlider,
     });
   } else {
-    raw = buildMansetTaggedSideFallbackPool({
+    primary = buildLatestNewsSideFallbackPool({
       items: opts.mansetFallbackItems ?? [],
       sliderItems: opts.sliderItems,
       tepeMansetItems: opts.tepeMansetActive ? opts.tepeMansetItems : [],
     }) as T[];
   }
+
+  // HM sitelerde yekpare/manşet havuzu ince kalırsa sol-sağ kartlar boş görünmesin:
+  // site son haberleri + manşet etiketli yedek ile doldur (slider tekrarı yok).
+  const mansetTagged = buildMansetTaggedSideFallbackPool({
+    items: (opts.mansetFallbackItems ?? opts.legacySidePool) as T[],
+    sliderItems: opts.sliderItems,
+    tepeMansetItems: opts.tepeMansetActive ? (opts.tepeMansetItems as T[]) : [],
+  }) as T[];
+  const siteLatest = excludeHeadlineSliderItems(
+    sortNewsByRecency(mergeUniqueNews(opts.legacySidePool) as T[]),
+    excludeSlider,
+  ) as T[];
+  const raw = mergeUniqueNews(primary, mansetTagged, siteLatest) as T[];
 
   return opts.tepeMansetActive
     ? excludeHeadlineSliderItems(raw, opts.tepeMansetItems ?? [])
