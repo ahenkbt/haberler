@@ -1581,7 +1581,11 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   /** P1-1: HM anasayfa featured + breaking + popular tek istek. */
   const hmHomeBundleEnabled = siteId != null && !isCorporateTheme;
-  const { data: hmHomeBundle } = useQuery<{
+  const {
+    data: hmHomeBundle,
+    isFetched: hmHomeBundleFetched,
+    isError: hmHomeBundleError,
+  } = useQuery<{
     siteId: number;
     featured: any[];
     manualEditor?: any[];
@@ -1602,6 +1606,20 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     enabled: hmHomeBundleEnabled,
   });
   const useHmHomeBundle = Boolean(hmHomeBundle);
+  const hmHomeBundleSettled = !hmHomeBundleEnabled || hmHomeBundleFetched || hmHomeBundleError;
+
+  /** RSS manşet açıkken de bundle'dan ilk boyamayı hemen yap; ağır featuredHm yedek. */
+  const featuredHmFromBundle = useMemo(() => {
+    if (!useHmHomeBundle || !hmHomeBundle) return null;
+    const pooled = mergeUniqueNews([
+      ...asArray(hmHomeBundle.featured),
+      ...asArray(hmHomeBundle.centerHeadlines),
+      ...asArray(hmHomeBundle.manualEditor),
+    ]);
+    return pooled.length > 0 ? pooled.slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT) : null;
+  }, [useHmHomeBundle, hmHomeBundle]);
+  const bundleCoversSlider =
+    (featuredHmFromBundle?.length ?? 0) >= Math.min(5, HM_HOME_HEADLINE_SLIDER_MIN);
 
   /* Slider / featured */
   const { data: featuredGlobal = [] } = useQuery<any[]>({
@@ -1674,11 +1692,21 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       return mergeUniqueNews(pool).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
     },
     staleTime: 2 * 60 * 1000,
-    enabled: !isCorporateTheme && newsSliderEnabled && siteId != null && !(useHmHomeBundle && !rssHeadlineEnabled),
+    // Bundle gelene kadar bekle; doluysa ağır featured+news+hybrid zincirini atla.
+    enabled:
+      !isCorporateTheme &&
+      newsSliderEnabled &&
+      siteId != null &&
+      hmHomeBundleSettled &&
+      !bundleCoversSlider,
   });
 
-  const featuredHmFromBundle = useHmHomeBundle && !rssHeadlineEnabled ? asArray(hmHomeBundle?.featured) : null;
-  const featuredHmResolved = featuredHmFromBundle ?? featuredHm;
+  const featuredHmResolved =
+    featuredHmFromBundle && featuredHmFromBundle.length > 0
+      ? featuredHm.length > 0
+        ? mergeUniqueNews([...featuredHmFromBundle, ...featuredHm]).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT)
+        : featuredHmFromBundle
+      : featuredHm;
 
   const featured = useMemo(
     () => (newsSliderEnabled ? asArray(siteId != null ? featuredHmResolved : featuredGlobal) : []),
@@ -1817,12 +1845,23 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     enabled: latestBandFetchReady,
   });
 
+  const bundleInstantPool = useMemo(() => {
+    if (!useHmHomeBundle || !hmHomeBundle) return [];
+    return mergeUniqueNews(
+      asArray(hmHomeBundle.featured),
+      asArray(hmHomeBundle.centerHeadlines),
+      asArray(hmHomeBundle.breaking),
+      asArray(hmHomeBundle.popular),
+      asArray(hmHomeBundle.manualEditor),
+    );
+  }, [useHmHomeBundle, hmHomeBundle]);
+
   const latest = useMemo(() => {
     const limit = activeTab ? 40 : Math.max(newsSidebarEnabled ? 60 : 80, HM_HOME_HEADLINE_SLIDER_LIMIT);
     const dbItems = asArray((latestDb as { items?: unknown })?.items);
-    let items = dbItems;
+    let items = dbItems.length > 0 ? dbItems : bundleInstantPool;
     if (useHybridHomeNewsPool && hybridHeadlineReady) {
-      items = mergeUniqueNews(dbItems, hybridBandItems);
+      items = mergeUniqueNews(items, hybridBandItems);
     }
     if (activeTab) {
       items = items.filter(
@@ -1844,6 +1883,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     activeTab,
     newsSidebarEnabled,
     layoutPrefs,
+    bundleInstantPool,
   ]);
 
   const latestBandRaw = useMemo(() => {
@@ -1870,8 +1910,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         asArray((latestDb as { items?: unknown })?.items),
         asArray((latestBandDb as { items?: unknown })?.items),
         hybridHeadlineReady ? hybridBandItems : [],
+        bundleInstantPool,
       ).length > 0,
-    [latestDb, latestBandDb, hybridHeadlineReady, hybridBandItems],
+    [latestDb, latestBandDb, hybridHeadlineReady, hybridBandItems, bundleInstantPool],
   );
 
   // Bootstrap süresi dolduğunda yükleme durumunu zorla kapat — hiçbir zaman sonsuz "Haberler yükleniyor" gösterme.

@@ -16,6 +16,9 @@ import { categoryBoxItemKey } from "@/lib/hmCategoryBoxItems";
 import { hmCategorySlug } from "@/lib/hmCategorySlug";
 
 const DEFAULT_FETCH_LIMIT = 12;
+/** Mobilde onlarca kategori hybrid isteği yerine üstteki kutular önce. */
+const DEFAULT_EAGER_REMOTE_MAX = 4;
+const DEFAULT_TOTAL_REMOTE_MAX = 8;
 
 function countFallbackItemsForSlug(
   slug: string,
@@ -47,8 +50,14 @@ export function useHmHomeCategorySectionItems(opts: {
   matchContext?: HmHomeCategoryMatchContext;
   /** Ana hibrit havuz yüklenene kadar kategori API isteklerini ertele. */
   deferRemoteFetch?: boolean;
+  /** Below-fold beklerken bile hemen çekilecek üst kutu sayısı. */
+  eagerRemoteMax?: number;
+  /** Toplam uzak kategori isteği üst sınırı (geri kalanı fallback havuz). */
+  maxRemoteFetches?: number;
 }) {
   const limit = opts.limit ?? DEFAULT_FETCH_LIMIT;
+  const eagerRemoteMax = opts.eagerRemoteMax ?? DEFAULT_EAGER_REMOTE_MAX;
+  const maxRemoteFetches = opts.maxRemoteFetches ?? DEFAULT_TOTAL_REMOTE_MAX;
   const uniqueSlugs = useMemo(() => {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -62,7 +71,7 @@ export function useHmHomeCategorySectionItems(opts: {
   }, [opts.slugs]);
 
   const queries = useQueries({
-    queries: uniqueSlugs.map((slug) => {
+    queries: uniqueSlugs.map((slug, index) => {
       const fallbackCount = countFallbackItemsForSlug(
         slug,
         opts.fallbackPool ?? [],
@@ -71,6 +80,8 @@ export function useHmHomeCategorySectionItems(opts: {
       );
       /** Tam kutu (4) dolmadan API atlanmasın — havuz yeterliyse gereksiz istek yapma. */
       const needsRemote = fallbackCount < limit;
+      const withinRemoteBudget = index < maxRemoteFetches;
+      const allowWhileDeferred = index < eagerRemoteMax;
       return {
         queryKey: hybridNewsListQueryKey({
           scope: "hm-home-cat-box",
@@ -97,7 +108,12 @@ export function useHmHomeCategorySectionItems(opts: {
         // "settle" olur (içerik veya boş). Hata yakalanır; fetchPublicJson zaman aşımında
         // {ok:false} döner, sorgu boş çözülür — asla pending'de asılı kalmaz.
         retry: 0,
-        enabled: opts.enabled && Boolean(slug) && !opts.deferRemoteFetch && needsRemote,
+        enabled:
+          opts.enabled &&
+          Boolean(slug) &&
+          needsRemote &&
+          withinRemoteBudget &&
+          (allowWhileDeferred || !opts.deferRemoteFetch),
       };
     }),
   });
