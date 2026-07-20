@@ -869,6 +869,13 @@
       "when": 1777553046710,
       "tag": "0121_news_site_manset",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1777554046710,
+      "tag": "0122_purge_cross_site_author_leak",
+      "breakpoints": true
     }
   ]
 }

@@ -2006,12 +2006,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     staleTime: 10 * 60 * 1000,
     enabled: isCorporateTheme ? corporateAuthorsEnabled : newsAuthorsEnabled,
   });
-  const { data: globalAuthorsFallbackData } = useQuery<any>({
-    queryKey: ["/api/authors", "global-fallback", siteId ?? "portal"],
-    queryFn: () => apiRequest("/api/authors?limit=10"),
-    staleTime: 10 * 60 * 1000,
-    enabled: siteId != null && (isCorporateTheme ? corporateAuthorsEnabled : newsAuthorsEnabled),
-  });
 
   /* Categories */
   const { data: apiCats = [] } = useQuery<any[]>({
@@ -2125,11 +2119,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   }, [sliderNews, allItems, featured, breaking, siteId, tepeMansetActive, tepeMansetItems]);
   const authors: any[] = useMemo(() => {
     const d = authorsData as any;
-    const primary = Array.isArray(d) ? d : asArray(d?.authors);
-    const fallback = Array.isArray(globalAuthorsFallbackData)
-      ? globalAuthorsFallbackData
-      : asArray(globalAuthorsFallbackData?.authors);
-    const raw = primary.length > 0 ? primary : fallback;
+    const raw = Array.isArray(d) ? d : asArray(d?.authors);
     const out = new Map<string, any>();
     for (const a of raw) {
       const key = String(a?.name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
@@ -2140,7 +2130,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       if (!prev || nextScore > prevScore) out.set(key, a);
     }
     return Array.from(out.values());
-  }, [authorsData, globalAuthorsFallbackData]);
+  }, [authorsData]);
   const esenAuthorsScrollRef = useRef<HTMLDivElement>(null);
   const scrollEsenAuthors = useCallback((direction: -1 | 1) => {
     esenAuthorsScrollRef.current?.scrollBy({ left: direction * 220, behavior: "smooth" });

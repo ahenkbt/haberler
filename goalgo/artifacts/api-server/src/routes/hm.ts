@@ -122,7 +122,6 @@ import {
 } from "../lib/hm-site-compat";
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
-import { distributeAuthorArticlesToHmSites } from "../lib/author-distribute-articles";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
 import { invalidateNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
@@ -1457,82 +1456,8 @@ router.get("/hm/makale", async (req, res): Promise<void> => {
       .orderBy(desc(hmMakalelerTable.createdAt))
       .limit(lim);
   }
-  if (rows.length === 0 && Number.isFinite(authorId) && authorId > 0 && status !== "all") {
-    // DB-first: bu yazar için sitede henüz makale yoksa, eş yazar (aynı kişi) havuzundan
-    // yayımlı makaleleri DOĞRUDAN oku ve hemen göster; siteye kopyalama (dağıtım) işini
-    // arka planda yürüt. Önceki sürüm dağıtımı senkron bekliyor, bu da köşe yazarı sayfasının
-    // ilk açılışını >3s bloke ediyordu (linkler slug tabanlı olduğundan eş satır göstermek güvenli).
-    let [sourceAuthor] = await newsReadDb()
-      .select({ name: authorsTable.name })
-      .from(authorsTable)
-      .where(eq(authorsTable.id, authorId))
-      .limit(1);
-    if (!sourceAuthor) {
-      [sourceAuthor] = await mainDb
-        .select({ name: authorsTable.name })
-        .from(authorsTable)
-        .where(eq(authorsTable.id, authorId))
-        .limit(1);
-    }
-    const normalizedName = String(sourceAuthor?.name ?? "")
-      .trim()
-      .replace(/\s+/g, " ")
-      .toLowerCase();
-    const peerIds = new Set<number>([authorId]);
-    if (normalizedName) {
-      const peers = await newsReadDb()
-        .select({ id: authorsTable.id })
-        .from(authorsTable)
-        .where(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`);
-      const mainPeers = await mainDb
-        .select({ id: authorsTable.id })
-        .from(authorsTable)
-        .where(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`);
-      for (const p of [...peers, ...mainPeers]) {
-        if (Number.isFinite(p.id) && p.id > 0) peerIds.add(p.id);
-      }
-    }
-    const peerIdList = [...peerIds];
-    // Eş yazar havuzundan (hangi site olursa olsun) yayımlı makaleleri anında göster.
-    rows = await newsReadDb()
-      .select()
-      .from(hmMakalelerTable)
-      .where(
-        and(
-          inArray(hmMakalelerTable.authorId, peerIdList),
-          eq(hmMakalelerTable.status, "published"),
-        ),
-      )
-      .orderBy(desc(hmMakalelerTable.createdAt))
-      .limit(lim);
-    if (rows.length === 0) {
-      rows = await mainDb
-        .select()
-        .from(hmMakalelerTable)
-        .where(
-          and(
-            inArray(hmMakalelerTable.authorId, peerIdList),
-            eq(hmMakalelerTable.status, "published"),
-          ),
-        )
-        .orderBy(desc(hmMakalelerTable.createdAt))
-        .limit(lim);
-    }
-    // Slug bazlı tekilleştir (aynı yazı birden çok sitede olabilir).
-    const seenSlugs = new Set<string>();
-    rows = rows.filter((r) => {
-      const slug = String(r.slug ?? "").trim();
-      if (!slug || seenSlugs.has(slug)) return false;
-      seenSlugs.add(slug);
-      return true;
-    });
-    // Arka planda siteye kopyala — sonraki açılışlar site-kapsamlı ve daha hızlı olsun.
-    if (peerIdList.length > 0) {
-      void distributeAuthorArticlesToHmSites(peerIdList, [siteId]).catch((err) =>
-        console.warn("[hm-makale-backfill]", err instanceof Error ? err.message : err),
-      );
-    }
-  }
+  // Site dışı eş yazar (peer) makale sızıntısı / otomatik dağıtım yok —
+  // yalnızca bu siteye ait makaleler listelenir.
   const ctx = await loadNewsContext();
   const fromHm = rows.map((m) => serializeHmMakaleAsNews(m, ctx));
 
@@ -3153,24 +3078,46 @@ router.post("/hm/editor/authors/bulk-delete", async (req, res): Promise<void> =>
     .from(authorsTable)
     .where(and(eq(authorsTable.hmSiteId, ctx.siteId), inArray(authorsTable.id, ids)));
   const ownedIds = ownedRows.map((row) => row.id);
-  if (ownedIds.length === 0) {
+  const foreignIds = ids.filter((id) => !ownedIds.includes(id));
+
+  // Bu siteye ait olmayan (sızıntı) yazarlar: yalnızca bu sitedeki içerik bağlarını kopar.
+  if (foreignIds.length > 0) {
+    await dualWriteDelete(
+      hmMakalelerTable,
+      and(eq(hmMakalelerTable.siteId, ctx.siteId), inArray(hmMakalelerTable.authorId, foreignIds)),
+    );
+    await dualWriteUpdate(
+      newsTable,
+      { authorId: null },
+      and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.authorId, foreignIds)),
+    );
+  }
+
+  if (ownedIds.length > 0) {
+    await dualWriteUpdate(
+      hmMakalelerTable,
+      { authorId: null },
+      and(eq(hmMakalelerTable.siteId, ctx.siteId), inArray(hmMakalelerTable.authorId, ownedIds)),
+    );
+    await dualWriteUpdate(
+      newsTable,
+      { authorId: null },
+      and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.authorId, ownedIds)),
+    );
+    await dualWriteDelete(authorsTable, and(eq(authorsTable.hmSiteId, ctx.siteId), inArray(authorsTable.id, ownedIds)));
+  }
+
+  if (ownedIds.length === 0 && foreignIds.length === 0) {
     res.status(404).json({ error: "Bu siteye ait seçili yazar bulunamadı." });
     return;
   }
 
-  await dualWriteUpdate(
-    hmMakalelerTable,
-    { authorId: null },
-    and(eq(hmMakalelerTable.siteId, ctx.siteId), inArray(hmMakalelerTable.authorId, ownedIds)),
-  );
-  await dualWriteUpdate(
-    newsTable,
-    { authorId: null },
-    and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.authorId, ownedIds)),
-  );
-  await dualWriteDelete(authorsTable, and(eq(authorsTable.hmSiteId, ctx.siteId), inArray(authorsTable.id, ownedIds)));
   triggerHmYekpareSyncForSite(ctx.siteId);
-  res.json({ ok: true, deleted: ownedIds.length });
+  res.json({
+    ok: true,
+    deleted: ownedIds.length,
+    detached: foreignIds.length,
+  });
 });
 
 router.patch("/hm/editor/authors/order", async (req, res): Promise<void> => {

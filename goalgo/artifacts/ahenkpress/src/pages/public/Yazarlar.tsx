@@ -61,19 +61,8 @@ export default function Yazarlar() {
     staleTime: 10 * 60 * 1000,
     placeholderData: (previous) => previous,
   });
-  const { data: globalAuthorsFallback } = useQuery<any[]>({
-    queryKey: ["/api/authors", "global-fallback", hmSiteId ?? "portal"],
-    queryFn: () => apiRequest("/api/authors"),
-    enabled: hmSiteId != null,
-    staleTime: 10 * 60 * 1000,
-    placeholderData: (previous) => previous,
-  });
 
-  const primaryAuthors = Array.isArray(rawAuthors) ? rawAuthors : (rawAuthors as any)?.authors ?? [];
-  const fallbackAuthors = Array.isArray(globalAuthorsFallback)
-    ? globalAuthorsFallback
-    : (globalAuthorsFallback as any)?.authors ?? [];
-  const authors = primaryAuthors.length > 0 ? primaryAuthors : fallbackAuthors;
+  const authors = Array.isArray(rawAuthors) ? rawAuthors : (rawAuthors as any)?.authors ?? [];
 
   return (
     <div className="sade-public-page min-h-screen">

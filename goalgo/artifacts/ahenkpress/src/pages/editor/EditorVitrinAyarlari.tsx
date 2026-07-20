@@ -1100,6 +1100,13 @@ export default function EditorVitrinAyarlari() {
               onChange={(c) => toggleDefaultOn("hmNewsSporModuleEnabled", c)}
             />
             <ToggleRow
+              id="hm-news-world-briefs"
+              label={NEWS_HOME_MODULE_LABELS.worldBriefs}
+              checked={p.hmNewsWorldBriefsEnabled !== false}
+              disabled={saving}
+              onChange={(c) => toggleHmNewsEditorModule("worldBriefs", c === true)}
+            />
+            <ToggleRow
               id="hm-news-rss-headline"
               label="RSS haberleri manşette göster"
               checked={p.hmNewsRssHeadlineEnabled === true}
