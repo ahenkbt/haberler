@@ -297,24 +297,13 @@ async function loadKoseMoreArticles(
 async function loadKoseOtherAuthors(authorId: number, siteId: number | null) {
   const readDb = getNewsDbForRead();
   if (siteId != null) {
-    const fromMak = await readDb
-      .selectDistinct({ authorId: hmMakalelerTable.authorId })
-      .from(hmMakalelerTable)
-      .where(
-        and(eq(hmMakalelerTable.siteId, siteId), eq(hmMakalelerTable.status, "published"), isNotNull(hmMakalelerTable.authorId)),
-      );
-    const idSet = new Set<number>();
-    for (const r of fromMak) if (typeof r.authorId === "number") idSet.add(r.authorId);
-    const owned = await readDb.select({ id: authorsTable.id }).from(authorsTable).where(eq(authorsTable.hmSiteId, siteId));
-    for (const r of owned) idSet.add(r.id);
-    idSet.delete(authorId);
-    if (idSet.size === 0) return [];
-    const rows = await readDb
+    // Yalnızca bu siteye ait yazarlar — başka siteden makale authorId sızıntısı yok.
+    const owned = await readDb
       .select()
       .from(authorsTable)
-      .where(inArray(authorsTable.id, [...idSet]))
+      .where(and(eq(authorsTable.hmSiteId, siteId), sql`${authorsTable.id} <> ${authorId}`))
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
-    return rows.map(({ passwordHash: _p, ...rest }) => rest);
+    return owned.map(({ passwordHash: _p, ...rest }) => rest);
   }
   const portalPeers = await readDb
     .select({ id: authorsTable.id, name: authorsTable.name })
@@ -340,21 +329,11 @@ async function loadSidebarAuthors(siteId: number | null) {
   if (!(await resolveHmSiteAuthorsPublicEnabled(siteId))) return [];
   const readDb = getNewsDbForRead();
   if (siteId != null) {
-    const fromMak = await readDb
-      .selectDistinct({ authorId: hmMakalelerTable.authorId })
-      .from(hmMakalelerTable)
-      .where(
-        and(eq(hmMakalelerTable.siteId, siteId), eq(hmMakalelerTable.status, "published"), isNotNull(hmMakalelerTable.authorId)),
-      );
-    const idSet = new Set<number>();
-    for (const r of fromMak) if (typeof r.authorId === "number") idSet.add(r.authorId);
-    const owned = await readDb.select({ id: authorsTable.id }).from(authorsTable).where(eq(authorsTable.hmSiteId, siteId));
-    for (const r of owned) idSet.add(r.id);
-    if (idSet.size === 0) return [];
+    // Otomatik çapraz site yazar yok — yalnızca panelden bu siteye eklenenler.
     const rows = await readDb
       .select()
       .from(authorsTable)
-      .where(inArray(authorsTable.id, [...idSet]))
+      .where(eq(authorsTable.hmSiteId, siteId))
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
     return rows.map(({ passwordHash: _p, ...rest }) => rest);
   }

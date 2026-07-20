@@ -441,7 +441,9 @@ router.post("/authors/bulk-distribute", async (req, res): Promise<void> => {
       res.status(400).json({ error: "syncArticlesOnly için targetHmSiteIds gerekli" });
       return;
     }
-    const articleStats = await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds);
+    const articleStats = await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds, {
+      explicitAdminAction: true,
+    });
     res.json({ ok: true, created: 0, skipped: 0, ...articleStats, syncArticlesOnly: true });
     return;
   }
@@ -510,7 +512,7 @@ router.post("/authors/bulk-distribute", async (req, res): Promise<void> => {
 
   const articleStats =
     targetHmSiteIds.length > 0
-      ? await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds)
+      ? await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds, { explicitAdminAction: true })
       : { articlesAdded: 0, articlesSkipped: 0 };
 
   res.json({ ok: true, created, skipped, ...articleStats });
