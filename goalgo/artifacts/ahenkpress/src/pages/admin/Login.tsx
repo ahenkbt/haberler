@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { adminFetchErrorHint, adminPanelCookieApiPath, apiFetch, portalCanonicalAdminPath } from "@/lib/apiBase";
+import { adminFetchErrorHint, adminPanelCookieApiPath, portalCanonicalAdminPath } from "@/lib/apiBase";
 
 export default function Login() {
   const { markPanelAuthenticated, logout } = useAuth();
@@ -20,15 +20,35 @@ export default function Login() {
     }
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const res = await apiFetch(adminPanelCookieApiPath("/api/members/admin-panel-session"), {
+      // Autofill çoğu tarayıcıda React onChange tetiklemez; DOM/FormData'dan oku.
+      const fd = new FormData(e.currentTarget);
+      const user = String(fd.get("username") ?? username)
+        .trim()
+        .replace(/^\uFEFF/, "");
+      const pass = String(fd.get("password") ?? password).replace(/^\uFEFF/, "");
+      if (!user || !pass) {
+        setError("Kullanıcı adı ve şifre gerekli.");
+        setLoading(false);
+        return;
+      }
+      setUsername(user);
+      setPassword(pass);
+
+      // apiFetch 401'de oturum yenileme denemesi yapar — giriş POST'unda kullanma.
+      const res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-session"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), password }),
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ username: user, password: pass }),
       });
       const data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
       if (!res.ok || !data.success) {
@@ -43,7 +63,7 @@ export default function Login() {
               adminFetchErrorHint(String(res.status)),
           );
         } else if (res.status === 401) {
-          setError("Kullanıcı adı veya şifre hatalı.");
+          setError("Kullanıcı adı veya şifre hatalı. Şifreyi elle yazıp tekrar deneyin (otomatik doldurma bazen eski şifre gönderir).");
         } else {
           setError("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.");
         }
@@ -73,7 +93,7 @@ export default function Login() {
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 mb-6">Giriş Yap</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Kullanıcı Adı
@@ -82,6 +102,7 @@ export default function Login() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
+                  name="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="E-posta veya kullanıcı adı"
@@ -100,6 +121,7 @@ export default function Login() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -126,7 +148,7 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={loading || !username || !password}
+              disabled={loading}
               className="w-full bg-[#e61e25] hover:bg-[#c9181e] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-lg transition-colors mt-2 flex items-center justify-center gap-2"
             >
               {loading ? (
