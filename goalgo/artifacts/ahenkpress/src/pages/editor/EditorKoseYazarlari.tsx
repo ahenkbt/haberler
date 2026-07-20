@@ -152,7 +152,16 @@ export default function EditorKoseYazarlari() {
         detached?: number;
         error?: string;
       };
-      if (!r.ok) throw new Error(j.error || "Silme başarısız");
+      if (!r.ok) {
+        // Eski API hâlâ 404 «Bu siteye ait…» dönerse kullanıcıya anlaşılır mesaj.
+        const msg = j.error || "Silme başarısız";
+        if (/siteye ait seçili yazar bulunamadı/i.test(msg)) {
+          throw new Error(
+            "Bu yazar başka siteden sızmış; silme düzeltmesi henüz canlıya alınmamış olabilir. Deploy sonrası Sil çalışır. Şimdilik sayfayı yenileyin.",
+          );
+        }
+        throw new Error(msg);
+      }
       setSelectedAuthorIds((prev) => prev.filter((id) => !ids.includes(id)));
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["/api/authors"] }),

@@ -3073,43 +3073,65 @@ router.post("/hm/editor/authors/bulk-delete", async (req, res): Promise<void> =>
     return;
   }
 
-  const ownedRows = await newsReadDb()
-    .select({ id: authorsTable.id })
+  // Seçilen id'ler (bu siteye ait olmasa bile) + aynı adlı lokal kopyalar silinir/ayrılır.
+  // Sızıntı yazarlar «Bu siteye ait değil» diye engellenmez.
+  const selectedRows = await newsReadDb()
+    .select({ id: authorsTable.id, name: authorsTable.name, hmSiteId: authorsTable.hmSiteId })
     .from(authorsTable)
-    .where(and(eq(authorsTable.hmSiteId, ctx.siteId), inArray(authorsTable.id, ids)));
-  const ownedIds = ownedRows.map((row) => row.id);
-  const foreignIds = ids.filter((id) => !ownedIds.includes(id));
+    .where(inArray(authorsTable.id, ids));
 
-  // Bu siteye ait olmayan (sızıntı) yazarlar: yalnızca bu sitedeki içerik bağlarını kopar.
-  if (foreignIds.length > 0) {
+  const nameKeys = new Set<string>();
+  for (const row of selectedRows) {
+    const key = String(row.name ?? "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLocaleLowerCase("tr-TR");
+    if (key) nameKeys.add(key);
+  }
+
+  const ownedById = new Set(
+    selectedRows.filter((r) => r.hmSiteId === ctx.siteId).map((r) => r.id),
+  );
+  const foreignIds = ids.filter((id) => !ownedById.has(id));
+
+  // Aynı adlı lokal kopyalar (otomatik dağıtımdan kalanlar)
+  let cloneIds: number[] = [];
+  if (nameKeys.size > 0) {
+    const localAuthors = await newsReadDb()
+      .select({ id: authorsTable.id, name: authorsTable.name })
+      .from(authorsTable)
+      .where(eq(authorsTable.hmSiteId, ctx.siteId));
+    cloneIds = localAuthors
+      .filter((a) => {
+        const key = String(a.name ?? "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLocaleLowerCase("tr-TR");
+        return key.length > 0 && nameKeys.has(key);
+      })
+      .map((a) => a.id);
+  }
+
+  const ownedIds = Array.from(new Set([...ownedById, ...cloneIds]));
+  const contentAuthorIds = Array.from(new Set([...ids, ...ownedIds]));
+
+  if (contentAuthorIds.length > 0) {
     await dualWriteDelete(
       hmMakalelerTable,
-      and(eq(hmMakalelerTable.siteId, ctx.siteId), inArray(hmMakalelerTable.authorId, foreignIds)),
+      and(eq(hmMakalelerTable.siteId, ctx.siteId), inArray(hmMakalelerTable.authorId, contentAuthorIds)),
     );
     await dualWriteUpdate(
       newsTable,
       { authorId: null },
-      and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.authorId, foreignIds)),
+      and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.authorId, contentAuthorIds)),
     );
   }
 
   if (ownedIds.length > 0) {
-    await dualWriteUpdate(
-      hmMakalelerTable,
-      { authorId: null },
-      and(eq(hmMakalelerTable.siteId, ctx.siteId), inArray(hmMakalelerTable.authorId, ownedIds)),
+    await dualWriteDelete(
+      authorsTable,
+      and(eq(authorsTable.hmSiteId, ctx.siteId), inArray(authorsTable.id, ownedIds)),
     );
-    await dualWriteUpdate(
-      newsTable,
-      { authorId: null },
-      and(eq(newsTable.siteId, ctx.siteId), inArray(newsTable.authorId, ownedIds)),
-    );
-    await dualWriteDelete(authorsTable, and(eq(authorsTable.hmSiteId, ctx.siteId), inArray(authorsTable.id, ownedIds)));
-  }
-
-  if (ownedIds.length === 0 && foreignIds.length === 0) {
-    res.status(404).json({ error: "Bu siteye ait seçili yazar bulunamadı." });
-    return;
   }
 
   triggerHmYekpareSyncForSite(ctx.siteId);
