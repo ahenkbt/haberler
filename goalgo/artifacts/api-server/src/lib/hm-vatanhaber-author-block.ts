@@ -3,6 +3,12 @@
  * Editör panelinde silinemeyen / yeniden sızan isimler için savunma katmanı.
  */
 
+/**
+ * El yazısı listesi (ASG’den kaldırılacak):
+ * Kerim Bahadır, Nur Delice, Hüsnü Karabulut, Gül Akdemir,
+ * Abidin Server/Şanver, Ayşegül Seçilmiş, Hasan Bora Yılmaz, Harika Sarıkaya
+ * (+ bilinen VH sızıntıları: Fatih Demirel, Hüseyin Akın — ASG kurucu hariç)
+ */
 const VATANHABER_BLOCKED_AUTHOR_NAMES = [
   "Kerim Bahadır",
   "KERİM BAHADIR",
@@ -21,12 +27,23 @@ const VATANHABER_BLOCKED_AUTHOR_NAMES = [
   "GUL AKDEMIR",
   "Abidin ŞANVER",
   "Abidin SANVER",
+  "Abidin Server",
+  "Abidin SERVER",
+  "ABİDİN SERVER",
+  "ABIDIN SERVER",
   "FATİH DEMİREL",
   "FATIH DEMIREL",
   "Fatih Demirel",
   "Ayşegül SEÇİLMİŞ",
   "Aysegul SECILMIS",
   "Ayşegül Seçilmiş",
+  "Hasan Bora Yılmaz",
+  "Hasan Bora Yilmaz",
+  "HASAN BORA YILMAZ",
+  "Harika Sarıkaya",
+  "Harika Sarikaya",
+  "HARİKA SARIKAYA",
+  "HARIKA SARIKAYA",
   "HÜSEYİN AKIN",
   "HUSEYIN AKIN",
   "Hüseyin Akın",

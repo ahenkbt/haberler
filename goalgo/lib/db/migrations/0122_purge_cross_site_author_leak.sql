@@ -181,7 +181,9 @@ BEGIN
     AND m.author_id = a.id
     AND (a.hm_site_id IS NULL OR a.hm_site_id <> m.site_id);
 
-  -- D4) El yazısı / bilinen VH isimleri (Kerim Bahadır vb.) — VH satırı olmasa da temizle.
+  -- D4) El yazısı listesi + bilinen VH isimleri — VH satırı olmasa da temizle.
+  --     Kerim Bahadır, Nur Delice, Hüsnü Karabulut, Gül Akdemir, Abidin Server/Şanver,
+  --     Ayşegül Seçilmiş, Hasan Bora Yılmaz, Harika Sarıkaya (+ Fatih / Hüseyin sızıntı).
   --     ASG kurucusu (İmtiyaz / Hüseyin Akın) korunur.
   UPDATE news n
   SET author_id = NULL
@@ -191,10 +193,10 @@ BEGIN
     AND a.hm_site_id = ANY(v_target_ids)
     AND (
       lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g'))
-        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin [şs]anver|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hüseyin ak[ıi]n|huseyin akin)$'
+        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin ([şs]anver|server)|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hasan bora y[ıi]lmaz|harika sar[ıi]kaya|hüseyin ak[ıi]n|huseyin akin)$'
       OR lower(translate(regexp_replace(btrim(a.name), '\s+', ' ', 'g'),
            'çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU'))
-         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin sanver|fatih demirel|aysegul secilmis|huseyin akin)$'
+         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin (sanver|server)|fatih demirel|aysegul secilmis|hasan bora yilmaz|harika sarikaya|huseyin akin)$'
     )
     AND NOT (
       a.hm_site_id = ANY(COALESCE(v_asg_ids, ARRAY[]::integer[]))
@@ -211,10 +213,10 @@ BEGIN
     AND a.hm_site_id = ANY(v_target_ids)
     AND (
       lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g'))
-        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin [şs]anver|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hüseyin ak[ıi]n|huseyin akin)$'
+        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin ([şs]anver|server)|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hasan bora y[ıi]lmaz|harika sar[ıi]kaya|hüseyin ak[ıi]n|huseyin akin)$'
       OR lower(translate(regexp_replace(btrim(a.name), '\s+', ' ', 'g'),
            'çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU'))
-         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin sanver|fatih demirel|aysegul secilmis|huseyin akin)$'
+         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin (sanver|server)|fatih demirel|aysegul secilmis|hasan bora yilmaz|harika sarikaya|huseyin akin)$'
     )
     AND NOT (
       a.hm_site_id = ANY(COALESCE(v_asg_ids, ARRAY[]::integer[]))
@@ -228,10 +230,10 @@ BEGIN
   WHERE a.hm_site_id = ANY(v_target_ids)
     AND (
       lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g'))
-        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin [şs]anver|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hüseyin ak[ıi]n|huseyin akin)$'
+        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin ([şs]anver|server)|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hasan bora y[ıi]lmaz|harika sar[ıi]kaya|hüseyin ak[ıi]n|huseyin akin)$'
       OR lower(translate(regexp_replace(btrim(a.name), '\s+', ' ', 'g'),
            'çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU'))
-         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin sanver|fatih demirel|aysegul secilmis|huseyin akin)$'
+         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin (sanver|server)|fatih demirel|aysegul secilmis|hasan bora yilmaz|harika sarikaya|huseyin akin)$'
     )
     AND NOT (
       a.hm_site_id = ANY(COALESCE(v_asg_ids, ARRAY[]::integer[]))

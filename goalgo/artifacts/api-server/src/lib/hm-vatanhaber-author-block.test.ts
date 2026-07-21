@@ -18,19 +18,27 @@ describe("shouldHideAuthorOnAnkaraHmSite", () => {
     ).toBe(true);
   });
 
-  it("hides other Vatanhaber authors on AHG", () => {
-    expect(
-      shouldHideAuthorOnAnkaraHmSite({
-        siteSlug: "ankarahabergundemi",
-        authorName: "Ayşegül SEÇİLMİŞ",
-      }),
-    ).toBe(true);
-    expect(
-      shouldHideAuthorOnAnkaraHmSite({
-        siteSlug: "ankarahabergundemi",
-        authorName: "NUR DELİCE",
-      }),
-    ).toBe(true);
+  it("hides handwritten ASG removal list", () => {
+    const names = [
+      "Nur Delice",
+      "Hüsnü Karabulut",
+      "Gül Akdemir",
+      "Abidin Server",
+      "Abidin ŞANVER",
+      "Ayşegül Seçilmiş",
+      "Hasan Bora Yılmaz",
+      "Harika Sarıkaya",
+    ];
+    for (const authorName of names) {
+      expect(
+        shouldHideAuthorOnAnkaraHmSite({
+          siteSlug: "asg",
+          siteDomain: "ankarasehirgazetesi.com",
+          authorName,
+        }),
+        authorName,
+      ).toBe(true);
+    }
   });
 
   it("keeps ASG founder Hüseyin Akın / İmtiyaz", () => {
