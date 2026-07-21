@@ -180,6 +180,66 @@ BEGIN
   WHERE m.site_id = ANY(v_target_ids)
     AND m.author_id = a.id
     AND (a.hm_site_id IS NULL OR a.hm_site_id <> m.site_id);
+
+  -- D4) El yazısı / bilinen VH isimleri (Kerim Bahadır vb.) — VH satırı olmasa da temizle.
+  --     ASG kurucusu (İmtiyaz / Hüseyin Akın) korunur.
+  UPDATE news n
+  SET author_id = NULL
+  FROM authors a
+  WHERE n.site_id = ANY(v_target_ids)
+    AND n.author_id = a.id
+    AND a.hm_site_id = ANY(v_target_ids)
+    AND (
+      lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g'))
+        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin [şs]anver|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hüseyin ak[ıi]n|huseyin akin)$'
+      OR lower(translate(regexp_replace(btrim(a.name), '\s+', ' ', 'g'),
+           'çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU'))
+         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin sanver|fatih demirel|aysegul secilmis|huseyin akin)$'
+    )
+    AND NOT (
+      a.hm_site_id = ANY(COALESCE(v_asg_ids, ARRAY[]::integer[]))
+      AND (
+        lower(coalesce(a.title, '')) LIKE '%imtiyaz%'
+        OR lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g')) IN ('hüseyin akın', 'huseyin akin')
+      )
+    );
+
+  DELETE FROM hm_makaleler m
+  USING authors a
+  WHERE m.site_id = ANY(v_target_ids)
+    AND m.author_id = a.id
+    AND a.hm_site_id = ANY(v_target_ids)
+    AND (
+      lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g'))
+        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin [şs]anver|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hüseyin ak[ıi]n|huseyin akin)$'
+      OR lower(translate(regexp_replace(btrim(a.name), '\s+', ' ', 'g'),
+           'çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU'))
+         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin sanver|fatih demirel|aysegul secilmis|huseyin akin)$'
+    )
+    AND NOT (
+      a.hm_site_id = ANY(COALESCE(v_asg_ids, ARRAY[]::integer[]))
+      AND (
+        lower(coalesce(a.title, '')) LIKE '%imtiyaz%'
+        OR lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g')) IN ('hüseyin akın', 'huseyin akin')
+      )
+    );
+
+  DELETE FROM authors a
+  WHERE a.hm_site_id = ANY(v_target_ids)
+    AND (
+      lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g'))
+        ~ '^(kerim bahad[ıi]r( erta[şs])?|nur del[iı]ce|hüsnü karabulut|husnu karabulut|gül akdemir|gul akdemir|abidin [şs]anver|fatih dem[iı]rel|ay[şs]egül se[çc][iı]lm[iı][şs]|hüseyin ak[ıi]n|huseyin akin)$'
+      OR lower(translate(regexp_replace(btrim(a.name), '\s+', ' ', 'g'),
+           'çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU'))
+         ~ '^(kerim bahadir( ertas)?|nur delice|husnu karabulut|gul akdemir|abidin sanver|fatih demirel|aysegul secilmis|huseyin akin)$'
+    )
+    AND NOT (
+      a.hm_site_id = ANY(COALESCE(v_asg_ids, ARRAY[]::integer[]))
+      AND (
+        lower(coalesce(a.title, '')) LIKE '%imtiyaz%'
+        OR lower(regexp_replace(btrim(a.name), '\s+', ' ', 'g')) IN ('hüseyin akın', 'huseyin akin')
+      )
+    );
 END $$;
 
 -- E) Makalesi/haberi kalmayan, başka sitedeki yazarla aynı adlı otomatik kopyaları sil.

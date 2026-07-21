@@ -19,6 +19,7 @@ import { applyNewsSiteOverrides } from "./hybrid-news-merge.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isHmCorporateLayout, parseHmLayoutJson, resolveHmCorporateAuthorsEnabledFromLayout } from "./hm-editor-categories.js";
 import { centralNewsRowBelongsToCorporateSite } from "./hm-corporate-news-policy.js";
+import { shouldHideAuthorOnAnkaraHmSite } from "./hm-vatanhaber-author-block.js";
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 type SerializedArticle = ReturnType<typeof serializeNews> | ReturnType<typeof serializeHmMakaleAsNews>;
@@ -298,12 +299,23 @@ async function loadKoseOtherAuthors(authorId: number, siteId: number | null) {
   const readDb = getNewsDbForRead();
   if (siteId != null) {
     // Yalnızca bu siteye ait yazarlar — başka siteden makale authorId sızıntısı yok.
+    const site = await getHmNewsSiteByIdCompat(siteId);
     const owned = await readDb
       .select()
       .from(authorsTable)
       .where(and(eq(authorsTable.hmSiteId, siteId), sql`${authorsTable.id} <> ${authorId}`))
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
-    return owned.map(({ passwordHash: _p, ...rest }) => rest);
+    return owned
+      .filter(
+        (r) =>
+          !shouldHideAuthorOnAnkaraHmSite({
+            siteSlug: site?.slug,
+            siteDomain: site?.domain,
+            authorName: r.name,
+            authorTitle: r.title,
+          }),
+      )
+      .map(({ passwordHash: _p, ...rest }) => rest);
   }
   const portalPeers = await readDb
     .select({ id: authorsTable.id, name: authorsTable.name })
@@ -330,12 +342,23 @@ async function loadSidebarAuthors(siteId: number | null) {
   const readDb = getNewsDbForRead();
   if (siteId != null) {
     // Otomatik çapraz site yazar yok — yalnızca panelden bu siteye eklenenler.
+    const site = await getHmNewsSiteByIdCompat(siteId);
     const rows = await readDb
       .select()
       .from(authorsTable)
       .where(eq(authorsTable.hmSiteId, siteId))
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
-    return rows.map(({ passwordHash: _p, ...rest }) => rest);
+    return rows
+      .filter(
+        (r) =>
+          !shouldHideAuthorOnAnkaraHmSite({
+            siteSlug: site?.slug,
+            siteDomain: site?.domain,
+            authorName: r.name,
+            authorTitle: r.title,
+          }),
+      )
+      .map(({ passwordHash: _p, ...rest }) => rest);
   }
   const rows = await readDb
     .select()

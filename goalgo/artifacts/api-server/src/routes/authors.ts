@@ -26,6 +26,7 @@ import {
   parseHmLayoutJson,
   resolveHmCorporateAuthorsEnabledFromLayout,
 } from "../lib/hm-editor-categories.js";
+import { shouldHideAuthorOnAnkaraHmSite } from "../lib/hm-vatanhaber-author-block.js";
 
 const router: IRouter = Router();
 const newsReadDb = () => getNewsDbForRead();
@@ -113,6 +114,20 @@ router.get("/authors/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Yazar bu haber sitesine ait değil veya siteId gerekli" });
     return;
   }
+  if (hmSiteId != null) {
+    const site = await getHmNewsSiteByIdCompat(hmSiteId);
+    if (
+      shouldHideAuthorOnAnkaraHmSite({
+        siteSlug: site?.slug,
+        siteDomain: site?.domain,
+        authorName: author.name,
+        authorTitle: author.title,
+      })
+    ) {
+      res.status(404).json({ error: "Yazar bulunamadı" });
+      return;
+    }
+  }
   if (hmSiteId == null && author.hmSiteId == null) {
     const portalPeers = await newsReadDb()
       .select({ id: authorsTable.id, name: authorsTable.name })
@@ -176,11 +191,20 @@ router.get("/authors", async (req, res): Promise<void> => {
     await ensureAuthorsSortOrderColumn();
     // Yalnızca bu siteye ait yazarlar — başka HM sitelerinden (ör. vatanhaber) otomatik
     // backfill / sızıntı yok. Havuzdan bilinçli ekleme local kopya oluşturur.
-    const rows = await newsReadDb()
+    const ownedRows = await newsReadDb()
       .select()
       .from(authorsTable)
       .where(eq(authorsTable.hmSiteId, hmSiteId))
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
+    const rows = ownedRows.filter(
+      (r) =>
+        !shouldHideAuthorOnAnkaraHmSite({
+          siteSlug: site?.slug,
+          siteDomain: site?.domain,
+          authorName: r.name,
+          authorTitle: r.title,
+        }),
+    );
     if (rows.length === 0) {
       res.json([]);
       return;
