@@ -952,6 +952,205 @@ async function socialPreviewOgHtml(request, env, incoming) {
   }
 }
 
+const NTV_DUNYA_RSS_URL = "https://www.ntv.com.tr/dunya.rss";
+const WORLD_BRIEFS_TR_CHARS = /[çğıöşüÇĞİÖŞÜıI]/;
+const WORLD_BRIEFS_EN_WORDS =
+  /\b(the|and|for|with|from|news|breaking|live|report|says|world|global|update|today|latest)\b/i;
+
+function decodeXmlEntities(raw) {
+  return String(raw || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => {
+      const code = Number(n);
+      return Number.isFinite(code) ? String.fromCharCode(code) : "";
+    })
+    .trim();
+}
+
+function xmlTag(block, tag) {
+  const re = new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = String(block || "").match(re);
+  return m ? decodeXmlEntities(m[1]) : "";
+}
+
+function xmlAttr(block, tag, attr) {
+  const re = new RegExp(`<${tag}[^>]*\\s${attr}=["']([^"']+)["'][^>]*/?>`, "i");
+  const m = String(block || "").match(re);
+  return m ? decodeXmlEntities(m[1]) : "";
+}
+
+function isTurkishWorldBriefTitle(title) {
+  const t = String(title || "").trim();
+  if (!t) return false;
+  if (WORLD_BRIEFS_TR_CHARS.test(t)) return true;
+  if (WORLD_BRIEFS_EN_WORDS.test(t) && !WORLD_BRIEFS_TR_CHARS.test(t)) return false;
+  return /[ğüşıöçĞÜŞİÖÇ]/.test(t) || /\b(ve|bir|için|ile|bu|da|de|haber|türkiye)\b/i.test(t);
+}
+
+function parseNtvDunyaAtom(xml, limit = 24) {
+  const entries = String(xml || "").match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
+  const out = [];
+  for (const entry of entries) {
+    const title = xmlTag(entry, "title");
+    if (!isTurkishWorldBriefTitle(title)) continue;
+    const href =
+      xmlAttr(entry, "link", "href") ||
+      xmlTag(entry, "id") ||
+      "";
+    if (!href) continue;
+    const published =
+      xmlTag(entry, "published") ||
+      xmlTag(entry, "updated") ||
+      new Date().toISOString();
+    const spot = xmlTag(entry, "summary") || null;
+    const imageUrl =
+      xmlAttr(entry, "media:thumbnail", "url") ||
+      xmlAttr(entry, "media:content", "url") ||
+      null;
+    const idMatch = href.match(/(\d+)(?:\/)?$/);
+    out.push({
+      id: idMatch ? `ntv:${idMatch[1]}` : `ntv:${out.length + 1}`,
+      title,
+      spot,
+      href,
+      publishedAt: new Date(published).toISOString(),
+      sourceName: "Dünya",
+      feedLabel: "Dünya",
+      countryCode: null,
+      countryName: null,
+      continent: "global",
+      imageUrl,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/**
+ * Edge: Dünyadan Kısa Kısa — NTV Dünya RSS (Render API deploy gecikmesinde donmasın).
+ * İsteğe bağlı siteId ile upstream Dünya DB haberlerini de birleştirir.
+ */
+async function serveWorldBriefsEdge(request, env, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (incoming.pathname !== "/api/news/world-briefs") return null;
+
+  const perFeedRaw = Number(incoming.searchParams.get("perFeed") || incoming.searchParams.get("limit") || 3);
+  const perFeed = Number.isFinite(perFeedRaw) && perFeedRaw > 0 ? Math.min(Math.round(perFeedRaw), 8) : 3;
+  const siteIdRaw = Number(incoming.searchParams.get("siteId") || 0);
+  const siteId = Number.isFinite(siteIdRaw) && siteIdRaw > 0 ? Math.floor(siteIdRaw) : null;
+  const itemCap = Math.min(perFeed * 4, 32);
+
+  let rssItems = [];
+  try {
+    const rssRes = await fetch(NTV_DUNYA_RSS_URL, {
+      headers: {
+        accept: "application/atom+xml, application/rss+xml, application/xml, text/xml, */*",
+        "user-agent": "YekpareWorldBriefs/1.0",
+      },
+      cf: { cacheTtl: 120, cacheEverything: true },
+    });
+    if (rssRes.ok) {
+      rssItems = parseNtvDunyaAtom(await rssRes.text(), itemCap * 2);
+    }
+  } catch {
+    /* NTV best-effort */
+  }
+
+  const seen = new Set();
+  const items = [];
+  const push = (item) => {
+    if (!item?.title || !item?.href) return;
+    const key = String(item.href).trim().toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    items.push(item);
+  };
+  for (const item of rssItems) push(item);
+
+  if (siteId != null) {
+    try {
+      const origin = upstreamOrigin(env);
+      const hybridUrl = new URL("/api/news/hybrid", origin);
+      hybridUrl.searchParams.set("siteId", String(siteId));
+      hybridUrl.searchParams.set("categorySlug", "dunya");
+      hybridUrl.searchParams.set("dbFirst", "1");
+      hybridUrl.searchParams.set("limit", String(itemCap));
+      const hybridRes = await fetch(hybridUrl.toString(), {
+        headers: {
+          accept: "application/json",
+          "x-forwarded-host": incoming.host,
+          "x-forwarded-proto": "https",
+        },
+        cf: { cacheTtl: 60, cacheEverything: true },
+      });
+      if (hybridRes.ok) {
+        const data = await hybridRes.json().catch(() => null);
+        for (const row of data?.items || []) {
+          const title = String(row.title || "").trim();
+          if (!isTurkishWorldBriefTitle(title)) continue;
+          const slug = String(row.slug || "").trim();
+          const href = slug
+            ? `/haber/${slug}`
+            : String(row.href || row.originUrl || "").trim();
+          if (!href) continue;
+          push({
+            id: `db:${row.id}`,
+            title,
+            spot: row.spot || null,
+            href,
+            publishedAt: row.publishedAt || row.createdAt || new Date().toISOString(),
+            sourceName: row.categoryName || "Dünya",
+            feedLabel: row.categoryName || "Dünya",
+            countryCode: null,
+            countryName: null,
+            continent: "global",
+            imageUrl: row.imageUrl || null,
+          });
+        }
+      }
+    } catch {
+      /* upstream DB merge best-effort */
+    }
+  }
+
+  items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  const slice = items.slice(0, itemCap);
+  const payload = {
+    continents:
+      slice.length === 0
+        ? []
+        : [
+            {
+              id: "global",
+              label: "Küresel",
+              items: slice,
+              countries: [],
+            },
+          ],
+    totalItems: slice.length,
+    feedCount: slice.length > 0 ? 1 : 0,
+    checkedAt: new Date().toISOString(),
+  };
+
+  const headers = {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "public, max-age=60, s-maxage=60, stale-while-revalidate=180",
+    "cdn-cache-control": "public, max-age=60, stale-while-revalidate=180",
+    "x-yekpare-frontend": "cloudflare-world-briefs",
+    "x-yekpare-world-briefs": "ntv-dunya-edge",
+  };
+  if (request.method === "HEAD") {
+    return new Response(null, { status: 200, headers });
+  }
+  return new Response(JSON.stringify(payload), { status: 200, headers });
+}
+
 export default {
   async fetch(request, env) {
     const incoming = new URL(request.url);
@@ -982,6 +1181,9 @@ export default {
 
     const sitemapXml = await proxyRootSitemap(request, env, incoming);
     if (sitemapXml) return sitemapXml;
+
+    const worldBriefs = await serveWorldBriefsEdge(request, env, incoming);
+    if (worldBriefs) return worldBriefs;
 
     const fromAssets = await tryServeAssets(request, env, incoming);
     if (fromAssets) return fromAssets;

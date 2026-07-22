@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, portalRssItemsTable } from "@workspace/db";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
 import { GLOBAL_MAP_NEWS_CONTINENTS } from "./global-map-news-feeds.js";
@@ -271,18 +271,22 @@ export async function loadWorldBriefs(opts?: {
     }
   }
 
+  const feedIds = dunyaFeeds.map((feed) => feed.id).filter(Boolean);
   const [rssRows, dbItems] = await Promise.all([
-    db
-      .select()
-      .from(portalRssItemsTable)
-      .where(
-        and(
-          eq(portalRssItemsTable.categorySlug, DUNYA_CATEGORY_SLUG),
-          sql`${portalRssItemsTable.cachedAt} > ${cutoff}`,
-        ),
-      )
-      .orderBy(desc(portalRssItemsTable.publishedAt))
-      .limit(fetchLimit),
+    feedIds.length
+      ? db
+          .select()
+          .from(portalRssItemsTable)
+          .where(
+            and(
+              eq(portalRssItemsTable.categorySlug, DUNYA_CATEGORY_SLUG),
+              inArray(portalRssItemsTable.feedId, feedIds),
+              sql`${portalRssItemsTable.cachedAt} > ${cutoff}`,
+            ),
+          )
+          .orderBy(desc(portalRssItemsTable.publishedAt))
+          .limit(fetchLimit)
+      : Promise.resolve([]),
     loadWorldBriefDbNews(siteId, fetchLimit),
   ]);
 
