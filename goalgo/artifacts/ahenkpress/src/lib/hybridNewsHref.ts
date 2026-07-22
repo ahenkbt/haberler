@@ -60,16 +60,10 @@ export function newsItemIsRssSource(item: HybridNewsLinkItem): boolean {
   return item.source === "rss" || String(item.id ?? "").startsWith("rss:");
 }
 
-/** API / kart mapper — yalnızca güvenli site-içi yollar döner.
- * Edge Site içi RSS (`rss:edge-*`): önizleme DB’de yoksa orijinal kaynağa gider.
- */
+/** Site-içi haber kartı bağlantısı — RSS asla harici URL açmaz. */
 export function coercePublicHybridNewsHref(item: HybridNewsLinkItem): string {
+  // RSS: item.href asla kullanılmaz (//ntv.com.tr, https://… dahil) — site içi önizleme.
   if (newsItemIsRssSource(item)) {
-    const rawId = String(item.id ?? "");
-    const src = String(item.rssSourceUrl ?? "").trim();
-    if ((rawId.includes("edge-") || rawId.includes(":edge-")) && isExternalNewsHref(src)) {
-      return src;
-    }
     const rssPath = hybridNewsItemPath({
       id: item.id,
       slug: item.slug ?? null,
