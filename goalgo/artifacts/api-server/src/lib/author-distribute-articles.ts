@@ -1,15 +1,14 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   authorsTable,
   dualWriteInsert,
   getNewsDbForRead,
   hmMakalelerTable,
-  newsTable,
 } from "@workspace/db";
+import { isDistributedFromNewsKey, normalizeMakaleTitleKey } from "./hm-makale-dedupe";
 
 type AuthorRow = typeof authorsTable.$inferSelect;
 type MakaleRow = typeof hmMakalelerTable.$inferSelect;
-type NewsRow = typeof newsTable.$inferSelect;
 const db = getNewsDbForRead();
 
 export type AuthorArticleDistributeResult = {
@@ -65,20 +64,6 @@ function makaleToSource(m: MakaleRow): SourceArticle | null {
   };
 }
 
-function newsToSource(n: NewsRow): SourceArticle | null {
-  const slug = String(n.slug ?? "").trim();
-  if (!slug) return null;
-  return {
-    title: String(n.title ?? ""),
-    slug,
-    spot: n.spot ?? null,
-    content: n.content ?? null,
-    imageUrl: n.imageUrl ?? null,
-    externalKey: `news:${n.id}`,
-    createdAt: n.createdAt,
-    updatedAt: n.updatedAt,
-  };
-}
 
 async function loadMakalelerForAuthor(sourceAuthorId: number, sourceSiteId: number | null): Promise<MakaleRow[]> {
   const baseConds = [eq(hmMakalelerTable.authorId, sourceAuthorId), eq(hmMakalelerTable.status, "published")];
@@ -96,39 +81,28 @@ async function loadMakalelerForAuthor(sourceAuthorId: number, sourceSiteId: numb
     .orderBy(desc(hmMakalelerTable.createdAt));
 }
 
-async function loadNewsForAuthor(sourceAuthorId: number, sourceSiteId: number | null): Promise<NewsRow[]> {
-  const baseConds = [eq(newsTable.authorId, sourceAuthorId), eq(newsTable.status, "published")];
-  if (sourceSiteId != null) {
-    return db
-      .select()
-      .from(newsTable)
-      .where(and(...baseConds, eq(newsTable.siteId, sourceSiteId)))
-      .orderBy(desc(newsTable.createdAt));
-  }
-  return db
-    .select()
-    .from(newsTable)
-    .where(and(...baseConds, isNull(newsTable.siteId)))
-    .orderBy(desc(newsTable.createdAt));
-}
 
 async function loadSourceArticles(source: AuthorRow): Promise<SourceArticle[]> {
+  // Yalnızca köşe makaleleri (hm_makaleler). Haber (news) köşe vitrinine kopyalanmaz.
   const directMak = await loadMakalelerForAuthor(source.id, source.hmSiteId ?? null);
-  const directNews = await loadNewsForAuthor(source.id, source.hmSiteId ?? null);
 
   const merged: SourceArticle[] = [];
   const seen = new Set<string>();
+  const seenTitles = new Set<string>();
 
   const push = (item: SourceArticle | null) => {
     if (!item) return;
+    if (isDistributedFromNewsKey(item.externalKey)) return;
+    const titleKey = normalizeMakaleTitleKey(item.title);
     const key = item.externalKey.trim() || `${item.slug}::${item.title}`;
     if (seen.has(key)) return;
+    if (titleKey && seenTitles.has(titleKey)) return;
     seen.add(key);
+    if (titleKey) seenTitles.add(titleKey);
     merged.push(item);
   };
 
   for (const row of directMak) push(makaleToSource(row));
-  for (const row of directNews) push(newsToSource(row));
 
   if (merged.length > 0) {
     return merged.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -147,8 +121,6 @@ async function loadSourceArticles(source: AuthorRow): Promise<SourceArticle[]> {
     if (peer.id === source.id) continue;
     const makRows = await loadMakalelerForAuthor(peer.id, peer.hmSiteId ?? null);
     for (const row of makRows) push(makaleToSource(row));
-    const newsRows = await loadNewsForAuthor(peer.id, peer.hmSiteId ?? null);
-    for (const row of newsRows) push(newsToSource(row));
   }
 
   return merged.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -179,20 +151,28 @@ export async function distributeAuthorArticlesToHmSites(
       if (targetAuthorId == null) continue;
 
       const existingRows = await db
-        .select({ slug: hmMakalelerTable.slug, externalKey: hmMakalelerTable.externalKey })
+        .select({
+          slug: hmMakalelerTable.slug,
+          externalKey: hmMakalelerTable.externalKey,
+          title: hmMakalelerTable.title,
+        })
         .from(hmMakalelerTable)
         .where(eq(hmMakalelerTable.siteId, targetSiteId));
       const slugSet = new Set(existingRows.map((r) => String(r.slug ?? "").trim()).filter(Boolean));
       const extSet = new Set(existingRows.map((r) => String(r.externalKey ?? "").trim()).filter(Boolean));
+      const titleSet = new Set(
+        existingRows.map((r) => normalizeMakaleTitleKey(r.title)).filter(Boolean),
+      );
 
       for (const m of articles) {
         const ext = m.externalKey.trim();
         const slug = m.slug.trim();
+        const titleKey = normalizeMakaleTitleKey(m.title);
         if (!slug) {
           articlesSkipped += 1;
           continue;
         }
-        if ((ext && extSet.has(ext)) || slugSet.has(slug)) {
+        if ((ext && extSet.has(ext)) || slugSet.has(slug) || (titleKey && titleSet.has(titleKey))) {
           articlesSkipped += 1;
           continue;
         }
@@ -213,6 +193,7 @@ export async function distributeAuthorArticlesToHmSites(
         });
         slugSet.add(slug);
         if (ext) extSet.add(ext);
+        if (titleKey) titleSet.add(titleKey);
         articlesAdded += 1;
       }
     }

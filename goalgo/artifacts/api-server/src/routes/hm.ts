@@ -123,6 +123,7 @@ import {
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { distributeAuthorArticlesToHmSites } from "../lib/author-distribute-articles";
+import { dedupeHmMakaleRows, normalizeMakaleTitleKey } from "../lib/hm-makale-dedupe";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
 import { invalidateNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
@@ -1533,42 +1534,40 @@ router.get("/hm/makale", async (req, res): Promise<void> => {
       );
     }
   }
+  // Haberden köşeye kopyalanmış satırları ele + aynı başlığı tekilleştir.
+  rows = dedupeHmMakaleRows(rows);
   const ctx = await loadNewsContext();
-  const fromHm = rows.map((m) => serializeHmMakaleAsNews(m, ctx));
 
-  /** Panelden eklenen blog haberleri (`news`) köşe yazarına bağlıdır; AHB `hm_makaleler` ile aynı vitrinde gösterilir. */
-  if (Number.isFinite(authorId) && authorId > 0 && status !== "all") {
-    const blogCatIds: number[] = [];
-    for (const [cid, cat] of ctx.categories) {
-      if (String(cat.slug ?? "")
-        .trim()
-        .toLowerCase() === "blog") {
-        blogCatIds.push(cid);
+  // Aynı sitede normal haber olarak da duran başlıkları köşe listesinden çıkar
+  // (dağıtım eskiden news→makale kopyalıyordu).
+  if (Number.isFinite(authorId) && authorId > 0 && rows.length > 0) {
+    const siteNewsRows = await newsReadDb()
+      .select({ title: newsTable.title, categoryId: newsTable.categoryId })
+      .from(newsTable)
+      .where(and(eq(newsTable.siteId, siteId), eq(newsTable.status, "published")))
+      .limit(800);
+    const newsTitleKeys = new Set<string>();
+    for (const n of siteNewsRows) {
+      const cat = n.categoryId != null ? ctx.categories.get(n.categoryId) : undefined;
+      const slug = String(cat?.slug ?? "").trim().toLowerCase();
+      if (slug === "blog" || slug === "kose" || slug === "kose-yazisi" || slug === "kose-yazilari") {
+        continue;
       }
+      const key = normalizeMakaleTitleKey(n.title);
+      if (key) newsTitleKeys.add(key);
     }
-    if (blogCatIds.length > 0) {
-      const newsConds = [
-        eq(newsTable.siteId, siteId),
-        eq(newsTable.authorId, authorId),
-        eq(newsTable.status, status),
-        inArray(newsTable.categoryId, blogCatIds),
-      ];
-      const newsRows = await newsReadDb()
-        .select()
-        .from(newsTable)
-        .where(and(...newsConds))
-        .orderBy(desc(newsTable.createdAt))
-        .limit(lim);
-      const fromNews = newsRows.map((r) => serializeNews(r, ctx));
-      const merged = [...fromHm, ...fromNews].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-      const sliced = merged.slice(0, lim);
-      res.json({ items: sliced, total: sliced.length });
-      return;
+    if (newsTitleKeys.size > 0) {
+      rows = rows.filter((r) => {
+        const key = normalizeMakaleTitleKey(r.title);
+        return !key || !newsTitleKeys.has(key);
+      });
     }
   }
 
+  rows = rows.slice(0, lim);
+  const fromHm = rows.map((m) => serializeHmMakaleAsNews(m, ctx));
+
+  // Public yazar sayfası: yalnızca hm_makaleler (köşe). news tablosu karışmasın.
   res.json({
     items: fromHm,
     total: fromHm.length,

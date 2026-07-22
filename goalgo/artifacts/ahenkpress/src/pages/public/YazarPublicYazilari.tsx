@@ -82,7 +82,22 @@ export default function YazarPublicYazilari() {
     enabled: Number.isFinite(authorId) && authorId > 0 && siteId != null,
   });
 
-  const items = Array.isArray(newsPayload?.items) ? newsPayload!.items! : [];
+  const itemsRaw = Array.isArray(newsPayload?.items) ? newsPayload!.items! : [];
+  const items = useMemo(() => {
+    const seen = new Set<string>();
+    const out: NewsListItem[] = [];
+    for (const item of itemsRaw) {
+      const titleKey = String(item.title ?? "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("tr-TR");
+      const key = titleKey || String(item.slug ?? "").trim().toLowerCase() || String(item.id);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+    return out;
+  }, [itemsRaw]);
 
   const { data: authorsRaw } = useQuery({
     queryKey: ["/api/authors", "other-authors", siteId],
