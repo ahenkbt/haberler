@@ -2429,7 +2429,8 @@
 
 [data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar,
 [data-hm-vitrin-theme="portal3"] .hm-classic-top-grid--center-trio-with-sidebar {
-  grid-template-columns: minmax(220px, 0.62fr) minmax(0, 1.28fr) minmax(230px, 0.58fr) minmax(260px, 0.34fr);
+  /* Manşet geniş, sağ Son Haberler dar */
+  grid-template-columns: minmax(200px, 0.58fr) minmax(0, 1.55fr) minmax(200px, 0.52fr) minmax(180px, 0.2fr);
 }
 
 [data-hm-vitrin-theme="classic"] .hm-classic-top-grid--split > .hm-classic-main-headline,
@@ -2462,6 +2463,29 @@
 [data-hm-vitrin-theme="portal3"] .hm-classic-top-grid--center-trio-with-sidebar > .hm-classic-hero-sidebar {
   grid-column: 4;
   grid-row: 1;
+  max-width: 220px;
+  justify-self: stretch;
+}
+
+[data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar .hm-classic-top-news-list .hm-classic-section-head h2,
+[data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar .hm-classic-top-news-list .hm-classic-more {
+  font-size: 12px;
+}
+
+[data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar .hm-classic-top-news-list .hm-classic-text-row {
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 6px;
+  padding: 7px 0;
+}
+
+[data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar .hm-classic-top-news-list .hm-classic-text-row span {
+  font-size: 16px;
+}
+
+[data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar .hm-classic-top-news-list .hm-classic-text-row strong {
+  font-size: 11px;
+  line-height: 1.3;
+  -webkit-line-clamp: 2;
 }
 
 [data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-one-side {
@@ -7686,6 +7710,16 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
 [data-hm-manset-variant="center-trio"] [data-hm-vitrin-theme="classic"] .hm-classic-top-grid,
 [data-hm-manset-variant="center-trio"] [data-hm-vitrin-theme="portal3"] .hm-classic-top-grid {
   grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.38fr) minmax(230px, 0.64fr);
+}
+
+/* Son Haberler yan sütunu varken manşeti geniş, sağ listeyi dar tut */
+html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar,
+html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"] .hm-classic-top-grid--center-trio-with-sidebar,
+[data-hm-manset-variant="center-trio"] [data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio-with-sidebar,
+[data-hm-manset-variant="center-trio"] [data-hm-vitrin-theme="portal3"] .hm-classic-top-grid--center-trio-with-sidebar,
+[data-hm-vitrin-theme="classic"] .hm-classic-top-grid--center-trio.hm-classic-top-grid--center-trio-with-sidebar,
+[data-hm-vitrin-theme="portal3"] .hm-classic-top-grid--center-trio.hm-classic-top-grid--center-trio-with-sidebar {
+  grid-template-columns: minmax(200px, 0.58fr) minmax(0, 1.55fr) minmax(200px, 0.52fr) minmax(180px, 0.2fr);
 }
 
 html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"] .hm-classic-top-grid,
