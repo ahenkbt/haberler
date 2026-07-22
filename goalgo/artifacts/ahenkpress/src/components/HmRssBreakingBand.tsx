@@ -111,7 +111,9 @@ function RssBreakingPreviewModal({
   onClose: () => void;
 }) {
   const titleId = `rss-breaking-preview-title-${item.id}`;
-  const contentHtml = sanitizeHtml(stripExternalAnchorsFromHtml(String(item.contentHtml ?? "").trim()));
+  const contentHtml = stripExternalAnchorsFromHtml(
+    sanitizeHtml(String(item.contentHtml ?? "").trim()),
+  );
   const contentText = String(item.contentText || item.summary || "").trim();
   const contentHasInlineImage = /<img\b/i.test(contentHtml);
   const showLeadImage = Boolean(item.imageUrl) && !contentHasInlineImage;
