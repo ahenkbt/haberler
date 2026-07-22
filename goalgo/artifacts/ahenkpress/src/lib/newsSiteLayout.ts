@@ -571,7 +571,7 @@ export type NewsSiteLayoutPrefs = {
   hmNewsBreakingRssLabels?: HmBreakingRssLabels | null;
   /** HABER teması: son dakika RSS satırları (kategori adı + URL). Birincil kaynak; ekle/sil buradan yönetilir. */
   hmNewsBreakingRssFeedRows?: HmBreakingRssFeedRow[] | null;
-  /** HABER teması: site içi RSS / hibrit haber akışı kaynakları. Boşsa eski kart bandı RSS satırları yedek alınır. */
+  /** HABER teması: site içi RSS / hibrit haber akışı kaynakları. Boş/eksikse varsayılan NTV preset’leri kullanılır (kutu bandına düşülmez). */
   hmNewsSiteRssFeedRows?: HmBreakingRssFeedRow[] | null;
   /** Yekpare `/haberler` hibrit vitrin: kategori bazlı harici RSS kaynakları (DB'ye yazılmaz). */
   portalHybridRssFeeds?: PortalHybridRssFeed[] | null;
@@ -2921,8 +2921,8 @@ export function parseNewsSiteLayoutFromJson(
     );
     const hmNewsSiteRssFeedRows = normalizeHmBreakingRssFeedRows(
       (j as { hmNewsSiteRssFeedRows?: unknown }).hmNewsSiteRssFeedRows,
-      hmNewsBreakingRssFeeds,
-      hmNewsBreakingRssLabels,
+      null,
+      null,
     );
     const portalHybridRssFeeds = normalizePortalHybridRssFeeds((j as { portalHybridRssFeeds?: unknown }).portalHybridRssFeeds);
     const hybridRssEnabledRaw = (j as { hybridRssEnabled?: unknown }).hybridRssEnabled;

@@ -311,14 +311,22 @@ function triggerPortalRssWarmIfEmpty(
   allowHmSite = false,
 ): void {
   if (!mayTriggerLivePortalRssRefresh(siteId, allowHmSite)) return;
-  void shouldRunRssAutomationTick()
-    .then((allowed) => {
-      if (!allowed || !mayTriggerBackgroundPortalRssRefresh()) return;
-      return warmPortalRssCacheIfEmpty(feeds);
-    })
-    .catch((err) => {
-      console.warn("[portal-rss] background warm failed", err instanceof Error ? err.message : err);
-    });
+  void (async () => {
+    const active = enabledPortalHybridRssFeeds(feeds);
+    if (!active.length) return;
+    const cached = await getPortalRssCachedItemsForFeeds(feeds);
+    // Editör site içi RSS: boş cache’te otomasyon/slot beklemeden doldur.
+    // Aksi halde RSS otomasyonu kapalıyken vitrin sonsuza kadar sources.rss=0 kalır.
+    if (cached.length === 0 && allowHmSite) {
+      await warmPortalRssCacheIfEmpty(feeds);
+      return;
+    }
+    if (!(await shouldRunRssAutomationTick())) return;
+    if (!mayTriggerBackgroundPortalRssRefresh()) return;
+    await warmPortalRssCacheIfEmpty(feeds);
+  })().catch((err) => {
+    console.warn("[portal-rss] background warm failed", err instanceof Error ? err.message : err);
+  });
 }
 
 function triggerUnderfilledRssRefresh(
@@ -692,10 +700,45 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       };
 
       const [dbResult, rssBundle] = await Promise.all([loadDbResult(), loadCachedRssBundle()]);
-      const { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
+      let { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
 
-      // dbFirst: RSS ısınmasını istek yolunda BEKLEME (eskiden 12s'ye kadar blokluyordu).
-      // Aşağıdaki triggerPortalRssWarmIfEmpty arka planda doldurur; bir sonraki istek cache'ten alır.
+      // Site içi RSS açıkken soğuk cache: kısa warm bekle (otomasyon/cooldown atlanır).
+      // Anasayfa dbFirst yolunda aksi halde RSS hiç dolmuyordu (bg warm otomasyona bağlıydı).
+      if (
+        includeCachedRss &&
+        mapRssItems.length === 0 &&
+        hmAccess?.hybridRssEnabled === true &&
+        !hmAccess.isCorporate
+      ) {
+        try {
+          const scopeForFeeds =
+            siteHybridRssOn && !yekparePoolOnly && rssScope !== "box"
+              ? "site"
+              : editorPool
+                ? "all"
+                : rssScope;
+          let warmFeeds = await loadPortalHybridRssFeeds(
+            editorPool || siteHybridRssOn ? siteId! : siteId,
+            scopeForFeeds,
+          );
+          if (editorPool || siteHybridRssOn) {
+            warmFeeds = warmFeeds.filter((feed) => !isBoxScopeFeedId(feed.id));
+          }
+          if (foreignOnlyRss) {
+            warmFeeds = filterForeignOnlyPortalHybridRssFeeds(warmFeeds);
+          }
+          await Promise.race([
+            warmPortalRssCacheIfEmpty(warmFeeds),
+            new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+          ]);
+          const warmed = await loadCachedRssBundle();
+          mapRssItems = warmed.mapRssItems;
+          mapFeedLabels = warmed.mapFeedLabels;
+          mapFeedGeoById = warmed.mapFeedGeoById;
+        } catch {
+          /* warm best-effort */
+        }
+      }
 
       // İçerik koruması: istenen kategori SPOR ise siyaset sızıntısını (DB + harita RSS) at.
       const merged = mergeHybridNews({
