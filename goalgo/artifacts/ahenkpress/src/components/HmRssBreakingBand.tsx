@@ -12,7 +12,7 @@ import {
   resolveHmBreakingRssFeedRows,
   resolveHmBreakingRssSectionTitle,
 } from "@/lib/newsSiteLayout";
-import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import { sanitizeHtml, stripExternalAnchorsFromHtml } from "@/lib/sanitizeHtml";
 import { coercePublicHybridNewsHref } from "@/lib/hybridNewsHref";
 import { fetchHybridNewsList } from "@/hooks/useHomeHybridNews";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
@@ -111,7 +111,9 @@ function RssBreakingPreviewModal({
   onClose: () => void;
 }) {
   const titleId = `rss-breaking-preview-title-${item.id}`;
-  const contentHtml = sanitizeHtml(String(item.contentHtml ?? "").trim());
+  const contentHtml = stripExternalAnchorsFromHtml(
+    sanitizeHtml(String(item.contentHtml ?? "").trim()),
+  );
   const contentText = String(item.contentText || item.summary || "").trim();
   const contentHasInlineImage = /<img\b/i.test(contentHtml);
   const showLeadImage = Boolean(item.imageUrl) && !contentHasInlineImage;
