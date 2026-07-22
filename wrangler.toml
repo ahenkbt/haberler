@@ -25,9 +25,14 @@ zone_name = "yekpare.net"
 pattern = "yekpare.net"
 zone_name = "yekpare.net"
 
+# www.yekpare.net already has externally managed DNS (CNAME/proxied); use zone routes.
+[[routes]]
+pattern = "www.yekpare.net/*"
+zone_name = "yekpare.net"
+
 [[routes]]
 pattern = "www.yekpare.net"
-custom_domain = true
+zone_name = "yekpare.net"
 
 # HM editör siteleri (Cloudflare zone → Worker → Render)
 [[routes]]

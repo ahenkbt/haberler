@@ -14,9 +14,9 @@ import { SADE_PUBLIC_POST_HERO_MAIN_CLASS } from "@/lib/yekpareSadeTheme";
 import { estimateNewsReadMinutes } from "@/lib/newsArticleMetrics";
 import { NewsShareButtons } from "@/components/news/NewsShareButtons";
 import { RssNewsDisclaimer } from "@/components/news/RssNewsDisclaimer";
+import { stripExternalAnchorsFromHtml } from "@/lib/sanitizeHtml";
 
 const SADE_ACCENT = "#0EA5E9";
-
 function fmtDate(value: string | null | undefined): string {
   if (!value) return "";
   const date = new Date(value);
@@ -52,7 +52,8 @@ function RssArticleBlock({
   const bodyHtml = useMemo(() => {
     const raw = article.contentHtml || article.spot || "";
     const normalized = rewriteInlineHtmlImgSrc(normalizeAiNewsHtml(raw));
-    const deduped = image ? stripDuplicateHeroImageFromHtml(normalized, image) : normalized;
+    const withoutExternal = stripExternalAnchorsFromHtml(normalized);
+    const deduped = image ? stripDuplicateHeroImageFromHtml(withoutExternal, image) : withoutExternal;
     return image ? stripLeadingBodyImage(deduped) : deduped;
   }, [article, image]);
 

@@ -147,3 +147,10 @@ export function sanitizeHtml(html: string): string {
   walk(doc.body);
   return doc.body.innerHTML;
 }
+
+/** RSS haber gövdesi — harici http(s) bağlantıları kaldırır (NTV vb. dışarı sızmasın). */
+export function stripExternalAnchorsFromHtml(html: string): string {
+  return String(html ?? "")
+    .replace(/<a\b[^>]*\bhref\s*=\s*["']https?:\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, "$1")
+    .replace(/<a\b[^>]*\bhref\s*=\s*["']\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, "$1");
+}

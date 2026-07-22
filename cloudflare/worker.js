@@ -1011,6 +1011,13 @@ function escapeHtmlText(value) {
     .replace(/"/g, "&quot;");
 }
 
+/** RSS gövdesindeki harici bağlantıları kaldırır (yalnızca metin kalır) — NTV’ye sızma olmasın. */
+function stripExternalAnchorsFromHtml(html) {
+  return String(html || "")
+    .replace(/<a\b[^>]*\bhref\s*=\s*["']https?:\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, "$1")
+    .replace(/<a\b[^>]*\bhref\s*=\s*["']\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, "$1");
+}
+
 function parseNtvDunyaAtom(xml, limit = 24) {
   const entries = String(xml || "").match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
   const out = [];
@@ -1114,12 +1121,40 @@ async function serveWorldBriefsEdge(request, env, incoming) {
           const title = String(row.title || "").trim();
           if (!isTurkishWorldBriefTitle(title)) continue;
           const slug = String(row.slug || "").trim();
-          const href = slug
-            ? `/haber/${slug}`
-            : String(row.href || row.originUrl || "").trim();
-          if (!href) continue;
+          const rawId = String(row.id || "").trim();
+          const isRss =
+            row.source === "rss" ||
+            rawId.startsWith("rss:") ||
+            rawId.startsWith("edge-") ||
+            String(row.href || "").includes("/haberler/rss/");
+          let href = "";
+          if (slug && !isRss) {
+            href = `/haber/${slug}`;
+          } else {
+            const candidate = String(row.href || "").trim();
+            if (candidate.startsWith("/") && !/^\/\//.test(candidate)) {
+              href = candidate;
+            } else if (isRss) {
+              const edgeId = rawId.startsWith("rss:")
+                ? rawId.slice(4)
+                : rawId.startsWith("edge-")
+                  ? rawId
+                  : hashRssEdgeId(String(row.originUrl || row.rssSourceUrl || candidate || title));
+              if (edgeId) href = `/haberler/rss/${encodeURIComponent(edgeId)}`;
+            }
+          }
+          // Harici originUrl (NTV vb.) kart href’i olmaz — site içi yol şart.
+          if (!href || /^https?:\/\//i.test(href) || /^\/\//.test(href)) continue;
           push({
-            id: `db:${row.id}`,
+            id: isRss
+              ? rawId.startsWith("rss:")
+                ? rawId
+                : rawId.startsWith("edge-")
+                  ? rawId
+                  : `rss:${rawId}`
+              : rawId.startsWith("db:")
+                ? rawId
+                : `db:${rawId}`,
             title,
             spot: row.spot || null,
             href,
@@ -1139,7 +1174,11 @@ async function serveWorldBriefsEdge(request, env, incoming) {
   }
 
   items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  const slice = items.slice(0, itemCap);
+  const slice = items.slice(0, itemCap).map((item) => {
+    // İstemciye harici originUrl verme — kartlar yalnızca site içi href kullanır.
+    const { originUrl: _originUrl, ...publicItem } = item;
+    return publicItem;
+  });
   const payload = {
     continents:
       slice.length === 0
@@ -1339,9 +1378,11 @@ async function serveEdgeRssPreview(request, env, incoming) {
 
   const { entry, feed } = found;
   const spot = entry.spot || null;
-  const contentHtml =
+  const rawContentHtml =
     entry.contentHtml ||
     (spot ? `<p>${escapeHtmlText(spot.replace(/…$/, "").trim())}</p>` : null);
+  // Editör sitelerinde gövde içi NTV vb. harici <a> kaldırılır; kart tıklaması zaten site içi.
+  const contentHtml = rawContentHtml ? stripExternalAnchorsFromHtml(rawContentHtml) : null;
   const siteIdRaw = Number(incoming.searchParams.get("siteId") || 0);
   const isEditorSite = Number.isFinite(siteIdRaw) && siteIdRaw > 0;
   const payload = {
@@ -1361,7 +1402,8 @@ async function serveEdgeRssPreview(request, env, incoming) {
     feedUrl: isEditorSite ? "https://yekpare.net/haberler" : feed.url || null,
     sourceScope: isEditorSite ? "editor" : "portal",
     readCount: null,
-    originUrl: entry.href,
+    // Editör vitrininde originUrl gösterme/sızdırma — NTV’ye çıkış yolu olmasın.
+    originUrl: isEditorSite ? null : entry.href,
   };
 
   const headers = {
@@ -1406,8 +1448,8 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
             categoryId: null,
             categoryColor: "#CC0000",
             externalUrl: null,
-            rssSourceUrl: entry.href,
-            originUrl: entry.href,
+            rssSourceUrl: null,
+            originUrl: null,
             sourceSiteUrl: null,
             publishedOnSiteId: null,
             sourceSiteSlug: null,

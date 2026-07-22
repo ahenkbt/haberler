@@ -10,7 +10,7 @@ import { coercePublicHybridNewsHref, mapPublicHybridNewsLinkFields } from "@/lib
 import { fetchPortalRssPreview, mapHybridNewsToBandItem, type PortalRssPreview } from "@/hooks/useHomeHybridNews";
 import { apiRequest } from "@/lib/queryClient";
 import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
-import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import { sanitizeHtml, stripExternalAnchorsFromHtml } from "@/lib/sanitizeHtml";
 import { hmCategorySlug, hmCategorySlugCandidates } from "@/lib/hmCategorySlug";
 import {
   hmNewsItemMatchesHomeCategorySlug,
@@ -505,7 +505,7 @@ export function HmRssNewsBand({
   const inlinePreview = selectedRssPreview ?? rssFallbackPreview(selectedRssItem);
   const inlineImage = inlinePreview?.imageUrl ? vitrinImgSrc(inlinePreview.imageUrl) : "";
   const inlineHtml = inlinePreview?.contentHtml
-    ? sanitizeHtml(inlinePreview.contentHtml)
+    ? sanitizeHtml(stripExternalAnchorsFromHtml(inlinePreview.contentHtml))
     : inlinePreview?.spot
       ? sanitizeHtml(`<p>${inlinePreview.spot}</p>`)
       : "";
