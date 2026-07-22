@@ -214,16 +214,15 @@ function normalizeHmBreakingRssRows(
     });
   }
 
-  // Site içi RSS: boş liste = kaynak yok. Kutu (box) legacy kırılım feed’lerine düşmesin.
-  if (out.length === 0 && scope === "site") {
-    return out;
-  }
-
+  // Site içi RSS boşsa kutu (box) legacy satırlarına düşme — varsayılan NTV preset’lerini kullan
+  // (editör parseNewsSiteLayoutFromJson ile aynı davranış; kaydedilmemiş sitelerde akış boş kalmasın).
   if (out.length === 0) {
     const legacyMap =
-      legacyFeeds && typeof legacyFeeds === "object" && !Array.isArray(legacyFeeds)
-        ? (legacyFeeds as Record<string, unknown>)
-        : HM_DEFAULT_BREAKING_RSS_FEEDS;
+      scope === "site"
+        ? HM_DEFAULT_BREAKING_RSS_FEEDS
+        : legacyFeeds && typeof legacyFeeds === "object" && !Array.isArray(legacyFeeds)
+          ? (legacyFeeds as Record<string, unknown>)
+          : HM_DEFAULT_BREAKING_RSS_FEEDS;
 
     HM_PRESET_BREAKING_RSS_CATEGORIES.forEach((category, index) => {
       const url = normalizeRssUrl(legacyMap[category.id] ?? HM_DEFAULT_BREAKING_RSS_FEEDS[category.id]);
@@ -283,7 +282,7 @@ export async function loadPortalHybridRssFeeds(
     const boxRows = () =>
       normalizeHmBreakingRssRows(layout.hmNewsBreakingRssFeedRows, layout.hmNewsBreakingRssFeeds, id, "box", categorySlugLookup);
     const siteRows = () =>
-      // Site scope: yalnızca hmNewsSiteRssFeedRows — kutu feed’leri / legacy breaking fallback karışmaz.
+      // Site scope: hmNewsSiteRssFeedRows; boşsa varsayılan NTV preset (kutu feed’lerine düşmez).
       normalizeHmBreakingRssRows(layout.hmNewsSiteRssFeedRows, null, id, "site", categorySlugLookup);
     const portalLayoutRows = () => hmPortalRssRowsFromLayout(layout, id, categorySlugLookup);
     if (scope === "box") return mergeHmScopedRssRows(boxRows(), []);
