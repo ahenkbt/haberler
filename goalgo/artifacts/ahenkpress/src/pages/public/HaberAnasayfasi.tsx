@@ -2510,7 +2510,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const classicLatestMini = useMemo(() => {
     const pool = mergeUniqueNews(bandNewsItems, allItems, popular, sliderSide);
     const fresh = pool.filter(isHeadlineFreshEnough);
-    return sortNewsByRecency(fresh.length > 0 ? fresh : pool).slice(0, 10);
+    return sortNewsByRecency(fresh.length > 0 ? fresh : pool).slice(0, 12);
   }, [bandNewsItems, allItems, popular, sliderSide]);
   const todayHighlightMini = useMemo(
     () => sortNewsByRecency(classicLatestMini.filter(isTodayHeadlineNews)).slice(0, 6),
@@ -4459,7 +4459,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const lead = classicMainSliderItems[0];
     const classicMansetVariant = effectiveMansetVariant;
     const classicHeroLatestEnabled = resolveHmNewsClassicHeroLatestEnabled(layoutPrefs);
-    const classicTopListCount = classicMansetVariant === "magazine-grid" ? 4 : 6;
+    const classicTopListCount =
+      classicMansetVariant === "magazine-grid"
+        ? 4
+        : classicMansetVariant === "center-trio" || classicMansetVariant === "slider-side-band"
+          ? 8
+          : 6;
     const hasClassicSidebarAd = !!sidebarTopHtmlDisplay?.trim();
     const hasClassicHeroLatestList = classicHeroLatestEnabled && classicLatestMini.length > 0;
     const classicSideCount =
