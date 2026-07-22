@@ -354,10 +354,18 @@ function triggerUnderfilledRssRefresh(
 router.get("/news/world-briefs", async (req, res): Promise<void> => {
   const perFeed = Number(req.query.perFeed ?? req.query.limit ?? 0);
   const warm = String(req.query.warm ?? "1").trim() !== "0";
+  const siteIdRaw = Number(req.query.siteId ?? 0);
+  const siteId = Number.isFinite(siteIdRaw) && siteIdRaw > 0 ? Math.floor(siteIdRaw) : null;
 
   try {
-    const payload = await loadWorldBriefs({ perFeed: perFeed > 0 ? perFeed : undefined, warmCache: warm });
-    res.setHeader("Cache-Control", "public, max-age=120, stale-while-revalidate=300");
+    const payload = await loadWorldBriefs({
+      perFeed: perFeed > 0 ? perFeed : undefined,
+      warmCache: warm,
+      siteId,
+    });
+    // Edge/CDN uzun cache Kısa Kısa’yı dondurmasın.
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=180");
+    res.setHeader("CDN-Cache-Control", "public, max-age=60, stale-while-revalidate=180");
     res.json(payload);
   } catch (e: unknown) {
     res.status(500).json({
