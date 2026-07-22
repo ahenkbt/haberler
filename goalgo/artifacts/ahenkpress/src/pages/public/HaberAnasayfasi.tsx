@@ -645,7 +645,7 @@ function HeroSlider({
     <div className="space-y-2">
     <div
       className="hm-vitrin-hero relative overflow-hidden rounded-xl"
-      style={{ aspectRatio, ...slider.swipeStyle }}
+      style={{ aspectRatio, minHeight: 220, ...slider.swipeStyle }}
       {...slider.bind}
     >
       {/* Active slide only — opacity stacking breaks under .hm-vitrin-home { opacity: 1 !important } */}
@@ -2503,7 +2503,17 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           limit: HM_HOME_HEADLINE_SLIDER_LIMIT,
         });
       }
-      return tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
+      const withoutTepe = tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
+      if (withoutTepe.length > 0) return withoutTepe;
+      // Tepe manşet tüm adayları aldıysa orta (2.) manşet boş kalmasın — son haberlerden doldur.
+      if (tepeMansetActive) {
+        const fallback = excludeHeadlineSliderItems(
+          sortNewsByRecency(mergeUniqueNews(latestNewsPool, allItems, classicHeadlinePool, bandNewsItems)),
+          tepeMansetItems,
+        );
+        if (fallback.length > 0) return fallback.slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
+      }
+      return withoutTepe;
     },
     [siteId, centerMansetSliderItems, sliderNews, classicHeadlinePool, latestNewsPool, allItems, bandNewsItems, popular, tepeMansetActive, tepeMansetItems],
   );
@@ -4185,7 +4195,80 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     );
     const hasEsenLeadPackContent =
       esenLeadPackEnabled && (leadPackColumns.left.length > 0 || leadPackColumns.right.length > 0);
-    const hasEsenContent = hasEsenLeadPackContent || classicHeadlinePool.length > 0;
+    const hasEsenContent = hasEsenLeadPackContent || classicHeadlinePool.length > 0 || classicHeadlineSliderItems.length > 0;
+
+    /** Gül (esen) orta manşet: center-trio HeroSlider yerine sabit min-yükseklikli esen hero grid. */
+    const renderEsenHeroManset = () => {
+      const slides = classicHeadlineSliderItems;
+      if (slides.length === 0) {
+        if (homeNewsBootstrapping) {
+          return <HmNewsModuleSkeleton title="Manşet" className="!mb-6" moduleId="hero" />;
+        }
+        return null;
+      }
+      const esenSidePoolRaw = sortNewsByRecency(
+        mergeUniqueNews(
+          sliderSide,
+          latestNewsPool,
+          allItems,
+          bandNewsItems,
+          popular,
+          classicLatestMini,
+          siteId != null ? breaking : [],
+        ).filter(isHeadlineFreshEnough),
+      );
+      const esenSidePool = tepeMansetActive
+        ? excludeHeadlineSliderItems(esenSidePoolRaw, tepeMansetItems)
+        : esenSidePoolRaw;
+      const sideItems = pickHeroSideHeadlines({
+        pool: esenSidePool,
+        widenPools: [moduleSectionSourcePool, latestNewsPool, popular, classicLatestMini],
+        sliderItems: slides,
+        sideCount: 3,
+        dedupe: homeNewsDedupe,
+        resolve: resolveCenterTrioSideHeadlines,
+      });
+      const left = sideItems[0] ?? null;
+      const right = sideItems.slice(1, 3);
+      const sideLoading = latestPending || latestBandPending;
+      return (
+        <section
+          className="hm-esen-hero-grid"
+          data-manset-variant="center-trio"
+          data-hm-home-module="hero"
+          aria-label="Manşet"
+        >
+          <div className="hm-esen-hero-side hm-esen-hero-side--left">
+            {left ? (
+              <ClassicFeatureCard n={left} accent={accent} hmCategoryColors={hmCat} large />
+            ) : sideLoading ? (
+              <ClassicSideHeadlineSkeleton large />
+            ) : null}
+          </div>
+          <div className="hm-esen-main-headline min-w-0">
+            <ClassicMainHeadlineSlider
+              items={slides}
+              accent={accent}
+              hmCategoryColors={hmCat}
+              tabsClassName="hm-esen-number-tabs"
+              maxTabs={HM_HOME_HEADLINE_SLIDER_LIMIT}
+              className="hm-esen-main-headline-inner"
+            />
+          </div>
+          <div className="hm-esen-hero-side hm-esen-hero-side--right">
+            {right.map((n, index) => (
+              <ClassicFeatureCard key={n.id ?? n.slug ?? index} n={n} accent={accent} hmCategoryColors={hmCat} />
+            ))}
+            {sideLoading
+              ? Array.from({ length: Math.max(0, 2 - right.length) }, (_, index) => (
+                  <ClassicSideHeadlineSkeleton key={`esen-side-sk-${index}`} />
+                ))
+              : null}
+          </div>
+        </section>
+      );
+    };
+
     return (
       <div
         className="hm-vitrin-home hm-esen-home min-h-screen"
@@ -4213,7 +4296,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           {hasEsenContent ? (
             <>
               {renderSafeNewsHomeModule("tepeManset")}
-              {renderNewsHomeModule("hero")}
+              {renderEsenHeroManset()}
 
               {newsAuthorsStripModuleEnabled && newsHorizontalAuthorsEnabled && authors.length > 0 ? (
                 <section className="hm-esen-authors-band">
