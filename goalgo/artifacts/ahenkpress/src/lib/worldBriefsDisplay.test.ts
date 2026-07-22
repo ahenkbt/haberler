@@ -26,23 +26,28 @@ describe("worldBriefsDisplay", () => {
     expect(isWorldBriefInternalRssPreviewPath("/kisa-kisa")).toBe(false);
   });
 
-  it("prefers external RSS source URLs", () => {
+  it("routes edge RSS cards to in-site preview", () => {
     expect(
-      resolveWorldBriefHref(h, brief({ id: "x", href: "https://www.bbc.com/news/world-123" })),
-    ).toBe("https://www.bbc.com/news/world-123");
+      resolveWorldBriefHref(
+        h,
+        brief({ id: "edge-abc123", href: "/haberler/rss/edge-abc123" }),
+      ),
+    ).toBe("/asg/haberler/rss/edge-abc123?siteId=3");
   });
 
-  it("never routes world brief cards to internal rss preview pages", () => {
-    expect(resolveWorldBriefHref(h, brief({ id: "x", href: "/haberler/rss/9e079fb7173949ca" }))).toBe(
-      "/asg/kisa-kisa?siteId=3",
-    );
+  it("does not open external publisher URLs from world briefs", () => {
+    expect(
+      resolveWorldBriefHref(h, brief({ id: "x", href: "https://www.ntv.com.tr/dunya/foo-123" })),
+    ).toBe("/asg/kisa-kisa?siteId=3");
   });
 
   it("falls back to kisa-kisa when href is empty", () => {
     expect(resolveWorldBriefHref(h, brief({ id: "x", href: "" }))).toBe("/asg/kisa-kisa?siteId=3");
   });
 
-  it("preserves safe internal paths", () => {
-    expect(resolveWorldBriefHref(h, brief({ id: "x", href: "/kisa-kisa" }))).toBe("/asg/kisa-kisa?siteId=3");
+  it("preserves safe internal article paths", () => {
+    expect(resolveWorldBriefHref(h, brief({ id: "db:1", href: "/haber/foo" }))).toBe(
+      "/asg/haber/foo?siteId=3",
+    );
   });
 });

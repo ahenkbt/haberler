@@ -1,15 +1,31 @@
 import type { WorldBriefContinentGroup, WorldBriefItem } from "@/hooks/useWorldBriefs";
-import { isExternalNewsHref } from "@/lib/hybridNewsHref";
+import { isExternalNewsHref, portalRssPreviewPath } from "@/lib/hybridNewsHref";
 
 export function isWorldBriefInternalRssPreviewPath(href: string): boolean {
   return /\/haberler\/rss\//i.test(String(href ?? "").trim());
 }
 
-/** RSS-only world brief cards — external source or `/kisa-kisa`, never `/haberler/rss/`. */
+/**
+ * Dünyadan Kısa Kısa kartları — Site içi RSS önizlemesi (`/haberler/rss/...`).
+ * Harici NTV vb. kaynaklara doğrudan çıkılmaz.
+ */
 export function resolveWorldBriefHref(h: (path: string) => string, item: WorldBriefItem): string {
   const raw = String(item.href ?? "").trim();
-  if (raw && isExternalNewsHref(raw)) return raw;
-  if (raw.startsWith("/") && !isWorldBriefInternalRssPreviewPath(raw)) return h(raw);
+  const id = String(item.id ?? "").trim();
+
+  if (isWorldBriefInternalRssPreviewPath(raw)) {
+    return h(raw.startsWith("/") ? raw : `/${raw}`);
+  }
+  if (id.startsWith("edge-") || id.startsWith("rss:edge-")) {
+    const edgeId = id.startsWith("rss:") ? id.slice(4) : id;
+    return h(portalRssPreviewPath(edgeId));
+  }
+  if (raw.startsWith("/") && !isExternalNewsHref(raw)) return h(raw);
+  // Eski harici href / ntv: id — site içi önizlemeye zorla (mümkünse edge id yoksa listeye dön)
+  if (id && !id.startsWith("db:")) {
+    const rssId = id.startsWith("rss:") ? id.slice(4) : id.replace(/^ntv:/, "edge-");
+    if (rssId.startsWith("edge-")) return h(portalRssPreviewPath(rssId));
+  }
   return h("/kisa-kisa");
 }
 

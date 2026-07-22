@@ -1667,17 +1667,18 @@ export default function EditorVitrinAyarlari() {
               Site-içi RSS entegrasyon modu
             </Label>
             <p className="text-xs text-slate-500">
-              Kutu içi RSS her zaman anlık/canlıdır (DB yok). Site-içi RSS kaynakları seçilen moda göre davranır; kalıcı
-              ve manuel modlarda 6 ay saklama cron temizliği uygulanır.
+              Kutu içi RSS her zaman anlık/canlıdır (DB yok). Site-içi RSS kaynakları seçilen moda göre davranır;
+              haberler site içinde açılır (NTV vb. dışarı atılmaz). Kalıcı ve manuel modlarda 6 ay saklama cron
+              temizliği uygulanır.
             </p>
             <Select value={rssIntegrationMode} onValueChange={(v) => setRssIntegrationMode(v as HmRssIntegrationMode)} disabled={saving}>
               <SelectTrigger id="hm-rss-integration-mode" className="max-w-md">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="live">Anlık Gösterim — ziyaret tetiklemeli, DB yok</SelectItem>
-                <SelectItem value="persistent">Kalıcı Haber Motoru — otomatik DB, 6 ay</SelectItem>
-                <SelectItem value="manual">Manuel — yalnızca «Güncelle» ile DB, 6 ay</SelectItem>
+                <SelectItem value="live">Anlık Gösterim — ziyaret tetiklemeli, site içi önizleme</SelectItem>
+                <SelectItem value="persistent">Kalıcı Haber Motoru — otomatik DB yayın, 6 ay</SelectItem>
+                <SelectItem value="manual">Manuel — yalnızca «Güncelle» ile DB yayın, 6 ay</SelectItem>
               </SelectContent>
             </Select>
             {rssIntegrationMode === "manual" ? (

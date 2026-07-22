@@ -993,17 +993,35 @@ function isTurkishWorldBriefTitle(title) {
   return /[ğüşıöçĞÜŞİÖÇ]/.test(t) || /\b(ve|bir|için|ile|bu|da|de|haber|türkiye)\b/i.test(t);
 }
 
+function hashRssEdgeId(link) {
+  const s = String(link || "");
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `edge-${(h >>> 0).toString(16)}`;
+}
+
+function escapeHtmlText(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function parseNtvDunyaAtom(xml, limit = 24) {
   const entries = String(xml || "").match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
   const out = [];
   for (const entry of entries) {
     const title = xmlTag(entry, "title");
     if (!isTurkishWorldBriefTitle(title)) continue;
-    const href =
+    const sourceUrl =
       xmlAttr(entry, "link", "href") ||
       xmlTag(entry, "id") ||
       "";
-    if (!href) continue;
+    if (!/^https?:\/\//i.test(sourceUrl)) continue;
     const published =
       xmlTag(entry, "published") ||
       xmlTag(entry, "updated") ||
@@ -1013,12 +1031,12 @@ function parseNtvDunyaAtom(xml, limit = 24) {
       xmlAttr(entry, "media:thumbnail", "url") ||
       xmlAttr(entry, "media:content", "url") ||
       null;
-    const idMatch = href.match(/(\d+)(?:\/)?$/);
+    const edgeId = hashRssEdgeId(sourceUrl);
     out.push({
-      id: idMatch ? `ntv:${idMatch[1]}` : `ntv:${out.length + 1}`,
+      id: edgeId,
       title,
       spot,
-      href,
+      href: `/haberler/rss/${encodeURIComponent(edgeId)}`,
       publishedAt: new Date(published).toISOString(),
       sourceName: "Dünya",
       feedLabel: "Dünya",
@@ -1026,6 +1044,7 @@ function parseNtvDunyaAtom(xml, limit = 24) {
       countryName: null,
       continent: "global",
       imageUrl,
+      originUrl: sourceUrl,
     });
     if (out.length >= limit) break;
   }
@@ -1066,7 +1085,7 @@ async function serveWorldBriefsEdge(request, env, incoming) {
   const items = [];
   const push = (item) => {
     if (!item?.title || !item?.href) return;
-    const key = String(item.href).trim().toLowerCase();
+    const key = String(item.originUrl || item.href).trim().toLowerCase();
     if (!key || seen.has(key)) return;
     seen.add(key);
     items.push(item);
@@ -1166,16 +1185,6 @@ function slugifyCategoryKey(raw) {
     .slice(0, 48);
 }
 
-function hashRssEdgeId(link) {
-  const s = String(link || "");
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i += 1) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return `edge-${(h >>> 0).toString(16)}`;
-}
-
 function parseFeedEntries(xml, limit = 6) {
   const atom = String(xml || "").match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
   const rss = String(xml || "").match(/<item\b[\s\S]*?<\/item>/gi) || [];
@@ -1198,6 +1207,10 @@ function parseFeedEntries(xml, limit = 6) {
       xmlTag(block, "dc:date") ||
       new Date().toISOString();
     const spot = xmlTag(block, "summary") || xmlTag(block, "description") || null;
+    const contentEncoded =
+      xmlTag(block, "content:encoded") ||
+      xmlTag(block, "content") ||
+      null;
     const imageUrl =
       xmlAttr(block, "media:thumbnail", "url") ||
       xmlAttr(block, "media:content", "url") ||
@@ -1205,7 +1218,7 @@ function parseFeedEntries(xml, limit = 6) {
       null;
     let publishedAt = new Date(published).toISOString();
     if (Number.isNaN(Date.parse(publishedAt))) publishedAt = new Date().toISOString();
-    out.push({ title, href, publishedAt, spot, imageUrl });
+    out.push({ title, href, publishedAt, spot, contentHtml: contentEncoded, imageUrl });
     if (out.length >= limit) break;
   }
   return out;
@@ -1233,13 +1246,17 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
       },
       cf: { cacheTtl: 120, cacheEverything: true },
     });
-    if (!metaRes.ok) return { enabled: true, feeds: DEFAULT_SITE_RSS_FEEDS };
+    if (!metaRes.ok) return { enabled: true, mode: "live", feeds: DEFAULT_SITE_RSS_FEEDS };
     const meta = await metaRes.json().catch(() => null);
     const layout = meta?.layout && typeof meta.layout === "object" ? meta.layout : {};
-    if (siteId != null && meta?.id != null && Number(meta.id) !== Number(siteId)) {
-      /* domain mismatch — still use layout if hybrid on */
-    }
     const enabled = layout.hybridRssEnabled === true;
+    const modeRaw = String(layout.hmRssIntegrationMode || "live").trim().toLowerCase();
+    const mode =
+      modeRaw === "persistent" || modeRaw === "kalici" || modeRaw === "kalıcı"
+        ? "persistent"
+        : modeRaw === "manual" || modeRaw === "manuel"
+          ? "manual"
+          : "live";
     const rows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
     const feeds = rows
       .map((row) => ({
@@ -1250,11 +1267,112 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
       .filter((row) => /^https?:\/\//i.test(row.url));
     return {
       enabled,
+      mode,
       feeds: feeds.length ? feeds : enabled ? DEFAULT_SITE_RSS_FEEDS : [],
     };
   } catch {
-    return { enabled: true, feeds: DEFAULT_SITE_RSS_FEEDS };
+    return { enabled: true, mode: "live", feeds: DEFAULT_SITE_RSS_FEEDS };
   }
+}
+
+async function findEdgeRssEntryById(itemId, origin, incoming) {
+  const raw = decodeURIComponent(String(itemId || "").trim());
+  const id = raw.startsWith("rss:") ? raw.slice(4) : raw;
+  if (!id.startsWith("edge-")) return null;
+
+  const meta = await loadSiteRssFeedRowsFromMeta(origin, incoming, null);
+  const feeds = [
+    ...(meta.feeds || []),
+    { id: "dunya", label: "Dünya", url: NTV_DUNYA_RSS_URL },
+  ];
+  const seenUrls = new Set();
+  for (const feed of feeds) {
+    const url = String(feed.url || "").trim();
+    if (!url || seenUrls.has(url)) continue;
+    seenUrls.add(url);
+    try {
+      const res = await fetch(url, {
+        headers: {
+          accept: "application/atom+xml, application/rss+xml, application/xml, text/xml, */*",
+          "user-agent": "YekpareSiteRssEdge/1.0",
+        },
+        cf: { cacheTtl: 180, cacheEverything: true },
+      });
+      if (!res.ok) continue;
+      const entries = parseFeedEntries(await res.text(), 40);
+      for (const entry of entries) {
+        if (hashRssEdgeId(entry.href) === id) {
+          return { entry, feed, mode: meta.mode || "live" };
+        }
+      }
+    } catch {
+      /* next feed */
+    }
+  }
+  return null;
+}
+
+/**
+ * Edge RSS detay — `/haberler/rss/edge-*` site içi önizleme (NTV’ye dışarı atmaz).
+ * Anlık modda feed içeriği; kalıcı/manuel için de önce site içi gövde gösterilir.
+ */
+async function serveEdgeRssPreview(request, env, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const m = incoming.pathname.match(/^\/api\/news\/hybrid\/rss\/([^/]+)\/?$/i);
+  if (!m) return null;
+  const itemId = decodeURIComponent(m[1] || "").trim();
+  const edgeKey = itemId.startsWith("rss:") ? itemId.slice(4) : itemId;
+  if (!edgeKey.startsWith("edge-")) return null;
+
+  const origin = upstreamOrigin(env);
+  const found = await findEdgeRssEntryById(itemId, origin, incoming);
+  if (!found) {
+    return new Response(JSON.stringify({ error: "RSS haber bulunamadı" }), {
+      status: 404,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-yekpare-frontend": "cloudflare-site-rss-edge",
+      },
+    });
+  }
+
+  const { entry, feed } = found;
+  const spot = entry.spot || null;
+  const contentHtml =
+    entry.contentHtml ||
+    (spot ? `<p>${escapeHtmlText(spot.replace(/…$/, "").trim())}</p>` : null);
+  const siteIdRaw = Number(incoming.searchParams.get("siteId") || 0);
+  const isEditorSite = Number.isFinite(siteIdRaw) && siteIdRaw > 0;
+  const payload = {
+    id: edgeKey,
+    title: entry.title,
+    spot,
+    contentHtml,
+    imageUrl: entry.imageUrl || null,
+    href: `/haberler/rss/${encodeURIComponent(edgeKey)}`,
+    publishedAt: entry.publishedAt,
+    categorySlug: slugifyCategoryKey(feed.id || feed.label) || "dunya",
+    categoryName: feed.label || "Dünya",
+    categoryColor: "#CC0000",
+    feedId: `edge-site-${slugifyCategoryKey(feed.id || feed.label) || "dunya"}`,
+    feedLabel: feed.label || "Dünya",
+    sourceName: isEditorSite ? "Yekpare Haberleri" : feed.label || "RSS",
+    feedUrl: isEditorSite ? "https://yekpare.net/haberler" : feed.url || null,
+    sourceScope: isEditorSite ? "editor" : "portal",
+    readCount: null,
+    originUrl: entry.href,
+  };
+
+  const headers = {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "public, max-age=60, s-maxage=60, stale-while-revalidate=180",
+    "cdn-cache-control": "public, max-age=60",
+    "x-yekpare-frontend": "cloudflare-site-rss-edge",
+    "x-yekpare-rss-preview": "edge",
+  };
+  if (request.method === "HEAD") return new Response(null, { status: 200, headers });
+  return new Response(JSON.stringify(payload), { status: 200, headers });
 }
 
 async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
@@ -1430,6 +1548,9 @@ export default {
 
     const worldBriefs = await serveWorldBriefsEdge(request, env, incoming);
     if (worldBriefs) return worldBriefs;
+
+    const edgeRssPreview = await serveEdgeRssPreview(request, env, incoming);
+    if (edgeRssPreview) return edgeRssPreview;
 
     const fromAssets = await tryServeAssets(request, env, incoming);
     if (fromAssets) return fromAssets;
