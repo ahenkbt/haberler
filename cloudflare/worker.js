@@ -1151,6 +1151,252 @@ async function serveWorldBriefsEdge(request, env, incoming) {
   return new Response(JSON.stringify(payload), { status: 200, headers });
 }
 
+function slugifyCategoryKey(raw) {
+  return String(raw || "")
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function hashRssEdgeId(link) {
+  const s = String(link || "");
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `edge-${(h >>> 0).toString(16)}`;
+}
+
+function parseFeedEntries(xml, limit = 6) {
+  const atom = String(xml || "").match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
+  const rss = String(xml || "").match(/<item\b[\s\S]*?<\/item>/gi) || [];
+  const blocks = atom.length ? atom : rss;
+  const out = [];
+  for (const block of blocks) {
+    const title = xmlTag(block, "title");
+    if (!title) continue;
+    const href =
+      xmlAttr(block, "link", "href") ||
+      xmlTag(block, "link") ||
+      xmlTag(block, "guid") ||
+      xmlTag(block, "id") ||
+      "";
+    if (!/^https?:\/\//i.test(href)) continue;
+    const published =
+      xmlTag(block, "published") ||
+      xmlTag(block, "updated") ||
+      xmlTag(block, "pubDate") ||
+      xmlTag(block, "dc:date") ||
+      new Date().toISOString();
+    const spot = xmlTag(block, "summary") || xmlTag(block, "description") || null;
+    const imageUrl =
+      xmlAttr(block, "media:thumbnail", "url") ||
+      xmlAttr(block, "media:content", "url") ||
+      xmlAttr(block, "enclosure", "url") ||
+      null;
+    let publishedAt = new Date(published).toISOString();
+    if (Number.isNaN(Date.parse(publishedAt))) publishedAt = new Date().toISOString();
+    out.push({ title, href, publishedAt, spot, imageUrl });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+const DEFAULT_SITE_RSS_FEEDS = [
+  { id: "turkiye", label: "Türkiye", url: "https://www.ntv.com.tr/turkiye.rss" },
+  { id: "dunya", label: "Dünya", url: "https://www.ntv.com.tr/dunya.rss" },
+  { id: "ekonomi", label: "Ekonomi", url: "https://www.ntv.com.tr/ekonomi.rss" },
+  { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
+  { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
+  { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
+];
+
+async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
+  const host = normalizeHost(incoming.hostname);
+  try {
+    const metaUrl = new URL("/api/hm/meta/by-domain", origin);
+    metaUrl.searchParams.set("domain", host);
+    const metaRes = await fetch(metaUrl.toString(), {
+      headers: {
+        accept: "application/json",
+        "x-forwarded-host": incoming.host,
+        "x-forwarded-proto": "https",
+      },
+      cf: { cacheTtl: 120, cacheEverything: true },
+    });
+    if (!metaRes.ok) return { enabled: true, feeds: DEFAULT_SITE_RSS_FEEDS };
+    const meta = await metaRes.json().catch(() => null);
+    const layout = meta?.layout && typeof meta.layout === "object" ? meta.layout : {};
+    if (siteId != null && meta?.id != null && Number(meta.id) !== Number(siteId)) {
+      /* domain mismatch — still use layout if hybrid on */
+    }
+    const enabled = layout.hybridRssEnabled === true;
+    const rows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
+    const feeds = rows
+      .map((row) => ({
+        id: String(row?.id || row?.categoryKey || "").trim() || slugifyCategoryKey(row?.label),
+        label: String(row?.label || row?.id || "RSS").trim() || "RSS",
+        url: String(row?.url || "").trim(),
+      }))
+      .filter((row) => /^https?:\/\//i.test(row.url));
+    return {
+      enabled,
+      feeds: feeds.length ? feeds : enabled ? DEFAULT_SITE_RSS_FEEDS : [],
+    };
+  } catch {
+    return { enabled: true, feeds: DEFAULT_SITE_RSS_FEEDS };
+  }
+}
+
+async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
+  const selected = (feeds || []).filter((f) => f.url).slice(0, 8);
+  const bags = await Promise.all(
+    selected.map(async (feed) => {
+      try {
+        const res = await fetch(feed.url, {
+          headers: {
+            accept: "application/atom+xml, application/rss+xml, application/xml, text/xml, */*",
+            "user-agent": "YekpareSiteRssEdge/1.0",
+          },
+          cf: { cacheTtl: 180, cacheEverything: true },
+        });
+        if (!res.ok) return [];
+        const entries = parseFeedEntries(await res.text(), perFeed);
+        const categorySlug = slugifyCategoryKey(feed.id || feed.label) || "gundem";
+        return entries.map((entry) => {
+          const edgeId = hashRssEdgeId(entry.href);
+          return {
+            id: `rss:${edgeId}`,
+            source: "rss",
+            title: entry.title,
+            slug: null,
+            href: `/haberler/rss/${encodeURIComponent(edgeId)}`,
+            spot: entry.spot,
+            content: null,
+            imageUrl: entry.imageUrl,
+            categorySlug,
+            categoryName: feed.label || categorySlug,
+            categoryId: null,
+            categoryColor: "#CC0000",
+            externalUrl: null,
+            rssSourceUrl: entry.href,
+            originUrl: entry.href,
+            sourceSiteUrl: null,
+            publishedOnSiteId: null,
+            sourceSiteSlug: null,
+            publishedAt: entry.publishedAt,
+            feedId: `edge-site-${categorySlug}`,
+            feedLabel: feed.label || categorySlug,
+            authorName: feed.label || categorySlug,
+            isFeatured: false,
+            isBreaking: false,
+            views: 0,
+            isEditorManual: false,
+            hmSyncKind: null,
+            contentKind: "news",
+            authorId: null,
+          };
+        });
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return bags.flat();
+}
+
+/**
+ * Site içi RSS açıkken Render cache boş kalırsa Cloudflare edge NTV/site feed’lerini doldurur.
+ */
+async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, outHeaders) {
+  if (request.method !== "GET") return null;
+  if (incoming.pathname !== "/api/news/hybrid") return null;
+  const siteIdRaw = Number(incoming.searchParams.get("siteId") || 0);
+  const siteId = Number.isFinite(siteIdRaw) && siteIdRaw > 0 ? Math.floor(siteIdRaw) : null;
+  if (siteId == null) return null;
+  const rssScope = String(incoming.searchParams.get("rssScope") || "all").trim().toLowerCase();
+  if (rssScope === "box") return null;
+
+  const ct = String(outHeaders.get("content-type") || upstream.headers.get("content-type") || "").toLowerCase();
+  if (!ct.includes("application/json")) return null;
+
+  let payload;
+  try {
+    payload = await upstream.clone().json();
+  } catch {
+    return null;
+  }
+  if (!payload || typeof payload !== "object") return null;
+  const sources = payload.sources && typeof payload.sources === "object" ? payload.sources : {};
+  const rssCount = Number(sources.rss || 0);
+  if (payload.hybridRssEnabled === false) return null;
+  if (rssCount > 0) return null;
+
+  const origin = upstreamOrigin(env);
+  const { enabled, feeds } = await loadSiteRssFeedRowsFromMeta(origin, incoming, siteId);
+  if (!enabled && payload.hybridRssEnabled !== true) return null;
+  if (!feeds.length) return null;
+
+  const limit = Math.min(Math.max(Number(payload.limit || incoming.searchParams.get("limit") || 40) || 40, 1), 200);
+  const rssItems = await fetchSiteRssHybridItems(feeds, 4);
+  if (!rssItems.length) return null;
+
+  const existing = Array.isArray(payload.items) ? payload.items : [];
+  const seen = new Set(
+    existing.map((item) => String(item?.rssSourceUrl || item?.originUrl || item?.href || item?.id || "").trim().toLowerCase()).filter(Boolean),
+  );
+  const mergedRss = [];
+  for (const item of rssItems) {
+    const key = String(item.rssSourceUrl || item.href || "").trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    mergedRss.push(item);
+  }
+  if (!mergedRss.length) return null;
+
+  const categorySlug = String(incoming.searchParams.get("categorySlug") || "").trim().toLowerCase();
+  const filteredRss = categorySlug
+    ? mergedRss.filter((item) => {
+        const slug = String(item.categorySlug || "").toLowerCase();
+        return slug === categorySlug || slug.endsWith(`-${categorySlug}`) || categorySlug.endsWith(`-${slug}`);
+      })
+    : mergedRss;
+
+  const combined = [...existing, ...filteredRss].sort(
+    (a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime(),
+  );
+  const offset = Math.max(Number(payload.offset || 0) || 0, 0);
+  const page = combined.slice(offset, offset + limit);
+
+  const next = {
+    ...payload,
+    items: page,
+    total: page.length,
+    hybridRssEnabled: true,
+    sources: {
+      db: Number(sources.db || existing.filter((i) => i?.source !== "rss").length || 0),
+      rss: filteredRss.length,
+    },
+  };
+
+  outHeaders.set("content-type", "application/json; charset=utf-8");
+  outHeaders.set("cache-control", "public, max-age=60, s-maxage=60, stale-while-revalidate=180");
+  outHeaders.set("cdn-cache-control", "public, max-age=60, stale-while-revalidate=180");
+  outHeaders.set("x-yekpare-frontend", "cloudflare-site-rss-edge");
+  outHeaders.set("x-yekpare-site-rss", "edge-fill");
+  outHeaders.delete("content-length");
+  return new Response(JSON.stringify(next), { status: upstream.status, headers: outHeaders });
+}
+
 export default {
   async fetch(request, env) {
     const incoming = new URL(request.url);
@@ -1237,6 +1483,9 @@ export default {
       } else {
         out.set("cdn-cache-control", "no-store");
       }
+
+      const siteRssEnriched = await enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out);
+      if (siteRssEnriched) return siteRssEnriched;
 
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {
