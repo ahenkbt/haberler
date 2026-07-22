@@ -249,11 +249,14 @@ function saveSession(req: Request): Promise<void> {
 router.post("/admin-panel-session", async (req, res): Promise<void> => {
   try {
     const { username, password } = req.body as { username?: string; password?: string };
-    if (!username?.trim() || !password) {
+    const user = String(username ?? "").trim().replace(/^\uFEFF/, "");
+    // Yapıştırma / autofill sondaki boşluk veya satır sonunu sık kırar.
+    const pass = String(password ?? "").replace(/^\uFEFF/, "").replace(/[\r\n]+$/g, "");
+    if (!user || !pass) {
       res.status(400).json({ success: false, error: "Kullanıcı adı ve şifre gerekli." });
       return;
     }
-    const login = await resolvePanelLogin(username, password);
+    const login = await resolvePanelLogin(user, pass);
     if (!login) {
       res.status(401).json({
         success: false,
