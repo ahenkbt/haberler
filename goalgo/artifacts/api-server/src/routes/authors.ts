@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   authorsTable,
   dualWriteDelete,
@@ -26,6 +26,7 @@ import {
   parseHmLayoutJson,
   resolveHmCorporateAuthorsEnabledFromLayout,
 } from "../lib/hm-editor-categories.js";
+import { shouldHideAuthorOnAnkaraHmSite } from "../lib/hm-vatanhaber-author-block.js";
 
 const router: IRouter = Router();
 const newsReadDb = () => getNewsDbForRead();
@@ -113,6 +114,20 @@ router.get("/authors/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Yazar bu haber sitesine ait değil veya siteId gerekli" });
     return;
   }
+  if (hmSiteId != null) {
+    const site = await getHmNewsSiteByIdCompat(hmSiteId);
+    if (
+      shouldHideAuthorOnAnkaraHmSite({
+        siteSlug: site?.slug,
+        siteDomain: site?.domain,
+        authorName: author.name,
+        authorTitle: author.title,
+      })
+    ) {
+      res.status(404).json({ error: "Yazar bulunamadı" });
+      return;
+    }
+  }
   if (hmSiteId == null && author.hmSiteId == null) {
     const portalPeers = await newsReadDb()
       .select({ id: authorsTable.id, name: authorsTable.name })
@@ -174,62 +189,26 @@ router.get("/authors", async (req, res): Promise<void> => {
       return;
     }
     await ensureAuthorsSortOrderColumn();
-    const fromMak = await newsReadDb()
-      .selectDistinct({ authorId: hmMakalelerTable.authorId })
-      .from(hmMakalelerTable)
-      .where(
-        and(
-          eq(hmMakalelerTable.siteId, hmSiteId),
-          eq(hmMakalelerTable.status, "published"),
-          isNotNull(hmMakalelerTable.authorId),
-        ),
-      );
-    const idSet = new Set<number>();
-    for (const r of fromMak) {
-      if (typeof r.authorId === "number") idSet.add(r.authorId);
-    }
-    const owned = await newsReadDb()
-      .select({ id: authorsTable.id })
+    // Yalnızca bu siteye ait yazarlar — başka HM sitelerinden (ör. vatanhaber) otomatik
+    // backfill / sızıntı yok. Havuzdan bilinçli ekleme local kopya oluşturur.
+    const ownedRows = await newsReadDb()
+      .select()
       .from(authorsTable)
-      .where(eq(authorsTable.hmSiteId, hmSiteId));
-    for (const r of owned) idSet.add(r.id);
-    if (idSet.size === 0) {
-      if (isHmCorporateLayout(layout)) {
-        res.json([]);
-        return;
-      }
-      const fallbackAuthors = await newsReadDb()
-        .selectDistinct({ authorId: hmMakalelerTable.authorId })
-        .from(hmMakalelerTable)
-        .where(
-          and(
-            eq(hmMakalelerTable.status, "published"),
-            isNotNull(hmMakalelerTable.authorId),
-            sql`${hmMakalelerTable.siteId} <> ${hmSiteId}`,
-          ),
-        )
-        .limit(24);
-      const fallbackIds = fallbackAuthors
-        .map((r) => r.authorId)
-        .filter((id): id is number => typeof id === "number" && Number.isFinite(id) && id > 0);
-      if (fallbackIds.length > 0) {
-        // DB-first: bu yazarları hemen göster; makalelerini bu siteye kopyalama işini
-        // arka planda yürüt (senkron dağıtım ilk açılışı >3s bloke ediyordu).
-        void distributeAuthorArticlesToHmSites(fallbackIds, [hmSiteId]).catch((err) =>
-          console.warn("[authors-hm-backfill]", err instanceof Error ? err.message : err),
-        );
-        for (const id of fallbackIds) idSet.add(id);
-      }
-    }
-    if (idSet.size === 0) {
+      .where(eq(authorsTable.hmSiteId, hmSiteId))
+      .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
+    const rows = ownedRows.filter(
+      (r) =>
+        !shouldHideAuthorOnAnkaraHmSite({
+          siteSlug: site?.slug,
+          siteDomain: site?.domain,
+          authorName: r.name,
+          authorTitle: r.title,
+        }),
+    );
+    if (rows.length === 0) {
       res.json([]);
       return;
     }
-    const rows = await newsReadDb()
-      .select()
-      .from(authorsTable)
-      .where(inArray(authorsTable.id, [...idSet]))
-      .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
     const ids = rows.map((r) => r.id);
     const countMap = new Map<number, number>();
     const latestMap = new Map<number, { id: number; title: string; slug: string }>();
@@ -486,7 +465,9 @@ router.post("/authors/bulk-distribute", async (req, res): Promise<void> => {
       res.status(400).json({ error: "syncArticlesOnly için targetHmSiteIds gerekli" });
       return;
     }
-    const articleStats = await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds);
+    const articleStats = await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds, {
+      explicitAdminAction: true,
+    });
     res.json({ ok: true, created: 0, skipped: 0, ...articleStats, syncArticlesOnly: true });
     return;
   }
@@ -555,7 +536,7 @@ router.post("/authors/bulk-distribute", async (req, res): Promise<void> => {
 
   const articleStats =
     targetHmSiteIds.length > 0
-      ? await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds)
+      ? await distributeAuthorArticlesToHmSites(authorIds, targetHmSiteIds, { explicitAdminAction: true })
       : { articlesAdded: 0, articlesSkipped: 0 };
 
   res.json({ ok: true, created, skipped, ...articleStats });

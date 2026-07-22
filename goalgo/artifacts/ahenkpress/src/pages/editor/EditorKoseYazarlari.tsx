@@ -49,6 +49,7 @@ export default function EditorKoseYazarlari() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [selectedAuthorIds, setSelectedAuthorIds] = useState<number[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deletingAuthorId, setDeletingAuthorId] = useState<number | null>(null);
   const [poolQuery, setPoolQuery] = useState("");
   const [poolAddingId, setPoolAddingId] = useState<number | null>(null);
   const [ordering, setOrdering] = useState(false);
@@ -126,24 +127,55 @@ export default function EditorKoseYazarlari() {
     });
   };
 
-  const bulkDeleteAuthors = async () => {
-    const ids = selectedAuthorIds.filter((id) => visibleAuthorIds.includes(id));
+  const deleteAuthorsByIds = async (ids: number[]) => {
     if (ids.length === 0) return;
-    if (!confirm(`${ids.length} köşe yazarı silinsin mi? Bu yazarların mevcut yazılarındaki yazar bağlantısı kaldırılır.`)) return;
+    const label =
+      ids.length === 1
+        ? "Bu köşe yazarı siteden silinsin mi? Yazılarındaki yazar bağlantısı kaldırılır."
+        : `${ids.length} köşe yazarı siteden silinsin mi? Bu yazarların yazılarındaki yazar bağlantısı kaldırılır.`;
+    if (!confirm(label)) return;
     const t = readHmJwt();
-    if (!t) return;
+    if (!t) {
+      toast({ title: "Silinemedi", description: "Oturum bulunamadı. Yeniden giriş yapın.", variant: "destructive" });
+      return;
+    }
     setBulkDeleting(true);
+    if (ids.length === 1) setDeletingAuthorId(ids[0]!);
     try {
       const r = await fetch(apiUrl("/api/hm/editor/authors/bulk-delete"), {
         method: "POST",
         headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
         body: JSON.stringify({ ids }),
       });
-      const j = (await r.json().catch(() => ({}))) as { deleted?: number; error?: string };
-      if (!r.ok) throw new Error(j.error || "Toplu silme başarısız");
-      setSelectedAuthorIds([]);
-      await qc.invalidateQueries({ queryKey: ["/api/authors", "hm-editor", site?.id] });
-      toast({ title: "Yazarlar silindi", description: `${j.deleted ?? ids.length} kayıt silindi.` });
+      const j = (await r.json().catch(() => ({}))) as {
+        deleted?: number;
+        detached?: number;
+        error?: string;
+      };
+      if (!r.ok) {
+        // Eski API hâlâ 404 «Bu siteye ait…» dönerse kullanıcıya anlaşılır mesaj.
+        const msg = j.error || "Silme başarısız";
+        if (/siteye ait seçili yazar bulunamadı/i.test(msg)) {
+          throw new Error(
+            "Bu yazar başka siteden sızmış; silme düzeltmesi henüz canlıya alınmamış olabilir. Deploy sonrası Sil çalışır. Şimdilik sayfayı yenileyin.",
+          );
+        }
+        throw new Error(msg);
+      }
+      setSelectedAuthorIds((prev) => prev.filter((id) => !ids.includes(id)));
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["/api/authors"] }),
+        qc.invalidateQueries({ queryKey: ["/api/hm/editor/pool/authors"] }),
+      ]);
+      const deleted = j.deleted ?? 0;
+      const detached = j.detached ?? 0;
+      toast({
+        title: "Yazar siteden kaldırıldı",
+        description:
+          detached > 0 && deleted === 0
+            ? `${detached} yabancı yazar kaydı bu siteden ayrıldı.`
+            : `${deleted + detached} kayıt işlendi.`,
+      });
     } catch (err) {
       toast({
         title: "Silinemedi",
@@ -152,7 +184,13 @@ export default function EditorKoseYazarlari() {
       });
     } finally {
       setBulkDeleting(false);
+      setDeletingAuthorId(null);
     }
+  };
+
+  const bulkDeleteAuthors = async () => {
+    const ids = selectedAuthorIds.filter((id) => visibleAuthorIds.includes(id));
+    await deleteAuthorsByIds(ids);
   };
 
   const saveAuthorOrder = async (ids: number[]) => {
@@ -385,9 +423,11 @@ export default function EditorKoseYazarlari() {
           </div>
         </form>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-100 bg-red-50/60 px-3 py-2">
           <p className="text-sm font-medium text-slate-700">
-            {selectedVisibleCount > 0 ? `${selectedVisibleCount} yazar seçildi` : "Toplu işlem için yazarları işaretleyin."}
+            {selectedVisibleCount > 0
+              ? `${selectedVisibleCount} yazar seçildi — silmek için «Seçilenleri sil»e basın.`
+              : "Silmek için satırdaki «Sil»e basın veya soldan işaretleyip toplu silin."}
           </p>
           <Button
             type="button"
@@ -397,7 +437,7 @@ export default function EditorKoseYazarlari() {
             disabled={selectedVisibleCount === 0 || bulkDeleting}
             onClick={() => void bulkDeleteAuthors()}
           >
-            {bulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+            {bulkDeleting && deletingAuthorId == null ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
             Seçilenleri sil
           </Button>
         </div>
@@ -468,7 +508,7 @@ export default function EditorKoseYazarlari() {
                 <TableHead>YAZAR</TableHead>
                 <TableHead>E-POSTA</TableHead>
                 <TableHead>ÜNVAN</TableHead>
-                <TableHead className="text-right w-[100px]">İŞLEM</TableHead>
+                <TableHead className="text-right w-[180px]">İŞLEM</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -510,16 +550,33 @@ export default function EditorKoseYazarlari() {
                     <TableCell className="text-sm text-slate-600">{a.email?.trim() ? a.email : "—"}</TableCell>
                     <TableCell>{a.title || "—"}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => startEdit(a)}
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        Düzenle
-                      </Button>
+                      <div className="inline-flex items-center justify-end gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => startEdit(a)}
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          Düzenle
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 border-red-200 text-red-700 hover:bg-red-50"
+                          disabled={bulkDeleting}
+                          onClick={() => void deleteAuthorsByIds([a.id])}
+                        >
+                          {deletingAuthorId === a.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                          Sil
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

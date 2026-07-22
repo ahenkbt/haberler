@@ -154,11 +154,25 @@ async function loadSourceArticles(source: AuthorRow): Promise<SourceArticle[]> {
   return merged.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
-/** Yazar ataması sonrası kaynak yazarın yayınlı köşe makalelerini hedef HM sitelerine kopyalar. */
+/** Yalnızca bilinçli admin ataması — otomatik/arka plan çağrıları yasak. */
+export type AuthorDistributeOpts = {
+  /** Admin panel «yazar ata» veya syncArticlesOnly. Otomatik backfill için kullanılmaz. */
+  explicitAdminAction: true;
+};
+
+/**
+ * Kaynak yazarın yayınlı köşe makalelerini hedef HM sitelerine kopyalar.
+ * Yalnızca admin bulk-distribute ile çağrılmalı; sayfa yüklemesinde / boş listede
+ * otomatik çalıştırılmamalı.
+ */
 export async function distributeAuthorArticlesToHmSites(
   sourceAuthorIds: number[],
   targetSiteIds: number[],
+  opts: AuthorDistributeOpts,
 ): Promise<AuthorArticleDistributeResult> {
+  if (opts?.explicitAdminAction !== true) {
+    throw new Error("distributeAuthorArticlesToHmSites: explicitAdminAction gerekli (otomatik dağıtım kapalı)");
+  }
   if (sourceAuthorIds.length === 0 || targetSiteIds.length === 0) {
     return { articlesAdded: 0, articlesSkipped: 0 };
   }
