@@ -251,10 +251,12 @@ function proxyInit(request, origin, incoming) {
 }
 
 function isStaticAssetPath(pathname) {
+  const p = String(pathname || "");
   return (
-    /\.(js|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif)(\?|$)/i.test(pathname) ||
-    pathname.startsWith("/assets/") ||
-    pathname.includes("/public/assets/")
+    /\.(js|mjs|cjs|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif|webmanifest)(\?|$)/i.test(p) ||
+    p.startsWith("/assets/") ||
+    p.startsWith("/yektube-v2/assets/") ||
+    p.includes("/public/assets/")
   );
 }
 
@@ -505,24 +507,60 @@ async function tryServeAssets(request, env, incoming) {
   const oneShotPurge = shouldOneShotPurge(request, incoming.hostname);
   const purgeCookie = purgeCookieName(incoming.hostname);
   const yektubeRewrite = rewriteYektubeSpaPath(incoming.pathname);
+  const assetPathForFetch = yektubeRewrite || incoming.pathname;
   const assetReq = yektubeRewrite ? withAssetPath(request, yektubeRewrite) : request;
+  const wantsStatic =
+    isStaticAssetPath(incoming.pathname) || isStaticAssetPath(assetPathForFetch);
 
   // .xml sitemap yollarını SPA index.html'e düşürme — proxy kaçırırsa boş XML yerine HTML olmasın
-  if (incoming.pathname.toLowerCase().endsWith(".xml") && !isStaticAssetPath(incoming.pathname)) {
+  if (incoming.pathname.toLowerCase().endsWith(".xml") && !wantsStatic) {
     return null;
   }
 
   let assetResp = await env.ASSETS.fetch(assetReq);
-  if (
-    assetResp.status === 404 &&
-    request.method === "GET" &&
-    !isStaticAssetPath(incoming.pathname)
-  ) {
-    assetResp = await env.ASSETS.fetch(withAssetPath(request, "/index.html"));
+  let ct = String(assetResp.headers.get("content-type") || "").toLowerCase();
+
+  /**
+   * CF Assets `not_found_handling=single-page-application` eksik dosyada 200 + HTML döner.
+   * /yektube-v2/assets/*.js HTML gelirse tarayıcı JS çalıştıramaz → /yp beyaz ekran.
+   * Statik istekte HTML = miss → Render proxy (Render'da dosyalar var).
+   */
+  if (wantsStatic) {
+    if (!assetResp.ok || ct.includes("text/html")) {
+      return null;
+    }
+    const out = new Headers(assetResp.headers);
+    out.set("x-yekpare-frontend", "cloudflare-assets");
+    out.set("cdn-cache-control", "public, max-age=86400");
+    if (!out.get("cache-control")) {
+      out.set("cache-control", "public, max-age=86400, immutable");
+    }
+    if (yektubeRewrite) out.set("x-yekpare-yektube-rewrite", yektubeRewrite);
+    return new Response(assetResp.body, { status: assetResp.status, headers: out });
   }
 
-  const ct = String(assetResp.headers.get("content-type") || "").toLowerCase();
+  if (assetResp.status === 404 && request.method === "GET") {
+    assetResp = await env.ASSETS.fetch(withAssetPath(request, "/index.html"));
+    ct = String(assetResp.headers.get("content-type") || "").toLowerCase();
+  }
+
   if (ct.includes("text/html")) {
+    // /yp → yektube-v2/index.html rewrite sonrası Assets portal index döndüyse Render'a bırak
+    if (yektubeRewrite || isYektubeSurfacePath(incoming.pathname)) {
+      try {
+        const html = await assetResp.clone().text();
+        if (!/yektube-v2\/assets\//i.test(html) && !/<title>\s*Yektube\s*<\/title>/i.test(html)) {
+          return null;
+        }
+        return respondAssetHtml(
+          request,
+          new Response(html, { status: assetResp.status, headers: assetResp.headers }),
+          { oneShotPurge, purgeCookie, hostname: incoming.hostname },
+        );
+      } catch {
+        return null;
+      }
+    }
     return respondAssetHtml(request, assetResp, {
       oneShotPurge,
       purgeCookie,
@@ -530,20 +568,40 @@ async function tryServeAssets(request, env, incoming) {
     });
   }
 
-  if (isStaticAssetPath(incoming.pathname) || assetResp.ok) {
+  if (assetResp.ok) {
     const out = new Headers(assetResp.headers);
     out.set("x-yekpare-frontend", "cloudflare-assets");
-    if (isStaticAssetPath(incoming.pathname)) {
-      out.set("cdn-cache-control", "public, max-age=86400");
-      if (!out.get("cache-control")) {
-        out.set("cache-control", "public, max-age=86400, immutable");
-      }
-    }
     if (yektubeRewrite) out.set("x-yekpare-yektube-rewrite", yektubeRewrite);
     return new Response(assetResp.body, { status: assetResp.status, headers: out });
   }
 
   return null;
+}
+
+function isYektubeSurfacePath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  return (
+    p === "/yp" ||
+    p.startsWith("/yp/") ||
+    p === "/yektube-v2" ||
+    p.startsWith("/yektube-v2/") ||
+    p === "/muzik" ||
+    p.startsWith("/muzik/") ||
+    p === "/cocuk" ||
+    p.startsWith("/cocuk/") ||
+    p === "/canli" ||
+    p.startsWith("/canli/") ||
+    p === "/yek-gonder" ||
+    p.startsWith("/yek-gonder/") ||
+    p === "/yeklive" ||
+    p.startsWith("/yeklive/") ||
+    p === "/hesabim" ||
+    p.startsWith("/hesabim/") ||
+    p === "/studio" ||
+    p.startsWith("/studio/") ||
+    p === "/yektube" ||
+    p.startsWith("/yektube/")
+  );
 }
 
 /**
