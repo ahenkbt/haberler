@@ -95,8 +95,17 @@ jobs:
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
         run: pnpm run build:cloudflare
 
+      - name: Deploy Worker + Static Assets to Cloudflare
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy
+
+      # Secret put, deploy edilmemiş version varken fail oluyor — önce deploy, sonra secret.
       - name: Sync Worker secrets (Neon)
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
@@ -109,10 +118,3 @@ jobs:
           if [ -n "$AGENTLABS_URL" ]; then
             printf '%s' "$AGENTLABS_URL" | pnpm exec wrangler secret put AGENTLABS_URL
           fi
-
-      - name: Deploy Worker + Static Assets to Cloudflare
-        if: steps.cf.outputs.enabled == 'true'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy
