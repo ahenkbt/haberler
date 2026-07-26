@@ -135,22 +135,25 @@ zone_name = "suhaberajansi.com"
 
 # belediyehizmet.com kaldırıldı — eski Kırşehir/Su sitesi artık suhaberajansi.com (/tr/su)
 
-# Kırşehir Haber (/tr/kh) — domainler DB + worker fallback'da tanımlı:
-#   kirsehirhaber.org, kirsehri.com, kirsehir.net
-# DNS/zone henüz yönlendirilmedi; CF Worker route'ları DNS hazır olunca açılacak
-# (zone yokken wrangler deploy kırılır). Site şimdilik /tr/kh üzerinden çalışır.
-# [[routes]]
-# pattern = "kirsehirhaber.org"
-# custom_domain = true
-# [[routes]]
-# pattern = "www.kirsehirhaber.org"
-# custom_domain = true
-# [[routes]]
-# pattern = "kirsehirhaber.org/*"
-# zone_name = "kirsehirhaber.org"
-# [[routes]]
-# pattern = "www.kirsehirhaber.org/*"
-# zone_name = "kirsehirhaber.org"
+# Kırşehir Haber (/tr/kh)
+# kirsehirhaber.org: zone CF'de (NS hazır) — Worker routes + originless DNS açık.
+# kirsehri.com / kirsehir.net: zone yoksa deploy kırılır; DNS gelince açılır.
+[[routes]]
+pattern = "kirsehirhaber.org"
+custom_domain = true
+
+[[routes]]
+pattern = "www.kirsehirhaber.org"
+custom_domain = true
+
+[[routes]]
+pattern = "kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
+
 # [[routes]]
 # pattern = "kirsehri.com"
 # custom_domain = true
@@ -176,4 +179,4 @@ zone_name = "suhaberajansi.com"
 # pattern = "www.kirsehir.net/*"
 # zone_name = "kirsehir.net"
 
-# redeploy trigger 2026-07-26T22:45:00Z
+# redeploy trigger 2026-07-27T09:20:00Z
