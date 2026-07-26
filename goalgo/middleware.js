@@ -1773,6 +1773,18 @@ export default async function middleware(request) {
   if (brandHosts.length > 0 && brandHosts.includes(host) && !pathname.startsWith("/api")) {
     const pathOnly = pathname.replace(/\/+$/, "") || "/";
     if (pathOnly === "/" && !/^\/(assets\/|_next\/)/i.test(pathname)) {
+      // Önce DB meta (editör sitesi); yoksa yapılandırılmış /tr/{slug} yedeği — asla portal `/`.
+      try {
+        const apiOrigin = railwayApiOrigin(request.url);
+        const metaSlug = await fetchHmSlugForHost(apiOrigin, host);
+        if (metaSlug) {
+          const dest = new URL(`/tr/${encodeURIComponent(metaSlug)}`, incoming.origin);
+          dest.search = incoming.search;
+          return Response.redirect(dest.toString(), 308);
+        }
+      } catch {
+        /* fallback below */
+      }
       const dest =
         forceCanonicalRoot && /^https?:\/\//i.test(forceCanonicalRoot)
           ? `${forceCanonicalRoot.replace(/\/+$/, "")}${incoming.search}`

@@ -26,6 +26,7 @@
     "repair:corporate-manual-images:prod": "node --import tsx ./scripts/repair-corporate-manual-images.ts",
     "repair:manual-news-site-only": "node --import tsx ./scripts/repair-manual-news-site-only.ts",
     "repair:stale-su-brand": "node --import tsx ./scripts/repair-stale-su-brand.ts",
+    "repair:hm-brand-domains": "node --import tsx ./scripts/repair-hm-brand-domains.ts",
     "purge:incomplete-contacts": "node --import tsx ./scripts/purge-incomplete-contacts.ts",
     "cleanup:video-tv": "node --env-file=../../.env --import tsx ./scripts/cleanup-video-tv.ts",
     "import:yektube-kids": "node --env-file=../../.env --import tsx ./scripts/import-yektube-kids.ts",

@@ -1,6 +1,9 @@
 import { resolveHmDomainSlugHint } from "./hmNestedMetaStorage";
+import { resolveKnownHmEditorSlug } from "./hmEditorDomains";
 import { LEGACY_PORTAL_HOSTS, PORTAL_ALIAS_HOSTS, PORTAL_HOST, PORTAL_WWW_HOST } from "./portalBrand";
 import { readVendorDomainMetaCache } from "./vendorDomainStorage";
+
+export { KNOWN_HM_EDITOR_DOMAIN_SLUGS, resolveKnownHmEditorSlug } from "./hmEditorDomains";
 
 function normalizeHostKey(host: string): string {
   return host.toLowerCase().split(":")[0]?.replace(/^www\./, "") ?? "";
@@ -10,6 +13,7 @@ function normalizeHostKey(host: string): string {
 export function isKnownHmCustomHost(host: string): boolean {
   const h = normalizeHostKey(host);
   if (!h || isConfiguredPortalHost(h)) return false;
+  if (resolveKnownHmEditorSlug(h)) return true;
   return !!resolveHmDomainSlugHint(host);
 }
 

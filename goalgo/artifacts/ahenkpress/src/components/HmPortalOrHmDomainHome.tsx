@@ -5,6 +5,7 @@ import { fetchPublicJson } from "@/lib/fetchPublicJson";
 import { apiUrl } from "@/lib/apiBase";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { isConfiguredPortalHost } from "@/lib/hmPortalHosts";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import HmSitePublic from "@/pages/public/HmSitePublic";
 import { applyHmEarlyBrandingFromMeta } from "@/lib/hmEarlyBranding";
 import {
@@ -63,9 +64,17 @@ export default function HmPortalOrHmDomainHome() {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
 
-  const cachedSlug = useMemo(
-    () => (host && !isConfiguredPortalHost(host) ? resolveHmDomainSlugHint(host) : undefined),
+  const knownEditorSlug = useMemo(
+    () => (host && !isConfiguredPortalHost(host) ? resolveKnownHmEditorSlug(host) : undefined),
     [host],
+  );
+
+  const cachedSlug = useMemo(
+    () =>
+      host && !isConfiguredPortalHost(host)
+        ? resolveHmDomainSlugHint(host) ?? knownEditorSlug
+        : undefined,
+    [host, knownEditorSlug],
   );
 
   useLayoutEffect(() => {
@@ -165,6 +174,12 @@ export default function HmPortalOrHmDomainHome() {
   }
 
   if (hmQuery.data === null && vendorQuery.isFetched && !vendorMeta) {
+    // Bilinen editör haber alanları asla Yekpare portal anasayfasına düşmesin.
+    if (knownEditorSlug || cachedSlug || bootSlug) {
+      const forceSlug = knownEditorSlug ?? cachedSlug ?? bootSlug;
+      if (forceSlug) writeHmDomainSlugCache(host, forceSlug);
+      return <HmSitePublic />;
+    }
     clearHmDomainSlugCache(host);
     return (
       <>
