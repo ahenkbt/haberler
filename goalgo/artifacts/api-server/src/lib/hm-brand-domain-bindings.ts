@@ -522,9 +522,10 @@ export async function ensureHmBrandDomainBindings(opts?: {
       }
 
       // 3) Bağımsız Su sitesi oluştur
-      let created = null as Awaited<ReturnType<typeof insertCleanSuSite>>;
+      let createdId: number | null = null;
       try {
-        created = await insertCleanSuSite(binding);
+        const created = await insertCleanSuSite(binding);
+        createdId = created?.id ?? null;
       } catch (err) {
         // slug çakışması — orphan satırı geri al
         const orphan = refreshed.find(
@@ -549,13 +550,13 @@ export async function ensureHmBrandDomainBindings(opts?: {
             },
             eq(hmNewsSitesTable.id, orphan.id),
           );
-          created = { id: orphan.id, slug } as typeof created;
+          createdId = orphan.id;
         } else {
           throw err;
         }
       }
 
-      if (!created?.id || isForbiddenBrandId(binding, created.id)) {
+      if (!createdId || isForbiddenBrandId(binding, createdId)) {
         results.push({ domain, slug, siteId: null, action: "error", detail: "Site insert boş veya yasaklı id" });
         continue;
       }
@@ -563,17 +564,17 @@ export async function ensureHmBrandDomainBindings(opts?: {
       // Claim eden yabancı sitelerden domain temizle
       const after = await listHmNewsSitesCompat();
       for (const site of after) {
-        if (site.id === created.id) continue;
+        if (site.id === createdId) continue;
         const hosts = [site.domain, site.domain2, site.domain3].map((d) => normalizeHost(String(d ?? "")));
         if (hosts.includes(domain)) await clearBrandDomainFromSite(site.id, domain);
       }
 
-      await ensureEditorForSite(created.id, binding.editorEmail, binding.displayName);
-      const movedNews = await migrateSuNewsFromKirsehir(created.id);
+      await ensureEditorForSite(createdId, binding.editorEmail, binding.displayName);
+      const movedNews = await migrateSuNewsFromKirsehir(createdId);
       results.push({
         domain,
         slug,
-        siteId: created.id,
+        siteId: createdId,
         action: "created_site",
         movedNews,
         detail: movedNews > 0 ? `kirsehir→su ${movedNews} haber` : undefined,

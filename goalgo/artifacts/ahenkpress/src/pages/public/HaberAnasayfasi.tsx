@@ -1342,18 +1342,20 @@ function ClassicTextList({
   accent,
   href,
   className = "",
+  hideTitle = false,
 }: {
   title: string;
   items: any[];
   accent: string;
   href?: string;
   className?: string;
+  hideTitle?: boolean;
 }) {
   const h = useHmPublicHref();
   if (!items.length) return null;
   return (
     <section className={`hm-classic-widget ${className}`.trim()}>
-      <ClassicSectionTitle title={title} href={href} accent={accent} />
+      {hideTitle ? null : <ClassicSectionTitle title={title} href={href} accent={accent} />}
       <div className="hm-classic-text-list">
         {items.map((n, index) => (
           <Link key={n.id ?? n.slug ?? `${title}-${index}`} href={hybridNewsItemHref(n, h)} className="hm-classic-text-row">
@@ -4174,6 +4176,17 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     );
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
     const esenTodayHighlightItems = pickSidebarNews(todayHighlightMini, 6);
+    // Lead pack kapalıyken: solda metin, sağda 2 fotoğraflı kart (tüm esen siteler).
+    const esenBottomWidgetPhotos = (() => {
+      const first = esenTodayHighlightItems[0] ?? null;
+      const secondPool = homeNewsDedupe.filterUnused(leadPackBasePool);
+      const second =
+        esenTodayHighlightItems[1] ??
+        secondPool.find((n) => !first || String(n.id ?? n.slug) !== String(first.id ?? first.slug)) ??
+        homeNewsDedupe.filterUnused(headlineRest)[0] ??
+        null;
+      return [first, second].filter(Boolean) as typeof esenTodayHighlightItems;
+    })();
     const videoItems = pickAndPadModuleItems(
       sortNewsByRecency(mergeUniqueNews(headlineRest.slice(8), classicLatestMini, latestNewsPool)),
       6,
@@ -4339,7 +4352,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
               {esenLeadPackEnabled && leadPackBasePool.length > 0 ? (
                 <section className="hm-esen-lead-pack" data-hm-home-module="esenLeadPack">
-                  <ClassicSectionTitle title="Günün Öne Çıkanları" href={tumHaberlerHref} accent={accent} />
+                  <ClassicSectionTitle title="Gündemde Öne Çıkanlar" href={tumHaberlerHref} accent={accent} />
                   <FeaturedCategoryTabs
                     tabs={tabStripCats}
                     selectedSlug={featuredCategorySlug}
@@ -4348,15 +4361,14 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                   />
                   {hasEsenLeadPackContent ? (
                     <div className="hm-esen-lead-pack-grid">
-                      {leadPackColumns.left[0] ? (
-                        <div className="hm-esen-lead-pack-lead-card">
-                          <ClassicFeatureCard
-                            n={leadPackColumns.left[0]}
-                            accent={accent}
-                            hmCategoryColors={hmCat}
-                            large
-                          />
-                        </div>
+                      {leadPackColumns.left.length > 0 ? (
+                        <ClassicTextList
+                          title="Gündemde Öne Çıkanlar"
+                          items={leadPackColumns.left}
+                          accent={accent}
+                          href={tumHaberlerHref}
+                          hideTitle
+                        />
                       ) : (
                         <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
                           {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
@@ -4365,7 +4377,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                       {leadPackColumns.right.length > 0 ? (
                         <div className="hm-esen-lead-pack-right-grid">
                           {leadPackColumns.right.map((n, index) => (
-                            <ClassicCompactCard key={n.id ?? n.slug ?? index} n={n} accent={accent} hmCategoryColors={hmCat} />
+                            <ClassicFeatureCard
+                              key={n.id ?? n.slug ?? index}
+                              n={n}
+                              accent={accent}
+                              hmCategoryColors={hmCat}
+                              large={index === 0}
+                            />
                           ))}
                         </div>
                       ) : (
@@ -4398,26 +4416,32 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               ) : null}
 
               {!esenLeadPackEnabled &&
-              (esenSidebarPopularItems.length > 0 || esenTodayHighlightItems[0]) ? (
-                <section className="hm-esen-bottom-widgets">
-                  {esenSidebarPopularItems.length > 0 ? (
-                    <ClassicTextList
-                      title="Gündemde Öne Çıkanlar"
-                      items={esenSidebarPopularItems}
-                      accent={accent}
-                      href={tumHaberlerHref}
-                    />
-                  ) : null}
-                  {esenTodayHighlightItems[0] ? (
-                    <aside className="hm-esen-bottom-widgets-feature" data-hm-home-module="esenLeadPack">
-                      <ClassicFeatureCard
-                        n={esenTodayHighlightItems[0]}
+              (esenSidebarPopularItems.length > 0 || esenBottomWidgetPhotos.length > 0) ? (
+                <section className="hm-esen-bottom-widgets-wrap" data-hm-home-module="esenLeadPack">
+                  <ClassicSectionTitle title="Gündemde Öne Çıkanlar" href={tumHaberlerHref} accent={accent} />
+                  <div className="hm-esen-bottom-widgets">
+                    {esenSidebarPopularItems.length > 0 ? (
+                      <ClassicTextList
+                        title="Gündemde Öne Çıkanlar"
+                        items={esenSidebarPopularItems}
                         accent={accent}
-                        hmCategoryColors={hmCat}
-                        large
+                        href={tumHaberlerHref}
+                        hideTitle
                       />
-                    </aside>
-                  ) : null}
+                    ) : (
+                      <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">Henüz haber yok.</div>
+                    )}
+                    {esenBottomWidgetPhotos.slice(0, 2).map((n, index) => (
+                      <aside key={n.id ?? n.slug ?? index} className="hm-esen-bottom-widgets-feature">
+                        <ClassicFeatureCard
+                          n={n}
+                          accent={accent}
+                          hmCategoryColors={hmCat}
+                          large={index === 0}
+                        />
+                      </aside>
+                    ))}
+                  </div>
                 </section>
               ) : null}
             </>
