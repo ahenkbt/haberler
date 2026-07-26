@@ -232,7 +232,7 @@ export default function HaberSiteleri() {
     } catch (e) {
       toast({
         title: "Kaydedilemedi",
-        description: String((e as Error)?.message ?? e).slice(0, 240),
+        description: String((e as Error)?.message ?? e).slice(0, 480),
         variant: "destructive",
       });
     } finally {

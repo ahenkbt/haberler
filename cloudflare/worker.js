@@ -31,8 +31,27 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.suhaberajansi.com",
   "belediyehizmet.com",
   "www.belediyehizmet.com",
+  "kirsehri.com",
+  "www.kirsehri.com",
+  "kirsehirhaber.org",
+  "www.kirsehirhaber.org",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717b";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260726c";
+
+/**
+ * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
+ * DB bağlandıktan sonra meta birincil kaynaktır; bu yalnızca yedek.
+ */
+const HM_DOMAIN_SLUG_FALLBACKS = {
+  "suhaberajansi.com": "su",
+  "www.suhaberajansi.com": "su",
+  "belediyehizmet.com": "kirsehir",
+  "www.belediyehizmet.com": "kirsehir",
+  "kirsehri.com": "kirsehir",
+  "www.kirsehri.com": "kirsehir",
+  "kirsehirhaber.org": "kirsehir",
+  "www.kirsehirhaber.org": "kirsehir",
+};
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -98,13 +117,29 @@ function purgeBootScript(cookieName) {
       });
     }).then(function () {
       try {
-        // Netlify / eski HM cache anahtarlarını temizle
+        // Netlify + bayat HM tema/meta localStorage anahtarlarını temizle
         var rm = [];
         for (var i = 0; i < localStorage.length; i++) {
           var k = localStorage.key(i);
-          if (k && (k.indexOf('nf_') === 0 || k.indexOf('netlify') !== -1)) rm.push(k);
+          if (!k) continue;
+          if (
+            k.indexOf('nf_') === 0 ||
+            k.indexOf('netlify') !== -1 ||
+            k.indexOf('hm-nested-meta:') === 0 ||
+            k.indexOf('hm-domain-slug:') === 0 ||
+            k.indexOf('hm-meta-by-domain:') === 0 ||
+            k.indexOf('hm-home-hybrid:') === 0
+          ) {
+            rm.push(k);
+          }
         }
         rm.forEach(function (k) { localStorage.removeItem(k); });
+        try {
+          for (var j = sessionStorage.length - 1; j >= 0; j--) {
+            var sk = sessionStorage.key(j);
+            if (sk && sk.indexOf('hm-meta-by-domain:') === 0) sessionStorage.removeItem(sk);
+          }
+        } catch (_) {}
       } catch (_) {}
       var u = new URL(location.href);
       if (!u.searchParams.has('_cf_purge')) {
@@ -657,11 +692,13 @@ function rewriteYektubeSpaPath(pathname) {
   return null;
 }
 
-/** HM anasayfa haber API'leri — soğuk Render'ı edge cache ile kes. */
+/**
+ * HM haber listeleri — edge cache (soğuk Render).
+ * NOT: `/api/hm/meta/*` ASLA cache'lenmez — tema/layout editör kaydı anında yansımalı.
+ */
 function isCacheableHmNewsApi(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
   return (
-    p.startsWith("/api/hm/meta/") ||
     p === "/api/hm/home-bundle" ||
     p === "/api/news" ||
     p === "/api/news/hybrid" ||
@@ -672,6 +709,11 @@ function isCacheableHmNewsApi(pathname) {
   );
 }
 
+function isHmMetaApiPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  return p.startsWith("/api/hm/meta/");
+}
+
 function upstreamCfCacheOptions(pathname, method) {
   if (method !== "GET" && method !== "HEAD") {
     return { cacheTtl: 0, cacheEverything: false };
@@ -679,7 +721,16 @@ function upstreamCfCacheOptions(pathname, method) {
   if (isStaticAssetPath(pathname)) {
     return { cacheTtl: 86400, cacheEverything: true };
   }
+  // Tema/layout meta — kenar önbelleği yok (editör değişiklikleri hemen görünsün).
+  if (isHmMetaApiPath(pathname)) {
+    return { cacheTtl: 0, cacheEverything: false };
+  }
   if (isCacheableHmNewsApi(pathname)) {
+    // home-bundle kısa tut; modül sırası meta'dan gelir ama haber listesi bayat kalabilir.
+    const p = String(pathname || "").split("?")[0] || "";
+    if (p === "/api/hm/home-bundle") {
+      return { cacheTtl: 30, cacheEverything: true };
+    }
     return { cacheTtl: 120, cacheEverything: true };
   }
   return { cacheTtl: 0, cacheEverything: false };
@@ -835,6 +886,32 @@ async function maybeRepairMismatchedNewsJson(origin, init, method, incoming, ups
   }
 }
 
+function hmDomainSlugFallback(hostname) {
+  const h = normalizeHost(hostname);
+  if (!h) return "";
+  return (
+    String(HM_DOMAIN_SLUG_FALLBACKS[h] || HM_DOMAIN_SLUG_FALLBACKS[`www.${h}`] || "").trim() || ""
+  );
+}
+
+function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
+  const loc = `${incoming.origin}/tr/${encodeURIComponent(slug)}${incoming.search || ""}`;
+  const headers = {
+    location: loc,
+    "cache-control": "public, max-age=30",
+    "cdn-cache-control": "public, max-age=30",
+    "x-yekpare-frontend": "cloudflare-render-proxy",
+    "x-yekpare-hm-redirect": slug,
+    "x-yekpare-hm-redirect-via": via,
+  };
+  if (needsForcePurge(incoming.hostname) && !cookieHas(request, FORCE_PURGE_COOKIE)) {
+    headers["set-cookie"] =
+      `${FORCE_PURGE_COOKIE}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
+    headers["x-yekpare-purge"] = "hm-force-redirect";
+  }
+  return new Response(null, { status: 308, headers });
+}
+
 /**
  * Edge soft-redirect: HM özel alan kökü → /tr/{slug}
  * (Vercel middleware CF Worker yolunda çalışmadığı için Worker'da tekrarlanır.)
@@ -847,6 +924,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
 
   const origin = upstreamOrigin(env);
   const domain = incoming.hostname.toLowerCase();
+  const fallbackSlug = hmDomainSlugFallback(domain);
   try {
     const metaRes = await fetch(
       `${origin}/api/hm/meta/by-domain?domain=${encodeURIComponent(domain)}`,
@@ -856,32 +934,45 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
           "x-forwarded-host": incoming.host,
           "x-forwarded-proto": "https",
         },
-        cf: { cacheTtl: 120, cacheEverything: true },
+        cf: { cacheTtl: 0, cacheEverything: false },
       },
     );
-    if (!metaRes.ok) return null;
-    const meta = await metaRes.json().catch(() => null);
-    const slug = String(meta?.slug || "").trim();
-    if (!slug) return null;
-    const loc = `${incoming.origin}/tr/${encodeURIComponent(slug)}`;
-    const headers = {
-      location: loc,
-      "cache-control": "public, max-age=60",
-      "cdn-cache-control": "public, max-age=120",
-      "x-yekpare-frontend": "cloudflare-render-proxy",
-      "x-yekpare-hm-redirect": slug,
-    };
-    // HM alanlarında 308: cookie işaretle (Clear-Site-Data YOK —
-    // Chrome document navigasyonunda ERR_FAILED üretebiliyor).
-    if (needsForcePurge(incoming.hostname) && !cookieHas(request, FORCE_PURGE_COOKIE)) {
-      headers["set-cookie"] =
-        `${FORCE_PURGE_COOKIE}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
-      headers["x-yekpare-purge"] = "hm-force-redirect";
+    if (metaRes.ok) {
+      const meta = await metaRes.json().catch(() => null);
+      const slug = String(meta?.slug || "").trim();
+      if (slug) {
+        return hmCustomDomainRootRedirectResponse(incoming, request, slug, "meta");
+      }
     }
-    return new Response(null, { status: 308, headers });
   } catch {
-    return null;
+    /* fallback below */
   }
+
+  // Meta yok/404: bilinen HM editör alanlarında asla Yekpare portal anasayfasına düşme.
+  if (fallbackSlug) {
+    return hmCustomDomainRootRedirectResponse(incoming, request, fallbackSlug, "fallback");
+  }
+  if (needsForcePurge(domain)) {
+    // FORCE_PURGE listesindeki alanlar editör siteleri — portal SPA gösterme.
+    return new Response(
+      `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Haber sitesi</title>
+<meta name="robots" content="noindex"><meta http-equiv="refresh" content="2;url=/editor">
+<style>body{font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#fff;color:#111}
+p{max-width:28rem;text-align:center;line-height:1.5}</style></head>
+<body><p>Bu alan adı bir haber sitesine aittir. Yapılandırma tamamlanıyor…</p></body></html>`,
+      {
+        status: 503,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "no-store",
+          "cdn-cache-control": "no-store",
+          "x-yekpare-frontend": "cloudflare-render-proxy",
+          "x-yekpare-hm-unmapped": "1",
+        },
+      },
+    );
+  }
+  return null;
 }
 
 /** WhatsApp / Facebook / Telegram vb. — JS çalıştırmaz, SPA index.html OG'sini okur. */
@@ -1694,15 +1785,26 @@ export default {
         if (!out.get("cache-control")) {
           out.set("cache-control", "public, max-age=86400, immutable");
         }
+      } else if (isHmMetaApiPath(upstreamPath)) {
+        out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+        out.set("cdn-cache-control", "no-store");
       } else if (isCacheableHmNewsApi(upstreamPath)) {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
-        if (!out.get("cache-control")) {
-          out.set(
-            "cache-control",
-            "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
-          );
+        const p = String(upstreamPath || "").split("?")[0] || "";
+        if (p === "/api/hm/home-bundle") {
+          if (!out.get("cache-control")) {
+            out.set("cache-control", "public, max-age=15, s-maxage=30");
+          }
+          out.set("cdn-cache-control", "public, max-age=30");
+        } else {
+          if (!out.get("cache-control")) {
+            out.set(
+              "cache-control",
+              "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+            );
+          }
+          out.set("cdn-cache-control", "public, max-age=120, stale-while-revalidate=300");
         }
-        out.set("cdn-cache-control", "public, max-age=120, stale-while-revalidate=300");
       } else {
         out.set("cdn-cache-control", "no-store");
       }

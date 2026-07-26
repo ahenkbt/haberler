@@ -119,11 +119,21 @@ import {
   ensureHmNewsSiteDomain2Column,
   ensureHmNewsSiteDomain3Column,
   ensureHmNewsSiteSeoColumns,
+  ensureHmNewsSiteWritableColumns,
+  formatHmSitesDbError,
   isMissingHmBaseTableError,
   isMissingHmSeoColumnError,
+  isMissingHmSiteColumnError,
   listActiveHmNewsSitesByUpdatedCompat,
   listHmNewsSitesCompat,
+  resetHmNewsSiteColumnEnsureCache,
 } from "../lib/hm-site-compat";
+import {
+  repairStaleSuBrandForSiteId,
+  repairStaleSuBrandOnHmSites,
+} from "../lib/hm-stale-su-brand-repair.js";
+import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
+import { ensureHmBrandDomainBindings } from "../lib/hm-brand-domain-bindings.js";
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
@@ -260,7 +270,6 @@ async function findHmSiteIdClaimingHost(host: string | null, exceptSiteId?: numb
   const n = normalizeDomain(host);
   if (!n) return null;
   await ensureHmNewsSiteDomain2Column().catch(() => undefined);
-  await ensureHmNewsSiteDomain3Column().catch(() => undefined);
   await ensureHmNewsSiteDomain3Column().catch(() => undefined);
   const rows = await newsReadDb()
     .select({
@@ -763,6 +772,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     return;
   }
 
+  // Tema/layout — kenar/tarayıcı önbelleği yok.
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+
   const queryDomain = typeof req.query.domain === "string" ? req.query.domain : "";
   if (queryDomain) {
     const domainRow = await getHmSiteMappedToDomain(queryDomain);
@@ -804,7 +817,9 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
   }
-  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300");
+  // Tema/layout — kenar/tarayıcı önbelleği yok (editör kaydı hemen yansımalı).
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
   res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
 });
 
@@ -820,7 +835,7 @@ router.get("/hm/home-bundle", async (req, res): Promise<void> => {
   const categorySlug = String(req.query.mansetCategorySlug ?? req.query.categorySlug ?? "").trim() || null;
   try {
     const bundle = await buildHmHomeBundle(siteId, sliderLimit, categorySlug);
-    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=120, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=30");
     res.json(bundle);
   } catch (err) {
     console.error("[hm/home-bundle]", err);
@@ -833,8 +848,7 @@ router.get("/hm/home-bundle", async (req, res): Promise<void> => {
 router.get("/hm/sites", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
-    await ensureHmNewsSiteDomain2Column().catch(() => undefined);
-  await ensureHmNewsSiteDomain3Column().catch(() => undefined);
+    await ensureHmNewsSiteWritableColumns().catch(() => undefined);
     const sites = await listHmNewsSitesCompat();
     const editors = await newsReadDb().select().from(hmSiteEditorsTable);
     const bySite = new Map<number, typeof editors>();
@@ -920,10 +934,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   const seoVerification = normalizeHmSeoVerification(b.seoVerification);
 
   try {
-    await ensureHmNewsSiteSeoColumns();
-    await ensureHmNewsSiteDomain2Column();
-    await ensureHmNewsSiteDomain3Column();
-    await ensureHmNewsSiteDomain3Column();
+    await ensureHmNewsSiteWritableColumns();
     const [site] = await dualWriteInsert(hmNewsSitesTable, {
         slug,
         domain,
@@ -958,12 +969,12 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         : null,
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (/unique|duplicate/i.test(msg)) {
+    const msg = formatHmSitesDbError(e);
+    if (/slug veya domain zaten kayıtlı/i.test(msg) || /unique|duplicate/i.test(msg)) {
       res.status(409).json({ error: "Bu slug veya domain zaten kayıtlı." });
       return;
     }
-    res.status(500).json({ error: msg.slice(0, 400) });
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -1087,20 +1098,19 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
   }
 
   patch.updatedAt = new Date();
-  const wantsSeoColumnPatch =
-    Object.prototype.hasOwnProperty.call(patch, "description") ||
-    Object.prototype.hasOwnProperty.call(patch, "verificationJson");
   try {
-    if (wantsSeoColumnPatch) {
-      await ensureHmNewsSiteSeoColumns();
-    }
-    if ("domain" in patch || "domain2" in patch) {
-      await ensureHmNewsSiteDomain2Column();
-    await ensureHmNewsSiteDomain3Column();
-    }
+    await ensureHmNewsSiteWritableColumns();
     let row: typeof hmNewsSitesTable.$inferSelect | undefined;
     if (Object.keys(patch).length > 0) {
-      const [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+      let updated: typeof hmNewsSitesTable.$inferSelect | undefined;
+      try {
+        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+      } catch (updateErr) {
+        if (!isMissingHmSiteColumnError(updateErr)) throw updateErr;
+        resetHmNewsSiteColumnEnsureCache();
+        await ensureHmNewsSiteWritableColumns();
+        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+      }
       if (!updated) {
         res.status(404).json({ error: "Bulunamadı" });
         return;
@@ -1136,15 +1146,22 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       }
     }
 
+    // Kayıt sonrası: Su Haber şablon artığı menü/marka izlerini temizle (kirsehir vb.)
+    try {
+      await repairStaleSuBrandForSiteId(id);
+    } catch {
+      /* best-effort */
+    }
+
     const finalRow = await getHmNewsSiteByIdCompat(id);
     res.json(finalRow ?? row);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (/unique|duplicate/i.test(msg)) {
+    const msg = formatHmSitesDbError(e);
+    if (/slug veya domain zaten kayıtlı/i.test(msg) || /unique|duplicate/i.test(msg)) {
       res.status(409).json({ error: "Bu slug veya domain zaten kayıtlı." });
       return;
     }
-    res.status(500).json({ error: msg.slice(0, 400) });
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -1598,6 +1615,52 @@ router.post("/hm/admin/vkd-restore-menu", async (req, res): Promise<void> => {
     res.json({
       ok: true,
       message: result.added > 0 ? `Menüye ${result.added} madde eklendi` : "Menü güncel — eksik madde yok",
+      ...result,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: suhaberajansi.com vb. marka alanlarını editör haber sitesine bağlar. */
+router.post("/hm/admin/bind-brand-domains", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const dryRun = (req.body as { dryRun?: boolean } | undefined)?.dryRun === true;
+    const rows = await ensureHmBrandDomainBindings({ dryRun });
+    res.json({
+      ok: true,
+      message: "Marka alan bağlama tamamlandı",
+      rows,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: Su Haber şablonundan kalan /tr/su menü ve marka izlerini temizler. */
+router.post("/hm/admin/repair-stale-su-brand", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const body = (req.body ?? {}) as { siteId?: number; dryRun?: boolean };
+    const siteId = Number(body.siteId);
+    const dryRun = body.dryRun === true;
+    const result =
+      Number.isFinite(siteId) && siteId > 0
+        ? await repairStaleSuBrandForSiteId(siteId, { dryRun })
+        : await repairStaleSuBrandOnHmSites({ dryRun });
+    res.json({
+      ok: true,
+      message:
+        result.repaired > 0
+          ? `${result.repaired} sitede Su Haber artığı temizlendi`
+          : "Su Haber artığı bulunamadı",
       ...result,
     });
   } catch (e) {
@@ -2092,6 +2155,7 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
       slug: site.slug,
       domain: site.domain,
       domain2: site.domain2 ?? null,
+      domain3: site.domain3 ?? null,
       displayName: site.displayName,
       contactJson: site.contactJson,
       layoutJson: site.layoutJson,
@@ -2197,7 +2261,35 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  // Ziyaretçi kenar önbelleğini temizle (tema/menü değişikliği).
+  void purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId).catch(() => undefined);
   res.json({ ok: true, layoutJson: raw });
+});
+
+/** Editör: vitrin/tema/meta kenar + tarayıcı önbelleğini boşalt. */
+router.post("/hm/editor/purge-public-cache", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  try {
+    const result = await purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId);
+    if (!result) {
+      res.status(404).json({ error: "Site bulunamadı" });
+      return;
+    }
+    res.json({
+      ok: true,
+      message:
+        result.cfPurged > 0
+          ? `Kenar önbellek temizlendi (${result.cfPurged} URL). Siteyi yenileyin.`
+          : "Meta önbelleği artık kenarda tutulmuyor; tarayıcı önbelleğini temizleyip siteyi yenileyin.",
+      ...result,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
 });
 
 /** Yalnızca anasayfa modül sırası — tam layout gövdesi gönderilmez. */
@@ -2232,6 +2324,7 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  void purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId).catch(() => undefined);
   res.json({ ok: true, layoutJson: raw });
 });
 

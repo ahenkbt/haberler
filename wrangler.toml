@@ -150,4 +150,37 @@ zone_name = "belediyehizmet.com"
 pattern = "www.belediyehizmet.com/*"
 zone_name = "belediyehizmet.com"
 
-# redeploy trigger 2026-07-26T19:29:27Z
+# Kırşehir alternatif alan adları (hm_news_sites.domain2 / domain3)
+[[routes]]
+pattern = "kirsehri.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.kirsehri.com"
+custom_domain = true
+
+[[routes]]
+pattern = "kirsehri.com/*"
+zone_name = "kirsehri.com"
+
+[[routes]]
+pattern = "www.kirsehri.com/*"
+zone_name = "kirsehri.com"
+
+[[routes]]
+pattern = "kirsehirhaber.org"
+custom_domain = true
+
+[[routes]]
+pattern = "www.kirsehirhaber.org"
+custom_domain = true
+
+[[routes]]
+pattern = "kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
+
+# redeploy trigger 2026-07-26T20:35:00Z

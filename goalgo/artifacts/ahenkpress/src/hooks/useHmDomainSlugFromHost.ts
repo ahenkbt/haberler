@@ -1,5 +1,6 @@
 import { useParams } from "wouter";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { resolveHmDomainSlugHint, writeHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 
@@ -12,16 +13,17 @@ export function useHmDomainSlugFromHost(): string {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
   const isCustom = !!host && !isDefaultPortalHost(host);
-  const cached = isCustom ? resolveHmDomainSlugHint(host) : undefined;
+  const cached = isCustom ? resolveHmDomainSlugHint(host) ?? resolveKnownHmEditorSlug(host) : undefined;
 
   const { data } = useHmMetaByDomain(host, {
-    enabled: isCustom && !cached,
+    // Bilinen slug yedeği olsa da domain meta çekilsin (slug doğrulama / cache güncelleme).
+    enabled: isCustom,
     timeoutMs: 18_000,
     retries: 2,
     retry: 2,
   });
 
-  const resolved = routeSlug || cached || data?.slug || "";
+  const resolved = routeSlug || data?.slug || cached || resolveKnownHmEditorSlug(host) || "";
   if (isCustom && data?.slug) writeHmDomainSlugCache(host, data.slug);
   return resolved;
 }

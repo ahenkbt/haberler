@@ -38,6 +38,9 @@ import { bootstrapKesfetNightScraperFromSettings } from "./routes/map";
 import { scheduleInsaatfirmalarimAutoImport, startInsaatfirmalarimQueueWatchdog } from "./lib/insaatfirmalarim-jobs.js";
 import { repairAllCorruptedRssImportTitles } from "./lib/rssTitleRepair.js";
 import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.js";
+import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
+import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
+import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
 import { seedGeliverMerchantCatalogIfNeeded } from "./lib/merchant-rss-import.js";
 import { ensureRssCampaignSchema } from "./lib/ensure-rss-campaign-schema.js";
@@ -356,6 +359,41 @@ const server = app.listen(port, listenHost, (err) => {
     }, 14_000).unref();
   } else {
     logger.info("[hm-manual-site-only] HM_MANUAL_NEWS_SITE_ONLY_REPAIR=0 veya Render — atlandı");
+  }
+
+  // HM site şema sütunları + Su Haber şablon artığı (kirsehir/belediyehizmet vb.)
+  if (envJobFlag("HM_STALE_SU_BRAND_REPAIR", true)) {
+    setTimeout(() => {
+      void ensureHmNewsSiteWritableColumns()
+        .then(() => repairStaleSuBrandOnHmSites({ dryRun: false }))
+        .then((r) => {
+          if (r.repaired > 0) {
+            logger.info(
+              { scanned: r.scanned, repaired: r.repaired, siteIds: r.siteIds },
+              "[hm-stale-su-brand] Su Haber menü/marka artıkları temizlendi",
+            );
+          }
+        })
+        .catch((err) => logger.error({ err }, "[hm-stale-su-brand] onarım başarısız"));
+    }, 16_000).unref();
+  } else {
+    logger.info("[hm-stale-su-brand] HM_STALE_SU_BRAND_REPAIR=0 — atlandı");
+  }
+
+  // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).
+  if (envJobFlag("HM_BRAND_DOMAIN_BIND", true)) {
+    setTimeout(() => {
+      void ensureHmBrandDomainBindings({ dryRun: false })
+        .then((rows) => {
+          const changed = rows.filter((r) => r.action !== "already_bound" && r.action !== "skipped");
+          if (changed.length > 0 || rows.some((r) => r.action === "error")) {
+            logger.info({ rows }, "[hm-brand-domain] marka alan bağlama tamam");
+          }
+        })
+        .catch((err) => logger.error({ err }, "[hm-brand-domain] bağlama başarısız"));
+    }, 18_000).unref();
+  } else {
+    logger.info("[hm-brand-domain] HM_BRAND_DOMAIN_BIND=0 — atlandı");
   }
 
   seedVideoDataIfNeeded(logger).catch((e) =>

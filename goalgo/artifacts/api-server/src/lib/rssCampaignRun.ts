@@ -145,6 +145,59 @@ function markImported(
   }
 }
 
+async function resolveRssCampaignTargets(campaign: {
+  hmSiteIds: unknown;
+  includeYekpareHaber: boolean | null;
+}): Promise<(number | null)[]> {
+  const rawHm = Array.isArray(campaign.hmSiteIds) ? (campaign.hmSiteIds as number[]) : [];
+  const parsedHm = rawHm.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0);
+  const existing =
+    parsedHm.length === 0
+      ? []
+      : await getNewsDbForRead()
+          .select({ id: hmNewsSitesTable.id })
+          .from(hmNewsSitesTable)
+          .where(inArray(hmNewsSitesTable.id, parsedHm));
+  const ok = new Set(existing.map((r) => r.id));
+  const filteredHm = parsedHm.filter((id) => ok.has(id));
+  const includeCentral = campaign.includeYekpareHaber === true;
+  const siteTargets: (number | null)[] = [];
+  if (includeCentral) siteTargets.push(null);
+  for (const sid of filteredHm) siteTargets.push(sid);
+  return siteTargets;
+}
+
+/** Çalıştırma öncesi: feed + hedef kontrolü (UI'ya 400 dönebilmek için). */
+export async function preflightRssCampaignRun(
+  campaignId: number,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  await ensureRssCampaignSchema();
+  const [campaign] = await getNewsDbForRead()
+    .select()
+    .from(rssCampaignsTable)
+    .where(eq(rssCampaignsTable.id, campaignId));
+  if (!campaign) {
+    return { ok: false, message: "Kampanya bulunamadı" };
+  }
+  const feedUrls = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
+  if (feedUrls.length === 0) {
+    return {
+      ok: false,
+      message:
+        "Kampanyaya henüz RSS feed URL'i eklenmemiş. Önce kampanyayı düzenleyip en az bir feed kaydedin, sonra Çalıştır'a basın.",
+    };
+  }
+  const siteTargets = await resolveRssCampaignTargets(campaign);
+  if (siteTargets.length === 0) {
+    return {
+      ok: false,
+      message:
+        "Kampanyada hedef yok: en az bir haber sitesi seçin veya «Yekpare Haber» (merkez akış) kutusunu işaretleyip kaydedin.",
+    };
+  }
+  return { ok: true };
+}
+
 /** Kampanya RSS çalıştırması — panel vekil zaman aşımını önlemek için route'tan arka planda çağrılır. */
 export async function executeRssCampaignRun(campaignId: number): Promise<RssCampaignRunResult> {
   await ensureRssCampaignSchema();
@@ -161,22 +214,8 @@ export async function executeRssCampaignRun(campaignId: number): Promise<RssCamp
     .from(categoriesTable)
     .where(eq(categoriesTable.slug, campaign.categorySlug));
 
-  const feedUrls: string[] = campaign.feeds ?? [];
-  const rawHm = Array.isArray(campaign.hmSiteIds) ? (campaign.hmSiteIds as number[]) : [];
-  const parsedHm = rawHm.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0);
-  const existing =
-    parsedHm.length === 0
-      ? []
-      : await getNewsDbForRead()
-          .select({ id: hmNewsSitesTable.id })
-          .from(hmNewsSitesTable)
-          .where(inArray(hmNewsSitesTable.id, parsedHm));
-  const ok = new Set(existing.map((r) => r.id));
-  const filteredHm = parsedHm.filter((id) => ok.has(id));
-  const includeCentral = campaign.includeYekpareHaber === true;
-  const siteTargets: (number | null)[] = [];
-  if (includeCentral) siteTargets.push(null);
-  for (const sid of filteredHm) siteTargets.push(sid);
+  const feedUrls: string[] = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
+  const siteTargets = await resolveRssCampaignTargets(campaign);
 
   if (siteTargets.length === 0) {
     await dualWriteInsert(rssLogsTable,{
@@ -189,7 +228,7 @@ export async function executeRssCampaignRun(campaignId: number): Promise<RssCamp
     return {
       added: 0,
       skipped: 0,
-      errors: 0,
+      errors: 1,
       message: "Kampanyada hedef site / merkez akış seçilmedi.",
     };
   }
@@ -205,7 +244,7 @@ export async function executeRssCampaignRun(campaignId: number): Promise<RssCamp
       action: "run",
       message: "Kampanyaya henüz RSS feed URL'i eklenmemiş.",
     });
-    return { added: 0, skipped: 0, errors: 0, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
+    return { added: 0, skipped: 0, errors: 1, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
   }
 
   const sourceBySite = await loadExistingSourceUrlsBySite(siteTargets);

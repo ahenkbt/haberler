@@ -88,15 +88,18 @@ function EditorSidebar({ onClose }: { onClose?: () => void }) {
               if (!site) return;
               setCacheClearBusy(true);
               try {
-                await clearHmSitePublicCaches(queryClient, {
+                const result = await clearHmSitePublicCaches(queryClient, {
                   siteId: site.id,
                   slug: site.slug,
                   domain: site.domain,
+                  domain2: site.domain2,
+                  domain3: site.domain3,
                 });
                 toast({
                   title: "Önbellek temizlendi",
                   description:
-                    "Site meta, hibrit haber ve domain önbelleği silindi. Ziyaretçiler için tam güncelleme CDN deploy sonrası görünür.",
+                    result.edgeMessage ||
+                    "Kenar + tarayıcı önbelleği temizlendi. Siteyi gizli pencerede veya Ctrl+F5 ile yenileyin; tema hemen görünmeli.",
                 });
                 onClose?.();
               } catch {

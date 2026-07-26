@@ -20,6 +20,8 @@ const ZONES = [
   "vatanhaber.net",
   "suhaberajansi.com",
   "belediyehizmet.com",
+  "kirsehri.com",
+  "kirsehirhaber.org",
 ];
 
 function token() {

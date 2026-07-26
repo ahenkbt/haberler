@@ -4353,13 +4353,15 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                   />
                   {hasEsenLeadPackContent ? (
                     <div className="hm-esen-lead-pack-grid">
-                      {leadPackColumns.left.length > 0 ? (
-                        <ClassicTextList
-                          title="Gündemde Öne Çıkanlar"
-                          items={leadPackColumns.left}
-                          accent={accent}
-                          href={tumHaberlerHref}
-                        />
+                      {leadPackColumns.left[0] ? (
+                        <div className="hm-esen-lead-pack-lead-card">
+                          <ClassicFeatureCard
+                            n={leadPackColumns.left[0]}
+                            accent={accent}
+                            hmCategoryColors={hmCat}
+                            large
+                          />
+                        </div>
                       ) : (
                         <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
                           {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
@@ -4404,8 +4406,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                 {esenSidebarPopularItems.length > 0 && !esenLeadPackEnabled ? (
                   <ClassicTextList title="Gündemde Öne Çıkanlar" items={esenSidebarPopularItems} accent={accent} href={tumHaberlerHref} />
                 ) : null}
-                {!esenLeadPackEnabled && esenTodayHighlightItems.length > 0 ? (
-                  <ClassicTextList title="Günün Öne Çıkanları" items={esenTodayHighlightItems} accent="#2563eb" href={tumHaberlerHref} />
+                {!esenLeadPackEnabled && esenTodayHighlightItems[0] ? (
+                  <aside className="hm-esen-bottom-widgets-feature" data-hm-home-module="esenLeadPack">
+                    <ClassicFeatureCard n={esenTodayHighlightItems[0]} accent={accent} hmCategoryColors={hmCat} large />
+                  </aside>
                 ) : null}
                 {esenBottomWidgetNews ? (
                   <aside className="hm-esen-bottom-widgets-feature">

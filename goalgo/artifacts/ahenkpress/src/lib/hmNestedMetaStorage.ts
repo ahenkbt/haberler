@@ -2,7 +2,8 @@
 
 export const HM_META_LS_PREFIX = "hm-nested-meta:v1:";
 export const HM_DOMAIN_SLUG_LS_PREFIX = "hm-domain-slug:v1:";
-export const HM_META_LS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Kısa tut: tema/layout değişince ziyaretçi bayat localStorage ile eski temada kalmasın. */
+export const HM_META_LS_MAX_AGE_MS = 2 * 60 * 1000;
 
 export type HmNestedMetaCached = {
   id: number;
