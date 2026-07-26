@@ -1,4 +1,4 @@
-﻿import { and, desc, eq, ilike, isNotNull, isNull, or, sql, inArray, type SQL } from "drizzle-orm";
+﻿import { and, desc, eq, ilike, isNotNull, isNull, not, or, sql, inArray, type SQL } from "drizzle-orm";
 import { getNewsDbForRead, db as mainDb, newsTable, categoriesTable, newsSiteOverridesTable } from "@workspace/db";
 import {
   buildHmSyncDedupeKey,
@@ -261,7 +261,17 @@ export async function loadPortalDbNews(opts: {
 }): Promise<{ items: DbSerialized[]; total: number }> {
   await ensureNewsPublicSubmissionColumns();
   // Yekpare merkez havuzu: siteye özel (site_only) haberler dahil edilmez.
-  const conds: SQL[] = [eq(newsTable.status, "published"), isNull(newsTable.siteId), eq(newsTable.siteOnly, false)];
+  // Manuel editör sync kopyaları da merkez vitrine düşmez (yalnızca kaynak sitede kalır).
+  const conds: SQL[] = [
+    eq(newsTable.status, "published"),
+    isNull(newsTable.siteId),
+    eq(newsTable.siteOnly, false),
+    or(
+      eq(newsTable.isEditorManual, false),
+      isNull(newsTable.rssSourceUrl),
+      not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-sync:%:news:%'`),
+    )!,
+  ];
   const corporateSiteIds = await loadCorporateHmSiteIds();
   const corporateExcl = excludeCorporateOriginCentralNewsSql(corporateSiteIds);
   if (corporateExcl) conds.push(corporateExcl);
@@ -387,6 +397,7 @@ export async function loadEditorScopedDbNews(opts: {
   ]);
 
   if (excludeCentralPool) {
+    const allowCrossSiteManualNews = opts.allowCrossSiteManualNews === true;
     let items = dedupeEditorScopedDbNewsItems(editor.items, opts.siteId);
     items = items.filter((item) => {
       const ref = String(item.rssSourceUrl ?? "").trim();
@@ -394,6 +405,13 @@ export async function loadEditorScopedDbNews(opts: {
       if (ref.startsWith("yekpare-hm-sync:")) return false;
       // Havuz alımı kapalıysa onaylı havuz kopyaları da gelmesin.
       if (!poolReceiveEnabled && ref.startsWith("yekpare-hm-pool:")) return false;
+      // Başka siteden manuel eklenip bu siteye pool kopyası olarak düşenler (varsayılan kapalı).
+      if (!allowCrossSiteManualNews && isExternalManualEditorNewsForSite(
+        { ...item, siteId: null },
+        opts.siteId,
+      )) {
+        return false;
+      }
       return true;
     });
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
@@ -435,7 +453,8 @@ export async function loadEditorScopedDbNews(opts: {
       .filter((item) => item.siteOnly !== true)
       .map((item) => buildHmSyncDedupeKey(opts.siteId, "news", item.id)),
   );
-  const allowCrossSiteManualNews = opts.allowCrossSiteManualNews !== false;
+  // Varsayılan kapalı: başka sitelerin manuel sync/pool haberleri bu sitede görünmez.
+  const allowCrossSiteManualNews = opts.allowCrossSiteManualNews === true;
   const portalForSite = portalNonCorporate.filter((item) => {
     if (localPoolTargetIds.has(item.id)) return false;
     const rssUrl = normalizeRssSourceUrl(String(item.rssSourceUrl ?? ""));

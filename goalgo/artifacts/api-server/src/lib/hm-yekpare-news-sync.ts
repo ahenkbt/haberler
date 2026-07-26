@@ -518,9 +518,10 @@ function shouldSyncEditorNews(
   if (row.siteId == null) return false;
   // Siteye özel haber yekpare merkeze / diğer sitelere senkron edilmez.
   if (row.siteOnly === true) return false;
+  // Panelden manuel eklenen haberler yalnızca kendi sitesinde kalır.
+  if (row.isEditorManual === true) return false;
   if (String(row.rssSourceUrl ?? "").trim().startsWith("yekpare-hm-sync:")) return false;
   if (String(row.rssSourceUrl ?? "").trim()) return false;
-  if (row.isEditorManual) return true;
   if (row.authorId != null && row.authorId > 0) {
     if (row.categoryId != null) {
       const cat = categoriesById.get(row.categoryId);
