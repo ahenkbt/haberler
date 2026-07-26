@@ -133,6 +133,7 @@ import {
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
+import { ensureHmBrandDomainBindings } from "../lib/hm-brand-domain-bindings.js";
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
@@ -1615,6 +1616,25 @@ router.post("/hm/admin/vkd-restore-menu", async (req, res): Promise<void> => {
       ok: true,
       message: result.added > 0 ? `Menüye ${result.added} madde eklendi` : "Menü güncel — eksik madde yok",
       ...result,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: suhaberajansi.com vb. marka alanlarını editör haber sitesine bağlar. */
+router.post("/hm/admin/bind-brand-domains", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const dryRun = (req.body as { dryRun?: boolean } | undefined)?.dryRun === true;
+    const rows = await ensureHmBrandDomainBindings({ dryRun });
+    res.json({
+      ok: true,
+      message: "Marka alan bağlama tamamlandı",
+      rows,
     });
   } catch (e) {
     res.status(500).json({
