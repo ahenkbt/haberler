@@ -410,6 +410,8 @@ export async function verifyAdminPanelSession(): Promise<"ok" | "denied" | "tran
   try {
     const res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-status"), {
       credentials: "include",
+      cache: "no-store",
+      headers: { Accept: "application/json", "Cache-Control": "no-cache" },
     });
     if (res.status === 401) return "denied";
     if (res.status === 429 || res.status >= 500) return "transient";

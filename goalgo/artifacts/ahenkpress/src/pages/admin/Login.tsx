@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { adminFetchErrorHint, adminPanelCookieApiPath, portalCanonicalAdminPath } from "@/lib/apiBase";
+import { invalidateAdminRouteVerificationCache } from "@/lib/adminRouteAuthCache";
 
 export default function Login() {
   const { markPanelAuthenticated, logout } = useAuth();
@@ -70,6 +71,7 @@ export default function Login() {
         setLoading(false);
         return;
       }
+      invalidateAdminRouteVerificationCache();
       markPanelAuthenticated();
       setLocation("/admin");
     } catch {

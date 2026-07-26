@@ -294,26 +294,58 @@ function proxyInit(request, origin, incoming) {
 
 /**
  * Upstream Set-Cookie'leri tarayıcıya güvenli aktar.
- * - getSetCookie ile çoklu çerez kaybını önle
+ * - getSetCookie ile çoklu çerez kaybını önle (+ boşsa headers.get fallback)
  * - Domain=onrender.com vb. kaldır → çerez yekpare.net hostuna yazılsın (admin giriş)
+ * - SameSite=None → Lax (aynı origin /api vekili; Chrome third-party cookie engeli admin girişi kırıyordu)
  */
+function collectUpstreamSetCookies(upstream) {
+  const fromGetter =
+    typeof upstream.headers.getSetCookie === "function" ? upstream.headers.getSetCookie() : null;
+  if (Array.isArray(fromGetter) && fromGetter.length > 0) {
+    return fromGetter.map((c) => String(c || "")).filter(Boolean);
+  }
+  const single = upstream.headers.get("set-cookie");
+  if (!single) return [];
+  return [String(single)];
+}
+
+function rewriteSessionCookieForBrowser(cookie) {
+  let c = String(cookie || "");
+  if (!c) return "";
+  c = c.replace(/;\s*Domain=[^;]*/gi, "");
+  if (/;\s*SameSite\s*=\s*None/i.test(c)) {
+    c = c.replace(/;\s*SameSite\s*=\s*None/gi, "; SameSite=Lax");
+  } else if (!/;\s*SameSite\s*=/i.test(c)) {
+    c += "; SameSite=Lax";
+  }
+  return c;
+}
+
 function copyUpstreamHeadersForBrowser(upstream) {
   const out = new Headers();
   upstream.headers.forEach((value, key) => {
     if (String(key).toLowerCase() === "set-cookie") return;
     out.append(key, value);
   });
-  const rawCookies =
-    typeof upstream.headers.getSetCookie === "function"
-      ? upstream.headers.getSetCookie()
-      : [];
-  for (const cookie of rawCookies) {
-    let c = String(cookie || "");
+  for (const cookie of collectUpstreamSetCookies(upstream)) {
+    const c = rewriteSessionCookieForBrowser(cookie);
     if (!c) continue;
-    c = c.replace(/;\s*Domain=[^;]*/gi, "");
     out.append("Set-Cookie", c);
   }
   return out;
+}
+
+/** Oturum / giriş uçları — kenar ve tarayıcı önbelleği yasak. */
+function isAuthSessionApiPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  return (
+    p === "/api/members/admin-panel-session" ||
+    p === "/api/members/admin-panel-status" ||
+    p === "/api/members/logout" ||
+    p === "/api/members/login" ||
+    p === "/api/hm/editor/login" ||
+    p === "/api/hm/author/login"
+  );
 }
 
 function isStaticAssetPath(pathname) {
@@ -777,6 +809,10 @@ function upstreamCfCacheOptions(pathname, method) {
   }
   if (isStaticAssetPath(pathname)) {
     return { cacheTtl: 86400, cacheEverything: true };
+  }
+  // Admin / oturum — asla kenar önbelleği yok.
+  if (isAuthSessionApiPath(pathname)) {
+    return { cacheTtl: 0, cacheEverything: false };
   }
   // Tema/layout meta — kenar önbelleği yok (editör değişiklikleri hemen görünsün).
   if (isHmMetaApiPath(pathname)) {
@@ -1851,9 +1887,10 @@ export default {
         if (!out.get("cache-control")) {
           out.set("cache-control", "public, max-age=86400, immutable");
         }
-      } else if (isHmMetaApiPath(upstreamPath)) {
+      } else if (isAuthSessionApiPath(upstreamPath) || isHmMetaApiPath(upstreamPath)) {
         out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
         out.set("cdn-cache-control", "no-store");
+        out.set("vary", "Origin, Cookie");
       } else if (isCacheableHmNewsApi(upstreamPath)) {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
         const p = String(upstreamPath || "").split("?")[0] || "";

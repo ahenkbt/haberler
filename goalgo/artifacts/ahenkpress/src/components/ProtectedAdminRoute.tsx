@@ -15,14 +15,10 @@ export function ProtectedAdminRoute({ component: Component }: { component: React
   useEffect(() => {
     let cancelled = false;
     const cached = getCachedAdminRouteVerification();
-    if (cached) {
-      if (cached.result === "ok") {
-        markPanelAuthenticated();
-        setStatus("ok");
-      } else {
-        logout();
-        setStatus("denied");
-      }
+    // "denied" önbelleğini kullanma — taze giriş sonrası 30 sn içinde paneli kilitliyordu.
+    if (cached?.result === "ok") {
+      markPanelAuthenticated();
+      setStatus("ok");
       return () => {
         cancelled = true;
       };
@@ -43,7 +39,6 @@ export function ProtectedAdminRoute({ component: Component }: { component: React
           setStatus("ok");
           return;
         }
-        setCachedAdminRouteVerification("denied");
         logout();
         setStatus("denied");
       });
