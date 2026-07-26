@@ -29,7 +29,6 @@ async function runOnAllNewsDatabases(query: ReturnType<typeof sql>): Promise<voi
 
 /**
  * Eski belediyehizmet.com sitesi → id=2 /tr/su + suhaberajansi.com.
- * Sahte slug=su satırlarını ve belediyehizmet domainini temizler.
  */
 export async function repairSuHaberDomainOwnership(opts?: {
   dryRun?: boolean;
@@ -66,7 +65,6 @@ export async function repairSuHaberDomainOwnership(opts?: {
     return { dryRun, actions, canonicalSiteId };
   }
 
-  // 0) belediyehizmet.com her siteden kaldır
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
@@ -96,7 +94,7 @@ export async function repairSuHaberDomainOwnership(opts?: {
   `);
   actions.push("removed-belediyehizmet-from-all-sites");
 
-  // 1) suhaber* alanlarını TÜM sitelerden temizle (unique çakışmasın)
+  // Kanonik dışından suhaber* temizle (id=2'ye dokunma)
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
@@ -116,17 +114,18 @@ export async function repairSuHaberDomainOwnership(opts?: {
         ELSE domain3
       END,
       updated_at = NOW()
-    WHERE
-      lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
-        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-      OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-      OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+    WHERE id <> ${canonicalSiteId}
+      AND (
+        lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+        OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+        OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+      )
   `);
-  actions.push("cleared-suhaber-from-all-sites");
+  actions.push("cleared-suhaber-from-other-sites");
 
-  // 2) Sahte slug=su satırlarını sil
   await runOnAllNewsDatabases(sql`
     DELETE FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
@@ -134,7 +133,6 @@ export async function repairSuHaberDomainOwnership(opts?: {
   `);
   actions.push("deleted-phantom-su-rows");
 
-  // 3) Kanonik satır = /tr/su + suhaberajansi.com
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
