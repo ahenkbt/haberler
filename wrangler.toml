@@ -151,22 +151,8 @@ pattern = "www.belediyehizmet.com/*"
 zone_name = "belediyehizmet.com"
 
 # Kırşehir alternatif alan adları (hm_news_sites.domain2 / domain3)
-[[routes]]
-pattern = "kirsehri.com"
-custom_domain = true
-
-[[routes]]
-pattern = "www.kirsehri.com"
-custom_domain = true
-
-[[routes]]
-pattern = "kirsehri.com/*"
-zone_name = "kirsehri.com"
-
-[[routes]]
-pattern = "www.kirsehri.com/*"
-zone_name = "kirsehri.com"
-
+# NOT: kirsehri.com zone bu CF hesabında yok — wrangler deploy'u kırıyor; DNS/zone
+# eklendikten sonra routes geri konabilir. Route bağlama scripts/cf-fix-originless-dns.mjs ile.
 [[routes]]
 pattern = "kirsehirhaber.org"
 custom_domain = true

@@ -294,17 +294,36 @@ async function loadHmNestedMeta(pathSlugRaw: string, includePageContent = false)
   if (!pathSlug) throw new Error("empty_slug");
 
   const host = browserHostname();
-  const params = new URLSearchParams();
-  if (host && !isDefaultPortalHost(host)) params.set("domain", host);
-  if (includePageContent) params.set("includePageContent", "1");
-  const query = params.toString() ? `?${params.toString()}` : "";
+  const buildQuery = (withDomain: boolean) => {
+    const params = new URLSearchParams();
+    if (withDomain && host && !isDefaultPortalHost(host)) params.set("domain", host);
+    if (includePageContent) params.set("includePageContent", "1");
+    const q = params.toString();
+    return q ? `?${q}` : "";
+  };
+
   const r1 = await fetchWithDeadline(
-    apiUrl(`/api/hm/meta/by-slug/${encodeURIComponent(pathSlug)}${query}`),
+    apiUrl(`/api/hm/meta/by-slug/${encodeURIComponent(pathSlug)}${buildQuery(true)}`),
     FETCH_TIMEOUT_MS,
   );
 
   if (r1.ok) {
     return readHmNestedMetaJson(r1, pathSlug);
+  }
+
+  // Özel alanda domain henüz DB’ye bağlı değilse slug-only ile bir kez daha dene.
+  const usedDomain = Boolean(host && !isDefaultPortalHost(host));
+  if (usedDomain && (r1.status === 404 || r1.status === 400)) {
+    const r2 = await fetchWithDeadline(
+      apiUrl(`/api/hm/meta/by-slug/${encodeURIComponent(pathSlug)}${buildQuery(false)}`),
+      FETCH_TIMEOUT_MS,
+    );
+    if (r2.ok) {
+      return readHmNestedMetaJson(r2, pathSlug);
+    }
+    if (r2.status === 404 || r2.status === 400) throw new Error("notfound");
+    const errText2 = await r2.text().catch(() => "");
+    throw new Error(errText2.replace(/\s+/g, " ").trim().slice(0, 220) || `http_${r2.status}`);
   }
 
   if (r1.status === 404 || r1.status === 400) throw new Error("notfound");
