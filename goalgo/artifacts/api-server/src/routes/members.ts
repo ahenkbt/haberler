@@ -231,6 +231,9 @@ router.patch("/admin/:memberId/listing-tier", async (req, res): Promise<void> =>
 
 /** GET /api/members/admin-panel-status — SPA, tarayıcı oturumu var mı (panelBootstrap) kontrolü. */
 router.get("/admin-panel-status", (req, res): void => {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  res.setHeader("Vary", "Origin, Cookie");
   const boot = req.session?.panelBootstrap === true || hmEditorJwtGrantsHaberlerPanel(req);
   const perms = req.session?.panelPermissions;
   res.json({
@@ -247,11 +250,13 @@ function saveSession(req: Request): Promise<void> {
 }
 
 router.post("/admin-panel-session", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
   try {
     const { username, password } = req.body as { username?: string; password?: string };
     const user = String(username ?? "").trim().replace(/^\uFEFF/, "");
     // Yapıştırma / autofill sondaki boşluk veya satır sonunu sık kırar.
-    const pass = String(password ?? "").replace(/^\uFEFF/, "").replace(/[\r\n]+$/g, "");
+    const pass = String(password ?? "").replace(/^\uFEFF/, "").replace(/[\r\n]+$/g, "").trimEnd();
     if (!user || !pass) {
       res.status(400).json({ success: false, error: "Kullanıcı adı ve şifre gerekli." });
       return;

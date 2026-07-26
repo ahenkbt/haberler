@@ -103,15 +103,15 @@ app.use(
       secure: process.env["NODE_ENV"] === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       /**
-       * CF Worker aynı origin'de /api vekillediği için Lax yeterli ve yeni tarayıcılarda
-       * third-party cookie engeline takılmaz. Çapraz origin gerekirse COOKIE_SAMESITE=none.
+       * CF Worker aynı origin'de /api vekillediği için Lax zorunlu.
+       * COOKIE_SAMESITE=none eski Render ayarı Chrome'da admin oturumunu düşürüyordu;
+       * çapraz origin gerekirse açıkça COOKIE_SAMESITE_CROSS=true + COOKIE_SAMESITE=none.
        */
       sameSite:
+        process.env["COOKIE_SAMESITE_CROSS"]?.trim().toLowerCase() === "true" &&
         process.env["COOKIE_SAMESITE"]?.trim().toLowerCase() === "none"
           ? "none"
-          : process.env["NODE_ENV"] === "production"
-            ? "lax"
-            : "lax",
+          : "lax",
     },
   }),
 );
