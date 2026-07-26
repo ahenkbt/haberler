@@ -53,6 +53,36 @@ export async function repairSuHaberDomainOwnership(opts?: {
     return { dryRun, actions, canonicalSiteId };
   }
 
+  // 0) belediyehizmet.com her siteden kaldır (eski Kırşehir alanı)
+  await runOnAllNewsDatabases(sql`
+    UPDATE hm_news_sites
+    SET
+      domain = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('belediyehizmet.com', 'belediyehizzmet.com') THEN NULL
+        ELSE domain
+      END,
+      domain2 = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('belediyehizmet.com', 'belediyehizzmet.com') THEN NULL
+        ELSE domain2
+      END,
+      domain3 = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('belediyehizmet.com', 'belediyehizzmet.com') THEN NULL
+        ELSE domain3
+      END,
+      updated_at = NOW()
+    WHERE
+      lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('belediyehizmet.com', 'belediyehizzmet.com')
+      OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('belediyehizmet.com', 'belediyehizzmet.com')
+      OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('belediyehizmet.com', 'belediyehizzmet.com')
+  `);
+  actions.push("removed-belediyehizmet-from-all-sites");
+
   // 1) suhaber* alanlarını slug≠su sitelerinden temizle
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
@@ -85,7 +115,7 @@ export async function repairSuHaberDomainOwnership(opts?: {
   `);
   actions.push("cleared-suhaber-from-non-su");
 
-  // 2) Kanonik /tr/su satırına domainleri yaz
+  // 2) Eski belediyehizmet/kirsehir sitesi = kanonik /tr/su → suhaberajansi.com
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
