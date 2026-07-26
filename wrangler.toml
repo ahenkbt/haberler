@@ -149,3 +149,5 @@ zone_name = "belediyehizmet.com"
 [[routes]]
 pattern = "www.belediyehizmet.com/*"
 zone_name = "belediyehizmet.com"
+
+# redeploy trigger 2026-07-26T19:29:27Z
