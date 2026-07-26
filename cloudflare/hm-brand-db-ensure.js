@@ -16,11 +16,13 @@ export const HM_BRAND_DB_BINDINGS = [
 const PROTECTED_SLUGS = new Set([
   "asg",
   "kirsehir",
+  "kh",
   "vkd",
   "tr",
   "vatanhaber",
   "ankarahabergundemi",
   "trafik",
+  "su",
 ]);
 
 function normalizeHost(raw) {

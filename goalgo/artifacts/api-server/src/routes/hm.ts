@@ -133,6 +133,7 @@ import {
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
+import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
 import {
   ensureHmBrandDomainBindings,
@@ -487,6 +488,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsHeaderMenuEnabled: true,
     hmNewsStripMenuEnabled: false,
     hmNewsSliderEnabled: true,
+    hmNewsTepeMansetEnabled: true,
     hmNewsRssHeadlineEnabled: false,
     hmNewsBreakingBandEnabled: true,
     hmNewsGoogleNewsBandEnabled: !isCorporate,
@@ -1751,6 +1753,30 @@ router.post("/hm/admin/bind-brand-domains", async (req, res): Promise<void> => {
       ok: true,
       message: "Marka alan bağlama tamamlandı",
       rows,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: /tr/kh + Kırşehir domainlerini oluştur/bağla (Su'ya dokunmaz). */
+router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const dryRun = (req.body as { dryRun?: boolean } | undefined)?.dryRun === true;
+    const result = await ensureKhNewsSite({ dryRun });
+    res.json({
+      ok: result.action !== "error",
+      message:
+        result.action === "created"
+          ? `Kırşehir Haber (/tr/kh) oluşturuldu #${result.siteId}`
+          : result.action === "updated"
+            ? `Kırşehir Haber (/tr/kh) güncellendi #${result.siteId}`
+            : result.detail || result.action,
+      ...result,
     });
   } catch (e) {
     res.status(500).json({

@@ -785,11 +785,11 @@ export type NewsSiteLayoutPrefs = {
 };
 
 export const HM_NEWS_HOME_MODULE_ORDER = [
+  "tepeManset",
+  "hero",
   "breakingBand",
   "yekpareSearchBox",
   "googleNewsBand",
-  "tepeManset",
-  "hero",
   "newsMapModule",
   "worldBriefs",
   "yemekHaber",
@@ -1194,7 +1194,8 @@ export function resolveHmNewsEditorModuleEnabled(
     case "hero":
       return p.hmNewsSliderEnabled !== false;
     case "tepeManset":
-      return p.hmNewsTepeMansetEnabled === true;
+      // Varsayılan açık — tüm haber sitelerinde header altında en üstte
+      return p.hmNewsTepeMansetEnabled !== false;
     case "mansetAd":
       return p.hmNewsMansetAdModuleEnabled !== false;
     case "authorsStrip":
@@ -2525,7 +2526,7 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsIndexLandingEnabled: false,
   hmNewsYekpareFeaturesEnabled: false,
   hmNewsSliderEnabled: true,
-  hmNewsTepeMansetEnabled: false,
+  hmNewsTepeMansetEnabled: true,
   hmNewsRssHeadlineEnabled: false,
   hmNewsBreakingBandEnabled: true,
   hmNewsGoogleNewsBandEnabled: false,
@@ -3230,7 +3231,8 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsIndexLandingEnabled: normalizeDefaultHiddenToggle(newsIndexLandingEnabledRaw),
       hmNewsYekpareFeaturesEnabled: normalizeDefaultHiddenToggle(newsYekpareFeaturesEnabledRaw),
       hmNewsSliderEnabled: normalizeDefaultVisibleToggle(newsSliderEnabledRaw),
-      hmNewsTepeMansetEnabled: normalizeDefaultHiddenToggle(newsTepeMansetEnabledRaw),
+      /** Tepe manşet: varsayılan açık — tüm haber sitelerinde header altında en üstte */
+      hmNewsTepeMansetEnabled: normalizeDefaultVisibleToggle(newsTepeMansetEnabledRaw),
       hmNewsRssHeadlineEnabled: normalizeDefaultHiddenToggle(newsRssHeadlineEnabledRaw),
       hmNewsBreakingBandEnabled: normalizeDefaultVisibleToggle(newsBreakingBandEnabledRaw),
       hmNewsGoogleNewsBandEnabled: normalizeDefaultHiddenToggle(newsGoogleNewsBandEnabledRaw),

@@ -40,6 +40,7 @@ import { repairAllCorruptedRssImportTitles } from "./lib/rssTitleRepair.js";
 import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.js";
 import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
+import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
@@ -392,6 +393,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_000).unref();
   } else {
     logger.info("[hm-su-domain] HM_SU_DOMAIN_REPAIR=0 — atlandı");
+  }
+
+  // /tr/kh + kirsehirhaber.org / kirsehri.com / kirsehir.net (Su'ya dokunmaz)
+  if (envJobFlag("HM_KH_SITE_ENSURE", true)) {
+    setTimeout(() => {
+      void ensureKhNewsSite({ dryRun: false })
+        .then((r) => logger.info({ ...r }, "[hm-kh] /tr/kh site ensure"))
+        .catch((err) => logger.error({ err }, "[hm-kh] site ensure başarısız"));
+    }, 17_500).unref();
+  } else {
+    logger.info("[hm-kh] HM_KH_SITE_ENSURE=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).
