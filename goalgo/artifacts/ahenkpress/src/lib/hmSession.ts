@@ -2,7 +2,14 @@ export const HM_EDITOR_JWT_KEY = "hm_editor_jwt";
 export const HM_EDITOR_SITE_KEY = "hm_editor_site";
 export const HM_EDITOR_BRIEF_KEY = "hm_editor_brief";
 
-export type HmSiteBrief = { id: number; slug: string; domain: string | null; displayName: string };
+export type HmSiteBrief = {
+  id: number;
+  slug: string;
+  domain: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+  displayName: string;
+};
 export type HmEditorBrief = { id: number; email: string; displayName: string | null };
 
 export type HmSessionEventOpts = { silent?: boolean };

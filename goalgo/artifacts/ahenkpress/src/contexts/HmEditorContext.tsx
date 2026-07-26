@@ -33,6 +33,7 @@ import {
 } from "@/lib/newsSiteLayout";
 import type { HmSeoVerification } from "@/lib/pageSeo";
 import { clearHmNestedMetaCache } from "@/lib/hmNestedMetaCache";
+import { clearHmSitePublicBrowserCaches } from "@/lib/hmSitePublicCacheClear";
 import { dispatchHmLayoutUpdated } from "@/lib/hmLayoutUpdatedEvent";
 
 type HmEditorContextType = {
@@ -131,6 +132,8 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         id: j.site.id,
         slug: j.site.slug,
         domain: j.site.domain ?? null,
+        domain2: j.site.domain2 ?? null,
+        domain3: j.site.domain3 ?? null,
         displayName: j.site.displayName,
       };
       verifiedTokenRef.current = verifyFor;
@@ -243,6 +246,13 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         setNewsLayoutPrefs(mergedPrefs);
       }
       if (site?.slug) {
+        clearHmSitePublicBrowserCaches({
+          siteId: site.id,
+          slug: site.slug,
+          domain: site.domain,
+          domain2: site.domain2,
+          domain3: site.domain3,
+        });
         clearHmNestedMetaCache(site.slug);
         dispatchHmLayoutUpdated(site.slug);
       }
@@ -251,7 +261,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
     } catch (e: unknown) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
-  }, [newsLayoutPrefs, site?.slug]);
+  }, [newsLayoutPrefs, site]);
 
   const saveHomeModuleOrder = useCallback(async (patch: {
     hmNewsHomeModuleOrder?: string[];
@@ -300,12 +310,22 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
             : {}),
         }));
       }
-      if (site?.slug) clearHmNestedMetaCache(site.slug);
+      if (site?.slug) {
+        clearHmSitePublicBrowserCaches({
+          siteId: site.id,
+          slug: site.slug,
+          domain: site.domain,
+          domain2: site.domain2,
+          domain3: site.domain3,
+        });
+        clearHmNestedMetaCache(site.slug);
+        dispatchHmLayoutUpdated(site.slug);
+      }
       return { ok: true };
     } catch (e: unknown) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
-  }, [site?.slug]);
+  }, [site]);
 
   const saveSeoVerification = useCallback(async (next: HmSeoVerification | null): Promise<{ ok: true } | { ok: false; error: string }> => {
     const t = readHmJwt();

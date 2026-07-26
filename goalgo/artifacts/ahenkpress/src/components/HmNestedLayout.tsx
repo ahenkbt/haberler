@@ -393,7 +393,7 @@ export function HmNestedLayout({
     queryFn: () => loadHmNestedMeta(slug, needsFreshMeta),
     enabled: slug.length > 0,
     // Anasayfa ilk boyamasını meta refetch ile bloklamayın; layout event ile invalidate edilir.
-    staleTime: indexLandingGate && isHomeRoot ? 5 * 60 * 1000 : needsFreshMeta ? 0 : 60 * 1000,
+    staleTime: indexLandingGate && isHomeRoot ? 30 * 1000 : needsFreshMeta ? 0 : 30 * 1000,
     refetchOnMount: needsFreshMeta ? "always" : true,
     refetchOnWindowFocus: needsFreshMeta,
     retry: 1,

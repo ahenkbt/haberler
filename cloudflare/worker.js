@@ -36,7 +36,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehirhaber.org",
   "www.kirsehirhaber.org",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717b";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260726c";
 
 const PORTAL_HOSTS = new Set([
   "yekpare.net",
@@ -102,13 +102,29 @@ function purgeBootScript(cookieName) {
       });
     }).then(function () {
       try {
-        // Netlify / eski HM cache anahtarlarını temizle
+        // Netlify + bayat HM tema/meta localStorage anahtarlarını temizle
         var rm = [];
         for (var i = 0; i < localStorage.length; i++) {
           var k = localStorage.key(i);
-          if (k && (k.indexOf('nf_') === 0 || k.indexOf('netlify') !== -1)) rm.push(k);
+          if (!k) continue;
+          if (
+            k.indexOf('nf_') === 0 ||
+            k.indexOf('netlify') !== -1 ||
+            k.indexOf('hm-nested-meta:') === 0 ||
+            k.indexOf('hm-domain-slug:') === 0 ||
+            k.indexOf('hm-meta-by-domain:') === 0 ||
+            k.indexOf('hm-home-hybrid:') === 0
+          ) {
+            rm.push(k);
+          }
         }
         rm.forEach(function (k) { localStorage.removeItem(k); });
+        try {
+          for (var j = sessionStorage.length - 1; j >= 0; j--) {
+            var sk = sessionStorage.key(j);
+            if (sk && sk.indexOf('hm-meta-by-domain:') === 0) sessionStorage.removeItem(sk);
+          }
+        } catch (_) {}
       } catch (_) {}
       var u = new URL(location.href);
       if (!u.searchParams.has('_cf_purge')) {
@@ -661,11 +677,13 @@ function rewriteYektubeSpaPath(pathname) {
   return null;
 }
 
-/** HM anasayfa haber API'leri — soğuk Render'ı edge cache ile kes. */
+/**
+ * HM haber listeleri — edge cache (soğuk Render).
+ * NOT: `/api/hm/meta/*` ASLA cache'lenmez — tema/layout editör kaydı anında yansımalı.
+ */
 function isCacheableHmNewsApi(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
   return (
-    p.startsWith("/api/hm/meta/") ||
     p === "/api/hm/home-bundle" ||
     p === "/api/news" ||
     p === "/api/news/hybrid" ||
@@ -676,6 +694,11 @@ function isCacheableHmNewsApi(pathname) {
   );
 }
 
+function isHmMetaApiPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  return p.startsWith("/api/hm/meta/");
+}
+
 function upstreamCfCacheOptions(pathname, method) {
   if (method !== "GET" && method !== "HEAD") {
     return { cacheTtl: 0, cacheEverything: false };
@@ -683,7 +706,16 @@ function upstreamCfCacheOptions(pathname, method) {
   if (isStaticAssetPath(pathname)) {
     return { cacheTtl: 86400, cacheEverything: true };
   }
+  // Tema/layout meta — kenar önbelleği yok (editör değişiklikleri hemen görünsün).
+  if (isHmMetaApiPath(pathname)) {
+    return { cacheTtl: 0, cacheEverything: false };
+  }
   if (isCacheableHmNewsApi(pathname)) {
+    // home-bundle kısa tut; modül sırası meta'dan gelir ama haber listesi bayat kalabilir.
+    const p = String(pathname || "").split("?")[0] || "";
+    if (p === "/api/hm/home-bundle") {
+      return { cacheTtl: 30, cacheEverything: true };
+    }
     return { cacheTtl: 120, cacheEverything: true };
   }
   return { cacheTtl: 0, cacheEverything: false };
@@ -860,7 +892,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
           "x-forwarded-host": incoming.host,
           "x-forwarded-proto": "https",
         },
-        cf: { cacheTtl: 120, cacheEverything: true },
+        cf: { cacheTtl: 0, cacheEverything: false },
       },
     );
     if (!metaRes.ok) return null;
@@ -1698,15 +1730,26 @@ export default {
         if (!out.get("cache-control")) {
           out.set("cache-control", "public, max-age=86400, immutable");
         }
+      } else if (isHmMetaApiPath(upstreamPath)) {
+        out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+        out.set("cdn-cache-control", "no-store");
       } else if (isCacheableHmNewsApi(upstreamPath)) {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
-        if (!out.get("cache-control")) {
-          out.set(
-            "cache-control",
-            "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
-          );
+        const p = String(upstreamPath || "").split("?")[0] || "";
+        if (p === "/api/hm/home-bundle") {
+          if (!out.get("cache-control")) {
+            out.set("cache-control", "public, max-age=15, s-maxage=30");
+          }
+          out.set("cdn-cache-control", "public, max-age=30");
+        } else {
+          if (!out.get("cache-control")) {
+            out.set(
+              "cache-control",
+              "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+            );
+          }
+          out.set("cdn-cache-control", "public, max-age=120, stale-while-revalidate=300");
         }
-        out.set("cdn-cache-control", "public, max-age=120, stale-while-revalidate=300");
       } else {
         out.set("cdn-cache-control", "no-store");
       }

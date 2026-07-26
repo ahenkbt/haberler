@@ -132,6 +132,7 @@ import {
   repairStaleSuBrandForSiteId,
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
+import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
@@ -770,6 +771,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     return;
   }
 
+  // Tema/layout — kenar/tarayıcı önbelleği yok.
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+
   const queryDomain = typeof req.query.domain === "string" ? req.query.domain : "";
   if (queryDomain) {
     const domainRow = await getHmSiteMappedToDomain(queryDomain);
@@ -811,7 +816,9 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
   }
-  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300");
+  // Tema/layout — kenar/tarayıcı önbelleği yok (editör kaydı hemen yansımalı).
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
   res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
 });
 
@@ -827,7 +834,7 @@ router.get("/hm/home-bundle", async (req, res): Promise<void> => {
   const categorySlug = String(req.query.mansetCategorySlug ?? req.query.categorySlug ?? "").trim() || null;
   try {
     const bundle = await buildHmHomeBundle(siteId, sliderLimit, categorySlug);
-    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=120, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=30");
     res.json(bundle);
   } catch (err) {
     console.error("[hm/home-bundle]", err);
@@ -2128,6 +2135,7 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
       slug: site.slug,
       domain: site.domain,
       domain2: site.domain2 ?? null,
+      domain3: site.domain3 ?? null,
       displayName: site.displayName,
       contactJson: site.contactJson,
       layoutJson: site.layoutJson,
@@ -2233,7 +2241,35 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  // Ziyaretçi kenar önbelleğini temizle (tema/menü değişikliği).
+  void purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId).catch(() => undefined);
   res.json({ ok: true, layoutJson: raw });
+});
+
+/** Editör: vitrin/tema/meta kenar + tarayıcı önbelleğini boşalt. */
+router.post("/hm/editor/purge-public-cache", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  try {
+    const result = await purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId);
+    if (!result) {
+      res.status(404).json({ error: "Site bulunamadı" });
+      return;
+    }
+    res.json({
+      ok: true,
+      message:
+        result.cfPurged > 0
+          ? `Kenar önbellek temizlendi (${result.cfPurged} URL). Siteyi yenileyin.`
+          : "Meta önbelleği artık kenarda tutulmuyor; tarayıcı önbelleğini temizleyip siteyi yenileyin.",
+      ...result,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
 });
 
 /** Yalnızca anasayfa modül sırası — tam layout gövdesi gönderilmez. */
@@ -2268,6 +2304,7 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  void purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId).catch(() => undefined);
   res.json({ ok: true, layoutJson: raw });
 });
 
