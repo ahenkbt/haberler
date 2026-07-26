@@ -636,7 +636,7 @@ export type NewsSiteLayoutPrefs = {
   hmNewsPortal3ThemeBlockEnabled?: boolean;
   /** HABER teması: MANŞET HABER kutusu (yalnızca manuel haberler); tanımsızsa kapalı kabul edilir. */
   hmNewsEsenThemeBlockEnabled?: boolean;
-  /** Gül teması: Günün Öne Çıkanları (sol liste + sağ 4×2 son haberler); tanımsızsa tema varsayılanı. */
+  /** Gül teması: Günün Öne Çıkanları (sol 1 görsel kart + sağ 4×2 son haberler); tanımsızsa tema varsayılanı. */
   hmNewsEsenLeadPackEnabled?: boolean;
   /** HABER teması: renkli kategori şeridi; tanımsızsa kapalı kabul edilir. */
   hmNewsFeaturedCategoryStripEnabled?: boolean;
