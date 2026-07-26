@@ -417,13 +417,13 @@ export default function EditorKategoriler() {
                 Diğer sitelerden manuel eklenen haberler bu sitede yayınlansın
               </Label>
               <p className="text-xs text-slate-500 mt-1">
-                Kapatırsanız, başka HM editör sitelerinde manuel eklenen haberler bu sitede listelenmez. Bu sitede
-                eklediğiniz haberler etkilenmez.
+                Varsayılan kapalıdır. Açarsanız, başka HM editör sitelerinde manuel eklenen (ve paylaşıma açık)
+                haberler bu sitede listelenebilir. Bu sitede eklediğiniz haberler her zaman yalnızca burada kalır.
               </p>
             </div>
             <Switch
               id="hm-allow-cross-site-manual"
-              checked={newsLayoutPrefs.hmAllowCrossSiteManualNews !== false}
+              checked={newsLayoutPrefs.hmAllowCrossSiteManualNews === true}
               disabled={saving}
               onCheckedChange={(on) => void toggleCrossSiteManual(!!on)}
             />

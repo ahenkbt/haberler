@@ -28,7 +28,11 @@ import {
 } from "@workspace/db";
 import { CreateCategoryBody, CreateNewsBody, UpdateNewsBody } from "@workspace/api-zod";
 import { mergeCategories } from "../lib/category-merge";
-import { denyUnlessAdminMaintenance, denyUnlessAdminMaintenanceAny } from "../lib/admin-guard";
+import {
+  denyUnlessAdminMaintenance,
+  denyUnlessAdminMaintenanceAny,
+  panelHasPermission,
+} from "../lib/admin-guard";
 import { syncVkdPagesFromData, syncVkdMenuPartialFromData, VKD_EDITOR_TOUCHED_KEY, VKD_SITE_SLUG } from "../lib/vkd-page-restore.js";
 import { parseHmEditorFromRequest } from "../lib/hmEditorJwt.js";
 import { getSessionSecret } from "../lib/secrets";
@@ -132,6 +136,7 @@ import {
   ensureVkdCorporateSiteCategories,
 } from "../lib/hm-corporate-news-policy.js";
 import { repairCorporateSiteLocalManualImages } from "../lib/hm-corporate-manual-image-repair.js";
+import { repairManualEditorNewsSiteOnly } from "../lib/hm-manual-news-site-only.js";
 import { recategorizeMisclassifiedSporBatch } from "../lib/recategorizeMisclassifiedSpor.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "../lib/hm-global-news-category.js";
 
@@ -3564,12 +3569,13 @@ router.post("/hm/author/news", async (req, res): Promise<void> => {
       tags,
       siteId: ctx.siteId,
       isEditorManual: true,
+      siteOnly: true,
+      ownerSiteId: ctx.siteId,
     });
   if (!row) {
     res.status(500).json({ error: "Kayıt oluşturulamadı" });
     return;
   }
-  triggerHmYekpareSyncForSite(ctx.siteId);
   res.status(201).json(serializeNews(row, newsCtx));
 });
 
@@ -3621,6 +3627,8 @@ router.put("/hm/author/news/:id", async (req, res): Promise<void> => {
       tags,
       siteId: ctx.siteId,
       isEditorManual: true,
+      siteOnly: true,
+      ownerSiteId: ctx.siteId,
     },
     eq(newsTable.id, id),
   );
@@ -3628,7 +3636,6 @@ router.put("/hm/author/news/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Haber bulunamadı." });
     return;
   }
-  triggerHmYekpareSyncForSite(ctx.siteId);
   res.json(serializeNews(row, newsCtx));
 });
 
@@ -3731,6 +3738,8 @@ router.post("/hm/public/sites/:slug/news-submissions", async (req, res): Promise
     tags: ["haber-gonder"],
     siteId: site.id,
     isEditorManual: true,
+    siteOnly: true,
+    ownerSiteId: site.id,
     senderFullName,
     senderEmail,
     senderPhone: senderPhone || null,
@@ -3810,6 +3819,43 @@ router.post("/hm/editor/news/repair-categories", async (req, res): Promise<void>
     dryRun,
   });
   res.json({ ok: true, dryRun, ...result });
+});
+
+/**
+ * Manuel editör haberlerini site_only yapar; merkez sync / diğer sitelerdeki pool kopyalarını temizler.
+ * Admin: tüm siteler. Editör: yalnızca kendi sitesi.
+ */
+router.post("/hm/editor/news/repair-site-only", async (req, res): Promise<void> => {
+  const adminOk = panelHasPermission(req, "haberler");
+  const editorCtx = adminOk ? null : parseHmEditor(req);
+  if (!adminOk && !editorCtx) {
+    res.status(401).json({ error: "Yönetici veya editör oturumu gerekli." });
+    return;
+  }
+
+  const dryRun =
+    req.query.dryRun === "1" ||
+    req.query.dryRun === "true" ||
+    (req.body as { dryRun?: unknown })?.dryRun === true;
+  const sinceRaw =
+    typeof req.query.since === "string"
+      ? req.query.since
+      : typeof (req.body as { since?: unknown })?.since === "string"
+        ? String((req.body as { since: string }).since)
+        : null;
+  const siteId = editorCtx?.siteId;
+  try {
+    const result = await repairManualEditorNewsSiteOnly({
+      dryRun,
+      siteId: siteId && siteId > 0 ? siteId : undefined,
+      since: sinceRaw,
+    });
+    res.json({ ok: true, dryRun, siteId: siteId ?? null, ...result });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : "Manuel haber site-only onarımı başarısız",
+    });
+  }
 });
 
 /** Spor kategorisinde yanlış etiketlenmiş (spor sinyali olmayan) haberleri gündem'e taşır — HM editör. */
@@ -3925,6 +3971,10 @@ router.post("/hm/editor/pool/news/bulk-publish", async (req, res): Promise<void>
     const [src] = await newsReadDb().select().from(newsTable).where(eq(newsTable.id, id));
     if (!src || src.status !== "published") continue;
     if (src.siteId != null && src.siteId === ctx.siteId) continue;
+    // Siteye özel / manuel editör haberleri diğer sitelere kopyalanmaz.
+    if (src.siteOnly === true || (src.isEditorManual === true && src.siteId != null && src.siteId !== ctx.siteId)) {
+      continue;
+    }
     const poolRef =
       src.siteId != null ? `yekpare-hm-pool:${src.siteId}:${src.id}` : `yekpare-hm-pool:0:${src.id}`;
     const [existing] = await newsReadDb()
@@ -4000,6 +4050,10 @@ router.post("/hm/editor/pool/news/:id/publish", async (req, res): Promise<void> 
     res.status(400).json({ error: "Bu haber zaten kendi sitenizde" });
     return;
   }
+  if (src.siteOnly === true || (src.isEditorManual === true && src.siteId != null && src.siteId !== ctx.siteId)) {
+    res.status(403).json({ error: "Siteye özel manuel haberler diğer sitelere kopyalanamaz" });
+    return;
+  }
   const poolRef =
     src.siteId != null
       ? `yekpare-hm-pool:${src.siteId}:${src.id}`
@@ -4067,9 +4121,8 @@ router.post("/hm/editor/news", async (req, res): Promise<void> => {
   const data = parsed.data;
   const hmAccess = await resolveHmHybridRssAccess(ctx.siteId);
   const isCorporateEditor = hmAccess?.isCorporate === true;
-  const siteOnly = isCorporateEditor
-    ? true
-    : (req.body as { siteOnly?: unknown })?.siteOnly === true;
+  // Manuel editör haberleri her zaman yalnızca bu sitede görünür.
+  const siteOnly = true;
   const newsCtx = await loadNewsContext();
   const categoryId = await resolveCategoryIdForHmEditor(ctx.siteId, data.categorySlug);
   if (isCorporateEditor) {
@@ -4104,16 +4157,13 @@ router.post("/hm/editor/news", async (req, res): Promise<void> => {
       siteId: ctx.siteId,
       isEditorManual: true,
       siteOnly,
-      ownerSiteId: siteOnly ? ctx.siteId : null,
+      ownerSiteId: ctx.siteId,
       isFoodRecipe: data.isFoodRecipe ?? false,
       foodRecipeCategorySlug: data.isFoodRecipe ? (data.foodRecipeCategorySlug?.trim().toLowerCase() || null) : null,
     });
   if (!row) {
     res.status(500).json({ error: "Kayıt oluşturulamadı" });
     return;
-  }
-  if (!isCorporateEditor) {
-    triggerHmYekpareSyncForSite(ctx.siteId);
   }
   res.status(201).json(serializeNews(row, newsCtx));
 });
@@ -4239,14 +4289,10 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
     return;
   }
   const data = parsed.data;
-  const hasSiteOnly = Object.prototype.hasOwnProperty.call(req.body ?? {}, "siteOnly");
   const hmAccess = await resolveHmHybridRssAccess(ctx.siteId);
   const isCorporateEditor = hmAccess?.isCorporate === true;
-  const siteOnly = isCorporateEditor
-    ? true
-    : hasSiteOnly
-      ? (req.body as { siteOnly?: unknown }).siteOnly === true
-      : existing.siteOnly === true;
+  // Manuel editör haberleri her zaman yalnızca bu sitede görünür.
+  const siteOnly = true;
   const newsCtx = await loadNewsContext();
   const categoryId = await resolveCategoryIdForHmEditor(ctx.siteId, data.categorySlug);
   if (isCorporateEditor) {
@@ -4281,7 +4327,7 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
       tags,
       siteId: ctx.siteId,
       siteOnly,
-      ownerSiteId: siteOnly ? ctx.siteId : null,
+      ownerSiteId: ctx.siteId,
       isFoodRecipe: data.isFoodRecipe ?? false,
       foodRecipeCategorySlug: data.isFoodRecipe ? (data.foodRecipeCategorySlug?.trim().toLowerCase() || null) : null,
       isEditorManual: true,

@@ -37,6 +37,7 @@ import { startHmPoolAutoScheduler } from "./lib/hmPoolAutoScheduler";
 import { bootstrapKesfetNightScraperFromSettings } from "./routes/map";
 import { scheduleInsaatfirmalarimAutoImport, startInsaatfirmalarimQueueWatchdog } from "./lib/insaatfirmalarim-jobs.js";
 import { repairAllCorruptedRssImportTitles } from "./lib/rssTitleRepair.js";
+import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
 import { seedGeliverMerchantCatalogIfNeeded } from "./lib/merchant-rss-import.js";
 import { ensureRssCampaignSchema } from "./lib/ensure-rss-campaign-schema.js";
@@ -332,6 +333,29 @@ const server = app.listen(port, listenHost, (err) => {
     }, 10_000).unref();
   } else {
     logger.info("[rss-title-repair] SKIP_RSS_TITLE_REPAIR=1 — atlandı");
+  }
+
+  // Manuel editör haberlerini site_only yap; merkez sync / yabancı pool kopyalarını temizle.
+  if (envJobFlag("HM_MANUAL_NEWS_SITE_ONLY_REPAIR", !isRenderHosting())) {
+    setTimeout(() => {
+      void repairManualEditorNewsSiteOnly({ dryRun: false })
+        .then((r) => {
+          if (r.markedSiteOnly > 0 || r.deletedCentralSync > 0 || r.deletedPoolCopies > 0) {
+            logger.info(
+              {
+                scanned: r.scanned,
+                markedSiteOnly: r.markedSiteOnly,
+                deletedCentralSync: r.deletedCentralSync,
+                deletedPoolCopies: r.deletedPoolCopies,
+              },
+              "[hm-manual-site-only] manuel haberler kendi sitelerine kilitlendi",
+            );
+          }
+        })
+        .catch((err) => logger.error({ err }, "[hm-manual-site-only] onarım başarısız"));
+    }, 14_000).unref();
+  } else {
+    logger.info("[hm-manual-site-only] HM_MANUAL_NEWS_SITE_ONLY_REPAIR=0 veya Render — atlandı");
   }
 
   seedVideoDataIfNeeded(logger).catch((e) =>

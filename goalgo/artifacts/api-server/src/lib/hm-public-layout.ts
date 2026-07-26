@@ -59,9 +59,9 @@ export function isHmLayoutModuleEnabled(
   return layout[key] !== false;
 }
 
-/** Diğer HM sitelerinden manuel sync/pool haberleri — varsayılan açık (mevcut davranış). */
+/** Diğer HM sitelerinden manuel sync/pool haberleri — varsayılan kapalı. */
 export function allowCrossSiteManualNewsFromLayout(layout: Record<string, unknown>): boolean {
-  return layout.hmAllowCrossSiteManualNews !== false;
+  return layout.hmAllowCrossSiteManualNews === true;
 }
 
 export type HmRssIntegrationMode = "live" | "persistent" | "manual";

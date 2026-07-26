@@ -28,7 +28,6 @@ import { HM_EDITOR_CATEGORIES_QUERY_KEY, HM_EDITOR_NEWS_QUERY_KEY } from "@/lib/
 import { HM_AUTHOR_NEWS_QUERY_KEY } from "@/lib/hmAuthorNewsQueryKey";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { YazarPanelNav } from "@/components/YazarPanelNav";
-import { useHmEditorOptional } from "@/contexts/HmEditorContext";
 import { useEffect, useState, useRef } from "react";
 import { Upload, Wand2, Loader2, ImageIcon, X, Images } from "lucide-react";
 import { YekpareMediaPickerDialog } from "@/components/YekpareMediaPickerDialog";
@@ -73,11 +72,6 @@ export default function HaberEditor() {
   const isEditing = !!params.id && params.id !== "yeni";
   const id = isEditing ? parseInt(params.id!, 10) : 0;
   const idValid = isEditing && Number.isFinite(id) && id > 0;
-  const hmEditorCtx = useHmEditorOptional();
-  const vitrinTheme = String(hmEditorCtx?.newsLayoutPrefs?.hmVitrinTheme ?? "").trim().toLowerCase();
-  const isCorporateSite =
-    isEditorHm && (vitrinTheme === "corporate" || vitrinTheme === "kurumsal");
-
   const { data: adminNews, isLoading: isLoadingAdminNews } = useGetNews(id, {
     query: { enabled: idValid && !isEditorHm && !isAuthorHm, queryKey: getGetNewsQueryKey(id) },
   });
@@ -196,7 +190,7 @@ export default function HaberEditor() {
     isFeatured: false,
     isSiteManset: false,
     isBreaking: false,
-    siteOnly: false,
+    siteOnly: true,
     isFoodRecipe: false,
     foodRecipeCategorySlug: "",
     tags: ""
@@ -224,7 +218,7 @@ export default function HaberEditor() {
         isFeatured: false,
         isSiteManset: false,
         isBreaking: false,
-        siteOnly: false,
+        siteOnly: true,
         isFoodRecipe: false,
         foodRecipeCategorySlug: "",
         tags: "",
@@ -248,7 +242,7 @@ export default function HaberEditor() {
       isFeatured: !!news.isFeatured,
       isSiteManset: !!(news as News & { isSiteManset?: boolean }).isSiteManset,
       isBreaking: !!news.isBreaking,
-      siteOnly: !!(news as News & { siteOnly?: boolean }).siteOnly,
+      siteOnly: true,
       isFoodRecipe: !!(news as News & { isFoodRecipe?: boolean }).isFoodRecipe,
       foodRecipeCategorySlug: String((news as News & { foodRecipeCategorySlug?: string | null }).foodRecipeCategorySlug ?? ""),
       tags: news.tags ? news.tags.join(", ") : "",
@@ -418,9 +412,7 @@ export default function HaberEditor() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(
-              isEditorHm && !isAuthorHm
-                ? { ...payload, siteOnly: isCorporateSite ? true : form.siteOnly }
-                : payload,
+              isEditorHm || isAuthorHm ? { ...payload, siteOnly: true } : payload,
             ),
           });
           const errBody = (await r.json().catch(() => ({}))) as { error?: string };
@@ -690,16 +682,12 @@ export default function HaberEditor() {
                     </div>
                   ) : null}
                 </div>
-                {isEditorHm && !isCorporateSite ? (
+                {isEditorHm ? (
                   <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="cursor-pointer">Siteye özel haber</Label>
-                      <Switch checked={form.siteOnly} onCheckedChange={(v) => setForm({ ...form, siteOnly: v })} />
-                    </div>
+                    <Label>Siteye özel haber</Label>
                     <p className="mt-1 text-[11px] leading-snug text-slate-500">
-                      {form.siteOnly
-                        ? "Bu haber yalnızca kendi sitenizde görünür; Yekpare ve diğer sitelere gönderilmez."
-                        : "Kapalı: haber Yekpare havuzuna ve bu kategoriyi kullanan tüm sitelere yayılır."}
+                      Manuel eklenen haberler yalnızca bu haber sitesinde görünür; Yekpare havuzuna ve diğer
+                      sitelere gönderilmez.
                     </p>
                   </div>
                 ) : null}
