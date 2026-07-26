@@ -136,6 +136,8 @@ import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge
 import {
   ensureHmBrandDomainBindings,
   ensureHmBrandSiteForMeta,
+  findHmBrandBinding,
+  hmBrandMetaConflicts,
   isKnownHmBrandDomain,
   isKnownHmBrandSlug,
 } from "../lib/hm-brand-domain-bindings.js";
@@ -788,17 +790,26 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     res.json(serializeHmMetaRow(row, { includePageContent }));
   };
 
+  const brandBinding = findHmBrandBinding({ domain: queryDomain || null, slug });
+
   /** Domain eşleşmezse sert 404 yerine slug’a düş — marka alan + /tr/su birlikte çalışsın. */
   if (queryDomain) {
     let domainRow = await getHmSiteMappedToDomain(queryDomain);
-    if (domainRow && normalizeSlug(domainRow.slug) === slug) {
+    const domainConflict =
+      Boolean(brandBinding) && domainRow != null && hmBrandMetaConflicts(domainRow, brandBinding!);
+    if (domainRow && normalizeSlug(domainRow.slug) === slug && !domainConflict) {
       respondSite(domainRow);
       return;
     }
-    if (!domainRow && isKnownHmBrandDomain(queryDomain)) {
+    if ((!domainRow || domainConflict) && isKnownHmBrandDomain(queryDomain)) {
       await ensureHmBrandSiteForMeta({ domain: queryDomain, slug }).catch(() => null);
       domainRow = await getHmSiteMappedToDomain(queryDomain);
-      if (domainRow && normalizeSlug(domainRow.slug) === slug) {
+      if (
+        domainRow &&
+        normalizeSlug(domainRow.slug) === slug &&
+        brandBinding &&
+        !hmBrandMetaConflicts(domainRow, brandBinding)
+      ) {
         respondSite(domainRow);
         return;
       }
@@ -807,7 +818,9 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
   } else {
     const hostRow = await getHmSiteMappedToRequestHost(req);
     if (hostRow) {
-      if (normalizeSlug(hostRow.slug) === slug) {
+      const hostConflict =
+        Boolean(brandBinding) && hmBrandMetaConflicts(hostRow, brandBinding!);
+      if (normalizeSlug(hostRow.slug) === slug && !hostConflict) {
         respondSite(hostRow);
         return;
       }
@@ -816,11 +829,17 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
   }
 
   let row = await getActiveHmNewsSiteBySlugCompat(slug);
-  if ((!row || !row.active) && isKnownHmBrandSlug(slug)) {
+  const slugConflict = Boolean(brandBinding) && row != null && hmBrandMetaConflicts(row, brandBinding!);
+  if ((!row || !row.active || slugConflict) && isKnownHmBrandSlug(slug)) {
     await ensureHmBrandSiteForMeta({ domain: queryDomain || null, slug }).catch(() => null);
     if (queryDomain) {
       const rebound = await getHmSiteMappedToDomain(queryDomain);
-      if (rebound && normalizeSlug(rebound.slug) === slug) {
+      if (
+        rebound &&
+        normalizeSlug(rebound.slug) === slug &&
+        brandBinding &&
+        !hmBrandMetaConflicts(rebound, brandBinding)
+      ) {
         respondSite(rebound);
         return;
       }
@@ -828,6 +847,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     row = await getActiveHmNewsSiteBySlugCompat(slug);
   }
   if (!row || !row.active) {
+    res.status(404).json({ error: "Site bulunamadı" });
+    return;
+  }
+  if (brandBinding && hmBrandMetaConflicts(row, brandBinding)) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
   }
@@ -841,12 +864,14 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     return;
   }
   const domainCandidates = domainLookupCandidates(host);
+  const brandBinding = findHmBrandBinding({ domain: host });
   let row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
-  if (!row && isKnownHmBrandDomain(host)) {
+  const conflict = Boolean(brandBinding) && row != null && hmBrandMetaConflicts(row, brandBinding!);
+  if ((!row || conflict) && isKnownHmBrandDomain(host)) {
     await ensureHmBrandSiteForMeta({ domain: host }).catch(() => null);
     row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
   }
-  if (!row) {
+  if (!row || (brandBinding && hmBrandMetaConflicts(row, brandBinding))) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
   }
