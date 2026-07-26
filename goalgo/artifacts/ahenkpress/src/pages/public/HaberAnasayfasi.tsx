@@ -245,12 +245,12 @@ const CLASSIC_NATIVE_HOME_MODULES = new Set<HmNewsHomeModuleId>([
   "featuredCategoryStrip",
 ]);
 
-/** Klasik / portal3 üst bant — kayıtlı sıra ne olursa olsun sabit sıra (tepeManset hero öncesi). */
+/** Klasik / portal3 üst bant — tepe manşet + hero header'ın hemen altında (en üstte). */
 const CLASSIC_TOP_MODULE_CANONICAL_ORDER: HmNewsHomeModuleId[] = [
-  "breakingBand",
-  "googleNewsBand",
   "tepeManset",
   "hero",
+  "breakingBand",
+  "googleNewsBand",
   "mansetAd",
   "authorsStrip",
 ];
@@ -1568,7 +1568,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const hmHybridNewsFetchEnabled = siteId != null && !isCorporateTheme && resolveHmHomeHybridNewsFetchEnabled(layoutPrefs, siteId);
   const hmYekparePoolReceiveEnabled = resolveHmYekparePoolReceiveEnabled(layoutPrefs);
   const newsSliderEnabled = layoutPrefs.hmNewsSliderEnabled !== false;
-  const tepeMansetEnabled = layoutPrefs.hmNewsTepeMansetEnabled === true;
+  const tepeMansetEnabled = layoutPrefs.hmNewsTepeMansetEnabled !== false;
   const rssHeadlineEnabled = layoutPrefs.hmNewsRssHeadlineEnabled !== false;
   const newsBandEnabled = layoutPrefs.hmNewsBreakingBandEnabled !== false;
   const mansetCategorySlug = String(layoutPrefs.mansetCategorySlug ?? "").trim() || null;
@@ -2442,13 +2442,18 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     "Güncel haberler, duyurular, analizler ve köşe yazıları kurumsal bir vitrin düzeninde yayında.";
   const currentCategoryName =
     activeTab ? String((cats as any[]).find((c: any) => String(c.slug ?? "") === activeTab)?.label ?? (cats as any[]).find((c: any) => String(c.slug ?? "") === activeTab)?.name ?? "Haberler") : "";
-  const orderedNewsModules = filterHmHomeModulesForPortalHub(
-    resolveHmHomeModuleOrder<HmNewsHomeModuleId>(
-      layoutPrefs.hmNewsHomeModuleOrder,
-      HM_NEWS_HOME_MODULE_ORDER,
-    ).filter((id) => !isHmNewsRetiredHomeModule(id)),
-    portalHubOnly,
-  );
+  const orderedNewsModules = (() => {
+    const mods = filterHmHomeModulesForPortalHub(
+      resolveHmHomeModuleOrder<HmNewsHomeModuleId>(
+        layoutPrefs.hmNewsHomeModuleOrder,
+        HM_NEWS_HOME_MODULE_ORDER,
+      ).filter((id) => !isHmNewsRetiredHomeModule(id)),
+      portalHubOnly,
+    );
+    // Tepe manşet her zaman header altında en üstte (kayıtlı sıra ne olursa olsun).
+    if (!mods.includes("tepeManset")) return mods;
+    return ["tepeManset", ...mods.filter((id) => id !== "tepeManset")];
+  })();
   const automaticHomeModuleCategorySlugs = useMemo(
     () =>
       resolveAutomaticHomeModuleCategorySlugs({
@@ -4261,27 +4266,27 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         data-hm-manset-variant={effectiveMansetVariant}
         style={{ background: "var(--hm-page-bg, #ffffff)" }}
       >
-        {hmCtx == null ? (
-          <div className="hm-esen-tab-strip sticky z-40" style={{ top: navTop }}>
-            <div className="mx-auto flex max-w-screen-xl items-center overflow-x-auto px-3">
-              {tabStripCats.map((c) => {
-                const active = activeTab === c.slug;
-                const catHref = c.slug ? `/haberler?hmTab=${encodeURIComponent(c.slug)}` : "/haberler";
-                return (
-                  <Link key={c.slug || "all"} href={catHref} className={active ? "is-active" : ""}>
-                    {c.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
         <main className={hmVitrinContentShell(`hm-esen-shell pb-8 ${SADE_PUBLIC_POST_HERO_BODY_CLASS}`)}>
           {hasEsenContent ? (
             <>
               {renderSafeNewsHomeModule("tepeManset")}
               {renderEsenHeroManset()}
+
+              {hmCtx == null ? (
+                <div className="hm-esen-tab-strip sticky z-40 mb-3" style={{ top: navTop }}>
+                  <div className="mx-auto flex max-w-screen-xl items-center overflow-x-auto px-3">
+                    {tabStripCats.map((c) => {
+                      const active = activeTab === c.slug;
+                      const catHref = c.slug ? `/haberler?hmTab=${encodeURIComponent(c.slug)}` : "/haberler";
+                      return (
+                        <Link key={c.slug || "all"} href={catHref} className={active ? "is-active" : ""}>
+                          {c.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
 
               {newsAuthorsStripModuleEnabled && newsHorizontalAuthorsEnabled && authors.length > 0 ? (
                 <section className="hm-esen-authors-band">

@@ -38,6 +38,8 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.kirsehri.com",
   "kirsehirhaber.org",
   "www.kirsehirhaber.org",
+  "kirsehir.net",
+  "www.kirsehir.net",
 ]);
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260726c";
 
@@ -49,10 +51,12 @@ const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260726c";
 const HM_DOMAIN_SLUG_FALLBACKS = {
   "suhaberajansi.com": "su",
   "www.suhaberajansi.com": "su",
-  "kirsehri.com": "kirsehir",
-  "www.kirsehri.com": "kirsehir",
-  "kirsehirhaber.org": "kirsehir",
-  "www.kirsehirhaber.org": "kirsehir",
+  "kirsehri.com": "kh",
+  "www.kirsehri.com": "kh",
+  "kirsehirhaber.org": "kh",
+  "www.kirsehirhaber.org": "kh",
+  "kirsehir.net": "kh",
+  "www.kirsehir.net": "kh",
 };
 
 const PORTAL_HOSTS = new Set([

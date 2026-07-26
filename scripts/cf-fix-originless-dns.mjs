@@ -20,8 +20,8 @@ const ZONES = [
   "vatanhaber.net",
   "suhaberajansi.com",
   // belediyehizmet.com kaldırıldı — site suhaberajansi.com
-  // kirsehri.com: zone bu CF hesabında yok (zone.create yetkisi de yok) — eklenince listeye geri konur
-  "kirsehirhaber.org",
+  // Kırşehir (/tr/kh) domainleri DB'de tanımlı; DNS yönlendirmesi sonra yapılacak:
+  // "kirsehirhaber.org", "kirsehri.com", "kirsehir.net",
 ];
 
 function token() {
