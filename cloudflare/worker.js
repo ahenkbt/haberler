@@ -31,6 +31,10 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.suhaberajansi.com",
   "belediyehizmet.com",
   "www.belediyehizmet.com",
+  "kirsehri.com",
+  "www.kirsehri.com",
+  "kirsehirhaber.org",
+  "www.kirsehirhaber.org",
 ]);
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717b";
 

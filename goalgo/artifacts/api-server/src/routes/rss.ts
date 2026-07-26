@@ -23,7 +23,7 @@ import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
 import { fetchRssFeedXml } from "../lib/rssFeedFetch.js";
 import { parseFeedItems } from "../lib/rssFeedParse.js";
 import { repairCorruptedRssImportTitlesBatch } from "../lib/rssTitleRepair.js";
-import { scheduleRssCampaignRun } from "../lib/rssCampaignRun.js";
+import { preflightRssCampaignRun, scheduleRssCampaignRun } from "../lib/rssCampaignRun.js";
 import { extractRssContentEncoded, extractRssCoverImage } from "../lib/rssItemMedia.js";
 import { fetchArticleContentHtml } from "../lib/rssArticleContent.js";
 import { coerceNewsPublishedAt } from "../lib/rssPublishedDate.js";
@@ -446,6 +446,19 @@ router.post("/rss/campaigns/:id/run", async (req, res): Promise<void> => {
     .where(eq(rssCampaignsTable.id, id));
   if (!campaign) {
     res.status(404).json({ error: "Campaign not found" });
+    return;
+  }
+
+  const preflight = await preflightRssCampaignRun(id);
+  if (!preflight.ok) {
+    res.status(400).json({
+      accepted: false,
+      added: 0,
+      skipped: 0,
+      errors: 1,
+      error: preflight.message,
+      message: preflight.message,
+    });
     return;
   }
 

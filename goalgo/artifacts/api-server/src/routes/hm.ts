@@ -119,11 +119,19 @@ import {
   ensureHmNewsSiteDomain2Column,
   ensureHmNewsSiteDomain3Column,
   ensureHmNewsSiteSeoColumns,
+  ensureHmNewsSiteWritableColumns,
+  formatHmSitesDbError,
   isMissingHmBaseTableError,
   isMissingHmSeoColumnError,
+  isMissingHmSiteColumnError,
   listActiveHmNewsSitesByUpdatedCompat,
   listHmNewsSitesCompat,
+  resetHmNewsSiteColumnEnsureCache,
 } from "../lib/hm-site-compat";
+import {
+  repairStaleSuBrandForSiteId,
+  repairStaleSuBrandOnHmSites,
+} from "../lib/hm-stale-su-brand-repair.js";
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
@@ -260,7 +268,6 @@ async function findHmSiteIdClaimingHost(host: string | null, exceptSiteId?: numb
   const n = normalizeDomain(host);
   if (!n) return null;
   await ensureHmNewsSiteDomain2Column().catch(() => undefined);
-  await ensureHmNewsSiteDomain3Column().catch(() => undefined);
   await ensureHmNewsSiteDomain3Column().catch(() => undefined);
   const rows = await newsReadDb()
     .select({
@@ -833,8 +840,7 @@ router.get("/hm/home-bundle", async (req, res): Promise<void> => {
 router.get("/hm/sites", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
-    await ensureHmNewsSiteDomain2Column().catch(() => undefined);
-  await ensureHmNewsSiteDomain3Column().catch(() => undefined);
+    await ensureHmNewsSiteWritableColumns().catch(() => undefined);
     const sites = await listHmNewsSitesCompat();
     const editors = await newsReadDb().select().from(hmSiteEditorsTable);
     const bySite = new Map<number, typeof editors>();
@@ -920,10 +926,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   const seoVerification = normalizeHmSeoVerification(b.seoVerification);
 
   try {
-    await ensureHmNewsSiteSeoColumns();
-    await ensureHmNewsSiteDomain2Column();
-    await ensureHmNewsSiteDomain3Column();
-    await ensureHmNewsSiteDomain3Column();
+    await ensureHmNewsSiteWritableColumns();
     const [site] = await dualWriteInsert(hmNewsSitesTable, {
         slug,
         domain,
@@ -958,12 +961,12 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         : null,
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (/unique|duplicate/i.test(msg)) {
+    const msg = formatHmSitesDbError(e);
+    if (/slug veya domain zaten kayıtlı/i.test(msg) || /unique|duplicate/i.test(msg)) {
       res.status(409).json({ error: "Bu slug veya domain zaten kayıtlı." });
       return;
     }
-    res.status(500).json({ error: msg.slice(0, 400) });
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -1087,20 +1090,19 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
   }
 
   patch.updatedAt = new Date();
-  const wantsSeoColumnPatch =
-    Object.prototype.hasOwnProperty.call(patch, "description") ||
-    Object.prototype.hasOwnProperty.call(patch, "verificationJson");
   try {
-    if (wantsSeoColumnPatch) {
-      await ensureHmNewsSiteSeoColumns();
-    }
-    if ("domain" in patch || "domain2" in patch) {
-      await ensureHmNewsSiteDomain2Column();
-    await ensureHmNewsSiteDomain3Column();
-    }
+    await ensureHmNewsSiteWritableColumns();
     let row: typeof hmNewsSitesTable.$inferSelect | undefined;
     if (Object.keys(patch).length > 0) {
-      const [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+      let updated: typeof hmNewsSitesTable.$inferSelect | undefined;
+      try {
+        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+      } catch (updateErr) {
+        if (!isMissingHmSiteColumnError(updateErr)) throw updateErr;
+        resetHmNewsSiteColumnEnsureCache();
+        await ensureHmNewsSiteWritableColumns();
+        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+      }
       if (!updated) {
         res.status(404).json({ error: "Bulunamadı" });
         return;
@@ -1136,15 +1138,22 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       }
     }
 
+    // Kayıt sonrası: Su Haber şablon artığı menü/marka izlerini temizle (kirsehir vb.)
+    try {
+      await repairStaleSuBrandForSiteId(id);
+    } catch {
+      /* best-effort */
+    }
+
     const finalRow = await getHmNewsSiteByIdCompat(id);
     res.json(finalRow ?? row);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (/unique|duplicate/i.test(msg)) {
+    const msg = formatHmSitesDbError(e);
+    if (/slug veya domain zaten kayıtlı/i.test(msg) || /unique|duplicate/i.test(msg)) {
       res.status(409).json({ error: "Bu slug veya domain zaten kayıtlı." });
       return;
     }
-    res.status(500).json({ error: msg.slice(0, 400) });
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -1598,6 +1607,33 @@ router.post("/hm/admin/vkd-restore-menu", async (req, res): Promise<void> => {
     res.json({
       ok: true,
       message: result.added > 0 ? `Menüye ${result.added} madde eklendi` : "Menü güncel — eksik madde yok",
+      ...result,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: Su Haber şablonundan kalan /tr/su menü ve marka izlerini temizler. */
+router.post("/hm/admin/repair-stale-su-brand", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const body = (req.body ?? {}) as { siteId?: number; dryRun?: boolean };
+    const siteId = Number(body.siteId);
+    const dryRun = body.dryRun === true;
+    const result =
+      Number.isFinite(siteId) && siteId > 0
+        ? await repairStaleSuBrandForSiteId(siteId, { dryRun })
+        : await repairStaleSuBrandOnHmSites({ dryRun });
+    res.json({
+      ok: true,
+      message:
+        result.repaired > 0
+          ? `${result.repaired} sitede Su Haber artığı temizlendi`
+          : "Su Haber artığı bulunamadı",
       ...result,
     });
   } catch (e) {

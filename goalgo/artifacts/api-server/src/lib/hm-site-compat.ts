@@ -51,9 +51,49 @@ export function dbErrorCode(e: unknown): string {
   return e && typeof e === "object" && "code" in e ? String((e as { code?: unknown }).code ?? "") : "";
 }
 
+/** Drizzle "Failed query: ..." sarmalayıcısından Postgres code/message çıkar. */
+export function postgresErrorMeta(err: unknown): { code?: string; message?: string } {
+  let cur: unknown = err;
+  for (let depth = 0; depth < 8 && cur != null; depth++) {
+    if (typeof cur === "object") {
+      const o = cur as Record<string, unknown>;
+      const code = typeof o.code === "string" ? o.code : undefined;
+      const message = typeof o.message === "string" ? o.message : undefined;
+      // Drizzle üst mesajı genelde "Failed query: ..."; asıl PG mesajı cause'ta.
+      if (code && code.length <= 8) return { code, message };
+      if (message && !/^Failed query:/i.test(message) && (code || /does not exist|duplicate|unique|violates/i.test(message))) {
+        return { code, message };
+      }
+      cur = o.cause ?? o.originalError ?? o.error;
+      continue;
+    }
+    break;
+  }
+  const fallback = err instanceof Error ? err.message : String(err);
+  return { message: fallback };
+}
+
+export function formatHmSitesDbError(err: unknown, maxLen = 400): string {
+  const { code, message } = postgresErrorMeta(err);
+  const top = err instanceof Error ? err.message : String(err);
+  const detail = message && message !== top ? message : top;
+  const withCode = code ? `[${code}] ${detail}` : detail;
+  if (/cannot insert multiple commands into a prepared statement/i.test(withCode)) {
+    return "Veritabanı şema güncellemesi başarısız (çoklu SQL). Sunucuyu yeniden deneyin; sorun sürerse domain2/domain3 migration uygulayın.";
+  }
+  if (code === "42703" || /does not exist/i.test(withCode)) {
+    return `Eksik sütun: ${detail}`.slice(0, maxLen);
+  }
+  if (code === "23505" || /unique|duplicate/i.test(withCode)) {
+    return "Bu slug veya domain zaten kayıtlı.";
+  }
+  return withCode.slice(0, maxLen);
+}
+
 export function isMissingHmSeoColumnError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e);
-  return dbErrorCode(e) === "42703" || /(?:description|verification_json).*does not exist/i.test(msg);
+  const { code, message } = postgresErrorMeta(e);
+  return code === "42703" || /(?:description|verification_json).*does not exist/i.test(message || msg);
 }
 
 export function isMissingHmBaseTableError(e: unknown): boolean {
@@ -74,13 +114,21 @@ function withSeoDefaults(row: LegacyHmNewsSiteRow): HmNewsSiteCompatRow {
 let hmNewsSiteDomain2ColumnPromise: Promise<void> | null = null;
 let hmNewsSiteDomain3ColumnPromise: Promise<void> | null = null;
 
+/**
+ * node-pg prepared statement tek komut kabul eder; ALTER + CREATE INDEX
+ * aynı execute içinde "cannot insert multiple commands" ile düşer.
+ */
 export function ensureHmNewsSiteDomain2Column(): Promise<void> {
   if (hmNewsSiteDomain2ColumnPromise) return hmNewsSiteDomain2ColumnPromise;
-  hmNewsSiteDomain2ColumnPromise = executeNewsDbWrite(sql`
+  hmNewsSiteDomain2ColumnPromise = (async () => {
+    await executeNewsDbWrite(sql`
       ALTER TABLE hm_news_sites ADD COLUMN IF NOT EXISTS domain2 text;
+    `);
+    await executeNewsDbWrite(sql`
       CREATE UNIQUE INDEX IF NOT EXISTS hm_news_sites_domain2_key
         ON hm_news_sites (domain2) WHERE domain2 IS NOT NULL;
-    `)
+    `);
+  })()
     .then(() => undefined)
     .catch((e) => {
       hmNewsSiteDomain2ColumnPromise = null;
@@ -91,16 +139,21 @@ export function ensureHmNewsSiteDomain2Column(): Promise<void> {
 
 export function isMissingHmDomain2ColumnError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e);
-  return dbErrorCode(e) === "42703" || /domain2.*does not exist/i.test(msg);
+  const { code, message } = postgresErrorMeta(e);
+  return code === "42703" || /domain2.*does not exist/i.test(message || msg);
 }
 
 export function ensureHmNewsSiteDomain3Column(): Promise<void> {
   if (hmNewsSiteDomain3ColumnPromise) return hmNewsSiteDomain3ColumnPromise;
-  hmNewsSiteDomain3ColumnPromise = executeNewsDbWrite(sql`
+  hmNewsSiteDomain3ColumnPromise = (async () => {
+    await executeNewsDbWrite(sql`
       ALTER TABLE hm_news_sites ADD COLUMN IF NOT EXISTS domain3 text;
+    `);
+    await executeNewsDbWrite(sql`
       CREATE UNIQUE INDEX IF NOT EXISTS hm_news_sites_domain3_key
         ON hm_news_sites (domain3) WHERE domain3 IS NOT NULL;
-    `)
+    `);
+  })()
     .then(() => undefined)
     .catch((e) => {
       hmNewsSiteDomain3ColumnPromise = null;
@@ -111,7 +164,31 @@ export function ensureHmNewsSiteDomain3Column(): Promise<void> {
 
 export function isMissingHmDomain3ColumnError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e);
-  return dbErrorCode(e) === "42703" || /domain3.*does not exist/i.test(msg);
+  const { code, message } = postgresErrorMeta(e);
+  return code === "42703" || /domain3.*does not exist/i.test(message || msg);
+}
+
+export function isMissingHmSiteColumnError(e: unknown): boolean {
+  return (
+    isMissingHmSeoColumnError(e) ||
+    isMissingHmDomain2ColumnError(e) ||
+    isMissingHmDomain3ColumnError(e)
+  );
+}
+
+/** PATCH/POST öncesi: SEO + domain2 + domain3 sütunlarını garantile. */
+export async function ensureHmNewsSiteWritableColumns(): Promise<void> {
+  await ensureHmNewsSiteSeoColumns();
+  await ensureHmNewsSiteDomain2Column();
+  await ensureHmNewsSiteDomain3Column();
+}
+
+/** Başarısız ensure sonrası cache'i temizleyip yeniden dene. */
+export function resetHmNewsSiteColumnEnsureCache(): void {
+  hmNewsSiteSeoColumnsPromise = null;
+  hmNewsSiteSeoColumnsExistPromise = null;
+  hmNewsSiteDomain2ColumnPromise = null;
+  hmNewsSiteDomain3ColumnPromise = null;
 }
 
 async function hmNewsSiteSeoColumnsExist(): Promise<boolean> {
