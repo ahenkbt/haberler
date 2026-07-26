@@ -4397,16 +4397,29 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                 <div className="hm-esen-ad hm-esen-ad--wide" dangerouslySetInnerHTML={{ __html: homeMiddleHtmlDisplay }} />
               ) : null}
 
-              <section className="hm-esen-bottom-widgets">
-                {esenSidebarPopularItems.length > 0 && !esenLeadPackEnabled ? (
-                  <ClassicTextList title="Gündemde Öne Çıkanlar" items={esenSidebarPopularItems} accent={accent} href={tumHaberlerHref} />
-                ) : null}
-                {!esenLeadPackEnabled && esenTodayHighlightItems[0] ? (
-                  <aside className="hm-esen-bottom-widgets-feature" data-hm-home-module="esenLeadPack">
-                    <ClassicFeatureCard n={esenTodayHighlightItems[0]} accent={accent} hmCategoryColors={hmCat} large />
-                  </aside>
-                ) : null}
-              </section>
+              {!esenLeadPackEnabled &&
+              (esenSidebarPopularItems.length > 0 || esenTodayHighlightItems[0]) ? (
+                <section className="hm-esen-bottom-widgets">
+                  {esenSidebarPopularItems.length > 0 ? (
+                    <ClassicTextList
+                      title="Gündemde Öne Çıkanlar"
+                      items={esenSidebarPopularItems}
+                      accent={accent}
+                      href={tumHaberlerHref}
+                    />
+                  ) : null}
+                  {esenTodayHighlightItems[0] ? (
+                    <aside className="hm-esen-bottom-widgets-feature" data-hm-home-module="esenLeadPack">
+                      <ClassicFeatureCard
+                        n={esenTodayHighlightItems[0]}
+                        accent={accent}
+                        hmCategoryColors={hmCat}
+                        large
+                      />
+                    </aside>
+                  ) : null}
+                </section>
+              ) : null}
             </>
           ) : latestPending || latestBandPending || homeNewsBootstrapping ? (
             <HmNewsModuleSkeleton className="!mb-6" />
