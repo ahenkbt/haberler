@@ -124,7 +124,7 @@ async function repairSuDomainOnNeon(sql) {
         IN ('belediyehizmet.com', 'belediyehizzmet.com')
   `;
 
-  // Önce TÜM sitelerden suhaber* temizle (unique ihlali olmasın), sonra id=2'ye yaz.
+  // Diğer sitelerden suhaber* temizle (kanonik id=2'ye dokunma).
   await sql`
     UPDATE hm_news_sites
     SET
@@ -133,25 +133,37 @@ async function repairSuDomainOnNeon(sql) {
           IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
         ELSE domain
       END,
-      domain2 = CASE
-        WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
-        ELSE domain2
-      END,
-      domain3 = CASE
-        WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
-        ELSE domain3
-      END,
       updated_at = NOW()
-    WHERE
-      lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
-        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-      OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-      OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+    WHERE id <> ${canonicalId}
+      AND lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
         IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
   `;
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET
+        domain2 = CASE
+          WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+            IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+          ELSE domain2
+        END,
+        domain3 = CASE
+          WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+            IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+          ELSE domain3
+        END,
+        updated_at = NOW()
+      WHERE id <> ${canonicalId}
+        AND (
+          lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+            IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+          OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+            IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+        )
+    `;
+  } catch {
+    /* domain2/domain3 yoksa yoksay */
+  }
 
   await sql`
     DELETE FROM hm_news_sites
@@ -159,13 +171,12 @@ async function repairSuDomainOnNeon(sql) {
       AND id <> ${canonicalId}
   `;
 
+  // Önce yalnızca domain (her zaman var) — domain2/3 ayrı (eksik kolon kırılmasın)
   await sql`
     UPDATE hm_news_sites
     SET
       slug = 'su',
       domain = 'suhaberajansi.com',
-      domain2 = 'www.suhaberajansi.com',
-      domain3 = 'suhaberajansi.com.tr',
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
         ELSE display_name
@@ -174,6 +185,18 @@ async function repairSuDomainOnNeon(sql) {
       updated_at = NOW()
     WHERE id = ${canonicalId}
   `;
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET
+        domain2 = 'www.suhaberajansi.com',
+        domain3 = 'suhaberajansi.com.tr',
+        updated_at = NOW()
+      WHERE id = ${canonicalId}
+    `;
+  } catch {
+    /* domain2/domain3 yoksa yoksay */
+  }
 
   return canonicalId;
 }
