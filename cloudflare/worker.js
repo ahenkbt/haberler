@@ -775,9 +775,9 @@ function isHmMetaApiPath(pathname) {
   return p.startsWith("/api/hm/meta/");
 }
 
-/** Meta 404 iken Neon'da marka site oluştur / bağla (Render gecikince). */
+/** Su markası: domain onarımını uygula ve kanonik /tr/su metasını tercih et. Diğer markalar: yalnız 404. */
 async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
-  if (!upstream || upstream.status !== 404) return null;
+  if (!upstream) return null;
   if (!isHmMetaApiPath(incoming.pathname)) return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "";
   let domain = incoming.searchParams.get("domain") || "";
@@ -786,16 +786,30 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
   if (bySlug) slug = decodeURIComponent(bySlug[1] || "");
   const byDomain = path === "/api/hm/meta/by-domain";
   if (byDomain && !domain) return null;
-  if (!matchBrandBinding({ domain, slug })) return null;
+  const binding = matchBrandBinding({ domain, slug });
+  if (!binding) return null;
+
+  const slugKey = String(slug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  const isSuBrand =
+    binding.slug === "su" ||
+    normalizeHost(domain) === "suhaberajansi.com" ||
+    slugKey === "su" ||
+    slugKey === "suhaber";
+
+  // Su dışı markalar: yalnızca upstream 404 iken kenar fallback
+  if (!isSuBrand && upstream.status !== 404) return null;
+
   try {
     const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
     if (!ensured?.meta?.id) return null;
-    // slug sorgusunda domain başka siteye aitse yine de istenen slug meta'sını dön
     if (slug && String(ensured.meta.slug || "").toLowerCase() !== slug.toLowerCase()) {
       return null;
     }
     return brandMetaJsonResponse(ensured.meta, {
-      "x-yekpare-hm-brand-ensure-action": ensured.action || "ok",
+      "x-yekpare-hm-brand-ensure-action": ensured.action || (isSuBrand ? "su-domain-repair" : "ok"),
     });
   } catch (err) {
     console.error("[hm-brand-db-ensure]", String(err?.message || err).slice(0, 240));
