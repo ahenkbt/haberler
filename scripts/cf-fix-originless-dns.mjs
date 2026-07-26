@@ -20,7 +20,7 @@ const ZONES = [
   "vatanhaber.net",
   "suhaberajansi.com",
   "belediyehizmet.com",
-  "kirsehri.com",
+  // kirsehri.com: zone bu CF hesabında yok (zone.create yetkisi de yok) — eklenince listeye geri konur
   "kirsehirhaber.org",
 ];
 

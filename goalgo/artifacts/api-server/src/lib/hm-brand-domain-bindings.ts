@@ -246,3 +246,33 @@ export async function ensureHmBrandDomainBindings(opts?: {
 export function listHmBrandDomains(): string[] {
   return HM_BRAND_DOMAIN_BINDINGS.map((b) => normalizeHost(b.domain)).filter(Boolean);
 }
+
+export function isKnownHmBrandDomain(domain: string): boolean {
+  const host = normalizeHost(domain);
+  return Boolean(host) && listHmBrandDomains().includes(host);
+}
+
+export function isKnownHmBrandSlug(slug: string): boolean {
+  const s = String(slug ?? "")
+    .trim()
+    .toLowerCase();
+  return Boolean(s) && HM_BRAND_DOMAIN_BINDINGS.some((b) => b.slug === s);
+}
+
+/**
+ * Meta 404 öncesi: bilinen marka alan/slug için site yoksa oluşturur veya domain bağlar.
+ * İlk istekte portal “slug yok” hatasını self-heal eder (Render restart beklemeden).
+ */
+export async function ensureHmBrandSiteForMeta(opts: {
+  domain?: string | null;
+  slug?: string | null;
+}): Promise<HmBrandDomainBindingResult[] | null> {
+  const domain = normalizeHost(String(opts.domain ?? ""));
+  const slug = String(opts.slug ?? "")
+    .trim()
+    .toLowerCase();
+  const needsBind =
+    (domain && isKnownHmBrandDomain(domain)) || (slug && isKnownHmBrandSlug(slug));
+  if (!needsBind) return null;
+  return ensureHmBrandDomainBindings({ dryRun: false });
+}

@@ -133,7 +133,12 @@ import {
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
-import { ensureHmBrandDomainBindings } from "../lib/hm-brand-domain-bindings.js";
+import {
+  ensureHmBrandDomainBindings,
+  ensureHmBrandSiteForMeta,
+  isKnownHmBrandDomain,
+  isKnownHmBrandSlug,
+} from "../lib/hm-brand-domain-bindings.js";
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
@@ -777,32 +782,56 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
   res.setHeader("CDN-Cache-Control", "no-store");
 
   const queryDomain = typeof req.query.domain === "string" ? req.query.domain : "";
+  const includePageContent = wantsHmMetaPageContent(req);
+
+  const respondSite = (row: typeof hmNewsSitesTable.$inferSelect): void => {
+    res.json(serializeHmMetaRow(row, { includePageContent }));
+  };
+
+  /** Domain eşleşmezse sert 404 yerine slug’a düş — marka alan + /tr/su birlikte çalışsın. */
   if (queryDomain) {
-    const domainRow = await getHmSiteMappedToDomain(queryDomain);
-    if (!domainRow || normalizeSlug(domainRow.slug) !== slug) {
-      res.status(404).json({ error: "Site bu alan adına ait değil" });
+    let domainRow = await getHmSiteMappedToDomain(queryDomain);
+    if (domainRow && normalizeSlug(domainRow.slug) === slug) {
+      respondSite(domainRow);
       return;
     }
-    res.json(serializeHmMetaRow(domainRow, { includePageContent: wantsHmMetaPageContent(req) }));
-    return;
-  }
-
-  const hostRow = await getHmSiteMappedToRequestHost(req);
-  if (hostRow) {
-    if (normalizeSlug(hostRow.slug) !== slug) {
-      res.status(404).json({ error: "Site bu alan adına ait değil" });
-      return;
+    if (!domainRow && isKnownHmBrandDomain(queryDomain)) {
+      await ensureHmBrandSiteForMeta({ domain: queryDomain, slug }).catch(() => null);
+      domainRow = await getHmSiteMappedToDomain(queryDomain);
+      if (domainRow && normalizeSlug(domainRow.slug) === slug) {
+        respondSite(domainRow);
+        return;
+      }
     }
-    res.json(serializeHmMetaRow(hostRow, { includePageContent: wantsHmMetaPageContent(req) }));
-    return;
+    // Domain bağlı değil / farklı slug — portal path slug’ı ile devam et.
+  } else {
+    const hostRow = await getHmSiteMappedToRequestHost(req);
+    if (hostRow) {
+      if (normalizeSlug(hostRow.slug) === slug) {
+        respondSite(hostRow);
+        return;
+      }
+      // Host başka siteye bağlıysa slug yolu yine denensin (portal /tr/:slug).
+    }
   }
 
-  const row = await getActiveHmNewsSiteBySlugCompat(slug);
+  let row = await getActiveHmNewsSiteBySlugCompat(slug);
+  if ((!row || !row.active) && isKnownHmBrandSlug(slug)) {
+    await ensureHmBrandSiteForMeta({ domain: queryDomain || null, slug }).catch(() => null);
+    if (queryDomain) {
+      const rebound = await getHmSiteMappedToDomain(queryDomain);
+      if (rebound && normalizeSlug(rebound.slug) === slug) {
+        respondSite(rebound);
+        return;
+      }
+    }
+    row = await getActiveHmNewsSiteBySlugCompat(slug);
+  }
   if (!row || !row.active) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
   }
-  res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
+  respondSite(row);
 });
 
 router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
@@ -812,7 +841,11 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     return;
   }
   const domainCandidates = domainLookupCandidates(host);
-  const row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+  let row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+  if (!row && isKnownHmBrandDomain(host)) {
+    await ensureHmBrandSiteForMeta({ domain: host }).catch(() => null);
+    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+  }
   if (!row) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;

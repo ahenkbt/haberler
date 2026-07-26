@@ -268,22 +268,50 @@ export async function getHmNewsSiteByIdCompat(id: number): Promise<HmNewsSiteCom
   return rows[0];
 }
 
+function normalizeHmSlugLookup(raw: string): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export async function getActiveHmNewsSiteBySlugCompat(slug: string): Promise<HmNewsSiteCompatRow | undefined> {
+  const normalized = normalizeHmSlugLookup(slug);
+  if (!normalized) return undefined;
   const rows = await withSeoColumnFallback(
     () =>
       getNewsDbForRead()
         .select()
         .from(hmNewsSitesTable)
-        .where(and(eq(hmNewsSitesTable.slug, slug), eq(hmNewsSitesTable.active, true)))
+        .where(and(eq(hmNewsSitesTable.slug, normalized), eq(hmNewsSitesTable.active, true)))
         .limit(1),
     () =>
       getNewsDbForRead()
         .select(hmNewsSiteLegacyColumns)
         .from(hmNewsSitesTable)
-        .where(and(eq(hmNewsSitesTable.slug, slug), eq(hmNewsSitesTable.active, true)))
+        .where(and(eq(hmNewsSitesTable.slug, normalized), eq(hmNewsSitesTable.active, true)))
         .limit(1),
   );
-  return rows[0];
+  if (rows[0]) return rows[0];
+
+  // DB'de "/su" veya "Su" gibi normalize edilmemiş slug kalmış olabilir.
+  const active = await withSeoColumnFallback(
+    () =>
+      getNewsDbForRead()
+        .select()
+        .from(hmNewsSitesTable)
+        .where(eq(hmNewsSitesTable.active, true)),
+    () =>
+      getNewsDbForRead()
+        .select(hmNewsSiteLegacyColumns)
+        .from(hmNewsSitesTable)
+        .where(eq(hmNewsSitesTable.active, true)),
+  );
+  return active.find((row) => normalizeHmSlugLookup(String(row.slug ?? "")) === normalized);
 }
 
 export async function getActiveHmNewsSiteByDomainCompat(
