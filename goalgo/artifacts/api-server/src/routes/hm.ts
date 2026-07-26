@@ -687,9 +687,18 @@ function makeHmCopySlug(base: string | null | undefined, targetSiteId: number, s
 
 /* —— Public meta (slug / domain) ————————————————————————————— */
 
+function dedupeHmSitesById<T extends { id: number }>(rows: T[]): T[] {
+  const byId = new Map<number, T>();
+  for (const row of rows) {
+    if (!byId.has(row.id)) byId.set(row.id, row);
+  }
+  return Array.from(byId.values());
+}
+
 router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
   /** Panel kategori / RSS hedefi: pasif siteler de seçilebilsin (yalnızca aktif olanlar vitrinde görünür). */
   const adminList = String(req.query.admin ?? "").trim() === "1";
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   if (adminList) {
     if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
     const rows = await newsReadDb()
@@ -701,7 +710,7 @@ router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
       })
       .from(hmNewsSitesTable)
       .orderBy(hmNewsSitesTable.slug);
-    res.json(rows);
+    res.json(dedupeHmSitesById(rows).sort((a, b) => a.slug.localeCompare(b.slug)));
     return;
   }
   const rows = await newsReadDb()
@@ -713,7 +722,7 @@ router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.active, true))
     .orderBy(hmNewsSitesTable.slug);
-  res.json(rows);
+  res.json(dedupeHmSitesById(rows).sort((a, b) => a.slug.localeCompare(b.slug)));
 });
 
 /** Tanıtım sayfası: aktif haber merkezi siteleri (logo + alan adı). Yeni site eklendikçe liste güncellenir. */
@@ -949,7 +958,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
     await ensureHmNewsSiteWritableColumns().catch(() => undefined);
-    const sites = await listHmNewsSitesCompat();
+    const sites = dedupeHmSitesById(await listHmNewsSitesCompat()).sort((a, b) => a.id - b.id);
     const editors = await newsReadDb().select().from(hmSiteEditorsTable);
     const bySite = new Map<number, typeof editors>();
     for (const e of editors) {
@@ -957,6 +966,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
       arr.push(e);
       bySite.set(e.siteId, arr);
     }
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.json({
       items: sites.map((s) => ({
         ...s,

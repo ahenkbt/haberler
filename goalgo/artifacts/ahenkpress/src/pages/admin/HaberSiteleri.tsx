@@ -87,7 +87,7 @@ const emptyForm: SiteForm = {
 
 async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
   await ensureAdminPanelBootstrap();
-  const r = await apiFetch(apiUrl("/api/hm/sites"));
+  const r = await apiFetch(apiUrl("/api/hm/sites"), { cache: "no-store" });
   const text = await r.text();
   const j = text ? JSON.parse(text) as { items?: HmSiteRow[]; error?: string } : {};
   if (!r.ok) throw new Error(j.error || text || "Haber siteleri yüklenemedi");
@@ -97,7 +97,10 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
         return { ...site, hybridRssEnabled: layout.hybridRssEnabled === true };
       })
     : [];
-  return { items };
+  // Aynı id birden fazla gelirse (eski çift-DB artığı) tek satır bırak.
+  const byId = new Map<number, HmSiteRow>();
+  for (const site of items) byId.set(site.id, site);
+  return { items: Array.from(byId.values()).sort((a, b) => a.id - b.id) };
 }
 
 function formFromSite(site: HmSiteRow): SiteForm {
@@ -171,21 +174,26 @@ export default function HaberSiteleri() {
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/hm/sites", "admin-panel"],
     queryFn: fetchHmSites,
     retry: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const sites = data?.items ?? [];
   const filteredSites = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr-TR");
-    if (!q) return sites;
-    return sites.filter((s) =>
-      [s.displayName, s.slug, s.domain, s.domain2, s.domain3]
-        .filter(Boolean)
-        .some((v) => String(v).toLocaleLowerCase("tr-TR").includes(q)),
-    );
+    const list = !q
+      ? sites
+      : sites.filter((s) => {
+          if (String(s.id) === q || `#${s.id}` === q) return true;
+          return [s.displayName, s.slug, s.domain, s.domain2, s.domain3, String(s.id)]
+            .filter(Boolean)
+            .some((v) => String(v).toLocaleLowerCase("tr-TR").includes(q));
+        });
+    return [...list].sort((a, b) => a.id - b.id);
   }, [query, sites]);
 
   function update<K extends keyof SiteForm>(key: K, value: SiteForm[K]) {
@@ -226,9 +234,13 @@ export default function HaberSiteleri() {
       const text = await r.text();
       const j = text ? JSON.parse(text) as { error?: string } : {};
       if (!r.ok) throw new Error(j.error || text || "Kaydedilemedi");
-      toast({ title: editingId ? "Haber sitesi güncellendi" : "Haber sitesi oluşturuldu" });
+      toast({
+        title: editingId ? "Haber sitesi güncellendi" : "Haber sitesi oluşturuldu",
+        description: `Slug: /${form.slug.trim()} · kaydı yenileniyor…`,
+      });
       resetForm();
       await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await refetch();
     } catch (e) {
       toast({
         title: "Kaydedilemedi",
@@ -299,6 +311,12 @@ export default function HaberSiteleri() {
                 <h2 className="text-lg font-black text-gray-900">
                   {editingId ? "Haber Sitesini Düzenle" : "Yeni Haber Sitesi"}
                 </h2>
+                {editingId ? (
+                  <p className="mt-1 text-sm font-bold text-gray-900">
+                    Site ID:{" "}
+                    <span className="rounded bg-slate-900 px-2 py-0.5 font-mono text-white">{editingId}</span>
+                  </p>
+                ) : null}
                 <p className="mt-1 text-xs text-gray-500">
                   Slug portal yoludur: <code>/tr/slug</code>. Domain alanlarına çıplak alan adını yazın.
                 </p>
@@ -391,9 +409,14 @@ export default function HaberSiteleri() {
             <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-black text-gray-900">Kayıtlı Haber Siteleri</h2>
-                <p className="text-xs text-gray-500">{sites.length} site kayıtlı</p>
+                <p className="text-xs text-gray-500">{sites.length} site · Site ID (1, 2, 3…) listede</p>
               </div>
-              <Input className="sm:w-72" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Site, slug veya domain ara..." />
+              <div className="flex flex-wrap gap-2">
+                <Input className="sm:w-64" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Site ID, ad, slug veya domain…" />
+                <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+                  Yenile
+                </Button>
+              </div>
             </div>
 
             {error ? (
@@ -414,6 +437,9 @@ export default function HaberSiteleri() {
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center rounded-md bg-slate-900 px-2.5 py-1 font-mono text-sm font-black text-white" title="Site ID">
+                              Site ID: {site.id}
+                            </span>
                             <h3 className="text-base font-black text-gray-900">{site.displayName}</h3>
                             <Badge variant={site.active ? "default" : "secondary"}>{site.active ? "Aktif" : "Pasif"}</Badge>
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">/{site.slug}</span>

@@ -102,8 +102,16 @@ app.use(
       httpOnly: true,
       secure: process.env["NODE_ENV"] === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      /* SPA (ör. yekpare.net) ile API (ör. Railway) farklı site ise çerez taşınması için gerekli */
-      sameSite: process.env["NODE_ENV"] === "production" ? "none" : "lax",
+      /**
+       * CF Worker aynı origin'de /api vekillediği için Lax yeterli ve yeni tarayıcılarda
+       * third-party cookie engeline takılmaz. Çapraz origin gerekirse COOKIE_SAMESITE=none.
+       */
+      sameSite:
+        process.env["COOKIE_SAMESITE"]?.trim().toLowerCase() === "none"
+          ? "none"
+          : process.env["NODE_ENV"] === "production"
+            ? "lax"
+            : "lax",
     },
   }),
 );
