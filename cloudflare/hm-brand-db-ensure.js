@@ -124,6 +124,7 @@ async function repairSuDomainOnNeon(sql) {
         IN ('belediyehizmet.com', 'belediyehizzmet.com')
   `;
 
+  // Önce TÜM sitelerden suhaber* temizle (unique ihlali olmasın), sonra id=2'ye yaz.
   await sql`
     UPDATE hm_news_sites
     SET
@@ -143,15 +144,19 @@ async function repairSuDomainOnNeon(sql) {
         ELSE domain3
       END,
       updated_at = NOW()
-    WHERE id <> ${canonicalId}
-      AND (
-        lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-        OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-        OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
-      )
+    WHERE
+      lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+      OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+      OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+  `;
+
+  await sql`
+    DELETE FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
+      AND id <> ${canonicalId}
   `;
 
   await sql`
@@ -160,7 +165,7 @@ async function repairSuDomainOnNeon(sql) {
       slug = 'su',
       domain = 'suhaberajansi.com',
       domain2 = 'www.suhaberajansi.com',
-      domain3 = COALESCE(NULLIF(trim(both from domain3), ''), 'suhaberajansi.com.tr'),
+      domain3 = 'suhaberajansi.com.tr',
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
         ELSE display_name
@@ -168,12 +173,6 @@ async function repairSuDomainOnNeon(sql) {
       active = true,
       updated_at = NOW()
     WHERE id = ${canonicalId}
-  `;
-
-  await sql`
-    DELETE FROM hm_news_sites
-    WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
-      AND id <> ${canonicalId}
   `;
 
   return canonicalId;
