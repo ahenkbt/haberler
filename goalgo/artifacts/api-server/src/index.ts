@@ -39,6 +39,7 @@ import { scheduleInsaatfirmalarimAutoImport, startInsaatfirmalarimQueueWatchdog 
 import { repairAllCorruptedRssImportTitles } from "./lib/rssTitleRepair.js";
 import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.js";
 import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
+import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
@@ -378,6 +379,19 @@ const server = app.listen(port, listenHost, (err) => {
     }, 16_000).unref();
   } else {
     logger.info("[hm-stale-su-brand] HM_STALE_SU_BRAND_REPAIR=0 — atlandı");
+  }
+
+  // /tr/su → suhaberajansi.com (sahte id/slug çiftlerini temizle)
+  if (envJobFlag("HM_SU_DOMAIN_REPAIR", true)) {
+    setTimeout(() => {
+      void repairSuHaberDomainOwnership({ dryRun: false })
+        .then((r) => {
+          logger.info({ ...r }, "[hm-su-domain] suhaberajansi.com → /tr/su onarım");
+        })
+        .catch((err) => logger.error({ err }, "[hm-su-domain] onarım başarısız"));
+    }, 17_000).unref();
+  } else {
+    logger.info("[hm-su-domain] HM_SU_DOMAIN_REPAIR=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).

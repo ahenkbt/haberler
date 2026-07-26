@@ -132,6 +132,7 @@ import {
   repairStaleSuBrandForSiteId,
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
+import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
 import {
   ensureHmBrandDomainBindings,
@@ -1750,6 +1751,28 @@ router.post("/hm/admin/bind-brand-domains", async (req, res): Promise<void> => {
       ok: true,
       message: "Marka alan bağlama tamamlandı",
       rows,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: /tr/su → suhaberajansi.com domain sahipliğini onarır (sahte çift kayıt temizliği). */
+router.post("/hm/admin/repair-su-domain", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const dryRun = (req.body as { dryRun?: boolean } | undefined)?.dryRun === true;
+    const result = await repairSuHaberDomainOwnership({ dryRun });
+    res.json({
+      ok: true,
+      message:
+        result.canonicalSiteId != null
+          ? `Su Haber domain onarıldı → site #${result.canonicalSiteId} (suhaberajansi.com)`
+          : "Slug=su sitesi bulunamadı",
+      ...result,
     });
   } catch (e) {
     res.status(500).json({

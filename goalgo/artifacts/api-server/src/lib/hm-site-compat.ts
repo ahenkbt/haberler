@@ -288,12 +288,14 @@ export async function getActiveHmNewsSiteBySlugCompat(slug: string): Promise<HmN
         .select()
         .from(hmNewsSitesTable)
         .where(and(eq(hmNewsSitesTable.slug, normalized), eq(hmNewsSitesTable.active, true)))
+        .orderBy(hmNewsSitesTable.id)
         .limit(1),
     () =>
       getNewsDbForRead()
         .select(hmNewsSiteLegacyColumns)
         .from(hmNewsSitesTable)
         .where(and(eq(hmNewsSitesTable.slug, normalized), eq(hmNewsSitesTable.active, true)))
+        .orderBy(hmNewsSitesTable.id)
         .limit(1),
   );
   if (rows[0]) return rows[0];
@@ -304,12 +306,14 @@ export async function getActiveHmNewsSiteBySlugCompat(slug: string): Promise<HmN
       getNewsDbForRead()
         .select()
         .from(hmNewsSitesTable)
-        .where(eq(hmNewsSitesTable.active, true)),
+        .where(eq(hmNewsSitesTable.active, true))
+        .orderBy(hmNewsSitesTable.id),
     () =>
       getNewsDbForRead()
         .select(hmNewsSiteLegacyColumns)
         .from(hmNewsSitesTable)
-        .where(eq(hmNewsSitesTable.active, true)),
+        .where(eq(hmNewsSitesTable.active, true))
+        .orderBy(hmNewsSitesTable.id),
   );
   return active.find((row) => normalizeHmSlugLookup(String(row.slug ?? "")) === normalized);
 }

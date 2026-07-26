@@ -1,7 +1,6 @@
 /**
- * Worker kenarı: bilinen marka alanları için meta lookup.
- * Domain sahipliği ADMIN panelinden yönetilir — silinen domain'i /su'ya geri bağlama.
- * Yalnızca DB'de mevcut satırı okur; domain boşsa zorla yazmaz.
+ * Worker kenarı: bilinen marka alanları için meta lookup + Su domain onarımı.
+ * /tr/su (en düşük id) → suhaberajansi.com; sahte slug=su satırlarını temizler.
  */
 import { neon } from "@neondatabase/serverless";
 
@@ -82,9 +81,73 @@ export function matchBrandBinding({ domain, slug } = {}) {
   );
 }
 
+async function repairSuDomainOnNeon(sql) {
+  const suRows = await sql`
+    SELECT id FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
+    ORDER BY id ASC
+    LIMIT 1
+  `;
+  const canonicalId = suRows?.[0]?.id;
+  if (!canonicalId) return null;
+
+  await sql`
+    UPDATE hm_news_sites
+    SET
+      domain = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+        ELSE domain
+      END,
+      domain2 = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+        ELSE domain2
+      END,
+      domain3 = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+        ELSE domain3
+      END,
+      updated_at = NOW()
+    WHERE lower(trim(both '/' from slug)) NOT IN ('su', 'suhaber')
+      AND (
+        lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+        OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+        OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+      )
+  `;
+
+  await sql`
+    UPDATE hm_news_sites
+    SET
+      domain = 'suhaberajansi.com',
+      domain2 = 'www.suhaberajansi.com',
+      domain3 = COALESCE(NULLIF(trim(both from domain3), ''), 'suhaberajansi.com.tr'),
+      display_name = CASE
+        WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
+        ELSE display_name
+      END,
+      active = true,
+      updated_at = NOW()
+    WHERE id = ${canonicalId}
+      AND lower(trim(both '/' from slug)) IN ('su', 'suhaber')
+  `;
+
+  await sql`
+    DELETE FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
+      AND id > ${canonicalId}
+  `;
+
+  return canonicalId;
+}
+
 /**
- * Sadece okuma: domain veya slug ile mevcut satır.
- * Domain'i slug satırına yazmaz; admin silmişse geri bağlama.
+ * Domain/slug ile bak; Su markası için domain sahipliğini onar, kanonik satırı dön.
  */
 export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   const binding = matchBrandBinding({ domain, slug });
@@ -95,6 +158,15 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   const sql = neon(dbUrl);
   const host = normalizeHost(domain || binding.domain);
   const wantSlug = normalizeSlug(slug || "");
+
+  // Su markası: domaini /tr/su (min id) üzerine sabitle
+  if (binding.slug === "su" || host === "suhaberajansi.com") {
+    try {
+      await repairSuDomainOnNeon(sql);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] su domain repair", String(err?.message || err).slice(0, 240));
+    }
+  }
 
   // 1) Domain ile bul — admin hangi siteye verdiyse onu döndür
   if (host) {
@@ -116,7 +188,7 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     }
   }
 
-  // 2) Slug ile bul — domain ekleme/yazma YOK
+  // 2) Slug ile bul — en düşük id (kanonik /tr/su)
   const slugKey = wantSlug || binding.slug;
   if (slugKey) {
     const bySlug = await sql`
@@ -133,11 +205,10 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     }
   }
 
-  // Domain/slug yok — admin oluştursun; kenarda INSERT/UPDATE yok
   return null;
 }
 
-export function brandMetaJsonResponse(meta, extraHeaders = {}) {
+export function brandMetaJsonResponse(meta, extra Headers = {}) {
   return new Response(JSON.stringify(meta), {
     status: 200,
     headers: {
