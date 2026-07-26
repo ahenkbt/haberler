@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import { db, getNewsDbInstance, isNewsDatabaseConfigured, newsDb } from "@workspace/db";
 
+/** Eski belediyehizmet/Kırşehir satırı — editör haberleri siteId=2'de. */
+export const SU_CANONICAL_SITE_ID = 2;
+
 export type SuDomainRepairResult = {
   dryRun: boolean;
   actions: string[];
@@ -25,8 +28,8 @@ async function runOnAllNewsDatabases(query: ReturnType<typeof sql>): Promise<voi
 }
 
 /**
- * /tr/su (kanonik en düşük id) → suhaberajansi.com.
- * Sahte çift kayıt ve domain çakışmalarını temizler.
+ * Eski belediyehizmet.com sitesi → id=2 /tr/su + suhaberajansi.com.
+ * Sahte slug=su satırlarını ve belediyehizmet domainini temizler.
  */
 export async function repairSuHaberDomainOwnership(opts?: {
   dryRun?: boolean;
@@ -34,26 +37,36 @@ export async function repairSuHaberDomainOwnership(opts?: {
   const dryRun = opts?.dryRun === true;
   const actions: string[] = [];
 
-  const result = await db.execute(sql`
-    SELECT id, slug, domain, domain2, domain3, display_name
-    FROM hm_news_sites
+  const byId2 = await db.execute(sql`
+    SELECT id, slug FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1
+  `);
+  const id2Rows = ((byId2 as { rows?: unknown[] }).rows ?? []) as Array<{ id: number }>;
+  const suFallback = await db.execute(sql`
+    SELECT id FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
     ORDER BY id ASC
+    LIMIT 1
   `);
-  const suList = (result.rows ?? []) as Array<{ id: number; slug: string }>;
-  const canonicalSiteId = suList.length ? Number(suList[0]!.id) : null;
+  const suRows = ((suFallback as { rows?: unknown[] }).rows ?? []) as Array<{ id: number }>;
+
+  const canonicalSiteId = id2Rows.length
+    ? SU_CANONICAL_SITE_ID
+    : suRows.length
+      ? Number(suRows[0]!.id)
+      : null;
+
   if (!canonicalSiteId) {
     actions.push("no-su-site");
     return { dryRun, actions, canonicalSiteId: null };
   }
-  actions.push(`canonical-su-id=${canonicalSiteId}`);
+  actions.push(`canonical-su-id=${canonicalSiteId}${id2Rows.length ? " (forced-id-2)" : ""}`);
 
   if (dryRun) {
     actions.push("dry-run-skip-writes");
     return { dryRun, actions, canonicalSiteId };
   }
 
-  // 0) belediyehizmet.com her siteden kaldır (eski Kırşehir alanı)
+  // 0) belediyehizmet.com her siteden kaldır
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
@@ -83,7 +96,7 @@ export async function repairSuHaberDomainOwnership(opts?: {
   `);
   actions.push("removed-belediyehizmet-from-all-sites");
 
-  // 1) suhaber* alanlarını slug≠su sitelerinden temizle
+  // 1) suhaber* alanlarını kanonik dışı sitelerden temizle
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
@@ -103,7 +116,7 @@ export async function repairSuHaberDomainOwnership(opts?: {
         ELSE domain3
       END,
       updated_at = NOW()
-    WHERE lower(trim(both '/' from slug)) NOT IN ('su', 'suhaber')
+    WHERE id <> ${canonicalSiteId}
       AND (
         lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
           IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
@@ -113,31 +126,33 @@ export async function repairSuHaberDomainOwnership(opts?: {
           IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
       )
   `);
-  actions.push("cleared-suhaber-from-non-su");
+  actions.push("cleared-suhaber-from-other-sites");
 
-  // 2) Eski belediyehizmet/kirsehir sitesi = kanonik /tr/su → suhaberajansi.com
+  // 2) Kanonik satır = /tr/su + suhaberajansi.com (slug zorla)
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
+      slug = 'su',
       domain = 'suhaberajansi.com',
       domain2 = 'www.suhaberajansi.com',
       domain3 = COALESCE(NULLIF(trim(both from domain3), ''), 'suhaberajansi.com.tr'),
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
+        WHEN lower(trim(both from display_name)) LIKE '%kırşehir%' THEN 'Su Haber Ajansı'
+        WHEN lower(trim(both from display_name)) LIKE '%kirsehir%' THEN 'Su Haber Ajansı'
         ELSE display_name
       END,
       active = true,
       updated_at = NOW()
     WHERE id = ${canonicalSiteId}
-      AND lower(trim(both '/' from slug)) IN ('su', 'suhaber')
   `);
   actions.push(`bound-suhaberajansi.com→id=${canonicalSiteId}`);
 
-  // 3) Daha yüksek id’li sahte slug=su satırlarını sil
+  // 3) Diğer slug=su satırlarını sil (sahte id=3 su vs asg)
   await runOnAllNewsDatabases(sql`
     DELETE FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
-      AND id > ${canonicalSiteId}
+      AND id <> ${canonicalSiteId}
   `);
   actions.push("deleted-phantom-su-rows");
 

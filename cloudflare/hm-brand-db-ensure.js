@@ -81,14 +81,18 @@ export function matchBrandBinding({ domain, slug } = {}) {
   );
 }
 
+/** Eski belediyehizmet satırı / editör haber siteId — kanonik Su. */
+const SU_CANONICAL_SITE_ID = 2;
+
 async function repairSuDomainOnNeon(sql) {
+  const id2 = await sql`SELECT id FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1`;
   const suRows = await sql`
     SELECT id FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
     ORDER BY id ASC
     LIMIT 1
   `;
-  const canonicalId = suRows?.[0]?.id;
+  const canonicalId = id2?.[0]?.id || suRows?.[0]?.id;
   if (!canonicalId) return null;
 
   // belediyehizmet.com tamamen kaldır
@@ -139,7 +143,7 @@ async function repairSuDomainOnNeon(sql) {
         ELSE domain3
       END,
       updated_at = NOW()
-    WHERE lower(trim(both '/' from slug)) NOT IN ('su', 'suhaber')
+    WHERE id <> ${canonicalId}
       AND (
         lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
           IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
@@ -153,6 +157,7 @@ async function repairSuDomainOnNeon(sql) {
   await sql`
     UPDATE hm_news_sites
     SET
+      slug = 'su',
       domain = 'suhaberajansi.com',
       domain2 = 'www.suhaberajansi.com',
       domain3 = COALESCE(NULLIF(trim(both from domain3), ''), 'suhaberajansi.com.tr'),
@@ -163,13 +168,12 @@ async function repairSuDomainOnNeon(sql) {
       active = true,
       updated_at = NOW()
     WHERE id = ${canonicalId}
-      AND lower(trim(both '/' from slug)) IN ('su', 'suhaber')
   `;
 
   await sql`
     DELETE FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
-      AND id > ${canonicalId}
+      AND id <> ${canonicalId}
   `;
 
   return canonicalId;
