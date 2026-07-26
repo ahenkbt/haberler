@@ -17,9 +17,14 @@ export type HmBrandDomainBindingResult = {
   detail?: string;
 };
 
-/** Özel alan → hedef slug (editör haber sitesi). Portal anasayfasına düşmesin. */
+/**
+ * Bilinen marka alanları (SPA / Worker host listesi).
+ * Domain → site eşlemesi ARTIK admin panelinden yönetilir; burada sabit slug'a
+ * zorla bağlama YAPILMAZ (suhaberajansi.com silinip /suha'ya taşınabilsin).
+ */
 export const HM_BRAND_DOMAIN_BINDINGS: Array<{
   domain: string;
+  /** Yalnızca site hiç yokken ilk bootstrap için varsayılan slug (zorunlu rebind yok). */
   slug: string;
   displayName: string;
   editorEmail: string;
@@ -76,49 +81,11 @@ async function findSiteClaimingDomain(domain: string): Promise<{ id: number; slu
     .from(hmNewsSitesTable);
   for (const row of rows) {
     const claimed = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(String(d ?? "")));
-    if (claimed.includes(host) || claimed.includes(www)) {
+    if (claimed.includes(host) || claimed.includes(www.replace(/^www\./, "")) || claimed.includes(www)) {
       return { id: row.id, slug: row.slug };
     }
   }
   return null;
-}
-
-async function bindDomainToSite(siteId: number, domain: string): Promise<"domain" | "domain2" | "domain3" | null> {
-  const host = normalizeHost(domain);
-  const [row] = await getNewsDbForRead()
-    .select({
-      domain: hmNewsSitesTable.domain,
-      domain2: hmNewsSitesTable.domain2,
-      domain3: hmNewsSitesTable.domain3,
-    })
-    .from(hmNewsSitesTable)
-    .where(eq(hmNewsSitesTable.id, siteId))
-    .limit(1);
-  if (!row) return null;
-
-  const patch: Partial<typeof hmNewsSitesTable.$inferInsert> = {
-    active: true,
-    updatedAt: new Date(),
-  };
-  let slot: "domain" | "domain2" | "domain3" | null = null;
-  const d1 = normalizeHost(row.domain ?? "");
-  const d2 = normalizeHost(row.domain2 ?? "");
-  const d3 = normalizeHost(row.domain3 ?? "");
-  if (!d1 || d1 === host) {
-    patch.domain = host;
-    slot = "domain";
-  } else if (!d2 || d2 === host) {
-    patch.domain2 = host;
-    slot = "domain2";
-  } else if (!d3 || d3 === host) {
-    patch.domain3 = host;
-    slot = "domain3";
-  } else {
-    patch.domain = host;
-    slot = "domain";
-  }
-  await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, siteId));
-  return slot;
 }
 
 async function ensureEditorForSite(siteId: number, email: string, displayName: string): Promise<void> {
@@ -146,11 +113,19 @@ async function ensureEditorForSite(siteId: number, email: string, displayName: s
   });
 }
 
-/** suhaberajansi.com gibi marka alanlarını editör haber sitesine bağlar / site yoksa oluşturur. */
+/**
+ * Marka alan bootstrap — admin domain sahipliğine saygı duyar.
+ * - Domain bir sitede kayıtlıysa: dokunma (silinmiş domain'i /su'ya geri bağlama).
+ * - Domain boşsa: sabit slug'a ZORLA bağlama YOK.
+ * - Ne domain ne slug yoksa: bir kez site oluştur (domain'siz) — admin domain ekler.
+ */
 export async function ensureHmBrandDomainBindings(opts?: {
   dryRun?: boolean;
+  /** true: domain boşken bile hardcoded slug'a bağla (eski davranış; varsayılan kapalı). */
+  forceBindUnboundDomain?: boolean;
 }): Promise<HmBrandDomainBindingResult[]> {
   const dryRun = opts?.dryRun === true;
+  const forceBind = opts?.forceBindUnboundDomain === true;
   await ensureHmNewsSiteWritableColumns();
   const results: HmBrandDomainBindingResult[] = [];
 
@@ -161,73 +136,68 @@ export async function ensureHmBrandDomainBindings(opts?: {
     try {
       const claimed = await findSiteClaimingDomain(domain);
       if (claimed) {
-        if (!dryRun) {
-          await dualWriteUpdate(
-            hmNewsSitesTable,
-            { active: true, updatedAt: new Date() },
-            eq(hmNewsSitesTable.id, claimed.id),
-          );
-        }
+        // Admin hangi siteye verdiyse orada kalsın — slug "su" diye taşıma.
         results.push({
           domain,
           slug: claimed.slug || slug,
           siteId: claimed.id,
           action: "already_bound",
+          detail: `admin-owned by site #${claimed.id} (${claimed.slug})`,
         });
         continue;
       }
 
       const sites = await listHmNewsSitesCompat();
       const target = sites.find((s) => altSlugs.has(String(s.slug ?? "").toLowerCase()));
+
       if (target) {
-        if (dryRun) {
+        // Domain boş + slug var → admin bilerek silmiş olabilir; zorla geri bağlama.
+        if (!forceBind) {
           results.push({
             domain,
             slug: target.slug,
             siteId: target.id,
-            action: "bound_existing",
-            detail: "dry-run",
+            action: "skipped",
+            detail: "domain unbound — admin assigns (no auto-rebind)",
           });
           continue;
         }
-        await bindDomainToSite(target.id, domain);
-        await dualWriteUpdate(
-          hmNewsSitesTable,
-          {
-            active: true,
-            displayName: binding.displayName,
-            updatedAt: new Date(),
-          },
-          eq(hmNewsSitesTable.id, target.id),
-        );
-        await ensureEditorForSite(target.id, binding.editorEmail, binding.displayName);
-        results.push({ domain, slug: target.slug, siteId: target.id, action: "bound_existing" });
+      }
+
+      if (!target) {
+        if (dryRun) {
+          results.push({ domain, slug, siteId: null, action: "created_site", detail: "dry-run" });
+          continue;
+        }
+        // İlk kurulum: site oluştur, domain'i admin bağlasın (zorla domain yazma).
+        const [created] = await dualWriteInsert(hmNewsSitesTable, {
+          slug,
+          domain: null,
+          domain2: null,
+          domain3: null,
+          displayName: binding.displayName,
+          description: "Su Haber Ajansı dijital haber platformu",
+          contactJson: JSON.stringify({ phone: "", email: binding.editorEmail, address: "" }),
+          layoutJson: defaultSuLayoutJson(),
+          verificationJson: null,
+          active: true,
+        });
+        if (!created) {
+          results.push({ domain, slug, siteId: null, action: "error", detail: "Site insert boş döndü" });
+          continue;
+        }
+        await ensureEditorForSite(created.id, binding.editorEmail, binding.displayName);
+        results.push({
+          domain,
+          slug,
+          siteId: created.id,
+          action: "created_site",
+          detail: "site created without domain — assign in admin",
+        });
         continue;
       }
 
-      if (dryRun) {
-        results.push({ domain, slug, siteId: null, action: "created_site", detail: "dry-run" });
-        continue;
-      }
-
-      const [created] = await dualWriteInsert(hmNewsSitesTable, {
-        slug,
-        domain,
-        domain2: null,
-        domain3: null,
-        displayName: binding.displayName,
-        description: "Su Haber Ajansı dijital haber platformu",
-        contactJson: JSON.stringify({ phone: "", email: binding.editorEmail, address: "" }),
-        layoutJson: defaultSuLayoutJson(),
-        verificationJson: null,
-        active: true,
-      });
-      if (!created) {
-        results.push({ domain, slug, siteId: null, action: "error", detail: "Site insert boş döndü" });
-        continue;
-      }
-      await ensureEditorForSite(created.id, binding.editorEmail, binding.displayName);
-      results.push({ domain, slug, siteId: created.id, action: "created_site" });
+      results.push({ domain, slug, siteId: target.id, action: "skipped" });
     } catch (e) {
       results.push({
         domain,
@@ -260,8 +230,7 @@ export function isKnownHmBrandSlug(slug: string): boolean {
 }
 
 /**
- * Meta 404 öncesi: bilinen marka alan/slug için site yoksa oluşturur veya domain bağlar.
- * İlk istekte portal “slug yok” hatasını self-heal eder (Render restart beklemeden).
+ * Meta öncesi: yalnızca site hiç yoksa bootstrap (domain zorla bağlanmaz).
  */
 export async function ensureHmBrandSiteForMeta(opts: {
   domain?: string | null;
@@ -274,5 +243,12 @@ export async function ensureHmBrandSiteForMeta(opts: {
   const needsBind =
     (domain && isKnownHmBrandDomain(domain)) || (slug && isKnownHmBrandSlug(slug));
   if (!needsBind) return null;
-  return ensureHmBrandDomainBindings({ dryRun: false });
+
+  // Domain zaten bir sitede ise hiçbir şey yazma.
+  if (domain) {
+    const claimed = await findSiteClaimingDomain(domain);
+    if (claimed) return [{ domain, slug: claimed.slug, siteId: claimed.id, action: "already_bound" }];
+  }
+
+  return ensureHmBrandDomainBindings({ dryRun: false, forceBindUnboundDomain: false });
 }

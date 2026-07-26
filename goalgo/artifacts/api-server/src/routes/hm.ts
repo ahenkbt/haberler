@@ -270,10 +270,54 @@ function normalizeDomain(raw: string | undefined | null): string | null {
   return d.replace(/:\d+$/, "").replace(/\.$/, "").trim() || null;
 }
 
-/** Başka bir HM sitesinin `domain` / `domain2` / `domain3` alanında kullanılıyor mu? */
-async function findHmSiteIdClaimingHost(host: string | null, exceptSiteId?: number): Promise<number | null> {
+/** www.ornek.com ve ornek.com aynı kabul edilir. */
+function domainApex(host: string | null | undefined): string | null {
   const n = normalizeDomain(host);
   if (!n) return null;
+  return n.replace(/^www\./, "");
+}
+
+function domainsMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+  const aa = domainApex(a);
+  const bb = domainApex(b);
+  return Boolean(aa && bb && aa === bb);
+}
+
+/** Başka bir HM sitesinin `domain` / `domain2` / `domain3` alanında kullanılıyor mu? */
+async function findHmSiteClaimingHost(
+  host: string | null,
+  exceptSiteId?: number,
+): Promise<{ id: number; slug: string } | null> {
+  const apex = domainApex(host);
+  if (!apex) return null;
+  await ensureHmNewsSiteDomain2Column().catch(() => undefined);
+  await ensureHmNewsSiteDomain3Column().catch(() => undefined);
+  const rows = await newsReadDb()
+    .select({
+      id: hmNewsSitesTable.id,
+      slug: hmNewsSitesTable.slug,
+      domain: hmNewsSitesTable.domain,
+      domain2: hmNewsSitesTable.domain2,
+      domain3: hmNewsSitesTable.domain3,
+    })
+    .from(hmNewsSitesTable);
+  for (const row of rows) {
+    if (exceptSiteId != null && row.id === exceptSiteId) continue;
+    if (
+      domainsMatch(row.domain, apex) ||
+      domainsMatch(row.domain2, apex) ||
+      domainsMatch(row.domain3, apex)
+    ) {
+      return { id: row.id, slug: row.slug };
+    }
+  }
+  return null;
+}
+
+/** Domain başka sitede ise o siteden temizle (admin taşıma). */
+async function releaseDomainFromOtherSites(host: string | null, keepSiteId: number): Promise<number[]> {
+  const apex = domainApex(host);
+  if (!apex) return [];
   await ensureHmNewsSiteDomain2Column().catch(() => undefined);
   await ensureHmNewsSiteDomain3Column().catch(() => undefined);
   const rows = await newsReadDb()
@@ -284,34 +328,57 @@ async function findHmSiteIdClaimingHost(host: string | null, exceptSiteId?: numb
       domain3: hmNewsSitesTable.domain3,
     })
     .from(hmNewsSitesTable);
+  const released: number[] = [];
   for (const row of rows) {
-    if (exceptSiteId != null && row.id === exceptSiteId) continue;
-    if (
-      normalizeDomain(row.domain) === n ||
-      normalizeDomain(row.domain2) === n ||
-      normalizeDomain(row.domain3) === n
-    ) {
-      return row.id;
+    if (row.id === keepSiteId) continue;
+    const patch: Partial<typeof hmNewsSitesTable.$inferInsert> = { updatedAt: new Date() };
+    let changed = false;
+    if (domainsMatch(row.domain, apex)) {
+      patch.domain = null;
+      changed = true;
     }
+    if (domainsMatch(row.domain2, apex)) {
+      patch.domain2 = null;
+      changed = true;
+    }
+    if (domainsMatch(row.domain3, apex)) {
+      patch.domain3 = null;
+      changed = true;
+    }
+    if (!changed) continue;
+    await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, row.id));
+    released.push(row.id);
   }
-  return null;
+  return released;
 }
 
+/** Aynı formdaki domain slotları çakışmasın (www = apex). */
 async function assertHmDomainsAvailable(
   domain: string | null,
   domain2: string | null,
   domain3: string | null,
-  exceptSiteId?: number,
+  _exceptSiteId?: number,
 ): Promise<string | null> {
   const normalized = [domain, domain2, domain3].map((d) => normalizeDomain(d)).filter(Boolean) as string[];
-  if (new Set(normalized).size !== normalized.length) {
-    return "Alan adları birbirinden farklı olmalı.";
+  const apexes = normalized.map((h) => domainApex(h)!);
+  if (new Set(apexes).size !== apexes.length) {
+    return "Alan adları birbirinden farklı olmalı (www ile aynı kök alan tekrar edemez).";
   }
-  for (const h of normalized) {
-    const taken = await findHmSiteIdClaimingHost(h, exceptSiteId);
-    if (taken != null) return `Bu alan adı başka bir siteye kayıtlı: ${h}`;
-  }
+  // Başka sitedeki çakışma: admin kaydında transferHmDomainsToSite ile taşınır (409 yok).
   return null;
+}
+
+/** Admin kayıt: çakışan domainleri diğer sitelerden alıp bu siteye bırak. */
+async function transferHmDomainsToSite(
+  siteId: number,
+  domain: string | null,
+  domain2: string | null,
+  domain3: string | null,
+): Promise<void> {
+  for (const h of [domain, domain2, domain3]) {
+    if (!normalizeDomain(h)) continue;
+    await releaseDomainFromOtherSites(h, siteId);
+  }
 }
 
 function domainLookupCandidates(raw: string | undefined | null): string[] {
@@ -620,9 +687,18 @@ function makeHmCopySlug(base: string | null | undefined, targetSiteId: number, s
 
 /* —— Public meta (slug / domain) ————————————————————————————— */
 
+function dedupeHmSitesById<T extends { id: number }>(rows: T[]): T[] {
+  const byId = new Map<number, T>();
+  for (const row of rows) {
+    if (!byId.has(row.id)) byId.set(row.id, row);
+  }
+  return Array.from(byId.values());
+}
+
 router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
   /** Panel kategori / RSS hedefi: pasif siteler de seçilebilsin (yalnızca aktif olanlar vitrinde görünür). */
   const adminList = String(req.query.admin ?? "").trim() === "1";
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   if (adminList) {
     if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
     const rows = await newsReadDb()
@@ -634,7 +710,7 @@ router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
       })
       .from(hmNewsSitesTable)
       .orderBy(hmNewsSitesTable.slug);
-    res.json(rows);
+    res.json(dedupeHmSitesById(rows).sort((a, b) => a.slug.localeCompare(b.slug)));
     return;
   }
   const rows = await newsReadDb()
@@ -646,7 +722,7 @@ router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.active, true))
     .orderBy(hmNewsSitesTable.slug);
-  res.json(rows);
+  res.json(dedupeHmSitesById(rows).sort((a, b) => a.slug.localeCompare(b.slug)));
 });
 
 /** Tanıtım sayfası: aktif haber merkezi siteleri (logo + alan adı). Yeni site eklendikçe liste güncellenir. */
@@ -882,7 +958,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
     await ensureHmNewsSiteWritableColumns().catch(() => undefined);
-    const sites = await listHmNewsSitesCompat();
+    const sites = dedupeHmSitesById(await listHmNewsSitesCompat()).sort((a, b) => a.id - b.id);
     const editors = await newsReadDb().select().from(hmSiteEditorsTable);
     const bySite = new Map<number, typeof editors>();
     for (const e of editors) {
@@ -890,6 +966,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
       arr.push(e);
       bySite.set(e.siteId, arr);
     }
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.json({
       items: sites.map((s) => ({
         ...s,
@@ -968,6 +1045,9 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
 
   try {
     await ensureHmNewsSiteWritableColumns();
+    // Önce domain'leri diğer sitelerden al (çakışma 409 yerine taşıma).
+    // Site id henüz yok — insert sonrası transfer; unique ihlali olmasın diye önce serbest bırak.
+    await transferHmDomainsToSite(0, domain, domain2, domain3);
     const [site] = await dualWriteInsert(hmNewsSitesTable, {
         slug,
         domain,
@@ -1070,6 +1150,8 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       res.status(409).json({ error: domainErr });
       return;
     }
+    // Başka sitedeki aynı domaini temizle — /su'dan silip /suha'ya taşıma çalışsın.
+    await transferHmDomainsToSite(id, nextDomain ?? null, nextDomain2 ?? null, nextDomain3 ?? null);
   }
   if (b.contact !== undefined) patch.contactJson = JSON.stringify(b.contact ?? {});
   if (b.seoVerification !== undefined) {

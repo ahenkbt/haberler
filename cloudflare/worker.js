@@ -292,6 +292,30 @@ function proxyInit(request, origin, incoming) {
   return init;
 }
 
+/**
+ * Upstream Set-Cookie'leri tarayıcıya güvenli aktar.
+ * - getSetCookie ile çoklu çerez kaybını önle
+ * - Domain=onrender.com vb. kaldır → çerez yekpare.net hostuna yazılsın (admin giriş)
+ */
+function copyUpstreamHeadersForBrowser(upstream) {
+  const out = new Headers();
+  upstream.headers.forEach((value, key) => {
+    if (String(key).toLowerCase() === "set-cookie") return;
+    out.append(key, value);
+  });
+  const rawCookies =
+    typeof upstream.headers.getSetCookie === "function"
+      ? upstream.headers.getSetCookie()
+      : [];
+  for (const cookie of rawCookies) {
+    let c = String(cookie || "");
+    if (!c) continue;
+    c = c.replace(/;\s*Domain=[^;]*/gi, "");
+    out.append("Set-Cookie", c);
+  }
+  return out;
+}
+
 function isStaticAssetPath(pathname) {
   const p = String(pathname || "");
   return (
@@ -1814,7 +1838,7 @@ export default {
         upstream,
       );
       if (repaired) return repaired;
-      const out = new Headers(upstream.headers);
+      const out = copyUpstreamHeadersForBrowser(upstream);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
       out.set("x-yekpare-frontend", "cloudflare-render-proxy");
