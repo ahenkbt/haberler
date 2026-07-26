@@ -15,6 +15,7 @@
     "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "pg": "^8.20.0"
   },
   "devDependencies": {

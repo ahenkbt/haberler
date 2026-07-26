@@ -5,6 +5,11 @@
  * Clear-Site-Data HTML yanıtlarında kullanılmaz — Chrome navigasyonu ERR_FAILED
  * ile düşürüp cookie yazılmadan döngüye sokabiliyor (yekpare.net/admin).
  */
+import {
+  brandMetaJsonResponse,
+  ensureBrandHmSiteMeta,
+  matchBrandBinding,
+} from "./hm-brand-db-ensure.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
 /**
@@ -714,6 +719,34 @@ function isHmMetaApiPath(pathname) {
   return p.startsWith("/api/hm/meta/");
 }
 
+/** Meta 404 iken Neon'da marka site oluştur / bağla (Render gecikince). */
+async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
+  if (!upstream || upstream.status !== 404) return null;
+  if (!isHmMetaApiPath(incoming.pathname)) return null;
+  const path = incoming.pathname.replace(/\/+$/, "") || "";
+  let domain = incoming.searchParams.get("domain") || "";
+  let slug = "";
+  const bySlug = path.match(/^\/api\/hm\/meta\/by-slug\/([^/]+)$/i);
+  if (bySlug) slug = decodeURIComponent(bySlug[1] || "");
+  const byDomain = path === "/api/hm/meta/by-domain";
+  if (byDomain && !domain) return null;
+  if (!matchBrandBinding({ domain, slug })) return null;
+  try {
+    const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
+    if (!ensured?.meta?.id) return null;
+    // slug sorgusunda domain başka siteye aitse yine de istenen slug meta'sını dön
+    if (slug && String(ensured.meta.slug || "").toLowerCase() !== slug.toLowerCase()) {
+      return null;
+    }
+    return brandMetaJsonResponse(ensured.meta, {
+      "x-yekpare-hm-brand-ensure-action": ensured.action || "ok",
+    });
+  } catch (err) {
+    console.error("[hm-brand-db-ensure]", String(err?.message || err).slice(0, 240));
+    return null;
+  }
+}
+
 function upstreamCfCacheOptions(pathname, method) {
   if (method !== "GET" && method !== "HEAD") {
     return { cacheTtl: 0, cacheEverything: false };
@@ -942,6 +975,13 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
       const slug = String(meta?.slug || "").trim();
       if (slug) {
         return hmCustomDomainRootRedirectResponse(incoming, request, slug, "meta");
+      }
+    } else if (metaRes.status === 404 && fallbackSlug) {
+      // Render meta 404 — Neon'da marka siteyi oluştur/bağla (sonraki /api/hm/meta çağrıları için).
+      try {
+        await ensureBrandHmSiteMeta(env, { domain, slug: fallbackSlug });
+      } catch (err) {
+        console.error("[hm-brand-db-ensure/root]", String(err?.message || err).slice(0, 200));
       }
     }
   } catch {
@@ -1763,6 +1803,8 @@ export default {
         proxyOpts,
         cfOpts,
       );
+      const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream);
+      if (brandMeta) return brandMeta;
       const repaired = await maybeRepairMismatchedNewsJson(
         origin,
         proxyOpts,
