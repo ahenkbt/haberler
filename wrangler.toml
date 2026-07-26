@@ -132,3 +132,20 @@ zone_name = "suhaberajansi.com"
 [[routes]]
 pattern = "www.suhaberajansi.com/*"
 zone_name = "suhaberajansi.com"
+
+# Belediye Hizmet — Kırşehir Haber (hm_news_sites.domain); zone CF'de, originless → Worker
+[[routes]]
+pattern = "belediyehizmet.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.belediyehizmet.com"
+custom_domain = true
+
+[[routes]]
+pattern = "belediyehizmet.com/*"
+zone_name = "belediyehizmet.com"
+
+[[routes]]
+pattern = "www.belediyehizmet.com/*"
+zone_name = "belediyehizmet.com"

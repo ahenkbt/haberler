@@ -29,6 +29,8 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.ankarahabergundemi.com",
   "suhaberajansi.com",
   "www.suhaberajansi.com",
+  "belediyehizmet.com",
+  "www.belediyehizmet.com",
 ]);
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260717b";
 

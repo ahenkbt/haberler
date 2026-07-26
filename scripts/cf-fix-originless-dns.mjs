@@ -19,6 +19,7 @@ const ZONES = [
   "vatankahramanlari.org",
   "vatanhaber.net",
   "suhaberajansi.com",
+  "belediyehizmet.com",
 ];
 
 function token() {
