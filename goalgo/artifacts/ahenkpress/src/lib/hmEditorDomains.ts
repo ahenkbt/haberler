@@ -4,7 +4,6 @@
  */
 export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "suhaberajansi.com": "su",
-  "belediyehizmet.com": "kirsehir",
   "kirsehri.com": "kirsehir",
   "kirsehirhaber.org": "kirsehir",
   "ankarahabergundemi.com": "ankarahabergundemi",

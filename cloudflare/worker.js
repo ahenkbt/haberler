@@ -34,8 +34,6 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.ankarahabergundemi.com",
   "suhaberajansi.com",
   "www.suhaberajansi.com",
-  "belediyehizmet.com",
-  "www.belediyehizmet.com",
   "kirsehri.com",
   "www.kirsehri.com",
   "kirsehirhaber.org",
@@ -46,12 +44,11 @@ const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260726c";
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
  * DB bağlandıktan sonra meta birincil kaynaktır; bu yalnızca yedek.
+ * belediyehizmet.com kaldırıldı → site suhaberajansi.com (/tr/su).
  */
 const HM_DOMAIN_SLUG_FALLBACKS = {
   "suhaberajansi.com": "su",
   "www.suhaberajansi.com": "su",
-  "belediyehizmet.com": "kirsehir",
-  "www.belediyehizmet.com": "kirsehir",
   "kirsehri.com": "kirsehir",
   "www.kirsehri.com": "kirsehir",
   "kirsehirhaber.org": "kirsehir",

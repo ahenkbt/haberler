@@ -5,22 +5,22 @@ describe("buildHmSitePublicCacheUrls", () => {
   it("includes portal meta + custom domain variants", () => {
     const urls = buildHmSitePublicCacheUrls({
       siteId: 2,
-      slug: "kirsehir",
-      domain: "belediyehizmet.com",
-      domain2: "kirsehri.com",
+      slug: "su",
+      domain: "suhaberajansi.com",
+      domain2: "www.suhaberajansi.com",
       domain3: null,
     });
-    expect(urls).toContain("https://yekpare.net/api/hm/meta/by-slug/kirsehir");
+    expect(urls).toContain("https://yekpare.net/api/hm/meta/by-slug/su");
     expect(urls).toContain(
-      "https://yekpare.net/api/hm/meta/by-domain?domain=belediyehizmet.com",
+      "https://yekpare.net/api/hm/meta/by-domain?domain=suhaberajansi.com",
     );
     expect(urls).toContain(
-      "https://belediyehizmet.com/api/hm/meta/by-domain?domain=belediyehizmet.com",
+      "https://suhaberajansi.com/api/hm/meta/by-domain?domain=suhaberajansi.com",
     );
     expect(urls).toContain(
-      "https://www.belediyehizmet.com/api/hm/meta/by-domain?domain=www.belediyehizmet.com",
+      "https://www.suhaberajansi.com/api/hm/meta/by-domain?domain=www.suhaberajansi.com",
     );
     expect(urls).toContain("https://yekpare.net/api/hm/home-bundle?siteId=2");
-    expect(urls.some((u) => u.includes("kirsehri.com"))).toBe(true);
+    expect(urls.some((u) => u.includes("suhaberajansi.com"))).toBe(true);
   });
 });

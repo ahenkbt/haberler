@@ -91,6 +91,35 @@ async function repairSuDomainOnNeon(sql) {
   const canonicalId = suRows?.[0]?.id;
   if (!canonicalId) return null;
 
+  // belediyehizmet.com tamamen kaldır
+  await sql`
+    UPDATE hm_news_sites
+    SET
+      domain = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('belediyehizmet.com', 'belediyehizzmet.com') THEN NULL
+        ELSE domain
+      END,
+      domain2 = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('belediyehizmet.com', 'belediyehizzmet.com') THEN NULL
+        ELSE domain2
+      END,
+      domain3 = CASE
+        WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+          IN ('belediyehizmet.com', 'belediyehizzmet.com') THEN NULL
+        ELSE domain3
+      END,
+      updated_at = NOW()
+    WHERE
+      lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('belediyehizmet.com', 'belediyehizzmet.com')
+      OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('belediyehizmet.com', 'belediyehizzmet.com')
+      OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+        IN ('belediyehizmet.com', 'belediyehizzmet.com')
+  `;
+
   await sql`
     UPDATE hm_news_sites
     SET
