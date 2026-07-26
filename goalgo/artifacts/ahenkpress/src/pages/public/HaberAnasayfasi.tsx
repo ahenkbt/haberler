@@ -4174,11 +4174,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     );
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
     const esenTodayHighlightItems = pickSidebarNews(todayHighlightMini, 6);
-    const esenBottomWidgetNews =
-      homeNewsDedupe.filterUnused(leadPackBasePool)[0]
-      ?? homeNewsDedupe.filterUnused(headlineRest)[0]
-      ?? leadPackBasePool.find((n) => !homeNewsDedupe.has(n))
-      ?? null;
     const videoItems = pickAndPadModuleItems(
       sortNewsByRecency(mergeUniqueNews(headlineRest.slice(8), classicLatestMini, latestNewsPool)),
       6,
@@ -4409,11 +4404,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                 {!esenLeadPackEnabled && esenTodayHighlightItems[0] ? (
                   <aside className="hm-esen-bottom-widgets-feature" data-hm-home-module="esenLeadPack">
                     <ClassicFeatureCard n={esenTodayHighlightItems[0]} accent={accent} hmCategoryColors={hmCat} large />
-                  </aside>
-                ) : null}
-                {esenBottomWidgetNews ? (
-                  <aside className="hm-esen-bottom-widgets-feature">
-                    <ClassicFeatureCard n={esenBottomWidgetNews} accent={accent} hmCategoryColors={hmCat} />
                   </aside>
                 ) : null}
               </section>
