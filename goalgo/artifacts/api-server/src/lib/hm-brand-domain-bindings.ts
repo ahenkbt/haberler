@@ -1,11 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
+  authorsTable,
   dualWriteInsert,
   dualWriteUpdate,
   getNewsDbForRead,
   hmNewsSitesTable,
   hmSiteEditorsTable,
+  newsTable,
 } from "@workspace/db";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
 
@@ -13,8 +15,15 @@ export type HmBrandDomainBindingResult = {
   domain: string;
   slug: string;
   siteId: number | null;
-  action: "already_bound" | "bound_existing" | "created_site" | "skipped" | "error";
+  action:
+    | "already_bound"
+    | "bound_existing"
+    | "created_site"
+    | "repaired_conflict"
+    | "skipped"
+    | "error";
   detail?: string;
+  movedNews?: number;
 };
 
 /** Özel alan → hedef slug (editör haber sitesi). Portal anasayfasına düşmesin. */
@@ -23,14 +32,38 @@ export const HM_BRAND_DOMAIN_BINDINGS: Array<{
   slug: string;
   displayName: string;
   editorEmail: string;
+  /** Bu id'ler asla marka sitesi olarak kullanılmaz (ör. ASG=3). */
+  forbiddenIds?: number[];
 }> = [
   {
     domain: "suhaberajansi.com",
     slug: "su",
     displayName: "Su Haber Ajansı",
     editorEmail: "editor@suhaberajansi.com",
+    forbiddenIds: [3],
   },
 ];
+
+const PROTECTED_SLUGS = new Set([
+  "asg",
+  "kirsehir",
+  "vkd",
+  "tr",
+  "vatanhaber",
+  "ankarahabergundemi",
+  "trafik",
+]);
+
+/** Su editör haberlerinin yanlışlıkla yazıldığı eski site (Kırşehir). */
+const KIRSEHIR_SITE_ID = 2;
+
+const ASG_SITE_ID = 3;
+const ASG_RESTORE = {
+  slug: "asg",
+  domain: "ankarasehirgazetesi.com",
+  domain2: "www.ankarasehirgazetesi.com",
+  displayName: "Ankara Şehir Gazetesi",
+} as const;
 
 function normalizeHost(raw: string): string {
   return (
@@ -43,6 +76,13 @@ function normalizeHost(raw: string): string {
       ?.replace(/^www\./, "")
       ?.replace(/\.$/, "") ?? ""
   );
+}
+
+function normalizeSlug(raw: string): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
 }
 
 function defaultSuLayoutJson(): string {
@@ -61,7 +101,127 @@ function defaultSuLayoutJson(): string {
   });
 }
 
-async function findSiteClaimingDomain(domain: string): Promise<{ id: number; slug: string } | null> {
+function isForbiddenBrandId(binding: (typeof HM_BRAND_DOMAIN_BINDINGS)[number], id: number): boolean {
+  if (!Number.isFinite(id) || id <= 0) return true;
+  return (binding.forbiddenIds ?? []).includes(id);
+}
+
+function rowLooksProtected(row: {
+  id?: number;
+  slug?: string | null;
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+  displayName?: string | null;
+}): boolean {
+  const slug = normalizeSlug(String(row.slug ?? ""));
+  if (PROTECTED_SLUGS.has(slug)) return true;
+  const hosts = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(String(d ?? "")));
+  if (hosts.some((h) => h.includes("ankarasehir") || h === "belediyehizmet.com")) return true;
+  const name = String(row.displayName ?? "").toLowerCase();
+  if (name.includes("ankara şehir") || name.includes("ankara sehir")) return true;
+  return false;
+}
+
+/** Meta/API: bu satır Su markası için güvenli mi? */
+export function isCleanHmBrandSiteRow(
+  row: {
+    id?: number;
+    slug?: string | null;
+    domain?: string | null;
+    domain2?: string | null;
+    domain3?: string | null;
+    displayName?: string | null;
+  } | null
+  | undefined,
+  binding: (typeof HM_BRAND_DOMAIN_BINDINGS)[number],
+): boolean {
+  if (!row?.id) return false;
+  if (isForbiddenBrandId(binding, row.id)) return false;
+  if (rowLooksProtected(row)) return false;
+  const slug = normalizeSlug(String(row.slug ?? ""));
+  return slug === binding.slug || slug === "suhaber";
+}
+
+export function findHmBrandBinding(opts: {
+  domain?: string | null;
+  slug?: string | null;
+}): (typeof HM_BRAND_DOMAIN_BINDINGS)[number] | null {
+  const host = normalizeHost(String(opts.domain ?? ""));
+  const slug = normalizeSlug(String(opts.slug ?? ""));
+  return (
+    HM_BRAND_DOMAIN_BINDINGS.find((b) => (host && b.domain === host) || (slug && b.slug === slug)) || null
+  );
+}
+
+async function clearBrandDomainFromSite(siteId: number, domain: string): Promise<void> {
+  const host = normalizeHost(domain);
+  const [row] = await getNewsDbForRead()
+    .select({
+      domain: hmNewsSitesTable.domain,
+      domain2: hmNewsSitesTable.domain2,
+      domain3: hmNewsSitesTable.domain3,
+    })
+    .from(hmNewsSitesTable)
+    .where(eq(hmNewsSitesTable.id, siteId))
+    .limit(1);
+  if (!row) return;
+  const patch: Partial<typeof hmNewsSitesTable.$inferInsert> = { updatedAt: new Date() };
+  let changed = false;
+  if (normalizeHost(row.domain ?? "") === host) {
+    patch.domain = null;
+    changed = true;
+  }
+  if (normalizeHost(row.domain2 ?? "") === host) {
+    patch.domain2 = null;
+    changed = true;
+  }
+  if (normalizeHost(row.domain3 ?? "") === host) {
+    patch.domain3 = null;
+    changed = true;
+  }
+  if (!changed) return;
+  await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, siteId));
+}
+
+/** ASG (id=3) Su'ya dönüştürülmüşse kimliği geri ver; Su domainini temizle. */
+async function restoreAsgIfCorrupted(row: {
+  id: number;
+  slug: string;
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+}): Promise<boolean> {
+  if (row.id !== ASG_SITE_ID) return false;
+  const slug = normalizeSlug(row.slug);
+  const hosts = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(String(d ?? "")));
+  const hasSuDomain = hosts.includes("suhaberajansi.com");
+  const suSlug = slug === "su" || slug === "suhaber";
+  if (!hasSuDomain && !suSlug) return false;
+  await dualWriteUpdate(
+    hmNewsSitesTable,
+    {
+      slug: ASG_RESTORE.slug,
+      domain: ASG_RESTORE.domain,
+      domain2: ASG_RESTORE.domain2,
+      domain3: null,
+      displayName: ASG_RESTORE.displayName,
+      active: true,
+      updatedAt: new Date(),
+    },
+    eq(hmNewsSitesTable.id, ASG_SITE_ID),
+  );
+  return true;
+}
+
+async function findSiteClaimingDomain(domain: string): Promise<{
+  id: number;
+  slug: string;
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+  displayName?: string | null;
+} | null> {
   const host = normalizeHost(domain);
   if (!host) return null;
   const www = `www.${host}`;
@@ -72,12 +232,13 @@ async function findSiteClaimingDomain(domain: string): Promise<{ id: number; slu
       domain: hmNewsSitesTable.domain,
       domain2: hmNewsSitesTable.domain2,
       domain3: hmNewsSitesTable.domain3,
+      displayName: hmNewsSitesTable.displayName,
     })
     .from(hmNewsSitesTable);
   for (const row of rows) {
     const claimed = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(String(d ?? "")));
     if (claimed.includes(host) || claimed.includes(www)) {
-      return { id: row.id, slug: row.slug };
+      return row;
     }
   }
   return null;
@@ -146,7 +307,120 @@ async function ensureEditorForSite(siteId: number, email: string, displayName: s
   });
 }
 
-/** suhaberajansi.com gibi marka alanlarını editör haber sitesine bağlar / site yoksa oluşturur. */
+async function migrateSuAuthorsFromKirsehir(suSiteId: number): Promise<number> {
+  const authors = await getNewsDbForRead()
+    .select({ id: authorsTable.id, name: authorsTable.name })
+    .from(authorsTable)
+    .where(
+      and(
+        eq(authorsTable.hmSiteId, KIRSEHIR_SITE_ID),
+        or(
+          ilike(authorsTable.name, "%Serkan Sekreter%"),
+          ilike(authorsTable.name, "%Su Mengüç%"),
+          ilike(authorsTable.name, "%Su Menguc%"),
+        ),
+      ),
+    );
+  let moved = 0;
+  for (const author of authors) {
+    await dualWriteUpdate(
+      authorsTable,
+      { hmSiteId: suSiteId },
+      eq(authorsTable.id, author.id),
+    );
+    moved += 1;
+  }
+  return moved;
+}
+
+async function migrateSuNewsFromKirsehir(suSiteId: number): Promise<number> {
+  if (!Number.isFinite(suSiteId) || suSiteId <= 0) return 0;
+  const candidates = await getNewsDbForRead()
+    .select({
+      id: newsTable.id,
+      title: newsTable.title,
+      slug: newsTable.slug,
+      siteOnly: newsTable.siteOnly,
+    })
+    .from(newsTable)
+    .where(
+      and(
+        or(eq(newsTable.siteId, KIRSEHIR_SITE_ID), eq(newsTable.ownerSiteId, KIRSEHIR_SITE_ID)),
+        eq(newsTable.isEditorManual, true),
+        or(
+          eq(newsTable.siteOnly, true),
+          ilike(newsTable.title, "%Su Mengüç%"),
+          ilike(newsTable.title, "%Su Menguc%"),
+          ilike(newsTable.slug, "%su-menguc%"),
+          ilike(newsTable.slug, "%ahlaki-restorasyon%"),
+          ilike(newsTable.slug, "%gelecek-partisi-genel-merkezi%"),
+        ),
+      ),
+    );
+
+  let moved = 0;
+  for (const row of candidates) {
+    await dualWriteUpdate(
+      newsTable,
+      {
+        siteId: suSiteId,
+        ownerSiteId: suSiteId,
+        siteOnly: true,
+        updatedAt: new Date(),
+      },
+      eq(newsTable.id, row.id),
+    );
+    moved += 1;
+  }
+
+  await migrateSuAuthorsFromKirsehir(suSiteId).catch(() => 0);
+
+  // Kırşehir'de çapraz site manuel haber sızıntısını kapat
+  const [kirsehir] = await getNewsDbForRead()
+    .select({ id: hmNewsSitesTable.id, layoutJson: hmNewsSitesTable.layoutJson })
+    .from(hmNewsSitesTable)
+    .where(eq(hmNewsSitesTable.id, KIRSEHIR_SITE_ID))
+    .limit(1);
+  if (kirsehir) {
+    let layoutObj: Record<string, unknown> = {};
+    try {
+      const parsed = kirsehir.layoutJson ? JSON.parse(String(kirsehir.layoutJson)) : {};
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        layoutObj = parsed as Record<string, unknown>;
+      }
+    } catch {
+      layoutObj = {};
+    }
+    if (layoutObj.hmAllowCrossSiteManualNews !== false) {
+      layoutObj.hmAllowCrossSiteManualNews = false;
+      await dualWriteUpdate(
+        hmNewsSitesTable,
+        { layoutJson: JSON.stringify(layoutObj), updatedAt: new Date() },
+        eq(hmNewsSitesTable.id, KIRSEHIR_SITE_ID),
+      );
+    }
+  }
+
+  return moved;
+}
+
+async function insertCleanSuSite(binding: (typeof HM_BRAND_DOMAIN_BINDINGS)[number]) {
+  const [created] = await dualWriteInsert(hmNewsSitesTable, {
+    slug: binding.slug,
+    domain: binding.domain,
+    domain2: null,
+    domain3: null,
+    displayName: binding.displayName,
+    description: "Su Haber Ajansı dijital haber platformu",
+    contactJson: JSON.stringify({ phone: "", email: binding.editorEmail, address: "" }),
+    layoutJson: defaultSuLayoutJson(),
+    verificationJson: null,
+    active: true,
+  });
+  return created ?? null;
+}
+
+/** suhaberajansi.com gibi marka alanlarını bağımsız editör haber sitesine bağlar / site yoksa oluşturur. */
 export async function ensureHmBrandDomainBindings(opts?: {
   dryRun?: boolean;
 }): Promise<HmBrandDomainBindingResult[]> {
@@ -159,49 +433,86 @@ export async function ensureHmBrandDomainBindings(opts?: {
     const slug = binding.slug.trim().toLowerCase();
     const altSlugs = new Set([slug, slug === "su" ? "suhaber" : ""].filter(Boolean));
     try {
-      const claimed = await findSiteClaimingDomain(domain);
-      if (claimed) {
-        if (!dryRun) {
-          await dualWriteUpdate(
-            hmNewsSitesTable,
-            { active: true, updatedAt: new Date() },
-            eq(hmNewsSitesTable.id, claimed.id),
-          );
+      const sites = await listHmNewsSitesCompat();
+
+      // 1) Kirli / korumalı satırlardan Su domainini temizle; ASG kimliğini onar
+      for (const site of sites) {
+        const hosts = [site.domain, site.domain2, site.domain3].map((d) => normalizeHost(String(d ?? "")));
+        const siteSlug = normalizeSlug(site.slug);
+        const claimsSuDomain = hosts.includes(domain);
+        const claimsSuSlug = altSlugs.has(siteSlug);
+        const dirty =
+          isForbiddenBrandId(binding, site.id) ||
+          rowLooksProtected(site) ||
+          (claimsSuSlug && isForbiddenBrandId(binding, site.id));
+
+        if (!claimsSuDomain && !(claimsSuSlug && dirty)) continue;
+
+        if (dryRun) continue;
+
+        if (site.id === ASG_SITE_ID) {
+          await restoreAsgIfCorrupted(site);
+          continue;
         }
-        results.push({
-          domain,
-          slug: claimed.slug || slug,
-          siteId: claimed.id,
-          action: "already_bound",
-        });
-        continue;
+
+        if (dirty || (claimsSuDomain && !isCleanHmBrandSiteRow(site, binding))) {
+          await clearBrandDomainFromSite(site.id, domain);
+          if (claimsSuSlug && (PROTECTED_SLUGS.has(siteSlug) || isForbiddenBrandId(binding, site.id))) {
+            // korumalı slug'a dokunma; yalnızca yanlış "su" slug'ını orphan et
+          } else if (claimsSuSlug && !PROTECTED_SLUGS.has(siteSlug)) {
+            await dualWriteUpdate(
+              hmNewsSitesTable,
+              { slug: `su-orphaned-${site.id}`, updatedAt: new Date() },
+              eq(hmNewsSitesTable.id, site.id),
+            );
+          }
+        }
       }
 
-      const sites = await listHmNewsSitesCompat();
-      const target = sites.find((s) => altSlugs.has(String(s.slug ?? "").toLowerCase()));
+      // 2) Temiz Su satırı bul
+      const refreshed = await listHmNewsSitesCompat();
+      let target = refreshed.find((s) => isCleanHmBrandSiteRow(s, binding));
+
       if (target) {
+        const already = [target.domain, target.domain2, target.domain3]
+          .map((d) => normalizeHost(String(d ?? "")))
+          .includes(domain);
         if (dryRun) {
           results.push({
             domain,
             slug: target.slug,
             siteId: target.id,
-            action: "bound_existing",
+            action: already ? "already_bound" : "bound_existing",
             detail: "dry-run",
           });
           continue;
         }
-        await bindDomainToSite(target.id, domain);
+        if (!already) await bindDomainToSite(target.id, domain);
         await dualWriteUpdate(
           hmNewsSitesTable,
           {
+            slug,
             active: true,
             displayName: binding.displayName,
             updatedAt: new Date(),
           },
           eq(hmNewsSitesTable.id, target.id),
         );
+        // Diğer sitelerden domain temizliği
+        for (const site of refreshed) {
+          if (site.id === target.id) continue;
+          const hosts = [site.domain, site.domain2, site.domain3].map((d) => normalizeHost(String(d ?? "")));
+          if (hosts.includes(domain)) await clearBrandDomainFromSite(site.id, domain);
+        }
         await ensureEditorForSite(target.id, binding.editorEmail, binding.displayName);
-        results.push({ domain, slug: target.slug, siteId: target.id, action: "bound_existing" });
+        const movedNews = await migrateSuNewsFromKirsehir(target.id);
+        results.push({
+          domain,
+          slug,
+          siteId: target.id,
+          action: already ? "already_bound" : "repaired_conflict",
+          movedNews,
+        });
         continue;
       }
 
@@ -210,24 +521,63 @@ export async function ensureHmBrandDomainBindings(opts?: {
         continue;
       }
 
-      const [created] = await dualWriteInsert(hmNewsSitesTable, {
-        slug,
-        domain,
-        domain2: null,
-        domain3: null,
-        displayName: binding.displayName,
-        description: "Su Haber Ajansı dijital haber platformu",
-        contactJson: JSON.stringify({ phone: "", email: binding.editorEmail, address: "" }),
-        layoutJson: defaultSuLayoutJson(),
-        verificationJson: null,
-        active: true,
-      });
-      if (!created) {
-        results.push({ domain, slug, siteId: null, action: "error", detail: "Site insert boş döndü" });
+      // 3) Bağımsız Su sitesi oluştur
+      let created = null as Awaited<ReturnType<typeof insertCleanSuSite>>;
+      try {
+        created = await insertCleanSuSite(binding);
+      } catch (err) {
+        // slug çakışması — orphan satırı geri al
+        const orphan = refreshed.find(
+          (s) =>
+            normalizeSlug(s.slug).startsWith("su-orphaned-") &&
+            !isForbiddenBrandId(binding, s.id) &&
+            !rowLooksProtected(s),
+        );
+        if (orphan) {
+          await dualWriteUpdate(
+            hmNewsSitesTable,
+            {
+              slug,
+              domain,
+              domain2: null,
+              domain3: null,
+              displayName: binding.displayName,
+              description: "Su Haber Ajansı dijital haber platformu",
+              layoutJson: orphan.layoutJson?.trim() ? orphan.layoutJson : defaultSuLayoutJson(),
+              active: true,
+              updatedAt: new Date(),
+            },
+            eq(hmNewsSitesTable.id, orphan.id),
+          );
+          created = { id: orphan.id, slug } as typeof created;
+        } else {
+          throw err;
+        }
+      }
+
+      if (!created?.id || isForbiddenBrandId(binding, created.id)) {
+        results.push({ domain, slug, siteId: null, action: "error", detail: "Site insert boş veya yasaklı id" });
         continue;
       }
+
+      // Claim eden yabancı sitelerden domain temizle
+      const after = await listHmNewsSitesCompat();
+      for (const site of after) {
+        if (site.id === created.id) continue;
+        const hosts = [site.domain, site.domain2, site.domain3].map((d) => normalizeHost(String(d ?? "")));
+        if (hosts.includes(domain)) await clearBrandDomainFromSite(site.id, domain);
+      }
+
       await ensureEditorForSite(created.id, binding.editorEmail, binding.displayName);
-      results.push({ domain, slug, siteId: created.id, action: "created_site" });
+      const movedNews = await migrateSuNewsFromKirsehir(created.id);
+      results.push({
+        domain,
+        slug,
+        siteId: created.id,
+        action: "created_site",
+        movedNews,
+        detail: movedNews > 0 ? `kirsehir→su ${movedNews} haber` : undefined,
+      });
     } catch (e) {
       results.push({
         domain,
@@ -260,8 +610,8 @@ export function isKnownHmBrandSlug(slug: string): boolean {
 }
 
 /**
- * Meta 404 öncesi: bilinen marka alan/slug için site yoksa oluşturur veya domain bağlar.
- * İlk istekte portal “slug yok” hatasını self-heal eder (Render restart beklemeden).
+ * Meta öncesi: bilinen marka alan/slug için bağımsız site yoksa oluşturur;
+ * ASG(id=3) / Kırşehir çakışmasını onarır.
  */
 export async function ensureHmBrandSiteForMeta(opts: {
   domain?: string | null;
@@ -271,8 +621,26 @@ export async function ensureHmBrandSiteForMeta(opts: {
   const slug = String(opts.slug ?? "")
     .trim()
     .toLowerCase();
-  const needsBind =
-    (domain && isKnownHmBrandDomain(domain)) || (slug && isKnownHmBrandSlug(slug));
-  if (!needsBind) return null;
+  const binding = findHmBrandBinding({ domain, slug });
+  if (!binding) return null;
+
+  // Çakışmalı mevcut satır varsa da onar (yalnızca 404 değil).
+  if (domain) {
+    const claimed = await findSiteClaimingDomain(domain);
+    if (claimed && isCleanHmBrandSiteRow(claimed, binding)) {
+      // Temiz — yine de haber göçü / ASG onarımı için tam ensure çalıştırılabilir ama
+      // hot-path'de gereksiz yazmayı azalt: yine ensure çağır (migrate no-op olur).
+    }
+  }
+
   return ensureHmBrandDomainBindings({ dryRun: false });
+}
+
+/** Test / meta: satır marka ile çakışıyor mu? */
+export function hmBrandMetaConflicts(
+  upstream: { id?: number; slug?: string | null; domain?: string | null; displayName?: string | null } | null,
+  binding: (typeof HM_BRAND_DOMAIN_BINDINGS)[number],
+): boolean {
+  if (!upstream?.id) return true;
+  return !isCleanHmBrandSiteRow(upstream, binding);
 }

@@ -9,6 +9,7 @@ import {
   brandMetaJsonResponse,
   ensureBrandHmSiteMeta,
   matchBrandBinding,
+  upstreamBrandMetaConflicts,
 } from "./hm-brand-db-ensure.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
@@ -719,10 +720,14 @@ function isHmMetaApiPath(pathname) {
   return p.startsWith("/api/hm/meta/");
 }
 
-/** Meta 404 iken Neon'da marka site oluştur / bağla (Render gecikince). */
+/**
+ * Marka meta: 404 veya ASG/id=3 çakışmalı 200 yanıtında bağımsız `su` sitesi oluştur/döndür.
+ * Böylece suhaberajansi.com siteId=3 (Ankara) ile açılmaz.
+ */
 async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
-  if (!upstream || upstream.status !== 404) return null;
+  if (!upstream) return null;
   if (!isHmMetaApiPath(incoming.pathname)) return null;
+  if (upstream.status !== 404 && upstream.status !== 200) return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "";
   let domain = incoming.searchParams.get("domain") || "";
   let slug = "";
@@ -730,16 +735,32 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
   if (bySlug) slug = decodeURIComponent(bySlug[1] || "");
   const byDomain = path === "/api/hm/meta/by-domain";
   if (byDomain && !domain) return null;
-  if (!matchBrandBinding({ domain, slug })) return null;
+  const binding = matchBrandBinding({ domain, slug });
+  if (!binding) return null;
+
+  let upstreamMeta = null;
+  if (upstream.status === 200) {
+    try {
+      upstreamMeta = await upstream.clone().json();
+    } catch {
+      upstreamMeta = null;
+    }
+    const conflicts = await upstreamBrandMetaConflicts(env, binding, upstreamMeta);
+    if (!conflicts) return null; // temiz su meta — dokunma
+  }
+
   try {
-    const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
+    const ensured = await ensureBrandHmSiteMeta(env, {
+      domain: domain || binding.domain,
+      slug: slug || binding.slug,
+    });
     if (!ensured?.meta?.id) return null;
-    // slug sorgusunda domain başka siteye aitse yine de istenen slug meta'sını dön
     if (slug && String(ensured.meta.slug || "").toLowerCase() !== slug.toLowerCase()) {
       return null;
     }
     return brandMetaJsonResponse(ensured.meta, {
       "x-yekpare-hm-brand-ensure-action": ensured.action || "ok",
+      "x-yekpare-hm-brand-moved-news": String(ensured.movedNews ?? 0),
     });
   } catch (err) {
     console.error("[hm-brand-db-ensure]", String(err?.message || err).slice(0, 240));
