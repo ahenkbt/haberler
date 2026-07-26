@@ -237,7 +237,7 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   return null;
 }
 
-export function brandMetaJsonResponse(meta, extra Headers = {}) {
+export function brandMetaJsonResponse(meta, extraHeaders = {}) {
   return new Response(JSON.stringify(meta), {
     status: 200,
     headers: {
