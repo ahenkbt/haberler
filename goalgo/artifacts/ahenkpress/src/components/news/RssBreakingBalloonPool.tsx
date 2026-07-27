@@ -19,16 +19,17 @@ export type RssBreakingBalloonItem = {
 };
 
 const BALLOON_CATEGORY_COLORS: Partial<Record<HmBreakingRssFeedId, string>> = {
+  sonDakika: "#dc2626",
   turkiye: "#e11d48",
-  dunya: "#2563eb",
+  egitim: "#0891b2",
   ekonomi: "#059669",
+  para: "#ca8a04",
+  yasam: "#db2777",
+  dunya: "#2563eb",
   teknoloji: "#7c3aed",
   saglik: "#0d9488",
-  spor: "#ea580c",
-  yasam: "#db2777",
   otomobil: "#475569",
-  para: "#ca8a04",
-  egitim: "#0891b2",
+  spor: "#ea580c",
   savunmaSanayi: "#4b5563",
 };
 

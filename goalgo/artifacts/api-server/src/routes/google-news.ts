@@ -8,16 +8,17 @@ import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat";
 import { rssSourceNameFromUrl } from "../lib/portal-rss-fetch.js";
 
 type RssBreakingFeedCategoryId =
+  | "sonDakika"
   | "turkiye"
-  | "dunya"
+  | "egitim"
   | "ekonomi"
+  | "para"
+  | "yasam"
+  | "dunya"
   | "teknoloji"
   | "saglik"
-  | "spor"
-  | "yasam"
   | "otomobil"
-  | "para"
-  | "egitim"
+  | "spor"
   | "savunmaSanayi";
 type RssBreakingCategoryId = "mixed" | string;
 
@@ -51,20 +52,34 @@ const router: IRouter = Router();
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const MAX_ITEMS = 10;
 const RSS_BREAKING_CATEGORIES: Record<RssBreakingFeedCategoryId, { label: string; defaultUrl: string }> = {
+  sonDakika: { label: "Son Dakika", defaultUrl: "https://www.ntv.com.tr/son-dakika.rss" },
   turkiye: { label: "Türkiye", defaultUrl: "https://www.ntv.com.tr/turkiye.rss" },
-  dunya: { label: "Dünya", defaultUrl: "https://www.ntv.com.tr/dunya.rss" },
+  egitim: { label: "Eğitim", defaultUrl: "https://www.ntv.com.tr/egitim.rss" },
   ekonomi: { label: "Ekonomi", defaultUrl: "https://www.ntv.com.tr/ekonomi.rss" },
+  para: { label: "Para", defaultUrl: "https://www.ntv.com.tr/ntvpara.rss" },
+  yasam: { label: "Yaşam", defaultUrl: "https://www.ntv.com.tr/yasam.rss" },
+  dunya: { label: "Dünya", defaultUrl: "https://www.ntv.com.tr/dunya.rss" },
   teknoloji: { label: "Teknoloji", defaultUrl: "https://www.ntv.com.tr/teknoloji.rss" },
   saglik: { label: "Sağlık", defaultUrl: "https://www.ntv.com.tr/saglik.rss" },
-  spor: { label: "Spor", defaultUrl: "" },
-  yasam: { label: "Yaşam", defaultUrl: "https://www.ntv.com.tr/yasam.rss" },
   otomobil: { label: "Otomobil", defaultUrl: "https://www.ntv.com.tr/otomobil.rss" },
-  para: { label: "Para", defaultUrl: "https://www.ntv.com.tr/ntvpara.rss" },
-  egitim: { label: "Eğitim", defaultUrl: "https://www.ntv.com.tr/egitim.rss" },
+  spor: { label: "Spor", defaultUrl: "https://www.dirilispostasi.com/rss/spor" },
   savunmaSanayi: { label: "Savunma Sanayi", defaultUrl: "https://www.dirilispostasi.com/rss/savunma-sanayi" },
 };
 
-const CATEGORY_ORDER = Object.keys(RSS_BREAKING_CATEGORIES) as RssBreakingFeedCategoryId[];
+const CATEGORY_ORDER = [
+  "sonDakika",
+  "turkiye",
+  "egitim",
+  "ekonomi",
+  "para",
+  "yasam",
+  "dunya",
+  "teknoloji",
+  "saglik",
+  "otomobil",
+  "spor",
+  "savunmaSanayi",
+] as RssBreakingFeedCategoryId[];
 const cache = new Map<string, CacheEntry>();
 
 function decodeXmlText(s: string): string {
@@ -413,6 +428,9 @@ function configuredCategoryIds(feeds: Record<string, string>): string[] {
 
 function buildLegacyCategoryAliasMap(availableIds: Set<string>): Map<string, string> {
   const pairs: Array<[string, RssBreakingFeedCategoryId]> = [
+    ["son dakika", "sonDakika"],
+    ["sondakika", "sonDakika"],
+    ["son-dakika", "sonDakika"],
     ["türkiye", "turkiye"],
     ["turkiye", "turkiye"],
     ["dünya", "dunya"],

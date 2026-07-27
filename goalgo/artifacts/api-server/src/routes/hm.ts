@@ -466,17 +466,19 @@ async function savePublicSubmissionImage(dataUrlRaw: unknown, title: string): Pr
   return saved.url;
 }
 
+const HM_BREAKING_RSS_DEFAULTS_REV = "20260727kutu1";
 const DEFAULT_HM_RSS_ROWS = [
+  { id: "sonDakika", label: "Son Dakika", url: "https://www.ntv.com.tr/son-dakika.rss" },
   { id: "turkiye", label: "Türkiye", url: "https://www.ntv.com.tr/turkiye.rss" },
-  { id: "dunya", label: "Dünya", url: "https://www.ntv.com.tr/dunya.rss" },
+  { id: "egitim", label: "Eğitim", url: "https://www.ntv.com.tr/egitim.rss" },
   { id: "ekonomi", label: "Ekonomi", url: "https://www.ntv.com.tr/ekonomi.rss" },
+  { id: "para", label: "Para", url: "https://www.ntv.com.tr/ntvpara.rss" },
+  { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
+  { id: "dunya", label: "Dünya", url: "https://www.ntv.com.tr/dunya.rss" },
   { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
   { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
-  { id: "spor", label: "Spor", url: "" },
-  { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
   { id: "otomobil", label: "Otomobil", url: "https://www.ntv.com.tr/otomobil.rss" },
-  { id: "para", label: "Para", url: "https://www.ntv.com.tr/ntvpara.rss" },
-  { id: "egitim", label: "Eğitim", url: "https://www.ntv.com.tr/egitim.rss" },
+  { id: "spor", label: "Spor", url: "https://www.dirilispostasi.com/rss/spor" },
   { id: "savunmaSanayi", label: "Savunma Sanayi", url: "https://www.dirilispostasi.com/rss/savunma-sanayi" },
 ];
 
@@ -486,8 +488,14 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     : {};
   const theme = String(inc.hmVitrinTheme ?? "").trim().toLowerCase();
   const isCorporate = theme === "corporate" || theme === "kurumsal";
-  const boxRows = DEFAULT_HM_RSS_ROWS.map((row) => ({ ...row }));
-  const siteRows = DEFAULT_HM_RSS_ROWS.map((row) => ({ ...row }));
+  const boxRows = DEFAULT_HM_RSS_ROWS.map((row) => ({
+    ...row,
+    categoryKey: row.id,
+  }));
+  const siteRows = DEFAULT_HM_RSS_ROWS.map((row) => ({
+    ...row,
+    categoryKey: row.id,
+  }));
   return {
     hmVitrinTheme: isCorporate ? "corporate" : "esen",
     mansetVariant: "center-trio",
@@ -500,6 +508,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsBreakingBandEnabled: true,
     hmNewsGoogleNewsBandEnabled: !isCorporate,
     hmNewsBreakingRssArticleLinkEnabled: true,
+    hmBreakingRssDefaultsRev: HM_BREAKING_RSS_DEFAULTS_REV,
     hmNewsBreakingRssFeedRows: boxRows,
     hmNewsSiteRssFeedRows: siteRows,
     hybridRssEnabled: !isCorporate,
