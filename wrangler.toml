@@ -17,6 +17,7 @@ run_worker_first = true
 API_ORIGIN = "https://goalgo-y7ze.onrender.com"
 # KH kenar login → Render JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
+# Medya yükleme (Worker → R2/S3): GitHub Actions S3_* secret'ları ile wrangler secret put
 
 # Apex: zone route (mevcut DNS ile uyumlu — custom_domain A/CNAME çakışması yapmaz)
 [[routes]]
