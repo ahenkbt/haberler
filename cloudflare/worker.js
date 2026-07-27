@@ -12,6 +12,7 @@ import {
   repairAsgEditorMisassignmentOnNeon,
 } from "./hm-brand-db-ensure.js";
 import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
+import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
 /**
@@ -1975,7 +1976,17 @@ export default {
       }
 
       const siteRssEnriched = await enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out);
-      if (siteRssEnriched) return siteRssEnriched;
+      if (siteRssEnriched) {
+        const filteredEnriched = await maybeFilterHmPublicNewsUpstream(
+          incoming,
+          siteRssEnriched,
+          new Headers(siteRssEnriched.headers),
+        );
+        return filteredEnriched || siteRssEnriched;
+      }
+
+      const filteredNews = await maybeFilterHmPublicNewsUpstream(incoming, upstream, out);
+      if (filteredNews) return filteredNews;
 
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {
