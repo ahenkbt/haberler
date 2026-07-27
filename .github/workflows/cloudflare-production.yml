@@ -121,6 +121,9 @@ jobs:
         run: |
           printf '%s' "$DATABASE_URL" | pnpm exec wrangler secret put DATABASE_URL
           printf '%s' "$SESSION_SECRET" | pnpm exec wrangler secret put SESSION_SECRET
+          if [ -n "$HM_EDITOR_JWT_SECRET" ]; then
+            printf '%s' "$HM_EDITOR_JWT_SECRET" | pnpm exec wrangler secret put HM_EDITOR_JWT_SECRET
+          fi
           if [ -n "$AGENTLABS_URL" ]; then
             printf '%s' "$AGENTLABS_URL" | pnpm exec wrangler secret put AGENTLABS_URL
           fi
