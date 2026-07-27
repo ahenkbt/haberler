@@ -212,6 +212,9 @@ export type HmRssIntegrationMode = "live" | "persistent" | "manual";
 /** Neon bir kerelik uygulama sürümü — cloudflare/hm-breaking-rss-defaults.js ile aynı. */
 export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
 
+/** Neon bir kerelik uygulama sürümü — cloudflare/hm-site-rss-defaults.js ile aynı. */
+export const HM_SITE_RSS_DEFAULTS_REV = "20260727site1";
+
 export const HM_BREAKING_RSS_FEED_CATEGORIES: Array<{ id: HmBreakingRssFeedId; label: string }> = [
   { id: "sonDakika", label: "Son Dakika" },
   { id: "turkiye", label: "Türkiye" },
@@ -580,7 +583,9 @@ export type NewsSiteLayoutPrefs = {
   hmNewsBreakingRssFeedRows?: HmBreakingRssFeedRow[] | null;
   /** Kutu içi RSS global varsayılan rev’i — Worker bir kerelik uyguladıktan sonra editör değişiklikleri korunur. */
   hmBreakingRssDefaultsRev?: string | null;
-  /** HABER teması: site içi RSS / hibrit haber akışı kaynakları. Boş/eksikse varsayılan NTV preset’leri kullanılır (kutu bandına düşülmez). */
+  /** Site içi RSS global varsayılan rev’i — Worker bir kerelik uyguladıktan sonra editör değişiklikleri korunur. */
+  hmSiteRssDefaultsRev?: string | null;
+  /** HABER teması: site içi RSS / hibrit haber akışı kaynakları. Boş/eksikse Diriliş Postası + yerel varsayılanlar kullanılır (kutu bandına düşülmez). */
   hmNewsSiteRssFeedRows?: HmBreakingRssFeedRow[] | null;
   /** Yekpare `/haberler` hibrit vitrin: kategori bazlı harici RSS kaynakları (DB'ye yazılmaz). */
   portalHybridRssFeeds?: PortalHybridRssFeed[] | null;
@@ -1755,6 +1760,27 @@ const HM_SPOR_SUBCATEGORY_DEFAULT_RSS_ROWS: HmBreakingRssFeedRow[] = [
   { id: "ozel-haber", categoryKey: "ozel-haber", label: "Özel Haber", url: "https://www.spordepor.com/rss/ozel-haber" },
 ];
 
+/** Site içi RSS — cloudflare/hm-site-rss-defaults.js ile aynı sıra/adresler. */
+export function defaultHmSiteRssFeedRows(): HmBreakingRssFeedRow[] {
+  return [
+    { id: "asayis", categoryKey: "asayis", label: "Asayiş", url: "https://www.dirilispostasi.com/rss/asayis" },
+    { id: "dunya", categoryKey: "dunya", label: "Dünya", url: "https://www.dirilispostasi.com/rss/dunya" },
+    { id: "gundem", categoryKey: "gundem", label: "Gündem", url: "https://www.dirilispostasi.com/rss/gundem" },
+    { id: "gundem-genel", categoryKey: "gundem", label: "Gündem", url: "https://www.dirilispostasi.com/rss/genel" },
+    { id: "gundem-guncel", categoryKey: "gundem", label: "Gündem", url: "https://www.dirilispostasi.com/rss/guncel" },
+    { id: "yerel", categoryKey: "yerel", label: "Yerel", url: "https://www.dirilispostasi.com/rss/yerel-haber" },
+    { id: "yerel-yozgat", categoryKey: "yerel", label: "Yerel", url: "https://www.yozgatmedya.com.tr/rss/yozgat" },
+    { id: "yerel-wanhaber", categoryKey: "yerel", label: "Yerel", url: "https://www.wanhaber.com/rss/guncel" },
+    { id: "teknoloji", categoryKey: "teknoloji", label: "Teknoloji", url: "https://www.dirilispostasi.com/rss/teknoloji" },
+    { id: "teknoloji-bilim", categoryKey: "teknoloji", label: "Teknoloji", url: "https://www.dirilispostasi.com/rss/teknoloji-ve-bilim" },
+    { id: "yasam", categoryKey: "yasam", label: "Yaşam", url: "https://www.dirilispostasi.com/rss/saglik" },
+    { id: "magazin", categoryKey: "magazin", label: "Magazin", url: "https://www.dirilispostasi.com/rss/magazin" },
+    { id: "otomobil", categoryKey: "otomobil", label: "Otomobil", url: "https://www.dirilispostasi.com/rss/otomobil" },
+    { id: "egitim", categoryKey: "egitim", label: "Eğitim", url: "https://www.dirilispostasi.com/rss/egitim" },
+    { id: "saglik", categoryKey: "saglik", label: "Sağlık", url: "https://www.dirilispostasi.com/rss/saglik" },
+  ];
+}
+
 export function defaultHmBreakingRssFeedRows(): HmBreakingRssFeedRow[] {
   const rows: HmBreakingRssFeedRow[] = HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => ({
     id: category.id,
@@ -1998,7 +2024,7 @@ function resolveHmSiteRssFeedRowsOnly(
   p?: Pick<NewsSiteLayoutPrefs, "hmNewsSiteRssFeedRows"> | null,
 ): HmBreakingRssFeedRow[] {
   const raw = p?.hmNewsSiteRssFeedRows;
-  if (!Array.isArray(raw) || raw.length === 0) return [];
+  if (!Array.isArray(raw) || raw.length === 0) return defaultHmSiteRssFeedRows();
   return normalizeHmBreakingRssFeedRows(raw, null, null);
 }
 
@@ -2567,14 +2593,14 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsGoogleNewsBandEnabled: false,
   hmNewsBreakingRssFeeds: { ...defaultHmBreakingRssFeeds },
   hmNewsBreakingRssFeedRows: defaultHmBreakingRssFeedRows(),
-  // hmBreakingRssDefaultsRev yalnızca Neon/Worker bir kerelik uygulamasında yazılır;
+  // hmBreakingRssDefaultsRev / hmSiteRssDefaultsRev yalnızca Neon/Worker bir kerelik uygulamasında yazılır;
   // client varsayılanına konmaz (yoksa eski satırlar korunup rev yanlışlıkla set edilir).
-  hmNewsSiteRssFeedRows: defaultHmBreakingRssFeedRows(),
+  hmNewsSiteRssFeedRows: defaultHmSiteRssFeedRows(),
   hmNewsBreakingRssArticleLinkEnabled: false,
   hmRssIntegrationMode: "live",
   hmYekparePoolReceiveEnabled: true,
   hmYekparePoolSendEnabled: true,
-  hybridRssEnabled: false,
+  hybridRssEnabled: true,
   hmNewsCategorySectionsEnabled: true,
   hmNewsQuickLinksEnabled: true,
   hmNewsAuthorsEnabled: true,
@@ -2963,11 +2989,16 @@ export function parseNewsSiteLayoutFromJson(
       typeof hmBreakingRssDefaultsRevRaw === "string" && hmBreakingRssDefaultsRevRaw.trim()
         ? hmBreakingRssDefaultsRevRaw.trim()
         : undefined;
-    const hmNewsSiteRssFeedRows = normalizeHmBreakingRssFeedRows(
-      (j as { hmNewsSiteRssFeedRows?: unknown }).hmNewsSiteRssFeedRows,
-      null,
-      null,
-    );
+    const hmSiteRssDefaultsRevRaw = (j as { hmSiteRssDefaultsRev?: unknown }).hmSiteRssDefaultsRev;
+    const hmSiteRssDefaultsRev =
+      typeof hmSiteRssDefaultsRevRaw === "string" && hmSiteRssDefaultsRevRaw.trim()
+        ? hmSiteRssDefaultsRevRaw.trim()
+        : undefined;
+    const siteRssRaw = (j as { hmNewsSiteRssFeedRows?: unknown }).hmNewsSiteRssFeedRows;
+    const hmNewsSiteRssFeedRows =
+      Array.isArray(siteRssRaw) && siteRssRaw.length > 0
+        ? normalizeHmBreakingRssFeedRows(siteRssRaw, null, null)
+        : defaultHmSiteRssFeedRows();
     const portalHybridRssFeeds = normalizePortalHybridRssFeeds((j as { portalHybridRssFeeds?: unknown }).portalHybridRssFeeds);
     const hybridRssEnabledRaw = (j as { hybridRssEnabled?: unknown }).hybridRssEnabled;
     const hmNewsBreakingRssBandTitle = normalizeHmBreakingRssBandTitle(
@@ -3231,6 +3262,7 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsBreakingRssLabels: hmNewsBreakingRssLabels ?? undefined,
       hmNewsBreakingRssFeedRows,
       hmBreakingRssDefaultsRev,
+      hmSiteRssDefaultsRev,
       hmNewsSiteRssFeedRows,
       portalHybridRssFeeds: portalHybridRssFeeds ?? undefined,
       hybridRssEnabled: hybridRssEnabledRaw === true ? true : undefined,

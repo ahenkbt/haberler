@@ -7,6 +7,10 @@ import {
   HM_BREAKING_RSS_DEFAULTS_REV,
   cloneDefaultHmBreakingRssFeedRows,
 } from "./hm-breaking-rss-defaults.js";
+import {
+  HM_SITE_RSS_DEFAULTS_REV,
+  cloneDefaultHmSiteRssFeedRows,
+} from "./hm-site-rss-defaults.js";
 
 export const HM_BRAND_DB_BINDINGS = [
   {
@@ -92,6 +96,68 @@ const SU_CANONICAL_SITE_ID = 2;
 
 let _breakingRssDefaultsPassAt = 0;
 let _breakingRssDefaultsPassDone = false;
+let _siteRssDefaultsPassAt = 0;
+let _siteRssDefaultsPassDone = false;
+
+/**
+ * Tüm editör sitelerinde site içi RSS varsayılanlarını uygular ve hibrit RSS’i açar (bir kerelik rev).
+ * Rev yazıldıktan sonra editör panelden değişen değerler korunur.
+ */
+export async function ensureHmSiteRssDefaultsOnNeon(env) {
+  const dbUrl = String(env?.DATABASE_URL || "").trim();
+  if (!dbUrl) return { ok: false, reason: "no-db" };
+  const now = Date.now();
+  if (_siteRssDefaultsPassDone) return { ok: true, action: "cached-done" };
+  if (now - _siteRssDefaultsPassAt < 15_000) return { ok: true, action: "throttled" };
+  _siteRssDefaultsPassAt = now;
+
+  const sql = neon(dbUrl);
+  try {
+    const sites = await sql`
+      SELECT id, layout_json FROM hm_news_sites
+      ORDER BY id ASC
+    `;
+    if (!sites?.length) return { ok: false, reason: "sites-missing" };
+
+    let patched = 0;
+    let skipped = 0;
+    const defaults = cloneDefaultHmSiteRssFeedRows();
+
+    for (const site of sites) {
+      let layout = {};
+      try {
+        layout = site.layout_json ? JSON.parse(String(site.layout_json)) : {};
+      } catch {
+        layout = {};
+      }
+      if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+
+      if (String(layout.hmSiteRssDefaultsRev || "") === HM_SITE_RSS_DEFAULTS_REV) {
+        skipped += 1;
+        continue;
+      }
+
+      const next = {
+        ...layout,
+        hmNewsSiteRssFeedRows: defaults.map((row) => ({ ...row })),
+        hybridRssEnabled: true,
+        hmSiteRssDefaultsRev: HM_SITE_RSS_DEFAULTS_REV,
+      };
+      await sql`
+        UPDATE hm_news_sites
+        SET layout_json = ${JSON.stringify(next)}::jsonb,
+            updated_at = NOW()
+        WHERE id = ${site.id}
+      `;
+      patched += 1;
+    }
+
+    if (skipped === sites.length) _siteRssDefaultsPassDone = true;
+    return { ok: true, action: "pass", patched, skipped, total: sites.length };
+  } catch (err) {
+    return { ok: false, reason: String(err?.message || err).slice(0, 200) };
+  }
+}
 
 /**
  * Tüm editör sitelerinde kutu içi RSS’i standart varsayılana çeker (bir kerelik rev).
