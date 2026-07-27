@@ -1,23 +1,15 @@
 /**
  * Render API gecikmeli olsa bile: editör haber sitelerinde
- * - başka sitenin / merkez sync manuel haberleri sızmasın
- * - 12 saatten eski DB haberleri public vitrinde düşsün
+ * - başka sitenin manuel / sync haberleri sızmasın
+ * - site_only / is_editor_manual yabancı satırlar düşsün
  *
- * Havuz onaylı yerel kopyalar (site_id = istenen site) geçer.
+ * Kategori kutusu (categorySlug) isteklerinde canlı RSS (site_id null) kalabilir —
+ * aksi halde SPOR vb. kutular boşalıp yanlış backfill'e yol açıyordu.
  */
-
-const MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 function parseSiteId(value) {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? n : null;
-}
-
-function itemAgeMs(item) {
-  const raw = item?.createdAt ?? item?.publishedAt ?? item?.date ?? null;
-  if (!raw) return null;
-  const t = new Date(raw).getTime();
-  return Number.isFinite(t) ? Date.now() - t : null;
 }
 
 function isYekpareSyncRef(url) {
@@ -33,67 +25,78 @@ function syncOriginSiteId(url) {
   return m ? Number(m[1]) : null;
 }
 
-/** Public vitrin satırı bu editör sitesinde görünür mü? */
-export function hmPublicNewsItemAllowed(item, siteId) {
+function isLiveRssRow(item) {
+  const source = String(item?.source ?? "").trim().toLowerCase();
+  if (source === "rss") return true;
+  const rss = String(item?.rssSourceUrl ?? "").trim();
+  if (!rss) return false;
+  if (isYekpareSyncRef(rss) || isYekparePoolRef(rss)) return false;
+  return /^https?:\/\//i.test(rss);
+}
+
+/**
+ * @param {object} item
+ * @param {number} siteId
+ * @param {{ allowCentralRss?: boolean }} [opts]
+ */
+export function hmPublicNewsItemAllowed(item, siteId, opts = {}) {
   if (!item || siteId == null) return false;
   const sid = item.siteId ?? item.publishedOnSiteId ?? null;
   const rss = String(item.rssSourceUrl ?? "").trim();
   const manual = item.isEditorManual === true || item.siteOnly === true;
+  const allowCentralRss = opts.allowCentralRss === true;
 
   // Kesin: başka sitenin yerel satırı yok.
   if (sid != null && Number(sid) !== Number(siteId)) return false;
 
-  // Merkez sync — yalnızca kaynak sitede (havuz onayı ayrı yerel satır).
+  // Merkez sync — yabancı kaynak asla; null site_id sync kopyası da yok.
   if (isYekpareSyncRef(rss)) {
     const origin = syncOriginSiteId(rss);
     if (origin != null && Number(origin) !== Number(siteId)) return false;
-    // Kaynak sitede bile merkez kopya yerine yerel satır tercih; merkez sync'i gizle.
     if (sid == null) return false;
   }
 
-  // site_id NULL merkez satır: manuel ise asla; pool ref değilse editör sitesinde gösterme.
   if (sid == null) {
     if (manual) return false;
     if (isYekparePoolRef(rss)) return false;
-    // Eski merkez RSS sızıntısı — editör sitesi public vitrinde yok.
+    // Kategori kutusu / hybrid: canlı RSS (API zaten categorySlug ile süzdü) kalsın.
+    if (allowCentralRss && isLiveRssRow(item)) return true;
     return false;
   }
 
-  // 12 saat tazelik (DB/manuel; RSS hybrid ayrı bandda kalabilir ama DB listelerinde uygula)
-  const age = itemAgeMs(item);
-  if (age != null && age > MAX_AGE_MS) return false;
-
+  // Bu sitenin satırı — manuel dahil (yalnızca kendi site_id'si).
   return Number(sid) === Number(siteId);
 }
 
-function filterItemArray(items, siteId) {
+function filterItemArray(items, siteId, opts) {
   if (!Array.isArray(items)) return items;
-  return items.filter((item) => hmPublicNewsItemAllowed(item, siteId));
+  return items.filter((item) => hmPublicNewsItemAllowed(item, siteId, opts));
 }
 
 function filterHomeBundle(payload, siteId) {
   if (!payload || typeof payload !== "object") return payload;
   const next = { ...payload, siteId: payload.siteId ?? siteId };
+  const opts = { allowCentralRss: false };
   for (const key of ["featured", "manualEditor", "centerHeadlines", "breaking", "popular"]) {
-    if (Array.isArray(payload[key])) next[key] = filterItemArray(payload[key], siteId);
+    if (Array.isArray(payload[key])) next[key] = filterItemArray(payload[key], siteId, opts);
   }
   return next;
 }
 
-function filterNewsListPayload(payload, siteId) {
+function filterNewsListPayload(payload, siteId, opts) {
   if (!payload || typeof payload !== "object") return payload;
   const next = { ...payload };
   if (Array.isArray(payload.items)) {
-    next.items = filterItemArray(payload.items, siteId);
+    next.items = filterItemArray(payload.items, siteId, opts);
     if (typeof payload.total === "number") next.total = next.items.length;
   }
-  if (Array.isArray(payload.news)) next.news = filterItemArray(payload.news, siteId);
-  if (Array.isArray(payload.data)) next.data = filterItemArray(payload.data, siteId);
+  if (Array.isArray(payload.news)) next.news = filterItemArray(payload.news, siteId, opts);
+  if (Array.isArray(payload.data)) next.data = filterItemArray(payload.data, siteId, opts);
   return next;
 }
 
 /**
- * Upstream JSON yanıtını site izolasyonu + 12s ile süzer.
+ * Upstream JSON yanıtını site izolasyonu ile süzer.
  * @returns {Response|null} null = dokunma
  */
 export async function maybeFilterHmPublicNewsUpstream(incoming, upstream, outHeaders) {
@@ -120,6 +123,12 @@ export async function maybeFilterHmPublicNewsUpstream(incoming, upstream, outHea
       path === "/api/news/hybrid/infinite";
     if (!isHomeBundle && !isNewsList) return null;
 
+    const categorySlug = String(incoming.searchParams.get("categorySlug") || incoming.searchParams.get("category") || "")
+      .trim()
+      .toLowerCase();
+    // Kategori kutusu çekiminde canlı RSS'e izin ver (SPOR vb.).
+    const allowCentralRss = Boolean(categorySlug) || path === "/api/news/hybrid" || path === "/api/news/hybrid/infinite";
+
     const text = await upstream.text();
     let payload;
     try {
@@ -128,8 +137,9 @@ export async function maybeFilterHmPublicNewsUpstream(incoming, upstream, outHea
       return new Response(text, { status: upstream.status, headers: outHeaders });
     }
 
-    const filtered = isHomeBundle ? filterHomeBundle(payload, siteId) : filterNewsListPayload(payload, siteId);
-    outHeaders.set("x-yekpare-hm-news-edge-filter", "site-isolation-12h");
+    const opts = { allowCentralRss };
+    const filtered = isHomeBundle ? filterHomeBundle(payload, siteId) : filterNewsListPayload(payload, siteId, opts);
+    outHeaders.set("x-yekpare-hm-news-edge-filter", allowCentralRss ? "site-isolation+rss" : "site-isolation");
     outHeaders.set("cache-control", "private, no-store, max-age=0, must-revalidate");
     outHeaders.set("cdn-cache-control", "no-store");
     return new Response(JSON.stringify(filtered), {
@@ -138,7 +148,6 @@ export async function maybeFilterHmPublicNewsUpstream(incoming, upstream, outHea
     });
   } catch (err) {
     console.error("[hm-public-news-edge-filter]", String(err?.message || err).slice(0, 200));
-    // Body tüketilmiş olabilir — fail-open için üst katmanda yeniden çekilmez; null dönme.
     return null;
   }
 }
