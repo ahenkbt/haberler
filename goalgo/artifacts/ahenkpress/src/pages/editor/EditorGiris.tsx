@@ -222,13 +222,8 @@ export default function EditorGiris() {
 
 
 
-  useEffect(() => {
-
-    if (sessionStatus === "denied") logout();
-
-  }, [sessionStatus, logout]);
-
-
+  // denied iken logout() çağırma — denySession zaten temizler; giriş anında
+  // eski /me 401 yarışı yeni JWT'yi silip paneldan dışarı atabiliyordu.
 
   if (token && (sessionStatus === "ok" || sessionStatus === "transient")) {
 

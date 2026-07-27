@@ -1,14 +1,17 @@
 /**
- * Render API geride kaldığında Worker kenarında:
- * - kullanıcı adı ile giriş (login gövdesini e-postaya çevir)
- * - PATCH /api/hm/editor/me (+ password)
- * - GET /me yanıtına username ekle
+ * Editör oturumu kenarda (Neon):
+ * - POST /api/hm/editor/login (e-posta veya kullanıcı adı)
+ * - GET/PATCH /api/hm/editor/me
+ * - PATCH /api/hm/editor/me/password
+ *
+ * Render API geride kalsa bile giriş + oturum doğrulama çalışır.
  */
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
-import { jwtVerify } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 
 const JWT_TYP = "hm_editor";
+const JWT_TTL = "7d";
 
 function normalizeHost(raw) {
   return String(raw ?? "")
@@ -39,6 +42,7 @@ function jsonResponse(status, body) {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "private, no-store, max-age=0, must-revalidate",
       "cdn-cache-control": "no-store",
+      vary: "Origin, Authorization, Cookie",
       "x-yekpare-frontend": "cloudflare-editor-profile-edge",
     },
   });
@@ -48,6 +52,12 @@ function sqlClient(env) {
   const dbUrl = String(env?.DATABASE_URL || "").trim();
   if (!dbUrl) return null;
   return neon(dbUrl);
+}
+
+function jwtSecretBytes(env) {
+  const secret = String(env?.HM_EDITOR_JWT_SECRET || env?.SESSION_SECRET || "").trim();
+  if (!secret) return null;
+  return new TextEncoder().encode(secret);
 }
 
 async function ensureUsernameColumn(sql) {
@@ -62,10 +72,9 @@ async function parseEditorJwt(request, env) {
   const h = String(request.headers.get("authorization") || "").trim();
   const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
   if (!token) return null;
-  const secret = String(env?.HM_EDITOR_JWT_SECRET || env?.SESSION_SECRET || "").trim();
-  if (!secret) return null;
+  const key = jwtSecretBytes(env);
+  if (!key) return null;
   try {
-    const key = new TextEncoder().encode(secret);
     const { payload } = await jwtVerify(token, key);
     if (payload?.typ !== JWT_TYP || typeof payload.eid !== "number" || typeof payload.sid !== "number") {
       return null;
@@ -76,11 +85,22 @@ async function parseEditorJwt(request, env) {
   }
 }
 
-async function resolveSiteIdByHost(sql, host) {
+async function signEditorJwt(env, editorId, siteId) {
+  const key = jwtSecretBytes(env);
+  if (!key) throw new Error("SESSION_SECRET eksik");
+  return new SignJWT({ typ: JWT_TYP, eid: editorId, sid: siteId, v: 1 })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(JWT_TTL)
+    .sign(key);
+}
+
+async function resolveSiteByHost(sql, host) {
   const h = normalizeHost(host);
   if (!h) return null;
   const rows = await sql`
-    SELECT id FROM hm_news_sites
+    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at, is_active
+    FROM hm_news_sites
     WHERE is_active = true
       AND (
         lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', '')) = ${h}
@@ -90,68 +110,24 @@ async function resolveSiteIdByHost(sql, host) {
     ORDER BY id ASC
     LIMIT 1
   `;
-  return rows?.[0]?.id ?? null;
+  return rows?.[0] || null;
 }
 
-/** Kullanıcı adı girildiyse login gövdesini e-postaya çevir; Request döner. */
-export async function rewriteEditorLoginForUsername(request, env, incomingUrl) {
-  if (request.method !== "POST") return request;
-  const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
-  if (path !== "/api/hm/editor/login") return request;
-
-  let body;
-  try {
-    body = await request.clone().json();
-  } catch {
-    return request;
-  }
-  if (!body || typeof body !== "object") return request;
-
-  const loginRaw = String(body.login ?? body.email ?? body.username ?? "")
+async function resolveSiteBySlug(sql, slugRaw) {
+  const slug = String(slugRaw || "")
     .trim()
-    .toLowerCase();
-  if (!loginRaw || loginRaw.includes("@")) return request;
-
-  const username = normalizeUsername(loginRaw);
-  if (!username) return request;
-
-  const sql = sqlClient(env);
-  if (!sql) return request;
-
-  try {
-    await ensureUsernameColumn(sql);
-    const host = normalizeHost(incomingUrl.hostname);
-    const siteId = await resolveSiteIdByHost(sql, host);
-    if (!siteId) return request;
-
-    const rows = await sql`
-      SELECT email FROM hm_site_editors
-      WHERE site_id = ${siteId}
-        AND is_active = true
-        AND lower(coalesce(username, '')) = ${username}
-      LIMIT 1
-    `;
-    const email = String(rows?.[0]?.email || "")
-      .trim()
-      .toLowerCase();
-    if (!email.includes("@")) return request;
-
-    const next = {
-      ...body,
-      login: email,
-      email,
-      username: undefined,
-    };
-    return new Request(request.url, {
-      method: "POST",
-      headers: request.headers,
-      body: JSON.stringify(next),
-      redirect: request.redirect,
-    });
-  } catch (err) {
-    console.error("[hm-editor-login-username]", String(err?.message || err).slice(0, 200));
-    return request;
-  }
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  if (!slug) return null;
+  const rows = await sql`
+    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at, is_active
+    FROM hm_news_sites
+    WHERE is_active = true
+      AND lower(trim(both '/' from slug)) = ${slug}
+    ORDER BY id ASC
+    LIMIT 1
+  `;
+  return rows?.[0] || null;
 }
 
 async function loadActiveEditor(sql, editorId, siteId) {
@@ -162,6 +138,16 @@ async function loadActiveEditor(sql, editorId, siteId) {
     LIMIT 1
   `;
   return rows?.[0] || null;
+}
+
+function parseSeoVerification(raw) {
+  if (raw == null || raw === "") return null;
+  try {
+    const v = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return v && typeof v === "object" ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 async function syncSharedCredentials(sql, opts) {
@@ -209,6 +195,218 @@ async function syncSharedCredentials(sql, opts) {
     n += 1;
   }
   return n;
+}
+
+/** Captcha token = base64url(JSON).HMAC_SHA256 (SESSION_SECRET) — API ile aynı. */
+async function verifyLoginMathCaptcha(env, tokenRaw, answerRaw) {
+  const token = String(tokenRaw ?? "").trim();
+  const answer = Number(String(answerRaw ?? "").trim());
+  if (!token || !Number.isFinite(answer)) return false;
+  const secret = String(env?.SESSION_SECRET || "").trim();
+  if (!secret) return false;
+
+  const dot = token.indexOf(".");
+  if (dot <= 0) return false;
+  const payloadB64 = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
+
+  let raw;
+  try {
+    const b64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+    const bin = atob(b64 + pad);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+    raw = new TextDecoder().decode(bytes);
+  } catch {
+    return false;
+  }
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
+  const macBytes = new Uint8Array(mac);
+  let bin = "";
+  for (let i = 0; i < macBytes.length; i += 1) bin += String.fromCharCode(macBytes[i]);
+  const expectedSig = btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  if (sig.length !== expectedSig.length) return false;
+  let ok = true;
+  for (let i = 0; i < sig.length; i += 1) {
+    if (sig.charCodeAt(i) !== expectedSig.charCodeAt(i)) ok = false;
+  }
+  if (!ok) return false;
+
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (!payload || Number(payload.exp) < Date.now()) return false;
+  if (!Number.isInteger(payload.a) || !Number.isInteger(payload.b)) return false;
+  if (payload.op !== "add" && payload.op !== "mul") return false;
+  const expected = payload.op === "add" ? payload.a + payload.b : payload.a * payload.b;
+  return answer === expected;
+}
+
+async function handleEditorLogin(request, env, incomingUrl) {
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+  if (!jwtSecretBytes(env)) return jsonResponse(503, { error: "Oturum anahtarı eksik." });
+
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+
+  // Captcha Render SESSION_SECRET ile imzalı; Worker secret farklıysa Render'a düş.
+  if (!(await verifyLoginMathCaptcha(env, b.captchaToken, b.captchaAnswer))) {
+    return null;
+  }
+
+  const loginRaw = String(b.login ?? b.email ?? b.username ?? "")
+    .trim()
+    .toLowerCase();
+  const password = String(b.password ?? "");
+  if (!loginRaw || !password) {
+    return jsonResponse(400, { error: "slug, e-posta/kullanıcı adı ve şifre gerekli" });
+  }
+
+  await ensureUsernameColumn(sql);
+
+  const host = normalizeHost(b.domain || incomingUrl.hostname);
+  let site = host ? await resolveSiteByHost(sql, host) : null;
+  if (!site) {
+    site = await resolveSiteBySlug(sql, b.slug);
+  }
+  if (!site) {
+    return jsonResponse(401, { error: "Site veya hesap bulunamadı" });
+  }
+
+  const loginIsEmail = loginRaw.includes("@");
+  const loginUsername = loginIsEmail ? null : normalizeUsername(loginRaw);
+  let editors;
+  if (loginIsEmail) {
+    editors = await sql`
+      SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+      FROM hm_site_editors
+      WHERE site_id = ${site.id}
+        AND is_active = true
+        AND lower(email) = ${loginRaw}
+      LIMIT 1
+    `;
+  } else if (loginUsername) {
+    editors = await sql`
+      SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+      FROM hm_site_editors
+      WHERE site_id = ${site.id}
+        AND is_active = true
+        AND lower(coalesce(username, '')) = ${loginUsername}
+      LIMIT 1
+    `;
+  } else {
+    return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
+  }
+
+  const editor = editors?.[0];
+  if (!editor?.password_hash) {
+    if (loginIsEmail) {
+      const elsewhere = await sql`
+        SELECT e.site_id, s.display_name, s.domain, s.slug
+        FROM hm_site_editors e
+        JOIN hm_news_sites s ON s.id = e.site_id
+        WHERE lower(e.email) = ${loginRaw} AND e.is_active = true
+        LIMIT 1
+      `;
+      const other = elsewhere?.[0];
+      if (other && Number(other.site_id) !== Number(site.id)) {
+        const otherHost = normalizeHost(other.domain) || other.slug || "";
+        return jsonResponse(401, {
+          error: otherHost
+            ? `Bu e-posta «${other.display_name || otherHost}» sitesine kayıtlı. Giriş: ${
+                otherHost.includes(".")
+                  ? `https://${otherHost}/editor/giris`
+                  : `/tr/${otherHost}/editor/giris`
+              }`
+            : "E-posta, kullanıcı adı veya şifre hatalı",
+        });
+      }
+    }
+    return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
+  }
+
+  const pwOk = await bcrypt.compare(password, editor.password_hash);
+  if (!pwOk) {
+    return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
+  }
+
+  const token = await signEditorJwt(env, editor.id, site.id);
+  return jsonResponse(200, {
+    token,
+    site: {
+      id: site.id,
+      slug: site.slug,
+      domain: site.domain,
+      domain2: site.domain2 ?? null,
+      displayName: site.display_name,
+    },
+    editor: {
+      id: editor.id,
+      email: editor.email,
+      username: editor.username ?? null,
+      displayName: editor.display_name,
+    },
+  });
+}
+
+async function handleEditorMeGet(request, env) {
+  const ctx = await parseEditorJwt(request, env);
+  if (!ctx) return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+
+  await ensureUsernameColumn(sql);
+  const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
+  const sites = await sql`
+    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at
+    FROM hm_news_sites
+    WHERE id = ${ctx.siteId}
+    LIMIT 1
+  `;
+  const site = sites?.[0];
+  if (!editor || !site || Number(editor.site_id) !== Number(site.id)) {
+    return jsonResponse(401, { error: "Geçersiz oturum" });
+  }
+
+  return jsonResponse(200, {
+    editor: {
+      id: editor.id,
+      email: editor.email,
+      username: editor.username ?? null,
+      displayName: editor.display_name,
+      createdAt: editor.created_at,
+    },
+    site: {
+      id: site.id,
+      slug: site.slug,
+      domain: site.domain,
+      domain2: site.domain2 ?? null,
+      domain3: site.domain3 ?? null,
+      displayName: site.display_name,
+      contactJson: site.contact_json,
+      layoutJson: site.layout_json,
+      seoVerification: parseSeoVerification(site.verification_json),
+      createdAt: site.created_at,
+    },
+  });
 }
 
 async function patchEditorMe(request, env) {
@@ -368,11 +566,27 @@ async function patchEditorPassword(request, env) {
   return jsonResponse(200, { ok: true });
 }
 
-/** PATCH profil uçları — Response veya null. */
+/**
+ * Login / me / profil — Response veya null (null = Render'a proxy).
+ * Login/GET me için request.clone() ile çağırın; body tüketilmesin.
+ */
 export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
   const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
 
+  if (path === "/api/hm/editor/login" && method === "POST") {
+    return handleEditorLogin(request, env, incomingUrl);
+  }
+  if (path === "/api/hm/editor/me" && method === "GET") {
+    const auth = String(request.headers.get("authorization") || "").trim();
+    const ctx = await parseEditorJwt(request, env);
+    if (!ctx) {
+      // Worker secret ile doğrulanamadı — Render imzalı JWT olabilir.
+      if (auth.startsWith("Bearer ")) return null;
+      return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+    }
+    return handleEditorMeGet(request, env);
+  }
   if (path === "/api/hm/editor/me" && method === "PATCH") {
     return patchEditorMe(request, env);
   }
@@ -382,44 +596,12 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
   return null;
 }
 
-/** Upstream GET /me 200 ise username alanını Neon'dan doldur. */
-export async function enrichEditorMeResponse(request, env, incomingUrl, upstream) {
-  const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
-  if (path !== "/api/hm/editor/me" || request.method !== "GET") return null;
-  if (!upstream || upstream.status !== 200) return null;
+/** @deprecated — login kenarda; geriye dönük no-op. */
+export async function rewriteEditorLoginForUsername(request) {
+  return request;
+}
 
-  const sql = sqlClient(env);
-  if (!sql) return null;
-
-  try {
-    const ctx = await parseEditorJwt(request, env);
-    if (!ctx) return null;
-    await ensureUsernameColumn(sql);
-    const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
-    if (!editor) return null;
-
-    const data = await upstream.clone().json();
-    if (!data || typeof data !== "object") return null;
-    const next = {
-      ...data,
-      editor: {
-        ...(data.editor || {}),
-        id: editor.id,
-        email: editor.email,
-        username: editor.username ?? null,
-        displayName: editor.display_name ?? data.editor?.displayName ?? null,
-      },
-    };
-    const headers = new Headers(upstream.headers);
-    headers.set("content-type", "application/json; charset=utf-8");
-    headers.set("cache-control", "private, no-store, max-age=0, must-revalidate");
-    headers.set("cdn-cache-control", "no-store");
-    headers.set("x-yekpare-editor-me", "username-enriched");
-    headers.delete("content-length");
-    headers.delete("content-encoding");
-    return new Response(JSON.stringify(next), { status: 200, headers });
-  } catch (err) {
-    console.error("[hm-editor-me-enrich]", String(err?.message || err).slice(0, 200));
-    return null;
-  }
+/** @deprecated — GET /me kenarda. */
+export async function enrichEditorMeResponse() {
+  return null;
 }

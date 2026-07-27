@@ -11,11 +11,7 @@ import {
   matchBrandBinding,
   repairAsgEditorMisassignmentOnNeon,
 } from "./hm-brand-db-ensure.js";
-import {
-  enrichEditorMeResponse,
-  handleHmEditorProfileEdge,
-  rewriteEditorLoginForUsername,
-} from "./hm-editor-profile-edge.js";
+import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
 /**
@@ -47,7 +43,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727a";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727b";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1862,22 +1858,25 @@ export default {
       }
     }
 
-    // Profil / şifre (Render gerideyse kenarda Neon).
+    // Editör login + /me + profil (Render gerideyse kenarda Neon — oturum düşmesini önler).
+    // clone: captcha secret uyuşmazlığında body bozulmadan Render'a düşülebilsin.
     try {
-      const profileEdge = await handleHmEditorProfileEdge(request, env, incoming);
+      const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+      const edgeMethod = String(request.method || "GET").toUpperCase();
+      const needsClone =
+        (edgePath === "/api/hm/editor/login" && edgeMethod === "POST") ||
+        (edgePath === "/api/hm/editor/me" && edgeMethod === "GET");
+      const profileEdge = await handleHmEditorProfileEdge(
+        needsClone ? request.clone() : request,
+        env,
+        incoming,
+      );
       if (profileEdge) return profileEdge;
     } catch (err) {
       console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
     }
 
-    // Kullanıcı adı ile giriş → e-posta (eski Render login uyumu).
-    let apiRequest = request;
-    try {
-      apiRequest = await rewriteEditorLoginForUsername(request, env, incoming);
-    } catch (err) {
-      console.error("[hm-editor-login-rewrite]", String(err?.message || err).slice(0, 200));
-      apiRequest = request;
-    }
+    const apiRequest = request;
 
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);
     if (hmRedirect) return hmRedirect;
@@ -1930,13 +1929,6 @@ export default {
       );
       if (repaired) return repaired;
 
-      try {
-        const meEnriched = await enrichEditorMeResponse(apiRequest, env, incoming, upstream);
-        if (meEnriched) return meEnriched;
-      } catch (err) {
-        console.error("[hm-editor-me-enrich]", String(err?.message || err).slice(0, 200));
-      }
-
       const out = copyUpstreamHeadersForBrowser(upstream);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
@@ -1953,7 +1945,8 @@ export default {
       } else if (isAuthSessionApiPath(upstreamPath) || isHmMetaApiPath(upstreamPath)) {
         out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
         out.set("cdn-cache-control", "no-store");
-        out.set("vary", "Origin, Cookie");
+        // Authorization şart — aksi halde /me 401 oturumlu isteğe servis edilip editör dışarı atılır.
+        out.set("vary", "Origin, Authorization, Cookie");
       } else if (isCacheableHmNewsApi(upstreamPath)) {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
         const p = String(upstreamPath || "").split("?")[0] || "";
