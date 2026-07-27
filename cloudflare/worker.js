@@ -2064,9 +2064,12 @@ export default {
       const edgeMethod = String(request.method || "GET").toUpperCase();
       const khNeedsClone =
         (edgeMethod === "POST" || edgeMethod === "PUT" || edgeMethod === "PATCH" || edgeMethod === "DELETE") &&
-        (edgePath === "/api/hm/editor/authors/bulk-delete" ||
+        (edgePath === "/api/hm/editor/authors" ||
+          edgePath === "/api/hm/editor/authors/bulk-delete" ||
           edgePath === "/api/hm/editor/authors/order" ||
           edgePath === "/api/hm/editor/news" ||
+          /^\/api\/hm\/editor\/authors\/\d+$/.test(edgePath) ||
+          /^\/api\/hm\/editor\/pool\/authors\/\d+\/publish$/.test(edgePath) ||
           /^\/api\/hm\/editor\/news\/\d+/.test(edgePath));
       const khData = await handleKhEditorDataEdge(
         khNeedsClone ? request.clone() : request,

@@ -9,6 +9,7 @@
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
+import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
 
 const JWT_TYP = "hm_editor";
 const JWT_TTL = "7d";
@@ -1047,8 +1048,10 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
 }
 
 /**
- * Editör görsel yükleme — kenar JWT doğrulandıktan sonra Render köprüsü ile kaydet.
- * Neon JWT ile Render JWT secret uyuşmazlığında /api/media/edge-upload kullanılır.
+ * Editör görsel yükleme — kenar JWT doğrulandıktan sonra kaydet.
+ * 1) Worker → R2/S3 (Render gerekmez)
+ * 2) Render /api/media/upload (Bearer JWT)
+ * 3) Render /api/media/edge-upload (HMAC köprüsü — yeni API deploy'u gerekir)
  */
 export async function handleHmEditorMediaUploadEdge(request, env) {
   const path = String(new URL(request.url).pathname || "").replace(/\/+$/, "") || "/";
@@ -1084,6 +1087,58 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   const dataUrl = typeof body?.dataUrl === "string" ? body.dataUrl.trim() : "";
   if (!dataUrl) return jsonResponse(400, { error: "dataUrl gerekli" });
 
+  const bearerToken = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+
+  // 1) Doğrudan R2/S3 — Render uykuda veya edge-upload deploy edilmemiş olsa bile çalışır.
+  if (s3MediaEnvReady(env)) {
+    const direct = await saveMediaDataUrlToS3(env, dataUrl, typeof body?.title === "string" ? body.title : undefined);
+    if (direct.url) {
+      return jsonResponse(200, { url: direct.url });
+    }
+    console.error("[hm-editor-media-s3]", String(direct.error || "unknown").slice(0, 200));
+  }
+
+  const origin = apiOriginFromEnv(env);
+
+  // 2) Render JWT ile klasik yükleme (edge JWT secret Render ile eşleşiyorsa).
+  if (bearerToken) {
+    const jwtUpload = await fetchRenderMediaUpload(origin, bearerToken, body);
+    if (jwtUpload) return jwtUpload;
+  }
+
+  // 3) HMAC köprüsü (Render'da /api/media/edge-upload deploy edilmişse).
+  const bridgeUpload = await fetchRenderMediaEdgeBridge(env, sql, ctx, editor, body, dataUrl);
+  if (bridgeUpload) return bridgeUpload;
+
+  return jsonResponse(502, {
+    error: "Medya yüklenemedi",
+    hint: "S3/R2 Worker secret'ları (S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY) tanımlayın veya Render API'yi yeniden deploy edin.",
+  });
+}
+
+async function fetchRenderMediaUpload(origin, bearerToken, body) {
+  let upstream;
+  try {
+    upstream = await fetch(`${origin}/api/media/upload`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${bearerToken}`,
+      },
+      body: JSON.stringify({
+        dataUrl: body?.dataUrl,
+        ...(typeof body?.title === "string" ? { title: body.title } : {}),
+      }),
+    });
+  } catch (err) {
+    console.error("[hm-editor-media-jwt]", String(err?.message || err).slice(0, 200));
+    return null;
+  }
+  if (!upstream.ok) return null;
+  return parseRenderMediaJsonResponse(upstream, "cloudflare-editor-media-jwt");
+}
+
+async function fetchRenderMediaEdgeBridge(env, sql, ctx, editor, body, dataUrl) {
   const siteRows = await sql`
     SELECT slug FROM hm_news_sites WHERE id = ${ctx.siteId} LIMIT 1
   `;
@@ -1138,27 +1193,30 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
     });
   }
 
+  if (!upstream.ok) return null;
+  return parseRenderMediaJsonResponse(upstream, "cloudflare-editor-media-edge");
+}
+
+async function parseRenderMediaJsonResponse(upstream, frontendTag) {
   const text = await upstream.text();
   const trimmed = text.trim();
   if (trimmed.startsWith("<") || trimmed.startsWith("<!")) {
-    return jsonResponse(502, {
-      error: "Medya sunucusu beklenmeyen yanıt döndürdü",
-      detail: `HTTP ${upstream.status}`,
-      hint: "API sunucusu uykuda veya bakımda olabilir. Birkaç dakika sonra tekrar deneyin.",
-    });
+    console.error(
+      `[hm-editor-media-upstream] html HTTP ${upstream.status}`,
+      trimmed.slice(0, 120),
+    );
+    return null;
   }
   let parsed;
   try {
     parsed = JSON.parse(trimmed);
   } catch {
-    return jsonResponse(502, {
-      error: "Medya sunucusu geçersiz yanıt döndürdü",
-      detail: trimmed.slice(0, 200),
-    });
+    console.error("[hm-editor-media-upstream] invalid json", trimmed.slice(0, 120));
+    return null;
   }
   const outHeaders = new Headers();
   outHeaders.set("content-type", "application/json; charset=utf-8");
-  outHeaders.set("x-yekpare-frontend", "cloudflare-editor-media-edge");
+  outHeaders.set("x-yekpare-frontend", frontendTag);
   outHeaders.set("cache-control", "private, no-store, max-age=0, must-revalidate");
   return new Response(JSON.stringify(parsed), { status: upstream.status, headers: outHeaders });
 }

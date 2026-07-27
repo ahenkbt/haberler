@@ -132,7 +132,7 @@ router.post("/media/upload", async (req, res): Promise<void> => {
   }
 });
 
-/** Worker kenar editör — HMAC köprüsü ile medya yükleme (JWT secret uyuşmazlığı yok). */
+/** Worker kenar editör — HMAC köprüsü ile medya yükleme (JWT secret uyuşmazlığı yok). Render deploy gerekir. */
 router.post("/media/edge-upload", async (req, res): Promise<void> => {
   const sig = String(req.get("x-yekpare-hm-edge-bridge") ?? "").trim();
   const b = (req.body ?? {}) as HmEdgeMediaBridgePayload;

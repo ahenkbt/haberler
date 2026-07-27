@@ -226,14 +226,23 @@ export function mapToYektubePublicUrl(pathname: string, search = "", hash = ""):
   return mapToYektubeDedicatedUrl(pathname, search, hash);
 }
 
-/** HM haber sitesi Video TV — yekpare.net/yp iframe (yektube.com DNS yedek). */
+/** HM haber sitesi Video TV — aynı origin /yp iframe (cross-origin yekpare.net engeli yok). */
 export function mapToHmYektubeEmbedUrl(pathname: string, search = "", hash = ""): string {
   const portalPath = mapPathToYektubePortal(pathname, search);
-  const origin =
+  const envOrigin =
     (typeof process !== "undefined" && process.env.YEKTUBE_HM_EMBED_ORIGIN?.trim()) ||
     (typeof import.meta !== "undefined" &&
       (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_YEKTUBE_HM_EMBED_ORIGIN?.trim()) ||
-    YEKTUBE_PORTAL_MIRROR_ORIGIN;
+    "";
+  let origin = envOrigin;
+  if (!origin && typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase().replace(/^www\./, "");
+    // Özel alan adlı HM siteler: Worker /yp sunar; yekpare.net iframe X-Frame-Options ile reddedilir.
+    if (host && host !== "yekpare.net" && host !== "localhost" && host !== "127.0.0.1") {
+      origin = window.location.origin;
+    }
+  }
+  if (!origin) origin = YEKTUBE_PORTAL_MIRROR_ORIGIN;
   return `${origin.replace(/\/+$/, "")}${portalPath}${hash}`;
 }
 
