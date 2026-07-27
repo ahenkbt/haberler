@@ -24,7 +24,12 @@ export type HmEditorSessionVerifyResult =
 
 async function verifyHmEditorSessionInner(token: string): Promise<HmEditorSessionVerifyResult> {
   const res = await fetch(apiUrl("/api/hm/editor/me"), {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Cache-Control": "no-cache",
+    },
+    cache: "no-store",
   });
   if (res.status === 401) return { status: "denied" };
   if (res.status === 429 || res.status >= 500) return { status: "transient" };

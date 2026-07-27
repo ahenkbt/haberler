@@ -480,17 +480,23 @@ export function HmPublicNewsNavStrip({
 
   const pillsRow = (
     <div
-      className={`hm-news-nav-row flex touch-manipulation items-center gap-1 px-3 py-1 overflow-x-auto overflow-y-visible overscroll-x-contain ${
+      className={`hm-news-nav-row relative flex min-h-9 touch-manipulation items-center gap-1 px-3 py-1 overflow-x-auto overflow-y-visible overscroll-x-contain ${
         corporateNav || useEditorHeaderMenu ? "hm-news-nav-row--corporate" : ""
       }`}
       style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
     >
-      <div className="flex min-w-0 flex-1 items-center overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-        {renderHeaderMenuPills()}
-        {useEditorHeaderMenu ? requestPill : null}
-        {videoTvPill}
+      {/* Menü öğeleri şerit ortasında; sağ aksiyonlar ml-auto ile köşede kalır. */}
+      <div
+        className="hm-news-nav-pills pointer-events-none absolute inset-0 flex items-center justify-center overflow-x-auto"
+        style={{ scrollbarWidth: "none" }}
+      >
+        <div className="pointer-events-auto flex items-center gap-1">
+          {renderHeaderMenuPills()}
+          {useEditorHeaderMenu ? requestPill : null}
+          {videoTvPill}
+        </div>
       </div>
-      <div className="hm-news-nav-actions flex shrink-0 items-center gap-1">
+      <div className="hm-news-nav-actions relative z-[1] ml-auto flex shrink-0 items-center gap-1">
         <HmPageRefreshNavButton navOnLight={stripNavOnLight} pillIdleBg={pillIdleBg} pillText={pillText} />
         {categoryRssHref ? (
           <HmCategoryRssNavButton

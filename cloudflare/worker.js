@@ -41,7 +41,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260726c";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727a";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -345,7 +345,9 @@ function isAuthSessionApiPath(pathname) {
     p === "/api/members/logout" ||
     p === "/api/members/login" ||
     p === "/api/hm/editor/login" ||
-    p === "/api/hm/author/login"
+    p === "/api/hm/editor/me" ||
+    p === "/api/hm/author/login" ||
+    p === "/api/hm/author/me"
   );
 }
 
