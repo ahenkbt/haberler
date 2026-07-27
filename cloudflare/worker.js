@@ -15,6 +15,7 @@ import {
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
+import { handleKhEditorDataEdge, syncKhAuthorsFromRender } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
@@ -817,9 +818,16 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     slugKey === "su" ||
     slugKey === "suhaber";
 
-  // Su: Neon meta tercih. KH dahil diğerleri: yalnızca upstream 404 iken fallback
-  // (KH editör Render JWT + main DB kullandığı için meta Render'dan gelmeli).
-  if (!isSuBrand && upstream.status !== 404) return null;
+  const khHosts = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
+  const isKhBrand =
+    binding.slug === "kh" ||
+    slugKey === "kh" ||
+    slugKey === "kirsehir" ||
+    khHosts.has(normalizeHost(domain));
+
+  // Su + KH: Neon meta (KH editör veri kenarı Neon'a yazıyor).
+  // Diğer markalar: yalnızca upstream 404 iken fallback.
+  if (!isSuBrand && !isKhBrand && upstream.status !== 404) return null;
 
   try {
     const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
@@ -828,7 +836,8 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
       return null;
     }
     return brandMetaJsonResponse(ensured.meta, {
-      "x-yekpare-hm-brand-ensure-action": ensured.action || (isSuBrand ? "su-domain-repair" : "ok"),
+      "x-yekpare-hm-brand-ensure-action":
+        ensured.action || (isSuBrand ? "su-domain-repair" : isKhBrand ? "kh-neon-meta" : "ok"),
     });
   } catch (err) {
     console.error("[hm-brand-db-ensure]", String(err?.message || err).slice(0, 240));
@@ -2000,7 +2009,9 @@ export default {
             edgePath === "/api/hm/editor/me" ||
             edgePath === "/api/hm/editor/me/password" ||
             edgePath === "/api/hm/editor/site-layout" ||
-            edgePath === "/api/hm/editor/site-home-module-order"
+            edgePath === "/api/hm/editor/site-home-module-order" ||
+            edgePath === "/api/hm/editor/authors/bulk-delete" ||
+            edgePath === "/api/hm/editor/authors/order"
           : false;
       const profileEdge = await handleHmEditorProfileEdge(
         needsClone ? request.clone() : request,
@@ -2010,6 +2021,24 @@ export default {
       if (profileEdge) return profileEdge;
     } catch (err) {
       console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
+    }
+
+    // KH: kenar JWT ile haber/yazar/makale (Render Bearer 401 bypass).
+    try {
+      const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+      const edgeMethod = String(request.method || "GET").toUpperCase();
+      const khNeedsClone =
+        (edgeMethod === "POST" || edgeMethod === "PATCH") &&
+        (edgePath === "/api/hm/editor/authors/bulk-delete" ||
+          edgePath === "/api/hm/editor/authors/order");
+      const khData = await handleKhEditorDataEdge(
+        khNeedsClone ? request.clone() : request,
+        env,
+        incoming,
+      );
+      if (khData) return khData;
+    } catch (err) {
+      console.error("[hm-editor-kh-data-edge]", String(err?.message || err).slice(0, 200));
     }
 
     const apiRequest = request;
