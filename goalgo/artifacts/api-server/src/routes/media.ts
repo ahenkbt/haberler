@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
-import { eq, ilike, or } from "drizzle-orm";
-import { db, newsTable } from "@workspace/db";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { db, getNewsDbForRead, hmSiteEditorsTable, newsTable } from "@workspace/db";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
 import jwt from "jsonwebtoken";
 import {
@@ -14,6 +14,11 @@ import { migrateMediaToDisk, type MediaMigrateScope } from "../lib/mediaBulkMigr
 import { getMediaStorageMode } from "../lib/mediaStorageConfig";
 import { logger } from "../lib/logger";
 import { getSessionSecret } from "../lib/secrets";
+import {
+  sha256Hex,
+  verifyHmEdgeMediaBridgeSignature,
+  type HmEdgeMediaBridgePayload,
+} from "../lib/hm-edge-media-bridge.js";
 
 const router: IRouter = Router();
 
@@ -27,6 +32,43 @@ function hmJwtSecret(): string {
   const s = String(process.env["HM_EDITOR_JWT_SECRET"] ?? "").trim();
   if (s) return s;
   return getSessionSecret();
+}
+
+async function saveDataUrlToMedia(
+  dataUrl: string,
+  uploadTitle?: string,
+): Promise<{ url: string }> {
+  const m =
+    dataUrl.match(/^data:(image\/(?:jpeg|png|gif|webp));base64,(.+)$/i) ||
+    dataUrl.match(/^data:(application\/pdf);base64,(.+)$/i) ||
+    dataUrl.match(/^data:(video\/(?:mp4|webm|ogg));base64,(.+)$/i);
+  if (!m) {
+    throw new Error("Geçersiz data URL (jpeg, png, gif, webp, pdf, mp4, webm veya ogg)");
+  }
+  const mime = m[1].toLowerCase();
+  const b64 = m[2].replace(/\s/g, "");
+  let buf: Buffer;
+  try {
+    buf = Buffer.from(b64, "base64");
+  } catch {
+    throw new Error("Base64 okunamadı");
+  }
+  const maxBytes =
+    mime === "application/pdf" ? MAX_BYTES_PDF : mime.startsWith("video/") ? MAX_BYTES_VIDEO : MAX_BYTES_IMAGE;
+  if (!buf.length || buf.length > maxBytes) {
+    throw new Error(`Dosya çok büyük (en fazla ${maxBytes / 1024 / 1024} MB)`);
+  }
+  const ext = extFromMime(mime);
+  if (!ext) {
+    throw new Error("Desteklenmeyen dosya türü");
+  }
+  const saved = await saveMediaBuffer(buf, {
+    ext,
+    mime,
+    optimizeNewsImage: mime.startsWith("image/"),
+    ...(uploadTitle && mime.startsWith("image/") ? { title: uploadTitle } : {}),
+  });
+  return { url: saved.url };
 }
 
 function hasUploadBearer(req: Request): boolean {
@@ -70,45 +112,16 @@ router.post("/media/upload", async (req, res): Promise<void> => {
     req.body && typeof (req.body as { title?: unknown }).title === "string"
       ? String((req.body as { title: string }).title).trim()
       : "";
-  const m =
-    dataUrl.match(/^data:(image\/(?:jpeg|png|gif|webp));base64,(.+)$/i) ||
-    dataUrl.match(/^data:(application\/pdf);base64,(.+)$/i) ||
-    dataUrl.match(/^data:(video\/(?:mp4|webm|ogg));base64,(.+)$/i);
-  if (!m) {
-    res.status(400).json({ error: "Geçersiz data URL (jpeg, png, gif, webp, pdf, mp4, webm veya ogg)" });
-    return;
-  }
-  const mime = m[1].toLowerCase();
-  const b64 = m[2].replace(/\s/g, "");
-  let buf: Buffer;
   try {
-    buf = Buffer.from(b64, "base64");
-  } catch {
-    res.status(400).json({ error: "Base64 okunamadı" });
-    return;
-  }
-  const maxBytes = mime === "application/pdf" ? MAX_BYTES_PDF : mime.startsWith("video/") ? MAX_BYTES_VIDEO : MAX_BYTES_IMAGE;
-  if (!buf.length || buf.length > maxBytes) {
-    res.status(400).json({ error: `Dosya çok büyük (en fazla ${maxBytes / 1024 / 1024} MB)` });
-    return;
-  }
-  const ext = extFromMime(mime);
-  if (!ext) {
-    res.status(400).json({ error: "Desteklenmeyen dosya türü" });
-    return;
-  }
-  try {
-    const saved = await saveMediaBuffer(buf, {
-      ext,
-      mime,
-      optimizeNewsImage: mime.startsWith("image/"),
-      ...(uploadTitle && mime.startsWith("image/") ? { title: uploadTitle } : {}),
-    });
-    res.json({ url: saved.url });
+    const saved = await saveDataUrlToMedia(dataUrl, uploadTitle || undefined);
+    res.json(saved);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
+    if (/Geçersiz data URL|Base64|çok büyük|Desteklenmeyen/.test(msg)) {
+      res.status(400).json({ error: msg });
+      return;
+    }
     logger.error({ err: e, storage: getMediaStorageMode() }, "[media-upload] save failed");
-    /* S3/TLS bağlantı hataları editör panelinde anlaşılır görünsün (gizli değer sızdırmadan). */
     const s3Issue = /EPROTO|handshake|certificate|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|AccessDenied|SignatureDoesNotMatch|InvalidAccessKeyId|NoSuchBucket/i.test(msg);
     res.status(500).json({
       error: s3Issue
@@ -116,6 +129,72 @@ router.post("/media/upload", async (req, res): Promise<void> => {
         : "Yükleme başarısız",
       ...(process.env.NODE_ENV === "production" ? {} : { detail: msg, storage: getMediaStorageMode() }),
     });
+  }
+});
+
+/** Worker kenar editör — HMAC köprüsü ile medya yükleme (JWT secret uyuşmazlığı yok). */
+router.post("/media/edge-upload", async (req, res): Promise<void> => {
+  const sig = String(req.get("x-yekpare-hm-edge-bridge") ?? "").trim();
+  const b = (req.body ?? {}) as HmEdgeMediaBridgePayload;
+  const dataUrl = typeof b.dataUrl === "string" ? b.dataUrl.trim() : "";
+  if (!dataUrl) {
+    res.status(400).json({ error: "dataUrl gerekli" });
+    return;
+  }
+  const payload: HmEdgeMediaBridgePayload = {
+    email: b.email,
+    siteId: Number(b.siteId),
+    siteSlug: b.siteSlug,
+    exp: Number(b.exp),
+    nonce: b.nonce,
+    dataUrlSha256: sha256Hex(dataUrl),
+  };
+  if (!verifyHmEdgeMediaBridgeSignature(payload, sig)) {
+    res.status(401).json({ error: "Kimlik doğrulama gerekli" });
+    return;
+  }
+  const exp = Number(payload.exp);
+  if (!Number.isFinite(exp) || exp < Date.now()) {
+    res.status(401).json({ error: "Köprü oturumu süresi doldu." });
+    return;
+  }
+  const email = String(payload.email ?? "")
+    .trim()
+    .toLowerCase();
+  const siteId = Number(payload.siteId);
+  if (!email.includes("@") || !Number.isFinite(siteId) || siteId <= 0) {
+    res.status(400).json({ error: "email ve siteId gerekli" });
+    return;
+  }
+
+  const [editor] = await getNewsDbForRead()
+    .select({ id: hmSiteEditorsTable.id })
+    .from(hmSiteEditorsTable)
+    .where(
+      and(
+        eq(hmSiteEditorsTable.siteId, siteId),
+        eq(hmSiteEditorsTable.isActive, true),
+        sql`lower(${hmSiteEditorsTable.email}) = ${email}`,
+      ),
+    )
+    .limit(1);
+  if (!editor) {
+    res.status(403).json({ error: "Editör bulunamadı" });
+    return;
+  }
+
+  const uploadTitle = typeof b.title === "string" ? b.title.trim() : "";
+  try {
+    const saved = await saveDataUrlToMedia(dataUrl, uploadTitle || undefined);
+    res.json(saved);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/Geçersiz data URL|Base64|çok büyük|Desteklenmeyen/.test(msg)) {
+      res.status(400).json({ error: msg });
+      return;
+    }
+    logger.error({ err: e, storage: getMediaStorageMode() }, "[media-edge-upload] save failed");
+    res.status(500).json({ error: "Yükleme başarısız" });
   }
 });
 

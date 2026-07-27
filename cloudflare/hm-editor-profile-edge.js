@@ -1047,8 +1047,8 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
 }
 
 /**
- * Editör görsel yükleme — kenar JWT doğrulandıktan sonra upstream'e ilet.
- * Worker/Render secret uyuşmazlığında ADMIN_MAINTENANCE_SECRET ile geçiş.
+ * Editör görsel yükleme — kenar JWT doğrulandıktan sonra Render köprüsü ile kaydet.
+ * Neon JWT ile Render JWT secret uyuşmazlığında /api/media/edge-upload kullanılır.
  */
 export async function handleHmEditorMediaUploadEdge(request, env) {
   const path = String(new URL(request.url).pathname || "").replace(/\/+$/, "") || "/";
@@ -1067,31 +1067,56 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
   if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
 
-  const origin = String(env?.API_ORIGIN || "").trim().replace(/\/$/, "");
-  if (!origin) return null;
-
-  const headers = new Headers();
-  headers.set("content-type", "application/json");
-  const maint = String(env?.ADMIN_MAINTENANCE_SECRET || "").trim();
-  if (maint) {
-    headers.set("x-yekpare-admin-secret", maint);
-  } else if (auth) {
-    headers.set("authorization", auth);
-  }
-
-  let bodyText;
+  let body;
   try {
-    bodyText = await request.text();
+    body = await request.json();
   } catch {
-    return jsonResponse(400, { error: "Geçersiz istek gövdesi" });
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+  const dataUrl = typeof body?.dataUrl === "string" ? body.dataUrl.trim() : "";
+  if (!dataUrl) return jsonResponse(400, { error: "dataUrl gerekli" });
+
+  const siteRows = await sql`
+    SELECT slug FROM hm_news_sites WHERE id = ${ctx.siteId} LIMIT 1
+  `;
+  const siteSlug = String(siteRows?.[0]?.slug || "").trim();
+
+  const secret = edgeBridgeSecret(env);
+  if (!secret) return null;
+
+  const payload = {
+    email: String(editor.email || "")
+      .trim()
+      .toLowerCase(),
+    siteId: ctx.siteId,
+    siteSlug,
+    exp: Date.now() + 90_000,
+    nonce: crypto.randomUUID(),
+    dataUrlSha256: await sha256HexUtf8(dataUrl),
+    dataUrl,
+    title: typeof body?.title === "string" ? body.title : undefined,
+  };
+
+  let sig;
+  try {
+    sig = await hmacSha256Base64Url(secret, mediaBridgeCanonical(payload));
+  } catch (err) {
+    return jsonResponse(502, {
+      error: "Yükleme imzası oluşturulamadı",
+      detail: String(err?.message || err).slice(0, 200),
+    });
   }
 
+  const origin = apiOriginFromEnv(env);
   let upstream;
   try {
-    upstream = await fetch(`${origin}/api/media/upload`, {
+    upstream = await fetch(`${origin}/api/media/edge-upload`, {
       method: "POST",
-      headers,
-      body: bodyText,
+      headers: {
+        "content-type": "application/json",
+        "x-yekpare-hm-edge-bridge": sig,
+      },
+      body: JSON.stringify(payload),
     });
   } catch (err) {
     return jsonResponse(502, {
@@ -1100,10 +1125,36 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
     });
   }
 
-  const outHeaders = new Headers(upstream.headers);
+  const text = await upstream.text();
+  const outHeaders = new Headers();
+  outHeaders.set("content-type", "application/json; charset=utf-8");
   outHeaders.set("x-yekpare-frontend", "cloudflare-editor-media-edge");
   outHeaders.set("cache-control", "private, no-store, max-age=0, must-revalidate");
-  return new Response(upstream.body, { status: upstream.status, headers: outHeaders });
+  return new Response(text, { status: upstream.status, headers: outHeaders });
+}
+
+function mediaBridgeCanonical(payload) {
+  const email = String(payload.email || "")
+    .trim()
+    .toLowerCase();
+  const siteId = String(Number(payload.siteId) || 0);
+  const siteSlug = String(payload.siteSlug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  const exp = String(Number(payload.exp) || 0);
+  const nonce = String(payload.nonce || "");
+  const dataUrlSha256 = String(payload.dataUrlSha256 || "")
+    .trim()
+    .toLowerCase();
+  return [email, siteId, siteSlug, exp, nonce, dataUrlSha256].join("\n");
+}
+
+async function sha256HexUtf8(raw) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(raw ?? "")));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /** @deprecated — login kenarda; geriye dönük no-op. */
