@@ -1738,9 +1738,9 @@ router.post("/hm/admin/vkd-restore-menu", async (req, res): Promise<void> => {
   try {
     const result = await syncVkdMenuPartialFromData();
     res.json({
+      ...result,
       ok: true,
       message: result.added > 0 ? `Menüye ${result.added} madde eklendi` : "Menü güncel — eksik madde yok",
-      ...result,
     });
   } catch (e) {
     res.status(500).json({
@@ -1776,6 +1776,7 @@ router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
     const dryRun = (req.body as { dryRun?: boolean } | undefined)?.dryRun === true;
     const result = await ensureKhNewsSite({ dryRun });
     res.json({
+      ...result,
       ok: result.action !== "error",
       message:
         result.action === "created"
@@ -1783,7 +1784,6 @@ router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
           : result.action === "updated"
             ? `Kırşehir Haber (/tr/kh) güncellendi #${result.siteId}`
             : result.detail || result.action,
-      ...result,
     });
   } catch (e) {
     res.status(500).json({
@@ -1799,12 +1799,12 @@ router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
   try {
     const result = await repairAsgEditorMisassignment();
     res.json({
+      ...result,
       ok: result.ok,
       message:
         result.action === "synced"
           ? `Ortak editör senkron: siteler [${result.siteIds.join(",")}] editörler [${result.editorIds.join(",")}]`
           : result.detail || result.action,
-      ...result,
     });
   } catch (e) {
     res.status(500).json({

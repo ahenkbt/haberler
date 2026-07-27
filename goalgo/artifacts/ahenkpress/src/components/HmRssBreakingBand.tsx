@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "r
 import { Link } from "wouter";
 import { RssBreakingBalloonPool } from "@/components/news/RssBreakingBalloonPool";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { hmCategorySlug } from "@/lib/hmCategorySlug";
 import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import {
   resolveHmBreakingRssDisplayMode,
@@ -66,23 +67,6 @@ function fmtDate(d: string | null | undefined) {
 
 function isValidBreakingRssUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test(String(value ?? "").trim());
-}
-
-function rssCategorySlug(raw: unknown): string {
-  return String(raw ?? "")
-    .trim()
-    .toLocaleLowerCase("tr-TR")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ı/g, "i")
-    .replace(/ğ/g, "g")
-    .replace(/ü/g, "u")
-    .replace(/ş/g, "s")
-    .replace(/ö/g, "o")
-    .replace(/ç/g, "c")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "");
 }
 
 function mapFallbackToRssItems(items: RssBreakingBandFallbackItem[]): RssBreakingBandItem[] {
@@ -232,12 +216,20 @@ export function HmRssBreakingBand({
     [feedRows],
   );
   const tabs = useMemo<Array<{ id: RssBreakingCategoryId; label: string }>>(() => {
-    const categories = feedRows
-      .filter((row) => isValidBreakingRssUrl(row.url))
-      .map((row) => ({
-        id: rssCategorySlug(row.label) || rssCategorySlug(row.id) || row.id,
-        label: row.label.trim() || row.id,
-      }));
+    // Aynı kategoride birden fazla RSS URL olabilir — sekmede kategori bir kez görünsün.
+    const seen = new Set<string>();
+    const categories: Array<{ id: string; label: string }> = [];
+    for (const row of feedRows) {
+      if (!isValidBreakingRssUrl(row.url)) continue;
+      const id =
+        hmCategorySlug(row.label, row.categoryKey, row.id) || String(row.id);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      categories.push({
+        id,
+        label: String(row.label ?? "").trim() || id,
+      });
+    }
     return categories.length ? [{ id: "mixed", label: "Genel" }, ...categories] : [];
   }, [feedRows]);
 

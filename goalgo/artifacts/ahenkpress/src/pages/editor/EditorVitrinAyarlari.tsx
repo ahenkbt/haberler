@@ -1,3 +1,4 @@
+import { hmCategorySlug } from "@/lib/hmCategorySlug";
 import { buildUnifiedHomeCategoryOptions, HM_NEWS_HOME_MODULE_CATEGORY_ASSIGNABLE, normalizeHomeModuleCategorySlug } from "@/lib/hmHomeModuleCategories";
 import { normalizeYekpareCategoryBoxCount, normalizeYekpareKutuItemCount, YEKPARE_CATEGORY_BOX_COUNT_OPTIONS } from "@/lib/hmCategoryBoxItems";
 import {
@@ -450,16 +451,21 @@ export default function EditorVitrinAyarlari() {
     });
   };
 
+  const rssRowCategorySlug = (row: HmBreakingRssFeedRow) =>
+    hmCategorySlug(row.label, resolveHmBreakingRssCategoryKey(row)) || resolveHmBreakingRssCategoryKey(row);
+
   const updateRssRow = (id: string, patch: Partial<Pick<HmBreakingRssFeedRow, "label" | "url">>) => {
     const target = rssRows.find((row) => row.id === id);
     const categoryKey = target ? resolveHmBreakingRssCategoryKey(target) : "";
+    const categorySlug = target ? rssRowCategorySlug(target) : "";
     setBoxRssRowsLocal(
       rssRows.map((row) => {
         if (row.id === id) return { ...row, ...patch };
-        if (patch.label && categoryKey && resolveHmBreakingRssCategoryKey(row) === categoryKey) {
-          return { ...row, label: patch.label };
-        }
-        return row;
+        if (!patch.label) return row;
+        const sameCategory =
+          (categorySlug && rssRowCategorySlug(row) === categorySlug) ||
+          (categoryKey && resolveHmBreakingRssCategoryKey(row) === categoryKey);
+        return sameCategory ? { ...row, label: patch.label } : row;
       }),
     );
   };
@@ -467,13 +473,15 @@ export default function EditorVitrinAyarlari() {
   const updateSiteRssRow = (id: string, patch: Partial<Pick<HmBreakingRssFeedRow, "label" | "url">>) => {
     const target = siteRssRows.find((row) => row.id === id);
     const categoryKey = target ? resolveHmBreakingRssCategoryKey(target) : "";
+    const categorySlug = target ? rssRowCategorySlug(target) : "";
     setSiteRssRowsLocal(
       siteRssRows.map((row) => {
         if (row.id === id) return { ...row, ...patch };
-        if (patch.label && categoryKey && resolveHmBreakingRssCategoryKey(row) === categoryKey) {
-          return { ...row, label: patch.label };
-        }
-        return row;
+        if (!patch.label) return row;
+        const sameCategory =
+          (categorySlug && rssRowCategorySlug(row) === categorySlug) ||
+          (categoryKey && resolveHmBreakingRssCategoryKey(row) === categoryKey);
+        return sameCategory ? { ...row, label: patch.label } : row;
       }),
     );
   };

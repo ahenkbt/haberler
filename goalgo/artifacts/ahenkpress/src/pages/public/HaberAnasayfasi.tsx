@@ -191,7 +191,10 @@ import {
 } from "@/lib/hmHomeCategorySectionPool";
 import { useHmHomeCategorySectionItems } from "@/hooks/useHmHomeCategorySectionItems";
 import { passesCategoryContentGuard } from "@/lib/hmCategoryContentGuard";
-import { dedupeHmCategoryTabsByCanonicalSlug } from "@/lib/hmCategoryTabs";
+import {
+  dedupeHmCategoryTabsByCanonicalSlug,
+  dedupeHmCategoryTabsByRepairedLabel,
+} from "@/lib/hmCategoryTabs";
 import { HM_STANDARD_NEWS_CATEGORIES, mergeHmStandardNewsCategoryRows } from "@/lib/hmStandardNewsCategories";
 import {
   filterHmPublicCategoryRows,
@@ -2320,10 +2323,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   const tabStripCats = useMemo(() => {
     try {
-      return dedupeHmCategoryTabsByCanonicalSlug(
-        tabStripCatsRaw,
-        homeCategoryMatchContext.knownCanonicalSlugs,
-        siteSlugPrefixes,
+      return dedupeHmCategoryTabsByRepairedLabel(
+        dedupeHmCategoryTabsByCanonicalSlug(
+          tabStripCatsRaw,
+          homeCategoryMatchContext.knownCanonicalSlugs,
+          siteSlugPrefixes,
+        ),
       );
     } catch (error) {
       console.error("[HaberAnasayfasi] tabStripCats dedupe failed; using raw tabs", error);

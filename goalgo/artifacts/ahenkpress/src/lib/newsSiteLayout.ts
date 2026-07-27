@@ -1768,22 +1768,29 @@ export function groupHmBreakingRssFeedRowsByCategory(rows: HmBreakingRssFeedRow[
   rows: HmBreakingRssFeedRow[];
 }> {
   const groups: Array<{ categoryKey: string; label: string; rows: HmBreakingRssFeedRow[] }> = [];
-  const indexByKey = new Map<string, number>();
+  const indexBySlug = new Map<string, number>();
   for (const row of rows) {
-    const categoryKey = resolveHmBreakingRssCategoryKey(row);
-    if (!categoryKey) continue;
-    const idx = indexByKey.get(categoryKey);
+    const rawKey = resolveHmBreakingRssCategoryKey(row);
+    const label = normalizeBreakingRssLabel(row.label) || rawKey;
+    if (!rawKey && !label) continue;
+    // Aynı etiket / slug farklı categoryKey (preset camelCase vs özel id) ile gelirse tek grup.
+    const slug = hmCategorySlug(label, rawKey) || slugifyBreakingRssRowId(label || rawKey);
+    if (!slug) continue;
+    const preferredKey = PRESET_BREAKING_RSS_IDS.has(rawKey as HmBreakingRssFeedId) ? rawKey : slug;
+    const idx = indexBySlug.get(slug);
     if (idx == null) {
-      indexByKey.set(categoryKey, groups.length);
+      indexBySlug.set(slug, groups.length);
       groups.push({
-        categoryKey,
-        label: normalizeBreakingRssLabel(row.label) || categoryKey,
+        categoryKey: preferredKey,
+        label: label || slug,
         rows: [row],
       });
     } else {
       groups[idx]!.rows.push(row);
-      const label = normalizeBreakingRssLabel(row.label);
-      if (label) groups[idx]!.label = label;
+      if (label && label.length >= groups[idx]!.label.length) groups[idx]!.label = label;
+      if (PRESET_BREAKING_RSS_IDS.has(rawKey as HmBreakingRssFeedId)) {
+        groups[idx]!.categoryKey = rawKey;
+      }
     }
   }
   return groups;
@@ -1791,10 +1798,11 @@ export function groupHmBreakingRssFeedRowsByCategory(rows: HmBreakingRssFeedRow[
 
 export function createHmBreakingRssFeedRow(label = "Yeni kategori"): HmBreakingRssFeedRow {
   const trimmed = normalizeBreakingRssLabel(label) || "Yeni kategori";
-  const id = `${slugifyBreakingRssRowId(trimmed)}-${Date.now().toString(36)}`;
+  const categoryKey = slugifyBreakingRssRowId(trimmed);
+  const id = `${categoryKey}-${Date.now().toString(36)}`;
   return {
     id,
-    categoryKey: id,
+    categoryKey,
     label: trimmed,
     url: "",
   };
