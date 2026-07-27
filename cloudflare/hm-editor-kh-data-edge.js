@@ -104,6 +104,48 @@ function slugify(input) {
   return s || `haber-${Date.now().toString(36)}`;
 }
 
+/** Neon HTTP: JS dizisini tek text[] parametresi olarak güvenle bağla. */
+function toPgTextArrayLiteral(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) return "{}";
+  return `{${tags
+    .map((t) => `"${String(t).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`)
+    .join(",")}}`;
+}
+
+let newsColumnsEnsured = false;
+
+/** Haber insert/update için eksik kolonları (özellikle news-cluster) tamamla. */
+async function ensureNewsWritableColumns(sql) {
+  if (newsColumnsEnsured || !sql) return;
+  const stmts = [
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS sender_full_name text",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS sender_email text",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS sender_phone text",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_site_manset boolean NOT NULL DEFAULT false",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_editor_manual boolean NOT NULL DEFAULT false",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS site_only boolean NOT NULL DEFAULT false",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS owner_site_id integer",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_food_recipe boolean NOT NULL DEFAULT false",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS food_recipe_category_slug text",
+  ];
+  for (const q of stmts) {
+    try {
+      await sql.query(q);
+    } catch (err) {
+      console.error("[kh-news-ensure-col]", String(err?.message || err).slice(0, 140));
+    }
+  }
+  newsColumnsEnsured = true;
+}
+
+function createFailResponse(detail) {
+  const d = String(detail || "").trim().slice(0, 180);
+  return jsonResponse(500, {
+    error: d ? `Kayıt oluşturulamadı: ${d}` : "Kayıt oluşturulamadı",
+    detail: d || undefined,
+  });
+}
+
 async function isKhSite(sql, siteId) {
   const rows = await sql`
     SELECT slug, domain, domain2, domain3 FROM hm_news_sites WHERE id = ${siteId} LIMIT 1
@@ -238,18 +280,31 @@ async function resolveCategoryId(sql, siteId, categorySlug) {
 }
 
 async function loadNewsWithCategory(sql, siteId, id) {
-  const rows = await sql`
-    SELECT n.*, c.slug AS category_slug
-    FROM news n
-    LEFT JOIN categories c ON c.id = n.category_id
-    WHERE n.id = ${id}
-      AND (
-        n.site_id = ${siteId}
-        OR (n.site_only = true AND n.owner_site_id = ${siteId})
-      )
-    LIMIT 1
-  `;
-  return rows?.[0] || null;
+  await ensureNewsWritableColumns(sql);
+  try {
+    const rows = await sql`
+      SELECT n.*, c.slug AS category_slug
+      FROM news n
+      LEFT JOIN categories c ON c.id = n.category_id
+      WHERE n.id = ${id}
+        AND (
+          n.site_id = ${siteId}
+          OR (n.site_only = true AND n.owner_site_id = ${siteId})
+        )
+      LIMIT 1
+    `;
+    return rows?.[0] || null;
+  } catch (err) {
+    console.error("[kh-news-load]", String(err?.message || err).slice(0, 160));
+    const rows = await sql`
+      SELECT n.*, c.slug AS category_slug
+      FROM news n
+      LEFT JOIN categories c ON c.id = n.category_id
+      WHERE n.id = ${id} AND n.site_id = ${siteId}
+      LIMIT 1
+    `;
+    return rows?.[0] || null;
+  }
 }
 
 async function handleAuthorsList(sql, siteId) {
@@ -411,48 +466,54 @@ async function handleEditorNews(sql, siteId, url, env) {
   const submitted =
     url.searchParams.get("submitted") === "1" || url.searchParams.get("submitted") === "true";
 
-  if (submitted) {
+  await ensureNewsWritableColumns(sql);
+
+  try {
+    if (submitted) {
+      const rows = await sql`
+        SELECT n.*, c.slug AS category_slug
+        FROM news n
+        LEFT JOIN categories c ON c.id = n.category_id
+        WHERE n.site_id = ${siteId}
+          AND (n.sender_full_name IS NOT NULL OR n.sender_email IS NOT NULL OR n.sender_phone IS NOT NULL)
+        ORDER BY n.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      const countRows = await sql`
+        SELECT count(*)::int AS count FROM news
+        WHERE site_id = ${siteId}
+          AND (sender_full_name IS NOT NULL OR sender_email IS NOT NULL OR sender_phone IS NOT NULL)
+      `;
+      return jsonResponse(200, {
+        items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
+        total: countRows?.[0]?.count ?? 0,
+      });
+    }
+
     const rows = await sql`
       SELECT n.*, c.slug AS category_slug
       FROM news n
       LEFT JOIN categories c ON c.id = n.category_id
       WHERE n.site_id = ${siteId}
-        AND (n.sender_full_name IS NOT NULL OR n.sender_email IS NOT NULL OR n.sender_phone IS NOT NULL)
+         OR (n.site_only = true AND n.owner_site_id = ${siteId})
       ORDER BY n.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
     const countRows = await sql`
       SELECT count(*)::int AS count FROM news
       WHERE site_id = ${siteId}
-        AND (sender_full_name IS NOT NULL OR sender_email IS NOT NULL OR sender_phone IS NOT NULL)
+         OR (site_only = true AND owner_site_id = ${siteId})
     `;
-    return jsonResponse(200, {
-      items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
-      total: countRows?.[0]?.count ?? 0,
-    });
-  }
-
-  const rows = await sql`
-    SELECT n.*, c.slug AS category_slug
-    FROM news n
-    LEFT JOIN categories c ON c.id = n.category_id
-    WHERE n.site_id = ${siteId}
-       OR (n.site_only = true AND n.owner_site_id = ${siteId})
-    ORDER BY n.created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  const countRows = await sql`
-    SELECT count(*)::int AS count FROM news
-    WHERE site_id = ${siteId}
-       OR (site_only = true AND owner_site_id = ${siteId})
-  `;
-  const neonTotal = countRows?.[0]?.count ?? 0;
-  if (neonTotal > 0) {
-    return jsonResponse(200, {
-      items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
-      total: neonTotal,
-      source: "neon",
-    });
+    const neonTotal = countRows?.[0]?.count ?? 0;
+    if (neonTotal > 0) {
+      return jsonResponse(200, {
+        items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
+        total: neonTotal,
+        source: "neon",
+      });
+    }
+  } catch (err) {
+    console.error("[kh-editor-news-list]", String(err?.message || err).slice(0, 200));
   }
 
   const pub = await fetchKhPublicNewsForEditor(env, siteId, limit, offset);
@@ -461,6 +522,8 @@ async function handleEditorNews(sql, siteId, url, env) {
 }
 
 async function handleCreateNews(sql, siteId, body) {
+  await ensureNewsWritableColumns(sql);
+
   const title = String(body?.title || "").trim();
   if (!title) return jsonResponse(400, { error: "Başlık gerekli" });
   const categorySlug = String(body?.categorySlug || "").trim();
@@ -474,7 +537,8 @@ async function handleCreateNews(sql, siteId, body) {
   const tags = Array.isArray(body?.tags)
     ? body.tags.map((t) => String(t).trim()).filter(Boolean)
     : [];
-  const authorId = asPositiveInt(body?.authorId);
+  const tagsLiteral = toPgTextArrayLiteral(tags);
+  let authorId = asPositiveInt(body?.authorId);
   const imageUrl = body?.imageUrl != null ? String(body.imageUrl).trim() || null : null;
   const spot = body?.spot != null ? String(body.spot) : null;
   const content = body?.content != null ? String(body.content) : null;
@@ -484,8 +548,15 @@ async function handleCreateNews(sql, siteId, body) {
   const senderFullName = body?.senderFullName != null ? String(body.senderFullName) : null;
   const senderEmail = body?.senderEmail != null ? String(body.senderEmail) : null;
   const senderPhone = body?.senderPhone != null ? String(body.senderPhone) : null;
+  const isFoodRecipe = body?.isFoodRecipe === true;
+  const foodRecipeCategorySlug = isFoodRecipe
+    ? String(body?.foodRecipeCategorySlug || "")
+        .trim()
+        .toLowerCase() || null
+    : null;
 
   // slug çakışırsa benzersizleştir
+  let lastErr = "";
   for (let i = 0; i < 8; i += 1) {
     const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
     try {
@@ -495,30 +566,79 @@ async function handleCreateNews(sql, siteId, body) {
           sender_full_name, sender_email, sender_phone,
           status, is_featured, is_site_manset, is_breaking, tags,
           site_id, is_editor_manual, site_only, owner_site_id,
+          is_food_recipe, food_recipe_category_slug,
           created_at, updated_at
         ) VALUES (
           ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
           ${senderFullName}, ${senderEmail}, ${senderPhone},
-          ${status}, ${isFeatured}, ${isSiteManset}, ${isBreaking}, ${tags},
+          ${status}, ${isFeatured}, ${isSiteManset}, ${isBreaking}, ${tagsLiteral}::text[],
           ${siteId}, true, true, ${siteId},
+          ${isFoodRecipe}, ${foodRecipeCategorySlug},
           NOW(), NOW()
         )
         RETURNING *
       `;
-      const row = rows?.[0];
-      if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+      const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+      if (!row) return createFailResponse("INSERT boş döndü");
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
       const msg = String(err?.message || err);
+      lastErr = msg;
+      // Silinmiş yazar FK'si — yazarsız tekrar dene
+      if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
+        authorId = null;
+        i -= 1;
+        continue;
+      }
       if (/unique|duplicate/i.test(msg) && i < 7) continue;
+      // Eksik kolon kalmış olabilir — ensure tekrar + sade INSERT
+      if (/column .* does not exist/i.test(msg)) {
+        newsColumnsEnsured = false;
+        await ensureNewsWritableColumns(sql);
+        try {
+          const rows = await sql`
+            INSERT INTO news (
+              title, slug, spot, content, image_url, category_id, author_id,
+              status, is_featured, is_breaking, tags,
+              site_id, is_editor_manual, created_at, updated_at
+            ) VALUES (
+              ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
+              ${status}, ${isFeatured}, ${isBreaking}, ${tagsLiteral}::text[],
+              ${siteId}, true, NOW(), NOW()
+            )
+            RETURNING *
+          `;
+          const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+          if (row) {
+            // site_only / manşet bayraklarını mümkünse sonradan yaz
+            try {
+              await sql`
+                UPDATE news SET
+                  is_site_manset = ${isSiteManset},
+                  is_breaking = ${isBreaking},
+                  site_only = true,
+                  owner_site_id = ${siteId},
+                  updated_at = NOW()
+                WHERE id = ${row.id}
+              `;
+            } catch {
+              /* kolon yoksa yok say */
+            }
+            return jsonResponse(201, serializeNewsRow(row, categorySlug));
+          }
+        } catch (err2) {
+          lastErr = String(err2?.message || err2);
+        }
+      }
       console.error("[kh-news-create]", msg.slice(0, 200));
-      return jsonResponse(500, { error: "Kayıt oluşturulamadı", detail: msg.slice(0, 160) });
+      return createFailResponse(msg);
     }
   }
-  return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+  return createFailResponse(lastErr || "slug çakışması");
 }
 
 async function handleUpdateNews(sql, siteId, id, body) {
+  await ensureNewsWritableColumns(sql);
   const existing = await loadNewsWithCategory(sql, siteId, id);
   if (!existing) return jsonResponse(404, { error: "Haber bulunamadı" });
 
@@ -539,6 +659,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
   const tags = Array.isArray(body?.tags)
     ? body.tags.map((t) => String(t).trim()).filter(Boolean)
     : existing.tags || [];
+  const tagsLiteral = toPgTextArrayLiteral(tags);
   const authorId =
     body?.authorId !== undefined ? asPositiveInt(body.authorId) : existing.author_id;
   const imageUrl =
@@ -570,7 +691,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
         is_featured = ${isFeatured},
         is_site_manset = ${isSiteManset},
         is_breaking = ${isBreaking},
-        tags = ${tags},
+        tags = ${tagsLiteral}::text[],
         is_editor_manual = true,
         site_only = true,
         owner_site_id = ${siteId},
@@ -579,16 +700,21 @@ async function handleUpdateNews(sql, siteId, id, body) {
       WHERE id = ${id}
       RETURNING *
     `;
-    const row = rows?.[0];
+    const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
-    console.error("[kh-news-update]", String(err?.message || err).slice(0, 200));
-    return jsonResponse(500, { error: "Güncellenemedi", detail: String(err?.message || err).slice(0, 160) });
+    const msg = String(err?.message || err);
+    console.error("[kh-news-update]", msg.slice(0, 200));
+    return jsonResponse(500, {
+      error: msg ? `Güncellenemedi: ${msg.slice(0, 160)}` : "Güncellenemedi",
+      detail: msg.slice(0, 160),
+    });
   }
 }
 
 async function handlePatchNewsFlags(sql, siteId, id, body) {
+  await ensureNewsWritableColumns(sql);
   const existing = await loadNewsWithCategory(sql, siteId, id);
   if (!existing) return jsonResponse(404, { error: "Haber bulunamadı" });
   const isFeatured =
