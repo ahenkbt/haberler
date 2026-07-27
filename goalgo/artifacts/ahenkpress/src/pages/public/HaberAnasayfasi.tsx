@@ -1849,6 +1849,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     () => (useHybridHomeNewsPool ? hybridBootstrap.map(mapHybridNewsToBandItem) : []),
     [useHybridHomeNewsPool, hybridBootstrap],
   );
+  const hybridMansetRssItems = useMemo(
+    () => hybridBandItems.filter((item) => isRssHybridItem(item)),
+    [hybridBandItems],
+  );
   const hybridHeadlineReady = useHybridHomeNewsPool && hybridBandItems.length > 0;
 
   const { data: yekparePoolHybrid = [] } = useQuery({
@@ -2098,9 +2102,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       if (hmHybridRssEnabled) {
         pool = buildRssAwareHeadlinePool({
           manualItems: centerMansetSliderItems,
-          latestItems: allItems,
+          latestItems: mergeUniqueNews(allItems, hybridMansetRssItems),
           rssEnabled: true,
-          rssBootstrapReady: hybridHeadlineReady,
+          rssBootstrapReady: hybridHeadlineReady || hybridMansetRssItems.length > 0,
           limit: HM_HOME_HEADLINE_SLIDER_LIMIT,
           minManual: 3,
           visitSeed: headlineVisitSeed,
@@ -2120,7 +2124,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       });
     }
     return tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
-  }, [featured, allItems, siteId, newsSliderEnabled, activeTab, rssHeadlineEnabled, hmHybridRssEnabled, hybridHeadlineReady, headlineVisitSeed, centerMansetSliderItems, tepeMansetActive, tepeMansetItems]);
+  }, [featured, allItems, siteId, newsSliderEnabled, activeTab, rssHeadlineEnabled, hmHybridRssEnabled, hybridHeadlineReady, hybridMansetRssItems, headlineVisitSeed, centerMansetSliderItems, tepeMansetActive, tepeMansetItems]);
   const sliderSide = useMemo(() => {
     const slideKeys = sliderHeadlineKeys(sliderNews);
     const pool: any[] = [];

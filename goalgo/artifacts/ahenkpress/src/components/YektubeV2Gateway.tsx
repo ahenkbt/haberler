@@ -138,7 +138,7 @@ export function HmYektubePortalEmbed() {
       ref={iframeRef}
       title="Yektube"
       src={activeSrc}
-      className="hm-video-tv-embed block min-h-[70vh] w-full flex-1 border-0 bg-white"
+      className="hm-video-tv-embed block h-full min-h-0 w-full flex-1 border-0 bg-white"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       referrerPolicy="strict-origin-when-cross-origin"
       onError={() => setActiveSrc((cur) => preferYektubeMirrorOrigin(cur))}

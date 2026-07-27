@@ -14,7 +14,7 @@ export function HmPublicVideoTvLayout({ children }: { children: ReactNode }) {
   return (
     <HmNestedLayout hideFooter>
       <HmVideoTvContextBridge>
-        <div className="flex min-h-[70vh] min-h-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </HmVideoTvContextBridge>
     </HmNestedLayout>
   );

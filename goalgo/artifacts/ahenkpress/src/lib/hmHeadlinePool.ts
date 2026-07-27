@@ -1024,16 +1024,22 @@ export function buildRssAwareHeadlinePool(opts: {
   );
   const allRss = sortNewsByRecency(latestItems.filter((item) => isRssHybridItem(item)));
   const freshRssSorted = allRss.filter(isHeadlineFreshEnough);
+  /** Hibrit bootstrap: tarihsiz RSS önce görünüp tazelik süzgecinde kaybolmasın. */
+  const rssSorted =
+    freshRssSorted.length > 0
+      ? freshRssSorted
+      : opts.rssBootstrapReady && opts.rssEnabled && allRss.length > 0
+        ? allRss
+        : freshRssSorted;
   const minManualDefault = Math.max(0, opts.minManual ?? 3);
   const minManual =
-    opts.rssBootstrapReady && opts.rssEnabled && freshRssSorted.length > 0
+    opts.rssBootstrapReady && opts.rssEnabled && rssSorted.length > 0
       ? Math.min(minManualDefault, 1)
       : minManualDefault;
 
   const buildPool = (): any[] => {
     const manualPool = preferFreshHeadlineCandidates(allManual);
     const manual = manualPool.slice(0, Math.max(minManual, Math.min(manualPool.length, limit)));
-    const rssSorted = freshRssSorted;
     const rss = buildRssHeadlineCandidates(rssSorted, opts.rssEnabled, limit);
 
     const interleaved = interleaveHeadlineItems(manual, rss, limit);
@@ -1057,8 +1063,8 @@ export function buildRssAwareHeadlinePool(opts: {
 
   let pool = buildPool();
 
-  if (opts.rssBootstrapReady && opts.rssEnabled && freshRssSorted.length > 0) {
-    const rssLead = buildRssHeadlineCandidates(freshRssSorted, true, limit);
+  if (opts.rssBootstrapReady && opts.rssEnabled && rssSorted.length > 0) {
+    const rssLead = buildRssHeadlineCandidates(rssSorted, true, limit);
     if (rssLead.length > 0) {
       pool = sortNewsByRecency(mergeUniqueNews(rssLead, pool)).slice(0, limit);
     }
