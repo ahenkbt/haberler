@@ -429,6 +429,82 @@ async function repairSuDomainOnNeon(sql) {
 /**
  * Domain/slug ile bak; Su markası için domain sahipliğini onar, kanonik satırı dön.
  */
+async function ensureKhVideoMenuOnRow(sql, row) {
+  if (!row) return row;
+  const slug = normalizeSlug(row.slug);
+  const hosts = [row.domain, row.domain2, row.domain3].map(normalizeHost);
+  const isKh =
+    slug === "kh" ||
+    slug === "kirsehir" ||
+    hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
+  if (!isKh) return row;
+
+  let layout = {};
+  try {
+    layout = row.layout_json ? JSON.parse(String(row.layout_json)) : {};
+  } catch {
+    layout = {};
+  }
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+
+  const items = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
+  const isVideoItem = (item) => {
+    const href = String(item?.href ?? "").trim().toLowerCase();
+    const label = String(item?.label ?? "")
+      .trim()
+      .toLocaleLowerCase("tr-TR");
+    const id = String(item?.id ?? "").trim().toLowerCase();
+    return (
+      id === "menu-video-tv" ||
+      id.includes("video-tv") ||
+      label === "video" ||
+      label.includes("video tv") ||
+      href === "/video" ||
+      /\/video(?:-tv)?(?:\/|$|\?)/.test(href)
+    );
+  };
+  const hasVideo = items.some(isVideoItem);
+  const videoOn = layout.hmNewsVideoTvEnabled !== false;
+  let nextItems = items;
+  let changed = false;
+
+  if (videoOn && items.length > 0 && !hasVideo) {
+    nextItems = [
+      ...items,
+      { id: "menu-video-tv", label: "Video", href: "/video", enabled: true },
+    ];
+    changed = true;
+  } else if (videoOn && hasVideo) {
+    nextItems = items.map((item) => {
+      if (!isVideoItem(item)) return item;
+      const next = { ...item, enabled: item.enabled !== false };
+      if (!String(next.label || "").trim()) next.label = "Video";
+      const href = String(next.href || "").trim();
+      if (!href || href.includes("video-tv")) next.href = "/video";
+      if (next.label && /video\s*tv/i.test(next.label)) next.label = "Video";
+      if (next.label !== item.label || next.href !== item.href) changed = true;
+      return next;
+    });
+  }
+
+  if (layout.hmNewsVideoTvEnabled === false) {
+    // kullanıcı kapattıysa dokunma
+  } else if (layout.hmNewsVideoTvEnabled !== true) {
+    layout.hmNewsVideoTvEnabled = true;
+    changed = true;
+  }
+
+  if (!changed && nextItems === items) return row;
+  const next = { ...layout, hmCorporateMenuItems: nextItems, hmNewsVideoTvEnabled: true };
+  await sql`
+    UPDATE hm_news_sites
+    SET layout_json = ${JSON.stringify(next)}::jsonb,
+        updated_at = NOW()
+    WHERE id = ${row.id}
+  `;
+  return { ...row, layout_json: JSON.stringify(next) };
+}
+
 export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   const binding = matchBrandBinding({ domain, slug });
   if (!binding) return null;
@@ -461,10 +537,12 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       LIMIT 1
     `;
     if (byDomain?.[0] && !PROTECTED_SLUGS.has(normalizeSlug(byDomain[0].slug))) {
-      return { meta: serializeMetaRow(byDomain[0]), action: "lookup_domain" };
+      const row = await ensureKhVideoMenuOnRow(sql, byDomain[0]);
+      return { meta: serializeMetaRow(row), action: "lookup_domain" };
     }
     if (byDomain?.[0]) {
-      return { meta: serializeMetaRow(byDomain[0]), action: "lookup_domain" };
+      const row = await ensureKhVideoMenuOnRow(sql, byDomain[0]);
+      return { meta: serializeMetaRow(row), action: "lookup_domain" };
     }
   }
 
@@ -493,10 +571,12 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
           LIMIT 1
         `;
     if (bySlug?.[0] && !PROTECTED_SLUGS.has(normalizeSlug(bySlug[0].slug))) {
-      return { meta: serializeMetaRow(bySlug[0]), action: "lookup_slug" };
+      const row = await ensureKhVideoMenuOnRow(sql, bySlug[0]);
+      return { meta: serializeMetaRow(row), action: "lookup_slug" };
     }
     if (bySlug?.[0]) {
-      return { meta: serializeMetaRow(bySlug[0]), action: "lookup_slug" };
+      const row = await ensureKhVideoMenuOnRow(sql, bySlug[0]);
+      return { meta: serializeMetaRow(row), action: "lookup_slug" };
     }
   }
 

@@ -15,7 +15,7 @@ import {
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
-import { handleKhEditorDataEdge, syncKhAuthorsFromRender } from "./hm-editor-kh-data-edge.js";
+import { handleKhEditorDataEdge } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";

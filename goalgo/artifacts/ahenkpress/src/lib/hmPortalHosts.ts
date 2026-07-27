@@ -50,6 +50,27 @@ export function isYekparePortalHubOnly(host: string, slug?: string | null): bool
   return true;
 }
 
+const KH_HM_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
+
+/** Kırşehir Haber özel alanı veya /tr/kh|kirsehir slug. */
+export function isKhHmSite(host: string, slug?: string | null): boolean {
+  const h = normalizeHostKey(host);
+  if (h && KH_HM_HOSTS.has(h)) return true;
+  const s = String(slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  return s === "kh" || s === "kirsehir";
+}
+
+/**
+ * Video TV / Yektube — hub + Kırşehir Haber özel alanı.
+ * Diğer HM siteleri (Su, ASG, …) kapalı kalır.
+ */
+export function isHmVideoTvAllowed(host: string, slug?: string | null): boolean {
+  return isYekparePortalHubOnly(host, slug) || isKhHmSite(host, slug);
+}
+
 /**
  * Mağaza özel alanı olarak önbellekte kayıtlı mı?
  * HM domain slug önbelleği yalnızca hızlı yönlendirme içindir; bağsız alanların portal sanılmasını önlemek için burada kullanılmaz.

@@ -10,14 +10,15 @@ type HmEmbedBrandLogoProps = {
 /** Sol menü / üst çubuk — şeffaf zemin, alanı dolduran Video TV logosu. */
 export const HM_EMBED_BRAND_LOGO_CLASS = "yt-hm-brand-logo";
 
-/** HM haber sitesi Video TV embed — Yektube Video TV logosu (site haber logosu değil). */
+/** HM haber sitesi Video TV embed — varsa site logosu (`hmLogo`), yoksa Yektube Video TV logosu. */
 export function HmEmbedBrandLogo({ className, alt }: HmEmbedBrandLogoProps) {
-  const { hmDisplayName } = readYektubeRuntimeConfig();
+  const { hmDisplayName, hmLogoUrl } = readYektubeRuntimeConfig();
   const displayName = hmDisplayName?.trim() || "Yektube Video TV";
+  const src = hmLogoUrl?.trim() || YEKTUBE_VIDEO_TV_LOGO_URL;
 
   return (
     <img
-      src={YEKTUBE_VIDEO_TV_LOGO_URL}
+      src={src}
       alt={alt ?? displayName}
       className={cn(HM_EMBED_BRAND_LOGO_CLASS, className)}
       draggable={false}

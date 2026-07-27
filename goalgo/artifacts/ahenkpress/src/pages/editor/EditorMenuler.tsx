@@ -48,10 +48,19 @@ function parseLocationFromSearch(search: string): HmMenuLocationKey {
   return found?.key ?? "hmCorporateMenuItems";
 }
 
+function isKhEditorSiteSlug(slug?: string | null): boolean {
+  const s = String(slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  return s === "kh" || s === "kirsehir";
+}
+
 function readItemsForLocation(
   prefs: NewsSiteLayoutPrefs,
   key: HmMenuLocationKey,
   hmBase: string,
+  siteSlug?: string | null,
 ): HmCorporateMenuItem[] {
   const raw = (prefs[key] ?? []) as HmCorporateMenuItem[];
   if (key !== "hmCorporateMenuItems" || !raw.length) return raw;
@@ -59,7 +68,11 @@ function readItemsForLocation(
     ? raw
     : raw.filter((item) => !isHmCorporateMenuVideoTvItem(item));
   if (!resolveHmNewsVideoTvEnabled(prefs)) return withoutVideoTv;
-  return ensureCorporateMenuVideoTvAtEnd(withoutVideoTv, hmBase, { videoTvEnabled: true });
+  const kh = isKhEditorSiteSlug(siteSlug);
+  return ensureCorporateMenuVideoTvAtEnd(withoutVideoTv, hmBase, {
+    videoTvEnabled: true,
+    ...(kh ? { label: "Video", path: "/video" } : {}),
+  });
 }
 
 export default function EditorMenuler() {
@@ -70,7 +83,7 @@ export default function EditorMenuler() {
   const hmBaseEarly = site?.slug ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}` : "";
   const [menuLocation, setMenuLocation] = useState<HmMenuLocationKey>(initialLocation);
   const [items, setItems] = useState<HmCorporateMenuItem[]>(() =>
-    readItemsForLocation(newsLayoutPrefs, initialLocation, hmBaseEarly),
+    readItemsForLocation(newsLayoutPrefs, initialLocation, hmBaseEarly, site?.slug),
   );
   const [saving, setSaving] = useState(false);
 
@@ -92,12 +105,12 @@ export default function EditorMenuler() {
   );
 
   useEffect(() => {
-    setItems(readItemsForLocation(newsLayoutPrefs, menuLocation, hmBase));
-  }, [newsLayoutPrefs, menuLocation, hmBase]);
+    setItems(readItemsForLocation(newsLayoutPrefs, menuLocation, hmBase, site?.slug));
+  }, [newsLayoutPrefs, menuLocation, hmBase, site?.slug]);
 
   const switchLocation = (key: HmMenuLocationKey) => {
     setMenuLocation(key);
-    setItems(readItemsForLocation(newsLayoutPrefs, key, hmBase));
+    setItems(readItemsForLocation(newsLayoutPrefs, key, hmBase, site?.slug));
     const base = location.split("?")[0] || "/editor/menuler";
     setLocation(`${base}?location=${encodeURIComponent(key)}`);
   };
@@ -107,10 +120,12 @@ export default function EditorMenuler() {
     const saveKey = menuLocation;
     const saveMeta = HM_MENU_LOCATIONS.find((loc) => loc.key === saveKey)!;
     const cleaned = cleanHmMenuItems(items, { allowNesting: saveMeta.allowNesting });
+    const kh = isKhEditorSiteSlug(site?.slug);
     const normalized =
       saveKey === "hmCorporateMenuItems" && cleaned?.length
         ? ensureCorporateMenuVideoTvAtEnd(cleaned, hmBase, {
             videoTvEnabled: resolveHmNewsVideoTvEnabled(newsLayoutPrefs),
+            ...(kh ? { label: "Video", path: "/video" } : {}),
           })
         : cleaned;
     if (!normalized?.length) {

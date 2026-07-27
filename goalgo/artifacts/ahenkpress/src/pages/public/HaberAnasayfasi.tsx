@@ -64,7 +64,7 @@ import { HmNewsSearchBox } from "@/components/HmNewsSearchBox";
 import { HmYekpareFeaturesBand } from "@/components/HmYekpareFeaturesBand";
 import { HmYekpareKategorilerKutusu } from "@/components/HmYekpareKategorilerKutusu";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
-import { isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { resetSeoToSiteDefaults } from "@/lib/pageSeo";
 import { rewriteHmSiteAnchorsInHtml } from "@/lib/rewriteNewsBodyLinksForHm";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
@@ -2445,10 +2445,15 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   );
   const yazarlarHref = h("/yazarlar");
   const hmHomeHref = hmSlug ? h("/") : "/";
-  const hmVideoTvEnabled = resolveHmNewsVideoTvEnabled(layoutPrefs) && portalHubOnly;
+  const hmVideoTvEnabled =
+    resolveHmNewsVideoTvEnabled(layoutPrefs) &&
+    isHmVideoTvAllowed(
+      typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "",
+      hmSlug,
+    );
   const hmVideoTvHref =
     hmVideoTvEnabled && hmSlug != null
-      ? h(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv`)
+      ? h(portalHubOnly ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv` : "/video")
       : null;
   const mediaDarkModulesEnabled =
     resolveHmNewsHomeModuleEnabled(layoutPrefs, "mediaDarkBlock") && portalHubOnly;

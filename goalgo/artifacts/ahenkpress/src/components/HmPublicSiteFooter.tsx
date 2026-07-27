@@ -17,7 +17,7 @@ import { rewriteHmSiteAnchorsInHtml } from "@/lib/rewriteNewsBodyLinksForHm";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { hmChromeContainedShellClass, hmFullWidthPageShellClass, isHmSiteLayoutContained } from "@/lib/hmChromeLayout";
 import { BILGI_AGACI_DISPLAY_NAME } from "@/lib/bilgiAgaciBrand";
-import { isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { buildCorporateFooterMenuGroups } from "@/lib/hmCorporateNavMenu";
 import { normalizeHmEditorLoginMenuHref } from "@/lib/hmEditorPublicLinks";
@@ -103,15 +103,16 @@ export function HmPublicSiteFooter({
 }: HmPublicSiteFooterProps) {
   const h = useHmPublicHref();
   const hmCtx = useHmPublicLinkContextOptional();
-  const portalHubOnly = isYekparePortalHubOnly(
-    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "",
-    slug,
-  );
-  const effectiveShowVideoTvLink = showVideoTvLink && portalHubOnly;
+  const hostKey =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  const portalHubOnly = isYekparePortalHubOnly(hostKey, slug);
+  const effectiveShowVideoTvLink = showVideoTvLink && isHmVideoTvAllowed(hostKey, slug);
   const [loc] = useLocation();
   const locPath = useMemo(() => (loc.split("?")[0] || "/").replace(/\/$/, "") || "/", [loc]);
   const home = h("/");
-  const videoPath = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/video-tv`;
+  const videoPath = effectiveShowVideoTvLink && !portalHubOnly
+    ? "/video"
+    : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/video-tv`;
   const about = (layoutPrefs.hmFooterAboutHtml ?? "").trim();
   const isCorporateTheme = layoutPrefs.hmVitrinTheme === "corporate";
   const siteLayoutContained = isHmSiteLayoutContained(layoutPrefs);
@@ -212,7 +213,9 @@ export function HmPublicSiteFooter({
   const defaultPageLinks: FooterLinkItem[] = [
     { key: "home", label: "Ana sayfa", href: home },
     ...(showRssLinks ? [{ key: "rss", label: "RSS", href: h("/rss-baglantilari"), rss: true }] : []),
-    ...(effectiveShowVideoTvLink ? [{ key: "video-tv", label: "Video TV", href: h(videoPath) }] : []),
+    ...(effectiveShowVideoTvLink
+      ? [{ key: "video-tv", label: portalHubOnly ? "Video TV" : "Video", href: h(videoPath) }]
+      : []),
     { key: "foto", label: "Foto galeri", href: h("/foto-galeri") },
     ...(hiddenCategorySlugs.has("blog") ? [] : [{ key: "blog", label: "Blog", href: h("/kategori/blog") }]),
     { key: "sitene-ekle", label: "Sitene ekle", href: h("/sitene-ekle") },

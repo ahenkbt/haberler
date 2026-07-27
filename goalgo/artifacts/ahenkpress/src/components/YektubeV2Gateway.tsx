@@ -62,11 +62,19 @@ export function HmYektubePortalEmbed() {
       if (displayName && !url.searchParams.get("hmName")) {
         url.searchParams.set("hmName", displayName);
       }
+      const logoRaw = hmCtx?.layoutPrefs?.logoUrl?.trim();
+      if (logoRaw && !url.searchParams.get("hmLogo")) {
+        const abs =
+          /^https?:\/\//i.test(logoRaw)
+            ? logoRaw
+            : `${window.location.origin}${logoRaw.startsWith("/") ? "" : "/"}${logoRaw}`;
+        url.searchParams.set("hmLogo", abs);
+      }
       return url.toString();
     } catch {
       return raw.includes("embed=1") ? raw : `${raw}${raw.includes("?") ? "&" : "?"}embed=1`;
     }
-  }, [location, hmCtx?.slug, hmCtx?.displayName]);
+  }, [location, hmCtx?.slug, hmCtx?.displayName, hmCtx?.layoutPrefs?.logoUrl]);
 
   useEffect(() => {
     const el = iframeRef.current;

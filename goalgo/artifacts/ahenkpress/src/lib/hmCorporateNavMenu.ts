@@ -8,7 +8,7 @@ import { buildVkdCorporateFooterMenuGroups } from "@/lib/hmVkdFooterNav";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { isHmPublicNavExternal } from "@/lib/hmPublicLinks";
 import { BILGI_AGACI_DISPLAY_NAME } from "@/lib/bilgiAgaciBrand";
-import { isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { isHmCorporateMenuVideoTvItem } from "@/lib/hmMenuEditorUtils";
 import { normalizeHmEditorLoginMenuHref } from "@/lib/hmEditorPublicLinks";
 import {
@@ -120,7 +120,13 @@ function resolveNavMenuItemIcon(href: string, label: string, key?: string): Luci
   if (path === "/" || key === "home") return resolveHmCategoryLucideIcon("anasayfa", label);
   if (path.includes("/tum-haberler") || key === "all-news") return resolveHmCategoryLucideIcon("tum-haberler", label);
   if (path.includes("/yazarlar") || key === "yazarlar") return resolveHmCategoryLucideIcon("yazarlar", label);
-  if (path.includes("/yektube") || path.includes("/video-tv") || key === "video-tv") {
+  if (
+    path.includes("/yektube") ||
+    path.includes("/video-tv") ||
+    path === "/video" ||
+    path.endsWith("/video") ||
+    key === "video-tv"
+  ) {
     return resolveHmCategoryLucideIcon("yektube", label);
   }
   const catMatch = path.match(/\/kategori\/([^/?#]+)/i);
@@ -176,9 +182,10 @@ export function buildCorporateHeaderNavItems(opts: BuildCorporateNavOpts): HmCor
   } = opts;
 
   const portalHubOnly = resolvePortalHubOnly(siteSlug);
+  const videoTvAllowed = resolveVideoTvAllowed(siteSlug);
   const hmHomeHref = h("/");
   const yazarlarHref = h("/yazarlar");
-  const hmVideoTvHref = h(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(siteSlug)}/video-tv`);
+  const hmVideoTvHref = h(videoTvAllowed && !portalHubOnly ? "/video" : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(siteSlug)}/video-tv`);
   const siteneEkleHref = h("/sitene-ekle");
   const talepFormuHref = h(hmRequestFormPath());
   const rssHref = h("/rss-baglantilari");
@@ -226,8 +233,13 @@ export function buildCorporateHeaderNavItems(opts: BuildCorporateNavOpts): HmCor
     ...(newsAuthorsEnabled
       ? [{ key: "yazarlar", label: "Yazarlar", href: yazarlarHref, active: locPath === normPath(pathOnlyHref(yazarlarHref)) }]
       : []),
-    ...(portalHubOnly && showVideoTvLink
-      ? [{ key: "video-tv", label: "Video TV", href: hmVideoTvHref, active: locPath === normPath(pathOnlyHref(hmVideoTvHref)) }]
+    ...(videoTvAllowed && showVideoTvLink
+      ? [{
+          key: "video-tv",
+          label: portalHubOnly ? "Video TV" : "Video",
+          href: hmVideoTvHref,
+          active: locPath === normPath(pathOnlyHref(hmVideoTvHref)) || locPath.includes("/video-tv") || locPath.endsWith("/video"),
+        }]
       : []),
     ...(portalHubOnly
       ? [
@@ -319,6 +331,12 @@ function resolvePortalHubOnly(siteSlug: string): boolean {
   return isYekparePortalHubOnly(host, siteSlug);
 }
 
+function resolveVideoTvAllowed(siteSlug: string): boolean {
+  const host =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  return isHmVideoTvAllowed(host, siteSlug);
+}
+
 /** Editör haber siteleri — tüm public HM sayfalarında ortak üst şerit. */
 export function buildEditorStandardNewsNavItems(opts: BuildCorporateNavOpts): HmCorporateNavMenuItem[] {
   const {
@@ -330,13 +348,17 @@ export function buildEditorStandardNewsNavItems(opts: BuildCorporateNavOpts): Hm
   } = opts;
 
   const portalHubOnly = resolvePortalHubOnly(siteSlug);
+  const videoTvAllowed = resolveVideoTvAllowed(siteSlug);
 
   const hmHomeHref = h("/");
   const sonDakikaHref = h("/sondakika");
   const kisaKisaHref = h("/kisa-kisa");
-  const hmVideoTvHref = h(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(siteSlug)}/video-tv`);
+  const hmVideoTvHref = h(videoTvAllowed && !portalHubOnly ? "/video" : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(siteSlug)}/video-tv`);
   const bilgiAgaciHref = h("/bilgiagaci");
   const videoTvPath = normPath(pathOnlyHref(hmVideoTvHref));
+  const videoTvAltPath = normPath(
+    pathOnlyHref(h(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(siteSlug)}/video-tv`)),
+  );
 
   const onVitrin =
     locPath === normPath(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(siteSlug)}`) ||
@@ -366,12 +388,18 @@ export function buildEditorStandardNewsNavItems(opts: BuildCorporateNavOpts): Hm
     },
   ];
 
-  if (portalHubOnly && showVideoTvLink) {
+  if (videoTvAllowed && showVideoTvLink) {
     items.push({
       key: "video-tv",
       label: "Video",
       href: hmVideoTvHref,
-      active: locPath === videoTvPath || locPath.startsWith(`${videoTvPath}/`),
+      active:
+        locPath === videoTvPath ||
+        locPath.startsWith(`${videoTvPath}/`) ||
+        locPath === videoTvAltPath ||
+        locPath.startsWith(`${videoTvAltPath}/`) ||
+        locPath.endsWith("/video") ||
+        locPath.includes("/video-tv"),
     });
   }
 

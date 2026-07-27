@@ -646,14 +646,9 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
   }
 
   // Kırşehir: tercihen Render JWT (session-bridge). Yoksa Neon JWT + kenar veri API.
+  // Yazar senkronu girişte YAPILMAZ — Render'dan tekrar çekmek silinen köşe yazarlarını geri getiriyordu.
   const siteIsKh = await isKhEditorSite(sql, site.id);
   if (siteIsKh || KH_HOSTS.has(host)) {
-    try {
-      const { syncKhAuthorsFromRender } = await import("./hm-editor-kh-data-edge.js");
-      await syncKhAuthorsFromRender(env, site.id);
-    } catch (err) {
-      console.error("[hm-kh-author-sync]", String(err?.message || err).slice(0, 160));
-    }
     const bridged = await exchangeKhSessionViaRenderBridge(env, {
       email: editor.email,
       passwordHash: editor.password_hash,

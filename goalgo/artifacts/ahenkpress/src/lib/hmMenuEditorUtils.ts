@@ -212,16 +212,26 @@ export function isHmCorporateMenuVideoTvItem(item: HmCorporateMenuItem): boolean
     .normalize("NFD")
     .replace(/\p{M}/gu, "");
   const id = String(item.id ?? "").trim().toLowerCase();
-  if (id === HM_CORPORATE_VIDEO_TV_MENU_ITEM_ID || id.includes("video-tv") || id.includes("videotv")) return true;
-  return /\/video-tv(?:\/|$|\?)/.test(href) || href.endsWith("/video-tv") || label.includes("video tv") || label.includes("yektube");
+  if (id === HM_CORPORATE_VIDEO_TV_MENU_ITEM_ID || id.includes("video-tv") || id.includes("videotv") || id === "menu-video") {
+    return true;
+  }
+  if (label === "video" || label.includes("video tv") || label.includes("yektube")) return true;
+  return (
+    /\/video-tv(?:\/|$|\?)/.test(href) ||
+    href.endsWith("/video-tv") ||
+    href === "/video" ||
+    /\/video(?:\/|$|\?)/.test(href)
+  );
 }
 
-export function buildCorporateMenuVideoTvItem(hmBase: string): HmCorporateMenuItem {
+export function buildCorporateMenuVideoTvItem(hmBase: string, opts?: { label?: string; path?: string }): HmCorporateMenuItem {
   const prefix = hmBase.trim().replace(/\/+$/, "");
+  const path = (opts?.path ?? "/video-tv").replace(/\/+$/, "") || "/video-tv";
+  const href = path.startsWith("/") ? (prefix ? `${prefix}${path}` : path) : `${prefix}/${path}`;
   return {
     id: HM_CORPORATE_VIDEO_TV_MENU_ITEM_ID,
-    label: "Video TV",
-    href: `${prefix}/video-tv`,
+    label: opts?.label ?? "Video TV",
+    href,
     enabled: true,
   };
 }
@@ -230,14 +240,20 @@ export function buildCorporateMenuVideoTvItem(hmBase: string): HmCorporateMenuIt
 export function ensureCorporateMenuVideoTvAtEnd(
   items: HmCorporateMenuItem[],
   hmBase: string,
-  opts?: { videoTvEnabled?: boolean },
+  opts?: { videoTvEnabled?: boolean; label?: string; path?: string },
 ): HmCorporateMenuItem[] {
   if (opts?.videoTvEnabled === false) return items;
   const existing = items.filter(isHmCorporateMenuVideoTvItem);
   const rest = items.filter((item) => !isHmCorporateMenuVideoTvItem(item));
   if (existing.length === 0) {
-    return [...rest, buildCorporateMenuVideoTvItem(hmBase)];
+    return [...rest, buildCorporateMenuVideoTvItem(hmBase, { label: opts?.label, path: opts?.path })];
   }
-  const primary = existing[0];
-  return [...rest, { ...primary, parentId: null }];
+  const primary = { ...existing[0], parentId: null as null };
+  if (opts?.label) primary.label = opts.label;
+  if (opts?.path) {
+    const prefix = hmBase.trim().replace(/\/+$/, "");
+    const path = opts.path.replace(/\/+$/, "") || "/video";
+    primary.href = path.startsWith("/") ? (prefix ? `${prefix}${path}` : path) : `${prefix}/${path}`;
+  }
+  return [...rest, primary];
 }
