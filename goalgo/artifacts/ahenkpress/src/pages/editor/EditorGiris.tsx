@@ -80,7 +80,7 @@ export default function EditorGiris() {
 
   const [loc, setLocation] = useLocation();
 
-  const { setSession, token, sessionStatus, logout } = useHmEditor();
+  const { setSession, token, sessionStatus } = useHmEditor();
 
   const host = browserHostKey();
 
@@ -222,13 +222,8 @@ export default function EditorGiris() {
 
 
 
-  useEffect(() => {
-
-    if (sessionStatus === "denied") logout();
-
-  }, [sessionStatus, logout]);
-
-
+  // denied iken logout() çağırma — denySession zaten temizler; giriş anında
+  // eski /me 401 yarışı yeni JWT'yi silip paneldan dışarı atabiliyordu.
 
   if (token && (sessionStatus === "ok" || sessionStatus === "transient")) {
 
