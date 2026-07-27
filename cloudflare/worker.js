@@ -45,7 +45,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727m";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727n";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1918,11 +1918,13 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   );
   const offset = Math.max(Number(payload.offset || 0) || 0, 0);
   const page = combined.slice(offset, offset + limit);
+  const totalCombined = combined.length;
 
   const next = {
     ...payload,
     items: page,
-    total: page.length,
+    total: totalCombined,
+    hasMore: offset + page.length < totalCombined,
     hybridRssEnabled: true,
     sources: {
       db: Number(sources.db || baseItems.filter((i) => i?.source !== "rss").length || 0),

@@ -522,9 +522,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     String(req.query.newsmap ?? "").trim() === "true";
   const limit = Math.min(
     Math.max(Number(req.query.limit ?? 20) || 20, 1),
-    newsmapMode ? 500 : 100,
+    newsmapMode ? 500 : 200,
   );
   const offset = Math.max(Number(req.query.offset ?? 0) || 0, 0);
+  /** Infinite scroll: offset+limit kadar havuz çek (üst sınır 500). */
+  const hybridPoolLimit = Math.min(Math.max(limit + offset + 80, 200), newsmapMode ? 500 : 500);
   const siteIdRaw = Number(req.query.siteId ?? 0);
   const siteId = Number.isFinite(siteIdRaw) && siteIdRaw > 0 ? siteIdRaw : null;
   const rssOnly = String(req.query.rssOnly ?? "").trim() === "1" || String(req.query.source ?? "").trim() === "rss";
@@ -584,7 +586,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           editorPool ||
           siteHybridRssOn ||
           (!isPortalRssSyncToNewsEnabled() && siteId == null));
-      const dbLimit = Math.min(limit, 200);
+      const dbLimit = Math.min(hybridPoolLimit, 500);
       const poolActivationDefault = poolOpts?.activationDefault ?? "all";
 
       const loadDbResult = async () => {
@@ -745,14 +747,18 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         }
       }
 
-      // İçerik koruması: istenen kategori SPOR ise siyaset sızıntısını (DB + harita RSS) at.
+      // Önce tüm havuzu birleştir; görünürlük süz, sonra sayfala — total doğru kalsın (infinite scroll).
+      const poolCap = Math.min(
+        Math.max(dbResult.items.length + mapRssItems.length, limit + offset + 40),
+        500,
+      );
       const merged = mergeHybridNews({
         dbItems: filterHmCategoryContentGuard(dbResult.items, categorySlug),
         rssItems: filterHmCategoryContentGuard(mapRssItems, categorySlug),
         feedLabels: mapFeedLabels,
         feedGeoById: mapFeedGeoById,
-        limit,
-        offset,
+        limit: poolCap,
+        offset: 0,
         ctx: scopeNewsContextForSite(ctx, siteId),
       });
       const imageEnriched = await enrichHybridNewsListImages(merged.items);
@@ -763,16 +769,18 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         categorySlug,
         activatedSlugs: hmAccess?.activatedCategorySlugs ?? null,
       });
-      let visibleItems = filterNewsItemsForSiteGlobalPolicy(enriched, {
+      let visibleAll = filterNewsItemsForSiteGlobalPolicy(enriched, {
         ...siteGlobalPolicy,
         feedGeoById: mapFeedGeoById,
       });
       if (hmAccess?.isCorporate) {
-        visibleItems = filterCorporatePublicNewsItems(visibleItems, { siteSlug: hmAccess.slug });
+        visibleAll = filterCorporatePublicNewsItems(visibleAll, { siteSlug: hmAccess.slug });
       }
       if (yekparePoolOnly && siteId != null) {
-        visibleItems = visibleItems.filter((item) => item.publishedOnSiteId == null);
+        visibleAll = visibleAll.filter((item) => item.publishedOnSiteId == null);
       }
+      const totalOut = visibleAll.length;
+      const visibleItems = visibleAll.slice(offset, offset + limit);
       void loadPortalHybridRssFeeds(
         editorPool || siteHybridRssOn ? siteId! : siteId,
         siteHybridRssOn && !yekparePoolOnly && rssScope !== "box"
@@ -805,9 +813,6 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           ? "public, max-age=30, s-maxage=120, stale-while-revalidate=300"
           : "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
       );
-      // Sayfa süzüldükten sonra total'ı sayfa uzunluğuna indirme — infinite scroll bozulur.
-      const dropped = Math.max(0, merged.items.length - visibleItems.length);
-      const totalOut = Math.max(visibleItems.length, merged.total - dropped);
       res.json({
         items: visibleItems.map(sanitizeHybridNewsItemForPublic),
         total: totalOut,
@@ -821,6 +826,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         hybridRssEnabled: siteId != null ? hmAccess?.hybridRssEnabled === true : null,
         dbFirst: true,
         sources: { db: merged.dbCount, rss: merged.rssCount },
+        hasMore: offset + visibleItems.length < totalOut,
       });
       return;
     }
@@ -974,7 +980,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
               siteId: siteId!,
               categorySlug,
               q,
-              limit: 200,
+              limit: hybridPoolLimit,
               offset: 0,
               ...(editorPoolOpts ?? {
                 activatedSlugs: hmAccess?.activatedCategorySlugs,
@@ -984,8 +990,8 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
               }),
             })
           : siteId != null
-            ? loadHmSiteDbNews({ siteId, categorySlug, q, limit: 200, offset: 0 })
-            : loadPortalDbNews({ categorySlug, q, limit: 200, offset: 0 }),
+            ? loadHmSiteDbNews({ siteId, categorySlug, q, limit: hybridPoolLimit, offset: 0 })
+            : loadPortalDbNews({ categorySlug, q, limit: hybridPoolLimit, offset: 0 }),
       mergeRssFromCache ? getPortalRssCachedItemsForFeeds(feeds, categorySlug) : Promise.resolve([]),
       loadNewsContext(),
     ]);
@@ -1022,7 +1028,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       rssItems = await getPortalRssCachedItemsForFeeds(feeds, categorySlug);
     }
 
-    // İçerik koruması: istenen kategori SPOR ise siyaset sızıntısını hem DB hem RSS'ten at.
+    // Tüm havuzu birleştir → görünürlük → sayfala (infinite scroll total doğru).
+    const poolCap = Math.min(
+      Math.max(dbResult.items.length + rssItems.length, hybridPoolLimit, limit + offset + 40),
+      500,
+    );
     const merged = mergeHybridNews({
       dbItems: filterHmCategoryContentGuard(dbResult.items, categorySlug),
       rssItems: filterHmCategoryContentGuard(
@@ -1033,8 +1043,8 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       ),
       feedLabels,
       feedGeoById,
-      limit,
-      offset,
+      limit: poolCap,
+      offset: 0,
       ctx: scopeNewsContextForSite(ctx, siteId),
     });
 
@@ -1046,13 +1056,15 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       categorySlug,
       activatedSlugs: hmAccess?.activatedCategorySlugs ?? null,
     });
-    let visibleItems = filterNewsItemsForSiteGlobalPolicy(enriched, {
+    let visibleAll = filterNewsItemsForSiteGlobalPolicy(enriched, {
       ...siteGlobalPolicy,
       feedGeoById,
     });
     if (hmAccess?.isCorporate) {
-      visibleItems = filterCorporatePublicNewsItems(visibleItems, { siteSlug: hmAccess.slug });
+      visibleAll = filterCorporatePublicNewsItems(visibleAll, { siteSlug: hmAccess.slug });
     }
+    const totalFull = visibleAll.length;
+    const visibleItems = visibleAll.slice(offset, offset + limit);
 
     if (includeRss && rssItems.length === 0 && activeFeeds.length > 0) {
       const cacheStatus = await getPortalRssCacheStatus(feeds);
@@ -1065,13 +1077,12 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       }
     }
 
-    const droppedFull = Math.max(0, merged.items.length - visibleItems.length);
-    const totalFull = Math.max(visibleItems.length, merged.total - droppedFull);
     const responseBody = {
       items: visibleItems.map(sanitizeHybridNewsItemForPublic),
       total: totalFull,
       limit,
       offset,
+      hasMore: offset + visibleItems.length < totalFull,
       categorySlug: categorySlug ?? null,
       siteId,
       rssOnly,
