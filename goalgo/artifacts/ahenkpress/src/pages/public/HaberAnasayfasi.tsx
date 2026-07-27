@@ -2459,7 +2459,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     );
     // Tepe manşet her zaman header altında en üstte (kayıtlı sıra ne olursa olsun).
     if (!mods.includes("tepeManset")) return mods;
-    return ["tepeManset", ...mods.filter((id) => id !== "tepeManset")];
+    const ordered: HmNewsHomeModuleId[] = ["tepeManset", ...mods.filter((id) => id !== "tepeManset")];
+    return ordered;
   })();
   const automaticHomeModuleCategorySlugs = useMemo(
     () =>
