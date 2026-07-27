@@ -612,12 +612,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           }
           items = items.filter((item) => {
             if (!centralNewsRowVisibleOnHmEditorSite(item, siteId)) return false;
-            if (
-              hmAccess?.allowCrossSiteManualNews === false &&
-              isExternalManualEditorNewsForSite(item, siteId)
-            ) {
-              return false;
-            }
+            // Havuz tarama: manuel / site_only haberler listelenmez (havuzdan eklenemez).
+            if (item.siteOnly === true || item.isEditorManual === true) return false;
+            if (isExternalManualEditorNewsForSite(item, siteId)) return false;
             return true;
           });
           items = await applyNewsSiteOverrides(items, siteId);
@@ -1182,7 +1179,8 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
       rssItems,
       feedLabels,
       ctx,
-      includePortalPool: editorPool,
+      // Canlı merkez birleşmez — manuel haberler yalnızca kendi sitesinde kalır.
+      includePortalPool: false,
       activatedSlugs: hmAccess?.activatedCategorySlugs,
       activationDefault: "all",
     });

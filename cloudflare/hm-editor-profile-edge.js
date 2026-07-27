@@ -294,6 +294,17 @@ async function handleEditorLogin(request, env, incomingUrl) {
     return null;
   }
 
+  // Captcha Worker'da doğrulandıktan sonra Render'a düşme — secret uyuşmazlığında
+  // "Güvenlik doğrulaması hatalı" döner. Hata olursa burada 503 ver.
+  try {
+    return await completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b);
+  } catch (err) {
+    console.error("[hm-editor-login-edge]", String(err?.message || err).slice(0, 200));
+    return jsonResponse(503, { error: "Giriş servisi geçici olarak kullanılamıyor. Lütfen tekrar deneyin." });
+  }
+}
+
+async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b) {
   const loginRaw = String(b.login ?? b.email ?? b.username ?? "")
     .trim()
     .toLowerCase();
@@ -616,9 +627,21 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
     return handleEditorMeGet(request, env);
   }
   if (path === "/api/hm/editor/me" && method === "PATCH") {
+    const auth = String(request.headers.get("authorization") || "").trim();
+    const ctx = await parseEditorJwt(request, env);
+    if (!ctx) {
+      if (auth.startsWith("Bearer ")) return null; // Render imzalı JWT
+      return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+    }
     return patchEditorMe(request, env);
   }
   if (path === "/api/hm/editor/me/password" && method === "PATCH") {
+    const auth = String(request.headers.get("authorization") || "").trim();
+    const ctx = await parseEditorJwt(request, env);
+    if (!ctx) {
+      if (auth.startsWith("Bearer ")) return null;
+      return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+    }
     return patchEditorPassword(request, env);
   }
   return null;

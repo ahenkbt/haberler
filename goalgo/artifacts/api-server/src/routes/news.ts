@@ -71,13 +71,10 @@ router.use((_req, _res, next) => {
 });
 
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number): Promise<SQL> {
-  const ownedCategories = await readDb
-    .select({ id: categoriesTable.id })
-    .from(categoriesTable)
-    .where(eq(categoriesTable.exclusiveSiteId, siteId));
-  const ownedCategoryIds = ownedCategories.map((row) => row.id).filter((id) => Number.isFinite(id) && id > 0);
-  if (ownedCategoryIds.length === 0) return eq(newsTable.siteId, siteId);
-  return or(eq(newsTable.siteId, siteId), and(isNull(newsTable.siteId), inArray(newsTable.categoryId, ownedCategoryIds)))!;
+  // Editör haber siteleri: yalnızca bu site_id — merkez exclusive-cat / sync sızıntısı yok.
+  // (Havuz onaylı kopyalar zaten site_id = alan site ile yazılır.)
+  void readDb;
+  return eq(newsTable.siteId, siteId);
 }
 
 async function newsRowBelongsToSite(

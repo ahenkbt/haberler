@@ -59,6 +59,14 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.kirsehirhaber.org": "kh",
   "kirsehir.net": "kh",
   "www.kirsehir.net": "kh",
+  "ankarasehirgazetesi.com": "asg",
+  "www.ankarasehirgazetesi.com": "asg",
+  "ankarahabergundemi.com": "ankarahabergundemi",
+  "www.ankarahabergundemi.com": "ankarahabergundemi",
+  "vatankahramanlari.org": "vkd",
+  "www.vatankahramanlari.org": "vkd",
+  "vatanhaber.net": "vatanhaber",
+  "www.vatanhaber.net": "vatanhaber",
 };
 
 const PORTAL_HOSTS = new Set([

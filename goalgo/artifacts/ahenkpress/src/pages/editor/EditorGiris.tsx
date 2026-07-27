@@ -25,6 +25,7 @@ import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { stripRedundantEditorLoginNextFromBrowserUrl } from "@/lib/hmEditorPublicLinks";
 
 import { LoginMathCaptcha, type LoginCaptchaValue } from "@/components/LoginMathCaptcha";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 
 
 
@@ -144,10 +145,13 @@ export default function EditorGiris() {
 
   const resolvedSiteHint = useMemo(() => {
     if (domainSite?.slug) return domainSite;
-    if (isCustomDomain && domainFetched && domainSite === null) return null;
     if (cachedDomainSlug) return { slug: cachedDomainSlug };
+    const knownSlug = isCustomDomain ? resolveKnownHmEditorSlug(host) : undefined;
+    if (knownSlug) return { slug: knownSlug };
+    // Meta 404 olsa bile bilinen slug yoksa alanı boş bırak — yanlış siteye düşme.
+    if (isCustomDomain && domainFetched && domainSite === null) return null;
     return null;
-  }, [domainSite, domainFetched, cachedDomainSlug, isCustomDomain]);
+  }, [domainSite, domainFetched, cachedDomainSlug, isCustomDomain, host]);
 
   const hideSiteField = isCustomDomain && !!resolvedSiteHint?.slug;
 

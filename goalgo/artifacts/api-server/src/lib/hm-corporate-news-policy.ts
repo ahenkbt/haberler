@@ -12,6 +12,9 @@ import { deriveCleanCategorySlug, isHmCorporateLayout } from "./hm-editor-catego
 import { isKoseArticle, type KoseArticleLike } from "./kose-article.js";
 import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
 
+/** Public editör haber sitesi vitrin: DB/manuel haberler en fazla 12 saat. */
+export const HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
 /** VKD kurumsal vitrin — yalnızca bu haber kategorileri (nav, footer, editör). */
 export const VKD_PUBLIC_NEWS_CATEGORY_SLUGS = ["dernegimiz", "faaliyetlerimiz", "sehit-gazi"] as const;
 
@@ -240,32 +243,46 @@ export function resolveCorporateRepairCategorySlug(opts: {
 }
 
 /**
- * HM haber sitesi: merkez havuzdaki köşe/makale yalnızca kaynak sitede görünür.
- * Genel haber sync (yekpare-hm-sync:*:news:*) diğer sitelerin etkin havuzunda kalır.
+ * Kesin kural: Manuel / site_only haber yalnızca eklendiği editör sitesinde görünür.
+ * Başka sitede görünmesi için editörün havuzdan «haber olarak ekle» ile onaylaması gerekir
+ * (yerel `yekpare-hm-pool:` kopyası, site_id = alan site).
+ *
+ * Merkez sync (`yekpare-hm-sync:*:news:*`) diğer editör sitelerinde canlı birleşmez.
  */
-/** Başka HM editör sitesinde manuel eklenip merkez havuza sync/pool ile gelen haber. */
+/** Başka HM editör sitesinin yerel/manuel/sync haberi — bu sitede gösterilmemeli. */
 export function isExternalManualEditorNewsForSite(
   row: {
     siteId?: number | null;
     rssSourceUrl?: string | null;
     isEditorManual?: boolean | null;
+    siteOnly?: boolean | null;
   },
   editorSiteId: number,
 ): boolean {
   if (!Number.isFinite(editorSiteId) || editorSiteId <= 0) return false;
+  // Bu sitenin kendi satırı (manuel veya havuz onaylı kopya) dış değil.
   if (row.siteId != null && row.siteId === editorSiteId) return false;
 
   const rssUrl = String(row.rssSourceUrl ?? "").trim();
   const sync = parseHmSyncDedupeKey(rssUrl);
   if (sync) {
-    if (sync.kind !== "news") return false;
+    // Makale/köşe zaten kaynak sitede; haber sync de yalnızca kaynak sitede.
     return sync.siteId !== editorSiteId;
   }
 
   const pool = parseHmPoolRef(rssUrl);
-  if (pool) return pool.siteId !== editorSiteId;
+  if (pool) {
+    // Onaylı havuz kopyası yerel site_id ile gelir (yukarıda false).
+    // Başka sitenin satırı / merkez sızıntısı → dış.
+    return row.siteId != null && row.siteId !== editorSiteId;
+  }
 
-  return row.siteId != null && row.siteId !== editorSiteId && row.isEditorManual === true;
+  if (row.siteId != null && row.siteId !== editorSiteId) {
+    // Başka sitenin yerel haberi — manuel veya değil — bu sitede çıkmaz.
+    return true;
+  }
+
+  return row.isEditorManual === true || row.siteOnly === true;
 }
 
 export function centralNewsRowVisibleOnHmEditorSite(
@@ -273,16 +290,20 @@ export function centralNewsRowVisibleOnHmEditorSite(
     siteId?: number | null;
     rssSourceUrl?: string | null;
     authorId?: number | null;
+    isEditorManual?: boolean | null;
+    siteOnly?: boolean | null;
   } & KoseArticleLike,
   editorSiteId: number,
 ): boolean {
   if (row.siteId != null) return row.siteId === editorSiteId;
 
+  // Merkez satır: site_only / manuel asla başka sitede görünmez.
+  if (row.siteOnly === true || row.isEditorManual === true) return false;
+
   const sync = parseHmSyncDedupeKey(String(row.rssSourceUrl ?? "").trim());
   if (sync) {
-    if (sync.kind === "makale") return sync.siteId === editorSiteId;
-    if (isKoseArticle(row)) return sync.siteId === editorSiteId;
-    return true;
+    // Sync kopyası yalnızca kaynak sitede (havuz onayı ayrı yerel satır yaratır).
+    return sync.siteId === editorSiteId;
   }
 
   const pool = parseHmPoolRef(String(row.rssSourceUrl ?? "").trim());

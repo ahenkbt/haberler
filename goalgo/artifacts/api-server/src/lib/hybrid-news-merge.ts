@@ -1,4 +1,4 @@
-﻿import { and, desc, eq, ilike, isNotNull, isNull, not, or, sql, inArray, type SQL } from "drizzle-orm";
+﻿import { and, desc, eq, gte, ilike, isNotNull, isNull, not, or, sql, inArray, type SQL } from "drizzle-orm";
 import { getNewsDbForRead, db as mainDb, newsTable, categoriesTable, newsSiteOverridesTable } from "@workspace/db";
 import {
   buildHmSyncDedupeKey,
@@ -9,6 +9,7 @@ import {
   centralNewsRowVisibleOnHmEditorSite,
   filterNonCorporateOriginCentralNewsItems,
   isExternalManualEditorNewsForSite,
+  HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS,
 } from "./hm-corporate-news-policy.js";
 import { loadNewsContext } from "./news-context.js";
 import {
@@ -393,11 +394,18 @@ export async function loadEditorScopedDbNews(opts: {
     excludeCentralPool
       ? Promise.resolve({ items: [] as DbSerialized[], total: 0 })
       : loadPortalDbNews({ categorySlug: opts.categorySlug, q: opts.q, limit: fetchLimit, offset: 0 }),
-    loadHmSiteDbNews({ siteId: opts.siteId, categorySlug: opts.categorySlug, q: opts.q, limit: fetchLimit, offset: 0 }),
+    loadHmSiteDbNews({
+      siteId: opts.siteId,
+      categorySlug: opts.categorySlug,
+      q: opts.q,
+      limit: fetchLimit,
+      offset: 0,
+      // Public hybrid/vitrin yolu — 12 saat tazelik.
+      publicFreshnessWindow: true,
+    }),
   ]);
 
   if (excludeCentralPool) {
-    const allowCrossSiteManualNews = opts.allowCrossSiteManualNews === true;
     let items = dedupeEditorScopedDbNewsItems(editor.items, opts.siteId);
     items = items.filter((item) => {
       const ref = String(item.rssSourceUrl ?? "").trim();
@@ -405,13 +413,9 @@ export async function loadEditorScopedDbNews(opts: {
       if (ref.startsWith("yekpare-hm-sync:")) return false;
       // Havuz alımı kapalıysa onaylı havuz kopyaları da gelmesin.
       if (!poolReceiveEnabled && ref.startsWith("yekpare-hm-pool:")) return false;
-      // Başka siteden manuel eklenip bu siteye pool kopyası olarak düşenler (varsayılan kapalı).
-      if (!allowCrossSiteManualNews && isExternalManualEditorNewsForSite(
-        { ...item, siteId: null },
-        opts.siteId,
-      )) {
-        return false;
-      }
+      // Kesin kural: başka sitenin manuel/yerel satırı bu sitede çıkmaz.
+      // (Onaylı yekpare-hm-pool kopyaları site_id=bu site olduğu için geçer.)
+      if (isExternalManualEditorNewsForSite(item, opts.siteId)) return false;
       return true;
     });
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
@@ -453,8 +457,7 @@ export async function loadEditorScopedDbNews(opts: {
       .filter((item) => item.siteOnly !== true)
       .map((item) => buildHmSyncDedupeKey(opts.siteId, "news", item.id)),
   );
-  // Varsayılan kapalı: başka sitelerin manuel sync/pool haberleri bu sitede görünmez.
-  const allowCrossSiteManualNews = opts.allowCrossSiteManualNews === true;
+  // Kesin kural: merkez sync / yabancı manuel asla; yalnızca görünür merkez + onaylı havuz.
   const portalForSite = portalNonCorporate.filter((item) => {
     if (localPoolTargetIds.has(item.id)) return false;
     const rssUrl = normalizeRssSourceUrl(String(item.rssSourceUrl ?? ""));
@@ -463,7 +466,7 @@ export async function loadEditorScopedDbNews(opts: {
     if (syncKey && localSyncKeys.has(syncKey)) return false;
     if (!centralNewsRowVisibleOnHmEditorSite(item, opts.siteId)) return false;
     if (!newsRowVisibleOnHmSiteByRssTarget(item, opts.siteId)) return false;
-    if (!allowCrossSiteManualNews && isExternalManualEditorNewsForSite(item, opts.siteId)) return false;
+    if (isExternalManualEditorNewsForSite(item, opts.siteId)) return false;
     return true;
   });
 
@@ -534,9 +537,14 @@ export async function loadHmSiteDbNews(opts: {
   q?: string;
   limit: number;
   offset: number;
+  /** Public vitrin: 12 saatten eski haberleri hariç tut. Editör paneli çağırmasın. */
+  publicFreshnessWindow?: boolean;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   await ensureNewsPublicSubmissionColumns();
   const conds: SQL[] = [eq(newsTable.status, "published"), eq(newsTable.siteId, opts.siteId)];
+  if (opts.publicFreshnessWindow === true) {
+    conds.push(gte(newsTable.createdAt, new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS)));
+  }
 
   if (opts.q) {
     const pattern = `%${opts.q}%`;
@@ -766,21 +774,39 @@ function makaleSyncCondition(): SQL {
 
 /** Editör havuzu için site kapsamı: kendi haberleri + Yekpare merkez (site_id NULL). */
 function newsSiteScopeForPool(siteId: number, includePortalPool: boolean): SQL {
-  return includePortalPool ? or(eq(newsTable.siteId, siteId), isNull(newsTable.siteId))! : eq(newsTable.siteId, siteId);
+  // Public vitrin: yalnızca bu sitenin satırları (havuz onaylı kopyalar site_id ile gelir).
+  // Merkez (site_id NULL) canlı birleşmez — manuel haber sızıntısını önler.
+  void includePortalPool;
+  return eq(newsTable.siteId, siteId);
 }
 
 function editorialDbConditions(siteId: number | null, includePortalPool = false): SQL[] {
   const conds: SQL[] = [
     eq(newsTable.status, "published"),
     isNull(newsTable.authorId),
-    or(
-      isNull(newsTable.rssSourceUrl),
-      sql`${newsTable.rssSourceUrl} like 'yekpare-hm-sync:%:news:%'`,
-      sql`'rss-auto' = ANY(${newsTable.tags})`,
-    )!,
   ];
-  if (siteId != null) conds.push(newsSiteScopeForPool(siteId, includePortalPool));
-  else conds.push(isNull(newsTable.siteId));
+  if (siteId != null) {
+    // Site kilitli: manuel + onaylı havuz kopyaları (yekpare-hm-pool:) + rss-auto dahil.
+    conds.push(newsSiteScopeForPool(siteId, includePortalPool));
+    conds.push(
+      or(
+        isNull(newsTable.rssSourceUrl),
+        sql`${newsTable.rssSourceUrl} like 'yekpare-hm-pool:%'`,
+        sql`${newsTable.rssSourceUrl} like 'yekpare-hm-sync:%:news:%'`,
+        sql`'rss-auto' = ANY(${newsTable.tags})`,
+      )!,
+    );
+  } else {
+    conds.push(isNull(newsTable.siteId));
+    conds.push(eq(newsTable.siteOnly, false));
+    conds.push(
+      or(
+        isNull(newsTable.rssSourceUrl),
+        sql`${newsTable.rssSourceUrl} like 'yekpare-hm-sync:%:news:%'`,
+        sql`'rss-auto' = ANY(${newsTable.tags})`,
+      )!,
+    );
+  }
   return conds;
 }
 
@@ -790,7 +816,10 @@ function authorDbConditions(siteId: number | null, includePortalPool = false): S
     or(isNotNull(newsTable.authorId), makaleSyncCondition())!,
   ];
   if (siteId != null) conds.push(newsSiteScopeForPool(siteId, includePortalPool));
-  else conds.push(isNull(newsTable.siteId));
+  else {
+    conds.push(isNull(newsTable.siteId));
+    conds.push(eq(newsTable.siteOnly, false));
+  }
   return conds;
 }
 
@@ -880,9 +909,12 @@ async function loadScopedDbPool(opts: {
     }
   }
 
-  const where = and(...conds);
   const ctx = await loadNewsContext();
   const limit = opts.limit ?? HYBRID_INFINITE_POOL_LIMIT;
+  if (opts.siteId != null) {
+    conds.push(gte(newsTable.createdAt, new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS)));
+  }
+  const where = and(...conds);
   const rows = await getNewsDbForRead()
     .select(newsListSelectFields)
     .from(newsTable)
@@ -891,18 +923,15 @@ async function loadScopedDbPool(opts: {
     .limit(limit);
 
   let serialized = rows.map((r) => serializeNewsListItem(r, ctx));
-  if (opts.siteId != null && opts.includePortalPool) {
+  if (opts.siteId != null) {
     serialized = await applyNewsSiteOverrides(serialized, opts.siteId);
+    // Yalnızca bu sitenin satırları; yabancı manuel / sync sızıntısı yok.
     serialized = serialized.filter(
-      (item) => item.siteId != null || centralNewsRowVisibleOnHmEditorSite(item, opts.siteId!),
+      (item) =>
+        item.siteId === opts.siteId &&
+        !isExternalManualEditorNewsForSite(item, opts.siteId!) &&
+        centralNewsRowVisibleOnHmEditorSite(item, opts.siteId!),
     );
-    // Yekpare havuzu (site_id NULL) öğelerini etkin genel kategorilere göre filtrele; kendi haberleri her zaman kalır.
-    const activated = resolveActivatedSet(opts.activatedSlugs, opts.activationDefault);
-    if (activated && shouldApplyActivatedPoolCategoryFilter(opts.categorySlug)) {
-      serialized = serialized.filter(
-        (item) => item.siteId != null || activated.has(String(item.categorySlug ?? "").trim().toLowerCase()),
-      );
-    }
   }
   if (opts.kind === "editorial") return serialized.filter((item) => !isAuthorArticle(item));
   return serialized.filter((item) => isAuthorArticle(item));

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, not, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, not, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { getNewsDbForRead, newsTable, hmMakalelerTable, categoriesTable } from "@workspace/db";
 import { loadNewsContext } from "./news-context.js";
 import {
@@ -14,6 +14,8 @@ import {
   strictCorporateSiteNewsScopeSql,
   filterCorporatePublicNewsItems,
   excludeYekparePoolNewsSql,
+  isExternalManualEditorNewsForSite,
+  HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS,
 } from "./hm-corporate-news-policy.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
@@ -22,15 +24,36 @@ type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
 const CENTER_HEADLINE_DEFAULT_LIMIT = 15;
 
+/** Haber siteleri public vitrin: yalnızca bu site_id (merkez exclusive-cat sızıntısı yok). */
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number, corporateStrict = false): Promise<SQL> {
+  void readDb;
   if (corporateStrict) return strictCorporateSiteNewsScopeSql(siteId);
-  const ownedCategories = await readDb
-    .select({ id: categoriesTable.id })
-    .from(categoriesTable)
-    .where(eq(categoriesTable.exclusiveSiteId, siteId));
-  const ownedCategoryIds = ownedCategories.map((row) => row.id).filter((id) => Number.isFinite(id) && id > 0);
-  if (ownedCategoryIds.length === 0) return eq(newsTable.siteId, siteId);
-  return or(eq(newsTable.siteId, siteId), and(isNull(newsTable.siteId), inArray(newsTable.categoryId, ownedCategoryIds)))!;
+  return eq(newsTable.siteId, siteId);
+}
+
+function publicEditorNewsFreshnessSql(corporateStrict: boolean): SQL | undefined {
+  if (corporateStrict) return undefined;
+  const since = new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS);
+  return gte(newsTable.createdAt, since);
+}
+
+function filterPublicEditorNewsItems(
+  items: SerializedNewsListItem[],
+  siteId: number,
+  corporateStrict: boolean,
+): SerializedNewsListItem[] {
+  const maxAge = corporateStrict ? null : HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS;
+  const now = Date.now();
+  return items.filter((item) => {
+    if (isExternalManualEditorNewsForSite(item, siteId)) return false;
+    if (item.siteId != null && item.siteId !== siteId) return false;
+    if (maxAge == null) return true;
+    const raw = item.createdAt ?? null;
+    if (!raw) return true;
+    const t = new Date(raw).getTime();
+    if (!Number.isFinite(t)) return true;
+    return now - t <= maxAge;
+  });
 }
 
 function normalizeCategorySlug(value: string | null | undefined): string {
@@ -89,6 +112,8 @@ async function loadFeaturedForSite(
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
     or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
   ];
+  const freshness = publicEditorNewsFreshnessSql(corporateStrict);
+  if (freshness) featuredConds.push(freshness);
   if (hiddenCategoryIds.length > 0) {
     featuredConds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
   }
@@ -135,6 +160,8 @@ async function loadManualEditorNewsForSite(
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
     or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
   ];
+  const freshness = publicEditorNewsFreshnessSql(corporateStrict);
+  if (freshness) conds.push(freshness);
   if (opts?.siteMansetOnly) conds.push(eq(newsTable.isSiteManset, true));
   if (opts?.excludeFeatured) conds.push(eq(newsTable.isFeatured, false));
   if (hiddenCategoryIds.length > 0) {
@@ -200,6 +227,8 @@ async function loadBreakingForSite(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
   ];
+  const freshness = publicEditorNewsFreshnessSql(corporateStrict);
+  if (freshness) conds.push(freshness);
   if (!poolReceiveEnabled) conds.push(excludeYekparePoolNewsSql());
   if (hiddenCategoryIds.length > 0) {
     conds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
@@ -221,6 +250,7 @@ async function loadBreakingForSite(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
   ];
+  if (freshness) fallbackConds.push(freshness);
   if (!poolReceiveEnabled) fallbackConds.push(excludeYekparePoolNewsSql());
   const fallback = await readDb
     .select(newsListSelectFields)
@@ -250,6 +280,7 @@ async function loadPopularForSite(
   const newsWhere = and(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
+    publicEditorNewsFreshnessSql(corporateStrict),
     hiddenCond,
     poolReceiveEnabled ? undefined : excludeYekparePoolNewsSql(),
   );
@@ -313,6 +344,13 @@ export async function buildHmHomeBundle(
     manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
     breaking = filterCorporatePublicNewsItems(breaking, corpOpts);
     popular = filterCorporatePublicNewsItems(popular, corpOpts);
+  } else {
+    featured = filterPublicEditorNewsItems(featured, siteId, false);
+    siteMansetEditor = filterPublicEditorNewsItems(siteMansetEditor, siteId, false);
+    latestEditor = filterPublicEditorNewsItems(latestEditor, siteId, false);
+    manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
+    breaking = filterPublicEditorNewsItems(breaking, siteId, false);
+    popular = filterPublicEditorNewsItems(popular, siteId, false);
   }
   const centerHeadlines = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
   return { siteId, featured, manualEditor, centerHeadlines, breaking, popular };
