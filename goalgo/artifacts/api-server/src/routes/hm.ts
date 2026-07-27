@@ -472,7 +472,7 @@ const DEFAULT_HM_RSS_ROWS = [
   { id: "ekonomi", label: "Ekonomi", url: "https://www.ntv.com.tr/ekonomi.rss" },
   { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
   { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
-  { id: "spor", label: "Spor", url: "" },
+  { id: "spor", label: "Spor", url: "https://www.ntv.com.tr/sporskor.rss" },
   { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
   { id: "otomobil", label: "Otomobil", url: "https://www.ntv.com.tr/otomobil.rss" },
   { id: "para", label: "Para", url: "https://www.ntv.com.tr/ntvpara.rss" },

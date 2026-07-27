@@ -227,7 +227,7 @@ export const defaultHmBreakingRssFeeds: HmBreakingRssFeeds = {
   ekonomi: "https://www.ntv.com.tr/ekonomi.rss",
   teknoloji: "https://www.ntv.com.tr/teknoloji.rss",
   saglik: "https://www.ntv.com.tr/saglik.rss",
-  spor: "",
+  spor: "https://www.ntv.com.tr/sporskor.rss",
   yasam: "https://www.ntv.com.tr/yasam.rss",
   otomobil: "https://www.ntv.com.tr/otomobil.rss",
   para: "https://www.ntv.com.tr/ntvpara.rss",

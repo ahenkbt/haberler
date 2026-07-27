@@ -86,6 +86,105 @@ export function matchBrandBinding({ domain, slug } = {}) {
 /** Eski belediyehizmet satırı / editör haber siteId — kanonik Su. */
 const SU_CANONICAL_SITE_ID = 2;
 
+export const NTV_SPORSKOR_RSS_URL = "https://www.ntv.com.tr/sporskor.rss";
+
+function rowLooksLikeSpor(row) {
+  const id = String(row?.id || "").trim().toLowerCase();
+  const key = String(row?.categoryKey || "").trim().toLowerCase();
+  const label = String(row?.label || "").trim().toLowerCase();
+  return (
+    key === "spor" ||
+    id === "spor" ||
+    id.startsWith("spor-") ||
+    label === "spor" ||
+    label.startsWith("spor ")
+  );
+}
+
+/**
+ * Ankara Haber Gündemi — SPOR kutusuna NTV Spor Skor RSS ekler / boş spor URL doldurur.
+ * Haberler edge üzerinden site içinde açılır; layout editör panelinde de görünür.
+ */
+export async function ensureAhgSporNtvRssOnNeon(env) {
+  const dbUrl = String(env?.DATABASE_URL || "").trim();
+  if (!dbUrl) return { ok: false, reason: "no-db" };
+  const sql = neon(dbUrl);
+  const target = NTV_SPORSKOR_RSS_URL;
+  const targetKey = target.toLowerCase();
+
+  try {
+    const rows = await sql`
+      SELECT id, layout_json FROM hm_news_sites
+      WHERE lower(trim(both '/' from slug)) = 'ankarahabergundemi'
+         OR lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = 'ankarahabergundemi.com'
+         OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = 'ankarahabergundemi.com'
+      ORDER BY id ASC
+      LIMIT 1
+    `;
+    const site = rows?.[0];
+    if (!site?.id) return { ok: false, reason: "site-missing" };
+
+    let layout = {};
+    try {
+      layout = site.layout_json ? JSON.parse(String(site.layout_json)) : {};
+    } catch {
+      layout = {};
+    }
+    if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+
+    const patchRows = (raw) => {
+      const list = Array.isArray(raw) ? raw.map((r) => (r && typeof r === "object" ? { ...r } : r)) : [];
+      let changed = false;
+      const hasNtv = list.some(
+        (r) => String(r?.url || "").trim().toLowerCase() === targetKey,
+      );
+      for (const row of list) {
+        if (!row || typeof row !== "object") continue;
+        if (!rowLooksLikeSpor(row)) continue;
+        const url = String(row.url || "").trim();
+        if (!url) {
+          row.url = target;
+          if (!row.categoryKey) row.categoryKey = "spor";
+          if (!row.label) row.label = "Spor";
+          changed = true;
+        }
+      }
+      if (!hasNtv && !list.some((r) => String(r?.url || "").trim().toLowerCase() === targetKey)) {
+        list.push({
+          id: "spor-ntv-sporskor",
+          categoryKey: "spor",
+          label: "Spor",
+          url: target,
+        });
+        changed = true;
+      }
+      return { rows: list, changed };
+    };
+
+    const box = patchRows(layout.hmNewsBreakingRssFeedRows);
+    const siteRss = patchRows(layout.hmNewsSiteRssFeedRows);
+    if (!box.changed && !siteRss.changed) {
+      return { ok: true, action: "noop", siteId: site.id };
+    }
+
+    const next = {
+      ...layout,
+      hmNewsBreakingRssFeedRows: box.rows,
+      hmNewsSiteRssFeedRows: siteRss.rows,
+      hybridRssEnabled: layout.hybridRssEnabled !== false,
+    };
+    await sql`
+      UPDATE hm_news_sites
+      SET layout_json = ${JSON.stringify(next)}::jsonb,
+          updated_at = NOW()
+      WHERE id = ${site.id}
+    `;
+    return { ok: true, action: "patched", siteId: site.id };
+  } catch (err) {
+    return { ok: false, reason: String(err?.message || err).slice(0, 200) };
+  }
+}
+
 /**
  * sehirgazetesiankara@gmail.com — ASG + ankarahabergundemi ortak hesap.
  * username=sehirgazetesi; aynı şifre hash her iki sitede.

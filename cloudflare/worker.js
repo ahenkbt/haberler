@@ -10,6 +10,7 @@ import {
   ensureBrandHmSiteMeta,
   matchBrandBinding,
   repairAsgEditorMisassignmentOnNeon,
+  ensureAhgSporNtvRssOnNeon,
 } from "./hm-brand-db-ensure.js";
 import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
@@ -44,7 +45,8 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727j";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727k";
+const NTV_SPORSKOR_RSS_URL = "https://www.ntv.com.tr/sporskor.rss";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1530,11 +1532,15 @@ function parseFeedEntries(xml, limit = 6) {
       xmlTag(block, "content:encoded") ||
       xmlTag(block, "content") ||
       null;
-    const imageUrl =
+    let imageUrl =
       xmlAttr(block, "media:thumbnail", "url") ||
       xmlAttr(block, "media:content", "url") ||
       xmlAttr(block, "enclosure", "url") ||
       null;
+    if (!imageUrl && contentEncoded) {
+      const img = String(contentEncoded).match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (img?.[1] && /^https?:\/\//i.test(img[1])) imageUrl = img[1];
+    }
     let publishedAt = new Date(published).toISOString();
     if (Number.isNaN(Date.parse(publishedAt))) publishedAt = new Date().toISOString();
     out.push({ title, href, publishedAt, spot, contentHtml: contentEncoded, imageUrl });
@@ -1549,6 +1555,7 @@ const DEFAULT_SITE_RSS_FEEDS = [
   { id: "ekonomi", label: "Ekonomi", url: "https://www.ntv.com.tr/ekonomi.rss" },
   { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
   { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
+  { id: "spor", label: "Spor", url: NTV_SPORSKOR_RSS_URL },
   { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
 ];
 
@@ -1576,28 +1583,38 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
         : modeRaw === "manual" || modeRaw === "manuel"
           ? "manual"
           : "live";
-    // Kutu içi + site içi RSS — spor URL çoğu zaman yalnızca breaking satırında dolu.
+    // Kutu içi + site içi RSS — aynı kategoride birden fazla URL (ör. spor + NTV sporskor) korunur.
     const boxRows = Array.isArray(layout.hmNewsBreakingRssFeedRows)
       ? layout.hmNewsBreakingRssFeedRows
       : [];
     const siteRows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
-    const byKey = new Map();
+    const feeds = [];
+    const seenUrls = new Set();
+    let hasSporRow = false;
     for (const row of [...boxRows, ...siteRows]) {
-      const url = String(row?.url || "").trim();
-      if (!/^https?:\/\//i.test(url)) continue;
       const label = String(row?.label || row?.id || "RSS").trim() || "RSS";
       const key =
         slugifyCategoryKey(row?.categoryKey) ||
         slugifyCategoryKey(row?.id) ||
         slugifyCategoryKey(label) ||
         "rss";
-      const prev = byKey.get(key);
-      // İlk dolu URL kazanır (kutu içi önce) — boş site satırı spor’u silmesin.
-      if (!prev || (!prev.url && url)) {
-        byKey.set(key, { id: key, label, url });
-      }
+      if (key === "spor" || key.startsWith("spor-")) hasSporRow = true;
+      const url = String(row?.url || "").trim();
+      if (!/^https?:\/\//i.test(url)) continue;
+      const urlKey = url.toLowerCase();
+      if (seenUrls.has(urlKey)) continue;
+      seenUrls.add(urlKey);
+      feeds.push({ id: key.startsWith("spor") ? "spor" : key, label, url });
     }
-    const feeds = Array.from(byKey.values());
+    // Spor satırı varken NTV Spor Skor yoksa kenarda ekle (kutu doldurma).
+    if (
+      enabled &&
+      hasSporRow &&
+      !seenUrls.has(NTV_SPORSKOR_RSS_URL.toLowerCase())
+    ) {
+      feeds.push({ id: "spor", label: "Spor", url: NTV_SPORSKOR_RSS_URL });
+      seenUrls.add(NTV_SPORSKOR_RSS_URL.toLowerCase());
+    }
     return {
       enabled,
       mode,
@@ -1693,7 +1710,8 @@ async function serveEdgeRssPreview(request, env, incoming) {
     feedId: `edge-site-${slugifyCategoryKey(feed.id || feed.label) || "dunya"}`,
     feedLabel: feed.label || "Dünya",
     sourceName: isEditorSite ? "Yekpare Haberleri" : feed.label || "RSS",
-    feedUrl: isEditorSite ? "https://yekpare.net/haberler" : feed.url || null,
+    // Editör sitelerinde kaynak bağlantısı yok; haber yalnızca site içinde açılır.
+    feedUrl: isEditorSite ? null : feed.url || null,
     sourceScope: isEditorSite ? "editor" : "portal",
     readCount: null,
     // Editör vitrininde originUrl gösterme/sızdırma — NTV’ye çıkış yolu olmasın.
@@ -1917,6 +1935,13 @@ export default {
         await repairAsgEditorMisassignmentOnNeon(env);
       } catch (err) {
         console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
+      }
+    }
+    if (hostKey === "ankarahabergundemi.com") {
+      try {
+        await ensureAhgSporNtvRssOnNeon(env);
+      } catch (err) {
+        console.error("[hm-ahg-spor-rss]", String(err?.message || err).slice(0, 200));
       }
     }
 
