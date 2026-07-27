@@ -376,7 +376,6 @@ function createMiddlewareSeoVerification(deps) {
     return (
       !h ||
       h === "turk.eco" ||
-      h === "yekpare.net" ||
       h === "turknet.app" ||
       h === "goalgo.org" ||
       h === "turkiye.li" ||
@@ -1108,8 +1107,6 @@ function isDefaultPortalHost(host) {
   return (
     h === "turk.eco" ||
     h === "www.turk.eco" ||
-    h === "yekpare.net" ||
-    h === "www.yekpare.net" ||
     h === "turknet.app" ||
     h === "www.turknet.app" ||
     h === "goalgo.org" ||

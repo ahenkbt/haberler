@@ -11,7 +11,6 @@ describe("buildHmSitePublicCacheUrls", () => {
       domain3: null,
     });
     expect(urls).toContain("https://turk.eco/api/hm/meta/by-slug/su");
-    expect(urls).toContain("https://yekpare.net/api/hm/meta/by-slug/su");
     expect(urls).toContain(
       "https://turk.eco/api/hm/meta/by-domain?domain=suhaberajansi.com",
     );

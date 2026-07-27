@@ -9,28 +9,6 @@
       "has": [
         {
           "type": "host",
-          "value": "yekpare.net"
-        }
-      ],
-      "destination": "https://turk.eco/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.yekpare.net"
-        }
-      ],
-      "destination": "https://turk.eco/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
           "value": "www.yektube.com"
         }
       ],

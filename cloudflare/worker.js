@@ -33,8 +33,6 @@ const PURGE_COOKIE = "__yekpare_sw_purged_v20260717a";
 const FORCE_PURGE_HOSTS = new Set([
   "turk.eco",
   "www.turk.eco",
-  "yekpare.net",
-  "www.yekpare.net",
   "haberler.ahenkbt.workers.dev",
   "vatanhaber.net",
   "www.vatanhaber.net",
@@ -82,8 +80,6 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
 const PORTAL_HOSTS = new Set([
   "turk.eco",
   "www.turk.eco",
-  "yekpare.net",
-  "www.yekpare.net",
   "turknet.app",
   "www.turknet.app",
   "goalgo.org",
@@ -93,9 +89,8 @@ const PORTAL_HOSTS = new Set([
   "haberler.ahenkbt.workers.dev",
 ]);
 
-/** Eski ana portal → kanonik turk.eco (SEO / tek köken). */
+/** www.turk.eco → apex (yekpare.net bu worker'da yönlendirilmez; ayrı proje). */
 const CANONICAL_PORTAL_ORIGIN = "https://turk.eco";
-const LEGACY_PORTAL_REDIRECT_HOSTS = new Set(["yekpare.net", "www.yekpare.net"]);
 const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.turk.eco"]);
 
 /** Eski Netlify SW'yi öldürür; kendini de kaldırır. */
@@ -1964,8 +1959,8 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
-    // yekpare.net → turk.eco (kalıcı); www.turk.eco → apex
-    if (LEGACY_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly) || APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
+    // www.turk.eco → apex (yekpare.net yönlendirmesi yok — goalgo-cloudflare / kendi worker)
+    if (APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
       return new Response(null, {
         status: 301,

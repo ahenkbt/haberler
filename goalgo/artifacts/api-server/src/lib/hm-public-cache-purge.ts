@@ -49,10 +49,7 @@ export function buildHmSitePublicCacheUrls(input: {
     .trim()
     .toLowerCase();
   const urls = new Set<string>();
-  const portalOrigins = [
-    PORTAL_ORIGIN.replace(/\/+$/, ""),
-    "https://yekpare.net", // geçiş: eski köken cache temizliği
-  ];
+  const portalOrigins = [PORTAL_ORIGIN.replace(/\/+$/, "")];
 
   if (slug) {
     for (const portal of portalOrigins) {
