@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
 import { HmCategoryThumbList } from "@/components/HmCategoryBoxLayout";
 import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import {
   CATEGORY_BOX_DESKTOP_LIST_SLOTS,
@@ -11,6 +12,7 @@ import {
   splitCategoryBoxItems,
 } from "@/lib/hmCategoryBoxItems";
 import type { HomeNewsDedupeTracker } from "@/lib/hmHeadlinePool";
+import { HM_SPOR_BOX_TOTAL, isSporHomeBoxSlug } from "@/lib/hmSporSubcategories";
 
 export type YekpareKategoriKutuItem = {
   id?: string | number | null;
@@ -50,6 +52,7 @@ export function HmYekpareCategoryBox({
   categoryHref,
   getItemHref,
   listSlots = CATEGORY_BOX_DESKTOP_LIST_SLOTS,
+  siteId = null,
   className = "",
 }: {
   slug: string;
@@ -59,8 +62,36 @@ export function HmYekpareCategoryBox({
   categoryHref: string;
   getItemHref: (item: YekpareKategoriKutuItem) => string;
   listSlots?: number;
+  siteId?: number | null;
   className?: string;
 }) {
+  if (isSporHomeBoxSlug(slug)) {
+    if (items.length === 0) return null;
+    return (
+      <article
+        className={`rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-sm ${className}`.trim()}
+        data-yekpare-kategori-slug={slug}
+      >
+        <div className="mb-4 flex items-center gap-2">
+          <span className="h-5 w-1 rounded-full shrink-0" style={{ background: color }} aria-hidden />
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-900">{label}</h3>
+          <div className="flex-1" />
+          <Link href={categoryHref} className="text-xs font-black hover:underline" style={{ color }}>
+            Tümü <ChevronRight className="inline h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <HmSporNewsPanel
+          items={items}
+          newsHref={getItemHref}
+          siteId={siteId}
+          kategoriHref={categoryHref}
+          categoryTitle={label || "SPOR"}
+          showCategoryTab={false}
+        />
+      </article>
+    );
+  }
+
   const desktopListSlots = Math.min(listSlots, CATEGORY_BOX_DESKTOP_LIST_SLOTS);
   const { lead, listItems } = splitCategoryBoxItems(items, desktopListSlots);
   const displayLead = lead ?? items[0] ?? null;
@@ -118,6 +149,7 @@ export function HmYekpareKategorilerKutusu({
   getCategoryHref,
   getItemHref,
   listSlots = CATEGORY_BOX_DESKTOP_LIST_SLOTS,
+  siteId = null,
   className = "",
   gridClassName = "grid gap-4 lg:grid-cols-2",
 }: {
@@ -132,18 +164,27 @@ export function HmYekpareKategorilerKutusu({
   getCategoryHref: (slug: string) => string;
   getItemHref: (item: YekpareKategoriKutuItem) => string;
   listSlots?: number;
+  siteId?: number | null;
   className?: string;
   gridClassName?: string;
 }) {
-  const minItems = CATEGORY_BOX_DISPLAY_TOTAL;
+  const hasSpor = sections.some((section) => isSporHomeBoxSlug(section.slug));
+  const minItems = hasSpor ? HM_SPOR_BOX_TOTAL : CATEGORY_BOX_DISPLAY_TOTAL;
   const prepared = ensureNewsBoxSections(
     sections,
     [] as YekpareKategoriKutuItem[],
     minItems,
-    (section) => section.items ?? [],
+    (section) => {
+      const rows = section.items ?? [];
+      if (isSporHomeBoxSlug(section.slug)) return rows.slice(0, HM_SPOR_BOX_TOTAL);
+      return rows.slice(0, CATEGORY_BOX_DISPLAY_TOTAL);
+    },
     (section) => section.items ?? [],
     globalDedupe,
-  );
+  ).map((section) => {
+    if (isSporHomeBoxSlug(section.slug)) return section;
+    return { ...section, items: section.items.slice(0, CATEGORY_BOX_DISPLAY_TOTAL) };
+  });
   const visible = prepared.filter((section) => section.items.length > 0);
   if (visible.length === 0) return null;
 
@@ -160,6 +201,7 @@ export function HmYekpareKategorilerKutusu({
             categoryHref={getCategoryHref(section.slug)}
             getItemHref={getItemHref}
             listSlots={listSlots}
+            siteId={siteId}
           />
         ))}
       </div>

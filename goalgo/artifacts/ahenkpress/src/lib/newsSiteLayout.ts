@@ -210,7 +210,7 @@ export type HmBreakingRssDisplayMode = "cards" | "balloons";
 export type HmRssIntegrationMode = "live" | "persistent" | "manual";
 
 /** Neon bir kerelik uygulama sürümü — cloudflare/hm-breaking-rss-defaults.js ile aynı. */
-export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727kutu1";
+export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
 
 export const HM_BREAKING_RSS_FEED_CATEGORIES: Array<{ id: HmBreakingRssFeedId; label: string }> = [
   { id: "sonDakika", label: "Son Dakika" },
@@ -1747,13 +1747,28 @@ export function cleanHmBreakingRssLabels(labels: Record<HmBreakingRssFeedId, str
 
 const PRESET_BREAKING_RSS_IDS = new Set<HmBreakingRssFeedId>(HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => category.id));
 
+const HM_SPOR_SUBCATEGORY_DEFAULT_RSS_ROWS: HmBreakingRssFeedRow[] = [
+  { id: "futbol", categoryKey: "futbol", label: "Futbol", url: "https://www.spordepor.com/rss/futbol" },
+  { id: "basketbol", categoryKey: "basketbol", label: "Basketbol", url: "https://www.spordepor.com/rss/basketbol" },
+  { id: "tenis", categoryKey: "tenis", label: "Tenis", url: "https://www.spordepor.com/rss/tenis" },
+  { id: "voleybol", categoryKey: "voleybol", label: "Voleybol", url: "https://www.spordepor.com/rss/voleybol" },
+  { id: "ozel-haber", categoryKey: "ozel-haber", label: "Özel Haber", url: "https://www.spordepor.com/rss/ozel-haber" },
+];
+
 export function defaultHmBreakingRssFeedRows(): HmBreakingRssFeedRow[] {
-  return HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => ({
+  const rows: HmBreakingRssFeedRow[] = HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => ({
     id: category.id,
     categoryKey: category.id,
     label: category.label,
     url: defaultHmBreakingRssFeeds[category.id] ?? "",
   }));
+  const sporIdx = rows.findIndex((row) => row.id === "spor");
+  if (sporIdx >= 0) {
+    rows.splice(sporIdx + 1, 0, ...HM_SPOR_SUBCATEGORY_DEFAULT_RSS_ROWS.map((row) => ({ ...row })));
+  } else {
+    rows.push(...HM_SPOR_SUBCATEGORY_DEFAULT_RSS_ROWS.map((row) => ({ ...row })));
+  }
+  return rows;
 }
 
 function slugifyBreakingRssRowId(label: string): string {

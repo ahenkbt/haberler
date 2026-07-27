@@ -55,6 +55,20 @@ const RSS_TO_SITE_CATEGORY: Record<string, string> = {
   savunmasanayi: "savunma-sanayi",
 };
 
+/** Spor iç kategorileri — «spor» isteğine tek yönlü eşleşir (tersi yok). */
+const SPOR_SUBCATEGORY_SLUGS = new Set([
+  "futbol",
+  "basketbol",
+  "tenis",
+  "voleybol",
+  "ozel-haber",
+  "ozelhaber",
+]);
+
+function isSporSubcategorySlug(slug: string): boolean {
+  return SPOR_SUBCATEGORY_SLUGS.has(slug);
+}
+
 /** Alias genişletmesi: bir slug’ın tüm eşdeğerleri (eşleşme için). */
 const ALIAS_GROUPS: string[][] = [
   ["gundem", "sondakika", "son-dakika", "turkiye", "turkey"],
@@ -104,6 +118,10 @@ export function rssCategorySlugsMatch(a: unknown, b: unknown): boolean {
   if (leftCanon === right || left === rightCanon) return true;
   const group = ALIAS_SET_BY_SLUG.get(left) || ALIAS_SET_BY_SLUG.get(leftCanon);
   if (group && (group.has(right) || group.has(rightCanon))) return true;
+  // Tek yön: Futbol/Basketbol… → spor kutusu; genel spor feed’i alt sekmeye düşmez.
+  if ((right === "spor" || rightCanon === "spor") && isSporSubcategorySlug(leftCanon || left)) {
+    return true;
+  }
   return false;
 }
 

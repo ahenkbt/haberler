@@ -21,6 +21,8 @@ import type { ReactNode } from "react";
 import { hmCategorySlug, humanizeNewsCategorySlug } from "@/lib/hmCategorySlug";
 import { resolveHmCategoryColor } from "@/lib/hmVitrinThemeTokens";
 import { newsItemMatchesCategorySlug } from "@/lib/hmHomeModuleCategories";
+import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
+import { HM_SPOR_BOX_TOTAL } from "@/lib/hmSporSubcategories";
 
 export type AhenkHaberBlockContext = {
   moduleId: HmNewsHomeModuleId;
@@ -33,6 +35,7 @@ export type AhenkHaberBlockContext = {
   yazarlarHref: string;
   newsHref: (n: any) => string;
   kategoriHref: (slug: string) => string;
+  siteId?: number | null;
 };
 
 const AHENK_ICON_ROWS = [
@@ -369,7 +372,7 @@ export function HmAhenkGundemLeadSide(ctx: AhenkHaberBlockContext) {
 }
 
 export function HmAhenkSporGrid(ctx: AhenkHaberBlockContext) {
-  const items = ctx.items.slice(0, 6);
+  const items = ctx.items.slice(0, HM_SPOR_BOX_TOTAL);
   if (items.length === 0) {
     return (
       <AhenkEmpty
@@ -382,6 +385,7 @@ export function HmAhenkSporGrid(ctx: AhenkHaberBlockContext) {
     );
   }
   const boxColor = blockCategoryColor(ctx.categorySlug || "spor", ctx.accent, ctx.hmCategoryColors);
+  const kategoriHref = ctx.kategoriHref(ctx.categorySlug);
   return (
     <AhenkBlockShell
       moduleId="ahenkSporGrid"
@@ -390,15 +394,15 @@ export function HmAhenkSporGrid(ctx: AhenkHaberBlockContext) {
       hmCategoryColors={ctx.hmCategoryColors}
       className="hm-ahenk-spor-grid"
     >
-      <AhenkSectionHead title={ctx.categoryTitle || "SPOR"} color={boxColor} href={ctx.kategoriHref(ctx.categorySlug)} />
-      <div className="hm-ahenk-spor-grid-inner">
-        {items.map((n) => (
-          <Link key={n.id ?? n.slug} href={ctx.newsHref(n)} className="hm-ahenk-spor-card group">
-            <AhenkStoryThumb n={n} badge={n.categoryName} badgeColor={catColor(n, ctx.accent, ctx.hmCategoryColors)} />
-            <h3>{newsTitle(n.title)}</h3>
-          </Link>
-        ))}
-      </div>
+      <AhenkSectionHead title={ctx.categoryTitle || "SPOR"} color={boxColor} href={kategoriHref} />
+      <HmSporNewsPanel
+        items={items}
+        newsHref={ctx.newsHref}
+        siteId={ctx.siteId ?? null}
+        kategoriHref={kategoriHref}
+        categoryTitle={ctx.categoryTitle || "SPOR"}
+        showCategoryTab={false}
+      />
     </AhenkBlockShell>
   );
 }

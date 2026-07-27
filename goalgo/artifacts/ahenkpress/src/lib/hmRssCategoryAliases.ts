@@ -4,6 +4,7 @@
  */
 
 import { normalizeNewsCategorySlug } from "@/lib/hmCategorySlug";
+import { isSporSubcategorySlug } from "@/lib/hmSporSubcategories";
 
 /** RSS / eski anahtar → site vitrin slug. */
 const RSS_TO_SITE_CATEGORY: Record<string, string> = {
@@ -87,6 +88,10 @@ export function rssCategorySlugsMatch(a: unknown, b: unknown): boolean {
   if (leftCanon === right || left === rightCanon) return true;
   const group = ALIAS_SET_BY_SLUG.get(left) || ALIAS_SET_BY_SLUG.get(leftCanon);
   if (group && (group.has(right) || group.has(rightCanon))) return true;
+  // Tek yön: Futbol/Basketbol… feed’leri «spor» kutusuna girer; genel spor feed’i alt sekmeye girmez.
+  if ((right === "spor" || rightCanon === "spor") && isSporSubcategorySlug(leftCanon || left)) {
+    return true;
+  }
   return false;
 }
 

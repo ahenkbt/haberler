@@ -1555,6 +1555,11 @@ const DEFAULT_SITE_RSS_FEEDS = [
   { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
   { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
   { id: "spor", label: "Spor", url: "https://www.dirilispostasi.com/rss/spor" },
+  { id: "futbol", label: "Futbol", url: "https://www.spordepor.com/rss/futbol" },
+  { id: "basketbol", label: "Basketbol", url: "https://www.spordepor.com/rss/basketbol" },
+  { id: "tenis", label: "Tenis", url: "https://www.spordepor.com/rss/tenis" },
+  { id: "voleybol", label: "Voleybol", url: "https://www.spordepor.com/rss/voleybol" },
+  { id: "ozel-haber", label: "Özel Haber", url: "https://www.spordepor.com/rss/ozel-haber" },
   { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
 ];
 

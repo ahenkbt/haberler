@@ -140,6 +140,7 @@ import {
   sliderHeadlineKeys,
 } from "@/lib/hmHeadlinePool";
 import { HmCategoryBoxGrid } from "@/components/HmCategoryBoxLayout";
+import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
 import { HmNewsImage, filterNewsItemsWithCoverImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
 import { HmTepeManset, HM_TEPE_MANSET_ITEM_COUNT } from "@/components/HmTepeManset";
 import {
@@ -169,6 +170,7 @@ import {
   splitCategoryBoxItems,
   yekpareCategoryBoxGridClass,
 } from "@/lib/hmCategoryBoxItems";
+import { HM_SPOR_BOX_TOTAL, isSporHomeBoxSlug } from "@/lib/hmSporSubcategories";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import { formatTrDisplayLabel } from "@/lib/hmDisplayText";
 import { applyHmGallerySpotlightForModule, fetchHmMediaSpotlightPool, hmMediaGallerySourceLabel, hmMediaGallerySourceListHref } from "@/lib/hmMediaSpotlightPool";
@@ -918,15 +920,19 @@ function CategorySection({
 }) {
   const h = useHmPublicHref();
   const siteQs = siteId != null ? `?siteId=${encodeURIComponent(String(siteId))}` : "";
+  const boxTotal = isSporHomeBoxSlug(slug) ? HM_SPOR_BOX_TOTAL : CATEGORY_BOX_DISPLAY_TOTAL;
   const { data = [] } = useQuery<any[]>({
-    queryKey: ["/api/news/by-category", slug, siteId ?? "all"],
+    queryKey: ["/api/news/by-category", slug, siteId ?? "all", boxTotal],
     queryFn: () => apiRequest(`/api/news/by-category/${slug}${siteQs}`),
     staleTime: 5 * 60 * 1000,
   });
-  const sortedData = useMemo(() => sortNewsByRecency(data), [data]);
-  const { lead, listItems } = useMemo(() => splitCategoryBoxItems(sortedData), [sortedData]);
+  const sortedData = useMemo(() => sortNewsByRecency(data).slice(0, boxTotal), [boxTotal, data]);
+  const { lead, listItems } = useMemo(
+    () => splitCategoryBoxItems(sortedData, Math.max(0, boxTotal - 1)),
+    [boxTotal, sortedData],
+  );
 
-  if (!lead) return null;
+  if (!lead && sortedData.length === 0) return null;
 
   const sectionColor =
     (typeof hmCategoryColors?.[slug] === "string" && HEX_COLOR.test(hmCategoryColors[slug]!.trim())
@@ -943,13 +949,24 @@ function CategorySection({
   return (
     <div className="mb-8">
       <SectionHead title={`${title} Haberleri`} color={sectionColor} href={categoryHref} />
-      <HmCategoryBoxGrid
-        lead={lead}
-        listItems={listItems}
-        color={sectionColor}
-        getHref={(n) => hybridNewsItemHref(n, h)}
-        categorySlug={slug}
-      />
+      {isSporHomeBoxSlug(slug) ? (
+        <HmSporNewsPanel
+          items={sortedData}
+          newsHref={(n) => hybridNewsItemHref(n, h)}
+          siteId={siteId}
+          kategoriHref={categoryHref}
+          categoryTitle={title || "SPOR"}
+          showCategoryTab
+        />
+      ) : lead ? (
+        <HmCategoryBoxGrid
+          lead={lead}
+          listItems={listItems}
+          color={sectionColor}
+          getHref={(n) => hybridNewsItemHref(n, h)}
+          categorySlug={slug}
+        />
+      ) : null}
     </div>
   );
 }
@@ -2758,7 +2775,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     slugs: homeCategoryBoxFetchSlugs,
     siteId,
     enabled: !isCorporateTheme,
-    limit: CATEGORY_BOX_DISPLAY_TOTAL,
+    limit: HM_SPOR_BOX_TOTAL,
     rssScope: "all",
     fallbackPool: moduleSectionSourcePool,
     matchContext: homeCategoryMatchContext,
@@ -2836,6 +2853,19 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       matchContext: homeCategoryMatchContext,
       allowGlobalPoolFallback: opts?.allowGlobalPoolFallback ?? false,
     });
+  const expandSporSectionItems = <T extends { slug: string; title: string; items?: any[] }>(
+    section: T,
+  ): T & { items: any[] } => {
+    if (!isSporHomeBoxSlug(section.slug)) {
+      return { ...section, items: Array.isArray(section.items) ? section.items : [] };
+    }
+    const pool = resolveSectionPoolItems(section, { allowGlobalPoolFallback: false }).filter((it: any) =>
+      passesCategoryContentGuard(it, "spor"),
+    );
+    const items = pickAndPadModuleItems(pool, HM_SPOR_BOX_TOTAL, pool, { exactLimit: true });
+    rememberModuleItems(items);
+    return { ...section, items };
+  };
   const selectModuleSections = <T extends { slug: string; title: string; items?: any[] }>(
     moduleId: HmNewsHomeModuleId,
     sections: T[],
@@ -2860,17 +2890,19 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       (section, sectionPool) => {
         const resolvedPool = resolveSectionPoolItems(section, { allowGlobalPoolFallback: false });
         const pool = resolvedPool.length > 0 ? resolvedPool : sectionPool;
+        const sectionLimit = isSporHomeBoxSlug(section.slug) ? HM_SPOR_BOX_TOTAL : boxTotal;
         return moduleBoxDedupe
-          ? pickModuleSectionCategoryItems(moduleBoxDedupe, pool, boxTotal, homeNewsDedupe)
-          : pickAndPadModuleItems(pool.length > 0 ? pool : sectionPool, boxTotal);
+          ? pickModuleSectionCategoryItems(moduleBoxDedupe, pool, sectionLimit, homeNewsDedupe)
+          : pickAndPadModuleItems(pool.length > 0 ? pool : sectionPool, sectionLimit);
       },
       (section) => resolveSectionPoolItems(section, { allowGlobalPoolFallback: false }),
       homeNewsDedupe,
     ).map((section) => {
       const sectionGuardSlug = hmCategorySlug(section.slug, section.title);
       section.items = (section.items ?? []).filter((it: any) => passesCategoryContentGuard(it, sectionGuardSlug));
-      rememberModuleItems(section.items);
-      return section as T & { items: any[] };
+      const expanded = expandSporSectionItems(section);
+      rememberModuleItems(expanded.items);
+      return expanded as T & { items: any[] };
     });
   };
   const mediaSpotlightItemsForModule = (moduleId: "mediaDarkBlock", limit = 6) => {
@@ -2941,6 +2973,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       yazarlarHref,
       newsHref: (n) => hybridNewsItemHref(n, h),
       kategoriHref: ahenkKategoriHref,
+      siteId,
     };
   };
 
@@ -3426,6 +3459,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               className="hm-yekpare-kategori-kutusu"
               gridClassName={yekpareCategoryBoxGridClass(yekpareCategoryBoxCount)}
               globalDedupe={homeNewsDedupe}
+              siteId={siteId}
               sections={sections.map((section) => ({
                 slug: section.slug,
                 title: section.title,
@@ -3864,7 +3898,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         return <HmAhenkGundemLeadSide {...buildAhenkBlockContext("ahenkGundemLeadSide", 4, "GÜNDEM")} />;
       case "ahenkSporGrid":
         if (!resolveHmNewsHomeModuleEnabled(layoutPrefs, "ahenkSporGrid")) return null;
-        return <HmAhenkSporGrid {...buildAhenkBlockContext("ahenkSporGrid", 6, "SPOR")} />;
+        return <HmAhenkSporGrid {...buildAhenkBlockContext("ahenkSporGrid", HM_SPOR_BOX_TOTAL, "SPOR")} />;
       case "sporModule": {
         if (!resolveHmNewsEditorModuleEnabled(layoutPrefs, "sporModule")) return null;
         const sporSlug = moduleCategorySlug("sporModule") || "spor";
@@ -3887,7 +3921,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
             passesCategoryContentGuard(item, sporSlug),
         );
         // Kesin: SPOR kutusuna başka kategoriden haber doldurma.
-        const sporItems = pickAndPadModuleItems(sporCategorized, 4, sporCategorized, { exactLimit: true });
+        const sporItems = pickAndPadModuleItems(sporCategorized, HM_SPOR_BOX_TOTAL, sporCategorized, {
+          exactLimit: true,
+        });
         rememberModuleItems(sporItems);
         return (
           <Suspense fallback={null}>
@@ -3896,6 +3932,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               newsHref={(n) => hybridNewsItemHref(n, h)}
               kategoriHref={ahenkKategoriHref(sporSlug)}
               categoryTitle={moduleCategoryTitle(sporSlug) || "SPOR"}
+              siteId={siteId}
               className="mb-6"
             />
           </Suspense>
@@ -4653,23 +4690,24 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       classicCategorySections,
       moduleSectionSourcePool,
       CATEGORY_BOX_DISPLAY_TOTAL,
-      (_section, sectionPool) =>
+      (section, sectionPool) =>
         pickModuleSectionCategoryItems(
           classicCategoryBoxDedupe,
           sectionPool,
-          CATEGORY_BOX_DISPLAY_TOTAL,
+          isSporHomeBoxSlug(section.slug) ? HM_SPOR_BOX_TOTAL : CATEGORY_BOX_DISPLAY_TOTAL,
           homeNewsDedupe,
         ),
       (section) => resolveSectionPoolItems(section, { allowGlobalPoolFallback: false }),
       homeNewsDedupe,
     ).map((section) => {
       const sectionGuardSlug = hmCategorySlug(section.slug, section.title);
-      return {
+      const guarded = {
         ...section,
         items: (section.items ?? []).filter((it: any) =>
           passesCategoryContentGuard(it, sectionGuardSlug),
         ),
       };
+      return expandSporSectionItems(guarded);
     });
     const classicHeroLatestItems = pickAndPadModuleItems(
       sortNewsByRecency(classicLatestMini),
@@ -4980,9 +5018,25 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               <section className="hm-classic-content-layout">
                 <div className="hm-classic-main-column">
                   {classicCategorySectionsDisplay.map((section) => {
+                    const sectionHref = h(siteId != null ? `/kategori/${section.slug}?siteId=${encodeURIComponent(String(siteId))}` : `/kategori/${section.slug}`);
+                    if (isSporHomeBoxSlug(section.slug)) {
+                      if ((section.items?.length ?? 0) === 0) return null;
+                      return (
+                        <section key={section.slug || section.title} className="hm-classic-category-section">
+                          <ClassicSectionTitle title={section.title} href={sectionHref} accent={section.color || accent} />
+                          <HmSporNewsPanel
+                            items={section.items}
+                            newsHref={(n) => hybridNewsItemHref(n, h)}
+                            siteId={siteId}
+                            kategoriHref={sectionHref}
+                            categoryTitle={section.title || "SPOR"}
+                            showCategoryTab={false}
+                          />
+                        </section>
+                      );
+                    }
                     const [mainItem, ...gridItems] = section.items;
                     if (!mainItem) return null;
-                    const sectionHref = h(siteId != null ? `/kategori/${section.slug}?siteId=${encodeURIComponent(String(siteId))}` : `/kategori/${section.slug}`);
                     const sideItems = gridItems.slice(0, CATEGORY_BOX_LIST_SLOTS);
                     return (
                       <section key={section.slug || section.title} className="hm-classic-category-section">
