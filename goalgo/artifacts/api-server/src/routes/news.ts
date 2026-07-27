@@ -290,6 +290,8 @@ router.get("/news", async (req, res): Promise<void> => {
         limit: Math.min(limit + offset + 200, 600),
         offset: 0,
         ...poolOpts,
+        // /sondakika ve tüm haber listesi arşivdir — 12 saat kesme yok.
+        publicFreshnessWindow: false,
       });
       let filtered = merged;
       if (categorySlug && categorySlug.trim().toLowerCase() === HM_GLOBAL_NEWS_CATEGORY_SLUG) {

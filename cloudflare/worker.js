@@ -45,7 +45,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727k";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727m";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1601,7 +1601,12 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
       const urlKey = url.toLowerCase();
       if (seenUrls.has(urlKey)) continue;
       seenUrls.add(urlKey);
-      feeds.push({ id: key.startsWith("spor") ? "spor" : key, label, url });
+      const canon = canonicalizeRssCategorySlugEdge(key) || key;
+      feeds.push({
+        id: key.startsWith("spor") ? "spor" : canon,
+        label,
+        url,
+      });
     }
     return {
       enabled,
@@ -1777,12 +1782,51 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
 /**
  * Site içi RSS açıkken Render cache boş kalırsa Cloudflare edge NTV/site feed’lerini doldurur.
  */
+/** RSS anahtar ↔ site kategori (son-dakika/turkiye → gundem). */
+const RSS_CATEGORY_ALIAS_GROUPS = [
+  ["gundem", "sondakika", "son-dakika", "turkiye", "turkey"],
+  ["dunya", "world"],
+  ["ekonomi", "para", "ntvpara", "ntv-para", "economy"],
+  ["politika", "siyaset"],
+  ["spor", "sport", "sporskor", "spor-skor"],
+  ["teknoloji", "technology"],
+  ["egitim", "education"],
+  ["saglik", "health"],
+  ["yasam", "life", "kultur", "kultur-sanat"],
+  ["otomobil", "auto"],
+  ["savunma-sanayi", "savunmasanayi"],
+];
+const RSS_CATEGORY_CANON = Object.fromEntries(
+  RSS_CATEGORY_ALIAS_GROUPS.flatMap((group) => {
+    const canon = group[0];
+    return group.map((slug) => [slug, canon]);
+  }),
+);
+
+function canonicalizeRssCategorySlugEdge(raw) {
+  const slug = slugifyCategoryKey(raw);
+  if (!slug) return "";
+  return RSS_CATEGORY_CANON[slug] || slug;
+}
+
+function rssCategorySlugsMatchEdge(a, b) {
+  const left = slugifyCategoryKey(a);
+  const right = slugifyCategoryKey(b);
+  if (!right) return true;
+  if (!left) return false;
+  if (left === right) return true;
+  if (left.endsWith(`-${right}`) || right.endsWith(`-${left}`)) return true;
+  const leftCanon = canonicalizeRssCategorySlugEdge(left);
+  const rightCanon = canonicalizeRssCategorySlugEdge(right);
+  return Boolean(leftCanon && rightCanon && leftCanon === rightCanon);
+}
+
 function hybridItemMatchesCategorySlug(item, categorySlug) {
   const want = String(categorySlug || "").trim().toLowerCase();
   if (!want) return true;
   const slug = String(item?.categorySlug || "").toLowerCase();
   if (!slug) return false;
-  return slug === want || slug.endsWith(`-${want}`) || want.endsWith(`-${slug}`);
+  return rssCategorySlugsMatchEdge(slug, want);
 }
 
 function prioritizeFeedsForCategory(feeds, categorySlug) {
@@ -1792,7 +1836,7 @@ function prioritizeFeedsForCategory(feeds, categorySlug) {
   const rest = [];
   for (const feed of feeds) {
     const key = slugifyCategoryKey(feed?.id || feed?.label) || "";
-    if (key === want || key.endsWith(`-${want}`) || want.endsWith(`-${key}`)) {
+    if (rssCategorySlugsMatchEdge(key, want)) {
       matched.push(feed);
     } else {
       rest.push(feed);

@@ -12,19 +12,11 @@
 import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
 import { normalizeNewsCategorySlug } from "./categorySort.js";
 import { looksLikeSportsContent } from "./rss-spor-category-guard.js";
+import { canonicalizeRssCategorySlug, rssCategorySlugsMatch } from "./hm-rss-category-aliases.js";
 
 const STANDARD_CATEGORY_SLUGS = new Set(
   HM_STANDARD_NEWS_CATEGORIES.map((row) => normalizeNewsCategorySlug(row.slug)).filter(Boolean),
 );
-
-function feedSlugMatchesWant(feedSlug: string, wantSlug: string): boolean {
-  const feed = feedSlug.trim().toLowerCase();
-  const want = wantSlug.trim().toLowerCase();
-  if (!want) return true;
-  if (feed === want) return true;
-  if (feed.endsWith(`-${want}`)) return true;
-  return false;
-}
 
 function normalizeFeedLabelSlug(raw: unknown): string {
   return normalizeNewsCategorySlug(raw);
@@ -38,8 +30,11 @@ export function feedLabelIndicatesOtherStandardCategory(
   const want = normalizeNewsCategorySlug(wantCategorySlug);
   if (!want) return false;
   const labelSlug = normalizeFeedLabelSlug(feedLabel);
-  if (!labelSlug || labelSlug === want || feedSlugMatchesWant(labelSlug, want)) return false;
-  return STANDARD_CATEGORY_SLUGS.has(labelSlug);
+  const labelCanon = canonicalizeRssCategorySlug(labelSlug);
+  if (!labelSlug) return false;
+  if (rssCategorySlugsMatch(labelSlug, want) || rssCategorySlugsMatch(labelCanon, want)) return false;
+  if (!STANDARD_CATEGORY_SLUGS.has(labelCanon) && !STANDARD_CATEGORY_SLUGS.has(labelSlug)) return false;
+  return STANDARD_CATEGORY_SLUGS.has(labelCanon) || STANDARD_CATEGORY_SLUGS.has(labelSlug);
 }
 
 const TR_LOWER = (value: unknown): string => String(value ?? "").toLocaleLowerCase("tr-TR");

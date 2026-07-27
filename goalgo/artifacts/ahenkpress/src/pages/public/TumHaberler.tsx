@@ -35,6 +35,7 @@ import {
 } from "@/lib/hmCategoryBoxItems";
 import { dedupeHmCategoryTabsByCanonicalSlug, dedupeHmCategoryTabsByRepairedLabel } from "@/lib/hmCategoryTabs";
 import { passesCategoryContentGuard } from "@/lib/hmCategoryContentGuard";
+import { expandRssCategorySlugCandidates, rssCategorySlugsMatch } from "@/lib/hmRssCategoryAliases";
 import { isGlobalNewsCategoryActiveInLayout, isHmGlobalNewsCategorySlug } from "@/lib/hmGlobalNewsCategory";
 import { HM_HOME_HEADLINE_SLIDER_LIMIT, resolveHeadlineSliderDisplayCount } from "@/lib/hmHeadlinePool";
 import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
@@ -137,7 +138,17 @@ function itemCanonicalCategorySlugs(item: HmRssNewsBandItem, knownCanonicalSlugs
 function itemMatchesCategory(item: HmRssNewsBandItem, slug: string, knownCanonicalSlugs: ReadonlySet<string>, siteSlugPrefixes: readonly string[]): boolean {
   const want = normalizeNewsCategorySlug(slug);
   if (!want) return true;
-  return itemCanonicalCategorySlugs(item, knownCanonicalSlugs, siteSlugPrefixes).includes(want);
+  const canonicals = itemCanonicalCategorySlugs(item, knownCanonicalSlugs, siteSlugPrefixes);
+  if (canonicals.includes(want)) return true;
+  if (canonicals.some((c) => rssCategorySlugsMatch(c, want))) return true;
+  for (const candidate of expandRssCategorySlugCandidates(
+    item.categorySlug,
+    item.categoryName,
+    item.feedLabel,
+  )) {
+    if (rssCategorySlugsMatch(candidate, want)) return true;
+  }
+  return false;
 }
 
 function formatCategoryDate(raw: string | null | undefined): string {
@@ -614,12 +625,35 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     enabled: !search || !isListView,
   });
 
+  /** Editör sitelerinde RSS + manuel aynı kategoride karışır (/api/news/hybrid). */
+  const listApiBase = (opts: { limit: number; offset: number; q?: string; categorySlug?: string }) => {
+    if (siteId != null) {
+      const qs = new URLSearchParams({
+        limit: String(opts.limit),
+        offset: String(opts.offset),
+        siteId: String(siteId),
+        rssScope: "all",
+      });
+      if (opts.q) qs.set("q", opts.q);
+      if (opts.categorySlug) qs.set("categorySlug", opts.categorySlug);
+      return `/api/news/hybrid?${qs.toString()}`;
+    }
+    const qs = new URLSearchParams({
+      limit: String(opts.limit),
+      offset: String(opts.offset),
+      status: "published",
+      includeTotal: "1",
+    });
+    if (opts.q) qs.set("q", opts.q);
+    if (opts.categorySlug) qs.set("categorySlug", opts.categorySlug);
+    qs.set("siteScope", "portal");
+    return `/api/news?${qs.toString()}`;
+  };
+
   const { data: poolData, isLoading: poolLoading } = useQuery<{ items: HmRssNewsBandItem[] }>({
-    queryKey: ["/api/news", "tum-haberler-pool", siteId ?? "all"],
+    queryKey: ["/api/news", "tum-haberler-pool", siteId ?? "all", siteId != null ? "hybrid" : "db"],
     queryFn: async () => {
-      const raw = await apiRequest(
-        `/api/news?limit=${NEWS_POOL_LIMIT}&offset=0&status=published${sitePart}`,
-      );
+      const raw = await apiRequest(listApiBase({ limit: Math.min(NEWS_POOL_LIMIT, 100), offset: 0 }));
       const rows = (raw as { items?: unknown[] })?.items ?? [];
       return { items: filterHaberBandItems(rows.map((n) => mapNewsToBandItem(n as Record<string, unknown>))) };
     },
@@ -635,11 +669,11 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     fetchNextPage: fetchNextListPage,
     isError: listInfiniteError,
   } = useInfiniteQuery({
-    queryKey: ["/api/news", "tum-haberler-infinite", siteId ?? "all", LIST_PAGE_SIZE],
+    queryKey: ["/api/news", "tum-haberler-infinite", siteId ?? "all", LIST_PAGE_SIZE, siteId != null ? "hybrid" : "db"],
     queryFn: async ({ pageParam }) => {
       const offset = typeof pageParam === "number" ? pageParam : 0;
       const raw = (await apiRequest(
-        `/api/news?limit=${LIST_PAGE_SIZE}&offset=${offset}&status=published&includeTotal=1${sitePart}`,
+        listApiBase({ limit: LIST_PAGE_SIZE, offset }),
       )) as { items?: unknown[]; total?: number };
       const rows = raw?.items ?? [];
       return {
@@ -649,8 +683,9 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < LIST_PAGE_SIZE) return undefined;
       const loaded = allPages.reduce((n, p) => n + p.items.length, 0);
-      if (loaded >= lastPage.total) return undefined;
+      if (typeof lastPage.total === "number" && loaded >= lastPage.total) return undefined;
       return loaded;
     },
     enabled: isListView && !search.trim(),
@@ -664,11 +699,11 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     hasNextPage: searchHasMore,
     fetchNextPage: fetchNextSearchPage,
   } = useInfiniteQuery({
-    queryKey: ["/api/news", "tum-haberler-search-infinite", search, siteId ?? "all", LIST_PAGE_SIZE],
+    queryKey: ["/api/news", "tum-haberler-search-infinite", search, siteId ?? "all", LIST_PAGE_SIZE, siteId != null ? "hybrid" : "db"],
     queryFn: async ({ pageParam }) => {
       const offset = typeof pageParam === "number" ? pageParam : 0;
       const raw = (await apiRequest(
-        `/api/news?limit=${LIST_PAGE_SIZE}&offset=${offset}&status=published&includeTotal=1&q=${encodeURIComponent(search)}${sitePart}`,
+        listApiBase({ limit: LIST_PAGE_SIZE, offset, q: search }),
       )) as { items?: unknown[]; total?: number };
       const rows = raw?.items ?? [];
       return {
@@ -678,8 +713,9 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < LIST_PAGE_SIZE) return undefined;
       const loaded = allPages.reduce((n, p) => n + p.items.length, 0);
-      if (loaded >= lastPage.total) return undefined;
+      if (typeof lastPage.total === "number" && loaded >= lastPage.total) return undefined;
       return loaded;
     },
     enabled: isListView && !!search.trim(),
@@ -891,10 +927,21 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
 
   const categoryBoxQueries = useQueries({
     queries: categorySlugsForBoxFetch.map((slug) => ({
-      queryKey: ["/api/news", "tum-haberler-cat-box", siteId ?? "portal", slug, CATEGORY_FETCH_LIMIT],
+      queryKey: [
+        "/api/news",
+        "tum-haberler-cat-box",
+        siteId ?? "portal",
+        slug,
+        CATEGORY_FETCH_LIMIT,
+        siteId != null ? "hybrid" : "db",
+      ],
       queryFn: async () => {
         const raw = await apiRequest(
-          `/api/news?limit=${CATEGORY_FETCH_LIMIT}&offset=0&status=published&categorySlug=${encodeURIComponent(slug)}${sitePart}`,
+          listApiBase({
+            limit: Math.min(CATEGORY_FETCH_LIMIT, 100),
+            offset: 0,
+            categorySlug: slug,
+          }),
         );
         const rows = (raw as { items?: unknown[] })?.items ?? [];
         return deferSimilarNewsItems(rows.map((n) => mapNewsToBandItem(n as Record<string, unknown>)));

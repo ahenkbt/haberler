@@ -12,6 +12,11 @@ import {
 import { resolveCanonicalPortalCategorySlug } from "@/lib/portalCategorySlug";
 import { passesCategoryContentGuard } from "@/lib/hmCategoryContentGuard";
 import {
+  canonicalizeRssCategorySlug,
+  expandRssCategorySlugCandidates,
+  rssCategorySlugsMatch,
+} from "@/lib/hmRssCategoryAliases";
+import {
   resolveHmBreakingRssCategoryKey,
   type HmBreakingRssFeedRow,
 } from "@/lib/newsSiteLayout";
@@ -71,12 +76,7 @@ export function hmNewsItemCanonicalCategorySlugs(
 }
 
 function feedSlugMatchesWant(feedCategorySlug: string, wantSlug: string): boolean {
-  const feedSlug = feedCategorySlug.trim().toLowerCase();
-  const want = wantSlug.trim().toLowerCase();
-  if (!want) return true;
-  if (feedSlug === want) return true;
-  if (feedSlug.endsWith(`-${want}`)) return true;
-  return false;
+  return rssCategorySlugsMatch(feedCategorySlug, wantSlug);
 }
 
 function rssFeedRowMatchesSectionSlug(
@@ -86,12 +86,13 @@ function rssFeedRowMatchesSectionSlug(
   const want = normalizeNewsCategorySlug(sectionSlug);
   if (!want) return false;
   const rowSlug = hmCategorySlug(row.label, resolveHmBreakingRssCategoryKey(row));
-  if (rowSlug === want) return true;
+  if (rssCategorySlugsMatch(rowSlug, want)) return true;
   const categoryKey = normalizeNewsCategorySlug(resolveHmBreakingRssCategoryKey(row));
-  if (categoryKey === want) return true;
-  if (feedSlugMatchesWant(categoryKey, want)) return true;
+  if (rssCategorySlugsMatch(categoryKey, want)) return true;
   const labelSlug = normalizeNewsCategorySlug(row.label);
-  return labelSlug === want;
+  if (rssCategorySlugsMatch(labelSlug, want)) return true;
+  const canon = canonicalizeRssCategorySlug(categoryKey || rowSlug || labelSlug);
+  return Boolean(canon && rssCategorySlugsMatch(canon, want));
 }
 
 function itemMatchesRssFeedRow(
@@ -146,8 +147,9 @@ export function hmNewsItemMatchesHomeCategorySlug(
   const prefixes = ctx.siteSlugPrefixes ?? [];
   const canonicalSlugs = hmNewsItemCanonicalCategorySlugs(item, ctx.knownCanonicalSlugs, prefixes);
   if (canonicalSlugs.includes(want)) return true;
+  if (canonicalSlugs.some((slug) => rssCategorySlugsMatch(slug, want))) return true;
 
-  for (const candidate of hmNewsItemCategorySlugCandidates(item)) {
+  for (const candidate of expandRssCategorySlugCandidates(...hmNewsItemCategorySlugCandidates(item))) {
     if (candidate === want) return true;
     if (feedSlugMatchesWant(candidate, want)) return true;
   }

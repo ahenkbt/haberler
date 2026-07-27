@@ -4,6 +4,11 @@ import { parseHmLayoutRecord } from "./hm-layout-json.js";
 import { allowCrossSiteManualNewsFromLayout, hiddenHmPoolNewsIdsFromLayout, hiddenHmRssItemIdsFromLayout, hmRssIntegrationModeFromLayout, yekparePoolReceiveEnabledFromLayout, yekparePoolSendEnabledFromLayout } from "./hm-public-layout.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isExcludedCumhaKoeseFeedUrl } from "./rssCumhaExclude.js";
+import {
+  canonicalizeRssCategorySlug,
+  expandRssCategorySlugCandidates,
+  rssCategorySlugsMatch,
+} from "./hm-rss-category-aliases.js";
 
 export type PortalHybridRssFeedConfig = {
   id: string;
@@ -117,11 +122,14 @@ function resolveFeedCategorySlug(
   index: number,
 ): string {
   const candidates = categorySlugCandidates(rawCategoryKey, rawId, rawLabel);
-  for (const candidate of candidates) {
+  const expanded = expandRssCategorySlugCandidates(...candidates);
+  for (const candidate of expanded) {
     const mapped = categorySlugLookup.get(candidate);
     if (mapped) return mapped;
   }
-  return candidates.find(Boolean) || `rss-${index + 1}`;
+  // Site kategorisi yoksa bile kanonik vitrin slug’ı yaz (gundem vb.) — karma eşleşme için.
+  const first = candidates.find(Boolean);
+  return canonicalizeRssCategorySlug(first) || first || `rss-${index + 1}`;
 }
 
 /** Frontend `defaultHmBreakingRssFeeds` ile uyumlu varsayılan RSS URL haritası. */
@@ -298,12 +306,7 @@ export async function loadPortalHybridRssFeeds(
 }
 
 export function feedMatchesCategorySlug(feedCategorySlug: string, wantSlug: string): boolean {
-  const feedSlug = feedCategorySlug.trim().toLowerCase();
-  const slug = wantSlug.trim().toLowerCase();
-  if (!slug) return true;
-  if (feedSlug === slug) return true;
-  if (feedSlug.endsWith(`-${slug}`)) return true;
-  return false;
+  return rssCategorySlugsMatch(feedCategorySlug, wantSlug);
 }
 
 export function enabledPortalHybridRssFeeds(
