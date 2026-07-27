@@ -43,7 +43,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727b";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727c";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1863,9 +1863,7 @@ export default {
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
-      const needsClone =
-        (edgePath === "/api/hm/editor/login" && edgeMethod === "POST") ||
-        (edgePath === "/api/hm/editor/me" && edgeMethod === "GET");
+      const needsClone = edgePath === "/api/hm/editor/login" && edgeMethod === "POST";
       const profileEdge = await handleHmEditorProfileEdge(
         needsClone ? request.clone() : request,
         env,

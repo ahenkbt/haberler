@@ -197,6 +197,40 @@ async function syncSharedCredentials(sql, opts) {
   return n;
 }
 
+function bytesToBase64Url(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function hmacSignBase64Url(secret, raw) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
+  return bytesToBase64Url(new Uint8Array(mac));
+}
+
+/** Kenarda captcha üret — Worker SESSION_SECRET ile; login kenarda doğrulanır. */
+async function issueLoginMathCaptcha(env) {
+  const secret = String(env?.SESSION_SECRET || "").trim();
+  if (!secret) return null;
+  const a = 2 + Math.floor(Math.random() * 8);
+  const b = 2 + Math.floor(Math.random() * 8);
+  const op = Math.random() < 0.5 ? "add" : "mul";
+  const payload = { a, b, op, exp: Date.now() + 10 * 60 * 1000 };
+  const raw = JSON.stringify(payload);
+  const rawBytes = new TextEncoder().encode(raw);
+  const payloadB64 = bytesToBase64Url(rawBytes);
+  const sig = await hmacSignBase64Url(secret, raw);
+  const question = op === "add" ? `${a} + ${b} = ?` : `${a} × ${b} = ?`;
+  return { token: `${payloadB64}.${sig}`, question };
+}
+
 /** Captcha token = base64url(JSON).HMAC_SHA256 (SESSION_SECRET) — API ile aynı. */
 async function verifyLoginMathCaptcha(env, tokenRaw, answerRaw) {
   const token = String(tokenRaw ?? "").trim();
@@ -222,18 +256,7 @@ async function verifyLoginMathCaptcha(env, tokenRaw, answerRaw) {
     return false;
   }
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
-  const macBytes = new Uint8Array(mac);
-  let bin = "";
-  for (let i = 0; i < macBytes.length; i += 1) bin += String.fromCharCode(macBytes[i]);
-  const expectedSig = btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  const expectedSig = await hmacSignBase64Url(secret, raw);
   if (sig.length !== expectedSig.length) return false;
   let ok = true;
   for (let i = 0; i < sig.length; i += 1) {
@@ -266,8 +289,8 @@ async function handleEditorLogin(request, env, incomingUrl) {
     return jsonResponse(400, { error: "Geçersiz JSON" });
   }
 
-  // Captcha Render SESSION_SECRET ile imzalı; Worker secret farklıysa Render'a düş.
   if (!(await verifyLoginMathCaptcha(env, b.captchaToken, b.captchaAnswer))) {
+    // Eski (Render imzalı) captcha olabilir — Render login'e düş.
     return null;
   }
 
@@ -567,13 +590,18 @@ async function patchEditorPassword(request, env) {
 }
 
 /**
- * Login / me / profil — Response veya null (null = Render'a proxy).
- * Login/GET me için request.clone() ile çağırın; body tüketilmesin.
+ * Login / me / profil / captcha — Response veya null (null = Render'a proxy).
+ * Login için request.clone() ile çağırın; body tüketilmesin.
  */
 export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
   const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
 
+  if (path === "/api/public/login-captcha" && method === "GET") {
+    const issued = await issueLoginMathCaptcha(env);
+    if (!issued) return null;
+    return jsonResponse(200, issued);
+  }
   if (path === "/api/hm/editor/login" && method === "POST") {
     return handleEditorLogin(request, env, incomingUrl);
   }
