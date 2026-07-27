@@ -39,6 +39,8 @@ export const hmSiteEditorsTable = pgTable(
       .notNull()
       .references(() => hmNewsSitesTable.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
+    /** Panel girişi için isteğe bağlı kullanıcı adı (e-posta yerine). */
+    username: text("username"),
     passwordHash: text("password_hash").notNull(),
     displayName: text("display_name"),
     isActive: boolean("is_active").notNull().default(true),
@@ -50,6 +52,7 @@ export const hmSiteEditorsTable = pgTable(
   },
   (t) => ({
     siteEmailUniq: uniqueIndex("hm_site_editors_site_id_email_key").on(t.siteId, t.email),
+    siteUsernameUniq: uniqueIndex("hm_site_editors_site_id_username_key").on(t.siteId, t.username),
   }),
 );
 

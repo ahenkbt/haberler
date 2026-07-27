@@ -1842,13 +1842,12 @@ export default {
       });
     }
 
-    // ASG: yanlış siteye bağlı editör e-postasını Neon'da düzelt (şifre hash korunur).
+    // Ortak editör (sehirgazetesiankara): ASG + AHB senkron + username.
     const hostKey = normalizeHost(incoming.hostname);
     if (
       hostKey === "ankarasehirgazetesi.com" ||
-      (incoming.pathname.replace(/\/+$/, "") === "/api/hm/editor/login" &&
-        (hostKey === "ankarasehirgazetesi.com" ||
-          String(incoming.searchParams.get("domain") || "").includes("ankarasehir")))
+      hostKey === "ankarahabergundemi.com" ||
+      incoming.pathname.replace(/\/+$/, "") === "/api/hm/editor/login"
     ) {
       try {
         await repairAsgEditorMisassignmentOnNeon(env);

@@ -16,12 +16,14 @@ import {
   Image as ImageIcon,
   Video,
   ScrollText,
+  UserRound,
 } from "lucide-react";
 
 export type EditorNavItem = { name: string; icon: LucideIcon; href: string };
 
 export const editorNavItems: EditorNavItem[] = [
   { name: "Özet", icon: LayoutDashboard, href: "/editor" },
+  { name: "Profil", icon: UserRound, href: "/editor/profil" },
   { name: "Genel ayarlar", icon: Settings, href: "/editor/genel-ayarlar" },
   { name: "Vitrin ayarları", icon: LayoutGrid, href: "/editor/vitrin" },
   { name: "Slider / Bant", icon: Sparkles, href: "/editor/manset" },

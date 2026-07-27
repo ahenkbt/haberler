@@ -135,6 +135,12 @@ import {
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
 import { repairAsgEditorMisassignment } from "../lib/hm-asg-editor-repair.js";
+import {
+  ensureHmSiteEditorUsernameColumn,
+  isHmEditorLoginEmail,
+  normalizeHmEditorUsername,
+  syncSharedHmEditorCredentials,
+} from "../lib/hm-editor-profile.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
 import {
   ensureHmBrandDomainBindings,
@@ -1787,7 +1793,7 @@ router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
   }
 });
 
-/** Yönetim: sehirgazetesiankara@gmail.com → Ankara Şehir Gazetesi (asg) editör kopyası. */
+/** Yönetim: sehirgazetesiankara@gmail.com → ASG + AHB ortak hesap + username. */
 router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
@@ -1795,13 +1801,9 @@ router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
     res.json({
       ok: result.ok,
       message:
-        result.action === "copied"
-          ? `ASG editör kopyalandı #${result.editorId}`
-          : result.action === "updated"
-            ? `ASG editör güncellendi #${result.editorId}`
-            : result.action === "already"
-              ? "ASG editör zaten doğru sitede"
-              : result.detail || result.action,
+        result.action === "synced"
+          ? `Ortak editör senkron: siteler [${result.siteIds.join(",")}] editörler [${result.editorIds.join(",")}]`
+          : result.detail || result.action,
       ...result,
     });
   } catch (e) {
@@ -2183,6 +2185,8 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
   const b = req.body as {
     slug?: string;
     email?: string;
+    login?: string;
+    username?: string;
     password?: string;
     domain?: string;
     yektubeStudio?: boolean;
@@ -2194,7 +2198,7 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
     return;
   }
   let slug = normalizeSlug(String(b.slug ?? ""));
-  const email = String(b.email ?? "").trim().toLowerCase();
+  const loginRaw = String(b.login ?? b.email ?? b.username ?? "").trim().toLowerCase();
   const password = String(b.password ?? "");
   const domainHost = normalizeDomain(
     String(b.domain ?? req.headers["x-forwarded-host"] ?? req.headers.host ?? ""),
@@ -2203,8 +2207,8 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
     const domainSite = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(domainHost));
     if (domainSite) slug = domainSite.slug;
   }
-  if (!slug || !email || !password) {
-    res.status(400).json({ error: "slug, email ve şifre gerekli" });
+  if (!slug || !loginRaw || !password) {
+    res.status(400).json({ error: "slug, e-posta/kullanıcı adı ve şifre gerekli" });
     return;
   }
   const site = await getActiveHmNewsSiteBySlugCompat(slug);
@@ -2212,53 +2216,71 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Site veya hesap bulunamadı" });
     return;
   }
+  await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
+  const loginIsEmail = isHmEditorLoginEmail(loginRaw);
+  const loginUsername = loginIsEmail ? null : normalizeHmEditorUsername(loginRaw);
   let editor: HmSiteEditorRow | undefined;
-  [editor] = await newsReadDb()
-    .select()
-    .from(hmSiteEditorsTable)
-    .where(
-      and(
-        eq(hmSiteEditorsTable.siteId, site.id),
-        eq(hmSiteEditorsTable.isActive, true),
-        eq(hmSiteEditorsTable.email, email),
-      ),
-    );
-  if (!editor && getNewsDbReadMode() === "news") {
-    editor = (await mirrorHmEditorFromMainDb(slug, email, password, site.id)) ?? undefined;
+  if (loginIsEmail) {
+    [editor] = await newsReadDb()
+      .select()
+      .from(hmSiteEditorsTable)
+      .where(
+        and(
+          eq(hmSiteEditorsTable.siteId, site.id),
+          eq(hmSiteEditorsTable.isActive, true),
+          eq(hmSiteEditorsTable.email, loginRaw),
+        ),
+      );
+  } else if (loginUsername) {
+    [editor] = await newsReadDb()
+      .select()
+      .from(hmSiteEditorsTable)
+      .where(
+        and(
+          eq(hmSiteEditorsTable.siteId, site.id),
+          eq(hmSiteEditorsTable.isActive, true),
+          eq(hmSiteEditorsTable.username, loginUsername),
+        ),
+      );
+  }
+  if (!editor && loginIsEmail && getNewsDbReadMode() === "news") {
+    editor = (await mirrorHmEditorFromMainDb(slug, loginRaw, password, site.id)) ?? undefined;
   }
   if (!editor) {
-    // Aynı e-posta başka HM sitesindeyse yönlendirici mesaj (şifre sızdırmaz).
-    const [elsewhere] = await newsReadDb()
-      .select({
-        siteId: hmSiteEditorsTable.siteId,
-        email: hmSiteEditorsTable.email,
-      })
-      .from(hmSiteEditorsTable)
-      .where(and(eq(hmSiteEditorsTable.email, email), eq(hmSiteEditorsTable.isActive, true)))
-      .limit(1);
-    if (elsewhere?.siteId && elsewhere.siteId !== site.id) {
-      const other = await getHmNewsSiteByIdCompat(elsewhere.siteId);
-      const otherHost = normalizeDomain(other?.domain ?? null) || other?.slug || "";
-      res.status(401).json({
-        error: otherHost
-          ? `Bu e-posta «${other?.displayName || otherHost}» sitesine kayıtlı. Giriş: ${otherHost.includes(".") ? `https://${otherHost}/editor/giris` : `/tr/${otherHost}/editor/giris`}`
-          : "E-posta veya şifre hatalı",
-      });
-      return;
+    if (loginIsEmail) {
+      // Aynı e-posta başka HM sitesindeyse yönlendirici mesaj (şifre sızdırmaz).
+      const [elsewhere] = await newsReadDb()
+        .select({
+          siteId: hmSiteEditorsTable.siteId,
+          email: hmSiteEditorsTable.email,
+        })
+        .from(hmSiteEditorsTable)
+        .where(and(eq(hmSiteEditorsTable.email, loginRaw), eq(hmSiteEditorsTable.isActive, true)))
+        .limit(1);
+      if (elsewhere?.siteId && elsewhere.siteId !== site.id) {
+        const other = await getHmNewsSiteByIdCompat(elsewhere.siteId);
+        const otherHost = normalizeDomain(other?.domain ?? null) || other?.slug || "";
+        res.status(401).json({
+          error: otherHost
+            ? `Bu e-posta «${other?.displayName || otherHost}» sitesine kayıtlı. Giriş: ${otherHost.includes(".") ? `https://${otherHost}/editor/giris` : `/tr/${otherHost}/editor/giris`}`
+            : "E-posta, kullanıcı adı veya şifre hatalı",
+        });
+        return;
+      }
     }
-    res.status(401).json({ error: "E-posta veya şifre hatalı" });
+    res.status(401).json({ error: "E-posta, kullanıcı adı veya şifre hatalı" });
     return;
   }
   let ok = await bcrypt.compare(password, editor.passwordHash);
   if (!ok && getNewsDbReadMode() === "news") {
-    const synced = await mirrorHmEditorFromMainDb(slug, email, password, site.id);
+    const synced = await mirrorHmEditorFromMainDb(slug, editor.email, password, site.id);
     if (synced) {
       editor = synced;
       ok = true;
     }
   }
   if (!ok) {
-    res.status(401).json({ error: "E-posta veya şifre hatalı" });
+    res.status(401).json({ error: "E-posta, kullanıcı adı veya şifre hatalı" });
     return;
   }
   const token = jwt.sign(
@@ -2291,6 +2313,7 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
     editor: {
       id: editor.id,
       email: editor.email,
+      username: editor.username ?? null,
       displayName: editor.displayName,
     },
     ...(yektubeStudio ? yektubeStudioPanelPayload() : {}),
@@ -2337,6 +2360,7 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
   res.setHeader("Vary", "Origin, Authorization");
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
   const yektubeStudio =
     req.query.yektubeStudio === "1" || String(req.query.yektubeStudio ?? "").toLowerCase() === "true";
   const [editor] = await newsReadDb().select().from(hmSiteEditorsTable).where(eq(hmSiteEditorsTable.id, ctx.editorId));
@@ -2360,6 +2384,7 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
     editor: {
       id: editor.id,
       email: editor.email,
+      username: editor.username ?? null,
       displayName: editor.displayName,
       createdAt: editor.createdAt,
     },
@@ -2377,6 +2402,185 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
     },
     ...(yektubeStudio ? yektubeStudioPanelPayload() : {}),
   });
+});
+
+/** Site sahibi profil: görünen ad, e-posta, kullanıcı adı (mevcut şifre ile). */
+router.patch("/hm/editor/me", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
+  const b = req.body as {
+    displayName?: unknown;
+    email?: unknown;
+    username?: unknown;
+    currentPassword?: unknown;
+  };
+  const [editor] = await newsReadDb()
+    .select()
+    .from(hmSiteEditorsTable)
+    .where(
+      and(
+        eq(hmSiteEditorsTable.id, ctx.editorId),
+        eq(hmSiteEditorsTable.siteId, ctx.siteId),
+        eq(hmSiteEditorsTable.isActive, true),
+      ),
+    );
+  if (!editor) {
+    res.status(401).json({ error: "Geçersiz oturum" });
+    return;
+  }
+
+  const wantsEmail = typeof b.email === "string";
+  const wantsUsername = b.username !== undefined;
+  const wantsDisplay = typeof b.displayName === "string";
+  if (!wantsEmail && !wantsUsername && !wantsDisplay) {
+    res.status(400).json({ error: "Güncellenecek alan yok" });
+    return;
+  }
+
+  const nextEmail = wantsEmail ? String(b.email).trim().toLowerCase() : editor.email;
+  if (wantsEmail && (!nextEmail.includes("@") || nextEmail.length < 5)) {
+    res.status(400).json({ error: "Geçerli bir e-posta girin" });
+    return;
+  }
+  let nextUsername: string | null | undefined = undefined;
+  if (wantsUsername) {
+    const raw = String(b.username ?? "").trim();
+    if (!raw) nextUsername = null;
+    else {
+      nextUsername = normalizeHmEditorUsername(raw);
+      if (!nextUsername) {
+        res.status(400).json({
+          error: "Kullanıcı adı en az 3 karakter; yalnızca harf, rakam, nokta, tire, alt çizgi.",
+        });
+        return;
+      }
+    }
+  }
+  const nextDisplay = wantsDisplay ? String(b.displayName).trim() || null : undefined;
+
+  const sensitive =
+    (wantsEmail && nextEmail !== editor.email) ||
+    (wantsUsername && nextUsername !== (editor.username ?? null));
+  if (sensitive) {
+    const current = String(b.currentPassword ?? "");
+    if (!current || !(await bcrypt.compare(current, editor.passwordHash))) {
+      res.status(401).json({ error: "Mevcut şifre yanlış." });
+      return;
+    }
+  }
+
+  if (wantsEmail && nextEmail !== editor.email) {
+    const [taken] = await newsReadDb()
+      .select({ id: hmSiteEditorsTable.id })
+      .from(hmSiteEditorsTable)
+      .where(
+        and(
+          eq(hmSiteEditorsTable.siteId, ctx.siteId),
+          eq(hmSiteEditorsTable.email, nextEmail),
+          ne(hmSiteEditorsTable.id, editor.id),
+        ),
+      )
+      .limit(1);
+    if (taken) {
+      res.status(409).json({ error: "Bu e-posta bu sitede zaten kayıtlı." });
+      return;
+    }
+  }
+  if (wantsUsername && nextUsername) {
+    const [takenU] = await newsReadDb()
+      .select({ id: hmSiteEditorsTable.id })
+      .from(hmSiteEditorsTable)
+      .where(
+        and(
+          eq(hmSiteEditorsTable.siteId, ctx.siteId),
+          eq(hmSiteEditorsTable.username, nextUsername),
+          ne(hmSiteEditorsTable.id, editor.id),
+        ),
+      )
+      .limit(1);
+    if (takenU) {
+      res.status(409).json({ error: "Bu kullanıcı adı bu sitede kullanımda." });
+      return;
+    }
+  }
+
+  const patch: Partial<typeof hmSiteEditorsTable.$inferInsert> = { updatedAt: new Date() };
+  if (wantsEmail) patch.email = nextEmail;
+  if (wantsUsername) patch.username = nextUsername ?? null;
+  if (wantsDisplay) patch.displayName = nextDisplay ?? null;
+  await dualWriteUpdate(hmSiteEditorsTable, patch, eq(hmSiteEditorsTable.id, editor.id));
+
+  // Ortak e-posta hesapları (ör. ASG + AHB) senkron
+  await syncSharedHmEditorCredentials({
+    email: editor.email,
+    excludeEditorId: editor.id,
+    nextEmail: wantsEmail && nextEmail !== editor.email ? nextEmail : undefined,
+    username: wantsUsername ? (nextUsername ?? null) : undefined,
+    displayName: wantsDisplay ? (nextDisplay ?? null) : undefined,
+  }).catch(() => 0);
+
+  const [fresh] = await newsReadDb()
+    .select()
+    .from(hmSiteEditorsTable)
+    .where(eq(hmSiteEditorsTable.id, editor.id));
+  res.json({
+    ok: true,
+    editor: {
+      id: fresh.id,
+      email: fresh.email,
+      username: fresh.username ?? null,
+      displayName: fresh.displayName,
+      createdAt: fresh.createdAt,
+    },
+  });
+});
+
+/** Site sahibi şifre değiştirme — aynı e-postalı diğer siteler de güncellenir. */
+router.patch("/hm/editor/me/password", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  const b = req.body as { currentPassword?: unknown; newPassword?: unknown };
+  const current = String(b.currentPassword ?? "");
+  const nextPw = String(b.newPassword ?? "");
+  if (nextPw.length < 8) {
+    res.status(400).json({ error: "Yeni şifre en az 8 karakter olmalı." });
+    return;
+  }
+  const [editor] = await newsReadDb()
+    .select()
+    .from(hmSiteEditorsTable)
+    .where(
+      and(
+        eq(hmSiteEditorsTable.id, ctx.editorId),
+        eq(hmSiteEditorsTable.siteId, ctx.siteId),
+        eq(hmSiteEditorsTable.isActive, true),
+      ),
+    );
+  if (!editor?.passwordHash) {
+    res.status(400).json({ error: "Şifre bu hesap için tanımlı değil." });
+    return;
+  }
+  if (!current || !(await bcrypt.compare(current, editor.passwordHash))) {
+    res.status(401).json({ error: "Mevcut şifre yanlış." });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(nextPw, 10);
+  await dualWriteUpdate(
+    hmSiteEditorsTable,
+    { passwordHash, updatedAt: new Date() },
+    eq(hmSiteEditorsTable.id, editor.id),
+  );
+  await syncSharedHmEditorCredentials({
+    email: editor.email,
+    excludeEditorId: editor.id,
+    passwordHash,
+  }).catch(() => 0);
+  res.json({ ok: true });
 });
 
 /** HM site editörleri — Video TV embed yönetimi */

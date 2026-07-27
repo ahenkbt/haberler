@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   dualWriteInsert,
   dualWriteUpdate,
@@ -6,110 +6,89 @@ import {
   hmNewsSitesTable,
   hmSiteEditorsTable,
 } from "@workspace/db";
+import { ensureHmSiteEditorUsernameColumn } from "./hm-editor-profile.js";
 
-const ASG_SLUG = "asg";
-const ASG_EDITOR_EMAIL = "sehirgazetesiankara@gmail.com";
-const ASG_EDITOR_DISPLAY = "Ankara Şehir Gazetesi";
+const SHARED_EMAIL = "sehirgazetesiankara@gmail.com";
+const SHARED_USERNAME = "sehirgazetesi";
+const TARGET_SLUGS = ["asg", "ankarahabergundemi"] as const;
 
 export type AsgEditorRepairResult = {
   ok: boolean;
-  action: "already" | "copied" | "updated" | "missing_asg" | "missing_source" | "error";
-  siteId: number | null;
-  editorId: number | null;
-  fromSiteId?: number | null;
+  action: "synced" | "missing_source" | "error";
+  siteIds: number[];
+  editorIds: number[];
   detail?: string;
 };
 
 /**
- * sehirgazetesiankara@gmail.com hesabını ASG sitesine kopyalar (şifre hash aynı kalır).
- * Kaynak satır (çoğunlukla ankarahabergundemi) silinmez.
+ * sehirgazetesiankara@gmail.com — ASG + Ankara Haber Gündemi ortak hesap.
+ * Aynı şifre hash + kullanıcı adı (sehirgazetesi) her iki sitede.
  */
 export async function repairAsgEditorMisassignment(): Promise<AsgEditorRepairResult> {
+  await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
   const db = getNewsDbForRead();
-  const [asg] = await db
-    .select({ id: hmNewsSitesTable.id })
-    .from(hmNewsSitesTable)
-    .where(eq(hmNewsSitesTable.slug, ASG_SLUG))
-    .limit(1);
-  if (!asg?.id) {
-    return { ok: false, action: "missing_asg", siteId: null, editorId: null };
-  }
 
-  const [onAsg] = await db
-    .select({
-      id: hmSiteEditorsTable.id,
-      passwordHash: hmSiteEditorsTable.passwordHash,
-    })
-    .from(hmSiteEditorsTable)
-    .where(
-      and(eq(hmSiteEditorsTable.siteId, asg.id), eq(hmSiteEditorsTable.email, ASG_EDITOR_EMAIL)),
-    )
-    .limit(1);
+  const sites = await db
+    .select({ id: hmNewsSitesTable.id, slug: hmNewsSitesTable.slug, displayName: hmNewsSitesTable.displayName })
+    .from(hmNewsSitesTable)
+    .where(inArray(hmNewsSitesTable.slug, [...TARGET_SLUGS]));
+
+  if (sites.length === 0) {
+    return { ok: false, action: "missing_source", siteIds: [], editorIds: [], detail: "hedef site yok" };
+  }
 
   const [source] = await db
-    .select({
-      id: hmSiteEditorsTable.id,
-      siteId: hmSiteEditorsTable.siteId,
-      passwordHash: hmSiteEditorsTable.passwordHash,
-      displayName: hmSiteEditorsTable.displayName,
-      isActive: hmSiteEditorsTable.isActive,
-    })
+    .select()
     .from(hmSiteEditorsTable)
-    .where(and(eq(hmSiteEditorsTable.email, ASG_EDITOR_EMAIL), eq(hmSiteEditorsTable.isActive, true)))
+    .where(and(eq(hmSiteEditorsTable.email, SHARED_EMAIL), eq(hmSiteEditorsTable.isActive, true)))
     .limit(1);
 
-  if (!source && !onAsg) {
-    return { ok: false, action: "missing_source", siteId: asg.id, editorId: null };
+  if (!source) {
+    return { ok: false, action: "missing_source", siteIds: sites.map((s) => s.id), editorIds: [] };
   }
 
-  if (onAsg && source && source.siteId === asg.id) {
-    return { ok: true, action: "already", siteId: asg.id, editorId: onAsg.id };
-  }
+  const editorIds: number[] = [];
+  for (const site of sites) {
+    const [existing] = await db
+      .select({ id: hmSiteEditorsTable.id })
+      .from(hmSiteEditorsTable)
+      .where(and(eq(hmSiteEditorsTable.siteId, site.id), eq(hmSiteEditorsTable.email, SHARED_EMAIL)))
+      .limit(1);
 
-  const hash = source?.passwordHash || onAsg?.passwordHash;
-  if (!hash) {
-    return {
-      ok: false,
-      action: "error",
-      siteId: asg.id,
-      editorId: null,
-      detail: "password hash yok",
-    };
-  }
+    const displayName =
+      site.slug === "asg" ? "Ankara Şehir Gazetesi" : source.displayName || site.displayName || "Editör";
 
-  if (onAsg) {
-    await dualWriteUpdate(
-      hmSiteEditorsTable,
-      {
-        passwordHash: hash,
-        displayName: ASG_EDITOR_DISPLAY,
-        isActive: true,
-        updatedAt: new Date(),
-      },
-      eq(hmSiteEditorsTable.id, onAsg.id),
-    );
-    return {
-      ok: true,
-      action: "updated",
-      siteId: asg.id,
-      editorId: onAsg.id,
-      fromSiteId: source?.siteId ?? null,
-    };
-  }
+    if (existing) {
+      await dualWriteUpdate(
+        hmSiteEditorsTable,
+        {
+          passwordHash: source.passwordHash,
+          username: SHARED_USERNAME,
+          displayName,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+        eq(hmSiteEditorsTable.id, existing.id),
+      );
+      editorIds.push(existing.id);
+      continue;
+    }
 
-  const [created] = await dualWriteInsert(hmSiteEditorsTable, {
-    siteId: asg.id,
-    email: ASG_EDITOR_EMAIL,
-    passwordHash: hash,
-    displayName: ASG_EDITOR_DISPLAY,
-    isActive: true,
-  });
+    const [created] = await dualWriteInsert(hmSiteEditorsTable, {
+      siteId: site.id,
+      email: SHARED_EMAIL,
+      username: SHARED_USERNAME,
+      passwordHash: source.passwordHash,
+      displayName,
+      isActive: true,
+    });
+    if (created?.id) editorIds.push(created.id);
+  }
 
   return {
-    ok: Boolean(created?.id),
-    action: created?.id ? "copied" : "error",
-    siteId: asg.id,
-    editorId: created?.id ?? null,
-    fromSiteId: source?.siteId ?? null,
+    ok: editorIds.length > 0,
+    action: "synced",
+    siteIds: sites.map((s) => s.id),
+    editorIds,
   };
 }
