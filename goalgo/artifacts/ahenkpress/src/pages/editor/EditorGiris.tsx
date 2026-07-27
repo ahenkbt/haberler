@@ -80,7 +80,7 @@ export default function EditorGiris() {
 
   const [loc, setLocation] = useLocation();
 
-  const { setSession, token, sessionStatus, logout } = useHmEditor();
+  const { setSession, token, sessionStatus } = useHmEditor();
 
   const host = browserHostKey();
 
