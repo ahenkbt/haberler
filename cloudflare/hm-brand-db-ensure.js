@@ -15,9 +15,18 @@ import {
 export const HM_BRAND_DB_BINDINGS = [
   {
     domain: "suhaberajansi.com",
+    domains: ["suhaberajansi.com"],
     slug: "su",
     displayName: "Su Haber Ajansı",
     description: "Su Haber Ajansı dijital haber platformu",
+  },
+  /** Kırşehir: editör layout kenarda Neon'a yazılıyor — meta da Neon'dan gelsin. */
+  {
+    domain: "kirsehirhaber.org",
+    domains: ["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"],
+    slug: "kh",
+    displayName: "Kırşehir Haber",
+    description: "Kırşehir’in dijital haber platformu",
   },
 ];
 
@@ -51,6 +60,16 @@ function normalizeSlug(raw) {
     .trim()
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
+}
+
+function bindingHosts(binding) {
+  const out = new Set();
+  if (binding?.domain) out.add(normalizeHost(binding.domain));
+  for (const d of binding?.domains || []) {
+    const h = normalizeHost(d);
+    if (h) out.add(h);
+  }
+  return out;
 }
 
 function serializeMetaRow(row) {
@@ -87,7 +106,11 @@ export function matchBrandBinding({ domain, slug } = {}) {
   const host = normalizeHost(domain || "");
   const s = normalizeSlug(slug || "");
   return (
-    HM_BRAND_DB_BINDINGS.find((b) => (host && b.domain === host) || (s && b.slug === s)) || null
+    HM_BRAND_DB_BINDINGS.find((b) => {
+      if (host && bindingHosts(b).has(host)) return true;
+      if (s && b.slug === s) return true;
+      return false;
+    }) || null
   );
 }
 
@@ -445,19 +468,34 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     }
   }
 
-  // 2) Slug ile bul — en düşük id (kanonik /tr/su)
+  // 2) Slug ile bul — en düşük id (kanonik /tr/su; KH için yalnız kh/kirsehir)
   const slugKey = wantSlug || binding.slug;
   if (slugKey) {
-    const bySlug = await sql`
-      SELECT id, slug, domain, domain2, domain3, display_name, description,
-             contact_json, layout_json, active, created_at, updated_at
-      FROM hm_news_sites
-      WHERE lower(trim(both '/' from slug)) = ${slugKey}
-         OR lower(trim(both '/' from slug)) = ${"suhaber"}
-      ORDER BY id ASC
-      LIMIT 1
-    `;
+    const isSuSlug = slugKey === "su" || slugKey === "suhaber";
+    const bySlug = isSuSlug
+      ? await sql`
+          SELECT id, slug, domain, domain2, domain3, display_name, description,
+                 contact_json, layout_json, active, created_at, updated_at
+          FROM hm_news_sites
+          WHERE lower(trim(both '/' from slug)) = ${slugKey}
+             OR lower(trim(both '/' from slug)) = ${"suhaber"}
+             OR lower(trim(both '/' from slug)) = ${"su"}
+          ORDER BY id ASC
+          LIMIT 1
+        `
+      : await sql`
+          SELECT id, slug, domain, domain2, domain3, display_name, description,
+                 contact_json, layout_json, active, created_at, updated_at
+          FROM hm_news_sites
+          WHERE lower(trim(both '/' from slug)) = ${slugKey}
+             OR (${slugKey === "kh"} AND lower(trim(both '/' from slug)) = ${"kirsehir"})
+          ORDER BY id ASC
+          LIMIT 1
+        `;
     if (bySlug?.[0] && !PROTECTED_SLUGS.has(normalizeSlug(bySlug[0].slug))) {
+      return { meta: serializeMetaRow(bySlug[0]), action: "lookup_slug" };
+    }
+    if (bySlug?.[0]) {
       return { meta: serializeMetaRow(bySlug[0]), action: "lookup_slug" };
     }
   }

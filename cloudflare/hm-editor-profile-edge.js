@@ -68,6 +68,11 @@ async function ensureUsernameColumn(sql) {
   }
 }
 
+function asPositiveInt(value) {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
+}
+
 async function parseEditorJwt(request, env) {
   const h = String(request.headers.get("authorization") || "").trim();
   const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
@@ -76,10 +81,12 @@ async function parseEditorJwt(request, env) {
   if (!key) return null;
   try {
     const { payload } = await jwtVerify(token, key);
-    if (payload?.typ !== JWT_TYP || typeof payload.eid !== "number" || typeof payload.sid !== "number") {
+    const editorId = asPositiveInt(payload?.eid);
+    const siteId = asPositiveInt(payload?.sid);
+    if (payload?.typ !== JWT_TYP || editorId == null || siteId == null) {
       return null;
     }
-    return { editorId: payload.eid, siteId: payload.sid };
+    return { editorId, siteId };
   } catch {
     return null;
   }
@@ -88,11 +95,268 @@ async function parseEditorJwt(request, env) {
 async function signEditorJwt(env, editorId, siteId) {
   const key = jwtSecretBytes(env);
   if (!key) throw new Error("SESSION_SECRET eksik");
-  return new SignJWT({ typ: JWT_TYP, eid: editorId, sid: siteId, v: 1 })
+  const eid = asPositiveInt(editorId);
+  const sid = asPositiveInt(siteId);
+  if (eid == null || sid == null) throw new Error("Geçersiz editör/site id");
+  return new SignJWT({ typ: JWT_TYP, eid, sid, v: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(JWT_TTL)
     .sign(key);
+}
+
+const KH_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
+const HM_LAYOUT_JSON_MAX_CHARS = 2_000_000;
+const HM_LAYOUT_HEAVY_KEYS = ["hmExtraPages", "hmCorporatePageHtml"];
+const HM_LAYOUT_MENU_KEYS = [
+  "hmCorporateMenuItems",
+  "hmCorporateMenuPrimaryOnly",
+  "hmNewsFooterMenuItems",
+  "hmNewsSidebarMenuItems",
+  "hmNewsStripMenuItems",
+];
+
+function parseLayoutRecord(raw) {
+  try {
+    if (raw == null || !String(raw).trim()) return {};
+    const j = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (j && typeof j === "object" && !Array.isArray(j)) return { ...j };
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
+function stripNonVitrinLayoutKeys(incoming) {
+  const out = { ...incoming };
+  for (const k of HM_LAYOUT_HEAVY_KEYS) delete out[k];
+  for (const k of HM_LAYOUT_MENU_KEYS) delete out[k];
+  delete out.vkdEditorTouchedAt;
+  delete out.vkdPageSyncVersion;
+  delete out.vkdMenuSyncVersion;
+  return out;
+}
+
+function mergeLayoutPatch(prev, incoming, opts = {}) {
+  const inc = opts.vitrinOnly ? stripNonVitrinLayoutKeys(incoming) : incoming;
+  const merged = { ...prev, ...inc };
+  if (
+    Array.isArray(inc.hmCorporateMenuItems) &&
+    inc.hmCorporateMenuItems.length > 0 &&
+    inc.hmCorporateMenuPrimaryOnly === undefined
+  ) {
+    merged.hmCorporateMenuPrimaryOnly = false;
+  }
+  if (
+    prev.hmCategoryColors &&
+    inc.hmCategoryColors &&
+    typeof inc.hmCategoryColors === "object" &&
+    !Array.isArray(inc.hmCategoryColors)
+  ) {
+    merged.hmCategoryColors = {
+      ...(prev.hmCategoryColors || {}),
+      ...inc.hmCategoryColors,
+    };
+  }
+  return merged;
+}
+
+async function isKhEditorSite(sql, siteId) {
+  const rows = await sql`
+    SELECT slug, domain, domain2, domain3
+    FROM hm_news_sites
+    WHERE id = ${siteId}
+    LIMIT 1
+  `;
+  const site = rows?.[0];
+  if (!site) return false;
+  const slug = String(site.slug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  if (slug === "kh" || slug === "kirsehir") return true;
+  for (const raw of [site.domain, site.domain2, site.domain3]) {
+    if (KH_HOSTS.has(normalizeHost(raw))) return true;
+  }
+  return false;
+}
+
+/**
+ * Kenar JWT + Neon: yalnızca Kırşehir (kh) — Render secret/DB ayrışınca
+ * tema/modül/sayfa/menü kaydı 401 olmasın.
+ * Diğer editör siteleri: null → Render proxy (dokunulmaz).
+ */
+async function handleKhSiteLayoutPatch(request, env) {
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const ctx = await parseEditorJwt(request, env);
+  if (!ctx) {
+    // Render imzalı JWT olabilir — KH dışı / Render yoluna bırak.
+    if (auth.startsWith("Bearer ")) return null;
+    return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+  }
+
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+
+  if (!(await isKhEditorSite(sql, ctx.siteId))) {
+    // ASG/Su/diğer: mevcut Render akışı.
+    return null;
+  }
+
+  const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
+  if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
+
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+
+  const sites = await sql`
+    SELECT id, layout_json
+    FROM hm_news_sites
+    WHERE id = ${ctx.siteId}
+    LIMIT 1
+  `;
+  const site = sites?.[0];
+  if (!site) return jsonResponse(404, { error: "Site bulunamadı" });
+
+  const prev = parseLayoutRecord(site.layout_json);
+  const incoming = b?.layout;
+  let inc =
+    incoming && typeof incoming === "object" && !Array.isArray(incoming) ? { ...incoming } : {};
+
+  if (b?.vitrinOnly !== true) {
+    if (
+      prev.hmExtraPages &&
+      Array.isArray(inc.hmExtraPages) &&
+      inc.hmExtraPages.length === 0 &&
+      b?.allowClearExtraPages !== true
+    ) {
+      delete inc.hmExtraPages;
+    }
+    if (inc.hmCorporatePageHtml === null && prev.hmCorporatePageHtml && b?.allowClearCorporatePageHtml !== true) {
+      delete inc.hmCorporatePageHtml;
+    }
+  }
+
+  const merged = mergeLayoutPatch(prev, inc, { vitrinOnly: b?.vitrinOnly === true });
+  let raw;
+  try {
+    raw = JSON.stringify(merged);
+  } catch (e) {
+    return jsonResponse(400, {
+      error: "layout JSON'a çevrilemedi",
+      detail: String(e?.message || e).slice(0, 200),
+    });
+  }
+  if (raw.length > HM_LAYOUT_JSON_MAX_CHARS) {
+    return jsonResponse(400, {
+      error: "layout çok büyük",
+      maxChars: HM_LAYOUT_JSON_MAX_CHARS,
+      sizeChars: raw.length,
+    });
+  }
+
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET layout_json = ${raw}::jsonb, updated_at = now()
+      WHERE id = ${ctx.siteId}
+    `;
+  } catch {
+    // layout_json text olan eski şema
+    await sql`
+      UPDATE hm_news_sites
+      SET layout_json = ${raw}, updated_at = now()
+      WHERE id = ${ctx.siteId}
+    `;
+  }
+
+  return jsonResponse(200, { ok: true, layoutJson: raw });
+}
+
+async function handleKhSiteHomeModuleOrderPatch(request, env) {
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const ctx = await parseEditorJwt(request, env);
+  if (!ctx) {
+    if (auth.startsWith("Bearer ")) return null;
+    return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+  }
+
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+  if (!(await isKhEditorSite(sql, ctx.siteId))) return null;
+
+  const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
+  if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
+
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+
+  const patch = {};
+  if (Array.isArray(b?.hmNewsHomeModuleOrder)) {
+    patch.hmNewsHomeModuleOrder = b.hmNewsHomeModuleOrder.map((x) => String(x).trim()).filter(Boolean);
+  }
+  if (Array.isArray(b?.hmCorporateHomeModuleOrder)) {
+    patch.hmCorporateHomeModuleOrder = b.hmCorporateHomeModuleOrder
+      .map((x) => String(x).trim())
+      .filter(Boolean);
+  }
+  if (Object.keys(patch).length === 0) {
+    return jsonResponse(400, {
+      error: "hmNewsHomeModuleOrder veya hmCorporateHomeModuleOrder gerekli",
+    });
+  }
+
+  const sites = await sql`
+    SELECT id, layout_json
+    FROM hm_news_sites
+    WHERE id = ${ctx.siteId}
+    LIMIT 1
+  `;
+  const site = sites?.[0];
+  if (!site) return jsonResponse(404, { error: "Site bulunamadı" });
+
+  const prev = parseLayoutRecord(site.layout_json);
+  const merged = mergeLayoutPatch(prev, patch, { vitrinOnly: true });
+  let raw;
+  try {
+    raw = JSON.stringify(merged);
+  } catch (e) {
+    return jsonResponse(400, {
+      error: "layout JSON'a çevrilemedi",
+      detail: String(e?.message || e).slice(0, 200),
+    });
+  }
+  if (raw.length > HM_LAYOUT_JSON_MAX_CHARS) {
+    return jsonResponse(400, {
+      error: "layout çok büyük",
+      maxChars: HM_LAYOUT_JSON_MAX_CHARS,
+      sizeChars: raw.length,
+    });
+  }
+
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET layout_json = ${raw}::jsonb, updated_at = now()
+      WHERE id = ${ctx.siteId}
+    `;
+  } catch {
+    await sql`
+      UPDATE hm_news_sites
+      SET layout_json = ${raw}, updated_at = now()
+      WHERE id = ${ctx.siteId}
+    `;
+  }
+
+  return jsonResponse(200, { ok: true, layoutJson: raw });
 }
 
 async function resolveSiteByHost(sql, host) {
@@ -601,7 +865,7 @@ async function patchEditorPassword(request, env) {
 }
 
 /**
- * Login / me / profil / captcha — Response veya null (null = Render'a proxy).
+ * Login / me / profil / captcha (+ KH layout) — Response veya null (null = Render'a proxy).
  * Login için request.clone() ile çağırın; body tüketilmesin.
  */
 export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
@@ -643,6 +907,13 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
       return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
     }
     return patchEditorPassword(request, env);
+  }
+  // Kırşehir: kenar JWT ile tema/modül/sayfa/menü kaydı Neon'a (Render 401 olmasın).
+  if (path === "/api/hm/editor/site-layout" && method === "PATCH") {
+    return handleKhSiteLayoutPatch(request, env);
+  }
+  if (path === "/api/hm/editor/site-home-module-order" && method === "PATCH") {
+    return handleKhSiteHomeModuleOrderPatch(request, env);
   }
   return null;
 }

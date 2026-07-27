@@ -816,9 +816,16 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     normalizeHost(domain) === "suhaberajansi.com" ||
     slugKey === "su" ||
     slugKey === "suhaber";
+  const khHosts = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
+  const isKhBrand =
+    binding.slug === "kh" ||
+    slugKey === "kh" ||
+    slugKey === "kirsehir" ||
+    khHosts.has(normalizeHost(domain));
 
-  // Su dışı markalar: yalnızca upstream 404 iken kenar fallback
-  if (!isSuBrand && upstream.status !== 404) return null;
+  // Su + Kırşehir: Neon meta tercih (editör kenar kaydı ile aynı DB).
+  // Diğer markalar: yalnızca upstream 404 iken kenar fallback.
+  if (!isSuBrand && !isKhBrand && upstream.status !== 404) return null;
 
   try {
     const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
@@ -827,7 +834,8 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
       return null;
     }
     return brandMetaJsonResponse(ensured.meta, {
-      "x-yekpare-hm-brand-ensure-action": ensured.action || (isSuBrand ? "su-domain-repair" : "ok"),
+      "x-yekpare-hm-brand-ensure-action":
+        ensured.action || (isSuBrand ? "su-domain-repair" : isKhBrand ? "kh-neon-meta" : "ok"),
     });
   } catch (err) {
     console.error("[hm-brand-db-ensure]", String(err?.message || err).slice(0, 240));
@@ -1988,12 +1996,19 @@ export default {
       }
     }
 
-    // Editör login + /me + profil (Render gerideyse kenarda Neon — oturum düşmesini önler).
-    // clone: captcha secret uyuşmazlığında body bozulmadan Render'a düşülebilsin.
+    // Editör login + /me + profil (+ KH layout) — Render gerideyse kenarda Neon.
+    // clone: kenar null dönerse (KH dışı layout / captcha) body Render'a bozulmadan gitsin.
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
-      const needsClone = edgePath === "/api/hm/editor/login" && edgeMethod === "POST";
+      const needsClone =
+        edgeMethod === "POST" || edgeMethod === "PATCH"
+          ? edgePath === "/api/hm/editor/login" ||
+            edgePath === "/api/hm/editor/me" ||
+            edgePath === "/api/hm/editor/me/password" ||
+            edgePath === "/api/hm/editor/site-layout" ||
+            edgePath === "/api/hm/editor/site-home-module-order"
+          : false;
       const profileEdge = await handleHmEditorProfileEdge(
         needsClone ? request.clone() : request,
         env,
