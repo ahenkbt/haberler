@@ -1676,9 +1676,20 @@
 }
 
 [data-hm-vitrin-theme] .hm-news-nav-row {
+  position: relative;
   max-width: 100%;
+  min-height: 2.25rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+}
+
+[data-hm-vitrin-theme] .hm-news-nav-pills {
+  z-index: 0;
+}
+
+[data-hm-vitrin-theme] .hm-news-nav-actions {
+  position: relative;
+  z-index: 1;
 }
 
 [data-hm-vitrin-theme="classic"] .hm-news-nav-row {

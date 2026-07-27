@@ -2286,6 +2286,10 @@ router.post("/hm/editor/yektube-admin-session", async (req, res): Promise<void> 
 });
 
 router.get("/hm/editor/me", async (req, res): Promise<void> => {
+  // Tarayıcı / CDN asla önbelleğe almasın — eski 401 login sonrası oturumu düşürür.
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  res.setHeader("Vary", "Origin, Authorization");
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   const yektubeStudio =
@@ -3708,6 +3712,9 @@ function escapeHtml(s: string): string {
 }
 
 router.get("/hm/author/me", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  res.setHeader("Vary", "Origin, Authorization");
   const ctx = denyUnlessHmAuthor(req, res);
   if (!ctx) return;
   const [author] = await newsReadDb()
