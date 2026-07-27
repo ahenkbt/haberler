@@ -407,6 +407,17 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-kh] HM_KH_SITE_ENSURE=0 — atlandı");
   }
 
+  // ASG: sehirgazetesiankara@gmail.com yanlış siteye bağlıysa asg'ye kopyala
+  if (envJobFlag("HM_ASG_EDITOR_REPAIR", true)) {
+    setTimeout(() => {
+      void repairAsgEditorMisassignment()
+        .then((r) => logger.info({ ...r }, "[hm-asg-editor] editör onarım"))
+        .catch((err) => logger.error({ err }, "[hm-asg-editor] onarım başarısız"));
+    }, 17_800).unref();
+  } else {
+    logger.info("[hm-asg-editor] HM_ASG_EDITOR_REPAIR=0 — atlandı");
+  }
+
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).
   if (envJobFlag("HM_BRAND_DOMAIN_BIND", true)) {
     setTimeout(() => {
