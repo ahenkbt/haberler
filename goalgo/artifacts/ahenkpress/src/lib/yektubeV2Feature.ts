@@ -16,4 +16,5 @@ export {
   isYektubeCanonicalRedirectEnabled,
   YEKTUBE_V2_PUBLIC_BASE,
   YEKTUBE_ORIGIN,
+  YEKTUBE_PORTAL_MIRROR_ORIGIN,
 } from "@workspace/yektube-core";

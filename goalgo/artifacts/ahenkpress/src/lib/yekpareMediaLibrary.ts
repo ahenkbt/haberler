@@ -64,8 +64,26 @@ export async function uploadYekpareMediaDataUrl(dataUrl: string): Promise<string
     headers: mediaUploadHeaders(),
     body: JSON.stringify({ dataUrl }),
   });
-  const data = (await res.json()) as { url?: string; error?: string };
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  const contentType = res.headers.get("content-type") ?? "";
+  const raw = await res.text();
+  let data: { url?: string; error?: string; detail?: string; hint?: string } = {};
+  if (contentType.includes("application/json") || raw.trim().startsWith("{")) {
+    try {
+      data = JSON.parse(raw) as typeof data;
+    } catch {
+      throw new Error("Sunucu geçersiz JSON döndürdü");
+    }
+  } else if (raw.trim().startsWith("<")) {
+    throw new Error(
+      data.error ||
+        `Medya sunucusu HTML yanıtı döndürdü (HTTP ${res.status}). API uykuda olabilir; birkaç dakika sonra tekrar deneyin.`,
+    );
+  } else {
+    throw new Error(data.error || raw.slice(0, 200) || `HTTP ${res.status}`);
+  }
+  if (!res.ok) {
+    throw new Error(data.error || data.detail || data.hint || `HTTP ${res.status}`);
+  }
   if (!data.url) throw new Error("Sunucu URL dönmedi");
   return data.url;
 }

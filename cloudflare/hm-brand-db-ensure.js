@@ -508,6 +508,116 @@ async function ensureKhVideoMenuOnRow(sql, row) {
 }
 
 const KH_AUTHORS_CLEAR_REV = "kh-authors-clear-20260727b";
+const HM_LAYOUT_SANITIZE_REV = "hm-layout-sanitize-20260727a";
+
+const CORPORATE_ONLY_MODULES = new Set([
+  "culturePortal",
+  "ataturkCorner",
+  "sehitSearch",
+  "heritageInfo",
+  "donationSupport",
+]);
+
+const VKD_MENU_PREFIX = "vkd-menu-";
+const VKD_ONLY_PATH_PREFIXES = [
+  "/faaliyetler",
+  "/baskan",
+  "/dernegimiz",
+  "/sehit-gazi",
+  "/bagis",
+  "/yonetim-kurulu",
+  "/tuzuk",
+];
+
+function isCorporateLayoutTheme(theme) {
+  const t = String(theme ?? "")
+    .trim()
+    .toLowerCase();
+  return t === "corporate" || t === "kurumsal";
+}
+
+function pathOnlyMenuHref(href) {
+  const raw = String(href ?? "").trim();
+  if (!raw || raw === "#") return raw;
+  try {
+    if (/^https?:\/\//i.test(raw)) return new URL(raw).pathname.toLowerCase();
+  } catch {
+    /* relative */
+  }
+  return raw.split("?")[0]?.split("#")[0]?.toLowerCase() ?? "";
+}
+
+function isForeignCorporateMenuItem(item, siteSlug) {
+  const slug = normalizeSlug(siteSlug);
+  if (slug === "vkd") return false;
+  const id = String(item?.id ?? "")
+    .trim()
+    .toLowerCase();
+  const href = pathOnlyMenuHref(item?.href);
+  if (id.startsWith(VKD_MENU_PREFIX)) return true;
+  for (const p of VKD_ONLY_PATH_PREFIXES) {
+    if (href === p || href.startsWith(`${p}/`)) return true;
+  }
+  if (href.includes("/ansiklopedi/t")) return true;
+  return false;
+}
+
+function sanitizeHmLayoutRecord(layout, siteSlug) {
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) return {};
+  const slug = normalizeSlug(siteSlug);
+  if (isCorporateLayoutTheme(layout.hmVitrinTheme) && slug === "vkd") return layout;
+
+  const next = { ...layout };
+
+  if (Array.isArray(next.hmCorporateMenuItems)) {
+    next.hmCorporateMenuItems = next.hmCorporateMenuItems.filter(
+      (item) => item && typeof item === "object" && !isForeignCorporateMenuItem(item, slug),
+    );
+  }
+  for (const key of ["hmNewsFooterMenuItems", "hmNewsSidebarMenuItems", "hmNewsStripMenuItems"]) {
+    if (Array.isArray(next[key])) {
+      next[key] = next[key].filter(
+        (item) => item && typeof item === "object" && !isForeignCorporateMenuItem(item, slug),
+      );
+    }
+  }
+  if (Array.isArray(next.hmNewsHomeModuleOrder)) {
+    next.hmNewsHomeModuleOrder = next.hmNewsHomeModuleOrder.filter((id) => !CORPORATE_ONLY_MODULES.has(String(id)));
+  }
+  if (!isCorporateLayoutTheme(layout.hmVitrinTheme)) {
+    next.hmCorporateAtaturkCornerEnabled = false;
+    next.hmCorporateCulturePortalBandEnabled = false;
+    next.hmCorporateWarsSectionEnabled = false;
+    next.hmCorporateNationalDaysSectionEnabled = false;
+    next.hmSehitSearchEnabled = false;
+    next.sadeNewsAtaturkBandEnabled = false;
+    next.sadeNewsHistoryNationalDaysBandEnabled = false;
+  }
+  next.hmLayoutSanitizeRev = HM_LAYOUT_SANITIZE_REV;
+  return next;
+}
+
+/** Tüm HM siteler — VKD/kurumsal şablon sızıntısını Neon layout_json'dan temizle. */
+async function ensureHmLayoutSanitizedOnRow(sql, row) {
+  if (!row) return row;
+  let layout = {};
+  try {
+    layout = row.layout_json ? JSON.parse(String(row.layout_json)) : {};
+  } catch {
+    layout = {};
+  }
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+  if (String(layout.hmLayoutSanitizeRev || "") === HM_LAYOUT_SANITIZE_REV) return row;
+
+  const next = sanitizeHmLayoutRecord(layout, row.slug);
+  await sql`
+    UPDATE hm_news_sites
+    SET layout_json = ${JSON.stringify(next)}::jsonb,
+        updated_at = NOW()
+    WHERE id = ${row.id}
+  `;
+  return { ...row, layout_json: JSON.stringify(next) };
+}
 
 /** KH: köşe yazarlarını Neon'dan sil + vitrin yazar modüllerini kapat (bir kerelik rev). */
 async function ensureKhAuthorsClearedOnRow(sql, row) {
@@ -563,6 +673,7 @@ async function ensureKhAuthorsClearedOnRow(sql, row) {
 async function ensureKhSiteRow(sql, row) {
   let next = await ensureKhVideoMenuOnRow(sql, row);
   next = await ensureKhAuthorsClearedOnRow(sql, next);
+  next = await ensureHmLayoutSanitizedOnRow(sql, next);
   return next;
 }
 

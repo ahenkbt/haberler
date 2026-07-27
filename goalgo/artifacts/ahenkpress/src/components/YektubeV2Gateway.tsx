@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, type ReactNode } from "react";
+import { useRef, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, Redirect } from "wouter";
 import { YektubeStandaloneShell } from "@/components/YektubeStandaloneShell";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
@@ -7,7 +7,64 @@ import {
   isYektubeV2Enabled,
   mapToHmYektubeEmbedUrl,
   mapToYektubePublicUrl,
+  YEKTUBE_PORTAL_MIRROR_ORIGIN,
 } from "@/lib/yektubeV2Feature";
+
+const YEKTUBE_MIRROR_ORIGIN = YEKTUBE_PORTAL_MIRROR_ORIGIN.replace(/\/+$/, "");
+
+/** yektube.com DNS bozuksa yekpare.net/yp yedeğine zorla. */
+function preferYektubeMirrorOrigin(url: string): string {
+  return url.replace(/^https?:\/\/(www\.)?yektube\.com(?=\/|$)/i, YEKTUBE_MIRROR_ORIGIN);
+}
+
+function buildHmYektubeEmbedSrc(hmCtx: ReturnType<typeof useHmPublicLinkContextOptional>): string {
+  const raw = preferYektubeMirrorOrigin(
+    mapToHmYektubeEmbedUrl(
+      typeof window !== "undefined" ? window.location.pathname : "/video",
+      typeof window !== "undefined" ? window.location.search : "",
+      typeof window !== "undefined" ? window.location.hash : "",
+    ),
+  );
+  try {
+    const url = new URL(raw, `${YEKTUBE_MIRROR_ORIGIN}/`);
+    if (url.hostname === "yektube.com" || url.hostname === "www.yektube.com") {
+      url.hostname = new URL(`${YEKTUBE_MIRROR_ORIGIN}/`).hostname;
+    }
+    url.searchParams.set("embed", "1");
+    const path = typeof window !== "undefined" ? window.location.pathname : "/video";
+    if (!url.searchParams.get("hm")) {
+      const hmFromPath =
+        path.match(/\/tr\/([^/]+)\/video(?:-tv)?(?:\/|$)/)?.[1] ??
+        path.match(/\/([^/]+)\/video(?:-tv)?(?:\/|$)/)?.[1];
+      const hmSlug =
+        hmCtx?.slug?.trim() ||
+        (hmFromPath &&
+        hmFromPath !== "tr" &&
+        hmFromPath !== "hm" &&
+        hmFromPath !== "video" &&
+        hmFromPath !== "video-tv"
+          ? hmFromPath
+          : null);
+      if (hmSlug) url.searchParams.set("hm", hmSlug);
+    }
+    const displayName = hmCtx?.displayName?.trim();
+    if (displayName && !url.searchParams.get("hmName")) {
+      url.searchParams.set("hmName", displayName);
+    }
+    const logoRaw = hmCtx?.layoutPrefs?.logoUrl?.trim();
+    if (logoRaw && !url.searchParams.get("hmLogo")) {
+      const abs =
+        /^https?:\/\//i.test(logoRaw)
+          ? logoRaw
+          : `${window.location.origin}${logoRaw.startsWith("/") ? "" : "/"}${logoRaw}`;
+      url.searchParams.set("hmLogo", abs);
+    }
+    return preferYektubeMirrorOrigin(url.toString());
+  } catch {
+    const withEmbed = raw.includes("embed=1") ? raw : `${raw}${raw.includes("?") ? "&" : "?"}embed=1`;
+    return preferYektubeMirrorOrigin(withEmbed);
+  }
+}
 
 /** v2 açıkken aynı origin üzerinde /yektube-v2 (yektube.com DNS bozuksa yedek) */
 export function YektubeV2Redirect({ fallback }: { fallback?: ReactNode }) {
@@ -45,63 +102,46 @@ export function HmYektubePortalEmbed() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const src = useMemo(() => {
-    if (typeof window === "undefined") return "https://yektube.com/yp/?embed=1";
-    const raw = mapToHmYektubeEmbedUrl(window.location.pathname, window.location.search, window.location.hash);
-    try {
-      const url = new URL(raw, "https://yektube.com");
-      url.searchParams.set("embed", "1");
-      const path = window.location.pathname;
-      if (!url.searchParams.get("hm")) {
-        const hmFromPath =
-          path.match(/\/tr\/([^/]+)\/video(?:-tv)?(?:\/|$)/)?.[1] ??
-          path.match(/\/([^/]+)\/video(?:-tv)?(?:\/|$)/)?.[1];
-        const hmSlug =
-          hmCtx?.slug?.trim() ||
-          (hmFromPath &&
-          hmFromPath !== "tr" &&
-          hmFromPath !== "hm" &&
-          hmFromPath !== "video" &&
-          hmFromPath !== "video-tv"
-            ? hmFromPath
-            : null);
-        if (hmSlug) url.searchParams.set("hm", hmSlug);
-      }
-      const displayName = hmCtx?.displayName?.trim();
-      if (displayName && !url.searchParams.get("hmName")) {
-        url.searchParams.set("hmName", displayName);
-      }
-      const logoRaw = hmCtx?.layoutPrefs?.logoUrl?.trim();
-      if (logoRaw && !url.searchParams.get("hmLogo")) {
-        const abs =
-          /^https?:\/\//i.test(logoRaw)
-            ? logoRaw
-            : `${window.location.origin}${logoRaw.startsWith("/") ? "" : "/"}${logoRaw}`;
-        url.searchParams.set("hmLogo", abs);
-      }
-      return url.toString();
-    } catch {
-      return raw.includes("embed=1") ? raw : `${raw}${raw.includes("?") ? "&" : "?"}embed=1`;
+    if (typeof window === "undefined") {
+      return `${YEKTUBE_MIRROR_ORIGIN}/yp/?embed=1`;
     }
+    return buildHmYektubeEmbedSrc(hmCtx);
   }, [location, hmCtx?.slug, hmCtx?.displayName, hmCtx?.layoutPrefs?.logoUrl]);
+
+  const [activeSrc, setActiveSrc] = useState(src);
+
+  useEffect(() => {
+    setActiveSrc(src);
+  }, [src]);
 
   useEffect(() => {
     const el = iframeRef.current;
-    if (!el || el.src === src) return;
+    if (!el || el.src === activeSrc) return;
     try {
-      el.contentWindow?.location.replace(src);
+      el.contentWindow?.location.replace(activeSrc);
     } catch {
-      el.src = src;
+      el.src = activeSrc;
     }
-  }, [src]);
+  }, [activeSrc]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (!activeSrc.includes("yektube.com")) return undefined;
+    const timer = window.setTimeout(() => {
+      setActiveSrc((cur) => preferYektubeMirrorOrigin(cur));
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [activeSrc]);
 
   return (
     <iframe
       ref={iframeRef}
       title="Yektube"
-      src={src}
+      src={activeSrc}
       className="hm-video-tv-embed block min-h-[70vh] w-full flex-1 border-0 bg-white"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       referrerPolicy="strict-origin-when-cross-origin"
+      onError={() => setActiveSrc((cur) => preferYektubeMirrorOrigin(cur))}
     />
   );
 }

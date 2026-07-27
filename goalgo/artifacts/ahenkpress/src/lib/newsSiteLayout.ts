@@ -2934,6 +2934,101 @@ function normalizeLayoutHexColor(raw: unknown): string | null {
   return typeof raw === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw.trim()) ? raw.trim() : null;
 }
 
+const HM_LAYOUT_SANITIZE_CORPORATE_MODULES = new Set<string>([
+  "culturePortal",
+  "ataturkCorner",
+  "sehitSearch",
+  "heritageInfo",
+  "donationSupport",
+]);
+
+const HM_VKD_MENU_PREFIX = "vkd-menu-";
+
+const HM_VKD_ONLY_PATH_PREFIXES = [
+  "/faaliyetler",
+  "/baskan",
+  "/dernegimiz",
+  "/sehit-gazi",
+  "/bagis",
+  "/yonetim-kurulu",
+  "/tuzuk",
+];
+
+function hmLayoutPathOnlyHref(href: unknown): string {
+  const raw = String(href ?? "").trim();
+  if (!raw || raw === "#") return raw;
+  try {
+    if (/^https?:\/\//i.test(raw)) return new URL(raw).pathname.toLowerCase();
+  } catch {
+    /* relative */
+  }
+  return raw.split("?")[0]?.split("#")[0]?.toLowerCase() ?? "";
+}
+
+function isForeignHmCorporateMenuItem(
+  item: { id?: string; href?: string },
+  siteSlug: string | null | undefined,
+): boolean {
+  const slug = String(siteSlug ?? "")
+    .trim()
+    .toLowerCase();
+  if (slug === "vkd") return false;
+  const id = String(item.id ?? "")
+    .trim()
+    .toLowerCase();
+  const href = hmLayoutPathOnlyHref(item.href);
+  if (id.startsWith(HM_VKD_MENU_PREFIX)) return true;
+  for (const p of HM_VKD_ONLY_PATH_PREFIXES) {
+    if (href === p || href.startsWith(`${p}/`)) return true;
+  }
+  if (href.includes("/ansiklopedi/t")) return true;
+  return false;
+}
+
+/** Kurumsal olmayan vitrinlerde VKD menü/modül/bant sızıntısını temizler. */
+export function sanitizeHmPublicLayoutPrefs(
+  prefs: NewsSiteLayoutPrefs,
+  siteSlug?: string | null,
+): NewsSiteLayoutPrefs {
+  const slug = String(siteSlug ?? "")
+    .trim()
+    .toLowerCase();
+  const theme = normalizeHmVitrinTheme(prefs.hmVitrinTheme);
+  if (theme === "corporate" && slug === "vkd") return prefs;
+
+  const next: NewsSiteLayoutPrefs = { ...prefs };
+
+  if (Array.isArray(next.hmCorporateMenuItems)) {
+    next.hmCorporateMenuItems = next.hmCorporateMenuItems.filter(
+      (item) => !isForeignHmCorporateMenuItem(item, slug),
+    );
+  }
+  for (const key of ["hmNewsFooterMenuItems", "hmNewsSidebarMenuItems", "hmNewsStripMenuItems"] as const) {
+    const rows = next[key];
+    if (Array.isArray(rows)) {
+      next[key] = rows.filter((item) => !isForeignHmCorporateMenuItem(item, slug));
+    }
+  }
+
+  if (Array.isArray(next.hmNewsHomeModuleOrder)) {
+    next.hmNewsHomeModuleOrder = next.hmNewsHomeModuleOrder.filter(
+      (id) => !HM_LAYOUT_SANITIZE_CORPORATE_MODULES.has(id),
+    );
+  }
+
+  if (theme !== "corporate") {
+    next.hmCorporateAtaturkCornerEnabled = false;
+    next.hmCorporateCulturePortalBandEnabled = false;
+    next.hmCorporateWarsSectionEnabled = false;
+    next.hmCorporateNationalDaysSectionEnabled = false;
+    next.hmSehitSearchEnabled = false;
+    next.sadeNewsAtaturkBandEnabled = false;
+    next.sadeNewsHistoryNationalDaysBandEnabled = false;
+  }
+
+  return next;
+}
+
 /** API'den gelen `layout_json` metnini güvenli biçimde tercihlere çevirir. */
 export function parseNewsSiteLayoutFromJson(
   raw: string | null | undefined,
@@ -3463,10 +3558,13 @@ export function parseNewsSiteLayoutFromJson(
         HM_CORPORATE_HOME_MODULE_ORDER,
       ).filter((id) => !isHmNewsRetiredHomeModule(id)),
     };
-    return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(layoutResult) : layoutResult;
+    const withVkd =
+      siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(layoutResult) : layoutResult;
+    return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
   } catch {
     const base = { ...defaultNewsSiteLayoutPrefs };
-    return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
+    const withVkd = siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
+    return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
   }
 }
 

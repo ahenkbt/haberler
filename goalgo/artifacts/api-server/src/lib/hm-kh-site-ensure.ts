@@ -8,6 +8,7 @@ import {
   hmSiteEditorsTable,
 } from "@workspace/db";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
+import { sanitizeHmPublicLayoutRecord } from "./hm-layout-sanitize.js";
 
 /**
  * Kırşehir Haber — kanonik slug `kirsehirhaber` (/tr/kirsehirhaber).
@@ -231,24 +232,27 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   try {
     const parsed = layoutJson ? (JSON.parse(String(layoutJson)) as Record<string, unknown>) : {};
     const defaults = JSON.parse(defaultKhLayoutJson()) as Record<string, unknown>;
-    const next = {
-      ...defaults,
-      ...parsed,
-      hmVitrinTheme: parsed.hmVitrinTheme || "esen",
-      mansetVariant: parsed.mansetVariant || "center-trio",
-      hmNewsTepeMansetEnabled: true,
-      hmNewsSliderEnabled: true,
-      hmNewsBreakingBandEnabled: true,
-      hmNewsGoogleNewsBandEnabled: true,
-      hmNewsEsenLeadPackEnabled: true,
-      hybridRssEnabled: true,
-      hmYekparePoolReceiveEnabled: true,
-      hmAllowCrossSiteManualNews: parsed.hmAllowCrossSiteManualNews ?? true,
-      hmNewsHomeModuleOrder:
-        Array.isArray(parsed.hmNewsHomeModuleOrder) && parsed.hmNewsHomeModuleOrder.length > 0
-          ? parsed.hmNewsHomeModuleOrder
-          : defaults.hmNewsHomeModuleOrder,
-    };
+    const next = sanitizeHmPublicLayoutRecord(
+      {
+        ...defaults,
+        ...parsed,
+        hmVitrinTheme: parsed.hmVitrinTheme || "esen",
+        mansetVariant: parsed.mansetVariant || "center-trio",
+        hmNewsTepeMansetEnabled: true,
+        hmNewsSliderEnabled: true,
+        hmNewsBreakingBandEnabled: true,
+        hmNewsGoogleNewsBandEnabled: true,
+        hmNewsEsenLeadPackEnabled: true,
+        hybridRssEnabled: true,
+        hmYekparePoolReceiveEnabled: true,
+        hmAllowCrossSiteManualNews: parsed.hmAllowCrossSiteManualNews ?? true,
+        hmNewsHomeModuleOrder:
+          Array.isArray(parsed.hmNewsHomeModuleOrder) && parsed.hmNewsHomeModuleOrder.length > 0
+            ? parsed.hmNewsHomeModuleOrder
+            : defaults.hmNewsHomeModuleOrder,
+      },
+      KH_SITE_SLUG,
+    );
     layoutJson = JSON.stringify(next);
   } catch {
     layoutJson = defaultKhLayoutJson();

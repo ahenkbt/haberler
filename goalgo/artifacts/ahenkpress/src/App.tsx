@@ -621,6 +621,25 @@ function KesfetListingRoute() {
   );
 }
 
+/** Kök `/video` — KH özel alanında doğrudan Video TV kabuğu; portalda /yektube. */
+function HmRootVideoRoute() {
+  const host =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  if (isHmVideoTvAllowed(host, null)) {
+    return (
+      <HmVideoTvPublicShell>
+        <HmPublicVideoTvRoute />
+      </HmVideoTvPublicShell>
+    );
+  }
+  return (
+    <HmPortalOrDomainStandardPage segment="video">
+      <HmVideoTvRouteGate>
+        <Redirect to="/yektube" />
+      </HmVideoTvRouteGate>
+    </HmPortalOrDomainStandardPage>
+  );
+}
 /** Video TV — yekpare.net hub + Kırşehir Haber (kh) özel alanı. */
 function HmVideoTvRouteGate({ children }: { children: React.ReactNode }) {
   const params = useParams<{ slug?: string }>();
@@ -810,15 +829,7 @@ export default function App() {
       <Route path="/kategori/:slug">{() => <PublicLayout><KategoriDetay /></PublicLayout>}</Route>
       <Route path="/video-tv/kanal/:id/:videoId">{() => <LegacyVideoTvKanalRedirect />}</Route>
       <Route path="/video-tv/kanal/:id">{() => <LegacyVideoTvKanalRedirect />}</Route>
-      <Route path="/video">
-        {() => (
-          <HmPortalOrDomainStandardPage segment="video">
-            <HmVideoTvRouteGate>
-              <Redirect to="/yektube" />
-            </HmVideoTvRouteGate>
-          </HmPortalOrDomainStandardPage>
-        )}
-      </Route>
+      <Route path="/video">{() => <HmRootVideoRoute />}</Route>
       <Route path="/video-tv">
         {() => (
           <HmPortalOrDomainStandardPage segment="video-tv">

@@ -40,6 +40,7 @@ import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
 import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
+import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
@@ -404,6 +405,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_200).unref();
   } else {
     logger.info("[hm-site-id] HM_SITE_ID_COLLISION_REPAIR=0 — atlandı");
+  }
+
+  // VKD/kurumsal şablon sızıntısı — tüm HM sitelerinde layout_json temizliği
+  if (envJobFlag("HM_LAYOUT_SANITIZE_REPAIR", true)) {
+    setTimeout(() => {
+      void repairAllHmLayoutSanitize({ dryRun: false })
+        .then((r) => logger.info({ ...r }, "[hm-layout] sızıntı temizliği"))
+        .catch((err) => logger.error({ err }, "[hm-layout] temizlik başarısız"));
+    }, 17_800).unref();
+  } else {
+    logger.info("[hm-layout] HM_LAYOUT_SANITIZE_REPAIR=0 — atlandı");
   }
 
   // /tr/kirsehirhaber + kirsehirhaber.org / kirsehri.com / kirsehir.net (Su'ya dokunmaz; kh yaratılmaz)
