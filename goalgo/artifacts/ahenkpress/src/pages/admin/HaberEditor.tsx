@@ -415,9 +415,13 @@ export default function HaberEditor() {
               isEditorHm || isAuthorHm ? { ...payload, siteOnly: true } : payload,
             ),
           });
-          const errBody = (await r.json().catch(() => ({}))) as { error?: string };
+          const errBody = (await r.json().catch(() => ({}))) as { error?: string; detail?: string };
           if (!r.ok) {
-            toast({ title: errBody.error || "Kayıt başarısız", variant: "destructive" });
+            toast({
+              title: errBody.error || "Kayıt başarısız",
+              description: errBody.detail && errBody.detail !== errBody.error ? errBody.detail : undefined,
+              variant: "destructive",
+            });
             return;
           }
           afterSave();
