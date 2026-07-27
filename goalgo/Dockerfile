@@ -1,5 +1,5 @@
 # Goalgo API — Railway / Docker (monorepo kökü: bu dosyanın olduğu klasör = `goalgo`)
-# deploy-rev: 2026-07-17-sitemap-tepe (Render auto-deploy tetik)
+# deploy-rev: 2026-07-27-haberler-repo (Render: ahenkbt/haberler, rootDir=goalgo)
 FROM node:22-bookworm-slim
 
 WORKDIR /app
