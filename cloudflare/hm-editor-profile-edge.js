@@ -645,8 +645,8 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 
-  // Kırşehir: kenar JWT Render API'de 401 verir (secret/DB ayrışması).
-  // Neon doğrulaması başarılı → Render session-bridge ile Render JWT al.
+  // Kırşehir: tercihen Render JWT (session-bridge). Render henüz deploy
+  // edilmediyse (404) Neon JWT'ye düş — giriş kilitlenmesin.
   const siteIsKh = await isKhEditorSite(sql, site.id);
   if (siteIsKh || KH_HOSTS.has(host)) {
     const bridged = await exchangeKhSessionViaRenderBridge(env, {
@@ -658,10 +658,7 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
       siteDomain: site.domain || host || "kirsehirhaber.org",
     });
     if (bridged) return bridged;
-    return jsonResponse(503, {
-      error:
-        "Kırşehir oturum köprüsü kurulamadı. Lütfen birkaç saniye sonra tekrar deneyin.",
-    });
+    console.error("[hm-kh-session-bridge] fallback neon-jwt");
   }
 
   const token = await signEditorJwt(env, editor.id, site.id);
