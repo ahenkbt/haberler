@@ -506,9 +506,16 @@ async function handleEditorNews(sql, siteId, url, env) {
     `;
     const neonTotal = countRows?.[0]?.count ?? 0;
     if (neonTotal > 0) {
+      const byId = new Map();
+      for (const r of rows || []) {
+        const id = Number(r.id);
+        if (!Number.isFinite(id) || id <= 0) continue;
+        if (!byId.has(id)) byId.set(id, r);
+      }
+      const uniqueRows = Array.from(byId.values());
       return jsonResponse(200, {
-        items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
-        total: neonTotal,
+        items: uniqueRows.map((r) => serializeNewsRow(r, r.category_slug)),
+        total: uniqueRows.length,
         source: "neon",
       });
     }
@@ -555,11 +562,25 @@ async function handleCreateNews(sql, siteId, body) {
         .toLowerCase() || null
     : null;
 
-  // slug çakışırsa benzersizleştir
+  // slug çakışırsa benzersizleştir; aynı slug zaten varsa idempotent dön (çift kayıt önleme)
   let lastErr = "";
   for (let i = 0; i < 8; i += 1) {
     const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
     try {
+      const existing = await sql`
+        SELECT n.*, c.slug AS category_slug
+        FROM news n
+        LEFT JOIN categories c ON c.id = n.category_id
+        WHERE n.site_id = ${siteId}
+          AND lower(trim(both '/' from n.slug)) = lower(trim(both '/' from ${trySlug}))
+        ORDER BY n.id DESC
+        LIMIT 1
+      `;
+      const hit = Array.isArray(existing) ? existing[0] : existing?.rows?.[0];
+      if (hit) {
+        return jsonResponse(200, serializeNewsRow(hit, hit.category_slug || categorySlug));
+      }
+
       const rows = await sql`
         INSERT INTO news (
           title, slug, spot, content, image_url, category_id, author_id,
