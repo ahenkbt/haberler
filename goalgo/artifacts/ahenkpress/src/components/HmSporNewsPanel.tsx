@@ -16,6 +16,7 @@ import {
   HM_SPOR_BOX_LEAD_COUNT,
   HM_SPOR_BOX_TOTAL,
   HM_SPOR_SUBCATEGORIES,
+  pickSporAllBoxItems,
   type HmSporSubcategoryId,
 } from "@/lib/hmSporSubcategories";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
@@ -37,10 +38,31 @@ export type HmSporNewsPanelItem = {
   feedLabel?: string | null;
   spot?: string | null;
   content?: string | null;
+  rssSourceUrl?: string | null;
+  originUrl?: string | null;
 };
 
 function newsTitle(raw: unknown): string {
   return decodeHtmlEntities(String(raw ?? "").trim()) || "Haber";
+}
+
+function dedupeFillSporItems(
+  primary: readonly HmSporNewsPanelItem[],
+  fallback: readonly HmSporNewsPanelItem[],
+  limit: number,
+): HmSporNewsPanelItem[] {
+  const seen = new Set<string>();
+  const out: HmSporNewsPanelItem[] = [];
+  const push = (item: HmSporNewsPanelItem | undefined) => {
+    if (!item || out.length >= limit) return;
+    const key = String(item.id ?? item.href ?? item.slug ?? item.rssSourceUrl ?? "").trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(item);
+  };
+  for (const item of primary) push(item);
+  for (const item of fallback) push(item);
+  return out;
 }
 
 export type HmSporNewsPanelProps = {
@@ -68,24 +90,24 @@ export function HmSporNewsPanel({
   const [activeSub, setActiveSub] = useState<HmSporSubcategoryId>("all");
   const activeMeta = HM_SPOR_SUBCATEGORIES.find((row) => row.id === activeSub) ?? HM_SPOR_SUBCATEGORIES[0]!;
 
-  const subQuery = useQuery({
+  const tabQuery = useQuery({
     queryKey: hybridNewsListQueryKey({
-      scope: "hm-spor-subcategory",
+      scope: "hm-spor-box-tab",
       siteId,
       categorySlug: activeMeta.categorySlug,
-      limit: HM_SPOR_BOX_TOTAL,
+      limit: Math.max(HM_SPOR_BOX_TOTAL * 3, 18),
       offset: 0,
       rssScope: "all",
-      rssOnly: activeSub !== "all",
+      rssOnly: true,
     }),
     queryFn: async ({ signal }) => {
       const rows = await fetchHybridNewsList({
         siteId,
         categorySlug: activeMeta.categorySlug,
-        limit: HM_SPOR_BOX_TOTAL,
+        limit: Math.max(HM_SPOR_BOX_TOTAL * 3, 18),
         offset: 0,
         rssScope: "all",
-        rssOnly: activeSub !== "all",
+        rssOnly: true,
         timeoutMs: HM_HYBRID_CATEGORY_FETCH_TIMEOUT_MS,
         retries: 0,
         signal,
@@ -94,18 +116,18 @@ export function HmSporNewsPanel({
         .map(mapHybridNewsToBandItem)
         .filter((item) => passesCategoryContentGuard(item, "spor"));
     },
-    enabled: activeSub !== "all",
     staleTime: 60 * 1000,
     retry: 0,
   });
 
   const displayItems = useMemo(() => {
+    const fromApi = (tabQuery.data ?? []).filter(Boolean) as HmSporNewsPanelItem[];
+    const fallback = items.filter(Boolean);
     if (activeSub === "all") {
-      return items.filter(Boolean).slice(0, HM_SPOR_BOX_TOTAL);
+      return pickSporAllBoxItems(fromApi, fallback, HM_SPOR_BOX_TOTAL);
     }
-    const fromApi = (subQuery.data ?? []).filter(Boolean).slice(0, HM_SPOR_BOX_TOTAL);
-    return fromApi;
-  }, [activeSub, items, subQuery.data]);
+    return dedupeFillSporItems(fromApi, fallback, HM_SPOR_BOX_TOTAL);
+  }, [activeSub, items, tabQuery.data]);
 
   const resolveHref = (n: HmSporNewsPanelItem) => {
     if (newsHref) return newsHref(n);
@@ -114,7 +136,7 @@ export function HmSporNewsPanel({
 
   const leads = displayItems.slice(0, HM_SPOR_BOX_LEAD_COUNT);
   const cards = displayItems.slice(HM_SPOR_BOX_LEAD_COUNT, HM_SPOR_BOX_TOTAL);
-  const loading = activeSub !== "all" && subQuery.isLoading;
+  const loading = tabQuery.isLoading && displayItems.length === 0;
 
   return (
     <div className={`hm-spor-news-panel ${className}`.trim()} data-hm-spor-sub={activeSub}>

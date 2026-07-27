@@ -144,7 +144,7 @@ const HM_DEFAULT_BREAKING_RSS_FEEDS: Record<string, string> = {
   teknoloji: "https://www.ntv.com.tr/teknoloji.rss",
   saglik: "https://www.ntv.com.tr/saglik.rss",
   otomobil: "https://www.ntv.com.tr/otomobil.rss",
-  spor: "https://www.dirilispostasi.com/rss/spor",
+  spor: "https://www.ntv.com.tr/sporskor.rss",
   futbol: "https://www.spordepor.com/rss/futbol",
   basketbol: "https://www.spordepor.com/rss/basketbol",
   tenis: "https://www.spordepor.com/rss/tenis",

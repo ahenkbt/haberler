@@ -62,7 +62,7 @@ const RSS_BREAKING_CATEGORIES: Record<RssBreakingFeedCategoryId, { label: string
   teknoloji: { label: "Teknoloji", defaultUrl: "https://www.ntv.com.tr/teknoloji.rss" },
   saglik: { label: "Sağlık", defaultUrl: "https://www.ntv.com.tr/saglik.rss" },
   otomobil: { label: "Otomobil", defaultUrl: "https://www.ntv.com.tr/otomobil.rss" },
-  spor: { label: "Spor", defaultUrl: "https://www.dirilispostasi.com/rss/spor" },
+  spor: { label: "Spor", defaultUrl: "https://www.ntv.com.tr/sporskor.rss" },
   savunmaSanayi: { label: "Savunma Sanayi", defaultUrl: "https://www.dirilispostasi.com/rss/savunma-sanayi" },
 };
 
