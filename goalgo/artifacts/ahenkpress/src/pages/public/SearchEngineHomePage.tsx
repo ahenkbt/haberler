@@ -72,9 +72,7 @@ const navItems: NavItem[] = [
   { label: "Haber", href: "/haberler", icon: Newspaper },
   { label: "Video", href: "/yektube", icon: Video },
   { label: "Harita", href: "/haritalar", icon: MapPinned },
-  { label: "Alışveriş", href: "/magaza", icon: ShoppingBag },
-  { label: "İlan", href: "/firma-rehberi/ilanlar", icon: Building2 },
-  { label: "Yakınımdakiler", href: "/kesfet", icon: Compass },
+  { label: "Keşfet", href: "/kesfet", icon: Compass },
   { label: "Seyahat", href: "/turizm", icon: Plane },
 ];
 
@@ -91,13 +89,11 @@ const heroChips = [
   { label: "Video", href: "/yektube" },
   { label: "Harita", href: "/haritalar" },
   { label: "Keşfet", href: "/kesfet" },
-  { label: "Alışveriş", href: "/magaza" },
   { label: "Seyahat", href: "/turizm" },
 ];
 
 const services: ServiceCard[] = [
   { label: "Keşfet", href: "/kesfet", icon: MapPinned, desc: "Yakındaki mekan ve hizmetler.", color: "#38bdf8" },
-  { label: "Alışveriş", href: "/magaza", icon: ShoppingBag, desc: "Binlerce ürün tek tıkta.", color: "#a855f7" },
   { label: "Seyahat", href: "/turizm", icon: Plane, desc: "Uçak, bilet, otel ve rota.", color: "#06b6d4" },
 ];
 
@@ -109,17 +105,16 @@ const whyCards = [
 
 const resultTypes = [
   { label: "Mekanlar", value: "Vitrindeki işletmeler", icon: Building2, href: "/kesfet?featured=1" },
-  { label: "Ürünler", value: "Öne çıkan ürünler", icon: ShoppingBag, href: "/firma-rehberi/urunler" },
   { label: "Harita", value: "Yakındaki kayıtlar", icon: MapPinned, href: "/kesfet?featured=1" },
   { label: "Video", value: "Tanıtım içerikleri", icon: Play, href: "/yektube?q=mekan%20%C3%BCr%C3%BCn" },
-  { label: "Alışveriş", value: "Fırsatlar", icon: ShoppingCart, href: "/alisveris" },
+  { label: "Keşfet", value: "Yakındaki fırsatlar", icon: ShoppingCart, href: "/kesfet" },
 ];
 
 const featuredProducts: FeaturedProduct[] = [
   { name: "Akıllı temizlik paketi", category: "Ev hizmeti", price: "₺899'dan başlayan", href: "/firma-rehberi/urunler", color: "#22c55e" },
   { name: "Premium araç kiralama", category: "Seyahat", price: "Günlük fırsat", href: "/turizm", color: "#06b6d4" },
   { name: "Dijital randevu paketi", category: "Sağlık", price: "Online kayıt", href: "/firma-rehberi/urunler", color: "#8b5cf6" },
-  { name: "Vitrin mağaza ürünü", category: "Alışveriş", price: "Öne çıkan", href: "/alisveris", color: "#f97316" },
+  { name: "Yerel işletme vitrini", category: "Keşfet", price: "Öne çıkan", href: "/kesfet", color: "#f97316" },
 ];
 
 const trendingCards = [
@@ -157,14 +152,14 @@ const trendingCards = [
     lines: [
       { label: "Çevrendeki indirimler", href: "/kesfet?q=indirim&near=T%C3%BCrkiye" },
       { label: "Kampanyalı kahvaltılar", href: "/kesfet?q=kahvalt%C4%B1&near=T%C3%BCrkiye" },
-      { label: "Mağaza fırsatları", href: "/magaza" },
+      { label: "Keşfet fırsatları", href: "/kesfet" },
     ],
   },
 ];
 
 const footerGroups = [
   { title: "Keşfet", links: ["Haberler", "Videolar", "Harita", "Sarı Sayfalar"] },
-  { title: "Servisler", links: ["Keşfet", "Alışveriş", "Seyahat"] },
+  { title: "Servisler", links: ["Keşfet", "Seyahat"] },
   { title: "Yönetim", links: ["Anasayfa Tasarım", "Anasayfa Modülleri"] },
   { title: "Yardım", links: ["SSS", "Gizlilik", "Kullanım Şartları", "İletişim", "Kariyer"] },
 ];
@@ -175,7 +170,6 @@ const footerHrefByLabel: Record<string, string> = {
   Harita: "/haritalar",
   "Sarı Sayfalar": "/firma-rehberi",
   Keşfet: "/kesfet",
-  Alışveriş: "/magaza",
   Seyahat: "/turizm",
   "Anasayfa Tasarım": "/admin/anasayfa-tasarim",
   "Anasayfa Modülleri": "/admin/anasayfa-modulleri",

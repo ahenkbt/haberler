@@ -35,7 +35,7 @@ export function haritalarSuperNavHref(item: (typeof HARITALAR_SUPER_NAV)[number]
     case "kamu":
       return HARITALAR.super(item.superCategory);
     case "alisveris":
-      return "/magaza";
+      return HARITALAR.super(item.superCategory);
     case "hizmet":
       return "/servisler";
     case "turizm":
@@ -76,13 +76,9 @@ export function isHaritalarSubNavItemActive(loc: string, href: string, id?: stri
     }
     return true;
   }
-  if (id === "alisveris" || href === "/magaza" || href === "/alisveris") {
-    return (
-      path === "/magaza" ||
-      path.startsWith("/magaza/") ||
-      path === "/alisveris" ||
-      path.startsWith("/alisveris/")
-    );
+  if (id === "alisveris" || href.startsWith("/map?") || href.startsWith("/haritalar?")) {
+    const superCat = parseHaritalarSuperCategory(loc);
+    return isHaritalarMapPath(path) && superCat === "alisveris";
   }
   if (id === "hizmet" || href === "/servisler") {
     return path === "/servisler" || path.startsWith("/servisler/");

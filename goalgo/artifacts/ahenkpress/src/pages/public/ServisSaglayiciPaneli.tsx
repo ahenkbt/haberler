@@ -4,7 +4,6 @@ import { useGetSiteSettings } from "@workspace/api-client-react";
 import { apiUrl } from "@/lib/apiBase";
 import { LocationPickerGooglePrimary } from "@/components/LocationPickerGooglePrimary";
 import { TrAddressFields } from "@/components/TrAddressFields";
-import { OrderTrackSearch } from "@/components/OrderTrackSearch";
 import { PlatformBroadcastStrip } from "@/components/PlatformBroadcastStrip";
 import { VendorPostaHub } from "@/pages/public/providerPanels/VendorPostaHub";
 import { VendorDuyurularPanel } from "@/pages/public/providerPanels/VendorDuyurularPanel";
@@ -14,7 +13,6 @@ import { VendorPlatformSupportTab } from "@/pages/public/providerPanels/VendorPl
 import { VendorThemesPanel } from "@/pages/public/providerPanels/VendorThemesPanel";
 import { VendorNavMenuPanel } from "@/pages/public/providerPanels/VendorNavMenuPanel";
 import { ExternalMenuImportPanel } from "@/components/ExternalMenuImportPanel";
-import { EcommerceCategorySelect, type EcommerceCategoryNode } from "@/components/EcommerceCategorySelect";
 import { getProviderSession, providerAuthHeaders } from "@/lib/providerSession";
 import { providerPanelPath } from "@/lib/providerPanelRoutes";
 
@@ -30,7 +28,7 @@ function buildVendorTableOrderUrl(params: {
   sectionId?: string;
 }): string {
   const { origin, slug } = params;
-  return `${origin}/alisveris/magaza/${encodeURIComponent(slug)}`;
+  return `${origin}/kesfet/${encodeURIComponent(slug)}`;
 }
 
 /** Standart üyelikte görünen panel sekmeleri (içerik + vitrin temeli; kalan modüller Gold). */
@@ -494,6 +492,7 @@ interface Vendor {
   custom_domains?: Array<{ domain?: string | null; status?: string | null; verified_at?: string | null }>;
 }
 interface MenuCategory { id: number; name: string; position: number; is_custom?: boolean; ecommerce_category_id?: number | null; }
+type EcommerceCategoryNode = { id: number; name: string; children?: EcommerceCategoryNode[] };
 interface MenuItem {
   id: number; name: string; description: string | null;
   price: string | null; sale_price: string | null;
@@ -3678,13 +3677,13 @@ export default function ServisSaglayiciPaneli() {
     { id: "profil",     label: "👤 Profil",       show: true },
     { id: "platform-destek", label: "🎫 Platform desteği", show: true },
     { id: "genel-ayarlar", label: "⚙️ Genel Ayarlar", show: isApproved },
-    { id: "temalar", label: "🎨 Temalar", show: isApproved && (isDelivery || isShop || isTourism) },
+    { id: "temalar", label: "🎨 Temalar", show: isApproved && (isDelivery || isTourism) },
     { id: "posta",      label: "📧 Posta & Bildirim", show: isApproved },
     { id: "bildirimler", label: "🔔 Bildirimler",      show: isApproved },
     { id: "duyurular",  label: "📣 Duyurular",       show: isApproved },
     { id: "kargo",      label: "📦 Kargo Gönder", show: isApproved },
-    { id: "urunler",    label: isDelivery ? "🍽️ Menü" : "🛍️ Ürünler", show: isDelivery || isShop },
-    { id: "siparisler", label: "📦 Siparişler",   show: isDelivery || isShop },
+    { id: "urunler",    label: isDelivery ? "🍽️ Menü" : "🛍️ Ürünler", show: isDelivery },
+    { id: "siparisler", label: "📦 Siparişler",   show: isDelivery },
     { id: "turizm-ilanlar",    label: "✈️ İlanlarım",      show: isTourism && isApproved },
     { id: "turizm-rezervasyon", label: "📅 Rezervasyonlar", show: isTourism && isApproved },
     { id: "ekibim",     label: "👥 Ekibim",          show: isApproved },
@@ -3732,11 +3731,11 @@ export default function ServisSaglayiciPaneli() {
   const vitrinPublicPath = (() => {
     const slug = (vendor.slug || "").trim() || String(vendor.id);
     const mapBid = String(vendor.linked_map_business_id ?? "").trim();
-    if (isDelivery) return `/alisveris/magaza/${slug}`;
-    if (isShop) return `/alisveris/magaza/${slug}`;
+    if (isDelivery) return `/kesfet/${slug}`;
+    if (isShop) return `/kesfet/${slug}`;
     if (mapBid) return `/kesfet/isletme/${mapBid}`;
     if (slug) return `/kesfet/${slug}`;
-    return `/alisveris/magaza/${slug}`;
+    return `/kesfet`;
   })();
   const vendorPublicUrl = buildTableOrderLink();
   const qrUrl = qrCodeImageUrl(vendorPublicUrl);
@@ -4475,7 +4474,7 @@ export default function ServisSaglayiciPaneli() {
                     authHeaders={authHeaders}
                     flash={(text, ok = true) => flash(ok ? "ok" : "err", text)}
                     isApproved={isApproved}
-                    storefrontPath={vendor?.slug ? `/alisveris/magaza/${encodeURIComponent(vendor.slug)}` : null}
+                    storefrontPath={vendor?.slug ? `/kesfet/${encodeURIComponent(vendor.slug)}` : null}
                   />
                   <h3 className="text-gray-900 text-sm font-bold">Vitrin ve iletişim</h3>
                   <GlassInput
@@ -6295,11 +6294,7 @@ export default function ServisSaglayiciPaneli() {
                     <div className="space-y-3">
                       <div>
                         <p className="text-[11px] font-semibold text-indigo-800 mb-1.5">Alışveriş Kategorileri</p>
-                        <EcommerceCategorySelect
-                          tree={ecommerceCategoryTree}
-                          value={productForm.useCustomCategory ? "" : productForm.ecommerceCategoryId}
-                          onChange={(v) => setProductForm((f) => ({ ...f, ecommerceCategoryId: v, useCustomCategory: false, customCategoryName: "" }))}
-                        />
+                        <p className="text-xs text-gray-500">Alışveriş kategorileri modülü kaldırıldı.</p>
                       </div>
                       <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                         <input
@@ -6404,7 +6399,7 @@ export default function ServisSaglayiciPaneli() {
                   </div>
                 )}
                 <div className="mb-4">
-                  <OrderTrackSearch compact />
+                  <p className="text-xs text-slate-500">Sipariş takip modülü kaldırıldı.</p>
                 </div>
                 <div className="flex gap-2 flex-wrap mb-4">
                   {[{ key: "all", label: "Tümü" }, { key: "pending", label: "⏳ Bekliyor" }, { key: "confirmed", label: "✓ Onaylandı" }, { key: "preparing", label: "🍳 Hazırlanıyor" }, { key: "ready", label: "✓ Hazır" }, { key: "delivered", label: "🚴 Teslim" }, { key: "cancelled", label: "✗ İptal" }].map(f => {

@@ -49,7 +49,6 @@ import {
   YektubePlaylistRedirect,
   YektubeRootRedirect,
 } from "./pages/public/YektubeRedirects";
-import Magaza from "./pages/public/Magaza";
 import Yazarlar from "./pages/public/Yazarlar";
 import TumHaberler from "./pages/public/TumHaberler";
 import HaberGonder from "./pages/public/HaberGonder";
@@ -57,22 +56,7 @@ import TalepFormu from "./pages/public/TalepFormu";
 import FotoGaleriPublic from "./pages/public/FotoGaleriPublic";
 import ResmiIlanlarPublic from "./pages/public/ResmiIlanlarPublic";
 import LisansAktivasyonu from "./pages/public/LisansAktivasyonu";
-import Checkout from "./pages/public/Checkout";
-import SiparisDetay from "./pages/public/SiparisDetay";
-import Siparislerim from "./pages/public/Siparislerim";
 import Hesabim from "./pages/public/Hesabim";
-import MagazaUrunDetay from "./pages/public/MagazaUrunDetay";
-import MagazaKatalog from "./pages/public/MagazaKatalog";
-import MagazaSaticiOl from "./pages/public/MagazaSaticiOl";
-import MagazaSepet from "./pages/public/MagazaSepet";
-import MagazaOdeme from "./pages/public/MagazaOdeme";
-import MagazaBlog from "./pages/public/MagazaBlog";
-import MagazaMarkalar from "./pages/public/MagazaMarkalar";
-import MagazaKampanyalar from "./pages/public/MagazaKampanyalar";
-import MagazaHakkimizda from "./pages/public/MagazaHakkimizda";
-import { MagazaBlogDetay, MagazaKategoriDetay, MagazaMagazaDetay, MagazaMarkaDetay } from "./pages/public/MagazaSlugPages";
-import { SellzyMarketplaceLayout as SellzyMarketplaceShell } from "./themes/sellzy/SellzyMarketplaceLayout";
-import { MagazaSubNavBar } from "./components/MagazaSubNavBar";
 import SariSayfalarHub from "./pages/public/SariSayfalarHub";
 import SariSayfalarDetay from "./pages/public/SariSayfalarDetay";
 import FirmaRehberi, { FirmaRehberiListe } from "./pages/public/FirmaRehberi";
@@ -81,10 +65,6 @@ import IsletmeDetay from "./pages/public/IsletmeDetay";
 import IsletmePaneli from "./pages/public/IsletmePaneli";
 import BilgiSayfasi from "./pages/public/BilgiSayfasi";
 import SiteHaritalari from "./pages/public/SiteHaritalari";
-import VendorBlogPublicList from "./pages/public/VendorBlogPublicList";
-import VendorBlogPublicPost from "./pages/public/VendorBlogPublicPost";
-import Alisveris from "./pages/public/Alisveris";
-import EcomSatici from "./pages/public/EcomSatici";
 import IsletmeBasvuru from "./pages/public/IsletmeBasvuru";
 import IsletmeGiris from "./pages/public/IsletmeGiris";
 import ServisSaglayiciGiris from "./pages/public/ServisSaglayiciGiris";
@@ -254,7 +234,7 @@ function SixAmMartHomeModuleRedirect() {
   const [location] = useLocation();
   const query = new URLSearchParams(location.split("?")[1] ?? "");
   const module = String(query.get("module") || "").toLowerCase();
-  if (module === "shop") return <Redirect to="/magaza" />;
+  if (module === "shop") return <Redirect to="/" />;
   return <SixAmMartHomeModulePage />;
 }
 
@@ -308,7 +288,6 @@ function isKesfetBusinessDetailPath(path: string): boolean {
 
 function isVendorStorefrontPath(path: string): boolean {
   return (
-    /^\/alisveris\/magaza\/[^/]+(?:\/.*)?$/.test(path) ||
     /^\/turizm\/(?:konaklama|villa-ev|arac-kiralama|yat-turlari|hotel|car|boat|villa|[^/]+)\/[^/]+(?:\/.*)?$/.test(path)
   );
 }
@@ -433,22 +412,6 @@ function PublicLayout({
   );
 }
 
-/** Mağaza — Yekpare Sade chrome + Sellzy gövde (§6, §8). çift header yok. */
-function MagazaRoute({ children }: { children: React.ReactNode }) {
-  return (
-    <SadeAwarePublicLayout
-      forceSade
-      chrome
-      fullBleed
-      active="shop"
-      searchPlaceholder="Ürün, marka veya mağaza ara"
-      subHeader={<MagazaSubNavBar inline />}
-    >
-      <SellzyMarketplaceShell bodyOnly>{children}</SellzyMarketplaceShell>
-    </SadeAwarePublicLayout>
-  );
-}
-
 type VendorDomainRouteMeta = {
   slug: string;
   storefrontPath: string;
@@ -502,11 +465,7 @@ function VendorCustomDomainShortStorefrontRoute() {
     return <Redirect to="/" />;
   }
   if (meta.storefrontPath.startsWith("/alisveris/")) {
-    return (
-      <SadeAwarePublicLayout>
-        <EcomSatici slugOverride={meta.slug} />
-      </SadeAwarePublicLayout>
-    );
+    return <Redirect to="/" />;
   }
   return null;
 }
@@ -839,31 +798,14 @@ export default function App() {
           </HmPortalOrDomainStandardPage>
         )}
       </Route>
-      <Route path="/alisveris">{() => <PublicLayout><Alisveris /></PublicLayout>}</Route>
-      <Route path="/magaza/urun/:slug">{() => <MagazaRoute><MagazaUrunDetay /></MagazaRoute>}</Route>
-      <Route path="/magaza/urunler">{() => <MagazaRoute><MagazaKatalog mode="products" /></MagazaRoute>}</Route>
-      <Route path="/magaza/kategori/:slug">{() => <MagazaRoute><MagazaKategoriDetay /></MagazaRoute>}</Route>
-      <Route path="/magaza/kategoriler">{() => <MagazaRoute><MagazaKatalog mode="categories" /></MagazaRoute>}</Route>
-      <Route path="/magaza/marka/:slug">{() => <MagazaRoute><MagazaMarkaDetay /></MagazaRoute>}</Route>
-      <Route path="/magaza/magaza/:slug">{() => <MagazaRoute><MagazaMagazaDetay /></MagazaRoute>}</Route>
-      <Route path="/magaza/magazalar">{() => <MagazaRoute><MagazaKatalog mode="vendors" /></MagazaRoute>}</Route>
-      <Route path="/magaza/saticilar">{() => <MagazaRoute><MagazaKatalog mode="vendors" /></MagazaRoute>}</Route>
-      <Route path="/magaza/satici-olun">{() => <Redirect to="/magaza/satici-ol" />}</Route>
-      <Route path="/magaza/satici-ol">{() => <MagazaRoute><MagazaSaticiOl /></MagazaRoute>}</Route>
-      <Route path="/magaza/sepet">{() => <MagazaRoute><MagazaSepet /></MagazaRoute>}</Route>
-      <Route path="/magaza/odeme">{() => <MagazaRoute><MagazaOdeme /></MagazaRoute>}</Route>
-      <Route path="/magaza/blog/:slug">{() => <MagazaRoute><MagazaBlogDetay /></MagazaRoute>}</Route>
-      <Route path="/magaza/blog">{() => <MagazaRoute><MagazaBlog /></MagazaRoute>}</Route>
-      <Route path="/magaza/markalar">{() => <MagazaRoute><MagazaMarkalar /></MagazaRoute>}</Route>
-      <Route path="/magaza/kampanyalar">{() => <MagazaRoute><MagazaKampanyalar /></MagazaRoute>}</Route>
-      <Route path="/magaza/hakkimizda">{() => <MagazaRoute><MagazaHakkimizda /></MagazaRoute>}</Route>
-      <Route path="/magaza">{() => <MagazaRoute><Magaza /></MagazaRoute>}</Route>
-      <Route path="/alisveris/magaza/:slug/blog/:postSlug">{() => <PublicLayout><VendorBlogPublicPost /></PublicLayout>}</Route>
-      <Route path="/alisveris/magaza/:slug/blog">{() => <PublicLayout><VendorBlogPublicList /></PublicLayout>}</Route>
-      <Route path="/alisveris/magaza/:slug/hakkimizda">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
-      <Route path="/alisveris/magaza/:slug/urunler">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
-      <Route path="/alisveris/magaza/:slug/iletisim">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
-      <Route path="/alisveris/magaza/:slug">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
+      <Route path="/alisveris">{() => <Redirect to="/" />}</Route>
+      <Route path="/alisveris/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/magaza">{() => <Redirect to="/" />}</Route>
+      <Route path="/magaza/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/odeme">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparis-takip/:code">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparis-takip">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparislerim">{() => <Redirect to="/" />}</Route>
       {/* Sipariş (yemek/market) modülü kaldırıldı — eski URL’ler anasayfaya; takip sayfaları aşağıda */}
       <Route path="/siparis/qr-menu/:slug">{() => <Redirect to="/" />}</Route>
       <Route path="/siparis/qr-menu/:slug/:rest*">{() => <Redirect to="/" />}</Route>
@@ -890,10 +832,6 @@ export default function App() {
       <Route path="/sari-sayfalar">{() => <Redirect to="/kesfet/sarisayfalar" />}</Route>
       <Route path="/resmi-ilanlar">{() => <PublicLayout><ResmiIlanlarPublic /></PublicLayout>}</Route>
       <Route path="/lisans-aktivasyon">{() => <PublicLayout><LisansAktivasyonu /></PublicLayout>}</Route>
-      <Route path="/odeme">{() => <PublicLayout><Checkout /></PublicLayout>}</Route>
-      <Route path="/siparis-takip/:code">{() => <PublicLayout><SiparisDetay /></PublicLayout>}</Route>
-      <Route path="/siparis-takip">{() => <PublicLayout><SiparisDetay /></PublicLayout>}</Route>
-      <Route path="/siparislerim">{() => <PublicLayout searchPlaceholder="Sipariş veya telefon numarası ara"><Siparislerim /></PublicLayout>}</Route>
       <Route path={/^\/maps\/place\/[^/]+\/(?:@|%40)[^/?#]*$/i}>{() => <LegacyMapsPlaceRedirect />}</Route>
       <Route path={/^\/maps\/(?:@|%40)[^/?#]*$/i}>{() => <LegacyMapsPlaceRedirect />}</Route>
       <Route path={/^\/maps\/?$/}>{() => <LazyRouteChunk><HaritalarFullscreenRoute /></LazyRouteChunk>}</Route>

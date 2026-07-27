@@ -28,7 +28,6 @@ import { SearchEngineHeaderBrandLogo } from "@/components/SearchEngineHeroBrandL
 import { SearchEngineSearchForm } from "@/components/SearchEngineSearchForm";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
-import { useCart } from "@/hooks/useCart";
 
 import { useYekpareTheme } from "@/hooks/useYekpareTheme";
 
@@ -255,7 +254,6 @@ function AppsGridMenu({
 
 function SearchEngineHeaderAccountActions() {
   const { user } = useCustomerAuth();
-  const { count: cartCount } = useCart();
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -265,25 +263,9 @@ function SearchEngineHeaderAccountActions() {
     setAuthOpen(true);
   };
 
-  const cartBadge =
-    cartCount > 0 ? (
-      <span className="seh-utilities-cart-count" aria-label={`${cartCount} ürün`}>
-        {cartCount > 99 ? "99+" : cartCount}
-      </span>
-    ) : null;
-
   return (
     <>
-      <div className="seh-utilities-inline" aria-label="Hesap ve sepet">
-        <Link href="/magaza/sepet" className="seh-cart-pill" aria-label="Sepet">
-          <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="seh-cart-pill-label">Sepet</span>
-          {cartCount > 0 ? (
-            <span className="seh-cart-count" aria-label={`${cartCount} ürün`}>
-              {cartCount > 99 ? "99+" : cartCount}
-            </span>
-          ) : null}
-        </Link>
+      <div className="seh-utilities-inline" aria-label="Hesap">
         {user ? (
           <Link href="/hesabim" className="seh-circle-btn" aria-label="Hesabım">
             <UserRound className="h-5 w-5" />
@@ -309,15 +291,10 @@ function SearchEngineHeaderAccountActions() {
             <button
               type="button"
               className="seh-circle-btn seh-utilities-trigger"
-              aria-label="Sepet, giriş ve favoriler menüsü"
+              aria-label="Giriş ve favoriler menüsü"
               aria-expanded={menuOpen}
             >
               <UserRound className="h-5 w-5" />
-              {cartCount > 0 ? (
-                <span className="seh-utilities-trigger-badge" aria-hidden>
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              ) : null}
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -326,16 +303,7 @@ function SearchEngineHeaderAccountActions() {
             side="bottom"
             sideOffset={8}
           >
-            <nav className="seh-utilities-menu" aria-label="Hesap ve sepet">
-              <Link
-                href="/magaza/sepet"
-                className="seh-utilities-menu-item seh-utilities-menu-item--cart"
-                onClick={closeMenu}
-              >
-                <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Sepet</span>
-                {cartBadge}
-              </Link>
+            <nav className="seh-utilities-menu" aria-label="Hesap">
               {user ? (
                 <Link href="/hesabim" className="seh-utilities-menu-item" onClick={closeMenu}>
                   <UserRound className="h-4 w-4 shrink-0" aria-hidden />

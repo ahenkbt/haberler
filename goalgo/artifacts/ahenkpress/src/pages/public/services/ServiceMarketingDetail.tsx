@@ -35,7 +35,6 @@ import { YEKPARE_PAGE_CONTAINER_CLASS } from "@/lib/yekpareLayout";
 import NotFound from "@/pages/not-found";
 
 const MODULE_ICONS: Record<ServiceMarketingSlug, typeof Utensils> = {
-  alisveris: ShoppingBag,
   turizm: Plane,
   "haber-merkezi": Newspaper,
   "ai-cagri-merkezi": Bot,

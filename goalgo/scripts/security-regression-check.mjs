@@ -76,10 +76,18 @@ assertIncludes("artifacts/ahenkpress/src/pages/public/AnsiklopediDetay.tsx", "sa
 assertIncludes("artifacts/ahenkpress/src/pages/public/HaberAnasayfasi.tsx", "sanitizeHtml(rewriteInlineHtmlImgSrc(h))", "homepage ad HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmNewsDetailSidebar.tsx", "sanitizeHtml(rewriteInlineHtmlImgSrc(h))", "news detail sidebar ad HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmRssBreakingBand.tsx", "sanitizeHtml(String(item.contentHtml", "RSS preview HTML must be sanitized");
-// Sipariş (yemek/market) public UI kaldırıldı — dosya geri gelirse güvenlik kontrolü yeniden eklenmeli.
+// Alışveriş (yemek/market/e-ticaret) public UI kaldırıldı — dosyalar geri gelirse güvenlik kontrolü yeniden eklenmeli.
 assert(
   !fs.existsSync(path.join(root, "artifacts/ahenkpress/src/pages/public/Siparis.tsx")),
   "removed Siparis.tsx must stay deleted (food delivery UI retired)",
+);
+assert(
+  !fs.existsSync(path.join(root, "artifacts/ahenkpress/src/pages/public/Magaza.tsx")),
+  "removed Magaza.tsx must stay deleted (ecommerce UI retired)",
+);
+assert(
+  !fs.existsSync(path.join(root, "artifacts/ahenkpress/src/pages/public/Checkout.tsx")),
+  "removed Checkout.tsx must stay deleted (ecommerce checkout UI retired)",
 );
 assertIncludes("artifacts/ahenkpress/src/pages/public/Kesfet.tsx", "sanitizeHtml(html)", "discovery wiki HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmPublicSiteFooter.tsx", "sanitizeHtml(rewritten)", "HM footer HTML must be sanitized");

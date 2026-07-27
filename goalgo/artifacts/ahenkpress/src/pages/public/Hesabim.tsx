@@ -295,7 +295,7 @@ export default function Hesabim() {
               <EmptyState icon={<Package className="w-12 h-12 text-gray-300" />} title="Henüz sipariş vermediniz"
                 desc="İlk siparişinizi verin ve burada takip edin.">
                 <button
-                  onClick={() => navigate("/magaza")}
+                  onClick={() => navigate("/kesfet")}
                   className="mt-5 rounded-xl bg-[#0f766e] px-6 py-3 text-sm font-black text-white transition hover:bg-[#0b5f59]"
                   style={{ color: "#fff" }}
                 >
@@ -345,13 +345,13 @@ export default function Hesabim() {
                 desc="Beğendiğiniz işletmeleri ❤ ikonuna tıklayarak kaydedin.">
                 <div className="flex items-center justify-center gap-3 mt-5">
                   <button
-                    onClick={() => navigate("/magaza")}
+                    onClick={() => navigate("/kesfet")}
                     className="flex items-center gap-2 rounded-xl bg-[#0f766e] px-4 py-2.5 text-sm font-bold text-white"
                     style={{ color: "#fff" }}
                   >
                     <UtensilsCrossed className="w-4 h-4" /> Sipariş
                   </button>
-                  <button onClick={() => navigate("/alisveris")}
+                  <button onClick={() => navigate("/kesfet")}
                     className="px-4 py-2.5 rounded-xl text-white font-bold text-sm flex items-center gap-2"
                     style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>
                     <ShoppingBag className="w-4 h-4" /> Alışveriş
@@ -385,7 +385,7 @@ export default function Hesabim() {
                     <Heart className="w-5 h-5 fill-current text-red-500" />
                   </button>
                   <button
-                    onClick={() => navigate(v.vendorType === "delivery" ? `/alisveris/magaza/${v.id}` : `/alisveris/${v.id}`)}
+                    onClick={() => navigate(`/kesfet/${v.id}`)}
                     className="flex items-center gap-1 rounded-xl bg-[#0f766e] px-3 py-2 text-xs font-bold text-white"
                     style={{ color: "#fff" }}
                   >

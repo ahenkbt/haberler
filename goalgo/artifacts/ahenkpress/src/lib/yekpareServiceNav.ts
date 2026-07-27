@@ -1,10 +1,10 @@
 /**
  * Yekpare Sade chrome — ana header ile aynı sıra ve etiketler.
- * Canonical: Keşfet, Alışveriş, Seyahat, … (site-nav MAIN_NAV_KEY_ORDER)
+ * Canonical: Keşfet, Seyahat, … (site-nav MAIN_NAV_KEY_ORDER)
  */
-export type SixAmMartModuleKey = "rental" | "shop";
+export type SixAmMartModuleKey = "rental";
 
-export const YEKPARE_SERVICE_MODULE_ORDER: SixAmMartModuleKey[] = ["shop", "rental"];
+export const YEKPARE_SERVICE_MODULE_ORDER: SixAmMartModuleKey[] = ["rental"];
 
 export const YEKPARE_SERVICE_MODULE_META: Record<
   SixAmMartModuleKey,
@@ -15,12 +15,6 @@ export const YEKPARE_SERVICE_MODULE_META: Record<
     title: "Seyahat",
     href: "/turizm",
     description: "Otel, villa, tur ve araç kiralama.",
-  },
-  shop: {
-    label: "Alışveriş",
-    title: "Alışveriş",
-    href: "/magaza",
-    description: "Pazaryeri, ürünler ve mağazalar.",
   },
 };
 
@@ -51,7 +45,5 @@ export function resolveSixAmMartActiveFromPath(
 ): SixAmMartModuleKey | undefined {
   const path = (location.split("?")[0] ?? "").trim();
   if (path === "/turizm" || path.startsWith("/turizm/")) return "rental";
-  if (path.startsWith("/magaza") || path === "/alisveris" || path.startsWith("/alisveris/")) return "shop";
-  if (path === "/siparis-takip" || path.startsWith("/siparis-takip/") || path === "/siparislerim") return "shop";
   return undefined;
 }

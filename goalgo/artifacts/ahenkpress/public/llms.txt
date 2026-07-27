@@ -1,7 +1,7 @@
 # Yekpare
-> Türkiye'nin yerli arama motoru: güncel haberler, alışveriş, seyahat rezervasyonu ve harita üzerinden işletme keşfi.
+> Türkiye'nin yerli arama motoru: güncel haberler, seyahat rezervasyonu ve harita üzerinden işletme keşfi.
 
-Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yektube video, harita/keşfet, e-ticaret mağazaları, firma rehberi ve turizm ilanlarını tek aramada birleştirir.
+Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yektube video, harita/keşfet, firma rehberi ve turizm ilanlarını tek aramada birleştirir.
 
 **Marka notu:** Türkçe «yekpare» sözcüğü sözlükte «bütün, tek parça» anlamına gelir. Yekpare.net bu sözlük girişinden bağımsız bir dijital hizmet platformu markasıdır. Resmi tanım: https://yekpare.net/bilgi/yekpare-nedir
 
@@ -12,20 +12,16 @@ Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yek
 - Yektube: https://yekpare.net/yektube
 - Keşfet (harita & işletmeler): https://yekpare.net/kesfet
 - Haritalar: https://yekpare.net/haritalar
-- Alışveriş / mağaza: https://yekpare.net/magaza
 - Seyahat / turizm: https://yekpare.net/turizm
 - Bilgi Ağacı bilgi portalı: https://yekpare.net/bilgiagaci
 - Firma rehberi: https://yekpare.net/firma-rehberi
 - AI çağrı merkezi: https://yekpare.net/ai-cagri-merkezi
-- Sipariş takip: https://yekpare.net/siparis-takip
 - Destek: https://yekpare.net/destek
 
 ## İşletme sayfaları (örnek URL kalıpları)
 
-- Mağaza vitrini: https://yekpare.net/magaza/magaza/{slug}
 - Keşfet / harita vitrin: https://yekpare.net/kesfet/{slug}
 - Turizm ilanı: https://yekpare.net/turizm/konaklama/{slug} (otel), /turizm/villa-ev/{slug}, /turizm/tur/{slug}
-- İşletme blog listesi: https://yekpare.net/magaza/magaza/{slug}/blog veya /alisveris/magaza/{slug}/blog
 - Köşe yazarı: https://yekpare.net/yazar/{id}
 
 ## Haber
@@ -37,8 +33,6 @@ Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yek
 
 - Ana sitemap dizini: https://yekpare.net/sitemap.xml
 - Statik sayfalar: https://yekpare.net/sitemap-static.xml
-- Mağazalar: https://yekpare.net/vendors-magaza.xml
-- Alışveriş: https://yekpare.net/vendors-alisveris.xml
 - Turizm: https://yekpare.net/turizm.xml
 - Keşfet işletmeleri: https://yekpare.net/businesses.xml
 - Haberler: https://yekpare.net/news-yekpare.xml
@@ -49,8 +43,6 @@ Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yek
 ## GEO bilgi sayfaları (yapay zeka özetleri için)
 
 - Yekpare nedir (entity): https://yekpare.net/bilgi/yekpare-nedir
-- Online alışveriş rehberi: https://yekpare.net/bilgi/online-siparis-nasil-verilir
-- Alışveriş nedir: https://yekpare.net/bilgi/alisveris-nedir
 - Seyahat nedir: https://yekpare.net/bilgi/seyahat-nedir
 - Haritalar nedir: https://yekpare.net/bilgi/haritalar-nedir
 - Yekpare AI / AI çağrı merkezi: https://yekpare.net/bilgi/ai-cagri-merkezi-nedir

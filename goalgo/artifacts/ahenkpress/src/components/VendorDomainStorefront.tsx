@@ -1,4 +1,3 @@
-import EcomSatici from "@/pages/public/EcomSatici";
 import { Redirect } from "wouter";
 
 type Props = {
@@ -17,11 +16,8 @@ export function VendorDomainStorefront({ slug, storefrontPath }: Props) {
     );
   }
 
-  if (base.startsWith("/siparis/")) {
+  if (base.startsWith("/siparis/") || base.startsWith("/alisveris/")) {
     return <Redirect to="/" />;
-  }
-  if (base.startsWith("/alisveris/")) {
-    return <EcomSatici slugOverride={slug} />;
   }
 
   return (

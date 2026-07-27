@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { sql, eq, and } from "drizzle-orm";
 import { db, vendorsTable } from "@workspace/db";
-import { getShopUser } from "./shop-auth";
+import { getShopUser } from "../lib/shop-auth";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
 
 const router: IRouter = Router();

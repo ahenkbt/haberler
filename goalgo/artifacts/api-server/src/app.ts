@@ -4,7 +4,6 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
 import router from "./routes";
-import { handleShopStripeWebhook } from "./routes/shop-checkout";
 import { handleDeliveryStripeWebhook } from "./routes/delivery";
 import { handlePremiumStripeWebhook } from "./routes/premium";
 import { handleGeliverWebhook } from "./routes/providers";
@@ -67,11 +66,6 @@ app.use(
 app.use(cors(buildCorsOptions()));
 /** Oturum / JSON / genel API rate limit dışında — liste sayfalarındaki çok sayıda görsel isteği */
 app.get("/api/media/uploads/:name", sendPublicMediaUpload);
-app.post(
-  "/api/shop/checkout/stripe-webhook",
-  express.raw({ type: ["application/json", "application/json; charset=utf-8"] }),
-  (req, res) => { void handleShopStripeWebhook(req, res); },
-);
 app.post(
   "/api/delivery/checkout/stripe-webhook",
   express.raw({ type: ["application/json", "application/json; charset=utf-8"] }),

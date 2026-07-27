@@ -64,7 +64,6 @@ import { KesfetDiscoverHubSection } from "@/components/KesfetDiscoverHubSection"
 
 const MODULE_ICONS: Record<SixAmMartModuleKey, LucideIcon> = {
   rental: Building2,
-  shop: ShoppingBag,
 };
 
 function LandingContainer({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -75,7 +74,7 @@ const HERO_QUICK_ACTION_BTN =
   "inline-flex min-h-[38px] min-w-0 items-center justify-center rounded-[12px] border px-2 py-2 text-center text-[11px] font-black leading-tight shadow-sm transition sm:min-h-[40px] sm:px-4 sm:py-2.5 sm:text-xs";
 
 const HOME_CATEGORY_TILES = [
-  { label: "Alışveriş", href: "/magaza", icon: ShoppingBag },
+  { label: "Keşfet", href: "/kesfet", icon: Compass },
   { label: "Rezervasyon", href: "/turizm", icon: Calendar },
   { label: "Haritalar", href: "/haritalar", icon: Map },
   { label: "Şehir Rehberi", href: "/kesfet", icon: Map },
