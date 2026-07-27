@@ -43,7 +43,11 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
+<<<<<<< HEAD
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727d";
+=======
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727c";
+>>>>>>> origin/main
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
