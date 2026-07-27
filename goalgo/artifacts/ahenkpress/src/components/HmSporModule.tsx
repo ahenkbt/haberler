@@ -1,21 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { HmNewsImage, resolveNewsItemImageFallbackUrl, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
-import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
+import { HmSporNewsPanel, type HmSporNewsPanelItem } from "@/components/HmSporNewsPanel";
 import { apiUrl } from "@/lib/apiBase";
+import { HM_SPOR_BOX_TOTAL } from "@/lib/hmSporSubcategories";
 import "@/styles/hmSporModule.css";
-
-type SporNewsItem = {
-  id?: string | number | null;
-  slug?: string | null;
-  title?: string | null;
-  imageUrl?: string | null;
-  image?: string | null;
-  thumbnailUrl?: string | null;
-  thumbnail?: string | null;
-  enclosure?: string | { url?: string | null } | null;
-};
 
 type LeagueId = "superlig" | "1lig";
 type PanelView = "standings" | "fixtures";
@@ -58,10 +46,6 @@ const LEAGUE_OPTIONS: Array<{ id: LeagueId; label: string }> = [
   { id: "superlig", label: "Süper Lig" },
   { id: "1lig", label: "1. Lig" },
 ];
-
-function newsTitle(raw: unknown): string {
-  return decodeHtmlEntities(String(raw ?? "").trim()) || "Haber";
-}
 
 function shortTeamName(name: string): string {
   const trimmed = name.trim();
@@ -168,10 +152,11 @@ function FixturesList({ rows, hafta }: { rows: FixtureRow[]; hafta: number | nul
 }
 
 export type HmSporModuleProps = {
-  items: SporNewsItem[];
-  newsHref: (n: SporNewsItem) => string;
+  items: HmSporNewsPanelItem[];
+  newsHref: (n: HmSporNewsPanelItem) => string;
   kategoriHref?: string;
   categoryTitle?: string;
+  siteId?: number | null;
   className?: string;
 };
 
@@ -181,11 +166,12 @@ export function HmSporModule({
   newsHref,
   kategoriHref,
   categoryTitle = "SPOR",
+  siteId = null,
   className = "",
 }: HmSporModuleProps) {
   const [activeLeague, setActiveLeague] = useState<LeagueId>("superlig");
   const [activeView, setActiveView] = useState<PanelView>("standings");
-  const newsItems = items.slice(0, 4);
+  const newsItems = items.slice(0, HM_SPOR_BOX_TOTAL);
 
   const birLigStandingsQuery = useQuery({
     queryKey: ["/api/public/superlig/puan", "hm-spor-module", "1lig", "probe"],
@@ -266,34 +252,14 @@ export function HmSporModule({
     >
       <div className="hm-spor-module-inner">
         <div className="hm-spor-module-news">
-          {kategoriHref ? (
-            <Link href={kategoriHref} className="hm-spor-module-tab">
-              {categoryTitle}
-            </Link>
-          ) : (
-            <span className="hm-spor-module-tab">{categoryTitle}</span>
-          )}
-          <div className="hm-spor-module-news-panel">
-            {newsItems.length > 0 ? (
-              <div className="hm-spor-module-grid">
-                {newsItems.map((n) => (
-                  <Link key={n.id ?? n.slug} href={newsHref(n)} className="hm-spor-module-card group">
-                    <div className="hm-spor-module-thumb">
-                      <HmNewsImage
-                        src={resolveNewsItemImageUrl(n)}
-                        fallbackSrc={resolveNewsItemImageFallbackUrl(n)}
-                        alt={newsTitle(n.title)}
-                        loading="lazy"
-                      />
-                    </div>
-                    <h3>{newsTitle(n.title)}</h3>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="hm-spor-module-empty">Spor haberi bulunamadı.</div>
-            )}
-          </div>
+          <HmSporNewsPanel
+            items={newsItems}
+            newsHref={newsHref}
+            siteId={siteId}
+            kategoriHref={kategoriHref}
+            categoryTitle={categoryTitle}
+            showCategoryTab
+          />
         </div>
 
         <aside className="hm-spor-module-standings">

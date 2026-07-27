@@ -59,6 +59,121 @@
   padding: 12px;
 }
 
+.hm-spor-news-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hm-spor-subcats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 640px) {
+  .hm-spor-subcats {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.hm-spor-subcat {
+  padding: 8px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.hm-spor-subcat:hover {
+  border-color: var(--hm-spor-green);
+  color: var(--hm-spor-green);
+}
+
+.hm-spor-subcat.is-active {
+  background: var(--hm-spor-green);
+  border-color: var(--hm-spor-green);
+  color: #fff;
+}
+
+.hm-spor-news-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hm-spor-news-leads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hm-spor-news-lead {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.hm-spor-news-lead-media {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #111;
+  aspect-ratio: 16 / 10;
+}
+
+.hm-spor-news-lead-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hm-spor-news-lead-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.2) 55%, transparent 100%);
+  pointer-events: none;
+}
+
+.hm-spor-news-lead-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 12px 14px;
+  color: #fff;
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  font-weight: 900;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.hm-spor-news-lead:hover .hm-spor-news-lead-title {
+  text-decoration: underline;
+}
+
+.hm-spor-news-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .hm-spor-news-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .hm-spor-module-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -3,7 +3,7 @@
  * Editör panelden değiştirilebilir; Neon rev ile bir kerelik uygulanır.
  */
 
-export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727kutu1";
+export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
 
 /** Kullanıcının verdiği sıra ve adresler. */
 export const DEFAULT_HM_BREAKING_RSS_FEED_ROWS = [
@@ -72,6 +72,36 @@ export const DEFAULT_HM_BREAKING_RSS_FEED_ROWS = [
     categoryKey: "spor",
     label: "Spor",
     url: "https://www.dirilispostasi.com/rss/spor",
+  },
+  {
+    id: "futbol",
+    categoryKey: "futbol",
+    label: "Futbol",
+    url: "https://www.spordepor.com/rss/futbol",
+  },
+  {
+    id: "basketbol",
+    categoryKey: "basketbol",
+    label: "Basketbol",
+    url: "https://www.spordepor.com/rss/basketbol",
+  },
+  {
+    id: "tenis",
+    categoryKey: "tenis",
+    label: "Tenis",
+    url: "https://www.spordepor.com/rss/tenis",
+  },
+  {
+    id: "voleybol",
+    categoryKey: "voleybol",
+    label: "Voleybol",
+    url: "https://www.spordepor.com/rss/voleybol",
+  },
+  {
+    id: "ozel-haber",
+    categoryKey: "ozel-haber",
+    label: "Özel Haber",
+    url: "https://www.spordepor.com/rss/ozel-haber",
   },
   {
     id: "savunmaSanayi",
