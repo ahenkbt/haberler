@@ -2228,7 +2228,7 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
         and(
           eq(hmSiteEditorsTable.siteId, site.id),
           eq(hmSiteEditorsTable.isActive, true),
-          eq(hmSiteEditorsTable.email, loginRaw),
+          sql`lower(${hmSiteEditorsTable.email}) = ${loginRaw}`,
         ),
       );
   } else if (loginUsername) {
@@ -2239,7 +2239,7 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
         and(
           eq(hmSiteEditorsTable.siteId, site.id),
           eq(hmSiteEditorsTable.isActive, true),
-          eq(hmSiteEditorsTable.username, loginUsername),
+          sql`lower(coalesce(${hmSiteEditorsTable.username}, '')) = ${loginUsername}`,
         ),
       );
   }
@@ -2255,7 +2255,9 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
           email: hmSiteEditorsTable.email,
         })
         .from(hmSiteEditorsTable)
-        .where(and(eq(hmSiteEditorsTable.email, loginRaw), eq(hmSiteEditorsTable.isActive, true)))
+        .where(
+          and(sql`lower(${hmSiteEditorsTable.email}) = ${loginRaw}`, eq(hmSiteEditorsTable.isActive, true)),
+        )
         .limit(1);
       if (elsewhere?.siteId && elsewhere.siteId !== site.id) {
         const other = await getHmNewsSiteByIdCompat(elsewhere.siteId);
@@ -4434,6 +4436,9 @@ router.get("/hm/editor/pool/news", async (req, res): Promise<void> => {
     eq(newsTable.status, "published"),
     isNotNull(newsTable.siteId),
     ne(newsTable.siteId, ctx.siteId),
+    // Kesin kural: manuel / site_only haberler havuzda görünmez ve eklenemez.
+    eq(newsTable.siteOnly, false),
+    eq(newsTable.isEditorManual, false),
   ];
   if (q) conds.push(sql`${newsTable.title} ILIKE ${`%${q}%`}`);
   const newsCtx = await loadNewsContext();

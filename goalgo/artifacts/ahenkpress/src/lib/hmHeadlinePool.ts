@@ -2,7 +2,7 @@ import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
 
 /**
  * Manşet havuzu tazelik kuralları:
- * - Manuel / DB haberleri: en fazla 7 gün (MANUAL_HEADLINE_MAX_AGE_MS)
+ * - Manuel / DB haberleri: en fazla 12 saat (MANUAL_HEADLINE_MAX_AGE_MS)
  * - RSS feed haberleri: en fazla 24 saat (RSS_HEADLINE_MAX_AGE_MS)
  *
  * RSS manşet slider: ziyaret bazlı rotasyon + RSS kaynakları.
@@ -10,7 +10,7 @@ import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
  */
 
 export const RSS_HEADLINE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-export const MANUAL_HEADLINE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+export const MANUAL_HEADLINE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const TR_DAY_OFFSET_MS = 3 * 60 * 60 * 1000;
 /** Manşet lead rotasyonu: en güncel haberler arasında kalır. */
 export const HEADLINE_VISIT_ROTATION_WINDOW = 8;

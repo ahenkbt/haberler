@@ -142,6 +142,16 @@ describe("hm-corporate-news-policy", () => {
         },
         7,
       ),
+    ).toBe(false);
+    expect(
+      centralNewsRowVisibleOnHmEditorSite(
+        {
+          siteId: null,
+          rssSourceUrl: "yekpare-hm-sync:3:news:12",
+          categorySlug: "gundem",
+        },
+        3,
+      ),
     ).toBe(true);
   });
 
@@ -200,9 +210,17 @@ describe("hm-corporate-news-policy", () => {
         7,
       ),
     ).toBe(false);
+    // Onaylı havuz kopyası (yerel site_id) dış değil.
     expect(
       isExternalManualEditorNewsForSite(
-        { siteId: null, rssSourceUrl: "yekpare-hm-pool:3:9001", isEditorManual: true },
+        { siteId: 7, rssSourceUrl: "yekpare-hm-pool:3:9001", isEditorManual: false },
+        7,
+      ),
+    ).toBe(false);
+    // Başka sitenin satırı dış.
+    expect(
+      isExternalManualEditorNewsForSite(
+        { siteId: 3, rssSourceUrl: "yekpare-hm-pool:3:9001", isEditorManual: false },
         7,
       ),
     ).toBe(true);
@@ -211,6 +229,6 @@ describe("hm-corporate-news-policy", () => {
         { siteId: null, rssSourceUrl: "yekpare-hm-sync:3:makale:9", isEditorManual: true },
         7,
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
