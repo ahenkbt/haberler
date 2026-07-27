@@ -483,7 +483,6 @@ export function HmNestedLayout({
   }, [effectiveData?.domain, effectiveData?.id, layoutPrefs.faviconUrl, layoutPrefs.logoUrl]);
 
   const showPlatformNav = layoutPrefs.showPlatformNav === true;
-  const hostKey = browserHostname();
   const portalHubOnly = isYekparePortalHubOnly(hostKey, slug);
   const videoTvRouteAllowed = isHmVideoTvAllowed(hostKey, slug);
   const isCorporateTheme = layoutPrefs.hmVitrinTheme === "corporate";
