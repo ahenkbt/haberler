@@ -645,10 +645,15 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 
-  // Kırşehir: tercihen Render JWT (session-bridge). Render henüz deploy
-  // edilmediyse (404) Neon JWT'ye düş — giriş kilitlenmesin.
+  // Kırşehir: tercihen Render JWT (session-bridge). Yoksa Neon JWT + kenar veri API.
   const siteIsKh = await isKhEditorSite(sql, site.id);
   if (siteIsKh || KH_HOSTS.has(host)) {
+    try {
+      const { syncKhAuthorsFromRender } = await import("./hm-editor-kh-data-edge.js");
+      await syncKhAuthorsFromRender(env, site.id);
+    } catch (err) {
+      console.error("[hm-kh-author-sync]", String(err?.message || err).slice(0, 160));
+    }
     const bridged = await exchangeKhSessionViaRenderBridge(env, {
       email: editor.email,
       passwordHash: editor.password_hash,
