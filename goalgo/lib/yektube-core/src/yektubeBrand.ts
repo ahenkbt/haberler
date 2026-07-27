@@ -226,14 +226,14 @@ export function mapToYektubePublicUrl(pathname: string, search = "", hash = ""):
   return mapToYektubeDedicatedUrl(pathname, search, hash);
 }
 
-/** HM haber sitesi Video TV — yektube.com/yp iframe (canlı ve hızlı API; yedek yekpare.net). */
+/** HM haber sitesi Video TV — yekpare.net/yp iframe (yektube.com DNS yedek). */
 export function mapToHmYektubeEmbedUrl(pathname: string, search = "", hash = ""): string {
   const portalPath = mapPathToYektubePortal(pathname, search);
   const origin =
     (typeof process !== "undefined" && process.env.YEKTUBE_HM_EMBED_ORIGIN?.trim()) ||
     (typeof import.meta !== "undefined" &&
       (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_YEKTUBE_HM_EMBED_ORIGIN?.trim()) ||
-    YEKTUBE_ORIGIN;
+    YEKTUBE_PORTAL_MIRROR_ORIGIN;
   return `${origin.replace(/\/+$/, "")}${portalPath}${hash}`;
 }
 

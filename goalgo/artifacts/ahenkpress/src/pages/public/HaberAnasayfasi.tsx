@@ -44,6 +44,7 @@ import {
   normalizeHmVitrinTheme,
   isHmNewsRetiredHomeModule,
   filterHmHomeModulesForPortalHub,
+  isHmNewsCorporateOnlyHomeModule,
 } from "@/lib/newsSiteLayout";
 import { fetchHybridNewsList, mapHybridNewsToBandItem } from "@/hooks/useHomeHybridNews";
 import {
@@ -2489,7 +2490,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       resolveHmHomeModuleOrder<HmNewsHomeModuleId>(
         layoutPrefs.hmNewsHomeModuleOrder,
         HM_NEWS_HOME_MODULE_ORDER,
-      ).filter((id) => !isHmNewsRetiredHomeModule(id)),
+      )
+        .filter((id) => !isHmNewsRetiredHomeModule(id))
+        .filter((id) => isCorporateTheme || !isHmNewsCorporateOnlyHomeModule(id)),
       portalHubOnly,
     );
     // Tepe manşet her zaman header altında en üstte (kayıtlı sıra ne olursa olsun).

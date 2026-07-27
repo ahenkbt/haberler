@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { HmCorporateMenuItem, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
+import { normalizeHmVitrinTheme } from "@/lib/newsSiteLayout";
 import { resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
 import { normalizeNewsCategorySlug } from "@/lib/hmCategorySlug";
 import { resolveHmCategoryLucideIcon } from "@/lib/hmCategoryIcon";
@@ -73,8 +74,10 @@ function filterHubOnlyNavMenuItems(items: HmCorporateNavMenuItem[]): HmCorporate
     });
 }
 
-/** Editörde kayıtlı üst menü (haber + kurumsal vitrin). */
+/** Editörde kayıtlı üst menü — yalnızca kurumsal vitrin temasında. */
 export function hasConfiguredHmHeaderMenu(layoutPrefs: NewsSiteLayoutPrefs | null | undefined): boolean {
+  const theme = normalizeHmVitrinTheme(layoutPrefs?.hmVitrinTheme);
+  if (theme !== "corporate") return false;
   return (layoutPrefs?.hmCorporateMenuItems ?? []).some(
     (item) => item.enabled !== false && String(item.label ?? "").trim().length > 0,
   );

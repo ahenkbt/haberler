@@ -1,4 +1,4 @@
-import { apiUrl } from "@/lib/apiBase";
+import { apiUrl, apiFetch, postAdminJson } from "@/lib/apiBase";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,7 +46,7 @@ export default function TopluIceAktar() {
       const title = cols[titleIdx];
       if (!title) { errors.push(`Satır ${i + 1}: Başlık boş`); continue; }
       try {
-        const res = await fetch(apiUrl("/api/news"), {
+        const res = await apiFetch(apiUrl("/api/news"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -57,7 +57,11 @@ export default function TopluIceAktar() {
             status: "draft",
           }),
         });
-        if (res.ok) success++; else errors.push(`Satır ${i + 1}: API hatası`);
+        if (res.ok) success++;
+        else {
+          const errBody = await res.text().catch(() => "");
+          errors.push(`Satır ${i + 1}: API hatası${errBody ? ` — ${errBody.slice(0, 120)}` : ""}`);
+        }
       } catch { errors.push(`Satır ${i + 1}: Bağlantı hatası`); }
     }
     setResult({ success, failed: errors.length, errors });
@@ -70,12 +74,24 @@ export default function TopluIceAktar() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch(apiUrl("/api/rss/direct-import"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: rssUrl, categorySlug: rssCategory || "gundem", maxItems: parseInt(rssMax) || 10 }),
+      const res = await postAdminJson("/api/rss/direct-import", {
+        url: rssUrl,
+        categorySlug: rssCategory || "gundem",
+        maxItems: parseInt(rssMax) || 10,
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data: { added?: number; error?: string } = {};
+      if (raw.trim().startsWith("{")) {
+        try {
+          data = JSON.parse(raw) as typeof data;
+        } catch {
+          data = { error: "Sunucu geçersiz JSON döndürdü" };
+        }
+      } else if (raw.trim().startsWith("<")) {
+        data = { error: `API HTML yanıtı (HTTP ${res.status})` };
+      } else {
+        data = { error: raw.slice(0, 200) || `HTTP ${res.status}` };
+      }
       if (res.ok) {
         setResult({ success: data.added ?? 0, failed: 0, errors: [] });
         toast({ title: `${data.added ?? 0} haber RSS'ten eklendi` });

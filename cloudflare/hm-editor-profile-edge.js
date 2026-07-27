@@ -1063,7 +1063,15 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   }
 
   const sql = sqlClient(env);
-  if (!sql) return null;
+  if (!sql) {
+    if (auth.startsWith("Bearer ")) {
+      return jsonResponse(503, {
+        error: "Medya yükleme geçici olarak kullanılamıyor",
+        detail: "Kenar veritabanı bağlantısı yok. Lütfen birkaç dakika sonra tekrar deneyin.",
+      });
+    }
+    return null;
+  }
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
   if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
 
@@ -1082,7 +1090,12 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   const siteSlug = String(siteRows?.[0]?.slug || "").trim();
 
   const secret = edgeBridgeSecret(env);
-  if (!secret) return null;
+  if (!secret) {
+    return jsonResponse(503, {
+      error: "Medya yükleme yapılandırması eksik",
+      detail: "HM_EDGE_BRIDGE_SECRET tanımlı değil.",
+    });
+  }
 
   const payload = {
     email: String(editor.email || "")
@@ -1126,11 +1139,28 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   }
 
   const text = await upstream.text();
+  const trimmed = text.trim();
+  if (trimmed.startsWith("<") || trimmed.startsWith("<!")) {
+    return jsonResponse(502, {
+      error: "Medya sunucusu beklenmeyen yanıt döndürdü",
+      detail: `HTTP ${upstream.status}`,
+      hint: "API sunucusu uykuda veya bakımda olabilir. Birkaç dakika sonra tekrar deneyin.",
+    });
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return jsonResponse(502, {
+      error: "Medya sunucusu geçersiz yanıt döndürdü",
+      detail: trimmed.slice(0, 200),
+    });
+  }
   const outHeaders = new Headers();
   outHeaders.set("content-type", "application/json; charset=utf-8");
   outHeaders.set("x-yekpare-frontend", "cloudflare-editor-media-edge");
   outHeaders.set("cache-control", "private, no-store, max-age=0, must-revalidate");
-  return new Response(text, { status: upstream.status, headers: outHeaders });
+  return new Response(JSON.stringify(parsed), { status: upstream.status, headers: outHeaders });
 }
 
 function mediaBridgeCanonical(payload) {

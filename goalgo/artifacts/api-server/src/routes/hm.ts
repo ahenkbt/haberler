@@ -134,6 +134,7 @@ import {
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
+import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import { repairAsgEditorMisassignment } from "../lib/hm-asg-editor-repair.js";
 import {
@@ -547,7 +548,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsRssLinksEnabled: !isCorporate,
     hmNewsVideoTvEnabled: true,
     sadeNewsCitiesBandEnabled: true,
-    hmCorporateAtaturkCornerEnabled: true,
+    hmCorporateAtaturkCornerEnabled: isCorporate,
     hmCorporateAuthorsEnabled: false,
     hmCorporateGoogleNewsBandEnabled: false,
     hmCorporateRssBandEnabled: false,
@@ -875,6 +876,9 @@ function serializeHmMetaRow(row: typeof hmNewsSitesTable.$inferSelect, opts?: { 
     }
     layout = opts?.includePageContent === true ? normalized : stripHmPublicMetaLayoutContent(normalized);
     layout = normalizeHmLayoutMediaUrls(layout);
+    if (layout && typeof layout === "object" && !Array.isArray(layout)) {
+      layout = sanitizeHmPublicLayoutRecord(layout as Record<string, unknown>, row.slug);
+    }
   } catch {
     layout = null;
   }
