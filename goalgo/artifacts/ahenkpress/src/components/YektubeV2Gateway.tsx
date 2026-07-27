@@ -53,9 +53,17 @@ export function HmYektubePortalEmbed() {
       const path = window.location.pathname;
       if (!url.searchParams.get("hm")) {
         const hmFromPath =
-          path.match(/\/tr\/([^/]+)\/video-tv(?:\/|$)/)?.[1] ??
-          path.match(/\/([^/]+)\/video-tv(?:\/|$)/)?.[1];
-        const hmSlug = hmCtx?.slug?.trim() || (hmFromPath && hmFromPath !== "tr" && hmFromPath !== "hm" ? hmFromPath : null);
+          path.match(/\/tr\/([^/]+)\/video(?:-tv)?(?:\/|$)/)?.[1] ??
+          path.match(/\/([^/]+)\/video(?:-tv)?(?:\/|$)/)?.[1];
+        const hmSlug =
+          hmCtx?.slug?.trim() ||
+          (hmFromPath &&
+          hmFromPath !== "tr" &&
+          hmFromPath !== "hm" &&
+          hmFromPath !== "video" &&
+          hmFromPath !== "video-tv"
+            ? hmFromPath
+            : null);
         if (hmSlug) url.searchParams.set("hm", hmSlug);
       }
       const displayName = hmCtx?.displayName?.trim();
@@ -91,7 +99,7 @@ export function HmYektubePortalEmbed() {
       ref={iframeRef}
       title="Yektube"
       src={src}
-      className="hm-video-tv-embed block min-h-0 w-full flex-1 border-0 bg-white"
+      className="hm-video-tv-embed block min-h-[70vh] w-full flex-1 border-0 bg-white"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       referrerPolicy="strict-origin-when-cross-origin"
     />

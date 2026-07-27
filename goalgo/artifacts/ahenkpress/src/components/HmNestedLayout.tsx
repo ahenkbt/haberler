@@ -26,7 +26,7 @@ import { HmPublicLinkProvider } from "@/contexts/HmPublicLinkContext";
 import { HmDeferredAdSlotStrip } from "@/components/HmDeferredAdSlotStrip";
 import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
 import { HmChromeWidthShell } from "@/components/HmChromeWidthShell";
-import { isDefaultPortalHost, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isDefaultPortalHost, isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { applyHmSiteVerificationMeta, applyHmSiteBranding, type HmSeoVerification } from "@/lib/pageSeo";
 import { applyHmEarlyBrandingFromMeta, hmSiteBrandingIconUrl } from "@/lib/hmEarlyBranding";
 import {
@@ -358,7 +358,11 @@ function isEditorManagedContentRoute(pathname: string): boolean {
 
 function isHmVideoTvPublicPath(pathname: string): boolean {
   const path = (pathname.split("?")[0] ?? "").replace(/\/+$/, "") || "/";
-  return /\/video-tv(?:\/|$)/.test(path);
+  // `/video` = KH kısa yol; `/video-tv` = kanonik. `video-galeri` hariç.
+  if (path === "/video" || path.startsWith("/video/")) return true;
+  if (/\/video-tv(?:\/|$)/.test(path)) return true;
+  if (/\/tr\/[^/]+\/video(?:\/|$)/.test(path)) return true;
+  return false;
 }
 
 function isHmIndexLandingEnabled(layout: unknown, parsedEnabled: boolean): boolean {
@@ -479,7 +483,9 @@ export function HmNestedLayout({
   }, [effectiveData?.domain, effectiveData?.id, layoutPrefs.faviconUrl, layoutPrefs.logoUrl]);
 
   const showPlatformNav = layoutPrefs.showPlatformNav === true;
-  const portalHubOnly = isYekparePortalHubOnly(browserHostname(), slug);
+  const hostKey = browserHostname();
+  const portalHubOnly = isYekparePortalHubOnly(hostKey, slug);
+  const videoTvRouteAllowed = isHmVideoTvAllowed(hostKey, slug);
   const isCorporateTheme = layoutPrefs.hmVitrinTheme === "corporate";
   const isClassicTheme = layoutPrefs.hmVitrinTheme === "classic";
   const isPortal3Theme = layoutPrefs.hmVitrinTheme === "portal3";
@@ -491,7 +497,8 @@ export function HmNestedLayout({
   const showNewsHeaderMenu = resolveHmNewsHeaderMenuEnabled(layoutPrefs);
   const showStripMenu = layoutPrefs.hmNewsStripMenuEnabled === true;
   const pathOnly = (location.split("?")[0] ?? "").trim();
-  const isVideoTvPage = portalHubOnly && isHmVideoTvPublicPath(pathOnly);
+  /** Hub + Kırşehir Haber özel alanı — aksi halde iframe yüksekliği 0 kalır. */
+  const isVideoTvPage = videoTvRouteAllowed && isHmVideoTvPublicPath(pathOnly);
   const showHaritalarEmbed =
     portalHubOnly && (isHmHaritalarPublicPath(pathOnly) || isHmNewsmapPublicPath(pathOnly));
   const showYekpareIconMenu = resolveShowYekpareIconMenu(layoutPrefs);
