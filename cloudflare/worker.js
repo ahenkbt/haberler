@@ -14,7 +14,7 @@ import {
   ensureHmSiteRssDefaultsOnNeon,
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
-import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
+import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
 import {
   handleKhEditorDataEdge,
   injectKhNeonNewsIntoPublicResponse,
@@ -61,12 +61,12 @@ const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727n";
 const HM_DOMAIN_SLUG_FALLBACKS = {
   "suhaberajansi.com": "su",
   "www.suhaberajansi.com": "su",
-  "kirsehri.com": "kh",
-  "www.kirsehri.com": "kh",
-  "kirsehirhaber.org": "kh",
-  "www.kirsehirhaber.org": "kh",
-  "kirsehir.net": "kh",
-  "www.kirsehir.net": "kh",
+  "kirsehri.com": "kirsehirhaber",
+  "www.kirsehri.com": "kirsehirhaber",
+  "kirsehirhaber.org": "kirsehirhaber",
+  "www.kirsehirhaber.org": "kirsehirhaber",
+  "kirsehir.net": "kirsehirhaber",
+  "www.kirsehir.net": "kirsehirhaber",
   "ankarasehirgazetesi.com": "asg",
   "www.ankarasehirgazetesi.com": "asg",
   "ankarahabergundemi.com": "ankarahabergundemi",
@@ -822,7 +822,9 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
 
   const khHosts = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
   const isKhBrand =
+    binding.slug === "kirsehirhaber" ||
     binding.slug === "kh" ||
+    slugKey === "kirsehirhaber" ||
     slugKey === "kh" ||
     slugKey === "kirsehir" ||
     khHosts.has(normalizeHost(domain));
@@ -2000,7 +2002,15 @@ export default {
       }
     }
 
-    // Editör login + /me + profil (+ KH layout) — Render gerideyse kenarda Neon.
+    // Editör görsel yükleme — kenar JWT (Render secret uyuşmazlığı bypass).
+    try {
+      const mediaEdge = await handleHmEditorMediaUploadEdge(request, env);
+      if (mediaEdge) return mediaEdge;
+    } catch (err) {
+      console.error("[hm-editor-media-edge]", String(err?.message || err).slice(0, 200));
+    }
+
+    // Editör login + /me + profil + layout — Render gerideyse kenarda Neon (tüm HM siteleri).
     // clone: kenar null dönerse (KH dışı layout / captcha) body Render'a bozulmadan gitsin.
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
@@ -2025,7 +2035,7 @@ export default {
       console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
     }
 
-    // KH: kenar JWT ile haber/yazar/makale (Render Bearer 401 bypass).
+    // HM editör haber/yazar/makale — kenar JWT ile Neon (tüm siteler).
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();

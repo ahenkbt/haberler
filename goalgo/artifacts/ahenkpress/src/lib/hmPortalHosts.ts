@@ -52,7 +52,7 @@ export function isYekparePortalHubOnly(host: string, slug?: string | null): bool
 
 const KH_HM_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
 
-/** Kırşehir Haber özel alanı veya /tr/kh|kirsehir slug. */
+/** Kırşehir Haber özel alanı veya /tr/kirsehirhaber|kh|kirsehir slug. */
 export function isKhHmSite(host: string, slug?: string | null): boolean {
   const h = normalizeHostKey(host);
   if (h && KH_HM_HOSTS.has(h)) return true;
@@ -60,7 +60,7 @@ export function isKhHmSite(host: string, slug?: string | null): boolean {
     .trim()
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
-  return s === "kh" || s === "kirsehir";
+  return s === "kirsehirhaber" || s === "kh" || s === "kirsehir";
 }
 
 /**

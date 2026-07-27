@@ -39,6 +39,7 @@ import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.j
 import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
+import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
@@ -394,11 +395,22 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-su-domain] HM_SU_DOMAIN_REPAIR=0 — atlandı");
   }
 
-  // /tr/kh + kirsehirhaber.org / kirsehri.com / kirsehir.net (Su'ya dokunmaz)
+  // Aynı id’li HM site çakışması (ör. tr + kirsehirhaber id=5) — panel kaybını önle
+  if (envJobFlag("HM_SITE_ID_COLLISION_REPAIR", true)) {
+    setTimeout(() => {
+      void repairHmSiteIdCollisions({ dryRun: false })
+        .then((r) => logger.info({ ...r }, "[hm-site-id] çakışma onarım"))
+        .catch((err) => logger.error({ err }, "[hm-site-id] onarım başarısız"));
+    }, 17_200).unref();
+  } else {
+    logger.info("[hm-site-id] HM_SITE_ID_COLLISION_REPAIR=0 — atlandı");
+  }
+
+  // /tr/kirsehirhaber + kirsehirhaber.org / kirsehri.com / kirsehir.net (Su'ya dokunmaz; kh yaratılmaz)
   if (envJobFlag("HM_KH_SITE_ENSURE", true)) {
     setTimeout(() => {
       void ensureKhNewsSite({ dryRun: false })
-        .then((r) => logger.info({ ...r }, "[hm-kh] /tr/kh site ensure"))
+        .then((r) => logger.info({ ...r }, "[hm-kh] /tr/kirsehirhaber site ensure"))
         .catch((err) => logger.error({ err }, "[hm-kh] site ensure başarısız"));
     }, 17_500).unref();
   } else {

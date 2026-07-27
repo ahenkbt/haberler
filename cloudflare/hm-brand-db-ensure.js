@@ -24,8 +24,8 @@ export const HM_BRAND_DB_BINDINGS = [
   {
     domain: "kirsehirhaber.org",
     domains: ["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"],
-    slug: "kh",
-    displayName: "Kırşehir Haber",
+    slug: "kirsehirhaber",
+    displayName: "KIRŞEHİR HABER PORTALI",
     description: "Kırşehir’in dijital haber platformu",
   },
 ];
@@ -33,6 +33,7 @@ export const HM_BRAND_DB_BINDINGS = [
 const PROTECTED_SLUGS = new Set([
   "asg",
   "kirsehir",
+  "kirsehirhaber",
   "kh",
   "vkd",
   "tr",
@@ -434,6 +435,7 @@ async function ensureKhVideoMenuOnRow(sql, row) {
   const slug = normalizeSlug(row.slug);
   const hosts = [row.domain, row.domain2, row.domain3].map(normalizeHost);
   const isKh =
+    slug === "kirsehirhaber" ||
     slug === "kh" ||
     slug === "kirsehir" ||
     hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
@@ -513,6 +515,7 @@ async function ensureKhAuthorsClearedOnRow(sql, row) {
   const slug = normalizeSlug(row.slug);
   const hosts = [row.domain, row.domain2, row.domain3].map(normalizeHost);
   const isKh =
+    slug === "kirsehirhaber" ||
     slug === "kh" ||
     slug === "kirsehir" ||
     hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
@@ -604,10 +607,12 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     }
   }
 
-  // 2) Slug ile bul — en düşük id (kanonik /tr/su; KH için yalnız kh/kirsehir)
+  // 2) Slug ile bul — en düşük id (kanonik /tr/su; KH: kirsehirhaber|kh|kirsehir)
   const slugKey = wantSlug || binding.slug;
   if (slugKey) {
     const isSuSlug = slugKey === "su" || slugKey === "suhaber";
+    const isKhSlug =
+      slugKey === "kirsehirhaber" || slugKey === "kh" || slugKey === "kirsehir";
     const bySlug = isSuSlug
       ? await sql`
           SELECT id, slug, domain, domain2, domain3, display_name, description,
@@ -619,12 +624,28 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
           ORDER BY id ASC
           LIMIT 1
         `
+      : isKhSlug
+        ? await sql`
+          SELECT id, slug, domain, domain2, domain3, display_name, description,
+                 contact_json, layout_json, active, created_at, updated_at
+          FROM hm_news_sites
+          WHERE lower(trim(both '/' from slug)) = ${"kirsehirhaber"}
+             OR lower(trim(both '/' from slug)) = ${"kirsehir"}
+             OR lower(trim(both '/' from slug)) = ${"kh"}
+          ORDER BY
+            CASE lower(trim(both '/' from slug))
+              WHEN 'kirsehirhaber' THEN 0
+              WHEN 'kirsehir' THEN 1
+              ELSE 2
+            END,
+            id ASC
+          LIMIT 1
+        `
       : await sql`
           SELECT id, slug, domain, domain2, domain3, display_name, description,
                  contact_json, layout_json, active, created_at, updated_at
           FROM hm_news_sites
           WHERE lower(trim(both '/' from slug)) = ${slugKey}
-             OR (${slugKey === "kh"} AND lower(trim(both '/' from slug)) = ${"kirsehir"})
           ORDER BY id ASC
           LIMIT 1
         `;

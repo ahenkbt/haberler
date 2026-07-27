@@ -174,7 +174,7 @@ async function isKhEditorSite(sql, siteId) {
     .trim()
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
-  if (slug === "kh" || slug === "kirsehir") return true;
+  if (slug === "kirsehirhaber" || slug === "kh" || slug === "kirsehir") return true;
   for (const raw of [site.domain, site.domain2, site.domain3]) {
     if (KH_HOSTS.has(normalizeHost(raw))) return true;
   }
@@ -182,26 +182,20 @@ async function isKhEditorSite(sql, siteId) {
 }
 
 /**
- * Kenar JWT + Neon: yalnızca Kırşehir (kh) — Render secret/DB ayrışınca
- * tema/modül/sayfa/menü kaydı 401 olmasın.
- * Diğer editör siteleri: null → Render proxy (dokunulmaz).
+ * Kenar JWT + Neon: tema/modül/sayfa/menü kaydı (tüm HM editör siteleri).
+ * Render secret/DB ayrışınca 401 olmasın diye Neon'a yazılır.
  */
-async function handleKhSiteLayoutPatch(request, env) {
+async function handleHmSiteLayoutPatch(request, env) {
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    // Render imzalı JWT olabilir — KH dışı / Render yoluna bırak.
+    // Render imzalı JWT olabilir — kenar doğrulayamadıysa Render yoluna bırak.
     if (auth.startsWith("Bearer ")) return null;
     return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
   }
 
   const sql = sqlClient(env);
   if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
-
-  if (!(await isKhEditorSite(sql, ctx.siteId))) {
-    // ASG/Su/diğer: mevcut Render akışı.
-    return null;
-  }
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
   if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
@@ -277,7 +271,7 @@ async function handleKhSiteLayoutPatch(request, env) {
   return jsonResponse(200, { ok: true, layoutJson: raw });
 }
 
-async function handleKhSiteHomeModuleOrderPatch(request, env) {
+async function handleHmSiteHomeModuleOrderPatch(request, env) {
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
@@ -287,7 +281,6 @@ async function handleKhSiteHomeModuleOrderPatch(request, env) {
 
   const sql = sqlClient(env);
   if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
-  if (!(await isKhEditorSite(sql, ctx.siteId))) return null;
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
   if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
@@ -654,7 +647,7 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
       passwordHash: editor.password_hash,
       displayName: editor.display_name ?? null,
       username: editor.username ?? null,
-      siteSlug: site.slug || "kh",
+      siteSlug: site.slug || "kirsehirhaber",
       siteDomain: site.domain || host || "kirsehirhaber.org",
     });
     if (bridged) return bridged;
@@ -735,7 +728,7 @@ async function exchangeKhSessionViaRenderBridge(env, opts) {
     passwordHash: String(opts.passwordHash || ""),
     displayName: opts.displayName ?? null,
     username: opts.username ?? null,
-    siteSlug: String(opts.siteSlug || "kh")
+    siteSlug: String(opts.siteSlug || "kirsehirhaber")
       .trim()
       .toLowerCase()
       .replace(/^\/+|\/+$/g, ""),
@@ -1043,14 +1036,74 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
     }
     return patchEditorPassword(request, env);
   }
-  // Kırşehir: kenar JWT ile tema/modül/sayfa/menü kaydı Neon'a (Render 401 olmasın).
+  // Tüm HM siteleri: kenar JWT ile tema/modül/sayfa/menü kaydı Neon'a.
   if (path === "/api/hm/editor/site-layout" && method === "PATCH") {
-    return handleKhSiteLayoutPatch(request, env);
+    return handleHmSiteLayoutPatch(request, env);
   }
   if (path === "/api/hm/editor/site-home-module-order" && method === "PATCH") {
-    return handleKhSiteHomeModuleOrderPatch(request, env);
+    return handleHmSiteHomeModuleOrderPatch(request, env);
   }
   return null;
+}
+
+/**
+ * Editör görsel yükleme — kenar JWT doğrulandıktan sonra upstream'e ilet.
+ * Worker/Render secret uyuşmazlığında ADMIN_MAINTENANCE_SECRET ile geçiş.
+ */
+export async function handleHmEditorMediaUploadEdge(request, env) {
+  const path = String(new URL(request.url).pathname || "").replace(/\/+$/, "") || "/";
+  const method = String(request.method || "GET").toUpperCase();
+  if (path !== "/api/media/upload" || method !== "POST") return null;
+
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const ctx = await parseEditorJwt(request, env);
+  if (!ctx) {
+    if (auth.startsWith("Bearer ")) return null;
+    return jsonResponse(401, { error: "Kimlik doğrulama gerekli" });
+  }
+
+  const sql = sqlClient(env);
+  if (!sql) return null;
+  const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
+  if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
+
+  const origin = String(env?.API_ORIGIN || "").trim().replace(/\/$/, "");
+  if (!origin) return null;
+
+  const headers = new Headers();
+  headers.set("content-type", "application/json");
+  const maint = String(env?.ADMIN_MAINTENANCE_SECRET || "").trim();
+  if (maint) {
+    headers.set("x-yekpare-admin-secret", maint);
+  } else if (auth) {
+    headers.set("authorization", auth);
+  }
+
+  let bodyText;
+  try {
+    bodyText = await request.text();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz istek gövdesi" });
+  }
+
+  let upstream;
+  try {
+    upstream = await fetch(`${origin}/api/media/upload`, {
+      method: "POST",
+      headers,
+      body: bodyText,
+    });
+  } catch (err) {
+    return jsonResponse(502, {
+      error: "Medya sunucusuna ulaşılamadı",
+      detail: String(err?.message || err).slice(0, 200),
+    });
+  }
+
+  const outHeaders = new Headers(upstream.headers);
+  outHeaders.set("x-yekpare-frontend", "cloudflare-editor-media-edge");
+  outHeaders.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+  return new Response(upstream.body, { status: upstream.status, headers: outHeaders });
 }
 
 /** @deprecated — login kenarda; geriye dönük no-op. */

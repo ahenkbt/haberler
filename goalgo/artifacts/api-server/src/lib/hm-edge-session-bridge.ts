@@ -22,7 +22,7 @@ export type HmEdgeSessionBridgePayload = {
   nonce?: string;
 };
 
-const KH_SLUGS = new Set(["kh", "kirsehir"]);
+const KH_SLUGS = new Set(["kirsehirhaber", "kh", "kirsehir"]);
 const KH_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
 
 function normalizeHost(raw: string | null | undefined): string {

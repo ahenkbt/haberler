@@ -3,8 +3,9 @@
  * - başka sitenin manuel / sync haberleri sızmasın
  * - site_only / is_editor_manual yabancı satırlar düşsün
  *
- * Kategori kutusu (categorySlug) isteklerinde canlı RSS (site_id null) kalabilir —
- * aksi halde SPOR vb. kutular boşalıp yanlış backfill'e yol açıyordu.
+ * Canlı RSS (site_id null + http link) ana liste / home-bundle / kategori
+ * isteklerinde kalır. Aksi halde KH gibi yalnızca merkez RSS gören siteler
+ * tamamen boşalıyordu (Su site_id=2 kopyaları olduğu için etkilenmiyordu).
  */
 
 function parseSiteId(value) {
@@ -73,12 +74,12 @@ function filterItemArray(items, siteId, opts) {
   return items.filter((item) => hmPublicNewsItemAllowed(item, siteId, opts));
 }
 
-function filterHomeBundle(payload, siteId) {
+function filterHomeBundle(payload, siteId, opts = {}) {
   if (!payload || typeof payload !== "object") return payload;
   const next = { ...payload, siteId: payload.siteId ?? siteId };
-  const opts = { allowCentralRss: false };
+  const filterOpts = { allowCentralRss: opts.allowCentralRss === true };
   for (const key of ["featured", "manualEditor", "centerHeadlines", "breaking", "popular"]) {
-    if (Array.isArray(payload[key])) next[key] = filterItemArray(payload[key], siteId, opts);
+    if (Array.isArray(payload[key])) next[key] = filterItemArray(payload[key], siteId, filterOpts);
   }
   return next;
 }
@@ -132,8 +133,16 @@ export async function maybeFilterHmPublicNewsUpstream(incoming, upstream, outHea
     const categorySlug = String(incoming.searchParams.get("categorySlug") || incoming.searchParams.get("category") || "")
       .trim()
       .toLowerCase();
-    // Kategori kutusu çekiminde canlı RSS'e izin ver (SPOR vb.).
-    const allowCentralRss = Boolean(categorySlug) || path === "/api/news/hybrid" || path === "/api/news/hybrid/infinite";
+    // Canlı RSS (site_id null): ana liste + hybrid + kategori + home-bundle.
+    // Yabancı site_id / sync / pool manuel sızıntısı hâlâ engellenir.
+    const allowCentralRss =
+      Boolean(categorySlug) ||
+      isHomeBundle ||
+      path === "/api/news" ||
+      path === "/api/news/featured" ||
+      path === "/api/news/breaking" ||
+      path === "/api/news/hybrid" ||
+      path === "/api/news/hybrid/infinite";
 
     const text = await upstream.text();
     let payload;
@@ -144,7 +153,9 @@ export async function maybeFilterHmPublicNewsUpstream(incoming, upstream, outHea
     }
 
     const opts = { allowCentralRss };
-    const filtered = isHomeBundle ? filterHomeBundle(payload, siteId) : filterNewsListPayload(payload, siteId, opts);
+    const filtered = isHomeBundle
+      ? filterHomeBundle(payload, siteId, opts)
+      : filterNewsListPayload(payload, siteId, opts);
     outHeaders.set("x-yekpare-hm-news-edge-filter", allowCentralRss ? "site-isolation+rss" : "site-isolation");
     outHeaders.set("cache-control", "private, no-store, max-age=0, must-revalidate");
     outHeaders.set("cdn-cache-control", "no-store");

@@ -156,7 +156,7 @@ async function isKhSite(sql, siteId) {
     .trim()
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
-  if (slug === "kh" || slug === "kirsehir") return true;
+  if (slug === "kirsehirhaber" || slug === "kh" || slug === "kirsehir") return true;
   for (const d of [s.domain, s.domain2, s.domain3]) {
     if (KH_HOSTS.has(normalizeHost(d))) return true;
   }
@@ -897,7 +897,6 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   const sql = sqlClient(env);
   if (!sql) return null;
-  if (!(await isKhSite(sql, ctx.siteId))) return null;
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
   if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });

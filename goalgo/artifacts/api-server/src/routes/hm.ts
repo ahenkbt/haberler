@@ -134,6 +134,7 @@ import {
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
+import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import { repairAsgEditorMisassignment } from "../lib/hm-asg-editor-repair.js";
 import {
   ensureHmSiteEditorUsernameColumn,
@@ -728,12 +729,43 @@ function makeHmCopySlug(base: string | null | undefined, targetSiteId: number, s
 
 /* —— Public meta (slug / domain) ————————————————————————————— */
 
-function dedupeHmSitesById<T extends { id: number }>(rows: T[]): T[] {
-  const byId = new Map<number, T>();
+const HM_SITE_ID_KEEP_SLUGS = new Set([
+  "su",
+  "tr",
+  "vkd",
+  "asg",
+  "vatanhaber",
+  "ankarahabergundemi",
+  "trafik",
+]);
+
+function normHmSiteSlug(raw: unknown): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+}
+
+/** Aynı slug tekrarını temizle; farklı slug aynı id'de kalabilir (çakışma onarımı ayrı). */
+function dedupeHmSitesById<T extends { id: number; slug?: string | null }>(rows: T[]): T[] {
+  const bySlug = new Map<string, T>();
   for (const row of rows) {
-    if (!byId.has(row.id)) byId.set(row.id, row);
+    const slug = normHmSiteSlug(row.slug);
+    if (!slug) continue;
+    const prev = bySlug.get(slug);
+    if (!prev) {
+      bySlug.set(slug, row);
+      continue;
+    }
+    const prevKeep = HM_SITE_ID_KEEP_SLUGS.has(slug);
+    if (prevKeep && row.id !== prev.id) {
+      // Kök slug: en düşük id kanonik
+      if (row.id < prev.id) bySlug.set(slug, row);
+      continue;
+    }
+    if (!prevKeep && row.id < prev.id) bySlug.set(slug, row);
   }
-  return Array.from(byId.values());
+  return Array.from(bySlug.values());
 }
 
 router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
@@ -1116,8 +1148,12 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         isActive: true,
       });
 
+    await repairHmSiteIdCollisions({ dryRun: false }).catch(() => undefined);
+
+    const freshSite = (await getActiveHmNewsSiteBySlugCompat(slug)) ?? site;
+
     res.status(201).json({
-      site,
+      site: freshSite,
       editor: editor
         ? { id: editor.id, email: editor.email, displayName: editor.displayName, createdAt: editor.createdAt }
         : null,
@@ -1800,7 +1836,7 @@ router.post("/hm/admin/bind-brand-domains", async (req, res): Promise<void> => {
   }
 });
 
-/** Yönetim: /tr/kh + Kırşehir domainlerini oluştur/bağla (Su'ya dokunmaz). */
+/** Yönetim: /tr/kirsehirhaber + Kırşehir domainlerini oluştur/bağla (Su'ya dokunmaz; kh yeniden yaratılmaz). */
 router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
@@ -1811,10 +1847,29 @@ router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
       ok: result.action !== "error",
       message:
         result.action === "created"
-          ? `Kırşehir Haber (/tr/kh) oluşturuldu #${result.siteId}`
+          ? `Kırşehir Haber (/tr/kirsehirhaber) oluşturuldu #${result.siteId}`
           : result.action === "updated"
-            ? `Kırşehir Haber (/tr/kh) güncellendi #${result.siteId}`
+            ? `Kırşehir Haber (/tr/kirsehirhaber) güncellendi #${result.siteId}`
             : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: aynı id’li HM site çakışmalarını onar (tr korunur, kirsehirhaber yeni id alır). */
+router.post("/hm/admin/repair-hm-site-id-collisions", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const dryRun = (req.body as { dryRun?: boolean } | undefined)?.dryRun === true;
+    const result = await repairHmSiteIdCollisions({ dryRun });
+    res.json({
+      ...result,
+      ok: true,
+      message: result.detail,
     });
   } catch (e) {
     res.status(500).json({
@@ -2232,14 +2287,14 @@ router.post("/hm/editor/session-bridge", async (req, res): Promise<void> => {
     .trim()
     .toLowerCase();
   const passwordHash = String(b.passwordHash ?? "").trim();
-  const siteSlug = normalizeSlug(String(b.siteSlug ?? "kh"));
+  const siteSlug = normalizeSlug(String(b.siteSlug ?? "kirsehirhaber"));
   const siteDomain = normalizeDomain(String(b.siteDomain ?? "")) || "kirsehirhaber.org";
   if (!email.includes("@") || passwordHash.length < 20) {
     res.status(400).json({ error: "e-posta ve passwordHash gerekli" });
     return;
   }
   if (!isKhBridgeTarget(siteSlug, siteDomain)) {
-    res.status(403).json({ error: "Köprü yalnızca Kırşehir Haber (kh) için." });
+    res.status(403).json({ error: "Köprü yalnızca Kırşehir Haber (kirsehirhaber) için." });
     return;
   }
 
@@ -2248,7 +2303,19 @@ router.post("/hm/editor/session-bridge", async (req, res): Promise<void> => {
     await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
     await ensureKhNewsSite({ dryRun: false }).catch(() => undefined);
 
-    let site = await getActiveHmNewsSiteBySlugCompat(siteSlug === "kirsehir" ? "kh" : siteSlug);
+    const bridgeSlugCandidates = [
+      siteSlug === "kh" || siteSlug === "kirsehir" ? "kirsehirhaber" : siteSlug,
+      "kirsehirhaber",
+      siteSlug,
+    ].filter((s, i, arr) => s && arr.indexOf(s) === i);
+    let site =
+      (await getActiveHmNewsSiteBySlugCompat(bridgeSlugCandidates[0]!)) ??
+      (bridgeSlugCandidates[1]
+        ? await getActiveHmNewsSiteBySlugCompat(bridgeSlugCandidates[1])
+        : undefined) ??
+      (bridgeSlugCandidates[2]
+        ? await getActiveHmNewsSiteBySlugCompat(bridgeSlugCandidates[2])
+        : undefined);
     if (!site && siteDomain) {
       site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(siteDomain));
     }
