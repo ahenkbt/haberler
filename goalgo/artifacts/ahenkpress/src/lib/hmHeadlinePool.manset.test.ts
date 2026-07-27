@@ -53,6 +53,22 @@ describe("manset pools", () => {
     expect(pool.map((x) => x.id)).toEqual([1]);
   });
 
+  it("tepe manşet harici RSS kaynaklı isFeatured haberleri eler", () => {
+    const featuredRss = {
+      id: 9,
+      title: "RSS manşet kaçak",
+      isFeatured: true,
+      rssSourceUrl: "https://example.com/feed.rss",
+      createdAt: "2026-07-15T14:00:00.000Z",
+      imageUrl: "https://example.com/r2.jpg",
+    };
+    const pool = buildTepeMansetPool({
+      items: [featuredOld, featuredRss, rss],
+      limit: 5,
+    });
+    expect(pool.map((x) => x.id)).toEqual([1]);
+  });
+
   it("site manşet seçilmemişse son haberleri seçer (RSS hariç; isFeatured aday kalır)", () => {
     const pool = buildCenterMansetSliderPool({
       manualItems: [featuredOld],

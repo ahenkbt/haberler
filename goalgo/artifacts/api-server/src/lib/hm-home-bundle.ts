@@ -110,6 +110,8 @@ async function loadFeaturedForSite(
     eq(newsTable.isFeatured, true),
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
+    /** Tepe manşet: yalnızca editör/manuel — harici RSS ve yekpare havuz kopyası hariç. */
+    or(eq(newsTable.isEditorManual, true), isNull(newsTable.rssSourceUrl))!,
     or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
   ];
   const freshness = publicEditorNewsFreshnessSql(corporateStrict);

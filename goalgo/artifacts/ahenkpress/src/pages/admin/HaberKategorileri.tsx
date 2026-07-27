@@ -205,10 +205,17 @@ export default function HaberKategorileri() {
     mutation: {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: ["/api/categories"] });
+        void qc.invalidateQueries({ queryKey: ["/api/categories", "scope", "admin"] });
         void qc.invalidateQueries({ queryKey: [...HM_EDITOR_CATEGORIES_QUERY_KEY] });
+        void qc.refetchQueries({ queryKey: ["/api/categories", "scope", "admin"] });
         toast({ title: "Kategori silindi" });
       },
-      onError: () => toast({ title: "Silinemedi", variant: "destructive" }),
+      onError: (e) =>
+        toast({
+          title: "Silinemedi",
+          description: e instanceof Error ? e.message : undefined,
+          variant: "destructive",
+        }),
     },
   });
 

@@ -1,6 +1,14 @@
 import { Router, type IRouter } from "express";
 import { and, asc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
-import { db, categoriesTable, hmNewsSitesTable, newsTable } from "@workspace/db";
+import {
+  categoriesTable,
+  dualWriteDelete,
+  dualWriteInsert,
+  dualWriteUpdate,
+  getNewsDbForRead,
+  hmNewsSitesTable,
+  newsTable,
+} from "@workspace/db";
 import { mergeCategories } from "../lib/category-merge";
 import { CreateCategoryBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
@@ -62,12 +70,19 @@ router.get("/categories", async (req, res): Promise<void> => {
     String((req.query as { scope?: string }).scope ?? "").toLowerCase() === "admin" &&
     canListAllNewsCategories(req);
 
+  /** Admin listesi ve mutasyon sonrası refetch — kenar/CDN önbelleği kullanma. */
+  if (listAll) {
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    res.setHeader("CDN-Cache-Control", "no-store");
+  }
+
+  const readDb = getNewsDbForRead();
   let exclusiveWhere: SQL | undefined;
   const siteIds = parseHmSiteIdsForCategoryFilter(req);
 
   if (!listAll) {
     if (siteIds.length === 1) {
-      const [siteRow] = await db
+      const [siteRow] = await readDb
         .select({ layoutJson: hmNewsSitesTable.layoutJson })
         .from(hmNewsSitesTable)
         .where(eq(hmNewsSitesTable.id, siteIds[0]!));
@@ -80,7 +95,7 @@ router.get("/categories", async (req, res): Promise<void> => {
     }
   }
 
-  const base = db
+  const base = readDb
     .select({
       id: categoriesTable.id,
       name: categoriesTable.name,
@@ -96,7 +111,7 @@ router.get("/categories", async (req, res): Promise<void> => {
   );
 
   if (siteIds.length === 1) {
-    const [siteRow] = await db
+    const [siteRow] = await readDb
       .select({ layoutJson: hmNewsSitesTable.layoutJson, slug: hmNewsSitesTable.slug })
       .from(hmNewsSitesTable)
       .where(eq(hmNewsSitesTable.id, siteIds[0]!));
@@ -113,7 +128,7 @@ router.get("/categories", async (req, res): Promise<void> => {
     }
   }
 
-  const countRows = await db
+  const countRows = await readDb
     .select({
       categoryId: newsTable.categoryId,
       cnt: sql<number>`count(*)::int`,
@@ -131,7 +146,7 @@ router.get("/categories", async (req, res): Promise<void> => {
   let siteDisplayNameBySlug = new Map<string, string>();
   let hmSiteSlugs: string[] = [];
   if (listAll) {
-    const hmSites = await db
+    const hmSites = await readDb
       .select({ id: hmNewsSitesTable.id, displayName: hmNewsSitesTable.displayName, slug: hmNewsSitesTable.slug })
       .from(hmNewsSitesTable);
     siteNameById = new Map(hmSites.map((s) => [s.id, String(s.displayName ?? s.slug ?? `#${s.id}`).trim()]));
@@ -168,20 +183,20 @@ router.post("/categories", async (req, res): Promise<void> => {
   }
   try {
     /** Siteye özel kategoriler yalnızca HM editör API’sinden açılır; merkez panel her zaman genel kategori ekler. */
-    const [row] = await db
-      .insert(categoriesTable)
-      .values({
-        name: parsed.data.name,
-        slug: parsed.data.slug,
-        color: parsed.data.color,
-        exclusiveSiteId: null,
-      })
-      .returning();
+    const inserted = await dualWriteInsert(categoriesTable, {
+      name: parsed.data.name,
+      slug: parsed.data.slug,
+      color: parsed.data.color,
+      exclusiveSiteId: null,
+    });
+    const row = inserted[0];
     if (!row) {
       res.status(500).json({ error: "Kayıt oluşturulamadı" });
       return;
     }
     invalidateNewsContextCache();
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    res.setHeader("CDN-Cache-Control", "no-store");
     res.status(201).json({ ...row, newsCount: 0 });
   } catch (err: unknown) {
     const { code, message } = postgresMeta(err);
@@ -228,7 +243,8 @@ router.put("/categories/:id", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const [existing] = await db
+    const readDb = getNewsDbForRead();
+    const [existing] = await readDb
       .select({ id: categoriesTable.id, exclusiveSiteId: categoriesTable.exclusiveSiteId })
       .from(categoriesTable)
       .where(eq(categoriesTable.id, id));
@@ -236,26 +252,29 @@ router.put("/categories/:id", async (req, res): Promise<void> => {
       res.status(404).json({ error: "Kategori bulunamadı" });
       return;
     }
-    const [row] = await db
-      .update(categoriesTable)
-      .set({
+    const updated = await dualWriteUpdate(
+      categoriesTable,
+      {
         name: parsed.data.name,
         slug: parsed.data.slug,
         color: parsed.data.color,
         exclusiveSiteId: existing.exclusiveSiteId ?? null,
-      })
-      .where(eq(categoriesTable.id, id))
-      .returning();
+      },
+      eq(categoriesTable.id, id),
+    );
+    const row = updated[0];
     if (!row) {
       res.status(500).json({ error: "Güncellenemedi" });
       return;
     }
-    const [cntRow] = await db
+    const [cntRow] = await readDb
       .select({ cnt: sql<number>`count(*)::int` })
       .from(newsTable)
       .where(eq(newsTable.categoryId, id));
     const newsCount = cntRow?.cnt ?? 0;
     invalidateNewsContextCache();
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    res.setHeader("CDN-Cache-Control", "no-store");
     res.json({ ...row, newsCount });
   } catch (err: unknown) {
     const { code, message } = postgresMeta(err);
@@ -275,13 +294,36 @@ router.delete("/categories/:id", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(String(raw), 10);
-  if (Number.isNaN(id)) {
+  if (Number.isNaN(id) || id <= 0) {
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  await db.delete(categoriesTable).where(eq(categoriesTable.id, id));
-  invalidateNewsContextCache();
-  res.sendStatus(204);
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  const readDb = getNewsDbForRead();
+  const [existing] = await readDb
+    .select({ id: categoriesTable.id })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.id, id));
+  if (!existing) {
+    res.status(404).json({ error: "Kategori bulunamadı" });
+    return;
+  }
+  try {
+    await dualWriteDelete(categoriesTable, eq(categoriesTable.id, id));
+    invalidateNewsContextCache();
+    res.sendStatus(204);
+  } catch (err: unknown) {
+    const { code, message } = postgresMeta(err);
+    if (code === "23503") {
+      res.status(409).json({
+        error: "Bu kategoriye bağlı haberler var; önce haberleri taşıyın veya silin.",
+      });
+      return;
+    }
+    logger.error({ err, code, message }, "DELETE /categories/:id failed");
+    res.status(500).json({ error: "Kategori silinemedi" });
+  }
 });
 
 /** Siteye özel bir kategoriyi GENEL (shared) kategoriye yükseltir (promote). */
@@ -294,7 +336,8 @@ router.post("/categories/:id/promote", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const [existing] = await db
+    const readDb = getNewsDbForRead();
+    const [existing] = await readDb
       .select({ id: categoriesTable.id, slug: categoriesTable.slug, exclusiveSiteId: categoriesTable.exclusiveSiteId })
       .from(categoriesTable)
       .where(eq(categoriesTable.id, id));
@@ -306,7 +349,7 @@ router.post("/categories/:id/promote", async (req, res): Promise<void> => {
       res.json({ ...existing, alreadyGeneral: true });
       return;
     }
-    const [conflict] = await db
+    const [conflict] = await readDb
       .select({ id: categoriesTable.id })
       .from(categoriesTable)
       .where(and(eq(categoriesTable.slug, existing.slug), isNull(categoriesTable.exclusiveSiteId)));
@@ -314,11 +357,14 @@ router.post("/categories/:id/promote", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Aynı slug ile genel bir kategori zaten var" });
       return;
     }
-    const [row] = await db
-      .update(categoriesTable)
-      .set({ exclusiveSiteId: null })
-      .where(eq(categoriesTable.id, id))
-      .returning();
+    const updated = await dualWriteUpdate(
+      categoriesTable,
+      { exclusiveSiteId: null },
+      eq(categoriesTable.id, id),
+    );
+    const row = updated[0];
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    res.setHeader("CDN-Cache-Control", "no-store");
     res.json({ ...row, promoted: true });
   } catch (err: unknown) {
     const { code, message } = postgresMeta(err);

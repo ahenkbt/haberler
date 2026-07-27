@@ -1701,14 +1701,14 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     enabled: !isCorporateTheme && newsSliderEnabled && siteId == null,
   });
 
-  /** Tepe Manşet: yalnızca `isFeatured` (strict API — son haber yedeklemesi yok). */
+  /** Tepe Manşet: yalnızca manşete çekilen editör haberleri (RSS / havuz yedek yok). */
   const { data: tepeFeaturedStrict = [] } = useQuery<any[]>({
-    queryKey: ["/api/news/tepe-featured", siteId ?? "portal"],
+    queryKey: ["/api/news/tepe-featured", siteId ?? "portal", "tepeOnly"],
     queryFn: async () => {
       const qs =
         siteId != null
-          ? `siteId=${encodeURIComponent(String(siteId))}&strict=1&limit=20`
-          : "strict=1&limit=20";
+          ? `siteId=${encodeURIComponent(String(siteId))}&strict=1&tepeOnly=1&limit=20`
+          : "strict=1&tepeOnly=1&limit=20";
       const rows = (await apiRequest(`/api/news/featured?${qs}`)) as any[];
       if (!Array.isArray(rows)) return [];
       return rows.filter((x) => !isBlogCategoryNews(x) && !isKoseArticle(x));
@@ -2092,13 +2092,26 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     if (activeTab) {
       pool = sortNewsByRecency(allItems).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
     } else if (siteId != null) {
-      // HM editör siteleri: normal manşet = en son eklenen haberler (RSS / isFeatured yok).
-      pool = centerMansetSliderItems;
+      // Site manşet: manuel (isSiteManset / son haberler) + hibrit RSS karma.
+      // Tepe manşet ayrı; burada tepeOnly filtre yok — excludeHeadlineSliderItems ile ayrılır.
+      if (hmHybridRssEnabled) {
+        pool = buildRssAwareHeadlinePool({
+          manualItems: centerMansetSliderItems,
+          latestItems: allItems,
+          rssEnabled: true,
+          rssBootstrapReady: hybridHeadlineReady,
+          limit: HM_HOME_HEADLINE_SLIDER_LIMIT,
+          minManual: 3,
+          visitSeed: headlineVisitSeed,
+        });
+      } else {
+        pool = centerMansetSliderItems;
+      }
     } else {
       pool = buildRssAwareHeadlinePool({
         manualItems: featured,
         latestItems: allItems,
-        rssEnabled: rssHeadlineEnabled && (siteId == null || hmHybridRssEnabled),
+        rssEnabled: rssHeadlineEnabled,
         rssBootstrapReady: hybridHeadlineReady,
         limit: HM_HOME_HEADLINE_SLIDER_LIMIT,
         minManual: 3,
@@ -2510,12 +2523,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const pool = mergeUniqueNews(sliderNews, sliderSide, latestNewsPool, allItems, popular);
     return sortNewsByRecency(preferFreshHeadlineCandidates(pool));
   }, [sliderNews, sliderSide, latestNewsPool, allItems, popular]);
-  /** Klasik / portal3 üst manşet: HM editör sitelerinde yalnızca MANŞET etiketli + manuel haberler. */
+  /** Klasik / portal3 üst manşet: HM sitelerinde site manşet havuzu (manuel + RSS karma). */
   const classicHeadlineSliderItems = useMemo(
     () => {
       let pool: any[];
       if (siteId != null) {
-        pool = centerMansetSliderItems;
+        // sliderNews zaten site manşet + hibrit RSS karmasını üretir.
+        pool = sliderNews.length > 0 ? sliderNews : centerMansetSliderItems;
       } else {
         pool = buildClassicHeadlineSliderPool({
           sliderItems: sliderNews,
