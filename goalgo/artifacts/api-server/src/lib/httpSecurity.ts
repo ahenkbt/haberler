@@ -467,6 +467,8 @@ const AUTH_POST_PATH_SUFFIXES = [
 
   "/hm/editor/login",
 
+  "/hm/editor/session-bridge",
+
   "/hm/author/login",
 
   "/hm/author/password-reset-request",

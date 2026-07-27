@@ -645,6 +645,25 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 
+  // Kırşehir: kenar JWT Render API'de 401 verir (secret/DB ayrışması).
+  // Neon doğrulaması başarılı → Render session-bridge ile Render JWT al.
+  const siteIsKh = await isKhEditorSite(sql, site.id);
+  if (siteIsKh || KH_HOSTS.has(host)) {
+    const bridged = await exchangeKhSessionViaRenderBridge(env, {
+      email: editor.email,
+      passwordHash: editor.password_hash,
+      displayName: editor.display_name ?? null,
+      username: editor.username ?? null,
+      siteSlug: site.slug || "kh",
+      siteDomain: site.domain || host || "kirsehirhaber.org",
+    });
+    if (bridged) return bridged;
+    return jsonResponse(503, {
+      error:
+        "Kırşehir oturum köprüsü kurulamadı. Lütfen birkaç saniye sonra tekrar deneyin.",
+    });
+  }
+
   const token = await signEditorJwt(env, editor.id, site.id);
   return jsonResponse(200, {
     token,
@@ -662,6 +681,125 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
       displayName: editor.display_name,
     },
   });
+}
+
+const HM_EDGE_BRIDGE_SECRET_FALLBACK = "yekpare-hm-kh-bridge-20260727-v1";
+
+function edgeBridgeSecret(env) {
+  return String(env?.HM_EDGE_BRIDGE_SECRET || HM_EDGE_BRIDGE_SECRET_FALLBACK).trim();
+}
+
+async function hmacSha256Base64Url(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  const bytes = new Uint8Array(sig);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function apiOriginFromEnv(env) {
+  return String(env?.API_ORIGIN || env?.RENDER_API_ORIGIN || "https://goalgo-y7ze.onrender.com").replace(
+    /\/+$/,
+    "",
+  );
+}
+
+function khBridgeCanonical(payload) {
+  const email = String(payload.email || "")
+    .trim()
+    .toLowerCase();
+  const siteSlug = String(payload.siteSlug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  const siteDomain = normalizeHost(payload.siteDomain || "");
+  const exp = String(Number(payload.exp) || 0);
+  const nonce = String(payload.nonce || "");
+  const passwordHash = String(payload.passwordHash || "");
+  return [email, siteSlug, siteDomain, exp, nonce, passwordHash].join("\n");
+}
+
+/** Neon'da doğrulanmış KH editörünü Render JWT'ye çevirir. */
+async function exchangeKhSessionViaRenderBridge(env, opts) {
+  const secret = edgeBridgeSecret(env);
+  if (!secret) return null;
+  const payload = {
+    email: String(opts.email || "")
+      .trim()
+      .toLowerCase(),
+    passwordHash: String(opts.passwordHash || ""),
+    displayName: opts.displayName ?? null,
+    username: opts.username ?? null,
+    siteSlug: String(opts.siteSlug || "kh")
+      .trim()
+      .toLowerCase()
+      .replace(/^\/+|\/+$/g, ""),
+    siteDomain: normalizeHost(opts.siteDomain) || "kirsehirhaber.org",
+    exp: Date.now() + 90_000,
+    nonce: crypto.randomUUID(),
+  };
+  const raw = JSON.stringify(payload);
+  let sig;
+  try {
+    sig = await hmacSha256Base64Url(secret, khBridgeCanonical(payload));
+  } catch (err) {
+    console.error("[hm-kh-session-bridge] hmac", String(err?.message || err).slice(0, 160));
+    return null;
+  }
+  const url = `${apiOriginFromEnv(env)}/api/hm/editor/session-bridge`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-yekpare-hm-edge-bridge": sig,
+      },
+      body: raw,
+    });
+    const text = await res.text();
+    let j = {};
+    try {
+      j = text ? JSON.parse(text) : {};
+    } catch {
+      j = {};
+    }
+    if (!res.ok || !j?.token || !j?.site || !j?.editor) {
+      console.error(
+        "[hm-kh-session-bridge]",
+        res.status,
+        String(j?.error || text || "").slice(0, 200),
+      );
+      return null;
+    }
+    return jsonResponse(200, {
+      token: j.token,
+      site: {
+        id: j.site.id,
+        slug: j.site.slug,
+        domain: j.site.domain,
+        domain2: j.site.domain2 ?? null,
+        displayName: j.site.displayName,
+      },
+      editor: {
+        id: j.editor.id,
+        email: j.editor.email,
+        username: j.editor.username ?? null,
+        displayName: j.editor.displayName,
+      },
+      bridged: true,
+    });
+  } catch (err) {
+    console.error("[hm-kh-session-bridge] fetch", String(err?.message || err).slice(0, 200));
+    return null;
+  }
 }
 
 async function handleEditorMeGet(request, env) {

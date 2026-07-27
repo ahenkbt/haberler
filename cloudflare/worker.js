@@ -359,6 +359,7 @@ function isAuthSessionApiPath(pathname) {
     p === "/api/members/logout" ||
     p === "/api/members/login" ||
     p === "/api/hm/editor/login" ||
+    p === "/api/hm/editor/session-bridge" ||
     p === "/api/hm/editor/me" ||
     p === "/api/hm/editor/me/password" ||
     p === "/api/hm/author/login" ||
@@ -816,16 +817,10 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     normalizeHost(domain) === "suhaberajansi.com" ||
     slugKey === "su" ||
     slugKey === "suhaber";
-  const khHosts = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
-  const isKhBrand =
-    binding.slug === "kh" ||
-    slugKey === "kh" ||
-    slugKey === "kirsehir" ||
-    khHosts.has(normalizeHost(domain));
 
-  // Su + Kırşehir: Neon meta tercih (editör kenar kaydı ile aynı DB).
-  // Diğer markalar: yalnızca upstream 404 iken kenar fallback.
-  if (!isSuBrand && !isKhBrand && upstream.status !== 404) return null;
+  // Su: Neon meta tercih. KH dahil diğerleri: yalnızca upstream 404 iken fallback
+  // (KH editör Render JWT + main DB kullandığı için meta Render'dan gelmeli).
+  if (!isSuBrand && upstream.status !== 404) return null;
 
   try {
     const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
@@ -834,8 +829,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
       return null;
     }
     return brandMetaJsonResponse(ensured.meta, {
-      "x-yekpare-hm-brand-ensure-action":
-        ensured.action || (isSuBrand ? "su-domain-repair" : isKhBrand ? "kh-neon-meta" : "ok"),
+      "x-yekpare-hm-brand-ensure-action": ensured.action || (isSuBrand ? "su-domain-repair" : "ok"),
     });
   } catch (err) {
     console.error("[hm-brand-db-ensure]", String(err?.message || err).slice(0, 240));
