@@ -276,6 +276,7 @@ export default function EditorGiris() {
 
         body: JSON.stringify({
           slug: slugNorm,
+          login: emailNorm,
           email: emailNorm,
           password,
           domain: isCustomDomain ? host : undefined,
@@ -411,7 +412,7 @@ export default function EditorGiris() {
 
           <div>
 
-            <Label className="text-slate-400 text-xs uppercase font-bold">Editör e-posta</Label>
+            <Label className="text-slate-400 text-xs uppercase font-bold">E-posta veya kullanıcı adı</Label>
 
             <div className="relative mt-1.5">
 
@@ -419,7 +420,7 @@ export default function EditorGiris() {
 
               <Input
 
-                type="email"
+                type="text"
 
                 value={email}
 

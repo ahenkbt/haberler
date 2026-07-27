@@ -10,7 +10,12 @@ export type HmSiteBrief = {
   domain3?: string | null;
   displayName: string;
 };
-export type HmEditorBrief = { id: number; email: string; displayName: string | null };
+export type HmEditorBrief = {
+  id: number;
+  email: string;
+  username?: string | null;
+  displayName: string | null;
+};
 
 export type HmSessionEventOpts = { silent?: boolean };
 

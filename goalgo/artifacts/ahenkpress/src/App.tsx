@@ -201,6 +201,7 @@ import EditorMenuler from "./pages/editor/EditorMenuler";
 import EditorWordPressImport from "./pages/editor/EditorWordPressImport";
 import EditorWordPressTemplatePages from "./pages/editor/EditorWordPressTemplatePages";
 import EditorGiris from "./pages/editor/EditorGiris";
+import EditorProfil from "./pages/editor/EditorProfil";
 import SiteneEkle from "./pages/public/SiteneEkle";
 import HmOrPortalHaberDetailRoute from "./pages/public/HmOrPortalHaberDetailRoute";
 import HmPublicHaberDetayRoute from "./pages/public/HmPublicHaberDetayRoute";
@@ -1674,6 +1675,13 @@ export default function App() {
       </Route>
       <Route path="/editor/site-sayfalari">
         {() => <Redirect to="/editor/sayfalar" />}
+      </Route>
+      <Route path="/editor/profil">
+        {() => (
+          <HmEditorRoute>
+            <EditorProfil />
+          </HmEditorRoute>
+        )}
       </Route>
       <Route path="/editor/genel-ayarlar">
         {() => (
