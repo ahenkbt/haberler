@@ -7,6 +7,7 @@ import {
   isYektubeV2Enabled,
   mapToHmYektubeEmbedUrl,
   mapToYektubePublicUrl,
+  YEKTUBE_PORTAL_MIRROR_ORIGIN,
 } from "@/lib/yektubeV2Feature";
 
 /** v2 açıkken aynı origin üzerinde /yektube-v2 (yektube.com DNS bozuksa yedek) */
@@ -45,7 +46,9 @@ export function HmYektubePortalEmbed() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const src = useMemo(() => {
-    if (typeof window === "undefined") return "https://yektube.com/yp/?embed=1";
+    if (typeof window === "undefined") {
+      return `${YEKTUBE_PORTAL_MIRROR_ORIGIN.replace(/\/+$/, "")}/yp/?embed=1`;
+    }
     const raw = mapToHmYektubeEmbedUrl(window.location.pathname, window.location.search, window.location.hash);
     try {
       const url = new URL(raw, "https://yektube.com");
