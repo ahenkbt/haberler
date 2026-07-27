@@ -41,6 +41,7 @@ import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.j
 import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
+import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
@@ -404,6 +405,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_500).unref();
   } else {
     logger.info("[hm-kh] HM_KH_SITE_ENSURE=0 — atlandı");
+  }
+
+  // ASG: sehirgazetesiankara@gmail.com yanlış siteye bağlıysa asg'ye kopyala
+  if (envJobFlag("HM_ASG_EDITOR_REPAIR", true)) {
+    setTimeout(() => {
+      void repairAsgEditorMisassignment()
+        .then((r) => logger.info({ ...r }, "[hm-asg-editor] editör onarım"))
+        .catch((err) => logger.error({ err }, "[hm-asg-editor] onarım başarısız"));
+    }, 17_800).unref();
+  } else {
+    logger.info("[hm-asg-editor] HM_ASG_EDITOR_REPAIR=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).

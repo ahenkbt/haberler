@@ -134,6 +134,7 @@ import {
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
+import { repairAsgEditorMisassignment } from "../lib/hm-asg-editor-repair.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
 import {
   ensureHmBrandDomainBindings,
@@ -1786,6 +1787,31 @@ router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
   }
 });
 
+/** Yönetim: sehirgazetesiankara@gmail.com → Ankara Şehir Gazetesi (asg) editör kopyası. */
+router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await repairAsgEditorMisassignment();
+    res.json({
+      ok: result.ok,
+      message:
+        result.action === "copied"
+          ? `ASG editör kopyalandı #${result.editorId}`
+          : result.action === "updated"
+            ? `ASG editör güncellendi #${result.editorId}`
+            : result.action === "already"
+              ? "ASG editör zaten doğru sitede"
+              : result.detail || result.action,
+      ...result,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
 /** Yönetim: /tr/su → suhaberajansi.com domain sahipliğini onarır (sahte çift kayıt temizliği). */
 router.post("/hm/admin/repair-su-domain", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
@@ -2201,6 +2227,25 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
     editor = (await mirrorHmEditorFromMainDb(slug, email, password, site.id)) ?? undefined;
   }
   if (!editor) {
+    // Aynı e-posta başka HM sitesindeyse yönlendirici mesaj (şifre sızdırmaz).
+    const [elsewhere] = await newsReadDb()
+      .select({
+        siteId: hmSiteEditorsTable.siteId,
+        email: hmSiteEditorsTable.email,
+      })
+      .from(hmSiteEditorsTable)
+      .where(and(eq(hmSiteEditorsTable.email, email), eq(hmSiteEditorsTable.isActive, true)))
+      .limit(1);
+    if (elsewhere?.siteId && elsewhere.siteId !== site.id) {
+      const other = await getHmNewsSiteByIdCompat(elsewhere.siteId);
+      const otherHost = normalizeDomain(other?.domain ?? null) || other?.slug || "";
+      res.status(401).json({
+        error: otherHost
+          ? `Bu e-posta «${other?.displayName || otherHost}» sitesine kayıtlı. Giriş: ${otherHost.includes(".") ? `https://${otherHost}/editor/giris` : `/tr/${otherHost}/editor/giris`}`
+          : "E-posta veya şifre hatalı",
+      });
+      return;
+    }
     res.status(401).json({ error: "E-posta veya şifre hatalı" });
     return;
   }
