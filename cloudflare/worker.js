@@ -9,6 +9,7 @@ import {
   brandMetaJsonResponse,
   ensureBrandHmSiteMeta,
   matchBrandBinding,
+  repairAsgEditorMisassignmentOnNeon,
 } from "./hm-brand-db-ensure.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
@@ -1839,6 +1840,21 @@ export default {
           "x-yekpare-sw": "kill-switch",
         },
       });
+    }
+
+    // ASG: yanlış siteye bağlı editör e-postasını Neon'da düzelt (şifre hash korunur).
+    const hostKey = normalizeHost(incoming.hostname);
+    if (
+      hostKey === "ankarasehirgazetesi.com" ||
+      (incoming.pathname.replace(/\/+$/, "") === "/api/hm/editor/login" &&
+        (hostKey === "ankarasehirgazetesi.com" ||
+          String(incoming.searchParams.get("domain") || "").includes("ankarasehir")))
+    ) {
+      try {
+        await repairAsgEditorMisassignmentOnNeon(env);
+      } catch (err) {
+        console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
+      }
     }
 
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);

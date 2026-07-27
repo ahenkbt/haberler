@@ -86,6 +86,74 @@ export function matchBrandBinding({ domain, slug } = {}) {
 /** Eski belediyehizmet satırı / editör haber siteId — kanonik Su. */
 const SU_CANONICAL_SITE_ID = 2;
 
+/**
+ * sehirgazetesiankara@gmail.com yanlışlıkla ankarahabergundemi'ye bağlı;
+ * aynı şifre hash'i ile ASG (slug=asg) üzerine kopyala (AHB kaydı silinmez).
+ */
+export async function repairAsgEditorMisassignmentOnNeon(env) {
+  const dbUrl = String(env?.DATABASE_URL || "").trim();
+  if (!dbUrl) return { ok: false, reason: "no-db" };
+  const sql = neon(dbUrl);
+  const asg = await sql`
+    SELECT id FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) = 'asg'
+    ORDER BY id ASC
+    LIMIT 1
+  `;
+  const asgId = asg?.[0]?.id;
+  if (!asgId) return { ok: false, reason: "asg-missing" };
+
+  const src = await sql`
+    SELECT id, email, password_hash, display_name, is_active, site_id
+    FROM hm_site_editors
+    WHERE lower(email) = 'sehirgazetesiankara@gmail.com'
+      AND is_active = true
+    ORDER BY id ASC
+    LIMIT 1
+  `;
+  const row = src?.[0];
+  if (!row) return { ok: false, reason: "editor-missing" };
+  if (Number(row.site_id) === Number(asgId)) {
+    return { ok: true, action: "already", siteId: asgId, editorId: row.id };
+  }
+
+  const existingOnAsg = await sql`
+    SELECT id FROM hm_site_editors
+    WHERE site_id = ${asgId} AND lower(email) = 'sehirgazetesiankara@gmail.com'
+    LIMIT 1
+  `;
+  if (existingOnAsg?.[0]?.id) {
+    await sql`
+      UPDATE hm_site_editors
+      SET password_hash = ${row.password_hash},
+          display_name = 'Ankara Şehir Gazetesi',
+          is_active = true,
+          updated_at = now()
+      WHERE id = ${existingOnAsg[0].id}
+    `;
+    return { ok: true, action: "updated", siteId: asgId, editorId: existingOnAsg[0].id };
+  }
+
+  const inserted = await sql`
+    INSERT INTO hm_site_editors (site_id, email, password_hash, display_name, is_active)
+    VALUES (
+      ${asgId},
+      'sehirgazetesiankara@gmail.com',
+      ${row.password_hash},
+      'Ankara Şehir Gazetesi',
+      true
+    )
+    RETURNING id
+  `;
+  return {
+    ok: true,
+    action: "copied",
+    siteId: asgId,
+    editorId: inserted?.[0]?.id ?? null,
+    fromSiteId: row.site_id,
+  };
+}
+
 async function repairSuDomainOnNeon(sql) {
   const id2 = await sql`SELECT id FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1`;
   const suRows = await sql`

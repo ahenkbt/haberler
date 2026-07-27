@@ -41,6 +41,7 @@ import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.j
 import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
+import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
