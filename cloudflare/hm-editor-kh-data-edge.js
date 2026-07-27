@@ -1,9 +1,10 @@
 /**
- * Kırşehir (kh) editör veri API — kenar JWT + Neon.
+ * HM editör veri API — kenar JWT + Neon.
  * Render SESSION_SECRET ayrışınca Bearer 401 olmasın diye Worker'da karşılanır.
- * Diğer siteler: null → Render proxy.
+ * Tanımsız rotalar: null → Render proxy.
  */
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcryptjs";
 
 const JWT_TYP = "hm_editor";
 const KH_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
@@ -163,6 +164,39 @@ async function isKhSite(sql, siteId) {
   return false;
 }
 
+async function isHmNewsSite(sql, siteId) {
+  const rows = await sql`SELECT id FROM hm_news_sites WHERE id = ${siteId} LIMIT 1`;
+  return Boolean(rows?.[0]?.id);
+}
+
+let authorsSortColumnEnsured = false;
+
+async function ensureAuthorsSortOrderColumn(sql) {
+  if (authorsSortColumnEnsured || !sql) return;
+  try {
+    await sql.query("ALTER TABLE authors ADD COLUMN IF NOT EXISTS hm_sort_order INTEGER");
+  } catch (err) {
+    console.error("[hm-authors-ensure-col]", String(err?.message || err).slice(0, 140));
+  }
+  authorsSortColumnEnsured = true;
+}
+
+function makeHmCopySlug(base, targetSiteId, sourceId) {
+  const raw = String(base ?? "haber")
+    .toLowerCase()
+    .replace(/[ğ]/g, "g")
+    .replace(/[ü]/g, "u")
+    .replace(/[ş]/g, "s")
+    .replace(/[ı]/g, "i")
+    .replace(/[ö]/g, "o")
+    .replace(/[ç]/g, "c")
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+  return `${raw || "haber"}-hm${targetSiteId}-src${sourceId}`;
+}
+
 async function loadActiveEditor(sql, editorId, siteId) {
   const rows = await sql`
     SELECT id, site_id, email FROM hm_site_editors
@@ -308,6 +342,7 @@ async function loadNewsWithCategory(sql, siteId, id) {
 }
 
 async function handleAuthorsList(sql, siteId) {
+  await ensureAuthorsSortOrderColumn(sql);
   const rows = await sql`
     SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
     FROM authors
@@ -315,6 +350,219 @@ async function handleAuthorsList(sql, siteId) {
     ORDER BY COALESCE(hm_sort_order, 2147483647) ASC, id ASC
   `;
   return jsonResponse(200, (rows || []).map(serializeAuthor));
+}
+
+async function handleCreateAuthor(sql, siteId, body) {
+  await ensureAuthorsSortOrderColumn(sql);
+  const name = String(body?.name ?? "").trim();
+  if (!name) return jsonResponse(400, { error: "Yazar adı gerekli" });
+
+  const emailRaw = String(body?.email ?? "")
+    .trim()
+    .toLowerCase();
+  const passwordRaw = String(body?.password ?? "");
+  if ((emailRaw && !passwordRaw) || (!emailRaw && passwordRaw)) {
+    return jsonResponse(400, { error: "E-posta ve şifre birlikte girilmeli (veya ikisi de boş)." });
+  }
+  if (emailRaw && passwordRaw.length < 8) {
+    return jsonResponse(400, { error: "Şifre en az 8 karakter olmalı." });
+  }
+  if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+    return jsonResponse(400, { error: "Geçerli e-posta girin." });
+  }
+
+  const title = String(body?.title ?? "").trim() || null;
+  const avatarUrl = String(body?.avatarUrl ?? "").trim() || null;
+  const bio = String(body?.bio ?? "").trim() || null;
+  const passwordHash = emailRaw ? await bcrypt.hash(passwordRaw, 10) : null;
+  const normalizedName = name.replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+
+  const existingName = await sql`
+    SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
+    FROM authors
+    WHERE hm_site_id = ${siteId}
+      AND lower(regexp_replace(btrim(name), '\\s+', ' ', 'g')) = ${normalizedName}
+    LIMIT 1
+  `;
+  if (existingName?.[0]) {
+    return jsonResponse(200, serializeAuthor(existingName[0]));
+  }
+
+  try {
+    const maxRows = await sql`
+      SELECT coalesce(max(hm_sort_order), 0)::int AS m
+      FROM authors
+      WHERE hm_site_id = ${siteId}
+    `;
+    const nextSort = (maxRows?.[0]?.m ?? 0) + 1;
+    const rows = await sql`
+      INSERT INTO authors (name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash)
+      VALUES (${name}, ${title}, ${avatarUrl}, ${bio}, ${siteId}, ${nextSort}, ${emailRaw || null}, ${passwordHash})
+      RETURNING id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
+    `;
+    const row = rows?.[0];
+    if (!row) return jsonResponse(500, { error: "Yazar oluşturulamadı" });
+    return jsonResponse(201, serializeAuthor(row));
+  } catch (err) {
+    const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
+    if (code === "23505") {
+      return jsonResponse(409, { error: "Bu e-posta bu haber sitesinde zaten kayıtlı." });
+    }
+    console.error("[hm-author-create]", String(err?.message || err).slice(0, 200));
+    return jsonResponse(500, { error: "Yazar oluşturulamadı" });
+  }
+}
+
+async function handleUpdateAuthor(sql, siteId, id, body) {
+  await ensureAuthorsSortOrderColumn(sql);
+  const existingRows = await sql`
+    SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash
+    FROM authors
+    WHERE id = ${id}
+    LIMIT 1
+  `;
+  const existing = existingRows?.[0];
+  if (!existing || existing.hm_site_id !== siteId) {
+    return jsonResponse(404, { error: "Yazar bulunamadı" });
+  }
+
+  const name = String(body?.name ?? "").trim();
+  if (!name) return jsonResponse(400, { error: "Yazar adı gerekli" });
+
+  const title = String(body?.title ?? "").trim() || null;
+  const avatarUrl = String(body?.avatarUrl ?? "").trim() || null;
+  const bio = String(body?.bio ?? "").trim() || null;
+  const emailRaw = String(body?.email ?? "")
+    .trim()
+    .toLowerCase();
+  const passwordRaw = String(body?.password ?? "");
+  const prevEmail = String(existing.email ?? "")
+    .trim()
+    .toLowerCase();
+
+  let nextEmail = existing.email;
+  let nextHash = existing.password_hash;
+
+  if (passwordRaw.length > 0) {
+    if (passwordRaw.length < 8) {
+      return jsonResponse(400, { error: "Şifre en az 8 karakter olmalı." });
+    }
+    const mailToUse = emailRaw || prevEmail;
+    if (!mailToUse || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailToUse)) {
+      return jsonResponse(400, { error: "Geçerli e-posta girin (şifre değişimi için)." });
+    }
+    const dup = await sql`
+      SELECT id FROM authors
+      WHERE hm_site_id = ${siteId} AND email = ${mailToUse} AND id <> ${id}
+      LIMIT 1
+    `;
+    if (dup?.[0]) {
+      return jsonResponse(409, { error: "Bu e-posta bu haber sitesinde başka bir yazara ait." });
+    }
+    nextEmail = mailToUse;
+    nextHash = await bcrypt.hash(passwordRaw, 10);
+  } else if (emailRaw && emailRaw !== prevEmail) {
+    return jsonResponse(400, {
+      error: "E-posta değiştirmek için yeni şifre girin (veya şifreyi boş bırakıp e-postayı olduğu gibi bırakın).",
+    });
+  }
+
+  try {
+    const rows = await sql`
+      UPDATE authors
+      SET name = ${name},
+          title = ${title},
+          avatar_url = ${avatarUrl},
+          bio = ${bio},
+          email = ${nextEmail},
+          password_hash = ${nextHash}
+      WHERE id = ${id} AND hm_site_id = ${siteId}
+      RETURNING id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
+    `;
+    const row = rows?.[0];
+    if (!row) return jsonResponse(404, { error: "Yazar bulunamadı" });
+    return jsonResponse(200, serializeAuthor(row));
+  } catch (err) {
+    const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
+    if (code === "23505") {
+      return jsonResponse(409, { error: "Bu e-posta bu haber sitesinde zaten kayıtlı." });
+    }
+    console.error("[hm-author-update]", String(err?.message || err).slice(0, 200));
+    return jsonResponse(500, { error: "Yazar güncellenemedi" });
+  }
+}
+
+async function handlePoolAuthorPublish(sql, siteId, sourceId) {
+  await ensureAuthorsSortOrderColumn(sql);
+  const sourceRows = await sql`
+    SELECT id, name, title, avatar_url, bio, hm_site_id
+    FROM authors
+    WHERE id = ${sourceId}
+    LIMIT 1
+  `;
+  const source = sourceRows?.[0];
+  if (!source || source.hm_site_id == null || source.hm_site_id === siteId) {
+    return jsonResponse(404, { error: "Havuz yazarı bulunamadı" });
+  }
+
+  const normalizedName = String(source.name ?? "")
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("tr-TR");
+  let targetRows = await sql`
+    SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
+    FROM authors
+    WHERE hm_site_id = ${siteId}
+      AND lower(regexp_replace(btrim(name), '\\s+', ' ', 'g')) = ${normalizedName}
+    LIMIT 1
+  `;
+  let targetAuthor = targetRows?.[0];
+
+  if (!targetAuthor) {
+    const maxRows = await sql`
+      SELECT coalesce(max(hm_sort_order), 0)::int AS m
+      FROM authors
+      WHERE hm_site_id = ${siteId}
+    `;
+    const nextSort = (maxRows?.[0]?.m ?? 0) + 1;
+    const inserted = await sql`
+      INSERT INTO authors (name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash)
+      VALUES (${source.name}, ${source.title ?? null}, ${source.avatar_url ?? null}, ${source.bio ?? null}, ${siteId}, ${nextSort}, NULL, NULL)
+      RETURNING id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
+    `;
+    targetAuthor = inserted?.[0];
+  }
+
+  if (!targetAuthor) {
+    return jsonResponse(500, { error: "Yazar kopyalanamadı" });
+  }
+
+  const sourcePosts = await sql`
+    SELECT id, title, slug, spot, content, image_url
+    FROM hm_makaleler
+    WHERE site_id = ${source.hm_site_id}
+      AND author_id = ${source.id}
+      AND status = 'published'
+    ORDER BY created_at ASC
+    LIMIT 500
+  `;
+
+  let copied = 0;
+  for (const post of sourcePosts || []) {
+    const slug = makeHmCopySlug(post.slug || post.title, siteId, post.id);
+    const exists = await sql`
+      SELECT id FROM hm_makaleler
+      WHERE site_id = ${siteId} AND slug = ${slug}
+      LIMIT 1
+    `;
+    if (exists?.[0]) continue;
+    await sql`
+      INSERT INTO hm_makaleler (site_id, author_id, title, slug, spot, content, image_url, status, created_at, updated_at)
+      VALUES (${siteId}, ${targetAuthor.id}, ${post.title}, ${slug}, ${post.spot ?? null}, ${post.content ?? null}, ${post.image_url ?? null}, 'published', NOW(), NOW())
+    `;
+    copied += 1;
+  }
+
+  return jsonResponse(201, { author: serializeAuthor(targetAuthor), copied });
 }
 
 /** Neon ANY(array) güvenilir değil — satır satır sil. */
@@ -895,7 +1143,7 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
 
-  // Public authors — hmSiteId veya siteId
+  // Public authors — hmSiteId veya siteId (tüm HM siteleri)
   if (path === "/api/authors" && method === "GET") {
     const hmSiteId =
       asPositiveInt(incomingUrl.searchParams.get("hmSiteId")) ||
@@ -903,7 +1151,7 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     if (!hmSiteId) return null;
     const sql = sqlClient(env);
     if (!sql) return null;
-    if (!(await isKhSite(sql, hmSiteId))) return null;
+    if (!(await isHmNewsSite(sql, hmSiteId))) return null;
     return handleAuthorsList(sql, hmSiteId);
   }
 
@@ -912,8 +1160,10 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    if (auth.startsWith("Bearer ")) return null; // Render JWT → Render
-    return null;
+    if (!auth.startsWith("Bearer ")) {
+      return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+    }
+    return null; // Render imzalı JWT → Render proxy
   }
 
   const sql = sqlClient(env);
@@ -928,6 +1178,24 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") {
     return handleBulkDelete(sql, ctx.siteId, await readJsonBody(request));
+  }
+
+  if (path === "/api/hm/editor/authors" && method === "POST") {
+    return handleCreateAuthor(sql, ctx.siteId, await readJsonBody(request));
+  }
+
+  const authorIdMatch = path.match(/^\/api\/hm\/editor\/authors\/(\d+)$/);
+  if (authorIdMatch && method === "PUT") {
+    const id = asPositiveInt(authorIdMatch[1]);
+    if (id == null) return jsonResponse(400, { error: "Geçersiz id" });
+    return handleUpdateAuthor(sql, ctx.siteId, id, await readJsonBody(request));
+  }
+
+  const poolPublishMatch = path.match(/^\/api\/hm\/editor\/pool\/authors\/(\d+)\/publish$/);
+  if (poolPublishMatch && method === "POST") {
+    const id = asPositiveInt(poolPublishMatch[1]);
+    if (id == null) return jsonResponse(400, { error: "Geçersiz yazar id" });
+    return handlePoolAuthorPublish(sql, ctx.siteId, id);
   }
 
   if (path === "/api/hm/editor/pool/authors" && method === "GET") {
