@@ -1768,27 +1768,26 @@ export function groupHmBreakingRssFeedRowsByCategory(rows: HmBreakingRssFeedRow[
   rows: HmBreakingRssFeedRow[];
 }> {
   const groups: Array<{ categoryKey: string; label: string; rows: HmBreakingRssFeedRow[] }> = [];
-  const indexByKey = new Map<string, number>();
+  const indexBySlug = new Map<string, number>();
   for (const row of rows) {
     const rawKey = resolveHmBreakingRssCategoryKey(row);
     const label = normalizeBreakingRssLabel(row.label) || rawKey;
     if (!rawKey && !label) continue;
-    // Aynı etiket / slug farklı categoryKey ile gelirse tek grupta birleştir.
+    // Aynı etiket / slug farklı categoryKey (preset camelCase vs özel id) ile gelirse tek grup.
     const slug = hmCategorySlug(label, rawKey) || slugifyBreakingRssRowId(label || rawKey);
-    const groupKey = PRESET_BREAKING_RSS_IDS.has(rawKey as HmBreakingRssFeedId) ? rawKey : slug || rawKey;
-    if (!groupKey) continue;
-    const idx = indexByKey.get(groupKey);
+    if (!slug) continue;
+    const preferredKey = PRESET_BREAKING_RSS_IDS.has(rawKey as HmBreakingRssFeedId) ? rawKey : slug;
+    const idx = indexBySlug.get(slug);
     if (idx == null) {
-      indexByKey.set(groupKey, groups.length);
+      indexBySlug.set(slug, groups.length);
       groups.push({
-        categoryKey: groupKey,
-        label: label || groupKey,
+        categoryKey: preferredKey,
+        label: label || slug,
         rows: [row],
       });
     } else {
       groups[idx]!.rows.push(row);
       if (label && label.length >= groups[idx]!.label.length) groups[idx]!.label = label;
-      // Preset id varsa grup anahtarını koru; satırların categoryKey'sini de hizala.
       if (PRESET_BREAKING_RSS_IDS.has(rawKey as HmBreakingRssFeedId)) {
         groups[idx]!.categoryKey = rawKey;
       }
