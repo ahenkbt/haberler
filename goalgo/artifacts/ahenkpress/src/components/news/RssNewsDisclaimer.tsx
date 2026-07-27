@@ -5,14 +5,14 @@ type Props = {
   className?: string;
 };
 
-/** RSS detay — yekpare.net tam künye; HM editör küçük «Haber Kaynağı»; kurumsal belirgin kaynak. */
+/** RSS detay — yekpare.net / kurumsal kaynak künyesi. Editör sitelerinde kaynak linki yok. */
 export function RssNewsDisclaimer({ sourceName, feedUrl, sourceScope, className = "" }: Props) {
   const isEditor = sourceScope === "editor";
+  // Editör vitrininde kaynak bağlantısı / künye gösterme.
+  if (isEditor) return null;
   const isCorporate = sourceScope === "corporate";
-  const label = isEditor ? "Haber Kaynağı" : isCorporate ? sourceName : `${sourceName} RSS`;
-  const suffix = isEditor
-    ? " — Yekpare haber havuzundan derlenmiştir."
-    : " kaynağından derlenmiştir.";
+  const label = isCorporate ? sourceName : `${sourceName} RSS`;
+  const suffix = " kaynağından derlenmiştir.";
   const linkClass = isCorporate
     ? "font-semibold text-slate-600 no-underline hover:underline"
     : "text-inherit no-underline hover:underline";

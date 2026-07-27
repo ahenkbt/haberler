@@ -1326,8 +1326,9 @@ router.get("/news/hybrid/rss/:itemId", async (req, res): Promise<void> => {
     const isEditorSite = siteId != null;
     const upstreamSourceName =
       rssSourceNameFromUrl(match.item.link) ?? rssSourceNameFromUrl(feed?.url) ?? match.feedLabel;
+    // Editör sitelerinde kaynak adı/linki gösterme — haber site içinde tam açılır.
     const sourceName = isEditorSite ? "Yekpare Haberleri" : upstreamSourceName;
-    const feedUrl = isEditorSite ? "https://yekpare.net/haberler" : (feed?.url ?? null);
+    const feedUrl = isEditorSite ? null : (feed?.url ?? null);
     const rawContentHtml =
       normalizePortalRssCachedContentHtml(match.item.contentHtml) ||
       (match.item.spot ? `<p>${decodeHtmlEntities(match.item.spot.replace(/…$/, "").trim())}</p>` : null);

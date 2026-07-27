@@ -126,30 +126,32 @@ function resolveFeedCategorySlug(
 
 /** Frontend `defaultHmBreakingRssFeeds` ile uyumlu varsayılan RSS URL haritası. */
 const HM_DEFAULT_BREAKING_RSS_FEEDS: Record<string, string> = {
+  sonDakika: "https://www.ntv.com.tr/son-dakika.rss",
   turkiye: "https://www.ntv.com.tr/turkiye.rss",
-  dunya: "https://www.ntv.com.tr/dunya.rss",
+  egitim: "https://www.ntv.com.tr/egitim.rss",
   ekonomi: "https://www.ntv.com.tr/ekonomi.rss",
+  para: "https://www.ntv.com.tr/ntvpara.rss",
+  yasam: "https://www.ntv.com.tr/yasam.rss",
+  dunya: "https://www.ntv.com.tr/dunya.rss",
   teknoloji: "https://www.ntv.com.tr/teknoloji.rss",
   saglik: "https://www.ntv.com.tr/saglik.rss",
-  spor: "",
-  yasam: "https://www.ntv.com.tr/yasam.rss",
   otomobil: "https://www.ntv.com.tr/otomobil.rss",
-  para: "https://www.ntv.com.tr/ntvpara.rss",
-  egitim: "https://www.ntv.com.tr/egitim.rss",
+  spor: "https://www.dirilispostasi.com/rss/spor",
   savunmaSanayi: "https://www.dirilispostasi.com/rss/savunma-sanayi",
 };
 
 const HM_PRESET_BREAKING_RSS_CATEGORIES: Array<{ id: string; label: string }> = [
+  { id: "sonDakika", label: "Son Dakika" },
   { id: "turkiye", label: "Türkiye" },
-  { id: "dunya", label: "Dünya" },
+  { id: "egitim", label: "Eğitim" },
   { id: "ekonomi", label: "Ekonomi" },
+  { id: "para", label: "Para" },
+  { id: "yasam", label: "Yaşam" },
+  { id: "dunya", label: "Dünya" },
   { id: "teknoloji", label: "Teknoloji" },
   { id: "saglik", label: "Sağlık" },
-  { id: "spor", label: "Spor" },
-  { id: "yasam", label: "Yaşam" },
   { id: "otomobil", label: "Otomobil" },
-  { id: "para", label: "Para" },
-  { id: "egitim", label: "Eğitim" },
+  { id: "spor", label: "Spor" },
   { id: "savunmaSanayi", label: "Savunma Sanayi" },
 ];
 

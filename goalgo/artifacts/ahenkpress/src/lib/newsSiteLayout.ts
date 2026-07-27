@@ -176,16 +176,17 @@ export type HmCorporateMenuItem = {
 export type HmNewsMenuItem = HmCorporateMenuItem;
 
 export type HmBreakingRssFeedId =
+  | "sonDakika"
   | "turkiye"
-  | "dunya"
+  | "egitim"
   | "ekonomi"
+  | "para"
+  | "yasam"
+  | "dunya"
   | "teknoloji"
   | "saglik"
-  | "spor"
-  | "yasam"
   | "otomobil"
-  | "para"
-  | "egitim"
+  | "spor"
   | "savunmaSanayi";
 export type HmBreakingRssFeeds = Partial<Record<HmBreakingRssFeedId, string>>;
 export type HmBreakingRssLabels = Partial<Record<HmBreakingRssFeedId, string>>;
@@ -207,31 +208,36 @@ export type PortalHybridRssFeed = {
 export type HmBreakingRssDisplayMode = "cards" | "balloons";
 export type HmRssIntegrationMode = "live" | "persistent" | "manual";
 
+/** Neon bir kerelik uygulama sürümü — cloudflare/hm-breaking-rss-defaults.js ile aynı. */
+export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727kutu1";
+
 export const HM_BREAKING_RSS_FEED_CATEGORIES: Array<{ id: HmBreakingRssFeedId; label: string }> = [
+  { id: "sonDakika", label: "Son Dakika" },
   { id: "turkiye", label: "Türkiye" },
-  { id: "dunya", label: "Dünya" },
+  { id: "egitim", label: "Eğitim" },
   { id: "ekonomi", label: "Ekonomi" },
+  { id: "para", label: "Para" },
+  { id: "yasam", label: "Yaşam" },
+  { id: "dunya", label: "Dünya" },
   { id: "teknoloji", label: "Teknoloji" },
   { id: "saglik", label: "Sağlık" },
-  { id: "spor", label: "Spor" },
-  { id: "yasam", label: "Yaşam" },
   { id: "otomobil", label: "Otomobil" },
-  { id: "para", label: "Para" },
-  { id: "egitim", label: "Eğitim" },
+  { id: "spor", label: "Spor" },
   { id: "savunmaSanayi", label: "Savunma Sanayi" },
 ];
 
 export const defaultHmBreakingRssFeeds: HmBreakingRssFeeds = {
+  sonDakika: "https://www.ntv.com.tr/son-dakika.rss",
   turkiye: "https://www.ntv.com.tr/turkiye.rss",
-  dunya: "https://www.ntv.com.tr/dunya.rss",
+  egitim: "https://www.ntv.com.tr/egitim.rss",
   ekonomi: "https://www.ntv.com.tr/ekonomi.rss",
+  para: "https://www.ntv.com.tr/ntvpara.rss",
+  yasam: "https://www.ntv.com.tr/yasam.rss",
+  dunya: "https://www.ntv.com.tr/dunya.rss",
   teknoloji: "https://www.ntv.com.tr/teknoloji.rss",
   saglik: "https://www.ntv.com.tr/saglik.rss",
-  spor: "",
-  yasam: "https://www.ntv.com.tr/yasam.rss",
   otomobil: "https://www.ntv.com.tr/otomobil.rss",
-  para: "https://www.ntv.com.tr/ntvpara.rss",
-  egitim: "https://www.ntv.com.tr/egitim.rss",
+  spor: "https://www.dirilispostasi.com/rss/spor",
   savunmaSanayi: "https://www.dirilispostasi.com/rss/savunma-sanayi",
 };
 
@@ -571,6 +577,8 @@ export type NewsSiteLayoutPrefs = {
   hmNewsBreakingRssLabels?: HmBreakingRssLabels | null;
   /** HABER teması: son dakika RSS satırları (kategori adı + URL). Birincil kaynak; ekle/sil buradan yönetilir. */
   hmNewsBreakingRssFeedRows?: HmBreakingRssFeedRow[] | null;
+  /** Kutu içi RSS global varsayılan rev’i — Worker bir kerelik uyguladıktan sonra editör değişiklikleri korunur. */
+  hmBreakingRssDefaultsRev?: string | null;
   /** HABER teması: site içi RSS / hibrit haber akışı kaynakları. Boş/eksikse varsayılan NTV preset’leri kullanılır (kutu bandına düşülmez). */
   hmNewsSiteRssFeedRows?: HmBreakingRssFeedRow[] | null;
   /** Yekpare `/haberler` hibrit vitrin: kategori bazlı harici RSS kaynakları (DB'ye yazılmaz). */
@@ -1741,6 +1749,7 @@ const PRESET_BREAKING_RSS_IDS = new Set<HmBreakingRssFeedId>(HM_BREAKING_RSS_FEE
 export function defaultHmBreakingRssFeedRows(): HmBreakingRssFeedRow[] {
   return HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => ({
     id: category.id,
+    categoryKey: category.id,
     label: category.label,
     url: defaultHmBreakingRssFeeds[category.id] ?? "",
   }));
@@ -2539,6 +2548,9 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsBreakingBandEnabled: true,
   hmNewsGoogleNewsBandEnabled: false,
   hmNewsBreakingRssFeeds: { ...defaultHmBreakingRssFeeds },
+  hmNewsBreakingRssFeedRows: defaultHmBreakingRssFeedRows(),
+  // hmBreakingRssDefaultsRev yalnızca Neon/Worker bir kerelik uygulamasında yazılır;
+  // client varsayılanına konmaz (yoksa eski satırlar korunup rev yanlışlıkla set edilir).
   hmNewsSiteRssFeedRows: defaultHmBreakingRssFeedRows(),
   hmNewsBreakingRssArticleLinkEnabled: false,
   hmRssIntegrationMode: "live",
@@ -2928,6 +2940,11 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsBreakingRssFeeds,
       hmNewsBreakingRssLabels,
     );
+    const hmBreakingRssDefaultsRevRaw = (j as { hmBreakingRssDefaultsRev?: unknown }).hmBreakingRssDefaultsRev;
+    const hmBreakingRssDefaultsRev =
+      typeof hmBreakingRssDefaultsRevRaw === "string" && hmBreakingRssDefaultsRevRaw.trim()
+        ? hmBreakingRssDefaultsRevRaw.trim()
+        : undefined;
     const hmNewsSiteRssFeedRows = normalizeHmBreakingRssFeedRows(
       (j as { hmNewsSiteRssFeedRows?: unknown }).hmNewsSiteRssFeedRows,
       null,
@@ -3195,6 +3212,7 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsBreakingRssFeeds,
       hmNewsBreakingRssLabels: hmNewsBreakingRssLabels ?? undefined,
       hmNewsBreakingRssFeedRows,
+      hmBreakingRssDefaultsRev,
       hmNewsSiteRssFeedRows,
       portalHybridRssFeeds: portalHybridRssFeeds ?? undefined,
       hybridRssEnabled: hybridRssEnabledRaw === true ? true : undefined,
