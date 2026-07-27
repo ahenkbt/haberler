@@ -145,11 +145,6 @@ const HM_DEFAULT_BREAKING_RSS_FEEDS: Record<string, string> = {
   saglik: "https://www.ntv.com.tr/saglik.rss",
   otomobil: "https://www.ntv.com.tr/otomobil.rss",
   spor: "https://www.ntv.com.tr/sporskor.rss",
-  futbol: "https://www.spordepor.com/rss/futbol",
-  basketbol: "https://www.spordepor.com/rss/basketbol",
-  tenis: "https://www.spordepor.com/rss/tenis",
-  voleybol: "https://www.spordepor.com/rss/voleybol",
-  "ozel-haber": "https://www.spordepor.com/rss/ozel-haber",
   savunmaSanayi: "https://www.dirilispostasi.com/rss/savunma-sanayi",
 };
 
@@ -165,11 +160,6 @@ const HM_PRESET_BREAKING_RSS_CATEGORIES: Array<{ id: string; label: string }> = 
   { id: "saglik", label: "Sağlık" },
   { id: "otomobil", label: "Otomobil" },
   { id: "spor", label: "Spor" },
-  { id: "futbol", label: "Futbol" },
-  { id: "basketbol", label: "Basketbol" },
-  { id: "tenis", label: "Tenis" },
-  { id: "voleybol", label: "Voleybol" },
-  { id: "ozel-haber", label: "Özel Haber" },
   { id: "savunmaSanayi", label: "Savunma Sanayi" },
 ];
 
