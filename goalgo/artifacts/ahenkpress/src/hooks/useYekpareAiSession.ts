@@ -79,12 +79,12 @@ function localIntentFallback(
       links: city
         ? [
             { label: `${city}'da gözleme`, href: `/kesfet?q=${encodeURIComponent("gözleme")}&city=${encodeURIComponent(city)}` },
-            { label: "Yemek siparişi", href: `/yemek?sehir=${encodeURIComponent(city)}` },
+            { label: "Restoranlar", href: `/kesfet/liste?q=restoran&city=${encodeURIComponent(city)}` },
             { label: "Pide restoranları", href: `/kesfet?q=pide&city=${encodeURIComponent(city)}` },
           ]
         : [
             { label: "Gözleme ara", href: `/kesfet?q=${encodeURIComponent("gözleme")}` },
-            { label: "Yemek", href: "/yemek" },
+            { label: "Keşfet", href: "/kesfet/liste" },
           ],
     };
   }
@@ -112,7 +112,7 @@ function localIntentFallback(
 
   if (/satici|isletme basvuru|isletme kayit/.test(q)) {
     return {
-      reply: "Restoran/market veya e-ticaret satıcısı olarak katılabilirsiniz. Hangi model size uygun?",
+      reply: "Restoran veya e-ticaret satıcısı olarak katılabilirsiniz. Hangi model size uygun?",
       links: [
         { label: "İşletme başvuru", href: "/isletme-basvuru" },
         { label: "Mağaza satıcı ol", href: "/magaza/satici-ol" },
@@ -122,10 +122,10 @@ function localIntentFallback(
 
   if (cityFromMsg && /var\s*mi|var\s*mı|restoran|isletme/.test(q)) {
     return {
-      reply: `${cityFromMsg} için Keşfet ve Yemek bölümlerinde işletmelere bakabilirsiniz. Ne tür bir yer arıyorsunuz?`,
+      reply: `${cityFromMsg} için Keşfet bölümünde işletmelere bakabilirsiniz. Ne tür bir yer arıyorsunuz?`,
       links: [
         { label: `${cityFromMsg} Keşfet`, href: `/kesfet?city=${encodeURIComponent(cityFromMsg)}` },
-        { label: "Yemek", href: `/yemek?sehir=${encodeURIComponent(cityFromMsg)}` },
+        { label: "Liste", href: `/kesfet/liste?city=${encodeURIComponent(cityFromMsg)}` },
       ],
     };
   }
@@ -136,7 +136,7 @@ function localIntentFallback(
       reply: `Konumunuza göre (${location.label}) yardımcı olabilirim.${pathHint} Ne aradığınızı biraz daha açar mısınız?`,
       links: [
         { label: "Keşfet", href: location.city ? `/kesfet?city=${encodeURIComponent(location.city)}` : "/kesfet" },
-        { label: "Yemek", href: location.city ? `/yemek?sehir=${encodeURIComponent(location.city)}` : "/yemek" },
+        { label: "Alışveriş", href: location.city ? `/magaza` : "/magaza" },
       ],
     };
   }
@@ -152,16 +152,16 @@ function localFallback(
   if (isGreeting(message)) {
     const locNote = location?.label ? ` Konumunuz: ${location.label}.` : "";
     return {
-      reply: `Merhaba! Ben Yekpare AI.${locNote} yekpare.net üzerinde yemek, alışveriş, seyahat, sipariş takibi ve işletme başvurusu konularında yardımcı olabilirim. Size nasıl yardımcı olayım?`,
+      reply: `Merhaba! Ben Yekpare AI.${locNote} yekpare.net üzerinde alışveriş, seyahat, sipariş takibi ve işletme başvurusu konularında yardımcı olabilirim. Size nasıl yardımcı olayım?`,
       links: [],
     };
   }
   if (isLikelyOffTopic(message)) {
     return {
       reply:
-        "Bu konuda yardımcı olamam; yalnızca yekpare.net hizmetleriyle ilgileniyorum. Sipariş, alışveriş, seyahat veya destek konularında yardımcı olabilirim.",
+        "Bu konuda yardımcı olamam; yalnızca yekpare.net hizmetleriyle ilgileniyorum. Alışveriş, seyahat veya destek konularında yardımcı olabilirim.",
       links: [
-        { label: "Yemek", href: "/yemek" },
+        { label: "Alışveriş", href: "/magaza" },
         { label: "Sipariş takip", href: "/siparis-takip" },
         { label: "Destek", href: "/destek" },
       ],
@@ -173,7 +173,6 @@ function localFallback(
 
   const q = message.toLowerCase();
   const chips = [
-    { label: "Yemek", query: "Yemek siparişi nasıl verilir?", href: "/yemek" },
     { label: "Alışveriş", query: "Alışveriş ve mağaza nerede?", href: "/magaza" },
     { label: "Seyahat", query: "Seyahat ve tur rezervasyonu", href: "/turizm" },
     { label: "Haritalar", query: "Haritalar nerede?", href: "/haritalar" },
@@ -195,7 +194,7 @@ function localFallback(
   return {
     reply: `Şu an sunucuya ulaşamıyorum.${locHint}${pathHint} Sorunuzu tekrar deneyebilir veya aşağıdaki kısayollardan birini seçebilirsiniz.`,
     links: [
-      { label: "Yemek", href: location?.city ? `/yemek?sehir=${encodeURIComponent(location.city)}` : "/yemek" },
+      { label: "Alışveriş", href: "/magaza" },
       { label: "Keşfet", href: location?.city ? `/kesfet?city=${encodeURIComponent(location.city)}` : "/kesfet" },
       { label: "Destek", href: "/destek" },
     ],

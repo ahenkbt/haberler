@@ -172,22 +172,6 @@ export const KESFET_DISCOVER_GROUP_DEFS: {
     ],
   },
   {
-    key: "siparis",
-    label: "Sipariş",
-    icon: "🍽️",
-    sortOrder: 7,
-    subs: [
-      "Yemek",
-      "Market",
-      "Fast Food",
-      "Kafe",
-      "Pastane",
-      "Manav",
-      "Kasap",
-      "Kurye",
-    ],
-  },
-  {
     key: "servis",
     label: "Servis",
     icon: "🛠️",

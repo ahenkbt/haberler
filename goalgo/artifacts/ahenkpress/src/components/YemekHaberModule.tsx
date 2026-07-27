@@ -6,7 +6,7 @@ import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { apiRequest } from "@/lib/queryClient";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { mapPublicHybridNewsLinkFields } from "@/lib/hybridNewsHref";
-import { ItemCardVertical, SectionHeading, type RailItem } from "@/pages/public/SiparisModulVitrin";
+import { ItemCardVertical, SectionHeading, type RailItem } from "@/components/vitrinRail";
 import { HmNewsImage } from "@/components/HmNewsImage";
 
 const GREEN = "#039D55";
@@ -56,7 +56,7 @@ export type YemekHaberModuleProps = {
 };
 
 function vendorHref(v: VendorRow): string {
-  return v.storefrontHref || `/siparis/satici/${v.slug}`;
+  return v.storefrontHref || `/kesfet/${encodeURIComponent(v.slug)}`;
 }
 
 function VendorCard({ vendor }: { vendor: VendorRow }) {
@@ -203,7 +203,7 @@ export function YemekHaberModule({ siteId, accent = GREEN, className = "" }: Yem
           {categoryChips.map((cat) => (
             <Link
               key={cat.slug}
-              href={`/yemek?subcategory=${encodeURIComponent(cat.slug)}`}
+              href={`/kesfet/liste?q=${encodeURIComponent(cat.name)}`}
               className="flex w-24 shrink-0 flex-col items-center gap-2 rounded-2xl border border-gray-100 bg-white p-3 text-center shadow-sm transition hover:border-emerald-200 hover:shadow"
             >
               <span className="grid h-12 w-12 place-items-center rounded-full text-xl" style={{ background: "#E4FFF3" }}>
@@ -217,7 +217,7 @@ export function YemekHaberModule({ siteId, accent = GREEN, className = "" }: Yem
 
       {recommendedVendors.length > 0 ? (
         <div>
-          <SectionHeading title="Önerilen Restoranlar" onSeeAll={() => window.location.assign("/yemek")} />
+          <SectionHeading title="Önerilen Restoranlar" onSeeAll={() => window.location.assign("/kesfet/liste?q=restoran")} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {recommendedVendors.slice(0, 4).map((v) => (
               <VendorCard key={v.id} vendor={v} />
@@ -228,7 +228,7 @@ export function YemekHaberModule({ siteId, accent = GREEN, className = "" }: Yem
 
       {bestItems.length > 0 ? (
         <div>
-          <SectionHeading title="En Çok Beğenilen Lezzetler" onSeeAll={() => window.location.assign("/yemek")} />
+          <SectionHeading title="En Çok Beğenilen Lezzetler" onSeeAll={() => window.location.assign("/kesfet/liste?q=restoran")} />
           <div className="flex gap-3 overflow-x-auto pb-2">
             {bestItems.map((item) => (
               <ItemCardVertical key={item.id} item={item} />
@@ -293,7 +293,7 @@ export function YemekHaberModule({ siteId, accent = GREEN, className = "" }: Yem
       ) : null}
 
       <div className="flex justify-end">
-        <Link href="/yemek" className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: accent }}>
+        <Link href="/kesfet/liste?q=restoran" className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: accent }}>
           Tüm yemek vitrini <ChevronRight className="h-4 w-4" />
         </Link>
       </div>

@@ -12,10 +12,6 @@ const HOME_INLINE_EXACT = new Set(["/", "/home", "/demo"]);
 const FAB_DOCK_EXACT = new Set(["/ara"]);
 
 const SERVICE_DOCK_PREFIXES = [
-  "/siparis",
-  "/yemek",
-  "/market",
-  "/isletmeler",
   "/turizm",
   "/haritalar",
   "/kesfet",
@@ -46,7 +42,6 @@ const HIDDEN_PREFIXES = [
   "/surucu-paneli",
   "/kurye-paneli",
   "/kasiyer",
-  "/siparis/qr-menu/",
 ] as const;
 
 function matchesPrefix(path: string, prefix: string): boolean {

@@ -26,7 +26,7 @@ const PAGES: BilgiPage[] = [
     slug: "yekpare-nedir",
     title: "Yekpare Nedir?",
     description:
-      "Yekpare.net; Türkiye'nin yerli arama motoru. Haber, YekTube, haritalar, yemek ve market siparişi, alışveriş, ulaşım, turizm, Haber Merkezi, işletme web siteleri, özel domain, Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.",
+      "Yekpare.net; Türkiye'nin yerli arama motoru. Haber, YekTube, haritalar, alışveriş, ulaşım, turizm, Haber Merkezi, işletme web siteleri, özel domain, Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.",
     lead:
       "Google'da «yekpare» sözcüğü Türkçede «bütün, tek parça» anlamına gelir; Yekpare.net ise bu sözlük anlamından bağımsız bir marka ve hizmet platformudur. yekpare.net, işletmelerin abonelikle yer aldığı bir firma rehberi ve pazaryeridir; site satıcı konumunda değildir. Sipariş, rezervasyon ve ödemeler doğrudan ilgili işletmeyle yapılır.",
     fullEntityGraph: true,
@@ -48,8 +48,8 @@ const PAGES: BilgiPage[] = [
         body: "Keşfet modülünde restoran, kafe, mağaza ve hizmet işletmeleri harita ve arama ile listelenir. Haritalar (yekpare.net/haritalar) tam ekran harita deneyimi sağlar. Firma rehberi işletme, ürün ve hizmet ilanlarını bir arada sunar.",
       },
       {
-        heading: "Sipariş, alışveriş ve seyahat",
-        body: "Yemek ve market siparişi /yemek, /market ve /siparis rotalarından verilir. Alışveriş modülü (/magaza) e-ticaret pazaryeridir. Seyahat modülü (/turizm) otel, villa, tur ve araç kiralama ilanları içerir.",
+        heading: "Alışveriş ve seyahat",
+        body: "Alışveriş modülü (/magaza) e-ticaret pazaryeridir. Seyahat modülü (/turizm) otel, villa, tur ve araç kiralama ilanları içerir. Restoran ve yerel işletmeler Keşfet ve Haritalar üzerinden listelenir.",
       },
       {
         heading: "Bilgi Ağacı ve Yekpare AI",
@@ -61,7 +61,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "İşletme sayfaları, mini web sitesi ve özel domain",
-        body: "Her işletme Yekpare'de kendi profil ve vitrin sayfasına sahiptir: sipariş işletmeleri (/siparis/satici/{slug}), e-ticaret mağazaları (/magaza/magaza/{slug}), Keşfet profilleri (/kesfet/{slug}) ve turizm ilanları. Servis sağlayıcı panelinden menü, ürün, blog, galeri yönetilir; onaylı özel alan adı (custom domain) DNS kaydı ile işletme sayfasına bağlanabilir.",
+        body: "Her işletme Yekpare'de kendi profil ve vitrin sayfasına sahiptir: e-ticaret mağazaları (/magaza/magaza/{slug}), Keşfet profilleri (/kesfet/{slug}) ve turizm ilanları. Servis sağlayıcı panelinden ürün, blog, galeri yönetilir; onaylı özel alan adı (custom domain) DNS kaydı ile işletme sayfasına bağlanabilir.",
       },
       {
         heading: "Haber Merkezi ve bağımsız yayın siteleri",
@@ -69,7 +69,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "Sipariş takip, destek ve işletme panelleri",
-        body: "Kullanıcılar /siparis-takip ile sipariş durumunu izler, /destek üzerinden yardım alır. İşletmeler /servis-saglayici-giris, /turizm-paneli ve /ulasim-paneli panellerinden operasyon yönetir; /kurye-paneli kurye takibi için kullanılır.",
+        body: "Kullanıcılar /siparis-takip ile mağaza sipariş durumunu izler, /destek üzerinden yardım alır. İşletmeler /servis-saglayici-giris, /turizm-paneli ve /ulasim-paneli panellerinden operasyon yönetir.",
       },
     ],
     faq: [
@@ -81,12 +81,12 @@ const PAGES: BilgiPage[] = [
       {
         question: "Yekpare nedir?",
         answer:
-          "Yekpare.net, Türkiye'nin yerli arama motorudur: haber, video, harita, yemek ve market siparişi, e-ticaret alışverişi, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlükteki «yekpare» (bütün) anlamı ile marka adı farklı kavramlardır.",
+          "Yekpare.net, Türkiye'nin yerli arama motorudur: haber, video, harita, e-ticaret alışverişi, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlükteki «yekpare» (bütün) anlamı ile marka adı farklı kavramlardır.",
       },
       {
-        question: "Yekpare ile yemek siparişi nasıl verilir?",
+        question: "Yekpare'de online alışveriş nasıl yapılır?",
         answer:
-          "yekpare.net/yemek veya yekpare.net/siparis adresinden restoran seçin, menüden ürünleri sepete ekleyin, teslimat adresinizi girin ve siparişi tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
+          "yekpare.net/magaza adresinden mağaza seçin, ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
       },
       {
         question: "Yekpare alışveriş nedir?",
@@ -135,8 +135,6 @@ const PAGES: BilgiPage[] = [
       },
     ],
     links: [
-      { label: "Yemek siparişi", href: "/yemek" },
-      { label: "Market", href: "/market" },
       { label: "Alışveriş", href: "/magaza" },
       { label: "Seyahat", href: "/turizm" },
       { label: "Ulaşım", href: "/ulasim" },
@@ -153,41 +151,33 @@ const PAGES: BilgiPage[] = [
   },
   {
     slug: "online-siparis-nasil-verilir",
-    title: "Yekpare'de Online Sipariş Nasıl Verilir?",
+    title: "Yekpare'de Online Alışveriş Nasıl Yapılır?",
     description:
-      "Yekpare sipariş modülünde işletme seçimi, menüden ürün ekleme ve teslimat adresi ile online yemek siparişi verme adımları.",
-    lead: "Yekpare'de online sipariş vermek için sipariş sayfasından işletmeyi seçin, menüden ürünleri sepete ekleyin ve teslimat bilgilerinizi girin.",
+      "Yekpare mağaza modülünde ürün seçimi, sepet ve ödeme adımları ile online alışveriş.",
+    lead: "Yekpare'de alışveriş yapmak için mağaza vitrininden ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın.",
     sections: [
       {
-        heading: "1. İşletme seçin",
-        body: "yekpare.net/yemek, yekpare.net/market veya yekpare.net/siparis adresinden veya Keşfet haritasından restoran / market profiline gidin.",
+        heading: "1. Mağaza veya ürün seçin",
+        body: "yekpare.net/magaza adresinden mağaza veya ürün vitrinine gidin; Keşfet ve arama ile de işletmelere ulaşabilirsiniz.",
       },
       {
-        heading: "2. Menüden ürün ekleyin",
-        body: "Kategorilere göre listelenen ürünleri sepete ekleyin; varsa seçenek ve not alanlarını doldurun.",
+        heading: "2. Sepete ürün ekleyin",
+        body: "Ürün detayından adet ve varyant seçerek sepete ekleyin.",
       },
       {
-        heading: "3. Adres ve ödeme",
-        body: "Teslimat adresinizi doğrulayın; işletmenin desteklediği ödeme yöntemiyle siparişi tamamlayın.",
+        heading: "3. Ödeme ve takip",
+        body: "Teslimat adresinizi doğrulayın; mağazanın desteklediği ödeme yöntemiyle siparişi tamamlayın. Sipariş numarası ile yekpare.net/siparis-takip üzerinden durumu sorgulayabilirsiniz.",
       },
     ],
     faq: [
       {
-        question: "Yekpare ile yemek siparişi nasıl verilir?",
-        answer: "İşletme seç → menüden ürün ekle → adres ve ödeme ile siparişi onayla. Detay: yekpare.net/siparis",
-      },
-      {
-        question: "Minimum sipariş tutarı var mı?",
-        answer: "Her işletmenin minimum sipariş tutarı farklıdır; işletme sayfasında gösterilir.",
-      },
-      {
         question: "Siparişimi nasıl takip ederim?",
-        answer: "Sipariş onaylandıktan sonra durum bilgisi yekpare.net/siparis-takip ve işletme bildirimleri üzerinden güncellenir.",
+        answer: "Sipariş onaylandıktan sonra durum bilgisi yekpare.net/siparis-takip ve mağaza bildirimleri üzerinden güncellenir.",
       },
     ],
     links: [
-      { label: "Yemek", href: "/yemek" },
-      { label: "Sipariş", href: "/siparis" },
+      { label: "Mağaza", href: "/magaza" },
+      { label: "Sipariş takip", href: "/siparis-takip" },
       { label: "Keşfet", href: "/kesfet" },
     ],
   },
@@ -296,7 +286,7 @@ const PAGES: BilgiPage[] = [
     links: [
       { label: "Keşfet", href: "/kesfet" },
       { label: "Haritalar", href: "/haritalar" },
-      { label: "İşletmeler", href: "/isletmeler" },
+      { label: "İşletmeler", href: "/kesfet/liste" },
     ],
   },
   {
@@ -480,7 +470,7 @@ const PAGES: BilgiPage[] = [
     sections: [
       {
         heading: "İşletme sayfası türleri",
-        body: "Sipariş: /siparis/satici/{slug}; mağaza: /magaza/magaza/{slug}; Keşfet: /kesfet/{slug}; turizm: /turizm/.../{slug}. Her sayfa SEO uyumlu vitrin sunar.",
+        body: "Mağaza: /magaza/magaza/{slug}; Keşfet: /kesfet/{slug}; turizm: /turizm/.../{slug}. Her sayfa SEO uyumlu vitrin sunar.",
       },
       {
         heading: "Mini web sitesi özellikleri",
@@ -528,7 +518,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "Kurye takibi",
-        body: "Teslimatlar /siparis-takip ve /takip/{kod} ile izlenir; /kurye-paneli saha operasyonu için kullanılır.",
+        body: "Mağaza siparişleri /siparis-takip üzerinden izlenir.",
       },
     ],
     faq: [

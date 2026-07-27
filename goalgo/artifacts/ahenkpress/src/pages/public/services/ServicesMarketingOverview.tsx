@@ -36,7 +36,6 @@ import {
 import { YEKPARE_PAGE_CONTAINER_CLASS } from "@/lib/yekpareLayout";
 
 const MODULE_ICONS = {
-  siparis: Utensils,
   alisveris: ShoppingBag,
   ulasim: Truck,
   turizm: Plane,

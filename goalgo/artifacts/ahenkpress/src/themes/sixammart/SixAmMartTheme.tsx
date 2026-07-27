@@ -7,7 +7,6 @@ import {
   YEKPARE_SERVICE_MODULE_META,
   YEKPARE_SERVICE_MODULE_ORDER,
   resolveSixAmMartActiveFromPath,
-  isSiparisNavActive,
   type SixAmMartModuleKey,
 } from "@/lib/yekpareServiceNav";
 import { kesfetSearchTarget, filterPublicTopNavForHeader, resolvePublicTopNav } from "@/lib/kesfetDiscoverHub";
@@ -116,7 +115,6 @@ import {
   SadeYekpareHaberlerBlock,
   useSadeFeaturedHeadlines,
 } from "./SadeNewsModules";
-import { HomeOrderTabs } from "./HomeOrderTabs";
 import { HomeShoppingShowcase } from "./HomeShoppingShowcase";
 import { HomeTravelTabs } from "./HomeTravelTabs";
 import { HmYekpareCategoryBox } from "@/components/HmYekpareKategorilerKutusu";
@@ -148,9 +146,6 @@ const SERVICE_RAIL_ICON: Record<
   SixAmMartModuleKey,
   { icon: typeof Utensils; color: string; bg: string }
 > = {
-  food: { icon: Utensils, color: "#ef4444", bg: "bg-red-50" },
-  grocery: { icon: Store, color: "#38BDF8", bg: "bg-sky-50" },
-  pharmacy: { icon: Wrench, color: "#8b5cf6", bg: "bg-violet-50" },
   rental: { icon: Building2, color: "#0284c7", bg: "bg-sky-50" },
   parcel: { icon: Car, color: "#f97316", bg: "bg-orange-50" },
   shop: { icon: ShoppingBag, color: SADE_ACCENT, bg: "bg-sky-50" },
@@ -223,9 +218,6 @@ type ModuleDef = {
 };
 
 const MODULE_ICON: Record<SixAmMartModuleKey, { icon: typeof Store; accent: string; bg: string }> = {
-  food: { icon: Utensils, accent: "#ef4444", bg: "bg-red-50" },
-  grocery: { icon: Store, accent: "#38BDF8", bg: "bg-sky-50" },
-  pharmacy: { icon: Wrench, accent: "#8b5cf6", bg: "bg-violet-50" },
   rental: { icon: Building2, accent: "#0284c7", bg: "bg-sky-50" },
   parcel: { icon: Car, accent: "#f97316", bg: "bg-orange-50" },
   shop: { icon: ShoppingBag, accent: "#0284C7", bg: "bg-cyan-50" },
@@ -255,10 +247,6 @@ const PUBLIC_LINK_ICONS: Record<string, typeof Compass> = {
   "/yektube": PlayCircle,
   "/bilgiagaci": BookOpen,
   "/magaza": ShoppingBag,
-  "/yemek": Utensils,
-  "/market": Store,
-  "/isletmeler": Wrench,
-  "/siparis": Store,
   "/iletisim": Phone,
 };
 
@@ -268,7 +256,6 @@ function platformLinkIcon(href: string) {
 }
 
 function isShellNavLinkActive(pathOnly: string, href: string): boolean {
-  if (href === "/siparis") return isSiparisNavActive(pathOnly);
   if (href === "/turizm") return isTurizmNavActive(pathOnly);
   if (href === "/") return pathOnly === "/";
   if (href === "/yektube") return pathOnly === "/yektube" || pathOnly.startsWith("/yektube/");
@@ -557,7 +544,7 @@ function currentModule(key?: SixAmMartModuleKey): ModuleDef {
   return MODULES.find((module) => module.key === key) ?? MODULES[0];
 }
 
-function moduleFromQuery(defaultModule: SixAmMartModuleKey = "grocery"): SixAmMartModuleKey {
+function moduleFromQuery(defaultModule: SixAmMartModuleKey = "shop"): SixAmMartModuleKey {
   if (typeof window === "undefined") return defaultModule;
   const raw = new URLSearchParams(window.location.search).get("module")?.toLowerCase();
   return MODULES.some((module) => module.key === raw) ? (raw as SixAmMartModuleKey) : defaultModule;
@@ -895,8 +882,6 @@ function Hero({
   );
 }
 
-const SIPARIS_MODULE_KEYS: SixAmMartModuleKey[] = ["food", "grocery", "shop", "pharmacy"];
-
 const SEYAHAT_TAB_ITEMS = [
   { type: "hotel", label: "Otel", href: "/turizm/konaklama", emoji: "🏨", description: "Konaklama ve oteller." },
   { type: "villa", label: "Villa & Ev", href: "/turizm/villa-ev", emoji: "🏡", description: "Villa ve tatil evleri." },
@@ -906,148 +891,49 @@ const SEYAHAT_TAB_ITEMS = [
   { type: "flight", label: "Uçak", href: "/turizm/ucus", emoji: "✈️", description: "Uçak bileti arama." },
 ] as const;
 
-type HomeServiceTabGroup = "siparis" | "seyahat";
-
 function HomeServiceTabs({
-  defaultGroup = "siparis",
-  activeModule,
   activeTravelType,
-  showGroupSwitch = true,
 }: {
-  defaultGroup?: HomeServiceTabGroup;
-  activeModule?: SixAmMartModuleKey;
   activeTravelType?: string;
-  /** Anasayfa: Sipariş | Seyahat; vitrin sayfalarında tek grup da gösterilebilir. */
-  showGroupSwitch?: boolean;
 }) {
-  const [group, setGroup] = useState<HomeServiceTabGroup>(defaultGroup);
-  const siparisModules = MODULES.filter((m) => SIPARIS_MODULE_KEYS.includes(m.key));
-
-  const siparisCardCount = siparisModules.length + 1;
-
   return (
     <Section
-      title={
-        showGroupSwitch
-          ? "Sipariş ve seyahat"
-          : group === "seyahat"
-            ? "Seyahat"
-            : "Sipariş"
-      }
-      subtitle={
-        showGroupSwitch
-          ? "Yemek, market veya seyahat ilanlarına sekmelerden geç."
-          : group === "seyahat"
-            ? "Otel, villa, tur, tekne ve araç kiralama."
-            : "Yemek, market, alışveriş ve yakındaki işletmeler."
-      }
+      title="Seyahat"
+      subtitle="Otel, villa, tur, tekne ve araç kiralama."
       className="pt-3 md:pt-4"
     >
-      {showGroupSwitch ? (
-        <div
-          className="mb-4 flex rounded-2xl border border-sky-100 bg-sky-50/60 p-1"
-          role="tablist"
-          aria-label="Sipariş ve seyahat sekmeleri"
-        >
-          {(
-            [
-              ["siparis", "Sipariş", Utensils],
-              ["seyahat", "Seyahat", Building2],
-            ] as const
-          ).map(([id, label, Icon]) => {
-            const selected = group === id;
+      <div role="tabpanel">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-2">
+          {SEYAHAT_TAB_ITEMS.map((item) => {
+            const selected = activeTravelType === item.type;
             return (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setGroup(id)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-black transition sm:px-4 sm:py-3 ${
-                  selected ? "bg-white text-[#0EA5E9] shadow-sm ring-1 ring-sky-100" : "text-slate-600 hover:text-slate-900"
+              <Link
+                key={item.type}
+                href={item.href}
+                className={`group rounded-[14px] border bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-4 lg:p-2.5 ${
+                  selected ? "border-sky-400 bg-sky-50/40" : "border-slate-100"
                 }`}
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </button>
+                <span className="mb-2 grid h-10 w-10 place-items-center rounded-2xl bg-sky-50 text-xl sm:mb-3 sm:h-12 sm:w-12 sm:text-2xl lg:mb-1.5 lg:h-9 lg:w-9 lg:text-lg">{item.emoji}</span>
+                <span className="block text-xs font-black text-slate-950 group-hover:text-sky-700 sm:text-sm lg:text-xs">{item.label}</span>
+                <span className="mt-1 line-clamp-2 hidden text-xs font-semibold leading-5 text-slate-500 sm:block lg:hidden">{item.description}</span>
+              </Link>
             );
           })}
-        </div>
-      ) : null}
-
-      <div role="tabpanel">
-        {group === "siparis" ? (
-          <div
-            className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-2.5 ${
-              siparisCardCount >= 5 ? "lg:grid-cols-5" : "lg:grid-cols-4"
-            }`}
+          <Link
+            href="/turizm"
+            className="group col-span-2 flex items-center justify-between rounded-[14px] border border-sky-100 bg-gradient-to-r from-sky-50 to-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:col-span-1 sm:flex-col sm:items-start sm:p-4 lg:col-span-1 lg:p-2.5"
           >
-            {siparisModules.map((module) => {
-              const Icon = module.icon;
-              const selected = module.key === activeModule;
-              return (
-                <Link
-                  key={module.key}
-                  href={module.href}
-                  className={`group rounded-[14px] border bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-4 lg:p-3 ${
-                    selected ? "border-[#0EA5E9]" : "border-slate-100"
-                  }`}
-                >
-                  <span className={`mb-2 flex h-10 w-10 items-center justify-center rounded-2xl sm:mb-3 sm:h-12 sm:w-12 lg:mb-2 lg:h-10 lg:w-10 ${module.bg}`}>
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-5 lg:w-5" style={{ color: module.accent }} />
-                  </span>
-                  <span className="block text-xs font-black text-slate-950 group-hover:text-[#0EA5E9] sm:text-sm lg:text-xs">{module.label}</span>
-                  <span className="mt-1 line-clamp-2 hidden text-xs font-semibold leading-5 text-slate-500 sm:block">{module.description}</span>
-                </Link>
-              );
-            })}
-            <Link
-              href="/siparis"
-              className="group col-span-2 flex items-center justify-between rounded-[14px] border border-sky-100 bg-gradient-to-r from-sky-50 to-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:col-span-1 sm:flex-col sm:items-start sm:p-4 lg:p-3"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 sm:mb-3 sm:h-12 sm:w-12">
-                <PackageCheck className="h-5 w-5 text-[#0EA5E9] sm:h-6 sm:w-6" />
-              </span>
-              <span>
-                <span className="block text-xs font-black text-slate-950 group-hover:text-[#0EA5E9] sm:text-sm">Tüm sipariş</span>
-                <span className="mt-0.5 hidden text-xs font-semibold text-slate-500 sm:block">Restoran ve market vitrini</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-[#0EA5E9] sm:hidden" />
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-2">
-            {SEYAHAT_TAB_ITEMS.map((item) => {
-              const selected = activeTravelType === item.type;
-              return (
-                <Link
-                  key={item.type}
-                  href={item.href}
-                  className={`group rounded-[14px] border bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-4 lg:p-2.5 ${
-                    selected ? "border-sky-400 bg-sky-50/40" : "border-slate-100"
-                  }`}
-                >
-                  <span className="mb-2 grid h-10 w-10 place-items-center rounded-2xl bg-sky-50 text-xl sm:mb-3 sm:h-12 sm:w-12 sm:text-2xl lg:mb-1.5 lg:h-9 lg:w-9 lg:text-lg">{item.emoji}</span>
-                  <span className="block text-xs font-black text-slate-950 group-hover:text-sky-700 sm:text-sm lg:text-xs">{item.label}</span>
-                  <span className="mt-1 line-clamp-2 hidden text-xs font-semibold leading-5 text-slate-500 sm:block lg:hidden">{item.description}</span>
-                </Link>
-              );
-            })}
-            <Link
-              href="/turizm"
-              className="group col-span-2 flex items-center justify-between rounded-[14px] border border-sky-100 bg-gradient-to-r from-sky-50 to-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:col-span-1 sm:flex-col sm:items-start sm:p-4 lg:col-span-1 lg:p-2.5"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 sm:mb-3 sm:h-12 sm:w-12">
-                <Compass className="h-5 w-5 text-sky-700 sm:h-6 sm:w-6" />
-              </span>
-              <span>
-                <span className="block text-xs font-black text-slate-950 group-hover:text-sky-700 sm:text-sm">Tüm seyahat</span>
-                <span className="mt-0.5 hidden text-xs font-semibold text-slate-500 sm:block">Otel, tur ve kiralama</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-sky-700 sm:hidden" />
-            </Link>
-          </div>
-        )}
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 sm:mb-3 sm:h-12 sm:w-12">
+              <Compass className="h-5 w-5 text-sky-700 sm:h-6 sm:w-6" />
+            </span>
+            <span>
+              <span className="block text-xs font-black text-slate-950 group-hover:text-sky-700 sm:text-sm">Tüm seyahat</span>
+              <span className="mt-0.5 hidden text-xs font-semibold text-slate-500 sm:block">Otel, tur ve kiralama</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-sky-700 sm:hidden" />
+          </Link>
+        </div>
       </div>
     </Section>
   );
@@ -1359,8 +1245,8 @@ export function SixAmMartHomePage() {
         kickerHref="/bilgi/yekpare-nedir"
         title="Yakındaki restoran, mağaza ve hizmetleri Yekpare ile bul."
         subtitle="Konumunu seç, yakınındaki işletmeleri keşfet, sipariş ve alışveriş adımlarına hızlıca geç."
-        ctaHref="/yemek"
-        ctaLabel="Siparişe başla"
+        ctaHref="/magaza"
+        ctaLabel="Alışverişe başla"
         locationLabel={locLabel}
         onLocationClick={() => setPickerOpen(true)}
         searchPlaceholder="Restoran, mağaza, ürün veya şehir ara"
@@ -1388,7 +1274,6 @@ export function SixAmMartHomePage() {
         ) : null}
         <HomeShoppingShowcase />
         <div className="space-y-4">
-          <HomeOrderTabs nearbyBusinesses={businesses} />
           <section className="sixam-section mx-auto w-full max-w-[1440px] px-4 pt-2">
             <KesfetRegionsExploreBlock mode="home" variant="sade" />
           </section>
@@ -1400,88 +1285,8 @@ export function SixAmMartHomePage() {
   );
 }
 
-export function SixAmMartDeliveryPage({ defaultModule = "grocery" }: { defaultModule?: SixAmMartModuleKey }) {
-  const { data: siteSettings } = useGetSiteSettings();
-  const [active, setActive] = useState<SixAmMartModuleKey>(() => moduleFromQuery(defaultModule));
-  const [categories, setCategories] = useState<VendorCategory[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [search, setSearch] = useState("");
-  const [loc, setLoc] = useState<TrAddressValue>({ city: "", district: "", mahalle: "" });
-  const [loading, setLoading] = useState(false);
-  const activeCategory = active === "food" ? "yemek" : active === "pharmacy" ? "nalbur-elektronik-yedek-parca" : "hepsi";
-  const locLabel = [loc.mahalle, loc.district, loc.city].filter(Boolean).join(", ") || "Adres / konum seç";
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const cat = params.get("kategori");
-    if (cat === "yemek") setActive("food");
-    if (cat === "nalbur-elektronik-yedek-parca") setActive("pharmacy");
-  }, []);
-
-  useEffect(() => {
-    fetch(`${API}/delivery/categories`)
-      .then((r) => r.json())
-      .then((all: VendorCategory[]) => setCategories(Array.isArray(all) ? all.filter((c) => c.superCategory === "siparis" || !c.superCategory).sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0)) : []))
-      .catch(() => setCategories([]));
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams({ type: "delivery", limit: "60" });
-    if (activeCategory !== "hepsi") params.set("category", activeCategory);
-    if (search.trim()) params.set("search", search.trim());
-    if (loc.city) params.set("city", loc.city);
-    if (loc.district) params.set("district", loc.district);
-    if (loc.mahalle) params.set("neighborhood", loc.mahalle);
-    fetch(`${API}/delivery/vendors?${params}`)
-      .then((r) => r.json())
-      .then((d) => setVendors(Array.isArray(d) ? d : []))
-      .catch(() => setVendors([]))
-      .finally(() => setLoading(false));
-  }, [activeCategory, search, loc.city, loc.district, loc.mahalle]);
-
-  return (
-    <Shell active={active} locationLabel={locLabel} searchPlaceholder="İşletme, kategori veya ürün ara">
-      <Hero active={active} kicker="Sipariş" title="Yakındaki restoranları ve işletmeleri keşfet" subtitle="Yemek, market ve yerel işletmeler Yekpare'de kartlar, kategoriler ve konum aramasıyla listelenir." ctaHref="/siparis" ctaLabel="Siparişe başla" locationLabel={locLabel} searchPlaceholder="İşletme veya ürün ara" />
-      <section className="border-y border-sky-100 bg-white">
-        <div className="mx-auto max-w-[1440px] px-4 pb-4 pt-3">
-          <GoogleTrAddressQuickFill mapsSettings={siteSettings ?? null} value={loc} onChange={setLoc} variant="orange" />
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="mt-4 flex flex-col gap-2 sm:flex-row"
-          >
-            <label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-4 ring-1 ring-slate-100">
-              <Search className="h-4 w-4 text-[#0284C7]" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 bg-transparent py-3 text-sm font-semibold outline-none" placeholder="İşletme veya ürün ara..." />
-            </label>
-            <button className="rounded-xl bg-[#0284C7] px-6 py-3 text-sm font-black text-white" style={{ color: "#fff" }}>Ara</button>
-          </form>
-        </div>
-      </section>
-      <HomeServiceTabs defaultGroup="siparis" activeModule={active} />
-      <main id="sixam-store-grid" className={`${SADE_PUBLIC_POST_HERO_MAIN_CLASS} pb-10`}>
-        <Section title="Kategoriler" subtitle="İşletmeleri kategoriye göre süz.">
-          <div className="yekpare-scrollbar flex gap-2 overflow-x-auto pb-1">
-            <button onClick={() => setActive("grocery")} className={`shrink-0 rounded-full px-4 py-2 text-sm font-black ${active === "grocery" ? "bg-[#0284C7] text-white" : "bg-white text-slate-700"}`}>🏪 Hepsi</button>
-            {categories.map((cat) => (
-              <button key={cat.id} onClick={() => setActive(cat.slug === "yemek" ? "food" : cat.slug === "nalbur-elektronik-yedek-parca" ? "pharmacy" : "grocery")} className="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-sky-50">
-                {cat.icon || "•"} {cat.name}
-              </button>
-            ))}
-          </div>
-        </Section>
-        <Section title="Öne çıkan işletmeler" subtitle={loading ? "Mağazalar yükleniyor..." : `${vendors.length} işletme listeleniyor.`}>
-          {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-52 animate-pulse rounded-[10px] bg-white" />)}</div>
-          ) : vendors.length ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{vendors.map((vendor) => <StoreCard key={vendor.id} item={vendor} />)}</div>
-          ) : (
-            <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-sm font-bold text-slate-500">Bu filtrede gerçek Yekpare işletmesi bulunamadı.</div>
-          )}
-        </Section>
-      </main>
-    </Shell>
-  );
+export function SixAmMartDeliveryPage(_props?: { defaultModule?: SixAmMartModuleKey }) {
+  return <Redirect to="/magaza" />;
 }
 
 export function SixAmMartMarketplacePage() {
@@ -1596,7 +1401,7 @@ export function SixAmMartTourismPage() {
           </div>
         </div>
       </section>
-      <HomeServiceTabs defaultGroup="seyahat" activeTravelType={activeType} />
+      <HomeServiceTabs activeTravelType={activeType} />
       <main className={`${SADE_PUBLIC_POST_HERO_MAIN_CLASS} pb-10`}>
         <Section title="Popüler seyahat seçenekleri" subtitle="Yekpare seyahat ilanları.">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>
@@ -3064,9 +2869,9 @@ export function SixAmMartNewsDetailPage() {
 }
 
 export function SixAmMartHomeModulePage() {
-  const module = moduleFromQuery("grocery");
+  const module = moduleFromQuery("shop");
   if (module === "shop") return <Redirect to="/magaza" />;
   if (module === "rental") return <SixAmMartTourismPage />;
   if (module === "parcel") return <SixAmMartTransportPage />;
-  return <SixAmMartDeliveryPage defaultModule={module} />;
+  return <Redirect to="/magaza" />;
 }

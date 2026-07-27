@@ -194,22 +194,6 @@ export const KESFET_DISCOVER_GROUPS: KesfetDiscoverGroup[] = [
     ]),
   },
   {
-    id: "siparis",
-    key: "siparis",
-    label: "Sipariş",
-    icon: "🍽️",
-    subcategories: sub("siparis", [
-      "Yemek",
-      "Market",
-      "Fast Food",
-      "Kafe",
-      "Pastane",
-      "Manav",
-      "Kasap",
-      "Kurye",
-    ]),
-  },
-  {
     id: "servis",
     key: "servis",
     label: "Servis",

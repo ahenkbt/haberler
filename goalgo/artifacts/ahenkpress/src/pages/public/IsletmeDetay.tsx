@@ -47,7 +47,7 @@ interface Business {
   images?: Array<{ id: string; imageUrl: string; altText?: string }>;
 }
 
-/** Harita işletmesi ile mağaza slug'ı farklı olsa bile `/siparis/satici/...` veya `/alisveris/magaza/...` üret. */
+/** Harita işletmesi ile mağaza slug'ı farklı olsa bile `/alisveris/magaza/...` veya Keşfet profili üret. */
 function resolveMapBusinessStoreHref(
   biz: Business,
   linked: { slug: string; vendor_type: string } | null,
@@ -56,13 +56,13 @@ function resolveMapBusinessStoreHref(
   if (linked?.slug?.trim()) {
     const vt = String(linked.vendor_type || "").toLowerCase();
     if (vt === "ecommerce") return `/alisveris/magaza/${enc(linked.slug)}`;
-    if (vt === "delivery") return `/siparis/satici/${enc(linked.slug)}`;
+    if (vt === "delivery") return `/kesfet/${enc(linked.slug)}`;
   }
   const bs = String(biz.slug ?? "").trim();
   const fallback = bs ? `/kesfet/${enc(bs)}?tab=products` : `/kesfet/isletme/${enc(biz.id)}?tab=products`;
   const st = String(biz.storeType ?? "").toLowerCase();
   if (bs && st === "alisveris") return `/alisveris/magaza/${enc(bs)}`;
-  if (bs && (st === "siparis" || biz.hasDelivery)) return `/siparis/satici/${enc(bs)}`;
+  if (bs && (st === "siparis" || biz.hasDelivery)) return `/kesfet/${enc(bs)}`;
   if (bs && biz.hasOnlineOrder) return `/alisveris/magaza/${enc(bs)}`;
   return fallback;
 }
@@ -763,14 +763,14 @@ export default function IsletmeDetay() {
   const editorialForOverview = (gd?.editorialSummary && String(gd.editorialSummary).trim()) || null;
   const linkedVendorBlogHref = (() => {
     if (linkedVendor?.slug != null && linkedVendor.slug !== "") {
-      return String(linkedVendor.vendor_type || "").toLowerCase() === "ecommerce"
-        ? `/alisveris/magaza/${encodeURIComponent(linkedVendor.slug)}/blog`
-        : `/siparis/satici/${encodeURIComponent(linkedVendor.slug)}/blog`;
+      if (String(linkedVendor.vendor_type || "").toLowerCase() === "ecommerce") {
+        return `/alisveris/magaza/${encodeURIComponent(linkedVendor.slug)}/blog`;
+      }
+      return null;
     }
     const bs = String(biz.slug ?? "").trim();
     if (!resolvedStoreHref || !bs) return null;
     if (resolvedStoreHref.startsWith("/alisveris/magaza/")) return `/alisveris/magaza/${encodeURIComponent(bs)}/blog`;
-    if (resolvedStoreHref.startsWith("/siparis/satici/")) return `/siparis/satici/${encodeURIComponent(bs)}/blog`;
     return null;
   })();
   const placesNew = pickPlacesNewExtras(biz);
@@ -808,7 +808,7 @@ export default function IsletmeDetay() {
     linkedVendor?.slug != null && linkedVendor.slug !== ""
       ? String(linkedVendor.vendor_type || "").toLowerCase() === "ecommerce"
         ? `/alisveris/magaza/${encodeURIComponent(linkedVendor.slug)}`
-        : `/siparis/satici/${encodeURIComponent(linkedVendor.slug)}`
+        : `/kesfet/${encodeURIComponent(linkedVendor.slug)}`
       : resolvedStoreHref ?? "";
   const placesProductSignals = productServiceSignals(placesNew);
   /** Keşfet slug'ı ile Yekpare PWA Store'daki servis sağlayıcı / işletme PWA indir sayfası. */

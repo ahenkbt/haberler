@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { Building2, Car, ChevronRight, Home, Map, Ship } from "lucide-react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
-import { Rail } from "@/pages/public/SiparisModulVitrin";
+import { Rail } from "@/components/vitrinRail";
 import { useTourismListings } from "@/themes/bookingcore/hooks/useTourismListings";
 import type { TourismListing } from "@/themes/bookingcore/hooks/useTourismListings";
 import { tourismSearchPath } from "@/themes/bookingcore/lib/listingRoutes";

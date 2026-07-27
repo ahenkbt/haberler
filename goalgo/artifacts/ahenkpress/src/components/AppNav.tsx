@@ -14,10 +14,8 @@ import {
   MAIN_NAV_HREF,
 } from "@workspace/site-nav";
 import { resolvePublicTopNav, filterPublicTopNavForHeader } from "@/lib/kesfetDiscoverHub";
-import { isSiparisNavActive } from "@/lib/yekpareServiceNav";
 import { isTurizmNavActive } from "@/themes/turizm/turizmRoutes";
 import { TurizmSubNavBar } from "@/themes/turizm/TurizmSubNavBar";
-import { SiparisSubNavBar } from "@/components/SiparisSubNavBar";
 import {
   Newspaper,
   BookOpen,
@@ -75,14 +73,6 @@ function navIcon(key: MainNavKey): ReactNode {
       return <ShoppingBag className={iconCls} />;
     case "magaza":
       return <Store className={iconCls} />;
-    case "yemek":
-      return <Store className={iconCls} />;
-    case "market":
-      return <ShoppingBag className={iconCls} />;
-    case "isletmeler":
-      return <Building2 className={iconCls} />;
-    case "siparis":
-      return <Store className={iconCls} />;
     case "turizm":
       return <Plane className={iconCls} />;
     case "ulasim":
@@ -124,38 +114,6 @@ function isHiddenTopNavItem(label: string, href: string): boolean {
     [String.fromCharCode(112, 97, 114, 99, 97), String.fromCharCode(112, 97, 114, 99, 101, 108), "6am" + "mart", "google", "maps"]
       .some((word) => new RegExp(`\\b${word}\\b`).test(text)) ||
     /^https?:\/\//i.test(href)
-  );
-}
-
-function SiparisNavDropdown({ active, shrink }: { active: boolean; shrink?: boolean }) {
-  const [open, setOpen] = useState(false);
-
-  const cls =
-    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap" +
-    (shrink ? " shrink-0" : "");
-  const st: CSSProperties = {
-    color: active ? "#fff" : "rgba(255,255,255,0.65)",
-    background: active ? "rgba(16,185,129,0.35)" : "transparent",
-    boxShadow: active ? "inset 0 0 0 1px rgba(52,211,153,0.5)" : "none",
-  };
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <Link href="/siparis" className={cls} style={st} aria-expanded={open}>
-        <Store className={iconCls} />
-        Sipariş
-        <ChevronDown className={`w-3 h-3 transition-transform${open ? " rotate-180" : ""}`} />
-      </Link>
-      {open ? (
-        <div className="absolute left-0 top-full z-[9010] mt-0 min-w-[min(100vw-1.5rem,36rem)]">
-          <SiparisSubNavBar className="module-subnav--panel" onNavigate={() => setOpen(false)} />
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -285,13 +243,6 @@ function DesktopNavBar({
   const overflowLinks = navLinks.slice(visibleCount);
 
   function renderNavItem(nav: ResolvedNav, measureOnly = false) {
-    if (nav.href === "/siparis") {
-      return measureOnly ? (
-        <TopNavItem key={nav.id} nav={nav} active={isActive("/siparis")} shrink measureOnly />
-      ) : (
-        <SiparisNavDropdown key={nav.id} active={isActive("/siparis")} shrink />
-      );
-    }
     if (nav.href === "/turizm") {
       return measureOnly ? (
         <TopNavItem key={nav.id} nav={nav} active={isActive("/turizm")} shrink measureOnly />
@@ -424,10 +375,8 @@ export function AppNav() {
   }, [settings?.mainNavJson, settings?.modulesEnabledJson, modulesMap]);
 
   const [turizmMobileOpen, setTurizmMobileOpen] = useState(false);
-  const [siparisMobileOpen, setSiparisMobileOpen] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === "/siparis") return isSiparisNavActive(loc);
     if (href === "/turizm") return isTurizmNavActive(loc);
     if (href === "/") return loc === "/";
     if (href === "/yektube") return loc === "/yektube" || loc.startsWith("/yektube/");
@@ -443,12 +392,9 @@ export function AppNav() {
     return () => window.removeEventListener("kesfet:close-mobile-menu", onCloseMenu as EventListener);
   }, []);
 
-  const hideSiteChrome = pathOnly.startsWith("/siparis/qr-menu/");
-  if (hideSiteChrome) return null;
-
-  function handleInstall() {
+  const handleInstall = () => {
     window.location.href = "/pwastore";
-  }
+  };
 
   const brand = portalNavBrandParts(settings ?? undefined);
 
@@ -557,33 +503,6 @@ export function AppNav() {
                 background: active ? "rgba(99,102,241,0.2)" : "transparent",
                 borderColor: "rgba(255,255,255,0.07)",
               };
-              if (nav.href === "/siparis") {
-                return (
-                  <div key={nav.id} className="border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-                    <button
-                      type="button"
-                      className={`${rowCls} w-full text-left`}
-                      style={rowSt}
-                      onClick={() => setSiparisMobileOpen((v) => !v)}
-                      aria-expanded={siparisMobileOpen}
-                    >
-                      {nav.icon}
-                      {nav.label}
-                      <ChevronDown
-                        className={`ml-auto w-4 h-4 transition-transform${siparisMobileOpen ? " rotate-180" : ""}`}
-                      />
-                    </button>
-                    {siparisMobileOpen ? (
-                      <SiparisSubNavBar
-                        onNavigate={() => {
-                          setMenuOpen(false);
-                          setSiparisMobileOpen(false);
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                );
-              }
               if (nav.href === "/turizm") {
                 return (
                   <div key={nav.id} className="border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
@@ -700,7 +619,7 @@ export function AppNav() {
           boxShadow: "0 -6px 24px rgba(0,0,0,0.45)",
         }}
       >
-        <div className={`h-full grid ${isKesfet ? "grid-cols-5" : "grid-cols-7"}`}>
+        <div className={`h-full grid ${isKesfet ? "grid-cols-5" : "grid-cols-6"}`}>
           {isKesfet ? (
             <>
               <Link href="/" className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.72)" }}>
@@ -734,9 +653,8 @@ export function AppNav() {
           ) : (
             [
               { href: "/", label: "Ana Sayfa", icon: <Store className="w-4 h-4" /> },
-              { href: "/siparis", label: "Sipariş", icon: <Store className="w-4 h-4" /> },
+              { href: "/magaza", label: "Alışveriş", icon: <ShoppingBag className="w-4 h-4" /> },
               { href: "/turizm", label: "Seyahat", icon: <Plane className="w-4 h-4" /> },
-              { href: "/magaza", label: "Alışveriş", icon: <Store className="w-4 h-4" /> },
               { href: "/kesfet", label: "Keşfet", icon: <MapIcon className="w-4 h-4" /> },
               { href: "/ulasim", label: "Ulaşım", icon: <Truck className="w-4 h-4" /> },
             ].map((item) => {

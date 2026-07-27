@@ -3,7 +3,7 @@
 
 ## Marka tanımı (entity)
 
-Yekpare.net, Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, yemek ve market siparişi, e-ticaret alışverişi, ulaşım, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
+Yekpare.net, Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, e-ticaret alışverişi, ulaşım, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
 
 ÖNEMLİ: Türkçe sözlükte «yekpare» = bütün, tek parça anlamına gelir. Yekpare.net markası bu sözlük anlamından bağımsızdır.
 
@@ -13,8 +13,6 @@ Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
 
 | Hizmet | URL | Açıklama |
 |--------|-----|----------|
-| Yemek siparişi | https://yekpare.net/yemek | Restoran paket servis |
-| Market | https://yekpare.net/market | Gıda / market siparişi |
 | Alışveriş | https://yekpare.net/magaza | E-ticaret pazaryeri |
 | Seyahat | https://yekpare.net/turizm | Otel, villa, tur rezervasyonu |
 | Ulaşım | https://yekpare.net/ulasim | Kurye, taksi, çekici, nakliye, kargo |
@@ -27,12 +25,11 @@ Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
 | Bilgi Ağacı | https://yekpare.net/bilgiagaci | Bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için bilgi portalı |
 | Yekpare AI | https://yekpare.net/ai-cagri-merkezi | Yapay zeka asistanı, AI çağrı merkezi |
 | Firma rehberi | https://yekpare.net/firma-rehberi | İşletme ve ilan rehberi |
-| Sipariş takip | https://yekpare.net/siparis-takip | Sipariş durumu |
+| Sipariş takip | https://yekpare.net/siparis-takip | Mağaza sipariş durumu |
 | Destek | https://yekpare.net/destek | Yardım merkezi |
 
 ## İşletme sayfaları ve özel domain
 
-- Sipariş vitrini: https://yekpare.net/siparis/satici/{slug}
 - Mağaza vitrini: https://yekpare.net/magaza/magaza/{slug}
 - Keşfet profili: https://yekpare.net/kesfet/{slug}
 - Onaylı işletmeler servis sağlayıcı panelinden özel alan adı (custom domain) tanımlayabilir.
@@ -41,10 +38,10 @@ Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
 ## Sık sorulan sorular (GEO)
 
 S: Yekpare nedir?
-C: Türkiye'nin yerli arama motoru; sipariş, alışveriş, ulaşım, seyahat, harita, haber, AI ve bilgi modüllerini tek aramada birleştirir.
+C: Türkiye'nin yerli arama motoru; alışveriş, ulaşım, seyahat, harita, haber, AI ve bilgi modüllerini tek aramada birleştirir.
 
-S: Yekpare ile yemek siparişi nasıl verilir?
-C: yekpare.net/yemek veya /siparis → işletme seç → menüden sepete ekle → teslimat adresi ile tamamla.
+S: Yekpare'de online alışveriş nasıl yapılır?
+C: yekpare.net/magaza → mağaza seç → sepete ekle → ödeme adımlarını tamamla → /siparis-takip ile takip et.
 
 S: Yekpare'de kurye, taksi ve çekici nasıl çağrılır?
 C: yekpare.net/ulasim → hizmet tipi seç (kurye, taksi, çekici, nakliye) → alış/varış konumu → talep oluştur.

@@ -19,7 +19,6 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p>Tüketici hakları bakımından mesafeli satış sözleşmesi, kullanıcı ile <strong>ilgili işletme</strong> arasında kurulur. Yekpare, işletmelerin platformda yer almasına aracılık eden bir liste ve rehber hizmeti sunar.</p>
 
 <h2>Sipariş ve rezervasyon süreci nasıl işler?</h2>
-<p><strong>Yemek ve market:</strong> Kullanıcı restoran veya market seçer, sepete ürün ekler, teslimat adresini girer ve siparişi onaylar. Sipariş kaydı ilgili işletmeye iletilir; hazırlık, kurye ve teslimat süreci işletme ve varsa anlaşmalı kurye ağı tarafından yürütülür.</p>
 <p><strong>Alışveriş (mağaza):</strong> Her mağazanın kendi vitrin sayfası vardır. Sepet, ödeme ve kargo adımları mağazanın politikasına göre tamamlanır. Sipariş numarası ile <a href="/siparis-takip">sipariş takip</a> ekranından durum sorgulanabilir.</p>
 <p><strong>Turizm (otel, tur, villa, araç, yat, transfer, uçuş):</strong> İlan veya arama sonucunda işletme profiline gidilir; rezervasyon, teklif talebi veya iletişim doğrudan işletmeyle yapılır. Uçuş ve otobüs gibi bazı modüllerde fiyat karşılaştırması sunulabilir; nihai satın alma ve ödeme partner işletme veya yetkili acente üzerinden gerçekleşir.</p>
 <p>Rezervasyon veya sipariş öncesinde işletmenin iletişim bilgilerini, iptal koşullarını ve varsa TURSAB/ruhsat belgelerini doğrudan teyit etmenizi öneririz.</p>
@@ -41,10 +40,6 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p>Yekpare Seyahat modülü (<a href="/turizm">/turizm</a>), otel, villa, tur paketi, araç kiralama, yat turu ve VIP transfer firmalarının ilanlarını listeler. Fiyat ve müsaitlik bilgisi işletme tarafından güncellenir; Yekpare fiyat garantisi vermez.</p>
 <p>Uçuş arama ekranlarında karşılaştırmalı fiyat sunulabilir; bilet satın alma işlemi yetkili acente veya havayolu partneri üzerinden tamamlanır. VIP transfer ve şoförlü araç hizmetlerinde rezervasyon ve ödeme listelenen transfer firmasıyla yapılır.</p>
 <p>Seyahat özelinde ayrıntılı sorular için <a href="/turizm/turlar/sss">Turizm SSS</a> sayfasına bakabilirsiniz.</p>
-
-<h2>Yemek siparişi ve market</h2>
-<p>Yemek (<a href="/yemek">/yemek</a>) ve market (<a href="/market">/market</a>) modüllerinde listelenen restoran ve marketler kendi menü, fiyat ve teslimat bölgelerini yönetir. Minimum sepet tutarı, teslimat ücreti ve hazırlık süresi işletmeye özeldir.</p>
-<p>Sipariş onayından sonra iptal veya değişiklik talepleri işletmenin operasyon politikasına tabidir. Gıda güvenliği, hijyen ve ürün içeriği sorumluluğu siparişi hazırlayan işletmeye aittir.</p>
 
 <h2>Abonelik modeli — işletmeler nasıl listelenir?</h2>
 <p>İşletmeler, Yekpare'de görünmek ve modül vitrinlerinde yer almak için <strong>abonelik modeliyle</strong> kayıt olur. Başvuru <a href="/isletme-basvuru">işletme başvurusu</a> veya ilgili modül paneli üzerinden yapılır; onay sonrası profil, menü, ürün veya ilan yönetimi servis sağlayıcı panelinden sürdürülür.</p>

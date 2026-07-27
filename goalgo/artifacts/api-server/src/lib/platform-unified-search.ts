@@ -132,7 +132,6 @@ export type UnifiedSearchSectionKey =
   | "bilgi_agaci"
   | "sehir"
   | "sari_sayfalar"
-  | "yemek_market"
   | "seyahat"
   | "urunler"
   | "hizmetler"
@@ -377,10 +376,6 @@ const SECTION_META: Record<
       return `/kesfet/liste?${params.toString()}`;
     },
   },
-  yemek_market: {
-    title: "Yemek & Market",
-    seeAll: (q) => `/siparis?q=${encodeURIComponent(q)}`,
-  },
   seyahat: {
     title: "Seyahat",
     seeAll: (q) => `/turizm/konaklama?q=${encodeURIComponent(q)}`,
@@ -413,7 +408,6 @@ const SECTION_ORDER: UnifiedSearchSectionKey[] = [
   "bilgi_agaci",
   "haberler",
   "sari_sayfalar",
-  "yemek_market",
   "urunler",
   "hizmetler",
 ];
@@ -553,23 +547,23 @@ function vendorTypeLabel(vendorType: string | null | undefined): {
 } {
   const type = String(vendorType ?? "").toLowerCase();
   if (["market", "grocery"].includes(type)) {
-    return { resultType: "vendor_grocery", typeLabel: "Market", hrefPrefix: "/market" };
+    return { resultType: "vendor_grocery", typeLabel: "Market", hrefPrefix: "/kesfet" };
   }
   if (["alisveris", "ecommerce", "shop"].includes(type)) {
     return { resultType: "vendor_shop", typeLabel: "Mağaza", hrefPrefix: "/alisveris/magaza" };
   }
   if (["siparis", "delivery", "restaurant", "restoran", "food"].includes(type)) {
-    return { resultType: "vendor_food", typeLabel: "Yemek", hrefPrefix: "/siparis/satici" };
+    return { resultType: "vendor_food", typeLabel: "Yemek", hrefPrefix: "/kesfet" };
   }
   return { resultType: "vendor_other", typeLabel: "İşletme", hrefPrefix: "/kesfet" };
 }
 
 function vendorDetailHref(slug: string | null, vendorType: string | null | undefined): string {
   const s = String(slug ?? "").trim();
-  if (!s) return "/siparis";
+  if (!s) return "/kesfet";
   const { hrefPrefix } = vendorTypeLabel(vendorType);
   if (hrefPrefix === "/kesfet") return `/kesfet/${encodeURIComponent(s)}`;
-  if (hrefPrefix === "/market") return `/market?q=${encodeURIComponent(s)}`;
+  if (hrefPrefix === "/market") return `/magaza?q=${encodeURIComponent(s)}`;
   return `${hrefPrefix}/${encodeURIComponent(s)}`;
 }
 
@@ -602,7 +596,6 @@ function emptySections(): Record<UnifiedSearchSectionKey, PlatformSearchResult[]
     bilgi_agaci: [],
     sehir: [],
     sari_sayfalar: [],
-    yemek_market: [],
     seyahat: [],
     urunler: [],
     hizmetler: [],
@@ -811,7 +804,6 @@ function collectGalleryImages(buckets: Record<UnifiedSearchSectionKey, PlatformS
     "haritalar",
     "sari_sayfalar",
     "hizmetler",
-    "yemek_market",
     "urunler",
     "yektube",
   ];
@@ -1091,7 +1083,6 @@ function buildLocationContext(input: {
       ...buckets.haritalar,
       ...buckets.sari_sayfalar,
       ...buckets.hizmetler,
-      ...buckets.yemek_market,
     ];
     const seenBiz = new Set<string>();
     for (const item of businessPool) {
@@ -1514,7 +1505,7 @@ export async function runGroupedUnifiedSearch(input: {
       const { resultType, typeLabel } = vendorTypeLabel(v.vendorType);
       const section: UnifiedSearchSectionKey =
         resultType === "vendor_shop" ? "urunler"
-          : (resultType === "vendor_food" || resultType === "vendor_grocery") ? "yemek_market"
+          : (resultType === "vendor_food" || resultType === "vendor_grocery") ? "sari_sayfalar"
             : "hizmetler";
       pushItem(section, {
         id: `vendor-${v.id}`,
@@ -1532,7 +1523,7 @@ export async function runGroupedUnifiedSearch(input: {
         photoUrl: v.imageUrl ?? null,
         coverPhotoUrl: v.coverUrl ?? v.imageUrl ?? null,
         categoryName: typeLabel,
-        homepageSuperCategory: "siparis",
+        homepageSuperCategory: resultType === "vendor_shop" ? "alisveris" : "hizmet",
         storeType: v.vendorType ?? null,
         hasPublicProfile: true,
         googlePlaceId: null,

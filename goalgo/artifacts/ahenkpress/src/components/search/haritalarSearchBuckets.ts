@@ -31,7 +31,6 @@ export type HaritalarSectionKey =
   | "oteller"
   | "rentacar"
   | "etkinlik"
-  | "siparis"
   | "urunler";
 
 export type HaritalarSectionDef = {
@@ -51,7 +50,6 @@ export type HaritalarBucketsInput = {
   sariSayfalarItems: HaritalarSearchItem[];
   hizmetItems: HaritalarSearchItem[];
   tourismItems: HaritalarSearchItem[];
-  yemekMarketItems: HaritalarSearchItem[];
   urunlerItems: HaritalarSearchItem[];
 };
 
@@ -94,15 +92,6 @@ function isEventItem(item: HaritalarSearchItem): boolean {
     label.includes("tiyatro") ||
     label.includes("bilet")
   );
-}
-
-function isFoodVendorItem(item: HaritalarSearchItem): boolean {
-  const superCat = String(item.resultType ?? "").toLowerCase();
-  if (superCat === "vendor_food" || superCat === "vendor_grocery") return true;
-  const t = String(item.storeType ?? "").toLowerCase();
-  if (t.includes("restoran") || t.includes("yemek") || t.includes("market")) return true;
-  const label = `${item.typeLabel ?? ""} ${item.categoryName ?? ""}`.toLocaleLowerCase("tr-TR");
-  return label.includes("yemek") || label.includes("market") || label.includes("restoran");
 }
 
 export function detectHaritalarQueryIntent(input: {
@@ -168,10 +157,6 @@ export function buildHaritalarSections(input: HaritalarBucketsInput): HaritalarS
   );
   const etkinlik = dedupeItems(etkinlikFromMap, etkinlikFromTourism);
 
-  const siparisFromMarket = input.yemekMarketItems;
-  const siparisFromMap = dedupeItems(input.sariSayfalarItems, input.mapItems).filter(isFoodVendorItem);
-  const siparis = dedupeItems(siparisFromMarket, siparisFromMap);
-
   const seyahat = input.tourismItems.filter(
     (item) => !isHotelItem(item) && !isRentCarItem(item) && !isEventItem(item),
   );
@@ -215,13 +200,6 @@ export function buildHaritalarSections(input: HaritalarBucketsInput): HaritalarS
       seeAllHref: seeAll("/turizm/etkinlik", q, city),
     },
     {
-      key: "siparis",
-      label: "Sipariş",
-      emoji: "🍽️",
-      items: siparis,
-      seeAllHref: seeAll("/siparis", q, city),
-    },
-    {
       key: "urunler",
       label: "Ürünler",
       emoji: "🛍️",
@@ -240,7 +218,6 @@ export function primaryHaritalarSection(sections: HaritalarSectionDef[]): Harita
     "seyahat",
     "rentacar",
     "etkinlik",
-    "siparis",
     "urunler",
   ];
   for (const key of order) {

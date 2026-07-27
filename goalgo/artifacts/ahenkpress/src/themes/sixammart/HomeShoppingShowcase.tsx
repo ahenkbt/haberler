@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
-import { Rail } from "@/pages/public/SiparisModulVitrin";
+import { Rail } from "@/components/vitrinRail";
 
 const API = "/api";
 const SADE_ACCENT = "#039D55";

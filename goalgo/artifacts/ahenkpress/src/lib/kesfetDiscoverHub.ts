@@ -1,6 +1,5 @@
 import {
   isModuleEnabled,
-  isSiparisSubNavKey,
   MAIN_NAV_HREF,
   MAIN_NAV_LABELS,
   parseModulesEnabledJson,
@@ -20,9 +19,9 @@ export const YEKPARE_SLOGAN =
   "Türkiye'nin yerli ve milli arama motoru — haber, hizmet ve alışverişi tek aramada keşfedin.";
 
 export const KESFET_HUB_BADGE_LABEL = "Keşfet Merkezi";
-export const KESFET_HUB_HERO_TITLE = "Şehri keşfet, sipariş ver, alışveriş yap, yola çık";
+export const KESFET_HUB_HERO_TITLE = "Şehri keşfet, alışveriş yap, yola çık";
 export const KESFET_HUB_HERO_SUBTITLE =
-  "Sipariş, alışveriş, seyahat, ulaşım, haritalar, haberler, YekTube, Bilgi Ağacı, işletme arama, sarı sayfalar ve rezervasyon — tüm Yekpare hizmetleri tek merkezde.";
+  "Alışveriş, seyahat, ulaşım, haritalar, haberler, YekTube, Bilgi Ağacı, işletme arama, sarı sayfalar ve rezervasyon — tüm Yekpare hizmetleri tek merkezde.";
 export const KESFET_HUB_META_DESCRIPTION = KESFET_HUB_HERO_SUBTITLE;
 export const KESFET_HUB_PAGE_TITLE = `${KESFET_HUB_BADGE_LABEL} — Yekpare`;
 
@@ -73,49 +72,6 @@ const HARITALAR_EMOJI: Record<string, string> = {
 };
 
 export const KESFET_HUB_SECTIONS: KesfetHubSection[] = [
-  {
-    id: "siparis",
-    title: "Sipariş",
-    subtitle: "Yemek, market ve yakınımdaki işletmeler",
-    cards: [
-      hubCard({
-        id: "siparis",
-        title: "Sipariş",
-        description: "Yemek, market ve hızlı teslimat — tek merkezden.",
-        href: MAIN_NAV_HREF.siparis,
-        accent: "#039D55",
-        bg: "from-emerald-50 via-white to-green-50/80",
-        emoji: "🍽️",
-      }),
-      hubCard({
-        id: "yemek",
-        title: YEKPARE_SERVICE_MODULE_META.food.label,
-        description: YEKPARE_SERVICE_MODULE_META.food.description,
-        href: YEKPARE_SERVICE_MODULE_META.food.href,
-        accent: "#ea580c",
-        bg: "from-orange-50 via-white to-amber-50/70",
-        emoji: "🍕",
-      }),
-      hubCard({
-        id: "market",
-        title: YEKPARE_SERVICE_MODULE_META.grocery.label,
-        description: YEKPARE_SERVICE_MODULE_META.grocery.description,
-        href: YEKPARE_SERVICE_MODULE_META.grocery.href,
-        accent: "#16a34a",
-        bg: "from-lime-50 via-white to-green-50/70",
-        emoji: "🛒",
-      }),
-      hubCard({
-        id: "isletmeler",
-        title: YEKPARE_SERVICE_MODULE_META.pharmacy.label,
-        description: YEKPARE_SERVICE_MODULE_META.pharmacy.description,
-        href: YEKPARE_SERVICE_MODULE_META.pharmacy.href,
-        accent: "#0d9488",
-        bg: "from-teal-50 via-white to-cyan-50/70",
-        emoji: "🏪",
-      }),
-    ],
-  },
   {
     id: "alisveris",
     title: "Alışveriş & Mağaza",
@@ -322,9 +278,6 @@ export const KESFET_HUB_CARDS: KesfetHubCard[] = KESFET_HUB_SECTIONS.flatMap((se
 
 /** Anasayfa özet şeridi — en çok kullanılan modüller */
 export const KESFET_HUB_FEATURED_CARD_IDS = [
-  "siparis",
-  "yemek",
-  "market",
   "magaza",
   "haritalar",
   "seyahat",
@@ -341,9 +294,6 @@ export const KESFET_HUB_FEATURED_CARDS: KesfetHubCard[] = KESFET_HUB_FEATURED_CA
 ).filter(Boolean);
 
 const SERVICE_NAV_TO_MODULE: Partial<Record<MainNavKey, SixAmMartModuleKey>> = {
-  yemek: "food",
-  market: "grocery",
-  isletmeler: "pharmacy",
   turizm: "rental",
   magaza: "shop",
   alisveris: "shop",
@@ -402,7 +352,7 @@ export function resolveHrefForNavKey(key: MainNavKey): string {
 }
 
 export function isShelteredFromTopNav(key: MainNavKey): boolean {
-  return KESFET_HUB_SHELTERED_NAV_KEYS.has(key) || isSiparisSubNavKey(key);
+  return KESFET_HUB_SHELTERED_NAV_KEYS.has(key);
 }
 
 function pushUniquePlatform(out: ResolvedPlatformNavLink[], seen: Set<string>, link: ResolvedPlatformNavLink) {
@@ -435,7 +385,6 @@ function resolveFromNavItems(
         if (!serviceModuleKeys.includes(serviceKey)) serviceModuleKeys.push(serviceKey);
         const href = MAIN_NAV_HREF[key];
         serviceNavHrefs.add(normalizeNavHref(href));
-        if (isSiparisSubNavKey(key)) continue;
         pushUniquePlatform(flatLinks, seenFlat, {
           id: `m-${key}`,
           label: MAIN_NAV_LABELS[key],
@@ -519,9 +468,6 @@ export function kesfetSearchTarget(query: string, fallback = UNIFIED_SEARCH_PATH
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   if (href === "/magaza" || href.startsWith("/magaza/")) {
-    return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
-  }
-  if (href === "/yemek" || href === "/market" || href === "/isletmeler" || href === "/siparis") {
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;

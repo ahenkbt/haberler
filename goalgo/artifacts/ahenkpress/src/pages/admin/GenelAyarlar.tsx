@@ -1762,8 +1762,7 @@ export default function GenelAyarlar() {
               </p>
               <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1">
                 <li>Haberler: <code>/news-yekpare.xml</code> (+ HM siteleri)</li>
-                <li>Sipariş işletmeleri: <code>/vendors-siparis.xml</code></li>
-                <li>Alışveriş mağazaları: <code>/vendors-alisveris.xml</code></li>
+                <li>Alışveriş mağazaları: <code>/vendors-alisveris.xml</code> ve <code>/vendors-magaza.xml</code></li>
                 <li>Turizm ilanları: <code>/turizm.xml</code></li>
                 <li>Keşfet / harita: <code>/businesses.xml</code></li>
                 <li>İşletme blogları: <code>/vendor-blogs.xml</code></li>

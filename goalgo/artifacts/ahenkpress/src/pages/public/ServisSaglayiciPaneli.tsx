@@ -17,7 +17,21 @@ import { ExternalMenuImportPanel } from "@/components/ExternalMenuImportPanel";
 import { EcommerceCategorySelect, type EcommerceCategoryNode } from "@/components/EcommerceCategorySelect";
 import { getProviderSession, providerAuthHeaders } from "@/lib/providerSession";
 import { providerPanelPath } from "@/lib/providerPanelRoutes";
-import { buildVendorTableOrderUrl, qrCodeImageUrl } from "@/lib/vendorQrUrls";
+
+function qrCodeImageUrl(targetUrl: string, size = 240): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(targetUrl)}&size=${size}x${size}&bgcolor=ffffff&color=1e1b4b&qzone=2`;
+}
+
+function buildVendorTableOrderUrl(params: {
+  origin: string;
+  slug: string;
+  tableServiceEnabled: boolean;
+  qrMenuPublic: boolean;
+  sectionId?: string;
+}): string {
+  const { origin, slug } = params;
+  return `${origin}/alisveris/magaza/${encodeURIComponent(slug)}`;
+}
 
 /** Standart üyelikte görünen panel sekmeleri (içerik + vitrin temeli; kalan modüller Gold). */
 const PROVIDER_STANDARD_TAB_IDS = new Set([
@@ -3718,11 +3732,11 @@ export default function ServisSaglayiciPaneli() {
   const vitrinPublicPath = (() => {
     const slug = (vendor.slug || "").trim() || String(vendor.id);
     const mapBid = String(vendor.linked_map_business_id ?? "").trim();
-    if (isDelivery) return `/siparis/satici/${slug}`;
+    if (isDelivery) return `/alisveris/magaza/${slug}`;
     if (isShop) return `/alisveris/magaza/${slug}`;
     if (mapBid) return `/kesfet/isletme/${mapBid}`;
     if (slug) return `/kesfet/${slug}`;
-    return `/siparis/satici/${slug}`;
+    return `/alisveris/magaza/${slug}`;
   })();
   const vendorPublicUrl = buildTableOrderLink();
   const qrUrl = qrCodeImageUrl(vendorPublicUrl);
@@ -4461,7 +4475,7 @@ export default function ServisSaglayiciPaneli() {
                     authHeaders={authHeaders}
                     flash={(text, ok = true) => flash(ok ? "ok" : "err", text)}
                     isApproved={isApproved}
-                    storefrontPath={vendor?.slug ? `/siparis/satici/${encodeURIComponent(vendor.slug)}` : null}
+                    storefrontPath={vendor?.slug ? `/alisveris/magaza/${encodeURIComponent(vendor.slug)}` : null}
                   />
                   <h3 className="text-gray-900 text-sm font-bold">Vitrin ve iletişim</h3>
                   <GlassInput

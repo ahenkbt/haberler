@@ -518,7 +518,7 @@
           "address": { "@type": "PostalAddress", "addressCountry": "TR" },
           "foundingLocation": { "@type": "Place", "name": "Türkiye" },
           "parentOrganization": { "@type": "Organization", "name": "Ahenk Bilgi Teknolojileri", "url": "https://ahenk.net.tr" },
-          "knowsAbout": ["online yemek siparişi", "market siparişi", "e-ticaret alışveriş", "turizm rezervasyonu", "kurye ve taksi", "çekici ve nakliye", "harita ve işletme keşfi", "haber portalı", "haber merkezi", "işletme özel domain", "ansiklopedi", "yapay zeka asistanı", "ai çağrı merkezi"]
+          "knowsAbout": ["e-ticaret alışveriş", "turizm rezervasyonu", "kurye ve taksi", "çekici ve nakliye", "harita ve işletme keşfi", "haber portalı", "haber merkezi", "işletme özel domain", "ansiklopedi", "yapay zeka asistanı", "ai çağrı merkezi", "video platformu"]
         },
         {
           "@type": "WebSite",
@@ -534,16 +534,6 @@
             { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/haberler?q={search_term_string}" }, "query-input": "required name=search_term_string" },
             { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/kesfet?q={search_term_string}" }, "query-input": "required name=search_term_string" }
           ]
-        },
-        {
-          "@type": "Service",
-          "@id": "https://yekpare.net/yemek#service",
-          "name": "Yemek Siparişi",
-          "serviceType": "FoodDelivery",
-          "url": "https://yekpare.net/yemek",
-          "description": "Restoran ve paket servis işletmelerinden online yemek siparişi.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
-          "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
@@ -592,16 +582,6 @@
           "serviceType": "EducationalOrganization",
           "url": "https://yekpare.net/ansiklopedi",
           "description": "Ansiklopedi ve bilgi ağacı içerik portalı.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
-          "areaServed": { "@type": "Country", "name": "Türkiye" }
-        },
-        {
-          "@type": "Service",
-          "@id": "https://yekpare.net/market#service",
-          "name": "Market Siparişi",
-          "serviceType": "GroceryDelivery",
-          "url": "https://yekpare.net/market",
-          "description": "Market ve gıda ürünleri online siparişi.",
           "provider": { "@id": "https://yekpare.net/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },

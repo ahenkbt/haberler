@@ -72,14 +72,11 @@ const navItems: NavItem[] = [
   { label: "Haber", href: "/haberler", icon: Newspaper },
   { label: "Video", href: "/yektube", icon: Video },
   { label: "Harita", href: "/haritalar", icon: MapPinned },
-  { label: "Sipariş", href: "/siparis", icon: ShoppingBag },
+  { label: "Alışveriş", href: "/magaza", icon: ShoppingBag },
   { label: "İlan", href: "/firma-rehberi/ilanlar", icon: Building2 },
-  { label: "Yemek", href: "/yemek", icon: Utensils },
-  { label: "Market", href: "/market", icon: ShoppingCart },
   { label: "Yakınımdakiler", href: "/kesfet", icon: Compass },
   { label: "Seyahat", href: "/turizm", icon: Plane },
   { label: "Ulaşım", href: "/ulasim", icon: Car },
-  { label: "Alışveriş", href: "/alisveris", icon: ShoppingBag },
 ];
 
 const searchExamples = [
@@ -94,20 +91,15 @@ const heroChips = [
   { label: "Haber", href: "/haberler" },
   { label: "Video", href: "/yektube" },
   { label: "Harita", href: "/haritalar" },
-  { label: "Yemek", href: "/yemek" },
-  { label: "Market", href: "/market" },
-  { label: "Alışveriş", href: "/alisveris" },
+  { label: "Keşfet", href: "/kesfet" },
+  { label: "Alışveriş", href: "/magaza" },
   { label: "Seyahat", href: "/turizm" },
   { label: "Ulaşım", href: "/ulasim" },
 ];
 
 const services: ServiceCard[] = [
-  { label: "Yemek", href: "/yemek", icon: Utensils, desc: "Lezzetli yemeklere konumdan ulaş.", color: "#f97316" },
-  { label: "Market", href: "/market", icon: ShoppingCart, desc: "Market alışverişini kolaylaştır.", color: "#22c55e" },
-  { label: "Yakınımdakiler", href: "/kesfet", icon: MapPinned, desc: "Yakındaki mekan ve hizmetler.", color: "#38bdf8" },
-  { label: "Haberler", href: "/haberler", icon: Newspaper, desc: "Gündemi anlık takip et.", color: "#8b5cf6" },
-  { label: "Videolar", href: "/yektube", icon: Video, desc: "En yeni ve popüler videolar.", color: "#ef4444" },
-  { label: "Alışveriş", href: "/alisveris", icon: ShoppingBag, desc: "Binlerce ürün tek tıkta.", color: "#a855f7" },
+  { label: "Keşfet", href: "/kesfet", icon: MapPinned, desc: "Yakındaki mekan ve hizmetler.", color: "#38bdf8" },
+  { label: "Alışveriş", href: "/magaza", icon: ShoppingBag, desc: "Binlerce ürün tek tıkta.", color: "#a855f7" },
   { label: "Seyahat", href: "/turizm", icon: Plane, desc: "Uçak, bilet, otel ve rota.", color: "#06b6d4" },
   { label: "Ulaşım", href: "/ulasim", icon: Car, desc: "Ulaşımda tüm seçenekler.", color: "#f59e0b" },
 ];
@@ -168,14 +160,14 @@ const trendingCards = [
     lines: [
       { label: "Çevrendeki indirimler", href: "/kesfet?q=indirim&near=T%C3%BCrkiye" },
       { label: "Kampanyalı kahvaltılar", href: "/kesfet?q=kahvalt%C4%B1&near=T%C3%BCrkiye" },
-      { label: "Bugüne özel market", href: "/market" },
+      { label: "Mağaza fırsatları", href: "/magaza" },
     ],
   },
 ];
 
 const footerGroups = [
   { title: "Keşfet", links: ["Haberler", "Videolar", "Harita", "Sarı Sayfalar"] },
-  { title: "Servisler", links: ["Yemek", "Market", "Seyahat", "Ulaşım"] },
+  { title: "Servisler", links: ["Keşfet", "Alışveriş", "Seyahat", "Ulaşım"] },
   { title: "Yönetim", links: ["Anasayfa Tasarım", "Anasayfa Modülleri"] },
   { title: "Yardım", links: ["SSS", "Gizlilik", "Kullanım Şartları", "İletişim", "Kariyer"] },
 ];
@@ -185,8 +177,8 @@ const footerHrefByLabel: Record<string, string> = {
   Videolar: "/yektube",
   Harita: "/haritalar",
   "Sarı Sayfalar": "/firma-rehberi",
-  Yemek: "/yemek",
-  Market: "/market",
+  Keşfet: "/kesfet",
+  Alışveriş: "/magaza",
   Seyahat: "/turizm",
   Ulaşım: "/ulasim",
   "Anasayfa Tasarım": "/admin/anasayfa-tasarim",

@@ -1,40 +1,15 @@
 /**
  * Yekpare Sade chrome — ana header ile aynı sıra ve etiketler.
- * Canonical: Keşfet, Sipariş (Yemek/Market/Yakınımdakiler altında), … (site-nav MAIN_NAV_KEY_ORDER)
+ * Canonical: Keşfet, Alışveriş, Seyahat, … (site-nav MAIN_NAV_KEY_ORDER)
  */
-export type SixAmMartModuleKey = "food" | "grocery" | "pharmacy" | "rental" | "parcel" | "shop";
+export type SixAmMartModuleKey = "rental" | "parcel" | "shop";
 
-export const YEKPARE_SERVICE_MODULE_ORDER: SixAmMartModuleKey[] = [
-  "food",
-  "grocery",
-  "pharmacy",
-  "rental",
-  "parcel",
-  "shop",
-];
+export const YEKPARE_SERVICE_MODULE_ORDER: SixAmMartModuleKey[] = ["shop", "rental", "parcel"];
 
 export const YEKPARE_SERVICE_MODULE_META: Record<
   SixAmMartModuleKey,
   { label: string; title: string; href: string; description: string }
 > = {
-  food: {
-    label: "Yemek",
-    title: "Yemek",
-    href: "/yemek",
-    description: "Restoran, cafe ve paket servis.",
-  },
-  grocery: {
-    label: "Market",
-    title: "Market",
-    href: "/market",
-    description: "Market ve yerel sipariş işletmeleri.",
-  },
-  pharmacy: {
-    label: "Yakınımdakiler",
-    title: "Yakınımdakiler",
-    href: "/isletmeler",
-    description: "Yerel hizmet, teknik ihtiyaç ve hızlı tedarik.",
-  },
   rental: {
     label: "Seyahat",
     title: "Seyahat",
@@ -76,32 +51,14 @@ export const YEKPARE_FOOTER_SERVICE_MODULES = YEKPARE_SERVICE_MODULE_ORDER.map((
   href: YEKPARE_SERVICE_MODULE_META[key].href,
 }));
 
-/** Üst menü Sipariş dropdown — yemek, market, yakınımdakiler + hub aktif durumu */
-export function isSiparisNavActive(location: string): boolean {
-  const p = location.split("?")[0] ?? "";
-  if (p === "/siparis" || p.startsWith("/siparis/")) return true;
-  if (p === "/yemek" || p.startsWith("/yemek/")) return true;
-  if (p === "/market" || p.startsWith("/market/")) return true;
-  if (p === "/isletmeler" || p.startsWith("/isletmeler/")) return true;
-  return false;
-}
-
 /** SadePublicChrome nav — yol üzerinden aktif modül */
 export function resolveSixAmMartActiveFromPath(
   location: string,
 ): SixAmMartModuleKey | undefined {
-  const [path, search = ""] = location.split("?");
-  const p = path ?? "";
-  if (p === "/yemek" || p.startsWith("/yemek/")) return "food";
-  if (p === "/market" || p.startsWith("/market/")) return "grocery";
-  if (p === "/isletmeler" || p.startsWith("/isletmeler/")) return "pharmacy";
-  if (p === "/turizm" || p.startsWith("/turizm/")) return "rental";
-  if (p === "/ulasim" || p.startsWith("/ulasim/")) return "parcel";
-  if (p.startsWith("/magaza")) return "shop";
-  if (p === "/siparis" || p.startsWith("/siparis/")) {
-    const cat = new URLSearchParams(search).get("kategori");
-    if (cat === "yemek") return "food";
-    return "grocery";
-  }
+  const path = (location.split("?")[0] ?? "").trim();
+  if (path === "/turizm" || path.startsWith("/turizm/")) return "rental";
+  if (path === "/ulasim" || path.startsWith("/ulasim/")) return "parcel";
+  if (path.startsWith("/magaza") || path === "/alisveris" || path.startsWith("/alisveris/")) return "shop";
+  if (path === "/siparis-takip" || path.startsWith("/siparis-takip/") || path === "/siparislerim") return "shop";
   return undefined;
 }

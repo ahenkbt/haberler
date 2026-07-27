@@ -171,8 +171,7 @@ export const FIRMA_REHBERI_MAIN_CATEGORY_CHIPS = FIRMA_REHBERI_CATEGORIES.map((i
 }));
 
 export const FIRMA_REHBERI_TRANSFER_DESTINATIONS = [
-  { key: "alisveris", label: "Alışveriş", href: "/alisveris", examples: "Mağaza, ürün vitrini" },
-  { key: "siparis", label: "Sipariş", href: "/siparis", examples: "Cafe, restoran, paket servis" },
+  { key: "alisveris", label: "Alışveriş", href: "/magaza", examples: "Mağaza, ürün vitrini" },
   { key: "ulasim", label: "Ulaşım", href: "/ulasim", examples: "Rentacar, taksi, kurye" },
   { key: "turizm", label: "Seyahat", href: "/turizm", examples: "Otel, tur, villa, tekne" },
 ];

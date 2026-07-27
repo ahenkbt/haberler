@@ -63,9 +63,6 @@ import {
 import { KesfetDiscoverHubSection } from "@/components/KesfetDiscoverHubSection";
 
 const MODULE_ICONS: Record<SixAmMartModuleKey, LucideIcon> = {
-  food: Utensils,
-  grocery: Store,
-  pharmacy: Compass,
   rental: Building2,
   parcel: Truck,
   shop: ShoppingBag,
@@ -79,7 +76,7 @@ const HERO_QUICK_ACTION_BTN =
   "inline-flex min-h-[38px] min-w-0 items-center justify-center rounded-[12px] border px-2 py-2 text-center text-[11px] font-black leading-tight shadow-sm transition sm:min-h-[40px] sm:px-4 sm:py-2.5 sm:text-xs";
 
 const HOME_CATEGORY_TILES = [
-  { label: "Sipariş", href: "/siparis", icon: Utensils },
+  { label: "Alışveriş", href: "/magaza", icon: ShoppingBag },
   { label: "Rezervasyon", href: "/turizm", icon: Calendar },
   { label: "Haritalar", href: "/haritalar", icon: Map },
   { label: "Şehir Rehberi", href: "/kesfet", icon: Map },

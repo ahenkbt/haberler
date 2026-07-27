@@ -100,18 +100,6 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   {
-    id: "mekan",
-    title: "Mekan & dükkan yönetimi",
-    items: [
-      { name: "Dükkan İşletmeleri", icon: UtensilsCrossed, href: "/admin/siparis-isletmeleri", permission: "teslimat" },
-      { name: "Dükkan Kategorileri", icon: Tags, href: "/admin/siparis-kategoriler", permission: "teslimat" },
-      { name: "Vitrin Bannerları", icon: Presentation, href: "/admin/siparis-bannerlari", permission: "teslimat" },
-      { name: "Menü & Ürünler", icon: ClipboardList, href: "/admin/siparis-menu-items", permission: "teslimat" },
-      { name: "Teslimat Siparişleri", icon: Truck, href: "/admin/teslimat-siparisleri", permission: "teslimat" },
-      { name: "Kupon Kodları", icon: Ticket, href: "/admin/kupon-kodlari", permission: "teslimat" },
-    ],
-  },
-  {
     id: "alisveris",
     title: "Alışveriş yönetimi",
     items: [
