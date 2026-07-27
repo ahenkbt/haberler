@@ -97,10 +97,26 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
         return { ...site, hybridRssEnabled: layout.hybridRssEnabled === true };
       })
     : [];
-  // Aynı id birden fazla gelirse (eski çift-DB artığı) tek satır bırak.
-  const byId = new Map<number, HmSiteRow>();
-  for (const site of items) byId.set(site.id, site);
-  return { items: Array.from(byId.values()).sort((a, b) => a.id - b.id) };
+  // Aynı slug tekrarını temizle; farklı slug aynı id'de kalır (sunucu onarımı ayrı).
+  const keepSlugs = new Set(["su", "tr", "vkd", "asg", "vatanhaber", "ankarahabergundemi", "trafik"]);
+  const norm = (s: string | null | undefined) =>
+    String(s ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/^\/+|\/+$/g, "");
+  const bySlug = new Map<string, HmSiteRow>();
+  for (const site of items) {
+    const slug = norm(site.slug);
+    if (!slug) continue;
+    const prev = bySlug.get(slug);
+    if (!prev) {
+      bySlug.set(slug, site);
+      continue;
+    }
+    if (keepSlugs.has(slug) && site.id < prev.id) bySlug.set(slug, site);
+    else if (!keepSlugs.has(slug) && site.id < prev.id) bySlug.set(slug, site);
+  }
+  return { items: Array.from(bySlug.values()).sort((a, b) => a.id - b.id) };
 }
 
 function formFromSite(site: HmSiteRow): SiteForm {
@@ -433,7 +449,7 @@ export default function HaberSiteleri() {
                   const publicHref = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}`;
                   const domains = [site.domain, site.domain2, site.domain3].filter(Boolean) as string[];
                   return (
-                    <article key={site.id} className="p-5">
+                    <article key={`${site.id}-${site.slug}`} className="p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">

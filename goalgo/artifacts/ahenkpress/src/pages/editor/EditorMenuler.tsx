@@ -53,7 +53,7 @@ function isKhEditorSiteSlug(slug?: string | null): boolean {
     .trim()
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
-  return s === "kh" || s === "kirsehir";
+  return s === "kirsehirhaber" || s === "kh" || s === "kirsehir";
 }
 
 function readItemsForLocation(

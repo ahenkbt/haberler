@@ -9,10 +9,15 @@ import {
 } from "@workspace/db";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
 
-/** Kırşehir Haber — /tr/kh (Su / suhaberajansi.com'a dokunmaz). */
-export const KH_SITE_SLUG = "kh";
-export const KH_DISPLAY_NAME = "Kırşehir Haber";
+/**
+ * Kırşehir Haber — kanonik slug `kirsehirhaber` (/tr/kirsehirhaber).
+ * Eski `kh` silindi; yeniden oluşturulmaz. Su / suhaberajansi.com'a dokunmaz.
+ */
+export const KH_SITE_SLUG = "kirsehirhaber";
+export const KH_DISPLAY_NAME = "KIRŞEHİR HABER PORTALI";
 export const KH_DOMAINS = ["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"] as const;
+/** Eski / alternatif slug'lar — yalnızca bulmak için; yazarken kanonik `kirsehirhaber` kullanılır. */
+const KH_LEGACY_SLUGS = ["kirsehirhaber", "kirsehir", "kh"] as const;
 
 export type KhSiteEnsureResult = {
   siteId: number | null;
@@ -32,6 +37,13 @@ function normalizeHost(raw: string | null | undefined): string {
       ?.replace(/^www\./, "")
       ?.replace(/\.$/, "") ?? ""
   );
+}
+
+function normalizeSlug(raw: string | null | undefined): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
 }
 
 function hostMatches(a: string | null | undefined, b: string): boolean {
@@ -144,18 +156,39 @@ async function releaseKhDomainsFromOthers(keepSiteId: number): Promise<void> {
   }
 }
 
+function findKhTarget(
+  sites: Array<{
+    id: number;
+    slug: string | null;
+    domain: string | null;
+    domain2?: string | null;
+    domain3?: string | null;
+    displayName?: string | null;
+    layoutJson?: string | null;
+  }>,
+) {
+  for (const legacy of KH_LEGACY_SLUGS) {
+    const hit = sites.find((s) => normalizeSlug(s.slug) === legacy);
+    if (hit) return hit;
+  }
+  return sites.find((s) =>
+    KH_DOMAINS.some(
+      (host) =>
+        hostMatches(s.domain, host) || hostMatches(s.domain2, host) || hostMatches(s.domain3, host),
+    ),
+  );
+}
+
 /**
- * /tr/kh sitesini oluşturur veya günceller; Kırşehir domainlerini bağlar.
- * suhaberajansi.com / slug=su satırına yazmaz.
+ * /tr/kirsehirhaber sitesini oluşturur veya günceller; Kırşehir domainlerini bağlar.
+ * Eski slug `kh` yeniden yaratılmaz. suhaberajansi.com / slug=su satırına yazmaz.
  */
 export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhSiteEnsureResult> {
   const dryRun = opts?.dryRun === true;
   await ensureHmNewsSiteWritableColumns();
 
   const sites = await listHmNewsSitesCompat();
-  let target =
-    sites.find((s) => String(s.slug ?? "").trim().toLowerCase() === KH_SITE_SLUG) ??
-    sites.find((s) => String(s.slug ?? "").trim().toLowerCase() === "kirsehir");
+  const target = findKhTarget(sites);
 
   if (dryRun) {
     return {
@@ -187,7 +220,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
     return {
       siteId: created.id,
       action: "created",
-      detail: "kh site + domains",
+      detail: "kirsehirhaber site + domains",
       domains: [...KH_DOMAINS],
     };
   }
@@ -240,7 +273,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   return {
     siteId: target.id,
     action: "updated",
-    detail: "kh domains + full layout",
+    detail: "kirsehirhaber domains + full layout",
     domains: [...KH_DOMAINS],
   };
 }

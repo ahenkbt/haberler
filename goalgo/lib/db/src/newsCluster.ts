@@ -4,6 +4,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { db } from "./connection";
 import { isNewsDatabaseConfigured, newsDb } from "./newsDb";
 import * as schema from "./schema";
+import { hmNewsSitesTable } from "./schema/hm";
 
 export type NewsDbReadMode = "main" | "news";
 export type NewsDbWriteMode = "main" | "news" | "dual";
@@ -108,6 +109,7 @@ function isUniqueViolation(err: unknown): boolean {
 async function mirrorRowsToNewsDb<T extends PgTable>(table: T, rows: T["$inferSelect"][]): Promise<void> {
   if (!isNewsDatabaseConfigured || !newsDb || rows.length === 0) return;
   const cluster = newsDb as NewsDatabase;
+  const isHmNewsSites = table === (hmNewsSitesTable as unknown as T);
   for (const row of rows) {
     try {
       await cluster.insert(table).values(row as T["$inferInsert"]);
@@ -117,6 +119,41 @@ async function mirrorRowsToNewsDb<T extends PgTable>(table: T, rows: T["$inferSe
       if (id == null) continue;
       const { id: _id, ...rest } = row as T["$inferSelect"] & { id: number };
       const cols = getTableColumns(table);
+
+      // hm_news_sites: aynı id farklı slug üzerine UPDATE yapma (tr ↔ kirsehirhaber çakışması).
+      if (isHmNewsSites) {
+        const incomingSlug = String((row as { slug?: unknown }).slug ?? "")
+          .trim()
+          .toLowerCase()
+          .replace(/^\/+|\/+$/g, "");
+        const existingAtId = await cluster
+          .select({ id: hmNewsSitesTable.id, slug: hmNewsSitesTable.slug })
+          .from(hmNewsSitesTable)
+          .where(eq(hmNewsSitesTable.id, id))
+          .limit(1);
+        const existingSlug = String(existingAtId[0]?.slug ?? "")
+          .trim()
+          .toLowerCase()
+          .replace(/^\/+|\/+$/g, "");
+        if (existingSlug && incomingSlug && existingSlug !== incomingSlug) {
+          const bySlug = await cluster
+            .select({ id: hmNewsSitesTable.id })
+            .from(hmNewsSitesTable)
+            .where(eq(hmNewsSitesTable.slug, (row as { slug: string }).slug))
+            .limit(1);
+          if (bySlug[0]) {
+            await cluster
+              .update(hmNewsSitesTable)
+              .set(rest as unknown as Partial<typeof hmNewsSitesTable.$inferInsert>)
+              .where(eq(hmNewsSitesTable.id, bySlug[0].id));
+          } else {
+            // Yeni id ile ekle — kök sitenin satırını ezme.
+            await cluster.insert(hmNewsSitesTable).values(rest as typeof hmNewsSitesTable.$inferInsert);
+          }
+          continue;
+        }
+      }
+
       await cluster.update(table).set(rest as unknown as Partial<T["$inferInsert"]>).where(eq(cols.id, id));
     }
   }
