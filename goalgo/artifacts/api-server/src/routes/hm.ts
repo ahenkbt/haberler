@@ -141,6 +141,11 @@ import {
   normalizeHmEditorUsername,
   syncSharedHmEditorCredentials,
 } from "../lib/hm-editor-profile.js";
+import {
+  isKhBridgeTarget,
+  verifyHmEdgeBridgeSignature,
+  type HmEdgeSessionBridgePayload,
+} from "../lib/hm-edge-session-bridge.js";
 import { purgeHmSitePublicEdgeCacheBySiteId } from "../lib/hm-public-cache-purge.js";
 import {
   ensureHmBrandDomainBindings,
@@ -2206,6 +2211,129 @@ async function mirrorHmEditorFromMainDb(
     .returning();
   return editor ?? null;
 }
+
+/**
+ * Worker kenar (Neon) girişinden sonra Render JWT üretir — yalnızca Kırşehir (kh).
+ * Captcha Worker'da doğrulanmış; imza HM_EDGE_BRIDGE_SECRET ile kontrol edilir.
+ */
+router.post("/hm/editor/session-bridge", async (req, res): Promise<void> => {
+  const b = (req.body ?? {}) as HmEdgeSessionBridgePayload;
+  const sig = String(req.get("x-yekpare-hm-edge-bridge") ?? "").trim();
+  if (!verifyHmEdgeBridgeSignature(b, sig)) {
+    res.status(401).json({ error: "Geçersiz kenar köprü imzası." });
+    return;
+  }
+  const exp = Number(b.exp);
+  if (!Number.isFinite(exp) || exp < Date.now()) {
+    res.status(401).json({ error: "Köprü oturumu süresi doldu." });
+    return;
+  }
+  const email = String(b.email ?? "")
+    .trim()
+    .toLowerCase();
+  const passwordHash = String(b.passwordHash ?? "").trim();
+  const siteSlug = normalizeSlug(String(b.siteSlug ?? "kh"));
+  const siteDomain = normalizeDomain(String(b.siteDomain ?? "")) || "kirsehirhaber.org";
+  if (!email.includes("@") || passwordHash.length < 20) {
+    res.status(400).json({ error: "e-posta ve passwordHash gerekli" });
+    return;
+  }
+  if (!isKhBridgeTarget(siteSlug, siteDomain)) {
+    res.status(403).json({ error: "Köprü yalnızca Kırşehir Haber (kh) için." });
+    return;
+  }
+
+  try {
+    await ensureHmNewsSiteWritableColumns();
+    await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
+    await ensureKhNewsSite({ dryRun: false }).catch(() => undefined);
+
+    let site = await getActiveHmNewsSiteBySlugCompat(siteSlug === "kirsehir" ? "kh" : siteSlug);
+    if (!site && siteDomain) {
+      site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(siteDomain));
+    }
+    if (!site) {
+      res.status(404).json({ error: "Kırşehir Haber sitesi bulunamadı" });
+      return;
+    }
+
+    const username =
+      b.username != null && String(b.username).trim()
+        ? normalizeHmEditorUsername(b.username)
+        : null;
+    const displayName =
+      typeof b.displayName === "string" && b.displayName.trim()
+        ? b.displayName.trim()
+        : site.displayName || "Kırşehir Haber";
+
+    const [existing] = await newsReadDb()
+      .select()
+      .from(hmSiteEditorsTable)
+      .where(and(eq(hmSiteEditorsTable.siteId, site.id), sql`lower(${hmSiteEditorsTable.email}) = ${email}`))
+      .limit(1);
+
+    let editor = existing;
+    if (existing) {
+      await dualWriteUpdate(
+        hmSiteEditorsTable,
+        {
+          passwordHash,
+          username: username ?? existing.username,
+          displayName,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+        eq(hmSiteEditorsTable.id, existing.id),
+      );
+      const [fresh] = await newsReadDb()
+        .select()
+        .from(hmSiteEditorsTable)
+        .where(eq(hmSiteEditorsTable.id, existing.id))
+        .limit(1);
+      editor = fresh ?? existing;
+    } else {
+      const [created] = await dualWriteInsert(hmSiteEditorsTable, {
+        siteId: site.id,
+        email,
+        username,
+        passwordHash,
+        displayName,
+        isActive: true,
+      });
+      if (!created) {
+        res.status(500).json({ error: "Editör oluşturulamadı" });
+        return;
+      }
+      editor = created;
+    }
+
+    const token = jwt.sign(
+      { typ: JWT_TYP, eid: editor.id, sid: site.id, v: 1 },
+      hmJwtSecret(),
+      { expiresIn: "7d" },
+    );
+    res.json({
+      token,
+      site: {
+        id: site.id,
+        slug: site.slug,
+        domain: site.domain,
+        domain2: site.domain2 ?? null,
+        displayName: site.displayName,
+      },
+      editor: {
+        id: editor.id,
+        email: editor.email,
+        username: editor.username ?? null,
+        displayName: editor.displayName,
+      },
+      bridged: true,
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    res.status(500).json({ error: msg.slice(0, 400) });
+  }
+});
 
 router.post("/hm/editor/login", async (req, res): Promise<void> => {
   const b = req.body as {

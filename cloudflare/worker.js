@@ -359,6 +359,7 @@ function isAuthSessionApiPath(pathname) {
     p === "/api/members/logout" ||
     p === "/api/members/login" ||
     p === "/api/hm/editor/login" ||
+    p === "/api/hm/editor/session-bridge" ||
     p === "/api/hm/editor/me" ||
     p === "/api/hm/editor/me/password" ||
     p === "/api/hm/author/login" ||
@@ -816,7 +817,8 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     slugKey === "su" ||
     slugKey === "suhaber";
 
-  // Su dışı markalar: yalnızca upstream 404 iken kenar fallback
+  // Su: Neon meta tercih. KH dahil diğerleri: yalnızca upstream 404 iken fallback
+  // (KH editör Render JWT + main DB kullandığı için meta Render'dan gelmeli).
   if (!isSuBrand && upstream.status !== 404) return null;
 
   try {
@@ -1987,12 +1989,19 @@ export default {
       }
     }
 
-    // Editör login + /me + profil (Render gerideyse kenarda Neon — oturum düşmesini önler).
-    // clone: captcha secret uyuşmazlığında body bozulmadan Render'a düşülebilsin.
+    // Editör login + /me + profil (+ KH layout) — Render gerideyse kenarda Neon.
+    // clone: kenar null dönerse (KH dışı layout / captcha) body Render'a bozulmadan gitsin.
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
-      const needsClone = edgePath === "/api/hm/editor/login" && edgeMethod === "POST";
+      const needsClone =
+        edgeMethod === "POST" || edgeMethod === "PATCH"
+          ? edgePath === "/api/hm/editor/login" ||
+            edgePath === "/api/hm/editor/me" ||
+            edgePath === "/api/hm/editor/me/password" ||
+            edgePath === "/api/hm/editor/site-layout" ||
+            edgePath === "/api/hm/editor/site-home-module-order"
+          : false;
       const profileEdge = await handleHmEditorProfileEdge(
         needsClone ? request.clone() : request,
         env,
