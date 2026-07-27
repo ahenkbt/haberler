@@ -19,23 +19,7 @@ API_ORIGIN = "https://goalgo-y7ze.onrender.com"
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 # Medya yükleme (Worker → R2/S3): GitHub Actions S3_* secret'ları ile wrangler secret put
 
-# Apex: zone route (mevcut DNS ile uyumlu — custom_domain A/CNAME çakışması yapmaz)
-[[routes]]
-pattern = "yekpare.net/*"
-zone_name = "yekpare.net"
-
-[[routes]]
-pattern = "yekpare.net"
-zone_name = "yekpare.net"
-
-# www.yekpare.net already has externally managed DNS (CNAME/proxied); use zone routes.
-[[routes]]
-pattern = "www.yekpare.net/*"
-zone_name = "yekpare.net"
-
-[[routes]]
-pattern = "www.yekpare.net"
-zone_name = "yekpare.net"
+# yekpare.net / www.yekpare.net bu worker'a bağlı değil (ayrı repo: goalgo-cloudflare).
 
 # HM editör siteleri (Cloudflare zone → Worker → Render)
 [[routes]]
