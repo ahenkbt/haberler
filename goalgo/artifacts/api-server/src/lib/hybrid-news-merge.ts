@@ -385,10 +385,22 @@ export async function loadEditorScopedDbNews(opts: {
    * true/undefined: editör panelden «sitede yayınla» ile eklenen havuz kopyaları kalır.
    */
   yekparePoolReceiveEnabled?: boolean;
+  /**
+   * true: public vitrin 12 saat tazelik (anasayfa/hybrid).
+   * false: arşiv (/sondakika, /api/news listesi) — tüm yayınlanmış yerel haberler.
+   * Tanımsız: excludeCentralPool ise true (eski davranış), aksi halde false.
+   */
+  publicFreshnessWindow?: boolean;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   const fetchLimit = opts.limit + opts.offset + 100;
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
+  const publicFreshnessWindow =
+    opts.publicFreshnessWindow === true
+      ? true
+      : opts.publicFreshnessWindow === false
+        ? false
+        : excludeCentralPool;
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
   const [portal, editor] = await Promise.all([
     excludeCentralPool
@@ -400,8 +412,7 @@ export async function loadEditorScopedDbNews(opts: {
       q: opts.q,
       limit: fetchLimit,
       offset: 0,
-      // Public hybrid/vitrin yolu — 12 saat tazelik.
-      publicFreshnessWindow: true,
+      publicFreshnessWindow,
     }),
   ]);
 

@@ -4,6 +4,7 @@
  */
 import { normalizeHmRequestCategories, type HmRequestCategory } from "./hmRequestForm";
 import { hmCategorySlug } from "./hmCategorySlug";
+import { canonicalizeRssCategorySlug } from "./hmRssCategoryAliases";
 import { HM_VITRIN_THEME_FLOWER_LABELS, hmVitrinThemeFlowerLabel } from "./hmVitrinThemeTokens";
 import { normalizeYekpareCategoryBoxCount, normalizeYekpareKutuItemCount } from "./hmCategoryBoxItems";
 import type { HmMediaGalleryHomeModuleId, HmMediaGallerySourceId, HmNewsGallerySpotlightMode, HmNewsHomeModuleGalleryVideoTvRefs } from "./hmMediaSpotlightPool";
@@ -1832,7 +1833,9 @@ export function collectHmRssCategoryNavItems(rows: HmBreakingRssFeedRow[]): Arra
   const seen = new Set<string>();
   const out: Array<{ slug: string; label: string }> = [];
   for (const row of rows) {
-    const slug = hmCategorySlug(row.label, resolveHmBreakingRssCategoryKey(row));
+    const rawSlug = hmCategorySlug(row.label, resolveHmBreakingRssCategoryKey(row));
+    // son-dakika / türkiye → gündem (site kategorisi ile aynı kutuda).
+    const slug = canonicalizeRssCategorySlug(rawSlug) || rawSlug;
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);
     out.push({ slug, label: decodeHmDisplayText(String(row.label ?? slug).trim() || slug) });

@@ -805,9 +805,12 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           ? "public, max-age=30, s-maxage=120, stale-while-revalidate=300"
           : "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
       );
+      // Sayfa süzüldükten sonra total'ı sayfa uzunluğuna indirme — infinite scroll bozulur.
+      const dropped = Math.max(0, merged.items.length - visibleItems.length);
+      const totalOut = Math.max(visibleItems.length, merged.total - dropped);
       res.json({
         items: visibleItems.map(sanitizeHybridNewsItemForPublic),
-        total: visibleItems.length,
+        total: totalOut,
         limit,
         offset,
         categorySlug: categorySlug ?? null,
@@ -1062,9 +1065,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       }
     }
 
+    const droppedFull = Math.max(0, merged.items.length - visibleItems.length);
+    const totalFull = Math.max(visibleItems.length, merged.total - droppedFull);
     const responseBody = {
       items: visibleItems.map(sanitizeHybridNewsItemForPublic),
-      total: visibleItems.length,
+      total: totalFull,
       limit,
       offset,
       categorySlug: categorySlug ?? null,

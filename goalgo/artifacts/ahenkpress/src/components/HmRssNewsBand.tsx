@@ -310,15 +310,26 @@ export function HmRssNewsBand({
   }, [activeSlug, baseVisibleLimit, inlineLoadMore, items, tabSourceItems]);
 
   const { data: categoryNewsRaw, isPending: categoryPending } = useQuery({
-    queryKey: ["/api/news/by-category", "rss-band", categoryQuerySiteId ?? "portal", activeSlug, categoryLimit],
+    queryKey: [
+      "/api/news",
+      "rss-band-category",
+      categoryQuerySiteId ?? "portal",
+      activeSlug,
+      categoryLimit,
+      categoryQuerySiteId != null ? "hybrid" : "by-category",
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.set("limit", String(categoryLimit));
+      params.set("limit", String(Math.min(categoryLimit, 100)));
       if (categoryQuerySiteId != null && Number.isFinite(categoryQuerySiteId) && categoryQuerySiteId > 0) {
+        // RSS + site kategorisi aynı kutuda (ör. son-dakika RSS → gündem).
         params.set("siteId", String(categoryQuerySiteId));
-      } else {
-        params.set("siteScope", "portal");
+        params.set("rssScope", "all");
+        params.set("categorySlug", activeSlug);
+        const raw = await apiRequest(`/api/news/hybrid?${params.toString()}`);
+        return Array.isArray(raw) ? raw : ((raw as { items?: unknown[] })?.items ?? []);
       }
+      params.set("siteScope", "portal");
       const raw = await apiRequest(
         `/api/news/by-category/${encodeURIComponent(activeSlug)}?${params.toString()}`,
       );
@@ -448,16 +459,20 @@ export function HmRssNewsBand({
       const params = new URLSearchParams({
         limit: String(batchSize),
         offset: String(apiOffset),
-        status: "published",
       });
+      let path = "/api/news";
       if (categoryQuerySiteId != null && Number.isFinite(categoryQuerySiteId) && categoryQuerySiteId > 0) {
+        // Editör siteleri: RSS + manuel aynı kategoride (hybrid).
+        path = "/api/news/hybrid";
         params.set("siteId", String(categoryQuerySiteId));
+        params.set("rssScope", "all");
       } else {
+        params.set("status", "published");
         params.set("siteScope", "portal");
       }
       if (activeSlug) params.set("categorySlug", activeSlug);
 
-      const raw = await apiRequest(`/api/news?${params.toString()}`);
+      const raw = await apiRequest(`${path}?${params.toString()}`);
       const rows = Array.isArray(raw) ? raw : ((raw as { items?: unknown[] })?.items ?? []);
       const mapped = rows.map((n: Record<string, unknown>) => {
         const mappedItem = mapHybridNewsToBandItem(n as Parameters<typeof mapHybridNewsToBandItem>[0]);

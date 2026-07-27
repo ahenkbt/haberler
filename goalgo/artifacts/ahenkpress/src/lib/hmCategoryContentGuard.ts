@@ -1,19 +1,11 @@
 import { hmCategorySlug, normalizeNewsCategorySlug } from "@/lib/hmCategorySlug";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG, belongsInGlobalNewsCategory } from "@/lib/hmGlobalNewsCategory";
+import { canonicalizeRssCategorySlug, rssCategorySlugsMatch } from "@/lib/hmRssCategoryAliases";
 import { HM_STANDARD_NEWS_CATEGORIES } from "@/lib/hmStandardNewsCategories";
 
 const STANDARD_CATEGORY_SLUGS = new Set(
   HM_STANDARD_NEWS_CATEGORIES.map((row) => normalizeNewsCategorySlug(row.slug)).filter(Boolean),
 );
-
-function feedSlugMatchesWant(feedSlug: string, wantSlug: string): boolean {
-  const feed = feedSlug.trim().toLowerCase();
-  const want = wantSlug.trim().toLowerCase();
-  if (!want) return true;
-  if (feed === want) return true;
-  if (feed.endsWith(`-${want}`)) return true;
-  return false;
-}
 
 /** RSS feed etiketi standart başka bir kategoriyi işaret ediyorsa (yanlış ingest slug'ına güvenme). */
 export function feedLabelIndicatesOtherStandardCategory(
@@ -23,8 +15,12 @@ export function feedLabelIndicatesOtherStandardCategory(
   const want = normalizeNewsCategorySlug(wantCategorySlug);
   if (!want) return false;
   const labelSlug = hmCategorySlug(feedLabel);
-  if (!labelSlug || labelSlug === want || feedSlugMatchesWant(labelSlug, want)) return false;
-  return STANDARD_CATEGORY_SLUGS.has(labelSlug);
+  const labelCanon = canonicalizeRssCategorySlug(labelSlug);
+  if (!labelSlug) return false;
+  if (rssCategorySlugsMatch(labelSlug, want) || rssCategorySlugsMatch(labelCanon, want)) return false;
+  // Son Dakika / Türkiye → gündem; standart dışı etiketler engellemez.
+  if (!STANDARD_CATEGORY_SLUGS.has(labelCanon) && !STANDARD_CATEGORY_SLUGS.has(labelSlug)) return false;
+  return STANDARD_CATEGORY_SLUGS.has(labelCanon) || STANDARD_CATEGORY_SLUGS.has(labelSlug);
 }
 
 /**
