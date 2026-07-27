@@ -467,6 +467,7 @@ async function savePublicSubmissionImage(dataUrlRaw: unknown, title: string): Pr
 }
 
 const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
+const HM_SITE_RSS_DEFAULTS_REV = "20260727site1";
 const DEFAULT_HM_RSS_ROWS = [
   { id: "sonDakika", label: "Son Dakika", url: "https://www.ntv.com.tr/son-dakika.rss" },
   { id: "turkiye", label: "Türkiye", url: "https://www.ntv.com.tr/turkiye.rss" },
@@ -486,6 +487,23 @@ const DEFAULT_HM_RSS_ROWS = [
   { id: "ozel-haber", label: "Özel Haber", url: "https://www.spordepor.com/rss/ozel-haber" },
   { id: "savunmaSanayi", label: "Savunma Sanayi", url: "https://www.dirilispostasi.com/rss/savunma-sanayi" },
 ];
+const DEFAULT_HM_SITE_RSS_ROWS = [
+  { id: "asayis", label: "Asayiş", url: "https://www.dirilispostasi.com/rss/asayis", categoryKey: "asayis" },
+  { id: "dunya", label: "Dünya", url: "https://www.dirilispostasi.com/rss/dunya", categoryKey: "dunya" },
+  { id: "gundem", label: "Gündem", url: "https://www.dirilispostasi.com/rss/gundem", categoryKey: "gundem" },
+  { id: "gundem-genel", label: "Gündem", url: "https://www.dirilispostasi.com/rss/genel", categoryKey: "gundem" },
+  { id: "gundem-guncel", label: "Gündem", url: "https://www.dirilispostasi.com/rss/guncel", categoryKey: "gundem" },
+  { id: "yerel", label: "Yerel", url: "https://www.dirilispostasi.com/rss/yerel-haber", categoryKey: "yerel" },
+  { id: "yerel-yozgat", label: "Yerel", url: "https://www.yozgatmedya.com.tr/rss/yozgat", categoryKey: "yerel" },
+  { id: "yerel-wanhaber", label: "Yerel", url: "https://www.wanhaber.com/rss/guncel", categoryKey: "yerel" },
+  { id: "teknoloji", label: "Teknoloji", url: "https://www.dirilispostasi.com/rss/teknoloji", categoryKey: "teknoloji" },
+  { id: "teknoloji-bilim", label: "Teknoloji", url: "https://www.dirilispostasi.com/rss/teknoloji-ve-bilim", categoryKey: "teknoloji" },
+  { id: "yasam", label: "Yaşam", url: "https://www.dirilispostasi.com/rss/saglik", categoryKey: "yasam" },
+  { id: "magazin", label: "Magazin", url: "https://www.dirilispostasi.com/rss/magazin", categoryKey: "magazin" },
+  { id: "otomobil", label: "Otomobil", url: "https://www.dirilispostasi.com/rss/otomobil", categoryKey: "otomobil" },
+  { id: "egitim", label: "Eğitim", url: "https://www.dirilispostasi.com/rss/egitim", categoryKey: "egitim" },
+  { id: "saglik", label: "Sağlık", url: "https://www.dirilispostasi.com/rss/saglik", categoryKey: "saglik" },
+];
 
 function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
   const inc = incoming && typeof incoming === "object" && !Array.isArray(incoming)
@@ -497,10 +515,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     ...row,
     categoryKey: row.id,
   }));
-  const siteRows = DEFAULT_HM_RSS_ROWS.map((row) => ({
-    ...row,
-    categoryKey: row.id,
-  }));
+  const siteRows = DEFAULT_HM_SITE_RSS_ROWS.map((row) => ({ ...row }));
   return {
     hmVitrinTheme: isCorporate ? "corporate" : "esen",
     mansetVariant: "center-trio",
@@ -514,9 +529,10 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsGoogleNewsBandEnabled: !isCorporate,
     hmNewsBreakingRssArticleLinkEnabled: true,
     hmBreakingRssDefaultsRev: HM_BREAKING_RSS_DEFAULTS_REV,
+    hmSiteRssDefaultsRev: HM_SITE_RSS_DEFAULTS_REV,
     hmNewsBreakingRssFeedRows: boxRows,
     hmNewsSiteRssFeedRows: siteRows,
-    hybridRssEnabled: !isCorporate,
+    hybridRssEnabled: true,
     hmNewsCategorySectionsEnabled: true,
     hmNewsQuickLinksEnabled: true,
     hmNewsAuthorsEnabled: !isCorporate,

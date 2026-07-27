@@ -26,6 +26,8 @@ const RSS_TO_SITE_CATEGORY: Record<string, string> = {
   turkey: "gundem",
   "gundem-turkiye": "gundem",
   gundem: "gundem",
+  genel: "gundem",
+  guncel: "gundem",
   dunya: "dunya",
   world: "dunya",
   ekonomi: "ekonomi",
@@ -41,6 +43,8 @@ const RSS_TO_SITE_CATEGORY: Record<string, string> = {
   "spor-skor": "spor",
   teknoloji: "teknoloji",
   technology: "teknoloji",
+  "teknoloji-ve-bilim": "teknoloji",
+  teknolojivebilim: "teknoloji",
   egitim: "egitim",
   education: "egitim",
   saglik: "saglik",
@@ -51,6 +55,11 @@ const RSS_TO_SITE_CATEGORY: Record<string, string> = {
   kultur: "yasam",
   otomobil: "otomobil",
   auto: "otomobil",
+  magazin: "magazin",
+  asayis: "asayis",
+  yerel: "yerel",
+  "yerel-haber": "yerel",
+  yozgat: "yerel",
   "savunma-sanayi": "savunma-sanayi",
   savunmasanayi: "savunma-sanayi",
 };
@@ -71,16 +80,19 @@ function isSporSubcategorySlug(slug: string): boolean {
 
 /** Alias genişletmesi: bir slug’ın tüm eşdeğerleri (eşleşme için). */
 const ALIAS_GROUPS: string[][] = [
-  ["gundem", "sondakika", "son-dakika", "turkiye", "turkey"],
+  ["gundem", "sondakika", "son-dakika", "turkiye", "turkey", "genel", "guncel"],
   ["dunya", "world"],
   ["ekonomi", "para", "ntvpara", "ntv-para", "economy"],
   ["politika", "siyaset"],
   ["spor", "sport", "sporskor", "spor-skor"],
-  ["teknoloji", "technology"],
+  ["teknoloji", "technology", "teknoloji-ve-bilim", "teknolojivebilim"],
   ["egitim", "education"],
   ["saglik", "health"],
   ["yasam", "life", "kultur", "kultur-sanat"],
   ["otomobil", "auto"],
+  ["magazin"],
+  ["asayis"],
+  ["yerel", "yerel-haber", "yozgat"],
   ["savunma-sanayi", "savunmasanayi", "savunmaSanayi"],
 ];
 

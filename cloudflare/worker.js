@@ -11,7 +11,9 @@ import {
   matchBrandBinding,
   repairAsgEditorMisassignmentOnNeon,
   ensureHmBreakingRssDefaultsOnNeon,
+  ensureHmSiteRssDefaultsOnNeon,
 } from "./hm-brand-db-ensure.js";
+import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 
@@ -1548,20 +1550,7 @@ function parseFeedEntries(xml, limit = 6) {
   return out;
 }
 
-const DEFAULT_SITE_RSS_FEEDS = [
-  { id: "turkiye", label: "Türkiye", url: "https://www.ntv.com.tr/turkiye.rss" },
-  { id: "dunya", label: "Dünya", url: "https://www.ntv.com.tr/dunya.rss" },
-  { id: "ekonomi", label: "Ekonomi", url: "https://www.ntv.com.tr/ekonomi.rss" },
-  { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
-  { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
-  { id: "spor", label: "Spor", url: "https://www.dirilispostasi.com/rss/spor" },
-  { id: "futbol", label: "Futbol", url: "https://www.spordepor.com/rss/futbol" },
-  { id: "basketbol", label: "Basketbol", url: "https://www.spordepor.com/rss/basketbol" },
-  { id: "tenis", label: "Tenis", url: "https://www.spordepor.com/rss/tenis" },
-  { id: "voleybol", label: "Voleybol", url: "https://www.spordepor.com/rss/voleybol" },
-  { id: "ozel-haber", label: "Özel Haber", url: "https://www.spordepor.com/rss/ozel-haber" },
-  { id: "yasam", label: "Yaşam", url: "https://www.ntv.com.tr/yasam.rss" },
-];
+const DEFAULT_SITE_RSS_FEEDS = cloneDefaultHmSiteRssFeedRows();
 
 async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
   const host = normalizeHost(incoming.hostname);
@@ -1976,7 +1965,7 @@ export default {
         console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
       }
     }
-    // Tüm editör siteleri: kutu içi RSS varsayılanlarını bir kerelik uygula (rev sonrası korunur).
+    // Tüm editör siteleri: kutu içi + site içi RSS varsayılanlarını bir kerelik uygula (rev sonrası korunur).
     {
       const bootPath = incoming.pathname.replace(/\/+$/, "") || "/";
       if (
@@ -1990,6 +1979,11 @@ export default {
           await ensureHmBreakingRssDefaultsOnNeon(env);
         } catch (err) {
           console.error("[hm-breaking-rss-defaults]", String(err?.message || err).slice(0, 200));
+        }
+        try {
+          await ensureHmSiteRssDefaultsOnNeon(env);
+        } catch (err) {
+          console.error("[hm-site-rss-defaults]", String(err?.message || err).slice(0, 200));
         }
       }
     }

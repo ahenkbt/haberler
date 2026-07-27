@@ -173,6 +173,25 @@ const HM_PRESET_BREAKING_RSS_CATEGORIES: Array<{ id: string; label: string }> = 
   { id: "savunmaSanayi", label: "Savunma Sanayi" },
 ];
 
+/** Site içi RSS boşsa — cloudflare/hm-site-rss-defaults.js ile aynı. */
+const HM_DEFAULT_SITE_RSS_ROWS: Array<{ id: string; label: string; url: string; categoryKey: string }> = [
+  { id: "asayis", label: "Asayiş", url: "https://www.dirilispostasi.com/rss/asayis", categoryKey: "asayis" },
+  { id: "dunya", label: "Dünya", url: "https://www.dirilispostasi.com/rss/dunya", categoryKey: "dunya" },
+  { id: "gundem", label: "Gündem", url: "https://www.dirilispostasi.com/rss/gundem", categoryKey: "gundem" },
+  { id: "gundem-genel", label: "Gündem", url: "https://www.dirilispostasi.com/rss/genel", categoryKey: "gundem" },
+  { id: "gundem-guncel", label: "Gündem", url: "https://www.dirilispostasi.com/rss/guncel", categoryKey: "gundem" },
+  { id: "yerel", label: "Yerel", url: "https://www.dirilispostasi.com/rss/yerel-haber", categoryKey: "yerel" },
+  { id: "yerel-yozgat", label: "Yerel", url: "https://www.yozgatmedya.com.tr/rss/yozgat", categoryKey: "yerel" },
+  { id: "yerel-wanhaber", label: "Yerel", url: "https://www.wanhaber.com/rss/guncel", categoryKey: "yerel" },
+  { id: "teknoloji", label: "Teknoloji", url: "https://www.dirilispostasi.com/rss/teknoloji", categoryKey: "teknoloji" },
+  { id: "teknoloji-bilim", label: "Teknoloji", url: "https://www.dirilispostasi.com/rss/teknoloji-ve-bilim", categoryKey: "teknoloji" },
+  { id: "yasam", label: "Yaşam", url: "https://www.dirilispostasi.com/rss/saglik", categoryKey: "yasam" },
+  { id: "magazin", label: "Magazin", url: "https://www.dirilispostasi.com/rss/magazin", categoryKey: "magazin" },
+  { id: "otomobil", label: "Otomobil", url: "https://www.dirilispostasi.com/rss/otomobil", categoryKey: "otomobil" },
+  { id: "egitim", label: "Eğitim", url: "https://www.dirilispostasi.com/rss/egitim", categoryKey: "egitim" },
+  { id: "saglik", label: "Sağlık", url: "https://www.dirilispostasi.com/rss/saglik", categoryKey: "saglik" },
+];
+
 async function loadHmCategorySlugLookup(siteId: number): Promise<Map<string, string>> {
   const rows = await getNewsDbForRead()
     .select({
@@ -234,21 +253,25 @@ function normalizeHmBreakingRssRows(
     });
   }
 
-  // Site içi RSS boşsa kutu (box) legacy satırlarına düşme — varsayılan NTV preset’lerini kullan
-  // (editör parseNewsSiteLayoutFromJson ile aynı davranış; kaydedilmemiş sitelerde akış boş kalmasın).
+  // Site içi RSS boşsa kutu (box) satırlarına düşme — site varsayılanlarını kullan.
+  // Kutu scope boşsa NTV/kutu preset’leri (legacy map).
   if (out.length === 0) {
-    const legacyMap =
-      scope === "site"
-        ? HM_DEFAULT_BREAKING_RSS_FEEDS
-        : legacyFeeds && typeof legacyFeeds === "object" && !Array.isArray(legacyFeeds)
+    if (scope === "site") {
+      HM_DEFAULT_SITE_RSS_ROWS.forEach((row, index) => {
+        add(row.id, row.label, row.url, row.categoryKey, index);
+      });
+    } else {
+      const legacyMap =
+        legacyFeeds && typeof legacyFeeds === "object" && !Array.isArray(legacyFeeds)
           ? (legacyFeeds as Record<string, unknown>)
           : HM_DEFAULT_BREAKING_RSS_FEEDS;
 
-    HM_PRESET_BREAKING_RSS_CATEGORIES.forEach((category, index) => {
-      const url = normalizeRssUrl(legacyMap[category.id] ?? HM_DEFAULT_BREAKING_RSS_FEEDS[category.id]);
-      if (!url) return;
-      add(category.id, category.label, url, category.id, index);
-    });
+      HM_PRESET_BREAKING_RSS_CATEGORIES.forEach((category, index) => {
+        const url = normalizeRssUrl(legacyMap[category.id] ?? HM_DEFAULT_BREAKING_RSS_FEEDS[category.id]);
+        if (!url) return;
+        add(category.id, category.label, url, category.id, index);
+      });
+    }
   }
 
   return out;
