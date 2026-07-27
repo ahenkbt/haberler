@@ -102,6 +102,16 @@ export function mapHmVideoTvRestToPortalPath(rest: string): string {
 
 function buildHmVideoTvEmbedPath(pathname: string, search = ""): string | null {
   const path = (pathname.split("?")[0] ?? "").replace(/\/+$/, "") || "/";
+  // KH özel alan kısa yol: `/video` (wouter iç `/tr/{slug}/video` olmadan)
+  if (path === "/video" || path.startsWith("/video/")) {
+    const rest = path === "/video" ? "" : path.slice("/video".length);
+    const portalPath = mapHmVideoTvRestToPortalPath(rest);
+    const embedQs = new URLSearchParams(search.replace(/^\?/, ""));
+    embedQs.set("embed", "1");
+    const qStr = embedQs.toString();
+    const [pathOnly] = portalPath.split("?");
+    return `${pathOnly}${qStr ? `?${qStr}` : ""}`;
+  }
   // `/video` = KH kısa yol; `/video-tv` = kanonik HM Video TV
   const trMatch = path.match(/^\/tr\/([^/]+)\/video(?:-tv)?(\/.*)?$/);
   const shortMatch = trMatch ? null : path.match(/^\/([^/]+)\/video(?:-tv)?(\/.*)?$/);
