@@ -104,11 +104,6 @@
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://yekpare.net/ulasim</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
     <loc>https://yekpare.net/bilgiagaci</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -319,11 +314,6 @@
   </url>
   <url>
     <loc>https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://yekpare.net/bilgi/ulasim-kurye-taksi-cekici</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

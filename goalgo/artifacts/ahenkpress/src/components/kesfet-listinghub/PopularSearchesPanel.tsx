@@ -109,10 +109,6 @@ export function PopularSearchesPanel({
       onSelect?.({ label: sub.name, category: "oteller", keyword: sub.googleKeyword || sub.name });
       return;
     }
-    if (active?.key === "ulasim") {
-      onSelect?.({ label: sub.name, keyword: sub.googleKeyword || sub.name, category: "hizmetler" });
-      return;
-    }
     onSelect?.({ label: sub.name, keyword: sub.googleKeyword || sub.name });
   };
 

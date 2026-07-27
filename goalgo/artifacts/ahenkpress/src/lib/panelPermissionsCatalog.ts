@@ -11,7 +11,6 @@ export const PANEL_PERMISSION_CATALOG = [
   { id: "comms", label: "Posta & iletişim merkezi (comms)" },
   { id: "duyurular", label: "Platform duyuruları" },
   { id: "iletisim", label: "İletişim mesajları (site)" },
-  { id: "ulasim", label: "Ulaşım yönetimi" },
   { id: "premium", label: "Premium / ücretlendirme" },
   { id: "is_ortaklari", label: "İş ortağı başvuruları" },
   { id: "kariyer", label: "Kariyer başvuruları" },

@@ -11,7 +11,7 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <h2>Yekpare nedir? Platform modeli nasıl çalışır?</h2>
 <p>Yekpare; restoran, market, mağaza, turizm acentesi, otel, transfer firması ve yerel hizmet sağlayıcılarının abonelikle listelendiği dijital bir vitrin ve rehberdir. Kullanıcılar konum, arama veya modül sekmeleriyle işletmeleri keşfeder; sipariş, rezervasyon veya iletişim talebini ilgili işletmeye yönlendirir.</p>
 <p>Platformun gelir modeli, işletmelerin listelenme ve görünürlük hizmeti için ödediği <strong>abonelik ücretlerinden</strong> oluşur. Son kullanıcılar siteyi ücretsiz kullanır. Abonelik bedeli, kullanıcının işletmeden aldığı ürün veya hizmet fiyatını kapsamaz ve Yekpare'yi o işlemin satıcısı yapmaz.</p>
-<p>Yekpare; yer sağlayıcı, arama ve keşif altyapısı, işletme paneli, harita entegrasyonu ve modül bazlı vitrinler sunar. Her modülde (yemek, market, alışveriş, turizm, ulaşım vb.) listelenen içerik ilgili işletmenin kendi profilinden yönetilir.</p>
+<p>Yekpare; yer sağlayıcı, arama ve keşif altyapısı, işletme paneli, harita entegrasyonu ve modül bazlı vitrinler sunar. Her modülde (alışveriş, turizm, haberler vb.) listelenen içerik ilgili işletmenin kendi profilinden yönetilir.</p>
 
 <h2>Kim satıcıdır? Kim sorumludur?</h2>
 <p><strong>Satıcı ve hizmet sağlayıcı</strong>, platformda listelenen ve siparişi/rezervasyonu kabul eden <strong>işletmedir</strong> (mağaza, restoran, turizm acentesi, otel, transfer firması vb.). İşletmenin ticari unvanı, iletişim bilgileri, vergi/MERSİS bilgileri (varsa) ve sektörel belgeleri kendi profilinde veya sipariş/rezervasyon öncesi ekranda gösterilir.</p>
@@ -70,7 +70,7 @@ export const YEKPARE_KULLANIM_KOSULLARI_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p>İşbu Kullanım Koşulları, <strong>yekpare.net</strong> web sitesi ve bağlı mobil deneyimini kullanan ziyaretçi, üye ve işletmeler ile platform işletmecisi arasındaki hak ve yükümlülükleri düzenler. Siteye erişim, üyelik oluşturma veya işletme başvurusu bu koşulların kabulü anlamına gelir.</p>
 
 <h2>2. Platformun niteliği</h2>
-<p>Yekpare; haber, video, harita, sipariş, alışveriş, ilan, turizm, ulaşım ve benzeri modüllerde <strong>işletmelerin listelendiği</strong> bir firma rehberi ve pazaryeridir. Platform, listelenen mal ve hizmetlerin satıcısı değildir. Ticari işlemler kullanıcı ile ilgili işletme arasında kurulur.</p>
+<p>Yekpare; haber, video, harita, alışveriş, ilan, turizm ve benzeri modüllerde <strong>işletmelerin listelendiği</strong> bir firma rehberi ve pazaryeridir. Platform, listelenen mal ve hizmetlerin satıcısı değildir. Ticari işlemler kullanıcı ile ilgili işletme arasında kurulur.</p>
 
 <h2>3. Abonelik ve işletme listeleme</h2>
 <p>İşletmeler platformda yer almak için abonelik modeliyle kayıt olur. Abonelik ücreti listeleme ve görünürlük hizmeti içindir. İşletme, profilinde yayınladığı tüm bilgi, fiyat, görsel ve belgelerin doğruluğundan sorumludur. Yekpare, işletme içeriklerini önceden tek tek onaylamak zorunda değildir; bildirim üzerine inceleme yapabilir.</p>
@@ -218,7 +218,7 @@ export const YEKPARE_TURIZM_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p>Turizm ödemeleri ilgili işletmeye veya işletmenin ödeme linkine yapılır. Yekpare turizm bedeli tahsil etmez. İptal, erteleme ve iade kuralları her ilanın ve işletmenin sözleşme metninde yer alır; genel SSS için <a href="/sss">/sss</a> sayfasına bakın.</p>
 
 <h2>Şikayet ve destek</h2>
-<p>Operasyonel sorunlarda (ulaşım, konaklama, tur iptali) önce işletmeyle iletişime geçin. Yanıltıcı ilan veya platform hatası için <a href="/destek">Destek</a> talebi açın; ilan linki ve rezervasyon referansını ekleyin.</p>`;
+<p>Operasyonel sorunlarda (konaklama, tur iptali) önce işletmeyle iletişime geçin. Yanıltıcı ilan veya platform hatası için <a href="/destek">Destek</a> talebi açın; ilan linki ve rezervasyon referansını ekleyin.</p>`;
 
 /** Destek sayfası üst bilgi ve SSS özeti */
 export const YEKPARE_DESTEK_FAQ_ITEMS: { question: string; answer: string }[] = [

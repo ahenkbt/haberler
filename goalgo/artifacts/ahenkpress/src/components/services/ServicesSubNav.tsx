@@ -12,7 +12,6 @@ import {
 
 const SERVICE_ICONS: Record<ServiceMarketingSlug, typeof Utensils> = {
   alisveris: ShoppingBag,
-  ulasim: Car,
   turizm: Plane,
   "haber-merkezi": Newspaper,
   "ai-cagri-merkezi": Bot,

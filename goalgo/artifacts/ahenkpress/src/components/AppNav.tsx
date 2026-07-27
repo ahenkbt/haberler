@@ -75,8 +75,6 @@ function navIcon(key: MainNavKey): ReactNode {
       return <Store className={iconCls} />;
     case "turizm":
       return <Plane className={iconCls} />;
-    case "ulasim":
-      return <Truck className={iconCls} />;
     case "iletisim":
       return <Mail className={iconCls} />;
     default:
@@ -656,7 +654,6 @@ export function AppNav() {
               { href: "/magaza", label: "Alışveriş", icon: <ShoppingBag className="w-4 h-4" /> },
               { href: "/turizm", label: "Seyahat", icon: <Plane className="w-4 h-4" /> },
               { href: "/kesfet", label: "Keşfet", icon: <MapIcon className="w-4 h-4" /> },
-              { href: "/ulasim", label: "Ulaşım", icon: <Truck className="w-4 h-4" /> },
             ].map((item) => {
               const active = isActive(item.href);
               return (

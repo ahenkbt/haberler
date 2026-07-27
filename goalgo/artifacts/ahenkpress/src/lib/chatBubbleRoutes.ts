@@ -72,7 +72,7 @@ export function isStoreTransactionRoute(pathNoQuery: string): boolean {
   if (p.startsWith("/admin") || p.startsWith("/editor") || p.startsWith("/pbx")) return false;
   if (isTurizmHubOnly(p)) return false;
   if (p === "/turizm" || p === "/siparis" || p === "/magaza" || p === "/alisveris") return false;
-  if (p === "/yemek" || p === "/market" || p === "/isletmeler" || p === "/ulasim") return false;
+  if (p === "/yemek" || p === "/market" || p === "/isletmeler") return false;
 
   for (const prefix of PROVIDER_PANEL_PREFIXES) {
     if (matchesPrefix(p, prefix)) return true;

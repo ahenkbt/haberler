@@ -15,12 +15,6 @@ const SERVICES = [
     bilgi: "/bilgi/seyahat-nedir",
   },
   {
-    title: "Ulaşım",
-    href: "/ulasim",
-    text: "Kurye, taksi, ortak yolculuk, çekici, nakliyat ve kargo talepleri.",
-    bilgi: "/bilgi/ulasim-kurye-taksi-cekici",
-  },
-  {
     title: "Keşfet ve haritalar",
     href: "/kesfet",
     text: "Harita üzerinden işletme keşfi; tam ekran haritalar ve işletme profilleri.",

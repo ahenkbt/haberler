@@ -36,7 +36,6 @@ import NotFound from "@/pages/not-found";
 
 const MODULE_ICONS: Record<ServiceMarketingSlug, typeof Utensils> = {
   alisveris: ShoppingBag,
-  ulasim: Truck,
   turizm: Plane,
   "haber-merkezi": Newspaper,
   "ai-cagri-merkezi": Bot,

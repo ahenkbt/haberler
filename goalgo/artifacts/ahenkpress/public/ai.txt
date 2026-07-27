@@ -15,7 +15,6 @@ Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
 |--------|-----|----------|
 | Alışveriş | https://yekpare.net/magaza | E-ticaret pazaryeri |
 | Seyahat | https://yekpare.net/turizm | Otel, villa, tur rezervasyonu |
-| Ulaşım | https://yekpare.net/ulasim | Kurye, taksi, çekici, nakliye, kargo |
 | Arama | https://yekpare.net/ara | Birleşik arama sonuçları (SERP) |
 | Keşfet | https://yekpare.net/kesfet | İşletme keşfi, harita |
 | Haritalar | https://yekpare.net/haritalar | Tam ekran harita |
@@ -38,13 +37,10 @@ Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
 ## Sık sorulan sorular (GEO)
 
 S: Yekpare nedir?
-C: Türkiye'nin yerli arama motoru; alışveriş, ulaşım, seyahat, harita, haber, AI ve bilgi modüllerini tek aramada birleştirir.
+C: Türkiye'nin yerli arama motoru; alışveriş, seyahat, harita, haber, AI ve bilgi modüllerini tek aramada birleştirir.
 
 S: Yekpare'de online alışveriş nasıl yapılır?
 C: yekpare.net/magaza → mağaza seç → sepete ekle → ödeme adımlarını tamamla → /siparis-takip ile takip et.
-
-S: Yekpare'de kurye, taksi ve çekici nasıl çağrılır?
-C: yekpare.net/ulasim → hizmet tipi seç (kurye, taksi, çekici, nakliye) → alış/varış konumu → talep oluştur.
 
 S: İşletmeler özel domain kullanabilir mi?
 C: Evet. Servis sağlayıcı panelinden DNS doğrulamalı custom domain bağlanır.
@@ -59,7 +55,6 @@ C: Site genelinde yüzen sohbet kutusu ve /ai-cagri-merkezi üzerinden AI asista
 - https://yekpare.net/bilgi/alisveris-nedir
 - https://yekpare.net/bilgi/seyahat-nedir
 - https://yekpare.net/bilgi/haritalar-nedir
-- https://yekpare.net/bilgi/ulasim-kurye-taksi-cekici
 - https://yekpare.net/bilgi/ai-cagri-merkezi-nedir
 - https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain
 - https://yekpare.net/bilgi/bilgi-agaci-nedir

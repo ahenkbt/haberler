@@ -32,12 +32,6 @@ export const SEARCH_ENGINE_CATEGORY_PILLS: SearchEngineCategoryPill[] = [
     emoji: "\u2708\uFE0F",
   },
   {
-    id: "ulasim",
-    label: "Ula\u015F\u0131m",
-    href: MAIN_NAV_HREF.ulasim,
-    emoji: "\uD83D\uDE9A",
-  },
-  {
     id: "icerik",
     label: "\u0130\u00E7erik",
     href: MAIN_NAV_HREF.haberler,
@@ -71,8 +65,6 @@ export function isSearchEngineCategoryPillActive(loc: string, pill: SearchEngine
       return isHaritalarSubNavItemActive(loc, pill.href, "alisveris");
     case "seyahat":
       return isHaritalarSubNavItemActive(loc, pill.href, "turizm");
-    case "ulasim":
-      return path === "/ulasim" || path.startsWith("/ulasim/");
     case "icerik":
       return (
         path === "/haberler" ||
@@ -130,7 +122,6 @@ const GLOBAL_CATEGORY_PILL_PREFIXES = [
   "/servisler",
   "/magaza",
   "/turizm",
-  "/ulasim",
   "/firma-rehberi",
   "/haberler",
   "/tum-haberler",

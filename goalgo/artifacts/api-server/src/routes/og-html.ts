@@ -1165,13 +1165,6 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
           { question: "Özel domain nasıl bağlanır?", answer: "Servis sağlayıcı paneli → DNS doğrulama → yayına alma." },
         ],
       },
-      "ulasim-kurye-taksi-cekici": {
-        title: "Yekpare Ulaşım: Kurye, Taksi, Çekici",
-        description: "Kurye, taksi, ortak yolculuk, çekici, nakliyat ve kargo talepleri. yekpare.net/ulasim",
-        faq: [
-          { question: "Taksi nasıl çağrılır?", answer: "yekpare.net/ulasim → Taksi → alış/varış konumu." },
-        ],
-      },
       "haber-merkezi-nedir": {
         title: "Yekpare Haber Merkezi Nedir?",
         description: "Bağımsız haber siteleri; özel domain ile white-label yayın altyapısı.",
