@@ -1063,18 +1063,6 @@ export function buildYekpareServiceJsonLd(
 
 export const YEKPARE_CORE_SERVICE_SCHEMA: YekpareServiceSchemaItem[] = [
   {
-    name: "Yemek Siparişi",
-    path: "/yemek",
-    serviceType: "FoodDelivery",
-    description: "Restoran ve paket servis işletmelerinden online yemek siparişi, teslimat ve sipariş takibi.",
-  },
-  {
-    name: "Market Siparişi",
-    path: "/market",
-    serviceType: "GroceryDelivery",
-    description: "Market ve gıda ürünleri siparişi, hızlı teslimat.",
-  },
-  {
     name: "Alışveriş",
     path: "/magaza",
     serviceType: "OnlineStore",

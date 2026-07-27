@@ -7,7 +7,7 @@ const SADE_ACCENT = "#039D55";
 const HOME_SEARCH_PATHS = new Set(["/", "/home", "/demo"]);
 
 const QUICK_CHIPS = [
-  { label: "Yemek", query: "Yemek siparişi nasıl verilir?", href: "/yemek" },
+  { label: "Alışveriş", query: "Alışveriş ve mağaza nerede?", href: "/magaza" },
   { label: "Alışveriş", query: "Alışveriş ve mağaza nerede?", href: "/magaza" },
   { label: "Seyahat", query: "Seyahat ve tur rezervasyonu", href: "/turizm" },
   { label: "Haritalar", query: "Haritalar nerede?", href: "/haritalar" },

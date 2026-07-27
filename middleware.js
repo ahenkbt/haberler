@@ -747,7 +747,6 @@ function rootSitemapApiPath(pathname) {
     "/news-yekpare.xml",
     "/news.xml",
     "/businesses.xml",
-    "/vendors-siparis.xml",
     "/vendors-alisveris.xml",
     "/vendors-magaza.xml",
     "/turizm.xml",

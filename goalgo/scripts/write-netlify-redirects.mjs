@@ -36,7 +36,6 @@ if (apiOrigin) {
     `/news-yekpare.xml  ${apiOrigin}/api/sitemap/news-yekpare.xml  200`,
     `/news.xml  ${apiOrigin}/api/sitemap/news.xml  200`,
     `/businesses.xml  ${apiOrigin}/api/sitemap/businesses.xml  200`,
-    `/vendors-siparis.xml  ${apiOrigin}/api/sitemap/vendors-siparis.xml  200`,
     `/vendors-alisveris.xml  ${apiOrigin}/api/sitemap/vendors-alisveris.xml  200`,
     `/vendors-magaza.xml  ${apiOrigin}/api/sitemap/vendors-magaza.xml  200`,
     `/turizm.xml  ${apiOrigin}/api/sitemap/turizm.xml  200`,

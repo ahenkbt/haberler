@@ -1,7 +1,6 @@
 /** Ana menü öğe anahtarları — URL ve ikonlar AppNav tarafında eşlenir. */
 export const MAIN_NAV_KEY_ORDER = [
   "kesfet",
-  "siparis",
   "magaza",
   "alisveris",
   "haritalar",
@@ -12,28 +11,14 @@ export const MAIN_NAV_KEY_ORDER = [
   "yektube",
   "firmaRehberi",
   "iletisim",
-  /** Sipariş alt kategorileri — üst menüde değil; modül aç/kapa ve footer havuzu */
-  "yemek",
-  "market",
-  "isletmeler",
 ] as const;
 
 export type MainNavKey = (typeof MAIN_NAV_KEY_ORDER)[number];
 
-/** Sipariş üst menüsünün alt sekmeleri — yalnızca dropdown / alt nav'da gösterilir. */
-export const SIPARIS_SUB_NAV_KEYS = ["yemek", "market", "isletmeler"] as const satisfies readonly MainNavKey[];
-
-export type SiparisSubNavKey = (typeof SIPARIS_SUB_NAV_KEYS)[number];
-
-export function isSiparisSubNavKey(key: MainNavKey): key is SiparisSubNavKey {
-  return (SIPARIS_SUB_NAV_KEYS as readonly string[]).includes(key);
-}
-
 const ALLOWED = new Set<string>(MAIN_NAV_KEY_ORDER);
-const SIPARIS_SUB_NAV_SET = new Set<string>(SIPARIS_SUB_NAV_KEYS);
 /** Eski DB mainNavJson kayıtlarında eksik kalabilir — okunurken varsayılan sıraya eklenir. */
 const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["kesfet", "haritalar"];
-const REQUIRED_TOP_NAV_KEYS: MainNavKey[] = ["siparis"];
+const REQUIRED_TOP_NAV_KEYS: MainNavKey[] = [];
 
 export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
   haberler: "Haberler",
@@ -44,10 +29,6 @@ export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
   firmaRehberi: "Sarı Sayfalar",
   alisveris: "Alışveriş",
   magaza: "Alışveriş",
-  yemek: "Yemek",
-  market: "Market",
-  isletmeler: "Yakınımdakiler",
-  siparis: "Sipariş",
   turizm: "Seyahat",
   ulasim: "Ulaşım",
   iletisim: "İletişim",
@@ -62,10 +43,6 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
   firmaRehberi: "/firma-rehberi",
   alisveris: "/alisveris",
   magaza: "/magaza",
-  yemek: "/yemek",
-  market: "/market",
-  isletmeler: "/isletmeler",
-  siparis: "/siparis",
   turizm: "/turizm",
   ulasim: "/ulasim",
   iletisim: "/iletisim",
@@ -81,10 +58,6 @@ const FOOTER_NAV_DEFAULT: MainNavKey[] = [
   "turizm",
   "alisveris",
   "magaza",
-  "yemek",
-  "market",
-  "isletmeler",
-  "siparis",
   "ulasim",
   "iletisim",
 ];
@@ -95,22 +68,10 @@ export type NavMenuItem =
   | { kind: "link"; id: string; label: string; href: string; newTab?: boolean };
 
 export function defaultNavMenuItems(): NavMenuItem[] {
-  return MAIN_NAV_KEY_ORDER.filter((k) => !SIPARIS_SUB_NAV_SET.has(k)).map((k) => ({
+  return MAIN_NAV_KEY_ORDER.map((k) => ({
     kind: "module" as const,
     key: k,
   }));
-}
-
-/** Eski kayıtlarda üst menüde ayrı duran yemek/market/yakınımdakiler → Sipariş altına taşınır. */
-function collapseSiparisSubNavToParent(items: NavMenuItem[]): NavMenuItem[] {
-  const hasSiparis = items.some((x) => x.kind === "module" && x.key === "siparis");
-  const firstSubIdx = items.findIndex((x) => x.kind === "module" && SIPARIS_SUB_NAV_SET.has(x.key));
-  const filtered = items.filter((x) => !(x.kind === "module" && SIPARIS_SUB_NAV_SET.has(x.key)));
-  if (!hasSiparis) {
-    const insertAt = firstSubIdx >= 0 ? Math.min(firstSubIdx, filtered.length) : filtered.length;
-    filtered.splice(insertAt, 0, { kind: "module", key: "siparis" });
-  }
-  return filtered;
 }
 
 function insertMissingNavKeyAtDefaultPosition(
@@ -135,7 +96,7 @@ function insertMissingNavKeyAtDefaultPosition(
 }
 
 function withRequiredPublicNavItems(items: NavMenuItem[]): NavMenuItem[] {
-  const next = collapseSiparisSubNavToParent([...items]);
+  const next = [...items];
   const existing = new Set(next.filter((x): x is { kind: "module"; key: MainNavKey } => x.kind === "module").map((x) => x.key));
   if (!existing.has("yektube")) {
     const afterNews = next.findIndex((item) => item.kind === "module" && item.key === "haberler");
@@ -613,7 +574,7 @@ export type FooterInfoLink = FooterLegalLink;
 
 const FOOTER_INFO_LINKS_DEFAULT: FooterInfoLink[] = [
   { label: "Yekpare nedir", href: "/bilgi/yekpare-nedir" },
-  { label: "Online sipariş", href: "/bilgi/online-siparis-nasil-verilir" },
+  { label: "Alışveriş rehberi", href: "/magaza" },
   { label: "Ulaşım · Kurye", href: "/bilgi/ulasim-kurye-taksi-cekici" },
   { label: "Yekpare AI", href: "/bilgi/ai-cagri-merkezi-nedir" },
   { label: "İşletme · Özel domain", href: "/bilgi/isletme-sayfasi-ozel-domain" },

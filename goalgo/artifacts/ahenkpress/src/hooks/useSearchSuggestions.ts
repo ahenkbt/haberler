@@ -66,7 +66,7 @@ export function filterTrendingByTab(tabId: string): string[] {
 
 export const SEARCH_MODULE_CHIPS = [
   { id: "isletme", label: "İşletme", emoji: "🏪", href: "/kesfet/liste" },
-  { id: "siparis", label: "Sipariş", emoji: "🍽️", href: "/siparis" },
+  { id: "magaza", label: "Alışveriş", emoji: "🛍️", href: "/magaza" },
   { id: "seyahat", label: "Seyahat", emoji: "✈️", href: "/turizm" },
   { id: "sari", label: "Sarı Sayfalar", emoji: "📒", href: "/kesfet/sarisayfalar" },
   { id: "icerik", label: "İçerik", emoji: "📰", href: "/haberler" },

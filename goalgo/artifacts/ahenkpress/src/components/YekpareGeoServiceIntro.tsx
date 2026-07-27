@@ -3,18 +3,6 @@ import { BILGI_AGACI_DISPLAY_NAME } from "@/lib/bilgiAgaciBrand";
 
 const SERVICES = [
   {
-    title: "Yemek siparişi",
-    href: "/yemek",
-    text: "Restoran ve paket servis işletmelerinden online yemek siparişi; menü, teslimat ve /siparis-takip ile takip.",
-    bilgi: "/bilgi/online-siparis-nasil-verilir",
-  },
-  {
-    title: "Market",
-    href: "/market",
-    text: "Market ve gıda ürünleri siparişi; hızlı teslimat ve yakınındaki marketler.",
-    bilgi: "/bilgi/online-siparis-nasil-verilir",
-  },
-  {
     title: "Alışveriş",
     href: "/magaza",
     text: "Çok satıcılı e-ticaret pazaryeri; mağaza vitrinleri, sepet ve online ödeme.",
@@ -79,11 +67,11 @@ const SERVICES = [
 const FAQ = [
   {
     q: "Yekpare nedir?",
-    a: "Yekpare (yekpare.net), Türkiye'nin yerli arama motorudur — haber, video, harita, yemek ve market siparişi, alışveriş, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlük anlamı «yekpare» (bütün, tek parça) ile marka adı farklıdır.",
+    a: "Yekpare (yekpare.net), Türkiye'nin yerli arama motorudur — haber, video, harita, alışveriş, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlük anlamı «yekpare» (bütün, tek parça) ile marka adı farklıdır.",
   },
   {
-    q: "Yekpare ile yemek siparişi nasıl verilir?",
-    a: "yekpare.net/yemek veya /siparis adresinden işletme seçin, menüden ürünleri sepete ekleyin ve teslimat adresinizle siparişi tamamlayın.",
+    q: "Yekpare'de online alışveriş nasıl yapılır?",
+    a: "yekpare.net/magaza adresinden mağaza seçin, ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
   },
   {
     q: "Yekpare alışveriş nedir?",
@@ -103,11 +91,11 @@ export function YekpareGeoServiceIntro({ compact = false }: { compact?: boolean 
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#039D55]">Yekpare nedir?</p>
             <h2 id="yekpare-geo-intro-heading" className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">
-              Türkiye&apos;nin yerli arama motoru: haber, sipariş, alışveriş, seyahat ve daha fazlası
+              Türkiye&apos;nin yerli arama motoru: haber, alışveriş, seyahat ve daha fazlası
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-600">
               <strong className="font-black text-slate-800">Yekpare.net</strong> bir haber sitesi veya sözlük girişi değildir;
-              kullanıcıların yemek siparişi, online alışveriş, turizm rezervasyonu, harita keşfi, haber okuma, YekTube video
+              kullanıcıların online alışveriş, turizm rezervasyonu, harita keşfi, haber okuma, YekTube video
               ve {BILGI_AGACI_DISPLAY_NAME} içeriklerine tek adresten ulaştığı hizmet platformudur.
             </p>
           </div>

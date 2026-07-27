@@ -14,7 +14,7 @@ import {
   Video,
 } from "lucide-react";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
-import { buildKonumaGoreHref } from "@/lib/konumaGoreUtils";
+import { buildKesfetListHref } from "@/lib/kesfetListHref";
 import { buildUnifiedSearchHref, resolveUnifiedSearchBasePath } from "@/lib/hmUnifiedSearchPath";
 import { buildSariSayfalarListPath } from "@/lib/sariSayfalarUtils";
 import { wikiTitleToUrlSlug } from "@/lib/wikiArticleSlug";
@@ -70,7 +70,6 @@ const HERO_FILTERS: Array<{ key: string; label: string; mode: HeroFilterMode }> 
   { key: "genel", label: "Genel", mode: "default" },
   { key: "rehber", label: "Şehir rehberi", mode: "panel" },
   { key: "bilgi", label: "Şehir bilgi", mode: "panel" },
-  { key: "siparis", label: "Sipariş", mode: "panel" },
   { key: "gezilecek", label: "Gezilecek yerler", mode: "search" },
   { key: "oteller", label: "Oteller", mode: "search" },
   { key: "restoranlar", label: "Restoranlar", mode: "search" },
@@ -514,11 +513,10 @@ function resolveCityActionLinks(input: {
   return {
     rehberHref: buildSariSayfalarListPath({ city: cityName }),
     bilgiHref: input.wikiHref ?? `/bilgiagaci/${wikiTitleToUrlSlug(cityName)}`,
-    siparisHref: buildKonumaGoreHref({
+    siparisHref: buildKesfetListHref({
       city: cityName,
       lat: input.lat ?? undefined,
       lng: input.lng ?? undefined,
-      module: "food",
     }),
   };
 }
@@ -606,40 +604,6 @@ function HeroFilterPanel({
         <Link href={links.bilgiHref} className="usr-service-cta">
           Bilgi Ağacı'nda oku
         </Link>
-      </div>
-    );
-  }
-
-  if (filterKey === "siparis") {
-    return (
-      <div className="usr-hero-panel" role="tabpanel" aria-label="Sipariş">
-        <p className="usr-hero-panel-lead">
-          {cityName} bölgesinde yemek, market ve yerel işletmelerden sipariş verin.
-        </p>
-        {orderItems.length > 0 ? (
-          <ul className="usr-hero-panel-list">
-            {orderItems.slice(0, 5).map((item) => (
-              <li key={item.id}>
-                <ResultLink href={item.href} className="usr-hero-panel-link">
-                  {item.name}
-                </ResultLink>
-                {item.typeLabel || item.categoryName ? (
-                  <span className="usr-hero-panel-meta">{item.typeLabel ?? item.categoryName}</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="usr-hero-panel-empty">Yakındaki sipariş verilebilir işletmeler listeleniyor.</p>
-        )}
-        <div className="usr-hero-panel-actions">
-          <Link href={links.siparisHref} className="usr-service-cta">
-            Sipariş ver
-          </Link>
-          <Link href={`/siparis?sehir=${encodeURIComponent(cityName)}`} className="usr-service-cta secondary">
-            Sipariş vitrini
-          </Link>
-        </div>
       </div>
     );
   }
@@ -1040,11 +1004,7 @@ export default function UnifiedSearchResultsPage({ embedInHmSite = false }: Unif
   const sariSayfalarItems = useMemo(() => sectionItems(sections, "sari_sayfalar"), [sections]);
   const hizmetItems = useMemo(() => sectionItems(sections, "hizmetler"), [sections]);
   const urunlerItems = useMemo(() => sectionItems(sections, "urunler"), [sections]);
-  const yemekMarketItems = useMemo(() => sectionItems(sections, "yemek_market"), [sections]);
-  const shopItems = useMemo(
-    () => [...urunlerItems, ...yemekMarketItems],
-    [urunlerItems, yemekMarketItems],
-  );
+  const shopItems = urunlerItems;
 
   const galleryImageItems = useMemo(() => {
     const items: GalleryImageItem[] = [];
@@ -1460,7 +1420,6 @@ export default function UnifiedSearchResultsPage({ embedInHmSite = false }: Unif
           sariSayfalarItems={sariSayfalarItems.map(toHaritalarItem)}
           hizmetItems={hizmetItems.map(toHaritalarItem)}
           tourismItems={tourismItems.map(toHaritalarItem)}
-          yemekMarketItems={yemekMarketItems.map(toHaritalarItem)}
           urunlerItems={urunlerItems.map(toHaritalarItem)}
         />
       );

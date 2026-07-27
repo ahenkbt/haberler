@@ -1071,30 +1071,9 @@ router.get("/businesses.xml", async (req, res): Promise<void> => {
   }
 });
 
-/* — Sipariş işletmeleri (/siparis/satici/...) — */
-router.get("/vendors-siparis.xml", async (req, res): Promise<void> => {
-  try {
-    const base = resolvePortalRequestOrigin(req);
-    const rows = await db
-      .select({ slug: vendorsTable.slug, updatedAt: vendorsTable.updatedAt })
-      .from(vendorsTable)
-      .where(and(eq(vendorsTable.active, true), eq(vendorsTable.vendorType, "delivery")))
-      .orderBy(desc(vendorsTable.updatedAt))
-      .limit(5000);
-
-    const urls = rows
-      .map((v) =>
-        urlXmlEntry(`${base}/siparis/satici/${encodeURIComponent(v.slug)}`, {
-          lastmod: v.updatedAt,
-          changefreq: "weekly",
-          priority: "0.7",
-        }),
-      )
-      .join("\n");
-    sendUrlset(res, urls);
-  } catch {
-    res.status(500).send("Sitemap hatası");
-  }
+/* Sipariş modülü kaldırıldı — eski vendors-siparis.xml boş urlset */
+router.get("/vendors-siparis.xml", async (_req, res): Promise<void> => {
+  sendUrlset(res, "");
 });
 
 /* — Alışveriş mağazaları (geriye dönük /alisveris + kanonik /magaza) — */
@@ -1609,7 +1588,6 @@ async function buildSitemapCatalog(baseInput?: string): Promise<{ indexUrl: stri
   const otherItems: SitemapListItem[] = [
     { label: "Tüm haber kaynakları (birleşik)", url: `${base}/news.xml` },
     { label: "Keşfet işletmeleri", url: `${base}/businesses.xml` },
-    { label: "Sipariş işletmeleri", url: `${base}/vendors-siparis.xml` },
     { label: "Mağaza vitrinleri (kanonik)", url: `${base}/vendors-magaza.xml` },
     { label: "Alışveriş mağazaları (eski yol)", url: `${base}/vendors-alisveris.xml` },
     { label: "Turizm ilanları", url: `${base}/turizm.xml` },

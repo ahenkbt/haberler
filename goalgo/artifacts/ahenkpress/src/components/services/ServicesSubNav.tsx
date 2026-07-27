@@ -11,7 +11,6 @@ import {
 } from "@/lib/servicesMarketingData";
 
 const SERVICE_ICONS: Record<ServiceMarketingSlug, typeof Utensils> = {
-  siparis: Utensils,
   alisveris: ShoppingBag,
   ulasim: Car,
   turizm: Plane,

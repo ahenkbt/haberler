@@ -53,7 +53,7 @@ export function VendorBlogPanel({
   const [busy, setBusy] = useState(false);
 
   const blogPathRoot =
-    (publicBlogPathPrefix || `/siparis/satici/${encodeURIComponent(vendorSlug)}`).replace(/\/$/, "");
+    (publicBlogPathPrefix || `/alisveris/magaza/${encodeURIComponent(vendorSlug)}`).replace(/\/$/, "");
   const publicBlogHref = `${blogPathRoot}/blog`;
   const publicBlogUrl = typeof window !== "undefined" ? `${window.location.origin}${publicBlogHref}` : "";
 

@@ -1,4 +1,3 @@
-import { DELIVERY_MODULES } from "@/lib/deliveryModuleGroups";
 import { isConfiguredPortalHost } from "@/lib/hmPortalHosts";
 import { PORTAL_ORIGIN } from "@/lib/portalBrand";
 import { MAGAZA, MAGAZA_TOP_CATEGORIES } from "@/themes/sellzy/magazaRoutes";
@@ -38,15 +37,6 @@ export function filterHmYekpareFeatureCards(portalHubOnly: boolean): HmYekpareFe
 }
 
 export const HM_YEKPARE_FEATURE_CARDS: HmYekpareFeatureCard[] = [
-  {
-    id: "siparis",
-    label: "Sipariş",
-    emoji: "🍽️",
-    href: "/siparis",
-    color: "#f97316",
-    desc: "Yemek, market ve yakın işletmeler.",
-    children: DELIVERY_MODULES.map((m) => ({ label: m.shortLabel, href: m.href })),
-  },
   {
     id: "shop",
     label: "Alışveriş",
@@ -119,7 +109,7 @@ export const HM_YEKPARE_FEATURE_CARDS: HmYekpareFeatureCard[] = [
       { label: "Keşfet", href: "/kesfet" },
       { label: "Liste", href: "/kesfet/liste" },
       { label: "Sarı Sayfalar", href: "/kesfet/sarisayfalar" },
-      { label: "Konuma göre", href: "/konumagore" },
+      { label: "Konuma göre", href: "/kesfet/liste" },
     ],
   },
   {

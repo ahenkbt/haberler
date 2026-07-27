@@ -42,7 +42,7 @@ import { YEKPARE_PAGE_CONTAINER_CLASS } from "@/lib/yekpareLayout";
 import { haritalarFullscreenHref, kesfetBusinessMapHref, parseLegacyMapsPlacePath as parseYekparePlacePath, parseLegacyMapsSyncedPath as parseYekpareSyncedMapPath } from "@/lib/haritalarNav";
 import { HARITALAR } from "@/lib/haritalarRoutes";
 import { buildSariSayfalarListPath } from "@/lib/sariSayfalarUtils";
-import { buildKonumaGoreHref } from "@/lib/konumaGoreUtils";
+import { buildKesfetListHref } from "@/lib/kesfetListHref";
 import {
   findKesfetDiscoveryCategory,
   findKesfetDiscoveryCity,
@@ -8317,12 +8317,11 @@ export default function Kesfet({
           )}
           {(() => {
             const cityName = cityNameFromLocation(loc);
-            const konumaGoreHref = buildKonumaGoreHref({
+            const konumaGoreHref = buildKesfetListHref({
               city: cityName || undefined,
               location: loc.title,
               lat: loc.lat,
               lng: loc.lng,
-              module: "food",
             });
             const sariSayfalarHref = cityName ? buildSariSayfalarListPath({ city: cityName }) : null;
             const bilgiAgaciHref = cityName ? resolveBilgiAgaciHref(cityName) : null;

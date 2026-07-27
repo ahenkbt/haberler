@@ -61,14 +61,8 @@ import Pbx3cxSettings from "../pages/admin/pbx/Pbx3cxSettings";
 import HaritalarYonetimi from "../pages/admin/HaritalarYonetimi";
 import GlobalMapNewsAdmin from "../pages/admin/GlobalMapNewsAdmin";
 import OneCikanIsletmeler from "../pages/admin/OneCikanIsletmeler";
-import SiparisIsletmeleri from "../pages/admin/SiparisIsletmeleri";
-import SiparisKategoriler from "../pages/admin/SiparisKategoriler";
-import SiparisBannerlari from "../pages/admin/SiparisBannerlari";
-import SiparisMenuItems from "../pages/admin/SiparisMenuItems";
 import AlisverisIsletmeleri from "../pages/admin/AlisverisIsletmeleri";
 import ServisSaglayicilar from "../pages/admin/ServisSaglayicilar";
-import TeslimatSiparisleri from "../pages/admin/TeslimatSiparisleri";
-import KuponYonetimi from "../pages/admin/KuponYonetimi";
 import IsOrtaklari from "../pages/admin/IsOrtaklari";
 import TurizmIlanlar from "../pages/admin/TurizmIlanlar";
 import TurizmRezervasyonlar from "../pages/admin/TurizmRezervasyonlar";
@@ -327,18 +321,10 @@ export default function AdminRoutes() {
       <Route path="/admin/one-cikan-isletmeler">
         {() => <ProtectedAdminRoute component={OneCikanIsletmeler} />}
       </Route>
-      <Route path="/admin/siparis-isletmeleri">
-        {() => <ProtectedAdminRoute component={SiparisIsletmeleri} />}
-      </Route>
-      <Route path="/admin/siparis-kategoriler">
-        {() => <ProtectedAdminRoute component={SiparisKategoriler} />}
-      </Route>
-      <Route path="/admin/siparis-bannerlari">
-        {() => <ProtectedAdminRoute component={SiparisBannerlari} />}
-      </Route>
-      <Route path="/admin/siparis-menu-items">
-        {() => <ProtectedAdminRoute component={SiparisMenuItems} />}
-      </Route>
+      <Route path="/admin/siparis-isletmeleri">{() => <Redirect to="/admin" />}</Route>
+      <Route path="/admin/siparis-kategoriler">{() => <Redirect to="/admin" />}</Route>
+      <Route path="/admin/siparis-bannerlari">{() => <Redirect to="/admin" />}</Route>
+      <Route path="/admin/siparis-menu-items">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/alisveris-isletmeleri">
         {() => <ProtectedAdminRoute component={AlisverisIsletmeleri} />}
       </Route>
@@ -378,14 +364,10 @@ export default function AdminRoutes() {
       <Route path="/admin/turizm-rezervasyonlar">
         {() => <ProtectedAdminRoute component={TurizmRezervasyonlar} />}
       </Route>
-      <Route path="/admin/teslimat-siparisleri">
-        {() => <ProtectedAdminRoute component={TeslimatSiparisleri} />}
-      </Route>
+      <Route path="/admin/teslimat-siparisleri">{() => <Redirect to="/admin" />}</Route>
+      <Route path="/admin/kupon-kodlari">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/kasiyer">
         {() => <ProtectedAdminRoute component={KasiyerAdmin} />}
-      </Route>
-      <Route path="/admin/kupon-kodlari">
-        {() => <ProtectedAdminRoute component={KuponYonetimi} />}
       </Route>
       <Route path="/admin/is-ortaklari">
         {() => <ProtectedAdminRoute component={IsOrtaklari} />}

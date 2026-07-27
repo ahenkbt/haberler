@@ -73,17 +73,12 @@ import MagazaHakkimizda from "./pages/public/MagazaHakkimizda";
 import { MagazaBlogDetay, MagazaKategoriDetay, MagazaMagazaDetay, MagazaMarkaDetay } from "./pages/public/MagazaSlugPages";
 import { SellzyMarketplaceLayout as SellzyMarketplaceShell } from "./themes/sellzy/SellzyMarketplaceLayout";
 import { MagazaSubNavBar } from "./components/MagazaSubNavBar";
-import { SiparisSubNavBar } from "./components/SiparisSubNavBar";
 import SariSayfalarHub from "./pages/public/SariSayfalarHub";
 import SariSayfalarDetay from "./pages/public/SariSayfalarDetay";
 import FirmaRehberi, { FirmaRehberiListe } from "./pages/public/FirmaRehberi";
 import FirmaRehberiPaneli from "./pages/public/FirmaRehberiPaneli";
 import IsletmeDetay from "./pages/public/IsletmeDetay";
 import IsletmePaneli from "./pages/public/IsletmePaneli";
-import Siparis from "./pages/public/Siparis";
-import SiparisModulVitrin from "./pages/public/SiparisModulVitrin";
-import KonumaGore from "./pages/public/KonumaGore";
-import SaticiDetay from "./pages/public/SaticiDetay";
 import BilgiSayfasi from "./pages/public/BilgiSayfasi";
 import SiteHaritalari from "./pages/public/SiteHaritalari";
 import VendorBlogPublicList from "./pages/public/VendorBlogPublicList";
@@ -102,8 +97,6 @@ import PremiumBasarili from "./pages/public/PremiumBasarili";
 import Ulasim from "./pages/public/Ulasim";
 import Iletisim from "./pages/public/Iletisim";
 import SuruciPaneli from "./pages/public/SuruciPaneli";
-import KuryeTakip from "./pages/public/KuryeTakip";
-import KuryePaneli from "./pages/public/KuryePaneli";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
 import Kasiyer from "./pages/public/Kasiyer";
@@ -135,7 +128,6 @@ import { TurizmPageErrorBoundary } from "./themes/turizm/TurizmPageErrorBoundary
 import { TurizmBlogDetailPage, TurizmBlogListPage } from "./themes/turizm/TurizmBlogPages";
 import { TurizmEtkinlikDetailPage } from "./themes/bookingcore/pages/TurizmEtkinlikDetailPage";
 import TurizmSssPage from "./themes/turizm/TurizmSssPage";
-import QrMenuPublic from "./pages/public/QrMenuPublic";
 import Destek from "./pages/public/Destek";
 import {
   MesafeliSatisSozlesmesiPage,
@@ -320,7 +312,6 @@ function isKesfetBusinessDetailPath(path: string): boolean {
 function isVendorStorefrontPath(path: string): boolean {
   return (
     /^\/alisveris\/magaza\/[^/]+(?:\/.*)?$/.test(path) ||
-    /^\/siparis\/(?:satici|isletme)\/[^/]+(?:\/.*)?$/.test(path) ||
     /^\/turizm\/(?:konaklama|villa-ev|arac-kiralama|yat-turlari|hotel|car|boat|villa|[^/]+)\/[^/]+(?:\/.*)?$/.test(path)
   );
 }
@@ -461,29 +452,6 @@ function MagazaRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Sipariş modül vitrinleri — yemek / market / yakınımdakiler + hub */
-function SiparisModuleRoute({
-  children,
-  active,
-  searchPlaceholder = "Restoran, market veya ürün ara",
-}: {
-  children: React.ReactNode;
-  active?: SixAmMartModuleKey;
-  searchPlaceholder?: string;
-}) {
-  return (
-    <SadeAwarePublicLayout
-      chrome
-      fullBleed
-      active={active}
-      searchPlaceholder={searchPlaceholder}
-      subHeader={<SiparisSubNavBar inline />}
-    >
-      {children}
-    </SadeAwarePublicLayout>
-  );
-}
-
 type VendorDomainRouteMeta = {
   slug: string;
   storefrontPath: string;
@@ -534,11 +502,7 @@ function VendorCustomDomainShortStorefrontRoute() {
   const expectedShort = String(meta?.shortPath ?? "").replace(/^\/+/, "");
   if (!meta?.slug || !expectedShort || expectedShort !== shortFromPath) return null;
   if (meta.storefrontPath.startsWith("/siparis/")) {
-    return (
-      <SadeAwarePublicLayout>
-        <SaticiDetay slugOverride={meta.slug} />
-      </SadeAwarePublicLayout>
-    );
+    return <Redirect to="/" />;
   }
   if (meta.storefrontPath.startsWith("/alisveris/")) {
     return (
@@ -698,11 +662,6 @@ function PortalHomeRoute() {
 function isKesfetRoute(pathnameWithQuery: string): boolean {
   const p = pathnameWithQuery.split("?")[0] ?? "";
   return p === "/kesfet" || p.startsWith("/kesfet/");
-}
-
-function isQrMenuRoute(pathnameWithQuery: string): boolean {
-  const p = pathnameWithQuery.split("?")[0] ?? "";
-  return p.startsWith("/siparis/qr-menu/");
 }
 
 function decodeHashId(hash: string): string {
@@ -875,22 +834,21 @@ export default function App() {
       <Route path="/alisveris/magaza/:slug/urunler">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
       <Route path="/alisveris/magaza/:slug/iletisim">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
       <Route path="/alisveris/magaza/:slug">{() => <SadeAwarePublicLayout><EcomSatici /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/qr-menu/:slug">{() => <QrMenuPublic />}</Route>
-      <Route path="/konumagore">{() => <SadeAwarePublicLayout chrome fullBleed active="food" searchPlaceholder="Yemek, market veya işletme ara"><KonumaGore /></SadeAwarePublicLayout>}</Route>
-      <Route path="/yemek">{() => <SiparisModuleRoute active="food" searchPlaceholder="Yemek veya restoran ara"><SiparisModulVitrin moduleKey="food" hideModuleHeroSearch /></SiparisModuleRoute>}</Route>
-      <Route path="/market">{() => <SiparisModuleRoute active="grocery" searchPlaceholder="Ürün veya market ara"><SiparisModulVitrin moduleKey="market" hideModuleHeroSearch /></SiparisModuleRoute>}</Route>
-      <Route path="/isletmeler">{() => <SiparisModuleRoute active="pharmacy" searchPlaceholder="Ürün veya işletme ara"><SiparisModulVitrin moduleKey="nearby" hideModuleHeroSearch /></SiparisModuleRoute>}</Route>
-      <Route path="/siparis">{() => <SiparisModuleRoute searchPlaceholder="Restoran, market veya ürün ara"><Siparis /></SiparisModuleRoute>}</Route>
-      <Route path="/siparis/satici/:slug/blog/:postSlug">{() => <PublicLayout><VendorBlogPublicPost /></PublicLayout>}</Route>
-      <Route path="/siparis/satici/:slug/blog">{() => <PublicLayout><VendorBlogPublicList /></PublicLayout>}</Route>
-      <Route path="/siparis/satici/:slug/hakkimizda">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/satici/:slug/menu">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/satici/:slug/iletisim">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/satici/:slug">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/isletme/:slug/hakkimizda">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/isletme/:slug/menu">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/isletme/:slug/iletisim">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/siparis/isletme/:slug">{() => <SadeAwarePublicLayout><SaticiDetay /></SadeAwarePublicLayout>}</Route>
+      {/* Sipariş (yemek/market) modülü kaldırıldı — eski URL’ler anasayfaya; takip sayfaları aşağıda */}
+      <Route path="/siparis/qr-menu/:slug">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparis/qr-menu/:slug/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/konumagore">{() => <Redirect to="/kesfet/liste" />}</Route>
+      <Route path="/konumagore/:rest*">{() => <Redirect to="/kesfet/liste" />}</Route>
+      <Route path="/yemek">{() => <Redirect to="/" />}</Route>
+      <Route path="/yemek/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/market">{() => <Redirect to="/" />}</Route>
+      <Route path="/market/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/isletmeler">{() => <Redirect to="/kesfet/liste" />}</Route>
+      <Route path="/isletmeler/:rest*">{() => <Redirect to="/kesfet/liste" />}</Route>
+      <Route path="/siparis/satici/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparis/isletme/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparis/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/siparis">{() => <Redirect to="/" />}</Route>
       <Route path="/yazarlar">{() => <HmPartnerOrPublicLayout><Yazarlar /></HmPartnerOrPublicLayout>}</Route>
       <Route path="/yazar/:authorKey">{() => <HmPartnerOrPublicLayout><YazarAuthorRoute /></HmPartnerOrPublicLayout>}</Route>
       <Route path="/foto-galeri/:id">{() => <PublicLayout><FotoGaleriPublic /></PublicLayout>}</Route>
@@ -1495,11 +1453,11 @@ export default function App() {
       <Route path="/bilgi/:slug">{() => <PublicLayout><BilgiSayfasi /></PublicLayout>}</Route>
       <Route path="/surucu-paneli">{() => <SuruciPaneli />}</Route>
       <Route path="/kasiyer">{() => <Kasiyer />}</Route>
-      <Route path="/kurye-paneli">{() => <KuryePaneli />}</Route>
+      <Route path="/kurye-paneli">{() => <Redirect to="/" />}</Route>
       <Route path="/usta-paneli">{() => <UstaPaneli />}</Route>
       <Route path="/servis-paneli">{() => <ServisElemanPaneli />}</Route>
-      <Route path="/takip/:code">{() => <PublicLayout><KuryeTakip /></PublicLayout>}</Route>
-      <Route path="/takip">{() => <PublicLayout><KuryeTakip /></PublicLayout>}</Route>
+      <Route path="/takip/:code">{() => <Redirect to="/" />}</Route>
+      <Route path="/takip">{() => <Redirect to="/" />}</Route>
 
       {/* PBX agent portal — bağımsız chrome, Yekpare header yok */}
       <Route path="/pbx/panel">{() => <AgentPanel />}</Route>

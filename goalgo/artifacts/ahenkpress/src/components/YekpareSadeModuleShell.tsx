@@ -42,9 +42,6 @@ const MODULE_VISUAL: Record<
   SadeModuleKey,
   { icon: ComponentType<{ className?: string; style?: CSSProperties }>; color: string; bg: string }
 > = {
-  food: { icon: Utensils, color: "#ef4444", bg: "bg-red-50" },
-  grocery: { icon: Store, color: "#10b981", bg: "bg-emerald-50" },
-  pharmacy: { icon: Wrench, color: "#8b5cf6", bg: "bg-violet-50" },
   rental: { icon: Building2, color: "#0284c7", bg: "bg-sky-50" },
   parcel: { icon: Car, color: "#f97316", bg: "bg-orange-50" },
   shop: { icon: ShoppingBag, color: "#0f766e", bg: "bg-teal-50" },
@@ -169,7 +166,7 @@ export function SixAmMartModuleSelector({ active }: { active?: SadeModuleKey }) 
           <h2 className="text-2xl font-black text-slate-950">Hizmet seç</h2>
           <p className="mt-1 text-sm font-semibold text-slate-500">İhtiyacın olan hizmete hızlıca ulaş.</p>
         </div>
-        <Link href="/isletmeler" className="text-sm font-black text-[#0f766e]">Yakınımdakileri gör</Link>
+        <Link href="/kesfet/liste" className="text-sm font-black text-[#0f766e]">Yakınımdakileri gör</Link>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         {SADE_MODULES.map((module) => {

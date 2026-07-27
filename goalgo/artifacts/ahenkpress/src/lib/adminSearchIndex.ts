@@ -154,15 +154,6 @@ export const ADMIN_SEARCH_INDEX: AdminSearchEntry[] = [
     keywords: ["magaza", "e-ticaret", "siparis", "alisveris", "urun"],
   }),
   entry({
-    id: "yemek-siparis",
-    title: "Yemek ve teslimat siparişleri",
-    description: "Restoran / market sipariş yönetimi",
-    href: "/admin/teslimat-siparisleri",
-    icon: Truck,
-    section: "Sipariş",
-    keywords: ["yemek", "market", "teslimat", "restoran", "kurye"],
-  }),
-  entry({
     id: "turizm-rez",
     title: "Turizm rezervasyonları",
     description: "Otel, tur ve seyahat rezervasyonları",
@@ -305,15 +296,6 @@ export const ADMIN_SEARCH_INDEX: AdminSearchEntry[] = [
     icon: Megaphone,
     section: "Duyuru",
     keywords: ["duyuru", "bildirim", "anasayfa"],
-  }),
-  entry({
-    id: "siparis-isletme",
-    title: "Dükkan işletmeleri",
-    description: "Yemek ve market işletmeleri",
-    href: "/admin/siparis-isletmeleri",
-    icon: UtensilsCrossed,
-    section: "Sipariş",
-    keywords: ["dukkan", "isletme", "restoran"],
   }),
   entry({
     id: "alisveris-magaza",

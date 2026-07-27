@@ -4,7 +4,6 @@
  */
 
 export type ServiceMarketingSlug =
-  | "siparis"
   | "alisveris"
   | "ulasim"
   | "turizm"
@@ -53,7 +52,6 @@ export type ServiceMarketingModule = {
 export const SERVICES_MARKETING_BASE = "/servisler";
 
 export const SERVICES_MARKETING_ORDER: ServiceMarketingSlug[] = [
-  "siparis",
   "alisveris",
   "ulasim",
   "turizm",
@@ -63,77 +61,12 @@ export const SERVICES_MARKETING_ORDER: ServiceMarketingSlug[] = [
 
 /** Kısa / eski URL takma adları → kanonik slug */
 export const SERVICES_MARKETING_SLUG_ALIASES: Record<string, ServiceMarketingSlug> = {
+  siparis: "alisveris",
   haberler: "haber-merkezi",
   ai: "ai-cagri-merkezi",
 };
 
 export const SERVICES_MARKETING_MODULES: Record<ServiceMarketingSlug, ServiceMarketingModule> = {
-  siparis: {
-    slug: "siparis",
-    title: "Sipariş",
-    navLabel: "Sipariş",
-    tagline: "Restoran, market ve yerel işletmeler için uçtan uca sipariş altyapısı",
-    description:
-      "Menüden teslimata kadar tüm akışı tek panelden yönetin. Kurye, servis personeli ve mutfak ekibi atamaları; POS, stok, kasa ve personel maaş takibi ile operasyonu ölçeklendirin.",
-    heroCta: { label: "Sipariş vitrinine git", href: "/siparis" },
-    secondaryCta: { label: "İşletme paneli", href: "/servis-saglayici-giris" },
-    highlights: [
-      "Çoklu şube ve servis alanı",
-      "Kurye & mutfak ekip yönetimi",
-      "POS, kasa ve stok entegrasyonu",
-      "Kampanya, kupon ve CRM",
-    ],
-    customerFeatures: [
-      { title: "Menü ve seçenekler", desc: "Varyant, ekstra, porsiyon ve alerjen bilgisiyle zengin menü deneyimi." },
-      { title: "Sepet ve ödeme", desc: "Online ödeme, kapıda ödeme ve POS ile uyumlu kasa akışı." },
-      { title: "Sipariş takibi", desc: "Hazırlanıyor, yolda ve teslim edildi durumları; canlı bildirimler." },
-      { title: "Konum ve teslimat", desc: "Servis alanı, minimum sepet ve bölgesel teslimat kuralları." },
-      { title: "QR menü", desc: "Masada QR ile menü ve hızlı sipariş; şube bazlı özelleştirme." },
-      { title: "Kampanyalar", desc: "İndirim, kupon ve sadakat programlarıyla tekrar siparişi artırın." },
-    ],
-    providerPanel: {
-      title: "Servis sağlayıcı paneli",
-      subtitle: "Restoran, kafe ve market işletmeleri için operasyon merkezi",
-      items: [
-        "Şube, servis alanı ve çalışma saatleri yönetimi",
-        "Menü, kategori, fiyat ve stok senkronizasyonu",
-        "Sipariş kuyruğu, mutfak ekranı ve hazırlık süreleri",
-        "Kurye, servis personeli ve vardiya atamaları",
-        "POS / kasa, gün sonu ve ödeme yöntemleri",
-        "Personel maaş takibi, prim ve vardiya raporları",
-        "Müşteri CRM, notlar ve sipariş geçmişi",
-        "Kampanya, kupon ve promosyon yönetimi",
-        "Özel domain ve kurumsal e-posta bağlama",
-      ],
-    },
-    operations: {
-      title: "Operasyonel imkanlar",
-      subtitle: "Sahada ve kasada ihtiyaç duyduğunuz her araç",
-      items: [
-        "Stok takibi ve kritik seviye uyarıları",
-        "Kasiyer / kasa modu ve fiş yazdırma",
-        "Çoklu ödeme kanalı (nakit, kart, online)",
-        "Şube performans ve satış raporları",
-        "Teslimat rotası ve kurye konum takibi",
-        "WhatsApp ve telefon entegrasyonu",
-      ],
-    },
-    opportunities: [
-      { title: "Yerel görünürlük", desc: "Keşfet ve haritalar üzerinden yakındaki müşterilere ulaşın." },
-      { title: "Çoklu kanal", desc: "Web, mobil PWA ve QR menü ile aynı menüyü her yerde sunun." },
-      { title: "Ölçeklenebilir ekip", desc: "Mutfak, servis ve kurye ekiplerini panelden büyütün." },
-    ],
-    platformExtras: ["Özel e-posta adresi", "Domain ekleme", "Şube yönetimi", "Sipariş API"],
-    audienceNotes: [
-      "Restoran ve market işletmeleri menü, stok ve teslimat operasyonunu tek panelden yönetir; müşteriler web ve mobil PWA üzerinden sipariş verir.",
-      "Çoklu şube yapısında her lokasyon için ayrı menü, servis alanı ve kurye ataması tanımlanabilir.",
-    ],
-    useCases: [
-      { title: "Restoran zinciri", desc: "Şubeler, mutfak ekranı ve kurye filosu tek merkezden izlenir." },
-      { title: "Mahalle marketi", desc: "Stok, kasa ve kapıda teslimat aynı gün operasyona alınır." },
-      { title: "Kafe & pastane", desc: "QR menü ve masa siparişi ile fiziksel ve dijital kanallar birleşir." },
-    ],
-  },
   alisveris: {
     slug: "alisveris",
     title: "Alışveriş",

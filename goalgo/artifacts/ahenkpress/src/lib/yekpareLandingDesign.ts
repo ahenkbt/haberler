@@ -227,34 +227,34 @@ export const defaultYekpareLandingDesign = (): YekpareLandingDesign => ({
   zones: {
     title: "Hizmet bölgelerimiz",
     description:
-      "Yemek, market ve yerel hizmetlerde kullanıcı konumu; turizm ve alışverişte Türkiye geneli vitrinler öne çıkar.",
+      "Keşfet ve yerel hizmetlerde kullanıcı konumu; turizm ve alışverişte Türkiye geneli vitrinler öne çıkar.",
     items: [
-      { name: "İstanbul Avrupa", modules: "Yemek, Market, Alışveriş", href: "/haritalar" },
-      { name: "İstanbul Anadolu", modules: "Yemek, Market, Keşfet", href: "/haritalar" },
-      { name: "Ankara", modules: "Yemek, Market, Seyahat", href: "/haritalar" },
-      { name: "İzmir", modules: "Yemek, Market, Alışveriş", href: "/haritalar" },
-      { name: "Antalya", modules: "Seyahat, Yemek, Keşfet", href: "/haritalar" },
+      { name: "İstanbul Avrupa", modules: "Keşfet, Alışveriş", href: "/haritalar" },
+      { name: "İstanbul Anadolu", modules: "Keşfet, Alışveriş", href: "/haritalar" },
+      { name: "Ankara", modules: "Keşfet, Seyahat", href: "/haritalar" },
+      { name: "İzmir", modules: "Keşfet, Alışveriş", href: "/haritalar" },
+      { name: "Antalya", modules: "Seyahat, Keşfet", href: "/haritalar" },
       { name: "Türkiye geneli", modules: "Seyahat, Alışveriş, Haberler", href: "/servisler" },
     ],
   },
   banners: [
     {
-      title: "İlk siparişe özel",
-      subtitle: "Seçili restoranlarda indirim fırsatları",
+      title: "Yerel işletmeleri keşfet",
+      subtitle: "Restoran ve hizmetler Keşfet'te",
       image: `${LANDING_IMAGE_BASE}/banner-image-1.jpg`,
-      href: "/yemek",
+      href: "/kesfet/liste",
     },
     {
-      title: "Market hızlı teslimat",
-      subtitle: "Günlük ihtiyaçlar kapında",
+      title: "Mağaza fırsatları",
+      subtitle: "Online alışveriş vitrinleri",
       image: `${LANDING_IMAGE_BASE}/banner-image-2.jpg`,
-      href: "/market",
+      href: "/magaza",
     },
     {
       title: "Yerel mağazalar",
       subtitle: "Alışveriş vitrinlerini keşfet",
       image: `${LANDING_IMAGE_BASE}/post-thumb-1.jpg`,
-      href: "/alisveris",
+      href: "/magaza",
     },
   ],
   appDownload: {
@@ -286,8 +286,8 @@ export const defaultYekpareLandingDesign = (): YekpareLandingDesign => ({
   discount: {
     eyebrow: "Özel fırsat",
     title: "İlk siparişinde avantajlı teslimat",
-    ctaLabel: "Siparişe başla",
-    ctaHref: "/yemek",
+    ctaLabel: "Alışverişe başla",
+    ctaHref: "/magaza",
     backgroundImage: `${LANDING_IMAGE_BASE}/bg-light.jpg`,
   },
   testimonials: {

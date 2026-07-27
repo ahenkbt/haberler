@@ -20,12 +20,6 @@ export type SearchEngineCategoryPill = {
 /** ?st kategori ?eridi ? tek kelime etiketler (/kesfet hub; Hizmetler yok). */
 export const SEARCH_ENGINE_CATEGORY_PILLS: SearchEngineCategoryPill[] = [
   {
-    id: "siparis",
-    label: "Sipari\u015F",
-    href: MAIN_NAV_HREF.siparis,
-    emoji: "\uD83C\uDF7D\uFE0F",
-  },
-  {
     id: "alisveris",
     label: "Al\u0131\u015Fveri\u015F",
     href: MAIN_NAV_HREF.magaza,
@@ -73,17 +67,6 @@ export function isSearchEngineCategoryPillActive(loc: string, pill: SearchEngine
   const path = loc.split("?")[0] ?? "";
 
   switch (pill.id) {
-    case "siparis":
-      return (
-        path === "/siparis" ||
-        path.startsWith("/siparis/") ||
-        path === "/yemek" ||
-        path.startsWith("/yemek/") ||
-        path === "/market" ||
-        path.startsWith("/market/") ||
-        path === "/isletmeler" ||
-        path.startsWith("/isletmeler/")
-      );
     case "alisveris":
       return isHaritalarSubNavItemActive(loc, pill.href, "alisveris");
     case "seyahat":
@@ -146,12 +129,7 @@ const GLOBAL_CATEGORY_PILL_PREFIXES = [
   "/kesfet",
   "/servisler",
   "/magaza",
-  "/market",
-  "/yemek",
-  "/siparis",
   "/turizm",
-  "/alisveris",
-  "/isletmeler",
   "/ulasim",
   "/firma-rehberi",
   "/haberler",

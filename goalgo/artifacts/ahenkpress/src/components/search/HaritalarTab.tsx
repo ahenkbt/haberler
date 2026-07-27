@@ -8,7 +8,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { Link } from "wouter";
-import { buildKonumaGoreHref } from "@/lib/konumaGoreUtils";
+import { buildKesfetListHref } from "@/lib/kesfetListHref";
 import {
   buildMapSearchHref,
   haritalarNavHref,
@@ -45,7 +45,6 @@ type HaritalarTabProps = {
   sariSayfalarItems: HaritalarSearchItem[];
   hizmetItems: HaritalarSearchItem[];
   tourismItems: HaritalarSearchItem[];
-  yemekMarketItems: HaritalarSearchItem[];
   urunlerItems: HaritalarSearchItem[];
 };
 
@@ -122,11 +121,10 @@ function LocationHero({
       ? haritalarPlaceHref({ name: label, lat, lng, zoom: city?.zoom ?? 12 })
       : buildMapSearchHref({ q: query, city: cityName, lat, lng, zoom: city?.zoom ?? 12 }));
   const guideHref = buildSariSayfalarListPath({ city: cityName });
-  const orderHref = buildKonumaGoreHref({
+  const orderHref = buildKesfetListHref({
     city: cityName,
     lat: lat ?? undefined,
     lng: lng ?? undefined,
-    module: "food",
   });
 
   return (
@@ -164,7 +162,7 @@ function LocationHero({
                   Şehir rehberi
                 </Link>
                 <Link href={orderHref} className="usr-service-cta secondary">
-                  Sipariş
+                  İşletmeler
                 </Link>
               </>
             ) : null}
@@ -335,15 +333,6 @@ function cardForSection(sectionKey: HaritalarSectionKey, item: HaritalarSearchIt
   switch (sectionKey) {
     case "isletmeler":
       return <BusinessMapCard key={item.id} item={item} />;
-    case "siparis":
-      return (
-        <CompactResultCard
-          key={item.id}
-          item={item}
-          badge={item.typeLabel ?? "Sipariş"}
-          cta="Sipariş Ver"
-        />
-      );
     case "oteller":
       return (
         <CompactResultCard key={item.id} item={item} badge="Otel" cta="Odaları Gör" />
@@ -378,7 +367,6 @@ export function HaritalarTab({
   sariSayfalarItems,
   hizmetItems,
   tourismItems,
-  yemekMarketItems,
   urunlerItems,
 }: HaritalarTabProps) {
   const sections = useMemo(
@@ -392,7 +380,6 @@ export function HaritalarTab({
         sariSayfalarItems,
         hizmetItems,
         tourismItems,
-        yemekMarketItems,
         urunlerItems,
       }),
     [
@@ -404,7 +391,6 @@ export function HaritalarTab({
       sariSayfalarItems,
       hizmetItems,
       tourismItems,
-      yemekMarketItems,
       urunlerItems,
     ],
   );

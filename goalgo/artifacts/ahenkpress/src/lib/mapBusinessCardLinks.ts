@@ -26,19 +26,25 @@ export function resolveMapBusinessDiscoverHref(biz: MapBusinessLinkInput): strin
   return buildSariSayfalarDetailPath(biz);
 }
 
-/** Bağlı vendor mağazası — `/siparis/satici/...` veya `/alisveris/magaza/...` */
+/** Bağlı vendor mağazası — `/alisveris/magaza/...` veya Keşfet profili */
 export function resolveMapBusinessStoreHref(biz: MapBusinessLinkInput): string | null {
   if (biz.hasActiveStorefront === false) return null;
   const fromApi = String(biz.storefrontHref ?? "").trim();
-  if (fromApi.startsWith("/")) return fromApi;
+  if (fromApi.startsWith("/")) {
+    if (fromApi.startsWith("/siparis/")) {
+      const slug = String(biz.slug ?? "").trim();
+      return slug ? `/kesfet/${encodeURIComponent(slug)}` : resolveMapBusinessDiscoverHref(biz);
+    }
+    return fromApi;
+  }
   const slug = String(biz.slug ?? "").trim();
   if (!slug) return null;
   const enc = encodeURIComponent(slug);
   const st = String(biz.storeType ?? "").toLowerCase();
   if (["alisveris", "ecommerce", "shop"].includes(st)) return `/alisveris/magaza/${enc}`;
-  if (["siparis", "delivery", "restaurant", "restoran"].includes(st) || biz.hasDelivery) {
-    return `/siparis/satici/${enc}`;
-  }
   if (biz.hasOnlineOrder) return `/alisveris/magaza/${enc}`;
+  if (["siparis", "delivery", "restaurant", "restoran"].includes(st) || biz.hasDelivery) {
+    return `/kesfet/${enc}`;
+  }
   return null;
 }

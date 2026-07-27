@@ -25,13 +25,12 @@ export function resolveFloatingWidgetVisibility(
   options?: { hmChrome?: boolean },
 ): { chatBubble: boolean; yekpareAi: boolean } {
   const pathNoQuery = normalizePath(location);
-  const isQrMenu = pathNoQuery.startsWith("/siparis/qr-menu/");
   const isHmChrome = options?.hmChrome ?? isHmSitePublicChromePath(pathNoQuery);
   const pageHost =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
   const isHmCustomDomain = Boolean(pageHost && !isDefaultPortalHost(pageHost));
 
-  if (isQrMenu || isHmChrome || isHmCustomDomain) {
+  if (isHmChrome || isHmCustomDomain) {
     return { chatBubble: false, yekpareAi: false };
   }
 

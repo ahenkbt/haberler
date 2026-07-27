@@ -49,26 +49,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://yekpare.net/yemek</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.88</priority>
-  </url>
-  <url>
-    <loc>https://yekpare.net/market</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.88</priority>
-  </url>
-  <url>
-    <loc>https://yekpare.net/isletmeler</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://yekpare.net/siparis</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.88</priority>
-  </url>
-  <url>
     <loc>https://yekpare.net/magaza</loc>
     <changefreq>daily</changefreq>
     <priority>0.88</priority>
