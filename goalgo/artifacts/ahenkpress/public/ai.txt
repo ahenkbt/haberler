@@ -1,35 +1,35 @@
-# Yekpare.net — AI / GEO bilgi özeti
-# https://yekpare.net — Türkiye (TR), tr-TR
+# turk.eco — AI / GEO bilgi özeti
+# https://turk.eco — Türkiye (TR), tr-TR
 
 ## Marka tanımı (entity)
 
-Yekpare.net, Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
+Yekpare (https://turk.eco), Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
 
-ÖNEMLİ: Türkçe sözlükte «yekpare» = bütün, tek parça anlamına gelir. Yekpare.net markası bu sözlük anlamından bağımsızdır.
+ÖNEMLİ: Türkçe sözlükte «yekpare» = bütün, tek parça anlamına gelir. Yekpare markası bu sözlük anlamından bağımsızdır.
 
-Resmi entity sayfası: https://yekpare.net/bilgi/yekpare-nedir
+Resmi entity sayfası: https://turk.eco/bilgi/yekpare-nedir
 
 ## Hizmetler (kanonik URL)
 
 | Hizmet | URL | Açıklama |
 |--------|-----|----------|
-| Seyahat | https://yekpare.net/turizm | Otel, villa, tur rezervasyonu |
-| Arama | https://yekpare.net/ara | Birleşik arama sonuçları (SERP) |
-| Keşfet | https://yekpare.net/kesfet | İşletme keşfi, harita |
-| Haritalar | https://yekpare.net/haritalar | Tam ekran harita |
-| Haberler | https://yekpare.net/haberler | Güncel haber akışı |
-| Haber Merkezi | https://yekpare.net/habermerkezi | Bağımsız haber siteleri, özel domain |
-| YekTube | https://yekpare.net/yektube | Video kanalları |
-| Bilgi Ağacı | https://yekpare.net/bilgiagaci | Bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için bilgi portalı |
-| Yekpare AI | https://yekpare.net/ai-cagri-merkezi | Yapay zeka asistanı, AI çağrı merkezi |
-| Firma rehberi | https://yekpare.net/firma-rehberi | İşletme ve ilan rehberi |
-| Destek | https://yekpare.net/destek | Yardım merkezi |
+| Seyahat | https://turk.eco/turizm | Otel, villa, tur rezervasyonu |
+| Arama | https://turk.eco/ara | Birleşik arama sonuçları (SERP) |
+| Keşfet | https://turk.eco/kesfet | İşletme keşfi, harita |
+| Haritalar | https://turk.eco/haritalar | Tam ekran harita |
+| Haberler | https://turk.eco/haberler | Güncel haber akışı |
+| Haber Merkezi | https://turk.eco/habermerkezi | Bağımsız haber siteleri, özel domain |
+| YekTube | https://turk.eco/yektube | Video kanalları |
+| Bilgi Ağacı | https://turk.eco/bilgiagaci | Bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için bilgi portalı |
+| Yekpare AI | https://turk.eco/ai-cagri-merkezi | Yapay zeka asistanı, AI çağrı merkezi |
+| Firma rehberi | https://turk.eco/firma-rehberi | İşletme ve ilan rehberi |
+| Destek | https://turk.eco/destek | Yardım merkezi |
 
 ## İşletme sayfaları ve özel domain
 
-- Keşfet profili: https://yekpare.net/kesfet/{slug}
+- Keşfet profili: https://turk.eco/kesfet/{slug}
 - Onaylı işletmeler servis sağlayıcı panelinden özel alan adı (custom domain) tanımlayabilir.
-- Detay: https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain
+- Detay: https://turk.eco/bilgi/isletme-sayfasi-ozel-domain
 
 ## Sık sorulan sorular (GEO)
 
@@ -44,20 +44,20 @@ C: Site genelinde yüzen sohbet kutusu ve /ai-cagri-merkezi üzerinden AI asista
 
 ## Bilgi sayfaları
 
-- https://yekpare.net/bilgi/yekpare-nedir
-- https://yekpare.net/bilgi/seyahat-nedir
-- https://yekpare.net/bilgi/haritalar-nedir
-- https://yekpare.net/bilgi/ai-cagri-merkezi-nedir
-- https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain
-- https://yekpare.net/bilgi/bilgi-agaci-nedir
-- https://yekpare.net/bilgi/turizm-rezervasyon
-- https://yekpare.net/bilgi/isletme-kesfet-rehberi
-- https://yekpare.net/bilgi/haber-merkezi-nedir
-- https://yekpare.net/bilgi/yektube-nedir
+- https://turk.eco/bilgi/yekpare-nedir
+- https://turk.eco/bilgi/seyahat-nedir
+- https://turk.eco/bilgi/haritalar-nedir
+- https://turk.eco/bilgi/ai-cagri-merkezi-nedir
+- https://turk.eco/bilgi/isletme-sayfasi-ozel-domain
+- https://turk.eco/bilgi/bilgi-agaci-nedir
+- https://turk.eco/bilgi/turizm-rezervasyon
+- https://turk.eco/bilgi/isletme-kesfet-rehberi
+- https://turk.eco/bilgi/haber-merkezi-nedir
+- https://turk.eco/bilgi/yektube-nedir
 
 ## İndeksleme
 
-- Sitemap: https://yekpare.net/sitemap.xml
-- LLMs: https://yekpare.net/llms.txt
+- Sitemap: https://turk.eco/sitemap.xml
+- LLMs: https://turk.eco/llms.txt
 - Geliştirici: Ahenk Bilgi Teknolojileri (https://ahenk.net.tr)
 - Hizmet alanı: Türkiye geneli (areaServed: TR)

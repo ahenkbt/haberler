@@ -27,8 +27,8 @@ export function buildHmLlmsTxt(site: HmAiSiteRow, requestOrigin: string): string
 > ${desc}
 
 Bu web sitesi **Yekpare Haber Merkezi** yayın altyapısı ile yönetilmektedir.
-Platform: [Yekpare Haber Merkezi](https://yekpare.net/bilgi/haber-merkezi-nedir) — https://yekpare.net/bilgi/haber-merkezi-nedir
-Ana platform: [Yekpare](https://yekpare.net) — Türkiye'nin yerli arama motoru ve dijital hizmet platformu.
+Platform: [Yekpare Haber Merkezi](https://turk.eco/bilgi/haber-merkezi-nedir) — https://turk.eco/bilgi/haber-merkezi-nedir
+Ana platform: [Yekpare](https://turk.eco) — Türkiye'nin yerli arama motoru ve dijital hizmet platformu.
 
 ## Site
 
@@ -65,11 +65,11 @@ country: TR
 language: tr-TR
 
 platform_name: Yekpare Haber Merkezi
-platform_url: https://yekpare.net/bilgi/haber-merkezi-nedir
+platform_url: https://turk.eco/bilgi/haber-merkezi-nedir
 platform_vendor: Ahenk Bilgi Teknolojileri
 platform_vendor_url: https://ahenk.net.tr
 parent_platform: Yekpare
-parent_platform_url: https://yekpare.net
+parent_platform_url: https://turk.eco
 
 sitemap: ${origin}/sitemap.xml
 llms_txt: ${origin}/llms.txt

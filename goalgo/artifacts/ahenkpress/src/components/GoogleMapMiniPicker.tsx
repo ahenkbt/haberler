@@ -66,7 +66,7 @@ export function GoogleMapMiniPicker({
   useEffect(() => {
     const onAuthFail = () => {
         setHint(
-          "Google anahtarı reddedildi (gm_authFailure). Cloud Console: faturalama, Maps JavaScript + Places API, HTTP referrer’da https://yekpare.net/* ve https://turknet.app/*.",
+          "Google anahtarı reddedildi (gm_authFailure). Cloud Console: faturalama, Maps JavaScript + Places API, HTTP referrer’da https://turk.eco/* , https://yekpare.net/* ve https://turknet.app/*.",
         );
     };
     window.addEventListener("yekpare-google-maps-auth-failure", onAuthFail);
@@ -91,7 +91,7 @@ export function GoogleMapMiniPicker({
       if (!loadRes.ok || !mapDiv.current || !searchInput.current) {
         const extra = !loadRes.ok ? describeGoogleMapsLoadFailure(loadRes.reason) : "";
         setHint(
-          `Google Haritalar yüklenemedi. ${extra} Cloud Console: Maps JavaScript API, Places API, faturalama; referrer’da https://yekpare.net/* ve https://turknet.app/*.`,
+          `Google Haritalar yüklenemedi. ${extra} Cloud Console: Maps JavaScript API, Places API, faturalama; referrer’da https://turk.eco/* , https://yekpare.net/* ve https://turknet.app/*.`,
         );
         setLoading(false);
         return;

@@ -17,7 +17,7 @@ export function isKnownHmCustomHost(host: string): boolean {
   return !!resolveHmDomainSlugHint(host);
 }
 
-/** Yapılandırılmış kanonik portal hostları (yekpare.net, turknet.app, VITE_PORTAL_HOSTS, localhost, *.vercel.app, *.netlify.app). */
+/** Yapılandırılmış kanonik portal hostları (turk.eco, yekpare.net legacy, turknet.app, VITE_PORTAL_HOSTS, localhost, *.vercel.app, *.netlify.app). */
 export function isConfiguredPortalHost(host: string): boolean {
   const h = normalizeHostKey(host);
   if (!h || h === "localhost" || h === "127.0.0.1") return true;

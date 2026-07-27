@@ -731,7 +731,7 @@ router.post("/providers/apply", async (req, res): Promise<void> => {
           : `💳 Gelir: Abonelik`,
         registrationNote ? `🌐 ${registrationNote}` : "",
       ].filter(Boolean).join("\n"),
-      panelUrl: `https://yekpare.net/admin/servis-saglayicilar`,
+      panelUrl: `https://turk.eco/admin/servis-saglayicilar`,
     }).catch(() => {});
 
     const welcomeWa = [
@@ -978,7 +978,7 @@ router.put("/admin/providers/:id/reject", async (req, res): Promise<void> => {
       reason ? `📋 Sebep: ${reason}` : "",
       `Eksiklerinizi tamamlayıp yeniden başvurabilirsiniz.`,
     ].filter(Boolean).join("\n"),
-    panelUrl: `https://yekpare.net/isletme-basvuru`,
+    panelUrl: `https://turk.eco/isletme-basvuru`,
   });
 
   res.json({ success: true, vendor: v, whatsapp: waResult });

@@ -43,7 +43,7 @@ import "@/styles/homepageTheme.css";
 import "@/styles/searchEngineHeader.css";
 
 const API = "/api";
-const ORIGIN = typeof window !== "undefined" ? window.location.origin : "https://yekpare.net";
+const ORIGIN = typeof window !== "undefined" ? window.location.origin : "https://turk.eco";
 
 type SearchTabKey =
   | "all"

@@ -10,9 +10,10 @@ describe("buildHmSitePublicCacheUrls", () => {
       domain2: "www.suhaberajansi.com",
       domain3: null,
     });
+    expect(urls).toContain("https://turk.eco/api/hm/meta/by-slug/su");
     expect(urls).toContain("https://yekpare.net/api/hm/meta/by-slug/su");
     expect(urls).toContain(
-      "https://yekpare.net/api/hm/meta/by-domain?domain=suhaberajansi.com",
+      "https://turk.eco/api/hm/meta/by-domain?domain=suhaberajansi.com",
     );
     expect(urls).toContain(
       "https://suhaberajansi.com/api/hm/meta/by-domain?domain=suhaberajansi.com",
@@ -20,7 +21,7 @@ describe("buildHmSitePublicCacheUrls", () => {
     expect(urls).toContain(
       "https://www.suhaberajansi.com/api/hm/meta/by-domain?domain=www.suhaberajansi.com",
     );
-    expect(urls).toContain("https://yekpare.net/api/hm/home-bundle?siteId=2");
+    expect(urls).toContain("https://turk.eco/api/hm/home-bundle?siteId=2");
     expect(urls.some((u) => u.includes("suhaberajansi.com"))).toBe(true);
   });
 });

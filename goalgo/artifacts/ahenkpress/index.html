@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <!-- Google Search Console — yekpare.net kök (Genel Ayarlar); HM sitelerinde edge middleware site kodunu enjekte eder -->
+    <!-- Google Search Console — turk.eco kök (Genel Ayarlar); HM sitelerinde edge middleware site kodunu enjekte eder -->
     <meta name="google-site-verification" content="VgFguI_O9BcZbc8mGpSo4TlgB3OlnHyUa_gchDPIG3c" data-yekpare-verification="portal" />
 
     <!-- Primary Meta Tags -->
@@ -417,6 +417,8 @@
           var host = (location.hostname || "").toLowerCase().split(":")[0];
           var portal =
             !host ||
+            host === "turk.eco" ||
+            host === "www.turk.eco" ||
             host === "yekpare.net" ||
             host === "www.yekpare.net" ||
             host === "turknet.app" ||
@@ -468,25 +470,25 @@
     <meta name="geo.placename" content="Türkiye" />
     <meta name="geo.position" content="39.0;35.0" />
     <meta name="ICBM" content="39.0, 35.0" />
-    <link rel="canonical" href="https://yekpare.net/" />
-    <link rel="alternate" hreflang="tr-TR" href="https://yekpare.net/" />
-    <link rel="alternate" hreflang="x-default" href="https://yekpare.net/" />
+    <link rel="canonical" href="https://turk.eco/" />
+    <link rel="alternate" hreflang="tr-TR" href="https://turk.eco/" />
+    <link rel="alternate" hreflang="x-default" href="https://turk.eco/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://yekpare.net/" />
+    <meta property="og:url" content="https://turk.eco/" />
     <meta property="og:title" content="Yekpare — Türkiye'nin Yerli Arama Motoru" />
     <meta property="og:description" content="Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmetleri tek aramada keşfedin." />
-    <meta property="og:image" content="https://yekpare.net/opengraph.jpg" />
+    <meta property="og:image" content="https://turk.eco/opengraph.jpg" />
     <meta property="og:locale" content="tr_TR" />
     <meta property="og:site_name" content="Yekpare" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://yekpare.net/" />
+    <meta name="twitter:url" content="https://turk.eco/" />
     <meta name="twitter:title" content="Yekpare — Türkiye'nin Yerli Arama Motoru" />
     <meta name="twitter:description" content="Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmetleri tek aramada keşfedin." />
-    <meta name="twitter:image" content="https://yekpare.net/opengraph.jpg" />
+    <meta name="twitter:image" content="https://turk.eco/opengraph.jpg" />
 
     <!-- PWA -->
     <meta name="theme-color" content="#0f766e" />
@@ -508,11 +510,11 @@
       "@graph": [
         {
           "@type": "Organization",
-          "@id": "https://yekpare.net/#organization",
+          "@id": "https://turk.eco/#organization",
           "name": "Yekpare",
-          "alternateName": ["Yekpare Arama Motoru", "Yekpare.net", "yekpare.net"],
-          "url": "https://yekpare.net",
-          "logo": { "@type": "ImageObject", "url": "https://yekpare.net/icon-512.png" },
+          "alternateName": ["Yekpare Arama Motoru", "Yekpare", "turk.eco", "yekpare.net"],
+          "url": "https://turk.eco",
+          "logo": { "@type": "ImageObject", "url": "https://turk.eco/icon-512.png" },
           "description": "Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş, firma rehberi ve turizm hizmetlerini tek aramada keşfedin.",
           "areaServed": { "@type": "Country", "name": "Türkiye" },
           "address": { "@type": "PostalAddress", "addressCountry": "TR" },
@@ -522,97 +524,97 @@
         },
         {
           "@type": "WebSite",
-          "@id": "https://yekpare.net/#website",
+          "@id": "https://turk.eco/#website",
           "name": "Yekpare",
           "alternateName": "Yekpare Arama Motoru",
-          "url": "https://yekpare.net",
+          "url": "https://turk.eco",
           "inLanguage": "tr-TR",
-          "publisher": { "@id": "https://yekpare.net/#organization" },
-          "about": { "@id": "https://yekpare.net/#organization" },
+          "publisher": { "@id": "https://turk.eco/#organization" },
+          "about": { "@id": "https://turk.eco/#organization" },
           "potentialAction": [
-            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/ara?q={search_term_string}" }, "query-input": "required name=search_term_string" },
-            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/haberler?q={search_term_string}" }, "query-input": "required name=search_term_string" },
-            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://yekpare.net/kesfet?q={search_term_string}" }, "query-input": "required name=search_term_string" }
+            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://turk.eco/ara?q={search_term_string}" }, "query-input": "required name=search_term_string" },
+            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://turk.eco/haberler?q={search_term_string}" }, "query-input": "required name=search_term_string" },
+            { "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://turk.eco/kesfet?q={search_term_string}" }, "query-input": "required name=search_term_string" }
           ]
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/turizm#service",
+          "@id": "https://turk.eco/turizm#service",
           "name": "Seyahat ve Turizm",
           "serviceType": "TravelAgency",
-          "url": "https://yekpare.net/turizm",
+          "url": "https://turk.eco/turizm",
           "description": "Otel, villa, tur ve araç kiralama rezervasyon ilanları.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/kesfet#service",
+          "@id": "https://turk.eco/kesfet#service",
           "name": "Keşfet ve Haritalar",
           "serviceType": "LocalBusinessDirectory",
-          "url": "https://yekpare.net/kesfet",
+          "url": "https://turk.eco/kesfet",
           "description": "Harita üzerinden işletme keşfi ve konum arama.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/haberler#service",
+          "@id": "https://turk.eco/haberler#service",
           "name": "Haberler",
           "serviceType": "NewsMediaOrganization",
-          "url": "https://yekpare.net/haberler",
+          "url": "https://turk.eco/haberler",
           "description": "Güncel haber akışı ve haber merkezi siteleri.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/ansiklopedi#service",
+          "@id": "https://turk.eco/ansiklopedi#service",
           "name": "Bilgi Ağacı",
           "serviceType": "EducationalOrganization",
-          "url": "https://yekpare.net/ansiklopedi",
+          "url": "https://turk.eco/ansiklopedi",
           "description": "Ansiklopedi ve bilgi ağacı içerik portalı.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/haritalar#service",
+          "@id": "https://turk.eco/haritalar#service",
           "name": "Haritalar",
           "serviceType": "MapService",
-          "url": "https://yekpare.net/haritalar",
+          "url": "https://turk.eco/haritalar",
           "description": "Tam ekran interaktif harita ve konum arama.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/ai-cagri-merkezi#service",
+          "@id": "https://turk.eco/ai-cagri-merkezi#service",
           "name": "Yekpare AI",
           "serviceType": "CustomerService",
-          "url": "https://yekpare.net/ai-cagri-merkezi",
+          "url": "https://turk.eco/ai-cagri-merkezi",
           "description": "Yapay zeka asistanı ve işletmeler için AI çağrı merkezi.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/habermerkezi#service",
+          "@id": "https://turk.eco/habermerkezi#service",
           "name": "Haber Merkezi",
           "serviceType": "NewsMediaOrganization",
-          "url": "https://yekpare.net/habermerkezi",
+          "url": "https://turk.eco/habermerkezi",
           "description": "Bağımsız haber siteleri; özel domain ile white-label yayın.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         },
         {
           "@type": "Service",
-          "@id": "https://yekpare.net/yektube#service",
+          "@id": "https://turk.eco/yektube#service",
           "name": "YekTube",
           "serviceType": "VideoObject",
-          "url": "https://yekpare.net/yektube",
+          "url": "https://turk.eco/yektube",
           "description": "Video kanalları, canlı TV ve haber videoları.",
-          "provider": { "@id": "https://yekpare.net/#organization" },
+          "provider": { "@id": "https://turk.eco/#organization" },
           "areaServed": { "@type": "Country", "name": "Türkiye" }
         }
       ]
@@ -627,7 +629,7 @@
       "name": "Yekpare",
       "applicationCategory": "SearchApplication",
       "operatingSystem": "Web, Android, iOS",
-      "url": "https://yekpare.net",
+      "url": "https://turk.eco",
       "description": "Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmet araması.",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
       "areaServed": "TR",

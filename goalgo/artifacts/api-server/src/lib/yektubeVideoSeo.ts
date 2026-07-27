@@ -77,7 +77,7 @@ function buildJsonLd(input: ResolveVideoSeoInput, seoTitle: string, seoDescripti
     publisher: {
       "@type": "Organization",
       name: "Yektube",
-      url: "https://yekpare.net/yp/",
+      url: "https://turk.eco/yp/",
     },
     ...(input.channelName?.trim()
       ? {

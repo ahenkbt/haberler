@@ -39,7 +39,7 @@ Allow: /
 # Entity page: /bilgi/yekpare-nedir
 
 # Not: Cloudflare Worker robots.txt’i host’a göre yeniden yazar (HM → kendi /sitemap.xml).
-Sitemap: https://yekpare.net/sitemap.xml
+Sitemap: https://turk.eco/sitemap.xml
 
 # Admin ve üye alanları
 Disallow: /admin/

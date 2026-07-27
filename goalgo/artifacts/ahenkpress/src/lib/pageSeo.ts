@@ -446,7 +446,7 @@ export function applyHmPublisherStructuredData(opts: {
         name: "Yekpare Haber Merkezi",
         applicationCategory: "NewsApplication",
         operatingSystem: "Web",
-        url: "https://yekpare.net/bilgi/haber-merkezi-nedir",
+        url: "https://turk.eco/bilgi/haber-merkezi-nedir",
         description:
           "Bu site Yekpare Haber Merkezi white-label haber yayın yazılımı ile yönetilmektedir.",
         author: {
@@ -457,7 +457,7 @@ export function applyHmPublisherStructuredData(opts: {
         isPartOf: {
           "@type": "WebApplication",
           name: "Yekpare",
-          url: "https://yekpare.net",
+          url: "https://turk.eco",
         },
       },
     ],

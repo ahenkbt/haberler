@@ -4,7 +4,7 @@ import { resolveApiOrigin } from "./resolve-api-origin.mjs";
 
 const apiBase = resolveApiOrigin();
 const outDir = process.argv[2] || "artifacts/ahenkpress/dist/public";
-const portalOrigin = String(process.env.SITEMAP_PORTAL_ORIGIN ?? "https://yekpare.net").replace(/\/+$/, "");
+const portalOrigin = String(process.env.SITEMAP_PORTAL_ORIGIN ?? "https://turk.eco").replace(/\/+$/, "");
 const portalHost = new URL(portalOrigin).hostname.replace(/^www\./i, "");
 const today = new Date().toISOString().split("T")[0];
 

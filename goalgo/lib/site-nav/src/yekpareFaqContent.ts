@@ -3,7 +3,7 @@
  * Platform modeli: firma rehberi + pazaryeri; Yekpare satıcı değildir.
  */
 
-export const YEKPARE_PLATFORM_INTRO = `<p><strong>yekpare.net</strong> (Yekpare), işletmelerin abonelikle yer aldığı bir <strong>firma rehberi</strong> ve <strong>pazaryeri</strong>dir. Haber, video, harita, sipariş, alışveriş, ilan, turizm ve benzeri modüller aracılığıyla kayıtlı işletmelerin tanıtılmasını ve kullanıcıların bu işletmelere ulaşmasını sağlar.</p>
+export const YEKPARE_PLATFORM_INTRO = `<p><strong>turk.eco</strong> (Yekpare), işletmelerin abonelikle yer aldığı bir <strong>firma rehberi</strong> ve <strong>pazaryeri</strong>dir. Haber, video, harita, sipariş, alışveriş, ilan, turizm ve benzeri modüller aracılığıyla kayıtlı işletmelerin tanıtılmasını ve kullanıcıların bu işletmelere ulaşmasını sağlar.</p>
 <p>Yekpare, platformda listelenen ürün veya hizmetlerin <strong>satıcısı, aracısı veya hizmet sağlayıcısı değildir</strong>. Sipariş, rezervasyon ve ödeme işlemleri kullanıcı ile platformda kayıtlı ilgili işletme arasında doğrudan gerçekleşir. TURSAB belgesi, seyahat acentesi ruhsatı, ürün/hizmet kalitesi ve zamanında ifa ilgili işletmenin sorumluluğundadır.</p>`;
 
 export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
@@ -66,7 +66,7 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 export const YEKPARE_KULLANIM_KOSULLARI_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 
 <h2>1. Taraflar ve kabul</h2>
-<p>İşbu Kullanım Koşulları, <strong>yekpare.net</strong> web sitesi ve bağlı mobil deneyimini kullanan ziyaretçi, üye ve işletmeler ile platform işletmecisi arasındaki hak ve yükümlülükleri düzenler. Siteye erişim, üyelik oluşturma veya işletme başvurusu bu koşulların kabulü anlamına gelir.</p>
+<p>İşbu Kullanım Koşulları, <strong>turk.eco</strong> web sitesi ve bağlı mobil deneyimini kullanan ziyaretçi, üye ve işletmeler ile platform işletmecisi arasındaki hak ve yükümlülükleri düzenler. Siteye erişim, üyelik oluşturma veya işletme başvurusu bu koşulların kabulü anlamına gelir.</p>
 
 <h2>2. Platformun niteliği</h2>
 <p>Yekpare; haber, video, harita, alışveriş, ilan, turizm ve benzeri modüllerde <strong>işletmelerin listelendiği</strong> bir firma rehberi ve pazaryeridir. Platform, listelenen mal ve hizmetlerin satıcısı değildir. Ticari işlemler kullanıcı ile ilgili işletme arasında kurulur.</p>
@@ -122,7 +122,7 @@ export const YEKPARE_GIZLILIK_BODY_HTML = `<p>Veri sorumlusu: <strong>VATAN SOSY
 <h2>6. Çerezler</h2>
 <p>Oturum, tercih ve analitik çerezleri site işlevselliği için kullanılır. Tarayıcı ayarlarından çerezleri yönetebilirsiniz.</p>`;
 
-export const YEKPARE_MESAFELI_SATIS_BODY_HTML = `<p>İşbu sözleşme, 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği çerçevesinde <strong>yekpare.net</strong> üzerinden ilgili işletmeye yönlendirilerek gerçekleştirilen mal/hizmet işlemlerinde tarafların hak ve yükümlülüklerini açıklar.</p>
+export const YEKPARE_MESAFELI_SATIS_BODY_HTML = `<p>İşbu sözleşme, 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği çerçevesinde <strong>turk.eco</strong> üzerinden ilgili işletmeye yönlendirilerek gerçekleştirilen mal/hizmet işlemlerinde tarafların hak ve yükümlülüklerini açıklar.</p>
 
 <h2>1. Platformun rolü</h2>
 <p><strong>Yekpare satıcı değildir.</strong> Platform, işletmelerin listelendiği firma rehberi ve pazaryeridir. Mesafeli satış sözleşmesi, siparişi onaylayan <strong>işletme (satıcı)</strong> ile siparişi veren <strong>tüketici (alıcı)</strong> arasında kurulur. Yekpare bu sözleşmenin tarafı değildir; listeleme ve teknik aracılık hizmeti sunar.</p>
@@ -146,7 +146,7 @@ export const YEKPARE_MESAFELI_SATIS_BODY_HTML = `<p>İşbu sözleşme, 6502 say�
 export const YEKPARE_ON_BILGILENDIRME_BODY_HTML = `<p>6502 sayılı Kanun uyarınca, ödeme öncesinde aşağıdaki hususlarda bilgilendirilirsiniz. Siparişi onaylayarak bu formu okuduğunuzu ve ilgili işletme ile mesafeli satış sözleşmesini kabul ettiğinizi beyan edersiniz.</p>
 
 <h2>Platform bilgisi</h2>
-<p><strong>yekpare.net</strong> satıcı konumunda değildir; firma rehberi ve pazaryeri olarak işletmeleri listeler. Satın alma sözleşmesi sizinle siparişi alan işletme arasında kurulur.</p>
+<p><strong>turk.eco</strong> satıcı konumunda değildir; firma rehberi ve pazaryeri olarak işletmeleri listeler. Satın alma sözleşmesi sizinle siparişi alan işletme arasında kurulur.</p>
 
 <h2>Satıcı bilgileri</h2>
 <p>Satıcının ticari unvanı, iletişim bilgileri ve MERSİS/vergi bilgileri (varsa) sipariş ekranında gösterilir. Eksik bilgi görürseniz sipariş öncesi işletmeyle teyit edin.</p>

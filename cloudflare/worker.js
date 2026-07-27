@@ -31,6 +31,8 @@ const PURGE_COOKIE = "__yekpare_sw_purged_v20260717a";
  * HM + portal: bir kez daha agresif Clear-Site-Data.
  */
 const FORCE_PURGE_HOSTS = new Set([
+  "turk.eco",
+  "www.turk.eco",
   "yekpare.net",
   "www.yekpare.net",
   "haberler.ahenkbt.workers.dev",
@@ -78,6 +80,8 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
 };
 
 const PORTAL_HOSTS = new Set([
+  "turk.eco",
+  "www.turk.eco",
   "yekpare.net",
   "www.yekpare.net",
   "turknet.app",
@@ -88,6 +92,11 @@ const PORTAL_HOSTS = new Set([
   "ahenk.net.tr",
   "haberler.ahenkbt.workers.dev",
 ]);
+
+/** Eski ana portal → kanonik turk.eco (SEO / tek köken). */
+const CANONICAL_PORTAL_ORIGIN = "https://turk.eco";
+const LEGACY_PORTAL_REDIRECT_HOSTS = new Set(["yekpare.net", "www.yekpare.net"]);
+const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.turk.eco"]);
 
 /** Eski Netlify SW'yi öldürür; kendini de kaldırır. */
 const KILL_SW = `/* yekpare-netlify-purge */
@@ -1953,6 +1962,20 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
 export default {
   async fetch(request, env) {
     const incoming = new URL(request.url);
+    const hostKeyEarly = normalizeHost(incoming.hostname);
+
+    // yekpare.net → turk.eco (kalıcı); www.turk.eco → apex
+    if (LEGACY_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly) || APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
+      const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: dest.toString(),
+          "cache-control": "public, max-age=3600",
+          "x-yekpare-frontend": "canonical-portal-redirect",
+        },
+      });
+    }
 
     if (isSwPath(incoming.pathname)) {
       return new Response(KILL_SW, {
@@ -1967,7 +1990,7 @@ export default {
     }
 
     // Ortak editör (sehirgazetesiankara): ASG + AHB senkron + username.
-    const hostKey = normalizeHost(incoming.hostname);
+    const hostKey = hostKeyEarly;
     if (
       hostKey === "ankarasehirgazetesi.com" ||
       hostKey === "ankarahabergundemi.com" ||

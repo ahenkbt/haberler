@@ -140,7 +140,7 @@ export default function IletisimKunyePremium() {
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href="https://yekpare.net"
+                href="https://turk.eco"
                 className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-black text-white shadow-lg transition hover:opacity-90"
                 style={{ backgroundColor: ACCENT }}
               >

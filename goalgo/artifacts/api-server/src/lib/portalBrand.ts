@@ -1,10 +1,15 @@
-/** Ana portal markası — yekpare.net (geçiş döneminde turknet.app de portal sayılır). */
+/** Ana portal markası — turk.eco (geçiş döneminde yekpare.net / turknet.app de portal sayılır). */
 
-export const PORTAL_ORIGIN = "https://yekpare.net";
-export const PORTAL_HOST = "yekpare.net";
-export const PORTAL_WWW_HOST = "www.yekpare.net";
+export const PORTAL_ORIGIN = "https://turk.eco";
+export const PORTAL_HOST = "turk.eco";
+export const PORTAL_WWW_HOST = "www.turk.eco";
 
-export const LEGACY_PORTAL_HOSTS = ["turknet.app", "www.turknet.app"] as const;
+export const LEGACY_PORTAL_HOSTS = [
+  "yekpare.net",
+  "www.yekpare.net",
+  "turknet.app",
+  "www.turknet.app",
+] as const;
 
 export const PORTAL_ALIAS_HOSTS = [
   "goalgo.org",
@@ -48,7 +53,7 @@ export function isPortalHostname(host: string | null | undefined): boolean {
 }
 
 /** HM özel alanında Railway portal sitemap yanıtında yanlışlıkla görünen kök alanlar. */
-export const PORTAL_SITEMAP_LEAK_HOSTS = [PORTAL_HOST, "turknet.app"] as const;
+export const PORTAL_SITEMAP_LEAK_HOSTS = [PORTAL_HOST, "yekpare.net", "turknet.app"] as const;
 
 /** Bilinen portal kökleri (admin SEO sekmesi ipuçları). */
 export function listKnownPortalHostKeys(): string[] {

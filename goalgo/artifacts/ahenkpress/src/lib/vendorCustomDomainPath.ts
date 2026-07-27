@@ -47,13 +47,13 @@ export function vendorCustomDomainRedirectTo(
   if (isVendorCustomDomainInfrastructurePath(pathname)) return null;
 
   if (pathname === "/kesfet" || pathname.startsWith("/kesfet/")) {
-    return `https://yekpare.net${pathname}${query}`;
+    return `https://turk.eco${pathname}${query}`;
   }
 
   const baseKesfetPrefix = `${base}/kesfet`;
   if (pathname === baseKesfetPrefix || pathname.startsWith(`${baseKesfetPrefix}/`)) {
     const rest = pathname.slice(baseKesfetPrefix.length) || "";
-    return `https://yekpare.net/kesfet${rest}${query}`;
+    return `https://turk.eco/kesfet${rest}${query}`;
   }
 
   if (pathname === base || pathname.startsWith(`${base}/`)) return null;

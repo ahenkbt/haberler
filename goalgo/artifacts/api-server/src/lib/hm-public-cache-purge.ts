@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getNewsDbForRead, hmNewsSitesTable } from "@workspace/db";
+import { PORTAL_ORIGIN } from "./portalBrand.js";
 
 export type HmPublicCachePurgeResult = {
   siteId: number;
@@ -48,13 +49,18 @@ export function buildHmSitePublicCacheUrls(input: {
     .trim()
     .toLowerCase();
   const urls = new Set<string>();
-  const portal = "https://yekpare.net";
+  const portalOrigins = [
+    PORTAL_ORIGIN.replace(/\/+$/, ""),
+    "https://yekpare.net", // geçiş: eski köken cache temizliği
+  ];
 
   if (slug) {
-    urls.add(`${portal}/api/hm/meta/by-slug/${encodeURIComponent(slug)}`);
-    urls.add(`${portal}/api/hm/meta/by-slug/${encodeURIComponent(slug)}?includePageContent=1`);
-    urls.add(`${portal}/tr/${encodeURIComponent(slug)}`);
-    urls.add(`${portal}/tr/${encodeURIComponent(slug)}/`);
+    for (const portal of portalOrigins) {
+      urls.add(`${portal}/api/hm/meta/by-slug/${encodeURIComponent(slug)}`);
+      urls.add(`${portal}/api/hm/meta/by-slug/${encodeURIComponent(slug)}?includePageContent=1`);
+      urls.add(`${portal}/tr/${encodeURIComponent(slug)}`);
+      urls.add(`${portal}/tr/${encodeURIComponent(slug)}/`);
+    }
   }
 
   const hosts = [input.domain, input.domain2, input.domain3]
@@ -63,7 +69,9 @@ export function buildHmSitePublicCacheUrls(input: {
 
   for (const host of hosts) {
     for (const h of hostVariants(host)) {
-      urls.add(`${portal}/api/hm/meta/by-domain?domain=${encodeURIComponent(h)}`);
+      for (const portal of portalOrigins) {
+        urls.add(`${portal}/api/hm/meta/by-domain?domain=${encodeURIComponent(h)}`);
+      }
       urls.add(`https://${h}/api/hm/meta/by-domain?domain=${encodeURIComponent(h)}`);
       urls.add(`https://${h}/`);
       if (slug) {
@@ -75,7 +83,9 @@ export function buildHmSitePublicCacheUrls(input: {
 
   const siteId = Number(input.siteId);
   if (Number.isFinite(siteId) && siteId > 0) {
-    urls.add(`${portal}/api/hm/home-bundle?siteId=${siteId}`);
+    for (const portal of portalOrigins) {
+      urls.add(`${portal}/api/hm/home-bundle?siteId=${siteId}`);
+    }
     for (const host of hosts) {
       for (const h of hostVariants(host)) {
         urls.add(`https://${h}/api/hm/home-bundle?siteId=${siteId}`);
