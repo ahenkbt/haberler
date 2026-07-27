@@ -76,8 +76,11 @@ assertIncludes("artifacts/ahenkpress/src/pages/public/AnsiklopediDetay.tsx", "sa
 assertIncludes("artifacts/ahenkpress/src/pages/public/HaberAnasayfasi.tsx", "sanitizeHtml(rewriteInlineHtmlImgSrc(h))", "homepage ad HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmNewsDetailSidebar.tsx", "sanitizeHtml(rewriteInlineHtmlImgSrc(h))", "news detail sidebar ad HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmRssBreakingBand.tsx", "sanitizeHtml(String(item.contentHtml", "RSS preview HTML must be sanitized");
-// Siparis.tsx artık ham HTML render etmiyor; geri eklenirse sanitize edilmeden girmesin.
-assertNotIncludes("artifacts/ahenkpress/src/pages/public/Siparis.tsx", "dangerouslySetInnerHTML", "order landing must not inject raw HTML without sanitization");
+// Sipariş (yemek/market) public UI kaldırıldı — dosya geri gelirse güvenlik kontrolü yeniden eklenmeli.
+assert(
+  !fs.existsSync(path.join(root, "artifacts/ahenkpress/src/pages/public/Siparis.tsx")),
+  "removed Siparis.tsx must stay deleted (food delivery UI retired)",
+);
 assertIncludes("artifacts/ahenkpress/src/pages/public/Kesfet.tsx", "sanitizeHtml(html)", "discovery wiki HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmPublicSiteFooter.tsx", "sanitizeHtml(rewritten)", "HM footer HTML must be sanitized");
 assertIncludes("artifacts/ahenkpress/src/components/HmCorporateStaticHtmlPage.tsx", "sanitizeHtml(html)", "corporate static HTML must be sanitized");
