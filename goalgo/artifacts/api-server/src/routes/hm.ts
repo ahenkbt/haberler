@@ -2360,6 +2360,7 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
   res.setHeader("Vary", "Origin, Authorization");
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
   const yektubeStudio =
     req.query.yektubeStudio === "1" || String(req.query.yektubeStudio ?? "").toLowerCase() === "true";
   const [editor] = await newsReadDb().select().from(hmSiteEditorsTable).where(eq(hmSiteEditorsTable.id, ctx.editorId));
