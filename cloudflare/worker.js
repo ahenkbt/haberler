@@ -44,7 +44,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727i";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727j";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1576,14 +1576,27 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
         : modeRaw === "manual" || modeRaw === "manuel"
           ? "manual"
           : "live";
-    const rows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
-    const feeds = rows
-      .map((row) => ({
-        id: String(row?.id || row?.categoryKey || "").trim() || slugifyCategoryKey(row?.label),
-        label: String(row?.label || row?.id || "RSS").trim() || "RSS",
-        url: String(row?.url || "").trim(),
-      }))
-      .filter((row) => /^https?:\/\//i.test(row.url));
+    // Kutu içi + site içi RSS — spor URL çoğu zaman yalnızca breaking satırında dolu.
+    const boxRows = Array.isArray(layout.hmNewsBreakingRssFeedRows)
+      ? layout.hmNewsBreakingRssFeedRows
+      : [];
+    const siteRows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
+    const byKey = new Map();
+    for (const row of [...boxRows, ...siteRows]) {
+      const url = String(row?.url || "").trim();
+      if (!/^https?:\/\//i.test(url)) continue;
+      const label = String(row?.label || row?.id || "RSS").trim() || "RSS";
+      const key =
+        slugifyCategoryKey(row?.categoryKey) ||
+        slugifyCategoryKey(row?.id) ||
+        slugifyCategoryKey(label) ||
+        "rss";
+      const prev = byKey.get(key);
+      if (!prev || (!prev.url && url)) {
+        byKey.set(key, { id: key, label, url });
+      }
+    }
+    const feeds = Array.from(byKey.values());
     return {
       enabled,
       mode,
