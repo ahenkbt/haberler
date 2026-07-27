@@ -31,7 +31,7 @@ export type HmSporNewsPanelItem = {
   thumbnail?: string | null;
   enclosure?: string | { url?: string | null } | null;
   href?: string | null;
-  source?: string | null;
+  source?: string;
   categorySlug?: string | null;
   categoryName?: string | null;
   feedLabel?: string | null;

@@ -168,15 +168,23 @@ export function HmYekpareKategorilerKutusu({
   className?: string;
   gridClassName?: string;
 }) {
-  const minItems = CATEGORY_BOX_DISPLAY_TOTAL;
+  const hasSpor = sections.some((section) => isSporHomeBoxSlug(section.slug));
+  const minItems = hasSpor ? HM_SPOR_BOX_TOTAL : CATEGORY_BOX_DISPLAY_TOTAL;
   const prepared = ensureNewsBoxSections(
     sections,
     [] as YekpareKategoriKutuItem[],
     minItems,
-    (section) => section.items ?? [],
+    (section) => {
+      const rows = section.items ?? [];
+      if (isSporHomeBoxSlug(section.slug)) return rows.slice(0, HM_SPOR_BOX_TOTAL);
+      return rows.slice(0, CATEGORY_BOX_DISPLAY_TOTAL);
+    },
     (section) => section.items ?? [],
     globalDedupe,
-  );
+  ).map((section) => {
+    if (isSporHomeBoxSlug(section.slug)) return section;
+    return { ...section, items: section.items.slice(0, CATEGORY_BOX_DISPLAY_TOTAL) };
+  });
   const visible = prepared.filter((section) => section.items.length > 0);
   if (visible.length === 0) return null;
 

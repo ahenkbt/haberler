@@ -1756,7 +1756,7 @@ const HM_SPOR_SUBCATEGORY_DEFAULT_RSS_ROWS: HmBreakingRssFeedRow[] = [
 ];
 
 export function defaultHmBreakingRssFeedRows(): HmBreakingRssFeedRow[] {
-  const rows = HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => ({
+  const rows: HmBreakingRssFeedRow[] = HM_BREAKING_RSS_FEED_CATEGORIES.map((category) => ({
     id: category.id,
     categoryKey: category.id,
     label: category.label,
