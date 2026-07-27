@@ -65,7 +65,7 @@ const FEATURES = [
   {
     icon: Sparkles,
     title: "Yekpare arama ve servisler",
-    text: "Birleşik arama kutusu, Yekpare servis kutuları (sipariş, otomotiv, keşfet…) — okuyucuya ek hizmet sunumu.",
+    text: "Birleşik arama kutusu, Yekpare servis kutuları (sipariş, keşfet, haritalar…) — okuyucuya ek hizmet sunumu.",
   },
   {
     icon: Users,

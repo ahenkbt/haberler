@@ -10,7 +10,6 @@ import {
 } from "@workspace/site-nav";
 import { YEKPARE_FOOTER_SERVICE_MODULES } from "@/lib/yekpareServiceNav";
 import { TURIZM_FOOTER_MODULES, isTurizmSubmenuItemActive } from "@/themes/turizm/turizmRoutes";
-import { OTOMOTIV_FOOTER_MODULES, isOtomotivSubmenuItemActive } from "@/themes/otomotiv/otomotivRoutes";
 import { YekpareFooterDisclaimer } from "@/components/YekpareFooterDisclaimer";
 import "@/styles/sade-public-footer.css";
 
@@ -242,90 +241,13 @@ function DefaultFooterBody() {
   );
 }
 
-const OTOMOTIV_HELP_LINKS = [
-  { label: "Sık sorulan sorular", href: "/sss" },
-  { label: "Destek merkezi", href: "/destek" },
-  { label: "İletişim · Künye", href: "/iletisim-kunye" },
-];
-
-const OTOMOTIV_COMPANY_LINKS = [
-  { label: "İş ortağı", href: "/is-ortagi" },
-  { label: "İşletme başvurusu", href: "/isletme-basvuru" },
-  { label: "Otomotiv yönetimi", href: "/admin/otomotiv" },
-];
-
-const OTOMOTIV_SUPPORT_LINKS = [
-  { label: "İşletme girişi", href: "/isletme-giris" },
-  { label: "Servis sağlayıcı girişi", href: "/servis-saglayici-giris" },
-];
-
-function OtomotivFooterBody() {
-  const [loc] = useLocation();
-  const path = loc.split("?")[0] ?? "";
-  const { data: settings } = useGetSiteSettings();
-  const modulesMap = useMemo(
-    () => parseModulesEnabledJson(settings?.modulesEnabledJson ?? null),
-    [settings?.modulesEnabledJson],
-  );
-  const showModules = isModuleEnabled(modulesMap, "otomotiv");
-  const legalLinks = useMemo(
-    () => parseFooterLegalLinksJson((settings as { footerLegalLinksJson?: string | null } | undefined)?.footerLegalLinksJson ?? null),
-    [settings],
-  );
-
-  return (
-    <>
-      <div className="yekpare-public-footer__main">
-        <div className="yekpare-public-footer__grid">
-          <FooterCol title="YARDIMA MI İHTİYACINIZ VAR?" links={OTOMOTIV_HELP_LINKS} />
-          <FooterCol title="ŞİRKET" links={OTOMOTIV_COMPANY_LINKS} />
-          <FooterCol title="DESTEK" links={OTOMOTIV_SUPPORT_LINKS} />
-          {showModules ? (
-            <div>
-              <strong className="yekpare-public-footer__col-title">MODÜLLER</strong>
-              <div className="yekpare-public-footer__links">
-                {OTOMOTIV_FOOTER_MODULES.map((item) => {
-                  const active = isOtomotivSubmenuItemActive(path, item);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={active ? "yekpare-public-footer__link--active" : undefined}
-                      aria-current={active ? "page" : undefined}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-        </div>
-        <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
-        <div className="yekpare-public-footer__bar">
-          <span>© {new Date().getFullYear()} Yekpare Otomotiv</span>
-          {legalLinks.length > 0 ? (
-            <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
-              {legalLinks.map((item, i) => (
-                <Link key={`${item.href}-${i}`} href={item.href}>
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-        </div>
-      </div>
-    </>
-  );
-}
-
 /** Unified Yekpare light footer — white + subtle green tint (§6). */
-export function SadePublicFooter({ variant = "default" }: { variant?: "default" | "turizm" | "otomotiv" }) {
-  const themed = variant === "turizm" || variant === "otomotiv";
+export function SadePublicFooter({ variant = "default" }: { variant?: "default" | "turizm" }) {
+  const themed = variant === "turizm";
   return (
     <footer className={`yekpare-public-footer${themed ? " sade-turizm-footer" : ""}`}>
       <FooterNewsletter label={themed ? "Güncellemeler ve daha fazlasını alın" : "Yekpare bültenine abone olun"} />
-      {variant === "turizm" ? <TurizmFooterBody /> : variant === "otomotiv" ? <OtomotivFooterBody /> : <DefaultFooterBody />}
+      {variant === "turizm" ? <TurizmFooterBody /> : <DefaultFooterBody />}
     </footer>
   );
 }

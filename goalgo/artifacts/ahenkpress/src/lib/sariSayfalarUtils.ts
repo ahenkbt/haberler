@@ -50,7 +50,7 @@ export const MAP_CATEGORY_DISCOVER_GROUP_KEY: Record<string, string> = {
   kafeler: "eglence",
   restoranlar: "eglence",
   hastaneler: "saglik",
-  otomotiv: "otomotiv",
+  otomotiv: "hizmetler",
   marketler: "ev",
   hizmetler: "hizmetler",
   eglence: "eglence",

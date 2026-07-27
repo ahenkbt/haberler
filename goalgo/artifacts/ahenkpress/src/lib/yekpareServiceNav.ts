@@ -95,7 +95,6 @@ export function resolveSixAmMartActiveFromPath(
   if (p === "/yemek" || p.startsWith("/yemek/")) return "food";
   if (p === "/market" || p.startsWith("/market/")) return "grocery";
   if (p === "/isletmeler" || p.startsWith("/isletmeler/")) return "pharmacy";
-  if (p === "/otomotiv" || p.startsWith("/otomotiv/")) return undefined;
   if (p === "/turizm" || p.startsWith("/turizm/")) return "rental";
   if (p === "/ulasim" || p.startsWith("/ulasim/")) return "parcel";
   if (p.startsWith("/magaza")) return "shop";

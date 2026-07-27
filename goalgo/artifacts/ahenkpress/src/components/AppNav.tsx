@@ -17,8 +17,6 @@ import { resolvePublicTopNav, filterPublicTopNavForHeader } from "@/lib/kesfetDi
 import { isSiparisNavActive } from "@/lib/yekpareServiceNav";
 import { isTurizmNavActive } from "@/themes/turizm/turizmRoutes";
 import { TurizmSubNavBar } from "@/themes/turizm/TurizmSubNavBar";
-import { isOtomotivNavActive } from "@/themes/otomotiv/otomotivRoutes";
-import { OtomotivSubNavBar } from "@/themes/otomotiv/OtomotivSubNavBar";
 import { SiparisSubNavBar } from "@/components/SiparisSubNavBar";
 import {
   Newspaper,
@@ -36,7 +34,6 @@ import {
   Building2,
   Handshake,
   Plane,
-  Car,
   Mail,
   Youtube,
   Link2,
@@ -88,8 +85,6 @@ function navIcon(key: MainNavKey): ReactNode {
       return <Store className={iconCls} />;
     case "turizm":
       return <Plane className={iconCls} />;
-    case "otomotiv":
-      return <Car className={iconCls} />;
     case "ulasim":
       return <Truck className={iconCls} />;
     case "iletisim":
@@ -129,38 +124,6 @@ function isHiddenTopNavItem(label: string, href: string): boolean {
     [String.fromCharCode(112, 97, 114, 99, 97), String.fromCharCode(112, 97, 114, 99, 101, 108), "6am" + "mart", "google", "maps"]
       .some((word) => new RegExp(`\\b${word}\\b`).test(text)) ||
     /^https?:\/\//i.test(href)
-  );
-}
-
-function OtomotivNavDropdown({ active, shrink }: { active: boolean; shrink?: boolean }) {
-  const [open, setOpen] = useState(false);
-
-  const cls =
-    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap" +
-    (shrink ? " shrink-0" : "");
-  const st: CSSProperties = {
-    color: active ? "#fff" : "rgba(255,255,255,0.65)",
-    background: active ? "rgba(30,58,95,0.45)" : "transparent",
-    boxShadow: active ? "inset 0 0 0 1px rgba(59,130,246,0.5)" : "none",
-  };
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <Link href="/otomotiv" className={cls} style={st} aria-expanded={open}>
-        <Car className={iconCls} />
-        Otomotiv
-        <ChevronDown className={`w-3 h-3 transition-transform${open ? " rotate-180" : ""}`} />
-      </Link>
-      {open ? (
-        <div className="absolute left-0 top-full z-[9010] mt-0 min-w-[min(100vw-1.5rem,42rem)]">
-          <OtomotivSubNavBar className="otomotiv-subnav--panel" onNavigate={() => setOpen(false)} />
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -336,13 +299,6 @@ function DesktopNavBar({
         <TurizmNavDropdown key={nav.id} active={isActive("/turizm")} shrink />
       );
     }
-    if (nav.href === "/otomotiv") {
-      return measureOnly ? (
-        <TopNavItem key={nav.id} nav={nav} active={isActive("/otomotiv")} shrink measureOnly />
-      ) : (
-        <OtomotivNavDropdown key={nav.id} active={isActive("/otomotiv")} shrink />
-      );
-    }
     return (
       <TopNavItem
         key={nav.id}
@@ -468,13 +424,11 @@ export function AppNav() {
   }, [settings?.mainNavJson, settings?.modulesEnabledJson, modulesMap]);
 
   const [turizmMobileOpen, setTurizmMobileOpen] = useState(false);
-  const [otomotivMobileOpen, setOtomotivMobileOpen] = useState(false);
   const [siparisMobileOpen, setSiparisMobileOpen] = useState(false);
 
   const isActive = (href: string) => {
     if (href === "/siparis") return isSiparisNavActive(loc);
     if (href === "/turizm") return isTurizmNavActive(loc);
-    if (href === "/otomotiv") return isOtomotivNavActive(loc);
     if (href === "/") return loc === "/";
     if (href === "/yektube") return loc === "/yektube" || loc.startsWith("/yektube/");
     if (href === "/kesfet") return loc === "/kesfet" || loc.startsWith("/kesfet/");
@@ -657,33 +611,6 @@ export function AppNav() {
                   </div>
                 );
               }
-              if (nav.href === "/otomotiv") {
-                return (
-                  <div key={nav.id} className="border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-                    <button
-                      type="button"
-                      className={`${rowCls} w-full text-left`}
-                      style={rowSt}
-                      onClick={() => setOtomotivMobileOpen((v) => !v)}
-                      aria-expanded={otomotivMobileOpen}
-                    >
-                      {nav.icon}
-                      {nav.label}
-                      <ChevronDown
-                        className={`ml-auto w-4 h-4 transition-transform${otomotivMobileOpen ? " rotate-180" : ""}`}
-                      />
-                    </button>
-                    {otomotivMobileOpen ? (
-                      <OtomotivSubNavBar
-                        onNavigate={() => {
-                          setMenuOpen(false);
-                          setOtomotivMobileOpen(false);
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                );
-              }
               if (nav.external) {
                 return (
                   <a
@@ -809,7 +736,6 @@ export function AppNav() {
               { href: "/", label: "Ana Sayfa", icon: <Store className="w-4 h-4" /> },
               { href: "/siparis", label: "Sipariş", icon: <Store className="w-4 h-4" /> },
               { href: "/turizm", label: "Seyahat", icon: <Plane className="w-4 h-4" /> },
-              { href: "/otomotiv", label: "Otomotiv", icon: <Car className="w-4 h-4" /> },
               { href: "/magaza", label: "Alışveriş", icon: <Store className="w-4 h-4" /> },
               { href: "/kesfet", label: "Keşfet", icon: <MapIcon className="w-4 h-4" /> },
               { href: "/ulasim", label: "Ulaşım", icon: <Truck className="w-4 h-4" /> },

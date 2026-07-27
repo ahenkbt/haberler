@@ -16,7 +16,6 @@ export const PANEL_PERMISSION_CATALOG = [
   { id: "is_ortaklari", label: "İş ortağı başvuruları" },
   { id: "kariyer", label: "Kariyer başvuruları" },
   { id: "turizm", label: "Turizm & rezervasyon" },
-  { id: "otomotiv", label: "Otomotiv ekosistemi" },
 ] as const;
 
 export type PanelPermissionId = (typeof PANEL_PERMISSION_CATALOG)[number]["id"];

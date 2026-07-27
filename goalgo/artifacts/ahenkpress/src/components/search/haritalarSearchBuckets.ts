@@ -50,7 +50,6 @@ export type HaritalarBucketsInput = {
   mapItems: HaritalarSearchItem[];
   sariSayfalarItems: HaritalarSearchItem[];
   hizmetItems: HaritalarSearchItem[];
-  otomotivItems: HaritalarSearchItem[];
   tourismItems: HaritalarSearchItem[];
   yemekMarketItems: HaritalarSearchItem[];
   urunlerItems: HaritalarSearchItem[];
@@ -158,7 +157,6 @@ export function buildHaritalarSections(input: HaritalarBucketsInput): HaritalarS
   const isletmeler = dedupeItems(
     input.sariSayfalarItems,
     input.hizmetItems,
-    input.otomotivItems,
     input.mapItems,
   ).filter((item) => !isEventItem(item));
 

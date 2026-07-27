@@ -27,9 +27,7 @@ import {
 } from "./data/seed";
 import { seedTourismBcDemoIfNeeded } from "./data/tourism-bc-seed.js";
 import { seedKesfetDiscoverCategoriesIfNeeded } from "./lib/kesfet-discover-seed.js";
-import { seedOtomotivServiceCategoriesIfNeeded } from "./data/otomotiv-service-categories-seed.js";
 import { resyncAllVendorsToMap } from "./lib/vendor-map-sync";
-import { resyncAllOtomotivToMap } from "./lib/otomotiv-map-sync";
 import { resyncAllEtkinlikVenuesToMap } from "./lib/etkinlik-venue-map-sync";
 import { ensurePortalRssItemViewsSchema } from "./lib/portal-rss-store.js";
 import { bootstrapRssAutomationFromSettings } from "./lib/rss-automation-control.js";
@@ -455,7 +453,6 @@ const server = app.listen(port, listenHost, (err) => {
       await seedImeceMarketplaceIfNeeded(logger);
     })
     .then(() => resyncAllVendorsToMap(logger))
-    .then(() => resyncAllOtomotivToMap(logger))
     .catch((e) => logger.error({ err: e }, "ensureExtraTables / vendor seed / map resync failed"));
   setTimeout(() => {
     void resyncAllEtkinlikVenuesToMap(logger)
@@ -472,9 +469,6 @@ const server = app.listen(port, listenHost, (err) => {
     .catch((e) => logger.error({ err: e }, "Map demo seed / category sync failed"));
   seedKesfetDiscoverCategoriesIfNeeded(logger).catch((e) =>
     logger.error({ err: e }, "Kesfet discover categories seed failed"),
-  );
-  seedOtomotivServiceCategoriesIfNeeded(logger).catch((e) =>
-    logger.error({ err: e }, "Otomotiv service categories seed failed"),
   );
   seedTourismBcDemoIfNeeded(logger).catch((e) =>
     logger.error({ err: e }, "Tourism BC demo seed failed"),

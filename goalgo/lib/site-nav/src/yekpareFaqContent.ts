@@ -24,10 +24,6 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p><strong>Turizm (otel, tur, villa, araç, yat, transfer, uçuş):</strong> İlan veya arama sonucunda işletme profiline gidilir; rezervasyon, teklif talebi veya iletişim doğrudan işletmeyle yapılır. Uçuş ve otobüs gibi bazı modüllerde fiyat karşılaştırması sunulabilir; nihai satın alma ve ödeme partner işletme veya yetkili acente üzerinden gerçekleşir.</p>
 <p>Rezervasyon veya sipariş öncesinde işletmenin iletişim bilgilerini, iptal koşullarını ve varsa TURSAB/ruhsat belgelerini doğrudan teyit etmenizi öneririz.</p>
 
-<h2>Otomotiv ve sigorta modülü</h2>
-<p>Yekpare Otomotiv (<a href="/otomotiv">/otomotiv</a>) modülünde araç, yedek parça, servis ve sigorta acenteleri abonelikle listelenir. Araç satışı, parça alımı, servis randevusu ve sigorta poliçesi işlemleri <strong>doğrudan listelenen işletme veya lisanslı sigorta acentesi</strong> ile yapılır.</p>
-<p>Sigorta teklif formları yalnızca <strong>lead (talep iletimi)</strong> amacı taşır; canlı prim teklifi broker API entegrasyonu sonrası sunulur. Yekpare sigortacı veya ödeme aracısı değildir; poliçe düzenleme ve prim ödemesi acente / sigorta firması sorumluluğundadır.</p>
-
 <h2>Ödeme kime yapılır? Yekpare ödeme alır mı?</h2>
 <p>Ödeme, <strong>doğrudan ilgili işletmeye</strong> veya işletmenin kullandığı ödeme altyapısına (online POS, havale/EFT, kapıda ödeme, işletme linki vb.) yapılır. Yekpare, kullanıcıların işletmelere yaptığı ürün ve hizmet ödemelerinde <strong>ödeme aracısı veya satıcı değildir</strong>; bu ödemeleri tahsil etmez.</p>
 <p>İşletmelerin Yekpare'ye ödediği tutar yalnızca <strong>abonelik ve listeleme hizmeti</strong> bedelidir. Kullanıcı ödemeleri ile karıştırılmamalıdır. Ödeme yöntemleri işletme bazında değişir; sipariş veya rezervasyon ekranında sunulan seçenekler o işletmeye aittir.</p>

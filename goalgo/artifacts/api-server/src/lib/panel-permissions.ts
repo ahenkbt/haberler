@@ -19,7 +19,6 @@ export const PANEL_PERMISSION_KEYS = [
   "is_ortaklari",
   "kariyer",
   "turizm",
-  "otomotiv",
 ] as const;
 
 export type PanelPermissionKey = (typeof PANEL_PERMISSION_KEYS)[number];
@@ -41,7 +40,6 @@ export const PANEL_PERMISSION_LABELS: Record<PanelPermissionKey, string> = {
   is_ortaklari: "İş ortağı başvuruları",
   kariyer: "Kariyer başvuruları",
   turizm: "Turizm & rezervasyon yönetimi",
-  otomotiv: "Otomotiv ekosistemi yönetimi",
 };
 
 export function isValidPanelPermissionKey(s: string): s is PanelPermissionKey {

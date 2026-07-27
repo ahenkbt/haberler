@@ -31,7 +31,6 @@ import {
   Plane,
   CalendarDays,
   Car,
-  Shield,
   MessageCircle,
   PhoneCall,
   Headphones,
@@ -137,14 +136,6 @@ export const adminNavSections: AdminNavSection[] = [
       { name: "Firma & İlan Yönetimi", icon: Building2, href: "/admin/turizm-yonetimi", permission: "turizm" },
       { name: "Turizm İlanları", icon: Plane, href: "/admin/turizm-ilanlar", permission: "turizm" },
       { name: "Rezervasyonlar", icon: CalendarDays, href: "/admin/turizm-rezervasyonlar", permission: "turizm" },
-    ],
-  },
-  {
-    id: "otomotiv",
-    title: "Otomotiv ekosistemi",
-    items: [
-      { name: "Otomotiv Yönetimi", icon: Car, href: "/admin/otomotiv", permission: "otomotiv" },
-      { name: "Sigorta Yönetimi", icon: Shield, href: "/admin/sigorta", permission: "otomotiv" },
     ],
   },
   {

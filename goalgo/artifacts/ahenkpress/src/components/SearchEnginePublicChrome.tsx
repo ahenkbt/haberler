@@ -36,7 +36,7 @@ export type SearchEnginePublicChromeProps = {
 
   fullBleed?: boolean;
 
-  footerVariant?: "default" | "turizm" | "otomotiv";
+  footerVariant?: "default" | "turizm";
 
   mapEmbed?: boolean;
 

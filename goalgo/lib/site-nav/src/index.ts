@@ -6,7 +6,6 @@ export const MAIN_NAV_KEY_ORDER = [
   "alisveris",
   "haritalar",
   "turizm",
-  "otomotiv",
   "ulasim",
   "haberler",
   "ansiklopedi",
@@ -33,7 +32,7 @@ export function isSiparisSubNavKey(key: MainNavKey): key is SiparisSubNavKey {
 const ALLOWED = new Set<string>(MAIN_NAV_KEY_ORDER);
 const SIPARIS_SUB_NAV_SET = new Set<string>(SIPARIS_SUB_NAV_KEYS);
 /** Eski DB mainNavJson kayıtlarında eksik kalabilir — okunurken varsayılan sıraya eklenir. */
-const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["kesfet", "haritalar", "otomotiv"];
+const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["kesfet", "haritalar"];
 const REQUIRED_TOP_NAV_KEYS: MainNavKey[] = ["siparis"];
 
 export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
@@ -50,7 +49,6 @@ export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
   isletmeler: "Yakınımdakiler",
   siparis: "Sipariş",
   turizm: "Seyahat",
-  otomotiv: "Otomotiv",
   ulasim: "Ulaşım",
   iletisim: "İletişim",
 };
@@ -69,7 +67,6 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
   isletmeler: "/isletmeler",
   siparis: "/siparis",
   turizm: "/turizm",
-  otomotiv: "/otomotiv",
   ulasim: "/ulasim",
   iletisim: "/iletisim",
 };
@@ -82,7 +79,6 @@ const FOOTER_NAV_DEFAULT: MainNavKey[] = [
   "haritalar",
   "firmaRehberi",
   "turizm",
-  "otomotiv",
   "alisveris",
   "magaza",
   "yemek",

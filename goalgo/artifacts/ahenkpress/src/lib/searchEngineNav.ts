@@ -1,7 +1,6 @@
 import { KESFET_HUB_CARDS, KESFET_HUB_PATH } from "@/lib/kesfetDiscoverHub";
 import { HARITALAR, isHaritalarSubNavItemActive } from "@/lib/haritalarRoutes";
 import { MAIN_NAV_HREF } from "@workspace/site-nav";
-import { OTOMOTIV } from "@/themes/otomotiv/otomotivRoutes";
 import { TURIZM } from "@/themes/turizm/turizmRoutes";
 
 export type SearchEngineModuleTile = {
@@ -31,12 +30,6 @@ export const SEARCH_ENGINE_CATEGORY_PILLS: SearchEngineCategoryPill[] = [
     label: "Al\u0131\u015Fveri\u015F",
     href: MAIN_NAV_HREF.magaza,
     emoji: "\uD83D\uDECD\uFE0F",
-  },
-  {
-    id: "otomotiv",
-    label: "Otomotiv",
-    href: OTOMOTIV.hub,
-    emoji: "\uD83D\uDE97",
   },
   {
     id: "seyahat",
@@ -93,8 +86,6 @@ export function isSearchEngineCategoryPillActive(loc: string, pill: SearchEngine
       );
     case "alisveris":
       return isHaritalarSubNavItemActive(loc, pill.href, "alisveris");
-    case "otomotiv":
-      return path === "/otomotiv" || path.startsWith("/otomotiv/");
     case "seyahat":
       return isHaritalarSubNavItemActive(loc, pill.href, "turizm");
     case "ulasim":
@@ -162,7 +153,6 @@ const GLOBAL_CATEGORY_PILL_PREFIXES = [
   "/alisveris",
   "/isletmeler",
   "/ulasim",
-  "/otomotiv",
   "/firma-rehberi",
   "/haberler",
   "/tum-haberler",

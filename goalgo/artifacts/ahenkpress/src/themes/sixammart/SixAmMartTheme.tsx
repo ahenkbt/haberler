@@ -12,7 +12,6 @@ import {
 } from "@/lib/yekpareServiceNav";
 import { kesfetSearchTarget, filterPublicTopNavForHeader, resolvePublicTopNav } from "@/lib/kesfetDiscoverHub";
 import { isTurizmNavActive } from "@/themes/turizm/turizmRoutes";
-import { isOtomotivNavActive } from "@/themes/otomotiv/otomotivRoutes";
 import {
   ArrowRight,
   Bike,
@@ -193,7 +192,7 @@ const HOME_SERVICE_RAILS = [
 ] as const;
 
 const YEKPARE_PLATFORM_MODULES = [
-  { title: "Keşfet", href: "/kesfet", icon: Compass, accent: "#3b82f6", description: "Sipariş, alışveriş, haritalar, seyahat, otomotiv, haberler, YekTube, Bilgi Ağacı ve daha fazlası — tek merkezden." },
+  { title: "Keşfet", href: "/kesfet", icon: Compass, accent: "#3b82f6", description: "Sipariş, alışveriş, haritalar, seyahat, haberler, YekTube, Bilgi Ağacı ve daha fazlası — tek merkezden." },
   { title: "Haritalar", href: "/haritalar", icon: Map, accent: "#0284C7", description: "İşletmeleri haritada keşfet, rota ve konum ara." },
   { title: "Haberler", href: "/haberler", icon: Newspaper, accent: SADE_ACCENT, description: "Gündem, manşet ve kategori haber akışı." },
   { title: "YekTube", href: "/yektube", icon: PlayCircle, accent: "#dc2626", description: "Canlı TV, kanallar ve video içerikleri." },
@@ -251,7 +250,6 @@ const PUBLIC_LINK_ICONS: Record<string, typeof Compass> = {
   "/kesfet": Compass,
   "/haritalar": Map,
   "/turizm": Building2,
-  "/otomotiv": Car,
   "/ulasim": Truck,
   "/haberler": Newspaper,
   "/yektube": PlayCircle,
@@ -272,7 +270,6 @@ function platformLinkIcon(href: string) {
 function isShellNavLinkActive(pathOnly: string, href: string): boolean {
   if (href === "/siparis") return isSiparisNavActive(pathOnly);
   if (href === "/turizm") return isTurizmNavActive(pathOnly);
-  if (href === "/otomotiv") return isOtomotivNavActive(pathOnly);
   if (href === "/") return pathOnly === "/";
   if (href === "/yektube") return pathOnly === "/yektube" || pathOnly.startsWith("/yektube/");
   if (href === "/kesfet") return pathOnly === "/kesfet" || pathOnly.startsWith("/kesfet/");
@@ -620,7 +617,7 @@ function Shell({
   staticLocationLabel?: string;
   searchPlaceholder?: string;
   /** Turizm rotalarında BC tarzı footer (§5.3) */
-  footerVariant?: "default" | "turizm" | "otomotiv";
+  footerVariant?: "default" | "turizm";
   /** Header altına yapışık alt şerit (ör. /haberler kategori menüsü) */
   subHeader?: React.ReactNode;
   /** Alt şerit ana menü altındaki hero gradient içinde (cam yüzey) */
@@ -725,7 +722,7 @@ export function SadePublicChrome({
   staticLocationLabel?: string;
   searchPlaceholder?: string;
   fullBleed?: boolean;
-  footerVariant?: "default" | "turizm" | "otomotiv";
+  footerVariant?: "default" | "turizm";
   mapEmbed?: boolean;
   subHeader?: React.ReactNode;
   subHeaderInHero?: boolean;
