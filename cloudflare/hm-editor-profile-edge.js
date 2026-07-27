@@ -99,9 +99,9 @@ async function resolveSiteByHost(sql, host) {
   const h = normalizeHost(host);
   if (!h) return null;
   const rows = await sql`
-    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at, is_active
+    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at, active
     FROM hm_news_sites
-    WHERE is_active = true
+    WHERE active = true
       AND (
         lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', '')) = ${h}
         OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', '')) = ${h}
@@ -120,9 +120,9 @@ async function resolveSiteBySlug(sql, slugRaw) {
     .replace(/^\/+|\/+$/g, "");
   if (!slug) return null;
   const rows = await sql`
-    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at, is_active
+    SELECT id, slug, domain, domain2, domain3, display_name, contact_json, layout_json, verification_json, created_at, active
     FROM hm_news_sites
-    WHERE is_active = true
+    WHERE active = true
       AND lower(trim(both '/' from slug)) = ${slug}
     ORDER BY id ASC
     LIMIT 1
