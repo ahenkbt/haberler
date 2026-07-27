@@ -783,7 +783,7 @@ function isCacheableHmNewsApi(pathname) {
     p === "/api/news/hybrid" ||
     p === "/api/news/featured" ||
     p === "/api/news/breaking" ||
-    p === "/api/categories" ||
+    // /api/categories ASLA kenar cache'lenmez — admin silme sonrası bayat liste dönmesin.
     p === "/api/authors"
   );
 }

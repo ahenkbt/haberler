@@ -163,14 +163,16 @@ export function isHmEditorManualNewsItem(n: unknown): boolean {
     rssSourceUrl?: string | null;
     source?: string | null;
   };
-  /** Editör «Manşet» (isFeatured) — DB kaydı; RSS hibrit satırı değilse aday. */
-  if (item.isFeatured === true) return true;
   const rssUrl = String(item.rssSourceUrl ?? "").trim();
   if (rssUrl.startsWith("yekpare-hm-pool:")) return false;
-  if (item.isEditorManual === true) return true;
-  if (item.hmSyncKind === "news") return true;
-  if (/^yekpare-hm-sync:\d+:news:\d+$/.test(rssUrl)) return true;
-  if (rssUrl) return false;
+  const isEditorSync =
+    item.isEditorManual === true ||
+    item.hmSyncKind === "news" ||
+    /^yekpare-hm-sync:\d+:news:\d+$/.test(rssUrl);
+  /** Harici RSS kaynaklı DB satırı — isFeatured olsa bile tepe/manuel manşet değil. */
+  if (rssUrl && !isEditorSync) return false;
+  if (item.isFeatured === true) return true;
+  if (isEditorSync) return true;
   return String(item.source ?? "").trim() !== "rss";
 }
 
