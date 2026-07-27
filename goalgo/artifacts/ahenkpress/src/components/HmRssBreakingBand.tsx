@@ -232,12 +232,23 @@ export function HmRssBreakingBand({
     [feedRows],
   );
   const tabs = useMemo<Array<{ id: RssBreakingCategoryId; label: string }>>(() => {
-    const categories = feedRows
-      .filter((row) => isValidBreakingRssUrl(row.url))
-      .map((row) => ({
-        id: rssCategorySlug(row.label) || rssCategorySlug(row.id) || row.id,
-        label: row.label.trim() || row.id,
-      }));
+    // Aynı kategoride birden fazla RSS URL olabilir — sekmede kategori bir kez görünsün.
+    const seen = new Set<string>();
+    const categories: Array<{ id: string; label: string }> = [];
+    for (const row of feedRows) {
+      if (!isValidBreakingRssUrl(row.url)) continue;
+      const id =
+        rssCategorySlug(row.label) ||
+        rssCategorySlug(row.categoryKey) ||
+        rssCategorySlug(row.id) ||
+        String(row.id);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      categories.push({
+        id,
+        label: String(row.label ?? "").trim() || id,
+      });
+    }
     return categories.length ? [{ id: "mixed", label: "Genel" }, ...categories] : [];
   }, [feedRows]);
 

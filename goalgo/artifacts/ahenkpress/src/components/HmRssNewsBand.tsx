@@ -17,7 +17,11 @@ import {
   type HmHomeCategoryMatchContext,
 } from "@/lib/hmHomeCategorySectionPool";
 import { newsItemMatchesCategorySlug } from "@/lib/hmHomeModuleCategories";
-import { dedupeHmCategoryTabsByCanonicalSlug, type HmRssCategoryTab } from "@/lib/hmCategoryTabs";
+import {
+  dedupeHmCategoryTabsByCanonicalSlug,
+  dedupeHmCategoryTabsByRepairedLabel,
+  type HmRssCategoryTab,
+} from "@/lib/hmCategoryTabs";
 import { passesCategoryContentGuard } from "@/lib/hmCategoryContentGuard";
 import { isKoseArticle } from "@/lib/isKoseArticle";
 
@@ -370,12 +374,14 @@ export function HmRssNewsBand({
       slug: normalizeSlug(t.slug),
     }));
     const merged = hasAll ? normalized : [{ label: "TÜMÜ", slug: "" }, ...normalized];
-    if (!categoryMatchContext) return merged;
-    return dedupeHmCategoryTabsByCanonicalSlug(
-      merged,
-      categoryMatchContext.knownCanonicalSlugs,
-      categoryMatchContext.siteSlugPrefixes,
-    );
+    const slugDeduped = categoryMatchContext
+      ? dedupeHmCategoryTabsByCanonicalSlug(
+          merged,
+          categoryMatchContext.knownCanonicalSlugs,
+          categoryMatchContext.siteSlugPrefixes,
+        )
+      : merged;
+    return dedupeHmCategoryTabsByRepairedLabel(slugDeduped);
   }, [categoryTabs, categoryMatchContext, items, tabSourceItems]);
 
   const filteredAll = useMemo(() => {
