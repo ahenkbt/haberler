@@ -8,7 +8,15 @@ export function HmVideoTvEnabledGate({ children }: { children: ReactNode }) {
   const ctx = useHmPublicLinkContextOptional();
   const enabled = resolveHmNewsVideoTvEnabled(ctx?.layoutPrefs);
 
-  if (!ctx || !enabled) {
+  if (!ctx) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">
+        Video yükleniyor…
+      </div>
+    );
+  }
+
+  if (!enabled) {
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 px-6 text-center text-sm text-slate-600">
         <p className="font-medium text-slate-800">Video TV bu sitede devre dışı.</p>

@@ -4,6 +4,7 @@ import { HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX } from "@/components/HmPublicNewsNav
 import { HmVideoTvContextProvider, type HmVideoTvLayoutValue } from "@/contexts/HmVideoTvContext";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { isKhHmSite } from "@/lib/hmPortalHosts";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 
 const HM_HEADER_BAND_PX = 72;
@@ -13,7 +14,7 @@ export function HmPublicVideoTvLayout({ children }: { children: ReactNode }) {
   return (
     <HmNestedLayout hideFooter>
       <HmVideoTvContextBridge>
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-h-[70vh] min-h-0 flex-1 flex-col">{children}</div>
       </HmVideoTvContextBridge>
     </HmNestedLayout>
   );
@@ -25,9 +26,14 @@ function HmVideoTvContextBridge({ children }: { children: ReactNode }) {
   const value = useMemo((): HmVideoTvLayoutValue | null => {
     if (!ctx?.slug) return null;
     const contentStickyTopPx = isMobile ? 0 : HM_HEADER_BAND_PX + HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX;
+    const host =
+      typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+    const khShort = isKhHmSite(host, ctx.slug);
     return {
       slug: ctx.slug,
-      pathHome: `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(ctx.slug)}/video-tv`,
+      pathHome: khShort
+        ? "/video"
+        : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(ctx.slug)}/video-tv`,
       contentStickyTopPx,
       displayName: ctx.displayName,
     };

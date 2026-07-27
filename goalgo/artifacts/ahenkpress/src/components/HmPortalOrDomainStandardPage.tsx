@@ -1,5 +1,5 @@
 import { Redirect } from "wouter";
-import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { isDefaultPortalHost, resolveKnownHmEditorSlug } from "@/lib/hmPortalHosts";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import type { ReactNode } from "react";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
@@ -24,17 +24,19 @@ export function HmPortalOrDomainStandardPage({
   });
 
   if (typeof window !== "undefined" && !isDefaultPortalHost(host)) {
-    if (isLoading) {
+    const knownSlug = resolveKnownHmEditorSlug(host);
+    const slug = data?.slug || knownSlug;
+    if (isLoading && !knownSlug) {
       return (
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">
           Sayfa yükleniyor…
         </div>
       );
     }
-    if (!isError && data?.slug) {
+    if (slug && (!isError || knownSlug)) {
       return (
         <Redirect
-          to={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(data.slug)}/${segment.replace(/^\/+/, "")}`}
+          to={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/${segment.replace(/^\/+/, "")}`}
         />
       );
     }
