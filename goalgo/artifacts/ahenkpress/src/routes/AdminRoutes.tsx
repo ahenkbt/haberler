@@ -15,7 +15,6 @@ import YektubeYekpareQuickAdmin from "../pages/admin/YektubeYekpareQuickAdmin";
 import AnasayfaModulleri from "../pages/admin/AnasayfaModulleri";
 import AnasayfaTasarimi from "../pages/admin/AnasayfaTasarimi";
 import TemaAyarlari from "../pages/admin/TemaAyarlari";
-import Urunler from "../pages/admin/Urunler";
 import KoseYazarlari from "../pages/admin/KoseYazarlari";
 import BlogYazilari from "../pages/admin/BlogYazilari";
 import Sayfalar from "../pages/admin/Sayfalar";
@@ -24,11 +23,8 @@ import AiIcerikRobotu from "../pages/admin/AiIcerikRobotu";
 import GenelAyarlar from "../pages/admin/GenelAyarlar";
 import AdminPostaVeDuyurular from "../pages/admin/AdminPostaVeDuyurular";
 import PanelHesaplari from "../pages/admin/PanelHesaplari";
-import UrunKategorileri from "../pages/admin/UrunKategorileri";
 import TopluIceAktar from "../pages/admin/TopluIceAktar";
-import Siparisler from "../pages/admin/Siparisler";
 import OdemeAyarlari from "../pages/admin/OdemeAyarlari";
-import MagazaYonetimi from "../pages/admin/MagazaYonetimi";
 import MansetYonetimi from "../pages/admin/MansetYonetimi";
 import FotoGaleri from "../pages/admin/FotoGaleri";
 import VideoGaleri from "../pages/admin/VideoGaleri";
@@ -60,7 +56,6 @@ import Pbx3cxSettings from "../pages/admin/pbx/Pbx3cxSettings";
 import HaritalarYonetimi from "../pages/admin/HaritalarYonetimi";
 import GlobalMapNewsAdmin from "../pages/admin/GlobalMapNewsAdmin";
 import OneCikanIsletmeler from "../pages/admin/OneCikanIsletmeler";
-import AlisverisIsletmeleri from "../pages/admin/AlisverisIsletmeleri";
 import ServisSaglayicilar from "../pages/admin/ServisSaglayicilar";
 import IsOrtaklari from "../pages/admin/IsOrtaklari";
 import TurizmIlanlar from "../pages/admin/TurizmIlanlar";
@@ -291,24 +286,16 @@ export default function AdminRoutes() {
       <Route path="/admin/lisans">
         {() => <ProtectedAdminRoute component={Lisans} />}
       </Route>
-      <Route path="/admin/urunler">
-        {() => <ProtectedAdminRoute component={Urunler} />}
-      </Route>
-      <Route path="/admin/urun-kategorileri">
-        {() => <ProtectedAdminRoute component={UrunKategorileri} />}
-      </Route>
+      <Route path="/admin/urunler">{() => <Redirect to="/admin" />}</Route>
+      <Route path="/admin/urun-kategorileri">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/toplu-ice-aktar">
         {() => <ProtectedAdminRoute component={TopluIceAktar} />}
       </Route>
-      <Route path="/admin/siparisler">
-        {() => <ProtectedAdminRoute component={Siparisler} />}
-      </Route>
+      <Route path="/admin/siparisler">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/odeme-ayarlari">
         {() => <ProtectedAdminRoute component={OdemeAyarlari} />}
       </Route>
-      <Route path="/admin/magaza-yonetimi">
-        {() => <ProtectedAdminRoute component={MagazaYonetimi} />}
-      </Route>
+      <Route path="/admin/magaza-yonetimi">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/haritalar-yonetimi">
         {() => <ProtectedAdminRoute component={HaritalarYonetimi} />}
       </Route>
@@ -322,9 +309,7 @@ export default function AdminRoutes() {
       <Route path="/admin/siparis-kategoriler">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/siparis-bannerlari">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/siparis-menu-items">{() => <Redirect to="/admin" />}</Route>
-      <Route path="/admin/alisveris-isletmeleri">
-        {() => <ProtectedAdminRoute component={AlisverisIsletmeleri} />}
-      </Route>
+      <Route path="/admin/alisveris-isletmeleri">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/sari-sayfalar-isletmeleri">
         {() => <Redirect to="/admin/haritalar-yonetimi" />}
       </Route>

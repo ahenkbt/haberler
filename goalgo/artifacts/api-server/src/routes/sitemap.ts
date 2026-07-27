@@ -1076,61 +1076,14 @@ router.get("/vendors-siparis.xml", async (_req, res): Promise<void> => {
   sendUrlset(res, "");
 });
 
-/* — Alışveriş mağazaları (geriye dönük /alisveris + kanonik /magaza) — */
-router.get("/vendors-alisveris.xml", async (req, res): Promise<void> => {
-  try {
-    const base = resolvePortalRequestOrigin(req);
-    const rows = await db
-      .select({ slug: vendorsTable.slug, updatedAt: vendorsTable.updatedAt })
-      .from(vendorsTable)
-      .where(and(eq(vendorsTable.active, true), eq(vendorsTable.vendorType, "ecommerce")))
-      .orderBy(desc(vendorsTable.updatedAt))
-      .limit(5000);
-
-    const urls = rows
-      .flatMap((v) => [
-        urlXmlEntry(`${base}${ecommerceVendorPublicPath(v.slug)}`, {
-          lastmod: v.updatedAt,
-          changefreq: "weekly",
-          priority: "0.75",
-        }),
-        urlXmlEntry(`${base}/alisveris/magaza/${encodeURIComponent(v.slug)}`, {
-          lastmod: v.updatedAt,
-          changefreq: "weekly",
-          priority: "0.65",
-        }),
-      ])
-      .join("\n");
-    sendUrlset(res, urls);
-  } catch {
-    res.status(500).send("Sitemap hatası");
-  }
+/* Alışveriş modülü kaldırıldı — eski vendors-alisveris.xml boş urlset */
+router.get("/vendors-alisveris.xml", async (_req, res): Promise<void> => {
+  sendUrlset(res, "");
 });
 
-/* — Mağaza vitrinleri (kanonik /magaza/magaza/...) — */
-router.get("/vendors-magaza.xml", async (req, res): Promise<void> => {
-  try {
-    const base = resolvePortalRequestOrigin(req);
-    const rows = await db
-      .select({ slug: vendorsTable.slug, updatedAt: vendorsTable.updatedAt })
-      .from(vendorsTable)
-      .where(and(eq(vendorsTable.active, true), eq(vendorsTable.vendorType, "ecommerce")))
-      .orderBy(desc(vendorsTable.updatedAt))
-      .limit(5000);
-
-    const urls = rows
-      .map((v) =>
-        urlXmlEntry(`${base}${ecommerceVendorPublicPath(v.slug)}`, {
-          lastmod: v.updatedAt,
-          changefreq: "weekly",
-          priority: "0.75",
-        }),
-      )
-      .join("\n");
-    sendUrlset(res, urls);
-  } catch {
-    res.status(500).send("Sitemap hatası");
-  }
+/* Mağaza modülü kaldırıldı — eski vendors-magaza.xml boş urlset */
+router.get("/vendors-magaza.xml", async (_req, res): Promise<void> => {
+  sendUrlset(res, "");
 });
 
 /* — Turizm ilanları (/turizm/:type/:slug) — */

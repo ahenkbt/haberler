@@ -1,22 +1,16 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Heart, Menu, PackageCheck, ShoppingBag, UserRound } from "lucide-react";
+import { Heart, Menu, UserRound } from "lucide-react";
 import { AppsGridPanel } from "@/components/AppsGridPanel";
 import { AuthModal } from "@/components/AuthModal";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
-import { useActiveCustomerOrder } from "@/hooks/useActiveCustomerOrder";
-import { useCart } from "@/hooks/useCart";
 
 export function MobileHeaderMenu() {
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const { user } = useCustomerAuth();
-  const { count: cartCount } = useCart();
-  const hasActiveOrder = useActiveCustomerOrder();
   const close = () => setOpen(false);
-  const showCart = cartCount > 0;
-  const showOrder = hasActiveOrder;
 
   return (
     <>
@@ -48,24 +42,7 @@ export function MobileHeaderMenu() {
             onClose={close}
           />
 
-          <div className="seh-mobile-menu-utilities" aria-label="Hesap ve sepet">
-            {showCart ? (
-              <Link href="/magaza/sepet" className="seh-mobile-menu-util" onClick={close}>
-                <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Sepet</span>
-                {cartCount > 0 ? (
-                  <span className="seh-mobile-menu-badge">{cartCount > 99 ? "99+" : cartCount}</span>
-                ) : null}
-              </Link>
-            ) : null}
-
-            {showOrder ? (
-              <Link href="/siparis-takip" className="seh-mobile-menu-util" onClick={close}>
-                <PackageCheck className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Sipariş takip</span>
-              </Link>
-            ) : null}
-
+          <div className="seh-mobile-menu-utilities" aria-label="Hesap">
             {user ? (
               <>
                 <Link href="/hesabim" className="seh-mobile-menu-util" onClick={close}>

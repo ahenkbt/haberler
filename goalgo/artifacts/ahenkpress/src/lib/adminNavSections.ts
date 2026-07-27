@@ -100,11 +100,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   {
-    id: "alisveris",
-    title: "Alışveriş yönetimi",
+    id: "odeme",
+    title: "Ödeme",
     items: [
-      { name: "Alışveriş Mağazaları", icon: Store, href: "/admin/alisveris-isletmeleri", permission: "teslimat" },
-      { name: "Siparişler", icon: ListOrdered, href: "/admin/siparisler", permission: "teslimat" },
       { name: "Ödeme Ayarları", icon: CreditCard, href: "/admin/odeme-ayarlari", permission: "premium" },
     ],
   },
@@ -204,6 +202,8 @@ const EXTRA_ADMIN_PATH_RULES: { prefix: string; permission: PanelPermissionId; a
   { prefix: "/admin/magaza-yonetimi", permission: "teslimat" },
   { prefix: "/admin/urunler", permission: "teslimat" },
   { prefix: "/admin/urun-kategorileri", permission: "teslimat" },
+  { prefix: "/admin/siparisler", permission: "teslimat" },
+  { prefix: "/admin/alisveris-isletmeleri", permission: "teslimat" },
   { prefix: "/admin/kasiyer", permission: "teslimat" },
   { prefix: "/admin/hizli-kurulum", permission: "site_ayarlari" },
 ];

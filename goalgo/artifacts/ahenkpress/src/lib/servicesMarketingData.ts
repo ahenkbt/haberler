@@ -4,7 +4,6 @@
  */
 
 export type ServiceMarketingSlug =
-  | "alisveris"
   | "turizm"
   | "haber-merkezi"
   | "ai-cagri-merkezi";
@@ -51,7 +50,6 @@ export type ServiceMarketingModule = {
 export const SERVICES_MARKETING_BASE = "/servisler";
 
 export const SERVICES_MARKETING_ORDER: ServiceMarketingSlug[] = [
-  "alisveris",
   "turizm",
   "haber-merkezi",
   "ai-cagri-merkezi",
@@ -59,79 +57,12 @@ export const SERVICES_MARKETING_ORDER: ServiceMarketingSlug[] = [
 
 /** Kısa / eski URL takma adları → kanonik slug */
 export const SERVICES_MARKETING_SLUG_ALIASES: Record<string, ServiceMarketingSlug> = {
-  siparis: "alisveris",
   ulasim: "turizm",
   haberler: "haber-merkezi",
   ai: "ai-cagri-merkezi",
 };
 
 export const SERVICES_MARKETING_MODULES: Record<ServiceMarketingSlug, ServiceMarketingModule> = {
-  alisveris: {
-    slug: "alisveris",
-    title: "Alışveriş",
-    navLabel: "Alışveriş",
-    tagline: "Pazaryeri ve mağaza vitrini — çoklu kargo, stok ve satıcı paneli",
-    description:
-      "Ürün kataloğundan ödemeye, çoklu kargo gönderiminden iade süreçlerine kadar e-ticaret altyapısı. Satıcı paneli, domain ve kurumsal e-posta ile markanızı büyütün.",
-    heroCta: { label: "Mağazaya git", href: "/magaza" },
-    secondaryCta: { label: "Satıcı olun", href: "/magaza/satici-ol" },
-    highlights: [
-      "Pazaryeri ve tek mağaza",
-      "Çoklu kargo / gönderi",
-      "Stok ve varyant yönetimi",
-      "Satıcı ve admin paneli",
-    ],
-    customerFeatures: [
-      { title: "Ürün vitrini", desc: "Kategori, marka, filtre ve arama ile zengin katalog deneyimi." },
-      { title: "Sepet ve ödeme", desc: "Güvenli ödeme, taksit ve kapıda ödeme seçenekleri." },
-      { title: "Çoklu kargo", desc: "Farklı kargo firmalarıyla gönderi; takip numarası ve durum bildirimi." },
-      { title: "İade ve değişim", desc: "İade talebi, onay akışı ve müşteri bildirimleri." },
-      { title: "Kampanyalar", desc: "İndirim, kupon, flash satış ve sepette indirim kuralları." },
-      { title: "Mağaza sayfaları", desc: "Satıcı vitrini, hakkımızda, blog ve iletişim sayfaları." },
-    ],
-    providerPanel: {
-      title: "Satıcı / servis sağlayıcı paneli",
-      subtitle: "Mağaza sahipleri ve pazaryeri satıcıları için",
-      items: [
-        "Ürün, kategori, marka ve varyant yönetimi",
-        "Stok, depo ve kritik seviye takibi",
-        "Sipariş, kargo etiketi ve çoklu gönderi planlama",
-        "İade, değişim ve müşteri mesajları",
-        "POS entegrasyonu ve kasa raporları",
-        "Kampanya, kupon ve fiyat listesi",
-        "Müşteri CRM ve sipariş geçmişi",
-        "Özel domain ve kurumsal e-posta",
-        "Mağaza teması ve vitrin düzeni",
-      ],
-    },
-    operations: {
-      title: "Operasyonel imkanlar",
-      subtitle: "Satıştan teslimata uçtan uca kontrol",
-      items: [
-        "Çoklu kargo firması ve gönderi şablonları",
-        "Toplu ürün içe/dışa aktarma",
-        "Kasiyer modu ve mağaza içi satış",
-        "Komisyon ve satıcı ödeme raporları",
-        "Envanter sayımı ve stok hareketleri",
-        "Ödeme geçidi ve POS uyumluluğu",
-      ],
-    },
-    opportunities: [
-      { title: "Pazaryeri büyümesi", desc: "Çoklu satıcı modeliyle katalog genişletin." },
-      { title: "Marka bağımsızlığı", desc: "Kendi domain ve e-postanızla profesyonel vitrin." },
-      { title: "Lojistik esnekliği", desc: "Sipariş başına farklı kargo seçenekleri sunun." },
-    ],
-    platformExtras: ["Özel domain", "Kurumsal e-posta", "Çoklu kargo", "Satıcı API"],
-    audienceNotes: [
-      "Tek mağaza veya çok satıcılı pazaryeri modelinde ürün kataloğu, ödeme ve kargo süreçleri uçtan uca yönetilir.",
-      "Satıcılar kendi vitrinlerini özelleştirir; yönetici paneli komisyon ve performans raporlarını sunar.",
-    ],
-    useCases: [
-      { title: "Yerel üretici pazarı", desc: "Çoklu satıcı, tek sepet ve birleşik ödeme deneyimi." },
-      { title: "Marka mağazası", desc: "Özel domain ile kurumsal e-ticaret vitrini." },
-      { title: "Hibrit perakende", desc: "Mağaza içi kasa ve online sipariş aynı stoktan düşer." },
-    ],
-  },
   turizm: {
     slug: "turizm",
     title: "Turizm",

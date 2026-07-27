@@ -1,6 +1,5 @@
 import { isConfiguredPortalHost } from "@/lib/hmPortalHosts";
 import { PORTAL_ORIGIN } from "@/lib/portalBrand";
-import { MAGAZA, MAGAZA_TOP_CATEGORIES } from "@/themes/sellzy/magazaRoutes";
 import { TURIZM, TURIZM_MODULES } from "@/themes/turizm/turizmRoutes";
 
 export type HmYekpareFeatureLink = {
@@ -37,23 +36,6 @@ export function filterHmYekpareFeatureCards(portalHubOnly: boolean): HmYekpareFe
 }
 
 export const HM_YEKPARE_FEATURE_CARDS: HmYekpareFeatureCard[] = [
-  {
-    id: "shop",
-    label: "Alışveriş",
-    emoji: "🛍️",
-    href: MAGAZA.hub,
-    color: "#a855f7",
-    desc: "Binlerce ürün tek tıkta.",
-    children: [
-      { label: "Ürünler", href: MAGAZA.urunler },
-      { label: "Mağazalar", href: MAGAZA.magazalar },
-      { label: "Kategoriler", href: MAGAZA.kategoriler },
-      ...MAGAZA_TOP_CATEGORIES.slice(0, 4).map((c) => ({
-        label: c.label,
-        href: MAGAZA.kategori(c.slug),
-      })),
-    ],
-  },
   {
     id: "seyahat",
     label: "Seyahat",

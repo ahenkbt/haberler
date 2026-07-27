@@ -41,8 +41,8 @@ export function resolveMapBusinessStoreHref(biz: MapBusinessLinkInput): string |
   if (!slug) return null;
   const enc = encodeURIComponent(slug);
   const st = String(biz.storeType ?? "").toLowerCase();
-  if (["alisveris", "ecommerce", "shop"].includes(st)) return `/alisveris/magaza/${enc}`;
-  if (biz.hasOnlineOrder) return `/alisveris/magaza/${enc}`;
+  if (["alisveris", "ecommerce", "shop"].includes(st)) return `/kesfet/${enc}`;
+  if (biz.hasOnlineOrder) return `/kesfet/${enc}`;
   if (["siparis", "delivery", "restaurant", "restoran"].includes(st) || biz.hasDelivery) {
     return `/kesfet/${enc}`;
   }

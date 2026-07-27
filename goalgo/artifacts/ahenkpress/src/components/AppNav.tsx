@@ -69,10 +69,6 @@ function navIcon(key: MainNavKey): ReactNode {
       return <MapIcon className={iconCls} />;
     case "firmaRehberi":
       return <Building2 className={iconCls} />;
-    case "alisveris":
-      return <ShoppingBag className={iconCls} />;
-    case "magaza":
-      return <Store className={iconCls} />;
     case "turizm":
       return <Plane className={iconCls} />;
     case "iletisim":
@@ -358,7 +354,6 @@ export function AppNav() {
           break;
         }
       }
-      if (key === "alisveris") continue;
       if (key && key !== "yektube" && !isModuleEnabled(modulesMap, key)) continue;
       out.push({
         id: it.id,
@@ -651,7 +646,7 @@ export function AppNav() {
           ) : (
             [
               { href: "/", label: "Ana Sayfa", icon: <Store className="w-4 h-4" /> },
-              { href: "/magaza", label: "Alışveriş", icon: <ShoppingBag className="w-4 h-4" /> },
+              { href: "/haritalar", label: "Haritalar", icon: <MapIcon className="w-4 h-4" /> },
               { href: "/turizm", label: "Seyahat", icon: <Plane className="w-4 h-4" /> },
               { href: "/kesfet", label: "Keşfet", icon: <MapIcon className="w-4 h-4" /> },
             ].map((item) => {

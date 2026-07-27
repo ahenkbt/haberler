@@ -43,7 +43,6 @@ const MODULE_VISUAL: Record<
   { icon: ComponentType<{ className?: string; style?: CSSProperties }>; color: string; bg: string }
 > = {
   rental: { icon: Building2, color: "#0284c7", bg: "bg-sky-50" },
-  shop: { icon: ShoppingBag, color: "#0f766e", bg: "bg-teal-50" },
 };
 
 export const SADE_MODULES: ModuleDef[] = YEKPARE_SERVICE_MODULE_ORDER.map((key) => {
@@ -123,10 +122,10 @@ export function SixAmMartTopHeader({
           <Link href="/hesabim" className="hidden rounded-full border border-slate-200 p-3 text-slate-700 hover:border-[#0f766e] sm:inline-flex" aria-label="Hesabım">
             <UserRound className="h-5 w-5" />
           </Link>
-          <Link href="/magaza/sepet" className="hidden rounded-full border border-slate-200 p-3 text-slate-700 hover:border-[#0f766e] sm:inline-flex" aria-label="Favoriler">
+          <Link href="/hesabim" className="hidden rounded-full border border-slate-200 p-3 text-slate-700 hover:border-[#0f766e] sm:inline-flex" aria-label="Favoriler">
             <Heart className="h-5 w-5" />
           </Link>
-          <Link href="/magaza/sepet" className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-amber-300">
+          <Link href="/kesfet" className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-amber-300">
             <ShoppingBag className="h-4 w-4" /> Sepet
           </Link>
         </div>

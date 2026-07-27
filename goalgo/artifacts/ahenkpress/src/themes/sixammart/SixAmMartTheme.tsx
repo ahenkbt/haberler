@@ -64,7 +64,6 @@ import {
   type PublicLocationState,
 } from "@/lib/publicLocation";
 import { resolveClientMediaSrc, normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
-import { resolveMarketplaceStoreCardHref } from "@/lib/marketplaceStoreHref";
 import { NewsArticleBody } from "@/components/NewsArticleBody";
 import { EditorialNewsDetailHeader } from "@/components/EditorialNewsDetailHeader";
 import { HmNewsDetailSidebar } from "@/components/HmNewsDetailSidebar";
@@ -105,7 +104,6 @@ import {
   SadeYekpareHaberlerBlock,
   useSadeFeaturedHeadlines,
 } from "./SadeNewsModules";
-import { HomeShoppingShowcase } from "./HomeShoppingShowcase";
 import { HomeTravelTabs } from "./HomeTravelTabs";
 import { HmYekpareCategoryBox } from "@/components/HmYekpareKategorilerKutusu";
 import { CATEGORY_BOX_DISPLAY_TOTAL, ensureNewsBoxItems } from "@/lib/hmCategoryBoxItems";
@@ -137,7 +135,6 @@ const SERVICE_RAIL_ICON: Record<
   { icon: typeof Utensils; color: string; bg: string }
 > = {
   rental: { icon: Building2, color: "#0284c7", bg: "bg-sky-50" },
-  shop: { icon: ShoppingBag, color: SADE_ACCENT, bg: "bg-sky-50" },
 };
 
 const PLATFORM_RAIL_ICON: Record<string, { icon: typeof Compass; color: string; bg: string }> = {
@@ -208,7 +205,6 @@ type ModuleDef = {
 
 const MODULE_ICON: Record<SixAmMartModuleKey, { icon: typeof Store; accent: string; bg: string }> = {
   rental: { icon: Building2, accent: "#0284c7", bg: "bg-sky-50" },
-  shop: { icon: ShoppingBag, accent: "#0284C7", bg: "bg-cyan-50" },
 };
 
 const MODULES: ModuleDef[] = YEKPARE_SERVICE_MODULE_ORDER.map((key) => {
@@ -233,7 +229,6 @@ const PUBLIC_LINK_ICONS: Record<string, typeof Compass> = {
   "/haberler": Newspaper,
   "/yektube": PlayCircle,
   "/bilgiagaci": BookOpen,
-  "/magaza": ShoppingBag,
   "/iletisim": Phone,
 };
 
@@ -531,7 +526,7 @@ function currentModule(key?: SixAmMartModuleKey): ModuleDef {
   return MODULES.find((module) => module.key === key) ?? MODULES[0];
 }
 
-function moduleFromQuery(defaultModule: SixAmMartModuleKey = "shop"): SixAmMartModuleKey {
+function moduleFromQuery(defaultModule: SixAmMartModuleKey = "rental"): SixAmMartModuleKey {
   if (typeof window === "undefined") return defaultModule;
   const raw = new URLSearchParams(window.location.search).get("module")?.toLowerCase();
   return MODULES.some((module) => module.key === raw) ? (raw as SixAmMartModuleKey) : defaultModule;
@@ -841,13 +836,13 @@ function Hero({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Link
-                    href="/magaza"
+                    href="/kesfet"
                     className="rounded-[1.5rem] bg-sky-500 p-4 text-white transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
-                    aria-label="Alışveriş — pazaryeri ve ürünler"
+                    aria-label="Keşfet — yakındaki işletmeler"
                   >
                     <ShoppingBag className="mb-3 h-7 w-7" />
-                    <p className="text-2xl font-black">Alışveriş</p>
-                    <p className="text-xs font-semibold text-white/80">Pazaryeri ve ürünler</p>
+                    <p className="text-2xl font-black">Keşfet</p>
+                    <p className="text-xs font-semibold text-white/80">Yakındaki işletmeler</p>
                   </Link>
                   <Link
                     href="/turizm"
@@ -966,7 +961,7 @@ function StoreCard({ item, compact = false, dense = false }: { item: Vendor | Ho
     : ("discoverHref" in item && item.discoverHref)
       ? String(item.discoverHref)
       : slug
-        ? resolveMarketplaceStoreCardHref({ slug, vendorType: "ecommerce", storefrontHref: sf || undefined })
+        ? `/kesfet/${encodeURIComponent(slug)}`
         : "/kesfet";
   const rating = "userRatingsTotal" in item ? item.rating : item.rating;
   const count = "userRatingsTotal" in item ? businessItem.userRatingsTotal : vendorItem.reviewCount;
@@ -1007,7 +1002,7 @@ function ProductCard({ product, dense = false }: { product: Product; dense?: boo
   const price = Number(product.price ?? 0);
   const sale = Number(product.salePrice ?? 0);
   const hasSale = sale > 0 && sale < price;
-  const href = product.href || product.storefrontHref || "/magaza";
+  const href = product.href || product.storefrontHref || "/kesfet";
   return (
     <Link href={href} className={`group flex h-full min-w-0 flex-col rounded-[8px] border border-slate-200 bg-white shadow-sm transition hover:shadow-lg ${dense ? "p-2 sm:p-[10px]" : "p-[10px]"}`}>
       <div className={`relative overflow-hidden rounded-[5px] bg-slate-50 ${dense ? "aspect-square sm:h-[212px] sm:aspect-auto" : "h-[212px]"}`}>
@@ -1134,7 +1129,7 @@ function PromoBanner({ campaigns }: { campaigns: Array<{ id: number; title: stri
             <h2 className="mt-2 text-2xl font-black leading-tight">{lead.title}</h2>
             {lead.description ? <p className="mt-2 max-w-xl text-sm font-semibold text-white/85">{lead.description}</p> : null}
           </div>
-          <Link href={lead.storefrontHref || "/magaza"} className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 hover:bg-sky-50">Keşfet <ArrowRight className="h-4 w-4" /></Link>
+          <Link href={lead.storefrontHref || "/kesfet"} className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 hover:bg-sky-50">Keşfet <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </div>
     </section>
@@ -1204,16 +1199,10 @@ export function SixAmMartHomePage() {
 
   useEffect(() => {
     void (async () => {
-      const [biz, mkt] = await Promise.all([
-        fetchPublicJson<{ success?: boolean; data?: HomepageBusiness[] }>(`${API}/map/homepage-businesses`),
-        fetchPublicJson<{ success?: boolean; data?: { campaigns?: Array<{ id: number; title: string; description?: string | null; storefrontHref?: string | null }> } }>(
-          `${API}/delivery/marketplace?lang=tr&limit=24&randomize=1`,
-        ),
-      ]);
+      const biz = await fetchPublicJson<{ success?: boolean; data?: HomepageBusiness[] }>(`${API}/map/homepage-businesses`);
       const bizRows = biz.data;
       setBusinesses(biz.ok && bizRows?.success && Array.isArray(bizRows.data) ? bizRows.data : []);
-      const campaigns = mkt.data?.data?.campaigns;
-      setCampaigns(Array.isArray(campaigns) ? campaigns.slice(0, 3) : []);
+      setCampaigns([]);
     })().catch(() => {
       setBusinesses([]);
       setCampaigns([]);
@@ -1231,9 +1220,9 @@ export function SixAmMartHomePage() {
         kicker="Yekpare Arama Motoru"
         kickerHref="/bilgi/yekpare-nedir"
         title="Yakındaki restoran, mağaza ve hizmetleri Yekpare ile bul."
-        subtitle="Konumunu seç, yakınındaki işletmeleri keşfet, sipariş ve alışveriş adımlarına hızlıca geç."
-        ctaHref="/magaza"
-        ctaLabel="Alışverişe başla"
+        subtitle="Konumunu seç, yakınındaki işletmeleri keşfet ve hizmetlere hızlıca ulaş."
+        ctaHref="/kesfet"
+        ctaLabel="Keşfet"
         locationLabel={locLabel}
         onLocationClick={() => setPickerOpen(true)}
         searchPlaceholder="Restoran, mağaza, ürün veya şehir ara"
@@ -1259,7 +1248,6 @@ export function SixAmMartHomePage() {
             <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">{businesses.slice(0, 8).map((business) => <StoreCard key={business.id} item={business} dense />)}</div>
           </Section>
         ) : null}
-        <HomeShoppingShowcase />
         <div className="space-y-4">
           <section className="sixam-section mx-auto w-full max-w-[1440px] px-4 pt-2">
             <KesfetRegionsExploreBlock mode="home" variant="sade" />
@@ -1273,70 +1261,11 @@ export function SixAmMartHomePage() {
 }
 
 export function SixAmMartDeliveryPage(_props?: { defaultModule?: SixAmMartModuleKey }) {
-  return <Redirect to="/magaza" />;
+  return <Redirect to="/" />;
 }
 
 export function SixAmMartMarketplacePage() {
-  const [payload, setPayload] = useState<MarketplacePayload>({});
-  const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams({ lang: "tr", limit: "120" });
-    if (query.trim()) params.set("q", query.trim());
-    if (selectedCategory) params.set("category", selectedCategory);
-    fetch(`${API}/delivery/marketplace?${params}`)
-      .then((r) => r.json())
-      .then((d) => setPayload(d?.success && d?.data ? d.data : {}))
-      .catch(() => setPayload({}))
-      .finally(() => setLoading(false));
-  }, [query, selectedCategory]);
-
-  const categories = payload.categories ?? [];
-  const categoryList = flattenCategories(categories).slice(0, 40);
-  const featured = payload.featuredProducts?.length ? payload.featuredProducts : (payload.products ?? []).slice(0, 8);
-  const newest = payload.newest?.length ? payload.newest : (payload.products ?? []).slice(0, 12);
-  const best = payload.bestSelling?.length ? payload.bestSelling : (payload.products ?? []).slice(0, 12);
-
-  return (
-    <Shell active="shop" staticLocationLabel="Türkiye geneli mağazalar" searchPlaceholder="Ürün, marka veya mağaza ara">
-      <Hero active="shop" kicker="Alışveriş" title="Türkiye'nin yerel mağazaları tek pazaryerinde" subtitle="Yekpare alışveriş mağazalarındaki ürünleri kategori, vitrin ve mağaza kartlarıyla keşfet." ctaHref="/magaza/urunler" ctaLabel="Alışverişe başla" locationLabel="Türkiye geneli" searchPlaceholder="Ürün, marka veya mağaza ara" />
-      <section className="border-y border-sky-100 bg-white">
-        <form onSubmit={(e) => e.preventDefault()} className="mx-auto flex max-w-[1440px] flex-col gap-2 px-4 pb-4 pt-3 lg:flex-row">
-          <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black outline-none">
-            <option value="">Tüm Kategoriler</option>
-            {categoryList.map((cat) => <option key={cat.id} value={categoryKey(cat)}>{cat.name}</option>)}
-          </select>
-          <label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-4 ring-1 ring-slate-100">
-            <Search className="h-4 w-4 text-[#0284C7]" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} className="flex-1 bg-transparent py-3 text-sm font-semibold outline-none" placeholder="Ürün, marka veya mağaza ara..." />
-          </label>
-        </form>
-      </section>
-      <ModuleSelector active="shop" />
-      <main className={`${SADE_PUBLIC_POST_HERO_MAIN_CLASS} pb-10`}>
-        {categories.length ? (
-          <Section title="Kategoriye göre alışveriş" subtitle="Yekpare ürün kategorileri.">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              {categories.slice(0, 12).map((cat) => (
-                <button key={cat.id} onClick={() => setSelectedCategory(categoryKey(cat))} className="rounded-[14px] border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <span className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-2xl">{cat.icon || "🛍️"}</span>
-                  <span className="line-clamp-2 text-sm font-black text-slate-950">{cat.name}</span>
-                </button>
-              ))}
-            </div>
-          </Section>
-        ) : null}
-        <Section title="Öne çıkan ürünler" subtitle={loading ? "Ürünler yükleniyor..." : "Yekpare mağazalarından ürünler."}>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{featured.map((product) => <ProductCard key={product.id} product={product} />)}</div>
-        </Section>
-        {best.length ? <Section title="En çok beğenilen ürünler"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{best.map((product) => <ProductCard key={product.id} product={product} />)}</div></Section> : null}
-        {newest.length ? <Section title="Yeni gelen ürünler"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{newest.map((product) => <ProductCard key={product.id} product={product} />)}</div></Section> : null}
-      </main>
-    </Shell>
-  );
+  return <Redirect to="/" />;
 }
 
 export function SixAmMartTourismPage() {
@@ -1912,8 +1841,7 @@ export function SixAmMartNewsDetailPage() {
 }
 
 export function SixAmMartHomeModulePage() {
-  const module = moduleFromQuery("shop");
-  if (module === "shop") return <Redirect to="/magaza" />;
+  const module = moduleFromQuery("rental");
   if (module === "rental") return <SixAmMartTourismPage />;
-  return <Redirect to="/magaza" />;
+  return <Redirect to="/" />;
 }

@@ -133,7 +133,6 @@ export type UnifiedSearchSectionKey =
   | "sehir"
   | "sari_sayfalar"
   | "seyahat"
-  | "urunler"
   | "hizmetler"
   | "haritalar"
   | "internet";
@@ -380,10 +379,6 @@ const SECTION_META: Record<
     title: "Seyahat",
     seeAll: (q) => `/turizm/konaklama?q=${encodeURIComponent(q)}`,
   },
-  urunler: {
-    title: "Ürünler",
-    seeAll: (q) => `/magaza/urunler?q=${encodeURIComponent(q)}`,
-  },
   hizmetler: {
     title: "Hizmetler",
     seeAll: (q) => `/kesfet/liste?q=${encodeURIComponent(q)}&superCategory=hizmet`,
@@ -408,7 +403,6 @@ const SECTION_ORDER: UnifiedSearchSectionKey[] = [
   "bilgi_agaci",
   "haberler",
   "sari_sayfalar",
-  "urunler",
   "hizmetler",
 ];
 
@@ -550,7 +544,7 @@ function vendorTypeLabel(vendorType: string | null | undefined): {
     return { resultType: "vendor_grocery", typeLabel: "Market", hrefPrefix: "/kesfet" };
   }
   if (["alisveris", "ecommerce", "shop"].includes(type)) {
-    return { resultType: "vendor_shop", typeLabel: "Mağaza", hrefPrefix: "/alisveris/magaza" };
+    return { resultType: "vendor_shop", typeLabel: "Mağaza", hrefPrefix: "/kesfet" };
   }
   if (["siparis", "delivery", "restaurant", "restoran", "food"].includes(type)) {
     return { resultType: "vendor_food", typeLabel: "Yemek", hrefPrefix: "/kesfet" };
@@ -563,7 +557,6 @@ function vendorDetailHref(slug: string | null, vendorType: string | null | undef
   if (!s) return "/kesfet";
   const { hrefPrefix } = vendorTypeLabel(vendorType);
   if (hrefPrefix === "/kesfet") return `/kesfet/${encodeURIComponent(s)}`;
-  if (hrefPrefix === "/market") return `/magaza?q=${encodeURIComponent(s)}`;
   return `${hrefPrefix}/${encodeURIComponent(s)}`;
 }
 
@@ -597,7 +590,6 @@ function emptySections(): Record<UnifiedSearchSectionKey, PlatformSearchResult[]
     sehir: [],
     sari_sayfalar: [],
     seyahat: [],
-    urunler: [],
     hizmetler: [],
     haritalar: [],
     internet: [],
@@ -804,7 +796,6 @@ function collectGalleryImages(buckets: Record<UnifiedSearchSectionKey, PlatformS
     "haritalar",
     "sari_sayfalar",
     "hizmetler",
-    "urunler",
     "yektube",
   ];
   const out: string[] = [];
@@ -1504,7 +1495,7 @@ export async function runGroupedUnifiedSearch(input: {
       if (linked && linkedMapIds.has(linked)) continue;
       const { resultType, typeLabel } = vendorTypeLabel(v.vendorType);
       const section: UnifiedSearchSectionKey =
-        resultType === "vendor_shop" ? "urunler"
+        resultType === "vendor_shop" ? "sari_sayfalar"
           : (resultType === "vendor_food" || resultType === "vendor_grocery") ? "sari_sayfalar"
             : "hizmetler";
       pushItem(section, {
@@ -1534,63 +1525,6 @@ export async function runGroupedUnifiedSearch(input: {
     }
   } catch {
     /* vendors yok */
-  }
-
-  try {
-    const productOrParts: SQL[] = [];
-    for (const term of vendorTerms) {
-      const pattern = `%${term}%`;
-      productOrParts.push(
-        sql`mi.name ILIKE ${pattern}`,
-        sql`mi.description ILIKE ${pattern}`,
-        sql`v.name ILIKE ${pattern}`,
-      );
-    }
-    const productR = await db.execute(sql`
-      SELECT mi.id, mi.name, mi.description, mi.price, mi.sale_price, mi.image_url,
-             v.name AS vendor_name, v.slug AS vendor_slug
-      FROM vendor_menu_items mi
-      JOIN vendors v ON v.id = mi.vendor_id
-      WHERE v.active = true
-        AND mi.active = true
-        AND v.vendor_type = 'ecommerce'
-        AND (${or(...productOrParts)!})
-      ORDER BY mi.is_popular DESC, mi.updated_at DESC NULLS LAST
-      LIMIT ${fetchLimit}
-    `);
-    for (const raw of productR.rows) {
-      const row = raw as Record<string, unknown>;
-      const id = String(row.id ?? "");
-      const name = String(row.name ?? "");
-      pushItem("urunler", {
-        id: `product-${id}`,
-        name,
-        slug: slugifyTr(name),
-        resultType: "product",
-        typeLabel: "Ürün",
-        href: `/magaza/urun/${id}-${slugifyTr(name)}`,
-        address: null,
-        city: null,
-        district: null,
-        description: String(row.description ?? "") || null,
-        rating: null,
-        userRatingsTotal: null,
-        photoUrl: String(row.image_url ?? "") || null,
-        coverPhotoUrl: String(row.image_url ?? "") || null,
-        categoryName: "Ürün",
-        homepageSuperCategory: null,
-        storeType: "ecommerce",
-        hasPublicProfile: true,
-        googlePlaceId: null,
-        latitude: null,
-        longitude: null,
-        phone: null,
-        price: typeof row.sale_price === "number" ? row.sale_price : Number(row.sale_price ?? row.price) || null,
-        subtitle: String(row.vendor_name ?? "") || null,
-      });
-    }
-  } catch {
-    /* ürünler yok */
   }
 
   try {

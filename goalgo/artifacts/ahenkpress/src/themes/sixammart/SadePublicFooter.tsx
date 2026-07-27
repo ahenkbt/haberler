@@ -35,11 +35,7 @@ const SERVICE_MODULES = YEKPARE_FOOTER_SERVICE_MODULES;
 
 const ACCOUNT_LINKS = [
   { label: "Hesabım", href: "/hesabim" },
-  { label: "Sepet", href: "/magaza/sepet" },
-  { label: "Sipariş takip", href: "/siparis-takip" },
-  { label: "Siparişlerim", href: "/siparislerim" },
   { label: "İşletme paneli", href: "/servis-saglayici-giris" },
-  { label: "Mağaza aç", href: "/magaza/satici-ol" },
 ] as const;
 
 const TURIZM_HELP_LINKS = [
@@ -57,7 +53,6 @@ const TURIZM_COMPANY_LINKS = [
 const TURIZM_SUPPORT_LINKS = [
   { label: "İşletme girişi", href: "/isletme-giris" },
   { label: "Servis sağlayıcı girişi", href: "/servis-saglayici-giris" },
-  { label: "Sipariş takip", href: "/siparis-takip" },
 ];
 
 function FooterCol({

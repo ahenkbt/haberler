@@ -1,6 +1,5 @@
 import { KESFET_HUB_CARDS, KESFET_HUB_PATH } from "@/lib/kesfetDiscoverHub";
 import { HARITALAR, isHaritalarSubNavItemActive } from "@/lib/haritalarRoutes";
-import { MAIN_NAV_HREF } from "@workspace/site-nav";
 import { TURIZM } from "@/themes/turizm/turizmRoutes";
 
 export type SearchEngineModuleTile = {
@@ -22,7 +21,7 @@ export const SEARCH_ENGINE_CATEGORY_PILLS: SearchEngineCategoryPill[] = [
   {
     id: "alisveris",
     label: "Al\u0131\u015Fveri\u015F",
-    href: MAIN_NAV_HREF.magaza,
+    href: HARITALAR.super("alisveris"),
     emoji: "\uD83D\uDECD\uFE0F",
   },
   {
@@ -34,7 +33,7 @@ export const SEARCH_ENGINE_CATEGORY_PILLS: SearchEngineCategoryPill[] = [
   {
     id: "icerik",
     label: "\u0130\u00E7erik",
-    href: MAIN_NAV_HREF.haberler,
+    href: "/haberler",
     emoji: "\uD83D\uDCF0",
   },
   {
@@ -120,7 +119,6 @@ const GLOBAL_CATEGORY_PILL_PREFIXES = [
   HARITALAR.sariSayfalar,
   "/kesfet",
   "/servisler",
-  "/magaza",
   "/turizm",
   "/firma-rehberi",
   "/haberler",

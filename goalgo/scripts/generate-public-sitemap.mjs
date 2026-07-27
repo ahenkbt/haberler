@@ -14,14 +14,12 @@ const fallbackIndex = `<?xml version="1.0" encoding="UTF-8"?>
   <sitemap><loc>${portalOrigin}/news-yekpare.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/businesses.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/sarisayfalar.xml</loc><lastmod>${today}</lastmod></sitemap>
-  <sitemap><loc>${portalOrigin}/vendors-magaza.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/turizm.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/authors.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/ansiklopedi.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/vendor-blogs.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/yektube-static.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/yektube-videos-1.xml</loc><lastmod>${today}</lastmod></sitemap>
-  <sitemap><loc>${portalOrigin}/products-1.xml</loc><lastmod>${today}</lastmod></sitemap>
 </sitemapindex>`;
 
 const LEAK_ORIGINS = [

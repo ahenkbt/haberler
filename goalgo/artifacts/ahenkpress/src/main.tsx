@@ -23,8 +23,6 @@ import "./styles/hmRssNewsBand.css";
 
 import "./styles/dunyadanKisaKisa.css";
 
-import "./styles/sellzy-theme.css";
-
 import "./styles/sade-public-footer.css";
 
 import "./styles/homepageTheme.css";

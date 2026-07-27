@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { customerFavoritesTable, vendorsTable, deliveryOrdersTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import { getShopUser } from "./shop-auth";
+import { getShopUser } from "../lib/shop-auth";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
 
 const router: IRouter = Router();

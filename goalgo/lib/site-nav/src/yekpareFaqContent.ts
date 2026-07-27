@@ -19,7 +19,6 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p>Tüketici hakları bakımından mesafeli satış sözleşmesi, kullanıcı ile <strong>ilgili işletme</strong> arasında kurulur. Yekpare, işletmelerin platformda yer almasına aracılık eden bir liste ve rehber hizmeti sunar.</p>
 
 <h2>Sipariş ve rezervasyon süreci nasıl işler?</h2>
-<p><strong>Alışveriş (mağaza):</strong> Her mağazanın kendi vitrin sayfası vardır. Sepet, ödeme ve kargo adımları mağazanın politikasına göre tamamlanır. Sipariş numarası ile <a href="/siparis-takip">sipariş takip</a> ekranından durum sorgulanabilir.</p>
 <p><strong>Turizm (otel, tur, villa, araç, yat, transfer, uçuş):</strong> İlan veya arama sonucunda işletme profiline gidilir; rezervasyon, teklif talebi veya iletişim doğrudan işletmeyle yapılır. Uçuş ve otobüs gibi bazı modüllerde fiyat karşılaştırması sunulabilir; nihai satın alma ve ödeme partner işletme veya yetkili acente üzerinden gerçekleşir.</p>
 <p>Rezervasyon veya sipariş öncesinde işletmenin iletişim bilgilerini, iptal koşullarını ve varsa TURSAB/ruhsat belgelerini doğrudan teyit etmenizi öneririz.</p>
 
@@ -49,7 +48,7 @@ export const YEKPARE_SSS_BODY_HTML = `${YEKPARE_PLATFORM_INTRO}
 <p>Hesap oluşturma, sipariş ve destek süreçlerinde kimlik ve iletişim verileriniz işlenir. Ayrıntılar <a href="/gizlilik-kvkk">Gizlilik Politikası ve KVKK Aydınlatma Metni</a> sayfasında yer alır. Veri sorumlusu VATAN SOSYAL HIZMETLER LTD'dir; başvuru: <a href="mailto:yekparenet@gmail.com">yekparenet@gmail.com</a>.</p>
 
 <h2>İşletme paneli ve doğrulama</h2>
-<p>Onaylı işletmeler <a href="/servis-saglayici-giris">servis sağlayıcı paneli</a>, <a href="/turizm-paneli">turizm paneli</a> veya mağaza paneli üzerinden içeriklerini yönetir. Yekpare, başvuru sırasında temel ticari bilgi ve sektörel belge talep edebilir; nihai doğrulama ve güncellik işletmenin beyanına dayanır.</p>
+<p>Onaylı işletmeler <a href="/servis-saglayici-giris">servis sağlayıcı paneli</a>, <a href="/turizm-paneli">turizm paneli</a> üzerinden içeriklerini yönetir. Yekpare, başvuru sırasında temel ticari bilgi ve sektörel belge talep edebilir; nihai doğrulama ve güncellik işletmenin beyanına dayanır.</p>
 <p>Doğrulanmış rozet veya öne çıkan listeleme, platform kurallarına uyum ve abonelik paketine bağlıdır; tek başına kalite veya yasal uygunluk garantisi anlamına gelmez.</p>
 
 <h2>Yanıltıcı ilan veya eksik bilgi görürsem ne yapmalıyım?</h2>

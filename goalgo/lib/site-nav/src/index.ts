@@ -1,8 +1,6 @@
 /** Ana menü öğe anahtarları — URL ve ikonlar AppNav tarafında eşlenir. */
 export const MAIN_NAV_KEY_ORDER = [
   "kesfet",
-  "magaza",
-  "alisveris",
   "haritalar",
   "turizm",
   "haberler",
@@ -26,8 +24,6 @@ export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
   kesfet: "Keşfet",
   haritalar: "Haritalar",
   firmaRehberi: "Sarı Sayfalar",
-  alisveris: "Alışveriş",
-  magaza: "Alışveriş",
   turizm: "Seyahat",
   iletisim: "İletişim",
 };
@@ -39,8 +35,6 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
   kesfet: "/kesfet",
   haritalar: "/haritalar",
   firmaRehberi: "/firma-rehberi",
-  alisveris: "/alisveris",
-  magaza: "/magaza",
   turizm: "/turizm",
   iletisim: "/iletisim",
 };
@@ -53,8 +47,6 @@ const FOOTER_NAV_DEFAULT: MainNavKey[] = [
   "haritalar",
   "firmaRehberi",
   "turizm",
-  "alisveris",
-  "magaza",
   "iletisim",
 ];
 
@@ -570,7 +562,7 @@ export type FooterInfoLink = FooterLegalLink;
 
 const FOOTER_INFO_LINKS_DEFAULT: FooterInfoLink[] = [
   { label: "Yekpare nedir", href: "/bilgi/yekpare-nedir" },
-  { label: "Alışveriş rehberi", href: "/magaza" },
+  { label: "Keşfet rehberi", href: "/kesfet" },
   { label: "Yekpare AI", href: "/bilgi/ai-cagri-merkezi-nedir" },
   { label: "İşletme · Özel domain", href: "/bilgi/isletme-sayfasi-ozel-domain" },
   { label: "Keşfet", href: "/bilgi/isletme-kesfet-rehberi" },

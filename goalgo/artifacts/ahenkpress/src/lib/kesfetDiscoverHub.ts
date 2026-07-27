@@ -73,22 +73,6 @@ const HARITALAR_EMOJI: Record<string, string> = {
 
 export const KESFET_HUB_SECTIONS: KesfetHubSection[] = [
   {
-    id: "alisveris",
-    title: "Alışveriş & Mağaza",
-    subtitle: "Pazaryeri, ürünler ve mağazalar",
-    cards: [
-      hubCard({
-        id: "magaza",
-        title: "Alışveriş",
-        description: YEKPARE_SERVICE_MODULE_META.shop.description,
-        href: YEKPARE_SERVICE_MODULE_META.shop.href,
-        accent: "#7c3aed",
-        bg: "from-violet-50 via-white to-purple-50/70",
-        emoji: "🛍️",
-      }),
-    ],
-  },
-  {
     id: "seyahat",
     title: "Seyahat & Turizm",
     subtitle: "Otel, tur, yat, etkinlik ve rezervasyon",
@@ -262,7 +246,6 @@ export const KESFET_HUB_CARDS: KesfetHubCard[] = KESFET_HUB_SECTIONS.flatMap((se
 
 /** Anasayfa özet şeridi — en çok kullanılan modüller */
 export const KESFET_HUB_FEATURED_CARD_IDS = [
-  "magaza",
   "haritalar",
   "seyahat",
   "kesfet-liste",
@@ -278,8 +261,6 @@ export const KESFET_HUB_FEATURED_CARDS: KesfetHubCard[] = KESFET_HUB_FEATURED_CA
 
 const SERVICE_NAV_TO_MODULE: Partial<Record<MainNavKey, SixAmMartModuleKey>> = {
   turizm: "rental",
-  magaza: "shop",
-  alisveris: "shop",
 };
 
 function normalizeNavHref(href: string): string {
@@ -445,9 +426,6 @@ export function kesfetSearchTarget(query: string, fallback = UNIFIED_SEARCH_PATH
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   if (href === "/turizm" || href.startsWith("/turizm/")) {
-    return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
-  }
-  if (href === "/magaza" || href.startsWith("/magaza/")) {
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
