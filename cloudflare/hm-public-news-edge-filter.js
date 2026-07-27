@@ -87,8 +87,14 @@ function filterNewsListPayload(payload, siteId, opts) {
   if (!payload || typeof payload !== "object") return payload;
   const next = { ...payload };
   if (Array.isArray(payload.items)) {
+    const before = payload.items.length;
     next.items = filterItemArray(payload.items, siteId, opts);
-    if (typeof payload.total === "number") next.total = next.items.length;
+    const after = next.items.length;
+    // Infinite scroll: total'ı sayfa uzunluğuna indirme — yalnızca bu sayfadan düşenleri çıkar.
+    if (typeof payload.total === "number" && Number.isFinite(payload.total)) {
+      const dropped = Math.max(0, before - after);
+      next.total = Math.max(after, Number(payload.total) - dropped);
+    }
   }
   if (Array.isArray(payload.news)) next.news = filterItemArray(payload.news, siteId, opts);
   if (Array.isArray(payload.data)) next.data = filterItemArray(payload.data, siteId, opts);

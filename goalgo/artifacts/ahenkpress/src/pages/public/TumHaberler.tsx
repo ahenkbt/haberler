@@ -674,19 +674,28 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
       const offset = typeof pageParam === "number" ? pageParam : 0;
       const raw = (await apiRequest(
         listApiBase({ limit: LIST_PAGE_SIZE, offset }),
-      )) as { items?: unknown[]; total?: number };
+      )) as { items?: unknown[]; total?: number; hasMore?: boolean };
       const rows = raw?.items ?? [];
+      const mapped = filterHaberBandItems(rows.map((n) => mapNewsToBandItem(n as Record<string, unknown>)));
+      const total = typeof raw?.total === "number" ? raw.total : undefined;
+      const fetched = rows.length;
+      // API sayfası doluysa veya hasMore/total daha fazla diyorsa devam.
+      const hasMore =
+        raw?.hasMore === true ||
+        fetched >= LIST_PAGE_SIZE ||
+        (typeof total === "number" && offset + fetched < total);
       return {
-        items: filterHaberBandItems(rows.map((n) => mapNewsToBandItem(n as Record<string, unknown>))),
-        total: typeof raw?.total === "number" ? raw.total : rows.length,
+        items: mapped,
+        fetched,
+        offset,
+        total: total ?? mapped.length,
+        hasMore: hasMore && fetched > 0,
       };
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.items.length < LIST_PAGE_SIZE) return undefined;
-      const loaded = allPages.reduce((n, p) => n + p.items.length, 0);
-      if (typeof lastPage.total === "number" && loaded >= lastPage.total) return undefined;
-      return loaded;
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.hasMore || lastPage.fetched === 0) return undefined;
+      return lastPage.offset + LIST_PAGE_SIZE;
     },
     enabled: isListView && !search.trim(),
     staleTime: 60 * 1000,
@@ -704,19 +713,27 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
       const offset = typeof pageParam === "number" ? pageParam : 0;
       const raw = (await apiRequest(
         listApiBase({ limit: LIST_PAGE_SIZE, offset, q: search }),
-      )) as { items?: unknown[]; total?: number };
+      )) as { items?: unknown[]; total?: number; hasMore?: boolean };
       const rows = raw?.items ?? [];
+      const mapped = filterHaberBandItems(rows.map((n) => mapNewsToBandItem(n as Record<string, unknown>)));
+      const total = typeof raw?.total === "number" ? raw.total : undefined;
+      const fetched = rows.length;
+      const hasMore =
+        raw?.hasMore === true ||
+        fetched >= LIST_PAGE_SIZE ||
+        (typeof total === "number" && offset + fetched < total);
       return {
-        items: filterHaberBandItems(rows.map((n) => mapNewsToBandItem(n as Record<string, unknown>))),
-        total: typeof raw?.total === "number" ? raw.total : rows.length,
+        items: mapped,
+        fetched,
+        offset,
+        total: total ?? mapped.length,
+        hasMore: hasMore && fetched > 0,
       };
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.items.length < LIST_PAGE_SIZE) return undefined;
-      const loaded = allPages.reduce((n, p) => n + p.items.length, 0);
-      if (typeof lastPage.total === "number" && loaded >= lastPage.total) return undefined;
-      return loaded;
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.hasMore || lastPage.fetched === 0) return undefined;
+      return lastPage.offset + LIST_PAGE_SIZE;
     },
     enabled: isListView && !!search.trim(),
     staleTime: 60 * 1000,
@@ -762,20 +779,41 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
   const fetchingMore = search.trim() ? searchFetchingMore : listFetchingMore;
 
   useEffect(() => {
-    if (!isListView || !infiniteScrollActive) return;
+    if (!isListView) return;
     const el = loadMoreRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !fetchingMore) {
-          void fetchMore();
-        }
+        if (!entries.some((e) => e.isIntersecting)) return;
+        if (fetchingMore || !infiniteScrollActive) return;
+        void fetchMore();
       },
-      { rootMargin: "320px 0px" },
+      { root: null, rootMargin: "480px 0px", threshold: 0 },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [isListView, infiniteScrollActive, fetchingMore, fetchMore]);
+  }, [isListView, infiniteScrollActive, fetchingMore, fetchMore, listItems.length, searchItems.length]);
+
+  // İlk boyamada kısa liste + sentinel görünürse hemen sonraki sayfayı çek.
+  useEffect(() => {
+    if (!isListView || !infiniteScrollActive || fetchingMore) return;
+    if (listInfiniteLoading || searchLoading) return;
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 480) {
+      void fetchMore();
+    }
+  }, [
+    isListView,
+    infiniteScrollActive,
+    fetchingMore,
+    fetchMore,
+    listInfiniteLoading,
+    searchLoading,
+    listItems.length,
+    searchItems.length,
+  ]);
 
   const activatedCategorySlugs = useMemo(() => {
     const slugs = (layoutPrefs?.hmActivatedCategorySlugs ?? [])
@@ -1068,10 +1106,22 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
             newsOnly
             categoryQuerySiteId={siteId}
             categoryFetchLimit={CATEGORY_FETCH_LIMIT}
+            loadMoreMode="inline"
+            loadMoreBatchSize={LIST_PAGE_SIZE}
             className="hm-tum-haberler-band"
           />
           {listFetchingMore ? (
             <p className="mt-6 text-center text-sm text-slate-400">Daha fazla haber yükleniyor…</p>
+          ) : null}
+          {listHasMore ? (
+            <button
+              type="button"
+              onClick={() => void fetchNextListPage()}
+              disabled={listFetchingMore}
+              className="mx-auto mt-6 block text-sm font-medium text-slate-600 underline-offset-2 hover:underline disabled:opacity-50"
+            >
+              {listFetchingMore ? "Yükleniyor…" : "Daha fazla haber yükle"}
+            </button>
           ) : null}
           {!listHasMore && listItems.length > 0 ? (
             <p className="mt-6 text-center text-sm text-slate-400">Tüm haberler listelendi.</p>
@@ -1079,7 +1129,7 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
           {listTotal > 0 ? (
             <p className="mt-2 text-center text-sm text-slate-400">{listItems.length} / {listTotal} haber</p>
           ) : null}
-          <div ref={loadMoreRef} className="h-4 w-full" aria-hidden />
+          <div ref={loadMoreRef} className="h-16 w-full" aria-hidden />
           </>
         )
         ) : (
