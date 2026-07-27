@@ -3,7 +3,7 @@
  * Editör panelden değiştirilebilir; Neon rev ile bir kerelik uygulanır.
  */
 
-export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
+export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporskor1";
 
 /** Kullanıcının verdiği sıra ve adresler. */
 export const DEFAULT_HM_BREAKING_RSS_FEED_ROWS = [
@@ -71,7 +71,7 @@ export const DEFAULT_HM_BREAKING_RSS_FEED_ROWS = [
     id: "spor",
     categoryKey: "spor",
     label: "Spor",
-    url: "https://www.dirilispostasi.com/rss/spor",
+    url: "https://www.ntv.com.tr/sporskor.rss",
   },
   {
     id: "futbol",

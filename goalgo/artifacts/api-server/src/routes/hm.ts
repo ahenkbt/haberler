@@ -466,7 +466,7 @@ async function savePublicSubmissionImage(dataUrlRaw: unknown, title: string): Pr
   return saved.url;
 }
 
-const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
+const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporskor1";
 const HM_SITE_RSS_DEFAULTS_REV = "20260727site1";
 const DEFAULT_HM_RSS_ROWS = [
   { id: "sonDakika", label: "Son Dakika", url: "https://www.ntv.com.tr/son-dakika.rss" },
@@ -479,7 +479,7 @@ const DEFAULT_HM_RSS_ROWS = [
   { id: "teknoloji", label: "Teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss" },
   { id: "saglik", label: "Sağlık", url: "https://www.ntv.com.tr/saglik.rss" },
   { id: "otomobil", label: "Otomobil", url: "https://www.ntv.com.tr/otomobil.rss" },
-  { id: "spor", label: "Spor", url: "https://www.dirilispostasi.com/rss/spor" },
+  { id: "spor", label: "Spor", url: "https://www.ntv.com.tr/sporskor.rss" },
   { id: "futbol", label: "Futbol", url: "https://www.spordepor.com/rss/futbol" },
   { id: "basketbol", label: "Basketbol", url: "https://www.spordepor.com/rss/basketbol" },
   { id: "tenis", label: "Tenis", url: "https://www.spordepor.com/rss/tenis" },

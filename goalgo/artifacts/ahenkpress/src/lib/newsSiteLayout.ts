@@ -210,7 +210,7 @@ export type HmBreakingRssDisplayMode = "cards" | "balloons";
 export type HmRssIntegrationMode = "live" | "persistent" | "manual";
 
 /** Neon bir kerelik uygulama sürümü — cloudflare/hm-breaking-rss-defaults.js ile aynı. */
-export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporalt1";
+export const HM_BREAKING_RSS_DEFAULTS_REV = "20260727sporskor1";
 
 /** Neon bir kerelik uygulama sürümü — cloudflare/hm-site-rss-defaults.js ile aynı. */
 export const HM_SITE_RSS_DEFAULTS_REV = "20260727site1";
@@ -241,7 +241,7 @@ export const defaultHmBreakingRssFeeds: HmBreakingRssFeeds = {
   teknoloji: "https://www.ntv.com.tr/teknoloji.rss",
   saglik: "https://www.ntv.com.tr/saglik.rss",
   otomobil: "https://www.ntv.com.tr/otomobil.rss",
-  spor: "https://www.dirilispostasi.com/rss/spor",
+  spor: "https://www.ntv.com.tr/sporskor.rss",
   savunmaSanayi: "https://www.dirilispostasi.com/rss/savunma-sanayi",
 };
 
