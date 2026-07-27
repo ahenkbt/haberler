@@ -213,7 +213,9 @@ export function HmPublicSiteFooter({
   const defaultPageLinks: FooterLinkItem[] = [
     { key: "home", label: "Ana sayfa", href: home },
     ...(showRssLinks ? [{ key: "rss", label: "RSS", href: h("/rss-baglantilari"), rss: true }] : []),
-    ...(effectiveShowVideoTvLink ? [{ key: "video-tv", label: "Video TV", href: h(videoPath) }] : []),
+    ...(effectiveShowVideoTvLink
+      ? [{ key: "video-tv", label: portalHubOnly ? "Video TV" : "Video", href: h(videoPath) }]
+      : []),
     { key: "foto", label: "Foto galeri", href: h("/foto-galeri") },
     ...(hiddenCategorySlugs.has("blog") ? [] : [{ key: "blog", label: "Blog", href: h("/kategori/blog") }]),
     { key: "sitene-ekle", label: "Sitene ekle", href: h("/sitene-ekle") },

@@ -120,7 +120,13 @@ function resolveNavMenuItemIcon(href: string, label: string, key?: string): Luci
   if (path === "/" || key === "home") return resolveHmCategoryLucideIcon("anasayfa", label);
   if (path.includes("/tum-haberler") || key === "all-news") return resolveHmCategoryLucideIcon("tum-haberler", label);
   if (path.includes("/yazarlar") || key === "yazarlar") return resolveHmCategoryLucideIcon("yazarlar", label);
-  if (path.includes("/yektube") || path.includes("/video-tv") || key === "video-tv") {
+  if (
+    path.includes("/yektube") ||
+    path.includes("/video-tv") ||
+    path === "/video" ||
+    path.endsWith("/video") ||
+    key === "video-tv"
+  ) {
     return resolveHmCategoryLucideIcon("yektube", label);
   }
   const catMatch = path.match(/\/kategori\/([^/?#]+)/i);
