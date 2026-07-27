@@ -15,7 +15,10 @@ import {
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge } from "./hm-editor-profile-edge.js";
-import { handleKhEditorDataEdge } from "./hm-editor-kh-data-edge.js";
+import {
+  handleKhEditorDataEdge,
+  injectKhNeonNewsIntoPublicResponse,
+} from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
@@ -2027,9 +2030,11 @@ export default {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
       const khNeedsClone =
-        (edgeMethod === "POST" || edgeMethod === "PATCH") &&
+        (edgeMethod === "POST" || edgeMethod === "PUT" || edgeMethod === "PATCH" || edgeMethod === "DELETE") &&
         (edgePath === "/api/hm/editor/authors/bulk-delete" ||
-          edgePath === "/api/hm/editor/authors/order");
+          edgePath === "/api/hm/editor/authors/order" ||
+          edgePath === "/api/hm/editor/news" ||
+          /^\/api\/hm\/editor\/news\/\d+/.test(edgePath));
       const khData = await handleKhEditorDataEdge(
         khNeedsClone ? request.clone() : request,
         env,
@@ -2139,11 +2144,16 @@ export default {
           siteRssEnriched,
           new Headers(siteRssEnriched.headers),
         );
-        return filteredEnriched || siteRssEnriched;
+        const enrichedBase = filteredEnriched || siteRssEnriched;
+        const withKhNeon = await injectKhNeonNewsIntoPublicResponse(env, incoming, enrichedBase);
+        return withKhNeon || enrichedBase;
       }
 
       const filteredNews = await maybeFilterHmPublicNewsUpstream(incoming, upstream, out);
-      if (filteredNews) return filteredNews;
+      if (filteredNews) {
+        const withKhNeon = await injectKhNeonNewsIntoPublicResponse(env, incoming, filteredNews);
+        return withKhNeon || filteredNews;
+      }
 
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {

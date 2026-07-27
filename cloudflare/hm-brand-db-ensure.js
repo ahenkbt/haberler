@@ -505,6 +505,64 @@ async function ensureKhVideoMenuOnRow(sql, row) {
   return { ...row, layout_json: JSON.stringify(next) };
 }
 
+const KH_AUTHORS_CLEAR_REV = "kh-authors-clear-20260727b";
+
+/** KH: köşe yazarlarını Neon'dan sil + vitrin yazar modüllerini kapat (bir kerelik rev). */
+async function ensureKhAuthorsClearedOnRow(sql, row) {
+  if (!row) return row;
+  const slug = normalizeSlug(row.slug);
+  const hosts = [row.domain, row.domain2, row.domain3].map(normalizeHost);
+  const isKh =
+    slug === "kh" ||
+    slug === "kirsehir" ||
+    hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
+  if (!isKh) return row;
+
+  let layout = {};
+  try {
+    layout = row.layout_json ? JSON.parse(String(row.layout_json)) : {};
+  } catch {
+    layout = {};
+  }
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+
+  const already = String(layout.hmKhAuthorsClearRev || "") === KH_AUTHORS_CLEAR_REV;
+  // Rev uygulanmış olsa bile kalan yazarları temizle (senkron sızıntısı)
+  try {
+    const { clearKhAuthorsAndDisableModules } = await import("./hm-editor-kh-data-edge.js");
+    await clearKhAuthorsAndDisableModules(sql, row.id);
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh authors clear", String(err?.message || err).slice(0, 200));
+  }
+
+  if (already) return row;
+
+  const order = Array.isArray(layout.hmNewsHomeModuleOrder)
+    ? layout.hmNewsHomeModuleOrder.filter((id) => id !== "authorsStrip")
+    : layout.hmNewsHomeModuleOrder;
+  const next = {
+    ...layout,
+    hmNewsAuthorsEnabled: false,
+    hmNewsHorizontalAuthorsEnabled: false,
+    hmNewsSidebarAuthorsEnabled: false,
+    hmNewsHomeModuleOrder: order,
+    hmKhAuthorsClearRev: KH_AUTHORS_CLEAR_REV,
+  };
+  await sql`
+    UPDATE hm_news_sites
+    SET layout_json = ${JSON.stringify(next)}::jsonb,
+        updated_at = NOW()
+    WHERE id = ${row.id}
+  `;
+  return { ...row, layout_json: JSON.stringify(next) };
+}
+
+async function ensureKhSiteRow(sql, row) {
+  let next = await ensureKhVideoMenuOnRow(sql, row);
+  next = await ensureKhAuthorsClearedOnRow(sql, next);
+  return next;
+}
+
 export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   const binding = matchBrandBinding({ domain, slug });
   if (!binding) return null;
@@ -537,11 +595,11 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       LIMIT 1
     `;
     if (byDomain?.[0] && !PROTECTED_SLUGS.has(normalizeSlug(byDomain[0].slug))) {
-      const row = await ensureKhVideoMenuOnRow(sql, byDomain[0]);
+      const row = await ensureKhSiteRow(sql, byDomain[0]);
       return { meta: serializeMetaRow(row), action: "lookup_domain" };
     }
     if (byDomain?.[0]) {
-      const row = await ensureKhVideoMenuOnRow(sql, byDomain[0]);
+      const row = await ensureKhSiteRow(sql, byDomain[0]);
       return { meta: serializeMetaRow(row), action: "lookup_domain" };
     }
   }
@@ -571,11 +629,11 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
           LIMIT 1
         `;
     if (bySlug?.[0] && !PROTECTED_SLUGS.has(normalizeSlug(bySlug[0].slug))) {
-      const row = await ensureKhVideoMenuOnRow(sql, bySlug[0]);
+      const row = await ensureKhSiteRow(sql, bySlug[0]);
       return { meta: serializeMetaRow(row), action: "lookup_slug" };
     }
     if (bySlug?.[0]) {
-      const row = await ensureKhVideoMenuOnRow(sql, bySlug[0]);
+      const row = await ensureKhSiteRow(sql, bySlug[0]);
       return { meta: serializeMetaRow(row), action: "lookup_slug" };
     }
   }
