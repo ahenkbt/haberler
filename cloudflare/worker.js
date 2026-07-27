@@ -44,7 +44,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727i";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727j";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -1576,14 +1576,28 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
         : modeRaw === "manual" || modeRaw === "manuel"
           ? "manual"
           : "live";
-    const rows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
-    const feeds = rows
-      .map((row) => ({
-        id: String(row?.id || row?.categoryKey || "").trim() || slugifyCategoryKey(row?.label),
-        label: String(row?.label || row?.id || "RSS").trim() || "RSS",
-        url: String(row?.url || "").trim(),
-      }))
-      .filter((row) => /^https?:\/\//i.test(row.url));
+    // Kutu içi + site içi RSS — spor URL çoğu zaman yalnızca breaking satırında dolu.
+    const boxRows = Array.isArray(layout.hmNewsBreakingRssFeedRows)
+      ? layout.hmNewsBreakingRssFeedRows
+      : [];
+    const siteRows = Array.isArray(layout.hmNewsSiteRssFeedRows) ? layout.hmNewsSiteRssFeedRows : [];
+    const byKey = new Map();
+    for (const row of [...boxRows, ...siteRows]) {
+      const url = String(row?.url || "").trim();
+      if (!/^https?:\/\//i.test(url)) continue;
+      const label = String(row?.label || row?.id || "RSS").trim() || "RSS";
+      const key =
+        slugifyCategoryKey(row?.categoryKey) ||
+        slugifyCategoryKey(row?.id) ||
+        slugifyCategoryKey(label) ||
+        "rss";
+      const prev = byKey.get(key);
+      // İlk dolu URL kazanır (kutu içi önce) — boş site satırı spor’u silmesin.
+      if (!prev || (!prev.url && url)) {
+        byKey.set(key, { id: key, label, url });
+      }
+    }
+    const feeds = Array.from(byKey.values());
     return {
       enabled,
       mode,
@@ -1757,6 +1771,31 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
 /**
  * Site içi RSS açıkken Render cache boş kalırsa Cloudflare edge NTV/site feed’lerini doldurur.
  */
+function hybridItemMatchesCategorySlug(item, categorySlug) {
+  const want = String(categorySlug || "").trim().toLowerCase();
+  if (!want) return true;
+  const slug = String(item?.categorySlug || "").toLowerCase();
+  if (!slug) return false;
+  return slug === want || slug.endsWith(`-${want}`) || want.endsWith(`-${slug}`);
+}
+
+function prioritizeFeedsForCategory(feeds, categorySlug) {
+  const want = String(categorySlug || "").trim().toLowerCase();
+  if (!want || !Array.isArray(feeds) || !feeds.length) return feeds || [];
+  const matched = [];
+  const rest = [];
+  for (const feed of feeds) {
+    const key = slugifyCategoryKey(feed?.id || feed?.label) || "";
+    if (key === want || key.endsWith(`-${want}`) || want.endsWith(`-${key}`)) {
+      matched.push(feed);
+    } else {
+      rest.push(feed);
+    }
+  }
+  // Kategori isteğinde önce eşleşen feed’ler; yoksa tümünü dene (slug sapması).
+  return matched.length ? matched : feeds;
+}
+
 async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, outHeaders) {
   if (request.method !== "GET") return null;
   if (incoming.pathname !== "/api/news/hybrid") return null;
@@ -1779,7 +1818,14 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   const sources = payload.sources && typeof payload.sources === "object" ? payload.sources : {};
   const rssCount = Number(sources.rss || 0);
   if (payload.hybridRssEnabled === false) return null;
-  if (rssCount > 0) return null;
+
+  const categorySlug = String(incoming.searchParams.get("categorySlug") || "").trim().toLowerCase();
+  const existing = Array.isArray(payload.items) ? payload.items : [];
+  const existingCategoryHits = categorySlug
+    ? existing.filter((item) => hybridItemMatchesCategorySlug(item, categorySlug))
+    : existing;
+  // Genel istekte RSS zaten doluysa dokunma. Kategori isteğinde hedef slug yoksa doldur.
+  if (rssCount > 0 && (!categorySlug || existingCategoryHits.length > 0)) return null;
 
   const origin = upstreamOrigin(env);
   const { enabled, feeds } = await loadSiteRssFeedRowsFromMeta(origin, incoming, siteId);
@@ -1787,12 +1833,19 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   if (!feeds.length) return null;
 
   const limit = Math.min(Math.max(Number(payload.limit || incoming.searchParams.get("limit") || 40) || 40, 1), 200);
-  const rssItems = await fetchSiteRssHybridItems(feeds, 4);
+  const feedPlan = prioritizeFeedsForCategory(feeds, categorySlug);
+  const perFeed = categorySlug ? 8 : 4;
+  const rssItems = await fetchSiteRssHybridItems(feedPlan, perFeed);
   if (!rssItems.length) return null;
 
-  const existing = Array.isArray(payload.items) ? payload.items : [];
   const seen = new Set(
-    existing.map((item) => String(item?.rssSourceUrl || item?.originUrl || item?.href || item?.id || "").trim().toLowerCase()).filter(Boolean),
+    existing
+      .map((item) =>
+        String(item?.rssSourceUrl || item?.originUrl || item?.href || item?.id || "")
+          .trim()
+          .toLowerCase(),
+      )
+      .filter(Boolean),
   );
   const mergedRss = [];
   for (const item of rssItems) {
@@ -1803,15 +1856,14 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   }
   if (!mergedRss.length) return null;
 
-  const categorySlug = String(incoming.searchParams.get("categorySlug") || "").trim().toLowerCase();
   const filteredRss = categorySlug
-    ? mergedRss.filter((item) => {
-        const slug = String(item.categorySlug || "").toLowerCase();
-        return slug === categorySlug || slug.endsWith(`-${categorySlug}`) || categorySlug.endsWith(`-${slug}`);
-      })
+    ? mergedRss.filter((item) => hybridItemMatchesCategorySlug(item, categorySlug))
     : mergedRss;
+  // Kategori isteğinde eşleşen RSS yoksa boş edge-fill dönme (üst akışı koru).
+  if (!filteredRss.length) return null;
 
-  const combined = [...existing, ...filteredRss].sort(
+  const baseItems = categorySlug ? existingCategoryHits : existing;
+  const combined = [...baseItems, ...filteredRss].sort(
     (a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime(),
   );
   const offset = Math.max(Number(payload.offset || 0) || 0, 0);
@@ -1823,7 +1875,7 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
     total: page.length,
     hybridRssEnabled: true,
     sources: {
-      db: Number(sources.db || existing.filter((i) => i?.source !== "rss").length || 0),
+      db: Number(sources.db || baseItems.filter((i) => i?.source !== "rss").length || 0),
       rss: filteredRss.length,
     },
   };
@@ -1833,6 +1885,7 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   outHeaders.set("cdn-cache-control", "public, max-age=60, stale-while-revalidate=180");
   outHeaders.set("x-yekpare-frontend", "cloudflare-site-rss-edge");
   outHeaders.set("x-yekpare-site-rss", "edge-fill");
+  if (categorySlug) outHeaders.set("x-yekpare-site-rss-category", categorySlug);
   outHeaders.delete("content-length");
   return new Response(JSON.stringify(next), { status: upstream.status, headers: outHeaders });
 }
