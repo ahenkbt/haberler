@@ -1738,9 +1738,9 @@ router.post("/hm/admin/vkd-restore-menu", async (req, res): Promise<void> => {
   try {
     const result = await syncVkdMenuPartialFromData();
     res.json({
+      ...result,
       ok: true,
       message: result.added > 0 ? `Menüye ${result.added} madde eklendi` : "Menü güncel — eksik madde yok",
-      ...result,
     });
   } catch (e) {
     res.status(500).json({
