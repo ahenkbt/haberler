@@ -2718,6 +2718,18 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       const slug = hmCategorySlug(...values);
       if (slug) slugs.add(slug);
     };
+    const resolveModuleSlug = (moduleId: HmNewsHomeModuleId) => {
+      const manual = normalizeHomeModuleCategorySlug(
+        String(layoutPrefs.hmNewsHomeModuleCategorySlugs?.[moduleId] ?? ""),
+      );
+      return manual || automaticHomeModuleCategorySlugs[moduleId] || "";
+    };
+    // Önce vitrin modül kategorileri (SPOR vb.) — uzak çekim bütçesinde öncelik.
+    for (const moduleId of orderedNewsModules) {
+      const slug = resolveModuleSlug(moduleId);
+      if (slug) push(slug);
+    }
+    push(resolveModuleSlug("sporModule") || "spor");
     for (const section of classicCategorySections.slice(0, HM_HOME_CATEGORY_BOX_MAX)) {
       push(section.slug, section.title);
     }
@@ -2737,6 +2749,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     layoutPrefs,
     layoutPrefs.hmClassicAraMansetCategorySlugs,
     layoutPrefs.hmNewsFeaturedCategoryStripSlugs,
+    layoutPrefs.hmNewsHomeModuleCategorySlugs,
+    orderedNewsModules,
+    automaticHomeModuleCategorySlugs,
   ]);
 
   const { bySlug: homeCategoryFetchedBySlug } = useHmHomeCategorySectionItems({
@@ -2800,8 +2815,11 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const categorized = slug
       ? safeItems.filter((item) => newsMatchesCategory(item, slug, homeCategoryMatchContext))
       : safeItems;
-    const primaryPool = sortNewsByRecency(categorized.length > 0 ? categorized : safeItems);
-    return pickAndPadModuleItems(primaryPool, targetLimit, safeItems);
+    // Kategori atanmış kutularda başka kategoriden doldurma yok (SPOR'a gündem sızmasın).
+    if (slug) {
+      return pickAndPadModuleItems(categorized, targetLimit, categorized, { exactLimit: true });
+    }
+    return pickAndPadModuleItems(safeItems, targetLimit, safeItems);
   };
   const resolveSectionPoolItems = (
     section: { slug: string; title: string; items?: any[] },
@@ -2887,23 +2905,38 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   const buildAhenkBlockContext = (moduleId: HmNewsHomeModuleId, limit: number, fallbackTitle: string): AhenkHaberBlockContext => {
     const categorySlug = resolveAhenkCategorySlug(moduleId, moduleCategorySlug(moduleId), AHENK_MODULE_DEFAULT_SLUGS);
+    const fetchedForSlug =
+      categorySlug && homeCategoryFetchedBySlug.has(categorySlug)
+        ? homeCategoryFetchedBySlug.get(categorySlug) ?? []
+        : [];
     const pool = sortNewsByRecency(
-      mergeUniqueNews(moduleSectionSourcePool, latestNewsPool, popular, allItems, featured).filter(isHeadlineFreshEnough),
+      mergeUniqueNews(
+        fetchedForSlug,
+        moduleSectionSourcePool,
+        latestNewsPool,
+        popular,
+        allItems,
+        featured,
+      ).filter(isHeadlineFreshEnough),
     );
     const categorized = categorySlug
-      ? pool.filter((item) => hmNewsItemMatchesHomeCategorySlug(item, categorySlug, homeCategoryMatchContext))
+      ? pool.filter(
+          (item) =>
+            hmNewsItemMatchesHomeCategorySlug(item, categorySlug, homeCategoryMatchContext) &&
+            passesCategoryContentGuard(item, categorySlug),
+        )
       : pool;
-    const items = pickAndPadModuleItems(categorized.length > 0 ? categorized : pool, limit, pool);
-    const rawItems = items.length > 0 ? items : ensureNewsBoxItems([], pool, limit, homeNewsDedupe);
-    // İçerik koruması: SPOR grid'ine (ahenkSporGrid) global havuzdan siyaset sızmasın.
-    const guardedItems = rawItems.filter((it) => passesCategoryContentGuard(it, categorySlug));
+    // Kategori kutusu: yalnızca o kategori; boşsa boş kalsın (başka kategoriden doldurma yok).
+    const items = categorySlug
+      ? pickAndPadModuleItems(categorized, limit, categorized, { exactLimit: true })
+      : pickAndPadModuleItems(pool, limit, pool);
     return {
       moduleId,
       accent,
       hmCategoryColors: hmCat,
       categorySlug,
       categoryTitle: titleForAhenkSlug(categorySlug, fallbackTitle),
-      items: guardedItems,
+      items,
       authors,
       yazarlarHref,
       newsHref: (n) => hybridNewsItemHref(n, h),
@@ -3834,20 +3867,27 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         return <HmAhenkSporGrid {...buildAhenkBlockContext("ahenkSporGrid", 6, "SPOR")} />;
       case "sporModule": {
         if (!resolveHmNewsEditorModuleEnabled(layoutPrefs, "sporModule")) return null;
-        const sporSlug = "spor";
+        const sporSlug = moduleCategorySlug("sporModule") || "spor";
+        const fetchedSpor = homeCategoryFetchedBySlug.has(sporSlug)
+          ? homeCategoryFetchedBySlug.get(sporSlug) ?? []
+          : [];
         const sporPool = sortNewsByRecency(
-          mergeUniqueNews(moduleSectionSourcePool, latestNewsPool, popular, allItems, featured).filter(isHeadlineFreshEnough),
+          mergeUniqueNews(
+            fetchedSpor,
+            moduleSectionSourcePool,
+            latestNewsPool,
+            popular,
+            allItems,
+            featured,
+          ).filter(isHeadlineFreshEnough),
         );
         const sporCategorized = sporPool.filter(
           (item) =>
             hmNewsItemMatchesHomeCategorySlug(item, sporSlug, homeCategoryMatchContext) &&
             passesCategoryContentGuard(item, sporSlug),
         );
-        const sporItems = pickAndPadModuleItems(
-          sporCategorized.length > 0 ? sporCategorized : sporPool,
-          4,
-          sporPool,
-        );
+        // Kesin: SPOR kutusuna başka kategoriden haber doldurma.
+        const sporItems = pickAndPadModuleItems(sporCategorized, 4, sporCategorized, { exactLimit: true });
         rememberModuleItems(sporItems);
         return (
           <Suspense fallback={null}>
@@ -3855,7 +3895,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               items={sporItems}
               newsHref={(n) => hybridNewsItemHref(n, h)}
               kategoriHref={ahenkKategoriHref(sporSlug)}
-              categoryTitle="SPOR"
+              categoryTitle={moduleCategoryTitle(sporSlug) || "SPOR"}
               className="mb-6"
             />
           </Suspense>
