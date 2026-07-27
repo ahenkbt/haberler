@@ -64,7 +64,6 @@ import { KesfetDiscoverHubSection } from "@/components/KesfetDiscoverHubSection"
 
 const MODULE_ICONS: Record<SixAmMartModuleKey, LucideIcon> = {
   rental: Building2,
-  parcel: Truck,
   shop: ShoppingBag,
 };
 

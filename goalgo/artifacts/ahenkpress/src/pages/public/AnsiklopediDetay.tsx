@@ -517,7 +517,6 @@ export default function AnsiklopediDetay() {
         href: portalAbsoluteHref(`/alisveris${cityQuery}`),
         label: articleCity ? `🛍️ ${articleCity} Mağazaları` : "🛍️ Alışveriş",
       },
-      { href: portalAbsoluteHref("/ulasim"), label: "🚗 Ulaşım" },
       { href: portalAbsoluteHref("/turizm"), label: "✈️ Seyahat" },
     ];
     if (articleMapTarget) {

@@ -54,12 +54,6 @@ export const YEKPARE_ROUTE_HINTS: YekpareRouteHint[] = [
     description: "Tur, otel, villa ve konaklama rezervasyonları.",
   },
   {
-    label: "Ulaşım",
-    href: "/ulasim",
-    keywords: ["ulaşım", "kargo", "nakliye", "taşıma", "lojistik", "parcel"],
-    description: "Kargo, nakliye ve ulaşım hizmetleri.",
-  },
-  {
     label: "Haritalar",
     href: "/haritalar",
     keywords: ["harita", "haritalar", "konum", "yol", "navigasyon", "map"],
@@ -153,7 +147,7 @@ export const YEKPARE_ROUTE_HINTS: YekpareRouteHint[] = [
 
 const PLATFORM_OVERVIEW = `
 Yekpare (yekpare.net), Türkiye odaklı çok modüllü bir sipariş ve keşif platformudur.
-Tek çatı altında yemek/market siparişi, e-ticaret, turizm, ulaşım, harita, haber, video ve bilgi servisleri sunar.
+Tek çatı altında yemek/market siparişi, e-ticaret, turizm, harita, haber, video ve bilgi servisleri sunar.
 
 Temel modüller:
 - Yemek (/yemek): Restoran siparişi ve teslimat.
@@ -162,7 +156,6 @@ Temel modüller:
 - Keşfet (/kesfet): İşletme keşfi ve detay sayfaları.
 - Alışveriş / Mağaza (/magaza): Çok satıcılı e-ticaret pazaryeri (sepet: /magaza/sepet).
 - Seyahat (/turizm): Tur, otel, villa, konaklama rezervasyonu.
-- Ulaşım (/ulasim): Kargo ve nakliye hizmetleri.
 - Haritalar (/haritalar): Harita ve konum araçları.
 - Haberler (/haberler, /tum-haberler): Haber merkezi ve kategori haberleri.
 - YekTube (/yektube): Video ve canlı TV kanalları.
@@ -186,7 +179,7 @@ Arama URL kalıpları (site içi, harici URL verme):
 - Seyahat şehir: /turizm?city={şehir}
 
 İşletme / sağlayıcı panelleri (yalnızca yetkili kullanıcılar — ziyaretçiye panel URL'si önerme):
-- /servis-saglayici-paneli, /turizm-paneli, /ulasim-paneli, /isletme-paneli
+- /servis-saglayici-paneli, /turizm-paneli, /isletme-paneli
 - Yönetim: /admin (yalnızca site yöneticileri)
 
 Görsel tema: Yekpare Sade — beyaz zemin, yeşil (#039D55) vurgu, Türkçe arayüz.

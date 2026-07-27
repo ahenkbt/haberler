@@ -88,12 +88,6 @@ const MODULES = [
     items: ["Rezervasyon talebi", "Tema destekli turizm vitrini", "Harita ve özel domain"],
   },
   {
-    title: "Ulaşım Mağazaları",
-    href: "/ulasim",
-    desc: "Taksi, transfer, kurye, çekici ve lojistik işletmeleri için dijital görünürlük.",
-    items: ["Ulaşım sayfasında görünürlük", "Talep toplama", "Firma ve servis tanıtımı"],
-  },
-  {
     title: "Haber Merkezi",
     href: "/habermerkezi",
     desc: "Yerel medya ve kurumsal yayın için haber sitesi, içerik akışı ve SEO altyapısı.",

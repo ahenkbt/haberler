@@ -1,4 +1,4 @@
-export type ProviderPanelKind = "delivery" | "tourism" | "transport";
+export type ProviderPanelKind = "delivery" | "tourism";
 
 export type ProviderPanelVendorLike = {
   vendor_type?: unknown;
@@ -17,12 +17,11 @@ export function providerPanelKind(vendor: ProviderPanelVendorLike | null | undef
   const type = norm(vendor?.provider_type ?? vendor?.providerType ?? vendor?.vendor_type ?? vendor?.vendorType);
   const subtype = norm(vendor?.provider_subtype ?? vendor?.providerSubtype);
   if (["turizm", "tourism"].includes(type)) return "tourism";
-  if (["ulasim", "ulaşım", "transport"].includes(type)) return "transport";
   if (["otel", "hotel", "arac", "car", "rentacar", "villa", "tur", "tour", "yat", "boat", "tekne"].includes(subtype)) {
     return "tourism";
   }
   if (["taksi", "taxi", "kurye", "courier", "cekici", "tow", "nakliyeci", "moving", "kargo", "cargo", "rideshare"].includes(subtype)) {
-    return "transport";
+    return "delivery";
   }
   return "delivery";
 }
@@ -30,6 +29,5 @@ export function providerPanelKind(vendor: ProviderPanelVendorLike | null | undef
 export function providerPanelPath(vendor: ProviderPanelVendorLike | null | undefined): string {
   const kind = providerPanelKind(vendor);
   if (kind === "tourism") return "/turizm-paneli";
-  if (kind === "transport") return "/ulasim-paneli";
   return "/servis-saglayici-paneli";
 }

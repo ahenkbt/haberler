@@ -219,22 +219,6 @@ export const KESFET_DISCOVER_GROUP_DEFS: {
       "Vize Takip Firmaları",
     ],
   },
-  {
-    key: "ulasim",
-    label: "Ulaşım",
-    icon: "🚕",
-    sortOrder: 10,
-    subs: [
-      "Kargo",
-      "Paket",
-      "Taksi",
-      "Dolmuş",
-      "Kurye",
-      "Çekici",
-      "Nakliyat",
-      "Rent a Car",
-    ],
-  },
 ];
 
 /** Legacy / removed Popüler Aramalar entries — deactivated on sync */

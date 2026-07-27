@@ -94,9 +94,7 @@ import IsOrtagi from "./pages/public/IsOrtagi";
 import IsOrtagiBasvuru from "./pages/public/IsOrtagiBasvuru";
 import Kariyer from "./pages/public/Kariyer";
 import PremiumBasarili from "./pages/public/PremiumBasarili";
-import Ulasim from "./pages/public/Ulasim";
 import Iletisim from "./pages/public/Iletisim";
-import SuruciPaneli from "./pages/public/SuruciPaneli";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
 import Kasiyer from "./pages/public/Kasiyer";
@@ -229,7 +227,6 @@ import { PortalRssNewsPreviewPage } from "./pages/public/PortalRssNewsPreviewPag
 
 const ServisSaglayiciPaneli = lazy(() => import("./pages/public/ServisSaglayiciPaneli"));
 const TurizmSaglayiciPaneli = lazy(() => import("./pages/public/TurizmSaglayiciPaneli"));
-const UlasimSaglayiciPaneli = lazy(() => import("./pages/public/UlasimSaglayiciPaneli"));
 const AdminRoutes = lazy(() => import("./routes/AdminRoutes"));
 const HaritalarFullscreenRoute = lazy(() => import("./pages/public/HaritalarFullscreenRoute"));
 const NewsmapRoute = lazy(() => import("./pages/public/NewsmapRoute"));
@@ -911,18 +908,6 @@ export default function App() {
       <Route path="/isletme-basvuru">{() => <SadeAwarePublicLayout chrome searchPlaceholder="Başvuru ve işletme ara"><IsletmeBasvuru /></SadeAwarePublicLayout>}</Route>
       <Route path="/isletme-giris">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ışletme hesabı ara"><IsletmeGiris /></SadeAwarePublicLayout>}</Route>
       <Route path="/servis-saglayici-giris">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ışletme hesabı ara"><ServisSaglayiciGiris /></SadeAwarePublicLayout>}</Route>
-      <Route path="/ulasim-saglayici-giris">
-        {() => (
-          <SadeAwarePublicLayout chrome searchPlaceholder="Ulaşım sağlayıcı hesabı ara">
-            <ServisSaglayiciGiris
-              title="Ulaşım Saşlayıcı Girişi"
-              subtitle="Filo, sürücü ve lojistik operasyon panelinize erişin"
-              backHref="/servisler/ulasim"
-              backLabel="Ulaşım servisi tanıtımına dön"
-            />
-          </SadeAwarePublicLayout>
-        )}
-      </Route>
       <Route path="/turizm-saglayici-giris">
         {() => (
           <SadeAwarePublicLayout chrome searchPlaceholder="Turizm sağlayıcı hesabı ara">
@@ -938,7 +923,6 @@ export default function App() {
       <Route path="/firma-rehberi-paneli">{() => <PublicLayout><FirmaRehberiPaneli /></PublicLayout>}</Route>
       <Route path="/servis-saglayici-paneli">{() => <LazyProviderPanel><ServisSaglayiciPaneli /></LazyProviderPanel>}</Route>
       <Route path="/turizm-paneli">{() => <LazyProviderPanel><TurizmSaglayiciPaneli /></LazyProviderPanel>}</Route>
-      <Route path="/ulasim-paneli">{() => <LazyProviderPanel><UlasimSaglayiciPaneli /></LazyProviderPanel>}</Route>
       <Route path="/sifre-sifirla">{() => <PublicLayout searchPlaceholder="Hesap veya işletme ara"><SifreSifirla /></PublicLayout>}</Route>
       <Route path="/sifre-yenile">{() => <PublicLayout searchPlaceholder="Hesap veya işletme ara"><SifreYenile /></PublicLayout>}</Route>
       <Route path="/kesfet">{() => <KesfetDiscoverHubRoute />}</Route>
@@ -1037,8 +1021,6 @@ export default function App() {
       <Route path="/hesabim">{() => <PublicLayout searchPlaceholder="Hesap, sipariş veya favori ara"><Hesabim /></PublicLayout>}</Route>
       <Route path="/is-ortagi/basvuru">{() => <SadeAwarePublicLayout chrome searchPlaceholder="Başvuru ve maşaza ara"><IsOrtagiBasvuru /></SadeAwarePublicLayout>}</Route>
       <Route path="/is-ortagi">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ış ortaklışı ve maşaza ara"><IsOrtagi /></SadeAwarePublicLayout>}</Route>
-      <Route path="/ulasim/:serviceSlug">{() => <SadeAwarePublicLayout><Ulasim /></SadeAwarePublicLayout>}</Route>
-      <Route path="/ulasim">{() => <SadeAwarePublicLayout><Ulasim /></SadeAwarePublicLayout>}</Route>
       <Route path="/kunye">
         {() => (
           <HmPortalOrDomainStandardPage segment="kunye">
@@ -1504,7 +1486,12 @@ export default function App() {
       <Route path="/rss-baglantilari">{() => <Redirect to="/site-haritalari" />}</Route>
       <Route path="/site-haritalari">{() => <PublicLayout><SiteHaritalari /></PublicLayout>}</Route>
       <Route path="/bilgi/:slug">{() => <PublicLayout><BilgiSayfasi /></PublicLayout>}</Route>
-      <Route path="/surucu-paneli">{() => <SuruciPaneli />}</Route>
+      {/* Ulaşım modülü kaldırıldı — eski URL'ler anasayfa */}
+      <Route path="/ulasim/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/ulasim">{() => <Redirect to="/" />}</Route>
+      <Route path="/ulasim-paneli">{() => <Redirect to="/" />}</Route>
+      <Route path="/ulasim-saglayici-giris">{() => <Redirect to="/" />}</Route>
+      <Route path="/surucu-paneli">{() => <Redirect to="/" />}</Route>
       <Route path="/kasiyer">{() => <Kasiyer />}</Route>
       <Route path="/kurye-paneli">{() => <Redirect to="/" />}</Route>
       <Route path="/usta-paneli">{() => <UstaPaneli />}</Route>

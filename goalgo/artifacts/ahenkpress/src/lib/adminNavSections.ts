@@ -127,14 +127,6 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   {
-    id: "ulasim",
-    title: "Ulaşım & bildirim",
-    items: [
-      { name: "Ulaşım Yönetimi", icon: Car, href: "/admin/transport", permission: "ulasim" },
-      { name: "WhatsApp Bildirimleri", icon: MessageCircle, href: "/admin/whatsapp-ayarlari", permission: "comms" },
-    ],
-  },
-  {
     id: "cagri-merkezi",
     title: "Çağrı merkezi",
     items: [
@@ -142,6 +134,7 @@ export const adminNavSections: AdminNavSection[] = [
       { name: "Verimor Bulutsantralim", icon: Cloud, href: "/admin/yekpare-ai-call/verimor", permission: "comms" },
       { name: "3CX PBX", icon: Phone, href: "/admin/yekpare-ai-call/3cx", permission: "comms" },
       { name: "Klasik PBX", icon: Headphones, href: "/admin/pbx", permission: "comms" },
+      { name: "WhatsApp Bildirimleri", icon: MessageCircle, href: "/admin/whatsapp-ayarlari", permission: "comms" },
     ],
   },
   {

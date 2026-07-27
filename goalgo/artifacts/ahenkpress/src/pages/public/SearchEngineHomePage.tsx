@@ -76,7 +76,6 @@ const navItems: NavItem[] = [
   { label: "İlan", href: "/firma-rehberi/ilanlar", icon: Building2 },
   { label: "Yakınımdakiler", href: "/kesfet", icon: Compass },
   { label: "Seyahat", href: "/turizm", icon: Plane },
-  { label: "Ulaşım", href: "/ulasim", icon: Car },
 ];
 
 const searchExamples = [
@@ -94,14 +93,12 @@ const heroChips = [
   { label: "Keşfet", href: "/kesfet" },
   { label: "Alışveriş", href: "/magaza" },
   { label: "Seyahat", href: "/turizm" },
-  { label: "Ulaşım", href: "/ulasim" },
 ];
 
 const services: ServiceCard[] = [
   { label: "Keşfet", href: "/kesfet", icon: MapPinned, desc: "Yakındaki mekan ve hizmetler.", color: "#38bdf8" },
   { label: "Alışveriş", href: "/magaza", icon: ShoppingBag, desc: "Binlerce ürün tek tıkta.", color: "#a855f7" },
   { label: "Seyahat", href: "/turizm", icon: Plane, desc: "Uçak, bilet, otel ve rota.", color: "#06b6d4" },
-  { label: "Ulaşım", href: "/ulasim", icon: Car, desc: "Ulaşımda tüm seçenekler.", color: "#f59e0b" },
 ];
 
 const whyCards = [
@@ -120,7 +117,7 @@ const resultTypes = [
 
 const featuredProducts: FeaturedProduct[] = [
   { name: "Akıllı temizlik paketi", category: "Ev hizmeti", price: "₺899'dan başlayan", href: "/firma-rehberi/urunler", color: "#22c55e" },
-  { name: "Premium araç kiralama", category: "Ulaşım", price: "Günlük fırsat", href: "/ulasim", color: "#06b6d4" },
+  { name: "Premium araç kiralama", category: "Seyahat", price: "Günlük fırsat", href: "/turizm", color: "#06b6d4" },
   { name: "Dijital randevu paketi", category: "Sağlık", price: "Online kayıt", href: "/firma-rehberi/urunler", color: "#8b5cf6" },
   { name: "Vitrin mağaza ürünü", category: "Alışveriş", price: "Öne çıkan", href: "/alisveris", color: "#f97316" },
 ];
@@ -167,7 +164,7 @@ const trendingCards = [
 
 const footerGroups = [
   { title: "Keşfet", links: ["Haberler", "Videolar", "Harita", "Sarı Sayfalar"] },
-  { title: "Servisler", links: ["Keşfet", "Alışveriş", "Seyahat", "Ulaşım"] },
+  { title: "Servisler", links: ["Keşfet", "Alışveriş", "Seyahat"] },
   { title: "Yönetim", links: ["Anasayfa Tasarım", "Anasayfa Modülleri"] },
   { title: "Yardım", links: ["SSS", "Gizlilik", "Kullanım Şartları", "İletişim", "Kariyer"] },
 ];
@@ -180,7 +177,6 @@ const footerHrefByLabel: Record<string, string> = {
   Keşfet: "/kesfet",
   Alışveriş: "/magaza",
   Seyahat: "/turizm",
-  Ulaşım: "/ulasim",
   "Anasayfa Tasarım": "/admin/anasayfa-tasarim",
   "Anasayfa Modülleri": "/admin/anasayfa-modulleri",
   SSS: "/destek",

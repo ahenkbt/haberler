@@ -3,7 +3,7 @@ import { Link, useRoute, useLocation } from "wouter";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { LocationPickerGooglePrimary } from "@/components/LocationPickerGooglePrimary";
 import type { TrAddressValue } from "@/components/TrAddressFields";
-import { combineTrAddressLine } from "@/components/transport/TransportAddressPicker";
+import { combineTrAddressLine } from "@/lib/trAddressLine";
 
 const API = "/api";
 const DAYS_TR = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];

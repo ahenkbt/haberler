@@ -1099,12 +1099,6 @@ export const YEKPARE_CORE_SERVICE_SCHEMA: YekpareServiceSchemaItem[] = [
     description: "Bilgi Ağacı bilgi portalı; bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için konu keşfi.",
   },
   {
-    name: "Ulaşım",
-    path: "/ulasim",
-    serviceType: "DeliveryService",
-    description: "Kurye, taksi, ortak yolculuk, çekici, nakliyat ve kargo talepleri.",
-  },
-  {
     name: "Yekpare AI",
     path: "/ai-cagri-merkezi",
     serviceType: "CustomerService",

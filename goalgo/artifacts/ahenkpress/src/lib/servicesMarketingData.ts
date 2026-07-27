@@ -5,7 +5,6 @@
 
 export type ServiceMarketingSlug =
   | "alisveris"
-  | "ulasim"
   | "turizm"
   | "haber-merkezi"
   | "ai-cagri-merkezi";
@@ -53,7 +52,6 @@ export const SERVICES_MARKETING_BASE = "/servisler";
 
 export const SERVICES_MARKETING_ORDER: ServiceMarketingSlug[] = [
   "alisveris",
-  "ulasim",
   "turizm",
   "haber-merkezi",
   "ai-cagri-merkezi",
@@ -62,6 +60,7 @@ export const SERVICES_MARKETING_ORDER: ServiceMarketingSlug[] = [
 /** Kısa / eski URL takma adları → kanonik slug */
 export const SERVICES_MARKETING_SLUG_ALIASES: Record<string, ServiceMarketingSlug> = {
   siparis: "alisveris",
+  ulasim: "turizm",
   haberler: "haber-merkezi",
   ai: "ai-cagri-merkezi",
 };
@@ -131,71 +130,6 @@ export const SERVICES_MARKETING_MODULES: Record<ServiceMarketingSlug, ServiceMar
       { title: "Yerel üretici pazarı", desc: "Çoklu satıcı, tek sepet ve birleşik ödeme deneyimi." },
       { title: "Marka mağazası", desc: "Özel domain ile kurumsal e-ticaret vitrini." },
       { title: "Hibrit perakende", desc: "Mağaza içi kasa ve online sipariş aynı stoktan düşer." },
-    ],
-  },
-  ulasim: {
-    slug: "ulasim",
-    title: "Ulaşım",
-    navLabel: "Ulaşım",
-    tagline: "Çekici, taksi, kurye, kargo ve nakliyat — talep, teklif ve filo yönetimi",
-    description:
-      "Müşteri taleplerini anında karşılayın; sürücü ve filo paneliyle iş atama, rota takibi ve teklif akışını tek yerden yönetin.",
-    heroCta: { label: "Ulaşım sayfası", href: "/ulasim" },
-    secondaryCta: { label: "Sağlayıcı paneli", href: "/ulasim-saglayici-giris" },
-    highlights: [
-      "Çekici, taksi, kurye, kargo",
-      "Sürücü ve filo paneli",
-      "Teklif ve iş takibi",
-      "Anlık bildirimler",
-    ],
-    customerFeatures: [
-      { title: "Hizmet seçimi", desc: "Çekici, taksi, kurye, kargo ve nakliyat için ayrı akışlar." },
-      { title: "Konum ve rota", desc: "Alış ve varış noktası; harita üzerinde görselleştirme." },
-      { title: "Teklif alma", desc: "Anlık fiyat tahmini ve sağlayıcı teklifleri." },
-      { title: "Talep takibi", desc: "Atanan sürücü, tahmini varış ve durum güncellemeleri." },
-      { title: "Bildirimler", desc: "SMS ve uygulama içi durum bildirimleri." },
-      { title: "Çoklu araç tipi", desc: "Paket boyutu, araç sınıfı ve özel ihtiyaç seçenekleri." },
-    ],
-    providerPanel: {
-      title: "Ulaşım sağlayıcı paneli",
-      subtitle: "Filo, sürücü ve lojistik işletmeleri için",
-      items: [
-        "Sürücü ve araç kayıt yönetimi",
-        "İş kuyruğu ve otomatik atama kuralları",
-        "Teklif verme ve fiyatlandırma şablonları",
-        "Canlı konum ve rota takibi",
-        "Günlük / haftalık iş ve gelir raporları",
-        "Müşteri CRM ve tekrarlayan talepler",
-        "Bildirim ve mesaj şablonları",
-        "Çoklu hizmet tipi (çekici, taksi, kurye…)",
-      ],
-    },
-    operations: {
-      title: "Operasyonel imkanlar",
-      subtitle: "Saha operasyonunu dijitalleştirin",
-      items: [
-        "Filo ve araç bakım takibi",
-        "Vardiya ve sürücü performansı",
-        "Komisyon ve ödeme mutabakatı",
-        "Acil talep önceliklendirme",
-        "Entegre harita ve navigasyon",
-        "API ile üçüncü parti entegrasyon",
-      ],
-    },
-    opportunities: [
-      { title: "Hızlı teklif", desc: "Müşteriye saniyeler içinde fiyat ve süre sunun." },
-      { title: "Filo ölçekleme", desc: "Yeni sürücü ve araçları panelden ekleyin." },
-      { title: "Çoklu hizmet", desc: "Tek işletmede çekici, kurye ve nakliyatı birleştirin." },
-    ],
-    platformExtras: ["Sürücü uygulaması", "Canlı takip", "Teklif API", "Bildirim merkezi"],
-    audienceNotes: [
-      "Müşteriler çekici, taksi, kurye veya nakliyat talebini konum seçerek oluşturur; sağlayıcılar teklif ve atama yapar.",
-      "Filo işletmeleri sürücü, araç ve iş kuyruğunu gerçek zamanlı takip eder.",
-    ],
-    useCases: [
-      { title: "Çekici operatörü", desc: "Acil talepler önceliklendirilir, sürücü konumu canlı izlenir." },
-      { title: "Kurye ağı", desc: "Paket boyutu ve rota bazlı fiyatlandırma şablonları." },
-      { title: "Nakliyat firması", desc: "Teklif, sözleşme ve teslimat durumu tek panelde." },
     ],
   },
   turizm: {
@@ -438,7 +372,7 @@ export function isServicesMarketingPath(path: string): boolean {
 export const SERVICES_PLATFORM_BENEFITS = [
   {
     title: "Tek platform, çoklu hizmet",
-    desc: "Sipariş, alışveriş, ulaşım, turizm, haber ve AI desteği tek Yekpare hesabında.",
+    desc: "Sipariş, alışveriş, turizm, haber ve AI desteği tek Yekpare hesabında.",
   },
   {
     title: "Özel domain ve e-posta",

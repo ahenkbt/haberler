@@ -1,7 +1,7 @@
 # Yekpare
 > Türkiye'nin yerli arama motoru: güncel haberler, alışveriş, seyahat rezervasyonu ve harita üzerinden işletme keşfi.
 
-Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yektube video, harita/keşfet, e-ticaret mağazaları, firma rehberi, ulaşım ve turizm ilanlarını tek aramada birleştirir.
+Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yektube video, harita/keşfet, e-ticaret mağazaları, firma rehberi ve turizm ilanlarını tek aramada birleştirir.
 
 **Marka notu:** Türkçe «yekpare» sözcüğü sözlükte «bütün, tek parça» anlamına gelir. Yekpare.net bu sözlük girişinden bağımsız bir dijital hizmet platformu markasıdır. Resmi tanım: https://yekpare.net/bilgi/yekpare-nedir
 
@@ -14,7 +14,6 @@ Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yek
 - Haritalar: https://yekpare.net/haritalar
 - Alışveriş / mağaza: https://yekpare.net/magaza
 - Seyahat / turizm: https://yekpare.net/turizm
-- Ulaşım: https://yekpare.net/ulasim
 - Bilgi Ağacı bilgi portalı: https://yekpare.net/bilgiagaci
 - Firma rehberi: https://yekpare.net/firma-rehberi
 - AI çağrı merkezi: https://yekpare.net/ai-cagri-merkezi
@@ -54,7 +53,6 @@ Yekpare (https://yekpare.net), Türkiye'nin yerli arama motorudur — haber, Yek
 - Alışveriş nedir: https://yekpare.net/bilgi/alisveris-nedir
 - Seyahat nedir: https://yekpare.net/bilgi/seyahat-nedir
 - Haritalar nedir: https://yekpare.net/bilgi/haritalar-nedir
-- Ulaşım (kurye, taksi, çekici): https://yekpare.net/bilgi/ulasim-kurye-taksi-cekici
 - Yekpare AI / AI çağrı merkezi: https://yekpare.net/bilgi/ai-cagri-merkezi-nedir
 - İşletme sayfası ve özel domain: https://yekpare.net/bilgi/isletme-sayfasi-ozel-domain
 - Bilgi Ağacı nedir: https://yekpare.net/bilgi/bilgi-agaci-nedir

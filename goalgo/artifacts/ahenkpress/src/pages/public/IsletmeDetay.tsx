@@ -240,15 +240,6 @@ function textFromObj(v: unknown, max = 600): string | null {
   return null;
 }
 
-function isUlasimTransportBusiness(b: Business): boolean {
-  const superCat = String(b.homepageSuperCategory ?? "").toLowerCase().trim();
-  if (superCat === "ulasim") return true;
-  const catSlug = String(b.category?.slug ?? "").toLowerCase();
-  if (catSlug.startsWith("ulasim")) return true;
-  if (String(b.storeType ?? "").toLowerCase() === "ulasim") return true;
-  return false;
-}
-
 interface Product {
   id: string; businessId: string; name: string; description?: string | null;
   price?: number | null; discountedPrice?: number | null; imageUrl?: string | null;
@@ -888,83 +879,6 @@ export default function IsletmeDetay() {
           <div className="lh-detail-main">
 
       
-        {isUlasimTransportBusiness(biz) && (
-          <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50/80 p-5 shadow-sm">
-            <p className="text-[11px] font-black text-amber-900 uppercase tracking-wider mb-4">Ulaşım firması</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <section id="hakkimizda" className="rounded-xl bg-white border border-amber-100/80 p-4 shadow-sm">
-                <h2 className="text-sm font-black text-gray-900 mb-2">Hakkımızda</h2>
-                  <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                  {(
-                    aboutText ||
-                    (gd?.editorialSummary && String(gd.editorialSummary).trim()) ||
-                    (biz.description && String(biz.description).trim()) ||
-                    `${biz.name} olarak yolcu ve gönderi taşımacılığında hizmet veriyoruz.`
-                  ).trim()}
-                </p>
-              </section>
-              <section id="hizmetlerimiz" className="rounded-xl bg-white border border-amber-100/80 p-4 shadow-sm">
-                <h2 className="text-sm font-black text-gray-900 mb-2">Hizmetlerimiz</h2>
-                {biz.tags && biz.tags.length > 0 ? (
-                  <ul className="list-disc pl-4 text-sm text-gray-700 space-y-1">
-                    {biz.tags.map((t, i) => (
-                      <li key={i}>{t}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <ul className="list-disc pl-4 text-sm text-gray-700 space-y-1">
-                    <li>{biz.category?.name ? `${biz.category.name} hizmetleri` : "Taksi, kurye, nakliyat ve benzeri ulaşım çözümleri"}</li>
-                    <li>Rezervasyon ve teklif için iletişim kanallarımızdan bize ulaşabilirsiniz.</li>
-                  </ul>
-                )}
-              </section>
-              <section id="adres" className="rounded-xl bg-white border border-amber-100/80 p-4 shadow-sm">
-                <h2 className="text-sm font-black text-gray-900 mb-2">Adres</h2>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {[biz.address, biz.district?.name, biz.city?.name].filter(Boolean).join(" · ") || "Adres bilgisi yakında güncellenecek."}
-                </p>
-                {biz.latitude != null && biz.longitude != null && (
-                  <Link href={haritalarNavHref({ id: biz.id, slug: biz.slug, lat: biz.latitude, lng: biz.longitude })} className="inline-block mt-2 text-xs font-bold text-amber-800 hover:underline">
-                    Haritada konumu aç →
-                  </Link>
-                )}
-              </section>
-              <section id="iletisim" className="rounded-xl bg-white border border-amber-100/80 p-4 shadow-sm">
-                <h2 className="text-sm font-black text-gray-900 mb-2">İletişim</h2>
-                <ul className="text-sm text-gray-700 space-y-2">
-                  {biz.phone && (
-                    <li>
-                      <span className="text-gray-500 font-semibold">Telefon: </span>
-                      <a href={`tel:${biz.phone}`} className="text-indigo-600 font-medium hover:underline">{biz.phone}</a>
-                    </li>
-                  )}
-                  {biz.email && (
-                    <li>
-                      <span className="text-gray-500 font-semibold">E-posta: </span>
-                      <a href={`mailto:${biz.email}`} className="text-indigo-600 font-medium hover:underline break-all">{biz.email}</a>
-                    </li>
-                  )}
-                  {waLink && (
-                    <li>
-                      <span className="text-gray-500 font-semibold">WhatsApp: </span>
-                      <a href={waLink} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-medium hover:underline">Yazın</a>
-                    </li>
-                  )}
-                  {biz.website && (
-                    <li>
-                      <span className="text-gray-500 font-semibold">Web: </span>
-                      <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium hover:underline break-all">{biz.website.replace(/^https?:\/\//, "")}</a>
-                    </li>
-                  )}
-                  {!biz.phone && !biz.email && !waLink && !biz.website && (
-                    <li className="text-gray-500">İletişim bilgisi eklenmemiş.</li>
-                  )}
-                </ul>
-              </section>
-            </div>
-          </div>
-        )}
-
             {scraping && (
               <div className="mb-4 flex items-center gap-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3">
                 <div className="lh-spinner h-4 w-4 shrink-0" />

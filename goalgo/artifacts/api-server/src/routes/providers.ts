@@ -207,7 +207,7 @@ function providerPanelKindForRow(row: Row): "delivery" | "tourism" | "transport"
 function attachProviderPanelRoute(row: Row): Row {
   const kind = providerPanelKindForRow(row);
   row.panel_kind = kind;
-  row.panel_route = kind === "tourism" ? "/turizm-paneli" : kind === "transport" ? "/ulasim-paneli" : "/servis-saglayici-paneli";
+  row.panel_route = kind === "tourism" ? "/turizm-paneli" : "/servis-saglayici-paneli";
   return row;
 }
 
@@ -898,7 +898,7 @@ router.put("/admin/providers/:id/approve", async (req, res): Promise<void> => {
    POST /api/admin/providers/:id/set-password
 ──────────────────────────────────────────────────────── */
 router.post("/admin/providers/:id/set-password", async (req, res): Promise<void> => {
-  if (!denyUnlessAdminMaintenanceAny(req, res, ["servis_saglayicilar", "turizm", "ulasim"])) return;
+  if (!denyUnlessAdminMaintenanceAny(req, res, ["servis_saglayicilar", "turizm"])) return;
   const id = Number(req.params.id);
   const { password } = req.body as { password?: string };
   if (!id) { res.status(400).json({ error: "Geçersiz ID" }); return; }
@@ -916,7 +916,7 @@ router.post("/admin/providers/:id/set-password", async (req, res): Promise<void>
 });
 
 router.post("/admin/providers/:id/panel-session", async (req, res): Promise<void> => {
-  if (!denyUnlessAdminMaintenanceAny(req, res, ["servis_saglayicilar", "turizm", "ulasim"])) return;
+  if (!denyUnlessAdminMaintenanceAny(req, res, ["servis_saglayicilar", "turizm"])) return;
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "Geçersiz ID" }); return; }
   const rows = r(await db.execute<Row>(sql`

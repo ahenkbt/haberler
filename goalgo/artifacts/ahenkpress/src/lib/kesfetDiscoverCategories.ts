@@ -248,20 +248,4 @@ export const KESFET_DISCOVER_GROUPS: KesfetDiscoverGroup[] = [
       "Vize Takip Firmaları",
     ]),
   },
-  {
-    id: "ulasim",
-    key: "ulasim",
-    label: "Ulaşım",
-    icon: "🚕",
-    subcategories: sub("ulasim", [
-      "Kargo",
-      "Paket",
-      "Taksi",
-      "Dolmuş",
-      "Kurye",
-      "Çekici",
-      "Nakliyat",
-      "Rent a Car",
-    ]),
-  },
 ];

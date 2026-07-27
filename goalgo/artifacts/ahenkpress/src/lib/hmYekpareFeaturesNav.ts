@@ -69,22 +69,6 @@ export const HM_YEKPARE_FEATURE_CARDS: HmYekpareFeatureCard[] = [
     ],
   },
   {
-    id: "ulasim",
-    label: "Ulaşım",
-    emoji: "🚚",
-    href: "/ulasim",
-    color: "#f59e0b",
-    desc: "Kurye, taksi ve nakliye.",
-    children: [
-      { label: "Kurye", href: "/ulasim/kurye" },
-      { label: "Taksi", href: "/ulasim/taksi" },
-      { label: "Ortak yolculuk", href: "/ulasim/rideshare" },
-      { label: "Çekici", href: "/ulasim/tow" },
-      { label: "Nakliyat", href: "/ulasim/moving" },
-      { label: "Kargo", href: "/ulasim/cargo" },
-    ],
-  },
-  {
     id: "sari-sayfalar",
     label: "Sarı Sayfalar",
     emoji: "📒",

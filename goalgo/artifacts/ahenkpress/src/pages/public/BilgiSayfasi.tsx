@@ -26,7 +26,7 @@ const PAGES: BilgiPage[] = [
     slug: "yekpare-nedir",
     title: "Yekpare Nedir?",
     description:
-      "Yekpare.net; Türkiye'nin yerli arama motoru. Haber, YekTube, haritalar, alışveriş, ulaşım, turizm, Haber Merkezi, işletme web siteleri, özel domain, Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.",
+      "Yekpare.net; Türkiye'nin yerli arama motoru. Haber, YekTube, haritalar, alışveriş, turizm, Haber Merkezi, işletme web siteleri, özel domain, Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.",
     lead:
       "Google'da «yekpare» sözcüğü Türkçede «bütün, tek parça» anlamına gelir; Yekpare.net ise bu sözlük anlamından bağımsız bir marka ve hizmet platformudur. yekpare.net, işletmelerin abonelikle yer aldığı bir firma rehberi ve pazaryeridir; site satıcı konumunda değildir. Sipariş, rezervasyon ve ödemeler doğrudan ilgili işletmeyle yapılır.",
     fullEntityGraph: true,
@@ -56,10 +56,6 @@ const PAGES: BilgiPage[] = [
         body: `${BILGI_AGACI_DISPLAY_NAME} (/bilgiagaci) ansiklopedi ve bilgi içerikleri sunar. Yekpare AI asistanı (/ai-cagri-merkezi) ve yüzen sohbet kutusu platform hizmetlerine yönlendirme sağlar; işletmeler için AI çağrı merkezi hizmeti de sunulur.`,
       },
       {
-        heading: "Ulaşım: kurye, taksi, ortak yolculuk, çekici ve nakliye",
-        body: "Yekpare Ulaşım modülü (yekpare.net/ulasim) kurye, taksi, araç paylaşımı (ortak yolculuk), çekici, nakliyat ve kargo talepleri için alış-varış konumu seçerek teklif akışı sunar. Ulaşım sağlayıcıları /ulasim-paneli üzerinden hizmet verir.",
-      },
-      {
         heading: "İşletme sayfaları, mini web sitesi ve özel domain",
         body: "Her işletme Yekpare'de kendi profil ve vitrin sayfasına sahiptir: e-ticaret mağazaları (/magaza/magaza/{slug}), Keşfet profilleri (/kesfet/{slug}) ve turizm ilanları. Servis sağlayıcı panelinden ürün, blog, galeri yönetilir; onaylı özel alan adı (custom domain) DNS kaydı ile işletme sayfasına bağlanabilir.",
       },
@@ -69,7 +65,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "Sipariş takip, destek ve işletme panelleri",
-        body: "Kullanıcılar /siparis-takip ile mağaza sipariş durumunu izler, /destek üzerinden yardım alır. İşletmeler /servis-saglayici-giris, /turizm-paneli ve /ulasim-paneli panellerinden operasyon yönetir.",
+        body: "Kullanıcılar /siparis-takip ile mağaza sipariş durumunu izler, /destek üzerinden yardım alır. İşletmeler /servis-saglayici-giris ve /turizm-paneli panellerinden operasyon yönetir.",
       },
     ],
     faq: [
@@ -124,11 +120,6 @@ const PAGES: BilgiPage[] = [
           "Evet. Onaylı işletmeler servis sağlayıcı panelinden özel alan adı (custom domain) talep edebilir; DNS doğrulaması sonrası mağaza veya işletme sayfası kendi domaininde açılır.",
       },
       {
-        question: "Yekpare'de kurye, taksi ve çekici nasıl çağrılır?",
-        answer:
-          "yekpare.net/ulasim adresinden kurye, taksi, araç paylaşımı, çekici, nakliyat veya kargo hizmetini seçin; alış ve varış konumunu girerek talep oluşturun.",
-      },
-      {
         question: "Yekpare Haber Merkezi nedir?",
         answer:
           "Bağımsız haber sitelerinin Yekpare altyapısıyla kendi domainlerinde yayın yapabildiği white-label haber platformudur. Detay: yekpare.net/bilgi/haber-merkezi-nedir",
@@ -137,7 +128,6 @@ const PAGES: BilgiPage[] = [
     links: [
       { label: "Alışveriş", href: "/magaza" },
       { label: "Seyahat", href: "/turizm" },
-      { label: "Ulaşım", href: "/ulasim" },
       { label: "Keşfet", href: "/kesfet" },
       { label: "Haritalar", href: "/haritalar" },
       { label: "Haberler", href: "/haberler" },
@@ -499,46 +489,6 @@ const PAGES: BilgiPage[] = [
       { label: "İşletme başvurusu", href: "/isletme-basvuru" },
       { label: "Servis sağlayıcı girişi", href: "/servis-saglayici-giris" },
       { label: "Keşfet rehberi", href: "/bilgi/isletme-kesfet-rehberi" },
-    ],
-  },
-  {
-    slug: "ulasim-kurye-taksi-cekici",
-    title: "Yekpare Ulaşım: Kurye, Taksi, Çekici ve Nakliye",
-    description:
-      "Yekpare ulaşım modülünde kurye, taksi, araç paylaşımı, çekici, nakliyat ve kargo talebi. yekpare.net/ulasim",
-    lead: "Yekpare Ulaşım (yekpare.net/ulasim), alış ve varış konumu seçerek kurye, taksi, ortak yolculuk, çekici, nakliyat ve kargo hizmetleri için teklif akışı sunar.",
-    sections: [
-      {
-        heading: "Desteklenen hizmet tipleri",
-        body: "Kurye, taksi, araç paylaşımı (rideshare), çekici (tow), nakliyat (moving) ve kargo (cargo) — /ulasim sayfasında ayrı sekmeler.",
-      },
-      {
-        heading: "Talep oluşturma",
-        body: "Alış ve varış adresini seçin; hizmet tipini belirleyin. Ulaşım sağlayıcıları /ulasim-paneli üzerinden talepleri yönetir.",
-      },
-      {
-        heading: "Kurye takibi",
-        body: "Mağaza siparişleri /siparis-takip üzerinden izlenir.",
-      },
-    ],
-    faq: [
-      {
-        question: "Yekpare'de taksi nasıl çağrılır?",
-        answer: "yekpare.net/ulasim → Taksi → alış ve varış konumu → talep oluştur.",
-      },
-      {
-        question: "Çekici ve yol yardımı var mı?",
-        answer: "Evet, Ulaşım modülünde Çekici hizmet tipi ile yol yardımı talebi oluşturulabilir.",
-      },
-      {
-        question: "Ortak yolculuk nedir?",
-        answer: "Araç paylaşımı (rideshare) sekmesi ile ortak yolculuk talepleri oluşturulur.",
-      },
-    ],
-    links: [
-      { label: "Ulaşım", href: "/ulasim" },
-      { label: "Sipariş takip", href: "/siparis-takip" },
-      { label: "Ulaşım paneli", href: "/ulasim-paneli" },
     ],
   },
   {

@@ -161,22 +161,6 @@ export const KESFET_HUB_SECTIONS: KesfetHubSection[] = [
     ],
   },
   {
-    id: "ulasim",
-    title: "Ulaşım",
-    subtitle: "Kurye, taksi, nakliye ve kargo",
-    cards: [
-      hubCard({
-        id: "ulasim",
-        title: "Ulaşım",
-        description: YEKPARE_SERVICE_MODULE_META.parcel.description,
-        href: YEKPARE_SERVICE_MODULE_META.parcel.href,
-        accent: "#b45309",
-        bg: "from-amber-50 via-white to-orange-50/70",
-        emoji: "🚚",
-      }),
-    ],
-  },
-  {
     id: "haritalar",
     title: "Haritalar",
     subtitle: "Harita, rota ve süper kategoriler",
@@ -281,7 +265,6 @@ export const KESFET_HUB_FEATURED_CARD_IDS = [
   "magaza",
   "haritalar",
   "seyahat",
-  "ulasim",
   "kesfet-liste",
   "sari-sayfalar",
   "haberler",
@@ -462,9 +445,6 @@ export function kesfetSearchTarget(query: string, fallback = UNIFIED_SEARCH_PATH
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   if (href === "/turizm" || href.startsWith("/turizm/")) {
-    return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
-  }
-  if (href === "/ulasim" || href.startsWith("/ulasim/")) {
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   if (href === "/magaza" || href.startsWith("/magaza/")) {

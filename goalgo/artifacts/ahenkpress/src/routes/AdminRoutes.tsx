@@ -34,7 +34,6 @@ import FotoGaleri from "../pages/admin/FotoGaleri";
 import VideoGaleri from "../pages/admin/VideoGaleri";
 import ResmiIlanlar from "../pages/admin/ResmiIlanlar";
 import Lisans from "../pages/admin/Lisans";
-import TransportYonetimi from "../pages/admin/TransportYonetimi";
 import AnsiklopediYonetimi from "../pages/admin/AnsiklopediYonetimi";
 import WhatsAppAyarlari from "../pages/admin/WhatsAppAyarlari";
 import YekpareAiCallOverview from "../pages/admin/yekpare-ai-call/YekpareAiCallOverview";
@@ -186,9 +185,7 @@ export default function AdminRoutes() {
       <Route path="/admin/resmi-ilanlar">
         {() => <ProtectedAdminRoute component={ResmiIlanlar} />}
       </Route>
-      <Route path="/admin/transport">
-        {() => <ProtectedAdminRoute component={TransportYonetimi} />}
-      </Route>
+      <Route path="/admin/transport">{() => <Redirect to="/admin" />}</Route>
       <Route path="/admin/ansiklopedi-yonetimi">
         {() => <ProtectedAdminRoute component={AnsiklopediYonetimi} />}
       </Route>

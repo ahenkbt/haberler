@@ -43,7 +43,6 @@ const MODULE_VISUAL: Record<
   { icon: ComponentType<{ className?: string; style?: CSSProperties }>; color: string; bg: string }
 > = {
   rental: { icon: Building2, color: "#0284c7", bg: "bg-sky-50" },
-  parcel: { icon: Car, color: "#f97316", bg: "bg-orange-50" },
   shop: { icon: ShoppingBag, color: "#0f766e", bg: "bg-teal-50" },
 };
 

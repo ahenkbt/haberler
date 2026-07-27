@@ -5,7 +5,6 @@ export const MAIN_NAV_KEY_ORDER = [
   "alisveris",
   "haritalar",
   "turizm",
-  "ulasim",
   "haberler",
   "ansiklopedi",
   "yektube",
@@ -30,7 +29,6 @@ export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
   alisveris: "Alışveriş",
   magaza: "Alışveriş",
   turizm: "Seyahat",
-  ulasim: "Ulaşım",
   iletisim: "İletişim",
 };
 
@@ -44,7 +42,6 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
   alisveris: "/alisveris",
   magaza: "/magaza",
   turizm: "/turizm",
-  ulasim: "/ulasim",
   iletisim: "/iletisim",
 };
 
@@ -58,7 +55,6 @@ const FOOTER_NAV_DEFAULT: MainNavKey[] = [
   "turizm",
   "alisveris",
   "magaza",
-  "ulasim",
   "iletisim",
 ];
 
@@ -575,7 +571,6 @@ export type FooterInfoLink = FooterLegalLink;
 const FOOTER_INFO_LINKS_DEFAULT: FooterInfoLink[] = [
   { label: "Yekpare nedir", href: "/bilgi/yekpare-nedir" },
   { label: "Alışveriş rehberi", href: "/magaza" },
-  { label: "Ulaşım · Kurye", href: "/bilgi/ulasim-kurye-taksi-cekici" },
   { label: "Yekpare AI", href: "/bilgi/ai-cagri-merkezi-nedir" },
   { label: "İşletme · Özel domain", href: "/bilgi/isletme-sayfasi-ozel-domain" },
   { label: "Keşfet", href: "/bilgi/isletme-kesfet-rehberi" },

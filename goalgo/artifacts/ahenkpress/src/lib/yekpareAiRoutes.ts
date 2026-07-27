@@ -15,7 +15,6 @@ const SERVICE_DOCK_PREFIXES = [
   "/turizm",
   "/haritalar",
   "/kesfet",
-  "/ulasim",
   "/magaza",
   "/habermerkezi",
   "/haberler",
