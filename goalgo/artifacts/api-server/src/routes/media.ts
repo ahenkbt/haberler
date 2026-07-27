@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db, getNewsDbForRead, hmSiteEditorsTable, newsTable } from "@workspace/db";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
@@ -96,7 +96,90 @@ function hasUploadBearer(req: Request): boolean {
   }
 }
 
+type EdgeBridgeUploadBody = HmEdgeMediaBridgePayload & { dataUrl?: string; title?: string };
+
+/** Worker kenar HMAC köprüsü — JWT secret uyuşmazlığı olmadan yükleme. */
+async function verifyHmEdgeMediaBridgeUpload(
+  req: Request,
+): Promise<
+  | { ok: true; dataUrl: string; uploadTitle: string }
+  | { ok: false; status: number; error: string }
+  | null
+> {
+  const sig = String(req.get("x-yekpare-hm-edge-bridge") ?? "").trim();
+  if (!sig) return null;
+  const b = (req.body ?? {}) as EdgeBridgeUploadBody;
+  const dataUrl = typeof b.dataUrl === "string" ? b.dataUrl.trim() : "";
+  if (!dataUrl) return { ok: false, status: 400, error: "dataUrl gerekli" };
+  const payload: HmEdgeMediaBridgePayload = {
+    email: b.email,
+    siteId: Number(b.siteId),
+    siteSlug: b.siteSlug,
+    exp: Number(b.exp),
+    nonce: b.nonce,
+    dataUrlSha256: sha256Hex(dataUrl),
+  };
+  if (!verifyHmEdgeMediaBridgeSignature(payload, sig)) {
+    return { ok: false, status: 401, error: "Kimlik doğrulama gerekli" };
+  }
+  const exp = Number(payload.exp);
+  if (!Number.isFinite(exp) || exp < Date.now()) {
+    return { ok: false, status: 401, error: "Köprü oturumu süresi doldu." };
+  }
+  const email = String(payload.email ?? "")
+    .trim()
+    .toLowerCase();
+  const siteId = Number(payload.siteId);
+  if (!email.includes("@") || !Number.isFinite(siteId) || siteId <= 0) {
+    return { ok: false, status: 400, error: "email ve siteId gerekli" };
+  }
+  const [editor] = await getNewsDbForRead()
+    .select({ id: hmSiteEditorsTable.id })
+    .from(hmSiteEditorsTable)
+    .where(
+      and(
+        eq(hmSiteEditorsTable.siteId, siteId),
+        eq(hmSiteEditorsTable.isActive, true),
+        sql`lower(${hmSiteEditorsTable.email}) = ${email}`,
+      ),
+    )
+    .limit(1);
+  if (!editor) return { ok: false, status: 403, error: "Editör bulunamadı" };
+  const uploadTitle = typeof b.title === "string" ? b.title.trim() : "";
+  return { ok: true, dataUrl, uploadTitle };
+}
+
+async function saveBridgeMediaUpload(
+  res: Response,
+  dataUrl: string,
+  uploadTitle: string,
+  logTag: string,
+): Promise<void> {
+  try {
+    const saved = await saveDataUrlToMedia(dataUrl, uploadTitle || undefined);
+    res.json(saved);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/Geçersiz data URL|Base64|çok büyük|Desteklenmeyen/.test(msg)) {
+      res.status(400).json({ error: msg });
+      return;
+    }
+    logger.error({ err: e, storage: getMediaStorageMode() }, logTag);
+    res.status(500).json({ error: "Yükleme başarısız" });
+  }
+}
+
 router.post("/media/upload", async (req, res): Promise<void> => {
+  const bridge = await verifyHmEdgeMediaBridgeUpload(req);
+  if (bridge && !bridge.ok) {
+    res.status(bridge.status).json({ error: bridge.error });
+    return;
+  }
+  if (bridge?.ok) {
+    await saveBridgeMediaUpload(res, bridge.dataUrl, bridge.uploadTitle, "[media-upload-bridge]");
+    return;
+  }
+
   const maintenanceSecret = String(process.env["ADMIN_MAINTENANCE_SECRET"] ?? "").trim();
   const maintenanceHeader = String(req.headers["x-yekpare-admin-secret"] ?? "").trim();
   const adminOk = req.session?.panelBootstrap === true || Boolean(maintenanceSecret && maintenanceHeader === maintenanceSecret);
@@ -134,68 +217,12 @@ router.post("/media/upload", async (req, res): Promise<void> => {
 
 /** Worker kenar editör — HMAC köprüsü ile medya yükleme (JWT secret uyuşmazlığı yok). Render deploy gerekir. */
 router.post("/media/edge-upload", async (req, res): Promise<void> => {
-  const sig = String(req.get("x-yekpare-hm-edge-bridge") ?? "").trim();
-  const b = (req.body ?? {}) as HmEdgeMediaBridgePayload;
-  const dataUrl = typeof b.dataUrl === "string" ? b.dataUrl.trim() : "";
-  if (!dataUrl) {
-    res.status(400).json({ error: "dataUrl gerekli" });
+  const bridge = await verifyHmEdgeMediaBridgeUpload(req);
+  if (!bridge?.ok) {
+    res.status(bridge?.status ?? 401).json({ error: bridge?.error ?? "Kimlik doğrulama gerekli" });
     return;
   }
-  const payload: HmEdgeMediaBridgePayload = {
-    email: b.email,
-    siteId: Number(b.siteId),
-    siteSlug: b.siteSlug,
-    exp: Number(b.exp),
-    nonce: b.nonce,
-    dataUrlSha256: sha256Hex(dataUrl),
-  };
-  if (!verifyHmEdgeMediaBridgeSignature(payload, sig)) {
-    res.status(401).json({ error: "Kimlik doğrulama gerekli" });
-    return;
-  }
-  const exp = Number(payload.exp);
-  if (!Number.isFinite(exp) || exp < Date.now()) {
-    res.status(401).json({ error: "Köprü oturumu süresi doldu." });
-    return;
-  }
-  const email = String(payload.email ?? "")
-    .trim()
-    .toLowerCase();
-  const siteId = Number(payload.siteId);
-  if (!email.includes("@") || !Number.isFinite(siteId) || siteId <= 0) {
-    res.status(400).json({ error: "email ve siteId gerekli" });
-    return;
-  }
-
-  const [editor] = await getNewsDbForRead()
-    .select({ id: hmSiteEditorsTable.id })
-    .from(hmSiteEditorsTable)
-    .where(
-      and(
-        eq(hmSiteEditorsTable.siteId, siteId),
-        eq(hmSiteEditorsTable.isActive, true),
-        sql`lower(${hmSiteEditorsTable.email}) = ${email}`,
-      ),
-    )
-    .limit(1);
-  if (!editor) {
-    res.status(403).json({ error: "Editör bulunamadı" });
-    return;
-  }
-
-  const uploadTitle = typeof b.title === "string" ? b.title.trim() : "";
-  try {
-    const saved = await saveDataUrlToMedia(dataUrl, uploadTitle || undefined);
-    res.json(saved);
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (/Geçersiz data URL|Base64|çok büyük|Desteklenmeyen/.test(msg)) {
-      res.status(400).json({ error: msg });
-      return;
-    }
-    logger.error({ err: e, storage: getMediaStorageMode() }, "[media-edge-upload] save failed");
-    res.status(500).json({ error: "Yükleme başarısız" });
-  }
+  await saveBridgeMediaUpload(res, bridge.dataUrl, bridge.uploadTitle, "[media-edge-upload]");
 });
 
 /**

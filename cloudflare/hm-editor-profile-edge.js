@@ -96,13 +96,32 @@ async function parseEditorJwt(request, env) {
 async function signEditorJwt(env, editorId, siteId) {
   const key = jwtSecretBytes(env);
   if (!key) throw new Error("SESSION_SECRET eksik");
+  return mintEditorJwtWithSecretBytes(key, editorId, siteId);
+}
+
+function collectJwtSecretStrings(env) {
+  const out = [];
+  for (const raw of [env?.HM_EDITOR_JWT_SECRET, env?.SESSION_SECRET]) {
+    const s = String(raw ?? "").trim();
+    if (s && !out.includes(s)) out.push(s);
+  }
+  return out;
+}
+
+async function mintEditorJwtWithSecret(secret, editorId, siteId) {
+  const s = String(secret ?? "").trim();
+  if (!s) throw new Error("secret empty");
+  return mintEditorJwtWithSecretBytes(new TextEncoder().encode(s), editorId, siteId);
+}
+
+async function mintEditorJwtWithSecretBytes(key, editorId, siteId) {
   const eid = asPositiveInt(editorId);
   const sid = asPositiveInt(siteId);
   if (eid == null || sid == null) throw new Error("Geçersiz editör/site id");
   return new SignJWT({ typ: JWT_TYP, eid, sid, v: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(JWT_TTL)
+    .setExpirationTime("5m")
     .sign(key);
 }
 
@@ -1089,68 +1108,113 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
 
   const bearerToken = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
 
-  // 1) Doğrudan R2/S3 — Render uykuda veya edge-upload deploy edilmemiş olsa bile çalışır.
+  const uploadSteps = [];
+
+  // 1) Doğrudan R2/S3 — Render gerekmez.
   if (s3MediaEnvReady(env)) {
     const direct = await saveMediaDataUrlToS3(env, dataUrl, typeof body?.title === "string" ? body.title : undefined);
     if (direct.url) {
       return jsonResponse(200, { url: direct.url });
     }
+    uploadSteps.push(`s3:${direct.error || "failed"}`);
     console.error("[hm-editor-media-s3]", String(direct.error || "unknown").slice(0, 200));
+  } else {
+    uploadSteps.push("s3:not-configured");
   }
 
   const origin = apiOriginFromEnv(env);
 
-  // 2) Render JWT ile klasik yükleme (edge JWT secret Render ile eşleşiyorsa).
-  if (bearerToken) {
-    const jwtUpload = await fetchRenderMediaUpload(origin, bearerToken, body);
-    if (jwtUpload) return jwtUpload;
-  }
+  // 2) Render /api/media/upload — kenarda imzalanmış kısa ömürlü JWT (secret uyuşmazlığı giderilir).
+  const renderUpload = await tryRenderMediaUploadAllTokens(env, origin, body, ctx, bearerToken);
+  if (renderUpload?.ok) return renderUpload.response;
+  if (renderUpload?.errorResponse) return renderUpload.errorResponse;
+  if (renderUpload?.detail) uploadSteps.push(`render:${renderUpload.detail}`);
 
-  // 3) HMAC köprüsü (Render'da /api/media/edge-upload deploy edilmişse).
-  const bridgeUpload = await fetchRenderMediaEdgeBridge(env, sql, ctx, editor, body, dataUrl);
-  if (bridgeUpload) return bridgeUpload;
+  // 3) HMAC köprüsü → Render /api/media/upload (veya edge-upload) — JWT secret gerekmez.
+  const bridgeUpload = await fetchRenderMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin);
+  if (bridgeUpload?.ok && bridgeUpload.response) return bridgeUpload.response;
+  if (bridgeUpload?.response) return bridgeUpload.response;
+  if (bridgeUpload?.detail) uploadSteps.push(`bridge:${bridgeUpload.detail}`);
 
   return jsonResponse(502, {
     error: "Medya yüklenemedi",
-    hint: "S3/R2 Worker secret'ları (S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY) tanımlayın veya Render API'yi yeniden deploy edin.",
+    detail: uploadSteps.join("; ") || "Tüm yükleme yolları başarısız",
+    hint:
+      "Cloudflare Worker secret'larına Render'daki S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY ve HM_EDITOR_JWT_SECRET (veya aynı SESSION_SECRET) ekleyin. Render deploy tamamlanınca edge-upload da devreye girer.",
   });
 }
 
-async function fetchRenderMediaUpload(origin, bearerToken, body) {
-  let upstream;
-  try {
-    upstream = await fetch(`${origin}/api/media/upload`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${bearerToken}`,
-      },
-      body: JSON.stringify({
-        dataUrl: body?.dataUrl,
-        ...(typeof body?.title === "string" ? { title: body.title } : {}),
-      }),
-    });
-  } catch (err) {
-    console.error("[hm-editor-media-jwt]", String(err?.message || err).slice(0, 200));
-    return null;
+async function tryRenderMediaUploadAllTokens(env, origin, body, ctx, clientBearer) {
+  const tokens = [];
+  if (clientBearer) tokens.push(clientBearer);
+  for (const secret of collectJwtSecretStrings(env)) {
+    try {
+      const minted = await mintEditorJwtWithSecret(secret, ctx.editorId, ctx.siteId);
+      if (!tokens.includes(minted)) tokens.push(minted);
+    } catch (err) {
+      console.error("[hm-editor-media-mint]", String(err?.message || err).slice(0, 120));
+    }
   }
-  if (!upstream.ok) return null;
-  return parseRenderMediaJsonResponse(upstream, "cloudflare-editor-media-jwt");
+  if (!tokens.length) {
+    return { detail: "no-jwt-secrets" };
+  }
+
+  let lastStatus = 0;
+  let lastDetail = "";
+  for (const token of tokens) {
+    let upstream;
+    try {
+      upstream = await fetch(`${origin}/api/media/upload`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          dataUrl: body?.dataUrl,
+          ...(typeof body?.title === "string" ? { title: body.title } : {}),
+        }),
+      });
+    } catch (err) {
+      lastDetail = String(err?.message || err).slice(0, 160);
+      continue;
+    }
+    lastStatus = upstream.status;
+    if (upstream.ok) {
+      const response = await parseRenderMediaJsonResponse(upstream, "cloudflare-editor-media-jwt");
+      if (response) return { ok: true, response };
+    }
+    const text = await upstream.text();
+    const trimmed = text.trim();
+    if (!trimmed.startsWith("<")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        lastDetail = String(parsed.error || parsed.detail || `HTTP ${upstream.status}`).slice(0, 160);
+        // 400/500 JSON — kullanıcıya göster (401 ise sonraki secret dene)
+        if (upstream.status !== 401) {
+          const errorResponse = await parseRenderMediaJsonResponse(
+            new Response(trimmed, { status: upstream.status, headers: { "content-type": "application/json" } }),
+            "cloudflare-editor-media-jwt",
+          );
+          if (errorResponse) return { errorResponse };
+        }
+      } catch {
+        lastDetail = trimmed.slice(0, 160);
+      }
+    } else {
+      lastDetail = `html-${upstream.status}`;
+    }
+  }
+  return { detail: lastDetail || `http-${lastStatus || "fail"}` };
 }
 
-async function fetchRenderMediaEdgeBridge(env, sql, ctx, editor, body, dataUrl) {
+async function fetchRenderMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin) {
   const siteRows = await sql`
     SELECT slug FROM hm_news_sites WHERE id = ${ctx.siteId} LIMIT 1
   `;
   const siteSlug = String(siteRows?.[0]?.slug || "").trim();
-
   const secret = edgeBridgeSecret(env);
-  if (!secret) {
-    return jsonResponse(503, {
-      error: "Medya yükleme yapılandırması eksik",
-      detail: "HM_EDGE_BRIDGE_SECRET tanımlı değil.",
-    });
-  }
+  if (!secret) return { detail: "bridge-secret-missing" };
 
   const payload = {
     email: String(editor.email || "")
@@ -1169,32 +1233,45 @@ async function fetchRenderMediaEdgeBridge(env, sql, ctx, editor, body, dataUrl) 
   try {
     sig = await hmacSha256Base64Url(secret, mediaBridgeCanonical(payload));
   } catch (err) {
-    return jsonResponse(502, {
-      error: "Yükleme imzası oluşturulamadı",
-      detail: String(err?.message || err).slice(0, 200),
-    });
+    return { detail: String(err?.message || err).slice(0, 120) };
   }
 
-  const origin = apiOriginFromEnv(env);
-  let upstream;
-  try {
-    upstream = await fetch(`${origin}/api/media/edge-upload`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-yekpare-hm-edge-bridge": sig,
-      },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    return jsonResponse(502, {
-      error: "Medya sunucusuna ulaşılamadı",
-      detail: String(err?.message || err).slice(0, 200),
-    });
+  const paths = ["/api/media/upload", "/api/media/edge-upload"];
+  let lastDetail = "";
+  for (const path of paths) {
+    let upstream;
+    try {
+      upstream = await fetch(`${origin}${path}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-yekpare-hm-edge-bridge": sig,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      lastDetail = String(err?.message || err).slice(0, 120);
+      continue;
+    }
+    if (upstream.ok) {
+      const response = await parseRenderMediaJsonResponse(upstream, "cloudflare-editor-media-bridge");
+      if (response) return { ok: true, response };
+    }
+    const text = await upstream.text();
+    if (!text.trim().startsWith("<")) {
+      lastDetail = `json-${upstream.status}`;
+      if (upstream.status !== 404) {
+        const response = await parseRenderMediaJsonResponse(
+          new Response(text, { status: upstream.status, headers: { "content-type": "application/json" } }),
+          "cloudflare-editor-media-bridge",
+        );
+        if (response && upstream.status !== 401) return { ok: false, response, detail: lastDetail };
+      }
+    } else {
+      lastDetail = `html-${upstream.status}`;
+    }
   }
-
-  if (!upstream.ok) return null;
-  return parseRenderMediaJsonResponse(upstream, "cloudflare-editor-media-edge");
+  return { detail: lastDetail || "bridge-failed" };
 }
 
 async function parseRenderMediaJsonResponse(upstream, frontendTag) {
