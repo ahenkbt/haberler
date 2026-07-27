@@ -11,6 +11,11 @@ import {
   matchBrandBinding,
   repairAsgEditorMisassignmentOnNeon,
 } from "./hm-brand-db-ensure.js";
+import {
+  enrichEditorMeResponse,
+  handleHmEditorProfileEdge,
+  rewriteEditorLoginForUsername,
+} from "./hm-editor-profile-edge.js";
 
 const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
 /**
@@ -347,6 +352,7 @@ function isAuthSessionApiPath(pathname) {
     p === "/api/members/login" ||
     p === "/api/hm/editor/login" ||
     p === "/api/hm/editor/me" ||
+    p === "/api/hm/editor/me/password" ||
     p === "/api/hm/author/login" ||
     p === "/api/hm/author/me"
   );
@@ -1856,6 +1862,23 @@ export default {
       }
     }
 
+    // Profil / şifre (Render gerideyse kenarda Neon).
+    try {
+      const profileEdge = await handleHmEditorProfileEdge(request, env, incoming);
+      if (profileEdge) return profileEdge;
+    } catch (err) {
+      console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
+    }
+
+    // Kullanıcı adı ile giriş → e-posta (eski Render login uyumu).
+    let apiRequest = request;
+    try {
+      apiRequest = await rewriteEditorLoginForUsername(request, env, incoming);
+    } catch (err) {
+      console.error("[hm-editor-login-rewrite]", String(err?.message || err).slice(0, 200));
+      apiRequest = request;
+    }
+
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);
     if (hmRedirect) return hmRedirect;
 
@@ -1888,8 +1911,8 @@ export default {
     const purgeCookie = purgeCookieName(incoming.hostname);
 
     try {
-      const cfOpts = upstreamCfCacheOptions(upstreamPath, request.method);
-      const proxyOpts = proxyInit(request, origin, incoming);
+      const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method);
+      const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const upstream = await fetchUpstreamWithRetry(
         target.toString(),
         proxyOpts,
@@ -1900,12 +1923,20 @@ export default {
       const repaired = await maybeRepairMismatchedNewsJson(
         origin,
         proxyOpts,
-        request.method,
+        apiRequest.method,
         incoming,
         upstreamPath,
         upstream,
       );
       if (repaired) return repaired;
+
+      try {
+        const meEnriched = await enrichEditorMeResponse(apiRequest, env, incoming, upstream);
+        if (meEnriched) return meEnriched;
+      } catch (err) {
+        console.error("[hm-editor-me-enrich]", String(err?.message || err).slice(0, 200));
+      }
+
       const out = copyUpstreamHeadersForBrowser(upstream);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
