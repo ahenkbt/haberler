@@ -636,7 +636,7 @@ export type NewsSiteLayoutPrefs = {
   hmNewsPortal3ThemeBlockEnabled?: boolean;
   /** HABER teması: MANŞET HABER kutusu (yalnızca manuel haberler); tanımsızsa kapalı kabul edilir. */
   hmNewsEsenThemeBlockEnabled?: boolean;
-  /** Gül teması: Günün Öne Çıkanları (sol 1 görsel kart + sağ 4×2 son haberler); tanımsızsa tema varsayılanı. */
+  /** Gül teması: Gündemde Öne Çıkanlar (sol metin listesi + sağ 2 fotoğraflı kart); tanımsızsa tema varsayılanı. */
   hmNewsEsenLeadPackEnabled?: boolean;
   /** HABER teması: renkli kategori şeridi; tanımsızsa kapalı kabul edilir. */
   hmNewsFeaturedCategoryStripEnabled?: boolean;
@@ -929,7 +929,7 @@ export const HM_NEWS_VITRIN_TOGGLE_MODULE_LABELS: Partial<Record<HmNewsHomeModul
   ahenkPopulerHaberler: "Popüler Haberler",
   portal3ThemeBlock: "Yekpare Haberler",
   esenThemeBlock: "MANŞET HABER",
-  esenLeadPack: "Günün Öne Çıkanları",
+  esenLeadPack: "Gündemde Öne Çıkanlar",
   featuredCategoryStrip: "Kategori Vitrini",
   yekpareKategorilerKutusu: "Yekpare Kategoriler Kutusu",
   leadListSidebar: "Öne Çıkan Haber Dosyası",
