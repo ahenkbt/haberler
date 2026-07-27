@@ -102,12 +102,13 @@ export function mapHmVideoTvRestToPortalPath(rest: string): string {
 
 function buildHmVideoTvEmbedPath(pathname: string, search = ""): string | null {
   const path = (pathname.split("?")[0] ?? "").replace(/\/+$/, "") || "/";
-  const trMatch = path.match(/^\/tr\/([^/]+)\/video-tv(\/.*)?$/);
-  const shortMatch = trMatch ? null : path.match(/^\/([^/]+)\/video-tv(\/.*)?$/);
+  // `/video` = KH kısa yol; `/video-tv` = kanonik HM Video TV
+  const trMatch = path.match(/^\/tr\/([^/]+)\/video(?:-tv)?(\/.*)?$/);
+  const shortMatch = trMatch ? null : path.match(/^\/([^/]+)\/video(?:-tv)?(\/.*)?$/);
   const hm = trMatch ?? shortMatch;
   if (!hm) return null;
   const slug = hm[1]!;
-  if (!trMatch && (slug === "tr" || slug === "hm")) return null;
+  if (!trMatch && (slug === "tr" || slug === "hm" || slug === "video" || slug === "video-tv")) return null;
   const rest = hm[2] ?? "";
   const portalPath = mapHmVideoTvRestToPortalPath(rest);
   const embedQs = new URLSearchParams(search.replace(/^\?/, ""));

@@ -2835,7 +2835,14 @@ export function resolveHmCorporateRssLinksEnabled(p: NewsSiteLayoutPrefs | null 
 function isHmVideoTvNavHref(href: string): boolean {
   const raw = String(href ?? "").trim().toLowerCase();
   if (!raw || raw === "#") return false;
-  return /\/video-tv(?:\/|$|\?)/.test(raw) || raw === "video-tv" || raw.endsWith("/video-tv");
+  return (
+    /\/video-tv(?:\/|$|\?)/.test(raw) ||
+    raw === "video-tv" ||
+    raw.endsWith("/video-tv") ||
+    raw === "/video" ||
+    raw === "video" ||
+    /\/video(?:\/|$|\?)/.test(raw)
+  );
 }
 
 function isHmVideoTvNavLabel(label: string): boolean {
@@ -2844,7 +2851,7 @@ function isHmVideoTvNavLabel(label: string): boolean {
     .toLocaleLowerCase("tr-TR")
     .normalize("NFD")
     .replace(/\p{M}/gu, "");
-  return norm === "video tv" || norm.includes("videotv") || norm.includes("yektube");
+  return norm === "video" || norm === "video tv" || norm.includes("videotv") || norm.includes("yektube");
 }
 
 /** Özel menüde etkin Video TV bağlantısı var mı? (vitrin bayrağı kapalı olsa bile) */

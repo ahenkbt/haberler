@@ -281,7 +281,58 @@ async function handlePoolAuthors(sql, siteId, url) {
   return jsonResponse(200, { items: (rows || []).map(serializeAuthor) });
 }
 
-async function handleEditorNews(sql, siteId, url) {
+function mapPublicNewsItemToEditor(item, siteId) {
+  return {
+    id: item.id,
+    title: item.title,
+    slug: item.slug,
+    spot: item.spot ?? null,
+    content: item.content ?? null,
+    imageUrl: item.imageUrl ?? item.image_url ?? null,
+    categoryId: item.categoryId ?? item.category_id ?? null,
+    categorySlug: item.categorySlug ?? item.category_slug ?? null,
+    authorId: item.authorId ?? item.author_id ?? null,
+    status: item.status || "published",
+    isFeatured: item.isFeatured === true || item.is_featured === true,
+    isSiteManset: item.isSiteManset === true || item.is_site_manset === true,
+    isBreaking: item.isBreaking === true || item.is_breaking === true,
+    views: item.views ?? 0,
+    siteId: item.siteId ?? item.site_id ?? siteId,
+    isEditorManual: item.isEditorManual === true || item.is_editor_manual === true,
+    siteOnly: item.siteOnly === true || item.site_only === true,
+    rssSourceUrl: item.rssSourceUrl ?? item.rss_source_url ?? null,
+    createdAt: item.createdAt ?? item.created_at,
+    updatedAt: item.updatedAt ?? item.updated_at,
+  };
+}
+
+/** Sitede görünen hibrit/RSS akışını editör Haberler listesine yansıt (Neon boşken). */
+async function fetchKhPublicNewsForEditor(env, siteId, limit, offset) {
+  try {
+    const qs = new URLSearchParams({
+      siteId: String(siteId),
+      limit: String(limit),
+      offset: String(offset),
+      includeHiddenCategories: "1",
+    });
+    const res = await fetch(`${apiOrigin(env)}/api/news?${qs.toString()}`, {
+      headers: { Accept: "application/json", "User-Agent": "yekpare-kh-editor-news/1" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return {
+      items: items.map((item) => mapPublicNewsItemToEditor(item, siteId)),
+      total: Number.isFinite(Number(data?.total)) ? Number(data.total) : items.length,
+      source: "public-hybrid",
+    };
+  } catch (err) {
+    console.error("[kh-editor-news-public]", String(err?.message || err).slice(0, 200));
+    return null;
+  }
+}
+
+async function handleEditorNews(sql, siteId, url, env) {
   const limit = Math.min(Number(url.searchParams.get("limit") || 200) || 200, 500);
   const offset = Number(url.searchParams.get("offset") || 0) || 0;
   const submitted =
@@ -301,24 +352,37 @@ async function handleEditorNews(sql, siteId, url) {
       WHERE site_id = ${siteId}
         AND (sender_full_name IS NOT NULL OR sender_email IS NOT NULL OR sender_phone IS NOT NULL)
     `;
-  } else {
-    rows = await sql`
-      SELECT * FROM news
-      WHERE site_id = ${siteId}
-         OR (site_only = true AND owner_site_id = ${siteId})
-      ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-    countRows = await sql`
-      SELECT count(*)::int AS count FROM news
-      WHERE site_id = ${siteId}
-         OR (site_only = true AND owner_site_id = ${siteId})
-    `;
+    return jsonResponse(200, {
+      items: (rows || []).map(serializeNewsRow),
+      total: countRows?.[0]?.count ?? 0,
+    });
   }
-  return jsonResponse(200, {
-    items: (rows || []).map(serializeNewsRow),
-    total: countRows?.[0]?.count ?? 0,
-  });
+
+  rows = await sql`
+    SELECT * FROM news
+    WHERE site_id = ${siteId}
+       OR (site_only = true AND owner_site_id = ${siteId})
+    ORDER BY created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  countRows = await sql`
+    SELECT count(*)::int AS count FROM news
+    WHERE site_id = ${siteId}
+       OR (site_only = true AND owner_site_id = ${siteId})
+  `;
+  const neonTotal = countRows?.[0]?.count ?? 0;
+  if (neonTotal > 0) {
+    return jsonResponse(200, {
+      items: (rows || []).map(serializeNewsRow),
+      total: neonTotal,
+      source: "neon",
+    });
+  }
+
+  // Neon'da siteye ait satır yok — sitedeki hibrit/RSS akışını göster (kullanıcı boş liste görmesin).
+  const pub = await fetchKhPublicNewsForEditor(env, siteId, limit, offset);
+  if (pub) return jsonResponse(200, pub);
+  return jsonResponse(200, { items: [], total: 0, source: "neon-empty" });
 }
 
 async function handleEditorMakale(sql, siteId, url) {
@@ -380,16 +444,10 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
   if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
 
-  // İlk isteklerde yazarları Render'dan senkron (best-effort)
-  if (
-    method === "GET" &&
-    (path === "/api/hm/editor/pool/authors" || path === "/api/hm/editor/news" || path === "/api/hm/editor/makale")
-  ) {
-    void syncKhAuthorsFromRender(env, ctx.siteId);
-  }
+  // Yazarları Render'dan otomatik senkron ETME — silinen köşe yazarlarını geri getiriyordu.
+  // (İlk kurulum için syncKhAuthorsFromRender manuel / tek seferlik kullanılabilir.)
 
   if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") {
-    await syncKhAuthorsFromRender(env, ctx.siteId);
     let body = {};
     try {
       body = await request.json();
@@ -400,12 +458,11 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   }
 
   if (path === "/api/hm/editor/pool/authors" && method === "GET") {
-    await syncKhAuthorsFromRender(env, ctx.siteId);
     return handlePoolAuthors(sql, ctx.siteId, incomingUrl);
   }
 
   if (path === "/api/hm/editor/news" && method === "GET") {
-    return handleEditorNews(sql, ctx.siteId, incomingUrl);
+    return handleEditorNews(sql, ctx.siteId, incomingUrl, env);
   }
 
   if (path === "/api/hm/editor/makale" && method === "GET") {

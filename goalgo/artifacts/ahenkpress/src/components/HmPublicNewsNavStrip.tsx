@@ -29,7 +29,7 @@ import { HmPwaInstallNavButton } from "@/components/HmPwaInstallNavButton";
 import { HmCategoryRssNavButton } from "@/components/HmCategoryRssNavButton";
 import { HmPageRefreshNavButton } from "@/components/HmPageRefreshNavButton";
 import { useHmEffectiveLayoutPrefs } from "@/contexts/HmChromeThemeContext";
-import { isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   hmRequestFormPath,
@@ -252,8 +252,14 @@ export function HmPublicNewsNavStrip({
 
   const accent = menuAccent;
   const hmSlug = ctx?.slug ?? null;
+  const hostKey =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  const portalHubOnly = isYekparePortalHubOnly(hostKey, hmSlug);
+  const videoTvAllowed = isHmVideoTvAllowed(hostKey, hmSlug);
   const hmVideoTvHref =
-    hmSlug != null ? h(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv`) : "/yektube";
+    hmSlug != null
+      ? h(videoTvAllowed && !portalHubOnly ? "/video" : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv`)
+      : "/yektube";
   const talepFormuHref = h(hmRequestFormPath());
   const locPath = useMemo(() => normPath(loc.split("?")[0] || "/"), [loc]);
 
@@ -267,17 +273,16 @@ export function HmPublicNewsNavStrip({
     return apiUrl(`/api/rss/${encodeURIComponent(ctx.slug)}/${encodeURIComponent(activeCategorySlug)}.xml`);
   }, [activeCategorySlug, ctx, newsRssEnabled]);
 
-  const videoActive = locPath === normPath(pathOnlyHref(hmVideoTvHref));
+  const videoActive =
+    locPath === normPath(pathOnlyHref(hmVideoTvHref)) ||
+    locPath.endsWith("/video") ||
+    locPath.includes("/video-tv");
   const talepFormuActive = locPath === normPath(pathOnlyHref(talepFormuHref));
   const requestFormEnabled = corporateNav
     ? resolveHmCorporateRequestFormEnabled(layoutPrefs)
     : resolveHmNewsRequestFormEnabled(layoutPrefs);
   const videoTvEnabled = resolveHmNewsVideoTvEnabled(layoutPrefs);
-  const portalHubOnly = isYekparePortalHubOnly(
-    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "",
-    hmSlug,
-  );
-  const showHubVideoTvLink = videoTvEnabled && portalHubOnly;
+  const showHubVideoTvLink = videoTvEnabled && videoTvAllowed;
 
   const contained = isHmHeaderChromeContained(layoutPrefs);
   const headerPreset = resolveHeaderPreset(layoutPrefs);
@@ -355,7 +360,7 @@ export function HmPublicNewsNavStrip({
   };
 
   const videoTvPill =
-    !useEditorHeaderMenu && videoTvEnabled && !hasHeaderVideoTvItem && portalHubOnly ? (
+    !useEditorHeaderMenu && videoTvEnabled && !hasHeaderVideoTvItem && videoTvAllowed ? (
       <HmVideoTvNavPill
         key="video-tv-pill"
         href={hmVideoTvHref}
