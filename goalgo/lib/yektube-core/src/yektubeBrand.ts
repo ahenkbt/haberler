@@ -5,7 +5,7 @@ export const YEKTUBE_HOST = "yektube.com";
 export const YEKTUBE_WWW_HOST = "www.yektube.com";
 export const YEKTUBE_ORIGIN = "https://yektube.com";
 /** yektube.com erişilemezse yedek kök */
-export const YEKTUBE_PORTAL_MIRROR_ORIGIN = "https://yekpare.net";
+export const YEKTUBE_PORTAL_MIRROR_ORIGIN = "https://turk.eco";
 /** yektube.com ana akış kökü (eski /tr yönlendirilir) */
 export const YEKTUBE_DEDICATED_PUBLIC_PATH = "/yp";
 export const YEKTUBE_DEDICATED_LEGACY_PUBLIC_PATH = "/tr";

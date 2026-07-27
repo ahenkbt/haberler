@@ -96,7 +96,7 @@ export const HM_TELIF_DEFAULT_BODY_HTML = `<div class="hm-vkv-masthead-page-root
         <div class="infra-card">
             <div class="infra-title"><i class="fa-solid fa-cubes"></i> Platform ve Altyapı Hakkında</div>
             <p class="infra-desc">
-                Bu web sitesi, Türkiye'nin ve Türk Dünyasının yerli ve milli arama motoru ve süper uygulaması (Super App) ekosistemi olan <a href="https://yekpare.net/habermerkezi" target="_blank">yekpare.net/habermerkezi</a> bulut haber altyapısını kullanmaktadır. Sitemizde yer alan içeriklerin bir kısmı kendi özgün kadromuz tarafından üretilirken, bir kısmı ise Türkiye ve dünyadan çeşitli haber kaynaklarından anlık veri akışı ile sağlanmaktadır.
+                Bu web sitesi, Türkiye'nin ve Türk Dünyasının yerli ve milli arama motoru ve süper uygulaması (Super App) ekosistemi olan <a href="https://turk.eco/habermerkezi" target="_blank">turk.eco/habermerkezi</a> bulut haber altyapısını kullanmaktadır. Sitemizde yer alan içeriklerin bir kısmı kendi özgün kadromuz tarafından üretilirken, bir kısmı ise Türkiye ve dünyadan çeşitli haber kaynaklarından anlık veri akışı ile sağlanmaktadır.
             </p>
         </div>
 
@@ -204,7 +204,7 @@ export const HM_TELIF_DEFAULT_BODY_HTML = `<div class="hm-vkv-masthead-page-root
                     <table class="info-table">
                         <tr>
                             <td class="info-label">🚀 Portal</td>
-                            <td class="info-value"><a href="https://yekpare.net" target="_blank">https://yekpare.net</a></td>
+                            <td class="info-value"><a href="https://turk.eco" target="_blank">https://turk.eco</a></td>
                         </tr>
                         <tr>
                             <td class="info-label">📍 Resmi Adres</td>

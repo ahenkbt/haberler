@@ -11,10 +11,10 @@ const env = {
   VITE_YEKTUBE_DEDICATED_HOSTS: "yektube.com",
   VITE_YEKTUBE_DEDICATED_PATH: "/yp",
   VITE_YEKTUBE_REDIRECT_TO_CANONICAL: "0",
-  VITE_YEKTUBE_PORTAL_SURFACE_HOSTS: "yekpare.net",
+  VITE_YEKTUBE_PORTAL_SURFACE_HOSTS: "turk.eco,yekpare.net",
   VITE_PORTAL_HOSTS:
     process.env.VITE_PORTAL_HOSTS ||
-    "goalgo.org,turkiye.li,getirsepeti.com.tr,ahenk.net.tr,turk.eco,www.turk.eco",
+    "yekpare.net,www.yekpare.net,goalgo.org,turkiye.li,getirsepeti.com.tr,ahenk.net.tr",
 };
 
 function run(cmd, args) {

@@ -1,10 +1,15 @@
-/** Ana portal markası — yekpare.net (geçiş döneminde turknet.app de portal sayılır). */
+/** Ana portal markası — turk.eco (geçiş döneminde yekpare.net / turknet.app de portal sayılır). */
 
-export const PORTAL_ORIGIN = "https://yekpare.net";
-export const PORTAL_HOST = "yekpare.net";
-export const PORTAL_WWW_HOST = "www.yekpare.net";
+export const PORTAL_ORIGIN = "https://turk.eco";
+export const PORTAL_HOST = "turk.eco";
+export const PORTAL_WWW_HOST = "www.turk.eco";
 
-export const LEGACY_PORTAL_HOSTS = ["turknet.app", "www.turknet.app"] as const;
+export const LEGACY_PORTAL_HOSTS = [
+  "yekpare.net",
+  "www.yekpare.net",
+  "turknet.app",
+  "www.turknet.app",
+] as const;
 
 /** Ek portal alias alanları (VITE_PORTAL_HOSTS / PORTAL_EXTRA_HOSTS ile de genişletilebilir). */
 export const PORTAL_ALIAS_HOSTS = [
@@ -12,8 +17,6 @@ export const PORTAL_ALIAS_HOSTS = [
   "turkiye.li",
   "getirsepeti.com.tr",
   "ahenk.net.tr",
-  "turk.eco",
-  "www.turk.eco",
 ] as const;
 
 export const PORTAL_SITE_NAME = "Yekpare";
@@ -21,10 +24,10 @@ export const PORTAL_SITE_TITLE_SUFFIX = " — Türkiye'nin Yerli Arama Motoru";
 export const PORTAL_SITE_FULL_TITLE = `${PORTAL_SITE_NAME}${PORTAL_SITE_TITLE_SUFFIX}`;
 export const PORTAL_BRAND_SHORT = "Yekpare";
 export const PORTAL_SEARCH_TAGLINE =
-  "Türkiye'nin yerli arama motoru. Haber, video, harita, sipariş, alışveriş ve hizmetleri tek aramada keşfedin.";
+  "Türkiye'nin yerli arama motoru. Haber, video, harita ve hizmetleri tek aramada keşfedin.";
 
 export const PWA_STORE_NAME = "Yekpare";
-export const PWA_STORE_TAGLINE = "Haber, harita, sipariş ve alışveriş";
+export const PWA_STORE_TAGLINE = "Haber, harita ve video";
 export const PWA_APP_NAME = "Yekpare";
 export const PWA_ICON_PATH = "/icon-192.svg";
 

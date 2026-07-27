@@ -19,7 +19,7 @@ import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPu
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 
 function origin(): string {
-  if (typeof window === "undefined") return "https://yekpare.net";
+  if (typeof window === "undefined") return "https://turk.eco";
   return window.location.origin;
 }
 

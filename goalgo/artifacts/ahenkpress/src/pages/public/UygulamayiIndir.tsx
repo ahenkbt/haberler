@@ -518,10 +518,10 @@ function UygulamayiIndirYekpareBody() {
 }
 
 function pwastoreHref(): string {
-  if (typeof window === "undefined") return "https://yekpare.net/pwastore";
+  if (typeof window === "undefined") return "https://turk.eco/pwastore";
   const h = window.location.hostname.toLowerCase().split(":")[0] ?? "";
   if (isDefaultPortalHost(h)) return `${window.location.origin}/pwastore`;
-  return "https://yekpare.net/pwastore";
+  return "https://turk.eco/pwastore";
 }
 
 type HmMeta = HmMetaByDomain;

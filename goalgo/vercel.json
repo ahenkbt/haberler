@@ -6,121 +6,243 @@
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yekpare.net"
+        }
+      ],
+      "destination": "https://turk.eco/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.yekpare.net"
+        }
+      ],
+      "destination": "https://turk.eco/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.yektube.com"
+        }
+      ],
       "destination": "https://yektube.com/:path*",
       "permanent": true
     },
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp/",
       "permanent": true
     },
     {
       "source": "/yektube-v2",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp",
       "permanent": true
     },
     {
       "source": "/yektube-v2/:path((?!assets/)(?!.*\\.[^/]+$).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/:path*",
       "permanent": true
     },
     {
       "source": "/yektube",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp",
       "permanent": false
     },
     {
       "source": "/yektube/:path*",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/:path*",
       "permanent": false
     },
     {
       "source": "/admin/kaynaklar/:path*",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/admin/kaynaklar/:path*",
       "permanent": true
     },
     {
       "source": "/admin/videolar/:path*",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/admin/videolar/:path*",
       "permanent": true
     },
     {
       "source": "/admin/hazir-kanallar/:path*",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/admin/hazir-kanallar/:path*",
       "permanent": true
     },
     {
       "source": "/admin/moduller/:path*",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/admin/moduller/:path*",
       "permanent": true
     },
     {
       "source": "/admin/araclar/:path*",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yp/admin/araclar/:path*",
       "permanent": true
     },
     {
       "source": "/v2",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp",
       "permanent": true
     },
     {
       "source": "/v2/:path*",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp/:path*",
       "permanent": true
     },
     {
       "source": "/tr",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp",
       "permanent": true
     },
     {
       "source": "/tr/:path*",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp/:path*",
       "permanent": true
     },
     {
       "source": "/yeklive",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yek-gonder",
       "permanent": true
     },
     {
       "source": "/yeklive/:path*",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yek-gonder/:path*",
       "permanent": true
     },
     {
       "source": "/yektube-v2",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp/",
       "permanent": true
     },
     {
       "source": "/yektube-v2/:path((?!assets/)(?!.*\\.[^/]+$).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp/:path*",
       "permanent": true
     },
     {
       "source": "/:path((?!yp|tr|muzik|cocuk|canli|yek-gonder|yeklive|hesabim|studio|yektube-v2|api|assets|.*\\..*).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yp/:path*",
       "permanent": false
     }
@@ -129,38 +251,72 @@
     {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" },
-        { "key": "X-Yekpare-Frontend", "value": "ahenkpress-vercel" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        },
+        {
+          "key": "X-Yekpare-Frontend",
+          "value": "ahenkpress-vercel"
+        }
       ]
     },
     {
       "source": "/maps/place/:path*",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" },
-        { "key": "X-Yekpare-Frontend", "value": "ahenkpress-vercel" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        },
+        {
+          "key": "X-Yekpare-Frontend",
+          "value": "ahenkpress-vercel"
+        }
       ]
     },
     {
       "source": "/((?!api/|assets/|.*\\..*).*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" },
-        { "key": "X-Yekpare-Frontend", "value": "ahenkpress-vercel" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        },
+        {
+          "key": "X-Yekpare-Frontend",
+          "value": "ahenkpress-vercel"
+        }
       ]
     },
     {
       "source": "/(.*\\.xml)",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
       ]
     },
     {
       "source": "/yektube-v2/sw.js",
-      "headers": [{ "key": "Service-Worker-Allowed", "value": "/yp/" }]
+      "headers": [
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/yp/"
+        }
+      ]
     },
     {
       "source": "/yp/sw.js",
-      "headers": [{ "key": "Service-Worker-Allowed", "value": "/yp/" }]
+      "headers": [
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/yp/"
+        }
+      ]
     }
   ],
   "functions": {
@@ -232,142 +388,282 @@
     },
     {
       "source": "/yp",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yp/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/muzik",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/muzik/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/cocuk",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/cocuk/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/canli",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/canli/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yek-gonder",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yek-gonder/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/hesabim",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/hesabim/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/studio",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/studio/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yp",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yp/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/muzik",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/muzik/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/cocuk",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/cocuk/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/canli",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/canli/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yek-gonder",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/yek-gonder/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/hesabim",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/hesabim/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/studio",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
       "source": "/studio/:path((?!.*\\.).*)",
-      "has": [{ "type": "host", "value": "yekpare.net" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {
@@ -392,7 +688,12 @@
     },
     {
       "source": "/:path((?!api/|assets/|yektube-v2|.*\\..*).*)",
-      "has": [{ "type": "host", "value": "yektube.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "yektube.com"
+        }
+      ],
       "destination": "/yektube-v2/index.html"
     },
     {

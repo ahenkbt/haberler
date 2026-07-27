@@ -320,7 +320,7 @@ async function tryYoutubeMetaOembedFallback(pathname) {
   try {
     const res = await fetch(
       `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}&format=json`,
-      { headers: { "User-Agent": "Yekpare/1.0 (+https://yekpare.net)" }, signal: shortAbortSignal(5000) },
+      { headers: { "User-Agent": "Yekpare/1.0 (+https://turk.eco)" }, signal: shortAbortSignal(5000) },
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -375,6 +375,7 @@ function createMiddlewareSeoVerification(deps) {
       .split(":")[0];
     return (
       !h ||
+      h === "turk.eco" ||
       h === "yekpare.net" ||
       h === "turknet.app" ||
       h === "goalgo.org" ||
@@ -986,6 +987,7 @@ async function proxySitemapXml(request, incoming, apiPath) {
         if (
           text.includes("turknet.app/") ||
           text.includes("yekpare.net/") ||
+          text.includes("turk.eco/") ||
           text.includes(`${origin}/sitemap.xml`)
         ) {
           return buildHmSitemapIndexAtEdge(request, incoming, host);
@@ -1095,6 +1097,8 @@ function isDefaultPortalHost(host) {
     .replace(/^www\./, "")
     .split(":")[0];
   return (
+    h === "turk.eco" ||
+    h === "www.turk.eco" ||
     h === "yekpare.net" ||
     h === "www.yekpare.net" ||
     h === "turknet.app" ||

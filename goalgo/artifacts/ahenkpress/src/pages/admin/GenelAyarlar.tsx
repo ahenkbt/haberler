@@ -1755,9 +1755,9 @@ export default function GenelAyarlar() {
                 Search Console → Sitemap&apos;ler bölümüne aşağıdaki ana dizini ekleyin. Haber, sipariş, alışveriş, turizm
                 ve keşfet işletmeleri otomatik güncellenir.
               </p>
-              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://yekpare.net/sitemap.xml</code>
+              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://turk.eco/sitemap.xml</code>
               <p className="text-xs text-gray-500">
-                Diğer portal domainlerinde aynı yol: <code>https://yekpare.net/sitemap.xml</code>,{" "}
+                Diğer portal domainlerinde aynı yol: <code>https://turk.eco/sitemap.xml</code>,{" "}
                 <code>https://getirsepeti.com.tr/sitemap.xml</code> — URL&apos;ler o domain kökünü kullanır.
               </p>
               <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1">
@@ -1769,7 +1769,7 @@ export default function GenelAyarlar() {
               </ul>
               <p className="text-xs text-gray-400">
                 Eski <code>/api/sitemap/…</code> yolları da çalışır; Search Console için yalnızca{" "}
-                <code>https://yekpare.net/sitemap.xml</code> yeterlidir.
+                <code>https://turk.eco/sitemap.xml</code> yeterlidir.
               </p>
               <p className="text-xs text-gray-500">
                 Haber siteleri (ör. suhaberajansi.com) için ayrı mülk doğrulaması:{" "}
@@ -1782,7 +1782,7 @@ export default function GenelAyarlar() {
                 ChatGPT, Perplexity ve Google AI özetleri için <code className="bg-gray-100 px-1 rounded">/llms.txt</code> dosyası
                 yayında; robots.txt AI botlarına izin verir. İşletme ve haber sayfalarında Schema.org JSON-LD otomatik eklenir.
               </p>
-              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://yekpare.net/llms.txt</code>
+              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://turk.eco/llms.txt</code>
             </div>
           </div>
         </TabsContent>

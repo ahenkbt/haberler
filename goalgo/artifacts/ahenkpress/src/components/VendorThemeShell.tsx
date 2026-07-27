@@ -41,7 +41,7 @@ function absoluteYekpareHref(href: string | null | undefined): string {
   const raw = String(href ?? "/kesfet").trim() || "/kesfet";
   if (/^https?:\/\//i.test(raw)) return raw;
   const path = raw.startsWith("/") ? raw : `/${raw}`;
-  return `https://yekpare.net${path}`;
+  return `https://turk.eco${path}`;
 }
 
 function contrastTextForHex(hex: string): "#0f172a" | "#ffffff" {
@@ -190,7 +190,7 @@ export function VendorThemeShell({
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="text-sm">
             <strong>{vendorName}</strong> altyapı:{" "}
-            <a href="https://yekpare.net" className="font-bold hover:underline">
+            <a href="https://turk.eco" className="font-bold hover:underline">
               yekpare.net
             </a>{" "}
             · © 2026
