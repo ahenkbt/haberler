@@ -100,7 +100,7 @@ const MARKET_TERMS = [
   "zeytin",
 ];
 
-/** Yakınımdakiler şeridinden çıkarılan kategoriler (otomotiv modülüne taşındı) */
+/** Yakınımdakiler şeridinden çıkarılan kategoriler */
 export const NEARBY_EXCLUDED_SLUGS = new Set(["yedek-parca", "oto-yedek-parca", "yedek-parca-oto"]);
 const NEARBY_OTO_EXCLUDED_TERMS = ["yedek parca", "oto parca", "oto yedek", "yedek parca oto"];
 

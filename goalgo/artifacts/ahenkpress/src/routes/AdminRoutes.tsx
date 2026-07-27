@@ -73,8 +73,6 @@ import IsOrtaklari from "../pages/admin/IsOrtaklari";
 import TurizmIlanlar from "../pages/admin/TurizmIlanlar";
 import TurizmRezervasyonlar from "../pages/admin/TurizmRezervasyonlar";
 import TurizmYonetimi from "../pages/admin/TurizmYonetimi";
-import OtomotivYonetimi from "../pages/admin/OtomotivYonetimi";
-import SigortaYonetimi from "../pages/admin/SigortaYonetimi";
 import IletisimMesajlari from "../pages/admin/IletisimMesajlari";
 import KariyerBasvurulari from "../pages/admin/KariyerBasvurulari";
 import PlatformDuyurular from "../pages/admin/PlatformDuyurular";
@@ -362,6 +360,15 @@ export default function AdminRoutes() {
       <Route path="/admin/panel-hesaplari">
         {() => <ProtectedAdminRoute component={PanelHesaplari} />}
       </Route>
+      <Route path="/admin/otomotiv">
+        {() => <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/sigorta">
+        {() => <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/sigorta-acente">
+        {() => <Redirect to="/admin" />}
+      </Route>
       <Route path="/admin/turizm-yonetimi">
         {() => <ProtectedAdminRoute component={TurizmYonetimi} />}
       </Route>
@@ -370,15 +377,6 @@ export default function AdminRoutes() {
       </Route>
       <Route path="/admin/turizm-rezervasyonlar">
         {() => <ProtectedAdminRoute component={TurizmRezervasyonlar} />}
-      </Route>
-      <Route path="/admin/otomotiv">
-        {() => <ProtectedAdminRoute component={OtomotivYonetimi} />}
-      </Route>
-      <Route path="/admin/sigorta">
-        {() => <ProtectedAdminRoute component={SigortaYonetimi} />}
-      </Route>
-      <Route path="/admin/sigorta-acente">
-        <Redirect to="/admin/sigorta" />
       </Route>
       <Route path="/admin/teslimat-siparisleri">
         {() => <ProtectedAdminRoute component={TeslimatSiparisleri} />}

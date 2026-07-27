@@ -44,7 +44,6 @@ type HaritalarTabProps = {
   mapItems: HaritalarSearchItem[];
   sariSayfalarItems: HaritalarSearchItem[];
   hizmetItems: HaritalarSearchItem[];
-  otomotivItems: HaritalarSearchItem[];
   tourismItems: HaritalarSearchItem[];
   yemekMarketItems: HaritalarSearchItem[];
   urunlerItems: HaritalarSearchItem[];
@@ -378,7 +377,6 @@ export function HaritalarTab({
   mapItems,
   sariSayfalarItems,
   hizmetItems,
-  otomotivItems,
   tourismItems,
   yemekMarketItems,
   urunlerItems,
@@ -393,7 +391,6 @@ export function HaritalarTab({
         mapItems,
         sariSayfalarItems,
         hizmetItems,
-        otomotivItems,
         tourismItems,
         yemekMarketItems,
         urunlerItems,
@@ -406,7 +403,6 @@ export function HaritalarTab({
       mapItems,
       sariSayfalarItems,
       hizmetItems,
-      otomotivItems,
       tourismItems,
       yemekMarketItems,
       urunlerItems,

@@ -5,7 +5,6 @@ import {
   Bike,
   Building2,
   Calendar,
-  Car,
   ChevronRight,
   Compass,
   Download,
@@ -82,7 +81,7 @@ const HERO_QUICK_ACTION_BTN =
 const HOME_CATEGORY_TILES = [
   { label: "Sipariş", href: "/siparis", icon: Utensils },
   { label: "Rezervasyon", href: "/turizm", icon: Calendar },
-  { label: "Otomotiv", href: "/otomotiv", icon: Car },
+  { label: "Haritalar", href: "/haritalar", icon: Map },
   { label: "Şehir Rehberi", href: "/kesfet", icon: Map },
 ] as const;
 

@@ -132,15 +132,6 @@ import BookingCoreDestinasyonlar, {
 import { TurizmSubNavBar } from "./themes/turizm/TurizmSubNavBar";
 import { TURIZM, pageOwnsTurizmSubNav } from "./themes/turizm/turizmRoutes";
 import { TurizmPageErrorBoundary } from "./themes/turizm/TurizmPageErrorBoundary";
-import OtomotivHubPage from "./themes/otomotiv/OtomotivHubPage";
-import { OtomotivCategoryStubPage } from "./themes/otomotiv/OtomotivCategoryStubPage";
-import { OtomotivServisPage } from "./themes/otomotiv/OtomotivServisPage";
-import { OtomotivVehicleListingPage } from "./themes/otomotiv/OtomotivVehicleListingPage";
-import { OtomotivVehicleDetailPage } from "./themes/otomotiv/OtomotivVehicleDetailPage";
-import { OtomotivSubNavBar } from "./themes/otomotiv/OtomotivSubNavBar";
-import { OTOMOTIV, pageOwnsOtomotivSubNav } from "./themes/otomotiv/otomotivRoutes";
-import { OtomotivSigortaPage } from "./themes/otomotiv/OtomotivSigortaPage";
-import { OtomotivPageErrorBoundary } from "./themes/otomotiv/OtomotivPageErrorBoundary";
 import { TurizmBlogDetailPage, TurizmBlogListPage } from "./themes/turizm/TurizmBlogPages";
 import { TurizmEtkinlikDetailPage } from "./themes/bookingcore/pages/TurizmEtkinlikDetailPage";
 import TurizmSssPage from "./themes/turizm/TurizmSssPage";
@@ -370,25 +361,6 @@ function TurizmLegacyTypeRedirect() {
   return <Redirect to={map[type] ?? "/turizm"} />;
 }
 
-/** Otomotiv — Sade chrome + sub-nav (turizm deseni) */
-function OtomotivRoute({ children }: { children: React.ReactNode }) {
-  const [loc] = useLocation();
-  const path = (loc.split("?")[0] ?? "").trim();
-  const hubOwnsSubNav = pageOwnsOtomotivSubNav(path);
-  return (
-    <SadeAwarePublicLayout
-      forceSade
-      chrome
-      fullBleed
-      footerVariant="otomotiv"
-      searchPlaceholder="Marka, model, parça veya servis ara"
-      subHeader={hubOwnsSubNav ? null : <OtomotivSubNavBar inline />}
-    >
-      <OtomotivPageErrorBoundary>{children}</OtomotivPageErrorBoundary>
-    </SadeAwarePublicLayout>
-  );
-}
-
 function isPwaStandaloneDisplay(): boolean {
   if (typeof window === "undefined") return false;
   return (
@@ -408,7 +380,7 @@ function PublicLayout({
   active?: SixAmMartModuleKey;
   searchPlaceholder?: string;
   fullBleed?: boolean;
-  footerVariant?: "default" | "turizm" | "otomotiv";
+  footerVariant?: "default" | "turizm";
 }) {
   const [loc] = useLocation();
   const pathOnly = (loc.split("?")[0] ?? "").trim();
@@ -604,7 +576,7 @@ function SadeAwarePublicLayout({
   active?: SixAmMartModuleKey;
   searchPlaceholder?: string;
   forceSade?: boolean;
-  footerVariant?: "default" | "turizm" | "otomotiv";
+  footerVariant?: "default" | "turizm";
   subHeader?: React.ReactNode;
   subHeaderInHero?: boolean;
 }) {
@@ -1513,27 +1485,11 @@ export default function App() {
       <Route path="/turizm/liste">{() => <Redirect to="/turizm/turlar" />}</Route>
       <Route path="/turizm/:type">{() => <TurizmLegacyTypeRedirect />}</Route>
       <Route path="/turizm">{() => <TurizmRoute><BookingCoreHome /></TurizmRoute>}</Route>
-      {/* Otomotiv — Yekpare otomotiv ekosistemi */}
-      <Route path="/otomotiv/galeri/:slug">{() => <OtomotivRoute><OtomotivVehicleDetailPage slug="galeri" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/galeri">{() => <OtomotivRoute><OtomotivVehicleListingPage slug="galeri" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/sifir/:slug">{() => <OtomotivRoute><OtomotivVehicleDetailPage slug="sifir" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/sifir">{() => <OtomotivRoute><OtomotivVehicleListingPage slug="sifir" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/ikinci-el/:slug">{() => <OtomotivRoute><OtomotivVehicleDetailPage slug="ikinci-el" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/ikinci-el">{() => <OtomotivRoute><OtomotivVehicleListingPage slug="ikinci-el" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/yedek-parca/:slug">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="yedek-parca" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/yedek-parca">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="yedek-parca" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/cikma/:slug">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="cikma" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/cikma">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="cikma" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/servis/:subSlug">{() => <OtomotivRoute><OtomotivServisPage /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/servis">{() => <OtomotivRoute><OtomotivServisPage /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/yikama/:slug">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="yikama" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/yikama">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="yikama" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/lastik/:slug">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="lastik" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/lastik">{() => <OtomotivRoute><OtomotivCategoryStubPage slug="lastik" /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv/sigorta">{() => <OtomotivRoute><OtomotivSigortaPage /></OtomotivRoute>}</Route>
-      <Route path="/otomotiv">{() => <OtomotivRoute><OtomotivHubPage /></OtomotivRoute>}</Route>
       <Route path="/emlak/:slug">{() => <Redirect to="/" />}</Route>
       <Route path="/emlak">{() => <Redirect to="/" />}</Route>
+      {/* Otomotiv modülü kaldırıldı — eski URL’ler anasayfa (arama) */}
+      <Route path="/otomotiv/:rest*">{() => <Redirect to="/" />}</Route>
+      <Route path="/otomotiv">{() => <Redirect to="/" />}</Route>
       <Route path="/rss-baglantilari">{() => <Redirect to="/site-haritalari" />}</Route>
       <Route path="/site-haritalari">{() => <PublicLayout><SiteHaritalari /></PublicLayout>}</Route>
       <Route path="/bilgi/:slug">{() => <PublicLayout><BilgiSayfasi /></PublicLayout>}</Route>

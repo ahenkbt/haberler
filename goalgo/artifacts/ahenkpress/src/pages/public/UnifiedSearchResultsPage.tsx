@@ -1039,7 +1039,6 @@ export default function UnifiedSearchResultsPage({ embedInHmSite = false }: Unif
   const mapItems = useMemo(() => sectionItems(sections, "haritalar"), [sections]);
   const sariSayfalarItems = useMemo(() => sectionItems(sections, "sari_sayfalar"), [sections]);
   const hizmetItems = useMemo(() => sectionItems(sections, "hizmetler"), [sections]);
-  const otomotivItems = useMemo(() => sectionItems(sections, "otomotiv"), [sections]);
   const urunlerItems = useMemo(() => sectionItems(sections, "urunler"), [sections]);
   const yemekMarketItems = useMemo(() => sectionItems(sections, "yemek_market"), [sections]);
   const shopItems = useMemo(
@@ -1131,12 +1130,11 @@ export default function UnifiedSearchResultsPage({ embedInHmSite = false }: Unif
     push(mapItems);
     push(sariSayfalarItems);
     push(hizmetItems);
-    push(otomotivItems);
     push(hmItems);
     push(newsItems);
     push(wikiItems.slice(1));
     return items;
-  }, [mapItems, sariSayfalarItems, hizmetItems, otomotivItems, hmItems, newsItems, wikiItems]);
+  }, [mapItems, sariSayfalarItems, hizmetItems, hmItems, newsItems, wikiItems]);
 
   const placesItems = useMemo(
     () => [...mapItems, ...tourismItems].filter((item) => item.photoUrl || item.coverPhotoUrl),
@@ -1461,7 +1459,6 @@ export default function UnifiedSearchResultsPage({ embedInHmSite = false }: Unif
           mapItems={mapItems.map(toHaritalarItem)}
           sariSayfalarItems={sariSayfalarItems.map(toHaritalarItem)}
           hizmetItems={hizmetItems.map(toHaritalarItem)}
-          otomotivItems={otomotivItems.map(toHaritalarItem)}
           tourismItems={tourismItems.map(toHaritalarItem)}
           yemekMarketItems={yemekMarketItems.map(toHaritalarItem)}
           urunlerItems={urunlerItems.map(toHaritalarItem)}

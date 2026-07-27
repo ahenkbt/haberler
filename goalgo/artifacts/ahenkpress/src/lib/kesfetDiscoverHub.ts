@@ -11,7 +11,6 @@ import {
 import { HARITALAR, HARITALAR_SUPER_NAV } from "@/lib/haritalarRoutes";
 import type { SixAmMartModuleKey } from "@/lib/yekpareServiceNav";
 import { YEKPARE_SERVICE_MODULE_META, YEKPARE_SERVICE_MODULE_ORDER } from "@/lib/yekpareServiceNav";
-import { OTOMOTIV, OTOMOTIV_MODULES } from "@/themes/otomotiv/otomotivRoutes";
 import { TURIZM, TURIZM_MODULES } from "@/themes/turizm/turizmRoutes";
 
 export const KESFET_HUB_PATH = "/kesfet";
@@ -23,7 +22,7 @@ export const YEKPARE_SLOGAN =
 export const KESFET_HUB_BADGE_LABEL = "Keşfet Merkezi";
 export const KESFET_HUB_HERO_TITLE = "Şehri keşfet, sipariş ver, alışveriş yap, yola çık";
 export const KESFET_HUB_HERO_SUBTITLE =
-  "Sipariş, alışveriş, otomotiv, seyahat, ulaşım, haritalar, haberler, YekTube, Bilgi Ağacı, işletme arama, sarı sayfalar ve rezervasyon — tüm Yekpare hizmetleri tek merkezde.";
+  "Sipariş, alışveriş, seyahat, ulaşım, haritalar, haberler, YekTube, Bilgi Ağacı, işletme arama, sarı sayfalar ve rezervasyon — tüm Yekpare hizmetleri tek merkezde.";
 export const KESFET_HUB_META_DESCRIPTION = KESFET_HUB_HERO_SUBTITLE;
 export const KESFET_HUB_PAGE_TITLE = `${KESFET_HUB_BADGE_LABEL} — Yekpare`;
 
@@ -55,18 +54,6 @@ export type KesfetHubSection = {
 function hubCard(card: KesfetHubCard): KesfetHubCard {
   return card;
 }
-
-const OTOMOTIV_EMOJI: Record<string, string> = {
-  galeri: "🚘",
-  sifir: "✨",
-  ikinciEl: "🔄",
-  yedekParca: "🔧",
-  cikma: "♻️",
-  servis: "🛠️",
-  yikama: "💧",
-  lastik: "⭕",
-  sigorta: "🛡️",
-};
 
 const TURIZM_EMOJI: Record<string, string> = {
   turlar: "🗺️",
@@ -143,33 +130,6 @@ export const KESFET_HUB_SECTIONS: KesfetHubSection[] = [
         bg: "from-violet-50 via-white to-purple-50/70",
         emoji: "🛍️",
       }),
-    ],
-  },
-  {
-    id: "otomotiv",
-    title: "Otomotiv",
-    subtitle: "Galeri, yedek parça, servis ve sigorta",
-    cards: [
-      hubCard({
-        id: "otomotiv",
-        title: "Otomotiv",
-        description: "Araç alım-satım, servis, yedek parça ve sigorta.",
-        href: OTOMOTIV.hub,
-        accent: "#1e3a5f",
-        bg: "from-slate-50 via-white to-blue-50/80",
-        emoji: "🚗",
-      }),
-      ...OTOMOTIV_MODULES.map((mod) =>
-        hubCard({
-          id: `otomotiv-${mod.key}`,
-          title: mod.label,
-          description: mod.description,
-          href: mod.href,
-          accent: "#1e3a5f",
-          bg: "from-slate-50 via-white to-sky-50/60",
-          emoji: OTOMOTIV_EMOJI[mod.key] ?? "🚗",
-        }),
-      ),
     ],
   },
   {
@@ -368,7 +328,6 @@ export const KESFET_HUB_FEATURED_CARD_IDS = [
   "magaza",
   "haritalar",
   "seyahat",
-  "otomotiv",
   "ulasim",
   "kesfet-liste",
   "sari-sayfalar",
@@ -563,9 +522,6 @@ export function kesfetSearchTarget(query: string, fallback = UNIFIED_SEARCH_PATH
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   if (href === "/yemek" || href === "/market" || href === "/isletmeler" || href === "/siparis") {
-    return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
-  }
-  if (href === "/otomotiv" || href.startsWith("/otomotiv/")) {
     return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;
   }
   return `${UNIFIED_SEARCH_PATH}?q=${encodeURIComponent(q)}`;

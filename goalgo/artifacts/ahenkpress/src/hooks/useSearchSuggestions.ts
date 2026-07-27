@@ -51,8 +51,7 @@ export const TREND_CATEGORY_TABS = [
   { id: "isletme", label: "İşletme", keywords: ["otel", "restoran", "kafe", "market", "mağaza", "kuaför", "eczane", "petshop", "servis", "galeri"] },
   { id: "seyahat", label: "Seyahat", keywords: ["otel", "villa", "kapadokya", "turizm", "seyahat", "balon"] },
   { id: "haber", label: "Haber", keywords: ["haber"] },
-  { id: "oto", label: "Otomotiv", keywords: ["oto", "yedek", "parça", "servis", "galeri"] },
-  { id: "harita", label: "Haritalar", keywords: ["ankara", "istanbul", "izmir", "antalya", "bursa", "trabzon", "kalesi"] },
+  { id: "harita", label: "Haritalar", keywords: ["ankara", "istanbul", "izmir", "antalya", "bursa", "trabzon", "kalesi", "oto", "servis", "galeri"] },
 ] as const;
 
 export function filterTrendingByTab(tabId: string): string[] {
@@ -69,7 +68,6 @@ export const SEARCH_MODULE_CHIPS = [
   { id: "isletme", label: "İşletme", emoji: "🏪", href: "/kesfet/liste" },
   { id: "siparis", label: "Sipariş", emoji: "🍽️", href: "/siparis" },
   { id: "seyahat", label: "Seyahat", emoji: "✈️", href: "/turizm" },
-  { id: "oto", label: "Otomotiv", emoji: "🚗", href: "/otomotiv" },
   { id: "sari", label: "Sarı Sayfalar", emoji: "📒", href: "/kesfet/sarisayfalar" },
   { id: "icerik", label: "İçerik", emoji: "📰", href: "/haberler" },
   { id: "haritalar", label: "Haritalar", emoji: "🗺️", href: "/map" },

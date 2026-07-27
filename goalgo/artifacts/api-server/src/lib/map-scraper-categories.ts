@@ -74,7 +74,6 @@ export const MAP_CATEGORY_SCRAPER_ALIASES: Record<string, {
       "otomotiv_galeri", "otomotiv_bayi", "otomotiv_servis", "otomotiv_yikama", "otomotiv_lastik",
       "otomotiv_yedek_parca", "otomotiv_cikma", "otomotiv_genel", "hizmet_tamir", "hizmet_galeri",
       "hizmet_yikama", "hizmet_lastik", "hizmet_parca",
-      ...OTOMOTIV_SERVICE_CATEGORY_ROWS.map((r) => r.store_type),
     ],
     googlePlaceTypes: ["car_dealer", "car_repair", "car_wash", "auto_parts_store"],
     superCategories: ["hizmet"],
@@ -120,8 +119,6 @@ const DISCOVER_GROUP_SUPER: Record<string, { superCategory: string; storeType: s
 };
 
 /** Mağaza türleri — premium / ulaşım / sipariş alt tipleri. */
-
-import { OTOMOTIV_SERVICE_CATEGORY_ROWS } from "../data/otomotiv-service-categories-data.js";
 
 export const MAP_SCRAPER_STORE_TYPE_OPTIONS: {
   group: string;
@@ -206,16 +203,16 @@ export const MAP_SCRAPER_STORE_TYPE_OPTIONS: {
     ],
   },
   {
-    group: "Otomotiv Servis",
+    group: "Otomotiv & araç hizmetleri",
     superCategory: "hizmet",
-    items: OTOMOTIV_SERVICE_CATEGORY_ROWS.map((cat) => ({
-      slug: `otomotiv-servis-${cat.slug}`,
-      label: cat.name,
-      storeType: cat.store_type,
-      homepageSuperCategory: "hizmet",
-      googlePlaceType: "car_repair",
-      keyword: Array.isArray(cat.tags) ? cat.tags.slice(0, 3).join(" ") : cat.name,
-    })),
+    items: [
+      { slug: "otomotiv-genel", label: "Otomotiv / oto servis", storeType: "otomotiv_genel", homepageSuperCategory: "hizmet", googlePlaceType: "car_repair", keyword: "oto servis oto tamir" },
+      { slug: "otomotiv-galeri", label: "Oto galeri", storeType: "otomotiv_galeri", homepageSuperCategory: "hizmet", googlePlaceType: "car_dealer", keyword: "oto galeri" },
+      { slug: "otomotiv-servis", label: "Oto servis", storeType: "otomotiv_servis", homepageSuperCategory: "hizmet", googlePlaceType: "car_repair", keyword: "oto servis" },
+      { slug: "otomotiv-yikama", label: "Oto yıkama", storeType: "otomotiv_yikama", homepageSuperCategory: "hizmet", googlePlaceType: "car_wash", keyword: "oto yıkama" },
+      { slug: "otomotiv-lastik", label: "Lastikçi", storeType: "otomotiv_lastik", homepageSuperCategory: "hizmet", googlePlaceType: "car_repair", keyword: "lastikçi" },
+      { slug: "otomotiv-yedek-parca", label: "Yedek parça", storeType: "otomotiv_yedek_parca", homepageSuperCategory: "hizmet", googlePlaceType: "car_repair", keyword: "yedek parça" },
+    ],
   },
   {
     group: "İnşaat",

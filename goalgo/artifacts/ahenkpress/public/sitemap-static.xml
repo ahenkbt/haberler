@@ -39,11 +39,6 @@
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://yekpare.net/otomotiv</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.82</priority>
-  </url>
-  <url>
     <loc>https://yekpare.net/haritalar</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>

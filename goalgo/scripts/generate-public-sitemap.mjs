@@ -14,7 +14,6 @@ const fallbackIndex = `<?xml version="1.0" encoding="UTF-8"?>
   <sitemap><loc>${portalOrigin}/news-yekpare.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/businesses.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/sarisayfalar.xml</loc><lastmod>${today}</lastmod></sitemap>
-  <sitemap><loc>${portalOrigin}/otomotiv.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/vendors-siparis.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/vendors-magaza.xml</loc><lastmod>${today}</lastmod></sitemap>
   <sitemap><loc>${portalOrigin}/turizm.xml</loc><lastmod>${today}</lastmod></sitemap>

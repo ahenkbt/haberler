@@ -15,7 +15,6 @@ import {
   vendorsTable,
 } from "@workspace/db";
 import { and, asc, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
-import { searchOtomotivServiceCategories } from "../data/otomotiv-service-categories-data.js";
 import { fetchDdgMediaSearch, type DdgImageResult, type DdgVideoResult } from "./ddg-media-search.js";
 import { buildUnifiedSearchAiPayload, type UnifiedSearchAiMeta } from "./geminiSearchService.js";
 import { TURKEY_CITIES } from "./seed-popular-locations.js";
@@ -28,8 +27,6 @@ const WIKI_HEADERS = { "User-Agent": "YekpareBilgiAgaci/1.0 (https://yekpare.net
 
 export type PlatformSearchResultType =
   | "map_business"
-  | "otomotiv"
-  | "otomotiv_listing"
   | "vendor_food"
   | "vendor_grocery"
   | "vendor_shop"
@@ -134,7 +131,6 @@ export type UnifiedSearchSectionKey =
   | "yektube"
   | "bilgi_agaci"
   | "sehir"
-  | "otomotiv"
   | "sari_sayfalar"
   | "yemek_market"
   | "seyahat"
@@ -373,10 +369,6 @@ const SECTION_META: Record<
     title: "Şehirler",
     seeAll: (q) => `/map?q=${encodeURIComponent(q)}`,
   },
-  otomotiv: {
-    title: "Otomotiv",
-    seeAll: (q) => `/otomotiv?q=${encodeURIComponent(q)}`,
-  },
   sari_sayfalar: {
     title: "Sarı Sayfalar / Firmalar",
     seeAll: (q, city) => {
@@ -420,7 +412,6 @@ const SECTION_ORDER: UnifiedSearchSectionKey[] = [
   "sehir",
   "bilgi_agaci",
   "haberler",
-  "otomotiv",
   "sari_sayfalar",
   "yemek_market",
   "urunler",
@@ -445,26 +436,26 @@ export function normalizePlatformSearchQuery(value: string): string {
     .trim();
 }
 
-/** Kısa sorgular (ör. "oto") için otomotiv / servis eşanlamlıları */
+/** Kısa sorgular (ör. "oto") için harita / keşfet eşanlamlıları */
 export function expandPlatformSearchTerms(rawQuery: string): string[] {
   const q = rawQuery.trim();
   if (!q) return [];
   const norm = normalizePlatformSearchQuery(q);
   const terms = new Set<string>([q]);
-  if (norm === "oto" || norm.startsWith("oto ") || norm.endsWith(" oto") || norm.includes(" oto ")) {
+  if (
+    norm === "oto" ||
+    norm.startsWith("oto ") ||
+    norm.endsWith(" oto") ||
+    norm.includes(" oto ") ||
+    norm.includes("otomotiv")
+  ) {
     terms.add("otomotiv");
     terms.add("oto servis");
     terms.add("oto galeri");
     terms.add("yedek parca");
     terms.add("oto yikama");
     terms.add("lastik");
-  }
-  if (norm.includes("otomotiv") || norm === "oto") {
-    for (const row of searchOtomotivServiceCategories(norm === "oto" ? "oto" : q)) {
-      terms.add(String(row.name ?? ""));
-      terms.add(String(row.slug ?? "").replace(/-/g, " "));
-      for (const tag of (row.tags as string[] | undefined) ?? []) terms.add(tag);
-    }
+    terms.add("oto tamir");
   }
   return Array.from(terms).map((t) => t.trim()).filter(Boolean);
 }
@@ -542,7 +533,8 @@ function mapBusinessSectionKey(typeLabel: string, row: {
 }): UnifiedSearchSectionKey {
   const superCat = String(row.homepageSuperCategory ?? "").toLowerCase();
   const storeType = String(row.storeType ?? "").toLowerCase();
-  if (typeLabel === "Otomotiv" || superCat === "otomotiv" || storeType.startsWith("otomotiv")) return "otomotiv";
+  /* Eski otomotiv_* store tipleri haritalar / sarı sayfalar altında kalır */
+  if (typeLabel === "Otomotiv" || superCat === "otomotiv" || storeType.startsWith("otomotiv")) return "sari_sayfalar";
   if (typeLabel === "Turizm" || superCat === "turizm" || superCat === "seyahat") return "seyahat";
   if (typeLabel === "Hizmet" || superCat === "hizmet" || superCat === "servis") return "hizmetler";
   return "sari_sayfalar";
@@ -581,41 +573,6 @@ function vendorDetailHref(slug: string | null, vendorType: string | null | undef
   return `${hrefPrefix}/${encodeURIComponent(s)}`;
 }
 
-function otomotivDetailHref(businessType: string | null | undefined, slug: string | null, q: string): string {
-  const s = String(slug ?? "").trim();
-  if (!s) return `/otomotiv?q=${encodeURIComponent(q)}`;
-  const t = String(businessType ?? "").toLowerCase();
-  const encoded = encodeURIComponent(s);
-  if (t === "galeri") return `/otomotiv/galeri/${encoded}`;
-  if (t === "yedek_parca") return `/otomotiv/yedek-parca/${encoded}`;
-  if (t === "cikma") return `/otomotiv/cikma/${encoded}`;
-  if (t === "servis") return `/otomotiv/servis/${encoded}`;
-  if (t === "yikama") return `/otomotiv/yikama/${encoded}`;
-  if (t === "lastik") return `/otomotiv/lastik/${encoded}`;
-  return `/otomotiv/servis/${encoded}`;
-}
-
-function otomotivListingHref(businessType: string | null | undefined, listingSlug: string | null): string {
-  const s = String(listingSlug ?? "").trim();
-  if (!s) return "/otomotiv";
-  const t = String(businessType ?? "").toLowerCase();
-  const encoded = encodeURIComponent(s);
-  if (t === "galeri" || t === "genel") return `/otomotiv/galeri/${encoded}`;
-  if (t === "yedek_parca") return `/otomotiv/yedek-parca/${encoded}`;
-  if (t === "cikma") return `/otomotiv/cikma/${encoded}`;
-  return `/otomotiv/ikinci-el/${encoded}`;
-}
-
-function otomotivBusinessTypeLabel(businessType: string | null | undefined): string {
-  const t = String(businessType ?? "").toLowerCase();
-  if (t === "galeri") return "Oto Galeri";
-  if (t === "yedek_parca") return "Yedek Parça";
-  if (t === "servis") return "Oto Servis";
-  if (t === "yikama") return "Oto Yıkama";
-  if (t === "lastik") return "Lastik";
-  return "Otomotiv";
-}
-
 function tourismListingHref(type: string | null | undefined, slug: string | null): string {
   const s = String(slug ?? "").trim();
   if (!s) return "/turizm";
@@ -644,7 +601,6 @@ function emptySections(): Record<UnifiedSearchSectionKey, PlatformSearchResult[]
     yektube: [],
     bilgi_agaci: [],
     sehir: [],
-    otomotiv: [],
     sari_sayfalar: [],
     yemek_market: [],
     seyahat: [],
@@ -858,7 +814,6 @@ function collectGalleryImages(buckets: Record<UnifiedSearchSectionKey, PlatformS
     "yemek_market",
     "urunler",
     "yektube",
-    "otomotiv",
   ];
   const out: string[] = [];
   const seen = new Set<string>();
@@ -1449,7 +1404,7 @@ export async function runGroupedUnifiedSearch(input: {
       id,
       name: String(b.name ?? ""),
       slug: b.slug ?? null,
-      resultType: section === "otomotiv" ? "otomotiv" : "map_business",
+      resultType: "map_business",
       typeLabel,
       href: mapBusinessDetailHref(b.slug ?? null, id, hasPublicProfile),
       address: b.address ?? null,
@@ -1532,131 +1487,6 @@ export async function runGroupedUnifiedSearch(input: {
     }
   } catch {
     /* şehirler yok */
-  }
-
-  try {
-    const otomotivOrParts: SQL[] = [];
-    for (const term of terms) {
-      const pattern = `%${term}%`;
-      otomotivOrParts.push(
-        sql`ob.name ILIKE ${pattern}`,
-        sql`ob.description ILIKE ${pattern}`,
-        sql`ob.city ILIKE ${pattern}`,
-        sql`ob.business_type ILIKE ${pattern}`,
-        sql`ob.servis_category_slug ILIKE ${pattern}`,
-      );
-    }
-    const otomotivCityCond = city
-      ? sql`AND (ob.city ILIKE ${`%${city}%`} OR ob.address ILIKE ${`%${city}%`})`
-      : sql``;
-    const otomotivR = await db.execute(sql`
-      SELECT ob.id, ob.name, ob.slug, ob.business_type, ob.city, ob.district, ob.phone, ob.address,
-             ob.description, ob.image_url, ob.map_business_id
-      FROM otomotiv_businesses ob
-      WHERE ob.status = 'active'
-        AND (${or(...otomotivOrParts)!})
-        ${otomotivCityCond}
-      ORDER BY ob.is_featured DESC NULLS LAST, ob.created_at DESC
-      LIMIT ${fetchLimit}
-    `);
-    for (const raw of otomotivR.rows) {
-      const row = raw as Record<string, unknown>;
-      const mapId = String(row.map_business_id ?? "").trim();
-      if (mapId && linkedMapIds.has(mapId)) continue;
-      const id = String(row.id ?? "");
-      const slug = String(row.slug ?? "").trim() || null;
-      pushItem("otomotiv", {
-        id: mapId || `otomotiv-${id}`,
-        name: String(row.name ?? ""),
-        slug,
-        resultType: "otomotiv",
-        typeLabel: otomotivBusinessTypeLabel(String(row.business_type ?? "")),
-        href: otomotivDetailHref(String(row.business_type ?? ""), slug, q),
-        address: String(row.address ?? "") || null,
-        city: String(row.city ?? "") || null,
-        district: String(row.district ?? "") || null,
-        description: String(row.description ?? "") || null,
-        rating: null,
-        userRatingsTotal: null,
-        photoUrl: String(row.image_url ?? "") || null,
-        coverPhotoUrl: String(row.image_url ?? "") || null,
-        categoryName: otomotivBusinessTypeLabel(String(row.business_type ?? "")),
-        homepageSuperCategory: "otomotiv",
-        storeType: null,
-        hasPublicProfile: Boolean(slug),
-        googlePlaceId: null,
-        latitude: null,
-        longitude: null,
-        phone: String(row.phone ?? "") || null,
-      });
-    }
-  } catch {
-    /* tablo yok */
-  }
-
-  try {
-    const listingOrParts: SQL[] = [];
-    for (const term of terms) {
-      const pattern = `%${term}%`;
-      listingOrParts.push(
-        sql`ol.title ILIKE ${pattern}`,
-        sql`ol.description ILIKE ${pattern}`,
-        sql`vb.name ILIKE ${pattern}`,
-        sql`vm.name ILIKE ${pattern}`,
-        sql`ob.name ILIKE ${pattern}`,
-      );
-    }
-    const listingCityCond = city ? sql`AND ob.city ILIKE ${`%${city}%`}` : sql``;
-    const listingR = await db.execute(sql`
-      SELECT ol.id, ol.slug, ol.title, ol.price, ol.year, ol.km,
-             (ol.photos_json->>0) AS image_url,
-             ob.business_type, ob.city, vb.name AS brand_name, vm.name AS model_name
-      FROM otomotiv_listings ol
-      JOIN otomotiv_businesses ob ON ob.id = ol.business_id AND ob.status = 'active'
-      LEFT JOIN vehicle_brands vb ON vb.id = ol.brand_id
-      LEFT JOIN vehicle_models vm ON vm.id = ol.model_id
-      WHERE ol.status = 'active'
-        AND (${or(...listingOrParts)!})
-        ${listingCityCond}
-      ORDER BY ol.is_featured DESC NULLS LAST, ol.created_at DESC
-      LIMIT ${fetchLimit}
-    `);
-    for (const raw of listingR.rows) {
-      const row = raw as Record<string, unknown>;
-      const id = String(row.id ?? "");
-      const slug = String(row.slug ?? "").trim() || null;
-      const brand = String(row.brand_name ?? "");
-      const model = String(row.model_name ?? "");
-      const title = String(row.title ?? (`${brand} ${model}`.trim() || "Araç ilanı"));
-      pushItem("otomotiv", {
-        id: `otomotiv-listing-${id}`,
-        name: title,
-        slug,
-        resultType: "otomotiv_listing",
-        typeLabel: "Araç İlanı",
-        href: otomotivListingHref(String(row.business_type ?? ""), slug),
-        address: null,
-        city: String(row.city ?? "") || null,
-        district: null,
-        description: [row.year, row.km != null ? `${row.km} km` : null].filter(Boolean).join(" · ") || null,
-        rating: null,
-        userRatingsTotal: null,
-        photoUrl: String(row.image_url ?? "") || null,
-        coverPhotoUrl: String(row.image_url ?? "") || null,
-        categoryName: "Araç İlanı",
-        homepageSuperCategory: "otomotiv",
-        storeType: null,
-        hasPublicProfile: true,
-        googlePlaceId: null,
-        latitude: null,
-        longitude: null,
-        phone: null,
-        price: typeof row.price === "number" ? row.price : Number(row.price) || null,
-        subtitle: brand && model ? `${brand} ${model}` : null,
-      });
-    }
-  } catch {
-    /* tablo yok */
   }
 
   const vendorTerms = terms.length ? terms : [q];

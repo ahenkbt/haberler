@@ -411,7 +411,6 @@ function rootSitemapApiPath(pathname) {
     "/news.xml",
     "/businesses.xml",
     "/sarisayfalar.xml",
-    "/otomotiv.xml",
     "/vendors-siparis.xml",
     "/vendors-alisveris.xml",
     "/vendors-magaza.xml",

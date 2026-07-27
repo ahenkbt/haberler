@@ -20,13 +20,12 @@ type Props = {
   sticky?: boolean;
   onNavigate?: () => void;
   className?: string;
-  /** BEM prefix — defaults to module-subnav; otomotiv/turizm keep legacy class names */
-  variant?: "module" | "otomotiv" | "turizm";
+  /** BEM prefix — defaults to module-subnav; turizm keeps legacy class names */
+  variant?: "module" | "turizm";
   isItemActive?: (path: string, item: ModuleSubNavItem) => boolean;
 };
 
 function prefixFor(variant: Props["variant"]): string {
-  if (variant === "otomotiv") return "otomotiv-subnav";
   if (variant === "turizm") return "turizm-subnav";
   return "module-subnav";
 }

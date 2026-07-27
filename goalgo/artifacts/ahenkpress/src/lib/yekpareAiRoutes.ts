@@ -17,7 +17,6 @@ const SERVICE_DOCK_PREFIXES = [
   "/market",
   "/isletmeler",
   "/turizm",
-  "/otomotiv",
   "/haritalar",
   "/kesfet",
   "/ulasim",

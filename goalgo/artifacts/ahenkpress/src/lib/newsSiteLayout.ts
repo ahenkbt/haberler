@@ -563,7 +563,7 @@ export type NewsSiteLayoutPrefs = {
   hmNewsSearchBoxEnabled?: boolean;
   /** HABER teması: domain kökünde dinamik index sayfası (site arka planda yüklenir); tanımsızsa kapalı. */
   hmNewsIndexLandingEnabled?: boolean;
-  /** HABER teması: Yekpare servis kutuları (Sipariş, Alışveriş, Otomotiv…); tanımsızsa kapalı kabul edilir. */
+  /** HABER teması: Yekpare servis kutuları (Sipariş, Alışveriş…); tanımsızsa kapalı kabul edilir. */
   hmNewsYekpareFeaturesEnabled?: boolean;
   /** HABER teması: anasayfa manşet sliderı; tanımsızsa açık kabul edilir. */
   hmNewsSliderEnabled?: boolean;

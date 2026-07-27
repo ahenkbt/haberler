@@ -239,31 +239,6 @@ function ecommerceVendorPublicPath(slug: string): string {
   return `/magaza/magaza/${encodeURIComponent(slug)}`;
 }
 
-function otomotivBusinessPublicPath(businessType: string | null | undefined, slug: string): string {
-  const s = String(slug ?? "").trim();
-  if (!s) return "/otomotiv";
-  const t = String(businessType ?? "").toLowerCase();
-  const encoded = encodeURIComponent(s);
-  if (t === "galeri") return `/otomotiv/galeri/${encoded}`;
-  if (t === "yedek_parca") return `/otomotiv/yedek-parca/${encoded}`;
-  if (t === "cikma") return `/otomotiv/cikma/${encoded}`;
-  if (t === "servis") return `/otomotiv/servis/${encoded}`;
-  if (t === "yikama") return `/otomotiv/yikama/${encoded}`;
-  if (t === "lastik") return `/otomotiv/lastik/${encoded}`;
-  return `/otomotiv/servis/${encoded}`;
-}
-
-function otomotivListingPublicPath(businessType: string | null | undefined, listingSlug: string): string {
-  const s = String(listingSlug ?? "").trim();
-  if (!s) return "/otomotiv";
-  const t = String(businessType ?? "").toLowerCase();
-  const encoded = encodeURIComponent(s);
-  if (t === "galeri" || t === "genel") return `/otomotiv/galeri/${encoded}`;
-  if (t === "yedek_parca") return `/otomotiv/yedek-parca/${encoded}`;
-  if (t === "cikma") return `/otomotiv/cikma/${encoded}`;
-  return `/otomotiv/ikinci-el/${encoded}`;
-}
-
 function sarisayfalarPublicPath(slug: string | null | undefined, id: string | number): string {
   const s = String(slug ?? "").trim();
   if (s) return `/kesfet/sarisayfalar/${encodeURIComponent(s)}`;
@@ -1393,60 +1368,6 @@ router.get("/sarisayfalar.xml", async (req, res): Promise<void> => {
   }
 });
 
-/* — Otomotiv işletmeleri ve ilanları — */
-router.get("/otomotiv.xml", async (req, res): Promise<void> => {
-  try {
-    const base = resolvePortalRequestOrigin(req);
-    const businessRows = await db.execute(sql`
-      SELECT slug, business_type, updated_at
-      FROM otomotiv_businesses
-      WHERE status = 'active' AND COALESCE(slug, '') <> ''
-      ORDER BY updated_at DESC NULLS LAST, id DESC
-      LIMIT 3000
-    `);
-    const listingRows = await db.execute(sql`
-      SELECT ol.slug, ob.business_type, ol.updated_at
-      FROM otomotiv_listings ol
-      INNER JOIN otomotiv_businesses ob ON ob.id = ol.business_id AND ob.status = 'active'
-      WHERE ol.status = 'active' AND COALESCE(ol.slug, '') <> ''
-      ORDER BY ol.updated_at DESC NULLS LAST, ol.id DESC
-      LIMIT 5000
-    `);
-    const businesses = (businessRows.rows ?? []) as Array<{
-      slug: string;
-      business_type: string | null;
-      updated_at: Date | string | null;
-    }>;
-    const listings = (listingRows.rows ?? []) as Array<{
-      slug: string;
-      business_type: string | null;
-      updated_at: Date | string | null;
-    }>;
-    const businessUrls = businesses
-      .map((row) =>
-        urlXmlEntry(`${base}${otomotivBusinessPublicPath(row.business_type, row.slug)}`, {
-          lastmod: row.updated_at,
-          changefreq: "weekly",
-          priority: "0.6",
-        }),
-      )
-      .join("\n");
-    const listingUrls = listings
-      .map((row) =>
-        urlXmlEntry(`${base}${otomotivListingPublicPath(row.business_type, row.slug)}`, {
-          lastmod: row.updated_at,
-          changefreq: "weekly",
-          priority: "0.65",
-        }),
-      )
-      .join("\n");
-    sendUrlset(res, [businessUrls, listingUrls].filter(Boolean).join("\n"));
-  } catch {
-    sendUrlset(res, "");
-  }
-});
-
-
 async function countPortalAuthorsForSitemap(): Promise<number> {
   const [row] = await db
     .select({ count: sql<number>`count(DISTINCT ${authorsTable.id})::int` })
@@ -1462,19 +1383,6 @@ async function countPortalAuthorsForSitemap(): Promise<number> {
       ),
     );
   return Number(row?.count ?? 0);
-}
-
-async function countOtomotivSitemapUrls(): Promise<number> {
-  const r = await db.execute(sql`
-    SELECT (
-      (SELECT count(*)::int FROM otomotiv_businesses WHERE status = 'active' AND COALESCE(slug, '') <> '')
-      +
-      (SELECT count(*)::int FROM otomotiv_listings ol
-        INNER JOIN otomotiv_businesses ob ON ob.id = ol.business_id AND ob.status = 'active'
-        WHERE ol.status = 'active' AND COALESCE(ol.slug, '') <> '')
-    ) AS count
-  `);
-  return Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0);
 }
 
 async function countSarisayfalarSitemapUrls(): Promise<number> {
@@ -1694,9 +1602,8 @@ async function buildSitemapCatalog(baseInput?: string): Promise<{ indexUrl: stri
     groups.push({ title: `Haber merkezi — ${siteLabel}`, items });
   }
 
-  const [authorCount, otomotivCount, sarisayfalarCount] = await Promise.all([
+  const [authorCount, sarisayfalarCount] = await Promise.all([
     countPortalAuthorsForSitemap(),
-    countOtomotivSitemapUrls(),
     countSarisayfalarSitemapUrls(),
   ]);
   const otherItems: SitemapListItem[] = [
@@ -1711,9 +1618,6 @@ async function buildSitemapCatalog(baseInput?: string): Promise<{ indexUrl: stri
   ];
   if (sarisayfalarCount > 0) {
     otherItems.splice(2, 0, { label: "Sarı Sayfalar işletmeleri", url: `${base}/sarisayfalar.xml` });
-  }
-  if (otomotivCount > 0) {
-    otherItems.splice(2, 0, { label: "Otomotiv işletmeleri ve ilanları", url: `${base}/otomotiv.xml` });
   }
   if (authorCount > 0) {
     otherItems.push({ label: "Köşe yazarları", url: `${base}/authors.xml` });

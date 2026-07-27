@@ -1,4 +1,4 @@
-/** etkinlik.io mekan → map_businesses (Haritalar + Sarı Sayfalar) — otomotiv-map-sync deseni */
+/** etkinlik.io mekan → map_businesses (Haritalar + Sarı Sayfalar) */
 
 import { db } from "@workspace/db";
 import { etkinlikEventCacheTable, mapBusinessesTable, mapCategoriesTable } from "@workspace/db";

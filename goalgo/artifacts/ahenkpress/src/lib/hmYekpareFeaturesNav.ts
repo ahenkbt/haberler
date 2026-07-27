@@ -2,7 +2,6 @@ import { DELIVERY_MODULES } from "@/lib/deliveryModuleGroups";
 import { isConfiguredPortalHost } from "@/lib/hmPortalHosts";
 import { PORTAL_ORIGIN } from "@/lib/portalBrand";
 import { MAGAZA, MAGAZA_TOP_CATEGORIES } from "@/themes/sellzy/magazaRoutes";
-import { OTOMOTIV, OTOMOTIV_MODULES } from "@/themes/otomotiv/otomotivRoutes";
 import { TURIZM, TURIZM_MODULES } from "@/themes/turizm/turizmRoutes";
 
 export type HmYekpareFeatureLink = {
@@ -64,15 +63,6 @@ export const HM_YEKPARE_FEATURE_CARDS: HmYekpareFeatureCard[] = [
         href: MAGAZA.kategori(c.slug),
       })),
     ],
-  },
-  {
-    id: "otomotiv",
-    label: "Otomotiv",
-    emoji: "🚗",
-    href: OTOMOTIV.hub,
-    color: "#0ea5e9",
-    desc: "Araç, parça ve servis ilanları.",
-    children: OTOMOTIV_MODULES.map((m) => ({ label: m.label, href: m.href })),
   },
   {
     id: "seyahat",
