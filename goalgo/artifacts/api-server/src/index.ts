@@ -42,6 +42,7 @@ import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
 import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
+import { repairHmTepeMansetSystem } from "./lib/hm-tepe-manset-repair.js";
 import { repairKhEditorMisassignment } from "./lib/hm-kh-editor-repair.js";
 import { repairHmEditorCrossSiteEmailConflicts } from "./lib/hm-editor-cross-site-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
@@ -462,6 +463,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 18_000).unref();
   } else {
     logger.info("[hm-editor-cross-site] HM_EDITOR_CROSS_SITE_REPAIR=0 — atlandı");
+  }
+
+  // Tepe manşet: layout'ta kapatılmış / sıradan düşmüş siteleri geri aç
+  if (envJobFlag("HM_TEPE_MANSET_REPAIR", true)) {
+    setTimeout(() => {
+      void repairHmTepeMansetSystem()
+        .then((r) => logger.info({ ...r }, "[hm-tepe-manset] onarım"))
+        .catch((err) => logger.error({ err }, "[hm-tepe-manset] onarım başarısız"));
+    }, 18_100).unref();
+  } else {
+    logger.info("[hm-tepe-manset] HM_TEPE_MANSET_REPAIR=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).

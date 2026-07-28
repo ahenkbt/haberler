@@ -458,7 +458,11 @@ router.get("/news/featured", async (req, res): Promise<void> => {
 
   if (editorOnlyFeatured) {
     featuredConds.push(
-      or(eq(newsTable.isEditorManual, true), isNull(newsTable.rssSourceUrl))!,
+      or(
+        eq(newsTable.isEditorManual, true),
+        isNull(newsTable.rssSourceUrl),
+        sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-sync:%'`,
+      )!,
       or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
     );
   }

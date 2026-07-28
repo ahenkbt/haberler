@@ -111,11 +111,13 @@ async function loadFeaturedForSite(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
     /** Tepe manşet: yalnızca editör/manuel — harici RSS ve yekpare havuz kopyası hariç. */
-    or(eq(newsTable.isEditorManual, true), isNull(newsTable.rssSourceUrl))!,
+    or(
+      eq(newsTable.isEditorManual, true),
+      isNull(newsTable.rssSourceUrl),
+      sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-sync:%'`,
+    )!,
     or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
   ];
-  const freshness = publicEditorNewsFreshnessSql(corporateStrict);
-  if (freshness) featuredConds.push(freshness);
   if (hiddenCategoryIds.length > 0) {
     featuredConds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
   }

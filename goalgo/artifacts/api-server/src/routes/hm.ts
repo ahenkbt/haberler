@@ -152,6 +152,7 @@ import {
   repairHmEditorCrossSiteEmailConflicts,
 } from "../lib/hm-editor-cross-site-repair.js";
 import { isHmCrossSiteSharedEditorEmail } from "../lib/hm-editor-shared-email.js";
+import { repairHmTepeMansetSystem } from "../lib/hm-tepe-manset-repair.js";
 import {
   ensureHmSiteEditorUsernameColumn,
   isHmEditorLoginEmail,
@@ -2009,6 +2010,24 @@ router.post("/hm/admin/repair-kh-editor", async (req, res): Promise<void> => {
         result.action === "synced"
           ? `KH editör onarım: ${result.moved.map((m) => `${m.email} (#${m.fromSiteId}→${m.toEditorId})`).join(", ")}`
           : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: tepe manşet modülünü tüm sitelerde aç + manşet bayraklarını onar. */
+router.post("/hm/admin/repair-tepe-manset", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await repairHmTepeMansetSystem();
+    res.json({
+      ...result,
+      ok: result.ok,
+      message: result.detail || "Tepe manşet onarımı tamamlandı",
     });
   } catch (e) {
     res.status(500).json({
