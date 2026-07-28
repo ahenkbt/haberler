@@ -87,6 +87,13 @@
     box-sizing: border-box;
   }
 
+  /* Mobil immersive: tam genişlik sabit; masaüstü ortalı host modelini ezmez */
+  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-embed-host {
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
   .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-embed {
     position: fixed;
     left: 0;

@@ -159,28 +159,47 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   overflow: hidden;
   position: relative;
 }
 
+/* Footer açıkken ana alan chrome ile footer arasında kalan yüksekliği doldurur */
+.hm-vitrin-root[data-hm-video-tv="true"] .hm-public-site-footer {
+  flex-shrink: 0;
+}
+
 .hm-vitrin-root[data-hm-video-tv="true"] .hm-video-tv-embed-host {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Iframe viewport altına sabitlensin — flex zinciri kırılsa bile tam yükseklik */
+/* Ortalı site: video alanı header / menü ile aynı 1280px hizasında */
+.hm-vitrin-root[data-hm-video-tv="true"][data-hm-site-layout="contained"] .hm-video-tv-embed-host {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .hm-vitrin-root[data-hm-video-tv="true"][data-hm-site-layout="contained"] .hm-video-tv-embed-host {
+    padding-inline: 1rem;
+  }
+}
+
+/* Header altından footer'a kadar — host içinde tam yükseklik (footer üstünü örtmez) */
 .hm-vitrin-root[data-hm-video-tv="true"] .hm-video-tv-embed {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  top: var(--hm-video-tv-chrome-height, 4.5rem);
+  position: absolute;
+  inset: 0;
   z-index: 1;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 0;
   max-height: none;
   border: 0;
