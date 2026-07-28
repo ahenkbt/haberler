@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCenterMansetSliderPool,
+  buildRssAwareHeadlinePool,
   buildTepeMansetPool,
 } from "./hmHeadlinePool";
+import { mergeHybridBootstrapPreserveRss } from "@/hooks/useHmHomeHybridBootstrap";
+import type { HomeHybridNewsItem } from "@/hooks/useHomeHybridNews";
 
 describe("manset pools", () => {
   const featuredOld = {
@@ -88,5 +91,60 @@ describe("manset pools", () => {
     });
     expect(pool.map((x) => x.id)).toEqual([4]);
     expect(pool.every((x) => x.isSiteManset === true)).toBe(true);
+  });
+
+  it("hibrit manşet bootstrap hazırken tarihsiz RSS havuzda kalır", () => {
+    const manual = {
+      id: 10,
+      title: "Editör haber",
+      createdAt: "2026-07-28T08:00:00.000Z",
+      imageUrl: "/a.webp",
+    };
+    const rssNoDate = {
+      id: "rss:99",
+      title: "RSS tarihsiz",
+      source: "rss",
+      imageUrl: "https://example.com/r.jpg",
+    };
+    const pool = buildRssAwareHeadlinePool({
+      manualItems: [manual],
+      latestItems: [manual, rssNoDate],
+      rssEnabled: true,
+      rssBootstrapReady: true,
+      limit: 5,
+      minManual: 1,
+    });
+    expect(pool.some((x) => x.id === "rss:99")).toBe(true);
+  });
+});
+
+describe("mergeHybridBootstrapPreserveRss", () => {
+  const rssA: HomeHybridNewsItem = {
+    id: "rss:1",
+    title: "RSS A",
+    source: "rss",
+    publishedAt: "2026-07-28T08:00:00.000Z",
+    href: "/haberler/rss/rss-a",
+  };
+  const rssB: HomeHybridNewsItem = {
+    id: "rss:2",
+    title: "RSS B",
+    source: "rss",
+    publishedAt: "2026-07-28T07:00:00.000Z",
+    href: "/haberler/rss/rss-b",
+  };
+  const dbItem: HomeHybridNewsItem = {
+    id: "db:1",
+    title: "DB haber",
+    source: "db",
+    publishedAt: "2026-07-28T09:00:00.000Z",
+    href: "/haber/db-1",
+  };
+
+  it("dbFirst yenilemesi RSS düşürürse önceki RSS korunur", () => {
+    const merged = mergeHybridBootstrapPreserveRss([dbItem], [rssA, rssB]);
+    expect(merged.some((x) => x.id === "rss:1")).toBe(true);
+    expect(merged.some((x) => x.id === "rss:2")).toBe(true);
+    expect(merged.some((x) => x.id === "db:1")).toBe(true);
   });
 });

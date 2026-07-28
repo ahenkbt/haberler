@@ -135,16 +135,22 @@
   overflow: hidden;
 }
 
+.hm-vitrin-root[data-hm-video-tv="true"] {
+  min-height: 100dvh;
+}
+
 .hm-vitrin-root[data-hm-video-tv="true"] .hm-vitrin-main {
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .hm-vitrin-root[data-hm-video-tv="true"] .hm-video-tv-embed {
   flex: 1 1 auto;
   width: 100%;
-  min-height: min(72vh, calc(100dvh - 8rem));
-  height: auto;
+  min-height: 0;
+  height: 100%;
   max-height: none;
 }
 

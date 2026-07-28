@@ -8,6 +8,21 @@ import {
   readHmHomeHybridNewsCacheMeta,
   writeHmHomeHybridNewsCache,
 } from "@/lib/hmHomeHybridNewsCache";
+import { isRssHybridItem, mergeUniqueNews } from "@/lib/hmHeadlinePool";
+
+/** dbFirst yenilemesi RSS’i düşürürse önbellek/önceki havuzdaki RSS manşette kalsın. */
+export function mergeHybridBootstrapPreserveRss(
+  fresh: readonly HomeHybridNewsItem[],
+  previous: readonly HomeHybridNewsItem[] | null | undefined,
+): HomeHybridNewsItem[] {
+  const prev = Array.isArray(previous) ? previous : [];
+  if (prev.length === 0) return [...fresh];
+  const merged = mergeUniqueNews(fresh, prev) as HomeHybridNewsItem[];
+  const freshRssCount = fresh.filter((item) => isRssHybridItem(item)).length;
+  const prevRss = prev.filter((item) => isRssHybridItem(item));
+  if (freshRssCount >= prevRss.length) return merged;
+  return mergeUniqueNews(merged, prevRss) as HomeHybridNewsItem[];
+}
 
 /** Tam anasayfa havuzu — RSS band + kategori kutuları geri doldurma. */
 export const HM_HOME_HYBRID_BOOTSTRAP_LIMIT = 100;
@@ -33,9 +48,10 @@ async function loadHmHomeHybridBootstrapPhase(
   siteId: number,
   phase: "hero" | "full",
   signal?: AbortSignal,
+  previous?: readonly HomeHybridNewsItem[],
 ): Promise<HomeHybridNewsItem[]> {
   const limit = phase === "hero" ? HM_HOME_HYBRID_HERO_LIMIT : HM_HOME_HYBRID_BOOTSTRAP_LIMIT;
-  const items = await fetchHybridNewsList({
+  const fresh = await fetchHybridNewsList({
     siteId,
     limit,
     offset: 0,
@@ -45,6 +61,7 @@ async function loadHmHomeHybridBootstrapPhase(
     timeoutMs: phase === "hero" ? 8_000 : 10_000,
     retries: phase === "hero" ? 0 : 1,
   });
+  const items = mergeHybridBootstrapPreserveRss(fresh, previous);
   if (items.length > 0 && phase === "full") writeHmHomeHybridNewsCache(siteId, items);
   return items;
 }
@@ -79,7 +96,12 @@ export function useHmHomeHybridBootstrapHero(siteId: number | null, enabled: boo
       siteId != null && siteId > 0
         ? hmHomeHybridBootstrapQueryKey(siteId, "hero")
         : ["/api/news/hybrid", "hm-home-bootstrap-hero", "disabled"],
-    queryFn: ({ signal }) => loadHmHomeHybridBootstrapPhase(siteId!, "hero", signal),
+    queryFn: ({ signal, client }) => {
+      const previous = client.getQueryData<HomeHybridNewsItem[]>(
+        hmHomeHybridBootstrapQueryKey(siteId!, "hero"),
+      );
+      return loadHmHomeHybridBootstrapPhase(siteId!, "hero", signal, previous ?? cacheMeta?.items);
+    },
     enabled: enabled && siteId != null && siteId > 0,
     initialData: cacheMeta?.items?.slice(0, HM_HOME_HYBRID_HERO_LIMIT),
     initialDataUpdatedAt: cacheMeta?.savedAt,
@@ -102,7 +124,12 @@ export function useHmHomeHybridBootstrapFull(
       siteId != null && siteId > 0
         ? hmHomeHybridBootstrapQueryKey(siteId, "full")
         : ["/api/news/hybrid", "hm-home-bootstrap", "disabled"],
-    queryFn: ({ signal }) => loadHmHomeHybridBootstrapPhase(siteId!, "full", signal),
+    queryFn: ({ signal, client }) => {
+      const previous = client.getQueryData<HomeHybridNewsItem[]>(
+        hmHomeHybridBootstrapQueryKey(siteId!, "full"),
+      );
+      return loadHmHomeHybridBootstrapPhase(siteId!, "full", signal, previous ?? cacheMeta?.items);
+    },
     enabled: enabled && !deferUntilReady && siteId != null && siteId > 0,
     initialData: cacheMeta?.items,
     initialDataUpdatedAt: cacheMeta?.savedAt,
