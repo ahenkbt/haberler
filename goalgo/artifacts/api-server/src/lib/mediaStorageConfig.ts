@@ -171,11 +171,13 @@ export function isS3TransportError(e: unknown): boolean {
 export function getMediaStorageMode(): MediaStorageMode {
   const pref = getMediaStoragePreference();
   if (pref === "volume") return "volume";
-  if (pref === "s3") return isS3MediaConfigured() ? "s3" : "volume";
   if (runtimeS3Disabled) return "volume";
-  /* Render'da R2 TLS el sıkışması sık; haber görselleri /api/media/uploads üzerinden sitede kalsın. */
-  if (isRenderHosting()) return "volume";
-  return isS3MediaConfigured() ? "s3" : "volume";
+  if (isS3MediaConfigured()) {
+    // MEDIA_STORAGE_MODE=s3|r2 veya auto — Render dahil R2 birincil depo.
+    if (pref === "s3" || pref === "auto") return "s3";
+  }
+  if (pref === "s3") return "volume";
+  return "volume";
 }
 
 export function s3PublicBaseUrl(): string | null {
@@ -235,10 +237,10 @@ export function assertProductionMediaStorage(): void {
 
   if (hasPersistentVolumeMount()) return;
 
-  if (isRenderHosting() && getMediaStoragePreference() !== "s3") {
+  if (isRenderHosting() && getMediaStoragePreference() !== "s3" && !isS3MediaConfigured()) {
     console.warn(
       "[goalgo] Render: kalıcı medya diski yok — yüklemeler geçici container diskine yazılır (deploy sonrası kaybolabilir). " +
-        "Kalıcılık için Render Disk ekleyip MEDIA_UPLOAD_ROOT ile mount yolunu verin veya MEDIA_STORAGE_MODE=s3 ile R2 kullanın.",
+        "Kalıcılık için Render Disk ekleyip MEDIA_UPLOAD_ROOT ile mount yolunu verin veya MEDIA_STORAGE_MODE=s3 ile Cloudflare R2 kullanın.",
     );
     return;
   }

@@ -46,6 +46,14 @@ services:
       # KH Worker kenar login → Render JWT (wrangler.toml HM_EDGE_BRIDGE_SECRET ile aynı)
       - key: HM_EDGE_BRIDGE_SECRET
         value: "yekpare-hm-kh-bridge-20260727-v1"
+      # Cloudflare R2 — medya birincil depo (GitHub/Render secret olarak ekleyin)
+      - key: MEDIA_STORAGE_MODE
+        value: s3
+      - key: S3_BUCKET
+        value: yekpare-media
+      - key: S3_REGION
+        value: auto
+      # S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_BASE_URL → Render secret
       - key: DATABASE_URL
         fromDatabase:
           name: goalgo-main

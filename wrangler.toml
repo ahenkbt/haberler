@@ -18,6 +18,7 @@ API_ORIGIN = "https://goalgo-y7ze.onrender.com"
 # KH kenar login → Render JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 # Medya yükleme (Worker → R2/S3): GitHub Actions S3_* secret'ları ile wrangler secret put
+# Render API: MEDIA_STORAGE_MODE=s3 + aynı S3_* değişkenleri
 
 # yekpare.net / www.yekpare.net bu worker'a bağlı değil (ayrı repo: goalgo-cloudflare).
 
