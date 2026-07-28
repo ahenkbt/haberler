@@ -42,6 +42,7 @@ import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
 import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
+import { repairAsgAuthorsFromAhg } from "./lib/hm-asg-authors-from-ahg-repair.js";
 import { repairHmTepeMansetSystem } from "./lib/hm-tepe-manset-repair.js";
 import { repairKhEditorMisassignment } from "./lib/hm-kh-editor-repair.js";
 import { repairHmEditorCrossSiteEmailConflicts } from "./lib/hm-editor-cross-site-repair.js";
@@ -441,6 +442,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_800).unref();
   } else {
     logger.info("[hm-asg-editor] HM_ASG_EDITOR_REPAIR=0 — atlandı");
+  }
+
+  // ASG: ankarahabergundemi yazar listesini ankarasehirgazetesi.com'a kopyala
+  if (envJobFlag("HM_ASG_AUTHORS_FROM_AHG_REPAIR", true)) {
+    setTimeout(() => {
+      void repairAsgAuthorsFromAhg()
+        .then((r) => logger.info({ ...r }, "[hm-asg-authors] AHG→ASG yazar senkron"))
+        .catch((err) => logger.error({ err }, "[hm-asg-authors] senkron başarısız"));
+    }, 17_850).unref();
+  } else {
+    logger.info("[hm-asg-authors] HM_ASG_AUTHORS_FROM_AHG_REPAIR=0 — atlandı");
   }
 
   // KH: kevser@gmail.com vb. yanlış siteye (ASG) eklenmişse kirsehirhaber sitesine taşı
