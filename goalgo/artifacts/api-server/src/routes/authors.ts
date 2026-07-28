@@ -198,6 +198,7 @@ router.get("/authors", async (req, res): Promise<void> => {
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
     const rows = ownedRows.filter(
       (r) =>
+        r.hmSortOrder != null ||
         !shouldHideAuthorOnAnkaraHmSite({
           siteSlug: site?.slug,
           siteDomain: site?.domain,
@@ -296,7 +297,9 @@ router.get("/authors", async (req, res): Promise<void> => {
       const rowScore = (countMap.get(row.id) ?? 0) + (row.avatarUrl ? 2 : 0) + (row.bio ? 1 : 0);
       if (rowScore > prevScore) dedupedRows.set(key, row);
     }
-    const sortedAuthors = Array.from(dedupedRows.values()).sort((a, b) => {
+    const sortedAuthors = Array.from(dedupedRows.values())
+      .filter((row, index, all) => all.findIndex((r) => r.id === row.id) === index)
+      .sort((a, b) => {
       const ao = a.hmSortOrder ?? 999999;
       const bo = b.hmSortOrder ?? 999999;
       if (ao !== bo) return ao - bo;
