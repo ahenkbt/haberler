@@ -236,6 +236,18 @@ export default function HaberSiteleri() {
       toast({ title: "Yeni site için editör e-postası ve en az 8 karakter şifre gerekli", variant: "destructive" });
       return;
     }
+    if (editingId) {
+      const current = sites.find((s) => s.id === editingId);
+      const hasEditor = Boolean(current?.editors?.[0]?.id);
+      if (!hasEditor && (!form.editorEmail.trim() || form.editorPassword.length < 8)) {
+        toast({
+          title: "Bu sitede editör yok",
+          description: "E-posta ve en az 8 karakter şifre girin — yeni editör oluşturulacak.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -403,10 +415,24 @@ export default function HaberSiteleri() {
 
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
                 <div className="mb-3 text-xs font-black uppercase tracking-wide text-indigo-700">Editör hesabı</div>
+                {editingId && !sites.find((s) => s.id === editingId)?.editors?.[0] ? (
+                  <p className="mb-3 text-xs font-semibold text-amber-800">
+                    Bu sitede henüz editör yok. E-posta + şifre girip kaydedin; yeni editör oluşturulur.
+                  </p>
+                ) : null}
                 <div className="space-y-3">
                   <Input value={form.editorDisplayName} onChange={(e) => update("editorDisplayName", e.target.value)} placeholder="Editör adı" />
                   <Input value={form.editorEmail} onChange={(e) => update("editorEmail", e.target.value)} placeholder="editor@ornek.com" />
-                  <Input value={form.editorPassword} onChange={(e) => update("editorPassword", e.target.value)} placeholder={editingId ? "Yeni şifre (boş bırak: değişmesin)" : "En az 8 karakter şifre"} type="password" />
+                  <Input
+                    value={form.editorPassword}
+                    onChange={(e) => update("editorPassword", e.target.value)}
+                    placeholder={
+                      editingId && sites.find((s) => s.id === editingId)?.editors?.[0]
+                        ? "Yeni şifre (boş bırak: değişmesin)"
+                        : "En az 8 karakter şifre"
+                    }
+                    type="password"
+                  />
                 </div>
               </div>
 

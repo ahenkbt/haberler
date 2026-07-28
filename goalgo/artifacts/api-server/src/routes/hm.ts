@@ -1267,11 +1267,18 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
   if (typeof b.active === "boolean") patch.active = b.active;
 
   const editorId = Number(b.editorId);
-  const wantsEditor =
-    Number.isFinite(editorId) &&
-    (typeof b.editorDisplayName === "string" ||
-      typeof b.editorEmail === "string" ||
-      (typeof b.editorPassword === "string" && b.editorPassword.length > 0));
+  const hasEditorFields =
+    typeof b.editorDisplayName === "string" ||
+    typeof b.editorEmail === "string" ||
+    (typeof b.editorPassword === "string" && b.editorPassword.length > 0);
+  const wantsEditorUpdate = Number.isFinite(editorId) && hasEditorFields;
+  const wantsEditorCreate =
+    !Number.isFinite(editorId) &&
+    typeof b.editorEmail === "string" &&
+    b.editorEmail.trim().toLowerCase().includes("@") &&
+    typeof b.editorPassword === "string" &&
+    b.editorPassword.length >= 8;
+  const wantsEditor = wantsEditorUpdate || wantsEditorCreate;
 
   if (Object.keys(patch).length === 0 && !wantsEditor) {
     res.status(400).json({ error: "Güncellenecek alan yok" });
@@ -1280,7 +1287,11 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
 
   if (wantsEditor) {
     const pw = typeof b.editorPassword === "string" ? b.editorPassword : "";
-    if (pw.length > 0 && pw.length < 8) {
+    if (wantsEditorCreate && pw.length < 8) {
+      res.status(400).json({ error: "Yeni editör için şifre en az 8 karakter olmalı" });
+      return;
+    }
+    if (wantsEditorUpdate && pw.length > 0 && pw.length < 8) {
       res.status(400).json({ error: "Editör şifresi en az 8 karakter olmalı" });
       return;
     }
@@ -1321,7 +1332,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       }
     }
 
-    if (wantsEditor) {
+    if (wantsEditorUpdate) {
       const [ed] = await newsReadDb()
         .select()
         .from(hmSiteEditorsTable)
@@ -1340,6 +1351,21 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         ePatch.updatedAt = new Date();
         await dualWriteUpdate(hmSiteEditorsTable, ePatch, eq(hmSiteEditorsTable.id, editorId));
       }
+    } else if (wantsEditorCreate) {
+      const em = String(b.editorEmail ?? "")
+        .trim()
+        .toLowerCase();
+      const hash = await bcrypt.hash(String(b.editorPassword), 10);
+      await dualWriteInsert(hmSiteEditorsTable, {
+        siteId: id,
+        email: em,
+        passwordHash: hash,
+        displayName:
+          typeof b.editorDisplayName === "string" && b.editorDisplayName.trim()
+            ? b.editorDisplayName.trim()
+            : null,
+        isActive: true,
+      });
     }
 
     // Kayıt sonrası: Su Haber şablon artığı menü/marka izlerini temizle (kirsehir vb.)
