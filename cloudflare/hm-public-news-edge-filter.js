@@ -84,7 +84,14 @@ function filterHomeBundle(payload, siteId, opts = {}) {
   return next;
 }
 
-function filterNewsListPayload(payload, siteId, opts) {
+/** @param {unknown} payload @param {number} siteId @param {{ allowCentralRss?: boolean }} [opts] */
+export function filterNewsListPayload(payload, siteId, opts) {
+  // /api/news/featured ve /api/news/breaking gibi uçlar çıplak dizi döner.
+  // `{ ...array }` diziye index anahtarlı nesne yapıyordu; frontend Array.isArray
+  // false görünce tepe manşet boşalıyordu.
+  if (Array.isArray(payload)) {
+    return filterItemArray(payload, siteId, opts);
+  }
   if (!payload || typeof payload !== "object") return payload;
   const next = { ...payload };
   if (Array.isArray(payload.items)) {

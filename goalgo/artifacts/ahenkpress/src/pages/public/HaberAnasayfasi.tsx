@@ -1708,22 +1708,24 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     queryFn: async () => {
       const qs =
         siteId != null
-          ? `siteId=${encodeURIComponent(String(siteId))}&strict=1&tepeOnly=1&limit=20`
+          ? `siteId=${encodeURIComponent(String(siteId))}&strict=1&tepeOnly=1&limit=20&includeHiddenCategories=1`
           : "strict=1&tepeOnly=1&limit=20";
       const rows = (await apiRequest(`/api/news/featured?${qs}`)) as any[];
       if (!Array.isArray(rows)) return [];
       return rows.filter((x) => !isBlogCategoryNews(x) && !isKoseArticle(x));
     },
     staleTime: 2 * 60 * 1000,
-    enabled: tepeMansetEnabled && !isCorporateTheme,
+    // Kurumsal vitrinde de Tepe Manşet açıkken veri çekilmeli (önceden !isCorporateTheme yüzünden hep boştu).
+    enabled: tepeMansetEnabled,
   });
 
   const { data: featuredHm = [] } = useQuery<any[]>({
     queryKey: ["/api/news/hm-slider", siteId, hmHybridRssEnabled ? "hybrid" : "db", rssHeadlineEnabled ? "rss" : "manset"],
     queryFn: async () => {
-      const featured = (await apiRequest(
+      const featuredRaw = await apiRequest(
         `/api/news/featured?siteId=${encodeURIComponent(String(siteId))}&strict=1&limit=${HM_HOME_HEADLINE_SLIDER_LIMIT}`,
-      )) as any[];
+      );
+      const featured = Array.isArray(featuredRaw) ? featuredRaw : [];
       const pool: any[] = [];
       const pushNoBlog = (arr: any[]) => {
         for (const x of arr) {
@@ -2048,11 +2050,18 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const bandNewsItems = useMemo(() => asArray((latestBandRaw as { items?: unknown })?.items), [latestBandRaw]);
   const tepeMansetItems = useMemo(() => {
     if (!tepeMansetEnabled) return [];
-    const bundleFeatured = asArray(hmHomeBundle?.featured).filter(
-      (x) => x?.isFeatured === true && !isBlogCategoryNews(x) && !isKoseArticle(x),
+    const keepTepeCandidate = (x: any) =>
+      x?.isFeatured === true && !isBlogCategoryNews(x) && !isKoseArticle(x);
+    const bundleFeatured = asArray(hmHomeBundle?.featured).filter(keepTepeCandidate);
+    const corporateFeatured = asArray(corporateFeaturedNews).filter(keepTepeCandidate);
+    const latestFeatured = asArray(allItems).filter(keepTepeCandidate);
+    // Strict API öncelikli; gecikmede / boşta bundle / kurumsal / son liste ile tepe boş kalmasın.
+    const source = mergeUniqueNews(
+      tepeFeaturedStrict,
+      bundleFeatured,
+      corporateFeatured,
+      latestFeatured,
     );
-    // Strict API öncelikli; gecikmede / boşta bundle featured ile tepe boş kalmasın.
-    const source = tepeFeaturedStrict.length > 0 ? tepeFeaturedStrict : bundleFeatured;
     const pool = buildTepeMansetPool({
       items: source,
       limit: HM_TEPE_MANSET_ITEM_COUNT,
@@ -2061,7 +2070,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     // Kapak filtresi tümünü düşürürse yine de başlık göster (boş tepe olmasın).
     const picked = withCover.length > 0 ? withCover : pool;
     return picked.slice(0, HM_TEPE_MANSET_ITEM_COUNT);
-  }, [tepeMansetEnabled, tepeFeaturedStrict, hmHomeBundle]);
+  }, [tepeMansetEnabled, tepeFeaturedStrict, hmHomeBundle, corporateFeaturedNews, allItems]);
   const tepeMansetActive = tepeMansetEnabled && tepeMansetItems.length > 0;
   const manualHeadlinePool = useMemo(
     () => buildManualHeadlineOnlyPool({ manualItems: featured, latestItems: allItems, limit: HM_HOME_HEADLINE_SLIDER_LIMIT }),
@@ -4415,9 +4424,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         style={{ background: "var(--hm-page-bg, #ffffff)" }}
       >
         <main className={hmVitrinContentShell(`hm-esen-shell pb-8 ${SADE_PUBLIC_POST_HERO_BODY_CLASS}`)}>
+          {/* Tepe manşet, diğer içerik yüklenmese bile header altında gösterilir. */}
+          {renderSafeNewsHomeModule("tepeManset")}
           {hasEsenContent ? (
             <>
-              {renderSafeNewsHomeModule("tepeManset")}
               {renderEsenHeroManset()}
 
               {hmCtx == null ? (
