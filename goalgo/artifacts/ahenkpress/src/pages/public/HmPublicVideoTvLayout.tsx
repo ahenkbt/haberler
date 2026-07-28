@@ -12,7 +12,7 @@ const HM_HEADER_BAND_PX = 72;
 /** Haber sitesi Video TV — tek HM kabuğu (`HmNestedLayout`), çift menü yok. */
 export function HmPublicVideoTvLayout({ children }: { children: ReactNode }) {
   return (
-    <HmNestedLayout>
+    <HmNestedLayout hideFooter>
       <HmVideoTvContextBridge>
         <div className="hm-video-tv-embed-host flex min-h-0 flex-1 flex-col">{children}</div>
       </HmVideoTvContextBridge>

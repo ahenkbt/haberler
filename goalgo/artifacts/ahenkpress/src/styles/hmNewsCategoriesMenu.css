@@ -159,50 +159,49 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   overflow: hidden;
   position: relative;
 }
 
-/* Footer açıkken ana alan chrome ile footer arasında kalan yüksekliği doldurur */
-.hm-vitrin-root[data-hm-video-tv="true"] .hm-public-site-footer {
-  flex-shrink: 0;
-}
-
 .hm-vitrin-root[data-hm-video-tv="true"] .hm-video-tv-embed-host {
-  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   width: 100%;
-  box-sizing: border-box;
 }
 
-/* Ortalı site: video alanı header / menü ile aynı 1280px hizasında */
-.hm-vitrin-root[data-hm-video-tv="true"][data-hm-site-layout="contained"] .hm-video-tv-embed-host {
-  max-width: 1280px;
-  margin-inline: auto;
-  padding-inline: 0.75rem;
-}
-
-@media (min-width: 768px) {
-  .hm-vitrin-root[data-hm-video-tv="true"][data-hm-site-layout="contained"] .hm-video-tv-embed-host {
-    padding-inline: 1rem;
-  }
-}
-
-/* Header altından footer'a kadar — host içinde tam yükseklik (footer üstünü örtmez) */
+/*
+ * Iframe viewport altına sabitlensin — flex zinciri kırılsa bile görünür kalır.
+ * Contained layout: header ile aynı 1280px ortalı hiza.
+ */
 .hm-vitrin-root[data-hm-video-tv="true"] .hm-video-tv-embed {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: var(--hm-video-tv-chrome-height, 4.5rem);
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 1;
   width: 100%;
-  height: 100%;
+  height: auto;
   min-height: 0;
   max-height: none;
   border: 0;
+}
+
+.hm-vitrin-root[data-hm-video-tv="true"][data-hm-site-layout="contained"] .hm-video-tv-embed {
+  left: max(0.75rem, calc(50% - 640px));
+  right: max(0.75rem, calc(50% - 640px));
+  width: auto;
+  max-width: 1280px;
+}
+
+@media (min-width: 768px) {
+  .hm-vitrin-root[data-hm-video-tv="true"][data-hm-site-layout="contained"] .hm-video-tv-embed {
+    left: max(1rem, calc(50% - 640px));
+    right: max(1rem, calc(50% - 640px));
+  }
 }
 
 .hm-mobile-bottom-nav {
