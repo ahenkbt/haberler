@@ -38,8 +38,10 @@ async function resolveSiteIdBySlug(slug: string): Promise<number | null> {
   return row?.id ?? null;
 }
 
-function canonicalAhgAuthors(rows: AuthorRow[]): AuthorRow[] {
-  const sorted = [...rows].sort((a, b) => {
+/** AHG vitrin sırası (hm_sort_order) olan yazarlar; aynı kişinin kopyalarını tekilleştir. */
+export function canonicalAhgAuthors(rows: AuthorRow[]): AuthorRow[] {
+  const withOrder = rows.filter((row) => row.hmSortOrder != null);
+  const sorted = [...withOrder].sort((a, b) => {
     const ao = a.hmSortOrder ?? 9999;
     const bo = b.hmSortOrder ?? 9999;
     if (ao !== bo) return ao - bo;
@@ -51,17 +53,6 @@ function canonicalAhgAuthors(rows: AuthorRow[]): AuthorRow[] {
     out.push(row);
   }
   return out;
-}
-
-function pickAsgMatch(targets: AuthorRow[], sourceName: string): AuthorRow | null {
-  const matches = targets.filter((row) => authorsRepresentSamePerson(row.name, sourceName));
-  if (matches.length === 0) return null;
-  return [...matches].sort((a, b) => {
-    const ao = a.hmSortOrder ?? 9999;
-    const bo = b.hmSortOrder ?? 9999;
-    if (ao !== bo) return ao - bo;
-    return (a.id ?? 0) - (b.id ?? 0);
-  })[0]!;
 }
 
 /**
@@ -94,92 +85,96 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
   ]);
 
   const canonical = canonicalAhgAuthors(sourceRows);
-  const keptIds = new Set<number>();
-  let upserted = 0;
+  if (canonical.length === 0) {
+    return {
+      ok: false,
+      sourceSiteId,
+      targetSiteId,
+      upserted: 0,
+      removed: 0,
+      remappedNews: 0,
+      remappedMakaleler: 0,
+      authorIds: [],
+      actions: ["no-source-authors"],
+    };
+  }
 
+  const oldAuthorNames = new Map<number, string>();
+  for (const row of targetRows) oldAuthorNames.set(row.id, row.name);
+
+  const newIds: number[] = [];
+  let upserted = 0;
   for (const src of canonical) {
-    const existing = pickAsgMatch(targetRows, src.name);
-    const payload = {
+    const [created] = await dualWriteInsert(authorsTable, {
       name: src.name,
       title: src.title,
       avatarUrl: src.avatarUrl,
       bio: src.bio,
       hmSiteId: targetSiteId,
       hmSortOrder: src.hmSortOrder,
-      email: src.email,
-    };
-
-    if (existing) {
-      await dualWriteUpdate(authorsTable, payload, eq(authorsTable.id, existing.id));
-      keptIds.add(existing.id);
-      upserted += 1;
-      actions.push(`updated:${existing.id}←ahg:${src.id}`);
-      continue;
-    }
-
-    const [created] = await dualWriteInsert(authorsTable, payload);
+      email: null,
+      passwordHash: null,
+    });
     if (created?.id) {
-      keptIds.add(created.id);
-      targetRows.push(created);
+      newIds.push(created.id);
       upserted += 1;
       actions.push(`created:${created.id}←ahg:${src.id}`);
     }
   }
 
-  const removeIds = targetRows.map((row) => row.id).filter((id) => !keptIds.has(id));
-  let removed = 0;
+  const freshRows = await db
+    .select()
+    .from(authorsTable)
+    .where(eq(authorsTable.hmSiteId, targetSiteId));
+  const newRows = freshRows.filter((row) => newIds.includes(row.id));
+
   let remappedNews = 0;
   let remappedMakaleler = 0;
-
-  for (const removeId of removeIds) {
-    const doomed = targetRows.find((row) => row.id === removeId);
-    if (!doomed) continue;
-    const replacement = [...keptIds]
-      .map((id) => targetRows.find((row) => row.id === id))
-      .filter((row): row is AuthorRow => Boolean(row))
-      .find((row) => authorsRepresentSamePerson(row.name, doomed.name));
-
-    if (replacement && replacement.id !== removeId) {
-      const newsRows = await dualWriteUpdate(
-        newsTable,
-        { authorId: replacement.id },
-        and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, removeId))!,
-      );
-      remappedNews += newsRows.length;
-
-      const makRows = await dualWriteUpdate(
-        hmMakalelerTable,
-        { authorId: replacement.id },
-        and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, removeId))!,
-      );
-      remappedMakaleler += makRows.length;
-    } else {
+  for (const [oldId, oldName] of oldAuthorNames) {
+    const match = newRows.find((row) => authorsRepresentSamePerson(row.name, oldName));
+    if (!match) continue;
+    remappedNews += (
       await dualWriteUpdate(
         newsTable,
-        { authorId: null },
-        and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, removeId))!,
-      );
+        { authorId: match.id },
+        and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, oldId))!,
+      )
+    ).length;
+    remappedMakaleler += (
       await dualWriteUpdate(
         hmMakalelerTable,
-        { authorId: null },
-        and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, removeId))!,
-      );
-    }
+        { authorId: match.id },
+        and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, oldId))!,
+      )
+    ).length;
+  }
 
-    await dualWriteDelete(authorsTable, eq(authorsTable.id, removeId));
+  let removed = 0;
+  for (const row of targetRows) {
+    await dualWriteUpdate(
+      newsTable,
+      { authorId: null },
+      and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, row.id))!,
+    );
+    await dualWriteUpdate(
+      hmMakalelerTable,
+      { authorId: null },
+      and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, row.id))!,
+    );
+    await dualWriteDelete(authorsTable, eq(authorsTable.id, row.id));
     removed += 1;
-    actions.push(`removed:${removeId}`);
+    actions.push(`removed:${row.id}`);
   }
 
   return {
-    ok: keptIds.size > 0,
+    ok: newIds.length > 0,
     sourceSiteId,
     targetSiteId,
     upserted,
     removed,
     remappedNews,
     remappedMakaleler,
-    authorIds: [...keptIds],
+    authorIds: newIds,
     actions,
   };
 }
