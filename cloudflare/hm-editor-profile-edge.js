@@ -201,6 +201,93 @@ async function isKhEditorSite(sql, siteId) {
   return false;
 }
 
+const KH_KNOWN_EDITOR_EMAILS = new Set(["kevser@gmail.com"]);
+
+function isKhEditorCandidate(editor) {
+  const email = String(editor?.email ?? "")
+    .trim()
+    .toLowerCase();
+  const dn = String(editor?.display_name ?? "")
+    .trim()
+    .toLowerCase();
+  if (KH_KNOWN_EDITOR_EMAILS.has(email)) return true;
+  if (email.includes("kirsehirhaber") || email.includes("kirsehri")) return true;
+  if (dn.includes("kırşehir") || dn.includes("kirsehir") || dn.includes("kirşehir")) return true;
+  return false;
+}
+
+async function repairKhEditorForLogin(sql, emailRaw, khSiteId) {
+  const email = String(emailRaw ?? "")
+    .trim()
+    .toLowerCase();
+  if (!email.includes("@")) return null;
+
+  const onKh = await sql`
+    SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+    FROM hm_site_editors
+    WHERE site_id = ${khSiteId}
+      AND is_active = true
+      AND lower(email) = ${email}
+    LIMIT 1
+  `;
+  if (onKh?.[0]?.password_hash) return onKh[0];
+
+  const elsewhere = await sql`
+    SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+    FROM hm_site_editors
+    WHERE site_id <> ${khSiteId}
+      AND is_active = true
+      AND lower(email) = ${email}
+    LIMIT 1
+  `;
+  const source = elsewhere?.[0];
+  if (!source?.password_hash || !isKhEditorCandidate(source)) return null;
+
+  const displayName =
+    String(source.display_name ?? "").trim() ||
+    (KH_KNOWN_EDITOR_EMAILS.has(email) ? "Kırşehir Haber" : null);
+
+  const existing = await sql`
+    SELECT id FROM hm_site_editors
+    WHERE site_id = ${khSiteId} AND lower(email) = ${email}
+    LIMIT 1
+  `;
+  let editorId = existing?.[0]?.id ?? null;
+  if (editorId) {
+    await sql`
+      UPDATE hm_site_editors
+      SET password_hash = ${source.password_hash},
+          username = ${source.username},
+          display_name = ${displayName},
+          is_active = true,
+          updated_at = NOW()
+      WHERE id = ${editorId}
+    `;
+  } else {
+    const inserted = await sql`
+      INSERT INTO hm_site_editors (site_id, email, username, password_hash, display_name, is_active, created_at, updated_at)
+      VALUES (${khSiteId}, ${email}, ${source.username}, ${source.password_hash}, ${displayName}, true, NOW(), NOW())
+      RETURNING id
+    `;
+    editorId = inserted?.[0]?.id ?? null;
+  }
+  if (!editorId) return null;
+
+  await sql`
+    UPDATE hm_site_editors
+    SET is_active = false, updated_at = NOW()
+    WHERE id = ${source.id}
+  `;
+
+  const fixed = await sql`
+    SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+    FROM hm_site_editors
+    WHERE id = ${editorId}
+    LIMIT 1
+  `;
+  return fixed?.[0] ?? null;
+}
+
 /**
  * Kenar JWT + Neon: tema/modül/sayfa/menü kaydı (tüm HM editör siteleri).
  * Render secret/DB ayrışınca 401 olmasın diye Neon'a yazılır.
@@ -626,7 +713,14 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 
-  const editor = editors?.[0];
+  let editor = editors?.[0];
+  if (!editor?.password_hash && loginIsEmail) {
+    const siteIsKh = (await isKhEditorSite(sql, site.id)) || KH_HOSTS.has(host);
+    if (siteIsKh) {
+      const repaired = await repairKhEditorForLogin(sql, loginRaw, site.id);
+      if (repaired?.password_hash) editor = repaired;
+    }
+  }
   if (!editor?.password_hash) {
     if (loginIsEmail) {
       const elsewhere = await sql`
