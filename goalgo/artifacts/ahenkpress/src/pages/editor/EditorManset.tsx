@@ -65,7 +65,7 @@ export default function EditorManset() {
   };
 
   return (
-    <EditorLayout title="Slider ve Bant Yönetimi">
+    <EditorLayout title="Tepe Manşet Yönetimi">
       <div className="max-w-5xl space-y-4">
         <p className="text-sm text-slate-600">
           <strong>Tepe manşet</strong> yalnızca <strong>Manşet</strong> işaretli haberleri gösterir.

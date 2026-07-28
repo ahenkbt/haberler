@@ -26,7 +26,7 @@ export const editorNavItems: EditorNavItem[] = [
   { name: "Profil", icon: UserRound, href: "/editor/profil" },
   { name: "Genel ayarlar", icon: Settings, href: "/editor/genel-ayarlar" },
   { name: "Vitrin ayarları", icon: LayoutGrid, href: "/editor/vitrin" },
-  { name: "Slider / Bant", icon: Sparkles, href: "/editor/manset" },
+  { name: "Tepe Manşet", icon: Sparkles, href: "/editor/manset" },
   { name: "Haberler", icon: Newspaper, href: "/editor/haberler" },
   { name: "İletişim", icon: Mail, href: "/editor/iletisim" },
   { name: "Posta kutusu", icon: Inbox, href: "/editor/posta-kutusu" },

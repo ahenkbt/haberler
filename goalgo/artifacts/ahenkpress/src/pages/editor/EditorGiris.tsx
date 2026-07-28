@@ -259,6 +259,12 @@ export default function EditorGiris() {
 
     setErr("");
 
+    const captchaAnswer = captcha.answer.trim();
+    if (!captcha.token || !captchaAnswer) {
+      setErr("Güvenlik doğrulaması için matematik sorusunun sonucunu yazın.");
+      return;
+    }
+
     setLoading(true);
 
     const slugNorm = slug.trim().toLowerCase();
@@ -280,7 +286,7 @@ export default function EditorGiris() {
           password,
           domain: isCustomDomain ? host : undefined,
           captchaToken: captcha.token,
-          captchaAnswer: captcha.answer,
+          captchaAnswer,
         }),
 
       });
@@ -306,9 +312,9 @@ export default function EditorGiris() {
           message = "Yayın kodu, e-posta veya şifre hatalı.";
 
         } else if (message.includes("Güvenlik doğrulaması")) {
-
+          message =
+            "Güvenlik doğrulaması hatalı veya süresi doldu. Sonucu kontrol edin veya «Yeni soru» ile yenileyin.";
           setCaptcha((c) => ({ ...c, answer: "" }));
-
         }
 
         setErr(message);
@@ -367,7 +373,17 @@ export default function EditorGiris() {
 
 
 
-        <form onSubmit={submit} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+        <form
+          onSubmit={submit}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" || e.target instanceof HTMLTextAreaElement) return;
+            if (!captcha.token || !captcha.answer.trim()) {
+              e.preventDefault();
+              setErr("Güvenlik doğrulaması için matematik sorusunun sonucunu yazın.");
+            }
+          }}
+          className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl"
+        >
 
           {err ? <p className="text-sm text-red-400 font-medium">{err}</p> : null}
 

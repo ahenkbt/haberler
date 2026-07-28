@@ -2009,7 +2009,7 @@ export default function EditorVitrinAyarlari() {
               Üst menü öğeleri sayfanın üstündeki <strong>Üst menü editörü</strong> bağlantısından yönetilir. Manuel hero
               slider içerikleri{" "}
               <Link href="/editor/manset" className="font-semibold text-red-600 hover:underline">
-                Slider / Bant
+                Tepe Manşet
               </Link>{" "}
               sayfasındadır; slider görünürlüğü <strong>Modül aç/kapa</strong> sekmesinden kapatılabilir.
             </p>
@@ -2025,9 +2025,9 @@ export default function EditorVitrinAyarlari() {
               <Link href="/editor/genel-ayarlar#hm-vitrin-theme-controls" className="font-semibold text-red-600 hover:underline">
                 Genel ayarlar ↔ KURUMSAL vitrin
               </Link>
-              . Slider ve bant içerikleri{" "}
+              . Tepe manşet ve bant içerikleri{" "}
               <Link href="/editor/manset" className="font-semibold text-red-600 hover:underline">
-                Slider / Bant
+                Tepe Manşet
               </Link>{" "}
               sayfasından düzenlenir. Kutu içi RSS ve RSS güven bandı aşağıdaki anahtarlarla açılır; besleme adresleri{" "}
               <strong>RSS & bant</strong> sekmesinden eklenir.

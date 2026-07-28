@@ -116,7 +116,7 @@ const HM_PREMIUM_PALETTES = [
 const EDITOR_SETTINGS_SECTIONS = [
   { href: "#hm-site-seo-logo", label: "Site / SEO / Logo", description: "Kayıt, doğrulama ve logo" },
   { href: "#hm-vitrin-theme-controls", label: "Vitrin / Renk / Genişlik", description: "Tema ve palet ayarları" },
-  { href: "#hm-corporate-slider", label: "Slider / Bant", description: "Vitrin giriş alanları" },
+  { href: "#hm-corporate-slider", label: "Tepe Manşet", description: "Üst manşet ve bant bayrakları" },
   { href: "#hm-corporate-menu", label: "Menü / Footer", description: "Menü, hızlı erişim, alt bilgi" },
   { href: "#hm-corporate-ataturk-corner", label: "Kurumsal / Bağış / Kültür", description: "Modüller ve destek alanı" },
   { href: "#hm-wordpress-tools", label: "WordPress", description: "İçe aktarma ve şablon sayfaları" },
@@ -879,7 +879,7 @@ export default function EditorGenelAyarlari() {
                 ) : (
                   <>
                     Haber vitrininde manuel slider ve slider altı bant buradan yönetilir. Haber manşeti ve son dakika
-                    bayrakları <strong>Slider / Bant</strong> menüsünden işaretlenir.
+                    bayrakları <strong>Tepe Manşet</strong> menüsünden işaretlenir.
                   </>
                 )}
               </p>
