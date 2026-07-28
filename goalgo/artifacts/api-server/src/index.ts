@@ -42,6 +42,7 @@ import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
 import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
+import { repairKhEditorMisassignment } from "./lib/hm-kh-editor-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
@@ -438,6 +439,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_800).unref();
   } else {
     logger.info("[hm-asg-editor] HM_ASG_EDITOR_REPAIR=0 — atlandı");
+  }
+
+  // KH: kevser@gmail.com vb. yanlış siteye (ASG) eklenmişse kirsehirhaber sitesine taşı
+  if (envJobFlag("HM_KH_EDITOR_REPAIR", true)) {
+    setTimeout(() => {
+      void repairKhEditorMisassignment()
+        .then((r) => logger.info({ ...r }, "[hm-kh-editor] editör onarım"))
+        .catch((err) => logger.error({ err }, "[hm-kh-editor] onarım başarısız"));
+    }, 17_900).unref();
+  } else {
+    logger.info("[hm-kh-editor] HM_KH_EDITOR_REPAIR=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).

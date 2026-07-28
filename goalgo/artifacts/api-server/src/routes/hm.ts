@@ -138,6 +138,11 @@ import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import { repairAsgEditorMisassignment } from "../lib/hm-asg-editor-repair.js";
 import {
+  isKhNewsSiteRow,
+  repairKhEditorForLogin,
+  repairKhEditorMisassignment,
+} from "../lib/hm-kh-editor-repair.js";
+import {
   ensureHmSiteEditorUsernameColumn,
   isHmEditorLoginEmail,
   normalizeHmEditorUsername,
@@ -1356,16 +1361,37 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         .trim()
         .toLowerCase();
       const hash = await bcrypt.hash(String(b.editorPassword), 10);
-      await dualWriteInsert(hmSiteEditorsTable, {
-        siteId: id,
-        email: em,
-        passwordHash: hash,
-        displayName:
-          typeof b.editorDisplayName === "string" && b.editorDisplayName.trim()
-            ? b.editorDisplayName.trim()
-            : null,
-        isActive: true,
-      });
+      const [existingOnSite] = await newsReadDb()
+        .select({ id: hmSiteEditorsTable.id })
+        .from(hmSiteEditorsTable)
+        .where(and(eq(hmSiteEditorsTable.siteId, id), sql`lower(${hmSiteEditorsTable.email}) = ${em}`))
+        .limit(1);
+      if (existingOnSite) {
+        await dualWriteUpdate(
+          hmSiteEditorsTable,
+          {
+            passwordHash: hash,
+            displayName:
+              typeof b.editorDisplayName === "string" && b.editorDisplayName.trim()
+                ? b.editorDisplayName.trim()
+                : null,
+            isActive: true,
+            updatedAt: new Date(),
+          },
+          eq(hmSiteEditorsTable.id, existingOnSite.id),
+        );
+      } else {
+        await dualWriteInsert(hmSiteEditorsTable, {
+          siteId: id,
+          email: em,
+          passwordHash: hash,
+          displayName:
+            typeof b.editorDisplayName === "string" && b.editorDisplayName.trim()
+              ? b.editorDisplayName.trim()
+              : null,
+          isActive: true,
+        });
+      }
     }
 
     // Kayıt sonrası: Su Haber şablon artığı menü/marka izlerini temizle (kirsehir vb.)
@@ -1920,6 +1946,27 @@ router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
       message:
         result.action === "synced"
           ? `Ortak editör senkron: siteler [${result.siteIds.join(",")}] editörler [${result.editorIds.join(",")}]`
+          : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: Kırşehir editörleri yanlış siteye (ör. ASG) eklenmişse KH sitesine taşır. */
+router.post("/hm/admin/repair-kh-editor", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await repairKhEditorMisassignment();
+    res.json({
+      ...result,
+      ok: result.ok,
+      message:
+        result.action === "synced"
+          ? `KH editör onarım: ${result.moved.map((m) => `${m.email} (#${m.fromSiteId}→${m.toEditorId})`).join(", ")}`
           : result.detail || result.action,
     });
   } catch (e) {
@@ -2496,6 +2543,9 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
   }
   if (!editor && loginIsEmail && getNewsDbReadMode() === "news") {
     editor = (await mirrorHmEditorFromMainDb(slug, loginRaw, password, site.id)) ?? undefined;
+  }
+  if (!editor && loginIsEmail && isKhNewsSiteRow(site)) {
+    editor = (await repairKhEditorForLogin(loginRaw, site.id)) ?? undefined;
   }
   if (!editor) {
     if (loginIsEmail) {
