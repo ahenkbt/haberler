@@ -36,29 +36,39 @@ export async function repairSuHaberDomainOwnership(opts?: {
   const dryRun = opts?.dryRun === true;
   const actions: string[] = [];
 
-  const byId2 = await db.execute(sql`
-    SELECT id, slug FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1
-  `);
-  const id2Rows = ((byId2 as { rows?: unknown[] }).rows ?? []) as Array<{ id: number }>;
-  const suFallback = await db.execute(sql`
-    SELECT id FROM hm_news_sites
+  const suBySlug = await db.execute(sql`
+    SELECT id, slug FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
     ORDER BY id ASC
     LIMIT 1
   `);
-  const suRows = ((suFallback as { rows?: unknown[] }).rows ?? []) as Array<{ id: number }>;
+  const suRows = ((suBySlug as { rows?: unknown[] }).rows ?? []) as Array<{ id: number }>;
+  const byId2 = await db.execute(sql`
+    SELECT id, slug FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1
+  `);
+  const id2Rows = ((byId2 as { rows?: unknown[] }).rows ?? []) as Array<{ id: number; slug: string }>;
+  const id2IsSu =
+    id2Rows.length > 0 &&
+    ["su", "suhaber"].includes(
+      String(id2Rows[0]!.slug ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/^\/+|\/+$/g, ""),
+    );
 
-  const canonicalSiteId = id2Rows.length
-    ? SU_CANONICAL_SITE_ID
-    : suRows.length
-      ? Number(suRows[0]!.id)
+  const canonicalSiteId = suRows.length
+    ? Number(suRows[0]!.id)
+    : id2IsSu
+      ? SU_CANONICAL_SITE_ID
       : null;
 
   if (!canonicalSiteId) {
     actions.push("no-su-site");
     return { dryRun, actions, canonicalSiteId: null };
   }
-  actions.push(`canonical-su-id=${canonicalSiteId}${id2Rows.length ? " (forced-id-2)" : ""}`);
+  actions.push(
+    `canonical-su-id=${canonicalSiteId}${canonicalSiteId === SU_CANONICAL_SITE_ID ? " (id-2)" : ""}`,
+  );
 
   if (dryRun) {
     actions.push("dry-run-skip-writes");
@@ -132,6 +142,22 @@ export async function repairSuHaberDomainOwnership(opts?: {
       AND id <> ${canonicalSiteId}
   `);
   actions.push("deleted-phantom-su-rows");
+
+  const suDomains = ["suhaberajansi.com", "www.suhaberajansi.com", "suhaberajansi.com.tr"] as const;
+  for (const host of suDomains) {
+    await runOnAllNewsDatabases(sql`
+      UPDATE hm_news_sites
+      SET
+        domain = CASE WHEN lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
+          = lower(regexp_replace(${host}, '^www\\.', '')) THEN NULL ELSE domain END,
+        domain2 = CASE WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
+          = lower(regexp_replace(${host}, '^www\\.', '')) THEN NULL ELSE domain2 END,
+        domain3 = CASE WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
+          = lower(regexp_replace(${host}, '^www\\.', '')) THEN NULL ELSE domain3 END,
+        updated_at = NOW()
+      WHERE id <> ${canonicalSiteId}
+    `);
+  }
 
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
