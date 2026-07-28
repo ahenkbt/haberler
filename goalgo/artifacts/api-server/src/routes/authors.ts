@@ -196,16 +196,25 @@ router.get("/authors", async (req, res): Promise<void> => {
       .from(authorsTable)
       .where(eq(authorsTable.hmSiteId, hmSiteId))
       .orderBy(asc(sql`coalesce(${authorsTable.hmSortOrder}, 999999)`), desc(authorsTable.id));
-    const rows = ownedRows.filter(
-      (r) =>
-        r.hmSortOrder != null ||
-        !shouldHideAuthorOnAnkaraHmSite({
-          siteSlug: site?.slug,
-          siteDomain: site?.domain,
-          authorName: r.name,
-          authorTitle: r.title,
-        }),
-    );
+    const siteSlug = String(site?.slug ?? "")
+      .trim()
+      .toLowerCase();
+    const siteDomain = String(site?.domain ?? "")
+      .trim()
+      .toLowerCase();
+    const isAsgSite = siteSlug === "asg" || siteDomain.includes("ankarasehirgazetesi");
+    const rows = isAsgSite
+      ? ownedRows
+      : ownedRows.filter(
+          (r) =>
+            r.hmSortOrder != null ||
+            !shouldHideAuthorOnAnkaraHmSite({
+              siteSlug: site?.slug,
+              siteDomain: site?.domain,
+              authorName: r.name,
+              authorTitle: r.title,
+            }),
+        );
     if (rows.length === 0) {
       res.json([]);
       return;
