@@ -781,6 +781,62 @@ async function ensureKhSiteRow(sql, row) {
   return next;
 }
 
+/** ankarahabergundemi → ankarasehirgazetesi (asg) yazar listesi; yalnızca authors tablosu. */
+async function repairAsgAuthorsFromAhgOnNeon(sql) {
+  const sourceRows = await sql`
+    SELECT id FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) = 'ankarahabergundemi'
+    LIMIT 1
+  `;
+  const targetRows = await sql`
+    SELECT id FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) = 'asg'
+    LIMIT 1
+  `;
+  const sourceSiteId = sourceRows?.[0]?.id;
+  const targetSiteId = targetRows?.[0]?.id;
+  if (!sourceSiteId || !targetSiteId) return;
+
+  const sourceAuthors = await sql`
+    SELECT id, name, title, avatar_url, bio, hm_sort_order
+    FROM authors
+    WHERE hm_site_id = ${sourceSiteId} AND hm_sort_order IS NOT NULL
+    ORDER BY hm_sort_order ASC, id DESC
+  `;
+  const seen = new Set();
+  const canonical = [];
+  for (const row of sourceAuthors || []) {
+    const key = String(row.name ?? "")
+      .trim()
+      .toLocaleLowerCase("tr-TR")
+      .replace(/\s+/g, " ");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    canonical.push(row);
+  }
+  if (!canonical.length) return;
+
+  await sql`UPDATE news SET author_id = NULL WHERE site_id = ${targetSiteId}`.catch(() => undefined);
+  await sql`UPDATE hm_makaleler SET author_id = NULL WHERE site_id = ${targetSiteId}`.catch(() => undefined);
+  await sql`DELETE FROM authors WHERE hm_site_id = ${targetSiteId}`;
+
+  for (const row of canonical) {
+    await sql`
+      INSERT INTO authors (name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash)
+      VALUES (
+        ${row.name},
+        ${row.title},
+        ${row.avatar_url},
+        ${row.bio},
+        ${targetSiteId},
+        ${row.hm_sort_order},
+        NULL,
+        NULL
+      )
+    `;
+  }
+}
+
 export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   const binding = matchBrandBinding({ domain, slug });
   if (!binding) return null;
@@ -797,6 +853,15 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       await repairSuDomainOnNeon(sql);
     } catch (err) {
       console.error("[hm-brand-db-ensure] su domain repair", String(err?.message || err).slice(0, 240));
+    }
+  }
+
+  // ASG: ankarahabergundemi yazarlarını kopyala (yalnızca authors)
+  if (binding.slug === "asg" || host.includes("ankarasehirgazetesi")) {
+    try {
+      await repairAsgAuthorsFromAhgOnNeon(sql);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] asg authors repair", String(err?.message || err).slice(0, 240));
     }
   }
 
