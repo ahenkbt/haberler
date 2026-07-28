@@ -206,6 +206,23 @@ export default function HaberSiteleri() {
   });
 
   const sites = data?.items ?? [];
+
+  /** Aynı e-posta birden fazla sitede aktif — VKD+KH karışıklığı uyarısı */
+  const duplicateEditorEmails = useMemo(() => {
+    const byEmail = new Map<string, Array<{ siteId: number; siteName: string }>>();
+    for (const site of sites) {
+      for (const ed of site.editors ?? []) {
+        if (ed.isActive === false) continue;
+        const em = ed.email.trim().toLowerCase();
+        if (!em.includes("@") || em === "sehirgazetesiankara@gmail.com") continue;
+        const arr = byEmail.get(em) ?? [];
+        arr.push({ siteId: site.id, siteName: site.displayName || site.slug });
+        byEmail.set(em, arr);
+      }
+    }
+    return [...byEmail.entries()].filter(([, rows]) => rows.length > 1);
+  }, [sites]);
+
   const filteredSites = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr-TR");
     const list = !q
@@ -384,8 +401,37 @@ export default function HaberSiteleri() {
             >
               {repairing === "/api/hm/admin/repair-hm-site-id-collisions" ? "Onarılıyor…" : "Site ID onar"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
+              onClick={() =>
+                void runAdminRepair("/api/hm/admin/repair-editor-cross-site", "Çift editör e-posta onarımı")
+              }
+            >
+              {repairing === "/api/hm/admin/repair-editor-cross-site" ? "Onarılıyor…" : "Çift e-posta onar"}
+            </Button>
           </div>
         </div>
+
+        {duplicateEditorEmails.length > 0 ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p className="font-bold">Çift editör e-postası tespit edildi</p>
+            <p className="mt-1 text-xs text-amber-900">
+              Aynı e-posta birden fazla haber sitesinde kayıtlı; girişte site karışıklığı ve otomatik çıkış yapabilir.
+              «Çift e-posta onar» ile fazla kayıtlar pasifleştirilir (Kırşehir için kevser@gmail.com yalnızca Site
+              #19&apos;da kalır).
+            </p>
+            <ul className="mt-2 list-disc pl-5 text-xs">
+              {duplicateEditorEmails.map(([email, rows]) => (
+                <li key={email}>
+                  <code>{email}</code> → {rows.map((r) => `${r.siteName} (#${r.siteId})`).join(", ")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">

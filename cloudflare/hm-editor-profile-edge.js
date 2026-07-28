@@ -121,7 +121,7 @@ async function mintEditorJwtWithSecretBytes(key, editorId, siteId) {
   return new SignJWT({ typ: JWT_TYP, eid, sid, v: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("5m")
+    .setExpirationTime(JWT_TTL)
     .sign(key);
 }
 
@@ -519,6 +519,8 @@ async function syncSharedCredentials(sql, opts) {
     .trim()
     .toLowerCase();
   if (!email.includes("@")) return 0;
+  // Yalnızca ASG+AHB ortak hesabı — diğer e-postalar site başına bağımsız.
+  if (email !== "sehirgazetesiankara@gmail.com") return 0;
   const excludeId = Number(opts.excludeEditorId) || 0;
   const peers = await sql`
     SELECT id, username, display_name, email FROM hm_site_editors

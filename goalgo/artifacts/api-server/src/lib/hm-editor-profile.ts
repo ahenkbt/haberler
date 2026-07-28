@@ -5,6 +5,7 @@ import {
   getNewsDbForRead,
   hmSiteEditorsTable,
 } from "@workspace/db";
+import { isHmCrossSiteSharedEditorEmail } from "./hm-editor-shared-email.js";
 
 let usernameColumnPromise: Promise<void> | null = null;
 
@@ -45,7 +46,7 @@ export function isHmEditorLoginEmail(raw: string): boolean {
   return raw.includes("@");
 }
 
-/** Aynı e-postalı tüm site editörlerinde şifre / kullanıcı adı / görünen ad senkronu. */
+/** Aynı e-postalı ortak hesaplarda (ASG+AHB) şifre / kullanıcı adı / görünen ad senkronu. */
 export async function syncSharedHmEditorCredentials(opts: {
   email: string;
   excludeEditorId?: number;
@@ -55,7 +56,7 @@ export async function syncSharedHmEditorCredentials(opts: {
   nextEmail?: string;
 }): Promise<number> {
   const email = String(opts.email ?? "").trim().toLowerCase();
-  if (!email.includes("@")) return 0;
+  if (!email.includes("@") || !isHmCrossSiteSharedEditorEmail(email)) return 0;
   const patch: Partial<typeof hmSiteEditorsTable.$inferInsert> = { updatedAt: new Date() };
   if (typeof opts.passwordHash === "string" && opts.passwordHash) patch.passwordHash = opts.passwordHash;
   if (opts.username !== undefined) patch.username = opts.username;

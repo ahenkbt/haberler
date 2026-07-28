@@ -143,6 +143,10 @@ import {
   repairKhEditorMisassignment,
 } from "../lib/hm-kh-editor-repair.js";
 import {
+  assertHmEditorEmailAllowedForSite,
+  repairHmEditorCrossSiteEmailConflicts,
+} from "../lib/hm-editor-cross-site-repair.js";
+import {
   ensureHmSiteEditorUsernameColumn,
   isHmEditorLoginEmail,
   normalizeHmEditorUsername,
@@ -1349,6 +1353,13 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         res.status(400).json({ error: "Editör bu siteye ait değil veya bulunamadı" });
         return;
       }
+      if (typeof b.editorEmail === "string") {
+        const emailCheck = await assertHmEditorEmailAllowedForSite(b.editorEmail, id, editorId);
+        if (!emailCheck.ok) {
+          res.status(409).json({ error: emailCheck.error });
+          return;
+        }
+      }
       const ePatch: Partial<typeof hmSiteEditorsTable.$inferInsert> = {};
       if (typeof b.editorDisplayName === "string") ePatch.displayName = b.editorDisplayName.trim() || null;
       if (typeof b.editorEmail === "string") ePatch.email = b.editorEmail.trim().toLowerCase();
@@ -1363,6 +1374,11 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       const em = String(b.editorEmail ?? "")
         .trim()
         .toLowerCase();
+      const emailCheck = await assertHmEditorEmailAllowedForSite(em, id);
+      if (!emailCheck.ok) {
+        res.status(409).json({ error: emailCheck.error });
+        return;
+      }
       const hash = await bcrypt.hash(String(b.editorPassword), 10);
       const [existingOnSite] = await newsReadDb()
         .select({ id: hmSiteEditorsTable.id })
@@ -1975,6 +1991,29 @@ router.post("/hm/admin/repair-kh-editor", async (req, res): Promise<void> => {
         result.action === "synced"
           ? `KH editör onarım: ${result.moved.map((m) => `${m.email} (#${m.fromSiteId}→${m.toEditorId})`).join(", ")}`
           : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: aynı e-postanın birden fazla sitede aktif olması (VKD+KH vb.) — fazlalıkları pasifleştirir. */
+router.post("/hm/admin/repair-editor-cross-site", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await repairHmEditorCrossSiteEmailConflicts();
+    res.json({
+      ...result,
+      ok: result.ok,
+      message:
+        result.deactivated.length > 0
+          ? `${result.deactivated.length} çift editör kaydı pasifleştirildi: ${result.deactivated
+              .map((d) => `${d.email}@#${d.siteId}`)
+              .join(", ")}`
+          : result.detail || "çakışma yok",
     });
   } catch (e) {
     res.status(500).json({

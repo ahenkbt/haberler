@@ -43,6 +43,7 @@ import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
 import { repairKhEditorMisassignment } from "./lib/hm-kh-editor-repair.js";
+import { repairHmEditorCrossSiteEmailConflicts } from "./lib/hm-editor-cross-site-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
 import { ensureHmNewsSiteWritableColumns } from "./lib/hm-site-compat.js";
 import { seedEcommerceProductCategoriesIfNeeded } from "./lib/ecommerce-product-categories.js";
@@ -450,6 +451,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_900).unref();
   } else {
     logger.info("[hm-kh-editor] HM_KH_EDITOR_REPAIR=0 — atlandı");
+  }
+
+  // Aynı e-postanın VKD+KH gibi birden fazla sitede aktif olması — fazlalıkları pasifleştir
+  if (envJobFlag("HM_EDITOR_CROSS_SITE_REPAIR", true)) {
+    setTimeout(() => {
+      void repairHmEditorCrossSiteEmailConflicts()
+        .then((r) => logger.info({ ...r }, "[hm-editor-cross-site] çakışma onarım"))
+        .catch((err) => logger.error({ err }, "[hm-editor-cross-site] onarım başarısız"));
+    }, 18_000).unref();
+  } else {
+    logger.info("[hm-editor-cross-site] HM_EDITOR_CROSS_SITE_REPAIR=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).
