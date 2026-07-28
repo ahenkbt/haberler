@@ -260,17 +260,26 @@ export async function repairAsgEditorMisassignmentOnNeon(env) {
   }
 
   const sites = await sql`
-    SELECT id, slug, display_name FROM hm_news_sites
-    WHERE lower(trim(both '/' from slug)) IN ('asg', 'ankarahabergundemi')
+    SELECT id, slug, display_name, domain, domain2, domain3 FROM hm_news_sites
+    WHERE active = true
+      AND (
+        lower(trim(both '/' from slug)) IN ('asg', 'ankarahabergundemi')
+        OR lower(coalesce(domain, '')) LIKE '%ankarasehirgazetesi%'
+        OR lower(coalesce(domain2, '')) LIKE '%ankarasehirgazetesi%'
+        OR lower(coalesce(domain3, '')) LIKE '%ankarasehirgazetesi%'
+        OR lower(coalesce(domain, '')) LIKE '%ankarahabergundemi%'
+        OR lower(coalesce(domain2, '')) LIKE '%ankarahabergundemi%'
+        OR lower(coalesce(domain3, '')) LIKE '%ankarahabergundemi%'
+      )
     ORDER BY id ASC
   `;
   if (!sites?.length) return { ok: false, reason: "sites-missing" };
 
   const src = await sql`
-    SELECT id, email, password_hash, display_name, is_active, site_id
+    SELECT id, email, password_hash, display_name, is_active, site_id, updated_at
     FROM hm_site_editors
     WHERE lower(email) = ${EMAIL} AND is_active = true
-    ORDER BY id ASC
+    ORDER BY updated_at DESC NULLS LAST, id DESC
     LIMIT 1
   `;
   const row = src?.[0];

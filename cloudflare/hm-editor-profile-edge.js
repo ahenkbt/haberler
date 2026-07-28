@@ -288,6 +288,154 @@ async function repairKhEditorForLogin(sql, emailRaw, khSiteId) {
   return fixed?.[0] ?? null;
 }
 
+const ASG_SHARED_EMAIL = "sehirgazetesiankara@gmail.com";
+const ASG_SHARED_USERNAME = "sehirgazetesi";
+
+function isAsgSharedEditorEmail(emailRaw) {
+  return String(emailRaw ?? "")
+    .trim()
+    .toLowerCase() === ASG_SHARED_EMAIL;
+}
+
+function isAsgHmSiteRow(site) {
+  const slug = String(site?.slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  if (
+    slug === "asg" ||
+    slug === "ankarahabergundemi" ||
+    slug.includes("ankarasehirgazetesi") ||
+    slug.includes("ankarahabergundemi")
+  ) {
+    return true;
+  }
+  for (const raw of [site?.domain, site?.domain2, site?.domain3]) {
+    const h = normalizeHost(raw);
+    if (h.includes("ankarasehirgazetesi") || h.includes("ankarahabergundemi")) return true;
+  }
+  return false;
+}
+
+async function repairAsgEditorForLoginEdge(sql, emailRaw, siteId) {
+  const email = String(emailRaw ?? "")
+    .trim()
+    .toLowerCase();
+  if (!isAsgSharedEditorEmail(email)) return null;
+
+  const sites = await sql`
+    SELECT id, slug, display_name, domain, domain2, domain3 FROM hm_news_sites
+    WHERE active = true
+      AND (
+        lower(trim(both '/' from slug)) IN ('asg', 'ankarahabergundemi')
+        OR lower(coalesce(domain, '')) LIKE '%ankarasehirgazetesi%'
+        OR lower(coalesce(domain2, '')) LIKE '%ankarasehirgazetesi%'
+        OR lower(coalesce(domain3, '')) LIKE '%ankarasehirgazetesi%'
+        OR lower(coalesce(domain, '')) LIKE '%ankarahabergundemi%'
+        OR lower(coalesce(domain2, '')) LIKE '%ankarahabergundemi%'
+        OR lower(coalesce(domain3, '')) LIKE '%ankarahabergundemi%'
+      )
+    ORDER BY id ASC
+  `;
+  if (!sites?.length) return null;
+
+  const srcRows = await sql`
+    SELECT id, email, password_hash, display_name, username, site_id, updated_at
+    FROM hm_site_editors
+    WHERE lower(email) = ${email} AND is_active = true
+    ORDER BY updated_at DESC NULLS LAST, id DESC
+    LIMIT 1
+  `;
+  const source = srcRows?.[0];
+  if (!source?.password_hash) return null;
+
+  for (const site of sites) {
+    const display =
+      String(site.slug || "").toLowerCase() === "asg"
+        ? "Ankara Şehir Gazetesi"
+        : source.display_name || site.display_name || "Editör";
+    const existing = await sql`
+      SELECT id FROM hm_site_editors
+      WHERE site_id = ${site.id} AND lower(email) = ${email}
+      LIMIT 1
+    `;
+    if (existing?.[0]?.id) {
+      await sql`
+        UPDATE hm_site_editors
+        SET password_hash = ${source.password_hash},
+            username = ${ASG_SHARED_USERNAME},
+            display_name = ${display},
+            is_active = true,
+            updated_at = now()
+        WHERE id = ${existing[0].id}
+      `;
+    } else {
+      await sql`
+        INSERT INTO hm_site_editors (site_id, email, username, password_hash, display_name, is_active)
+        VALUES (${site.id}, ${email}, ${ASG_SHARED_USERNAME}, ${source.password_hash}, ${display}, true)
+      `;
+    }
+  }
+
+  const onSite = await sql`
+    SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+    FROM hm_site_editors
+    WHERE site_id = ${siteId} AND lower(email) = ${email} AND is_active = true
+    LIMIT 1
+  `;
+  return onSite?.[0] ?? null;
+}
+
+async function tryAsgSharedPasswordLogin(sql, emailRaw, password, siteId) {
+  const email = String(emailRaw ?? "")
+    .trim()
+    .toLowerCase();
+  if (!isAsgSharedEditorEmail(email) || !password) return false;
+
+  const peers = await sql`
+    SELECT id, site_id, password_hash
+    FROM hm_site_editors
+    WHERE lower(email) = ${email} AND is_active = true
+  `;
+  let matchedHash = null;
+  for (const peer of peers || []) {
+    if (!peer.password_hash) continue;
+    if (await bcrypt.compare(password, peer.password_hash)) {
+      matchedHash = peer.password_hash;
+      break;
+    }
+  }
+  if (!matchedHash) return false;
+
+  for (const peer of peers || []) {
+    if (peer.password_hash === matchedHash) continue;
+    await sql`
+      UPDATE hm_site_editors
+      SET password_hash = ${matchedHash},
+          username = ${ASG_SHARED_USERNAME},
+          is_active = true,
+          updated_at = now()
+      WHERE id = ${peer.id}
+    `;
+  }
+  const onSite = (peers || []).find((p) => Number(p.site_id) === Number(siteId));
+  if (!onSite) {
+    await repairAsgEditorForLoginEdge(sql, email, siteId);
+    return true;
+  }
+  if (onSite.password_hash !== matchedHash) {
+    await sql`
+      UPDATE hm_site_editors
+      SET password_hash = ${matchedHash},
+          username = ${ASG_SHARED_USERNAME},
+          is_active = true,
+          updated_at = now()
+      WHERE id = ${onSite.id}
+    `;
+  }
+  return true;
+}
+
 /**
  * Kenar JWT + Neon: tema/modül/sayfa/menü kaydı (tüm HM editör siteleri).
  * Render secret/DB ayrışınca 401 olmasın diye Neon'a yazılır.
@@ -723,8 +871,13 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
       if (repaired?.password_hash) editor = repaired;
     }
   }
+  if (!editor?.password_hash && loginIsEmail && isAsgSharedEditorEmail(loginRaw) && isAsgHmSiteRow(site)) {
+    const repaired = await repairAsgEditorForLoginEdge(sql, loginRaw, site.id);
+    if (repaired?.password_hash) editor = repaired;
+  }
   if (!editor?.password_hash) {
     if (loginIsEmail) {
+      if (!isAsgSharedEditorEmail(loginRaw)) {
       const elsewhere = await sql`
         SELECT e.site_id, s.display_name, s.domain, s.slug
         FROM hm_site_editors e
@@ -745,11 +898,19 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
             : "E-posta, kullanıcı adı veya şifre hatalı",
         });
       }
+      }
     }
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 
-  const pwOk = await bcrypt.compare(password, editor.password_hash);
+  let pwOk = await bcrypt.compare(password, editor.password_hash);
+  if (!pwOk && isAsgSharedEditorEmail(editor.email)) {
+    pwOk = await tryAsgSharedPasswordLogin(sql, editor.email, password, site.id);
+    if (pwOk) {
+      const refreshed = await repairAsgEditorForLoginEdge(sql, editor.email, site.id);
+      if (refreshed?.password_hash) editor = refreshed;
+    }
+  }
   if (!pwOk) {
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }

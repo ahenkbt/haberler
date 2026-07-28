@@ -136,7 +136,12 @@ import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
 import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
-import { repairAsgEditorMisassignment } from "../lib/hm-asg-editor-repair.js";
+import {
+  isAsgHmNewsSiteRow,
+  repairAsgEditorForLogin,
+  repairAsgEditorMisassignment,
+  tryHmSharedEditorLoginPassword,
+} from "../lib/hm-asg-editor-repair.js";
 import {
   isKhNewsSiteRow,
   repairKhEditorForLogin,
@@ -146,6 +151,7 @@ import {
   assertHmEditorEmailAllowedForSite,
   repairHmEditorCrossSiteEmailConflicts,
 } from "../lib/hm-editor-cross-site-repair.js";
+import { isHmCrossSiteSharedEditorEmail } from "../lib/hm-editor-shared-email.js";
 import {
   ensureHmSiteEditorUsernameColumn,
   isHmEditorLoginEmail,
@@ -1369,6 +1375,12 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       if (Object.keys(ePatch).length > 0) {
         ePatch.updatedAt = new Date();
         await dualWriteUpdate(hmSiteEditorsTable, ePatch, eq(hmSiteEditorsTable.id, editorId));
+        if (ePatch.passwordHash && isHmCrossSiteSharedEditorEmail(ed.email)) {
+          await syncSharedHmEditorCredentials({
+            email: ed.email,
+            passwordHash: ePatch.passwordHash,
+          }).catch(() => 0);
+        }
       }
     } else if (wantsEditorCreate) {
       const em = String(b.editorEmail ?? "")
@@ -1399,8 +1411,11 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
           },
           eq(hmSiteEditorsTable.id, existingOnSite.id),
         );
+        if (isHmCrossSiteSharedEditorEmail(em)) {
+          await syncSharedHmEditorCredentials({ email: em, passwordHash: hash }).catch(() => 0);
+        }
       } else {
-        await dualWriteInsert(hmSiteEditorsTable, {
+        const [created] = await dualWriteInsert(hmSiteEditorsTable, {
           siteId: id,
           email: em,
           passwordHash: hash,
@@ -1410,6 +1425,9 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
               : null,
           isActive: true,
         });
+        if (created && isHmCrossSiteSharedEditorEmail(em)) {
+          await syncSharedHmEditorCredentials({ email: em, passwordHash: hash }).catch(() => 0);
+        }
       }
     }
 
@@ -2593,9 +2611,16 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
   if (!editor && loginIsEmail && isKhNewsSiteRow(site)) {
     editor = (await repairKhEditorForLogin(loginRaw, site.id)) ?? undefined;
   }
+  if (!editor && loginIsEmail && isHmCrossSiteSharedEditorEmail(loginRaw) && isAsgHmNewsSiteRow(site)) {
+    editor = (await repairAsgEditorForLogin(loginRaw, site.id)) ?? undefined;
+  }
   if (!editor) {
     if (loginIsEmail) {
-      // Aynı e-posta başka HM sitesindeyse yönlendirici mesaj (şifre sızdırmaz).
+      if (isHmCrossSiteSharedEditorEmail(loginRaw) && isAsgHmNewsSiteRow(site)) {
+        editor = (await repairAsgEditorForLogin(loginRaw, site.id)) ?? undefined;
+      }
+      if (!editor) {
+      // Aynı e-posta başka HM sitesindeyse yönlendirici mesaj (ortak ASG hesabı hariç).
       const [elsewhere] = await newsReadDb()
         .select({
           siteId: hmSiteEditorsTable.siteId,
@@ -2606,7 +2631,7 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
           and(sql`lower(${hmSiteEditorsTable.email}) = ${loginRaw}`, eq(hmSiteEditorsTable.isActive, true)),
         )
         .limit(1);
-      if (elsewhere?.siteId && elsewhere.siteId !== site.id) {
+      if (elsewhere?.siteId && elsewhere.siteId !== site.id && !isHmCrossSiteSharedEditorEmail(loginRaw)) {
         const other = await getHmNewsSiteByIdCompat(elsewhere.siteId);
         const otherHost = normalizeDomain(other?.domain ?? null) || other?.slug || "";
         res.status(401).json({
@@ -2616,9 +2641,12 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
         });
         return;
       }
+      }
     }
-    res.status(401).json({ error: "E-posta, kullanıcı adı veya şifre hatalı" });
-    return;
+    if (!editor) {
+      res.status(401).json({ error: "E-posta, kullanıcı adı veya şifre hatalı" });
+      return;
+    }
   }
   let ok = await bcrypt.compare(password, editor.passwordHash);
   if (!ok && getNewsDbReadMode() === "news") {
@@ -2626,6 +2654,13 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
     if (synced) {
       editor = synced;
       ok = true;
+    }
+  }
+  if (!ok && isHmCrossSiteSharedEditorEmail(editor.email)) {
+    ok = await tryHmSharedEditorLoginPassword(editor.email, password, site.id);
+    if (ok) {
+      const repaired = await repairAsgEditorForLogin(editor.email, site.id);
+      if (repaired) editor = repaired;
     }
   }
   if (!ok) {
