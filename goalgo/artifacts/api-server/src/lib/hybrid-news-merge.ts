@@ -23,6 +23,7 @@ import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
 import { newsRowVisibleOnHmSiteByRssTarget } from "./rss-campaign-target.js";
 import { sanitizeCumhaRssSpot } from "./rssCumhaExclude.js";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
+import { suSiteNewsScopeCondition } from "./hm-su-domain-repair.js";
 import { sanitizeDisplayText } from "./sanitizeDisplayText.js";
 import { serializeNewsListItem, newsListSelectFields, type NewsContext, type SerializedNewsListItem } from "./serializers.js";
 import { normalizePublicMediaUrl } from "./normalizePublicMediaUrl.js";
@@ -552,7 +553,7 @@ export async function loadHmSiteDbNews(opts: {
   publicFreshnessWindow?: boolean;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   await ensureNewsPublicSubmissionColumns();
-  const conds: SQL[] = [eq(newsTable.status, "published"), eq(newsTable.siteId, opts.siteId)];
+  const conds: SQL[] = [eq(newsTable.status, "published"), suSiteNewsScopeCondition(opts.siteId)];
   if (opts.publicFreshnessWindow === true) {
     conds.push(gte(newsTable.createdAt, new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS)));
   }
