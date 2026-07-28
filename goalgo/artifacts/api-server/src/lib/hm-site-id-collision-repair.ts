@@ -29,6 +29,9 @@ function normSlug(raw: unknown): string {
     .replace(/^\/+|\/+$/g, "");
 }
 
+/** Su Haber kanonik site id — çakışmada asla başka id'ye taşınmaz. */
+const SU_CANONICAL_SITE_ID = 2;
+
 /** Bilinen “kök” siteler — id’leri koru; çakışan yenileri taşı. */
 const KEEP_SLUG_PRIORITY = new Set([
   "su",
@@ -154,12 +157,17 @@ async function repairOneDb(opts: {
 
   for (const [id, group] of byId) {
     if (group.length < 2) continue;
-    const keep =
-      group.find((r) => KEEP_SLUG_PRIORITY.has(normSlug(r.slug))) ?? group[0];
+    const suAtCanonical =
+      id === SU_CANONICAL_SITE_ID && group.some((r) => normSlug(r.slug) === "su");
+    const keep = suAtCanonical
+      ? group.find((r) => normSlug(r.slug) === "su")!
+      : group.find((r) => KEEP_SLUG_PRIORITY.has(normSlug(r.slug))) ?? group[0];
     for (const row of group) {
       if (row === keep) continue;
       const slug = normSlug(row.slug);
       if (!slug) continue;
+      // /tr/su editör haberleri siteId=2'de — su satırını asla yeni id'ye taşıma.
+      if (slug === "su" || slug === "suhaber") continue;
       maxId += 1;
       const toId = maxId;
       await reassignSiteId({ fromId: id, toId, slug, dryRun, writeSql });

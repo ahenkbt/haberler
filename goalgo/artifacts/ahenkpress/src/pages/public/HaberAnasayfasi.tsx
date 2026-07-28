@@ -4279,9 +4279,14 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     // Manşet (hero) önce yer kaplar; lead-pack aynı dedupe havuzunu manşetten SONRA kullanmalı.
     // Bu yüzden burada rememberModuleItems çağırmıyoruz — hero render sırasında claim eder.
     const leadPackBasePool = sortNewsByRecency(
-      mergeUniqueNews(latestNewsPool, bandNewsItems, allItems, classicLatestMini, headlineRest.slice(4)).filter(
-        isHeadlineFreshEnough,
-      ),
+      mergeUniqueNews(
+        latestNewsPool,
+        bandNewsItems,
+        allItems,
+        hybridBandItems,
+        classicLatestMini,
+        headlineRest.slice(4),
+      ).filter(isHeadlineFreshEnough),
     );
     // Slider manşetindeki haberleri lead-pack'ten düş (sol/sağ manşet kartları da hero tarafında ayrı seçilir).
     const leadPackPoolExcludingSlider = excludeHeadlineSliderItems(
@@ -4304,11 +4309,19 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const leadPackRightCover = filterNewsItemsWithCoverImage(
       leadPackPoolExcludingSlider.filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? ""))),
     ).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
+    const leadPackRightFallback =
+      leadPackRightCover.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
+        ? leadPackRightCover
+        : filterNewsItemsWithCoverImage(
+            mergeUniqueNews(hybridBandItems, hybridMansetRssItems, leadPackPoolExcludingSlider),
+          )
+            .filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? "")))
+            .slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
     const leadPackColumns = {
       left: leadPackColumnsRaw.left,
       right:
-        leadPackRightCover.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
-          ? leadPackRightCover
+        leadPackRightFallback.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
+          ? leadPackRightFallback
           : leadPackColumnsRaw.right.slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
     };
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
@@ -4538,7 +4551,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                         </div>
                       ) : (
                         <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
-                          {featuredCategorySlug ? "Bu kategoride kart gösterilecek haber yok." : "Son haberler yükleniyor…"}
+                          {featuredCategorySlug
+                            ? "Bu kategoride kart gösterilecek haber yok."
+                            : leadPackColumns.left.length > 0
+                              ? "Görselli kart için uygun haber bulunamadı."
+                              : homeNewsBootstrapping
+                                ? "Son haberler yükleniyor…"
+                                : "Henüz haber yok."}
                         </div>
                       )}
                     </div>
