@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, and, eq, isNull, or, ilike, type SQL } from "drizzle-orm";
 import {
   db,
   getNewsDbForPrimaryWrite,
@@ -6,12 +6,33 @@ import {
   getNewsDbInstance,
   isNewsDatabaseConfigured,
   newsDb,
+  newsTable,
 } from "@workspace/db";
 
 /** Eski belediyehizmet/Kırşehir satırı — editör haberleri siteId=2'de. */
 export const SU_CANONICAL_SITE_ID = 2;
 
 export const SU_DEFAULT_EDITOR_EMAIL = "editor@suhaberajansi.com";
+
+/** Su Haber: site_id kopmuş manuel/manşet haberleri vitrinde göster (onarım tamamlanana kadar). */
+export function suSiteNewsScopeCondition(siteId: number): SQL {
+  if (siteId !== SU_CANONICAL_SITE_ID) return eq(newsTable.siteId, siteId);
+  const localUpload = or(
+    ilike(newsTable.imageUrl, "%/api/media/uploads/%"),
+    ilike(newsTable.imageUrl, "/api/media/uploads/%"),
+  )!;
+  const suOrphan = and(
+    isNull(newsTable.siteId),
+    or(
+      eq(newsTable.isEditorManual, true),
+      eq(newsTable.isFeatured, true),
+      eq(newsTable.isBreaking, true),
+      eq(newsTable.isSiteManset, true),
+    ),
+    localUpload,
+  )!;
+  return or(eq(newsTable.siteId, siteId), suOrphan)!;
+}
 
 export type SuDomainRepairResult = {
   dryRun: boolean;
