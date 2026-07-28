@@ -4,6 +4,8 @@ import { db, getNewsDbInstance, isNewsDatabaseConfigured, newsDb } from "@worksp
 /** Eski belediyehizmet/Kırşehir satırı — editör haberleri siteId=2'de. */
 export const SU_CANONICAL_SITE_ID = 2;
 
+export const SU_DEFAULT_EDITOR_EMAIL = "editor@suhaberajansi.com";
+
 export type SuDomainRepairResult = {
   dryRun: boolean;
   actions: string[];
@@ -27,52 +29,106 @@ async function runOnAllNewsDatabases(query: ReturnType<typeof sql>): Promise<voi
   }
 }
 
+function normSlug(raw: unknown): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+}
+
+function isSuSlug(raw: unknown): boolean {
+  const s = normSlug(raw);
+  return s === "su" || s === "suhaber";
+}
+
+async function nextHmSiteId(): Promise<number> {
+  const maxIdResult = await db.execute(sql`SELECT COALESCE(MAX(id), 1) AS max_id FROM hm_news_sites`);
+  const maxRows = ((maxIdResult as { rows?: unknown[] }).rows ?? []) as Array<{ max_id: number }>;
+  return Number(maxRows[0]?.max_id ?? 0) + 1;
+}
+
 /**
  * Eski belediyehizmet.com sitesi → id=2 /tr/su + suhaberajansi.com.
+ * Çakışma onarımı su'yu başka id'ye taşırsa haberleri siteId=2'de bırakır; burada birleştirir.
  */
 export async function repairSuHaberDomainOwnership(opts?: {
   dryRun?: boolean;
 }): Promise<SuDomainRepairResult> {
   const dryRun = opts?.dryRun === true;
   const actions: string[] = [];
+  const canonicalSiteId = SU_CANONICAL_SITE_ID;
 
-  const suBySlug = await db.execute(sql`
+  const allSu = await db.execute(sql`
     SELECT id, slug FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
     ORDER BY id ASC
-    LIMIT 1
   `);
-  const suRows = ((suBySlug as { rows?: unknown[] }).rows ?? []) as Array<{ id: number }>;
+  const suRows = ((allSu as { rows?: unknown[] }).rows ?? []) as Array<{ id: number; slug: string }>;
+
   const byId2 = await db.execute(sql`
-    SELECT id, slug FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1
+    SELECT id, slug FROM hm_news_sites WHERE id = ${canonicalSiteId} LIMIT 1
   `);
   const id2Rows = ((byId2 as { rows?: unknown[] }).rows ?? []) as Array<{ id: number; slug: string }>;
-  const id2IsSu =
-    id2Rows.length > 0 &&
-    ["su", "suhaber"].includes(
-      String(id2Rows[0]!.slug ?? "")
-        .trim()
-        .toLowerCase()
-        .replace(/^\/+|\/+$/g, ""),
-    );
+  const id2Row = id2Rows[0] ?? null;
 
-  const canonicalSiteId = suRows.length
-    ? Number(suRows[0]!.id)
-    : id2IsSu
-      ? SU_CANONICAL_SITE_ID
-      : null;
-
-  if (!canonicalSiteId) {
+  if (!id2Row && suRows.length === 0) {
     actions.push("no-su-site");
     return { dryRun, actions, canonicalSiteId: null };
   }
-  actions.push(
-    `canonical-su-id=${canonicalSiteId}${canonicalSiteId === SU_CANONICAL_SITE_ID ? " (id-2)" : ""}`,
-  );
+
+  const phantomSuIds = suRows.map((r) => Number(r.id)).filter((id) => id !== canonicalSiteId);
+  actions.push(`target-canonical-id=${canonicalSiteId}`);
+  if (phantomSuIds.length) actions.push(`phantom-su-ids=${phantomSuIds.join(",")}`);
 
   if (dryRun) {
     actions.push("dry-run-skip-writes");
     return { dryRun, actions, canonicalSiteId };
+  }
+
+  // id=2 başka slug'taysa yeni id'ye taşı — su kanonik id=2'yi alsın.
+  if (id2Row && !isSuSlug(id2Row.slug)) {
+    const newId = await nextHmSiteId();
+    const displacedSlug = normSlug(id2Row.slug);
+    await runOnAllNewsDatabases(sql`
+      UPDATE hm_news_sites SET id = ${newId}, updated_at = NOW()
+      WHERE id = ${canonicalSiteId}
+    `);
+    await runOnAllNewsDatabases(sql`
+      UPDATE hm_site_editors SET site_id = ${newId} WHERE site_id = ${canonicalSiteId}
+    `).catch(() => undefined);
+    await runOnAllNewsDatabases(sql`
+      UPDATE news SET site_id = ${newId} WHERE site_id = ${canonicalSiteId}
+    `).catch(() => undefined);
+    await runOnAllNewsDatabases(sql`
+      UPDATE news SET owner_site_id = ${newId} WHERE owner_site_id = ${canonicalSiteId}
+    `).catch(() => undefined);
+    actions.push(`displaced-id-2-slug=${displacedSlug}→id=${newId}`);
+  }
+
+  // Sahte su satırını (ör. id=24) id=2'ye taşı.
+  const suAtCanonical = suRows.some((r) => Number(r.id) === canonicalSiteId);
+  const primaryPhantom = phantomSuIds[0];
+  if (!suAtCanonical && primaryPhantom != null) {
+    await runOnAllNewsDatabases(sql`
+      UPDATE hm_news_sites SET id = ${canonicalSiteId}, updated_at = NOW()
+      WHERE id = ${primaryPhantom}
+    `);
+    actions.push(`reassigned-su-id=${primaryPhantom}→${canonicalSiteId}`);
+  }
+
+  // Kalan sahte su id'lerindeki haber/editörleri kanonik siteye al.
+  for (const phantomId of phantomSuIds) {
+    if (phantomId === primaryPhantom && !suAtCanonical) continue;
+    await runOnAllNewsDatabases(sql`
+      UPDATE news SET site_id = ${canonicalSiteId} WHERE site_id = ${phantomId}
+    `).catch(() => undefined);
+    await runOnAllNewsDatabases(sql`
+      UPDATE news SET owner_site_id = ${canonicalSiteId} WHERE owner_site_id = ${phantomId}
+    `).catch(() => undefined);
+    await runOnAllNewsDatabases(sql`
+      UPDATE hm_site_editors SET site_id = ${canonicalSiteId} WHERE site_id = ${phantomId}
+    `).catch(() => undefined);
+    actions.push(`merged-from-id=${phantomId}`);
   }
 
   await runOnAllNewsDatabases(sql`
@@ -104,7 +160,6 @@ export async function repairSuHaberDomainOwnership(opts?: {
   `);
   actions.push("removed-belediyehizmet-from-all-sites");
 
-  // Kanonik dışından suhaber* temizle (id=2'ye dokunma)
   await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
@@ -136,13 +191,6 @@ export async function repairSuHaberDomainOwnership(opts?: {
   `);
   actions.push("cleared-suhaber-from-other-sites");
 
-  await runOnAllNewsDatabases(sql`
-    DELETE FROM hm_news_sites
-    WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
-      AND id <> ${canonicalSiteId}
-  `);
-  actions.push("deleted-phantom-su-rows");
-
   const suDomains = ["suhaberajansi.com", "www.suhaberajansi.com", "suhaberajansi.com.tr"] as const;
   for (const host of suDomains) {
     await runOnAllNewsDatabases(sql`
@@ -160,6 +208,13 @@ export async function repairSuHaberDomainOwnership(opts?: {
   }
 
   await runOnAllNewsDatabases(sql`
+    DELETE FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
+      AND id <> ${canonicalSiteId}
+  `);
+  actions.push("deleted-phantom-su-rows");
+
+  await runOnAllNewsDatabases(sql`
     UPDATE hm_news_sites
     SET
       slug = 'su',
@@ -171,6 +226,16 @@ export async function repairSuHaberDomainOwnership(opts?: {
         WHEN lower(trim(both from display_name)) LIKE '%kırşehir%' THEN 'Su Haber Ajansı'
         WHEN lower(trim(both from display_name)) LIKE '%kirsehir%' THEN 'Su Haber Ajansı'
         ELSE display_name
+      END,
+      contact_json = CASE
+        WHEN coalesce(contact_json::text, '') IN ('', '{}', 'null')
+          OR coalesce(contact_json->>'email', '') = ''
+        THEN jsonb_build_object(
+          'phone', coalesce(contact_json->>'phone', ''),
+          'email', ${SU_DEFAULT_EDITOR_EMAIL},
+          'address', coalesce(contact_json->>'address', '')
+        )
+        ELSE contact_json
       END,
       active = true,
       updated_at = NOW()

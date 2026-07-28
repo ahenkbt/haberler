@@ -320,15 +320,54 @@ export async function repairAsgEditorMisassignmentOnNeon(env) {
 }
 
 async function repairSuDomainOnNeon(sql) {
-  const id2 = await sql`SELECT id FROM hm_news_sites WHERE id = ${SU_CANONICAL_SITE_ID} LIMIT 1`;
+  const SU_DEFAULT_EMAIL = "editor@suhaberajansi.com";
+  const canonicalId = SU_CANONICAL_SITE_ID;
+
+  const id2 = await sql`SELECT id, slug FROM hm_news_sites WHERE id = ${canonicalId} LIMIT 1`;
   const suRows = await sql`
-    SELECT id FROM hm_news_sites
+    SELECT id, slug FROM hm_news_sites
     WHERE lower(trim(both '/' from slug)) IN ('su', 'suhaber')
     ORDER BY id ASC
-    LIMIT 1
   `;
-  const canonicalId = id2?.[0]?.id || suRows?.[0]?.id;
-  if (!canonicalId) return null;
+  const id2Row = id2?.[0] ?? null;
+  const id2IsSu =
+    id2Row &&
+    ["su", "suhaber"].includes(
+      String(id2Row.slug ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/^\/+|\/+$/g, ""),
+    );
+  const phantomSuIds = (suRows ?? [])
+    .map((r) => Number(r.id))
+    .filter((id) => Number.isFinite(id) && id > 0 && id !== canonicalId);
+
+  if (!id2Row && !(suRows?.length)) return null;
+
+  // id=2 başka slug'taysa yeni id'ye taşı.
+  if (id2Row && !id2IsSu) {
+    const maxRow = await sql`SELECT COALESCE(MAX(id), 1) AS max_id FROM hm_news_sites`;
+    const newId = Number(maxRow?.[0]?.max_id ?? 0) + 1;
+    await sql`UPDATE hm_news_sites SET id = ${newId}, updated_at = NOW() WHERE id = ${canonicalId}`;
+    await sql`UPDATE hm_site_editors SET site_id = ${newId} WHERE site_id = ${canonicalId}`.catch(() => undefined);
+    await sql`UPDATE news SET site_id = ${newId} WHERE site_id = ${canonicalId}`.catch(() => undefined);
+    await sql`UPDATE news SET owner_site_id = ${newId} WHERE owner_site_id = ${canonicalId}`.catch(() => undefined);
+  }
+
+  const primaryPhantom = phantomSuIds[0];
+  if (!id2IsSu && primaryPhantom != null) {
+    await sql`
+      UPDATE hm_news_sites SET id = ${canonicalId}, updated_at = NOW()
+      WHERE id = ${primaryPhantom}
+    `;
+  }
+
+  for (const phantomId of phantomSuIds) {
+    if (phantomId === primaryPhantom && !id2IsSu) continue;
+    await sql`UPDATE news SET site_id = ${canonicalId} WHERE site_id = ${phantomId}`.catch(() => undefined);
+    await sql`UPDATE news SET owner_site_id = ${canonicalId} WHERE owner_site_id = ${phantomId}`.catch(() => undefined);
+    await sql`UPDATE hm_site_editors SET site_id = ${canonicalId} WHERE site_id = ${phantomId}`.catch(() => undefined);
+  }
 
   // belediyehizmet.com tamamen kaldır
   await sql`
@@ -415,6 +454,16 @@ async function repairSuDomainOnNeon(sql) {
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
         ELSE display_name
+      END,
+      contact_json = CASE
+        WHEN coalesce(contact_json::text, '') IN ('', '{}', 'null')
+          OR coalesce(contact_json->>'email', '') = ''
+        THEN jsonb_build_object(
+          'phone', coalesce(contact_json->>'phone', ''),
+          'email', ${SU_DEFAULT_EMAIL},
+          'address', coalesce(contact_json->>'address', '')
+        )
+        ELSE contact_json
       END,
       active = true,
       updated_at = NOW()
