@@ -74,10 +74,8 @@ function filterHubOnlyNavMenuItems(items: HmCorporateNavMenuItem[]): HmCorporate
     });
 }
 
-/** Editörde kayıtlı üst menü — yalnızca kurumsal vitrin temasında. */
+/** Editörde kayıtlı üst menü (hmCorporateMenuItems) — tüm vitrin temalarında geçerli. */
 export function hasConfiguredHmHeaderMenu(layoutPrefs: NewsSiteLayoutPrefs | null | undefined): boolean {
-  const theme = normalizeHmVitrinTheme(layoutPrefs?.hmVitrinTheme);
-  if (theme !== "corporate") return false;
   return (layoutPrefs?.hmCorporateMenuItems ?? []).some(
     (item) => item.enabled !== false && String(item.label ?? "").trim().length > 0,
   );
