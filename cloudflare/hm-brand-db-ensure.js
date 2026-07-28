@@ -482,6 +482,41 @@ async function repairSuDomainOnNeon(sql) {
     /* domain2/domain3 yoksa yoksay */
   }
 
+  // hm_news_sites silinince FK ON DELETE SET NULL → manuel haberler merkez havuzuna düşer.
+  await sql`
+    UPDATE news
+    SET site_id = ${canonicalId}, owner_site_id = COALESCE(owner_site_id, ${canonicalId}), site_only = true, updated_at = NOW()
+    WHERE site_id IS NULL AND status = 'published'
+      AND (
+        coalesce(rss_source_url, '') LIKE 'yekpare-hm-sync:2:%'
+        OR coalesce(rss_source_url, '') LIKE 'yekpare-hm-sync:24:%'
+        OR owner_site_id IN (2, 24)
+      )
+  `.catch(() => undefined);
+  await sql`
+    UPDATE news n
+    SET site_id = ${canonicalId}, owner_site_id = ${canonicalId}, site_only = true, updated_at = NOW()
+    FROM authors a
+    WHERE n.site_id IS NULL AND n.status = 'published'
+      AND n.author_id = a.id AND a.hm_site_id = ${canonicalId}
+  `.catch(() => undefined);
+  await sql`
+    UPDATE news n
+    SET site_id = ${canonicalId}, owner_site_id = ${canonicalId}, site_only = true, updated_at = NOW()
+    FROM news_site_overrides o
+    WHERE n.site_id IS NULL AND n.status = 'published'
+      AND o.site_id = ${canonicalId} AND o.article_id = n.id
+  `.catch(() => undefined);
+  await sql`
+    UPDATE news
+    SET site_id = ${canonicalId}, owner_site_id = ${canonicalId}, site_only = true, updated_at = NOW()
+    WHERE site_id IS NULL AND status = 'published'
+      AND (is_featured = true OR is_site_manset = true OR is_breaking = true OR is_editor_manual = true)
+      AND (coalesce(image_url, '') LIKE '%/api/media/uploads/%' OR coalesce(image_url, '') LIKE '/api/media/uploads/%')
+      AND coalesce(rss_source_url, '') NOT LIKE 'yekpare-hm-sync:%'
+      AND title ~ '[çğıöşüÇĞİÖŞÜ]'
+  `.catch(() => undefined);
+
   return canonicalId;
 }
 

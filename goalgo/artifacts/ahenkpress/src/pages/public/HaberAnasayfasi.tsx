@@ -2169,14 +2169,17 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const authors: any[] = useMemo(() => {
     const d = authorsData as any;
     const raw = Array.isArray(d) ? d : asArray(d?.authors);
+    const sorted = [...raw].sort((a, b) => {
+      const ao = Number(a?.hmSortOrder ?? 9999);
+      const bo = Number(b?.hmSortOrder ?? 9999);
+      if (ao !== bo) return ao - bo;
+      return String(a?.name ?? "").localeCompare(String(b?.name ?? ""), "tr");
+    });
     const out = new Map<string, any>();
-    for (const a of raw) {
-      const key = String(a?.name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+    for (const a of sorted) {
+      const key = String(a?.id ?? a?.name ?? "").trim();
       if (!key) continue;
-      const prev = out.get(key);
-      const prevScore = prev ? (prev.avatarUrl ? 2 : 0) + (prev.latestArticle ? 2 : 0) + (prev.title ? 1 : 0) : -1;
-      const nextScore = (a?.avatarUrl ? 2 : 0) + (a?.latestArticle ? 2 : 0) + (a?.title ? 1 : 0);
-      if (!prev || nextScore > prevScore) out.set(key, a);
+      if (!out.has(key)) out.set(key, a);
     }
     return Array.from(out.values());
   }, [authorsData]);
