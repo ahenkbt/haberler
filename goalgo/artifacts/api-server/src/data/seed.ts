@@ -449,6 +449,17 @@ export async function ensureExtraTables(logger?: { info: (msg: string, obj?: obj
     `);
     log("ensureExtraTables: kesfet_discover_groups / subcategories ready");
 
+    // Eski DB'lerde tablo UNIQUE olmadan oluşmuş olabilir — ON CONFLICT için index zorunlu.
+    await db.execute(sql`
+      DELETE FROM map_feature_placement_pricing a
+      USING map_feature_placement_pricing b
+      WHERE a.placement_key = b.placement_key AND a.ctid > b.ctid
+    `);
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_map_feature_placement_pricing_placement_key
+      ON map_feature_placement_pricing (placement_key)
+    `);
+
     await db.execute(sql`
       INSERT INTO map_feature_placement_pricing (placement_key, label_tr, price_day, price_week, price_month, sort_order)
       VALUES
@@ -569,6 +580,17 @@ export async function ensureDeliveryExtensions(logger?: { info: (msg: string, ob
     `);
     log("ensureDeliveryExtensions: vendor_subcategories, product_templates, combos, options tables ready");
     log("ensureDeliveryExtensions: branch_type, subcategory_id, unit_type columns ready");
+
+    // Eski DB'lerde slug unique yoksa ON CONFLICT çalışmaz.
+    await db.execute(sql`
+      DELETE FROM vendor_categories a
+      USING vendor_categories b
+      WHERE a.slug = b.slug AND a.id > b.id
+    `);
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS vendor_categories_slug_unique
+      ON vendor_categories (slug)
+    `);
 
     /* — Ensure core delivery categories exist — */
     const deliveryCats = [

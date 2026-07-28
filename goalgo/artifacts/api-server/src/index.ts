@@ -383,7 +383,18 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-stale-su-brand] HM_STALE_SU_BRAND_REPAIR=0 — atlandı");
   }
 
-  // /tr/su → suhaberajansi.com (sahte id/slug çiftlerini temizle)
+  // Aynı id’li HM site çakışması (ör. tr + kirsehirhaber id=5) — domain onarımlarından önce
+  if (envJobFlag("HM_SITE_ID_COLLISION_REPAIR", true)) {
+    setTimeout(() => {
+      void repairHmSiteIdCollisions({ dryRun: false })
+        .then((r) => logger.info({ ...r }, "[hm-site-id] çakışma onarım"))
+        .catch((err) => logger.error({ err }, "[hm-site-id] onarım başarısız"));
+    }, 17_000).unref();
+  } else {
+    logger.info("[hm-site-id] HM_SITE_ID_COLLISION_REPAIR=0 — atlandı");
+  }
+
+  // /tr/su → suhaberajansi.com (id çakışması onarımından sonra)
   if (envJobFlag("HM_SU_DOMAIN_REPAIR", true)) {
     setTimeout(() => {
       void repairSuHaberDomainOwnership({ dryRun: false })
@@ -391,20 +402,9 @@ const server = app.listen(port, listenHost, (err) => {
           logger.info({ ...r }, "[hm-su-domain] suhaberajansi.com → /tr/su onarım");
         })
         .catch((err) => logger.error({ err }, "[hm-su-domain] onarım başarısız"));
-    }, 17_000).unref();
-  } else {
-    logger.info("[hm-su-domain] HM_SU_DOMAIN_REPAIR=0 — atlandı");
-  }
-
-  // Aynı id’li HM site çakışması (ör. tr + kirsehirhaber id=5) — panel kaybını önle
-  if (envJobFlag("HM_SITE_ID_COLLISION_REPAIR", true)) {
-    setTimeout(() => {
-      void repairHmSiteIdCollisions({ dryRun: false })
-        .then((r) => logger.info({ ...r }, "[hm-site-id] çakışma onarım"))
-        .catch((err) => logger.error({ err }, "[hm-site-id] onarım başarısız"));
     }, 17_200).unref();
   } else {
-    logger.info("[hm-site-id] HM_SITE_ID_COLLISION_REPAIR=0 — atlandı");
+    logger.info("[hm-su-domain] HM_SU_DOMAIN_REPAIR=0 — atlandı");
   }
 
   // VKD/kurumsal şablon sızıntısı — tüm HM sitelerinde layout_json temizliği
