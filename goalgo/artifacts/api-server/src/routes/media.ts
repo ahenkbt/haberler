@@ -11,6 +11,7 @@ import {
   saveMediaBuffer,
 } from "../lib/mediaUploadService";
 import { migrateMediaToDisk, type MediaMigrateScope } from "../lib/mediaBulkMigrate";
+import { countLocalMediaFiles, migrateMediaVolumeToR2 } from "../lib/mediaR2Migrate";
 import { getMediaStorageMode } from "../lib/mediaStorageConfig";
 import { logger } from "../lib/logger";
 import { getSessionSecret } from "../lib/secrets";
@@ -355,6 +356,51 @@ router.post("/media/migrate-to-disk", async (req, res): Promise<void> => {
     res.status(500).json({
       ok: false,
       error: e instanceof Error ? e.message : "Taşıma başarısız",
+    });
+  }
+});
+
+/**
+ * Render diski / legacy kaynak → Cloudflare R2 toplu taşıma.
+ * DB URL'leri `/api/media/uploads/…` olarak kalır; dosyalar R2'ye kopyalanır.
+ */
+router.post("/media/migrate-to-r2", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
+
+  const body = (req.body ?? {}) as {
+    limit?: number;
+    dryRun?: boolean;
+    includeDbReferenced?: boolean;
+    scanLocalDisk?: boolean;
+  };
+  const limit = Math.min(2000, Math.max(1, Number(body.limit) || 200));
+  const dryRun = body.dryRun === true;
+  const includeDbReferenced = body.includeDbReferenced !== false;
+  const scanLocalDisk = body.scanLocalDisk !== false;
+
+  try {
+    const localCount = await countLocalMediaFiles();
+    const result = await migrateMediaVolumeToR2({
+      limit,
+      dryRun,
+      includeDbReferenced,
+      scanLocalDisk,
+    });
+    res.json({
+      ok: true,
+      mediaRoot: process.env.MEDIA_UPLOAD_ROOT ?? process.env.RENDER_DISK_MOUNT_PATH ?? "(varsayılan)",
+      localFileCount: localCount,
+      s3PublicBaseUrl: process.env.S3_PUBLIC_BASE_URL?.trim() || null,
+      ...result,
+      hint: dryRun
+        ? "dryRun=true — gerçek taşıma için dryRun:false ile tekrar çağırın."
+        : "Kalan dosyalar için limit artırıp tekrar çalıştırın. Yeni yüklemeler doğrudan R2'ye gider.",
+    });
+  } catch (e: unknown) {
+    logger.error({ err: e }, "[media-r2-migrate] failed");
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : "R2 taşıma başarısız",
     });
   }
 });

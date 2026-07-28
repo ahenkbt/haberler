@@ -51,7 +51,7 @@ function legacyMediaOrigin(): string | null {
     if (!t || t === "0" || t === "false" || t === "off") return null;
     return t.replace(/\/+$/, "");
   }
-  return "https://goalgo-production.up.railway.app";
+  return "https://goalgo-y7ze.onrender.com";
 }
 
 export function parseUploadFname(url: string): string | null {

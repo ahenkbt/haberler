@@ -38,14 +38,24 @@ describe("mediaStorageConfig", () => {
     restoreEnv();
   });
 
-  it("Render hosting forces volume mode even when S3 env is set", () => {
+  it("Render hosting uses R2 when MEDIA_STORAGE_MODE=s3 and S3 env is set", () => {
     snapshotEnv();
     clearMediaEnv();
     process.env.RENDER = "true";
-    process.env.S3_BUCKET = "bucket";
+    process.env.MEDIA_STORAGE_MODE = "s3";
+    process.env.S3_BUCKET = "yekpare-media";
     process.env.S3_ACCESS_KEY_ID = "key";
     process.env.S3_SECRET_ACCESS_KEY = "secret";
-    process.env.S3_ENDPOINT = "https://account.r2.cloudflarestorage.com";
+    process.env.S3_ENDPOINT = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+
+    expect(getMediaStorageMode()).toBe("s3");
+    expect(shouldUseS3ForMediaIo()).toBe(true);
+  });
+
+  it("Render hosting falls back to volume when S3 is not configured", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    process.env.RENDER = "true";
 
     expect(getMediaStorageMode()).toBe("volume");
     expect(shouldUseS3ForMediaIo()).toBe(false);

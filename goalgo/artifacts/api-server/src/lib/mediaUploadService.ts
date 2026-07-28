@@ -159,7 +159,7 @@ export async function saveMediaBuffer(
   return { fname, url: publicUploadUrl(fname) };
 }
 
-const DEFAULT_LEGACY_MEDIA_ORIGIN = "https://goalgo-production.up.railway.app";
+const DEFAULT_LEGACY_MEDIA_ORIGIN = "https://goalgo-y7ze.onrender.com";
 
 function legacyMediaOrigin(): string | null {
   const raw = process.env.LEGACY_MEDIA_ORIGIN;
