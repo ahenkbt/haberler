@@ -47,22 +47,33 @@ function asPositiveInt(value) {
   return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
 }
 
+function collectJwtSecretStrings(env) {
+  const out = [];
+  for (const raw of [env?.HM_EDITOR_JWT_SECRET, env?.SESSION_SECRET]) {
+    const s = String(raw ?? "").trim();
+    if (s && !out.includes(s)) out.push(s);
+  }
+  return out;
+}
+
 async function parseEditorJwt(request, env) {
   const { jwtVerify } = await import("jose");
   const h = String(request.headers.get("authorization") || "").trim();
   const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
   if (!token) return null;
-  const key = jwtSecretBytes(env);
-  if (!key) return null;
-  try {
-    const { payload } = await jwtVerify(token, key);
-    const editorId = asPositiveInt(payload?.eid);
-    const siteId = asPositiveInt(payload?.sid);
-    if (payload?.typ !== JWT_TYP || editorId == null || siteId == null) return null;
-    return { editorId, siteId };
-  } catch {
-    return null;
+  for (const secret of collectJwtSecretStrings(env)) {
+    try {
+      const key = new TextEncoder().encode(secret);
+      const { payload } = await jwtVerify(token, key);
+      const editorId = asPositiveInt(payload?.eid);
+      const siteId = asPositiveInt(payload?.sid);
+      if (payload?.typ !== JWT_TYP || editorId == null || siteId == null) continue;
+      return { editorId, siteId };
+    } catch {
+      /* sonraki secret */
+    }
   }
+  return null;
 }
 
 function normalizeHost(raw) {
@@ -1156,6 +1167,14 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   }
 
   if (!path.startsWith("/api/hm/editor/")) return null;
+
+  // Oturumsuz uçlar — profile edge null döndüğünde Render'a düşmeli (login captcha yedek vb.).
+  if (
+    (path === "/api/hm/editor/login" || path === "/api/hm/editor/session-bridge") &&
+    method === "POST"
+  ) {
+    return null;
+  }
 
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
