@@ -521,6 +521,7 @@ export function HmNestedLayout({
   const hidePlatformNavOnVideoTvMobile = isVideoTvPage && isMobileViewport;
   const showNewsFooter =
     !hideFooterProp &&
+    !isVideoTvPage &&
     !showHaritalarEmbed &&
     (isCorporateTheme || layoutPrefs.hmNewsFooterEnabled !== false);
   const stackTopPx = showPlatformNav && !hidePlatformNavOnVideoTvMobile ? APP_NAV_HEIGHT : 0;
