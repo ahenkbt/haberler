@@ -743,6 +743,9 @@ const HM_SITE_ID_KEEP_SLUGS = new Set([
   "vatanhaber",
   "ankarahabergundemi",
   "trafik",
+  "kirsehirhaber",
+  "kirsehir",
+  "kh",
 ]);
 
 function normHmSiteSlug(raw: unknown): string {
@@ -1405,6 +1408,10 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     res.json(finalRow ?? row);
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);
+    if (/hm_site_editors_site_id_email|editör.*zaten|editor.*already/i.test(msg)) {
+      res.status(409).json({ error: "Bu e-posta bu sitede zaten kayıtlı." });
+      return;
+    }
     if (/slug veya domain zaten kayıtlı/i.test(msg) || /unique|duplicate/i.test(msg)) {
       res.status(409).json({ error: "Bu slug veya domain zaten kayıtlı." });
       return;

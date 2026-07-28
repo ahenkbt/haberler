@@ -88,9 +88,14 @@
   }
 
   .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-embed {
-    flex: 1 1 auto;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: var(--hm-video-tv-chrome-height, 3.25rem);
+    flex: none;
     min-height: 0 !important;
-    height: calc(100dvh - var(--hm-video-tv-chrome-height, 3.25rem));
-    max-height: calc(100dvh - var(--hm-video-tv-chrome-height, 3.25rem));
+    height: auto;
+    max-height: none;
   }
 }

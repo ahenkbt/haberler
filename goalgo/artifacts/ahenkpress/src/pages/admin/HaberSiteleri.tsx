@@ -97,30 +97,36 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
         return { ...site, hybridRssEnabled: layout.hybridRssEnabled === true };
       })
     : [];
-  // Aynı slug tekrarını temizle; farklı slug aynı id'de kalır (sunucu onarımı ayrı).
-  const keepSlugs = new Set(["su", "tr", "vkd", "asg", "vatanhaber", "ankarahabergundemi", "trafik"]);
-  const norm = (s: string | null | undefined) =>
-    String(s ?? "")
-      .trim()
-      .toLowerCase()
-      .replace(/^\/+|\/+$/g, "");
-  const bySlug = new Map<string, HmSiteRow>();
-  for (const site of items) {
-    const slug = norm(site.slug);
-    if (!slug) continue;
-    const prev = bySlug.get(slug);
-    if (!prev) {
-      bySlug.set(slug, site);
-      continue;
-    }
-    if (keepSlugs.has(slug) && site.id < prev.id) bySlug.set(slug, site);
-    else if (!keepSlugs.has(slug) && site.id < prev.id) bySlug.set(slug, site);
+  return { items: [...items].sort((a, b) => a.id - b.id) };
+}
+
+/** Form için birincil editör — contact e-postası eşleşen veya ilk aktif kayıt. */
+function primaryHmSiteEditor(site: HmSiteRow | undefined): HmEditor | undefined {
+  if (!site) return undefined;
+  const editors = site.editors ?? [];
+  if (editors.length === 0) return undefined;
+  const contactEmail = site.contact?.email?.trim().toLowerCase();
+  if (contactEmail) {
+    const byContact = editors.find((e) => e.isActive !== false && e.email.trim().toLowerCase() === contactEmail);
+    if (byContact) return byContact;
   }
-  return { items: Array.from(bySlug.values()).sort((a, b) => a.id - b.id) };
+  return editors.find((e) => e.isActive !== false) ?? editors[0];
+}
+
+function editorSummary(site: HmSiteRow): string {
+  const editors = site.editors ?? [];
+  if (!editors.length) return "";
+  return editors
+    .map((e) => {
+      const label = e.displayName?.trim() || e.email;
+      const inactive = e.isActive === false ? " (pasif)" : "";
+      return `${label} <${e.email}>${inactive}`;
+    })
+    .join(" · ");
 }
 
 function formFromSite(site: HmSiteRow): SiteForm {
-  const editor = site.editors?.[0];
+  const editor = primaryHmSiteEditor(site);
   return {
     slug: site.slug ?? "",
     displayName: site.displayName ?? "",
@@ -188,6 +194,7 @@ export default function HaberSiteleri() {
   const [form, setForm] = useState<SiteForm>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [repairing, setRepairing] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -238,7 +245,7 @@ export default function HaberSiteleri() {
     }
     if (editingId) {
       const current = sites.find((s) => s.id === editingId);
-      const hasEditor = Boolean(current?.editors?.[0]?.id);
+      const hasEditor = Boolean(primaryHmSiteEditor(current));
       if (!hasEditor && (!form.editorEmail.trim() || form.editorPassword.length < 8)) {
         toast({
           title: "Bu sitede editör yok",
@@ -253,7 +260,7 @@ export default function HaberSiteleri() {
     try {
       await ensureAdminPanelBootstrap();
       const current = editingId ? sites.find((s) => s.id === editingId) : undefined;
-      const editorId = current?.editors?.[0]?.id;
+      const editorId = primaryHmSiteEditor(current)?.id;
       const r = await apiFetch(apiUrl(editingId ? `/api/hm/sites/${editingId}` : "/api/hm/sites"), {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,6 +284,34 @@ export default function HaberSiteleri() {
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function runAdminRepair(path: string, label: string) {
+    setRepairing(path);
+    try {
+      await ensureAdminPanelBootstrap();
+      const r = await apiFetch(apiUrl(path), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string; ok?: boolean };
+      if (!r.ok) throw new Error(j.error || j.message || "Onarım başarısız");
+      toast({
+        title: label,
+        description: String(j.message ?? "Tamamlandı").slice(0, 480),
+      });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await refetch();
+    } catch (e) {
+      toast({
+        title: `${label} başarısız`,
+        description: String((e as Error)?.message ?? e).slice(0, 480),
+        variant: "destructive",
+      });
+    } finally {
+      setRepairing(null);
     }
   }
 
@@ -329,6 +364,26 @@ export default function HaberSiteleri() {
             <Link href="/admin/hm-kose-ice-aktar" className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
               Köşe İçe Aktar
             </Link>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
+              onClick={() => void runAdminRepair("/api/hm/admin/repair-kh-editor", "Kırşehir editör onarımı")}
+            >
+              {repairing === "/api/hm/admin/repair-kh-editor" ? "Onarılıyor…" : "KH editör onar"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
+              onClick={() =>
+                void runAdminRepair("/api/hm/admin/repair-hm-site-id-collisions", "Site ID çakışma onarımı")
+              }
+            >
+              {repairing === "/api/hm/admin/repair-hm-site-id-collisions" ? "Onarılıyor…" : "Site ID onar"}
+            </Button>
           </div>
         </div>
 
@@ -415,9 +470,14 @@ export default function HaberSiteleri() {
 
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
                 <div className="mb-3 text-xs font-black uppercase tracking-wide text-indigo-700">Editör hesabı</div>
-                {editingId && !sites.find((s) => s.id === editingId)?.editors?.[0] ? (
+                {editingId && !primaryHmSiteEditor(sites.find((s) => s.id === editingId)) ? (
                   <p className="mb-3 text-xs font-semibold text-amber-800">
                     Bu sitede henüz editör yok. E-posta + şifre girip kaydedin; yeni editör oluşturulur.
+                    {(sites.find((s) => s.id === editingId)?.editors?.length ?? 0) > 0 ? (
+                      <span className="block mt-1 text-amber-700">
+                        Not: Bu sitede yalnızca pasif editör kayıtları var — yeni kayıt oluşturulacak.
+                      </span>
+                    ) : null}
                   </p>
                 ) : null}
                 <div className="space-y-3">
@@ -427,7 +487,7 @@ export default function HaberSiteleri() {
                     value={form.editorPassword}
                     onChange={(e) => update("editorPassword", e.target.value)}
                     placeholder={
-                      editingId && sites.find((s) => s.id === editingId)?.editors?.[0]
+                      editingId && primaryHmSiteEditor(sites.find((s) => s.id === editingId))
                         ? "Yeni şifre (boş bırak: değişmesin)"
                         : "En az 8 karakter şifre"
                     }
@@ -502,9 +562,11 @@ export default function HaberSiteleri() {
                           </div>
                           {site.editors?.length ? (
                             <div className="mt-3 text-xs text-gray-500">
-                              Editör: {site.editors.map((e) => e.displayName || e.email).join(", ")}
+                              Editör: {editorSummary(site)}
                             </div>
-                          ) : null}
+                          ) : (
+                            <div className="mt-3 text-xs font-semibold text-amber-700">Editör tanımlı değil</div>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
