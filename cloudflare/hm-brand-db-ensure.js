@@ -508,13 +508,24 @@ async function repairSuDomainOnNeon(sql) {
       AND o.site_id = ${canonicalId} AND o.article_id = n.id
   `.catch(() => undefined);
   await sql`
+    UPDATE news n
+    SET site_id = ${canonicalId}, owner_site_id = ${canonicalId}, site_only = true, updated_at = NOW()
+    FROM categories c
+    WHERE n.site_id IS NULL AND n.status = 'published'
+      AND n.category_id = c.id AND c.exclusive_site_id = ${canonicalId}
+  `.catch(() => undefined);
+  await sql`
+    UPDATE news
+    SET site_id = ${canonicalId}, owner_site_id = ${canonicalId}, site_only = true, updated_at = NOW()
+    WHERE site_id IS NULL AND status = 'published' AND is_editor_manual = true
+      AND (coalesce(image_url, '') LIKE '%/api/media/uploads/%' OR coalesce(image_url, '') LIKE '/api/media/uploads/%')
+  `.catch(() => undefined);
+  await sql`
     UPDATE news
     SET site_id = ${canonicalId}, owner_site_id = ${canonicalId}, site_only = true, updated_at = NOW()
     WHERE site_id IS NULL AND status = 'published'
-      AND (is_featured = true OR is_site_manset = true OR is_breaking = true OR is_editor_manual = true)
+      AND (is_featured = true OR is_site_manset = true OR is_breaking = true)
       AND (coalesce(image_url, '') LIKE '%/api/media/uploads/%' OR coalesce(image_url, '') LIKE '/api/media/uploads/%')
-      AND coalesce(rss_source_url, '') NOT LIKE 'yekpare-hm-sync:%'
-      AND title ~ '[çğıöşüÇĞİÖŞÜ]'
   `.catch(() => undefined);
 
   return canonicalId;

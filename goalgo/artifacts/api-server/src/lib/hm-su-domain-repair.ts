@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { db, getNewsDbInstance, isNewsDatabaseConfigured, newsDb } from "@workspace/db";
+import {
+  db,
+  getNewsDbForPrimaryWrite,
+  getNewsDbForRead,
+  getNewsDbInstance,
+  isNewsDatabaseConfigured,
+  newsDb,
+} from "@workspace/db";
 
 /** Eski belediyehizmet/Kırşehir satırı — editör haberleri siteId=2'de. */
 export const SU_CANONICAL_SITE_ID = 2;
@@ -18,21 +25,24 @@ export type SuOrphanedNewsRepairResult = {
   actions: string[];
 };
 
-async function runOnAllNewsDatabases(query: ReturnType<typeof sql>): Promise<void> {
-  await db.execute(query);
-  if (isNewsDatabaseConfigured && newsDb) {
+async function runOnAllNewsDatabases(query: ReturnType<typeof sql>): Promise<number> {
+  const targets = new Set<typeof db>();
+  targets.add(db);
+  targets.add(getNewsDbForRead() as typeof db);
+  targets.add(getNewsDbForPrimaryWrite() as typeof db);
+  targets.add(getNewsDbInstance() as typeof db);
+  if (isNewsDatabaseConfigured && newsDb) targets.add(newsDb as typeof db);
+
+  let total = 0;
+  for (const target of targets) {
     try {
-      await (newsDb as typeof db).execute(query);
+      const result = await target.execute(query);
+      total += Number((result as { rowCount?: number }).rowCount ?? 0);
     } catch {
       /* mirror best-effort */
     }
   }
-  try {
-    const primary = getNewsDbInstance();
-    if (primary !== db) await primary.execute(query);
-  } catch {
-    /* ignore */
-  }
+  return total;
 }
 
 function normSlug(raw: unknown): string {
@@ -71,21 +81,7 @@ export async function repairSuHaberOrphanedNews(opts?: {
 
   let restored = 0;
   const bump = async (label: string, query: ReturnType<typeof sql>) => {
-    const result = await db.execute(query);
-    if (isNewsDatabaseConfigured && newsDb) {
-      try {
-        await (newsDb as typeof db).execute(query);
-      } catch {
-        /* mirror best-effort */
-      }
-    }
-    try {
-      const primary = getNewsDbInstance();
-      if (primary !== db) await primary.execute(query);
-    } catch {
-      /* ignore */
-    }
-    const n = Number((result as { rowCount?: number }).rowCount ?? 0);
+    const n = await runOnAllNewsDatabases(query);
     if (n > 0) {
       restored += n;
       actions.push(`${label}=${n}`);
@@ -146,7 +142,24 @@ export async function repairSuHaberOrphanedNews(opts?: {
   );
 
   await bump(
-    "editor-manset-local",
+    "category-exclusive",
+    sql`
+      UPDATE news n
+      SET
+        site_id = ${canonicalSiteId},
+        owner_site_id = ${canonicalSiteId},
+        site_only = true,
+        updated_at = NOW()
+      FROM categories c
+      WHERE n.site_id IS NULL
+        AND n.status = 'published'
+        AND n.category_id = c.id
+        AND c.exclusive_site_id = ${canonicalSiteId}
+    `,
+  );
+
+  await bump(
+    "editor-local-upload",
     sql`
       UPDATE news
       SET
@@ -156,13 +169,30 @@ export async function repairSuHaberOrphanedNews(opts?: {
         updated_at = NOW()
       WHERE site_id IS NULL
         AND status = 'published'
-        AND (is_featured = true OR is_site_manset = true OR is_breaking = true OR is_editor_manual = true)
+        AND is_editor_manual = true
         AND (
           coalesce(image_url, '') LIKE '%/api/media/uploads/%'
           OR coalesce(image_url, '') LIKE '/api/media/uploads/%'
         )
-        AND coalesce(rss_source_url, '') NOT LIKE 'yekpare-hm-sync:%'
-        AND title ~ '[çğıöşüÇĞİÖŞÜ]'
+    `,
+  );
+
+  await bump(
+    "manset-local-upload",
+    sql`
+      UPDATE news
+      SET
+        site_id = ${canonicalSiteId},
+        owner_site_id = ${canonicalSiteId},
+        site_only = true,
+        updated_at = NOW()
+      WHERE site_id IS NULL
+        AND status = 'published'
+        AND (is_featured = true OR is_site_manset = true OR is_breaking = true)
+        AND (
+          coalesce(image_url, '') LIKE '%/api/media/uploads/%'
+          OR coalesce(image_url, '') LIKE '/api/media/uploads/%'
+        )
     `,
   );
 
