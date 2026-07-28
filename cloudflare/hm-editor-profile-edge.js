@@ -78,19 +78,19 @@ async function parseEditorJwt(request, env) {
   const h = String(request.headers.get("authorization") || "").trim();
   const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
   if (!token) return null;
-  const key = jwtSecretBytes(env);
-  if (!key) return null;
-  try {
-    const { payload } = await jwtVerify(token, key);
-    const editorId = asPositiveInt(payload?.eid);
-    const siteId = asPositiveInt(payload?.sid);
-    if (payload?.typ !== JWT_TYP || editorId == null || siteId == null) {
-      return null;
+  for (const secret of collectJwtSecretStrings(env)) {
+    try {
+      const key = new TextEncoder().encode(secret);
+      const { payload } = await jwtVerify(token, key);
+      const editorId = asPositiveInt(payload?.eid);
+      const siteId = asPositiveInt(payload?.sid);
+      if (payload?.typ !== JWT_TYP || editorId == null || siteId == null) continue;
+      return { editorId, siteId };
+    } catch {
+      /* sonraki secret */
     }
-    return { editorId, siteId };
-  } catch {
-    return null;
   }
+  return null;
 }
 
 async function signEditorJwt(env, editorId, siteId) {
@@ -1124,17 +1124,17 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
 
   const origin = apiOriginFromEnv(env);
 
-  // 2) Render /api/media/upload — kenarda imzalanmış kısa ömürlü JWT (secret uyuşmazlığı giderilir).
-  const renderUpload = await tryRenderMediaUploadAllTokens(env, origin, body, ctx, bearerToken);
-  if (renderUpload?.ok) return renderUpload.response;
-  if (renderUpload?.errorResponse) return renderUpload.errorResponse;
-  if (renderUpload?.detail) uploadSteps.push(`render:${renderUpload.detail}`);
-
-  // 3) HMAC köprüsü → Render /api/media/upload (veya edge-upload) — JWT secret gerekmez.
+  // 2) HMAC köprüsü — JWT secret uyuşmazlığında en güvenilir Render yolu.
   const bridgeUpload = await fetchRenderMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin);
   if (bridgeUpload?.ok && bridgeUpload.response) return bridgeUpload.response;
   if (bridgeUpload?.response) return bridgeUpload.response;
   if (bridgeUpload?.detail) uploadSteps.push(`bridge:${bridgeUpload.detail}`);
+
+  // 3) Render /api/media/upload — kenarda imzalanmış kısa ömürlü JWT.
+  const renderUpload = await tryRenderMediaUploadAllTokens(env, origin, body, ctx, bearerToken);
+  if (renderUpload?.ok) return renderUpload.response;
+  if (renderUpload?.errorResponse) return renderUpload.errorResponse;
+  if (renderUpload?.detail) uploadSteps.push(`render:${renderUpload.detail}`);
 
   return jsonResponse(502, {
     error: "Medya yüklenemedi",
