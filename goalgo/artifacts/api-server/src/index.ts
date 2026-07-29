@@ -444,11 +444,11 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-asg-editor] HM_ASG_EDITOR_REPAIR=0 — atlandı");
   }
 
-  // ASG: ankarahabergundemi yazar listesini ankarasehirgazetesi.com'a kopyala
+  // ASG: /tr/ankarahabergundemi yazar + köşe yazılarını ankarasehirgazetesi.com'a kopyala
   if (envJobFlag("HM_ASG_AUTHORS_FROM_AHG_REPAIR", true)) {
     setTimeout(() => {
       void repairAsgAuthorsFromAhg()
-        .then((r) => logger.info({ ...r }, "[hm-asg-authors] AHG→ASG yazar senkron"))
+        .then((r) => logger.info({ ...r }, "[hm-asg-authors] ankarahabergundemi→ASG yazar+makale senkron"))
         .catch((err) => logger.error({ err }, "[hm-asg-authors] senkron başarısız"));
     }, 17_850).unref();
   } else {

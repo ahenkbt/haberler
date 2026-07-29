@@ -838,12 +838,12 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     slugKey === "asg" ||
     normalizeHost(domain).includes("ankarasehirgazetesi");
 
-  // ASG: yazar listesini AHG ile hizala (fingerprint aynıysa no-op); meta yanıtını bozma.
+  // ASG: yazar + köşe yazısını /tr/ankarahabergundemi ile hizala (fingerprint aynıysa no-op).
   if (isAsgBrand && upstream.ok) {
     try {
       await ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "asg" });
     } catch (err) {
-      console.error("[hm-brand-db-ensure/asg-authors]", String(err?.message || err).slice(0, 200));
+      console.error("[hm-brand-db-ensure/asg-authors-makale]", String(err?.message || err).slice(0, 200));
     }
     return null;
   }
