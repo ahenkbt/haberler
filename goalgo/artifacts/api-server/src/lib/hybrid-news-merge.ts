@@ -387,11 +387,13 @@ export async function loadEditorScopedDbNews(opts: {
    */
   yekparePoolReceiveEnabled?: boolean;
   /**
-   * true: public vitrin 12 saat tazelik (anasayfa/hybrid).
+   * true: public vitrin tazelik (anasayfa/hybrid).
    * false: arşiv (/sondakika, /api/news listesi) — tüm yayınlanmış yerel haberler.
    * Tanımsız: excludeCentralPool ise true (eski davranış), aksi halde false.
    */
   publicFreshnessWindow?: boolean;
+  /** publicFreshnessWindow true iken max yaş (ms). */
+  publicFreshnessMaxAgeMs?: number;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   const fetchLimit = opts.limit + opts.offset + 100;
   const excludeCentralPool = opts.excludeCentralPool === true;
@@ -414,6 +416,7 @@ export async function loadEditorScopedDbNews(opts: {
       limit: fetchLimit,
       offset: 0,
       publicFreshnessWindow,
+      publicFreshnessMaxAgeMs: opts.publicFreshnessMaxAgeMs,
     }),
   ]);
 
@@ -549,13 +552,19 @@ export async function loadHmSiteDbNews(opts: {
   q?: string;
   limit: number;
   offset: number;
-  /** Public vitrin: 12 saatten eski haberleri hariç tut. Editör paneli çağırmasın. */
+  /** Public vitrin: tazelik penceresi. Editör paneli çağırmasın. */
   publicFreshnessWindow?: boolean;
+  /** true iken kullanılan max yaş (ms). Varsayılan: HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS. */
+  publicFreshnessMaxAgeMs?: number;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   await ensureNewsPublicSubmissionColumns();
   const conds: SQL[] = [eq(newsTable.status, "published"), suSiteNewsScopeCondition(opts.siteId)];
   if (opts.publicFreshnessWindow === true) {
-    conds.push(gte(newsTable.createdAt, new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS)));
+    const maxAge =
+      typeof opts.publicFreshnessMaxAgeMs === "number" && opts.publicFreshnessMaxAgeMs > 0
+        ? opts.publicFreshnessMaxAgeMs
+        : HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS;
+    conds.push(gte(newsTable.createdAt, new Date(Date.now() - maxAge)));
   }
 
   if (opts.q) {

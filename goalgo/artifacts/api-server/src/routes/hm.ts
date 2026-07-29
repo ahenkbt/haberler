@@ -143,6 +143,7 @@ import {
   tryHmSharedEditorLoginPassword,
 } from "../lib/hm-asg-editor-repair.js";
 import { repairAsgAuthorsFromAhg } from "../lib/hm-asg-authors-from-ahg-repair.js";
+import { repairAsgHomeModules } from "../lib/hm-asg-home-modules-repair.js";
 import {
   isKhNewsSiteRow,
   repairKhEditorForLogin,
@@ -2012,6 +2013,29 @@ router.post("/hm/admin/repair-asg-authors-from-ahg", async (req, res): Promise<v
       message: result.ok
         ? `ASG ← ankarahabergundemi: önce ${result.makaleRemoved} köşe yazısı silindi; ${result.upserted} yazar + ${result.makaleCopied} makale eklendi`
         : "Kaynak veya hedef site bulunamadı / senkron tamamlanamadı",
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: ASG anasayfa — Gündemde Öne Çıkanlar + Spor + Ankara/spor RSS. */
+router.post("/hm/admin/repair-asg-home-modules", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await repairAsgHomeModules();
+    res.json({
+      ...result,
+      ok: result.ok,
+      message:
+        result.action === "patched"
+          ? "ASG anasayfa modülleri açıldı (Gündemde Öne Çıkanlar, Spor, Ankara/spor RSS)"
+          : result.action === "already"
+            ? "ASG anasayfa modülleri zaten güncel"
+            : "ASG sitesi bulunamadı",
     });
   } catch (e) {
     res.status(500).json({

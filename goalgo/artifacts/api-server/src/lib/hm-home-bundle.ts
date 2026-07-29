@@ -16,6 +16,7 @@ import {
   excludeYekparePoolNewsSql,
   isExternalManualEditorNewsForSite,
   HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS,
+  HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS,
 } from "./hm-corporate-news-policy.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
@@ -31,9 +32,9 @@ async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number, corpor
   return eq(newsTable.siteId, siteId);
 }
 
-function publicEditorNewsFreshnessSql(corporateStrict: boolean): SQL | undefined {
+function publicEditorNewsFreshnessSql(corporateStrict: boolean, maxAgeMs = HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS): SQL | undefined {
   if (corporateStrict) return undefined;
-  const since = new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS);
+  const since = new Date(Date.now() - maxAgeMs);
   return gte(newsTable.createdAt, since);
 }
 
@@ -41,8 +42,9 @@ function filterPublicEditorNewsItems(
   items: SerializedNewsListItem[],
   siteId: number,
   corporateStrict: boolean,
+  maxAgeMs: number | null = HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS,
 ): SerializedNewsListItem[] {
-  const maxAge = corporateStrict ? null : HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS;
+  const maxAge = corporateStrict ? null : maxAgeMs;
   const now = Date.now();
   return items.filter((item) => {
     if (isExternalManualEditorNewsForSite(item, siteId)) return false;
@@ -284,7 +286,7 @@ async function loadPopularForSite(
   const newsWhere = and(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
-    publicEditorNewsFreshnessSql(corporateStrict),
+    publicEditorNewsFreshnessSql(corporateStrict, HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS),
     hiddenCond,
     poolReceiveEnabled ? undefined : excludeYekparePoolNewsSql(),
   );
@@ -354,7 +356,13 @@ export async function buildHmHomeBundle(
     latestEditor = filterPublicEditorNewsItems(latestEditor, siteId, false);
     manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
     breaking = filterPublicEditorNewsItems(breaking, siteId, false);
-    popular = filterPublicEditorNewsItems(popular, siteId, false);
+    // Popüler / Gündemde Öne Çıkanlar: kategori vitrini gibi 7 gün.
+    popular = filterPublicEditorNewsItems(
+      popular,
+      siteId,
+      false,
+      HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS,
+    );
   }
   const centerHeadlines = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
   return { siteId, featured, manualEditor, centerHeadlines, breaking, popular };

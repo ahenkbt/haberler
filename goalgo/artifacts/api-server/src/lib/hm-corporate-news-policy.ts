@@ -12,8 +12,14 @@ import { deriveCleanCategorySlug, isHmCorporateLayout } from "./hm-editor-catego
 import { isKoseArticle, type KoseArticleLike } from "./kose-article.js";
 import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
 
-/** Public editör haber sitesi vitrin: DB/manuel haberler en fazla 12 saat. */
+/** Public editör haber sitesi vitrin: DB/manuel manşet haberleri en fazla 12 saat. */
 export const HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Kategori kutuları / by-category: 12 saat çok dar kalıyor (Ankara Haberleri 1 haber).
+ * Yerel arşiv vitrinde son 7 gün gösterilir.
+ */
+export const HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** VKD kurumsal vitrin — yalnızca bu haber kategorileri (nav, footer, editör). */
 export const VKD_PUBLIC_NEWS_CATEGORY_SLUGS = ["dernegimiz", "faaliyetlerimiz", "sehit-gazi"] as const;

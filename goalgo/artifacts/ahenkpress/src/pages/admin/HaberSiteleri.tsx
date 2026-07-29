@@ -432,6 +432,17 @@ export default function HaberSiteleri() {
               variant="outline"
               size="sm"
               disabled={repairing !== null}
+              onClick={() =>
+                void runAdminRepair("/api/hm/admin/repair-asg-home-modules", "ASG anasayfa Ankara/Spor")
+              }
+            >
+              {repairing === "/api/hm/admin/repair-asg-home-modules" ? "Onarılıyor…" : "ASG anasayfa Ankara/Spor"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
               onClick={() => void runAdminRepair("/api/hm/admin/repair-kh-editor", "Kırşehir editör onarımı")}
             >
               {repairing === "/api/hm/admin/repair-kh-editor" ? "Onarılıyor…" : "KH editör onar"}

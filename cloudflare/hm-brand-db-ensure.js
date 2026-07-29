@@ -781,6 +781,86 @@ async function ensureKhSiteRow(sql, row) {
   return next;
 }
 
+/**
+ * ASG anasayfa: Gündemde Öne Çıkanlar + Spor modülü + Ankara/spor RSS.
+ * Rev: hmAsgHomeModulesRev — bir kerelik layout yaması.
+ */
+async function repairAsgHomeModulesOnNeon(sql) {
+  const REV = "asg-home-ankara-spor-v1";
+  const rows = await sql`
+    SELECT id, layout_json FROM hm_news_sites
+    WHERE lower(trim(both '/' from slug)) = 'asg'
+       OR lower(coalesce(domain, '')) LIKE '%ankarasehirgazetesi%'
+    ORDER BY id ASC
+    LIMIT 1
+  `.catch(() => []);
+  const row = rows?.[0];
+  if (!row?.id) return;
+
+  let layout = {};
+  try {
+    layout =
+      typeof row.layout_json === "string"
+        ? JSON.parse(row.layout_json || "{}")
+        : row.layout_json && typeof row.layout_json === "object"
+          ? { ...row.layout_json }
+          : {};
+  } catch {
+    layout = {};
+  }
+  if (layout.hmAsgHomeModulesRev === REV) return;
+
+  layout.hmNewsEsenLeadPackEnabled = true;
+  layout.hmNewsSporModuleEnabled = true;
+  layout.hmAsgHomeModulesRev = REV;
+
+  const siteRss = Array.isArray(layout.hmNewsSiteRssFeedRows) ? [...layout.hmNewsSiteRssFeedRows] : [];
+  const hasAnkara = siteRss.some((r) => {
+    const key = String(r?.categoryKey ?? r?.id ?? "")
+      .trim()
+      .toLowerCase();
+    return key === "ankara";
+  });
+  if (!hasAnkara) {
+    siteRss.push({
+      id: "ankara",
+      label: "Ankara",
+      categoryKey: "ankara",
+      url: "https://baskentpostasi.com/rss/category/ankara",
+    });
+  }
+  layout.hmNewsSiteRssFeedRows = siteRss;
+
+  const boxRss = Array.isArray(layout.hmNewsBreakingRssFeedRows)
+    ? [...layout.hmNewsBreakingRssFeedRows]
+    : [];
+  const sporFeeds = [
+    { id: "spor", label: "Spor", categoryKey: "spor", url: "https://www.ntv.com.tr/sporskor.rss" },
+    { id: "futbol", label: "Futbol", categoryKey: "futbol", url: "https://www.spordepor.com/rss/futbol" },
+    { id: "basketbol", label: "Basketbol", categoryKey: "basketbol", url: "https://www.spordepor.com/rss/basketbol" },
+    { id: "tenis", label: "Tenis", categoryKey: "tenis", url: "https://www.spordepor.com/rss/tenis" },
+    { id: "voleybol", label: "Voleybol", categoryKey: "voleybol", url: "https://www.spordepor.com/rss/voleybol" },
+  ];
+  for (const feed of sporFeeds) {
+    const exists = boxRss.some((r) => String(r?.id ?? "").trim().toLowerCase() === feed.id);
+    if (!exists) boxRss.push(feed);
+  }
+  layout.hmNewsBreakingRssFeedRows = boxRss;
+
+  const json = JSON.stringify(layout);
+  await sql`
+    UPDATE hm_news_sites
+    SET layout_json = ${json}::jsonb, updated_at = NOW()
+    WHERE id = ${row.id}
+  `.catch(async () => {
+    await sql`
+      UPDATE hm_news_sites
+      SET layout_json = ${json}, updated_at = NOW()
+      WHERE id = ${row.id}
+    `;
+  });
+}
+
 const ASG_FROM_AHG_MAKALE_EXT_PREFIX = "asg←ankarahabergundemi:makale:";
 /** Bump: önce makale sil → yazar ekle → makale ekle. */
 const ASG_FROM_AHG_SYNC_REV = "wipe-makale-then-authors-v3";
@@ -1037,8 +1117,13 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     }
   }
 
-  // ASG: /tr/ankarahabergundemi yazar + köşe yazılarını kopyala (slug ahg değil)
+  // ASG: anasayfa modülleri + /tr/ankarahabergundemi yazar/köşe kopyası
   if (binding.slug === "asg" || host.includes("ankarasehirgazetesi")) {
+    try {
+      await repairAsgHomeModulesOnNeon(sql);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] asg home modules", String(err?.message || err).slice(0, 240));
+    }
     try {
       await repairAsgAuthorsFromAhgOnNeon(sql);
     } catch (err) {

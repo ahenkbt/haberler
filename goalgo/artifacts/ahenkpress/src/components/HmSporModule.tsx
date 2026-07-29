@@ -305,7 +305,7 @@ export function HmSporModule({
                 <StandingsTable rows={standings} hafta={standingsHafta} />
               ) : (
                 <div className="hm-spor-module-empty hm-spor-module-empty--compact">
-                  {leagueLabel} puan durumu şu an kullanılamıyor.
+                  {leagueLabel} puan durumu henüz yayınlanmadı (sezon verisi yok).
                 </div>
               )
             ) : fixturesQuery.isLoading ? (

@@ -4600,6 +4600,20 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                         href={tumHaberlerHref}
                         hideTitle
                       />
+                    ) : pickSidebarNews(
+                        mergeUniqueNews(hybridBandItems, classicLatestMini, leadPackBasePool),
+                        6,
+                      ).length > 0 ? (
+                      <ClassicTextList
+                        title="Gündemde Öne Çıkanlar"
+                        items={pickSidebarNews(
+                          mergeUniqueNews(hybridBandItems, classicLatestMini, leadPackBasePool),
+                          6,
+                        )}
+                        accent={accent}
+                        href={tumHaberlerHref}
+                        hideTitle
+                      />
                     ) : (
                       <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">Henüz haber yok.</div>
                     )}

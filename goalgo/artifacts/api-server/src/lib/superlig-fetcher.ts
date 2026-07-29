@@ -216,21 +216,30 @@ function parseCurrentWeekFixtures(
 function parseStandings(data: TffPuanResponse, league: TffLeagueId): SuperligStandingsPayload {
   const rows = Array.isArray(data.puan_cetveli) ? data.puan_cetveli : [];
   const standings: SuperligStandingRow[] = rows
-    .map((row) => ({
-      rank: Number(row.sira) || 0,
-      team: String(row.takim ?? "").trim(),
-      played: Number(row.oynan) || 0,
-      points: Number(row.puan) || 0,
-    }))
+    .map((row) => {
+      const raw = row as Record<string, unknown>;
+      const played = Number(
+        raw.oynan ?? raw.oynanan ?? raw.oynadigimac ?? raw.oynanan_mac ?? raw.om ?? raw.played ?? 0,
+      );
+      const points = Number(raw.puan ?? raw.puani ?? raw.points ?? raw.p ?? 0);
+      return {
+        rank: Number(raw.sira ?? raw.rank ?? 0) || 0,
+        team: String(raw.takim ?? raw.takim_adi ?? raw.team ?? "").trim(),
+        played: Number.isFinite(played) ? played : 0,
+        points: Number.isFinite(points) ? points : 0,
+      };
+    })
     .filter((row) => row.rank > 0 && row.team)
     .sort((a, b) => a.rank - b.rank);
 
+  // Sezon öncesi / bozuk kaynak: tüm satırlar 0 ise boş liste dön (UI sıfır tablosu göstermesin).
+  const hasRealStats = standings.some((row) => row.played > 0 || row.points > 0);
   return {
     ok: true,
     league,
     hafta: Number.isFinite(Number(data.hafta)) ? Number(data.hafta) : null,
     updatedAt: data.guncellendi ? String(data.guncellendi) : null,
-    standings,
+    standings: hasRealStats ? standings : [],
   };
 }
 
