@@ -40,6 +40,7 @@ import {
   buildYekpareWebSiteJsonLd,
   PORTAL_SEARCH_TAGLINE,
 } from "@/lib/pageSeo";
+import { PORTAL_BRAND_SHORT, PORTAL_SITE_NAME } from "@/lib/portalBrand";
 
 import "@/styles/homepageTheme.css";
 import "@/styles/searchSuggest.css";
@@ -71,50 +72,50 @@ type FeaturedSpotlight = {
 const navItems: NavItem[] = [
   { label: "Haber", href: "/haberler", icon: Newspaper },
   { label: "Video", href: "/yektube", icon: Video },
-  { label: "Harita", href: "/haritalar", icon: MapPinned },
-  { label: "Keşfet", href: "/kesfet", icon: Compass },
-  { label: "Seyahat", href: "/turizm", icon: Plane },
+  { label: "Newsmap", href: "/newsmap", icon: MapPinned },
+  { label: "Haber Merkezi", href: "/habermerkezi", icon: Building2 },
 ];
 
 const searchExamples = [
-  "En mekanlar ve ürünler",
-  "İstanbul hava durumu",
-  "En yakın eczane",
-  "Uçak bileti",
-  "Market siparişi",
+  "Son dakika haberler",
+  "Yerel gündem",
+  "Canlı yayın",
+  "Newsmap",
+  "Haber Merkezi",
 ];
 
 const heroChips = [
   { label: "Haber", href: "/haberler" },
   { label: "Video", href: "/yektube" },
-  { label: "Harita", href: "/haritalar" },
-  { label: "Keşfet", href: "/kesfet" },
-  { label: "Seyahat", href: "/turizm" },
+  { label: "Newsmap", href: "/newsmap" },
+  { label: "Haber Merkezi", href: "/habermerkezi" },
 ];
 
 const services: ServiceCard[] = [
-  { label: "Keşfet", href: "/kesfet", icon: MapPinned, desc: "Yakındaki mekan ve hizmetler.", color: "#38bdf8" },
-  { label: "Seyahat", href: "/turizm", icon: Plane, desc: "Uçak, bilet, otel ve rota.", color: "#06b6d4" },
+  { label: "Haberler", href: "/haberler", icon: Newspaper, desc: "Gündem ve manşet akışı.", color: "#0f766e" },
+  { label: "YekTube", href: "/yektube", icon: Video, desc: "Canlı TV ve video içerikleri.", color: "#dc2626" },
+  { label: "Newsmap", href: "/newsmap", icon: MapPinned, desc: "Haber haritası ve konum.", color: "#059669" },
+  { label: "Haber Merkezi", href: "/habermerkezi", icon: Building2, desc: "HM editör siteleri ve yayınlar.", color: "#7c3aed" },
 ];
 
 const whyCards = [
-  { icon: Search, title: "Tek Arama", desc: "Farklı kaynaklarda arama yapmana gerek kalmaz; sonuçlar birleşir." },
-  { icon: CheckCircle2, title: "Tek Hesap", desc: "Tüm servisler için tek hesap, tek panel ve hızlı işlem deneyimi." },
-  { icon: Grid3X3, title: "Tek Platform", desc: "Arama, keşif ve işlem aynı ekosistemde kesintisiz ilerler." },
+  { icon: Search, title: "Tek Arama", desc: "Haber ve video sonuçları tek aramada birleşir." },
+  { icon: CheckCircle2, title: "Tek Hesap", desc: "Platform genelinde tek hesap ve hızlı erişim." },
+  { icon: Grid3X3, title: "Tek Platform", desc: "Haber Merkezi, Yektube ve Newsmap aynı ekosistemde." },
 ];
 
 const resultTypes = [
-  { label: "Mekanlar", value: "Vitrindeki işletmeler", icon: Building2, href: "/kesfet?featured=1" },
-  { label: "Harita", value: "Yakındaki kayıtlar", icon: MapPinned, href: "/kesfet?featured=1" },
-  { label: "Video", value: "Tanıtım içerikleri", icon: Play, href: "/yektube?q=mekan%20%C3%BCr%C3%BCn" },
-  { label: "Keşfet", value: "Yakındaki fırsatlar", icon: ShoppingCart, href: "/kesfet" },
+  { label: "Haber", value: "Gündem akışı", icon: Newspaper, href: "/haberler" },
+  { label: "Video", value: "YekTube içerikleri", icon: Play, href: "/yektube" },
+  { label: "Newsmap", value: "Haber haritası", icon: MapPinned, href: "/newsmap" },
+  { label: "Haber Merkezi", value: "Editör siteleri", icon: Building2, href: "/habermerkezi" },
 ];
 
 const featuredProducts: FeaturedProduct[] = [
-  { name: "Akıllı temizlik paketi", category: "Ev hizmeti", price: "₺899'dan başlayan", href: "/firma-rehberi/urunler", color: "#22c55e" },
-  { name: "Premium araç kiralama", category: "Seyahat", price: "Günlük fırsat", href: "/turizm", color: "#06b6d4" },
-  { name: "Dijital randevu paketi", category: "Sağlık", price: "Online kayıt", href: "/firma-rehberi/urunler", color: "#8b5cf6" },
-  { name: "Yerel işletme vitrini", category: "Keşfet", price: "Öne çıkan", href: "/kesfet", color: "#f97316" },
+  { name: "Günün manşetleri", category: "Haber", price: "Canlı akış", href: "/haberler", color: "#0f766e" },
+  { name: "Canlı TV & video", category: "YekTube", price: "İzle", href: "/yektube", color: "#dc2626" },
+  { name: "Newsmap", category: "Harita", price: "Keşfet", href: "/newsmap", color: "#059669" },
+  { name: "Haber Merkezi", category: "Yayın", price: "Siteler", href: "/habermerkezi", color: "#7c3aed" },
 ];
 
 const trendingCards = [
@@ -122,10 +123,10 @@ const trendingCards = [
     title: "En Çok Arananlar",
     icon: Zap,
     lines: [
-      { label: "iPhone 15", href: "/ara?q=iPhone%2015" },
-      { label: "İstanbul hava durumu", href: "/ara?q=%C4%B0stanbul%20hava%20durumu" },
-      { label: "Galatasaray maçı", href: "/ara?q=Galatasaray%20ma%C3%A7%C4%B1" },
-      { label: "En iyi diziler", href: "/ara?q=En%20iyi%20diziler" },
+      { label: "Son dakika", href: "/haberler?q=son%20dakika" },
+      { label: "Gündem", href: "/haberler?q=g%C3%BCndem" },
+      { label: "Yerel haber", href: "/haberler?q=yerel" },
+      { label: "Ekonomi", href: "/haberler?q=ekonomi" },
     ],
   },
   {
@@ -143,23 +144,23 @@ const trendingCards = [
     lines: [
       { label: "Günün en çok izlenenleri", href: "/yektube" },
       { label: "Teknoloji kısa özetleri", href: "/yektube?q=teknoloji" },
-      { label: "Yerel keşif videoları", href: "/yektube?q=ke%C5%9Ffet" },
+      { label: "Haber özetleri", href: "/yektube?q=haber" },
     ],
   },
   {
-    title: "Yakındaki Fırsatlar",
+    title: "Haber Merkezi",
     icon: BadgePercent,
     lines: [
-      { label: "Çevrendeki indirimler", href: "/kesfet?q=indirim&near=T%C3%BCrkiye" },
-      { label: "Kampanyalı kahvaltılar", href: "/kesfet?q=kahvalt%C4%B1&near=T%C3%BCrkiye" },
-      { label: "Keşfet fırsatları", href: "/kesfet" },
+      { label: "Editör siteleri", href: "/habermerkezi" },
+      { label: "Newsmap", href: "/newsmap" },
+      { label: "YekTube", href: "/yektube" },
     ],
   },
 ];
 
 const footerGroups = [
-  { title: "Keşfet", links: ["Haberler", "Videolar", "Harita", "Sarı Sayfalar"] },
-  { title: "Servisler", links: ["Keşfet", "Seyahat"] },
+  { title: "Keşfet", links: ["Haberler", "Videolar", "Newsmap", "Haber Merkezi"] },
+  { title: "Servisler", links: ["Haberler", "YekTube"] },
   { title: "Yönetim", links: ["Anasayfa Tasarım", "Anasayfa Modülleri"] },
   { title: "Yardım", links: ["SSS", "Gizlilik", "Kullanım Şartları", "İletişim", "Kariyer"] },
 ];
@@ -167,10 +168,9 @@ const footerGroups = [
 const footerHrefByLabel: Record<string, string> = {
   Haberler: "/haberler",
   Videolar: "/yektube",
-  Harita: "/haritalar",
-  "Sarı Sayfalar": "/firma-rehberi",
-  Keşfet: "/kesfet",
-  Seyahat: "/turizm",
+  YekTube: "/yektube",
+  Newsmap: "/newsmap",
+  "Haber Merkezi": "/habermerkezi",
   "Anasayfa Tasarım": "/admin/anasayfa-tasarim",
   "Anasayfa Modülleri": "/admin/anasayfa-modulleri",
   SSS: "/destek",
@@ -181,30 +181,23 @@ const footerHrefByLabel: Record<string, string> = {
 };
 
 function breakfastSearchHref(query = "kahvaltı"): string {
-  const loc = typeof window !== "undefined" ? readPublicLocation() : null;
-  const near = loc?.city?.trim() || loc?.district?.trim() || "Türkiye";
-  const params = new URLSearchParams({ q: query, near });
-  return `/kesfet?${params.toString()}`;
+  const params = new URLSearchParams({ q: query });
+  return `${UNIFIED_SEARCH_PATH}?${params.toString()}`;
 }
 
 function routeForHomeQuery(rawQuery: string): string {
   const q = rawQuery.trim();
   const nq = q.toLocaleLowerCase("tr-TR");
-  if (nq.includes("mekan") || nq.includes("ürün") || nq.includes("urun")) {
-    return "/kesfet?featured=1";
+  if (nq.includes("video") || nq.includes("yektube") || nq.includes("canlı") || nq.includes("canli")) {
+    return q ? `/yektube?q=${encodeURIComponent(q)}` : "/yektube";
   }
-  if (nq.includes("kahvalt")) {
-    const explicitCity = /\bankara\b/i.test(q)
-      ? "Ankara"
-      : /\bistanbul\b/i.test(q)
-        ? "İstanbul"
-        : "";
-    if (explicitCity) {
-      const params = new URLSearchParams({ q: "kahvaltı", near: explicitCity });
-      return `/kesfet?${params.toString()}`;
-    }
-    return breakfastSearchHref("kahvaltı");
+  if (nq.includes("newsmap") || nq.includes("harita")) {
+    return "/newsmap";
   }
+  if (nq.includes("haber merkezi") || nq.includes("habermerkezi") || nq.includes("editör") || nq.includes("editor")) {
+    return "/habermerkezi";
+  }
+  if (!q) return UNIFIED_SEARCH_PATH;
   const params = new URLSearchParams({ q });
   return `${UNIFIED_SEARCH_PATH}?${params.toString()}`;
 }
@@ -237,9 +230,9 @@ function SectionReveal({
 
 function PremiumLogo() {
   return (
-    <Link href="/" className="ypl-logo" aria-label="Yekpare ana sayfa">
-      <span className="ypl-logo-mark">Y</span>
-      <span>Yekpare</span>
+    <Link href="/" className="ypl-logo" aria-label={`${PORTAL_SITE_NAME} ana sayfa`}>
+      <span className="ypl-logo-mark">T</span>
+      <span>{PORTAL_SITE_NAME}</span>
     </Link>
   );
 }
@@ -255,7 +248,7 @@ function PremiumNav({
     <header className="ypl-nav-wrap">
       <div className="ypl-nav">
         <PremiumLogo />
-        <nav className="ypl-nav-links" aria-label="Yekpare ana menü">
+        <nav className="ypl-nav-links" aria-label={`${PORTAL_SITE_NAME} ana menü`}>
           <Link href="/ara" className="ypl-nav-link">
             <Search className="h-3.5 w-3.5" aria-hidden />
             Search
@@ -440,9 +433,9 @@ function WhySection() {
   return (
     <SectionReveal className="ypl-container ypl-why">
       <div className="ypl-section-copy">
-        <p>Neden Yekpare?</p>
-        <h2>Tek Platform, Sınırsız İmkân</h2>
-        <span>Aradığın her şeye tek yerden ulaş. Zaman kazan, hayatını kolaylaştır.</span>
+        <p>Neden {PORTAL_SITE_NAME}?</p>
+        <h2>Tek Platform, Haber Odaklı</h2>
+        <span>Haber, video, Newsmap ve Haber Merkezi — tek yerden.</span>
       </div>
       <div className="ypl-why-grid">
         {whyCards.map((card) => {
@@ -461,42 +454,34 @@ function WhySection() {
 }
 
 function SmartSearchSection({ spotlight }: { spotlight: FeaturedSpotlight }) {
-  const featuredHref = `/kesfet?featured=1&q=${encodeURIComponent(spotlight.business.category)}`;
+  void spotlight;
   return (
     <SectionReveal className="ypl-container ypl-smart">
       <div className="ypl-smart-demo">
-        <Link href={featuredHref} className="ypl-demo-search">
+        <Link href="/haberler" className="ypl-demo-search">
           <Search className="h-4 w-4" aria-hidden />
-          En Mekanlar ve Ürünler
+          Son dakika haberler
         </Link>
         <div className="ypl-demo-tabs">
-          {["Tümü", "Mekanlar", "Ürünler", "Harita", "Fırsatlar"].map((tab) => (
+          {["Haber", "Video", "Newsmap", "Haber Merkezi"].map((tab) => (
             <span key={tab}>{tab}</span>
           ))}
         </div>
         <div className="ypl-demo-grid ypl-featured-grid">
-          <Link href={featuredHref} className="ypl-featured-card ypl-featured-card--business">
-            <span className="ypl-featured-kicker">Öne çıkan işletme</span>
-            <strong>{spotlight.business.name}</strong>
-            <small>
-              {spotlight.business.category} · {spotlight.business.district}, {spotlight.business.city}
-            </small>
-            <span className="ypl-featured-rating">{spotlight.business.rating} · {spotlight.business.reviews}</span>
+          <Link href="/haberler" className="ypl-featured-card ypl-featured-card--business">
+            <span className="ypl-featured-kicker">Haberler</span>
+            <strong>Gündem ve manşet akışı</strong>
+            <small>Canlı haber vitrini</small>
           </Link>
-          <Link
-            href={spotlight.product.href}
-            className="ypl-featured-card ypl-featured-card--product"
-            style={{ "--featured-color": spotlight.product.color } as React.CSSProperties}
-          >
-            <span className="ypl-featured-kicker">Öne çıkan ürün</span>
-            <strong>{spotlight.product.name}</strong>
-            <small>{spotlight.product.category}</small>
-            <span className="ypl-featured-rating">{spotlight.product.price}</span>
+          <Link href="/yektube" className="ypl-featured-card ypl-featured-card--product">
+            <span className="ypl-featured-kicker">YekTube</span>
+            <strong>Canlı TV ve videolar</strong>
+            <small>İzlemeye başla</small>
           </Link>
-          <Link href="/firma-rehberi/urunler" className="ypl-featured-card ypl-featured-card--compact">
-            <span className="ypl-featured-kicker">Vitrin</span>
-            <strong>Yeni işletme ve ürünleri keşfet</strong>
-            <small>Her açılışta farklı öneriler</small>
+          <Link href="/newsmap" className="ypl-featured-card ypl-featured-card--compact">
+            <span className="ypl-featured-kicker">Newsmap</span>
+            <strong>Haber haritası</strong>
+            <small>Konuma göre keşfet</small>
           </Link>
         </div>
       </div>
@@ -504,8 +489,7 @@ function SmartSearchSection({ spotlight }: { spotlight: FeaturedSpotlight }) {
         <p>Akıllı Arama</p>
         <h2>Bir Arama, Birden Fazlası.</h2>
         <span>
-          Yekpare tek bir arama yapar, sonuçları harita, haber, video, işletme,
-          yorum ve alışveriş sonuçlarıyla birlikte anlamlı şekilde sunar.
+          {PORTAL_BRAND_SHORT} tek bir aramada haber, video ve Newsmap sonuçlarını bir araya getirir.
         </span>
         <div className="ypl-result-pills">
           {resultTypes.map((item) => {
@@ -529,7 +513,7 @@ function TrendingSection() {
     <SectionReveal className="ypl-container ypl-trending">
       <div className="ypl-section-row">
         <h2>Trend Olanlar</h2>
-        <Link href="/kesfet">Tümünü Gör</Link>
+        <Link href="/haberler">Tümünü Gör</Link>
       </div>
       <div className="ypl-trending-grid">
         {trendingCards.map((card) => {
@@ -592,7 +576,7 @@ function PremiumFooter() {
           <div key={group.title}>
             <h3>{group.title}</h3>
             {group.links.map((link) => (
-              <Link key={link} href={footerHrefByLabel[link] ?? "/kesfet"}>
+              <Link key={link} href={footerHrefByLabel[link] ?? "/haberler"}>
                 {link}
               </Link>
             ))}
@@ -610,7 +594,7 @@ function PremiumFooter() {
         </form>
       </div>
       <div className="ypl-footer-bottom">
-        <span>© 2026 Yekpare. Tüm hakları saklıdır.</span>
+        <span>© 2026 Türk Ekosistemi. Tüm hakları saklıdır.</span>
         <nav className="ypl-footer-bottom-nav" aria-label="Alt menü">
           <Link href="/kariyer">Kariyer</Link>
         </nav>
@@ -628,7 +612,7 @@ export default function SearchEngineHomePage() {
   );
 
   useEffect(() => {
-    applyPortalSiteSeo({ siteName: "Yekpare", tagline: PORTAL_SEARCH_TAGLINE });
+    applyPortalSiteSeo({ siteName: PORTAL_SITE_NAME, tagline: PORTAL_SEARCH_TAGLINE });
     applyJsonLd(buildYekpareWebSiteJsonLd());
   }, []);
 

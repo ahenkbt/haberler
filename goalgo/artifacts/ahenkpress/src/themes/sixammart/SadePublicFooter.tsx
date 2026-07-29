@@ -8,7 +8,6 @@ import {
   parseModulesEnabledJson,
   isModuleEnabled,
 } from "@workspace/site-nav";
-import { YEKPARE_FOOTER_SERVICE_MODULES } from "@/lib/yekpareServiceNav";
 import { TURIZM_FOOTER_MODULES, isTurizmSubmenuItemActive } from "@/themes/turizm/turizmRoutes";
 import { YekpareFooterDisclaimer } from "@/components/YekpareFooterDisclaimer";
 import "@/styles/sade-public-footer.css";
@@ -16,22 +15,18 @@ import "@/styles/sade-public-footer.css";
 const APP_STORE_LINKS = [
   { label: "Uygulama mağazası", href: "/pwastore" },
   { label: "Haber Merkezi", href: "/habermerkezi" },
-  { label: "AI Call Center", href: "/ai-cagri-merkezi" },
-  { label: "Haritalar", href: "/haritalar" },
-  { label: "Navigasyon", href: "/kesfet" },
-  { label: "Bilgi Ağacı", href: "/bilgiagaci" },
+  { label: "Newsmap", href: "/newsmap" },
+  { label: "Haberler", href: "/haberler" },
+  { label: "YekTube", href: "/yektube" },
 ] as const;
 
 const SADE_PUBLIC_LINKS = [
-  { label: "Tüm hizmetler", href: "/servisler" },
-  { label: "Yekpare nedir?", href: "/bilgi/yekpare-nedir" },
-  { label: "Keşfet", href: "/kesfet" },
   { label: "Haberler", href: "/haberler" },
   { label: "YekTube", href: "/yektube" },
+  { label: "Newsmap", href: "/newsmap" },
+  { label: "Haber Merkezi", href: "/habermerkezi" },
   { label: "Destek", href: "/destek" },
 ] as const;
-
-const SERVICE_MODULES = YEKPARE_FOOTER_SERVICE_MODULES;
 
 const ACCOUNT_LINKS = [
   { label: "Hesabım", href: "/hesabim" },
@@ -157,7 +152,7 @@ function TurizmFooterBody() {
         </div>
         <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
         <div className="yekpare-public-footer__bar">
-          <span>© {new Date().getFullYear()} Yekpare Seyahat</span>
+          <span>© {new Date().getFullYear()} Türk Ekosistemi Seyahat</span>
           {legalLinks.length > 0 ? (
             <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
               {legalLinks.map((item, i) => (
@@ -181,17 +176,17 @@ function DefaultFooterBody() {
   );
   const footerText =
     settings?.footerText?.trim() ||
-    "Yekpare'de sipariş, alışveriş, keşif, haber ve video içerikleri tek kullanıcı deneyiminde buluşur.";
+    "Türk Ekosistemi'nde haber, video, Newsmap ve Haber Merkezi tek kullanıcı deneyiminde buluşur.";
 
   return (
     <div className="yekpare-public-footer__main">
       <div className="yekpare-public-footer__grid yekpare-public-footer__grid--default">
         <div>
           <div className="mb-4 flex items-center gap-3">
-            <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label="Yekpare ana sayfa">
+            <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label="Türk Ekosistemi ana sayfa">
               <img
                 src={YEKPARE_BRAND_LOGO_SRC}
-                alt="Yekpare"
+                alt="Türk Ekosistemi"
                 className="yekpare-public-footer__brand-logo"
                 width={160}
                 height={40}
@@ -201,14 +196,14 @@ function DefaultFooterBody() {
           </div>
           <p className="yekpare-public-footer__brand-text">{footerText}</p>
         </div>
-        <FooterCol title="Hizmetler" links={[...SERVICE_MODULES]} />
+        <FooterCol title="Hizmetler" links={[...SADE_PUBLIC_LINKS.slice(0, 4)]} />
         <FooterCol title="Hesap" links={[...ACCOUNT_LINKS]} />
         <FooterCol title="Yekstra" links={[...APP_STORE_LINKS]} />
-        <FooterCol title="Yekpare" links={[...SADE_PUBLIC_LINKS]} />
+        <FooterCol title="Türk Ekosistemi" links={[...SADE_PUBLIC_LINKS]} />
       </div>
       <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
       <div className="yekpare-public-footer__bar">
-        <span>© {new Date().getFullYear()} Yekpare. Tüm hakları saklıdır.</span>
+        <span>© {new Date().getFullYear()} Türk Ekosistemi. Tüm hakları saklıdır.</span>
         {legalLinks.length > 0 ? (
           <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
             {legalLinks.map((item, i) => (

@@ -16,10 +16,9 @@ export const PORTAL_ALIAS_HOSTS = [
   "ahenk.net.tr",
 ] as const;
 
-export const PORTAL_SITE_NAME = "Yekpare";
-export const PORTAL_BRAND_SHORT = "Yekpare";
-
-export const PWA_STORE_NAME = "Yekpare";
+export const PORTAL_SITE_NAME = "Türk Ekosistemi";
+export const PORTAL_BRAND_SHORT = "Türk Ekosistemi";
+export const PWA_STORE_NAME = "Türk Ekosistemi";
 export const PWA_ICON_PATH = "/icon-192.svg";
 
 /** Virgülle: getirsepeti.com.tr,goalgo.org,www.goalgo.org */

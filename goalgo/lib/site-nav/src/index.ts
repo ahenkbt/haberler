@@ -1,20 +1,25 @@
 /** Ana menü öğe anahtarları — URL ve ikonlar AppNav tarafında eşlenir. */
 export const MAIN_NAV_KEY_ORDER = [
-  "kesfet",
-  "haritalar",
-  "turizm",
   "haberler",
-  "ansiklopedi",
   "yektube",
-  "firmaRehberi",
+  "haritalar",
+  "ansiklopedi",
   "iletisim",
+  "kesfet",
+  "turizm",
+  "firmaRehberi",
 ] as const;
 
 export type MainNavKey = (typeof MAIN_NAV_KEY_ORDER)[number];
 
 const ALLOWED = new Set<string>(MAIN_NAV_KEY_ORDER);
-/** Eski DB mainNavJson kayıtlarında eksik kalabilir — okunurken varsayılan sıraya eklenir. */
-const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["kesfet", "haritalar"];
+/**
+ * Seyahat / Sarı Sayfalar / Keşfet (maps hub) — turk.eco’da kapalı.
+ * `haritalar` anahtarı Newsmap olarak kalır.
+ */
+export const PORTAL_RETIRED_NAV_KEYS = new Set<MainNavKey>(["turizm", "firmaRehberi", "kesfet"]);
+/** Üst menüde her zaman gösterilecek çekirdek modüller. */
+const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["haberler", "yektube", "haritalar"];
 const REQUIRED_TOP_NAV_KEYS: MainNavKey[] = [];
 
 export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
@@ -22,7 +27,7 @@ export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
   ansiklopedi: "Ansiklopedi",
   yektube: "YekTube",
   kesfet: "Keşfet",
-  haritalar: "Haritalar",
+  haritalar: "Newsmap",
   firmaRehberi: "Sarı Sayfalar",
   turizm: "Seyahat",
   iletisim: "İletişim",
@@ -33,7 +38,7 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
   ansiklopedi: "/bilgiagaci",
   yektube: "/yektube",
   kesfet: "/kesfet",
-  haritalar: "/haritalar",
+  haritalar: "/newsmap",
   firmaRehberi: "/firma-rehberi",
   turizm: "/turizm",
   iletisim: "/iletisim",
@@ -43,10 +48,7 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
 const FOOTER_NAV_DEFAULT: MainNavKey[] = [
   "haberler",
   "yektube",
-  "kesfet",
   "haritalar",
-  "firmaRehberi",
-  "turizm",
   "iletisim",
 ];
 
@@ -56,10 +58,12 @@ export type NavMenuItem =
   | { kind: "link"; id: string; label: string; href: string; newTab?: boolean };
 
 export function defaultNavMenuItems(): NavMenuItem[] {
-  return MAIN_NAV_KEY_ORDER.map((k) => ({
-    kind: "module" as const,
-    key: k,
-  }));
+  return [
+    { kind: "module", key: "haberler" },
+    { kind: "module", key: "yektube" },
+    { kind: "module", key: "haritalar" },
+    { kind: "link", id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi" },
+  ];
 }
 
 function insertMissingNavKeyAtDefaultPosition(
@@ -84,8 +88,13 @@ function insertMissingNavKeyAtDefaultPosition(
 }
 
 function withRequiredPublicNavItems(items: NavMenuItem[]): NavMenuItem[] {
-  const next = [...items];
-  const existing = new Set(next.filter((x): x is { kind: "module"; key: MainNavKey } => x.kind === "module").map((x) => x.key));
+  const next = items.filter((item) => {
+    if (item.kind === "module" && PORTAL_RETIRED_NAV_KEYS.has(item.key)) return false;
+    return true;
+  });
+  const existing = new Set(
+    next.filter((x): x is { kind: "module"; key: MainNavKey } => x.kind === "module").map((x) => x.key),
+  );
   if (!existing.has("yektube")) {
     const afterNews = next.findIndex((item) => item.kind === "module" && item.key === "haberler");
     next.splice(afterNews >= 0 ? afterNews + 1 : 0, 0, { kind: "module", key: "yektube" });
@@ -97,7 +106,16 @@ function withRequiredPublicNavItems(items: NavMenuItem[]): NavMenuItem[] {
   for (const key of REQUIRED_PLATFORM_NAV_KEYS) {
     insertMissingNavKeyAtDefaultPosition(next, key, existing);
   }
-  return next;
+  const hasHm = next.some(
+    (item) =>
+      (item.kind === "link" && (item.id === "habermerkezi" || item.href === "/habermerkezi")) ||
+      (item.kind === "module" && item.key === "haberler"),
+  );
+  if (!next.some((item) => item.kind === "link" && (item.id === "habermerkezi" || item.href === "/habermerkezi"))) {
+    next.push({ kind: "link", id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi" });
+  }
+  void hasHm;
+  return next.length > 0 ? next : defaultNavMenuItems();
 }
 
 function normalizePublicNavText(value: string): string {
@@ -228,6 +246,7 @@ export function parseFooterNavJson(json: string | null | undefined): MainNavKey[
     const seen = new Set<string>();
     for (const item of data) {
       if (typeof item !== "string" || !ALLOWED.has(item) || seen.has(item)) continue;
+      if (PORTAL_RETIRED_NAV_KEYS.has(item as MainNavKey)) continue;
       seen.add(item);
       out.push(item);
     }
@@ -349,7 +368,8 @@ export function isModuleEnabled(
   map: Partial<Record<MainNavKey, boolean>> | null | undefined,
   key: MainNavKey,
 ): boolean {
-  if (!map || Object.keys(map).length === 0) return true;
+  if (PORTAL_RETIRED_NAV_KEYS.has(key)) return false;
+  if (!map || Object.keys(map).length === 0) return !PORTAL_RETIRED_NAV_KEYS.has(key);
   return map[key] !== false;
 }
 
@@ -360,7 +380,7 @@ export function parseModulesEnabledJsonMerged(
   const partial = parseModulesEnabledJson(json);
   const out = {} as Record<MainNavKey, boolean>;
   for (const k of MAIN_NAV_KEY_ORDER) {
-    out[k] = partial[k] !== false;
+    out[k] = PORTAL_RETIRED_NAV_KEYS.has(k) ? false : partial[k] !== false;
   }
   return out;
 }
@@ -368,7 +388,7 @@ export function parseModulesEnabledJsonMerged(
 export function serializeModulesEnabledFull(map: Record<MainNavKey, boolean>): string {
   const o: Record<string, boolean> = {};
   for (const k of MAIN_NAV_KEY_ORDER) {
-    o[k] = map[k] !== false;
+    o[k] = PORTAL_RETIRED_NAV_KEYS.has(k) ? false : map[k] !== false;
   }
   return JSON.stringify(o);
 }
