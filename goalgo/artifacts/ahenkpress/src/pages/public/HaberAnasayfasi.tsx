@@ -4215,6 +4215,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               onSelect={setFeaturedCategorySlug}
             />
             {hasLeadPackContent ? (
+              leadPackColumns.right.length > 0 ? (
               <div className="hm-esen-lead-pack-grid">
                 {leadPackColumns.left.length > 0 ? (
                   <ClassicTextList
@@ -4229,28 +4230,31 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                     {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
                   </div>
                 )}
-                {leadPackColumns.right.length > 0 ? (
-                  <div className="hm-esen-lead-pack-right-grid">
-                    {leadPackColumns.right.map((n, index) => (
-                      <ClassicFeatureCard
-                        key={n.id ?? n.slug ?? index}
-                        n={n}
-                        accent={accent}
-                        hmCategoryColors={hmCat}
-                        large={index === 0}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
-                    {featuredCategorySlug
-                      ? "Bu kategoride kart gösterilecek haber yok."
-                      : homeNewsBootstrapping
-                        ? "Son haberler yükleniyor…"
-                        : "Henüz haber yok."}
-                  </div>
-                )}
+                <div className="hm-esen-lead-pack-right-grid">
+                  {leadPackColumns.right.map((n, index) => (
+                    <ClassicFeatureCard
+                      key={n.id ?? n.slug ?? index}
+                      n={n}
+                      accent={accent}
+                      hmCategoryColors={hmCat}
+                      large={index === 0}
+                    />
+                  ))}
+                </div>
               </div>
+              ) : leadPackColumns.left.length > 0 ? (
+                <ClassicTextList
+                  title="Gündemde Öne Çıkanlar"
+                  items={leadPackColumns.left}
+                  accent={accent}
+                  href={tumHaberlerHref}
+                  hideTitle
+                />
+              ) : (
+                <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
+                  {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
+                </div>
+              )
             ) : homeNewsBootstrapping ? (
               <HmNewsInlinePulse className="max-w-md" />
             ) : featuredCategorySlug ? (
@@ -4641,6 +4645,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                     onSelect={setFeaturedCategorySlug}
                   />
                   {hasEsenLeadPackContent ? (
+                    leadPackColumns.right.length > 0 ? (
                     <div className="hm-esen-lead-pack-grid">
                       {leadPackColumns.left.length > 0 ? (
                         <ClassicTextList
@@ -4655,30 +4660,31 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                           {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
                         </div>
                       )}
-                      {leadPackColumns.right.length > 0 ? (
-                        <div className="hm-esen-lead-pack-right-grid">
-                          {leadPackColumns.right.map((n, index) => (
-                            <ClassicFeatureCard
-                              key={n.id ?? n.slug ?? index}
-                              n={n}
-                              accent={accent}
-                              hmCategoryColors={hmCat}
-                              large={index === 0}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
-                          {featuredCategorySlug
-                            ? "Bu kategoride kart gösterilecek haber yok."
-                            : leadPackColumns.left.length > 0
-                              ? "Görselli kart için uygun haber bulunamadı."
-                              : homeNewsBootstrapping
-                                ? "Son haberler yükleniyor…"
-                                : "Henüz haber yok."}
-                        </div>
-                      )}
+                      <div className="hm-esen-lead-pack-right-grid">
+                        {leadPackColumns.right.map((n, index) => (
+                          <ClassicFeatureCard
+                            key={n.id ?? n.slug ?? index}
+                            n={n}
+                            accent={accent}
+                            hmCategoryColors={hmCat}
+                            large={index === 0}
+                          />
+                        ))}
+                      </div>
                     </div>
+                    ) : leadPackColumns.left.length > 0 ? (
+                      <ClassicTextList
+                        title="Gündemde Öne Çıkanlar"
+                        items={leadPackColumns.left}
+                        accent={accent}
+                        href={tumHaberlerHref}
+                        hideTitle
+                      />
+                    ) : (
+                      <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
+                        {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
+                      </div>
+                    )
                   ) : homeNewsBootstrapping ? (
                     <HmNewsInlinePulse className="max-w-md" />
                   ) : featuredCategorySlug ? (

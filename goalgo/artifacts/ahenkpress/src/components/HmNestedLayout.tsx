@@ -834,7 +834,11 @@ function HmNestedLayoutVitrinRoot({
   }, [immersiveVideoTvMain]);
 
   const showVideoTvLink =
-    resolveHmNewsVideoTvEnabled(layoutPrefs) && !isKhHmSite(hostKey, effectiveData?.slug ?? slug);
+    resolveHmNewsVideoTvEnabled(layoutPrefs) &&
+    !isKhHmSite(
+      typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "",
+      effectiveData.slug,
+    );
   const useContainedEditorPageHost =
     siteLayoutWidth === "contained" && isHmEditorPageForContainedHost(pathOnly, isHomeRoot);
   const mainChildren = useContainedEditorPageHost ? (
