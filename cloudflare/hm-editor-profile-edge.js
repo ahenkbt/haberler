@@ -864,6 +864,43 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
   }
 
   let editor = editors?.[0];
+  if (!editor?.password_hash) {
+    // Site «Aktif» iken editör is_active=false kalabiliyor; doğru şifreyle yeniden aç.
+    let inactiveRows;
+    if (loginIsEmail) {
+      inactiveRows = await sql`
+        SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+        FROM hm_site_editors
+        WHERE site_id = ${site.id}
+          AND is_active = false
+          AND lower(email) = ${loginRaw}
+        ORDER BY updated_at DESC NULLS LAST, id DESC
+        LIMIT 1
+      `;
+    } else if (loginUsername) {
+      inactiveRows = await sql`
+        SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
+        FROM hm_site_editors
+        WHERE site_id = ${site.id}
+          AND is_active = false
+          AND lower(coalesce(username, '')) = ${loginUsername}
+        ORDER BY updated_at DESC NULLS LAST, id DESC
+        LIMIT 1
+      `;
+    }
+    const inactive = inactiveRows?.[0];
+    if (inactive?.password_hash) {
+      const inactiveOk = await bcrypt.compare(password, inactive.password_hash);
+      if (inactiveOk) {
+        await sql`
+          UPDATE hm_site_editors
+          SET is_active = true, updated_at = NOW()
+          WHERE id = ${inactive.id}
+        `;
+        editor = { ...inactive, is_active: true };
+      }
+    }
+  }
   if (!editor?.password_hash && loginIsEmail) {
     const siteIsKh = (await isKhEditorSite(sql, site.id)) || KH_HOSTS.has(host);
     if (siteIsKh) {
