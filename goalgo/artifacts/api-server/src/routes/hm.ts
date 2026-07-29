@@ -1368,21 +1368,23 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
           return;
         }
       }
-      const ePatch: Partial<typeof hmSiteEditorsTable.$inferInsert> = {};
+      const ePatch: Partial<typeof hmSiteEditorsTable.$inferInsert> = {
+        // Site «Aktif» ≠ editör is_active. Admin kaydı pasif editörü yeniden açar;
+        // aksi halde şifre güncellenir ama giriş is_active=true filtresinde 401 kalır.
+        isActive: true,
+      };
       if (typeof b.editorDisplayName === "string") ePatch.displayName = b.editorDisplayName.trim() || null;
       if (typeof b.editorEmail === "string") ePatch.email = b.editorEmail.trim().toLowerCase();
       if (typeof b.editorPassword === "string" && b.editorPassword.length >= 8) {
         ePatch.passwordHash = await bcrypt.hash(b.editorPassword, 10);
       }
-      if (Object.keys(ePatch).length > 0) {
-        ePatch.updatedAt = new Date();
-        await dualWriteUpdate(hmSiteEditorsTable, ePatch, eq(hmSiteEditorsTable.id, editorId));
-        if (ePatch.passwordHash && isHmCrossSiteSharedEditorEmail(ed.email)) {
-          await syncSharedHmEditorCredentials({
-            email: ed.email,
-            passwordHash: ePatch.passwordHash,
-          }).catch(() => 0);
-        }
+      ePatch.updatedAt = new Date();
+      await dualWriteUpdate(hmSiteEditorsTable, ePatch, eq(hmSiteEditorsTable.id, editorId));
+      if (ePatch.passwordHash && isHmCrossSiteSharedEditorEmail(ed.email)) {
+        await syncSharedHmEditorCredentials({
+          email: ePatch.email ?? ed.email,
+          passwordHash: ePatch.passwordHash,
+        }).catch(() => 0);
       }
     } else if (wantsEditorCreate) {
       const em = String(b.editorEmail ?? "")

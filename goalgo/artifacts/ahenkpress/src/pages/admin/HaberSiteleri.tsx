@@ -100,17 +100,26 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
   return { items: [...items].sort((a, b) => a.id - b.id) };
 }
 
-/** Form için birincil editör — contact e-postası eşleşen veya ilk aktif kayıt. */
+/** Form için birincil editör — önce aktif; yoksa pasif kayıt (güncelleme ile yeniden aktif edilir). */
 function primaryHmSiteEditor(site: HmSiteRow | undefined): HmEditor | undefined {
   if (!site) return undefined;
   const editors = site.editors ?? [];
   if (editors.length === 0) return undefined;
   const contactEmail = site.contact?.email?.trim().toLowerCase();
   if (contactEmail) {
-    const byContact = editors.find((e) => e.isActive !== false && e.email.trim().toLowerCase() === contactEmail);
-    if (byContact) return byContact;
+    const byContactActive = editors.find(
+      (e) => e.isActive !== false && e.email.trim().toLowerCase() === contactEmail,
+    );
+    if (byContactActive) return byContactActive;
+    const byContactAny = editors.find((e) => e.email.trim().toLowerCase() === contactEmail);
+    if (byContactAny) return byContactAny;
   }
   return editors.find((e) => e.isActive !== false) ?? editors[0];
+}
+
+function primaryEditorIsPassive(site: HmSiteRow | undefined): boolean {
+  const editor = primaryHmSiteEditor(site);
+  return Boolean(editor && editor.isActive === false);
 }
 
 function editorSummary(site: HmSiteRow): string {
@@ -537,11 +546,12 @@ export default function HaberSiteleri() {
                 {editingId && !primaryHmSiteEditor(sites.find((s) => s.id === editingId)) ? (
                   <p className="mb-3 text-xs font-semibold text-amber-800">
                     Bu sitede henüz editör yok. E-posta + şifre girip kaydedin; yeni editör oluşturulur.
-                    {(sites.find((s) => s.id === editingId)?.editors?.length ?? 0) > 0 ? (
-                      <span className="block mt-1 text-amber-700">
-                        Not: Bu sitede yalnızca pasif editör kayıtları var — yeni kayıt oluşturulacak.
-                      </span>
-                    ) : null}
+                  </p>
+                ) : null}
+                {editingId && primaryEditorIsPassive(sites.find((s) => s.id === editingId)) ? (
+                  <p className="mb-3 text-xs font-semibold text-amber-800">
+                    Bu editör şu an <strong>pasif</strong> — site «Aktif» olsa bile giriş yapılamaz. «Güncelle»
+                    deyince editör yeniden aktif olur; yeni şifre girmeniz önerilir.
                   </p>
                 ) : null}
                 <div className="space-y-3">
@@ -561,9 +571,12 @@ export default function HaberSiteleri() {
               </div>
 
               <label className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2">
-                <span className="text-sm font-semibold text-gray-800">Aktif</span>
+                <span className="text-sm font-semibold text-gray-800">Site aktif</span>
                 <Switch checked={form.active} onCheckedChange={(v) => update("active", Boolean(v))} />
               </label>
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                «Site aktif» yalnızca vitrini açar. Editör girişi için sağ listedeki hesap «(pasif)» olmamalı.
+              </p>
 
               <Button type="button" disabled={saving} onClick={saveSite} className="w-full bg-[#e61e25] hover:bg-[#c91820]">
                 <Save className="mr-2 h-4 w-4" /> {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : "Site Oluştur"}
