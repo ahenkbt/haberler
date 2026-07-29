@@ -782,10 +782,13 @@ async function ensureKhSiteRow(sql, row) {
 }
 
 const ASG_FROM_AHG_MAKALE_EXT_PREFIX = "asg←ankarahabergundemi:makale:";
-/** Bump when copy semantics change so fingerprint no-op cannot skip a needed re-sync. */
-const ASG_FROM_AHG_SYNC_REV = "authors+makale-v1";
+/** Bump: önce makale sil → yazar ekle → makale ekle. */
+const ASG_FROM_AHG_SYNC_REV = "wipe-makale-then-authors-v3";
 
-/** /tr/ankarahabergundemi → asg: yazar listesi + köşe yazıları (slug ahg değil). */
+/**
+ * Sıra: 1) ASG hm_makaleler sil  2) yazarları ankarahabergundemi'den yaz  3) makaleleri kopyala
+ * Kaynak slug: ankarahabergundemi (ahg değil).
+ */
 async function repairAsgAuthorsFromAhgOnNeon(sql) {
   const sourceRows = await sql`
     SELECT id FROM hm_news_sites
@@ -833,6 +836,12 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
       AND external_key LIKE ${`${ASG_FROM_AHG_MAKALE_EXT_PREFIX}%`}
   `.catch(() => [{ c: 0 }]);
   const copiedMakaleCount = Number(copiedMakaleCountRows?.[0]?.c ?? 0);
+  const leftoverMakaleRows = await sql`
+    SELECT count(*)::int AS c FROM hm_makaleler
+    WHERE site_id = ${targetSiteId}
+      AND (external_key IS NULL OR external_key NOT LIKE ${`${ASG_FROM_AHG_MAKALE_EXT_PREFIX}%`})
+  `.catch(() => [{ c: 0 }]);
+  const leftoverMakaleCount = Number(leftoverMakaleRows?.[0]?.c ?? 0);
 
   const current = await sql`
     SELECT name, avatar_url, hm_sort_order
@@ -858,12 +867,30 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
     })),
   );
   const authorsMatch = fp(current) === wantFp && (current || []).length === canonical.length;
-  const makalesMatch = sourceMakaleCount > 0 && copiedMakaleCount === sourceMakaleCount;
+  const makalesMatch =
+    leftoverMakaleCount === 0 &&
+    sourceMakaleCount > 0 &&
+    copiedMakaleCount === sourceMakaleCount;
   if (authorsMatch && makalesMatch) {
-    return; // yazar + köşe yazısı ankarahabergundemi ile hizalı
+    return;
   }
 
-  // Byline ad haritası (silmeden önce) — yalnızca news; makaleler yeniden kopyalanır
+  const norm = (n) =>
+    String(n ?? "")
+      .trim()
+      .toLocaleLowerCase("tr-TR")
+      .replace(/\s+/g, " ");
+
+  // 1) ÖNCE tüm ASG köşe yazılarını sil
+  await sql`DELETE FROM hm_makaleler WHERE site_id = ${targetSiteId}`.catch((err) => {
+    console.error(
+      "[hm-brand-db-ensure/asg-wipe-makale]",
+      ASG_FROM_AHG_SYNC_REV,
+      String(err?.message || err).slice(0, 180),
+    );
+  });
+
+  // 2) Yazarları yenile
   const oldAuthors = await sql`
     SELECT id, name FROM authors WHERE hm_site_id = ${targetSiteId}
   `;
@@ -879,7 +906,6 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
   }
 
   await sql`UPDATE news SET author_id = NULL WHERE site_id = ${targetSiteId}`.catch(() => undefined);
-  await sql`DELETE FROM hm_makaleler WHERE site_id = ${targetSiteId}`.catch(() => undefined);
   await sql`DELETE FROM authors WHERE hm_site_id = ${targetSiteId}`;
 
   const inserted = [];
@@ -905,11 +931,6 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
     }
   }
 
-  const norm = (n) =>
-    String(n ?? "")
-      .trim()
-      .toLocaleLowerCase("tr-TR")
-      .replace(/\s+/g, " ");
   const findNewId = (name) => {
     const key = norm(name);
     const hit = inserted.find((r) => norm(r.name) === key);
@@ -929,6 +950,7 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
     await sql`UPDATE news SET author_id = ${nextId} WHERE id = ${newsId}`.catch(() => undefined);
   }
 
+  // 3) ankarahabergundemi köşe yazılarını ekle
   const sourceMakaleler = await sql`
     SELECT id, author_id, title, slug, spot, content, image_url, status, created_at, updated_at
     FROM hm_makaleler

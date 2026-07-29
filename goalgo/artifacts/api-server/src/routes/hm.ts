@@ -2010,7 +2010,7 @@ router.post("/hm/admin/repair-asg-authors-from-ahg", async (req, res): Promise<v
       ...result,
       ok: result.ok,
       message: result.ok
-        ? `ASG ← ankarahabergundemi: ${result.upserted} yazar, ${result.makaleCopied} köşe yazısı kopyalandı (${result.removed} yazar / ${result.makaleRemoved} makale silindi)`
+        ? `ASG ← ankarahabergundemi: önce ${result.makaleRemoved} köşe yazısı silindi; ${result.upserted} yazar + ${result.makaleCopied} makale eklendi`
         : "Kaynak veya hedef site bulunamadı / senkron tamamlanamadı",
     });
   } catch (e) {

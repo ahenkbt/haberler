@@ -90,8 +90,10 @@ function allocSlug(base: string, existing: Set<string>): string {
 }
 
 /**
- * ASG yazarlarını silip ankarahabergundemi kanonik listesini kopyalar;
- * ASG köşe yazılarını silip kaynak site makalelerini yazar eşlemesiyle kopyalar.
+ * Sıra (zorunlu):
+ * 1) ASG mevcut köşe yazılarını (`hm_makaleler`) sil
+ * 2) ASG yazarlarını sil → ankarahabergundemi yazarlarını ekle
+ * 3) ankarahabergundemi köşe yazılarını yazar eşlemesiyle ekle
  */
 export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepairResult> {
   const db = getNewsDbForRead();
@@ -131,7 +133,6 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
   const oldIds = targetRows.map((row) => row.id);
   const oldIdToName = new Map(targetRows.map((row) => [row.id, row.name] as const));
 
-  // Silmeden önce haber byline → yazar adı (makaleler tamamen yenilenecek)
   const newsNameById = new Map<number, string>();
   if (oldIds.length > 0) {
     const newsHits = await db
@@ -144,7 +145,18 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
     }
   }
 
-  // 1) ASG yazarlarını tamamen sil
+  // 1) ÖNCE: ASG'deki tüm köşe yazılarını sil
+  const existingMakaleIds = await db
+    .select({ id: hmMakalelerTable.id })
+    .from(hmMakalelerTable)
+    .where(eq(hmMakalelerTable.siteId, targetSiteId));
+  const makaleRemoved = existingMakaleIds.length;
+  if (makaleRemoved > 0) {
+    await dualWriteDelete(hmMakalelerTable, eq(hmMakalelerTable.siteId, targetSiteId));
+    actions.push(`removed-makaleler:${makaleRemoved}`);
+  }
+
+  // 2) ASG yazarlarını sil
   let removed = 0;
   for (const row of targetRows) {
     await dualWriteUpdate(
@@ -152,17 +164,12 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
       { authorId: null },
       and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, row.id))!,
     );
-    await dualWriteUpdate(
-      hmMakalelerTable,
-      { authorId: null },
-      and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, row.id))!,
-    );
     await dualWriteDelete(authorsTable, eq(authorsTable.id, row.id));
     removed += 1;
     actions.push(`removed-author:${row.id}`);
   }
 
-  // 2) ankarahabergundemi kanonik yazarlarını ekle
+  // 3) ankarahabergundemi yazarlarını ekle
   const newIds: number[] = [];
   let upserted = 0;
   const sourceAuthorIdToTargetId = new Map<number, number>();
@@ -194,14 +201,12 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
     return match?.id ?? null;
   };
 
-  // Kaynakta hm_sort_order olmayan eş yazarlar (aynı kişi) → hedef id
   for (const src of sourceRows) {
     if (sourceAuthorIdToTargetId.has(src.id)) continue;
     const mapped = findNewIdByName(src.name);
     if (mapped != null) sourceAuthorIdToTargetId.set(src.id, mapped);
   }
 
-  // 3) Haber byline'larını ada göre yeni id'lere bağla
   let remappedNews = 0;
   for (const [newsId, name] of newsNameById) {
     const nextId = findNewIdByName(name);
@@ -211,18 +216,7 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
     ).length;
   }
 
-  // 4) ASG köşe yazılarını sil; ankarahabergundemi makalelerini kopyala
-  const existingTargetMakaleler = await db
-    .select({ id: hmMakalelerTable.id })
-    .from(hmMakalelerTable)
-    .where(eq(hmMakalelerTable.siteId, targetSiteId));
-  let makaleRemoved = 0;
-  for (const row of existingTargetMakaleler) {
-    await dualWriteDelete(hmMakalelerTable, eq(hmMakalelerTable.id, row.id));
-    makaleRemoved += 1;
-  }
-  if (makaleRemoved > 0) actions.push(`removed-makaleler:${makaleRemoved}`);
-
+  // 4) ankarahabergundemi köşe yazılarını ekle
   const sourceMakaleler: MakaleRow[] = await db
     .select()
     .from(hmMakalelerTable)
@@ -257,14 +251,13 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
       createdAt: src.createdAt,
       updatedAt: src.updatedAt,
     });
-    if (created?.id) {
-      makaleCopied += 1;
-    }
+    if (created?.id) makaleCopied += 1;
   }
   actions.push(`copied-makaleler:${makaleCopied}/${sourceMakaleler.length}`);
 
+  const titledSource = sourceMakaleler.filter((m) => String(m.title ?? "").trim()).length;
   return {
-    ok: newIds.length === canonical.length && makaleCopied === sourceMakaleler.filter((m) => String(m.title ?? "").trim()).length,
+    ok: newIds.length === canonical.length && makaleCopied === titledSource,
     sourceSiteId,
     targetSiteId,
     upserted,

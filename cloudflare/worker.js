@@ -850,7 +850,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     } else {
       // waitUntil yoksa kısa fingerprint no-op için yine de dene; uzun kopya riskli
       try {
-        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))];
+        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))]);
       } catch (_) {}
     }
     return null;
@@ -2162,7 +2162,9 @@ export default {
         proxyOpts,
         cfOpts,
       );
-      const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream);
+      const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
+        waitUntil: typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : undefined,
+      });
       if (brandMeta) return brandMeta;
       const repaired = await maybeRepairMismatchedNewsJson(
         origin,
