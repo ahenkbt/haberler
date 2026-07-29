@@ -79,13 +79,71 @@ async function ensureExtraSettingsColumns() {
   ensuredExtraSettingsCols = true;
 }
 
+let ensuredPortalBrandTrim = false;
+
+/** turk.eco markası + seyahat/sarı sayfalar/keşfet kapalı. */
+async function ensurePortalBrandAndModuleTrim() {
+  if (ensuredPortalBrandTrim) return;
+  ensuredPortalBrandTrim = true;
+  try {
+    const [row] = await db
+      .select({
+        id: siteSettingsTable.id,
+        siteName: siteSettingsTable.siteName,
+        modulesEnabledJson: siteSettingsTable.modulesEnabledJson,
+        mainNavJson: siteSettingsTable.mainNavJson,
+        footerNavJson: siteSettingsTable.footerNavJson,
+      })
+      .from(siteSettingsTable)
+      .limit(1);
+    if (!row) return;
+    const name = String(row.siteName ?? "").trim().toLowerCase();
+    const patch: Partial<typeof siteSettingsTable.$inferInsert> = {};
+    if (!name || name === "yekpare" || name === "yekpare.net" || name.includes("yekpare")) {
+      patch.siteName = "Türk Ekosistemi";
+    }
+    let mods: Record<string, boolean> = {};
+    try {
+      mods = row.modulesEnabledJson ? (JSON.parse(row.modulesEnabledJson) as Record<string, boolean>) : {};
+    } catch {
+      mods = {};
+    }
+    const nextMods = {
+      ...mods,
+      turizm: false,
+      firmaRehberi: false,
+      kesfet: false,
+      haritalar: true,
+      haberler: true,
+      yektube: true,
+    };
+    patch.modulesEnabledJson = JSON.stringify(nextMods);
+    patch.mainNavJson = JSON.stringify({
+      v: 1,
+      items: [
+        { type: "module", key: "haberler" },
+        { type: "module", key: "yektube" },
+        { type: "module", key: "haritalar" },
+        { type: "link", id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi" },
+      ],
+    });
+    patch.footerNavJson = JSON.stringify(["haberler", "yektube", "haritalar", "iletisim"]);
+    if (Object.keys(patch).length > 0) {
+      await db.update(siteSettingsTable).set(patch).where(eq(siteSettingsTable.id, row.id));
+    }
+  } catch {
+    ensuredPortalBrandTrim = false;
+  }
+}
+
 async function getOrCreate() {
   await ensureExtraSettingsColumns();
+  await ensurePortalBrandAndModuleTrim();
   const rows = await db.select().from(siteSettingsTable).limit(1);
   if (rows[0]) return rows[0];
   const [row] = await db
     .insert(siteSettingsTable)
-    .values({})
+    .values({ siteName: "Türk Ekosistemi" })
     .returning();
   return row;
 }

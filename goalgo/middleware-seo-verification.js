@@ -205,7 +205,7 @@ export function createMiddlewareSeoVerification(deps) {
         if (portal?.seoVerification && hasSeoVerification(portal.seoVerification)) {
           return {
             seoVerification: portal.seoVerification,
-            displayName: portal.siteName || "Yekpare",
+            displayName: portal.siteName || "Türk Ekosistemi",
           };
         }
       }
@@ -314,7 +314,7 @@ export function createMiddlewareSeoVerification(deps) {
         const portal = await portalRes.json().catch(() => null);
         if (portal?.seoVerification?.googleSiteVerification) {
           const html = buildVerificationHtml(
-            { displayName: portal.siteName || "Yekpare", seoVerification: portal.seoVerification },
+            { displayName: portal.siteName || "Türk Ekosistemi", seoVerification: portal.seoVerification },
             request.url,
           );
           return new Response(html, {

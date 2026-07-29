@@ -2,7 +2,7 @@ import { pgTable, text, serial, boolean, integer, decimal, timestamp } from "dri
 
 export const siteSettingsTable = pgTable("site_settings", {
   id: serial("id").primaryKey(),
-  siteName: text("site_name").notNull().default("Yekpare"),
+  siteName: text("site_name").notNull().default("Türk Ekosistemi"),
   tagline: text("tagline").notNull().default(
     "Haber Video Haritalar Sipariş Alışveriş Rezervasyon ve İlan Portalı",
   ),

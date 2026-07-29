@@ -8,11 +8,8 @@ type SiteBrandSettings = {
 
 /** Üst bar / footer metin logosu — site adı öncelikli. */
 export function portalNavBrandText(settings: SiteBrandSettings | null | undefined): string {
-  const name = normalizePortalDisplayName(settings?.siteName);
-  if (settings?.siteName?.trim()) return name;
-  const t1 = settings?.logoText1?.trim() || "Yek";
-  const t2 = settings?.logoText2?.trim() || "pare";
-  return `${t1}${t2}`;
+  if (settings?.siteName?.trim()) return normalizePortalDisplayName(settings.siteName);
+  return PORTAL_BRAND_SHORT;
 }
 
 export function portalNavBrandParts(settings: SiteBrandSettings | null | undefined): {
@@ -21,20 +18,11 @@ export function portalNavBrandParts(settings: SiteBrandSettings | null | undefin
   part1: string;
   part2: string;
 } {
-  const name = settings?.siteName?.trim();
-  if (name) {
-    const display = normalizePortalDisplayName(name);
-    return { single: true, text: display, part1: "", part2: display };
-  }
-  return {
-    single: false,
-    text: portalNavBrandText(settings),
-    part1: settings?.logoText1?.trim() || "Yek",
-    part2: settings?.logoText2?.trim() || "pare",
-  };
+  const text = portalNavBrandText(settings);
+  return { single: true, text, part1: "", part2: text };
 }
 
 export function portalCopyrightFallback(settings: SiteBrandSettings | null | undefined): string {
-  const name = normalizePortalDisplayName(settings?.siteName) || PORTAL_BRAND_SHORT;
+  const name = portalNavBrandText(settings) || PORTAL_BRAND_SHORT;
   return `© ${new Date().getFullYear()} ${name}. Tüm hakları saklıdır.`;
 }

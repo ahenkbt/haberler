@@ -612,7 +612,7 @@ export function AppNav() {
           boxShadow: "0 -6px 24px rgba(0,0,0,0.45)",
         }}
       >
-        <div className={`h-full grid ${isKesfet ? "grid-cols-5" : "grid-cols-6"}`}>
+        <div className={`h-full grid ${isKesfet ? "grid-cols-5" : "grid-cols-5"}`}>
           {isKesfet ? (
             <>
               <Link href="/" className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.72)" }}>
@@ -646,9 +646,10 @@ export function AppNav() {
           ) : (
             [
               { href: "/", label: "Ana Sayfa", icon: <Store className="w-4 h-4" /> },
-              { href: "/haritalar", label: "Haritalar", icon: <MapIcon className="w-4 h-4" /> },
-              { href: "/turizm", label: "Seyahat", icon: <Plane className="w-4 h-4" /> },
-              { href: "/kesfet", label: "Keşfet", icon: <MapIcon className="w-4 h-4" /> },
+              { href: "/haberler", label: "Haberler", icon: <Newspaper className="w-4 h-4" /> },
+              { href: "/yektube", label: "YekTube", icon: <Youtube className="w-4 h-4" /> },
+              { href: "/newsmap", label: "Newsmap", icon: <MapIcon className="w-4 h-4" /> },
+              { href: "/habermerkezi", label: "HM", icon: <Building2 className="w-4 h-4" /> },
             ].map((item) => {
               const active = isActive(item.href);
               return (

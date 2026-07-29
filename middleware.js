@@ -118,7 +118,7 @@ function optionalPublicGetFallbackBody(pathname, method, search = "") {
   const qs = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
 
   if (p === "/api/settings") {
-    return JSON.stringify({ siteName: "Yekpare", homepageDesignJson: null });
+    return JSON.stringify({ siteName: "Türk Ekosistemi", homepageDesignJson: null });
   }
   if (p === "/api/map/homepage-businesses" || p === "/api/map/homepage-featured-offers") {
     return JSON.stringify({ success: true, data: [] });
@@ -194,7 +194,7 @@ function optionalPublicGetFallbackBody(pathname, method, search = "") {
     return JSON.stringify({ items: [], total: 0 });
   }
   if (p === "/api/public/portal-seo") {
-    return JSON.stringify({ siteName: "Yekpare", seoVerification: null });
+    return JSON.stringify({ siteName: "Türk Ekosistemi", seoVerification: null });
   }
   if (p === "/api/vendors/meta/by-domain") {
     return JSON.stringify({ slug: null, storefrontPath: null, shortPath: null });
@@ -565,7 +565,7 @@ function createMiddlewareSeoVerification(deps) {
         if (portal?.seoVerification && hasSeoVerification(portal.seoVerification)) {
           return {
             seoVerification: portal.seoVerification,
-            displayName: portal.siteName || "Yekpare",
+            displayName: portal.siteName || "Türk Ekosistemi",
           };
         }
       }
@@ -677,7 +677,7 @@ function createMiddlewareSeoVerification(deps) {
         const portal = await portalRes.json().catch(() => null);
         if (portal?.seoVerification?.googleSiteVerification) {
           const html = buildVerificationHtml(
-            { displayName: portal.siteName || "Yekpare", seoVerification: portal.seoVerification },
+            { displayName: portal.siteName || "Türk Ekosistemi", seoVerification: portal.seoVerification },
             request.url,
           );
           return new Response(html, {

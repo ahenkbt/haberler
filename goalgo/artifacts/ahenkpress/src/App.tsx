@@ -293,40 +293,14 @@ function isVendorStorefrontPath(path: string): boolean {
   );
 }
 
-/** Turizm — Yeni Sade/SixAmMart chrome; eski mor AppNav/SiteFooter yasak (§5.1) */
+/** Turizm / Seyahat — turk.eco’da kaldırıldı. */
 function TurizmRoute({ children }: { children: React.ReactNode }) {
-  const [loc] = useLocation();
-  const path = (loc.split("?")[0] ?? "").trim();
-  const hubOwnsSubNav = pageOwnsTurizmSubNav(path);
-  return (
-    <SadeAwarePublicLayout
-      forceSade
-      chrome
-      fullBleed
-      active="rental"
-      footerVariant="turizm"
-      searchPlaceholder="Otel, villa, tur veya destinasyon ara"
-      subHeader={hubOwnsSubNav ? null : <TurizmSubNavBar inline />}
-    >
-      <TurizmPageErrorBoundary>{children}</TurizmPageErrorBoundary>
-    </SadeAwarePublicLayout>
-  );
+  void children;
+  return <Redirect to="/" replace />;
 }
 
 function TurizmLegacyTypeRedirect() {
-  const [, params] = useRoute("/turizm/:type");
-  const type = String(params?.type ?? "").toLowerCase();
-  const map: Record<string, string> = {
-    hotel: "/turizm/konaklama",
-    villa: "/turizm/villa-ev",
-    space: "/turizm/villa-ev",
-    uzay: "/turizm/villa-ev",
-    car: "/turizm/arac-kiralama",
-    boat: "/turizm/yat-turlari",
-    tour: "/turizm/turlar",
-    turlar: "/turizm/turlar",
-  };
-  return <Redirect to={map[type] ?? "/turizm"} />;
+  return <Redirect to="/" replace />;
 }
 
 function isPwaStandaloneDisplay(): boolean {
@@ -646,7 +620,7 @@ function HmPublicShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Kök yol: kanonik portal doşrudan vitrin; dişer özel alanlar HM başlantısı için kısa API kontrolü. */
+/** Kök yol: arama motoru anasayfası (SearchEngineHomePage) — haber vitrinine çevrilmez. */
 function PortalHomeRoute() {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
@@ -903,31 +877,31 @@ export default function App() {
       <Route path="/foto-galeri">{() => <PublicLayout><FotoGaleriPublic /></PublicLayout>}</Route>
       <Route path="/video-galeri/:id" component={VideoGaleriToYektubeRedirect} />
       <Route path="/video-galeri">{() => <YektubeRootRedirect />}</Route>
-      <Route path="/seri-ilanlar/:id">{() => <Redirect to="/kesfet" />}</Route>
-      <Route path="/seri-ilanlar">{() => <Redirect to="/kesfet" />}</Route>
-      <Route path="/sari-sayfalar">{() => <Redirect to="/kesfet/sarisayfalar" />}</Route>
+      <Route path="/seri-ilanlar/:id">{() => <Redirect to="/" />}</Route>
+      <Route path="/seri-ilanlar">{() => <Redirect to="/" />}</Route>
+      <Route path="/sari-sayfalar">{() => <Redirect to="/" />}</Route>
       <Route path="/resmi-ilanlar">{() => <PublicLayout><ResmiIlanlarPublic /></PublicLayout>}</Route>
       <Route path="/lisans-aktivasyon">{() => <PublicLayout><LisansAktivasyonu /></PublicLayout>}</Route>
-      <Route path={/^\/maps\/place\/[^/]+\/(?:@|%40)[^/?#]*$/i}>{() => <LegacyMapsPlaceRedirect />}</Route>
-      <Route path={/^\/maps\/(?:@|%40)[^/?#]*$/i}>{() => <LegacyMapsPlaceRedirect />}</Route>
-      <Route path={/^\/maps\/?$/}>{() => <LazyRouteChunk><HaritalarFullscreenRoute /></LazyRouteChunk>}</Route>
-      <Route path={/^\/map\/?$/}>{() => <LazyRouteChunk><HaritalarFullscreenRoute /></LazyRouteChunk>}</Route>
-      <Route path="/maps">{() => <LazyRouteChunk><HaritalarFullscreenRoute /></LazyRouteChunk>}</Route>
-      <Route path="/map">{() => <LazyRouteChunk><HaritalarFullscreenRoute /></LazyRouteChunk>}</Route>
-      <Route path="/haritalar/tam-ekran">{() => <LegacyFullscreenMapRedirect />}</Route>
+      <Route path={/^\/maps\/place\/[^/]+\/(?:@|%40)[^/?#]*$/i}>{() => <Redirect to="/newsmap" replace />}</Route>
+      <Route path={/^\/maps\/(?:@|%40)[^/?#]*$/i}>{() => <Redirect to="/newsmap" replace />}</Route>
+      <Route path={/^\/maps\/?$/}>{() => <Redirect to="/newsmap" replace />}</Route>
+      <Route path={/^\/map\/?$/}>{() => <Redirect to="/newsmap" replace />}</Route>
+      <Route path="/maps">{() => <Redirect to="/newsmap" replace />}</Route>
+      <Route path="/map">{() => <Redirect to="/newsmap" replace />}</Route>
+      <Route path="/haritalar/tam-ekran">{() => <Redirect to="/newsmap" replace />}</Route>
       <Route path="/haritalar">{() => <Redirect to="/newsmap" />}</Route>
       <Route path="/newsmap">{() => (
         <YekparePortalHubOnlyRoute>
           <LazyRouteChunk><NewsmapRoute /></LazyRouteChunk>
         </YekparePortalHubOnlyRoute>
       )}</Route>
-      <Route path="/kesfet/premium-basarili">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ışletme, ürün veya haber ara"><PremiumBasarili /></SadeAwarePublicLayout>}</Route>
-      <Route path="/kesfet/sarisayfalar/:id">{() => <SariSayfalarDetayRoute />}</Route>
-      <Route path="/kesfet/sarisayfalar">{() => <SariSayfalarHubRoute />}</Route>
+      <Route path="/kesfet/premium-basarili">{() => <Redirect to="/" />}</Route>
+      <Route path="/kesfet/sarisayfalar/:id">{() => <Redirect to="/" />}</Route>
+      <Route path="/kesfet/sarisayfalar">{() => <Redirect to="/" />}</Route>
       <Route path="/ara">{() => <HmPortalOrDomainAraRoute />}</Route>
-      <Route path="/kesfet/liste">{() => <KesfetListingRoute />}</Route>
-      <Route path="/kesfet/isletme/:id">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ışletme, ürün veya haber ara"><IsletmeDetay /></SadeAwarePublicLayout>}</Route>
-      <Route path="/kesfet/:slug">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ışletme, ürün veya haber ara"><IsletmeDetay /></SadeAwarePublicLayout>}</Route>
+      <Route path="/kesfet/liste">{() => <Redirect to="/" />}</Route>
+      <Route path="/kesfet/isletme/:id">{() => <Redirect to="/" />}</Route>
+      <Route path="/kesfet/:slug">{() => <Redirect to="/" />}</Route>
       <Route path="/isletme-paneli/:id">{() => <PublicLayout><IsletmePaneli /></PublicLayout>}</Route>
       <Route path="/isletme-paneli">{() => <PublicLayout><IsletmePaneli /></PublicLayout>}</Route>
       <Route path="/isletme-basvuru">{() => <SadeAwarePublicLayout chrome searchPlaceholder="Başvuru ve işletme ara"><IsletmeBasvuru /></SadeAwarePublicLayout>}</Route>
@@ -950,12 +924,12 @@ export default function App() {
       <Route path="/turizm-paneli">{() => <LazyProviderPanel><TurizmSaglayiciPaneli /></LazyProviderPanel>}</Route>
       <Route path="/sifre-sifirla">{() => <PublicLayout searchPlaceholder="Hesap veya işletme ara"><SifreSifirla /></PublicLayout>}</Route>
       <Route path="/sifre-yenile">{() => <PublicLayout searchPlaceholder="Hesap veya işletme ara"><SifreYenile /></PublicLayout>}</Route>
-      <Route path="/kesfet">{() => <KesfetDiscoverHubRoute />}</Route>
-      <Route path="/gezi-seyahat">{() => <Redirect to="/bilgiagaci/kategori/gezi-seyahat" replace />}</Route>
-      <Route path="/firma-rehberi/urunler">{() => <PublicLayout><FirmaRehberiListe mode="urunler" /></PublicLayout>}</Route>
-      <Route path="/firma-rehberi/hizmetler">{() => <PublicLayout><FirmaRehberiListe mode="hizmetler" /></PublicLayout>}</Route>
-      <Route path="/firma-rehberi/ilanlar">{() => <PublicLayout><FirmaRehberiListe mode="ilanlar" /></PublicLayout>}</Route>
-      <Route path="/firma-rehberi">{() => <PublicLayout><FirmaRehberi /></PublicLayout>}</Route>
+      <Route path="/kesfet">{() => <Redirect to="/" />}</Route>
+      <Route path="/gezi-seyahat">{() => <Redirect to="/" replace />}</Route>
+      <Route path="/firma-rehberi/urunler">{() => <Redirect to="/" />}</Route>
+      <Route path="/firma-rehberi/hizmetler">{() => <Redirect to="/" />}</Route>
+      <Route path="/firma-rehberi/ilanlar">{() => <Redirect to="/" />}</Route>
+      <Route path="/firma-rehberi">{() => <Redirect to="/" />}</Route>
       <Route path="/bilgiagaci/kategori/:categorySlug">
         {() => (
           <YekparePortalHubOnlyRoute>
@@ -1082,6 +1056,7 @@ export default function App() {
           </HmPortalOrDomainStandardPage>
         )}
       </Route>
+      {/* Haber Merkezi tanıtım sayfası — korunur */}
       <Route path="/habermerkezi">{() => <PublicLayout><Habermerkezi /></PublicLayout>}</Route>
       <Route path="/ucretsiz-haber-sitesi">{() => <PublicLayout><UcretsizHaberSitesiLanding /></PublicLayout>}</Route>
       <Route path="/ai-cagri-merkezi">{() => <PublicLayout><AiCagriMerkeziLanding /></PublicLayout>}</Route>

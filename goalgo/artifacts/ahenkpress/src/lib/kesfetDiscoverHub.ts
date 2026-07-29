@@ -16,21 +16,21 @@ export const KESFET_HUB_PATH = "/kesfet";
 export const KESFET_LISTING_PATH = "/kesfet/liste";
 export const UNIFIED_SEARCH_PATH = "/ara";
 export const YEKPARE_SLOGAN =
-  "Türkiye'nin yerli ve milli arama motoru — haber, hizmet ve alışverişi tek aramada keşfedin.";
+  "Haberler, Yektube, Haber Merkezi ve Newsmap — Türk Ekosistemi.";
 
 export const KESFET_HUB_BADGE_LABEL = "Keşfet Merkezi";
-export const KESFET_HUB_HERO_TITLE = "Şehri keşfet, alışveriş yap, yola çık";
+export const KESFET_HUB_HERO_TITLE = "Haber, video ve Newsmap";
 export const KESFET_HUB_HERO_SUBTITLE =
-  "Alışveriş, seyahat, ulaşım, haritalar, haberler, YekTube, Bilgi Ağacı, işletme arama, sarı sayfalar ve rezervasyon — tüm Yekpare hizmetleri tek merkezde.";
+  "Haberler, YekTube, Haber Merkezi ve Newsmap — Türk Ekosistemi hizmetleri.";
 export const KESFET_HUB_META_DESCRIPTION = KESFET_HUB_HERO_SUBTITLE;
-export const KESFET_HUB_PAGE_TITLE = `${KESFET_HUB_BADGE_LABEL} — Yekpare`;
+export const KESFET_HUB_PAGE_TITLE = `${KESFET_HUB_BADGE_LABEL} — Türk Ekosistemi`;
 
 /** Üst menüden kaldırılır — yalnızca Keşfet hub kartlarından erişilir. */
 export const KESFET_HUB_SHELTERED_NAV_KEYS = new Set<MainNavKey>([
-  "haberler",
-  "yektube",
   "ansiklopedi",
   "firmaRehberi",
+  "kesfet",
+  "turizm",
 ]);
 
 export type KesfetHubCard = {
@@ -246,13 +246,9 @@ export const KESFET_HUB_CARDS: KesfetHubCard[] = KESFET_HUB_SECTIONS.flatMap((se
 
 /** Anasayfa özet şeridi — en çok kullanılan modüller */
 export const KESFET_HUB_FEATURED_CARD_IDS = [
-  "haritalar",
-  "seyahat",
-  "kesfet-liste",
-  "sari-sayfalar",
   "haberler",
   "yektube",
-  "bilgi-agaci",
+  "habermerkezi",
 ] as const;
 
 export const KESFET_HUB_FEATURED_CARDS: KesfetHubCard[] = KESFET_HUB_FEATURED_CARD_IDS.map(
@@ -407,14 +403,14 @@ export function filterPublicTopNavForHeader(
   const filtered = flatLinks.filter((it) => {
     const href = normalizeNavHref(it.href);
     if (href === "/alisveris") return false;
+    if (href === "/turizm" || href.startsWith("/turizm/")) return false;
+    if (href === "/kesfet" || href.startsWith("/kesfet/")) return false;
+    if (href === "/firma-rehberi" || href.startsWith("/firma-rehberi/")) return false;
+    if (href === "/sari-sayfalar" || href.includes("sarisayfalar")) return false;
     if (isStalePublicNavLink(it.label, it.href)) return false;
     return true;
   });
-  const kesfetIdx = filtered.findIndex((it) => normalizeNavHref(it.href) === KESFET_HUB_PATH);
-  if (kesfetIdx <= 0) return filtered;
-  const kesfet = filtered[kesfetIdx];
-  if (!kesfet) return filtered;
-  return [kesfet, ...filtered.slice(0, kesfetIdx), ...filtered.slice(kesfetIdx + 1)];
+  return filtered;
 }
 
 export function kesfetSearchTarget(query: string, fallback = UNIFIED_SEARCH_PATH, moduleHref?: string): string {

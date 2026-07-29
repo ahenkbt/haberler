@@ -17,33 +17,34 @@ export const PORTAL_ALIAS_HOSTS = [
   "ahenk.net.tr",
 ] as const;
 
-export const PORTAL_SITE_NAME = "Yekpare";
-export const PORTAL_SITE_TITLE_SUFFIX = " — Türkiye'nin Yerli Arama Motoru";
+export const PORTAL_SITE_NAME = "Türk Ekosistemi";
+export const PORTAL_SITE_TITLE_SUFFIX = " — Haber, Video ve Newsmap";
 export const PORTAL_SITE_FULL_TITLE = `${PORTAL_SITE_NAME}${PORTAL_SITE_TITLE_SUFFIX}`;
-export const PORTAL_BRAND_SHORT = "Yekpare";
+export const PORTAL_BRAND_SHORT = "Türk Ekosistemi";
 export const PORTAL_SEARCH_TAGLINE =
-  "Türkiye'nin yerli arama motoru. Haber, video, harita ve hizmetleri tek aramada keşfedin.";
+  "Haberler, Yektube, Haber Merkezi ve Newsmap — tek platformda.";
 
-export const PWA_STORE_NAME = "Yekpare";
-export const PWA_STORE_TAGLINE = "Haber, harita ve video";
-export const PWA_APP_NAME = "Yekpare";
+export const PWA_STORE_NAME = "Türk Ekosistemi";
+export const PWA_STORE_TAGLINE = "Haber, video ve Newsmap";
+export const PWA_APP_NAME = "Türk Ekosistemi";
 export const PWA_ICON_PATH = "/icon-192.svg";
 
-/** Eski DB / seed / geçiş dönemi metinlerini kullanıcıya Yekpare olarak gösterir. */
+/** Eski DB / seed / geçiş dönemi metinlerini kullanıcıya Türk Ekosistemi olarak gösterir. */
 export function normalizePortalDisplayName(name: string | null | undefined): string {
   const t = String(name ?? "").trim();
   if (!t) return PORTAL_BRAND_SHORT;
   return (
     t
-      .replace(/türknet\s*yekpare\s*süper\s*app/gi, "Yekpare")
-      .replace(/turknet\s*yekpare/gi, "Yekpare")
-      .replace(/türknet/gi, "Yekpare")
-      .replace(/turknet/gi, "Yekpare")
-      .replace(/goalgo/gi, "Yekpare")
+      .replace(/türknet\s*yekpare\s*süper\s*app/gi, PORTAL_BRAND_SHORT)
+      .replace(/turknet\s*yekpare/gi, PORTAL_BRAND_SHORT)
+      .replace(/\byekpare\b/gi, PORTAL_BRAND_SHORT)
+      .replace(/türknet/gi, PORTAL_BRAND_SHORT)
+      .replace(/turknet/gi, PORTAL_BRAND_SHORT)
+      .replace(/goalgo/gi, PORTAL_BRAND_SHORT)
       .replace(/süper\s*app/gi, "")
       .replace(/super\s*app/gi, "")
-      .replace(/süper\s*uygulama/gi, "arama motoru")
-      .replace(/süper\s*uygulaması/gi, "arama motoru")
+      .replace(/süper\s*uygulama/gi, "")
+      .replace(/süper\s*uygulaması/gi, "")
       .replace(/\s{2,}/g, " ")
       .trim() || PORTAL_BRAND_SHORT
   );

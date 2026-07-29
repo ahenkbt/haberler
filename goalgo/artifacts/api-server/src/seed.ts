@@ -337,8 +337,8 @@ async function main() {
   );
 
   await db.insert(siteSettingsTable).values({
-    siteName: "Yekpare",
-    tagline: "Türkiye'nin yerli arama motoru",
+    siteName: "Türk Ekosistemi",
+    tagline: "Haberler, Yektube, Haber Merkezi ve Newsmap",
     address: "Kırşehir, Türkiye",
     phone: "+90 386 000 00 00",
     email: "yekparenet@gmail.com",
@@ -346,10 +346,10 @@ async function main() {
     twitter: "https://x.com/yekpare",
     instagram: "https://instagram.com/yekpare",
     youtube: "https://youtube.com/@yekpare",
-    logoText1: "Yek",
-    logoText2: "pare",
-    footerText: "Yekpare haber ve süper uygulama portalı.",
-    copyrightText: "© Yekpare. Tüm hakları saklıdır.",
+    logoText1: "Türk",
+    logoText2: "Ekosistemi",
+    footerText: "Türk Ekosistemi — haber, video, Newsmap ve Haber Merkezi.",
+    copyrightText: "© Türk Ekosistemi. Tüm hakları saklıdır.",
   });
 
   console.log("Seed complete.");
