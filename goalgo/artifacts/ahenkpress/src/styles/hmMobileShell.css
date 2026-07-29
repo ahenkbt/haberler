@@ -58,51 +58,5 @@
   }
 }
 
-/* Video TV mobil: dış sayfa kaymasın; üst şerit sabit kalsın. */
-@media (max-width: 767px) {
-  .hm-vitrin-root[data-hm-video-tv-immersive="true"] {
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
+/* Video TV: native API sayfa — eski iframe immersive kuralları kaldırıldı. */
 
-  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-chrome-stack {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 80;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-vitrin-main--video-tv-immersive {
-    flex: 1 1 auto;
-    min-height: 0;
-    height: 100dvh;
-    max-height: 100dvh;
-    padding-top: var(--hm-video-tv-chrome-height, 3.25rem);
-    overflow: hidden;
-    box-sizing: border-box;
-  }
-
-  /* Mobil immersive: tam genişlik sabit; masaüstü ortalı host modelini ezmez */
-  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-embed-host {
-    max-width: none;
-    margin-inline: 0;
-    padding-inline: 0;
-  }
-
-  .hm-vitrin-root[data-hm-video-tv-immersive="true"] .hm-video-tv-embed {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: var(--hm-video-tv-chrome-height, 3.25rem);
-    flex: none;
-    min-height: 0 !important;
-    height: auto;
-    max-height: none;
-  }
-}

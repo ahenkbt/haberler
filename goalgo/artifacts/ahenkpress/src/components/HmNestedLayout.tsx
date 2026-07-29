@@ -18,7 +18,6 @@ import {
 import { HmMobileBottomNav, HM_MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/components/HmMobileBottomNav";
 import { HmSonDakikaChromeBand } from "@/components/HmSonDakikaChromeBand";
 import { HmFinanceWeatherPlacementBand } from "@/components/HmFinanceWeatherPlacementBand";
-import { HmVideoTvChromeStack } from "@/components/HmVideoTvChromeStack";
 import { HmBilgiAgaciChromeBand } from "@/components/HmBilgiAgaciChromeBand";
 import { HM_BILGI_AGACI_CHROME_BAND_HEIGHT_PX, isHmBilgiAgaciPublicPath } from "@/lib/bilgiAgaciHmRoutes";
 import { isHmHaritalarPublicPath, isHmNewsmapPublicPath } from "@/lib/hmHaritalarRoutes";
@@ -518,15 +517,14 @@ export function HmNestedLayout({
   const financeBelowMenu = resolveFinanceWeatherBelowMenu(layoutPrefs);
   const showMobileBottomNav =
     showStripMenu && isCompactViewport && !isVideoTvPage && !isCorporateTheme && !showHaritalarEmbed;
-  const hidePlatformNavOnVideoTvMobile = isVideoTvPage && isMobileViewport;
+  const hidePlatformNavOnVideoTvMobile = false;
   const showNewsFooter =
     !hideFooterProp &&
-    !isVideoTvPage &&
     !showHaritalarEmbed &&
     (isCorporateTheme || layoutPrefs.hmNewsFooterEnabled !== false);
   const stackTopPx = showPlatformNav && !hidePlatformNavOnVideoTvMobile ? APP_NAV_HEIGHT : 0;
   const showBilgiAgaciChrome = portalHubOnly && isHmBilgiAgaciPublicPath(pathOnly);
-  const videoTvChromeHeaderPx = isVideoTvPage ? 0 : headerBandPx;
+  const videoTvChromeHeaderPx = headerBandPx;
   const newsStripStickyTopPx = stackTopPx + videoTvChromeHeaderPx;
   const categoryNavStripHeightPx = showSumbulNavStrip
     ? HM_SUMBUL_CATEGORY_NAV_STRIP_HEIGHT_PX
@@ -794,9 +792,7 @@ function HmNestedLayoutVitrinRoot({
   const themeCtx = useHmChromeThemeOptional();
   const isMobile = useIsMobile();
   const isCompactViewport = useIsHmCompactViewport();
-  /** Video TV mobil: yalnızca içerik alanı tam ekran; haber menü şeridi görünür kalır. */
-  const immersiveVideoTvMain = isVideoTvPage && isMobile;
-  const hidePlatformNavOnVideoTvMobile = immersiveVideoTvMain;
+  const hidePlatformNavOnVideoTvMobile = false;
   const chromeLayoutPrefs = themeCtx?.mergedLayoutPrefs ?? layoutPrefs;
   const effectiveChromeMode = themeCtx?.effectiveChromeMode ?? resolveEditorHmEffectiveChromeColorMode(layoutPrefs);
   const navLinkColors = useMemo(() => resolveHmNavLinkColor(chromeLayoutPrefs), [chromeLayoutPrefs]);
@@ -812,26 +808,6 @@ function HmNestedLayoutVitrinRoot({
     siteId: effectiveData?.id ?? null,
     mansetVariant: layoutPrefs.mansetVariant,
   });
-
-  useEffect(() => {
-    if (!immersiveVideoTvMain || typeof document === "undefined") return undefined;
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    const prevBodyPosition = body.style.position;
-    const prevBodyWidth = body.style.width;
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    body.style.position = "fixed";
-    body.style.width = "100%";
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-      body.style.position = prevBodyPosition;
-      body.style.width = prevBodyWidth;
-    };
-  }, [immersiveVideoTvMain]);
 
   const showVideoTvLink =
     resolveHmNewsVideoTvEnabled(layoutPrefs) &&
@@ -856,16 +832,7 @@ function HmNestedLayoutVitrinRoot({
     : undefined;
   const rootStyle = {
     ...rootStyleBase,
-    ...(immersiveVideoTvMain
-      ? {
-          paddingBottom: 0,
-          height: "100dvh",
-          maxHeight: "100dvh",
-          overflow: "hidden",
-        }
-      : showMobileBottomNav
-        ? { paddingBottom: mobileBottomNavPadding }
-        : {}),
+    ...(showMobileBottomNav ? { paddingBottom: mobileBottomNavPadding } : {}),
     ["--hm-nav-link-muted" as string]: navLinkColors.muted,
     ["--hm-nav-link-active" as string]: navLinkColors.active,
     ["--hm-nav-pill-idle-text" as string]: navLinkColors.pillText,
@@ -877,8 +844,8 @@ function HmNestedLayoutVitrinRoot({
     <div
       className="hm-vitrin-root flex min-h-[100dvh] min-w-0 w-full flex-1 flex-col"
       data-hm-vitrin-theme={vitrinThemeAttr}
-      data-hm-video-tv={isVideoTvPage ? "true" : undefined}
-      data-hm-video-tv-immersive={immersiveVideoTvMain ? "true" : undefined}
+      data-hm-video-tv={isVideoTvPage ? "native" : undefined}
+      data-hm-video-tv-immersive={undefined}
       data-hm-chrome-mode={effectiveChromeMode}
       data-hm-nav-on-light={navLinkColors.onLight ? "true" : "false"}
       data-hm-ticker-glass-breaking={breakingTickerGlass}
@@ -891,7 +858,7 @@ function HmNestedLayoutVitrinRoot({
       style={Object.keys(rootStyle).length > 0 ? rootStyle : undefined}
     >
       {showPlatformNav && !hidePlatformNavOnVideoTvMobile ? <AppNav /> : null}
-        {!isVideoTvPage && isStandardNewsTheme && !isMobile ? (
+        {isStandardNewsTheme && !isMobile ? (
           <HmChromeWidthShell layoutPrefs={layoutPrefs}>
             <HmDeferredAdSlotStrip
               slotKey="header_top"
@@ -903,38 +870,30 @@ function HmNestedLayoutVitrinRoot({
             />
           </HmChromeWidthShell>
         ) : null}
-        {!isVideoTvPage ? (
-          <HmPublicSiteHeader
-            slug={effectiveData.slug}
-            displayName={effectiveData.displayName}
-            domain={publicDomain}
-            logoUrl={logo}
-            stickyStackTopPx={stackTopPx}
-            rootRef={headerBandRef}
-            showNewsmapBranding={showNewsmapBranding}
-          />
+        <HmPublicSiteHeader
+          slug={effectiveData.slug}
+          displayName={effectiveData.displayName}
+          domain={publicDomain}
+          logoUrl={logo}
+          stickyStackTopPx={stackTopPx}
+          rootRef={headerBandRef}
+          showNewsmapBranding={showNewsmapBranding}
+        />
+        {showSumbulNavStrip ? (
+          <HmSumbulCategoryNavStrip stickyTopPx={newsStripStickyTopPx} yekpareIcons={showYekpareIconMenu} />
+        ) : showTopNewsNavStrip ? (
+          <HmPublicNewsNavStrip stickyTopPx={newsStripStickyTopPx} pinOnVideoTv={isVideoTvPage} />
         ) : null}
-        {isVideoTvPage && showTopNewsNavStrip ? (
-          <HmVideoTvChromeStack stickyTopPx={newsStripStickyTopPx} />
-        ) : (
-          <>
-            {showSumbulNavStrip ? (
-              <HmSumbulCategoryNavStrip stickyTopPx={newsStripStickyTopPx} yekpareIcons={showYekpareIconMenu} />
-            ) : showTopNewsNavStrip ? (
-              <HmPublicNewsNavStrip stickyTopPx={newsStripStickyTopPx} pinOnVideoTv={isVideoTvPage} />
-            ) : null}
-            {financeBelowMenu && !isCorporateTheme && !showBilgiAgaciChrome && !showHaritalarEmbed ? (
-              <HmFinanceWeatherPlacementBand stickyTopPx={afterNavStickyTopPx} variant="below-menu" />
-            ) : null}
-            {!isCorporateTheme && !showBilgiAgaciChrome && !showHaritalarEmbed && (!immersiveVideoTvMain || isVideoTvPage) && showExternalSondakika ? (
-              <HmSonDakikaChromeBand stickyTopPx={sonDakikaChromeStickyTopPx} />
-            ) : null}
-          </>
-        )}
-        {!immersiveVideoTvMain && showBilgiAgaciChrome ? (
+        {financeBelowMenu && !isCorporateTheme && !showBilgiAgaciChrome && !showHaritalarEmbed ? (
+          <HmFinanceWeatherPlacementBand stickyTopPx={afterNavStickyTopPx} variant="below-menu" />
+        ) : null}
+        {!isCorporateTheme && !showBilgiAgaciChrome && !showHaritalarEmbed && showExternalSondakika ? (
+          <HmSonDakikaChromeBand stickyTopPx={sonDakikaChromeStickyTopPx} />
+        ) : null}
+        {showBilgiAgaciChrome ? (
           <HmBilgiAgaciChromeBand stickyTopPx={bilgiAgaciChromeStickyTopPx} />
         ) : null}
-        {!isVideoTvPage && !immersiveVideoTvMain && isStandardNewsTheme ? (
+        {isStandardNewsTheme ? (
           <HmChromeWidthShell layoutPrefs={layoutPrefs}>
             <HmDeferredAdSlotStrip
               slotKey="header_bottom"
@@ -947,7 +906,7 @@ function HmNestedLayoutVitrinRoot({
           </HmChromeWidthShell>
         ) : null}
         <div
-          className={`hm-vitrin-main min-w-0 w-full flex-1${isVideoTvPage ? " flex min-h-0 flex-col" : ""}${showHaritalarEmbed ? " hm-vitrin-main--haritalar-embed flex min-h-0 flex-col" : ""}${immersiveVideoTvMain ? " hm-vitrin-main--video-tv-immersive" : ""}`}
+          className={`hm-vitrin-main min-w-0 w-full flex-1${showHaritalarEmbed ? " hm-vitrin-main--haritalar-embed flex min-h-0 flex-col" : ""}`}
         >
           {mainChildren}
         </div>

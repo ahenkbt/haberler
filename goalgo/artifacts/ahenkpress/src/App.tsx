@@ -22,7 +22,7 @@ import { PortalSeoSync } from "./components/PortalSeoSync";
 import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
 import { SearchEnginePublicChrome } from "@/components/SearchEnginePublicChrome";
 import { shouldSkipSearchEnginePublicChrome } from "@/lib/searchEngineNav";
-import { YektubeStandaloneRoute, HmYektubePortalEmbed } from "@/components/YektubeV2Gateway";
+import { YektubeStandaloneRoute } from "@/components/YektubeV2Gateway";
 import { YektubeDedicatedHostGate } from "@/components/YektubeDedicatedHostRedirect";
 import { useYekpareTheme } from "@/hooks/useYekpareTheme";
 
@@ -48,6 +48,7 @@ import {
   YektubeLegacySectionRedirect,
   YektubePlaylistRedirect,
   YektubeRootRedirect,
+  HmYektubePlaylistRedirect,
 } from "./pages/public/YektubeRedirects";
 import Yazarlar from "./pages/public/Yazarlar";
 import TumHaberler from "./pages/public/TumHaberler";
@@ -599,6 +600,14 @@ function HmRootVideoRoute() {
     </HmPortalOrDomainStandardPage>
   );
 }
+
+/** KH `/video/playlist/:id` → `/video/kanal/:id` */
+function KhVideoPlaylistRedirect() {
+  const { id, videoId } = useParams<{ id: string; videoId?: string }>();
+  if (!id) return null;
+  if (videoId) return <Redirect to={`/video/kanal/${id}/${encodeURIComponent(videoId)}`} />;
+  return <Redirect to={`/video/kanal/${id}`} />;
+}
 /** Video TV — yekpare.net hub + Kırşehir Haber (kh) özel alanı. */
 function HmVideoTvRouteGate({ children }: { children: React.ReactNode }) {
   const params = useParams<{ slug?: string }>();
@@ -788,6 +797,69 @@ export default function App() {
       <Route path="/kategori/:slug">{() => <PublicLayout><KategoriDetay /></PublicLayout>}</Route>
       <Route path="/video-tv/kanal/:id/:videoId">{() => <LegacyVideoTvKanalRedirect />}</Route>
       <Route path="/video-tv/kanal/:id">{() => <LegacyVideoTvKanalRedirect />}</Route>
+      <Route path="/video/canlitv/kanal/:id">
+        {() => (
+          <HmVideoTvPublicShell>
+            <YektubeCanliTvPage />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/canlitv">
+        {() => (
+          <HmVideoTvPublicShell>
+            <YektubeCanliTvPage />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/kanal/:id/:videoId">
+        {() => (
+          <HmVideoTvPublicShell>
+            <VideoTvChannel />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/kanal/:id">
+        {() => (
+          <HmVideoTvPublicShell>
+            <VideoTvChannel />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/playlist/:id/:videoId">
+        {() => (
+          <HmVideoTvPublicShell>
+            <KhVideoPlaylistRedirect />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/playlist/:id">
+        {() => (
+          <HmVideoTvPublicShell>
+            <KhVideoPlaylistRedirect />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/ara">
+        {() => (
+          <HmVideoTvPublicShell>
+            <HmPublicVideoTvRoute />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/:section/:category">
+        {() => (
+          <HmVideoTvPublicShell>
+            <HmPublicVideoTvRoute />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
+      <Route path="/video/:section">
+        {() => (
+          <HmVideoTvPublicShell>
+            <HmPublicVideoTvRoute />
+          </HmVideoTvPublicShell>
+        )}
+      </Route>
       <Route path="/video">{() => <HmRootVideoRoute />}</Route>
       <Route path="/video-tv">
         {() => (
@@ -1217,14 +1289,14 @@ export default function App() {
       <Route path="/tr/:slug/video/kanal/:id/:videoId">
         {() => (
           <HmVideoTvPublicShell>
-            <HmYektubePortalEmbed />
+            <VideoTvChannel />
           </HmVideoTvPublicShell>
         )}
       </Route>
       <Route path="/tr/:slug/video/kanal/:id">
         {() => (
           <HmVideoTvPublicShell>
-            <HmYektubePortalEmbed />
+            <VideoTvChannel />
           </HmVideoTvPublicShell>
         )}
       </Route>
@@ -1266,28 +1338,28 @@ export default function App() {
       <Route path="/tr/:slug/video-tv/kanal/:id/:videoId">
         {() => (
           <HmVideoTvPublicShell>
-            <HmYektubePortalEmbed />
+            <VideoTvChannel />
           </HmVideoTvPublicShell>
         )}
       </Route>
       <Route path="/tr/:slug/video-tv/kanal/:id">
         {() => (
           <HmVideoTvPublicShell>
-            <HmYektubePortalEmbed />
+            <VideoTvChannel />
           </HmVideoTvPublicShell>
         )}
       </Route>
       <Route path="/tr/:slug/video-tv/playlist/:id/:videoId">
         {() => (
           <HmVideoTvPublicShell>
-            <HmYektubePortalEmbed />
+            <HmYektubePlaylistRedirect />
           </HmVideoTvPublicShell>
         )}
       </Route>
       <Route path="/tr/:slug/video-tv/playlist/:id">
         {() => (
           <HmVideoTvPublicShell>
-            <HmYektubePortalEmbed />
+            <HmYektubePlaylistRedirect />
           </HmVideoTvPublicShell>
         )}
       </Route>
