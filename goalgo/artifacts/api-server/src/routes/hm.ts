@@ -2650,6 +2650,46 @@ router.post("/hm/editor/login", async (req, res): Promise<void> => {
   if (!editor && loginIsEmail && getNewsDbReadMode() === "news") {
     editor = (await mirrorHmEditorFromMainDb(slug, loginRaw, password, site.id)) ?? undefined;
   }
+  if (!editor) {
+    // Pasif editör + doğru şifre → yeniden aktif et (site.active ≠ editor.isActive ayrımı).
+    let inactive: HmSiteEditorRow | undefined;
+    if (loginIsEmail) {
+      [inactive] = await newsReadDb()
+        .select()
+        .from(hmSiteEditorsTable)
+        .where(
+          and(
+            eq(hmSiteEditorsTable.siteId, site.id),
+            eq(hmSiteEditorsTable.isActive, false),
+            sql`lower(${hmSiteEditorsTable.email}) = ${loginRaw}`,
+          ),
+        )
+        .limit(1);
+    } else if (loginUsername) {
+      [inactive] = await newsReadDb()
+        .select()
+        .from(hmSiteEditorsTable)
+        .where(
+          and(
+            eq(hmSiteEditorsTable.siteId, site.id),
+            eq(hmSiteEditorsTable.isActive, false),
+            sql`lower(coalesce(${hmSiteEditorsTable.username}, '')) = ${loginUsername}`,
+          ),
+        )
+        .limit(1);
+    }
+    if (inactive?.passwordHash) {
+      const inactiveOk = await bcrypt.compare(password, inactive.passwordHash);
+      if (inactiveOk) {
+        await dualWriteUpdate(
+          hmSiteEditorsTable,
+          { isActive: true, updatedAt: new Date() },
+          eq(hmSiteEditorsTable.id, inactive.id),
+        );
+        editor = { ...inactive, isActive: true };
+      }
+    }
+  }
   if (!editor && loginIsEmail && isKhNewsSiteRow(site)) {
     editor = (await repairKhEditorForLogin(loginRaw, site.id)) ?? undefined;
   }
