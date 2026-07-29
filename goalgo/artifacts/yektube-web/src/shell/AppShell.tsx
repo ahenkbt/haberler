@@ -559,7 +559,7 @@ function DesktopShell({
   ];
 
   return (
-    <div className="flex min-h-[100dvh] overflow-x-hidden yt-app-bg">
+    <div className={cn("flex h-[100dvh] max-h-[100dvh] w-full overflow-x-hidden yt-app-bg", embed && "min-h-0")}>
       <aside className="sticky top-0 flex h-[100dvh] w-[240px] shrink-0 flex-col border-r border-[var(--color-yt-border)] px-3 py-2 yt-panel">
         <div className="mb-2 flex items-center gap-1 px-1">
           <button
