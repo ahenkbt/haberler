@@ -21,6 +21,17 @@ const queryClient = new QueryClient({
 registerServiceWorker();
 installAudioUnlockListeners();
 
+try {
+  if (typeof window !== "undefined") {
+    const embed =
+      new URLSearchParams(window.location.search).get("embed") === "1" ||
+      window.self !== window.top;
+    if (embed) document.documentElement.classList.add("yt-embed-root");
+  }
+} catch {
+  document.documentElement.classList.add("yt-embed-root");
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

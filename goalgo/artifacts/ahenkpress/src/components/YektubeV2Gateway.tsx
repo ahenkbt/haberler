@@ -133,12 +133,73 @@ export function HmYektubePortalEmbed() {
     return () => window.clearTimeout(timer);
   }, [activeSrc]);
 
+  /** Iframe boyutu: chrome→alt kenar + contained genişlik (CSS fixed ile uyumlu). */
+  useEffect(() => {
+    const el = iframeRef.current;
+    if (!el || typeof window === "undefined") return undefined;
+
+    const applySize = () => {
+      const root = el.closest(".hm-vitrin-root") as HTMLElement | null;
+      const contained = root?.getAttribute("data-hm-site-layout") === "contained";
+      const chromeRaw =
+        root?.style.getPropertyValue("--hm-video-tv-chrome-height") ||
+        getComputedStyle(document.documentElement).getPropertyValue("--hm-video-tv-chrome-height") ||
+        "4.5rem";
+      const chromePx = (() => {
+        const n = Number.parseFloat(chromeRaw);
+        if (!Number.isFinite(n)) return 72;
+        return chromeRaw.trim().endsWith("rem") ? n * 16 : n;
+      })();
+      const top = Math.max(0, Math.round(chromePx));
+      const height = Math.max(240, window.innerHeight - top);
+      let left = 0;
+      let width = window.innerWidth;
+      if (contained) {
+        const pad = window.innerWidth >= 768 ? 16 : 12;
+        const maxW = Math.min(1280, window.innerWidth - pad * 2);
+        left = Math.max(pad, Math.round((window.innerWidth - maxW) / 2));
+        width = Math.max(280, Math.round(window.innerWidth - left * 2));
+      }
+      el.style.position = "fixed";
+      el.style.top = `${top}px`;
+      el.style.left = `${left}px`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.zIndex = "1";
+      el.setAttribute("width", String(width));
+      el.setAttribute("height", String(height));
+    };
+
+    applySize();
+    window.addEventListener("resize", applySize);
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => applySize())
+        : null;
+    const root = el.closest(".hm-vitrin-root");
+    const chrome = document.querySelector(".hm-video-tv-chrome-stack");
+    if (ro && root) ro.observe(root);
+    if (ro && chrome) ro.observe(chrome);
+    const t1 = window.setTimeout(applySize, 50);
+    const t2 = window.setTimeout(applySize, 300);
+    const t3 = window.setTimeout(applySize, 1000);
+    return () => {
+      window.removeEventListener("resize", applySize);
+      ro?.disconnect();
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+    };
+  }, [activeSrc]);
+
   return (
     <iframe
       ref={iframeRef}
       title="Yektube"
       src={activeSrc}
-      className="hm-video-tv-embed block h-full min-h-0 w-full flex-1 border-0 bg-white"
+      className="hm-video-tv-embed block border-0 bg-[#0f0f0f]"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       referrerPolicy="strict-origin-when-cross-origin"
       onError={() => setActiveSrc((cur) => preferYektubeMirrorOrigin(cur))}
