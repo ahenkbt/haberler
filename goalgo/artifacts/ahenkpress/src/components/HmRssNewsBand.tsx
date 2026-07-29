@@ -531,8 +531,16 @@ export function HmRssNewsBand({
       ? sanitizeHtml(`<p>${inlinePreview.spot}</p>`)
       : "";
 
+  const effectiveGridColumns =
+    filtered.length <= 1 ? 1 : filtered.length === 2 ? 2 : gridColumns;
   const gridClass =
-    gridColumns === 4 ? "hm-rss-news-band--cols-4" : gridColumns === 3 ? "hm-rss-news-band--cols-3" : "";
+    effectiveGridColumns === 4
+      ? "hm-rss-news-band--cols-4"
+      : effectiveGridColumns === 3
+        ? "hm-rss-news-band--cols-3"
+        : effectiveGridColumns === 1
+          ? "hm-rss-news-band--cols-1"
+          : "";
 
   return (
     <section className={`hm-rss-news-band ${gridClass} ${className}`.trim()} data-hm-news-list>

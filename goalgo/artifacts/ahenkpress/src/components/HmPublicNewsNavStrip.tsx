@@ -29,7 +29,7 @@ import { HmPwaInstallNavButton } from "@/components/HmPwaInstallNavButton";
 import { HmCategoryRssNavButton } from "@/components/HmCategoryRssNavButton";
 import { HmPageRefreshNavButton } from "@/components/HmPageRefreshNavButton";
 import { useHmEffectiveLayoutPrefs } from "@/contexts/HmChromeThemeContext";
-import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isHmVideoTvAllowed, isKhHmSite, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   hmRequestFormPath,
@@ -282,7 +282,8 @@ export function HmPublicNewsNavStrip({
     ? resolveHmCorporateRequestFormEnabled(layoutPrefs)
     : resolveHmNewsRequestFormEnabled(layoutPrefs);
   const videoTvEnabled = resolveHmNewsVideoTvEnabled(layoutPrefs);
-  const showHubVideoTvLink = videoTvEnabled && videoTvAllowed;
+  /** KH: /video sayfası açık; menüde Video linki gösterilmez. */
+  const showHubVideoTvLink = videoTvEnabled && videoTvAllowed && !isKhHmSite(hostKey, hmSlug);
 
   const contained = isHmHeaderChromeContained(layoutPrefs);
   const headerPreset = resolveHeaderPreset(layoutPrefs);

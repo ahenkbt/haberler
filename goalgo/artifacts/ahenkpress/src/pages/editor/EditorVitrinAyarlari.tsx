@@ -132,7 +132,7 @@ const NEWS_HOME_MODULE_LABELS: Record<(typeof HM_NEWS_HOME_MODULE_ORDER)[number]
   ahenkPopulerHaberler: formatHmNewsModuleEditorLabel("ahenkPopulerHaberler", "Popüler Haberler"),
   portal3ThemeBlock: formatHmNewsModuleEditorLabel("portal3ThemeBlock", "Gazete vitrini bloğu"),
   esenThemeBlock: formatHmNewsModuleEditorLabel("esenThemeBlock", "MANŞET HABER"),
-  esenLeadPack: formatHmNewsModuleEditorLabel("esenLeadPack", "Günün Öne Çıkanları"),
+  esenLeadPack: formatHmNewsModuleEditorLabel("esenLeadPack", "Gündemde Öne Çıkanlar"),
   featuredCategoryStrip: formatHmNewsModuleEditorLabel("featuredCategoryStrip", "Kategori vitrini"),
   yekpareKategorilerKutusu: formatHmNewsModuleEditorLabel("yekpareKategorilerKutusu", "Yekpare Kategoriler Kutusu"),
   leadListSidebar: formatHmNewsModuleEditorLabel("leadListSidebar", "Büyük haber + sağ liste bloğu"),

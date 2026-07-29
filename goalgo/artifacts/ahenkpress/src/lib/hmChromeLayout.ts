@@ -132,6 +132,7 @@ const HM_CONTAINED_HOST_NEWS_SEGMENTS = new Set([
   "etiketler",
   "foto-galeri",
   "embed",
+  "video",
   "video-tv",
 ]);
 

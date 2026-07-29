@@ -18,6 +18,7 @@ import {
   ensureCorporateMenuVideoTvAtEnd,
   HM_MENU_LOCATIONS,
   isHmCorporateMenuVideoTvItem,
+  stripCorporateMenuVideoTvItems,
   type HmMenuLocationKey,
 } from "@/lib/hmMenuEditorUtils";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
@@ -64,14 +65,14 @@ function readItemsForLocation(
 ): HmCorporateMenuItem[] {
   const raw = (prefs[key] ?? []) as HmCorporateMenuItem[];
   if (key !== "hmCorporateMenuItems" || !raw.length) return raw;
+  /** KH: Video sayfası açık kalabilir; menüye Video eklenmez. */
+  if (isKhEditorSiteSlug(siteSlug)) return stripCorporateMenuVideoTvItems(raw);
   const withoutVideoTv = resolveHmNewsVideoTvEnabled(prefs)
     ? raw
     : raw.filter((item) => !isHmCorporateMenuVideoTvItem(item));
   if (!resolveHmNewsVideoTvEnabled(prefs)) return withoutVideoTv;
-  const kh = isKhEditorSiteSlug(siteSlug);
   return ensureCorporateMenuVideoTvAtEnd(withoutVideoTv, hmBase, {
     videoTvEnabled: true,
-    ...(kh ? { label: "Video", path: "/video" } : {}),
   });
 }
 
@@ -123,10 +124,11 @@ export default function EditorMenuler() {
     const kh = isKhEditorSiteSlug(site?.slug);
     const normalized =
       saveKey === "hmCorporateMenuItems" && cleaned?.length
-        ? ensureCorporateMenuVideoTvAtEnd(cleaned, hmBase, {
-            videoTvEnabled: resolveHmNewsVideoTvEnabled(newsLayoutPrefs),
-            ...(kh ? { label: "Video", path: "/video" } : {}),
-          })
+        ? kh
+          ? stripCorporateMenuVideoTvItems(cleaned)
+          : ensureCorporateMenuVideoTvAtEnd(cleaned, hmBase, {
+              videoTvEnabled: resolveHmNewsVideoTvEnabled(newsLayoutPrefs),
+            })
         : cleaned;
     if (!normalized?.length) {
       setSaving(false);

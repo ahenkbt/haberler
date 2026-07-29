@@ -6,13 +6,14 @@ import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isKhHmSite } from "@/lib/hmPortalHosts";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import "@/styles/hmNewsCategoriesMenu.css";
 
 const HM_HEADER_BAND_PX = 72;
 
 /** Haber sitesi Video TV — tek HM kabuğu (`HmNestedLayout`), çift menü yok. */
 export function HmPublicVideoTvLayout({ children }: { children: ReactNode }) {
   return (
-    <HmNestedLayout hideFooter>
+    <HmNestedLayout>
       <HmVideoTvContextBridge>
         <div className="hm-video-tv-embed-host flex min-h-0 flex-1 flex-col">{children}</div>
       </HmVideoTvContextBridge>
