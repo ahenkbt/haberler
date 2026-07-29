@@ -417,10 +417,15 @@ export default function HaberSiteleri() {
               size="sm"
               disabled={repairing !== null}
               onClick={() =>
-                void runAdminRepair("/api/hm/admin/repair-asg-authors-from-ahg", "ASG yazarları AHG'den kopyala")
+                void runAdminRepair(
+                  "/api/hm/admin/repair-asg-authors-from-ahg",
+                  "ASG yazar + köşe yazısı (ankarahabergundemi)",
+                )
               }
             >
-              {repairing === "/api/hm/admin/repair-asg-authors-from-ahg" ? "Kopyalanıyor…" : "ASG yazarları AHG'den"}
+              {repairing === "/api/hm/admin/repair-asg-authors-from-ahg"
+                ? "Kopyalanıyor…"
+                : "ASG ← ankarahabergundemi yazar/köşe"}
             </Button>
             <Button
               type="button"

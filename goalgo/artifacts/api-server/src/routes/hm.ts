@@ -2001,7 +2001,7 @@ router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
   }
 });
 
-/** Yönetim: ankarahabergundemi yazarlarını ankarasehirgazetesi (asg) sitesine kopyala. */
+/** Yönetim: /tr/ankarahabergundemi yazar + köşe yazılarını ankarasehirgazetesi (asg) sitesine kopyala. */
 router.post("/hm/admin/repair-asg-authors-from-ahg", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
@@ -2010,8 +2010,8 @@ router.post("/hm/admin/repair-asg-authors-from-ahg", async (req, res): Promise<v
       ...result,
       ok: result.ok,
       message: result.ok
-        ? `ASG yazarları AHG'den senkron: ${result.upserted} güncellendi/eklendi, ${result.removed} kaldırıldı`
-        : "Kaynak veya hedef site bulunamadı",
+        ? `ASG ← ankarahabergundemi: önce ${result.makaleRemoved} köşe yazısı silindi; ${result.upserted} yazar + ${result.makaleCopied} makale eklendi`
+        : "Kaynak veya hedef site bulunamadı / senkron tamamlanamadı",
     });
   } catch (e) {
     res.status(500).json({
