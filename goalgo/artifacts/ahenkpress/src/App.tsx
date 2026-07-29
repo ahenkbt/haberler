@@ -821,7 +821,11 @@ export default function App() {
       <Route path="/siparis/isletme/:rest*">{() => <Redirect to="/" />}</Route>
       <Route path="/siparis/:rest*">{() => <Redirect to="/" />}</Route>
       <Route path="/siparis">{() => <Redirect to="/" />}</Route>
-      <Route path="/yazarlar">{() => <HmPartnerOrPublicLayout><Yazarlar /></HmPartnerOrPublicLayout>}</Route>
+      <Route path="/yazarlar">{() => (
+        <HmPortalOrDomainStandardPage segment="yazarlar">
+          <HmPartnerOrPublicLayout><Yazarlar /></HmPartnerOrPublicLayout>
+        </HmPortalOrDomainStandardPage>
+      )}</Route>
       <Route path="/yazar/:authorKey">{() => <HmPartnerOrPublicLayout><YazarAuthorRoute /></HmPartnerOrPublicLayout>}</Route>
       <Route path="/foto-galeri/:id">{() => <PublicLayout><FotoGaleriPublic /></PublicLayout>}</Route>
       <Route path="/foto-galeri">{() => <PublicLayout><FotoGaleriPublic /></PublicLayout>}</Route>

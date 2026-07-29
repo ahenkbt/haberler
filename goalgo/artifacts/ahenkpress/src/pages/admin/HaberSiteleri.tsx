@@ -416,6 +416,17 @@ export default function HaberSiteleri() {
               variant="outline"
               size="sm"
               disabled={repairing !== null}
+              onClick={() =>
+                void runAdminRepair("/api/hm/admin/repair-asg-authors-from-ahg", "ASG yazarları AHG'den kopyala")
+              }
+            >
+              {repairing === "/api/hm/admin/repair-asg-authors-from-ahg" ? "Kopyalanıyor…" : "ASG yazarları AHG'den"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
               onClick={() => void runAdminRepair("/api/hm/admin/repair-kh-editor", "Kırşehir editör onarımı")}
             >
               {repairing === "/api/hm/admin/repair-kh-editor" ? "Onarılıyor…" : "KH editör onar"}

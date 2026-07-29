@@ -816,12 +816,64 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
   }
   if (!canonical.length) return;
 
+  const current = await sql`
+    SELECT name, avatar_url, hm_sort_order
+    FROM authors
+    WHERE hm_site_id = ${targetSiteId} AND hm_sort_order IS NOT NULL
+    ORDER BY hm_sort_order ASC, id ASC
+  `;
+  const fp = (rows) =>
+    (rows || [])
+      .map((r) => {
+        const key = String(r.name ?? "")
+          .trim()
+          .toLocaleLowerCase("tr-TR")
+          .replace(/\s+/g, " ");
+        return `${r.hm_sort_order ?? ""}|${key}|${String(r.avatar_url ?? r.avatarUrl ?? "").trim()}`;
+      })
+      .join("\n");
+  const wantFp = fp(
+    canonical.map((r) => ({
+      name: r.name,
+      avatar_url: r.avatar_url,
+      hm_sort_order: r.hm_sort_order,
+    })),
+  );
+  if (fp(current) === wantFp && (current || []).length === canonical.length) {
+    return; // zaten AHG ile birebir
+  }
+
+  // Byline ad haritası (silmeden önce)
+  const oldAuthors = await sql`
+    SELECT id, name FROM authors WHERE hm_site_id = ${targetSiteId}
+  `;
+  const oldIdToName = new Map((oldAuthors || []).map((r) => [Number(r.id), String(r.name || "")]));
+  const newsHits = await sql`
+    SELECT id, author_id FROM news
+    WHERE site_id = ${targetSiteId} AND author_id IS NOT NULL
+  `.catch(() => []);
+  const makaleHits = await sql`
+    SELECT id, author_id FROM hm_makaleler
+    WHERE site_id = ${targetSiteId} AND author_id IS NOT NULL
+  `.catch(() => []);
+  const newsNameById = new Map();
+  for (const hit of newsHits || []) {
+    const name = oldIdToName.get(Number(hit.author_id));
+    if (name) newsNameById.set(Number(hit.id), name);
+  }
+  const makaleNameById = new Map();
+  for (const hit of makaleHits || []) {
+    const name = oldIdToName.get(Number(hit.author_id));
+    if (name) makaleNameById.set(Number(hit.id), name);
+  }
+
   await sql`UPDATE news SET author_id = NULL WHERE site_id = ${targetSiteId}`.catch(() => undefined);
   await sql`UPDATE hm_makaleler SET author_id = NULL WHERE site_id = ${targetSiteId}`.catch(() => undefined);
   await sql`DELETE FROM authors WHERE hm_site_id = ${targetSiteId}`;
 
+  const inserted = [];
   for (const row of canonical) {
-    await sql`
+    const created = await sql`
       INSERT INTO authors (name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash)
       VALUES (
         ${row.name},
@@ -833,7 +885,31 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
         NULL,
         NULL
       )
+      RETURNING id, name
     `;
+    if (created?.[0]?.id) inserted.push(created[0]);
+  }
+
+  const norm = (n) =>
+    String(n ?? "")
+      .trim()
+      .toLocaleLowerCase("tr-TR")
+      .replace(/\s+/g, " ");
+  const findNewId = (name) => {
+    const key = norm(name);
+    const hit = inserted.find((r) => norm(r.name) === key);
+    return hit?.id ?? null;
+  };
+
+  for (const [newsId, name] of newsNameById) {
+    const nextId = findNewId(name);
+    if (!nextId) continue;
+    await sql`UPDATE news SET author_id = ${nextId} WHERE id = ${newsId}`.catch(() => undefined);
+  }
+  for (const [makaleId, name] of makaleNameById) {
+    const nextId = findNewId(name);
+    if (!nextId) continue;
+    await sql`UPDATE hm_makaleler SET author_id = ${nextId} WHERE id = ${makaleId}`.catch(() => undefined);
   }
 }
 

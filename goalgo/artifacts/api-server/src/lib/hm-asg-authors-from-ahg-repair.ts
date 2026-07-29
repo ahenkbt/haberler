@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   authorsTable,
   dualWriteDelete,
@@ -56,8 +56,8 @@ export function canonicalAhgAuthors(rows: AuthorRow[]): AuthorRow[] {
 }
 
 /**
- * ankarahabergundemi.com yazar listesini ankarasehirgazetesi.com (slug=asg) sitesine kopyalar.
- * Yalnızca yazar kayıtları — haber, layout veya başka site ayarlarına dokunmaz.
+ * ASG yazarlarını silip AHG kanonik listesini birebir kopyalar (ad + avatar + sıra).
+ * Haber/makale byline'ları ada göre yeni id'lere bağlanır.
  */
 export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepairResult> {
   const db = getNewsDbForRead();
@@ -99,9 +99,50 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
     };
   }
 
-  const oldAuthorNames = new Map<number, string>();
-  for (const row of targetRows) oldAuthorNames.set(row.id, row.name);
+  const oldIds = targetRows.map((row) => row.id);
+  const oldIdToName = new Map(targetRows.map((row) => [row.id, row.name] as const));
 
+  // Silmeden önce byline → yazar adı haritası
+  const newsNameById = new Map<number, string>();
+  const makaleNameById = new Map<number, string>();
+  if (oldIds.length > 0) {
+    const newsHits = await db
+      .select({ id: newsTable.id, authorId: newsTable.authorId })
+      .from(newsTable)
+      .where(and(eq(newsTable.siteId, targetSiteId), inArray(newsTable.authorId, oldIds)));
+    for (const hit of newsHits) {
+      const name = hit.authorId != null ? oldIdToName.get(hit.authorId) : null;
+      if (name) newsNameById.set(hit.id, name);
+    }
+    const makaleHits = await db
+      .select({ id: hmMakalelerTable.id, authorId: hmMakalelerTable.authorId })
+      .from(hmMakalelerTable)
+      .where(and(eq(hmMakalelerTable.siteId, targetSiteId), inArray(hmMakalelerTable.authorId, oldIds)));
+    for (const hit of makaleHits) {
+      const name = hit.authorId != null ? oldIdToName.get(hit.authorId) : null;
+      if (name) makaleNameById.set(hit.id, name);
+    }
+  }
+
+  // 1) ASG yazarlarını tamamen sil
+  let removed = 0;
+  for (const row of targetRows) {
+    await dualWriteUpdate(
+      newsTable,
+      { authorId: null },
+      and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, row.id))!,
+    );
+    await dualWriteUpdate(
+      hmMakalelerTable,
+      { authorId: null },
+      and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, row.id))!,
+    );
+    await dualWriteDelete(authorsTable, eq(authorsTable.id, row.id));
+    removed += 1;
+    actions.push(`removed:${row.id}`);
+  }
+
+  // 2) AHG listesini birebir ekle
   const newIds: number[] = [];
   let upserted = 0;
   for (const src of canonical) {
@@ -122,52 +163,35 @@ export async function repairAsgAuthorsFromAhg(): Promise<AsgAuthorsFromAhgRepair
     }
   }
 
-  const freshRows = await db
-    .select()
-    .from(authorsTable)
-    .where(eq(authorsTable.hmSiteId, targetSiteId));
-  const newRows = freshRows.filter((row) => newIds.includes(row.id));
+  const newRows = (
+    await db.select().from(authorsTable).where(eq(authorsTable.hmSiteId, targetSiteId))
+  ).filter((row) => newIds.includes(row.id));
 
+  const findNewId = (name: string): number | null => {
+    const match = newRows.find((row) => authorsRepresentSamePerson(row.name, name));
+    return match?.id ?? null;
+  };
+
+  // 3) Byline'ları ada göre yeni id'lere bağla
   let remappedNews = 0;
   let remappedMakaleler = 0;
-  for (const [oldId, oldName] of oldAuthorNames) {
-    const match = newRows.find((row) => authorsRepresentSamePerson(row.name, oldName));
-    if (!match) continue;
+  for (const [newsId, name] of newsNameById) {
+    const nextId = findNewId(name);
+    if (nextId == null) continue;
     remappedNews += (
-      await dualWriteUpdate(
-        newsTable,
-        { authorId: match.id },
-        and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, oldId))!,
-      )
-    ).length;
-    remappedMakaleler += (
-      await dualWriteUpdate(
-        hmMakalelerTable,
-        { authorId: match.id },
-        and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, oldId))!,
-      )
+      await dualWriteUpdate(newsTable, { authorId: nextId }, eq(newsTable.id, newsId))
     ).length;
   }
-
-  let removed = 0;
-  for (const row of targetRows) {
-    await dualWriteUpdate(
-      newsTable,
-      { authorId: null },
-      and(eq(newsTable.siteId, targetSiteId), eq(newsTable.authorId, row.id))!,
-    );
-    await dualWriteUpdate(
-      hmMakalelerTable,
-      { authorId: null },
-      and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.authorId, row.id))!,
-    );
-    await dualWriteDelete(authorsTable, eq(authorsTable.id, row.id));
-    removed += 1;
-    actions.push(`removed:${row.id}`);
+  for (const [makaleId, name] of makaleNameById) {
+    const nextId = findNewId(name);
+    if (nextId == null) continue;
+    remappedMakaleler += (
+      await dualWriteUpdate(hmMakalelerTable, { authorId: nextId }, eq(hmMakalelerTable.id, makaleId))
+    ).length;
   }
 
   return {
-    ok: newIds.length > 0,
+    ok: newIds.length === canonical.length,
     sourceSiteId,
     targetSiteId,
     upserted,
