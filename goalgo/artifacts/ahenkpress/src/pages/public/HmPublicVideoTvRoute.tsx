@@ -1,6 +1,9 @@
-import { HmYektubePortalEmbed } from "@/components/YektubeV2Gateway";
+import HmVideoTvPage from "@/pages/public/HmVideoTvPage";
 
-/** `/tr/:slug/video-tv` — yekpare.net/yp ile aynı Yektube arayüzü (haber kromu dışarıda). */
+/**
+ * `/tr/:slug/video-tv` ve KH `/video` —
+ * iframe yerine `/api/video` ile native Video TV vitrini.
+ */
 export default function HmPublicVideoTvRoute() {
-  return <HmYektubePortalEmbed />;
+  return <HmVideoTvPage />;
 }
