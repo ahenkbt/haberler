@@ -52,7 +52,7 @@ function publicSiteUrl(site: ShowcaseSite): string {
 
 function domainLabel(site: ShowcaseSite): string {
   const raw = (site.domain ?? "").trim().toLowerCase().replace(/^https?:\/\//, "");
-  return raw.split("/")[0]?.trim() || `yekpare.net${vitrinHref(site.slug)}`;
+  return raw.split("/")[0]?.trim() || `turk.eco${vitrinHref(site.slug)}`;
 }
 
 function formatHmApiError(prefix: string, err: unknown): string {
@@ -63,9 +63,9 @@ function formatHmApiError(prefix: string, err: unknown): string {
 export default function Habermerkezi() {
   useEffect(() => {
     applySocialShareMeta({
-      title: "Yekpare Haber Merkezi — Yapay zekâ destekli haber siteniz",
+      title: "Türk Ekosistemi Haber Merkezi — Yapay zekâ destekli haber siteniz",
       descriptionPrimary:
-        "Ajans ve sunucu derdi olmadan haber siteniz anında yayında. Yapay zekâ ile özgün içerik, havuz, otomatik güncelleme ve köşe yazarları — Yekpare.",
+        "Ajans ve sunucu derdi olmadan haber siteniz anında yayında. Yapay zekâ ile özgün içerik, havuz, otomatik güncelleme ve köşe yazarları — Türk Ekosistemi.",
       canonicalPath: "/habermerkezi",
     });
     return () => resetSeoToSiteDefaults();
