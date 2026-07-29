@@ -182,6 +182,35 @@ const HM_DEFAULT_SITE_RSS_ROWS: Array<{ id: string; label: string; url: string; 
   { id: "saglik", label: "Sağlık", url: "https://www.dirilispostasi.com/rss/saglik", categoryKey: "saglik" },
 ];
 
+/** SPOR alt sekmeleri (futbol/voleybol…) — ahenkpress hmSporSubcategories ile aynı. */
+const HM_SPOR_SUBCATEGORY_RSS_ROWS: Array<{ id: string; label: string; url: string; categoryKey: string }> = [
+  { id: "futbol", label: "Futbol", url: "https://www.spordepor.com/rss/futbol", categoryKey: "futbol" },
+  { id: "basketbol", label: "Basketbol", url: "https://www.spordepor.com/rss/basketbol", categoryKey: "basketbol" },
+  { id: "tenis", label: "Tenis", url: "https://www.spordepor.com/rss/tenis", categoryKey: "tenis" },
+  { id: "voleybol", label: "Voleybol", url: "https://www.spordepor.com/rss/voleybol", categoryKey: "voleybol" },
+  { id: "ozel-haber", label: "Özel Haber", url: "https://www.spordepor.com/rss/ozel-haber", categoryKey: "ozel-haber" },
+];
+
+const HM_SPOR_ALL_FEED_ROW = {
+  id: "spor",
+  label: "Spor",
+  url: "https://www.ntv.com.tr/sporskor.rss",
+  categoryKey: "spor",
+} as const;
+
+function hmSporBoxRssRows(
+  siteId: number,
+  categorySlugLookup: Map<string, string>,
+): PortalHybridRssFeedConfig[] {
+  return normalizeHmBreakingRssRows(
+    [HM_SPOR_ALL_FEED_ROW, ...HM_SPOR_SUBCATEGORY_RSS_ROWS],
+    null,
+    siteId,
+    "box",
+    categorySlugLookup,
+  );
+}
+
 async function loadHmCategorySlugLookup(siteId: number): Promise<Map<string, string>> {
   const rows = await getNewsDbForRead()
     .select({
@@ -313,12 +342,15 @@ export async function loadPortalHybridRssFeeds(
     const id = Math.floor(siteId);
     const categorySlugLookup = await loadHmCategorySlugLookup(id);
     const boxRows = () =>
-      normalizeHmBreakingRssRows(layout.hmNewsBreakingRssFeedRows, layout.hmNewsBreakingRssFeeds, id, "box", categorySlugLookup);
+      mergeHmScopedRssRows(
+        normalizeHmBreakingRssRows(layout.hmNewsBreakingRssFeedRows, layout.hmNewsBreakingRssFeeds, id, "box", categorySlugLookup),
+        hmSporBoxRssRows(id, categorySlugLookup),
+      );
     const siteRows = () =>
       // Site scope: hmNewsSiteRssFeedRows; boşsa varsayılan NTV preset (kutu feed’lerine düşmez).
       normalizeHmBreakingRssRows(layout.hmNewsSiteRssFeedRows, null, id, "site", categorySlugLookup);
     const portalLayoutRows = () => hmPortalRssRowsFromLayout(layout, id, categorySlugLookup);
-    if (scope === "box") return mergeHmScopedRssRows(boxRows(), []);
+    if (scope === "box") return boxRows();
     if (scope === "site") return mergeHmScopedRssRows(siteRows(), portalLayoutRows());
     return mergeHmScopedRssRows(mergeHmScopedRssRows(siteRows(), boxRows()), portalLayoutRows());
   }

@@ -58,6 +58,7 @@ import {
   filterCorporatePublicNewsItems,
   centralNewsRowBelongsToCorporateSite,
   excludeYekparePoolNewsSql,
+  HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS,
 } from "../lib/hm-corporate-news-policy.js";
 import { isHmCorporateLayout, parseHmLayoutJson } from "../lib/hm-editor-categories.js";
 import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat.js";
@@ -669,6 +670,9 @@ router.get("/news/by-category/:categorySlug", async (req, res): Promise<void> =>
         limit: Math.min(limit + offset + 200, 600),
         offset: 0,
         ...poolOpts,
+        // Kategori vitrinleri: 12s yerine 7 gün (Ankara Haberleri boş kalmasın).
+        publicFreshnessWindow: true,
+        publicFreshnessMaxAgeMs: HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS,
       });
       let filtered = merged;
       if (slugNorm === HM_GLOBAL_NEWS_CATEGORY_SLUG) {
