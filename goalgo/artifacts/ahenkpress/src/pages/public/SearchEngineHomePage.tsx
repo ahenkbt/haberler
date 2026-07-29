@@ -33,7 +33,6 @@ import { pushRecentSearch } from "@/hooks/useSearchSuggestions";
 import { useYekpareTheme } from "@/hooks/useYekpareTheme";
 import { FIRMA_REHBERI_FEATURED_BUSINESSES } from "@/lib/firmaRehberiData";
 import { UNIFIED_SEARCH_PATH } from "@/lib/kesfetDiscoverHub";
-import { readPublicLocation } from "@/lib/publicLocation";
 import {
   applyJsonLd,
   applyPortalSiteSeo,
@@ -179,11 +178,6 @@ const footerHrefByLabel: Record<string, string> = {
   İletişim: "/iletisim",
   Kariyer: "/kariyer",
 };
-
-function breakfastSearchHref(query = "kahvaltı"): string {
-  const params = new URLSearchParams({ q: query });
-  return `${UNIFIED_SEARCH_PATH}?${params.toString()}`;
-}
 
 function routeForHomeQuery(rawQuery: string): string {
   const q = rawQuery.trim();
