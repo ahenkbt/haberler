@@ -1014,7 +1014,7 @@ export const HM_NEWS_MODULE_THEME_MAP: Partial<Record<HmNewsHomeModuleId, HmVitr
   ahenkPopulerHaberler: ["ahenkhaber"],
   portal3ThemeBlock: ["portal3"],
   esenThemeBlock: ["esen"],
-  esenLeadPack: ["esen"],
+  /** Gündemde Öne Çıkanlar — tüm haber vitrinlerinde (kurumsal hariç; shouldShow ile). */
   featuredCategoryStrip: ["classic", "renkli", "modern"],
   yekpareKategorilerKutusu: ["news", "sumbul"],
   yemekHaber: ["sumbul", "news"],
@@ -1047,6 +1047,9 @@ export function isHmNewsModuleCompatibleWithTheme(
   theme: HmVitrinThemeId | string | null | undefined,
   moduleId: HmNewsHomeModuleId,
 ): boolean {
+  if (moduleId === "esenLeadPack") {
+    return normalizeHmVitrinTheme(theme) !== "corporate";
+  }
   const mapped = HM_NEWS_MODULE_THEME_MAP[moduleId];
   if (!mapped?.length) return true;
   return mapped.includes(normalizeHmVitrinTheme(theme));
@@ -1106,6 +1109,10 @@ export function shouldShowHmNewsEditorModule(
 ): boolean {
   if (normalizeHmVitrinTheme(theme) !== "corporate" && isHmNewsCorporateOnlyHomeModule(moduleId)) {
     return false;
+  }
+  /** Gündemde Öne Çıkanlar — tüm haber siteleri editör modüllerinde (kurumsal vitrin hariç). */
+  if (moduleId === "esenLeadPack") {
+    return normalizeHmVitrinTheme(theme) !== "corporate";
   }
   if (isHmNewsVitrinToggleModule(moduleId)) {
     return isHmNewsModuleCompatibleWithTheme(theme, moduleId);

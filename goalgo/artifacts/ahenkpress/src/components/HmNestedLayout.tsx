@@ -26,7 +26,7 @@ import { HmPublicLinkProvider } from "@/contexts/HmPublicLinkContext";
 import { HmDeferredAdSlotStrip } from "@/components/HmDeferredAdSlotStrip";
 import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
 import { HmChromeWidthShell } from "@/components/HmChromeWidthShell";
-import { isDefaultPortalHost, isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { isDefaultPortalHost, isHmVideoTvAllowed, isKhHmSite, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { applyHmSiteVerificationMeta, applyHmSiteBranding, type HmSeoVerification } from "@/lib/pageSeo";
 import { applyHmEarlyBrandingFromMeta, hmSiteBrandingIconUrl } from "@/lib/hmEarlyBranding";
 import {
@@ -521,7 +521,7 @@ export function HmNestedLayout({
   const hidePlatformNavOnVideoTvMobile = isVideoTvPage && isMobileViewport;
   const showNewsFooter =
     !hideFooterProp &&
-    !isVideoTvPage &&
+    !(isVideoTvPage && isMobileViewport) &&
     !showHaritalarEmbed &&
     (isCorporateTheme || layoutPrefs.hmNewsFooterEnabled !== false);
   const stackTopPx = showPlatformNav && !hidePlatformNavOnVideoTvMobile ? APP_NAV_HEIGHT : 0;
@@ -833,7 +833,8 @@ function HmNestedLayoutVitrinRoot({
     };
   }, [immersiveVideoTvMain]);
 
-  const showVideoTvLink = resolveHmNewsVideoTvEnabled(layoutPrefs);
+  const showVideoTvLink =
+    resolveHmNewsVideoTvEnabled(layoutPrefs) && !isKhHmSite(hostKey, effectiveData?.slug ?? slug);
   const useContainedEditorPageHost =
     siteLayoutWidth === "contained" && isHmEditorPageForContainedHost(pathOnly, isHomeRoot);
   const mainChildren = useContainedEditorPageHost ? (

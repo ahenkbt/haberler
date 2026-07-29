@@ -236,13 +236,18 @@ export function buildCorporateMenuVideoTvItem(hmBase: string, opts?: { label?: s
   };
 }
 
+/** Kurumsal üst menüden Video / Video TV öğelerini çıkarır. */
+export function stripCorporateMenuVideoTvItems(items: HmCorporateMenuItem[]): HmCorporateMenuItem[] {
+  return items.filter((item) => !isHmCorporateMenuVideoTvItem(item));
+}
+
 /** Kurumsal üst menüde Video TV kök öğesini listenin sonuna taşır; yoksa ekler. */
 export function ensureCorporateMenuVideoTvAtEnd(
   items: HmCorporateMenuItem[],
   hmBase: string,
   opts?: { videoTvEnabled?: boolean; label?: string; path?: string },
 ): HmCorporateMenuItem[] {
-  if (opts?.videoTvEnabled === false) return items;
+  if (opts?.videoTvEnabled === false) return stripCorporateMenuVideoTvItems(items);
   const existing = items.filter(isHmCorporateMenuVideoTvItem);
   const rest = items.filter((item) => !isHmCorporateMenuVideoTvItem(item));
   if (existing.length === 0) {

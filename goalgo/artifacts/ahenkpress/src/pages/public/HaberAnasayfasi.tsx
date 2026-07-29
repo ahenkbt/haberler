@@ -4144,6 +4144,121 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           </section>
         );
       }
+      case "esenLeadPack": {
+        if (!resolveHmNewsHomeModuleEnabled(layoutPrefs, "esenLeadPack")) return null;
+        const leadPackBasePool = sortNewsByRecency(
+          mergeUniqueNews(
+            latestNewsPool,
+            bandNewsItems,
+            allItems,
+            hybridBandItems,
+            classicLatestMini,
+            classicHeadlinePool.slice(1),
+          ).filter(isHeadlineFreshEnough),
+        );
+        const leadPackPoolExcludingSlider = excludeHeadlineSliderItems(
+          leadPackBasePool,
+          classicHeadlineSliderItems,
+        );
+        const leadPackUnused = homeNewsDedupe.filterUnused(leadPackPoolExcludingSlider);
+        const leadPackColumnsRaw = pickCategoryAwareNewsColumns(
+          leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider,
+          HM_ESEN_LEAD_PACK_LEFT_COUNT,
+          HM_ESEN_LEAD_PACK_RIGHT_COUNT,
+          featuredCategorySlug,
+          homeCategoryMatchContext,
+          leadPackPoolExcludingSlider,
+        );
+        const leadPackLeftIds = new Set(
+          leadPackColumnsRaw.left.map((n) => String(n.id ?? n.slug ?? "")).filter(Boolean),
+        );
+        const leadPackRightCover = filterNewsItemsWithCoverImage(
+          leadPackPoolExcludingSlider.filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? ""))),
+        ).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
+        const leadPackRightFallback =
+          leadPackRightCover.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
+            ? leadPackRightCover
+            : filterNewsItemsWithCoverImage(
+                mergeUniqueNews(hybridBandItems, hybridMansetRssItems, leadPackPoolExcludingSlider),
+              )
+                .filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? "")))
+                .slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
+        const leadPackColumns = {
+          left: leadPackColumnsRaw.left,
+          right:
+            leadPackRightFallback.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
+              ? leadPackRightFallback
+              : leadPackColumnsRaw.right.slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
+        };
+        const hasLeadPackContent =
+          leadPackColumns.left.length > 0 || leadPackColumns.right.length > 0;
+        if (!hasLeadPackContent && leadPackBasePool.length === 0) {
+          if (homeNewsBootstrapping) {
+            return (
+              <HmNewsModuleSkeleton
+                title="Gündemde Öne Çıkanlar"
+                className="hm-esen-lead-pack"
+                moduleId="esenLeadPack"
+              />
+            );
+          }
+          return null;
+        }
+        rememberModuleItems([...leadPackColumns.left, ...leadPackColumns.right]);
+        return (
+          <section className="hm-esen-lead-pack mb-6" data-hm-home-module="esenLeadPack">
+            <ClassicSectionTitle title="Gündemde Öne Çıkanlar" href={tumHaberlerHref} accent={accent} />
+            <FeaturedCategoryTabs
+              tabs={tabStripCats}
+              selectedSlug={featuredCategorySlug}
+              accent={accent}
+              onSelect={setFeaturedCategorySlug}
+            />
+            {hasLeadPackContent ? (
+              <div className="hm-esen-lead-pack-grid">
+                {leadPackColumns.left.length > 0 ? (
+                  <ClassicTextList
+                    title="Gündemde Öne Çıkanlar"
+                    items={leadPackColumns.left}
+                    accent={accent}
+                    href={tumHaberlerHref}
+                    hideTitle
+                  />
+                ) : (
+                  <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
+                    {featuredCategorySlug ? "Bu kategoride henüz haber yok." : "Henüz haber yok."}
+                  </div>
+                )}
+                {leadPackColumns.right.length > 0 ? (
+                  <div className="hm-esen-lead-pack-right-grid">
+                    {leadPackColumns.right.map((n, index) => (
+                      <ClassicFeatureCard
+                        key={n.id ?? n.slug ?? index}
+                        n={n}
+                        accent={accent}
+                        hmCategoryColors={hmCat}
+                        large={index === 0}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="hm-classic-empty-panel hm-classic-empty-panel--compact">
+                    {featuredCategorySlug
+                      ? "Bu kategoride kart gösterilecek haber yok."
+                      : homeNewsBootstrapping
+                        ? "Son haberler yükleniyor…"
+                        : "Henüz haber yok."}
+                  </div>
+                )}
+              </div>
+            ) : homeNewsBootstrapping ? (
+              <HmNewsInlinePulse className="max-w-md" />
+            ) : featuredCategorySlug ? (
+              <div className="hm-classic-empty-panel">Seçilen kategoride henüz haber yok.</div>
+            ) : null}
+          </section>
+        );
+      }
       default:
         return null;
     }

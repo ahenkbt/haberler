@@ -532,7 +532,8 @@ async function repairSuDomainOnNeon(sql) {
 }
 
 /**
- * Domain/slug ile bak; Su markası için domain sahipliğini onar, kanonik satırı dön.
+ * KH: Video TV sayfası açık kalır; üst menüden Video bağlantısını kaldırır.
+ * Rev: hmKhVideoMenuRev — bir kerelik menü temizliği.
  */
 async function ensureKhVideoMenuOnRow(sql, row) {
   if (!row) return row;
@@ -545,6 +546,7 @@ async function ensureKhVideoMenuOnRow(sql, row) {
     hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
   if (!isKh) return row;
 
+  const REV = "kh-video-menu-off-20260729a";
   let layout = {};
   try {
     layout = row.layout_json ? JSON.parse(String(row.layout_json)) : {};
@@ -552,6 +554,7 @@ async function ensureKhVideoMenuOnRow(sql, row) {
     layout = {};
   }
   if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+  if (layout.hmKhVideoMenuRev === REV) return row;
 
   const items = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
   const isVideoItem = (item) => {
@@ -569,29 +572,8 @@ async function ensureKhVideoMenuOnRow(sql, row) {
       /\/video(?:-tv)?(?:\/|$|\?)/.test(href)
     );
   };
-  const hasVideo = items.some(isVideoItem);
-  const videoOn = layout.hmNewsVideoTvEnabled !== false;
-  let nextItems = items;
-  let changed = false;
-
-  if (videoOn && items.length > 0 && !hasVideo) {
-    nextItems = [
-      ...items,
-      { id: "menu-video-tv", label: "Video", href: "/video", enabled: true },
-    ];
-    changed = true;
-  } else if (videoOn && hasVideo) {
-    nextItems = items.map((item) => {
-      if (!isVideoItem(item)) return item;
-      const next = { ...item, enabled: item.enabled !== false };
-      if (!String(next.label || "").trim()) next.label = "Video";
-      const href = String(next.href || "").trim();
-      if (!href || href.includes("video-tv")) next.href = "/video";
-      if (next.label && /video\s*tv/i.test(next.label)) next.label = "Video";
-      if (next.label !== item.label || next.href !== item.href) changed = true;
-      return next;
-    });
-  }
+  const nextItems = items.filter((item) => !isVideoItem(item));
+  let changed = nextItems.length !== items.length;
 
   if (layout.hmNewsVideoTvEnabled === false) {
     // kullanıcı kapattıysa dokunma
@@ -600,8 +582,16 @@ async function ensureKhVideoMenuOnRow(sql, row) {
     changed = true;
   }
 
+  layout.hmKhVideoMenuRev = REV;
+  changed = true;
+
   if (!changed && nextItems === items) return row;
-  const next = { ...layout, hmCorporateMenuItems: nextItems, hmNewsVideoTvEnabled: true };
+  const next = {
+    ...layout,
+    hmCorporateMenuItems: nextItems,
+    hmNewsVideoTvEnabled: layout.hmNewsVideoTvEnabled === false ? false : true,
+    hmKhVideoMenuRev: REV,
+  };
   await sql`
     UPDATE hm_news_sites
     SET layout_json = ${JSON.stringify(next)}::jsonb,
