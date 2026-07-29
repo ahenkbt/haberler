@@ -611,7 +611,7 @@ function HmPublicShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Kök yol: kanonik portal doşrudan vitrin; dişer özel alanlar HM başlantısı için kısa API kontrolü. */
+/** Kök yol: arama motoru anasayfası (SearchEngineHomePage) — haber vitrinine çevrilmez. */
 function PortalHomeRoute() {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
@@ -984,6 +984,7 @@ export default function App() {
           </HmPortalOrDomainStandardPage>
         )}
       </Route>
+      {/* Haber Merkezi tanıtım sayfası — korunur */}
       <Route path="/habermerkezi">{() => <PublicLayout><Habermerkezi /></PublicLayout>}</Route>
       <Route path="/ucretsiz-haber-sitesi">{() => <PublicLayout><UcretsizHaberSitesiLanding /></PublicLayout>}</Route>
       <Route path="/ai-cagri-merkezi">{() => <PublicLayout><AiCagriMerkeziLanding /></PublicLayout>}</Route>
