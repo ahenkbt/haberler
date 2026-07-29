@@ -833,6 +833,21 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     slugKey === "kirsehir" ||
     khHosts.has(normalizeHost(domain));
 
+  const isAsgBrand =
+    binding.slug === "asg" ||
+    slugKey === "asg" ||
+    normalizeHost(domain).includes("ankarasehirgazetesi");
+
+  // ASG: yazar listesini AHG ile hizala (fingerprint aynıysa no-op); meta yanıtını bozma.
+  if (isAsgBrand && upstream.ok) {
+    try {
+      await ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "asg" });
+    } catch (err) {
+      console.error("[hm-brand-db-ensure/asg-authors]", String(err?.message || err).slice(0, 200));
+    }
+    return null;
+  }
+
   // Su + KH: Neon meta (KH editör veri kenarı Neon'a yazıyor).
   // Diğer markalar: yalnızca upstream 404 iken fallback.
   if (!isSuBrand && !isKhBrand && upstream.status !== 404) return null;
@@ -1062,12 +1077,34 @@ function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
 async function redirectHmCustomDomainRoot(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
-  if (path !== "/") return null;
   if (isPortalHost(incoming.hostname)) return null;
 
-  const origin = upstreamOrigin(env);
   const domain = incoming.hostname.toLowerCase();
   const fallbackSlug = hmDomainSlugFallback(domain);
+
+  // HM özel alanda /admin → /editor (turk.eco/admin'e atma)
+  if (fallbackSlug || !isPortalHost(domain)) {
+    const bare = path.toLowerCase();
+    if (bare === "/admin" || bare === "/admin/giris" || bare.startsWith("/admin/")) {
+      if (fallbackSlug || needsForcePurge(domain)) {
+        const target = new URL("/editor", incoming.origin);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            location: target.toString(),
+            "cache-control": "no-store",
+            "cdn-cache-control": "no-store",
+            "x-yekpare-frontend": "cloudflare-render-proxy",
+            "x-yekpare-hm-admin-to-editor": "1",
+          },
+        });
+      }
+    }
+  }
+
+  if (path !== "/") return null;
+
+  const origin = upstreamOrigin(env);
   try {
     const metaRes = await fetch(
       `${origin}/api/hm/meta/by-domain?domain=${encodeURIComponent(domain)}`,

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { adminFetchErrorHint, adminPanelCookieApiPath, portalCanonicalAdminPath } from "@/lib/apiBase";
+import { adminFetchErrorHint, adminPanelCookieApiPath, hmEditorEntryPathForHost, portalCanonicalAdminPath } from "@/lib/apiBase";
 import { invalidateAdminRouteVerificationCache } from "@/lib/adminRouteAuthCache";
 
 export default function Login() {
@@ -15,6 +15,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // HM haber sitesi: /admin → /editor (turk.eco/admin'e atma)
+    const editorEntry = hmEditorEntryPathForHost();
+    if (editorEntry) {
+      window.location.replace(editorEntry);
+      return;
+    }
     const canonical = portalCanonicalAdminPath("/admin/giris");
     if (/^https?:\/\//i.test(canonical) && canonical !== window.location.href) {
       window.location.replace(canonical);

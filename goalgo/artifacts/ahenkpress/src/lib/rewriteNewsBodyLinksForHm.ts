@@ -1,7 +1,7 @@
 import { hmPublicHref } from "@/lib/hmPublicLinks";
 import { isLikelyHmExtraPagePublicPath } from "@/lib/hmExtraPageLookup";
 
-const YEKPARE_HOSTS = /^(?:www\.)?yekpare\.net$/i;
+const PORTAL_HOSTS = /^(?:www\.)?(?:yekpare\.net|turk\.eco|turknet\.app)$/i;
 
 function pathOnly(p: string): string {
   const t = p.trim().split("#")[0] ?? "";
@@ -73,7 +73,7 @@ export function rewriteHmSiteAnchorsInHtml(
     try {
       if (/^https?:\/\//i.test(u)) {
         const parsed = new URL(u);
-        if (!YEKPARE_HOSTS.test(parsed.hostname)) return null;
+        if (!PORTAL_HOSTS.test(parsed.hostname)) return null;
         const inner = parsed.pathname + (parsed.search || "");
         if (!isHmScopedPortalPath(inner)) return null;
         return hmPublicHref(inner, { domain: opts.domain ?? null, slug: opts.slug, siteId: opts.siteId });

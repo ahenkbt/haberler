@@ -1,4 +1,5 @@
 import { isConfiguredPortalHost, isDefaultPortalHost, isEffectivePortalHost } from "./hmPortalHosts";
+import { resolveKnownHmEditorSlug } from "./hmEditorDomains";
 import { PORTAL_ORIGIN } from "./portalBrand";
 
 function parseConfiguredApiOrigin(): string | null {
@@ -76,16 +77,29 @@ export function publicMediaOriginForPersistence(): string {
 }
 
 /**
- * Özel alan (örn. ajans.com) üzerinde `/admin/...` aynı hostta `/api` vekili olmadan çalışmaz; oturum çerezi de
- * kanonik portalda (`turknet.app` veya `VITE_PUBLIC_PORTAL_ORIGIN`) oluşmalıdır.
- * SSR sırasında göreli yol döner; istemcide hosta göre tam URL üretilir.
+ * Portal yönetim paneli yolu.
+ * HM editör özel alanında asla turk.eco'ya atma — aynı hostta kal (veya /editor).
  */
 export function portalCanonicalAdminPath(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;
   if (typeof window === "undefined") return p;
   const host = window.location.hostname.toLowerCase().split(":")[0] ?? "";
   if (isDefaultPortalHost(host)) return p;
+  // Haber sitesi özel alanı: portal admin'e sıçrama yok
+  if (resolveKnownHmEditorSlug(host) || isCustomNonPortalHost(host)) return p;
   return `${FALLBACK_PORTAL_ORIGIN.replace(/\/+$/, "")}${p}`;
+}
+
+/** HM özel alanında /admin → /editor (Yekpare portal admin değil). */
+export function hmEditorEntryPathForHost(host?: string): string | null {
+  const h =
+    (host ?? (typeof window !== "undefined" ? window.location.hostname : ""))
+      .toLowerCase()
+      .split(":")[0]
+      ?.replace(/^www\./, "") ?? "";
+  if (!h || isDefaultPortalHost(h)) return null;
+  if (resolveKnownHmEditorSlug(h) || isCustomNonPortalHost(h)) return "/editor";
+  return null;
 }
 
 /**

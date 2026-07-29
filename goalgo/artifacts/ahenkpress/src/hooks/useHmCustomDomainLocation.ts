@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { readHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import { toHmCustomDomainCleanPath, toHmInternalTrPath } from "@/lib/hmCustomDomainCleanPath";
 import { readVendorDomainMetaCache } from "@/lib/vendorDomainStorage";
@@ -17,7 +18,7 @@ function browserPathname(): string {
 }
 
 function resolveCustomDomainBinding(host: string): { kind: "hm"; slug: string } | { kind: "vendor"; storefrontPath: string } | null {
-  const hmSlug = readHmDomainSlugCache(host);
+  const hmSlug = readHmDomainSlugCache(host) || resolveKnownHmEditorSlug(host);
   if (hmSlug) return { kind: "hm", slug: hmSlug };
   const vendor = readVendorDomainMetaCache(host);
   if (vendor?.storefrontPath) return { kind: "vendor", storefrontPath: vendor.storefrontPath };
