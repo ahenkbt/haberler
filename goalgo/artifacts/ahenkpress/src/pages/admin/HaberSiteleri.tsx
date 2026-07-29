@@ -295,9 +295,12 @@ export default function HaberSiteleri() {
       const text = await r.text();
       const j = text ? JSON.parse(text) as { error?: string } : {};
       if (!r.ok) throw new Error(j.error || text || "Kaydedilemedi");
+      const wasPassiveEditor = primaryEditorIsPassive(current);
       toast({
         title: editingId ? "Haber sitesi güncellendi" : "Haber sitesi oluşturuldu",
-        description: `Slug: /${form.slug.trim()} · kaydı yenileniyor…`,
+        description: wasPassiveEditor
+          ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}`
+          : `Slug: /${form.slug.trim()} · kaydı yenileniyor…`,
       });
       resetForm();
       await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
