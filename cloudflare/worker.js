@@ -800,8 +800,10 @@ function isHmMetaApiPath(pathname) {
   return p.startsWith("/api/hm/meta/");
 }
 
-/** Su markası: domain onarımını uygula ve kanonik /tr/su metasını tercih et. Diğer markalar: yalnız 404. */
-async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
+/** Su markası: domain onarımını uygula ve kanonik /tr/su metasını tercih et. Diğer markalar: yalnız 404.
+ * @param {{ waitUntil?: (p: Promise<unknown>) => void }} [opts]
+ */
+async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) {
   if (!upstream) return null;
   if (!isHmMetaApiPath(incoming.pathname)) return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "";
@@ -838,12 +840,18 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream) {
     slugKey === "asg" ||
     normalizeHost(domain).includes("ankarasehirgazetesi");
 
-  // ASG: yazar + köşe yazısını /tr/ankarahabergundemi ile hizala (fingerprint aynıysa no-op).
+  // ASG: yazar + köşe yazısını arka planda hizala (makale kopyası meta yanıtını geciktirmesin).
   if (isAsgBrand && upstream.ok) {
-    try {
-      await ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "asg" });
-    } catch (err) {
+    const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "asg" }).catch((err) => {
       console.error("[hm-brand-db-ensure/asg-authors-makale]", String(err?.message || err).slice(0, 200));
+    });
+    if (typeof opts.waitUntil === "function") {
+      opts.waitUntil(job);
+    } else {
+      // waitUntil yoksa kısa fingerprint no-op için yine de dene; uzun kopya riskli
+      try {
+        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))];
+      } catch (_) {}
     }
     return null;
   }
@@ -1992,7 +2000,7 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
