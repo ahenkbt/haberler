@@ -23,7 +23,7 @@ import { parseHmLayoutRecord } from "./hm-layout-json.js";
  * Yekpare merkez (portal) + Site içi RSS açık editör sitelerinin hibrit RSS
  * beslemelerini ARKA PLANDA periyodik yeniler ve kalıcı DB havuzuna
  * (portal_rss_items) UPSERT eder. Böylece:
- *  - yekpare.net/haberler ve editör siteleri sayfa açılışında CANLI RSS BEKLEMEZ,
+ *  - turk.eco/haberler ve editör siteleri sayfa açılışında CANLI RSS BEKLEMEZ,
  *  - kategori kutuları / manşet / SON HABERLER DB'den hızlı okur.
  *
  * Site içi RSS (`hybridRssEnabled`): zamanlayıcı o sitenin `hm-*-site-*` feed’lerini

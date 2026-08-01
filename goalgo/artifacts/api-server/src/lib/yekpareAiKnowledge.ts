@@ -1,5 +1,5 @@
 /**
- * Yekpare.net platform bilgisi — Yekpare AI asistanına sistem bağlamı olarak gönderilir.
+ * turk.eco platform bilgisi — Yekpare AI asistanına sistem bağlamı olarak gönderilir.
  * Tek kaynak: rota haritası, hizmetler ve yönlendirme kuralları burada tutulur.
  */
 

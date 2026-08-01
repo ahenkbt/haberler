@@ -152,14 +152,14 @@ function localFallback(
   if (isGreeting(message)) {
     const locNote = location?.label ? ` Konumunuz: ${location.label}.` : "";
     return {
-      reply: `Merhaba! Ben Yekpare AI.${locNote} yekpare.net üzerinde alışveriş, seyahat, sipariş takibi ve işletme başvurusu konularında yardımcı olabilirim. Size nasıl yardımcı olayım?`,
+      reply: `Merhaba! Ben Yekpare AI.${locNote} turk.eco üzerinde alışveriş, seyahat, sipariş takibi ve işletme başvurusu konularında yardımcı olabilirim. Size nasıl yardımcı olayım?`,
       links: [],
     };
   }
   if (isLikelyOffTopic(message)) {
     return {
       reply:
-        "Bu konuda yardımcı olamam; yalnızca yekpare.net hizmetleriyle ilgileniyorum. Alışveriş, seyahat veya destek konularında yardımcı olabilirim.",
+        "Bu konuda yardımcı olamam; yalnızca turk.eco hizmetleriyle ilgileniyorum. Alışveriş, seyahat veya destek konularında yardımcı olabilirim.",
       links: [
         { label: "Alışveriş", href: "/magaza" },
         { label: "Sipariş takip", href: "/siparis-takip" },
@@ -245,7 +245,7 @@ function buildWelcomeMessage(): ChatMessage {
   return {
     id: "welcome",
     role: "assistant",
-    text: `Merhaba! Ben Yekpare AI.${locNote} yekpare.net üzerinde arama, yemek, alışveriş, seyahat, sipariş takibi ve işletme başvurusu konularında size yardımcı olabilirim.`,
+    text: `Merhaba! Ben Yekpare AI.${locNote} turk.eco üzerinde arama, yemek, alışveriş, seyahat, sipariş takibi ve işletme başvurusu konularında size yardımcı olabilirim.`,
   };
 }
 

@@ -930,7 +930,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
 
     /**
      * Sayfa açılışında CANLI RSS beklenmez. Portal/site scope beslemeleri kalıcı
-     * DB havuzundan (portal_rss_items) okunur; canlı tazeleme yalnızca yekpare.net'te.
+     * DB havuzundan (portal_rss_items) okunur; canlı tazeleme yalnızca turk.eco'da.
      * Kutu içi RSS (box) canlı kalır — yalnızca portal isteklerinde.
      */
     // Kutu içi RSS tüm HM sitelerde ziyaret tetiklemeli canlı kalır (DB yok); site-içi moda göre cache/DB.
@@ -1336,8 +1336,8 @@ router.get("/news/hybrid/rss/:itemId", async (req, res): Promise<void> => {
     /**
      * KAYNAK ETİKETİ/LİNKİ (kesinleşmiş model):
      *  - EDİTÖR sitelerinde makale "Yekpare Haberleri"dir → etiket "Yekpare Haberleri",
-     *    link yekpare.net/haberler'e gider (ham upstream yayıncı adı Ntv vb. gösterilmez).
-     *  - yekpare.net/haberler'de kaynak ORİJİNAL yayıncıya (Ntv, vb.) işaret eder.
+     *    link turk.eco/haberler'e gider (ham upstream yayıncı adı Ntv vb. gösterilmez).
+     *  - turk.eco/haberler'de kaynak ORİJİNAL yayıncıya (Ntv, vb.) işaret eder.
      */
     const isEditorSite = siteId != null;
     const upstreamSourceName =

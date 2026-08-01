@@ -662,9 +662,9 @@ export function sanitizeHybridNewsItemForPublic(item: HybridNewsItem): HybridNew
 
 /**
  * Kaynak linki kuralı (kesinleşmiş):
- *  - EDITÖR sitelerinde haber "Kaynağı" → Yekpare'deki o haber (yekpare.net/haber/... veya
- *    yekpare.net/haberler/rss/...), ham RSS yayıncısı DEĞİL.
- *  - yekpare.net/haberler tarafında kaynak → orijinal RSS kaynağı (mevcut davranış).
+ *  - EDITÖR sitelerinde haber "Kaynağı" → Yekpare'deki o haber (turk.eco/haber/... veya
+ *    turk.eco/haberler/rss/...), ham RSS yayıncısı DEĞİL.
+ *  - turk.eco/haberler tarafında kaynak → orijinal RSS kaynağı (mevcut davranış).
  * Editörün kendi manuel haberi (publishedOnSiteId === siteId) için kaynak değiştirilmez.
  */
 export function applyEditorSourceAttribution(

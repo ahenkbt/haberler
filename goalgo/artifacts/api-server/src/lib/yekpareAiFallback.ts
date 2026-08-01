@@ -181,7 +181,7 @@ export function isLikelyOffTopicMessage(message: string): boolean {
 export function buildGreetingFallbackReply(): YekpareAiChatPayload {
   return {
     reply:
-      "Merhaba! Ben Yekpare AI. yekpare.net üzerinde yemek siparişi, alışveriş, seyahat, haritalar, haberler ve Bilgi Ağacı gibi konularda size yardımcı olabilirim. Bugün neye ihtiyacınız var?",
+      "Merhaba! Ben Yekpare AI. turk.eco üzerinde yemek siparişi, alışveriş, seyahat, haritalar, haberler ve Bilgi Ağacı gibi konularda size yardımcı olabilirim. Bugün neye ihtiyacınız var?",
     links: [],
     provider: "fallback",
     aiConfigured: false,
@@ -190,7 +190,7 @@ export function buildGreetingFallbackReply(): YekpareAiChatPayload {
 
 export function buildThanksFallbackReply(): YekpareAiChatPayload {
   return {
-    reply: "Rica ederim! yekpare.net ile ilgili başka bir konuda yardıma ihtiyacınız olursa buradayım.",
+    reply: "Rica ederim! turk.eco ile ilgili başka bir konuda yardıma ihtiyacınız olursa buradayım.",
     links: [],
     provider: "fallback",
     aiConfigured: false,
@@ -200,7 +200,7 @@ export function buildThanksFallbackReply(): YekpareAiChatPayload {
 export function buildOffTopicFallbackReply(): YekpareAiChatPayload {
   return {
     reply:
-      "Bu konuda yardımcı olamam; ben yalnızca yekpare.net hizmetleriyle ilgileniyorum. Sipariş, alışveriş, seyahat, haritalar, haberler, Bilgi Ağacı, işletme başvurusu veya destek konularında size yardımcı olabilirim — hangisiyle ilgileniyorsunuz?",
+      "Bu konuda yardımcı olamam; ben yalnızca turk.eco hizmetleriyle ilgileniyorum. Sipariş, alışveriş, seyahat, haritalar, haberler, Bilgi Ağacı, işletme başvurusu veya destek konularında size yardımcı olabilirim — hangisiyle ilgileniyorsunuz?",
     links: DEFAULT_SCOPE_LINKS,
     provider: "fallback",
     aiConfigured: false,

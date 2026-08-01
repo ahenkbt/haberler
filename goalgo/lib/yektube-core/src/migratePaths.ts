@@ -80,7 +80,7 @@ const HM_VIDEO_TV_PORTAL_TOP_LEVEL: Record<string, string> = {
   studio: "/studio",
 };
 
-/** HM `/tr/:slug/video-tv/...` → yekpare.net `/yp` (veya `/muzik` vb.) göreli yol. */
+/** HM `/tr/:slug/video-tv/...` → turk.eco `/yp` (veya `/muzik` vb.) göreli yol. */
 export function mapHmVideoTvRestToPortalPath(rest: string): string {
   const trimmed = rest.replace(/\/+$/, "").replace(/^\//, "");
   if (!trimmed) return "/yp/";

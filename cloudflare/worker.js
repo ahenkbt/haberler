@@ -3,7 +3,7 @@
  * ASSETS yoksa (eski deploy) tüm trafik Render'a proxy edilir.
  * Eski Netlify SW / cache için TEK SEFERLIK purge (JS boot + cookie).
  * Clear-Site-Data HTML yanıtlarında kullanılmaz — Chrome navigasyonu ERR_FAILED
- * ile düşürüp cookie yazılmadan döngüye sokabiliyor (yekpare.net/admin).
+ * ile düşürüp cookie yazılmadan döngüye sokabiliyor (turk.eco/admin).
  */
 import {
   brandMetaJsonResponse,
@@ -89,7 +89,7 @@ const PORTAL_HOSTS = new Set([
   "haberler.ahenkbt.workers.dev",
 ]);
 
-/** www.turk.eco → apex (yekpare.net bu worker'da yönlendirilmez; ayrı proje). */
+/** www.turk.eco → apex. */
 const CANONICAL_PORTAL_ORIGIN = "https://turk.eco";
 const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.turk.eco"]);
 
@@ -318,7 +318,7 @@ function proxyInit(request, origin, incoming) {
 /**
  * Upstream Set-Cookie'leri tarayıcıya güvenli aktar.
  * - getSetCookie ile çoklu çerez kaybını önle (+ boşsa headers.get fallback)
- * - Domain=onrender.com vb. kaldır → çerez yekpare.net hostuna yazılsın (admin giriş)
+ * - Domain=onrender.com vb. kaldır → çerez turk.eco hostuna yazılsın (admin giriş)
  * - SameSite=None → Lax (aynı origin /api vekili; Chrome third-party cookie engeli admin girişi kırıyordu)
  */
 function collectUpstreamSetCookies(upstream) {
@@ -504,7 +504,7 @@ function redirectBareSitemapPath(request, incoming) {
   });
 }
 
-/** HM + portal: robots.txt Sitemap satırı ziyaret edilen köke bağlanır (statik yekpare.net ezilmesin). */
+/** HM + portal: robots.txt Sitemap satırı ziyaret edilen köke bağlanır (statik turk.eco ezilmesin). */
 function serveDynamicRobotsTxt(request, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
@@ -1249,7 +1249,7 @@ async function fetchHmSlugForHost(apiOrigin, host) {
 }
 
 /**
- * Sosyal önizleme botları: SPA index.html (yekpare.net OG) yerine
+ * Sosyal önizleme botları: SPA index.html (turk.eco OG) yerine
  * /api/public/og-html ile haber başlık/açıklama/görsel döndür.
  * (Vercel middleware / Netlify edge CF Worker yolunda çalışmadığı için burada tekrarlanır.)
  */
@@ -2004,7 +2004,7 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
-    // www.turk.eco → apex (yekpare.net yönlendirmesi yok — goalgo-cloudflare / kendi worker)
+    // www.turk.eco → apex
     if (APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
       return new Response(null, {

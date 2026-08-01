@@ -681,7 +681,7 @@ export default function HaberEditor() {
                         </SelectContent>
                       </Select>
                       <p className="mt-1 text-[11px] leading-snug text-slate-500">
-                        Yemek Haber modülünde listelenir; kategoriler yekpare.net/yemek ile aynıdır.
+                        Yemek Haber modülünde listelenir; kategoriler turk.eco/yemek ile aynıdır.
                       </p>
                     </div>
                   ) : null}

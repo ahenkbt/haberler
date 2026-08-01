@@ -1648,7 +1648,7 @@ export default function GenelAyarlar() {
             <div>
               <h2 className="text-lg font-bold text-gray-900">Google Search Console — çoklu portal domain</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Ana portalın birden fazla alan adıyla (yekpare.net, turknet.app, getirsepeti.com.tr, goalgo.org vb.)
+                Ana portalın birden fazla alan adıyla (turk.eco, turknet.app, getirsepeti.com.tr, goalgo.org vb.)
                 aynı sitede yayınlanması için her domaini Google Search Console&apos;da <strong>ayrı mülk</strong> olarak
                 ekleyin. Sitemap her domainde kendi kökünden okunur:{" "}
                 <code className="bg-gray-100 px-1 rounded">https://ALAN-ADINIZ/sitemap.xml</code>
@@ -1660,12 +1660,12 @@ export default function GenelAyarlar() {
                 <code className="bg-gray-100 px-1 rounded text-xs">getirsepeti.com.tr,goalgo.org</code>
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                Aşağıdaki <strong>varsayılan</strong> alan yekpare.net (ve www) içindir. Diğer portal domainleri için
+                Aşağıdaki <strong>varsayılan</strong> alan turk.eco (ve www) içindir. Diğer portal domainleri için
                 alttaki satırlara domain başına GSC HTML etiketini girin.
               </p>
             </div>
             <div>
-              <Label>Varsayılan Google doğrulama (yekpare.net / portal kökü)</Label>
+              <Label>Varsayılan Google doğrulama (turk.eco / portal kökü)</Label>
               <Textarea
                 value={googleSiteVerification}
                 onChange={(e) => setGoogleSiteVerification(e.target.value)}
@@ -1690,7 +1690,7 @@ export default function GenelAyarlar() {
               </div>
               {portalHostVerifications.length === 0 ? (
                 <p className="text-xs text-gray-500">
-                  Örnek: yekpare.net, getirsepeti.com.tr, goalgo.org — her biri için GSC&apos;de ayrı mülk açıp HTML
+                  Örnek: turk.eco, getirsepeti.com.tr, goalgo.org — her biri için GSC&apos;de ayrı mülk açıp HTML
                   etiketini buraya kaydedin.
                 </p>
               ) : null}
@@ -1703,7 +1703,7 @@ export default function GenelAyarlar() {
                         prev.map((r, j) => (j === i ? { ...r, host: e.target.value } : r)),
                       )
                     }
-                    placeholder="yekpare.net"
+                    placeholder="turk.eco"
                     className="font-mono text-sm"
                   />
                   <Textarea

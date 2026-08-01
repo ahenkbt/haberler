@@ -25,7 +25,7 @@ export function yekparePortalHref(path: string): string {
   return `${PORTAL_ORIGIN}${p}`;
 }
 
-/** Yekpare menü kartları — harita/keşfet yalnızca yekpare.net hub'ında. */
+/** Yekpare menü kartları — harita/keşfet yalnızca turk.eco hub'ında. */
 export const HM_PORTAL_HUB_ONLY_YEKPARE_FEATURE_IDS = ["haritalar", "kesfet"] as const;
 
 const HM_PORTAL_HUB_ONLY_YEKPARE_FEATURE_SET = new Set<string>(HM_PORTAL_HUB_ONLY_YEKPARE_FEATURE_IDS);

@@ -1,6 +1,6 @@
 import { normalizeHmVitrinTheme, type NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 
-/** yekpare.net/haberler kategori şeridi — Sümbül teması editör sitelerinde aynı sıra. */
+/** turk.eco/haberler kategori şeridi — Sümbül teması editör sitelerinde aynı sıra. */
 export const SUMBUL_PORTAL_CATEGORY_NAV = [
   { slug: "gundem", label: "Gündem" },
   { slug: "ekonomi", label: "Ekonomi" },

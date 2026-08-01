@@ -5,7 +5,7 @@ type Props = {
   className?: string;
 };
 
-/** RSS detay — yekpare.net / kurumsal kaynak künyesi. Editör sitelerinde kaynak linki yok. */
+/** RSS detay — turk.eco / kurumsal kaynak künyesi. Editör sitelerinde kaynak linki yok. */
 export function RssNewsDisclaimer({ sourceName, feedUrl, sourceScope, className = "" }: Props) {
   const isEditor = sourceScope === "editor";
   // Editör vitrininde kaynak bağlantısı / künye gösterme.

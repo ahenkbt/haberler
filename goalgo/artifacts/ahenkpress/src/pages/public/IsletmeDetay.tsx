@@ -247,7 +247,7 @@ interface Product {
 }
 
 const EMPTY_STORE_FEATURES = [
-  "Yekpare.net pazaryerinden satış yapmaya başla",
+  "Türk Ekosistemi pazaryerinden satış yapmaya başla",
   "Kendi özel domainini mağazana bağla",
   "PayTR / iyzico hesabınla online ödeme al",
   "Ürün, menü, rezervasyon ve hizmetlerini tek panelden yönet",

@@ -27,7 +27,7 @@ function cancelEarlyMirrorTimer() {
   w.__YEKTUBE_CANCEL_MIRROR__?.();
 }
 
-/** yektube.com ayakta değilse aynı yolu yekpare.net üzerinde aç */
+/** yektube.com ayakta değilse aynı yolu turk.eco üzerinde aç */
 export function useYektubePortalFallback() {
   useEffect(() => {
     const { hostname } = window.location;

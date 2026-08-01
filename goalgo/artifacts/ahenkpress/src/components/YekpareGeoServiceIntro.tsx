@@ -61,11 +61,11 @@ const SERVICES = [
 const FAQ = [
   {
     q: "Yekpare nedir?",
-    a: "Yekpare (yekpare.net), Türkiye'nin yerli arama motorudur — haber, video, harita, alışveriş, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlük anlamı «yekpare» (bütün, tek parça) ile marka adı farklıdır.",
+    a: "Yekpare (turk.eco), Türkiye'nin yerli arama motorudur — haber, video, harita, alışveriş, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlük anlamı «yekpare» (bütün, tek parça) ile marka adı farklıdır.",
   },
   {
     q: "Yekpare'de online alışveriş nasıl yapılır?",
-    a: "yekpare.net/magaza adresinden mağaza seçin, ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
+    a: "turk.eco/magaza adresinden mağaza seçin, ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
   },
   {
     q: "Yekpare alışveriş nedir?",
@@ -88,7 +88,7 @@ export function YekpareGeoServiceIntro({ compact = false }: { compact?: boolean 
               Türkiye&apos;nin yerli arama motoru: haber, alışveriş, seyahat ve daha fazlası
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-600">
-              <strong className="font-black text-slate-800">Yekpare.net</strong> bir haber sitesi veya sözlük girişi değildir;
+              <strong className="font-black text-slate-800">Türk Ekosistemi</strong> bir haber sitesi veya sözlük girişi değildir;
               kullanıcıların online alışveriş, turizm rezervasyonu, harita keşfi, haber okuma, YekTube video
               ve {BILGI_AGACI_DISPLAY_NAME} içeriklerine tek adresten ulaştığı hizmet platformudur.
             </p>

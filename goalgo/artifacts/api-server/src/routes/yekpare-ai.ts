@@ -252,7 +252,7 @@ router.get("/yekpare-ai/status", async (_req, res): Promise<void> => {
     aiConfigured: !!(keys.geminiApiKey || keys.openaiApiKey || keys.deepseekApiKey),
     adminGeminiPath: "/admin/ayarlar?tab=entegrasyon#gemini-api-key",
     scopeNote:
-      "Yekpare AI yalnızca yekpare.net hizmetleriyle ilgili sorulara yanıt verir; konu dışı istekler nazikçe reddedilir.",
+      "Yekpare AI yalnızca turk.eco hizmetleriyle ilgili sorulara yanıt verir; konu dışı istekler nazikçe reddedilir.",
     assistantFeatures: [
       "konum ve şehir bazlı yemek/işletme araması",
       "alternatif öneri (gözleme → pide/restoran)",

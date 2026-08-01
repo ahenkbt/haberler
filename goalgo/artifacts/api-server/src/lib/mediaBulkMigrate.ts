@@ -73,7 +73,7 @@ export async function importMissingUploadFile(fname: string): Promise<boolean> {
   const legacy = legacyMediaOrigin();
   const candidates = [
     legacy ? `${legacy}/api/media/uploads/${fname}` : null,
-    `https://yekpare.net/api/media/uploads/${fname}`,
+    `https://turk.eco/api/media/uploads/${fname}`,
     `https://goalgo-production.up.railway.app/api/media/uploads/${fname}`,
   ].filter(Boolean) as string[];
 

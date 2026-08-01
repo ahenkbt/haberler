@@ -16,7 +16,7 @@ export type YektubeStaticPage = {
 
 const DEFAULT_TELIF_BODY = `## Platform Hakkında
 
-YekTube, Türkiye'nin ve Türk Dünyasının yerli ve milli arama motoru ve süper uygulaması (Super App) ekosistemi tarafından sağlanan yenilikçi bir video içerik platformudur. YekTube; yektube.com ve yekpare.net/yp/ adresleri üzerinden bağımsız olarak hizmet verdiği gibi, aynı zamanda yekpare.net/habermerkezi altyapısını kullanan ulusal ve yerel haber sitelerinin video/TV sayfalarından da yayın yapan entegre bir video portalı olarak faaliyet göstermektedir.
+YekTube, Türkiye'nin ve Türk Dünyasının yerli ve milli arama motoru ve süper uygulaması (Super App) ekosistemi tarafından sağlanan yenilikçi bir video içerik platformudur. YekTube; yektube.com ve turk.eco/yp/ adresleri üzerinden bağımsız olarak hizmet verdiği gibi, aynı zamanda turk.eco/habermerkezi altyapısını kullanan ulusal ve yerel haber sitelerinin video/TV sayfalarından da yayın yapan entegre bir video portalı olarak faaliyet göstermektedir.
 
 ## 1. İçerik Sağlama Yöntemi ve Sorumluluk Sınırı
 

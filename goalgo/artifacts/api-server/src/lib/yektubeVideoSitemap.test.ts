@@ -7,7 +7,7 @@ function youtubeEmbedPlayerLoc(videoId: string): string {
 
 describe("yektube video sitemap locs", () => {
   it("player_loc uses YouTube embed, not the watch page loc", () => {
-    const loc = "https://yekpare.net/yp/kanal/demo/video-abc123";
+    const loc = "https://turk.eco/yp/kanal/demo/video-abc123";
     const player = youtubeEmbedPlayerLoc("abc123");
     expect(player).toBe("https://www.youtube.com/embed/abc123");
     expect(player).not.toBe(loc);

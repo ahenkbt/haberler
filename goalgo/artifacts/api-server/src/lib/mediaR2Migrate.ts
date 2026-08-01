@@ -64,7 +64,7 @@ async function fetchLegacyMediaBytes(fname: string): Promise<Buffer | null> {
     legacy ? `${legacy}/api/media/uploads/${fname}` : null,
     `https://goalgo-y7ze.onrender.com/api/media/uploads/${fname}`,
     `https://goalgo-production.up.railway.app/api/media/uploads/${fname}`,
-    `https://yekpare.net/api/media/uploads/${fname}`,
+    `https://turk.eco/api/media/uploads/${fname}`,
   ].filter(Boolean) as string[];
 
   for (const url of candidates) {

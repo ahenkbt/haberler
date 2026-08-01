@@ -40,7 +40,7 @@ export function isDefaultPortalHost(host: string): boolean {
 }
 
 /**
- * Newsmap, Bilgi Ağacı ve YekTube yalnızca yekpare.net hub'ında açık.
+ * Newsmap, Bilgi Ağacı ve YekTube yalnızca turk.eco hub'ında açık.
  * HM özel alan ve `/tr/{slug}` (slug !== yekpare) için false.
  */
 export function isYekparePortalHubOnly(host: string, slug?: string | null): boolean {

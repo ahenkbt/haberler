@@ -22,7 +22,7 @@ export function YektubeLiveChatPanel({
   className?: string;
   compact?: boolean;
 }) {
-  const embedDomain = typeof window !== "undefined" ? window.location.hostname : "yekpare.net";
+  const embedDomain = typeof window !== "undefined" ? window.location.hostname : "turk.eco";
   const liveChatSrc = useMemo(
     () =>
       `https://www.youtube.com/live_chat?v=${encodeURIComponent(youtubeVideoId)}&embed_domain=${encodeURIComponent(embedDomain)}&dark_theme=0`,

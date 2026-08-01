@@ -5,7 +5,7 @@ import { isPortalHostname, normalizePortalHostKey, PORTAL_ORIGIN } from "./porta
 const INTERNAL_SITEMAP_HOST =
   /^(?:goalgo-production\.up\.railway\.app|goalgo-y7ze\.onrender\.com|localhost|127\.0\.0\.1)$/i;
 
-/** Railway/Render kökünü sitemap `<loc>` için yekpare.net'e çevirir. */
+/** Railway/Render kökünü sitemap `<loc>` için turk.eco'ya çevirir. */
 export function canonicalSitemapOrigin(raw: string | null | undefined): string {
   const fallback = PORTAL_ORIGIN.replace(/\/+$/, "");
   const trimmed = String(raw ?? "").trim().replace(/\/+$/, "");

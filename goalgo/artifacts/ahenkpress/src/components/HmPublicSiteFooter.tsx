@@ -445,7 +445,7 @@ export function HmPublicSiteFooter({
           <span className="mt-1 block sm:mt-0 sm:inline">
             Haber merkezi alt yapı:{" "}
             <a href={`${PORTAL_ORIGIN}/habermerkezi`} className="text-[color:var(--hm-footer-link-hover,var(--hm-brand-label,#f87171))] hover:underline" rel="noreferrer">
-              yekpare.net
+              turk.eco
             </a>
           </span>
           <span className="mx-2 hidden sm:inline">·</span>

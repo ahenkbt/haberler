@@ -104,7 +104,7 @@ describe("haberHaritasiOverlaySourceUrl", () => {
       title: "Editör haberi",
       source: "db",
       href: "/haber/yerel-slug",
-      originUrl: "https://yekpare.net/haber/yerel-slug",
+      originUrl: "https://turk.eco/haber/yerel-slug",
       publishedOnSiteId: 7,
     });
     const hmPublicHref = (path: string) => `https://ankarasehirgazetesi.com${path}`;
@@ -124,9 +124,9 @@ describe("haberHaritasiOverlaySourceUrl", () => {
       title: "Yekpare haber",
       source: "db",
       href: "/haber/yerel-slug",
-      originUrl: "https://yekpare.net/haber/yerel-slug",
+      originUrl: "https://turk.eco/haber/yerel-slug",
       publishedOnSiteId: null,
     });
-    expect(resolveNewsmapOverlaySourceUrl(row)).toBe("https://yekpare.net/haber/yerel-slug");
+    expect(resolveNewsmapOverlaySourceUrl(row)).toBe("https://turk.eco/haber/yerel-slug");
   });
 });

@@ -331,7 +331,7 @@ export const defaultYekpareLandingDesign = (): YekpareLandingDesign => ({
         items: [
           {
             q: "Yekpare nedir? Kim satıcıdır?",
-            a: "yekpare.net, işletmelerin abonelikle listelendiği firma rehberi ve pazaryeridir. Satıcı, siparişi veya rezervasyonu alan işletmedir; Yekpare satıcı konumunda değildir.",
+            a: "turk.eco, işletmelerin abonelikle listelendiği firma rehberi ve pazaryeridir. Satıcı, siparişi veya rezervasyonu alan işletmedir; Yekpare satıcı konumunda değildir.",
           },
           {
             q: "Ödeme kime yapılır?",

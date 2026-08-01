@@ -2,7 +2,7 @@ import { ytMainRoute } from "@/lib/routes";
 import { appendQueryParam } from "@/lib/runtimeConfig";
 import { isAdminEmbedLight } from "./adminEmbedTheme";
 
-/** Yektube Studio rota — yekpare.net/yp/admin, yektube.com/yp/admin, /yektube-v2/admin */
+/** Yektube Studio rota — turk.eco/yp/admin, yektube.com/yp/admin, /yektube-v2/admin */
 export function adminRoute(suffix = ""): string {
   const path = ytMainRoute(`/admin${suffix}`);
   return isAdminEmbedLight() ? appendQueryParam(path, "embed", "1") : path;

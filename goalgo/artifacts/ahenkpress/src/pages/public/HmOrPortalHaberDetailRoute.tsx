@@ -5,7 +5,7 @@ import HmPublicHaberDetayRoute from "@/pages/public/HmPublicHaberDetayRoute";
 import { SixAmMartNewsDetailPage } from "@/themes/sixammart/SixAmMartTheme";
 
 /**
- * `/haber/:id` — özel HM alanında vitrin detayı; yekpare.net'te SixAmMart haber detayı.
+ * `/haber/:id` — özel HM alanında vitrin detayı; turk.eco'te SixAmMart haber detayı.
  * Temiz URL (`/haber/slug`) wouter iç yoluna çevrilmeden önce de doğru sayfayı açar.
  */
 export default function HmOrPortalHaberDetailRoute() {

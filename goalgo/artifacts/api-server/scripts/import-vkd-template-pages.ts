@@ -264,7 +264,7 @@ async function main() {
       process.exit(1);
     }
     console.log(`\nCanlıya uygulandı: ${text}`);
-    console.log(`Önizleme: https://yekpare.net/tr/${siteSlug}`);
+    console.log(`Önizleme: https://turk.eco/tr/${siteSlug}`);
     return;
   }
 
@@ -289,7 +289,7 @@ async function main() {
   console.log(`\nBitti. Site: ${siteSlug} (id ${site.id}) — ${SITE_DISPLAY_NAME}`);
   console.log(`Sayfalar: +${merged.createdCount} yeni, ${merged.updatedCount} güncellendi (toplam ${pages.length} dosya).`);
   console.log(`Slider altı hızlı erişim: ${SLIDER_BAND_QUICK_LINKS.length} emoji kutusu ayarlandı.`);
-  console.log(`Önizleme: https://yekpare.net/tr/${siteSlug}`);
+  console.log(`Önizleme: https://turk.eco/tr/${siteSlug}`);
 }
 
 main().catch((e) => {

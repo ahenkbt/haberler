@@ -440,7 +440,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
     <AdminLayout title="Yekpare Haberler (vitrin)">
       <div className="max-w-3xl space-y-6">
         <p className="text-sm text-slate-600">
-          Bu ekran `yekpare.net/haberler` sayfasının vitrin düzenini yönetir (editör sitesindeki “Vitrin ayarları” ile aynı mantık).
+          Bu ekran `turk.eco/haberler` sayfasının vitrin düzenini yönetir (editör sitesindeki “Vitrin ayarları” ile aynı mantık).
           Sade tema `/haberler` modülleri aşaşıdaki anahtarlarla açılıp kapatılır; manşet, yazarlar ve Atatürk bandı varsayılan açıktır.
           Son gelişmeler, son dakika, namaz/günün sözü ve RSS son dakika kart bandı `/haberler` düzeninden kaldırıldı (admin açsa bile gösterilmez).
         </p>
@@ -491,7 +491,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
                 <div className="px-4 py-3">
                   <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Modül görünürlüğü</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Kapalı modüller yalnızca yekpare.net/haberler sayfasında gizlenir. Kaldırılan modüller:{" "}
+                    Kapalı modüller yalnızca turk.eco/haberler sayfasında gizlenir. Kaldırılan modüller:{" "}
                     {SADE_NEWS_PORTAL_RETIRED_MODULE_IDS.map((id) => SADE_NEWS_PORTAL_MODULE_LABELS[id]).join(", ")}.
                   </p>
                 </div>

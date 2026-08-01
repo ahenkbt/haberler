@@ -4,7 +4,7 @@
  * Ortam:
  * - SITEMAP_PING_DISABLED=1 — tüm pingleri kapat
  * - SITEMAP_PING_COOLDOWN_MS — aynı URL için minimum aralık (varsayılan 5 dk)
- * - SITE_PUBLIC_ORIGIN — yekpare.net kök
+ * - SITE_PUBLIC_ORIGIN — turk.eco kök
  */
 import { eq } from "drizzle-orm";
 import { db, hmNewsSitesTable, type NewsRow } from "@workspace/db";

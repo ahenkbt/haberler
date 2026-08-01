@@ -1,4 +1,4 @@
-/** Ana portal markası — turk.eco (yekpare.net ayrı proje / worker). */
+/** Ana portal markası — turk.eco. */
 
 export const PORTAL_ORIGIN = "https://turk.eco";
 export const PORTAL_HOST = "turk.eco";
