@@ -6,7 +6,7 @@ on:
       web_origin:
         description: WEB_ORIGIN (Netlify)
         required: true
-        default: https://yekpare.net
+        default: https://turk.eco
       api_origin:
         description: API_ORIGIN (Render)
         required: false

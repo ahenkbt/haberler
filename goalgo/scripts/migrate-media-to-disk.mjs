@@ -3,10 +3,10 @@
  * Mevcut görselleri site diskine taşır (haber, logo, köşe yazarı, banner, RSS).
  *
  * Kullanım:
- *   ADMIN_MAINTENANCE_SECRET=... API_ORIGIN=https://yekpare.net node goalgo/scripts/migrate-media-to-disk.mjs
+ *   ADMIN_MAINTENANCE_SECRET=... API_ORIGIN=https://turk.eco node goalgo/scripts/migrate-media-to-disk.mjs
  *   ADMIN_MAINTENANCE_SECRET=... API_ORIGIN=https://goalgo-y7ze.onrender.com node goalgo/scripts/migrate-media-to-disk.mjs --limit 200 --batches 20
  */
-const apiOrigin = (process.env.API_ORIGIN ?? "https://yekpare.net").replace(/\/+$/, "");
+const apiOrigin = (process.env.API_ORIGIN ?? "https://turk.eco").replace(/\/+$/, "");
 const secret = String(process.env.ADMIN_MAINTENANCE_SECRET ?? "").trim();
 
 const args = process.argv.slice(2);

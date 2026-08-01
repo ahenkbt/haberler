@@ -28,7 +28,7 @@ jobs:
       - name: Migrate media batches to site disk
         env:
           ADMIN_MAINTENANCE_SECRET: ${{ secrets.ADMIN_MAINTENANCE_SECRET }}
-          API_ORIGIN: https://yekpare.net
+          API_ORIGIN: https://turk.eco
         run: |
           set -euo pipefail
           if [ -z "${ADMIN_MAINTENANCE_SECRET:-}" ]; then

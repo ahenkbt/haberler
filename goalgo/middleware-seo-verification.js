@@ -19,7 +19,7 @@ export function createMiddlewareSeoVerification(deps) {
       .split(":")[0];
     return (
       !h ||
-      h === "yekpare.net" ||
+      h === "turk.eco" ||
       h === "turknet.app" ||
       h === "goalgo.org" ||
       h === "turkiye.li" ||
