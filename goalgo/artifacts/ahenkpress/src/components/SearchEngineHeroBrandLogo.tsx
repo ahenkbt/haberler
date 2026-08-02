@@ -1,9 +1,10 @@
 import { Link } from "wouter";
 
-import turkEcoLogo from "@/assets/turk-eco-logo.png?url";
+import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
+import { PORTAL_DEFAULT_LOGO_PATH } from "@/lib/portalBrand";
 
-/** turk.eco marka logosu (haber video portalı). */
-export const YEKPARE_SUPER_APP_LOGO_SRC = turkEcoLogo;
+/** Varsayılan turk.eco logosu (DB boşken). */
+export const YEKPARE_SUPER_APP_LOGO_SRC = PORTAL_DEFAULT_LOGO_PATH;
 
 export type SearchEngineHeaderBrandLogoProps = {
   className?: string;
@@ -16,6 +17,7 @@ export function SearchEngineHeaderBrandLogo({
   className = "",
   compact = false,
 }: SearchEngineHeaderBrandLogoProps) {
+  const { logoSrc } = usePortalBrandVisuals();
   return (
     <Link
       href="/"
@@ -29,7 +31,7 @@ export function SearchEngineHeaderBrandLogo({
       aria-label="turk.eco ana sayfa"
     >
       <img
-        src={YEKPARE_SUPER_APP_LOGO_SRC}
+        src={logoSrc}
         alt="turk.eco — haber video portalı"
         className="seh-header-brand-logo-img"
         width={compact ? 44 : 96}
@@ -45,8 +47,9 @@ export type SearchEngineHeroBrandLogoProps = {
   className?: string;
 };
 
-/** Anasayfa hero logosu — yekpare-super-app-logo.png, arka plansız. */
+/** Anasayfa hero logosu — site ayarları veya varsayılan logo1. */
 export function SearchEngineHeroBrandLogo({ className = "" }: SearchEngineHeroBrandLogoProps) {
+  const { logoSrc } = usePortalBrandVisuals();
   return (
     <Link
       href="/"
@@ -62,7 +65,7 @@ export function SearchEngineHeroBrandLogo({ className = "" }: SearchEngineHeroBr
       aria-label="turk.eco ana sayfa"
     >
       <img
-        src={YEKPARE_SUPER_APP_LOGO_SRC}
+        src={logoSrc}
         alt="turk.eco — haber video portalı"
         className="yekpare-brand-logo-img seh-hero-brand-logo-img seh-hero-brand-logo-img--home"
         width={220}

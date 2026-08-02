@@ -334,9 +334,12 @@ const FINANCE_FALLBACK: FinanceRow[] = [
 export function SadeFinanceWeatherStrip({
   showFinance = true,
   showWeather = true,
+  variant = "card",
 }: {
   showFinance?: boolean;
   showWeather?: boolean;
+  /** `header`: arama kutusu yerine üst şerit */
+  variant?: "card" | "header";
 }) {
   if (!showFinance && !showWeather) return null;
   const { data: financeRaw = [] } = useQuery({
@@ -377,7 +380,13 @@ export function SadeFinanceWeatherStrip({
   }, [financeRaw]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-emerald-100 bg-white shadow-sm">
+    <div
+      className={
+        variant === "header"
+          ? "seh-finance-weather-strip overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm"
+          : "overflow-hidden rounded-xl border border-emerald-100 bg-white shadow-sm"
+      }
+    >
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <div
           className="flex shrink-0 items-center gap-2 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-white sm:text-xs"

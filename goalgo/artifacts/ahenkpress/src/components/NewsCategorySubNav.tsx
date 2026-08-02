@@ -38,7 +38,7 @@ export function NewsCategorySubNav({ categories, activeCategory, onCategoryChang
     () => [
       {
         id: "yektube",
-        label: "Yektube",
+        label: "Videolar",
         href: "/yektube",
         icon: PlayCircle,
       },

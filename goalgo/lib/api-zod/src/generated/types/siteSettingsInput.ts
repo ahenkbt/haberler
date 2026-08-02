@@ -30,6 +30,7 @@ export interface SiteSettingsInput {
   telegram?: string | null;
   mainNavJson?: string | null;
   logoUrl?: string | null;
+  faviconUrl?: string | null;
   footerNavJson?: string | null;
   modulesEnabledJson?: string | null;
   homeSectionsJson?: string | null;

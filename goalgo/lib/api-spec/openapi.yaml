@@ -574,10 +574,15 @@ components:
         categoryColor: { type: string, nullable: true }
         authorId: { type: integer, nullable: true }
         authorName: { type: string, nullable: true }
+        senderFullName: { type: string, nullable: true }
+        senderEmail: { type: string, nullable: true }
+        senderPhone: { type: string, nullable: true }
         status: { type: string, enum: [published, draft] }
         isFeatured: { type: boolean, description: "Tepe manşet" }
         isSiteManset: { type: boolean, description: "Site (alt) manşet slider" }
         isBreaking: { type: boolean }
+        isFoodRecipe: { type: boolean, description: "Yemek tarifi modülü" }
+        foodRecipeCategorySlug: { type: string, nullable: true }
         views: { type: integer }
         tags:
           type: array
@@ -598,10 +603,15 @@ components:
         imageUrl: { type: string, nullable: true }
         categorySlug: { type: string }
         authorId: { type: integer, nullable: true }
+        senderFullName: { type: string, nullable: true }
+        senderEmail: { type: string, nullable: true }
+        senderPhone: { type: string, nullable: true }
         status: { type: string, enum: [published, draft] }
         isFeatured: { type: boolean, description: "Tepe manşet" }
         isSiteManset: { type: boolean, description: "Site (alt) manşet slider" }
         isBreaking: { type: boolean }
+        isFoodRecipe: { type: boolean }
+        foodRecipeCategorySlug: { type: string, nullable: true }
         tags:
           type: array
           items: { type: string }
@@ -898,6 +908,7 @@ components:
         telegram: { type: string, nullable: true }
         mainNavJson: { type: string, nullable: true, description: "JSON dizi — ana menü sırası (örn. [\"haberler\",\"yektube\"])" }
         logoUrl: { type: string, nullable: true, description: "Üst logo görseli tam URL veya / ile başlayan yol" }
+        faviconUrl: { type: string, nullable: true, description: "Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu" }
         footerNavJson: { type: string, nullable: true, description: "Footer menü anahtar dizisi (mainNavJson ile aynı format)" }
         modulesEnabledJson: { type: string, nullable: true, description: "Modül açık/kapalı JSON nesnesi" }
         homeSectionsJson: { type: string, nullable: true, description: "Anasayfa blokları [{id,enabled}]" }
@@ -938,6 +949,7 @@ components:
         telegram: { type: string, nullable: true }
         mainNavJson: { type: string, nullable: true }
         logoUrl: { type: string, nullable: true }
+        faviconUrl: { type: string, nullable: true }
         footerNavJson: { type: string, nullable: true }
         modulesEnabledJson: { type: string, nullable: true }
         homeSectionsJson: { type: string, nullable: true }

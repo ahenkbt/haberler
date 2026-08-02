@@ -26,7 +26,11 @@ export const PORTAL_SEARCH_TAGLINE = "haber video portalı";
 export const PWA_STORE_NAME = "Türk Ekosistemi";
 export const PWA_STORE_TAGLINE = "Haber, video ve Newsmap";
 export const PWA_APP_NAME = "Türk Ekosistemi";
-export const PWA_ICON_PATH = "/icon-192.svg";
+
+/** Varsayılan portal logosu ve sekme ikonu (public/portal-brand). */
+export const PORTAL_DEFAULT_LOGO_PATH = "/portal-brand/logo1.png";
+export const PORTAL_DEFAULT_FAVICON_PATH = "/portal-brand/icon.png";
+export const PWA_ICON_PATH = PORTAL_DEFAULT_FAVICON_PATH;
 
 /** Eski DB / seed / geçiş dönemi metinlerini kullanıcıya Türk Ekosistemi olarak gösterir. */
 export function normalizePortalDisplayName(name: string | null | undefined): string {

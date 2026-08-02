@@ -123,6 +123,12 @@ export type SearchEngineHeaderProps = {
 
   brandLeading?: ReactNode;
 
+  /** false: arama kutusu gizlenir (ör. /haberler — piyasa bandı). */
+  showSearch?: boolean;
+
+  /** showSearch=false iken arama alanında gösterilecek içerik. */
+  searchReplacement?: ReactNode;
+
   /** @deprecated Anasayfa hero artık SearchEngineHomePage içinde */
 
   beforeLocationRow?: ReactNode;
@@ -399,6 +405,10 @@ export function SearchEngineHeader({
 
   brandLeading,
 
+  showSearch = true,
+
+  searchReplacement,
+
   beforeLocationRow,
 
   beforeCategories,
@@ -545,7 +555,9 @@ export function SearchEngineHeader({
       ) : null}
 
       <div className="seh-search-utilities-row">
-        <div className="seh-search-block">{searchForm}</div>
+        <div className={`seh-search-block${!showSearch && searchReplacement ? " seh-search-block--replacement" : ""}`}>
+          {showSearch ? searchForm : searchReplacement}
+        </div>
         {isMobileSerp ? <MobileHeaderMenu /> : utilitiesBlock}
       </div>
 

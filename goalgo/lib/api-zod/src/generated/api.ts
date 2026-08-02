@@ -42,8 +42,14 @@ export const GetDashboardSummaryResponse = zod.object({
       senderEmail: zod.string().nullish(),
       senderPhone: zod.string().nullish(),
       status: zod.enum(["published", "draft"]),
-      isFeatured: zod.boolean().optional(),
+      isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+      isSiteManset: zod
+        .boolean()
+        .optional()
+        .describe("Site (alt) manşet slider"),
       isBreaking: zod.boolean().optional(),
+      isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+      foodRecipeCategorySlug: zod.string().nullish(),
       views: zod.number(),
       tags: zod.array(zod.string()).optional(),
       isEditorManual: zod
@@ -92,9 +98,18 @@ export const ListNewsResponse = zod.object({
       categoryColor: zod.string().nullish(),
       authorId: zod.number().nullish(),
       authorName: zod.string().nullish(),
+      senderFullName: zod.string().nullish(),
+      senderEmail: zod.string().nullish(),
+      senderPhone: zod.string().nullish(),
       status: zod.enum(["published", "draft"]),
-      isFeatured: zod.boolean().optional(),
+      isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+      isSiteManset: zod
+        .boolean()
+        .optional()
+        .describe("Site (alt) manşet slider"),
       isBreaking: zod.boolean().optional(),
+      isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+      foodRecipeCategorySlug: zod.string().nullish(),
       views: zod.number(),
       tags: zod.array(zod.string()).optional(),
       isEditorManual: zod
@@ -124,8 +139,8 @@ export const CreateNewsBody = zod.object({
   senderEmail: zod.string().nullish(),
   senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   isFoodRecipe: zod.boolean().optional(),
   foodRecipeCategorySlug: zod.string().nullish(),
@@ -148,10 +163,15 @@ export const ListFeaturedNewsResponseItem = zod.object({
   categoryColor: zod.string().nullish(),
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
+  senderFullName: zod.string().nullish(),
+  senderEmail: zod.string().nullish(),
+  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
+  isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+  foodRecipeCategorySlug: zod.string().nullish(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
   isEditorManual: zod
@@ -183,10 +203,15 @@ export const ListBreakingNewsResponseItem = zod.object({
   categoryColor: zod.string().nullish(),
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
+  senderFullName: zod.string().nullish(),
+  senderEmail: zod.string().nullish(),
+  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
+  isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+  foodRecipeCategorySlug: zod.string().nullish(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
   isEditorManual: zod
@@ -215,10 +240,15 @@ export const ListPopularNewsResponseItem = zod.object({
   categoryColor: zod.string().nullish(),
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
+  senderFullName: zod.string().nullish(),
+  senderEmail: zod.string().nullish(),
+  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
+  isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+  foodRecipeCategorySlug: zod.string().nullish(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
   isEditorManual: zod
@@ -251,10 +281,15 @@ export const ListNewsByCategoryResponseItem = zod.object({
   categoryColor: zod.string().nullish(),
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
+  senderFullName: zod.string().nullish(),
+  senderEmail: zod.string().nullish(),
+  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
+  isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+  foodRecipeCategorySlug: zod.string().nullish(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
   isEditorManual: zod
@@ -289,10 +324,15 @@ export const GetNewsResponse = zod.object({
   categoryColor: zod.string().nullish(),
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
+  senderFullName: zod.string().nullish(),
+  senderEmail: zod.string().nullish(),
+  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
+  isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+  foodRecipeCategorySlug: zod.string().nullish(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
   isEditorManual: zod
@@ -323,8 +363,8 @@ export const UpdateNewsBody = zod.object({
   senderEmail: zod.string().nullish(),
   senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   isFoodRecipe: zod.boolean().optional(),
   foodRecipeCategorySlug: zod.string().nullish(),
@@ -344,10 +384,15 @@ export const UpdateNewsResponse = zod.object({
   categoryColor: zod.string().nullish(),
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
+  senderFullName: zod.string().nullish(),
+  senderEmail: zod.string().nullish(),
+  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
+  isFoodRecipe: zod.boolean().optional().describe("Yemek tarifi modülü"),
+  foodRecipeCategorySlug: zod.string().nullish(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
   isEditorManual: zod
@@ -772,7 +817,12 @@ export const CreateVideoSourceBody = zod.object({
   categorySlug: zod.string(),
   active: zod.boolean().optional(),
   isLive: zod.boolean().optional(),
-  useYoutubeApi: zod.boolean().optional(),
+  useYoutubeApi: zod
+    .boolean()
+    .optional()
+    .describe(
+      "true ise YouTube Data API; false ise RSS + HTML kazıma (en fazla 50 video)",
+    ),
 });
 
 export const DeleteVideoSourceParams = zod.object({
@@ -915,6 +965,10 @@ export const GetSiteSettingsResponse = zod.object({
     .string()
     .nullish()
     .describe("Üst logo görseli tam URL veya \/ ile başlayan yol"),
+  faviconUrl: zod
+    .string()
+    .nullish()
+    .describe("Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu"),
   footerNavJson: zod
     .string()
     .nullish()
@@ -973,6 +1027,7 @@ export const UpdateSiteSettingsBody = zod.object({
   telegram: zod.string().nullish(),
   mainNavJson: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
+  faviconUrl: zod.string().nullish(),
   footerNavJson: zod.string().nullish(),
   modulesEnabledJson: zod.string().nullish(),
   homeSectionsJson: zod.string().nullish(),
@@ -1020,6 +1075,10 @@ export const UpdateSiteSettingsResponse = zod.object({
     .string()
     .nullish()
     .describe("Üst logo görseli tam URL veya \/ ile başlayan yol"),
+  faviconUrl: zod
+    .string()
+    .nullish()
+    .describe("Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu"),
   footerNavJson: zod
     .string()
     .nullish()

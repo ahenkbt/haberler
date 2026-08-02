@@ -10,6 +10,7 @@ import {
   PORTAL_SITE_TITLE_SUFFIX,
   normalizePortalDisplayName,
 } from "@/lib/portalBrand";
+import { resolvePortalFaviconSrc } from "@/lib/portalBrandAssets";
 import { BILGI_AGACI_DISPLAY_NAME } from "@/lib/bilgiAgaciBrand";
 import { KESFET_HUB_HERO_SUBTITLE } from "@/lib/kesfetDiscoverHub";
 
@@ -23,6 +24,8 @@ export { PORTAL_SEARCH_TAGLINE };
 export type PortalSeoSettings = {
   siteName?: string | null;
   tagline?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
 };
 
 let cachedPortalSeoSettings: PortalSeoSettings | null = null;
@@ -281,6 +284,21 @@ function upsertHmManifestLink(href: string): void {
   }
   primary.href = href;
   primary.setAttribute("data-hm-branding", "manifest");
+}
+
+/** Portal kökü (turk.eco): sekme ikonu — site ayarları veya varsayılan portal-brand/icon. */
+export function applyPortalSiteBranding(opts: {
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+}): void {
+  if (typeof document === "undefined") return;
+  const base = origin();
+  const iconPath = resolvePortalFaviconSrc(opts.faviconUrl, opts.logoUrl);
+  const iconHref = absUrl("/", iconPath, base);
+  upsertLink("icon", iconHref, { sizes: "192x192", type: "image/png", id: "icon-192" });
+  upsertLink("icon", iconHref, { sizes: "48x48", type: "image/png", id: "icon-48" });
+  upsertLink("apple-touch-icon", iconHref, { sizes: "180x180", id: "apple-touch" });
+  syncExistingBrowserIcons(iconHref);
 }
 
 /** HM sitesinde sekme ikonu / PWA manifest — logo varsa Yekpare varsayılanı yerine site logosu. */

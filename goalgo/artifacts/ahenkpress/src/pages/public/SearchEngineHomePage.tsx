@@ -9,8 +9,8 @@ import { pushRecentSearch } from "@/hooks/useSearchSuggestions";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { UNIFIED_SEARCH_PATH } from "@/lib/kesfetDiscoverHub";
 import { applyJsonLd, applyPortalSiteSeo, buildYekpareWebSiteJsonLd } from "@/lib/pageSeo";
+import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
 import { PORTAL_HOST, PORTAL_ORIGIN } from "@/lib/portalBrand";
-import { YEKPARE_SUPER_APP_LOGO_SRC } from "@/components/SearchEngineHeroBrandLogo";
 import { apiRequest } from "@/lib/queryClient";
 import { yektubeWatchPath } from "@/lib/yektubeUrls";
 
@@ -95,6 +95,7 @@ function routeForHomeQuery(rawQuery: string): string {
 export default function SearchEngineHomePage() {
   const [searchText, setSearchText] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const { logoSrc } = usePortalBrandVisuals();
 
   const { data: news = [], isLoading: newsLoading } = useQuery({
     queryKey: ["/api/news", "turkeco-home"],
@@ -155,7 +156,7 @@ export default function SearchEngineHomePage() {
       <section className="tec-hero" aria-label="Arama">
         <Link href="/" className="tec-brand" aria-label={`${HOME_BRAND} ana sayfa`}>
           <img
-            src={YEKPARE_SUPER_APP_LOGO_SRC}
+            src={logoSrc}
             alt={`${HOME_BRAND} — ${HOME_TAGLINE}`}
             className="tec-brand-logo"
             width={280}

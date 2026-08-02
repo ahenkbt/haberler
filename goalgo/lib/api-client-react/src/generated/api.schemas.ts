@@ -44,10 +44,14 @@ export interface News {
   senderEmail?: string | null;
   senderPhone?: string | null;
   status: NewsStatus;
+  /** Tepe manşet */
   isFeatured?: boolean;
   /** Site (alt) manşet slider */
   isSiteManset?: boolean;
   isBreaking?: boolean;
+  /** Yemek tarifi modülü */
+  isFoodRecipe?: boolean;
+  foodRecipeCategorySlug?: string | null;
   views: number;
   tags?: string[];
   /** Panelden manuel eklenen haber */
@@ -91,10 +95,13 @@ export interface NewsInput {
   senderEmail?: string | null;
   senderPhone?: string | null;
   status: NewsInputStatus;
+  /** Tepe manşet */
   isFeatured?: boolean;
   /** Site (alt) manşet slider */
   isSiteManset?: boolean;
   isBreaking?: boolean;
+  isFoodRecipe?: boolean;
+  foodRecipeCategorySlug?: string | null;
   tags?: string[];
 }
 
@@ -334,6 +341,7 @@ export interface VideoSourceInput {
   categorySlug: string;
   active?: boolean;
   isLive?: boolean;
+  /** true ise YouTube Data API; false ise RSS + HTML kazıma (en fazla 50 video) */
   useYoutubeApi?: boolean;
 }
 
@@ -426,6 +434,8 @@ export interface SiteSettings {
   mainNavJson?: string | null;
   /** Üst logo görseli tam URL veya / ile başlayan yol */
   logoUrl?: string | null;
+  /** Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu */
+  faviconUrl?: string | null;
   /** Footer menü anahtar dizisi (mainNavJson ile aynı format) */
   footerNavJson?: string | null;
   /** Modül açık/kapalı JSON nesnesi */
@@ -468,6 +478,7 @@ export interface SiteSettingsInput {
   telegram?: string | null;
   mainNavJson?: string | null;
   logoUrl?: string | null;
+  faviconUrl?: string | null;
   footerNavJson?: string | null;
   modulesEnabledJson?: string | null;
   homeSectionsJson?: string | null;

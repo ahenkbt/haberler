@@ -1,12 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { useMemo, useState, useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { AuthModal } from "./AuthModal";
 import NotificationBell from "./NotificationBell";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { normalizePortalDisplayName, PORTAL_BRAND_SHORT, PWA_ICON_PATH, PWA_STORE_NAME, PWA_STORE_TAGLINE } from "@/lib/portalBrand";
-import { portalNavBrandParts } from "@/lib/portalNavBrand";
+import { resolvePortalLogoSrc } from "@/lib/portalBrandAssets";
+import { normalizePortalDisplayName, PORTAL_BRAND_SHORT, PWA_STORE_NAME, PWA_STORE_TAGLINE } from "@/lib/portalBrand";
 import {
   parseModulesEnabledJson,
   isModuleEnabled,
@@ -389,8 +388,6 @@ export function AppNav() {
     window.location.href = "/pwastore";
   };
 
-  const brand = portalNavBrandParts(settings ?? undefined);
-
   return (
     <>
       <nav
@@ -408,19 +405,11 @@ export function AppNav() {
 
           {/* Logo: görsel URL doluysa yalnızca görsel; değilse yalnızca metin (çift logo önlenir). */}
           <Link href="/" className="flex items-center gap-2 shrink-0 mr-1 sm:mr-3">
-            {settings?.logoUrl?.trim() ? (
-              <img
-                src={resolveClientMediaSrc(settings.logoUrl.trim()) || settings.logoUrl.trim()}
-                alt={normalizePortalDisplayName(settings?.siteName) || PORTAL_BRAND_SHORT}
-                className="h-8 sm:h-9 w-auto max-w-[min(42vw,9rem)] sm:max-w-[10.5rem] object-contain object-left drop-shadow-md"
-              />
-            ) : (
-              <span className="flex items-center gap-2 font-black text-sm tracking-tight whitespace-nowrap">
-                <img src={PWA_ICON_PATH} alt="" className="h-8 w-8 sm:h-9 sm:w-9 rounded-[10px] object-cover shrink-0" />
-                <span style={{ color: settings?.primaryColor || "#ff6b35" }}>{brand.part1}</span>
-                <span className="text-white">{brand.part2}</span>
-              </span>
-            )}
+            <img
+              src={resolvePortalLogoSrc(settings?.logoUrl)}
+              alt={normalizePortalDisplayName(settings?.siteName) || PORTAL_BRAND_SHORT}
+              className="h-8 sm:h-9 w-auto max-w-[min(42vw,9rem)] sm:max-w-[10.5rem] object-contain object-left drop-shadow-md"
+            />
           </Link>
 
           {/* Desktop: admin kaydettiği sıra ile tek yatay menü */}

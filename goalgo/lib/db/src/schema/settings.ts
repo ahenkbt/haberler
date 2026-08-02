@@ -35,6 +35,8 @@ export const siteSettingsTable = pgTable("site_settings", {
   mainNavJson: text("main_nav_json"),
   /** Tam URL veya site köküne göre yol — üst logo resmi */
   logoUrl: text("logo_url"),
+  /** Tarayıcı sekmesi / PWA ikonu; boşsa logo veya varsayılan portal ikonu */
+  faviconUrl: text("favicon_url"),
   /** Üst menü ile aynı anahtar dizisi; footer link sırası */
   footerNavJson: text("footer_nav_json"),
   /** JSON dizi: [{ "label": "...", "href": "/..." }] yasal / alt bilgi satırı */

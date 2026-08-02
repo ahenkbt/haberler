@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Rss } from "lucide-react";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { PORTAL_ORIGIN, PWA_ICON_PATH } from "@/lib/portalBrand";
+import { PORTAL_ORIGIN } from "@/lib/portalBrand";
+import { resolvePortalLogoSrc } from "@/lib/portalBrandAssets";
 import {
   parseModulesEnabledJson,
   isModuleEnabled,
@@ -14,7 +15,6 @@ import {
   type FooterLegalLink,
 } from "@workspace/site-nav";
 import { useEditorPageFlagsSync } from "@/hooks/useEditorPageFlags";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { portalCopyrightFallback, portalNavBrandParts } from "@/lib/portalNavBrand";
 import { TURIZM_FOOTER_MODULES, isTurizmSubmenuItemActive } from "@/themes/turizm/turizmRoutes";
 import { YekpareFooterDisclaimer } from "@/components/YekpareFooterDisclaimer";
@@ -57,9 +57,7 @@ export function SiteFooter() {
 
   const primary = settings?.primaryColor?.trim() || "#e61e25";
   const brand = portalNavBrandParts(settings ?? undefined);
-  const footerLogo = settings?.logoUrl?.trim()
-    ? resolveClientMediaSrc(settings.logoUrl.trim()) || settings.logoUrl.trim()
-    : PWA_ICON_PATH;
+  const footerLogo = resolvePortalLogoSrc(settings?.logoUrl);
   const showTurizmModules = isModuleEnabled(modulesMap, "turizm");
 
   return (
