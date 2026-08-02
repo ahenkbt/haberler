@@ -117,17 +117,23 @@ function isPortalRssVisitRefreshDue(payload: FeedCachePayload | null | undefined
  */
 export async function refreshPortalRssFeedsOnVisit(
   feeds: PortalHybridRssFeedConfig[],
-  opts?: { maxWaitMs?: number; categorySlug?: string },
+  opts?: { maxWaitMs?: number; categorySlug?: string; force?: boolean },
 ): Promise<void> {
   const enabled = enabledPortalHybridRssFeeds(feeds, opts?.categorySlug);
   if (!enabled.length) return;
 
   const now = Date.now();
   const due: PortalHybridRssFeedConfig[] = [];
-  for (const feed of enabled) {
-    if (!feed.enabled || !feed.url) continue;
-    const cached = await readCache(feed.id);
-    if (isPortalRssVisitRefreshDue(cached, now)) due.push(feed);
+  if (opts?.force) {
+    for (const feed of enabled) {
+      if (feed.enabled && feed.url) due.push(feed);
+    }
+  } else {
+    for (const feed of enabled) {
+      if (!feed.enabled || !feed.url) continue;
+      const cached = await readCache(feed.id);
+      if (isPortalRssVisitRefreshDue(cached, now)) due.push(feed);
+    }
   }
   if (!due.length) return;
 
