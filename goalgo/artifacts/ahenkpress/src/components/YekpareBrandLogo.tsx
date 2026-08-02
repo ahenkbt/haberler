@@ -1,8 +1,9 @@
 import { Link } from "wouter";
 
 import { YEKPARE_SUPER_APP_LOGO_SRC } from "@/components/SearchEngineHeroBrandLogo";
+import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
 
-/** Vite-bundled marka logosu — /assets/ altında servis edilir (public kök 500 verebiliyor). */
+/** Varsayılan portal logosu (DB boş veya eski URL). */
 export const YEKPARE_BRAND_LOGO_SRC = YEKPARE_SUPER_APP_LOGO_SRC;
 
 export type YekpareBrandLogoProps = {
@@ -19,6 +20,7 @@ export function YekpareBrandLogo({
   compact = false,
   variant = "serp",
 }: YekpareBrandLogoProps) {
+  const { logoSrc } = usePortalBrandVisuals();
   return (
     <Link
       href="/"
@@ -34,7 +36,7 @@ export function YekpareBrandLogo({
       aria-label="turk.eco ana sayfa"
     >
       <img
-        src={YEKPARE_BRAND_LOGO_SRC}
+        src={logoSrc}
         alt="turk.eco — haber video portalı"
         className="yekpare-brand-logo-img seh-header-brand-logo-img"
         width={compact ? 44 : 96}

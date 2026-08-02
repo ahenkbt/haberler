@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Rss } from "lucide-react";
-import { YEKPARE_BRAND_LOGO_SRC } from "@/components/YekpareBrandLogo";
+import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import {
   parseFooterLegalLinksJson,
@@ -170,6 +170,7 @@ function TurizmFooterBody() {
 
 function DefaultFooterBody() {
   const { data: settings } = useGetSiteSettings();
+  const { logoSrc } = usePortalBrandVisuals();
   const legalLinks = useMemo(
     () => parseFooterLegalLinksJson((settings as { footerLegalLinksJson?: string | null } | undefined)?.footerLegalLinksJson ?? null),
     [settings],
@@ -185,7 +186,7 @@ function DefaultFooterBody() {
           <div className="mb-4 flex items-center gap-3">
             <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label="Türk Ekosistemi ana sayfa">
               <img
-                src={YEKPARE_BRAND_LOGO_SRC}
+                src={logoSrc}
                 alt="Türk Ekosistemi"
                 className="yekpare-public-footer__brand-logo"
                 width={160}

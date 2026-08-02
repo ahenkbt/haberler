@@ -9,6 +9,7 @@ import {
 import { normalizeNewsCategorySlug } from "./categorySort.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "./hm-global-news-category.js";
 import { deriveCleanCategorySlug, isHmCorporateLayout } from "./hm-editor-categories.js";
+import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
 import { isKoseArticle, type KoseArticleLike } from "./kose-article.js";
 import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
 
@@ -212,6 +213,13 @@ export function filterCorporatePublicCategoryRows<
     const slug = normalizeNewsCategorySlug(r.slug);
     if (!slug || slug === HM_GLOBAL_NEWS_CATEGORY_SLUG) return false;
     if (isVkdOnlyGlobalCategorySlug(slug) && r.exclusiveSiteId !== siteId) return false;
+    if (
+      (HM_STANDARD_NEWS_CATEGORIES as readonly { slug: string }[]).some(
+        (std) => normalizeNewsCategorySlug(std.slug) === slug,
+      )
+    ) {
+      return false;
+    }
     return true;
   });
   return filterVkdPublicCategoryRows(siteOnly, siteSlug);
