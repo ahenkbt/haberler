@@ -12,7 +12,11 @@ import { listHmNewsSitesCompat } from "./hm-site-compat.js";
 const KH_LEGACY_SLUGS = ["kirsehirhaber", "kirsehir", "kh"] as const;
 
 /** Bilinen Kırşehir editör e-postaları — yanlış siteye eklenmişse KH'ye taşınır. */
-const KH_KNOWN_EDITOR_EMAILS = new Set(["kevser@gmail.com"]);
+const KH_KNOWN_EDITOR_EMAILS = new Set([
+  "kevser@gmail.com",
+  "kirsehir@gmail.com",
+  "yekpare@gmail.com",
+]);
 
 export type KhEditorRepairResult = {
   ok: boolean;

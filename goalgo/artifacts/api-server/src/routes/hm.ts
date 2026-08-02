@@ -1124,8 +1124,8 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Editör e-postası gerekli" });
     return;
   }
-  if (editorPassword.length < 8) {
-    res.status(400).json({ error: "Editör şifresi en az 8 karakter olmalı" });
+  if (editorPassword.length < 6) {
+    res.status(400).json({ error: "Editör şifresi en az 6 karakter olmalı" });
     return;
   }
   const domain = normalizeDomain(b.domain ?? null);
@@ -1298,7 +1298,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     typeof b.editorEmail === "string" &&
     b.editorEmail.trim().toLowerCase().includes("@") &&
     typeof b.editorPassword === "string" &&
-    b.editorPassword.length >= 8;
+    b.editorPassword.length >= 6;
   const wantsEditor = wantsEditorUpdate || wantsEditorCreate;
 
   if (Object.keys(patch).length === 0 && !wantsEditor) {
@@ -1308,12 +1308,12 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
 
   if (wantsEditor) {
     const pw = typeof b.editorPassword === "string" ? b.editorPassword : "";
-    if (wantsEditorCreate && pw.length < 8) {
-      res.status(400).json({ error: "Yeni editör için şifre en az 8 karakter olmalı" });
+    if (wantsEditorCreate && pw.length < 6) {
+      res.status(400).json({ error: "Yeni editör için şifre en az 6 karakter olmalı" });
       return;
     }
-    if (wantsEditorUpdate && pw.length > 0 && pw.length < 8) {
-      res.status(400).json({ error: "Editör şifresi en az 8 karakter olmalı" });
+    if (wantsEditorUpdate && pw.length > 0 && pw.length < 6) {
+      res.status(400).json({ error: "Editör şifresi en az 6 karakter olmalı" });
       return;
     }
     if (typeof b.editorEmail === "string") {
@@ -1376,7 +1376,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       };
       if (typeof b.editorDisplayName === "string") ePatch.displayName = b.editorDisplayName.trim() || null;
       if (typeof b.editorEmail === "string") ePatch.email = b.editorEmail.trim().toLowerCase();
-      if (typeof b.editorPassword === "string" && b.editorPassword.length >= 8) {
+      if (typeof b.editorPassword === "string" && b.editorPassword.length >= 6) {
         ePatch.passwordHash = await bcrypt.hash(b.editorPassword, 10);
       }
       ePatch.updatedAt = new Date();

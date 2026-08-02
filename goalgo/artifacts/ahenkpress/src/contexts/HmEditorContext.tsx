@@ -114,6 +114,17 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
       const result = await verifyHmEditorSession(verifyFor);
       if (readHmJwt() !== verifyFor) return;
       if (result.status === "denied") {
+        // Zorunlu yenileme değilse ve yerelde oturum özeti varsa tek 401 ile silme
+        // (CDN/yarış). refreshMe({ force }) gerçek 401'de yine dışarı atar.
+        if (
+          !opts?.force &&
+          verifiedTokenRef.current === verifyFor &&
+          readHmEditorBrief() &&
+          readHmSite()
+        ) {
+          setSessionStatus("transient");
+          return;
+        }
         denySession();
         return;
       }

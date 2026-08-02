@@ -201,7 +201,21 @@ async function isKhEditorSite(sql, siteId) {
   return false;
 }
 
-const KH_KNOWN_EDITOR_EMAILS = new Set(["kevser@gmail.com"]);
+const KH_KNOWN_EDITOR_EMAILS = new Set([
+  "kevser@gmail.com",
+  "kirsehir@gmail.com",
+  "yekpare@gmail.com",
+]);
+
+/** İkinci Kırşehir editörü — aynı hesabı paylaşmadan paralel oturum. */
+const KH_YEKEPARE_EDITOR = {
+  email: "yekpare@gmail.com",
+  username: "yekpare",
+  password: "yekpare",
+  displayName: "Yekpare Editör",
+};
+
+let khYekpareEditorEnsuredAt = 0;
 
 function isKhEditorCandidate(editor) {
   const email = String(editor?.email ?? "")
@@ -214,6 +228,41 @@ function isKhEditorCandidate(editor) {
   if (email.includes("kirsehirhaber") || email.includes("kirsehri")) return true;
   if (dn.includes("kırşehir") || dn.includes("kirsehir") || dn.includes("kirşehir")) return true;
   return false;
+}
+
+/** Neon'da yekpare@gmail.com editörünü oluştur/güncelle (5 dk TTL). */
+async function ensureKhYekpareEditor(sql, siteId) {
+  const sid = asPositiveInt(siteId);
+  if (sid == null) return;
+  const now = Date.now();
+  if (now - khYekpareEditorEnsuredAt < 5 * 60_000) return;
+  await ensureUsernameColumn(sql);
+  const email = KH_YEKEPARE_EDITOR.email;
+  const username = KH_YEKEPARE_EDITOR.username;
+  const displayName = KH_YEKEPARE_EDITOR.displayName;
+  const passwordHash = await bcrypt.hash(KH_YEKEPARE_EDITOR.password, 10);
+  const existing = await sql`
+    SELECT id FROM hm_site_editors
+    WHERE site_id = ${sid} AND lower(email) = ${email}
+    LIMIT 1
+  `;
+  if (existing?.[0]?.id) {
+    await sql`
+      UPDATE hm_site_editors
+      SET password_hash = ${passwordHash},
+          username = ${username},
+          display_name = ${displayName},
+          is_active = true,
+          updated_at = NOW()
+      WHERE id = ${existing[0].id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO hm_site_editors (site_id, email, username, password_hash, display_name, is_active, created_at, updated_at)
+      VALUES (${sid}, ${email}, ${username}, ${passwordHash}, ${displayName}, true, NOW(), NOW())
+    `;
+  }
+  khYekpareEditorEnsuredAt = now;
 }
 
 async function repairKhEditorForLogin(sql, emailRaw, khSiteId) {
@@ -952,20 +1001,25 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
     return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 
-  // Kırşehir: tercihen Render JWT (session-bridge). Yoksa Neon JWT + kenar veri API.
-  // Yazar senkronu girişte YAPILMAZ — Render'dan tekrar çekmek silinen köşe yazarlarını geri getiriyordu.
+  // Kırşehir: her zaman Neon JWT (eid/sid Neon ile uyumlu).
+  // Eski session-bridge Render JWT döndürüyordu; secret aynı olsa bile Render eid
+  // Neon'da yoksa kenar /me «Geçersiz oturum» ile paneli dışarı atıyordu.
+  // Render senkronu arka planda (token olarak kullanılmaz) — çoklu oturum korunur.
   const siteIsKh = await isKhEditorSite(sql, site.id);
   if (siteIsKh || KH_HOSTS.has(host)) {
-    const bridged = await exchangeKhSessionViaRenderBridge(env, {
+    await ensureKhYekpareEditor(sql, site.id).catch((err) => {
+      console.error("[hm-kh-yekpare-editor]", String(err?.message || err).slice(0, 160));
+    });
+    void exchangeKhSessionViaRenderBridge(env, {
       email: editor.email,
       passwordHash: editor.password_hash,
       displayName: editor.display_name ?? null,
       username: editor.username ?? null,
       siteSlug: site.slug || "kirsehirhaber",
       siteDomain: site.domain || host || "kirsehirhaber.org",
+    }).catch((err) => {
+      console.error("[hm-kh-session-bridge] sync", String(err?.message || err).slice(0, 160));
     });
-    if (bridged) return bridged;
-    console.error("[hm-kh-session-bridge] fallback neon-jwt");
   }
 
   const token = await signEditorJwt(env, editor.id, site.id);
@@ -1330,7 +1384,10 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
       if (auth.startsWith("Bearer ")) return null;
       return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
     }
-    return handleEditorMeGet(request, env);
+    const me = await handleEditorMeGet(request, env);
+    // JWT kenarda açıldı ama eid Neon'da yok (eski Render-bridge token) → Render'a bırak.
+    if (me && me.status === 401 && auth.startsWith("Bearer ")) return null;
+    return me;
   }
   if (path === "/api/hm/editor/me" && method === "PATCH") {
     const auth = String(request.headers.get("authorization") || "").trim();
