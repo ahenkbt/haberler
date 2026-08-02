@@ -28,7 +28,7 @@ import { suSiteNewsScopeCondition } from "./hm-su-domain-repair.js";
 import { sanitizeDisplayText } from "./sanitizeDisplayText.js";
 import { serializeNewsListItem, newsListSelectFields, type NewsContext, type SerializedNewsListItem } from "./serializers.js";
 import { normalizePublicMediaUrl } from "./normalizePublicMediaUrl.js";
-import { resolveNewsItemImageUrl } from "./news-display-image.js";
+import { resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "./news-display-image.js";
 import {
   enrichSerializedNewsListImages,
   filterHiddenPoolNewsItems,
@@ -76,6 +76,8 @@ export type HybridNewsItem = {
   spot: string | null;
   content: string | null;
   imageUrl: string | null;
+  /** Harici kapak yedeği — yerel mirror 404 olduğunda kartlarda kullanılır. */
+  imageFallbackUrl?: string | null;
   categorySlug: string;
   categoryName: string;
   categoryId?: number | null;
@@ -220,6 +222,16 @@ function dbToHybrid(item: DbSerialized, source: "db" | "author" = "db", rssImage
   };
 }
 
+function externalRssCoverFallback(item: PortalRssItem): string | null {
+  const img = String(item.imageUrl ?? "").trim();
+  if (/^https?:\/\//i.test(img)) return img;
+  const html = String(item.contentHtml ?? item.spot ?? "");
+  const m = html.match(/<img[^>]+src=["'](https?:\/\/[^"'>\s]+)["']/i);
+  if (m?.[1]) return m[1];
+  const enc = html.match(/url=["']?(https?:\/\/[^"'>\s]+\.(?:jpe?g|png|webp|gif)[^"'>\s]*)/i);
+  return enc?.[1] ?? null;
+}
+
 function rssToHybrid(
   item: PortalRssItem,
   feedLabel: string | null,
@@ -236,6 +248,7 @@ function rssToHybrid(
     spot: item.spot ? sanitizeCumhaRssSpot(decodeHtmlEntities(item.spot), item.link) || null : null,
     content: null,
     imageUrl: item.imageUrl,
+    imageFallbackUrl: externalRssCoverFallback(item),
     categorySlug: item.categorySlug,
     categoryName: sanitizeDisplayText(cat?.name ?? feedLabel ?? item.categorySlug),
     categoryColor: cat?.color ?? "#CC0000",
@@ -675,6 +688,9 @@ export function sanitizeHybridNewsItemForPublic(item: HybridNewsItem): HybridNew
     href: safeHref,
     content: null,
     imageUrl: normalizePublicMediaUrl(resolveNewsItemImageUrl(item) ?? item.imageUrl) ?? item.imageUrl,
+    imageFallbackUrl:
+      resolveNewsItemImageFallbackUrl(item) ??
+      (String(item.imageFallbackUrl ?? "").trim() || null),
     externalUrl: null,
     rssSourceUrl,
     originUrl: item.originUrl ?? (rssSourceUrl && /^https?:\/\//i.test(rssSourceUrl) ? rssSourceUrl : null),

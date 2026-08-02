@@ -17,6 +17,11 @@ import {
 import {
   HM_HOME_HEADLINE_SLIDER_LIMIT,
 } from "@/lib/hmHeadlinePool";
+import {
+  HmNewsImage,
+  resolveNewsItemImageUrl,
+  resolveNewsItemImageFallbackUrl,
+} from "@/components/HmNewsImage";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { useHeadlineSliderInteraction } from "@/hooks/useHeadlineSliderInteraction";
 import {
@@ -56,6 +61,7 @@ export type SadeNewsCardItem = {
   summary?: string | null;
   content?: string | null;
   imageUrl?: string | null;
+  imageFallbackUrl?: string | null;
   categoryName?: string | null;
   categorySlug?: string | null;
   authorName?: string | null;
@@ -120,11 +126,15 @@ export function SadeNewsHeroSlider({ slides, fillHeight = false, className = "" 
             className="absolute inset-0 transition-opacity duration-700"
             style={{ opacity: i === idx ? 1 : 0, zIndex: i === idx ? 1 : 0 }}
           >
-            {s.imageUrl ? (
-              <img
-                src={resolveClientMediaSrc(s.imageUrl) || s.imageUrl}
+            {s.imageUrl || resolveNewsItemImageFallbackUrl(s) ? (
+              <HmNewsImage
+                src={resolveNewsItemImageUrl(s)}
+                fallbackSrc={resolveNewsItemImageFallbackUrl(s)}
                 alt={s.title}
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                className="object-cover object-center"
+                loading={i === idx ? "eager" : "lazy"}
+                priority={i === idx}
+                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-emerald-50 to-amber-50 text-6xl">
@@ -187,15 +197,23 @@ const QUICK_LINKS = [
 ] as const;
 
 function SadeHeadlineSideCard({ item }: { item: SadeNewsCardItem }) {
-  const img = item.imageUrl ? resolveClientMediaSrc(item.imageUrl) || item.imageUrl : null;
+  const imgSrc = resolveNewsItemImageUrl(item);
+  const imgFallback = resolveNewsItemImageFallbackUrl(item);
   return (
     <Link
       href={sadeNewsItemHref(item)}
       className="group flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:border-emerald-200"
     >
       <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-slate-100">
-        {img ? (
-          <img src={img} alt="" className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]" />
+        {imgSrc || imgFallback ? (
+          <HmNewsImage
+            src={imgSrc}
+            fallbackSrc={imgFallback}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+          />
         ) : (
           <div className="grid h-full w-full place-items-center bg-gradient-to-br from-emerald-50 to-slate-100 text-2xl">📰</div>
         )}

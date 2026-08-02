@@ -7,7 +7,7 @@ import {
   writeNewsmapHybridNewsCache,
 } from "@/lib/newsmapHybridNewsCache";
 import type { HmRssNewsBandItem } from "@/components/HmRssNewsBand";
-import { resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
 
 const STALE_MS = 5 * 60 * 1000;
 
@@ -28,6 +28,7 @@ export type HomeHybridNewsItem = {
   categoryName?: string | null;
   categoryColor?: string | null;
   imageUrl?: string | null;
+  imageFallbackUrl?: string | null;
   publishedAt?: string | null;
   source?: "db" | "rss";
   slug?: string | null;
@@ -76,6 +77,7 @@ function mapHybridNewsRow(row: Record<string, unknown>): HomeHybridNewsItem | nu
     categoryColor: (row.categoryColor as string | null) ?? null,
     imageUrl:
       String(row.imageUrl ?? row.image ?? row.thumbnailUrl ?? row.thumbnail ?? "").trim() || null,
+    imageFallbackUrl: String(row.imageFallbackUrl ?? "").trim() || null,
     publishedAt: (row.publishedAt as string | null) ?? null,
     source,
     slug: (row.slug as string | null) ?? null,
@@ -359,6 +361,7 @@ export function mapHybridNewsToBandItem(row: HomeHybridNewsItem): HmRssNewsBandI
     title: row.title,
     spot: row.spot ?? null,
     imageUrl: resolveNewsItemImageUrl(row) || null,
+    imageFallbackUrl: resolveNewsItemImageFallbackUrl(row) || null,
     categoryName: row.categoryName ?? null,
     categorySlug: row.categorySlug ?? null,
     categoryColor: row.categoryColor ?? null,

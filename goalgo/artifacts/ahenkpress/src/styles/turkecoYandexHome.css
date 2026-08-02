@@ -288,11 +288,19 @@
 }
 
 .tec-news-thumb {
+  position: relative;
   width: 6.5rem;
   aspect-ratio: 16 / 10;
   overflow: hidden;
   border-radius: 0.5rem;
   background: #e5e7eb;
+}
+
+.tec-news-thumb .hm-news-image-root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .tec-news-thumb img {

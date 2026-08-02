@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, X } from "lucide-react";
 import { Link } from "wouter";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { HM_HOME_LATEST_BAND_ITEM_COUNT } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
@@ -50,6 +50,7 @@ export type HmRssNewsBandItem = {
   contentHtml?: string | null;
   contentText?: string | null;
   imageUrl?: string | null;
+  imageFallbackUrl?: string | null;
   categoryName?: string | null;
   categorySlug?: string | null;
   categoryColor?: string | null;
@@ -641,6 +642,7 @@ export function HmRssNewsBand({
                 <div className="hm-rss-news-band__media">
                   <HmNewsImage
                     src={resolveNewsItemImageUrl(item)}
+                    fallbackSrc={resolveNewsItemImageFallbackUrl(item)}
                     alt={item.title}
                     className="hm-rss-news-band__img"
                     loading={index < 8 ? "eager" : "lazy"}

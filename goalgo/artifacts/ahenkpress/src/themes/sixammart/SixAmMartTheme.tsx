@@ -109,6 +109,7 @@ import { HomeTravelTabs } from "./HomeTravelTabs";
 import { HmYekpareCategoryBox } from "@/components/HmYekpareKategorilerKutusu";
 import { CATEGORY_BOX_DISPLAY_TOTAL, ensureNewsBoxItems } from "@/lib/hmCategoryBoxItems";
 import { HmRecentVideosBox } from "@/components/HmRecentVideosBox";
+import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
 import { HmNewsMapModule } from "@/components/HmNewsMapModule";
 import { DunyadanKisaKisaBand } from "@/components/DunyadanKisaKisaBand";
 
@@ -357,6 +358,7 @@ type NewsCardItem = {
   summary?: string | null;
   content?: string | null;
   imageUrl?: string | null;
+  imageFallbackUrl?: string | null;
   categoryName?: string | null;
   categorySlug?: string | null;
   authorName?: string | null;
@@ -379,6 +381,7 @@ function mapHybridNewsRow(row: Record<string, unknown>): NewsCardItem {
     title: String(row.title ?? ""),
     spot: (row.spot as string | null) ?? null,
     imageUrl: (row.imageUrl as string | null) ?? null,
+    imageFallbackUrl: (row.imageFallbackUrl as string | null) ?? null,
     categoryName: (row.categoryName as string | null) ?? null,
     categorySlug: (row.categorySlug as string | null) ?? null,
     authorName: (row.authorName as string | null) ?? (row.feedLabel as string | null) ?? null,
@@ -1351,8 +1354,9 @@ export function SixAmMartTourismPage() {
 
 
 function NewsCard({ item, featured = false }: { item: NewsCardItem; featured?: boolean }) {
-  const image = resolveClientMediaSrc(item.imageUrl ?? null);
   const text = item.spot || item.summary || stripHtml(item.content).slice(0, 180);
+  const imgSrc = resolveNewsItemImageUrl(item);
+  const imgFallback = resolveNewsItemImageFallbackUrl(item);
   return (
     <NewsItemLink
       item={item}
@@ -1361,8 +1365,16 @@ function NewsCard({ item, featured = false }: { item: NewsCardItem; featured?: b
       }`}
     >
       <div className={`relative overflow-hidden bg-slate-100 ${featured ? "min-h-[280px]" : "h-44"}`}>
-        {image ? (
-          <img src={image} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        {imgSrc || imgFallback ? (
+          <HmNewsImage
+            src={imgSrc}
+            fallbackSrc={imgFallback}
+            alt={item.title}
+            className="transition duration-500 group-hover:scale-105"
+            loading={featured ? "eager" : "lazy"}
+            priority={featured}
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <div className="grid h-full place-items-center bg-gradient-to-br from-sky-50 to-amber-50 text-5xl">📰</div>
         )}
