@@ -152,6 +152,8 @@ export async function fetchHybridNewsListResult(opts: {
   /** true = tam RSS+DB birleşimi (yavaş). Varsayılan: hızlı DB-first. */
   dbFirst?: boolean;
   fullHybrid?: boolean;
+  /** Portal (turk.eco): ziyaret tetiklemeli NTV RSS tazelemesi */
+  fresh?: boolean;
   signal?: AbortSignal;
   timeoutMs?: number;
   retries?: number;
@@ -172,6 +174,7 @@ export async function fetchHybridNewsListResult(opts: {
   if (opts.yekparePool) qs.set("yekparePool", "1");
   if (opts.poolBrowse) qs.set("poolBrowse", "1");
   if (useDbFirst) qs.set("dbFirst", "1");
+  if (opts.fresh) qs.set("fresh", "1");
   if (opts.newsmap) qs.set("newsmap", "1");
   if (opts.global) {
     qs.set("global", "1");
@@ -215,6 +218,8 @@ export async function fetchHybridNewsList(opts: {
   poolBrowse?: boolean;
   dbFirst?: boolean;
   fullHybrid?: boolean;
+  /** Portal (turk.eco): ziyaret tetiklemeli NTV RSS tazelemesi */
+  fresh?: boolean;
   signal?: AbortSignal;
   timeoutMs?: number;
   retries?: number;
