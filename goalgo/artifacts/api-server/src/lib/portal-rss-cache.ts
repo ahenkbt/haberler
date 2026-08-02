@@ -97,6 +97,47 @@ function isPortalRssRefreshDue(payload: FeedCachePayload, now = Date.now()): boo
   return now - lastFetchedAtMs >= portalRssRefreshAgeMs();
 }
 
+/** turk.eco ziyaret tetiklemeli tazeleme — feed başına kısa eşik (varsayılan ~90 sn). */
+function portalRssVisitRefreshAgeMs(): number {
+  const raw = Number(process.env.PORTAL_RSS_VISIT_REFRESH_AGE_MS);
+  const fallback = 90_000;
+  return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+}
+
+function isPortalRssVisitRefreshDue(payload: FeedCachePayload | null | undefined, now = Date.now()): boolean {
+  if (!payload) return true;
+  const lastFetchedAtMs = new Date(payload.lastFetchedAt).getTime();
+  if (!Number.isFinite(lastFetchedAtMs)) return true;
+  return now - lastFetchedAtMs >= portalRssVisitRefreshAgeMs();
+}
+
+/**
+ * Portal (turk.eco) sayfa açılışında NTV vb. beslemeleri günceller — eşik aşılmış feed'ler.
+ * Yanıt süresini korumak için `maxWaitMs` ile sınırlanır; tamamlanmayan fetch'ler arka planda kalır.
+ */
+export async function refreshPortalRssFeedsOnVisit(
+  feeds: PortalHybridRssFeedConfig[],
+  opts?: { maxWaitMs?: number; categorySlug?: string },
+): Promise<void> {
+  const enabled = enabledPortalHybridRssFeeds(feeds, opts?.categorySlug);
+  if (!enabled.length) return;
+
+  const now = Date.now();
+  const due: PortalHybridRssFeedConfig[] = [];
+  for (const feed of enabled) {
+    if (!feed.enabled || !feed.url) continue;
+    const cached = await readCache(feed.id);
+    if (isPortalRssVisitRefreshDue(cached, now)) due.push(feed);
+  }
+  if (!due.length) return;
+
+  const maxWait = Math.max(3_000, opts?.maxWaitMs ?? 12_000);
+  await Promise.race([
+    refreshAllPortalRssFeeds(due),
+    new Promise<void>((resolve) => setTimeout(resolve, maxWait)),
+  ]);
+}
+
 function itemCachedAtMs(item: PortalRssItem): number {
   const raw = item.cachedAt ?? item.publishedAt;
   const ms = new Date(raw).getTime();

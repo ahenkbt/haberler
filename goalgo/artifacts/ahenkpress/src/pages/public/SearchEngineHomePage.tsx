@@ -10,24 +10,14 @@ import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { UNIFIED_SEARCH_PATH } from "@/lib/kesfetDiscoverHub";
 import { applyJsonLd, applyPortalSiteSeo, buildYekpareWebSiteJsonLd } from "@/lib/pageSeo";
 import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
+import { fetchHybridNewsList, type HomeHybridNewsItem } from "@/hooks/useHomeHybridNews";
 import { PORTAL_HOST, PORTAL_ORIGIN } from "@/lib/portalBrand";
-import { apiRequest } from "@/lib/queryClient";
 import { yektubeWatchPath } from "@/lib/yektubeUrls";
 
 import "@/styles/turkecoYandexHome.css";
 
 const HOME_BRAND = "turk.eco";
 const HOME_TAGLINE = "haber video portalı";
-
-type NewsRow = {
-  id: number;
-  title: string;
-  slug?: string | null;
-  spot?: string | null;
-  imageUrl?: string | null;
-  categoryName?: string | null;
-  categorySlug?: string | null;
-};
 
 type VideoRow = {
   id: number;
@@ -53,16 +43,21 @@ const searchExamples = [
   "Ekonomi",
 ];
 
-function newsHref(row: NewsRow): string {
-  const slug = String(row.slug ?? "").trim();
-  if (slug) return `/haber/${encodeURIComponent(slug)}`;
-  return `/haber/${encodeURIComponent(String(row.id))}`;
+function newsItemImage(row: HomeHybridNewsItem): string | null {
+  return resolveClientMediaSrc(row.imageUrl) || null;
 }
 
-async function fetchHomeNews(): Promise<NewsRow[]> {
-  const data = await apiRequest("/api/news?siteScope=portal&limit=10&status=published");
-  const items = Array.isArray(data) ? data : ((data as { items?: NewsRow[] })?.items ?? []);
-  return items.filter((n) => n && n.title);
+async function fetchHomeNews(): Promise<HomeHybridNewsItem[]> {
+  return fetchHybridNewsList({
+    limit: 12,
+    offset: 0,
+    rssScope: "all",
+    fullHybrid: true,
+    dbFirst: false,
+    fresh: true,
+    timeoutMs: 14_000,
+    retries: 1,
+  });
 }
 
 async function fetchHomeVideos(): Promise<VideoRow[]> {
@@ -98,9 +93,12 @@ export default function SearchEngineHomePage() {
   const { logoSrc } = usePortalBrandVisuals();
 
   const { data: news = [], isLoading: newsLoading } = useQuery({
-    queryKey: ["/api/news", "turkeco-home"],
+    queryKey: ["/api/news/hybrid", "turkeco-home", "rss-all"],
     queryFn: fetchHomeNews,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 0,
+    gcTime: 60_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const { data: videos = [], isLoading: videosLoading } = useQuery({
@@ -219,9 +217,9 @@ export default function SearchEngineHomePage() {
             ) : (
               <div className="tec-news-list">
                 {news.slice(0, 8).map((row) => {
-                  const img = resolveClientMediaSrc(row.imageUrl);
+                  const img = newsItemImage(row);
                   return (
-                    <Link key={row.id} href={newsHref(row)} className="tec-news-item">
+                    <Link key={row.id} href={row.href} className="tec-news-item">
                       <div className="tec-news-thumb">
                         {img ? (
                           <img src={img} alt="" loading="lazy" />
