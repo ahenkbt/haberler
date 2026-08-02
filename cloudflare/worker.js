@@ -877,7 +877,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
   }
 }
 
-function upstreamCfCacheOptions(pathname, method) {
+function upstreamCfCacheOptions(pathname, method, search = "") {
   if (method !== "GET" && method !== "HEAD") {
     return { cacheTtl: 0, cacheEverything: false };
   }
@@ -893,6 +893,10 @@ function upstreamCfCacheOptions(pathname, method) {
     return { cacheTtl: 0, cacheEverything: false };
   }
   if (isCacheableHmNewsApi(pathname)) {
+    const qs = new URLSearchParams(String(search || "").replace(/^\?/, ""));
+    if (qs.get("fresh") === "1" || qs.get("fresh") === "true") {
+      return { cacheTtl: 0, cacheEverything: false };
+    }
     // home-bundle kısa tut; modül sırası meta'dan gelir ama haber listesi bayat kalabilir.
     const p = String(pathname || "").split("?")[0] || "";
     if (p === "/api/hm/home-bundle") {
@@ -2169,7 +2173,7 @@ export default {
     const purgeCookie = purgeCookieName(incoming.hostname);
 
     try {
-      const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method);
+      const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const upstream = await fetchUpstreamWithRetry(
         target.toString(),
@@ -2209,6 +2213,13 @@ export default {
         // Authorization şart — aksi halde /me 401 oturumlu isteğe servis edilip editör dışarı atılır.
         out.set("vary", "Origin, Authorization, Cookie");
       } else if (isCacheableHmNewsApi(upstreamPath)) {
+        const freshVisit =
+          incoming.searchParams.get("fresh") === "1" ||
+          incoming.searchParams.get("fresh") === "true";
+        if (freshVisit) {
+          out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+          out.set("cdn-cache-control", "no-store");
+        } else {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
         const p = String(upstreamPath || "").split("?")[0] || "";
         if (p === "/api/hm/home-bundle") {
@@ -2224,6 +2235,7 @@ export default {
             );
           }
           out.set("cdn-cache-control", "public, max-age=120, stale-while-revalidate=300");
+        }
         }
       } else {
         out.set("cdn-cache-control", "no-store");

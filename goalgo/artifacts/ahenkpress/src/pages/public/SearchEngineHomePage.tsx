@@ -49,16 +49,19 @@ function newsItemImage(row: HomeHybridNewsItem): string | null {
 }
 
 async function fetchHomeNews(): Promise<HomeHybridNewsItem[]> {
-  return fetchHybridNewsList({
-    limit: 12,
+  const items = await fetchHybridNewsList({
+    limit: 24,
     offset: 0,
     rssScope: "all",
     fullHybrid: true,
     dbFirst: false,
     fresh: true,
-    timeoutMs: 14_000,
+    timeoutMs: 20_000,
     retries: 1,
   });
+  const rss = items.filter((row) => row.source === "rss");
+  const rest = items.filter((row) => row.source !== "rss");
+  return [...rss, ...rest].slice(0, 12);
 }
 
 async function fetchHomeVideos(): Promise<VideoRow[]> {
