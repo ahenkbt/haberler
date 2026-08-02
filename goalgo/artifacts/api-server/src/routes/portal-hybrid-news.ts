@@ -25,6 +25,7 @@ import {
   refreshPortalRssFeed,
   refreshPortalRssFeedsOnVisit,
 } from "../lib/portal-rss-cache.js";
+import { getPortalRssItemsForHybridMerge } from "../lib/portal-rss-hybrid-read.js";
 import { readPortalRssItemsForFeeds, incrementPortalRssItemView } from "../lib/portal-rss-store.js";
 import {
   filterForeignOnlyPortalHybridRssFeeds,
@@ -720,7 +721,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
             },
           ]),
         );
-        let cachedMapRss = await getPortalRssCachedItemsForFeeds(mapActiveFeeds, categorySlug);
+        let cachedMapRss = await getPortalRssItemsForHybridMerge(mapActiveFeeds, categorySlug, {
+          usePersistentPool: siteId == null && rssScope === "all",
+        });
         if (editorPool && shouldApplyActivatedPoolCategoryFilter(categorySlug)) {
           cachedMapRss = filterRssItemsByActivatedSet(
             cachedMapRss,
@@ -1071,7 +1074,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           : siteId != null
             ? loadHmSiteDbNews({ siteId, categorySlug, q, limit: hybridPoolLimit, offset: 0 })
             : loadPortalDbNews({ categorySlug, q, limit: hybridPoolLimit, offset: 0 }),
-      mergeRssFromCache ? getPortalRssCachedItemsForFeeds(feeds, categorySlug) : Promise.resolve([]),
+      mergeRssFromCache
+        ? getPortalRssItemsForHybridMerge(feeds, categorySlug, {
+            usePersistentPool: siteId == null && rssScope === "all",
+          })
+        : Promise.resolve([]),
       loadNewsContext(),
     ]);
     let rssItems = initialRssItems;
@@ -1104,7 +1111,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       rssItems.every((item) => !String(item.imageUrl ?? "").trim())
     ) {
       await Promise.all(activeFeeds.map((feed) => refreshPortalRssFeed(feed).catch(() => null)));
-      rssItems = await getPortalRssCachedItemsForFeeds(feeds, categorySlug);
+      rssItems = await getPortalRssItemsForHybridMerge(feeds, categorySlug, {
+        usePersistentPool: siteId == null && rssScope === "all",
+      });
     }
 
     // Tüm havuzu birleştir → görünürlük → sayfala (infinite scroll total doğru).
@@ -1239,7 +1248,11 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
       (editorPool || !isPortalRssSyncToNewsEnabled() || (siteId == null && rssScope === "all"));
 
     const [rssItemsRaw, ctx] = await Promise.all([
-      mergeRssFromCache ? getPortalRssCachedItemsForFeeds(feeds, categorySlug) : Promise.resolve([]),
+      mergeRssFromCache
+        ? getPortalRssItemsForHybridMerge(feeds, categorySlug, {
+            usePersistentPool: siteId == null && rssScope === "all",
+          })
+        : Promise.resolve([]),
       loadNewsContext(),
     ]);
     // Editör sonsuz kaydırması: RSS'i ETKİN genel kategorilere göre süz (kurumsal → yalnızca aktif).
