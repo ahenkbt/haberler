@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard.js";
+import { portalSuperappModuleRetired } from "../lib/portal-superapp-retire.js";
 import { startCampaign, stopCampaign } from "../lib/ai-call/campaign-runner.js";
 import { isNativeAiCallEnabled } from "../lib/ai-call/config.js";
 import { testProviderConnection, chatWithProvider } from "../lib/ai-call/provider-router.js";
@@ -24,6 +25,8 @@ import {
 } from "../lib/ai-call/service.js";
 
 const router: IRouter = Router();
+
+router.use(portalSuperappModuleRetired("ai-call"));
 
 function nativeDisabled(_req: import("express").Request, res: import("express").Response): boolean {
   if (isNativeAiCallEnabled()) return false;

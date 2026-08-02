@@ -5737,24 +5737,12 @@ router.get("/hm/ai.txt", async (req, res): Promise<void> => {
   }
 });
 
-/** Yekpare PWA Store vitrin verisi (haber siteleri + keşfet işletmeleri). */
+/** Haber merkezi PWA vitrin verisi (yalnızca HM siteleri). */
 router.get("/hm/pwa-store", async (_req, res): Promise<void> => {
   try {
     const portal = sitePublicOrigin().replace(/\/+$/, "");
     const portalIcon = `${portal}${PWA_ICON_PATH}`;
     const hmRows = await listActiveHmNewsSitesByUpdatedCompat();
-
-    const bizRows = await db
-      .select({
-        slug: mapBusinessesTable.slug,
-        name: mapBusinessesTable.name,
-        photoUrl: mapBusinessesTable.photoUrl,
-        coverPhotoUrl: mapBusinessesTable.coverPhotoUrl,
-      })
-      .from(mapBusinessesTable)
-      .where(and(eq(mapBusinessesTable.isActive, true), isNotNull(mapBusinessesTable.slug)))
-      .orderBy(desc(mapBusinessesTable.updatedAt))
-      .limit(150);
 
     const hmSites = hmRows.map((r) => {
       let tabIconUrl: string | null = null;
@@ -5783,28 +5771,16 @@ router.get("/hm/pwa-store", async (_req, res): Promise<void> => {
       };
     });
 
-    const businesses = bizRows
-      .filter((b) => String(b.slug ?? "").trim().length > 0)
-      .map((b) => ({
-        slug: String(b.slug),
-        name: b.name,
-        icon:
-          (b.photoUrl && String(b.photoUrl).trim()) ||
-          (b.coverPhotoUrl && String(b.coverPhotoUrl).trim()) ||
-          `${portalIcon}`,
-        installQuery: `kesfet=${encodeURIComponent(String(b.slug))}`,
-      }));
-
     res.json({
       portalOrigin: portal,
       yekpare: {
         displayName: PORTAL_SITE_NAME,
-        tagline: "Haber, video, harita, sipariş ve keşfet tek uygulamada",
+        tagline: "Haber, video, Newsmap ve Haber Merkezi",
         icon: portalIcon,
         installQuery: "yekpare=1",
       },
       hmSites,
-      businesses,
+      businesses: [],
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);

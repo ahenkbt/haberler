@@ -154,6 +154,28 @@ router.get("/settings", async (_req, res): Promise<void> => {
   res.json(serializeSettings(row));
 });
 
+/** Süper app arşiv özeti (migration 0125+). */
+router.get("/admin/portal-superapp-archive-summary", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "site_ayarlari")) return;
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  try {
+    const result = await db.execute(sql`
+      SELECT phase, source_table, row_count, archived_at, notes
+      FROM portal_superapp_archive_batch
+      ORDER BY id DESC
+      LIMIT 200
+    `);
+    res.json({ batches: result.rows ?? [] });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/portal_superapp_archive_batch/i.test(msg)) {
+      res.json({ batches: [], hint: "Arşiv tabloları henüz oluşturulmadı (migration 0125)." });
+      return;
+    }
+    res.status(500).json({ error: msg.slice(0, 400) });
+  }
+});
+
 /** Google Search Console vb. doğrulama botları — yalnızca meta etiket içeriği (herkese açık). */
 router.get("/public/portal-seo", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
