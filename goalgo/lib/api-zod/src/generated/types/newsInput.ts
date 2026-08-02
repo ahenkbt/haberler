@@ -15,11 +15,16 @@ export interface NewsInput {
   imageUrl?: string | null;
   categorySlug: string;
   authorId?: number | null;
+  senderFullName?: string | null;
+  senderEmail?: string | null;
+  senderPhone?: string | null;
   status: NewsInputStatus;
   /** Tepe manşet */
   isFeatured?: boolean;
   /** Site (alt) manşet slider */
   isSiteManset?: boolean;
   isBreaking?: boolean;
+  isFoodRecipe?: boolean;
+  foodRecipeCategorySlug?: string | null;
   tags?: string[];
 }

@@ -574,10 +574,15 @@ components:
         categoryColor: { type: string, nullable: true }
         authorId: { type: integer, nullable: true }
         authorName: { type: string, nullable: true }
+        senderFullName: { type: string, nullable: true }
+        senderEmail: { type: string, nullable: true }
+        senderPhone: { type: string, nullable: true }
         status: { type: string, enum: [published, draft] }
         isFeatured: { type: boolean, description: "Tepe manşet" }
         isSiteManset: { type: boolean, description: "Site (alt) manşet slider" }
         isBreaking: { type: boolean }
+        isFoodRecipe: { type: boolean, description: "Yemek tarifi modülü" }
+        foodRecipeCategorySlug: { type: string, nullable: true }
         views: { type: integer }
         tags:
           type: array
@@ -598,10 +603,15 @@ components:
         imageUrl: { type: string, nullable: true }
         categorySlug: { type: string }
         authorId: { type: integer, nullable: true }
+        senderFullName: { type: string, nullable: true }
+        senderEmail: { type: string, nullable: true }
+        senderPhone: { type: string, nullable: true }
         status: { type: string, enum: [published, draft] }
         isFeatured: { type: boolean, description: "Tepe manşet" }
         isSiteManset: { type: boolean, description: "Site (alt) manşet slider" }
         isBreaking: { type: boolean }
+        isFoodRecipe: { type: boolean }
+        foodRecipeCategorySlug: { type: string, nullable: true }
         tags:
           type: array
           items: { type: string }
