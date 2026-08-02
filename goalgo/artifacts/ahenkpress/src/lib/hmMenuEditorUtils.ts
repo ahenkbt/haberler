@@ -245,11 +245,22 @@ export function stripCorporateMenuVideoTvItems(items: HmCorporateMenuItem[]): Hm
 export function ensureCorporateMenuVideoTvAtEnd(
   items: HmCorporateMenuItem[],
   hmBase: string,
-  opts?: { videoTvEnabled?: boolean; label?: string; path?: string },
+  opts?: { videoTvEnabled?: boolean; label?: string; path?: string; skipAutoVideoTv?: boolean },
 ): HmCorporateMenuItem[] {
   if (opts?.videoTvEnabled === false) return stripCorporateMenuVideoTvItems(items);
   const existing = items.filter(isHmCorporateMenuVideoTvItem);
   const rest = items.filter((item) => !isHmCorporateMenuVideoTvItem(item));
+  if (opts?.skipAutoVideoTv) {
+    if (existing.length === 0) return rest;
+    const primary = { ...existing[0], parentId: null as null };
+    if (opts?.label) primary.label = opts.label;
+    if (opts?.path) {
+      const prefix = hmBase.trim().replace(/\/+$/, "");
+      const path = opts.path.replace(/\/+$/, "") || "/video";
+      primary.href = path.startsWith("/") ? (prefix ? `${prefix}${path}` : path) : `${prefix}/${path}`;
+    }
+    return [...rest, primary];
+  }
   if (existing.length === 0) {
     return [...rest, buildCorporateMenuVideoTvItem(hmBase, { label: opts?.label, path: opts?.path })];
   }

@@ -1,4 +1,4 @@
-import { eq, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import {
   db as mainDb,
   dualWriteDelete,
@@ -103,7 +103,11 @@ export async function propagateAdminNewsDelete(newsId: number): Promise<void> {
   invalidateNewsPageBundleCache({ slug: row.slug ?? undefined, siteId: row.siteId ?? null });
 }
 
-/** Admin list: merkez haberler + tüm RSS kaynaklı (HM site dahil) içerik. */
+/** Admin list: merkez haberler + RSS + panelden/HM editörden manuel içerik (site_id olsa bile). */
 export function adminNewsListScopeCondition(): SQL {
-  return or(isNull(newsTable.siteId), isNotNull(newsTable.rssSourceUrl))!;
+  return or(
+    isNull(newsTable.siteId),
+    isNotNull(newsTable.rssSourceUrl),
+    and(isNotNull(newsTable.siteId), eq(newsTable.isEditorManual, true)),
+  )!;
 }

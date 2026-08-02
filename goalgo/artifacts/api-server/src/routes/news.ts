@@ -323,7 +323,9 @@ router.get("/news", async (req, res): Promise<void> => {
   }
 
   const ctx = await loadNewsContext();
-  const readDb = getNewsDbForRead();
+  /** Panel listesi: replika gecikmesinde yeni eklenen haber görünmesin diye ana DB. */
+  const readDb =
+    adminNewsAccess && siteScope === "admin" ? (mainDb as typeof mainDb) : getNewsDbForRead();
   const where = await buildNewsListWhere(readDb, {
     q,
     status: adminNewsAccess ? status : status ?? "published",
