@@ -8403,17 +8403,36 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
   }
 }
 
-/* Kurumsal — tepe manşet header bandına sıfır, düz köşe */
+/* Kurumsal — tepe manşet header/nav ile aynı 1280px kabuk (hm-chrome-contained-shell) */
 .hm-corporate-tepe-manset-wrap {
   margin: 0;
   padding: 0;
   width: 100%;
-  max-width: none;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.hm-corporate-tepe-manset-wrap--contained-outer {
+  background: transparent !important;
+}
+
+.hm-corporate-tepe-manset-wrap__plate {
+  min-width: 0;
 }
 
 .hm-corporate-tepe-manset-wrap .hm-tepe-manset {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   border-radius: 0;
   box-shadow: none;
   min-height: 16rem;
+}
+
+[data-hm-vitrin-theme="corporate"][data-hm-corporate-layout="contained"] .hm-corporate-tepe-manset-wrap .hm-chrome-contained-shell,
+[data-hm-vitrin-theme="corporate"][data-hm-header-chrome="contained"] .hm-corporate-tepe-manset-wrap .hm-chrome-contained-shell {
+  max-width: 1280px;
+  margin-right: auto;
+  margin-left: auto;
 }
