@@ -1153,7 +1153,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     ) {
       await Promise.all(activeFeeds.map((feed) => refreshPortalRssFeed(feed).catch(() => null)));
       rssItems = await getPortalRssItemsForHybridMerge(feeds, categorySlug, {
-        usePersistentPool: siteId == null && rssScope === "all",
+        usePersistentPool: false,
       });
     }
 
@@ -1268,6 +1268,7 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
     }
 
     const rssScopeRaw = String(req.query.rssScope ?? "").trim() || (categorySlug ? "all" : "site");
+    const rssScope = rssScopeRaw === "box" ? "box" : rssScopeRaw === "all" ? "all" : "site";
 
     let feeds: Awaited<ReturnType<typeof loadPortalHybridRssFeeds>>;
     if (siteId != null && hmAccess?.hybridRssEnabled === true) {
