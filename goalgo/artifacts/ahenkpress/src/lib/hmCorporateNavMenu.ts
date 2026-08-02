@@ -234,7 +234,7 @@ export function buildCorporateHeaderNavItems(opts: BuildCorporateNavOpts): HmCor
     ...(newsAuthorsEnabled
       ? [{ key: "yazarlar", label: "Yazarlar", href: yazarlarHref, active: locPath === normPath(pathOnlyHref(yazarlarHref)) }]
       : []),
-    ...(videoTvAllowed && showVideoTvLink
+    ...(videoTvAllowed && showVideoTvLink && layoutPrefs.hmVitrinTheme !== "corporate"
       ? [{
           key: "video-tv",
           label: portalHubOnly ? "Video TV" : "Video",

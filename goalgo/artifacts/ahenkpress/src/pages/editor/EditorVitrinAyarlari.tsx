@@ -1067,6 +1067,8 @@ export default function EditorVitrinAyarlari() {
               disabled={saving}
               onChange={(c) => toggleDefaultOn("hmNewsSearchBoxEnabled", c)}
             />
+            {!isCorporateEditorSite ? (
+              <>
             <div className="px-4 py-2 text-xs text-slate-500 border-b border-slate-100">
               Kapalıyken üst menüde video rozeti gizlenir; <code className="text-slate-600">/video</code> ve{" "}
               <code className="text-slate-600">/video-tv</code> sayfaları devre dışı kalır. Açıkken videolarda site
@@ -1079,6 +1081,8 @@ export default function EditorVitrinAyarlari() {
               disabled={saving}
               onChange={(c) => toggleDefaultOn("hmNewsVideoTvEnabled", c)}
             />
+              </>
+            ) : null}
             <ToggleRow
               id="hm-news-yekpare-features"
               label="Yekpare özellikleri (servis kutuları)"
