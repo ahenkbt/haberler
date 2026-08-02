@@ -1701,6 +1701,20 @@
   height: clamp(52px, 18%, 96px);
 }
 
+/* /haberler + anasayfa Sade manşet — frame yüksekliği yoksa görseller 0px kalıyordu */
+.hm-sade-headline-hero-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: clamp(200px, 52vw, 420px);
+}
+
+.hm-sade-headline-hero.h-full .hm-sade-headline-hero-frame {
+  aspect-ratio: auto;
+  min-height: 100%;
+  height: 100%;
+}
+
 /* YekTube hoşgeldin — standart hero oranı, önceki aşırı sıkıştırma geri alındı */
 .sade-public-hero-inner--yektube {
   min-height: clamp(168px, 22vw, 248px);

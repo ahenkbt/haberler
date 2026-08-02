@@ -3,10 +3,10 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, MapPinned, Newspaper, Play, Search, Video } from "lucide-react";
 
+import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
 import { UnifiedSearchInput } from "@/components/search/UnifiedSearchInput.tsx";
 import { YektubeVideoThumb } from "@/components/YektubeVideoThumb";
 import { pushRecentSearch } from "@/hooks/useSearchSuggestions";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { UNIFIED_SEARCH_PATH } from "@/lib/kesfetDiscoverHub";
 import { applyJsonLd, applyPortalSiteSeo, buildYekpareWebSiteJsonLd } from "@/lib/pageSeo";
 import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
@@ -43,10 +43,6 @@ const searchExamples = [
   "Yerel haber",
   "Ekonomi",
 ];
-
-function newsItemImage(row: HomeHybridNewsItem): string | null {
-  return resolveClientMediaSrc(row.imageUrl) || null;
-}
 
 async function fetchHomeNews(): Promise<HomeHybridNewsItem[]> {
   const items = await fetchHybridNewsList({
@@ -224,24 +220,24 @@ export default function SearchEngineHomePage() {
               <p className="tec-empty">Şu an gösterilecek haber yok.</p>
             ) : (
               <div className="tec-news-list">
-                {news.slice(0, 8).map((row) => {
-                  const img = newsItemImage(row);
-                  return (
+                {news.slice(0, 8).map((row) => (
                     <Link key={row.id} href={row.href} className="tec-news-item">
                       <div className="tec-news-thumb">
-                        {img ? (
-                          <img src={img} alt="" loading="lazy" />
-                        ) : (
-                          <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300" />
-                        )}
+                        <HmNewsImage
+                          src={resolveNewsItemImageUrl(row)}
+                          fallbackSrc={resolveNewsItemImageFallbackUrl(row)}
+                          alt=""
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                       <div className="tec-news-meta">
                         {row.categoryName ? <span className="tec-news-cat">{row.categoryName}</span> : null}
                         <p className="tec-news-title">{row.title}</p>
                       </div>
                     </Link>
-                  );
-                })}
+                ))}
               </div>
             )}
           </section>
