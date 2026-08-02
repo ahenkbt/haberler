@@ -4,7 +4,7 @@
  *
  * Kullanım:
  *   node scripts/ping-sitemap.mjs
- *   SITEMAP_URL=https://yekpare.net/sitemap.xml node scripts/ping-sitemap.mjs
+ *   SITEMAP_URL=https://turk.eco/sitemap.xml node scripts/ping-sitemap.mjs
  */
 
 const sitemapUrl = String(process.env.SITEMAP_URL ?? "https://turk.eco/sitemap.xml").trim();

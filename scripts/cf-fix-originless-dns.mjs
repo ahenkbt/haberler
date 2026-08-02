@@ -7,13 +7,14 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { detachRemovedDomains, isDetachedZone } from "./cf-detached-domains.mjs";
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "16f5b996194174624e7969a3658bd2bb";
 const API = "https://api.cloudflare.com/client/v4";
 const SCRIPT = "haberler";
 
 const ZONES = [
-  "yekpare.net",
+  // yekpare.net kaldırıldı — cf-detached-domains.mjs her çalıştırmada Worker'dan söker.
   "ankarasehirgazetesi.com",
   "ankarahabergundemi.com",
   "vatankahramanlari.org",
@@ -213,6 +214,10 @@ async function probeWorkerLive(hostname) {
 
 async function fixZone(name) {
   console.log(`\n===== ${name} =====`);
+  if (isDetachedZone(name)) {
+    console.log(`[fix] SKIP — ${name} bu Worker'dan kaldırıldı`);
+    return false;
+  }
   let zone = await getZone(name);
   if (!zone) zone = await createZoneIfMissing(name);
   if (!zone?.id) {
@@ -330,6 +335,10 @@ async function main() {
     await tryWranglerDeploy();
     return;
   }
+  await detachRemovedDomains((path, init) => cf(path, init), {
+    accountId: ACCOUNT_ID,
+    script: SCRIPT,
+  });
   let ok = 0;
   for (const z of ZONES) {
     if (await fixZone(z)) ok += 1;

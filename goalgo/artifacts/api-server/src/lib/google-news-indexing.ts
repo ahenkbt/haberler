@@ -8,7 +8,7 @@
  *
  * Opsiyonel:
  * - GOOGLE_INDEXING_DISABLED=1 — tüm bildirimleri kapat
- * - SITE_PUBLIC_ORIGIN — yekpare.net kök (sitemap ping için)
+ * - SITE_PUBLIC_ORIGIN — turk.eco kök (sitemap ping için)
  *
  * Kimlik bilgisi yoksa: site haritası Google + Bing + Yandex ping (sitemap-search-engine-ping.ts).
  */

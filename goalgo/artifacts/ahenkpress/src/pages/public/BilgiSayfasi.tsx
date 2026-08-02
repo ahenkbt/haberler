@@ -26,9 +26,9 @@ const PAGES: BilgiPage[] = [
     slug: "yekpare-nedir",
     title: "Yekpare Nedir?",
     description:
-      "Yekpare.net; Türkiye'nin yerli arama motoru. Haber, YekTube, haritalar, alışveriş, turizm, Haber Merkezi, işletme web siteleri, özel domain, Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.",
+      "Türk Ekosistemi; Türkiye'nin yerli arama motoru. Haber, YekTube, haritalar, alışveriş, turizm, Haber Merkezi, işletme web siteleri, özel domain, Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.",
     lead:
-      "Google'da «yekpare» sözcüğü Türkçede «bütün, tek parça» anlamına gelir; Yekpare.net ise bu sözlük anlamından bağımsız bir marka ve hizmet platformudur. yekpare.net, işletmelerin abonelikle yer aldığı bir firma rehberi ve pazaryeridir; site satıcı konumunda değildir. Sipariş, rezervasyon ve ödemeler doğrudan ilgili işletmeyle yapılır.",
+      "Google'da «yekpare» sözcüğü Türkçede «bütün, tek parça» anlamına gelir; Türk Ekosistemi ise bu sözlük anlamından bağımsız bir marka ve hizmet platformudur. turk.eco, işletmelerin abonelikle yer aldığı bir firma rehberi ve pazaryeridir; site satıcı konumunda değildir. Sipariş, rezervasyon ve ödemeler doğrudan ilgili işletmeyle yapılır.",
     fullEntityGraph: true,
     sections: [
       {
@@ -37,15 +37,15 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "Yekpare bir web sitesi mi, uygulama mı?",
-        body: "Yekpare hem web (yekpare.net) hem mobil uyumlu arama motoru deneyimi sunar. Tek hesap ve tek arayüzle haber, sipariş, alışveriş, seyahat, haritalar ve bilgi modüllerine geçiş yapılır. İşletmeler servis sağlayıcı paneli üzerinden menü, mağaza veya turizm ilanı yayınlar.",
+        body: "Yekpare hem web (turk.eco) hem mobil uyumlu arama motoru deneyimi sunar. Tek hesap ve tek arayüzle haber, sipariş, alışveriş, seyahat, haritalar ve bilgi modüllerine geçiş yapılır. İşletmeler servis sağlayıcı paneli üzerinden menü, mağaza veya turizm ilanı yayınlar.",
       },
       {
         heading: "Haberler ve YekTube",
-        body: "Yekpare Haberler güncel manşet ve kategori akışı sunar. YekTube (yekpare.net/yektube) video kanalları ve haber videoları için ayrı modüldür. Bağımsız haber siteleri Haber Merkezi altyapısıyla kendi domainlerinde de yayın yapabilir.",
+        body: "Yekpare Haberler güncel manşet ve kategori akışı sunar. YekTube (turk.eco/yektube) video kanalları ve haber videoları için ayrı modüldür. Bağımsız haber siteleri Haber Merkezi altyapısıyla kendi domainlerinde de yayın yapabilir.",
       },
       {
         heading: "Keşfet, haritalar ve firma rehberi",
-        body: "Keşfet modülünde restoran, kafe, mağaza ve hizmet işletmeleri harita ve arama ile listelenir. Haritalar (yekpare.net/haritalar) tam ekran harita deneyimi sağlar. Firma rehberi işletme, ürün ve hizmet ilanlarını bir arada sunar.",
+        body: "Keşfet modülünde restoran, kafe, mağaza ve hizmet işletmeleri harita ve arama ile listelenir. Haritalar (turk.eco/haritalar) tam ekran harita deneyimi sağlar. Firma rehberi işletme, ürün ve hizmet ilanlarını bir arada sunar.",
       },
       {
         heading: "Alışveriş ve seyahat",
@@ -61,7 +61,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "Haber Merkezi ve bağımsız yayın siteleri",
-        body: "Haber Merkezi (yekpare.net/habermerkezi) bağımsız haber sitelerinin kendi slug veya özel domainleriyle yayın yapmasını sağlar. Kurumsal vitrinler, RSS ve sitemap otomatik üretilir.",
+        body: "Haber Merkezi (turk.eco/habermerkezi) bağımsız haber sitelerinin kendi slug veya özel domainleriyle yayın yapmasını sağlar. Kurumsal vitrinler, RSS ve sitemap otomatik üretilir.",
       },
       {
         heading: "Sipariş takip, destek ve işletme panelleri",
@@ -72,32 +72,32 @@ const PAGES: BilgiPage[] = [
       {
         question: "Yekpare satıcı mıdır?",
         answer:
-          "Hayır. yekpare.net işletmelerin abonelikle yer aldığı firma rehberi ve pazaryeridir. Sipariş, rezervasyon ve ödemeler doğrudan ilgili işletmeyle yapılır; Yekpare bu işlemlerde ödeme almaz ve satıcı sorumluluğu taşımaz.",
+          "Hayır. turk.eco işletmelerin abonelikle yer aldığı firma rehberi ve pazaryeridir. Sipariş, rezervasyon ve ödemeler doğrudan ilgili işletmeyle yapılır; Yekpare bu işlemlerde ödeme almaz ve satıcı sorumluluğu taşımaz.",
       },
       {
         question: "Yekpare nedir?",
         answer:
-          "Yekpare.net, Türkiye'nin yerli arama motorudur: haber, video, harita, e-ticaret alışverişi, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlükteki «yekpare» (bütün) anlamı ile marka adı farklı kavramlardır.",
+          "Türk Ekosistemi, Türkiye'nin yerli arama motorudur: haber, video, harita, e-ticaret alışverişi, firma rehberi ve turizm rezervasyonunu tek aramada birleştirir. Sözlükteki «yekpare» (bütün) anlamı ile marka adı farklı kavramlardır.",
       },
       {
         question: "Yekpare'de online alışveriş nasıl yapılır?",
         answer:
-          "yekpare.net/magaza adresinden mağaza seçin, ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
+          "turk.eco/magaza adresinden mağaza seçin, ürünleri sepete ekleyin ve ödeme adımlarını tamamlayın. Sipariş durumunu /siparis-takip üzerinden takip edebilirsiniz.",
       },
       {
         question: "Yekpare alışveriş nedir?",
         answer:
-          "Yekpare alışveriş modülü (yekpare.net/magaza) çok satıcılı e-ticaret pazaryeridir. Mağaza vitrinleri, ürün kataloğu, sepet ve ödeme adımları tek platformda sunulur.",
+          "Yekpare alışveriş modülü (turk.eco/magaza) çok satıcılı e-ticaret pazaryeridir. Mağaza vitrinleri, ürün kataloğu, sepet ve ödeme adımları tek platformda sunulur.",
       },
       {
         question: "Yekpare seyahat nedir?",
         answer:
-          "Yekpare seyahat modülü (yekpare.net/turizm) otel, villa, tur, araç kiralama ve yat turları ilanlarını listeler. İlan detayından rezervasyon veya iletişim talebi oluşturulur.",
+          "Yekpare seyahat modülü (turk.eco/turizm) otel, villa, tur, araç kiralama ve yat turları ilanlarını listeler. İlan detayından rezervasyon veya iletişim talebi oluşturulur.",
       },
       {
         question: "Yekpare haritalar ne işe yarar?",
         answer:
-          "Yekpare haritalar (yekpare.net/haritalar ve yekpare.net/kesfet) konum bazlı işletme keşfi, harita üzerinde arama ve tam ekran harita deneyimi sunar. Restoran ve mağaza profillerine haritadan geçiş yapılır.",
+          "Yekpare haritalar (turk.eco/haritalar ve turk.eco/kesfet) konum bazlı işletme keşfi, harita üzerinde arama ve tam ekran harita deneyimi sunar. Restoran ve mağaza profillerine haritadan geçiş yapılır.",
       },
       {
         question: "Yekpare ücretsiz mi?",
@@ -122,7 +122,7 @@ const PAGES: BilgiPage[] = [
       {
         question: "Yekpare Haber Merkezi nedir?",
         answer:
-          "Bağımsız haber sitelerinin Yekpare altyapısıyla kendi domainlerinde yayın yapabildiği white-label haber platformudur. Detay: yekpare.net/bilgi/haber-merkezi-nedir",
+          "Bağımsız haber sitelerinin Yekpare altyapısıyla kendi domainlerinde yayın yapabildiği white-label haber platformudur. Detay: turk.eco/bilgi/haber-merkezi-nedir",
       },
     ],
     links: [
@@ -148,7 +148,7 @@ const PAGES: BilgiPage[] = [
     sections: [
       {
         heading: "1. Mağaza veya ürün seçin",
-        body: "yekpare.net/magaza adresinden mağaza veya ürün vitrinine gidin; Keşfet ve arama ile de işletmelere ulaşabilirsiniz.",
+        body: "turk.eco/magaza adresinden mağaza veya ürün vitrinine gidin; Keşfet ve arama ile de işletmelere ulaşabilirsiniz.",
       },
       {
         heading: "2. Sepete ürün ekleyin",
@@ -156,13 +156,13 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "3. Ödeme ve takip",
-        body: "Teslimat adresinizi doğrulayın; mağazanın desteklediği ödeme yöntemiyle siparişi tamamlayın. Sipariş numarası ile yekpare.net/siparis-takip üzerinden durumu sorgulayabilirsiniz.",
+        body: "Teslimat adresinizi doğrulayın; mağazanın desteklediği ödeme yöntemiyle siparişi tamamlayın. Sipariş numarası ile turk.eco/siparis-takip üzerinden durumu sorgulayabilirsiniz.",
       },
     ],
     faq: [
       {
         question: "Siparişimi nasıl takip ederim?",
-        answer: "Sipariş onaylandıktan sonra durum bilgisi yekpare.net/siparis-takip ve mağaza bildirimleri üzerinden güncellenir.",
+        answer: "Sipariş onaylandıktan sonra durum bilgisi turk.eco/siparis-takip ve mağaza bildirimleri üzerinden güncellenir.",
       },
     ],
     links: [
@@ -175,16 +175,16 @@ const PAGES: BilgiPage[] = [
     slug: "alisveris-nedir",
     title: "Yekpare Alışveriş Nedir?",
     description:
-      "Yekpare alışveriş modülü: e-ticaret pazaryeri, mağaza vitrinleri, ürün kataloğu ve online sipariş. yekpare.net/magaza",
+      "Yekpare alışveriş modülü: e-ticaret pazaryeri, mağaza vitrinleri, ürün kataloğu ve online sipariş. turk.eco/magaza",
     lead: "Yekpare alışveriş (/magaza), çok satıcılı e-ticaret pazaryeridir. Kullanıcılar mağaza vitrinlerini gezer, ürünleri sepete ekler ve online ödeme ile sipariş verir.",
     sections: [
       {
         heading: "Mağaza vitrinleri",
-        body: "Her satıcının kendi mağaza sayfası (yekpare.net/magaza/magaza/{slug}) bulunur; ürünler, kampanyalar ve kargo bilgileri vitrinde listelenir.",
+        body: "Her satıcının kendi mağaza sayfası (turk.eco/magaza/magaza/{slug}) bulunur; ürünler, kampanyalar ve kargo bilgileri vitrinde listelenir.",
       },
       {
         heading: "Ürün arama ve kategoriler",
-        body: "yekpare.net/magaza/urunler ve kategori sayfalarından ürün aranır; indirimli ve öne çıkan ürünler anasayfada gösterilir.",
+        body: "turk.eco/magaza/urunler ve kategori sayfalarından ürün aranır; indirimli ve öne çıkan ürünler anasayfada gösterilir.",
       },
       {
         heading: "Sepet ve ödeme",
@@ -194,7 +194,7 @@ const PAGES: BilgiPage[] = [
     faq: [
       {
         question: "Yekpare alışveriş nedir?",
-        answer: "Yekpare.net/magaza üzerinden çok satıcılı online alışveriş yapılan e-ticaret modülüdür.",
+        answer: "turk.eco/magaza üzerinden çok satıcılı online alışveriş yapılan e-ticaret modülüdür.",
       },
       {
         question: "Mağaza nasıl açılır?",
@@ -211,8 +211,8 @@ const PAGES: BilgiPage[] = [
     slug: "seyahat-nedir",
     title: "Yekpare Seyahat Nedir?",
     description:
-      "Yekpare seyahat modülü: otel, villa, tur, araç kiralama ve destinasyon ilanları. Turizm rezervasyonu yekpare.net/turizm",
-    lead: "Yekpare seyahat (yekpare.net/turizm), konaklama, tur ve ulaşım ilanlarını tek çatı altında sunar. Kullanıcılar ilan detayından rezervasyon veya iletişim talebi oluşturur.",
+      "Yekpare seyahat modülü: otel, villa, tur, araç kiralama ve destinasyon ilanları. Turizm rezervasyonu turk.eco/turizm",
+    lead: "Yekpare seyahat (turk.eco/turizm), konaklama, tur ve ulaşım ilanlarını tek çatı altında sunar. Kullanıcılar ilan detayından rezervasyon veya iletişim talebi oluşturur.",
     sections: [
       {
         heading: "Konaklama ve villa",
@@ -230,7 +230,7 @@ const PAGES: BilgiPage[] = [
     faq: [
       {
         question: "Yekpare seyahat nedir?",
-        answer: "Yekpare.net/turizm adresindeki turizm ve rezervasyon modülüdür; otel, villa, tur ve ulaşım ilanları içerir.",
+        answer: "turk.eco/turizm adresindeki turizm ve rezervasyon modülüdür; otel, villa, tur ve ulaşım ilanları içerir.",
       },
       {
         question: "Rezervasyon nasıl yapılır?",
@@ -252,11 +252,11 @@ const PAGES: BilgiPage[] = [
     sections: [
       {
         heading: "Keşfet haritası",
-        body: "yekpare.net/kesfet adresinde restoran, mağaza ve hizmet işletmeleri harita pinleri ve liste görünümüyle sunulur; kategori ve şehir filtreleri uygulanır.",
+        body: "turk.eco/kesfet adresinde restoran, mağaza ve hizmet işletmeleri harita pinleri ve liste görünümüyle sunulur; kategori ve şehir filtreleri uygulanır.",
       },
       {
         heading: "Tam ekran haritalar",
-        body: "yekpare.net/haritalar tam ekran harita deneyimi sunar; konum arama ve işletme keşfi için genişletilmiş arayüz sağlar.",
+        body: "turk.eco/haritalar tam ekran harita deneyimi sunar; konum arama ve işletme keşfi için genişletilmiş arayüz sağlar.",
       },
       {
         heading: "İşletme profiline geçiş",
@@ -283,12 +283,12 @@ const PAGES: BilgiPage[] = [
     slug: "bilgi-agaci-nedir",
     title: `${BILGI_AGACI_DISPLAY_NAME} Nedir?`,
     description:
-      "Bilgi Ağacı ansiklopedi modülü: kaliteli maddeler, günün içeriği, konu keşfi ve Wikipedia entegrasyonu. yekpare.net/bilgiagaci",
+      "Bilgi Ağacı ansiklopedi modülü: kaliteli maddeler, günün içeriği, konu keşfi ve Wikipedia entegrasyonu. turk.eco/bilgiagaci",
     lead: `${BILGI_AGACI_DISPLAY_NAME}, Yekpare platformundaki ansiklopedi ve bilgi portalıdır. Kullanıcılar konu arar, madde okur ve günlük öne çıkan içerikleri keşfeder.`,
     sections: [
       {
         heading: "Ansiklopedi maddeleri",
-        body: "yekpare.net/bilgiagaci adresinde konu bazlı maddeler listelenir; her madde SEO uyumlu detay sayfasına sahiptir.",
+        body: "turk.eco/bilgiagaci adresinde konu bazlı maddeler listelenir; her madde SEO uyumlu detay sayfasına sahiptir.",
       },
       {
         heading: "Günlük bilgi akışı",
@@ -302,7 +302,7 @@ const PAGES: BilgiPage[] = [
     faq: [
       {
         question: "Bilgi Ağacı nedir?",
-        answer: "Yekpare.net/bilgiagaci rotasındaki ansiklopedi ve bilgi modülünün kullanıcıya görünen adıdır.",
+        answer: "turk.eco/bilgiagaci rotasındaki ansiklopedi ve bilgi modülünün kullanıcıya görünen adıdır.",
       },
       {
         question: "Bilgi Ağacı ücretsiz mi?",
@@ -341,7 +341,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         question: "Keşfet URL formatı nedir?",
-        answer: "yekpare.net/kesfet/{isletme-slug} adresinden erişilir.",
+        answer: "turk.eco/kesfet/{isletme-slug} adresinden erişilir.",
       },
     ],
     links: [
@@ -358,7 +358,7 @@ const PAGES: BilgiPage[] = [
     sections: [
       {
         heading: "Seyahat ana sayfası",
-        body: "yekpare.net/turizm adresinden otel, villa, tur, rent a car ve yat kiralama kategorilerine ulaşın.",
+        body: "turk.eco/turizm adresinden otel, villa, tur, rent a car ve yat kiralama kategorilerine ulaşın.",
       },
       {
         heading: "İlan detayı",
@@ -372,7 +372,7 @@ const PAGES: BilgiPage[] = [
     faq: [
       {
         question: "Yekpare seyahat nedir?",
-        answer: "yekpare.net/turizm modülü; otel, villa, tur ve ulaşım rezervasyon ilanlarını kapsar.",
+        answer: "turk.eco/turizm modülü; otel, villa, tur ve ulaşım rezervasyon ilanlarını kapsar.",
       },
       {
         question: "Ödeme Yekpare üzerinden mi alınır?",
@@ -397,7 +397,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "Yekpare portal entegrasyonu",
-        body: "Haberler yekpare.net/haberler ve ilgili kategorilerde de listelenebilir; RSS ve sitemap otomatik üretilir.",
+        body: "Haberler turk.eco/haberler ve ilgili kategorilerde de listelenebilir; RSS ve sitemap otomatik üretilir.",
       },
       {
         heading: "Kurumsal vitrin",
@@ -419,7 +419,7 @@ const PAGES: BilgiPage[] = [
     slug: "ai-cagri-merkezi-nedir",
     title: "Yekpare AI ve AI Çağrı Merkezi Nedir?",
     description:
-      "Yekpare AI asistanı ve AI çağrı merkezi: site rehberi sohbet kutusu, hizmet yönlendirme ve işletmeler için sesli yapay zeka desteği. yekpare.net/ai-cagri-merkezi",
+      "Yekpare AI asistanı ve AI çağrı merkezi: site rehberi sohbet kutusu, hizmet yönlendirme ve işletmeler için sesli yapay zeka desteği. turk.eco/ai-cagri-merkezi",
     lead: "Yekpare AI, kullanıcıların platformdaki yemek siparişi, alışveriş, seyahat, haritalar, haberler ve Bilgi Ağacı modüllerine hızlıca ulaşmasını sağlayan yapay zeka asistanıdır. AI Çağrı Merkezi ise işletmeler için sesli ve mesaj tabanlı destek hizmeti sunar.",
     sections: [
       {
@@ -432,7 +432,7 @@ const PAGES: BilgiPage[] = [
       },
       {
         heading: "AI çağrı merkezi (işletmeler)",
-        body: "yekpare.net/ai-cagri-merkezi landing sayfası işletmelere yapay zeka destekli çağrı ve mesajlaşma hizmetini tanıtır.",
+        body: "turk.eco/ai-cagri-merkezi landing sayfası işletmelere yapay zeka destekli çağrı ve mesajlaşma hizmetini tanıtır.",
       },
     ],
     faq: [
@@ -496,7 +496,7 @@ const PAGES: BilgiPage[] = [
     title: "Yektube Nedir?",
     description:
       "Yektube, Yekpare içindeki video platformudur; canlı TV, kanallar ve haber video içeriklerine tek adresten erişim sağlar.",
-    lead: "Yektube (yekpare.net/yektube), Türkiye ve dünya kaynaklı video kanallarını ve haber videolarını izleyebileceğiniz Yekpare video modülüdür.",
+    lead: "Yektube (turk.eco/yektube), Türkiye ve dünya kaynaklı video kanallarını ve haber videolarını izleyebileceğiniz Yekpare video modülüdür.",
     sections: [
       {
         heading: "Canlı TV ve kanallar",
@@ -590,7 +590,7 @@ export default function BilgiSayfasi() {
         <span className="text-slate-700">{page.title}</span>
       </nav>
       <header className="mb-8 rounded-[18px] border border-emerald-100 bg-[#f7fbf8] p-6">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#039D55]">Yekpare.net</p>
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#039D55]">Türk Ekosistemi</p>
         <h1 className="text-3xl font-black text-slate-900 mt-2 mb-4">{page.title}</h1>
         <p className="text-base text-slate-700 leading-relaxed font-semibold">{page.lead}</p>
       </header>

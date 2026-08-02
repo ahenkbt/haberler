@@ -19,7 +19,7 @@
         var link = document.querySelector('link[rel="manifest"]');
         if (!link) return;
         var host = location.hostname.replace(/^www\./i, "");
-        if (host === "yekpare.net" || location.pathname.indexOf("/yp") === 0) {
+        if (host === "turk.eco" || location.pathname.indexOf("/yp") === 0) {
           link.setAttribute("href", "/yp/manifest.webmanifest");
         }
       })();
@@ -62,7 +62,7 @@
         var host = location.hostname.replace(/^www\./i, "");
         if (host !== "yektube.com") return;
         if (sessionStorage.getItem("yektube-mirror-active") === "1") return;
-        var mirror = "https://yekpare.net";
+        var mirror = "https://turk.eco";
         var redirected = false;
         function mirrorPath() {
           var p = location.pathname.replace(/\/+$/, "") || "/";
@@ -120,7 +120,7 @@
     <noscript>
       <p style="padding: 2rem; font-family: system-ui, sans-serif; text-align: center">
         Yektube için JavaScript gerekli. Alternatif:
-        <a href="https://yekpare.net/yp/">https://yekpare.net/yp/</a>
+        <a href="https://turk.eco/yp/">https://turk.eco/yp/</a>
       </p>
     </noscript>
     <div id="root">

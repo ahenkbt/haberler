@@ -1,11 +1,12 @@
 /**
- * Post-deploy: Netlify temizliği + www + Worker domains API
+ * Post-deploy: Worker domains API + bekleyen zone oluşturma
  */
 import { spawnSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { detachRemovedDomains } from "./cf-detached-domains.mjs";
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "16f5b996194174624e7969a3658bd2bb";
 const API = "https://api.cloudflare.com/client/v4";
@@ -104,66 +105,6 @@ async function attachWorkerHostname(auth, hostname) {
   return r.ok;
 }
 
-async function ensureWwwDns(auth, zoneId, zoneName) {
-  const list = await cf(`/zones/${zoneId}/dns_records?name=www.${zoneName}&per_page=50`, auth);
-  const existing = list.json?.result || [];
-  if (existing.length) {
-    for (const rec of existing) {
-      if (!rec.proxied && ["A", "AAAA", "CNAME"].includes(rec.type)) {
-        await cf(
-          `/zones/${zoneId}/dns_records/${rec.id}`,
-          { method: "PATCH", body: { proxied: true }, ...auth },
-        );
-        console.log(`[cutover] proxied existing ${rec.type} ${rec.name}`);
-      }
-    }
-    return;
-  }
-  const created = await cf(`/zones/${zoneId}/dns_records`, {
-    method: "POST",
-    body: { type: "CNAME", name: "www", content: zoneName, proxied: true, ttl: 1 },
-    ...auth,
-  });
-  if (created.ok) {
-    console.log(`[cutover] created www CNAME`);
-    return;
-  }
-  const aaaa = await cf(`/zones/${zoneId}/dns_records`, {
-    method: "POST",
-    body: { type: "AAAA", name: "www", content: "100::", proxied: true, ttl: 1 },
-    ...auth,
-  });
-  console.log(`[cutover] www AAAA ok=${aaaa.ok}`, JSON.stringify(aaaa.json?.errors || {}));
-}
-
-async function purgeNetlify(auth, zoneId, zoneName) {
-  const r = await cf(`/zones/${zoneId}/dns_records?per_page=100`, auth);
-  let n = 0;
-  for (const rec of r.json?.result || []) {
-    const content = String(rec.content || "").toLowerCase();
-    if (!["A", "AAAA", "CNAME"].includes(rec.type)) continue;
-    if (!(content.includes("netlify") || content.includes("ntl.") || content.includes("netlify.app"))) continue;
-    await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE", ...auth });
-    console.log(`[cutover] deleted Netlify ${rec.type} ${rec.name}`);
-    n++;
-  }
-  console.log(`[cutover] ${zoneName}: purged ${n} Netlify records`);
-}
-
-async function ensureRoutes(auth, zoneId) {
-  const patterns = ["yekpare.net/*", "yekpare.net", "www.yekpare.net/*", "www.yekpare.net"];
-  const list = await cf(`/zones/${zoneId}/workers/routes`, auth);
-  const have = new Set((list.json?.result || []).map((r) => r.pattern));
-  for (const pattern of patterns) {
-    if (have.has(pattern)) continue;
-    const r = await cf(
-      `/zones/${zoneId}/workers/routes`,
-      { method: "POST", body: { pattern, script: SCRIPT }, ...auth },
-    );
-    console.log(`[cutover] route ${pattern} ok=${r.ok}`, JSON.stringify(r.json?.errors || {}));
-  }
-}
-
 async function main() {
   console.log(
     "[cutover] auth-related env keys:",
@@ -189,17 +130,14 @@ async function main() {
     return;
   }
 
-  const yekpare = await getZoneId(auth, "yekpare.net");
-  if (yekpare) {
-    await purgeNetlify(auth, yekpare, "yekpare.net");
-    await ensureWwwDns(auth, yekpare, "yekpare.net");
-    await ensureRoutes(auth, yekpare);
-  } else {
-    console.log("[cutover] yekpare.net zone not found");
-  }
+  await detachRemovedDomains((path, init) => cf(path, { ...init, ...auth }), {
+    accountId: ACCOUNT_ID,
+    script: SCRIPT,
+    log: (...args) => console.log(...args),
+  });
 
   // Custom hostnames on Worker (requires zone ownership)
-  for (const host of ["www.yekpare.net", "yekpare.net", "ankarasehirgazetesi.com", "www.ankarasehirgazetesi.com", "turknet.app", "www.turknet.app"]) {
+  for (const host of ["ankarasehirgazetesi.com", "www.ankarasehirgazetesi.com", "turknet.app", "www.turknet.app"]) {
     await attachWorkerHostname(auth, host);
   }
 

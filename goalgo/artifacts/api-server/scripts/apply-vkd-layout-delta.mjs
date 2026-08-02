@@ -23,7 +23,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const THEME_DIR = "C:\\Users\\ahenk\\Downloads\\vatanvakfi\\wp-content\\themes\\vkv-wp-v2";
 const SITE_SLUG = "vkd";
 const INSTITUTION = "VATAN KAHRAMANLARI DERNEĞİ";
-const DEFAULT_API = "https://yekpare.net";
+const DEFAULT_API = "https://turk.eco";
 const PAGES_PER_BATCH = 2;
 
 const SKIP_THEME_SLUGS = new Set([
@@ -223,7 +223,7 @@ async function main() {
     console.log(`  • ${i + batch.length}/${allPages.length}`);
   }
 
-  console.log(`\nBitti. https://yekpare.net/tr/${SITE_SLUG}`);
+  console.log(`\nBitti. https://turk.eco/tr/${SITE_SLUG}`);
 }
 
 main().catch((err) => {

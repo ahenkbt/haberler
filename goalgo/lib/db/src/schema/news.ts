@@ -35,7 +35,7 @@ export const newsTable = pgTable("news", {
   isEditorManual: boolean("is_editor_manual").notNull().default(false),
   /**
    * Siteye özel haber: true ise SADECE `ownerSiteId` sitesinde görünür;
-   * yekpare.net/haberler ve diğer editör sitelerine dahil edilmez / senkron edilmez.
+   * turk.eco/haberler ve diğer editör sitelerine dahil edilmez / senkron edilmez.
    */
   siteOnly: boolean("site_only").notNull().default(false),
   /** `siteOnly` haberin sahibi editör site. */

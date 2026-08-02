@@ -17,7 +17,7 @@ export function isYtDedicatedHost(): boolean {
   return usesYektubePublicPathLayout(window.location.hostname, window.location.pathname);
 }
 
-/** Ana akış öneki: yektube.com veya yekpare.net/yp → /yp */
+/** Ana akış öneki: yektube.com veya turk.eco/yp → /yp */
 export function ytMainPrefix(): string {
   return isYtDedicatedHost() ? yektubeDedicatedPublicPath() : "";
 }
@@ -118,11 +118,11 @@ export const ytRoutes = {
   liveExternal: () => {
     if (typeof window !== "undefined") {
       const host = window.location.hostname.toLowerCase();
-      if (host.includes("yekpare.net")) {
-        return "https://yekpare.net/canlitv";
+      if (host.includes("turk.eco")) {
+        return "https://turk.eco/canlitv";
       }
     }
-    return "https://yekpare.net/canlitv";
+    return "https://turk.eco/canlitv";
   },
 } as const;
 

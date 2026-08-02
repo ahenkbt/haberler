@@ -55,7 +55,7 @@ export function YektubeV2OrV1({
   return <YektubeV2Redirect />;
 }
 
-/** v2 açıkken tam sayfa yönlendirme; kapalıyken v1 standalone shell — yalnızca yekpare.net hub. */
+/** v2 açıkken tam sayfa yönlendirme; kapalıyken v1 standalone shell — yalnızca turk.eco hub. */
 export function YektubeStandaloneRoute({ children }: { children: ReactNode }) {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";

@@ -191,7 +191,7 @@ export function VendorThemeShell({
           <div className="text-sm">
             <strong>{vendorName}</strong> altyapı:{" "}
             <a href="https://turk.eco" className="font-bold hover:underline">
-              yekpare.net
+              turk.eco
             </a>{" "}
             · © 2026
           </div>

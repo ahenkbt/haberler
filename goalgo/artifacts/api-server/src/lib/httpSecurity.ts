@@ -34,7 +34,7 @@ const isProd = process.env["NODE_ENV"] === "production";
 
 
 
-/** Portal kökleri — CORS_ALLOWED_ORIGINS eksik olsa bile turknet.app / yekpare.net çapraz köken istekleri reddedilmesin. */
+/** Portal kökleri — CORS_ALLOWED_ORIGINS eksik olsa bile turknet.app / turk.eco çapraz köken istekleri reddedilmesin. */
 
 function defaultPortalCorsOrigins(): string[] {
 
@@ -64,7 +64,7 @@ function defaultPortalCorsOrigins(): string[] {
 
 /**
 
- * Üretimde virgülle ayrılmış tam kökenler (örn. https://yekpare.net,https://www.yekpare.net).
+ * Üretimde virgülle ayrılmış tam kökenler (örn. https://turk.eco,https://www.turk.eco).
 
  * Production varsayılanı sıkıdır; geçici tanılama için RELAX_CORS_IN_PRODUCTION=1 kullanılabilir.
 
@@ -116,7 +116,7 @@ export function buildCorsOptions(): CorsOptions {
 
     logger.info(
 
-      "CORS_ALLOWED_ORIGINS tanımlı değil — portal kökleri (yekpare.net, turknet.app vb.) varsayılan izin listesine eklendi.",
+      "CORS_ALLOWED_ORIGINS tanımlı değil — portal kökleri (turk.eco, turknet.app vb.) varsayılan izin listesine eklendi.",
 
     );
 

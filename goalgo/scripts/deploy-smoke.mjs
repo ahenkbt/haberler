@@ -3,8 +3,8 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 function usage() {
   console.log(`Usage:
-  WEB_ORIGIN=https://yekpare.net API_ORIGIN=https://api.up.railway.app pnpm run deploy:smoke
-  pnpm run deploy:smoke -- --web https://yekpare.net --api https://api.up.railway.app --call https://call.yekpare.net
+  WEB_ORIGIN=https://turk.eco API_ORIGIN=https://api.up.railway.app pnpm run deploy:smoke
+  pnpm run deploy:smoke -- --web https://turk.eco --api https://api.up.railway.app --call https://call.yekpare.net
 
 Checks:
   - web origin loads /

@@ -38,8 +38,8 @@ function isDefaultPortalHost(host: string): boolean {
     .replace(/^www\./, "")
     .split(":")[0];
   return (
-    h === "yekpare.net" ||
-    h === "www.yekpare.net" ||
+    h === "turk.eco" ||
+    h === "www.turk.eco" ||
     h === "turknet.app" ||
     h === "www.turknet.app" ||
     h === "goalgo.org" ||

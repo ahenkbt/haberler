@@ -38,9 +38,9 @@ const APPLY_HREF = "/iletisim-kunye";
 export default function Kariyer() {
   useEffect(() => {
     applySocialShareMeta({
-      title: "Kariyer — Çağrı Merkezi Satış Temsilcileri | Yekpare.net",
+      title: "Kariyer — Çağrı Merkezi Satış Temsilcileri | Türk Ekosistemi",
       descriptionPrimary:
-        "Yekpare.net ailesine katılın. Türkiye'nin yerli Süper App'inde çağrı merkezi satış temsilcisi olarak yüksek kazanç potansiyeli ve prim usulü çalışma modeli.",
+        "Türk Ekosistemi ailesine katılın. Türkiye'nin yerli Süper App'inde çağrı merkezi satış temsilcisi olarak yüksek kazanç potansiyeli ve prim usulü çalışma modeli.",
       canonicalPath: "/kariyer",
     });
     return () => resetSeoToSiteDefaults();
@@ -56,10 +56,10 @@ export default function Kariyer() {
           </div>
           <p className={SADE_HERO_EYEBROW_CLASS}>Kariyer</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
-            Yekpare.net ailesine katılmaya hazır mısınız?
+            Türk Ekosistemi ailesine katılmaya hazır mısınız?
           </h1>
           <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Türkiye&apos;nin yeni nesil yerli arama motoru ve &quot;Süper App&quot; uygulaması yekpare.net olarak,
+            Türkiye&apos;nin yeni nesil yerli arama motoru ve &quot;Süper App&quot; uygulaması turk.eco olarak,
             dijital dünyada işletmelerin görünürlüğünü artırıyor ve kullanıcılarımıza tek bir uygulama üzerinden
             hayatlarını kolaylaştıracak kapsamlı çözümler sunuyoruz. Büyüyen ekibimizde, Türkiye genelindeki
             işletmeleri dijital dünyamıza kazandıracak{" "}
@@ -79,7 +79,7 @@ export default function Kariyer() {
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
               <Sparkles className="h-8 w-8" style={{ color: YEKPARE_SADE_TEAL }} />
-              <CardTitle className="text-xl">Neden Yekpare.net?</CardTitle>
+              <CardTitle className="text-xl">Neden Türk Ekosistemi?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm leading-relaxed text-slate-600">
               <p>
@@ -124,7 +124,7 @@ export default function Kariyer() {
               <CardTitle className="text-xl">İşletmelerimize neler sunuyoruz?</CardTitle>
             </CardHeader>
             <CardContent className="text-sm leading-relaxed text-slate-600">
-              Yekpare.net üzerinde; restoranlardan kafelere, tamir servislerinden butik mağazalara, hukuk bürolarından
+              Türk Ekosistemi üzerinde; restoranlardan kafelere, tamir servislerinden butik mağazalara, hukuk bürolarından
               sağlık kuruluşlarına kadar her sektörü dijital dünyada görünür kılıyoruz.
             </CardContent>
           </Card>
@@ -161,7 +161,7 @@ export default function Kariyer() {
             Siz de Türkiye&apos;nin yerli gücüne ortak olmak ve yüksek kazançlı bir satış kariyerine adım atmak
             istiyorsanız, güncel CV&apos;nizi ve kısa bir ön yazınızı iletişim formumuz üzerinden iletebilirsiniz.
           </p>
-          <p className="mt-4 text-sm font-semibold text-slate-800">Yekpare.net – Türkiye&apos;nin Dijital Geleceği.</p>
+          <p className="mt-4 text-sm font-semibold text-slate-800">Türk Ekosistemi – Türkiye&apos;nin Dijital Geleceği.</p>
         </div>
 
         <Card>

@@ -15,6 +15,7 @@ on:
     paths:
       - "scripts/cf-fix-originless-dns.mjs"
       - "scripts/cf-dns-cutover.mjs"
+      - "scripts/cf-detached-domains.mjs"
       - "wrangler.toml"
       - "cloudflare/worker.js"
       - ".github/workflows/cf-fix-hm-dns.yml"

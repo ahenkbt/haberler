@@ -144,7 +144,7 @@ export default function IletisimKunyePremium() {
                 className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-black text-white shadow-lg transition hover:opacity-90"
                 style={{ backgroundColor: ACCENT }}
               >
-                yekpare.net
+                turk.eco
               </a>
               <Link
                 href="/destek"

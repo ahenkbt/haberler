@@ -8,7 +8,7 @@ import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { db, getNewsDbForRead, hmMakalelerTable, mapBusinessesTable, newsTable, vendorsTable } from "@workspace/db";
 import { sitePublicOrigin } from "../lib/site-public-origin.js";
-import { PORTAL_SITE_NAME } from "../lib/portalBrand.js";
+import { PORTAL_HOST, PORTAL_SITE_NAME } from "../lib/portalBrand.js";
 import { getActiveHmNewsSiteByDomainCompat, getActiveHmNewsSiteBySlugCompat } from "../lib/hm-site-compat";
 import { resolveNewsArticleBySlug } from "../lib/news-page-bundle.js";
 import { getEncyclopediaArticleShareMeta } from "./wiki.js";
@@ -32,7 +32,7 @@ import { parseSeoVerificationJson, type SeoVerification } from "../lib/seo-verif
 
 const router: IRouter = Router();
 
-const SITE_TAIL = ` ${PORTAL_SITE_NAME} — yekpare.net`;
+const SITE_TAIL = ` ${PORTAL_SITE_NAME} — ${PORTAL_HOST}`;
 
 type HmSiteOgRow = {
   id: number;
@@ -1148,7 +1148,7 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
         title: "Yekpare Keşfet: İşletme Bulma Rehberi",
         description: "Harita ve arama ile restoran, mağaza ve hizmet işletmelerini keşfetme rehberi.",
         faq: [
-          { question: "Keşfet URL formatı nedir?", answer: "yekpare.net/kesfet/{isletme-slug}" },
+          { question: "Keşfet URL formatı nedir?", answer: "turk.eco/kesfet/{isletme-slug}" },
         ],
       },
       "ai-cagri-merkezi-nedir": {
@@ -1176,7 +1176,7 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
         title: "Yekpare Haritalar Ne İşe Yarar?",
         description: "Konum bazlı işletme keşfi ve tam ekran harita deneyimi.",
         faq: [
-          { question: "Haritalar URL?", answer: "yekpare.net/haritalar ve yekpare.net/kesfet" },
+          { question: "Haritalar URL?", answer: "turk.eco/haritalar ve turk.eco/kesfet" },
         ],
       },
     };

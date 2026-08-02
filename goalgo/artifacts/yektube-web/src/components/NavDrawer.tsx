@@ -32,11 +32,11 @@ function kidsNavLabel(): string {
   return isYtDedicatedHost() ? "Çocuk" : "Yekpare Çocuk";
 }
 
-const YEKTUBE_STUDIO_URL = "https://yekpare.net/studio";
+const YEKTUBE_STUDIO_URL = "https://turk.eco/studio";
 
 function portalHref(path: string): string {
   if (typeof window === "undefined") return path;
-  return isYtDedicatedHost() ? `https://yekpare.net${path}` : path;
+  return isYtDedicatedHost() ? `https://turk.eco${path}` : path;
 }
 
 type NavDrawerProps = {

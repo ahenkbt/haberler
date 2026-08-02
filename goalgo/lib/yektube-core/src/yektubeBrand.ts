@@ -1,6 +1,6 @@
 import { mapPathToYektubeV2 } from "./migratePaths";
 
-/** Yektube özel alan adı — yekpare.net/yektube-v2 yerine yektube.com/yp */
+/** Yektube özel alan adı — turk.eco/yektube-v2 yerine yektube.com/yp */
 export const YEKTUBE_HOST = "yektube.com";
 export const YEKTUBE_WWW_HOST = "www.yektube.com";
 export const YEKTUBE_ORIGIN = "https://yektube.com";
@@ -71,7 +71,7 @@ function readPortalSurfaceHostsEnv(): string[] {
     (typeof import.meta !== "undefined" &&
       (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_YEKTUBE_PORTAL_SURFACE_HOSTS) ||
     (typeof process !== "undefined" ? process.env.VITE_YEKTUBE_PORTAL_SURFACE_HOSTS : "") ||
-    "yekpare.net";
+    "turk.eco";
   const set = new Set<string>();
   for (const part of String(raw).split(",")) {
     const h = normalizeYektubeHostKey(part);
@@ -80,7 +80,7 @@ function readPortalSurfaceHostsEnv(): string[] {
   return Array.from(set);
 }
 
-/** yekpare.net gibi portal — yalnızca /yp, /muzik … yollarında Yektube düzeni */
+/** turk.eco gibi portal — yalnızca /yp, /muzik … yollarında Yektube düzeni */
 export function isYektubePortalSurfaceHost(host: string | null | undefined): boolean {
   const h = normalizeYektubeHostKey(host);
   if (!h) return false;
@@ -92,7 +92,7 @@ export function isYektubeSurfacePathname(pathname: string): boolean {
   return yektubeDedicatedTopLevelPaths().some((p) => path === p || path.startsWith(`${p}/`));
 }
 
-/** yektube.com veya yekpare.net/yp — /yp önekli rota düzeni */
+/** yektube.com veya turk.eco/yp — /yp önekli rota düzeni */
 export function usesYektubePublicPathLayout(
   host: string | null | undefined,
   pathname: string,
@@ -157,7 +157,7 @@ export function yektubeDedicatedCorsOrigins(): string[] {
   ]);
 }
 
-/** yekpare.net/yektube-v2/... → https://yektube.com/yp/... */
+/** turk.eco/yektube-v2/... → https://yektube.com/yp/... */
 export function mapToYektubeDedicatedUrl(pathname: string, search = "", hash = ""): string {
   const main = yektubeDedicatedPublicPath();
   let path = pathname.trim() || "/";
@@ -204,7 +204,7 @@ function readCanonicalRedirectEnv(): boolean {
   return false;
 }
 
-/** yektube.com DNS/SSL sorunlu iken yekpare.net üzerinde kal (varsayılan: kapalı redirect) */
+/** yektube.com DNS/SSL sorunlu iken turk.eco üzerinde kal (varsayılan: kapalı redirect) */
 export function isYektubeCanonicalRedirectEnabled(): boolean {
   return readCanonicalRedirectEnv();
 }
@@ -226,7 +226,7 @@ export function mapToYektubePublicUrl(pathname: string, search = "", hash = ""):
   return mapToYektubeDedicatedUrl(pathname, search, hash);
 }
 
-/** HM haber sitesi Video TV — aynı origin /yp iframe (cross-origin yekpare.net engeli yok). */
+/** HM haber sitesi Video TV — aynı origin /yp iframe (cross-origin turk.eco engeli yok). */
 export function mapToHmYektubeEmbedUrl(pathname: string, search = "", hash = ""): string {
   const portalPath = mapPathToYektubePortal(pathname, search);
   const envOrigin =
@@ -237,8 +237,8 @@ export function mapToHmYektubeEmbedUrl(pathname: string, search = "", hash = "")
   let origin = envOrigin;
   if (!origin && typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase().replace(/^www\./, "");
-    // Özel alan adlı HM siteler: Worker /yp sunar; yekpare.net iframe X-Frame-Options ile reddedilir.
-    if (host && host !== "yekpare.net" && host !== "localhost" && host !== "127.0.0.1") {
+    // Özel alan adlı HM siteler: Worker /yp sunar; turk.eco iframe X-Frame-Options ile reddedilir.
+    if (host && host !== "turk.eco" && host !== "localhost" && host !== "127.0.0.1") {
       origin = window.location.origin;
     }
   }
@@ -246,7 +246,7 @@ export function mapToHmYektubeEmbedUrl(pathname: string, search = "", hash = "")
   return `${origin.replace(/\/+$/, "")}${portalPath}${hash}`;
 }
 
-/** yektube.com yolunu yekpare.net yedeğine taşır (/yp/... korunur) */
+/** yektube.com yolunu turk.eco yedeğine taşır (/yp/... korunur) */
 export function yektubePortalMirrorUrl(pathname?: string, search = "", hash = ""): string {
   const path =
     pathname ??

@@ -3,6 +3,7 @@
 import { hmPwaManifestApiPath } from "@/lib/hmPublicLinks";
 import {
   PORTAL_BRAND_SHORT,
+  PORTAL_HOST,
   PORTAL_ORIGIN,
   PORTAL_SEARCH_TAGLINE,
   PORTAL_SITE_FULL_TITLE,
@@ -60,7 +61,7 @@ function portalSeoHost(): string {
   try {
     return new URL(DEFAULT_ORIGIN).hostname.replace(/^www\./i, "");
   } catch {
-    return "yekpare.net";
+    return PORTAL_HOST;
   }
 }
 
@@ -979,7 +980,7 @@ export type YekpareServiceSchemaItem = {
   serviceType?: string;
 };
 
-/** Yekpare.net Organization + WebSite + Service grafiği (GEO / marka sorguları). */
+/** turk.eco Organization + WebSite + Service grafiği (GEO / marka sorguları). */
 export function buildYekpareOrganizationJsonLd(baseOrigin?: string): Record<string, unknown> {
   const base = (baseOrigin ?? origin()).replace(/\/+$/, "");
   return {
@@ -987,7 +988,7 @@ export function buildYekpareOrganizationJsonLd(baseOrigin?: string): Record<stri
     "@type": "Organization",
     "@id": `${base}/#organization`,
     name: PORTAL_BRAND_SHORT,
-    alternateName: ["Yekpare Arama Motoru", "Yekpare.net", "yekpare.net"],
+    alternateName: ["Türk Ekosistemi Arama Motoru", "Turk.eco", "turk.eco"],
     url: base,
     logo: { "@type": "ImageObject", url: `${base}/icon-512.png` },
     description:

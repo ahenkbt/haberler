@@ -614,7 +614,7 @@ function KhVideoPlaylistRedirect() {
   if (videoId) return <Redirect to={`/video/kanal/${id}/${encodeURIComponent(videoId)}`} />;
   return <Redirect to={`/video/kanal/${id}`} />;
 }
-/** Video TV — yekpare.net hub + Kırşehir Haber (kh) özel alanı. */
+/** Video TV — turk.eco hub + Kırşehir Haber (kh) özel alanı. */
 function HmVideoTvRouteGate({ children }: { children: React.ReactNode }) {
   const params = useParams<{ slug?: string }>();
   const host =

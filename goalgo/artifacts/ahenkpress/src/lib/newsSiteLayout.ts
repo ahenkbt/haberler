@@ -88,7 +88,7 @@ export function isHmNewsRetiredHomeModule(moduleId: string): boolean {
 }
 
 /**
- * Yalnızca yekpare.net hub'ında (`isYekparePortalHubOnly`) açık anasayfa modülleri.
+ * Yalnızca turk.eco hub'ında (`isYekparePortalHubOnly`) açık anasayfa modülleri.
  * HM özel alan / `/tr/{slug}` sitelerinde render, lazy import ve API çağrısı yok.
  */
 export const HM_HUB_ONLY_HOME_MODULE_IDS = [
@@ -454,7 +454,7 @@ export type NewsSiteLayoutPrefs = {
   moduleMacSonuclari: boolean;
   /** true: /tr/{slug} vitrinde üstte Yekpare AppNav (Haberler, Yektube, …) gösterilir */
   showPlatformNav?: boolean;
-  /** HABER teması: Video TV / Yektube (yekpare.net/yp) modülü; tanımsızsa açık kabul edilir. */
+  /** HABER teması: Video TV / Yektube (turk.eco/yp) modülü; tanımsızsa açık kabul edilir. */
   hmNewsVideoTvEnabled?: boolean;
   /** HM site: üst şeritte logo (URL) */
   logoUrl?: string | null;
@@ -654,7 +654,7 @@ export type NewsSiteLayoutPrefs = {
   hmNewsEsenLeadPackEnabled?: boolean;
   /** HABER teması: renkli kategori şeridi; tanımsızsa kapalı kabul edilir. */
   hmNewsFeaturedCategoryStripEnabled?: boolean;
-  /** HABER teması: Yekpare Kategoriler Kutusu (yekpare.net/haberler grid); tanımsızsa kapalı kabul edilir. */
+  /** HABER teması: Yekpare Kategoriler Kutusu (turk.eco/haberler grid); tanımsızsa kapalı kabul edilir. */
   hmNewsYekpareKategorilerKutusuEnabled?: boolean;
   /** HABER teması: büyük haber + sağ liste bloğu; tanımsızsa kapalı kabul edilir. */
   hmNewsLeadListSidebarEnabled?: boolean;
@@ -2883,7 +2883,7 @@ export function isHmNewsVideoTvFlagEnabled(p: NewsSiteLayoutPrefs | null | undef
   return p?.hmNewsVideoTvEnabled !== false;
 }
 
-/** HABER vitrinde Video TV / Yektube (yekpare.net/yp) modülü açık mı? */
+/** HABER vitrinde Video TV / Yektube (turk.eco/yp) modülü açık mı? */
 export function resolveHmNewsVideoTvEnabled(p: NewsSiteLayoutPrefs | null | undefined): boolean {
   if (normalizeHmVitrinTheme(p?.hmVitrinTheme) === "corporate") return false;
   if (isHmNewsVideoTvFlagEnabled(p)) return true;

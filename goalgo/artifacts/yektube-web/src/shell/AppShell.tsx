@@ -37,11 +37,11 @@ import { useLiveStatusPoll } from "@/hooks/useLiveStatusPoll";
 
 type YektubeTabId = "home" | "shorts" | "live" | "yeklive" | "music" | "kids" | "subscriptions" | "categories" | "library";
 
-const YEKTUBE_STUDIO_URL = "https://yekpare.net/studio";
+const YEKTUBE_STUDIO_URL = "https://turk.eco/studio";
 
 function yekparePortalOrigin(): string {
-  if (typeof window === "undefined") return "https://yekpare.net";
-  return isYektubeDedicatedHost(window.location.hostname) ? "https://yekpare.net" : "";
+  if (typeof window === "undefined") return "https://turk.eco";
+  return isYektubeDedicatedHost(window.location.hostname) ? "https://turk.eco" : "";
 }
 
 function portalHref(path: string): string {
@@ -146,7 +146,7 @@ export function YektubeAppShell({
     );
   }
 
-  /** HM Video TV iframe — masaüstünde yekpare.net/yp ile aynı kabuk */
+  /** HM Video TV iframe — masaüstünde turk.eco/yp ile aynı kabuk */
   if (embed) {
     if (onMusic && !isWatch) {
       return (
@@ -672,7 +672,7 @@ function DesktopShell({
   );
 }
 
-/** HM embed — sol menü + yekpare.net/yp tarzı üst arama çubuğu (logo yalnızca menüde). */
+/** HM embed — sol menü + turk.eco/yp tarzı üst arama çubuğu (logo yalnızca menüde). */
 function EmbedDesktopShell({
   children,
   dockNav = false,

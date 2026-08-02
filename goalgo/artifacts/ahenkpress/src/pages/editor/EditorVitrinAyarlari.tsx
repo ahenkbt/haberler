@@ -795,7 +795,7 @@ export default function EditorVitrinAyarlari() {
                 <p className="text-[11px] text-slate-500">
                   <strong>Yekpare ikon menü</strong> veya <strong>Özel menü</strong> şeffaf üst şerit kullanır.
                   Menü öğelerini <Link href="/editor/menuler?location=hmCorporateMenuItems" className="text-sky-700 underline">üst menü editöründe</Link> ekleyin;
-                  kategori bağlantılarına emoji otomatik atanır. Yektube ikonu yalnızca <strong>yekpare.net</strong> hub vitrininde gösterilir.
+                  kategori bağlantılarına emoji otomatik atanır. Yektube ikonu yalnızca <strong>turk.eco</strong> hub vitrininde gösterilir.
                 </p>
                 <Select
                   value={p.yekpareMenuPreset ?? "default"}
@@ -1029,7 +1029,7 @@ export default function EditorVitrinAyarlari() {
                 onChange={(c) => toggleDefaultOn("hmNewsIndexLandingEnabled", c)}
               />
               <div className="px-4 pb-3 text-xs text-slate-600">
-                Özel alan kökünde (<code className="text-slate-700">/</code>) yekpare.net tarzı hızlı index: son dakika, döviz,
+                Özel alan kökünde (<code className="text-slate-700">/</code>) turk.eco tarzı hızlı index: son dakika, döviz,
                 hava, video, harita ve kategori kutuları. Tam site arka planda yüklenir; ziyaretçi «Siteye gir» ile vitrine geçer.
               </div>
             </div>
@@ -1208,7 +1208,7 @@ export default function EditorVitrinAyarlari() {
                 <div>
                   <Label className="font-semibold text-slate-900">Yekpare Kategoriler Kutusu — kategoriler</Label>
                   <p className="mt-1 text-xs text-slate-500">
-                    yekpare.net/hg tarzı kategori kutuları. Seçilen sıra anasayfada korunur; boş bırakılırsa otomatik kategoriler kullanılır.
+                    turk.eco/hg tarzı kategori kutuları. Seçilen sıra anasayfada korunur; boş bırakılırsa otomatik kategoriler kullanılır.
                   </p>
                 </div>
                 {categoryOptions.length > 0 ? (

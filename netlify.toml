@@ -2,11 +2,11 @@
 # Üretim: Cloudflare Worker → Render (goalgo-y7ze.onrender.com)
 
 [build]
-  command = "mkdir -p dist && printf '%s\\n' '<!DOCTYPE html><meta http-equiv=\"refresh\" content=\"0;url=https://yekpare.net/\"><title>Moved</title><p><a href=\"https://yekpare.net/\">yekpare.net</a></p>' > dist/index.html"
+  command = "mkdir -p dist && printf '%s\\n' '<!DOCTYPE html><meta http-equiv=\"refresh\" content=\"0;url=https://turk.eco/\"><title>Moved</title><p><a href=\"https://turk.eco/\">turk.eco</a></p>' > dist/index.html"
   publish = "dist"
 
 [[redirects]]
   from = "/*"
-  to = "https://yekpare.net/:splat"
+  to = "https://turk.eco/:splat"
   status = 301
   force = true

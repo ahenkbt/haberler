@@ -129,7 +129,7 @@ const FAQ = [
   },
   {
     question: "Başvuru nereden yapılır?",
-    answer: "İşletme üyeliği başvurusu yekpare.net/is-ortagi/basvuru adresinden yapılır.",
+    answer: "İşletme üyeliği başvurusu turk.eco/is-ortagi/basvuru adresinden yapılır.",
   },
 ];
 
