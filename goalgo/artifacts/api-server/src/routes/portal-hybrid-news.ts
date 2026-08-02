@@ -1014,6 +1014,16 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       } else {
         triggerPortalRssWarmIfEmpty(feeds, siteId, allowHmLiveRss);
       }
+    } else if (includeRss && siteId == null && rssScope === "all") {
+      const cachedProbe = await getPortalRssCachedItemsForFeeds(activeFeeds, categorySlug);
+      if (cachedProbe.length === 0) {
+        await Promise.race([
+          warmPortalRssCacheIfEmpty(feeds),
+          new Promise<void>((resolve) => setTimeout(resolve, 15_000)),
+        ]);
+      } else {
+        triggerPortalRssWarmIfEmpty(feeds, siteId, allowHmLiveRss);
+      }
     } else if (includeRss) {
       triggerPortalRssWarmIfEmpty(feeds, siteId, allowHmLiveRss);
     }
