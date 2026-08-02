@@ -155,7 +155,7 @@ export function shouldApplyActivatedPoolCategoryFilter(categorySlug?: string | n
   return !normalizePortalCategorySlug(categorySlug);
 }
 
-async function findCategoryForScope(categorySlug: string, siteId: number | null): Promise<{ id: number } | null> {
+export async function findCategoryForScope(categorySlug: string, siteId: number | null): Promise<{ id: number } | null> {
   const slug = normalizePortalCategorySlug(categorySlug);
   if (!slug) return null;
   if (siteId == null) {

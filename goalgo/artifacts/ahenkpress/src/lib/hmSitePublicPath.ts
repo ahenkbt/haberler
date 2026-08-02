@@ -1,4 +1,4 @@
-import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { isDefaultPortalHost, isKnownHmCustomHost } from "@/lib/hmPortalHosts";
 
 /** Haber merkezi vitrin kök URL segmenti: `/tr/{siteSlug}/...` (eski `/hm/...` yönlendirilir). */
 export const HM_SITE_PUBLIC_PREFIX = "tr" as const;
@@ -25,10 +25,11 @@ export function isHmShortSiteHaberPath(pathNoQuery: string): boolean {
   return parts.length >= 3 && parts[1] === "haber";
 }
 
-/** turk.eco / portal kökünde giriş konum modalı ve sessiz warmup kapalı. */
+/** turk.eco, HM özel alanları ve haber vitrin yollarında konum modalı / warmup kapalı. */
 export function shouldSkipSiteGeolocationWarmup(pathNoQuery: string, host: string): boolean {
   const h = host.toLowerCase().split(":")[0] ?? "";
   if (isDefaultPortalHost(h)) return true;
+  if (isKnownHmCustomHost(h)) return true;
   const p = pathNoQuery.trim();
   if (isHmSitePublicChromePath(p)) return true;
   if (isHmShortSiteHaberPath(p)) return true;

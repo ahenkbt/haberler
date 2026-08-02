@@ -12,7 +12,9 @@ import {
   enabledPortalHybridRssFeeds,
   feedMatchesCategorySlug,
   loadPortalHybridRssFeeds,
+  resolveHmHybridFeedLoadScope,
   resolveHmHybridRssAccess,
+  type HmHybridRssScope,
 } from "../lib/portal-hybrid-config.js";
 import {
   getPortalRssCacheStatus,
@@ -99,6 +101,28 @@ async function resolveHybridSiteIdFromRequest(req: Request): Promise<number | nu
   if (!slug) return null;
   const row = await getActiveHmNewsSiteBySlugCompat(slug);
   return row?.active ? row.id : null;
+}
+
+/** HM site içi RSS: istemci `rssScope` ile site / kutu / hepsi feed yüklemesi. */
+function resolveEditorSiteHybridFeedScope(opts: {
+  siteHybridRssOn: boolean;
+  yekparePoolOnly: boolean;
+  rssScope: string;
+  editorPool: boolean;
+}): HmHybridRssScope {
+  if (opts.rssScope === "box") return "box";
+  if (opts.siteHybridRssOn && !opts.yekparePoolOnly) {
+    return resolveHmHybridFeedLoadScope(opts.rssScope);
+  }
+  if (opts.editorPool) return "all";
+  return resolveHmHybridFeedLoadScope(opts.rssScope);
+}
+
+function stripBoxScopeFeedsWhenSiteOnly<T extends { id: string }>(
+  feeds: T[],
+  feedScope: HmHybridRssScope,
+): T[] {
+  return feedScope === "site" ? feeds.filter((feed) => !isBoxScopeFeedId(feed.id)) : feeds;
 }
 
 /** Havuz (çok kategorili) için: her öğeyi KENDİ kategori slug'ına göre içerik korumasından geçir. */
@@ -441,7 +465,7 @@ router.get("/news/pool", async (req, res): Promise<void> => {
       // Kalıcı RSS havuzu (canlı çekim yok) — box scope hariç, kategori süzgeçli.
       const feeds =
         siteId != null && poolAccess?.hybridRssEnabled === true
-          ? await loadPortalHybridRssFeeds(siteId, "site")
+          ? await loadPortalHybridRssFeeds(siteId, "all")
           : (await loadPortalHybridRssFeeds(siteId, "all")).filter((feed) => !isBoxScopeFeedId(feed.id));
       const activeFeeds = enabledPortalHybridRssFeeds(feeds);
       feedLabels = Object.fromEntries(activeFeeds.map((feed) => [feed.id, feed.label]));
@@ -656,17 +680,17 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         if (!includeCachedRss) {
           return { mapRssItems, mapFeedLabels, mapFeedGeoById };
         }
-        // Site içi RSS açıkken yalnızca site feed’leri; kutu feed’leri karışmasın.
-        const scopeForFeeds =
-          siteHybridRssOn && !yekparePoolOnly && rssScope !== "box"
-            ? "site"
-            : editorPool
-              ? "all"
-              : rssScope;
+        // Site içi RSS: `rssScope=all` kutu feed'lerini de kapsar (ör. özel / spor alt kategorileri).
+        const scopeForFeeds = resolveEditorSiteHybridFeedScope({
+          siteHybridRssOn,
+          yekparePoolOnly,
+          rssScope,
+          editorPool,
+        });
         const mapFeeds = await loadPortalHybridRssFeeds(editorPool || siteHybridRssOn ? siteId! : siteId, scopeForFeeds);
         let scopeFeeds =
           editorPool || siteHybridRssOn
-            ? mapFeeds.filter((feed) => !isBoxScopeFeedId(feed.id))
+            ? stripBoxScopeFeedsWhenSiteOnly(mapFeeds, scopeForFeeds)
             : mapFeeds;
         if (foreignOnlyRss) {
           scopeFeeds = filterForeignOnlyPortalHybridRssFeeds(scopeFeeds);
@@ -718,18 +742,18 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         !hmAccess.isCorporate
       ) {
         try {
-          const scopeForFeeds =
-            siteHybridRssOn && !yekparePoolOnly && rssScope !== "box"
-              ? "site"
-              : editorPool
-                ? "all"
-                : rssScope;
+          const scopeForFeeds = resolveEditorSiteHybridFeedScope({
+            siteHybridRssOn,
+            yekparePoolOnly,
+            rssScope,
+            editorPool,
+          });
           let warmFeeds = await loadPortalHybridRssFeeds(
             editorPool || siteHybridRssOn ? siteId! : siteId,
             scopeForFeeds,
           );
           if (editorPool || siteHybridRssOn) {
-            warmFeeds = warmFeeds.filter((feed) => !isBoxScopeFeedId(feed.id));
+            warmFeeds = stripBoxScopeFeedsWhenSiteOnly(warmFeeds, scopeForFeeds);
           }
           if (foreignOnlyRss) {
             warmFeeds = filterForeignOnlyPortalHybridRssFeeds(warmFeeds);
@@ -781,16 +805,17 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       }
       const totalOut = visibleAll.length;
       const visibleItems = visibleAll.slice(offset, offset + limit);
-      void loadPortalHybridRssFeeds(
-        editorPool || siteHybridRssOn ? siteId! : siteId,
-        siteHybridRssOn && !yekparePoolOnly && rssScope !== "box"
-          ? "site"
-          : editorPool
-            ? "all"
-            : rssScope,
-      )
+      const bgFeedScope = resolveEditorSiteHybridFeedScope({
+        siteHybridRssOn,
+        yekparePoolOnly,
+        rssScope,
+        editorPool,
+      });
+      void loadPortalHybridRssFeeds(editorPool || siteHybridRssOn ? siteId! : siteId, bgFeedScope)
         .then((feeds) =>
-          editorPool || siteHybridRssOn ? feeds.filter((feed) => !isBoxScopeFeedId(feed.id)) : feeds,
+          editorPool || siteHybridRssOn
+            ? stripBoxScopeFeedsWhenSiteOnly(feeds, bgFeedScope)
+            : feeds,
         )
         .then((feeds) => {
           if (includeGlobalFeeds && rssScope === "all") {
@@ -896,7 +921,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     if (rssScope === "box") {
       feeds = await loadPortalHybridRssFeeds(siteId, "box");
     } else if (siteId != null && hmAccess?.hybridRssEnabled === true) {
-      feeds = await loadPortalHybridRssFeeds(siteId, "site");
+      feeds = await loadPortalHybridRssFeeds(siteId, resolveHmHybridFeedLoadScope(rssScope));
     } else if (editorPool) {
       feeds = filterForeignOnlyPortalHybridRssFeeds(await loadPortalHybridRssFeeds(null, "site"));
     } else {
@@ -1130,9 +1155,11 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
       includeRss = hmAccess.hybridRssEnabled === true;
     }
 
+    const rssScopeRaw = String(req.query.rssScope ?? "").trim() || (categorySlug ? "all" : "site");
+
     let feeds: Awaited<ReturnType<typeof loadPortalHybridRssFeeds>>;
     if (siteId != null && hmAccess?.hybridRssEnabled === true) {
-      feeds = await loadPortalHybridRssFeeds(siteId, "site");
+      feeds = await loadPortalHybridRssFeeds(siteId, resolveHmHybridFeedLoadScope(rssScopeRaw));
     } else if (editorPool) {
       feeds = filterForeignOnlyPortalHybridRssFeeds(await loadPortalHybridRssFeeds(null, "site"));
       includeRss = true;
@@ -1263,7 +1290,7 @@ router.get("/news/hybrid/rss/:itemId", async (req, res): Promise<void> => {
     const portalFeeds = await loadPortalHybridRssFeeds(null, "all");
     const feeds =
       siteId != null && hmSiteAccess?.hybridRssEnabled === true
-        ? mergePortalHybridRssFeedLists(await loadPortalHybridRssFeeds(siteId, "site"), portalFeeds)
+        ? mergePortalHybridRssFeedLists(await loadPortalHybridRssFeeds(siteId, "all"), portalFeeds)
         : siteId != null
           ? mergePortalHybridRssFeedLists(
               (await loadPortalHybridRssFeeds(siteId, "all")).filter((feed) => !isBoxScopeFeedId(feed.id)),

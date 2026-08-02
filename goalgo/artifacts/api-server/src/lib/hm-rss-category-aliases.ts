@@ -62,6 +62,9 @@ const RSS_TO_SITE_CATEGORY: Record<string, string> = {
   yozgat: "yerel",
   "savunma-sanayi": "savunma-sanayi",
   savunmasanayi: "savunma-sanayi",
+  ozel: "ozel-haber",
+  "ozel-haberler": "ozel-haber",
+  ozelhaber: "ozel-haber",
 };
 
 /** Spor iç kategorileri — «spor» isteğine tek yönlü eşleşir (tersi yok). */
@@ -94,6 +97,7 @@ const ALIAS_GROUPS: string[][] = [
   ["asayis"],
   ["yerel", "yerel-haber", "yozgat"],
   ["savunma-sanayi", "savunmasanayi", "savunmaSanayi"],
+  ["ozel", "ozel-haber", "ozelhaber", "ozel-haberler"],
 ];
 
 const ALIAS_SET_BY_SLUG = (() => {

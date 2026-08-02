@@ -27,6 +27,13 @@ export type PortalHybridRssFeedConfig = {
 
 export type HmHybridRssScope = "site" | "box" | "all";
 
+/** İstemci `rssScope` → `loadPortalHybridRssFeeds` kapsamı (`all` = site + kutu RSS). */
+export function resolveHmHybridFeedLoadScope(rssScope: string): HmHybridRssScope {
+  if (rssScope === "box") return "box";
+  if (rssScope === "all") return "all";
+  return "site";
+}
+
 const BOX_RSS_MAX_ITEMS = 10;
 const SITE_RSS_MAX_ITEMS = 12;
 const PORTAL_RSS_MAX_ITEMS = 20;

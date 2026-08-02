@@ -1,5 +1,6 @@
 ﻿import { and, eq, isNull } from "drizzle-orm";
 import { categoriesTable, categoryAliasesTable, getNewsDbForRead, hmNewsSitesTable } from "@workspace/db";
+import { rssCategorySlugsMatch } from "./hm-rss-category-aliases.js";
 
 /** Birleştirme (merge) sonrası eski slug → hedef kategori id eşlemesi. */
 export async function resolveCategoryAliasTargetId(slug: string): Promise<number | null> {
@@ -69,7 +70,8 @@ export function portalCategorySlugMatches(
 ): boolean {
   const canonical = resolveCanonicalPortalCategorySlug(requestedSlug, siteSlugs);
   const candidate = resolveCanonicalPortalCategorySlug(categorySlug, siteSlugs);
-  return Boolean(canonical && candidate && canonical === candidate);
+  if (canonical && candidate && canonical === candidate) return true;
+  return Boolean(canonical && candidate && rssCategorySlugsMatch(canonical, candidate));
 }
 
 type PortalCategoryRow = {
