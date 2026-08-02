@@ -878,10 +878,10 @@
       "breakpoints": true
     },
     {
-      "idx": 125,
+      "idx": 126,
       "version": "7",
-      "when": 1777555046710,
-      "tag": "0123_site_settings_favicon_url",
+      "when": 1777556046710,
+      "tag": "0124_portal_retired_platform_trim",
       "breakpoints": true
     }
   ]

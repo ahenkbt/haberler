@@ -24,6 +24,13 @@ import {
   normalizeHostKey,
 } from "../lib/seo-verification";
 import { isLegacyPortalBrandAssetUrl } from "../lib/portal-brand-assets";
+import {
+  PORTAL_DEFAULT_FOOTER_NAV_JSON,
+  PORTAL_DEFAULT_FOOTER_TEXT,
+  PORTAL_DEFAULT_HOME_SECTIONS_JSON,
+  PORTAL_DEFAULT_MAIN_NAV_JSON,
+  PORTAL_DEFAULT_MODULES_JSON,
+} from "../lib/portal-platform-policy.js";
 
 const router: IRouter = Router();
 let ensuredExtraSettingsCols = false;
@@ -97,6 +104,8 @@ async function ensurePortalBrandAndModuleTrim() {
         modulesEnabledJson: siteSettingsTable.modulesEnabledJson,
         mainNavJson: siteSettingsTable.mainNavJson,
         footerNavJson: siteSettingsTable.footerNavJson,
+        homeSectionsJson: siteSettingsTable.homeSectionsJson,
+        footerText: siteSettingsTable.footerText,
       })
       .from(siteSettingsTable)
       .limit(1);
@@ -106,32 +115,13 @@ async function ensurePortalBrandAndModuleTrim() {
     if (!name || name === "yekpare" || name === "yekpare.net" || name.includes("yekpare")) {
       patch.siteName = "Türk Ekosistemi";
     }
-    let mods: Record<string, boolean> = {};
-    try {
-      mods = row.modulesEnabledJson ? (JSON.parse(row.modulesEnabledJson) as Record<string, boolean>) : {};
-    } catch {
-      mods = {};
+    patch.modulesEnabledJson = PORTAL_DEFAULT_MODULES_JSON;
+    patch.mainNavJson = PORTAL_DEFAULT_MAIN_NAV_JSON;
+    patch.footerNavJson = PORTAL_DEFAULT_FOOTER_NAV_JSON;
+    patch.homeSectionsJson = PORTAL_DEFAULT_HOME_SECTIONS_JSON;
+    if (!String(row.footerText ?? "").trim() || /yekpare|pazaryeri|firma rehberi/i.test(String(row.footerText))) {
+      patch.footerText = PORTAL_DEFAULT_FOOTER_TEXT;
     }
-    const nextMods = {
-      ...mods,
-      turizm: false,
-      firmaRehberi: false,
-      kesfet: false,
-      haritalar: true,
-      haberler: true,
-      yektube: true,
-    };
-    patch.modulesEnabledJson = JSON.stringify(nextMods);
-    patch.mainNavJson = JSON.stringify({
-      v: 1,
-      items: [
-        { type: "module", key: "haberler" },
-        { type: "module", key: "yektube" },
-        { type: "module", key: "haritalar" },
-        { type: "link", id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi" },
-      ],
-    });
-    patch.footerNavJson = JSON.stringify(["haberler", "yektube", "haritalar", "iletisim"]);
     if (isLegacyPortalBrandAssetUrl(row.logoUrl)) {
       patch.logoUrl = null;
     }

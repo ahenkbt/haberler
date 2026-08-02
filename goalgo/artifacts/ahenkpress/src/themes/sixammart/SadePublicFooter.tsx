@@ -13,25 +13,21 @@ import { YekpareFooterDisclaimer } from "@/components/YekpareFooterDisclaimer";
 import "@/styles/sade-public-footer.css";
 
 const APP_STORE_LINKS = [
-  { label: "Uygulama mağazası", href: "/pwastore" },
   { label: "Haber Merkezi", href: "/habermerkezi" },
   { label: "Newsmap", href: "/newsmap" },
   { label: "Haberler", href: "/haberler" },
-  { label: "YekTube", href: "/yektube" },
+  { label: "Videolar", href: "/yektube" },
 ] as const;
 
 const SADE_PUBLIC_LINKS = [
   { label: "Haberler", href: "/haberler" },
-  { label: "YekTube", href: "/yektube" },
+  { label: "Videolar", href: "/yektube" },
   { label: "Newsmap", href: "/newsmap" },
   { label: "Haber Merkezi", href: "/habermerkezi" },
   { label: "Destek", href: "/destek" },
 ] as const;
 
-const ACCOUNT_LINKS = [
-  { label: "Hesabım", href: "/hesabim" },
-  { label: "İşletme paneli", href: "/servis-saglayici-giris" },
-] as const;
+const ACCOUNT_LINKS = [{ label: "Hesabım", href: "/hesabim" }] as const;
 
 const TURIZM_HELP_LINKS = [
   { label: "Sık sorulan sorular", href: "/sss" },
@@ -199,7 +195,7 @@ function DefaultFooterBody() {
         </div>
         <FooterCol title="Hizmetler" links={[...SADE_PUBLIC_LINKS.slice(0, 4)]} />
         <FooterCol title="Hesap" links={[...ACCOUNT_LINKS]} />
-        <FooterCol title="Yekstra" links={[...APP_STORE_LINKS]} />
+        <FooterCol title="Platform" links={[...APP_STORE_LINKS]} />
         <FooterCol title="Türk Ekosistemi" links={[...SADE_PUBLIC_LINKS]} />
       </div>
       <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
@@ -237,7 +233,7 @@ export function SadePublicFooter({ variant = "default" }: { variant?: "default" 
   const themed = variant === "turizm";
   return (
     <footer className={`yekpare-public-footer${themed ? " sade-turizm-footer" : ""}`}>
-      <FooterNewsletter label={themed ? "Güncellemeler ve daha fazlasını alın" : "Yekpare bültenine abone olun"} />
+      <FooterNewsletter label={themed ? "Güncellemeler ve daha fazlasını alın" : "Haber bültenine abone olun"} />
       {variant === "turizm" ? <TurizmFooterBody /> : <DefaultFooterBody />}
     </footer>
   );

@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db, getNewsDbForRead, hmSiteEditorsTable, newsTable } from "@workspace/db";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
+import { hmEditorJwtGrantsHaberlerPanel } from "../lib/hmEditorJwt.js";
 import jwt from "jsonwebtoken";
 import {
   downloadExternalImageToMedia,
@@ -183,7 +184,10 @@ router.post("/media/upload", async (req, res): Promise<void> => {
 
   const maintenanceSecret = String(process.env["ADMIN_MAINTENANCE_SECRET"] ?? "").trim();
   const maintenanceHeader = String(req.headers["x-yekpare-admin-secret"] ?? "").trim();
-  const adminOk = req.session?.panelBootstrap === true || Boolean(maintenanceSecret && maintenanceHeader === maintenanceSecret);
+  const adminOk =
+    req.session?.panelBootstrap === true ||
+    hmEditorJwtGrantsHaberlerPanel(req) ||
+    Boolean(maintenanceSecret && maintenanceHeader === maintenanceSecret);
   if (!adminOk && !hasUploadBearer(req)) {
     res.status(401).json({ error: "Kimlik doğrulama gerekli" });
     return;
