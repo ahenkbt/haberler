@@ -6,7 +6,7 @@ import { useHmEffectiveLayoutPrefs } from "@/contexts/HmChromeThemeContext";
 import {
   resolveHmCorporateAuthorsEnabled,
   resolveHmNewsAnyAuthorsEnabled,
-  resolveHmNewsVideoTvEnabled,
+  isHmNewsVideoTvFlagEnabled,
 } from "@/lib/newsSiteLayout";
 import { buildHmStripMenuNavItems, type HmCorporateNavMenuItem } from "@/lib/hmCorporateNavMenu";
 import { isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
@@ -67,7 +67,7 @@ export function HmMobileBottomNav() {
       ? resolveHmCorporateAuthorsEnabled(layoutPrefs)
       : resolveHmNewsAnyAuthorsEnabled(layoutPrefs)
     : true;
-  const videoTvEnabled = resolveHmNewsVideoTvEnabled(layoutPrefs);
+  const videoTvEnabled = isHmNewsVideoTvFlagEnabled(layoutPrefs);
   const portalHubOnly = hmSlug
     ? isYekparePortalHubOnly(
         typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "",

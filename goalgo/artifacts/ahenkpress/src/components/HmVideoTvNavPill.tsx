@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import type { CSSProperties } from "react";
 import { VideoTvBrandLogo } from "@/components/VideoTvBrandLogo";
+import { useHmVideoTvSiteBrand } from "@/lib/hmVideoTvSiteBrand";
 
 export type HmVideoTvNavPillProps = {
   href: string;
@@ -14,7 +15,7 @@ export type HmVideoTvNavPillProps = {
   className?: string;
 };
 
-/** HM haber sitesi üst menüsünde Video TV marka rozeti (Yektube play + VİDEO TV). */
+/** HM haber sitesi üst menüsünde video modülü rozeti — site logosu ile markalanır. */
 export function HmVideoTvNavPill({
   href,
   active = false,
@@ -25,12 +26,15 @@ export function HmVideoTvNavPill({
   whiteIdleBackground = false,
   className = "",
 }: HmVideoTvNavPillProps) {
+  const brand = useHmVideoTvSiteBrand();
   const idleBg = whiteIdleBackground && !active ? "#ffffff" : pillIdleBg;
   const style: CSSProperties = {
     background: active ? accent : idleBg,
     color: active ? activePillText : pillText,
     boxShadow: active ? "var(--hm-nav-pill-active-shadow, 0 1px 0 rgba(0,0,0,0.35))" : undefined,
   };
+
+  const label = brand.useSiteBranding ? "Videolar" : "Video TV";
 
   return (
     <Link
@@ -40,8 +44,14 @@ export function HmVideoTvNavPill({
       }${className ? ` ${className}` : ""}`}
       style={style}
     >
-      <VideoTvBrandLogo className="h-5 w-auto max-w-[88px] object-contain" alt="" />
-      <span className="sr-only">Video TV</span>
+      <VideoTvBrandLogo
+        className="h-5 w-auto max-w-[88px] object-contain"
+        alt=""
+        preferSiteBranding={brand.useSiteBranding}
+        siteLogoUrl={brand.siteLogoUrl}
+        siteName={brand.siteName}
+      />
+      <span className={brand.useSiteBranding ? "max-w-[7rem] truncate uppercase" : "sr-only"}>{label}</span>
     </Link>
   );
 }

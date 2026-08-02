@@ -1,35 +1,27 @@
-import { useHmVideoTvLayout } from "@/contexts/HmVideoTvContext";
+import { useHmVideoTvSiteBrand } from "@/lib/hmVideoTvSiteBrand";
 
 const YEKTUBE_LOGO_SRC = "/yektube-logo.png";
-const YEKTUBE_VIDEO_TV_LOGO_SRC = "/yektube-video-tv-logo.png";
 
-/** Oynatıcı üzerinde köşe markası — YouTube filigranının üstüne opak zemin + logo. */
+/** Oynatıcı üzerinde köşe markası — YouTube filigranının üstüne opak logo. */
 export function YektubePlayerMark({
   className = "",
-  /** YouTube köşe filigranını kapatmak için Yektube logosu + koyu zemin */
   coverYoutubeCorner = false,
-  /** iframe oynatıcı boyutu — watch / shorts */
   playerVariant = "watch",
-  /** HM Video TV sayfalarında geniş VIDEO TV logosu */
-  preferVideoTvLogo,
 }: {
   className?: string;
   coverYoutubeCorner?: boolean;
   playerVariant?: "watch" | "shorts";
-  preferVideoTvLogo?: boolean;
 }) {
-  const hmTv = useHmVideoTvLayout();
-  const useVideoTvLogo = preferVideoTvLogo ?? Boolean(hmTv);
+  const { useSiteBranding, siteLogoUrl, siteName } = useHmVideoTvSiteBrand();
 
   if (coverYoutubeCorner) {
-    const logoSrc = useVideoTvLogo ? YEKTUBE_VIDEO_TV_LOGO_SRC : YEKTUBE_LOGO_SRC;
     const sizeClasses =
       playerVariant === "shorts"
-        ? useVideoTvLogo
-          ? "h-7 w-auto max-w-[min(44%,7.5rem)]"
+        ? useSiteBranding
+          ? "h-7 w-7 object-contain"
           : "h-5 w-auto max-w-[min(34%,5.5rem)] sm:h-5"
-        : useVideoTvLogo
-          ? "h-10 sm:h-11 w-auto max-w-[min(62%,15rem)]"
+        : useSiteBranding && siteLogoUrl
+          ? "h-9 w-auto max-w-[min(48%,10rem)] object-contain"
           : "h-9 sm:h-10 w-auto max-w-[min(52%,12rem)]";
     const pillPad =
       playerVariant === "shorts"
@@ -40,12 +32,27 @@ export function YektubePlayerMark({
         className={`pointer-events-none z-30 inline-flex items-center justify-end rounded-[2px] bg-black leading-none ${pillPad} shadow-[0_0_0_1px_rgba(0,0,0,0.9)]`}
         aria-hidden
       >
-        <img
-          src={logoSrc}
-          alt="Yektube"
-          className={`select-none object-contain object-bottom brightness-110 contrast-105 ${sizeClasses} ${className}`.trim()}
-          draggable={false}
-        />
+        {useSiteBranding && siteLogoUrl ? (
+          <img
+            src={siteLogoUrl}
+            alt=""
+            className={`select-none object-contain object-bottom brightness-110 ${sizeClasses} ${className}`.trim()}
+            draggable={false}
+          />
+        ) : useSiteBranding ? (
+          <span
+            className={`max-w-[min(52%,10rem)] truncate text-[10px] font-black uppercase tracking-wide text-white sm:text-[11px] ${className}`.trim()}
+          >
+            {siteName}
+          </span>
+        ) : (
+          <img
+            src={YEKTUBE_LOGO_SRC}
+            alt="Yektube"
+            className={`select-none object-contain object-bottom brightness-110 contrast-105 ${sizeClasses} ${className}`.trim()}
+            draggable={false}
+          />
+        )}
       </span>
     );
   }

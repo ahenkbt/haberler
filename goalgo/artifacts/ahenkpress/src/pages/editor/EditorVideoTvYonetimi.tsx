@@ -5,7 +5,11 @@ import { EditorLayout } from "@/components/EditorLayout";
 import { VideoTvBrandLogo } from "@/components/VideoTvBrandLogo";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { readHmJwt } from "@/lib/hmSession";
-import { resolveHmNewsVideoTvEnabled } from "@/lib/newsSiteLayout";
+import {
+  hmVideoTvModuleTitle,
+  resolveHmVideoTvSiteLogoUrl,
+} from "@/lib/hmVideoTvSiteBrand";
+import { isHmNewsVideoTvFlagEnabled } from "@/lib/newsSiteLayout";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 
 /** Aynı origin — HM editör oturumu + /api çerezleri; middleware /yp/admin'a izin verir. */
@@ -15,7 +19,10 @@ const HM_EDITOR_JWT_POST_MESSAGE = "goalgo:hm-editor-jwt";
 export default function EditorVideoTvYonetimi() {
   const { site, newsLayoutPrefs, token } = useHmEditor();
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const videoTvEnabled = resolveHmNewsVideoTvEnabled(newsLayoutPrefs);
+  const videoTvEnabled = isHmNewsVideoTvFlagEnabled(newsLayoutPrefs);
+  const siteName = site?.displayName?.trim() || "Haber";
+  const siteLogoUrl = resolveHmVideoTvSiteLogoUrl(newsLayoutPrefs.logoUrl, newsLayoutPrefs.faviconUrl);
+  const moduleTitle = hmVideoTvModuleTitle(siteName);
   const publicVideoTvHref = site?.slug
     ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}/video-tv`
     : null;
@@ -37,7 +44,7 @@ export default function EditorVideoTvYonetimi() {
         <div className="mx-auto max-w-lg space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
           <p className="font-medium">Video TV bu sitede kapalı.</p>
           <p>
-            Vitrin ayarlarından <strong>Video TV / Yektube</strong> seçeneğini açın; ardından kanal ve video
+            Vitrin ayarlarından <strong>Video TV modülü</strong> seçeneğini açın; ardından kanal ve video
             yönetimine buradan erişebilirsiniz.
           </p>
           <Link href="/editor/vitrin" className="inline-flex font-semibold text-amber-900 underline">
@@ -52,9 +59,15 @@ export default function EditorVideoTvYonetimi() {
     <EditorLayout title="Video TV yönetimi">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <VideoTvBrandLogo className="h-11 w-auto max-w-[220px] object-contain object-left" />
+          <VideoTvBrandLogo
+            className="h-11 w-auto max-w-[220px] object-contain object-left"
+            preferSiteBranding
+            siteLogoUrl={siteLogoUrl}
+            siteName={siteName}
+            alt={moduleTitle}
+          />
           <div className="min-w-0 text-sm text-slate-600">
-            <p className="font-medium text-slate-900">Video TV Studio — kanal, video ve senkron</p>
+            <p className="font-medium text-slate-900">{moduleTitle} — kanal, video ve senkron</p>
             <p className="mt-1">
               Aşağıdaki panel editör hesabınızla açılır. Zaten editör paneline giriş yaptıysanız otomatik yüklenir;
               aksi halde site e-posta ve şifrenizi kullanın.

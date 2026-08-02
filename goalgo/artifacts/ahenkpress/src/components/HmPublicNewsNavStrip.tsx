@@ -10,7 +10,7 @@ import {
   resolveHmCorporateRssLinksEnabled,
   resolveHmNewsAnyAuthorsEnabled,
   resolveHmNewsHeaderMenuEnabled,
-  resolveHmNewsVideoTvEnabled,
+  isHmNewsVideoTvFlagEnabled,
   resolveHeaderPreset,
   resolveHmNavStripTransparent,
   hasHmConfiguredVideoTvNavLink,
@@ -282,7 +282,7 @@ export function HmPublicNewsNavStrip({
   const requestFormEnabled = corporateNav
     ? resolveHmCorporateRequestFormEnabled(layoutPrefs)
     : resolveHmNewsRequestFormEnabled(layoutPrefs);
-  const videoTvEnabled = resolveHmNewsVideoTvEnabled(layoutPrefs);
+  const videoTvEnabled = isHmNewsVideoTvFlagEnabled(layoutPrefs);
   const khSite = isKhHmSite(hostKey, hmSlug);
   const userVideoInMenu = hasHmConfiguredVideoTvNavLink(layoutPrefs);
   /** KH: otomatik Video hub yok; editörün eklediği /video menü öğesi gösterilir. */
