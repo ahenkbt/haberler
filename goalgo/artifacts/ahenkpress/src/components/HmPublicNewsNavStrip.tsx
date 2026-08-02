@@ -31,6 +31,7 @@ import { HmCategoryRssNavButton } from "@/components/HmCategoryRssNavButton";
 import { HmPageRefreshNavButton } from "@/components/HmPageRefreshNavButton";
 import { useHmEffectiveLayoutPrefs } from "@/contexts/HmChromeThemeContext";
 import { isHmVideoTvAllowed, isKhHmSite, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { hmPublicVideoTvHomeHref } from "@/lib/hmVideoTvPublicPaths";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   hmRequestFormPath,
@@ -259,7 +260,9 @@ export function HmPublicNewsNavStrip({
   const videoTvAllowed = isHmVideoTvAllowed(hostKey, hmSlug);
   const hmVideoTvHref =
     hmSlug != null
-      ? h(videoTvAllowed && !portalHubOnly ? "/video" : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv`)
+      ? videoTvAllowed
+        ? hmPublicVideoTvHomeHref({ host: hostKey, slug: hmSlug, href: h, layoutPrefs })
+        : h(`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv`)
       : "/yektube";
   const talepFormuHref = h(hmRequestFormPath());
   const locPath = useMemo(() => normPath(loc.split("?")[0] || "/"), [loc]);

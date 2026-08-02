@@ -17,6 +17,7 @@ import { HmChromeWidthShell } from "@/components/HmChromeWidthShell";
 import { HmChromeThemeProvider, useHmChromeThemeOptional } from "@/contexts/HmChromeThemeContext";
 import { resolveEditorHmEffectiveChromeColorMode } from "@/lib/hmChromeLayout";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { resolveHmVideoTvPathHome } from "@/lib/hmVideoTvPublicPaths";
 
 type HmMeta = {
   id: number;
@@ -79,7 +80,7 @@ export function HmVideoTvShell({ children }: { children: ReactNode }) {
 
   const ctxValue = useMemo((): HmVideoTvLayoutValue | null => {
     if (!data?.slug) return null;
-    const pathHome = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(data.slug)}/video-tv`;
+    const pathHome = resolveHmVideoTvPathHome(hostKey, data.slug);
     return {
       slug: data.slug,
       pathHome,

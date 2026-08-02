@@ -67,7 +67,7 @@ export default function HmVideoTvPage() {
   const hmCtx = useHmPublicLinkContextOptional();
   const hmTv = useHmVideoTvLayout();
   const h = useHmPublicHref();
-  const pathHome = hmTv?.pathHome ?? h("/video-tv");
+  const pathHome = hmTv?.pathHome ?? h("/video");
   const layoutPrefs = hmCtx?.layoutPrefs ?? parseNewsSiteLayoutFromJson(null);
   const accent = hmVitrinAccentHex(layoutPrefs.hmVitrinTheme ?? "default") ?? "#039D55";
   const brand = useHmVideoTvSiteBrand();
@@ -85,7 +85,7 @@ export default function HmVideoTvPage() {
 
   useEffect(() => {
     if (!hmCtx?.slug) return;
-    const canonicalPath = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmCtx.slug)}/video-tv`;
+    const canonicalPath = hmTv?.pathHome ?? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmCtx.slug)}/video`;
     applyHmNewsSiteHomeMeta({
       siteName: hmCtx.displayName,
       browserTitle: `${brand.moduleTitle} · ${hmCtx.displayName}`,

@@ -2,6 +2,9 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from "r
 import { Switch, Route, Redirect, useLocation, useParams, useRoute, useSearch, Router } from "wouter";
 import { apiUrl } from "@/lib/apiBase";
 import { isConfiguredPortalHost, isEffectivePortalHost, isHmVideoTvAllowed } from "@/lib/hmPortalHosts";
+import { isHmVideoTvShortPublicPath } from "@/lib/hmVideoTvPublicPaths";
+import { readHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
+import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { YekparePortalHubOnlyRoute } from "./components/YekparePortalHubOnlyRoute";
 import { applyHmSiteVerificationMeta } from "@/lib/pageSeo";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
@@ -555,6 +558,30 @@ function KesfetListingRoute() {
   );
 }
 
+/** HM özel alanında `/yektube/...` → site Video TV (`/video/...`, site logosu). */
+function HmYektubeAliasOrPortal({ children }: { children: React.ReactNode }) {
+  const [loc] = useLocation();
+  const host =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  const cachedSlug = host && !isConfiguredPortalHost(host) ? readHmDomainSlugCache(host) : undefined;
+  const { data } = useHmMetaByDomain(host, {
+    enabled: typeof window !== "undefined" && !!host && !isConfiguredPortalHost(host),
+    retry: false,
+  });
+  const slug = data?.slug ?? cachedSlug;
+  if (typeof window !== "undefined" && loc.startsWith("/yektube") && isHmVideoTvShortPublicPath(host, slug)) {
+    return <Redirect to={loc.replace(/^\/yektube/, "/video")} replace />;
+  }
+  return <>{children}</>;
+}
+
+/** `/tr/:slug/video-tv/...` → `/tr/:slug/video/...` (site markalı Video TV). */
+function HmTrVideoTvPathAliasRedirect() {
+  const [location] = useLocation();
+  if (!location.includes("/video-tv")) return <Redirect to="/" replace />;
+  return <Redirect to={location.replace("/video-tv", "/video")} replace />;
+}
+
 /** Kök `/video` — KH özel alanında doğrudan Video TV kabuğu; portalda /yektube. */
 function HmRootVideoRoute() {
   const host =
@@ -751,13 +778,59 @@ export default function App() {
       <Route path="/canlitv/kanal/:id">{() => <YektubeStandaloneRoute><YektubeCanliTvPage /></YektubeStandaloneRoute>}</Route>
       <Route path="/canlitv">{() => <YektubeStandaloneRoute><YektubeCanliTvPage /></YektubeStandaloneRoute>}</Route>
       {/* Yektube — parametreli rotalar önce (wouter ilk eşleşen kazanır) */}
-      <Route path="/yektube/kanal/:id/:videoId">{() => <YektubeStandaloneRoute><VideoTvChannel /></YektubeStandaloneRoute>}</Route>
-      <Route path="/yektube/kanal/:id">{() => <YektubeStandaloneRoute><VideoTvChannel /></YektubeStandaloneRoute>}</Route>
+      <Route path="/yektube/kanal/:id/:videoId">
+        {() => (
+          <HmYektubeAliasOrPortal>
+            <YektubeStandaloneRoute>
+              <VideoTvChannel />
+            </YektubeStandaloneRoute>
+          </HmYektubeAliasOrPortal>
+        )}
+      </Route>
+      <Route path="/yektube/kanal/:id">
+        {() => (
+          <HmYektubeAliasOrPortal>
+            <YektubeStandaloneRoute>
+              <VideoTvChannel />
+            </YektubeStandaloneRoute>
+          </HmYektubeAliasOrPortal>
+        )}
+      </Route>
       <Route path="/yektube/playlist/:id/:videoId">{() => <YektubePlaylistRedirect />}</Route>
       <Route path="/yektube/playlist/:id">{() => <YektubePlaylistRedirect />}</Route>
-      <Route path="/yektube/:section/:category">{() => <YektubeStandaloneRoute><><YektubeLegacySectionRedirect /><CanliTv /></></YektubeStandaloneRoute>}</Route>
-      <Route path="/yektube/:section">{() => <YektubeStandaloneRoute><><YektubeLegacySectionRedirect /><CanliTv /></></YektubeStandaloneRoute>}</Route>
-      <Route path="/yektube">{() => <YektubeStandaloneRoute><CanliTv /></YektubeStandaloneRoute>}</Route>
+      <Route path="/yektube/:section/:category">
+        {() => (
+          <HmYektubeAliasOrPortal>
+            <YektubeStandaloneRoute>
+              <>
+                <YektubeLegacySectionRedirect />
+                <CanliTv />
+              </>
+            </YektubeStandaloneRoute>
+          </HmYektubeAliasOrPortal>
+        )}
+      </Route>
+      <Route path="/yektube/:section">
+        {() => (
+          <HmYektubeAliasOrPortal>
+            <YektubeStandaloneRoute>
+              <>
+                <YektubeLegacySectionRedirect />
+                <CanliTv />
+              </>
+            </YektubeStandaloneRoute>
+          </HmYektubeAliasOrPortal>
+        )}
+      </Route>
+      <Route path="/yektube">
+        {() => (
+          <HmYektubeAliasOrPortal>
+            <YektubeStandaloneRoute>
+              <CanliTv />
+            </YektubeStandaloneRoute>
+          </HmYektubeAliasOrPortal>
+        )}
+      </Route>
       <Route path="/canli-tv">{() => <Redirect to="/canlitv" />}</Route>
       <Route path="/embed/haber">{() => <HaberEmbedWidget />}</Route>
       <Route path="/sitene-ekle">{() => <SadeAwarePublicLayout chrome searchPlaceholder="Yekpare'de yayın ve işletme ara"><SiteneEkle /></SadeAwarePublicLayout>}</Route>
@@ -1296,69 +1369,15 @@ export default function App() {
           </HmVideoTvPublicShell>
         )}
       </Route>
-      <Route path="/tr/:slug/video-tv/canlitv/kanal/:id">
-        {() => (
-          <HmVideoTvPublicShell>
-            <YektubeCanliTvPage />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/canlitv">
-        {() => (
-          <HmVideoTvPublicShell>
-            <YektubeCanliTvPage />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/kanal/:id/:videoId">
-        {() => (
-          <HmVideoTvPublicShell>
-            <VideoTvChannel />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/kanal/:id">
-        {() => (
-          <HmVideoTvPublicShell>
-            <VideoTvChannel />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/playlist/:id/:videoId">
-        {() => (
-          <HmVideoTvPublicShell>
-            <HmYektubePlaylistRedirect />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/playlist/:id">
-        {() => (
-          <HmVideoTvPublicShell>
-            <HmYektubePlaylistRedirect />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/:section/:category">
-        {() => (
-          <HmVideoTvPublicShell>
-            <HmPublicVideoTvRoute />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv/:section">
-        {() => (
-          <HmVideoTvPublicShell>
-            <HmPublicVideoTvRoute />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
-      <Route path="/tr/:slug/video-tv">
-        {() => (
-          <HmVideoTvPublicShell>
-            <HmPublicVideoTvRoute />
-          </HmVideoTvPublicShell>
-        )}
-      </Route>
+      <Route path="/tr/:slug/video-tv/canlitv/kanal/:id">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/canlitv">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/kanal/:id/:videoId">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/kanal/:id">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/playlist/:id/:videoId">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/playlist/:id">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/:section/:category">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv/:section">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+      <Route path="/tr/:slug/video-tv">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
       <Route path="/tr/:slug/bilgiagaci/kategori/:categorySlug">
         {() => (
           <YekparePortalHubOnlyRoute>

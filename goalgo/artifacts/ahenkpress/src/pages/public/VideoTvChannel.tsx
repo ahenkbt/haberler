@@ -21,6 +21,7 @@ import {
   YEKTUBE_HOME,
 } from "@/lib/yektubeUrls";
 import { useHmVideoTvLayout } from "@/contexts/HmVideoTvContext";
+import { isHmEditorNewsVideoTvSite, isHmVideoTvShortPublicPath, resolveHmVideoTvPathHome } from "@/lib/hmVideoTvPublicPaths";
 import { isLiveSource } from "./YektubeCanliTvPage";
 import { enhanceYoutubeIframeSrc } from "@/lib/youtubeEmbed";
 import { normalizeYoutubeImageSrc } from "@/lib/youtubeThumbnails";
@@ -537,10 +538,24 @@ export default function VideoTvChannel() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = window.location.pathname;
-    if (p.startsWith("/video-tv/kanal/") && !p.includes("/tr/")) {
-      setLocation(`${YEKTUBE_HOME}${p.slice("/video-tv".length)}${window.location.search}`, { replace: true });
+    const host = window.location.hostname.toLowerCase().split(":")[0] ?? "";
+    const slug = hmTv?.slug ?? null;
+    if (p.includes("/video-tv/kanal/")) {
+      const tail = `${p.slice(p.indexOf("/video-tv") + "/video-tv".length)}${window.location.search}`;
+      if (slug && isHmEditorNewsVideoTvSite(host, slug)) {
+        const home = resolveHmVideoTvPathHome(host, slug);
+        setLocation(`${home}${tail}`, { replace: true });
+        return;
+      }
+      if (p.startsWith("/video-tv/kanal/") && !p.includes("/tr/")) {
+        if (isHmVideoTvShortPublicPath(host, slug)) {
+          setLocation(`/video${tail}`, { replace: true });
+        } else {
+          setLocation(`${YEKTUBE_HOME}${tail}`, { replace: true });
+        }
+      }
     }
-  }, [setLocation]);
+  }, [setLocation, hmTv?.slug]);
 
   const [source, setSource] = useState<Source | null>(null);
   const [videos, setVideos] = useState<VideoItem[]>([]);

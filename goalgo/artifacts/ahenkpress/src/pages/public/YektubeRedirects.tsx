@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Redirect, useLocation, useParams } from "wouter";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { isHmEditorNewsVideoTvSite, resolveHmVideoTvPathHome } from "@/lib/hmVideoTvPublicPaths";
 import { isYektubeV2Enabled, mapLegacyYektubePathToCanonical } from "@/lib/yektubeV2Feature";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 
@@ -19,11 +20,11 @@ function LegacyPathRedirect() {
   return null;
 }
 
-/** `/tr/:slug/video-tv/playlist/:id` → kanal sayfası (aynı kaynak). */
+/** `/tr/:slug/video/playlist/:id` → kanal sayfası (aynı kaynak). */
 export function HmYektubePlaylistRedirect() {
   const { slug, id, videoId } = useParams<{ slug: string; id: string; videoId?: string }>();
   if (!slug || !id) return null;
-  const base = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/video-tv`;
+  const base = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/video`;
   if (videoId) return <Redirect to={`${base}/kanal/${id}/${encodeURIComponent(videoId)}`} />;
   return <Redirect to={`${base}/kanal/${id}`} />;
 }
@@ -66,6 +67,12 @@ export function LegacyVideoTvKanalRedirect() {
       return <div className="py-16 text-center text-sm text-slate-500">Yönlendiriliyor…</div>;
     }
     if (data?.slug) {
+      if (isHmEditorNewsVideoTvSite(host, data.slug)) {
+        const home = resolveHmVideoTvPathHome(host, data.slug);
+        const base = `${home}/kanal/${id}`;
+        const target = videoId ? `${base}/${encodeURIComponent(videoId)}` : base;
+        return <Redirect to={target} replace />;
+      }
       const base = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(data.slug)}/video-tv/kanal/${id}`;
       const target = videoId ? `${base}/${encodeURIComponent(videoId)}` : base;
       return <Redirect to={target} replace />;
