@@ -21,8 +21,7 @@ export const PORTAL_SITE_NAME = "Türk Ekosistemi";
 export const PORTAL_SITE_TITLE_SUFFIX = " — Haber, Video ve Newsmap";
 export const PORTAL_SITE_FULL_TITLE = `${PORTAL_SITE_NAME}${PORTAL_SITE_TITLE_SUFFIX}`;
 export const PORTAL_BRAND_SHORT = "Türk Ekosistemi";
-export const PORTAL_SEARCH_TAGLINE =
-  "Haberler, Yektube, Haber Merkezi ve Newsmap — tek platformda.";
+export const PORTAL_SEARCH_TAGLINE = "haber video portalı";
 
 export const PWA_STORE_NAME = "Türk Ekosistemi";
 export const PWA_STORE_TAGLINE = "Haber, video ve Newsmap";

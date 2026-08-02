@@ -1,9 +1,9 @@
 import { Link } from "wouter";
 
-import yekpareSuperAppLogo from "@/assets/yekpare-super-app-logo.png?url";
+import turkEcoLogo from "@/assets/turk-eco-logo.png?url";
 
-/** Vite-bundled YEKPARE Super App kare logosu. */
-export const YEKPARE_SUPER_APP_LOGO_SRC = yekpareSuperAppLogo;
+/** turk.eco marka logosu (haber video portalı). */
+export const YEKPARE_SUPER_APP_LOGO_SRC = turkEcoLogo;
 
 export type SearchEngineHeaderBrandLogoProps = {
   className?: string;
@@ -26,14 +26,14 @@ export function SearchEngineHeaderBrandLogo({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="Yekpare ana sayfa"
+      aria-label="turk.eco ana sayfa"
     >
       <img
         src={YEKPARE_SUPER_APP_LOGO_SRC}
-        alt="Yekpare Super App"
+        alt="turk.eco — haber video portalı"
         className="seh-header-brand-logo-img"
-        width={compact ? 48 : 120}
-        height={compact ? 48 : 120}
+        width={compact ? 44 : 96}
+        height={compact ? 44 : 96}
         decoding="async"
         fetchPriority={compact ? "auto" : "high"}
       />
@@ -59,14 +59,14 @@ export function SearchEngineHeroBrandLogo({ className = "" }: SearchEngineHeroBr
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="Yekpare ana sayfa"
+      aria-label="turk.eco ana sayfa"
     >
       <img
         src={YEKPARE_SUPER_APP_LOGO_SRC}
-        alt="Yekpare Super App"
+        alt="turk.eco — haber video portalı"
         className="yekpare-brand-logo-img seh-hero-brand-logo-img seh-hero-brand-logo-img--home"
-        width={176}
-        height={176}
+        width={220}
+        height={220}
         decoding="async"
         fetchPriority="high"
       />
