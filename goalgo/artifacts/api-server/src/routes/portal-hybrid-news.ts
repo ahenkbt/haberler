@@ -41,6 +41,7 @@ import {
   mergeHybridNews,
   enrichHybridNewsListImages,
   sanitizeHybridNewsItemForPublic,
+  type HybridNewsItem,
   stripExternalAnchorsFromHtml,
   parseHybridExcludeIds,
   pickNextHybridInfiniteItem,
@@ -84,6 +85,41 @@ import {
 } from "../lib/portal-rss-ai-meta.js";
 
 const router: IRouter = Router();
+
+const PORTAL_PUBLIC_DB_MAX_AGE_MS = 72 * 60 * 60_000;
+
+function isTurkEcoPortalHomeFeed(
+  siteId: number | null,
+  opts: { rssScope: string; categorySlug?: string; q?: string; rssOnly: boolean },
+): boolean {
+  return siteId == null && opts.rssScope === "all" && !opts.categorySlug && !opts.q && !opts.rssOnly;
+}
+
+function trimStalePortalDbForPublicFeed<
+  T extends { publishedAt?: string | null; createdAt?: string | null; rssSourceUrl?: string | null },
+>(items: T[]): T[] {
+  const cutoff = Date.now() - PORTAL_PUBLIC_DB_MAX_AGE_MS;
+  return items.filter((item) => {
+    const src = String(item.rssSourceUrl ?? "").toLowerCase();
+    if (src.includes("ntv.com.tr")) return true;
+    const t = new Date(item.publishedAt ?? item.createdAt ?? 0).getTime();
+    return Number.isFinite(t) && t >= cutoff;
+  });
+}
+
+/** turk.eco anasayfa / genel haberler — RSS (NTV) önce, belediye DB gürültüsü sonra. */
+function interleavePortalHomeRssFirst(items: HybridNewsItem[]): HybridNewsItem[] {
+  const rss = items.filter((i) => i.source === "rss");
+  const db = items.filter((i) => i.source !== "rss");
+  const out: HybridNewsItem[] = [];
+  let r = 0;
+  let d = 0;
+  while (r < rss.length || d < db.length) {
+    if (r < rss.length) out.push(rss[r++]!);
+    if (d < db.length) out.push(db[d++]!);
+  }
+  return out;
+}
 
 function normalizeHybridSlugParam(raw: unknown): string {
   return String(raw ?? "")
@@ -754,7 +790,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           }
           await refreshPortalRssFeedsOnVisit(
             enabledPortalHybridRssFeeds(visitFeeds, categorySlug),
-            { maxWaitMs: 12_000, categorySlug },
+            {
+              maxWaitMs: freshPortalVisit ? 22_000 : 12_000,
+              categorySlug,
+              force: freshPortalVisit,
+            },
           );
         } catch {
           /* ziyaret tazelemesi — en iyi çaba */
@@ -971,8 +1011,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     if (includeRss && siteId == null && (freshPortalVisit || !dbFirst)) {
       try {
         await refreshPortalRssFeedsOnVisit(activeFeeds, {
-          maxWaitMs: 12_000,
+          maxWaitMs: freshPortalVisit ? 22_000 : 12_000,
           categorySlug,
+          force: freshPortalVisit,
         });
       } catch {
         /* ziyaret tazelemesi — en iyi çaba */
@@ -1121,8 +1162,13 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       Math.max(dbResult.items.length + rssItems.length, hybridPoolLimit, limit + offset + 40),
       500,
     );
+    const portalHomeFeed = isTurkEcoPortalHomeFeed(siteId, { rssScope, categorySlug, q, rssOnly });
+    let portalDbItems = filterHmCategoryContentGuard(dbResult.items, categorySlug);
+    if (portalHomeFeed) {
+      portalDbItems = trimStalePortalDbForPublicFeed(portalDbItems);
+    }
     const merged = mergeHybridNews({
-      dbItems: filterHmCategoryContentGuard(dbResult.items, categorySlug),
+      dbItems: portalDbItems,
       rssItems: filterHmCategoryContentGuard(
         q
           ? rssItems.filter((item) => item.title.toLocaleLowerCase("tr-TR").includes(q.toLocaleLowerCase("tr-TR")))
@@ -1150,6 +1196,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     });
     if (hmAccess?.isCorporate) {
       visibleAll = filterCorporatePublicNewsItems(visibleAll, { siteSlug: hmAccess.slug });
+    }
+    if (portalHomeFeed) {
+      visibleAll = interleavePortalHomeRssFirst(visibleAll);
     }
     const totalFull = visibleAll.length;
     const visibleItems = visibleAll.slice(offset, offset + limit);
