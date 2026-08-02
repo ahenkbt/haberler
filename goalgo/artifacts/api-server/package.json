@@ -29,6 +29,7 @@
     "repair:hm-brand-domains": "node --import tsx ./scripts/repair-hm-brand-domains.ts",
     "purge:incomplete-contacts": "node --import tsx ./scripts/purge-incomplete-contacts.ts",
     "cleanup:video-tv": "node --env-file=../../.env --import tsx ./scripts/cleanup-video-tv.ts",
+    "sync:yektube-remote": "node --env-file=../../.env --env-file=.env ./scripts/sync-yektube-remote.mjs",
     "import:yektube-kids": "node --env-file=../../.env --import tsx ./scripts/import-yektube-kids.ts",
     "excel-to-vendors-json": "node ./scripts/excel-to-vendors-json.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
