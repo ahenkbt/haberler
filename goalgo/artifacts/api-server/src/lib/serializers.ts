@@ -323,6 +323,7 @@ export function serializeSettings(row: SiteSettingsRow) {
       ? serializeNavMenuItems(parseNavMenuItems(row.mainNavJson))
       : null,
     logoUrl: row.logoUrl ?? null,
+    faviconUrl: row.faviconUrl ?? null,
     footerNavJson: row.footerNavJson ?? null,
     footerLegalLinksJson: row.footerLegalLinksJson ?? null,
     footerInfoLinksJson: extraFooter.footerInfoLinksJson ?? null,

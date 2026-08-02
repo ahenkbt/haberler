@@ -38,11 +38,12 @@ export const GetDashboardSummaryResponse = zod.object({
       categoryColor: zod.string().nullish(),
       authorId: zod.number().nullish(),
       authorName: zod.string().nullish(),
-      senderFullName: zod.string().nullish(),
-      senderEmail: zod.string().nullish(),
-      senderPhone: zod.string().nullish(),
       status: zod.enum(["published", "draft"]),
-      isFeatured: zod.boolean().optional(),
+      isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+      isSiteManset: zod
+        .boolean()
+        .optional()
+        .describe("Site (alt) manşet slider"),
       isBreaking: zod.boolean().optional(),
       views: zod.number(),
       tags: zod.array(zod.string()).optional(),
@@ -93,7 +94,11 @@ export const ListNewsResponse = zod.object({
       authorId: zod.number().nullish(),
       authorName: zod.string().nullish(),
       status: zod.enum(["published", "draft"]),
-      isFeatured: zod.boolean().optional(),
+      isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+      isSiteManset: zod
+        .boolean()
+        .optional()
+        .describe("Site (alt) manşet slider"),
       isBreaking: zod.boolean().optional(),
       views: zod.number(),
       tags: zod.array(zod.string()).optional(),
@@ -120,15 +125,10 @@ export const CreateNewsBody = zod.object({
   imageUrl: zod.string().nullish(),
   categorySlug: zod.string(),
   authorId: zod.number().nullish(),
-  senderFullName: zod.string().nullish(),
-  senderEmail: zod.string().nullish(),
-  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
-  isFoodRecipe: zod.boolean().optional(),
-  foodRecipeCategorySlug: zod.string().nullish(),
   tags: zod.array(zod.string()).optional(),
 });
 
@@ -149,8 +149,8 @@ export const ListFeaturedNewsResponseItem = zod.object({
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
@@ -184,8 +184,8 @@ export const ListBreakingNewsResponseItem = zod.object({
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
@@ -216,8 +216,8 @@ export const ListPopularNewsResponseItem = zod.object({
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
@@ -252,8 +252,8 @@ export const ListNewsByCategoryResponseItem = zod.object({
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
@@ -290,8 +290,8 @@ export const GetNewsResponse = zod.object({
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
@@ -319,15 +319,10 @@ export const UpdateNewsBody = zod.object({
   imageUrl: zod.string().nullish(),
   categorySlug: zod.string(),
   authorId: zod.number().nullish(),
-  senderFullName: zod.string().nullish(),
-  senderEmail: zod.string().nullish(),
-  senderPhone: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
-  isFoodRecipe: zod.boolean().optional(),
-  foodRecipeCategorySlug: zod.string().nullish(),
   tags: zod.array(zod.string()).optional(),
 });
 
@@ -345,8 +340,8 @@ export const UpdateNewsResponse = zod.object({
   authorId: zod.number().nullish(),
   authorName: zod.string().nullish(),
   status: zod.enum(["published", "draft"]),
-  isFeatured: zod.boolean().optional(),
-  isSiteManset: zod.boolean().optional(),
+  isFeatured: zod.boolean().optional().describe("Tepe manşet"),
+  isSiteManset: zod.boolean().optional().describe("Site (alt) manşet slider"),
   isBreaking: zod.boolean().optional(),
   views: zod.number(),
   tags: zod.array(zod.string()).optional(),
@@ -772,7 +767,12 @@ export const CreateVideoSourceBody = zod.object({
   categorySlug: zod.string(),
   active: zod.boolean().optional(),
   isLive: zod.boolean().optional(),
-  useYoutubeApi: zod.boolean().optional(),
+  useYoutubeApi: zod
+    .boolean()
+    .optional()
+    .describe(
+      "true ise YouTube Data API; false ise RSS + HTML kazıma (en fazla 50 video)",
+    ),
 });
 
 export const DeleteVideoSourceParams = zod.object({
@@ -915,6 +915,10 @@ export const GetSiteSettingsResponse = zod.object({
     .string()
     .nullish()
     .describe("Üst logo görseli tam URL veya \/ ile başlayan yol"),
+  faviconUrl: zod
+    .string()
+    .nullish()
+    .describe("Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu"),
   footerNavJson: zod
     .string()
     .nullish()
@@ -973,6 +977,7 @@ export const UpdateSiteSettingsBody = zod.object({
   telegram: zod.string().nullish(),
   mainNavJson: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
+  faviconUrl: zod.string().nullish(),
   footerNavJson: zod.string().nullish(),
   modulesEnabledJson: zod.string().nullish(),
   homeSectionsJson: zod.string().nullish(),
@@ -1020,6 +1025,10 @@ export const UpdateSiteSettingsResponse = zod.object({
     .string()
     .nullish()
     .describe("Üst logo görseli tam URL veya \/ ile başlayan yol"),
+  faviconUrl: zod
+    .string()
+    .nullish()
+    .describe("Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu"),
   footerNavJson: zod
     .string()
     .nullish()

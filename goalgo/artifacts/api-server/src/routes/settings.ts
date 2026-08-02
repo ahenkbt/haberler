@@ -76,6 +76,7 @@ async function ensureExtraSettingsColumns() {
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS usd_try_rate NUMERIC(14, 6)`);
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS usd_try_updated_at TIMESTAMPTZ`);
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS verification_json TEXT`);
+  await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS favicon_url TEXT`);
   ensuredExtraSettingsCols = true;
 }
 
@@ -260,6 +261,15 @@ router.put("/settings", async (req, res): Promise<void> => {
       return;
     }
     payload = { ...payload, logoUrl: u === "" ? null : u };
+  }
+  if (payload.faviconUrl !== undefined) {
+    const rawFav = payload.faviconUrl;
+    const u = rawFav == null ? "" : String(rawFav).trim();
+    if (u.length > 2048) {
+      res.status(400).json({ error: "faviconUrl çok uzun" });
+      return;
+    }
+    payload = { ...payload, faviconUrl: u === "" ? null : u };
   }
   if (payload.mapsGoogleBrowserKey !== undefined && payload.mapsGoogleBrowserKey != null) {
     const u = String(payload.mapsGoogleBrowserKey).trim();

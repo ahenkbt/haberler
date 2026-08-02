@@ -32,6 +32,8 @@ export interface SiteSettings {
   mainNavJson?: string | null;
   /** Üst logo görseli tam URL veya / ile başlayan yol */
   logoUrl?: string | null;
+  /** Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu */
+  faviconUrl?: string | null;
   /** Footer menü anahtar dizisi (mainNavJson ile aynı format) */
   footerNavJson?: string | null;
   /** Modül açık/kapalı JSON nesnesi */

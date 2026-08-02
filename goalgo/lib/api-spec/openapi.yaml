@@ -898,6 +898,7 @@ components:
         telegram: { type: string, nullable: true }
         mainNavJson: { type: string, nullable: true, description: "JSON dizi — ana menü sırası (örn. [\"haberler\",\"yektube\"])" }
         logoUrl: { type: string, nullable: true, description: "Üst logo görseli tam URL veya / ile başlayan yol" }
+        faviconUrl: { type: string, nullable: true, description: "Site ikonu (favicon); boşsa logo veya varsayılan portal ikonu" }
         footerNavJson: { type: string, nullable: true, description: "Footer menü anahtar dizisi (mainNavJson ile aynı format)" }
         modulesEnabledJson: { type: string, nullable: true, description: "Modül açık/kapalı JSON nesnesi" }
         homeSectionsJson: { type: string, nullable: true, description: "Anasayfa blokları [{id,enabled}]" }
@@ -938,6 +939,7 @@ components:
         telegram: { type: string, nullable: true }
         mainNavJson: { type: string, nullable: true }
         logoUrl: { type: string, nullable: true }
+        faviconUrl: { type: string, nullable: true }
         footerNavJson: { type: string, nullable: true }
         modulesEnabledJson: { type: string, nullable: true }
         homeSectionsJson: { type: string, nullable: true }

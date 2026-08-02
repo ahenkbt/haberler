@@ -9,10 +9,18 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Upload } from "lucide-react";
 import type { SiteSettingsInput } from "@workspace/api-client-react";
+import { resolveClientMediaSrc, toPersistedPublicMediaUrl } from "@/lib/apiBase";
+import { uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
+import {
+  PORTAL_DEFAULT_FAVICON_PATH,
+  PORTAL_DEFAULT_LOGO_PATH,
+} from "@/lib/portalBrand";
+import { resolvePortalFaviconSrc, resolvePortalLogoSrc } from "@/lib/portalBrandAssets";
+
 type ThemeForm = Pick<
   SiteSettingsInput,
   | "siteName"
@@ -20,6 +28,7 @@ type ThemeForm = Pick<
   | "logoText1"
   | "logoText2"
   | "logoUrl"
+  | "faviconUrl"
   | "primaryColor"
   | "secondaryColor"
   | "navbarBg"
@@ -32,6 +41,7 @@ const emptyTheme: ThemeForm = {
   logoText1: "",
   logoText2: "",
   logoUrl: "",
+  faviconUrl: "",
   primaryColor: "#e61e25",
   secondaryColor: "#1F2937",
   navbarBg: "#FFFFFF",
@@ -45,6 +55,10 @@ export default function TemaAyarlari() {
   const { toast } = useToast();
 
   const [form, setForm] = useState<ThemeForm>(emptyTheme);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const faviconFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!settings) return;
@@ -54,6 +68,7 @@ export default function TemaAyarlari() {
       logoText1: settings.logoText1 ?? "",
       logoText2: settings.logoText2 ?? "",
       logoUrl: settings.logoUrl ?? "",
+      faviconUrl: settings.faviconUrl ?? "",
       primaryColor: settings.primaryColor ?? "#e61e25",
       secondaryColor: settings.secondaryColor ?? "#1F2937",
       navbarBg: settings.navbarBg ?? "#FFFFFF",
@@ -65,6 +80,7 @@ export default function TemaAyarlari() {
     settings?.logoText1,
     settings?.logoText2,
     settings?.logoUrl,
+    settings?.faviconUrl,
     settings?.primaryColor,
     settings?.secondaryColor,
     settings?.navbarBg,
@@ -77,7 +93,11 @@ export default function TemaAyarlari() {
   };
 
   const handleSave = () => {
-    const payload: SiteSettingsInput = { ...form };
+    const payload: SiteSettingsInput = {
+      ...form,
+      logoUrl: form.logoUrl?.trim() ? form.logoUrl.trim() : null,
+      faviconUrl: form.faviconUrl?.trim() ? form.faviconUrl.trim() : null,
+    };
     updateSettings.mutate(
       { data: payload },
       {
@@ -97,6 +117,59 @@ export default function TemaAyarlari() {
       },
     );
   };
+
+  const onPickLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Geçersiz dosya", description: "Yalnızca görsel seçin.", variant: "destructive" });
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const { url } = await uploadYekpareMediaFile(file);
+      const full = toPersistedPublicMediaUrl(url);
+      setForm((prev) => ({ ...prev, logoUrl: full }));
+      toast({ title: "Logo yüklendi", description: "Kaydet ile yayınlayın." });
+    } catch (err) {
+      toast({
+        title: "Yükleme başarısız",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const onPickFavicon = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Geçersiz dosya", description: "Yalnızca görsel seçin.", variant: "destructive" });
+      return;
+    }
+    setUploadingFavicon(true);
+    try {
+      const { url } = await uploadYekpareMediaFile(file);
+      const full = toPersistedPublicMediaUrl(url);
+      setForm((prev) => ({ ...prev, faviconUrl: full }));
+      toast({ title: "Site ikonu yüklendi", description: "Kaydet ile yayınlayın." });
+    } catch (err) {
+      toast({
+        title: "Yükleme başarısız",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFavicon(false);
+    }
+  };
+
+  const logoPreviewSrc = resolvePortalLogoSrc(form.logoUrl || null);
+  const faviconPreviewSrc = resolvePortalFaviconSrc(form.faviconUrl || null, form.logoUrl || null);
 
   if (isLoading) {
     return (
@@ -146,27 +219,114 @@ export default function TemaAyarlari() {
           </div>
         </div>
 
-        <div className="border-t pt-4 space-y-2">
-          <Label>Üst bar logo görseli (URL)</Label>
-          <Input
-            name="logoUrl"
-            value={form.logoUrl ?? ""}
-            onChange={handleChange}
-            className="mt-1 font-mono text-sm"
-            placeholder="/yekpare-logo.png"
-          />
-          <p className="text-xs text-gray-400">
-            Görsel yüklemek için{" "}
-            <Link href="/admin/medya" className="text-[#e61e25] hover:underline font-medium">
-              Medya
-            </Link>
-            .
-          </p>
-          {form.logoUrl?.trim() ? (
-            <div className="p-4 bg-gray-50 rounded-lg border flex items-center gap-4">
-              <img src={form.logoUrl.trim()} alt="" className="h-10 w-auto max-w-[220px] object-contain" />
+        <div className="border-t pt-4 space-y-4">
+          <div className="space-y-2">
+            <Label>Site logosu</Label>
+            <p className="text-xs text-gray-500">
+              Üst menü, haber şeridi ve anasayfa hero. Boş bırakılırsa varsayılan{" "}
+              <code className="text-gray-600">{PORTAL_DEFAULT_LOGO_PATH}</code> kullanılır.
+            </p>
+            <input
+              ref={logoFileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(ev) => void onPickLogo(ev)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploadingLogo || updateSettings.isPending}
+                className="gap-2"
+                onClick={() => logoFileRef.current?.click()}
+              >
+                {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                Logo yükle
+              </Button>
+              {form.logoUrl?.trim() ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
+                >
+                  Özel logoyu kaldır
+                </Button>
+              ) : null}
             </div>
-          ) : null}
+            <Input
+              name="logoUrl"
+              value={form.logoUrl ?? ""}
+              onChange={handleChange}
+              className="mt-1 font-mono text-sm"
+              placeholder={PORTAL_DEFAULT_LOGO_PATH}
+            />
+            <div className="p-4 bg-gray-50 rounded-lg border flex items-center gap-4">
+              <img
+                src={
+                  form.logoUrl?.trim()
+                    ? resolveClientMediaSrc(form.logoUrl.trim()) || form.logoUrl.trim()
+                    : logoPreviewSrc
+                }
+                alt=""
+                className="h-12 w-auto max-w-[280px] object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Site ikonu (favicon)</Label>
+            <p className="text-xs text-gray-500">
+              Tarayıcı sekmesi ve PWA. Boş bırakılırsa önce logo, yoksa{" "}
+              <code className="text-gray-600">{PORTAL_DEFAULT_FAVICON_PATH}</code>.
+            </p>
+            <input
+              ref={faviconFileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(ev) => void onPickFavicon(ev)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploadingFavicon || updateSettings.isPending}
+                className="gap-2"
+                onClick={() => faviconFileRef.current?.click()}
+              >
+                {uploadingFavicon ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                İkon yükle
+              </Button>
+              {form.faviconUrl?.trim() ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setForm((prev) => ({ ...prev, faviconUrl: "" }))}
+                >
+                  Özel ikonu kaldır
+                </Button>
+              ) : null}
+            </div>
+            <Input
+              name="faviconUrl"
+              value={form.faviconUrl ?? ""}
+              onChange={handleChange}
+              className="mt-1 font-mono text-sm"
+              placeholder={PORTAL_DEFAULT_FAVICON_PATH}
+            />
+            <div className="p-4 bg-gray-50 rounded-lg border flex items-center gap-4">
+              <img
+                src={faviconPreviewSrc}
+                alt=""
+                className="h-12 w-12 object-contain rounded-md"
+              />
+            </div>
+          </div>
         </div>
 
         <div>

@@ -18,5 +18,6 @@ export interface VideoSourceInput {
   categorySlug: string;
   active?: boolean;
   isLive?: boolean;
+  /** true ise YouTube Data API; false ise RSS + HTML kazıma (en fazla 50 video) */
   useYoutubeApi?: boolean;
 }
