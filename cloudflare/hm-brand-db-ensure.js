@@ -3,6 +3,7 @@
  * /tr/su (en düşük id) → suhaberajansi.com; sahte slug=su satırlarını temizler.
  */
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcryptjs";
 import {
   HM_BREAKING_RSS_DEFAULTS_REV,
   cloneDefaultHmBreakingRssFeedRows,
@@ -11,6 +12,84 @@ import {
   HM_SITE_RSS_DEFAULTS_REV,
   cloneDefaultHmSiteRssFeedRows,
 } from "./hm-site-rss-defaults.js";
+
+const KH_YEKEPARE_EDITOR = {
+  email: "yekpare@gmail.com",
+  username: "yekpare",
+  password: "yekpare",
+  displayName: "Yekpare Editör",
+};
+let khYekpareEnsureAt = 0;
+
+/**
+ * Kırşehir Neon: ikinci editör yekpare@gmail.com / yekpare (5 dk TTL).
+ * Aynı hesabı paylaşmadan paralel panel oturumu için.
+ */
+export async function ensureKhYekpareEditorOnNeon(env) {
+  const dbUrl = String(env?.DATABASE_URL || "").trim();
+  if (!dbUrl) return { ok: false, reason: "no-db" };
+  const now = Date.now();
+  if (now - khYekpareEnsureAt < 5 * 60_000) return { ok: true, reason: "cached" };
+  const sql = neon(dbUrl);
+  try {
+    try {
+      await sql`ALTER TABLE hm_site_editors ADD COLUMN IF NOT EXISTS username text`;
+    } catch {
+      /* ignore */
+    }
+    const sites = await sql`
+      SELECT id FROM hm_news_sites
+      WHERE active = true
+        AND (
+          lower(trim(both '/' from coalesce(slug, ''))) IN ('kirsehirhaber', 'kirsehir', 'kh')
+          OR lower(coalesce(domain, '')) LIKE '%kirsehirhaber%'
+          OR lower(coalesce(domain2, '')) LIKE '%kirsehirhaber%'
+          OR lower(coalesce(domain3, '')) LIKE '%kirsehirhaber%'
+          OR lower(coalesce(domain, '')) LIKE '%kirsehri.com%'
+          OR lower(coalesce(domain2, '')) LIKE '%kirsehri.com%'
+          OR lower(coalesce(domain3, '')) LIKE '%kirsehri.com%'
+          OR lower(coalesce(domain, '')) LIKE '%kirsehir.net%'
+          OR lower(coalesce(domain2, '')) LIKE '%kirsehir.net%'
+          OR lower(coalesce(domain3, '')) LIKE '%kirsehir.net%'
+        )
+      ORDER BY id ASC
+      LIMIT 1
+    `;
+    const siteId = sites?.[0]?.id;
+    if (!siteId) return { ok: false, reason: "kh-site-missing" };
+    const email = KH_YEKEPARE_EDITOR.email;
+    const username = KH_YEKEPARE_EDITOR.username;
+    const displayName = KH_YEKEPARE_EDITOR.displayName;
+    const passwordHash = await bcrypt.hash(KH_YEKEPARE_EDITOR.password, 10);
+    const existing = await sql`
+      SELECT id FROM hm_site_editors
+      WHERE site_id = ${siteId} AND lower(email) = ${email}
+      LIMIT 1
+    `;
+    if (existing?.[0]?.id) {
+      await sql`
+        UPDATE hm_site_editors
+        SET password_hash = ${passwordHash},
+            username = ${username},
+            display_name = ${displayName},
+            is_active = true,
+            updated_at = now()
+        WHERE id = ${existing[0].id}
+      `;
+      khYekpareEnsureAt = now;
+      return { ok: true, action: "updated", editorId: existing[0].id, siteId };
+    }
+    const inserted = await sql`
+      INSERT INTO hm_site_editors (site_id, email, username, password_hash, display_name, is_active)
+      VALUES (${siteId}, ${email}, ${username}, ${passwordHash}, ${displayName}, true)
+      RETURNING id
+    `;
+    khYekpareEnsureAt = now;
+    return { ok: true, action: "created", editorId: inserted?.[0]?.id ?? null, siteId };
+  } catch (err) {
+    return { ok: false, reason: String(err?.message || err).slice(0, 200) };
+  }
+}
 
 export const HM_BRAND_DB_BINDINGS = [
   {

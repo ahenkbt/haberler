@@ -12,6 +12,7 @@ import {
   repairAsgEditorMisassignmentOnNeon,
   ensureHmBreakingRssDefaultsOnNeon,
   ensureHmSiteRssDefaultsOnNeon,
+  ensureKhYekpareEditorOnNeon,
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
@@ -51,7 +52,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "kirsehir.net",
   "www.kirsehir.net",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260727n";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260802a";
 
 /**
  * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
@@ -2040,6 +2041,19 @@ export default {
         await repairAsgEditorMisassignmentOnNeon(env);
       } catch (err) {
         console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
+      }
+    }
+    // Kırşehir: ikinci editör hesabı (yekpare@gmail.com) — paralel oturum.
+    if (
+      hostKey === "kirsehirhaber.org" ||
+      hostKey === "kirsehri.com" ||
+      hostKey === "kirsehir.net" ||
+      incoming.pathname.replace(/\/+$/, "") === "/api/hm/editor/login"
+    ) {
+      try {
+        await ensureKhYekpareEditorOnNeon(env);
+      } catch (err) {
+        console.error("[hm-kh-yekpare-editor]", String(err?.message || err).slice(0, 200));
       }
     }
     // Tüm editör siteleri: kutu içi + site içi RSS varsayılanlarını bir kerelik uygula (rev sonrası korunur).

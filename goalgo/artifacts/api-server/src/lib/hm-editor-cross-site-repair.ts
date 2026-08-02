@@ -104,7 +104,11 @@ export async function repairHmEditorCrossSiteEmailConflicts(): Promise<HmEditorC
     const khSiteId = khSite?.id ?? null;
     const preferKh =
       khSiteId != null &&
-      (email === "kevser@gmail.com" || email.includes("kirsehirhaber") || email.includes("kirsehri"));
+      (email === "kevser@gmail.com" ||
+        email === "kirsehir@gmail.com" ||
+        email === "yekpare@gmail.com" ||
+        email.includes("kirsehirhaber") ||
+        email.includes("kirsehri"));
 
     let keepId: number;
     if (preferKh) {

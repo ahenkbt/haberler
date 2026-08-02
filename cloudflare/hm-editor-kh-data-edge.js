@@ -1189,7 +1189,8 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   if (!sql) return null;
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
-  if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
+  // Eski Render-bridge JWT: eid Neon'da yoksa 401 yerine Render proxy (oturum düşmesin).
+  if (!editor) return auth.startsWith("Bearer ") ? null : jsonResponse(401, { error: "Geçersiz oturum" });
 
   if (path === "/api/hm/editor/categories" && method === "GET") {
     return handleCategories(sql, ctx.siteId);

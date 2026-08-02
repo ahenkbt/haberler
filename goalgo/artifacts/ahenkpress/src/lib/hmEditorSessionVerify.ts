@@ -47,6 +47,15 @@ async function verifyHmEditorSessionInner(token: string): Promise<HmEditorSessio
 /** `/api/hm/editor/me` — yalnızca 401 oturumu reddeder; ağ/502 geçici sayılır. */
 export async function verifyHmEditorSession(token: string): Promise<HmEditorSessionVerifyResult> {
   try {
+    const first = await Promise.race([
+      verifyHmEditorSessionInner(token),
+      new Promise<HmEditorSessionVerifyResult>((resolve) => {
+        setTimeout(() => resolve({ status: "transient" }), VERIFY_TIMEOUT_MS);
+      }),
+    ]);
+    // Tek seferlik 401 (CDN/yarış) — kısa bekleyip bir kez daha dene; aksi halde dışarı atılıyor.
+    if (first.status !== "denied") return first;
+    await new Promise((r) => setTimeout(r, 400));
     return await Promise.race([
       verifyHmEditorSessionInner(token),
       new Promise<HmEditorSessionVerifyResult>((resolve) => {

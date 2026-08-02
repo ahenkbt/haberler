@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
   dualWriteInsert,
@@ -7,6 +7,7 @@ import {
   hmNewsSitesTable,
   hmSiteEditorsTable,
 } from "@workspace/db";
+import { ensureHmSiteEditorUsernameColumn } from "./hm-editor-profile.js";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
 import { sanitizeHmPublicLayoutRecord } from "./hm-layout-sanitize.js";
 
@@ -96,6 +97,14 @@ function defaultKhLayoutJson(): string {
   });
 }
 
+/** İkinci Kırşehir editörü — paralel oturum için ayrı hesap. */
+export const KH_YEKEPARE_EDITOR = {
+  email: "yekpare@gmail.com",
+  username: "yekpare",
+  password: "yekpare",
+  displayName: "Yekpare Editör",
+} as const;
+
 async function ensureEditorForKh(siteId: number): Promise<void> {
   const email = "editor@kirsehirhaber.org";
   const [existing] = await getNewsDbForRead()
@@ -109,14 +118,49 @@ async function ensureEditorForKh(siteId: number): Promise<void> {
       { isActive: true, displayName: KH_DISPLAY_NAME, updatedAt: new Date() },
       eq(hmSiteEditorsTable.id, existing.id),
     );
+  } else {
+    const passwordHash = await bcrypt.hash(`KhHaber!${siteId}-${Date.now().toString(36)}`, 10);
+    await dualWriteInsert(hmSiteEditorsTable, {
+      siteId,
+      email,
+      passwordHash,
+      displayName: KH_DISPLAY_NAME,
+      isActive: true,
+    });
+  }
+  await ensureYekpareEditorForKh(siteId);
+}
+
+/** yekpare@gmail.com / yekpare — Kırşehir ikinci editör (şifre her ensure'da senkron). */
+export async function ensureYekpareEditorForKh(siteId: number): Promise<void> {
+  await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
+  const email = KH_YEKEPARE_EDITOR.email;
+  const passwordHash = await bcrypt.hash(KH_YEKEPARE_EDITOR.password, 10);
+  const [existing] = await getNewsDbForRead()
+    .select({ id: hmSiteEditorsTable.id })
+    .from(hmSiteEditorsTable)
+    .where(and(eq(hmSiteEditorsTable.siteId, siteId), sql`lower(${hmSiteEditorsTable.email}) = ${email}`))
+    .limit(1);
+  if (existing) {
+    await dualWriteUpdate(
+      hmSiteEditorsTable,
+      {
+        passwordHash,
+        username: KH_YEKEPARE_EDITOR.username,
+        displayName: KH_YEKEPARE_EDITOR.displayName,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+      eq(hmSiteEditorsTable.id, existing.id),
+    );
     return;
   }
-  const passwordHash = await bcrypt.hash(`KhHaber!${siteId}-${Date.now().toString(36)}`, 10);
   await dualWriteInsert(hmSiteEditorsTable, {
     siteId,
     email,
+    username: KH_YEKEPARE_EDITOR.username,
     passwordHash,
-    displayName: KH_DISPLAY_NAME,
+    displayName: KH_YEKEPARE_EDITOR.displayName,
     isActive: true,
   });
 }
