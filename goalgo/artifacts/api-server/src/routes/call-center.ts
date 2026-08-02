@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard";
+import { portalSuperappModuleRetired } from "../lib/portal-superapp-retire.js";
 import {
   getAgentLabsBearerToken,
   isAgentLabsProxyPathAllowed,
@@ -21,6 +22,8 @@ import { isNativeAiCallEnabled } from "../lib/ai-call/config.js";
 import { getNativeStatus, ensureAiCallTables } from "../lib/ai-call/service.js";
 
 const router: IRouter = Router();
+
+router.use(portalSuperappModuleRetired("call-center"));
 
 const AGENTLABS_MODULES = [
   { id: "dashboard", labelTr: "Gösterge paneli", path: "/app", group: "genel" },

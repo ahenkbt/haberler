@@ -13,6 +13,7 @@ import {
   canAccessAdminPath,
 } from "@/lib/adminNavSections";
 import { normalizePortalDisplayName, PORTAL_BRAND_SHORT } from "@/lib/portalBrand";
+import { isPortalNewsPlatformHost, isPortalRetiredAdminPath } from "@/lib/portalPlatformPolicy";
 import { AdminGlobalSearch } from "@/components/AdminGlobalSearch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -154,6 +155,7 @@ export function AdminLayout({ children, title }: { children: React.ReactNode; ti
       adminNavSectionsFiltered({
         panelFullAdmin: access.panelFullAdmin,
         permissions: access.permissions,
+        portalNewsPlatform: isPortalNewsPlatformHost(),
       }),
     [access.panelFullAdmin, access.permissions],
   );
@@ -248,10 +250,15 @@ export function AdminLayout({ children, title }: { children: React.ReactNode; ti
             <p className="text-sm text-red-600">Panel oturumu bulunamadı. Lütfen yeniden giriş yapın.</p>
           ) : !routeAllowed ? (
             <div className="max-w-lg rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-950">
-              <p className="font-semibold">Bu bölüme erişim yetkiniz yok.</p>
+              <p className="font-semibold">
+                {isPortalNewsPlatformHost() && isPortalRetiredAdminPath(location)
+                  ? "Bu modül turk.eco haber platformunda kapalıdır."
+                  : "Bu bölüme erişim yetkiniz yok."}
+              </p>
               <p className="text-sm mt-2 text-amber-900/90">
-                Hesabınıza atanmış izinler dışındaki sayfalar gizlenir. Gerekli alanlar için tam yetkili yöneticiden izin
-                isteyebilirsiniz.
+                {isPortalNewsPlatformHost() && isPortalRetiredAdminPath(location)
+                  ? "Harita, keşfet, turizm, ödeme ve çağrı merkezi yönetimi bu ortamda kullanılmaz. Haber, video ve Haber Merkezi araçları için sol menüyü kullanın."
+                  : "Hesabınıza atanmış izinler dışındaki sayfalar gizlenir. Gerekli alanlar için tam yetkili yöneticiden izin isteyebilirsiniz."}
               </p>
               <Button className="mt-4 bg-red-600 hover:bg-red-700 text-white" asChild>
                 <Link href="/admin">Kontrol paneline dön</Link>

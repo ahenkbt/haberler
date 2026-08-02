@@ -51,6 +51,11 @@ import {
   Phone,
 } from "lucide-react";
 import type { PanelPermissionId } from "./panelPermissionsCatalog";
+import {
+  filterAdminNavForPortalNewsPlatform,
+  isPortalNewsPlatformHost,
+  isPortalRetiredAdminPath,
+} from "./portalPlatformPolicy";
 
 export type AdminNavItem = {
   name: string;
@@ -185,13 +190,22 @@ export function adminNavItemVisible(
   return adminNavItemPermissionKeys(item).some((perm) => p.includes(perm));
 }
 
-export function adminNavSectionsFiltered(opts: { panelFullAdmin: boolean; permissions: string[] | null }): AdminNavSection[] {
-  return adminNavSections
+export function adminNavSectionsFiltered(opts: {
+  panelFullAdmin: boolean;
+  permissions: string[] | null;
+  portalNewsPlatform?: boolean;
+}): AdminNavSection[] {
+  const portal = opts.portalNewsPlatform ?? isPortalNewsPlatformHost();
+  let sections = adminNavSections
     .map((sec) => ({
       ...sec,
       items: sec.items.filter((it) => adminNavItemVisible(it, opts)),
     }))
     .filter((sec) => sec.items.length > 0);
+  if (portal) {
+    sections = filterAdminNavForPortalNewsPlatform(sections);
+  }
+  return sections;
 }
 
 const EXTRA_ADMIN_PATH_RULES: { prefix: string; permission: PanelPermissionId; anyPermissions?: PanelPermissionId[] }[] = [
@@ -245,6 +259,7 @@ export function canAccessAdminPath(
   access: { loaded: boolean; panelFullAdmin: boolean; permissions: string[] | null },
 ): boolean {
   if (!access.loaded) return true;
+  if (isPortalNewsPlatformHost() && isPortalRetiredAdminPath(location)) return false;
   if (access.panelFullAdmin) return true;
   const req = requiredPanelAccessForPath(location);
   if (req.kind === "full") return false;

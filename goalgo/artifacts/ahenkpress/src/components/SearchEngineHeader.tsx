@@ -21,6 +21,7 @@ import {
 import { AuthModal } from "@/components/AuthModal";
 
 import { AppsGridPanel } from "@/components/AppsGridPanel";
+import { isPortalNewsPlatformHost } from "@/lib/portalPlatformPolicy";
 import { MobileHeaderMenu } from "@/components/MobileHeaderMenu";
 import { SearchEngineCategoryScroll } from "@/components/SearchEngineCategoryScroll";
 import { SearchEngineHeaderBrandLogo } from "@/components/SearchEngineHeroBrandLogo";
@@ -528,7 +529,9 @@ export function SearchEngineHeader({
     <div className="seh-topbar-right">
       <SearchEngineHeaderAccountActions />
 
-      <AppsGridMenu open={appsOpen} onOpenChange={setAppsOpen} isMobile={isMobile} />
+      {!isPortalNewsPlatformHost() ? (
+        <AppsGridMenu open={appsOpen} onOpenChange={setAppsOpen} isMobile={isMobile} />
+      ) : null}
 
       {showThemeToggle ? (
         <button

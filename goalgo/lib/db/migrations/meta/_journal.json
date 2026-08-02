@@ -878,10 +878,38 @@
       "breakpoints": true
     },
     {
-      "idx": 125,
+      "idx": 126,
       "version": "7",
-      "when": 1777555046710,
-      "tag": "0123_site_settings_favicon_url",
+      "when": 1777556046710,
+      "tag": "0124_portal_retired_platform_trim",
+      "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1777557046710,
+      "tag": "0125_portal_superapp_archive_infra",
+      "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1777558046710,
+      "tag": "0126_portal_superapp_retire_phase1_comms",
+      "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1777559046710,
+      "tag": "0127_portal_superapp_retire_phase2_verticals",
+      "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1777560046710,
+      "tag": "0128_portal_superapp_retire_phase3_marketplace_tx",
       "breakpoints": true
     }
   ]

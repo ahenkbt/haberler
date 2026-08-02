@@ -1431,8 +1431,8 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    if (auth.startsWith("Bearer ")) return null;
-    return jsonResponse(401, { error: "Kimlik doğrulama gerekli" });
+    // turk.eco /admin oturumu — çerez ile Render'a ilet (HM JWT yok).
+    return null;
   }
 
   const sql = sqlClient(env);

@@ -2,6 +2,11 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from "r
 import { Switch, Route, Redirect, useLocation, useParams, useRoute, useSearch, Router } from "wouter";
 import { apiUrl } from "@/lib/apiBase";
 import { isConfiguredPortalHost, isEffectivePortalHost, isHmVideoTvAllowed } from "@/lib/hmPortalHosts";
+import {
+  isPortalNewsPlatformHost,
+  isPortalRetiredPublicPath,
+  portalRetiredPublicRedirectTarget,
+} from "@/lib/portalPlatformPolicy";
 import { isHmVideoTvShortPublicPath } from "@/lib/hmVideoTvPublicPaths";
 import { readHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
@@ -729,6 +734,20 @@ function RouteScrollRestoration() {
   return null;
 }
 
+/** turk.eco: keşfet, turizm, harita pazaryeri, ödeme vb. rotaları haber vitrinine yönlendir. */
+function PortalNewsPlatformRouteGate() {
+  const [location, setLocation] = useLocation();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isPortalNewsPlatformHost()) return;
+    const pathOnly = (location.split("?")[0] ?? "").trim();
+    if (!isPortalRetiredPublicPath(pathOnly)) return;
+    const target = portalRetiredPublicRedirectTarget(pathOnly);
+    if (target !== pathOnly) setLocation(target);
+  }, [location, setLocation]);
+  return null;
+}
+
 export default function App() {
   useYekpareTheme();
   const [location] = useLocation();
@@ -765,6 +784,7 @@ export default function App() {
     <HmCustomDomainPathRedirect />
     <VendorCustomDomainPathRedirect />
     <RouteScrollRestoration />
+    <PortalNewsPlatformRouteGate />
     <Switch>
       {/* Public routes — all wrapped with AppNav */}
       <Route path="/servisler/:slug">{() => <ServiceMarketingDetail />}</Route>

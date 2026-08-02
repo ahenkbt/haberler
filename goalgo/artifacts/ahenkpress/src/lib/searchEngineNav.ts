@@ -1,6 +1,7 @@
 import { KESFET_HUB_CARDS, KESFET_HUB_PATH } from "@/lib/kesfetDiscoverHub";
 import { HARITALAR, isHaritalarSubNavItemActive } from "@/lib/haritalarRoutes";
 import { TURIZM } from "@/themes/turizm/turizmRoutes";
+import { isPortalNewsPlatformHost } from "@/lib/portalPlatformPolicy";
 
 export type SearchEngineModuleTile = {
   id: string;
@@ -83,6 +84,19 @@ export function isSearchEngineCategoryPillActive(loc: string, pill: SearchEngine
       return isHaritalarSubNavItemActive(loc, pill.href, "firma_rehberi");
     case "kesfet":
       return isHaritalarSubNavItemActive(loc, pill.href, "kesfet");
+    case "haberler":
+      return (
+        path === "/haberler" ||
+        path.startsWith("/haberler/") ||
+        path === "/tum-haberler" ||
+        path.startsWith("/tum-haberler/")
+      );
+    case "videolar":
+      return path === "/yektube" || path.startsWith("/yektube/") || path === "/canlitv" || path.startsWith("/canlitv/");
+    case "newsmap":
+      return path === "/newsmap" || path.startsWith("/newsmap/");
+    case "habermerkezi":
+      return path === "/habermerkezi" || path.startsWith("/habermerkezi/");
     default:
       return path === pill.href || path.startsWith(`${pill.href}/`);
   }
@@ -172,4 +186,19 @@ export function shouldSkipSearchEnginePublicChrome(path: string): boolean {
   return SEARCH_ENGINE_CHROME_EXCLUDED_PREFIXES.some(
     (prefix) => p === prefix.replace(/\/$/, "") || p.startsWith(prefix),
   );
+}
+
+/** turk.eco üst menü — yalnızca haber, video, Newsmap, Haber Merkezi. */
+export const PORTAL_NEWS_PLATFORM_PILLS: SearchEngineCategoryPill[] = [
+  { id: "haberler", label: "Haberler", href: "/haberler", emoji: "📰" },
+  { id: "videolar", label: "Videolar", href: "/yektube", emoji: "▶️" },
+  { id: "newsmap", label: "Newsmap", href: "/newsmap", emoji: "🗺️" },
+  { id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi", emoji: "📡" },
+];
+
+export function resolveSearchEngineCategoryPills(): SearchEngineCategoryPill[] {
+  if (typeof window !== "undefined" && isPortalNewsPlatformHost()) {
+    return PORTAL_NEWS_PLATFORM_PILLS;
+  }
+  return SEARCH_ENGINE_CATEGORY_PILLS;
 }
