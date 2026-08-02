@@ -23,6 +23,7 @@ import {
   isBoxScopeFeedId,
   refreshAllPortalRssFeeds,
   refreshPortalRssFeed,
+  refreshPortalRssFeedsOnVisit,
 } from "../lib/portal-rss-cache.js";
 import { readPortalRssItemsForFeeds, incrementPortalRssItemView } from "../lib/portal-rss-store.js";
 import {
@@ -181,6 +182,12 @@ const publicNewsResponseCache = new Map<string, { expiresAt: number; body: unkno
 
 function publicNewsCacheKey(req: Request): string | null {
   if (req.method !== "GET") return null;
+  if (
+    String(req.query.fresh ?? "").trim() === "1" ||
+    String(req.query.fresh ?? "").trim() === "true"
+  ) {
+    return null;
+  }
   if (String(req.query.q ?? "").trim()) return null;
   if (String(req.query.excludeIds ?? "").trim()) return null;
   const categorySlug =
@@ -572,6 +579,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
   const poolBrowse =
     String(req.query.poolBrowse ?? "").trim() === "1" ||
     String(req.query.poolBrowse ?? "").trim() === "true";
+  const freshPortalVisit =
+    String(req.query.fresh ?? "").trim() === "1" ||
+    String(req.query.fresh ?? "").trim() === "true";
 
   /**
    * Editör sitesi (box hariç): Site içi RSS açıksa site feed'leri; kapalıysa Yekpare
@@ -729,6 +739,24 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           : cachedMapRss;
         return { mapRssItems, mapFeedLabels, mapFeedGeoById };
       };
+
+      if (siteId == null && includeCachedRss && (freshPortalVisit || !dbFirst)) {
+        try {
+          let visitFeeds = await loadPortalHybridRssFeeds(null, rssScope);
+          if (includeGlobalFeeds && rssScope === "all") {
+            visitFeeds = mergePortalHybridRssFeedLists(
+              visitFeeds,
+              await loadEnabledGlobalMapNewsFeeds(),
+            );
+          }
+          await refreshPortalRssFeedsOnVisit(
+            enabledPortalHybridRssFeeds(visitFeeds, categorySlug),
+            { maxWaitMs: 12_000, categorySlug },
+          );
+        } catch {
+          /* ziyaret tazelemesi — en iyi çaba */
+        }
+      }
 
       const [dbResult, rssBundle] = await Promise.all([loadDbResult(), loadCachedRssBundle()]);
       let { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
@@ -936,6 +964,18 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     }
 
     const activeFeeds = enabledPortalHybridRssFeeds(feeds, categorySlug);
+
+    if (includeRss && siteId == null && (freshPortalVisit || !dbFirst)) {
+      try {
+        await refreshPortalRssFeedsOnVisit(activeFeeds, {
+          maxWaitMs: 12_000,
+          categorySlug,
+        });
+      } catch {
+        /* ziyaret tazelemesi — en iyi çaba */
+      }
+    }
+
     // Öğeler feed kategorisinden bağımsız (per-item) süzülür; etiket/geo eşlemesini
     // tüm etkin feed'lerden kur ki kategori kutusundaki her öğe kaynağını gösterebilsin.
     const labelFeeds = enabledPortalHybridRssFeeds(feeds);
