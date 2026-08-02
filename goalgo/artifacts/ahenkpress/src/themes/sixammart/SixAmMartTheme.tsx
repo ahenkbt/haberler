@@ -56,6 +56,7 @@ import { SearchEngineSubNavStack } from "@/components/SearchEngineSubNavStack";
 import { useSearchEngineHeaderState } from "@/hooks/useSearchEngineHeaderState";
 import { useYekpareTheme } from "@/hooks/useYekpareTheme";
 import { shouldShowGlobalCategoryPills } from "@/lib/searchEngineNav";
+import { isPortalNewsPlatformHost } from "@/lib/portalPlatformPolicy";
 import { SadeLocationPickerModal } from "@/components/SadeLocationPickerModal";
 import {
   formatPublicLocationLabel,
@@ -465,13 +466,21 @@ function buildPortalHeadlinePool(opts: {
   latestItems: NewsCardItem[];
   rssEnabled: boolean;
   limit?: number;
+  /** turk.eco: eski belediye «öne çıkan» DB manşetlerini RSS’in önüne geçirme */
+  portalRssFirst?: boolean;
 }): NewsCardItem[] {
+  const limit = opts.limit ?? 12;
+  if (opts.portalRssFirst) {
+    const rssPicks = opts.rssEnabled ? pickOneRssHeadlinePerCategory(opts.latestItems) : [];
+    const rssStream = opts.latestItems.filter((item) => newsItemIsRss(item));
+    return mergeUniqueNewsItems(rssPicks, rssStream, opts.latestItems, opts.manualItems).slice(0, limit);
+  }
   const manual = mergeUniqueNewsItems(
     opts.manualItems.filter((item) => !newsItemIsRss(item)),
     opts.latestItems.filter((item) => !newsItemIsRss(item)),
   ).slice(0, 1);
   const rss = opts.rssEnabled ? pickOneRssHeadlinePerCategory(opts.latestItems) : [];
-  return mergeUniqueNewsItems(manual, rss, opts.manualItems, opts.latestItems).slice(0, opts.limit ?? 12);
+  return mergeUniqueNewsItems(manual, rss, opts.manualItems, opts.latestItems).slice(0, limit);
 }
 
 function excludeNewsItems(items: NewsCardItem[], excluded: NewsCardItem[], limit: number): NewsCardItem[] {
@@ -580,6 +589,7 @@ function Shell({
   heroChrome = false,
   heroExtension,
   mapEmbed = false,
+  portalNewsPage = false,
   showHeaderSearch = true,
   headerSearchReplacement,
   children,
@@ -599,6 +609,8 @@ function Shell({
   heroChrome?: boolean;
   /** heroChrome içinde kategori nav altına eklenen içerik (ör. /haberler vitrin modülleri) */
   heroExtension?: React.ReactNode;
+  /** /haberler turk.eco — gece temasında bile açık header/gövde */
+  portalNewsPage?: boolean;
   /** /haritalar masaüstü: header/footer arasında esnek harita gövdesi */
   mapEmbed?: boolean;
   /** false: SERP arama kutusu gizlenir; `headerSearchReplacement` kullanılır */
@@ -646,6 +658,7 @@ function Shell({
       data-page="sade-shell"
       data-yekpare-theme={theme}
       data-home-theme={theme}
+      data-portal-news-page={portalNewsPage ? "1" : undefined}
     >
       <SearchEngineHeader
         mode="serp"
@@ -1393,6 +1406,7 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
   const showQuickLinks = layoutPrefs.hmNewsQuickLinksEnabled !== false;
   const rssHeadlineEnabled = layoutPrefs.hmNewsRssHeadlineEnabled !== false;
 
+  const [portalNewsHost, setPortalNewsHost] = useState(false);
   const apiFeatured = useSadeFeaturedHeadlines(8);
   const [activeCategory, setActiveCategory] = useState("");
   const [items, setItems] = useState<NewsCardItem[]>([]);
@@ -1402,6 +1416,25 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
   const [popularNews, setPopularNews] = useState<NewsCardItem[]>([]);
   const [authors, setAuthors] = useState<SadeAuthor[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPortalNewsHost(isPortalNewsPlatformHost());
+  }, []);
+
+  useEffect(() => {
+    if (!portalNewsHost) return;
+    const root = document.documentElement;
+    const prevY = root.getAttribute("data-yekpare-theme");
+    const prevH = root.getAttribute("data-home-theme");
+    root.setAttribute("data-yekpare-theme", "light");
+    root.setAttribute("data-home-theme", "light");
+    return () => {
+      if (prevY != null) root.setAttribute("data-yekpare-theme", prevY);
+      else root.removeAttribute("data-yekpare-theme");
+      if (prevH != null) root.setAttribute("data-home-theme", prevH);
+      else root.removeAttribute("data-home-theme");
+    };
+  }, [portalNewsHost]);
 
   useEffect(() => {
     setLoading(true);
@@ -1428,12 +1461,13 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
 
   const featuredSlides = useMemo(() => {
     return buildPortalHeadlinePool({
-      manualItems: apiFeatured,
+      manualItems: portalNewsHost ? [] : apiFeatured,
       latestItems: mergeUniqueNewsItems(categoryPoolItems, items, rssHeadlineItems),
       rssEnabled: rssHeadlineEnabled,
       limit: 12,
+      portalRssFirst: portalNewsHost,
     });
-  }, [apiFeatured, categoryPoolItems, items, rssHeadlineItems, rssHeadlineEnabled]);
+  }, [apiFeatured, categoryPoolItems, items, portalNewsHost, rssHeadlineItems, rssHeadlineEnabled]);
 
   const featuredSideItems = useMemo(
     () => excludeNewsItems(mergeUniqueNewsItems(categoryPoolItems, items, apiFeatured), featuredSlides, 4),
@@ -1602,20 +1636,13 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
     }
   };
 
-  const heroModuleIds = showEditorial
-    ? (["headlineGrid"].filter((id) => modOn(id as SadeNewsPortalModuleId)) as SadeNewsPortalModuleId[])
-    : [];
-  const editorialModules = moduleOrder.filter((id) => id !== "financeWeather" && id !== "headlineGrid" && id !== "latestGrid" && id !== "popularSidebar");
+  const showHeadlineGrid =
+    showEditorial && modOn("headlineGrid") && featuredSlides.length > 0;
+  const editorialModules = moduleOrder.filter(
+    (id) => id !== "financeWeather" && id !== "headlineGrid" && id !== "latestGrid" && id !== "popularSidebar",
+  );
   const listModuleIds = moduleOrder.filter((id) => id === "latestGrid" || id === "popularSidebar");
   const hasSidebar = showEditorial && listModuleIds.includes("popularSidebar") && modOn("popularSidebar") && popularNews.length > 0;
-  const newsHeroExtension = heroModuleIds.length ? (
-    <div className="space-y-1.5 pt-0 pb-0.5">
-      {heroModuleIds.map((moduleId) => (
-        <div key={moduleId}>{renderPortalModule(moduleId)}</div>
-      ))}
-    </div>
-  ) : null;
-
   const headerFinanceTicker =
     modOn("financeWeather") && (showFinance || showWeather) ? (
       <SadeFinanceWeatherStrip showFinance={showFinance} showWeather={showWeather} variant="header" />
@@ -1628,13 +1655,18 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
       showHeaderSearch={false}
       headerSearchReplacement={headerFinanceTicker}
       subHeader={categoryNav}
-      heroChrome={Boolean(newsHeroExtension)}
-      heroExtension={newsHeroExtension}
+      heroChrome={false}
+      portalNewsPage={portalNewsHost}
     >
       <main
         className={`relative z-[5] mx-auto w-full max-w-[1440px] bg-white px-4 pb-8 ${SADE_PUBLIC_POST_HERO_MAIN_CLASS}`}
         data-hm-vitrin-theme="news"
       >
+        {showHeadlineGrid ? (
+          <div className={`${SADE_PUBLIC_POST_HERO_STACK_CLASS} pt-2`}>
+            {renderPortalModule("headlineGrid")}
+          </div>
+        ) : null}
         {showEditorial && editorialModules.some((id) => modOn(id)) ? (
           <div className={SADE_PUBLIC_POST_HERO_STACK_CLASS}>
             {editorialModules.map((moduleId) => (

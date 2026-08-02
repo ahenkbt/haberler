@@ -1904,6 +1904,20 @@ body[data-home-theme="night"] {
   color: #f1f5f9;
 }
 
+.yekpare-chrome-shell[data-portal-news-page="1"] {
+  background-color: #ffffff;
+}
+
+.yekpare-chrome-shell[data-portal-news-page="1"] .yekpare-chrome-main {
+  background-color: #ffffff;
+}
+
+html[data-yekpare-theme="night"] .yekpare-chrome-shell[data-portal-news-page="1"] .seh-sticky,
+html[data-home-theme="night"] .yekpare-chrome-shell[data-portal-news-page="1"] .seh-sticky {
+  background: #ffffff !important;
+  color: #0f172a;
+}
+
 html[data-yekpare-theme="night"] .sade-public-hero-surface,
 html[data-home-theme="night"] .sade-public-hero-surface {
   background: linear-gradient(115deg, #0f172a 0%, #1e293b 48%, #0f172a 100%);

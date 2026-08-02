@@ -73,7 +73,7 @@ async function fetchHomeVideos(): Promise<VideoRow[]> {
     mixChannels: "true",
     seed: String(seed),
   });
-  const res = await fetch(`/api/video/videos?${params}`);
+  const res = await fetch(`/api/video/videos?${params}`, { cache: "no-store" });
   if (!res.ok) return [];
   const data = (await res.json()) as { items?: VideoRow[] };
   return (data.items ?? []).filter((v) => v?.videoId && v.title);
@@ -210,9 +210,12 @@ export default function SearchEngineHomePage() {
 
       <main className="tec-main">
         <div className="tec-panels">
-          <section className="tec-panel" aria-labelledby="tec-news-heading">
+          <section className="tec-panel tec-panel--news" aria-labelledby="tec-news-heading">
             <div className="tec-panel-head">
-              <h2 id="tec-news-heading">Haberler</h2>
+              <div className="tec-panel-title-wrap">
+                <span className="tec-panel-kind">Metin haber</span>
+                <h2 id="tec-news-heading">Haberler</h2>
+              </div>
               <Link href="/haberler">Tümü</Link>
             </div>
             {newsLoading ? (
@@ -243,9 +246,12 @@ export default function SearchEngineHomePage() {
             )}
           </section>
 
-          <section className="tec-panel" aria-labelledby="tec-video-heading">
+          <section className="tec-panel tec-panel--video" aria-labelledby="tec-video-heading">
             <div className="tec-panel-head">
-              <h2 id="tec-video-heading">Videolar</h2>
+              <div className="tec-panel-title-wrap">
+                <span className="tec-panel-kind">Yektube</span>
+                <h2 id="tec-video-heading">Videolar</h2>
+              </div>
               <Link href="/yektube">Tümü</Link>
             </div>
             {videosLoading ? (
