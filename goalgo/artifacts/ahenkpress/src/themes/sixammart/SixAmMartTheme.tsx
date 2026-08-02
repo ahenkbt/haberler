@@ -578,6 +578,8 @@ function Shell({
   heroChrome = false,
   heroExtension,
   mapEmbed = false,
+  showHeaderSearch = true,
+  headerSearchReplacement,
   children,
 }: {
   active?: SixAmMartModuleKey;
@@ -597,6 +599,9 @@ function Shell({
   heroExtension?: React.ReactNode;
   /** /haritalar masaüstü: header/footer arasında esnek harita gövdesi */
   mapEmbed?: boolean;
+  /** false: SERP arama kutusu gizlenir; `headerSearchReplacement` kullanılır */
+  showHeaderSearch?: boolean;
+  headerSearchReplacement?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [loc] = useLocation();
@@ -650,6 +655,8 @@ function Shell({
         listId={`sade-shell-suggest-${pathOnly.replace(/\//g, "-") || "home"}`}
         showDefaultSubNav={false}
         showLocationPill={false}
+        showSearch={showHeaderSearch}
+        searchReplacement={headerSearchReplacement}
         beforeCategories={categoryRow}
         afterSearch={moduleSubNavRow}
       />
@@ -1594,7 +1601,7 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
   };
 
   const heroModuleIds = showEditorial
-    ? (["financeWeather", "headlineGrid"].filter((id) => modOn(id as SadeNewsPortalModuleId)) as SadeNewsPortalModuleId[])
+    ? (["headlineGrid"].filter((id) => modOn(id as SadeNewsPortalModuleId)) as SadeNewsPortalModuleId[])
     : [];
   const editorialModules = moduleOrder.filter((id) => id !== "financeWeather" && id !== "headlineGrid" && id !== "latestGrid" && id !== "popularSidebar");
   const listModuleIds = moduleOrder.filter((id) => id === "latestGrid" || id === "popularSidebar");
@@ -1607,10 +1614,17 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
     </div>
   ) : null;
 
+  const headerFinanceTicker =
+    modOn("financeWeather") && (showFinance || showWeather) ? (
+      <SadeFinanceWeatherStrip showFinance={showFinance} showWeather={showWeather} variant="header" />
+    ) : null;
+
   return (
     <Shell
       staticLocationLabel="Türkiye"
       searchPlaceholder="Haberlerde ara"
+      showHeaderSearch={false}
+      headerSearchReplacement={headerFinanceTicker}
       subHeader={categoryNav}
       heroChrome={Boolean(newsHeroExtension)}
       heroExtension={newsHeroExtension}
