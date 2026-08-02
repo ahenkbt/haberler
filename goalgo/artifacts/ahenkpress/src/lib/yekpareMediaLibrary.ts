@@ -42,8 +42,16 @@ export function appendYekpareCustomMedia(item: YekpareMediaItem): void {
   persistYekpareCustomMedia([item, ...cur.filter((x) => x.url !== item.url)]);
 }
 
+function isTurkEcoAdminPanelPath(): boolean {
+  if (typeof window === "undefined") return false;
+  const p = (window.location.pathname || "").replace(/\/+$/, "") || "/";
+  return p === "/admin" || p.startsWith("/admin/");
+}
+
 function mediaUploadHeaders(): Record<string, string> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
+  /** turk.eco panel: HM JWT önceliği oturum çerezini geçersiz kılar → 401 yükleme. */
+  if (isTurkEcoAdminPanelPath()) return headers;
   const editorJwt = readHmJwt();
   if (editorJwt) {
     headers.Authorization = `Bearer ${editorJwt}`;

@@ -13,6 +13,7 @@ import {
   resolveHmNewsVideoTvEnabled,
   resolveHeaderPreset,
   resolveHmNavStripTransparent,
+  hasHmConfiguredVideoTvNavLink,
 } from "@/lib/newsSiteLayout";
 import { HmNewsCategoriesDropdown } from "@/components/HmNewsCategoriesDropdown";
 import { useHmPublicNewsCategoryMenu } from "@/hooks/useHmPublicNewsCategoryMenu";
@@ -282,8 +283,11 @@ export function HmPublicNewsNavStrip({
     ? resolveHmCorporateRequestFormEnabled(layoutPrefs)
     : resolveHmNewsRequestFormEnabled(layoutPrefs);
   const videoTvEnabled = resolveHmNewsVideoTvEnabled(layoutPrefs);
-  /** KH: /video sayfası açık; menüde Video linki gösterilmez. */
-  const showHubVideoTvLink = videoTvEnabled && videoTvAllowed && !isKhHmSite(hostKey, hmSlug);
+  const khSite = isKhHmSite(hostKey, hmSlug);
+  const userVideoInMenu = hasHmConfiguredVideoTvNavLink(layoutPrefs);
+  /** KH: otomatik Video hub yok; editörün eklediği /video menü öğesi gösterilir. */
+  const showHubVideoTvLink =
+    videoTvEnabled && videoTvAllowed && (!khSite || userVideoInMenu);
 
   const contained = isHmHeaderChromeContained(layoutPrefs);
   const headerPreset = resolveHeaderPreset(layoutPrefs);

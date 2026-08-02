@@ -611,8 +611,8 @@ async function repairSuDomainOnNeon(sql) {
 }
 
 /**
- * KH: Video TV sayfası açık kalır; üst menüden Video bağlantısını kaldırır.
- * Rev: hmKhVideoMenuRev — bir kerelik menü temizliği.
+ * KH: Video TV sayfası açık kalır; editörün menüye eklediği /video öğeleri korunur.
+ * Eski rev menüden Video'yu siliyordu — yeni rev yalnızca bayrak senkronu.
  */
 async function ensureKhVideoMenuOnRow(sql, row) {
   if (!row) return row;
@@ -625,7 +625,7 @@ async function ensureKhVideoMenuOnRow(sql, row) {
     hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
   if (!isKh) return row;
 
-  const REV = "kh-video-menu-off-20260729a";
+  const REV = "kh-video-menu-user-20260802a";
   let layout = {};
   try {
     layout = row.layout_json ? JSON.parse(String(row.layout_json)) : {};
@@ -635,25 +635,7 @@ async function ensureKhVideoMenuOnRow(sql, row) {
   if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
   if (layout.hmKhVideoMenuRev === REV) return row;
 
-  const items = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
-  const isVideoItem = (item) => {
-    const href = String(item?.href ?? "").trim().toLowerCase();
-    const label = String(item?.label ?? "")
-      .trim()
-      .toLocaleLowerCase("tr-TR");
-    const id = String(item?.id ?? "").trim().toLowerCase();
-    return (
-      id === "menu-video-tv" ||
-      id.includes("video-tv") ||
-      label === "video" ||
-      label.includes("video tv") ||
-      href === "/video" ||
-      /\/video(?:-tv)?(?:\/|$|\?)/.test(href)
-    );
-  };
-  const nextItems = items.filter((item) => !isVideoItem(item));
-  let changed = nextItems.length !== items.length;
-
+  let changed = false;
   if (layout.hmNewsVideoTvEnabled === false) {
     // kullanıcı kapattıysa dokunma
   } else if (layout.hmNewsVideoTvEnabled !== true) {
@@ -664,10 +646,9 @@ async function ensureKhVideoMenuOnRow(sql, row) {
   layout.hmKhVideoMenuRev = REV;
   changed = true;
 
-  if (!changed && nextItems === items) return row;
+  if (!changed) return row;
   const next = {
     ...layout,
-    hmCorporateMenuItems: nextItems,
     hmNewsVideoTvEnabled: layout.hmNewsVideoTvEnabled === false ? false : true,
     hmKhVideoMenuRev: REV,
   };

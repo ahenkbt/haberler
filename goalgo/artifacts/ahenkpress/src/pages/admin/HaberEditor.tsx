@@ -441,6 +441,13 @@ export default function HaberEditor() {
           onSuccess: () => {
             afterSave();
           },
+          onError: (err: Error) => {
+            toast({
+              title: "Kayıt başarısız",
+              description: err.message?.slice(0, 220) || "Haber güncellenemedi.",
+              variant: "destructive",
+            });
+          },
         },
       );
     } else {
@@ -449,6 +456,13 @@ export default function HaberEditor() {
         {
           onSuccess: () => {
             afterSave();
+          },
+          onError: (err: Error) => {
+            toast({
+              title: "Kayıt başarısız",
+              description: err.message?.slice(0, 220) || "Haber oluşturulamadı.",
+              variant: "destructive",
+            });
           },
         },
       );
