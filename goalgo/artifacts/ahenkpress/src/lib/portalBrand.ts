@@ -28,8 +28,8 @@ export const PWA_STORE_TAGLINE = "Haber, video ve Newsmap";
 export const PWA_APP_NAME = "Türk Ekosistemi";
 
 /** Varsayılan portal logosu ve sekme ikonu (public/portal-brand). */
-export const PORTAL_DEFAULT_LOGO_PATH = "/portal-brand/logo1.png?v=2";
-export const PORTAL_DEFAULT_FAVICON_PATH = "/portal-brand/icon.png?v=2";
+export const PORTAL_DEFAULT_LOGO_PATH = "/portal-brand/logo1.png?v=3";
+export const PORTAL_DEFAULT_FAVICON_PATH = "/portal-brand/icon.png?v=3";
 
 /** Eski YEKPARE / TURKNET görselleri — site_settings’te kalsa bile yeni markaya düş. */
 export function isLegacyPortalBrandAssetUrl(url: string | null | undefined): boolean {
@@ -40,7 +40,12 @@ export function isLegacyPortalBrandAssetUrl(url: string | null | undefined): boo
     t.includes("yekpare_super_app") ||
     t.includes("turknet.app") ||
     t.includes("/yekpare-logo") ||
-    (t.includes("yekpare") && t.includes("logo") && !t.includes("portal-brand"))
+    t.includes("icon-512.png") ||
+    t.includes("apple-touch-icon") ||
+    t.includes("/opengraph.jpg") ||
+    (t.includes("yekpare") && t.includes("logo") && !t.includes("portal-brand")) ||
+    (t.includes("goalgo") && (t.includes("logo") || t.includes("brand"))) ||
+    (t.includes("turknet") && t.includes("logo"))
   );
 }
 export const PWA_ICON_PATH = PORTAL_DEFAULT_FAVICON_PATH;

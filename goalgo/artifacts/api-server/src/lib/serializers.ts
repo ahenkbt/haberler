@@ -26,6 +26,12 @@ import {
   KOSE_ARTICLE_CATEGORY_SLUG,
 } from "./kose-article.js";
 import { parseNavMenuItems, serializeNavMenuItems } from "@workspace/site-nav";
+import {
+  PORTAL_DEFAULT_FAVICON_PATH,
+  PORTAL_DEFAULT_LOGO_PATH,
+  sanitizePortalBrandFaviconUrl,
+  sanitizePortalBrandLogoUrl,
+} from "./portal-brand-assets.js";
 
 export type NewsContext = {
   categories: Map<number, Category>;
@@ -322,8 +328,9 @@ export function serializeSettings(row: SiteSettingsRow) {
     mainNavJson: row.mainNavJson
       ? serializeNavMenuItems(parseNavMenuItems(row.mainNavJson))
       : null,
-    logoUrl: row.logoUrl ?? null,
-    faviconUrl: row.faviconUrl ?? null,
+    logoUrl: sanitizePortalBrandLogoUrl(row.logoUrl) ?? PORTAL_DEFAULT_LOGO_PATH,
+    faviconUrl:
+      sanitizePortalBrandFaviconUrl(row.faviconUrl, row.logoUrl) ?? PORTAL_DEFAULT_FAVICON_PATH,
     footerNavJson: row.footerNavJson ?? null,
     footerLegalLinksJson: row.footerLegalLinksJson ?? null,
     footerInfoLinksJson: extraFooter.footerInfoLinksJson ?? null,

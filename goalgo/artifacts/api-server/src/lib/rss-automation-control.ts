@@ -7,16 +7,16 @@ import { startAiRssScheduler } from "./aiRssScheduler.js";
 import { startPortalRssScheduler } from "./portal-rss-scheduler.js";
 
 /**
- * RSS arka plan otomasyonu — varsayılan KAPALI (sunucu açılışında çalışmaz).
- * Admin düğmesiyle açıldığında günde 3 kez otomatik RSS çekimi çalışır (AI kuyruğu ayrıdır).
+ * RSS arka plan otomasyonu — site_settings boşsa varsayılan AÇIK; RSS_AUTOMATION=0 ile kapatılır.
+ * Günde 3 kez otomatik RSS çekimi + haber tablosuna aktarım (AI kuyruğu ayrıdır).
  *
- * Zamanlama: 01:00, 09:00, 18:00 Europe/Istanbul (UTC+3 sabit; Türkiye yaz saati yok).
+ * Zamanlama: 09:00, 15:00, 21:00 Europe/Istanbul (UTC+3 sabit; Türkiye yaz saati yok).
  * Gündüz test için: RSS_AUTOMATION_ALL_DAY=1
  * Manuel «Önbelleği yenile» / «Çalıştır» uçları slot dışında da anında çalışır.
  *
  * Ayar: site_settings.background_jobs_json → { rssAutomationEnabled: boolean }
  */
-export const RSS_SCHEDULED_HOURS_TR = [1, 9, 18] as const;
+export const RSS_SCHEDULED_HOURS_TR = [9, 15, 21] as const;
 /** Planlı slotta tick penceresi (dakika) — tüm saat boyunca değil, yalnızca slot başı. */
 export const RSS_SCHEDULED_SLOT_WINDOW_MIN = 20;
 const RSS_TZ_OFFSET_MIN = 3 * 60;
@@ -62,18 +62,17 @@ function ensureBackgroundJobsSchema(): Promise<void> {
 
 function parseBackgroundJobsJson(raw: unknown): RssAutomationSettings {
   if (typeof raw !== "string" || !raw.trim()) {
-    return { rssAutomationEnabled: false };
+    return { rssAutomationEnabled: true };
   }
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const enabled = parsed.rssAutomationEnabled;
     return {
       rssAutomationEnabled:
-        typeof parsed.rssAutomationEnabled === "boolean"
-          ? parsed.rssAutomationEnabled
-          : false,
+        typeof enabled === "boolean" ? enabled : true,
     };
   } catch {
-    return { rssAutomationEnabled: false };
+    return { rssAutomationEnabled: true };
   }
 }
 
@@ -247,6 +246,13 @@ function startRssAutomationSchedulers(log: Logger): () => void {
 
 /** index.ts: DB'de rssAutomationEnabled=true ise zamanlayıcıları başlatır. */
 export async function bootstrapRssAutomationFromSettings(log: Logger): Promise<(() => void) | null> {
+  if (process.env.RSS_AUTOMATION !== "0") {
+    const settings = await getRssAutomationSettings();
+    if (!settings.rssAutomationEnabled) {
+      await setRssAutomationEnabled(true, log);
+      log.info("[rss-automation] site ayarı kapalıydı — portal RSS otomasyonu açıldı (09:00, 15:00, 21:00 TR)");
+    }
+  }
   const shouldRun = await isRssAutomationEnabledInDbOrEnv();
   if (!shouldRun) {
     log.info(

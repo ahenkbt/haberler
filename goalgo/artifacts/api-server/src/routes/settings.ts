@@ -23,6 +23,7 @@ import {
   serializeSeoVerificationJson,
   normalizeHostKey,
 } from "../lib/seo-verification";
+import { isLegacyPortalBrandAssetUrl } from "../lib/portal-brand-assets";
 
 const router: IRouter = Router();
 let ensuredExtraSettingsCols = false;
@@ -91,6 +92,8 @@ async function ensurePortalBrandAndModuleTrim() {
       .select({
         id: siteSettingsTable.id,
         siteName: siteSettingsTable.siteName,
+        logoUrl: siteSettingsTable.logoUrl,
+        faviconUrl: siteSettingsTable.faviconUrl,
         modulesEnabledJson: siteSettingsTable.modulesEnabledJson,
         mainNavJson: siteSettingsTable.mainNavJson,
         footerNavJson: siteSettingsTable.footerNavJson,
@@ -129,6 +132,12 @@ async function ensurePortalBrandAndModuleTrim() {
       ],
     });
     patch.footerNavJson = JSON.stringify(["haberler", "yektube", "haritalar", "iletisim"]);
+    if (isLegacyPortalBrandAssetUrl(row.logoUrl)) {
+      patch.logoUrl = null;
+    }
+    if (isLegacyPortalBrandAssetUrl(row.faviconUrl)) {
+      patch.faviconUrl = null;
+    }
     if (Object.keys(patch).length > 0) {
       await db.update(siteSettingsTable).set(patch).where(eq(siteSettingsTable.id, row.id));
     }
