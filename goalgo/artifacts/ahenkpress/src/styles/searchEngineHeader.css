@@ -161,7 +161,7 @@
   width: auto;
   height: var(--seh-brand-logo-height, 7.25rem);
   max-height: 8rem;
-  aspect-ratio: 1;
+  aspect-ratio: auto;
   object-fit: contain;
   border-radius: 0.85rem;
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.14);

@@ -31,14 +31,14 @@ export function YekpareBrandLogo({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="Yekpare ana sayfa"
+      aria-label="turk.eco ana sayfa"
     >
       <img
         src={YEKPARE_BRAND_LOGO_SRC}
-        alt="Yekpare Super App"
+        alt="turk.eco — haber video portalı"
         className="yekpare-brand-logo-img seh-header-brand-logo-img"
-        width={compact ? 48 : 120}
-        height={compact ? 48 : 120}
+        width={compact ? 44 : 96}
+        height={compact ? 44 : 96}
         decoding="async"
         fetchPriority={compact ? "auto" : "high"}
       />

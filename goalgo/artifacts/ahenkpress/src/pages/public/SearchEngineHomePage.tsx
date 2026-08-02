@@ -10,13 +10,14 @@ import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { UNIFIED_SEARCH_PATH } from "@/lib/kesfetDiscoverHub";
 import { applyJsonLd, applyPortalSiteSeo, buildYekpareWebSiteJsonLd } from "@/lib/pageSeo";
 import { PORTAL_HOST, PORTAL_ORIGIN } from "@/lib/portalBrand";
+import { YEKPARE_SUPER_APP_LOGO_SRC } from "@/components/SearchEngineHeroBrandLogo";
 import { apiRequest } from "@/lib/queryClient";
 import { yektubeWatchPath } from "@/lib/yektubeUrls";
 
 import "@/styles/turkecoYandexHome.css";
 
 const HOME_BRAND = "turk.eco";
-const HOME_TAGLINE = "Haberler ve videolar — tek aramada.";
+const HOME_TAGLINE = "haber video portalı";
 
 type NewsRow = {
   id: number;
@@ -153,10 +154,15 @@ export default function SearchEngineHomePage() {
 
       <section className="tec-hero" aria-label="Arama">
         <Link href="/" className="tec-brand" aria-label={`${HOME_BRAND} ana sayfa`}>
-          <div className="tec-brand-mark">
-            turk<span>.eco</span>
-          </div>
-          <p className="tec-brand-tag">{HOME_TAGLINE}</p>
+          <img
+            src={YEKPARE_SUPER_APP_LOGO_SRC}
+            alt={`${HOME_BRAND} — ${HOME_TAGLINE}`}
+            className="tec-brand-logo"
+            width={280}
+            height={280}
+            decoding="async"
+            fetchPriority="high"
+          />
         </Link>
 
         <div className="tec-search-wrap">
