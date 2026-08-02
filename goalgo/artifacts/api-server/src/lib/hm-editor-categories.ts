@@ -3,7 +3,7 @@ import { categoriesTable, getNewsDbForRead, hmNewsSitesTable } from "@workspace/
 import { normalizeNewsCategorySlug } from "./categorySort";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG, isHmOptInNewsCategorySlug } from "./hm-global-news-category.js";
 import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
-import { filterCorporatePublicCategoryRows } from "./hm-corporate-news-policy.js";
+import { filterCorporatePublicCategoryRows, VKD_PUBLIC_NEWS_CATEGORY_SLUGS } from "./hm-corporate-news-policy.js";
 
 /** layoutJson.hmActivatedCategorySlugs → normalize edilmiş, tekilleştirilmiş slug listesi. */
 export function parseHmActivatedCategorySlugs(layout: Record<string, unknown>): string[] {
@@ -119,6 +119,9 @@ export function filterHmPublicCategoryRows<
     .map((c) => normalizeNewsCategorySlug(c.slug))
     .filter(Boolean);
   const activeGlobal = resolveHmPublicActiveGlobalSlugs(layout, globalSlugs);
+  const corporateOnlyGlobalSlugs = new Set(
+    [...VKD_PUBLIC_NEWS_CATEGORY_SLUGS, "kurumsal"].map((s) => normalizeNewsCategorySlug(s)).filter(Boolean),
+  );
 
   return categories.filter((c) => {
     const dbSlug = normalizeNewsCategorySlug(c.slug);
@@ -126,6 +129,8 @@ export function filterHmPublicCategoryRows<
     if (hiddenSlugs.has(dbSlug) || hiddenSlugs.has(cleanSlug)) return false;
     if (c.exclusiveSiteId === siteId) return true;
     if (c.exclusiveSiteId == null) {
+      const slug = cleanSlug || dbSlug;
+      if (slug && corporateOnlyGlobalSlugs.has(slug)) return false;
       return activeGlobal.has(dbSlug) || activeGlobal.has(cleanSlug);
     }
     return false;

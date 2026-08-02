@@ -494,6 +494,7 @@ export function SearchEngineHeader({
   const subNavAlign = subNavAlignProp ?? "center";
   const isMobileSerp = isMobile && mode === "serp";
   const showInlineUtilities = !isMobileSerp;
+  const mobileTickerBelowLogo = isMobileSerp && !showSearch && Boolean(searchReplacement);
 
   const contentBeforeLocation = beforeLocationRow ?? beforeCategories;
 
@@ -554,12 +555,22 @@ export function SearchEngineHeader({
         <div className="seh-before-search">{contentBeforeLocation}</div>
       ) : null}
 
-      <div className="seh-search-utilities-row">
-        <div className={`seh-search-block${!showSearch && searchReplacement ? " seh-search-block--replacement" : ""}`}>
-          {showSearch ? searchForm : searchReplacement}
+      {showSearch || !mobileTickerBelowLogo ? (
+        <div className="seh-search-utilities-row">
+          <div
+            className={`seh-search-block${!showSearch && searchReplacement && !mobileTickerBelowLogo ? " seh-search-block--replacement" : ""}`}
+          >
+            {showSearch ? searchForm : mobileTickerBelowLogo ? null : searchReplacement}
+          </div>
+          {isMobileSerp ? (mobileTickerBelowLogo ? null : <MobileHeaderMenu />) : utilitiesBlock}
         </div>
-        {isMobileSerp ? <MobileHeaderMenu /> : utilitiesBlock}
-      </div>
+      ) : null}
+
+      {mobileTickerBelowLogo ? (
+        <div className="seh-mobile-ticker-below-logo" aria-label="Piyasa ve hava">
+          {searchReplacement}
+        </div>
+      ) : null}
 
       {resolvedSubNav ? (
         <SearchEngineLocationSubNavRow
@@ -622,9 +633,19 @@ export function SearchEngineHeader({
   );
 
   const brandSearchRow = (
-    <div className="seh-brand-search-row">
+    <div
+      className={[
+        "seh-brand-search-row",
+        mobileTickerBelowLogo ? "seh-brand-search-row--mobile-ticker-stack" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {brandLeading ? <div className="seh-brand-search-leading shrink-0">{brandLeading}</div> : null}
-      <SearchEngineHeaderBrandLogo className="seh-brand-search-logo" compact />
+      <div className="seh-brand-search-logo-row">
+        <SearchEngineHeaderBrandLogo className="seh-brand-search-logo" compact />
+        {mobileTickerBelowLogo ? <div className="seh-brand-search-logo-row__menu">{isMobileSerp ? <MobileHeaderMenu /> : null}</div> : null}
+      </div>
       <div className="seh-brand-search-column">{serpNavColumn}</div>
     </div>
   );

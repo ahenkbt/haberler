@@ -1495,6 +1495,45 @@ html[data-home-theme="night"] .yekpare-search-home .seh-home-footer {
 /* ── Anasayfa mobil (390px+) — Google tarzı, taşma yok ── */
 
 @media (max-width: 768px) {
+  .seh-brand-search-row--mobile-ticker-stack {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .seh-brand-search-row--mobile-ticker-stack .seh-brand-search-logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .seh-brand-search-row--mobile-ticker-stack .seh-brand-search-logo-row .seh-brand-search-logo {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .seh-brand-search-row--mobile-ticker-stack .seh-brand-search-logo-row__menu {
+    flex-shrink: 0;
+  }
+
+  .seh-brand-search-row--mobile-ticker-stack .seh-brand-search-column {
+    width: 100%;
+  }
+
+  .seh-brand-search-row--mobile-ticker-stack .seh-search-utilities-row:empty {
+    display: none;
+  }
+
+  .seh-mobile-ticker-below-logo {
+    width: 100%;
+    min-width: 0;
+    padding: 0 0.05rem 0.15rem;
+  }
+
   .yekpare-search-home {
     max-width: 100vw;
     overflow-x: hidden;

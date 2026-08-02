@@ -6,6 +6,14 @@ import { isVkdSiteSlug } from "@/lib/hmVkdFooterNav";
 
 export const VKD_PUBLIC_NEWS_CATEGORY_SLUGS = ["dernegimiz", "faaliyetlerimiz", "sehit-gazi"] as const;
 
+const EDITOR_STANDARD_CATEGORY_SLUGS = new Set(
+  HM_STANDARD_NEWS_CATEGORIES.map((c) => normalizeNewsCategorySlug(c.slug)).filter(Boolean),
+);
+
+const CORPORATE_ONLY_GLOBAL_CATEGORY_SLUGS = new Set(
+  [...VKD_PUBLIC_NEWS_CATEGORY_SLUGS, "kurumsal"].map((s) => normalizeNewsCategorySlug(s)).filter(Boolean),
+);
+
 /** layoutJson.hmNavHiddenCategorySlugs → vitrinde kapalı site kategorileri. */
 export function resolveHmPublicHiddenCategorySlugs(
   layoutPrefs: NewsSiteLayoutPrefs | null | undefined,
@@ -80,6 +88,7 @@ export function filterHmPublicCategoryRows<T extends { slug?: string; exclusiveS
       const slug = normalizeNewsCategorySlug(row.slug);
       if (!slug || hiddenSlugs.has(slug)) return false;
       if (isHmOptInNewsCategorySlug(slug)) return false;
+      if (EDITOR_STANDARD_CATEGORY_SLUGS.has(slug)) return false;
       return true;
     });
     if (isVkdSiteSlug(siteSlug)) {
@@ -95,13 +104,15 @@ export function filterHmPublicCategoryRows<T extends { slug?: string; exclusiveS
     .filter(Boolean);
   const activeGlobalSlugs = resolveHmPublicActiveGlobalSlugs(layoutPrefs, globalSlugs);
 
-  return rows.filter((row) =>
-    isHmPublicCategorySlugVisible(row.slug, {
+  return rows.filter((row) => {
+    const slug = normalizeNewsCategorySlug(row.slug);
+    if (row.exclusiveSiteId == null && slug && CORPORATE_ONLY_GLOBAL_CATEGORY_SLUGS.has(slug)) return false;
+    return isHmPublicCategorySlugVisible(row.slug, {
       layoutPrefs,
       hiddenSlugs,
       activeGlobalSlugs,
       exclusiveSiteId: row.exclusiveSiteId,
       siteId,
-    }),
-  );
+    });
+  });
 }

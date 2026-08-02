@@ -28,8 +28,21 @@ export const PWA_STORE_TAGLINE = "Haber, video ve Newsmap";
 export const PWA_APP_NAME = "Türk Ekosistemi";
 
 /** Varsayılan portal logosu ve sekme ikonu (public/portal-brand). */
-export const PORTAL_DEFAULT_LOGO_PATH = "/portal-brand/logo1.png";
-export const PORTAL_DEFAULT_FAVICON_PATH = "/portal-brand/icon.png";
+export const PORTAL_DEFAULT_LOGO_PATH = "/portal-brand/logo1.png?v=2";
+export const PORTAL_DEFAULT_FAVICON_PATH = "/portal-brand/icon.png?v=2";
+
+/** Eski YEKPARE / TURKNET görselleri — site_settings’te kalsa bile yeni markaya düş. */
+export function isLegacyPortalBrandAssetUrl(url: string | null | undefined): boolean {
+  const t = String(url ?? "").trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes("yekpare-super-app") ||
+    t.includes("yekpare_super_app") ||
+    t.includes("turknet.app") ||
+    t.includes("/yekpare-logo") ||
+    (t.includes("yekpare") && t.includes("logo") && !t.includes("portal-brand"))
+  );
+}
 export const PWA_ICON_PATH = PORTAL_DEFAULT_FAVICON_PATH;
 
 /** Eski DB / seed / geçiş dönemi metinlerini kullanıcıya Türk Ekosistemi olarak gösterir. */

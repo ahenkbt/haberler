@@ -8402,3 +8402,18 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
     background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.55) 55%, rgba(0, 0, 0, 0) 100%);
   }
 }
+
+/* Kurumsal — tepe manşet header bandına sıfır, düz köşe */
+.hm-corporate-tepe-manset-wrap {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.hm-corporate-tepe-manset-wrap .hm-tepe-manset {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 16rem;
+}

@@ -324,14 +324,25 @@ export function HmPublicNewsNavStrip({
     ? { background: "transparent", color: videoTvPlainText }
     : categoryTriggerStyle;
   const useEditorHeaderMenu = hasConfiguredHmHeaderMenu(layoutPrefs);
-  const standardNavItems: NavMenuItem[] = buildEditorStandardNewsNavItems({
-    layoutPrefs: layoutPrefs!,
-    h,
-    siteSlug: hmSlug,
-    locPath,
-    showVideoTvLink: showHubVideoTvLink,
-    newsAuthorsEnabled,
-  });
+  const standardNavItems: NavMenuItem[] = corporateNav
+    ? buildCorporateHeaderNavItems({
+        layoutPrefs: layoutPrefs!,
+        h,
+        siteSlug: hmSlug,
+        locPath,
+        showVideoTvLink: showHubVideoTvLink,
+        newsAuthorsEnabled,
+        newsRssEnabled,
+        requestFormEnabled,
+      })
+    : buildEditorStandardNewsNavItems({
+        layoutPrefs: layoutPrefs!,
+        h,
+        siteSlug: hmSlug,
+        locPath,
+        showVideoTvLink: showHubVideoTvLink,
+        newsAuthorsEnabled,
+      });
   const headerMenuItems: NavMenuItem[] = useEditorHeaderMenu
     ? buildCorporateHeaderNavItems({
         layoutPrefs: layoutPrefs!,
@@ -479,7 +490,7 @@ export function HmPublicNewsNavStrip({
       };
 
   const categoriesDropdown =
-    !useEditorHeaderMenu && categoryMenuItems.length ? (
+    !useEditorHeaderMenu && !corporateNav && categoryMenuItems.length ? (
     <HmNewsCategoriesDropdown
       items={categoryMenuItems}
       triggerStyle={dropdownTriggerStyle}

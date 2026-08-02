@@ -94,7 +94,7 @@ import { CULTURE_PORTAL_ITEMS, HM_WAR_PAGES, NATIONAL_DAY_HIGHLIGHTS, corporateW
 import { HM_LAYOUT_UPDATED_EVENT } from "@/lib/hmLayoutUpdatedEvent";
 import { resolveSadeAccent, SADE_PUBLIC_POST_HERO_BODY_CLASS, YEKPARE_SADE_ACCENT } from "@/lib/yekpareSadeTheme";
 import { sortHmCategoriesForNav } from "@/lib/hmCategoryNav";
-import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
+import { hmSiteContentShellClass, normalizeHmChromeHex, resolveHmHeaderBandBackgroundStyle } from "@/lib/hmChromeLayout";
 import { isHmPublicNavExternal, normalizeHmPublicExternalHref } from "@/lib/hmPublicLinks";
 import {
   buildClassicHeadlineSliderPool,
@@ -4329,21 +4329,25 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   if (isCorporateTheme) {
     const corporateTepeMansetEnabled = resolveHmNewsEditorModuleEnabled(layoutPrefs, "tepeManset", { portalHubOnly });
+    const corporateTepeBgStyle: CSSProperties = {
+      ...resolveHmHeaderBandBackgroundStyle(
+        layoutPrefs,
+        normalizeHmChromeHex(layoutPrefs.hmLogoBarBackground ?? null),
+      ),
+    };
     return (
       <>
         {corporateTepeMansetEnabled && tepeMansetItems.length > 0 ? (
           <div
             className="hm-vitrin-home hm-corporate-tepe-manset-wrap min-h-0"
             data-hm-vitrin-theme="corporate"
-            style={{ background: "var(--hm-page-bg, #ffffff)" }}
+            style={corporateTepeBgStyle}
           >
-            <div className={hmVitrinContentShell("pt-3")}>
-              <HmTepeManset
-                items={tepeMansetItems}
-                getItemHref={(n) => hybridNewsItemHref(n, h)}
-                accent={accent}
-              />
-            </div>
+            <HmTepeManset
+              items={tepeMansetItems}
+              getItemHref={(n) => hybridNewsItemHref(n, h)}
+              accent={accent}
+            />
           </div>
         ) : null}
       <HmCorporateHome
