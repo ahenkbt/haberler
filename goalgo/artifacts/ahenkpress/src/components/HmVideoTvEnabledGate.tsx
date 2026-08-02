@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
-import { Link } from "wouter";
+import { Link, Redirect } from "wouter";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
-import { isHmNewsVideoTvFlagEnabled } from "@/lib/newsSiteLayout";
+import { normalizeHmVitrinTheme, resolveHmNewsVideoTvEnabled } from "@/lib/newsSiteLayout";
 
 /** Video TV kapalıysa bilgi mesajı; açıksa çocukları render eder. */
 export function HmVideoTvEnabledGate({ children }: { children: ReactNode }) {
   const ctx = useHmPublicLinkContextOptional();
-  const enabled = isHmNewsVideoTvFlagEnabled(ctx?.layoutPrefs);
+  const enabled = resolveHmNewsVideoTvEnabled(ctx?.layoutPrefs);
+  const isCorporateSite = normalizeHmVitrinTheme(ctx?.layoutPrefs?.hmVitrinTheme) === "corporate";
 
   if (!ctx) {
     return (
@@ -17,6 +18,9 @@ export function HmVideoTvEnabledGate({ children }: { children: ReactNode }) {
   }
 
   if (!enabled) {
+    if (isCorporateSite) {
+      return <Redirect to="/" replace />;
+    }
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 px-6 text-center text-sm text-slate-600">
         <p className="font-medium text-slate-800">Video TV bu sitede devre dışı.</p>

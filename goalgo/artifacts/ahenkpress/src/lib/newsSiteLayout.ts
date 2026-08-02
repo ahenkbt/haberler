@@ -2885,6 +2885,7 @@ export function isHmNewsVideoTvFlagEnabled(p: NewsSiteLayoutPrefs | null | undef
 
 /** HABER vitrinde Video TV / Yektube (yekpare.net/yp) modülü açık mı? */
 export function resolveHmNewsVideoTvEnabled(p: NewsSiteLayoutPrefs | null | undefined): boolean {
+  if (normalizeHmVitrinTheme(p?.hmVitrinTheme) === "corporate") return false;
   if (isHmNewsVideoTvFlagEnabled(p)) return true;
   return hasHmConfiguredVideoTvNavLink(p);
 }
