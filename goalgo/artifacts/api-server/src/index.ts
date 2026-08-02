@@ -55,6 +55,7 @@ import { seedGeliverMerchantCatalogIfNeeded } from "./lib/merchant-rss-import.js
 import { ensureRssCampaignSchema } from "./lib/ensure-rss-campaign-schema.js";
 import { scheduleHmYekpareNewsStartupSync } from "./lib/hm-yekpare-news-sync.js";
 import { scheduleYektubeStartupRefresh } from "./routes/video.js";
+import { startYektubeVideoDailyScheduler } from "./lib/yektube-video-scheduler.js";
 import { bootstrapSiteMailboxFromEnv, startSiteMailboxAutoSync } from "./lib/siteMailbox.js";
 import { ensureGlobalMapNewsFeedsSeeded } from "./lib/global-map-news-feeds.js";
 import { getMediaUploadRoot } from "./lib/mediaUploadRoot";
@@ -304,6 +305,12 @@ const server = app.listen(port, listenHost, (err) => {
     }, Number(process.env.YEKTUBE_STARTUP_REFRESH_DELAY_MS) || 25_000).unref();
   } else {
     logger.info("[yektube] YEKTUBE_STARTUP_REFRESH=0 veya Render — startup refresh atlandı");
+  }
+
+  if (envJobFlag("YEKTUBE_NIGHT_SYNC", true)) {
+    schedulerStops.push(startYektubeVideoDailyScheduler(logger));
+  } else {
+    logger.info("[yektube-scheduler] YEKTUBE_NIGHT_SYNC=0 — günlük 01:00 senkron kapalı");
   }
 
   scheduleTrAddressAutoImport();

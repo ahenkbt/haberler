@@ -11,6 +11,7 @@ import { UNIFIED_SEARCH_PATH } from "@/lib/kesfetDiscoverHub";
 import { applyJsonLd, applyPortalSiteSeo, buildYekpareWebSiteJsonLd } from "@/lib/pageSeo";
 import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
 import { fetchHybridNewsList, type HomeHybridNewsItem } from "@/hooks/useHomeHybridNews";
+import { triggerYektubeBackgroundRefresh } from "@/lib/yektubeBackgroundRefresh";
 import { PORTAL_HOST, PORTAL_ORIGIN } from "@/lib/portalBrand";
 import { yektubeWatchPath } from "@/lib/yektubeUrls";
 
@@ -113,6 +114,7 @@ export default function SearchEngineHomePage() {
       tagline: HOME_TAGLINE,
     });
     applyJsonLd(buildYekpareWebSiteJsonLd());
+    triggerYektubeBackgroundRefresh();
   }, []);
 
   useEffect(() => {

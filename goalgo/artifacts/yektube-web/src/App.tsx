@@ -33,6 +33,7 @@ import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { useYektubeModules } from "@/hooks/useYektubeModules";
 import { ytMainRoute, ytRouterBase, ytRoutes } from "@/lib/routes";
 import { markYektubeAppReady, useYektubePortalFallback } from "@/hooks/useYektubePortalFallback";
+import { triggerYektubeBackgroundRefresh } from "@/lib/yektubeBackgroundRefresh";
 
 function MusicRoute() {
   const modules = useYektubeModules();
@@ -211,6 +212,7 @@ export default function App() {
   useLayoutEffect(() => {
       markYektubeAppReady();
       (window as Window & { __YEKTUBE_READY__?: boolean }).__YEKTUBE_READY__ = true;
+      triggerYektubeBackgroundRefresh();
   }, []);
   const routerBase = ytRouterBase();
   return (
