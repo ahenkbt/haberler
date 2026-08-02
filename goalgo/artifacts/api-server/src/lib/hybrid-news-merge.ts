@@ -5,6 +5,7 @@ import {
   excludeCorporateOriginCentralNewsSql,
   loadCorporateHmSiteIds,
 } from "./hm-yekpare-news-sync.js";
+import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
 import {
   centralNewsRowVisibleOnHmEditorSite,
   filterNonCorporateOriginCentralNewsItems,
@@ -36,13 +37,13 @@ import { ensureNewsPublicSubmissionColumns } from "./news-public-submission-sche
 import { PORTAL_ORIGIN } from "./portalBrand.js";
 import { buildYekparePortalArticleUrl } from "./site-public-origin.js";
 import {
+  findAllCategoryIdsByCanonicalSlug,
   findPortalCategoryIdsBySlug,
-  findPortalGlobalCategoryBySlug,
   loadHmSiteSlugPrefixes,
   normalizePortalCategoryFields,
   normalizePortalCategorySlug,
-  portalCategorySlugMatches,
 } from "./portal-category-slug.js";
+import { rssCategorySlugsMatch } from "./hm-rss-category-aliases.js";
 import { portalRssTitleKey, portalRssInternalHref, type PortalRssItem } from "./portal-rss-fetch.js";
 import {
   filterGlobalCategoryNewsItems,
@@ -155,25 +156,29 @@ export function shouldApplyActivatedPoolCategoryFilter(categorySlug?: string | n
   return !normalizePortalCategorySlug(categorySlug);
 }
 
-export async function findCategoryForScope(categorySlug: string, siteId: number | null): Promise<{ id: number } | null> {
+export async function findCategoryIdsForScope(
+  categorySlug: string,
+  siteId: number | null,
+): Promise<number[]> {
   const slug = normalizePortalCategorySlug(categorySlug);
-  if (!slug) return null;
-  if (siteId == null) {
-    return findPortalGlobalCategoryBySlug(slug);
-  }
-  const siteSlugs = await loadHmSiteSlugPrefixes();
+  if (!slug) return [];
+  const allIds = await findAllCategoryIdsByCanonicalSlug(slug);
+  if (!allIds.length) return [];
+  if (siteId == null) return allIds;
   const rows = await getNewsDbForRead()
-    .select({ id: categoriesTable.id, exclusiveSiteId: categoriesTable.exclusiveSiteId, slug: categoriesTable.slug })
+    .select({ id: categoriesTable.id, exclusiveSiteId: categoriesTable.exclusiveSiteId })
     .from(categoriesTable)
-    .where(or(isNull(categoriesTable.exclusiveSiteId), eq(categoriesTable.exclusiveSiteId, siteId))!);
-  const siteExclusive = rows.find(
-    (row) =>
-      row.exclusiveSiteId === siteId &&
-      portalCategorySlugMatches(slug, String(row.slug ?? ""), siteSlugs),
-  );
-  if (siteExclusive) return { id: siteExclusive.id };
-  const globalIds = await findPortalCategoryIdsBySlug(slug);
-  return globalIds.length > 0 ? { id: globalIds[0]! } : null;
+    .where(inArray(categoriesTable.id, allIds));
+  const scoped = rows
+    .filter((row) => row.exclusiveSiteId == null || row.exclusiveSiteId === siteId)
+    .map((row) => row.id);
+  return scoped.length > 0 ? scoped : allIds;
+}
+
+export async function findCategoryForScope(categorySlug: string, siteId: number | null): Promise<{ id: number } | null> {
+  const ids = await findCategoryIdsForScope(categorySlug, siteId);
+  const first = ids[0];
+  return first != null ? { id: first } : null;
 }
 
 function dbToHybrid(item: DbSerialized, source: "db" | "author" = "db", rssImageUrl?: string | null): HybridNewsItem {
@@ -428,6 +433,19 @@ export async function loadEditorScopedDbNews(opts: {
       if (ref.startsWith("yekpare-hm-sync:")) return false;
       // Havuz alımı kapalıysa onaylı havuz kopyaları da gelmesin.
       if (!poolReceiveEnabled && ref.startsWith("yekpare-hm-pool:")) return false;
+      // Merkez havuz (site_id NULL) — yalnızca bu siteye ait kanıt varsa.
+      if (item.siteId == null) {
+        const owner = item.ownerSiteId;
+        if (owner != null && owner !== opts.siteId) return false;
+        if (owner == null) {
+          const pool = parseHmPoolRef(ref);
+          const sync = parseHmSyncDedupeKey(ref);
+          const belongs =
+            (pool != null && pool.siteId === opts.siteId) ||
+            (sync != null && sync.siteId === opts.siteId);
+          if (!belongs) return false;
+        }
+      }
       // Kesin kural: başka sitenin manuel/yerel satırı bu sitede çıkmaz.
       // (Onaylı yekpare-hm-pool kopyaları site_id=bu site olduğu için geçer.)
       if (isExternalManualEditorNewsForSite(item, opts.siteId)) return false;
@@ -435,6 +453,9 @@ export async function loadEditorScopedDbNews(opts: {
     });
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
     const wantSlug = String(opts.categorySlug ?? "").trim().toLowerCase();
+    if (wantSlug && wantSlug !== HM_GLOBAL_NEWS_CATEGORY_SLUG) {
+      items = items.filter((item) => rssCategorySlugsMatch(item.categorySlug, wantSlug));
+    }
     if (wantSlug === HM_GLOBAL_NEWS_CATEGORY_SLUG) {
       items = filterGlobalCategoryNewsItems(items);
     }
@@ -573,9 +594,9 @@ export async function loadHmSiteDbNews(opts: {
   }
 
   if (opts.categorySlug) {
-    const cat = await findCategoryForScope(opts.categorySlug, opts.siteId);
-    if (!cat) return { items: [], total: 0 };
-    conds.push(eq(newsTable.categoryId, cat.id));
+    const catIds = await findCategoryIdsForScope(opts.categorySlug, opts.siteId);
+    if (!catIds.length) return { items: [], total: 0 };
+    conds.push(catIds.length === 1 ? eq(newsTable.categoryId, catIds[0]!) : inArray(newsTable.categoryId, catIds));
   }
 
   const where = and(...conds);

@@ -1,4 +1,4 @@
-import { sql, and, eq, isNull, or, ilike, type SQL } from "drizzle-orm";
+import { sql, and, eq, isNull, or, type SQL } from "drizzle-orm";
 import {
   db,
   getNewsDbForPrimaryWrite,
@@ -14,23 +14,15 @@ export const SU_CANONICAL_SITE_ID = 2;
 
 export const SU_DEFAULT_EDITOR_EMAIL = "editor@suhaberajansi.com";
 
-/** Su Haber: site_id kopmuş manuel/manşet haberleri vitrinde göster (onarım tamamlanana kadar). */
+/** Su Haber: yalnızca site_id=2 veya kanıtlanmış Su kaynaklı yetim satırlar (merkez sızıntısı yok). */
 export function suSiteNewsScopeCondition(siteId: number): SQL {
   if (siteId !== SU_CANONICAL_SITE_ID) return eq(newsTable.siteId, siteId);
-  const localUpload = or(
-    ilike(newsTable.imageUrl, "%/api/media/uploads/%"),
-    ilike(newsTable.imageUrl, "/api/media/uploads/%"),
+  const suProvenance = or(
+    eq(newsTable.ownerSiteId, SU_CANONICAL_SITE_ID),
+    sql`coalesce(${newsTable.rssSourceUrl}, '') LIKE 'yekpare-hm-sync:2:%'`,
+    sql`coalesce(${newsTable.rssSourceUrl}, '') LIKE 'yekpare-hm-pool:2:%'`,
   )!;
-  const suOrphan = and(
-    isNull(newsTable.siteId),
-    or(
-      eq(newsTable.isEditorManual, true),
-      eq(newsTable.isFeatured, true),
-      eq(newsTable.isBreaking, true),
-      eq(newsTable.isSiteManset, true),
-    ),
-    localUpload,
-  )!;
+  const suOrphan = and(isNull(newsTable.siteId), suProvenance)!;
   return or(eq(newsTable.siteId, siteId), suOrphan)!;
 }
 
