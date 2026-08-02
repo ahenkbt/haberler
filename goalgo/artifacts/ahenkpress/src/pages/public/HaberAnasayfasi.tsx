@@ -95,7 +95,14 @@ import { CULTURE_PORTAL_ITEMS, HM_WAR_PAGES, NATIONAL_DAY_HIGHLIGHTS, corporateW
 import { HM_LAYOUT_UPDATED_EVENT } from "@/lib/hmLayoutUpdatedEvent";
 import { resolveSadeAccent, SADE_PUBLIC_POST_HERO_BODY_CLASS, YEKPARE_SADE_ACCENT } from "@/lib/yekpareSadeTheme";
 import { sortHmCategoriesForNav } from "@/lib/hmCategoryNav";
-import { hmSiteContentShellClass, normalizeHmChromeHex, resolveHmHeaderBandBackgroundStyle } from "@/lib/hmChromeLayout";
+import {
+  hmChromeContainedShellClass,
+  hmSiteContentShellClass,
+  isHmHeaderChromeContained,
+  isHmSiteLayoutContained,
+  normalizeHmChromeHex,
+  resolveHmHeaderBandBackgroundStyle,
+} from "@/lib/hmChromeLayout";
 import { isHmPublicNavExternal, normalizeHmPublicExternalHref } from "@/lib/hmPublicLinks";
 import {
   buildClassicHeadlineSliderPool,
@@ -4352,19 +4359,37 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         normalizeHmChromeHex(layoutPrefs.hmLogoBarBackground ?? null),
       ),
     };
+    const corporateTepeAlignedWithHeader =
+      isHmSiteLayoutContained(layoutPrefs) || isHmHeaderChromeContained(layoutPrefs);
     return (
       <>
         {corporateTepeMansetEnabled && tepeMansetItems.length > 0 ? (
           <div
-            className="hm-vitrin-home hm-corporate-tepe-manset-wrap min-h-0"
+            className={`hm-vitrin-home hm-corporate-tepe-manset-wrap min-h-0 w-full min-w-0 overflow-x-clip${
+              corporateTepeAlignedWithHeader ? " hm-corporate-tepe-manset-wrap--contained-outer" : ""
+            }`}
             data-hm-vitrin-theme="corporate"
-            style={corporateTepeBgStyle}
           >
-            <HmTepeManset
-              items={tepeMansetItems}
-              getItemHref={(n) => hybridNewsItemHref(n, h)}
-              accent={accent}
-            />
+            {corporateTepeAlignedWithHeader ? (
+              <div
+                className={hmChromeContainedShellClass("hm-corporate-tepe-manset-wrap__plate min-w-0")}
+                style={corporateTepeBgStyle}
+              >
+                <HmTepeManset
+                  items={tepeMansetItems}
+                  getItemHref={(n) => hybridNewsItemHref(n, h)}
+                  accent={accent}
+                />
+              </div>
+            ) : (
+              <div className="w-full min-w-0" style={corporateTepeBgStyle}>
+                <HmTepeManset
+                  items={tepeMansetItems}
+                  getItemHref={(n) => hybridNewsItemHref(n, h)}
+                  accent={accent}
+                />
+              </div>
+            )}
           </div>
         ) : null}
       <HmCorporateHome
