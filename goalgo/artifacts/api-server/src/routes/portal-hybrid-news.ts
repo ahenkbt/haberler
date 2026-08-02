@@ -1034,7 +1034,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     const mergeRssFromCache =
       includeRss &&
       !hmAccess?.isCorporate &&
-      (newsmapMode || rssScope === "box" || editorPool || !isPortalRssSyncToNewsEnabled());
+      (newsmapMode ||
+        rssScope === "box" ||
+        editorPool ||
+        !isPortalRssSyncToNewsEnabled() ||
+        (siteId == null && rssScope === "all"));
 
     const editorPoolOpts = hmAccess ? resolveEditorScopedPoolOpts(hmAccess) : null;
     const [dbResult, initialRssItems, ctx] = await Promise.all([
@@ -1220,7 +1224,9 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
       triggerPortalRssWarmIfEmpty(feeds, siteId, hmAccess?.hybridRssEnabled === true);
     }
 
-    const mergeRssFromCache = includeRss && (editorPool || !isPortalRssSyncToNewsEnabled());
+    const mergeRssFromCache =
+      includeRss &&
+      (editorPool || !isPortalRssSyncToNewsEnabled() || (siteId == null && rssScope === "all"));
 
     const [rssItemsRaw, ctx] = await Promise.all([
       mergeRssFromCache ? getPortalRssCachedItemsForFeeds(feeds, categorySlug) : Promise.resolve([]),
