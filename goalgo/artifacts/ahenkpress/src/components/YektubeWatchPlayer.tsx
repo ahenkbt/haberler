@@ -82,7 +82,7 @@ function NativeStreamPlayer({
         <ExternalLink className="h-3 w-3" />
         YouTube
       </a>
-      <div className="pointer-events-none absolute inset-0 z-10 flex items-end justify-end p-2 sm:p-3">
+      <div className="pointer-events-none absolute bottom-2 right-1.5 z-[30] flex items-end justify-end p-2 sm:p-3 sm:bottom-2.5 sm:right-2">
         <YektubePlayerMark coverYoutubeCorner playerVariant="watch" />
       </div>
     </div>
@@ -192,7 +192,7 @@ export function YektubeWatchPlayer({
         </button>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 z-10 flex items-end justify-end p-2 sm:p-3">
+      <div className="pointer-events-none absolute bottom-2 right-1.5 z-[30] flex items-end justify-end p-2 sm:p-3 sm:bottom-2.5 sm:right-2">
         <YektubePlayerMark coverYoutubeCorner playerVariant="watch" />
       </div>
     </div>
