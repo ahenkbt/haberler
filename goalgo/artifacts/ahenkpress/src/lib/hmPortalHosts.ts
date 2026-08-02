@@ -52,6 +52,24 @@ export function isYekparePortalHubOnly(host: string, slug?: string | null): bool
 
 const KH_HM_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
 
+/** Video TV açık editör alanları (hub + KH + seçili haber siteleri). */
+const HM_VIDEO_TV_ALLOWED_HOSTS = new Set([
+  ...KH_HM_HOSTS,
+  "suhaberajansi.com",
+  "www.suhaberajansi.com",
+  "ankarahabergundemi.com",
+  "www.ankarahabergundemi.com",
+]);
+
+const HM_VIDEO_TV_ALLOWED_SLUGS = new Set([
+  "kirsehirhaber",
+  "kh",
+  "kirsehir",
+  "su",
+  "suhaber",
+  "ankarahabergundemi",
+]);
+
 /** Kırşehir Haber özel alanı veya /tr/kirsehirhaber|kh|kirsehir slug. */
 export function isKhHmSite(host: string, slug?: string | null): boolean {
   const h = normalizeHostKey(host);
@@ -64,11 +82,17 @@ export function isKhHmSite(host: string, slug?: string | null): boolean {
 }
 
 /**
- * Video TV / Yektube — hub + Kırşehir Haber özel alanı.
- * Diğer HM siteleri (Su, ASG, …) kapalı kalır.
+ * Video TV / Yektube — turk.eco hub, Kırşehir Haber, Su Haber Ajansı, Ankara Haber Gündemi.
  */
 export function isHmVideoTvAllowed(host: string, slug?: string | null): boolean {
-  return isYekparePortalHubOnly(host, slug) || isKhHmSite(host, slug);
+  if (isYekparePortalHubOnly(host, slug)) return true;
+  const h = normalizeHostKey(host);
+  if (h && HM_VIDEO_TV_ALLOWED_HOSTS.has(h)) return true;
+  const s = String(slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  return HM_VIDEO_TV_ALLOWED_SLUGS.has(s);
 }
 
 /**

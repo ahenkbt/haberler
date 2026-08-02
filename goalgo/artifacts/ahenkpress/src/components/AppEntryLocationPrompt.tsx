@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { LocateFixed, MapPin, X } from "lucide-react";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 import { shouldSkipSiteGeolocationWarmup } from "@/lib/hmSitePublicPath";
 import { effectiveMapsGeocodeSettings } from "@/lib/mapsGeocode";
 import {
@@ -15,7 +14,7 @@ import { SadeLocationPickerModal } from "./SadeLocationPickerModal";
 export const GEO_PROMPT_ASKED_KEY = "yekpare_geo_prompt_asked_v1";
 
 /**
- * Portal girişinde kayıtlı konum yoksa bir kez yumuşak modal gösterir.
+ * Kayıtlı konum yoksa bir kez yumuşak modal (turk.eco portalında kapalı).
  * Tarayıcı geolocation yalnızca kullanıcı «Konumumu kullan» dediğinde çağrılır.
  */
 export function AppEntryLocationPrompt() {
@@ -24,14 +23,14 @@ export function AppEntryLocationPrompt() {
   const pathNoQuery = (location.split("?")[0] ?? "").trim();
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  const skipGeo = shouldSkipSiteGeolocationWarmup(pathNoQuery, host);
 
   const [showSoft, setShowSoft] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [locating, setLocating] = useState(false);
 
   useEffect(() => {
-    if (shouldSkipSiteGeolocationWarmup(pathNoQuery, host)) return;
-    if (!host || !isDefaultPortalHost(host)) return;
+    if (skipGeo) return;
     if (typeof window === "undefined") return;
     if (readPublicLocation()) return;
     try {
@@ -41,7 +40,7 @@ export function AppEntryLocationPrompt() {
     }
     const timer = window.setTimeout(() => setShowSoft(true), 900);
     return () => window.clearTimeout(timer);
-  }, [pathNoQuery, host]);
+  }, [pathNoQuery, host, skipGeo]);
 
   useEffect(() => {
     const onSaved = () => {
@@ -82,6 +81,7 @@ export function AppEntryLocationPrompt() {
     }
   }
 
+  if (skipGeo) return null;
   if (!showSoft && !pickerOpen) return null;
 
   return (

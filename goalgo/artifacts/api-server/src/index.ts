@@ -39,6 +39,7 @@ import { repairManualEditorNewsSiteOnly } from "./lib/hm-manual-news-site-only.j
 import { repairStaleSuBrandOnHmSites } from "./lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "./lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite } from "./lib/hm-kh-site-ensure.js";
+import { ensureHmVideoTvEnabledForEditorSites } from "./lib/hm-video-tv-enable-repair.js";
 import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
@@ -432,6 +433,16 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_500).unref();
   } else {
     logger.info("[hm-kh] HM_KH_SITE_ENSURE=0 — atlandı");
+  }
+
+  if (envJobFlag("HM_VIDEO_TV_ENABLE_REPAIR", true)) {
+    setTimeout(() => {
+      void ensureHmVideoTvEnabledForEditorSites()
+        .then((r) => logger.info({ ...r }, "[hm-video-tv] vitrin bayrağı onarım"))
+        .catch((err) => logger.error({ err }, "[hm-video-tv] onarım başarısız"));
+    }, 17_600).unref();
+  } else {
+    logger.info("[hm-video-tv] HM_VIDEO_TV_ENABLE_REPAIR=0 — atlandı");
   }
 
   // ASG: sehirgazetesiankara@gmail.com yanlış siteye bağlıysa asg'ye kopyala

@@ -25,10 +25,10 @@ export function isHmShortSiteHaberPath(pathNoQuery: string): boolean {
   return parts.length >= 3 && parts[1] === "haber";
 }
 
-/** Haber merkezi / kurumsal vitrin: tarayıcı konum izni istenmez. */
+/** turk.eco / portal kökünde giriş konum modalı ve sessiz warmup kapalı. */
 export function shouldSkipSiteGeolocationWarmup(pathNoQuery: string, host: string): boolean {
   const h = host.toLowerCase().split(":")[0] ?? "";
-  if (!isDefaultPortalHost(h)) return true;
+  if (isDefaultPortalHost(h)) return true;
   const p = pathNoQuery.trim();
   if (isHmSitePublicChromePath(p)) return true;
   if (isHmShortSiteHaberPath(p)) return true;
