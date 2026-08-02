@@ -26,6 +26,7 @@ import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { hmVitrinAccentHex } from "@/lib/hmVitrinThemeTokens";
 import { apiRequest } from "@/lib/queryClient";
 import { recommendationVideoTitle } from "@/lib/yektubeVideoClassify";
+import { hmPublicVideoTvHomeHref, hmPublicVideoTvWatchHref } from "@/lib/hmVideoTvPublicPaths";
 
 import "@/styles/hmIndexLanding.css";
 
@@ -122,6 +123,14 @@ export default function HmEditorIndexLandingPage({ onEnterSite }: Props) {
   const siteOrigin = hmPublicSiteOrigin(ctx?.domain ?? null);
   const editorLoginHref = resolveHmEditorLoginPublicHref(siteOrigin);
   const logoSrc = resolveClientMediaSrc(String(layout?.logoUrl ?? "").trim());
+  const videoTvHost =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  const videoTvHome = hmPublicVideoTvHomeHref({
+    host: videoTvHost,
+    slug: ctx?.slug,
+    href: h,
+    layoutPrefs: layout,
+  });
 
   const breakingItems = useHmHeaderSonDakikaItems("breaking");
   useHmHomeHybridBootstrap(siteId, siteId > 0);
@@ -386,13 +395,20 @@ export default function HmEditorIndexLandingPage({ onEnterSite }: Props) {
             </ul>
           </IndexWidgetCard>
 
-          <IndexWidgetCard title="Popüler Videolar" icon={Video} accent={accent} href={h("/video-tv")}>
+          <IndexWidgetCard title="Popüler Videolar" icon={Video} accent={accent} href={videoTvHome}>
             {recentVideos.length > 0 ? (
               <div className="hm-index-videos">
                 {recentVideos.slice(0, 4).map((video) => {
                   const sourceId = video.sourceId ?? 0;
                   const href =
-                    sourceId > 0 ? h(`/video-tv/kanal/${sourceId}/${encodeURIComponent(video.videoId)}`) : h("/video-tv");
+                    sourceId > 0
+                      ? hmPublicVideoTvWatchHref(sourceId, video.videoId, {
+                          host: videoTvHost,
+                          slug: ctx?.slug,
+                          href: h,
+                          layoutPrefs: layout,
+                        })
+                      : videoTvHome;
                   return (
                     <Link key={video.id} href={href} className="hm-index-video-card">
                       <div className="hm-index-video-card__thumb">

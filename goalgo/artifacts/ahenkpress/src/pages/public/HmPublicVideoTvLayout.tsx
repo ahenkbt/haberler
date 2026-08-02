@@ -4,8 +4,7 @@ import { HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX } from "@/components/HmPublicNewsNav
 import { HmVideoTvContextProvider, type HmVideoTvLayoutValue } from "@/contexts/HmVideoTvContext";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { isKhHmSite } from "@/lib/hmPortalHosts";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { resolveHmVideoTvPathHome } from "@/lib/hmVideoTvPublicPaths";
 
 const HM_HEADER_BAND_PX = 72;
 
@@ -31,12 +30,9 @@ function HmVideoTvContextBridge({ children }: { children: ReactNode }) {
     const contentStickyTopPx = isMobile ? 0 : HM_HEADER_BAND_PX + HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX;
     const host =
       typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
-    const khShort = isKhHmSite(host, ctx.slug);
     return {
       slug: ctx.slug,
-      pathHome: khShort
-        ? "/video"
-        : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(ctx.slug)}/video-tv`,
+      pathHome: resolveHmVideoTvPathHome(host, ctx.slug),
       contentStickyTopPx,
       displayName: ctx.displayName,
     };

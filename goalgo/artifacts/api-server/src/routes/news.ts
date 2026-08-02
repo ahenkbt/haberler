@@ -49,6 +49,7 @@ import {
 import { recategorizeMisclassifiedSporBatch } from "../lib/recategorizeMisclassifiedSpor.js";
 import {
   filterPoolCopiesWhenReceiveDisabled,
+  findCategoryForScope,
   loadEditorScopedDbNews,
   resolveEditorScopedPoolOpts,
 } from "../lib/hybrid-news-merge.js";
@@ -208,15 +209,8 @@ async function buildNewsListWhere(readDb: NewsReadDb, opts: {
       if (portalCategoryIds.length > 0) conds.push(inArray(newsTable.categoryId, portalCategoryIds));
       else return sql`false`;
     } else {
-      const catRows = await readDb
-        .select()
-        .from(categoriesTable)
-        .where(eq(categoriesTable.slug, opts.categorySlug));
-      const cat =
-        hmScoped
-          ? catRows.find((row) => row.exclusiveSiteId === opts.siteId) ??
-            catRows.find((row) => row.exclusiveSiteId == null)
-          : catRows.find((row) => row.exclusiveSiteId == null) ?? catRows[0];
+      const siteIdForCat = hmScoped && Number.isFinite(opts.siteId) ? opts.siteId : null;
+      const cat = await findCategoryForScope(opts.categorySlug, siteIdForCat);
       if (cat) conds.push(eq(newsTable.categoryId, cat.id));
       else return sql`false`;
     }

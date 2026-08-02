@@ -66,6 +66,7 @@ import { HmYekpareFeaturesBand } from "@/components/HmYekpareFeaturesBand";
 import { HmYekpareKategorilerKutusu } from "@/components/HmYekpareKategorilerKutusu";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
+import { hmPublicVideoTvHomeHref, hmPublicVideoTvWatchHref } from "@/lib/hmVideoTvPublicPaths";
 import { resetSeoToSiteDefaults } from "@/lib/pageSeo";
 import { rewriteHmSiteAnchorsInHtml } from "@/lib/rewriteNewsBodyLinksForHm";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
@@ -2468,10 +2469,26 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "",
       hmSlug,
     );
+  const hmVideoTvHost =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
   const hmVideoTvHref =
     hmVideoTvEnabled && hmSlug != null
-      ? h(portalHubOnly ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmSlug)}/video-tv` : "/video")
+      ? portalHubOnly
+        ? "/yektube"
+        : hmPublicVideoTvHomeHref({
+            host: hmVideoTvHost,
+            slug: hmSlug,
+            href: h,
+            layoutPrefs,
+          })
       : null;
+  const hmVideoTvWatchHref = (sourceId: number, videoId: string) =>
+    hmPublicVideoTvWatchHref(sourceId, videoId, {
+      host: hmVideoTvHost,
+      slug: hmSlug,
+      href: h,
+      layoutPrefs,
+    });
   const mediaDarkModulesEnabled =
     resolveHmNewsHomeModuleEnabled(layoutPrefs, "mediaDarkBlock") && portalHubOnly;
   const { data: mediaSpotlightPool = [] } = useQuery({
@@ -2480,7 +2497,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       fetchHmMediaSpotlightPool({
         fotoHref: (id) => h(`/foto-galeri/${id}`),
         videoGalleryHref: (id) => h(`/video-galeri/${id}`),
-        videoTvHref: (sourceId, videoId) => h(`/video-tv/kanal/${sourceId}/${encodeURIComponent(videoId)}`),
+        videoTvHref: hmVideoTvWatchHref,
         limit: 12,
       }),
     staleTime: 5 * 60 * 1000,
@@ -3650,7 +3667,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         return (
           <Suspense fallback={null}>
             <LazyHmRecentVideosBox
-              videoTvHref={(sourceId, videoId) => h(`/video-tv/kanal/${sourceId}/${encodeURIComponent(videoId)}`)}
+              videoTvHref={hmVideoTvWatchHref}
               listHref={hmVideoTvHref}
               accent={accent}
             />

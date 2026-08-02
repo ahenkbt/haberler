@@ -566,7 +566,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
                     <p className="font-black text-slate-900">RSS otomasyonu (zamanlanmış)</p>
                     <p className="text-xs text-slate-600 mt-1">
                       Varsayılan kapalı. Açıkken yalnızca RSS çekimi günde 3 kez —{" "}
-                      {rssAutomation?.schedule?.label ?? "01:00, 09:00, 18:00"} (
+                      {rssAutomation?.schedule?.label ?? "09:00, 15:00, 21:00"} (
                       {rssAutomation?.schedule?.timezone ?? "Europe/Istanbul"}) — otomatik çalışır.
                       Her slotta kategori başına 20 benzersiz haber <code className="text-xs">news</code> tablosuna
                       aktarılır; havuz temizliği 180 günde bir uygulanır.
@@ -601,7 +601,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
                         toast({
                           title: checked ? "RSS otomasyonu açıldı" : "RSS otomasyonu kapatıldı",
                           description: checked
-                            ? `Günde 3 kez (${rssAutomation?.schedule?.label ?? "01:00, 09:00, 18:00"} TR) RSS çekimi otomatik çalışır.`
+                            ? `Günde 3 kez (${rssAutomation?.schedule?.label ?? "09:00, 15:00, 21:00"} TR) RSS çekimi otomatik çalışır.`
                             : "Arka plan RSS botları durduruldu.",
                         });
                       } catch (e) {

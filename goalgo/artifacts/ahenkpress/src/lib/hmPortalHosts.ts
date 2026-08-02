@@ -82,17 +82,20 @@ export function isKhHmSite(host: string, slug?: string | null): boolean {
 }
 
 /**
- * Video TV / Yektube — turk.eco hub, Kırşehir Haber, Su Haber Ajansı, Ankara Haber Gündemi.
+ * Video TV — yekpare.net hub + tüm HM haber editör alanları (özel domain ve /tr/{slug}).
  */
 export function isHmVideoTvAllowed(host: string, slug?: string | null): boolean {
   if (isYekparePortalHubOnly(host, slug)) return true;
   const h = normalizeHostKey(host);
+  if (h && isKnownHmCustomHost(h)) return true;
   if (h && HM_VIDEO_TV_ALLOWED_HOSTS.has(h)) return true;
   const s = String(slug ?? "")
     .trim()
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
-  return HM_VIDEO_TV_ALLOWED_SLUGS.has(s);
+  if (HM_VIDEO_TV_ALLOWED_SLUGS.has(s)) return true;
+  if (isDefaultPortalHost(h) && s && s !== "yekpare") return true;
+  return false;
 }
 
 /**
