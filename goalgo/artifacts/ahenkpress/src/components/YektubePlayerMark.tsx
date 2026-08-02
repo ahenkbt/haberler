@@ -49,7 +49,7 @@ export function YektubePlayerMark({
           <img
             src={YEKTUBE_LOGO_SRC}
             alt="Yektube"
-            className={`select-none object-contain object-bottom brightness-110 ${sizeClasses} ${className}`.trim()}
+            className={`select-none object-contain object-bottom brightness-110 contrast-105 ${sizeClasses} ${className}`.trim()}
             draggable={false}
           />
         )}

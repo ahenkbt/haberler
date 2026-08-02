@@ -1255,11 +1255,8 @@ export default function VideoTvChannel() {
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
               />
-              <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-2 sm:p-3">
-                <YektubePlayerMark
-                  coverYoutubeCorner
-                  className="h-6 sm:h-8 w-auto max-w-[min(46%,11rem)] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
-                />
+              <div className="pointer-events-none absolute bottom-2 right-1.5 z-[30] flex items-end justify-end sm:bottom-2.5 sm:right-2">
+                <YektubePlayerMark coverYoutubeCorner />
               </div>
             </div>
             <p className="text-xs text-zinc-500 mt-3">Yayın YouTube üzerinden gelir; saat dilimi ve yayın durumu YouTube'a bağlıdır.</p>

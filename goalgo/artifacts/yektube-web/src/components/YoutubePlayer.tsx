@@ -110,10 +110,10 @@ function PlayerBrand({ shortsMode = false }: { shortsMode?: boolean }) {
   return (
     <div
       className={cn(
-        "pointer-events-none absolute z-[2] flex",
+        "pointer-events-none absolute z-[30] flex",
         shortsMode
-          ? "bottom-11 right-2 items-end justify-end sm:bottom-12 sm:right-2.5"
-          : "bottom-11 right-2 items-end justify-end sm:bottom-12 sm:right-2.5",
+          ? "bottom-2 right-1.5 items-end justify-end sm:bottom-2.5 sm:right-2"
+          : "bottom-2 right-1.5 items-end justify-end sm:bottom-2.5 sm:right-2",
       )}
     >
       <YektubePlayerMark

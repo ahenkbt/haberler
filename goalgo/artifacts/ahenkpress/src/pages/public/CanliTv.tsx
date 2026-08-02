@@ -1057,11 +1057,8 @@ export function WatchExperience({
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
                 />
-                <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-2 sm:p-3">
-                  <YektubePlayerMark
-                    coverYoutubeCorner
-                    className="h-6 sm:h-8 w-auto max-w-[min(46%,11rem)] object-contain object-bottom drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
-                  />
+                <div className="pointer-events-none absolute bottom-2 right-1.5 z-[30] flex items-end justify-end sm:bottom-2.5 sm:right-2">
+                  <YektubePlayerMark coverYoutubeCorner />
                 </div>
               </div>
             )}
