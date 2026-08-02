@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { MonitorPlay, Play, Radio } from "lucide-react";
 import { YektubeVideoThumb } from "@/components/YektubeVideoThumb";
+import { VideoTvBrandLogo } from "@/components/VideoTvBrandLogo";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { useHmVideoTvLayout } from "@/contexts/HmVideoTvContext";
 import { applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { hmVitrinAccentHex } from "@/lib/hmVitrinThemeTokens";
+import { useHmVideoTvSiteBrand } from "@/lib/hmVideoTvSiteBrand";
 import { parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 import { isLongFormVideo, recommendationVideoTitle } from "@/lib/yektubeVideoClassify";
 import { VIDEO_TV_CATEGORY_LABELS, VIDEO_TV_NAV_SLUGS } from "@/lib/videoTvCategories";
@@ -68,6 +70,7 @@ export default function HmVideoTvPage() {
   const pathHome = hmTv?.pathHome ?? h("/video-tv");
   const layoutPrefs = hmCtx?.layoutPrefs ?? parseNewsSiteLayoutFromJson(null);
   const accent = hmVitrinAccentHex(layoutPrefs.hmVitrinTheme ?? "default") ?? "#039D55";
+  const brand = useHmVideoTvSiteBrand();
 
   const tabSlugs = useMemo(() => ["", ...VIDEO_TV_NAV_SLUGS], []);
   const [activeSlug, setActiveSlug] = useState("");
@@ -85,28 +88,42 @@ export default function HmVideoTvPage() {
     const canonicalPath = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(hmCtx.slug)}/video-tv`;
     applyHmNewsSiteHomeMeta({
       siteName: hmCtx.displayName,
-      browserTitle: `Video TV · ${hmCtx.displayName}`,
-      description: `Güncel videolar — ${hmCtx.displayName}`,
+      browserTitle: `${brand.moduleTitle} · ${hmCtx.displayName}`,
+      description: brand.moduleSubtitle,
       canonicalPath,
       canonicalOrigin: hmPublicSiteOrigin(hmCtx.domain),
       imageUrl: layoutPrefs.logoUrl,
       logoUrl: layoutPrefs.logoUrl,
       faviconUrl: layoutPrefs.faviconUrl,
     });
-  }, [hmCtx?.slug, hmCtx?.displayName, hmCtx?.domain, layoutPrefs.logoUrl, layoutPrefs.faviconUrl]);
+  }, [hmCtx?.slug, hmCtx?.displayName, hmCtx?.domain, layoutPrefs.logoUrl, layoutPrefs.faviconUrl, brand.moduleTitle, brand.moduleSubtitle]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-4 sm:py-6">
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Yektube</p>
-          <h1 className="mt-1 flex items-center gap-2 text-2xl font-black text-slate-900">
-            <MonitorPlay className="h-7 w-7" style={{ color: accent }} />
-            Video TV
+          {brand.useSiteBranding ? (
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{brand.siteName}</p>
+          ) : (
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Yektube</p>
+          )}
+          <h1 className="mt-1 flex items-center gap-3 text-2xl font-black text-slate-900">
+            {brand.useSiteBranding && brand.siteLogoUrl ? (
+              <VideoTvBrandLogo
+                className="h-10 w-auto max-w-[200px] object-contain object-left"
+                preferSiteBranding
+                siteLogoUrl={brand.siteLogoUrl}
+                siteName={brand.siteName}
+                alt={brand.moduleTitle}
+              />
+            ) : (
+              <>
+                <MonitorPlay className="h-7 w-7 shrink-0" style={{ color: accent }} />
+                {brand.moduleTitle}
+              </>
+            )}
           </h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-600">
-            Güncel haber videoları — canlı yayın ve haber kanallarından karma akış.
-          </p>
+          <p className="mt-1 max-w-xl text-sm text-slate-600">{brand.moduleSubtitle}</p>
         </div>
         <Link
           href={yektubeCanliTvPath(pathHome)}

@@ -244,7 +244,7 @@ export function YektubeYoutubePlayer({
           title={title}
         />
         {!embedBlocked ? (
-          <div className="pointer-events-none absolute bottom-11 right-2 z-[2] flex items-end justify-end sm:bottom-12 sm:right-2.5">
+          <div className="pointer-events-none absolute bottom-2 right-1.5 z-[30] flex items-end justify-end sm:bottom-2.5 sm:right-2">
             <YektubePlayerMark coverYoutubeCorner playerVariant={isShorts ? "shorts" : "watch"} />
           </div>
         ) : null}

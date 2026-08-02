@@ -28,6 +28,7 @@ import { looksLikeVideoPlaylistNotPodcast } from "@/lib/yektubePodcastFilter";
 import { triggerYektubeBackgroundRefresh } from "@/lib/yektubeBackgroundRefresh";
 import { buildMosaicSlots, YektubeHeroMosaic } from "@/components/YektubeHeroMosaic";
 import { VideoTvBrandLogo } from "@/components/VideoTvBrandLogo";
+import { useHmVideoTvSiteBrand } from "@/lib/hmVideoTvSiteBrand";
 import { YektubeVideoThumb } from "@/components/YektubeVideoThumb";
 import { YektubeScrollTabs } from "@/components/YektubeScrollTabs";
 import { YektubePlayerMark } from "@/components/YektubePlayerMark";
@@ -93,9 +94,14 @@ function PlaylistCardMosaic({ items }: { items: VideoItem[] }) {
 }
 
 function YektubeThumbBadge() {
+  const siteBrand = useHmVideoTvSiteBrand();
+  const text =
+    siteBrand.useSiteBranding && siteBrand.siteName
+      ? siteBrand.siteName
+      : "Yektube";
   return (
-    <span className="pointer-events-none absolute top-1.5 left-1.5 z-[1] rounded bg-[#039D55] px-[5px] py-0.5 text-[8px] font-black uppercase tracking-wide text-white shadow-sm">
-      Yektube
+    <span className="pointer-events-none absolute top-1.5 left-1.5 z-[1] max-w-[min(70%,8rem)] truncate rounded bg-[#039D55] px-[5px] py-0.5 text-[8px] font-black uppercase tracking-wide text-white shadow-sm">
+      {text}
     </span>
   );
 }
@@ -501,8 +507,9 @@ export default function VideoTvChannel() {
   const { id, videoId: videoIdParam } = useParams<{ id: string; videoId?: string; slug?: string }>();
   const [, setLocation] = useLocation();
   const hmTv = useHmVideoTvLayout();
+  const siteBrand = useHmVideoTvSiteBrand();
   const pathHome = hmTv?.pathHome ?? YEKTUBE_HOME;
-  const brandLabel = hmTv ? "Video TV" : "Yektube";
+  const brandLabel = hmTv ? siteBrand.siteName : "Yektube";
   const stickyHeaderPx = hmTv?.contentStickyTopPx ?? 52;
   const { data: allSources } = useListVideoSources();
   const channelId = parseInt(String(id ?? ""), 10);
@@ -893,7 +900,12 @@ export default function VideoTvChannel() {
               href={pathHome}
               className="pointer-events-auto flex items-center gap-2 rounded-xl bg-white/95 px-2.5 py-2 shadow-lg ring-1 ring-black/10 hover:bg-white transition-colors"
             >
-              <VideoTvBrandLogo className="h-7 w-auto object-contain" />
+              <VideoTvBrandLogo
+                className="h-7 w-auto object-contain"
+                preferSiteBranding={siteBrand.useSiteBranding}
+                siteLogoUrl={siteBrand.siteLogoUrl}
+                siteName={siteBrand.siteName}
+              />
             </Link>
           ) : (
             <Link
