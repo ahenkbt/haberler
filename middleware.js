@@ -1137,6 +1137,36 @@ function isYektubeSurfacePath(pathname) {
   return false;
 }
 
+const YEKTUBE_CANONICAL_ORIGIN = "https://yektube.com";
+
+function isYektubeDedicatedHost(host) {
+  const h = String(host || "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .split(":")[0];
+  return h === "yektube.com";
+}
+
+function isYektubeEmbedRequest(incoming) {
+  const embed = String(incoming.searchParams.get("embed") || "").toLowerCase();
+  if (embed === "1" || embed === "true" || embed === "yes") return true;
+  const hm = incoming.searchParams.get("hm");
+  return hm != null && String(hm).trim() !== "";
+}
+
+/** turk.eco/yp → https://yektube.com/yp (kanonik alan). */
+function redirectPortalYektubeToCanonical(request, incoming, host) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (!isDefaultPortalHost(host) || isLocalOrPreviewHost(host)) return null;
+  if (isYektubeDedicatedHost(host)) return null;
+  if (isYektubeEmbedRequest(incoming)) return null;
+  if (!isYektubeSurfacePath(incoming.pathname)) return null;
+  const nextPath = mapLegacyYektubeSurfacePath(incoming.pathname);
+  const dest = new URL(nextPath, YEKTUBE_CANONICAL_ORIGIN);
+  dest.search = incoming.search;
+  return Response.redirect(dest.toString(), 308);
+}
+
 function mapLegacyYektubeSurfacePath(pathname) {
   const raw = String(pathname || "/") || "/";
   const path = raw.replace(/\/+$/, "") || "/";
@@ -1637,6 +1667,9 @@ export default async function middleware(request) {
 
   const hmYektubeGuard = await guardHmCustomDomainYektubeSurface(request, incoming, host);
   if (hmYektubeGuard) return hmYektubeGuard;
+
+  const yektubeCanonicalRedirect = redirectPortalYektubeToCanonical(request, incoming, host);
+  if (yektubeCanonicalRedirect) return yektubeCanonicalRedirect;
 
   const yektubeLocalRedirect = redirectLegacyYektubeSurfaceToLocal(request, incoming, host);
   if (yektubeLocalRedirect) return yektubeLocalRedirect;

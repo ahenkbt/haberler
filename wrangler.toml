@@ -56,6 +56,23 @@ zone_name = "turk.eco"
 pattern = "www.turk.eco"
 zone_name = "turk.eco"
 
+# Yektube özel alan — turk.eco/yp kanonik yüzü (yektube.com)
+[[routes]]
+pattern = "yektube.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.yektube.com"
+custom_domain = true
+
+[[routes]]
+pattern = "yektube.com/*"
+zone_name = "yektube.com"
+
+[[routes]]
+pattern = "www.yektube.com/*"
+zone_name = "yektube.com"
+
 # Error 1016: zone aktif ama origin yok — custom_domain Worker DNS oluşturur
 [[routes]]
 pattern = "ankarasehirgazetesi.com"

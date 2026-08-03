@@ -204,14 +204,14 @@ function readCanonicalRedirectEnv(): boolean {
   return false;
 }
 
-/** yektube.com DNS/SSL sorunlu iken turk.eco üzerinde kal (varsayılan: kapalı redirect) */
+/** turk.eco/yp → yektube.com kanonik yönlendirme (build'de varsayılan açık) */
 export function isYektubeCanonicalRedirectEnabled(): boolean {
   return readCanonicalRedirectEnv();
 }
 
 /**
- * Gezinme / iframe için URL: varsayılan olarak mevcut origin + /yektube-v2.
- * VITE_YEKTUBE_REDIRECT_TO_CANONICAL=1 ile eski davranış (her zaman yektube.com).
+ * Gezinme / iframe için URL: VITE_YEKTUBE_REDIRECT_TO_CANONICAL=1 iken yektube.com.
+ * Kapalıysa mevcut origin + /yp (portal yedek).
  */
 export function mapToYektubePublicUrl(pathname: string, search = "", hash = ""): string {
   if (isYektubeCanonicalRedirectEnabled()) {
