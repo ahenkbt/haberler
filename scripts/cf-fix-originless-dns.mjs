@@ -22,6 +22,8 @@ const ZONES = [
   "suhaberajansi.com",
   // belediyehizmet.com kaldırıldı — site suhaberajansi.com
   "kirsehirhaber.org",
+  // Yektube — turk.eco/yp kanonik alan adı
+  "yektube.com",
   // kirsehri.com / kirsehir.net: zone CF hesabında yoksa atlanır; eklenince listeye alınır
 ];
 

@@ -24,12 +24,12 @@ export function YektubePwaInstallBanner({ className }: { className?: string }) {
             Safari&apos;de{" "}
             <Share className="inline h-3.5 w-3.5 align-text-bottom" aria-hidden /> Paylaş →{" "}
             <strong>Ana Ekrana Ekle</strong>. Uygulama{" "}
-            <strong>turk.eco/yp</strong> adresinden açılır.
+            <strong>yektube.com</strong> adresinden açılır.
           </p>
         ) : (
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-yt-muted)]">
             Ana ekrandan tek dokunuşla açın — başlangıç adresi{" "}
-            <strong>turk.eco/yp</strong>.
+            <strong>yektube.com</strong>.
           </p>
         )}
         <div className="mt-2 flex flex-wrap gap-2">

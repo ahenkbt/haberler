@@ -27,6 +27,160 @@
       "permanent": true
     },
     {
+      "source": "/yp",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/yp",
+      "permanent": true
+    },
+    {
+      "source": "/yp/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/yp/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/muzik",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/muzik",
+      "permanent": true
+    },
+    {
+      "source": "/muzik/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/muzik/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/cocuk",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/cocuk",
+      "permanent": true
+    },
+    {
+      "source": "/cocuk/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/cocuk/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/canli",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/canli",
+      "permanent": true
+    },
+    {
+      "source": "/canli/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/canli/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/yek-gonder",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/yek-gonder",
+      "permanent": true
+    },
+    {
+      "source": "/yek-gonder/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/yek-gonder/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/hesabim",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/hesabim",
+      "permanent": true
+    },
+    {
+      "source": "/hesabim/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/hesabim/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/studio",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/studio",
+      "permanent": true
+    },
+    {
+      "source": "/studio/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "turk.eco"
+        }
+      ],
+      "destination": "https://yektube.com/studio/:path*",
+      "permanent": true
+    },
+    {
       "source": "/yektube-v2",
       "has": [
         {
@@ -34,8 +188,8 @@
           "value": "turk.eco"
         }
       ],
-      "destination": "/yp",
-      "permanent": false
+      "destination": "https://yektube.com/yp",
+      "permanent": true
     },
     {
       "source": "/yektube-v2/:path((?!assets/)(?!.*\\.[^/]+$).*)",
@@ -45,8 +199,8 @@
           "value": "turk.eco"
         }
       ],
-      "destination": "/yp/:path*",
-      "permanent": false
+      "destination": "https://yektube.com/yp/:path*",
+      "permanent": true
     },
     {
       "source": "/yektube",
@@ -56,8 +210,8 @@
           "value": "turk.eco"
         }
       ],
-      "destination": "/yp",
-      "permanent": false
+      "destination": "https://yektube.com/yp",
+      "permanent": true
     },
     {
       "source": "/yektube/:path*",
@@ -67,8 +221,8 @@
           "value": "turk.eco"
         }
       ],
-      "destination": "/yp/:path*",
-      "permanent": false
+      "destination": "https://yektube.com/yp/:path*",
+      "permanent": true
     },
     {
       "source": "/v2",

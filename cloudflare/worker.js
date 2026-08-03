@@ -51,6 +51,8 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.kirsehirhaber.org",
   "kirsehir.net",
   "www.kirsehir.net",
+  "yektube.com",
+  "www.yektube.com",
 ]);
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260802d";
 
@@ -93,6 +95,11 @@ const PORTAL_HOSTS = new Set([
 /** www.turk.eco → apex. */
 const CANONICAL_PORTAL_ORIGIN = "https://turk.eco";
 const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.turk.eco"]);
+
+/** turk.eco/yp → yektube.com (kanonik Yektube alanı). */
+const CANONICAL_YEKTUBE_ORIGIN = "https://yektube.com";
+const YEKTUBE_DEDICATED_HOSTS = new Set(["yektube.com", "www.yektube.com"]);
+const APEX_YEKTUBE_REDIRECT_HOSTS = new Set(["www.yektube.com"]);
 
 /** Eski Netlify SW'yi öldürür; kendini de kaldırır. */
 const KILL_SW = `/* yekpare-netlify-purge */
@@ -726,6 +733,115 @@ function isYektubeSurfacePath(pathname) {
     p === "/yektube" ||
     p.startsWith("/yektube/")
   );
+}
+
+function isYektubeDedicatedHost(host) {
+  const h = String(host || "")
+    .toLowerCase()
+    .split(":")[0]
+    .trim();
+  return YEKTUBE_DEDICATED_HOSTS.has(h);
+}
+
+function isYektubeEmbedRequest(incoming) {
+  const embed = String(incoming.searchParams.get("embed") || "").toLowerCase();
+  if (embed === "1" || embed === "true" || embed === "yes") return true;
+  const hm = incoming.searchParams.get("hm");
+  return hm != null && String(hm).trim() !== "";
+}
+
+/** Portal (turk.eco) Yektube yüzey yollarını kanonik /yp düzenine çevir. */
+function mapPortalYektubePathToDedicated(pathname) {
+  const raw = String(pathname || "/") || "/";
+  const path = raw.replace(/\/+$/, "") || "/";
+  if (path === "/yektube-v2") return "/yp/";
+  if (path.startsWith("/yektube-v2/")) return path.replace(/^\/yektube-v2(?=\/|$)/, "/yp");
+  if (path === "/yektube") return "/yp/";
+  if (path.startsWith("/yektube/")) return path.replace(/^\/yektube(?=\/|$)/, "/yp");
+  if (path === "/yeklive") return "/yek-gonder";
+  if (path.startsWith("/yeklive/")) return path.replace(/^\/yeklive(?=\/|$)/, "/yek-gonder");
+  if (path === "/yp") return "/yp/";
+  return path;
+}
+
+/**
+ * turk.eco/yp (ve diğer Yektube yüzeyleri) → https://yektube.com/...
+ * HM iframe (embed=1 / hm=) aynı origin'de kalsın.
+ */
+function redirectPortalYektubeToCanonical(request, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (!isPortalHost(incoming.hostname)) return null;
+  if (isYektubeDedicatedHost(incoming.hostname)) return null;
+  if (isYektubeEmbedRequest(incoming)) return null;
+  if (!isYektubeSurfacePath(incoming.pathname)) return null;
+  // Asset uzantılı istekleri (js/css/png) domain değiştirme
+  const last = (incoming.pathname.split("/").pop() || "");
+  if (last.includes(".") && !/\.html?$/i.test(last)) return null;
+
+  const nextPath = mapPortalYektubePathToDedicated(incoming.pathname);
+  const dest = new URL(nextPath, CANONICAL_YEKTUBE_ORIGIN);
+  dest.search = incoming.search;
+  return new Response(null, {
+    status: 308,
+    headers: {
+      Location: dest.toString(),
+      "cache-control": "public, max-age=3600",
+      "x-yekpare-frontend": "yektube-canonical-redirect",
+    },
+  });
+}
+
+/**
+ * yektube.com kök + eski yollar → /yp (turk.eco/yp ile aynı yüzey).
+ */
+function redirectYektubeDedicatedHost(request, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (!isYektubeDedicatedHost(incoming.hostname)) return null;
+
+  const raw = String(incoming.pathname || "/") || "/";
+  const path = raw.replace(/\/+$/, "") || "/";
+
+  if (path === "/") {
+    const dest = new URL("/yp/", CANONICAL_YEKTUBE_ORIGIN);
+    dest.search = incoming.search;
+    return new Response(null, {
+      status: 301,
+      headers: {
+        Location: dest.toString(),
+        "cache-control": "public, max-age=3600",
+        "x-yekpare-frontend": "yektube-root-redirect",
+      },
+    });
+  }
+
+  let nextPath = null;
+  if (path === "/tr" || path.startsWith("/tr/")) {
+    nextPath = path.replace(/^\/tr(?=\/|$)/, "/yp") || "/yp/";
+  } else if (path === "/v2" || path.startsWith("/v2/")) {
+    nextPath = path.replace(/^\/v2(?=\/|$)/, "/yp") || "/yp/";
+  } else if (path === "/yektube-v2" || path.startsWith("/yektube-v2/")) {
+    // Asset yolu (/yektube-v2/assets/...) rewrite'ta kalır
+    if (path.startsWith("/yektube-v2/assets/") || /\.[a-z0-9]+$/i.test(path)) return null;
+    nextPath = path.replace(/^\/yektube-v2(?=\/|$)/, "/yp") || "/yp/";
+  } else if (path === "/yektube" || path.startsWith("/yektube/")) {
+    nextPath = path.replace(/^\/yektube(?=\/|$)/, "/yp") || "/yp/";
+  } else if (path === "/yeklive" || path.startsWith("/yeklive/")) {
+    nextPath = path.replace(/^\/yeklive(?=\/|$)/, "/yek-gonder");
+  } else if (path === "/yp") {
+    nextPath = "/yp/";
+  }
+
+  if (!nextPath || nextPath === incoming.pathname) return null;
+  const dest = new URL(nextPath, CANONICAL_YEKTUBE_ORIGIN);
+  dest.search = incoming.search;
+  return new Response(null, {
+    status: 301,
+    headers: {
+      Location: dest.toString(),
+      "cache-control": "public, max-age=3600",
+      "x-yekpare-frontend": "yektube-path-redirect",
+    },
+  });
 }
 
 /**
@@ -2021,6 +2137,27 @@ export default {
         },
       });
     }
+
+    // www.yektube.com → apex
+    if (APEX_YEKTUBE_REDIRECT_HOSTS.has(String(incoming.hostname || "").toLowerCase().split(":")[0])) {
+      const dest = new URL(incoming.pathname + incoming.search, CANONICAL_YEKTUBE_ORIGIN);
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: dest.toString(),
+          "cache-control": "public, max-age=3600",
+          "x-yekpare-frontend": "canonical-yektube-redirect",
+        },
+      });
+    }
+
+    // turk.eco/yp → yektube.com/yp
+    const portalYektubeRedirect = redirectPortalYektubeToCanonical(request, incoming);
+    if (portalYektubeRedirect) return portalYektubeRedirect;
+
+    // yektube.com / → /yp/ (+ eski yollar)
+    const dedicatedYektubeRedirect = redirectYektubeDedicatedHost(request, incoming);
+    if (dedicatedYektubeRedirect) return dedicatedYektubeRedirect;
 
     if (isSwPath(incoming.pathname)) {
       return new Response(KILL_SW, {
