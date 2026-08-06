@@ -4759,7 +4759,7 @@ router.post("/hm/public/sites/:slug/news-submissions", async (req, res): Promise
 router.get("/hm/editor/news", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
-  const limit = Math.min(Number(req.query.limit ?? 200) || 200, 500);
+  const limit = Math.min(Number(req.query.limit ?? 500) || 500, 1000);
   const offset = Number(req.query.offset ?? 0) || 0;
   const categorySlug =
     typeof req.query.categorySlug === "string" ? req.query.categorySlug.trim() : "";
@@ -4771,6 +4771,8 @@ router.get("/hm/editor/news", async (req, res): Promise<void> => {
   const submittedOnly =
     req.query.submitted === "1" ||
     req.query.submitted === "true";
+  const qRaw = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  const q = qRaw.slice(0, 120);
   const newsCtx = await loadNewsContext();
   const conds: SQL[] = [];
   if (submittedOnly) {
@@ -4790,13 +4792,20 @@ router.get("/hm/editor/news", async (req, res): Promise<void> => {
     }
     conds.push(eq(newsTable.categoryId, categoryId));
   }
+  if (q) {
+    const like = `%${q.replace(/[%_]/g, "")}%`;
+    conds.push(
+      sql`(${newsTable.title} ILIKE ${like} OR ${newsTable.slug} ILIKE ${like} OR COALESCE(${newsTable.spot}, '') ILIKE ${like})`,
+    );
+  }
   const where = hmEditorSiteNewsWhere(ctx.siteId, conds.length ? and(...conds) : undefined);
+  // updatedAt: yeni düzenlenen / eklenen haberler listenin başında görünsün.
   const [rows, totalRows] = await Promise.all([
     newsReadDb()
       .select()
       .from(newsTable)
       .where(where)
-      .orderBy(desc(newsTable.createdAt))
+      .orderBy(desc(newsTable.updatedAt), desc(newsTable.createdAt))
       .limit(limit)
       .offset(offset),
     newsReadDb().select({ count: sql<number>`count(*)::int` }).from(newsTable).where(where),

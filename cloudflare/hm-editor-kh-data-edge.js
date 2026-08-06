@@ -720,25 +720,49 @@ async function fetchKhPublicNewsForEditor(env, siteId, limit, offset) {
 }
 
 async function handleEditorNews(sql, siteId, url, env) {
-  const limit = Math.min(Number(url.searchParams.get("limit") || 200) || 200, 500);
+  const limit = Math.min(Number(url.searchParams.get("limit") || 500) || 500, 1000);
   const offset = Number(url.searchParams.get("offset") || 0) || 0;
   const submitted =
     url.searchParams.get("submitted") === "1" || url.searchParams.get("submitted") === "true";
+  const q = String(url.searchParams.get("q") || "")
+    .trim()
+    .slice(0, 120)
+    .replace(/[%_]/g, "");
+  const categorySlug = String(url.searchParams.get("categorySlug") || "").trim();
+  const like = q ? `%${q}%` : null;
 
   await ensureNewsWritableColumns(sql);
 
   try {
     if (submitted) {
-      const rows = await sql`
+      const rows = like
+        ? await sql`
         SELECT n.*, c.slug AS category_slug
         FROM news n
         LEFT JOIN categories c ON c.id = n.category_id
         WHERE n.site_id = ${siteId}
           AND (n.sender_full_name IS NOT NULL OR n.sender_email IS NOT NULL OR n.sender_phone IS NOT NULL)
-        ORDER BY n.created_at DESC
+          AND (n.title ILIKE ${like} OR n.slug ILIKE ${like} OR COALESCE(n.spot, '') ILIKE ${like})
+        ORDER BY n.updated_at DESC, n.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `
+        : await sql`
+        SELECT n.*, c.slug AS category_slug
+        FROM news n
+        LEFT JOIN categories c ON c.id = n.category_id
+        WHERE n.site_id = ${siteId}
+          AND (n.sender_full_name IS NOT NULL OR n.sender_email IS NOT NULL OR n.sender_phone IS NOT NULL)
+        ORDER BY n.updated_at DESC, n.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
-      const countRows = await sql`
+      const countRows = like
+        ? await sql`
+        SELECT count(*)::int AS count FROM news
+        WHERE site_id = ${siteId}
+          AND (sender_full_name IS NOT NULL OR sender_email IS NOT NULL OR sender_phone IS NOT NULL)
+          AND (title ILIKE ${like} OR slug ILIKE ${like} OR COALESCE(spot, '') ILIKE ${like})
+      `
+        : await sql`
         SELECT count(*)::int AS count FROM news
         WHERE site_id = ${siteId}
           AND (sender_full_name IS NOT NULL OR sender_email IS NOT NULL OR sender_phone IS NOT NULL)
@@ -749,22 +773,78 @@ async function handleEditorNews(sql, siteId, url, env) {
       });
     }
 
-    const rows = await sql`
+    let categoryId = null;
+    if (categorySlug) {
+      categoryId = await resolveCategoryId(sql, siteId, categorySlug);
+      if (!categoryId) return jsonResponse(200, { items: [], total: 0, source: "neon" });
+    }
+
+    const rows = like
+      ? categoryId
+        ? await sql`
+      SELECT n.*, c.slug AS category_slug
+      FROM news n
+      LEFT JOIN categories c ON c.id = n.category_id
+      WHERE (n.site_id = ${siteId} OR (n.site_only = true AND n.owner_site_id = ${siteId}))
+        AND n.category_id = ${categoryId}
+        AND (n.title ILIKE ${like} OR n.slug ILIKE ${like} OR COALESCE(n.spot, '') ILIKE ${like})
+      ORDER BY n.updated_at DESC, n.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `
+        : await sql`
+      SELECT n.*, c.slug AS category_slug
+      FROM news n
+      LEFT JOIN categories c ON c.id = n.category_id
+      WHERE (n.site_id = ${siteId} OR (n.site_only = true AND n.owner_site_id = ${siteId}))
+        AND (n.title ILIKE ${like} OR n.slug ILIKE ${like} OR COALESCE(n.spot, '') ILIKE ${like})
+      ORDER BY n.updated_at DESC, n.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `
+      : categoryId
+        ? await sql`
+      SELECT n.*, c.slug AS category_slug
+      FROM news n
+      LEFT JOIN categories c ON c.id = n.category_id
+      WHERE (n.site_id = ${siteId} OR (n.site_only = true AND n.owner_site_id = ${siteId}))
+        AND n.category_id = ${categoryId}
+      ORDER BY n.updated_at DESC, n.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `
+        : await sql`
       SELECT n.*, c.slug AS category_slug
       FROM news n
       LEFT JOIN categories c ON c.id = n.category_id
       WHERE n.site_id = ${siteId}
          OR (n.site_only = true AND n.owner_site_id = ${siteId})
-      ORDER BY n.created_at DESC
+      ORDER BY n.updated_at DESC, n.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
-    const countRows = await sql`
+    const countRows = like
+      ? categoryId
+        ? await sql`
+      SELECT count(*)::int AS count FROM news
+      WHERE (site_id = ${siteId} OR (site_only = true AND owner_site_id = ${siteId}))
+        AND category_id = ${categoryId}
+        AND (title ILIKE ${like} OR slug ILIKE ${like} OR COALESCE(spot, '') ILIKE ${like})
+    `
+        : await sql`
+      SELECT count(*)::int AS count FROM news
+      WHERE (site_id = ${siteId} OR (site_only = true AND owner_site_id = ${siteId}))
+        AND (title ILIKE ${like} OR slug ILIKE ${like} OR COALESCE(spot, '') ILIKE ${like})
+    `
+      : categoryId
+        ? await sql`
+      SELECT count(*)::int AS count FROM news
+      WHERE (site_id = ${siteId} OR (site_only = true AND owner_site_id = ${siteId}))
+        AND category_id = ${categoryId}
+    `
+        : await sql`
       SELECT count(*)::int AS count FROM news
       WHERE site_id = ${siteId}
          OR (site_only = true AND owner_site_id = ${siteId})
     `;
     const neonTotal = countRows?.[0]?.count ?? 0;
-    if (neonTotal > 0) {
+    if (neonTotal > 0 || like || categoryId) {
       const byId = new Map();
       for (const r of rows || []) {
         const id = Number(r.id);
@@ -774,7 +854,7 @@ async function handleEditorNews(sql, siteId, url, env) {
       const uniqueRows = Array.from(byId.values());
       return jsonResponse(200, {
         items: uniqueRows.map((r) => serializeNewsRow(r, r.category_slug)),
-        total: uniqueRows.length,
+        total: neonTotal,
         source: "neon",
       });
     }

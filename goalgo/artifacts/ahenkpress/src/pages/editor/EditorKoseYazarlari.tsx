@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowDown, ArrowUp, ExternalLink, Upload, Images, Loader2, X, Edit2, Trash2, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Upload, Images, Loader2, X, Edit2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { YekpareMediaPickerDialog } from "@/components/YekpareMediaPickerDialog";
 import { appendYekpareCustomMedia, uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
@@ -25,9 +25,6 @@ type AuthorRow = {
   avatarUrl?: string | null;
   bio?: string | null;
   hmSortOrder?: number | null;
-  articleCount?: number | null;
-  sourceSiteName?: string | null;
-  siteName?: string | null;
 };
 
 export default function EditorKoseYazarlari() {
@@ -50,8 +47,6 @@ export default function EditorKoseYazarlari() {
   const [selectedAuthorIds, setSelectedAuthorIds] = useState<number[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [deletingAuthorId, setDeletingAuthorId] = useState<number | null>(null);
-  const [poolQuery, setPoolQuery] = useState("");
-  const [poolAddingId, setPoolAddingId] = useState<number | null>(null);
   const [ordering, setOrdering] = useState(false);
   const avatarFileRef = useRef<HTMLInputElement>(null);
 
@@ -70,25 +65,6 @@ export default function EditorKoseYazarlari() {
       return (await r.json()) as AuthorRow[];
     },
     enabled: !!site?.id,
-  });
-
-  const { data: poolAuthors = [], isLoading: poolLoading, isError: poolError } = useQuery({
-    queryKey: ["/api/hm/editor/pool/authors", site?.id, poolQuery],
-    queryFn: async () => {
-      const t = readHmJwt();
-      if (!t) throw new Error("Oturum yok");
-      const qs = new URLSearchParams({ limit: "80" });
-      if (poolQuery.trim()) qs.set("q", poolQuery.trim());
-      const r = await fetch(apiUrl(`/api/hm/editor/pool/authors?${qs}`), {
-        headers: { Authorization: `Bearer ${t}` },
-      });
-      if (!r.ok) throw new Error(await r.text());
-      const j = (await r.json()) as { items?: AuthorRow[] };
-      return j.items ?? [];
-    },
-    enabled: !!site?.id && !!readHmJwt() && (!isCorporateSite || corporateAuthorsEnabled),
-    retry: false,
-    staleTime: 60_000,
   });
 
   const resetForm = () => {
@@ -163,10 +139,7 @@ export default function EditorKoseYazarlari() {
         throw new Error(msg);
       }
       setSelectedAuthorIds((prev) => prev.filter((id) => !ids.includes(id)));
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["/api/authors"] }),
-        qc.invalidateQueries({ queryKey: ["/api/hm/editor/pool/authors"] }),
-      ]);
+      await qc.invalidateQueries({ queryKey: ["/api/authors"] });
       const deleted = j.deleted ?? 0;
       const detached = j.detached ?? 0;
       toast({
@@ -217,10 +190,7 @@ export default function EditorKoseYazarlari() {
       const j = (await r.json().catch(() => ({}))) as { deleted?: number; error?: string };
       if (!r.ok) throw new Error(j.error || "Silme başarısız");
       setSelectedAuthorIds([]);
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["/api/authors"] }),
-        qc.invalidateQueries({ queryKey: ["/api/hm/editor/pool/authors"] }),
-      ]);
+      await qc.invalidateQueries({ queryKey: ["/api/authors"] });
       toast({ title: "Tüm köşe yazarları silindi", description: `${j.deleted ?? 0} kayıt kaldırıldı.` });
     } catch (err) {
       toast({
@@ -259,27 +229,6 @@ export default function EditorKoseYazarlari() {
     const next = [...authors];
     [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
     void saveAuthorOrder(next.map((row) => row.id));
-  };
-
-  const addPoolAuthor = async (id: number) => {
-    const t = readHmJwt();
-    if (!t) return;
-    setPoolAddingId(id);
-    try {
-      const r = await fetch(apiUrl(`/api/hm/editor/pool/authors/${id}/publish`), {
-        method: "POST",
-        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
-      });
-      const j = (await r.json().catch(() => ({}))) as { copied?: number; error?: string };
-      if (!r.ok) throw new Error(j.error || "Yazar eklenemedi");
-      await qc.invalidateQueries({ queryKey: ["/api/authors", "hm-editor", site?.id] });
-      await qc.invalidateQueries({ queryKey: ["/api/hm/editor/pool/authors"] });
-      toast({ title: "Yazar havuzdan eklendi", description: `${j.copied ?? 0} makale kopyalandı.` });
-    } catch (err) {
-      toast({ title: "Eklenemedi", description: String((err as Error).message), variant: "destructive" });
-    } finally {
-      setPoolAddingId(null);
-    }
   };
 
   const save = async (e: React.FormEvent) => {
@@ -491,54 +440,6 @@ export default function EditorKoseYazarlari() {
             >
               Tümünü sil
             </Button>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-black uppercase tracking-wide text-slate-900">Yazar havuzu</h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Diğer editör sitelerindeki köşe yazarını seçin; yazar ve yayınlanmış tüm makaleleri bu siteye kopyalanır.
-              </p>
-            </div>
-            <Input
-              value={poolQuery}
-              onChange={(e) => setPoolQuery(e.target.value)}
-              placeholder="Yazar ara"
-              className="w-full sm:w-56"
-            />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {poolLoading ? (
-              <p className="text-sm text-slate-500">Havuz yükleniyor...</p>
-            ) : poolError ? (
-              <p className="text-sm text-red-600">Yazar havuzu yüklenemedi. Oturumu yenileyip tekrar deneyin.</p>
-            ) : poolAuthors.length === 0 ? (
-              <p className="text-sm text-slate-500">Havuzda eklenebilir yazar bulunamadı.</p>
-            ) : (
-              poolAuthors.slice(0, 8).map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-900">{a.name}</p>
-                    <p className="truncate text-xs text-slate-500">
-                      {a.siteName || a.sourceSiteName || "Editör sitesi"} · {a.articleCount ?? 0} makale
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 gap-1"
-                    disabled={poolAddingId === a.id}
-                    onClick={() => void addPoolAuthor(a.id)}
-                  >
-                    {poolAddingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-                    Ekle
-                  </Button>
-                </div>
-              ))
-            )}
           </div>
         </div>
 
