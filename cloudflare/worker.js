@@ -2263,9 +2263,12 @@ export default {
           edgePath === "/api/hm/editor/authors/bulk-delete" ||
           edgePath === "/api/hm/editor/authors/order" ||
           edgePath === "/api/hm/editor/news" ||
+          edgePath === "/api/hm/editor/makale" ||
+          edgePath === "/api/hm/editor/makale/bulk-delete" ||
           /^\/api\/hm\/editor\/authors\/\d+$/.test(edgePath) ||
           /^\/api\/hm\/editor\/pool\/authors\/\d+\/publish$/.test(edgePath) ||
-          /^\/api\/hm\/editor\/news\/\d+/.test(edgePath));
+          /^\/api\/hm\/editor\/news\/\d+/.test(edgePath) ||
+          /^\/api\/hm\/editor\/makale\/\d+$/.test(edgePath));
       const khData = await handleKhEditorDataEdge(
         khNeedsClone ? request.clone() : request,
         env,
