@@ -1032,15 +1032,8 @@ async function handleDeleteNews(sql, siteId, id) {
   return jsonResponse(200, { ok: true });
 }
 
-async function handleEditorMakale(sql, siteId, url) {
-  const limit = Math.min(Number(url.searchParams.get("limit") || 200) || 200, 500);
-  const rows = await sql`
-    SELECT * FROM hm_makaleler
-    WHERE site_id = ${siteId}
-    ORDER BY created_at DESC
-    LIMIT ${limit}
-  `;
-  const items = (rows || []).map((r) => ({
+function serializeMakaleRow(r) {
+  return {
     id: r.id,
     title: r.title,
     slug: r.slug,
@@ -1054,8 +1047,227 @@ async function handleEditorMakale(sql, siteId, url) {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     kind: "makale",
-  }));
+    contentKind: "makale",
+    categorySlug: "kose",
+    categoryName: "Köşe yazısı",
+    categoryId: null,
+    categoryColor: "#0ea5e9",
+    isFeatured: false,
+    isSiteManset: false,
+    isBreaking: false,
+    tags: [],
+    isEditorManual: false,
+  };
+}
+
+function parseMakaleAuthorId(body) {
+  if (body?.authorId === null) return null;
+  if (typeof body?.authorId === "number" && Number.isFinite(body.authorId)) {
+    return body.authorId > 0 ? Math.trunc(body.authorId) : null;
+  }
+  if (typeof body?.authorId === "string" && /^\d+$/.test(body.authorId)) {
+    const n = parseInt(body.authorId, 10);
+    return n > 0 ? n : null;
+  }
+  return undefined;
+}
+
+async function handleEditorMakale(sql, siteId, url) {
+  const limit = Math.min(Number(url.searchParams.get("limit") || 200) || 200, 500);
+  const rows = await sql`
+    SELECT * FROM hm_makaleler
+    WHERE site_id = ${siteId}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+  const items = (rows || []).map((r) => serializeMakaleRow(r));
   return jsonResponse(200, { items, total: items.length });
+}
+
+async function handleGetMakale(sql, siteId, id) {
+  const rows = await sql`
+    SELECT * FROM hm_makaleler
+    WHERE id = ${id} AND site_id = ${siteId}
+    LIMIT 1
+  `;
+  const row = rows?.[0];
+  if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
+  return jsonResponse(200, serializeMakaleRow(row));
+}
+
+async function handleCreateMakale(sql, siteId, body) {
+  const title = String(body?.title || "").trim();
+  if (!title) return jsonResponse(400, { error: "title gerekli" });
+  const slugRaw = typeof body?.slug === "string" ? body.slug.trim() : "";
+  let slug = slugify(slugRaw || title);
+  const spot = typeof body?.spot === "string" ? body.spot : null;
+  const content = typeof body?.content === "string" ? body.content : null;
+  const imageUrl =
+    typeof body?.imageUrl === "string" ? body.imageUrl.trim() || null : null;
+  let authorId = parseMakaleAuthorId(body);
+  if (authorId === undefined) authorId = null;
+  const status = body?.status === "published" || body?.status === "draft" ? body.status : "draft";
+
+  let lastErr = "";
+  for (let i = 0; i < 8; i += 1) {
+    const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
+    try {
+      const rows = await sql`
+        INSERT INTO hm_makaleler (
+          site_id, author_id, title, slug, spot, content, image_url, status, created_at, updated_at
+        ) VALUES (
+          ${siteId}, ${authorId}, ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${status}, NOW(), NOW()
+        )
+        RETURNING *
+      `;
+      const row = rows?.[0];
+      if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+      return jsonResponse(201, serializeMakaleRow(row));
+    } catch (err) {
+      const msg = String(err?.message || err);
+      lastErr = msg;
+      if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
+        authorId = null;
+        i -= 1;
+        continue;
+      }
+      if (/unique|duplicate/i.test(msg)) {
+        if (i < 7) continue;
+        return jsonResponse(409, { error: "Bu slug bu sitede zaten kullanılıyor" });
+      }
+      console.error("[hm-makale-create]", msg.slice(0, 200));
+      return jsonResponse(500, { error: "Kayıt oluşturulamadı", detail: msg.slice(0, 160) });
+    }
+  }
+  return jsonResponse(500, {
+    error: lastErr ? `Kayıt oluşturulamadı: ${lastErr.slice(0, 160)}` : "Kayıt oluşturulamadı",
+  });
+}
+
+async function handleUpdateMakale(sql, siteId, id, body) {
+  const existingRows = await sql`
+    SELECT * FROM hm_makaleler
+    WHERE id = ${id} AND site_id = ${siteId}
+    LIMIT 1
+  `;
+  const existing = existingRows?.[0];
+  if (!existing) return jsonResponse(404, { error: "Makale bulunamadı" });
+
+  const title =
+    typeof body?.title === "string" ? body.title.trim() : existing.title;
+  if (!title) return jsonResponse(400, { error: "title gerekli" });
+  const slug =
+    typeof body?.slug === "string" && body.slug.trim()
+      ? slugify(body.slug.trim())
+      : existing.slug;
+  const spot =
+    "spot" in (body || {})
+      ? typeof body.spot === "string"
+        ? body.spot
+        : null
+      : existing.spot;
+  const content =
+    "content" in (body || {})
+      ? typeof body.content === "string"
+        ? body.content
+        : null
+      : existing.content;
+  const imageUrl =
+    "imageUrl" in (body || {})
+      ? typeof body.imageUrl === "string"
+        ? body.imageUrl.trim() || null
+        : null
+      : existing.image_url;
+  let authorId = existing.author_id ?? null;
+  if ("authorId" in (body || {})) {
+    const parsed = parseMakaleAuthorId(body);
+    authorId = parsed === undefined ? null : parsed;
+  }
+  const status =
+    body?.status === "published" || body?.status === "draft" ? body.status : existing.status;
+
+  try {
+    const rows = await sql`
+      UPDATE hm_makaleler SET
+        title = ${title},
+        slug = ${slug},
+        spot = ${spot},
+        content = ${content},
+        image_url = ${imageUrl},
+        author_id = ${authorId},
+        status = ${status},
+        updated_at = NOW()
+      WHERE id = ${id} AND site_id = ${siteId}
+      RETURNING *
+    `;
+    const row = rows?.[0];
+    if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
+    return jsonResponse(200, serializeMakaleRow(row));
+  } catch (err) {
+    const msg = String(err?.message || err);
+    if (/unique|duplicate/i.test(msg)) {
+      return jsonResponse(409, { error: "Bu slug bu sitede zaten kullanılıyor" });
+    }
+    if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg)) {
+      try {
+        const rows = await sql`
+          UPDATE hm_makaleler SET
+            title = ${title},
+            slug = ${slug},
+            spot = ${spot},
+            content = ${content},
+            image_url = ${imageUrl},
+            author_id = NULL,
+            status = ${status},
+            updated_at = NOW()
+          WHERE id = ${id} AND site_id = ${siteId}
+          RETURNING *
+        `;
+        const row = rows?.[0];
+        if (row) return jsonResponse(200, serializeMakaleRow(row));
+      } catch (err2) {
+        console.error("[hm-makale-update-retry]", String(err2?.message || err2).slice(0, 200));
+      }
+    }
+    console.error("[hm-makale-update]", msg.slice(0, 200));
+    return jsonResponse(500, { error: "Güncellenemedi", detail: msg.slice(0, 160) });
+  }
+}
+
+async function handleDeleteMakale(sql, siteId, id) {
+  const rows = await sql`
+    DELETE FROM hm_makaleler
+    WHERE id = ${id} AND site_id = ${siteId}
+    RETURNING id
+  `;
+  if (!rows?.[0]) return jsonResponse(404, { error: "Makale bulunamadı" });
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
+      "cdn-cache-control": "no-store",
+      "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+    },
+  });
+}
+
+async function handleBulkDeleteMakale(sql, siteId, body) {
+  const ids = Array.isArray(body?.ids)
+    ? Array.from(
+        new Set(body.ids.map((x) => parseInt(String(x), 10)).filter((n) => Number.isFinite(n) && n > 0)),
+      )
+    : [];
+  if (!ids.length) return jsonResponse(400, { error: "ids dizisi gerekli" });
+  let deleted = 0;
+  for (const id of ids) {
+    const rows = await sql`
+      DELETE FROM hm_makaleler
+      WHERE id = ${id} AND site_id = ${siteId}
+      RETURNING id
+    `;
+    if (rows?.[0]) deleted += 1;
+  }
+  return jsonResponse(200, { deleted });
 }
 
 async function readJsonBody(request) {
@@ -1256,6 +1468,23 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   if (path === "/api/hm/editor/makale" && method === "GET") {
     return handleEditorMakale(sql, ctx.siteId, incomingUrl);
+  }
+
+  if (path === "/api/hm/editor/makale" && method === "POST") {
+    return handleCreateMakale(sql, ctx.siteId, await readJsonBody(request));
+  }
+
+  if (path === "/api/hm/editor/makale/bulk-delete" && method === "POST") {
+    return handleBulkDeleteMakale(sql, ctx.siteId, await readJsonBody(request));
+  }
+
+  const makaleIdMatch = path.match(/^\/api\/hm\/editor\/makale\/(\d+)$/);
+  if (makaleIdMatch) {
+    const id = asPositiveInt(makaleIdMatch[1]);
+    if (id == null) return jsonResponse(400, { error: "id" });
+    if (method === "GET") return handleGetMakale(sql, ctx.siteId, id);
+    if (method === "PUT") return handleUpdateMakale(sql, ctx.siteId, id, await readJsonBody(request));
+    if (method === "DELETE") return handleDeleteMakale(sql, ctx.siteId, id);
   }
 
   if (path === "/api/hm/editor/authors/order" && method === "PATCH") {
