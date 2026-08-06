@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "wouter";
+import { Link, Redirect, useParams } from "wouter";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
@@ -45,22 +45,43 @@ export default function YazarPublicYazilari() {
 
   const siteId = hmCtx?.siteId ?? null;
 
+  type AuthorQueryResult = AuthorRow | { redirectTo: number };
+
   const {
-    data: author,
+    data: authorResult,
     error: authorErr,
     isLoading: authorLoading,
   } = useQuery({
     queryKey: ["/api/authors", authorId, siteId],
-    queryFn: async () => {
+    queryFn: async (): Promise<AuthorQueryResult> => {
       if (!Number.isFinite(authorId) || authorId <= 0 || siteId == null) throw new Error("bad");
       const qs = new URLSearchParams({ siteId: String(siteId) });
       const r = await fetch(apiUrl(`/api/authors/${authorId}?${qs}`));
-      if (!r.ok) throw new Error(await r.text());
-      return (await r.json()) as AuthorRow;
+      if (r.ok) return (await r.json()) as AuthorRow;
+      // Eski / silinmiş yazar id (ASG repair sonrası): sitede tek yazar varsa ona yönlendir.
+      if (r.status === 404) {
+        const listRes = await fetch(apiUrl(`/api/authors?hmSiteId=${encodeURIComponent(String(siteId))}`));
+        if (listRes.ok) {
+          const list = (await listRes.json()) as AuthorRow[];
+          if (Array.isArray(list) && list.length === 1 && list[0]?.id && list[0].id !== authorId) {
+            return { redirectTo: list[0].id };
+          }
+        }
+      }
+      throw new Error(await r.text());
     },
     enabled: Number.isFinite(authorId) && authorId > 0 && siteId != null,
     retry: false,
   });
+
+  const redirectAuthorId =
+    authorResult && typeof authorResult === "object" && "redirectTo" in authorResult
+      ? Number(authorResult.redirectTo)
+      : NaN;
+  const author =
+    authorResult && typeof authorResult === "object" && "id" in authorResult && "name" in authorResult
+      ? (authorResult as AuthorRow)
+      : undefined;
 
   const listQs = useMemo(() => {
     const q = new URLSearchParams({
@@ -138,6 +159,10 @@ export default function YazarPublicYazilari() {
         Yükleniyor…
       </div>
     );
+  }
+
+  if (Number.isFinite(redirectAuthorId) && redirectAuthorId > 0) {
+    return <Redirect to={h(`/yazar/${redirectAuthorId}`)} />;
   }
 
   if (authorErr || !author) {

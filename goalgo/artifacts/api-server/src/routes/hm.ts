@@ -1777,37 +1777,30 @@ router.get("/hm/makale", async (req, res): Promise<void> => {
   const ctx = await loadNewsContext();
   const fromHm = rows.map((m) => serializeHmMakaleAsNews(m, ctx));
 
-  /** Panelden eklenen blog haberleri (`news`) köşe yazarına bağlıdır; AHB `hm_makaleler` ile aynı vitrinde gösterilir. */
+  /**
+   * Yazar sayfası: `hm_makaleler` + bu yazara bağlı tüm yayınlanmış site haberleri.
+   * (Eski kod yalnızca blog kategorisini alıyordu; panelden ankara/gündem vb. ile
+   * eklenen yazarlı haberler /yazar/:id altında görünmüyordu.)
+   */
   if (Number.isFinite(authorId) && authorId > 0 && status !== "all") {
-    const blogCatIds: number[] = [];
-    for (const [cid, cat] of ctx.categories) {
-      if (String(cat.slug ?? "")
-        .trim()
-        .toLowerCase() === "blog") {
-        blogCatIds.push(cid);
-      }
-    }
-    if (blogCatIds.length > 0) {
-      const newsConds = [
-        eq(newsTable.siteId, siteId),
-        eq(newsTable.authorId, authorId),
-        eq(newsTable.status, status),
-        inArray(newsTable.categoryId, blogCatIds),
-      ];
-      const newsRows = await newsReadDb()
-        .select()
-        .from(newsTable)
-        .where(and(...newsConds))
-        .orderBy(desc(newsTable.createdAt))
-        .limit(lim);
-      const fromNews = newsRows.map((r) => serializeNews(r, ctx));
-      const merged = [...fromHm, ...fromNews].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-      const sliced = merged.slice(0, lim);
-      res.json({ items: sliced, total: sliced.length });
-      return;
-    }
+    const newsConds = [
+      eq(newsTable.siteId, siteId),
+      eq(newsTable.authorId, authorId),
+      eq(newsTable.status, status),
+    ];
+    const newsRows = await newsReadDb()
+      .select()
+      .from(newsTable)
+      .where(and(...newsConds))
+      .orderBy(desc(newsTable.createdAt))
+      .limit(lim);
+    const fromNews = newsRows.map((r) => serializeNews(r, ctx));
+    const merged = [...fromHm, ...fromNews].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    const sliced = merged.slice(0, lim);
+    res.json({ items: sliced, total: sliced.length });
+    return;
   }
 
   res.json({

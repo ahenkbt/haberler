@@ -1207,9 +1207,10 @@ async function handleCreateMakale(sql, siteId, body) {
       const msg = String(err?.message || err);
       lastErr = msg;
       if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
-        authorId = null;
-        i -= 1;
-        continue;
+        // Yazarsız sessiz kayıt yapma — yazar sayfasında görünmez kalıyordu.
+        return jsonResponse(400, {
+          error: "Seçilen yazar bu sitede bulunamadı. Köşe yazarları listesinden geçerli bir yazar seçin.",
+        });
       }
       if (/unique|duplicate/i.test(msg)) {
         if (i < 7) continue;

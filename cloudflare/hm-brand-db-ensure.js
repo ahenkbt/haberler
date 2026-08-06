@@ -912,12 +912,15 @@ async function repairAsgHomeModulesOnNeon(sql) {
 }
 
 const ASG_FROM_AHG_MAKALE_EXT_PREFIX = "asg←ankarahabergundemi:makale:";
-/** Bump: önce makale sil → yazar ekle → makale ekle. */
-const ASG_FROM_AHG_SYNC_REV = "wipe-makale-then-authors-v3";
+/** Bump: otomatik wipe kapatıldı — yalnızca boş ASG bootstrap. */
+const ASG_FROM_AHG_SYNC_REV = "no-auto-wipe-v4";
 
 /**
- * Sıra: 1) ASG hm_makaleler sil  2) yazarları ankarahabergundemi'den yaz  3) makaleleri kopyala
- * Kaynak slug: ankarahabergundemi (ahg değil).
+ * Otomatik ASG←AHG senkronu.
+ * Eski sürüm her meta isteğinde ASG yazar+makaleleri SİLİP yeniden kopyalıyordu;
+ * editör paneli içeriği ve /yazar/:id linkleri kırılıyordu.
+ * Artık yalnızca hedef sitede hiç yazar yoksa (bootstrap) çalışır.
+ * Tam wipe/senkron: admin `POST /api/hm/admin/repair-asg-authors-from-ahg`.
  */
 async function repairAsgAuthorsFromAhgOnNeon(sql) {
   const sourceRows = await sql`
@@ -933,6 +936,13 @@ async function repairAsgAuthorsFromAhgOnNeon(sql) {
   const sourceSiteId = sourceRows?.[0]?.id;
   const targetSiteId = targetRows?.[0]?.id;
   if (!sourceSiteId || !targetSiteId) return;
+
+  const existingAuthorCountRows = await sql`
+    SELECT count(*)::int AS c FROM authors WHERE hm_site_id = ${targetSiteId}
+  `.catch(() => [{ c: 0 }]);
+  const existingAuthorCount = Number(existingAuthorCountRows?.[0]?.c ?? 0);
+  // Editör zaten yazar eklemişse (ör. Gülay KOÇ) otomatik wipe yapma.
+  if (existingAuthorCount > 0) return;
 
   const sourceAuthors = await sql`
     SELECT id, name, title, avatar_url, bio, hm_sort_order

@@ -463,15 +463,17 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-asg-editor] HM_ASG_EDITOR_REPAIR=0 — atlandı");
   }
 
-  // ASG: /tr/ankarahabergundemi yazar + köşe yazılarını ankarasehirgazetesi.com'a kopyala
-  if (envJobFlag("HM_ASG_AUTHORS_FROM_AHG_REPAIR", true)) {
+  // ASG←AHG yazar/makale wipe: varsayılan KAPALI.
+  // Açıkken her boot'ta ASG yazar+makale silinip yeniden kopyalanıyor; editörün eklediği
+  // Gülay KOÇ vb. siliniyor ve /yazar/:id linkleri kırılıyordu. Manuel: admin repair endpoint.
+  if (envJobFlag("HM_ASG_AUTHORS_FROM_AHG_REPAIR", false)) {
     setTimeout(() => {
       void repairAsgAuthorsFromAhg()
         .then((r) => logger.info({ ...r }, "[hm-asg-authors] ankarahabergundemi→ASG yazar+makale senkron"))
         .catch((err) => logger.error({ err }, "[hm-asg-authors] senkron başarısız"));
     }, 17_850).unref();
   } else {
-    logger.info("[hm-asg-authors] HM_ASG_AUTHORS_FROM_AHG_REPAIR=0 — atlandı");
+    logger.info("[hm-asg-authors] HM_ASG_AUTHORS_FROM_AHG_REPAIR kapalı (editör içeriğini korur) — atlandı");
   }
 
   // ASG: Gündemde Öne Çıkanlar + Spor + Ankara RSS
