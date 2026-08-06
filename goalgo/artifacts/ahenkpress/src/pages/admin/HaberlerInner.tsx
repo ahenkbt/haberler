@@ -230,14 +230,14 @@ export function HaberlerInner({
     : ((adminCategories.data ?? []) as { id: number; name: string; slug: string }[]);
 
   const hmNews = useQuery({
-    queryKey: hmEditorNewsQueryKey(selectedCategorySlug || undefined),
+    queryKey: hmEditorNewsQueryKey(selectedCategorySlug || undefined, searchDebounced || undefined),
     queryFn: async () => {
       const t = readHmJwt();
       if (!t) throw new Error("Oturum yok");
-      const qs = selectedCategorySlug
-        ? `?categorySlug=${encodeURIComponent(selectedCategorySlug)}`
-        : "";
-      const r = await fetch(apiUrl(`/api/hm/editor/news${qs}`), {
+      const qs = new URLSearchParams({ limit: "1000" });
+      if (selectedCategorySlug) qs.set("categorySlug", selectedCategorySlug);
+      if (searchDebounced) qs.set("q", searchDebounced);
+      const r = await fetch(apiUrl(`/api/hm/editor/news?${qs}`), {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (!r.ok) throw new Error(await r.text());
@@ -316,8 +316,9 @@ export function HaberlerInner({
     const qs = params.toString();
     setLocation(qs ? `${pathBase}?${qs}` : pathBase);
   };
+  // HM editör listesi sunucu tarafında `q` ile aranır; istemci tekrar filtrelemez.
   const filteredItems =
-    !hmEditorApi && !hmAuthorApi && !hmEditorMakaleApi
+    hmEditorApi || (!hmAuthorApi && !hmEditorMakaleApi)
       ? newsItems
       : newsItems.filter((n) =>
           search.trim() === "" ? true : n.title.toLowerCase().includes(search.toLowerCase()),
