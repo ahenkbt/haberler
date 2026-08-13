@@ -60,6 +60,31 @@ export function parseHmLayoutRecord(raw: string | null | undefined): Record<stri
   return {};
 }
 
+function isCorporateLayoutTheme(layout: Record<string, unknown>): boolean {
+  const t = String(layout.hmVitrinTheme ?? "").trim().toLowerCase();
+  return t === "corporate" || t === "kurumsal";
+}
+
+/** Kurumsal vitrin kaydında RSS feed anahtarlarını kapatır; haber sitelerine dokunmaz. */
+export function stripCorporateRssLayoutFlags(layout: Record<string, unknown>): Record<string, unknown> {
+  if (!isCorporateLayoutTheme(layout)) return layout;
+  const order = Array.isArray(layout.hmCorporateHomeModuleOrder)
+    ? (layout.hmCorporateHomeModuleOrder as unknown[]).filter(
+        (id) => id !== "googleNewsBand" && id !== "rssBand",
+      )
+    : layout.hmCorporateHomeModuleOrder;
+  return {
+    ...layout,
+    hybridRssEnabled: false,
+    hmNewsRssHeadlineEnabled: false,
+    hmNewsGoogleNewsBandEnabled: false,
+    hmNewsRssLinksEnabled: false,
+    hmCorporateGoogleNewsBandEnabled: false,
+    hmCorporateRssBandEnabled: false,
+    hmCorporateHomeModuleOrder: order,
+  };
+}
+
 export function mergeHmLayoutPatch(
   prev: Record<string, unknown>,
   incoming: Record<string, unknown>,
@@ -85,7 +110,7 @@ export function mergeHmLayoutPatch(
       ...(inc.hmCategoryColors as Record<string, unknown>),
     };
   }
-  return merged;
+  return stripCorporateRssLayoutFlags(merged);
 }
 
 export function stringifyHmLayoutMerged(merged: Record<string, unknown>): string {

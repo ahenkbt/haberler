@@ -1741,6 +1741,10 @@ async function loadSiteRssFeedRowsFromMeta(env, origin, incoming, siteId) {
     if (!metaRes.ok) return { enabled: true, mode: "live", feeds: DEFAULT_SITE_RSS_FEEDS };
     const meta = await metaRes.json().catch(() => null);
     const layout = meta?.layout && typeof meta.layout === "object" ? meta.layout : {};
+    const theme = String(layout.hmVitrinTheme || "").trim().toLowerCase();
+    if (theme === "corporate" || theme === "kurumsal") {
+      return { enabled: false, mode: "live", feeds: [] };
+    }
     const enabled = layout.hybridRssEnabled === true;
     const modeRaw = String(layout.hmRssIntegrationMode || "live").trim().toLowerCase();
     const mode =

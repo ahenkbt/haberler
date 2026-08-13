@@ -506,9 +506,10 @@ export function buildDefaultMenuPageCandidates(
   opts?: { siteOrigin?: string | null; layoutPrefs?: NewsSiteLayoutPrefs | null },
 ): MenuPageCandidate[] {
   const prefix = hmBase || "";
-  const siteSlug = prefix.match(/^\/tr\/([^/]+)/)?.[1];
   const siteOrigin = String(opts?.siteOrigin ?? "").trim().replace(/\/+$/, "");
   const editorLoginHref = resolveHmEditorLoginPublicHref(siteOrigin || null);
+  const layoutPrefs = opts?.layoutPrefs ?? null;
+  const isCorporate = layoutPrefs?.hmVitrinTheme === "corporate";
   const standard: MenuPageCandidate[] = [
     { key: "home", label: "Anasayfa", href: prefix || "/", group: "Site" },
     { key: "all-news", label: "Tüm Haberler", href: `${prefix}/tum-haberler`, group: "Site" },
@@ -518,7 +519,7 @@ export function buildDefaultMenuPageCandidates(
     { key: "reklam", label: "Reklam", href: `${prefix}/reklam`, group: "Kurumsal" },
     { key: "abonelik", label: "Abonelik", href: `${prefix}/abonelik`, group: "Kurumsal" },
     { key: "yazarlar", label: "Yazarlar", href: `${prefix}/yazarlar`, group: "Medya" },
-    { key: "rss", label: "RSS Bağlantıları", href: `${prefix}/rss-baglantilari`, group: "Medya" },
+    ...(isCorporate ? [] : [{ key: "rss", label: "RSS Bağlantıları", href: `${prefix}/rss-baglantilari`, group: "Medya" }]),
     { key: "haber-gonder", label: "Haber Gönder", href: `${prefix}/haber-gonder`, group: "Medya" },
     { key: "sitene-ekle", label: "Sitene Ekle", href: `${prefix}/sitene-ekle`, group: "Medya" },
     { key: "foto-galeri", label: "Foto Galeri", href: `${prefix}/foto-galeri`, group: "Medya" },

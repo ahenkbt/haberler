@@ -625,9 +625,9 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     enabled: !search || !isListView,
   });
 
-  /** Editör sitelerinde RSS + manuel aynı kategoride karışır (/api/news/hybrid). */
+  /** Haber sitelerinde RSS + manuel karışır (/api/news/hybrid). Kurumsal vitrin yalnızca editör haberleri. */
   const listApiBase = (opts: { limit: number; offset: number; q?: string; categorySlug?: string }) => {
-    if (siteId != null) {
+    if (siteId != null && !isCorporate) {
       const qs = new URLSearchParams({
         limit: String(opts.limit),
         offset: String(opts.offset),
@@ -646,12 +646,13 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     });
     if (opts.q) qs.set("q", opts.q);
     if (opts.categorySlug) qs.set("categorySlug", opts.categorySlug);
-    qs.set("siteScope", "portal");
+    if (siteId != null) qs.set("siteId", String(siteId));
+    else qs.set("siteScope", "portal");
     return `/api/news?${qs.toString()}`;
   };
 
   const { data: poolData, isLoading: poolLoading } = useQuery<{ items: HmRssNewsBandItem[] }>({
-    queryKey: ["/api/news", "tum-haberler-pool", siteId ?? "all", siteId != null ? "hybrid" : "db"],
+    queryKey: ["/api/news", "tum-haberler-pool", siteId ?? "all", siteId != null && !isCorporate ? "hybrid" : "db"],
     queryFn: async () => {
       const raw = await apiRequest(listApiBase({ limit: Math.min(NEWS_POOL_LIMIT, 100), offset: 0 }));
       const rows = (raw as { items?: unknown[] })?.items ?? [];
@@ -669,7 +670,7 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     fetchNextPage: fetchNextListPage,
     isError: listInfiniteError,
   } = useInfiniteQuery({
-    queryKey: ["/api/news", "tum-haberler-infinite", siteId ?? "all", LIST_PAGE_SIZE, siteId != null ? "hybrid" : "db"],
+    queryKey: ["/api/news", "tum-haberler-infinite", siteId ?? "all", LIST_PAGE_SIZE, siteId != null && !isCorporate ? "hybrid" : "db"],
     queryFn: async ({ pageParam }) => {
       const offset = typeof pageParam === "number" ? pageParam : 0;
       const raw = (await apiRequest(
@@ -708,7 +709,7 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     hasNextPage: searchHasMore,
     fetchNextPage: fetchNextSearchPage,
   } = useInfiniteQuery({
-    queryKey: ["/api/news", "tum-haberler-search-infinite", search, siteId ?? "all", LIST_PAGE_SIZE, siteId != null ? "hybrid" : "db"],
+    queryKey: ["/api/news", "tum-haberler-search-infinite", search, siteId ?? "all", LIST_PAGE_SIZE, siteId != null && !isCorporate ? "hybrid" : "db"],
     queryFn: async ({ pageParam }) => {
       const offset = typeof pageParam === "number" ? pageParam : 0;
       const raw = (await apiRequest(
@@ -971,7 +972,7 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
         siteId ?? "portal",
         slug,
         CATEGORY_FETCH_LIMIT,
-        siteId != null ? "hybrid" : "db",
+        siteId != null && !isCorporate ? "hybrid" : "db",
       ],
       queryFn: async () => {
         const raw = await apiRequest(

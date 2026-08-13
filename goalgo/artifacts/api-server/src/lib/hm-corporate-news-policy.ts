@@ -79,9 +79,29 @@ export function excludeYekparePoolNewsSql(): SQL {
   )!;
 }
 
-/** Kurumsal vitrin: yalnızca site-yerel satırlar (merkez havuz / pool kopyası yok). */
+/** SQL: dış RSS feed URL'li satırları hariç tut (kurumsal vitrin). */
+export function excludeExternalRssNewsSql(): SQL {
+  return or(
+    isNull(newsTable.rssSourceUrl),
+    not(sql`lower(${newsTable.rssSourceUrl}) LIKE 'http%'`),
+  )!;
+}
+
+/** Kurumsal vitrin: yalnızca site-yerel editör haberleri (havuz kopyası ve RSS feed yok). */
 export function strictCorporateSiteNewsScopeSql(siteId: number): SQL {
-  return and(eq(newsTable.siteId, siteId), excludeYekparePoolNewsSql())!;
+  return and(eq(newsTable.siteId, siteId), excludeYekparePoolNewsSql(), excludeExternalRssNewsSql())!;
+}
+
+/** Canlı hibrit RSS veya kalıcı RSS içe aktarımı — kurumsal vitrinde gösterilmez. */
+export function isCorporateRssFeedNewsRow(row: {
+  source?: string | null;
+  rssSourceUrl?: string | null;
+  tags?: string[] | null;
+}): boolean {
+  if (String(row.source ?? "").trim().toLowerCase() === "rss") return true;
+  const tags = row.tags ?? [];
+  if (tags.includes("rss-auto") || tags.includes("rss-hybrid") || tags.includes("rss-import")) return true;
+  return /^https?:\/\//i.test(String(row.rssSourceUrl ?? "").trim());
 }
 
 export function isCorporateSiteLocalNewsRow(row: {
@@ -89,12 +109,12 @@ export function isCorporateSiteLocalNewsRow(row: {
   publishedOnSiteId?: number | null;
   rssSourceUrl?: string | null;
   source?: string | null;
+  tags?: string[] | null;
 }): boolean {
   if (isYekparePoolOrSyncRef(row.rssSourceUrl)) return false;
+  if (isCorporateRssFeedNewsRow(row)) return false;
   const siteId = row.siteId ?? row.publishedOnSiteId;
-  if (siteId != null && siteId > 0) return true;
-  if (String(row.source ?? "").trim().toLowerCase() === "rss") return true;
-  return false;
+  return siteId != null && siteId > 0;
 }
 
 export function filterCorporatePublicNewsItems<
@@ -104,6 +124,7 @@ export function filterCorporatePublicNewsItems<
     categorySlug?: string | null;
     rssSourceUrl?: string | null;
     source?: string | null;
+    tags?: string[] | null;
   },
 >(items: T[], opts?: { siteSlug?: string | null }): T[] {
   const siteSlug = opts?.siteSlug ?? null;

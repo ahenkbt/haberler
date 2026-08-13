@@ -858,6 +858,17 @@ export const HM_CORPORATE_HOME_MODULE_ORDER = [
   "donationSupport",
 ] as const;
 
+/** Kurumsal vitrinden kaldırılan RSS modülleri — editör ve anasayfada render edilmez. */
+export const HM_CORPORATE_RETIRED_RSS_MODULE_IDS = ["googleNewsBand", "rssBand"] as const;
+
+export function isHmCorporateRetiredRssModule(moduleId: string): boolean {
+  return (HM_CORPORATE_RETIRED_RSS_MODULE_IDS as readonly string[]).includes(moduleId);
+}
+
+export const HM_CORPORATE_EDITOR_HOME_MODULE_ORDER = HM_CORPORATE_HOME_MODULE_ORDER.filter(
+  (id) => !isHmCorporateRetiredRssModule(id),
+);
+
 export type HmNewsHomeModuleId = (typeof HM_NEWS_HOME_MODULE_ORDER)[number];
 export type HmCorporateHomeModuleId = (typeof HM_CORPORATE_HOME_MODULE_ORDER)[number];
 export type HmNewsHomeModuleCategorySlugs = Partial<Record<HmNewsHomeModuleId, string>>;
@@ -1344,7 +1355,7 @@ export function resolveHmCorporateEditorModuleEnabled(
     case "quickAccess":
       return p.hmCorporateQuickAccessEnabled !== false;
     case "googleNewsBand":
-      return p.hmCorporateGoogleNewsBandEnabled === true;
+      return false;
     case "culturePortal":
       return p.hmCorporateCulturePortalBandEnabled === true;
     case "mansetAd":
@@ -1356,7 +1367,7 @@ export function resolveHmCorporateEditorModuleEnabled(
     case "ataturkCorner":
       return p.hmCorporateAtaturkCornerEnabled === true;
     case "rssBand":
-      return p.hmCorporateRssBandEnabled === true;
+      return false;
     case "authorsStrip":
       return resolveHmCorporateAuthorsEnabled(p);
     case "homeMiddleAd":
@@ -2092,9 +2103,14 @@ export function mergeHmRssFeedRowsByCategorySlug(...sources: HmBreakingRssFeedRo
 export function resolveHmUnifiedRssFeedRows(
   p?: Pick<
     NewsSiteLayoutPrefs,
-    "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels" | "hmNewsSiteRssFeedRows"
+    | "hmVitrinTheme"
+    | "hmNewsBreakingRssFeedRows"
+    | "hmNewsBreakingRssFeeds"
+    | "hmNewsBreakingRssLabels"
+    | "hmNewsSiteRssFeedRows"
   > | null,
 ): HmBreakingRssFeedRow[] {
+  if (normalizeHmVitrinTheme(p?.hmVitrinTheme) === "corporate") return [];
   return mergeHmRssFeedRowsByCategorySlug(
     resolveHmBreakingRssFeedRowsOnly(p),
     resolveHmSiteRssFeedRowsOnly(p),
@@ -2477,9 +2493,11 @@ export function filterCorporateHomeModulesForDonation(
   modules: string[] | null | undefined,
   donation?: HmCorporateDonationSettings | null,
 ): string[] | null {
-  if (!modules?.length || !isHmDonationActive(donation)) return modules ?? null;
-  const filtered = modules.filter((id) => id !== "donationFooter");
-  return filtered.length ? filtered : modules;
+  if (!modules?.length) return modules ?? null;
+  const source = modules.filter((id) => !isHmCorporateRetiredRssModule(id));
+  if (!isHmDonationActive(donation)) return source;
+  const filtered = source.filter((id) => id !== "donationFooter");
+  return filtered.length ? filtered : source;
 }
 
 function normalizeHmCorporateDonation(raw: unknown): HmCorporateDonationSettings {
@@ -2630,7 +2648,7 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsAgencyTopicRowsEnabled: false,
   hmNewsWsjEditorialGridEnabled: false,
   hmNewsHomeModuleOrder: [...HM_NEWS_HOME_MODULE_ORDER],
-  hmCorporateHomeModuleOrder: [...HM_CORPORATE_HOME_MODULE_ORDER],
+  hmCorporateHomeModuleOrder: [...HM_CORPORATE_EDITOR_HOME_MODULE_ORDER],
   sadeNewsPublicInfoEnabled: false,
   sadeNewsNewsletterEnabled: true,
   sadeNewsTimelineEnabled: false,
@@ -2834,9 +2852,9 @@ export function resolveHmNewsAnyAuthorsEnabled(p: NewsSiteLayoutPrefs | null | u
   return resolveHmNewsHorizontalAuthorsEnabled(p) || resolveHmNewsSidebarAuthorsEnabled(p);
 }
 
-/** KURUMSAL vitrinde RSS linkleri yalnızca panelden özellikle açılırsa görünür. */
-export function resolveHmCorporateRssLinksEnabled(p: NewsSiteLayoutPrefs | null | undefined): boolean {
-  return p?.hmNewsRssLinksEnabled === true;
+/** KURUMSAL vitrinde RSS bağlantıları ve feed modülü yoktur. */
+export function resolveHmCorporateRssLinksEnabled(_p?: NewsSiteLayoutPrefs | null): boolean {
+  return false;
 }
 
 function isHmVideoTvNavHref(href: string): boolean {
@@ -2903,8 +2921,11 @@ function normalizeThemeDefaultHiddenToggle(
   return isHmNewsHomeModuleDefaultEnabledForTheme(theme, moduleId);
 }
 
-/** Site-içi RSS hibrit vitrin — editör vitrininde «Site içi RSS» anahtarı (hybridRssEnabled). */
-export function isHmHybridRssEnabled(p?: Pick<NewsSiteLayoutPrefs, "hybridRssEnabled"> | null): boolean {
+/** Site-içi RSS hibrit vitrin — kurumsal temada kapalı; haber sitelerinde «Site içi RSS» anahtarı. */
+export function isHmHybridRssEnabled(
+  p?: Pick<NewsSiteLayoutPrefs, "hybridRssEnabled" | "hmVitrinTheme"> | null,
+): boolean {
+  if (normalizeHmVitrinTheme(p?.hmVitrinTheme) === "corporate") return false;
   return p?.hybridRssEnabled === true;
 }
 
@@ -2912,7 +2933,7 @@ export function isHmHybridRssEnabled(p?: Pick<NewsSiteLayoutPrefs, "hybridRssEna
 export function resolveHmHomeHybridNewsFetchEnabled(
   p?: Pick<
     NewsSiteLayoutPrefs,
-    "hybridRssEnabled" | "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels" | "hmNewsSiteRssFeedRows"
+    "hybridRssEnabled" | "hmVitrinTheme" | "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels" | "hmNewsSiteRssFeedRows"
   > | null,
   _siteId?: number | null,
 ): boolean {
@@ -3361,7 +3382,7 @@ export function parseNewsSiteLayoutFromJson(
       hmSiteRssDefaultsRev,
       hmNewsSiteRssFeedRows,
       portalHybridRssFeeds: portalHybridRssFeeds ?? undefined,
-      hybridRssEnabled: hybridRssEnabledRaw === true ? true : undefined,
+      hybridRssEnabled: isCorporateTheme ? false : hybridRssEnabledRaw === true ? true : undefined,
       hmNewsBreakingRssBandTitle: hmNewsBreakingRssBandTitle ?? undefined,
       hmNewsBreakingRssDisplayMode: hmNewsBreakingRssDisplayMode ?? undefined,
       hmNewsBreakingRssArticleLinkEnabled: normalizeDefaultHiddenToggle(newsBreakingRssArticleLinkEnabledRaw),
@@ -3377,11 +3398,13 @@ export function parseNewsSiteLayoutFromJson(
       hmCorporateWarsSectionEnabled: normalizeDefaultHiddenToggle(warsSectionEnabledRaw),
       hmCorporateNationalDaysSectionEnabled: normalizeDefaultHiddenToggle(nationalDaysSectionEnabledRaw),
       hmCorporateCategorySectionsEnabled: normalizeDefaultVisibleToggle(corporateCategorySectionsEnabledRaw),
-      hmCorporateRssBandEnabled: normalizeDefaultHiddenToggle(corporateRssBandEnabledRaw),
+      hmCorporateRssBandEnabled: isCorporateTheme ? false : normalizeDefaultHiddenToggle(corporateRssBandEnabledRaw),
       hmCorporateLatestNewsEnabled: normalizeDefaultVisibleToggle(corporateLatestNewsEnabledRaw),
       hmCorporateLatestDevelopmentsEnabled: normalizeDefaultVisibleToggle(corporateLatestDevelopmentsEnabledRaw),
       hmCorporateSidebarInfoEnabled: normalizeDefaultVisibleToggle(corporateSidebarInfoEnabledRaw),
-      hmCorporateGoogleNewsBandEnabled: normalizeDefaultHiddenToggle(corporateGoogleNewsBandEnabledRaw),
+      hmCorporateGoogleNewsBandEnabled: isCorporateTheme
+        ? false
+        : normalizeDefaultHiddenToggle(corporateGoogleNewsBandEnabledRaw),
       hmCorporateRequestFormEnabled: normalizeDefaultVisibleToggle(corporateRequestFormEnabledRaw),
       hmCorporateRequestCategories:
         normalizeHmRequestCategories((j as { hmCorporateRequestCategories?: unknown }).hmCorporateRequestCategories) ??
@@ -3405,9 +3428,11 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsSliderEnabled: normalizeDefaultVisibleToggle(newsSliderEnabledRaw),
       /** Tepe manşet: varsayılan açık — tüm haber sitelerinde header altında en üstte */
       hmNewsTepeMansetEnabled: normalizeDefaultVisibleToggle(newsTepeMansetEnabledRaw),
-      hmNewsRssHeadlineEnabled: normalizeDefaultHiddenToggle(newsRssHeadlineEnabledRaw),
+      hmNewsRssHeadlineEnabled: isCorporateTheme ? false : normalizeDefaultHiddenToggle(newsRssHeadlineEnabledRaw),
       hmNewsBreakingBandEnabled: normalizeDefaultVisibleToggle(newsBreakingBandEnabledRaw),
-      hmNewsGoogleNewsBandEnabled: normalizeDefaultHiddenToggle(newsGoogleNewsBandEnabledRaw),
+      hmNewsGoogleNewsBandEnabled: isCorporateTheme
+        ? false
+        : normalizeDefaultHiddenToggle(newsGoogleNewsBandEnabledRaw),
       hmNewsCategorySectionsEnabled: normalizeDefaultVisibleToggle(newsCategorySectionsEnabledRaw),
       hmNewsQuickLinksEnabled: normalizeDefaultVisibleToggle(newsQuickLinksEnabledRaw),
       hmNewsAuthorsEnabled: normalizeDefaultVisibleToggle(newsAuthorsEnabledRaw),
@@ -3426,7 +3451,7 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsFooterEnabled: normalizeDefaultVisibleToggle(newsFooterEnabledRaw),
       hmNewsFooterCategoriesEnabled: normalizeDefaultVisibleToggle(newsFooterCategoriesEnabledRaw),
       hmNewsRssLinksEnabled: isCorporateTheme
-        ? normalizeDefaultHiddenToggle(newsRssLinksEnabledRaw)
+        ? false
         : normalizeDefaultVisibleToggle(newsRssLinksEnabledRaw),
       hmNewsSubmitLinkEnabled: normalizeDefaultHiddenToggle(newsSubmitLinkEnabledRaw),
       hmNewsRequestFormEnabled: normalizeDefaultHiddenToggle(newsRequestFormEnabledRaw),
@@ -3537,7 +3562,7 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsVideoTvChannelId,
       hmNewsVideoTvPlaylistId,
       hmNewsVideoTvManualLink,
-      hmCorporateHomeModuleOrder: hmCorporateHomeModuleOrder ?? [...HM_CORPORATE_HOME_MODULE_ORDER],
+      hmCorporateHomeModuleOrder: hmCorporateHomeModuleOrder ?? [...HM_CORPORATE_EDITOR_HOME_MODULE_ORDER],
       sadeNewsPortalModuleOrder: resolveHmHomeModuleOrder(
         sadeNewsPortalModuleOrder,
         SADE_NEWS_PORTAL_ACTIVE_MODULE_ORDER,
@@ -3563,8 +3588,8 @@ export function parseNewsSiteLayoutFromJson(
       ),
       hmCorporateHomeModuleOrder: resolveHmHomeModuleOrder(
         layoutResult.hmCorporateHomeModuleOrder,
-        HM_CORPORATE_HOME_MODULE_ORDER,
-      ).filter((id) => !isHmNewsRetiredHomeModule(id)),
+        HM_CORPORATE_EDITOR_HOME_MODULE_ORDER,
+      ).filter((id) => !isHmNewsRetiredHomeModule(id) && !isHmCorporateRetiredRssModule(id)),
     };
     const withVkd =
       siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(layoutResult) : layoutResult;

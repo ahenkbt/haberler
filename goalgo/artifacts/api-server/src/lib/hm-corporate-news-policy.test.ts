@@ -31,11 +31,26 @@ describe("hm-corporate-news-policy", () => {
     expect(isYekparePoolOrSyncRef("wp-wxr:vatankahramanlari.org:1")).toBe(false);
   });
 
-  it("keeps only site-local rows for corporate", () => {
+  it("keeps only site-local editor rows for corporate and drops RSS feeds", () => {
     expect(isCorporateSiteLocalNewsRow({ siteId: 5, rssSourceUrl: null })).toBe(true);
     expect(isCorporateSiteLocalNewsRow({ siteId: null, rssSourceUrl: null })).toBe(false);
     expect(isCorporateSiteLocalNewsRow({ siteId: 5, rssSourceUrl: "yekpare-hm-pool:1:2" })).toBe(false);
-    expect(isCorporateSiteLocalNewsRow({ source: "rss", rssSourceUrl: "https://example.com/feed" })).toBe(true);
+    expect(isCorporateSiteLocalNewsRow({ source: "rss", rssSourceUrl: "https://example.com/feed" })).toBe(false);
+    expect(
+      isCorporateSiteLocalNewsRow({
+        siteId: 5,
+        source: "rss",
+        rssSourceUrl: "https://www.dirilispostasi.com/rss/gundem",
+      }),
+    ).toBe(false);
+    expect(
+      isCorporateSiteLocalNewsRow({
+        siteId: 5,
+        rssSourceUrl: "https://www.ntv.com.tr/gundem.rss",
+        tags: ["rss-auto"],
+      }),
+    ).toBe(false);
+    expect(isCorporateSiteLocalNewsRow({ siteId: 5, rssSourceUrl: "wp-wxr:vatankahramanlari.org:1" })).toBe(true);
   });
 
   it("filters VKD public news to allowed categories", () => {
@@ -44,6 +59,7 @@ describe("hm-corporate-news-policy", () => {
       { id: 2, siteId: 5, categorySlug: "gundem", rssSourceUrl: null },
       { id: 3, siteId: null, categorySlug: "dernegimiz", rssSourceUrl: null },
       { id: 4, siteId: 5, categorySlug: "faaliyetlerimiz", rssSourceUrl: "yekpare-hm-pool:1:9" },
+      { id: 5, siteId: 5, categorySlug: "dernegimiz", source: "rss", rssSourceUrl: "https://example.com/feed" },
     ];
     const out = filterCorporatePublicNewsItems(items, { siteSlug: "vkd" });
     expect(out.map((x) => x.id)).toEqual([1]);

@@ -537,7 +537,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     categoryKey: row.id,
   }));
   const siteRows = DEFAULT_HM_SITE_RSS_ROWS.map((row) => ({ ...row }));
-  return {
+  const layout: Record<string, unknown> = {
     hmVitrinTheme: isCorporate ? "corporate" : "esen",
     mansetVariant: "center-trio",
     hmChromeColorMode: "light",
@@ -551,9 +551,9 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsBreakingRssArticleLinkEnabled: true,
     hmBreakingRssDefaultsRev: HM_BREAKING_RSS_DEFAULTS_REV,
     hmSiteRssDefaultsRev: HM_SITE_RSS_DEFAULTS_REV,
-    hmNewsBreakingRssFeedRows: boxRows,
-    hmNewsSiteRssFeedRows: siteRows,
-    hybridRssEnabled: true,
+    hmNewsBreakingRssFeedRows: isCorporate ? [] : boxRows,
+    hmNewsSiteRssFeedRows: isCorporate ? [] : siteRows,
+    hybridRssEnabled: !isCorporate,
     hmNewsCategorySectionsEnabled: true,
     hmNewsQuickLinksEnabled: true,
     hmNewsAuthorsEnabled: !isCorporate,
@@ -572,6 +572,15 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmCorporateRssBandEnabled: false,
     ...inc,
   };
+  if (isCorporate) {
+    layout.hybridRssEnabled = false;
+    layout.hmNewsRssHeadlineEnabled = false;
+    layout.hmNewsGoogleNewsBandEnabled = false;
+    layout.hmNewsRssLinksEnabled = false;
+    layout.hmCorporateGoogleNewsBandEnabled = false;
+    layout.hmCorporateRssBandEnabled = false;
+  }
+  return layout;
 }
 
 function donationText(raw: unknown, fallback: string, max = 240): string {
