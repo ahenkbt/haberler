@@ -1,4 +1,8 @@
 import { isLegacyHmDonationHtml, stripLegacyHmDonationHtml } from "./hmLegacyDonationHtml.js";
+import {
+  VKD_ACCOUNT_NAME,
+  VKD_DONATION_ACCOUNTS,
+} from "./vkd-public-contact.js";
 
 /** Anasayfa bağış düzeni: tek kutu (destek bandı + IBAN), alt footer modülü yok. */
 
@@ -40,12 +44,16 @@ function normalizeCorporateDonationBlock(raw: unknown): Record<string, unknown> 
   const buttonRaw = String(o.buttonText ?? "").trim();
   const buttonText =
     !buttonRaw || /^bağış\s*yap$/i.test(buttonRaw) ? "IBAN Kopyala" : buttonRaw.slice(0, 40);
+  const accounts = Array.isArray(o.accounts)
+    ? o.accounts.filter((row) => row && typeof row === "object" && String((row as { iban?: unknown }).iban ?? "").trim())
+    : undefined;
 
   return {
     ...o,
     description: null,
     amounts: [],
     buttonText,
+    ...(accounts?.length ? { accounts } : {}),
     supportBand: {
       ...band,
       text: highlightsHtml ? null : band.text ?? null,
@@ -71,12 +79,10 @@ export function applyVkdDonationLayoutDefaults(layout: Record<string, unknown>):
       ? ({ ...(bandRaw as Record<string, unknown>) })
       : {};
 
-  if (!String(o.iban ?? "").trim()) {
-    o.iban = "TR66 0010 3000 0000 0084 0744 71";
-  }
-  if (!String(o.accountName ?? "").trim()) {
-    o.accountName = "VATAN KAHRAMANLARI SAVUNMA HİZMETLERİ";
-  }
+  const ziraat = VKD_DONATION_ACCOUNTS[0]!;
+  o.iban = ziraat.iban;
+  o.accountName = VKD_ACCOUNT_NAME;
+  o.accounts = VKD_DONATION_ACCOUNTS.map((row) => ({ ...row }));
   const title = String(o.title ?? "").trim();
   if (!title || /^kurumsal yayıncılığa destek/i.test(title)) {
     o.title = "Çalışmalarımıza Destek Olun.";

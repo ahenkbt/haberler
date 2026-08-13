@@ -11,6 +11,12 @@ import {
   isVkdSiteSlug,
   VKD_FOOTER_CATEGORY_LINKS,
 } from "@/lib/hmVkdFooterNav";
+import {
+  VKD_CONTACT_ADDRESS,
+  VKD_CONTACT_PHONE_DISPLAY,
+  VKD_DONATION_ACCOUNTS,
+  formatIbanDisplay,
+} from "@/lib/vkdPublicContact";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import type { HmPublicSiteContact } from "@/contexts/HmPublicLinkContext";
 import { rewriteHmSiteAnchorsInHtml } from "@/lib/rewriteNewsBodyLinksForHm";
@@ -259,8 +265,19 @@ export function HmPublicSiteFooter({
   const soc = layoutPrefs.hmFooterSocial;
   const waDigits = (layoutPrefs.hmFooterWhatsappIhbar ?? "").replace(/\D/g, "");
 
+  const vkdSite = isVkdSiteSlug(slug);
+  const effectiveContact = vkdSite
+    ? {
+        phone: (contact?.phone ?? "").trim() || VKD_CONTACT_PHONE_DISPLAY,
+        email: contact?.email,
+        address: (contact?.address ?? "").trim() || VKD_CONTACT_ADDRESS,
+        notes: contact?.notes,
+      }
+    : contact;
   const showIletisimBlock =
-    !!(contact?.phone || contact?.email || contact?.address || contact?.notes) || waDigits.length > 0;
+    !!(effectiveContact?.phone || effectiveContact?.email || effectiveContact?.address || effectiveContact?.notes) ||
+    waDigits.length > 0 ||
+    vkdSite;
   const hasRightColumn =
     showIletisimBlock || !!(soc?.instagramUrl || soc?.facebookUrl || soc?.xUrl || soc?.youtubeUrl);
 
@@ -381,30 +398,41 @@ export function HmPublicSiteFooter({
                 <div>
                   <h3 className={HM_FOOTER_HEADING_CLASS}>İletişim</h3>
                   <ul className={`mt-3 space-y-2 ${HM_FOOTER_BODY_CLASS}`}>
-                    {contact?.phone ? (
+                    {effectiveContact?.phone ? (
                       <li>
                         <span className="text-[color:var(--hm-footer-text,rgba(203,213,225,0.65))]">Tel: </span>
-                        <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className={HM_FOOTER_LINK_EMPHASIS_CLASS}>
-                          {contact.phone}
+                        <a href={`tel:${effectiveContact.phone.replace(/\s/g, "")}`} className={HM_FOOTER_LINK_EMPHASIS_CLASS}>
+                          {effectiveContact.phone}
                         </a>
                       </li>
                     ) : null}
-                    {contact?.email ? (
+                    {effectiveContact?.email ? (
                       <li>
                         <span className="text-[color:var(--hm-footer-text,rgba(203,213,225,0.65))]">E-posta: </span>
-                        <a href={`mailto:${encodeURIComponent(contact.email)}`} className={`break-all ${HM_FOOTER_LINK_EMPHASIS_CLASS}`}>
-                          {contact.email}
+                        <a href={`mailto:${encodeURIComponent(effectiveContact.email)}`} className={`break-all ${HM_FOOTER_LINK_EMPHASIS_CLASS}`}>
+                          {effectiveContact.email}
                         </a>
                       </li>
                     ) : null}
-                    {contact?.address ? (
+                    {effectiveContact?.address ? (
                       <li>
                         <span className="text-[color:var(--hm-footer-text,rgba(203,213,225,0.65))]">Adres: </span>
-                        {contact.address}
+                        {effectiveContact.address}
                       </li>
                     ) : null}
-                    {contact?.notes ? (
-                      <li className="text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--hm-footer-text,rgba(203,213,225,0.72))]">{contact.notes}</li>
+                    {vkdSite
+                      ? VKD_DONATION_ACCOUNTS.map((account) => (
+                          <li key={account.iban}>
+                            <span className="text-[color:var(--hm-footer-text,rgba(203,213,225,0.65))]">{account.bank}: </span>
+                            <span className="font-mono text-[11px]">{formatIbanDisplay(account.iban)}</span>
+                            <span className="block text-[11px] text-[color:var(--hm-footer-text,rgba(203,213,225,0.72))]">
+                              {account.accountName}
+                            </span>
+                          </li>
+                        ))
+                      : null}
+                    {effectiveContact?.notes ? (
+                      <li className="text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--hm-footer-text,rgba(203,213,225,0.72))]">{effectiveContact.notes}</li>
                     ) : null}
                     {waDigits.length > 0 ? (
                       <li>

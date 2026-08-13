@@ -217,6 +217,13 @@ function cleanCorporateDonationSettings(input: HmCorporateDonationSettings): HmC
     amounts: amounts.length ? amounts : DEFAULT_DONATION_SETTINGS.amounts,
     iban: input.iban?.trim() || null,
     accountName: input.accountName?.trim() || null,
+    accounts: (input.accounts ?? [])
+      .map((row) => ({
+        bank: row.bank?.trim() || null,
+        accountName: row.accountName?.trim() || null,
+        iban: row.iban?.trim() || null,
+      }))
+      .filter((row) => row.iban),
     buttonText: input.buttonText?.trim() || DEFAULT_DONATION_SETTINGS.buttonText,
     supportBand: {
       enabled: input.supportBand?.enabled !== false,
