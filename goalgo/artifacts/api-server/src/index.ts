@@ -509,7 +509,7 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-editor-cross-site] HM_EDITOR_CROSS_SITE_REPAIR=0 — atlandı");
   }
 
-  // Tepe manşet: eksik sitelerde sıraya ekle; editörün kapalı kaydını geri açma
+  // Tepe manşet: bir kerelik opt-in (tüm sitelerde varsayılan kapalı)
   if (envJobFlag("HM_TEPE_MANSET_REPAIR", true)) {
     setTimeout(() => {
       void repairHmTepeMansetSystem()

@@ -155,6 +155,7 @@ import {
 } from "../lib/hm-editor-cross-site-repair.js";
 import { isHmCrossSiteSharedEditorEmail } from "../lib/hm-editor-shared-email.js";
 import { repairHmTepeMansetSystem } from "../lib/hm-tepe-manset-repair.js";
+import { HM_TEPE_MANSET_OPT_IN_REV } from "../lib/hm-tepe-manset-layout.js";
 import {
   ensureHmSiteEditorUsernameColumn,
   isHmEditorLoginEmail,
@@ -544,7 +545,8 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsHeaderMenuEnabled: true,
     hmNewsStripMenuEnabled: false,
     hmNewsSliderEnabled: true,
-    hmNewsTepeMansetEnabled: true,
+    hmNewsTepeMansetEnabled: false,
+    hmTepeMansetOptInRev: HM_TEPE_MANSET_OPT_IN_REV,
     hmNewsRssHeadlineEnabled: false,
     hmNewsBreakingBandEnabled: true,
     hmNewsGoogleNewsBandEnabled: !isCorporate,
@@ -2059,7 +2061,7 @@ router.post("/hm/admin/repair-kh-editor", async (req, res): Promise<void> => {
   }
 });
 
-/** Yönetim: tepe manşet modülünü tüm sitelerde aç + manşet bayraklarını onar. */
+/** Yönetim: Tepe manşet opt-in geçişi + manşet bayrak onarımı. */
 router.post("/hm/admin/repair-tepe-manset", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {

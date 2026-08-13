@@ -22,8 +22,8 @@ function parseLayoutRecord(raw: unknown): Record<string, unknown> {
 }
 
 /**
- * Tüm HM haber sitelerinde tepe manşet modülünü sıraya ekler (eksikse).
- * Editörün `hmNewsTepeMansetEnabled: false` kaydı korunur.
+ * Tüm HM haber sitelerinde Tepe manşeti bir kez kapatır (opt-in).
+ * Editör panelden açtıysa `hmTepeMansetOptInRev` sayesinde tekrar kapanmaz.
  */
 export async function repairHmTepeMansetLayoutForAllSites(): Promise<HmTepeMansetRepairResult> {
   const sites = await listHmNewsSitesCompat();
@@ -52,7 +52,7 @@ export async function repairHmTepeMansetLayoutForAllSites(): Promise<HmTepeManse
     ok: true,
     sitesPatched,
     featuredFlagsPatched: 0,
-    detail: sitesPatched > 0 ? `${sitesPatched} sitede tepe manşet sırası onarıldı` : "layout zaten uygun",
+    detail: sitesPatched > 0 ? `${sitesPatched} sitede Tepe manşet varsayılan kapalıya alındı` : "layout zaten uygun",
   };
 }
 

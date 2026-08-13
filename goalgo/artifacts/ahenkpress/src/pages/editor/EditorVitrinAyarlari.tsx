@@ -1099,8 +1099,8 @@ export default function EditorVitrinAyarlari() {
             />
             <ToggleRow
               id="hm-news-tepe-manset"
-              label="Tepe Manşet sistemi"
-              checked={p.hmNewsTepeMansetEnabled !== false}
+              label="Tepe Manşet sistemi (varsayılan kapalı)"
+              checked={p.hmNewsTepeMansetEnabled === true}
               disabled={saving}
               onChange={(c) => toggleDefaultOn("hmNewsTepeMansetEnabled", c)}
             />
@@ -2046,8 +2046,8 @@ export default function EditorVitrinAyarlari() {
             />
             <ToggleRow
               id="hm-corporate-tepe-manset"
-              label="Tepe Manşet sistemi"
-              checked={p.hmNewsTepeMansetEnabled !== false}
+              label="Tepe Manşet sistemi (varsayılan kapalı)"
+              checked={p.hmNewsTepeMansetEnabled === true}
               disabled={saving}
               onChange={(c) => toggleDefaultOn("hmNewsTepeMansetEnabled", c)}
             />
