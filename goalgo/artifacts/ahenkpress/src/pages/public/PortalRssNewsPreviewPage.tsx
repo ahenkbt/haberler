@@ -7,6 +7,7 @@ import { readHmRssPreviewFromHomeCache } from "@/lib/hmHomeHybridNewsCache";
 import { EditorialNewsDetailHeader } from "@/components/EditorialNewsDetailHeader";
 import { EditorialNewsArticleLayout } from "@/components/news/EditorialNewsArticleLayout";
 import { NewsArticleBody } from "@/components/NewsArticleBody";
+import { HmNewsImage } from "@/components/HmNewsImage";
 import { resolveClientMediaSrc, normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import { stripDuplicateHeroImageFromHtml } from "@/lib/stripDuplicateHeroImageFromHtml";
@@ -233,18 +234,15 @@ function RssRelatedNewsBox({ items, accent }: { items: HomeHybridNewsItem[]; acc
       </div>
       <div className="grid gap-3 p-4 sm:grid-cols-2">
         {items.map((item) => {
-          const img = item.imageUrl ? resolveClientMediaSrc(item.imageUrl) || item.imageUrl : null;
           return (
             <Link
               key={`${item.source ?? "news"}:${item.id}`}
               href={h(item.href)}
               className="group flex gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
             >
-              {img ? (
-                <img src={img} alt="" className="h-20 w-24 shrink-0 rounded-lg object-cover" />
-              ) : (
-                <div className="h-20 w-24 shrink-0 rounded-lg bg-slate-200" />
-              )}
+              <span className="h-20 w-24 shrink-0 overflow-hidden rounded-lg">
+                <HmNewsImage item={item} alt="" />
+              </span>
               <div className="min-w-0 flex-1">
                 {item.categoryName ? (
                   <p className="mb-1 text-[10px] font-black uppercase tracking-wide" style={{ color: accent }}>

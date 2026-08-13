@@ -588,10 +588,10 @@ export function SadeBreakingBand({ items }: { items: SadeNewsCardItem[] }) {
             >
               <div className="relative h-[88px] overflow-hidden bg-slate-200">
                 {img ? (
-                  <img
+                  <HmNewsImage
                     src={img}
                     alt=""
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    className="transition duration-300 group-hover:scale-105"
                     loading="lazy"
                   />
                 ) : (

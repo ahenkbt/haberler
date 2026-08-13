@@ -8,7 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { resolveHmOrGlobalSlotHtml } from "@/lib/hmResolveAdSlotHtml";
 import { rewriteHmSiteAnchorsInHtml } from "@/lib/rewriteNewsBodyLinksForHm";
-import { resolveClientMediaSrc, rewriteInlineHtmlImgSrc, apiUrl } from "@/lib/apiBase";
+import { rewriteInlineHtmlImgSrc, apiUrl } from "@/lib/apiBase";
+import { HmNewsImage } from "@/components/HmNewsImage";
 import { defaultNewsSiteLayoutPrefs, isHmHybridRssEnabled, normalizeHmVitrinTheme, resolveHmCorporateAuthorsEnabled, resolveHmNewsSidebarAuthorsEnabled, type NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { fetchHybridNewsList } from "@/hooks/useHomeHybridNews";
 import { mapPublicHybridNewsLinkFields } from "@/lib/hybridNewsHref";
@@ -17,12 +18,20 @@ import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type AuthorBrief = { id: number; name: string; title?: string | null; avatarUrl?: string | null };
-type NewsBrief = { id: number; slug: string; title: string; imageUrl?: string | null; createdAt: string };
+type NewsBrief = {
+  id: number;
+  slug: string;
+  title: string;
+  imageUrl?: string | null;
+  imageFallbackUrl?: string | null;
+  createdAt: string;
+};
 type LatestSidebarItem = {
   id: string | number;
   title: string;
   href: string;
   imageUrl?: string | null;
+  imageFallbackUrl?: string | null;
   dateRaw?: string | null;
 };
 
@@ -129,6 +138,7 @@ export function HmNewsDetailSidebar({
           title: row.title,
           href: h(row.href),
           imageUrl: row.imageUrl ?? null,
+          imageFallbackUrl: row.imageFallbackUrl ?? null,
           dateRaw: row.publishedAt ?? null,
         }));
       }
@@ -142,6 +152,7 @@ export function HmNewsDetailSidebar({
           title: row.title,
           href: h(`/haber/${encodeURIComponent(row.slug)}`),
           imageUrl: row.imageUrl ?? null,
+          imageFallbackUrl: row.imageFallbackUrl ?? null,
           dateRaw: row.createdAt,
         }));
       }
@@ -164,6 +175,7 @@ export function HmNewsDetailSidebar({
             title: String(row.title ?? ""),
             href: h(href),
             imageUrl: row.imageUrl ?? null,
+            imageFallbackUrl: (row as { imageFallbackUrl?: string | null }).imageFallbackUrl ?? null,
             dateRaw: row.publishedAt ?? null,
           };
         })
@@ -248,15 +260,12 @@ export function HmNewsDetailSidebar({
           </div>
           <ul className="divide-y divide-slate-100">
             {latestNews.slice(0, 8).map((n) => {
-              const img = n.imageUrl ? resolveClientMediaSrc(n.imageUrl) || n.imageUrl : null;
               return (
                 <li key={n.id}>
                   <Link href={n.href} className="flex gap-2.5 p-2.5 hover:bg-sky-50/50 transition-colors group">
-                    {img ? (
-                      <img src={img} alt="" className="w-16 h-11 object-cover rounded shrink-0" />
-                    ) : (
-                      <div className="w-16 h-11 bg-slate-100 rounded shrink-0" />
-                    )}
+                    <span className="w-16 h-11 rounded shrink-0 overflow-hidden">
+                      <HmNewsImage item={n} alt="" />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-slate-900 leading-snug line-clamp-3 group-hover:text-sky-700">
                         {n.title}
@@ -293,11 +302,9 @@ export function HmNewsDetailSidebar({
                   >
                     {i + 1}
                   </span>
-                  {n.imageUrl ? (
-                    <img src={resolveClientMediaSrc(n.imageUrl) || n.imageUrl} alt="" className="w-14 h-10 object-cover rounded shrink-0" />
-                  ) : (
-                    <div className="w-14 h-10 bg-slate-100 rounded shrink-0" />
-                  )}
+                  <span className="w-14 h-10 rounded shrink-0 overflow-hidden">
+                    <HmNewsImage item={n} alt="" />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900 leading-snug line-clamp-3 group-hover:opacity-80">{n.title}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">

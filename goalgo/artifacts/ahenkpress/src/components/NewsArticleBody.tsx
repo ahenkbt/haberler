@@ -1,6 +1,7 @@
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { splitNewsBodyHtml } from "@/lib/newsInlineGallery";
 import { NewsInlineGallery } from "@/components/NewsInlineGallery";
+import { applyHmNewsImageFallback } from "@/lib/hmNewsPlaceholder";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type Props = {
@@ -10,10 +11,21 @@ type Props = {
 };
 
 export function NewsArticleBody({ html, className, style }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const parts = useMemo(() => splitNewsBodyHtml(html), [html]);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const onError = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) applyHmNewsImageFallback(event.target);
+    };
+    root.addEventListener("error", onError, true);
+    return () => root.removeEventListener("error", onError, true);
+  }, [html]);
+
   return (
-    <div className={className} style={style}>
+    <div ref={rootRef} className={className} style={style}>
       {parts.map((part, i) =>
         part.type === "gallery" ? (
           <NewsInlineGallery key={`g-${i}`} images={part.images} />

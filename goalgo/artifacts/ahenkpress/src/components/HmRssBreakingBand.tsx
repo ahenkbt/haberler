@@ -5,6 +5,8 @@ import { Clock, Flame, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link } from "wouter";
 import { RssBreakingBalloonPool } from "@/components/news/RssBreakingBalloonPool";
+import { HmNewsImage } from "@/components/HmNewsImage";
+import { onHmNewsImageError } from "@/lib/hmNewsPlaceholder";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { hmCategorySlug } from "@/lib/hmCategorySlug";
 import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
@@ -148,7 +150,7 @@ function RssBreakingPreviewModal({
 
         <div className="max-h-[calc(92vh-138px)] overflow-y-auto px-4 py-4 sm:px-5">
           {showLeadImage ? (
-            <img src={item.imageUrl!} alt="" className="mb-4 max-h-[280px] w-full rounded-xl object-cover" />
+            <img src={item.imageUrl!} alt="" className="mb-4 max-h-[280px] w-full rounded-xl object-cover bg-white" onError={onHmNewsImageError} />
           ) : null}
 
           {contentHtml ? (
@@ -396,11 +398,11 @@ export function HmRssBreakingBand({
                 <>
                   <div className="relative h-24 w-full overflow-hidden bg-slate-100">
                     {item.imageUrl ? (
-                      <img
+                      <HmNewsImage
                         src={item.imageUrl}
                         alt=""
                         loading="lazy"
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        className="transition duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] font-black uppercase tracking-wide text-slate-400">

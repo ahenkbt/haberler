@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { onHmNewsImageError } from "@/lib/hmNewsPlaceholder";
 
 export type EditorialNewsDetailHeaderProps = {
   accent: string;
@@ -70,8 +71,9 @@ export function EditorialNewsDetailHeader({
           <img
             src={imageSrc}
             alt={imageAlt ?? title}
-            className="mx-auto block h-auto w-full max-h-[min(70vh,560px)] object-contain"
+            className="mx-auto block h-auto w-full max-h-[min(70vh,560px)] object-contain bg-white"
             loading="eager"
+            onError={onHmNewsImageError}
           />
         </div>
       ) : null}

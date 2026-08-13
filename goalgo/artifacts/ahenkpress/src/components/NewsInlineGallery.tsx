@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { onHmNewsImageError } from "@/lib/hmNewsPlaceholder";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -36,6 +37,7 @@ export function NewsInlineGallery({ images, className }: Props) {
             alt=""
             className="h-full w-full object-contain bg-black/90"
             loading="lazy"
+            onError={onHmNewsImageError}
           />
         </div>
         {count > 1 ? (
@@ -77,7 +79,7 @@ export function NewsInlineGallery({ images, className }: Props) {
                 )}
                 aria-label={`Görsel ${i + 1}`}
               >
-                <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" onError={onHmNewsImageError} />
               </button>
             );
           })}
