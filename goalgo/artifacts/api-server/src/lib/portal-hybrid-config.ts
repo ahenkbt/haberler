@@ -384,6 +384,7 @@ export function enabledPortalHybridRssFeeds(
 }
 
 export function isHybridRssEnabledInLayout(layout: Record<string, unknown>): boolean {
+  if (isCorporateHmLayout(layout)) return false;
   return layout.hybridRssEnabled === true;
 }
 

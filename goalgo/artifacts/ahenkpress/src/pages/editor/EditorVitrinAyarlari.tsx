@@ -25,6 +25,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent 
 import { useQuery } from "@tanstack/react-query";
 import {
   HM_CORPORATE_HOME_MODULE_ORDER,
+  HM_CORPORATE_EDITOR_HOME_MODULE_ORDER,
   HM_NEWS_HOME_MODULE_ORDER,
   HM_NEWS_EDITOR_HOME_MODULE_ORDER,
   defaultNewsSiteLayoutPrefs,
@@ -194,6 +195,14 @@ export default function EditorVitrinAyarlari() {
 
   const commit = async (patch: Partial<NewsSiteLayoutPrefs>) => {
     const next = { ...newsLayoutPrefs, ...patch };
+    if (next.hmVitrinTheme === "corporate") {
+      next.hybridRssEnabled = false;
+      next.hmNewsRssHeadlineEnabled = false;
+      next.hmNewsGoogleNewsBandEnabled = false;
+      next.hmNewsRssLinksEnabled = false;
+      next.hmCorporateGoogleNewsBandEnabled = false;
+      next.hmCorporateRssBandEnabled = false;
+    }
     setP(next);
     setSaving(true);
     const r = await saveNewsSiteLayout(next, { vitrinOnly: true, layoutPatch: patch });
@@ -262,11 +271,11 @@ export default function EditorVitrinAyarlari() {
       return isHmNewsModuleCompatibleWithTheme(p.hmVitrinTheme, id as HmNewsHomeModuleId);
     });
   }, [newsHomeOrder, p]);
-  const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
+  const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_EDITOR_HOME_MODULE_ORDER);
   const isCorporateEditorSite = p.hmVitrinTheme === "corporate";
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder;
-  const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER;
+  const corporateEditorHomeDefaults = HM_CORPORATE_EDITOR_HOME_MODULE_ORDER;
   const rssRows = resolveHmBreakingRssFeedRows(p);
   const siteRssRows = resolveHmSiteRssFeedRows(p);
   const rssIntegrationMode = resolveHmRssIntegrationMode(p);
@@ -1846,9 +1855,6 @@ export default function EditorVitrinAyarlari() {
               <TabsTrigger value="corporate-sira" className="px-3 py-2 text-sm">
                 Modül sırası
               </TabsTrigger>
-              <TabsTrigger value="corporate-rss" className="px-3 py-2 text-sm">
-                RSS & bant
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="corporate-header" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
@@ -2111,20 +2117,6 @@ export default function EditorVitrinAyarlari() {
               onChange={(c) => toggleCorporateModule("homeMiddleAd", c)}
             />
             <ToggleRow
-              id="hm-corporate-google-news-band"
-              label="Kutu içi RSS"
-              checked={p.hmCorporateGoogleNewsBandEnabled === true}
-              disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmCorporateGoogleNewsBandEnabled", c)}
-            />
-            <ToggleRow
-              id="hm-corporate-rss-band"
-              label="RSS güven bandı"
-              checked={p.hmCorporateRssBandEnabled === true}
-              disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmCorporateRssBandEnabled", c)}
-            />
-            <ToggleRow
               id="hm-corporate-request-form"
               label="Talep formu menü bağlantısı"
               checked={p.hmCorporateRequestFormEnabled !== false}
@@ -2238,36 +2230,6 @@ export default function EditorVitrinAyarlari() {
             onChange={(items) => setP({ ...p, hmCorporateHomeModuleOrder: items })}
             onSave={(items) => saveHomeOrder("hmCorporateHomeModuleOrder", items)}
             onReset={() => void saveHomeOrder("hmCorporateHomeModuleOrder", [...corporateEditorHomeDefaults])}
-          />
-            </TabsContent>
-
-            <TabsContent value="corporate-rss" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
-          <RssBreakingFeedsEditor
-            enabled={p.hmCorporateGoogleNewsBandEnabled === true}
-            articleLinkEnabled={p.hmNewsBreakingRssArticleLinkEnabled === true}
-            displayMode={breakingRssDisplayMode}
-            rows={rssRows}
-            disabled={saving}
-            onToggle={(checked) => toggleDefaultOn("hmCorporateGoogleNewsBandEnabled", checked)}
-            onArticleLinkToggle={(checked) => toggleDefaultOn("hmNewsBreakingRssArticleLinkEnabled", checked)}
-            onDisplayModeChange={setBreakingRssDisplayMode}
-            onChange={updateRssRow}
-            onAdd={addRssRow}
-            onAddUrl={addRssUrlRow}
-            onRemove={removeRssRow}
-            onSave={() =>
-              void commit({
-                ...p,
-                ...saveRssRows(rssRows, siteRssRows),
-                hmNewsBreakingRssDisplayMode: cleanHmBreakingRssDisplayMode(breakingRssDisplayMode),
-              })
-            }
-            onReset={() =>
-              void commit({
-                ...p,
-                ...saveRssRows(defaultHmBreakingRssFeedRows(), defaultHmBreakingRssFeedRows()),
-              })
-            }
           />
             </TabsContent>
           </Tabs>

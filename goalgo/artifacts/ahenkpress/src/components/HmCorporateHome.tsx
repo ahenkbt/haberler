@@ -2,7 +2,7 @@ import { Fragment, useMemo, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Clock, Rss } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Link } from "wouter";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { apiRequest } from "@/lib/queryClient";
@@ -36,7 +36,6 @@ import {
 } from "@/lib/newsSiteLayout";
 import { HmCorporateDonationBand } from "@/components/HmCorporateDonationSections";
 import { isLegacyHmDonationHtml, stripLegacyHmDonationHtml } from "@/lib/hmLegacyDonationHtml";
-import { HmRssBreakingBand } from "@/components/HmRssBreakingBand";
 import { HmSehitSearchModule } from "@/components/HmSehitSearchModule";
 import { HmRssNewsBand, type HmRssCategoryTab } from "@/components/HmRssNewsBand";
 import { resolveLatestGridOpeningCategorySlug } from "@/lib/hmHomeModuleCategories";
@@ -885,11 +884,9 @@ export function HmCorporateHome({
   hmCorporateWarsSectionHref,
   hmCorporateNationalDaysSectionHref,
   hmCorporateCategorySectionsEnabled,
-  hmCorporateRssBandEnabled,
   hmCorporateLatestNewsEnabled,
   hmCorporateLatestDevelopmentsEnabled,
   hmCorporateSidebarInfoEnabled,
-  hmCorporateGoogleNewsBandEnabled,
   hmCorporateAuthorsEnabled = false,
   hmSehitSearchEnabled = false,
   layoutPrefs = null,
@@ -980,14 +977,7 @@ export function HmCorporateHome({
           />
         );
       case "googleNewsBand":
-        return hmCorporateGoogleNewsBandEnabled === true && layoutPrefs ? (
-          <HmRssBreakingBand
-            accent={accent}
-            layoutPrefs={layoutPrefs}
-            siteId={siteId}
-            className="vkv-rss-breaking-band hm-vitrin-card overflow-hidden rounded-xl border border-slate-200 bg-white shadow"
-          />
-        ) : null;
+        return null;
       case "culturePortal":
         return hmCorporateCulturePortalBandEnabled === true ? <CulturePortalBand /> : null;
       case "mansetAd": {
@@ -1021,21 +1011,7 @@ export function HmCorporateHome({
           <HmAtaturkCornerBand accent={accent} className="hm-ataturk-band--corporate-home" />
         ) : null;
       case "rssBand":
-        return hmCorporateRssBandEnabled === true ? (
-          <div className="vkv-kb">
-            <div className="vkv-kb-w">
-              <span className="vkv-kb-icon" aria-hidden>
-                <Rss className="h-7 w-7" />
-              </span>
-              <div className="vkv-kb-text">
-                {siteDisplayName} <em>güvenilir yayın akışını</em> kurumsal vitrinle okuyucularına ulaştırıyor.
-              </div>
-              <Link href={h("/rss-baglantilari")} className="vkv-kb-link">
-                RSS Bağlantıları <ChevronRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-        ) : null;
+        return null;
       case "authorsStrip":
         return hmCorporateAuthorsEnabled === true && authors.length > 0 ? (
           <HmAuthorsStrip authors={authors.slice(0, 8)} accent={accent} yazarlarHref={yazarlarHref} variant="corporate" />

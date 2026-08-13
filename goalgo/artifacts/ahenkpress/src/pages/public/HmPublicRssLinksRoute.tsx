@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { normalizeHmVitrinTheme } from "@/lib/newsSiteLayout";
 
 type RssCategoryRow = {
   slug?: string;
@@ -38,7 +39,8 @@ function RssLinksBody() {
   const ctx = useHmPublicLinkContextOptional();
   const h = useHmPublicHref();
   const siteId = ctx?.siteId ?? null;
-  const rssEnabled = ctx?.layoutPrefs?.hmNewsRssLinksEnabled !== false;
+  const isCorporate = normalizeHmVitrinTheme(ctx?.layoutPrefs?.hmVitrinTheme) === "corporate";
+  const rssEnabled = !isCorporate && ctx?.layoutPrefs?.hmNewsRssLinksEnabled !== false;
   const hiddenCategorySlugs = useMemo(
     () =>
       new Set(
@@ -79,7 +81,9 @@ function RssLinksBody() {
     return (
       <main className="mx-auto w-full max-w-screen-xl px-3 py-6 sm:px-4 sm:py-8">
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
-          Bu haber sitesi için RSS bağlantıları pasif.
+          {isCorporate
+            ? "Kurumsal sitede RSS beslemesi yoktur."
+            : "Bu haber sitesi için RSS bağlantıları pasif."}
         </div>
       </main>
     );

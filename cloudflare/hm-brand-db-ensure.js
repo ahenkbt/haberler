@@ -202,9 +202,15 @@ let _breakingRssDefaultsPassDone = false;
 let _siteRssDefaultsPassAt = 0;
 let _siteRssDefaultsPassDone = false;
 
+function isCorporateHmLayoutJson(layout) {
+  const t = String(layout?.hmVitrinTheme || "").trim().toLowerCase();
+  return t === "corporate" || t === "kurumsal";
+}
+
 /**
  * Tüm editör sitelerinde site içi RSS varsayılanlarını uygular ve hibrit RSS’i açar (bir kerelik rev).
  * Rev yazıldıktan sonra editör panelden değişen değerler korunur.
+ * Kurumsal sitelerde RSS açılmaz; varsa kapatılır.
  */
 export async function ensureHmSiteRssDefaultsOnNeon(env) {
   const dbUrl = String(env?.DATABASE_URL || "").trim();
@@ -234,6 +240,34 @@ export async function ensureHmSiteRssDefaultsOnNeon(env) {
         layout = {};
       }
       if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+
+      if (isCorporateHmLayoutJson(layout)) {
+        const alreadyOff =
+          layout.hybridRssEnabled !== true &&
+          String(layout.hmSiteRssDefaultsRev || "") === HM_SITE_RSS_DEFAULTS_REV;
+        if (alreadyOff) {
+          skipped += 1;
+          continue;
+        }
+        const next = {
+          ...layout,
+          hybridRssEnabled: false,
+          hmNewsRssHeadlineEnabled: false,
+          hmNewsGoogleNewsBandEnabled: false,
+          hmNewsRssLinksEnabled: false,
+          hmCorporateGoogleNewsBandEnabled: false,
+          hmCorporateRssBandEnabled: false,
+          hmSiteRssDefaultsRev: HM_SITE_RSS_DEFAULTS_REV,
+        };
+        await sql`
+          UPDATE hm_news_sites
+          SET layout_json = ${JSON.stringify(next)}::jsonb,
+              updated_at = NOW()
+          WHERE id = ${site.id}
+        `;
+        patched += 1;
+        continue;
+      }
 
       if (String(layout.hmSiteRssDefaultsRev || "") === HM_SITE_RSS_DEFAULTS_REV) {
         skipped += 1;
@@ -294,6 +328,27 @@ export async function ensureHmBreakingRssDefaultsOnNeon(env) {
         layout = {};
       }
       if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+
+      if (isCorporateHmLayoutJson(layout)) {
+        if (String(layout.hmBreakingRssDefaultsRev || "") === HM_BREAKING_RSS_DEFAULTS_REV) {
+          skipped += 1;
+          continue;
+        }
+        const next = {
+          ...layout,
+          hmCorporateGoogleNewsBandEnabled: false,
+          hmNewsBreakingRssFeedRows: [],
+          hmBreakingRssDefaultsRev: HM_BREAKING_RSS_DEFAULTS_REV,
+        };
+        await sql`
+          UPDATE hm_news_sites
+          SET layout_json = ${JSON.stringify(next)}::jsonb,
+              updated_at = NOW()
+          WHERE id = ${site.id}
+        `;
+        patched += 1;
+        continue;
+      }
 
       if (String(layout.hmBreakingRssDefaultsRev || "") === HM_BREAKING_RSS_DEFAULTS_REV) {
         skipped += 1;

@@ -978,7 +978,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         return;
       }
       // Box her zaman; site-içi RSS yalnızca vitrin anahtarı açıkken.
-      includeRss = rssScope === "box" ? true : hmAccess.hybridRssEnabled === true;
+      includeRss = hmAccess.isCorporate
+        ? false
+        : rssScope === "box"
+          ? true
+          : hmAccess.hybridRssEnabled === true;
       foreignOnlyRss = useForeignOnlyHybridRss(
         editorPool && !yekparePoolOnly,
         newsmapMode,
@@ -988,8 +992,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     }
 
     // Site içi RSS açık → site feed'leri. Kapalı editör → Yekpare merkez (yabancı-only).
+    // Kurumsal vitrin: RSS feed hiç yüklenmez.
     let feeds: Awaited<ReturnType<typeof loadPortalHybridRssFeeds>>;
-    if (rssScope === "box") {
+    if (hmAccess?.isCorporate) {
+      feeds = [];
+    } else if (rssScope === "box") {
       feeds = await loadPortalHybridRssFeeds(siteId, "box");
     } else if (siteId != null && hmAccess?.hybridRssEnabled === true) {
       feeds = await loadPortalHybridRssFeeds(siteId, resolveHmHybridFeedLoadScope(rssScope));
@@ -998,7 +1005,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     } else {
       feeds = await loadPortalHybridRssFeeds(siteId, rssScope);
     }
-    if (includeGlobalFeeds && rssScope === "all") {
+    if (includeGlobalFeeds && rssScope === "all" && !hmAccess?.isCorporate) {
       const globalFeeds = await loadEnabledGlobalMapNewsFeeds();
       feeds = mergePortalHybridRssFeedLists(feeds, globalFeeds);
     }
@@ -1264,7 +1271,7 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
         res.status(404).json({ error: "Site bulunamadı" });
         return;
       }
-      includeRss = hmAccess.hybridRssEnabled === true;
+      includeRss = hmAccess.isCorporate ? false : hmAccess.hybridRssEnabled === true;
     }
 
     const rssScopeRaw = String(req.query.rssScope ?? "").trim() || (categorySlug ? "all" : "site");
@@ -1274,8 +1281,13 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
     if (siteId != null && hmAccess?.hybridRssEnabled === true) {
       feeds = await loadPortalHybridRssFeeds(siteId, resolveHmHybridFeedLoadScope(rssScopeRaw));
     } else if (editorPool) {
-      feeds = filterForeignOnlyPortalHybridRssFeeds(await loadPortalHybridRssFeeds(null, "site"));
-      includeRss = true;
+      if (hmAccess?.isCorporate) {
+        feeds = [];
+        includeRss = false;
+      } else {
+        feeds = filterForeignOnlyPortalHybridRssFeeds(await loadPortalHybridRssFeeds(null, "site"));
+        includeRss = true;
+      }
     } else {
       feeds = await loadPortalHybridRssFeeds(siteId, "all");
     }
@@ -1399,7 +1411,7 @@ router.get("/news/hybrid/rss/:itemId", async (req, res): Promise<void> => {
     let hmSiteAccess: Awaited<ReturnType<typeof resolveHmHybridRssAccess>> = null;
     if (siteId != null) {
       hmSiteAccess = await resolveHmHybridRssAccess(siteId);
-      if (!hmSiteAccess || !hmSiteAccess.active) {
+      if (!hmSiteAccess || !hmSiteAccess.active || hmSiteAccess.isCorporate) {
         res.status(404).json({ error: "RSS haber bulunamadı" });
         return;
       }

@@ -13,6 +13,7 @@ import {
 } from "../lib/hm-rss-news-service.js";
 import jwt from "jsonwebtoken";
 import { getHmEditorJwtSecret } from "../lib/secrets.js";
+import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
 
 const router: IRouter = Router();
 
@@ -43,9 +44,20 @@ function denyUnlessHmEditor(
   return x;
 }
 
+async function denyIfCorporateRssRemoved(
+  siteId: number,
+  res: { status: (n: number) => { json: (b: unknown) => void } },
+): Promise<boolean> {
+  const access = await resolveHmHybridRssAccess(siteId);
+  if (!access?.isCorporate) return false;
+  res.status(403).json({ error: "Kurumsal sitede RSS feed modülü yoktur." });
+  return true;
+}
+
 router.get("/hm/editor/rss-news", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  if (await denyIfCorporateRssRemoved(ctx.siteId, res)) return;
   const categorySlug =
     typeof req.query.categorySlug === "string" ? req.query.categorySlug.trim().toLowerCase() : undefined;
   const q = typeof req.query.q === "string" ? req.query.q.trim() : undefined;
@@ -69,6 +81,7 @@ router.get("/hm/editor/rss-news", async (req, res): Promise<void> => {
 router.post("/hm/editor/rss-feeds/refresh", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  if (await denyIfCorporateRssRemoved(ctx.siteId, res)) return;
   try {
     const result = await refreshHmSiteRssFeedsForEditor(ctx.siteId);
     res.json(result);
@@ -80,6 +93,7 @@ router.post("/hm/editor/rss-feeds/refresh", async (req, res): Promise<void> => {
 router.get("/hm/editor/rss-news/:itemId", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  if (await denyIfCorporateRssRemoved(ctx.siteId, res)) return;
   try {
     const detail = await getHmRssNewsDetail(ctx.siteId, req.params.itemId);
     if (!detail) {
@@ -95,6 +109,7 @@ router.get("/hm/editor/rss-news/:itemId", async (req, res): Promise<void> => {
 router.post("/hm/editor/rss-news/:itemId/import", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  if (await denyIfCorporateRssRemoved(ctx.siteId, res)) return;
   const body = req.body as {
     title?: unknown;
     spot?: unknown;
@@ -123,6 +138,7 @@ router.post("/hm/editor/rss-news/:itemId/import", async (req, res): Promise<void
 router.post("/hm/editor/rss-news/bulk-import", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  if (await denyIfCorporateRssRemoved(ctx.siteId, res)) return;
   const body = req.body as {
     items?: Array<{ rssItemId?: unknown; categorySlug?: unknown; status?: unknown }>;
     categorySlug?: unknown;
@@ -156,6 +172,7 @@ router.post("/hm/editor/rss-news/bulk-import", async (req, res): Promise<void> =
 router.delete("/hm/editor/rss-news/:itemId", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
+  if (await denyIfCorporateRssRemoved(ctx.siteId, res)) return;
   try {
     const result = await removeHmRssNewsFromSite(ctx.siteId, req.params.itemId);
     if (!result.ok) {
