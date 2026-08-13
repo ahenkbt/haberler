@@ -143,6 +143,7 @@ import {
   tryHmSharedEditorLoginPassword,
 } from "../lib/hm-asg-editor-repair.js";
 import { repairAsgAuthorsFromAhg } from "../lib/hm-asg-authors-from-ahg-repair.js";
+import { repairAhgAuthorsFromAsg } from "../lib/hm-ahg-authors-from-asg-repair.js";
 import { repairAsgHomeModules } from "../lib/hm-asg-home-modules-repair.js";
 import {
   isKhNewsSiteRow,
@@ -1988,6 +1989,26 @@ router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
         result.action === "synced"
           ? `Ortak editör senkron: siteler [${result.siteIds.join(",")}] editörler [${result.editorIds.join(",")}]`
           : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: ankarasehirgazetesi (asg) yazar + köşe yazılarını ankarahabergundemi.com sitesine ekle. */
+router.post("/hm/admin/repair-ahg-authors-from-asg", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await repairAhgAuthorsFromAsg();
+    res.json({
+      ...result,
+      ok: result.ok,
+      message: result.ok
+        ? `ankarahabergundemi ← ASG: ${result.upserted} yeni yazar, ${result.reused} mevcut; ${result.makaleCopied} makale kopyalandı, ${result.makaleRematched} eşlendi, ${result.newsCopied} haber makale olarak eklendi`
+        : "Kaynak veya hedef site bulunamadı / senkron tamamlanamadı",
     });
   } catch (e) {
     res.status(500).json({
