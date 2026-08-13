@@ -2091,7 +2091,10 @@ export default {
       incoming.pathname.replace(/\/+$/, "") === "/api/hm/editor/login"
     ) {
       try {
-        await repairAsgEditorMisassignmentOnNeon(env);
+        const job = repairAsgEditorMisassignmentOnNeon(env).catch((err) => {
+          console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
+        });
+        if (typeof ctx.waitUntil === "function") ctx.waitUntil(job);
       } catch (err) {
         console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
       }
@@ -2104,12 +2107,15 @@ export default {
       incoming.pathname.replace(/\/+$/, "") === "/api/hm/editor/login"
     ) {
       try {
-        await ensureKhYekpareEditorOnNeon(env);
+        const job = ensureKhYekpareEditorOnNeon(env).catch((err) => {
+          console.error("[hm-kh-yekpare-editor]", String(err?.message || err).slice(0, 200));
+        });
+        if (typeof ctx.waitUntil === "function") ctx.waitUntil(job);
       } catch (err) {
         console.error("[hm-kh-yekpare-editor]", String(err?.message || err).slice(0, 200));
       }
     }
-    // Tüm editör siteleri: kutu içi + site içi RSS varsayılanlarını bir kerelik uygula (rev sonrası korunur).
+    // Tüm editör siteleri: RSS varsayılanları arka planda (sayfa/API'yi bekletme).
     {
       const bootPath = incoming.pathname.replace(/\/+$/, "") || "/";
       if (
@@ -2119,16 +2125,13 @@ export default {
           bootPath.startsWith("/api/news/") ||
           bootPath.startsWith("/editor"))
       ) {
-        try {
-          await ensureHmBreakingRssDefaultsOnNeon(env);
-        } catch (err) {
-          console.error("[hm-breaking-rss-defaults]", String(err?.message || err).slice(0, 200));
-        }
-        try {
-          await ensureHmSiteRssDefaultsOnNeon(env);
-        } catch (err) {
-          console.error("[hm-site-rss-defaults]", String(err?.message || err).slice(0, 200));
-        }
+        const rssJob = Promise.all([
+          ensureHmBreakingRssDefaultsOnNeon(env),
+          ensureHmSiteRssDefaultsOnNeon(env),
+        ]).catch((err) => {
+          console.error("[hm-rss-defaults]", String(err?.message || err).slice(0, 200));
+        });
+        if (typeof ctx.waitUntil === "function") ctx.waitUntil(rssJob);
       }
     }
 

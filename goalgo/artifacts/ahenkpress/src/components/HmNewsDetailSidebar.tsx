@@ -13,6 +13,7 @@ import { defaultNewsSiteLayoutPrefs, isHmHybridRssEnabled, normalizeHmVitrinThem
 import { fetchHybridNewsList } from "@/hooks/useHomeHybridNews";
 import { mapPublicHybridNewsLinkFields } from "@/lib/hybridNewsHref";
 import { ChevronRight } from "lucide-react";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type AuthorBrief = { id: number; name: string; title?: string | null; avatarUrl?: string | null };
@@ -201,20 +202,12 @@ export function HmNewsDetailSidebar({
                   href={h(`/yazar/${a.id}`)}
                   className="flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50/50 transition-colors"
                 >
-                  {a.avatarUrl ? (
-                    <img
-                      src={resolveClientMediaSrc(a.avatarUrl) || a.avatarUrl}
-                      alt=""
-                      className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm"
-                    />
-                  ) : (
-                    <div
-                      className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-white text-sm font-bold"
-                      style={{ background: `linear-gradient(135deg, ${accent}, #1e293b)` }}
-                    >
-                      {a.name?.[0]?.toUpperCase() ?? "?"}
-                    </div>
-                  )}
+                  <HmAuthorAvatar
+                    src={a.avatarUrl}
+                    name={a.name}
+                    className="h-10 w-10 shrink-0 ring-2 ring-white shadow-sm"
+                    accent={accent}
+                  />
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{a.name}</p>
                     {a.title ? <p className="text-[10px] text-slate-500 line-clamp-2 leading-tight">{a.title}</p> : null}

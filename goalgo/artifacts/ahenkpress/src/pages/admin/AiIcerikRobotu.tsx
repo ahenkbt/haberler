@@ -29,8 +29,8 @@ import {
   apiFetch as apiBaseFetch,
   apiUrl,
   ensureAdminPanelBootstrap,
-  resolveClientMediaSrc,
 } from "@/lib/apiBase";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { Link } from "wouter";
 
@@ -2048,10 +2048,7 @@ function KoseYazarlariTab({ hasApiKey, onSuccess }: { hasApiKey: boolean; onSucc
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center overflow-hidden shrink-0">
-                      {author.avatarUrl
-                        ? <img src={resolveClientMediaSrc(author.avatarUrl) || author.avatarUrl} className="w-full h-full object-cover" />
-                        : <span className="font-bold text-purple-600">{author.name.charAt(0)}</span>
-                      }
+                      <HmAuthorAvatar src={author.avatarUrl} name={author.name} className="h-10 w-10" />
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">{author.name}</div>

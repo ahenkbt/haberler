@@ -239,6 +239,25 @@ function s3ObjectUrl(endpoint, env, fname) {
   return `${endpoint}/${bucket}/${key}`;
 }
 
+let s3ApiSkipUntil = 0;
+let r2PublicSkipUntil = 0;
+
+function s3ApiSkipped() {
+  return Date.now() < s3ApiSkipUntil;
+}
+
+function noteS3ApiUnreachable() {
+  s3ApiSkipUntil = Date.now() + 10 * 60_000;
+}
+
+function r2PublicSkipped() {
+  return Date.now() < r2PublicSkipUntil;
+}
+
+function noteR2PublicUnusable() {
+  r2PublicSkipUntil = Date.now() + 10 * 60_000;
+}
+
 /** wrangler.toml `MEDIA_BUCKET` — S3 API TLS (alert 40) olmadan aynı hesaptaki nesneler. */
 export function r2Binding(env) {
   const bucket = env?.MEDIA_BUCKET;
@@ -296,11 +315,14 @@ export async function handleMediaGetFromR2(request, env) {
     }
   }
 
-  if (s3MediaEnvReady(env)) {
+  if (s3MediaEnvReady(env) && !s3ApiSkipped()) {
     const client = s3Client(env);
     for (const endpoint of s3EndpointCandidates(env)) {
       try {
-        const res = await client.fetch(s3ObjectUrl(endpoint, env, fname), { method });
+        const res = await client.fetch(s3ObjectUrl(endpoint, env, fname), {
+          method,
+          signal: AbortSignal.timeout(1200),
+        });
         if (res && res.ok) {
           return respond(
             res.body,
@@ -310,25 +332,29 @@ export async function handleMediaGetFromR2(request, env) {
           );
         }
       } catch (err) {
+        noteS3ApiUnreachable();
         console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
+        break;
       }
     }
   }
 
   const pub = normalizeEnvValue(env?.S3_PUBLIC_BASE_URL).replace(/\/+$/, "");
-  if (pub && /^https?:\/\//i.test(pub)) {
+  if (pub && /^https?:\/\//i.test(pub) && !r2PublicSkipped()) {
     try {
       const pubRes = await fetch(`${pub}/${encodeURIComponent(fname)}`, {
         method: method === "HEAD" ? "GET" : method,
         redirect: "follow",
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(1200),
       });
       const ct = String(pubRes.headers.get("content-type") || "").toLowerCase();
       if (pubRes.ok && !ct.includes("text/html")) {
         const len = pubRes.headers.get("content-length");
         return respond(pubRes.body, pubRes.headers.get("content-type"), len, "r2-public");
       }
+      noteR2PublicUnusable();
     } catch (err) {
+      noteR2PublicUnusable();
       console.error("[media-r2-public]", String(err?.message || err).slice(0, 160));
     }
   }

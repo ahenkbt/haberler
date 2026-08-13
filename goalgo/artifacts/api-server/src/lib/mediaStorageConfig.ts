@@ -298,11 +298,10 @@ export function shouldUseS3ForMediaIo(): boolean {
 }
 
 /**
- * Temmuz 2026 dual-write (R2 + Render disk) dosyaları: startup probe R2'yi kapatsa bile oku.
- * Yazma `shouldUseS3ForMediaIo` ile volume'a düşebilir; GET R2'yi denemeye devam eder.
+ * Temmuz 2026 dual-write dosyaları: TLS/probe R2'yi kapattıysa tekrar deneme (EPROTO her görseli bekletmesin).
  */
 export function shouldReadS3ForMediaIo(): boolean {
-  return isS3MediaConfigured();
+  return isS3MediaConfigured() && !runtimeS3Disabled;
 }
 
 /** R2/S3 uç noktasına TLS veya ağ hatası (404 değil). */

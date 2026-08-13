@@ -110,7 +110,7 @@ describe("mediaStorageConfig", () => {
     expect(shouldReadS3ForMediaIo()).toBe(true);
   });
 
-  it("still reads R2 after a runtime write failure", () => {
+  it("does not keep probing R2 after a runtime TLS failure", () => {
     snapshotEnv();
     clearMediaEnv();
     process.env.MEDIA_STORAGE_MODE = "s3";
@@ -120,7 +120,7 @@ describe("mediaStorageConfig", () => {
     process.env.S3_ENDPOINT = "https://account.r2.cloudflarestorage.com";
     noteS3RuntimeFailure("startup probe");
     expect(shouldUseS3ForMediaIo()).toBe(false);
-    expect(shouldReadS3ForMediaIo()).toBe(true);
+    expect(shouldReadS3ForMediaIo()).toBe(false);
   });
 
   it("prefers the Render dual-write R2 host when the env blob lists another account first", () => {

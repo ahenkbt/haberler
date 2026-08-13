@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link } from "wouter";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 
 export const HM_TEPE_MANSET_ITEM_COUNT = 5;
@@ -60,7 +60,7 @@ export function HmTepeManset({
 
         <div className="hm-tepe-manset__media">
           <HmNewsImage
-            src={resolveNewsItemImageUrl(active)}
+            item={active}
             alt={newsDisplayTitle(active.title)}
             className="hm-tepe-manset__img"
             loading="eager"

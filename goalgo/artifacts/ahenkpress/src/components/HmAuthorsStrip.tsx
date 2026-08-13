@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { ChevronRight, Users } from "lucide-react";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 
 export type HmAuthorsStripAuthor = {
   id: number | string;
@@ -10,12 +10,6 @@ export type HmAuthorsStripAuthor = {
   avatarUrl?: string | null;
   latestArticle?: { id: number | string; title: string; slug: string } | null;
 };
-
-function authorAvatarSrc(url: string | null | undefined): string {
-  const raw = (url ?? "").trim();
-  if (!raw) return "";
-  return resolveClientMediaSrc(raw) || raw;
-}
 
 function dedupeAuthors(authors: HmAuthorsStripAuthor[]): HmAuthorsStripAuthor[] {
   const out = new Map<string, HmAuthorsStripAuthor>();
@@ -51,7 +45,6 @@ function CorporateAuthorsSection({
         </div>
         <div className="vkv-authors-grid vkv-authors-grid--strip">
           {uniqueAuthors.map((author) => {
-            const src = authorAvatarSrc(author.avatarUrl);
             const latest = author.latestArticle;
             const cardHref = latest?.slug
               ? h(`/haber/${encodeURIComponent(String(latest.slug))}`)
@@ -63,13 +56,11 @@ function CorporateAuthorsSection({
 
             return (
               <Link key={author.id} href={cardHref} className="vkv-author-card">
-                {src ? (
-                  <img src={src} alt={author.name} className="vkv-author-img" loading="lazy" />
-                ) : (
-                  <div className="vkv-author-img vkv-author-img--fallback" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                    {author.name?.[0] ?? "Y"}
-                  </div>
-                )}
+                <HmAuthorAvatar
+                  src={author.avatarUrl}
+                  name={author.name}
+                  className="vkv-author-img h-full w-full"
+                />
                 <span className="vkv-author-name">{author.name}</span>
                 {subtitle ? (
                   <span className={`vkv-author-title${subtitleIsArticle ? " vkv-author-title--article" : ""}`}>{subtitle}</span>
@@ -115,34 +106,21 @@ export function HmAuthorsStrip({
         </Link>
       </div>
       <div className="flex gap-5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-        {uniqueAuthors.map((author) => {
-          const src = authorAvatarSrc(author.avatarUrl);
-          return (
+        {uniqueAuthors.map((author) => (
             <Link
               key={author.id}
               href={h(`/yazar/${author.id}`)}
               className="flex min-w-[88px] max-w-[120px] shrink-0 flex-col items-center gap-1 text-center"
             >
-              {src ? (
-                <img
-                  src={src}
-                  alt={author.name}
-                  className="h-16 w-16 rounded-full object-cover transition hover:opacity-95"
-                  style={{ boxShadow: `0 0 0 3px ${accent}55` }}
-                  loading="lazy"
-                />
-              ) : (
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-full text-lg font-black text-white"
-                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: `0 0 0 3px ${accent}55` }}
-                >
-                  {author.name?.[0] ?? "Y"}
-                </div>
-              )}
+              <HmAuthorAvatar
+                src={author.avatarUrl}
+                name={author.name}
+                className="h-16 w-16"
+                accent={accent}
+              />
               <span className="line-clamp-2 text-[11px] font-bold leading-tight text-gray-900">{author.name}</span>
             </Link>
-          );
-        })}
+        ))}
       </div>
     </div>
   );

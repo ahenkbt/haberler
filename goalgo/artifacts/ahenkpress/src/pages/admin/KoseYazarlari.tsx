@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useListAuthors } from "@workspace/api-client-react";
 import { Plus, Edit2, Trash2 } from "lucide-react";
-import { apiFetch, apiUrl, ensureAdminPanelBootstrap, resolveClientMediaSrc } from "@/lib/apiBase";
+import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { useToast } from "@/hooks/use-toast";
 
 type HmSiteRow = { id: number; slug: string; displayName: string; active: boolean };
@@ -197,7 +198,6 @@ export default function KoseYazarlari() {
               </TableRow>
             ) : (
               list.map((author) => {
-                const av = resolveClientMediaSrc(author.avatarUrl);
                 const hmSid = author.hmSiteId;
                 const hmSlug = typeof hmSid === "number" ? siteSlugById.get(hmSid) : undefined;
                 return (
@@ -211,13 +211,7 @@ export default function KoseYazarlari() {
                     </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                          {av ? (
-                            <img src={av} alt={author.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-gray-500 font-bold">{author.name.charAt(0)}</span>
-                          )}
-                        </div>
+                        <HmAuthorAvatar src={author.avatarUrl} name={author.name} className="h-10 w-10 shrink-0" />
                         {author.name}
                       </div>
                     </TableCell>

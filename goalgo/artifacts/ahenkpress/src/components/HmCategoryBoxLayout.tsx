@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import {
   CATEGORY_BOX_DESKTOP_LIST_SLOTS,
@@ -30,7 +30,7 @@ function HmCategorySmallCard({
       className="group flex min-w-0 flex-col gap-1 overflow-hidden rounded-lg border border-slate-100 bg-white p-1.5 transition hover:border-slate-200 hover:bg-slate-50"
     >
       <div className="aspect-[16/10] w-full overflow-hidden rounded-md bg-slate-100">
-        <HmNewsImage src={resolveNewsItemImageUrl(item)} alt={displayTitle(item.title)} loading="lazy" className="transition group-hover:scale-105" />
+        <HmNewsImage item={item} alt={displayTitle(item.title)} loading="lazy" className="transition group-hover:scale-105" />
       </div>
       <p className="line-clamp-2 text-[10px] font-bold leading-snug text-slate-900 group-hover:text-[var(--hm-accent,#e61e25)]">
         {displayTitle(item.title)}
@@ -65,7 +65,7 @@ export function HmCategoryThumbList({
         >
           <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
             <HmNewsImage
-              src={resolveNewsItemImageUrl(item)}
+              item={item}
               alt={displayTitle(item.title)}
               loading="lazy"
               className="h-full w-full object-cover transition group-hover:scale-105"
@@ -122,7 +122,7 @@ export function HmCategoryFeaturedLead({
   return (
     <Link href={getHref(item)} className={`group min-w-0 overflow-hidden rounded-xl bg-white shadow-sm ${className}`.trim()}>
       <div className="hm-manset-img-frame hm-manset-img-frame--thumb">
-        <HmNewsImage src={resolveNewsItemImageUrl(item)} alt={displayTitle(item.title)} className="transition duration-500 group-hover:scale-105" />
+        <HmNewsImage item={item} alt={displayTitle(item.title)} className="transition duration-500 group-hover:scale-105" />
       </div>
       <div className="p-3">
         <p className="text-[10px] font-black tracking-wide" style={{ color }}>

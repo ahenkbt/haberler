@@ -14,8 +14,8 @@ import {
   Trophy,
 } from "lucide-react";
 import type { HmNewsHomeModuleId } from "@/lib/newsSiteLayout";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { HmNewsImage } from "@/components/HmNewsImage";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import type { ReactNode } from "react";
 import { hmCategorySlug, humanizeNewsCategorySlug } from "@/lib/hmCategorySlug";
@@ -66,10 +66,6 @@ function catColor(item: any, accent: string, hmCategoryColors?: Record<string, s
   return accent;
 }
 
-function vitrinImgSrc(url: string | null | undefined): string {
-  return resolveClientMediaSrc(url ?? "") || "";
-}
-
 function AhenkSectionHead({
   title,
   color,
@@ -112,7 +108,7 @@ function AhenkStoryThumb({
 }) {
   return (
     <div className={`hm-ahenk-story-thumb ${large ? "hm-ahenk-story-thumb--large" : ""}`.trim()}>
-      <HmNewsImage src={resolveNewsItemImageUrl(n)} alt={newsTitle(n.title)} loading={large ? "eager" : "lazy"} />
+      <HmNewsImage item={n} alt={newsTitle(n.title)} loading={large ? "eager" : "lazy"} />
       {badge ? (
         <span className="hm-ahenk-story-badge" style={{ background: badgeColor ?? "#cc0000" }}>
           {badge}
@@ -248,11 +244,7 @@ export function HmAhenkGununSesiAuthors(ctx: AhenkHaberBlockContext) {
           <div className="hm-ahenk-authors-list">
             {ctx.authors.slice(0, 6).map((a) => (
               <Link key={a.id ?? a.slug ?? a.name} href={ctx.yazarlarHref} className="hm-ahenk-author-row">
-                {a.avatarUrl ? (
-                  <img src={vitrinImgSrc(a.avatarUrl)} alt={String(a.name ?? "")} loading="lazy" />
-                ) : (
-                  <span className="hm-ahenk-author-fallback">{String(a.name ?? "?").slice(0, 1)}</span>
-                )}
+                <HmAuthorAvatar src={a.avatarUrl} name={String(a.name ?? "")} className="h-10 w-10 shrink-0" />
                 <span>
                   <strong>{String(a.name ?? "Yazar")}</strong>
                   {a.latestTitle ? <small>{decodeHtmlEntities(String(a.latestTitle))}</small> : null}
