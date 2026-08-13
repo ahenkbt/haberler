@@ -36,6 +36,7 @@ import { ensureNewsPublicSubmissionColumns } from "../lib/news-public-submission
 import { deriveNewsTagsFromContent } from "../lib/newsAutoTags.js";
 import { scheduleGoogleNewsIndexing } from "../lib/google-news-indexing.js";
 import {
+  ensureNewsSlugRedirectsTable,
   recordNewsSlugRedirectBeforeDelete,
   removeNewsSlugRedirect,
   resolveMissingNewsRedirect,
@@ -63,13 +64,14 @@ import {
 } from "../lib/hm-corporate-news-policy.js";
 import { isHmCorporateLayout, parseHmLayoutJson } from "../lib/hm-editor-categories.js";
 import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat.js";
+import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
 router.use((_req, _res, next) => {
-  void ensureNewsPublicSubmissionColumns().then(() => next(), next);
+  void Promise.all([ensureNewsPublicSubmissionColumns(), ensureNewsSlugRedirectsTable()]).then(() => next(), next);
 });
 
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number): Promise<SQL> {
@@ -943,12 +945,17 @@ router.get("/news/deleted-redirect/:slug", async (req, res): Promise<void> => {
       : null;
   const siteSlug = String(siteSlugRaw ?? "").trim() || null;
   const scopedSiteId = siteId != null && Number.isFinite(siteId) && siteId > 0 ? siteId : null;
-  const redirect = await resolveMissingNewsRedirect(String(raw ?? ""), scopedSiteId, siteSlug);
-  if (!redirect) {
+  try {
+    const redirect = await resolveMissingNewsRedirect(String(raw ?? ""), scopedSiteId, siteSlug);
+    if (!redirect) {
+      res.status(404).json({ error: "Yönlendirme bulunamadı" });
+      return;
+    }
+    res.redirect(301, redirect.location);
+  } catch (err) {
+    logger.error({ err }, "deleted-redirect");
     res.status(404).json({ error: "Yönlendirme bulunamadı" });
-    return;
   }
-  res.redirect(301, redirect.location);
 });
 
 /**
@@ -973,23 +980,38 @@ router.get("/news/page-bundle/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  const bundle = await buildNewsPageBundle(String(raw ?? ""), siteScoped ? siteId : null);
-  if (!bundle.article) {
-    const siteSlugQ = req.query.siteSlug;
-    const siteSlug = String(siteSlugQ ?? "").trim() || null;
-    const redirect = await resolveMissingNewsRedirect(
-      String(raw ?? ""),
-      siteScoped ? siteId : null,
-      siteSlug,
-    );
-    if (redirect) {
-      writeNewsPageBundleCache(cacheKey, { ...bundle, redirect });
-      res.json({ ...bundle, redirect });
-      return;
+  try {
+    const bundle = await buildNewsPageBundle(String(raw ?? ""), siteScoped ? siteId : null);
+    if (!bundle.article) {
+      const siteSlugQ = req.query.siteSlug;
+      const siteSlug = String(siteSlugQ ?? "").trim() || null;
+      let redirect = null;
+      try {
+        redirect = await resolveMissingNewsRedirect(
+          String(raw ?? ""),
+          siteScoped ? siteId : null,
+          siteSlug,
+        );
+      } catch (err) {
+        logger.warn({ err, slug: raw }, "page-bundle missing redirect");
+      }
+      if (redirect) {
+        writeNewsPageBundleCache(cacheKey, { ...bundle, redirect });
+        res.json({ ...bundle, redirect });
+        return;
+      }
     }
+    writeNewsPageBundleCache(cacheKey, bundle);
+    res.json(bundle);
+  } catch (err) {
+    logger.error({ err, slug: raw, siteId: siteScoped ? siteId : null }, "page-bundle");
+    res.status(200).json({
+      article: null,
+      related: [],
+      kose: null,
+      sidebar: { authors: [], popular: [] },
+    });
   }
-  writeNewsPageBundleCache(cacheKey, bundle);
-  res.json(bundle);
 });
 
 router.get("/news/:id", async (req, res): Promise<void> => {
@@ -1006,7 +1028,7 @@ router.get("/news/:id", async (req, res): Promise<void> => {
   let isCorporate = false;
   if (siteScoped) {
     const site = await getHmNewsSiteByIdCompat(siteId);
-    isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
+    isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson));
   }
 
   // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." → yanlış id olmasın.

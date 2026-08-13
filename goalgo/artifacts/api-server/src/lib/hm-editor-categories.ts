@@ -17,8 +17,11 @@ export function parseHmActivatedCategorySlugs(layout: Record<string, unknown>): 
   return [...out];
 }
 
-export function parseHmLayoutJson(raw: string | null | undefined): Record<string, unknown> {
-  if (!raw || !String(raw).trim()) return {};
+export function parseHmLayoutJson(raw: unknown): Record<string, unknown> {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return { ...(raw as Record<string, unknown>) };
+  }
+  if (raw == null || !String(raw).trim() || String(raw).trim() === "[object Object]") return {};
   try {
     const parsed = JSON.parse(String(raw)) as unknown;
     return parsed && typeof parsed === "object" && !Array.isArray(parsed)

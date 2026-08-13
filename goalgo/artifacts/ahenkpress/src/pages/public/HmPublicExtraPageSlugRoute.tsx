@@ -1,7 +1,6 @@
 import { useParams } from "wouter";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import HmRedirectToSonDakika from "@/pages/public/HmRedirectToSonDakika";
 import KategoriDetay from "@/pages/public/KategoriDetay";
 import Iletisim from "@/pages/public/Iletisim";
 import { HmPublicStandardExtraPageRoute } from "@/components/HmPublicStandardExtraPageRoute";
@@ -44,7 +43,7 @@ function CategorySlugFallback({ segment }: { segment: string }) {
     return <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-slate-500">Sayfa yükleniyor…</div>;
   }
   if (hasDbCategory || hasRssCategory) return <KategoriDetay />;
-  return <HmRedirectToSonDakika />;
+  return <MissingExtraPage segment={segment} />;
 }
 
 /** `/tr/:slug/:pageSlug` — özel sayfa (kunye, iletisim, vb.). */

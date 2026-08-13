@@ -11,7 +11,7 @@ export type HmEditorMePayload = {
   editor: HmEditorBrief;
   site: HmSiteBrief & {
     contactJson?: string;
-    layoutJson?: string | null;
+    layoutJson?: string | Record<string, unknown> | null;
     seoVerification?: HmSeoVerification | null;
     createdAt?: string;
   };
@@ -39,7 +39,11 @@ async function verifyHmEditorSessionInner(token: string): Promise<HmEditorSessio
   return {
     status: "ok",
     data: j,
-    newsLayoutPrefs: parseNewsSiteLayoutFromJson(j.site.layoutJson ?? null),
+    newsLayoutPrefs: parseNewsSiteLayoutFromJson(
+      (j.site.layoutJson && typeof j.site.layoutJson === "object"
+        ? JSON.stringify(j.site.layoutJson)
+        : j.site.layoutJson) ?? null,
+    ),
     seoVerification: j.site.seoVerification ?? null,
   };
 }

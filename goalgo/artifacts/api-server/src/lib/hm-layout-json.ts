@@ -49,10 +49,15 @@ export function stripNonVitrinLayoutKeys(inc: Record<string, unknown>): Record<s
   return out;
 }
 
-export function parseHmLayoutRecord(raw: string | null | undefined): Record<string, unknown> {
+export function parseHmLayoutRecord(raw: unknown): Record<string, unknown> {
   try {
-    if (raw == null || !String(raw).trim()) return {};
-    const j = JSON.parse(String(raw)) as unknown;
+    if (raw == null) return {};
+    if (typeof raw === "object" && !Array.isArray(raw)) {
+      return { ...(raw as Record<string, unknown>) };
+    }
+    const text = String(raw).trim();
+    if (!text || text === "[object Object]") return {};
+    const j = JSON.parse(text) as unknown;
     if (j && typeof j === "object" && !Array.isArray(j)) return j as Record<string, unknown>;
   } catch {
     /* ignore */

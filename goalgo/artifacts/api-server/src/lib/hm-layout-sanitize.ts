@@ -133,7 +133,13 @@ export async function repairAllHmLayoutSanitize(opts?: { dryRun?: boolean }): Pr
   for (const row of rows) {
     let layout: Record<string, unknown> = {};
     try {
-      layout = row.layoutJson ? (JSON.parse(String(row.layoutJson)) as Record<string, unknown>) : {};
+      const raw = row.layoutJson as unknown;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        layout = { ...(raw as Record<string, unknown>) };
+      } else {
+        const text = raw != null ? String(raw).trim() : "";
+        layout = text && text !== "[object Object]" ? (JSON.parse(text) as Record<string, unknown>) : {};
+      }
     } catch {
       layout = {};
     }

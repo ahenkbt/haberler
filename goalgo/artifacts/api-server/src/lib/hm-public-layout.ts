@@ -2,8 +2,11 @@ import { eq, inArray } from "drizzle-orm";
 import { categoriesTable, db, hmNewsSitesTable } from "@workspace/db";
 import { normalizeNewsCategorySlug } from "./categorySort";
 
-function parseLayoutJson(raw: string | null | undefined): Record<string, unknown> {
-  if (!raw || !String(raw).trim()) return {};
+function parseLayoutJson(raw: unknown): Record<string, unknown> {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return { ...(raw as Record<string, unknown>) };
+  }
+  if (raw == null || !String(raw).trim() || String(raw).trim() === "[object Object]") return {};
   try {
     const parsed = JSON.parse(String(raw)) as unknown;
     return parsed && typeof parsed === "object" && !Array.isArray(parsed)
@@ -89,7 +92,7 @@ export async function readHmPublicLayout(siteId: number): Promise<Record<string,
     .select({ layoutJson: hmNewsSitesTable.layoutJson })
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.id, siteId));
-  return parseLayoutJson(row?.layoutJson != null ? String(row.layoutJson) : null);
+  return parseLayoutJson(row?.layoutJson);
 }
 
 export async function getHmHiddenCategorySlugs(siteId: number): Promise<Set<string>> {

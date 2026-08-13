@@ -168,6 +168,7 @@ export function hmPublicHref(
     !query.includes("siteId=") &&
     !query.includes("hmSiteId=") &&
     (pathname.startsWith("/haber/") ||
+      pathname.startsWith("/makale/") ||
       pathname.startsWith("/haberler/rss/") ||
       pathname.startsWith("/kategori/") ||
       pathname === "/tum-haberler" ||

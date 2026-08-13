@@ -446,8 +446,11 @@ type HmDonationLayout = {
   amounts: number[];
 };
 
-function parseHmLayoutJson(raw: string | null | undefined): Record<string, unknown> {
-  if (!raw || !String(raw).trim()) return {};
+function parseHmLayoutJson(raw: unknown): Record<string, unknown> {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return { ...(raw as Record<string, unknown>) };
+  }
+  if (raw == null || !String(raw).trim() || String(raw).trim() === "[object Object]") return {};
   try {
     const parsed = JSON.parse(String(raw)) as unknown;
     return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
@@ -2879,7 +2882,12 @@ router.get("/hm/editor/me", async (req, res): Promise<void> => {
       domain3: site.domain3 ?? null,
       displayName: site.displayName,
       contactJson: site.contactJson,
-      layoutJson: site.layoutJson,
+      layoutJson:
+        site.layoutJson == null
+          ? null
+          : typeof site.layoutJson === "string"
+            ? site.layoutJson
+            : JSON.stringify(site.layoutJson),
       seoVerification: parseHmSeoVerification(site.verificationJson),
       createdAt: site.createdAt,
     },
