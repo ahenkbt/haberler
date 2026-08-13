@@ -1599,7 +1599,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const hmHybridNewsFetchEnabled = siteId != null && !isCorporateTheme && resolveHmHomeHybridNewsFetchEnabled(layoutPrefs, siteId);
   const hmYekparePoolReceiveEnabled = resolveHmYekparePoolReceiveEnabled(layoutPrefs);
   const newsSliderEnabled = layoutPrefs.hmNewsSliderEnabled !== false;
-  const tepeMansetEnabled = layoutPrefs.hmNewsTepeMansetEnabled !== false;
+  const tepeMansetEnabled = resolveHmNewsEditorModuleEnabled(layoutPrefs, "tepeManset", { portalHubOnly });
   const rssHeadlineEnabled = layoutPrefs.hmNewsRssHeadlineEnabled !== false;
   const newsBandEnabled = layoutPrefs.hmNewsBreakingBandEnabled !== false;
   const mansetCategorySlug = String(layoutPrefs.mansetCategorySlug ?? "").trim() || null;
@@ -2535,8 +2535,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         .filter((id) => isCorporateTheme || !isHmNewsCorporateOnlyHomeModule(id)),
       portalHubOnly,
     );
-    // Tepe manşet her zaman header altında en üstte (kayıtlı sıra ne olursa olsun).
-    if (!mods.includes("tepeManset")) return mods;
+    // Tepe manşet açıksa header altında en üstte (kayıtlı sıra ne olursa olsun).
+    if (!tepeMansetEnabled || !mods.includes("tepeManset")) return mods;
     const ordered: HmNewsHomeModuleId[] = ["tepeManset", ...mods.filter((id) => id !== "tepeManset")];
     return ordered;
   })();

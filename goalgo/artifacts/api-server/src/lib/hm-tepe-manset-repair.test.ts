@@ -1,36 +1,47 @@
 import { describe, expect, it } from "vitest";
+import { nextTepeMansetLayoutPatch } from "./hm-tepe-manset-layout.js";
 
-function ensureTepeMansetInModuleOrder(order: unknown): string[] {
-  const seen = new Set<string>();
-  const next: string[] = [];
-  if (Array.isArray(order)) {
-    for (const item of order) {
-      const id = String(item ?? "").trim();
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      next.push(id);
-    }
-  }
-  if (!next.includes("tepeManset")) {
-    return ["tepeManset", ...next];
-  }
-  return ["tepeManset", ...next.filter((id) => id !== "tepeManset")];
-}
+describe("tepe manset layout repair", () => {
+  it("does not re-enable a site the editor turned off", () => {
+    expect(
+      nextTepeMansetLayoutPatch({
+        hmNewsTepeMansetEnabled: false,
+        hmNewsHomeModuleOrder: ["hero", "latestGrid"],
+      }),
+    ).toBeNull();
+  });
 
-describe("tepe manset module order", () => {
-  it("prepends tepeManset when missing", () => {
-    expect(ensureTepeMansetInModuleOrder(["hero", "latestGrid"])).toEqual([
-      "tepeManset",
-      "hero",
-      "latestGrid",
-    ]);
+  it("prepends tepeManset when missing on an enabled site", () => {
+    const next = nextTepeMansetLayoutPatch({
+      hmNewsTepeMansetEnabled: true,
+      hmNewsHomeModuleOrder: ["hero", "latestGrid"],
+    });
+    expect(next?.hmNewsHomeModuleOrder).toEqual(["tepeManset", "hero", "latestGrid"]);
+    expect(next?.hmNewsTepeMansetEnabled).toBe(true);
   });
 
   it("moves tepeManset to front when present elsewhere", () => {
-    expect(ensureTepeMansetInModuleOrder(["hero", "tepeManset", "latestGrid"])).toEqual([
-      "tepeManset",
-      "hero",
-      "latestGrid",
-    ]);
+    const next = nextTepeMansetLayoutPatch({
+      hmNewsTepeMansetEnabled: true,
+      hmNewsHomeModuleOrder: ["hero", "tepeManset", "latestGrid"],
+    });
+    expect(next?.hmNewsHomeModuleOrder).toEqual(["tepeManset", "hero", "latestGrid"]);
+  });
+
+  it("enables tepe manset when the flag was never set", () => {
+    const next = nextTepeMansetLayoutPatch({
+      hmNewsHomeModuleOrder: ["hero"],
+    });
+    expect(next?.hmNewsTepeMansetEnabled).toBe(true);
+    expect(next?.hmNewsHomeModuleOrder).toEqual(["tepeManset", "hero"]);
+  });
+
+  it("skips a site that is already enabled with tepeManset first", () => {
+    expect(
+      nextTepeMansetLayoutPatch({
+        hmNewsTepeMansetEnabled: true,
+        hmNewsHomeModuleOrder: ["tepeManset", "hero"],
+      }),
+    ).toBeNull();
   });
 });

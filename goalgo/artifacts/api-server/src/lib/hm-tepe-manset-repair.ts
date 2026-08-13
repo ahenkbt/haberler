@@ -1,6 +1,7 @@
 import { and, eq, isNull, not, or, sql } from "drizzle-orm";
 import { dualWriteUpdate, getNewsDbForRead, hmNewsSitesTable, newsTable } from "@workspace/db";
 import { listHmNewsSitesCompat } from "./hm-site-compat.js";
+import { nextTepeMansetLayoutPatch } from "./hm-tepe-manset-layout.js";
 
 export type HmTepeMansetRepairResult = {
   ok: boolean;
@@ -20,26 +21,9 @@ function parseLayoutRecord(raw: unknown): Record<string, unknown> {
   return {};
 }
 
-function ensureTepeMansetInModuleOrder(order: unknown): string[] {
-  const seen = new Set<string>();
-  const next: string[] = [];
-  if (Array.isArray(order)) {
-    for (const item of order) {
-      const id = String(item ?? "").trim();
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      next.push(id);
-    }
-  }
-  if (!next.includes("tepeManset")) {
-    return ["tepeManset", ...next];
-  }
-  return ["tepeManset", ...next.filter((id) => id !== "tepeManset")];
-}
-
 /**
- * Tüm HM haber sitelerinde tepe manşet modülünü aç ve modül sırasına ekle.
- * `hmNewsTepeMansetEnabled: false` ile kapatılmış siteleri geri açar.
+ * Tüm HM haber sitelerinde tepe manşet modülünü sıraya ekler (eksikse).
+ * Editörün `hmNewsTepeMansetEnabled: false` kaydı korunur.
  */
 export async function repairHmTepeMansetLayoutForAllSites(): Promise<HmTepeMansetRepairResult> {
   const sites = await listHmNewsSitesCompat();
@@ -52,19 +36,9 @@ export async function repairHmTepeMansetLayoutForAllSites(): Promise<HmTepeManse
       .where(eq(hmNewsSitesTable.id, site.id))
       .limit(1);
     const prev = parseLayoutRecord(row[0]?.layoutJson);
-    const nextOrder = ensureTepeMansetInModuleOrder(prev.hmNewsHomeModuleOrder);
-    const prevOrder = Array.isArray(prev.hmNewsHomeModuleOrder)
-      ? (prev.hmNewsHomeModuleOrder as string[]).join(",")
-      : "";
-    const orderChanged = prevOrder !== nextOrder.join(",");
-    const wasDisabled = prev.hmNewsTepeMansetEnabled === false;
-    if (!orderChanged && !wasDisabled) continue;
+    const merged = nextTepeMansetLayoutPatch(prev);
+    if (!merged) continue;
 
-    const merged = {
-      ...prev,
-      hmNewsTepeMansetEnabled: true,
-      hmNewsHomeModuleOrder: nextOrder,
-    };
     const raw = JSON.stringify(merged);
     await dualWriteUpdate(
       hmNewsSitesTable,
@@ -78,7 +52,7 @@ export async function repairHmTepeMansetLayoutForAllSites(): Promise<HmTepeManse
     ok: true,
     sitesPatched,
     featuredFlagsPatched: 0,
-    detail: sitesPatched > 0 ? `${sitesPatched} sitede tepe manşet yeniden açıldı` : "layout zaten uygun",
+    detail: sitesPatched > 0 ? `${sitesPatched} sitede tepe manşet sırası onarıldı` : "layout zaten uygun",
   };
 }
 
