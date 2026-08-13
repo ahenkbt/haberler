@@ -47,6 +47,8 @@ import {
   resolveHmNavStripBackgroundStyle,
 } from "@/lib/hmChromeLayout";
 import { formatHmNavLabel } from "@/lib/hmDisplayText";
+import { isVkdSiteSlug } from "@/lib/hmVkdFooterNav";
+import { VkdNavStripContact } from "@/components/VkdNavStripContact";
 import "@/styles/hmNewsCategoriesMenu.css";
 
 function renderMenuItemLabel(label: string, Icon?: LucideIcon | null) {
@@ -502,7 +504,29 @@ export function HmPublicNewsNavStrip({
     />
   ) : null;
 
-  const pillsRow = (
+  const pillsInner = (
+    <>
+      {renderHeaderMenuPills()}
+      {useEditorHeaderMenu ? requestPill : null}
+      {videoTvPill}
+    </>
+  );
+
+  const vkdNav = isVkdSiteSlug(hmSlug);
+
+  const pillsRow = vkdNav ? (
+    <div
+      className="hm-news-nav-row hm-news-nav-row--corporate hm-news-nav-row--vkd relative flex min-h-9 touch-manipulation items-start gap-3 px-3 py-1"
+    >
+      <div className="hm-news-nav-pills flex min-w-0 flex-1 flex-wrap items-center gap-1 overflow-x-auto">
+        {pillsInner}
+      </div>
+      <div className="hm-news-nav-actions relative z-[1] flex shrink-0 items-start gap-2">
+        <VkdNavStripContact />
+        <HmPageRefreshNavButton navOnLight={stripNavOnLight} pillIdleBg={pillIdleBg} pillText={pillText} />
+      </div>
+    </div>
+  ) : (
     <div
       className={`hm-news-nav-row relative flex min-h-9 touch-manipulation items-center gap-1 px-3 py-1 overflow-x-auto overflow-y-visible overscroll-x-contain ${
         corporateNav || useEditorHeaderMenu ? "hm-news-nav-row--corporate" : ""
@@ -515,9 +539,7 @@ export function HmPublicNewsNavStrip({
         style={{ scrollbarWidth: "none" }}
       >
         <div className="pointer-events-auto flex items-center gap-1">
-          {renderHeaderMenuPills()}
-          {useEditorHeaderMenu ? requestPill : null}
-          {videoTvPill}
+          {pillsInner}
         </div>
       </div>
       <div className="hm-news-nav-actions relative z-[1] ml-auto flex shrink-0 items-center gap-1">

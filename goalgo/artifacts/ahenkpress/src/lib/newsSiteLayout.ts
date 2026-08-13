@@ -11,6 +11,10 @@ import type { HmMediaGalleryHomeModuleId, HmMediaGallerySourceId, HmNewsGalleryS
 import { hmGallerySpotlightModeToSourceId, normalizeHmMediaGallerySourceId, normalizeHmNewsGallerySpotlightMode, normalizeHmNewsHomeModuleGalleryVideoTvRefs, resolveHmNewsGalleryVideoTvRef } from "./hmMediaSpotlightPool";
 import { normalizeHmEditorLoginMenuHref } from "./hmEditorPublicLinks";
 import { decodeHmDisplayText } from "./hmDisplayText";
+import {
+  VKD_ACCOUNT_NAME,
+  VKD_DONATION_ACCOUNTS,
+} from "./vkdPublicContact";
 export type MansetVariant =
   | "split"
   | "full-thumbs"
@@ -289,6 +293,12 @@ export type HmCorporateDonationSupportBand = {
   items?: string[] | null;
 };
 
+export type HmCorporateDonationAccount = {
+  bank?: string | null;
+  accountName?: string | null;
+  iban?: string | null;
+};
+
 /** Kurumsal tema bağış kutusu ve alt destek bandı ayarları. */
 export type HmCorporateDonationSettings = {
   enabled: boolean;
@@ -297,6 +307,8 @@ export type HmCorporateDonationSettings = {
   amounts?: number[] | null;
   iban?: string | null;
   accountName?: string | null;
+  /** Birden fazla banka hesabı (VKD Ziraat + Vakıfbank). */
+  accounts?: HmCorporateDonationAccount[] | null;
   buttonText?: string | null;
   supportBand?: HmCorporateDonationSupportBand | null;
 };
@@ -2407,6 +2419,7 @@ const defaultHmCorporateDonation: HmCorporateDonationSettings = {
   amounts: DEFAULT_DONATION_AMOUNTS,
   iban: null,
   accountName: null,
+  accounts: null,
   buttonText: "Bağış Yap",
   supportBand: {
     enabled: true,
@@ -2482,6 +2495,24 @@ export function filterCorporateHomeModulesForDonation(
   return filtered.length ? filtered : modules;
 }
 
+function normalizeHmCorporateDonationAccounts(raw: unknown): HmCorporateDonationAccount[] | null {
+  if (!Array.isArray(raw)) return null;
+  const accounts = raw
+    .map((row) => {
+      if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+      const o = row as Record<string, unknown>;
+      const iban = normalizeDonationText(o.iban, 64);
+      if (!iban) return null;
+      return {
+        bank: normalizeDonationText(o.bank, 80),
+        accountName: normalizeDonationText(o.accountName, 120),
+        iban,
+      } satisfies HmCorporateDonationAccount;
+    })
+    .filter((row): row is HmCorporateDonationAccount => row != null);
+  return accounts.length ? accounts : null;
+}
+
 function normalizeHmCorporateDonation(raw: unknown): HmCorporateDonationSettings {
   const o = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const buttonRaw = normalizeDonationText(o.buttonText, 40);
@@ -2494,6 +2525,7 @@ function normalizeHmCorporateDonation(raw: unknown): HmCorporateDonationSettings
     amounts: [],
     iban: normalizeDonationText(o.iban, 64),
     accountName: normalizeDonationText(o.accountName, 120),
+    accounts: normalizeHmCorporateDonationAccounts(o.accounts),
     buttonText,
     supportBand: normalizeHmCorporateDonationSupportBand(o.supportBand),
   };
@@ -2517,14 +2549,16 @@ export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsS
   const bandTitle = (band.title ?? "").trim();
   const highlightsHtml = (band.highlightsHtml ?? "").trim();
   const leadText = (band.text ?? "").trim();
+  const ziraat = VKD_DONATION_ACCOUNTS[0]!;
 
   return {
     ...prefs,
     hmCorporateDonation: {
       ...prev,
       title: !title || /^kurumsal yayıncılı[ğş]a destek/i.test(title) ? "Çalışmalarımıza Destek Olun." : prev.title,
-      iban: (prev.iban ?? "").trim() || "TR66 0010 3000 0000 0084 0744 71",
-      accountName: (prev.accountName ?? "").trim() || "VATAN KAHRAMANLARI SAVUNMA HİZMETLERİ",
+      iban: ziraat.iban,
+      accountName: VKD_ACCOUNT_NAME,
+      accounts: VKD_DONATION_ACCOUNTS.map((row) => ({ ...row })),
       buttonText: prev.buttonText || "IBAN Kopyala",
       supportBand: {
         ...band,
