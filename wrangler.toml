@@ -7,6 +7,11 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 account_id = "16f5b996194174624e7969a3658bd2bb"
 
+# Native R2 — S3 API (*.r2.cloudflarestorage.com) Cloudflare ağında TLS alert 40 veriyor.
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "yekpare-media"
+
 [assets]
 directory = "artifacts/ahenkpress/dist/public"
 binding = "ASSETS"
@@ -21,10 +26,6 @@ run_worker_first = true
 API_ORIGIN = ""
 # KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
-# Medya yükleme (Worker → R2): native binding (S3 API TLS CF ağında kırılıyor)
-[[r2_buckets]]
-binding = "MEDIA_BUCKET"
-bucket_name = "yekpare-media"
 
 [[containers]]
 class_name = "GoalgoApiContainer"
