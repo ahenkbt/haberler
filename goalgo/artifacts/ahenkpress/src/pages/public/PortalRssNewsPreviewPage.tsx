@@ -7,7 +7,8 @@ import { readHmRssPreviewFromHomeCache } from "@/lib/hmHomeHybridNewsCache";
 import { EditorialNewsDetailHeader } from "@/components/EditorialNewsDetailHeader";
 import { EditorialNewsArticleLayout } from "@/components/news/EditorialNewsArticleLayout";
 import { NewsArticleBody } from "@/components/NewsArticleBody";
-import { resolveClientMediaSrc, normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import { stripDuplicateHeroImageFromHtml } from "@/lib/stripDuplicateHeroImageFromHtml";
 import { SADE_PUBLIC_POST_HERO_MAIN_CLASS } from "@/lib/yekpareSadeTheme";
@@ -46,8 +47,7 @@ function RssArticleBlock({
   article: PortalRssPreview;
   accent?: string;
 }) {
-  const image =
-    article.imageUrl ? resolveClientMediaSrc(article.imageUrl) || article.imageUrl : null;
+  const image = newsCoverSrc(article.imageUrl);
 
   const bodyHtml = useMemo(() => {
     const raw = article.contentHtml || article.spot || "";
@@ -233,7 +233,7 @@ function RssRelatedNewsBox({ items, accent }: { items: HomeHybridNewsItem[]; acc
       </div>
       <div className="grid gap-3 p-4 sm:grid-cols-2">
         {items.map((item) => {
-          const img = item.imageUrl ? resolveClientMediaSrc(item.imageUrl) || item.imageUrl : null;
+          const img = newsCoverSrc(item.imageUrl);
           return (
             <Link
               key={`${item.source ?? "news"}:${item.id}`}

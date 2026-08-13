@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Clock, Rss } from "lucide-react";
 import { Link } from "wouter";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc, handleNewsImageError } from "@/lib/newsCoverSrc";
 import { apiRequest } from "@/lib/queryClient";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { isHmPublicNavExternal } from "@/lib/hmPublicLinks";
@@ -135,9 +135,7 @@ const CORPORATE_MANSET_SIDE_LIMIT = 10;
 const MAIN_NEWS_GRID_LIMIT = CORPORATE_MANSET_SLIDER_LIMIT + CORPORATE_MANSET_SIDE_LIMIT;
 
 function mediaSrc(url: string | null | undefined): string {
-  const raw = (url ?? "").trim();
-  if (!raw) return "";
-  return resolveClientMediaSrc(raw) || raw;
+  return newsCoverSrc(url);
 }
 
 function normalizeNewsIdentityPart(value: string | number | null | undefined): string {
@@ -311,7 +309,7 @@ function SectionTitle({ title, href, dark = false }: { title: string; href?: str
 function ImageBox({ item, className = "" }: { item: NewsItem; className?: string }) {
   const src = mediaSrc(item.imageUrl);
   if (src) {
-    return <img src={src} alt={item.title} className={className} loading="lazy" />;
+    return <img src={src} alt={item.title} className={className} loading="lazy" onError={(ev) => handleNewsImageError(ev.currentTarget)} />;
   }
   return (
     <div className={`vkv-image-placeholder ${className}`} aria-hidden>
@@ -323,7 +321,7 @@ function ImageBox({ item, className = "" }: { item: NewsItem; className?: string
 function ManualImageBox({ title, imageUrl, className = "" }: { title: string; imageUrl?: string | null; className?: string }) {
   const src = mediaSrc(imageUrl);
   if (src) {
-    return <img src={src} alt={title} className={className} loading="lazy" />;
+    return <img src={src} alt={title} className={className} loading="lazy" onError={(ev) => handleNewsImageError(ev.currentTarget)} />;
   }
   return (
     <div className={`vkv-image-placeholder ${className}`} aria-hidden>

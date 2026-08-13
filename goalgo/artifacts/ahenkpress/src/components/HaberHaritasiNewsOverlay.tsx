@@ -18,7 +18,7 @@ import {
   resolveNewsmapOverlayVideoId,
   resolveNewsmapOverlayVideoSourceUrl,
 } from "@/lib/newsmapOverlayArticle";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 
 type HaberHaritasiNewsOverlayProps = {
   headline: HmMapCityHeadline | null;
@@ -81,8 +81,7 @@ export function HaberHaritasiNewsOverlay({
 
   const heroImage = useMemo(() => {
     const raw = articleData?.imageUrl || headline?.thumbnail || null;
-    if (!raw) return null;
-    return resolveClientMediaSrc(raw) || raw;
+    return newsCoverSrc(raw);
   }, [articleData?.imageUrl, headline?.thumbnail]);
 
   if (!headline) return null;

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc, handleNewsImageError } from "@/lib/newsCoverSrc";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -24,7 +24,7 @@ export function NewsInlineGallery({ images, className }: Props) {
 
   if (count === 0) return null;
 
-  const src = resolveClientMediaSrc(slides[current]!) || slides[current]!;
+  const src = newsCoverSrc(slides[current]);
 
   return (
     <figure className={cn("ap-news-gallery not-prose my-8", className)} data-ap-gallery="true">
@@ -36,6 +36,7 @@ export function NewsInlineGallery({ images, className }: Props) {
             alt=""
             className="h-full w-full object-contain bg-black/90"
             loading="lazy"
+            onError={(ev) => handleNewsImageError(ev.currentTarget)}
           />
         </div>
         {count > 1 ? (
@@ -65,7 +66,7 @@ export function NewsInlineGallery({ images, className }: Props) {
       {count > 1 ? (
         <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
           {slides.map((u, i) => {
-            const thumb = resolveClientMediaSrc(u) || u;
+            const thumb = newsCoverSrc(u);
             return (
               <button
                 key={`${u}-${i}`}
@@ -77,7 +78,7 @@ export function NewsInlineGallery({ images, className }: Props) {
                 )}
                 aria-label={`Görsel ${i + 1}`}
               >
-                <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" onError={(ev) => handleNewsImageError(ev.currentTarget)} />
               </button>
             );
           })}

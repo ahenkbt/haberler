@@ -74,7 +74,8 @@ import { hmVitrinAccentHex } from "@/lib/hmVitrinThemeTokens";
 import { HmSehitSearchModule } from "@/components/HmSehitSearchModule";
 import { isBlogCategoryNews } from "@/lib/blogNews";
 import { isKoseArticle } from "@/lib/isKoseArticle";
-import { apiUrl, resolveClientMediaSrc, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { apiUrl, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { newsCoverSrc, resolveUsableClientMediaSrc, handleNewsImageError } from "@/lib/newsCoverSrc";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { useHmTabQueryParam, useSiteIdQueryParam } from "@/hooks/useBrowserLocationSearch";
 import { useHeadlineSliderInteraction } from "@/hooks/useHeadlineSliderInteraction";
@@ -293,9 +294,7 @@ class HmHomeBlockBoundary extends Component<
 }
 
 function vitrinImgSrc(url: string | null | undefined): string {
-  const u = (url ?? "").trim();
-  if (!u) return "";
-  return resolveClientMediaSrc(u) || u;
+  return resolveUsableClientMediaSrc(url);
 }
 
 function catColor(c: any, accent: string, hmCategoryColors?: Record<string, string> | null) {
@@ -4151,11 +4150,11 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               {visibleSections.map((section) => {
                 const item = section.items[0];
                 const href = h(siteId != null ? `/kategori/${section.slug}?siteId=${encodeURIComponent(String(siteId))}` : `/kategori/${section.slug}`);
-                const src = vitrinImgSrc(item?.imageUrl);
+                const src = newsCoverSrc(item?.imageUrl);
                 return (
                   <Link key={section.slug || section.title} href={href} className="hm-vitrin-card group overflow-hidden rounded-xl shadow">
                     <div className="relative aspect-[16/10] bg-slate-100">
-                      {src ? <img src={src} alt={newsDisplayTitle(item?.title ?? section.title)} className="h-full w-full object-cover transition group-hover:scale-105" /> : null}
+                      {src ? <img src={src} alt={newsDisplayTitle(item?.title ?? section.title)} className="h-full w-full object-cover transition group-hover:scale-105" onError={(ev) => handleNewsImageError(ev.currentTarget)} /> : null}
                       <span className="absolute left-2 top-2 rounded px-2 py-1 text-[10px] font-black uppercase text-white" style={{ background: section.color || accent }}>
                         {section.title}
                       </span>

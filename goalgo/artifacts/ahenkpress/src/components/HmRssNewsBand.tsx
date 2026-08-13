@@ -3,7 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, X } from "lucide-react";
 import { Link } from "wouter";
 import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import { HM_HOME_LATEST_BAND_ITEM_COUNT } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { coercePublicHybridNewsHref, mapPublicHybridNewsLinkFields } from "@/lib/hybridNewsHref";
@@ -116,9 +116,7 @@ export function resolveRssBandCategoryItems(opts: {
 }
 
 function vitrinImgSrc(url: string | null | undefined): string {
-  const u = (url ?? "").trim();
-  if (!u) return "";
-  return resolveClientMediaSrc(u) || u;
+  return newsCoverSrc(url);
 }
 
 function stripHtmlText(raw: string): string {

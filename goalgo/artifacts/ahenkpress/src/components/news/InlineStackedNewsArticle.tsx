@@ -7,7 +7,8 @@ import { NewsArticleBody } from "@/components/NewsArticleBody";
 import { NewsShareButtons } from "@/components/news/NewsShareButtons";
 import { resolveNewsExcerpt } from "@/lib/resolveNewsExcerpt";
 import { estimateNewsReadMinutes } from "@/lib/newsArticleMetrics";
-import { normalizeAiNewsHtml, resolveClientMediaSrc, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import { rewriteNewsBodyLinksForHm } from "@/lib/rewriteNewsBodyLinksForHm";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import type { StackedNewsArticle } from "@/hooks/useNewsInfiniteScroll";
@@ -54,7 +55,7 @@ export function InlineStackedNewsArticle({ article, accent, registerRef }: Props
     summary: article.spot,
     description: article.spot,
   });
-  const heroImageSrc = article.imageUrl ? resolveClientMediaSrc(article.imageUrl) || article.imageUrl : null;
+  const heroImageSrc = newsCoverSrc(article.imageUrl);
   const detailHref = h(article.href.startsWith("/") ? article.href : `/haber/${article.slug ?? ""}`);
   const catHref =
     article.categorySlug != null

@@ -65,6 +65,7 @@ import {
   type PublicLocationState,
 } from "@/lib/publicLocation";
 import { resolveClientMediaSrc, normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import { NewsArticleBody } from "@/components/NewsArticleBody";
 import { EditorialNewsDetailHeader } from "@/components/EditorialNewsDetailHeader";
 import { HmNewsDetailSidebar } from "@/components/HmNewsDetailSidebar";
@@ -1793,7 +1794,7 @@ export function SixAmMartNewsDetailPage() {
       });
   }, [koseArticle, news?.authorId, slug]);
 
-  const image = news?.imageUrl ? resolveClientMediaSrc(news.imageUrl) || news.imageUrl : null;
+  const image = newsCoverSrc(news?.imageUrl);
   const excerpt = news ? resolveNewsExcerpt(news) : null;
   const readMin = useMemo(
     () =>

@@ -1,18 +1,36 @@
 import { useEffect, useState, type ImgHTMLAttributes } from "react";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { resolveUsableClientMediaSrc } from "@/lib/newsCoverSrc";
+import {
+  HM_NEWS_PLACEHOLDER_IMAGE,
+  HM_NEWS_PLACEHOLDER_SVG,
+} from "@/lib/hmNewsPlaceholder";
+import { firstUsableNewsImageUrl, isUnusableNewsImageUrl } from "@/lib/unusableNewsImageUrl";
 import { cn } from "@/lib/utils";
 
 export function resolveHmNewsImageSrc(url: string | null | undefined): string {
-  const u = String(url ?? "").trim();
-  if (!u) return "";
-  return resolveClientMediaSrc(u) || u;
+  return resolveUsableClientMediaSrc(url);
 }
 
-/** Kapak görseli var mı (manşet / öne çıkan filtreleri). */
+function firstRawNewsImageUrl(
+  item: Parameters<typeof resolveNewsItemImageUrl>[0],
+): string {
+  if (!item) return "";
+  const enclosure =
+    typeof item.enclosure === "string"
+      ? item.enclosure
+      : String(item.enclosure?.url ?? "").trim() || null;
+  for (const raw of [item.imageUrl, item.featuredImage, item.image, item.thumbnailUrl, item.thumbnail, enclosure]) {
+    const s = String(raw ?? "").trim();
+    if (s) return s;
+  }
+  return "";
+}
+
+/** Kapak görseli var mı (manşet / öne çıkan filtreleri). Render’da kalan URL de kapak sayılır. */
 export function newsItemHasCoverImage(
   item: Parameters<typeof resolveNewsItemImageUrl>[0],
 ): boolean {
-  return Boolean(String(resolveNewsItemImageUrl(item) ?? "").trim());
+  return Boolean(firstRawNewsImageUrl(item));
 }
 
 export function filterNewsItemsWithCoverImage<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
@@ -41,11 +59,14 @@ export function resolveNewsItemImageUrl(
     typeof item.enclosure === "string"
       ? item.enclosure
       : String(item.enclosure?.url ?? "").trim() || null;
-  for (const raw of [item.imageUrl, item.featuredImage, item.image, item.thumbnailUrl, item.thumbnail, enclosure]) {
-    const s = String(raw ?? "").trim();
-    if (s) return s;
-  }
-  return "";
+  return firstUsableNewsImageUrl([
+    item.imageUrl,
+    item.featuredImage,
+    item.image,
+    item.thumbnailUrl,
+    item.thumbnail,
+    enclosure,
+  ]);
 }
 
 /** WebP mirror hazır değilse veya yerel upload 404 ise harici kapak yedeği. */
@@ -71,7 +92,7 @@ export function resolveNewsItemImageFallbackUrl(
       : String(item.enclosure?.url ?? "").trim() || null;
   for (const raw of [item.imageFallbackUrl, item.featuredImage, item.thumbnailUrl, item.thumbnail, item.image, enclosure]) {
     const s = String(raw ?? "").trim();
-    if (!s || s === primary) continue;
+    if (!s || s === primary || isUnusableNewsImageUrl(s)) continue;
     if (/^https?:\/\//i.test(s) || s.startsWith("//")) {
       return s.startsWith("//") ? `https:${s}` : s;
     }
@@ -89,8 +110,8 @@ type HmNewsImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
 };
 
 /**
- * Haber görselleri: kaynak URL varsa hemen göster.
- * «Görseli Hazırlanmaktadır» varsayılanı gösterilmez (yüklenene kadar boş/arkaplan).
+ * Haber görselleri: kaynak yoksa, Render’da kaldıysa veya yükleme kırılırsa
+ * «Görseli Hazırlanmaktadır» varsayılanı gösterilir.
  */
 export function HmNewsImage({
   src,
@@ -105,13 +126,12 @@ export function HmNewsImage({
 }: HmNewsImageProps) {
   const resolvedPrimary = resolveHmNewsImageSrc(src);
   const resolvedFallback = resolveHmNewsImageSrc(fallbackSrc);
-  const [activeSrc, setActiveSrc] = useState(resolvedPrimary || resolvedFallback);
-  const [failed, setFailed] = useState(!(resolvedPrimary || resolvedFallback));
+  const [activeSrc, setActiveSrc] = useState(
+    resolvedPrimary || resolvedFallback || HM_NEWS_PLACEHOLDER_IMAGE,
+  );
 
   useEffect(() => {
-    const next = resolvedPrimary || resolvedFallback;
-    setActiveSrc(next);
-    setFailed(!next);
+    setActiveSrc(resolvedPrimary || resolvedFallback || HM_NEWS_PLACEHOLDER_IMAGE);
   }, [resolvedPrimary, resolvedFallback]);
 
   const imgLoading = loading ?? (priority ? "eager" : "lazy");
@@ -119,10 +139,15 @@ export function HmNewsImage({
   const onImageError = () => {
     if (resolvedFallback && activeSrc !== resolvedFallback) {
       setActiveSrc(resolvedFallback);
-      setFailed(false);
       return;
     }
-    setFailed(true);
+    if (activeSrc !== HM_NEWS_PLACEHOLDER_IMAGE) {
+      setActiveSrc(HM_NEWS_PLACEHOLDER_IMAGE);
+      return;
+    }
+    if (activeSrc !== HM_NEWS_PLACEHOLDER_SVG) {
+      setActiveSrc(HM_NEWS_PLACEHOLDER_SVG);
+    }
   };
 
   return (
@@ -132,7 +157,7 @@ export function HmNewsImage({
         wrapperClassName,
       )}
     >
-      {activeSrc && !failed ? (
+      {activeSrc ? (
         <img
           {...rest}
           src={activeSrc}
@@ -141,7 +166,6 @@ export function HmNewsImage({
           decoding="async"
           fetchPriority={priority ? "high" : fetchPriority}
           className={cn("absolute inset-0 h-full w-full object-cover opacity-100", className)}
-          onLoad={() => setFailed(false)}
           onError={onImageError}
         />
       ) : null}

@@ -41,7 +41,7 @@ import { HM_HOME_HEADLINE_SLIDER_LIMIT, resolveHeadlineSliderDisplayCount } from
 import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
 import { filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
 import { isKoseArticle } from "@/lib/isKoseArticle";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc, handleNewsImageError } from "@/lib/newsCoverSrc";
 import { Badge } from "@/components/ui/badge";
 import { HM_CATEGORIES_NEWS_LOADING_LABEL } from "@/lib/hmNewsPlaceholder";
 
@@ -159,9 +159,7 @@ function formatCategoryDate(raw: string | null | undefined): string {
 }
 
 function imageSrc(url: string | null | undefined): string {
-  const u = String(url ?? "").trim();
-  if (!u) return "";
-  return resolveClientMediaSrc(u) || u;
+  return newsCoverSrc(url);
 }
 
 function categoryColor(slug: string, accent: string, hmCategoryColors?: Record<string, string> | null): string {
@@ -208,6 +206,7 @@ function CategoryNewsCard({
             src={img}
             alt={item.title}
             className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            onError={(ev) => handleNewsImageError(ev.currentTarget)}
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-slate-800 text-xs font-black uppercase text-slate-400">
@@ -235,7 +234,7 @@ function CategoryNewsCard({
     >
       <div className="relative h-[92px] w-[116px] shrink-0 overflow-hidden rounded-xl bg-slate-100">
         {img ? (
-          <img src={img} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          <img src={img} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" onError={(ev) => handleNewsImageError(ev.currentTarget)} />
         ) : (
           <div className="grid h-full w-full place-items-center bg-slate-100 text-xs font-black uppercase text-slate-400">Haber</div>
         )}
@@ -277,7 +276,7 @@ function MagazineHeadlineCompactCard({
     >
       <div className="relative aspect-[16/10] min-h-[104px] overflow-hidden bg-slate-100">
         {img ? (
-          <img src={img} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          <img src={img} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" onError={(ev) => handleNewsImageError(ev.currentTarget)} />
         ) : (
           <div className="grid h-full w-full place-items-center bg-slate-100 text-[10px] font-black uppercase text-slate-400">Haber</div>
         )}

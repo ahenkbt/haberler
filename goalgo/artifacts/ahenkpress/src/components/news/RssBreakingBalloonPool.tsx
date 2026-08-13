@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { HmBreakingRssFeedId } from "@/lib/newsSiteLayout";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import "./RssBreakingBalloonPool.css";
 
 function balloonImageSrc(url: string | null | undefined): string {
-  const value = String(url ?? "").trim();
-  if (!value) return "";
-  return resolveClientMediaSrc(value) || value;
+  return newsCoverSrc(url);
 }
 
 export type RssBreakingBalloonItem = {
@@ -194,7 +192,7 @@ export function RssBreakingBalloonPool<T extends RssBreakingBalloonItem>({
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
         {pool.slice(0, slotCount).map((item) => {
           const color = balloonCategoryColor(item.category, accent);
-          const imageSrc = item.imageUrl ? balloonImageSrc(item.imageUrl) : null;
+          const imageSrc = balloonImageSrc(item.imageUrl);
           return (
             <button
               key={item.id}
@@ -236,7 +234,7 @@ export function RssBreakingBalloonPool<T extends RssBreakingBalloonItem>({
       >
         {slots.map((slot, slotIndex) => {
           const color = balloonCategoryColor(slot.item.category, accent);
-          const imageSrc = slot.item.imageUrl ? balloonImageSrc(slot.item.imageUrl) : null;
+          const imageSrc = balloonImageSrc(slot.item.imageUrl);
           const popKey = `${slotIndex}-${slot.cycle}`;
           const isManualPop = manualPopKey === popKey;
           return (
