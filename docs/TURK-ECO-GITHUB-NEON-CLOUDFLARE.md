@@ -164,10 +164,15 @@ Operasyon: Cloudflare deploy yeşil olduktan sonra Render dashboard’daki `goal
 
 ```bash
 curl -sS -D- https://turk.eco/api/healthz | head
-# x-yekpare-frontend: cloudflare-worker  (veya Container JSON 200)
+# x-yekpare-frontend: cloudflare-worker
+# gövde: {"status":"ok",...}
+# 503 + "secret(s) missing" → GitHub Secrets + wrangler secret put
 
 curl -sS -o /dev/null -w "%{http_code}" https://turk.eco/
 curl -sS -o /dev/null -w "%{http_code}" https://ankarahabergundemi.com/
 ```
+
+Worker `DATABASE_URL` / `SESSION_SECRET` / `S3_*` secret'ları Container `process.env`'e
+`cloudflare/goalgo-api-container.js` start() ile kopyalanır; yalnızca Worker'da durmaz.
 
 Detaylı kurulum: [goalgo/docs/CLOUDFLARE-NEON-KURULUM.md](../goalgo/docs/CLOUDFLARE-NEON-KURULUM.md)
