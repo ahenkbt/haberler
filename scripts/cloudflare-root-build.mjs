@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, rmSync, unlinkSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { ensureYektubeCloudflareAssets } from "./ensure-yektube-cloudflare-assets.mjs";
 
 const goalgo = "goalgo";
 const distSrc = join(goalgo, "artifacts/ahenkpress/dist/public");
@@ -26,6 +27,12 @@ run("pnpm", ["run", "build:cloudflare"], goalgo);
 rmSync(distDest, { recursive: true, force: true });
 mkdirSync(distDest, { recursive: true });
 cpSync(distSrc, distDest, { recursive: true });
+
+const yektube = ensureYektubeCloudflareAssets(distDest, [
+  join(distSrc, "yektube-v2"),
+  join(goalgo, "artifacts/ahenkpress/public/yektube-v2"),
+]);
+console.log(`cloudflare-root-build yektube-v2 ok → ${yektube.scriptSrc}`);
 
 // Netlify `_redirects` CF Assets'te infinite-loop hatası veriyor (code 100324).
 // SPA fallback: wrangler not_found_handling; /yp rewrite: worker.js.
