@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Görsel Haz1rlanmaktad1r">
+  <rect width="640" height="360" fill="#ffffff"/>
+  <g fill="#c5c9ce">
+    <rect x="268" y="92" width="78" height="28" rx="8"/>
+    <rect x="214" y="116" width="176" height="116" rx="18"/>
+    <rect x="230" y="128" width="24" height="14" rx="3" fill="#d7dbdf"/>
+    <circle cx="292" cy="174" r="34" fill="#e6e8eb"/>
+    <circle cx="292" cy="174" r="24" fill="#c5c9ce"/>
+    <circle cx="292" cy="174" r="12" fill="#e6e8eb"/>
+    <rect x="366" y="102" width="56" height="10" rx="3"/>
+    <rect x="366" y="216" width="56" height="10" rx="3"/>
+    <rect x="370" y="112" width="8" height="104" rx="3"/>
+    <rect x="410" y="112" width="8" height="104" rx="3"/>
+    <polygon points="378,114 410,114 394,162"/>
+    <polygon points="378,224 410,224 394,176"/>
+  </g>
+  <text x="320" y="286" text-anchor="middle" fill="#9aa0a6" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700">Görsel Haz1rlanmaktad1r</text>
+</svg>

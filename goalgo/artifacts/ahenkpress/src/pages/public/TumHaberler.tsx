@@ -39,7 +39,7 @@ import { expandRssCategorySlugCandidates, rssCategorySlugsMatch } from "@/lib/hm
 import { isGlobalNewsCategoryActiveInLayout, isHmGlobalNewsCategorySlug } from "@/lib/hmGlobalNewsCategory";
 import { HM_HOME_HEADLINE_SLIDER_LIMIT, resolveHeadlineSliderDisplayCount } from "@/lib/hmHeadlinePool";
 import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
-import { filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
+import { HmNewsImage, filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
 import { isKoseArticle } from "@/lib/isKoseArticle";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { Badge } from "@/components/ui/badge";
@@ -204,10 +204,10 @@ function CategoryNewsCard({
         className={`group relative block overflow-hidden rounded-2xl border border-slate-100 bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${heightClass} ${className}`}
       >
         {img ? (
-          <img
+          <HmNewsImage
             src={img}
             alt={item.title}
-            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            className="transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-slate-800 text-xs font-black uppercase text-slate-400">
@@ -235,7 +235,7 @@ function CategoryNewsCard({
     >
       <div className="relative h-[92px] w-[116px] shrink-0 overflow-hidden rounded-xl bg-slate-100">
         {img ? (
-          <img src={img} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          <HmNewsImage src={img} alt={item.title} className="transition duration-500 group-hover:scale-105" />
         ) : (
           <div className="grid h-full w-full place-items-center bg-slate-100 text-xs font-black uppercase text-slate-400">Haber</div>
         )}
@@ -277,7 +277,7 @@ function MagazineHeadlineCompactCard({
     >
       <div className="relative aspect-[16/10] min-h-[104px] overflow-hidden bg-slate-100">
         {img ? (
-          <img src={img} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          <HmNewsImage src={img} alt={item.title} className="transition duration-500 group-hover:scale-105" />
         ) : (
           <div className="grid h-full w-full place-items-center bg-slate-100 text-[10px] font-black uppercase text-slate-400">Haber</div>
         )}

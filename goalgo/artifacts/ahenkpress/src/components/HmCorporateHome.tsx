@@ -5,6 +5,7 @@ import { tr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Clock, Rss } from "lucide-react";
 import { Link } from "wouter";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { onHmNewsImageError } from "@/lib/hmNewsPlaceholder";
 import { apiRequest } from "@/lib/queryClient";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { isHmPublicNavExternal } from "@/lib/hmPublicLinks";
@@ -311,7 +312,7 @@ function SectionTitle({ title, href, dark = false }: { title: string; href?: str
 function ImageBox({ item, className = "" }: { item: NewsItem; className?: string }) {
   const src = mediaSrc(item.imageUrl);
   if (src) {
-    return <img src={src} alt={item.title} className={className} loading="lazy" />;
+    return <img src={src} alt={item.title} className={className} loading="lazy" onError={onHmNewsImageError} />;
   }
   return (
     <div className={`vkv-image-placeholder ${className}`} aria-hidden>
@@ -323,7 +324,7 @@ function ImageBox({ item, className = "" }: { item: NewsItem; className?: string
 function ManualImageBox({ title, imageUrl, className = "" }: { title: string; imageUrl?: string | null; className?: string }) {
   const src = mediaSrc(imageUrl);
   if (src) {
-    return <img src={src} alt={title} className={className} loading="lazy" />;
+    return <img src={src} alt={title} className={className} loading="lazy" onError={onHmNewsImageError} />;
   }
   return (
     <div className={`vkv-image-placeholder ${className}`} aria-hidden>

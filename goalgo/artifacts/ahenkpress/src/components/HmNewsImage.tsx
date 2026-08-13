@@ -1,5 +1,6 @@
 import { useEffect, useState, type ImgHTMLAttributes } from "react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { HM_NEWS_PLACEHOLDER_SVG } from "@/lib/hmNewsPlaceholder";
 import { cn } from "@/lib/utils";
 
 export function resolveHmNewsImageSrc(url: string | null | undefined): string {
@@ -110,7 +111,8 @@ export function pickFastNewsImageSrc(primary: string, fallback: string): string 
 
 /**
  * Haber görselleri: kaynak URL varsa hemen göster.
- * Yerel upload 404 ise harici RSS yedeğine düş.
+ * Yerel upload 404 ise harici RSS yedeğine, o da kırılırsa
+ * «Görsel Hazırlanmaktadır» varsayılanına düş.
  */
 export function HmNewsImage({
   src,
@@ -131,14 +133,17 @@ export function HmNewsImage({
   const initial = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
   const [activeSrc, setActiveSrc] = useState(initial);
   const [failed, setFailed] = useState(!initial);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const next = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
     setActiveSrc(next);
     setFailed(!next);
+    setLoaded(false);
   }, [resolvedPrimary, resolvedFallback]);
 
   const imgLoading = loading ?? (priority ? "eager" : "lazy");
+  const showPlaceholder = !activeSrc || failed;
 
   const onImageError = () => {
     const other =
@@ -146,6 +151,7 @@ export function HmNewsImage({
     if (other && other !== activeSrc) {
       setActiveSrc(other);
       setFailed(false);
+      setLoaded(false);
       return;
     }
     setFailed(true);
@@ -154,11 +160,19 @@ export function HmNewsImage({
   return (
     <span
       className={cn(
-        "hm-news-image-root relative block h-full w-full overflow-hidden bg-slate-100",
+        "hm-news-image-root relative block h-full w-full overflow-hidden",
+        showPlaceholder ? "bg-white" : "bg-slate-100",
         wrapperClassName,
       )}
     >
-      {activeSrc && !failed ? (
+      {showPlaceholder ? (
+        <img
+          src={HM_NEWS_PLACEHOLDER_SVG}
+          alt=""
+          decoding="async"
+          className={cn("absolute inset-0 h-full w-full object-contain", className, "object-contain")}
+        />
+      ) : (
         <img
           {...rest}
           src={activeSrc}
@@ -166,11 +180,27 @@ export function HmNewsImage({
           loading={imgLoading}
           decoding="async"
           fetchPriority={priority ? "high" : fetchPriority}
-          className={cn("absolute inset-0 h-full w-full object-cover opacity-100", className)}
-          onLoad={() => setFailed(false)}
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover",
+            loaded ? "opacity-100" : "opacity-0",
+            className,
+          )}
+          onLoad={() => {
+            setFailed(false);
+            setLoaded(true);
+          }}
           onError={onImageError}
+          ref={(el) => {
+            if (!el?.complete) return;
+            if (el.naturalWidth > 0) {
+              setFailed(false);
+              setLoaded(true);
+            } else {
+              onImageError();
+            }
+          }}
         />
-      ) : null}
+      )}
     </span>
   );
 }

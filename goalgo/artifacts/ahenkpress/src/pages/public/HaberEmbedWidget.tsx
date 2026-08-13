@@ -10,6 +10,7 @@ import { hmPublicHref } from "@/lib/hmPublicLinks";
 import { coercePublicHybridNewsHref } from "@/lib/hybridNewsHref";
 import { fetchHybridNewsList, type HomeHybridNewsItem } from "@/hooks/useHomeHybridNews";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { onHmNewsImageError } from "@/lib/hmNewsPlaceholder";
 import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { resolveSadeAccent } from "@/lib/yekpareSadeTheme";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
@@ -191,7 +192,8 @@ export default function HaberEmbedWidget() {
                 <img
                   src={resolveClientMediaSrc(current.imageUrl) || current.imageUrl}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover bg-white"
+                  onError={onHmNewsImageError}
                 />
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />

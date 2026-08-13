@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { HmBreakingRssFeedId } from "@/lib/newsSiteLayout";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { onHmNewsImageError } from "@/lib/hmNewsPlaceholder";
 import "./RssBreakingBalloonPool.css";
 
 function balloonImageSrc(url: string | null | undefined): string {
@@ -205,7 +206,7 @@ export function RssBreakingBalloonPool<T extends RssBreakingBalloonItem>({
               aria-label={`${item.title} haberini aç`}
             >
               {imageSrc ? (
-                <img src={imageSrc} alt="" className="h-28 w-full object-cover" />
+                <img src={imageSrc} alt="" className="h-28 w-full object-cover" onError={onHmNewsImageError} />
               ) : (
                 <div className="flex h-28 w-full items-center justify-center text-[10px] font-black uppercase tracking-wide text-white" style={{ background: color }}>
                   Haber
@@ -260,7 +261,7 @@ export function RssBreakingBalloonPool<T extends RssBreakingBalloonItem>({
               >
                 <span className="rss-breaking-balloon__body">
                   {imageSrc ? (
-                    <img src={imageSrc} alt="" className="rss-breaking-balloon__photo" loading="lazy" />
+                    <img src={imageSrc} alt="" className="rss-breaking-balloon__photo" loading="lazy" onError={onHmNewsImageError} />
                   ) : null}
                   <span className="rss-breaking-balloon__overlay" aria-hidden />
                   <span className="rss-breaking-balloon__shine" aria-hidden />
