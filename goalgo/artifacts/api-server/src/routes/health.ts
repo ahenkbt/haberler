@@ -8,13 +8,12 @@ import {
   hasPersistentVolumeMount,
   isRuntimeS3Disabled,
   isS3MediaConfigured,
-  noteS3RuntimeFailure,
   s3EnvHealthDetails,
   s3PublicBaseUrl,
 } from "../lib/mediaStorageConfig";
 import { etkinlikIoEnvHealthDetails } from "../lib/etkinlik-io.js";
 import { isNativeAiCallEnabled } from "../lib/ai-call/config.js";
-import { s3ObjectExists } from "../lib/mediaObjectStorage";
+import { probeS3Connectivity } from "../lib/mediaObjectStorage";
 
 const router: IRouter = Router();
 
@@ -34,19 +33,24 @@ const mediaProbe = async (_req: Request, res: Response) => {
     res.json({ ...base, s3Probe: "skipped (s3 yapılandırılmamış)" });
     return;
   }
-  try {
-    await s3ObjectExists("healthz-probe-object");
-    res.json({ ...base, s3Probe: "ok" });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    res.status(503).json({
+  const probe = await probeS3Connectivity();
+  if (probe.ok) {
+    res.json({
       ...base,
-      s3Probe: "failed",
-      s3Error: msg.slice(0, 300),
-      hint:
-        "S3/R2 erişimi başarısız — S3_ENDPOINT (https://<account_id>.r2.cloudflarestorage.com biçiminde, bucket adı OLMADAN), S3_BUCKET ve anahtarları kontrol edin.",
+      s3Probe: "ok",
+      s3ActiveHostPrefix: probe.hostPrefix,
+      s3TriedEndpoints: probe.tried,
     });
+    return;
   }
+  res.status(503).json({
+    ...base,
+    s3Probe: "failed",
+    s3Error: probe.error,
+    s3TriedEndpoints: probe.tried,
+    hint:
+      "S3/R2 erişimi başarısız — S3_ENDPOINT (https://<account_id>.r2.cloudflarestorage.com biçiminde, bucket adı OLMADAN), S3_BUCKET ve anahtarları kontrol edin. Yapıştırılmış env bloğunda birden fazla R2 hostu varsa Render dual-write hostu da denenir.",
+  });
 };
 
 /** DB beklemeden anında yanıt — Netlify vekili / banner için (havuz doluyken healthz yavaşlar). */

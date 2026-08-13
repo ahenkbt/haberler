@@ -4,8 +4,13 @@ import {
   isS3MediaConfigured,
   isS3TransportError,
   noteS3RuntimeFailure,
+  resetRuntimeS3Disabled,
   coerceR2S3Endpoint,
   getS3Endpoint,
+  getS3EndpointCandidates,
+  listR2S3EndpointCandidates,
+  RENDER_R2_S3_ENDPOINT,
+  CF_ACCOUNT_R2_S3_ENDPOINT,
   shouldReadS3ForMediaIo,
   shouldUseS3ForMediaIo,
 } from "./mediaStorageConfig";
@@ -40,6 +45,7 @@ function clearMediaEnv(): void {
 describe("mediaStorageConfig", () => {
   afterEach(() => {
     restoreEnv();
+    resetRuntimeS3Disabled();
   });
 
   it("uses R2 when MEDIA_STORAGE_MODE=s3 and S3 env is set", () => {
@@ -115,5 +121,36 @@ describe("mediaStorageConfig", () => {
     noteS3RuntimeFailure("startup probe");
     expect(shouldUseS3ForMediaIo()).toBe(false);
     expect(shouldReadS3ForMediaIo()).toBe(true);
+  });
+
+  it("prefers the Render dual-write R2 host when the env blob lists another account first", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    const cf = CF_ACCOUNT_R2_S3_ENDPOINT;
+    const render = RENDER_R2_S3_ENDPOINT;
+    const blob = [
+      `S3_ENDPOINT=${cf}`,
+      "S3_BUCKET=yekpare-media",
+      `S3_PUBLIC_BASE_URL=https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev`,
+      `R2_ENDPOINT=${render}`,
+    ].join("\n");
+    process.env.S3_ENDPOINT = blob;
+    process.env.S3_BUCKET = "yekpare-media";
+    process.env.S3_ACCESS_KEY_ID = "key";
+    process.env.S3_SECRET_ACCESS_KEY = "secret";
+
+    const listed = listR2S3EndpointCandidates(blob);
+    expect(listed[0]).toBe(render);
+    expect(listed).toContain(cf);
+    expect(coerceR2S3Endpoint(blob)).toBe(render);
+    expect(getS3Endpoint()).toBe(render);
+    expect(getS3EndpointCandidates()[0]).toBe(render);
+  });
+
+  it("always includes the Render dual-write host when any R2 API URL is present", () => {
+    const cfOnly = CF_ACCOUNT_R2_S3_ENDPOINT;
+    const listed = listR2S3EndpointCandidates(cfOnly);
+    expect(listed[0]).toBe(RENDER_R2_S3_ENDPOINT);
+    expect(listed).toContain(cfOnly);
   });
 });

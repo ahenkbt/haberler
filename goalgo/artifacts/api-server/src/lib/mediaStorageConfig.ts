@@ -26,6 +26,10 @@ export type S3EnvHealthDetails = S3EnvDiagnostics & {
   endpointCoerced?: boolean;
   /** Ayıklanmış R2 S3 API URL'si kullanılabilir. */
   endpointReady?: boolean;
+  /** Host'un ilk 4 karakteri (gizli URL yok). */
+  endpointHostPrefix4?: string | null;
+  /** Env bloğu + bilinen dual-write hostları. */
+  endpointCandidateCount?: number;
 };
 
 /** Railway / panel kopyala-yapıştır: tırnak, BOM, satır sonu. */
@@ -41,31 +45,113 @@ export function normalizeEnvValue(value: string | undefined): string {
   return v.replace(/\r?\n/g, "");
 }
 
-const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/i;
-const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/i;
+const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/gi;
+const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/gi;
+
+/** Render env (PR #103): 2 aydır dual-write bu R2 S3 hostuna yazdı. */
+export const RENDER_R2_S3_ENDPOINT =
+  "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+
+/** wrangler.toml account_id — Worker secret bloğunda yanlışlıkla ilk sıraya düşebiliyor. */
+export const CF_ACCOUNT_R2_S3_ENDPOINT =
+  "https://16f5b996194174624e7969a3658bd2bb.r2.cloudflarestorage.com";
+
+function normalizeR2EndpointUrl(raw: string): string {
+  return raw.replace(/\/+$/, "").replace(/^http:\/\//i, "https://");
+}
+
+function isR2S3ApiHost(host: string): boolean {
+  return /\.r2\.cloudflarestorage\.com$/i.test(host);
+}
+
+function r2S3UrlFromValue(value: string | undefined): string | null {
+  const n = normalizeR2EndpointUrl(String(value ?? "").trim());
+  if (!n) return null;
+  try {
+    const host = new URL(/^https?:\/\//i.test(n) ? n : `https://${n}`).hostname;
+    if (!isR2S3ApiHost(host)) return null;
+    return `https://${host}`;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * GitHub/Worker secret'ına env bloğu yapıştırılınca S3_ENDPOINT 300+ karakter olabiliyor.
  * R2 API hostunu ayıkla; r2.dev public URL'sini S3 endpoint sanma.
+ * Dual-write (Render) hostu listedeyse her zaman ilk sıradadır.
  */
 export function coerceR2S3Endpoint(raw: string | undefined): string {
-  const v = normalizeEnvValue(raw);
-  if (!v) return "";
-  const embedded = v.match(R2_API_URL_RE);
-  if (embedded?.[0]) {
-    return embedded[0].replace(/\/+$/, "").replace(/^http:\/\//i, "https://");
+  const all = listR2S3EndpointCandidates(raw);
+  return all[0] ?? "";
+}
+
+/** Env bloğundaki tüm R2 S3 hostları + Render'da 2 aydır yazılan kanonik host. */
+export function listR2S3EndpointCandidates(
+  raw?: string,
+  extraAccountIds: readonly string[] = [],
+): string[] {
+  const blob: string[] = [];
+  const seenBlob = new Set<string>();
+  const addBlob = (value: string | undefined) => {
+    const url = r2S3UrlFromValue(value);
+    if (!url || seenBlob.has(url)) return;
+    seenBlob.add(url);
+    blob.push(url);
+  };
+
+  const text = String(raw ?? "");
+  for (const m of text.matchAll(R2_API_URL_RE)) addBlob(m[0]);
+  for (const m of text.matchAll(R2_API_HOST_RE)) addBlob(`https://${m[1]}`);
+
+  const extras: string[] = [];
+  const seenExtra = new Set<string>();
+  const addExtra = (value: string | undefined) => {
+    const url = r2S3UrlFromValue(value);
+    if (!url || seenExtra.has(url) || seenBlob.has(url)) return;
+    seenExtra.add(url);
+    extras.push(url);
+  };
+
+  for (const id of extraAccountIds) {
+    const hex = String(id ?? "").replace(/[^a-f0-9]/gi, "");
+    if (hex.length >= 32) addExtra(`https://${hex}.r2.cloudflarestorage.com`);
   }
-  const bare = v.match(R2_API_HOST_RE);
-  if (bare?.[1]) return `https://${bare[1].replace(/\/+$/, "")}`;
-  if (v.length > 180) return "";
-  const withScheme = /^https?:\/\//i.test(v) ? v.replace(/\/+$/, "") : `https://${v.replace(/\/+$/, "")}`;
-  try {
-    const host = new URL(withScheme).hostname;
-    if (/\.r2\.cloudflarestorage\.com$/i.test(host)) return `https://${host}`;
-  } catch {
-    return "";
+
+  const hasR2 = blob.length > 0;
+  // Uzun yapıştırma bloğu regex kaçırsa bile dual-write hostunu dene.
+  if (hasR2 || text.length > 180) {
+    addExtra(RENDER_R2_S3_ENDPOINT);
+    addExtra(CF_ACCOUNT_R2_S3_ENDPOINT);
   }
-  return withScheme;
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (url: string) => {
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    out.push(url);
+  };
+
+  const render = r2S3UrlFromValue(RENDER_R2_S3_ENDPOINT);
+  if (render && (seenBlob.has(render) || seenExtra.has(render))) push(render);
+  for (const u of blob) push(u);
+  for (const u of extras) push(u);
+
+  if (out.length === 0) {
+    const v = normalizeEnvValue(raw);
+    if (v && v.length <= 180) {
+      const n = normalizeR2EndpointUrl(/^https?:\/\//i.test(v) ? v : `https://${v}`);
+      try {
+        const url = new URL(n);
+        if (url.hostname) push(`${url.protocol}//${url.host}`.replace(/\/+$/, ""));
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  return out;
 }
 
 const S3_ENDPOINT_KEYS = [
@@ -92,6 +178,25 @@ export function getS3Endpoint(): string {
   return hit ? coerceR2S3Endpoint(hit.value) : "";
 }
 
+/** GET/HEAD: tüm aday hostlar (Render dual-write önce). Env yoksa boş. */
+export function getS3EndpointCandidates(): string[] {
+  const hit = readFirstEnv(S3_ENDPOINT_KEYS);
+  if (!hit) return [];
+  return listR2S3EndpointCandidates(hit.value);
+}
+
+export function s3EndpointHostPrefixFromUrl(ep: string | null | undefined): string | null {
+  if (!ep) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(ep) ? ep : `https://${ep}`);
+    const host = url.hostname;
+    if (!host) return null;
+    return host.length <= 4 ? host : host.slice(0, 4);
+  } catch {
+    return null;
+  }
+}
+
 export function s3EnvDiagnostics(): S3EnvDiagnostics {
   return {
     bucket: Boolean(normalizeEnvValue(process.env.S3_BUCKET)),
@@ -104,7 +209,8 @@ export function s3EnvDiagnostics(): S3EnvDiagnostics {
 export function s3EnvHealthDetails(): S3EnvHealthDetails {
   const hit = readFirstEnv(S3_ENDPOINT_KEYS);
   const endpointLength = hit?.value.length ?? 0;
-  const coerced = hit ? coerceR2S3Endpoint(hit.value) : "";
+  const candidates = hit ? listR2S3EndpointCandidates(hit.value) : [];
+  const coerced = candidates[0] ?? "";
   return {
     ...s3EnvDiagnostics(),
     endpointRawPresent: Object.prototype.hasOwnProperty.call(process.env, "S3_ENDPOINT"),
@@ -112,21 +218,14 @@ export function s3EnvHealthDetails(): S3EnvHealthDetails {
     endpointSource: hit?.key ?? null,
     endpointCoerced: coerced.length > 0 && coerced.length !== endpointLength,
     endpointReady: Boolean(coerced),
+    endpointHostPrefix4: s3EndpointHostPrefixFromUrl(coerced),
+    endpointCandidateCount: candidates.length,
   };
 }
 
 /** healthz / log: endpoint URL değerini sızdırmadan host'un ilk 4 karakteri. */
 export function s3EndpointHostPrefix4(): string | null {
-  const ep = getS3Endpoint();
-  if (!ep) return null;
-  try {
-    const url = new URL(/^https?:\/\//i.test(ep) ? ep : `https://${ep}`);
-    const host = url.hostname;
-    if (!host) return null;
-    return host.length <= 4 ? host : host.slice(0, 4);
-  } catch {
-    return null;
-  }
+  return s3EndpointHostPrefixFromUrl(getS3Endpoint());
 }
 
 /** Açılışta endpoint'in container'a ulaşıp ulaşmadığını doğrula (gizli değer yok). */
@@ -186,6 +285,11 @@ export function noteS3RuntimeFailure(reason?: string): void {
 
 export function isRuntimeS3Disabled(): boolean {
   return runtimeS3Disabled;
+}
+
+/** Test / yeniden deneme: runtime kilidini aç. */
+export function resetRuntimeS3Disabled(): void {
+  runtimeS3Disabled = false;
 }
 
 /** Okuma/yazma için S3 kullanılacak mı — `isS3MediaConfigured` tek başına yeterli değil (Render volume modu). */
