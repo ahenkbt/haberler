@@ -10,6 +10,9 @@ account_id = "16f5b996194174624e7969a3658bd2bb"
 [assets]
 directory = "artifacts/ahenkpress/dist/public"
 binding = "ASSETS"
+# none: /yektube-v2/index.html dosyayı 307'siz servis etsin (auto-trailing-slash
+# nested SPA'yı kök portal index.html'e düşürüyordu).
+html_handling = "none"
 not_found_handling = "single-page-application"
 run_worker_first = true
 

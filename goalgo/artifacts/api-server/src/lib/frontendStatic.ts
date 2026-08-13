@@ -17,6 +17,17 @@ function resolveFrontendDist(): string {
   return path.resolve(process.cwd(), "..", "ahenkpress", "dist", "public");
 }
 
+function resolveYektubeIndexHtml(frontendDist: string): string | null {
+  const candidates = [
+    path.join(frontendDist, "yektube-v2", "index.html"),
+    path.resolve(frontendDist, "..", "..", "public", "yektube-v2", "index.html"),
+  ];
+  for (const file of candidates) {
+    if (existsSync(file)) return file;
+  }
+  return null;
+}
+
 function setStaticCacheHeaders(res: Response, filePath: string): void {
   if (path.basename(filePath) === "index.html") {
     res.setHeader("Cache-Control", "no-store, max-age=0");
@@ -81,7 +92,7 @@ function redirectSocialPreviewToOgHtml(req: Request, res: Response): boolean {
 }
 
 /** /yp ve Yektube yüzeyleri — portal index yerine Yektube SPA. */
-function isYektubeSpaPath(pathname: string): boolean {
+export function isYektubeSpaPath(pathname: string): boolean {
   const raw = String(pathname || "/") || "/";
   const last = raw.split("/").pop() || "";
   if (last.includes(".") && !/\.html?$/i.test(last)) return false;
@@ -110,12 +121,20 @@ function isYektubeSpaPath(pathname: string): boolean {
   );
 }
 
+/**
+ * Portal dist (CF Assets) ve/veya git-tracked public/yektube-v2.
+ * CF Container image API-only dist taşımaz; Worker Assets kaçırırsa
+ * Express "Cannot GET /yektube-v2/index.html" olmasın diye public kopyayı servis eder.
+ * @returns portal index.html mount edildi mi (kök SPA). Yektube-only true değildir.
+ */
 export function setupFrontendStatic(app: Express): boolean {
   const frontendDist = resolveFrontendDist();
   const indexHtml = path.join(frontendDist, "index.html");
-  const yektubeIndexHtml = path.join(frontendDist, "yektube-v2", "index.html");
+  const yektubeIndexHtml = resolveYektubeIndexHtml(frontendDist);
+  const portalOk = existsSync(indexHtml);
+  const yektubeOk = Boolean(yektubeIndexHtml && existsSync(yektubeIndexHtml));
 
-  if (!existsSync(indexHtml)) {
+  if (!portalOk && !yektubeOk) {
     logger.warn(
       { frontendDist },
       "Frontend dist bulunamadı; API kök health yanıtı kullanılacak",
@@ -123,14 +142,29 @@ export function setupFrontendStatic(app: Express): boolean {
     return false;
   }
 
-  app.use(
-    express.static(frontendDist, {
-      index: false,
-      etag: true,
-      lastModified: true,
-      setHeaders: setStaticCacheHeaders,
-    }),
-  );
+  if (yektubeOk && yektubeIndexHtml) {
+    const yektubeDir = path.dirname(yektubeIndexHtml);
+    app.use(
+      "/yektube-v2",
+      express.static(yektubeDir, {
+        index: false,
+        etag: true,
+        lastModified: true,
+        setHeaders: setStaticCacheHeaders,
+      }),
+    );
+  }
+
+  if (portalOk) {
+    app.use(
+      express.static(frontendDist, {
+        index: false,
+        etag: true,
+        lastModified: true,
+        setHeaders: setStaticCacheHeaders,
+      }),
+    );
+  }
 
   const sendFrontendIndex = (req: Request, res: Response, next: NextFunction): void => {
     if (req.method !== "GET" && req.method !== "HEAD") {
@@ -141,15 +175,23 @@ export function setupFrontendStatic(app: Express): boolean {
     if (redirectSocialPreviewToOgHtml(req, res)) return;
 
     const pathOnly = String(req.path || "/");
-    const useYektube =
-      existsSync(yektubeIndexHtml) && isYektubeSpaPath(pathOnly);
-    const file = useYektube ? yektubeIndexHtml : indexHtml;
+    const useYektube = yektubeOk && isYektubeSpaPath(pathOnly);
+    if (useYektube && yektubeIndexHtml) {
+      res.setHeader("Cache-Control", "no-store, max-age=0");
+      res.setHeader("x-yekpare-yektube-rewrite", "/yektube-v2/index.html");
+      res.sendFile(yektubeIndexHtml, (err) => {
+        if (err) next(err);
+      });
+      return;
+    }
+
+    if (!portalOk) {
+      next();
+      return;
+    }
 
     res.setHeader("Cache-Control", "no-store, max-age=0");
-    if (useYektube) {
-      res.setHeader("x-yekpare-yektube-rewrite", "/yektube-v2/index.html");
-    }
-    res.sendFile(file, (err) => {
+    res.sendFile(indexHtml, (err) => {
       if (err) next(err);
     });
   };
@@ -159,6 +201,9 @@ export function setupFrontendStatic(app: Express): boolean {
   app.get(/^\/maps\/place(?:\/.*)?$/i, sendFrontendIndex);
   app.get(/^\/(?!api(?:\/|$)).*/, sendFrontendIndex);
 
-  logger.info({ frontendDist }, "Frontend static assets mounted");
-  return true;
+  logger.info(
+    { frontendDist, portalOk, yektubeOk, yektubeIndexHtml },
+    "Frontend static assets mounted",
+  );
+  return portalOk;
 }

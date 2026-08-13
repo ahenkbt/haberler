@@ -23,6 +23,7 @@ on:
       - "goalgo/scripts/generate-public-sitemap.mjs"
       - "goalgo/scripts/resolve-api-origin.mjs"
       - "scripts/cloudflare-root-build.mjs"
+      - "scripts/ensure-yektube-cloudflare-assets.mjs"
       - "cloudflare/**"
       - "wrangler.toml"
       - "package.json"
