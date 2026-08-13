@@ -4,12 +4,13 @@
  * - GET/PATCH /api/hm/editor/me
  * - PATCH /api/hm/editor/me/password
  *
- * Render API geride kalsa bile giriş + oturum doğrulama çalışır.
+ * Container geride kalsa bile giriş + oturum doğrulama çalışır.
  */
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
+import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
 const JWT_TYP = "hm_editor";
 const JWT_TTL = "7d";
@@ -1063,11 +1064,8 @@ async function hmacSha256Base64Url(secret, message) {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function apiOriginFromEnv(env) {
-  return String(env?.API_ORIGIN || env?.RENDER_API_ORIGIN || "https://goalgo-y7ze.onrender.com").replace(
-    /\/+$/,
-    "",
-  );
+function apiOriginFromEnv(env, incomingOrigin) {
+  return resolveApiOrigin(env, incomingOrigin);
 }
 
 function khBridgeCanonical(payload) {
@@ -1114,7 +1112,7 @@ async function exchangeKhSessionViaRenderBridge(env, opts) {
   }
   const url = `${apiOriginFromEnv(env)}/api/hm/editor/session-bridge`;
   try {
-    const res = await fetch(url, {
+    const res = await fetchApi(env, url, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -1361,7 +1359,7 @@ async function patchEditorPassword(request, env) {
 }
 
 /**
- * Login / me / profil / captcha (+ KH layout) — Response veya null (null = Render'a proxy).
+ * Login / me / profil / captcha (+ KH layout) — Response veya null (null = Container vekili).
  * Login için request.clone() ile çağırın; body tüketilmesin.
  */
 export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
@@ -1419,9 +1417,9 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
 
 /**
  * Editör görsel yükleme — kenar JWT doğrulandıktan sonra kaydet.
- * 1) Worker → R2/S3 (Render gerekmez)
- * 2) Render /api/media/upload (Bearer JWT)
- * 3) Render /api/media/edge-upload (HMAC köprüsü — yeni API deploy'u gerekir)
+ * 1) Worker → Cloudflare R2
+ * 2) Container /api/media/upload (Bearer JWT)
+ * 3) Container /api/media/edge-upload (HMAC köprüsü)
  */
 export async function handleHmEditorMediaUploadEdge(request, env) {
   const path = String(new URL(request.url).pathname || "").replace(/\/+$/, "") || "/";
@@ -1461,7 +1459,7 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
 
   const uploadSteps = [];
 
-  // 1) Doğrudan R2/S3 — Render gerekmez.
+  // 1) Doğrudan R2 — Container gerekmez.
   if (s3MediaEnvReady(env)) {
     const direct = await saveMediaDataUrlToS3(env, dataUrl, typeof body?.title === "string" ? body.title : undefined);
     if (direct.url) {
@@ -1475,27 +1473,27 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
 
   const origin = apiOriginFromEnv(env);
 
-  // 2) HMAC köprüsü — JWT secret uyuşmazlığında en güvenilir Render yolu.
-  const bridgeUpload = await fetchRenderMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin);
+  // 2) HMAC köprüsü — JWT secret uyuşmazlığında Container yolu.
+  const bridgeUpload = await fetchApiMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin);
   if (bridgeUpload?.ok && bridgeUpload.response) return bridgeUpload.response;
   if (bridgeUpload?.response) return bridgeUpload.response;
   if (bridgeUpload?.detail) uploadSteps.push(`bridge:${bridgeUpload.detail}`);
 
-  // 3) Render /api/media/upload — kenarda imzalanmış kısa ömürlü JWT.
-  const renderUpload = await tryRenderMediaUploadAllTokens(env, origin, body, ctx, bearerToken);
-  if (renderUpload?.ok) return renderUpload.response;
-  if (renderUpload?.errorResponse) return renderUpload.errorResponse;
-  if (renderUpload?.detail) uploadSteps.push(`render:${renderUpload.detail}`);
+  // 3) /api/media/upload — kenarda imzalanmış kısa ömürlü JWT.
+  const apiUpload = await tryApiMediaUploadAllTokens(env, origin, body, ctx, bearerToken);
+  if (apiUpload?.ok) return apiUpload.response;
+  if (apiUpload?.errorResponse) return apiUpload.errorResponse;
+  if (apiUpload?.detail) uploadSteps.push(`api:${apiUpload.detail}`);
 
   return jsonResponse(502, {
     error: "Medya yüklenemedi",
     detail: uploadSteps.join("; ") || "Tüm yükleme yolları başarısız",
     hint:
-      "Cloudflare Worker secret'larına Render'daki S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY ve HM_EDITOR_JWT_SECRET (veya aynı SESSION_SECRET) ekleyin. Render deploy tamamlanınca edge-upload da devreye girer.",
+      "Cloudflare Worker secret'larına S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY ve HM_EDITOR_JWT_SECRET (veya SESSION_SECRET) ekleyin.",
   });
 }
 
-async function tryRenderMediaUploadAllTokens(env, origin, body, ctx, clientBearer) {
+async function tryApiMediaUploadAllTokens(env, origin, body, ctx, clientBearer) {
   const tokens = [];
   if (clientBearer) tokens.push(clientBearer);
   for (const secret of collectJwtSecretStrings(env)) {
@@ -1515,7 +1513,7 @@ async function tryRenderMediaUploadAllTokens(env, origin, body, ctx, clientBeare
   for (const token of tokens) {
     let upstream;
     try {
-      upstream = await fetch(`${origin}/api/media/upload`, {
+      upstream = await fetchApi(env, `${origin}/api/media/upload`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -1559,7 +1557,7 @@ async function tryRenderMediaUploadAllTokens(env, origin, body, ctx, clientBeare
   return { detail: lastDetail || `http-${lastStatus || "fail"}` };
 }
 
-async function fetchRenderMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin) {
+async function fetchApiMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin) {
   const siteRows = await sql`
     SELECT slug FROM hm_news_sites WHERE id = ${ctx.siteId} LIMIT 1
   `;
@@ -1592,7 +1590,7 @@ async function fetchRenderMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl
   for (const path of paths) {
     let upstream;
     try {
-      upstream = await fetch(`${origin}${path}`, {
+      upstream = await fetchApi(env, `${origin}${path}`, {
         method: "POST",
         headers: {
           "content-type": "application/json",

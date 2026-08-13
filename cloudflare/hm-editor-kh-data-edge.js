@@ -1,10 +1,10 @@
 /**
  * HM editör veri API — kenar JWT + Neon.
- * Render SESSION_SECRET ayrışınca Bearer 401 olmasın diye Worker'da karşılanır.
- * Tanımsız rotalar: null → Render proxy.
+ * Tanımsız rotalar: null → Worker Container vekili.
  */
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
+import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
 const JWT_TYP = "hm_editor";
 const KH_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
@@ -217,8 +217,8 @@ async function loadActiveEditor(sql, editorId, siteId) {
   return rows?.[0] || null;
 }
 
-function apiOrigin(env) {
-  return String(env?.API_ORIGIN || "https://goalgo-y7ze.onrender.com").replace(/\/+$/, "");
+function apiOrigin(env, incoming) {
+  return resolveApiOrigin(env, incoming?.origin);
 }
 
 function serializeAuthor(row) {
@@ -702,7 +702,7 @@ async function fetchKhPublicNewsForEditor(env, siteId, limit, offset) {
       offset: String(offset),
       includeHiddenCategories: "1",
     });
-    const res = await fetch(`${apiOrigin(env)}/api/news?${qs.toString()}`, {
+    const res = await fetchApi(env, `${apiOrigin(env)}/api/news?${qs.toString()}`, {
       headers: { Accept: "application/json", "User-Agent": "yekpare-kh-editor-news/1" },
     });
     if (!res.ok) return null;

@@ -1,6 +1,5 @@
 /**
- * HM editör medya yükleme — Worker → R2/S3 (Render edge-upload olmadan).
- * Render /api/media/edge-upload deploy edilmemiş olsa bile çalışır.
+ * HM editör medya yükleme — Worker → Cloudflare R2.
  */
 import { AwsClient } from "aws4fetch";
 

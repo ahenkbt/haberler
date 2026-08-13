@@ -23,7 +23,9 @@ Cloudflare Worker "haberler"
      Neon Postgres (tek DB: neondb)
 ```
 
-Tarayıcı aynı origin kullanır: `https://<host>/api/*` → Container → Neon.
+Tarayıcı aynı origin kullanır: `https://<host>/api/*` → Container → Neon + R2.
+
+Şema: [docs/TURK-ECO-GITHUB-NEON-CLOUDFLARE.md](../../docs/TURK-ECO-GITHUB-NEON-CLOUDFLARE.md)
 
 ---
 
@@ -47,6 +49,10 @@ Repo → Settings → Secrets and variables → Actions:
 | `CLOUDFLARE_ACCOUNT_ID` | evet | CF Account ID |
 | `DATABASE_URL` | evet | Neon URL |
 | `SESSION_SECRET` | evet | ≥16 karakter rastgele |
+| `S3_ENDPOINT` | evet | R2 API (`https://<account>.r2.cloudflarestorage.com`) |
+| `S3_BUCKET` | evet | `yekpare-media` |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | evet | R2 token |
+| `S3_PUBLIC_BASE_URL` | hayır | Public medya kökü |
 | `AGENTLABS_URL` | hayır | Call center |
 
 Örnek:
@@ -82,6 +88,10 @@ Container image için build ortamında **Docker** gerekir. CF Builds’te Docker
 ```bash
 printf '%s' "$DATABASE_URL" | npx wrangler secret put DATABASE_URL
 printf '%s' "$SESSION_SECRET" | npx wrangler secret put SESSION_SECRET
+printf '%s' "$S3_ENDPOINT" | npx wrangler secret put S3_ENDPOINT
+printf '%s' "$S3_BUCKET" | npx wrangler secret put S3_BUCKET
+printf '%s' "$S3_ACCESS_KEY_ID" | npx wrangler secret put S3_ACCESS_KEY_ID
+printf '%s' "$S3_SECRET_ACCESS_KEY" | npx wrangler secret put S3_SECRET_ACCESS_KEY
 ```
 
 **Not:** Container image için Docker gerekir (GHA `ubuntu-latest` sağlar). Yerelde `docker info` çalışmalı.
@@ -98,6 +108,10 @@ pnpm run build:cloudflare
 # secrets bir kez:
 printf '%s' "$DATABASE_URL" | pnpm exec wrangler secret put DATABASE_URL
 printf '%s' "$SESSION_SECRET" | pnpm exec wrangler secret put SESSION_SECRET
+printf '%s' "$S3_ENDPOINT" | pnpm exec wrangler secret put S3_ENDPOINT
+printf '%s' "$S3_BUCKET" | pnpm exec wrangler secret put S3_BUCKET
+printf '%s' "$S3_ACCESS_KEY_ID" | pnpm exec wrangler secret put S3_ACCESS_KEY_ID
+printf '%s' "$S3_SECRET_ACCESS_KEY" | pnpm exec wrangler secret put S3_SECRET_ACCESS_KEY
 pnpm exec wrangler deploy
 ```
 
@@ -111,7 +125,7 @@ curl -sS "https://haberler.<account>.workers.dev/api/healthz"
 
 ## 5. DNS
 
-Custom domain’i Cloudflare Worker’a bağlayın (`yekpare.net`, HM siteleri).  
+Custom domain’i Cloudflare Worker’a bağlayın (`turk.eco`, HM siteleri).  
 `call.yekpare.net` hâlâ ayrı call-center ise oraya yönlendirin (opsiyonel `AGENTLABS_URL`).
 
 ---
@@ -134,6 +148,8 @@ Custom domain’i Cloudflare Worker’a bağlayın (`yekpare.net`, HM siteleri).
 - [ ] `SESSION_SECRET` GitHub secret
 - [ ] Cloudflare token + account id
 - [ ] `main` push veya workflow_dispatch → deploy yeşil
+- [ ] `S3_*` GitHub secret (Cloudflare R2)
 - [ ] `/api/healthz` 200
 - [ ] SPA açılıyor
-- [ ] Eski Render servislerini kapat
+- [ ] Editör medya yükleme R2’ye yazılıyor
+- [ ] Eski Render servislerini kapat (dashboard)

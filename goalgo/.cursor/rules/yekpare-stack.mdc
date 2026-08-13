@@ -5,11 +5,12 @@ alwaysApply: true
 
 # Yekpare stack (do not assume Next.js)
 
-- **Backend:** `artifacts/api-server` — Node.js, Express 5, TypeScript, Drizzle ORM, PostgreSQL (Render prod; `render.yaml`)
+- **Backend:** `artifacts/api-server` — Node.js, Express 5, TypeScript, Drizzle ORM, PostgreSQL (Neon prod)
 - **Frontend:** `artifacts/ahenkpress` — React 18, Vite, wouter (not React Router), TanStack Query; **Cloudflare Workers Static Assets** (`wrangler.toml`, `cloudflare/worker.js`)
 - **API:** Cloudflare Containers (`goalgo/Dockerfile.cloudflare`) — Express; **DB: Neon** (`DATABASE_URL` secret)
+- **Medya:** Cloudflare R2 (`MEDIA_STORAGE_MODE=s3`, `S3_*`)
 - **DB migrations:** `lib/db/migrations/` + `meta/_journal.json` (Drizzle) — not Prisma
-- **Deploy (prod):** Neon + GitHub Actions + Cloudflare. Detay: `docs/CLOUDFLARE-NEON-KURULUM.md`. Render/Railway/Vercel/Netlify prod değildir.
+- **Deploy (prod):** Neon + GitHub Actions + Cloudflare. Detay: `docs/CLOUDFLARE-NEON-KURULUM.md` ve `docs/TURK-ECO-GITHUB-NEON-CLOUDFLARE.md`. Render/Railway/Vercel/Netlify prod değildir.
 - **Auth:** express-session + PostgreSQL store; JWT Bearer for shop/courier/driver; admin via `denyUnlessAdminMaintenance`
 
 When editing routes, prefer existing patterns in the same file. Minimize diff scope — security fixes should not refactor unrelated code.

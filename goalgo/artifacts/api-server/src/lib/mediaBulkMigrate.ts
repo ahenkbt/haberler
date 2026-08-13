@@ -49,9 +49,10 @@ function legacyMediaOrigin(): string | null {
   if (raw != null) {
     const t = raw.trim();
     if (!t || t === "0" || t === "false" || t === "off") return null;
+    if (/onrender\.com/i.test(t)) return null;
     return t.replace(/\/+$/, "");
   }
-  return "https://goalgo-y7ze.onrender.com";
+  return null;
 }
 
 export function parseUploadFname(url: string): string | null {
@@ -74,7 +75,6 @@ export async function importMissingUploadFile(fname: string): Promise<boolean> {
   const candidates = [
     legacy ? `${legacy}/api/media/uploads/${fname}` : null,
     `https://turk.eco/api/media/uploads/${fname}`,
-    `https://goalgo-production.up.railway.app/api/media/uploads/${fname}`,
   ].filter(Boolean) as string[];
 
   for (const url of candidates) {

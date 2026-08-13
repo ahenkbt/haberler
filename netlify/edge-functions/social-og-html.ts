@@ -1,12 +1,12 @@
 import type { Context } from "https://edge.netlify.com";
 
-const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
+const DEFAULT_API = "https://turk.eco";
 const EDGE_FETCH_TIMEOUT_MS = 4000;
 
 function apiOrigin(): string {
   return (
-    Netlify.env.get("RENDER_API_ORIGIN") ||
-    Netlify.env.get("RAILWAY_API_ORIGIN") ||
+    Netlify.env.get("API_ORIGIN") ||
+    Netlify.env.get("SITE_ORIGIN") ||
     DEFAULT_API
   ).replace(/\/+$/, "");
 }

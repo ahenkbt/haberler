@@ -1,6 +1,6 @@
 /**
- * SPA → Workers Static Assets (ASSETS); /api → Render.
- * ASSETS yoksa (eski deploy) tüm trafik Render'a proxy edilir.
+ * SPA → Workers Static Assets (ASSETS); /api → Cloudflare Container (Neon + R2).
+ * ASSETS yoksa SPA 404; API Container bağından gider. Render kullanılmaz.
  * Eski Netlify SW / cache için TEK SEFERLIK purge (JS boot + cookie).
  * Clear-Site-Data HTML yanıtlarında kullanılmaz — Chrome navigasyonu ERR_FAILED
  * ile düşürüp cookie yazılmadan döngüye sokabiliyor (turk.eco/admin).
@@ -21,8 +21,9 @@ import {
   injectKhNeonNewsIntoPublicResponse,
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
+import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 
-const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
+export { GoalgoApiContainer } from "./goalgo-api-container.js";
 /**
  * Cookie sürümü — artırınca tüm ziyaretçilerde Netlify SW yeniden temizlenir.
  * (Eski cookie ile purge atlanınca /tr/vkd Netlify 404 görünmeye devam ediyordu.)
@@ -187,7 +188,7 @@ function purgeBootScript(cookieName) {
   purge();
   try {
     navigator.serviceWorker.register = function () {
-      return Promise.reject(new Error('sw-disabled-cf-render'));
+      return Promise.reject(new Error('sw-disabled-cf-worker'));
     };
   } catch (_) {}
 })();
@@ -205,7 +206,7 @@ const SW_BLOCK_BOOT = `
   if (!('serviceWorker' in navigator)) return;
   try {
     navigator.serviceWorker.register = function () {
-      return Promise.reject(new Error('sw-disabled-cf-render'));
+      return Promise.reject(new Error('sw-disabled-cf-worker'));
     };
   } catch (_) {}
   navigator.serviceWorker.getRegistrations().then(function (regs) {
@@ -230,8 +231,8 @@ const SW_BLOCK_BOOT = `
 </script>
 `;
 
-function upstreamOrigin(env) {
-  return String(env.API_ORIGIN || env.RENDER_API_ORIGIN || DEFAULT_API).replace(/\/+$/, "");
+function upstreamOrigin(env, incoming) {
+  return resolveApiOrigin(env, incoming?.origin);
 }
 
 function isSwPath(pathname) {
@@ -459,7 +460,7 @@ function rewriteSitemapOrigins(xml, publicOrigin) {
 
 /**
  * GSC video sitemap: player_loc / content_loc <loc> ile aynı olamaz.
- * Render eski API hâlâ player_loc=loc yazıyorsa edge’de YouTube embed’e çevir;
+ * Eski API hâlâ player_loc=loc yazıyorsa edge’de YouTube embed’e çevir;
  * watch?v= content_loc satırlarını kaldır (gerçek medya dosyası değil).
  */
 function rewriteYektubeVideoSitemapXml(xml) {
@@ -557,10 +558,10 @@ async function proxyRootSitemap(request, env, incoming) {
   const apiPath = rootSitemapApiPath(pathOnly);
   if (!apiPath) return null;
 
-  const origin = upstreamOrigin(env);
+  const origin = upstreamOrigin(env, incoming);
   const targetUrl = `${origin}${apiPath}${incoming.search}`;
   try {
-    const upstream = await fetch(targetUrl, {
+    const upstream = await fetchApi(env, targetUrl, {
       method: request.method === "HEAD" ? "GET" : request.method,
       headers: {
         accept: "application/xml, text/xml, */*",
@@ -630,7 +631,7 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   });
 }
 
-/** SPA + statik: ASSETS; yoksa null (Render proxy'ye düş). */
+/** SPA + statik: ASSETS; yoksa null (API/Container vekiline düş). */
 async function tryServeAssets(request, env, incoming) {
   if (!env.ASSETS) return null;
   if (isApiPath(incoming.pathname)) return null;
@@ -654,7 +655,7 @@ async function tryServeAssets(request, env, incoming) {
   /**
    * CF Assets `not_found_handling=single-page-application` eksik dosyada 200 + HTML döner.
    * /yektube-v2/assets/*.js HTML gelirse tarayıcı JS çalıştıramaz → /yp beyaz ekran.
-   * Statik istekte HTML = miss → Render proxy (Render'da dosyalar var).
+   * Statik istekte HTML = miss → Container vekili (dosyalar image'da varsa).
    */
   if (wantsStatic) {
     if (!assetResp.ok || ct.includes("text/html")) {
@@ -676,7 +677,7 @@ async function tryServeAssets(request, env, incoming) {
   }
 
   if (ct.includes("text/html")) {
-    // /yp → yektube-v2/index.html rewrite sonrası Assets portal index döndüyse Render'a bırak
+    // /yp → yektube-v2/index.html rewrite sonrası Assets portal index döndüyse Container'a bırak
     if (yektubeRewrite || isYektubeSurfacePath(incoming.pathname)) {
       try {
         const html = await assetResp.clone().text();
@@ -846,7 +847,7 @@ function redirectYektubeDedicatedHost(request, incoming) {
 
 /**
  * /yp ve Yektube yüzeyleri → yektube-v2/index.html
- * (Vercel/Netlify rewrite'ları CF Worker → Render yolunda çalışmıyor;
+ * (Vercel/Netlify rewrite'ları CF Worker yolunda çalışmıyor;
  *  aksi halde portal SPA /yp'yi vendor short-path sanıp beyaz ekran veriyor.)
  */
 function rewriteYektubeSpaPath(pathname) {
@@ -896,7 +897,7 @@ function rewriteYektubeSpaPath(pathname) {
 }
 
 /**
- * HM haber listeleri — edge cache (soğuk Render).
+ * HM haber listeleri — edge cache.
  * NOT: `/api/hm/meta/*` ASLA cache'lenmez — tema/layout editör kaydı anında yansımalı.
  */
 function isCacheableHmNewsApi(pathname) {
@@ -1023,28 +1024,12 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
   return { cacheTtl: 0, cacheEverything: false };
 }
 
-async function fetchUpstreamWithRetry(url, init, cfOpts, retries = 2) {
-  let lastErr = null;
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    try {
-      const res = await fetch(url, { ...init, cf: cfOpts });
-      if ([502, 503, 504].includes(res.status) && attempt < retries) {
-        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
-        continue;
-      }
-      return res;
-    } catch (err) {
-      lastErr = err;
-      if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
-      }
-    }
-  }
-  throw lastErr || new Error("upstream_unavailable");
+async function fetchUpstreamWithRetry(env, url, init, cfOpts, retries = 2) {
+  return fetchApiWithRetry(env, url, { ...init, cf: cfOpts }, retries);
 }
 
 /**
- * Render eski kodu: parseInt("2026-yili-...") → id 2026 (yanlış haber).
+ * Eski API: parseInt("2026-yili-...") → id 2026 (yanlış haber).
  * Edge’de slug uyuşmazlığını yakala; listeden doğru id’yi bulup bundle’ı yeniden çek.
  */
 function parseNewsSlugApiRequest(pathname) {
@@ -1074,13 +1059,13 @@ function parseNewsSlugApiRequest(pathname) {
   return { kind: "news", slug: seg };
 }
 
-async function resolveNewsIdByExactSlug(origin, init, slug, siteId) {
+async function resolveNewsIdByExactSlug(env, origin, init, slug, siteId) {
   const want = String(slug || "").trim();
   if (!want) return null;
   const qs = new URLSearchParams({ limit: "120" });
   if (siteId) qs.set("siteId", String(siteId));
   try {
-    const res = await fetch(`${origin}/api/news?${qs}`, {
+    const res = await fetchApi(env, `${origin}/api/news?${qs}`, {
       ...init,
       method: "GET",
       cf: { cacheTtl: 30, cacheEverything: true },
@@ -1096,7 +1081,7 @@ async function resolveNewsIdByExactSlug(origin, init, slug, siteId) {
   }
 }
 
-async function maybeRepairMismatchedNewsJson(origin, init, method, incoming, upstreamPath, upstreamRes) {
+async function maybeRepairMismatchedNewsJson(env, origin, init, method, incoming, upstreamPath, upstreamRes) {
   if (method !== "GET" && method !== "HEAD") return null;
   if (upstreamRes.status !== 200 && upstreamRes.status !== 404) return null;
   const parsed = parseNewsSlugApiRequest(upstreamPath);
@@ -1131,6 +1116,7 @@ async function maybeRepairMismatchedNewsJson(origin, init, method, incoming, ups
       ? parseInt(String(siteIdRaw), 10)
       : NaN;
   const fixedId = await resolveNewsIdByExactSlug(
+    env,
     origin,
     init,
     slug,
@@ -1143,7 +1129,7 @@ async function maybeRepairMismatchedNewsJson(origin, init, method, incoming, ups
       ? new URL(`/api/news/page-bundle/${fixedId}${incoming.search}`, origin)
       : new URL(`/api/news/${fixedId}${incoming.search}`, origin);
   try {
-    const repaired = await fetch(repairUrl.toString(), {
+    const repaired = await fetchApi(env, repairUrl.toString(), {
       ...init,
       method: "GET",
       cf: { cacheTtl: 0, cacheEverything: false },
@@ -1162,7 +1148,7 @@ async function maybeRepairMismatchedNewsJson(origin, init, method, incoming, ups
     headers.set("x-yekpare-slug-repair", "1");
     headers.set("x-yekpare-slug-repair-id", String(fixedId));
     headers.set("cache-control", "public, max-age=30, s-maxage=60");
-    headers.set("x-yekpare-frontend", "cloudflare-render-proxy");
+    headers.set("x-yekpare-frontend", FRONTEND_TAG);
     headers.set("x-yekpare-upstream", origin);
     return new Response(JSON.stringify(repairedBody), {
       status: 200,
@@ -1187,7 +1173,7 @@ function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
     location: loc,
     "cache-control": "public, max-age=30",
     "cdn-cache-control": "public, max-age=30",
-    "x-yekpare-frontend": "cloudflare-render-proxy",
+    "x-yekpare-frontend": FRONTEND_TAG,
     "x-yekpare-hm-redirect": slug,
     "x-yekpare-hm-redirect-via": via,
   };
@@ -1223,7 +1209,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
             location: target.toString(),
             "cache-control": "no-store",
             "cdn-cache-control": "no-store",
-            "x-yekpare-frontend": "cloudflare-render-proxy",
+            "x-yekpare-frontend": "cloudflare-worker",
             "x-yekpare-hm-admin-to-editor": "1",
           },
         });
@@ -1233,9 +1219,10 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
 
   if (path !== "/") return null;
 
-  const origin = upstreamOrigin(env);
+  const origin = upstreamOrigin(env, incoming);
   try {
-    const metaRes = await fetch(
+    const metaRes = await fetchApi(
+      env,
       `${origin}/api/hm/meta/by-domain?domain=${encodeURIComponent(domain)}`,
       {
         headers: {
@@ -1253,7 +1240,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
         return hmCustomDomainRootRedirectResponse(incoming, request, slug, "meta");
       }
     } else if (metaRes.status === 404 && fallbackSlug) {
-      // Render meta 404 — Neon'da marka siteyi oluştur/bağla (sonraki /api/hm/meta çağrıları için).
+      // Meta 404 — Neon'da marka siteyi oluştur/bağla (sonraki /api/hm/meta çağrıları için).
       try {
         await ensureBrandHmSiteMeta(env, { domain, slug: fallbackSlug });
       } catch (err) {
@@ -1282,7 +1269,7 @@ p{max-width:28rem;text-align:center;line-height:1.5}</style></head>
           "content-type": "text/html; charset=utf-8",
           "cache-control": "no-store",
           "cdn-cache-control": "no-store",
-          "x-yekpare-frontend": "cloudflare-render-proxy",
+          "x-yekpare-frontend": "cloudflare-worker",
           "x-yekpare-hm-unmapped": "1",
         },
       },
@@ -1349,11 +1336,12 @@ function isPortalOgSharePath(pathname) {
   );
 }
 
-async function fetchHmSlugForHost(apiOrigin, host) {
+async function fetchHmSlugForHost(env, apiOrigin, host) {
   const h = normalizeHost(host);
   if (!h || isPortalHost(h)) return null;
   try {
-    const res = await fetch(
+    const res = await fetchApi(
+      env,
       `${apiOrigin}/api/hm/meta/by-domain?domain=${encodeURIComponent(h)}`,
       {
         headers: { accept: "application/json" },
@@ -1381,9 +1369,9 @@ async function socialPreviewOgHtml(request, env, incoming) {
 
   const host = (incoming.hostname || "").toLowerCase();
   const cleanPath = incoming.pathname.replace(/\/+$/, "") || "/";
-  const apiOrigin = upstreamOrigin(env);
+  const apiOrigin = upstreamOrigin(env, incoming);
   const isHmSlugPath = /^\/tr\/[^/]+(?:\/.*)?$/.test(cleanPath);
-  const hmBound = !isPortalHost(host) ? Boolean(await fetchHmSlugForHost(apiOrigin, host)) : false;
+  const hmBound = !isPortalHost(host) ? Boolean(await fetchHmSlugForHost(env, apiOrigin, host)) : false;
   const isCustomHmDomainPath = hmBound;
   const isPortalSharePath = (isPortalHost(host) || !hmBound) && isPortalOgSharePath(cleanPath);
   if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath) return null;
@@ -1393,7 +1381,7 @@ async function socialPreviewOgHtml(request, env, incoming) {
   target.searchParams.set("origin", incoming.origin);
 
   try {
-    const upstream = await fetch(target.toString(), {
+    const upstream = await fetchApi(env, target.toString(), {
       headers: {
         accept: "text/html",
         "user-agent": request.headers.get("user-agent") ?? "",
@@ -1408,7 +1396,7 @@ async function socialPreviewOgHtml(request, env, incoming) {
     headers.delete("transfer-encoding");
     headers.set("cache-control", "public, max-age=300, s-maxage=300");
     headers.set("cdn-cache-control", "public, max-age=300");
-    headers.set("x-yekpare-frontend", "cloudflare-render-proxy");
+    headers.set("x-yekpare-frontend", FRONTEND_TAG);
     headers.set("x-yekpare-og", "social-preview");
     if (request.method === "HEAD") {
       return new Response(null, { status: upstream.status, headers });
@@ -1526,7 +1514,7 @@ function parseNtvDunyaAtom(xml, limit = 24) {
 }
 
 /**
- * Edge: Dünyadan Kısa Kısa — NTV Dünya RSS (Render API deploy gecikmesinde donmasın).
+ * Edge: Dünyadan Kısa Kısa — NTV Dünya RSS (API gecikmesinde donmasın).
  * İsteğe bağlı siteId ile upstream Dünya DB haberlerini de birleştirir.
  */
 async function serveWorldBriefsEdge(request, env, incoming) {
@@ -1568,13 +1556,13 @@ async function serveWorldBriefsEdge(request, env, incoming) {
 
   if (siteId != null) {
     try {
-      const origin = upstreamOrigin(env);
+      const origin = upstreamOrigin(env, incoming);
       const hybridUrl = new URL("/api/news/hybrid", origin);
       hybridUrl.searchParams.set("siteId", String(siteId));
       hybridUrl.searchParams.set("categorySlug", "dunya");
       hybridUrl.searchParams.set("dbFirst", "1");
       hybridUrl.searchParams.set("limit", String(itemCap));
-      const hybridRes = await fetch(hybridUrl.toString(), {
+      const hybridRes = await fetchApi(env, hybridUrl.toString(), {
         headers: {
           accept: "application/json",
           "x-forwarded-host": incoming.host,
@@ -1736,12 +1724,12 @@ function parseFeedEntries(xml, limit = 6) {
 
 const DEFAULT_SITE_RSS_FEEDS = cloneDefaultHmSiteRssFeedRows();
 
-async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
+async function loadSiteRssFeedRowsFromMeta(env, origin, incoming, siteId) {
   const host = normalizeHost(incoming.hostname);
   try {
     const metaUrl = new URL("/api/hm/meta/by-domain", origin);
     metaUrl.searchParams.set("domain", host);
-    const metaRes = await fetch(metaUrl.toString(), {
+    const metaRes = await fetchApi(env, metaUrl.toString(), {
       headers: {
         accept: "application/json",
         "x-forwarded-host": incoming.host,
@@ -1796,12 +1784,12 @@ async function loadSiteRssFeedRowsFromMeta(origin, incoming, siteId) {
   }
 }
 
-async function findEdgeRssEntryById(itemId, origin, incoming) {
+async function findEdgeRssEntryById(env, itemId, origin, incoming) {
   const raw = decodeURIComponent(String(itemId || "").trim());
   const id = raw.startsWith("rss:") ? raw.slice(4) : raw;
   if (!id.startsWith("edge-")) return null;
 
-  const meta = await loadSiteRssFeedRowsFromMeta(origin, incoming, null);
+  const meta = await loadSiteRssFeedRowsFromMeta(env, origin, incoming, null);
   const feeds = [
     ...(meta.feeds || []),
     { id: "dunya", label: "Dünya", url: NTV_DUNYA_RSS_URL },
@@ -1845,8 +1833,8 @@ async function serveEdgeRssPreview(request, env, incoming) {
   const edgeKey = itemId.startsWith("rss:") ? itemId.slice(4) : itemId;
   if (!edgeKey.startsWith("edge-")) return null;
 
-  const origin = upstreamOrigin(env);
-  const found = await findEdgeRssEntryById(itemId, origin, incoming);
+  const origin = upstreamOrigin(env, incoming);
+  const found = await findEdgeRssEntryById(env, itemId, origin, incoming);
   if (!found) {
     return new Response(JSON.stringify({ error: "RSS haber bulunamadı" }), {
       status: 404,
@@ -1958,7 +1946,7 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
 }
 
 /**
- * Site içi RSS açıkken Render cache boş kalırsa Cloudflare edge NTV/site feed’lerini doldurur.
+ * Site içi RSS açıkken API cache boş kalırsa Cloudflare edge NTV/site feed’lerini doldurur.
  */
 /** RSS anahtar ↔ site kategori (son-dakika/turkiye → gundem). */
 const RSS_CATEGORY_ALIAS_GROUPS = [
@@ -2055,8 +2043,8 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   // Genel istekte RSS zaten doluysa dokunma. Kategori isteğinde hedef slug yoksa doldur.
   if (rssCount > 0 && (!categorySlug || existingCategoryHits.length > 0)) return null;
 
-  const origin = upstreamOrigin(env);
-  const { enabled, feeds } = await loadSiteRssFeedRowsFromMeta(origin, incoming, siteId);
+  const origin = upstreamOrigin(env, incoming);
+  const { enabled, feeds } = await loadSiteRssFeedRowsFromMeta(env, origin, incoming, siteId);
   if (!enabled && payload.hybridRssEnabled !== true) return null;
   if (!feeds.length) return null;
 
@@ -2165,7 +2153,7 @@ export default {
         headers: {
           "content-type": "application/javascript; charset=utf-8",
           "cache-control": "no-store, max-age=0, must-revalidate",
-          "x-yekpare-frontend": "cloudflare-render-proxy",
+          "x-yekpare-frontend": "cloudflare-worker",
           "x-yekpare-sw": "kill-switch",
         },
       });
@@ -2220,7 +2208,7 @@ export default {
       }
     }
 
-    // Editör görsel yükleme — kenar JWT (Render secret uyuşmazlığı bypass).
+    // Editör görsel yükleme — kenar JWT + R2.
     try {
       const mediaEdge = await handleHmEditorMediaUploadEdge(request, env);
       if (mediaEdge) return mediaEdge;
@@ -2228,8 +2216,8 @@ export default {
       console.error("[hm-editor-media-edge]", String(err?.message || err).slice(0, 200));
     }
 
-    // Editör login + /me + profil + layout — Render gerideyse kenarda Neon (tüm HM siteleri).
-    // clone: kenar null dönerse (KH dışı layout / captcha) body Render'a bozulmadan gitsin.
+    // Editör login + /me + profil + layout — kenarda Neon (tüm HM siteleri).
+    // clone: kenar null dönerse (KH dışı layout / captcha) body Container'a bozulmadan gitsin.
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
@@ -2305,7 +2293,7 @@ export default {
     const fromAssets = await tryServeAssets(request, env, incoming);
     if (fromAssets) return fromAssets;
 
-    const origin = upstreamOrigin(env);
+    const origin = upstreamOrigin(env, incoming);
     const yektubeRewrite = rewriteYektubeSpaPath(incoming.pathname);
     const upstreamPath = yektubeRewrite || incoming.pathname;
     const target = new URL(upstreamPath + incoming.search, origin);
@@ -2316,6 +2304,7 @@ export default {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const upstream = await fetchUpstreamWithRetry(
+        env,
         target.toString(),
         proxyOpts,
         cfOpts,
@@ -2325,6 +2314,7 @@ export default {
       });
       if (brandMeta) return brandMeta;
       const repaired = await maybeRepairMismatchedNewsJson(
+        env,
         origin,
         proxyOpts,
         apiRequest.method,
@@ -2337,7 +2327,7 @@ export default {
       const out = copyUpstreamHeadersForBrowser(upstream);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
-      out.set("x-yekpare-frontend", "cloudflare-render-proxy");
+      out.set("x-yekpare-frontend", FRONTEND_TAG);
       out.set("x-yekpare-upstream", origin);
       if (yektubeRewrite) {
         out.set("x-yekpare-yektube-rewrite", yektubeRewrite);
@@ -2431,7 +2421,7 @@ export default {
     } catch (err) {
       return new Response(
         JSON.stringify({
-          error: "render_upstream_unavailable",
+          error: "api_unavailable",
           detail: String(err?.message || err),
           upstream: origin,
         }),
@@ -2439,7 +2429,7 @@ export default {
           status: 502,
           headers: {
             "content-type": "application/json",
-            "x-yekpare-frontend": "cloudflare-render-proxy",
+            "x-yekpare-frontend": "cloudflare-worker",
           },
         },
       );

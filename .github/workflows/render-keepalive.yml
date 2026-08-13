@@ -1,29 +1,14 @@
-# Geçici: Render API sıcak tut (Neon/CF cutover tamamlanana kadar)
-name: render-keepalive
+# LEGACY — Render keepalive (KAPALI). Render kullanılmaz.
+name: render-keepalive (disabled)
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions: {}
 
 jobs:
-  ping:
+  skipped:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
     steps:
-      - name: Ping Render API healthz
-        run: |
-          set +e
-          for url in \
-            "https://goalgo-y7ze.onrender.com/api/healthz/live" \
-            "https://goalgo-y7ze.onrender.com/api/healthz" \
-            "https://turk.eco/api/healthz/live" \
-            "https://ankarahabergundemi.com/" \
-            "https://ankarasehirgazetesi.com/" \
-            "https://vatanhaber.net/"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$url")
-            echo "$url -> $code"
-          done
-          exit 0
+      - name: Render is not used
+        run: echo "Render keepalive disabled. Health checks: https://turk.eco/api/healthz"

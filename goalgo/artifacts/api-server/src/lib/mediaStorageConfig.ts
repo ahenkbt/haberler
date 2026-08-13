@@ -1,5 +1,3 @@
-import { isRenderHosting } from "./hostingProfile";
-
 /** S3 uyumlu nesne depolama (Cloudflare R2, AWS S3, MinIO). */
 export type MediaStorageMode = "volume" | "s3";
 
@@ -173,7 +171,7 @@ export function getMediaStorageMode(): MediaStorageMode {
   if (pref === "volume") return "volume";
   if (runtimeS3Disabled) return "volume";
   if (isS3MediaConfigured()) {
-    // MEDIA_STORAGE_MODE=s3|r2 veya auto — Render dahil R2 birincil depo.
+    // MEDIA_STORAGE_MODE=s3|r2 veya auto — Cloudflare R2 birincil depo.
     if (pref === "s3" || pref === "auto") return "s3";
   }
   if (pref === "s3") return "volume";
@@ -237,17 +235,8 @@ export function assertProductionMediaStorage(): void {
 
   if (hasPersistentVolumeMount()) return;
 
-  if (isRenderHosting() && getMediaStoragePreference() !== "s3" && !isS3MediaConfigured()) {
-    console.warn(
-      "[goalgo] Render: kalıcı medya diski yok — yüklemeler geçici container diskine yazılır (deploy sonrası kaybolabilir). " +
-        "Kalıcılık için Render Disk ekleyip MEDIA_UPLOAD_ROOT ile mount yolunu verin veya MEDIA_STORAGE_MODE=s3 ile Cloudflare R2 kullanın.",
-    );
-    return;
-  }
-
   const msg =
-    "Üretim ortamında kalıcı medya depolama yok: Railway Volume (RAILWAY_VOLUME_MOUNT_PATH), " +
-    "MEDIA_UPLOAD_ROOT / Render Disk, veya S3/R2 (S3_BUCKET + S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY + S3_ENDPOINT) tanımlayın. " +
+    "Üretim ortamında kalıcı medya depolama yok: Cloudflare R2 (S3_BUCKET + S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY + S3_ENDPOINT) veya MEDIA_UPLOAD_ROOT tanımlayın. " +
     "Geçici diskte yüklemeler deploy sonrası kaybolur. Acil bypass: SKIP_MEDIA_STORAGE_CHECK=1";
   throw new Error(msg);
 }
