@@ -22,6 +22,10 @@ export type S3EnvHealthDetails = S3EnvDiagnostics & {
   endpointLength: number;
   /** Hangi env anahtarından okundu; yoksa null. */
   endpointSource: string | null;
+  /** Yapıştırılmış env bloğundan R2 hostu ayıklandı. */
+  endpointCoerced?: boolean;
+  /** Ayıklanmış R2 S3 API URL'si kullanılabilir. */
+  endpointReady?: boolean;
 };
 
 /** Railway / panel kopyala-yapıştır: tırnak, BOM, satır sonu. */
@@ -35,6 +39,33 @@ export function normalizeEnvValue(value: string | undefined): string {
     v = v.slice(1, -1).trim();
   }
   return v.replace(/\r?\n/g, "");
+}
+
+const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/i;
+const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/i;
+
+/**
+ * GitHub/Worker secret'ına env bloğu yapıştırılınca S3_ENDPOINT 300+ karakter olabiliyor.
+ * R2 API hostunu ayıkla; r2.dev public URL'sini S3 endpoint sanma.
+ */
+export function coerceR2S3Endpoint(raw: string | undefined): string {
+  const v = normalizeEnvValue(raw);
+  if (!v) return "";
+  const embedded = v.match(R2_API_URL_RE);
+  if (embedded?.[0]) {
+    return embedded[0].replace(/\/+$/, "").replace(/^http:\/\//i, "https://");
+  }
+  const bare = v.match(R2_API_HOST_RE);
+  if (bare?.[1]) return `https://${bare[1].replace(/\/+$/, "")}`;
+  if (v.length > 180) return "";
+  const withScheme = /^https?:\/\//i.test(v) ? v.replace(/\/+$/, "") : `https://${v.replace(/\/+$/, "")}`;
+  try {
+    const host = new URL(withScheme).hostname;
+    if (/\.r2\.cloudflarestorage\.com$/i.test(host)) return `https://${host}`;
+  } catch {
+    return "";
+  }
+  return withScheme;
 }
 
 const S3_ENDPOINT_KEYS = [
@@ -55,9 +86,10 @@ function readFirstEnv(keys: readonly string[]): { key: string; value: string } |
   return null;
 }
 
-/** R2/S3 API endpoint — alias ve trim ile. */
+/** R2/S3 API endpoint — alias, trim ve yapıştırılmış env bloğundan ayıklama. */
 export function getS3Endpoint(): string {
-  return readFirstEnv(S3_ENDPOINT_KEYS)?.value ?? "";
+  const hit = readFirstEnv(S3_ENDPOINT_KEYS);
+  return hit ? coerceR2S3Endpoint(hit.value) : "";
 }
 
 export function s3EnvDiagnostics(): S3EnvDiagnostics {
@@ -72,11 +104,14 @@ export function s3EnvDiagnostics(): S3EnvDiagnostics {
 export function s3EnvHealthDetails(): S3EnvHealthDetails {
   const hit = readFirstEnv(S3_ENDPOINT_KEYS);
   const endpointLength = hit?.value.length ?? 0;
+  const coerced = hit ? coerceR2S3Endpoint(hit.value) : "";
   return {
     ...s3EnvDiagnostics(),
     endpointRawPresent: Object.prototype.hasOwnProperty.call(process.env, "S3_ENDPOINT"),
     endpointLength,
     endpointSource: hit?.key ?? null,
+    endpointCoerced: coerced.length > 0 && coerced.length !== endpointLength,
+    endpointReady: Boolean(coerced),
   };
 }
 
@@ -156,6 +191,14 @@ export function isRuntimeS3Disabled(): boolean {
 /** Okuma/yazma için S3 kullanılacak mı — `isS3MediaConfigured` tek başına yeterli değil (Render volume modu). */
 export function shouldUseS3ForMediaIo(): boolean {
   return getMediaStorageMode() === "s3" && !runtimeS3Disabled;
+}
+
+/**
+ * Temmuz 2026 dual-write (R2 + Render disk) dosyaları: startup probe R2'yi kapatsa bile oku.
+ * Yazma `shouldUseS3ForMediaIo` ile volume'a düşebilir; GET R2'yi denemeye devam eder.
+ */
+export function shouldReadS3ForMediaIo(): boolean {
+  return isS3MediaConfigured();
 }
 
 /** R2/S3 uç noktasına TLS veya ağ hatası (404 değil). */

@@ -94,6 +94,11 @@ function envVal(name) {
 function s3Endpoint() {
   const raw = envVal("S3_ENDPOINT");
   if (!raw) return "";
+  const embedded = raw.match(/https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/i);
+  if (embedded?.[0]) {
+    return embedded[0].replace(/\/+$/, "").replace(/^http:\/\//i, "https://");
+  }
+  if (raw.length > 180) return "";
   return /^https?:\/\//i.test(raw) ? raw.replace(/\/+$/, "") : `https://${raw.replace(/\/+$/, "")}`;
 }
 

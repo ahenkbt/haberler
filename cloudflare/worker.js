@@ -393,6 +393,7 @@ function isAuthSessionApiPath(pathname) {
 
 function isStaticAssetPath(pathname) {
   const p = String(pathname || "");
+  if (p === "/api" || p.startsWith("/api/")) return false;
   return (
     /\.(js|mjs|cjs|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif|webmanifest)(\?|$)/i.test(p) ||
     p.startsWith("/assets/") ||

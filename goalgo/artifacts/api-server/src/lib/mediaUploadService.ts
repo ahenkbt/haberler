@@ -4,14 +4,15 @@ import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 import { getMediaUploadRoot } from "./mediaUploadRoot";
 import {
   getMediaStorageMode,
   hasPersistentVolumeMount,
   isS3TransportError,
   noteS3RuntimeFailure,
-  shouldUseS3ForMediaIo,
+  shouldReadS3ForMediaIo,
+  s3PublicBaseUrl,
 } from "./mediaStorageConfig";
 import { getS3ObjectStream, putS3Object, s3ObjectExists } from "./mediaObjectStorage";
 import { logger } from "./logger";
@@ -176,7 +177,7 @@ export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | 
   const local = resolveLocalMedia(name);
   if (local) return local;
 
-  if (shouldUseS3ForMediaIo()) {
+  if (shouldReadS3ForMediaIo()) {
     try {
       const obj = await getS3ObjectStream(name);
       if (obj) return { kind: "stream", stream: obj.body, contentType: obj.contentType };
@@ -193,6 +194,26 @@ export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | 
     }
   }
 
+  const pub = s3PublicBaseUrl();
+  if (pub) {
+    try {
+      const res = await fetch(`${pub.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, {
+        redirect: "follow",
+        signal: AbortSignal.timeout(15_000),
+        headers: { Accept: "image/*,application/pdf,video/*,audio/*,*/*;q=0.8" },
+      });
+      const ct = String(res.headers.get("content-type") || "").toLowerCase();
+      if (res.ok && !ct.includes("text/html")) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (buf.length > 32) {
+          return { kind: "stream", stream: Readable.from(buf), contentType: ct || undefined };
+        }
+      }
+    } catch (e) {
+      logger.warn({ err: e, name, pub }, "[media-get] S3_PUBLIC_BASE_URL okunamadı");
+    }
+  }
+
   const legacy = legacyMediaOrigin();
   if (legacy) {
     return { kind: "redirect", url: `${legacy}/api/media/uploads/${name}` };
@@ -202,7 +223,7 @@ export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | 
 
 export async function mediaObjectExists(name: string): Promise<boolean> {
   if (resolveLocalMedia(name)) return true;
-  if (!shouldUseS3ForMediaIo()) return false;
+  if (!shouldReadS3ForMediaIo()) return false;
   try {
     return await s3ObjectExists(name);
   } catch (e) {
