@@ -1,40 +1,50 @@
 /**
  * Goalgo Express API — Cloudflare Container (Durable Object).
  * wrangler.toml [[containers]] → goalgo/Dockerfile.cloudflare
- * Neon + R2 secret'ları Worker üzerinden container'a aktarılır.
  *
+ * Worker secret'ları (DATABASE_URL, SESSION_SECRET, S3_*) otomatik olarak
+ * container process.env'e düşmez; start() env ile iletilir.
  * İlk açılış (imaj + migrate) 20s varsayılan port timeout'unu aşar;
  * fetch() request.signal ile iptal edilmez.
  */
 import { Container } from "@cloudflare/containers";
+import {
+  CONTAINER_PORT,
+  buildContainerEnv,
+  missingContainerBootSecrets,
+  requestWithoutAbort,
+} from "./container-env.js";
 
 export class GoalgoApiContainer extends Container {
-  defaultPort = 3000;
-  requiredPorts = [3000];
+  defaultPort = CONTAINER_PORT;
+  requiredPorts = [CONTAINER_PORT];
   sleepAfter = "30m";
   enableInternet = true;
 
-  envVars = {
-    NODE_ENV: "production",
-    PORT: "3000",
-    LISTEN_HOST: "0.0.0.0",
-    MEDIA_STORAGE_MODE: "s3",
-    SITE_PUBLIC_ORIGIN: "https://turk.eco",
-    LEGACY_MEDIA_ORIGIN: "0",
-    YEKTUBE_DB_READ: "main",
-    YEKTUBE_DB_WRITE: "main",
-    NEWS_DB_READ: "main",
-    NEWS_DB_WRITE: "main",
-    USE_NATIVE_AI_CALL: "true",
-    PG_POOL_MAX: "5",
-    PG_POOL_CONNECTION_TIMEOUT_MS: "10000",
-    S3_REGION: "auto",
-  };
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.envVars = buildContainerEnv(env);
+  }
 
   async fetch(request) {
+    const missing = missingContainerBootSecrets(this.env);
+    if (missing.length > 0) {
+      return new Response(
+        `Container cannot start: Worker secret(s) missing: ${missing.join(", ")}\n`,
+        { status: 503 },
+      );
+    }
+
+    const envVars = buildContainerEnv(this.env);
+    this.envVars = envVars;
+
     try {
       await this.startAndWaitForPorts({
         ports: [this.defaultPort],
+        startOptions: {
+          envVars,
+          enableInternet: true,
+        },
         cancellationOptions: {
           instanceGetTimeoutMS: 120_000,
           portReadyTimeoutMS: 180_000,
@@ -51,6 +61,6 @@ export class GoalgoApiContainer extends Container {
       }
       return new Response(`Failed to start container: ${msg}`, { status: 503 });
     }
-    return this.containerFetch(request, this.defaultPort);
+    return this.containerFetch(requestWithoutAbort(request), this.defaultPort);
   }
 }

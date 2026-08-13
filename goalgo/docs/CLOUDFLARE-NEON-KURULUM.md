@@ -25,6 +25,8 @@ Cloudflare Worker "haberler"
 
 Tarayıcı aynı origin kullanır: `https://<host>/api/*` → Container → Neon + R2.
 
+Worker secret’ları (`DATABASE_URL`, `SESSION_SECRET`, `S3_*`) Container sürecine `start({ envVars })` ile kopyalanır. Yalnızca Worker’da dururlarsa API açılmaz (`/api/healthz` 503).
+
 Şema: [docs/TURK-ECO-GITHUB-NEON-CLOUDFLARE.md](../../docs/TURK-ECO-GITHUB-NEON-CLOUDFLARE.md)
 
 ---
