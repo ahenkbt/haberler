@@ -44,6 +44,7 @@ import { repairHmSiteIdCollisions } from "./lib/hm-site-id-collision-repair.js";
 import { repairAllHmLayoutSanitize } from "./lib/hm-layout-sanitize.js";
 import { repairAsgEditorMisassignment } from "./lib/hm-asg-editor-repair.js";
 import { repairAsgAuthorsFromAhg } from "./lib/hm-asg-authors-from-ahg-repair.js";
+import { repairAhgAuthorsFromAsg } from "./lib/hm-ahg-authors-from-asg-repair.js";
 import { repairAsgHomeModules } from "./lib/hm-asg-home-modules-repair.js";
 import { repairHmTepeMansetSystem } from "./lib/hm-tepe-manset-repair.js";
 import { repairKhEditorMisassignment } from "./lib/hm-kh-editor-repair.js";
@@ -485,6 +486,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 17_850).unref();
   } else {
     logger.info("[hm-asg-authors] HM_ASG_AUTHORS_FROM_AHG_REPAIR kapalı (editör içeriğini korur) — atlandı");
+  }
+
+  // ASG köşe yazarları + makaleler → ankarahabergundemi.com (silmeden ekle)
+  if (envJobFlag("HM_AHG_AUTHORS_FROM_ASG_REPAIR", true)) {
+    setTimeout(() => {
+      void repairAhgAuthorsFromAsg()
+        .then((r) => logger.info({ ...r }, "[hm-ahg-authors] ASG→ankarahabergundemi yazar+makale ekleme"))
+        .catch((err) => logger.error({ err }, "[hm-ahg-authors] ekleme başarısız"));
+    }, 17_860).unref();
+  } else {
+    logger.info("[hm-ahg-authors] HM_AHG_AUTHORS_FROM_ASG_REPAIR=0 — atlandı");
   }
 
   // ASG: Gündemde Öne Çıkanlar + Spor + Ankara RSS
