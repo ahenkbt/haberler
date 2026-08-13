@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, listR2S3EndpointCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, listR2S3EndpointCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -46,5 +46,30 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(listed[0], RENDER_R2_S3_ENDPOINT);
     assert.ok(listed.includes(CF_ACCOUNT_R2_S3_ENDPOINT));
     assert.equal(coerceR2S3Endpoint(blob), RENDER_R2_S3_ENDPOINT);
+  });
+
+  it("serves GET from the native R2 bucket binding without S3 API", async () => {
+    const fname = "1786401635611-a8d116dd0f19d485.webp";
+    const env = {
+      MEDIA_BUCKET: {
+        get: async (key) => {
+          if (key !== fname) return null;
+          return {
+            body: new Uint8Array([0x52, 0x49, 0x46, 0x46]),
+            httpMetadata: { contentType: "image/webp" },
+            size: 4,
+          };
+        },
+        head: async () => null,
+      },
+    };
+    assert.ok(r2Binding(env));
+    const res = await handleMediaGetFromR2(
+      new Request(`https://turk.eco/api/media/uploads/${fname}`),
+      env,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-yekpare-media"), "r2-binding");
+    assert.equal(res.headers.get("content-type"), "image/webp");
   });
 });
