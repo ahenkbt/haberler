@@ -38,10 +38,9 @@ describe("mediaStorageConfig", () => {
     restoreEnv();
   });
 
-  it("Render hosting uses R2 when MEDIA_STORAGE_MODE=s3 and S3 env is set", () => {
+  it("uses R2 when MEDIA_STORAGE_MODE=s3 and S3 env is set", () => {
     snapshotEnv();
     clearMediaEnv();
-    process.env.RENDER = "true";
     process.env.MEDIA_STORAGE_MODE = "s3";
     process.env.S3_BUCKET = "yekpare-media";
     process.env.S3_ACCESS_KEY_ID = "key";
@@ -52,10 +51,9 @@ describe("mediaStorageConfig", () => {
     expect(shouldUseS3ForMediaIo()).toBe(true);
   });
 
-  it("Render hosting falls back to volume when S3 is not configured", () => {
+  it("falls back to volume when S3 is not configured", () => {
     snapshotEnv();
     clearMediaEnv();
-    process.env.RENDER = "true";
 
     expect(getMediaStorageMode()).toBe("volume");
     expect(shouldUseS3ForMediaIo()).toBe(false);

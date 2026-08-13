@@ -37,9 +37,10 @@ function legacyMediaOrigin(): string | null {
   if (raw != null) {
     const t = raw.trim();
     if (!t || t === "0" || t === "false" || t === "off") return null;
+    if (/onrender\.com/i.test(t)) return null;
     return t.replace(/\/+$/, "");
   }
-  return "https://goalgo-y7ze.onrender.com";
+  return null;
 }
 
 async function readLocalMediaBytes(fname: string): Promise<Buffer | null> {
@@ -62,8 +63,6 @@ async function fetchLegacyMediaBytes(fname: string): Promise<Buffer | null> {
   const legacy = legacyMediaOrigin();
   const candidates = [
     legacy ? `${legacy}/api/media/uploads/${fname}` : null,
-    `https://goalgo-y7ze.onrender.com/api/media/uploads/${fname}`,
-    `https://goalgo-production.up.railway.app/api/media/uploads/${fname}`,
     `https://turk.eco/api/media/uploads/${fname}`,
   ].filter(Boolean) as string[];
 
@@ -163,7 +162,7 @@ export async function migrateMediaVolumeToR2(opts: {
 
   if (!shouldUseS3ForMediaIo()) {
     throw new Error(
-      "R2 yapılandırması aktif değil — Render'da MEDIA_STORAGE_MODE=s3 ve S3_* değişkenlerini tanımlayın.",
+      "R2 yapılandırması aktif değil — MEDIA_STORAGE_MODE=s3 ve S3_* (Cloudflare R2) tanımlayın.",
     );
   }
 

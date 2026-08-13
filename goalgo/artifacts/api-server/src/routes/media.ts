@@ -213,7 +213,7 @@ router.post("/media/upload", async (req, res): Promise<void> => {
     const s3Issue = /EPROTO|handshake|certificate|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|AccessDenied|SignatureDoesNotMatch|InvalidAccessKeyId|NoSuchBucket/i.test(msg);
     res.status(500).json({
       error: s3Issue
-        ? "Yükleme başarısız: medya diski yazılamadı. Yönetici: Render Disk veya MEDIA_UPLOAD_ROOT tanımlayın; Cloudflare R2 kullanmayacaksanız S3 değişkenlerini kaldırın veya MEDIA_STORAGE_MODE=volume ayarlayın."
+        ? "Yükleme başarısız: medya diski yazılamadı. Yönetici: Cloudflare R2 (S3_*) veya MEDIA_UPLOAD_ROOT tanımlayın; MEDIA_STORAGE_MODE=s3 olmalı."
         : "Yükleme başarısız",
       ...(process.env.NODE_ENV === "production" ? {} : { detail: msg, storage: getMediaStorageMode() }),
     });

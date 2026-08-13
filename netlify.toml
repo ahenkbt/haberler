@@ -1,5 +1,5 @@
 # Netlify kapatıldı — yanlışlıkla build olsa bile Cloudflare'e yönlendir.
-# Üretim: Cloudflare Worker → Render (goalgo-y7ze.onrender.com)
+# Üretim: Cloudflare Worker + Container + Neon + R2 (turk.eco)
 
 [build]
   command = "mkdir -p dist && printf '%s\\n' '<!DOCTYPE html><meta http-equiv=\"refresh\" content=\"0;url=https://turk.eco/\"><title>Moved</title><p><a href=\"https://turk.eco/\">turk.eco</a></p>' > dist/index.html"

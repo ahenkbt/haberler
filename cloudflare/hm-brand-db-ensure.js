@@ -1275,7 +1275,7 @@ export function brandMetaJsonResponse(meta, extraHeaders = {}) {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "private, no-store, max-age=0, must-revalidate",
       "cdn-cache-control": "no-store",
-      "x-yekpare-frontend": "cloudflare-render-proxy",
+      "x-yekpare-frontend": FRONTEND_TAG,
       "x-yekpare-hm-brand-ensure": "1",
       ...extraHeaders,
     },

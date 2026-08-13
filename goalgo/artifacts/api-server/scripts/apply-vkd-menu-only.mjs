@@ -6,7 +6,7 @@
  *
  * Canlı API (admin bakım anahtarı gerekir):
  *   set ADMIN_MAINTENANCE_SECRET=...
- *   npx tsx ./scripts/apply-vkd-menu-only.mjs --api=https://goalgo-y7ze.onrender.com
+ *   npx tsx ./scripts/apply-vkd-menu-only.mjs --api=https://turk.eco
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";

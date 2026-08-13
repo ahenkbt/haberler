@@ -19,7 +19,7 @@ const isNeon = /neon\.tech/i.test(databaseUrl) || Boolean(process.env.NEON_PROJE
 
 export const pool = new Pool({
   connectionString: databaseUrl,
-  // Neon / Render: düşük pool (serverless/compute limit); aksi halde prod'da daha geniş
+  // Neon: düşük pool (compute limit); aksi halde prod'da daha geniş
   max: poolInt("PG_POOL_MAX", isNeon || isRender ? 5 : isProd ? 20 : 10),
   idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
   connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", isNeon || isRender ? 10_000 : 10_000),

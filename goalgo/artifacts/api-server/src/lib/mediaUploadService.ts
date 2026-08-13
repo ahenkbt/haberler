@@ -159,16 +159,17 @@ export async function saveMediaBuffer(
   return { fname, url: publicUploadUrl(fname) };
 }
 
-const DEFAULT_LEGACY_MEDIA_ORIGIN = "https://goalgo-y7ze.onrender.com";
+const DEFAULT_LEGACY_MEDIA_ORIGIN = "";
 
 function legacyMediaOrigin(): string | null {
   const raw = process.env.LEGACY_MEDIA_ORIGIN;
   if (raw != null) {
     const t = raw.trim();
     if (!t || t === "0" || t === "false" || t === "off") return null;
+    if (/onrender\.com/i.test(t)) return null;
     return t.replace(/\/+$/, "");
   }
-  return DEFAULT_LEGACY_MEDIA_ORIGIN;
+  return DEFAULT_LEGACY_MEDIA_ORIGIN || null;
 }
 
 export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | null> {

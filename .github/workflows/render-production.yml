@@ -1,40 +1,15 @@
-# Render API (goalgo-y7ze) — GitHub auto-deploy kapalıysa deploy hook ile tetikle.
-# Secret: RENDER_DEPLOY_HOOK_URL = Render Dashboard → Service → Settings → Deploy Hook
-name: Render Production Deploy
+# LEGACY — Render Production Deploy (KAPALI)
+# Prod: .github/workflows/cloudflare-production.yml (GitHub + Neon + Cloudflare).
+# Bu workflow kasıtlı olarak tetiklenmez.
+name: Render Production Deploy (disabled)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "goalgo/artifacts/api-server/**"
-      - "goalgo/lib/**"
-      - "goalgo/Dockerfile"
-      - "goalgo/package.json"
-      - "goalgo/pnpm-lock.yaml"
-      - ".github/workflows/render-production.yml"
   workflow_dispatch:
 
-concurrency:
-  group: render-production
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  skipped:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render deploy hook
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      - name: Render is not used
         run: |
-          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "::notice::RENDER_DEPLOY_HOOK_URL secret yok — Render Dashboard'dan Manual Deploy veya secret ekleyin."
-            exit 0
-          fi
-          code=$(curl -sS -o /tmp/render-deploy.json -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK_URL")
-          echo "HTTP $code"
-          cat /tmp/render-deploy.json || true
-          if [ "$code" != "200" ] && [ "$code" != "201" ] && [ "$code" != "202" ]; then
-            echo "::error::Render deploy hook failed ($code)"
-            exit 1
-          fi
+          echo "Render production deploy is disabled. Use Cloudflare Production Deploy."

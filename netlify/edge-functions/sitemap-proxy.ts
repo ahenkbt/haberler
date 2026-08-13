@@ -1,6 +1,6 @@
 import type { Context } from "https://edge.netlify.com";
 
-const DEFAULT_API = "https://goalgo-y7ze.onrender.com";
+const DEFAULT_API = "https://turk.eco";
 
 const STATIC_XML = new Set(["/sitemap-static.xml", "/browserconfig.xml"]);
 
@@ -13,8 +13,8 @@ const LEAK_ORIGINS = [
 
 function apiOrigin(): string {
   return (
-    Netlify.env.get("RENDER_API_ORIGIN") ||
-    Netlify.env.get("RAILWAY_API_ORIGIN") ||
+    Netlify.env.get("API_ORIGIN") ||
+    Netlify.env.get("SITE_ORIGIN") ||
     DEFAULT_API
   ).replace(/\/+$/, "");
 }

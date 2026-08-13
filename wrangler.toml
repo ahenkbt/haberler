@@ -1,4 +1,4 @@
-# SPA: Workers Static Assets · /api → Render (API_ORIGIN)
+# SPA: Workers Static Assets · /api → Cloudflare Container (Neon + R2)
 # Workers Builds / cloudflare-production: build SPA → wrangler deploy
 name = "haberler"
 compatibility_date = "2025-07-15"
@@ -14,16 +14,30 @@ not_found_handling = "single-page-application"
 run_worker_first = true
 
 [vars]
-API_ORIGIN = "https://goalgo-y7ze.onrender.com"
-# KH kenar login → Render JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
+# Boş = aynı origin /api → Container. onrender.com kullanılmaz.
+API_ORIGIN = ""
+# KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
-# Medya yükleme (Worker → R2/S3): GitHub Actions S3_* secret'ları ile wrangler secret put
-# Render API: MEDIA_STORAGE_MODE=s3 + aynı S3_* değişkenleri
+# Medya yükleme (Worker → R2): GitHub Actions S3_* secret'ları ile wrangler secret put
+
+[[containers]]
+class_name = "GoalgoApiContainer"
+image = "./goalgo/Dockerfile.cloudflare"
+max_instances = 3
+instance_type = "standard-1"
+
+[[durable_objects.bindings]]
+name = "GOALGO_API"
+class_name = "GoalgoApiContainer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GoalgoApiContainer"]
 
 # yekpare.net / www.yekpare.net bu worker'dan kaldırıldı (ayrı repo: goalgo-cloudflare).
 # Tekrar bağlanmasın diye scripts/cf-detached-domains.mjs her DNS/cutover çalıştırmasında söker.
 
-# HM editör siteleri (Cloudflare zone → Worker → Render)
+# HM editör siteleri (Cloudflare zone → Worker → Container / Neon)
 [[routes]]
 pattern = "ankarahabergundemi.com/*"
 zone_name = "ankarahabergundemi.com"

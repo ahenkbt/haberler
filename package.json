@@ -12,9 +12,11 @@
     "build:cloudflare": "node scripts/cloudflare-root-build.mjs",
     "deploy:cloudflare": "pnpm run build:cloudflare && pnpm exec wrangler deploy",
     "cf:dashboard-deploy": "pnpm run deploy:cloudflare",
-    "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs"
+    "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs",
+    "test:worker": "node --test cloudflare/*.test.js"
   },
   "dependencies": {
+    "@cloudflare/containers": "^0.3.7",
     "@neondatabase/serverless": "^1.1.0",
     "aws4fetch": "1.0.20",
     "bcryptjs": "^3.0.3",

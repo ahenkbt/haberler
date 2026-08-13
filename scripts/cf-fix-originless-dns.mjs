@@ -278,7 +278,9 @@ async function uploadWorkerScriptViaApi() {
       {
         type: "plain_text",
         name: "API_ORIGIN",
-        text: process.env.API_ORIGIN || "https://goalgo-y7ze.onrender.com",
+        text: process.env.API_ORIGIN && !/onrender\.com/i.test(process.env.API_ORIGIN)
+          ? process.env.API_ORIGIN
+          : "",
       },
     ],
   };
