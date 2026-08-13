@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   getMediaStorageMode,
+  isS3MediaConfigured,
   isS3TransportError,
   noteS3RuntimeFailure,
+  coerceR2S3Endpoint,
+  getS3Endpoint,
+  shouldReadS3ForMediaIo,
   shouldUseS3ForMediaIo,
 } from "./mediaStorageConfig";
 
@@ -78,5 +82,38 @@ describe("mediaStorageConfig", () => {
       isS3TransportError(new Error("write EPROTO ssl3_read_bytes:ssl/tls alert handshake failure")),
     ).toBe(true);
     expect(isS3TransportError(new Error("NotFound"))).toBe(false);
+  });
+
+  it("extracts R2 API host from a pasted env block in S3_ENDPOINT", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    const real = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    process.env.MEDIA_STORAGE_MODE = "s3";
+    process.env.S3_BUCKET = "yekpare-media";
+    process.env.S3_ACCESS_KEY_ID = "key";
+    process.env.S3_SECRET_ACCESS_KEY = "secret";
+    process.env.S3_ENDPOINT = [
+      "S3_ENDPOINT=" + real,
+      "S3_BUCKET=yekpare-media",
+      "S3_PUBLIC_BASE_URL=https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev",
+    ].join("\n");
+
+    expect(coerceR2S3Endpoint(process.env.S3_ENDPOINT)).toBe(real);
+    expect(getS3Endpoint()).toBe(real);
+    expect(isS3MediaConfigured()).toBe(true);
+    expect(shouldReadS3ForMediaIo()).toBe(true);
+  });
+
+  it("still reads R2 after a runtime write failure", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    process.env.MEDIA_STORAGE_MODE = "s3";
+    process.env.S3_BUCKET = "yekpare-media";
+    process.env.S3_ACCESS_KEY_ID = "key";
+    process.env.S3_SECRET_ACCESS_KEY = "secret";
+    process.env.S3_ENDPOINT = "https://account.r2.cloudflarestorage.com";
+    noteS3RuntimeFailure("startup probe");
+    expect(shouldUseS3ForMediaIo()).toBe(false);
+    expect(shouldReadS3ForMediaIo()).toBe(true);
   });
 });

@@ -36,10 +36,34 @@ function s3Endpoint(env) {
     "S3_ENDPOINT_URL",
   ];
   for (const key of keys) {
-    const v = normalizeEnvValue(env?.[key]);
-    if (v) return /^https?:\/\//i.test(v) ? v.replace(/\/+$/, "") : `https://${v.replace(/\/+$/, "")}`;
+    const v = coerceR2S3Endpoint(env?.[key]);
+    if (v) return v;
   }
   return "";
+}
+
+const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/i;
+const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/i;
+
+/** Yapıştırılmış env bloğundan R2 S3 API hostunu ayıkla. */
+export function coerceR2S3Endpoint(raw) {
+  const v = normalizeEnvValue(raw);
+  if (!v) return "";
+  const embedded = v.match(R2_API_URL_RE);
+  if (embedded?.[0]) {
+    return embedded[0].replace(/\/+$/, "").replace(/^http:\/\//i, "https://");
+  }
+  const bare = v.match(R2_API_HOST_RE);
+  if (bare?.[1]) return `https://${bare[1].replace(/\/+$/, "")}`;
+  if (v.length > 180) return "";
+  const withScheme = /^https?:\/\//i.test(v) ? v.replace(/\/+$/, "") : `https://${v.replace(/\/+$/, "")}`;
+  try {
+    const host = new URL(withScheme).hostname;
+    if (/\.r2\.cloudflarestorage\.com$/i.test(host)) return `https://${host}`;
+  } catch {
+    return "";
+  }
+  return withScheme;
 }
 
 export function s3MediaEnvReady(env) {
@@ -134,33 +158,60 @@ function s3ObjectUrl(env, fname) {
 
 /**
  * GET/HEAD `/api/media/uploads/:file` → R2. Yoksa null (Container dener).
+ * Temmuz 2026 dual-write: dosyalar R2'de olabilir; bozuk S3_ENDPOINT ayıklanır.
  */
 export async function handleMediaGetFromR2(request, env) {
   const method = String(request.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") return null;
   const fname = parseMediaUploadFname(new URL(request.url).pathname);
-  if (!fname || !s3MediaEnvReady(env)) return null;
+  if (!fname) return null;
 
-  let res;
-  try {
-    res = await s3Client(env).fetch(s3ObjectUrl(env, fname), { method });
-  } catch (err) {
-    console.error("[media-r2-get]", String(err?.message || err).slice(0, 160));
-    return null;
+  const respond = (body, contentType, len, via) => {
+    const headers = new Headers();
+    headers.set("content-type", contentType || mimeFromFname(fname));
+    if (len) headers.set("content-length", len);
+    headers.set("cache-control", "public, max-age=86400, stale-while-revalidate=604800");
+    headers.set("x-yekpare-frontend", "cloudflare-worker");
+    headers.set("x-yekpare-media", via);
+    if (method === "HEAD") return new Response(null, { status: 200, headers });
+    return new Response(body, { status: 200, headers });
+  };
+
+  if (s3MediaEnvReady(env)) {
+    try {
+      const res = await s3Client(env).fetch(s3ObjectUrl(env, fname), { method });
+      if (res && res.ok) {
+        return respond(
+          res.body,
+          res.headers.get("content-type"),
+          res.headers.get("content-length"),
+          "r2",
+        );
+      }
+    } catch (err) {
+      console.error("[media-r2-get]", String(err?.message || err).slice(0, 160));
+    }
   }
-  if (!res || res.status === 404) return null;
-  if (!res.ok) return null;
 
-  const headers = new Headers();
-  const contentType = res.headers.get("content-type") || mimeFromFname(fname);
-  headers.set("content-type", contentType);
-  const len = res.headers.get("content-length");
-  if (len) headers.set("content-length", len);
-  headers.set("cache-control", "public, max-age=86400, stale-while-revalidate=604800");
-  headers.set("x-yekpare-frontend", "cloudflare-worker");
-  headers.set("x-yekpare-media", "r2");
-  if (method === "HEAD") return new Response(null, { status: 200, headers });
-  return new Response(res.body, { status: 200, headers });
+  const pub = normalizeEnvValue(env?.S3_PUBLIC_BASE_URL).replace(/\/+$/, "");
+  if (pub && /^https?:\/\//i.test(pub)) {
+    try {
+      const pubRes = await fetch(`${pub}/${encodeURIComponent(fname)}`, {
+        method: method === "HEAD" ? "GET" : method,
+        redirect: "follow",
+        signal: AbortSignal.timeout(15_000),
+      });
+      const ct = String(pubRes.headers.get("content-type") || "").toLowerCase();
+      if (pubRes.ok && !ct.includes("text/html")) {
+        const len = pubRes.headers.get("content-length");
+        return respond(pubRes.body, pubRes.headers.get("content-type"), len, "r2-public");
+      }
+    } catch (err) {
+      console.error("[media-r2-public]", String(err?.message || err).slice(0, 160));
+    }
+  }
+
+  return null;
 }
 
 /**
