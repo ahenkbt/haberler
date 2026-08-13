@@ -12,7 +12,6 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 ENV CHROMIUM_PATH=/usr/bin/chromium
-ENV NODE_ENV=production
 ENV PORT=3000
 ENV YEKTUBE_DB_READ=main
 ENV YEKTUBE_DB_WRITE=main
@@ -39,6 +38,8 @@ COPY işletmeler ./işletmeler
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @workspace/api-server run build
+
+ENV NODE_ENV=production
 
 EXPOSE 3000
 
