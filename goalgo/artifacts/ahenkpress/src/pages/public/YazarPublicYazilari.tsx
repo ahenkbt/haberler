@@ -5,12 +5,12 @@ import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPu
 import { applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
-import { apiUrl, resolveClientMediaSrc } from "@/lib/apiBase";
+import { apiUrl } from "@/lib/apiBase";
 import { useEffect, useMemo } from "react";
-import { User } from "lucide-react";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmNewsDetailSidebar } from "@/components/HmNewsDetailSidebar";
 import { KoseArticleTextCard, KoseOtherAuthorsBand } from "@/components/HmKoseCarouselBands";
-import { resolveSadeAccent, YEKPARE_SADE_ACCENT_DARK } from "@/lib/yekpareSadeTheme";
+import { resolveSadeAccent } from "@/lib/yekpareSadeTheme";
 
 type AuthorRow = {
   id: number;
@@ -199,20 +199,12 @@ export default function YazarPublicYazilari() {
                   className="w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden bg-slate-100 shrink-0 mx-auto sm:mx-0 ring-4 ring-white shadow-md"
                   style={{ boxShadow: `0 0 0 4px ${accent}18` }}
                 >
-                  {author?.avatarUrl ? (
-                    <img
-                      src={resolveClientMediaSrc(author.avatarUrl) || author.avatarUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center text-white font-black text-4xl"
-                        style={{ background: `linear-gradient(135deg, ${accent}, ${YEKPARE_SADE_ACCENT_DARK})` }}
-                    >
-                      {author?.name?.[0]?.toUpperCase() ?? <User className="w-12 h-12" />}
-                    </div>
-                  )}
+                  <HmAuthorAvatar
+                    src={author?.avatarUrl}
+                    name={author?.name}
+                    className="h-full w-full rounded-full text-4xl"
+                    accent={accent}
+                  />
                 </div>
                 <div className="min-w-0 flex-1 text-center sm:text-left">
                   <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{author?.name}</h1>

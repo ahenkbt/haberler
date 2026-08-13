@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { ChevronRight, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import { splitCategoryBoxItems } from "@/lib/hmCategoryBoxItems";
 import { HM_LEAD_LIST_SIDEBAR_TOTAL } from "@/lib/hmHeadlinePool";
@@ -91,7 +91,7 @@ function LeadListHeroCard({
       className={`hm-vitrin-card group relative block min-h-[180px] overflow-hidden rounded-xl bg-slate-900 shadow transition hover:-translate-y-0.5 hover:shadow-lg ${className}`}
     >
       <HmNewsImage
-        src={resolveNewsItemImageUrl(item)}
+        item={item}
         alt={newsDisplayTitle(item.title)}
         className="transition-transform duration-500 group-hover:scale-105"
         loading="eager"
@@ -141,7 +141,7 @@ function LeadListSideCard({
     >
       <div className="relative aspect-[16/10] w-16 shrink-0 overflow-hidden rounded-lg sm:w-20">
         <HmNewsImage
-          src={resolveNewsItemImageUrl(item)}
+          item={item}
           alt={newsDisplayTitle(item.title)}
           className="transition-transform group-hover:scale-105"
           loading="eager"
@@ -184,7 +184,7 @@ function LeadListMobileCard({
     >
       <div className="hm-vitrin-card-thumb relative shrink-0 overflow-hidden" style={{ height: 72 }}>
         <HmNewsImage
-          src={resolveNewsItemImageUrl(item)}
+          item={item}
           alt={newsDisplayTitle(item.title)}
           className="transition-transform duration-500 group-hover:scale-105"
           loading="lazy"

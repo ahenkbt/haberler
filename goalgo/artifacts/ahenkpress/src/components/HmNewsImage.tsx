@@ -79,22 +79,43 @@ export function resolveNewsItemImageFallbackUrl(
   return "";
 }
 
+type NewsImageItem = Parameters<typeof resolveNewsItemImageUrl>[0];
+
 type HmNewsImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   src?: string | null;
   /** Birincil src başarısız olursa (ör. WebP mirror 404) denenecek harici yedek URL. */
   fallbackSrc?: string | null;
+  /** Verilirse src + RSS orijinal yedek otomatik çözülür. */
+  item?: NewsImageItem;
   wrapperClassName?: string;
   /** Manset / above-the-fold — eager load, hızlı görünüm. */
   priority?: boolean;
 };
 
+function isLocalMediaUploadSrc(url: string): boolean {
+  return /\/api\/media\/uploads\//i.test(url);
+}
+
+function isExternalHttpSrc(url: string): boolean {
+  return /^https?:\/\//i.test(url) && !isLocalMediaUploadSrc(url);
+}
+
+/**
+ * Yerel /api/media 404 (R2 TLS) bekletmesin: RSS/CDN orijinali varsa onu önce göster.
+ */
+export function pickFastNewsImageSrc(primary: string, fallback: string): string {
+  if (isLocalMediaUploadSrc(primary) && isExternalHttpSrc(fallback)) return fallback;
+  return primary || fallback;
+}
+
 /**
  * Haber görselleri: kaynak URL varsa hemen göster.
- * «Görseli Hazırlanmaktadır» varsayılanı gösterilmez (yüklenene kadar boş/arkaplan).
+ * Yerel upload 404 ise harici RSS yedeğine düş.
  */
 export function HmNewsImage({
   src,
   fallbackSrc,
+  item,
   alt = "",
   className,
   wrapperClassName,
@@ -103,13 +124,16 @@ export function HmNewsImage({
   fetchPriority,
   ...rest
 }: HmNewsImageProps) {
-  const resolvedPrimary = resolveHmNewsImageSrc(src);
-  const resolvedFallback = resolveHmNewsImageSrc(fallbackSrc);
-  const [activeSrc, setActiveSrc] = useState(resolvedPrimary || resolvedFallback);
-  const [failed, setFailed] = useState(!(resolvedPrimary || resolvedFallback));
+  const fromItem = item ? resolveNewsItemImageUrl(item) : "";
+  const fallbackFromItem = item ? resolveNewsItemImageFallbackUrl(item) : "";
+  const resolvedPrimary = resolveHmNewsImageSrc(src || fromItem);
+  const resolvedFallback = resolveHmNewsImageSrc(fallbackSrc || fallbackFromItem);
+  const initial = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
+  const [activeSrc, setActiveSrc] = useState(initial);
+  const [failed, setFailed] = useState(!initial);
 
   useEffect(() => {
-    const next = resolvedPrimary || resolvedFallback;
+    const next = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
     setActiveSrc(next);
     setFailed(!next);
   }, [resolvedPrimary, resolvedFallback]);
@@ -117,8 +141,10 @@ export function HmNewsImage({
   const imgLoading = loading ?? (priority ? "eager" : "lazy");
 
   const onImageError = () => {
-    if (resolvedFallback && activeSrc !== resolvedFallback) {
-      setActiveSrc(resolvedFallback);
+    const other =
+      activeSrc === resolvedFallback ? resolvedPrimary : resolvedFallback;
+    if (other && other !== activeSrc) {
+      setActiveSrc(other);
       setFailed(false);
       return;
     }

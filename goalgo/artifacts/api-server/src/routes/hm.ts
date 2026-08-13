@@ -3921,6 +3921,28 @@ router.post("/hm/editor/authors", async (req, res): Promise<void> => {
     .where(and(eq(authorsTable.hmSiteId, ctx.siteId), sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`))
     .limit(1);
   if (existingName) {
+    const patch: { avatarUrl?: string; title?: string | null; bio?: string | null } = {};
+    if (avatarUrl) patch.avatarUrl = avatarUrl;
+    if (title && !String(existingName.title ?? "").trim()) patch.title = title;
+    if (bio && !String(existingName.bio ?? "").trim()) patch.bio = bio;
+    if (Object.keys(patch).length > 0) {
+      try {
+        const [row] = await dualWriteUpdate(authorsTable, patch, eq(authorsTable.id, existingName.id));
+        const src = row ?? existingName;
+        const { passwordHash: _ph, ...safe } = src;
+        triggerHmYekpareSyncForSite(ctx.siteId);
+        res.status(200).json(safe);
+        return;
+      } catch (e: unknown) {
+        const uniqueViolation =
+          e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505";
+        if (uniqueViolation) {
+          res.status(409).json({ error: "Bu e-posta bu haber sitesinde zaten kayıtlı." });
+          return;
+        }
+        throw e;
+      }
+    }
     const { passwordHash: _ph, ...safe } = existingName;
     res.status(200).json(safe);
     return;

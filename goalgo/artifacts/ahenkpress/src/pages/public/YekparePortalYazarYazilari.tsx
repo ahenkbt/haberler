@@ -2,10 +2,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { apiUrl, resolveClientMediaSrc } from "@/lib/apiBase";
+import { apiUrl } from "@/lib/apiBase";
 import { User } from "lucide-react";
 import { KoseArticleTextCard } from "@/components/HmKoseCarouselBands";
-import { resolveSadeAccent, SADE_PUBLIC_POST_HERO_BODY_CLASS, YEKPARE_SADE_ACCENT_DARK } from "@/lib/yekpareSadeTheme";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
+import { resolveSadeAccent, SADE_PUBLIC_POST_HERO_BODY_CLASS } from "@/lib/yekpareSadeTheme";
 
 type AuthorRow = {
   id: number;
@@ -92,8 +93,6 @@ export default function YekparePortalYazarYazilari() {
     );
   }
 
-  const avatarSrc = resolveClientMediaSrc(author.avatarUrl ?? null);
-
   return (
     <div className="sade-public-page min-h-screen">
       <main className={`max-w-screen-xl mx-auto px-4 pb-8 md:pb-10 ${SADE_PUBLIC_POST_HERO_BODY_CLASS}`}>
@@ -111,16 +110,12 @@ export default function YekparePortalYazarYazilari() {
 
         <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
           <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-emerald-50">
-            {avatarSrc ? (
-              <img src={avatarSrc} alt={author.name} className="h-full w-full object-cover" />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center text-2xl font-black text-white"
-                style={{ background: `linear-gradient(135deg, ${accent}, ${YEKPARE_SADE_ACCENT_DARK})` }}
-              >
-                {author.name?.[0]?.toUpperCase() ?? "Y"}
-              </div>
-            )}
+            <HmAuthorAvatar
+              src={author.avatarUrl}
+              name={author.name}
+              accent={accent}
+              className="h-full w-full text-2xl"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900">{author.name}</h1>

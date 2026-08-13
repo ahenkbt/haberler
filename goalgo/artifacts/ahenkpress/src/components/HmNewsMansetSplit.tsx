@@ -71,7 +71,6 @@ export function HmNewsHeroSlider({
   const idx = slider.index;
   const current = slides[idx];
   if (!current) return null;
-  const currentImage = resolveNewsItemImageUrl(current) || current.imageUrl;
 
   return (
     <div className="space-y-2">
@@ -82,7 +81,7 @@ export function HmNewsHeroSlider({
       >
         <div className="pointer-events-none absolute inset-0 z-[1]">
           <HmNewsImage
-            src={currentImage}
+            item={current}
             alt={current.title}
             wrapperClassName="absolute inset-0"
             className="hm-vitrin-hero-img h-full w-full object-cover"
@@ -173,7 +172,7 @@ export function HmNewsHeroSlider({
               }}
             >
               <div className="h-[52px] w-[76px] overflow-hidden sm:h-16 sm:w-24">
-                <HmNewsImage src={resolveNewsItemImageUrl(s)} alt="" loading="lazy" />
+                <HmNewsImage item={s} alt="" loading="lazy" />
               </div>
             </button>
           ))}
@@ -235,7 +234,7 @@ export function HmNewsMansetSplit({
                 }`}
               >
                 <HmNewsImage
-                  src={resolveNewsItemImageUrl(n)}
+                  item={n}
                   alt={n.title}
                   className="transition-transform group-hover:scale-105"
                   loading="lazy"

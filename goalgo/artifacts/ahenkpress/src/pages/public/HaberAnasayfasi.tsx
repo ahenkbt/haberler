@@ -150,7 +150,8 @@ import {
 } from "@/lib/hmHeadlinePool";
 import { HmCategoryBoxGrid } from "@/components/HmCategoryBoxLayout";
 import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
-import { HmNewsImage, filterNewsItemsWithCoverImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmTepeManset, HM_TEPE_MANSET_ITEM_COUNT } from "@/components/HmTepeManset";
 import {
   HmAhenkAnkaraGrid,
@@ -576,7 +577,7 @@ function CardHoriz({
     <Link href={hybridNewsItemHref(n, h)}
       className={`group flex gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors rounded px-1 ${className}`}>
       <div className={`relative shrink-0 overflow-hidden rounded-lg ${thumbClass}`}>
-        <HmNewsImage src={resolveNewsItemImageUrl(n)} alt={newsDisplayTitle(n.title)} className="transition-transform group-hover:scale-105" loading="lazy" />
+        <HmNewsImage item={n} alt={newsDisplayTitle(n.title)} className="transition-transform group-hover:scale-105" loading="lazy" />
       </div>
       <div className="flex-1 min-w-0">
         {n.categoryName && (
@@ -613,7 +614,7 @@ function CardVert({
         className="hm-vitrin-card-thumb relative shrink-0 overflow-hidden"
         style={imgHeight ? { height: imgHeight } : undefined}
       >
-        <HmNewsImage src={resolveNewsItemImageUrl(n)} alt={newsDisplayTitle(n.title)} className="transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        <HmNewsImage item={n} alt={newsDisplayTitle(n.title)} className="transition-transform duration-500 group-hover:scale-105" loading="lazy" />
         {n.categoryName && (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-sm text-[9px] font-black uppercase text-white"
             style={{ background: catColor(n, accent, hmCategoryColors) }}>{n.categoryName}</span>
@@ -665,7 +666,7 @@ function HeroSlider({
       {/* Active slide only — opacity stacking breaks under .hm-vitrin-home { opacity: 1 !important } */}
       <div className="pointer-events-none absolute inset-0 z-[1]">
         <HmNewsImage
-          src={resolveNewsItemImageUrl(n)}
+          item={n}
           alt={n.title}
           wrapperClassName="absolute inset-0"
           className="hm-vitrin-hero-img w-full h-full object-cover"
@@ -740,7 +741,7 @@ function HeroSlider({
             style={{ borderColor: i === idx ? accent : "transparent", boxShadow: i === idx ? `0 0 0 2px ${accent}44` : undefined }}
           >
             <div className="h-[52px] w-[76px] overflow-hidden sm:h-16 sm:w-24">
-              <HmNewsImage src={resolveNewsItemImageUrl(s)} alt="" loading="lazy" />
+              <HmNewsImage item={s} alt="" loading="lazy" />
             </div>
           </button>
         ))}
@@ -816,7 +817,7 @@ function HeadlineOverlayCard({
       className={`hm-vitrin-card group relative block min-h-[180px] overflow-hidden rounded-xl bg-slate-900 shadow transition hover:-translate-y-0.5 hover:shadow-lg ${className}`}
     >
       <HmNewsImage
-        src={resolveNewsItemImageUrl(n)}
+        item={n}
         alt={newsDisplayTitle(n.title)}
         className="transition-transform duration-500 group-hover:scale-105"
         loading="eager"
@@ -1227,7 +1228,7 @@ function FeaturedCategoryTabs({
 
 function ClassicImage({ n, className = "" }: { n: any; className?: string }) {
   return (
-    <HmNewsImage src={resolveNewsItemImageUrl(n)} alt={n?.title ?? ""} className={className} loading="lazy" />
+    <HmNewsImage item={n} alt={n?.title ?? ""} className={className} loading="lazy" />
   );
 }
 
@@ -1406,11 +1407,12 @@ function ClassicAuthorsWidget({ authors, yazarlarHref, accent }: { authors: any[
       <div className="hm-classic-authors">
         {authors.slice(0, 5).map((a) => (
           <Link key={a.id ?? a.name} href={h(`/yazar/${a.id}`)} className="hm-classic-author-row">
-            {a.avatarUrl ? (
-              <img src={vitrinImgSrc(a.avatarUrl)} alt={a.name} />
-            ) : (
-              <span style={{ background: accent }}>{String(a.name ?? "Y").charAt(0)}</span>
-            )}
+            <HmAuthorAvatar
+              src={a.avatarUrl}
+              name={a.name}
+              className="h-10 w-10 shrink-0"
+              accent={accent}
+            />
             <span>
               <strong>{a.name}</strong>
               {a.latestArticle?.title || a.title ? <em>{a.latestArticle?.title ?? a.title}</em> : null}
@@ -3367,7 +3369,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                           className="hm-vitrin-card group flex min-h-[94px] gap-2.5 overflow-hidden rounded-xl p-2.5 shadow transition-all hover:-translate-y-0.5 hover:shadow-md lg:h-full xl:min-h-0">
                           <div className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-lg bg-white sm:h-[72px] sm:w-[72px] xl:h-[78px] xl:w-[78px]">
                             <HmNewsImage
-                              src={resolveNewsItemImageUrl(n)}
+                              item={n}
                               alt={newsDisplayTitle(n.title)}
                               className="transition-transform group-hover:scale-105"
                               loading="lazy"
@@ -3852,20 +3854,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                         href={h(`/yazar/${a.id}`)}
                         className="flex items-center gap-3 py-2.5 border-b last:border-0 hover:bg-gray-50 transition rounded-lg px-1"
                       >
-                        {a.avatarUrl ? (
-                          <img
-                            src={vitrinImgSrc(a.avatarUrl)}
-                            alt={a.name}
-                            className="w-10 h-10 rounded-full object-cover shrink-0"
-                          />
-                        ) : (
-                          <div
-                            className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-sm"
-                            style={{ background: `linear-gradient(135deg,${accent},var(--hm-accent-2,${accent}))` }}
-                          >
-                            {a.name?.[0]}
-                          </div>
-                        )}
+                        <HmAuthorAvatar
+                          src={a.avatarUrl}
+                          name={a.name}
+                          className="h-10 w-10 shrink-0"
+                          accent={accent}
+                        />
                         <div className="min-w-0">
                           <p className="font-bold text-sm text-gray-900 truncate">{a.name}</p>
                           {a.title ? <p className="text-[10px] text-gray-400 line-clamp-2">{a.title}</p> : null}
@@ -4640,7 +4634,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                   <div ref={esenAuthorsScrollRef} className="hm-esen-authors-row">
                     {authors.map((a) => (
                       <Link key={a.id ?? a.name} href={h(`/yazar/${a.id}`)} className="hm-esen-author">
-                        {a.avatarUrl ? <img src={vitrinImgSrc(a.avatarUrl)} alt={a.name} /> : <span>{String(a.name ?? "Y").charAt(0)}</span>}
+                        <HmAuthorAvatar src={a.avatarUrl} name={a.name} className="h-12 w-12 shrink-0" />
                         <strong>{a.name}</strong>
                         {a.latestArticle?.title || a.title ? <em>{a.latestArticle?.title ?? a.title}</em> : null}
                       </Link>

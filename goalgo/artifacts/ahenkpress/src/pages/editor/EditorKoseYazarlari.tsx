@@ -9,10 +9,10 @@ import { Link, useLocation } from "wouter";
 import { ArrowDown, ArrowUp, ExternalLink, Upload, Images, Loader2, X, Edit2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { YekpareMediaPickerDialog } from "@/components/YekpareMediaPickerDialog";
-import { appendYekpareCustomMedia, uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
+import { HmAuthorAvatar, compressAuthorAvatarFile } from "@/components/HmAuthorAvatar";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { normalizeHmVitrinTheme, resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
-import { apiUrl, resolveClientMediaSrc } from "@/lib/apiBase";
+import { apiUrl } from "@/lib/apiBase";
 import { readHmJwt } from "@/lib/hmSession";
 import { useToast } from "@/hooks/use-toast";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
@@ -235,6 +235,7 @@ export default function EditorKoseYazarlari() {
     e.preventDefault();
     const t = readHmJwt();
     if (!t || !name.trim()) return;
+    const wasEdit = editingId != null;
     setSaving(true);
     try {
       const body = {
@@ -260,7 +261,7 @@ export default function EditorKoseYazarlari() {
       }
       resetForm();
       await qc.invalidateQueries({ queryKey: ["/api/authors", "hm-editor", site?.id] });
-      toast({ title: editingId != null ? "Yazar güncellendi" : "Yazar eklendi" });
+      toast({ title: wasEdit ? "Yazar güncellendi" : "Yazar eklendi" });
     } catch (err) {
       toast({
         title: "Eklenemedi",
@@ -270,6 +271,35 @@ export default function EditorKoseYazarlari() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const applyAvatarFile = async (file: File) => {
+    const dataUrl = await compressAuthorAvatarFile(file);
+    setAvatarUrl(dataUrl);
+    const t = readHmJwt();
+    if (!t || editingId == null || !name.trim()) {
+      toast({
+        title: "Avatar eklendi",
+        description: "«Yazar ekle» veya «Kaydet»e basın — fotoğraf sitede hemen görünür.",
+      });
+      return;
+    }
+    const r = await fetch(apiUrl(`/api/hm/editor/authors/${editingId}`), {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        title: title.trim() || undefined,
+        avatarUrl: dataUrl,
+        bio: bio.trim() || undefined,
+      }),
+    });
+    if (!r.ok) {
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      throw new Error(j.error || "Fotoğraf kaydedilemedi");
+    }
+    await qc.invalidateQueries({ queryKey: ["/api/authors", "hm-editor", site?.id] });
+    toast({ title: "Fotoğraf kaydedildi", description: "Sitede hemen görünür." });
   };
 
   return (
@@ -354,7 +384,20 @@ export default function EditorKoseYazarlari() {
           </div>
           <div className="sm:col-span-2 space-y-2">
             <Label htmlFor="hm-au-av">Avatar</Label>
-            <Input id="hm-au-av" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} className="mt-1" placeholder="https://..." />
+            {avatarUrl.startsWith("data:image/") ? (
+              <p className="text-xs text-emerald-800">Fotoğraf yüklendi. Kaydet’e basınca sitede görünür (kırık medya adresi kullanılmaz).</p>
+            ) : (
+              <Input
+                id="hm-au-av"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                className="mt-1"
+                placeholder="https://..."
+              />
+            )}
+            <p className="text-xs text-slate-500">
+              Kırık görünen eski fotoğraflar için yazarı Düzenle deyip «Dosyadan yükle» ile yeniden ekleyin, sonra Kaydet’e basın.
+            </p>
             <div className="flex flex-wrap gap-2">
               <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -363,10 +406,7 @@ export default function EditorKoseYazarlari() {
                 void (async () => {
                   setAvatarUploading(true);
                   try {
-                    const { url, title } = await uploadYekpareMediaFile(file);
-                    appendYekpareCustomMedia({ url, title });
-                    setAvatarUrl(url);
-                    toast({ title: "Avatar yüklendi" });
+                    await applyAvatarFile(file);
                   } catch (err) {
                     toast({ title: "Yükleme başarısız", description: String((err as Error).message), variant: "destructive" });
                   } finally {
@@ -391,23 +431,31 @@ export default function EditorKoseYazarlari() {
             </div>
             {avatarUrl ? (
               <div className="mt-2 flex items-center gap-3">
-                <img
-                  src={resolveClientMediaSrc(avatarUrl) || avatarUrl}
-                  alt=""
-                  className="h-14 w-14 rounded-full border object-cover bg-slate-100"
-                />
+                <HmAuthorAvatar src={avatarUrl} name={name || "Y"} className="h-14 w-14" />
               </div>
             ) : null}
             <YekpareMediaPickerDialog
               open={mediaOpen}
               onOpenChange={setMediaOpen}
               title="Avatar — Yekpare medya"
-              onSelect={(url) => setAvatarUrl(url)}
+              onSelect={(url) => {
+                const u = String(url ?? "").trim();
+                if (!u) return;
+                if (u.startsWith("data:image/") || (/^https?:\/\//i.test(u) && !/\/api\/media\//i.test(u))) {
+                  setAvatarUrl(u);
+                  return;
+                }
+                toast({
+                  title: "Dosyadan yükleyin",
+                  description: "Medya kütüphanesindeki adresler şu an kırık. Fotoğrafı «Dosyadan yükle» ile ekleyin.",
+                  variant: "destructive",
+                });
+              }}
             />
           </div>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={saving} className="bg-[#e61e25] hover:bg-[#c9181e] text-white">
-              {saving ? "Kaydediliyor…" : "Yazar ekle"}
+              {saving ? "Kaydediliyor…" : editingId != null ? "Kaydet" : "Yazar ekle"}
             </Button>
           </div>
         </form>
@@ -499,7 +547,12 @@ export default function EditorKoseYazarlari() {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{a.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <HmAuthorAvatar src={a.avatarUrl} name={a.name} className="h-9 w-9 shrink-0" />
+                        {a.name}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm text-slate-600">{a.email?.trim() ? a.email : "—"}</TableCell>
                     <TableCell>{a.title || "—"}</TableCell>
                     <TableCell className="text-right">

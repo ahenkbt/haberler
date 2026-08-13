@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { Link, useLocation } from "wouter";
 import { User, Feather } from "lucide-react";
 import { useGetSiteSettings } from "@workspace/api-client-react";
@@ -16,8 +15,8 @@ import {
   SADE_HERO_GLOW_CLASS,
   SADE_HERO_SHELL_CLASS,
   SADE_PUBLIC_POST_HERO_BODY_CLASS,
-  YEKPARE_SADE_ACCENT_DARK,
 } from "@/lib/yekpareSadeTheme";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 
 export default function Yazarlar() {
   const { data: settings } = useGetSiteSettings();
@@ -111,20 +110,12 @@ export default function Yazarlar() {
                     className="w-24 h-24 rounded-full mx-auto overflow-hidden bg-slate-100 mb-4 ring-4 ring-offset-2 ring-offset-white ring-emerald-100"
                     style={{ boxShadow: `0 0 0 4px ${accent}22` }}
                   >
-                    {author.avatarUrl ? (
-                      <img
-                        src={resolveClientMediaSrc(author.avatarUrl) || author.avatarUrl}
-                        alt={author.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center text-white font-black text-2xl"
-                        style={{ background: `linear-gradient(135deg, ${accent}, ${YEKPARE_SADE_ACCENT_DARK})` }}
-                      >
-                        {author.name?.[0]?.toUpperCase()}
-                      </div>
-                    )}
+                    <HmAuthorAvatar
+                      src={author.avatarUrl}
+                      name={author.name}
+                      className="h-full w-full rounded-full"
+                      accent={accent}
+                    />
                   </div>
                   <h2 className="font-black text-slate-900 text-lg leading-tight">{author.name}</h2>
                   {!hmSiteId ? (

@@ -110,13 +110,13 @@ import { HmYekpareCategoryBox } from "@/components/HmYekpareKategorilerKutusu";
 import { CATEGORY_BOX_DISPLAY_TOTAL, ensureNewsBoxItems } from "@/lib/hmCategoryBoxItems";
 import { HmRecentVideosBox } from "@/components/HmRecentVideosBox";
 import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmNewsMapModule } from "@/components/HmNewsMapModule";
 import { DunyadanKisaKisaBand } from "@/components/DunyadanKisaKisaBand";
 
 const API = "/api";
 
 const SADE_ACCENT = "#0EA5E9";
-const SADE_ACCENT_DARK = "#0284C7";
 
 const NEWS_CATEGORY_MODULES = [
   { slug: "gundem", label: "Gündem", color: SADE_ACCENT },
@@ -1108,11 +1108,10 @@ function SadeAuthorsStrip({ authors }: { authors: SadeAuthor[] }) {
       </div>
       <div className="yekpare-scrollbar flex gap-4 overflow-x-auto pb-1">
         {authors.map((author) => {
-          const src = resolveClientMediaSrc(author.avatarUrl ?? null);
           const href = author.latestArticle?.slug ? buildKoseArticlePublicPath(String(author.latestArticle.slug)) : `/yazar/${author.id}`;
           return (
             <Link key={author.id} href={href} className="flex w-[120px] shrink-0 flex-col items-center gap-2 text-center">
-              {src ? <img src={src} alt={author.name} className="h-16 w-16 rounded-full object-cover ring-2 ring-sky-100" loading="lazy" /> : <div className="grid h-16 w-16 place-items-center rounded-full text-lg font-black text-white" style={{ background: `linear-gradient(135deg,${SADE_ACCENT},${SADE_ACCENT_DARK})` }}>{author.name?.[0] ?? "Y"}</div>}
+              <HmAuthorAvatar src={author.avatarUrl} name={author.name} className="h-16 w-16 ring-2 ring-sky-100" />
               <span className="line-clamp-2 text-[11px] font-black leading-tight text-slate-900">{author.name}</span>
               {author.latestArticle?.title ? <span className="line-clamp-2 text-[9px] font-semibold leading-snug text-slate-500">{author.latestArticle.title}</span> : author.title ? <span className="line-clamp-2 text-[9px] font-semibold text-slate-400">{author.title}</span> : null}
             </Link>

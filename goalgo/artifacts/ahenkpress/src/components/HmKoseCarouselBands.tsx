@@ -3,9 +3,8 @@ import { format } from "date-fns";
 import { resolveArticlePublicPath } from "@/lib/isKoseArticle";
 import { tr } from "date-fns/locale";
 import { ChevronRight } from "lucide-react";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
-import { YEKPARE_SADE_ACCENT_DARK } from "@/lib/yekpareSadeTheme";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 
 export type KoseArticleBrief = {
   id: number;
@@ -34,17 +33,13 @@ function AuthorAvatar({
   size?: "sm" | "md" | "lg";
 }) {
   const dim = size === "sm" ? "h-12 w-12 text-sm" : size === "lg" ? "h-20 w-20 text-2xl" : "h-14 w-14 text-lg";
-  const src = avatarUrl ? resolveClientMediaSrc(avatarUrl) || avatarUrl : "";
-  if (src) {
-    return <img src={src} alt="" className={`${dim} shrink-0 rounded-full object-cover ring-2 ring-emerald-100`} />;
-  }
   return (
-    <div
-      className={`${dim} flex shrink-0 items-center justify-center rounded-full font-black text-white`}
-      style={{ background: `linear-gradient(135deg, ${accent}, ${YEKPARE_SADE_ACCENT_DARK})` }}
-    >
-      {name?.[0]?.toUpperCase() ?? "?"}
-    </div>
+    <HmAuthorAvatar
+      src={avatarUrl}
+      name={name}
+      accent={accent}
+      className={`${dim} shrink-0 ring-2 ring-emerald-100`}
+    />
   );
 }
 

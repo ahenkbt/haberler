@@ -10,6 +10,7 @@ import { hmPublicHref } from "@/lib/hmPublicLinks";
 import { coercePublicHybridNewsHref } from "@/lib/hybridNewsHref";
 import { fetchHybridNewsList, type HomeHybridNewsItem } from "@/hooks/useHomeHybridNews";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { resolveSadeAccent } from "@/lib/yekpareSadeTheme";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 
@@ -139,20 +140,12 @@ export default function HaberEmbedWidget() {
         <div className="p-2 space-y-2">
           {authorsList.slice(0, limit).map((a: any) => (
             <div key={a.id} className="flex items-center gap-2 border-b border-gray-100 pb-2 last:border-0">
-              {a.avatarUrl ? (
-                <img
-                  src={resolveClientMediaSrc(a.avatarUrl) || a.avatarUrl}
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                  style={{ background: accent }}
-                >
-                  {a.name?.[0]}
-                </div>
-              )}
+              <HmAuthorAvatar
+                src={a.avatarUrl}
+                name={a.name}
+                accent={accent}
+                className="h-10 w-10 shrink-0"
+              />
               <div className="min-w-0">
                 <p className="text-xs font-bold truncate">{a.name}</p>
                 {a.title ? <p className="text-[10px] text-gray-500 truncate">{a.title}</p> : null}

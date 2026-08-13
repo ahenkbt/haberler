@@ -199,7 +199,7 @@ export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | 
     try {
       const res = await fetch(`${pub.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, {
         redirect: "follow",
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(1_200),
         headers: { Accept: "image/*,application/pdf,video/*,audio/*,*/*;q=0.8" },
       });
       const ct = String(res.headers.get("content-type") || "").toLowerCase();
