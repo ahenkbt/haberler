@@ -1,25 +1,12 @@
 import { useEffect, useState, type ImgHTMLAttributes } from "react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
-import { HM_NEWS_PLACEHOLDER_SVG } from "@/lib/hmNewsPlaceholder";
+import { HM_NEWS_PLACEHOLDER_SVG, isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
 import { cn } from "@/lib/utils";
 
 export function resolveHmNewsImageSrc(url: string | null | undefined): string {
   const u = String(url ?? "").trim();
   if (!u) return "";
   return resolveClientMediaSrc(u) || u;
-}
-
-/** Kapak görseli var mı (manşet / öne çıkan filtreleri). */
-export function newsItemHasCoverImage(
-  item: Parameters<typeof resolveNewsItemImageUrl>[0],
-): boolean {
-  return Boolean(String(resolveNewsItemImageUrl(item) ?? "").trim());
-}
-
-export function filterNewsItemsWithCoverImage<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
-  items: readonly T[],
-): T[] {
-  return items.filter((item) => newsItemHasCoverImage(item));
 }
 
 /** Haber kartları — API/RSS farklı alan adlarından görsel URL. */
@@ -44,7 +31,7 @@ export function resolveNewsItemImageUrl(
       : String(item.enclosure?.url ?? "").trim() || null;
   for (const raw of [item.imageUrl, item.featuredImage, item.image, item.thumbnailUrl, item.thumbnail, enclosure]) {
     const s = String(raw ?? "").trim();
-    if (s) return s;
+    if (s && isUsableNewsCoverSrc(s)) return s;
   }
   return "";
 }
@@ -73,11 +60,27 @@ export function resolveNewsItemImageFallbackUrl(
   for (const raw of [item.imageFallbackUrl, item.featuredImage, item.thumbnailUrl, item.thumbnail, item.image, enclosure]) {
     const s = String(raw ?? "").trim();
     if (!s || s === primary) continue;
+    if (!isUsableNewsCoverSrc(s)) continue;
     if (/^https?:\/\//i.test(s) || s.startsWith("//")) {
       return s.startsWith("//") ? `https:${s}` : s;
     }
   }
   return "";
+}
+
+/** Kapak görseli var mı (manşet / öne çıkan / anasayfa kartları). Varsayılan placeholder kapak sayılmaz. */
+export function newsItemHasCoverImage(
+  item: Parameters<typeof resolveNewsItemImageUrl>[0],
+): boolean {
+  const primary = resolveNewsItemImageUrl(item);
+  if (isUsableNewsCoverSrc(primary)) return true;
+  return isUsableNewsCoverSrc(resolveNewsItemImageFallbackUrl(item));
+}
+
+export function filterNewsItemsWithCoverImage<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
+  items: readonly T[],
+): T[] {
+  return items.filter((item) => newsItemHasCoverImage(item));
 }
 
 type NewsImageItem = Parameters<typeof resolveNewsItemImageUrl>[0];

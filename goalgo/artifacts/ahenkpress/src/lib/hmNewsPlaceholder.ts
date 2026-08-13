@@ -48,6 +48,13 @@ export function isHmNewsPlaceholderSrc(src: string | null | undefined): boolean 
   return t === HM_NEWS_PLACEHOLDER_SVG || t.includes("haber-gorsel-hazirlaniyor");
 }
 
+/** Anasayfa kartları: boş veya varsayılan «Görsel Hazırlanmaktadır» kapak sayılmaz. */
+export function isUsableNewsCoverSrc(src: string | null | undefined): boolean {
+  const t = String(src ?? "").trim();
+  if (!t) return false;
+  return !isHmNewsPlaceholderSrc(t);
+}
+
 /** Kırık `<img>` kaynağını varsayılan görselle değiştirir (döngü yok). */
 export function applyHmNewsImageFallback(img: HTMLImageElement): void {
   if (img.getAttribute("data-hm-news-placeholder") === "1") return;

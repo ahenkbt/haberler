@@ -30,10 +30,9 @@ export const HOME_NEWS_AUTO_CATEGORY_MODULES = new Set<HmNewsHomeModuleId>([
 /** Birden fazla kategori kutusu gösteren modüller — tek slug filtresi uygulanmaz. */
 export const HOME_NEWS_MULTI_CATEGORY_SECTION_MODULES = new Set<HmNewsHomeModuleId>(["yekpareKategorilerKutusu"]);
 
-/** Editör «Kutu kategorileri» sekmesinde slug atanabilir tüm haber kutuları. */
+/** Editör «Kutu kategorileri» sekmesinde slug atanabilir tüm haber kutuları. Son Haberler (latestGrid) her zaman Tümü. */
 export const HM_NEWS_HOME_MODULE_CATEGORY_ASSIGNABLE: HmNewsHomeModuleId[] = [
   ...Array.from(HOME_NEWS_AUTO_CATEGORY_MODULES),
-  "latestGrid",
   "featuredCategoryStrip",
 ];
 
@@ -276,7 +275,7 @@ export function normalizeCategorySlugList(raw: unknown): string[] {
 
 /**
  * Son Haberler (latestGrid) modülünün açılış sekmesi.
- * Yalnızca editörün seçtiği slug kullanılır; boş = «Tümü» sekmesi.
+ * Her zaman «Tümü»: en son çıkan haberler, kategori filtresi yok.
  */
 export function resolveLatestGridOpeningCategorySlug(opts: {
   manualSlug?: string | null;
@@ -284,10 +283,11 @@ export function resolveLatestGridOpeningCategorySlug(opts: {
   tabStripSlugs?: readonly string[];
   sectionSlugs?: readonly string[];
 }): string {
+  void opts.manualSlug;
   void opts.autoSlug;
   void opts.tabStripSlugs;
   void opts.sectionSlugs;
-  return hmCategorySlug(opts.manualSlug);
+  return "";
 }
 
 /** Manuel slug sırasına göre kategori bölümlerini seçer (renkli şerit vb.). */

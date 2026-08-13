@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, X } from "lucide-react";
 import { Link } from "wouter";
-import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl, newsItemHasCoverImage } from "@/components/HmNewsImage";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { HM_HOME_LATEST_BAND_ITEM_COUNT } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
@@ -235,6 +235,8 @@ type Props = {
   allNewsHref?: string;
   /** inline modda her tıklamada gösterilecek ek satır sayısı. */
   loadMoreBatchSize?: number;
+  /** true: resmi olmayan veya varsayılan kapaklı haberleri ızgarada gösterme. */
+  requireCoverImage?: boolean;
 };
 
 function isHaberBandRow(item: HmRssNewsBandItem): boolean {
@@ -250,6 +252,11 @@ function isHaberBandRow(item: HmRssNewsBandItem): boolean {
 function maybeNewsOnly(items: readonly HmRssNewsBandItem[], newsOnly: boolean): HmRssNewsBandItem[] {
   if (!newsOnly) return [...items];
   return items.filter(isHaberBandRow);
+}
+
+function maybeCoverOnly(items: readonly HmRssNewsBandItem[], requireCover: boolean): HmRssNewsBandItem[] {
+  if (!requireCover) return [...items];
+  return items.filter((item) => newsItemHasCoverImage(item));
 }
 
 export function HmRssNewsBand({
@@ -278,6 +285,7 @@ export function HmRssNewsBand({
   categoriesHref,
   allNewsHref,
   loadMoreBatchSize,
+  requireCoverImage = false,
 }: Props) {
   const h = useHmPublicHref();
   const [activeSlug, setActiveSlug] = useState(normalizeSlug(initialCategorySlug));
@@ -374,8 +382,8 @@ export function HmRssNewsBand({
         source,
       };
     });
-    return maybeNewsOnly(mapped, newsOnly);
-  }, [categoryNewsRaw, newsOnly]);
+    return maybeCoverOnly(maybeNewsOnly(mapped, newsOnly), requireCoverImage);
+  }, [categoryNewsRaw, newsOnly, requireCoverImage]);
 
   const tabs = useMemo(() => {
     const pool = tabSourceItems ?? items;
@@ -417,7 +425,7 @@ export function HmRssNewsBand({
       list = list.filter((item) => passesCategoryContentGuard(item, activeSlug));
     }
     const deduped = deferSimilarNewsItems(list);
-    return maybeNewsOnly(deduped, newsOnly);
+    return maybeCoverOnly(maybeNewsOnly(deduped, newsOnly), requireCoverImage);
   }, [
     activeSlug,
     categoryMatchContext,
@@ -425,6 +433,7 @@ export function HmRssNewsBand({
     items,
     tabSourceItems,
     newsOnly,
+    requireCoverImage,
   ]);
 
   const filtered = useMemo(() => {
@@ -497,10 +506,10 @@ export function HmRssNewsBand({
           source,
         } satisfies HmRssNewsBandItem;
       });
-      const nextItems = maybeNewsOnly(mapped, newsOnly);
+      const nextItems = maybeCoverOnly(maybeNewsOnly(mapped, newsOnly), requireCoverImage);
       setApiExtraItems((prev) => [...prev, ...nextItems]);
       setApiOffset((prev) => prev + batchSize);
-      if (nextItems.length < batchSize) setApiExhausted(true);
+      if (mapped.length < batchSize) setApiExhausted(true);
     } catch {
       setApiExhausted(true);
     } finally {
@@ -517,6 +526,7 @@ export function HmRssNewsBand({
     inlineVisibleLimit,
     loadingMore,
     newsOnly,
+    requireCoverImage,
   ]);
 
   const listPending = pending || (!!activeSlug && categoryPending);

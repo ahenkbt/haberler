@@ -1794,7 +1794,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       : featuredHm;
 
   const featured = useMemo(
-    () => (newsSliderEnabled ? asArray(siteId != null ? featuredHmResolved : featuredGlobal) : []),
+    () =>
+      newsSliderEnabled
+        ? filterNewsItemsWithCoverImage(asArray(siteId != null ? featuredHmResolved : featuredGlobal))
+        : [],
     [newsSliderEnabled, siteId, featuredHmResolved, featuredGlobal],
   );
 
@@ -1858,7 +1861,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const hybridBootstrapError = hybridBootstrapHeroError || hybridBootstrapFullError;
 
   const hybridBandItems = useMemo(
-    () => (useHybridHomeNewsPool ? hybridBootstrap.map(mapHybridNewsToBandItem) : []),
+    () =>
+      useHybridHomeNewsPool
+        ? filterNewsItemsWithCoverImage(hybridBootstrap.map(mapHybridNewsToBandItem))
+        : [],
     [useHybridHomeNewsPool, hybridBootstrap],
   );
   const hybridMansetRssItems = useMemo(
@@ -2031,7 +2037,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const popularHmResolved = useHmHomeBundle ? asArray(hmHomeBundle?.popular) : popularHm;
 
   const popular = useMemo(
-    () => asArray(siteId != null ? popularHmResolved : popularGlobal),
+    () => filterNewsItemsWithCoverImage(asArray(siteId != null ? popularHmResolved : popularGlobal)),
     [siteId, popularHmResolved, popularGlobal],
   );
 
@@ -2056,8 +2062,14 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     staleTime: 10 * 60 * 1000,
   });
 
-  const allItems = useMemo(() => asArray((latest as { items?: unknown })?.items), [latest]);
-  const bandNewsItems = useMemo(() => asArray((latestBandRaw as { items?: unknown })?.items), [latestBandRaw]);
+  const allItems = useMemo(
+    () => filterNewsItemsWithCoverImage(asArray((latest as { items?: unknown })?.items)),
+    [latest],
+  );
+  const bandNewsItems = useMemo(
+    () => filterNewsItemsWithCoverImage(asArray((latestBandRaw as { items?: unknown })?.items)),
+    [latestBandRaw],
+  );
   const tepeMansetItems = useMemo(() => {
     if (!tepeMansetEnabled) return [];
     const keepTepeCandidate = (x: any) =>
@@ -2077,9 +2089,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       limit: HM_TEPE_MANSET_ITEM_COUNT,
     });
     const withCover = filterNewsItemsWithCoverImage(pool);
-    // Kapak filtresi tümünü düşürürse yine de başlık göster (boş tepe olmasın).
-    const picked = withCover.length > 0 ? withCover : pool;
-    return picked.slice(0, HM_TEPE_MANSET_ITEM_COUNT);
+    return withCover.slice(0, HM_TEPE_MANSET_ITEM_COUNT);
   }, [tepeMansetEnabled, tepeFeaturedStrict, hmHomeBundle, corporateFeaturedNews, allItems]);
   const tepeMansetActive = tepeMansetEnabled && tepeMansetItems.length > 0;
   const manualHeadlinePool = useMemo(
@@ -2142,7 +2152,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         visitSeed: headlineVisitSeed,
       });
     }
-    return tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
+    const withoutTepe = tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
+    return filterNewsItemsWithCoverImage(withoutTepe);
   }, [featured, allItems, siteId, newsSliderEnabled, activeTab, rssHeadlineEnabled, hmHybridRssEnabled, hybridHeadlineReady, hybridMansetRssItems, headlineVisitSeed, centerMansetSliderItems, tepeMansetActive, tepeMansetItems]);
   const sliderSide = useMemo(() => {
     const slideKeys = sliderHeadlineKeys(sliderNews);
@@ -2174,7 +2185,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       mergeUniqueNews(breaking, allItems, featured).filter(isHeadlineFreshEnough).forEach(push);
     }
     const trimmed = pool.slice(0, 6);
-    return tepeMansetActive ? excludeHeadlineSliderItems(trimmed, tepeMansetItems) : trimmed;
+    const withoutTepe = tepeMansetActive ? excludeHeadlineSliderItems(trimmed, tepeMansetItems) : trimmed;
+    return filterNewsItemsWithCoverImage(withoutTepe);
   }, [sliderNews, allItems, featured, breaking, siteId, tepeMansetActive, tepeMansetItems]);
   const authors: any[] = useMemo(() => {
     const d = authorsData as any;
@@ -2587,13 +2599,17 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           limit: HM_HOME_HEADLINE_SLIDER_LIMIT,
         });
       }
-      const withoutTepe = tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool;
+      const withoutTepe = filterNewsItemsWithCoverImage(
+        tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool,
+      );
       if (withoutTepe.length > 0) return withoutTepe;
       // Tepe manşet tüm adayları aldıysa orta (2.) manşet boş kalmasın — son haberlerden doldur.
       if (tepeMansetActive) {
-        const fallback = excludeHeadlineSliderItems(
-          sortNewsByRecency(mergeUniqueNews(latestNewsPool, allItems, classicHeadlinePool, bandNewsItems)),
-          tepeMansetItems,
+        const fallback = filterNewsItemsWithCoverImage(
+          excludeHeadlineSliderItems(
+            sortNewsByRecency(mergeUniqueNews(latestNewsPool, allItems, classicHeadlinePool, bandNewsItems)),
+            tepeMansetItems,
+          ),
         );
         if (fallback.length > 0) return fallback.slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
       }
@@ -2602,7 +2618,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     [siteId, centerMansetSliderItems, sliderNews, classicHeadlinePool, latestNewsPool, allItems, bandNewsItems, popular, tepeMansetActive, tepeMansetItems],
   );
   const classicLatestMini = useMemo(() => {
-    const pool = mergeUniqueNews(bandNewsItems, allItems, popular, sliderSide);
+    const pool = filterNewsItemsWithCoverImage(mergeUniqueNews(bandNewsItems, allItems, popular, sliderSide));
     const fresh = pool.filter(isHeadlineFreshEnough);
     return sortNewsByRecency(fresh.length > 0 ? fresh : pool).slice(0, 12);
   }, [bandNewsItems, allItems, popular, sliderSide]);
@@ -2781,7 +2797,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     ],
   );
   const moduleSectionSourcePool = useMemo(() => {
-    const raw = mergeUniqueNews(featured, latestNewsPool, allItems, bandNewsItems, sliderNews, popular);
+    const raw = filterNewsItemsWithCoverImage(
+      mergeUniqueNews(featured, latestNewsPool, allItems, bandNewsItems, sliderNews, popular),
+    );
     const fresh = raw.filter(isHeadlineFreshEnough);
     return sortNewsByRecency(fresh.length > 0 ? fresh : raw);
   }, [featured, latestNewsPool, allItems, bandNewsItems, sliderNews, popular]);
@@ -3083,14 +3101,16 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         const heroSliderNews = classicHeadlineSliderItems;
         if (heroSliderNews.length === 0) return null;
         const legacyHeadlineSidePool = sortNewsByRecency(
-          mergeUniqueNews(
-            sliderSide,
-            latestNewsPool,
-            allItems,
-            bandNewsItems,
-            popular,
-            siteId != null ? breaking : [],
-          ).filter(isHeadlineFreshEnough),
+          filterNewsItemsWithCoverImage(
+            mergeUniqueNews(
+              sliderSide,
+              latestNewsPool,
+              allItems,
+              bandNewsItems,
+              popular,
+              siteId != null ? breaking : [],
+            ).filter(isHeadlineFreshEnough),
+          ),
         );
         const legacyHeadlineSidePoolFiltered = tepeMansetActive
           ? excludeHeadlineSliderItems(legacyHeadlineSidePool, tepeMansetItems)
@@ -3737,26 +3757,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         const latestGridTabPool = sortNewsByRecency(
           mergeUniqueNews(bandNewsItems, allItems, popular),
         ).slice(0, 80);
-        const latestGridOpeningSlugManual = hmCategorySlug(
-          layoutPrefs.hmNewsHomeModuleCategorySlugs?.latestGrid,
-        );
-        const latestGridDisplayPool = (() => {
-          if (!latestGridOpeningSlugManual) return latestGridTabPool;
-          const matchesOpeningCategory = (item: any) =>
-            hmNewsItemMatchesHomeCategorySlug(item, latestGridOpeningSlugManual, homeCategoryMatchContext) ||
-            newsMatchesCategory(item, latestGridOpeningSlugManual);
-          const matched = latestGridTabPool.filter(matchesOpeningCategory);
-          return matched.length > 0 ? matched : latestGridTabPool;
-        })();
         const latestGridItems = padNewsItemsToLimit(
-          latestGridDisplayPool,
+          latestGridTabPool,
           latestGridTabPool,
           HM_HOME_LATEST_BAND_ITEM_COUNT,
           homeNewsDedupe,
         );
-        const latestSectionTitle = latestGridOpeningSlugManual
-          ? moduleCategoryTitle(latestGridOpeningSlugManual) || "Haberler"
-          : "Son Haberler";
+        const latestSectionTitle = "Son Haberler";
 
         const latestBand = (visible: typeof latestNewsPool) => (
           <Suspense
@@ -3770,7 +3777,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               items={visible.length > 0 ? visible : latestGridTabPool}
               tabSourceItems={latestGridTabPool}
               categoryTabs={tabStripCats}
-              initialCategorySlug={latestGridOpeningSlugManual}
+              initialCategorySlug=""
+              requireCoverImage
               accent={accent}
               hmCategoryColors={hmCat}
               pending={latestPending || latestBandPending}
@@ -4206,7 +4214,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           right:
             leadPackRightFallback.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
               ? leadPackRightFallback
-              : leadPackColumnsRaw.right.slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
+              : filterNewsItemsWithCoverImage(leadPackColumnsRaw.right).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
         };
         const hasLeadPackContent =
           leadPackColumns.left.length > 0 || leadPackColumns.right.length > 0;
@@ -4484,7 +4492,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       right:
         leadPackRightFallback.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
           ? leadPackRightFallback
-          : leadPackColumnsRaw.right.slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
+          : filterNewsItemsWithCoverImage(leadPackColumnsRaw.right).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
     };
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
     const esenTodayHighlightItems = pickSidebarNews(todayHighlightMini, 6);
@@ -4528,11 +4536,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       const esenSidePoolBase = tepeMansetActive
         ? excludeHeadlineSliderItems(esenSidePoolRaw, tepeMansetItems)
         : esenSidePoolRaw;
-      // Yan kartlarda görsel şart — önce kapaklı haberler.
-      const esenSidePool = mergeUniqueNews(
-        filterNewsItemsWithCoverImage(esenSidePoolBase),
-        esenSidePoolBase,
-      );
+      // Yan kartlarda görsel şart — resmi olmayan haberler gösterilmez.
+      const esenSidePool = filterNewsItemsWithCoverImage(esenSidePoolBase);
       const sideItems = pickHeroSideHeadlines({
         pool: esenSidePool,
         widenPools: [
@@ -4540,10 +4545,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           filterNewsItemsWithCoverImage(latestNewsPool),
           filterNewsItemsWithCoverImage(popular),
           filterNewsItemsWithCoverImage(classicLatestMini),
-          moduleSectionSourcePool,
-          latestNewsPool,
-          popular,
-          classicLatestMini,
         ],
         sliderItems: slides,
         sideCount: 3,
@@ -4853,8 +4854,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           })
         : resolveClassicHeroSideCount(classicMansetVariant);
     const classicBelowHeroPoolRaw = sortNewsByRecency(
-      mergeUniqueNews(classicLatestMini, latestNewsPool, bandNewsItems, allItems, popular, siteId != null ? breaking : []).filter(
-        isHeadlineFreshEnough,
+      filterNewsItemsWithCoverImage(
+        mergeUniqueNews(classicLatestMini, latestNewsPool, bandNewsItems, allItems, popular, siteId != null ? breaking : []).filter(
+          isHeadlineFreshEnough,
+        ),
       ),
     );
     const classicBelowHeroPool = tepeMansetActive
