@@ -1106,6 +1106,7 @@ export function HmCorporateHome({
                     tabSourceItems={latestList}
                     categoryTabs={categoryTabs ?? undefined}
                     initialCategorySlug={latestGridOpeningSlug}
+                    requireCoverImage
                     accent={accent}
                     hmCategoryColors={hmCategoryColors}
                     pending={latestPending}
@@ -1138,6 +1139,7 @@ export function HmCorporateHome({
                   tabSourceItems={latestList}
                   categoryTabs={categoryTabs ?? undefined}
                   initialCategorySlug={latestGridOpeningSlug}
+                  requireCoverImage
                   accent={accent}
                   hmCategoryColors={hmCategoryColors}
                   pending={latestPending}

@@ -1635,7 +1635,7 @@ export default function EditorVitrinAyarlari() {
             <TabsContent value="kategoriler" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
           <ModuleCategoryEditor
             title="Anasayfa haber kutusu kategorileri"
-            description="Seçili vitrin temasıyla uyumlu haber kutuları listelenir. Yeşil nokta aktif, kırmızı nokta pasif kutuyu gösterir — pasif kutulara kategori atanamaz; önce «Modüller» sekmesinden kutuyu açın. Kategoriler canonical slug ile tek listede birleştirilir. «Orta son haberler + sidebar kutusu» için «Açılışta hangi kategori» alanı sayfa açılışında seçili sekmeyi belirler; boş bırakılırsa Tümü sekmesi açılır. Diğer kutular boş bırakılırsa otomatik farklı kategorilere dağıtılır."
+            description="Seçili vitrin temasıyla uyumlu haber kutuları listelenir. Yeşil nokta aktif, kırmızı nokta pasif kutuyu gösterir — pasif kutulara kategori atanamaz; önce «Modüller» sekmesinden kutuyu açın. Kategoriler canonical slug ile tek listede birleştirilir. «Son Haberler» her zaman Tümü sekmesinde en son çıkan haberleri gösterir. Diğer kutular boş bırakılırsa otomatik farklı kategorilere dağıtılır."
             items={newsCategoryAssignableModules}
             labels={NEWS_HOME_MODULE_LABELS}
             categories={categoryOptions}
@@ -2807,9 +2807,7 @@ function ModuleCategoryEditor<T extends string>({
                 <p className="mt-0.5 text-[11px] text-slate-500">
                   {!moduleEnabled
                     ? "Pasif — «Modüller» sekmesinden açın"
-                    : item === "latestGrid"
-                      ? "Açılışta hangi kategori sekmesi seçili gelsin (boş = Tümü)"
-                      : "Bu kutunun haber kaynağı"}
+                    : "Bu kutunun haber kaynağı"}
                 </p>
               </div>
               <div className="space-y-2">

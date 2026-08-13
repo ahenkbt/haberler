@@ -3,6 +3,7 @@ import {
   HM_NEWS_PLACEHOLDER_IMAGE,
   HM_NEWS_PLACEHOLDER_SVG,
   isHmNewsPlaceholderSrc,
+  isUsableNewsCoverSrc,
 } from "./hmNewsPlaceholder";
 
 describe("haber görsel placeholder", () => {
@@ -16,5 +17,13 @@ describe("haber görsel placeholder", () => {
   it("placeholder src tanıması", () => {
     expect(isHmNewsPlaceholderSrc(HM_NEWS_PLACEHOLDER_SVG)).toBe(true);
     expect(isHmNewsPlaceholderSrc("https://cdn.example.com/cover.jpg")).toBe(false);
+  });
+
+  it("anasayfa kapak filtresi boş ve varsayılan görseli reddeder", () => {
+    expect(isUsableNewsCoverSrc("")).toBe(false);
+    expect(isUsableNewsCoverSrc(null)).toBe(false);
+    expect(isUsableNewsCoverSrc(HM_NEWS_PLACEHOLDER_SVG)).toBe(false);
+    expect(isUsableNewsCoverSrc("/hm/haber-gorsel-hazirlaniyor.svg")).toBe(false);
+    expect(isUsableNewsCoverSrc("https://cdn.example.com/cover.jpg")).toBe(true);
   });
 });
