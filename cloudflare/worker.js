@@ -22,6 +22,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
+import { handleMediaGetFromR2 } from "./hm-editor-media-s3-edge.js";
 
 export { GoalgoApiContainer } from "./goalgo-api-container.js";
 /**
@@ -2206,6 +2207,14 @@ export default {
           console.error("[hm-site-rss-defaults]", String(err?.message || err).slice(0, 200));
         }
       }
+    }
+
+    // Haber görselleri — R2'de varsa Container'a gitmeden kenardan.
+    try {
+      const mediaGet = await handleMediaGetFromR2(request, env);
+      if (mediaGet) return mediaGet;
+    } catch (err) {
+      console.error("[media-r2-get]", String(err?.message || err).slice(0, 200));
     }
 
     // Editör görsel yükleme — kenar JWT + R2.

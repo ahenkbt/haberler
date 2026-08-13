@@ -121,7 +121,9 @@ sequenceDiagram
 
 Yeni yüklemeler Worker kenarından veya Container üzerinden R2’ye yazılır. Eski Render diski kullanılmaz.
 
-Eski dosyalar hâlâ Render’daysa **bir kerelik** `LEGACY_MEDIA_ORIGIN` ile kopyalanıp secret silinir. Varsayılan olarak Render’a gidilmez.
+Eski dosyalar Render diskteyse **bir kerelik** `Copy Render media to R2` workflow’u çalışır
+(`goalgo/scripts/copy-render-media-to-r2.mjs`). Render askıdaysa dashboard’dan **Resume**
+edin; script askıyı görünce RSS `og:image` yedeğine düşer. Production Worker Render’a vekil olmaz.
 
 ---
 
@@ -141,6 +143,8 @@ Eski dosyalar hâlâ Render’daysa **bir kerelik** `LEGACY_MEDIA_ORIGIN` ile ko
 | `HM_EDITOR_JWT_SECRET` | hayır |
 | `ADMIN_MAINTENANCE_SECRET` | hayır (R2 migrate workflow) |
 | `AGENTLABS_URL` | hayır |
+
+S3_* şu an GitHub **Environment `DATABASE_URL`** Variables altında da okunur (`Copy Render media to R2` ve Cloudflare deploy `environment: DATABASE_URL`). Tercih: repo **Actions secrets**.
 
 **Kullanılmayan:** `RENDER_DEPLOY_HOOK_URL`, `RENDER_API_ORIGIN`.
 
