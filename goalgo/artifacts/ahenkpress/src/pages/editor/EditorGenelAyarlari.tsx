@@ -28,7 +28,7 @@ import {
   resolveHmColorPalette,
   resolveHmEditorSecondaryFallback,
 } from "@/lib/hmVitrinThemeTokens";
-import { uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
+import { compressInlineImageFile } from "@/lib/compressInlineImage";
 import { resolveClientMediaSrc, toPersistedPublicMediaUrl } from "@/lib/apiBase";
 import { ArrowDown, ArrowUp, FileCode2, FileUp, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -483,10 +483,10 @@ export default function EditorGenelAyarlari() {
     }
     setUploading(true);
     try {
-      const { url } = await uploadYekpareMediaFile(file);
-      const full = toPersistedPublicMediaUrl(url);
-      setLogoUrlDraft(full);
-      await commit({ logoUrl: full || null });
+      const url = await compressInlineImageFile(file, { maxPx: 384, quality: 0.86, mime: "image/png" });
+      setLogoUrlDraft(url);
+      await commit({ logoUrl: url });
+      toast({ title: "Logo kaydedildi", description: "Üst şeritte hemen görünür." });
     } catch (err) {
       toast({
         title: "Yükleme başarısız",
@@ -508,10 +508,10 @@ export default function EditorGenelAyarlari() {
     }
     setUploading(true);
     try {
-      const { url } = await uploadYekpareMediaFile(file);
-      const full = toPersistedPublicMediaUrl(url);
-      setFaviconUrlDraft(full);
-      await commit({ faviconUrl: full || null });
+      const url = await compressInlineImageFile(file, { maxPx: 128, quality: 0.9, mime: "image/png" });
+      setFaviconUrlDraft(url);
+      await commit({ faviconUrl: url });
+      toast({ title: "İkon kaydedildi" });
     } catch (err) {
       toast({
         title: "Yükleme başarısız",
@@ -659,9 +659,8 @@ export default function EditorGenelAyarlari() {
               veya kareye yakın PNG yüklemeniz önerilir.
             </p>
             <p className="text-xs text-slate-500 mt-1 mb-2">
-              Görsel yükleyin veya tam URL yapıştırın. Yükleme sunucuya kaydedilir;{" "}
-              <code className="text-slate-600">/api/media/…</code> yolları özel alan köküyle kayıtlı olsa bile kayıtta
-              doğru API adresine çevrilir.
+              Görseli «Dosya yükle» ile ekleyin. Kayıt sitede saklanır; kırık <code className="text-slate-600">/api/media</code> adresi
+              kullanılmaz. Eski logo görünmüyorsa dosyayı yeniden yükleyin.
             </p>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(ev) => void onPickLogo(ev)} />
             <div className="flex flex-wrap gap-2">
@@ -677,27 +676,34 @@ export default function EditorGenelAyarlari() {
                 Dosya yükle
               </Button>
             </div>
-            <Input
-              className="mt-3"
-              placeholder="https://… veya /api/media/uploads/…"
-              value={logoUrlDraft}
-              disabled={saving}
-              onChange={(e) => setLogoUrlDraft(e.target.value)}
-              onBlur={() => {
-                const trimmedRaw = logoUrlDraft.trim() || null;
-                const trimmed = trimmedRaw ? toPersistedPublicMediaUrl(trimmedRaw) : null;
-                const cur = (p.logoUrl ?? "").trim() || null;
-                if (trimmed === cur) return;
-                if (trimmed && trimmed !== trimmedRaw) setLogoUrlDraft(trimmed);
-                void commit({ logoUrl: trimmed });
-              }}
-            />
+            {logoUrlDraft.startsWith("data:image/") ? (
+              <p className="mt-3 text-xs text-emerald-800">Logo yüklendi ve kaydedildi.</p>
+            ) : (
+              <Input
+                className="mt-3"
+                placeholder="https://… veya /api/media/uploads/…"
+                value={logoUrlDraft}
+                disabled={saving}
+                onChange={(e) => setLogoUrlDraft(e.target.value)}
+                onBlur={() => {
+                  const trimmedRaw = logoUrlDraft.trim() || null;
+                  const trimmed = trimmedRaw ? toPersistedPublicMediaUrl(trimmedRaw) : null;
+                  const cur = (p.logoUrl ?? "").trim() || null;
+                  if (trimmed === cur) return;
+                  if (trimmed && trimmed !== trimmedRaw) setLogoUrlDraft(trimmed);
+                  void commit({ logoUrl: trimmed });
+                }}
+              />
+            )}
             {(logoUrlDraft ?? "").trim() ? (
               <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 flex justify-center">
                 <img
                   src={resolveClientMediaSrc(logoUrlDraft.trim()) || logoUrlDraft.trim()}
                   alt="Önizleme"
                   className="max-h-16 w-auto max-w-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
                 />
               </div>
             ) : null}
@@ -743,21 +749,25 @@ export default function EditorGenelAyarlari() {
                 </Button>
               ) : null}
             </div>
-            <Input
-              className="mt-3"
-              placeholder="https://… veya /api/media/uploads/…"
-              value={faviconUrlDraft}
-              disabled={saving}
-              onChange={(e) => setFaviconUrlDraft(e.target.value)}
-              onBlur={() => {
-                const trimmedRaw = faviconUrlDraft.trim() || null;
-                const trimmed = trimmedRaw ? toPersistedPublicMediaUrl(trimmedRaw) : null;
-                const cur = (p.faviconUrl ?? "").trim() || null;
-                if (trimmed === cur) return;
-                if (trimmed && trimmed !== trimmedRaw) setFaviconUrlDraft(trimmed);
-                void commit({ faviconUrl: trimmed });
-              }}
-            />
+            {faviconUrlDraft.startsWith("data:image/") ? (
+              <p className="mt-3 text-xs text-emerald-800">İkon yüklendi ve kaydedildi.</p>
+            ) : (
+              <Input
+                className="mt-3"
+                placeholder="https://… veya /api/media/uploads/…"
+                value={faviconUrlDraft}
+                disabled={saving}
+                onChange={(e) => setFaviconUrlDraft(e.target.value)}
+                onBlur={() => {
+                  const trimmedRaw = faviconUrlDraft.trim() || null;
+                  const trimmed = trimmedRaw ? toPersistedPublicMediaUrl(trimmedRaw) : null;
+                  const cur = (p.faviconUrl ?? "").trim() || null;
+                  if (trimmed === cur) return;
+                  if (trimmed && trimmed !== trimmedRaw) setFaviconUrlDraft(trimmed);
+                  void commit({ faviconUrl: trimmed });
+                }}
+              />
+            )}
             {((faviconUrlDraft ?? "").trim() || (logoUrlDraft ?? "").trim()) ? (
               <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 flex justify-center">
                 <img
@@ -767,6 +777,9 @@ export default function EditorGenelAyarlari() {
                   }
                   alt="Favicon önizleme"
                   className="h-12 w-12 object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
                 />
               </div>
             ) : null}

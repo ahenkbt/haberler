@@ -6,6 +6,7 @@
 export function normalizePublicMediaUrl(url: string | null | undefined): string | null {
   const raw = String(url ?? "").trim();
   if (!raw) return null;
+  if (raw.startsWith("data:")) return raw;
   if (raw.startsWith("/api/media/")) return raw;
 
   const extracted = extractApiMediaPathFromString(raw);
@@ -15,6 +16,7 @@ export function normalizePublicMediaUrl(url: string | null | undefined): string 
 }
 
 function extractApiMediaPathFromString(raw: string): string | null {
+  if (raw.startsWith("data:")) return null;
   try {
     if (/^https?:\/\//i.test(raw) || raw.startsWith("//")) {
       const u = new URL(raw.startsWith("//") ? `https:${raw}` : raw);

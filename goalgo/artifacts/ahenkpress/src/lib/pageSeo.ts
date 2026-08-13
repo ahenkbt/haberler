@@ -194,6 +194,8 @@ function hmShareImageUrl(baseOrigin: string, ...candidates: (string | null | und
   for (const raw of candidates) {
     const u = String(raw ?? "").trim();
     if (!u) continue;
+    if (u.startsWith("data:")) continue;
+    if (/\/api\/media\/uploads\//i.test(u)) continue;
     if (u.startsWith("http://") || u.startsWith("https://")) return u;
     return `${base}${u.startsWith("/") ? u : `/${u}`}`;
   }
