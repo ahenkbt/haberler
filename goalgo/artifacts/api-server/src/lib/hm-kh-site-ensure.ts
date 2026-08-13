@@ -10,6 +10,7 @@ import {
 import { ensureHmSiteEditorUsernameColumn } from "./hm-editor-profile.js";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
 import { sanitizeHmPublicLayoutRecord } from "./hm-layout-sanitize.js";
+import { HM_TEPE_MANSET_OPT_IN_REV } from "./hm-tepe-manset-layout.js";
 
 /**
  * Kırşehir Haber — kanonik slug `kirsehirhaber` (/tr/kirsehirhaber).
@@ -62,7 +63,8 @@ function defaultKhLayoutJson(): string {
     hmChromeColorMode: "light",
     hmNewsHeaderMenuEnabled: true,
     hmNewsSliderEnabled: true,
-    hmNewsTepeMansetEnabled: true,
+    hmNewsTepeMansetEnabled: false,
+    hmTepeMansetOptInRev: HM_TEPE_MANSET_OPT_IN_REV,
     hmNewsHomeModuleOrder: [
       "tepeManset",
       "hero",
@@ -282,7 +284,9 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
         ...parsed,
         hmVitrinTheme: parsed.hmVitrinTheme || "esen",
         mansetVariant: parsed.mansetVariant || "center-trio",
-        hmNewsTepeMansetEnabled: true,
+        hmNewsTepeMansetEnabled: parsed.hmNewsTepeMansetEnabled === true,
+        // Opt-in rev'i varsayılandan kopyalama — boot onarımı bir kez kapatabilsin.
+        hmTepeMansetOptInRev: parsed.hmTepeMansetOptInRev,
         hmNewsSliderEnabled: true,
         hmNewsBreakingBandEnabled: true,
         hmNewsGoogleNewsBandEnabled: true,

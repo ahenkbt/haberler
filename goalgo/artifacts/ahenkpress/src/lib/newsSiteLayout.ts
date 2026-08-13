@@ -581,6 +581,8 @@ export type NewsSiteLayoutPrefs = {
   hmNewsSliderEnabled?: boolean;
   /** HABER teması: üst tepe manşet bandı (numaralı 1–5); tanımsızsa kapalı kabul edilir. */
   hmNewsTepeMansetEnabled?: boolean;
+  /** Tepe manşet opt-in geçişi — bir kerelik kapatıldıktan sonra editör açarsa tekrar kapanmaz. */
+  hmTepeMansetOptInRev?: string | null;
   /** HABER teması: manşet havuzuna RSS kategorilerinden temsilci haber ekle; tanımsızsa kapalı kabul edilir. */
   hmNewsRssHeadlineEnabled?: boolean;
   /** HABER teması: son dakika / finans / hava durumu bandı; tanımsızsa açık kabul edilir. */
@@ -1227,8 +1229,8 @@ export function resolveHmNewsEditorModuleEnabled(
     case "hero":
       return p.hmNewsSliderEnabled !== false;
     case "tepeManset":
-      // Varsayılan açık — tüm haber sitelerinde header altında en üstte
-      return p.hmNewsTepeMansetEnabled !== false;
+      // Varsayılan kapalı — editör panelden açar
+      return p.hmNewsTepeMansetEnabled === true;
     case "mansetAd":
       return p.hmNewsMansetAdModuleEnabled !== false;
     case "authorsStrip":
@@ -2498,7 +2500,7 @@ export function filterCorporateHomeModulesForDonation(
 function normalizeHmCorporateDonationAccounts(raw: unknown): HmCorporateDonationAccount[] | null {
   if (!Array.isArray(raw)) return null;
   const accounts = raw
-    .map((row) => {
+    .map((row): HmCorporateDonationAccount | null => {
       if (!row || typeof row !== "object" || Array.isArray(row)) return null;
       const o = row as Record<string, unknown>;
       const iban = normalizeDonationText(o.iban, 64);
@@ -2507,7 +2509,7 @@ function normalizeHmCorporateDonationAccounts(raw: unknown): HmCorporateDonation
         bank: normalizeDonationText(o.bank, 80),
         accountName: normalizeDonationText(o.accountName, 120),
         iban,
-      } satisfies HmCorporateDonationAccount;
+      };
     })
     .filter((row): row is HmCorporateDonationAccount => row != null);
   return accounts.length ? accounts : null;
@@ -2614,7 +2616,7 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsIndexLandingEnabled: false,
   hmNewsYekpareFeaturesEnabled: false,
   hmNewsSliderEnabled: true,
-  hmNewsTepeMansetEnabled: true,
+  hmNewsTepeMansetEnabled: false,
   hmNewsRssHeadlineEnabled: false,
   hmNewsBreakingBandEnabled: true,
   hmNewsGoogleNewsBandEnabled: false,
@@ -3181,6 +3183,11 @@ export function parseNewsSiteLayoutFromJson(
     const newsYekpareFeaturesEnabledRaw = (j as { hmNewsYekpareFeaturesEnabled?: unknown }).hmNewsYekpareFeaturesEnabled;
     const newsSliderEnabledRaw = (j as { hmNewsSliderEnabled?: unknown }).hmNewsSliderEnabled;
     const newsTepeMansetEnabledRaw = (j as { hmNewsTepeMansetEnabled?: unknown }).hmNewsTepeMansetEnabled;
+    const hmTepeMansetOptInRevRaw = (j as { hmTepeMansetOptInRev?: unknown }).hmTepeMansetOptInRev;
+    const hmTepeMansetOptInRev =
+      typeof hmTepeMansetOptInRevRaw === "string" && hmTepeMansetOptInRevRaw.trim()
+        ? hmTepeMansetOptInRevRaw.trim()
+        : undefined;
     const newsRssHeadlineEnabledRaw = (j as { hmNewsRssHeadlineEnabled?: unknown }).hmNewsRssHeadlineEnabled;
     const newsBreakingBandEnabledRaw = (j as { hmNewsBreakingBandEnabled?: unknown }).hmNewsBreakingBandEnabled;
     const newsGoogleNewsBandEnabledRaw = (j as { hmNewsGoogleNewsBandEnabled?: unknown }).hmNewsGoogleNewsBandEnabled;
@@ -3437,8 +3444,9 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsIndexLandingEnabled: normalizeDefaultHiddenToggle(newsIndexLandingEnabledRaw),
       hmNewsYekpareFeaturesEnabled: normalizeDefaultHiddenToggle(newsYekpareFeaturesEnabledRaw),
       hmNewsSliderEnabled: normalizeDefaultVisibleToggle(newsSliderEnabledRaw),
-      /** Tepe manşet: varsayılan açık — tüm haber sitelerinde header altında en üstte */
-      hmNewsTepeMansetEnabled: normalizeDefaultVisibleToggle(newsTepeMansetEnabledRaw),
+      /** Tepe manşet: varsayılan kapalı — editör panelden açar */
+      hmNewsTepeMansetEnabled: normalizeDefaultHiddenToggle(newsTepeMansetEnabledRaw),
+      hmTepeMansetOptInRev,
       hmNewsRssHeadlineEnabled: normalizeDefaultHiddenToggle(newsRssHeadlineEnabledRaw),
       hmNewsBreakingBandEnabled: normalizeDefaultVisibleToggle(newsBreakingBandEnabledRaw),
       hmNewsGoogleNewsBandEnabled: normalizeDefaultHiddenToggle(newsGoogleNewsBandEnabledRaw),
