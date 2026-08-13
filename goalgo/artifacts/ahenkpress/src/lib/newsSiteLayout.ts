@@ -2500,7 +2500,7 @@ export function filterCorporateHomeModulesForDonation(
 function normalizeHmCorporateDonationAccounts(raw: unknown): HmCorporateDonationAccount[] | null {
   if (!Array.isArray(raw)) return null;
   const accounts = raw
-    .map((row) => {
+    .map((row): HmCorporateDonationAccount | null => {
       if (!row || typeof row !== "object" || Array.isArray(row)) return null;
       const o = row as Record<string, unknown>;
       const iban = normalizeDonationText(o.iban, 64);
@@ -2509,7 +2509,7 @@ function normalizeHmCorporateDonationAccounts(raw: unknown): HmCorporateDonation
         bank: normalizeDonationText(o.bank, 80),
         accountName: normalizeDonationText(o.accountName, 120),
         iban,
-      } satisfies HmCorporateDonationAccount;
+      };
     })
     .filter((row): row is HmCorporateDonationAccount => row != null);
   return accounts.length ? accounts : null;

@@ -1599,7 +1599,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const hmHybridNewsFetchEnabled = siteId != null && !isCorporateTheme && resolveHmHomeHybridNewsFetchEnabled(layoutPrefs, siteId);
   const hmYekparePoolReceiveEnabled = resolveHmYekparePoolReceiveEnabled(layoutPrefs);
   const newsSliderEnabled = layoutPrefs.hmNewsSliderEnabled !== false;
-  const tepeMansetEnabled = resolveHmNewsEditorModuleEnabled(layoutPrefs, "tepeManset", { portalHubOnly });
+  const tepeMansetEnabled = resolveHmNewsEditorModuleEnabled(layoutPrefs, "tepeManset");
   const rssHeadlineEnabled = layoutPrefs.hmNewsRssHeadlineEnabled !== false;
   const newsBandEnabled = layoutPrefs.hmNewsBreakingBandEnabled !== false;
   const mansetCategorySlug = String(layoutPrefs.mansetCategorySlug ?? "").trim() || null;
