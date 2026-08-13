@@ -23,7 +23,7 @@ HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 [[containers]]
 class_name = "GoalgoApiContainer"
 image = "./goalgo/Dockerfile.cloudflare"
-max_instances = 3
+max_instances = 2
 instance_type = "standard-1"
 
 [[durable_objects.bindings]]
