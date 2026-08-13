@@ -239,6 +239,12 @@ function s3ObjectUrl(endpoint, env, fname) {
   return `${endpoint}/${bucket}/${key}`;
 }
 
+/** wrangler.toml `MEDIA_BUCKET` — S3 API TLS (alert 40) olmadan aynı hesaptaki nesneler. */
+export function r2Binding(env) {
+  const bucket = env?.MEDIA_BUCKET;
+  return bucket && typeof bucket.get === "function" ? bucket : null;
+}
+
 /**
  * GET/HEAD `/api/media/uploads/:file` → R2. Yoksa null (Container dener).
  * Temmuz 2026 dual-write: dosyalar R2'de olabilir; bozuk S3_ENDPOINT ayıklanır.
@@ -259,6 +265,36 @@ export async function handleMediaGetFromR2(request, env) {
     if (method === "HEAD") return new Response(null, { status: 200, headers });
     return new Response(body, { status: 200, headers });
   };
+
+  const bound = r2Binding(env);
+  if (bound) {
+    try {
+      const key = objectKey(env, fname);
+      if (method === "HEAD") {
+        const head = await bound.head(key);
+        if (head) {
+          return respond(
+            null,
+            head.httpMetadata?.contentType,
+            head.size != null ? String(head.size) : null,
+            "r2-binding",
+          );
+        }
+      } else {
+        const obj = await bound.get(key);
+        if (obj) {
+          return respond(
+            obj.body,
+            obj.httpMetadata?.contentType,
+            obj.size != null ? String(obj.size) : null,
+            "r2-binding",
+          );
+        }
+      }
+    } catch (err) {
+      console.error("[media-r2-binding]", String(err?.message || err).slice(0, 160));
+    }
+  }
 
   if (s3MediaEnvReady(env)) {
     const client = s3Client(env);
@@ -304,13 +340,24 @@ export async function handleMediaGetFromR2(request, env) {
  * @returns {Promise<{ url: string }|{ error: string }>}
  */
 export async function saveMediaDataUrlToS3(env, dataUrl, title) {
-  if (!s3MediaEnvReady(env)) {
-    return { error: "S3 yapılandırması eksik" };
-  }
   const parsed = parseDataUrl(dataUrl);
   if (parsed.error) return { error: parsed.error };
 
   const fname = `${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}.${parsed.ext}`;
+  const key = objectKey(env, fname);
+  const bound = r2Binding(env);
+  if (bound && typeof bound.put === "function") {
+    try {
+      await bound.put(key, parsed.bytes, { httpMetadata: { contentType: parsed.mime } });
+      return { url: publicUploadUrl(fname) };
+    } catch (err) {
+      console.error("[media-r2-put]", String(err?.message || err).slice(0, 160));
+    }
+  }
+
+  if (!s3MediaEnvReady(env)) {
+    return { error: "S3 yapılandırması eksik" };
+  }
   const endpoints = s3EndpointCandidates(env);
   const region = normalizeEnvValue(env.S3_REGION) || "auto";
 

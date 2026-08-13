@@ -21,7 +21,10 @@ run_worker_first = true
 API_ORIGIN = ""
 # KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
-# Medya yükleme (Worker → R2): GitHub Actions S3_* secret'ları ile wrangler secret put
+# Medya yükleme (Worker → R2): native binding (S3 API TLS CF ağında kırılıyor)
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "yekpare-media"
 
 [[containers]]
 class_name = "GoalgoApiContainer"
