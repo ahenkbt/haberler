@@ -121,12 +121,31 @@ function objectUrl(fname) {
   return `${s3Endpoint()}/${envVal("S3_BUCKET")}/${key}`;
 }
 
-async function r2Exists(fname) {
-  const res = await aws().fetch(objectUrl(fname), { method: "HEAD" });
-  return res.ok;
+function cfAccountId() {
+  return envVal("CLOUDFLARE_ACCOUNT_ID") || "16f5b996194174624e7969a3658bd2bb";
 }
 
-async function r2Put(fname, buf, contentType) {
+function errText(err) {
+  const cause = err?.cause ? ` cause=${err.cause.message || err.cause}` : "";
+  return `${err?.message || err}${cause}`;
+}
+
+let r2HeadLogged = false;
+
+async function r2Exists(fname) {
+  try {
+    const res = await aws().fetch(objectUrl(fname), { method: "HEAD" });
+    return res.ok;
+  } catch (err) {
+    if (!r2HeadLogged) {
+      r2HeadLogged = true;
+      console.warn(`[copy-r2] R2 HEAD başarısız (devam): ${errText(err)}`);
+    }
+    return false;
+  }
+}
+
+async function r2PutS3(fname, buf, contentType) {
   const res = await aws().fetch(objectUrl(fname), {
     method: "PUT",
     body: buf,
@@ -138,6 +157,53 @@ async function r2Put(fname, buf, contentType) {
   if (!res.ok) {
     const detail = (await res.text()).trim().slice(0, 180);
     throw new Error(`R2 PUT HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+  }
+}
+
+async function r2PutCfApi(fname, buf, contentType) {
+  const token = envVal("CLOUDFLARE_API_TOKEN");
+  if (!token) throw new Error("CLOUDFLARE_API_TOKEN yok");
+  const url =
+    `https://api.cloudflare.com/client/v4/accounts/${cfAccountId()}` +
+    `/r2/buckets/${encodeURIComponent(envVal("S3_BUCKET"))}/objects/${encodeURIComponent(fname)}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": contentType,
+    },
+    body: buf,
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim().slice(0, 180);
+    throw new Error(`CF API PUT HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+  }
+}
+
+async function r2Put(fname, buf, contentType) {
+  try {
+    await r2PutS3(fname, buf, contentType);
+  } catch (err) {
+    console.warn(`[copy-r2] S3 PUT başarısız, CF API deneniyor: ${errText(err)}`);
+    await r2PutCfApi(fname, buf, contentType);
+  }
+}
+
+async function probeR2() {
+  const host = (() => {
+    try {
+      return new URL(s3Endpoint()).host;
+    } catch {
+      return s3Endpoint() || "(boş)";
+    }
+  })();
+  console.log(`[copy-r2] R2 host=${host} bucket=${envVal("S3_BUCKET")}`);
+  try {
+    const res = await aws().fetch(objectUrl("yekpare-r2-probe"), { method: "HEAD" });
+    console.log(`[copy-r2] R2 S3 probe HTTP ${res.status}`);
+  } catch (err) {
+    console.warn(`[copy-r2] R2 S3 probe: ${errText(err)}`);
   }
 }
 
@@ -267,6 +333,7 @@ async function main() {
 
   if (limit) fnames = fnames.slice(0, limit);
   console.log(`[copy-r2] ${fnames.length} dosya (Render: ${origin}, rss yedek: ${rssMap.size})`);
+  if (!dryRun) await probeR2();
 
   const stats = {
     already: 0,
@@ -316,7 +383,7 @@ async function main() {
   });
 
   console.log("[copy-r2] bitti", JSON.stringify({ ...stats, renderSuspended: renderState.suspended, sampleMissing: missing }));
-  if (renderState.suspended && stats.fromRender === 0 && stats.uploaded === 0) {
+  if (stats.uploaded === 0 && stats.already === 0) {
     process.exitCode = 2;
   }
 }
