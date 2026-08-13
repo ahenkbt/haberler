@@ -42,11 +42,14 @@ export function resolveApiOrigin(env, incomingOrigin) {
 export async function getApiStub(env) {
   if (!env?.GOALGO_API) return null;
   try {
-    const { getRandom } = await import("@cloudflare/containers");
-    return await getRandom(env.GOALGO_API, API_CONTAINER_INSTANCES);
+    const { getContainer } = await import("@cloudflare/containers");
+    return getContainer(env.GOALGO_API, "api");
   } catch {
     if (typeof env.GOALGO_API.getByName === "function") {
       return env.GOALGO_API.getByName("api");
+    }
+    if (typeof env.GOALGO_API.idFromName === "function") {
+      return env.GOALGO_API.get(env.GOALGO_API.idFromName("api"));
     }
     return null;
   }
@@ -66,6 +69,7 @@ export async function fetchApi(env, url, init = {}) {
   const stub = await getApiStub(env);
   if (stub) {
     const reqInit = requestInitWithoutCf(init);
+    delete reqInit.signal;
     const method = String(reqInit.method || "GET").toUpperCase();
     if (reqInit.body && method !== "GET" && method !== "HEAD") {
       reqInit.duplex = reqInit.duplex || "half";
