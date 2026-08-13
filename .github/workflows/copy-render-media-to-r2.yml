@@ -1,0 +1,75 @@
+# Render disk (veya RSS og:image yedeği) → Cloudflare R2
+# GitHub Environment: DATABASE_URL  (kullanıcının S3_* / SESSION_SECRET koyduğu yer)
+name: Copy Render media to R2
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run (true/false)"
+        required: false
+        default: "false"
+      limit:
+        description: "İlk N dosya (0 = hepsi)"
+        required: false
+        default: "0"
+  push:
+    branches:
+      - main
+    paths:
+      - "goalgo/scripts/copy-render-media-to-r2.mjs"
+      - ".github/workflows/copy-render-media-to-r2.yml"
+
+concurrency:
+  group: copy-render-media-to-r2
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install root deps (pg, aws4fetch)
+        run: pnpm install --frozen-lockfile
+
+      - name: Copy media to Cloudflare R2
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT || vars.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET || vars.S3_BUCKET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID || vars.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || vars.S3_SECRET_ACCESS_KEY }}
+          S3_REGION: ${{ secrets.S3_REGION || vars.S3_REGION || 'auto' }}
+          S3_PUBLIC_BASE_URL: ${{ secrets.S3_PUBLIC_BASE_URL || vars.S3_PUBLIC_BASE_URL }}
+          RENDER_MEDIA_ORIGIN: https://goalgo-y7ze.onrender.com
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "DATABASE_URL yok — Environment DATABASE_URL secret'ını kontrol edin."
+            exit 1
+          fi
+          if [ -z "${S3_ENDPOINT:-}" ] || [ -z "${S3_BUCKET:-}" ] || [ -z "${S3_ACCESS_KEY_ID:-}" ] || [ -z "${S3_SECRET_ACCESS_KEY:-}" ]; then
+            echo "S3_* yok — Environment DATABASE_URL Variables (S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY) gerekli."
+            exit 1
+          fi
+          EXTRA=""
+          LIMIT="${{ github.event.inputs.limit || '0' }}"
+          DRY="${{ github.event.inputs.dry_run || 'false' }}"
+          if [ "$DRY" = "true" ]; then EXTRA="$EXTRA --dry-run"; fi
+          if [ -n "$LIMIT" ] && [ "$LIMIT" != "0" ]; then EXTRA="$EXTRA --limit $LIMIT"; fi
+          node goalgo/scripts/copy-render-media-to-r2.mjs $EXTRA

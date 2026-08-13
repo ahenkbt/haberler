@@ -86,6 +86,83 @@ function publicUploadUrl(fname) {
   return `/api/media/uploads/${fname}`;
 }
 
+const UPLOAD_GET_RE = /^\/api\/media\/uploads\/([a-zA-Z0-9._-]+)$/;
+
+const MIME_BY_EXT = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  bmp: "image/bmp",
+  pdf: "application/pdf",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  ogv: "video/ogg",
+  mov: "video/quicktime",
+  mp3: "audio/mpeg",
+};
+
+export function parseMediaUploadFname(pathname) {
+  const m = String(pathname || "").match(UPLOAD_GET_RE);
+  const name = m?.[1] || null;
+  if (!name || name.includes("..")) return null;
+  return name;
+}
+
+function mimeFromFname(fname) {
+  const ext = String(fname).split(".").pop()?.toLowerCase() || "";
+  return MIME_BY_EXT[ext] || "application/octet-stream";
+}
+
+function s3Client(env) {
+  return new AwsClient({
+    accessKeyId: normalizeEnvValue(env.S3_ACCESS_KEY_ID),
+    secretAccessKey: normalizeEnvValue(env.S3_SECRET_ACCESS_KEY),
+    service: "s3",
+    region: normalizeEnvValue(env.S3_REGION) || "auto",
+  });
+}
+
+function s3ObjectUrl(env, fname) {
+  const bucket = normalizeEnvValue(env.S3_BUCKET);
+  const endpoint = s3Endpoint(env);
+  const key = objectKey(env, fname);
+  return `${endpoint}/${bucket}/${key}`;
+}
+
+/**
+ * GET/HEAD `/api/media/uploads/:file` → R2. Yoksa null (Container dener).
+ */
+export async function handleMediaGetFromR2(request, env) {
+  const method = String(request.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return null;
+  const fname = parseMediaUploadFname(new URL(request.url).pathname);
+  if (!fname || !s3MediaEnvReady(env)) return null;
+
+  let res;
+  try {
+    res = await s3Client(env).fetch(s3ObjectUrl(env, fname), { method });
+  } catch (err) {
+    console.error("[media-r2-get]", String(err?.message || err).slice(0, 160));
+    return null;
+  }
+  if (!res || res.status === 404) return null;
+  if (!res.ok) return null;
+
+  const headers = new Headers();
+  const contentType = res.headers.get("content-type") || mimeFromFname(fname);
+  headers.set("content-type", contentType);
+  const len = res.headers.get("content-length");
+  if (len) headers.set("content-length", len);
+  headers.set("cache-control", "public, max-age=86400, stale-while-revalidate=604800");
+  headers.set("x-yekpare-frontend", "cloudflare-worker");
+  headers.set("x-yekpare-media", "r2");
+  if (method === "HEAD") return new Response(null, { status: 200, headers });
+  return new Response(res.body, { status: 200, headers });
+}
+
 /**
  * @returns {Promise<{ url: string }|{ error: string }>}
  */
