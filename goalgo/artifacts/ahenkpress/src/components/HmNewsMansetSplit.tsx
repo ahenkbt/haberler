@@ -4,7 +4,6 @@ import { tr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Clock, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
 import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { useHeadlineSliderInteraction } from "@/hooks/useHeadlineSliderInteraction";
 
@@ -28,12 +27,6 @@ export type HmMansetQuickLink = {
   label: string;
   icon: string;
 };
-
-function vitrinImgSrc(url: string | null | undefined): string {
-  const u = (url ?? "").trim();
-  if (!u) return "";
-  return resolveClientMediaSrc(u) || u;
-}
 
 function fmtDate(d: string | null | undefined): string {
   if (!d) return "";

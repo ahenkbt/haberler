@@ -37,7 +37,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { extractApiMediaPath, resolveClientMediaSrc } from "@/lib/apiBase";
+import { extractApiMediaPath } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import { NewsGalleryExtension } from "@/tiptap/newsGalleryExtension";
 import { uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
 import { useToast } from "@/hooks/use-toast";
@@ -467,7 +468,7 @@ export function NewsContentEditor({ value, onChange, className }: Props) {
                 {galleryUrls.map((url) => (
                   <div key={url} className="relative aspect-square rounded overflow-hidden border bg-white">
                     <img
-                      src={resolveClientMediaSrc(url) || url}
+                      src={newsCoverSrc(url)}
                       alt=""
                       className="h-full w-full object-cover"
                     />

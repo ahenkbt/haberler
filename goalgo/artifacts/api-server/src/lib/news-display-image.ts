@@ -1,4 +1,5 @@
 import { mediaObjectExists, publicUploadPath } from "./mediaUploadService";
+import { isUnusableNewsImageUrl } from "./unusableNewsImageUrl.js";
 
 const UPLOAD_PATH_RE = /\/api\/media\/uploads\/([a-zA-Z0-9._-]+)/g;
 
@@ -38,14 +39,14 @@ export async function resolveNewsDisplayImageUrl(
   content: string | null | undefined,
 ): Promise<string | null> {
   const primary = String(imageUrl ?? "").trim();
-  if (primary && /^https?:\/\//i.test(primary)) return primary;
-  if (primary && (await uploadPathExists(primary))) return primary;
+  if (primary && /^https?:\/\//i.test(primary) && !isUnusableNewsImageUrl(primary)) return primary;
+  if (primary && !isUnusableNewsImageUrl(primary) && (await uploadPathExists(primary))) return primary;
 
   for (const fname of collectUploadFnamesFromHtml(content)) {
     if (await mediaObjectExists(fname)) return publicUploadPath(fname);
   }
 
-  return primary || null;
+  return isUnusableNewsImageUrl(primary) ? null : primary || null;
 }
 
 export async function newsRowHasResolvableDisplayImage(
@@ -53,7 +54,7 @@ export async function newsRowHasResolvableDisplayImage(
   content: string | null | undefined,
 ): Promise<boolean> {
   const resolved = await resolveNewsDisplayImageUrl(imageUrl, content);
-  if (!resolved) return false;
+  if (!resolved || isUnusableNewsImageUrl(resolved)) return false;
   if (/^https?:\/\//i.test(resolved)) return true;
   return uploadPathExists(resolved);
 }
@@ -82,7 +83,7 @@ export function resolveNewsItemImageUrl(item: {
     enclosure,
   ]) {
     const s = String(raw ?? "").trim();
-    if (s) return s;
+    if (s && !isUnusableNewsImageUrl(s)) return s;
   }
   return null;
 }
@@ -105,7 +106,7 @@ export function resolveNewsItemImageFallbackUrl(item: {
       : String(item.enclosure?.url ?? "").trim() || null;
   for (const raw of [item.imageFallbackUrl, item.featuredImage, item.thumbnailUrl, item.thumbnail, item.image, enclosure]) {
     const s = String(raw ?? "").trim();
-    if (!s || s === primary) continue;
+    if (!s || s === primary || isUnusableNewsImageUrl(s)) continue;
     if (/^https?:\/\//i.test(s) || s.startsWith("//")) {
       return s.startsWith("//") ? `https:${s.slice(2)}` : s;
     }

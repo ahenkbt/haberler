@@ -8,7 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { resolveHmOrGlobalSlotHtml } from "@/lib/hmResolveAdSlotHtml";
 import { rewriteHmSiteAnchorsInHtml } from "@/lib/rewriteNewsBodyLinksForHm";
-import { resolveClientMediaSrc, rewriteInlineHtmlImgSrc, apiUrl } from "@/lib/apiBase";
+import { rewriteInlineHtmlImgSrc, apiUrl } from "@/lib/apiBase";
+import { newsCoverSrc, resolveUsableClientMediaSrc } from "@/lib/newsCoverSrc";
 import { defaultNewsSiteLayoutPrefs, isHmHybridRssEnabled, normalizeHmVitrinTheme, resolveHmCorporateAuthorsEnabled, resolveHmNewsSidebarAuthorsEnabled, type NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { fetchHybridNewsList } from "@/hooks/useHomeHybridNews";
 import { mapPublicHybridNewsLinkFields } from "@/lib/hybridNewsHref";
@@ -203,7 +204,7 @@ export function HmNewsDetailSidebar({
                 >
                   {a.avatarUrl ? (
                     <img
-                      src={resolveClientMediaSrc(a.avatarUrl) || a.avatarUrl}
+                      src={resolveUsableClientMediaSrc(a.avatarUrl)}
                       alt=""
                       className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm"
                     />
@@ -255,7 +256,7 @@ export function HmNewsDetailSidebar({
           </div>
           <ul className="divide-y divide-slate-100">
             {latestNews.slice(0, 8).map((n) => {
-              const img = n.imageUrl ? resolveClientMediaSrc(n.imageUrl) || n.imageUrl : null;
+              const img = newsCoverSrc(n.imageUrl);
               return (
                 <li key={n.id}>
                   <Link href={n.href} className="flex gap-2.5 p-2.5 hover:bg-sky-50/50 transition-colors group">
@@ -300,11 +301,7 @@ export function HmNewsDetailSidebar({
                   >
                     {i + 1}
                   </span>
-                  {n.imageUrl ? (
-                    <img src={resolveClientMediaSrc(n.imageUrl) || n.imageUrl} alt="" className="w-14 h-10 object-cover rounded shrink-0" />
-                  ) : (
-                    <div className="w-14 h-10 bg-slate-100 rounded shrink-0" />
-                  )}
+                  <img src={newsCoverSrc(n.imageUrl)} alt="" className="w-14 h-10 object-cover rounded shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900 leading-snug line-clamp-3 group-hover:opacity-80">{n.title}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">

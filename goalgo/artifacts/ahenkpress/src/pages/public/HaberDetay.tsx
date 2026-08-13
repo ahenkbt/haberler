@@ -4,7 +4,8 @@ import { tr } from "date-fns/locale";
 import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { apiUrl, resolveClientMediaSrc, rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
+import { apiUrl, rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
+import { newsCoverSrc } from "@/lib/newsCoverSrc";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
 import { fetchHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { readHmNewsArticleBundleCache, writeHmNewsArticleBundleCache } from "@/lib/hmNewsArticleCache";
@@ -539,7 +540,7 @@ function ArticleBody({
   const displayTags = useMemo(() => filterNewsDisplayTags(article.tags), [article.tags]);
 
   const excerpt = resolveNewsExcerpt(article);
-  const heroImageSrc = article.imageUrl ? resolveClientMediaSrc(article.imageUrl) || article.imageUrl : null;
+  const heroImageSrc = newsCoverSrc(article.imageUrl);
   const isPortalLayout = !hmCtx;
   const hasSenderInfo = Boolean(article.senderFullName || article.senderEmail || article.senderPhone);
 

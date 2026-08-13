@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode, SyntheticEvent } from "react";
+import { HM_NEWS_PLACEHOLDER_IMAGE } from "@/lib/hmNewsPlaceholder";
+import { handleNewsImageError } from "@/lib/newsCoverSrc";
 
 export type EditorialNewsDetailHeaderProps = {
   accent: string;
@@ -65,16 +67,15 @@ export function EditorialNewsDetailHeader({
         </div>
       ) : null}
 
-      {imageSrc ? (
-        <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 shadow-sm">
-          <img
-            src={imageSrc}
-            alt={imageAlt ?? title}
-            className="mx-auto block h-auto w-full max-h-[min(70vh,560px)] object-contain"
-            loading="eager"
-          />
-        </div>
-      ) : null}
+      <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 shadow-sm">
+        <img
+          src={imageSrc?.trim() || HM_NEWS_PLACEHOLDER_IMAGE}
+          alt={imageAlt ?? title}
+          className="mx-auto block h-auto w-full max-h-[min(70vh,560px)] object-contain"
+          loading="eager"
+          onError={(ev: SyntheticEvent<HTMLImageElement>) => handleNewsImageError(ev.currentTarget)}
+        />
+      </div>
 
       {beforeExcerptSlot}
 

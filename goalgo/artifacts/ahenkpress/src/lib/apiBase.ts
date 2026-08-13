@@ -1,6 +1,8 @@
 import { isConfiguredPortalHost, isDefaultPortalHost, isEffectivePortalHost } from "./hmPortalHosts";
 import { resolveKnownHmEditorSlug } from "./hmEditorDomains";
+import { HM_NEWS_PLACEHOLDER_IMAGE } from "./hmNewsPlaceholder";
 import { PORTAL_ORIGIN } from "./portalBrand";
+import { isUnusableNewsImageUrl } from "./unusableNewsImageUrl";
 
 function parseConfiguredApiOrigin(): string | null {
   const raw = import.meta.env.VITE_API_BASE_URL?.trim() ?? "";
@@ -279,6 +281,7 @@ export function resolveClientMediaSrc(url: string | null | undefined): string {
   if (!t) return "";
   if (t.startsWith("//")) t = `https:${t}`;
   t = upgradeGooglePhotoResolution(t);
+  if (isUnusableNewsImageUrl(t)) return "";
 
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase().split(":")[0] ?? "";
@@ -344,9 +347,25 @@ export function resolveClientMediaSrc(url: string | null | undefined): string {
 /** Eski AI haberlerinde markdown ** alt başlıklarını gösterimde düzeltir (üretim zamanı normalize tercih edilir). */
 export { normalizeAiNewsHtml } from "./normalizeAiNewsHtml";
 
+function rewriteNewsImgSrcValue(src: string): string {
+  const t = String(src ?? "").trim();
+  if (!t || t.startsWith("data:") || t.startsWith("blob:")) return t;
+  if (isUnusableNewsImageUrl(t)) return HM_NEWS_PLACEHOLDER_IMAGE;
+  const resolved = resolveClientMediaSrc(t);
+  if (!resolved || isUnusableNewsImageUrl(resolved)) return HM_NEWS_PLACEHOLDER_IMAGE;
+  return resolved;
+}
+
 export function rewriteInlineHtmlImgSrc(html: string): string {
   const raw = html ?? "";
-  if (!raw.trim() || typeof window === "undefined") return raw;
+  if (!raw.trim()) return raw;
+  if (typeof window === "undefined") {
+    return raw.replace(/<img\b[^>]*>/gi, (tag) =>
+      tag.replace(/\bsrc\s*=\s*(["'])([^"']*)\1/i, (_m, quote: string, src: string) => {
+        return `src=${quote}${rewriteNewsImgSrcValue(src)}${quote}`;
+      }),
+    );
+  }
   try {
     const doc = new DOMParser().parseFromString(raw, "text/html");
     const body = doc.body;
@@ -354,8 +373,7 @@ export function rewriteInlineHtmlImgSrc(html: string): string {
     body.querySelectorAll("img[src]").forEach((el) => {
       const src = el.getAttribute("src");
       if (!src || src.startsWith("data:") || src.startsWith("blob:")) return;
-      const resolved = resolveClientMediaSrc(src);
-      if (resolved) el.setAttribute("src", resolved);
+      el.setAttribute("src", rewriteNewsImgSrcValue(src));
     });
     return body.innerHTML;
   } catch {

@@ -9,7 +9,7 @@ import { parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 import { hmPublicHref } from "@/lib/hmPublicLinks";
 import { coercePublicHybridNewsHref } from "@/lib/hybridNewsHref";
 import { fetchHybridNewsList, type HomeHybridNewsItem } from "@/hooks/useHomeHybridNews";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { newsCoverSrc, resolveUsableClientMediaSrc } from "@/lib/newsCoverSrc";
 import { resolveSadeAccent } from "@/lib/yekpareSadeTheme";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 
@@ -111,7 +111,7 @@ export default function HaberEmbedWidget() {
   };
 
   const partnerLogoRaw = layoutPrefs.logoUrl?.trim();
-  const partnerLogo = partnerLogoRaw ? resolveClientMediaSrc(partnerLogoRaw) || partnerLogoRaw : "";
+  const partnerLogo = partnerLogoRaw ? resolveUsableClientMediaSrc(partnerLogoRaw) : "";
   const partnerName = hmMeta?.displayName ?? hmCtx?.displayName ?? "";
 
   return (
@@ -141,7 +141,7 @@ export default function HaberEmbedWidget() {
             <div key={a.id} className="flex items-center gap-2 border-b border-gray-100 pb-2 last:border-0">
               {a.avatarUrl ? (
                 <img
-                  src={resolveClientMediaSrc(a.avatarUrl) || a.avatarUrl}
+                  src={resolveUsableClientMediaSrc(a.avatarUrl)}
                   alt=""
                   className="w-10 h-10 rounded-full object-cover shrink-0"
                 />
@@ -194,13 +194,11 @@ export default function HaberEmbedWidget() {
               rel="noopener noreferrer"
               className="block relative aspect-[16/10] bg-gray-900"
             >
-              {current.imageUrl ? (
-                <img
-                  src={resolveClientMediaSrc(current.imageUrl) || current.imageUrl}
+              <img
+                  src={newsCoverSrc(current.imageUrl)}
                   alt=""
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-              ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-3">
                 <p className="text-white font-black text-sm leading-tight line-clamp-3">{current.title}</p>

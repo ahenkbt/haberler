@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { ChevronRight, Users } from "lucide-react";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { resolveUsableClientMediaSrc } from "@/lib/newsCoverSrc";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 
 export type HmAuthorsStripAuthor = {
@@ -12,9 +12,7 @@ export type HmAuthorsStripAuthor = {
 };
 
 function authorAvatarSrc(url: string | null | undefined): string {
-  const raw = (url ?? "").trim();
-  if (!raw) return "";
-  return resolveClientMediaSrc(raw) || raw;
+  return resolveUsableClientMediaSrc(url);
 }
 
 function dedupeAuthors(authors: HmAuthorsStripAuthor[]): HmAuthorsStripAuthor[] {
