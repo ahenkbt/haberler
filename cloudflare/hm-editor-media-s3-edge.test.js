@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, listR2S3EndpointCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -38,5 +38,13 @@ describe("hm-editor-media-s3-edge", () => {
       }),
       true,
     );
+  });
+
+  it("tries the Render dual-write host first when the blob lists the wrangler account first", () => {
+    const blob = `${CF_ACCOUNT_R2_S3_ENDPOINT} ${RENDER_R2_S3_ENDPOINT}`;
+    const listed = listR2S3EndpointCandidates(blob);
+    assert.equal(listed[0], RENDER_R2_S3_ENDPOINT);
+    assert.ok(listed.includes(CF_ACCOUNT_R2_S3_ENDPOINT));
+    assert.equal(coerceR2S3Endpoint(blob), RENDER_R2_S3_ENDPOINT);
   });
 });

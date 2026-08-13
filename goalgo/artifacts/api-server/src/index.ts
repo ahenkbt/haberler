@@ -69,7 +69,7 @@ import {
   noteS3RuntimeFailure,
   s3EndpointHostPrefix4,
 } from "./lib/mediaStorageConfig";
-import { s3ObjectExists } from "./lib/mediaObjectStorage";
+import { probeS3Connectivity } from "./lib/mediaObjectStorage";
 import { logEtkinlikIoStartupHint } from "./lib/etkinlik-io.js";
 import { envJobFlag, isRenderHosting } from "./lib/hostingProfile.js";
 import { migrateMediaToDisk } from "./lib/mediaBulkMigrate.js";
@@ -83,9 +83,20 @@ logEtkinlikIoStartupHint();
 assertProductionMediaStorage();
 
 if (isS3MediaConfigured() && getMediaStoragePreference() === "s3") {
-  void s3ObjectExists("startup-probe")
-    .then(() => {
-      logger.info("[goalgo] S3/R2 startup probe: ok");
+  void probeS3Connectivity()
+    .then((r) => {
+      if (r.ok) {
+        logger.info(
+          { hostPrefix: r.hostPrefix, tried: r.tried },
+          "[goalgo] S3/R2 startup probe: ok",
+        );
+        return;
+      }
+      noteS3RuntimeFailure((r.error ?? "probe failed").slice(0, 120));
+      logger.warn(
+        { error: r.error, tried: r.tried },
+        "[goalgo] S3/R2 startup probe failed — volume moduna geçildi",
+      );
     })
     .catch((err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
