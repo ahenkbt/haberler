@@ -27,6 +27,8 @@ type Props = {
   /** Çoklu seçim: onConfirm ile birlikte kullanın. */
   multiSelect?: boolean;
   onConfirm?: (urls: string[]) => void;
+  /** Verilirse dosya R2'ye gitmez; dönen data URL seçilir (logo / yazar fotoğrafı). */
+  inlineUpload?: (file: File) => Promise<string>;
 };
 
 export function YekpareMediaPickerDialog({
@@ -36,6 +38,7 @@ export function YekpareMediaPickerDialog({
   title = "Yekpare medyadan seç",
   multiSelect = false,
   onConfirm,
+  inlineUpload,
 }: Props) {
   const { data: news, isLoading } = useListNews();
   const { toast } = useToast();
@@ -104,6 +107,11 @@ export function YekpareMediaPickerDialog({
     const uploaded: string[] = [];
     try {
       for (const file of list) {
+        if (inlineUpload) {
+          const url = await inlineUpload(file);
+          uploaded.push(url);
+          continue;
+        }
         const { url, title } = await uploadYekpareMediaFile(file);
         setCustom((prev) => [{ url, title }, ...prev.filter((x) => x.url !== url)]);
         uploaded.push(url);
@@ -134,7 +142,9 @@ export function YekpareMediaPickerDialog({
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <p className="mt-1 text-xs text-muted-foreground">
-            Yüklediğiniz görseller ve tüm sitelerin haber kapakları ortak havuzda listelenir.
+            {inlineUpload
+              ? "Yüklediğiniz görsel doğrudan kaydedilir; kırık medya adresi kullanılmaz."
+              : "Yüklediğiniz görseller ve tüm sitelerin haber kapakları ortak havuzda listelenir."}
             {multiSelect ? " Birden fazla görsel seçebilirsiniz." : null}
           </p>
           <div className="mt-3 flex gap-2">

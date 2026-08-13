@@ -125,6 +125,7 @@ export function hmEditorEntryPathForHost(host?: string): string | null {
 export function extractApiMediaPath(url: string): string | null {
   const raw = url.trim();
   if (!raw) return null;
+  if (raw.startsWith("data:")) return null;
   try {
     if (/^https?:\/\//i.test(raw) || raw.startsWith("//")) {
       const u = new URL(raw.startsWith("//") ? `https:${raw}` : raw);
@@ -216,6 +217,7 @@ function rewriteAbsoluteMediaApiUrlToCanonical(absUrl: string): string | null {
 export function toPersistedPublicMediaUrl(pathOrUrl: string): string {
   const raw = pathOrUrl.trim();
   if (!raw) return "";
+  if (raw.startsWith("data:")) return raw;
   let t = raw;
   if (t.startsWith("//")) t = `https:${t}`;
   if (/^https?:\/\//i.test(t)) {
@@ -277,6 +279,7 @@ export function upgradeGooglePhotoResolution(url: string): string {
 export function resolveClientMediaSrc(url: string | null | undefined): string {
   let t = (url ?? "").trim();
   if (!t) return "";
+  if (t.startsWith("data:")) return t;
   if (t.startsWith("//")) t = `https:${t}`;
   t = upgradeGooglePhotoResolution(t);
 

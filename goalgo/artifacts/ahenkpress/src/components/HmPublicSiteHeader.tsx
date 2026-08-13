@@ -59,6 +59,9 @@ export function HmPublicSiteHeader({
 }: HmPublicSiteHeaderProps) {
   const logo = logoUrl?.trim();
   const [logoFailed, setLogoFailed] = useState(false);
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [logo]);
   const h = useHmPublicHref();
   const hmCtx = useHmPublicLinkContextOptional();
   const layoutPrefs = hmCtx?.layoutPrefs ?? null;

@@ -10,6 +10,7 @@ import { ArrowDown, ArrowUp, ExternalLink, Upload, Images, Loader2, X, Edit2, Tr
 import { useEffect, useRef, useState } from "react";
 import { YekpareMediaPickerDialog } from "@/components/YekpareMediaPickerDialog";
 import { HmAuthorAvatar, compressAuthorAvatarFile } from "@/components/HmAuthorAvatar";
+import { inlineImageFromSrc } from "@/lib/compressInlineImage";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { normalizeHmVitrinTheme, resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
 import { apiUrl } from "@/lib/apiBase";
@@ -438,18 +439,53 @@ export default function EditorKoseYazarlari() {
               open={mediaOpen}
               onOpenChange={setMediaOpen}
               title="Avatar — Yekpare medya"
+              inlineUpload={compressAuthorAvatarFile}
               onSelect={(url) => {
                 const u = String(url ?? "").trim();
                 if (!u) return;
-                if (u.startsWith("data:image/") || (/^https?:\/\//i.test(u) && !/\/api\/media\//i.test(u))) {
-                  setAvatarUrl(u);
-                  return;
-                }
-                toast({
-                  title: "Dosyadan yükleyin",
-                  description: "Medya kütüphanesindeki adresler şu an kırık. Fotoğrafı «Dosyadan yükle» ile ekleyin.",
-                  variant: "destructive",
-                });
+                void (async () => {
+                  setAvatarUploading(true);
+                  try {
+                    const dataUrl = u.startsWith("data:image/")
+                      ? u
+                      : await inlineImageFromSrc(u, { maxPx: 192, quality: 0.78, mime: "image/jpeg" });
+                    setAvatarUrl(dataUrl);
+                    const t = readHmJwt();
+                    if (t && editingId != null && name.trim()) {
+                      const r = await fetch(apiUrl(`/api/hm/editor/authors/${editingId}`), {
+                        method: "PUT",
+                        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: name.trim(),
+                          title: title.trim() || undefined,
+                          avatarUrl: dataUrl,
+                          bio: bio.trim() || undefined,
+                        }),
+                      });
+                      if (!r.ok) {
+                        const j = (await r.json().catch(() => ({}))) as { error?: string };
+                        throw new Error(j.error || "Fotoğraf kaydedilemedi");
+                      }
+                      await qc.invalidateQueries({ queryKey: ["/api/authors", "hm-editor", site?.id] });
+                      toast({ title: "Fotoğraf kaydedildi", description: "Sitede hemen görünür." });
+                    } else {
+                      toast({
+                        title: "Avatar eklendi",
+                        description: "«Yazar ekle» veya «Kaydet»e basın — fotoğraf sitede hemen görünür.",
+                      });
+                    }
+                  } catch (err) {
+                    toast({
+                      title: "Dosyadan yükleyin",
+                      description:
+                        String((err as Error).message).slice(0, 160) ||
+                        "Medya kütüphanesindeki adres kırık. Penceredeki «Yükle»yi veya «Dosyadan yükle»yi kullanın.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setAvatarUploading(false);
+                  }
+                })();
               }}
             />
           </div>

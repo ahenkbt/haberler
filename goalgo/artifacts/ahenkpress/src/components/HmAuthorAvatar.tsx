@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { compressInlineImageFile } from "@/lib/compressInlineImage";
 import { cn } from "@/lib/utils";
 
 function authorInitial(name: string | null | undefined): string {
@@ -76,27 +77,5 @@ export function HmAuthorAvatar({
 }
 
 export async function compressAuthorAvatarFile(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Yalnızca görsel dosyası yükleyin");
-  }
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Görsel okunamadı"));
-      el.src = objectUrl;
-    });
-    const max = 192;
-    const scale = Math.min(1, max / Math.max(img.width || 1, img.height || 1));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round((img.width || 1) * scale));
-    canvas.height = Math.max(1, Math.round((img.height || 1) * scale));
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Görsel işlenemedi");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.78);
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
+  return compressInlineImageFile(file, { maxPx: 192, quality: 0.78, mime: "image/jpeg" });
 }
