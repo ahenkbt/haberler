@@ -102,16 +102,6 @@ jobs:
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
         run: pnpm run build:cloudflare
 
-      - name: Ensure R2 media bucket exists
-        if: steps.cf.outputs.enabled == 'true'
-        continue-on-error: true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
-        run: |
-          pnpm exec wrangler r2 bucket create yekpare-media || true
-          pnpm exec wrangler r2 bucket list
-
       - name: Deploy Worker + Container + Static Assets to Cloudflare
         if: steps.cf.outputs.enabled == 'true'
         env:
