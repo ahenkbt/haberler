@@ -72,6 +72,11 @@ import {
   resolveHmHeaderRightSlot,
   type HmHeaderRightSlotId,
 } from "@/lib/newsSiteLayout";
+import {
+  HM_RSS_SOURCE_PACK_OPTIONS,
+  cleanHmRssSourcePackFlags,
+  parseHmRssSourcePackFlags,
+} from "@/lib/hmRssSourcePacks";
 import { Link } from "wouter";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
@@ -1679,9 +1684,8 @@ export default function EditorVitrinAyarlari() {
               Site-içi RSS entegrasyon modu
             </Label>
             <p className="text-xs text-slate-500">
-              Kutu içi RSS her zaman anlık/canlıdır (DB yok). Site-içi RSS kaynakları seçilen moda göre davranır;
-              haberler site içinde açılır (NTV vb. dışarı atılmaz). Kalıcı ve manuel modlarda 6 ay saklama cron
-              temizliği uygulanır.
+              RSS adresleri saatte bir canlı çekilir ve siteye kaydedilmeden gösterilir (görseller indirilmez).
+              Gece 01:00’de o ana kadar gösterilen öğeler veritabanına yazılır. Haberler site içinde açılır.
             </p>
             <Select value={rssIntegrationMode} onValueChange={(v) => setRssIntegrationMode(v as HmRssIntegrationMode)} disabled={saving}>
               <SelectTrigger id="hm-rss-integration-mode" className="max-w-md">
@@ -1727,6 +1731,62 @@ export default function EditorVitrinAyarlari() {
                 Güncelle
               </Button>
             ) : null}
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <Label className="font-semibold text-slate-900">Kaynak paketleri</Label>
+            <p className="text-xs text-slate-500">
+              Aktif paketlerin RSS’leri ilgili kategoride birleştirilir. Benzer başlıklar (genel, gündem, siyaset,
+              politika) aynı kategoridedir. Yerel pakette Ankara haberleri Ankara, diğerleri Yerel kategorisindedir.
+            </p>
+            {HM_RSS_SOURCE_PACK_OPTIONS.map((pack) => {
+              const packs = parseHmRssSourcePackFlags(p.hmRssSourcePacks);
+              const checked = packs[pack.id] === true;
+              return (
+                <div key={pack.id} className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 px-3 py-2">
+                  <div className="min-w-0">
+                    <Label htmlFor={`hm-rss-pack-${pack.id}`} className="cursor-pointer text-sm font-semibold text-slate-800">
+                      {pack.label}
+                    </Label>
+                    <p className="text-[11px] text-slate-500">{pack.hint}</p>
+                  </div>
+                  <Switch
+                    id={`hm-rss-pack-${pack.id}`}
+                    disabled={saving}
+                    checked={checked}
+                    onCheckedChange={(c) => {
+                      const next = cleanHmRssSourcePackFlags({ ...packs, [pack.id]: c });
+                      void commit({
+                        ...p,
+                        hybridRssEnabled: c ? true : p.hybridRssEnabled,
+                        hmRssSourcePacks: next,
+                      });
+                    }}
+                  />
+                </div>
+              );
+            })}
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-rose-100 bg-rose-50/50 px-3 py-2">
+              <div className="min-w-0">
+                <Label htmlFor="hm-rss-pack-karma" className="cursor-pointer text-sm font-semibold text-slate-800">
+                  Karma çek
+                </Label>
+                <p className="text-[11px] text-slate-500">
+                  Her açık kaynaktan son 5 benzersiz haberi ilgili kategoride göster.
+                </p>
+              </div>
+              <Switch
+                id="hm-rss-pack-karma"
+                disabled={saving}
+                checked={parseHmRssSourcePackFlags(p.hmRssSourcePacks).karmaCek === true}
+                onCheckedChange={(c) => {
+                  const packs = parseHmRssSourcePackFlags(p.hmRssSourcePacks);
+                  void commit({
+                    ...p,
+                    hmRssSourcePacks: cleanHmRssSourcePackFlags({ ...packs, karmaCek: c }),
+                  });
+                }}
+              />
+            </div>
           </div>
           <RssBreakingFeedsEditor
             enabled={p.hmNewsGoogleNewsBandEnabled === true}

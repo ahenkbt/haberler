@@ -9,6 +9,11 @@ import {
   expandRssCategorySlugCandidates,
   rssCategorySlugsMatch,
 } from "./hm-rss-category-aliases.js";
+import {
+  HM_RSS_KARMA_MAX_ITEMS,
+  listEnabledHmRssSourcePackFeeds,
+  parseHmRssSourcePackFlags,
+} from "./hm-rss-source-packs.js";
 
 export type PortalHybridRssFeedConfig = {
   id: string;
@@ -353,9 +358,36 @@ export async function loadPortalHybridRssFeeds(
         normalizeHmBreakingRssRows(layout.hmNewsBreakingRssFeedRows, layout.hmNewsBreakingRssFeeds, id, "box", categorySlugLookup),
         hmSporBoxRssRows(id, categorySlugLookup),
       );
-    const siteRows = () =>
-      // Site scope: hmNewsSiteRssFeedRows; boşsa varsayılan NTV preset (kutu feed’lerine düşmez).
-      normalizeHmBreakingRssRows(layout.hmNewsSiteRssFeedRows, null, id, "site", categorySlugLookup);
+    const siteRows = () => {
+      const layoutRows = normalizeHmBreakingRssRows(
+        layout.hmNewsSiteRssFeedRows,
+        null,
+        id,
+        "site",
+        categorySlugLookup,
+      );
+      const packFlags = parseHmRssSourcePackFlags(layout.hmRssSourcePacks);
+      const packFeeds = listEnabledHmRssSourcePackFeeds(packFlags);
+      const packMax = packFlags.karmaCek === true ? HM_RSS_KARMA_MAX_ITEMS : SITE_RSS_MAX_ITEMS;
+      const packRows: PortalHybridRssFeedConfig[] = packFeeds.map((feed, index) => {
+        const categorySlug = resolveFeedCategorySlug(
+          feed.categoryKey,
+          feed.id,
+          feed.label,
+          categorySlugLookup,
+          index,
+        );
+        return {
+          id: `hm-${id}-site-pack-${feed.id}`,
+          categorySlug,
+          label: feed.label,
+          url: feed.url,
+          enabled: true,
+          maxItems: packMax,
+        };
+      });
+      return mergeHmScopedRssRows(layoutRows, packRows);
+    };
     const portalLayoutRows = () => hmPortalRssRowsFromLayout(layout, id, categorySlugLookup);
     if (scope === "box") return boxRows();
     if (scope === "site") return mergeHmScopedRssRows(siteRows(), portalLayoutRows());

@@ -13,6 +13,7 @@ import { backfillPortalRssNewsFromCache } from "./portal-rss-auto-import.js";
 import { importPortalRssNewsByCategoryBatch } from "./portal-rss-category-import.js";
 import { PG_ADVISORY_LOCKS, withPgAdvisoryLock } from "./pg-advisory-lock.js";
 import {
+  isWithinRssPersistSlot,
   msUntilNextRssScheduledSlot,
   shouldRunRssAutomationTick,
 } from "./rss-automation-control.js";
@@ -29,7 +30,7 @@ import { parseHmLayoutRecord } from "./hm-layout-json.js";
  * Site içi RSS (`hybridRssEnabled`): zamanlayıcı o sitenin `hm-*-site-*` feed’lerini
  * de tarar. "Kutu içi RSS" (box scope) DB'ye yazılmaz — o widget canlı kalır.
  *
- * Otomatik çalışma: admin «RSS otomasyonu» (günde 3× — 01:00, 09:00, 18:00 TR) veya RSS_AUTOMATION=1.
+ * Otomatik çalışma: saatlik canlı önbellek; gece 01:00 TR kalıcı DB kaydı.
  * Manuel: POST /api/admin/portal-rss/refresh.
  */
 const PER_FEED_CONCURRENCY = Math.min(
@@ -140,45 +141,51 @@ export function startPortalRssScheduler(log: Logger, intervalMs = 60 * 60_000): 
             return;
           }
 
+          const persistToDb = isWithinRssPersistSlot();
           const target = due.length ? due : feeds;
           let stored = 0;
           let failed = 0;
           await mapWithConcurrency(target, PER_FEED_CONCURRENCY, async (feed) => {
-            const res = await refreshPortalRssFeedSafe(feed);
+            const res = await refreshPortalRssFeedSafe(feed, { persistToDb });
             if (res.error) failed += 1;
             else stored += res.stored;
           });
 
-          try {
-            const batch = await importPortalRssNewsByCategoryBatch();
-            if (batch.inserted > 0) {
-              log.info(batch, "[portal-rss] kategori batch news import tamamlandı");
-            }
-          } catch (e) {
-            log.debug({ err: e }, "[portal-rss] kategori batch news import atlandı");
-          }
-
-          if (reason === "startup") {
+          if (persistToDb) {
             try {
-              const backfill = await backfillPortalRssNewsFromCache(50);
-              if (backfill.inserted > 0) {
-                log.info(backfill, "[portal-rss] mevcut RSS önbelleği news tablosuna aktarıldı");
+              const batch = await importPortalRssNewsByCategoryBatch();
+              if (batch.inserted > 0) {
+                log.info(batch, "[portal-rss] gece 01:00 kategori batch news import tamamlandı");
               }
             } catch (e) {
-              log.debug({ err: e }, "[portal-rss] news geri doldurma atlandı");
+              log.debug({ err: e }, "[portal-rss] kategori batch news import atlandı");
+            }
+
+            if (reason === "startup") {
+              try {
+                const backfill = await backfillPortalRssNewsFromCache(50);
+                if (backfill.inserted > 0) {
+                  log.info(backfill, "[portal-rss] mevcut RSS önbelleği news tablosuna aktarıldı");
+                }
+              } catch (e) {
+                log.debug({ err: e }, "[portal-rss] news geri doldurma atlandı");
+              }
             }
           }
 
           log.info(
             {
               reason,
+              persistToDb,
               portalFeeds: portalFeeds.length,
               siteFeeds: siteFeeds.length,
               refreshed: target.length,
               stored,
               failed,
             },
-            "Portal + site hibrit RSS DB havuzu yenilendi",
+            persistToDb
+              ? "Portal + site hibrit RSS DB havuzu yenilendi"
+              : "Portal + site hibrit RSS canlı önbellek yenilendi",
           );
         }),
         TICK_HARD_TIMEOUT_MS,

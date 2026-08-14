@@ -791,7 +791,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           await refreshPortalRssFeedsOnVisit(
             enabledPortalHybridRssFeeds(visitFeeds, categorySlug),
             {
-              maxWaitMs: freshPortalVisit ? 22_000 : 12_000,
+              maxWaitMs: freshPortalVisit ? 3_000 : 1_500,
               categorySlug,
               force: freshPortalVisit,
             },
@@ -831,7 +831,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           }
           await Promise.race([
             warmPortalRssCacheIfEmpty(warmFeeds),
-            new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+            new Promise<void>((resolve) => setTimeout(resolve, 2_000)),
           ]);
           const warmed = await loadCachedRssBundle();
           mapRssItems = warmed.mapRssItems;
@@ -1011,7 +1011,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     if (includeRss && siteId == null && (freshPortalVisit || !dbFirst)) {
       try {
         await refreshPortalRssFeedsOnVisit(activeFeeds, {
-          maxWaitMs: freshPortalVisit ? 22_000 : 12_000,
+          maxWaitMs: freshPortalVisit ? 3_000 : 1_500,
           categorySlug,
           force: freshPortalVisit,
         });

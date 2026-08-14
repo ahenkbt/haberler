@@ -178,7 +178,7 @@ export async function refreshHmSiteRssFeedsForEditor(siteId: number): Promise<{
   if (!feeds.length) return { refreshed: 0, stored: 0, failed: 0 };
   let stored = 0;
   let failed = 0;
-  const results = await refreshAllPortalRssFeeds(feeds);
+  const results = await refreshAllPortalRssFeeds(feeds, { persistToDb: true });
   for (const row of results) {
     if (row.error) failed += 1;
     else stored += row.stored;

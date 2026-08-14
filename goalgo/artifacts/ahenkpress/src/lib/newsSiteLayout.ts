@@ -5,6 +5,7 @@
 import { normalizeHmRequestCategories, type HmRequestCategory } from "./hmRequestForm";
 import { hmCategorySlug } from "./hmCategorySlug";
 import { canonicalizeRssCategorySlug } from "./hmRssCategoryAliases";
+import { parseHmRssSourcePackFlags, type HmRssSourcePackFlags } from "./hmRssSourcePacks";
 import { HM_VITRIN_THEME_FLOWER_LABELS, hmVitrinThemeFlowerLabel } from "./hmVitrinThemeTokens";
 import { normalizeYekpareCategoryBoxCount, normalizeYekpareKutuItemCount } from "./hmCategoryBoxItems";
 import type { HmMediaGalleryHomeModuleId, HmMediaGallerySourceId, HmNewsGallerySpotlightMode, HmNewsHomeModuleGalleryVideoTvRefs } from "./hmMediaSpotlightPool";
@@ -601,6 +602,8 @@ export type NewsSiteLayoutPrefs = {
   hmSiteRssDefaultsRev?: string | null;
   /** HABER teması: site içi RSS / hibrit haber akışı kaynakları. Boş/eksikse Diriliş Postası + yerel varsayılanlar kullanılır (kutu bandına düşülmez). */
   hmNewsSiteRssFeedRows?: HmBreakingRssFeedRow[] | null;
+  /** Editör: NTV / Diriliş / Birgün / Yerel paketleri + karma çek. */
+  hmRssSourcePacks?: HmRssSourcePackFlags | null;
   /** Yekpare `/haberler` hibrit vitrin: kategori bazlı harici RSS kaynakları (DB'ye yazılmaz). */
   portalHybridRssFeeds?: PortalHybridRssFeed[] | null;
   /** HM haber sitesi: site-içi RSS hibrit haber akışı; tanımsızsa kapalı. Entegrasyon modu: hmRssIntegrationMode. */
@@ -3131,6 +3134,7 @@ export function parseNewsSiteLayoutFromJson(
       Array.isArray(siteRssRaw) && siteRssRaw.length > 0
         ? normalizeHmBreakingRssFeedRows(siteRssRaw, null, null)
         : defaultHmSiteRssFeedRows();
+    const hmRssSourcePacks = parseHmRssSourcePackFlags((j as { hmRssSourcePacks?: unknown }).hmRssSourcePacks);
     const portalHybridRssFeeds = normalizePortalHybridRssFeeds((j as { portalHybridRssFeeds?: unknown }).portalHybridRssFeeds);
     const hybridRssEnabledRaw = (j as { hybridRssEnabled?: unknown }).hybridRssEnabled;
     const hmNewsBreakingRssBandTitle = normalizeHmBreakingRssBandTitle(
@@ -3401,6 +3405,7 @@ export function parseNewsSiteLayoutFromJson(
       hmBreakingRssDefaultsRev,
       hmSiteRssDefaultsRev,
       hmNewsSiteRssFeedRows,
+      hmRssSourcePacks,
       portalHybridRssFeeds: portalHybridRssFeeds ?? undefined,
       hybridRssEnabled: hybridRssEnabledRaw === true ? true : undefined,
       hmNewsBreakingRssBandTitle: hmNewsBreakingRssBandTitle ?? undefined,
