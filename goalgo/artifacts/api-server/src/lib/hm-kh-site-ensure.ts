@@ -11,6 +11,10 @@ import { ensureHmSiteEditorUsernameColumn } from "./hm-editor-profile.js";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
 import { sanitizeHmPublicLayoutRecord } from "./hm-layout-sanitize.js";
 import { HM_TEPE_MANSET_OPT_IN_REV } from "./hm-tepe-manset-layout.js";
+import {
+  DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS,
+  HM_RSS_KARMA_DEFAULTS_REV,
+} from "./hm-rss-source-packs.js";
 
 /**
  * Kırşehir Haber — kanonik slug `kirsehirhaber` (/tr/kirsehirhaber).
@@ -90,6 +94,8 @@ function defaultKhLayoutJson(): string {
     hmNewsVideoTvEnabled: true,
     sadeNewsCitiesBandEnabled: true,
     hybridRssEnabled: true,
+    hmRssSourcePacks: { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
+    hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
     hmYekparePoolReceiveEnabled: true,
     hmRssIntegrationMode: "live",
     /** İlk açılışta havuz haberleriyle dolu görünsün */
@@ -292,6 +298,8 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
         hmNewsGoogleNewsBandEnabled: true,
         hmNewsEsenLeadPackEnabled: true,
         hybridRssEnabled: true,
+        hmRssSourcePacks: { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
+        hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
         hmYekparePoolReceiveEnabled: true,
         hmAllowCrossSiteManualNews: parsed.hmAllowCrossSiteManualNews ?? true,
         hmNewsHomeModuleOrder:

@@ -103,8 +103,53 @@ export const HM_RSS_SOURCE_PACKS: Record<HmRssSourcePackId, { label: string; fee
   yerel: { label: "Yerel RSS", feeds: YEREL },
 };
 
-export function parseHmRssSourcePackFlags(raw: unknown): HmRssSourcePackFlags {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+export const DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS: HmRssSourcePackFlags = {
+  ntv: true,
+  dirilis: true,
+  birgun: true,
+  yerel: true,
+  karmaCek: true,
+};
+
+export const HM_RSS_SOURCE_PACKS_ALL_OFF: HmRssSourcePackFlags = {
+  ntv: false,
+  dirilis: false,
+  birgun: false,
+  yerel: false,
+  karmaCek: false,
+};
+
+/** Haber sitelerinde RSS karma varsayılanını bir kez aç; editör kapattıktan sonra tekrar zorlanmaz. */
+export const HM_RSS_KARMA_DEFAULTS_REV = "rss-karma-default-v1";
+
+export function isHmRssKarmaDefaultsRevCurrent(raw: unknown): boolean {
+  return String(raw ?? "").trim() === HM_RSS_KARMA_DEFAULTS_REV;
+}
+
+function isCorporateHmVitrinTheme(theme: unknown): boolean {
+  const t = String(theme ?? "").trim().toLowerCase();
+  return t === "corporate" || t === "kurumsal";
+}
+
+function packObjectHasAnyFlag(raw: unknown): raw is Record<string, unknown> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+  const o = raw as Record<string, unknown>;
+  return "ntv" in o || "dirilis" in o || "birgun" in o || "yerel" in o || "karmaCek" in o;
+}
+
+export function parseHmRssSourcePackFlags(
+  raw: unknown,
+  opts?: { corporate?: boolean; karmaDefaultsRev?: unknown },
+): HmRssSourcePackFlags {
+  if (opts?.corporate) {
+    return { ...HM_RSS_SOURCE_PACKS_ALL_OFF };
+  }
+  if (!isHmRssKarmaDefaultsRevCurrent(opts?.karmaDefaultsRev)) {
+    return { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS };
+  }
+  if (!packObjectHasAnyFlag(raw)) {
+    return { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS };
+  }
   const o = raw as Record<string, unknown>;
   return {
     ntv: o.ntv === true,
@@ -113,6 +158,57 @@ export function parseHmRssSourcePackFlags(raw: unknown): HmRssSourcePackFlags {
     yerel: o.yerel === true,
     karmaCek: o.karmaCek === true,
   };
+}
+
+function rssNewsRowsPresent(raw: unknown): boolean {
+  return Array.isArray(raw) && raw.length > 0;
+}
+
+/** Kurumsal vitrinden gelen RSS haberini siler; haber sitesinde rev yoksa karma varsayılanını yazar. */
+export function nextRssKarmaDefaultLayoutPatch(
+  prev: Record<string, unknown>,
+): Record<string, unknown> | null {
+  if (isCorporateHmVitrinTheme(prev.hmVitrinTheme)) {
+    const alreadyOff =
+      prev.hybridRssEnabled === false &&
+      prev.hmNewsGoogleNewsBandEnabled !== true &&
+      prev.hmCorporateGoogleNewsBandEnabled !== true &&
+      !rssNewsRowsPresent(prev.hmNewsSiteRssFeedRows) &&
+      !rssNewsRowsPresent(prev.hmNewsBreakingRssFeedRows) &&
+      !rssNewsRowsPresent(prev.portalHybridRssFeeds);
+    const packs = prev.hmRssSourcePacks;
+    const packsOff =
+      packs &&
+      typeof packs === "object" &&
+      !Array.isArray(packs) &&
+      (packs as HmRssSourcePackFlags).ntv !== true &&
+      (packs as HmRssSourcePackFlags).dirilis !== true &&
+      (packs as HmRssSourcePackFlags).birgun !== true &&
+      (packs as HmRssSourcePackFlags).yerel !== true &&
+      (packs as HmRssSourcePackFlags).karmaCek !== true;
+    if (alreadyOff && packsOff) return null;
+    return {
+      ...prev,
+      hybridRssEnabled: false,
+      hmRssSourcePacks: { ...HM_RSS_SOURCE_PACKS_ALL_OFF },
+      hmNewsSiteRssFeedRows: [],
+      hmNewsBreakingRssFeedRows: [],
+      hmNewsGoogleNewsBandEnabled: false,
+      hmCorporateGoogleNewsBandEnabled: false,
+      portalHybridRssFeeds: [],
+    };
+  }
+  if (isHmRssKarmaDefaultsRevCurrent(prev.hmRssKarmaDefaultsRev)) return null;
+  return {
+    ...prev,
+    hybridRssEnabled: true,
+    hmRssSourcePacks: { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
+    hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
+  };
+}
+
+export function applyHmRssNewsPolicyToLayout(layout: Record<string, unknown>): Record<string, unknown> {
+  return nextRssKarmaDefaultLayoutPatch(layout) ?? layout;
 }
 
 export function listEnabledHmRssSourcePackFeeds(flags: HmRssSourcePackFlags): HmRssSourcePackFeed[] {

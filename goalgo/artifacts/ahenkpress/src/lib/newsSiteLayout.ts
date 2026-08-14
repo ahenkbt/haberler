@@ -5,7 +5,7 @@
 import { normalizeHmRequestCategories, type HmRequestCategory } from "./hmRequestForm";
 import { hmCategorySlug } from "./hmCategorySlug";
 import { canonicalizeRssCategorySlug } from "./hmRssCategoryAliases";
-import { parseHmRssSourcePackFlags, type HmRssSourcePackFlags } from "./hmRssSourcePacks";
+import { parseHmRssSourcePackFlags, type HmRssSourcePackFlags, DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS, HM_RSS_KARMA_DEFAULTS_REV, HM_RSS_SOURCE_PACKS_ALL_OFF, isHmRssKarmaDefaultsRevCurrent } from "./hmRssSourcePacks";
 import { HM_VITRIN_THEME_FLOWER_LABELS, hmVitrinThemeFlowerLabel } from "./hmVitrinThemeTokens";
 import { normalizeYekpareCategoryBoxCount, normalizeYekpareKutuItemCount } from "./hmCategoryBoxItems";
 import type { HmMediaGalleryHomeModuleId, HmMediaGallerySourceId, HmNewsGallerySpotlightMode, HmNewsHomeModuleGalleryVideoTvRefs } from "./hmMediaSpotlightPool";
@@ -604,9 +604,11 @@ export type NewsSiteLayoutPrefs = {
   hmNewsSiteRssFeedRows?: HmBreakingRssFeedRow[] | null;
   /** Editör: NTV / Diriliş / Birgün / Yerel paketleri + karma çek. */
   hmRssSourcePacks?: HmRssSourcePackFlags | null;
+  /** Haber sitelerinde RSS karma varsayılan rev’i — bir kez açıldıktan sonra editör kapatırsa korunur. */
+  hmRssKarmaDefaultsRev?: string | null;
   /** Yekpare `/haberler` hibrit vitrin: kategori bazlı harici RSS kaynakları (DB'ye yazılmaz). */
   portalHybridRssFeeds?: PortalHybridRssFeed[] | null;
-  /** HM haber sitesi: site-içi RSS hibrit haber akışı; tanımsızsa kapalı. Entegrasyon modu: hmRssIntegrationMode. */
+  /** HM haber sitesi: site-içi RSS hibrit haber akışı; tanımsızsa açık. Entegrasyon modu: hmRssIntegrationMode. */
   hybridRssEnabled?: boolean;
   /** HABER teması: RSS son dakika kart bandı başlışı; tanımsızsa "Haber Bandı" kullanılır. */
   hmNewsBreakingRssBandTitle?: string | null;
@@ -1361,7 +1363,7 @@ export function resolveHmCorporateEditorModuleEnabled(
     case "quickAccess":
       return p.hmCorporateQuickAccessEnabled !== false;
     case "googleNewsBand":
-      return p.hmCorporateGoogleNewsBandEnabled === true;
+      return false;
     case "culturePortal":
       return p.hmCorporateCulturePortalBandEnabled === true;
     case "mansetAd":
@@ -1403,7 +1405,7 @@ export function applyHmCorporateEditorModuleTogglePatch(
     case "quickAccess":
       return { hmCorporateQuickAccessEnabled: checked };
     case "googleNewsBand":
-      return { hmCorporateGoogleNewsBandEnabled: checked };
+      return { hmCorporateGoogleNewsBandEnabled: false };
     case "culturePortal":
       return { hmCorporateCulturePortalBandEnabled: checked };
     case "mansetAd":
@@ -2633,6 +2635,8 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmYekparePoolReceiveEnabled: true,
   hmYekparePoolSendEnabled: true,
   hybridRssEnabled: true,
+  hmRssSourcePacks: { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
+  hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
   hmNewsCategorySectionsEnabled: true,
   hmNewsQuickLinksEnabled: true,
   hmNewsAuthorsEnabled: true,
@@ -2942,16 +2946,19 @@ function normalizeThemeDefaultHiddenToggle(
   return isHmNewsHomeModuleDefaultEnabledForTheme(theme, moduleId);
 }
 
-/** Site-içi RSS hibrit vitrin — editör vitrininde «Site içi RSS» anahtarı (hybridRssEnabled). */
-export function isHmHybridRssEnabled(p?: Pick<NewsSiteLayoutPrefs, "hybridRssEnabled"> | null): boolean {
-  return p?.hybridRssEnabled === true;
+/** Site-içi RSS hibrit vitrin — kurumsal temada kesinlikle kapalı; haber sitesinde tanımsızsa açık. */
+export function isHmHybridRssEnabled(
+  p?: Pick<NewsSiteLayoutPrefs, "hybridRssEnabled" | "hmVitrinTheme"> | null,
+): boolean {
+  if (p?.hmVitrinTheme === "corporate") return false;
+  return p?.hybridRssEnabled !== false;
 }
 
 /** Anasayfa hibrit haber havuzu — site-içi RSS açıkken entegrasyon moduna göre API'den çekilir. */
 export function resolveHmHomeHybridNewsFetchEnabled(
   p?: Pick<
     NewsSiteLayoutPrefs,
-    "hybridRssEnabled" | "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels" | "hmNewsSiteRssFeedRows"
+    "hybridRssEnabled" | "hmVitrinTheme" | "hmNewsBreakingRssFeedRows" | "hmNewsBreakingRssFeeds" | "hmNewsBreakingRssLabels" | "hmNewsSiteRssFeedRows"
   > | null,
   _siteId?: number | null,
 ): boolean {
@@ -3134,7 +3141,11 @@ export function parseNewsSiteLayoutFromJson(
       Array.isArray(siteRssRaw) && siteRssRaw.length > 0
         ? normalizeHmBreakingRssFeedRows(siteRssRaw, null, null)
         : defaultHmSiteRssFeedRows();
-    const hmRssSourcePacks = parseHmRssSourcePackFlags((j as { hmRssSourcePacks?: unknown }).hmRssSourcePacks);
+    const hmRssKarmaDefaultsRevRaw = (j as { hmRssKarmaDefaultsRev?: unknown }).hmRssKarmaDefaultsRev;
+    const hmRssKarmaDefaultsRevStored =
+      typeof hmRssKarmaDefaultsRevRaw === "string" && hmRssKarmaDefaultsRevRaw.trim()
+        ? hmRssKarmaDefaultsRevRaw.trim()
+        : undefined;
     const portalHybridRssFeeds = normalizePortalHybridRssFeeds((j as { portalHybridRssFeeds?: unknown }).portalHybridRssFeeds);
     const hybridRssEnabledRaw = (j as { hybridRssEnabled?: unknown }).hybridRssEnabled;
     const hmNewsBreakingRssBandTitle = normalizeHmBreakingRssBandTitle(
@@ -3405,9 +3416,22 @@ export function parseNewsSiteLayoutFromJson(
       hmBreakingRssDefaultsRev,
       hmSiteRssDefaultsRev,
       hmNewsSiteRssFeedRows,
-      hmRssSourcePacks,
-      portalHybridRssFeeds: portalHybridRssFeeds ?? undefined,
-      hybridRssEnabled: hybridRssEnabledRaw === true ? true : undefined,
+      hmRssSourcePacks: isCorporateTheme
+        ? { ...HM_RSS_SOURCE_PACKS_ALL_OFF }
+        : parseHmRssSourcePackFlags((j as { hmRssSourcePacks?: unknown }).hmRssSourcePacks, {
+            karmaDefaultsRev: hmRssKarmaDefaultsRevStored,
+          }),
+      hmRssKarmaDefaultsRev: isCorporateTheme
+        ? undefined
+        : hmRssKarmaDefaultsRevStored ?? HM_RSS_KARMA_DEFAULTS_REV,
+      portalHybridRssFeeds: isCorporateTheme ? undefined : portalHybridRssFeeds ?? undefined,
+      hybridRssEnabled: isCorporateTheme
+        ? false
+        : isHmRssKarmaDefaultsRevCurrent(hmRssKarmaDefaultsRevStored)
+          ? hybridRssEnabledRaw === false
+            ? false
+            : true
+          : true,
       hmNewsBreakingRssBandTitle: hmNewsBreakingRssBandTitle ?? undefined,
       hmNewsBreakingRssDisplayMode: hmNewsBreakingRssDisplayMode ?? undefined,
       hmNewsBreakingRssArticleLinkEnabled: normalizeDefaultHiddenToggle(newsBreakingRssArticleLinkEnabledRaw),
@@ -3427,7 +3451,7 @@ export function parseNewsSiteLayoutFromJson(
       hmCorporateLatestNewsEnabled: normalizeDefaultVisibleToggle(corporateLatestNewsEnabledRaw),
       hmCorporateLatestDevelopmentsEnabled: normalizeDefaultVisibleToggle(corporateLatestDevelopmentsEnabledRaw),
       hmCorporateSidebarInfoEnabled: normalizeDefaultVisibleToggle(corporateSidebarInfoEnabledRaw),
-      hmCorporateGoogleNewsBandEnabled: normalizeDefaultHiddenToggle(corporateGoogleNewsBandEnabledRaw),
+      hmCorporateGoogleNewsBandEnabled: isCorporateTheme ? false : normalizeDefaultHiddenToggle(corporateGoogleNewsBandEnabledRaw),
       hmCorporateRequestFormEnabled: normalizeDefaultVisibleToggle(corporateRequestFormEnabledRaw),
       hmCorporateRequestCategories:
         normalizeHmRequestCategories((j as { hmCorporateRequestCategories?: unknown }).hmCorporateRequestCategories) ??

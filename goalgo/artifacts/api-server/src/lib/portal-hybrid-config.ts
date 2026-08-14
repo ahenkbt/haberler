@@ -12,6 +12,7 @@ import {
 import {
   HM_RSS_KARMA_MAX_ITEMS,
   listEnabledHmRssSourcePackFeeds,
+  isHmRssKarmaDefaultsRevCurrent,
   parseHmRssSourcePackFlags,
 } from "./hm-rss-source-packs.js";
 
@@ -351,6 +352,7 @@ export async function loadPortalHybridRssFeeds(
   if (siteId != null && Number.isFinite(siteId) && siteId > 0) {
     const site = await getHmNewsSiteByIdCompat(Math.floor(siteId));
     const layout = parseHmLayoutRecord(site?.layoutJson ?? null);
+    if (isCorporateHmLayout(layout)) return [];
     const id = Math.floor(siteId);
     const categorySlugLookup = await loadHmCategorySlugLookup(id);
     const boxRows = () =>
@@ -366,7 +368,10 @@ export async function loadPortalHybridRssFeeds(
         "site",
         categorySlugLookup,
       );
-      const packFlags = parseHmRssSourcePackFlags(layout.hmRssSourcePacks);
+      const packFlags = parseHmRssSourcePackFlags(layout.hmRssSourcePacks, {
+        corporate: isCorporateHmLayout(layout),
+        karmaDefaultsRev: layout.hmRssKarmaDefaultsRev,
+      });
       const packFeeds = listEnabledHmRssSourcePackFeeds(packFlags);
       const packMax = packFlags.karmaCek === true ? HM_RSS_KARMA_MAX_ITEMS : SITE_RSS_MAX_ITEMS;
       const packRows: PortalHybridRssFeedConfig[] = packFeeds.map((feed, index) => {
@@ -416,7 +421,9 @@ export function enabledPortalHybridRssFeeds(
 }
 
 export function isHybridRssEnabledInLayout(layout: Record<string, unknown>): boolean {
-  return layout.hybridRssEnabled === true;
+  if (isCorporateHmLayout(layout)) return false;
+  if (!isHmRssKarmaDefaultsRevCurrent(layout.hmRssKarmaDefaultsRev)) return true;
+  return layout.hybridRssEnabled !== false;
 }
 
 function parseActivatedCategorySlugs(layout: Record<string, unknown>): string[] {
