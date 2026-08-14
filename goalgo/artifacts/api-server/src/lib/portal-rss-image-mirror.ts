@@ -3,7 +3,8 @@ import type { PortalRssItem } from "./portal-rss-fetch.js";
 import { logger } from "./logger.js";
 
 export function isPortalRssMirrorImagesEnabled(): boolean {
-  return process.env.PORTAL_RSS_MIRROR_IMAGES?.trim() !== "0";
+  // Varsayılan kapalı: RSS kapakları harici URL ile gösterilir (indirme/WebP yavaşlatmasın).
+  return process.env.PORTAL_RSS_MIRROR_IMAGES?.trim() === "1";
 }
 
 export function isLocalMediaUploadUrl(url: string | null | undefined): boolean {

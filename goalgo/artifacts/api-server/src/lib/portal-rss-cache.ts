@@ -17,6 +17,7 @@ import {
   upsertPortalRssItems,
 } from "./portal-rss-store.js";
 import { hmRssIntegrationModeFromLayout, readHmPublicLayout, type HmRssIntegrationMode } from "./hm-public-layout.js";
+import { isWithinRssPersistSlot } from "./rss-automation-control.js";
 
 /**
  * "Kutu içi RSS" (box scope) beslemeleri kalıcı DB havuzuna YAZILMAZ — canlı kalır.
@@ -40,14 +41,17 @@ async function rssIntegrationModeForFeed(feedId: string): Promise<HmRssIntegrati
   return "portal";
 }
 
-/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi feed’ler her zaman DB’de (çok instance / cold start). */
-export async function shouldSkipRssDbForFeed(feedId: string): Promise<boolean> {
+/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi: yalnızca gece 01:00 veya persistToDb. */
+export async function shouldSkipRssDbForFeed(
+  feedId: string,
+  opts?: { persistToDb?: boolean },
+): Promise<boolean> {
   if (isBoxScopeFeedId(feedId)) return true;
-  // Site içi RSS: layout «live» olsa bile portal_rss_items’a yaz/oku —
-  // aksi halde bellek/Redis boşken vitrin sürekli RSS’siz kalır.
-  if (isSiteScopeFeedId(feedId)) return false;
+  if (opts?.persistToDb === true) return false;
+  if (isWithinRssPersistSlot()) return false;
+  if (isSiteScopeFeedId(feedId)) return true;
   const mode = await rssIntegrationModeForFeed(feedId);
-  return mode === "live";
+  return mode !== "persistent";
 }
 
 /** Site-içi RSS ziyaret tetiklemeli yenileme — manuel modda otomatik fetch yok. */
@@ -60,8 +64,8 @@ export async function shouldAutoRefreshRssFeedOnVisit(feedId: string): Promise<b
 
 /** Besleme önbelleğinin «tazeleme gerekli» sayılması için üst sınır (öğe silme değil). */
 const FEED_CACHE_STALE_MS = 7 * 24 * 60 * 60_000;
-/** Besleme tazelik eşiği — günde 3× slot arası (~8 saat); 1 saatlik döngüyü engeller. */
-const DEFAULT_REFRESH_AGE_MS = 7 * 60 * 60_000;
+/** Besleme tazelik eşiği — saatlik canlı yenileme (~50 dk). */
+const DEFAULT_REFRESH_AGE_MS = 50 * 60_000;
 const PER_FEED_REFRESH_TIMEOUT_MS = PORTAL_RSS_FETCH_TIMEOUT_MS + 3_000;
 const MAX_STORED_PER_FEED = 200;
 const REDIS_KEY_PREFIX = "portal-hybrid-rss:";
@@ -237,11 +241,10 @@ async function readCache(feedId: string): Promise<FeedCachePayload | null> {
   }
 
   /**
-   * Soğuk başlangıç kalıcılığı: bellek/Redis boşsa kalıcı DB havuzundan doldur.
-   * Bu sayede sayfa açılışında canlı RSS beklenmez (5 dk sorunu). Box scope
-   * beslemeleri DB'de olmadığından null döner → canlı davranış korunur.
+   * Soğuk başlangıç: bellek/Redis boşsa gece kaydedilen portal_rss_items havuzundan doldur.
+   * Kutu içi RSS DB'de yok → canlı davranış.
    */
-  if (await shouldSkipRssDbForFeed(feedId)) return null;
+  if (isBoxScopeFeedId(feedId)) return null;
   try {
     const dbItems = sweepPoolRetentionItems(await readPortalRssItemsForFeed(feedId));
     if (dbItems.length === 0) return null;
@@ -286,6 +289,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 
 export async function refreshPortalRssFeed(
   feed: PortalHybridRssFeedConfig,
+  opts?: { persistToDb?: boolean },
 ): Promise<{ feedId: string; fetched: number; stored: number; lastFetchedAt: string }> {
   const incoming = await fetchPortalRssItems({
     feedId: feed.id,
@@ -311,7 +315,7 @@ export async function refreshPortalRssFeed(
    * Kalıcı DB havuzu: portal + site scope beslemeleri UPSERT edilir (dedupe by URL/guid).
    * "Kutu içi RSS" (box scope) DB'ye yazılmaz — canlı kalır. DB hatası bellek yolunu bozmaz.
    */
-  if (!(await shouldSkipRssDbForFeed(feed.id)) && incoming.length > 0) {
+  if (!(await shouldSkipRssDbForFeed(feed.id, { persistToDb: opts?.persistToDb })) && incoming.length > 0) {
     try {
       await upsertPortalRssItems(feed, incoming);
     } catch (err) {
@@ -334,10 +338,11 @@ export async function refreshPortalRssFeed(
 
 export async function refreshPortalRssFeedSafe(
   feed: PortalHybridRssFeedConfig,
+  opts?: { persistToDb?: boolean },
 ): Promise<{ feedId: string; fetched: number; stored: number; lastFetchedAt: string; error?: string }> {
   try {
     return await withTimeout(
-      refreshPortalRssFeed(feed),
+      refreshPortalRssFeed(feed, opts),
       PER_FEED_REFRESH_TIMEOUT_MS,
       `RSS kaynağı ${feed.id}`,
     );
@@ -377,13 +382,14 @@ async function mapWithConcurrency<T, R>(
 
 export async function refreshAllPortalRssFeeds(
   feeds: PortalHybridRssFeedConfig[],
+  opts?: { persistToDb?: boolean },
 ): Promise<Array<{ feedId: string; fetched: number; stored: number; lastFetchedAt: string; error?: string }>> {
   const enabled = feeds.filter((feed) => feed.enabled && feed.url);
   const concurrency = Math.min(
     10,
     Math.max(1, Number(process.env.PORTAL_RSS_REFRESH_CONCURRENCY ?? 10) || 10),
   );
-  return mapWithConcurrency(enabled, concurrency, (feed) => refreshPortalRssFeedSafe(feed));
+  return mapWithConcurrency(enabled, concurrency, (feed) => refreshPortalRssFeedSafe(feed, opts));
 }
 
 async function collectCachedItems(

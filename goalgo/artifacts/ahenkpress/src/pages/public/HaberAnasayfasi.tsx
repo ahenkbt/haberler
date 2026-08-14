@@ -1860,18 +1860,19 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const hybridBootstrapPending = hybridBootstrapHeroPending || (belowFoldReady && hybridBootstrapFullPending);
   const hybridBootstrapError = hybridBootstrapHeroError || hybridBootstrapFullError;
 
-  const hybridBandItems = useMemo(
-    () =>
-      useHybridHomeNewsPool
-        ? filterNewsItemsWithCoverImage(hybridBootstrap.map(mapHybridNewsToBandItem))
-        : [],
+  const hybridBootstrapMapped = useMemo(
+    () => (useHybridHomeNewsPool ? hybridBootstrap.map(mapHybridNewsToBandItem) : []),
     [useHybridHomeNewsPool, hybridBootstrap],
+  );
+  const hybridBandItems = useMemo(
+    () => filterNewsItemsWithCoverImage(hybridBootstrapMapped),
+    [hybridBootstrapMapped],
   );
   const hybridMansetRssItems = useMemo(
     () => hybridBandItems.filter((item) => isRssHybridItem(item)),
     [hybridBandItems],
   );
-  const hybridHeadlineReady = useHybridHomeNewsPool && hybridBandItems.length > 0;
+  const hybridHeadlineReady = useHybridHomeNewsPool && hybridBootstrapMapped.length > 0;
 
   const { data: yekparePoolHybrid = [] } = useQuery({
     queryKey: ["/api/news/hybrid", "yekpare-pool-manset-side", siteId ?? "none", mansetCategorySlug ?? ""],
@@ -1985,10 +1986,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const dbItems = asArray((latestBandDb as { items?: unknown })?.items);
     if (!useHybridHomeNewsPool) return latestBandDb;
     const items = hybridHeadlineReady
-      ? mergeUniqueNews(dbItems, hybridBandItems)
+      ? mergeUniqueNews(dbItems, hybridBandItems.length > 0 ? hybridBandItems : hybridBootstrapMapped)
       : dbItems;
     return { items: items.slice(0, 80) };
-  }, [useHybridHomeNewsPool, hybridHeadlineReady, hybridBandItems, latestBandDb]);
+  }, [useHybridHomeNewsPool, hybridHeadlineReady, hybridBandItems, hybridBootstrapMapped, latestBandDb]);
 
   const dbNewsReady = useMemo(
     () =>
@@ -3755,7 +3756,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         if (!effectiveLatestGridMain && !showLatestGridSidebar) return null;
 
         const latestGridTabPool = sortNewsByRecency(
-          mergeUniqueNews(bandNewsItems, allItems, popular),
+          mergeUniqueNews(hybridBootstrapMapped, hybridBandItems, bandNewsItems, allItems, popular),
         ).slice(0, 80);
         const latestGridItems = padNewsItemsToLimit(
           latestGridTabPool,
@@ -3778,7 +3779,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               tabSourceItems={latestGridTabPool}
               categoryTabs={tabStripCats}
               initialCategorySlug=""
-              requireCoverImage
               accent={accent}
               hmCategoryColors={hmCat}
               pending={latestPending || latestBandPending}
