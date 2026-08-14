@@ -73,6 +73,7 @@ import {
   type HmHeaderRightSlotId,
 } from "@/lib/newsSiteLayout";
 import {
+  HM_RSS_KARMA_DEFAULTS_REV,
   HM_RSS_SOURCE_PACK_OPTIONS,
   cleanHmRssSourcePackFlags,
   parseHmRssSourcePackFlags,
@@ -270,8 +271,8 @@ export default function EditorVitrinAyarlari() {
   const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
   const isCorporateEditorSite = p.hmVitrinTheme === "corporate";
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
-  const corporateEditorHomeOrder = corporateHomeOrder;
-  const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER;
+  const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
+  const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
   const rssRows = resolveHmBreakingRssFeedRows(p);
   const siteRssRows = resolveHmSiteRssFeedRows(p);
   const rssIntegrationMode = resolveHmRssIntegrationMode(p);
@@ -1739,7 +1740,9 @@ export default function EditorVitrinAyarlari() {
               politika) aynı kategoridedir. Yerel pakette Ankara haberleri Ankara, diğerleri Yerel kategorisindedir.
             </p>
             {HM_RSS_SOURCE_PACK_OPTIONS.map((pack) => {
-              const packs = parseHmRssSourcePackFlags(p.hmRssSourcePacks);
+              const packs = parseHmRssSourcePackFlags(p.hmRssSourcePacks, {
+                karmaDefaultsRev: p.hmRssKarmaDefaultsRev,
+              });
               const checked = packs[pack.id] === true;
               return (
                 <div key={pack.id} className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 px-3 py-2">
@@ -1759,6 +1762,7 @@ export default function EditorVitrinAyarlari() {
                         ...p,
                         hybridRssEnabled: c ? true : p.hybridRssEnabled,
                         hmRssSourcePacks: next,
+                        hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
                       });
                     }}
                   />
@@ -1777,12 +1781,19 @@ export default function EditorVitrinAyarlari() {
               <Switch
                 id="hm-rss-pack-karma"
                 disabled={saving}
-                checked={parseHmRssSourcePackFlags(p.hmRssSourcePacks).karmaCek === true}
+                checked={
+                  parseHmRssSourcePackFlags(p.hmRssSourcePacks, {
+                    karmaDefaultsRev: p.hmRssKarmaDefaultsRev,
+                  }).karmaCek === true
+                }
                 onCheckedChange={(c) => {
-                  const packs = parseHmRssSourcePackFlags(p.hmRssSourcePacks);
+                  const packs = parseHmRssSourcePackFlags(p.hmRssSourcePacks, {
+                    karmaDefaultsRev: p.hmRssKarmaDefaultsRev,
+                  });
                   void commit({
                     ...p,
                     hmRssSourcePacks: cleanHmRssSourcePackFlags({ ...packs, karmaCek: c }),
+                    hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
                   });
                 }}
               />
@@ -1905,9 +1916,6 @@ export default function EditorVitrinAyarlari() {
               </TabsTrigger>
               <TabsTrigger value="corporate-sira" className="px-3 py-2 text-sm">
                 Modül sırası
-              </TabsTrigger>
-              <TabsTrigger value="corporate-rss" className="px-3 py-2 text-sm">
-                RSS & bant
               </TabsTrigger>
             </TabsList>
 
@@ -2093,8 +2101,7 @@ export default function EditorVitrinAyarlari() {
               <Link href="/editor/manset" className="font-semibold text-red-600 hover:underline">
                 Tepe Manşet
               </Link>{" "}
-              sayfasından düzenlenir. Kutu içi RSS ve RSS güven bandı aşağıdaki anahtarlarla açılır; besleme adresleri{" "}
-              <strong>RSS & bant</strong> sekmesinden eklenir.
+              sayfasından düzenlenir. Kurumsal vitrine RSS haber eklenmez.
             </p>
             </div>
             <ToggleRow
@@ -2169,13 +2176,6 @@ export default function EditorVitrinAyarlari() {
               checked={p.hmCorporateHomeMiddleAdModuleEnabled !== false}
               disabled={saving}
               onChange={(c) => toggleCorporateModule("homeMiddleAd", c)}
-            />
-            <ToggleRow
-              id="hm-corporate-google-news-band"
-              label="Kutu içi RSS"
-              checked={p.hmCorporateGoogleNewsBandEnabled === true}
-              disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmCorporateGoogleNewsBandEnabled", c)}
             />
             <ToggleRow
               id="hm-corporate-rss-band"
@@ -2301,35 +2301,6 @@ export default function EditorVitrinAyarlari() {
           />
             </TabsContent>
 
-            <TabsContent value="corporate-rss" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
-          <RssBreakingFeedsEditor
-            enabled={p.hmCorporateGoogleNewsBandEnabled === true}
-            articleLinkEnabled={p.hmNewsBreakingRssArticleLinkEnabled === true}
-            displayMode={breakingRssDisplayMode}
-            rows={rssRows}
-            disabled={saving}
-            onToggle={(checked) => toggleDefaultOn("hmCorporateGoogleNewsBandEnabled", checked)}
-            onArticleLinkToggle={(checked) => toggleDefaultOn("hmNewsBreakingRssArticleLinkEnabled", checked)}
-            onDisplayModeChange={setBreakingRssDisplayMode}
-            onChange={updateRssRow}
-            onAdd={addRssRow}
-            onAddUrl={addRssUrlRow}
-            onRemove={removeRssRow}
-            onSave={() =>
-              void commit({
-                ...p,
-                ...saveRssRows(rssRows, siteRssRows),
-                hmNewsBreakingRssDisplayMode: cleanHmBreakingRssDisplayMode(breakingRssDisplayMode),
-              })
-            }
-            onReset={() =>
-              void commit({
-                ...p,
-                ...saveRssRows(defaultHmBreakingRssFeedRows(), defaultHmBreakingRssFeedRows()),
-              })
-            }
-          />
-            </TabsContent>
           </Tabs>
             </AccordionContent>
           </AccordionItem>

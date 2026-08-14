@@ -47,6 +47,7 @@ import { repairAsgAuthorsFromAhg } from "./lib/hm-asg-authors-from-ahg-repair.js
 import { repairAhgAuthorsFromAsg } from "./lib/hm-ahg-authors-from-asg-repair.js";
 import { repairAsgHomeModules } from "./lib/hm-asg-home-modules-repair.js";
 import { repairHmTepeMansetSystem } from "./lib/hm-tepe-manset-repair.js";
+import { repairHmRssKarmaDefaultsForAllSites } from "./lib/hm-rss-karma-default-repair.js";
 import { repairKhEditorMisassignment } from "./lib/hm-kh-editor-repair.js";
 import { repairHmEditorCrossSiteEmailConflicts } from "./lib/hm-editor-cross-site-repair.js";
 import { ensureHmBrandDomainBindings } from "./lib/hm-brand-domain-bindings.js";
@@ -541,6 +542,17 @@ const server = app.listen(port, listenHost, (err) => {
     }, 18_100).unref();
   } else {
     logger.info("[hm-tepe-manset] HM_TEPE_MANSET_REPAIR=0 — atlandı");
+  }
+
+  // Haber siteleri: RSS karma varsayılan açık; kurumsal sitelere RSS haber yazılmaz.
+  if (envJobFlag("HM_RSS_KARMA_DEFAULT_REPAIR", true)) {
+    setTimeout(() => {
+      void repairHmRssKarmaDefaultsForAllSites()
+        .then((r) => logger.info({ ...r }, "[hm-rss-karma] onarım"))
+        .catch((err) => logger.error({ err }, "[hm-rss-karma] onarım başarısız"));
+    }, 18_200).unref();
+  } else {
+    logger.info("[hm-rss-karma] HM_RSS_KARMA_DEFAULT_REPAIR=0 — atlandı");
   }
 
   // suhaberajansi.com vb. marka alanlarını editör haber sitesine bağla (portal anasayfaya düşmesin).

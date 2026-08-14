@@ -5,6 +5,7 @@ import { parseFeedItems, type RssFeedItem } from "../lib/rssFeedParse.js";
 import { extractRssImageUrls } from "../lib/rssItemMedia.js";
 import { pickFirstNewsImageUrl } from "../lib/newsImageHeuristics.js";
 import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat";
+import { isCorporateHmLayout } from "../lib/portal-hybrid-config.js";
 import { rssSourceNameFromUrl } from "../lib/portal-rss-fetch.js";
 
 type RssBreakingFeedCategoryId =
@@ -505,6 +506,7 @@ async function resolveFeedRows(siteIdRaw: unknown): Promise<RssBreakingFeedRow[]
   try {
     const site = await getHmNewsSiteByIdCompat(Math.floor(siteId));
     const layout = parseLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null);
+    if (isCorporateHmLayout(layout)) return [];
     return normalizeFeedRows(layout.hmNewsBreakingRssFeedRows, layout.hmNewsBreakingRssFeeds as Record<string, unknown>);
   } catch {
     return defaultFeedRows();

@@ -158,6 +158,12 @@ import { isHmCrossSiteSharedEditorEmail } from "../lib/hm-editor-shared-email.js
 import { repairHmTepeMansetSystem } from "../lib/hm-tepe-manset-repair.js";
 import { HM_TEPE_MANSET_OPT_IN_REV } from "../lib/hm-tepe-manset-layout.js";
 import {
+  applyHmRssNewsPolicyToLayout,
+  DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS,
+  HM_RSS_KARMA_DEFAULTS_REV,
+  HM_RSS_SOURCE_PACKS_ALL_OFF,
+} from "../lib/hm-rss-source-packs.js";
+import {
   ensureHmSiteEditorUsernameColumn,
   isHmEditorLoginEmail,
   normalizeHmEditorUsername,
@@ -539,7 +545,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     categoryKey: row.id,
   }));
   const siteRows = DEFAULT_HM_SITE_RSS_ROWS.map((row) => ({ ...row }));
-  return {
+  const base: Record<string, unknown> = {
     hmVitrinTheme: isCorporate ? "corporate" : "esen",
     mansetVariant: "center-trio",
     hmChromeColorMode: "light",
@@ -554,9 +560,13 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsBreakingRssArticleLinkEnabled: true,
     hmBreakingRssDefaultsRev: HM_BREAKING_RSS_DEFAULTS_REV,
     hmSiteRssDefaultsRev: HM_SITE_RSS_DEFAULTS_REV,
-    hmNewsBreakingRssFeedRows: boxRows,
-    hmNewsSiteRssFeedRows: siteRows,
-    hybridRssEnabled: true,
+    hybridRssEnabled: !isCorporate,
+    hmRssSourcePacks: isCorporate
+      ? { ...HM_RSS_SOURCE_PACKS_ALL_OFF }
+      : { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
+    hmRssKarmaDefaultsRev: isCorporate ? undefined : HM_RSS_KARMA_DEFAULTS_REV,
+    hmNewsBreakingRssFeedRows: isCorporate ? [] : boxRows,
+    hmNewsSiteRssFeedRows: isCorporate ? [] : siteRows,
     hmNewsCategorySectionsEnabled: true,
     hmNewsQuickLinksEnabled: true,
     hmNewsAuthorsEnabled: !isCorporate,
@@ -575,6 +585,7 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmCorporateRssBandEnabled: false,
     ...inc,
   };
+  return applyHmRssNewsPolicyToLayout(base);
 }
 
 function donationText(raw: unknown, fallback: string, max = 240): string {
@@ -1286,7 +1297,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         ...(inc.hmCategoryColors as Record<string, unknown>),
       };
     }
-    patch.layoutJson = JSON.stringify(merged);
+    patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(merged));
   }
   if (typeof b.active === "boolean") patch.active = b.active;
 
@@ -3156,7 +3167,7 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
       delete inc.hmCorporatePageHtml;
     }
   }
-  const merged = mergeHmLayoutPatch(prev, inc, { vitrinOnly: b.vitrinOnly === true });
+  const merged = applyHmRssNewsPolicyToLayout(mergeHmLayoutPatch(prev, inc, { vitrinOnly: b.vitrinOnly === true }));
   const [siteMeta] = await newsReadDb()
     .select({ slug: hmNewsSitesTable.slug })
     .from(hmNewsSitesTable)
@@ -3236,7 +3247,7 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.id, ctx.siteId));
   const prev = parseHmLayoutRecord(row?.layoutJson != null ? String(row.layoutJson) : null);
-  const merged = mergeHmLayoutPatch(prev, patch, { vitrinOnly: true });
+  const merged = applyHmRssNewsPolicyToLayout(mergeHmLayoutPatch(prev, patch, { vitrinOnly: true }));
   let raw: string;
   try {
     raw = stringifyHmLayoutMerged(merged);

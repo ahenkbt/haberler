@@ -37,7 +37,6 @@ import {
 } from "@/lib/newsSiteLayout";
 import { HmCorporateDonationBand } from "@/components/HmCorporateDonationSections";
 import { isLegacyHmDonationHtml, stripLegacyHmDonationHtml } from "@/lib/hmLegacyDonationHtml";
-import { HmRssBreakingBand } from "@/components/HmRssBreakingBand";
 import { HmSehitSearchModule } from "@/components/HmSehitSearchModule";
 import { HmRssNewsBand, type HmRssCategoryTab } from "@/components/HmRssNewsBand";
 import { resolveLatestGridOpeningCategorySlug } from "@/lib/hmHomeModuleCategories";
@@ -890,7 +889,6 @@ export function HmCorporateHome({
   hmCorporateLatestNewsEnabled,
   hmCorporateLatestDevelopmentsEnabled,
   hmCorporateSidebarInfoEnabled,
-  hmCorporateGoogleNewsBandEnabled,
   hmCorporateAuthorsEnabled = false,
   hmSehitSearchEnabled = false,
   layoutPrefs = null,
@@ -981,14 +979,7 @@ export function HmCorporateHome({
           />
         );
       case "googleNewsBand":
-        return hmCorporateGoogleNewsBandEnabled === true && layoutPrefs ? (
-          <HmRssBreakingBand
-            accent={accent}
-            layoutPrefs={layoutPrefs}
-            siteId={siteId}
-            className="vkv-rss-breaking-band hm-vitrin-card overflow-hidden rounded-xl border border-slate-200 bg-white shadow"
-          />
-        ) : null;
+        return null;
       case "culturePortal":
         return hmCorporateCulturePortalBandEnabled === true ? <CulturePortalBand /> : null;
       case "mansetAd": {
