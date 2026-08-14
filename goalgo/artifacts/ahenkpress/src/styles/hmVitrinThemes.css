@@ -4478,25 +4478,55 @@
   [data-hm-vitrin-theme="esen"] .hm-esen-hero-grid {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    min-height: 0;
+    height: auto;
+    align-items: stretch;
+    justify-content: flex-start;
   }
 
-  /* İki manşet arası: sağdaki 2 fotoğrafı üstte yan yana göster (yarım boşluk kalmasın). */
+  [data-hm-vitrin-theme="esen"] .hm-esen-hero-side {
+    align-content: start;
+    flex: 0 0 auto;
+    height: auto;
+  }
+
+  /* İki manşet arası: sağdaki 2 fotoğrafı üstte yan yana göster (boş 1fr satır şişmesin). */
   [data-hm-vitrin-theme="esen"] .hm-esen-hero-side--right {
     order: -1;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: start;
+    align-items: start;
     gap: 8px;
+    min-height: 0;
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  [data-hm-vitrin-theme="esen"] .hm-esen-hero-side--right:empty {
+    display: none;
   }
 
   [data-hm-vitrin-theme="esen"] .hm-esen-main-headline {
     order: 0;
+    min-height: 0;
+    flex: 0 0 auto;
   }
 
   [data-hm-vitrin-theme="esen"] .hm-esen-hero-side--left {
     order: 1;
     display: grid;
     grid-template-columns: 1fr;
+    min-height: 0;
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  [data-hm-vitrin-theme="esen"] .hm-esen-hero-side--left:empty {
+    display: none;
   }
 
   [data-hm-vitrin-theme="esen"] .hm-esen-hero-side--left > :only-child {
@@ -4535,6 +4565,10 @@
 
   [data-hm-vitrin-theme="esen"] .hm-esen-hero-side--right {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    min-height: 0;
+    height: auto;
   }
 
   [data-hm-vitrin-theme="esen"] .hm-esen-bottom-widgets {
