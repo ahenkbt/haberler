@@ -327,6 +327,10 @@ function fmtDate(d: string | null | undefined) {
   catch { return ""; }
 }
 
+function newsCardDate(n: { publishedAt?: string | null; createdAt?: string | null; date?: string | null }) {
+  return fmtDate(n.publishedAt ?? n.date ?? n.createdAt);
+}
+
 function fmtDateShort(d: string | null | undefined) {
   if (!d) return "";
   try { return format(new Date(d), "d MMM yyyy", { locale: tr }); }
@@ -1287,7 +1291,7 @@ function ClassicFeatureCard({
       <div className="hm-classic-feature-body">
         <ClassicBadge label={n.categoryName} color={color} />
         <h3>{newsDisplayTitle(n.title)}</h3>
-        <time>{fmtDate(n.createdAt)}</time>
+        <time>{newsCardDate(n)}</time>
       </div>
     </Link>
   );
@@ -1360,7 +1364,7 @@ function ClassicCompactCard({
       <div className="hm-classic-compact-body">
         <ClassicBadge label={n.categoryName} color={color} />
         <h3>{newsDisplayTitle(n.title)}</h3>
-        <time>{fmtDate(n.createdAt)}</time>
+        <time>{newsCardDate(n)}</time>
       </div>
     </Link>
   );
@@ -2038,7 +2042,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const popularHmResolved = useHmHomeBundle ? asArray(hmHomeBundle?.popular) : popularHm;
 
   const popular = useMemo(
-    () => filterNewsItemsWithCoverImage(asArray(siteId != null ? popularHmResolved : popularGlobal)),
+    () =>
+      filterNewsItemsWithCoverImage(asArray(siteId != null ? popularHmResolved : popularGlobal)).filter(
+        isHeadlineFreshEnough,
+      ),
     [siteId, popularHmResolved, popularGlobal],
   );
 
@@ -2113,11 +2120,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const mansetTaggedSideFallbackItems = useMemo(
     () =>
       sortNewsByRecency(
-        mergeUniqueNews(allItems).filter(
-          (item) =>
-            !isRssHybridItem(item) &&
-            (item as { isFeatured?: boolean }).isFeatured !== true,
-        ),
+        mergeUniqueNews(allItems)
+          .filter(
+            (item) =>
+              !isRssHybridItem(item) &&
+              (item as { isFeatured?: boolean }).isFeatured !== true,
+          )
+          .filter(isHeadlineFreshEnough),
       ),
     [allItems],
   );
@@ -2125,7 +2134,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     let pool: any[];
     if (!newsSliderEnabled) return [];
     if (activeTab) {
-      pool = sortNewsByRecency(allItems).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
+      pool = sortNewsByRecency(allItems.filter(isHeadlineFreshEnough)).slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
     } else if (siteId != null) {
       // Site manşet: manuel (isSiteManset / son haberler) + hibrit RSS karma.
       // Tepe manşet ayrı; burada tepeOnly filtre yok — excludeHeadlineSliderItems ile ayrılır.
@@ -2171,11 +2180,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     const sideSource =
       siteId != null
         ? sortNewsByRecency(
-            mergeUniqueNews(allItems).filter(
-              (item) =>
-                !isRssHybridItem(item) &&
-                (item as { isFeatured?: boolean }).isFeatured !== true,
-            ),
+            mergeUniqueNews(allItems)
+              .filter(
+                (item) =>
+                  !isRssHybridItem(item) &&
+                  (item as { isFeatured?: boolean }).isFeatured !== true,
+              )
+              .filter(isHeadlineFreshEnough),
           )
         : mergeUniqueNews(featured, allItems).filter((item) => !isRssHybridItem(item)).filter(isHeadlineFreshEnough);
     sideSource
@@ -2473,7 +2484,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     );
 
   const latestNewsPool = useMemo(
-    () => sortNewsByRecency(mergeUniqueNews(bandNewsItems, allItems)).slice(0, 80),
+    () =>
+      sortNewsByRecency(mergeUniqueNews(bandNewsItems, allItems).filter(isHeadlineFreshEnough)).slice(0, 80),
     [bandNewsItems, allItems],
   );
 
@@ -2603,25 +2615,29 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       const withoutTepe = filterNewsItemsWithCoverImage(
         tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool,
       );
-      if (withoutTepe.length > 0) return withoutTepe;
-      // Tepe manşet tüm adayları aldıysa orta (2.) manşet boş kalmasın — son haberlerden doldur.
+      if (withoutTepe.length > 0) return withoutTepe.filter(isHeadlineFreshEnough);
+      // Tepe manşet tüm adayları aldıysa orta manşet taze RSS/son haberlerle dolsun.
       if (tepeMansetActive) {
         const fallback = filterNewsItemsWithCoverImage(
           excludeHeadlineSliderItems(
-            sortNewsByRecency(mergeUniqueNews(latestNewsPool, allItems, classicHeadlinePool, bandNewsItems)),
+            sortNewsByRecency(
+              mergeUniqueNews(latestNewsPool, allItems, classicHeadlinePool, bandNewsItems).filter(
+                isHeadlineFreshEnough,
+              ),
+            ),
             tepeMansetItems,
           ),
         );
         if (fallback.length > 0) return fallback.slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
       }
-      return withoutTepe;
+      return withoutTepe.filter(isHeadlineFreshEnough);
     },
     [siteId, centerMansetSliderItems, sliderNews, classicHeadlinePool, latestNewsPool, allItems, bandNewsItems, popular, tepeMansetActive, tepeMansetItems],
   );
   const classicLatestMini = useMemo(() => {
     const pool = filterNewsItemsWithCoverImage(mergeUniqueNews(bandNewsItems, allItems, popular, sliderSide));
     const fresh = pool.filter(isHeadlineFreshEnough);
-    return sortNewsByRecency(fresh.length > 0 ? fresh : pool).slice(0, 12);
+    return sortNewsByRecency(fresh).slice(0, 12);
   }, [bandNewsItems, allItems, popular, sliderSide]);
   const todayHighlightMini = useMemo(
     () => sortNewsByRecency(classicLatestMini.filter(isTodayHeadlineNews)).slice(0, 6),
@@ -2655,9 +2671,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const classicCategorySections = useMemo(() => {
     if (!newsCategorySectionsEnabled) return [];
 
-    const rawSourcePool = mergeUniqueNews(latestNewsPool, allItems, bandNewsItems, sliderNews);
-    const freshSourcePool = rawSourcePool.filter(isHeadlineFreshEnough);
-    const sourcePool = freshSourcePool.length > 0 ? freshSourcePool : rawSourcePool;
+    const sourcePool = mergeUniqueNews(latestNewsPool, allItems, bandNewsItems, sliderNews).filter(
+      isHeadlineFreshEnough,
+    );
     const selectedSlugs = normalizeCategorySlugList(layoutPrefs.hmClassicAraMansetCategorySlugs);
     const baseSections = selectedSlugs.length > 0
       ? selectedSlugs.map((slug) => {
@@ -2802,7 +2818,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       mergeUniqueNews(featured, latestNewsPool, allItems, bandNewsItems, sliderNews, popular),
     );
     const fresh = raw.filter(isHeadlineFreshEnough);
-    return sortNewsByRecency(fresh.length > 0 ? fresh : raw);
+    return sortNewsByRecency(fresh);
   }, [featured, latestNewsPool, allItems, bandNewsItems, sliderNews, popular]);
   const siteHasAnyNews = moduleSectionSourcePool.length > 0;
   const hasInstantNewsPool = latestMergedHasItems || hybridHeadlineReady;

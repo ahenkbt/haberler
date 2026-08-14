@@ -2,11 +2,10 @@ import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
 
 /**
  * Manşet havuzu tazelik kuralları:
- * - Manuel / DB haberleri: en fazla 12 saat (MANUAL_HEADLINE_MAX_AGE_MS)
- * - RSS feed haberleri: en fazla 24 saat (RSS_HEADLINE_MAX_AGE_MS)
- *
- * RSS manşet slider: ziyaret bazlı rotasyon + RSS kaynakları.
- * MANŞET HABER kutusu (esenThemeBlock): yalnızca manuel/DB haberler.
+ * - Anasayfa (tepe hariç): yalnızca taze haberler; eski manuel yedek yok.
+ * - Manuel / DB: en fazla 12 saat (MANUAL_HEADLINE_MAX_AGE_MS)
+ * - RSS: en fazla 24 saat (RSS_HEADLINE_MAX_AGE_MS) — daima son haberler.
+ * - Tepe manşet: editörün `isFeatured` manuel haberleri, yaş sınırı yok.
  */
 
 export const RSS_HEADLINE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -265,7 +264,7 @@ export function buildCenterMansetSliderPool(opts: {
   const siteManset = filterHmSiteMansetNews(merged);
   const latestFirst = siteManset.length > 0 ? siteManset : merged;
   const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
-  const pool = sortNewsByRecency(scoped);
+  const pool = sortNewsByRecency(preferFreshHeadlineCandidates(scoped));
   return dedupeHeadlineSliderItems(pool.slice(0, limit));
 }
 
@@ -277,11 +276,13 @@ export function buildLatestNewsSideFallbackPool<T>(opts: {
 }): T[] {
   const excludeFrom = mergeUniqueNews(opts.sliderItems, opts.tepeMansetItems ?? []);
   const latestPool = sortNewsByRecency(
-    mergeUniqueNews(opts.items).filter(
-      (item) =>
-        !isRssHybridItem(item) &&
-        !isYekparePoolNewsItem(item) &&
-        (item as { isFeatured?: boolean }).isFeatured !== true,
+    preferFreshHeadlineCandidates(
+      mergeUniqueNews(opts.items).filter(
+        (item) =>
+          !isRssHybridItem(item) &&
+          !isYekparePoolNewsItem(item) &&
+          (item as { isFeatured?: boolean }).isFeatured !== true,
+      ),
     ),
   );
   return excludeHeadlineSliderItems(latestPool as T[], excludeFrom);
@@ -316,7 +317,9 @@ export function buildMansetTaggedSideFallbackPool<T>(opts: {
   tepeMansetItems?: readonly T[];
 }): T[] {
   const excludeFrom = mergeUniqueNews(opts.sliderItems, opts.tepeMansetItems ?? []);
-  const mansetPool = sortNewsByRecency(filterHmMansetNews(mergeUniqueNews(opts.items)));
+  const mansetPool = sortNewsByRecency(
+    preferFreshHeadlineCandidates(filterHmMansetNews(mergeUniqueNews(opts.items))),
+  );
   return excludeHeadlineSliderItems(mansetPool, excludeFrom);
 }
 
@@ -542,7 +545,7 @@ export function buildHeadlineSidePrimaryPool<T>(opts: {
     tepeMansetItems: opts.tepeMansetActive ? (opts.tepeMansetItems as T[]) : [],
   }) as T[];
   const siteLatest = excludeHeadlineSliderItems(
-    sortNewsByRecency(mergeUniqueNews(opts.legacySidePool) as T[]),
+    sortNewsByRecency(preferFreshHeadlineCandidates(mergeUniqueNews(opts.legacySidePool) as T[])),
     excludeSlider,
   ) as T[];
   const raw = mergeUniqueNews(primary, mansetTagged, siteLatest) as T[];
@@ -791,9 +794,19 @@ export function pickHomeModuleNewsItems<T>(
 }
 
 /** Haber eklenme tarihi — manşet havuzlarında tutarlı sıralama alanı. */
+function newsItemDateRaw(n: unknown): string {
+  const item = n as { publishedAt?: string | null; date?: string | null; createdAt?: string | null };
+  for (const raw of [item?.publishedAt, item?.date, item?.createdAt]) {
+    const s = String(raw ?? "").trim();
+    if (!s) continue;
+    const time = new Date(s).getTime();
+    if (Number.isFinite(time)) return s;
+  }
+  return "";
+}
+
 export function newsItemRecencyMs(n: unknown): number {
-  const item = n as { createdAt?: string | null; publishedAt?: string | null; date?: string | null };
-  const raw = item?.createdAt ?? item?.publishedAt ?? item?.date;
+  const raw = newsItemDateRaw(n);
   if (!raw) return 0;
   const time = new Date(raw).getTime();
   return Number.isFinite(time) ? time : 0;
@@ -806,12 +819,10 @@ export function sortNewsByRecency<T>(items: readonly T[] | null | undefined): T[
 
 export function isHeadlineFreshEnough(n: unknown): boolean {
   const isRss = isRssHybridItem(n);
-  const rawDate = (n as { createdAt?: string; publishedAt?: string; date?: string })?.createdAt
-    ?? (n as { publishedAt?: string }).publishedAt
-    ?? (n as { date?: string }).date;
-  if (!rawDate) return !isRss;
+  const rawDate = newsItemDateRaw(n);
+  if (!rawDate) return true;
   const time = new Date(rawDate).getTime();
-  if (!Number.isFinite(time)) return !isRss;
+  if (!Number.isFinite(time)) return true;
   const maxAge = isRss ? RSS_HEADLINE_MAX_AGE_MS : MANUAL_HEADLINE_MAX_AGE_MS;
   return Date.now() - time <= maxAge;
 }
@@ -829,12 +840,10 @@ export function isTodayHeadlineNews(n: unknown): boolean {
   return turkeyCalendarDayKey(recency) === turkeyCalendarDayKey(Date.now());
 }
 
-/** Önce taze adaylar; hiç taze yoksa manuel/DB yedek (RSS hariç — RSS yalnızca taze kalır). */
+/** Anasayfa (tepe manşet hariç): yalnızca taze haberler. Eski manuel yedek yok. */
 export function preferFreshHeadlineCandidates<T>(items: readonly T[]): T[] {
   const source = Array.isArray(items) ? items : [];
-  const fresh = source.filter(isHeadlineFreshEnough);
-  if (fresh.length > 0) return fresh;
-  return source.filter((item) => !isRssHybridItem(item));
+  return source.filter(isHeadlineFreshEnough);
 }
 
 /** Alias çakışmasında hangi kaynak kazanır — editör manuel haber görseli korunur. */
@@ -1023,18 +1032,11 @@ export function buildRssAwareHeadlinePool(opts: {
     ),
   );
   const allRss = sortNewsByRecency(latestItems.filter((item) => isRssHybridItem(item)));
-  const freshRssSorted = allRss.filter(isHeadlineFreshEnough);
-  /** Hibrit bootstrap: tarihsiz RSS önce görünüp tazelik süzgecinde kaybolmasın. */
-  const rssSorted =
-    freshRssSorted.length > 0
-      ? freshRssSorted
-      : opts.rssBootstrapReady && opts.rssEnabled && allRss.length > 0
-        ? allRss
-        : freshRssSorted;
+  const rssSorted = allRss.filter(isHeadlineFreshEnough);
   const minManualDefault = Math.max(0, opts.minManual ?? 3);
   const minManual =
     opts.rssBootstrapReady && opts.rssEnabled && rssSorted.length > 0
-      ? Math.min(minManualDefault, 1)
+      ? 0
       : minManualDefault;
 
   const buildPool = (): any[] => {
@@ -1078,7 +1080,7 @@ export function buildRssAwareHeadlinePool(opts: {
   return pool;
 }
 
-/** MANŞET HABER kutusu: editör manuel/DB haberler; RSS hibrit hariç. Tazelik yetersizse geniş havuz. */
+/** MANŞET HABER kutusu: editör manuel/DB haberler; RSS hibrit hariç. Yalnızca taze. */
 export function buildManualHeadlineOnlyPool(opts: {
   manualItems: unknown[];
   latestItems: unknown[];
