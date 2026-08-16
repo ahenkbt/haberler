@@ -180,15 +180,6 @@ function s3EndpointCandidates(env) {
   return listR2S3EndpointCandidates(s3EndpointRaw(env));
 }
 
-/** Worker/Container TLS: Render dual-write hostu (fb9f…) alert 40 veriyor; CF hesabı önce. */
-function s3EndpointCandidatesPreferCfAccount(env) {
-  const listed = s3EndpointCandidates(env);
-  const cf = r2S3UrlFromValue(CF_ACCOUNT_R2_S3_ENDPOINT);
-  if (!cf) return listed;
-  if (!listed.includes(cf)) return [cf, ...listed];
-  return [cf, ...listed.filter((url) => url !== cf)];
-}
-
 /** Yapıştırılmış env bloğundan R2 S3 API hostunu ayıkla (Render dual-write önce). */
 export function coerceR2S3Endpoint(raw) {
   return listR2S3EndpointCandidates(raw)[0] || "";
