@@ -407,25 +407,37 @@ export async function handleMediaGetFromR2(request, env) {
 
   const creds = s3CredentialSets(env);
   const endpoints = s3EndpointCandidates(env);
+  let lastS3 = "none";
+  const keyNames = [];
+  const primaryKey = objectKey(env, fname);
+  keyNames.push(primaryKey);
+  if (primaryKey === fname) {
+    keyNames.push(`uploads/${fname}`);
+  }
   if (creds.length && endpoints.length) {
     for (const cred of creds) {
       const client = s3ClientWithCreds(cred, env);
       for (const endpoint of endpoints) {
-        try {
-          const res = await client.fetch(s3ObjectUrl(endpoint, env, fname), {
-            method,
-            signal: AbortSignal.timeout(4000),
-          });
-          if (res && res.ok) {
-            return respond(
-              res.body,
-              res.headers.get("content-type"),
-              res.headers.get("content-length"),
-              "r2",
-            );
+        for (const key of keyNames) {
+          const url = `${endpoint}/${s3BucketName(env)}/${key}`;
+          try {
+            const res = await client.fetch(url, {
+              method,
+              signal: AbortSignal.timeout(4000),
+            });
+            lastS3 = `${endpoint.slice(8, 12)}:${res ? res.status : "0"}`;
+            if (res && res.ok) {
+              return respond(
+                res.body,
+                res.headers.get("content-type"),
+                res.headers.get("content-length"),
+                "r2",
+              );
+            }
+          } catch (err) {
+            lastS3 = `${endpoint.slice(8, 12)}:tls`;
+            console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
           }
-        } catch (err) {
-          console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
         }
       }
     }
@@ -437,6 +449,7 @@ export async function handleMediaGetFromR2(request, env) {
   miss.set("x-yekpare-media-ready", s3MediaEnvReady(env) ? "1" : "0");
   miss.set("x-yekpare-media-bucket-len", String(s3BucketName(env).length));
   miss.set("x-yekpare-media-hosts", String(endpoints.length));
+  miss.set("x-yekpare-media-s3", lastS3);
   miss.set("cache-control", "no-store");
   return new Response(null, { status: 404, headers: miss });
 }

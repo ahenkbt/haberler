@@ -21,7 +21,10 @@ run_worker_first = true
 API_ORIGIN = ""
 # KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
-# Medya: Worker hesabında R2 kapalı (API 10042). Binding, Dashboard'da R2 açılınca eklenir.
+# Medya: Worker native R2 binding — S3 API TLS (alert 40) olmadan aynı hesaptaki nesneler.
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "yekpare-media"
 
 [[containers]]
 class_name = "GoalgoApiContainer"
