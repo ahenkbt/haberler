@@ -202,5 +202,5 @@ zone_name = "kirsehirhaber.org"
 # pattern = "www.kirsehir.net/*"
 # zone_name = "kirsehir.net"
 
-# redeploy trigger 2026-07-27T22:16:34Z
+# redeploy trigger 2026-08-16T23:16:00Z — S3_* GitHub env secrets → Worker
 
