@@ -27,6 +27,41 @@ function normalizeEnvValue(value) {
   return v.replace(/\r?\n/g, "");
 }
 
+/** GitHub/panel: tüm env bloğu tek secret'a yapıştırılınca `S3_BUCKET=yekpare-media` ayıkla. */
+export function assignmentFromEnvBlob(blob, key) {
+  const re = new RegExp(`(?:^|[\\n\\r;\\s"']+)${key}=([^\\s\\n\\r"']+)`, "i");
+  const m = String(blob ?? "").match(re);
+  return m ? m[1].trim() : "";
+}
+
+export function coerceS3Bucket(raw, blob = "") {
+  const combined = `${raw ?? ""}\n${blob ?? ""}`;
+  const named = assignmentFromEnvBlob(combined, "S3_BUCKET");
+  if (named && /^[a-z0-9][a-z0-9._-]{1,62}$/i.test(named)) return named;
+  const n = normalizeEnvValue(raw);
+  if (/^[a-z0-9][a-z0-9._-]{1,62}$/i.test(n)) return n;
+  if (/yekpare-media/i.test(combined)) return "yekpare-media";
+  return "";
+}
+
+export function coerceS3AccessKeyId(raw, blob = "") {
+  const n = normalizeEnvValue(raw);
+  if (n && n.length < 180 && !/S3_/i.test(n) && !n.includes("://")) return n;
+  const named = assignmentFromEnvBlob(`${raw ?? ""}\n${blob ?? ""}`, "S3_ACCESS_KEY_ID");
+  if (named && named.length >= 8 && named.length <= 128 && !named.includes("=") && !named.includes("://")) {
+    return named;
+  }
+  return "";
+}
+
+export function coerceS3SecretAccessKey(raw, blob = "") {
+  const n = normalizeEnvValue(raw);
+  if (n && n.length < 180 && !/S3_/i.test(n) && !n.includes("://")) return n;
+  const named = assignmentFromEnvBlob(`${raw ?? ""}\n${blob ?? ""}`, "S3_SECRET_ACCESS_KEY");
+  if (named && named.length >= 8 && named.length <= 256 && !named.includes("://")) return named;
+  return "";
+}
+
 function s3Endpoint(env) {
   const keys = [
     "S3_ENDPOINT",
@@ -145,27 +180,39 @@ function s3EndpointCandidates(env) {
   return listR2S3EndpointCandidates(s3EndpointRaw(env));
 }
 
-/** Worker/Container TLS: Render dual-write hostu (fb9f…) alert 40 veriyor; CF hesabı önce. */
-function s3EndpointCandidatesPreferCfAccount(env) {
-  const listed = s3EndpointCandidates(env);
-  const cf = r2S3UrlFromValue(CF_ACCOUNT_R2_S3_ENDPOINT);
-  if (!cf) return listed;
-  if (!listed.includes(cf)) return [cf, ...listed];
-  return [cf, ...listed.filter((url) => url !== cf)];
-}
-
 /** Yapıştırılmış env bloğundan R2 S3 API hostunu ayıkla (Render dual-write önce). */
 export function coerceR2S3Endpoint(raw) {
   return listR2S3EndpointCandidates(raw)[0] || "";
 }
 
+function s3BlobText(env) {
+  return `${s3EndpointRaw(env) || ""}\n${env?.S3_BUCKET || ""}\n${env?.S3_ACCESS_KEY_ID || ""}\n${env?.S3_PUBLIC_BASE_URL || ""}`;
+}
+
+function s3BucketName(env) {
+  return coerceS3Bucket(env?.S3_BUCKET, s3BlobText(env));
+}
+
+function s3CredentialSets(env) {
+  const blob = s3BlobText(env);
+  const out = [];
+  const seen = new Set();
+  const add = (idRaw, secretRaw) => {
+    const accessKeyId = coerceS3AccessKeyId(idRaw, blob);
+    const secretAccessKey = coerceS3SecretAccessKey(secretRaw, blob);
+    if (!accessKeyId || !secretAccessKey) return;
+    const k = `${accessKeyId}:${secretAccessKey}`;
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push({ accessKeyId, secretAccessKey });
+  };
+  add(env?.S3_ACCESS_KEY_ID, env?.S3_SECRET_ACCESS_KEY);
+  add(assignmentFromEnvBlob(blob, "S3_ACCESS_KEY_ID"), assignmentFromEnvBlob(blob, "S3_SECRET_ACCESS_KEY"));
+  return out;
+}
+
 export function s3MediaEnvReady(env) {
-  return Boolean(
-    normalizeEnvValue(env?.S3_BUCKET) &&
-      normalizeEnvValue(env?.S3_ACCESS_KEY_ID) &&
-      normalizeEnvValue(env?.S3_SECRET_ACCESS_KEY) &&
-      s3Endpoint(env),
-  );
+  return Boolean(s3BucketName(env) && s3CredentialSets(env).length > 0 && s3Endpoint(env));
 }
 
 function parseDataUrl(dataUrl) {
@@ -196,7 +243,8 @@ function parseDataUrl(dataUrl) {
 
 function objectKey(env, fname) {
   const prefix = normalizeEnvValue(env?.S3_KEY_PREFIX).replace(/^\/+|\/+$/g, "");
-  return prefix ? `${prefix}/${fname}` : fname;
+  if (prefix && prefix.length <= 80 && !/S3_/i.test(prefix)) return `${prefix}/${fname}`;
+  return fname;
 }
 
 function publicUploadUrl(fname) {
@@ -233,17 +281,17 @@ function mimeFromFname(fname) {
   return MIME_BY_EXT[ext] || "application/octet-stream";
 }
 
-function s3Client(env) {
+function s3ClientWithCreds(creds, env) {
   return new AwsClient({
-    accessKeyId: normalizeEnvValue(env.S3_ACCESS_KEY_ID),
-    secretAccessKey: normalizeEnvValue(env.S3_SECRET_ACCESS_KEY),
+    accessKeyId: creds.accessKeyId,
+    secretAccessKey: creds.secretAccessKey,
     service: "s3",
-    region: normalizeEnvValue(env.S3_REGION) || "auto",
+    region: normalizeEnvValue(env?.S3_REGION) || "auto",
   });
 }
 
 function s3ObjectUrl(endpoint, env, fname) {
-  const bucket = normalizeEnvValue(env.S3_BUCKET);
+  const bucket = s3BucketName(env);
   const key = objectKey(env, fname);
   return `${endpoint}/${bucket}/${key}`;
 }
@@ -357,29 +405,40 @@ export async function handleMediaGetFromR2(request, env) {
     }
   }
 
-  if (s3MediaEnvReady(env)) {
-    const client = s3Client(env);
-    for (const endpoint of s3EndpointCandidatesPreferCfAccount(env)) {
-      try {
-        const res = await client.fetch(s3ObjectUrl(endpoint, env, fname), {
-          method,
-          signal: AbortSignal.timeout(4000),
-        });
-        if (res && res.ok) {
-          return respond(
-            res.body,
-            res.headers.get("content-type"),
-            res.headers.get("content-length"),
-            "r2",
-          );
+  const creds = s3CredentialSets(env);
+  const endpoints = s3EndpointCandidates(env);
+  if (creds.length && endpoints.length) {
+    for (const cred of creds) {
+      const client = s3ClientWithCreds(cred, env);
+      for (const endpoint of endpoints) {
+        try {
+          const res = await client.fetch(s3ObjectUrl(endpoint, env, fname), {
+            method,
+            signal: AbortSignal.timeout(4000),
+          });
+          if (res && res.ok) {
+            return respond(
+              res.body,
+              res.headers.get("content-type"),
+              res.headers.get("content-length"),
+              "r2",
+            );
+          }
+        } catch (err) {
+          console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
         }
-      } catch (err) {
-        console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
       }
     }
   }
 
-  return null;
+  const miss = new Headers();
+  miss.set("x-yekpare-frontend", "cloudflare-worker");
+  miss.set("x-yekpare-media", "miss");
+  miss.set("x-yekpare-media-ready", s3MediaEnvReady(env) ? "1" : "0");
+  miss.set("x-yekpare-media-bucket-len", String(s3BucketName(env).length));
+  miss.set("x-yekpare-media-hosts", String(endpoints.length));
+  miss.set("cache-control", "no-store");
+  return new Response(null, { status: 404, headers: miss });
 }
 
 /**
@@ -401,42 +460,38 @@ export async function saveMediaDataUrlToS3(env, dataUrl, title) {
     }
   }
 
-  if (!s3MediaEnvReady(env)) {
+  const endpoints = s3EndpointCandidates(env);
+  const creds = s3CredentialSets(env);
+  if (!creds.length || !endpoints.length) {
     return { error: "S3 yapılandırması eksik" };
   }
-  const endpoints = s3EndpointCandidatesPreferCfAccount(env);
-  const region = normalizeEnvValue(env.S3_REGION) || "auto";
-
-  const client = new AwsClient({
-    accessKeyId: normalizeEnvValue(env.S3_ACCESS_KEY_ID),
-    secretAccessKey: normalizeEnvValue(env.S3_SECRET_ACCESS_KEY),
-    service: "s3",
-    region,
-  });
 
   let lastDetail = "";
-  for (const endpoint of endpoints) {
-    const url = s3ObjectUrl(endpoint, env, fname);
-    let res;
-    try {
-      res = await client.fetch(url, {
-        method: "PUT",
-        body: parsed.bytes,
-        headers: {
-          "content-type": parsed.mime,
-          "content-length": String(parsed.bytes.length),
-        },
-      });
-    } catch (err) {
-      lastDetail = `S3 yükleme hatası: ${String(err?.message || err).slice(0, 160)}`;
-      continue;
-    }
+  for (const cred of creds) {
+    const client = s3ClientWithCreds(cred, env);
+    for (const endpoint of endpoints) {
+      const url = s3ObjectUrl(endpoint, env, fname);
+      let res;
+      try {
+        res = await client.fetch(url, {
+          method: "PUT",
+          body: parsed.bytes,
+          headers: {
+            "content-type": parsed.mime,
+            "content-length": String(parsed.bytes.length),
+          },
+        });
+      } catch (err) {
+        lastDetail = `S3 yükleme hatası: ${String(err?.message || err).slice(0, 160)}`;
+        continue;
+      }
 
-    if (res.ok) {
-      return { url: publicUploadUrl(fname) };
+      if (res.ok) {
+        return { url: publicUploadUrl(fname) };
+      }
+      const detail = (await res.text()).trim().slice(0, 200);
+      lastDetail = `S3 yükleme reddedildi (HTTP ${res.status})${detail ? `: ${detail}` : ""}`;
     }
-    const detail = (await res.text()).trim().slice(0, 200);
-    lastDetail = `S3 yükleme reddedildi (HTTP ${res.status})${detail ? `: ${detail}` : ""}`;
   }
 
   return { error: lastDetail || "S3 yapılandırması eksik" };

@@ -45,6 +45,52 @@ export function normalizeEnvValue(value: string | undefined): string {
   return v.replace(/\r?\n/g, "");
 }
 
+/** GitHub/panel: tüm env bloğu tek secret'a yapıştırılınca `S3_BUCKET=yekpare-media` ayıkla. */
+export function assignmentFromEnvBlob(blob: string | undefined, key: string): string {
+  const re = new RegExp(`(?:^|[\\n\\r;\\s"']+)${key}=([^\\s\\n\\r"']+)`, "i");
+  const m = String(blob ?? "").match(re);
+  return m ? m[1].trim() : "";
+}
+
+export function coerceS3Bucket(raw: string | undefined, blob = ""): string {
+  const combined = `${raw ?? ""}\n${blob ?? ""}`;
+  const named = assignmentFromEnvBlob(combined, "S3_BUCKET");
+  if (named && /^[a-z0-9][a-z0-9._-]{1,62}$/i.test(named)) return named;
+  const n = normalizeEnvValue(raw);
+  if (/^[a-z0-9][a-z0-9._-]{1,62}$/i.test(n)) return n;
+  if (/yekpare-media/i.test(combined)) return "yekpare-media";
+  return "";
+}
+
+export function coerceS3AccessKeyId(raw: string | undefined, blob = ""): string {
+  const n = normalizeEnvValue(raw);
+  if (n && n.length < 180 && !/S3_/i.test(n) && !n.includes("://")) return n;
+  const named = assignmentFromEnvBlob(`${raw ?? ""}\n${blob ?? ""}`, "S3_ACCESS_KEY_ID");
+  if (named && named.length >= 8 && named.length <= 128 && !named.includes("=") && !named.includes("://")) {
+    return named;
+  }
+  return "";
+}
+
+export function coerceS3SecretAccessKey(raw: string | undefined, blob = ""): string {
+  const n = normalizeEnvValue(raw);
+  if (n && n.length < 180 && !/S3_/i.test(n) && !n.includes("://")) return n;
+  const named = assignmentFromEnvBlob(`${raw ?? ""}\n${blob ?? ""}`, "S3_SECRET_ACCESS_KEY");
+  if (named && named.length >= 8 && named.length <= 256 && !named.includes("://")) return named;
+  return "";
+}
+
+function s3EnvBlobText(): string {
+  return [
+    process.env.S3_ENDPOINT,
+    process.env.S3_BUCKET,
+    process.env.S3_ACCESS_KEY_ID,
+    process.env.S3_PUBLIC_BASE_URL,
+  ]
+    .map((v) => String(v ?? ""))
+    .join("\n");
+}
+
 const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/gi;
 const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/gi;
 
@@ -198,10 +244,11 @@ export function s3EndpointHostPrefixFromUrl(ep: string | null | undefined): stri
 }
 
 export function s3EnvDiagnostics(): S3EnvDiagnostics {
+  const blob = s3EnvBlobText();
   return {
-    bucket: Boolean(normalizeEnvValue(process.env.S3_BUCKET)),
-    accessKey: Boolean(normalizeEnvValue(process.env.S3_ACCESS_KEY_ID)),
-    secret: Boolean(normalizeEnvValue(process.env.S3_SECRET_ACCESS_KEY)),
+    bucket: Boolean(coerceS3Bucket(process.env.S3_BUCKET, blob)),
+    accessKey: Boolean(coerceS3AccessKeyId(process.env.S3_ACCESS_KEY_ID, blob)),
+    secret: Boolean(coerceS3SecretAccessKey(process.env.S3_SECRET_ACCESS_KEY, blob)),
     endpoint: Boolean(getS3Endpoint()),
   };
 }
