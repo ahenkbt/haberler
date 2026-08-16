@@ -1,17 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { normalizeLocalWssUrl } from "./local-wss-url.js";
+import {
+  canonicalFreePbxHost,
+  FREEPBX_PUBLIC_WSS_HOST,
+  normalizeLocalWssUrl,
+} from "./local-wss-url.js";
 
 describe("normalizeLocalWssUrl", () => {
-  it("adds FreePBX WSS port and /ws path for Hostinger hosts", () => {
+  it("rewrites Hostinger aliases to the Let's Encrypt WSS hostname", () => {
     expect(normalizeLocalWssUrl("wss://srv1828480.hstgr.cloud")).toBe(
-      "wss://srv1828480.hstgr.cloud:8089/ws",
+      `wss://${FREEPBX_PUBLIC_WSS_HOST}:8089/ws`,
     );
-    expect(normalizeLocalWssUrl("wss://187.127.82.106")).toBe("wss://187.127.82.106:8089/ws");
+    expect(normalizeLocalWssUrl("wss://187.127.82.106")).toBe(
+      `wss://${FREEPBX_PUBLIC_WSS_HOST}:8089/ws`,
+    );
+    expect(normalizeLocalWssUrl("wss://srv1828480.hstgr.cloud:8089/ws")).toBe(
+      `wss://${FREEPBX_PUBLIC_WSS_HOST}:8089/ws`,
+    );
   });
 
-  it("leaves an explicit FreePBX path unchanged", () => {
-    expect(normalizeLocalWssUrl("wss://srv1828480.hstgr.cloud:8089/ws")).toBe(
-      "wss://srv1828480.hstgr.cloud:8089/ws",
+  it("keeps the certificate hostname and adds port/path", () => {
+    expect(normalizeLocalWssUrl(`wss://${FREEPBX_PUBLIC_WSS_HOST}`)).toBe(
+      `wss://${FREEPBX_PUBLIC_WSS_HOST}:8089/ws`,
     );
   });
 
@@ -19,5 +28,11 @@ describe("normalizeLocalWssUrl", () => {
     expect(normalizeLocalWssUrl("wss://api.bulutsantralim.com:7443")).toBe(
       "wss://api.bulutsantralim.com:7443",
     );
+  });
+
+  it("maps Hostinger SIP hosts to the certificate CN", () => {
+    expect(canonicalFreePbxHost("srv1828480.hstgr.cloud")).toBe(FREEPBX_PUBLIC_WSS_HOST);
+    expect(canonicalFreePbxHost("187.127.82.106")).toBe(FREEPBX_PUBLIC_WSS_HOST);
+    expect(canonicalFreePbxHost(FREEPBX_PUBLIC_WSS_HOST)).toBe(FREEPBX_PUBLIC_WSS_HOST);
   });
 });

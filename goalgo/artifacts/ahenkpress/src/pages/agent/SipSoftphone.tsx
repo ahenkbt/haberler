@@ -34,9 +34,20 @@ function isMobileBrowser(): boolean {
   return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
 }
 
+const FREEPBX_PUBLIC_WSS_HOST = "santral.aiaddin.net";
+const HOSTINGER_PBX_IPV4 = "187.127.82.106";
+
+function isHostingerPbxAlias(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return /hstgr\.cloud$|hostinger/i.test(host) || host === HOSTINGER_PBX_IPV4;
+}
+
 function isFreePbxWssHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  return /hstgr\.cloud$|hostinger/i.test(host) || /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+  return (
+    /hstgr\.cloud$|hostinger|aiaddin\.net$/i.test(host) ||
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(host)
+  );
 }
 
 function normalizeWssUrl(url: string): string {
@@ -47,6 +58,9 @@ function normalizeWssUrl(url: string): string {
   try {
     const u = new URL(trimmed);
     if (u.protocol !== "wss:" && u.protocol !== "ws:") return trimmed;
+    if (isHostingerPbxAlias(u.hostname)) {
+      u.hostname = FREEPBX_PUBLIC_WSS_HOST;
+    }
     if (isFreePbxWssHost(u.hostname)) {
       if (!u.port) u.port = "8089";
       if (!u.pathname || u.pathname === "/") u.pathname = "/ws";
@@ -82,13 +96,14 @@ export function normalizeSipConfig(
   const password = String(raw.password ?? raw.sipSecret ?? "").trim();
   if (!password) return null;
   const extension = raw.extension.trim();
-  const domain = raw.domain.trim();
+  const rawDomain = raw.domain.trim();
+  const domain = isHostingerPbxAlias(rawDomain) ? FREEPBX_PUBLIC_WSS_HOST : rawDomain;
   return {
     extension,
     password,
     domain,
     wssUrl: normalizeWssUrl(raw.wssUrl.trim()),
-    sipUri: raw.sipUri?.trim() || `sip:${extension}@${domain}`,
+    sipUri: `sip:${extension}@${domain}`,
   };
 }
 

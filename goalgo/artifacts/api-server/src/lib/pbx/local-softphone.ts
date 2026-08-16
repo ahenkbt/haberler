@@ -10,7 +10,7 @@ import {
   agentLogin,
 } from "./service.js";
 import type { PbxAgent } from "./types.js";
-import { hostFromSipUrl, normalizeLocalWssUrl } from "./local-wss-url.js";
+import { canonicalFreePbxHost, hostFromSipUrl, normalizeLocalWssUrl } from "./local-wss-url.js";
 
 export { normalizeLocalWssUrl } from "./local-wss-url.js";
 
@@ -85,7 +85,7 @@ export async function getLocalAgentSipCredentials(agentId: string): Promise<Loca
   if (!ext || !ext.enabled || ext.provider !== "local") return null;
   if (!ext.sipSecret || !ext.extension) return null;
 
-  const domain = await resolveLocalDomain(ext);
+  const domain = canonicalFreePbxHost(await resolveLocalDomain(ext));
   if (!domain) return null;
 
   const wssUrl = await resolveLocalWssUrl(ext, domain);
