@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, listR2S3EndpointCandidates, listR2PublicBaseCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -83,6 +83,19 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(listed.length, 1);
   });
 
+  it("extracts bucket and keys from a pasted env block", () => {
+    const blob = [
+      "S3_ENDPOINT=https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
+      "S3_BUCKET=yekpare-media",
+      "S3_ACCESS_KEY_ID=abcdef0123456789abcdef0123456789",
+      "S3_SECRET_ACCESS_KEY=secretsecretsecretsecretsecretsecret12",
+      "S3_PUBLIC_BASE_URL=https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev",
+    ].join("\n");
+    assert.equal(coerceS3Bucket(blob, blob), "yekpare-media");
+    assert.equal(coerceS3AccessKeyId(blob, blob), "abcdef0123456789abcdef0123456789");
+    assert.equal(s3MediaEnvReady({ S3_ENDPOINT: blob, S3_BUCKET: blob, S3_ACCESS_KEY_ID: blob, S3_SECRET_ACCESS_KEY: blob }), true);
+  });
+
   it("serves GET from r2.dev before the S3 API", async () => {
     const fname = "1786904268708-0049503dc6a1d47a.webp";
     const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
@@ -146,7 +159,7 @@ describe("hm-editor-media-s3-edge", () => {
       if (u.includes(".r2.cloudflarestorage.com")) {
         const host = new URL(u).hostname;
         s3Hosts.push(host);
-        if (host.startsWith("16f5")) {
+        if (host.startsWith("fb9f")) {
           throw new Error("TLS handshake failure SSL alert 40");
         }
         return new Response(new Uint8Array([0x52, 0x49, 0x46, 0x46]), {
@@ -163,8 +176,8 @@ describe("hm-editor-media-s3-edge", () => {
       );
       assert.equal(res.status, 200);
       assert.equal(res.headers.get("x-yekpare-media"), "r2");
-      assert.ok(s3Hosts[0]?.startsWith("16f5"), `CF account first, got ${s3Hosts.join(",")}`);
-      assert.ok(s3Hosts.some((h) => h.startsWith("fb9f")));
+      assert.ok(s3Hosts[0]?.startsWith("fb9f"), `Render dual-write first, got ${s3Hosts.join(",")}`);
+      assert.ok(s3Hosts.some((h) => h.startsWith("16f5")));
     } finally {
       globalThis.fetch = origFetch;
     }

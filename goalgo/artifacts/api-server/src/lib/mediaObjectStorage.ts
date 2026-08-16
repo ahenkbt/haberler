@@ -7,6 +7,9 @@ import {
 import type { Readable } from "node:stream";
 import {
   CF_ACCOUNT_R2_S3_ENDPOINT,
+  coerceS3AccessKeyId,
+  coerceS3Bucket,
+  coerceS3SecretAccessKey,
   getS3EndpointCandidates,
   isS3TransportError,
   normalizeEnvValue,
@@ -23,6 +26,18 @@ function normalizeS3EndpointUrl(raw: string): string {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
+function s3CredBlob(): string {
+  return [
+    process.env.S3_ENDPOINT,
+    process.env.S3_BUCKET,
+    process.env.S3_ACCESS_KEY_ID,
+    process.env.S3_SECRET_ACCESS_KEY,
+    process.env.S3_PUBLIC_BASE_URL,
+  ]
+    .map((v) => String(v ?? ""))
+    .join("\n");
+}
+
 function createS3Client(endpoint: string): S3Client {
   const region = normalizeEnvValue(process.env.S3_REGION) || "auto";
   const url = normalizeS3EndpointUrl(endpoint);
@@ -31,6 +46,7 @@ function createS3Client(endpoint: string): S3Client {
       "S3_ENDPOINT tanımlı değil — R2/S3 uyumlu depolama için S3_ENDPOINT ekleyin.",
     );
   }
+  const blob = s3CredBlob();
   return new S3Client({
     region,
     endpoint: url,
@@ -40,8 +56,8 @@ function createS3Client(endpoint: string): S3Client {
     requestChecksumCalculation: "WHEN_REQUIRED",
     responseChecksumValidation: "WHEN_REQUIRED",
     credentials: {
-      accessKeyId: normalizeEnvValue(process.env.S3_ACCESS_KEY_ID),
-      secretAccessKey: normalizeEnvValue(process.env.S3_SECRET_ACCESS_KEY),
+      accessKeyId: coerceS3AccessKeyId(process.env.S3_ACCESS_KEY_ID, blob),
+      secretAccessKey: coerceS3SecretAccessKey(process.env.S3_SECRET_ACCESS_KEY, blob),
     },
   });
 }
@@ -64,7 +80,7 @@ function endpointsToTry(): string[] {
 }
 
 function bucket(): string {
-  return normalizeEnvValue(process.env.S3_BUCKET);
+  return coerceS3Bucket(process.env.S3_BUCKET, s3CredBlob());
 }
 
 function objectKey(name: string): string {
