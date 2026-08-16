@@ -244,7 +244,7 @@ function parseDataUrl(dataUrl) {
 function objectKey(env, fname) {
   const prefix = normalizeEnvValue(env?.S3_KEY_PREFIX).replace(/^\/+|\/+$/g, "");
   if (prefix && prefix.length <= 80 && !/S3_/i.test(prefix)) return `${prefix}/${fname}`;
-  return fname;
+  return `yekpare-media/${fname}`;
 }
 
 function publicUploadUrl(fname) {
@@ -307,7 +307,7 @@ function isPublicHttpUrl(value) {
   }
 }
 
-/** r2.dev / özel CDN — S3 API hostu değil. 404 bir dosyayı zehirlemez. */
+/** r2.dev / özel CDN — path (`/yekpare-media`) korunur; origin'e indirgenmez. */
 export function listR2PublicBaseCandidates(env) {
   const out = [];
   const add = (raw) => {
@@ -317,9 +317,11 @@ export function listR2PublicBaseCandidates(env) {
     try {
       const u = new URL(v);
       if (/\.r2\.cloudflarestorage\.com$/i.test(u.hostname)) return;
-      const base = `${u.protocol}//${u.host}`.replace(/\/+$/, "");
-      if (!isPublicHttpUrl(base) || out.includes(base)) return;
-      out.push(base);
+      const origin = `${u.protocol}//${u.host}`.replace(/\/+$/, "");
+      if (!isPublicHttpUrl(origin)) return;
+      const path = u.pathname.replace(/\/+$/, "");
+      const base = path && path !== "/" ? `${origin}${path}` : origin;
+      if (!out.includes(base)) out.push(base);
     } catch {
       /* ignore */
     }
@@ -327,6 +329,16 @@ export function listR2PublicBaseCandidates(env) {
   add(env?.S3_PUBLIC_BASE_URL);
   const blob = `${String(env?.S3_PUBLIC_BASE_URL || "")}\n${String(s3EndpointRaw(env) || "")}`;
   for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);
+  const bucket = s3BucketName(env) || "yekpare-media";
+  for (const base of [...out]) {
+    try {
+      const u = new URL(base);
+      const path = u.pathname.replace(/\/+$/, "") || "/";
+      if (path === "/" && bucket) add(`${base}/${bucket}`);
+    } catch {
+      /* ignore */
+    }
+  }
   return out;
 }
 
@@ -410,10 +422,10 @@ export async function handleMediaGetFromR2(request, env) {
   let lastS3 = "none";
   const keyNames = [];
   const primaryKey = objectKey(env, fname);
-  keyNames.push(primaryKey);
-  if (primaryKey === fname) {
-    keyNames.push(`uploads/${fname}`);
-  }
+  const bucket = s3BucketName(env) || "yekpare-media";
+  keyNames.push(`${bucket}/${fname}`);
+  if (primaryKey !== `${bucket}/${fname}`) keyNames.push(primaryKey);
+  if (primaryKey === fname) keyNames.push(`uploads/${fname}`);
   if (creds.length && endpoints.length) {
     for (const cred of creds) {
       const client = s3ClientWithCreds(cred, env);

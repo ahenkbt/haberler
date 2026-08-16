@@ -85,7 +85,8 @@ function bucket(): string {
 
 function objectKey(name: string): string {
   const prefix = normalizeEnvValue(process.env.S3_KEY_PREFIX).replace(/^\/+|\/+$/g, "");
-  return prefix ? `${prefix}/${name}` : name;
+  if (prefix) return `${prefix}/${name}`;
+  return `yekpare-media/${name}`;
 }
 
 /** S3/R2 yok (404) — diğer hatalar (EPROTO, ağ) üst katmanda volume yedeğine bırakılır. */
