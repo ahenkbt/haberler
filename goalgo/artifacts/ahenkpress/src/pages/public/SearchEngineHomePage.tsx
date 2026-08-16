@@ -45,19 +45,28 @@ const searchExamples = [
 ];
 
 async function fetchHomeNews(): Promise<HomeHybridNewsItem[]> {
-  const items = await fetchHybridNewsList({
-    limit: 24,
-    offset: 0,
-    rssScope: "all",
-    fullHybrid: true,
-    dbFirst: false,
-    fresh: true,
-    timeoutMs: 20_000,
-    retries: 1,
-  });
-  const rss = items.filter((row) => row.source === "rss");
-  const rest = items.filter((row) => row.source !== "rss");
-  return [...rss, ...rest].slice(0, 12);
+  try {
+    const items = await fetchHybridNewsList({
+      limit: 24,
+      offset: 0,
+      rssScope: "all",
+      dbFirst: true,
+      fullHybrid: false,
+      timeoutMs: 8_000,
+      retries: 0,
+    });
+    if (items.length > 0) return items.slice(0, 12);
+  } catch {
+    /* DB yedek */
+  }
+  try {
+    const res = await fetch("/api/news?status=published&limit=12", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { items?: HomeHybridNewsItem[] };
+    return Array.isArray(data.items) ? data.items.slice(0, 12) : [];
+  } catch {
+    return [];
+  }
 }
 
 async function fetchHomeVideos(): Promise<VideoRow[]> {
@@ -93,7 +102,7 @@ export default function SearchEngineHomePage() {
   const { logoSrc } = usePortalBrandVisuals();
 
   const { data: news = [], isLoading: newsLoading } = useQuery({
-    queryKey: ["/api/news/hybrid", "turkeco-home", "rss-all"],
+    queryKey: ["/api/news/hybrid", "turkeco-home", "db-first"],
     queryFn: fetchHomeNews,
     staleTime: 0,
     gcTime: 60_000,
