@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, listR2S3EndpointCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, listR2S3EndpointCandidates, listR2PublicBaseCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -71,5 +71,102 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-media"), "r2-binding");
     assert.equal(res.headers.get("content-type"), "image/webp");
+  });
+
+  it("extracts r2.dev public bases from S3_PUBLIC_BASE_URL and a pasted endpoint blob", () => {
+    const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
+    const listed = listR2PublicBaseCandidates({
+      S3_PUBLIC_BASE_URL: pub,
+      S3_ENDPOINT: `${CF_ACCOUNT_R2_S3_ENDPOINT}\nS3_PUBLIC_BASE_URL=${pub}`,
+    });
+    assert.equal(listed[0], pub);
+    assert.equal(listed.length, 1);
+  });
+
+  it("serves GET from r2.dev before the S3 API", async () => {
+    const fname = "1786904268708-0049503dc6a1d47a.webp";
+    const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
+    const env = {
+      S3_ENDPOINT: CF_ACCOUNT_R2_S3_ENDPOINT,
+      S3_BUCKET: "yekpare-media",
+      S3_ACCESS_KEY_ID: "ak",
+      S3_SECRET_ACCESS_KEY: "sk",
+      S3_PUBLIC_BASE_URL: pub,
+    };
+    const origFetch = globalThis.fetch;
+    let s3Called = false;
+    globalThis.fetch = async (input) => {
+      const u = String(input?.url || input);
+      if (u.startsWith(`${pub}/`)) {
+        return new Response(new Uint8Array([0x52, 0x49, 0x46, 0x46]), {
+          status: 200,
+          headers: { "content-type": "image/webp", "content-length": "4" },
+        });
+      }
+      if (u.includes(".r2.cloudflarestorage.com")) {
+        s3Called = true;
+        throw new Error("S3 should not run when public GET succeeds");
+      }
+      return origFetch(input);
+    };
+    try {
+      const res = await handleMediaGetFromR2(
+        new Request(`https://turk.eco/api/media/uploads/${fname}`),
+        env,
+      );
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get("x-yekpare-media"), "r2-public");
+      assert.equal(s3Called, false);
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it("keeps trying the next S3 host after TLS failure and ignores public 404 HTML", async () => {
+    const fname = "1786904268708-0049503dc6a1d47a.webp";
+    const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
+    const blob = `${RENDER_R2_S3_ENDPOINT} ${CF_ACCOUNT_R2_S3_ENDPOINT}`;
+    const env = {
+      S3_ENDPOINT: blob,
+      S3_BUCKET: "yekpare-media",
+      S3_ACCESS_KEY_ID: "ak",
+      S3_SECRET_ACCESS_KEY: "sk",
+      S3_PUBLIC_BASE_URL: pub,
+    };
+    const origFetch = globalThis.fetch;
+    const s3Hosts = [];
+    globalThis.fetch = async (input) => {
+      const u = String(input?.url || input);
+      if (u.includes(".r2.dev")) {
+        return new Response("<!doctype html>not found", {
+          status: 404,
+          headers: { "content-type": "text/html" },
+        });
+      }
+      if (u.includes(".r2.cloudflarestorage.com")) {
+        const host = new URL(u).hostname;
+        s3Hosts.push(host);
+        if (host.startsWith("16f5")) {
+          throw new Error("TLS handshake failure SSL alert 40");
+        }
+        return new Response(new Uint8Array([0x52, 0x49, 0x46, 0x46]), {
+          status: 200,
+          headers: { "content-type": "image/webp", "content-length": "4" },
+        });
+      }
+      return origFetch(input);
+    };
+    try {
+      const res = await handleMediaGetFromR2(
+        new Request(`https://turk.eco/api/media/uploads/${fname}`),
+        env,
+      );
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get("x-yekpare-media"), "r2");
+      assert.ok(s3Hosts[0]?.startsWith("16f5"), `CF account first, got ${s3Hosts.join(",")}`);
+      assert.ok(s3Hosts.some((h) => h.startsWith("fb9f")));
+    } finally {
+      globalThis.fetch = origFetch;
+    }
   });
 });

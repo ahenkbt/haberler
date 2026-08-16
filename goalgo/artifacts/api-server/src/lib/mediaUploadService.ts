@@ -10,9 +10,9 @@ import {
   getMediaStorageMode,
   hasPersistentVolumeMount,
   isS3TransportError,
+  listR2PublicBaseCandidates,
   noteS3RuntimeFailure,
   shouldReadS3ForMediaIo,
-  s3PublicBaseUrl,
 } from "./mediaStorageConfig";
 import { getS3ObjectStream, putS3Object, s3ObjectExists } from "./mediaObjectStorage";
 import { logger } from "./logger";
@@ -173,44 +173,48 @@ function legacyMediaOrigin(): string | null {
   return DEFAULT_LEGACY_MEDIA_ORIGIN || null;
 }
 
+async function fetchPublicMediaBuffer(
+  name: string,
+): Promise<{ buf: Buffer; contentType?: string } | null> {
+  for (const pub of listR2PublicBaseCandidates()) {
+    try {
+      const res = await fetch(`${pub.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, {
+        redirect: "follow",
+        signal: AbortSignal.timeout(4_000),
+        headers: { Accept: "image/*,application/pdf,video/*,audio/*,*/*;q=0.8" },
+      });
+      const ct = String(res.headers.get("content-type") || "").toLowerCase();
+      if (res.ok && !ct.includes("text/html")) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (buf.length > 32) return { buf, contentType: ct || undefined };
+      }
+    } catch (e) {
+      logger.warn({ err: e, name, pub }, "[media-get] public R2 okunamadı");
+    }
+  }
+  return null;
+}
+
 export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | null> {
   const local = resolveLocalMedia(name);
   if (local) return local;
+
+  const fromPublic = await fetchPublicMediaBuffer(name);
+  if (fromPublic) {
+    return { kind: "stream", stream: Readable.from(fromPublic.buf), contentType: fromPublic.contentType };
+  }
 
   if (shouldReadS3ForMediaIo()) {
     try {
       const obj = await getS3ObjectStream(name);
       if (obj) return { kind: "stream", stream: obj.body, contentType: obj.contentType };
     } catch (e) {
-      if (isS3TransportError(e)) {
-        noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
-      }
       logger.warn(
         { err: e, name, transport: isS3TransportError(e) },
         "[media-get] S3 read failed — volume yedeğine bakılıyor",
       );
       const retryLocal = resolveLocalMedia(name);
       if (retryLocal) return retryLocal;
-    }
-  }
-
-  const pub = s3PublicBaseUrl();
-  if (pub) {
-    try {
-      const res = await fetch(`${pub.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, {
-        redirect: "follow",
-        signal: AbortSignal.timeout(1_200),
-        headers: { Accept: "image/*,application/pdf,video/*,audio/*,*/*;q=0.8" },
-      });
-      const ct = String(res.headers.get("content-type") || "").toLowerCase();
-      if (res.ok && !ct.includes("text/html")) {
-        const buf = Buffer.from(await res.arrayBuffer());
-        if (buf.length > 32) {
-          return { kind: "stream", stream: Readable.from(buf), contentType: ct || undefined };
-        }
-      }
-    } catch (e) {
-      logger.warn({ err: e, name, pub }, "[media-get] S3_PUBLIC_BASE_URL okunamadı");
     }
   }
 
@@ -223,27 +227,12 @@ export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | 
 
 export async function mediaObjectExists(name: string): Promise<boolean> {
   if (resolveLocalMedia(name)) return true;
+  if (await fetchPublicMediaBuffer(name)) return true;
   if (shouldReadS3ForMediaIo()) {
     try {
       if (await s3ObjectExists(name)) return true;
     } catch (e) {
-      if (isS3TransportError(e)) {
-        noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
-      }
       logger.warn({ err: e, name }, "[media-exists] S3 head failed");
-    }
-  }
-  const pub = s3PublicBaseUrl();
-  if (pub) {
-    try {
-      const res = await fetch(`${pub.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, {
-        method: "HEAD",
-        redirect: "follow",
-        signal: AbortSignal.timeout(1_200),
-      });
-      if (res.ok) return true;
-    } catch {
-      /* public R2.dev HEAD desteklemezse GET resolveMediaForGet'te denenir */
     }
   }
   return false;
