@@ -621,6 +621,9 @@ export async function agentLogin(username: string, password: string): Promise<{
   });
   const data = await parseApiJson(res);
   if (!res.ok || !data.ok || !data.token) {
+    if (res.status === 410) {
+      throw new Error("PBX API kapalı. Webphone SIP girişi için /api/pbx yeniden açılmalı.");
+    }
     throw new Error(String(data.error ?? "Giriş yapılamadı."));
   }
   return {
