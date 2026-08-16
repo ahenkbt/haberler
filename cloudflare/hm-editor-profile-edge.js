@@ -6,7 +6,8 @@
  *
  * Container geride kalsa bile giriş + oturum doğrulama çalışır.
  */
-import { neon } from "@neondatabase/serverless";
+import { isNeonServerlessUrl } from "./neon-edge-url.js";
+import { neonSqlClient } from "./neon-edge-db.js";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
@@ -51,9 +52,7 @@ function jsonResponse(status, body) {
 }
 
 function sqlClient(env) {
-  const dbUrl = String(env?.DATABASE_URL || "").trim();
-  if (!dbUrl) return null;
-  return neon(dbUrl);
+  return neonSqlClient(env);
 }
 
 function jwtSecretBytes(env) {
@@ -1371,6 +1370,8 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
     if (!issued) return null;
     return jsonResponse(200, issued);
   }
+  // Hostinger / klasik Postgres: Neon HTTP sürücüsü çalışmaz → Container.
+  if (!isNeonServerlessUrl(env?.DATABASE_URL)) return null;
   if (path === "/api/hm/editor/login" && method === "POST") {
     return handleEditorLogin(request, env, incomingUrl);
   }
@@ -1425,6 +1426,7 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   const path = String(new URL(request.url).pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
   if (path !== "/api/media/upload" || method !== "POST") return null;
+  if (!isNeonServerlessUrl(env?.DATABASE_URL)) return null;
 
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);

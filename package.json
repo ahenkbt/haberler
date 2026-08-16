@@ -13,7 +13,7 @@
     "deploy:cloudflare": "pnpm run build:cloudflare && pnpm exec wrangler deploy",
     "cf:dashboard-deploy": "pnpm run deploy:cloudflare",
     "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs",
-    "test:worker": "node --test cloudflare/*.test.js goalgo/scripts/copy-render-media-to-r2.test.mjs scripts/ensure-yektube-cloudflare-assets.test.mjs"
+    "test:worker": "node --test cloudflare/*.test.js goalgo/lib/db/pg-pool-ssl.test.mjs goalgo/scripts/copy-render-media-to-r2.test.mjs scripts/ensure-yektube-cloudflare-assets.test.mjs"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",

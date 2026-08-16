@@ -39,6 +39,10 @@ export {
 } from "./yektubeCluster";
 export { logYektubeDbStartupHint } from "./yektubeStartup";
 export {
+  databaseProvider,
+  isNeonServerlessUrl,
+  pgPoolConfig,
+  pgSslOption,
   resolveDatabaseUrl,
   resolveNewsDatabaseUrl,
   resolveYektubeDatabaseUrl,
@@ -46,3 +50,4 @@ export {
   requireNewsDatabaseUrl,
   requireYektubeDatabaseUrl,
 } from "./databaseUrl";
+export type { DatabaseProvider } from "./databaseUrl";

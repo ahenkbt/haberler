@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { pgPoolConfig } from "../../../lib/db/pg-pool-ssl.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,7 +45,7 @@ if (!databaseUrl) {
 
 const migrationsFolder = path.resolve(goalgoRoot, "lib/db/migrations");
 
-const pool = new pg.Pool({ connectionString: databaseUrl });
+const pool = new pg.Pool(pgPoolConfig(databaseUrl));
 const db = drizzle(pool);
 
 let exitCode = 0;

@@ -9,6 +9,7 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { resolveYektubeDatabaseUrlFromEnv } from "./yektube-env.mjs";
+import { pgPoolConfig } from "../../../lib/db/pg-pool-ssl.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -32,7 +33,7 @@ if (!yektubeDatabaseUrl) {
 }
 
 const migrationsFolder = path.resolve(goalgoRoot, "lib/db/migrations-yektube");
-const pool = new pg.Pool({ connectionString: yektubeDatabaseUrl });
+const pool = new pg.Pool(pgPoolConfig(yektubeDatabaseUrl));
 const db = drizzle(pool);
 
 let exitCode = 0;

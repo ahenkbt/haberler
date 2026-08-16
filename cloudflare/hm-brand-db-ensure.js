@@ -4,6 +4,7 @@
  */
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
+import { isNeonServerlessUrl } from "./neon-edge-url.js";
 import {
   HM_BREAKING_RSS_DEFAULTS_REV,
   cloneDefaultHmBreakingRssFeedRows,
@@ -28,6 +29,7 @@ let khYekpareEnsureAt = 0;
 export async function ensureKhYekpareEditorOnNeon(env) {
   const dbUrl = String(env?.DATABASE_URL || "").trim();
   if (!dbUrl) return { ok: false, reason: "no-db" };
+  if (!isNeonServerlessUrl(dbUrl)) return { ok: false, reason: "not-neon" };
   const now = Date.now();
   if (now - khYekpareEnsureAt < 5 * 60_000) return { ok: true, reason: "cached" };
   const sql = neon(dbUrl);
@@ -209,6 +211,7 @@ let _siteRssDefaultsPassDone = false;
 export async function ensureHmSiteRssDefaultsOnNeon(env) {
   const dbUrl = String(env?.DATABASE_URL || "").trim();
   if (!dbUrl) return { ok: false, reason: "no-db" };
+  if (!isNeonServerlessUrl(dbUrl)) return { ok: false, reason: "not-neon" };
   const now = Date.now();
   if (_siteRssDefaultsPassDone) return { ok: true, action: "cached-done" };
   if (now - _siteRssDefaultsPassAt < 15_000) return { ok: true, action: "throttled" };
@@ -269,6 +272,7 @@ export async function ensureHmSiteRssDefaultsOnNeon(env) {
 export async function ensureHmBreakingRssDefaultsOnNeon(env) {
   const dbUrl = String(env?.DATABASE_URL || "").trim();
   if (!dbUrl) return { ok: false, reason: "no-db" };
+  if (!isNeonServerlessUrl(dbUrl)) return { ok: false, reason: "not-neon" };
   const now = Date.now();
   if (_breakingRssDefaultsPassDone) return { ok: true, action: "cached-done" };
   if (now - _breakingRssDefaultsPassAt < 15_000) return { ok: true, action: "throttled" };
@@ -328,6 +332,7 @@ export async function ensureHmBreakingRssDefaultsOnNeon(env) {
 export async function repairAsgEditorMisassignmentOnNeon(env) {
   const dbUrl = String(env?.DATABASE_URL || "").trim();
   if (!dbUrl) return { ok: false, reason: "no-db" };
+  if (!isNeonServerlessUrl(dbUrl)) return { ok: false, reason: "not-neon" };
   const sql = neon(dbUrl);
   const EMAIL = "sehirgazetesiankara@gmail.com";
   const USERNAME = "sehirgazetesi";
@@ -1163,6 +1168,7 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   if (!binding) return null;
   const dbUrl = String(env?.DATABASE_URL || "").trim();
   if (!dbUrl) return null;
+  if (!isNeonServerlessUrl(dbUrl)) return null;
 
   const sql = neon(dbUrl);
   const host = normalizeHost(domain || binding.domain);
