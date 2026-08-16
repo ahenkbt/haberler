@@ -145,6 +145,15 @@ function s3EndpointCandidates(env) {
   return listR2S3EndpointCandidates(s3EndpointRaw(env));
 }
 
+/** Worker/Container TLS: Render dual-write hostu (fb9f…) alert 40 veriyor; CF hesabı önce. */
+function s3EndpointCandidatesPreferCfAccount(env) {
+  const listed = s3EndpointCandidates(env);
+  const cf = r2S3UrlFromValue(CF_ACCOUNT_R2_S3_ENDPOINT);
+  if (!cf) return listed;
+  if (!listed.includes(cf)) return [cf, ...listed];
+  return [cf, ...listed.filter((url) => url !== cf)];
+}
+
 /** Yapıştırılmış env bloğundan R2 S3 API hostunu ayıkla (Render dual-write önce). */
 export function coerceR2S3Endpoint(raw) {
   return listR2S3EndpointCandidates(raw)[0] || "";
@@ -239,23 +248,38 @@ function s3ObjectUrl(endpoint, env, fname) {
   return `${endpoint}/${bucket}/${key}`;
 }
 
-let s3ApiSkipUntil = 0;
-let r2PublicSkipUntil = 0;
+const R2_PUBLIC_URL_RE = /https?:\/\/pub-[a-f0-9]+\.r2\.dev/gi;
 
-function s3ApiSkipped() {
-  return Date.now() < s3ApiSkipUntil;
+function isPublicHttpUrl(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
-function noteS3ApiUnreachable() {
-  s3ApiSkipUntil = Date.now() + 10 * 60_000;
-}
-
-function r2PublicSkipped() {
-  return Date.now() < r2PublicSkipUntil;
-}
-
-function noteR2PublicUnusable() {
-  r2PublicSkipUntil = Date.now() + 10 * 60_000;
+/** r2.dev / özel CDN — S3 API hostu değil. 404 bir dosyayı zehirlemez. */
+export function listR2PublicBaseCandidates(env) {
+  const out = [];
+  const add = (raw) => {
+    let v = normalizeEnvValue(raw).replace(/\/+$/, "");
+    if (!v) return;
+    if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+    try {
+      const u = new URL(v);
+      if (/\.r2\.cloudflarestorage\.com$/i.test(u.hostname)) return;
+      const base = `${u.protocol}//${u.host}`.replace(/\/+$/, "");
+      if (!isPublicHttpUrl(base) || out.includes(base)) return;
+      out.push(base);
+    } catch {
+      /* ignore */
+    }
+  };
+  add(env?.S3_PUBLIC_BASE_URL);
+  const blob = `${String(env?.S3_PUBLIC_BASE_URL || "")}\n${String(s3EndpointRaw(env) || "")}`;
+  for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);
+  return out;
 }
 
 /** wrangler.toml `MEDIA_BUCKET` — S3 API TLS (alert 40) olmadan aynı hesaptaki nesneler. */
@@ -315,13 +339,31 @@ export async function handleMediaGetFromR2(request, env) {
     }
   }
 
-  if (s3MediaEnvReady(env) && !s3ApiSkipped()) {
+  const publicBases = listR2PublicBaseCandidates(env);
+  for (const pub of publicBases) {
+    try {
+      const pubRes = await fetch(`${pub}/${encodeURIComponent(fname)}`, {
+        method: method === "HEAD" ? "GET" : method,
+        redirect: "follow",
+        signal: AbortSignal.timeout(4000),
+      });
+      const ct = String(pubRes.headers.get("content-type") || "").toLowerCase();
+      if (pubRes.ok && !ct.includes("text/html")) {
+        const len = pubRes.headers.get("content-length");
+        return respond(pubRes.body, pubRes.headers.get("content-type"), len, "r2-public");
+      }
+    } catch (err) {
+      console.error("[media-r2-public]", pub.slice(0, 48), String(err?.message || err).slice(0, 160));
+    }
+  }
+
+  if (s3MediaEnvReady(env)) {
     const client = s3Client(env);
-    for (const endpoint of s3EndpointCandidates(env)) {
+    for (const endpoint of s3EndpointCandidatesPreferCfAccount(env)) {
       try {
         const res = await client.fetch(s3ObjectUrl(endpoint, env, fname), {
           method,
-          signal: AbortSignal.timeout(1200),
+          signal: AbortSignal.timeout(4000),
         });
         if (res && res.ok) {
           return respond(
@@ -332,30 +374,8 @@ export async function handleMediaGetFromR2(request, env) {
           );
         }
       } catch (err) {
-        noteS3ApiUnreachable();
         console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
-        break;
       }
-    }
-  }
-
-  const pub = normalizeEnvValue(env?.S3_PUBLIC_BASE_URL).replace(/\/+$/, "");
-  if (pub && /^https?:\/\//i.test(pub) && !r2PublicSkipped()) {
-    try {
-      const pubRes = await fetch(`${pub}/${encodeURIComponent(fname)}`, {
-        method: method === "HEAD" ? "GET" : method,
-        redirect: "follow",
-        signal: AbortSignal.timeout(1200),
-      });
-      const ct = String(pubRes.headers.get("content-type") || "").toLowerCase();
-      if (pubRes.ok && !ct.includes("text/html")) {
-        const len = pubRes.headers.get("content-length");
-        return respond(pubRes.body, pubRes.headers.get("content-type"), len, "r2-public");
-      }
-      noteR2PublicUnusable();
-    } catch (err) {
-      noteR2PublicUnusable();
-      console.error("[media-r2-public]", String(err?.message || err).slice(0, 160));
     }
   }
 
@@ -384,7 +404,7 @@ export async function saveMediaDataUrlToS3(env, dataUrl, title) {
   if (!s3MediaEnvReady(env)) {
     return { error: "S3 yapılandırması eksik" };
   }
-  const endpoints = s3EndpointCandidates(env);
+  const endpoints = s3EndpointCandidatesPreferCfAccount(env);
   const region = normalizeEnvValue(env.S3_REGION) || "auto";
 
   const client = new AwsClient({

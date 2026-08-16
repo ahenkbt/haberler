@@ -9,6 +9,7 @@ import {
   getS3Endpoint,
   getS3EndpointCandidates,
   listR2S3EndpointCandidates,
+  listR2PublicBaseCandidates,
   RENDER_R2_S3_ENDPOINT,
   CF_ACCOUNT_R2_S3_ENDPOINT,
   shouldReadS3ForMediaIo,
@@ -23,6 +24,7 @@ const ENV_KEYS = [
   "S3_ACCESS_KEY_ID",
   "S3_SECRET_ACCESS_KEY",
   "S3_ENDPOINT",
+  "S3_PUBLIC_BASE_URL",
   "RAILWAY_VOLUME_MOUNT_PATH",
   "MEDIA_UPLOAD_ROOT",
   "RENDER_DISK_MOUNT_PATH",
@@ -170,5 +172,20 @@ describe("mediaStorageConfig", () => {
     const listed = listR2S3EndpointCandidates(cfOnly);
     expect(listed[0]).toBe(RENDER_R2_S3_ENDPOINT);
     expect(listed).toContain(cfOnly);
+  });
+
+  it("lists r2.dev public bases from S3_PUBLIC_BASE_URL and a pasted S3_ENDPOINT blob", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
+    process.env.S3_ENDPOINT = [
+      `S3_ENDPOINT=${CF_ACCOUNT_R2_S3_ENDPOINT}`,
+      "S3_BUCKET=yekpare-media",
+      `S3_PUBLIC_BASE_URL=${pub}`,
+    ].join("\n");
+    expect(listR2PublicBaseCandidates()).toEqual([pub]);
+
+    process.env.S3_PUBLIC_BASE_URL = pub;
+    expect(listR2PublicBaseCandidates()[0]).toBe(pub);
   });
 });

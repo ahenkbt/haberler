@@ -334,10 +334,43 @@ export function getMediaStorageMode(): MediaStorageMode {
   return "volume";
 }
 
+const R2_PUBLIC_URL_RE = /https?:\/\/pub-[a-f0-9]+\.r2\.dev/gi;
+
+function isPublicHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** r2.dev / özel CDN — S3 API hostu değil. 404 bir dosyayı zehirlemez. */
+export function listR2PublicBaseCandidates(): string[] {
+  const out: string[] = [];
+  const add = (raw: string | undefined) => {
+    let v = normalizeEnvValue(raw).replace(/\/+$/, "");
+    if (!v) return;
+    if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+    try {
+      const u = new URL(v);
+      if (/\.r2\.cloudflarestorage\.com$/i.test(u.hostname)) return;
+      const base = `${u.protocol}//${u.host}`.replace(/\/+$/, "");
+      if (!isPublicHttpUrl(base) || out.includes(base)) return;
+      out.push(base);
+    } catch {
+      /* ignore */
+    }
+  };
+  add(process.env.S3_PUBLIC_BASE_URL);
+  const hit = readFirstEnv(S3_ENDPOINT_KEYS);
+  const blob = `${process.env.S3_PUBLIC_BASE_URL || ""}\n${hit?.value || ""}`;
+  for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);
+  return out;
+}
+
 export function s3PublicBaseUrl(): string | null {
-  const raw = normalizeEnvValue(process.env.S3_PUBLIC_BASE_URL);
-  if (!raw) return null;
-  return raw.replace(/\/+$/, "");
+  return listR2PublicBaseCandidates()[0] ?? null;
 }
 
 export function isProductionRuntime(): boolean {

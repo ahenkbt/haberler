@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import type { Readable } from "node:stream";
 import {
+  CF_ACCOUNT_R2_S3_ENDPOINT,
   getS3EndpointCandidates,
   isS3TransportError,
   normalizeEnvValue,
@@ -56,8 +57,10 @@ function clientFor(endpoint: string): S3Client {
 
 function endpointsToTry(): string[] {
   const list = getS3EndpointCandidates();
-  if (!cachedEndpoint) return list;
-  return [cachedEndpoint, ...list.filter((e) => e !== cachedEndpoint)];
+  const cf = CF_ACCOUNT_R2_S3_ENDPOINT;
+  const ordered = list.includes(cf) ? [cf, ...list.filter((e) => e !== cf)] : list;
+  if (!cachedEndpoint) return ordered;
+  return [cachedEndpoint, ...ordered.filter((e) => e !== cachedEndpoint)];
 }
 
 function bucket(): string {
