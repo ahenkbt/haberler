@@ -34,12 +34,32 @@ function isMobileBrowser(): boolean {
   return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
 }
 
+function isFreePbxWssHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return /hstgr\.cloud$|hostinger/i.test(host) || /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+}
+
 function normalizeWssUrl(url: string): string {
   const trimmed = url.trim();
   if (/bulutsantralim\.com/i.test(trimmed) && /:443(\/|$)/.test(trimmed)) {
     return trimmed.replace(/:443(\/|$)/, ":7443$1");
   }
-  return trimmed;
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol !== "wss:" && u.protocol !== "ws:") return trimmed;
+    if (isFreePbxWssHost(u.hostname)) {
+      if (!u.port) u.port = "8089";
+      if (!u.pathname || u.pathname === "/") u.pathname = "/ws";
+    }
+    return u.toString();
+  } catch {
+    return trimmed;
+  }
+}
+
+function isAsteriskWss(url: string): boolean {
+  const normalized = normalizeWssUrl(url);
+  return /:8089\b|\/ws\/?$/i.test(normalized) && !/bulutsantralim/i.test(normalized);
 }
 
 const ICE_SERVERS: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
@@ -67,7 +87,7 @@ export function normalizeSipConfig(
     extension,
     password,
     domain,
-    wssUrl: raw.wssUrl.trim(),
+    wssUrl: normalizeWssUrl(raw.wssUrl.trim()),
     sipUri: raw.sipUri?.trim() || `sip:${extension}@${domain}`,
   };
 }
@@ -370,11 +390,15 @@ export function SipSoftphone({
       if (!uri) throw new Error("Geçersiz SIP URI");
 
       const wssUrl = normalizeWssUrl(cfg.wssUrl);
+      const asterisk = isAsteriskWss(wssUrl);
       ua = new UserAgent({
         uri,
-        transportOptions: { server: wssUrl, connectionTimeout: 10 },
+        transportOptions: { server: wssUrl, connectionTimeout: 15 },
         authorizationUsername: cfg.extension,
         authorizationPassword: cfg.password,
+        hackWssInTransport: asterisk,
+        hackIpInContact: asterisk,
+        viaHost: asterisk ? cfg.domain : undefined,
         sessionDescriptionHandlerFactory: Web.defaultSessionDescriptionHandlerFactory(createMediaStreamFactory()),
         sessionDescriptionHandlerFactoryOptions: {
           constraints: MEDIA_OPTIONS.constraints,

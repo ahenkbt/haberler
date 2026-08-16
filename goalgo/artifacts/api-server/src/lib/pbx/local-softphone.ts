@@ -10,6 +10,9 @@ import {
   agentLogin,
 } from "./service.js";
 import type { PbxAgent } from "./types.js";
+import { hostFromSipUrl, normalizeLocalWssUrl } from "./local-wss-url.js";
+
+export { normalizeLocalWssUrl } from "./local-wss-url.js";
 
 export type LocalAgentSipCredentials = {
   extension: string;
@@ -33,38 +36,27 @@ function normalizeDomain(raw: string): string {
     .trim();
 }
 
-function hostFromUrl(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-  try {
-    const withProto = /^wss?:\/\//i.test(trimmed) || /^https?:\/\//i.test(trimmed) ? trimmed : `wss://${trimmed}`;
-    return normalizeDomain(new URL(withProto).hostname);
-  } catch {
-    return normalizeDomain(trimmed);
-  }
-}
-
 async function resolveLocalWssUrl(
   ext: { sipWssUrl?: string | null; sipDomain?: string },
   domain: string,
 ): Promise<string> {
   const explicit = ext.sipWssUrl?.trim();
-  if (explicit) return explicit;
+  if (explicit) return normalizeLocalWssUrl(explicit);
 
   const trunks = await listTrunks();
   const domainNorm = normalizeDomain(domain);
   const byHost = trunks.find(
     (t) => t.enabled && t.sipWssUrl?.trim() && normalizeDomain(t.host) === domainNorm,
   );
-  if (byHost?.sipWssUrl?.trim()) return byHost.sipWssUrl.trim();
+  if (byHost?.sipWssUrl?.trim()) return normalizeLocalWssUrl(byHost.sipWssUrl.trim());
 
   const anyTrunkWss = trunks.find((t) => t.enabled && t.sipWssUrl?.trim());
-  if (anyTrunkWss?.sipWssUrl?.trim()) return anyTrunkWss.sipWssUrl.trim();
+  if (anyTrunkWss?.sipWssUrl?.trim()) return normalizeLocalWssUrl(anyTrunkWss.sipWssUrl.trim());
 
   const settings = await loadPbxSettings();
-  if (settings.sipBridgeWsUrl?.trim()) return settings.sipBridgeWsUrl.trim();
+  if (settings.sipBridgeWsUrl?.trim()) return normalizeLocalWssUrl(settings.sipBridgeWsUrl.trim());
 
-  return String(process.env.PBX_WSS_URL ?? process.env.PBX_BRIDGE_WS_URL ?? "").trim();
+  return normalizeLocalWssUrl(String(process.env.PBX_WSS_URL ?? process.env.PBX_BRIDGE_WS_URL ?? "").trim());
 }
 
 async function resolveLocalDomain(ext: { sipDomain?: string; sipWssUrl?: string | null }): Promise<string> {
@@ -76,11 +68,11 @@ async function resolveLocalDomain(ext: { sipDomain?: string; sipWssUrl?: string 
   if (enabledTrunk) return normalizeDomain(enabledTrunk.host);
 
   const settings = await loadPbxSettings();
-  const fromBridge = hostFromUrl(settings.sipBridgeUrl ?? "");
+  const fromBridge = hostFromSipUrl(settings.sipBridgeUrl ?? "");
   if (fromBridge) return fromBridge;
 
   const wssUrl = ext.sipWssUrl?.trim() || settings.sipBridgeWsUrl?.trim() || "";
-  const fromWss = hostFromUrl(wssUrl);
+  const fromWss = hostFromSipUrl(wssUrl);
   if (fromWss) return fromWss;
 
   return "";
