@@ -1,4 +1,11 @@
-export { databaseProvider, isNeonServerlessUrl, pgPoolConfig, pgSslOption } from "./pgPoolOptions";
+export {
+  applyHostingerIpv4First,
+  databaseProvider,
+  isNeonServerlessUrl,
+  pgPoolConfig,
+  pgSslOption,
+  shouldForceIpv4,
+} from "./pgPoolOptions";
 export type { DatabaseProvider } from "./pgPoolOptions";
 
 /** Railway Postgres: ana URL yoksa private/public yedeklerini dene. */
