@@ -1,7 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import multer from "multer";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard.js";
-import { portalSuperappModuleRetired } from "../lib/portal-superapp-retire.js";
 import { isDemoSeedAllowed } from "../lib/demo-credentials.js";
 import {
   agentStatusLabelTr,
@@ -123,8 +122,6 @@ import {
 import type { PbxAgentStatus } from "../lib/pbx/types.js";
 
 const router: IRouter = Router();
-
-router.use(portalSuperappModuleRetired("pbx"));
 
 const campaignContactUpload = multer({
   storage: multer.memoryStorage(),
