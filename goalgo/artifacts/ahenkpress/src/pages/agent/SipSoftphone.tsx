@@ -396,7 +396,8 @@ export function SipSoftphone({
         transportOptions: { server: wssUrl, connectionTimeout: 15 },
         authorizationUsername: cfg.extension,
         authorizationPassword: cfg.password,
-        hackWssInTransport: asterisk,
+        // sip.js 0.21: hackWssInTransport kaldırıldı; Asterisk Contact `transport=ws` ister.
+        contactParams: asterisk ? { transport: "ws" } : undefined,
         hackIpInContact: asterisk,
         viaHost: asterisk ? cfg.domain : undefined,
         sessionDescriptionHandlerFactory: Web.defaultSessionDescriptionHandlerFactory(createMediaStreamFactory()),
