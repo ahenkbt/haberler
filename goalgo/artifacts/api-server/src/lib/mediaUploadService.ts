@@ -223,16 +223,30 @@ export async function resolveMediaForGet(name: string): Promise<ResolvedMedia | 
 
 export async function mediaObjectExists(name: string): Promise<boolean> {
   if (resolveLocalMedia(name)) return true;
-  if (!shouldReadS3ForMediaIo()) return false;
-  try {
-    return await s3ObjectExists(name);
-  } catch (e) {
-    if (isS3TransportError(e)) {
-      noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
+  if (shouldReadS3ForMediaIo()) {
+    try {
+      if (await s3ObjectExists(name)) return true;
+    } catch (e) {
+      if (isS3TransportError(e)) {
+        noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
+      }
+      logger.warn({ err: e, name }, "[media-exists] S3 head failed");
     }
-    logger.warn({ err: e, name }, "[media-exists] S3 head failed");
-    return false;
   }
+  const pub = s3PublicBaseUrl();
+  if (pub) {
+    try {
+      const res = await fetch(`${pub.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, {
+        method: "HEAD",
+        redirect: "follow",
+        signal: AbortSignal.timeout(1_200),
+      });
+      if (res.ok) return true;
+    } catch {
+      /* public R2.dev HEAD desteklemezse GET resolveMediaForGet'te denenir */
+    }
+  }
+  return false;
 }
 
 export function extFromMime(mime: string): string | null {

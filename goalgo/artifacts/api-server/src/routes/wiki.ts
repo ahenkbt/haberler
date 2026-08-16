@@ -102,23 +102,47 @@ function wikiArticleCacheKey(title: string): string {
   return norm(decodeWikiTitleParam(title)).slice(0, 300);
 }
 
+async function ensureWikiArticleUniqueIndex(): Promise<void> {
+  try {
+    await executeNewsDbWrite(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS wiki_articles_lang_query_key_uidx
+      ON wiki_articles (lang, query_key)
+    `);
+  } catch {
+    await executeNewsDbWrite(sql`
+      DELETE FROM wiki_articles a
+      WHERE a.id NOT IN (
+        SELECT MAX(b.id) FROM wiki_articles b GROUP BY b.lang, b.query_key
+      )
+    `);
+    await executeNewsDbWrite(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS wiki_articles_lang_query_key_uidx
+      ON wiki_articles (lang, query_key)
+    `);
+  }
+}
+
 async function ensureWikiArticleCacheTable(): Promise<void> {
-  wikiArticleCacheTableReady ??= executeNewsDbWrite(sql`
-    CREATE TABLE IF NOT EXISTS wiki_articles (
-      id bigserial PRIMARY KEY,
-      lang text NOT NULL DEFAULT 'tr',
-      query_key text NOT NULL,
-      requested_title text NOT NULL,
-      resolved_title text NOT NULL,
-      response_json jsonb NOT NULL,
-      hit_count integer NOT NULL DEFAULT 0,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now(),
-      last_accessed_at timestamptz NOT NULL DEFAULT now(),
-      CONSTRAINT wiki_articles_lang_query_key_unique UNIQUE (lang, query_key)
-    );
-    CREATE INDEX IF NOT EXISTS wiki_articles_lang_resolved_title_idx ON wiki_articles (lang, resolved_title);
-  `);
+  wikiArticleCacheTableReady ??= (async () => {
+    await executeNewsDbWrite(sql`
+      CREATE TABLE IF NOT EXISTS wiki_articles (
+        id bigserial PRIMARY KEY,
+        lang text NOT NULL DEFAULT 'tr',
+        query_key text NOT NULL,
+        requested_title text NOT NULL,
+        resolved_title text NOT NULL,
+        response_json jsonb NOT NULL,
+        hit_count integer NOT NULL DEFAULT 0,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        last_accessed_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT wiki_articles_lang_query_key_unique UNIQUE (lang, query_key)
+      );
+      CREATE INDEX IF NOT EXISTS wiki_articles_lang_resolved_title_idx ON wiki_articles (lang, resolved_title);
+    `);
+    // Tablo eski dump'tan geldiyse IF NOT EXISTS UNIQUE eklemez; ON CONFLICT 42P10 olur.
+    await ensureWikiArticleUniqueIndex();
+  })();
   await wikiArticleCacheTableReady;
 }
 
@@ -2796,8 +2820,23 @@ async function ensureWikiSettingsTable(): Promise<void> {
       wiki_featured jsonb NOT NULL DEFAULT '[]'::jsonb,
       wiki_encyclopedia_ui jsonb,
       updated_at timestamptz NOT NULL DEFAULT now()
-    );
-    INSERT INTO wiki_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+    )
+  `);
+  try {
+    await executeNewsDbWrite(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS wiki_settings_id_uidx ON wiki_settings (id)
+    `);
+  } catch {
+    await executeNewsDbWrite(sql`
+      DELETE FROM wiki_settings a
+      WHERE a.ctid NOT IN (SELECT min(b.ctid) FROM wiki_settings b GROUP BY b.id)
+    `);
+    await executeNewsDbWrite(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS wiki_settings_id_uidx ON wiki_settings (id)
+    `);
+  }
+  await executeNewsDbWrite(sql`
+    INSERT INTO wiki_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING
   `);
 }
 

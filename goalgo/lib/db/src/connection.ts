@@ -3,11 +3,12 @@ import { sql } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "./schema";
 import { requireDatabaseUrl } from "./databaseUrl";
-import { isNeonServerlessUrl, pgPoolConfig } from "./pgPoolOptions";
+import { applyHostingerIpv4First, isNeonServerlessUrl, pgPoolConfig } from "./pgPoolOptions";
 
 const { Pool } = pg;
 
 const databaseUrl = requireDatabaseUrl();
+applyHostingerIpv4First(databaseUrl);
 
 function poolInt(name: string, fallback: number): number {
   const n = Number(process.env[name]);
@@ -28,8 +29,20 @@ export const pool = new Pool(
 );
 export const db = drizzle(pool, { schema });
 
+export type PingDatabaseResult = { ok: true } | { ok: false; error: "timeout" | "reset" | "refused" | "dns" | "error" };
+
+function classifyPingError(err: unknown): PingDatabaseResult {
+  const code = err && typeof err === "object" && "code" in err ? String((err as { code?: string }).code ?? "") : "";
+  const msg = err instanceof Error ? err.message : String(err);
+  if (code === "ETIMEDOUT" || /timeout/i.test(msg)) return { ok: false, error: "timeout" };
+  if (code === "ECONNRESET" || /closed the connection|ECONNRESET/i.test(msg)) return { ok: false, error: "reset" };
+  if (code === "ECONNREFUSED" || /ECONNREFUSED/i.test(msg)) return { ok: false, error: "refused" };
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") return { ok: false, error: "dns" };
+  return { ok: false, error: "error" };
+}
+
 /** Healthcheck / readiness — SELECT 1 (zaman aşımında false; health endpoint takılmaz). */
-export async function pingDatabase(timeoutMs = 4_000): Promise<boolean> {
+export async function pingDatabaseDetailed(timeoutMs = 8_000): Promise<PingDatabaseResult> {
   try {
     await Promise.race([
       pool.query("SELECT 1"),
@@ -38,10 +51,15 @@ export async function pingDatabase(timeoutMs = 4_000): Promise<boolean> {
         timer.unref?.();
       }),
     ]);
-    return true;
-  } catch {
-    return false;
+    return { ok: true };
+  } catch (err) {
+    return classifyPingError(err);
   }
+}
+
+export async function pingDatabase(timeoutMs = 8_000): Promise<boolean> {
+  const result = await pingDatabaseDetailed(timeoutMs);
+  return result.ok;
 }
 
 let hmNewsSiteSeoColumnsPromise: Promise<void> | null = null;

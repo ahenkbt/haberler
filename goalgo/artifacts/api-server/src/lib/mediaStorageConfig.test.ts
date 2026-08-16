@@ -23,6 +23,9 @@ const ENV_KEYS = [
   "S3_ACCESS_KEY_ID",
   "S3_SECRET_ACCESS_KEY",
   "S3_ENDPOINT",
+  "RAILWAY_VOLUME_MOUNT_PATH",
+  "MEDIA_UPLOAD_ROOT",
+  "RENDER_DISK_MOUNT_PATH",
 ] as const;
 
 const saved: Record<string, string | undefined> = {};
@@ -79,6 +82,7 @@ describe("mediaStorageConfig", () => {
     process.env.S3_ENDPOINT = "https://account.r2.cloudflarestorage.com";
 
     expect(shouldUseS3ForMediaIo()).toBe(true);
+    process.env.RAILWAY_VOLUME_MOUNT_PATH = "/data";
     noteS3RuntimeFailure("EPROTO handshake");
     expect(shouldUseS3ForMediaIo()).toBe(false);
   });
@@ -118,9 +122,23 @@ describe("mediaStorageConfig", () => {
     process.env.S3_ACCESS_KEY_ID = "key";
     process.env.S3_SECRET_ACCESS_KEY = "secret";
     process.env.S3_ENDPOINT = "https://account.r2.cloudflarestorage.com";
+    process.env.RAILWAY_VOLUME_MOUNT_PATH = "/data";
     noteS3RuntimeFailure("startup probe");
     expect(shouldUseS3ForMediaIo()).toBe(false);
     expect(shouldReadS3ForMediaIo()).toBe(false);
+  });
+
+  it("keeps R2 enabled when a TLS error happens but no persistent volume exists", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    process.env.MEDIA_STORAGE_MODE = "s3";
+    process.env.S3_BUCKET = "yekpare-media";
+    process.env.S3_ACCESS_KEY_ID = "key";
+    process.env.S3_SECRET_ACCESS_KEY = "secret";
+    process.env.S3_ENDPOINT = "https://account.r2.cloudflarestorage.com";
+    noteS3RuntimeFailure("EPROTO handshake");
+    expect(shouldUseS3ForMediaIo()).toBe(true);
+    expect(shouldReadS3ForMediaIo()).toBe(true);
   });
 
   it("prefers the Render dual-write R2 host when the env blob lists another account first", () => {

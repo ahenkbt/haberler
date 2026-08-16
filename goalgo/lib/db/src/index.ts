@@ -1,4 +1,5 @@
-export { pool, db, ensureHmNewsSiteSeoColumns, pingDatabase } from "./connection";
+export { pool, db, ensureHmNewsSiteSeoColumns, pingDatabase, pingDatabaseDetailed } from "./connection";
+export type { PingDatabaseResult } from "./connection";
 export * from "./schema";
 export {
   isNewsDatabaseConfigured,
@@ -39,10 +40,12 @@ export {
 } from "./yektubeCluster";
 export { logYektubeDbStartupHint } from "./yektubeStartup";
 export {
+  applyHostingerIpv4First,
   databaseProvider,
   isNeonServerlessUrl,
   pgPoolConfig,
   pgSslOption,
+  shouldForceIpv4,
   resolveDatabaseUrl,
   resolveNewsDatabaseUrl,
   resolveYektubeDatabaseUrl,

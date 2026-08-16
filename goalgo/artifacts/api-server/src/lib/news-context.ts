@@ -2,6 +2,7 @@ import { db, getNewsDbForRead, categoriesTable, authorsTable } from "@workspace/
 import type { NewsContext } from "./serializers";
 
 let cachedContext: { value: NewsContext; expiresAt: number } | null = null;
+let inflightContext: Promise<NewsContext> | null = null;
 const NEWS_CONTEXT_CACHE_MS = 60_000;
 
 /** Kategori slug/isim güncellemelerinden sonra serialize önbelleğini temizler. */
@@ -14,21 +15,30 @@ export async function loadNewsContext(): Promise<NewsContext> {
   if (cachedContext && cachedContext.expiresAt > now) {
     return cachedContext.value;
   }
+  if (inflightContext) return inflightContext;
 
-  const rdb = getNewsDbForRead();
-  const [cats, auths] = await Promise.all([
-    /* Kategori yazımları ana DB'de; haber okuma cluster'ı ile senkron gecikmesi olmasın. */
-    db.select().from(categoriesTable),
-    rdb
-      .select({ id: authorsTable.id, name: authorsTable.name })
-      .from(authorsTable),
-  ]);
-  const value = {
-    categories: new Map(cats.map((c) => [c.id, c])),
-    authors: new Map(auths.map((a) => [a.id, a])),
-  };
-  cachedContext = { value, expiresAt: now + NEWS_CONTEXT_CACHE_MS };
-  return value;
+  inflightContext = (async () => {
+    const rdb = getNewsDbForRead();
+    const [cats, auths] = await Promise.all([
+      /* Kategori yazımları ana DB'de; haber okuma cluster'ı ile senkron gecikmesi olmasın. */
+      db.select().from(categoriesTable),
+      rdb
+        .select({ id: authorsTable.id, name: authorsTable.name })
+        .from(authorsTable),
+    ]);
+    const value = {
+      categories: new Map(cats.map((c) => [c.id, c])),
+      authors: new Map(auths.map((a) => [a.id, a])),
+    };
+    cachedContext = { value, expiresAt: Date.now() + NEWS_CONTEXT_CACHE_MS };
+    return value;
+  })();
+
+  try {
+    return await inflightContext;
+  } finally {
+    inflightContext = null;
+  }
 }
 
 export function slugify(input: string): string {
