@@ -4,10 +4,16 @@
  * Acil durumda SKIP_DB_MIGRATE=1 ile migration atlanabilir.
  */
 import http from "node:http";
+import dns from "node:dns";
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { hasYektubeDatabaseUrl } from "./yektube-env.mjs";
+
+const dbUrl = process.env.DATABASE_URL || process.env.DATABASE_PRIVATE_URL || "";
+if (/hstgr|hostinger|sslmode=disable/i.test(dbUrl) || /@(\d{1,3}\.){3}\d{1,3}/.test(dbUrl)) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(__dirname, "..");

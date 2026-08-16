@@ -1,3 +1,4 @@
+import dns from "node:dns";
 import type { PoolConfig } from "pg";
 
 export type DatabaseProvider = "neon" | "hostinger" | "postgres";
@@ -36,11 +37,34 @@ export function pgSslOption(connectionString: string): PoolConfig["ssl"] {
   return undefined;
 }
 
+export function shouldForceIpv4(connectionString: string): boolean {
+  return databaseProvider(connectionString) === "hostinger";
+}
+
+/** Node 17+ AAAA tercih eder; Hostinger Postgres IPv6'da dinlemiyor. */
+export function applyHostingerIpv4First(connectionString: string): void {
+  if (shouldForceIpv4(connectionString)) {
+    dns.setDefaultResultOrder("ipv4first");
+  }
+}
+
+function ipv4Lookup(
+  hostname: string,
+  options: dns.LookupOneOptions | ((err: NodeJS.ErrnoException | null, address: string, family: number) => void),
+  callback?: (err: NodeJS.ErrnoException | null, address: string, family: number) => void,
+): void {
+  const cb = typeof options === "function" ? options : callback;
+  dns.lookup(hostname, { family: 4, all: false }, (err, address, family) => {
+    cb?.(err, address, family);
+  });
+}
+
 export function pgPoolConfig(connectionString: string, extra: PoolConfig = {}): PoolConfig {
   const ssl = pgSslOption(connectionString);
   return {
     connectionString,
     ...extra,
     ...(ssl === undefined ? {} : { ssl }),
-  };
+    ...(shouldForceIpv4(connectionString) ? { lookup: ipv4Lookup } : {}),
+  } as PoolConfig;
 }
