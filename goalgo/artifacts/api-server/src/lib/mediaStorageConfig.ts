@@ -274,9 +274,19 @@ export function getMediaStoragePreference(): MediaStoragePreference {
   return "auto";
 }
 
-/** S3 probe veya upload hatası sonrası bir sonraki isteklerde volume kullan. */
+/**
+ * S3 probe veya upload hatası sonrası volume'a düş.
+ * Cloudflare Container'da volume yok (`volumeMount: missing`); S3'ü kapatmak
+ * yeni haber görsellerini geçici diske yazıp kaybettirir.
+ */
 export function noteS3RuntimeFailure(reason?: string): void {
   if (runtimeS3Disabled) return;
+  if (!hasPersistentVolumeMount()) {
+    console.warn(
+      `[goalgo] S3/R2 hata ama kalıcı volume yok — R2 açık kalacak${reason ? `: ${reason}` : ""}`,
+    );
+    return;
+  }
   runtimeS3Disabled = true;
   console.warn(
     `[goalgo] S3/R2 devre dışı — yüklemeler site diskine yazılacak${reason ? `: ${reason}` : ""}`,
