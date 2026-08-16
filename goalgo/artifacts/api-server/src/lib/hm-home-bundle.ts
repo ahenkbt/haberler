@@ -334,12 +334,23 @@ export async function buildHmHomeBundle(
   const corporateStrict = isHmCorporateLayout(layout);
   const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
+  const settle = <T,>(label: string, p: Promise<T[]>) =>
+    p.catch((err) => {
+      console.error(`[hm-home-bundle] ${label}`, err instanceof Error ? err.message : err);
+      return [] as T[];
+    });
   let [featured, siteMansetEditor, latestEditor, breaking, popular] = await Promise.all([
-    loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict),
-    loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { siteMansetOnly: true }),
-    loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { excludeFeatured: true }),
-    loadBreakingForSite(siteId, corporateStrict, poolReceiveEnabled),
-    loadPopularForSite(siteId, 12, corporateStrict, poolReceiveEnabled),
+    settle("featured", loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict)),
+    settle(
+      "site-manset",
+      loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { siteMansetOnly: true }),
+    ),
+    settle(
+      "latest-editor",
+      loadManualEditorNewsForSite(siteId, fetchLimit, categorySlug, corporateStrict, { excludeFeatured: true }),
+    ),
+    settle("breaking", loadBreakingForSite(siteId, corporateStrict, poolReceiveEnabled)),
+    settle("popular", loadPopularForSite(siteId, 12, corporateStrict, poolReceiveEnabled)),
   ]);
   let manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
   if (corporateStrict) {

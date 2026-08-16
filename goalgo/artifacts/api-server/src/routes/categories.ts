@@ -66,6 +66,7 @@ function parseHmSiteIdsForCategoryFilter(req: { query: unknown }): number[] {
 }
 
 router.get("/categories", async (req, res): Promise<void> => {
+  try {
   const listAll =
     String((req.query as { scope?: string }).scope ?? "").toLowerCase() === "admin" &&
     canListAllNewsCategories(req);
@@ -128,14 +129,25 @@ router.get("/categories", async (req, res): Promise<void> => {
     }
   }
 
-  const countRows = await readDb
-    .select({
-      categoryId: newsTable.categoryId,
-      cnt: sql<number>`count(*)::int`,
-    })
-    .from(newsTable)
-    .where(isNotNull(newsTable.categoryId))
-    .groupBy(newsTable.categoryId);
+  const countRows = await (async () => {
+    try {
+      const countWhere =
+        siteIds.length === 1
+          ? and(isNotNull(newsTable.categoryId), eq(newsTable.siteId, siteIds[0]!))
+          : isNotNull(newsTable.categoryId);
+      return await readDb
+        .select({
+          categoryId: newsTable.categoryId,
+          cnt: sql<number>`count(*)::int`,
+        })
+        .from(newsTable)
+        .where(countWhere)
+        .groupBy(newsTable.categoryId);
+    } catch (err) {
+      logger.warn({ err }, "GET /categories: newsCount atlandı");
+      return [];
+    }
+  })();
 
   const newsCountByCategoryId = new Map<number, number>();
   for (const r of countRows) {
@@ -172,6 +184,10 @@ router.get("/categories", async (req, res): Promise<void> => {
   }));
 
   res.json(rows);
+  } catch (err) {
+    logger.error({ err }, "GET /categories failed");
+    res.status(500).json({ ok: false, error: "Sunucu hatası" });
+  }
 });
 
 router.post("/categories", async (req, res): Promise<void> => {
