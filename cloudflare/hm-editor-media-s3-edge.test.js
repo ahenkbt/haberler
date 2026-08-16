@@ -53,7 +53,7 @@ describe("hm-editor-media-s3-edge", () => {
     const env = {
       MEDIA_BUCKET: {
         get: async (key) => {
-          if (key !== fname) return null;
+          if (key !== fname && key !== `yekpare-media/${fname}`) return null;
           return {
             body: new Uint8Array([0x52, 0x49, 0x46, 0x46]),
             httpMetadata: { contentType: "image/webp" },
@@ -77,10 +77,20 @@ describe("hm-editor-media-s3-edge", () => {
     const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
     const listed = listR2PublicBaseCandidates({
       S3_PUBLIC_BASE_URL: pub,
+      S3_BUCKET: "yekpare-media",
       S3_ENDPOINT: `${CF_ACCOUNT_R2_S3_ENDPOINT}\nS3_PUBLIC_BASE_URL=${pub}`,
     });
     assert.equal(listed[0], pub);
-    assert.equal(listed.length, 1);
+    assert.ok(listed.includes(`${pub}/yekpare-media`));
+  });
+
+  it("keeps /yekpare-media on the public base (path is not stripped to origin)", () => {
+    const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev/yekpare-media";
+    const listed = listR2PublicBaseCandidates({
+      S3_PUBLIC_BASE_URL: pub,
+      S3_BUCKET: "yekpare-media",
+    });
+    assert.equal(listed[0], pub);
   });
 
   it("extracts bucket and keys from a pasted env block", () => {

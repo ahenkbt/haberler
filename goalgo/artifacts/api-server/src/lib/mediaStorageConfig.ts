@@ -392,7 +392,7 @@ function isPublicHttpUrl(value: string): boolean {
   }
 }
 
-/** r2.dev / özel CDN — S3 API hostu değil. 404 bir dosyayı zehirlemez. */
+/** r2.dev / özel CDN — path (`/yekpare-media`) korunur; origin'e indirgenmez. */
 export function listR2PublicBaseCandidates(): string[] {
   const out: string[] = [];
   const add = (raw: string | undefined) => {
@@ -402,9 +402,11 @@ export function listR2PublicBaseCandidates(): string[] {
     try {
       const u = new URL(v);
       if (/\.r2\.cloudflarestorage\.com$/i.test(u.hostname)) return;
-      const base = `${u.protocol}//${u.host}`.replace(/\/+$/, "");
-      if (!isPublicHttpUrl(base) || out.includes(base)) return;
-      out.push(base);
+      const origin = `${u.protocol}//${u.host}`.replace(/\/+$/, "");
+      if (!isPublicHttpUrl(origin)) return;
+      const path = u.pathname.replace(/\/+$/, "");
+      const base = path && path !== "/" ? `${origin}${path}` : origin;
+      if (!out.includes(base)) out.push(base);
     } catch {
       /* ignore */
     }
@@ -413,6 +415,16 @@ export function listR2PublicBaseCandidates(): string[] {
   const hit = readFirstEnv(S3_ENDPOINT_KEYS);
   const blob = `${process.env.S3_PUBLIC_BASE_URL || ""}\n${hit?.value || ""}`;
   for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);
+  const bucket = coerceS3Bucket(process.env.S3_BUCKET, s3EnvBlobText()) || "yekpare-media";
+  for (const base of [...out]) {
+    try {
+      const u = new URL(base);
+      const path = u.pathname.replace(/\/+$/, "") || "/";
+      if (path === "/" && bucket) add(`${base}/${bucket}`);
+    } catch {
+      /* ignore */
+    }
+  }
   return out;
 }
 

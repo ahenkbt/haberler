@@ -183,9 +183,14 @@ describe("mediaStorageConfig", () => {
       "S3_BUCKET=yekpare-media",
       `S3_PUBLIC_BASE_URL=${pub}`,
     ].join("\n");
-    expect(listR2PublicBaseCandidates()).toEqual([pub]);
+    expect(listR2PublicBaseCandidates()).toEqual([pub, `${pub}/yekpare-media`]);
 
     process.env.S3_PUBLIC_BASE_URL = pub;
+    process.env.S3_BUCKET = "yekpare-media";
     expect(listR2PublicBaseCandidates()[0]).toBe(pub);
+    expect(listR2PublicBaseCandidates()).toContain(`${pub}/yekpare-media`);
+
+    process.env.S3_PUBLIC_BASE_URL = `${pub}/yekpare-media`;
+    expect(listR2PublicBaseCandidates()[0]).toBe(`${pub}/yekpare-media`);
   });
 });
