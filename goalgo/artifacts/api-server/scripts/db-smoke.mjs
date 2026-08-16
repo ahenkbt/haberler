@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import pg from "pg";
 import { readFileSync, readdirSync } from "node:fs";
+import { pgPoolConfig } from "../../../lib/db/pg-pool-ssl.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const goalgoRoot = path.resolve(__dirname, "../../..");
@@ -50,7 +51,7 @@ if (orphans.length || missingFiles.length) {
   process.exit(1);
 }
 
-const pool = new pg.Pool({ connectionString: databaseUrl });
+const pool = new pg.Pool(pgPoolConfig(databaseUrl));
 let failed = false;
 
 try {

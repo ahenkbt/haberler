@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { pgPoolConfig } from "../../../lib/db/pg-pool-ssl.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,7 +36,7 @@ if (!newsDatabaseUrl) {
 }
 
 const migrationsFolder = path.resolve(goalgoRoot, "lib/db/migrations-news");
-const pool = new pg.Pool({ connectionString: newsDatabaseUrl });
+const pool = new pg.Pool(pgPoolConfig(newsDatabaseUrl));
 const db = drizzle(pool);
 
 let exitCode = 0;

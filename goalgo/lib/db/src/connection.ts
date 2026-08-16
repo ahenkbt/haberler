@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "./schema";
 import { requireDatabaseUrl } from "./databaseUrl";
+import { isNeonServerlessUrl, pgPoolConfig } from "./pgPoolOptions";
 
 const { Pool } = pg;
 
@@ -15,15 +16,16 @@ function poolInt(name: string, fallback: number): number {
 
 const isProd = process.env.NODE_ENV === "production";
 const isRender = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
-const isNeon = /neon\.tech/i.test(databaseUrl) || Boolean(process.env.NEON_PROJECT_ID);
+const isNeon = isNeonServerlessUrl(databaseUrl) || Boolean(process.env.NEON_PROJECT_ID);
 
-export const pool = new Pool({
-  connectionString: databaseUrl,
-  // Neon: düşük pool (compute limit); aksi halde prod'da daha geniş
-  max: poolInt("PG_POOL_MAX", isNeon || isRender ? 5 : isProd ? 20 : 10),
-  idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
-  connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", isNeon || isRender ? 10_000 : 10_000),
-});
+export const pool = new Pool(
+  pgPoolConfig(databaseUrl, {
+    // Neon: düşük pool (compute limit); aksi halde prod'da daha geniş
+    max: poolInt("PG_POOL_MAX", isNeon || isRender ? 5 : isProd ? 20 : 10),
+    idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
+    connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", 10_000),
+  }),
+);
 export const db = drizzle(pool, { schema });
 
 /** Healthcheck / readiness — SELECT 1 (zaman aşımında false; health endpoint takılmaz). */

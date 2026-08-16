@@ -2,7 +2,7 @@
  * HM editör veri API — kenar JWT + Neon.
  * Tanımsız rotalar: null → Worker Container vekili.
  */
-import { neon } from "@neondatabase/serverless";
+import { neonSqlClient } from "./neon-edge-db.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
@@ -31,9 +31,7 @@ function jsonResponse(status, body) {
 }
 
 function sqlClient(env) {
-  const dbUrl = String(env?.DATABASE_URL || "").trim();
-  if (!dbUrl) return null;
-  return neon(dbUrl);
+  return neonSqlClient(env);
 }
 
 function jwtSecretBytes(env) {

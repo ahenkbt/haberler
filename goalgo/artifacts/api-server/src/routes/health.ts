@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { HealthCheckResponse } from "@workspace/api-zod";
-import { pingDatabase } from "@workspace/db";
+import { pingDatabase, databaseProvider, resolveDatabaseUrl } from "@workspace/db";
 import {
   getMediaStorageMode,
   getMediaStoragePreference,
@@ -59,14 +59,16 @@ const live = (_req: Request, res: Response) => {
 };
 
 const ok = async (_req: Request, res: Response) => {
+  const dbProvider = databaseProvider(resolveDatabaseUrl());
   const dbOk = await pingDatabase();
   if (!dbOk) {
-    res.status(503).json({ status: "degraded", db: "unreachable" });
+    res.status(503).json({ status: "degraded", db: "unreachable", dbProvider });
     return;
   }
   const data = HealthCheckResponse.parse({ status: "ok" });
   res.json({
     ...data,
+    dbProvider,
     media: {
       mode: getMediaStorageMode(),
       preference: getMediaStoragePreference(),

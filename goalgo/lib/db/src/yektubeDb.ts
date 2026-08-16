@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 import { resolveYektubeDatabaseUrl } from "./databaseUrl";
+import { pgPoolConfig } from "./pgPoolOptions";
 
 const { Pool } = pg;
 
@@ -17,12 +18,13 @@ export const isYektubeDatabaseConfigured = Boolean(yektubeDatabaseUrl);
 
 /** YEKTUBE_DATABASE_URL yoksa null — yektubeCluster ana DB'ye düşer. */
 export const yektubePool: pg.Pool | null = yektubeDatabaseUrl
-  ? new Pool({
-      connectionString: yektubeDatabaseUrl,
-      max: poolInt("YEKTUBE_PG_POOL_MAX", 3),
-      idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
-      connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", 5_000),
-    })
+  ? new Pool(
+      pgPoolConfig(yektubeDatabaseUrl, {
+        max: poolInt("YEKTUBE_PG_POOL_MAX", 3),
+        idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
+        connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", 5_000),
+      }),
+    )
   : null;
 
 export const yektubeDb = yektubePool ? drizzle(yektubePool, { schema }) : null;
