@@ -93,6 +93,23 @@ jobs:
         if: steps.cf.outputs.enabled == 'true'
         run: pnpm install
 
+      # PR #196 GitHub S3 secret'larını sildi ama `wrangler versions deploy` etmedi;
+      # canlı Worker hâlâ 16f5:403. Container deploy ~7 dk — kapakları önce yayınla.
+      - name: Promote Worker version without GitHub S3 keys
+        if: steps.cf.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
+        run: |
+          set +e
+          # Run 31981316840: S3_PUBLIC_BASE_URL / keys / bucket silindi, trafik güncellenmedi.
+          vid="2a0cc72e-4100-4dc4-8b5c-3f29cac5e80e"
+          echo "::notice::Worker $vid (GitHub S3 silinmiş kopya) %100 trafiğe alınıyor."
+          pnpm exec wrangler versions deploy "${vid}@100%" --yes --name haberler \
+            || pnpm exec wrangler versions deploy "$vid" --percentage 100 --yes --name haberler \
+            || echo "versions deploy skipped"
+
       - name: Build SPA
         if: steps.cf.outputs.enabled == 'true'
         env:
@@ -110,6 +127,7 @@ jobs:
         run: pnpm exec wrangler deploy
 
       # Secret put, deploy edilmemiş version varken fail oluyor — önce deploy, sonra secret.
+      # versions secret * trafiğe koymaz; sonda wrangler versions deploy şart.
       - name: Sync Worker secrets (Neon)
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
         continue-on-error: true
@@ -128,15 +146,55 @@ jobs:
           S3_PUBLIC_BASE_URL: ${{ secrets.S3_PUBLIC_BASE_URL || vars.S3_PUBLIC_BASE_URL || '' }}
         run: |
           set +e
+          LAST_VID=""
+          capture_vid() {
+            vid=$(printf '%s' "$1" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | tail -1)
+            if [ -n "$vid" ]; then LAST_VID="$vid"; fi
+          }
+          latest_vid() {
+            if [ -n "$LAST_VID" ]; then printf '%s' "$LAST_VID"; return; fi
+            pnpm exec wrangler versions list --name haberler --json 2>/dev/null | node -e '
+              let s = "";
+              process.stdin.on("data", (d) => { s += d; });
+              process.stdin.on("end", () => {
+                try {
+                  const j = JSON.parse(s);
+                  const arr = Array.isArray(j) ? j : (j.versions || j.result || []);
+                  const id = arr[0] && (arr[0].id || arr[0].version_id || arr[0].versionId);
+                  if (id) process.stdout.write(String(id));
+                } catch {}
+              });
+            '
+          }
+          # wrangler versions secret put/delete yeni version üretir ama trafiğe koymaz.
+          # GitHub S3 silindiği version yayına alınmayınca kapaklar 16f5:403 kalır.
+          promote() {
+            vid=$(latest_vid)
+            if [ -z "$vid" ]; then
+              echo "versions deploy skipped (no version id)"
+              return 0
+            fi
+            echo "::notice::Worker version $vid trafiğe alınıyor (GitHub S3 silinmiş kopya)."
+            pnpm exec wrangler versions deploy "${vid}@100%" --yes --name haberler \
+              || pnpm exec wrangler versions deploy "$vid" --percentage 100 --yes --name haberler \
+              || echo "versions deploy failed for $vid"
+          }
           put_secret() {
-            printf '%s' "$2" | pnpm exec wrangler secret put "$1" \
-              || printf '%s' "$2" | pnpm exec wrangler versions secret put "$1" \
-              || echo "put $1 failed"
+            out=$(printf '%s' "$2" | pnpm exec wrangler secret put "$1" 2>&1)
+            printf '%s\n' "$out"
+            if printf '%s' "$out" | grep -qi 'Success'; then capture_vid "$out"; return 0; fi
+            out=$(printf '%s' "$2" | pnpm exec wrangler versions secret put "$1" 2>&1)
+            printf '%s\n' "$out"
+            capture_vid "$out"
           }
           del_secret() {
-            pnpm exec wrangler secret delete "$1" --name haberler --force \
-              || pnpm exec wrangler versions secret delete "$1" --name haberler \
-              || echo "delete $1 skipped"
+            # wrangler 4.86: secret delete --force yok; CI'da onay fallback yes.
+            out=$(pnpm exec wrangler secret delete "$1" --name haberler 2>&1)
+            printf '%s\n' "$out"
+            if printf '%s' "$out" | grep -qi 'Success'; then capture_vid "$out"; return 0; fi
+            out=$(pnpm exec wrangler versions secret delete "$1" --name haberler 2>&1)
+            printf '%s\n' "$out"
+            capture_vid "$out"
           }
           put_secret DATABASE_URL "$DATABASE_URL"
           put_secret SESSION_SECRET "$SESSION_SECRET"
@@ -150,3 +208,4 @@ jobs:
           for key in S3_PUBLIC_BASE_URL S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
             del_secret "$key"
           done
+          promote
