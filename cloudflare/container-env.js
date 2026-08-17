@@ -4,6 +4,14 @@
  * iletmez; start() sırasında açıkça verilmelidir.
  */
 
+import {
+  coerceR2S3Endpoint,
+  coerceS3AccessKeyId,
+  coerceS3Bucket,
+  coerceS3SecretAccessKey,
+  s3MediaEnvReady,
+} from "./hm-editor-media-s3-edge.js";
+
 export const CONTAINER_PORT = 3000;
 
 export const CONTAINER_DEFAULTS = {
@@ -31,6 +39,7 @@ const FORWARD_KEYS = [
   "DATABASE_URL",
   "SESSION_SECRET",
   "S3_ENDPOINT",
+  "R2_ENDPOINT",
   "S3_BUCKET",
   "S3_ACCESS_KEY_ID",
   "S3_SECRET_ACCESS_KEY",
@@ -61,12 +70,7 @@ export function hasSessionSecret(workerEnv) {
 }
 
 export function hasS3MediaConfig(vars) {
-  return (
-    nonEmptyString(vars?.S3_ENDPOINT) &&
-    nonEmptyString(vars?.S3_BUCKET) &&
-    nonEmptyString(vars?.S3_ACCESS_KEY_ID) &&
-    nonEmptyString(vars?.S3_SECRET_ACCESS_KEY)
-  );
+  return s3MediaEnvReady(vars);
 }
 
 /**
@@ -80,6 +84,17 @@ export function buildContainerEnv(workerEnv = {}) {
     const value = workerEnv[key];
     if (nonEmptyString(value)) vars[key] = value;
   }
+  const blob = [vars.S3_ENDPOINT, vars.R2_ENDPOINT, vars.S3_BUCKET, vars.S3_ACCESS_KEY_ID, vars.S3_PUBLIC_BASE_URL]
+    .map((v) => String(v ?? ""))
+    .join("\n");
+  const endpoint = coerceR2S3Endpoint(vars.S3_ENDPOINT) || coerceR2S3Endpoint(vars.R2_ENDPOINT) || coerceR2S3Endpoint(blob);
+  if (endpoint) vars.S3_ENDPOINT = endpoint;
+  const bucket = coerceS3Bucket(vars.S3_BUCKET, blob);
+  if (bucket) vars.S3_BUCKET = bucket;
+  const accessKey = coerceS3AccessKeyId(vars.S3_ACCESS_KEY_ID, blob);
+  if (accessKey) vars.S3_ACCESS_KEY_ID = accessKey;
+  const secret = coerceS3SecretAccessKey(vars.S3_SECRET_ACCESS_KEY, blob);
+  if (secret) vars.S3_SECRET_ACCESS_KEY = secret;
   if (!hasS3MediaConfig(vars)) {
     vars.SKIP_MEDIA_STORAGE_CHECK = "1";
   }
