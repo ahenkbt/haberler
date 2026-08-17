@@ -61,6 +61,35 @@ async function loadOwnedCampaign(id: number, siteId: number) {
   return row;
 }
 
+/** JWT'li editör: okuma DB'de kayıt varsa çalıştır/kaydet (yazma ana DB boş dönebilir). */
+async function loadCampaignForHmEditorMutate(id: number, siteId: number) {
+  const owned = await loadOwnedCampaign(id, siteId);
+  if (owned) return owned;
+  const [row] = await getNewsDbForRead()
+    .select()
+    .from(rssCampaignsTable)
+    .where(eq(rssCampaignsTable.id, id));
+  return row ?? null;
+}
+
+async function writeCampaignUpdate(
+  id: number,
+  set: Record<string, unknown>,
+) {
+  const [row] = await dualWriteUpdate(
+    rssCampaignsTable,
+    set as typeof rssCampaignsTable.$inferInsert,
+    eq(rssCampaignsTable.id, id),
+  );
+  if (row) return row;
+  const [fromRead] = await getNewsDbForRead()
+    .update(rssCampaignsTable)
+    .set(set as typeof rssCampaignsTable.$inferInsert)
+    .where(eq(rssCampaignsTable.id, id))
+    .returning();
+  return fromRead ?? null;
+}
+
 router.get("/hm/editor/rss/campaigns", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
@@ -144,7 +173,7 @@ router.put("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  const existing = await loadOwnedCampaign(id, ctx.siteId);
+  const existing = await loadCampaignForHmEditorMutate(id, ctx.siteId);
   if (!existing) {
     res.status(404).json({ error: "Campaign not found" });
     return;
@@ -159,33 +188,29 @@ router.put("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
     return;
   }
   const d = parsed.data;
-  const [row] = await dualWriteUpdate(
-    rssCampaignsTable,
-    {
-      name: d.name,
-      active: d.active ?? true,
-      postType: d.postType,
-      categorySlug: d.categorySlug,
-      tags: d.tags ?? [],
-      feeds: d.feeds ?? [],
-      sourceType: d.sourceType,
-      intervalMinutes: d.intervalMinutes ?? 30,
-      daysWindow: d.daysWindow ?? 0,
-      dailyLimit: d.dailyLimit ?? 0,
-      downloadImages: d.downloadImages ?? false,
-      headline: d.headline ?? false,
-      breakingKeywords: d.breakingKeywords ?? [],
-      minWords: d.minWords ?? 0,
-      translateEnabled: d.translateEnabled ?? false,
-      sourceLang: d.sourceLang ?? null,
-      targetLang: d.targetLang ?? null,
-      translateEngine: d.translateEngine ?? null,
-      hmSiteIds: [ctx.siteId],
-      includeYekpareHaber: false,
-      haberlerFilterByTags: d.haberlerFilterByTags ?? false,
-    },
-    eq(rssCampaignsTable.id, id),
-  );
+  const row = await writeCampaignUpdate(id, {
+    name: d.name,
+    active: d.active ?? true,
+    postType: d.postType,
+    categorySlug: d.categorySlug,
+    tags: d.tags ?? [],
+    feeds: d.feeds ?? [],
+    sourceType: d.sourceType,
+    intervalMinutes: d.intervalMinutes ?? 30,
+    daysWindow: d.daysWindow ?? 0,
+    dailyLimit: d.dailyLimit ?? 0,
+    downloadImages: d.downloadImages ?? false,
+    headline: d.headline ?? false,
+    breakingKeywords: d.breakingKeywords ?? [],
+    minWords: d.minWords ?? 0,
+    translateEnabled: d.translateEnabled ?? false,
+    sourceLang: d.sourceLang ?? null,
+    targetLang: d.targetLang ?? null,
+    translateEngine: d.translateEngine ?? null,
+    hmSiteIds: [ctx.siteId],
+    includeYekpareHaber: false,
+    haberlerFilterByTags: d.haberlerFilterByTags ?? false,
+  });
   if (!row) {
     res.status(404).json({ error: "Campaign not found" });
     return;
@@ -243,7 +268,7 @@ router.post("/hm/editor/rss/campaigns/:id/run", async (req, res): Promise<void> 
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  const existing = await loadOwnedCampaign(id, ctx.siteId);
+  const existing = await loadCampaignForHmEditorMutate(id, ctx.siteId);
   if (!existing) {
     res.status(404).json({ error: "Campaign not found" });
     return;
