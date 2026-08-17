@@ -206,8 +206,8 @@ function s3CredentialSets(env) {
     seen.add(k);
     out.push({ accessKeyId, secretAccessKey });
   };
-  add(env?.S3_ACCESS_KEY_ID, env?.S3_SECRET_ACCESS_KEY);
   add(assignmentFromEnvBlob(blob, "S3_ACCESS_KEY_ID"), assignmentFromEnvBlob(blob, "S3_SECRET_ACCESS_KEY"));
+  add(env?.S3_ACCESS_KEY_ID, env?.S3_SECRET_ACCESS_KEY);
   return out;
 }
 
@@ -326,9 +326,13 @@ export function listR2PublicBaseCandidates(env) {
       /* ignore */
     }
   };
+  const blob = s3BlobText(env);
+  add(assignmentFromEnvBlob(blob, "S3_PUBLIC_BASE_URL"));
   add(env?.S3_PUBLIC_BASE_URL);
-  const blob = `${String(env?.S3_PUBLIC_BASE_URL || "")}\n${String(s3EndpointRaw(env) || "")}`;
   for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);
+  for (const m of blob.matchAll(/https?:\/\/[^\s"'=]+/gi)) {
+    if (!/\.r2\.cloudflarestorage\.com/i.test(m[0])) add(m[0]);
+  }
   const bucket = s3BucketName(env) || "yekpare-media";
   for (const base of [...out]) {
     try {
