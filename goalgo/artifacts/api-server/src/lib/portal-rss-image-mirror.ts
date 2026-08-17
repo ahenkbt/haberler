@@ -7,6 +7,11 @@ export function isPortalRssMirrorImagesEnabled(): boolean {
   return process.env.PORTAL_RSS_MIRROR_IMAGES?.trim() === "1";
 }
 
+/** Kampanya «Kapakları sunucuya indir» veya global PORTAL_RSS_MIRROR_IMAGES=1. */
+export function shouldMirrorRssImportImages(force?: boolean): boolean {
+  return force === true || isPortalRssMirrorImagesEnabled();
+}
+
 export function isLocalMediaUploadUrl(url: string | null | undefined): boolean {
   const v = String(url ?? "").trim();
   return v.startsWith("/api/media/uploads/");
@@ -19,10 +24,11 @@ export function isExternalRssImageUrl(url: string | null | undefined): boolean {
 export async function mirrorRssImportImageUrl(
   imageUrl: string | null | undefined,
   title: string,
+  opts?: { force?: boolean },
 ): Promise<string | null> {
   const raw = String(imageUrl ?? "").trim();
   if (!raw) return null;
-  if (!isPortalRssMirrorImagesEnabled()) return raw;
+  if (!shouldMirrorRssImportImages(opts?.force)) return raw;
   if (isLocalMediaUploadUrl(raw)) return raw;
   if (!isExternalRssImageUrl(raw)) return raw;
   try {
@@ -54,15 +60,15 @@ async function mapWithConcurrency<T>(
 
 export async function mirrorPortalRssItemsImages(
   items: PortalRssItem[],
-  opts?: { concurrency?: number },
+  opts?: { concurrency?: number; force?: boolean },
 ): Promise<PortalRssItem[]> {
-  if (!isPortalRssMirrorImagesEnabled() || items.length === 0) return items;
+  if (!shouldMirrorRssImportImages(opts?.force) || items.length === 0) return items;
   const concurrency = Math.min(6, Math.max(1, opts?.concurrency ?? 4));
   const out = items.map((item) => ({ ...item }));
   await mapWithConcurrency(out, concurrency, async (item) => {
     const raw = String(item.imageUrl ?? "").trim();
     if (!raw || isLocalMediaUploadUrl(raw) || !isExternalRssImageUrl(raw)) return;
-    const mirrored = await mirrorRssImportImageUrl(raw, item.title);
+    const mirrored = await mirrorRssImportImageUrl(raw, item.title, { force: opts?.force });
     if (mirrored) item.imageUrl = mirrored;
   });
   return out;

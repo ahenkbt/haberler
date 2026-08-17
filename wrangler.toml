@@ -210,5 +210,5 @@ zone_name = "kirsehirhaber.org"
 # pattern = "www.kirsehir.net/*"
 # zone_name = "kirsehir.net"
 
-# redeploy trigger 2026-08-17T10:30:00Z — fb9f S3_ENDPOINT toml; GitHub blob ezmesin
+# redeploy trigger 2026-08-17T13:40:00Z — fb9f S3 + RSS kapak indirme + geçici disk yazma yok
 

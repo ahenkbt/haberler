@@ -6,7 +6,6 @@ import {
 } from "@aws-sdk/client-s3";
 import type { Readable } from "node:stream";
 import {
-  CF_ACCOUNT_R2_S3_ENDPOINT,
   coerceS3AccessKeyId,
   coerceS3Bucket,
   coerceS3SecretAccessKey,
@@ -72,11 +71,11 @@ function clientFor(endpoint: string): S3Client {
 }
 
 function endpointsToTry(): string[] {
+  // Render dual-write (fb9f) aday listesinde önce gelir. Worker hesabı (16f5)
+  // öne alınırsa PUT yanlış bucket'a yazar; GET fb9f'te 404 olur.
   const list = getS3EndpointCandidates();
-  const cf = CF_ACCOUNT_R2_S3_ENDPOINT;
-  const ordered = list.includes(cf) ? [cf, ...list.filter((e) => e !== cf)] : list;
-  if (!cachedEndpoint) return ordered;
-  return [cachedEndpoint, ...ordered.filter((e) => e !== cachedEndpoint)];
+  if (!cachedEndpoint) return list;
+  return [cachedEndpoint, ...list.filter((e) => e !== cachedEndpoint)];
 }
 
 function bucket(): string {
