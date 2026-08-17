@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, handleMediaEdgeHealth, mediaEdgeHealthPayload, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -218,6 +218,37 @@ describe("hm-editor-media-s3-edge", () => {
       {},
     );
     assert.equal(res, null);
+  });
+
+  it("records miss diagnostics for the worker 404 wrapper", async () => {
+    const diag = {};
+    const res = await handleMediaGetFromR2(
+      new Request("https://turk.eco/api/media/uploads/1786896263302-0937c05a03d02845.webp"),
+      {},
+      diag,
+    );
+    assert.equal(res, null);
+    assert.equal(diag.lastS3, "none");
+    assert.equal(diag.ready, "0");
+  });
+
+  it("reports edge health without leaking secrets", () => {
+    const payload = mediaEdgeHealthPayload({
+      S3_ENDPOINT: RENDER_R2_S3_ENDPOINT,
+      S3_BUCKET: "yekpare-media",
+      S3_ACCESS_KEY_ID: "ak",
+      S3_SECRET_ACCESS_KEY: "sk",
+    });
+    assert.equal(payload.ready, true);
+    assert.equal(payload.accessKey, true);
+    assert.equal(payload.hostPrefix, "fb9f");
+    assert.equal(payload.endpointLength, RENDER_R2_S3_ENDPOINT.length);
+    const res = handleMediaEdgeHealth(
+      new Request("https://turk.eco/api/healthz/media-edge"),
+      { S3_ENDPOINT: RENDER_R2_S3_ENDPOINT, S3_BUCKET: "yekpare-media", S3_ACCESS_KEY_ID: "ak", S3_SECRET_ACCESS_KEY: "sk" },
+    );
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-yekpare-media"), "health");
   });
 
   it("GETs path-style /yekpare-media/<file> without a doubled prefix", async () => {

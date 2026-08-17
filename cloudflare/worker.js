@@ -22,7 +22,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
-import { handleMediaGetFromR2 } from "./hm-editor-media-s3-edge.js";
+import { handleMediaEdgeHealth, handleMediaGetFromR2, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
   isYektubeSpaHtml,
@@ -2135,9 +2135,13 @@ export default {
       }
     }
 
+    const mediaEdgeHealth = handleMediaEdgeHealth(request, env);
+    if (mediaEdgeHealth) return mediaEdgeHealth;
+
     // Haber görselleri — R2'de varsa Container'a gitmeden kenardan.
+    const mediaMiss = {};
     try {
-      const mediaGet = await handleMediaGetFromR2(request, env);
+      const mediaGet = await handleMediaGetFromR2(request, env, mediaMiss);
       if (mediaGet) return mediaGet;
     } catch (err) {
       console.error("[media-r2-get]", String(err?.message || err).slice(0, 200));
@@ -2264,6 +2268,11 @@ export default {
       out.delete("transfer-encoding");
       out.set("x-yekpare-frontend", FRONTEND_TAG);
       out.set("x-yekpare-upstream", origin);
+      if (parseMediaUploadFname(incoming.pathname) && mediaMiss.lastS3) {
+        out.set("x-yekpare-media", "miss");
+        out.set("x-yekpare-media-s3", String(mediaMiss.lastS3));
+        out.set("x-yekpare-media-ready", String(mediaMiss.ready || "0"));
+      }
       if (yektubeRewrite) {
         out.set("x-yekpare-yektube-rewrite", yektubeRewrite);
       }
