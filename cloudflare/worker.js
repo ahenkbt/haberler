@@ -13,6 +13,7 @@ import {
   ensureHmBreakingRssDefaultsOnNeon,
   ensureHmSiteRssDefaultsOnNeon,
   ensureKhYekpareEditorOnNeon,
+  purgeAhgRssCampaignNewsOnNeon,
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
@@ -2097,6 +2098,16 @@ export default {
         if (typeof ctx.waitUntil === "function") ctx.waitUntil(job);
       } catch (err) {
         console.error("[hm-asg-editor-repair]", String(err?.message || err).slice(0, 200));
+      }
+    }
+    if (hostKey === "ankarahabergundemi.com") {
+      try {
+        const job = purgeAhgRssCampaignNewsOnNeon(env).catch((err) => {
+          console.error("[hm-ahg-rss-news-purge]", String(err?.message || err).slice(0, 200));
+        });
+        if (typeof ctx.waitUntil === "function") ctx.waitUntil(job);
+      } catch (err) {
+        console.error("[hm-ahg-rss-news-purge]", String(err?.message || err).slice(0, 200));
       }
     }
     // Kırşehir: ikinci editör hesabı (yekpare@gmail.com) — paralel oturum.

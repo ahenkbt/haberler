@@ -1274,6 +1274,99 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   return null;
 }
 
+const AHG_RSS_NEWS_PURGE_REV = "ahg-sha-rss-news-20260817a";
+let _ahgRssNewsPurgeAt = 0;
+let _ahgRssNewsPurgeDone = false;
+
+/**
+ * ankarahabergundemi.com — RSS kampanyasının eklediği sehirhaberajansi haberlerini bir kez siler.
+ */
+export async function purgeAhgRssCampaignNewsOnNeon(env) {
+  const dbUrl = String(env?.DATABASE_URL || "").trim();
+  if (!dbUrl) return { ok: false, reason: "no-db" };
+  if (!isNeonServerlessUrl(dbUrl)) return { ok: false, reason: "not-neon" };
+  if (_ahgRssNewsPurgeDone) return { ok: true, action: "cached-done" };
+  const now = Date.now();
+  if (now - _ahgRssNewsPurgeAt < 15_000) return { ok: true, action: "throttled" };
+  _ahgRssNewsPurgeAt = now;
+
+  const sql = neon(dbUrl);
+  try {
+    const sites = await sql`
+      SELECT id, slug, domain, domain2, domain3, layout_json
+      FROM hm_news_sites
+      WHERE lower(trim(both '/' from slug)) = 'ankarahabergundemi'
+         OR lower(coalesce(domain, '')) LIKE '%ankarahabergundemi.com%'
+         OR lower(coalesce(domain2, '')) LIKE '%ankarahabergundemi.com%'
+         OR lower(coalesce(domain3, '')) LIKE '%ankarahabergundemi.com%'
+    `;
+    if (!sites?.length) return { ok: false, reason: "ahg-site-missing" };
+
+    let patched = 0;
+    for (const site of sites) {
+      let layout = {};
+      try {
+        layout = site.layout_json ? JSON.parse(String(site.layout_json)) : {};
+      } catch {
+        layout = {};
+      }
+      if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+      if (String(layout.ahgRssCampaignNewsPurgeRev || "") === AHG_RSS_NEWS_PURGE_REV) {
+        continue;
+      }
+
+      const campaigns = await sql`
+        SELECT feeds FROM rss_campaigns WHERE ${site.id} = ANY(hm_site_ids)
+      `;
+      const hosts = new Set(["sehirhaberajansi.com.tr"]);
+      for (const c of campaigns || []) {
+        const feeds = Array.isArray(c.feeds) ? c.feeds : [];
+        for (const f of feeds) {
+          try {
+            const href = String(f || "").trim();
+            if (!href) continue;
+            const u = new URL(/^https?:\/\//i.test(href) ? href : `https://${href}`);
+            const host = u.hostname.toLowerCase().replace(/^www\./, "");
+            if (host) hosts.add(host);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      const likeParts = Array.from(hosts);
+      for (const host of likeParts) {
+        const pattern = `%${host}%`;
+        await sql`
+          DELETE FROM news
+          WHERE site_id = ${site.id}
+            AND COALESCE(is_editor_manual, false) = false
+            AND rss_source_url IS NOT NULL
+            AND rss_source_url ILIKE ${pattern}
+        `;
+      }
+      await sql`
+        UPDATE rss_campaigns
+        SET added_count = 0
+        WHERE ${site.id} = ANY(hm_site_ids)
+      `;
+      const next = { ...layout, ahgRssCampaignNewsPurgeRev: AHG_RSS_NEWS_PURGE_REV };
+      await sql`
+        UPDATE hm_news_sites
+        SET layout_json = ${JSON.stringify(next)}::jsonb,
+            updated_at = NOW()
+        WHERE id = ${site.id}
+      `;
+      patched += 1;
+    }
+
+    if (patched === 0) _ahgRssNewsPurgeDone = true;
+    else _ahgRssNewsPurgeDone = true;
+    return { ok: true, action: "purged", patched };
+  } catch (err) {
+    return { ok: false, reason: String(err?.message || err).slice(0, 200) };
+  }
+}
+
 export function brandMetaJsonResponse(meta, extraHeaders = {}) {
   return new Response(JSON.stringify(meta), {
     status: 200,

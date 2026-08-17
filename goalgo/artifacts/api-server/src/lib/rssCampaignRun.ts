@@ -22,6 +22,7 @@ import { extractRssContentEncoded, extractRssCoverImage } from "./rssItemMedia.j
 import { mirrorRssImportImageUrl } from "./portal-rss-image-mirror.js";
 import { logger } from "./logger";
 import { ensureRssCampaignSchema } from "./ensure-rss-campaign-schema.js";
+import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
 
 export type RssCampaignRunResult = {
   added: number;
@@ -145,12 +146,22 @@ function markImported(
   }
 }
 
-async function resolveRssCampaignTargets(campaign: {
-  hmSiteIds: unknown;
-  includeYekpareHaber: boolean | null;
-}): Promise<(number | null)[]> {
-  const rawHm = Array.isArray(campaign.hmSiteIds) ? (campaign.hmSiteIds as number[]) : [];
-  const parsedHm = rawHm.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0);
+async function resolveRssCampaignTargets(
+  campaign: {
+    hmSiteIds: unknown;
+    includeYekpareHaber: boolean | null;
+  },
+  opts?: { forceHmSiteId?: number },
+): Promise<(number | null)[]> {
+  const forced = Number(opts?.forceHmSiteId);
+  if (Number.isFinite(forced) && forced > 0) {
+    const [exists] = await getNewsDbForRead()
+      .select({ id: hmNewsSitesTable.id })
+      .from(hmNewsSitesTable)
+      .where(eq(hmNewsSitesTable.id, forced));
+    return exists?.id ? [exists.id] : [];
+  }
+  const parsedHm = normalizeHmSiteIds(campaign.hmSiteIds);
   const existing =
     parsedHm.length === 0
       ? []
@@ -170,6 +181,7 @@ async function resolveRssCampaignTargets(campaign: {
 /** Çalıştırma öncesi: feed + hedef kontrolü (UI'ya 400 dönebilmek için). */
 export async function preflightRssCampaignRun(
   campaignId: number,
+  opts?: { forceHmSiteId?: number },
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   await ensureRssCampaignSchema();
   const [campaign] = await getNewsDbForRead()
@@ -187,7 +199,7 @@ export async function preflightRssCampaignRun(
         "Kampanyaya henüz RSS feed URL'i eklenmemiş. Önce kampanyayı düzenleyip en az bir feed kaydedin, sonra Çalıştır'a basın.",
     };
   }
-  const siteTargets = await resolveRssCampaignTargets(campaign);
+  const siteTargets = await resolveRssCampaignTargets(campaign, opts);
   if (siteTargets.length === 0) {
     return {
       ok: false,
@@ -199,7 +211,10 @@ export async function preflightRssCampaignRun(
 }
 
 /** Kampanya RSS çalıştırması — panel vekil zaman aşımını önlemek için route'tan arka planda çağrılır. */
-export async function executeRssCampaignRun(campaignId: number): Promise<RssCampaignRunResult> {
+export async function executeRssCampaignRun(
+  campaignId: number,
+  opts?: { forceHmSiteId?: number },
+): Promise<RssCampaignRunResult> {
   await ensureRssCampaignSchema();
   const [campaign] = await getNewsDbForRead()
     .select()
@@ -215,7 +230,7 @@ export async function executeRssCampaignRun(campaignId: number): Promise<RssCamp
     .where(eq(categoriesTable.slug, campaign.categorySlug));
 
   const feedUrls: string[] = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
-  const siteTargets = await resolveRssCampaignTargets(campaign);
+  const siteTargets = await resolveRssCampaignTargets(campaign, opts);
 
   if (siteTargets.length === 0) {
     await dualWriteInsert(rssLogsTable,{
@@ -473,7 +488,10 @@ export async function executeRssCampaignRun(campaignId: number): Promise<RssCamp
 }
 
 /** Vekil 504 önlemek için HTTP yanıtından önce döner; iş `executeRssCampaignRun` ile arka planda sürer. */
-export function scheduleRssCampaignRun(campaignId: number): {
+export function scheduleRssCampaignRun(
+  campaignId: number,
+  opts?: { forceHmSiteId?: number },
+): {
   accepted: boolean;
   alreadyRunning: boolean;
 } {
@@ -481,7 +499,7 @@ export function scheduleRssCampaignRun(campaignId: number): {
     return { accepted: true, alreadyRunning: true };
   }
   runningCampaignIds.add(campaignId);
-  void executeRssCampaignRun(campaignId)
+  void executeRssCampaignRun(campaignId, opts)
     .then((result) => {
       logger.info({ campaignId, ...result }, "RSS kampanya çalışması bitti");
     })
