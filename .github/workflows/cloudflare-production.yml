@@ -127,29 +127,26 @@ jobs:
           S3_REGION: ${{ secrets.S3_REGION || vars.S3_REGION || '' }}
           S3_PUBLIC_BASE_URL: ${{ secrets.S3_PUBLIC_BASE_URL || vars.S3_PUBLIC_BASE_URL || '' }}
         run: |
-          printf '%s' "$DATABASE_URL" | pnpm exec wrangler secret put DATABASE_URL
-          printf '%s' "$SESSION_SECRET" | pnpm exec wrangler secret put SESSION_SECRET
+          set +e
+          put_secret() {
+            printf '%s' "$2" | pnpm exec wrangler secret put "$1" \
+              || printf '%s' "$2" | pnpm exec wrangler versions secret put "$1" \
+              || echo "put $1 failed"
+          }
+          del_secret() {
+            pnpm exec wrangler secret delete "$1" --name haberler --force \
+              || pnpm exec wrangler versions secret delete "$1" --name haberler \
+              || echo "delete $1 skipped"
+          }
+          put_secret DATABASE_URL "$DATABASE_URL"
+          put_secret SESSION_SECRET "$SESSION_SECRET"
           if [ -n "$HM_EDITOR_JWT_SECRET" ]; then
-            printf '%s' "$HM_EDITOR_JWT_SECRET" | pnpm exec wrangler secret put HM_EDITOR_JWT_SECRET
+            put_secret HM_EDITOR_JWT_SECRET "$HM_EDITOR_JWT_SECRET"
           fi
           if [ -n "$AGENTLABS_URL" ]; then
-            printf '%s' "$AGENTLABS_URL" | pnpm exec wrangler secret put AGENTLABS_URL
+            put_secret AGENTLABS_URL "$AGENTLABS_URL"
           fi
-          s3_present=""
-          s3_missing=""
-          for key in S3_ENDPOINT S3_BUCKET S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_PUBLIC_BASE_URL; do
-            eval "val=\${$key}"
-            if [ -n "$val" ]; then
-              s3_present="${s3_present} ${key}"
-            else
-              s3_missing="${s3_missing} ${key}"
-            fi
-          done
-          echo "S3 secret varlık (değer yok): present=${s3_present:- none} missing=${s3_missing:- none}"
-          echo "::notice::S3_* GitHub'dan Worker'a yazılmıyor — önceki senkron çalışan kapakları ezdi. Worker S3_ENDPOINT bloğundaki public URL ve anahtarlar kullanılır."
-          # GitHub'dan yazılan ayrı S3 alanları Worker'dan düşür; 3 haftalık S3_ENDPOINT bloğu kalsın.
+          echo "::notice::S3_* GitHub'dan Worker'a yazılmıyor — önceki senkron çalışan kapakları ezdi."
           for key in S3_PUBLIC_BASE_URL S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
-            pnpm exec wrangler secret delete "$key" --name haberler --force \
-              || pnpm exec wrangler secret delete "$key" --name haberler -y \
-              || echo "delete $key skipped"
+            del_secret "$key"
           done
