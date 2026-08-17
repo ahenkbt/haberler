@@ -1487,28 +1487,242 @@ function serializeRssCampaignEdge(row) {
   };
 }
 
+function asStringArray(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((x) => String(x ?? "").trim()).filter(Boolean);
+}
+
+const RSS_SOURCE_TYPES = new Set(["rss", "html", "haberler", "youtube_channel", "youtube_playlist", "youtube_video"]);
+const RSS_POST_TYPES = new Set(["news", "blog", "column"]);
+
+function campaignFieldsFromBody(body, siteId, existing) {
+  const name = String(body?.name ?? existing?.name ?? "").trim();
+  const categorySlug = String(body?.categorySlug ?? existing?.category_slug ?? "").trim();
+  const feeds = Array.isArray(body?.feeds) ? asStringArray(body.feeds) : asStringArray(existing?.feeds);
+  let sourceType = String(body?.sourceType ?? existing?.source_type ?? "rss").trim().toLowerCase();
+  if (!RSS_SOURCE_TYPES.has(sourceType)) sourceType = "rss";
+  let postType = String(body?.postType ?? existing?.post_type ?? "news").trim().toLowerCase();
+  if (!RSS_POST_TYPES.has(postType)) postType = "news";
+  return {
+    name,
+    categorySlug,
+    feeds,
+    sourceType,
+    postType,
+    active: body?.active !== undefined ? body.active !== false : existing?.active !== false,
+    tags: Array.isArray(body?.tags) ? asStringArray(body.tags) : asStringArray(existing?.tags),
+    intervalMinutes: Number(body?.intervalMinutes ?? existing?.interval_minutes) || 60,
+    daysWindow: Number(body?.daysWindow ?? existing?.days_window) || 0,
+    dailyLimit: Number(body?.dailyLimit ?? existing?.daily_limit) || 0,
+    downloadImages: body?.downloadImages === true,
+    headline: body?.headline === true,
+    breakingKeywords: Array.isArray(body?.breakingKeywords)
+      ? asStringArray(body.breakingKeywords)
+      : asStringArray(existing?.breaking_keywords),
+    minWords: Number(body?.minWords ?? existing?.min_words) || 0,
+    translateEnabled: body?.translateEnabled === true,
+    haberlerFilterByTags: body?.haberlerFilterByTags === true,
+    siteId,
+  };
+}
+
+async function ensureRssCampaignColumns(sql) {
+  try {
+    await sql`ALTER TABLE rss_campaigns ADD COLUMN IF NOT EXISTS hm_site_ids integer[] NOT NULL DEFAULT '{}'`;
+    await sql`ALTER TABLE rss_campaigns ADD COLUMN IF NOT EXISTS include_yekpare_haber boolean NOT NULL DEFAULT false`;
+    await sql`ALTER TABLE rss_campaigns ADD COLUMN IF NOT EXISTS haberler_filter_by_tags boolean NOT NULL DEFAULT false`;
+  } catch {
+    /* best-effort */
+  }
+}
+
+async function loadOwnedRssCampaignRow(sql, siteId, id) {
+  const owned = await sql`
+    SELECT * FROM rss_campaigns
+    WHERE id = ${id} AND ${siteId} = ANY(hm_site_ids)
+    LIMIT 1
+  `;
+  if (owned?.length) return owned[0];
+  const rows = await sql`SELECT * FROM rss_campaigns WHERE id = ${id} LIMIT 1`;
+  if (!rows?.length) return null;
+  const ids = normalizeHmSiteIdsEdge(rows[0].hm_site_ids);
+  if (ids.includes(siteId) || ids.length === 0) return rows[0];
+  return null;
+}
+
 /**
  * Kampanya bulundu ve bu siteye aitse JSON; aksi halde null → Container.
  * @returns {Promise<Response|null>}
  */
 async function handleEditorRssCampaignGet(sql, siteId, id) {
   try {
-    const rows = await sql`SELECT * FROM rss_campaigns WHERE id = ${id} LIMIT 1`;
-    if (!rows?.length) return null;
-    const row = rows[0];
-    const ids = normalizeHmSiteIdsEdge(row.hm_site_ids);
-    if (!ids.includes(siteId)) {
-      // SQL ANY yedek — JS dizi biçimi bozulsa bile
-      const owned = await sql`
-        SELECT id FROM rss_campaigns
-        WHERE id = ${id} AND ${siteId} = ANY(hm_site_ids)
-        LIMIT 1
-      `;
-      if (!owned?.length) return null;
-    }
+    await ensureRssCampaignColumns(sql);
+    const row = await loadOwnedRssCampaignRow(sql, siteId, id);
+    if (!row) return null;
     return jsonResponse(200, serializeRssCampaignEdge(row));
   } catch {
     return null;
+  }
+}
+
+async function handleEditorRssCampaignList(sql, siteId) {
+  try {
+    await ensureRssCampaignColumns(sql);
+    const rows = await sql`SELECT * FROM rss_campaigns ORDER BY id`;
+    const items = (rows || [])
+      .filter((r) => {
+        const ids = normalizeHmSiteIdsEdge(r.hm_site_ids);
+        return ids.includes(siteId);
+      })
+      .map(serializeRssCampaignEdge);
+    const totalActive = items.filter((r) => r.active).length;
+    const totalAdded = items.reduce((s, r) => s + (r.addedCount ?? 0), 0);
+    return jsonResponse(200, {
+      items,
+      totalActive,
+      totalAdded,
+      nextRunAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function handleEditorRssCampaignPut(sql, siteId, id, body) {
+  try {
+    await ensureRssCampaignColumns(sql);
+    const existing = await loadOwnedRssCampaignRow(sql, siteId, id);
+    if (!existing) return jsonResponse(404, { error: "Campaign not found" });
+    const f = campaignFieldsFromBody(body, siteId, existing);
+    if (!f.name || !f.categorySlug || !f.feeds.length) {
+      return jsonResponse(400, { error: "Lütfen zorunlu alanları doldurun" });
+    }
+    const tagsLiteral = toPgTextArrayLiteral(f.tags);
+    const feedsLiteral = toPgTextArrayLiteral(f.feeds);
+    const kwLiteral = toPgTextArrayLiteral(f.breakingKeywords);
+    const rows = await sql`
+      UPDATE rss_campaigns SET
+        name = ${f.name},
+        active = ${f.active},
+        post_type = ${f.postType},
+        category_slug = ${f.categorySlug},
+        tags = ${tagsLiteral}::text[],
+        feeds = ${feedsLiteral}::text[],
+        source_type = ${f.sourceType},
+        interval_minutes = ${f.intervalMinutes},
+        days_window = ${f.daysWindow},
+        daily_limit = ${f.dailyLimit},
+        download_images = ${f.downloadImages},
+        headline = ${f.headline},
+        breaking_keywords = ${kwLiteral}::text[],
+        min_words = ${f.minWords},
+        translate_enabled = ${f.translateEnabled},
+        hm_site_ids = ARRAY[${siteId}]::integer[],
+        include_yekpare_haber = false,
+        haberler_filter_by_tags = ${f.haberlerFilterByTags}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+    if (!row) return jsonResponse(404, { error: "Campaign not found" });
+    return jsonResponse(200, serializeRssCampaignEdge(row));
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.error("[hm-rss-campaign-put]", msg.slice(0, 200));
+    return jsonResponse(500, { error: msg ? `Kaydedilemedi: ${msg.slice(0, 160)}` : "Kaydedilemedi" });
+  }
+}
+
+async function handleEditorRssCampaignCreate(sql, siteId, body) {
+  try {
+    await ensureRssCampaignColumns(sql);
+    const f = campaignFieldsFromBody(body, siteId, null);
+    if (!f.name || !f.categorySlug || !f.feeds.length) {
+      return jsonResponse(400, { error: "Lütfen zorunlu alanları doldurun" });
+    }
+    const tagsLiteral = toPgTextArrayLiteral(f.tags);
+    const feedsLiteral = toPgTextArrayLiteral(f.feeds);
+    const kwLiteral = toPgTextArrayLiteral(f.breakingKeywords);
+    const rows = await sql`
+      INSERT INTO rss_campaigns (
+        name, active, post_type, category_slug, tags, feeds, source_type,
+        interval_minutes, days_window, daily_limit, download_images, headline,
+        breaking_keywords, min_words, translate_enabled, hm_site_ids,
+        include_yekpare_haber, haberler_filter_by_tags
+      ) VALUES (
+        ${f.name}, ${f.active}, ${f.postType}, ${f.categorySlug},
+        ${tagsLiteral}::text[], ${feedsLiteral}::text[], ${f.sourceType},
+        ${f.intervalMinutes}, ${f.daysWindow}, ${f.dailyLimit}, ${f.downloadImages}, ${f.headline},
+        ${kwLiteral}::text[], ${f.minWords}, ${f.translateEnabled}, ARRAY[${siteId}]::integer[],
+        false, ${f.haberlerFilterByTags}
+      )
+      RETURNING *
+    `;
+    const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+    if (!row) return jsonResponse(500, { error: "Kampanya oluşturulamadı" });
+    return jsonResponse(201, serializeRssCampaignEdge(row));
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.error("[hm-rss-campaign-create]", msg.slice(0, 200));
+    return jsonResponse(500, { error: msg ? `Kaydedilemedi: ${msg.slice(0, 160)}` : "Kaydedilemedi" });
+  }
+}
+
+async function handleEditorRssCampaignDelete(sql, siteId, id) {
+  try {
+    await ensureRssCampaignColumns(sql);
+    const existing = await loadOwnedRssCampaignRow(sql, siteId, id);
+    if (!existing) return jsonResponse(404, { error: "Campaign not found" });
+    await sql`DELETE FROM rss_logs WHERE campaign_id = ${id}`;
+    await sql`DELETE FROM rss_campaigns WHERE id = ${id}`;
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "cache-control": "private, no-store, max-age=0, must-revalidate",
+        "cdn-cache-control": "no-store",
+        "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+      },
+    });
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.error("[hm-rss-campaign-delete]", msg.slice(0, 200));
+    return jsonResponse(500, { error: "Silinemedi" });
+  }
+}
+
+async function handleEditorRssCampaignRun(sql, env, request, siteId, id) {
+  try {
+    await ensureRssCampaignColumns(sql);
+    const existing = await loadOwnedRssCampaignRow(sql, siteId, id);
+    if (!existing) return jsonResponse(404, { error: "Campaign not found" });
+    await sql`
+      UPDATE rss_campaigns
+      SET hm_site_ids = ARRAY[${siteId}]::integer[], include_yekpare_haber = false
+      WHERE id = ${id}
+    `;
+    const origin = apiOrigin(env);
+    const res = await fetchApi(env, `${origin}/api/hm/editor/rss/campaigns/${id}/run`, {
+      method: "POST",
+      headers: {
+        Authorization: request.headers.get("authorization") || "",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "x-yekpare-rss-run-proxy": "1",
+      },
+      body: "{}",
+    });
+    const text = await res.text();
+    const headers = {
+      "content-type": res.headers.get("content-type") || "application/json; charset=utf-8",
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
+      "cdn-cache-control": "no-store",
+      "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+    };
+    return new Response(text, { status: res.status, headers });
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.error("[hm-rss-campaign-run]", msg.slice(0, 200));
+    return jsonResponse(500, { error: "Kampanya çalıştırılamadı" });
   }
 }
 
@@ -1657,11 +1871,35 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     return jsonResponse(200, { ok: true });
   }
 
-  const rssCampaignGet = path.match(/^\/api\/hm\/editor\/rss\/campaigns\/(\d+)$/);
-  if (rssCampaignGet && method === "GET") {
-    const id = asPositiveInt(rssCampaignGet[1]);
+  if (path === "/api/hm/editor/rss/campaigns" && method === "GET") {
+    return handleEditorRssCampaignList(sql, ctx.siteId);
+  }
+  if (path === "/api/hm/editor/rss/campaigns" && method === "POST") {
+    return handleEditorRssCampaignCreate(sql, ctx.siteId, await readJsonBody(request));
+  }
+
+  const rssRun = path.match(/^\/api\/hm\/editor\/rss\/campaigns\/(\d+)\/run$/);
+  if (rssRun && method === "POST") {
+    if (String(request.headers.get("x-yekpare-rss-run-proxy") || "") === "1") {
+      return null;
+    }
+    const id = asPositiveInt(rssRun[1]);
     if (id == null) return jsonResponse(400, { error: "Invalid id" });
-    return handleEditorRssCampaignGet(sql, ctx.siteId, id);
+    return handleEditorRssCampaignRun(sql, env, request, ctx.siteId, id);
+  }
+
+  const rssNewsDel = path.match(/^\/api\/hm\/editor\/rss\/campaigns\/(\d+)\/news$/);
+  if (rssNewsDel && method === "DELETE") {
+    return null;
+  }
+
+  const rssOne = path.match(/^\/api\/hm\/editor\/rss\/campaigns\/(\d+)$/);
+  if (rssOne) {
+    const id = asPositiveInt(rssOne[1]);
+    if (id == null) return jsonResponse(400, { error: "Invalid id" });
+    if (method === "GET") return handleEditorRssCampaignGet(sql, ctx.siteId, id);
+    if (method === "PUT") return handleEditorRssCampaignPut(sql, ctx.siteId, id, await readJsonBody(request));
+    if (method === "DELETE") return handleEditorRssCampaignDelete(sql, ctx.siteId, id);
   }
 
   return null;
