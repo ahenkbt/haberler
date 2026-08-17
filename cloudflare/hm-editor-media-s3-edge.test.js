@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -199,6 +199,56 @@ describe("hm-editor-media-s3-edge", () => {
       assert.equal(res.headers.get("x-yekpare-media"), "r2");
       assert.ok(s3Hosts[0]?.startsWith("fb9f"), `Render dual-write first, got ${s3Hosts.join(",")}`);
       assert.ok(s3Hosts.some((h) => h.startsWith("16f5")));
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it("uses bucket/file as the S3 object key (not yekpare-media/yekpare-media/file)", () => {
+    const fname = "1786896263302-0937c05a03d02845.webp";
+    const keys = listMediaObjectKeys({ S3_BUCKET: "yekpare-media" }, fname);
+    assert.equal(keys[0], fname);
+    assert.ok(keys.includes(`uploads/${fname}`));
+    assert.ok(keys.includes(`yekpare-media/${fname}`));
+  });
+
+  it("returns null on miss so the container can try", async () => {
+    const res = await handleMediaGetFromR2(
+      new Request("https://turk.eco/api/media/uploads/1786896263302-0937c05a03d02845.webp"),
+      {},
+    );
+    assert.equal(res, null);
+  });
+
+  it("GETs path-style /yekpare-media/<file> without a doubled prefix", async () => {
+    const fname = "1786896263302-0937c05a03d02845.webp";
+    const env = {
+      S3_ENDPOINT: CF_ACCOUNT_R2_S3_ENDPOINT,
+      S3_BUCKET: "yekpare-media",
+      S3_ACCESS_KEY_ID: "ak",
+      S3_SECRET_ACCESS_KEY: "sk",
+    };
+    const origFetch = globalThis.fetch;
+    const urls = [];
+    globalThis.fetch = async (input) => {
+      const u = typeof input === "string" ? input : String(input && input.url ? input.url : input);
+      urls.push(u);
+      const pathOk = u.includes(`/${fname}`) && !u.includes("/yekpare-media/yekpare-media/");
+      if (pathOk && u.includes(".r2.cloudflarestorage.com")) {
+        return new Response(new Uint8Array([0x52, 0x49, 0x46, 0x46]), {
+          status: 200,
+          headers: { "content-type": "image/webp", "content-length": "4" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    };
+    try {
+      const res = await handleMediaGetFromR2(
+        new Request(`https://turk.eco/api/media/uploads/${fname}`),
+        env,
+      );
+      assert.equal(res.status, 200);
+      assert.ok(urls.some((u) => u.includes(`/${fname}`) && !u.includes("/yekpare-media/yekpare-media/")));
     } finally {
       globalThis.fetch = origFetch;
     }

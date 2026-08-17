@@ -86,7 +86,17 @@ function bucket(): string {
 function objectKey(name: string): string {
   const prefix = normalizeEnvValue(process.env.S3_KEY_PREFIX).replace(/^\/+|\/+$/g, "");
   if (prefix) return `${prefix}/${name}`;
-  return `yekpare-media/${name}`;
+  return name;
+}
+
+function objectKeysToTry(name: string): string[] {
+  const primary = objectKey(name);
+  const keys = [primary];
+  if (primary === name) {
+    keys.push(`uploads/${name}`);
+    keys.push(`yekpare-media/${name}`);
+  }
+  return keys;
 }
 
 /** S3/R2 yok (404) — diğer hatalar (EPROTO, ağ) üst katmanda volume yedeğine bırakılır. */
@@ -175,19 +185,21 @@ export async function s3ObjectExists(name: string): Promise<boolean> {
   let lastTransport: unknown = null;
   let sawNotFound = false;
   for (const ep of endpoints) {
-    try {
-      await clientFor(ep).send(
-        new HeadObjectCommand({ Bucket: bucket(), Key: objectKey(name) }),
-      );
-      cachedEndpoint = ep;
-      return true;
-    } catch (e: unknown) {
-      if (isS3NotFoundError(e)) {
-        sawNotFound = true;
-        continue;
+    for (const key of objectKeysToTry(name)) {
+      try {
+        await clientFor(ep).send(
+          new HeadObjectCommand({ Bucket: bucket(), Key: key }),
+        );
+        cachedEndpoint = ep;
+        return true;
+      } catch (e: unknown) {
+        if (isS3NotFoundError(e)) {
+          sawNotFound = true;
+          continue;
+        }
+        lastTransport = e;
+        if (!shouldTryNextEndpoint(e)) throw e;
       }
-      lastTransport = e;
-      if (!shouldTryNextEndpoint(e)) throw e;
     }
   }
   if (sawNotFound) return false;
@@ -235,26 +247,28 @@ export async function getS3ObjectStream(
   let lastTransport: unknown = null;
   let sawNotFound = false;
   for (const ep of endpoints) {
-    try {
-      const out = await clientFor(ep).send(
-        new GetObjectCommand({ Bucket: bucket(), Key: objectKey(name) }),
-      );
-      if (!out.Body) {
-        sawNotFound = true;
-        continue;
+    for (const key of objectKeysToTry(name)) {
+      try {
+        const out = await clientFor(ep).send(
+          new GetObjectCommand({ Bucket: bucket(), Key: key }),
+        );
+        if (!out.Body) {
+          sawNotFound = true;
+          continue;
+        }
+        cachedEndpoint = ep;
+        return {
+          body: out.Body as Readable,
+          contentType: out.ContentType,
+        };
+      } catch (e: unknown) {
+        if (isS3NotFoundError(e)) {
+          sawNotFound = true;
+          continue;
+        }
+        lastTransport = e;
+        if (!shouldTryNextEndpoint(e)) throw e;
       }
-      cachedEndpoint = ep;
-      return {
-        body: out.Body as Readable,
-        contentType: out.ContentType,
-      };
-    } catch (e: unknown) {
-      if (isS3NotFoundError(e)) {
-        sawNotFound = true;
-        continue;
-      }
-      lastTransport = e;
-      if (!shouldTryNextEndpoint(e)) throw e;
     }
   }
   if (sawNotFound) return null;

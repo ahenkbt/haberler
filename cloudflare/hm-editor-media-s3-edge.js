@@ -244,7 +244,19 @@ function parseDataUrl(dataUrl) {
 function objectKey(env, fname) {
   const prefix = normalizeEnvValue(env?.S3_KEY_PREFIX).replace(/^\/+|\/+$/g, "");
   if (prefix && prefix.length <= 80 && !/S3_/i.test(prefix)) return `${prefix}/${fname}`;
-  return `yekpare-media/${fname}`;
+  // Path-style URL zaten /yekpare-media/<dosya> (bucket adı). Ek önek çift yol yapıyordu.
+  return fname;
+}
+
+/** GET: önce düz dosya adı (GitHub S3 öncesi kapaklar), sonra uploads/ ve yekpare-media/. */
+export function listMediaObjectKeys(env, fname) {
+  const primary = objectKey(env, fname);
+  const keys = [primary];
+  if (primary === fname) {
+    keys.push(`uploads/${fname}`);
+    keys.push(`yekpare-media/${fname}`);
+  }
+  return keys;
 }
 
 function publicUploadUrl(fname) {
@@ -376,26 +388,27 @@ export async function handleMediaGetFromR2(request, env) {
   const bound = r2Binding(env);
   if (bound) {
     try {
-      const key = objectKey(env, fname);
-      if (method === "HEAD") {
-        const head = await bound.head(key);
-        if (head) {
-          return respond(
-            null,
-            head.httpMetadata?.contentType,
-            head.size != null ? String(head.size) : null,
-            "r2-binding",
-          );
-        }
-      } else {
-        const obj = await bound.get(key);
-        if (obj) {
-          return respond(
-            obj.body,
-            obj.httpMetadata?.contentType,
-            obj.size != null ? String(obj.size) : null,
-            "r2-binding",
-          );
+      for (const key of listMediaObjectKeys(env, fname)) {
+        if (method === "HEAD") {
+          const head = await bound.head(key);
+          if (head) {
+            return respond(
+              null,
+              head.httpMetadata?.contentType,
+              head.size != null ? String(head.size) : null,
+              "r2-binding",
+            );
+          }
+        } else {
+          const obj = await bound.get(key);
+          if (obj) {
+            return respond(
+              obj.body,
+              obj.httpMetadata?.contentType,
+              obj.size != null ? String(obj.size) : null,
+              "r2-binding",
+            );
+          }
         }
       }
     } catch (err) {
@@ -404,32 +417,31 @@ export async function handleMediaGetFromR2(request, env) {
   }
 
   const publicBases = listR2PublicBaseCandidates(env);
+  const publicPaths = listMediaObjectKeys(env, fname);
   for (const pub of publicBases) {
-    try {
-      const pubRes = await fetch(`${pub}/${encodeURIComponent(fname)}`, {
-        method: method === "HEAD" ? "GET" : method,
-        redirect: "follow",
-        signal: AbortSignal.timeout(4000),
-      });
-      const ct = String(pubRes.headers.get("content-type") || "").toLowerCase();
-      if (pubRes.ok && !ct.includes("text/html")) {
-        const len = pubRes.headers.get("content-length");
-        return respond(pubRes.body, pubRes.headers.get("content-type"), len, "r2-public");
+    for (const key of publicPaths) {
+      try {
+        const path = key.split("/").map((p) => encodeURIComponent(p)).join("/");
+        const pubRes = await fetch(`${pub.replace(/\/+$/, "")}/${path}`, {
+          method: method === "HEAD" ? "GET" : method,
+          redirect: "follow",
+          signal: AbortSignal.timeout(4000),
+        });
+        const ct = String(pubRes.headers.get("content-type") || "").toLowerCase();
+        if (pubRes.ok && !ct.includes("text/html")) {
+          const len = pubRes.headers.get("content-length");
+          return respond(pubRes.body, pubRes.headers.get("content-type"), len, "r2-public");
+        }
+      } catch (err) {
+        console.error("[media-r2-public]", pub.slice(0, 48), String(err?.message || err).slice(0, 160));
       }
-    } catch (err) {
-      console.error("[media-r2-public]", pub.slice(0, 48), String(err?.message || err).slice(0, 160));
     }
   }
 
   const creds = s3CredentialSets(env);
   const endpoints = s3EndpointCandidates(env);
   let lastS3 = "none";
-  const keyNames = [];
-  const primaryKey = objectKey(env, fname);
-  const bucket = s3BucketName(env) || "yekpare-media";
-  keyNames.push(`${bucket}/${fname}`);
-  if (primaryKey !== `${bucket}/${fname}`) keyNames.push(primaryKey);
-  if (primaryKey === fname) keyNames.push(`uploads/${fname}`);
+  const keyNames = listMediaObjectKeys(env, fname);
   if (creds.length && endpoints.length) {
     for (const cred of creds) {
       const client = s3ClientWithCreds(cred, env);
@@ -459,15 +471,9 @@ export async function handleMediaGetFromR2(request, env) {
     }
   }
 
-  const miss = new Headers();
-  miss.set("x-yekpare-frontend", "cloudflare-worker");
-  miss.set("x-yekpare-media", "miss");
-  miss.set("x-yekpare-media-ready", s3MediaEnvReady(env) ? "1" : "0");
-  miss.set("x-yekpare-media-bucket-len", String(s3BucketName(env).length));
-  miss.set("x-yekpare-media-hosts", String(endpoints.length));
-  miss.set("x-yekpare-media-s3", lastS3);
-  miss.set("cache-control", "no-store");
-  return new Response(null, { status: 404, headers: miss });
+  console.error("[media-r2-miss]", lastS3, "ready", s3MediaEnvReady(env) ? "1" : "0", "hosts", endpoints.length);
+  // 404 dönme — Worker.js Container'a düşsün (eski S3 env / public URL).
+  return null;
 }
 
 /**
