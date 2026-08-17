@@ -182,6 +182,7 @@ export function HmNewsImage({
           alt={alt}
           loading={imgLoading}
           decoding="async"
+          referrerPolicy="no-referrer"
           fetchPriority={priority ? "high" : fetchPriority}
           className={cn(
             "absolute inset-0 h-full w-full object-cover",

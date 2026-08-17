@@ -364,15 +364,55 @@ export function r2Binding(env) {
   return bucket && typeof bucket.get === "function" ? bucket : null;
 }
 
+/** Worker kenar healthz — gizli değer yok; Dashboard vs canlı env ayrımı. */
+export function mediaEdgeHealthPayload(env) {
+  const blob = s3BlobText(env);
+  const endpoints = s3EndpointCandidates(env);
+  return {
+    ready: s3MediaEnvReady(env),
+    bucket: Boolean(s3BucketName(env)),
+    accessKey: Boolean(coerceS3AccessKeyId(env?.S3_ACCESS_KEY_ID, blob)),
+    secret: Boolean(coerceS3SecretAccessKey(env?.S3_SECRET_ACCESS_KEY, blob)),
+    endpointReady: Boolean(s3Endpoint(env)),
+    endpointLength: String(s3EndpointRaw(env) || "").length,
+    hostPrefix: endpoints[0] ? endpoints[0].slice(8, 12) : null,
+    hosts: endpoints.length,
+    publicBases: listR2PublicBaseCandidates(env).length,
+  };
+}
+
+export function handleMediaEdgeHealth(request, env) {
+  const method = String(request.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return null;
+  const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
+  if (path !== "/api/healthz/media-edge") return null;
+  return new Response(JSON.stringify(mediaEdgeHealthPayload(env)), {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-yekpare-frontend": "cloudflare-worker",
+      "x-yekpare-media": "health",
+    },
+  });
+}
+
 /**
  * GET/HEAD `/api/media/uploads/:file` → R2. Yoksa null (Container dener).
  * Temmuz 2026 dual-write: dosyalar R2'de olabilir; bozuk S3_ENDPOINT ayıklanır.
+ * `diag` verilirse miss durumunda lastS3/ready yazılır (404 yanıtına header).
  */
-export async function handleMediaGetFromR2(request, env) {
+export async function handleMediaGetFromR2(request, env, diag) {
   const method = String(request.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") return null;
   const fname = parseMediaUploadFname(new URL(request.url).pathname);
   if (!fname) return null;
+  const markMiss = (lastS3) => {
+    if (!diag || typeof diag !== "object") return;
+    diag.lastS3 = lastS3;
+    diag.ready = s3MediaEnvReady(env) ? "1" : "0";
+    diag.hosts = s3EndpointCandidates(env).length;
+  };
 
   const respond = (body, contentType, len, via) => {
     const headers = new Headers();
@@ -472,6 +512,7 @@ export async function handleMediaGetFromR2(request, env) {
   }
 
   console.error("[media-r2-miss]", lastS3, "ready", s3MediaEnvReady(env) ? "1" : "0", "hosts", endpoints.length);
+  markMiss(lastS3);
   // 404 dönme — Worker.js Container'a düşsün (eski S3 env / public URL).
   return null;
 }

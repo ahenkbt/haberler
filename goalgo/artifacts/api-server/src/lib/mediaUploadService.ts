@@ -144,14 +144,17 @@ export async function saveMediaBuffer(
     } catch (e) {
       logger.error({ err: e, fname }, "[media-upload] S3 put failed");
       noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
+      if (!hasPersistentVolumeMount()) {
+        throw e instanceof Error ? e : new Error(String(e ?? "S3 put failed"));
+      }
       await writeLocalMediaFile(fname, outBuf);
       logger.warn(
         {
           fname,
           root: getMediaUploadRoot(),
-          persistent: hasPersistentVolumeMount(),
+          persistent: true,
         },
-        "[media-upload] S3 başarısız — dosya site diskine yazıldı",
+        "[media-upload] S3 başarısız — dosya kalıcı volume'a yazıldı",
       );
     }
   } else {

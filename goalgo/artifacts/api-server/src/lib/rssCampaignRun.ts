@@ -432,7 +432,9 @@ export async function executeRssCampaignRun(
 
         const contentHtml = resolveCampaignRssContent({ ...item, rssSpot });
         const publishedAt = item.publishedAt;
-        const imageUrl = await mirrorRssImportImageUrl(item.imageUrl, cleanTitle);
+        const imageUrl = await mirrorRssImportImageUrl(item.imageUrl, cleanTitle, {
+          force: campaign.downloadImages === true,
+        });
 
         for (const siteId of targetsToAdd) {
           const slugSuffix = `${Date.now()}-${added}-${siteId ?? "m"}-${Math.random().toString(36).slice(2, 7)}`;

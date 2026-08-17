@@ -22,6 +22,14 @@ API_ORIGIN = ""
 # KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 # Medya: Worker hesabında R2 kapalı (API 10042). Binding, Dashboard'da R2 açılınca eklenir.
+# Kapaklar Render dual-write R2 hesabında (fb9f…), wrangler account_id (16f5…) değil.
+# GitHub S3_ENDPOINT yapıştırması (~362 karakter) secret olarak ezerdi; workflow
+# artık GitHub secret'ını yazmaz, kanonik fb9f hostunu put eder.
+S3_ENDPOINT = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+R2_ENDPOINT = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+S3_BUCKET = "yekpare-media"
+S3_REGION = "auto"
+S3_FORCE_PATH_STYLE = "true"
 
 [[containers]]
 class_name = "GoalgoApiContainer"
@@ -202,5 +210,5 @@ zone_name = "kirsehirhaber.org"
 # pattern = "www.kirsehir.net/*"
 # zone_name = "kirsehir.net"
 
-# redeploy trigger 2026-08-16T23:23:00Z — S3_ACCESS_KEY_ID eklendi, tam S3 sync
+# redeploy trigger 2026-08-17T13:40:00Z — fb9f S3 + RSS kapak indirme + geçici disk yazma yok
 
