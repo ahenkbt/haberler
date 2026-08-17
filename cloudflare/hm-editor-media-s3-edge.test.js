@@ -84,6 +84,17 @@ describe("hm-editor-media-s3-edge", () => {
     assert.ok(listed.includes(`${pub}/yekpare-media`));
   });
 
+  it("prefers S3_PUBLIC_BASE_URL from the endpoint blob over a later GitHub field", () => {
+    const fromBlob = "https://pub-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.r2.dev/yekpare-media";
+    const fromGithub = "https://pub-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.r2.dev";
+    const listed = listR2PublicBaseCandidates({
+      S3_PUBLIC_BASE_URL: fromGithub,
+      S3_BUCKET: "yekpare-media",
+      S3_ENDPOINT: `S3_ENDPOINT=${CF_ACCOUNT_R2_S3_ENDPOINT}\nS3_PUBLIC_BASE_URL=${fromBlob}`,
+    });
+    assert.equal(listed[0], fromBlob);
+  });
+
   it("keeps /yekpare-media on the public base (path is not stripped to origin)", () => {
     const pub = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev/yekpare-media";
     const listed = listR2PublicBaseCandidates({
