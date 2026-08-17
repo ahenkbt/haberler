@@ -80,15 +80,14 @@ describe("manset pools", () => {
     expect(pool.map((x) => x.id)).toEqual([1]);
   });
 
-  it("site manşet seçilmemişse taze son haberleri seçer (eski ve RSS hariç)", () => {
+  it("site manşet seçilmemişse son haberleri seçer (RSS hariç)", () => {
     const pool = buildCenterMansetSliderPool({
       manualItems: [featuredOld],
       latestItems: [latestA, latestB, featuredOld, rss],
       limit: 5,
     });
-    expect(pool.map((x) => x.id)).toEqual([2, 3]);
+    expect(pool.map((x) => x.id)).toEqual([2, 3, 1]);
     expect(pool.every((x) => x.source !== "rss")).toBe(true);
-    expect(pool.some((x) => x.id === 1)).toBe(false);
   });
 
   it("site manşet işaretliyse yalnızca taze olanları gösterir", () => {
@@ -121,7 +120,7 @@ describe("manset pools", () => {
     expect(pool.some((x) => x.id === "rss:1")).toBe(false);
   });
 
-  it("yayın tarihi eskiyse içe aktarma tarihi taze olsa da anasayfada sayılmaz", () => {
+  it("içe aktarılan eski editör haberi anasayfada kalır; eski RSS girmez", () => {
     const importedOld = {
       id: 22,
       title: "İçe aktarılan eski",
@@ -129,24 +128,24 @@ describe("manset pools", () => {
       publishedAt: hoursAgoIso(48),
       imageUrl: "/old.webp",
     };
-    expect(isHeadlineFreshEnough(importedOld)).toBe(false);
+    expect(isHeadlineFreshEnough(importedOld)).toBe(true);
     const pool = buildCenterMansetSliderPool({
       manualItems: [],
       latestItems: [importedOld, latestA],
       limit: 5,
     });
-    expect(pool.map((x) => x.id)).toEqual([2]);
+    expect(pool.map((x) => x.id)).toEqual([2, 22]);
   });
 
-  it("eski manuel yedek anasayfa havuzuna girmez", () => {
+  it("eski manuel haber anasayfa havuzunda kalır", () => {
     const oldManual = {
       id: 30,
       title: "Eski manuel",
       createdAt: hoursAgoIso(72),
       imageUrl: "/old-manual.webp",
     };
-    expect(preferFreshHeadlineCandidates([oldManual, latestA]).map((x) => x.id)).toEqual([2]);
-    expect(preferFreshHeadlineCandidates([oldManual])).toEqual([]);
+    expect(preferFreshHeadlineCandidates([oldManual, latestA]).map((x) => x.id)).toEqual([30, 2]);
+    expect(preferFreshHeadlineCandidates([oldManual]).map((x) => x.id)).toEqual([30]);
   });
 
   it("yan kart yedek havuzu eski ve tepe manşet haberlerini eler", () => {
@@ -162,7 +161,7 @@ describe("manset pools", () => {
       sliderItems: [],
       tepeMansetItems: [],
     });
-    expect(mansetTagged.some((x) => x.id === 1)).toBe(false);
+    expect(mansetTagged.some((x) => x.id === 1)).toBe(true);
   });
 
   it("hibrit manşet bootstrap hazırken tarihsiz RSS havuzda kalır", () => {

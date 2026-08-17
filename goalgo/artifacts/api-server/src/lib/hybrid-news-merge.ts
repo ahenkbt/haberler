@@ -416,12 +416,7 @@ export async function loadEditorScopedDbNews(opts: {
   const fetchLimit = opts.limit + opts.offset + 100;
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
-  const publicFreshnessWindow =
-    opts.publicFreshnessWindow === true
-      ? true
-      : opts.publicFreshnessWindow === false
-        ? false
-        : excludeCentralPool;
+  const publicFreshnessWindow = opts.publicFreshnessWindow === true;
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
   const [portal, editor] = await Promise.all([
     excludeCentralPool
@@ -598,7 +593,9 @@ export async function loadHmSiteDbNews(opts: {
       typeof opts.publicFreshnessMaxAgeMs === "number" && opts.publicFreshnessMaxAgeMs > 0
         ? opts.publicFreshnessMaxAgeMs
         : HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS;
-    conds.push(gte(newsTable.createdAt, new Date(Date.now() - maxAge)));
+    if (Number.isFinite(maxAge)) {
+      conds.push(gte(newsTable.createdAt, new Date(Date.now() - maxAge)));
+    }
   }
 
   if (opts.q) {
@@ -969,9 +966,6 @@ async function loadScopedDbPool(opts: {
 
   const ctx = await loadNewsContext();
   const limit = opts.limit ?? HYBRID_INFINITE_POOL_LIMIT;
-  if (opts.siteId != null) {
-    conds.push(gte(newsTable.createdAt, new Date(Date.now() - HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS)));
-  }
   const where = and(...conds);
   const rows = await getNewsDbForRead()
     .select(newsListSelectFields)

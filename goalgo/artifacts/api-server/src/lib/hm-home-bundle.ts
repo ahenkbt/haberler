@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNull, not, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, not, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { getNewsDbForRead, newsTable, hmMakalelerTable, categoriesTable } from "@workspace/db";
 import { loadNewsContext } from "./news-context.js";
 import {
@@ -15,8 +15,6 @@ import {
   filterCorporatePublicNewsItems,
   excludeYekparePoolNewsSql,
   isExternalManualEditorNewsForSite,
-  HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS,
-  HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS,
 } from "./hm-corporate-news-policy.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
@@ -32,29 +30,18 @@ async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number, corpor
   return eq(newsTable.siteId, siteId);
 }
 
-function publicEditorNewsFreshnessSql(corporateStrict: boolean, maxAgeMs = HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS): SQL | undefined {
-  if (corporateStrict) return undefined;
-  const since = new Date(Date.now() - maxAgeMs);
-  return gte(newsTable.createdAt, since);
-}
-
 function filterPublicEditorNewsItems(
   items: SerializedNewsListItem[],
   siteId: number,
   corporateStrict: boolean,
-  maxAgeMs: number | null = HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS,
+  _maxAgeMs: number | null = null,
 ): SerializedNewsListItem[] {
-  const maxAge = corporateStrict ? null : maxAgeMs;
-  const now = Date.now();
+  void corporateStrict;
+  void _maxAgeMs;
   return items.filter((item) => {
     if (isExternalManualEditorNewsForSite(item, siteId)) return false;
     if (item.siteId != null && item.siteId !== siteId) return false;
-    if (maxAge == null) return true;
-    const raw = item.createdAt ?? null;
-    if (!raw) return true;
-    const t = new Date(raw).getTime();
-    if (!Number.isFinite(t)) return true;
-    return now - t <= maxAge;
+    return true;
   });
 }
 
@@ -166,8 +153,6 @@ async function loadManualEditorNewsForSite(
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
     or(isNull(newsTable.rssSourceUrl), not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-pool:%'`))!,
   ];
-  const freshness = publicEditorNewsFreshnessSql(corporateStrict);
-  if (freshness) conds.push(freshness);
   if (opts?.siteMansetOnly) conds.push(eq(newsTable.isSiteManset, true));
   if (opts?.excludeFeatured) conds.push(eq(newsTable.isFeatured, false));
   if (hiddenCategoryIds.length > 0) {
@@ -233,8 +218,6 @@ async function loadBreakingForSite(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
   ];
-  const freshness = publicEditorNewsFreshnessSql(corporateStrict);
-  if (freshness) conds.push(freshness);
   if (!poolReceiveEnabled) conds.push(excludeYekparePoolNewsSql());
   if (hiddenCategoryIds.length > 0) {
     conds.push(or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))!);
@@ -256,7 +239,6 @@ async function loadBreakingForSite(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
   ];
-  if (freshness) fallbackConds.push(freshness);
   if (!poolReceiveEnabled) fallbackConds.push(excludeYekparePoolNewsSql());
   const fallback = await readDb
     .select(newsListSelectFields)
@@ -286,7 +268,6 @@ async function loadPopularForSite(
   const newsWhere = and(
     eq(newsTable.status, "published"),
     await newsSiteScopeCondition(readDb, siteId, corporateStrict),
-    publicEditorNewsFreshnessSql(corporateStrict, HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS),
     hiddenCond,
     poolReceiveEnabled ? undefined : excludeYekparePoolNewsSql(),
   );
@@ -367,13 +348,7 @@ export async function buildHmHomeBundle(
     latestEditor = filterPublicEditorNewsItems(latestEditor, siteId, false);
     manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
     breaking = filterPublicEditorNewsItems(breaking, siteId, false);
-    // Popüler / Gündemde Öne Çıkanlar: kategori vitrini gibi 7 gün.
-    popular = filterPublicEditorNewsItems(
-      popular,
-      siteId,
-      false,
-      HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS,
-    );
+    popular = filterPublicEditorNewsItems(popular, siteId, false);
   }
   const centerHeadlines = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
   return { siteId, featured, manualEditor, centerHeadlines, breaking, popular };
