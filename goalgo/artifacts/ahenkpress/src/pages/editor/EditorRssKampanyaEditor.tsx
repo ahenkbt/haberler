@@ -89,20 +89,29 @@ type Cat = { slug: string; name: string };
 
 export default function EditorRssKampanyaEditor() {
   const { site } = useHmEditor();
-  const [, setLocation] = useLocation();
-  const params = useParams();
-  const isEditing = !!params.id && params.id !== "yeni";
-  const id = isEditing ? parseInt(params.id!, 10) : 0;
+  const [loc, setLocation] = useLocation();
+  const params = useParams<{ id?: string }>();
+  const pathId = String(loc.split("?")[0] ?? "").match(/\/editor\/rss-kampanyalari\/(\d+)\/duzenle/);
+  const rawId = params.id && params.id !== "yeni" ? params.id : pathId?.[1];
+  const isEditing = !!rawId && rawId !== "yeni";
+  const id = isEditing ? parseInt(rawId, 10) : 0;
   const idValid = isEditing && Number.isFinite(id) && id > 0;
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...DEFAULT_CAMPAIGN_FORM });
 
-  const { data: campaign, isLoading } = useQuery({
-    queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY, id],
+  const {
+    data: campaign,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY, site?.id, id],
     queryFn: () => hmEditorJson<CampaignRow>(`/api/hm/editor/rss/campaigns/${id}`),
     enabled: idValid,
+    retry: 1,
   });
 
   const { data: rssCategoryOptions = [] } = useQuery({
@@ -116,7 +125,7 @@ export default function EditorRssKampanyaEditor() {
       setForm({ ...DEFAULT_CAMPAIGN_FORM });
       return;
     }
-    if (!campaign || campaign.id !== id) return;
+    if (!campaign || Number(campaign.id) !== Number(id)) return;
     setForm({
       ...DEFAULT_CAMPAIGN_FORM,
       ...campaign,
@@ -229,10 +238,43 @@ export default function EditorRssKampanyaEditor() {
     }
   };
 
-  if (isEditing && (!idValid || isLoading || !campaign || campaign.id !== id)) {
+  if (isEditing && !idValid) {
+    return (
+      <EditorLayout title="Kampanya Düzenle">
+        <div className="p-8 space-y-3">
+          <p className="text-sm text-red-700">Kampanya adresi geçersiz.</p>
+          <Button variant="outline" onClick={() => setLocation("/editor/rss-kampanyalari")}>
+            Listeye dön
+          </Button>
+        </div>
+      </EditorLayout>
+    );
+  }
+
+  if (isEditing && isLoading) {
     return (
       <EditorLayout title="Kampanya Düzenle">
         <div className="p-8">Yükleniyor...</div>
+      </EditorLayout>
+    );
+  }
+
+  if (isEditing && (isError || !campaign || Number(campaign.id) !== Number(id))) {
+    return (
+      <EditorLayout title="Kampanya Düzenle">
+        <div className="p-8 space-y-3">
+          <p className="text-sm text-red-700">
+            Kampanya açılamadı: {error instanceof Error ? error.message : "Kayıt bulunamadı"}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => void refetch()}>
+              Tekrar dene
+            </Button>
+            <Button variant="outline" onClick={() => setLocation("/editor/rss-kampanyalari")}>
+              Listeye dön
+            </Button>
+          </div>
+        </div>
       </EditorLayout>
     );
   }

@@ -2,9 +2,8 @@
  * HM editör — RSS Kampanyaları (site-scoped).
  * Admin /api/rss/campaigns ile aynı motor; hedef her zaman JWT siteId.
  */
-import { Router, type IRouter } from "express";
-import { desc, eq, inArray } from "drizzle-orm";
-import jwt from "jsonwebtoken";
+import { Router, type IRouter, type Request } from "express";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import {
   dualWriteDelete,
   dualWriteInsert,
@@ -14,33 +13,28 @@ import {
   rssLogsTable,
 } from "@workspace/db";
 import { CreateRssCampaignBody, UpdateRssCampaignBody } from "@workspace/api-zod";
-import { getHmEditorJwtSecret } from "../lib/secrets.js";
+import { parseHmEditorFromRequest } from "../lib/hmEditorJwt.js";
 import { serializeRssCampaign, serializeRssLog } from "../lib/serializers";
 import { ensureRssCampaignSchema } from "../lib/ensure-rss-campaign-schema.js";
 import { preflightRssCampaignRun, scheduleRssCampaignRun } from "../lib/rssCampaignRun.js";
-import { parsePositiveInt, rssCampaignOwnedByHmSite } from "../lib/hm-rss-campaigns.js";
+import {
+  campaignIdFromRequestPath,
+  parsePositiveInt,
+  rssCampaignOwnedByHmSite,
+} from "../lib/hm-rss-campaigns.js";
+import {
+  deleteNewsImportedByRssCampaign,
+  purgeAhgRssCampaignNewsOnce,
+  sqlSiteOwnsCampaign,
+} from "../lib/hm-rss-campaign-news-purge.js";
 
 const router: IRouter = Router();
-const JWT_TYP = "hm_editor";
-
-function parseHmEditor(req: { headers: { authorization?: string } }): { editorId: number; siteId: number } | null {
-  const h = String(req.headers.authorization ?? "").trim();
-  const token = h.startsWith("Bearer ") ? h.slice(7) : "";
-  if (!token) return null;
-  try {
-    const p = jwt.verify(token, getHmEditorJwtSecret()) as { typ?: string; eid?: number; sid?: number };
-    if (p.typ !== JWT_TYP || typeof p.eid !== "number" || typeof p.sid !== "number") return null;
-    return { editorId: p.eid, siteId: p.sid };
-  } catch {
-    return null;
-  }
-}
 
 function denyUnlessHmEditor(
-  req: { headers: { authorization?: string } },
+  req: Request,
   res: { status: (n: number) => { json: (b: unknown) => void } },
 ): { editorId: number; siteId: number } | null {
-  const x = parseHmEditor(req);
+  const x = parseHmEditorFromRequest(req);
   if (!x) {
     res.status(401).json({ error: "Editör oturumu gerekli (Bearer token)." });
     return null;
@@ -48,7 +42,17 @@ function denyUnlessHmEditor(
   return x;
 }
 
+function campaignIdFromReq(req: Request): number | null {
+  return campaignIdFromRequestPath(req.params.id, `${req.baseUrl || ""}${req.path || ""}`);
+}
+
 async function loadOwnedCampaign(id: number, siteId: number) {
+  const [bySql] = await getNewsDbForRead()
+    .select()
+    .from(rssCampaignsTable)
+    .where(and(eq(rssCampaignsTable.id, id), sqlSiteOwnsCampaign(siteId)));
+  if (bySql) return bySql;
+
   const [row] = await getNewsDbForRead()
     .select()
     .from(rssCampaignsTable)
@@ -61,6 +65,7 @@ router.get("/hm/editor/rss/campaigns", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   await ensureRssCampaignSchema();
+  await purgeAhgRssCampaignNewsOnce();
   const rows = await getNewsDbForRead().select().from(rssCampaignsTable).orderBy(rssCampaignsTable.id);
   const items = rows.filter((r) => rssCampaignOwnedByHmSite(r, ctx.siteId)).map(serializeRssCampaign);
   const totalActive = items.filter((r) => r.active).length;
@@ -117,7 +122,7 @@ router.get("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   await ensureRssCampaignSchema();
-  const id = parsePositiveInt(req.params.id);
+  const id = campaignIdFromReq(req);
   if (id == null) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -134,7 +139,7 @@ router.put("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   await ensureRssCampaignSchema();
-  const id = parsePositiveInt(req.params.id);
+  const id = campaignIdFromReq(req);
   if (id == null) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -188,10 +193,10 @@ router.put("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
   res.json(serializeRssCampaign(row));
 });
 
-router.delete("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
+router.delete("/hm/editor/rss/campaigns/:id/news", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
-  const id = parsePositiveInt(req.params.id);
+  const id = campaignIdFromReq(req);
   if (id == null) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -200,6 +205,29 @@ router.delete("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> =>
   if (!existing) {
     res.status(404).json({ error: "Campaign not found" });
     return;
+  }
+  const result = await deleteNewsImportedByRssCampaign({ siteId: ctx.siteId, campaign: existing });
+  res.json({ ok: true, message: "Kampanyanın eklediği haberler silindi.", hosts: result.hosts });
+});
+
+router.delete("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  const id = campaignIdFromReq(req);
+  if (id == null) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const existing = await loadOwnedCampaign(id, ctx.siteId);
+  if (!existing) {
+    res.status(404).json({ error: "Campaign not found" });
+    return;
+  }
+  const deleteNews =
+    String(req.query.deleteNews ?? req.query.delete_news ?? "").trim() === "1" ||
+    (req.body && typeof req.body === "object" && (req.body as { deleteNews?: unknown }).deleteNews === true);
+  if (deleteNews) {
+    await deleteNewsImportedByRssCampaign({ siteId: ctx.siteId, campaign: existing });
   }
   await dualWriteDelete(rssLogsTable, eq(rssLogsTable.campaignId, id));
   await dualWriteDelete(rssCampaignsTable, eq(rssCampaignsTable.id, id));
@@ -210,7 +238,7 @@ router.post("/hm/editor/rss/campaigns/:id/run", async (req, res): Promise<void> 
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   await ensureRssCampaignSchema();
-  const id = parsePositiveInt(req.params.id);
+  const id = campaignIdFromReq(req);
   if (id == null) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -220,7 +248,7 @@ router.post("/hm/editor/rss/campaigns/:id/run", async (req, res): Promise<void> 
     res.status(404).json({ error: "Campaign not found" });
     return;
   }
-  const preflight = await preflightRssCampaignRun(id);
+  const preflight = await preflightRssCampaignRun(id, { forceHmSiteId: ctx.siteId });
   if (!preflight.ok) {
     res.status(400).json({
       accepted: false,
@@ -232,7 +260,7 @@ router.post("/hm/editor/rss/campaigns/:id/run", async (req, res): Promise<void> 
     });
     return;
   }
-  const { alreadyRunning } = scheduleRssCampaignRun(id);
+  const { alreadyRunning } = scheduleRssCampaignRun(id, { forceHmSiteId: ctx.siteId });
   res.status(202).json({
     accepted: true,
     added: 0,

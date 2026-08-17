@@ -1438,6 +1438,80 @@ export async function clearKhAuthorsAndDisableModules(sql, siteId) {
   return { deleted };
 }
 
+function normalizeHmSiteIdsEdge(raw) {
+  if (raw == null) return [];
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return [Math.trunc(raw)];
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return [];
+    if (/^\d+$/.test(s)) return [parseInt(s, 10)];
+    const inner = s.replace(/^[{\[]\s*/, "").replace(/\s*[}\]]$/, "");
+    return inner
+      .split(/[\s,]+/)
+      .map((x) => parseInt(x.replace(/^["']|["']$/g, ""), 10))
+      .filter((n) => Number.isFinite(n) && n > 0);
+  }
+  if (Array.isArray(raw)) {
+    return raw.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0);
+  }
+  return [];
+}
+
+function serializeRssCampaignEdge(row) {
+  const last = row.last_run_at ? new Date(row.last_run_at) : null;
+  return {
+    id: Number(row.id),
+    name: row.name,
+    active: !!row.active,
+    postType: row.post_type,
+    categorySlug: row.category_slug,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    feeds: Array.isArray(row.feeds) ? row.feeds : [],
+    sourceType: row.source_type,
+    intervalMinutes: Number(row.interval_minutes) || 30,
+    daysWindow: Number(row.days_window) || 0,
+    dailyLimit: Number(row.daily_limit) || 0,
+    downloadImages: !!row.download_images,
+    headline: !!row.headline,
+    breakingKeywords: Array.isArray(row.breaking_keywords) ? row.breaking_keywords : [],
+    minWords: Number(row.min_words) || 0,
+    translateEnabled: !!row.translate_enabled,
+    sourceLang: row.source_lang ?? null,
+    targetLang: row.target_lang ?? null,
+    translateEngine: row.translate_engine ?? null,
+    addedCount: Number(row.added_count) || 0,
+    lastRunAt: last && !Number.isNaN(last.getTime()) ? last.toISOString() : null,
+    hmSiteIds: normalizeHmSiteIdsEdge(row.hm_site_ids),
+    includeYekpareHaber: !!row.include_yekpare_haber,
+    haberlerFilterByTags: !!row.haberler_filter_by_tags,
+  };
+}
+
+/**
+ * Kampanya bulundu ve bu siteye aitse JSON; aksi halde null → Container.
+ * @returns {Promise<Response|null>}
+ */
+async function handleEditorRssCampaignGet(sql, siteId, id) {
+  try {
+    const rows = await sql`SELECT * FROM rss_campaigns WHERE id = ${id} LIMIT 1`;
+    if (!rows?.length) return null;
+    const row = rows[0];
+    const ids = normalizeHmSiteIdsEdge(row.hm_site_ids);
+    if (!ids.includes(siteId)) {
+      // SQL ANY yedek — JS dizi biçimi bozulsa bile
+      const owned = await sql`
+        SELECT id FROM rss_campaigns
+        WHERE id = ${id} AND ${siteId} = ANY(hm_site_ids)
+        LIMIT 1
+      `;
+      if (!owned?.length) return null;
+    }
+    return jsonResponse(200, serializeRssCampaignEdge(row));
+  } catch {
+    return null;
+  }
+}
+
 /**
  * @returns {Promise<Response|null>}
  */
@@ -1581,6 +1655,13 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
       order += 1;
     }
     return jsonResponse(200, { ok: true });
+  }
+
+  const rssCampaignGet = path.match(/^\/api\/hm\/editor\/rss\/campaigns\/(\d+)$/);
+  if (rssCampaignGet && method === "GET") {
+    const id = asPositiveInt(rssCampaignGet[1]);
+    if (id == null) return jsonResponse(400, { error: "Invalid id" });
+    return handleEditorRssCampaignGet(sql, ctx.siteId, id);
   }
 
   return null;

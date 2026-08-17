@@ -31,26 +31,51 @@ export default function EditorRssKampanyalari() {
   const { toast } = useToast();
   const [running, setRunning] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [clearingNewsId, setClearingNewsId] = useState<number | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY],
+    queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY, site?.id],
     queryFn: () => hmEditorJson<CampaignList>("/api/hm/editor/rss/campaigns"),
   });
   const campaigns = data?.items ?? [];
 
+  const handleDeleteNews = async (id: number, name: string) => {
+    if (
+      !confirm(
+        `"${name}" kampanyasının ${site?.displayName || "bu siteye"} eklediği RSS haberleri silinsin mi? Kampanya kaydı kalır.`,
+      )
+    ) {
+      return;
+    }
+    setClearingNewsId(id);
+    try {
+      await hmEditorJson(`/api/hm/editor/rss/campaigns/${id}/news`, { method: "DELETE" });
+      await qc.invalidateQueries({ queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY] });
+      toast({ title: "Eklenen haberler silindi" });
+    } catch (e) {
+      toast({
+        title: "Haberler silinemedi",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setClearingNewsId(null);
+    }
+  };
+
   const handleDelete = async (id: number, name: string) => {
     if (
       !confirm(
-        `"${name}" kampanyası kalıcı olarak silinsin mi? İlgili RSS ayarları kaldırılır; eklenmiş haberler silinmez.`,
+        `"${name}" kampanyası ve bu kampanyanın eklediği haberler silinsin mi?`,
       )
     ) {
       return;
     }
     setDeletingId(id);
     try {
-      await hmEditorJson(`/api/hm/editor/rss/campaigns/${id}`, { method: "DELETE" });
+      await hmEditorJson(`/api/hm/editor/rss/campaigns/${id}?deleteNews=1`, { method: "DELETE" });
       await qc.invalidateQueries({ queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY] });
-      toast({ title: "Kampanya silindi" });
+      toast({ title: "Kampanya ve eklenen haberler silindi" });
     } catch (e) {
       toast({
         title: "Silinemedi",
@@ -202,7 +227,7 @@ export default function EditorRssKampanyalari() {
                         size="sm"
                         className="bg-[#e61e25] hover:bg-[#c9181e] text-white gap-1.5"
                         onClick={() => handleRun(camp.id, camp.name)}
-                        disabled={running === camp.id || deletingId === camp.id}
+                        disabled={running === camp.id || deletingId === camp.id || clearingNewsId === camp.id}
                       >
                         {running === camp.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -218,9 +243,24 @@ export default function EditorRssKampanyalari() {
                         type="button"
                         variant="outline"
                         size="sm"
+                        onClick={() => void handleDeleteNews(camp.id, camp.name)}
+                        disabled={
+                          deletingId === camp.id || running === camp.id || clearingNewsId === camp.id
+                        }
+                        title="Bu kampanyanın eklediği haberleri sil"
+                      >
+                        {clearingNewsId === camp.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : null}
+                        Haberleri sil
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
                         className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 gap-1.5"
                         onClick={() => void handleDelete(camp.id, camp.name)}
-                        disabled={deletingId === camp.id || running === camp.id}
+                        disabled={deletingId === camp.id || running === camp.id || clearingNewsId === camp.id}
                         title="Kampanyayı sil"
                       >
                         {deletingId === camp.id ? (
