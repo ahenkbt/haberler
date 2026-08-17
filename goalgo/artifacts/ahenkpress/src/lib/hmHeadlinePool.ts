@@ -2,14 +2,14 @@ import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
 
 /**
  * Manşet havuzu tazelik kuralları:
- * - Anasayfa (tepe hariç): yalnızca taze haberler; eski manuel yedek yok.
- * - Manuel / DB: en fazla 12 saat (MANUAL_HEADLINE_MAX_AGE_MS)
- * - RSS: en fazla 24 saat (RSS_HEADLINE_MAX_AGE_MS) — daima son haberler.
- * - Tepe manşet: editörün `isFeatured` manuel haberleri, yaş sınırı yok.
+ * - Editör / DB manuel haber: yaş kesimi yok (önceki haberler sitede kalsın).
+ * - RSS: en fazla 24 saat (RSS_HEADLINE_MAX_AGE_MS).
+ * - Tepe manşet: editörün `isFeatured` manuel haberleri.
  */
 
 export const RSS_HEADLINE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-export const MANUAL_HEADLINE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+/** @deprecated Editör manuel haberlerde yaş kesimi yok; sabit RSS dışı çağrılar için. */
+export const MANUAL_HEADLINE_MAX_AGE_MS = Number.POSITIVE_INFINITY;
 const TR_DAY_OFFSET_MS = 3 * 60 * 60 * 1000;
 /** Manşet lead rotasyonu: en güncel haberler arasında kalır. */
 export const HEADLINE_VISIT_ROTATION_WINDOW = 8;
@@ -819,12 +819,12 @@ export function sortNewsByRecency<T>(items: readonly T[] | null | undefined): T[
 
 export function isHeadlineFreshEnough(n: unknown): boolean {
   const isRss = isRssHybridItem(n);
+  if (!isRss) return true;
   const rawDate = newsItemDateRaw(n);
   if (!rawDate) return true;
   const time = new Date(rawDate).getTime();
   if (!Number.isFinite(time)) return true;
-  const maxAge = isRss ? RSS_HEADLINE_MAX_AGE_MS : MANUAL_HEADLINE_MAX_AGE_MS;
-  return Date.now() - time <= maxAge;
+  return Date.now() - time <= RSS_HEADLINE_MAX_AGE_MS;
 }
 
 function turkeyCalendarDayKey(ms: number): string {
@@ -840,7 +840,7 @@ export function isTodayHeadlineNews(n: unknown): boolean {
   return turkeyCalendarDayKey(recency) === turkeyCalendarDayKey(Date.now());
 }
 
-/** Anasayfa (tepe manşet hariç): yalnızca taze haberler. Eski manuel yedek yok. */
+/** Anasayfa: RSS tazeliği; editör haberleri yaşa göre düşmez. */
 export function preferFreshHeadlineCandidates<T>(items: readonly T[]): T[] {
   const source = Array.isArray(items) ? items : [];
   return source.filter(isHeadlineFreshEnough);

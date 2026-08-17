@@ -13,14 +13,14 @@ import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
 import { isKoseArticle, type KoseArticleLike } from "./kose-article.js";
 import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
 
-/** Public editör haber sitesi vitrin: DB/manuel manşet haberleri en fazla 12 saat. */
-export const HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+/** Public editör haber sitesi vitrin: yaş kesimi yok — yayınlanmış manuel haberler listelenir. */
+export const HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS = Number.POSITIVE_INFINITY;
 
 /**
- * Kategori kutuları / by-category: 12 saat çok dar kalıyor (Ankara Haberleri 1 haber).
- * Yerel arşiv vitrinde son 7 gün gösterilir.
+ * Eski 7 günlük kategori penceresi kaldırıldı (Kırşehir son haber 2 Ağustos’ta
+ * vitrin boşalıyordu). Sabit geriye dönük çağrılar için sonsuz.
  */
-export const HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+export const HM_PUBLIC_EDITOR_CATEGORY_NEWS_MAX_AGE_MS = Number.POSITIVE_INFINITY;
 
 /** VKD kurumsal vitrin — yalnızca bu haber kategorileri (nav, footer, editör). */
 export const VKD_PUBLIC_NEWS_CATEGORY_SLUGS = ["dernegimiz", "faaliyetlerimiz", "sehit-gazi"] as const;
