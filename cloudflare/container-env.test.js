@@ -36,7 +36,10 @@ describe("container-env", () => {
       S3_PUBLIC_BASE_URL: "https://media.turk.eco",
     });
     assert.equal(vars.S3_BUCKET, "yekpare-media");
-    assert.equal(vars.S3_ENDPOINT, "https://account.r2.cloudflarestorage.com");
+    assert.equal(
+      vars.S3_ENDPOINT,
+      "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
+    );
     assert.equal(hasS3MediaConfig(vars), true);
     assert.equal(vars.SKIP_MEDIA_STORAGE_CHECK, undefined);
   });
@@ -49,6 +52,35 @@ describe("container-env", () => {
     });
     assert.equal(vars.SKIP_MEDIA_STORAGE_CHECK, "1");
     assert.equal(hasS3MediaConfig(vars), false);
+  });
+
+  it("coerces a pasted S3_ENDPOINT blob to the Render dual-write host", () => {
+    const real = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    const blob = `S3_ENDPOINT=${real}\nS3_BUCKET=yekpare-media\nS3_PUBLIC_BASE_URL=https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev`;
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://neon/neondb",
+      SESSION_SECRET: "sixteen-chars-ok",
+      S3_ENDPOINT: blob,
+      S3_ACCESS_KEY_ID: "ak",
+      S3_SECRET_ACCESS_KEY: "sk",
+    });
+    assert.equal(vars.S3_ENDPOINT, real);
+    assert.equal(vars.S3_BUCKET, "yekpare-media");
+    assert.equal(hasS3MediaConfig(vars), true);
+    assert.equal(vars.SKIP_MEDIA_STORAGE_CHECK, undefined);
+  });
+
+  it("forwards R2_ENDPOINT when S3_ENDPOINT is missing", () => {
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://neon/neondb",
+      SESSION_SECRET: "sixteen-chars-ok",
+      R2_ENDPOINT: "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
+      S3_BUCKET: "yekpare-media",
+      S3_ACCESS_KEY_ID: "ak",
+      S3_SECRET_ACCESS_KEY: "sk",
+    });
+    assert.equal(vars.S3_ENDPOINT, "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com");
+    assert.equal(hasS3MediaConfig(vars), true);
   });
 
   it("ignores empty and non-string Worker bindings", () => {
