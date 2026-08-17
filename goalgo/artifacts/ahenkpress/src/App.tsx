@@ -172,6 +172,9 @@ import EditorWordPressImport from "./pages/editor/EditorWordPressImport";
 import EditorWordPressTemplatePages from "./pages/editor/EditorWordPressTemplatePages";
 import EditorGiris from "./pages/editor/EditorGiris";
 import EditorProfil from "./pages/editor/EditorProfil";
+import EditorRssKampanyalari from "./pages/editor/EditorRssKampanyalari";
+import EditorRssKampanyaEditor from "./pages/editor/EditorRssKampanyaEditor";
+import EditorRssLoglar from "./pages/editor/EditorRssLoglar";
 import SiteneEkle from "./pages/public/SiteneEkle";
 import HmOrPortalHaberDetailRoute from "./pages/public/HmOrPortalHaberDetailRoute";
 import HmPublicHaberDetayRoute from "./pages/public/HmPublicHaberDetayRoute";
@@ -1593,6 +1596,34 @@ export default function App() {
         {() => (
           <HmEditorRoute>
             <EditorHaberler />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/rss-kampanyalari/yeni">
+        {() => (
+          <HmEditorRoute>
+            <EditorRssKampanyaEditor />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/rss-kampanyalari/loglar">
+        {() => (
+          <HmEditorRoute>
+            <EditorRssLoglar />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/rss-kampanyalari/:id/duzenle">
+        {() => (
+          <HmEditorRoute>
+            <EditorRssKampanyaEditor />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/rss-kampanyalari">
+        {() => (
+          <HmEditorRoute>
+            <EditorRssKampanyalari />
           </HmEditorRoute>
         )}
       </Route>

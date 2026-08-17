@@ -15,3 +15,6 @@ export const HM_EDITOR_MAKALE_QUERY_KEY = ["/api/hm/editor/makale"] as const;
 
 /** HM editör — genel + bu siteye özel haber kategorileri */
 export const HM_EDITOR_CATEGORIES_QUERY_KEY = ["/api/hm/editor/categories"] as const;
+
+/** HM editör RSS kampanyaları (siteye kilitli) */
+export const HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY = ["/api/hm/editor/rss/campaigns"] as const;
