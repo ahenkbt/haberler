@@ -110,7 +110,8 @@ jobs:
         run: pnpm exec wrangler deploy
 
       # Secret put, deploy edilmemiş version varken fail oluyor — önce deploy, sonra secret.
-      # versions secret * trafiğe koymaz; sonda wrangler versions deploy şart.
+      # wrangler secret put zaten yayına alır. versions list'teki rastgele eski
+      # kopyayı %100 yapmak DATABASE_URL düşürdü (f24ae171, 503).
       - name: Sync Worker secrets (Neon)
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
         continue-on-error: true
@@ -130,44 +131,17 @@ jobs:
         run: |
           set +e
           LAST_VID=""
-          capture_vid() {
-            vid=$(printf '%s' "$1" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | tail -1)
+          capture_created() {
+            vid=$(printf '%s' "$1" | grep -oE 'Created version [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | tail -1 | awk '{print $3}')
             if [ -n "$vid" ]; then LAST_VID="$vid"; fi
-          }
-          latest_vid() {
-            if [ -n "$LAST_VID" ]; then printf '%s' "$LAST_VID"; return; fi
-            pnpm exec wrangler versions list --name haberler --json 2>/dev/null | node -e '
-              let s = "";
-              process.stdin.on("data", (d) => { s += d; });
-              process.stdin.on("end", () => {
-                try {
-                  const j = JSON.parse(s);
-                  const arr = Array.isArray(j) ? j : (j.versions || j.result || []);
-                  const id = arr[0] && (arr[0].id || arr[0].version_id || arr[0].versionId);
-                  if (id) process.stdout.write(String(id));
-                } catch {}
-              });
-            '
-          }
-          # wrangler versions secret put yeni version üretir ama trafiğe koymaz.
-          promote() {
-            vid=$(latest_vid)
-            if [ -z "$vid" ]; then
-              echo "versions deploy skipped (no version id)"
-              return 0
-            fi
-            echo "::notice::Worker version $vid trafiğe alınıyor."
-            pnpm exec wrangler versions deploy "${vid}@100%" --yes --name haberler \
-              || pnpm exec wrangler versions deploy "$vid" --percentage 100 --yes --name haberler \
-              || echo "versions deploy failed for $vid"
           }
           put_secret() {
             out=$(printf '%s' "$2" | pnpm exec wrangler secret put "$1" 2>&1)
             printf '%s\n' "$out"
-            if printf '%s' "$out" | grep -qi 'Success'; then capture_vid "$out"; return 0; fi
+            if printf '%s' "$out" | grep -qi 'Uploaded secret'; then return 0; fi
             out=$(printf '%s' "$2" | pnpm exec wrangler versions secret put "$1" 2>&1)
             printf '%s\n' "$out"
-            capture_vid "$out"
+            capture_created "$out"
           }
           put_secret DATABASE_URL "$DATABASE_URL"
           put_secret SESSION_SECRET "$SESSION_SECRET"
@@ -184,4 +158,9 @@ jobs:
               put_secret "$key" "$val"
             fi
           done
-          promote
+          if [ -n "$LAST_VID" ]; then
+            echo "::notice::Yalnızca secret put'un ürettiği $LAST_VID yayına alınıyor."
+            pnpm exec wrangler versions deploy "${LAST_VID}@100%" --yes --name haberler \
+              || pnpm exec wrangler versions deploy "$LAST_VID" --percentage 100 --yes --name haberler \
+              || echo "versions deploy failed for $LAST_VID"
+          fi
