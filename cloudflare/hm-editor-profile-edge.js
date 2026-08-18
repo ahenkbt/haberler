@@ -1478,14 +1478,18 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   // 2) HMAC köprüsü — JWT secret uyuşmazlığında Container yolu.
   const bridgeUpload = await fetchApiMediaBridgeUpload(env, sql, ctx, editor, body, dataUrl, origin);
   if (bridgeUpload?.ok && bridgeUpload.response) return bridgeUpload.response;
-  if (bridgeUpload?.response) return bridgeUpload.response;
+  // Container Node OpenSSL R2'ye TLS alert 40 verir; 5xx Worker S3 hatasını örtmesin.
+  if (bridgeUpload?.response && bridgeUpload.response.status < 500) return bridgeUpload.response;
   if (bridgeUpload?.detail) uploadSteps.push(`bridge:${bridgeUpload.detail}`);
 
   // 3) /api/media/upload — kenarda imzalanmış kısa ömürlü JWT.
   const apiUpload = await tryApiMediaUploadAllTokens(env, origin, body, ctx, bearerToken);
   if (apiUpload?.ok) return apiUpload.response;
-  if (apiUpload?.errorResponse) return apiUpload.errorResponse;
+  if (apiUpload?.errorResponse && apiUpload.errorResponse.status < 500) return apiUpload.errorResponse;
   if (apiUpload?.detail) uploadSteps.push(`api:${apiUpload.detail}`);
+  if (apiUpload?.errorResponse) {
+    uploadSteps.push(`api-http:${apiUpload.errorResponse.status}`);
+  }
 
   return jsonResponse(502, {
     error: "Medya yüklenemedi",

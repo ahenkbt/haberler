@@ -90,7 +90,8 @@ export async function uploadYekpareMediaDataUrl(dataUrl: string): Promise<string
     throw new Error(data.error || raw.slice(0, 200) || `HTTP ${res.status}`);
   }
   if (!res.ok) {
-    throw new Error(data.error || data.detail || data.hint || `HTTP ${res.status}`);
+    const msg = [data.error, data.detail].filter((v, i, a) => v && a.indexOf(v) === i).join(" — ");
+    throw new Error(msg || `HTTP ${res.status}`);
   }
   if (!data.url) throw new Error("Sunucu URL dönmedi");
   return data.url;

@@ -167,7 +167,10 @@ async function saveBridgeMediaUpload(
       return;
     }
     logger.error({ err: e, storage: getMediaStorageMode() }, logTag);
-    res.status(500).json({ error: "Yükleme başarısız" });
+    res.status(500).json({
+      error: "Yükleme başarısız",
+      detail: msg.slice(0, 220),
+    });
   }
 }
 

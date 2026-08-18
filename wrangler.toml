@@ -210,5 +210,5 @@ zone_name = "kirsehirhaber.org"
 # pattern = "www.kirsehir.net/*"
 # zone_name = "kirsehir.net"
 
-# redeploy trigger 2026-08-17T13:40:00Z — fb9f S3 + RSS kapak indirme + geçici disk yazma yok
+# redeploy trigger 2026-08-18T13:50:00Z — editör kapak yükleme Worker R2 proxy
 
