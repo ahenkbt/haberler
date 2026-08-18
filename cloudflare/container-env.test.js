@@ -38,8 +38,22 @@ describe("container-env", () => {
     assert.equal(vars.S3_BUCKET, "yekpare-media");
     assert.equal(
       vars.S3_ENDPOINT,
-      "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
+      "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
     );
+    assert.equal(hasS3MediaConfig(vars), true);
+    assert.equal(vars.SKIP_MEDIA_STORAGE_CHECK, undefined);
+  });
+
+  it("treats Cloudflare R2 REST token as complete media config", () => {
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://neon/neondb",
+      SESSION_SECRET: "sixteen-chars-ok",
+      S3_BUCKET: "yekpare-media",
+      R2_CF_API_TOKEN: "cf-account-token",
+      R2_ACCOUNT_ID: "fb9fc9dc1991b7cc17ba58ab3c2e8726",
+    });
+    assert.equal(vars.R2_CF_API_TOKEN, "cf-account-token");
+    assert.equal(vars.R2_ACCOUNT_ID, "fb9fc9dc1991b7cc17ba58ab3c2e8726");
     assert.equal(hasS3MediaConfig(vars), true);
     assert.equal(vars.SKIP_MEDIA_STORAGE_CHECK, undefined);
   });
@@ -55,7 +69,7 @@ describe("container-env", () => {
   });
 
   it("coerces a pasted S3_ENDPOINT blob to the Render dual-write host", () => {
-    const real = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    const real = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
     const blob = `S3_ENDPOINT=${real}\nS3_BUCKET=yekpare-media\nS3_PUBLIC_BASE_URL=https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev`;
     const vars = buildContainerEnv({
       DATABASE_URL: "postgres://neon/neondb",
@@ -74,12 +88,12 @@ describe("container-env", () => {
     const vars = buildContainerEnv({
       DATABASE_URL: "postgres://neon/neondb",
       SESSION_SECRET: "sixteen-chars-ok",
-      R2_ENDPOINT: "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
+      R2_ENDPOINT: "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
       S3_BUCKET: "yekpare-media",
       S3_ACCESS_KEY_ID: "ak",
       S3_SECRET_ACCESS_KEY: "sk",
     });
-    assert.equal(vars.S3_ENDPOINT, "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com");
+    assert.equal(vars.S3_ENDPOINT, "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com");
     assert.equal(hasS3MediaConfig(vars), true);
   });
 

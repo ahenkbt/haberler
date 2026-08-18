@@ -95,9 +95,13 @@ function s3EndpointRaw(env) {
 const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/gi;
 const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/gi;
 
-/** Render env (PR #103): 2 aydır dual-write bu R2 S3 hostuna yazdı. */
+/** fb9f R2 hesabı (Dashboard: fb9fc9dc… 32 hex). Eski kodda fazla 9 vardı (33 karakter → 401). */
+export const R2_MEDIA_ACCOUNT_ID = "fb9fc9dc1991b7cc17ba58ab3c2e8726";
+const R2_MEDIA_ACCOUNT_ID_TYPO = "fb9f9c9dc1991b7cc17ba58ab3c2e8726";
+
+/** Render dual-write R2 S3 hostu — doğru 32 karakterlik hesap ID. */
 export const RENDER_R2_S3_ENDPOINT =
-  "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+  `https://${R2_MEDIA_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
 /** wrangler.toml account_id — Worker secret bloğunda yanlışlıkla ilk sıraya düşebiliyor. */
 export const CF_ACCOUNT_R2_S3_ENDPOINT =
@@ -110,7 +114,8 @@ function r2S3UrlFromValue(value) {
     .replace(/^http:\/\//i, "https://");
   if (!n) return null;
   try {
-    const host = new URL(/^https?:\/\//i.test(n) ? n : `https://${n}`).hostname;
+    const host = new URL(/^https?:\/\//i.test(n) ? n : `https://${n}`).hostname
+      .replace(R2_MEDIA_ACCOUNT_ID_TYPO, R2_MEDIA_ACCOUNT_ID);
     if (!/\.r2\.cloudflarestorage\.com$/i.test(host)) return null;
     return `https://${host}`;
   } catch {
@@ -211,7 +216,52 @@ function s3CredentialSets(env) {
   return out;
 }
 
+export function r2CfApiToken(env) {
+  return normalizeEnvValue(env?.R2_CF_API_TOKEN) || normalizeEnvValue(env?.R2_API_TOKEN);
+}
+
+export function r2CfAccountId(env) {
+  const n = normalizeEnvValue(env?.R2_ACCOUNT_ID).replace(/[^a-f0-9]/gi, "");
+  if (n === R2_MEDIA_ACCOUNT_ID_TYPO) return R2_MEDIA_ACCOUNT_ID;
+  if (/^[a-f0-9]{32}$/i.test(n)) return n.toLowerCase();
+  return R2_MEDIA_ACCOUNT_ID;
+}
+
+function cfApiObjectUrl(account, bucket, key) {
+  const path = String(key)
+    .split("/")
+    .map((p) => encodeURIComponent(p))
+    .join("/");
+  return `https://api.cloudflare.com/client/v4/accounts/${account}/r2/buckets/${encodeURIComponent(bucket)}/objects/${path}`;
+}
+
+async function fetchR2ObjectViaCfApi(env, method, fname, body, mime) {
+  const token = r2CfApiToken(env);
+  const bucket = s3BucketName(env) || "yekpare-media";
+  if (!token || !bucket) return null;
+  const account = r2CfAccountId(env);
+  const keys = method === "PUT" ? [objectKey(env, fname)] : listMediaObjectKeys(env, fname);
+  let last = null;
+  for (const key of keys) {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (mime) headers["Content-Type"] = mime;
+      last = await fetch(cfApiObjectUrl(account, bucket, key), {
+        method,
+        headers,
+        body: body || undefined,
+        signal: AbortSignal.timeout(method === "PUT" ? 15000 : 8000),
+      });
+      if (last && last.ok) return last;
+    } catch (err) {
+      console.error("[media-r2-cfapi]", method, String(err?.message || err).slice(0, 160));
+    }
+  }
+  return last;
+}
+
 export function s3MediaEnvReady(env) {
+  if (s3BucketName(env) && r2CfApiToken(env)) return true;
   return Boolean(s3BucketName(env) && s3CredentialSets(env).length > 0 && s3Endpoint(env));
 }
 
@@ -400,7 +450,19 @@ export function mediaEdgeHealthPayload(env) {
     hostPrefix: endpoints[0] ? endpoints[0].slice(8, 12) : null,
     hosts: endpoints.length,
     publicBases: listR2PublicBaseCandidates(env).length,
+    cfApiToken: Boolean(r2CfApiToken(env)),
+    r2AccountPrefix: r2CfAccountId(env).slice(0, 8),
   };
+}
+
+async function probeCfApiFromWorker(env) {
+  if (!r2CfApiToken(env)) return { status: "missing" };
+  try {
+    const res = await fetchR2ObjectViaCfApi(env, "GET", "healthz-probe-object");
+    return { status: res ? res.status : 0 };
+  } catch {
+    return { status: "err" };
+  }
 }
 
 async function probeS3HostsFromWorker(env) {
@@ -433,6 +495,7 @@ export async function handleMediaEdgeHealth(request, env) {
   const payload = mediaEdgeHealthPayload(env);
   if (method === "GET") {
     payload.s3Probe = await probeS3HostsFromWorker(env);
+    payload.cfApiProbe = await probeCfApiFromWorker(env);
   }
   return new Response(JSON.stringify(payload), {
     status: 200,
@@ -593,6 +656,24 @@ export async function handleMediaGetFromR2(request, env, diag) {
     }
   }
 
+  const cfApiGet = await fetchR2ObjectViaCfApi(env, method === "HEAD" ? "GET" : method, fname);
+  if (cfApiGet && cfApiGet.ok) {
+    const ct = cfApiGet.headers.get("content-type");
+    if (!String(ct || "").toLowerCase().includes("application/json")) {
+      return respond(
+        cfApiGet.body,
+        ct,
+        cfApiGet.headers.get("content-length"),
+        "r2-cfapi",
+      );
+    }
+    // JSON error body — R2 object GET başarılıysa binary döner.
+    const peek = await cfApiGet.clone().text().catch(() => "");
+    if (peek && !peek.trim().startsWith("{") && !peek.trim().startsWith("<")) {
+      return respond(peek, ct || mimeFromFname(fname), String(peek.length), "r2-cfapi");
+    }
+  }
+
   const publicBases = listR2PublicBaseCandidates(env);
   const publicPaths = listMediaObjectKeys(env, fname);
   for (const pub of publicBases) {
@@ -670,9 +751,21 @@ async function putBytesToR2(env, fname, bytes, mime) {
     }
   }
 
+  const cfPut = await fetchR2ObjectViaCfApi(env, "PUT", fname, bytesForS3Body(bytes), mime);
+  if (cfPut && cfPut.ok) {
+    return { url: publicUploadUrl(fname) };
+  }
+  if (cfPut && !cfPut.ok) {
+    const detail = (await cfPut.text()).trim().slice(0, 160);
+    console.error("[media-r2-cfapi-put]", cfPut.status, detail);
+  }
+
   const endpoints = s3EndpointCandidates(env);
   const creds = s3CredentialSets(env);
   if (!creds.length || !endpoints.length) {
+    if (cfPut && !cfPut.ok) {
+      return { error: `R2 API HTTP ${cfPut.status}` };
+    }
     return { error: "S3 yapılandırması eksik" };
   }
 

@@ -94,9 +94,13 @@ function s3EnvBlobText(): string {
 const R2_API_URL_RE = /https?:\/\/[a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com/gi;
 const R2_API_HOST_RE = /(?:^|[\s"'=\n\r])([a-z0-9][a-z0-9.-]*\.r2\.cloudflarestorage\.com)/gi;
 
-/** Render env (PR #103): 2 aydır dual-write bu R2 S3 hostuna yazdı. */
+/** fb9f R2 hesabı (Dashboard 32 hex). Eski kodda fazla 9 vardı. */
+export const R2_MEDIA_ACCOUNT_ID = "fb9fc9dc1991b7cc17ba58ab3c2e8726";
+const R2_MEDIA_ACCOUNT_ID_TYPO = "fb9f9c9dc1991b7cc17ba58ab3c2e8726";
+
+/** Render dual-write R2 S3 hostu. */
 export const RENDER_R2_S3_ENDPOINT =
-  "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+  `https://${R2_MEDIA_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
 /** wrangler.toml account_id — Worker secret bloğunda yanlışlıkla ilk sıraya düşebiliyor. */
 export const CF_ACCOUNT_R2_S3_ENDPOINT =
@@ -114,7 +118,10 @@ function r2S3UrlFromValue(value: string | undefined): string | null {
   const n = normalizeR2EndpointUrl(String(value ?? "").trim());
   if (!n) return null;
   try {
-    const host = new URL(/^https?:\/\//i.test(n) ? n : `https://${n}`).hostname;
+    const host = new URL(/^https?:\/\//i.test(n) ? n : `https://${n}`).hostname.replace(
+      R2_MEDIA_ACCOUNT_ID_TYPO,
+      R2_MEDIA_ACCOUNT_ID,
+    );
     if (!isR2S3ApiHost(host)) return null;
     return `https://${host}`;
   } catch {
@@ -301,9 +308,21 @@ export function logS3EndpointStartupHint(): void {
   }
 }
 
-/** Tam S3/R2: bucket, anahtarlar ve endpoint (R2 için endpoint zorunlu). */
+export function r2CfApiTokenFromEnv(): string {
+  return normalizeEnvValue(process.env.R2_CF_API_TOKEN) || normalizeEnvValue(process.env.R2_API_TOKEN);
+}
+
+export function r2CfAccountIdFromEnv(): string {
+  const n = normalizeEnvValue(process.env.R2_ACCOUNT_ID).replace(/[^a-f0-9]/gi, "");
+  if (n === R2_MEDIA_ACCOUNT_ID_TYPO) return R2_MEDIA_ACCOUNT_ID;
+  if (/^[a-f0-9]{32}$/i.test(n)) return n.toLowerCase();
+  return R2_MEDIA_ACCOUNT_ID;
+}
+
+/** Tam S3/R2: bucket, anahtarlar ve endpoint — veya Cloudflare R2 REST token. */
 export function isS3MediaConfigured(): boolean {
   const d = s3EnvDiagnostics();
+  if (d.bucket && r2CfApiTokenFromEnv()) return true;
   return d.bucket && d.accessKey && d.secret && d.endpoint;
 }
 

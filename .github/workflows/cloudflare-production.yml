@@ -4,7 +4,8 @@
 #   CLOUDFLARE_ACCOUNT_ID
 #   DATABASE_URL          (Neon connection string)
 #   SESSION_SECRET        (min 16 chars)
-# Optional: AGENTLABS_URL, HM_EDITOR_JWT_SECRET, ADMIN_MAINTENANCE_SECRET
+# Optional: AGENTLABS_URL, HM_EDITOR_JWT_SECRET, ADMIN_MAINTENANCE_SECRET,
+#           R2_CF_API_TOKEN (fb9f hesap API token; 16f5 CLOUDFLARE_API_TOKEN değil)
 # S3_ENDPOINT GitHub'dan yazılmaz (362 karakterlik yapıştırma). Kanonik fb9f host
 # wrangler.toml + workflow hardcoded put. S3 anahtarları yalnızca Dashboard.
 name: Cloudflare Production Deploy
@@ -124,6 +125,7 @@ jobs:
           SESSION_SECRET: ${{ secrets.SESSION_SECRET || vars.SESSION_SECRET }}
           HM_EDITOR_JWT_SECRET: ${{ secrets.HM_EDITOR_JWT_SECRET || '' }}
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
+          R2_CF_API_TOKEN: ${{ secrets.R2_CF_API_TOKEN || '' }}
         run: |
           set +e
           LAST_VID=""
@@ -147,10 +149,13 @@ jobs:
           if [ -n "$AGENTLABS_URL" ]; then
             put_secret AGENTLABS_URL "$AGENTLABS_URL"
           fi
+          if [ -n "$R2_CF_API_TOKEN" ]; then
+            put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
+          fi
           echo "::notice::GitHub S3_* Worker'a yazılmıyor (blob S3_ENDPOINT kapak 403/404 yaptı)."
           # Secret, wrangler.toml [vars] S3_ENDPOINT'i ezer. Eski 362 karakterlik
           # yapıştırmayı kanonik fb9f dual-write hostu ile değiştir (anahtar değil).
-          CANONICAL_S3_ENDPOINT="https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+          CANONICAL_S3_ENDPOINT="https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
           put_secret S3_ENDPOINT "$CANONICAL_S3_ENDPOINT"
           if [ -n "$LAST_VID" ]; then
             echo "::notice::Yalnızca secret put'un ürettiği $LAST_VID yayına alınıyor."
