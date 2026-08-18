@@ -334,10 +334,6 @@ describe("hm-editor-media-s3-edge", () => {
       globalThis.fetch = origFetch;
     }
   });
-    } finally {
-      globalThis.fetch = origFetch;
-    }
-  });
 
   it("rejects unauthenticated R2 put proxy requests", async () => {
     const res = await handleMediaR2PutProxy(
