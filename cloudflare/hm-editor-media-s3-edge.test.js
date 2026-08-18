@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, handleMediaEdgeHealth, mediaEdgeHealthPayload, r2Binding } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, handleMediaEdgeHealth, handleMediaR2PutProxy, mediaEdgeHealthPayload, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -232,7 +232,7 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(diag.ready, "0");
   });
 
-  it("reports edge health without leaking secrets", () => {
+  it("reports edge health without leaking secrets", async () => {
     const payload = mediaEdgeHealthPayload({
       S3_ENDPOINT: RENDER_R2_S3_ENDPOINT,
       S3_BUCKET: "yekpare-media",
@@ -243,12 +243,38 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(payload.accessKey, true);
     assert.equal(payload.hostPrefix, "fb9f");
     assert.equal(payload.endpointLength, RENDER_R2_S3_ENDPOINT.length);
-    const res = handleMediaEdgeHealth(
-      new Request("https://turk.eco/api/healthz/media-edge"),
-      { S3_ENDPOINT: RENDER_R2_S3_ENDPOINT, S3_BUCKET: "yekpare-media", S3_ACCESS_KEY_ID: "ak", S3_SECRET_ACCESS_KEY: "sk" },
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response(null, { status: 404 });
+    try {
+      const res = await handleMediaEdgeHealth(
+        new Request("https://turk.eco/api/healthz/media-edge"),
+        { S3_ENDPOINT: RENDER_R2_S3_ENDPOINT, S3_BUCKET: "yekpare-media", S3_ACCESS_KEY_ID: "ak", S3_SECRET_ACCESS_KEY: "sk" },
+      );
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get("x-yekpare-media"), "health");
+      const body = await res.json();
+      assert.equal(body.s3Probe?.[0]?.host, "fb9f");
+      assert.equal(body.s3Probe?.[0]?.status, 404);
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it("rejects unauthenticated R2 put proxy requests", async () => {
+    const res = await handleMediaR2PutProxy(
+      new Request("https://turk.eco/api/media/r2-put-proxy", {
+        method: "POST",
+        headers: {
+          "x-yekpare-r2-fname": "cover.webp",
+          "x-yekpare-r2-mime": "image/webp",
+          "x-yekpare-r2-exp": String(Date.now() + 60_000),
+          "x-yekpare-r2-nonce": "abc",
+        },
+        body: new Uint8Array([1, 2, 3]),
+      }),
+      { HM_EDGE_BRIDGE_SECRET: "test-secret" },
     );
-    assert.equal(res.status, 200);
-    assert.equal(res.headers.get("x-yekpare-media"), "health");
+    assert.equal(res.status, 401);
   });
 
   it("GETs path-style /yekpare-media/<file> without a doubled prefix", async () => {

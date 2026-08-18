@@ -23,7 +23,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
-import { handleMediaEdgeHealth, handleMediaGetFromR2, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
+import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
   isYektubeSpaHtml,
@@ -2146,8 +2146,11 @@ export default {
       }
     }
 
-    const mediaEdgeHealth = handleMediaEdgeHealth(request, env);
+    const mediaEdgeHealth = await handleMediaEdgeHealth(request, env);
     if (mediaEdgeHealth) return mediaEdgeHealth;
+
+    const mediaPutProxy = await handleMediaR2PutProxy(request, env);
+    if (mediaPutProxy) return mediaPutProxy;
 
     // Haber görselleri — R2'de varsa Container'a gitmeden kenardan.
     const mediaMiss = {};

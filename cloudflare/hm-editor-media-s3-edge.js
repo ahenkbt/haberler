@@ -299,7 +299,29 @@ function s3ClientWithCreds(creds, env) {
     secretAccessKey: creds.secretAccessKey,
     service: "s3",
     region: normalizeEnvValue(env?.S3_REGION) || "auto",
+    retries: 1,
+    initRetryMs: 50,
   });
+}
+
+function hostPrefix4(endpoint) {
+  return String(endpoint || "").replace(/^https?:\/\//i, "").slice(0, 4);
+}
+
+function noteHostAttempt(attempts, endpoint, status) {
+  const tag = `${hostPrefix4(endpoint)}:${status}`;
+  const host = hostPrefix4(endpoint);
+  const idx = attempts.findIndex((a) => a.startsWith(`${host}:`));
+  if (idx >= 0) attempts[idx] = tag;
+  else attempts.push(tag);
+}
+
+function bytesForS3Body(bytes) {
+  if (bytes instanceof ArrayBuffer) return bytes;
+  if (ArrayBuffer.isView(bytes)) {
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  }
+  return bytes;
 }
 
 function s3ObjectUrl(endpoint, env, fname) {
@@ -381,18 +403,133 @@ export function mediaEdgeHealthPayload(env) {
   };
 }
 
-export function handleMediaEdgeHealth(request, env) {
+async function probeS3HostsFromWorker(env) {
+  const creds = s3CredentialSets(env)[0];
+  const endpoints = s3EndpointCandidates(env);
+  const bucket = s3BucketName(env);
+  if (!creds || !endpoints.length || !bucket) return [];
+  const client = s3ClientWithCreds(creds, env);
+  const out = [];
+  for (const endpoint of endpoints) {
+    try {
+      const res = await client.fetch(`${endpoint}/${bucket}/healthz-probe-object`, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(4000),
+      });
+      out.push({ host: hostPrefix4(endpoint), status: res ? res.status : 0 });
+    } catch (err) {
+      const msg = String(err?.message || err);
+      out.push({ host: hostPrefix4(endpoint), status: /tls|handshake|EPROTO/i.test(msg) ? "tls" : "err" });
+    }
+  }
+  return out;
+}
+
+export async function handleMediaEdgeHealth(request, env) {
   const method = String(request.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") return null;
   const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
   if (path !== "/api/healthz/media-edge") return null;
-  return new Response(JSON.stringify(mediaEdgeHealthPayload(env)), {
+  const payload = mediaEdgeHealthPayload(env);
+  if (method === "GET") {
+    payload.s3Probe = await probeS3HostsFromWorker(env);
+  }
+  return new Response(JSON.stringify(payload), {
     status: 200,
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
       "x-yekpare-frontend": "cloudflare-worker",
       "x-yekpare-media": "health",
+    },
+  });
+}
+
+function edgeBridgeSecret(env) {
+  const s = String(env?.HM_EDGE_BRIDGE_SECRET || "").trim();
+  return s || "yekpare-hm-kh-bridge-20260727-v1";
+}
+
+async function hmacSha256Base64Url(secret, message) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(String(secret)),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(String(message)));
+  const bytes = new Uint8Array(sig);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function timingSafeEqualString(a, b) {
+  const left = String(a || "");
+  const right = String(b || "");
+  if (left.length !== right.length) return false;
+  let out = 0;
+  for (let i = 0; i < left.length; i++) out |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  return out === 0;
+}
+
+/**
+ * Container → Worker R2 yazma. Node OpenSSL R2 S3 API'ye TLS alert 40 verir;
+ * Worker fetch aynı nesneyi yazabilir.
+ */
+export async function handleMediaR2PutProxy(request, env) {
+  const method = String(request.method || "GET").toUpperCase();
+  if (method !== "POST") return null;
+  const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
+  if (path !== "/api/media/r2-put-proxy") return null;
+
+  const fname = String(request.headers.get("x-yekpare-r2-fname") || "").trim();
+  const mime = String(request.headers.get("x-yekpare-r2-mime") || "application/octet-stream").trim();
+  const exp = String(request.headers.get("x-yekpare-r2-exp") || "").trim();
+  const nonce = String(request.headers.get("x-yekpare-r2-nonce") || "").trim();
+  const sig = String(request.headers.get("x-yekpare-r2-proxy") || "").trim();
+  if (!fname || fname.includes("..") || !/^[a-zA-Z0-9._-]+$/.test(fname)) {
+    return new Response(JSON.stringify({ error: "Geçersiz dosya adı" }), {
+      status: 400,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    });
+  }
+  const expMs = Number(exp);
+  if (!Number.isFinite(expMs) || expMs < Date.now() || expMs > Date.now() + 5 * 60_000) {
+    return new Response(JSON.stringify({ error: "Köprü oturumu geçersiz" }), {
+      status: 401,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    });
+  }
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  if (!bytes.length || bytes.length > MAX_BYTES_VIDEO) {
+    return new Response(JSON.stringify({ error: "Dosya boş veya çok büyük" }), {
+      status: 400,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    });
+  }
+  const canonical = `r2-put\n${exp}\n${nonce}\n${fname}\n${mime}\n${bytes.length}`;
+  const expected = await hmacSha256Base64Url(edgeBridgeSecret(env), canonical);
+  if (!timingSafeEqualString(sig, expected)) {
+    return new Response(JSON.stringify({ error: "Kimlik doğrulama gerekli" }), {
+      status: 401,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    });
+  }
+  const saved = await putBytesToR2(env, fname, bytes, mime);
+  if (saved.error) {
+    return new Response(JSON.stringify({ error: saved.error }), {
+      status: 502,
+      headers: { "content-type": "application/json; charset=utf-8", "x-yekpare-media": "r2-proxy-fail" },
+    });
+  }
+  return new Response(JSON.stringify({ url: saved.url }), {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "x-yekpare-frontend": "cloudflare-worker",
+      "x-yekpare-media": "r2-proxy",
     },
   });
 }
@@ -481,6 +618,7 @@ export async function handleMediaGetFromR2(request, env, diag) {
   const creds = s3CredentialSets(env);
   const endpoints = s3EndpointCandidates(env);
   let lastS3 = "none";
+  const attempts = [];
   const keyNames = listMediaObjectKeys(env, fname);
   if (creds.length && endpoints.length) {
     for (const cred of creds) {
@@ -493,7 +631,8 @@ export async function handleMediaGetFromR2(request, env, diag) {
               method,
               signal: AbortSignal.timeout(4000),
             });
-            lastS3 = `${endpoint.slice(8, 12)}:${res ? res.status : "0"}`;
+            lastS3 = `${hostPrefix4(endpoint)}:${res ? res.status : "0"}`;
+            noteHostAttempt(attempts, endpoint, res ? res.status : 0);
             if (res && res.ok) {
               return respond(
                 res.body,
@@ -503,33 +642,28 @@ export async function handleMediaGetFromR2(request, env, diag) {
               );
             }
           } catch (err) {
-            lastS3 = `${endpoint.slice(8, 12)}:tls`;
-            console.error("[media-r2-get]", endpoint.slice(8, 12), String(err?.message || err).slice(0, 160));
+            lastS3 = `${hostPrefix4(endpoint)}:tls`;
+            noteHostAttempt(attempts, endpoint, "tls");
+            console.error("[media-r2-get]", hostPrefix4(endpoint), String(err?.message || err).slice(0, 160));
           }
         }
       }
     }
   }
 
-  console.error("[media-r2-miss]", lastS3, "ready", s3MediaEnvReady(env) ? "1" : "0", "hosts", endpoints.length);
-  markMiss(lastS3);
+  const missLabel = attempts.length ? attempts.join(",") : lastS3;
+  console.error("[media-r2-miss]", missLabel, "ready", s3MediaEnvReady(env) ? "1" : "0", "hosts", endpoints.length);
+  markMiss(missLabel);
   // 404 dönme — Worker.js Container'a düşsün (eski S3 env / public URL).
   return null;
 }
 
-/**
- * @returns {Promise<{ url: string }|{ error: string }>}
- */
-export async function saveMediaDataUrlToS3(env, dataUrl, title) {
-  const parsed = parseDataUrl(dataUrl);
-  if (parsed.error) return { error: parsed.error };
-
-  const fname = `${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}.${parsed.ext}`;
+async function putBytesToR2(env, fname, bytes, mime) {
   const key = objectKey(env, fname);
   const bound = r2Binding(env);
   if (bound && typeof bound.put === "function") {
     try {
-      await bound.put(key, parsed.bytes, { httpMetadata: { contentType: parsed.mime } });
+      await bound.put(key, bytes, { httpMetadata: { contentType: mime } });
       return { url: publicUploadUrl(fname) };
     } catch (err) {
       console.error("[media-r2-put]", String(err?.message || err).slice(0, 160));
@@ -542,33 +676,45 @@ export async function saveMediaDataUrlToS3(env, dataUrl, title) {
     return { error: "S3 yapılandırması eksik" };
   }
 
+  const body = bytesForS3Body(bytes);
   let lastDetail = "";
   for (const cred of creds) {
     const client = s3ClientWithCreds(cred, env);
     for (const endpoint of endpoints) {
-      const url = s3ObjectUrl(endpoint, env, fname);
+      const url = `${endpoint}/${s3BucketName(env)}/${key}`;
       let res;
       try {
         res = await client.fetch(url, {
           method: "PUT",
-          body: parsed.bytes,
+          body,
           headers: {
-            "content-type": parsed.mime,
-            "content-length": String(parsed.bytes.length),
+            "content-type": mime,
           },
+          signal: AbortSignal.timeout(15000),
         });
       } catch (err) {
-        lastDetail = `S3 yükleme hatası: ${String(err?.message || err).slice(0, 160)}`;
+        lastDetail = `${hostPrefix4(endpoint)}:tls ${String(err?.message || err).slice(0, 120)}`;
         continue;
       }
 
       if (res.ok) {
         return { url: publicUploadUrl(fname) };
       }
-      const detail = (await res.text()).trim().slice(0, 200);
-      lastDetail = `S3 yükleme reddedildi (HTTP ${res.status})${detail ? `: ${detail}` : ""}`;
+      const detail = (await res.text()).trim().slice(0, 160);
+      lastDetail = `${hostPrefix4(endpoint)}:HTTP ${res.status}${detail ? `: ${detail}` : ""}`;
     }
   }
 
   return { error: lastDetail || "S3 yapılandırması eksik" };
+}
+
+/**
+ * @returns {Promise<{ url: string }|{ error: string }>}
+ */
+export async function saveMediaDataUrlToS3(env, dataUrl, title) {
+  const parsed = parseDataUrl(dataUrl);
+  if (parsed.error) return { error: parsed.error };
+
+  const fname = `${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}.${parsed.ext}`;
+  return putBytesToR2(env, fname, parsed.bytes, parsed.mime);
 }

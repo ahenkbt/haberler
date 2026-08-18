@@ -5,6 +5,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import type { Readable } from "node:stream";
+import { createHmac, randomBytes } from "node:crypto";
 import {
   coerceS3AccessKeyId,
   coerceS3Bucket,
@@ -14,6 +15,7 @@ import {
   normalizeEnvValue,
   s3EndpointHostPrefixFromUrl,
 } from "./mediaStorageConfig";
+import { getHmEdgeBridgeSecret } from "./hm-edge-session-bridge.js";
 
 const clients = new Map<string, S3Client>();
 let cachedEndpoint: string | null = null;
@@ -206,6 +208,44 @@ export async function s3ObjectExists(name: string): Promise<boolean> {
   return false;
 }
 
+function workerMediaOrigin(): string {
+  const raw = String(process.env.MEDIA_WORKER_ORIGIN || process.env.SITE_PUBLIC_ORIGIN || "https://turk.eco")
+    .trim()
+    .replace(/\/+$/, "");
+  return raw || "https://turk.eco";
+}
+
+/** Node OpenSSL R2 S3 API'ye TLS alert 40 verir; Worker fetch aynı nesneyi yazar. */
+export async function putS3ObjectViaWorkerProxy(
+  name: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
+  const secret = getHmEdgeBridgeSecret();
+  const exp = String(Date.now() + 90_000);
+  const nonce = randomBytes(16).toString("hex");
+  const mime = contentType || "application/octet-stream";
+  const canonical = `r2-put\n${exp}\n${nonce}\n${name}\n${mime}\n${body.length}`;
+  const sig = createHmac("sha256", secret).update(canonical).digest("base64url");
+  const res = await fetch(`${workerMediaOrigin()}/api/media/r2-put-proxy`, {
+    method: "POST",
+    headers: {
+      "content-type": mime,
+      "x-yekpare-r2-proxy": sig,
+      "x-yekpare-r2-exp": exp,
+      "x-yekpare-r2-nonce": nonce,
+      "x-yekpare-r2-fname": name,
+      "x-yekpare-r2-mime": mime,
+    },
+    body: new Uint8Array(body),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim().slice(0, 200);
+    throw new Error(`Worker R2 proxy HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+  }
+}
+
 export async function putS3Object(
   name: string,
   body: Buffer,
@@ -213,9 +253,11 @@ export async function putS3Object(
 ): Promise<void> {
   const endpoints = endpointsToTry();
   if (endpoints.length === 0) {
-    throw new Error("S3_ENDPOINT tanımlı değil — R2/S3 uyumlu depolama için S3_ENDPOINT ekleyin.");
+    await putS3ObjectViaWorkerProxy(name, body, contentType);
+    return;
   }
   let lastErr: unknown = null;
+  let sawTls = false;
   for (const ep of endpoints) {
     try {
       await clientFor(ep).send(
@@ -230,7 +272,16 @@ export async function putS3Object(
       return;
     } catch (e: unknown) {
       lastErr = e;
+      if (isS3TransportError(e)) sawTls = true;
       if (!shouldTryNextEndpoint(e)) throw e;
+    }
+  }
+  if (sawTls || lastErr) {
+    try {
+      await putS3ObjectViaWorkerProxy(name, body, contentType);
+      return;
+    } catch (proxyErr) {
+      lastErr = proxyErr;
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr ?? "S3 put failed"));
