@@ -285,6 +285,7 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(payload.hostPrefix, "fb9f");
     assert.equal(payload.cfApiToken, false);
     assert.equal(payload.r2AccountPrefix, "fb9fc9dc");
+    assert.ok(payload.publicBases >= 1);
     assert.equal(payload.endpointLength, RENDER_R2_S3_ENDPOINT.length);
     const origFetch = globalThis.fetch;
     globalThis.fetch = async () => new Response(null, { status: 404 });

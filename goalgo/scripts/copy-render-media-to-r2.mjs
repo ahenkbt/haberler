@@ -102,7 +102,19 @@ function s3Endpoint() {
   return /^https?:\/\//i.test(raw) ? raw.replace(/\/+$/, "") : `https://${raw.replace(/\/+$/, "")}`;
 }
 
+function r2AccountId() {
+  const n = envVal("R2_ACCOUNT_ID").replace(/[^a-f0-9]/gi, "");
+  if (n === "fb9f9c9dc1991b7cc17ba58ab3c2e8726") return "fb9fc9dc1991b7cc17ba58ab3c2e8726";
+  if (/^[a-f0-9]{32}$/i.test(n)) return n.toLowerCase();
+  return "fb9fc9dc1991b7cc17ba58ab3c2e8726";
+}
+
+function r2CfApiToken() {
+  return envVal("R2_CF_API_TOKEN") || envVal("R2_API_TOKEN");
+}
+
 function requireS3Env() {
+  if (envVal("S3_BUCKET") && r2CfApiToken()) return;
   const missing = ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"].filter(
     (k) => !envVal(k),
   );
@@ -126,10 +138,6 @@ function objectUrl(fname) {
   return `${s3Endpoint()}/${envVal("S3_BUCKET")}/${key}`;
 }
 
-function cfAccountId() {
-  return envVal("CLOUDFLARE_ACCOUNT_ID") || "16f5b996194174624e7969a3658bd2bb";
-}
-
 function errText(err) {
   const cause = err?.cause ? ` cause=${err.cause.message || err.cause}` : "";
   return `${err?.message || err}${cause}`;
@@ -138,6 +146,23 @@ function errText(err) {
 let r2HeadLogged = false;
 
 async function r2Exists(fname) {
+  const token = r2CfApiToken();
+  if (token) {
+    try {
+      const res = await fetch(cfApiObjectUrl(fname), {
+        method: "HEAD",
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) return true;
+    } catch (err) {
+      if (!r2HeadLogged) {
+        r2HeadLogged = true;
+        console.warn(`[copy-r2] R2 CF HEAD başarısız (devam): ${errText(err)}`);
+      }
+    }
+  }
+  if (!envVal("S3_ACCESS_KEY_ID") || !s3Endpoint()) return false;
   try {
     const res = await aws().fetch(objectUrl(fname), { method: "HEAD" });
     return res.ok;
@@ -148,6 +173,13 @@ async function r2Exists(fname) {
     }
     return false;
   }
+}
+
+function cfApiObjectUrl(fname) {
+  return (
+    `https://api.cloudflare.com/client/v4/accounts/${r2AccountId()}` +
+    `/r2/buckets/${encodeURIComponent(envVal("S3_BUCKET"))}/objects/${encodeURIComponent(fname)}`
+  );
 }
 
 async function r2PutS3(fname, buf, contentType) {
@@ -166,12 +198,9 @@ async function r2PutS3(fname, buf, contentType) {
 }
 
 async function r2PutCfApi(fname, buf, contentType) {
-  const token = envVal("CLOUDFLARE_API_TOKEN");
-  if (!token) throw new Error("CLOUDFLARE_API_TOKEN yok");
-  const url =
-    `https://api.cloudflare.com/client/v4/accounts/${cfAccountId()}` +
-    `/r2/buckets/${encodeURIComponent(envVal("S3_BUCKET"))}/objects/${encodeURIComponent(fname)}`;
-  const res = await fetch(url, {
+  const token = r2CfApiToken();
+  if (!token) throw new Error("R2_CF_API_TOKEN yok");
+  const res = await fetch(cfApiObjectUrl(fname), {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -187,12 +216,16 @@ async function r2PutCfApi(fname, buf, contentType) {
 }
 
 async function r2Put(fname, buf, contentType) {
-  try {
-    await r2PutS3(fname, buf, contentType);
-  } catch (err) {
-    console.warn(`[copy-r2] S3 PUT başarısız, CF API deneniyor: ${errText(err)}`);
-    await r2PutCfApi(fname, buf, contentType);
+  if (r2CfApiToken()) {
+    try {
+      await r2PutCfApi(fname, buf, contentType);
+      return;
+    } catch (err) {
+      if (!envVal("S3_ACCESS_KEY_ID") || !s3Endpoint()) throw err;
+      console.warn(`[copy-r2] CF API PUT başarısız, S3 deneniyor: ${errText(err)}`);
+    }
   }
+  await r2PutS3(fname, buf, contentType);
 }
 
 async function probeR2() {
@@ -203,7 +236,20 @@ async function probeR2() {
       return s3Endpoint() || "(boş)";
     }
   })();
-  console.log(`[copy-r2] R2 host=${host} bucket=${envVal("S3_BUCKET")}`);
+  console.log(`[copy-r2] R2 host=${host || "cf-api"} account=${r2AccountId().slice(0, 8)} bucket=${envVal("S3_BUCKET")} cfToken=${Boolean(r2CfApiToken())}`);
+  if (r2CfApiToken()) {
+    try {
+      const res = await fetch(cfApiObjectUrl("yekpare-r2-probe"), {
+        method: "HEAD",
+        headers: { Authorization: `Bearer ${r2CfApiToken()}` },
+        signal: AbortSignal.timeout(8_000),
+      });
+      console.log(`[copy-r2] R2 CF probe HTTP ${res.status}`);
+      return;
+    } catch (err) {
+      console.warn(`[copy-r2] R2 CF probe: ${errText(err)}`);
+    }
+  }
   try {
     const res = await aws().fetch(objectUrl("yekpare-r2-probe"), { method: "HEAD" });
     console.log(`[copy-r2] R2 S3 probe HTTP ${res.status}`);

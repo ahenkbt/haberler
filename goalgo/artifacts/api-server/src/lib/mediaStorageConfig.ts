@@ -102,6 +102,10 @@ const R2_MEDIA_ACCOUNT_ID_TYPO = "fb9f9c9dc1991b7cc17ba58ab3c2e8726";
 export const RENDER_R2_S3_ENDPOINT =
   `https://${R2_MEDIA_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
+/** Dashboard public development URL (yekpare-media). */
+export const R2_MEDIA_PUBLIC_BASE =
+  "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
+
 /** wrangler.toml account_id — Worker secret bloğunda yanlışlıkla ilk sıraya düşebiliyor. */
 export const CF_ACCOUNT_R2_S3_ENDPOINT =
   "https://16f5b996194174624e7969a3658bd2bb.r2.cloudflarestorage.com";
@@ -431,6 +435,9 @@ export function listR2PublicBaseCandidates(): string[] {
     }
   };
   add(process.env.S3_PUBLIC_BASE_URL);
+  if (coerceS3Bucket(process.env.S3_BUCKET, s3EnvBlobText()) === "yekpare-media") {
+    add(R2_MEDIA_PUBLIC_BASE);
+  }
   const hit = readFirstEnv(S3_ENDPOINT_KEYS);
   const blob = `${process.env.S3_PUBLIC_BASE_URL || ""}\n${hit?.value || ""}`;
   for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);

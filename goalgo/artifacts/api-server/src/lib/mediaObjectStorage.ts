@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 import { createHmac, randomBytes } from "node:crypto";
 import {
   coerceS3AccessKeyId,

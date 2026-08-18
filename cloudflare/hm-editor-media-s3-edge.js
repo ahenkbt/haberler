@@ -103,6 +103,10 @@ const R2_MEDIA_ACCOUNT_ID_TYPO = "fb9f9c9dc1991b7cc17ba58ab3c2e8726";
 export const RENDER_R2_S3_ENDPOINT =
   `https://${R2_MEDIA_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
+/** Dashboard: yekpare-media → Settings → Public development URL. */
+export const R2_MEDIA_PUBLIC_BASE =
+  "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev";
+
 /** wrangler.toml account_id — Worker secret bloğunda yanlışlıkla ilk sıraya düşebiliyor. */
 export const CF_ACCOUNT_R2_S3_ENDPOINT =
   "https://16f5b996194174624e7969a3658bd2bb.r2.cloudflarestorage.com";
@@ -413,6 +417,7 @@ export function listR2PublicBaseCandidates(env) {
   const blob = s3BlobText(env);
   add(assignmentFromEnvBlob(blob, "S3_PUBLIC_BASE_URL"));
   add(env?.S3_PUBLIC_BASE_URL);
+  if (s3BucketName(env) === "yekpare-media") add(R2_MEDIA_PUBLIC_BASE);
   for (const m of blob.matchAll(R2_PUBLIC_URL_RE)) add(m[0]);
   for (const m of blob.matchAll(/https?:\/\/[^\s"'=]+/gi)) {
     if (!/\.r2\.cloudflarestorage\.com/i.test(m[0])) add(m[0]);
