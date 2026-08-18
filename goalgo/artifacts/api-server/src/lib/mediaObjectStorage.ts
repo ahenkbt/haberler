@@ -237,7 +237,7 @@ export async function putS3ObjectViaWorkerProxy(
       "x-yekpare-r2-fname": name,
       "x-yekpare-r2-mime": mime,
     },
-    body,
+    body: new Uint8Array(body),
     signal: AbortSignal.timeout(20_000),
   });
   if (!res.ok) {
