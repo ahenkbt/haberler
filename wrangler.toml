@@ -25,11 +25,15 @@ HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 # Kapaklar Render dual-write R2 hesabında (fb9f…), wrangler account_id (16f5…) değil.
 # GitHub S3_ENDPOINT yapıştırması (~362 karakter) secret olarak ezerdi; workflow
 # artık GitHub secret'ını yazmaz, kanonik fb9f hostunu put eder.
-S3_ENDPOINT = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
-R2_ENDPOINT = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 S3_BUCKET = "yekpare-media"
 S3_REGION = "auto"
 S3_FORCE_PATH_STYLE = "true"
+# R2 REST (api.cloudflare.com) — Dashboard secret R2_CF_API_TOKEN. Git'e yazılmaz.
+R2_ACCOUNT_ID = "fb9fc9dc1991b7cc17ba58ab3c2e8726"
+# Bucket Settings → Public development URL (nesne yoksa 404; S3_ENDPOINT'e /yekpare-media eklenmez).
+S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
 
 [[containers]]
 class_name = "GoalgoApiContainer"
@@ -210,5 +214,5 @@ zone_name = "kirsehirhaber.org"
 # pattern = "www.kirsehir.net/*"
 # zone_name = "kirsehir.net"
 
-# redeploy trigger 2026-08-18T13:50:00Z — editör kapak yükleme Worker R2 proxy
+# redeploy trigger 2026-08-18T15:20:00Z — r2.dev public URL + boş bucket gerçeği
 

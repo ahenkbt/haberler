@@ -25,6 +25,9 @@ const ENV_KEYS = [
   "S3_SECRET_ACCESS_KEY",
   "S3_ENDPOINT",
   "S3_PUBLIC_BASE_URL",
+  "R2_CF_API_TOKEN",
+  "R2_API_TOKEN",
+  "R2_ACCOUNT_ID",
   "RAILWAY_VOLUME_MOUNT_PATH",
   "MEDIA_UPLOAD_ROOT",
   "RENDER_DISK_MOUNT_PATH",
@@ -60,7 +63,7 @@ describe("mediaStorageConfig", () => {
     process.env.S3_BUCKET = "yekpare-media";
     process.env.S3_ACCESS_KEY_ID = "key";
     process.env.S3_SECRET_ACCESS_KEY = "secret";
-    process.env.S3_ENDPOINT = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    process.env.S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
 
     expect(getMediaStorageMode()).toBe("s3");
     expect(shouldUseS3ForMediaIo()).toBe(true);
@@ -99,7 +102,7 @@ describe("mediaStorageConfig", () => {
   it("extracts R2 API host from a pasted env block in S3_ENDPOINT", () => {
     snapshotEnv();
     clearMediaEnv();
-    const real = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    const real = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
     process.env.MEDIA_STORAGE_MODE = "s3";
     process.env.S3_BUCKET = "yekpare-media";
     process.env.S3_ACCESS_KEY_ID = "key";
@@ -114,6 +117,22 @@ describe("mediaStorageConfig", () => {
     expect(getS3Endpoint()).toBe(real);
     expect(isS3MediaConfigured()).toBe(true);
     expect(shouldReadS3ForMediaIo()).toBe(true);
+  });
+
+  it("rewrites the 33-char typo R2 account id", () => {
+    const typo = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    expect(coerceR2S3Endpoint(typo)).toBe(RENDER_R2_S3_ENDPOINT);
+  });
+
+  it("treats Cloudflare R2 REST token as enough to serve media", () => {
+    snapshotEnv();
+    clearMediaEnv();
+    process.env.MEDIA_STORAGE_MODE = "s3";
+    process.env.S3_BUCKET = "yekpare-media";
+    process.env.R2_CF_API_TOKEN = "cf-account-token";
+    expect(isS3MediaConfigured()).toBe(true);
+    expect(shouldReadS3ForMediaIo()).toBe(true);
+    expect(shouldUseS3ForMediaIo()).toBe(true);
   });
 
   it("does not keep probing R2 after a runtime TLS failure", () => {

@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 import { createHmac, randomBytes } from "node:crypto";
 import {
   coerceS3AccessKeyId,
@@ -13,6 +13,8 @@ import {
   getS3EndpointCandidates,
   isS3TransportError,
   normalizeEnvValue,
+  r2CfAccountIdFromEnv,
+  r2CfApiTokenFromEnv,
   s3EndpointHostPrefixFromUrl,
 } from "./mediaStorageConfig";
 import { getHmEdgeBridgeSecret } from "./hm-edge-session-bridge.js";
@@ -178,9 +180,34 @@ export async function probeS3Connectivity(): Promise<S3ConnectivityProbe> {
   };
 }
 
+async function existsViaCfApi(name: string): Promise<boolean | null> {
+  const token = r2CfApiTokenFromEnv();
+  if (!token) return null;
+  let sawAuthError = false;
+  for (const key of objectKeysToTry(name)) {
+    try {
+      const res = await fetch(cfApiObjectUrl(key), {
+        method: "HEAD",
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (res.ok) return true;
+      if (res.status === 401 || res.status === 403) sawAuthError = true;
+    } catch {
+      /* sonraki anahtar / S3 */
+    }
+  }
+  if (sawAuthError) return null;
+  return false;
+}
+
 export async function s3ObjectExists(name: string): Promise<boolean> {
+  const viaApi = await existsViaCfApi(name);
+  if (viaApi === true) return true;
+
   const endpoints = endpointsToTry();
   if (endpoints.length === 0) {
+    if (viaApi === false) return false;
     throw new Error("S3_ENDPOINT tanımlı değil — R2/S3 uyumlu depolama için S3_ENDPOINT ekleyin.");
   }
   let lastTransport: unknown = null;
@@ -206,6 +233,55 @@ export async function s3ObjectExists(name: string): Promise<boolean> {
   if (sawNotFound) return false;
   if (lastTransport) throw lastTransport;
   return false;
+}
+
+function cfApiObjectUrl(key: string): string {
+  const account = r2CfAccountIdFromEnv();
+  const bkt = bucket();
+  const path = key
+    .split("/")
+    .map((p) => encodeURIComponent(p))
+    .join("/");
+  return `https://api.cloudflare.com/client/v4/accounts/${account}/r2/buckets/${encodeURIComponent(bkt)}/objects/${path}`;
+}
+
+async function putViaCfApi(name: string, body: Buffer, contentType: string): Promise<boolean> {
+  const token = r2CfApiTokenFromEnv();
+  if (!token) return false;
+  const res = await fetch(cfApiObjectUrl(objectKey(name)), {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": contentType || "application/octet-stream",
+    },
+    body: new Uint8Array(body),
+    signal: AbortSignal.timeout(20_000),
+  });
+  return res.ok;
+}
+
+async function getViaCfApi(
+  name: string,
+): Promise<{ body: Readable; contentType?: string } | null> {
+  const token = r2CfApiTokenFromEnv();
+  if (!token) return null;
+  for (const key of objectKeysToTry(name)) {
+    try {
+      const res = await fetch(cfApiObjectUrl(key), {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!res.ok) continue;
+      const ct = String(res.headers.get("content-type") || "");
+      if (ct.includes("application/json") || ct.includes("text/html")) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 8) continue;
+      return { body: Readable.from(buf), contentType: ct || undefined };
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 function workerMediaOrigin(): string {
@@ -251,6 +327,8 @@ export async function putS3Object(
   body: Buffer,
   contentType: string,
 ): Promise<void> {
+  if (await putViaCfApi(name, body, contentType)) return;
+
   const endpoints = endpointsToTry();
   if (endpoints.length === 0) {
     await putS3ObjectViaWorkerProxy(name, body, contentType);
@@ -290,6 +368,9 @@ export async function putS3Object(
 export async function getS3ObjectStream(
   name: string,
 ): Promise<{ body: Readable; contentType?: string } | null> {
+  const fromApi = await getViaCfApi(name);
+  if (fromApi) return fromApi;
+
   const endpoints = endpointsToTry();
   if (endpoints.length === 0) {
     throw new Error("S3_ENDPOINT tanımlı değil — R2/S3 uyumlu depolama için S3_ENDPOINT ekleyin.");

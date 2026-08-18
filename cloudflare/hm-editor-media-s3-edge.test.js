@@ -26,7 +26,7 @@ describe("hm-editor-media-s3-edge", () => {
   });
 
   it("coerces a pasted S3_ENDPOINT env block to the R2 API host", () => {
-    const real = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    const real = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
     const blob = `S3_ENDPOINT=${real}\nS3_BUCKET=yekpare-media\nS3_PUBLIC_BASE_URL=https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev`;
     assert.equal(coerceR2S3Endpoint(blob), real);
     assert.equal(
@@ -46,6 +46,47 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(listed[0], RENDER_R2_S3_ENDPOINT);
     assert.ok(listed.includes(CF_ACCOUNT_R2_S3_ENDPOINT));
     assert.equal(coerceR2S3Endpoint(blob), RENDER_R2_S3_ENDPOINT);
+  });
+
+  it("rewrites the 33-char typo R2 account id to the real 32-char host", () => {
+    const typo = "https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com";
+    assert.equal(coerceR2S3Endpoint(typo), RENDER_R2_S3_ENDPOINT);
+    assert.equal(
+      s3MediaEnvReady({
+        S3_BUCKET: "yekpare-media",
+        R2_CF_API_TOKEN: "cf-account-token",
+      }),
+      true,
+    );
+  });
+
+  it("serves GET via Cloudflare R2 REST API", async () => {
+    const fname = "rss-1783294058708-840ed3ceeeebd6d7.webp";
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const u = typeof input === "string" ? input : String(input && input.url ? input.url : input);
+      if (u.includes("api.cloudflare.com") && u.includes(fname)) {
+        return new Response(new Uint8Array([0x52, 0x49, 0x46, 0x46]), {
+          status: 200,
+          headers: { "content-type": "image/webp", "content-length": "4" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    };
+    try {
+      const res = await handleMediaGetFromR2(
+        new Request(`https://turk.eco/api/media/uploads/${fname}`),
+        {
+          S3_BUCKET: "yekpare-media",
+          R2_CF_API_TOKEN: "tok",
+          R2_ACCOUNT_ID: "fb9fc9dc1991b7cc17ba58ab3c2e8726",
+        },
+      );
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get("x-yekpare-media"), "r2-cfapi");
+    } finally {
+      globalThis.fetch = origFetch;
+    }
   });
 
   it("serves GET from the native R2 bucket binding without S3 API", async () => {
@@ -106,7 +147,7 @@ describe("hm-editor-media-s3-edge", () => {
 
   it("extracts bucket and keys from a pasted env block", () => {
     const blob = [
-      "S3_ENDPOINT=https://fb9f9c9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
+      "S3_ENDPOINT=https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com",
       "S3_BUCKET=yekpare-media",
       "S3_ACCESS_KEY_ID=abcdef0123456789abcdef0123456789",
       "S3_SECRET_ACCESS_KEY=secretsecretsecretsecretsecretsecret12",
@@ -242,6 +283,9 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(payload.ready, true);
     assert.equal(payload.accessKey, true);
     assert.equal(payload.hostPrefix, "fb9f");
+    assert.equal(payload.cfApiToken, false);
+    assert.equal(payload.r2AccountPrefix, "fb9fc9dc");
+    assert.ok(payload.publicBases >= 1);
     assert.equal(payload.endpointLength, RENDER_R2_S3_ENDPOINT.length);
     const origFetch = globalThis.fetch;
     globalThis.fetch = async () => new Response(null, { status: 404 });
@@ -255,6 +299,38 @@ describe("hm-editor-media-s3-edge", () => {
       const body = await res.json();
       assert.equal(body.s3Probe?.[0]?.host, "fb9f");
       assert.equal(body.s3Probe?.[0]?.status, 404);
+      assert.equal(body.cfApiProbe?.status, "missing");
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it("probes Cloudflare R2 REST with the account API token", async () => {
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const u = typeof input === "string" ? input : String(input && input.url ? input.url : input);
+      if (u.includes("api.cloudflare.com") && u.includes("healthz-probe-object")) {
+        return new Response(JSON.stringify({ success: false }), {
+          status: 404,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    };
+    try {
+      const res = await handleMediaEdgeHealth(
+        new Request("https://turk.eco/api/healthz/media-edge"),
+        {
+          S3_BUCKET: "yekpare-media",
+          R2_CF_API_TOKEN: "tok",
+          R2_ACCOUNT_ID: "fb9fc9dc1991b7cc17ba58ab3c2e8726",
+        },
+      );
+      const body = await res.json();
+      assert.equal(body.cfApiToken, true);
+      assert.equal(body.r2AccountPrefix, "fb9fc9dc");
+      assert.equal(body.ready, true);
+      assert.equal(body.cfApiProbe?.status, 404);
     } finally {
       globalThis.fetch = origFetch;
     }
