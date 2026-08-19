@@ -10,6 +10,7 @@ export const HM_RESERVED_HM_ROUTE_SEGMENTS = new Set([
   "etiketler",
   "tag",
   "haber",
+  "makale",
   "yazar",
   "yazarlar",
   "kategori",

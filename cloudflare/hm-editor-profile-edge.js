@@ -1193,7 +1193,12 @@ async function handleEditorMeGet(request, env) {
       domain3: site.domain3 ?? null,
       displayName: site.display_name,
       contactJson: site.contact_json,
-      layoutJson: site.layout_json,
+      layoutJson:
+        site.layout_json == null
+          ? null
+          : typeof site.layout_json === "string"
+            ? site.layout_json
+            : JSON.stringify(site.layout_json),
       seoVerification: parseSeoVerification(site.verification_json),
       createdAt: site.created_at,
     },

@@ -91,7 +91,7 @@ export async function resolveNewsArticleBySlug(
   let isCorporate = false;
   if (siteScoped) {
     const site = await getHmNewsSiteByIdCompat(siteId!);
-    isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
+    isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson));
   }
 
   // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." parseInt ile yanlış id'ye düşmesin.
@@ -201,6 +201,18 @@ export async function resolveNewsArticleBySlug(
     }
   }
 
+  // Vitrinde görünen hibrit/RSS haber başka siteId ile kayıtlı olsa da tıklanınca açılsın.
+  let crossSiteFallback = false;
+  if (!row && !mak && siteScoped) {
+    const [anyLocal] = await readDb.select().from(newsTable).where(eq(newsTable.slug, slugKey)).limit(1);
+    row = acceptRowForSlug(anyLocal);
+    if (!row) {
+      const [anyMain] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, slugKey)).limit(1);
+      row = acceptRowForSlug(anyMain);
+    }
+    if (row) crossSiteFallback = true;
+  }
+
   if (!row && !mak) return null;
 
   if (mak) {
@@ -208,7 +220,7 @@ export async function resolveNewsArticleBySlug(
     return serializeHmMakaleAsNews({ ...mak, views: mak.views + 1 }, ctx);
   }
 
-  if (siteScoped && !(await newsRowBelongsToSite(row!, siteId!, readDb, isCorporate))) return null;
+  if (siteScoped && !crossSiteFallback && !(await newsRowBelongsToSite(row!, siteId!, readDb, isCorporate))) return null;
   await dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id));
   return serializeNews({ ...row!, views: row!.views + 1 }, ctx);
 }
@@ -332,7 +344,7 @@ async function loadKoseOtherAuthors(authorId: number, siteId: number | null) {
 async function resolveHmSiteAuthorsPublicEnabled(siteId: number | null): Promise<boolean> {
   if (siteId == null || siteId <= 0) return true;
   const site = await getHmNewsSiteByIdCompat(siteId);
-  const layout = parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null);
+  const layout = parseHmLayoutJson(site?.layoutJson);
   if (!isHmCorporateLayout(layout)) return true;
   return resolveHmCorporateAuthorsEnabledFromLayout(layout);
 }

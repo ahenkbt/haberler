@@ -3085,15 +3085,25 @@ export function sanitizeHmPublicLayoutPrefs(
 
 /** API'den gelen `layout_json` metnini güvenli biçimde tercihlere çevirir. */
 export function parseNewsSiteLayoutFromJson(
-  raw: string | null | undefined,
+  raw: string | Record<string, unknown> | null | undefined,
   siteSlug?: string | null,
 ): NewsSiteLayoutPrefs {
-  if (!raw || !String(raw).trim()) {
+  let text: string | null = null;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    try {
+      text = JSON.stringify(raw);
+    } catch {
+      text = null;
+    }
+  } else if (typeof raw === "string") {
+    text = raw;
+  }
+  if (!text || !String(text).trim() || String(text).trim() === "[object Object]") {
     const base = { ...defaultNewsSiteLayoutPrefs };
     return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
   }
   try {
-    const j = JSON.parse(raw) as Partial<NewsSiteLayoutPrefs>;
+    const j = JSON.parse(text) as Partial<NewsSiteLayoutPrefs>;
     const merged = { ...defaultNewsSiteLayoutPrefs, ...j };
     const logoUrl =
       (typeof merged.logoUrl === "string" && merged.logoUrl.trim().length > 0

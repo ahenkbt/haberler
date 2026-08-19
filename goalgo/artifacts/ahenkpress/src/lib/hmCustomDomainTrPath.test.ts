@@ -22,12 +22,10 @@ describe("hmCustomDomainTrPath — harita kök yolları", () => {
     expect(toHmInternalTrPath("/maps?city=ankara", "vatanhaber")).toBeNull();
   });
 
-  it("hmPublicHref keeps /maps at domain root for editor custom domain", () => {
-    const href = hmPublicHref("/maps", {
-      domain: "vatanhaber.net",
-      slug: "vatanhaber",
-      siteId: 42,
-    });
-    expect(href).toBe("https://vatanhaber.net/maps");
+  it("does not prefix /editor/sayfalar with /tr/{slug} on custom domains", () => {
+    expect(isHmCustomDomainInfrastructurePath("/editor")).toBe(true);
+    expect(isHmCustomDomainInfrastructurePath("/editor/sayfalar")).toBe(true);
+    expect(toHmInternalTrPath("/editor/sayfalar", "ankarahabergundemi")).toBeNull();
+    expect(toHmInternalTrPath("/editor/giris", "asg")).toBeNull();
   });
 });

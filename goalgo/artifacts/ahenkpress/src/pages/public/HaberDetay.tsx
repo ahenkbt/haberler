@@ -16,7 +16,6 @@ import { PORTAL_BRAND_SHORT } from "@/lib/portalBrand";
 import { hmPublicSeoPath, hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { rewriteNewsBodyLinksForHm } from "@/lib/rewriteNewsBodyLinksForHm";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
-import HmRedirectToSonDakika from "@/pages/public/HmRedirectToSonDakika";
 import { HmYekpareFeaturesBand } from "@/components/HmYekpareFeaturesBand";
 import {
   EditorialNewsArticleLayout,
@@ -152,16 +151,18 @@ export default function HaberDetay() {
     }
   }, [location, slug, news, navigate, h, articlePublicPath]);
 
-  /** Özel alanda eski `/haber/...` adresi → `/tr/{siteSlug}/haber/...` */
+  /** Özel alanda eski `/haber/...` veya `/makale/...` adresi → `/tr/{siteSlug}/...` */
   useEffect(() => {
     const path = (location.split("?")[0] ?? "").trim();
-    if (!slug || !path.startsWith("/haber/")) return;
+    if (!slug) return;
+    const kind = path.startsWith("/makale/") ? "makale" : path.startsWith("/haber/") ? "haber" : null;
+    if (!kind) return;
     if (isDefaultPortalHost(host)) return;
     let cancelled = false;
     const cachedSlug = resolveHmDomainSlugHint(host);
     if (cachedSlug) {
       navigate(
-        `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(cachedSlug)}/haber/${encodeURIComponent(slug)}`,
+        `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(cachedSlug)}/${kind}/${encodeURIComponent(slug)}`,
         { replace: true },
       );
       return;
@@ -172,7 +173,7 @@ export default function HaberDetay() {
         if (!meta?.slug || cancelled) return;
         writeHmDomainSlugCache(host, meta.slug);
         navigate(
-          `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(meta.slug)}/haber/${encodeURIComponent(slug)}`,
+          `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(meta.slug)}/${kind}/${encodeURIComponent(slug)}`,
           { replace: true },
         );
       } catch {
@@ -383,7 +384,18 @@ export default function HaberDetay() {
         </div>
       );
     }
-    if (hmCtx) return <HmRedirectToSonDakika />;
+    if (hmCtx) {
+      return (
+        <div className="min-h-screen hm-article-detail-page">
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <p className="text-xl font-bold text-gray-600">Haber bulunamadı.</p>
+            <Link href={h("/")} className="hover:underline font-semibold" style={{ color: accent }}>
+              Ana Sayfaya Dön
+            </Link>
+          </div>
+        </div>
+      );
+    }
     return (
     <div className="min-h-screen hm-article-detail-page">
       <div className="flex flex-col items-center justify-center h-64 gap-4">

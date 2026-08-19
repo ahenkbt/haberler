@@ -1,14 +1,72 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
+  executeNewsDbWrite,
   getNewsDbForRead,
   newsSlugRedirectsTable,
   newsTable,
   type NewsRow,
 } from "@workspace/db";
 import { loadNewsContext } from "./news-context.js";
+import { logger } from "./logger.js";
 
 const HM_PREFIX = "tr";
+
+let newsSlugRedirectsTablePromise: Promise<void> | null = null;
+
+/** Neon'da 0117 henüz uygulanmadıysa page-bundle 500 olmasın. */
+export function ensureNewsSlugRedirectsTable(): Promise<void> {
+  if (newsSlugRedirectsTablePromise) return newsSlugRedirectsTablePromise;
+
+  newsSlugRedirectsTablePromise = (async () => {
+    await executeNewsDbWrite(sql`
+      CREATE TABLE IF NOT EXISTS "news_slug_redirects" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "slug" text NOT NULL,
+        "site_id" integer,
+        "title" text,
+        "category_slug" text,
+        "search_query" text NOT NULL,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "updated_at" timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    try {
+      await executeNewsDbWrite(sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS "news_slug_redirects_slug_site_unique"
+          ON "news_slug_redirects" ("slug", "site_id")
+      `);
+    } catch {
+      /* NULL site_id tekrarları eski PG'de unique index'i düşürebilir */
+    }
+    try {
+      await executeNewsDbWrite(sql`
+        CREATE INDEX IF NOT EXISTS "news_slug_redirects_slug_idx"
+          ON "news_slug_redirects" ("slug")
+      `);
+    } catch {
+      /* index zaten varsa */
+    }
+    const readDb = getNewsDbForRead();
+    if (readDb !== db) {
+      await readDb.execute(sql`CREATE TABLE IF NOT EXISTS "news_slug_redirects" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "slug" text NOT NULL,
+        "site_id" integer,
+        "title" text,
+        "category_slug" text,
+        "search_query" text NOT NULL,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "updated_at" timestamptz NOT NULL DEFAULT now()
+      )`);
+    }
+  })().catch((e) => {
+    newsSlugRedirectsTablePromise = null;
+    throw e;
+  });
+
+  return newsSlugRedirectsTablePromise;
+}
 
 /** Slug parçalarından arama sorgusu türet (Türkçe karakter geri yüklemesi sınırlı). */
 export function deriveSearchQueryFromSlug(slug: string): string {
@@ -91,6 +149,7 @@ export async function upsertNewsSlugRedirectFromRow(
     updatedAt: new Date(),
   };
 
+  await ensureNewsSlugRedirectsTable();
   await db
     .insert(newsSlugRedirectsTable)
     .values(values)
@@ -108,6 +167,7 @@ export async function upsertNewsSlugRedirectFromRow(
 export async function removeNewsSlugRedirect(slug: string, siteId: number | null): Promise<void> {
   const s = String(slug ?? "").trim();
   if (!s) return;
+  await ensureNewsSlugRedirectsTable();
   const cond =
     siteId == null
       ? and(eq(newsSlugRedirectsTable.slug, s), isNull(newsSlugRedirectsTable.siteId))
@@ -130,18 +190,29 @@ export async function resolveMissingNewsRedirect(
   if (!s) return null;
 
   const readDb = getNewsDbForRead();
-  const scopeCond =
-    siteId != null && siteId > 0
-      ? and(eq(newsSlugRedirectsTable.slug, s), eq(newsSlugRedirectsTable.siteId, siteId))
-      : and(eq(newsSlugRedirectsTable.slug, s), isNull(newsSlugRedirectsTable.siteId));
+  let row: {
+    searchQuery?: string | null;
+    categorySlug?: string | null;
+  } | undefined;
 
-  let [row] = await db.select().from(newsSlugRedirectsTable).where(scopeCond).limit(1);
-  if (!row && siteId != null && siteId > 0) {
-    [row] = await db
-      .select()
-      .from(newsSlugRedirectsTable)
-      .where(and(eq(newsSlugRedirectsTable.slug, s), isNull(newsSlugRedirectsTable.siteId)))
-      .limit(1);
+  try {
+    await ensureNewsSlugRedirectsTable();
+    const scopeCond =
+      siteId != null && siteId > 0
+        ? and(eq(newsSlugRedirectsTable.slug, s), eq(newsSlugRedirectsTable.siteId, siteId))
+        : and(eq(newsSlugRedirectsTable.slug, s), isNull(newsSlugRedirectsTable.siteId));
+
+    [row] = await db.select().from(newsSlugRedirectsTable).where(scopeCond).limit(1);
+    if (!row && siteId != null && siteId > 0) {
+      [row] = await db
+        .select()
+        .from(newsSlugRedirectsTable)
+        .where(and(eq(newsSlugRedirectsTable.slug, s), isNull(newsSlugRedirectsTable.siteId)))
+        .limit(1);
+    }
+  } catch (err) {
+    logger.warn({ err, slug: s }, "news_slug_redirects okunamadı; türetilmiş aramaya düşülüyor");
+    row = undefined;
   }
 
   let searchQuery = row?.searchQuery?.trim() ?? "";
