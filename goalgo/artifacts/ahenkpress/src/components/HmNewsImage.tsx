@@ -1,12 +1,13 @@
 import { useEffect, useState, type ImgHTMLAttributes } from "react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
+import { encodeHttpImageUrl } from "@/lib/encodeHttpImageUrl";
 import { HM_NEWS_PLACEHOLDER_SVG, isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
 import { cn } from "@/lib/utils";
 
 export function resolveHmNewsImageSrc(url: string | null | undefined): string {
   const u = String(url ?? "").trim();
   if (!u) return "";
-  return resolveClientMediaSrc(u) || u;
+  return encodeHttpImageUrl(resolveClientMediaSrc(u) || u);
 }
 
 /** Haber kartları — API/RSS farklı alan adlarından görsel URL. */

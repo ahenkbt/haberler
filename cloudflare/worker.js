@@ -33,6 +33,7 @@ import {
   shouldInstantHmRootRedirect,
   withBudget,
 } from "./hm-html-boot.js";
+import { extractRssBlockImageUrl } from "./rss-entry-image.js";
 import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
@@ -1444,10 +1445,7 @@ function parseNtvDunyaAtom(xml, limit = 24) {
       xmlTag(entry, "updated") ||
       new Date().toISOString();
     const spot = xmlTag(entry, "summary") || null;
-    const imageUrl =
-      xmlAttr(entry, "media:thumbnail", "url") ||
-      xmlAttr(entry, "media:content", "url") ||
-      null;
+    const imageUrl = extractRssBlockImageUrl(entry);
     const edgeId = hashRssEdgeId(sourceUrl);
     out.push({
       id: edgeId,
@@ -1660,15 +1658,7 @@ function parseFeedEntries(xml, limit = 6) {
       xmlTag(block, "content:encoded") ||
       xmlTag(block, "content") ||
       null;
-    let imageUrl =
-      xmlAttr(block, "media:thumbnail", "url") ||
-      xmlAttr(block, "media:content", "url") ||
-      xmlAttr(block, "enclosure", "url") ||
-      null;
-    if (!imageUrl && contentEncoded) {
-      const img = String(contentEncoded).match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (img?.[1] && /^https?:\/\//i.test(img[1])) imageUrl = img[1];
-    }
+    const imageUrl = extractRssBlockImageUrl(block);
     let publishedAt = new Date(published).toISOString();
     if (Number.isNaN(Date.parse(publishedAt))) publishedAt = new Date().toISOString();
     out.push({ title, href, publishedAt, spot, contentHtml: contentEncoded, imageUrl });
