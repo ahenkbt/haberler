@@ -39,6 +39,7 @@ import {
 } from "@/lib/hmNestedMetaStorage";
 import { resolveExternalSondakikaEnabled } from "@/lib/hmHeadlinePool";
 import { HM_SITE_LOADING_LABEL } from "@/lib/hmNewsPlaceholder";
+import { prefetchHmHomeHybridNews } from "@/hooks/useHmHomeHybridBootstrap";
 import { hmPublicSiteOrigin, resolveHmPublicDomainFromSite } from "@/lib/hmPublicLinks";
 import {
   hmEditorContainedPageHostClass,
@@ -429,6 +430,12 @@ export function HmNestedLayout({
       if (typeof d === "string" && d.trim()) writeHmDomainSlugCache(d, data.slug);
     }
   }, [data, slug]);
+
+  useEffect(() => {
+    const id = Number((data ?? storedMeta?.data)?.id);
+    if (!Number.isFinite(id) || id <= 0) return;
+    prefetchHmHomeHybridNews(queryClient, id);
+  }, [queryClient, data, storedMeta?.data]);
 
   useLayoutEffect(() => {
     const early = data ?? storedMeta?.data;

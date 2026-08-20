@@ -136,13 +136,11 @@ export function HmNewsImage({
   const initial = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
   const [activeSrc, setActiveSrc] = useState(initial);
   const [failed, setFailed] = useState(!initial);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const next = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
     setActiveSrc(next);
     setFailed(!next);
-    setLoaded(false);
   }, [resolvedPrimary, resolvedFallback]);
 
   const imgLoading = loading ?? (priority ? "eager" : "lazy");
@@ -154,7 +152,6 @@ export function HmNewsImage({
     if (other && other !== activeSrc) {
       setActiveSrc(other);
       setFailed(false);
-      setLoaded(false);
       return;
     }
     setFailed(true);
@@ -181,24 +178,21 @@ export function HmNewsImage({
           src={activeSrc}
           alt={alt}
           loading={imgLoading}
-          decoding="async"
+          decoding={priority ? "sync" : "async"}
           referrerPolicy="no-referrer"
           fetchPriority={priority ? "high" : fetchPriority}
           className={cn(
-            "absolute inset-0 h-full w-full object-cover",
-            loaded ? "opacity-100" : "opacity-0",
+            "absolute inset-0 h-full w-full object-cover opacity-100",
             className,
           )}
           onLoad={() => {
             setFailed(false);
-            setLoaded(true);
           }}
           onError={onImageError}
           ref={(el) => {
             if (!el?.complete) return;
             if (el.naturalWidth > 0) {
               setFailed(false);
-              setLoaded(true);
             } else {
               onImageError();
             }

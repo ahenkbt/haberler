@@ -249,6 +249,27 @@
             var p = (location.pathname || "").replace(/\/+$/, "") || "/";
             return p === "/" || /^\/tr\/[^/]+$/i.test(p) || /^\/hm\/[^/]+$/i.test(p);
           }
+          function prefetchHmHomeBundle(siteId, slugHint) {
+            var id = Number(siteId);
+            var slug = normSlug(slugHint || "");
+            if ((!id || !Number.isFinite(id)) && !slug) return;
+            if (!isHmHomePath()) return;
+            if (window.__YEKPARE_HM_HOME_BUNDLE__ && (!id || window.__YEKPARE_HM_HOME_BUNDLE__.siteId === id)) return;
+            var url = id
+              ? "/api/hm/home-bundle?siteId=" + encodeURIComponent(String(id)) + "&sliderLimit=15"
+              : "/api/hm/home-bundle?slug=" + encodeURIComponent(slug) + "&sliderLimit=15";
+            fetch(url)
+              .then(function (r) {
+                return r.ok ? r.json() : null;
+              })
+              .then(function (data) {
+                if (!data || typeof data !== "object") return;
+                var resolvedId = Number(data.siteId || id);
+                if (!resolvedId || !Number.isFinite(resolvedId)) return;
+                window.__YEKPARE_HM_HOME_BUNDLE__ = { siteId: resolvedId, savedAt: Date.now(), bundle: data };
+              })
+              .catch(function () {});
+          }
           function prefetchHmHomeHybrid(opts) {
             var siteId = opts && opts.siteId ? Number(opts.siteId) : 0;
             var slug = opts && opts.slug ? normSlug(opts.slug) : "";
@@ -262,6 +283,7 @@
                   items: cached.items,
                 };
               }
+              prefetchHmHomeBundle(siteId, slug);
             }
             if (!isHmHomePath()) return;
             var qs =
@@ -283,6 +305,7 @@
                 var payload = { siteId: resolvedId, savedAt: Date.now(), items: data.items };
                 window.__YEKPARE_HM_HOME_HYBRID__ = payload;
                 writeHybridCache(resolvedId, data.items);
+                prefetchHmHomeBundle(resolvedId, slug);
               })
               .catch(function () {});
           }
@@ -395,7 +418,11 @@
           if (seg) {
             clearPortalVerificationMeta();
             var slug = normSlug(decodeURIComponent(seg));
-            var cached = readLs(LS_META + slug);
+            var injectedMeta = window.__YEKPARE_HM_NESTED_META__;
+            var cached =
+              injectedMeta && normSlug(injectedMeta.slug || "") === slug
+                ? { data: injectedMeta, updatedAt: Date.now() }
+                : readLs(LS_META + slug);
             if (applyMeta(cached && cached.data, slug)) {
               if (cached && cached.data && cached.data.id) {
                 prefetchHmHomeHybrid({ siteId: cached.data.id, slug: slug });
@@ -426,10 +453,18 @@
             host.indexOf(".vercel.app") !== -1;
           if (!portal) {
             clearPortalVerificationMeta();
+            var injectedMeta = window.__YEKPARE_HM_NESTED_META__;
+            var injectedBoot = window.__YEKPARE_HM_DOMAIN_BOOT__;
             var dom = readLs(LS_DOMAIN + host);
-            var domSlug = dom && dom.slug ? normSlug(dom.slug) : "";
+            var domSlug =
+              (injectedMeta && normSlug(injectedMeta.slug || "")) ||
+              (injectedBoot && normSlug(injectedBoot.slug || "")) ||
+              (dom && dom.slug ? normSlug(dom.slug) : "");
             if (domSlug) {
-              var domMeta = readLs(LS_META + domSlug);
+              var domMeta =
+                injectedMeta && normSlug(injectedMeta.slug || "") === domSlug
+                  ? { data: injectedMeta, updatedAt: Date.now() }
+                  : readLs(LS_META + domSlug);
               if (applyMeta(domMeta && domMeta.data, domSlug)) {
                 if (domMeta && domMeta.data && domMeta.data.id) {
                   prefetchHmHomeHybrid({ siteId: domMeta.data.id, slug: domSlug });
@@ -640,7 +675,9 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=latin,latin-ext&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=latin,latin-ext&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=latin,latin-ext&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=latin,latin-ext&display=swap" rel="stylesheet"></noscript>
 
   </head>
   <body>

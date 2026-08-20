@@ -55,6 +55,8 @@ export function buildHmSitePublicCacheUrls(input: {
     for (const portal of portalOrigins) {
       urls.add(`${portal}/api/hm/meta/by-slug/${encodeURIComponent(slug)}`);
       urls.add(`${portal}/api/hm/meta/by-slug/${encodeURIComponent(slug)}?includePageContent=1`);
+      urls.add(`${portal}/api/hm/home-bundle?slug=${encodeURIComponent(slug)}`);
+      urls.add(`${portal}/api/hm/home-bundle?slug=${encodeURIComponent(slug)}&sliderLimit=15`);
       urls.add(`${portal}/tr/${encodeURIComponent(slug)}`);
       urls.add(`${portal}/tr/${encodeURIComponent(slug)}/`);
     }
@@ -74,6 +76,8 @@ export function buildHmSitePublicCacheUrls(input: {
       if (slug) {
         urls.add(`https://${h}/tr/${encodeURIComponent(slug)}`);
         urls.add(`https://${h}/tr/${encodeURIComponent(slug)}/`);
+        urls.add(`https://${h}/api/hm/home-bundle?slug=${encodeURIComponent(slug)}`);
+        urls.add(`https://${h}/api/hm/home-bundle?slug=${encodeURIComponent(slug)}&sliderLimit=15`);
       }
     }
   }
@@ -82,10 +86,12 @@ export function buildHmSitePublicCacheUrls(input: {
   if (Number.isFinite(siteId) && siteId > 0) {
     for (const portal of portalOrigins) {
       urls.add(`${portal}/api/hm/home-bundle?siteId=${siteId}`);
+      urls.add(`${portal}/api/hm/home-bundle?siteId=${siteId}&sliderLimit=15`);
     }
     for (const host of hosts) {
       for (const h of hostVariants(host)) {
         urls.add(`https://${h}/api/hm/home-bundle?siteId=${siteId}`);
+        urls.add(`https://${h}/api/hm/home-bundle?siteId=${siteId}&sliderLimit=15`);
       }
     }
   }

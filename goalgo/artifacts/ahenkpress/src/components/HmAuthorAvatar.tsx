@@ -28,11 +28,9 @@ export function HmAuthorAvatar({
   const raw = String(src ?? "").trim();
   const resolved = raw.startsWith("data:image/") ? raw : resolveClientMediaSrc(src) || raw;
   const [failed, setFailed] = useState(!resolved);
-  const [loaded, setLoaded] = useState(resolved.startsWith("data:image/"));
 
   useEffect(() => {
     setFailed(!resolved);
-    setLoaded(resolved.startsWith("data:image/"));
   }, [resolved]);
 
   const fallbackStyle = {
@@ -58,18 +56,12 @@ export function HmAuthorAvatar({
 
   return (
     <span className={cn("relative inline-flex overflow-hidden rounded-full", className)}>
-      {!loaded ? initials : null}
       <img
         src={resolved}
         alt={name || ""}
-        className={cn(
-          "h-full w-full rounded-full object-cover",
-          loaded ? "opacity-100" : "opacity-0",
-          imgClassName,
-        )}
+        className={cn("h-full w-full rounded-full object-cover opacity-100", imgClassName)}
         loading="lazy"
         decoding="async"
-        onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
     </span>
