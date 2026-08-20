@@ -965,12 +965,16 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  // Tema/layout — kenar/tarayıcı önbelleği yok.
-  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
-  res.setHeader("CDN-Cache-Control", "no-store");
+  const includePageContent = wantsHmMetaPageContent(req);
+  if (includePageContent) {
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    res.setHeader("CDN-Cache-Control", "no-store");
+  } else {
+    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
+    res.setHeader("CDN-Cache-Control", "public, max-age=20");
+  }
 
   const queryDomain = typeof req.query.domain === "string" ? req.query.domain : "";
-  const includePageContent = wantsHmMetaPageContent(req);
 
   const respondSite = (row: typeof hmNewsSitesTable.$inferSelect): void => {
     res.json(serializeHmMetaRow(row, { includePageContent }));
@@ -1038,25 +1042,35 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
   }
-  // Tema/layout — kenar/tarayıcı önbelleği yok (editör kaydı hemen yansımalı).
-  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
-  res.setHeader("CDN-Cache-Control", "no-store");
+  if (wantsHmMetaPageContent(req)) {
+    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    res.setHeader("CDN-Cache-Control", "no-store");
+  } else {
+    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
+    res.setHeader("CDN-Cache-Control", "public, max-age=20");
+  }
   res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
 });
 
 /** P1-1: HM anasayfa — featured + breaking + popular tek round-trip. */
 router.get("/hm/home-bundle", async (req, res): Promise<void> => {
-  const siteIdRaw = req.query.siteId;
-  const siteId = parseInt(String(siteIdRaw ?? ""), 10);
+  let siteId = parseInt(String(req.query.siteId ?? ""), 10);
   if (!Number.isFinite(siteId) || siteId <= 0) {
-    res.status(400).json({ error: "siteId gerekli" });
+    const slug = normalizeSlug(String(req.query.slug ?? ""));
+    if (slug) {
+      const bySlug = await getActiveHmNewsSiteBySlugCompat(slug);
+      siteId = Number(bySlug?.id);
+    }
+  }
+  if (!Number.isFinite(siteId) || siteId <= 0) {
+    res.status(400).json({ error: "siteId veya slug gerekli" });
     return;
   }
   const sliderLimit = Math.min(Math.max(parseInt(String(req.query.sliderLimit ?? "15"), 10) || 15, 1), 30);
   const categorySlug = String(req.query.mansetCategorySlug ?? req.query.categorySlug ?? "").trim() || null;
   try {
     const bundle = await buildHmHomeBundle(siteId, sliderLimit, categorySlug);
-    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=30");
+    res.setHeader("Cache-Control", "public, max-age=30, s-maxage=90, stale-while-revalidate=300");
     res.json(bundle);
   } catch (err) {
     console.error("[hm/home-bundle]", err);

@@ -23,6 +23,16 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
+import {
+  firstHmBootImageUrl,
+  hmDomainSlugFallback,
+  hmHomeSlugFromPath,
+  injectHmHtmlBoot,
+  isHmPublicHomeHtmlPath,
+  raceHmHtmlBoot,
+  shouldInstantHmRootRedirect,
+  withBudget,
+} from "./hm-html-boot.js";
 import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
@@ -64,30 +74,6 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.yektube.com",
 ]);
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260802d";
-
-/**
- * HM editör özel alanları — meta API gecikse/eksik olsa bile portal anasayfasına düşme.
- * DB bağlandıktan sonra meta birincil kaynaktır; bu yalnızca yedek.
- * belediyehizmet.com kaldırıldı → site suhaberajansi.com (/tr/su).
- */
-const HM_DOMAIN_SLUG_FALLBACKS = {
-  "suhaberajansi.com": "su",
-  "www.suhaberajansi.com": "su",
-  "kirsehri.com": "kirsehirhaber",
-  "www.kirsehri.com": "kirsehirhaber",
-  "kirsehirhaber.org": "kirsehirhaber",
-  "www.kirsehirhaber.org": "kirsehirhaber",
-  "kirsehir.net": "kirsehirhaber",
-  "www.kirsehir.net": "kirsehirhaber",
-  "ankarasehirgazetesi.com": "asg",
-  "www.ankarasehirgazetesi.com": "asg",
-  "ankarahabergundemi.com": "ankarahabergundemi",
-  "www.ankarahabergundemi.com": "ankarahabergundemi",
-  "vatankahramanlari.org": "vkd",
-  "www.vatankahramanlari.org": "vkd",
-  "vatanhaber.net": "vatanhaber",
-  "www.vatanhaber.net": "vatanhaber",
-};
 
 const PORTAL_HOSTS = new Set([
   "turk.eco",
@@ -605,7 +591,7 @@ async function proxyRootSitemap(request, env, incoming) {
 }
 
 /** CF Assets'ten HTML yanıtını SW purge boot ile sar. */
-async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname }) {
+async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname, env, incoming }) {
   const out = new Headers(assetResp.headers);
   out.delete("content-encoding");
   out.delete("transfer-encoding");
@@ -627,8 +613,32 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   if (request.method === "HEAD") {
     return new Response(null, { status: assetResp.status, headers: out });
   }
-  const html = await assetResp.text();
-  return new Response(rewriteHtml(html, { oneShotPurge, purgeCookie }), {
+  let html = rewriteHtml(await assetResp.text(), { oneShotPurge, purgeCookie });
+  const homeHtml = incoming && isHmPublicHomeHtmlPath(incoming.pathname, incoming.hostname);
+  if (homeHtml && env && incoming) {
+    const slug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname);
+    if (slug) {
+      const metaPreload = `/api/hm/meta/by-slug/${encodeURIComponent(slug)}?domain=${encodeURIComponent(incoming.hostname)}`;
+      out.append("Link", `<${metaPreload}>; rel=preload; as=fetch; crossorigin`);
+      out.append(
+        "Link",
+        `</api/hm/home-bundle?slug=${encodeURIComponent(slug)}&sliderLimit=15>; rel=preload; as=fetch; crossorigin`,
+      );
+    }
+    try {
+      const origin = upstreamOrigin(env, incoming);
+      const boot = await withBudget(raceHmHtmlBoot({ fetchApi, origin, env, incoming }));
+      if (boot) {
+        html = injectHmHtmlBoot(html, boot);
+        out.set("x-yekpare-hm-html-boot", boot.bundle ? "bundle" : "meta");
+        const hero = firstHmBootImageUrl(boot.bundle, incoming.origin);
+        if (hero) out.append("Link", `<${hero}>; rel=preload; as=image`);
+      }
+    } catch (err) {
+      console.error("[hm-html-boot]", String(err?.message || err).slice(0, 180));
+    }
+  }
+  return new Response(html, {
     status: assetResp.status,
     headers: out,
   });
@@ -689,7 +699,7 @@ async function tryServeAssets(request, env, incoming) {
         return respondAssetHtml(
           request,
           new Response(html, { status: assetResp.status, headers: assetResp.headers }),
-          { oneShotPurge, purgeCookie, hostname: incoming.hostname },
+          { oneShotPurge, purgeCookie, hostname: incoming.hostname, env, incoming },
         );
       } catch {
         return null;
@@ -699,6 +709,8 @@ async function tryServeAssets(request, env, incoming) {
       oneShotPurge,
       purgeCookie,
       hostname: incoming.hostname,
+      env,
+      incoming,
     });
   }
 
@@ -823,7 +835,7 @@ function redirectYektubeDedicatedHost(request, incoming) {
 
 /**
  * HM haber listeleri — edge cache.
- * NOT: `/api/hm/meta/*` ASLA cache'lenmez — tema/layout editör kaydı anında yansımalı.
+ * Public meta kısa kenar önbelleği (includePageContent/fresh hariç); editör kaydı purge eder.
  */
 function isCacheableHmNewsApi(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
@@ -930,19 +942,23 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
   if (isAuthSessionApiPath(pathname)) {
     return { cacheTtl: 0, cacheEverything: false };
   }
-  // Tema/layout meta — kenar önbelleği yok (editör değişiklikleri hemen görünsün).
+  // Tema/layout meta — kısa kenar önbelleği (editör yayınında purgeHmSitePublicEdgeCache).
   if (isHmMetaApiPath(pathname)) {
-    return { cacheTtl: 0, cacheEverything: false };
+    const qs = new URLSearchParams(String(search || "").replace(/^\?/, ""));
+    if (qs.get("includePageContent") === "1" || qs.get("fresh") === "1") {
+      return { cacheTtl: 0, cacheEverything: false };
+    }
+    return { cacheTtl: 20, cacheEverything: true };
   }
   if (isCacheableHmNewsApi(pathname)) {
     const qs = new URLSearchParams(String(search || "").replace(/^\?/, ""));
     if (qs.get("fresh") === "1" || qs.get("fresh") === "true") {
       return { cacheTtl: 0, cacheEverything: false };
     }
-    // home-bundle kısa tut; modül sırası meta'dan gelir ama haber listesi bayat kalabilir.
+    // home-bundle: ilk boyama; 90s kenar + SWR.
     const p = String(pathname || "").split("?")[0] || "";
     if (p === "/api/hm/home-bundle") {
-      return { cacheTtl: 30, cacheEverything: true };
+      return { cacheTtl: 90, cacheEverything: true };
     }
     return { cacheTtl: 120, cacheEverything: true };
   }
@@ -1084,14 +1100,6 @@ async function maybeRepairMismatchedNewsJson(env, origin, init, method, incoming
   }
 }
 
-function hmDomainSlugFallback(hostname) {
-  const h = normalizeHost(hostname);
-  if (!h) return "";
-  return (
-    String(HM_DOMAIN_SLUG_FALLBACKS[h] || HM_DOMAIN_SLUG_FALLBACKS[`www.${h}`] || "").trim() || ""
-  );
-}
-
 function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
   const loc = `${incoming.origin}/tr/${encodeURIComponent(slug)}${incoming.search || ""}`;
   const headers = {
@@ -1114,7 +1122,7 @@ function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
  * Edge soft-redirect: HM özel alan kökü → /tr/{slug}
  * (Vercel middleware CF Worker yolunda çalışmadığı için Worker'da tekrarlanır.)
  */
-async function redirectHmCustomDomainRoot(request, env, incoming) {
+async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
   if (isPortalHost(incoming.hostname)) return null;
@@ -1143,6 +1151,28 @@ async function redirectHmCustomDomainRoot(request, env, incoming) {
   }
 
   if (path !== "/") return null;
+
+  // Bilinen HM alanları: meta API bekleme (0.5–2s TTFB). Slug tablosu yeterli.
+  if (shouldInstantHmRootRedirect(request.method, path, domain) && fallbackSlug) {
+    if (ctx && typeof ctx.waitUntil === "function") {
+      const origin = upstreamOrigin(env, incoming);
+      ctx.waitUntil(
+        fetchApi(
+          env,
+          `${origin}/api/hm/meta/by-domain?domain=${encodeURIComponent(domain)}`,
+          {
+            headers: {
+              accept: "application/json",
+              "x-forwarded-host": incoming.host,
+              "x-forwarded-proto": "https",
+            },
+            cf: { cacheTtl: 60, cacheEverything: true },
+          },
+        ).catch(() => null),
+      );
+    }
+    return hmCustomDomainRootRedirectResponse(incoming, request, fallbackSlug, "fallback-instant");
+  }
 
   const origin = upstreamOrigin(env, incoming);
   try {
@@ -2224,7 +2254,7 @@ export default {
 
     const apiRequest = request;
 
-    const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming);
+    const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming, ctx);
     if (hmRedirect) return hmRedirect;
 
     const bareSitemap = redirectBareSitemapPath(request, incoming);
@@ -2297,11 +2327,22 @@ export default {
         if (!out.get("cache-control")) {
           out.set("cache-control", "public, max-age=86400, immutable");
         }
-      } else if (isAuthSessionApiPath(upstreamPath) || isHmMetaApiPath(upstreamPath)) {
+      } else if (isAuthSessionApiPath(upstreamPath)) {
         out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
         out.set("cdn-cache-control", "no-store");
-        // Authorization şart — aksi halde /me 401 oturumlu isteğe servis edilip editör dışarı atılır.
         out.set("vary", "Origin, Authorization, Cookie");
+      } else if (isHmMetaApiPath(upstreamPath)) {
+        const includePage = incoming.searchParams.get("includePageContent") === "1";
+        const freshVisit =
+          incoming.searchParams.get("fresh") === "1" || incoming.searchParams.get("fresh") === "true";
+        if (includePage || freshVisit) {
+          out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+          out.set("cdn-cache-control", "no-store");
+        } else {
+          out.set("cache-control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
+          out.set("cdn-cache-control", "public, max-age=20");
+        }
+        out.set("vary", "Origin");
       } else if (isCacheableHmNewsApi(upstreamPath)) {
         const freshVisit =
           incoming.searchParams.get("fresh") === "1" ||
@@ -2313,10 +2354,8 @@ export default {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
         const p = String(upstreamPath || "").split("?")[0] || "";
         if (p === "/api/hm/home-bundle") {
-          if (!out.get("cache-control")) {
-            out.set("cache-control", "public, max-age=15, s-maxage=30");
-          }
-          out.set("cdn-cache-control", "public, max-age=30");
+          out.set("cache-control", "public, max-age=30, s-maxage=90, stale-while-revalidate=300");
+          out.set("cdn-cache-control", "public, max-age=90, stale-while-revalidate=300");
         } else {
           if (!out.get("cache-control")) {
             out.set(

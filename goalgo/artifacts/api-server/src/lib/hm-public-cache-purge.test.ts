@@ -21,6 +21,7 @@ describe("buildHmSitePublicCacheUrls", () => {
       "https://www.suhaberajansi.com/api/hm/meta/by-domain?domain=www.suhaberajansi.com",
     );
     expect(urls).toContain("https://turk.eco/api/hm/home-bundle?siteId=2");
+    expect(urls).toContain("https://turk.eco/api/hm/home-bundle?slug=su&sliderLimit=15");
     expect(urls.some((u) => u.includes("suhaberajansi.com"))).toBe(true);
   });
 });

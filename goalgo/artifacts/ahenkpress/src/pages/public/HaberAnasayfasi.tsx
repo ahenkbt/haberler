@@ -55,6 +55,7 @@ import {
   useHmHomeHybridBootstrapHero,
 } from "@/hooks/useHmHomeHybridBootstrap";
 import { HmLazyHomeSection } from "@/components/HmLazyHomeSection";
+import { readHmHomeBundleBoot } from "@/lib/hmHomeBundleBoot";
 import { isHmHomeAboveFoldModule } from "@/lib/hmHomeLazyModules";
 import { defaultNewsSiteLayoutPrefs, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 import { resolveHmOrGlobalSlotHtml } from "@/lib/hmResolveAdSlotHtml";
@@ -1668,6 +1669,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   /** P1-1: HM anasayfa featured + breaking + popular tek istek. */
   const hmHomeBundleEnabled = siteId != null && !isCorporateTheme;
+  const hmHomeBundleBoot = useMemo(
+    () => (siteId != null && siteId > 0 ? readHmHomeBundleBoot(siteId) : undefined),
+    [siteId],
+  );
   const {
     data: hmHomeBundle,
     isFetched: hmHomeBundleFetched,
@@ -1691,6 +1696,19 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     },
     staleTime: 2 * 60 * 1000,
     enabled: hmHomeBundleEnabled,
+    initialData: hmHomeBundleBoot
+      ? {
+          siteId: siteId!,
+          featured: Array.isArray(hmHomeBundleBoot.featured) ? hmHomeBundleBoot.featured : [],
+          manualEditor: Array.isArray(hmHomeBundleBoot.manualEditor) ? hmHomeBundleBoot.manualEditor : [],
+          centerHeadlines: Array.isArray(hmHomeBundleBoot.centerHeadlines)
+            ? hmHomeBundleBoot.centerHeadlines
+            : [],
+          breaking: Array.isArray(hmHomeBundleBoot.breaking) ? hmHomeBundleBoot.breaking : [],
+          popular: Array.isArray(hmHomeBundleBoot.popular) ? hmHomeBundleBoot.popular : [],
+        }
+      : undefined,
+    placeholderData: (previous) => previous,
   });
   const useHmHomeBundle = Boolean(hmHomeBundle);
   const hmHomeBundleSettled = !hmHomeBundleEnabled || hmHomeBundleFetched || hmHomeBundleError;

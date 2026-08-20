@@ -3,7 +3,7 @@
 export const HM_META_LS_PREFIX = "hm-nested-meta:v1:";
 export const HM_DOMAIN_SLUG_LS_PREFIX = "hm-domain-slug:v1:";
 /** Kısa tut: tema/layout değişince ziyaretçi bayat localStorage ile eski temada kalmasın. */
-export const HM_META_LS_MAX_AGE_MS = 2 * 60 * 1000;
+export const HM_META_LS_MAX_AGE_MS = 10 * 60 * 1000;
 
 export type HmNestedMetaCached = {
   id: number;
@@ -45,6 +45,14 @@ export function readHmNestedMetaCache(pathSlugRaw: string): HmNestedMetaStored |
   if (typeof window === "undefined") return undefined;
   const pathSlug = normalizeHmSlugSegment(pathSlugRaw);
   if (!pathSlug) return undefined;
+  try {
+    const boot = window.__YEKPARE_HM_NESTED_META__;
+    if (boot && typeof boot.id === "number" && normalizeHmSlugSegment(boot.slug) === pathSlug) {
+      return { data: boot, updatedAt: Date.now() };
+    }
+  } catch {
+    /* ignore */
+  }
   try {
     const raw = localStorage.getItem(hmNestedMetaStorageKey(pathSlug));
     if (!raw) return undefined;

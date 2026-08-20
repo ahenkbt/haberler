@@ -1,6 +1,6 @@
 /**
  * Bilinen editör haber sitesi alanları — meta 404 olsa bile Yekpare portal anasayfasına düşülmez.
- * Worker `HM_DOMAIN_SLUG_FALLBACKS` ile senkron tutulmalı.
+ * Worker `cloudflare/hm-html-boot.js` alan→slug tablosu ile senkron tutulmalı.
  */
 export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "suhaberajansi.com": "su",

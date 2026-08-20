@@ -43,6 +43,21 @@ interface Window {
     savedAt: number;
     items: import("@/hooks/useHomeHybridNews").HomeHybridNewsItem[];
   };
+  /** Worker HTML boot — React yüklenmeden site meta. */
+  __YEKPARE_HM_NESTED_META__?: import("@/lib/hmNestedMetaStorage").HmNestedMetaCached;
+  /** Worker / index.html — anasayfa home-bundle. */
+  __YEKPARE_HM_HOME_BUNDLE__?: {
+    siteId: number;
+    savedAt: number;
+    bundle: {
+      siteId?: number;
+      featured?: unknown[];
+      manualEditor?: unknown[];
+      centerHeadlines?: unknown[];
+      breaking?: unknown[];
+      popular?: unknown[];
+    };
+  };
   /** index.html erken bootstrap — özel alan slug/meta ipucu. */
   __YEKPARE_HM_DOMAIN_BOOT__?: {
     host?: string;
