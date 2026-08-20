@@ -1,13 +1,14 @@
-# Cloudflare Workers + Containers (API) + Neon Postgres
+# Cloudflare Workers + Containers (API) + Postgres (Hostinger / Neon)
 # Secrets:
 #   CLOUDFLARE_API_TOKEN
 #   CLOUDFLARE_ACCOUNT_ID
-#   DATABASE_URL          (Neon connection string)
+#   DATABASE_URL          (Hostinger: postgresql://…@HOST:32768/… — neon.tech olmamalı)
 #   SESSION_SECRET        (min 16 chars)
 # Optional: AGENTLABS_URL, HM_EDITOR_JWT_SECRET, ADMIN_MAINTENANCE_SECRET,
 #           R2_CF_API_TOKEN (fb9f hesap API token; 16f5 CLOUDFLARE_API_TOKEN değil)
-# S3_ENDPOINT GitHub'dan yazılmaz (362 karakterlik yapıştırma). Kanonik fb9f host
-# wrangler.toml + workflow hardcoded put. S3 anahtarları yalnızca Dashboard.
+# S3_ENDPOINT secret olarak YAZILMAZ (wrangler.toml [vars] ile çakışır, code 10053).
+# Eski "versions secret put S3_ENDPOINT → versions deploy @100%" DATABASE_URL'i
+# Neon kopyasına geri alıyordu (run 32356785593, version 5807ec05).
 name: Cloudflare Production Deploy
 
 on:
@@ -46,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Check Cloudflare + Neon secrets
+      - name: Check Cloudflare + database secrets
         id: cf
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -65,13 +66,28 @@ jobs:
           else
             echo "ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
           fi
-          # Neon secrets isteğe bağlı — SPA Assets + Worker deploy için token yeterli
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
             echo "sync_secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::DATABASE_URL / SESSION_SECRET yok — Worker secret sync atlanacak, SPA deploy devam."
-          else
-            echo "sync_secrets=true" >> "$GITHUB_OUTPUT"
+            echo "::error::DATABASE_URL / SESSION_SECRET yok — Worker hâlâ eski Neon URL ile kalır."
+            exit 1
           fi
+          rest="${DATABASE_URL#*@}"
+          hostport="${rest%%/*}"
+          host="${hostport%%:*}"
+          port="${hostport##*:}"
+          echo "database_host=${host:-none}"
+          echo "database_port=${port:-default}"
+          case "$host" in
+            *neon.tech*)
+              echo "::error::GitHub DATABASE_URL hâlâ Neon (neon.tech). Secret değerini Hostinger URL'si yapın."
+              exit 1
+              ;;
+            ""|none)
+              echo "::error::DATABASE_URL parse edilemedi (host boş)."
+              exit 1
+              ;;
+          esac
+          echo "sync_secrets=true" >> "$GITHUB_OUTPUT"
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v6
@@ -112,12 +128,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
         run: pnpm exec wrangler deploy
 
-      # Secret put, deploy edilmemiş version varken fail oluyor — önce deploy, sonra secret.
-      # wrangler secret put zaten yayına alır. versions list'teki rastgele eski
-      # kopyayı %100 yapmak DATABASE_URL düşürdü (f24ae171, 503).
-      - name: Sync Worker secrets (Neon)
+      # wrangler secret put production'a yazar. versions secret put yeni bir
+      # sürüm üretir; onu @100% yapmak eski Neon DATABASE_URL'i geri getirir
+      # (32356785593 → 5807ec05). S3_ENDPOINT wrangler.toml [vars]'ta; secret put
+      # 10053 verir ve bu tuzak tetiklenir. S3_ENDPOINT asla secret put edilmez.
+      - name: Sync Worker DATABASE_URL
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
-        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
@@ -127,39 +143,56 @@ jobs:
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
           R2_CF_API_TOKEN: ${{ secrets.R2_CF_API_TOKEN || '' }}
         run: |
-          set +e
-          LAST_VID=""
-          capture_created() {
-            vid=$(printf '%s' "$1" | grep -oE 'Created version [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | tail -1 | awk '{print $3}')
-            if [ -n "$vid" ]; then LAST_VID="$vid"; fi
-          }
+          set -euo pipefail
           put_secret() {
-            out=$(printf '%s' "$2" | pnpm exec wrangler secret put "$1" 2>&1)
+            local name="$1"
+            local value="$2"
+            out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || {
+              printf '%s\n' "$out"
+              echo "::error::$name wrangler secret put failed"
+              return 1
+            }
             printf '%s\n' "$out"
-            if printf '%s' "$out" | grep -qi 'Uploaded secret'; then return 0; fi
-            out=$(printf '%s' "$2" | pnpm exec wrangler versions secret put "$1" 2>&1)
-            printf '%s\n' "$out"
-            capture_created "$out"
+            if ! printf '%s' "$out" | grep -qi 'Uploaded secret'; then
+              echo "::error::$name production'a yazılmadı (Uploaded secret yok). versions secret put kullanılmıyor."
+              return 1
+            fi
           }
           put_secret DATABASE_URL "$DATABASE_URL"
           put_secret SESSION_SECRET "$SESSION_SECRET"
-          if [ -n "$HM_EDITOR_JWT_SECRET" ]; then
+          if [ -n "${HM_EDITOR_JWT_SECRET}" ]; then
             put_secret HM_EDITOR_JWT_SECRET "$HM_EDITOR_JWT_SECRET"
           fi
-          if [ -n "$AGENTLABS_URL" ]; then
+          if [ -n "${AGENTLABS_URL}" ]; then
             put_secret AGENTLABS_URL "$AGENTLABS_URL"
           fi
-          if [ -n "$R2_CF_API_TOKEN" ]; then
+          if [ -n "${R2_CF_API_TOKEN}" ]; then
             put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
           fi
-          echo "::notice::GitHub S3_* Worker'a yazılmıyor (blob S3_ENDPOINT kapak 403/404 yaptı)."
-          # Secret, wrangler.toml [vars] S3_ENDPOINT'i ezer. Eski 362 karakterlik
-          # yapıştırmayı kanonik fb9f dual-write hostu ile değiştir (anahtar değil).
-          CANONICAL_S3_ENDPOINT="https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
-          put_secret S3_ENDPOINT "$CANONICAL_S3_ENDPOINT"
-          if [ -n "$LAST_VID" ]; then
-            echo "::notice::Yalnızca secret put'un ürettiği $LAST_VID yayına alınıyor."
-            pnpm exec wrangler versions deploy "${LAST_VID}@100%" --yes --name haberler \
-              || pnpm exec wrangler versions deploy "$LAST_VID" --percentage 100 --yes --name haberler \
-              || echo "versions deploy failed for $LAST_VID"
-          fi
+          echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
+
+      - name: Redeploy Worker so Container picks up DATABASE_URL
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy
+
+      - name: Verify live dbProvider is hostinger
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6 7 8; do
+            body=$(curl -fsS -m 25 "https://turk.eco/api/healthz" || true)
+            provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
+            echo "attempt=$i dbProvider=${provider:-empty}"
+            if [ "$provider" = "hostinger" ]; then
+              echo "Hostinger Postgres canlı."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::turk.eco/api/healthz hâlâ dbProvider=${provider:-unknown} (hostinger bekleniyor). GitHub DATABASE_URL neon.tech içeriyor olabilir veya Container eski env ile uyuyor."
+          printf '%s\n' "$body" | head -c 400
+          echo
+          exit 1
