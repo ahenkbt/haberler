@@ -128,8 +128,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
         run: |
           set -euo pipefail
+          # Workers Builds (Dashboard Git) aynı anda çalışırsa CF "internal error" verebiliyor.
+          echo "Waiting 20s before wrangler deploy to avoid racing Workers Builds..."
+          sleep 20
           attempt=1
-          max=4
+          max=6
           while true; do
             if pnpm exec wrangler deploy; then
               exit 0
@@ -138,7 +141,7 @@ jobs:
               echo "::error::wrangler deploy failed after ${max} attempts"
               exit 1
             fi
-            sleep_s=$((attempt * 8))
+            sleep_s=$((attempt * 12))
             echo "wrangler deploy failed (attempt ${attempt}/${max}); Cloudflare API hiccup — retry in ${sleep_s}s"
             sleep "$sleep_s"
             attempt=$((attempt + 1))
