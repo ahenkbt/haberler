@@ -99,11 +99,13 @@ export function newsArticleJsonLd(opts: {
   dateModified?: string | Date | null;
   authorName?: string | null;
   publisherName?: string;
+  publisherLogoUrl?: string | null;
 }): Record<string, unknown> {
   const url = `${opts.origin.replace(/\/+$/, "")}${opts.path.startsWith("/") ? opts.path : `/${opts.path}`}`;
   const pub = opts.datePublished != null ? new Date(opts.datePublished).toISOString() : undefined;
   const mod = opts.dateModified != null ? new Date(opts.dateModified).toISOString() : pub;
   const publisher = opts.publisherName?.trim() || "Yekpare";
+  const logo = opts.publisherLogoUrl?.trim() || `${portalOriginFallback(opts.origin)}/icon-512.png`;
   return {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -115,18 +117,76 @@ export function newsArticleJsonLd(opts: {
     dateModified: mod,
     author: opts.authorName?.trim()
       ? { "@type": "Person", name: opts.authorName.trim() }
-      : { "@type": "Organization", name: publisher },
+      : { "@type": "NewsMediaOrganization", name: publisher },
     publisher: {
-      "@type": "Organization",
+      "@type": "NewsMediaOrganization",
       name: publisher,
       url: portalOriginFallback(opts.origin),
       logo: {
         "@type": "ImageObject",
-        url: `${portalOriginFallback(opts.origin)}/icon-512.png`,
+        url: logo,
       },
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     inLanguage: "tr-TR",
+    isAccessibleForFree: true,
+    contentLocation: { "@type": "Country", name: "Türkiye" },
+    spatialCoverage: { "@type": "Country", name: "Türkiye" },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", "title", "meta[name='description']"],
+    },
+  };
+}
+
+export function newsMediaOrganizationJsonLd(opts: {
+  origin: string;
+  name: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  sameAs?: string[];
+}): Record<string, unknown> {
+  const base = opts.origin.replace(/\/+$/, "");
+  const logo = opts.logoUrl?.trim() || `${base}/icon-512.png`;
+  return {
+    "@context": "https://schema.org",
+    "@type": ["NewsMediaOrganization", "Organization"],
+    "@id": `${base}/#organization`,
+    name: opts.name,
+    url: `${base}/`,
+    description: cleanText(opts.description) || undefined,
+    logo: { "@type": "ImageObject", url: logo, width: 512, height: 512 },
+    image: logo,
+    inLanguage: "tr-TR",
+    areaServed: { "@type": "Country", name: "Türkiye" },
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "TR",
+    },
+    sameAs: opts.sameAs?.filter(Boolean),
+  };
+}
+
+export function newsWebSiteJsonLd(opts: {
+  origin: string;
+  name: string;
+  description?: string | null;
+}): Record<string, unknown> {
+  const base = opts.origin.replace(/\/+$/, "");
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${base}/#website`,
+    name: opts.name,
+    url: `${base}/`,
+    description: cleanText(opts.description) || undefined,
+    inLanguage: "tr-TR",
+    publisher: { "@id": `${base}/#organization` },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${base}/ara?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
 }
 

@@ -59,6 +59,19 @@ function hmSiteOrigin(domain: string | null | undefined, fallback: string): stri
   }
 }
 
+function hmSiteOrigins(site: {
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+}): string[] {
+  const origins = new Set<string>();
+  for (const d of [site.domain, site.domain2, site.domain3]) {
+    const origin = hmSiteOrigin(d, "");
+    if (origin && origin.startsWith("http")) origins.add(origin.replace(/\/+$/, ""));
+  }
+  return [...origins];
+}
+
 /** Haber yayını sonrası pinglenecek kanonik site haritası URL'leri (kök /api yok). */
 export async function buildNewsSitemapPingUrls(
   row: Pick<NewsRow, "siteId" | "status">,
@@ -70,14 +83,19 @@ export async function buildNewsSitemapPingUrls(
   if (row.siteId == null) {
     urls.add(`${portalBase}/sitemap.xml`);
     urls.add(`${portalBase}/news-yekpare.xml`);
+    urls.add(`${portalBase}/google-news.xml`);
     return [...urls];
   }
 
   const site = await getHmNewsSiteByIdCompat(row.siteId);
   if (site) {
-    const origin = hmSiteOrigin(site.domain, portalBase);
-    urls.add(`${origin}/sitemap.xml`);
-    urls.add(`${origin}/news-hm-${encodeURIComponent(site.slug)}.xml`);
+    const origins = hmSiteOrigins(site);
+    if (origins.length === 0) origins.push(hmSiteOrigin(site.domain, portalBase));
+    for (const origin of origins) {
+      urls.add(`${origin}/sitemap.xml`);
+      urls.add(`${origin}/news-hm-${encodeURIComponent(site.slug)}.xml`);
+      urls.add(`${origin}/google-news.xml`);
+    }
     return [...urls];
   }
 
@@ -88,17 +106,30 @@ export async function buildNewsSitemapPingUrls(
 /** RSS batch / toplu güncelleme — portal + tüm aktif HM alan adları. */
 export async function buildPortalNewsSitemapPingUrls(): Promise<string[]> {
   const portalBase = sitePublicOrigin().replace(/\/+$/, "");
-  const urls = new Set<string>([`${portalBase}/sitemap.xml`, `${portalBase}/news-yekpare.xml`]);
+  const urls = new Set<string>([
+    `${portalBase}/sitemap.xml`,
+    `${portalBase}/news-yekpare.xml`,
+    `${portalBase}/google-news.xml`,
+  ]);
 
   const hmSites = await db
-    .select({ slug: hmNewsSitesTable.slug, domain: hmNewsSitesTable.domain })
+    .select({
+      slug: hmNewsSitesTable.slug,
+      domain: hmNewsSitesTable.domain,
+      domain2: hmNewsSitesTable.domain2,
+      domain3: hmNewsSitesTable.domain3,
+    })
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.active, true));
 
   for (const site of hmSites) {
-    const origin = hmSiteOrigin(site.domain, portalBase);
-    urls.add(`${origin}/sitemap.xml`);
-    urls.add(`${origin}/news-hm-${encodeURIComponent(site.slug)}.xml`);
+    const origins = hmSiteOrigins(site);
+    if (origins.length === 0) origins.push(hmSiteOrigin(site.domain, portalBase));
+    for (const origin of origins) {
+      urls.add(`${origin}/sitemap.xml`);
+      urls.add(`${origin}/news-hm-${encodeURIComponent(site.slug)}.xml`);
+      urls.add(`${origin}/google-news.xml`);
+    }
   }
 
   return [...urls];

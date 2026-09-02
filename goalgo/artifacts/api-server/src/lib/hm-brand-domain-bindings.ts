@@ -30,6 +30,12 @@ export const HM_BRAND_DOMAIN_BINDINGS: Array<{
   editorEmail: string;
 }> = [
   {
+    domain: "suhaber.net",
+    slug: "su",
+    displayName: "Su Haber",
+    editorEmail: "editor@suhaber.net",
+  },
+  {
     domain: "suhaberajansi.com",
     slug: "su",
     displayName: "Su Haber Ajansı",

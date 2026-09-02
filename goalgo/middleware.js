@@ -743,6 +743,10 @@ function rootSitemapApiPath(pathname) {
   if (mHmYazarlar) return `/api/sitemap/news-hm-${mHmYazarlar[1]}-yazarlar.xml`;
   const mHmSayfalar = /^\/news-hm-([^/]+)-sayfalar\.xml$/i.exec(p);
   if (mHmSayfalar) return `/api/sitemap/news-hm-${mHmSayfalar[1]}-sayfalar.xml`;
+  const mHmGoogleNews = /^\/news-hm-([^/]+)-google-news\.xml$/i.exec(p);
+  if (mHmGoogleNews) return `/api/sitemap/news-hm-${mHmGoogleNews[1]}-google-news.xml`;
+  if (p === "/google-news.xml") return "/api/sitemap/google-news.xml";
+  if (p === "/news-yekpare-google-news.xml") return "/api/sitemap/news-yekpare-google-news.xml";
   const mHm = /^\/news-hm-(.+)\.xml$/i.exec(p);
   if (mHm) return `/api/sitemap/news-hm-${mHm[1]}.xml`;
   const mProducts = /^\/products-(\d+)\.xml$/i.exec(p);
@@ -883,7 +887,7 @@ async function buildMinimalSitemapIndexFallback(request, incoming) {
   return sitemapIndexXmlResponse(request, portalXml);
 }
 
-/** HM özel alan adında robots.txt — ziyaret edilen köke göre sitemap. */
+/** HM özel alan adında robots.txt — ziyaret edilen köke göre sitemap + GEO. */
 function serveDynamicRobotsTxt(request, incoming, host) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   if (incoming.pathname !== "/robots.txt") return null;
@@ -892,8 +896,28 @@ function serveDynamicRobotsTxt(request, incoming, host) {
   const body = [
     "User-agent: *",
     "Allow: /",
+    "Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full",
+    "",
+    "User-agent: GPTBot",
+    "Allow: /",
+    "",
+    "User-agent: ChatGPT-User",
+    "Allow: /",
+    "",
+    "User-agent: ClaudeBot",
+    "Allow: /",
+    "",
+    "User-agent: PerplexityBot",
+    "Allow: /",
+    "",
+    "User-agent: Google-Extended",
+    "Allow: /",
+    "",
+    "User-agent: Googlebot-News",
+    "Allow: /",
     "",
     `Sitemap: ${origin}/sitemap.xml`,
+    `Sitemap: ${origin}/google-news.xml`,
     "",
     "Disallow: /admin/",
     "Disallow: /editor/",
@@ -1796,7 +1820,7 @@ export default async function middleware(request) {
           .split(",")
           .map((s) => s.trim().toLowerCase())
           .filter(Boolean)
-      : ["suhaberajansi.com", "www.suhaberajansi.com"];
+      : ["suhaber.net", "www.suhaber.net", "suhaberajansi.com", "www.suhaberajansi.com"];
 
   const homePathRaw = String(process.env.HM_NEWS_CENTER_BRAND_HOME_PATH ?? "/tr/su").trim();
   const homePath = homePathRaw.startsWith("/") ? homePathRaw : `/${homePathRaw}`;

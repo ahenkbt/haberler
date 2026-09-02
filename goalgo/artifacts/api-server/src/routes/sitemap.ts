@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, isNull, isNotNull, notInArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, isNotNull, notInArray, or, sql } from "drizzle-orm";
 import {
   db,
   getNewsDbForRead,
@@ -45,7 +45,7 @@ import {
   NEWS_URLSET_ATTRS,
   type NewsSitemapRow,
 } from "../lib/news-sitemap-xml.js";
-import { filterNewsSitemapRows } from "../lib/sitemap-validation.js";
+import { filterNewsSitemapRows, isRecentGoogleNewsArticle, GOOGLE_NEWS_SITEMAP_MAX_AGE_MS } from "../lib/sitemap-validation.js";
 
 const router: IRouter = Router();
 
@@ -156,6 +156,20 @@ function hmSitemapUrlDomain(
     }
   }
   return null;
+}
+
+/** Ziyaret edilen HM alan adı — GSC'de vatanhaber.net / suhaber.net loc'ları kendi kökünde kalsın. */
+function hmRequestSitemapOrigin(
+  req: import("express").Request,
+  site: { domain: string | null | undefined; domain2?: string | null; domain3?: string | null },
+): string {
+  const requestHost = normalizeRequestHost(req);
+  const matched = hmSitemapUrlDomain(req, site);
+  if (matched) return hmSiteOrigin(matched, requestHost ? `https://${requestHost}` : resolvePortalRequestOrigin(req));
+  if (requestHost && !isPortalHostForSitemap(requestHost)) {
+    return `https://${requestHost}`;
+  }
+  return hmSiteOrigin(site.domain, resolvePortalRequestOrigin(req));
 }
 
 function sendSitemapIndex(res: import("express").Response, locs: string[]): void {
@@ -858,6 +872,179 @@ router.get("/news-hm-:hmSlug-sayfalar.xml", async (req, res): Promise<void> => {
   }
 });
 
+function googleNewsCutoff(): Date {
+  return new Date(Date.now() - GOOGLE_NEWS_SITEMAP_MAX_AGE_MS);
+}
+
+async function sendGoogleNewsUrlset(
+  res: import("express").Response,
+  articles: NewsSitemapRow[],
+  locFor: (row: NewsSitemapRow) => string,
+  publicationName: string,
+  mediaOrigin: string,
+): Promise<void> {
+  const recent = dedupeNewsSitemapRows(articles).filter((row) => isRecentGoogleNewsArticle(row.createdAt));
+  if (recent.length === 0) {
+    sendUrlset(res, "");
+    return;
+  }
+  const urls = recent
+    .map((a) =>
+      newsUrlXmlBlock(locFor(a), a, publicationName, true, {
+        mediaOrigin,
+        priority: "0.9",
+        changefreq: "hourly",
+      }),
+    )
+    .join("\n");
+  res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=900");
+  res.send(`${xmlHeader()}<urlset ${NEWS_URLSET_ATTRS}>\n${urls}\n</urlset>`);
+}
+
+/* — Google News: yalnızca son 48 saat (GSC / Publisher Center) — */
+router.get("/news-yekpare-google-news.xml", async (req, res): Promise<void> => {
+  try {
+    const base = resolvePortalRequestOrigin(req);
+    const cutoff = googleNewsCutoff();
+    const articles = await db
+      .select(newsSitemapSelectFields)
+      .from(newsTable)
+      .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
+      .where(and(portalPublishedNewsWhere, gte(newsTable.createdAt, cutoff)))
+      .orderBy(desc(newsTable.createdAt))
+      .limit(1000)
+      .then((rows) => rows.map(mapJoinedNewsSitemapRow));
+    await sendGoogleNewsUrlset(
+      res,
+      articles,
+      (a) => yekpareArticleUrl(a.slug, base),
+      PORTAL_BRAND_SHORT,
+      base.replace(/\/+$/, ""),
+    );
+  } catch {
+    res.status(500).send("Sitemap hatası");
+  }
+});
+
+router.get("/news-hm-:hmSlug-google-news.xml", async (req, res): Promise<void> => {
+  try {
+    const hmSlug = String(req.params.hmSlug ?? "").trim();
+    if (!hmSlug) {
+      res.status(400).send("slug");
+      return;
+    }
+    const site = await getActiveHmNewsSiteBySlugCompat(hmSlug);
+    if (!site) {
+      sendUrlset(res, "");
+      return;
+    }
+    const cutoff = googleNewsCutoff();
+    const hiddenCategoryIds = await getHmHiddenCategoryIds(site.id);
+    const hiddenCond =
+      hiddenCategoryIds.length > 0
+        ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
+        : undefined;
+    const siteArticles = await db
+      .select(newsSitemapSelectFields)
+      .from(newsTable)
+      .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
+      .where(
+        hiddenCond
+          ? and(
+              eq(newsTable.status, "published"),
+              eq(newsTable.siteId, site.id),
+              gte(newsTable.createdAt, cutoff),
+              hiddenCond,
+            )
+          : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), gte(newsTable.createdAt, cutoff)),
+      )
+      .orderBy(desc(newsTable.createdAt))
+      .limit(1000)
+      .then((rows) => rows.map(mapJoinedNewsSitemapRow));
+    const origin = hmRequestSitemapOrigin(req, site);
+    const urlDomain = hmSitemapUrlDomain(req, site);
+    const portalBase = resolvePortalRequestOrigin(req);
+    const mediaOrigin = newsSitemapMediaOrigin(portalBase, origin);
+    const pubName = site.displayName || site.slug;
+    await sendGoogleNewsUrlset(
+      res,
+      siteArticles,
+      (a) => hmArticleUrl(site.slug, a.slug, urlDomain, origin),
+      pubName,
+      mediaOrigin,
+    );
+  } catch {
+    res.status(500).send("Sitemap hatası");
+  }
+});
+
+router.get("/google-news.xml", async (req, res): Promise<void> => {
+  try {
+    const requestHost = normalizeRequestHost(req);
+    if (requestHost && !isPortalHostForSitemap(requestHost)) {
+      const site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(requestHost));
+      if (site) {
+        const cutoff = googleNewsCutoff();
+        const hiddenCategoryIds = await getHmHiddenCategoryIds(site.id);
+        const hiddenCond =
+          hiddenCategoryIds.length > 0
+            ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
+            : undefined;
+        const siteArticles = await db
+          .select(newsSitemapSelectFields)
+          .from(newsTable)
+          .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
+          .where(
+            hiddenCond
+              ? and(
+                  eq(newsTable.status, "published"),
+                  eq(newsTable.siteId, site.id),
+                  gte(newsTable.createdAt, cutoff),
+                  hiddenCond,
+                )
+              : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), gte(newsTable.createdAt, cutoff)),
+          )
+          .orderBy(desc(newsTable.createdAt))
+          .limit(1000)
+          .then((rows) => rows.map(mapJoinedNewsSitemapRow));
+        const origin = hmRequestSitemapOrigin(req, site);
+        const urlDomain = hmSitemapUrlDomain(req, site);
+        const portalBase = resolvePortalRequestOrigin(req);
+        const mediaOrigin = newsSitemapMediaOrigin(portalBase, origin);
+        const pubName = site.displayName || site.slug;
+        await sendGoogleNewsUrlset(
+          res,
+          siteArticles,
+          (a) => hmArticleUrl(site.slug, a.slug, urlDomain, origin),
+          pubName,
+          mediaOrigin,
+        );
+        return;
+      }
+    }
+    const base = resolvePortalRequestOrigin(req);
+    const cutoff = googleNewsCutoff();
+    const articles = await db
+      .select(newsSitemapSelectFields)
+      .from(newsTable)
+      .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
+      .where(and(portalPublishedNewsWhere, gte(newsTable.createdAt, cutoff)))
+      .orderBy(desc(newsTable.createdAt))
+      .limit(1000)
+      .then((rows) => rows.map(mapJoinedNewsSitemapRow));
+    await sendGoogleNewsUrlset(
+      res,
+      articles,
+      (a) => yekpareArticleUrl(a.slug, base),
+      PORTAL_BRAND_SHORT,
+      base.replace(/\/+$/, ""),
+    );
+  } catch {
+    res.status(500).send("Sitemap hatası");
+  }
+});
+
 /* — HM site: tüm yayınlar + kategori URL’leri — */
 router.get("/news-hm-:hmSlug.xml", async (req, res): Promise<void> => {
   try {
@@ -1377,6 +1564,8 @@ async function hmDomainSitemapLocs(site: HmSiteSitemapRow, origin: string): Prom
   const catSlugs = await resolveHmSitemapCategorySlugs(site);
   const locs = [
     `${origin}/news-hm-${encodeURIComponent(site.slug)}.xml`,
+    `${origin}/news-hm-${encodeURIComponent(site.slug)}-google-news.xml`,
+    `${origin}/google-news.xml`,
     ...(await hmSupplementarySitemapLocsFiltered(site, origin)),
   ];
   for (const catSlug of catSlugs) {
@@ -1435,6 +1624,7 @@ async function buildGscDomainHintGroups(hmSites: HmSiteSitemapRow[], base: strin
           if (leaf.startsWith(`news-hm-${site.slug}-makale`)) label = `${siteLabel} — köşe / makale`;
           else if (leaf.startsWith(`news-hm-${site.slug}-yazarlar`)) label = `${siteLabel} — yazarlar`;
           else if (leaf.startsWith(`news-hm-${site.slug}-sayfalar`)) label = `${siteLabel} — kurumsal sayfalar`;
+          else if (leaf === "google-news" || leaf.endsWith("-google-news")) label = `${siteLabel} — Google News (48 saat)`;
           else if (leaf.startsWith("news-hm-")) label = `${siteLabel} — tüm haberler`;
           return { label, url };
         }),
@@ -1457,6 +1647,9 @@ async function buildHmDomainSitemapCatalog(
     else if (leaf === `news-hm-${site.slug}-makale`) label = `${siteLabel} — köşe / makale`;
     else if (leaf === `news-hm-${site.slug}-yazarlar`) label = `${siteLabel} — yazarlar`;
     else if (leaf === `news-hm-${site.slug}-sayfalar`) label = `${siteLabel} — kurumsal sayfalar`;
+    else if (leaf === `news-hm-${site.slug}-google-news` || leaf === "google-news") {
+      label = `${siteLabel} — Google News (48 saat)`;
+    }
     return { label, url };
   });
   return {
@@ -1492,6 +1685,7 @@ async function buildSitemapCatalog(baseInput?: string): Promise<{ indexUrl: stri
       title: `${PORTAL_BRAND_SHORT} haberleri`,
       items: [
         { label: `Tüm ${PORTAL_BRAND_SHORT} haberleri`, url: `${base}/news-yekpare.xml` },
+        { label: "Google News (48 saat)", url: `${base}/google-news.xml` },
         ...cats.map((c) => ({
           label: c.name?.trim() || c.slug,
           url: `${base}/news-yekpare-cat-${encodeURIComponent(c.slug)}.xml`,
@@ -1522,6 +1716,9 @@ async function buildSitemapCatalog(baseInput?: string): Promise<{ indexUrl: stri
         if (leaf === `news-hm-${site.slug}-makale`) label = `${siteLabel} — köşe / makale`;
         else if (leaf === `news-hm-${site.slug}-yazarlar`) label = `${siteLabel} — yazarlar`;
         else if (leaf === `news-hm-${site.slug}-sayfalar`) label = `${siteLabel} — kurumsal sayfalar`;
+        else if (leaf === `news-hm-${site.slug}-google-news` || leaf === "google-news") {
+          label = `${siteLabel} — Google News (48 saat)`;
+        }
         return { label, url };
       }),
     ];
@@ -1674,7 +1871,7 @@ router.get("/list.json", async (req, res): Promise<void> => {
     if (requestHost && !isPortalHostForSitemap(requestHost)) {
       const site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(requestHost));
       if (site) {
-        const origin = hmSiteOrigin(site.domain, `https://${requestHost}`);
+        const origin = hmRequestSitemapOrigin(req, site);
         catalog = await buildHmDomainSitemapCatalog(site, origin);
         const allRss = await buildRssCatalog();
         const siteLabel = site.displayName?.trim() || site.slug;
@@ -1721,7 +1918,7 @@ router.get("/index.xml", async (req, res): Promise<void> => {
     if (requestHost && !isPortalHostForSitemap(requestHost)) {
       const site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(requestHost));
       if (site) {
-        const origin = hmSiteOrigin(site.domain, `https://${requestHost}`);
+        const origin = hmRequestSitemapOrigin(req, site);
         const locs = await hmDomainSitemapLocs(site, origin);
         sendSitemapIndex(res, locs);
         return;

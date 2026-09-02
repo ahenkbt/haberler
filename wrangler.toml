@@ -151,6 +151,23 @@ zone_name = "vatanhaber.net"
 pattern = "www.vatanhaber.net"
 zone_name = "vatanhaber.net"
 
+# Su Haber — kanonik Google alanı suhaber.net; suhaberajansi.com takma ad
+[[routes]]
+pattern = "suhaber.net"
+custom_domain = true
+
+[[routes]]
+pattern = "www.suhaber.net"
+custom_domain = true
+
+[[routes]]
+pattern = "suhaber.net/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/*"
+zone_name = "suhaber.net"
+
 # Su Haber Ajansı — zone Cloudflare'de; A/AAAA boş → Worker custom_domain
 [[routes]]
 pattern = "suhaberajansi.com"
@@ -168,7 +185,7 @@ zone_name = "suhaberajansi.com"
 pattern = "www.suhaberajansi.com/*"
 zone_name = "suhaberajansi.com"
 
-# belediyehizmet.com kaldırıldı — eski Kırşehir/Su sitesi artık suhaberajansi.com (/tr/su)
+# belediyehizmet.com kaldırıldı — Su Haber kanonik alan: suhaber.net (/tr/su)
 
 # Kırşehir Haber (/tr/kh)
 # kirsehirhaber.org: zone CF'de (NS hazır) — Worker routes + originless DNS açık.

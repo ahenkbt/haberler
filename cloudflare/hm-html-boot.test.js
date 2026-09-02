@@ -8,12 +8,17 @@ import {
   firstHmBootImageUrl,
   injectHmHtmlBoot,
   withBudget,
+  buildGeoRobotsTxt,
+  buildHmLlmsTxtFallback,
+  isHmAiKnowledgePath,
 } from "./hm-html-boot.js";
 
 describe("hm-html-boot", () => {
   it("maps known editor domains to slugs", () => {
     assert.equal(hmDomainSlugFallback("ankarahabergundemi.com"), "ankarahabergundemi");
     assert.equal(hmDomainSlugFallback("www.vatanhaber.net"), "vatanhaber");
+    assert.equal(hmDomainSlugFallback("suhaber.net"), "su");
+    assert.equal(hmDomainSlugFallback("www.suhaber.net"), "su");
     assert.equal(hmDomainSlugFallback("turk.eco"), "");
   });
 
@@ -22,6 +27,8 @@ describe("hm-html-boot", () => {
     assert.equal(shouldInstantHmRootRedirect("GET", "/tr/ankarahabergundemi", "ankarahabergundemi.com"), false);
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "turk.eco"), false);
     assert.equal(shouldInstantHmRootRedirect("POST", "/", "vatanhaber.net"), false);
+    assert.equal(shouldInstantHmRootRedirect("GET", "/", "suhaber.net"), true);
+    assert.equal(hmHomeSlugFromPath("/", "suhaber.net"), "su");
   });
 
   it("reads /tr/{slug} and domain fallback for HTML boot", () => {
@@ -61,5 +68,17 @@ describe("hm-html-boot", () => {
     const slow = new Promise((resolve) => setTimeout(() => resolve("late"), 50));
     assert.equal(await withBudget(slow, 5), null);
     assert.equal(await withBudget(Promise.resolve("ok"), 50), "ok");
+  });
+
+  it("builds GEO robots and HM llms fallback for vatanhaber.net / suhaber.net", () => {
+    const robots = buildGeoRobotsTxt("https://vatanhaber.net");
+    assert.match(robots, /Sitemap: https:\/\/vatanhaber\.net\/sitemap\.xml/);
+    assert.match(robots, /Sitemap: https:\/\/vatanhaber\.net\/google-news\.xml/);
+    assert.match(robots, /User-agent: GPTBot\nAllow: \//);
+    assert.match(robots, /User-agent: Google-Extended\nAllow: \//);
+    assert.equal(isHmAiKnowledgePath("/llms.txt"), true);
+    const llms = buildHmLlmsTxtFallback("vatanhaber", "https://vatanhaber.net");
+    assert.match(llms, /# Vatan Haber/);
+    assert.match(llms, /https:\/\/vatanhaber\.net\/sitemap\.xml/);
   });
 });
