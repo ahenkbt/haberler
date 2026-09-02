@@ -413,9 +413,15 @@ function isApiPath(pathname) {
 }
 
 /** Kök sitemap .xml → /api/sitemap/* (Googlebot HTML SPA almasın). */
-function rootSitemapApiPath(pathname) {
+function rootSitemapApiPath(pathname, hostname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
-  if (p === "/sitemap.xml") return "/api/sitemap/index.xml";
+  if (p === "/sitemap.xml") {
+    // GSC submitted file must be a urlset. HM index.xml was a sitemapindex (0 pages)
+    // until the Container rolled; news-hm-{slug}.xml already has the article URLs.
+    const slug = hmDomainSlugFallback(hostname);
+    if (slug) return `/api/sitemap/news-hm-${encodeURIComponent(slug)}.xml`;
+    return "/api/sitemap/index.xml";
+  }
   if (p === "/sitemap-index.xml") return "/api/sitemap/index-shards.xml";
   const mHmCat = /^\/news-hm\/([^/]+)\/([^/]+)\.xml$/i.exec(p);
   if (mHmCat) return `/api/sitemap/news-hm/${mHmCat[1]}/${mHmCat[2]}.xml`;
@@ -673,7 +679,7 @@ async function proxyRootSitemap(request, env, incoming) {
   if (!pathOnly.endsWith(".xml")) return null;
   // Statik asset XML'ler (sitemap-static) CF Assets'ten gelsin
   if (pathOnly === "/sitemap-static.xml" || pathOnly === "/browserconfig.xml") return null;
-  const apiPath = rootSitemapApiPath(pathOnly);
+  const apiPath = rootSitemapApiPath(pathOnly, incoming.hostname);
   if (!apiPath) return null;
 
   const origin = upstreamOrigin(env, incoming);

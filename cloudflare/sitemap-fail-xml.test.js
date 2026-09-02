@@ -14,3 +14,9 @@ test("child sitemap fail XML stays an empty urlset", () => {
   assert.match(xml, /<urlset /);
   assert.doesNotMatch(xml, /<url>/);
 });
+
+test("vatanhaber.net slug is vatanhaber so Worker can map sitemap.xml to news-hm urlset", async () => {
+  const { hmDomainSlugFallback } = await import("./hm-html-boot.js");
+  assert.equal(hmDomainSlugFallback("vatanhaber.net"), "vatanhaber");
+  assert.equal(hmDomainSlugFallback("www.suhaber.net"), "su");
+});
