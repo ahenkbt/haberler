@@ -152,6 +152,7 @@ export const adminNavSections: AdminNavSection[] = [
       { name: "Tema Ayarları", icon: Settings, href: "/admin/tema-ayarlari", permission: "site_ayarlari" },
       { name: "Yekpare Haberler (vitrin)", icon: SlidersHorizontal, href: "/admin/yekpare-haberler", permission: "site_ayarlari" },
       { name: "Anasayfa Tasarımı", icon: LayoutTemplate, href: "/admin/anasayfa-tasarim", permission: "site_ayarlari" },
+      { name: "Ahenk Ajans Sitesi", icon: Building2, href: "/admin/ahenk-ajans", permission: "site_ayarlari" },
       { name: "Anasayfa Modülleri", icon: LayoutTemplate, href: "/admin/anasayfa-modulleri", permission: "site_ayarlari" },
       { name: "İletişim Mesajları", icon: Mail, href: "/admin/iletisim-mesajlari", permission: "iletisim" },
       { name: "Posta & anasayfa duyuru", icon: Inbox, href: "/admin/posta-ve-duyurular", permission: "comms" },

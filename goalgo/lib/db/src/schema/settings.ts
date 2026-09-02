@@ -53,6 +53,8 @@ export const siteSettingsTable = pgTable("site_settings", {
   newsLayoutJson: text("news_layout_json"),
   /** JSON string: Yekpare `/` landing vitrin düzeni (YekpareLandingDesign). */
   homepageDesignJson: text("homepage_design_json"),
+  /** JSON: ahenk.net.tr ajans vitrini (AhenkAgencySite). */
+  ahenkAgencyJson: text("ahenk_agency_json"),
   /** Google Maps JavaScript API tarayıcı anahtarı (HTTP referrer kısıtlı önerilir) */
   mapsGoogleBrowserKey: text("maps_google_browser_key"),
   /** true ise konum çözümlemesinde önce Google Geocoder denenir; kota/hata → OSM */
