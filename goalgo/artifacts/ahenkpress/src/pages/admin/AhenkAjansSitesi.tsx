@@ -690,6 +690,26 @@ function CardList({
             onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, excerpt: e.target.value } : c)))}
             placeholder="Özet"
           />
+          <Textarea
+            rows={4}
+            value={(item.features ?? []).join("\n")}
+            onChange={(e) =>
+              onChange(
+                items.map((c, j) =>
+                  j === i
+                    ? {
+                        ...c,
+                        features: e.target.value
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .filter(Boolean),
+                      }
+                    : c,
+                ),
+              )
+            }
+            placeholder="Sektör modülleri (her satır bir özellik: QR menü, POS, online randevu…)"
+          />
           <Input
             value={item.image ?? ""}
             onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, image: e.target.value } : c)))}
@@ -731,6 +751,7 @@ function CardList({
               href: "/",
               bodyHtml: "<p></p>",
               image: "",
+              features: [],
             },
           ])
         }

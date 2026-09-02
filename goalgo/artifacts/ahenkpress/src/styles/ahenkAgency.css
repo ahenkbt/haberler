@@ -70,7 +70,7 @@
   width: 46px;
   height: 46px;
   border-radius: 10px;
-  background: linear-gradient(145deg, var(--ahenk-navy-2), var(--ahenk-navy));
+  background: #000;
   color: var(--ahenk-gold);
   display: grid;
   place-items: center;
@@ -78,6 +78,14 @@
   font-size: 18px;
   letter-spacing: -0.04em;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ahenk-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .ahenk-brand-text {
@@ -383,8 +391,75 @@
   color: var(--ahenk-muted);
   font-size: 14px;
   line-height: 1.55;
+  margin: 0 0 10px;
+  flex: 0 1 auto;
+}
+
+.ahenk-chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin: 0 0 14px;
-  flex: 1;
+  padding: 0;
+}
+
+.ahenk-chips li {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--ahenk-paper);
+  color: var(--ahenk-navy);
+  border: 1px solid var(--ahenk-line);
+  line-height: 1.2;
+}
+
+.ahenk-chip-more {
+  background: #fff !important;
+  color: var(--ahenk-gold) !important;
+  border-color: #d9c78a !important;
+}
+
+.ahenk-card-body .ahenk-card-cta {
+  margin-top: auto;
+}
+
+.ahenk-prose .ahenk-mods,
+.ahenk-mods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 22px;
+}
+
+.ahenk-mods li {
+  position: relative;
+  padding: 10px 12px 10px 32px;
+  background: var(--ahenk-paper);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ahenk-navy);
+  line-height: 1.35;
+}
+
+.ahenk-mods li::before {
+  content: "✓";
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  color: var(--ahenk-gold);
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .ahenk-mods {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ahenk-card-cta {
@@ -555,6 +630,16 @@
   background: var(--ahenk-navy);
   color: #c9d3e0;
   padding: 48px 20px 24px;
+}
+
+.ahenk-footer-wordmark {
+  height: 52px;
+  width: auto;
+  max-width: 240px;
+  display: block;
+  margin: 0 0 14px;
+  border-radius: 8px;
+  background: #000;
 }
 
 .ahenk-footer-grid {

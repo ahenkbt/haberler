@@ -1,3 +1,10 @@
+import {
+  AHENK_CORPORATE_EMAIL,
+  AHENK_LOGO_MARK,
+  AHENK_LOGO_WORDMARK,
+  ahenkResolvedPackage,
+} from "@/lib/ahenkCampaignPrice";
+
 /** Ahenk Bilgi Teknolojileri ajans vitrini — arşiv içeriği + admin override. */
 
 export type AhenkAgencyOffice = {
@@ -35,7 +42,12 @@ export type AhenkContentCard = {
   bodyHtml: string;
   image?: string;
   aliases?: string[];
+  /** Sektöre özel operasyon modülleri (POS, randevu, kurye…). */
+  features?: string[];
 };
+
+/** Kayıtlı vitrinde yoksa anasayfaya eklenen yeni yazılım dikeyleri. */
+export const AHENK_SOFTWARE_APPEND_SLUGS = ["surucu-kursu-sitesi", "guzellik-merkezi-sitesi"] as const;
 
 export type AhenkPromoBlock = {
   kicker: string;
@@ -53,21 +65,59 @@ export type AhenkFaq = {
   a: string;
 };
 
+export type AhenkTextBlock = {
+  title: string;
+  text: string;
+};
+
 export const AHENK_REMOVED_SERVICE_SLUGS = new Set(["temizlik-hizmetleri"]);
+
+export function defaultAhenkLandingFeatures(): AhenkTextBlock[] {
+  return [
+    {
+      title: "Manşet ve vitrin",
+      text: "Slider manşet, ara manşet, kategori blokları, son haberler ızgarası ve gazete / ajans / kurumsal düzenler.",
+    },
+    {
+      title: "RSS ve hibrit haber",
+      text: "RSS kaynakları, son dakika bandı, Google News tarzı kart bandı ve manuel + otomatik haber havuzu.",
+    },
+    {
+      title: "Özel alan adı ve sunucu",
+      text: "Kendi domaininiz, sunucu ve SSL kampanya paketine dahildir. SEO, sitemap ve RSS otomatik.",
+    },
+    {
+      title: "Haber sitesi teması",
+      text: "Çoklu vitrin teması, logo, renk, sidebar ve footer — kod bilmeden admin / editör panelinden.",
+    },
+    {
+      title: "Video TV ve galeri",
+      text: "Kanal, playlist, foto galeri ve embed widget; haber detayında zengin medya.",
+    },
+    {
+      title: "Yapay zekâ editör",
+      text: "Haber ekleme, özgünleştirme ve içerik araçları; 1–3 günde teslim.",
+    },
+  ];
+}
 
 export function defaultAhenkFaqs(): AhenkFaq[] {
   return [
     {
       q: "Kurumsal web sitesi kaç günde teslim edilir ve fiyatı nedir?",
-      a: "Kurumsal web sitesi 3 günde teslim edilir. Paket fiyatı 10.000 TL’dir. Yapay zeka destekli üretim ile içerik, tasarım ve yayın aynı sprintte tamamlanır.",
+      a: "Kurumsal web sitesi 3 günde teslim edilir. 2026 sonuna kadar kampanya fiyatı 10.000 TL’dir (20.000 TL yerine); sunucu ve domain dahildir. 2027’den itibaren paket 20.000 TL olur.",
     },
     {
       q: "Web yazılımı ve web tasarımı hangi sektörleri kapsar?",
-      a: "Tüm sektörler: haber sitesi yazılımı ve haber scripti, avukat sitesi, doktor sitesi, dernek-vakıf, belediye, restoran ve otel, e-ticaret, emlak, okul ve holding kurumsal siteleri.",
+      a: "Tüm sektörler kendi operasyon modülleriyle teslim edilir: restoran POS, QR menü, kurye, kasiyer ve garson; doktor ve avukat sitelerinde online randevu ile görüntülü danışmanlık; emlak, okul, sürücü kursu, güzellik merkezi, haber scripti ve kurumsal web sitesi.",
     },
     {
       q: "Haber sitesi yazılımı veya haber scripti alabilir miyim?",
       a: "Evet. Haber Merkezi white-label yazılımı manşet, RSS, yazar, tema ve özel alan adı ile teslim edilir. 1-3 günde yayına alınır.",
+    },
+    {
+      q: "Restoran yazılımında POS, QR menü ve kurye var mı?",
+      a: "Evet. Restoran paketinde QR kod menü, restoran POS yönetimi, kasiyer, garson sipariş, kurye / paket servis, stok takibi, masa rezervasyonu ve online sipariş bulunur. Her sektörün kendi profesyonel modülleri ayrı teslim edilir.",
     },
     {
       q: "Mobil uyumlu yazılım dahil mi?",
@@ -75,7 +125,7 @@ export function defaultAhenkFaqs(): AhenkFaq[] {
     },
     {
       q: "Ödeme IBAN bilgisi nedir?",
-      a: "Kuveyt Türk · Nail TÜRKOĞLU · TR160020500000041593000001. WhatsApp hattı 0541 313 62 45.",
+      a: "Kuveyt Türk · Nail TÜRKOĞLU · TR160020500000041593000001. Kurumsal e-posta bilgi@ahenk.net.tr. WhatsApp hattı 0541 313 62 45.",
     },
   ];
 }
@@ -88,6 +138,8 @@ export type AhenkAgencySite = {
   phoneTel: string;
   whatsappTel: string;
   email: string;
+  logoUrl: string;
+  logoMarkUrl: string;
   seoTitle: string;
   seoDescription: string;
   seoKeywords: string;
@@ -96,6 +148,10 @@ export type AhenkAgencySite = {
   priceAmount: string;
   priceCurrency: string;
   pricePeriodNote: string;
+  priceCampaignUntilYear: string;
+  priceCampaignAmount: string;
+  priceRegularAmount: string;
+  priceIncludesNote: string;
   ibanBank: string;
   ibanHolder: string;
   iban: string;
@@ -133,6 +189,11 @@ export type AhenkAgencySite = {
   servicesTitle: string;
   servicesLead: string;
   servicesHeroImage: string;
+  landingKicker: string;
+  landingTitle: string;
+  landingLead: string;
+  landingCtaLabel: string;
+  landingFeatures: AhenkTextBlock[];
   offices: AhenkAgencyOffice[];
   slides: AhenkAgencySlide[];
   services: AhenkAgencyService[];
@@ -177,6 +238,8 @@ export const AHENK_PHOTOS = {
   restaurant: photo("photo-1414235077428-338989a2e8c0"),
   estate: photo("photo-1560518883-ce09059eeffa"),
   school: photo("photo-1524178232363-1fb2b075b655"),
+  driving: photo("photo-1449965408869-eaa3f722e40d"),
+  beauty: photo("photo-1560066984-138dadb4c035"),
   corporate: photo("photo-1497366811353-6870744d04b2"),
   design: photo("photo-1561070791-2526d30994b5"),
   code: photo("photo-1461749280684-dccba630e2f6"),
@@ -205,114 +268,322 @@ function card(
   href: string,
   bodyHtml: string,
   image: string,
+  features: string[] = [],
 ): AhenkContentCard {
-  return { slug, title, excerpt, icon, href, bodyHtml, image };
+  return { slug, title, excerpt, icon, href, bodyHtml, image, features };
+}
+
+function modsHtml(features: string[]): string {
+  if (!features.length) return "";
+  return `<h3>Sektör modülleri</h3>
+<ul class="ahenk-mods">${features.map((f) => `<li>${f}</li>`).join("")}</ul>`;
 }
 
 function defaultSoftwareSectors(): AhenkContentCard[] {
+  const pkg = ahenkResolvedPackage({});
+  const lawyerMods = [
+    "Online randevu",
+    "Görüntülü danışmanlık",
+    "Uzmanlık ve dava alanları",
+    "Müvekkil paneli",
+    "Evrak ve dilekçe yükleme",
+    "Ücret tarifesi",
+    "Baro ve reklam mevzuatı",
+    "KVKK ve referans gizliliği",
+    "Karar / yayın arşivi",
+    "WhatsApp hattı",
+  ];
+  const doctorMods = [
+    "Online randevu",
+    "Görüntülü danışmanlık",
+    "Branş ve hekim seçimi",
+    "Hasta ön kayıt formu",
+    "Randevu hatırlatma",
+    "Online ödeme",
+    "Tetkik / sonuç talebi",
+    "Çoklu klinik / şube",
+    "KVKK ve hasta gizliliği",
+    "WhatsApp hattı",
+  ];
+  const ngoMods = [
+    "Online bağış",
+    "Üyelik ve aidat",
+    "Gönüllü kaydı",
+    "Burs başvurusu",
+    "Etkinlik takvimi",
+    "Faaliyet ve arşiv",
+    "Şeffaflık raporları",
+    "Duyuru / SMS",
+    "Haber vitrini",
+    "Yönetim kurulu sayfaları",
+  ];
+  const cityMods = [
+    "Duyuru ve meclis kararları",
+    "Başvuru / dilekçe formu",
+    "e-Belediye yönlendirme",
+    "İhale ilanları",
+    "Proje ve mahalle haritası",
+    "Başkan mesajı ve canlı yayın",
+    "Randevu (nikâh, zabıta)",
+    "Haber merkezi",
+    "Erişilebilirlik",
+    "Mobil vatandaş paneli",
+  ];
+  const newsMods = [
+    "Manşet ve slider",
+    "Editör / yazar paneli",
+    "RSS ve Google News",
+    "Son dakika bandı",
+    "Video TV ve galeri",
+    "Haber haritası",
+    "Reklam alanları",
+    "Çoklu tema",
+    "Özel alan adı",
+    "Yapay zekâ haber aracı",
+  ];
+  const shopMods = [
+    "Ürün katalog ve varyant",
+    "Stok takibi",
+    "Sepet ve sanal POS",
+    "Kargo entegrasyonu",
+    "Sipariş ve iade paneli",
+    "Kupon / kampanya",
+    "Çağrı merkezi sipariş",
+    "Müşteri hesabı",
+    "Fatura / e-arşiv yönlendirme",
+    "Pazaryeri ürün aktarımı",
+  ];
+  const restoMods = [
+    "QR kod menü",
+    "Restoran POS yönetimi",
+    "Kasiyer ekranı",
+    "Garson sipariş / masa",
+    "Kurye ve paket servis",
+    "Stok takibi",
+    "Masa rezervasyonu",
+    "Mutfak ekranı (KDS)",
+    "Online sipariş",
+    "Personel ve vardiya",
+    "Çoklu şube",
+    "Otel oda rezervasyonu",
+  ];
+  const estateMods = [
+    "Proje ve portföy vitrini",
+    "Kat planı ve vaziyet",
+    "Sanal tur / 360",
+    "Filtreli ilan arama",
+    "Gezme randevusu",
+    "Lead ve CRM",
+    "Teslim takvimi",
+    "Yatırımcı sunumu",
+    "Danışman kadrosu",
+    "WhatsApp ilan paylaşımı",
+  ];
+  const schoolMods = [
+    "Online ön kayıt",
+    "Veli paneli",
+    "Akademik kadro",
+    "Ders programı ve takvim",
+    "Duyuru ve ödev",
+    "Aidat / online ödeme",
+    "Görüntülü veli görüşmesi",
+    "Galeri ve etkinlik",
+    "Servis güzergâhı",
+    "Yoklama bildirimi",
+  ];
+  const drivingMods = [
+    "Ehliyet sınıfları (B, A, C…)",
+    "Online kurs kaydı",
+    "Direksiyon randevusu",
+    "Sınav takvimi",
+    "Eğitmen ve filo",
+    "Paket ve fiyat",
+    "Direksiyon saati takibi",
+    "Online ödeme / taksit",
+    "e-Sınav deneme",
+    "Aday WhatsApp hattı",
+  ];
+  const beautyMods = [
+    "Online randevu",
+    "Uzman / oda seçimi",
+    "Hizmet ve fiyat listesi",
+    "Önce–sonra galeri",
+    "Paket ve üyelik",
+    "Stok / ürün satışı",
+    "Online ödeme",
+    "Randevu hatırlatma",
+    "Instagram vitrini",
+    "Kampanya QR menü",
+  ];
+  const corpMods = [
+    "Çok dilli kurumsal vitrin",
+    "Ürün ve hizmet ailesi",
+    "Kariyer / İK başvuru",
+    "Yatırımcı ilişkileri",
+    "Bayi ve iş ortağı formu",
+    "Katalog / doküman",
+    "Kurumsal blog ve haber",
+    "CRM iletişim formu",
+    "Sürdürülebilirlik sayfası",
+    "Sunucu ve domain dahil paket",
+  ];
+
   return [
     card(
       "avukat-sitesi",
       "Avukat sitesi yazılımı",
-      "Avukat sitesi ve hukuk bürosu web yazılımı: dava alanları, randevu, KVKK. 1-3 günde teslim.",
+      "Online randevu, görüntülü danışmanlık, müvekkil paneli ve evrak yükleme. Baro uyumlu hukuk bürosu yazılımı.",
       "scale",
       "/yazilim/avukat-sitesi",
       `<h2>Avukat sitesi yazılımı</h2>
-<p>Hukuk büroları için vitrin değil, güven mimarisi tasarlarız. Uzmanlık alanları, avukat kadrosu, yayınlar, randevu ve WhatsApp hattı tek bir prestij yüzeyinde birleşir. Baro ve reklam mevzuatına uygun dil, koyu mermer-tonlu tipografi, referans gizliliği.</p>
-<p>İçerik paneliyle karar özetleri, SSS ve iletişim formları yönetilir. SEO, Google İşletme ve harita kaydı teslimata dahildir.</p>`,
+<p>Hukuk büroları için vitrin değil, müvekkil operasyonu: uzmanlık alanları, avukat kadrosu, online randevu ve görüntülü danışmanlık tek prestij yüzeyinde. Baro ve reklam mevzuatına uygun dil, referans gizliliği, KVKK.</p>
+${modsHtml(lawyerMods)}
+<p>Müvekkil paneliyle evrak ve dilekçe yüklenir; ücret tarifesi ve SSS panelden yönetilir. SEO, Google İşletme ve harita kaydı teslimata dahildir.</p>`,
       AHENK_PHOTOS.lawyer,
+      lawyerMods,
     ),
     card(
       "doktor-sitesi",
       "Doktor sitesi yazılımı",
-      "Doktor sitesi, klinik ve hastane web yazılımı: randevu, birimler, bilimsel içerik.",
+      "Online randevu, görüntülü danışmanlık, hekim seçimi ve hasta ön kayıt. Klinik ve hastane web yazılımı.",
       "heart",
       "/yazilim/doktor-sitesi",
       `<h2>Doktor ve klinik yazılımı</h2>
-<p>Sağlıkta dijital yüz, tedavi kadar özen ister. Branş sayfaları, hekim özgeçmişleri, tıbbi içerik, randevu ve hasta iletişim formları klinik kimliğinize göre kodlanır.</p>
-<p>Mobil öncelikli, sakin palet, tıbbi görsel yönetimi ve KVKK. Estetik cerrahiden diş kliniğine, tıp merkezinden özel muayenehaneye kadar dikey şablonlar değil özel mimari.</p>`,
+<p>Sağlıkta dijital yüz, tedavi kadar özen ister. Branş sayfaları, hekim özgeçmişleri, online randevu, görüntülü danışmanlık ve hasta ön kayıt formu klinik kimliğinize göre kodlanır.</p>
+${modsHtml(doctorMods)}
+<p>Hatırlatma, online ödeme ve tetkik talebi paneli; KVKK ve hasta gizliliği. Estetik cerrahiden diş kliniğine, tıp merkezinden özel muayenehaneye kadar özel mimari.</p>`,
       AHENK_PHOTOS.doctor,
+      doctorMods,
     ),
     card(
       "dernek-vakif-sitesi",
       "Dernek & vakıf",
-      "Bağış, üyelik, faaliyet, şehit-gazi ve kurumsal şeffaflık sayfaları.",
+      "Online bağış, üyelik, burs, gönüllü kaydı ve şeffaflık raporları.",
       "users",
       "/yazilim/dernek-vakif-sitesi",
       `<h2>Dernek ve vakıf yazılımı</h2>
-<p>Sivil toplumun dijital kampüsü: faaliyetler, yönetim kurulu, bağış, burs, etkinlik takvimi ve arşiv. Vakıf senedi, şeffaflık raporları ve gönüllü formları panelden yönetilir.</p>
+<p>Sivil toplumun dijital kampüsü: faaliyetler, yönetim kurulu, bağış, burs, etkinlik takvimi ve arşiv. Vakıf senedi ve gönüllü formları panelden yönetilir.</p>
+${modsHtml(ngoMods)}
 <p>Ahenk’in STK temaları ve Haber Merkezi entegrasyonu ile duyurular haber vitrinine de düşebilir.</p>`,
       AHENK_PHOTOS.ngo,
+      ngoMods,
     ),
     card(
       "belediye-kamu-sitesi",
       "Belediye & kamu",
-      "Duyuru, e-belediye yönlendirme, başkan mesajı, ihale ve mahalle haberleri.",
+      "Dilekçe, randevu, ihale, e-belediye yönlendirme ve mahalle haberleri.",
       "building",
       "/yazilim/belediye-kamu-sitesi",
       `<h2>Belediye ve kamu web yazılımı</h2>
-<p>Vatandaşın ilk kapısı. Başkan mesajı, birimler, duyurular, ihaleler, proje haritası ve haber merkezi. Erişilebilirlik, Türkçe sade dil ve mobil hız kamu standardıdır.</p>`,
+<p>Vatandaşın ilk kapısı. Başkan mesajı, birimler, duyurular, ihaleler, proje haritası ve haber merkezi. Erişilebilirlik ve mobil hız kamu standardıdır.</p>
+${modsHtml(cityMods)}
+<p>Başvuru formu, nikâh / zabıta randevusu ve e-belediye köprüleri teslimata dahildir.</p>`,
       AHENK_PHOTOS.city,
+      cityMods,
     ),
     card(
       "haber-medya-sitesi",
       "Haber sitesi yazılımı & haber scripti",
-      "Haber sitesi yazılımı, haber scripti, manşet, RSS, yazar ve Newsmap — 1-3 günde yayında.",
+      "Manşet, RSS, editör paneli, yazar, video TV ve haber haritası — 1-3 günde yayında.",
       "news",
       "/yazilim/haber-medya-sitesi",
       `<h2>Haber sitesi yazılımı</h2>
-<p>Gazete ve ajanslar için Haber Merkezi: manşet, kategori, köşe, video TV, Google News ve haber haritası. Özel alan adı, editör paneli, RSS. YekTube ile video yayın katmanı eklenebilir.</p>`,
+<p>Gazete ve ajanslar için Haber Merkezi: manşet, kategori, köşe, video TV, Google News ve haber haritası. Özel alan adı, editör paneli, RSS.</p>
+${modsHtml(newsMods)}
+<p>YekTube ile video yayın katmanı eklenebilir. Yapay zekâ haber aracı 1–3 günde yayına alır.</p>`,
       AHENK_PHOTOS.news,
+      newsMods,
     ),
     card(
       "e-ticaret-sitesi",
       "E-ticaret & marka mağazası",
-      "Vitrin, sepet, ödeme, kargo ve performans reklamıyla satış makinesi.",
+      "Katalog, stok, sanal POS, kargo, kupon ve çağrı merkezi sipariş.",
       "cart",
       "/yazilim/e-ticaret-sitesi",
       `<h2>E-ticaret yazılımı</h2>
-<p>Ürün, stok, ödeme ve kargo akışını markanızın ritmine göre kurarız. Katalog fotoğrafı, QR menü ve çağrı merkezi sipariş sistemi ile omnichannel teslimat.</p>`,
+<p>Ürün, stok, ödeme ve kargo akışını markanızın ritmine göre kurarız. Katalog, sanal POS ve çağrı merkezi sipariş ile omnichannel teslimat.</p>
+${modsHtml(shopMods)}
+<p>Kampanya, iade ve müşteri hesabı panelden yönetilir. Performans reklamına hazır ürün sayfaları.</p>`,
       AHENK_PHOTOS.shop,
+      shopMods,
     ),
     card(
       "restoran-otel-sitesi",
       "Restoran sitesi yazılımı",
-      "Restoran sitesi, otel sitesi, rezervasyon ve QR menü. Mobil uyumlu web yazılımı.",
-      "sparkle",
+      "QR menü, restoran POS, kasiyer, garson, kurye ve stok takibi. Rezervasyon ve online sipariş.",
+      "qr",
       "/yazilim/restoran-otel-sitesi",
       `<h2>Restoran ve otel yazılımı</h2>
-<p>Menü, rezervasyon, galeri, konum ve KRAL POS / QR menü entegrasyonu. Otelde oda tipleri, müsaitlik ve deneyim hikâyesi.</p>`,
+<p>Restoran, kafe ve otel için operasyon yazılımı: masadan mutfağa, kasadan kuryeye tek panel. QR kod menü, restoran POS yönetimi, kasiyer, garson sipariş, kurye ve stok takibi aynı sistemde çalışır.</p>
+${modsHtml(restoMods)}
+<p>Otelde oda tipleri, müsaitlik ve rezervasyon; restoranda masa, mutfak ekranı (KDS) ve personel vardiyası. Mobil uyumlu, 1–3 günde teslim.</p>`,
       AHENK_PHOTOS.restaurant,
+      restoMods,
     ),
     card(
       "emlak-insaat-sitesi",
       "Emlak & inşaat",
-      "Proje vitrini, kat planı, teslim takvimi ve yatırım dili.",
+      "Portföy, kat planı, sanal tur, gezme randevusu ve CRM. Teslim takvimi.",
       "building",
       "/yazilim/emlak-insaat-sitesi",
       `<h2>Emlak ve inşaat yazılımı</h2>
-<p>Konut projeleri, arsa, ticari portföy. Kat planı, vaziyet, teslim tarihi, sanal tur ve lead formu. Yatırımcı sunum kalitesinde tipografi.</p>`,
+<p>Konut projeleri, arsa, ticari portföy. Kat planı, vaziyet, teslim tarihi, sanal tur ve lead formu. Yatırımcı sunum kalitesinde tipografi.</p>
+${modsHtml(estateMods)}
+<p>Gezme randevusu, danışman kadrosu ve WhatsApp ilan paylaşımı teslimata dahildir.</p>`,
       AHENK_PHOTOS.estate,
+      estateMods,
     ),
     card(
       "egitim-okul-sitesi",
       "Okul & eğitim",
-      "Kayıt, akademik kadro, duyuru ve veli iletişimi.",
+      "Online kayıt, veli paneli, aidat, ders programı ve görüntülü veli görüşmesi.",
       "users",
       "/yazilim/egitim-okul-sitesi",
       `<h2>Eğitim kurumu yazılımı</h2>
-<p>Okul, kurs ve üniversite birimleri için kayıt, kadro, akademik takvim, galeri ve duyuru. Güven ve aidiyet hissi taşıyan arayüz.</p>`,
+<p>Okul, kurs ve üniversite birimleri için kayıt, kadro, akademik takvim, galeri ve duyuru. Güven ve aidiyet hissi taşıyan arayüz.</p>
+${modsHtml(schoolMods)}
+<p>Veli paneli, aidat ödemesi ve görüntülü görüşme ile okul–aile hattı tek yerde toplanır.</p>`,
       AHENK_PHOTOS.school,
+      schoolMods,
+    ),
+    card(
+      "surucu-kursu-sitesi",
+      "Sürücü kursu sitesi",
+      "Ehliyet sınıfları, online kayıt, direksiyon randevusu, filo ve sınav takvimi.",
+      "map",
+      "/yazilim/surucu-kursu-sitesi",
+      `<h2>Sürücü kursu yazılımı</h2>
+<p>Ehliyet sınıfları, paket fiyatları, eğitmen kadrosu, araç filosu, kayıt ve sınav takvimi tek panelde. Aday WhatsApp hattı teslimata dahildir.</p>
+${modsHtml(drivingMods)}
+<p>Direksiyon saati takibi ve e-sınav deneme ile kurs operasyonu dijitalleşir. Mobil uyumlu, 1–3 günde yayında.</p>`,
+      AHENK_PHOTOS.driving,
+      drivingMods,
+    ),
+    card(
+      "guzellik-merkezi-sitesi",
+      "Güzellik merkezi sitesi",
+      "Online randevu, uzman seçimi, fiyat listesi, önce–sonra galeri ve paket üyelik.",
+      "sparkle",
+      "/yazilim/guzellik-merkezi-sitesi",
+      `<h2>Güzellik merkezi yazılımı</h2>
+<p>Cilt bakımı, saç, tırnak, lazer ve medikal estetik hizmet sayfaları; uzman kadro, önce–sonra galeri, randevu ve WhatsApp. Marka paleti sizin kimliğinizle kurulur.</p>
+${modsHtml(beautyMods)}
+<p>Paket üyelik, ürün stoku ve kampanya QR menü eklenebilir. Mobil öncelikli, 1–3 günde teslim.</p>`,
+      AHENK_PHOTOS.beauty,
+      beautyMods,
     ),
     card(
       "kurumsal-sirket-sitesi",
-      "Kurumsal web sitesi — 10.000 TL",
-      "Kurumsal web sitesi 3 günde teslim, 10.000 TL. Holding, sanayi ve ihracat markaları.",
+      `Kurumsal web sitesi — ${pkg.display}`,
+      `Çok dil, kariyer, yatırımcı ve ürün ailesi. ${pkg.display}, 3 günde teslim · ${pkg.includes}`,
       "pen",
       "/yazilim/kurumsal-sirket-sitesi",
       `<h2>Kurumsal web yazılımı</h2>
-<p>Çok dilli şirket sitesi, yatırımcı ilişkileri, kariyer, sürdürülebilirlik ve ürün ailesi. Londra–Ankara ofis standartlarında teslimat.</p>`,
+<p>Holding, sanayi ve ihracat markaları için çok dilli şirket sitesi. Yatırımcı ilişkileri, kariyer, sürdürülebilirlik ve ürün ailesi Londra–Ankara ofis standartlarında teslim edilir.</p>
+${modsHtml(corpMods)}
+<p>${pkg.note}</p>`,
       AHENK_PHOTOS.corporate,
+      corpMods,
     ),
   ];
 }
@@ -444,7 +715,9 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     phone: "0541 313 62 45",
     phoneTel: "+905413136245",
     whatsappTel: "+905413136245",
-    email: "ahenkbilgiteknoloji@gmail.com",
+    email: AHENK_CORPORATE_EMAIL,
+    logoUrl: AHENK_LOGO_WORDMARK,
+    logoMarkUrl: AHENK_LOGO_MARK,
     seoTitle: "Web Yazılımı, Web Tasarımı, Haber Sitesi Yazılımı | Ahenk",
     seoDescription:
       "Yapay zeka destekli web yazılımı: haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi ve kurumsal web sitesi. 1-3 günde teslim. Kurumsal paket 10.000 TL.",
@@ -454,7 +727,11 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     priceTitle: "Kurumsal web sitesi",
     priceAmount: "10000",
     priceCurrency: "TRY",
-    pricePeriodNote: "Kurumsal web sitesi 3 günde teslim · 10.000 TL",
+    pricePeriodNote: "Kurumsal web sitesi 3 günde teslim · sunucu ve domain dahil",
+    priceCampaignUntilYear: "2026",
+    priceCampaignAmount: "10000",
+    priceRegularAmount: "20000",
+    priceIncludesNote: "Sunucu ve domain dahildir.",
     ibanBank: "Kuveyt Türk",
     ibanHolder: "Nail TÜRKOĞLU",
     iban: "TR160020500000041593000001",
@@ -472,7 +749,7 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     heroImage: AHENK_PHOTOS.hero,
     softwareTitle: "Web yazılımı — tüm sektörler",
     softwareLead:
-      "Avukat sitesi, doktor sitesi, haber sitesi yazılımı, haber scripti, restoran sitesi, e-ticaret ve kurumsal web sitesi. Yapay zeka destekli, mobil uyumlu, 1-3 günde teslim.",
+      "Avukat ve doktor sitelerinde online randevu ile görüntülü danışmanlık; restoranda QR menü, POS, kasiyer, garson, kurye ve stok; emlak, okul, sürücü kursu, güzellik ve kurumsal web sitesi. Yapay zeka destekli, 1-3 günde teslim.",
     softwareSectors: defaultSoftwareSectors(),
     agencyTitle: "Ajans hizmetleri",
     agencyLead: "Web yazılımından sonra: grafik, sosyal medya, film, reklam ve SEO.",
@@ -502,6 +779,12 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     servicesLead:
       "Web yazılımı ve ajansın ardından: çağrı merkezi, müşteri hizmetleri, insan kaynakları, e-ticaret destek ve kurumsal organizasyon.",
     servicesHeroImage: AHENK_PHOTOS.servicesHero,
+    landingKicker: "Ahenk Bilgi Teknolojileri",
+    landingTitle: "Haber sitesi yazılımı — sunucu ve domain dahil",
+    landingLead:
+      "Yapay zeka destekli haber sitesi yazılımı ve kurumsal web sitesi. 2026 sonuna kadar kampanya 10.000 TL (20.000 TL yerine); 2027’den itibaren 20.000 TL. Teslim 1–3 gün.",
+    landingCtaLabel: "Teklif / başvuru",
+    landingFeatures: defaultAhenkLandingFeatures(),
     offices: [
       {
         id: "tr",
@@ -752,6 +1035,14 @@ function mergeServices(raw: unknown, defaults: AhenkAgencyService[]): AhenkAgenc
   return items.length ? items : defaults;
 }
 
+function mergeFeatureList(raw: unknown, fallback?: string[]): string[] | undefined {
+  if (Array.isArray(raw)) {
+    const items = raw.map((x) => String(x ?? "").trim()).filter(Boolean);
+    if (items.length) return items;
+  }
+  return fallback?.length ? fallback : undefined;
+}
+
 function mergeCards(raw: unknown, defaults: AhenkContentCard[]): AhenkContentCard[] {
   if (!Array.isArray(raw) || raw.length === 0) return defaults;
   const bySlug = new Map(defaults.map((d) => [d.slug, d]));
@@ -774,10 +1065,53 @@ function mergeCards(raw: unknown, defaults: AhenkContentCard[]): AhenkContentCar
         aliases: Array.isArray(c.aliases)
           ? c.aliases.map((a) => String(a || "").trim()).filter(Boolean)
           : fallback?.aliases,
+        features: mergeFeatureList(c.features, fallback?.features),
       };
     })
     .filter((c) => c.slug && c.title);
   return items.length ? items : defaults;
+}
+
+function mergeTextBlocks(raw: unknown, defaults: AhenkTextBlock[]): AhenkTextBlock[] {
+  if (!Array.isArray(raw) || raw.length === 0) return defaults;
+  const items = raw
+    .filter(isRecord)
+    .map((b) => ({ title: str(b.title, ""), text: str(b.text, "") }))
+    .filter((b) => b.title && b.text);
+  return items.length ? items : defaults;
+}
+
+/** Kayıtlı JSON eski kopyaysa sektör modüllerini ve yeni dikeyleri uygular. */
+export function enrichSoftwareSectors(
+  items: AhenkContentCard[],
+  defaults: AhenkContentCard[],
+): AhenkContentCard[] {
+  const bySlug = new Map(defaults.map((d) => [d.slug, d]));
+  const mapped = items.map((c) => {
+    const d = bySlug.get(c.slug);
+    if (!d) return c;
+    const hasMods =
+      (c.features?.length ?? 0) > 0 && String(c.bodyHtml || "").includes("ahenk-mods");
+    if (hasMods) {
+      return { ...c, features: c.features?.length ? c.features : d.features };
+    }
+    return {
+      ...c,
+      excerpt: d.excerpt,
+      bodyHtml: d.bodyHtml,
+      features: d.features,
+      icon: c.icon || d.icon,
+      image: c.image || d.image,
+    };
+  });
+  const seen = new Set(mapped.map((c) => c.slug));
+  const extra = defaults.filter(
+    (d) => (AHENK_SOFTWARE_APPEND_SLUGS as readonly string[]).includes(d.slug) && !seen.has(d.slug),
+  );
+  if (!extra.length) return mapped;
+  const insertAt = mapped.findIndex((c) => c.slug === "kurumsal-sirket-sitesi");
+  if (insertAt >= 0) return [...mapped.slice(0, insertAt), ...extra, ...mapped.slice(insertAt)];
+  return [...mapped, ...extra];
 }
 
 function mergePromo(raw: unknown, defaults: AhenkPromoBlock): AhenkPromoBlock {
@@ -800,7 +1134,12 @@ function mergeFaqs(raw: unknown, defaults: AhenkFaq[]): AhenkFaq[] {
     .filter(isRecord)
     .map((f) => ({ q: str(f.q, ""), a: str(f.a, "") }))
     .filter((f) => f.q && f.a);
-  return items.length ? items : defaults;
+  if (!items.length) return defaults;
+  const seen = new Set(items.map((f) => f.q.trim().toLowerCase()));
+  for (const d of defaults) {
+    if (!seen.has(d.q.trim().toLowerCase())) items.push(d);
+  }
+  return items;
 }
 
 export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): AhenkAgencySite {
@@ -818,6 +1157,8 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       phoneTel: str(data.phoneTel, defaults.phoneTel),
       whatsappTel: str(data.whatsappTel, defaults.whatsappTel),
       email: str(data.email, defaults.email),
+      logoUrl: safeAhenkImageUrl(data.logoUrl, defaults.logoUrl),
+      logoMarkUrl: safeAhenkImageUrl(data.logoMarkUrl, defaults.logoMarkUrl),
       seoTitle: str(data.seoTitle, defaults.seoTitle),
       seoDescription: str(data.seoDescription, defaults.seoDescription),
       seoKeywords: str(data.seoKeywords, defaults.seoKeywords),
@@ -826,6 +1167,10 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       priceAmount: str(data.priceAmount, defaults.priceAmount),
       priceCurrency: str(data.priceCurrency, defaults.priceCurrency),
       pricePeriodNote: str(data.pricePeriodNote, defaults.pricePeriodNote),
+      priceCampaignUntilYear: str(data.priceCampaignUntilYear, defaults.priceCampaignUntilYear),
+      priceCampaignAmount: str(data.priceCampaignAmount, defaults.priceCampaignAmount),
+      priceRegularAmount: str(data.priceRegularAmount, defaults.priceRegularAmount),
+      priceIncludesNote: str(data.priceIncludesNote, defaults.priceIncludesNote),
       ibanBank: str(data.ibanBank, defaults.ibanBank),
       ibanHolder: str(data.ibanHolder, defaults.ibanHolder),
       iban: str(data.iban, defaults.iban).replace(/\s+/g, ""),
@@ -845,10 +1190,14 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
         : str(data.heroSecondaryHref, defaults.heroSecondaryHref),
       heroImage: safeAhenkImageUrl(data.heroImage, defaults.heroImage),
       softwareTitle: useNewCopy ? defaults.softwareTitle : str(data.softwareTitle, defaults.softwareTitle),
-      softwareLead: useNewCopy ? defaults.softwareLead : str(data.softwareLead, defaults.softwareLead),
-      softwareSectors: useNewCopy
-        ? defaults.softwareSectors
-        : mergeCards(data.softwareSectors, defaults.softwareSectors),
+      softwareLead:
+        useNewCopy || !String(data.softwareLead || "").includes("görüntülü")
+          ? defaults.softwareLead
+          : str(data.softwareLead, defaults.softwareLead),
+      softwareSectors: enrichSoftwareSectors(
+        useNewCopy ? defaults.softwareSectors : mergeCards(data.softwareSectors, defaults.softwareSectors),
+        defaults.softwareSectors,
+      ),
       agencyTitle: useNewCopy ? defaults.agencyTitle : str(data.agencyTitle, defaults.agencyTitle),
       agencyLead: useNewCopy ? defaults.agencyLead : str(data.agencyLead, defaults.agencyLead),
       agencyOffers: mergeCards(data.agencyOffers, defaults.agencyOffers),
@@ -869,6 +1218,11 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       servicesTitle: useNewCopy ? defaults.servicesTitle : str(data.servicesTitle, defaults.servicesTitle),
       servicesLead: useNewCopy ? defaults.servicesLead : str(data.servicesLead, defaults.servicesLead),
       servicesHeroImage: safeAhenkImageUrl(data.servicesHeroImage, defaults.servicesHeroImage),
+      landingKicker: str(data.landingKicker, defaults.landingKicker),
+      landingTitle: str(data.landingTitle, defaults.landingTitle),
+      landingLead: str(data.landingLead, defaults.landingLead),
+      landingCtaLabel: str(data.landingCtaLabel, defaults.landingCtaLabel),
+      landingFeatures: mergeTextBlocks(data.landingFeatures, defaults.landingFeatures),
       offices: mergeOffices(data.offices, defaults.offices),
       slides: mergeSlides(data.slides, defaults.slides),
       services: mergeServices(data.services, defaults.services),

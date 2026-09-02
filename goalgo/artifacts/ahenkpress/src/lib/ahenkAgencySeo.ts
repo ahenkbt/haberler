@@ -2,6 +2,7 @@
 
 import { applyJsonLd, buildBreadcrumbJsonLd } from "@/lib/pageSeo";
 import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
+import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
 import {
   AHENK_REMOVED_SERVICE_SLUGS,
   defaultAhenkFaqs,
@@ -42,6 +43,12 @@ export const AHENK_SLUG_ALIASES: Record<string, string> = {
   "/emlak-sitesi": "emlak-insaat-sitesi",
   "/insaat-sitesi": "emlak-insaat-sitesi",
   "/okul-sitesi": "egitim-okul-sitesi",
+  "/surucu-kursu-sitesi": "surucu-kursu-sitesi",
+  "/surucu-kursu": "surucu-kursu-sitesi",
+  "/ehliyet-kursu": "surucu-kursu-sitesi",
+  "/guzellik-merkezi-sitesi": "guzellik-merkezi-sitesi",
+  "/guzellik-merkezi": "guzellik-merkezi-sitesi",
+  "/guzellik-salonu": "guzellik-merkezi-sitesi",
   "/kurumsal-web-sitesi": "kurumsal-sirket-sitesi",
   "/kurumsal-web-yazilimi": "kurumsal-sirket-sitesi",
   "/kurumsal-site": "kurumsal-sirket-sitesi",
@@ -188,6 +195,10 @@ export function applyAhenkAgencySeo(opts: {
   if (image) upsertMeta("name", "twitter:image", image);
   upsertLink("canonical", canonical);
   upsertLink("alternate", canonical);
+  const iconRel = opts.site.logoMarkUrl?.trim() || "/ahenk-brand/ahenk-mark.png";
+  const iconAbs = iconRel.startsWith("http") ? iconRel : `${origin}${iconRel.startsWith("/") ? "" : "/"}${iconRel}`;
+  upsertLink("icon", iconAbs);
+  upsertLink("apple-touch-icon", iconAbs);
 
   const crumbs = [{ name: "Anasayfa", path: "/" }];
   if (path !== "/") crumbs.push({ name: opts.title.slice(0, 80), path });
@@ -206,6 +217,8 @@ export function applyAhenkAgencySeo(opts: {
 
 export function buildAhenkOrganizationJsonLd(site: AhenkAgencySite, origin: string): Record<string, unknown> {
   const tr = site.offices.find((o) => o.id === "tr") ?? site.offices[0];
+  const mark = site.logoMarkUrl?.trim() || "/ahenk-brand/ahenk-mark.png";
+  const logo = mark.startsWith("http") ? mark : `${origin}${mark.startsWith("/") ? "" : "/"}${mark}`;
   return {
     "@context": "https://schema.org",
     "@type": ["ProfessionalService", "Organization"],
@@ -215,7 +228,7 @@ export function buildAhenkOrganizationJsonLd(site: AhenkAgencySite, origin: stri
       new Set([...AHENK_BT_ENTITY.alternateName, "Ahenk Web Yazılımı", site.brandName]),
     ),
     url: `${origin}/`,
-    logo: `${origin}/favicon.png`,
+    logo,
     image: site.heroImage,
     description: site.seoDescription || site.tagline || AHENK_BT_ENTITY.description,
     disambiguatingDescription: AHENK_BT_ENTITY.disambiguatingDescription,
@@ -289,15 +302,15 @@ export function buildAhenkWebSiteJsonLd(site: AhenkAgencySite, origin: string): 
 }
 
 export function buildAhenkOfferJsonLd(site: AhenkAgencySite, origin: string): Record<string, unknown> {
-  const amount = String(site.priceAmount || "10000").replace(/[^\d]/g, "") || "10000";
+  const pkg = ahenkPackageFromFields(site);
   return {
     "@context": "https://schema.org",
     "@type": "Offer",
     "@id": `${origin}/#kurumsal-web-teklifi`,
     name: site.priceTitle || "Kurumsal web sitesi",
-    description: site.pricePeriodNote,
+    description: pkg.note,
     url: `${origin}/kurumsal-web-sitesi`,
-    price: amount,
+    price: pkg.amount,
     priceCurrency: site.priceCurrency || "TRY",
     availability: "https://schema.org/InStock",
     itemOffered: {

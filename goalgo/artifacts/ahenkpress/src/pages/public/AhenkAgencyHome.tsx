@@ -3,11 +3,13 @@ import {
   AhenkAgencyChrome,
   AhenkCardGrid,
   AhenkFaqList,
+  AhenkFeatureChips,
   AhenkMediaCard,
   AhenkSmartLink,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { ahenkCallCenterServices, ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
+import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
 import { safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
 
 export default function AhenkAgencyHome() {
@@ -18,6 +20,7 @@ export default function AhenkAgencyHome() {
   const featured = site.softwareSectors.slice(0, 3);
   const restSectors = site.softwareSectors.slice(3);
   const callCenter = ahenkCallCenterServices(site);
+  const pkg = ahenkPackageFromFields(site);
   const wa = ahenkWhatsAppHref(
     site.whatsappTel || site.phoneTel,
     "Merhaba, kurumsal web sitesi / web yazılımı istiyorum.",
@@ -56,12 +59,9 @@ export default function AhenkAgencyHome() {
         <div className="ahenk-price-inner">
           <div>
             <span className="ahenk-kicker">{site.priceTitle}</span>
-            <strong>
-              {Number(String(site.priceAmount || "10000").replace(/\D/g, "") || "10000").toLocaleString("tr-TR")}{" "}
-              TL
-            </strong>
+            <strong>{pkg.display}</strong>
             <p>
-              {site.pricePeriodNote}. {site.aiDeliveryLead}
+              {pkg.note} {site.aiDeliveryLead}
             </p>
           </div>
           <a className="ahenk-btn" href={wa} target="_blank" rel="noreferrer">
@@ -84,6 +84,7 @@ export default function AhenkAgencyHome() {
                 <span className="ahenk-card-body">
                   <h3>{item.title}</h3>
                   <p>{item.excerpt}</p>
+                  <AhenkFeatureChips features={item.features} limit={4} />
                   <span className="ahenk-card-cta">Detay →</span>
                 </span>
               </AhenkSmartLink>

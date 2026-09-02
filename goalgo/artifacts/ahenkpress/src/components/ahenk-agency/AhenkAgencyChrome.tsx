@@ -121,6 +121,27 @@ export function AhenkSmartLink({
   );
 }
 
+export function AhenkFeatureChips({
+  features,
+  limit = 6,
+}: {
+  features?: string[];
+  limit?: number;
+}) {
+  const list = (features ?? []).map((f) => f.trim()).filter(Boolean);
+  if (!list.length) return null;
+  const shown = list.slice(0, limit);
+  const more = list.length - shown.length;
+  return (
+    <ul className="ahenk-chips">
+      {shown.map((f) => (
+        <li key={f}>{f}</li>
+      ))}
+      {more > 0 ? <li className="ahenk-chip-more">+{more}</li> : null}
+    </ul>
+  );
+}
+
 export function AhenkMediaCard({
   href,
   image,
@@ -128,6 +149,8 @@ export function AhenkMediaCard({
   excerpt,
   icon,
   cta = "İncele",
+  features,
+  featureLimit = 5,
 }: {
   href: string;
   image?: string;
@@ -135,6 +158,8 @@ export function AhenkMediaCard({
   excerpt: string;
   icon: string;
   cta?: string;
+  features?: string[];
+  featureLimit?: number;
 }) {
   const src = safeAhenkImageUrl(image, "");
   return (
@@ -148,6 +173,7 @@ export function AhenkMediaCard({
       <span className="ahenk-card-body">
         <h3>{title}</h3>
         <p>{excerpt}</p>
+        <AhenkFeatureChips features={features} limit={featureLimit} />
         <span className="ahenk-card-cta">{cta} →</span>
       </span>
     </AhenkSmartLink>
@@ -172,6 +198,7 @@ export function AhenkCardGrid({
           excerpt={item.excerpt}
           icon={item.icon}
           cta={cta}
+          features={item.features}
         />
       ))}
     </div>
@@ -266,7 +293,7 @@ export function AhenkAgencyChrome({
       <header className="ahenk-header">
         <div className="ahenk-header-inner">
           <Link href="/" className="ahenk-brand">
-            <span className="ahenk-mark">A</span>
+            <AhenkBrandMark site={site} />
             <span className="ahenk-brand-text">
               <span className="ahenk-brand-name">{site.brandName}</span>
               <span className="ahenk-brand-tag">{site.tagline}</span>
@@ -317,12 +344,26 @@ export function AhenkAgencyChrome({
   );
 }
 
+function AhenkBrandMark({ site }: { site: AhenkAgencySite }) {
+  const src = safeAhenkImageUrl(site.logoMarkUrl, "/ahenk-brand/ahenk-mark.png");
+  return (
+    <span className="ahenk-mark">
+      {src ? <img src={src} alt="" /> : "A"}
+    </span>
+  );
+}
+
 function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
+  const wordmark = safeAhenkImageUrl(site.logoUrl, "/ahenk-brand/ahenk-logo.png");
   return (
     <footer className="ahenk-footer">
       <div className="ahenk-footer-grid">
         <div>
-          <h3>{site.brandName}</h3>
+          {wordmark ? (
+            <img className="ahenk-footer-wordmark" src={wordmark} alt={site.brandName} />
+          ) : (
+            <h3>{site.brandName}</h3>
+          )}
           <p>{site.tagline}</p>
           <p style={{ marginTop: 12 }}>
             <Phone className="inline w-4 h-4 mr-1" />
