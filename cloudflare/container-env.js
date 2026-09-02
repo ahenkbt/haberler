@@ -19,7 +19,7 @@ export const CONTAINER_DEFAULTS = {
   PORT: String(CONTAINER_PORT),
   LISTEN_HOST: "0.0.0.0",
   MEDIA_STORAGE_MODE: "s3",
-  SITE_PUBLIC_ORIGIN: "https://turk.eco",
+  SITE_PUBLIC_ORIGIN: "https://ahenk.net.tr",
   LEGACY_MEDIA_ORIGIN: "0",
   YEKTUBE_DB_READ: "main",
   YEKTUBE_DB_WRITE: "main",

@@ -96,7 +96,7 @@ export async function ensureKhYekpareEditorOnNeon(env) {
 export const HM_BRAND_DB_BINDINGS = [
   {
     domain: "suhaber.net",
-    domains: ["suhaber.net", "suhaberajansi.com"],
+    domains: ["suhaber.net"],
     slug: "su",
     displayName: "Su Haber",
     description: "Su Haber dijital haber platformu",
@@ -557,8 +557,8 @@ async function repairSuDomainOnNeon(sql) {
     await sql`
       UPDATE hm_news_sites
       SET
-        domain2 = 'suhaberajansi.com',
-        domain3 = 'www.suhaber.net',
+        domain2 = 'www.suhaber.net',
+        domain3 = NULL,
         updated_at = NOW()
       WHERE id = ${canonicalId}
     `;

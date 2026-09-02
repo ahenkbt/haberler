@@ -204,7 +204,7 @@ export const HM_TELIF_DEFAULT_BODY_HTML = `<div class="hm-vkv-masthead-page-root
                     <table class="info-table">
                         <tr>
                             <td class="info-label">🚀 Portal</td>
-                            <td class="info-value"><a href="https://turk.eco" target="_blank">https://turk.eco</a></td>
+                            <td class="info-value"><a href="https://ahenk.net.tr" target="_blank">https://ahenk.net.tr</a></td>
                         </tr>
                         <tr>
                             <td class="info-label">📍 Resmi Adres</td>

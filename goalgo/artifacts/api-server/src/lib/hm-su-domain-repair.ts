@@ -14,7 +14,7 @@ export const SU_CANONICAL_SITE_ID = 2;
 
 export const SU_DEFAULT_EDITOR_EMAIL = "editor@suhaber.net";
 
-/** Google / GEO kanonik alan — suhaberajansi.com takma ad olarak kalır. */
+/** Google / GEO kanonik alan — suhaberajansi.com iptal. */
 export const SU_CANONICAL_PUBLIC_DOMAIN = "suhaber.net";
 export const SU_BRAND_HOSTS = ["suhaber.net", "suhaberajansi.com", "suhaberajansi.com.tr"] as const;
 
@@ -402,8 +402,8 @@ export async function repairSuHaberDomainOwnership(opts?: {
     SET
       slug = 'su',
       domain = 'suhaber.net',
-      domain2 = 'suhaberajansi.com',
-      domain3 = 'www.suhaber.net',
+      domain2 = 'www.suhaber.net',
+      domain3 = NULL,
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
         WHEN lower(trim(both from display_name)) LIKE '%kırşehir%' THEN 'Su Haber Ajansı'

@@ -18,12 +18,13 @@ const ZONES = [
   "ankarasehirgazetesi.com",
   "ankarahabergundemi.com",
   "vatankahramanlari.org",
+  "ahenk.net.tr",
   "vatanhaber.net",
   "suhaber.net",
-  "suhaberajansi.com",
+  // suhaberajansi.com iptal — DETACHED_ZONES
   // belediyehizmet.com kaldırıldı — kanonik alan suhaber.net
   "kirsehirhaber.org",
-  // Yektube — turk.eco/yp kanonik alan adı
+  // Yektube — ahenk.net.tr/yp kanonik alan adı
   "yektube.com",
   // kirsehri.com / kirsehir.net: zone CF hesabında yoksa atlanır; eklenince listeye alınır
 ];

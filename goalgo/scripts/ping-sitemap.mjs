@@ -7,7 +7,7 @@
  *   SITEMAP_URL=https://turk.eco/sitemap.xml node scripts/ping-sitemap.mjs
  */
 
-const sitemapUrl = String(process.env.SITEMAP_URL ?? "https://turk.eco/sitemap.xml").trim();
+const sitemapUrl = String(process.env.SITEMAP_URL ?? "https://ahenk.net.tr/sitemap.xml").trim();
 const encoded = encodeURIComponent(sitemapUrl);
 
 const targets = [

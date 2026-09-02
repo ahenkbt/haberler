@@ -183,7 +183,7 @@ jobs:
         run: |
           set -euo pipefail
           for i in 1 2 3 4 5 6 7 8; do
-            body=$(curl -fsS -m 25 "https://turk.eco/api/healthz" || true)
+            body=$(curl -fsS -m 25 "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 "https://vatanhaber.net/api/healthz" || true)
             provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
             echo "attempt=$i dbProvider=${provider:-empty}"
             if [ "$provider" = "hostinger" ]; then
@@ -192,7 +192,7 @@ jobs:
             fi
             sleep 15
           done
-          echo "::error::turk.eco/api/healthz hâlâ dbProvider=${provider:-unknown} (hostinger bekleniyor). GitHub DATABASE_URL neon.tech içeriyor olabilir veya Container eski env ile uyuyor."
+          echo "::error::ahenk.net.tr/api/healthz hâlâ dbProvider=${provider:-unknown} (hostinger bekleniyor). GitHub DATABASE_URL neon.tech içeriyor olabilir veya Container eski env ile uyuyor."
           printf '%s\n' "$body" | head -c 400
           echo
           exit 1

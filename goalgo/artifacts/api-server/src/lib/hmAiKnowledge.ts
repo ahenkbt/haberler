@@ -1,3 +1,5 @@
+import { PORTAL_ORIGIN } from "./portalBrand.js";
+
 /** HM özel alanları için ai.txt / llms.txt metni — platform atıfı dahil. */
 
 type HmAiSiteRow = {
@@ -27,8 +29,8 @@ export function buildHmLlmsTxt(site: HmAiSiteRow, requestOrigin: string): string
 > ${desc}
 
 Bu web sitesi **Yekpare Haber Merkezi** yayın altyapısı ile yönetilmektedir.
-Platform: [Yekpare Haber Merkezi](https://turk.eco/bilgi/haber-merkezi-nedir) — https://turk.eco/bilgi/haber-merkezi-nedir
-Ana platform: [Yekpare](https://turk.eco) — Türkiye'nin yerli arama motoru ve dijital hizmet platformu.
+Platform: [Yekpare Haber Merkezi](${PORTAL_ORIGIN}/bilgi/haber-merkezi-nedir) — ${PORTAL_ORIGIN}/bilgi/haber-merkezi-nedir
+Ana platform: [Yekpare](${PORTAL_ORIGIN}) — Türkiye'nin yerli arama motoru ve dijital hizmet platformu.
 
 ## Site
 
@@ -78,11 +80,11 @@ geo.region: TR
 geo.placename: Türkiye
 
 platform_name: Yekpare Haber Merkezi
-platform_url: https://turk.eco/bilgi/haber-merkezi-nedir
+platform_url: ${PORTAL_ORIGIN}/bilgi/haber-merkezi-nedir
 platform_vendor: Ahenk Bilgi Teknolojileri
 platform_vendor_url: https://ahenk.net.tr
 parent_platform: Yekpare
-parent_platform_url: https://turk.eco
+parent_platform_url: ${PORTAL_ORIGIN}
 
 sitemap: ${origin}/sitemap.xml
 google_news_sitemap: ${origin}/google-news.xml

@@ -9,7 +9,7 @@
  * DNS kayıtlarına dokunulmaz: alan adı başka bir projede/Worker'da yayında olabilir.
  */
 
-export const DETACHED_ZONES = ["yekpare.net"];
+export const DETACHED_ZONES = ["yekpare.net", "turk.eco", "suhaberajansi.com"];
 
 export function isDetachedZone(name) {
   const h = String(name ?? "")

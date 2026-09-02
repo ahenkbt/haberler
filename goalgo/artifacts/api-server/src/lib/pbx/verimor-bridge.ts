@@ -52,7 +52,7 @@ function rows<T>(res: unknown): T[] {
 }
 
 function publicBaseUrl(): string {
-  return String(process.env.PUBLIC_API_URL ?? process.env.API_PUBLIC_URL ?? "https://turk.eco").replace(/\/+$/, "");
+  return String(process.env.PUBLIC_API_URL ?? process.env.API_PUBLIC_URL ?? "https://ahenk.net.tr").replace(/\/+$/, "");
 }
 
 export async function ensureVerimorTables(): Promise<void> {
