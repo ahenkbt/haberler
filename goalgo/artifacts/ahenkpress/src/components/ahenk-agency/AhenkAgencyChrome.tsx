@@ -292,12 +292,8 @@ export function AhenkAgencyChrome({
       </div>
       <header className="ahenk-header">
         <div className="ahenk-header-inner">
-          <Link href="/" className="ahenk-brand">
-            <AhenkBrandMark site={site} />
-            <span className="ahenk-brand-text">
-              <span className="ahenk-brand-name">{site.brandName}</span>
-              <span className="ahenk-brand-tag">{site.tagline}</span>
-            </span>
+          <Link href="/" className="ahenk-brand" aria-label={site.brandName}>
+            <AhenkHeaderLogo site={site} />
           </Link>
           <button
             type="button"
@@ -344,12 +340,17 @@ export function AhenkAgencyChrome({
   );
 }
 
-function AhenkBrandMark({ site }: { site: AhenkAgencySite }) {
-  const src = safeAhenkImageUrl(site.logoMarkUrl, "/ahenk-brand/ahenk-mark.png");
+function AhenkHeaderLogo({ site }: { site: AhenkAgencySite }) {
+  const wordmark = safeAhenkImageUrl(site.logoUrl, "/ahenk-brand/ahenk-logo.png");
+  const mark = safeAhenkImageUrl(site.logoMarkUrl, "/ahenk-brand/ahenk-mark.png");
+  const src = wordmark || mark;
+  if (!src) return <span className="ahenk-mark">A</span>;
   return (
-    <span className="ahenk-mark">
-      {src ? <img src={src} alt="" /> : "A"}
-    </span>
+    <img
+      className={wordmark ? "ahenk-brand-lockup" : "ahenk-mark-img"}
+      src={src}
+      alt={site.brandName}
+    />
   );
 }
 

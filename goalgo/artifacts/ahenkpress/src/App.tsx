@@ -95,6 +95,7 @@ import AhenkAgencyYazilimDetail from "./pages/public/AhenkAgencyYazilimDetail";
 import AhenkAgencyAjans from "./pages/public/AhenkAgencyAjans";
 import AhenkAgencyHaberMerkezi from "./pages/public/AhenkAgencyHaberMerkezi";
 import AhenkAgencyYekpare from "./pages/public/AhenkAgencyYekpare";
+import AhenkHaberSitesiLanding from "./pages/public/AhenkHaberSitesiLanding";
 import { AHENK_HUB_PATHS, AHENK_SLUG_ALIASES } from "@/lib/ahenkAgencySeo";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
@@ -1215,7 +1216,17 @@ export default function App() {
           )
         }
       </Route>
-      <Route path="/ucretsiz-haber-sitesi">{() => <PublicLayout><UcretsizHaberSitesiLanding /></PublicLayout>}</Route>
+      <Route path="/ucretsiz-haber-sitesi">
+        {() =>
+          isAhenkAgencyHost() ? (
+            <AhenkHaberSitesiLanding />
+          ) : (
+            <PublicLayout>
+              <UcretsizHaberSitesiLanding />
+            </PublicLayout>
+          )
+        }
+      </Route>
       <Route path="/ai-cagri-merkezi">{() => <PublicLayout><AiCagriMerkeziLanding /></PublicLayout>}</Route>
       <Route path="/kariyer">{() => <PublicLayout><Kariyer /></PublicLayout>}</Route>
       <Route path="/hizmetler/ai-cagri-merkezi">

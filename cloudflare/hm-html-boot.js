@@ -369,6 +369,7 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/" || p === "/hakkimizda" || p === "/about" || p === "/hakkinda") return true;
   if (p === "/hizmetler" || p === "/hizmetlerimiz") return true;
   if (p === "/iletisim" || p === "/contact") return true;
+  if (p === "/ucretsiz-haber-sitesi") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
   if (p === "/yazilim" || p.startsWith("/yazilim/") || p === "/ajans" || p === "/haber-merkezi" || p === "/yekpare") {

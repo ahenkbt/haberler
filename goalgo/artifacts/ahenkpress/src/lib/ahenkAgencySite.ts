@@ -658,10 +658,10 @@ function defaultPlatformProducts(): AhenkContentCard[] {
     card(
       "haber-merkezi",
       "Haber Merkezi",
-      "Kendi haber siteniz: manşet, RSS, yazar, tema ve özel domain.",
+      "Kendi haber siteniz: manşet, RSS, yazar, tema, özel domain. Sunucu ve domain dahil paket.",
       "news",
       "/ucretsiz-haber-sitesi",
-      `<p>White-label haber yazılımı. Editör paneli, vitrin temaları, köşe yazarları. Ücretsiz haber sitesi kurulumundan kurumsal gazete teslimatına kadar.</p>`,
+      `<p>White-label haber yazılımı. Editör paneli, vitrin temaları, köşe yazarları. Haber sitesi yazılımı ve kurumsal web sitesi Ahenk Bilgi Teknolojileri kampanya paketiyle teslim edilir; sunucu ve domain dahildir.</p>`,
       AHENK_PHOTOS.news,
     ),
     card(

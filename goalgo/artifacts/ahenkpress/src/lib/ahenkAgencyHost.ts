@@ -40,6 +40,7 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (isAhenkKeywordPath(n)) return true;
   if (n === "/hakkimizda" || n === "/about") return true;
   if (n === "/iletisim" || n === "/contact") return true;
+  if (n === "/ucretsiz-haber-sitesi") return true;
   return false;
 }
 
