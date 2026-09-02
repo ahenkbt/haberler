@@ -5,56 +5,59 @@ import {
   AhenkServiceIcon,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
-import { findAhenkAgencyService, safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
+import { findAhenkContentCard, safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
 
-export default function AhenkAgencyHizmetDetail() {
+export default function AhenkAgencyYazilimDetail() {
   const site = useAhenkAgencySite();
   const params = useParams<{ slug?: string }>();
   const slug = String(params.slug ?? "").trim();
-  const service = findAhenkAgencyService(site, slug);
+  const card = findAhenkContentCard(site, slug);
+  const isAgency = Boolean(card && site.agencyOffers.some((c) => c.slug === card.slug));
 
-  if (!service) {
+  if (!card) {
     return (
-      <AhenkAgencyChrome title="Hizmet bulunamadı">
+      <AhenkAgencyChrome title="Sayfa bulunamadı">
         <div className="ahenk-section">
-          <h2>Hizmet bulunamadı</h2>
-          <p className="ahenk-lead">Aradığınız hizmet sayfası yok veya kaldırılmış olabilir.</p>
-          <Link href="/hizmetler" className="ahenk-btn">
-            Tüm hizmetler
+          <h2>Sayfa bulunamadı</h2>
+          <p className="ahenk-lead">Aradığınız yazılım veya ajans sayfası yok.</p>
+          <Link href="/yazilim" className="ahenk-btn">
+            Yazılım dikeyleri
           </Link>
         </div>
       </AhenkAgencyChrome>
     );
   }
 
-  const src = safeAhenkImageUrl(service.image, site.servicesHeroImage);
+  const src = safeAhenkImageUrl(card.image, site.heroImage);
+  const parentHref = isAgency ? "/ajans" : "/yazilim";
+  const parentLabel = isAgency ? "Ajans" : "Yazılım";
 
   return (
-    <AhenkAgencyChrome title={service.title} description={service.excerpt}>
+    <AhenkAgencyChrome title={card.title} description={card.excerpt}>
       <AhenkPageHero
         crumb={
           <>
-            <Link href="/">Anasayfa</Link> / <Link href="/hizmetler">Hizmetler</Link> / {service.title}
+            <Link href="/">Anasayfa</Link> / <Link href={parentHref}>{parentLabel}</Link> / {card.title}
           </>
         }
-        title={service.title}
-        lead={service.excerpt}
+        title={card.title}
+        lead={card.excerpt}
         image={src}
       />
       <section className="ahenk-section ahenk-detail">
         {src ? (
           <div className="ahenk-detail-photo">
-            <img src={src} alt={service.title} />
+            <img src={src} alt={card.title} />
           </div>
         ) : null}
         <div>
           <span className="ahenk-card-icon" style={{ marginBottom: 18 }}>
-            <AhenkServiceIcon name={service.icon} />
+            <AhenkServiceIcon name={card.icon} />
           </span>
-          <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: service.bodyHtml }} />
+          <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: card.bodyHtml }} />
           <div style={{ marginTop: 24, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href="/iletisim" className="ahenk-btn">
-              Bize sorun
+              Teklif alın
             </Link>
             <a className="ahenk-btn ahenk-btn-light" href={`tel:${site.phoneTel}`}>
               {site.phone}

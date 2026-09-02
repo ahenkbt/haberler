@@ -31,6 +31,10 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (n === "/hizmetler" || n.startsWith("/hizmet/")) return true;
   if (n === "/hizmetlerimiz") return true;
   if (n.startsWith("/icerik/")) return true;
+  if (n === "/yazilim" || n.startsWith("/yazilim/")) return true;
+  if (n === "/ajans") return true;
+  if (n === "/haber-merkezi" || n === "/habermerkezi") return true;
+  if (n === "/yekpare") return true;
   if (n === "/hakkimizda" || n === "/about") return true;
   if (n === "/iletisim" || n === "/contact") return true;
   return false;

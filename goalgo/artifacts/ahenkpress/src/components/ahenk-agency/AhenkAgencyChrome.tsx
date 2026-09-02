@@ -3,25 +3,40 @@ import { Link, useLocation } from "wouter";
 import {
   Building2,
   Camera,
+  Code2,
   Headphones,
+  Heart,
   Mail,
+  Map,
   Menu,
+  Newspaper,
   PenTool,
   Phone,
+  Play,
   QrCode,
+  Scale,
   ShoppingCart,
   Sparkles,
   Users,
   X,
 } from "lucide-react";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
-import type { AhenkAgencySite } from "@/lib/ahenkAgencySite";
+import {
+  isExternalAhenkHref,
+  safeAhenkImageUrl,
+  type AhenkAgencySite,
+  type AhenkContentCard,
+} from "@/lib/ahenkAgencySite";
 import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
 import { applyJsonLd } from "@/lib/pageSeo";
 import "@/styles/ahenkAgency.css";
 
 const NAV = [
   { href: "/", label: "Anasayfa" },
+  { href: "/yazilim", label: "Yazılım" },
+  { href: "/ajans", label: "Ajans" },
+  { href: "/haber-merkezi", label: "Haber Merkezi" },
+  { href: "/yekpare", label: "Yekpare" },
   { href: "/hizmetler", label: "Hizmetler" },
   { href: "/hakkimizda", label: "Hakkımızda" },
   { href: "/iletisim", label: "İletişim" },
@@ -46,6 +61,18 @@ export function AhenkServiceIcon({ name, className }: { name: string; className?
       return <QrCode className={cls} />;
     case "building":
       return <Building2 className={cls} />;
+    case "scale":
+      return <Scale className={cls} />;
+    case "heart":
+      return <Heart className={cls} />;
+    case "news":
+      return <Newspaper className={cls} />;
+    case "play":
+      return <Play className={cls} />;
+    case "map":
+      return <Map className={cls} />;
+    case "code":
+      return <Code2 className={cls} />;
     default:
       return <Headphones className={cls} />;
   }
@@ -54,6 +81,114 @@ export function AhenkServiceIcon({ name, className }: { name: string; className?
 function navActive(path: string, href: string): boolean {
   if (href === "/") return path === "/";
   return path === href || path.startsWith(`${href}/`);
+}
+
+export function AhenkSmartLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (isExternalAhenkHref(href)) {
+    return (
+      <a href={href} className={className} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+export function AhenkMediaCard({
+  href,
+  image,
+  title,
+  excerpt,
+  icon,
+  cta = "İncele",
+}: {
+  href: string;
+  image?: string;
+  title: string;
+  excerpt: string;
+  icon: string;
+  cta?: string;
+}) {
+  const src = safeAhenkImageUrl(image, "");
+  return (
+    <AhenkSmartLink href={href} className="ahenk-card ahenk-card-media">
+      <span className="ahenk-card-photo">
+        {src ? <img src={src} alt="" loading="lazy" /> : null}
+        <span className="ahenk-card-icon">
+          <AhenkServiceIcon name={icon} />
+        </span>
+      </span>
+      <span className="ahenk-card-body">
+        <h3>{title}</h3>
+        <p>{excerpt}</p>
+        <span className="ahenk-card-cta">{cta} →</span>
+      </span>
+    </AhenkSmartLink>
+  );
+}
+
+export function AhenkCardGrid({
+  items,
+  cta,
+}: {
+  items: AhenkContentCard[];
+  cta?: string;
+}) {
+  return (
+    <div className="ahenk-grid">
+      {items.map((item) => (
+        <AhenkMediaCard
+          key={item.slug}
+          href={item.href}
+          image={item.image}
+          title={item.title}
+          excerpt={item.excerpt}
+          icon={item.icon}
+          cta={cta}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function AhenkPageHero({
+  crumb,
+  title,
+  lead,
+  image,
+}: {
+  crumb: ReactNode;
+  title: string;
+  lead?: string;
+  image?: string;
+}) {
+  const src = safeAhenkImageUrl(image, "");
+  return (
+    <div className={`ahenk-page-hero${src ? " has-photo" : ""}`}>
+      {src ? (
+        <div className="ahenk-page-hero-bg" aria-hidden>
+          <img src={src} alt="" />
+        </div>
+      ) : null}
+      <div className="ahenk-page-hero-inner">
+        <div className="ahenk-crumb">{crumb}</div>
+        <h1>{title}</h1>
+        {lead ? <p className="ahenk-page-hero-lead">{lead}</p> : null}
+      </div>
+    </div>
+  );
 }
 
 export function AhenkAgencyChrome({
@@ -200,6 +335,16 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
           </p>
         </div>
         <div>
+          <h3>Yazılım</h3>
+          <div style={{ display: "grid", gap: 6 }}>
+            {site.softwareSectors.slice(0, 6).map((s) => (
+              <Link key={s.slug} href={s.href}>
+                {s.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div>
           <h3>Hizmetler</h3>
           <div style={{ display: "grid", gap: 6 }}>
             {site.services.slice(0, 6).map((s) => (
@@ -216,7 +361,13 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <br />
             {site.hoursSunday}
           </p>
-          <p style={{ marginTop: 10 }}>Bir sorunuz mu var? Bizi 7/24 arayın</p>
+          <p style={{ marginTop: 10 }}>
+            <Link href="/haber-merkezi">Haber Merkezi</Link>
+            {" · "}
+            <a href="https://yekpare.net" target="_blank" rel="noreferrer">
+              Yekpare.net
+            </a>
+          </p>
           <p>
             <strong style={{ color: "#fff" }}>{site.phone}</strong>
           </p>

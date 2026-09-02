@@ -18,6 +18,7 @@ import {
   type AhenkAgencyService,
   type AhenkAgencySite,
   type AhenkAgencySlide,
+  type AhenkContentCard,
 } from "@/lib/ahenkAgencySite";
 
 export default function AhenkAjansSitesi() {
@@ -72,8 +73,8 @@ export default function AhenkAjansSitesi() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Ahenk.net.tr ajans vitrini</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Anasayfa, hizmetler, hakkımızda ve iletişim sayfaları bu kayıttan beslenir. Admin, YekTube ve
-            HM editör siteleri etkilenmez.
+            Anasayfa, yazılım, ajans, Haber Merkezi, Yekpare, hizmetler, hakkımızda ve iletişim bu kayıttan
+            beslenir. Görsel alanlarına Unsplash veya https URL yapıştırın.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -92,7 +93,11 @@ export default function AhenkAjansSitesi() {
         </div>
       </div>
 
-      <Accordion type="multiple" defaultValue={["brand", "offices", "slides", "services"]} className="rounded-lg border bg-white">
+      <Accordion
+        type="multiple"
+        defaultValue={["brand", "hero", "software", "services"]}
+        className="rounded-lg border bg-white"
+      >
         <AccordionItem value="brand">
           <AccordionTrigger className="px-4">Marka ve iletişim</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
@@ -124,11 +129,188 @@ export default function AhenkAjansSitesi() {
           </AccordionContent>
         </AccordionItem>
 
+        <AccordionItem value="hero">
+          <AccordionTrigger className="px-4">Anasayfa kahraman görseli</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <Field label="Üst kicker">
+              <Input value={site.heroKicker} onChange={(e) => setSite({ ...site, heroKicker: e.target.value })} />
+            </Field>
+            <Field label="Başlık">
+              <Input value={site.heroTitle} onChange={(e) => setSite({ ...site, heroTitle: e.target.value })} />
+            </Field>
+            <Field label="Alt metin">
+              <Textarea rows={3} value={site.heroSubtitle} onChange={(e) => setSite({ ...site, heroSubtitle: e.target.value })} />
+            </Field>
+            <Field label="Kahraman görsel URL">
+              <Input
+                value={site.heroImage}
+                onChange={(e) => setSite({ ...site, heroImage: e.target.value })}
+                placeholder="https://images.unsplash.com/..."
+              />
+            </Field>
+            {site.heroImage ? (
+              <img src={site.heroImage} alt="" className="h-28 w-full max-w-md rounded object-cover" />
+            ) : null}
+            <div className="grid sm:grid-cols-2 gap-2">
+              <Input
+                value={site.heroCtaLabel}
+                onChange={(e) => setSite({ ...site, heroCtaLabel: e.target.value })}
+                placeholder="Birincil buton"
+              />
+              <Input
+                value={site.heroCtaHref}
+                onChange={(e) => setSite({ ...site, heroCtaHref: e.target.value })}
+                placeholder="/yazilim"
+              />
+              <Input
+                value={site.heroSecondaryLabel}
+                onChange={(e) => setSite({ ...site, heroSecondaryLabel: e.target.value })}
+                placeholder="İkincil buton"
+              />
+              <Input
+                value={site.heroSecondaryHref}
+                onChange={(e) => setSite({ ...site, heroSecondaryHref: e.target.value })}
+                placeholder="/ajans"
+              />
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="software">
+          <AccordionTrigger className="px-4">Yazılım dikeyleri (görselli kartlar)</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <Field label="Bölüm başlığı">
+              <Input value={site.softwareTitle} onChange={(e) => setSite({ ...site, softwareTitle: e.target.value })} />
+            </Field>
+            <Field label="Bölüm metni">
+              <Textarea rows={2} value={site.softwareLead} onChange={(e) => setSite({ ...site, softwareLead: e.target.value })} />
+            </Field>
+            <CardList
+              items={site.softwareSectors}
+              onChange={(softwareSectors) => setSite({ ...site, softwareSectors })}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="agency">
+          <AccordionTrigger className="px-4">Ajans stüdyosu</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <Field label="Bölüm başlığı">
+              <Input value={site.agencyTitle} onChange={(e) => setSite({ ...site, agencyTitle: e.target.value })} />
+            </Field>
+            <Field label="Bölüm metni">
+              <Textarea rows={2} value={site.agencyLead} onChange={(e) => setSite({ ...site, agencyLead: e.target.value })} />
+            </Field>
+            <CardList items={site.agencyOffers} onChange={(agencyOffers) => setSite({ ...site, agencyOffers })} />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="yekpare">
+          <AccordionTrigger className="px-4">Yekpare.net</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <div className="grid sm:grid-cols-2 gap-2">
+              <Input
+                value={site.yekpare.kicker}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, kicker: e.target.value } })}
+                placeholder="Kicker"
+              />
+              <Input
+                value={site.yekpare.title}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, title: e.target.value } })}
+                placeholder="Başlık"
+              />
+            </div>
+            <Textarea
+              rows={3}
+              value={site.yekpare.text}
+              onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, text: e.target.value } })}
+            />
+            <Field label="Görsel URL">
+              <Input
+                value={site.yekpare.image ?? ""}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, image: e.target.value } })}
+              />
+            </Field>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <Input
+                value={site.yekpare.ctaLabel}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, ctaLabel: e.target.value } })}
+              />
+              <Input
+                value={site.yekpare.ctaHref}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, ctaHref: e.target.value } })}
+              />
+              <Input
+                value={site.yekpare.secondaryLabel}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, secondaryLabel: e.target.value } })}
+              />
+              <Input
+                value={site.yekpare.secondaryHref}
+                onChange={(e) => setSite({ ...site, yekpare: { ...site.yekpare, secondaryHref: e.target.value } })}
+              />
+            </div>
+            <Field label="Yekpare sayfa başlığı">
+              <Input
+                value={site.yekparePageTitle}
+                onChange={(e) => setSite({ ...site, yekparePageTitle: e.target.value })}
+              />
+            </Field>
+            <Field label="Yekpare sayfa HTML">
+              <Textarea
+                rows={6}
+                className="font-mono text-xs"
+                value={site.yekparePageHtml}
+                onChange={(e) => setSite({ ...site, yekparePageHtml: e.target.value })}
+              />
+            </Field>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="platform">
+          <AccordionTrigger className="px-4">Haber Merkezi ürünleri</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <Field label="Anasayfa bölüm başlığı">
+              <Input value={site.platformTitle} onChange={(e) => setSite({ ...site, platformTitle: e.target.value })} />
+            </Field>
+            <Field label="Anasayfa bölüm metni">
+              <Textarea rows={2} value={site.platformLead} onChange={(e) => setSite({ ...site, platformLead: e.target.value })} />
+            </Field>
+            <Field label="Haber Merkezi sayfa başlığı">
+              <Input
+                value={site.haberMerkeziTitle}
+                onChange={(e) => setSite({ ...site, haberMerkeziTitle: e.target.value })}
+              />
+            </Field>
+            <Field label="Haber Merkezi özet">
+              <Textarea
+                rows={2}
+                value={site.haberMerkeziLead}
+                onChange={(e) => setSite({ ...site, haberMerkeziLead: e.target.value })}
+              />
+            </Field>
+            <Field label="Haber Merkezi HTML">
+              <Textarea
+                rows={5}
+                className="font-mono text-xs"
+                value={site.haberMerkeziHtml}
+                onChange={(e) => setSite({ ...site, haberMerkeziHtml: e.target.value })}
+              />
+            </Field>
+            <CardList
+              items={site.platformProducts}
+              onChange={(platformProducts) => setSite({ ...site, platformProducts })}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
         <AccordionItem value="about">
           <AccordionTrigger className="px-4">Hakkımızda ve CTA</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
             <Field label="Hakkımızda başlığı">
               <Input value={site.aboutTitle} onChange={(e) => setSite({ ...site, aboutTitle: e.target.value })} />
+            </Field>
+            <Field label="Hakkımızda görsel URL">
+              <Input value={site.aboutImage} onChange={(e) => setSite({ ...site, aboutImage: e.target.value })} />
             </Field>
             <Field label="Hakkımızda HTML">
               <Textarea rows={8} value={site.aboutHtml} onChange={(e) => setSite({ ...site, aboutHtml: e.target.value })} />
@@ -153,9 +335,7 @@ export default function AhenkAjansSitesi() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() =>
-                      setSite({ ...site, offices: site.offices.filter((_, j) => j !== i) })
-                    }
+                    onClick={() => setSite({ ...site, offices: site.offices.filter((_, j) => j !== i) })}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -187,10 +367,7 @@ export default function AhenkAjansSitesi() {
               onClick={() =>
                 setSite({
                   ...site,
-                  offices: [
-                    ...site.offices,
-                    { id: `office-${Date.now()}`, country: "", flag: "📍", address: "" },
-                  ],
+                  offices: [...site.offices, { id: `office-${Date.now()}`, country: "", flag: "📍", address: "" }],
                 })
               }
             >
@@ -200,7 +377,7 @@ export default function AhenkAjansSitesi() {
         </AccordionItem>
 
         <AccordionItem value="slides">
-          <AccordionTrigger className="px-4">Anasayfa slaytları</AccordionTrigger>
+          <AccordionTrigger className="px-4">Yedek slaytlar (CMS)</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
             {site.slides.map((slide, i) => (
               <div key={slide.id} className="rounded-md border p-3 space-y-2">
@@ -226,6 +403,11 @@ export default function AhenkAjansSitesi() {
                   onChange={(e) => patchSlide(site, setSite, i, { subtitle: e.target.value })}
                   placeholder="Alt başlık"
                 />
+                <Input
+                  value={slide.image ?? ""}
+                  onChange={(e) => patchSlide(site, setSite, i, { image: e.target.value })}
+                  placeholder="Görsel URL"
+                />
                 <div className="grid sm:grid-cols-2 gap-2">
                   <Input
                     value={slide.ctaLabel}
@@ -235,7 +417,7 @@ export default function AhenkAjansSitesi() {
                   <Input
                     value={slide.ctaHref}
                     onChange={(e) => patchSlide(site, setSite, i, { ctaHref: e.target.value })}
-                    placeholder="/hizmetler"
+                    placeholder="/yazilim"
                   />
                 </div>
               </div>
@@ -254,7 +436,8 @@ export default function AhenkAjansSitesi() {
                       title: "",
                       subtitle: "",
                       ctaLabel: "İncele",
-                      ctaHref: "/hizmetler",
+                      ctaHref: "/yazilim",
+                      image: "",
                     },
                   ],
                 })
@@ -266,8 +449,24 @@ export default function AhenkAjansSitesi() {
         </AccordionItem>
 
         <AccordionItem value="services">
-          <AccordionTrigger className="px-4">Hizmet sayfaları</AccordionTrigger>
+          <AccordionTrigger className="px-4">Hizmetler (görselli operasyon sayfaları)</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
+            <Field label="Hizmetler başlığı">
+              <Input value={site.servicesTitle} onChange={(e) => setSite({ ...site, servicesTitle: e.target.value })} />
+            </Field>
+            <Field label="Hizmetler özeti">
+              <Textarea
+                rows={2}
+                value={site.servicesLead}
+                onChange={(e) => setSite({ ...site, servicesLead: e.target.value })}
+              />
+            </Field>
+            <Field label="Hizmetler kapak görseli">
+              <Input
+                value={site.servicesHeroImage}
+                onChange={(e) => setSite({ ...site, servicesHeroImage: e.target.value })}
+              />
+            </Field>
             {site.services.map((svc, i) => (
               <div key={svc.slug + i} className="rounded-md border p-3 space-y-2">
                 <div className="flex justify-between">
@@ -281,6 +480,9 @@ export default function AhenkAjansSitesi() {
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
+                {svc.image ? (
+                  <img src={svc.image} alt="" className="h-24 w-full rounded object-cover" />
+                ) : null}
                 <div className="grid sm:grid-cols-2 gap-2">
                   <Input
                     value={svc.title}
@@ -297,6 +499,11 @@ export default function AhenkAjansSitesi() {
                   value={svc.excerpt}
                   onChange={(e) => patchService(site, setSite, i, { excerpt: e.target.value })}
                   placeholder="Kısa özet"
+                />
+                <Input
+                  value={svc.image ?? ""}
+                  onChange={(e) => patchService(site, setSite, i, { image: e.target.value })}
+                  placeholder="Görsel URL"
                 />
                 <Input
                   value={svc.icon}
@@ -327,6 +534,7 @@ export default function AhenkAjansSitesi() {
                       excerpt: "",
                       icon: "sparkle",
                       bodyHtml: "<p></p>",
+                      image: "",
                     },
                   ],
                 })
@@ -346,6 +554,92 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function CardList({
+  items,
+  onChange,
+}: {
+  items: AhenkContentCard[];
+  onChange: (next: AhenkContentCard[]) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => (
+        <div key={item.slug + i} className="rounded-md border p-3 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm font-semibold">{item.title || item.slug}</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+          {item.image ? <img src={item.image} alt="" className="h-24 w-full rounded object-cover" /> : null}
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Input
+              value={item.title}
+              onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, title: e.target.value } : c)))}
+              placeholder="Başlık"
+            />
+            <Input
+              value={item.slug}
+              onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, slug: e.target.value } : c)))}
+              placeholder="slug"
+            />
+          </div>
+          <Input
+            value={item.excerpt}
+            onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, excerpt: e.target.value } : c)))}
+            placeholder="Özet"
+          />
+          <Input
+            value={item.image ?? ""}
+            onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, image: e.target.value } : c)))}
+            placeholder="Görsel URL"
+          />
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Input
+              value={item.icon}
+              onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, icon: e.target.value } : c)))}
+              placeholder="icon"
+            />
+            <Input
+              value={item.href}
+              onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, href: e.target.value } : c)))}
+              placeholder="/yazilim/..."
+            />
+          </div>
+          <Textarea
+            rows={5}
+            className="font-mono text-xs"
+            value={item.bodyHtml}
+            onChange={(e) => onChange(items.map((c, j) => (j === i ? { ...c, bodyHtml: e.target.value } : c)))}
+            placeholder="Sayfa HTML"
+          />
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          onChange([
+            ...items,
+            {
+              slug: `kart-${Date.now()}`,
+              title: "Yeni kart",
+              excerpt: "",
+              icon: "sparkle",
+              href: "/",
+              bodyHtml: "<p></p>",
+              image: "",
+            },
+          ])
+        }
+      >
+        <Plus className="w-4 h-4 mr-1" /> Kart ekle
+      </Button>
     </div>
   );
 }

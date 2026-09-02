@@ -1,20 +1,35 @@
 import { Link } from "wouter";
-import { AhenkAgencyChrome } from "@/components/ahenk-agency/AhenkAgencyChrome";
+import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
+import { safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
 
 export default function AhenkAgencyHakkimizda() {
   const site = useAhenkAgencySite();
+  const src = safeAhenkImageUrl(site.aboutImage, "");
   return (
     <AhenkAgencyChrome title="Hakkımızda" description={site.tagline}>
-      <div className="ahenk-page-hero">
-        <div className="ahenk-page-hero-inner">
-          <div className="ahenk-crumb">
+      <AhenkPageHero
+        crumb={
+          <>
             <Link href="/">Anasayfa</Link> / Hakkımızda
+          </>
+        }
+        title="Hakkımızda"
+        lead={site.tagline}
+        image={src}
+      />
+      <section className="ahenk-section ahenk-detail">
+        {src ? (
+          <div className="ahenk-detail-photo">
+            <img src={src} alt="" />
           </div>
-          <h1>Hakkımızda</h1>
+        ) : null}
+        <div>
+          <h2>{site.aboutTitle}</h2>
+          <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: site.aboutHtml }} />
         </div>
-      </div>
+      </section>
       <section className="ahenk-section">
         <h2>Ahenk Bilgi Teknolojileri kimdir?</h2>
         <p className="ahenk-lead">{AHENK_BT_ENTITY.description}</p>
@@ -25,10 +40,6 @@ export default function AhenkAgencyHakkimizda() {
           <li>Telefon: {site.phone}</li>
           <li>E-posta: {site.email}</li>
         </ul>
-      </section>
-      <section className="ahenk-section">
-        <h2>{site.aboutTitle}</h2>
-        <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: site.aboutHtml }} />
       </section>
       <section className="ahenk-cta">
         <div className="ahenk-cta-inner">

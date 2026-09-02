@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { AhenkAgencyChrome } from "@/components/ahenk-agency/AhenkAgencyChrome";
+import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { apiUrl } from "@/lib/apiBase";
 
@@ -55,14 +55,16 @@ export default function AhenkAgencyIletisim() {
 
   return (
     <AhenkAgencyChrome title="İletişim" description="Ahenk Bilgi Teknolojileri iletişim ve ofis bilgileri.">
-      <div className="ahenk-page-hero">
-        <div className="ahenk-page-hero-inner">
-          <div className="ahenk-crumb">
+      <AhenkPageHero
+        crumb={
+          <>
             <Link href="/">Anasayfa</Link> / İletişim
-          </div>
-          <h1>İletişim</h1>
-        </div>
-      </div>
+          </>
+        }
+        title="İletişim"
+        lead={`${site.phone} · ${site.email}`}
+        image={site.aboutImage}
+      />
       <section className="ahenk-section ahenk-split">
         <form className="ahenk-form" onSubmit={(e) => void submit(e)}>
           <h2>Bize yazın</h2>

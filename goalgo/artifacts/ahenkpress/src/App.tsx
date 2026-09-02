@@ -90,6 +90,11 @@ import AhenkAgencyHizmetler from "./pages/public/AhenkAgencyHizmetler";
 import AhenkAgencyHizmetDetail from "./pages/public/AhenkAgencyHizmetDetail";
 import AhenkAgencyHakkimizda from "./pages/public/AhenkAgencyHakkimizda";
 import AhenkAgencyIletisim from "./pages/public/AhenkAgencyIletisim";
+import AhenkAgencyYazilim from "./pages/public/AhenkAgencyYazilim";
+import AhenkAgencyYazilimDetail from "./pages/public/AhenkAgencyYazilimDetail";
+import AhenkAgencyAjans from "./pages/public/AhenkAgencyAjans";
+import AhenkAgencyHaberMerkezi from "./pages/public/AhenkAgencyHaberMerkezi";
+import AhenkAgencyYekpare from "./pages/public/AhenkAgencyYekpare";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
 import Kasiyer from "./pages/public/Kasiyer";
@@ -811,6 +816,11 @@ export default function App() {
       <Route path="/hizmetlerimiz">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetler /> : <Redirect to="/haberler" />)}</Route>
       <Route path="/hizmet/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetDetail /> : <Redirect to="/haberler" />)}</Route>
       <Route path="/icerik/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetDetail /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/yazilim/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyYazilimDetail /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/yazilim">{() => (isAhenkAgencyHost() ? <AhenkAgencyYazilim /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/ajans">{() => (isAhenkAgencyHost() ? <AhenkAgencyAjans /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/haber-merkezi">{() => (isAhenkAgencyHost() ? <AhenkAgencyHaberMerkezi /> : <Redirect to="/habermerkezi" />)}</Route>
+      <Route path="/yekpare">{() => (isAhenkAgencyHost() ? <AhenkAgencyYekpare /> : <Redirect to="/" />)}</Route>
       <Route path="/hakkimizda">{() => (isAhenkAgencyHost() ? <AhenkAgencyHakkimizda /> : <Redirect to="/" />)}</Route>
       <Route path="/">{() => <PortalHomeRoute />}</Route>
       <Route path="/home">{() => <SixAmMartHomeModuleRedirect />}</Route>
@@ -1182,8 +1192,18 @@ export default function App() {
           </HmPortalOrDomainStandardPage>
         )}
       </Route>
-      {/* Haber Merkezi tanıtım sayfası — korunur */}
-      <Route path="/habermerkezi">{() => <PublicLayout><Habermerkezi /></PublicLayout>}</Route>
+      {/* Haber Merkezi tanıtım: ahenk.net.tr ajans ürün ailesi; diğer hostlarda mevcut landing */}
+      <Route path="/habermerkezi">
+        {() =>
+          isAhenkAgencyHost() ? (
+            <AhenkAgencyHaberMerkezi />
+          ) : (
+            <PublicLayout>
+              <Habermerkezi />
+            </PublicLayout>
+          )
+        }
+      </Route>
       <Route path="/ucretsiz-haber-sitesi">{() => <PublicLayout><UcretsizHaberSitesiLanding /></PublicLayout>}</Route>
       <Route path="/ai-cagri-merkezi">{() => <PublicLayout><AiCagriMerkeziLanding /></PublicLayout>}</Route>
       <Route path="/kariyer">{() => <PublicLayout><Kariyer /></PublicLayout>}</Route>
