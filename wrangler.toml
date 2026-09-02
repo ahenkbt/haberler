@@ -151,21 +151,23 @@ zone_name = "vatanhaber.net"
 pattern = "www.vatanhaber.net"
 zone_name = "vatanhaber.net"
 
-# Su Haber — kanonik Google alanı suhaber.net; suhaberajansi.com takma ad
-[[routes]]
-pattern = "suhaber.net"
-custom_domain = true
-
-[[routes]]
-pattern = "www.suhaber.net"
-custom_domain = true
-
+# Su Haber — kanonik Google alanı suhaber.net; suhaberajansi.com takma ad.
+# Zone CF'de ve A/CNAME kayıtları var: custom_domain 100117 ile wrangler deploy kırılır.
+# vatanhaber.net gibi zone_name Worker route kullan (DNS'e dokunma).
 [[routes]]
 pattern = "suhaber.net/*"
 zone_name = "suhaber.net"
 
 [[routes]]
+pattern = "suhaber.net"
+zone_name = "suhaber.net"
+
+[[routes]]
 pattern = "www.suhaber.net/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net"
 zone_name = "suhaber.net"
 
 # Su Haber Ajansı — zone Cloudflare'de; A/AAAA boş → Worker custom_domain

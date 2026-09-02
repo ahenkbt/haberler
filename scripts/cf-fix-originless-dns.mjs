@@ -19,8 +19,9 @@ const ZONES = [
   "ankarahabergundemi.com",
   "vatankahramanlari.org",
   "vatanhaber.net",
+  "suhaber.net",
   "suhaberajansi.com",
-  // belediyehizmet.com kaldırıldı — site suhaberajansi.com
+  // belediyehizmet.com kaldırıldı — kanonik alan suhaber.net
   "kirsehirhaber.org",
   // Yektube — turk.eco/yp kanonik alan adı
   "yektube.com",
