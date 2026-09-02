@@ -95,6 +95,8 @@ describe("hm-html-boot", () => {
     assert.equal(isAhenkAgencyGeoPath("/"), true);
     assert.equal(isAhenkAgencyGeoPath("/hakkimizda"), true);
     assert.equal(isAhenkAgencyGeoPath("/haberler"), false);
+    assert.equal(isAhenkAgencyGeoPath("/web-yazilimi"), true);
+    assert.equal(isAhenkAgencyGeoPath("/avukat-sitesi"), true);
     const llms = buildAhenkLlmsTxtFallback("https://ahenk.net.tr");
     assert.match(llms, /Ahenk Bilgi Teknolojileri/);
     assert.match(llms, /ahenk\.net\.tr/);

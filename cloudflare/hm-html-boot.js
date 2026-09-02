@@ -370,6 +370,30 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/iletisim" || p === "/contact") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
+  if (p === "/yazilim" || p.startsWith("/yazilim/") || p === "/ajans" || p === "/haber-merkezi" || p === "/yekpare") {
+    return true;
+  }
+  if (
+    p === "/web-yazilimi" ||
+    p === "/web-yazilim" ||
+    p === "/web-tasarimi" ||
+    p === "/web-tasarim" ||
+    p === "/mobil-uyumlu-yazilim" ||
+    p === "/mobil-uyumlu-yazilimlar"
+  ) {
+    return true;
+  }
+  if (
+    p.endsWith("-sitesi") ||
+    p === "/haber-scripti" ||
+    p === "/haber-yazilimi" ||
+    p === "/haber-portali" ||
+    p === "/haber-sitesi-yazilimi" ||
+    p === "/kurumsal-web-yazilimi" ||
+    p === "/kurumsal-site"
+  ) {
+    return true;
+  }
   return false;
 }
 

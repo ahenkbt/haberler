@@ -524,16 +524,7 @@ function redirectBareSitemapPath(request, incoming) {
   });
 }
 
-/** HM + portal: robots.txt Sitemap satırı ziyaret edilen köke bağlanır (statik turk.eco ezilmesin). */
 /** ahenk.net.tr web yazılım vitrini — haber sitemap yerine ajans haritası. */
-function isAhenkAgencyHost(host) {
-  const h = String(host || "")
-    .toLowerCase()
-    .replace(/^www\./, "")
-    .split(":")[0];
-  return h === "ahenk.net.tr";
-}
-
 function serveAhenkAgencyRobots(request, incoming) {
   if (!isAhenkAgencyHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
