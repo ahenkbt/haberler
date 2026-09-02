@@ -13,7 +13,7 @@ import {
 } from "@workspace/db";
 import { TR_PROVINCE_NAMES_81 } from "../lib/turkishProvinces.js";
 import { sitePublicOrigin, resolvePortalRequestOrigin } from "../lib/site-public-origin";
-import { isPortalHostname, PORTAL_BRAND_SHORT } from "../lib/portalBrand";
+import { isPortalHostname, PORTAL_BRAND_SHORT, portalNewsPublicationName } from "../lib/portalBrand";
 import {
   buildYektubeStaticSitemapXml,
   buildYektubeVideoSitemapXml,
@@ -887,7 +887,7 @@ router.get("/news-yekpare-google-news.xml", async (req, res): Promise<void> => {
       res,
       articles,
       (a) => yekpareArticleUrl(a.slug, base),
-      PORTAL_BRAND_SHORT,
+      portalNewsPublicationName(normalizeRequestHost(req)),
       base.replace(/\/+$/, ""),
     );
   } catch {
@@ -1005,7 +1005,7 @@ router.get("/google-news.xml", async (req, res): Promise<void> => {
       res,
       articles,
       (a) => yekpareArticleUrl(a.slug, base),
-      PORTAL_BRAND_SHORT,
+      portalNewsPublicationName(requestHost),
       base.replace(/\/+$/, ""),
     );
   } catch {

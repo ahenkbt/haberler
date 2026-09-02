@@ -109,7 +109,7 @@ import { HomeTravelTabs } from "./HomeTravelTabs";
 import { HmYekpareCategoryBox } from "@/components/HmYekpareKategorilerKutusu";
 import { CATEGORY_BOX_DISPLAY_TOTAL, ensureNewsBoxItems } from "@/lib/hmCategoryBoxItems";
 import { HmRecentVideosBox } from "@/components/HmRecentVideosBox";
-import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl, filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
 import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmNewsMapModule } from "@/components/HmNewsMapModule";
 import { DunyadanKisaKisaBand } from "@/components/DunyadanKisaKisaBand";
@@ -412,7 +412,7 @@ async function fetchHybridNews(params: {
   const r = await fetch(`${API}/news/hybrid?${qs}`);
   const d = await r.json();
   const rows = Array.isArray(d?.items) ? d.items : [];
-  return rows.map((row: Record<string, unknown>) => mapHybridNewsRow(row));
+  return filterNewsItemsWithCoverImage(rows.map((row: Record<string, unknown>) => mapHybridNewsRow(row)));
 }
 
 function newsItemIsRss(item: NewsCardItem): boolean {
@@ -1471,13 +1471,15 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
   }, []);
 
   const featuredSlides = useMemo(() => {
-    return buildPortalHeadlinePool({
-      manualItems: portalNewsHost ? [] : apiFeatured,
-      latestItems: mergeUniqueNewsItems(categoryPoolItems, items, rssHeadlineItems),
-      rssEnabled: rssHeadlineEnabled,
-      limit: 12,
-      portalRssFirst: portalNewsHost,
-    });
+    return filterNewsItemsWithCoverImage(
+      buildPortalHeadlinePool({
+        manualItems: portalNewsHost ? [] : apiFeatured,
+        latestItems: mergeUniqueNewsItems(categoryPoolItems, items, rssHeadlineItems),
+        rssEnabled: rssHeadlineEnabled,
+        limit: 12,
+        portalRssFirst: portalNewsHost,
+      }),
+    );
   }, [apiFeatured, categoryPoolItems, items, portalNewsHost, rssHeadlineItems, rssHeadlineEnabled]);
 
   const featuredSideItems = useMemo(
@@ -1598,6 +1600,7 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
             loadMoreMode="inline"
             allNewsHref="/haberler"
             gridColumns={3}
+            requireCoverImage
           />
         );
       case "popularSidebar":

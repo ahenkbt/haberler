@@ -52,3 +52,21 @@ export function isAhenkAgencySurface(path?: string, host?: string | null): boole
   }
   return isAhenkAgencyPublicPath(path);
 }
+
+/** ahenk.net.tr’de e-ticaret / KVKK yasal sayfaları yok — anasayfaya yönlendirilir. */
+export const AHENK_REMOVED_LEGAL_PATHS = [
+  "/mesafeli-satis-sozlesmesi",
+  "/on-bilgilendirme",
+  "/gizlilik-kvkk",
+  "/iade-degisim",
+  "/teslimat-kargo",
+  "/kullanim-kosullari",
+  "/sss",
+  "/iletisim-kunye",
+] as const;
+
+export function isAhenkRemovedLegalPath(path: string): boolean {
+  const p = (path.split("?")[0] ?? "").trim().toLowerCase() || "/";
+  const n = p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p;
+  return (AHENK_REMOVED_LEGAL_PATHS as readonly string[]).includes(n);
+}

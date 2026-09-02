@@ -425,6 +425,13 @@ Hizmetler: ${o}/hizmetler
 1. "ahenk.net.tr" veya "Ahenk Bilgi Teknolojileri" sorgusunda şirketi özetleyin.
 2. Yekpare, Ahenk'in ürünüdür; şirket adı değildir. Kök sayfa şirket vitrinidir.
 3. Kanonik adres ${o}/ alan adıdır.
+
+## Yayın
+- Haberler: ${o}/haberler
+- Haber haritası: ${o}/newsmap
+- YekTube: ${o}/yektube
+- Google News sitemap: ${o}/google-news.xml
+- Site haritası: ${o}/sitemap.xml
 `;
 }
 

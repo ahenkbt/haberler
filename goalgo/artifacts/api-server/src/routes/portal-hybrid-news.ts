@@ -189,18 +189,18 @@ function buildSiteGlobalCategoryPolicy(opts: {
 }
 
 /**
- * Editör / newsmap: TR yerel kategori RSS yerine DB; dış RSS yalnızca yurtdışı.
- * Site içi RSS (`hybridRssEnabled`) açıkken filtre kapalı — editör kendi feed’lerini kullanır.
- * Kutu içi RSS (box) zaten muaf.
+ * Editör havuzu: TR yerel kategori RSS yerine DB; dış RSS yalnızca yurtdışı.
+ * Portal newsmap /haberler ile aynı RSS’i kullanır — `newsmapMode` yabancı-only tetiklemez.
+ * Site içi RSS (`hybridRssEnabled`) açıkken filtre kapalı. Kutu içi RSS (box) muaf.
  */
 function useForeignOnlyHybridRss(
   editorPool: boolean,
-  newsmapMode: boolean,
+  _newsmapMode: boolean,
   rssScope: string,
   hybridRssEnabled = false,
 ): boolean {
   if (hybridRssEnabled) return false;
-  return (editorPool || newsmapMode) && rssScope !== "box";
+  return editorPool && rssScope !== "box";
 }
 
 const NEWSMAP_HYBRID_RESPONSE_TTL_MS = 60_000;

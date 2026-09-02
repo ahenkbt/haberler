@@ -2,6 +2,7 @@ import { Link } from "wouter";
 
 import { YEKPARE_SUPER_APP_LOGO_SRC } from "@/components/SearchEngineHeroBrandLogo";
 import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
+import { portalBrandHomeAriaLabel, portalBrandLogoAlt } from "@/lib/portalBrand";
 
 /** Varsayılan portal logosu (DB boş veya eski URL). */
 export const YEKPARE_BRAND_LOGO_SRC = YEKPARE_SUPER_APP_LOGO_SRC;
@@ -33,11 +34,11 @@ export function YekpareBrandLogo({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="turk.eco ana sayfa"
+      aria-label={portalBrandHomeAriaLabel()}
     >
       <img
         src={logoSrc}
-        alt="turk.eco — haber video portalı"
+        alt={portalBrandLogoAlt()}
         className="yekpare-brand-logo-img seh-header-brand-logo-img"
         width={compact ? 44 : 96}
         height={compact ? 44 : 96}

@@ -418,11 +418,14 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             {site.hoursSunday}
           </p>
           <p style={{ marginTop: 10 }}>
-            <Link href="/haber-merkezi">Haber Merkezi</Link>
+            <Link href="/haberler">Haberler</Link>
             {" · "}
-            <a href="https://yekpare.net" target="_blank" rel="noreferrer">
-              Yekpare.net
-            </a>
+            <Link href="/newsmap">Haber haritası</Link>
+          </p>
+          <p>
+            <Link href="/yektube">YekTube</Link>
+            {" · "}
+            <Link href="/haber-merkezi">Haber Merkezi</Link>
           </p>
           <p>
             <strong style={{ color: "#fff" }}>{site.phone}</strong>

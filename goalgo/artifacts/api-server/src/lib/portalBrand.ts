@@ -19,6 +19,7 @@ export const PORTAL_ALIAS_HOSTS = [
 
 export const PORTAL_SITE_NAME = "Türk Ekosistemi";
 export const PORTAL_BRAND_SHORT = "Türk Ekosistemi";
+export const AHENK_NEWS_PUBLICATION_NAME = "Ahenk Haber";
 export const PWA_STORE_NAME = "Türk Ekosistemi";
 export const PWA_ICON_PATH = "/icon-192.svg";
 
@@ -48,6 +49,15 @@ export function isPortalHostname(host: string | null | undefined): boolean {
   if (h.endsWith(".vercel.app")) return true;
   if (parsePortalExtraHosts().includes(h)) return true;
   return false;
+}
+
+export function isAhenkNetTrHost(host: string | null | undefined): boolean {
+  const h = normalizePortalHostKey(host);
+  return h === PORTAL_HOST || h === "www.ahenk.net.tr";
+}
+
+export function portalNewsPublicationName(host?: string | null): string {
+  return isAhenkNetTrHost(host) ? AHENK_NEWS_PUBLICATION_NAME : PORTAL_BRAND_SHORT;
 }
 
 /** HM özel alanında Railway portal sitemap yanıtında yanlışlıkla görünen kök alanlar. */

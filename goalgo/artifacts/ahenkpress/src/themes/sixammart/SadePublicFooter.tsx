@@ -10,6 +10,11 @@ import {
 } from "@workspace/site-nav";
 import { TURIZM_FOOTER_MODULES, isTurizmSubmenuItemActive } from "@/themes/turizm/turizmRoutes";
 import { YekpareFooterDisclaimer } from "@/components/YekpareFooterDisclaimer";
+import {
+  AHENK_BRAND_NAME,
+  isAhenkPortalHost,
+  portalBrandHomeAriaLabel,
+} from "@/lib/portalBrand";
 import "@/styles/sade-public-footer.css";
 
 const APP_STORE_LINKS = [
@@ -17,6 +22,15 @@ const APP_STORE_LINKS = [
   { label: "Newsmap", href: "/newsmap" },
   { label: "Haberler", href: "/haberler" },
   { label: "Videolar", href: "/yektube" },
+] as const;
+
+const AHENK_PUBLIC_LINKS = [
+  { label: "Haberler", href: "/haberler" },
+  { label: "Videolar", href: "/yektube" },
+  { label: "Newsmap", href: "/newsmap" },
+  { label: "Haber Merkezi", href: "/haber-merkezi" },
+  { label: "Hakkımızda", href: "/hakkimizda" },
+  { label: "İletişim", href: "/iletisim" },
 ] as const;
 
 const SADE_PUBLIC_LINKS = [
@@ -167,23 +181,27 @@ function TurizmFooterBody() {
 function DefaultFooterBody() {
   const { data: settings } = useGetSiteSettings();
   const { logoSrc } = usePortalBrandVisuals();
-  const legalLinks = useMemo(
-    () => parseFooterLegalLinksJson((settings as { footerLegalLinksJson?: string | null } | undefined)?.footerLegalLinksJson ?? null),
-    [settings],
-  );
-  const footerText =
-    settings?.footerText?.trim() ||
-    "Türk Ekosistemi'nde haber, video, Newsmap ve Haber Merkezi tek kullanıcı deneyiminde buluşur.";
+  const ahenk = isAhenkPortalHost();
+  const legalLinks = useMemo(() => {
+    if (ahenk) return [];
+    return parseFooterLegalLinksJson((settings as { footerLegalLinksJson?: string | null } | undefined)?.footerLegalLinksJson ?? null);
+  }, [ahenk, settings]);
+  const footerText = ahenk
+    ? "Ahenk Bilgi Teknolojileri — haber, video, Newsmap ve Haber Merkezi."
+    : settings?.footerText?.trim() ||
+      "Türk Ekosistemi'nde haber, video, Newsmap ve Haber Merkezi tek kullanıcı deneyiminde buluşur.";
+  const brandName = ahenk ? AHENK_BRAND_NAME : "Türk Ekosistemi";
+  const publicLinks = ahenk ? AHENK_PUBLIC_LINKS : SADE_PUBLIC_LINKS;
 
   return (
     <div className="yekpare-public-footer__main">
       <div className="yekpare-public-footer__grid yekpare-public-footer__grid--default">
         <div>
           <div className="mb-4 flex items-center gap-3">
-            <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label="Türk Ekosistemi ana sayfa">
+            <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label={portalBrandHomeAriaLabel()}>
               <img
                 src={logoSrc}
-                alt="Türk Ekosistemi"
+                alt={brandName}
                 className="yekpare-public-footer__brand-logo"
                 width={160}
                 height={40}
@@ -193,37 +211,39 @@ function DefaultFooterBody() {
           </div>
           <p className="yekpare-public-footer__brand-text">{footerText}</p>
         </div>
-        <FooterCol title="Hizmetler" links={[...SADE_PUBLIC_LINKS.slice(0, 4)]} />
-        <FooterCol title="Hesap" links={[...ACCOUNT_LINKS]} />
-        <FooterCol title="Platform" links={[...APP_STORE_LINKS]} />
-        <FooterCol title="Türk Ekosistemi" links={[...SADE_PUBLIC_LINKS]} />
+        <FooterCol title="Hizmetler" links={[...publicLinks.slice(0, 4)]} />
+        {ahenk ? (
+          <FooterCol title="Kurumsal" links={[...AHENK_PUBLIC_LINKS.slice(4)]} />
+        ) : (
+          <FooterCol title="Hesap" links={[...ACCOUNT_LINKS]} />
+        )}
+        {ahenk ? (
+          <FooterCol title="Yayın" links={[...AHENK_PUBLIC_LINKS.slice(0, 4)]} />
+        ) : (
+          <FooterCol title="Platform" links={[...APP_STORE_LINKS]} />
+        )}
+        {ahenk ? null : <FooterCol title="Türk Ekosistemi" links={[...SADE_PUBLIC_LINKS]} />}
       </div>
-      <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
+      {ahenk ? null : <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />}
       <div className="yekpare-public-footer__bar">
-        <span>© {new Date().getFullYear()} Türk Ekosistemi. Tüm hakları saklıdır.</span>
-        {legalLinks.length > 0 ? (
+        <span>© {new Date().getFullYear()} {brandName}. Tüm hakları saklıdır.</span>
+        {!ahenk ? (
           <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
-            {legalLinks.map((item, i) => (
+            {(legalLinks.length > 0 ? legalLinks : parseFooterLegalLinksJson(null)).map((item, i) => (
               <Link key={`${item.href}-${i}`} href={item.href}>
                 {item.label}
               </Link>
             ))}
           </nav>
-        ) : (
-          <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
-            {parseFooterLegalLinksJson(null).map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        )}
+        ) : null}
       </div>
-      <div className="yekpare-public-footer__rss">
-        <Link href="/site-haritalari" title="RSS ve site haritaları" aria-label="RSS ve site haritaları">
-          <Rss className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-        </Link>
-      </div>
+      {ahenk ? null : (
+        <div className="yekpare-public-footer__rss">
+          <Link href="/site-haritalari" title="RSS ve site haritaları" aria-label="RSS ve site haritaları">
+            <Rss className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

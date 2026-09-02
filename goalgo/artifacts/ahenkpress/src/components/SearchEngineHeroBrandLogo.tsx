@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 
 import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
-import { PORTAL_DEFAULT_LOGO_PATH } from "@/lib/portalBrand";
+import { PORTAL_DEFAULT_LOGO_PATH, portalBrandHomeAriaLabel, portalBrandLogoAlt } from "@/lib/portalBrand";
 
 /** Varsayılan turk.eco logosu (DB boşken). */
 export const YEKPARE_SUPER_APP_LOGO_SRC = PORTAL_DEFAULT_LOGO_PATH;
@@ -28,11 +28,11 @@ export function SearchEngineHeaderBrandLogo({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="turk.eco ana sayfa"
+      aria-label={portalBrandHomeAriaLabel()}
     >
       <img
         src={logoSrc}
-        alt="turk.eco — haber video portalı"
+        alt={portalBrandLogoAlt()}
         className="seh-header-brand-logo-img"
         width={compact ? 44 : 96}
         height={compact ? 44 : 96}
@@ -62,11 +62,11 @@ export function SearchEngineHeroBrandLogo({ className = "" }: SearchEngineHeroBr
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="turk.eco ana sayfa"
+      aria-label={portalBrandHomeAriaLabel()}
     >
       <img
         src={logoSrc}
-        alt="turk.eco — haber video portalı"
+        alt={portalBrandLogoAlt()}
         className="yekpare-brand-logo-img seh-hero-brand-logo-img seh-hero-brand-logo-img--home"
         width={220}
         height={220}

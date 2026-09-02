@@ -132,7 +132,7 @@ export function hybridNewsListQueryKey(opts: {
     opts.rssScope ?? "site",
     opts.global ? "global" : "local",
     opts.newsmap ? "newsmap" : "plain",
-    opts.fullHybrid ? "full" : opts.dbFirst === false ? "full" : "db-first",
+    opts.fullHybrid || opts.dbFirst === false || opts.dbFirst !== true ? "full" : "db-first",
   ];
 }
 
@@ -151,7 +151,7 @@ export async function fetchHybridNewsListResult(opts: {
   yekparePool?: boolean;
   /** Editör onay paneli — public değil; canlı merkez tarama. */
   poolBrowse?: boolean;
-  /** true = tam RSS+DB birleşimi (yavaş). Varsayılan: hızlı DB-first. */
+  /** true = yalnızca DB (RSS yok). Varsayılan: tam hibrit (RSS+DB). Açıkça `true` olmadıkça dbFirst gönderilmez. */
   dbFirst?: boolean;
   fullHybrid?: boolean;
   /** Portal (turk.eco): ziyaret tetiklemeli NTV RSS tazelemesi */
@@ -172,7 +172,7 @@ export async function fetchHybridNewsListResult(opts: {
   const useDbFirst =
     opts.fullHybrid !== true &&
     opts.rssOnly !== true &&
-    (opts.dbFirst === true || opts.dbFirst !== false);
+    opts.dbFirst === true;
   if (opts.yekparePool) qs.set("yekparePool", "1");
   if (opts.poolBrowse) qs.set("poolBrowse", "1");
   if (useDbFirst) qs.set("dbFirst", "1");
@@ -281,6 +281,8 @@ export function newsmapHybridNewsQueryKey(siteId?: number | null): readonly unkn
       offset: 0,
       rssScope: "all",
       newsmap: true,
+      dbFirst: false,
+      fullHybrid: true,
       scope: "haber-haritasi-hm",
     });
   }
@@ -290,6 +292,8 @@ export function newsmapHybridNewsQueryKey(siteId?: number | null): readonly unkn
     offset: 0,
     rssScope: "all",
     global: true,
+    dbFirst: false,
+    fullHybrid: true,
     scope: "haber-haritasi",
   });
 }

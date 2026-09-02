@@ -532,7 +532,7 @@ function redirectBareSitemapPath(request, incoming) {
   });
 }
 
-/** ahenk.net.tr web yazılım vitrini — haber sitemap yerine ajans haritası. */
+/** ahenk.net.tr — ajans urlset + Google News / haber sitemap bildirimi. */
 function serveAhenkAgencyRobots(request, incoming) {
   if (!isAhenkAgencyHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -560,6 +560,9 @@ function serveAhenkAgencyRobots(request, incoming) {
     "Allow: /",
     "",
     `Sitemap: ${origin}/sitemap.xml`,
+    `Sitemap: ${origin}/google-news.xml`,
+    `Sitemap: ${origin}/news-yekpare.xml`,
+    `Sitemap: ${origin}/sitemap-web.xml`,
     "",
     "Disallow: /admin/",
     "Disallow: /editor/",

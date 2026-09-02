@@ -38,3 +38,6 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli web yazılım evi ve ajansıdır. A
 
 ## Sitemap
 - https://ahenk.net.tr/sitemap.xml
+- https://ahenk.net.tr/google-news.xml
+- https://ahenk.net.tr/news-yekpare.xml
+- https://ahenk.net.tr/llms.txt
