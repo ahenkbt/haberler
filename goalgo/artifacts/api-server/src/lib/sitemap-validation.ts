@@ -11,11 +11,19 @@ export function isValidNewsSitemapSlug(slug: string | null | undefined): boolean
   return true;
 }
 
-export function isRecentGoogleNewsArticle(createdAt: Date | null | undefined): boolean {
-  if (!createdAt) return false;
-  const d = new Date(createdAt);
+function isWithinGoogleNewsWindow(value: Date | null | undefined): boolean {
+  if (!value) return false;
+  const d = new Date(value);
   if (Number.isNaN(d.getTime())) return false;
   return Date.now() - d.getTime() <= GOOGLE_NEWS_SITEMAP_MAX_AGE_MS;
+}
+
+/** Yayın veya güncelleme son 48 saat içindeyse Google News sitemap'e girer. */
+export function isRecentGoogleNewsArticle(
+  createdAt: Date | null | undefined,
+  updatedAt?: Date | null,
+): boolean {
+  return isWithinGoogleNewsWindow(createdAt) || isWithinGoogleNewsWindow(updatedAt);
 }
 
 /** Geçerli slug + yinelenenleri at; sitemap'e uygun satırlar. */
