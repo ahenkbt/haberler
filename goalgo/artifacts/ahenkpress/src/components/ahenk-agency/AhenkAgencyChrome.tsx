@@ -293,7 +293,7 @@ export function AhenkAgencyChrome({
       <header className="ahenk-header">
         <div className="ahenk-header-inner">
           <Link href="/" className="ahenk-brand">
-            <span className="ahenk-mark">A</span>
+            <AhenkBrandMark site={site} />
             <span className="ahenk-brand-text">
               <span className="ahenk-brand-name">{site.brandName}</span>
               <span className="ahenk-brand-tag">{site.tagline}</span>
@@ -344,12 +344,26 @@ export function AhenkAgencyChrome({
   );
 }
 
+function AhenkBrandMark({ site }: { site: AhenkAgencySite }) {
+  const src = safeAhenkImageUrl(site.logoMarkUrl, "/ahenk-brand/ahenk-mark.png");
+  return (
+    <span className="ahenk-mark">
+      {src ? <img src={src} alt="" /> : "A"}
+    </span>
+  );
+}
+
 function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
+  const wordmark = safeAhenkImageUrl(site.logoUrl, "/ahenk-brand/ahenk-logo.png");
   return (
     <footer className="ahenk-footer">
       <div className="ahenk-footer-grid">
         <div>
-          <h3>{site.brandName}</h3>
+          {wordmark ? (
+            <img className="ahenk-footer-wordmark" src={wordmark} alt={site.brandName} />
+          ) : (
+            <h3>{site.brandName}</h3>
+          )}
           <p>{site.tagline}</p>
           <p style={{ marginTop: 12 }}>
             <Phone className="inline w-4 h-4 mr-1" />

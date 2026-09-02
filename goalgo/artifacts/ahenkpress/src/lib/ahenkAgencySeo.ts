@@ -195,6 +195,10 @@ export function applyAhenkAgencySeo(opts: {
   if (image) upsertMeta("name", "twitter:image", image);
   upsertLink("canonical", canonical);
   upsertLink("alternate", canonical);
+  const iconRel = opts.site.logoMarkUrl?.trim() || "/ahenk-brand/ahenk-mark.png";
+  const iconAbs = iconRel.startsWith("http") ? iconRel : `${origin}${iconRel.startsWith("/") ? "" : "/"}${iconRel}`;
+  upsertLink("icon", iconAbs);
+  upsertLink("apple-touch-icon", iconAbs);
 
   const crumbs = [{ name: "Anasayfa", path: "/" }];
   if (path !== "/") crumbs.push({ name: opts.title.slice(0, 80), path });
@@ -213,6 +217,8 @@ export function applyAhenkAgencySeo(opts: {
 
 export function buildAhenkOrganizationJsonLd(site: AhenkAgencySite, origin: string): Record<string, unknown> {
   const tr = site.offices.find((o) => o.id === "tr") ?? site.offices[0];
+  const mark = site.logoMarkUrl?.trim() || "/ahenk-brand/ahenk-mark.png";
+  const logo = mark.startsWith("http") ? mark : `${origin}${mark.startsWith("/") ? "" : "/"}${mark}`;
   return {
     "@context": "https://schema.org",
     "@type": ["ProfessionalService", "Organization"],
@@ -222,7 +228,7 @@ export function buildAhenkOrganizationJsonLd(site: AhenkAgencySite, origin: stri
       new Set([...AHENK_BT_ENTITY.alternateName, "Ahenk Web Yazılımı", site.brandName]),
     ),
     url: `${origin}/`,
-    logo: `${origin}/favicon.png`,
+    logo,
     image: site.heroImage,
     description: site.seoDescription || site.tagline || AHENK_BT_ENTITY.description,
     disambiguatingDescription: AHENK_BT_ENTITY.disambiguatingDescription,
