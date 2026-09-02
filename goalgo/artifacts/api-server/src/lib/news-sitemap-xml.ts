@@ -24,6 +24,11 @@ export const NEWS_URLSET_ATTRS =
   'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" ' +
   'xmlns:xhtml="http://www.w3.org/1999/xhtml"';
 
+/** Boş olsa bile news xmlns — GSC "Bilinmiyor / Getirilemedi" olmasın. */
+export function emptyGoogleNewsUrlsetXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset ${NEWS_URLSET_ATTRS}>\n</urlset>`;
+}
+
 function escXml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -116,7 +121,7 @@ export function buildNewsUrlXmlBlock(
     lines.push("    </image:image>");
   }
 
-  if (withNewsExtension && pubDate && isRecentGoogleNewsArticle(row.createdAt)) {
+  if (withNewsExtension && pubDate && isRecentGoogleNewsArticle(row.createdAt, row.updatedAt)) {
     lines.push("    <news:news>");
     lines.push("      <news:publication>");
     lines.push(`        <news:name>${escXml(publicationName)}</news:name>`);

@@ -43,6 +43,7 @@ import {
   buildNewsUrlXmlBlock,
   mapJoinedNewsSitemapRow,
   NEWS_URLSET_ATTRS,
+  emptyGoogleNewsUrlsetXml,
   type NewsSitemapRow,
 } from "../lib/news-sitemap-xml.js";
 import { filterNewsSitemapRows, isRecentGoogleNewsArticle, GOOGLE_NEWS_SITEMAP_MAX_AGE_MS } from "../lib/sitemap-validation.js";
@@ -443,24 +444,8 @@ function hmEnabledExtraPages(layout: Record<string, unknown>): Array<{ slug: str
 }
 
 async function resolveHmSitemapCategorySlugs(site: HmSiteSitemapRow): Promise<string[]> {
-  const layout = await readHmPublicLayout(site.id);
   const hidden = await getHmHiddenCategorySlugs(site.id);
   const slugSet = new Set<string>();
-
-  const allCats = await db
-    .select({ slug: categoriesTable.slug, exclusiveSiteId: categoriesTable.exclusiveSiteId })
-    .from(categoriesTable)
-    .where(or(isNull(categoriesTable.exclusiveSiteId), eq(categoriesTable.exclusiveSiteId, site.id)));
-
-  const publicCats = filterHmPublicCategoryRows(allCats, site.id, site.slug, layout);
-  for (const cat of publicCats) {
-    const clean = deriveCleanCategorySlug(cat.slug, site.slug).toLowerCase();
-    if (!clean || hidden.has(clean) || isPortalCategorySitemapAliasSlug(clean)) continue;
-    const canonical = canonicalPortalCategorySitemapSlug(clean).toLowerCase();
-    if (!canonical || hidden.has(canonical)) continue;
-    slugSet.add(canonical);
-  }
-
   const siteCatRows = await db
     .selectDistinct({ catSlug: categoriesTable.slug })
     .from(newsTable)
@@ -473,31 +458,7 @@ async function resolveHmSitemapCategorySlugs(site: HmSiteSitemapRow): Promise<st
     if (!canonical || hidden.has(canonical)) continue;
     slugSet.add(canonical);
   }
-
-  const globalSlugs = allCats
-    .filter((c) => c.exclusiveSiteId == null)
-    .map((c) => normalizeNewsCategorySlug(c.slug))
-    .filter(Boolean);
-  const activeGlobal = resolveHmPublicActiveGlobalSlugs(layout, globalSlugs);
-  for (const catSlug of activeGlobal) {
-    if (hidden.has(catSlug) || isPortalCategorySitemapAliasSlug(catSlug)) continue;
-    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 5, site.slug));
-    if (articles.length > 0) slugSet.add(catSlug);
-  }
-
-  for (const catSlug of HM_PORTAL_POOL_SITEMAP_CATEGORIES) {
-    if (hidden.has(catSlug) || slugSet.has(catSlug)) continue;
-    const portalArticles = dedupeNewsSitemapRows(await loadPortalPoolCategoryArticles(catSlug, 5));
-    if (portalArticles.length === 0) continue;
-    slugSet.add(catSlug);
-  }
-
-  const verified = new Set<string>();
-  for (const catSlug of slugSet) {
-    const articles = dedupeNewsSitemapRows(await loadHmCategorySitemapArticles(site.id, catSlug, 1, site.slug));
-    if (articles.length > 0) verified.add(catSlug);
-  }
-  return [...verified].sort((a, b) => a.localeCompare(b, "tr"));
+  return [...slugSet].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
 function hmSupplementarySitemapLocs(origin: string, siteSlug: string): string[] {
@@ -876,6 +837,11 @@ function googleNewsCutoff(): Date {
   return new Date(Date.now() - GOOGLE_NEWS_SITEMAP_MAX_AGE_MS);
 }
 
+function googleNewsRecencyWhere() {
+  const cutoff = googleNewsCutoff();
+  return or(gte(newsTable.createdAt, cutoff), gte(newsTable.updatedAt, cutoff));
+}
+
 async function sendGoogleNewsUrlset(
   res: import("express").Response,
   articles: NewsSitemapRow[],
@@ -883,9 +849,13 @@ async function sendGoogleNewsUrlset(
   publicationName: string,
   mediaOrigin: string,
 ): Promise<void> {
-  const recent = dedupeNewsSitemapRows(articles).filter((row) => isRecentGoogleNewsArticle(row.createdAt));
+  const recent = dedupeNewsSitemapRows(articles).filter((row) =>
+    isRecentGoogleNewsArticle(row.createdAt, row.updatedAt),
+  );
+  res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=900");
   if (recent.length === 0) {
-    sendUrlset(res, "");
+    res.send(emptyGoogleNewsUrlsetXml());
     return;
   }
   const urls = recent
@@ -897,8 +867,6 @@ async function sendGoogleNewsUrlset(
       }),
     )
     .join("\n");
-  res.setHeader("Content-Type", "application/xml; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=900");
   res.send(`${xmlHeader()}<urlset ${NEWS_URLSET_ATTRS}>\n${urls}\n</urlset>`);
 }
 
@@ -906,12 +874,11 @@ async function sendGoogleNewsUrlset(
 router.get("/news-yekpare-google-news.xml", async (req, res): Promise<void> => {
   try {
     const base = resolvePortalRequestOrigin(req);
-    const cutoff = googleNewsCutoff();
     const articles = await db
       .select(newsSitemapSelectFields)
       .from(newsTable)
       .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
-      .where(and(portalPublishedNewsWhere, gte(newsTable.createdAt, cutoff)))
+      .where(and(portalPublishedNewsWhere, googleNewsRecencyWhere()))
       .orderBy(desc(newsTable.createdAt))
       .limit(1000)
       .then((rows) => rows.map(mapJoinedNewsSitemapRow));
@@ -936,15 +903,16 @@ router.get("/news-hm-:hmSlug-google-news.xml", async (req, res): Promise<void> =
     }
     const site = await getActiveHmNewsSiteBySlugCompat(hmSlug);
     if (!site) {
-      sendUrlset(res, "");
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.send(emptyGoogleNewsUrlsetXml());
       return;
     }
-    const cutoff = googleNewsCutoff();
     const hiddenCategoryIds = await getHmHiddenCategoryIds(site.id);
     const hiddenCond =
       hiddenCategoryIds.length > 0
         ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
         : undefined;
+    const recency = googleNewsRecencyWhere();
     const siteArticles = await db
       .select(newsSitemapSelectFields)
       .from(newsTable)
@@ -954,10 +922,10 @@ router.get("/news-hm-:hmSlug-google-news.xml", async (req, res): Promise<void> =
           ? and(
               eq(newsTable.status, "published"),
               eq(newsTable.siteId, site.id),
-              gte(newsTable.createdAt, cutoff),
+              recency,
               hiddenCond,
             )
-          : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), gte(newsTable.createdAt, cutoff)),
+          : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), recency),
       )
       .orderBy(desc(newsTable.createdAt))
       .limit(1000)
@@ -985,12 +953,12 @@ router.get("/google-news.xml", async (req, res): Promise<void> => {
     if (requestHost && !isPortalHostForSitemap(requestHost)) {
       const site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(requestHost));
       if (site) {
-        const cutoff = googleNewsCutoff();
         const hiddenCategoryIds = await getHmHiddenCategoryIds(site.id);
         const hiddenCond =
           hiddenCategoryIds.length > 0
             ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
             : undefined;
+        const recency = googleNewsRecencyWhere();
         const siteArticles = await db
           .select(newsSitemapSelectFields)
           .from(newsTable)
@@ -1000,10 +968,10 @@ router.get("/google-news.xml", async (req, res): Promise<void> => {
               ? and(
                   eq(newsTable.status, "published"),
                   eq(newsTable.siteId, site.id),
-                  gte(newsTable.createdAt, cutoff),
+                  recency,
                   hiddenCond,
                 )
-              : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), gte(newsTable.createdAt, cutoff)),
+              : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), recency),
           )
           .orderBy(desc(newsTable.createdAt))
           .limit(1000)
@@ -1024,12 +992,11 @@ router.get("/google-news.xml", async (req, res): Promise<void> => {
       }
     }
     const base = resolvePortalRequestOrigin(req);
-    const cutoff = googleNewsCutoff();
     const articles = await db
       .select(newsSitemapSelectFields)
       .from(newsTable)
       .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
-      .where(and(portalPublishedNewsWhere, gte(newsTable.createdAt, cutoff)))
+      .where(and(portalPublishedNewsWhere, googleNewsRecencyWhere()))
       .orderBy(desc(newsTable.createdAt))
       .limit(1000)
       .then((rows) => rows.map(mapJoinedNewsSitemapRow));
@@ -1564,9 +1531,9 @@ async function hmDomainSitemapLocs(site: HmSiteSitemapRow, origin: string): Prom
   const catSlugs = await resolveHmSitemapCategorySlugs(site);
   const locs = [
     `${origin}/news-hm-${encodeURIComponent(site.slug)}.xml`,
-    `${origin}/news-hm-${encodeURIComponent(site.slug)}-google-news.xml`,
     `${origin}/google-news.xml`,
-    ...(await hmSupplementarySitemapLocsFiltered(site, origin)),
+    `${origin}/news-hm-${encodeURIComponent(site.slug)}-google-news.xml`,
+    ...hmSupplementarySitemapLocs(origin, site.slug),
   ];
   for (const catSlug of catSlugs) {
     locs.push(

@@ -588,8 +588,26 @@ async function proxyRootSitemap(request, env, incoming) {
 
   const origin = upstreamOrigin(env, incoming);
   const targetUrl = `${origin}${apiPath}${incoming.search}`;
+  const xmlHeaders = (extra = {}) => {
+    const headers = new Headers({
+      "content-type": "application/xml; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "cache-control": "public, max-age=300, stale-while-revalidate=86400",
+      "x-yekpare-frontend": "cloudflare-sitemap-proxy",
+      "x-yekpare-sitemap-api": apiPath,
+      ...extra,
+    });
+    return headers;
+  };
+  const failXml = (status) => {
+    const headers = xmlHeaders({ "retry-after": "60" });
+    headers.set("x-yekpare-sitemap-error", "1");
+    const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n</urlset>`;
+    if (request.method === "HEAD") return new Response(null, { status, headers });
+    return new Response(body, { status, headers });
+  };
   try {
-    const upstream = await fetchApi(env, targetUrl, {
+    const upstream = await fetchApiWithRetry(env, targetUrl, {
       method: request.method === "HEAD" ? "GET" : request.method,
       headers: {
         accept: "application/xml, text/xml, */*",
@@ -597,25 +615,22 @@ async function proxyRootSitemap(request, env, incoming) {
         "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
         "user-agent": request.headers.get("user-agent") || "yekpare-sitemap-proxy",
       },
-      cf: { cacheTtl: 300, cacheEverything: true },
+      cf: { cacheTtl: pathOnly === "/sitemap.xml" || pathOnly === "/google-news.xml" ? 600 : 300, cacheEverything: true },
       redirect: "manual",
     });
     const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
-    if (!upstream.ok || (!ct.includes("xml") && !ct.includes("text/plain"))) {
-      return null;
+    if (!upstream.ok || (!ct.includes("xml") && !ct.includes("text/plain") && !ct.includes("text/xml"))) {
+      return failXml(upstream.status >= 500 ? 503 : upstream.status || 503);
     }
     let text = rewriteSitemapOrigins(await upstream.text(), incoming.origin);
     if (/^\/yektube-videos-\d+\.xml$/i.test(pathOnly) || /yektube-videos-\d+/i.test(apiPath)) {
       text = rewriteYektubeVideoSitemapXml(text);
     }
-    const headers = new Headers({
-      "content-type": "application/xml; charset=utf-8",
-      "x-content-type-options": "nosniff",
-      "cache-control":
-        upstream.headers.get("cache-control") || "public, max-age=1800, stale-while-revalidate=86400",
-      "x-yekpare-frontend": "cloudflare-sitemap-proxy",
-      "x-yekpare-sitemap-api": apiPath,
-    });
+    const headers = xmlHeaders();
+    headers.set(
+      "cache-control",
+      upstream.headers.get("cache-control") || "public, max-age=1800, stale-while-revalidate=86400",
+    );
     if (/yektube-videos/i.test(pathOnly)) {
       headers.set("x-yekpare-video-sitemap-rewrite", "1");
     }
@@ -625,7 +640,7 @@ async function proxyRootSitemap(request, env, incoming) {
     }
     return new Response(text, { status: 200, headers });
   } catch {
-    return null;
+    return failXml(503);
   }
 }
 
