@@ -126,7 +126,23 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy
+        run: |
+          set -euo pipefail
+          attempt=1
+          max=4
+          while true; do
+            if pnpm exec wrangler deploy; then
+              exit 0
+            fi
+            if [ "$attempt" -ge "$max" ]; then
+              echo "::error::wrangler deploy failed after ${max} attempts"
+              exit 1
+            fi
+            sleep_s=$((attempt * 8))
+            echo "wrangler deploy failed (attempt ${attempt}/${max}); Cloudflare API hiccup — retry in ${sleep_s}s"
+            sleep "$sleep_s"
+            attempt=$((attempt + 1))
+          done
 
       # wrangler secret put production'a yazar. versions secret put yeni bir
       # sürüm üretir; onu @100% yapmak eski Neon DATABASE_URL'i geri getirir
