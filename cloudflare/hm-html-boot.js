@@ -256,6 +256,7 @@ export function buildGeoRobotsTxt(origin) {
     "# AI knowledge: /ai.txt",
     "",
     `Sitemap: ${o}/sitemap.xml`,
+    `Sitemap: ${o}/sitemap-web.xml`,
     `Sitemap: ${o}/google-news.xml`,
     "",
     "Disallow: /admin/",

@@ -79,6 +79,7 @@ describe("hm-html-boot", () => {
   it("builds GEO robots and HM llms fallback for vatanhaber.net / suhaber.net", () => {
     const robots = buildGeoRobotsTxt("https://vatanhaber.net");
     assert.match(robots, /Sitemap: https:\/\/vatanhaber\.net\/sitemap\.xml/);
+    assert.match(robots, /Sitemap: https:\/\/vatanhaber\.net\/sitemap-web\.xml/);
     assert.match(robots, /Sitemap: https:\/\/vatanhaber\.net\/google-news\.xml/);
     assert.match(robots, /User-agent: GPTBot\nAllow: \//);
     assert.match(robots, /User-agent: Google-Extended\nAllow: \//);

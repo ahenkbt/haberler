@@ -42,7 +42,7 @@ import {
   shouldInstantHmRootRedirect,
   withBudget,
 } from "./hm-html-boot.js";
-import { sitemapFailXml } from "./sitemap-fail-xml.js";
+import { sitemapFailXml, toGscWebSitemapXml, isGscWebSitemapPath } from "./sitemap-fail-xml.js";
 import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
@@ -415,7 +415,7 @@ function isApiPath(pathname) {
 /** Kök sitemap .xml → /api/sitemap/* (Googlebot HTML SPA almasın). */
 function rootSitemapApiPath(pathname, hostname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
-  if (p === "/sitemap.xml") {
+  if (p === "/sitemap.xml" || p === "/sitemap-web.xml") {
     // GSC submitted file must be a urlset. HM index.xml was a sitemapindex (0 pages)
     // until the Container rolled; news-hm-{slug}.xml already has the article URLs.
     const slug = hmDomainSlugFallback(hostname);
@@ -719,8 +719,8 @@ async function proxyRootSitemap(request, env, incoming) {
         "user-agent": request.headers.get("user-agent") || "yekpare-sitemap-proxy",
       },
       cf: {
-        cacheTtl: pathOnly === "/sitemap.xml" ? 0 : pathOnly === "/google-news.xml" ? 600 : 300,
-        cacheEverything: pathOnly !== "/sitemap.xml",
+        cacheTtl: isGscWebSitemapPath(pathOnly) ? 0 : pathOnly === "/google-news.xml" ? 600 : 300,
+        cacheEverything: !isGscWebSitemapPath(pathOnly),
       },
       redirect: "manual",
     });
@@ -732,11 +732,17 @@ async function proxyRootSitemap(request, env, incoming) {
     if (/^\/yektube-videos-\d+\.xml$/i.test(pathOnly) || /yektube-videos-\d+/i.test(apiPath)) {
       text = rewriteYektubeVideoSitemapXml(text);
     }
+    if (isGscWebSitemapPath(pathOnly)) {
+      text = toGscWebSitemapXml(text);
+    }
     const headers = xmlHeaders();
     headers.set(
       "cache-control",
       upstream.headers.get("cache-control") || "public, max-age=1800, stale-while-revalidate=86400",
     );
+    if (isGscWebSitemapPath(pathOnly)) {
+      headers.set("x-yekpare-gsc-web-sitemap", "1");
+    }
     if (/yektube-videos/i.test(pathOnly)) {
       headers.set("x-yekpare-video-sitemap-rewrite", "1");
     }
