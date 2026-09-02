@@ -66,6 +66,31 @@
   min-width: 0;
 }
 
+.ahenk-brand-lockup {
+  display: block;
+  height: 48px;
+  width: auto;
+  max-width: min(280px, 58vw);
+  object-fit: contain;
+  background: #000;
+  border-radius: 8px;
+}
+
+.ahenk-mark-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+@media (max-width: 720px) {
+  .ahenk-brand-lockup {
+    height: 40px;
+  }
+}
+
 .ahenk-mark {
   width: 46px;
   height: 46px;

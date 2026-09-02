@@ -16,6 +16,7 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli web yazılım evi ve ajansıdır. A
 - Mobil uyumlu yazılım: https://ahenk.net.tr/mobil-uyumlu-yazilim
 - Kurumsal web sitesi: https://ahenk.net.tr/kurumsal-web-sitesi
 - Haber sitesi yazılımı: https://ahenk.net.tr/haber-sitesi-yazilimi
+- Haber sitesi başvuru: https://ahenk.net.tr/ucretsiz-haber-sitesi
 - Haber scripti: https://ahenk.net.tr/haber-scripti
 - Avukat sitesi: https://ahenk.net.tr/avukat-sitesi
 - Doktor sitesi: https://ahenk.net.tr/doktor-sitesi
