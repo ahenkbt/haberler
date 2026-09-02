@@ -49,8 +49,25 @@ class_name = "GoalgoApiContainer"
 tag = "v1"
 new_sqlite_classes = ["GoalgoApiContainer"]
 
-# yekpare.net / www.yekpare.net bu worker'dan kaldırıldı (ayrı repo: goalgo-cloudflare).
+# yekpare.net / turk.eco / suhaberajansi.com bu worker'dan kaldırıldı.
 # Tekrar bağlanmasın diye scripts/cf-detached-domains.mjs her DNS/cutover çalıştırmasında söker.
+
+# Ana portal — ahenk.net.tr (eski turk.eco iptal). DNS varsa custom_domain 100117 kırar.
+[[routes]]
+pattern = "ahenk.net.tr/*"
+zone_name = "ahenk.net.tr"
+
+[[routes]]
+pattern = "ahenk.net.tr"
+zone_name = "ahenk.net.tr"
+
+[[routes]]
+pattern = "www.ahenk.net.tr/*"
+zone_name = "ahenk.net.tr"
+
+[[routes]]
+pattern = "www.ahenk.net.tr"
+zone_name = "ahenk.net.tr"
 
 # HM editör siteleri (Cloudflare zone → Worker → Container / Neon)
 [[routes]]
@@ -69,23 +86,7 @@ zone_name = "ankarahabergundemi.com"
 pattern = "www.ankarahabergundemi.com"
 zone_name = "ankarahabergundemi.com"
 
-[[routes]]
-pattern = "turk.eco/*"
-zone_name = "turk.eco"
-
-[[routes]]
-pattern = "turk.eco"
-zone_name = "turk.eco"
-
-[[routes]]
-pattern = "www.turk.eco/*"
-zone_name = "turk.eco"
-
-[[routes]]
-pattern = "www.turk.eco"
-zone_name = "turk.eco"
-
-# Yektube özel alan — turk.eco/yp kanonik yüzü (yektube.com)
+# Yektube özel alan — ahenk.net.tr/yp kanonik yüzü (yektube.com)
 [[routes]]
 pattern = "yektube.com"
 custom_domain = true
@@ -151,41 +152,27 @@ zone_name = "vatanhaber.net"
 pattern = "www.vatanhaber.net"
 zone_name = "vatanhaber.net"
 
-# Su Haber — kanonik Google alanı suhaber.net; suhaberajansi.com takma ad
-[[routes]]
-pattern = "suhaber.net"
-custom_domain = true
-
-[[routes]]
-pattern = "www.suhaber.net"
-custom_domain = true
-
+# Su Haber — kanonik Google alanı suhaber.net (suhaberajansi.com iptal, detach).
+# Zone CF'de ve A/CNAME kayıtları var: custom_domain 100117 ile wrangler deploy kırılır.
+# vatanhaber.net gibi zone_name Worker route kullan (DNS'e dokunma).
 [[routes]]
 pattern = "suhaber.net/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net"
 zone_name = "suhaber.net"
 
 [[routes]]
 pattern = "www.suhaber.net/*"
 zone_name = "suhaber.net"
 
-# Su Haber Ajansı — zone Cloudflare'de; A/AAAA boş → Worker custom_domain
 [[routes]]
-pattern = "suhaberajansi.com"
-custom_domain = true
+pattern = "www.suhaber.net"
+zone_name = "suhaber.net"
 
-[[routes]]
-pattern = "www.suhaberajansi.com"
-custom_domain = true
-
-[[routes]]
-pattern = "suhaberajansi.com/*"
-zone_name = "suhaberajansi.com"
-
-[[routes]]
-pattern = "www.suhaberajansi.com/*"
-zone_name = "suhaberajansi.com"
-
-# belediyehizmet.com kaldırıldı — Su Haber kanonik alan: suhaber.net (/tr/su)
+# suhaberajansi.com iptal — Worker route yok (cf-detached-domains). Kanonik: suhaber.net (/tr/su)
+# belediyehizmet.com kaldırıldı.
 
 # Kırşehir Haber (/tr/kh)
 # kirsehirhaber.org: zone CF'de (NS hazır) — Worker routes + originless DNS açık.

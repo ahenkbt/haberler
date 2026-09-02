@@ -467,7 +467,7 @@ export function applyHmPublisherStructuredData(opts: {
         name: "Yekpare Haber Merkezi",
         applicationCategory: "NewsApplication",
         operatingSystem: "Web",
-        url: "https://turk.eco/bilgi/haber-merkezi-nedir",
+        url: `${PORTAL_ORIGIN}/bilgi/haber-merkezi-nedir`,
         description:
           "Bu site Yekpare Haber Merkezi white-label haber yayın yazılımı ile yönetilmektedir.",
         author: {
@@ -478,7 +478,7 @@ export function applyHmPublisherStructuredData(opts: {
         isPartOf: {
           "@type": "WebApplication",
           name: "Yekpare",
-          url: "https://turk.eco",
+          url: PORTAL_ORIGIN,
         },
       },
     ],
@@ -994,7 +994,7 @@ export function buildYekpareOrganizationJsonLd(baseOrigin?: string): Record<stri
     "@type": "Organization",
     "@id": `${base}/#organization`,
     name: PORTAL_BRAND_SHORT,
-    alternateName: ["Türk Ekosistemi Arama Motoru", "Turk.eco", "turk.eco"],
+    alternateName: ["Türk Ekosistemi Arama Motoru", "Ahenk", "ahenk.net.tr", "Turk.eco"],
     url: base,
     logo: { "@type": "ImageObject", url: `${base}/icon-512.png` },
     description:

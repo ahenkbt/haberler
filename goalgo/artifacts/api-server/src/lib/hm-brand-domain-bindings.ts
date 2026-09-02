@@ -35,12 +35,6 @@ export const HM_BRAND_DOMAIN_BINDINGS: Array<{
     displayName: "Su Haber",
     editorEmail: "editor@suhaber.net",
   },
-  {
-    domain: "suhaberajansi.com",
-    slug: "su",
-    displayName: "Su Haber Ajansı",
-    editorEmail: "editor@suhaberajansi.com",
-  },
 ];
 
 function normalizeHost(raw: string): string {

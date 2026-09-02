@@ -1226,7 +1226,7 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
         title: "Yekpare Keşfet: İşletme Bulma Rehberi",
         description: "Harita ve arama ile restoran, mağaza ve hizmet işletmelerini keşfetme rehberi.",
         faq: [
-          { question: "Keşfet URL formatı nedir?", answer: "turk.eco/kesfet/{isletme-slug}" },
+          { question: "Keşfet URL formatı nedir?", answer: "ahenk.net.tr/kesfet/{isletme-slug}" },
         ],
       },
       "ai-cagri-merkezi-nedir": {
@@ -1254,7 +1254,7 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
         title: "Yekpare Haritalar Ne İşe Yarar?",
         description: "Konum bazlı işletme keşfi ve tam ekran harita deneyimi.",
         faq: [
-          { question: "Haritalar URL?", answer: "turk.eco/haritalar ve turk.eco/kesfet" },
+          { question: "Haritalar URL?", answer: "ahenk.net.tr/haritalar ve ahenk.net.tr/kesfet" },
         ],
       },
     };

@@ -55,6 +55,8 @@ const PURGE_COOKIE = "__yekpare_sw_purged_v20260717a";
  * HM + portal: bir kez daha agresif Clear-Site-Data.
  */
 const FORCE_PURGE_HOSTS = new Set([
+  "ahenk.net.tr",
+  "www.ahenk.net.tr",
   "turk.eco",
   "www.turk.eco",
   "haberler.ahenkbt.workers.dev",
@@ -82,6 +84,8 @@ const FORCE_PURGE_HOSTS = new Set([
 const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260802d";
 
 const PORTAL_HOSTS = new Set([
+  "ahenk.net.tr",
+  "www.ahenk.net.tr",
   "turk.eco",
   "www.turk.eco",
   "turknet.app",
@@ -89,15 +93,18 @@ const PORTAL_HOSTS = new Set([
   "goalgo.org",
   "turkiye.li",
   "getirsepeti.com.tr",
-  "ahenk.net.tr",
   "haberler.ahenkbt.workers.dev",
 ]);
 
-/** www.turk.eco → apex. */
-const CANONICAL_PORTAL_ORIGIN = "https://turk.eco";
-const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.turk.eco"]);
+/** www.ahenk.net.tr + iptal turk.eco → ahenk.net.tr. */
+const CANONICAL_PORTAL_ORIGIN = "https://ahenk.net.tr";
+const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.ahenk.net.tr", "turk.eco", "www.turk.eco"]);
 
-/** turk.eco/yp → yektube.com (kanonik Yektube alanı). */
+/** suhaberajansi.com iptal → suhaber.net. */
+const CANONICAL_SU_ORIGIN = "https://suhaber.net";
+const LEGACY_SU_REDIRECT_HOSTS = new Set(["suhaberajansi.com", "www.suhaberajansi.com"]);
+
+/** ahenk.net.tr/yp → yektube.com (kanonik Yektube alanı). */
 const CANONICAL_YEKTUBE_ORIGIN = "https://yektube.com";
 const YEKTUBE_DEDICATED_HOSTS = new Set(["yektube.com", "www.yektube.com"]);
 const APEX_YEKTUBE_REDIRECT_HOSTS = new Set(["www.yektube.com"]);
@@ -2104,7 +2111,7 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
-    // www.turk.eco → apex
+    // www.ahenk.net.tr / turk.eco → ahenk.net.tr
     if (APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
       return new Response(null, {
@@ -2113,6 +2120,19 @@ export default {
           Location: dest.toString(),
           "cache-control": "public, max-age=3600",
           "x-yekpare-frontend": "canonical-portal-redirect",
+        },
+      });
+    }
+
+    // suhaberajansi.com → suhaber.net
+    if (LEGACY_SU_REDIRECT_HOSTS.has(hostKeyEarly)) {
+      const dest = new URL(incoming.pathname + incoming.search, CANONICAL_SU_ORIGIN);
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: dest.toString(),
+          "cache-control": "public, max-age=3600",
+          "x-yekpare-frontend": "canonical-su-redirect",
         },
       });
     }

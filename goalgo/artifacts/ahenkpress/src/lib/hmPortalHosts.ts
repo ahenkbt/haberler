@@ -57,8 +57,6 @@ const HM_VIDEO_TV_ALLOWED_HOSTS = new Set([
   ...KH_HM_HOSTS,
   "suhaber.net",
   "www.suhaber.net",
-  "suhaberajansi.com",
-  "www.suhaberajansi.com",
   "ankarahabergundemi.com",
   "www.ankarahabergundemi.com",
 ]);

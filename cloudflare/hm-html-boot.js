@@ -283,7 +283,7 @@ export function buildHmLlmsTxtFallback(slug, origin) {
 > ${name} resmi haber sitesi. Türkiye (TR) yerel ve ulusal gündem; Türkçe yayın.
 
 Bu web sitesi **Yekpare Haber Merkezi** yayın altyapısı ile yönetilmektedir.
-İçerik sahibi: ${name}. Altyapı: Yekpare (https://turk.eco).
+İçerik sahibi: ${name}. Altyapı: Yekpare (https://ahenk.net.tr).
 
 ## Site
 
@@ -326,9 +326,9 @@ geo.region: TR
 geo.placename: Türkiye
 
 platform_name: Yekpare Haber Merkezi
-platform_url: https://turk.eco/bilgi/haber-merkezi-nedir
+platform_url: https://ahenk.net.tr/bilgi/haber-merkezi-nedir
 parent_platform: Yekpare
-parent_platform_url: https://turk.eco
+parent_platform_url: https://ahenk.net.tr
 
 sitemap: ${o}/sitemap.xml
 google_news_sitemap: ${o}/google-news.xml

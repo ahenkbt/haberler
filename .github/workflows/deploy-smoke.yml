@@ -6,11 +6,11 @@ on:
       web_origin:
         description: WEB_ORIGIN (Netlify)
         required: true
-        default: https://turk.eco
+        default: https://ahenk.net.tr
       api_origin:
         description: API_ORIGIN (aynı origin; boş = WEB_ORIGIN)
         required: false
-        default: https://turk.eco
+        default: https://ahenk.net.tr
       call_origin:
         description: CALL_ORIGIN (PBX / call center)
         required: false

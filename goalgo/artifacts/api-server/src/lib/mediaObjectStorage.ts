@@ -285,10 +285,10 @@ async function getViaCfApi(
 }
 
 function workerMediaOrigin(): string {
-  const raw = String(process.env.MEDIA_WORKER_ORIGIN || process.env.SITE_PUBLIC_ORIGIN || "https://turk.eco")
+  const raw = String(process.env.MEDIA_WORKER_ORIGIN || process.env.SITE_PUBLIC_ORIGIN || "https://ahenk.net.tr")
     .trim()
     .replace(/\/+$/, "");
-  return raw || "https://turk.eco";
+  return raw || "https://ahenk.net.tr";
 }
 
 /** Node OpenSSL R2 S3 API'ye TLS alert 40 verir; Worker fetch aynı nesneyi yazar. */

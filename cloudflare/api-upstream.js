@@ -3,7 +3,7 @@
  * Render / onrender.com asla kullanılmaz.
  */
 export const FRONTEND_TAG = "cloudflare-worker";
-export const CANONICAL_API_ORIGIN = "https://turk.eco";
+export const CANONICAL_API_ORIGIN = "https://ahenk.net.tr";
 export const API_CONTAINER_INSTANCES = 3;
 
 const FORBIDDEN_ORIGIN_RE = /onrender\.com/i;

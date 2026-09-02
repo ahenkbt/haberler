@@ -4,7 +4,7 @@ import { buildHmAiTxt, buildHmLlmsTxt } from "./hmAiKnowledge.js";
 describe("hmAiKnowledge", () => {
   it("uses the request origin so suhaber.net / vatanhaber.net stay canonical", () => {
     const llms = buildHmLlmsTxt(
-      { slug: "su", displayName: "Su Haber", domain: "suhaberajansi.com" },
+      { slug: "su", displayName: "Su Haber", domain: "suhaber.net" },
       "https://suhaber.net",
     );
     expect(llms).toContain("# Su Haber");

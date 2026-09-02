@@ -6,22 +6,22 @@ describe("buildHmSitePublicCacheUrls", () => {
     const urls = buildHmSitePublicCacheUrls({
       siteId: 2,
       slug: "su",
-      domain: "suhaberajansi.com",
-      domain2: "www.suhaberajansi.com",
+      domain: "suhaber.net",
+      domain2: "www.suhaber.net",
       domain3: null,
     });
-    expect(urls).toContain("https://turk.eco/api/hm/meta/by-slug/su");
+    expect(urls).toContain("https://ahenk.net.tr/api/hm/meta/by-slug/su");
     expect(urls).toContain(
-      "https://turk.eco/api/hm/meta/by-domain?domain=suhaberajansi.com",
+      "https://ahenk.net.tr/api/hm/meta/by-domain?domain=suhaber.net",
     );
     expect(urls).toContain(
-      "https://suhaberajansi.com/api/hm/meta/by-domain?domain=suhaberajansi.com",
+      "https://suhaber.net/api/hm/meta/by-domain?domain=suhaber.net",
     );
     expect(urls).toContain(
-      "https://www.suhaberajansi.com/api/hm/meta/by-domain?domain=www.suhaberajansi.com",
+      "https://www.suhaber.net/api/hm/meta/by-domain?domain=www.suhaber.net",
     );
-    expect(urls).toContain("https://turk.eco/api/hm/home-bundle?siteId=2");
-    expect(urls).toContain("https://turk.eco/api/hm/home-bundle?slug=su&sliderLimit=15");
-    expect(urls.some((u) => u.includes("suhaberajansi.com"))).toBe(true);
+    expect(urls).toContain("https://ahenk.net.tr/api/hm/home-bundle?siteId=2");
+    expect(urls).toContain("https://ahenk.net.tr/api/hm/home-bundle?slug=su&sliderLimit=15");
+    expect(urls.some((u) => u.includes("suhaber.net"))).toBe(true);
   });
 });

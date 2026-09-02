@@ -1820,7 +1820,7 @@ export default async function middleware(request) {
           .split(",")
           .map((s) => s.trim().toLowerCase())
           .filter(Boolean)
-      : ["suhaber.net", "www.suhaber.net", "suhaberajansi.com", "www.suhaberajansi.com"];
+      : ["suhaber.net", "www.suhaber.net"];
 
   const homePathRaw = String(process.env.HM_NEWS_CENTER_BRAND_HOME_PATH ?? "/tr/su").trim();
   const homePath = homePathRaw.startsWith("/") ? homePathRaw : `/${homePathRaw}`;

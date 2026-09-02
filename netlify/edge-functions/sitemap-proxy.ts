@@ -1,6 +1,6 @@
 import type { Context } from "https://edge.netlify.com";
 
-const DEFAULT_API = "https://turk.eco";
+const DEFAULT_API = "https://ahenk.net.tr";
 
 const STATIC_XML = new Set(["/sitemap-static.xml", "/browserconfig.xml"]);
 

@@ -11,6 +11,7 @@ describe("api-upstream", () => {
   it("rejects Render / onrender origins", () => {
     assert.equal(isForbiddenLegacyOrigin("https://goalgo-y7ze.onrender.com"), true);
     assert.equal(isForbiddenLegacyOrigin("http://goalgo-y7ze.onrender.com"), true);
+    assert.equal(isForbiddenLegacyOrigin("https://ahenk.net.tr"), false);
     assert.equal(isForbiddenLegacyOrigin("https://turk.eco"), false);
   });
 
@@ -33,15 +34,16 @@ describe("api-upstream", () => {
     );
   });
 
-  it("falls back to incoming host then turk.eco", () => {
+  it("falls back to incoming host then ahenk.net.tr", () => {
     assert.equal(
       resolveApiOrigin({}, "https://ankarahabergundemi.com"),
       "https://ankarahabergundemi.com",
     );
     assert.equal(resolveApiOrigin({}), CANONICAL_API_ORIGIN);
+    assert.equal(CANONICAL_API_ORIGIN, "https://ahenk.net.tr");
     assert.equal(
-      resolveApiOrigin({ API_ORIGIN: "https://goalgo-y7ze.onrender.com" }, "https://turk.eco"),
-      "https://turk.eco",
+      resolveApiOrigin({ API_ORIGIN: "https://goalgo-y7ze.onrender.com" }, "https://ahenk.net.tr"),
+      "https://ahenk.net.tr",
     );
   });
 });

@@ -20,12 +20,14 @@ describe("hm-html-boot", () => {
     assert.equal(hmDomainSlugFallback("suhaber.net"), "su");
     assert.equal(hmDomainSlugFallback("www.suhaber.net"), "su");
     assert.equal(hmDomainSlugFallback("turk.eco"), "");
+    assert.equal(hmDomainSlugFallback("ahenk.net.tr"), "");
   });
 
   it("redirects known HM roots instantly without waiting for meta", () => {
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "ankarahabergundemi.com"), true);
     assert.equal(shouldInstantHmRootRedirect("GET", "/tr/ankarahabergundemi", "ankarahabergundemi.com"), false);
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "turk.eco"), false);
+    assert.equal(shouldInstantHmRootRedirect("GET", "/", "ahenk.net.tr"), false);
     assert.equal(shouldInstantHmRootRedirect("POST", "/", "vatanhaber.net"), false);
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "suhaber.net"), true);
     assert.equal(hmHomeSlugFromPath("/", "suhaber.net"), "su");

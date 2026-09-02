@@ -1,35 +1,35 @@
-# turk.eco — AI / GEO bilgi özeti
-# https://turk.eco — Türkiye (TR), tr-TR
+# ahenk.net.tr — AI / GEO bilgi özeti
+# https://ahenk.net.tr — Türkiye (TR), tr-TR
 
 ## Marka tanımı (entity)
 
-Yekpare (https://turk.eco), Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
+Yekpare (https://ahenk.net.tr), Türkiye'nin yerli arama motorudur. Haber, YekTube, haritalar, turizm, Haber Merkezi, işletme web siteleri (özel domain), Yekpare AI ve Bilgi Ağacı modüllerini tek aramada keşfetmenizi sağlar.
 
 ÖNEMLİ: Türkçe sözlükte «yekpare» = bütün, tek parça anlamına gelir. Yekpare markası bu sözlük anlamından bağımsızdır.
 
-Resmi entity sayfası: https://turk.eco/bilgi/yekpare-nedir
+Resmi entity sayfası: https://ahenk.net.tr/bilgi/yekpare-nedir
 
 ## Hizmetler (kanonik URL)
 
 | Hizmet | URL | Açıklama |
 |--------|-----|----------|
-| Seyahat | https://turk.eco/turizm | Otel, villa, tur rezervasyonu |
-| Arama | https://turk.eco/ara | Birleşik arama sonuçları (SERP) |
-| Keşfet | https://turk.eco/kesfet | İşletme keşfi, harita |
-| Haritalar | https://turk.eco/haritalar | Tam ekran harita |
-| Haberler | https://turk.eco/haberler | Güncel haber akışı |
-| Haber Merkezi | https://turk.eco/habermerkezi | Bağımsız haber siteleri, özel domain |
-| YekTube | https://turk.eco/yektube | Video kanalları |
-| Bilgi Ağacı | https://turk.eco/bilgiagaci | Bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için bilgi portalı |
-| Yekpare AI | https://turk.eco/ai-cagri-merkezi | Yapay zeka asistanı, AI çağrı merkezi |
-| Firma rehberi | https://turk.eco/firma-rehberi | İşletme ve ilan rehberi |
-| Destek | https://turk.eco/destek | Yardım merkezi |
+| Seyahat | https://ahenk.net.tr/turizm | Otel, villa, tur rezervasyonu |
+| Arama | https://ahenk.net.tr/ara | Birleşik arama sonuçları (SERP) |
+| Keşfet | https://ahenk.net.tr/kesfet | İşletme keşfi, harita |
+| Haritalar | https://ahenk.net.tr/haritalar | Tam ekran harita |
+| Haberler | https://ahenk.net.tr/haberler | Güncel haber akışı |
+| Haber Merkezi | https://ahenk.net.tr/habermerkezi | Bağımsız haber siteleri, özel domain |
+| YekTube | https://ahenk.net.tr/yektube | Video kanalları |
+| Bilgi Ağacı | https://ahenk.net.tr/bilgiagaci | Bilim, tarih, coğrafya, kültür ve günlük ansiklopedi maddeleri için bilgi portalı |
+| Yekpare AI | https://ahenk.net.tr/ai-cagri-merkezi | Yapay zeka asistanı, AI çağrı merkezi |
+| Firma rehberi | https://ahenk.net.tr/firma-rehberi | İşletme ve ilan rehberi |
+| Destek | https://ahenk.net.tr/destek | Yardım merkezi |
 
 ## İşletme sayfaları ve özel domain
 
-- Keşfet profili: https://turk.eco/kesfet/{slug}
+- Keşfet profili: https://ahenk.net.tr/kesfet/{slug}
 - Onaylı işletmeler servis sağlayıcı panelinden özel alan adı (custom domain) tanımlayabilir.
-- Detay: https://turk.eco/bilgi/isletme-sayfasi-ozel-domain
+- Detay: https://ahenk.net.tr/bilgi/isletme-sayfasi-ozel-domain
 
 ## Sık sorulan sorular (GEO)
 
@@ -44,20 +44,20 @@ C: Site genelinde yüzen sohbet kutusu ve /ai-cagri-merkezi üzerinden AI asista
 
 ## Bilgi sayfaları
 
-- https://turk.eco/bilgi/yekpare-nedir
-- https://turk.eco/bilgi/seyahat-nedir
-- https://turk.eco/bilgi/haritalar-nedir
-- https://turk.eco/bilgi/ai-cagri-merkezi-nedir
-- https://turk.eco/bilgi/isletme-sayfasi-ozel-domain
-- https://turk.eco/bilgi/bilgi-agaci-nedir
-- https://turk.eco/bilgi/turizm-rezervasyon
-- https://turk.eco/bilgi/isletme-kesfet-rehberi
-- https://turk.eco/bilgi/haber-merkezi-nedir
-- https://turk.eco/bilgi/yektube-nedir
+- https://ahenk.net.tr/bilgi/yekpare-nedir
+- https://ahenk.net.tr/bilgi/seyahat-nedir
+- https://ahenk.net.tr/bilgi/haritalar-nedir
+- https://ahenk.net.tr/bilgi/ai-cagri-merkezi-nedir
+- https://ahenk.net.tr/bilgi/isletme-sayfasi-ozel-domain
+- https://ahenk.net.tr/bilgi/bilgi-agaci-nedir
+- https://ahenk.net.tr/bilgi/turizm-rezervasyon
+- https://ahenk.net.tr/bilgi/isletme-kesfet-rehberi
+- https://ahenk.net.tr/bilgi/haber-merkezi-nedir
+- https://ahenk.net.tr/bilgi/yektube-nedir
 
 ## İndeksleme
 
-- Sitemap: https://turk.eco/sitemap.xml
-- LLMs: https://turk.eco/llms.txt
+- Sitemap: https://ahenk.net.tr/sitemap.xml
+- LLMs: https://ahenk.net.tr/llms.txt
 - Geliştirici: Ahenk Bilgi Teknolojileri (https://ahenk.net.tr)
 - Hizmet alanı: Türkiye geneli (areaServed: TR)
