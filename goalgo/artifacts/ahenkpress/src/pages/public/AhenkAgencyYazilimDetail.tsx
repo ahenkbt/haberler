@@ -1,16 +1,18 @@
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import {
   AhenkAgencyChrome,
   AhenkPageHero,
   AhenkServiceIcon,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
+import { ahenkAliasSlug } from "@/lib/ahenkAgencySeo";
 import { findAhenkContentCard, safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
 
 export default function AhenkAgencyYazilimDetail() {
   const site = useAhenkAgencySite();
   const params = useParams<{ slug?: string }>();
-  const slug = String(params.slug ?? "").trim();
+  const [location] = useLocation();
+  const slug = String(params.slug ?? ahenkAliasSlug(location) ?? "").trim();
   const card = findAhenkContentCard(site, slug);
   const isAgency = Boolean(card && site.agencyOffers.some((c) => c.slug === card.slug));
 
@@ -57,10 +59,15 @@ export default function AhenkAgencyYazilimDetail() {
           <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: card.bodyHtml }} />
           <div style={{ marginTop: 24, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href="/iletisim" className="ahenk-btn">
-              Teklif alın
+              Teklif alın — 10.000 TL
             </Link>
-            <a className="ahenk-btn ahenk-btn-light" href={`tel:${site.phoneTel}`}>
-              {site.phone}
+            <a
+              className="ahenk-btn ahenk-btn-light"
+              href={`https://wa.me/905413136245?text=${encodeURIComponent(`Merhaba, ${card.title} istiyorum.`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              WhatsApp {site.phone}
             </a>
           </div>
         </div>

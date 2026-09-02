@@ -86,7 +86,29 @@ export default function AhenkAgencyIletisim() {
             <strong>GSM:</strong> <a href={`tel:${site.phoneTel}`}>{site.phone}</a>
           </p>
           <p>
+            <strong>WhatsApp:</strong>{" "}
+            <a
+              href={`https://wa.me/905413136245?text=${encodeURIComponent("Merhaba, web yazılımı hakkında bilgi almak istiyorum.")}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {site.phone}
+            </a>
+          </p>
+          <p>
             <strong>E-posta:</strong> <a href={`mailto:${site.email}`}>{site.email}</a>
+          </p>
+          <p className="ahenk-iban">
+            <strong>IBAN</strong>
+            <br />
+            {site.ibanBank} · {site.ibanHolder}
+            <br />
+            <span className="ahenk-iban-num">{site.iban}</span>
+          </p>
+          <p>
+            {site.pricePeriodNote}
+            <br />
+            {site.aiDeliveryLead}
           </p>
           <p>
             {site.hoursWeekday}

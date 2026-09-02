@@ -95,6 +95,7 @@ import AhenkAgencyYazilimDetail from "./pages/public/AhenkAgencyYazilimDetail";
 import AhenkAgencyAjans from "./pages/public/AhenkAgencyAjans";
 import AhenkAgencyHaberMerkezi from "./pages/public/AhenkAgencyHaberMerkezi";
 import AhenkAgencyYekpare from "./pages/public/AhenkAgencyYekpare";
+import { AHENK_HUB_PATHS, AHENK_SLUG_ALIASES } from "@/lib/ahenkAgencySeo";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
 import Kasiyer from "./pages/public/Kasiyer";
@@ -818,6 +819,16 @@ export default function App() {
       <Route path="/icerik/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetDetail /> : <Redirect to="/haberler" />)}</Route>
       <Route path="/yazilim/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyYazilimDetail /> : <Redirect to="/haberler" />)}</Route>
       <Route path="/yazilim">{() => (isAhenkAgencyHost() ? <AhenkAgencyYazilim /> : <Redirect to="/haberler" />)}</Route>
+      {AHENK_HUB_PATHS.map((p) => (
+        <Route key={p} path={p}>
+          {() => (isAhenkAgencyHost() ? <AhenkAgencyYazilim /> : <Redirect to="/haberler" />)}
+        </Route>
+      ))}
+      {Object.keys(AHENK_SLUG_ALIASES).map((p) => (
+        <Route key={p} path={p}>
+          {() => (isAhenkAgencyHost() ? <AhenkAgencyYazilimDetail /> : <Redirect to="/haberler" />)}
+        </Route>
+      ))}
       <Route path="/ajans">{() => (isAhenkAgencyHost() ? <AhenkAgencyAjans /> : <Redirect to="/haberler" />)}</Route>
       <Route path="/haber-merkezi">{() => (isAhenkAgencyHost() ? <AhenkAgencyHaberMerkezi /> : <Redirect to="/habermerkezi" />)}</Route>
       <Route path="/yekpare">{() => (isAhenkAgencyHost() ? <AhenkAgencyYekpare /> : <Redirect to="/" />)}</Route>

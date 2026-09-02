@@ -34,6 +34,7 @@ export type AhenkContentCard = {
   href: string;
   bodyHtml: string;
   image?: string;
+  aliases?: string[];
 };
 
 export type AhenkPromoBlock = {
@@ -47,13 +48,58 @@ export type AhenkPromoBlock = {
   image?: string;
 };
 
+export type AhenkFaq = {
+  q: string;
+  a: string;
+};
+
+export const AHENK_REMOVED_SERVICE_SLUGS = new Set(["temizlik-hizmetleri"]);
+
+export function defaultAhenkFaqs(): AhenkFaq[] {
+  return [
+    {
+      q: "Kurumsal web sitesi kaç günde teslim edilir ve fiyatı nedir?",
+      a: "Kurumsal web sitesi 3 günde teslim edilir. Paket fiyatı 10.000 TL’dir. Yapay zeka destekli üretim ile içerik, tasarım ve yayın aynı sprintte tamamlanır.",
+    },
+    {
+      q: "Web yazılımı ve web tasarımı hangi sektörleri kapsar?",
+      a: "Tüm sektörler: haber sitesi yazılımı ve haber scripti, avukat sitesi, doktor sitesi, dernek-vakıf, belediye, restoran ve otel, e-ticaret, emlak, okul ve holding kurumsal siteleri.",
+    },
+    {
+      q: "Haber sitesi yazılımı veya haber scripti alabilir miyim?",
+      a: "Evet. Haber Merkezi white-label yazılımı manşet, RSS, yazar, tema ve özel alan adı ile teslim edilir. 1-3 günde yayına alınır.",
+    },
+    {
+      q: "Mobil uyumlu yazılım dahil mi?",
+      a: "Tüm web yazılımları mobil uyumludur. Telefon, tablet ve masaüstünde aynı hız ve SEO temeliyle teslim edilir.",
+    },
+    {
+      q: "Ödeme IBAN bilgisi nedir?",
+      a: "Kuveyt Türk · Nail TÜRKOĞLU · TR160020500000041593000001. WhatsApp hattı 0541 313 62 45.",
+    },
+  ];
+}
+
 export type AhenkAgencySite = {
   version: 2;
   brandName: string;
   tagline: string;
   phone: string;
   phoneTel: string;
+  whatsappTel: string;
   email: string;
+  seoTitle: string;
+  seoDescription: string;
+  seoKeywords: string;
+  aiDeliveryLead: string;
+  priceTitle: string;
+  priceAmount: string;
+  priceCurrency: string;
+  pricePeriodNote: string;
+  ibanBank: string;
+  ibanHolder: string;
+  iban: string;
+  faqs: AhenkFaq[];
   hoursWeekday: string;
   hoursSunday: string;
   heroKicker: string;
@@ -167,8 +213,8 @@ function defaultSoftwareSectors(): AhenkContentCard[] {
   return [
     card(
       "avukat-sitesi",
-      "Avukat & hukuk bürosu",
-      "Dava alanları, avukat profilleri, randevu ve KVKK uyumlu kurumsal hukuk yazılımı.",
+      "Avukat sitesi yazılımı",
+      "Avukat sitesi ve hukuk bürosu web yazılımı: dava alanları, randevu, KVKK. 1-3 günde teslim.",
       "scale",
       "/yazilim/avukat-sitesi",
       `<h2>Avukat sitesi yazılımı</h2>
@@ -178,8 +224,8 @@ function defaultSoftwareSectors(): AhenkContentCard[] {
     ),
     card(
       "doktor-sitesi",
-      "Doktor & sağlık kurumu",
-      "Klinik, hastane ve hekim markası: randevu, birimler, bilimsel içerik, güven.",
+      "Doktor sitesi yazılımı",
+      "Doktor sitesi, klinik ve hastane web yazılımı: randevu, birimler, bilimsel içerik.",
       "heart",
       "/yazilim/doktor-sitesi",
       `<h2>Doktor ve klinik yazılımı</h2>
@@ -210,8 +256,8 @@ function defaultSoftwareSectors(): AhenkContentCard[] {
     ),
     card(
       "haber-medya-sitesi",
-      "Haber & medya",
-      "Manşet, son dakika, yazar, RSS ve Newsmap — Haber Merkezi altyapısı.",
+      "Haber sitesi yazılımı & haber scripti",
+      "Haber sitesi yazılımı, haber scripti, manşet, RSS, yazar ve Newsmap — 1-3 günde yayında.",
       "news",
       "/yazilim/haber-medya-sitesi",
       `<h2>Haber sitesi yazılımı</h2>
@@ -230,8 +276,8 @@ function defaultSoftwareSectors(): AhenkContentCard[] {
     ),
     card(
       "restoran-otel-sitesi",
-      "Restoran & otel",
-      "Rezervasyon, dijital menü, oda ve deneyim sayfaları.",
+      "Restoran sitesi yazılımı",
+      "Restoran sitesi, otel sitesi, rezervasyon ve QR menü. Mobil uyumlu web yazılımı.",
       "sparkle",
       "/yazilim/restoran-otel-sitesi",
       `<h2>Restoran ve otel yazılımı</h2>
@@ -260,8 +306,8 @@ function defaultSoftwareSectors(): AhenkContentCard[] {
     ),
     card(
       "kurumsal-sirket-sitesi",
-      "Kurumsal şirket",
-      "Holding, sanayi ve ihracat markaları için global İngilizce-Türkçe vitrin.",
+      "Kurumsal web sitesi — 10.000 TL",
+      "Kurumsal web sitesi 3 günde teslim, 10.000 TL. Holding, sanayi ve ihracat markaları.",
       "pen",
       "/yazilim/kurumsal-sirket-sitesi",
       `<h2>Kurumsal web yazılımı</h2>
@@ -394,27 +440,42 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
   return {
     version: 2,
     brandName: "Ahenk Bilgi Teknolojileri",
-    tagline: "Prestij yazılım evi ve kreatif ajans. Avukat, doktor, dernek ve küresel markalar için.",
+    tagline: "Yapay zeka destekli web yazılımı — tüm sektörler, 1-3 günde teslim.",
     phone: "0541 313 62 45",
     phoneTel: "+905413136245",
+    whatsappTel: "+905413136245",
     email: "ahenkbilgiteknoloji@gmail.com",
+    seoTitle: "Web Yazılımı, Web Tasarımı, Haber Sitesi Yazılımı | Ahenk",
+    seoDescription:
+      "Yapay zeka destekli web yazılımı: haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi ve kurumsal web sitesi. 1-3 günde teslim. Kurumsal paket 10.000 TL.",
+    seoKeywords:
+      "web yazılımı, web tasarımı, haber sitesi yazılımı, haber scripti, avukat sitesi, doktor sitesi, restoran sitesi, kurumsal web sitesi, mobil uyumlu yazılım, web ofisi, webintek",
+    aiDeliveryLead: "Yapay zeka destekli tüm sektörlerden web yazılımı yapıyoruz. 1-3 günde teslim ediyoruz.",
+    priceTitle: "Kurumsal web sitesi",
+    priceAmount: "10000",
+    priceCurrency: "TRY",
+    pricePeriodNote: "Kurumsal web sitesi 3 günde teslim · 10.000 TL",
+    ibanBank: "Kuveyt Türk",
+    ibanHolder: "Nail TÜRKOĞLU",
+    iban: "TR160020500000041593000001",
+    faqs: defaultAhenkFaqs(),
     hoursWeekday: "Pazartesi - Cumartesi 09:00 - 18:00",
     hoursSunday: "Pazar: Kapalı",
-    heroKicker: "Yazılım evi · Kreatif ajans",
-    heroTitle: "Avukat, doktor ve kurumlar için milyon dolarlık dijital yüz.",
+    heroKicker: "Yapay zeka destekli web yazılımı",
+    heroTitle: "Tüm sektörlere web yazılımı — 1-3 günde teslim.",
     heroSubtitle:
-      "Sektörel web yazılımı, marka stüdyosu ve yayın altyapısı. Operasyonel hizmetler ayrı bir katmanda; anasayfada yalnızca prestij işi.",
-    heroCtaLabel: "Sektör yazılımı",
-    heroCtaHref: "/yazilim",
-    heroSecondaryLabel: "Ajans stüdyosu",
-    heroSecondaryHref: "/ajans",
+      "Haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi ve kurumsal web sitesi. Kurumsal paket 10.000 TL, 3 günde yayında.",
+    heroCtaLabel: "Web yazılımı",
+    heroCtaHref: "/web-yazilimi",
+    heroSecondaryLabel: "Kurumsal 10.000 TL",
+    heroSecondaryHref: "/kurumsal-web-sitesi",
     heroImage: AHENK_PHOTOS.hero,
-    softwareTitle: "Ön planda: sektör yazılımı",
+    softwareTitle: "Web yazılımı — tüm sektörler",
     softwareLead:
-      "Avukat, doktor, dernek ve vakıf sitelerinden belediye, haber, e-ticaret ve holding vitrinine. Her dikeyde size özel mimari.",
+      "Avukat sitesi, doktor sitesi, haber sitesi yazılımı, haber scripti, restoran sitesi, e-ticaret ve kurumsal web sitesi. Yapay zeka destekli, mobil uyumlu, 1-3 günde teslim.",
     softwareSectors: defaultSoftwareSectors(),
-    agencyTitle: "Ajans stüdyosu",
-    agencyLead: "Marka, yazılım, sosyal, film, reklam ve SEO — tek imza, tek ritim.",
+    agencyTitle: "Ajans hizmetleri",
+    agencyLead: "Web yazılımından sonra: grafik, sosyal medya, film, reklam ve SEO.",
     agencyOffers: defaultAgencyOffers(),
     yekpare: defaultYekpare(),
     platformTitle: "Yayın ürünleri",
@@ -437,9 +498,9 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     ctaTitle: "Ofisimizde misafirimiz olun",
     ctaText:
       "Yazılım, ajans veya yayın projeniz için sizi Ankara, Londra veya Batum ofisimizde ağırlamaktan mutluluk duyarız.",
-    servicesTitle: "Operasyonel hizmetler",
+    servicesTitle: "Çağrı merkezi ve operasyon",
     servicesLead:
-      "Çağrı merkezi, insan kaynakları, temizlik, e-ticaret destek, QR menü ve kurumsal organizasyon — saha ve operasyon katmanı.",
+      "Web yazılımı ve ajansın ardından: çağrı merkezi, müşteri hizmetleri, insan kaynakları, e-ticaret destek ve kurumsal organizasyon.",
     servicesHeroImage: AHENK_PHOTOS.servicesHero,
     offices: [
       {
@@ -575,21 +636,6 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
 <p>Ahenk Bilgi Teknolojileri olarak başta e-ticaret şirketlerinin kalifiye insana ihtiyaç duydukları alanlarda ve bu ekosistemde yer almak isteyen firmaların internete taşınmasında, pazara açıldıktan sonra da teknoloji odaklı ihtiyaç duyulan birçok alanda uzman çalışanlarımızla hizmet sunuyoruz.</p>`,
       },
       {
-        slug: "temizlik-hizmetleri",
-        title: "Temizlik Hizmetleri",
-        excerpt:
-          "Ev, ofis, işyeri ve inşaat sonrası temizlik için aynı gün profesyonel ekip yönlendirmesi.",
-        icon: "sparkle",
-        image: AHENK_PHOTOS.cleaning,
-        bodyHtml: `<h2>Temizlik Hizmetleri</h2>
-<p>Yüzlerce profesyonel temizlikçi ağımız ile size yakınız. Yoğunluğa göre aynı gün içerisinde 1–3 saat gibi kısa bir sürede temizlikçi, istemiş olduğunuz adreste hazır bulunarak hizmete başlayabilir.</p>
-<p>Kimlik ve adres bilgileri doğrulanmış, ciddi şikayet almamış, gerçek müşteri referanslarına sahip profesyoneller yönlendirilir. Gelişmiş eşleştirme ile ihtiyacınıza uygun temizlikçi bulunur.</p>
-<h3>Sıfır Risk Sistemi</h3>
-<p>Ödemenizi kart veya havale ile yapabilirsiniz. Temizlik sırasında oluşabilecek herhangi bir durumda ödemeniz aktarılmadan müdahale edilir; hizmet alamamanız durumunda paranız iade edilir. Satın aldığınız süre boyunca sürpriz ek ücret yoktur.</p>
-<h3>Temizlik Hizmetlerimiz</h3>
-<p>Ev, ofis, işyeri, villa ya da inşaat sonrası temizlik işleriniz için haftanın 7 günü rezervasyon yapılabilir.</p>`,
-      },
-      {
         slug: "ajans-hizmetleri",
         title: "Ajans Hizmetleri",
         excerpt: "Grafik tasarım, web yazılım, SEO, sosyal medya, video ve dijital reklam yönetimi.",
@@ -702,7 +748,7 @@ function mergeServices(raw: unknown, defaults: AhenkAgencyService[]): AhenkAgenc
           : undefined,
       };
     })
-    .filter((s) => s.slug && s.title);
+    .filter((s) => s.slug && s.title && !AHENK_REMOVED_SERVICE_SLUGS.has(s.slug));
   return items.length ? items : defaults;
 }
 
@@ -725,6 +771,9 @@ function mergeCards(raw: unknown, defaults: AhenkContentCard[]): AhenkContentCar
         href: str(c.href, fallback?.href ?? "/"),
         bodyHtml: str(c.bodyHtml, fallback?.bodyHtml ?? ""),
         image: safeAhenkImageUrl(c.image, fallback?.image ?? ""),
+        aliases: Array.isArray(c.aliases)
+          ? c.aliases.map((a) => String(a || "").trim()).filter(Boolean)
+          : fallback?.aliases,
       };
     })
     .filter((c) => c.slug && c.title);
@@ -745,34 +794,63 @@ function mergePromo(raw: unknown, defaults: AhenkPromoBlock): AhenkPromoBlock {
   };
 }
 
+function mergeFaqs(raw: unknown, defaults: AhenkFaq[]): AhenkFaq[] {
+  if (!Array.isArray(raw) || raw.length === 0) return defaults;
+  const items = raw
+    .filter(isRecord)
+    .map((f) => ({ q: str(f.q, ""), a: str(f.a, "") }))
+    .filter((f) => f.q && f.a);
+  return items.length ? items : defaults;
+}
+
 export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): AhenkAgencySite {
   const defaults = defaultAhenkAgencySite();
   if (!raw || !String(raw).trim()) return defaults;
   try {
     const data = JSON.parse(String(raw)) as unknown;
     if (!isRecord(data)) return defaults;
+    const useNewCopy = typeof data.seoTitle !== "string" || !String(data.seoTitle).trim();
     return {
       version: 2,
       brandName: str(data.brandName, defaults.brandName),
-      tagline: str(data.tagline, defaults.tagline),
+      tagline: useNewCopy ? defaults.tagline : str(data.tagline, defaults.tagline),
       phone: str(data.phone, defaults.phone),
       phoneTel: str(data.phoneTel, defaults.phoneTel),
+      whatsappTel: str(data.whatsappTel, defaults.whatsappTel),
       email: str(data.email, defaults.email),
+      seoTitle: str(data.seoTitle, defaults.seoTitle),
+      seoDescription: str(data.seoDescription, defaults.seoDescription),
+      seoKeywords: str(data.seoKeywords, defaults.seoKeywords),
+      aiDeliveryLead: str(data.aiDeliveryLead, defaults.aiDeliveryLead),
+      priceTitle: str(data.priceTitle, defaults.priceTitle),
+      priceAmount: str(data.priceAmount, defaults.priceAmount),
+      priceCurrency: str(data.priceCurrency, defaults.priceCurrency),
+      pricePeriodNote: str(data.pricePeriodNote, defaults.pricePeriodNote),
+      ibanBank: str(data.ibanBank, defaults.ibanBank),
+      ibanHolder: str(data.ibanHolder, defaults.ibanHolder),
+      iban: str(data.iban, defaults.iban).replace(/\s+/g, ""),
+      faqs: mergeFaqs(data.faqs, defaults.faqs),
       hoursWeekday: str(data.hoursWeekday, defaults.hoursWeekday),
       hoursSunday: str(data.hoursSunday, defaults.hoursSunday),
-      heroKicker: str(data.heroKicker, defaults.heroKicker),
-      heroTitle: str(data.heroTitle, defaults.heroTitle),
-      heroSubtitle: str(data.heroSubtitle, defaults.heroSubtitle),
-      heroCtaLabel: str(data.heroCtaLabel, defaults.heroCtaLabel),
-      heroCtaHref: str(data.heroCtaHref, defaults.heroCtaHref),
-      heroSecondaryLabel: str(data.heroSecondaryLabel, defaults.heroSecondaryLabel),
-      heroSecondaryHref: str(data.heroSecondaryHref, defaults.heroSecondaryHref),
+      heroKicker: useNewCopy ? defaults.heroKicker : str(data.heroKicker, defaults.heroKicker),
+      heroTitle: useNewCopy ? defaults.heroTitle : str(data.heroTitle, defaults.heroTitle),
+      heroSubtitle: useNewCopy ? defaults.heroSubtitle : str(data.heroSubtitle, defaults.heroSubtitle),
+      heroCtaLabel: useNewCopy ? defaults.heroCtaLabel : str(data.heroCtaLabel, defaults.heroCtaLabel),
+      heroCtaHref: useNewCopy ? defaults.heroCtaHref : str(data.heroCtaHref, defaults.heroCtaHref),
+      heroSecondaryLabel: useNewCopy
+        ? defaults.heroSecondaryLabel
+        : str(data.heroSecondaryLabel, defaults.heroSecondaryLabel),
+      heroSecondaryHref: useNewCopy
+        ? defaults.heroSecondaryHref
+        : str(data.heroSecondaryHref, defaults.heroSecondaryHref),
       heroImage: safeAhenkImageUrl(data.heroImage, defaults.heroImage),
-      softwareTitle: str(data.softwareTitle, defaults.softwareTitle),
-      softwareLead: str(data.softwareLead, defaults.softwareLead),
-      softwareSectors: mergeCards(data.softwareSectors, defaults.softwareSectors),
-      agencyTitle: str(data.agencyTitle, defaults.agencyTitle),
-      agencyLead: str(data.agencyLead, defaults.agencyLead),
+      softwareTitle: useNewCopy ? defaults.softwareTitle : str(data.softwareTitle, defaults.softwareTitle),
+      softwareLead: useNewCopy ? defaults.softwareLead : str(data.softwareLead, defaults.softwareLead),
+      softwareSectors: useNewCopy
+        ? defaults.softwareSectors
+        : mergeCards(data.softwareSectors, defaults.softwareSectors),
+      agencyTitle: useNewCopy ? defaults.agencyTitle : str(data.agencyTitle, defaults.agencyTitle),
+      agencyLead: useNewCopy ? defaults.agencyLead : str(data.agencyLead, defaults.agencyLead),
       agencyOffers: mergeCards(data.agencyOffers, defaults.agencyOffers),
       yekpare: mergePromo(data.yekpare, defaults.yekpare),
       platformTitle: str(data.platformTitle, defaults.platformTitle),
@@ -788,8 +866,8 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       aboutImage: safeAhenkImageUrl(data.aboutImage, defaults.aboutImage),
       ctaTitle: str(data.ctaTitle, defaults.ctaTitle),
       ctaText: str(data.ctaText, defaults.ctaText),
-      servicesTitle: str(data.servicesTitle, defaults.servicesTitle),
-      servicesLead: str(data.servicesLead, defaults.servicesLead),
+      servicesTitle: useNewCopy ? defaults.servicesTitle : str(data.servicesTitle, defaults.servicesTitle),
+      servicesLead: useNewCopy ? defaults.servicesLead : str(data.servicesLead, defaults.servicesLead),
       servicesHeroImage: safeAhenkImageUrl(data.servicesHeroImage, defaults.servicesHeroImage),
       offices: mergeOffices(data.offices, defaults.offices),
       slides: mergeSlides(data.slides, defaults.slides),
@@ -813,6 +891,7 @@ export function findAhenkAgencyService(
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
   if (!key) return null;
+  if (AHENK_REMOVED_SERVICE_SLUGS.has(key)) return null;
   return site.services.find((s) => s.slug === key || s.aliases?.includes(key)) ?? null;
 }
 
@@ -822,10 +901,12 @@ export function findAhenkContentCard(site: AhenkAgencySite, slug: string): Ahenk
     .toLowerCase()
     .replace(/^\/+|\/+$/g, "");
   if (!key) return null;
+  const match = (s: AhenkContentCard) =>
+    s.slug === key || s.aliases?.includes(key) || s.aliases?.includes(`/${key}`) || s.href.endsWith(`/${key}`);
   return (
-    site.softwareSectors.find((s) => s.slug === key) ??
-    site.agencyOffers.find((s) => s.slug === key) ??
-    site.platformProducts.find((s) => s.slug === key) ??
+    site.softwareSectors.find(match) ??
+    site.agencyOffers.find(match) ??
+    site.platformProducts.find(match) ??
     null
   );
 }

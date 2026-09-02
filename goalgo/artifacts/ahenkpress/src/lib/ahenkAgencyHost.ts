@@ -1,5 +1,7 @@
 /** ahenk.net.tr kurumsal ajans vitrini — Yekpare / HM / YekTube hostlarından ayrı. */
 
+import { isAhenkKeywordPath } from "@/lib/ahenkAgencySeo";
+
 const AHENK_AGENCY_HOSTS = new Set(["ahenk.net.tr", "www.ahenk.net.tr"]);
 
 export function normalizeAhenkHost(host: string | null | undefined): string {
@@ -35,6 +37,7 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (n === "/ajans") return true;
   if (n === "/haber-merkezi" || n === "/habermerkezi") return true;
   if (n === "/yekpare") return true;
+  if (isAhenkKeywordPath(n)) return true;
   if (n === "/hakkimizda" || n === "/about") return true;
   if (n === "/iletisim" || n === "/contact") return true;
   return false;

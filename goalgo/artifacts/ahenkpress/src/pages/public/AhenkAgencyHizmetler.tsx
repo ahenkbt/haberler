@@ -5,18 +5,17 @@ import {
   AhenkPageHero,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
+import { ahenkOperationalServices } from "@/lib/ahenkAgencySeo";
 
 export default function AhenkAgencyHizmetler() {
   const site = useAhenkAgencySite();
+  const services = ahenkOperationalServices(site);
   return (
-    <AhenkAgencyChrome
-      title={site.servicesTitle}
-      description={site.servicesLead}
-    >
+    <AhenkAgencyChrome title={site.servicesTitle} description={site.servicesLead}>
       <AhenkPageHero
         crumb={
           <>
-            <Link href="/">Anasayfa</Link> / Hizmetler
+            <Link href="/">Anasayfa</Link> / Çağrı merkezi
           </>
         }
         title={site.servicesTitle}
@@ -25,7 +24,7 @@ export default function AhenkAgencyHizmetler() {
       />
       <section className="ahenk-section">
         <div className="ahenk-grid">
-          {site.services.map((svc) => (
+          {services.map((svc) => (
             <AhenkMediaCard
               key={svc.slug}
               href={`/hizmet/${svc.slug}`}

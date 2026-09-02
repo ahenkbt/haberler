@@ -525,6 +525,87 @@ function redirectBareSitemapPath(request, incoming) {
 }
 
 /** HM + portal: robots.txt Sitemap satırı ziyaret edilen köke bağlanır (statik turk.eco ezilmesin). */
+/** ahenk.net.tr web yazılım vitrini — haber sitemap yerine ajans haritası. */
+function isAhenkAgencyHost(host) {
+  const h = String(host || "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .split(":")[0];
+  return h === "ahenk.net.tr";
+}
+
+function serveAhenkAgencyRobots(request, incoming) {
+  if (!isAhenkAgencyHost(incoming.hostname)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const path = incoming.pathname.replace(/\/+$/, "") || "/";
+  if (path !== "/robots.txt") return null;
+  const origin = incoming.origin.replace(/\/+$/, "");
+  const body = [
+    "User-agent: *",
+    "Allow: /",
+    "Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full",
+    "",
+    "User-agent: GPTBot",
+    "Allow: /",
+    "",
+    "User-agent: ChatGPT-User",
+    "Allow: /",
+    "",
+    "User-agent: ClaudeBot",
+    "Allow: /",
+    "",
+    "User-agent: PerplexityBot",
+    "Allow: /",
+    "",
+    "User-agent: Google-Extended",
+    "Allow: /",
+    "",
+    `Sitemap: ${origin}/sitemap.xml`,
+    "",
+    "Disallow: /admin/",
+    "Disallow: /editor/",
+    "",
+  ].join("\n");
+  return new Response(request.method === "HEAD" ? null : body, {
+    status: 200,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+      "x-yekpare-frontend": "cloudflare-ahenk-robots",
+    },
+  });
+}
+
+async function serveAhenkAgencySeoFiles(request, env, incoming) {
+  if (!isAhenkAgencyHost(incoming.hostname)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const path = incoming.pathname.replace(/\/+$/, "") || "/";
+  let assetPath = "";
+  let contentType = "";
+  if (path === "/sitemap.xml" || path === "/sitemap-static.xml") {
+    assetPath = "/ahenk-sitemap.xml";
+    contentType = "application/xml; charset=utf-8";
+  } else if (path === "/llms.txt") {
+    assetPath = "/ahenk-llms.txt";
+    contentType = "text/plain; charset=utf-8";
+  } else {
+    return null;
+  }
+  try {
+    const assetResp = await fetchStaticAssets(env, request, assetPath);
+    if (!assetResp || !assetResp.ok) return null;
+    const headers = new Headers({
+      "content-type": contentType,
+      "cache-control": "public, max-age=3600",
+      "x-yekpare-frontend": "cloudflare-ahenk-seo",
+    });
+    if (request.method === "HEAD") return new Response(null, { status: 200, headers });
+    return new Response(await assetResp.text(), { status: 200, headers });
+  } catch {
+    return null;
+  }
+}
+
 function serveDynamicRobotsTxt(request, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
@@ -2364,6 +2445,12 @@ export default {
 
     const bareSitemap = redirectBareSitemapPath(request, incoming);
     if (bareSitemap) return bareSitemap;
+
+    const ahenkRobots = serveAhenkAgencyRobots(request, incoming);
+    if (ahenkRobots) return ahenkRobots;
+
+    const ahenkSeoFiles = await serveAhenkAgencySeoFiles(request, env, incoming);
+    if (ahenkSeoFiles) return ahenkSeoFiles;
 
     const robotsTxt = serveDynamicRobotsTxt(request, incoming);
     if (robotsTxt) return robotsTxt;

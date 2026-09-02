@@ -887,6 +887,67 @@ async function buildMinimalSitemapIndexFallback(request, incoming) {
   return sitemapIndexXmlResponse(request, portalXml);
 }
 
+function isAhenkAgencyHostMw(host) {
+  const h = String(host || "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .split(":")[0];
+  return h === "ahenk.net.tr";
+}
+
+/** ahenk.net.tr web yazılım vitrini — haber sitemap’i yerine ajans haritası. */
+function serveAhenkAgencyDiscoverFiles(request, incoming, host) {
+  if (!isAhenkAgencyHostMw(host)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const p = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+  const origin = incoming.origin.replace(/\/+$/, "");
+  if (p === "/robots.txt") {
+    const body = [
+      "User-agent: *",
+      "Allow: /",
+      "Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full",
+      "",
+      "User-agent: GPTBot",
+      "Allow: /",
+      "",
+      "User-agent: ChatGPT-User",
+      "Allow: /",
+      "",
+      "User-agent: ClaudeBot",
+      "Allow: /",
+      "",
+      "User-agent: PerplexityBot",
+      "Allow: /",
+      "",
+      "User-agent: Google-Extended",
+      "Allow: /",
+      "",
+      `Sitemap: ${origin}/sitemap.xml`,
+      "",
+      "Disallow: /admin/",
+      "Disallow: /editor/",
+      "",
+    ].join("\n");
+    return new Response(request.method === "HEAD" ? null : body, {
+      status: 200,
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" },
+    });
+  }
+  if (p === "/llms.txt") {
+    return fetch(new URL("/ahenk-llms.txt", incoming.origin), {
+      headers: { accept: "text/plain", "x-middleware-subrequest": "1" },
+      redirect: "manual",
+    }).catch(() => null);
+  }
+  if (p === "/sitemap.xml" || p === "/sitemap-static.xml") {
+    return fetch(new URL("/ahenk-sitemap.xml", incoming.origin), {
+      headers: { accept: "application/xml", "x-middleware-subrequest": "1" },
+      redirect: "manual",
+    }).catch(() => null);
+  }
+  return null;
+}
+
 /** HM özel alan adında robots.txt — ziyaret edilen köke göre sitemap + GEO. */
 function serveDynamicRobotsTxt(request, incoming, host) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -1782,6 +1843,9 @@ export default async function middleware(request) {
 
   const kesfetRedir = await kesfetIsletmeSlugRedirect(request, incoming);
   if (kesfetRedir) return kesfetRedir;
+
+  const ahenkDiscover = serveAhenkAgencyDiscoverFiles(request, incoming, host);
+  if (ahenkDiscover) return ahenkDiscover;
 
   const dynamicRobots = serveDynamicRobotsTxt(request, incoming, host);
   if (dynamicRobots) return dynamicRobots;

@@ -95,7 +95,7 @@ export default function AhenkAjansSitesi() {
 
       <Accordion
         type="multiple"
-        defaultValue={["brand", "hero", "software", "services"]}
+        defaultValue={["brand", "seo", "hero", "software", "services"]}
         className="rounded-lg border bg-white"
       >
         <AccordionItem value="brand">
@@ -126,6 +126,103 @@ export default function AhenkAjansSitesi() {
                 <Input value={site.hoursSunday} onChange={(e) => setSite({ ...site, hoursSunday: e.target.value })} />
               </Field>
             </div>
+            <Field label="WhatsApp tel">
+              <Input
+                value={site.whatsappTel}
+                onChange={(e) => setSite({ ...site, whatsappTel: e.target.value })}
+                placeholder="+905413136245"
+              />
+            </Field>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="seo">
+          <AccordionTrigger className="px-4">SEO, fiyat, IBAN, SSS</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <Field label="SEO başlık">
+              <Input value={site.seoTitle} onChange={(e) => setSite({ ...site, seoTitle: e.target.value })} />
+            </Field>
+            <Field label="SEO açıklama">
+              <Textarea
+                rows={3}
+                value={site.seoDescription}
+                onChange={(e) => setSite({ ...site, seoDescription: e.target.value })}
+              />
+            </Field>
+            <Field label="Anahtar kelimeler">
+              <Textarea
+                rows={2}
+                value={site.seoKeywords}
+                onChange={(e) => setSite({ ...site, seoKeywords: e.target.value })}
+              />
+            </Field>
+            <Field label="Yapay zeka teslim cümlesi">
+              <Input value={site.aiDeliveryLead} onChange={(e) => setSite({ ...site, aiDeliveryLead: e.target.value })} />
+            </Field>
+            <Field label="Fiyat başlığı">
+              <Input value={site.priceTitle} onChange={(e) => setSite({ ...site, priceTitle: e.target.value })} />
+            </Field>
+            <div className="grid sm:grid-cols-3 gap-2">
+              <Input
+                value={site.priceAmount}
+                onChange={(e) => setSite({ ...site, priceAmount: e.target.value })}
+                placeholder="10000"
+              />
+              <Input
+                value={site.priceCurrency}
+                onChange={(e) => setSite({ ...site, priceCurrency: e.target.value })}
+                placeholder="TRY"
+              />
+              <Input
+                value={site.pricePeriodNote}
+                onChange={(e) => setSite({ ...site, pricePeriodNote: e.target.value })}
+                placeholder="3 günde teslim · 10.000 TL"
+                className="sm:col-span-3"
+              />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <Input
+                value={site.ibanBank}
+                onChange={(e) => setSite({ ...site, ibanBank: e.target.value })}
+                placeholder="Banka"
+              />
+              <Input
+                value={site.ibanHolder}
+                onChange={(e) => setSite({ ...site, ibanHolder: e.target.value })}
+                placeholder="Hesap adı"
+              />
+              <Input
+                value={site.iban}
+                onChange={(e) => setSite({ ...site, iban: e.target.value })}
+                placeholder="TR..."
+                className="sm:col-span-2"
+              />
+            </div>
+            {site.faqs.map((faq, i) => (
+              <div key={i} className="rounded-md border p-3 space-y-2">
+                <Input
+                  value={faq.q}
+                  onChange={(e) =>
+                    setSite({
+                      ...site,
+                      faqs: site.faqs.map((f, j) => (j === i ? { ...f, q: e.target.value } : f)),
+                    })
+                  }
+                  placeholder="Soru"
+                />
+                <Textarea
+                  rows={3}
+                  value={faq.a}
+                  onChange={(e) =>
+                    setSite({
+                      ...site,
+                      faqs: site.faqs.map((f, j) => (j === i ? { ...f, a: e.target.value } : f)),
+                    })
+                  }
+                  placeholder="Yanıt"
+                />
+              </div>
+            ))}
           </AccordionContent>
         </AccordionItem>
 

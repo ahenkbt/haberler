@@ -745,3 +745,121 @@
     display: none;
   }
 }
+
+.ahenk-hero-ai {
+  max-width: 52ch;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ahenk-gold-2);
+  margin: -8px 0 22px;
+}
+
+.ahenk-price {
+  background: var(--ahenk-paper);
+  border-bottom: 1px solid var(--ahenk-line);
+}
+
+.ahenk-price-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+
+.ahenk-price-inner strong {
+  display: block;
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -0.04em;
+  color: var(--ahenk-navy);
+  margin: 4px 0 6px;
+}
+
+.ahenk-price-inner p {
+  margin: 0;
+  color: var(--ahenk-muted);
+  max-width: 52ch;
+}
+
+.ahenk-faq {
+  display: grid;
+  gap: 10px;
+  max-width: 820px;
+}
+
+.ahenk-faq-item {
+  border: 1px solid var(--ahenk-line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 4px 16px 4px;
+}
+
+.ahenk-faq-item summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--ahenk-navy);
+  padding: 12px 0;
+}
+
+.ahenk-faq-item p {
+  margin: 0 0 14px;
+  color: var(--ahenk-muted);
+  line-height: 1.6;
+}
+
+.ahenk-iban {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ahenk-ink);
+}
+
+.ahenk-footer .ahenk-iban,
+.ahenk-cta .ahenk-iban {
+  color: #d5deea;
+}
+
+.ahenk-iban-num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.ahenk-wa {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  min-width: 58px;
+  height: 58px;
+  padding: 0 16px 0 14px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 10px 28px rgba(37, 211, 102, 0.45);
+}
+
+.ahenk-wa:hover {
+  background: #1ebe5d;
+}
+
+@media (max-width: 760px) {
+  .ahenk-price-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ahenk-wa span {
+    display: none;
+  }
+  .ahenk-wa {
+    padding: 0;
+    width: 58px;
+    justify-content: center;
+  }
+}

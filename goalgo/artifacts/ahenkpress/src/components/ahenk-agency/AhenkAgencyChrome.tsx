@@ -23,21 +23,27 @@ import {
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import {
   isExternalAhenkHref,
+  AHENK_REMOVED_SERVICE_SLUGS,
   safeAhenkImageUrl,
   type AhenkAgencySite,
   type AhenkContentCard,
+  type AhenkFaq,
 } from "@/lib/ahenkAgencySite";
-import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
-import { applyJsonLd } from "@/lib/pageSeo";
+import {
+  applyAhenkAgencySeo,
+  ahenkWhatsAppHref,
+  isAhenkHubPath,
+  normalizeAhenkPath,
+} from "@/lib/ahenkAgencySeo";
 import "@/styles/ahenkAgency.css";
 
 const NAV = [
   { href: "/", label: "Anasayfa" },
-  { href: "/yazilim", label: "Yazılım" },
+  { href: "/web-yazilimi", label: "Web Yazılımı" },
   { href: "/ajans", label: "Ajans" },
+  { href: "/hizmetler", label: "Çağrı Merkezi" },
   { href: "/haber-merkezi", label: "Haber Merkezi" },
   { href: "/yekpare", label: "Yekpare" },
-  { href: "/hizmetler", label: "Hizmetler" },
   { href: "/hakkimizda", label: "Hakkımızda" },
   { href: "/iletisim", label: "İletişim" },
 ];
@@ -80,6 +86,15 @@ export function AhenkServiceIcon({ name, className }: { name: string; className?
 
 function navActive(path: string, href: string): boolean {
   if (href === "/") return path === "/";
+  if (href === "/web-yazilimi") {
+    return (
+      path === "/yazilim" ||
+      path.startsWith("/yazilim/") ||
+      isAhenkHubPath(path) ||
+      path === "/web-yazilimi"
+    );
+  }
+  if (href === "/hizmetler") return path === "/hizmetler" || path.startsWith("/hizmet/");
   return path === href || path.startsWith(`${href}/`);
 }
 
@@ -191,6 +206,20 @@ export function AhenkPageHero({
   );
 }
 
+export function AhenkFaqList({ faqs }: { faqs: AhenkFaq[] }) {
+  if (!faqs.length) return null;
+  return (
+    <div className="ahenk-faq">
+      {faqs.map((f) => (
+        <details key={f.q} className="ahenk-faq-item">
+          <summary>{f.q}</summary>
+          <p>{f.a}</p>
+        </details>
+      ))}
+    </div>
+  );
+}
+
 export function AhenkAgencyChrome({
   children,
   title,
@@ -202,71 +231,26 @@ export function AhenkAgencyChrome({
 }) {
   const site = useAhenkAgencySite();
   const [location] = useLocation();
-  const path = (location.split("?")[0] ?? "/").trim() || "/";
+  const path = normalizeAhenkPath((location.split("?")[0] ?? "/").trim() || "/");
   const [open, setOpen] = useState(false);
+  const wa = ahenkWhatsAppHref(
+    site.whatsappTel || site.phoneTel,
+    "Merhaba, web yazılımı / kurumsal web sitesi hakkında bilgi almak istiyorum.",
+  );
 
   useEffect(() => {
     setOpen(false);
   }, [path]);
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    const pageTitle = title ? `${title} | ${site.brandName}` : site.brandName;
-    document.title = pageTitle;
-    const desc = description || site.tagline;
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "description");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", desc);
-    const origin = "https://ahenk.net.tr";
-    applyJsonLd(
-      [
-        {
-          "@context": "https://schema.org",
-          "@type": ["Organization", "ProfessionalService"],
-          "@id": `${origin}/#organization`,
-          name: AHENK_BT_ENTITY.officialName,
-          alternateName: AHENK_BT_ENTITY.alternateName,
-          url: `${origin}/`,
-          description: AHENK_BT_ENTITY.description,
-          disambiguatingDescription: AHENK_BT_ENTITY.disambiguatingDescription,
-          telephone: site.phoneTel || AHENK_BT_ENTITY.telephone,
-          email: site.email || AHENK_BT_ENTITY.email,
-          areaServed: { "@type": "Country", name: "Türkiye" },
-          address: {
-            "@type": "PostalAddress",
-            streetAddress: "Meşrutiyet Mah. Karanfil Sokak 4/91",
-            addressLocality: "Çankaya",
-            addressRegion: "Ankara",
-            addressCountry: "TR",
-          },
-          inLanguage: "tr-TR",
-        },
-        {
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "@id": `${origin}/#website`,
-          name: AHENK_BT_ENTITY.officialName,
-          url: `${origin}/`,
-          publisher: { "@id": `${origin}/#organization` },
-          inLanguage: "tr-TR",
-        },
-        {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: AHENK_BT_ENTITY.faq.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: { "@type": "Answer", text: item.answer },
-          })),
-        },
-      ],
-      "ahenk-org",
-    );
-  }, [title, description, site.brandName, site.tagline, site.phoneTel, site.email]);
+    applyAhenkAgencySeo({
+      title: title || site.seoTitle || site.brandName,
+      description: description || site.seoDescription || site.tagline,
+      path,
+      site,
+      image: site.heroImage,
+    });
+  }, [title, description, path, site]);
 
   return (
     <div className="ahenk-agency">
@@ -306,13 +290,28 @@ export function AhenkAgencyChrome({
                 {item.label}
               </Link>
             ))}
-            <a className="ahenk-nav-cta" href={`tel:${site.phoneTel}`}>
-              Bizi Arayın
+            <a className="ahenk-nav-cta" href={wa} target="_blank" rel="noreferrer">
+              WhatsApp
             </a>
           </nav>
         </div>
       </header>
       {children}
+      <a
+        className="ahenk-wa"
+        href={wa}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="WhatsApp 0541 313 62 45"
+      >
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden>
+          <path
+            fill="currentColor"
+            d="M20.5 3.5A11 11 0 0 0 3.2 17.4L2 22l4.7-1.2A11 11 0 1 0 20.5 3.5zm-8.5 17a9 9 0 0 1-4.6-1.3l-.3-.2-2.8.7.8-2.7-.2-.3A9 9 0 1 1 12 20.5zm5-6.7c-.3-.1-1.6-.8-1.9-.9s-.4-.1-.6.1-.7.9-.8 1-.3.2-.6.1a7.4 7.4 0 0 1-2.2-1.4 8 8 0 0 1-1.5-1.9c-.2-.3 0-.4.1-.6l.5-.6c.1-.2.1-.3 0-.5l-.9-2.1c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3s-1 1-1 2.4 1 2.8 1.2 3 .2.4 2.1 3.3a11.3 11.3 0 0 0 3.2 2.1c.4.2 1.5.5 2.1.3s1.4-1.1 1.6-2.1.2-.9.1-1-.2-.2-.5-.3z"
+          />
+        </svg>
+        <span>WhatsApp</span>
+      </a>
       <AhenkAgencyFooter site={site} />
     </div>
   );
@@ -330,8 +329,20 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <a href={`tel:${site.phoneTel}`}>{site.phone}</a>
           </p>
           <p>
+            <a href={ahenkWhatsAppHref(site.whatsappTel || site.phoneTel)} target="_blank" rel="noreferrer">
+              WhatsApp: {site.phone}
+            </a>
+          </p>
+          <p>
             <Mail className="inline w-4 h-4 mr-1" />
             <a href={`mailto:${site.email}`}>{site.email}</a>
+          </p>
+          <p className="ahenk-iban" style={{ marginTop: 12 }}>
+            <strong>{site.ibanBank}</strong>
+            <br />
+            {site.ibanHolder}
+            <br />
+            <span className="ahenk-iban-num">{site.iban}</span>
           </p>
         </div>
         <div>
@@ -345,9 +356,12 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
           </div>
         </div>
         <div>
-          <h3>Hizmetler</h3>
+          <h3>Çağrı merkezi</h3>
           <div style={{ display: "grid", gap: 6 }}>
-            {site.services.slice(0, 6).map((s) => (
+            {site.services
+              .filter((s) => !AHENK_REMOVED_SERVICE_SLUGS.has(s.slug))
+              .slice(0, 6)
+              .map((s) => (
               <Link key={s.slug} href={`/hizmet/${s.slug}`}>
                 {s.title}
               </Link>
