@@ -14,6 +14,7 @@ import {
 import { resolvePortalFaviconSrc } from "@/lib/portalBrandAssets";
 import { BILGI_AGACI_DISPLAY_NAME } from "@/lib/bilgiAgaciBrand";
 import { KESFET_HUB_HERO_SUBTITLE } from "@/lib/kesfetDiscoverHub";
+import { geoEntityByDomain } from "@/lib/geoSiteEntities";
 
 const DEFAULT_ORIGIN = PORTAL_ORIGIN;
 const DEFAULT_OG_IMAGE = `${DEFAULT_ORIGIN}/opengraph.jpg`;
@@ -438,6 +439,13 @@ export function applyHmPublisherStructuredData(opts: {
   if (typeof document === "undefined") return;
   const base = opts.siteUrl.replace(/\/+$/, "");
   const logo = hmShareImageUrl(base, opts.logoUrl);
+  let entityHost = "";
+  try {
+    entityHost = new URL(base).hostname;
+  } catch {
+    entityHost = "";
+  }
+  const entity = geoEntityByDomain(entityHost);
   document.head.querySelectorAll('script[data-yekpare-portal-jsonld="1"]').forEach((el) => el.remove());
   applyJsonLd(
     [
@@ -446,11 +454,18 @@ export function applyHmPublisherStructuredData(opts: {
         "@type": ["NewsMediaOrganization", "Organization"],
         "@id": `${base}/#organization`,
         name: opts.siteName,
+        legalName: entity?.officialName || opts.siteName,
+        alternateName: entity?.alternateName,
         url: base,
         logo: { "@type": "ImageObject", url: logo, width: 512, height: 512 },
         image: logo,
-        description: seoPlainSnippet(opts.siteDescription ?? opts.siteName, 300) || undefined,
+        description: seoPlainSnippet(entity?.description ?? opts.siteDescription ?? opts.siteName, 300) || undefined,
+        disambiguatingDescription: entity?.disambiguatingDescription,
+        identifier: entity
+          ? { "@type": "PropertyValue", name: "domain", value: entity.domain }
+          : undefined,
         areaServed: { "@type": "Country", name: "Türkiye" },
+        inLanguage: "tr-TR",
       },
       {
         "@context": "https://schema.org",

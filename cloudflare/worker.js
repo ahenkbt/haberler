@@ -24,6 +24,9 @@ import {
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
+  buildAhenkAiTxtFallback,
+  buildAhenkAgencyEntityHtml,
+  buildAhenkLlmsTxtFallback,
   buildGeoRobotsTxt,
   buildHmAiTxtFallback,
   buildHmLlmsTxtFallback,
@@ -31,6 +34,8 @@ import {
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
   injectHmHtmlBoot,
+  isAhenkAgencyGeoPath,
+  isAhenkAgencyHost,
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
   raceHmHtmlBoot,
@@ -539,10 +544,12 @@ async function proxyHmAiKnowledgeText(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   if (!isHmAiKnowledgePath(incoming.pathname)) return null;
   const host = normalizeHost(incoming.hostname);
-  if (!host || isPortalHost(host)) return null;
+  if (!host) return null;
   const slug = hmDomainSlugFallback(incoming.hostname);
   const origin = incoming.origin.replace(/\/+$/, "");
   const p = incoming.pathname.replace(/\/+$/, "") || "/";
+  const ahenkHost = isAhenkAgencyHost(host);
+  if (isPortalHost(host) && !ahenkHost) return null;
   const apiPath = p === "/llms.txt" ? "/api/hm/llms.txt" : "/api/hm/ai.txt";
   const apiOrigin = upstreamOrigin(env, incoming);
   try {
@@ -560,12 +567,21 @@ async function proxyHmAiKnowledgeText(request, env, incoming) {
       const headers = new Headers(upstream.headers);
       headers.set("content-type", "text/plain; charset=utf-8");
       headers.set("cache-control", "public, max-age=3600");
-      headers.set("x-yekpare-frontend", "cloudflare-hm-llms");
+      headers.set("x-yekpare-frontend", ahenkHost ? "cloudflare-ahenk-llms" : "cloudflare-hm-llms");
       if (request.method === "HEAD") return new Response(null, { status: upstream.status, headers });
       return new Response(upstream.body, { status: upstream.status, headers });
     }
   } catch {
     /* fallback */
+  }
+  if (ahenkHost) {
+    const body = p === "/llms.txt" ? buildAhenkLlmsTxtFallback(origin) : buildAhenkAiTxtFallback(origin);
+    const headers = new Headers({
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=600",
+      "x-yekpare-frontend": "cloudflare-ahenk-llms-fallback",
+    });
+    return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
   }
   if (!slug) return null;
   const body = p === "/llms.txt" ? buildHmLlmsTxtFallback(slug, origin) : buildHmAiTxtFallback(slug, origin);
@@ -1386,7 +1402,8 @@ async function socialPreviewOgHtml(request, env, incoming) {
   const hmBound = !isPortalHost(host) ? Boolean(await fetchHmSlugForHost(env, apiOrigin, host)) : false;
   const isCustomHmDomainPath = hmBound;
   const isPortalSharePath = (isPortalHost(host) || !hmBound) && isPortalOgSharePath(cleanPath);
-  if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath) return null;
+  const isAhenkAgencyPath = isAhenkAgencyHost(host) && isAhenkAgencyGeoPath(cleanPath);
+  if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath && !isAhenkAgencyPath) return null;
 
   const target = new URL("/api/public/og-html", apiOrigin);
   target.searchParams.set("path", cleanPath);
@@ -1402,22 +1419,39 @@ async function socialPreviewOgHtml(request, env, incoming) {
       },
       cf: { cacheTtl: 0, cacheEverything: false },
     });
-    if (!upstream.ok) return null;
+    if (!upstream.ok) {
+      if (isAhenkAgencyPath) return ahenkAgencyEntityResponse(request, cleanPath);
+      return null;
+    }
     const headers = new Headers(upstream.headers);
     headers.delete("content-encoding");
     headers.delete("transfer-encoding");
     headers.set("cache-control", "public, max-age=300, s-maxage=300");
     headers.set("cdn-cache-control", "public, max-age=300");
     headers.set("x-yekpare-frontend", FRONTEND_TAG);
-    headers.set("x-yekpare-og", "social-preview");
+    headers.set("x-yekpare-og", isAhenkAgencyPath ? "ahenk-entity" : "social-preview");
     headers.set("x-robots-tag", "index, follow, max-image-preview:large, max-snippet:-1");
     if (request.method === "HEAD") {
       return new Response(null, { status: upstream.status, headers });
     }
     return new Response(upstream.body, { status: upstream.status, headers });
   } catch {
+    if (isAhenkAgencyPath) return ahenkAgencyEntityResponse(request, cleanPath);
     return null;
   }
+}
+
+function ahenkAgencyEntityResponse(request, pathname) {
+  const body = buildAhenkAgencyEntityHtml(pathname);
+  const headers = new Headers({
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "public, max-age=300",
+    "x-yekpare-frontend": FRONTEND_TAG,
+    "x-yekpare-og": "ahenk-entity-fallback",
+    "x-robots-tag": "index, follow, max-image-preview:large, max-snippet:-1",
+  });
+  if (request.method === "HEAD") return new Response(null, { status: 200, headers });
+  return new Response(body, { status: 200, headers });
 }
 
 const NTV_DUNYA_RSS_URL = "https://www.ntv.com.tr/dunya.rss";

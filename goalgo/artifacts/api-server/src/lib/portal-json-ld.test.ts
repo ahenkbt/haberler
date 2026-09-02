@@ -26,6 +26,16 @@ describe("portal-json-ld GEO / news publisher", () => {
     expect(org["@type"]).toEqual(["NewsMediaOrganization", "Organization"]);
     expect((org.areaServed as { name: string }).name).toBe("Türkiye");
 
+    const named = newsMediaOrganizationJsonLd({
+      origin: "https://vatanhaber.net",
+      name: "Vatan Haber",
+      alternateName: ["vatanhaber.net"],
+      domain: "vatanhaber.net",
+      disambiguatingDescription: "gazetevatan.com ile aynı yayın değildir.",
+    });
+    expect(named.alternateName).toEqual(["vatanhaber.net"]);
+    expect((named.identifier as { value: string }).value).toBe("vatanhaber.net");
+
     const site = newsWebSiteJsonLd({
       origin: "https://suhaber.net",
       name: "Su Haber",

@@ -133,6 +133,7 @@ import {
   IletisimKunyePage,
 } from "./pages/public/legalPages";
 import KunyePage from "./pages/public/KunyePage";
+import HakkindaPage from "./pages/public/HakkindaPage";
 import ReklamPage from "./pages/public/ReklamPage";
 import AbonelikPage from "./pages/public/AbonelikPage";
 import TelifKullanimPage from "./pages/public/TelifKullanimPage";
@@ -1140,6 +1141,19 @@ export default function App() {
             </PublicLayout>
           </HmPortalOrDomainStandardPage>
         )}
+      </Route>
+      <Route path="/hakkinda">
+        {() =>
+          isAhenkAgencyHost() ? (
+            <Redirect to="/hakkimizda" />
+          ) : (
+            <HmPortalOrDomainStandardPage segment="hakkinda">
+              <PublicLayout>
+                <HakkindaPage />
+              </PublicLayout>
+            </HmPortalOrDomainStandardPage>
+          )
+        }
       </Route>
       <Route path="/reklam">
         {() => (

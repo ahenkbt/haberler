@@ -31,6 +31,15 @@ import {
 } from "../lib/portal-json-ld.js";
 import { marketplaceProductPublicPath } from "../lib/marketplaceProductSitemap.js";
 import { parseSeoVerificationJson, type SeoVerification } from "../lib/seo-verification.js";
+import {
+  AHENK_BT_ENTITY,
+  geoEntityBySlug,
+  geoEntityPageTitle,
+  geoEntityVisibleBodyHtml,
+  geoPublisherGraph,
+  isAhenkAgencyGeoPath,
+  isHmGeoEntityPath,
+} from "../lib/geoSiteEntities.js";
 
 const router: IRouter = Router();
 
@@ -332,6 +341,7 @@ function titleForHmTail(tail: string, siteName: string, layout?: Record<string, 
   if (tail === "/tum-haberler") return `Tüm haberler · ${siteName}`;
   if (tail === "/yazarlar") return `Köşe yazarları · ${siteName}`;
   if (tail === "/kunye") return `Künye · ${siteName}`;
+  if (tail === "/hakkinda" || tail === "/about") return `${siteName} nedir?`;
   if (tail === "/iletisim") return `İletişim · ${siteName}`;
   if (tail === "/reklam") return `Reklam · ${siteName}`;
   if (tail === "/abonelik") return `Abonelik · ${siteName}`;
@@ -582,30 +592,43 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
 
       const layout = parseLayout(hmSite.layoutJson);
       const extraPage = findHmExtraPageOg(layout, hmTail);
-      const title = titleForHmTail(hmTail, hmSite.displayName, layout);
-      const description = extraPage?.description ?? hmDescription(hmSite);
+      const entity = geoEntityBySlug(hmSite.slug);
+      const isEntityPath = isHmGeoEntityPath(hmTail);
+      const title = entity && isEntityPath
+        ? geoEntityPageTitle(entity, hmTail)
+        : titleForHmTail(hmTail, hmSite.displayName, layout);
+      const description =
+        extraPage?.description ??
+        (entity && isEntityPath ? entity.description : hmDescription(hmSite));
       const image = await hmSiteOgImage(hmSite, canonicalOrigin);
       const headlines = hmTail === "/" || hmTail === "" ? await latestNewsHeadlines(hmSite.id, canonicalOrigin) : [];
       const extraBody =
-        headlines.length > 0
-          ? `<ol>${headlines
-              .map((h) => `<li><a href="${esc(h.url)}">${esc(h.title)}</a></li>`)
-              .join("")}</ol>`
-          : "";
-      const jsonLd: Record<string, unknown>[] = [
-        newsMediaOrganizationJsonLd({
-          origin: canonicalOrigin,
-          name: hmSite.displayName,
-          description,
-          logoUrl: image,
-        }),
-        newsWebSiteJsonLd({
-          origin: canonicalOrigin,
-          name: hmSite.displayName,
-          description,
-        }),
-      ];
-      if (headlines.length > 0) {
+        entity && isEntityPath
+          ? geoEntityVisibleBodyHtml(entity, canonicalOrigin, headlines)
+          : headlines.length > 0
+            ? `<ol>${headlines
+                .map((h) => `<li><a href="${esc(h.url)}">${esc(h.title)}</a></li>`)
+                .join("")}</ol>`
+            : "";
+      const jsonLd: Record<string, unknown>[] = entity && isEntityPath
+        ? geoPublisherGraph(entity, canonicalOrigin, { logoUrl: image, path: hmTail === "/" || hmTail === "" ? "/" : hmTail })
+        : [
+            newsMediaOrganizationJsonLd({
+              origin: canonicalOrigin,
+              name: hmSite.displayName,
+              description,
+              logoUrl: image,
+              alternateName: entity?.alternateName,
+              disambiguatingDescription: entity?.disambiguatingDescription,
+              domain: entity?.domain,
+            }),
+            newsWebSiteJsonLd({
+              origin: canonicalOrigin,
+              name: hmSite.displayName,
+              description,
+            }),
+          ];
+      if (!(entity && isEntityPath) && headlines.length > 0) {
         jsonLd.push({
           "@context": "https://schema.org",
           "@type": "ItemList",
@@ -634,6 +657,30 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
             extraBody,
           }),
         );
+      return;
+    }
+
+    const originKey = originHost(origin) || requestHost(req);
+    if (
+      (originKey === "ahenk.net.tr" || originKey === "www.ahenk.net.tr") &&
+      isAhenkAgencyGeoPath(path)
+    ) {
+      const ahenkOrigin = "https://ahenk.net.tr";
+      const ahenkPath = path.replace(/\/+$/, "") || "/";
+      const title = geoEntityPageTitle(AHENK_BT_ENTITY, ahenkPath);
+      const image = `${ahenkOrigin}/icon-512.png`;
+      res.status(200).type("html").send(
+        shellHtml({
+          origin: ahenkOrigin,
+          path: ahenkPath,
+          title,
+          description: AHENK_BT_ENTITY.description,
+          image,
+          siteName: AHENK_BT_ENTITY.officialName,
+          jsonLd: geoPublisherGraph(AHENK_BT_ENTITY, ahenkOrigin, { logoUrl: image, path: ahenkPath }),
+          extraBody: geoEntityVisibleBodyHtml(AHENK_BT_ENTITY, ahenkOrigin),
+        }),
+      );
       return;
     }
 
@@ -1250,6 +1297,16 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
           { question: "Haber sitesi nasıl açılır?", answer: "Yönetim panelinden Haber Siteleri bölümünden oluşturulur." },
         ],
       },
+      "ahenk-bilgi-teknolojileri": {
+        title: "Ahenk Bilgi Teknolojileri Nedir?",
+        description: AHENK_BT_ENTITY.description,
+        faq: AHENK_BT_ENTITY.faq,
+      },
+      "ahenk-nedir": {
+        title: "Ahenk Bilgi Teknolojileri Nedir?",
+        description: AHENK_BT_ENTITY.description,
+        faq: AHENK_BT_ENTITY.faq,
+      },
       "haritalar-nedir": {
         title: "Yekpare Haritalar Ne İşe Yarar?",
         description: "Konum bazlı işletme keşfi ve tam ekran harita deneyimi.",
@@ -1267,15 +1324,19 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
         return;
       }
       const bPath = `/bilgi/${encodeURIComponent(bilgiSlug)}`;
+      const ahenkBilgi = bilgiSlug === "ahenk-bilgi-teknolojileri" || bilgiSlug === "ahenk-nedir";
       res.status(200).type("html").send(
         shellHtml({
-          origin,
+          origin: ahenkBilgi ? "https://ahenk.net.tr" : origin,
           path: bPath,
-          title: `${bp.title} — Yekpare`,
+          title: ahenkBilgi ? bp.title : `${bp.title} — Yekpare`,
           description: bp.description,
-          image: `${origin.replace(/\/+$/, "")}/opengraph.jpg`,
-          siteName: "Yekpare",
-          jsonLd: faqPageJsonLd(bp.faq),
+          image: `${(ahenkBilgi ? "https://ahenk.net.tr" : origin).replace(/\/+$/, "")}/opengraph.jpg`,
+          siteName: ahenkBilgi ? AHENK_BT_ENTITY.officialName : "Yekpare",
+          jsonLd: ahenkBilgi
+            ? geoPublisherGraph(AHENK_BT_ENTITY, "https://ahenk.net.tr", { path: bPath })
+            : faqPageJsonLd(bp.faq),
+          extraBody: ahenkBilgi ? geoEntityVisibleBodyHtml(AHENK_BT_ENTITY, "https://ahenk.net.tr") : "",
         }),
       );
       return;

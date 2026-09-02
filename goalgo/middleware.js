@@ -1294,9 +1294,13 @@ async function proxyHmAiKnowledgeText(request, incoming, host) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const p = incoming.pathname.replace(/\/+$/, "") || "/";
   if (p !== "/llms.txt" && p !== "/ai.txt") return null;
-  if (isDefaultPortalHost(host)) return null;
-  const hmBound = await isHmBoundDomainHost(railwayApiOrigin(request.url), host);
-  if (!hmBound) return null;
+  const h = String(host || "").toLowerCase().replace(/^www\./, "").split(":")[0];
+  const ahenkHost = h === "ahenk.net.tr";
+  if (isDefaultPortalHost(host) && !ahenkHost) return null;
+  if (!ahenkHost) {
+    const hmBound = await isHmBoundDomainHost(railwayApiOrigin(request.url), host);
+    if (!hmBound) return null;
+  }
   const apiOrigin = railwayApiOrigin(request.url);
   const apiPath = p === "/llms.txt" ? "/api/hm/llms.txt" : "/api/hm/ai.txt";
   try {
@@ -1397,6 +1401,24 @@ function isPortalOgSharePath(pathname) {
   );
 }
 
+function isAhenkAgencyGeoPath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  if (p === "/" || p === "/hakkimizda" || p === "/about" || p === "/hakkinda") return true;
+  if (p === "/hizmetler" || p === "/hizmetlerimiz") return true;
+  if (p === "/iletisim" || p === "/contact") return true;
+  if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
+  if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
+  return false;
+}
+
+function isAhenkAgencyHostName(host) {
+  const h = String(host || "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .split(":")[0];
+  return h === "ahenk.net.tr";
+}
+
 async function hmPublicOgHtml(request, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   if (seoVerificationMw.isVerificationBot(request.headers.get("user-agent"))) return null;
@@ -1409,9 +1431,10 @@ async function hmPublicOgHtml(request, incoming) {
   const hmBound = !isDefaultPortalHost(host) ? await isHmBoundDomainHost(apiOrigin, host) : false;
   const isCustomHmDomainPath = hmBound;
   const isPortalSharePath = (isDefaultPortalHost(host) || !hmBound) && isPortalOgSharePath(incoming.pathname);
-  if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath) return null;
-
   const cleanPath = incoming.pathname.replace(/\/+$/, "") || "/";
+  const isAhenkAgencyPath = isAhenkAgencyHostName(host) && isAhenkAgencyGeoPath(cleanPath);
+  if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath && !isAhenkAgencyPath) return null;
+
   const target = new URL("/api/public/og-html", apiOrigin);
   target.searchParams.set("path", cleanPath);
   target.searchParams.set("origin", incoming.origin);

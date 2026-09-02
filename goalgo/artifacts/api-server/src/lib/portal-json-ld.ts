@@ -145,6 +145,10 @@ export function newsMediaOrganizationJsonLd(opts: {
   description?: string | null;
   logoUrl?: string | null;
   sameAs?: string[];
+  alternateName?: string[];
+  disambiguatingDescription?: string | null;
+  legalName?: string | null;
+  domain?: string | null;
 }): Record<string, unknown> {
   const base = opts.origin.replace(/\/+$/, "");
   const logo = opts.logoUrl?.trim() || `${base}/icon-512.png`;
@@ -153,8 +157,11 @@ export function newsMediaOrganizationJsonLd(opts: {
     "@type": ["NewsMediaOrganization", "Organization"],
     "@id": `${base}/#organization`,
     name: opts.name,
+    legalName: opts.legalName?.trim() || opts.name,
+    alternateName: opts.alternateName?.filter(Boolean),
     url: `${base}/`,
     description: cleanText(opts.description) || undefined,
+    disambiguatingDescription: cleanText(opts.disambiguatingDescription) || undefined,
     logo: { "@type": "ImageObject", url: logo, width: 512, height: 512 },
     image: logo,
     inLanguage: "tr-TR",
@@ -163,6 +170,9 @@ export function newsMediaOrganizationJsonLd(opts: {
       "@type": "PostalAddress",
       addressCountry: "TR",
     },
+    identifier: opts.domain
+      ? { "@type": "PropertyValue", name: "domain", value: opts.domain }
+      : undefined,
     sameAs: opts.sameAs?.filter(Boolean),
   };
 }

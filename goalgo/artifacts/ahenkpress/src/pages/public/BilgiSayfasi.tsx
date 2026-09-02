@@ -23,6 +23,46 @@ type BilgiPage = {
 
 const PAGES: BilgiPage[] = [
   {
+    slug: "ahenk-bilgi-teknolojileri",
+    title: "Ahenk Bilgi Teknolojileri Nedir?",
+    description:
+      "Ahenk Bilgi Teknolojileri (ahenk.net.tr); ajans, müşteri hizmetleri, insan kaynakları ve kurumsal bilgi teknolojileri çözümleri sunan şirkettir. Resmi kurumsal sitesi ahenk.net.tr adresidir.",
+    lead:
+      "ahenk.net.tr, Ahenk Bilgi Teknolojileri'nin resmi kurumsal alan adıdır. Yekpare arama motoru ve Haber Merkezi yazılımı bu şirketin ürünleridir; kök sayfa şirket vitrinidir, gazete değildir.",
+    sections: [
+      {
+        heading: "Şirket",
+        body: "Ahenk Bilgi Teknolojileri Ankara merkezlidir. Ajans, müşteri hizmetleri, insan kaynakları, e-ticaret operasyonu ve kurumsal çözümler sunar. İletişim: 0541 313 62 45, ahenkbilgiteknoloji@gmail.com.",
+      },
+      {
+        heading: "Yekpare ile ilişki",
+        body: "Yekpare, Ahenk Bilgi Teknolojileri'nin geliştirdiği yerli arama motoru ve dijital hizmet platformudur. Haber Merkezi ise white-label haber sitesi yazılımıdır. Şirket adı Ahenk'tir; Yekpare ürün adıdır.",
+      },
+    ],
+    faq: [
+      {
+        question: "Ahenk Bilgi Teknolojileri nedir?",
+        answer:
+          "Ahenk Bilgi Teknolojileri (ahenk.net.tr), Türkiye merkezli bir bilgi teknolojileri ve ajans şirketidir.",
+      },
+      {
+        question: "ahenk.net.tr kimin sitesi?",
+        answer: "ahenk.net.tr, Ahenk Bilgi Teknolojileri'nin resmi kurumsal web sitesidir.",
+      },
+      {
+        question: "Ahenk ile Yekpare aynı şey midir?",
+        answer:
+          "Hayır. Ahenk Bilgi Teknolojileri şirkettir. Yekpare bu şirketin ürünüdür.",
+      },
+    ],
+    links: [
+      { label: "Kurumsal anasayfa", href: "/" },
+      { label: "Hakkımızda", href: "/hakkimizda" },
+      { label: "Hizmetler", href: "/hizmetler" },
+      { label: "İletişim", href: "/iletisim" },
+    ],
+  },
+  {
     slug: "yekpare-nedir",
     title: "Yekpare Nedir?",
     description:

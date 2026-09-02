@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { AhenkAgencyChrome } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
+import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
 
 export default function AhenkAgencyHakkimizda() {
   const site = useAhenkAgencySite();
@@ -14,6 +15,17 @@ export default function AhenkAgencyHakkimizda() {
           <h1>Hakkımızda</h1>
         </div>
       </div>
+      <section className="ahenk-section">
+        <h2>Ahenk Bilgi Teknolojileri kimdir?</h2>
+        <p className="ahenk-lead">{AHENK_BT_ENTITY.description}</p>
+        <p>{AHENK_BT_ENTITY.disambiguatingDescription}</p>
+        <ul>
+          <li>Resmi ad: {AHENK_BT_ENTITY.officialName}</li>
+          <li>Resmi alan adı: ahenk.net.tr</li>
+          <li>Telefon: {site.phone}</li>
+          <li>E-posta: {site.email}</li>
+        </ul>
+      </section>
       <section className="ahenk-section">
         <h2>{site.aboutTitle}</h2>
         <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: site.aboutHtml }} />

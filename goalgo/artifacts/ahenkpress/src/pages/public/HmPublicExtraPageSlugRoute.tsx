@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import HmRedirectToSonDakika from "@/pages/public/HmRedirectToSonDakika";
 import KategoriDetay from "@/pages/public/KategoriDetay";
 import Iletisim from "@/pages/public/Iletisim";
+import HakkindaPage from "@/pages/public/HakkindaPage";
 import { HmPublicStandardExtraPageRoute } from "@/components/HmPublicStandardExtraPageRoute";
 import { isHmReservedRouteSegment, normalizeHmExtraPageSlug } from "@/lib/hmExtraPageLookup";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
@@ -65,6 +66,8 @@ export default function HmPublicExtraPageSlugRoute() {
   const fallback =
     norm === "iletisim" ? (
       <Iletisim />
+    ) : norm === "hakkinda" || norm === "about" ? (
+      <HakkindaPage />
     ) : (
       <CategorySlugFallback segment={pageSlug} />
     );

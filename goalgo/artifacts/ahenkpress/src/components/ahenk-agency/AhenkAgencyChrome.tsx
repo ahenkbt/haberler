@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import type { AhenkAgencySite } from "@/lib/ahenkAgencySite";
+import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
+import { applyJsonLd } from "@/lib/pageSeo";
 import "@/styles/ahenkAgency.css";
 
 const NAV = [
@@ -84,7 +86,52 @@ export function AhenkAgencyChrome({
       document.head.appendChild(meta);
     }
     meta.setAttribute("content", desc);
-  }, [title, description, site.brandName, site.tagline]);
+    const origin = "https://ahenk.net.tr";
+    applyJsonLd(
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": ["Organization", "ProfessionalService"],
+          "@id": `${origin}/#organization`,
+          name: AHENK_BT_ENTITY.officialName,
+          alternateName: AHENK_BT_ENTITY.alternateName,
+          url: `${origin}/`,
+          description: AHENK_BT_ENTITY.description,
+          disambiguatingDescription: AHENK_BT_ENTITY.disambiguatingDescription,
+          telephone: site.phoneTel || AHENK_BT_ENTITY.telephone,
+          email: site.email || AHENK_BT_ENTITY.email,
+          areaServed: { "@type": "Country", name: "Türkiye" },
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "Meşrutiyet Mah. Karanfil Sokak 4/91",
+            addressLocality: "Çankaya",
+            addressRegion: "Ankara",
+            addressCountry: "TR",
+          },
+          inLanguage: "tr-TR",
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "@id": `${origin}/#website`,
+          name: AHENK_BT_ENTITY.officialName,
+          url: `${origin}/`,
+          publisher: { "@id": `${origin}/#organization` },
+          inLanguage: "tr-TR",
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: AHENK_BT_ENTITY.faq.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: { "@type": "Answer", text: item.answer },
+          })),
+        },
+      ],
+      "ahenk-org",
+    );
+  }, [title, description, site.brandName, site.tagline, site.phoneTel, site.email]);
 
   return (
     <div className="ahenk-agency">

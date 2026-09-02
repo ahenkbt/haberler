@@ -2,345 +2,367 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Ana modüller -->
+  <!-- Ahenk Bilgi Teknolojileri kurumsal -->
   <url>
-    <loc>https://turk.eco/</loc>
-    <changefreq>daily</changefreq>
+    <loc>https://ahenk.net.tr/</loc>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://turk.eco/ara</loc>
+    <loc>https://ahenk.net.tr/hakkimizda</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://ahenk.net.tr/hizmetler</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ahenk.net.tr/iletisim</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ahenk.net.tr/bilgi/ahenk-bilgi-teknolojileri</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Ana modüller -->
+  <url>
+    <loc>https://ahenk.net.tr/ara</loc>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://turk.eco/haberler</loc>
+    <loc>https://ahenk.net.tr/haberler</loc>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://turk.eco/tum-haberler</loc>
+    <loc>https://ahenk.net.tr/tum-haberler</loc>
     <changefreq>hourly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://turk.eco/yektube</loc>
+    <loc>https://ahenk.net.tr/yektube</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kesfet</loc>
+    <loc>https://ahenk.net.tr/kesfet</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kesfet/sarisayfalar</loc>
+    <loc>https://ahenk.net.tr/kesfet/sarisayfalar</loc>
     <changefreq>daily</changefreq>
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://turk.eco/haritalar</loc>
+    <loc>https://ahenk.net.tr/haritalar</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://turk.eco/map</loc>
+    <loc>https://ahenk.net.tr/map</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://turk.eco/magaza</loc>
+    <loc>https://ahenk.net.tr/magaza</loc>
     <changefreq>daily</changefreq>
     <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://turk.eco/magaza/urunler</loc>
+    <loc>https://ahenk.net.tr/magaza/urunler</loc>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/magaza/kategoriler</loc>
+    <loc>https://ahenk.net.tr/magaza/kategoriler</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/magaza/magazalar</loc>
+    <loc>https://ahenk.net.tr/magaza/magazalar</loc>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm</loc>
+    <loc>https://ahenk.net.tr/turizm</loc>
     <changefreq>daily</changefreq>
     <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm/konaklama</loc>
+    <loc>https://ahenk.net.tr/turizm/konaklama</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm/villa-ev</loc>
+    <loc>https://ahenk.net.tr/turizm/villa-ev</loc>
     <changefreq>daily</changefreq>
     <priority>0.78</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm/arac-kiralama</loc>
+    <loc>https://ahenk.net.tr/turizm/arac-kiralama</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm/yat-turlari</loc>
+    <loc>https://ahenk.net.tr/turizm/yat-turlari</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm/turlar</loc>
+    <loc>https://ahenk.net.tr/turizm/turlar</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/turizm/destinasyonlar</loc>
+    <loc>https://ahenk.net.tr/turizm/destinasyonlar</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/bilim</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/bilim</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/tarih</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/tarih</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/cografya</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/cografya</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/doga</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/doga</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/teknoloji</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/teknoloji</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/kultur</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/kultur</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/sanat</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/sanat</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/saglik</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/saglik</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/ekonomi</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/ekonomi</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgiagaci/kategori/spor</loc>
+    <loc>https://ahenk.net.tr/bilgiagaci/kategori/spor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
   <url>
-    <loc>https://turk.eco/firma-rehberi</loc>
+    <loc>https://ahenk.net.tr/firma-rehberi</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/firma-rehberi/urunler</loc>
+    <loc>https://ahenk.net.tr/firma-rehberi/urunler</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/firma-rehberi/hizmetler</loc>
+    <loc>https://ahenk.net.tr/firma-rehberi/hizmetler</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/firma-rehberi/ilanlar</loc>
+    <loc>https://ahenk.net.tr/firma-rehberi/ilanlar</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/yazarlar</loc>
+    <loc>https://ahenk.net.tr/yazarlar</loc>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://turk.eco/foto-galeri</loc>
+    <loc>https://ahenk.net.tr/foto-galeri</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://turk.eco/ai-cagri-merkezi</loc>
+    <loc>https://ahenk.net.tr/ai-cagri-merkezi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://turk.eco/siparis-takip</loc>
+    <loc>https://ahenk.net.tr/siparis-takip</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://turk.eco/destek</loc>
+    <loc>https://ahenk.net.tr/destek</loc>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>
   <url>
-    <loc>https://turk.eco/isletme-basvuru</loc>
+    <loc>https://ahenk.net.tr/isletme-basvuru</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://turk.eco/is-ortagi</loc>
+    <loc>https://ahenk.net.tr/is-ortagi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>
 
   <!-- Haber kategorileri -->
   <url>
-    <loc>https://turk.eco/kategori/gundem</loc>
+    <loc>https://ahenk.net.tr/kategori/gundem</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/ekonomi</loc>
+    <loc>https://ahenk.net.tr/kategori/ekonomi</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/spor</loc>
+    <loc>https://ahenk.net.tr/kategori/spor</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/dunya</loc>
+    <loc>https://ahenk.net.tr/kategori/dunya</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/teknoloji</loc>
+    <loc>https://ahenk.net.tr/kategori/teknoloji</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/kultur</loc>
+    <loc>https://ahenk.net.tr/kategori/kultur</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/yasam</loc>
+    <loc>https://ahenk.net.tr/kategori/yasam</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kategori/saglik</loc>
+    <loc>https://ahenk.net.tr/kategori/saglik</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- GEO bilgi sayfaları -->
   <url>
-    <loc>https://turk.eco/bilgi/yekpare-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/yekpare-nedir</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/alisveris-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/alisveris-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/seyahat-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/seyahat-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/haritalar-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/haritalar-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/bilgi-agaci-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/bilgi-agaci-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/online-siparis-nasil-verilir</loc>
+    <loc>https://ahenk.net.tr/bilgi/online-siparis-nasil-verilir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/isletme-kesfet-rehberi</loc>
+    <loc>https://ahenk.net.tr/bilgi/isletme-kesfet-rehberi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/turizm-rezervasyon</loc>
+    <loc>https://ahenk.net.tr/bilgi/turizm-rezervasyon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/haber-merkezi-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/haber-merkezi-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/yektube-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/yektube-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/ai-cagri-merkezi-nedir</loc>
+    <loc>https://ahenk.net.tr/bilgi/ai-cagri-merkezi-nedir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://turk.eco/bilgi/isletme-sayfasi-ozel-domain</loc>
+    <loc>https://ahenk.net.tr/bilgi/isletme-sayfasi-ozel-domain</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Kurumsal / yardımcı -->
   <url>
-    <loc>https://turk.eco/site-haritalari</loc>
+    <loc>https://ahenk.net.tr/site-haritalari</loc>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>
   <url>
-    <loc>https://turk.eco/uygulamayi-indir</loc>
+    <loc>https://ahenk.net.tr/uygulamayi-indir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://turk.eco/sitene-ekle</loc>
+    <loc>https://ahenk.net.tr/sitene-ekle</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://turk.eco/kunye</loc>
+    <loc>https://ahenk.net.tr/kunye</loc>
     <changefreq>monthly</changefreq>
     <priority>0.45</priority>
   </url>
   <url>
-    <loc>https://turk.eco/reklam</loc>
+    <loc>https://ahenk.net.tr/reklam</loc>
     <changefreq>monthly</changefreq>
     <priority>0.45</priority>
   </url>
