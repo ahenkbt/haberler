@@ -149,10 +149,36 @@ jobs:
 
       # wrangler secret put production'a yazar. versions secret put yeni bir
       # sürüm üretir; onu @100% yapmak eski Neon DATABASE_URL'i geri getirir
-      # (32356785593 → 5807ec05). S3_ENDPOINT wrangler.toml [vars]'ta; secret put
-      # 10053 verir ve bu tuzak tetiklenir. S3_ENDPOINT asla secret put edilmez.
-      - name: Sync Worker DATABASE_URL
+      # (32356785593 → 5807ec05). Canlı zaten Hostinger ise secret put atlanır —
+      # "latest version isn't currently deployed" Workers Builds yarışında job'u
+      # kırmasın diye. versions deploy @100% KULLANILMAZ.
+      - name: Skip secret sync when Hostinger is already live
+        id: live_db
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        run: |
+          set -euo pipefail
+          echo "Waiting 15s so the just-deployed Worker/Container answers healthz..."
+          sleep 15
+          UA="Mozilla/5.0 (compatible; Haberler-CI/1.0; +https://github.com/ahenkbt/haberler)"
+          provider=""
+          for i in 1 2 3 4; do
+            body=$(curl -fsS -m 25 -A "$UA" "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 -A "$UA" "https://vatanhaber.net/api/healthz" || true)
+            provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
+            echo "live-check attempt=$i dbProvider=${provider:-empty}"
+            if [ "$provider" = "hostinger" ]; then
+              break
+            fi
+            sleep 8
+          done
+          if [ "$provider" = "hostinger" ]; then
+            echo "skip_secrets=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Canlı dbProvider=hostinger — DATABASE_URL secret put atlanıyor."
+          else
+            echo "skip_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync Worker DATABASE_URL
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true' && steps.live_db.outputs.skip_secrets != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
@@ -166,16 +192,22 @@ jobs:
           put_secret() {
             local name="$1"
             local value="$2"
-            out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || {
+            local attempt=1
+            local max=4
+            while true; do
+              out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || true
               printf '%s\n' "$out"
-              echo "::error::$name wrangler secret put failed"
-              return 1
-            }
-            printf '%s\n' "$out"
-            if ! printf '%s' "$out" | grep -qi 'Uploaded secret'; then
-              echo "::error::$name production'a yazılmadı (Uploaded secret yok). versions secret put kullanılmıyor."
-              return 1
-            fi
+              if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
+                return 0
+              fi
+              if [ "$attempt" -ge "$max" ]; then
+                echo "::error::$name wrangler secret put failed after ${max} attempts"
+                return 1
+              fi
+              echo "$name secret put retry ${attempt}/${max} in $((attempt * 8))s"
+              sleep $((attempt * 8))
+              attempt=$((attempt + 1))
+            done
           }
           put_secret DATABASE_URL "$DATABASE_URL"
           put_secret SESSION_SECRET "$SESSION_SECRET"
@@ -191,18 +223,19 @@ jobs:
           echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
 
       - name: Redeploy Worker so Container picks up DATABASE_URL
-        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true' && steps.live_db.outputs.skip_secrets != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
         run: pnpm exec wrangler deploy
 
       - name: Verify live dbProvider is hostinger
-        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        if: steps.cf.outputs.enabled == 'true'
         run: |
           set -euo pipefail
+          UA="Mozilla/5.0 (compatible; Haberler-CI/1.0; +https://github.com/ahenkbt/haberler)"
           for i in 1 2 3 4 5 6 7 8; do
-            body=$(curl -fsS -m 25 "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 "https://vatanhaber.net/api/healthz" || true)
+            body=$(curl -fsS -m 25 -A "$UA" "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 -A "$UA" "https://vatanhaber.net/api/healthz" || true)
             provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
             echo "attempt=$i dbProvider=${provider:-empty}"
             if [ "$provider" = "hostinger" ]; then
