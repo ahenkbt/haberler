@@ -339,6 +339,7 @@ export function serializeSettings(row: SiteSettingsRow) {
     homeSectionsJson: row.homeSectionsJson ?? null,
     newsLayoutJson: row.newsLayoutJson ?? null,
     homepageDesignJson: row.homepageDesignJson ?? null,
+    ahenkAgencyJson: row.ahenkAgencyJson ?? null,
     mapsGoogleBrowserKey: row.mapsGoogleBrowserKey ?? null,
     mapsGoogleEnabled: row.mapsGoogleEnabled === true,
     hasGooglePlacesApiKey: Boolean(row.googlePlacesApiKey?.trim()),

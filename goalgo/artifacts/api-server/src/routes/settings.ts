@@ -16,6 +16,7 @@ import {
 import { serializeSettings } from "../lib/serializers";
 import { clearTravelpayoutsConfigCache } from "../lib/travelpayouts";
 import { validateHomepageDesignJsonInput } from "../lib/homepage-design";
+import { validateAhenkAgencyJsonInput } from "../lib/ahenk-agency-json";
 import {
   normalizeSeoVerification,
   parseSeoVerificationJson,
@@ -71,6 +72,7 @@ async function ensureExtraSettingsColumns() {
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS modules_enabled_json TEXT`);
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS home_sections_json TEXT`);
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS homepage_design_json TEXT`);
+  await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS ahenk_agency_json TEXT`);
   await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS public_theme_key TEXT NOT NULL DEFAULT 'yekpare-sade'`);
   await db.execute(
     sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS provider_membership_standard_usd NUMERIC(10, 2) NOT NULL DEFAULT 10`,
@@ -187,7 +189,7 @@ router.get("/public/portal-seo", async (req, res): Promise<void> => {
   const host = normalizeHostKey(fwd || String(req.get("host") ?? ""));
   const seoVerification = resolveSeoVerificationForHost(store, host);
   res.json({
-    siteName: row.siteName,
+    siteName: host === "ahenk.net.tr" ? "Ahenk Bilgi Teknolojileri" : row.siteName,
     host: host || null,
     seoVerification,
   });
@@ -309,6 +311,17 @@ router.put("/settings", async (req, res): Promise<void> => {
   const openaiApiKey = raw.openaiApiKey == null ? undefined : String(raw.openaiApiKey).trim();
   const openaiModel = raw.openaiModel == null ? undefined : String(raw.openaiModel).trim();
   const integrationPayload: Partial<typeof siteSettingsTable.$inferInsert> = {};
+  const ahenkAgencyRaw = raw.ahenkAgencyJson;
+  if (ahenkAgencyRaw !== undefined) {
+    const checked = validateAhenkAgencyJsonInput(
+      ahenkAgencyRaw == null ? null : String(ahenkAgencyRaw),
+    );
+    if (!checked.ok) {
+      res.status(400).json({ error: checked.error });
+      return;
+    }
+    integrationPayload.ahenkAgencyJson = checked.value;
+  }
   const footerLegalRaw = raw.footerLegalLinksJson;
   if (footerLegalRaw !== undefined) {
     const checked = validateFooterLegalLinksJsonInput(

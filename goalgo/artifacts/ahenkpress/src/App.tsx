@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from "r
 import { Switch, Route, Redirect, useLocation, useParams, useRoute, useSearch, Router } from "wouter";
 import { apiUrl } from "@/lib/apiBase";
 import { isConfiguredPortalHost, isEffectivePortalHost, isHmVideoTvAllowed } from "@/lib/hmPortalHosts";
+import { isAhenkAgencyHost, isAhenkAgencyPublicPath, isAhenkAgencySurface } from "@/lib/ahenkAgencyHost";
 import {
   isPortalNewsPlatformHost,
   isPortalRetiredPublicPath,
@@ -84,6 +85,11 @@ import IsOrtagiBasvuru from "./pages/public/IsOrtagiBasvuru";
 import Kariyer from "./pages/public/Kariyer";
 import PremiumBasarili from "./pages/public/PremiumBasarili";
 import Iletisim from "./pages/public/Iletisim";
+import AhenkAgencyHome from "./pages/public/AhenkAgencyHome";
+import AhenkAgencyHizmetler from "./pages/public/AhenkAgencyHizmetler";
+import AhenkAgencyHizmetDetail from "./pages/public/AhenkAgencyHizmetDetail";
+import AhenkAgencyHakkimizda from "./pages/public/AhenkAgencyHakkimizda";
+import AhenkAgencyIletisim from "./pages/public/AhenkAgencyIletisim";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
 import Kasiyer from "./pages/public/Kasiyer";
@@ -655,10 +661,13 @@ function HmPublicShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Kök yol: arama motoru anasayfası (SearchEngineHomePage) — haber vitrinine çevrilmez. */
+/** Kök yol: ahenk.net.tr ajans vitrini; diğer portal hostlarında arama motoru anasayfası. */
 function PortalHomeRoute() {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  if (isAhenkAgencyHost(host)) {
+    return <AhenkAgencyHome />;
+  }
   if (host && !isConfiguredPortalHost(host)) {
     return <HmPortalOrHmDomainHome />;
   }
@@ -744,6 +753,7 @@ function PortalNewsPlatformRouteGate() {
     if (typeof window === "undefined") return;
     if (!isPortalNewsPlatformHost()) return;
     const pathOnly = (location.split("?")[0] ?? "").trim();
+    if (isAhenkAgencyHost() && isAhenkAgencyPublicPath(pathOnly)) return;
     if (!isPortalRetiredPublicPath(pathOnly)) return;
     const target = portalRetiredPublicRedirectTarget(pathOnly);
     if (target !== pathOnly) setLocation(target);
@@ -760,6 +770,7 @@ export default function App() {
     !pathNoQuery.startsWith("/pwastore") &&
     !pathNoQuery.startsWith("/uygulamayi-indir") &&
     !isHmSitePublicChromePath(pathNoQuery) &&
+    !isAhenkAgencySurface(pathNoQuery) &&
     !isPwaStandaloneDisplay();
 
   useLayoutEffect(() => {
@@ -795,6 +806,11 @@ export default function App() {
       <Route path="/demo">{() => <SearchEngineHomePage />}</Route>
       <Route path="/eski">{() => <YekpareLandingHome />}</Route>
       <Route path="/home-classic">{() => <YekpareLandingHome />}</Route>
+      <Route path="/hizmetler">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetler /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/hizmetlerimiz">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetler /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/hizmet/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetDetail /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/icerik/:slug">{() => (isAhenkAgencyHost() ? <AhenkAgencyHizmetDetail /> : <Redirect to="/haberler" />)}</Route>
+      <Route path="/hakkimizda">{() => (isAhenkAgencyHost() ? <AhenkAgencyHakkimizda /> : <Redirect to="/" />)}</Route>
       <Route path="/">{() => <PortalHomeRoute />}</Route>
       <Route path="/home">{() => <SixAmMartHomeModuleRedirect />}</Route>
       {/* Canlı Yayın TV playlist — parametreli rotalar önce */}
@@ -1455,13 +1471,17 @@ export default function App() {
       </Route>
       <Route path="/tr/:slug">{() => <HmPublicShell><HmSitePublic /></HmPublicShell>}</Route>
       <Route path="/iletisim">
-        {() => (
-          <HmPortalOrDomainStandardPage segment="iletisim">
-            <PublicLayout>
-              <Iletisim />
-            </PublicLayout>
-          </HmPortalOrDomainStandardPage>
-        )}
+        {() =>
+          isAhenkAgencyHost() ? (
+            <AhenkAgencyIletisim />
+          ) : (
+            <HmPortalOrDomainStandardPage segment="iletisim">
+              <PublicLayout>
+                <Iletisim />
+              </PublicLayout>
+            </HmPortalOrDomainStandardPage>
+          )
+        }
       </Route>
       <Route path="/destek">{() => <PublicLayout><Destek /></PublicLayout>}</Route>
       <Route path="/mesafeli-satis-sozlesmesi">{() => <PublicLayout><MesafeliSatisSozlesmesiPage /></PublicLayout>}</Route>

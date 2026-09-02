@@ -14,6 +14,7 @@ import ReklamAlanlari from "../pages/admin/ReklamAlanlari";
 import YektubeYekpareQuickAdmin from "../pages/admin/YektubeYekpareQuickAdmin";
 import AnasayfaModulleri from "../pages/admin/AnasayfaModulleri";
 import AnasayfaTasarimi from "../pages/admin/AnasayfaTasarimi";
+import AhenkAjansSitesi from "../pages/admin/AhenkAjansSitesi";
 import TemaAyarlari from "../pages/admin/TemaAyarlari";
 import KoseYazarlari from "../pages/admin/KoseYazarlari";
 import BlogYazilari from "../pages/admin/BlogYazilari";
@@ -154,6 +155,9 @@ export default function AdminRoutes() {
       </Route>
       <Route path="/admin/anasayfa-tasarim">
         {() => <ProtectedAdminRoute component={AnasayfaTasarimi} />}
+      </Route>
+      <Route path="/admin/ahenk-ajans">
+        {() => <ProtectedAdminRoute component={AhenkAjansSitesi} />}
       </Route>
       <Route path="/admin/anasayfa-modulleri">
         {() => <ProtectedAdminRoute component={AnasayfaModulleri} />}

@@ -56,6 +56,7 @@ export default function IletisimMesajlari() {
             <h1 className="text-2xl font-bold text-gray-900">İletişim formu</h1>
             <p className="text-sm text-gray-500 mt-1">
               {total} kayıt · <span className="font-mono text-xs">/iletisim</span>,{" "}
+              <span className="font-mono text-xs">ahenk.net.tr iletişim</span>,{" "}
               <span className="font-mono text-xs">/iletisim-kunye</span>,{" "}
               <span className="font-mono text-xs">/ucretsiz-haber-sitesi</span>,{" "}
               <span className="font-mono text-xs">/tr/…/iletisim</span> ve diğer formlar

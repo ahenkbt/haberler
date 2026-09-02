@@ -2,6 +2,7 @@ import { KESFET_HUB_CARDS, KESFET_HUB_PATH } from "@/lib/kesfetDiscoverHub";
 import { HARITALAR, isHaritalarSubNavItemActive } from "@/lib/haritalarRoutes";
 import { TURIZM } from "@/themes/turizm/turizmRoutes";
 import { isPortalNewsPlatformHost } from "@/lib/portalPlatformPolicy";
+import { isAhenkAgencySurface } from "@/lib/ahenkAgencyHost";
 
 export type SearchEngineModuleTile = {
   id: string;
@@ -183,6 +184,7 @@ export function isYektubeStandalonePath(path: string): boolean {
 export function shouldSkipSearchEnginePublicChrome(path: string): boolean {
   const p = (path.split("?")[0] ?? "").trim().toLowerCase();
   if (!p) return false;
+  if (isAhenkAgencySurface(p)) return true;
   return SEARCH_ENGINE_CHROME_EXCLUDED_PREFIXES.some(
     (prefix) => p === prefix.replace(/\/$/, "") || p.startsWith(prefix),
   );

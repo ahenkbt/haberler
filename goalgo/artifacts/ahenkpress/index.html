@@ -11,6 +11,26 @@
     <script>
       (function () {
         try {
+          var hostEarly = (location.hostname || "").toLowerCase().replace(/^www\./, "").split(":")[0];
+          var pathEarly = (location.pathname || "/").replace(/\/+$/, "") || "/";
+          var ahenkAgencyPath =
+            pathEarly === "/" ||
+            pathEarly === "/hizmetler" ||
+            pathEarly === "/hizmetlerimiz" ||
+            pathEarly === "/hakkimizda" ||
+            pathEarly === "/iletisim" ||
+            pathEarly.indexOf("/hizmet/") === 0 ||
+            pathEarly.indexOf("/icerik/") === 0;
+          if (hostEarly === "ahenk.net.tr" && ahenkAgencyPath) {
+            document.title = "Ahenk Bilgi Teknolojileri";
+            var descEl = document.querySelector('meta[name="description"]');
+            if (descEl) {
+              descEl.setAttribute(
+                "content",
+                "Ahenk Bilgi Teknolojileri — ajans, müşteri hizmetleri, insan kaynakları ve kurumsal çözümler.",
+              );
+            }
+          }
           var LS_META = "hm-nested-meta:v1:";
           var LS_DOMAIN = "hm-domain-slug:v1:";
           var LS_HYBRID = "hm-home-hybrid-v1:";

@@ -9,6 +9,7 @@ import { shouldShowChatBubble } from "@/lib/chatBubbleRoutes";
 import { getYekpareAiLayout } from "@/lib/yekpareAiRoutes";
 import { isHmSitePublicChromePath } from "@/lib/hmSitePublicPath";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { isAhenkAgencySurface } from "@/lib/ahenkAgencyHost";
 
 export type FloatingWidgetContext = {
   pathNoQuery: string;
@@ -31,6 +32,9 @@ export function resolveFloatingWidgetVisibility(
   const isHmCustomDomain = Boolean(pageHost && !isDefaultPortalHost(pageHost));
 
   if (isHmChrome || isHmCustomDomain) {
+    return { chatBubble: false, yekpareAi: false };
+  }
+  if (isAhenkAgencySurface(pathNoQuery, pageHost)) {
     return { chatBubble: false, yekpareAi: false };
   }
 
