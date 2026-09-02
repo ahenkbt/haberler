@@ -11,6 +11,10 @@ import {
   buildGeoRobotsTxt,
   buildHmLlmsTxtFallback,
   isHmAiKnowledgePath,
+  isAhenkAgencyHost,
+  isAhenkAgencyGeoPath,
+  buildAhenkLlmsTxtFallback,
+  buildAhenkAgencyEntityHtml,
 } from "./hm-html-boot.js";
 
 describe("hm-html-boot", () => {
@@ -82,5 +86,21 @@ describe("hm-html-boot", () => {
     const llms = buildHmLlmsTxtFallback("vatanhaber", "https://vatanhaber.net");
     assert.match(llms, /# Vatan Haber/);
     assert.match(llms, /https:\/\/vatanhaber\.net\/sitemap\.xml/);
+    assert.match(llms, /hakkinda/);
+    assert.match(llms, /gazetevatan\.com/);
+  });
+
+  it("builds Ahenk BT GEO llms and entity HTML", () => {
+    assert.equal(isAhenkAgencyHost("www.ahenk.net.tr"), true);
+    assert.equal(isAhenkAgencyGeoPath("/"), true);
+    assert.equal(isAhenkAgencyGeoPath("/hakkimizda"), true);
+    assert.equal(isAhenkAgencyGeoPath("/haberler"), false);
+    const llms = buildAhenkLlmsTxtFallback("https://ahenk.net.tr");
+    assert.match(llms, /Ahenk Bilgi Teknolojileri/);
+    assert.match(llms, /ahenk\.net\.tr/);
+    const html = buildAhenkAgencyEntityHtml("/");
+    assert.match(html, /Ahenk Bilgi Teknolojileri/);
+    assert.match(html, /application\/ld\+json/);
+    assert.match(html, /ahenk\.net\.tr/);
   });
 });

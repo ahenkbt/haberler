@@ -413,6 +413,7 @@ const HM_STATIC_SITEMAP_PATHS: Array<{ path: string; priority: string; changefre
   { path: "/tum-haberler", priority: "0.8", changefreq: "daily" },
   { path: "/yazarlar", priority: "0.6", changefreq: "weekly" },
   { path: "/kunye", priority: "0.4", changefreq: "monthly" },
+  { path: "/hakkinda", priority: "0.8", changefreq: "weekly" },
   { path: "/iletisim", priority: "0.4", changefreq: "monthly" },
   { path: "/ara", priority: "0.5", changefreq: "weekly" },
   { path: "/foto-galeri", priority: "0.5", changefreq: "weekly" },

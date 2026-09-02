@@ -48,7 +48,7 @@ import {
   syncHmSiteMailboxFromImap,
   testHmSiteMailboxConnections,
 } from "../lib/hmSiteMailbox.js";
-import { buildHmAiTxt, buildHmLlmsTxt } from "../lib/hmAiKnowledge.js";
+import { buildAhenkAiTxt, buildAhenkLlmsTxt, buildHmAiTxt, buildHmLlmsTxt } from "../lib/hmAiKnowledge.js";
 import { sitePublicOrigin } from "../lib/site-public-origin.js";
 import { PWA_ICON_PATH, PORTAL_SITE_NAME } from "../lib/portalBrand";
 import { expandDomainHostKeys } from "../lib/domainHostAliases.js";
@@ -5753,12 +5753,18 @@ router.get("/hm/llms.txt", async (req, res): Promise<void> => {
       return;
     }
     const { host, rawHost, proto } = resolved;
+    const origin = `${proto}://${rawHost}`;
+    if (host === "ahenk.net.tr" || host === "www.ahenk.net.tr") {
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.send(buildAhenkLlmsTxt("https://ahenk.net.tr"));
+      return;
+    }
     const row = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(host));
     if (!row) {
       res.status(404).type("text/plain").send("site");
       return;
     }
-    const origin = `${proto}://${rawHost}`;
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(
@@ -5785,6 +5791,12 @@ router.get("/hm/ai.txt", async (req, res): Promise<void> => {
       return;
     }
     const { host, rawHost, proto } = resolved;
+    if (host === "ahenk.net.tr" || host === "www.ahenk.net.tr") {
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.send(buildAhenkAiTxt("https://ahenk.net.tr"));
+      return;
+    }
     const row = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(host));
     if (!row) {
       res.status(404).type("text/plain").send("site");
