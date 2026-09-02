@@ -2,6 +2,7 @@
 
 import { applyJsonLd, buildBreadcrumbJsonLd } from "@/lib/pageSeo";
 import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
+import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
 import {
   AHENK_REMOVED_SERVICE_SLUGS,
   defaultAhenkFaqs,
@@ -42,6 +43,12 @@ export const AHENK_SLUG_ALIASES: Record<string, string> = {
   "/emlak-sitesi": "emlak-insaat-sitesi",
   "/insaat-sitesi": "emlak-insaat-sitesi",
   "/okul-sitesi": "egitim-okul-sitesi",
+  "/surucu-kursu-sitesi": "surucu-kursu-sitesi",
+  "/surucu-kursu": "surucu-kursu-sitesi",
+  "/ehliyet-kursu": "surucu-kursu-sitesi",
+  "/guzellik-merkezi-sitesi": "guzellik-merkezi-sitesi",
+  "/guzellik-merkezi": "guzellik-merkezi-sitesi",
+  "/guzellik-salonu": "guzellik-merkezi-sitesi",
   "/kurumsal-web-sitesi": "kurumsal-sirket-sitesi",
   "/kurumsal-web-yazilimi": "kurumsal-sirket-sitesi",
   "/kurumsal-site": "kurumsal-sirket-sitesi",
@@ -289,15 +296,15 @@ export function buildAhenkWebSiteJsonLd(site: AhenkAgencySite, origin: string): 
 }
 
 export function buildAhenkOfferJsonLd(site: AhenkAgencySite, origin: string): Record<string, unknown> {
-  const amount = String(site.priceAmount || "10000").replace(/[^\d]/g, "") || "10000";
+  const pkg = ahenkPackageFromFields(site);
   return {
     "@context": "https://schema.org",
     "@type": "Offer",
     "@id": `${origin}/#kurumsal-web-teklifi`,
     name: site.priceTitle || "Kurumsal web sitesi",
-    description: site.pricePeriodNote,
+    description: pkg.note,
     url: `${origin}/kurumsal-web-sitesi`,
-    price: amount,
+    price: pkg.amount,
     priceCurrency: site.priceCurrency || "TRY",
     availability: "https://schema.org/InStock",
     itemOffered: {
