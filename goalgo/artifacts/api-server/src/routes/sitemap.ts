@@ -1013,6 +1013,130 @@ router.get("/google-news.xml", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * GSC'ye gönderilen /sitemap.xml bir sitemapindex olunca Google çocukları
+ * okumadan "0 keşfedilen sayfa" gösterir. HM kök haritası gerçek <url> listesidir.
+ */
+async function sendHmSitePrimaryUrlset(
+  req: import("express").Request,
+  res: import("express").Response,
+  site: {
+    id: number;
+    slug: string;
+    displayName: string | null;
+    domain: string | null;
+    domain2?: string | null;
+    domain3?: string | null;
+  },
+): Promise<void> {
+  const hiddenCategoryIds = await getHmHiddenCategoryIds(site.id);
+  const hiddenCategorySlugs = await getHmHiddenCategorySlugs(site.id);
+  const hiddenCond =
+    hiddenCategoryIds.length > 0
+      ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
+      : undefined;
+  const siteArticles: NewsSitemapRow[] = await db
+    .select(newsSitemapSelectFields)
+    .from(newsTable)
+    .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
+    .where(
+      hiddenCond
+        ? and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), hiddenCond)
+        : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id)),
+    )
+    .orderBy(desc(newsTable.updatedAt))
+    .limit(2000)
+    .then((rows) => rows.map(mapJoinedNewsSitemapRow));
+
+  const portalGlobalArticles = hiddenCategorySlugs.has(HM_GLOBAL_NEWS_CATEGORY_SLUG)
+    ? []
+    : await loadPortalPoolCategoryArticles(HM_GLOBAL_NEWS_CATEGORY_SLUG, 500);
+  const articleSeen = new Set(siteArticles.map((row) => row.slug));
+  const articles: NewsSitemapRow[] = [...siteArticles];
+  for (const row of portalGlobalArticles) {
+    if (articleSeen.has(row.slug)) continue;
+    articleSeen.add(row.slug);
+    articles.push(row);
+  }
+
+  const pubName = site.displayName || site.slug;
+  const urlDomain = hmSitemapUrlDomain(req, site);
+  const portalBase = resolvePortalRequestOrigin(req);
+  const mediaOrigin = newsSitemapMediaOrigin(portalBase, hmSiteOrigin(site.domain, portalBase));
+  const articlesDeduped = dedupeNewsSitemapRows(articles);
+  const urls = articlesDeduped
+    .map((a) =>
+      newsUrlXmlBlock(hmArticleUrl(site.slug, a.slug, urlDomain, portalBase), a, pubName, true, {
+        mediaOrigin,
+      }),
+    )
+    .join("\n");
+
+  const catRows = await db
+    .selectDistinct({ id: categoriesTable.id, slug: categoriesTable.slug, name: categoriesTable.name })
+    .from(newsTable)
+    .innerJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
+    .where(
+      hiddenCond
+        ? and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), hiddenCond)
+        : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id)),
+    );
+
+  const catSlugSet = new Set(catRows.map((row) => String(row.slug ?? "").trim().toLowerCase()).filter(Boolean));
+  if (
+    portalGlobalArticles.length > 0 &&
+    !hiddenCategorySlugs.has(HM_GLOBAL_NEWS_CATEGORY_SLUG) &&
+    !catSlugSet.has(HM_GLOBAL_NEWS_CATEGORY_SLUG)
+  ) {
+    const [globalCat] = await db
+      .select({ id: categoriesTable.id, slug: categoriesTable.slug, name: categoriesTable.name })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.slug, HM_GLOBAL_NEWS_CATEGORY_SLUG))
+      .limit(1);
+    if (globalCat) catRows.push(globalCat);
+  }
+
+  const catUrls = catRows
+    .map((c) => {
+      const loc = hmCategoryUrl(site.slug, c.slug, urlDomain, portalBase);
+      const fake: NewsSitemapRow = {
+        slug: c.slug,
+        title: `${c.name ?? c.slug} — ${pubName}`,
+        spot: `${c.name ?? c.slug} kategorisi`,
+        imageUrl: null,
+        tags: null,
+        categorySlug: c.slug,
+        categoryName: c.name ?? c.slug,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      return newsUrlXmlBlock(loc, fake, pubName, false);
+    })
+    .join("\n");
+
+  const layout = await readHmPublicLayout(site.id);
+  const staticSeen = new Set<string>();
+  const staticParts: string[] = [];
+  for (const { path, priority, changefreq } of HM_STATIC_SITEMAP_PATHS) {
+    const loc = hmPublicContentUrl(site.slug, path, urlDomain, portalBase);
+    if (staticSeen.has(loc)) continue;
+    staticSeen.add(loc);
+    staticParts.push(urlXmlEntry(loc, { priority, changefreq }));
+  }
+  for (const page of hmEnabledExtraPages(layout)) {
+    const loc = hmPublicContentUrl(site.slug, `/${encodeURIComponent(page.slug)}`, urlDomain, portalBase);
+    if (staticSeen.has(loc)) continue;
+    staticSeen.add(loc);
+    staticParts.push(urlXmlEntry(loc, { changefreq: "monthly", priority: "0.45" }));
+  }
+  const staticUrls = staticParts.join("\n");
+
+  res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=1800");
+  res.setHeader("Vary", "Host");
+  res.send(`${xmlHeader()}<urlset ${NEWS_URLSET_ATTRS}>\n${staticUrls}\n${catUrls}\n${urls}\n</urlset>`);
+}
+
 /* — HM site: tüm yayınlar + kategori URL’leri — */
 router.get("/news-hm-:hmSlug.xml", async (req, res): Promise<void> => {
   try {
@@ -1026,107 +1150,7 @@ router.get("/news-hm-:hmSlug.xml", async (req, res): Promise<void> => {
       res.status(404).send("site");
       return;
     }
-    const hiddenCategoryIds = await getHmHiddenCategoryIds(site.id);
-    const hiddenCategorySlugs = await getHmHiddenCategorySlugs(site.id);
-    const hiddenCond =
-      hiddenCategoryIds.length > 0
-        ? or(isNull(newsTable.categoryId), notInArray(newsTable.categoryId, hiddenCategoryIds))
-        : undefined;
-    const siteArticles: NewsSitemapRow[] = await db
-      .select(newsSitemapSelectFields)
-      .from(newsTable)
-      .leftJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
-      .where(
-        hiddenCond
-          ? and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), hiddenCond)
-          : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id)),
-      )
-      .orderBy(desc(newsTable.updatedAt))
-      .limit(2000)
-      .then((rows) => rows.map(mapJoinedNewsSitemapRow));
-
-    const portalGlobalArticles = hiddenCategorySlugs.has(HM_GLOBAL_NEWS_CATEGORY_SLUG)
-      ? []
-      : await loadPortalPoolCategoryArticles(HM_GLOBAL_NEWS_CATEGORY_SLUG, 500);
-    const articleSeen = new Set(siteArticles.map((row) => row.slug));
-    const articles: NewsSitemapRow[] = [...siteArticles];
-    for (const row of portalGlobalArticles) {
-      if (articleSeen.has(row.slug)) continue;
-      articleSeen.add(row.slug);
-      articles.push(row);
-    }
-
-    const pubName = site.displayName || site.slug;
-    const urlDomain = hmSitemapUrlDomain(req, site);
-    const portalBase = resolvePortalRequestOrigin(req);
-    const mediaOrigin = newsSitemapMediaOrigin(portalBase, hmSiteOrigin(site.domain, portalBase));
-    const articlesDeduped = dedupeNewsSitemapRows(articles);
-    const urls = articlesDeduped
-      .map((a) =>
-        newsUrlXmlBlock(hmArticleUrl(site.slug, a.slug, urlDomain, portalBase), a, pubName, true, {
-          mediaOrigin,
-        }),
-      )
-      .join("\n");
-
-    const catRows = await db
-      .selectDistinct({ id: categoriesTable.id, slug: categoriesTable.slug, name: categoriesTable.name })
-      .from(newsTable)
-      .innerJoin(categoriesTable, eq(newsTable.categoryId, categoriesTable.id))
-      .where(
-        hiddenCond
-          ? and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id), hiddenCond)
-          : and(eq(newsTable.status, "published"), eq(newsTable.siteId, site.id)),
-      );
-
-    const catSlugSet = new Set(catRows.map((row) => String(row.slug ?? "").trim().toLowerCase()).filter(Boolean));
-    if (
-      portalGlobalArticles.length > 0 &&
-      !hiddenCategorySlugs.has(HM_GLOBAL_NEWS_CATEGORY_SLUG) &&
-      !catSlugSet.has(HM_GLOBAL_NEWS_CATEGORY_SLUG)
-    ) {
-      const [globalCat] = await db
-        .select({ id: categoriesTable.id, slug: categoriesTable.slug, name: categoriesTable.name })
-        .from(categoriesTable)
-        .where(eq(categoriesTable.slug, HM_GLOBAL_NEWS_CATEGORY_SLUG))
-        .limit(1);
-      if (globalCat) catRows.push(globalCat);
-    }
-
-    const catUrls = catRows
-      .map((c) => {
-        const loc = hmCategoryUrl(site.slug, c.slug, urlDomain, portalBase);
-        const fake: NewsSitemapRow = {
-          slug: c.slug,
-          title: `${c.name ?? c.slug} — ${pubName}`,
-          spot: `${c.name ?? c.slug} kategorisi`,
-          imageUrl: null,
-          tags: null,
-          categorySlug: c.slug,
-          categoryName: c.name ?? c.slug,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        return newsUrlXmlBlock(loc, fake, pubName, false);
-      })
-      .join("\n");
-
-    const staticUrls = [
-      { path: "/", priority: "1.0", changefreq: "daily" },
-      { path: "/sondakika", priority: "0.9", changefreq: "hourly" },
-      { path: "/tum-haberler", priority: "0.8", changefreq: "daily" },
-      { path: "/yazarlar", priority: "0.6", changefreq: "weekly" },
-      { path: "/kunye", priority: "0.4", changefreq: "monthly" },
-      { path: "/iletisim", priority: "0.4", changefreq: "monthly" },
-    ]
-      .map(({ path, priority, changefreq }) =>
-        urlXmlEntry(hmPublicContentUrl(site.slug, path, urlDomain, portalBase), { priority, changefreq }),
-      )
-      .join("\n");
-
-    res.setHeader("Content-Type", "application/xml; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=1800");
-    res.send(`${xmlHeader()}<urlset ${NEWS_URLSET_ATTRS}>\n${staticUrls}\n${catUrls}\n${urls}\n</urlset>`);
+    await sendHmSitePrimaryUrlset(req, res, site);
   } catch {
     res.status(500).send("Sitemap hatası");
   }
@@ -1886,13 +1910,33 @@ router.get("/index.xml", async (req, res): Promise<void> => {
     if (requestHost && !isPortalHostForSitemap(requestHost)) {
       const site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(requestHost));
       if (site) {
+        // GSC /sitemap.xml = urlset (sayfa sayısı). Shard dizini: /sitemap-index.xml
+        await sendHmSitePrimaryUrlset(req, res, site);
+        return;
+      }
+    }
+
+    const base = resolvePortalRequestOrigin(req);
+    const catalog = await buildSitemapCatalogWithYektube(base);
+    const sitemapLocs = catalog.groups.flatMap((g) => g.items.map((i) => i.url));
+    sendSitemapIndex(res, filterSitemapIndexLocs(sitemapLocs, base));
+  } catch {
+    res.status(500).send("Sitemap hatası");
+  }
+});
+
+router.get("/index-shards.xml", async (req, res): Promise<void> => {
+  try {
+    const requestHost = normalizeRequestHost(req);
+    if (requestHost && !isPortalHostForSitemap(requestHost)) {
+      const site = await getActiveHmNewsSiteByDomainCompat(domainLookupCandidates(requestHost));
+      if (site) {
         const origin = hmRequestSitemapOrigin(req, site);
         const locs = await hmDomainSitemapLocs(site, origin);
         sendSitemapIndex(res, locs);
         return;
       }
     }
-
     const base = resolvePortalRequestOrigin(req);
     const catalog = await buildSitemapCatalogWithYektube(base);
     const sitemapLocs = catalog.groups.flatMap((g) => g.items.map((i) => i.url));

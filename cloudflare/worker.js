@@ -42,6 +42,7 @@ import {
   shouldInstantHmRootRedirect,
   withBudget,
 } from "./hm-html-boot.js";
+import { sitemapFailXml } from "./sitemap-fail-xml.js";
 import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
@@ -415,6 +416,7 @@ function isApiPath(pathname) {
 function rootSitemapApiPath(pathname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
   if (p === "/sitemap.xml") return "/api/sitemap/index.xml";
+  if (p === "/sitemap-index.xml") return "/api/sitemap/index-shards.xml";
   const mHmCat = /^\/news-hm\/([^/]+)\/([^/]+)\.xml$/i.exec(p);
   if (mHmCat) return `/api/sitemap/news-hm/${mHmCat[1]}/${mHmCat[2]}.xml`;
   const mCat = /^\/news-yekpare-cat-(.+)\.xml$/i.exec(p);
@@ -675,7 +677,6 @@ async function proxyRootSitemap(request, env, incoming) {
   if (!apiPath) return null;
 
   const origin = upstreamOrigin(env, incoming);
-  const targetUrl = `${origin}${apiPath}${incoming.search}`;
   const xmlHeaders = (extra = {}) => {
     const headers = new Headers({
       "content-type": "application/xml; charset=utf-8",
@@ -690,11 +691,19 @@ async function proxyRootSitemap(request, env, incoming) {
   const failXml = (status) => {
     const headers = xmlHeaders({ "retry-after": "60" });
     headers.set("x-yekpare-sitemap-error", "1");
-    const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n</urlset>`;
+    const body = sitemapFailXml(pathOnly, incoming.origin);
     if (request.method === "HEAD") return new Response(null, { status, headers });
     return new Response(body, { status, headers });
   };
   try {
+    const target = new URL(`${origin}${apiPath}`);
+    if (incoming.search) {
+      new URLSearchParams(incoming.search).forEach((value, key) => {
+        target.searchParams.set(key, value);
+      });
+    }
+    target.searchParams.set("xfh", incoming.host);
+    const targetUrl = target.toString();
     const upstream = await fetchApiWithRetry(env, targetUrl, {
       method: request.method === "HEAD" ? "GET" : request.method,
       headers: {
@@ -703,7 +712,10 @@ async function proxyRootSitemap(request, env, incoming) {
         "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
         "user-agent": request.headers.get("user-agent") || "yekpare-sitemap-proxy",
       },
-      cf: { cacheTtl: pathOnly === "/sitemap.xml" || pathOnly === "/google-news.xml" ? 600 : 300, cacheEverything: true },
+      cf: {
+        cacheTtl: pathOnly === "/sitemap.xml" ? 0 : pathOnly === "/google-news.xml" ? 600 : 300,
+        cacheEverything: pathOnly !== "/sitemap.xml",
+      },
       redirect: "manual",
     });
     const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
