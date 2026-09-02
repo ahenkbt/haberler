@@ -18,6 +18,8 @@ import {
   jsonLdScriptTag,
   mapBusinessJsonLd,
   newsArticleJsonLd,
+  newsMediaOrganizationJsonLd,
+  newsWebSiteJsonLd,
   tourismListingJsonLd,
   vendorJsonLd,
   encyclopediaArticleJsonLd,
@@ -236,6 +238,25 @@ async function latestNewsImage(siteId: number): Promise<string | null> {
   return textField(row?.imageUrl);
 }
 
+async function latestNewsHeadlines(
+  siteId: number,
+  origin: string,
+  limit = 12,
+): Promise<Array<{ title: string; url: string; datePublished?: Date | null }>> {
+  const rows = await getNewsDbForRead()
+    .select({ slug: newsTable.slug, title: newsTable.title, createdAt: newsTable.createdAt })
+    .from(newsTable)
+    .where(and(eq(newsTable.siteId, siteId), eq(newsTable.status, "published")))
+    .orderBy(desc(newsTable.createdAt))
+    .limit(limit);
+  const base = origin.replace(/\/+$/, "");
+  return rows.map((row: { slug: string; title: string | null; createdAt: Date | null }) => ({
+    title: String(row.title ?? "").trim() || row.slug,
+    url: `${base}/haber/${encodeURIComponent(row.slug)}`,
+    datePublished: row.createdAt,
+  }));
+}
+
 async function rssShareMeta(itemId: string, siteId: number | null): Promise<{
   title: string;
   description: string;
@@ -333,6 +354,7 @@ function shellHtml(opts: {
   type?: "website" | "article";
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   seoVerification?: SeoVerification | null;
+  extraBody?: string;
 }): string {
   const url = `${opts.origin}${opts.path}`;
   const t = esc(opts.title);
@@ -346,6 +368,7 @@ function shellHtml(opts: {
       ? jsonLdScriptTag(Array.isArray(opts.jsonLd) ? opts.jsonLd : [opts.jsonLd])
       : "";
   const verificationTags = verificationMetaHtml(opts.seoVerification);
+  const extraBody = opts.extraBody ?? "";
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -353,7 +376,12 @@ function shellHtml(opts: {
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>${t}</title>
 <meta name="description" content="${d}"/>
-<meta name="robots" content="index, follow, max-image-preview:large"/>
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"/>
+<meta name="googlebot" content="index, follow, max-image-preview:large"/>
+<meta name="geo.region" content="TR"/>
+<meta name="geo.placename" content="Türkiye"/>
+<meta name="language" content="Turkish"/>
+<meta http-equiv="content-language" content="tr-TR"/>
 <link rel="canonical" href="${u}"/>
 <link rel="alternate" type="text/plain" href="${esc(opts.origin.replace(/\/+$/, ""))}/llms.txt" title="LLMs"/>${verificationTags}
 <meta property="og:type" content="${type}"/>
@@ -379,6 +407,7 @@ ${ld}
 <h1>${t}</h1>
 <p>${d}</p>
 <p><a href="${u}">${u}</a></p>
+${extraBody}
 </article>
 </body>
 </html>`;
@@ -492,19 +521,32 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
 
         const desc = clip(stripHtml(article.spot || article.content || article.title), 300) || article.title;
         const fallbackImage = await hmSiteOgImage(hmSite, canonicalOrigin);
+        const image = article.imageUrl ? absImage(canonicalOrigin, article.imageUrl) : fallbackImage;
+        const articlePath = `/haber/${encodeURIComponent(article.slug)}`;
         res
           .status(200)
           .type("html")
           .send(
             shellHtml({
               origin: canonicalOrigin,
-              path,
+              path: articlePath,
               title: `${article.title} · ${hmSite.displayName}`,
               description: desc,
-              image: article.imageUrl ? absImage(canonicalOrigin, article.imageUrl) : fallbackImage,
+              image,
               siteName: hmSite.displayName,
               type: "article",
               seoVerification: hmSeoVerification,
+              jsonLd: newsArticleJsonLd({
+                origin: canonicalOrigin,
+                path: articlePath,
+                headline: article.title,
+                description: article.spot,
+                image,
+                datePublished: article.createdAt,
+                dateModified: article.updatedAt,
+                publisherName: hmSite.displayName,
+                publisherLogoUrl: fallbackImage,
+              }),
             }),
           );
         return;
@@ -542,18 +584,54 @@ router.get("/public/og-html", async (req, res): Promise<void> => {
       const extraPage = findHmExtraPageOg(layout, hmTail);
       const title = titleForHmTail(hmTail, hmSite.displayName, layout);
       const description = extraPage?.description ?? hmDescription(hmSite);
+      const image = await hmSiteOgImage(hmSite, canonicalOrigin);
+      const headlines = hmTail === "/" || hmTail === "" ? await latestNewsHeadlines(hmSite.id, canonicalOrigin) : [];
+      const extraBody =
+        headlines.length > 0
+          ? `<ol>${headlines
+              .map((h) => `<li><a href="${esc(h.url)}">${esc(h.title)}</a></li>`)
+              .join("")}</ol>`
+          : "";
+      const jsonLd: Record<string, unknown>[] = [
+        newsMediaOrganizationJsonLd({
+          origin: canonicalOrigin,
+          name: hmSite.displayName,
+          description,
+          logoUrl: image,
+        }),
+        newsWebSiteJsonLd({
+          origin: canonicalOrigin,
+          name: hmSite.displayName,
+          description,
+        }),
+      ];
+      if (headlines.length > 0) {
+        jsonLd.push({
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `${hmSite.displayName} son haberler`,
+          itemListElement: headlines.map((h, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: h.url,
+            name: h.title,
+          })),
+        });
+      }
       res
         .status(200)
         .type("html")
         .send(
           shellHtml({
             origin: canonicalOrigin,
-            path,
+            path: hmTail === "/" || hmTail === "" ? "/" : path,
             title,
             description,
-            image: await hmSiteOgImage(hmSite, canonicalOrigin),
+            image,
             siteName: hmSite.displayName,
             seoVerification: hmSeoVerification,
+            jsonLd,
+            extraBody,
           }),
         );
       return;

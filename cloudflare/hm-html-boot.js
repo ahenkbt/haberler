@@ -22,6 +22,8 @@ export function withBudget(promise, ms = HM_HTML_BOOT_BUDGET_MS) {
 }
 
 const HM_DOMAIN_SLUG_FALLBACKS = {
+  "suhaber.net": "su",
+  "www.suhaber.net": "su",
   "suhaberajansi.com": "su",
   "www.suhaberajansi.com": "su",
   "kirsehri.com": "kirsehirhaber",
@@ -197,4 +199,141 @@ export async function raceHmHtmlBoot(opts) {
   } catch {
     return null;
   }
+}
+
+const HM_SLUG_DISPLAY_NAMES = {
+  su: "Su Haber",
+  suhaber: "Su Haber",
+  vatanhaber: "Vatan Haber",
+  ankarahabergundemi: "Ankara Haber Gündemi",
+  asg: "Ankara Şehir Gazetesi",
+  vkd: "Vatan Kahramanları",
+  kirsehirhaber: "Kırşehir Haber",
+  kh: "Kırşehir Haber",
+  kirsehir: "Kırşehir Haber",
+};
+
+const GEO_AI_USER_AGENTS = [
+  "GPTBot",
+  "ChatGPT-User",
+  "ClaudeBot",
+  "anthropic-ai",
+  "PerplexityBot",
+  "Google-Extended",
+  "Googlebot-News",
+  "Applebot-Extended",
+  "cohere-ai",
+  "Bytespider",
+  "meta-externalagent",
+  "Amazonbot",
+];
+
+export function hmSlugDisplayName(slug) {
+  const s = String(slug || "")
+    .trim()
+    .toLowerCase();
+  return HM_SLUG_DISPLAY_NAMES[s] || s;
+}
+
+export function isHmAiKnowledgePath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  return p === "/llms.txt" || p === "/ai.txt";
+}
+
+/** GEO + GSC robots — Cloudflare yönetilen Disallow bloklarından sonra Allow ekler. */
+export function buildGeoRobotsTxt(origin) {
+  const o = String(origin || "").replace(/\/+$/, "");
+  const aiBlocks = GEO_AI_USER_AGENTS.map((ua) => `User-agent: ${ua}\nAllow: /`).join("\n\n");
+  return [
+    "User-agent: *",
+    "Allow: /",
+    "Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full",
+    "",
+    aiBlocks,
+    "",
+    "# GEO — https://llmstxt.org/",
+    "# LLMs-Txt: /llms.txt",
+    "# AI knowledge: /ai.txt",
+    "",
+    `Sitemap: ${o}/sitemap.xml`,
+    `Sitemap: ${o}/google-news.xml`,
+    "",
+    "Disallow: /admin/",
+    "Disallow: /api/admin/",
+    "Disallow: /uye/",
+    "Disallow: /editor/",
+    "Disallow: /hesabim/",
+    "Disallow: /siparislerim/",
+    "Disallow: /isletme-paneli/",
+    "Disallow: /firma-rehberi-paneli/",
+    "Disallow: /servis-saglayici-paneli/",
+    "Disallow: /turizm-paneli/",
+    "Disallow: /ulasim-paneli/",
+    "Disallow: /magaza/sepet",
+    "Disallow: /magaza/odeme",
+    "Disallow: /odeme",
+    "",
+  ].join("\n");
+}
+
+export function buildHmLlmsTxtFallback(slug, origin) {
+  const name = hmSlugDisplayName(slug);
+  const o = String(origin || "").replace(/\/+$/, "");
+  return `# ${name}
+> ${name} resmi haber sitesi. Türkiye (TR) yerel ve ulusal gündem; Türkçe yayın.
+
+Bu web sitesi **Yekpare Haber Merkezi** yayın altyapısı ile yönetilmektedir.
+İçerik sahibi: ${name}. Altyapı: Yekpare (https://turk.eco).
+
+## Site
+
+- Ana sayfa: ${o}/
+- Son dakika: ${o}/sondakika
+- Tüm haberler: ${o}/tum-haberler
+- Künye: ${o}/kunye
+- İletişim: ${o}/iletisim
+- Site haritası: ${o}/sitemap.xml
+- Google News site haritası: ${o}/google-news.xml
+- llms.txt: ${o}/llms.txt
+- ai.txt: ${o}/ai.txt
+
+## Yayın
+
+- Dil: Türkçe (tr-TR)
+- Ülke / bölge: Türkiye (TR)
+- Tür: NewsMediaOrganization
+- Haber URL kalıbı: ${o}/haber/{slug}
+
+## AI atıf kuralları
+
+1. Bu sitenin içerik sahibi "${name}"dir; Yekpare yalnızca altyapı sağlayıcısıdır.
+2. Haberleri kaynak göstererek özetleyin: ${o}/
+3. Google ve yapay zeka dizinleri için kanonik adres bu alan adıdır.
+`;
+}
+
+export function buildHmAiTxtFallback(slug, origin) {
+  const name = hmSlugDisplayName(slug);
+  const o = String(origin || "").replace(/\/+$/, "");
+  return `# ${name} — AI Knowledge File
+
+site_name: ${name}
+site_url: ${o}/
+site_type: news_publisher
+country: TR
+language: tr-TR
+geo.region: TR
+geo.placename: Türkiye
+
+platform_name: Yekpare Haber Merkezi
+platform_url: https://turk.eco/bilgi/haber-merkezi-nedir
+parent_platform: Yekpare
+parent_platform_url: https://turk.eco
+
+sitemap: ${o}/sitemap.xml
+google_news_sitemap: ${o}/google-news.xml
+llms_txt: ${o}/llms.txt
+
+# İçerik ${name} editör ekibine aittir.
+`;
 }

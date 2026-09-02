@@ -443,7 +443,7 @@ export function applyHmPublisherStructuredData(opts: {
     [
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
+        "@type": ["NewsMediaOrganization", "Organization"],
         "@id": `${base}/#organization`,
         name: opts.siteName,
         url: base,
@@ -544,6 +544,7 @@ export function applyHmNewsArticleMeta(opts: {
     document.head.appendChild(link);
   }
   link.href = url;
+  upsertHmGeoMeta();
 }
 
 export function applyProductStructuredData(opts: {
@@ -745,13 +746,16 @@ export function applyNewsArticleStructuredData(opts: {
         ? { "@type": "Person", name: opts.authorName.trim() }
         : { "@type": "Organization", name: opts.publisherName?.trim() || PORTAL_BRAND_SHORT },
       publisher: {
-        "@type": "Organization",
+        "@type": "NewsMediaOrganization",
         name: opts.publisherName?.trim() || PORTAL_BRAND_SHORT,
         url: base,
         logo: { "@type": "ImageObject", url: publisherLogo, width: 512, height: 512 },
       },
       mainEntityOfPage: { "@type": "WebPage", "@id": `${base}${path}` },
       inLanguage: "tr-TR",
+      contentLocation: { "@type": "Country", name: "Türkiye" },
+      spatialCoverage: { "@type": "Country", name: "Türkiye" },
+      isAccessibleForFree: true,
     },
     "article",
   );

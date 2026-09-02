@@ -12,7 +12,11 @@ import {
 /** Eski belediyehizmet/Kırşehir satırı — editör haberleri siteId=2'de. */
 export const SU_CANONICAL_SITE_ID = 2;
 
-export const SU_DEFAULT_EDITOR_EMAIL = "editor@suhaberajansi.com";
+export const SU_DEFAULT_EDITOR_EMAIL = "editor@suhaber.net";
+
+/** Google / GEO kanonik alan — suhaberajansi.com takma ad olarak kalır. */
+export const SU_CANONICAL_PUBLIC_DOMAIN = "suhaber.net";
+export const SU_BRAND_HOSTS = ["suhaber.net", "suhaberajansi.com", "suhaberajansi.com.tr"] as const;
 
 /** Su Haber: yalnızca site_id=2 veya kanıtlanmış Su kaynaklı yetim satırlar (merkez sızıntısı yok). */
 export function suSiteNewsScopeCondition(siteId: number): SQL {
@@ -330,33 +334,39 @@ export async function repairSuHaberDomainOwnership(opts?: {
     SET
       domain = CASE
         WHEN lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
         ELSE domain
       END,
       domain2 = CASE
         WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
         ELSE domain2
       END,
       domain3 = CASE
         WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
         ELSE domain3
       END,
       updated_at = NOW()
     WHERE id <> ${canonicalSiteId}
       AND (
         lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr')
         OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr')
         OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr')
       )
   `);
   actions.push("cleared-suhaber-from-other-sites");
 
-  const suDomains = ["suhaberajansi.com", "www.suhaberajansi.com", "suhaberajansi.com.tr"] as const;
+  const suDomains = [
+    "suhaber.net",
+    "www.suhaber.net",
+    "suhaberajansi.com",
+    "www.suhaberajansi.com",
+    "suhaberajansi.com.tr",
+  ] as const;
   for (const host of suDomains) {
     await runOnAllNewsDatabases(sql`
       UPDATE hm_news_sites
@@ -391,9 +401,9 @@ export async function repairSuHaberDomainOwnership(opts?: {
     UPDATE hm_news_sites
     SET
       slug = 'su',
-      domain = 'suhaberajansi.com',
-      domain2 = 'www.suhaberajansi.com',
-      domain3 = 'suhaberajansi.com.tr',
+      domain = 'suhaber.net',
+      domain2 = 'suhaberajansi.com',
+      domain3 = 'www.suhaber.net',
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
         WHEN lower(trim(both from display_name)) LIKE '%kırşehir%' THEN 'Su Haber Ajansı'
@@ -414,7 +424,7 @@ export async function repairSuHaberDomainOwnership(opts?: {
       updated_at = NOW()
     WHERE id = ${canonicalSiteId}
   `);
-  actions.push(`bound-suhaberajansi.com→id=${canonicalSiteId}`);
+  actions.push(`bound-suhaber.net→id=${canonicalSiteId}`);
 
   const orphan = await repairSuHaberOrphanedNews({ dryRun: false });
   if (orphan.restored > 0) {

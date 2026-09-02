@@ -3,6 +3,7 @@
  * Worker `cloudflare/hm-html-boot.js` alan→slug tablosu ile senkron tutulmalı.
  */
 export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
+  "suhaber.net": "su",
   "suhaberajansi.com": "su",
   "kirsehri.com": "kirsehirhaber",
   "kirsehirhaber.org": "kirsehirhaber",

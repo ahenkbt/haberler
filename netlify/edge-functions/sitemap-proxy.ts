@@ -27,6 +27,8 @@ function rootSitemapApiPath(pathname: string): string | null {
   if (mHmCat) return `/api/sitemap/news-hm/${mHmCat[1]}/${mHmCat[2]}.xml`;
   const mCat = /^\/news-yekpare-cat-(.+)\.xml$/i.exec(p);
   if (mCat) return `/api/sitemap/news-yekpare-cat-${mCat[1]}.xml`;
+  if (p === "/google-news.xml") return "/api/sitemap/google-news.xml";
+  if (p === "/news-yekpare-google-news.xml") return "/api/sitemap/news-yekpare-google-news.xml";
   const mHm = /^\/news-hm-(.+)\.xml$/i.exec(p);
   if (mHm) return `/api/sitemap/news-hm-${mHm[1]}.xml`;
   const mProducts = /^\/products-(\d+)\.xml$/i.exec(p);

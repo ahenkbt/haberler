@@ -20,6 +20,9 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
+User-agent: Googlebot-News
+Allow: /
+
 User-agent: Applebot-Extended
 Allow: /
 
@@ -40,6 +43,7 @@ Allow: /
 
 # Not: Cloudflare Worker robots.txt’i host’a göre yeniden yazar (HM → kendi /sitemap.xml).
 Sitemap: https://turk.eco/sitemap.xml
+Sitemap: https://turk.eco/google-news.xml
 
 # Admin ve üye alanları
 Disallow: /admin/

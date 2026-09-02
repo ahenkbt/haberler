@@ -55,6 +55,8 @@ const KH_HM_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"
 /** Video TV açık editör alanları (hub + KH + seçili haber siteleri). */
 const HM_VIDEO_TV_ALLOWED_HOSTS = new Set([
   ...KH_HM_HOSTS,
+  "suhaber.net",
+  "www.suhaber.net",
   "suhaberajansi.com",
   "www.suhaberajansi.com",
   "ankarahabergundemi.com",

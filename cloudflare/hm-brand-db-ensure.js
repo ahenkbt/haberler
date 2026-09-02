@@ -1,6 +1,6 @@
 /**
  * Worker kenarı: bilinen marka alanları için meta lookup + Su domain onarımı.
- * /tr/su (en düşük id) → suhaberajansi.com; sahte slug=su satırlarını temizler.
+ * /tr/su (en düşük id) → suhaber.net; suhaberajansi.com takma ad; sahte slug=su satırlarını temizler.
  */
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
@@ -95,11 +95,11 @@ export async function ensureKhYekpareEditorOnNeon(env) {
 
 export const HM_BRAND_DB_BINDINGS = [
   {
-    domain: "suhaberajansi.com",
-    domains: ["suhaberajansi.com"],
+    domain: "suhaber.net",
+    domains: ["suhaber.net", "suhaberajansi.com"],
     slug: "su",
-    displayName: "Su Haber Ajansı",
-    description: "Su Haber Ajansı dijital haber platformu",
+    displayName: "Su Haber",
+    description: "Su Haber dijital haber platformu",
   },
   /** Kırşehir: editör layout kenarda Neon'a yazılıyor — meta da Neon'dan gelsin. */
   {
@@ -404,7 +404,7 @@ export async function repairAsgEditorMisassignmentOnNeon(env) {
 }
 
 async function repairSuDomainOnNeon(sql) {
-  const SU_DEFAULT_EMAIL = "editor@suhaberajansi.com";
+  const SU_DEFAULT_EMAIL = "editor@suhaber.net";
   const canonicalId = SU_CANONICAL_SITE_ID;
 
   const id2 = await sql`SELECT id, slug FROM hm_news_sites WHERE id = ${canonicalId} LIMIT 1`;
@@ -488,7 +488,7 @@ async function repairSuDomainOnNeon(sql) {
     SET
       domain = CASE
         WHEN lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', ''))
-          IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+          IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
         ELSE domain
       END,
       updated_at = NOW()
@@ -502,21 +502,21 @@ async function repairSuDomainOnNeon(sql) {
       SET
         domain2 = CASE
           WHEN lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-            IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+            IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
           ELSE domain2
         END,
         domain3 = CASE
           WHEN lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-            IN ('suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
+            IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr') THEN NULL
           ELSE domain3
         END,
         updated_at = NOW()
       WHERE id <> ${canonicalId}
         AND (
           lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', ''))
-            IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+            IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr')
           OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', ''))
-            IN ('suhaberajansi.com', 'suhaberajansi.com.tr')
+            IN ('suhaber.net', 'suhaberajansi.com', 'suhaberajansi.com.tr')
         )
     `;
   } catch {
@@ -534,7 +534,7 @@ async function repairSuDomainOnNeon(sql) {
     UPDATE hm_news_sites
     SET
       slug = 'su',
-      domain = 'suhaberajansi.com',
+      domain = 'suhaber.net',
       display_name = CASE
         WHEN trim(both from coalesce(display_name, '')) = '' THEN 'Su Haber Ajansı'
         ELSE display_name
@@ -557,8 +557,8 @@ async function repairSuDomainOnNeon(sql) {
     await sql`
       UPDATE hm_news_sites
       SET
-        domain2 = 'www.suhaberajansi.com',
-        domain3 = 'suhaberajansi.com.tr',
+        domain2 = 'suhaberajansi.com',
+        domain3 = 'www.suhaber.net',
         updated_at = NOW()
       WHERE id = ${canonicalId}
     `;
@@ -1175,7 +1175,7 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
   const wantSlug = normalizeSlug(slug || "");
 
   // Su markası: domaini /tr/su (min id) üzerine sabitle
-  if (binding.slug === "su" || host === "suhaberajansi.com") {
+  if (binding.slug === "su" || host === "suhaber.net" || host === "suhaberajansi.com") {
     try {
       await repairSuDomainOnNeon(sql);
     } catch (err) {

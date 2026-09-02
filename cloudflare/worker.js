@@ -24,10 +24,14 @@ import {
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
+  buildGeoRobotsTxt,
+  buildHmAiTxtFallback,
+  buildHmLlmsTxtFallback,
   firstHmBootImageUrl,
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
   injectHmHtmlBoot,
+  isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
   raceHmHtmlBoot,
   shouldInstantHmRootRedirect,
@@ -62,6 +66,8 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.ankarasehirgazetesi.com",
   "ankarahabergundemi.com",
   "www.ankarahabergundemi.com",
+  "suhaber.net",
+  "www.suhaber.net",
   "suhaberajansi.com",
   "www.suhaberajansi.com",
   "kirsehri.com",
@@ -407,6 +413,10 @@ function rootSitemapApiPath(pathname) {
   if (mHmYazarlar) return `/api/sitemap/news-hm-${mHmYazarlar[1]}-yazarlar.xml`;
   const mHmSayfalar = /^\/news-hm-([^/]+)-sayfalar\.xml$/i.exec(p);
   if (mHmSayfalar) return `/api/sitemap/news-hm-${mHmSayfalar[1]}-sayfalar.xml`;
+  const mHmGoogleNews = /^\/news-hm-([^/]+)-google-news\.xml$/i.exec(p);
+  if (mHmGoogleNews) return `/api/sitemap/news-hm-${mHmGoogleNews[1]}-google-news.xml`;
+  if (p === "/google-news.xml") return "/api/sitemap/google-news.xml";
+  if (p === "/news-yekpare-google-news.xml") return "/api/sitemap/news-yekpare-google-news.xml";
   const mHm = /^\/news-hm-(.+)\.xml$/i.exec(p);
   if (mHm) return `/api/sitemap/news-hm-${mHm[1]}.xml`;
   const mProducts = /^\/products-(\d+)\.xml$/i.exec(p);
@@ -508,32 +518,54 @@ function serveDynamicRobotsTxt(request, incoming) {
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
   if (path !== "/robots.txt") return null;
   const origin = incoming.origin.replace(/\/+$/, "");
-  const body = [
-    "User-agent: *",
-    "Allow: /",
-    "",
-    `Sitemap: ${origin}/sitemap.xml`,
-    "",
-    "Disallow: /admin/",
-    "Disallow: /api/admin/",
-    "Disallow: /uye/",
-    "Disallow: /editor/",
-    "Disallow: /hesabim/",
-    "Disallow: /siparislerim/",
-    "Disallow: /isletme-paneli/",
-    "Disallow: /firma-rehberi-paneli/",
-    "Disallow: /servis-saglayici-paneli/",
-    "Disallow: /turizm-paneli/",
-    "Disallow: /ulasim-paneli/",
-    "Disallow: /magaza/sepet",
-    "Disallow: /magaza/odeme",
-    "Disallow: /odeme",
-    "",
-  ].join("\n");
+  const body = buildGeoRobotsTxt(origin);
   const headers = new Headers({
     "content-type": "text/plain; charset=utf-8",
     "cache-control": "public, max-age=3600",
     "x-yekpare-frontend": "cloudflare-robots",
+  });
+  return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
+}
+
+/** HM özel alan — siteye özel llms.txt / ai.txt (SPA public/llms.txt portal metnini ezmesin). */
+async function proxyHmAiKnowledgeText(request, env, incoming) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (!isHmAiKnowledgePath(incoming.pathname)) return null;
+  const host = normalizeHost(incoming.hostname);
+  if (!host || isPortalHost(host)) return null;
+  const slug = hmDomainSlugFallback(incoming.hostname);
+  const origin = incoming.origin.replace(/\/+$/, "");
+  const p = incoming.pathname.replace(/\/+$/, "") || "/";
+  const apiPath = p === "/llms.txt" ? "/api/hm/llms.txt" : "/api/hm/ai.txt";
+  const apiOrigin = upstreamOrigin(env, incoming);
+  try {
+    const upstream = await fetchApi(env, `${apiOrigin}${apiPath}`, {
+      method: request.method === "HEAD" ? "GET" : request.method,
+      headers: {
+        accept: "text/plain",
+        "x-forwarded-host": incoming.host,
+        "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
+      },
+      cf: { cacheTtl: 600, cacheEverything: true },
+    });
+    const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
+    if (upstream.ok && (ct.includes("text/plain") || ct.includes("text/markdown"))) {
+      const headers = new Headers(upstream.headers);
+      headers.set("content-type", "text/plain; charset=utf-8");
+      headers.set("cache-control", "public, max-age=3600");
+      headers.set("x-yekpare-frontend", "cloudflare-hm-llms");
+      if (request.method === "HEAD") return new Response(null, { status: upstream.status, headers });
+      return new Response(upstream.body, { status: upstream.status, headers });
+    }
+  } catch {
+    /* fallback */
+  }
+  if (!slug) return null;
+  const body = p === "/llms.txt" ? buildHmLlmsTxtFallback(slug, origin) : buildHmAiTxtFallback(slug, origin);
+  const headers = new Headers({
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "public, max-age=600",
+    "x-yekpare-frontend": "cloudflare-hm-llms-fallback",
   });
   return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
 }
@@ -877,6 +909,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     .replace(/^\/+|\/+$/g, "");
   const isSuBrand =
     binding.slug === "su" ||
+    normalizeHost(domain) === "suhaber.net" ||
     normalizeHost(domain) === "suhaberajansi.com" ||
     slugKey === "su" ||
     slugKey === "suhaber";
@@ -1253,6 +1286,8 @@ function isOgProxySkipPath(pathname) {
     /\.xml$/i.test(p) ||
     p === "/robots.txt" ||
     p === "/sitemap.xml" ||
+    p === "/llms.txt" ||
+    p === "/ai.txt" ||
     isStaticAssetPath(pathname)
   );
 }
@@ -1353,6 +1388,7 @@ async function socialPreviewOgHtml(request, env, incoming) {
     headers.set("cdn-cache-control", "public, max-age=300");
     headers.set("x-yekpare-frontend", FRONTEND_TAG);
     headers.set("x-yekpare-og", "social-preview");
+    headers.set("x-robots-tag", "index, follow, max-image-preview:large, max-snippet:-1");
     if (request.method === "HEAD") {
       return new Response(null, { status: upstream.status, headers });
     }
@@ -2262,6 +2298,9 @@ export default {
 
     const robotsTxt = serveDynamicRobotsTxt(request, incoming);
     if (robotsTxt) return robotsTxt;
+
+    const hmLlms = await proxyHmAiKnowledgeText(request, env, incoming);
+    if (hmLlms) return hmLlms;
 
     const ogHtml = await socialPreviewOgHtml(request, env, incoming);
     if (ogHtml) return ogHtml;
