@@ -547,7 +547,9 @@ export function sanitizeOgShareImages(html, origin) {
     .replace(
       /(<meta\s+[^>]*content=["'])(?:https?:\/\/[^"']+\/)?data:[^"']*(["'][^>]*(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'])/gi,
       `$1${fallback}$2`,
-    );
+    )
+    .replace(/https?:\/\/[^"'\s\\]+\/data:image\/[^"'\s\\]*/gi, fallback)
+    .replace(/"data:image\/[^"]*"/gi, `"${fallback}"`);
 }
 
 export function buildHmSiteEntityHtml(slug, origin, pathname) {

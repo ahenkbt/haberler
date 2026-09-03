@@ -145,9 +145,10 @@ describe("hm-html-boot", () => {
 
   it("strips data: og:image so WhatsApp can load a real URL", () => {
     const dirty =
-      '<meta property="og:image" content="https://vatanhaber.net/data:image/png;base64,AAA"/>';
+      '<meta property="og:image" content="https://vatanhaber.net/data:image/png;base64,AAA"/><script type="application/ld+json">{"logo":{"url":"https://vatanhaber.net/data:image/png;base64,AAA"}}</script>';
     const clean = sanitizeOgShareImages(dirty, "https://vatanhaber.net");
     assert.match(clean, /og:image" content="https:\/\/vatanhaber\.net\/apple-touch-icon\.png"/);
+    assert.match(clean, /"url":"https:\/\/vatanhaber\.net\/apple-touch-icon\.png"/);
     assert.equal(clean.includes("data:image"), false);
   });
 });
