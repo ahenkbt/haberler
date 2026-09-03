@@ -41,7 +41,8 @@ const NAV = [
   { href: "/", label: "Anasayfa" },
   { href: "/web-yazilimi", label: "Web Yazılımı" },
   { href: "/ajans", label: "Ajans" },
-  { href: "/hizmetler", label: "Çağrı Merkezi" },
+  { href: "/aiaddin", label: "Aiaddin" },
+  { href: "/cagri-merkezi-crm", label: "PBX CRM" },
   { href: "/haber-merkezi", label: "Haber Merkezi" },
   { href: "/yekpare", label: "Yekpare" },
   { href: "/hakkimizda", label: "Hakkımızda" },
@@ -94,7 +95,14 @@ function navActive(path: string, href: string): boolean {
       path === "/web-yazilimi"
     );
   }
-  if (href === "/hizmetler") return path === "/hizmetler" || path.startsWith("/hizmet/");
+  if (href === "/cagri-merkezi-crm") {
+    return (
+      path === "/cagri-merkezi-crm" ||
+      path === "/yapay-zeka-cagri-merkezi" ||
+      path === "/hizmetler" ||
+      path.startsWith("/hizmet/")
+    );
+  }
   return path === href || path.startsWith(`${href}/`);
 }
 
@@ -419,6 +427,10 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
           </p>
           <p style={{ marginTop: 10 }}>
             <Link href="/haber-merkezi">Haber Merkezi</Link>
+            {" · "}
+            <Link href="/aiaddin">Aiaddin</Link>
+            {" · "}
+            <Link href="/cagri-merkezi-crm">PBX CRM</Link>
             {" · "}
             <a href="https://yekpare.net" target="_blank" rel="noreferrer">
               Yekpare.net

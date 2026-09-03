@@ -9,44 +9,85 @@ import {
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { ahenkCallCenterServices, ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
-import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
-import { safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
+import { AHENK_PHOTOS, safeAhenkImageUrl, type AhenkContentCard } from "@/lib/ahenkAgencySite";
+import { formatTry, PBX_BASE_PER_AGENT_TL, pbxMonthlyTl } from "@/lib/ahenkPbxPricing";
+import {
+  HM_EDITOR_DEMOS,
+  YEKPARE_ECOSYSTEM_POINTS,
+  YEKPARE_HOME_FAQS,
+  YEKPARE_SERVICE_DEMOS,
+  type AhenkDemoLink,
+} from "@/lib/ahenkYekpareDemos";
+
+function hideHomeCampaignPrice(text: string): string {
+  return text
+    .replace(/\s*[—–-]\s*\d{1,3}(?:\.\d{3})*\s*TL/gi, "")
+    .replace(/\d{1,3}(?:\.\d{3})*\s*TL(?:’den|\b)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+·\s+·/g, " · ")
+    .trim();
+}
+
+function sectorForHome(item: AhenkContentCard): AhenkContentCard {
+  return {
+    ...item,
+    title: hideHomeCampaignPrice(item.title),
+    excerpt: hideHomeCampaignPrice(item.excerpt),
+  };
+}
+
+function DemoGrid({ items }: { items: AhenkDemoLink[] }) {
+  return (
+    <div className="ahenk-demo-list">
+      {items.map((item) => (
+        <a key={item.href} className="ahenk-demo-link" href={item.href} target="_blank" rel="noreferrer">
+          <span className="ahenk-kicker">{item.note}</span>
+          <strong>{item.title}</strong>
+          <span className="ahenk-demo-url">{item.href.replace(/^https?:\/\//, "")}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
 
 export default function AhenkAgencyHome() {
   const site = useAhenkAgencySite();
   const heroSrc = safeAhenkImageUrl(site.heroImage, "");
   const yekpareSrc = safeAhenkImageUrl(site.yekpare.image, "");
   const aboutSrc = safeAhenkImageUrl(site.aboutImage, "");
-  const featured = site.softwareSectors.slice(0, 3);
-  const restSectors = site.softwareSectors.slice(3);
+  const sectors = site.softwareSectors.map(sectorForHome);
+  const featured = sectors.slice(0, 3);
+  const restSectors = sectors.slice(3);
   const callCenter = ahenkCallCenterServices(site);
-  const pkg = ahenkPackageFromFields(site);
   const wa = ahenkWhatsAppHref(
     site.whatsappTel || site.phoneTel,
-    "Merhaba, kurumsal web sitesi / web yazılımı istiyorum.",
+    "Merhaba, yekpare.net hazır web sitesi / özel yazılım istiyorum.",
   );
 
   return (
     <AhenkAgencyChrome title={site.seoTitle} description={site.seoDescription}>
-      <section className="ahenk-hero" aria-label="Web yazılımı">
+      <section className="ahenk-hero" aria-label="yekpare.net hazır web sitesi">
         {heroSrc ? (
           <div className="ahenk-hero-photo" aria-hidden>
-            <img src={heroSrc} alt="Ahenk web yazılımı" />
+            <img src={heroSrc} alt="Ahenk yekpare.net hazır web sitesi" />
           </div>
         ) : null}
         <div className="ahenk-hero-slide">
           <div className="ahenk-hero-inner">
-            <span className="ahenk-kicker">{site.heroKicker}</span>
-            <h1>{site.heroTitle}</h1>
-            <p>{site.heroSubtitle}</p>
-            <p className="ahenk-hero-ai">{site.aiDeliveryLead}</p>
+            <span className="ahenk-kicker">Ahenk Bilgi Teknolojileri</span>
+            <h1>yekpare.net hazır web sitesi</h1>
+            <p>
+              Ahenk BT markası, yekpare.net üzerinde hazır web siteleri üretir. Haber siteleri HM editör altyapısıyla,
+              sağlık, hukuk, mağaza ve sipariş vitrinleri yekpare.net servis sağlayıcı siteleriyle yayına alınır.
+            </p>
+            <p className="ahenk-hero-ai">Özel yazılımlar için bizimle iletişime geçin.</p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <AhenkSmartLink href={site.heroCtaHref} className="ahenk-btn">
-                {site.heroCtaLabel}
-              </AhenkSmartLink>
-              <AhenkSmartLink href={site.heroSecondaryHref} className="ahenk-btn ahenk-btn-ghost">
-                {site.heroSecondaryLabel}
-              </AhenkSmartLink>
+              <a className="ahenk-btn" href="#demolar">
+                Canlı demolar
+              </a>
+              <Link href="/iletisim" className="ahenk-btn ahenk-btn-ghost">
+                Özel yazılım için iletişim
+              </Link>
               <a className="ahenk-btn ahenk-btn-ghost" href={wa} target="_blank" rel="noreferrer">
                 WhatsApp {site.phone}
               </a>
@@ -55,24 +96,48 @@ export default function AhenkAgencyHome() {
         </div>
       </section>
 
-      <section className="ahenk-price" id="fiyat">
-        <div className="ahenk-price-inner">
-          <div>
-            <span className="ahenk-kicker">{site.priceTitle}</span>
-            <strong>{pkg.display}</strong>
-            <p>
-              {pkg.note} {site.aiDeliveryLead}
-            </p>
-          </div>
-          <a className="ahenk-btn" href={wa} target="_blank" rel="noreferrer">
-            WhatsApp ile sipariş
+      <section className="ahenk-section" id="yekpare-ekosistem">
+        <h2>yekpare.net’te yayınlanmanın avantajı</h2>
+        <p className="ahenk-lead">
+          Hazır siteniz yalnızca bir vitrin değildir: ücretsiz liste, reklam trafiği, harita ve sarı sayfalar kaydı,
+          onbinlerce işletmenin bulunduğu ağ. Sipariş, satış ve rezervasyon bu sistemden gelir.
+        </p>
+        <div className="ahenk-grid">
+          {YEKPARE_ECOSYSTEM_POINTS.map((item) => (
+            <article key={item.title} className="ahenk-card">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="ahenk-section" id="demolar">
+        <h2>Canlı demo örnekleri</h2>
+        <p className="ahenk-lead">
+          Mevcut örnekler yekpare.net servis sağlayıcı siteleri ve HM editör haber siteleri üzerindendir. Kendi
+          yazılımınız için özel geliştirme istiyorsanız bizimle iletişime geçin.
+        </p>
+        <h3 className="ahenk-subhead">yekpare.net servis sağlayıcı</h3>
+        <DemoGrid items={YEKPARE_SERVICE_DEMOS} />
+        <h3 className="ahenk-subhead">HM editör siteleri</h3>
+        <DemoGrid items={HM_EDITOR_DEMOS} />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
+          <a className="ahenk-btn" href="https://yekpare.net" target="_blank" rel="noreferrer">
+            yekpare.net
           </a>
+          <Link href="/iletisim" className="ahenk-btn ahenk-btn-light">
+            Özel yazılımlar için iletişime geçin
+          </Link>
         </div>
       </section>
 
       <section className="ahenk-section" id="yazilim">
         <h2>{site.softwareTitle}</h2>
-        <p className="ahenk-lead">{site.softwareLead}</p>
+        <p className="ahenk-lead">
+          Sektör şablonları yekpare.net hazır site olarak teslim edilir. Avukat, doktor, restoran, haber, emlak ve diğer
+          dikeyler; özel yazılım ihtiyacında Ahenk BT ile görüşülür.
+        </p>
         {featured.length ? <AhenkCardGrid items={featured} cta="Web yazılımı" /> : null}
         {restSectors.length ? (
           <div className="ahenk-grid ahenk-grid-tight" style={{ marginTop: 18 }}>
@@ -98,6 +163,45 @@ export default function AhenkAgencyHome() {
           <h2>{site.agencyTitle}</h2>
           <p className="ahenk-lead">{site.agencyLead}</p>
           <AhenkCardGrid items={site.agencyOffers} cta="Ajans" />
+        </div>
+      </section>
+
+      <section className="ahenk-section" id="urunler">
+        <h2>Yazılım ürünlerimiz</h2>
+        <p className="ahenk-lead">
+          Kurumsal yapay zeka IDE (Aiaddin) ve yapay zeka destekli çağrı merkezi CRM (Ahenk PBX). Detaylı sayfalar
+          ahenk.net.tr üzerinde; ürün girişleri aiaddin.net ve pbx.goalgo.org.
+        </p>
+        <div className="ahenk-grid ahenk-grid-2">
+          <AhenkSmartLink href="/aiaddin" className="ahenk-card ahenk-card-media">
+            <span className="ahenk-card-photo ahenk-card-photo-sm">
+              <img src={AHENK_PHOTOS.code} alt="Aiaddin" loading="lazy" />
+            </span>
+            <span className="ahenk-card-body">
+              <span className="ahenk-kicker">aiaddin.net</span>
+              <h3>Aiaddin — kurumsal yapay zeka IDE</h3>
+              <p>
+                Monaco, gerçek terminal, semantik bağlam ve Composer ajanı tarayıcıda. BYOK ile Claude / GPT / DeepSeek.
+                Free $0, Pro $20/ay, Enterprise özel.
+              </p>
+              <span className="ahenk-card-cta">Aiaddin tanıtımı →</span>
+            </span>
+          </AhenkSmartLink>
+          <AhenkSmartLink href="/cagri-merkezi-crm" className="ahenk-card ahenk-card-media">
+            <span className="ahenk-card-photo ahenk-card-photo-sm">
+              <img src={AHENK_PHOTOS.callCenter} alt="Ahenk PBX" loading="lazy" />
+            </span>
+            <span className="ahenk-card-body">
+              <span className="ahenk-kicker">pbx.goalgo.org</span>
+              <h3>Ahenk PBX — çağrı merkezi CRM</h3>
+              <p>
+                Yapay zeka destekli çağrı merkezi CRM. Temsilci başı {formatTry(PBX_BASE_PER_AGENT_TL)}; 10 kişide{" "}
+                {formatTry(pbxMonthlyTl(10))}, 20 kişide {formatTry(pbxMonthlyTl(20))}, 30 kişide{" "}
+                {formatTry(pbxMonthlyTl(30))}. Her +10 temsilcide 50 TL indirim, 50 ajana kadar.
+              </p>
+              <span className="ahenk-card-cta">PBX fiyatları →</span>
+            </span>
+          </AhenkSmartLink>
         </div>
       </section>
 
@@ -132,16 +236,19 @@ export default function AhenkAgencyHome() {
           <div className="ahenk-promo-visual ahenk-promo-fallback" />
         )}
         <div className="ahenk-promo-copy">
-          <span className="ahenk-kicker">{site.yekpare.kicker}</span>
-          <h2>{site.yekpare.title}</h2>
-          <p>{site.yekpare.text}</p>
+          <span className="ahenk-kicker">yekpare.net</span>
+          <h2>Hazır siteniz keşif ve sipariş ağına bağlanır</h2>
+          <p>
+            Ücretsiz liste, yekpare.net reklamları, haritalar ve sarı sayfalar. Onbinlerce işletme kaydı; sipariş, satış
+            ve rezervasyon bu trafikten gelir.
+          </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
-            <AhenkSmartLink href={site.yekpare.ctaHref} className="ahenk-btn">
-              {site.yekpare.ctaLabel}
-            </AhenkSmartLink>
-            <AhenkSmartLink href={site.yekpare.secondaryHref} className="ahenk-btn ahenk-btn-ghost">
-              {site.yekpare.secondaryLabel}
-            </AhenkSmartLink>
+            <a className="ahenk-btn" href="https://yekpare.net" target="_blank" rel="noreferrer">
+              yekpare.net’i aç
+            </a>
+            <Link href="/yekpare" className="ahenk-btn ahenk-btn-ghost">
+              Yekpare sayfası
+            </Link>
           </div>
         </div>
       </section>
@@ -159,8 +266,8 @@ export default function AhenkAgencyHome() {
 
       <section className="ahenk-section" id="sss">
         <h2>Sık sorulan sorular</h2>
-        <p className="ahenk-lead">Web yazılımı, kurumsal web sitesi fiyatı ve teslim süresi.</p>
-        <AhenkFaqList faqs={site.faqs} />
+        <p className="ahenk-lead">Hazır yekpare.net sitesi, ücretsiz liste ve özel yazılım.</p>
+        <AhenkFaqList faqs={YEKPARE_HOME_FAQS} />
       </section>
 
       <section className="ahenk-band">
@@ -185,8 +292,11 @@ export default function AhenkAgencyHome() {
       <section className="ahenk-cta">
         <div className="ahenk-cta-inner">
           <div>
-            <h2>{site.ctaTitle}</h2>
-            <p>{site.ctaText}</p>
+            <h2>Özel yazılımlar için bizimle iletişime geçin</h2>
+            <p>
+              Hazır yekpare.net sitesi dışında kurumunuza özel yazılım, entegrasyon veya yayın kurgusu için Ahenk BT
+              ofisleri ve WhatsApp hattı açık.
+            </p>
             <p className="ahenk-iban" style={{ marginTop: 12 }}>
               {site.ibanBank} · {site.ibanHolder}
               <br />
