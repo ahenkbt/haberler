@@ -3,6 +3,7 @@
 import { applyJsonLd, buildBreadcrumbJsonLd } from "@/lib/pageSeo";
 import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
 import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
+import { YEKPARE_HOME_FAQS } from "@/lib/ahenkYekpareDemos";
 import {
   AHENK_REMOVED_SERVICE_SLUGS,
   defaultAhenkFaqs,
@@ -202,13 +203,14 @@ export function applyAhenkAgencySeo(opts: {
 
   const crumbs = [{ name: "Anasayfa", path: "/" }];
   if (path !== "/") crumbs.push({ name: opts.title.slice(0, 80), path });
+  const isHome = path === "/";
 
   applyJsonLd(
     [
       buildAhenkOrganizationJsonLd(opts.site, origin),
       buildAhenkWebSiteJsonLd(opts.site, origin),
-      buildAhenkOfferJsonLd(opts.site, origin),
-      buildAhenkFaqJsonLd(opts.site.faqs),
+      ...(isHome ? [] : [buildAhenkOfferJsonLd(opts.site, origin)]),
+      buildAhenkFaqJsonLd(isHome ? YEKPARE_HOME_FAQS : opts.site.faqs),
       buildBreadcrumbJsonLd(crumbs),
     ],
     "ahenk-agency",

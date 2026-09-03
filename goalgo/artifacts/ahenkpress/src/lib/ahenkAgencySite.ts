@@ -574,8 +574,8 @@ ${modsHtml(beautyMods)}
     ),
     card(
       "kurumsal-sirket-sitesi",
-      `Kurumsal web sitesi — ${pkg.display}`,
-      `Çok dil, kariyer, yatırımcı ve ürün ailesi. ${pkg.display}, 3 günde teslim · ${pkg.includes}`,
+      "Kurumsal web sitesi",
+      "Çok dil, kariyer, yatırımcı ve ürün ailesi. 3 günde teslim · sunucu ve domain dahil.",
       "pen",
       "/yazilim/kurumsal-sirket-sitesi",
       `<h2>Kurumsal web yazılımı</h2>
@@ -696,9 +696,9 @@ function defaultPlatformProducts(): AhenkContentCard[] {
 
 function defaultYekpare(): AhenkPromoBlock {
   return {
-    kicker: "Yekpare.net",
-    title: "Türkiye’nin dijital kamusal katmanı",
-    text: "Yekpare; harita, yerel hizmet, turizm ve keşif yüzeylerini tek çatıda birleştirir. Ahenk, Yekpare’nin teknoloji ve yayın omurgasını üretir — markanız bu ekosisteme bağlanabilir.",
+    kicker: "yekpare.net",
+    title: "Hazır siteniz keşif, harita ve sipariş ağına bağlanır",
+    text: "Listelenmek ücretsizdir. yekpare.net reklamları trafiği artırır; haritalar, sarı sayfalar ve onbinlerce işletme kaydı aynı sistemde. Sipariş, satış ve rezervasyon buradan gelir. Özel yazılımlar için Ahenk BT ile iletişime geçin.",
     ctaLabel: "Yekpare.net’i ziyaret et",
     ctaHref: "https://yekpare.net",
     secondaryLabel: "Yekpare sayfası",
@@ -711,16 +711,16 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
   return {
     version: 2,
     brandName: "Ahenk Bilgi Teknolojileri",
-    tagline: "Yapay zeka destekli web yazılımı — tüm sektörler, 1-3 günde teslim.",
+    tagline: "yekpare.net hazır web sitesi — Ahenk Bilgi Teknolojileri.",
     phone: "0541 313 62 45",
     phoneTel: "+905413136245",
     whatsappTel: "+905413136245",
     email: AHENK_CORPORATE_EMAIL,
     logoUrl: AHENK_LOGO_WORDMARK,
     logoMarkUrl: AHENK_LOGO_MARK,
-    seoTitle: "Web Yazılımı, Web Tasarımı, Haber Sitesi Yazılımı | Ahenk",
+    seoTitle: "Ahenk BT | yekpare.net hazır web sitesi",
     seoDescription:
-      "Yapay zeka destekli web yazılımı: haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi ve kurumsal web sitesi. 1-3 günde teslim. Kurumsal paket 10.000 TL.",
+      "Ahenk Bilgi Teknolojileri, yekpare.net hazır web siteleri üretir. Haber siteleri (HM editör) ve servis sağlayıcı vitrinleri. Ücretsiz liste, harita, sarı sayfalar, sipariş ve rezervasyon. Özel yazılımlar için iletişime geçin.",
     seoKeywords:
       "web yazılımı, web tasarımı, haber sitesi yazılımı, haber scripti, avukat sitesi, doktor sitesi, restoran sitesi, kurumsal web sitesi, mobil uyumlu yazılım, web ofisi, webintek",
     aiDeliveryLead: "Yapay zeka destekli tüm sektörlerden web yazılımı yapıyoruz. 1-3 günde teslim ediyoruz.",
@@ -738,14 +738,14 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     faqs: defaultAhenkFaqs(),
     hoursWeekday: "Pazartesi - Cumartesi 09:00 - 18:00",
     hoursSunday: "Pazar: Kapalı",
-    heroKicker: "Yapay zeka destekli web yazılımı",
-    heroTitle: "Tüm sektörlere web yazılımı — 1-3 günde teslim.",
+    heroKicker: "Ahenk Bilgi Teknolojileri",
+    heroTitle: "yekpare.net hazır web sitesi",
     heroSubtitle:
-      "Haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi ve kurumsal web sitesi. Kurumsal paket 10.000 TL, 3 günde yayında.",
-    heroCtaLabel: "Web yazılımı",
-    heroCtaHref: "/web-yazilimi",
-    heroSecondaryLabel: "Kurumsal 10.000 TL",
-    heroSecondaryHref: "/kurumsal-web-sitesi",
+      "Ahenk BT, yekpare.net üzerinde hazır web siteleri üretir. Haber siteleri HM editör altyapısıyla, sektör siteleri yekpare.net servis sağlayıcı vitrinleriyle yayına alınır.",
+    heroCtaLabel: "Canlı demolar",
+    heroCtaHref: "#demolar",
+    heroSecondaryLabel: "Özel yazılım için iletişim",
+    heroSecondaryHref: "/iletisim",
     heroImage: AHENK_PHOTOS.hero,
     softwareTitle: "Web yazılımı — tüm sektörler",
     softwareLead:
@@ -764,9 +764,10 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     haberMerkeziHtml: `<p>Ahenk’in yayın katmanı dört üründen oluşur. Haber Merkezi ile kendi gazetenizi kurarsınız; Haberler canlı vitrindir; YekTube video ve canlı TV’dir; haber haritası coğrafi keşiftir.</p>
 <p>Canlı uygulamalar mevcut adreslerinde çalışmaya devam eder. Bu sayfa ürünleri kurumsal dilde tanıtır.</p>`,
     yekparePageTitle: "Yekpare.net",
-    yekparePageHtml: `<p><strong>Yekpare.net</strong>, yerel keşif, harita ve kamusal dijital hizmetleri bir araya getiren platformdur. Ahenk Bilgi Teknolojileri, Yekpare’nin yazılım ve yayın omurgasını üretir.</p>
-<p>Markanızı Yekpare ekosistemine bağlamak, sektör yazılımınızı harita ve keşif katmanına taşımak veya ortak yayın kurgulamak için bizimle görüşün.</p>
-<p><a href="https://yekpare.net" rel="noreferrer">yekpare.net</a> adresinden platformu ziyaret edebilirsiniz.</p>`,
+    yekparePageHtml: `<p><strong>Yekpare.net</strong> hazır web sitelerinin yayınlandığı ekosistemdir. Ahenk Bilgi Teknolojileri (Ahenk BT) bu hazır siteleri üretir: haber siteleri HM editör altyapısıyla, sektör vitrinleri yekpare.net servis sağlayıcı siteleriyle.</p>
+<p>yekpare.net üzerinde listelenmek ücretsizdir. Reklamlar trafiği artırır; haritalar kaydı, sarı sayfalar ve onbinlerce işletme kaydı aynı sistemdedir. Sipariş, satış ve rezervasyon bu ağdan gelir.</p>
+<p>Canlı örnekler: <a href="https://yekpare.net/saglik" rel="noreferrer">sağlık</a>, <a href="https://yekpare.net/hukuk" rel="noreferrer">hukuk</a>, <a href="https://yekpare.net/alisveris/magaza/imece" rel="noreferrer">İmece mağaza</a>, <a href="https://yekpare.net/siparis/satici/kafe-bazar" rel="noreferrer">Kafe Bazar</a>; haber için <a href="https://ankarasehirgazetesi.com/" rel="noreferrer">Ankara Şehir Gazetesi</a> ve <a href="https://vatankahramanlari.org/" rel="noreferrer">Vatan Kahramanları</a>.</p>
+<p>Özel yazılımlar için <a href="/iletisim">bizimle iletişime geçin</a>.</p>`,
     aboutTitle: "Küresel markalarla çalışıyoruz",
     aboutHtml: `<p>Ahenk Bilgi Teknolojileri olarak Getir Yemek, Getir Çarşı, Migros Yemek ve Yemeksepeti gibi start up firmalarına verdiğimiz hizmetlerle tecrübe sahibiyiz. Teknolojik girişim şirketlerinin ihtiyaç duydukları tüm bilgi ve birikime sahibiz; birçok alanda hizmet sağlıyoruz.</p>
 <p>Hedefimiz; yenilikçi uygulamalarıyla ülkemizin kamu kurumları ve özel sektör kuruluşlarına bilgi teknolojileri alanında en üst seviyede hizmet verebilmektir. Teknolojik girişim tekliflerine açığız.</p>
@@ -1142,6 +1143,10 @@ function mergeFaqs(raw: unknown, defaults: AhenkFaq[]): AhenkFaq[] {
   return items;
 }
 
+function looksLikePricedHomeCopy(value: unknown): boolean {
+  return /10\.000|10000\s*TL|Kurumsal 10/i.test(String(value ?? ""));
+}
+
 export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): AhenkAgencySite {
   const defaults = defaultAhenkAgencySite();
   if (!raw || !String(raw).trim()) return defaults;
@@ -1149,18 +1154,26 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
     const data = JSON.parse(String(raw)) as unknown;
     if (!isRecord(data)) return defaults;
     const useNewCopy = typeof data.seoTitle !== "string" || !String(data.seoTitle).trim();
+    const refreshHomeCopy =
+      useNewCopy ||
+      looksLikePricedHomeCopy(data.heroTitle) ||
+      looksLikePricedHomeCopy(data.heroSubtitle) ||
+      looksLikePricedHomeCopy(data.heroSecondaryLabel) ||
+      looksLikePricedHomeCopy(data.seoDescription) ||
+      looksLikePricedHomeCopy(data.seoTitle) ||
+      looksLikePricedHomeCopy(data.tagline);
     return {
       version: 2,
       brandName: str(data.brandName, defaults.brandName),
-      tagline: useNewCopy ? defaults.tagline : str(data.tagline, defaults.tagline),
+      tagline: refreshHomeCopy ? defaults.tagline : str(data.tagline, defaults.tagline),
       phone: str(data.phone, defaults.phone),
       phoneTel: str(data.phoneTel, defaults.phoneTel),
       whatsappTel: str(data.whatsappTel, defaults.whatsappTel),
       email: str(data.email, defaults.email),
       logoUrl: safeAhenkImageUrl(data.logoUrl, defaults.logoUrl),
       logoMarkUrl: safeAhenkImageUrl(data.logoMarkUrl, defaults.logoMarkUrl),
-      seoTitle: str(data.seoTitle, defaults.seoTitle),
-      seoDescription: str(data.seoDescription, defaults.seoDescription),
+      seoTitle: refreshHomeCopy ? defaults.seoTitle : str(data.seoTitle, defaults.seoTitle),
+      seoDescription: refreshHomeCopy ? defaults.seoDescription : str(data.seoDescription, defaults.seoDescription),
       seoKeywords: str(data.seoKeywords, defaults.seoKeywords),
       aiDeliveryLead: str(data.aiDeliveryLead, defaults.aiDeliveryLead),
       priceTitle: str(data.priceTitle, defaults.priceTitle),
@@ -1177,15 +1190,15 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       faqs: mergeFaqs(data.faqs, defaults.faqs),
       hoursWeekday: str(data.hoursWeekday, defaults.hoursWeekday),
       hoursSunday: str(data.hoursSunday, defaults.hoursSunday),
-      heroKicker: useNewCopy ? defaults.heroKicker : str(data.heroKicker, defaults.heroKicker),
-      heroTitle: useNewCopy ? defaults.heroTitle : str(data.heroTitle, defaults.heroTitle),
-      heroSubtitle: useNewCopy ? defaults.heroSubtitle : str(data.heroSubtitle, defaults.heroSubtitle),
-      heroCtaLabel: useNewCopy ? defaults.heroCtaLabel : str(data.heroCtaLabel, defaults.heroCtaLabel),
-      heroCtaHref: useNewCopy ? defaults.heroCtaHref : str(data.heroCtaHref, defaults.heroCtaHref),
-      heroSecondaryLabel: useNewCopy
+      heroKicker: refreshHomeCopy ? defaults.heroKicker : str(data.heroKicker, defaults.heroKicker),
+      heroTitle: refreshHomeCopy ? defaults.heroTitle : str(data.heroTitle, defaults.heroTitle),
+      heroSubtitle: refreshHomeCopy ? defaults.heroSubtitle : str(data.heroSubtitle, defaults.heroSubtitle),
+      heroCtaLabel: refreshHomeCopy ? defaults.heroCtaLabel : str(data.heroCtaLabel, defaults.heroCtaLabel),
+      heroCtaHref: refreshHomeCopy ? defaults.heroCtaHref : str(data.heroCtaHref, defaults.heroCtaHref),
+      heroSecondaryLabel: refreshHomeCopy
         ? defaults.heroSecondaryLabel
         : str(data.heroSecondaryLabel, defaults.heroSecondaryLabel),
-      heroSecondaryHref: useNewCopy
+      heroSecondaryHref: refreshHomeCopy
         ? defaults.heroSecondaryHref
         : str(data.heroSecondaryHref, defaults.heroSecondaryHref),
       heroImage: safeAhenkImageUrl(data.heroImage, defaults.heroImage),
