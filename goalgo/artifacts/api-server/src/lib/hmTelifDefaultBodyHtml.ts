@@ -96,7 +96,7 @@ export const HM_TELIF_DEFAULT_BODY_HTML = `<div class="hm-vkv-masthead-page-root
         <div class="infra-card">
             <div class="infra-title"><i class="fa-solid fa-cubes"></i> Platform ve Altyapı Hakkında</div>
             <p class="infra-desc">
-                Bu web sitesi, Türkiye'nin ve Türk Dünyasının yerli ve milli arama motoru ve süper uygulaması (Super App) ekosistemi olan <a href="https://turk.eco/habermerkezi" target="_blank">turk.eco/habermerkezi</a> bulut haber altyapısını kullanmaktadır. Sitemizde yer alan içeriklerin bir kısmı kendi özgün kadromuz tarafından üretilirken, bir kısmı ise Türkiye ve dünyadan çeşitli haber kaynaklarından anlık veri akışı ile sağlanmaktadır.
+                Bu web sitesi, <a href="https://ahenk.net.tr" target="_blank" rel="noreferrer">Ahenk Bilgi Teknolojileri</a> tarafından geliştirilen Haber Merkezi yayın altyapısını kullanmaktadır. Sitemizde yer alan içeriklerin bir kısmı kendi özgün kadromuz tarafından üretilirken, bir kısmı ise Türkiye ve dünyadan çeşitli haber kaynaklarından anlık veri akışı ile sağlanmaktadır.
             </p>
         </div>
 

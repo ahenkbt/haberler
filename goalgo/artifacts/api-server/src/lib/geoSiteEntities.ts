@@ -383,8 +383,13 @@ export function geoEntityVisibleBodyHtml(
             : ""
         }</ul>`
       : "";
+  const vendorLine =
+    entity.vendor && entity.slug !== "ahenk"
+      ? `<p>Yayın altyapısı: <a href="${esc(entity.vendor.url)}">${esc(entity.vendor.name)}</a></p>`
+      : "";
   return `<p>${esc(entity.description)}</p>
 <p>Resmi ad: <strong>${esc(entity.officialName)}</strong>. Resmi alan adı: <strong>${esc(entity.domain)}</strong>. Tür: ${esc(entity.type)}. Dil: Türkçe (tr-TR). Ülke: Türkiye.</p>
+${vendorLine}
 <p>Hakkında: <a href="${esc(aboutHref)}">${esc(aboutHref)}</a></p>
 <h2>Diğer adlar</h2>
 <ul>${aliases}</ul>

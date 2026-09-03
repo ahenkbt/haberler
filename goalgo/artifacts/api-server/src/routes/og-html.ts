@@ -129,9 +129,18 @@ function publicOrigin(raw: unknown): string {
   }
 }
 
-function absImage(origin: string, url: string | null | undefined): string {
+function isUnusableShareImage(url: string): boolean {
   const u = String(url ?? "").trim();
-  if (!u) return `${origin}/opengraph.jpg`;
+  if (!u) return true;
+  if (/^(data|blob|javascript|about):/i.test(u)) return true;
+  if (/^https?:\/\/[^/]+\/data:/i.test(u)) return true;
+  return false;
+}
+
+function absImage(origin: string, url: string | null | undefined, fallbackPath = "/opengraph.jpg"): string {
+  const u = String(url ?? "").trim();
+  const fallback = `${origin}${fallbackPath.startsWith("/") ? fallbackPath : `/${fallbackPath}`}`;
+  if (!u || isUnusableShareImage(u)) return fallback;
   if (u.startsWith("http://") || u.startsWith("https://")) {
     try {
       const parsed = new URL(u);
@@ -298,8 +307,15 @@ async function rssShareMeta(itemId: string, siteId: number | null): Promise<{
 
 async function hmSiteOgImage(site: HmSiteOgRow, origin: string): Promise<string> {
   const layout = parseLayout(site.layoutJson);
-  const image = layoutOgImage(layout) ?? (await latestNewsImage(site.id));
-  return absImage(origin, image);
+  const logo = layoutOgImage(layout);
+  if (logo && !isUnusableShareImage(logo)) {
+    return absImage(origin, logo, "/apple-touch-icon.png");
+  }
+  const news = await latestNewsImage(site.id);
+  if (news && !isUnusableShareImage(news)) {
+    return absImage(origin, news, "/apple-touch-icon.png");
+  }
+  return `${origin}/apple-touch-icon.png`;
 }
 
 function hmDescription(site: HmSiteOgRow): string {

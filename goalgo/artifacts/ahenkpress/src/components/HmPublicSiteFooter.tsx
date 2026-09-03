@@ -35,7 +35,6 @@ import {
   resolveHmPublicActiveGlobalSlugs,
   resolveHmPublicHiddenCategorySlugs,
 } from "@/lib/hmPublicCategoryFilter";
-import { PORTAL_ORIGIN } from "@/lib/portalBrand";
 import {
   hmTelifFooterNavItem,
   isHmTelifMenuHref,
@@ -471,9 +470,9 @@ export function HmPublicSiteFooter({
 
         <p className="mt-10 border-t border-[color:var(--hm-header-border,rgba(255,255,255,0.1))] pt-6 text-center text-xs text-[color:var(--hm-footer-text,rgba(203,213,225,0.88))]">
           <span className="mt-1 block sm:mt-0 sm:inline">
-            Haber merkezi alt yapı:{" "}
-            <a href={`${PORTAL_ORIGIN}/habermerkezi`} className="text-[color:var(--hm-footer-link-hover,var(--hm-brand-label,#f87171))] hover:underline" rel="noreferrer">
-              turk.eco
+            Haber merkezi altyapısı:{" "}
+            <a href="https://ahenk.net.tr" className="text-[color:var(--hm-footer-link-hover,var(--hm-brand-label,#f87171))] hover:underline" rel="noreferrer">
+              Ahenk Bilgi Teknolojileri
             </a>
           </span>
           <span className="mx-2 hidden sm:inline">·</span>

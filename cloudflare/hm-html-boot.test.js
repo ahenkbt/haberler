@@ -15,6 +15,9 @@ import {
   isAhenkAgencyGeoPath,
   buildAhenkLlmsTxtFallback,
   buildAhenkAgencyEntityHtml,
+  buildHmSiteEntityHtml,
+  isSharePreviewUserAgent,
+  rewriteSpaShellOgForHmHost,
 } from "./hm-html-boot.js";
 
 describe("hm-html-boot", () => {
@@ -106,5 +109,36 @@ describe("hm-html-boot", () => {
     assert.match(html, /Ahenk Bilgi Teknolojileri/);
     assert.match(html, /application\/ld\+json/);
     assert.match(html, /ahenk\.net\.tr/);
+  });
+
+  it("builds HM entity HTML with site name, not Ahenk as og:title", () => {
+    const html = buildHmSiteEntityHtml("vatanhaber", "https://vatanhaber.net", "/");
+    assert.match(html, /Vatan Haber — vatanhaber\.net resmi haber sitesi/);
+    assert.match(html, /og:site_name" content="Vatan Haber"/);
+    assert.match(html, /gazetevatan\.com/);
+    assert.match(html, /Ahenk Bilgi Teknolojileri/);
+    assert.equal(/og:title" content="Ahenk/i.test(html), false);
+    assert.equal(isSharePreviewUserAgent("WhatsApp/2.23.20.0"), true);
+    assert.equal(isSharePreviewUserAgent("facebookexternalhit/1.1"), true);
+    assert.equal(isSharePreviewUserAgent("Mozilla/5.0 Chrome/120"), false);
+  });
+
+  it("rewrites SPA Ahenk OG tags on editor hosts", () => {
+    const spa = `<html><head><title>Ahenk Bilgi Teknolojileri</title>
+<meta property="og:title" content="Ahenk Bilgi Teknolojileri" />
+<meta property="og:site_name" content="Ahenk Bilgi Teknolojileri" />
+<meta property="og:url" content="https://ahenk.net.tr/" />
+<meta property="og:image" content="https://ahenk.net.tr/opengraph.jpg" />
+<meta name="description" content="Ahenk Bilgi Teknolojileri (ahenk.net.tr)" />
+<script type="application/ld+json" data-yekpare-portal-jsonld="1">{"name":"Ahenk Bilgi Teknolojileri"}</script>
+</head><body></body></html>`;
+    const out = rewriteSpaShellOgForHmHost(spa, "vatanhaber.net", "https://vatanhaber.net");
+    assert.match(out, /<title>Vatan Haber — vatanhaber\.net resmi haber sitesi<\/title>/);
+    assert.match(out, /og:site_name" content="Vatan Haber"/);
+    assert.match(out, /og:url" content="https:\/\/vatanhaber\.net\/"/);
+    assert.equal(out.includes("https://ahenk.net.tr/opengraph.jpg"), false);
+    assert.match(out, /NewsMediaOrganization/);
+    const ahenk = rewriteSpaShellOgForHmHost(spa, "ahenk.net.tr", "https://ahenk.net.tr");
+    assert.match(ahenk, /Ahenk Bilgi Teknolojileri/);
   });
 });

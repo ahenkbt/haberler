@@ -45,6 +45,8 @@ describe("geoSiteEntities", () => {
     const html = geoEntityVisibleBodyHtml(entity, "https://vatanhaber.net");
     expect(html).toContain("vatanhaber.net");
     expect(html).toContain("gazetevatan.com");
+    expect(html).toContain("Ahenk Bilgi Teknolojileri");
+    expect(html).toContain("https://ahenk.net.tr");
     expect(geoEntityPageTitle(entity, "/")).toContain("vatanhaber.net");
   });
 

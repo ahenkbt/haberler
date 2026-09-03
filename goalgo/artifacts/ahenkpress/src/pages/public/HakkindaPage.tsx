@@ -125,6 +125,12 @@ export default function HakkindaPage() {
               </section>
             ) : null}
             <p>
+              Yayın altyapısı:{" "}
+              <a href="https://ahenk.net.tr" rel="noreferrer" target="_blank">
+                Ahenk Bilgi Teknolojileri
+              </a>
+            </p>
+            <p>
               Künye: <Link href="/kunye">/kunye</Link>
               {" · "}
               İletişim: <Link href="/iletisim">/iletisim</Link>

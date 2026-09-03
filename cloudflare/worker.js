@@ -30,6 +30,7 @@ import {
   buildGeoRobotsTxt,
   buildHmAiTxtFallback,
   buildHmLlmsTxtFallback,
+  buildHmSiteEntityHtml,
   firstHmBootImageUrl,
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
@@ -38,7 +39,9 @@ import {
   isAhenkAgencyHost,
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
+  isSharePreviewUserAgent,
   raceHmHtmlBoot,
+  rewriteSpaShellOgForHmHost,
   shouldInstantHmRootRedirect,
   withBudget,
 } from "./hm-html-boot.js";
@@ -780,6 +783,12 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     return new Response(null, { status: assetResp.status, headers: out });
   }
   let html = rewriteHtml(await assetResp.text(), { oneShotPurge, purgeCookie });
+  const hmHostSlug = hmDomainSlugFallback(hostname);
+  if (hmHostSlug && !isAhenkAgencyHost(hostname)) {
+    const ogOrigin = incoming?.origin || `https://${String(hostname || "").replace(/^www\./, "")}`;
+    html = rewriteSpaShellOgForHmHost(html, hostname, ogOrigin);
+    out.set("x-yekpare-hm-og-rewrite", hmHostSlug);
+  }
   const homeHtml = incoming && isHmPublicHomeHtmlPath(incoming.pathname, incoming.hostname);
   if (homeHtml && env && incoming) {
     const slug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname);
@@ -1402,10 +1411,7 @@ p{max-width:28rem;text-align:center;line-height:1.5}</style></head>
 
 /** WhatsApp / Facebook / Telegram vb. — JS çalıştırmaz, SPA index.html OG'sini okur. */
 function isSocialPreviewBot(request) {
-  const ua = String(request.headers.get("user-agent") ?? "").toLowerCase();
-  return /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|pinterest|bingbot|googlebot|duckduckbot|yandexbot|gptbot|chatgpt-user|claudebot|anthropic-ai|perplexitybot|google-extended|applebot|cohere-ai|bytespider|meta-externalagent|amazonbot/.test(
-    ua,
-  );
+  return isSharePreviewUserAgent(request.headers.get("user-agent") ?? "");
 }
 
 function isOgProxySkipPath(pathname) {
@@ -1495,7 +1501,10 @@ async function socialPreviewOgHtml(request, env, incoming) {
   const cleanPath = incoming.pathname.replace(/\/+$/, "") || "/";
   const apiOrigin = upstreamOrigin(env, incoming);
   const isHmSlugPath = /^\/tr\/[^/]+(?:\/.*)?$/.test(cleanPath);
-  const hmBound = !isPortalHost(host) ? Boolean(await fetchHmSlugForHost(env, apiOrigin, host)) : false;
+  const fallbackSlug = !isPortalHost(host) && !isAhenkAgencyHost(host) ? hmDomainSlugFallback(host) : "";
+  const apiSlug = !isPortalHost(host) && !isAhenkAgencyHost(host) ? await fetchHmSlugForHost(env, apiOrigin, host) : null;
+  const hmSlug = apiSlug || fallbackSlug || "";
+  const hmBound = Boolean(hmSlug);
   const isCustomHmDomainPath = hmBound;
   const isPortalSharePath = (isPortalHost(host) || !hmBound) && isPortalOgSharePath(cleanPath);
   const isAhenkAgencyPath = isAhenkAgencyHost(host) && isAhenkAgencyGeoPath(cleanPath);
@@ -1517,6 +1526,7 @@ async function socialPreviewOgHtml(request, env, incoming) {
     });
     if (!upstream.ok) {
       if (isAhenkAgencyPath) return ahenkAgencyEntityResponse(request, cleanPath);
+      if (hmSlug) return hmSiteEntityResponse(request, hmSlug, incoming.origin, cleanPath);
       return null;
     }
     const headers = new Headers(upstream.headers);
@@ -1533,8 +1543,22 @@ async function socialPreviewOgHtml(request, env, incoming) {
     return new Response(upstream.body, { status: upstream.status, headers });
   } catch {
     if (isAhenkAgencyPath) return ahenkAgencyEntityResponse(request, cleanPath);
+    if (hmSlug) return hmSiteEntityResponse(request, hmSlug, incoming.origin, cleanPath);
     return null;
   }
+}
+
+function hmSiteEntityResponse(request, slug, origin, pathname) {
+  const body = buildHmSiteEntityHtml(slug, origin, pathname);
+  const headers = new Headers({
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "public, max-age=300",
+    "x-yekpare-frontend": FRONTEND_TAG,
+    "x-yekpare-og": "hm-entity-fallback",
+    "x-robots-tag": "index, follow, max-image-preview:large, max-snippet:-1",
+  });
+  if (request.method === "HEAD") return new Response(null, { status: 200, headers });
+  return new Response(body, { status: 200, headers });
 }
 
 function ahenkAgencyEntityResponse(request, pathname) {
@@ -2455,6 +2479,10 @@ export default {
 
     const apiRequest = request;
 
+    // Sosyal / Googlebot kökte 308'e düşmeden site adı+logo OG görsün.
+    const ogHtml = await socialPreviewOgHtml(request, env, incoming);
+    if (ogHtml) return ogHtml;
+
     const hmRedirect = await redirectHmCustomDomainRoot(request, env, incoming, ctx);
     if (hmRedirect) return hmRedirect;
 
@@ -2472,9 +2500,6 @@ export default {
 
     const hmLlms = await proxyHmAiKnowledgeText(request, env, incoming);
     if (hmLlms) return hmLlms;
-
-    const ogHtml = await socialPreviewOgHtml(request, env, incoming);
-    if (ogHtml) return ogHtml;
 
     const sitemapXml = await proxyRootSitemap(request, env, incoming);
     if (sitemapXml) return sitemapXml;

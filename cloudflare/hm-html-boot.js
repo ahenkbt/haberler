@@ -235,6 +235,13 @@ export function hmSlugDisplayName(slug) {
   return HM_SLUG_DISPLAY_NAMES[s] || s;
 }
 
+/** WhatsApp / Facebook / Googlebot / iMessage vb. — JS çalıştırmaz. */
+export function isSharePreviewUserAgent(ua) {
+  return /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|pinterest|bingbot|googlebot|google-inspectiontool|googleother|google-pagerenderer|storebot|duckduckbot|yandexbot|gptbot|chatgpt-user|claudebot|anthropic-ai|perplexitybot|google-extended|applebot|cohere-ai|bytespider|meta-externalagent|amazonbot|skypeuripreview|embedly|iframely|redditbot|quora|vkshare|viber|flipboard|screaming frog|semrush|ahrefs/.test(
+    String(ua || "").toLowerCase(),
+  );
+}
+
 export function isHmAiKnowledgePath(pathname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
   return p === "/llms.txt" || p === "/ai.txt";
@@ -452,6 +459,155 @@ function escHtml(s) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/"/g, "&quot;");
+}
+
+function replaceMetaByKey(html, attr, key, value) {
+  const escVal = escHtml(value);
+  const rePropFirst = new RegExp(
+    `(<meta\\s+[^>]*${attr}=["']${key}["'][^>]*content=["'])[^"']*(["'])`,
+    "i",
+  );
+  if (rePropFirst.test(html)) return html.replace(rePropFirst, `$1${escVal}$2`);
+  const reContentFirst = new RegExp(
+    `(<meta\\s+[^>]*content=["'])[^"']*(["'][^>]*${attr}=["']${key}["'])`,
+    "i",
+  );
+  return html.replace(reContentFirst, `$1${escVal}$2`);
+}
+
+/**
+ * SPA index.html Ahenk OG/JSON-LD sızdırır. Editör hostunda paylaşım ve Google
+ * botları JS çalıştırmadan site adı + açıklama + logo görsün.
+ */
+export function rewriteSpaShellOgForHmHost(html, hostname, origin) {
+  const slug = hmDomainSlugFallback(hostname);
+  if (!slug || isAhenkAgencyHost(hostname)) return String(html || "");
+  const name = hmSlugDisplayName(slug);
+  const host = String(hostname || "")
+    .toLowerCase()
+    .split(":")[0]
+    .replace(/^www\./, "")
+    .trim();
+  const o = String(origin || `https://${host}`).replace(/\/+$/, "");
+  const title = `${name} — ${host} resmi haber sitesi`;
+  const desc = `${name} resmi haber sitesi. Türkiye genelinde Türkçe yayın. Resmi alan adı ${host}.`;
+  const image = `${o}/apple-touch-icon.png`;
+  const url = `${o}/`;
+  let out = String(html || "");
+  out = out.replace(/<title>[^<]*<\/title>/i, `<title>${escHtml(title)}</title>`);
+  out = replaceMetaByKey(out, "name", "title", title);
+  out = replaceMetaByKey(out, "name", "description", desc);
+  out = replaceMetaByKey(out, "name", "author", name);
+  out = replaceMetaByKey(out, "name", "keywords", `${name}, ${host}, haber`);
+  out = replaceMetaByKey(out, "property", "og:title", title);
+  out = replaceMetaByKey(out, "property", "og:description", desc);
+  out = replaceMetaByKey(out, "property", "og:site_name", name);
+  out = replaceMetaByKey(out, "property", "og:url", url);
+  out = replaceMetaByKey(out, "property", "og:image", image);
+  out = replaceMetaByKey(out, "name", "twitter:title", title);
+  out = replaceMetaByKey(out, "name", "twitter:description", desc);
+  out = replaceMetaByKey(out, "name", "twitter:image", image);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": ["NewsMediaOrganization", "Organization"],
+    "@id": `${o}/#organization`,
+    name,
+    url,
+    description: desc,
+    identifier: { "@type": "PropertyValue", name: "domain", value: host },
+    inLanguage: "tr-TR",
+    areaServed: { "@type": "Country", name: "Türkiye" },
+    logo: { "@type": "ImageObject", url: image },
+    parentOrganization: {
+      "@type": "Organization",
+      name: "Ahenk Bilgi Teknolojileri",
+      url: "https://ahenk.net.tr",
+    },
+  };
+  const ldTag = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+  if (/data-yekpare-portal-jsonld="1"/.test(out)) {
+    out = out.replace(
+      /<script type="application\/ld\+json"[^>]*data-yekpare-portal-jsonld="1"[^>]*>[\s\S]*?<\/script>/gi,
+      "",
+    );
+    out = out.replace(/<\/head>/i, `${ldTag}\n</head>`);
+  }
+  return out;
+}
+
+export function buildHmSiteEntityHtml(slug, origin, pathname) {
+  const name = hmSlugDisplayName(slug);
+  const o = String(origin || "").replace(/\/+$/, "");
+  const host = o.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const path = String(pathname || "/").replace(/\/+$/, "") || "/";
+  const title =
+    path === "/hakkinda" || path === "/about"
+      ? `${name} nedir? — ${host}`
+      : path === "/kunye"
+        ? `Künye · ${name} (${host})`
+        : `${name} — ${host} resmi haber sitesi`;
+  const desc = `${name} resmi haber sitesi. Türkiye genelinde Türkçe yayın. Resmi alan adı ${host}.`;
+  const image = `${o}/apple-touch-icon.png`;
+  const canonical = path === "/" ? `${o}/` : `${o}${path}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": ["NewsMediaOrganization", "Organization"],
+    "@id": `${o}/#organization`,
+    name,
+    url: `${o}/`,
+    description: desc,
+    identifier: { "@type": "PropertyValue", name: "domain", value: host },
+    inLanguage: "tr-TR",
+    areaServed: { "@type": "Country", name: "Türkiye" },
+    logo: { "@type": "ImageObject", url: image },
+    parentOrganization: {
+      "@type": "Organization",
+      name: "Ahenk Bilgi Teknolojileri",
+      url: "https://ahenk.net.tr",
+    },
+  };
+  const vatanNote =
+    String(slug) === "vatanhaber"
+      ? "<p>vatanhaber.net, Vatan Haber resmi haber sitesidir. gazetevatan.com, vatanhaber.org ve vatanhaber.com.tr ayrı sitelerdir.</p>"
+      : "";
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${escHtml(title)}</title>
+<meta name="description" content="${escHtml(desc)}"/>
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"/>
+<meta name="geo.region" content="TR"/>
+<link rel="canonical" href="${escHtml(canonical)}"/>
+<link rel="alternate" type="text/plain" href="${o}/llms.txt" title="LLMs"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="${escHtml(canonical)}"/>
+<meta property="og:title" content="${escHtml(title)}"/>
+<meta property="og:description" content="${escHtml(desc)}"/>
+<meta property="og:image" content="${escHtml(image)}"/>
+<meta property="og:site_name" content="${escHtml(name)}"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${escHtml(title)}"/>
+<meta name="twitter:description" content="${escHtml(desc)}"/>
+<meta name="twitter:image" content="${escHtml(image)}"/>
+<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+</head>
+<body>
+<article>
+<h1>${escHtml(title)}</h1>
+<p>${escHtml(desc)}</p>
+${vatanNote}
+<p>Yayın altyapısı: <a href="https://ahenk.net.tr">Ahenk Bilgi Teknolojileri</a></p>
+<ul>
+<li><a href="${o}/">Anasayfa</a></li>
+<li><a href="${o}/hakkinda">Hakkında</a></li>
+<li><a href="${o}/kunye">Künye</a></li>
+<li><a href="${o}/tum-haberler">Tüm haberler</a></li>
+</ul>
+</article>
+</body>
+</html>`;
 }
 
 export function buildAhenkAgencyEntityHtml(pathname) {
