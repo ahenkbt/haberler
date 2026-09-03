@@ -535,6 +535,21 @@ export function rewriteSpaShellOgForHmHost(html, hostname, origin) {
   return out;
 }
 
+/** Container eskiyse data: logo origin'e yapışır; paylaşım görseli geçersiz kalır. */
+export function sanitizeOgShareImages(html, origin) {
+  const o = String(origin || "").replace(/\/+$/, "");
+  const fallback = `${o}/apple-touch-icon.png`;
+  return String(html || "")
+    .replace(
+      /(<meta\s+[^>]*(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'][^>]*content=["'])(?:https?:\/\/[^"']+\/)?data:[^"']*(["'])/gi,
+      `$1${fallback}$2`,
+    )
+    .replace(
+      /(<meta\s+[^>]*content=["'])(?:https?:\/\/[^"']+\/)?data:[^"']*(["'][^>]*(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'])/gi,
+      `$1${fallback}$2`,
+    );
+}
+
 export function buildHmSiteEntityHtml(slug, origin, pathname) {
   const name = hmSlugDisplayName(slug);
   const o = String(origin || "").replace(/\/+$/, "");

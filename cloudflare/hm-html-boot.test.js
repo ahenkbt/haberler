@@ -18,6 +18,7 @@ import {
   buildHmSiteEntityHtml,
   isSharePreviewUserAgent,
   rewriteSpaShellOgForHmHost,
+  sanitizeOgShareImages,
 } from "./hm-html-boot.js";
 
 describe("hm-html-boot", () => {
@@ -140,5 +141,13 @@ describe("hm-html-boot", () => {
     assert.match(out, /NewsMediaOrganization/);
     const ahenk = rewriteSpaShellOgForHmHost(spa, "ahenk.net.tr", "https://ahenk.net.tr");
     assert.match(ahenk, /Ahenk Bilgi Teknolojileri/);
+  });
+
+  it("strips data: og:image so WhatsApp can load a real URL", () => {
+    const dirty =
+      '<meta property="og:image" content="https://vatanhaber.net/data:image/png;base64,AAA"/>';
+    const clean = sanitizeOgShareImages(dirty, "https://vatanhaber.net");
+    assert.match(clean, /og:image" content="https:\/\/vatanhaber\.net\/apple-touch-icon\.png"/);
+    assert.equal(clean.includes("data:image"), false);
   });
 });

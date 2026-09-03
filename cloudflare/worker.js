@@ -42,6 +42,7 @@ import {
   isSharePreviewUserAgent,
   raceHmHtmlBoot,
   rewriteSpaShellOgForHmHost,
+  sanitizeOgShareImages,
   shouldInstantHmRootRedirect,
   withBudget,
 } from "./hm-html-boot.js";
@@ -1539,6 +1540,11 @@ async function socialPreviewOgHtml(request, env, incoming) {
     headers.set("x-robots-tag", "index, follow, max-image-preview:large, max-snippet:-1");
     if (request.method === "HEAD") {
       return new Response(null, { status: upstream.status, headers });
+    }
+    if (hmSlug) {
+      const text = sanitizeOgShareImages(await upstream.text(), incoming.origin);
+      if (/\/apple-touch-icon\.png/.test(text)) headers.set("x-yekpare-og-image-fix", "1");
+      return new Response(text, { status: upstream.status, headers });
     }
     return new Response(upstream.body, { status: upstream.status, headers });
   } catch {
