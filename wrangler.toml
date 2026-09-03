@@ -52,21 +52,23 @@ new_sqlite_classes = ["GoalgoApiContainer"]
 # yekpare.net / turk.eco / suhaberajansi.com bu worker'dan kaldırıldı.
 # Tekrar bağlanmasın diye scripts/cf-detached-domains.mjs her DNS/cutover çalıştırmasında söker.
 
-# Ana portal — ahenk.net.tr (eski turk.eco iptal). DNS varsa custom_domain 100117 kırar.
+# Ana portal — zone DNS kaydı boş (A/AAAA yok → tarayıcı NXDOMAIN).
+# custom_domain Worker hostname + anycast A kaydı oluşturur; zone_name/* trafiği karşılar.
+# DNS kaydı varken custom_domain 100117 verir; şu an kayıt yok.
+[[routes]]
+pattern = "ahenk.net.tr"
+custom_domain = true
+
+[[routes]]
+pattern = "www.ahenk.net.tr"
+custom_domain = true
+
 [[routes]]
 pattern = "ahenk.net.tr/*"
 zone_name = "ahenk.net.tr"
 
 [[routes]]
-pattern = "ahenk.net.tr"
-zone_name = "ahenk.net.tr"
-
-[[routes]]
 pattern = "www.ahenk.net.tr/*"
-zone_name = "ahenk.net.tr"
-
-[[routes]]
-pattern = "www.ahenk.net.tr"
 zone_name = "ahenk.net.tr"
 
 # HM editör siteleri (Cloudflare zone → Worker → Container / Neon)
