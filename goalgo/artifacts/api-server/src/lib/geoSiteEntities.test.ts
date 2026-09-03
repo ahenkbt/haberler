@@ -38,6 +38,8 @@ describe("geoSiteEntities", () => {
     expect(isAhenkAgencyGeoPath("/")).toBe(true);
     expect(isAhenkAgencyGeoPath("/hakkimizda")).toBe(true);
     expect(isAhenkAgencyGeoPath("/haberler")).toBe(false);
+    expect(isAhenkAgencyGeoPath("/aiaddin")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/cagri-merkezi-crm")).toBe(true);
   });
 
   it("builds Googlebot HTML that names the domain", () => {

@@ -321,6 +321,7 @@ export function isAhenkAgencyGeoPath(pathname: string | null | undefined): boole
   if (p === "/iletisim" || p === "/contact") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
+  if (p === "/aiaddin" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
   return false;
 }
 
@@ -338,6 +339,10 @@ export function geoEntityPageTitle(entity: GeoSiteEntity, path = "/"): string {
     if (p === "/hakkimizda" || p === "/about") return `Hakkımızda — ${entity.officialName}`;
     if (p === "/hizmetler" || p === "/hizmetlerimiz") return `Hizmetler — ${entity.officialName}`;
     if (p === "/iletisim" || p === "/contact") return `İletişim — ${entity.officialName}`;
+    if (p === "/aiaddin") return `Aiaddin — ${entity.officialName}`;
+    if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") {
+      return `Yapay zeka destekli çağrı merkezi CRM — ${entity.officialName}`;
+    }
     return `${entity.officialName} — ${entity.domain}`;
   }
   if (p === "/hakkinda" || p === "/about") return `${entity.officialName} nedir? — ${entity.domain}`;

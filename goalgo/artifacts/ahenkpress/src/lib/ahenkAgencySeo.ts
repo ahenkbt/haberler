@@ -260,7 +260,12 @@ export function buildAhenkOrganizationJsonLd(site: AhenkAgencySite, origin: stri
       latitude: 39.9208,
       longitude: 32.8541,
     },
-    sameAs: ["https://yekpare.net", "https://ahenk.net.tr/haber-merkezi"],
+    sameAs: [
+      "https://yekpare.net",
+      "https://ahenk.net.tr/haber-merkezi",
+      "https://aiaddin.net/",
+      "https://pbx.goalgo.org/",
+    ],
     contactPoint: [
       {
         "@type": "ContactPoint",

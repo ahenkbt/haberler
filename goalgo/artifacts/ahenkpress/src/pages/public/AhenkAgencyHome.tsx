@@ -10,7 +10,8 @@ import {
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { ahenkCallCenterServices, ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
 import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
-import { safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
+import { AHENK_PHOTOS, safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
+import { formatTry, PBX_BASE_PER_AGENT_TL, pbxMonthlyTl } from "@/lib/ahenkPbxPricing";
 
 export default function AhenkAgencyHome() {
   const site = useAhenkAgencySite();
@@ -98,6 +99,45 @@ export default function AhenkAgencyHome() {
           <h2>{site.agencyTitle}</h2>
           <p className="ahenk-lead">{site.agencyLead}</p>
           <AhenkCardGrid items={site.agencyOffers} cta="Ajans" />
+        </div>
+      </section>
+
+      <section className="ahenk-section" id="urunler">
+        <h2>Yazılım ürünlerimiz</h2>
+        <p className="ahenk-lead">
+          Kurumsal yapay zeka IDE (Aiaddin) ve yapay zeka destekli çağrı merkezi CRM (Ahenk PBX). Detaylı sayfalar ahenk.net.tr
+          üzerinde; ürün girişleri aiaddin.net ve pbx.goalgo.org.
+        </p>
+        <div className="ahenk-grid ahenk-grid-2">
+          <AhenkSmartLink href="/aiaddin" className="ahenk-card ahenk-card-media">
+            <span className="ahenk-card-photo ahenk-card-photo-sm">
+              <img src={AHENK_PHOTOS.code} alt="Aiaddin" loading="lazy" />
+            </span>
+            <span className="ahenk-card-body">
+              <span className="ahenk-kicker">aiaddin.net</span>
+              <h3>Aiaddin — kurumsal yapay zeka IDE</h3>
+              <p>
+                Monaco, gerçek terminal, semantik bağlam ve Composer ajanı tarayıcıda. BYOK ile Claude / GPT / DeepSeek.
+                Free $0, Pro $20/ay, Enterprise özel.
+              </p>
+              <span className="ahenk-card-cta">Aiaddin tanıtımı →</span>
+            </span>
+          </AhenkSmartLink>
+          <AhenkSmartLink href="/cagri-merkezi-crm" className="ahenk-card ahenk-card-media">
+            <span className="ahenk-card-photo ahenk-card-photo-sm">
+              <img src={AHENK_PHOTOS.callCenter} alt="Ahenk PBX" loading="lazy" />
+            </span>
+            <span className="ahenk-card-body">
+              <span className="ahenk-kicker">pbx.goalgo.org</span>
+              <h3>Ahenk PBX — çağrı merkezi CRM</h3>
+              <p>
+                Yapay zeka destekli çağrı merkezi CRM. Temsilci başı {formatTry(PBX_BASE_PER_AGENT_TL)}; 10 kişide{" "}
+                {formatTry(pbxMonthlyTl(10))}, 20 kişide {formatTry(pbxMonthlyTl(20))}, 30 kişide{" "}
+                {formatTry(pbxMonthlyTl(30))}. Her +10 temsilcide 50 TL indirim, 50 ajana kadar.
+              </p>
+              <span className="ahenk-card-cta">PBX fiyatları →</span>
+            </span>
+          </AhenkSmartLink>
         </div>
       </section>
 

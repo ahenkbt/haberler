@@ -377,6 +377,8 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/hizmetler" || p === "/hizmetlerimiz") return true;
   if (p === "/iletisim" || p === "/contact") return true;
   if (p === "/ucretsiz-haber-sitesi") return true;
+  if (p === "/aiaddin") return true;
+  if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
   if (p === "/yazilim" || p.startsWith("/yazilim/") || p === "/ajans" || p === "/haber-merkezi" || p === "/yekpare") {
@@ -415,6 +417,8 @@ Resmi kurumsal site: ${o}/
 Hakkımızda: ${o}/hakkimizda
 Hizmetler: ${o}/hizmetler
 İletişim: ${o}/iletisim
+Aiaddin: ${o}/aiaddin
+Çağrı merkezi CRM: ${o}/cagri-merkezi-crm
 
 ## Kimlik
 

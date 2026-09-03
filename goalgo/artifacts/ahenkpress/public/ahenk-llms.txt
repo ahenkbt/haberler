@@ -27,7 +27,15 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli web yazılım evi ve ajansıdır. A
 
 ## Ajans ve çağrı merkezi
 - Ajans: https://ahenk.net.tr/ajans
-- Çağrı merkezi: https://ahenk.net.tr/hizmetler
+- Çağrı merkezi hizmetleri: https://ahenk.net.tr/hizmetler
+- Yapay zeka destekli çağrı merkezi CRM (Ahenk PBX): https://ahenk.net.tr/cagri-merkezi-crm
+- PBX giriş: https://pbx.goalgo.org/
+
+## Yazılım ürünleri
+- Aiaddin (kurumsal yapay zeka IDE): https://ahenk.net.tr/aiaddin
+- Aiaddin ürün sitesi: https://aiaddin.net/
+- Aiaddin fiyat: Free $0 / Pro $20 / Enterprise özel — https://aiaddin.net/pricing
+- Ahenk PBX kullanım: temsilci başı 700 TL; 10→7.000, 20→13.000, 30→18.000 TL. Her +10 temsilcide −50 TL/kişi, 50 ajana kadar.
 
 ## Yayın ürünleri
 - Haber Merkezi: https://ahenk.net.tr/haber-merkezi
