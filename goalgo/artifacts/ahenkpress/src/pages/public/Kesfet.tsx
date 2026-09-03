@@ -121,6 +121,7 @@ import {
 } from "@/lib/haberHaritasiLocationContext";
 import {
   buildNewsmapGlobalPoolHeadlines,
+  buildNewsmapHaberlerRssHeadlines,
   defaultNewsmapBottomBandTab,
   isNewsmapTurkeyOrKktcViewport,
   mergeNewsmapBottomBandHeadlines,
@@ -2921,8 +2922,21 @@ export default function Kesfet({
     return buildNewsmapGlobalPoolHeadlines([
       ...haberHaritasiNews.items,
       ...haberHaritasiNews.regionItems,
+      ...haberHaritasiNews.haberlerLiveItems,
     ]);
-  }, [haberHaritasiNews.items, haberHaritasiNews.regionItems, isNewsmapPage, newsmapBusinessesMode]);
+  }, [
+    haberHaritasiNews.haberlerLiveItems,
+    haberHaritasiNews.items,
+    haberHaritasiNews.regionItems,
+    isNewsmapPage,
+    newsmapBusinessesMode,
+  ]);
+
+  /** /haberler RSS — geo eşleşmese de Türkçe alt banda anlık akış. */
+  const newsmapHaberlerRssHeadlines = useMemo(() => {
+    if (!isNewsmapPage || newsmapBusinessesMode) return [];
+    return buildNewsmapHaberlerRssHeadlines(haberHaritasiNews.haberlerLiveItems, 96);
+  }, [haberHaritasiNews.haberlerLiveItems, isNewsmapPage, newsmapBusinessesMode]);
 
   /** Ülke görünümü — geo eşleşmese de ulusal YekTube videoları banda girsin. */
   const newsmapVideoBandHeadlines = useMemo(() => {
@@ -2954,6 +2968,7 @@ export default function Kesfet({
       newsmapCountryClusterHeadlines,
       newsmapDisplayHeadlines,
       newsmapPanelHeadlines,
+      newsmapHaberlerRssHeadlines,
       newsmapGlobalPoolHeadlines,
       newsmapVideoBandHeadlines,
     );
@@ -2965,6 +2980,7 @@ export default function Kesfet({
     newsmapCountryClusterHeadlines,
     newsmapDisplayHeadlines,
     newsmapGlobalPoolHeadlines,
+    newsmapHaberlerRssHeadlines,
     newsmapPanelHeadlines,
     newsmapVideoBandHeadlines,
     selectedNewsmapCity,

@@ -116,11 +116,15 @@ function isTurkishFeedHeadline(headline: HmMapCityHeadline): boolean {
   return false;
 }
 
-/** Türkçe sekme: yalnızca Türkçe metin + (TR/KKTC coğrafya veya Türkçe kaynak). */
+/** Türkçe sekme: Türkçe metin; yabancı geo/küresel kaynak hariç (RSS geo’suz da kabul). */
 export function isStrictTurkishBottomBandHeadline(headline: HmMapCityHeadline): boolean {
   const title = String(headline.title ?? "").trim();
   if (detectLanguage(title) !== "tr") return false;
-  return isTrCyGeoHeadline(headline) || isTurkishFeedHeadline(headline);
+  if (isTurkishFeedHeadline(headline)) return true;
+  const countryCode = String(headline.countryCode ?? "").trim().toUpperCase();
+  if (countryCode && countryCode !== "TR" && countryCode !== "CY") return false;
+  if (isGlobalMapNewsHeadline(headline)) return false;
+  return true;
 }
 
 function isGlobalEligibleBottomBandHeadline(headline: HmMapCityHeadline): boolean {
@@ -277,6 +281,51 @@ export function buildNewsmapGlobalPoolHeadlines(
       spot: item.spot ?? null,
       content: item.content ?? null,
       categorySlug: categorySlug || HM_GLOBAL_NEWS_CATEGORY_SLUG,
+    });
+  }
+  return rows;
+}
+
+/**
+ * /haberler hibrit RSS — şehir eşleşmesi olmasa da alt banda girer (Türkiye).
+ * Kapak görseli olanlar öne alınır.
+ */
+export function buildNewsmapHaberlerRssHeadlines(
+  pool: HomeHybridNewsItem[],
+  limit = 96,
+): HmMapCityHeadline[] {
+  const ranked = [...pool].sort((a, b) => {
+    const aCover = a.imageUrl || a.imageFallbackUrl ? 1 : 0;
+    const bCover = b.imageUrl || b.imageFallbackUrl ? 1 : 0;
+    if (aCover !== bCover) return bCover - aCover;
+    return (Date.parse(b.publishedAt ?? "") || 0) - (Date.parse(a.publishedAt ?? "") || 0);
+  });
+  const rows: HmMapCityHeadline[] = [];
+  const seen = new Set<string>();
+  for (const item of ranked) {
+    if (rows.length >= limit) break;
+    const title = String(item.title ?? "").trim();
+    const href = String(item.href ?? "").trim();
+    if (!title || !href || seen.has(href)) continue;
+    seen.add(href);
+    const countryCode = String(item.countryCode ?? "").trim().toUpperCase() || undefined;
+    rows.push({
+      city: String(item.regionLabel ?? "").trim() || "Türkiye",
+      title,
+      href,
+      publishedAt: item.publishedAt ?? null,
+      kind: "news",
+      thumbnail: item.imageUrl ?? item.imageFallbackUrl ?? null,
+      source: item.source,
+      feedLabel: item.feedLabel ?? null,
+      rssSourceUrl: item.rssSourceUrl ?? null,
+      originUrl: item.originUrl ?? null,
+      countryCode,
+      geoLat: item.geoLat ?? undefined,
+      geoLng: item.geoLng ?? undefined,
+      spot: item.spot ?? null,
+      content: item.content ?? null,
+      categorySlug: normalizeNewsCategorySlug(item.categorySlug) || undefined,
     });
   }
   return rows;

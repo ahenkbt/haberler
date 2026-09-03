@@ -24,6 +24,13 @@ export const PORTAL_SITE_FULL_TITLE = `${PORTAL_SITE_NAME}${PORTAL_SITE_TITLE_SU
 export const PORTAL_BRAND_SHORT = "Türk Ekosistemi";
 export const PORTAL_SEARCH_TAGLINE = "haber video portalı";
 
+/** ahenk.net.tr yayın vitrini — Türk Ekosistemi / turk.eco metinleri bu hostta kullanılmaz. */
+export const AHENK_BRAND_NAME = "Ahenk Bilgi Teknolojileri";
+export const AHENK_BRAND_SHORT = "Ahenk";
+export const AHENK_SEARCH_TAGLINE = "haber ve video";
+export const AHENK_LOGO_PATH = "/ahenk-brand/ahenk-logo.png";
+export const AHENK_FAVICON_PATH = "/ahenk-brand/ahenk-mark.png";
+
 export const PWA_STORE_NAME = "Türk Ekosistemi";
 export const PWA_STORE_TAGLINE = "Haber, video ve Newsmap";
 export const PWA_APP_NAME = "Türk Ekosistemi";
@@ -82,4 +89,32 @@ export function portalAbsoluteHref(path: string): string {
 export function isPrimaryPortalHostname(host: string): boolean {
   const h = host.toLowerCase().split(":")[0] ?? "";
   return h === PORTAL_HOST || h === PORTAL_WWW_HOST;
+}
+
+export function currentBrowserHostname(): string {
+  if (typeof window === "undefined") return "";
+  return window.location.hostname.toLowerCase().split(":")[0] ?? "";
+}
+
+/** ahenk.net.tr (www dahil) — haber/video chrome bu hostta Ahenk markası kullanır. */
+export function isAhenkPortalHost(host?: string | null): boolean {
+  const raw = String(host ?? currentBrowserHostname())
+    .trim()
+    .toLowerCase()
+    .split(":")[0] ?? "";
+  return isPrimaryPortalHostname(raw);
+}
+
+export function portalBrandDisplayName(host?: string | null): string {
+  return isAhenkPortalHost(host) ? AHENK_BRAND_NAME : PORTAL_BRAND_SHORT;
+}
+
+export function portalBrandLogoAlt(host?: string | null): string {
+  return isAhenkPortalHost(host)
+    ? `${AHENK_BRAND_NAME} — ${AHENK_SEARCH_TAGLINE}`
+    : `turk.eco — ${PORTAL_SEARCH_TAGLINE}`;
+}
+
+export function portalBrandHomeAriaLabel(host?: string | null): string {
+  return isAhenkPortalHost(host) ? `${AHENK_BRAND_NAME} ana sayfa` : "turk.eco ana sayfa";
 }

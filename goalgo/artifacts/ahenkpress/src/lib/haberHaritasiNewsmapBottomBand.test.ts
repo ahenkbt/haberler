@@ -4,6 +4,7 @@ import {
   defaultNewsmapBottomBandTab,
   detectLanguage,
   filterNewsmapBottomBandHeadlines,
+  buildNewsmapHaberlerRssHeadlines,
   isInsideKktcBounds,
   isNewsmapTurkeyOrKktcViewport,
   isStrictTurkishBottomBandHeadline,
@@ -42,6 +43,42 @@ describe("haberHaritasiNewsmapBottomBand", () => {
     expect(detectLanguage("Ankara'da son dakika gelişme")).toBe("tr");
     expect(detectLanguage("Breaking news from London")).toBe("en");
     expect(detectLanguage("La France face à une nouvelle réforme")).toBe("fr");
+  });
+
+  it("treats Turkish RSS without geo as turkce tab", () => {
+    expect(
+      isStrictTurkishBottomBandHeadline(
+        headline({ title: "Ankara'da son dakika gelişme", city: "Türkiye", countryCode: null, feedLabel: "NTV Gündem" }),
+      ),
+    ).toBe(true);
+    expect(
+      classifyNewsmapBottomBandHeadline(
+        headline({ title: "Galatasaray derbiye hazır", city: "Türkiye", href: "/rss-1" }),
+      ),
+    ).toBe("turkce");
+  });
+
+  it("buildNewsmapHaberlerRssHeadlines maps haberler RSS without city match", () => {
+    const rows = buildNewsmapHaberlerRssHeadlines([
+      {
+        id: "rss:1",
+        title: "İstanbul'da son dakika",
+        href: "/haberler/rss/1",
+        source: "rss",
+        imageUrl: "https://cdn.example/a.jpg",
+        publishedAt: "2026-09-02T10:00:00Z",
+      },
+      {
+        id: "rss:2",
+        title: "Görselsiz başlık",
+        href: "/haberler/rss/2",
+        source: "rss",
+        publishedAt: "2026-09-02T11:00:00Z",
+      },
+    ]);
+    expect(rows[0]?.href).toBe("/haberler/rss/1");
+    expect(rows[0]?.city).toBe("Türkiye");
+    expect(rows.map((r) => r.href)).toEqual(["/haberler/rss/1", "/haberler/rss/2"]);
   });
 
   it("classifies Turkish province headlines strictly", () => {

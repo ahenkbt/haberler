@@ -47,6 +47,8 @@ function mergeHybridNewsItems(...groups: HomeHybridNewsItem[][]): HomeHybridNews
 
 export type HmMapCityNewsBundle = {
   items: HomeHybridNewsItem[];
+  /** /haberler ile aynı hibrit RSS — geo eşleşmesi olmasa da alt banda girer. */
+  haberlerLiveItems: HomeHybridNewsItem[];
   videoItems: HaberHaritasiVideoItem[];
   headlines: HmMapCityHeadline[];
   cityIndex: Map<string, HomeHybridNewsItem>;
@@ -109,6 +111,38 @@ export function useHmMapCityNews(
     initialDataUpdatedAt: newsmapCacheMeta?.savedAt,
   });
 
+  /** /haberler ile aynı canlı hibrit (newsmap=0) — TR RSS alt banda ve haritaya aksın. */
+  const haberlerLiveQuery = useQuery({
+    queryKey: hybridNewsListQueryKey({
+      siteId: null,
+      limit: 200,
+      offset: 0,
+      rssScope: "all",
+      dbFirst: false,
+      fullHybrid: true,
+      scope: "haberler-live-newsmap",
+    }),
+    queryFn: ({ signal }) =>
+      fetchHybridNewsList({
+        siteId: null,
+        limit: 200,
+        offset: 0,
+        rssScope: "all",
+        fresh: true,
+        dbFirst: false,
+        fullHybrid: true,
+        signal,
+        retries: 1,
+        timeoutMs: 20_000,
+      }),
+    enabled: enabled && portalGlobalNewsmap,
+    staleTime: STALE_MS,
+    gcTime: STALE_MS * 2,
+    retry: 1,
+    refetchInterval: newsmapMode ? NEWSMAP_BG_REFETCH_MS : false,
+    refetchIntervalInBackground: false,
+  });
+
   /** Phase-2: RSS zenginleştirme — arka planda birleştirilir. */
   const fullNewsQuery = useQuery({
     queryKey: newsmapMode
@@ -122,6 +156,9 @@ export function useHmMapCityNews(
         rssScope,
         global: portalGlobalNewsmap,
         newsmap: newsmapMode,
+        dbFirst: false,
+        fullHybrid: true,
+        fresh: true,
         signal,
         retries: 1,
         timeoutMs: newsmapMode ? 25_000 : 12_000,
@@ -141,8 +178,9 @@ export function useHmMapCityNews(
       newsmapCachedItems ?? [],
       fastNewsQuery.data ?? [],
       fullNewsQuery.data ?? [],
+      haberlerLiveQuery.data ?? [],
     );
-  }, [newsmapMode, newsmapCachedItems, fastNewsQuery.data, fullNewsQuery.data]);
+  }, [newsmapMode, newsmapCachedItems, fastNewsQuery.data, fullNewsQuery.data, haberlerLiveQuery.data]);
 
   const videoQuery = useQuery({
     queryKey: ["/api/video/videos/haber-haritasi", linkMode],
@@ -154,8 +192,18 @@ export function useHmMapCityNews(
   });
 
   const rawVideos = videoQuery.data ?? [];
-  const items = useMemo(() => rawNews.filter((item) => isNewsmapFreshPublishedAt(item.publishedAt)), [rawNews]);
-  const regionItems = useMemo(() => rawNews.filter((item) => isNewsmapRegionPublishedAt(item.publishedAt)), [rawNews]);
+  const items = useMemo(
+    () => rawNews.filter((item) => !item.publishedAt || isNewsmapFreshPublishedAt(item.publishedAt)),
+    [rawNews],
+  );
+  const regionItems = useMemo(
+    () => rawNews.filter((item) => !item.publishedAt || isNewsmapRegionPublishedAt(item.publishedAt)),
+    [rawNews],
+  );
+  const haberlerLiveItems = useMemo(
+    () => mergeHybridNewsItems(haberlerLiveQuery.data ?? [], regionItems, items),
+    [haberlerLiveQuery.data, regionItems, items],
+  );
   /** Videolarda yaş/süre süzgeci yok — lokasyondaki tüm eşleşen videolar gösterilir. */
   const videoItems = rawVideos;
   const regionVideoItems = rawVideos;
@@ -195,7 +243,7 @@ export function useHmMapCityNews(
       : fastNewsQuery.isPending && fastNewsQuery.data === undefined;
 
   return {
-    items, videoItems, cityIndex, cityContentIndex, matches, headlines,
+    items, haberlerLiveItems, videoItems, cityIndex, cityContentIndex, matches, headlines,
     cityNewsCounts, cityVideoCounts, regionItems, regionVideoItems, regionHeadlines, regionCityContentIndex,
     isLoading: newsLoading,
   };

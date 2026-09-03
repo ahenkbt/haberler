@@ -324,6 +324,12 @@ function TurizmRoute({ children }: { children: React.ReactNode }) {
   return <Redirect to="/" replace />;
 }
 
+/** ahenk.net.tr — mesafeli satış / KVKK / SSS vb. e-ticaret sayfaları yok. */
+function AhenkRemovedLegalPage({ children }: { children: React.ReactNode }) {
+  if (isAhenkAgencyHost()) return <Redirect to="/" replace />;
+  return <>{children}</>;
+}
+
 function TurizmLegacyTypeRedirect() {
   return <Redirect to="/" replace />;
 }
@@ -1540,14 +1546,14 @@ export default function App() {
         }
       </Route>
       <Route path="/destek">{() => <PublicLayout><Destek /></PublicLayout>}</Route>
-      <Route path="/mesafeli-satis-sozlesmesi">{() => <PublicLayout><MesafeliSatisSozlesmesiPage /></PublicLayout>}</Route>
-      <Route path="/on-bilgilendirme">{() => <PublicLayout><OnBilgilendirmePage /></PublicLayout>}</Route>
-      <Route path="/gizlilik-kvkk">{() => <PublicLayout><KvkkPage /></PublicLayout>}</Route>
-      <Route path="/iade-degisim">{() => <PublicLayout><IadeDegisimPage /></PublicLayout>}</Route>
-      <Route path="/teslimat-kargo">{() => <PublicLayout><TeslimatKargoPage /></PublicLayout>}</Route>
-      <Route path="/kullanim-kosullari">{() => <PublicLayout><KullanimKosullariPage /></PublicLayout>}</Route>
-      <Route path="/sss">{() => <PublicLayout><SssPage /></PublicLayout>}</Route>
-      <Route path="/iletisim-kunye">{() => <PublicLayout><IletisimKunyePage /></PublicLayout>}</Route>
+      <Route path="/mesafeli-satis-sozlesmesi">{() => <AhenkRemovedLegalPage><PublicLayout><MesafeliSatisSozlesmesiPage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/on-bilgilendirme">{() => <AhenkRemovedLegalPage><PublicLayout><OnBilgilendirmePage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/gizlilik-kvkk">{() => <AhenkRemovedLegalPage><PublicLayout><KvkkPage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/iade-degisim">{() => <AhenkRemovedLegalPage><PublicLayout><IadeDegisimPage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/teslimat-kargo">{() => <AhenkRemovedLegalPage><PublicLayout><TeslimatKargoPage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/kullanim-kosullari">{() => <AhenkRemovedLegalPage><PublicLayout><KullanimKosullariPage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/sss">{() => <AhenkRemovedLegalPage><PublicLayout><SssPage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
+      <Route path="/iletisim-kunye">{() => <AhenkRemovedLegalPage><PublicLayout><IletisimKunyePage /></PublicLayout></AhenkRemovedLegalPage>}</Route>
       {/* Turizm — Yekpare site chrome + tema içerik gövdesi */}
       <Route path="/turizm/rezervasyon/:ref">{() => <TurizmRoute><BookingCoreRezervasyonOnay /></TurizmRoute>}</Route>
       <Route path="/turizm/tur/:slug">{() => <TurizmRoute><TurizmDetay /></TurizmRoute>}</Route>
