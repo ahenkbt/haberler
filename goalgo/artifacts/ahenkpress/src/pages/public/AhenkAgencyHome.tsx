@@ -1,17 +1,17 @@
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   AhenkAgencyChrome,
   AhenkCardGrid,
   AhenkFaqList,
   AhenkFeatureChips,
-  AhenkMediaCard,
   AhenkSmartLink,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
-import { ahenkCallCenterServices, ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
-import { AHENK_PHOTOS, safeAhenkImageUrl, type AhenkContentCard } from "@/lib/ahenkAgencySite";
-import { formatTry, PBX_BASE_PER_AGENT_TL, pbxMonthlyTl } from "@/lib/ahenkPbxPricing";
+import { ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
+import { safeAhenkImageUrl, type AhenkContentCard } from "@/lib/ahenkAgencySite";
 import { YEKPARE_ECOSYSTEM_POINTS, YEKPARE_HOME_FAQS } from "@/lib/ahenkYekpareDemos";
+import { AHENK_ASISTAN_IMG, AHENK_PRODUCTS } from "@/lib/ahenkProducts";
 
 function hideHomeCampaignPrice(text: string): string {
   return text
@@ -30,15 +30,116 @@ function sectorForHome(item: AhenkContentCard): AhenkContentCard {
   };
 }
 
+function AhenkHomeSlider({
+  slides,
+  phone,
+  wa,
+}: {
+  slides: { id: string; title: string; subtitle: string; ctaLabel: string; ctaHref: string; image?: string }[];
+  phone: string;
+  wa: string;
+}) {
+  const list = slides.filter((s) => s.title.trim());
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const n = list.length;
+
+  useEffect(() => {
+    if (idx >= n && n > 0) setIdx(0);
+  }, [idx, n]);
+
+  useEffect(() => {
+    if (n < 2 || paused) return;
+    const t = window.setInterval(() => setIdx((i) => (i + 1) % n), 6500);
+    return () => window.clearInterval(t);
+  }, [n, paused]);
+
+  if (!n) return null;
+  const current = list[Math.min(idx, n - 1)]!;
+
+  return (
+    <section
+      className="ahenk-hero ahenk-hero-slider"
+      aria-label="Anasayfa slaytları"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {list.map((slide, i) => {
+        const img = safeAhenkImageUrl(slide.image, "");
+        return (
+          <div
+            key={slide.id}
+            className={`ahenk-hero-layer${i === idx ? " is-active" : ""}`}
+            aria-hidden={i !== idx}
+          >
+            {img ? (
+              <div className="ahenk-hero-photo">
+                <img src={img} alt="" />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+      <div className="ahenk-hero-slide">
+        <div className="ahenk-hero-inner">
+          <span className="ahenk-kicker">Ahenk Bilgi Teknolojileri</span>
+          <p className="ahenk-hero-index">
+            {String(idx + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+          </p>
+          <h1>{current.title}</h1>
+          <p>{current.subtitle}</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <AhenkSmartLink href={current.ctaHref || "/urunlerimiz"} className="ahenk-btn">
+              {current.ctaLabel || "İncele"}
+            </AhenkSmartLink>
+            <a className="ahenk-btn ahenk-btn-ghost" href={wa} target="_blank" rel="noreferrer">
+              WhatsApp {phone}
+            </a>
+          </div>
+        </div>
+      </div>
+      {n > 1 ? (
+        <>
+          <button
+            type="button"
+            className="ahenk-hero-arrow ahenk-hero-prev"
+            aria-label="Önceki slayt"
+            onClick={() => setIdx((i) => (i - 1 + n) % n)}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="ahenk-hero-arrow ahenk-hero-next"
+            aria-label="Sonraki slayt"
+            onClick={() => setIdx((i) => (i + 1) % n)}
+          >
+            ›
+          </button>
+          <div className="ahenk-hero-dots">
+            {list.map((slide, i) => (
+              <button
+                key={slide.id}
+                type="button"
+                className={i === idx ? "is-active" : ""}
+                aria-label={`${slide.title} slaytı`}
+                onClick={() => setIdx(i)}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
 export default function AhenkAgencyHome() {
   const site = useAhenkAgencySite();
-  const heroSrc = safeAhenkImageUrl(site.heroImage, "");
   const yekpareSrc = safeAhenkImageUrl(site.yekpare.image, "");
   const aboutSrc = safeAhenkImageUrl(site.aboutImage, "");
   const sectors = site.softwareSectors.map(sectorForHome);
   const featured = sectors.slice(0, 3);
   const restSectors = sectors.slice(3);
-  const callCenter = ahenkCallCenterServices(site);
   const wa = ahenkWhatsAppHref(
     site.whatsappTel || site.phoneTel,
     "Merhaba, yekpare.net hazır web sitesi / özel yazılım istiyorum.",
@@ -46,32 +147,32 @@ export default function AhenkAgencyHome() {
 
   return (
     <AhenkAgencyChrome title={site.seoTitle} description={site.seoDescription}>
-      <section className="ahenk-hero" aria-label="yekpare.net hazır web sitesi">
-        {heroSrc ? (
-          <div className="ahenk-hero-photo" aria-hidden>
-            <img src={heroSrc} alt="Ahenk yekpare.net hazır web sitesi" />
-          </div>
-        ) : null}
-        <div className="ahenk-hero-slide">
-          <div className="ahenk-hero-inner">
-            <span className="ahenk-kicker">Ahenk Bilgi Teknolojileri</span>
-            <h1>yekpare.net hazır web sitesi</h1>
-            <p>
-              Ahenk BT markası, yekpare.net üzerinde hazır web siteleri üretir. Haber siteleri HM editör altyapısıyla,
-              sağlık, hukuk, mağaza ve sipariş vitrinleri yekpare.net servis sağlayıcı siteleriyle yayına alınır.
-            </p>
-            <p className="ahenk-hero-ai">Özel yazılımlar için bizimle iletişime geçin.</p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <a className="ahenk-btn" href="#polis-ai">
-                Polis AI
-              </a>
-              <Link href="/iletisim" className="ahenk-btn ahenk-btn-ghost">
-                Özel yazılım için iletişim
-              </Link>
-              <a className="ahenk-btn ahenk-btn-ghost" href={wa} target="_blank" rel="noreferrer">
-                WhatsApp {site.phone}
-              </a>
-            </div>
+      <AhenkHomeSlider slides={site.slides} phone={site.phone} wa={wa} />
+
+      <section className="ahenk-polis-home ahenk-split-promo" id="asistan-ai">
+        <div className="ahenk-polis-home-visual" aria-hidden>
+          <img src={AHENK_ASISTAN_IMG} alt="" />
+        </div>
+        <div className="ahenk-polis-home-copy">
+          <span className="ahenk-kicker">7/24 otonom satış · WhatsApp + ses</span>
+          <h2>Ahenk Asistan AI</h2>
+          <p>
+            Gelen çağrı ve WhatsApp cevapsız kalmaz. Asistan menüyü sunar, sipariş ve rezervasyonu alır, stok kontrol
+            eder; mutfak, kurye, kasa ve yöneticiye anlık rol bildirimi düşer. ElevenLabs ses, OpenAI / Gemini anlama,
+            yekpare.net entegrasyonu.
+          </p>
+          <ul>
+            <li>Kişiye özel hitap ve çapraz satış önerisi.</li>
+            <li>Toplu WhatsApp, AI chat ve otomatik arama kampanyası.</li>
+            <li>Google Maps konum, Geliver kargo, sıfır kurulum senkronu.</li>
+          </ul>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
+            <Link href="/asistan-ai" className="ahenk-btn">
+              Detaylı tanıtım
+            </Link>
+            <Link href="/whatsapp-cagri-merkezi" className="ahenk-btn ahenk-btn-ghost">
+              WhatsApp çağrı merkezi
+            </Link>
           </div>
         </div>
       </section>
@@ -94,15 +195,15 @@ export default function AhenkAgencyHome() {
 
       <section className="ahenk-polis-home" id="polis-ai">
         <div className="ahenk-polis-home-visual" aria-hidden>
-          <img src="/ahenk-polis-ai/02-vatandas-poster.jpg" alt="" />
+          <img src="/ahenk-polis-ai/hero.png" alt="" />
         </div>
         <div className="ahenk-polis-home-copy">
           <span className="ahenk-kicker">Yapım aşamasında · web · App Store · Play Store</span>
           <h2>Polis AI</h2>
           <p>
             Akıllı şehir ve bireysel güvenlik ekosistemi. Tek tuşla sessiz ihbar, yapay zeka risk analizi, 112’ye
-            otomatik sesli anons ve <strong>polisai.net</strong> PIN ile canlı konum / görüntü. Legal-tech avukat
-            pazaryeri, kategorik ihbar (polis · trafik · zabıta) ve siber / aile kalkanı.
+            otomatik sesli anons ve PIN ile canlı konum / görüntü. Legal-tech avukat pazaryeri, kategorik ihbar (polis ·
+            trafik · zabıta) ve siber / aile kalkanı.
           </p>
           <ul>
             <li>PIN protokolü: operatör uygulama yüklemeden canlı veriye bakar.</li>
@@ -146,87 +247,40 @@ export default function AhenkAgencyHome() {
         ) : null}
       </section>
 
-      <section className="ahenk-section ahenk-section-flush" id="ajans">
-        <div className="ahenk-section">
-          <h2>{site.agencyTitle}</h2>
-          <p className="ahenk-lead">{site.agencyLead}</p>
-          <AhenkCardGrid items={site.agencyOffers} cta="Ajans" />
-        </div>
-      </section>
-
       <section className="ahenk-section" id="urunler">
-        <h2>Yazılım ürünlerimiz</h2>
-        <p className="ahenk-lead">
-          Polis AI (yapım aşamasında), kurumsal yapay zeka IDE (Aiaddin) ve çağrı merkezi CRM (Ahenk PBX).
-        </p>
-        <div className="ahenk-grid">
-          <AhenkSmartLink href="/polis-ai" className="ahenk-card ahenk-card-media">
-            <span className="ahenk-card-photo ahenk-card-photo-sm">
-              <img src="/ahenk-polis-ai/01-nedir.jpg" alt="Polis AI" loading="lazy" />
-            </span>
-            <span className="ahenk-card-body">
-              <span className="ahenk-kicker">polisai.net</span>
-              <h3>Polis AI — akıllı güvenlik</h3>
-              <p>
-                112 PIN protokolü, legal-tech, şehir ihbar akışı. App Store ve Play Store çok yakında. Sunum ve PDF
-                detay sayfasında.
-              </p>
-              <span className="ahenk-card-cta">Polis AI sunumu →</span>
-            </span>
-          </AhenkSmartLink>
-          <AhenkSmartLink href="/aiaddin" className="ahenk-card ahenk-card-media">
-            <span className="ahenk-card-photo ahenk-card-photo-sm">
-              <img src={AHENK_PHOTOS.code} alt="Aiaddin" loading="lazy" />
-            </span>
-            <span className="ahenk-card-body">
-              <span className="ahenk-kicker">aiaddin.net</span>
-              <h3>Aiaddin — kurumsal yapay zeka IDE</h3>
-              <p>
-                Monaco, gerçek terminal, semantik bağlam ve Composer ajanı tarayıcıda. BYOK ile Claude / GPT / DeepSeek.
-                Free $0, Pro $20/ay, Enterprise özel.
-              </p>
-              <span className="ahenk-card-cta">Aiaddin tanıtımı →</span>
-            </span>
-          </AhenkSmartLink>
-          <AhenkSmartLink href="/cagri-merkezi-crm" className="ahenk-card ahenk-card-media">
-            <span className="ahenk-card-photo ahenk-card-photo-sm">
-              <img src={AHENK_PHOTOS.callCenter} alt="Ahenk PBX" loading="lazy" />
-            </span>
-            <span className="ahenk-card-body">
-              <span className="ahenk-kicker">pbx.goalgo.org</span>
-              <h3>Ahenk PBX — çağrı merkezi CRM</h3>
-              <p>
-                Yapay zeka destekli çağrı merkezi CRM. Temsilci başı {formatTry(PBX_BASE_PER_AGENT_TL)}; 10 kişide{" "}
-                {formatTry(pbxMonthlyTl(10))}, 20 kişide {formatTry(pbxMonthlyTl(20))}, 30 kişide{" "}
-                {formatTry(pbxMonthlyTl(30))}. Her +10 temsilcide 50 TL indirim, 50 ajana kadar.
-              </p>
-              <span className="ahenk-card-cta">PBX fiyatları →</span>
-            </span>
-          </AhenkSmartLink>
+        <h2>Ürünlerimiz</h2>
+          <p className="ahenk-lead">
+            Asistan AI, WhatsApp çağrı merkezi, Polis AI, yekpare.net, Aiaddin, PBX CRM, Haber Merkezi, YekTube, Haberler
+            ve web yazılımı.
+          </p>
+        <div className="ahenk-product-board">
+          {AHENK_PRODUCTS.slice(0, 4).map((item) => (
+            <AhenkSmartLink
+              key={item.slug}
+              href={item.href}
+              className={`ahenk-product-tile${item.featured ? " is-featured" : ""}`}
+            >
+              <span className="ahenk-product-photo">
+                <img src={item.image} alt="" loading="lazy" />
+              </span>
+              <span className="ahenk-product-copy">
+                <span className="ahenk-kicker">{item.kicker}</span>
+                <strong>{item.title}</strong>
+                <span>{item.excerpt}</span>
+                <em>İncele →</em>
+              </span>
+            </AhenkSmartLink>
+          ))}
+        </div>
+        <div style={{ marginTop: 22, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link href="/urunlerimiz" className="ahenk-btn">
+            Tüm ürünler
+          </Link>
+          <Link href="/hizmetlerimiz" className="ahenk-btn ahenk-btn-ghost">
+            Hizmetlerimiz
+          </Link>
         </div>
       </section>
-
-      {callCenter.length ? (
-        <section className="ahenk-section" id="cagri-merkezi">
-          <h2>Çağrı merkezi hizmetleri</h2>
-          <p className="ahenk-lead">
-            Web yazılımı ve ajansın ardından operasyon: müşteri hizmetleri ve çağrı merkezi sipariş sistemi.
-          </p>
-          <div className="ahenk-grid">
-            {callCenter.map((svc) => (
-              <AhenkMediaCard
-                key={svc.slug}
-                href={`/hizmet/${svc.slug}`}
-                image={svc.image}
-                title={svc.title}
-                excerpt={svc.excerpt}
-                icon={svc.icon}
-                cta="İncele"
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <section className="ahenk-promo" aria-label="Yekpare">
         {yekpareSrc ? (
@@ -251,17 +305,6 @@ export default function AhenkAgencyHome() {
               Yekpare sayfası
             </Link>
           </div>
-        </div>
-      </section>
-
-      <section className="ahenk-section" id="yayin">
-        <h2>{site.platformTitle}</h2>
-        <p className="ahenk-lead">{site.platformLead}</p>
-        <AhenkCardGrid items={site.platformProducts} cta="Aç" />
-        <div style={{ marginTop: 22 }}>
-          <Link href="/haber-merkezi" className="ahenk-btn ahenk-btn-light">
-            Haber sitesi yazılımı
-          </Link>
         </div>
       </section>
 

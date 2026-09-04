@@ -13,7 +13,7 @@ export default function AhenkAgencyHaberMerkezi() {
       <AhenkPageHero
         crumb={
           <>
-            <Link href="/">Anasayfa</Link> / Haber Merkezi
+            <Link href="/">Anasayfa</Link> / <Link href="/urunlerimiz">Ürünlerimiz</Link> / Haber Merkezi
           </>
         }
         title={site.haberMerkeziTitle}

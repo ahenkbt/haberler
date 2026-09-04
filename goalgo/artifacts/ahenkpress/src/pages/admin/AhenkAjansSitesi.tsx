@@ -7,11 +7,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { useGetSiteSettings, useUpdateSiteSettings, getGetSiteSettingsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   ahenkAgencyJsonFromSettings,
   defaultAhenkAgencySite,
+  defaultAhenkNavItems,
   parseAhenkAgencySiteFromJson,
   serializeAhenkAgencySite,
   type AhenkAgencyOffice,
@@ -19,6 +20,7 @@ import {
   type AhenkAgencySite,
   type AhenkAgencySlide,
   type AhenkContentCard,
+  type AhenkNavItem,
 } from "@/lib/ahenkAgencySite";
 
 export default function AhenkAjansSitesi() {
@@ -95,9 +97,101 @@ export default function AhenkAjansSitesi() {
 
       <Accordion
         type="multiple"
-        defaultValue={["brand", "seo", "hero", "software", "services"]}
+        defaultValue={["nav", "brand", "seo", "hero", "software", "services"]}
         className="rounded-lg border bg-white"
       >
+        <AccordionItem value="nav">
+          <AccordionTrigger className="px-4">Üst menü</AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-3">
+            <p className="text-sm text-gray-500">
+              Anasayfa, Hakkımızda, Ürünlerimiz, Hizmetlerimiz, İletişim — sıra, etiket ve bağlantı buradan değişir.
+            </p>
+            {site.navItems.map((item, i) => (
+              <div key={item.id} className="rounded-md border p-3 grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                <Field label="Etiket">
+                  <Input
+                    value={item.label}
+                    onChange={(e) =>
+                      setSite({
+                        ...site,
+                        navItems: site.navItems.map((n, j) => (j === i ? { ...n, label: e.target.value } : n)),
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Bağlantı">
+                  <Input
+                    value={item.href}
+                    onChange={(e) =>
+                      setSite({
+                        ...site,
+                        navItems: site.navItems.map((n, j) => (j === i ? { ...n, href: e.target.value } : n)),
+                      })
+                    }
+                  />
+                </Field>
+                <div className="flex gap-1 pb-0.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={i === 0}
+                    onClick={() => {
+                      const next = [...site.navItems];
+                      [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                      setSite({ ...site, navItems: next });
+                    }}
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={i === site.navItems.length - 1}
+                    onClick={() => {
+                      const next = [...site.navItems];
+                      [next[i + 1], next[i]] = [next[i], next[i + 1]];
+                      setSite({ ...site, navItems: next });
+                    }}
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSite({ ...site, navItems: site.navItems.filter((_, j) => j !== i) })}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setSite({
+                    ...site,
+                    navItems: [
+                      ...site.navItems,
+                      { id: `nav-${Date.now()}`, label: "Yeni", href: "/" } satisfies AhenkNavItem,
+                    ],
+                  })
+                }
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Madde ekle
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setSite({ ...site, navItems: defaultAhenkNavItems() })}>
+                Varsayılan menü
+              </Button>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
         <AccordionItem value="brand">
           <AccordionTrigger className="px-4">Marka ve iletişim</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
@@ -474,31 +568,64 @@ export default function AhenkAjansSitesi() {
         </AccordionItem>
 
         <AccordionItem value="slides">
-          <AccordionTrigger className="px-4">Yedek slaytlar (CMS)</AccordionTrigger>
+          <AccordionTrigger className="px-4">Anasayfa slaytları</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Ürünlerimiz, Hizmetlerimiz ve Hakkımızda — sıra, başlık, görsel ve buton buradan değişir.
+            </p>
             {site.slides.map((slide, i) => (
               <div key={slide.id} className="rounded-md border p-3 space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2 items-center">
                   <span className="text-sm font-semibold">Slayt {i + 1}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSite({ ...site, slides: site.slides.filter((_, j) => j !== i) })}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={i === 0}
+                      onClick={() => {
+                        const next = [...site.slides];
+                        const [item] = next.splice(i, 1);
+                        next.splice(i - 1, 0, item!);
+                        setSite({ ...site, slides: next });
+                      }}
+                    >
+                      Yukarı
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={i === site.slides.length - 1}
+                      onClick={() => {
+                        const next = [...site.slides];
+                        const [item] = next.splice(i, 1);
+                        next.splice(i + 1, 0, item!);
+                        setSite({ ...site, slides: next });
+                      }}
+                    >
+                      Aşağı
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSite({ ...site, slides: site.slides.filter((_, j) => j !== i) })}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <Input
                   value={slide.title}
                   onChange={(e) => patchSlide(site, setSite, i, { title: e.target.value })}
-                  placeholder="Başlık"
+                  placeholder="Başlık (Ürünlerimiz / Hizmetlerimiz / Hakkımızda)"
                 />
                 <Textarea
                   rows={3}
                   value={slide.subtitle}
                   onChange={(e) => patchSlide(site, setSite, i, { subtitle: e.target.value })}
-                  placeholder="Alt başlık"
+                  placeholder="Açıklama"
                 />
                 <Input
                   value={slide.image ?? ""}
@@ -514,34 +641,44 @@ export default function AhenkAjansSitesi() {
                   <Input
                     value={slide.ctaHref}
                     onChange={(e) => patchSlide(site, setSite, i, { ctaHref: e.target.value })}
-                    placeholder="/yazilim"
+                    placeholder="/urunlerimiz"
                   />
                 </div>
               </div>
             ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setSite({
-                  ...site,
-                  slides: [
-                    ...site.slides,
-                    {
-                      id: `slide-${Date.now()}`,
-                      title: "",
-                      subtitle: "",
-                      ctaLabel: "İncele",
-                      ctaHref: "/yazilim",
-                      image: "",
-                    },
-                  ],
-                })
-              }
-            >
-              <Plus className="w-4 h-4 mr-1" /> Slayt ekle
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setSite({
+                    ...site,
+                    slides: [
+                      ...site.slides,
+                      {
+                        id: `slide-${Date.now()}`,
+                        title: "",
+                        subtitle: "",
+                        ctaLabel: "İncele",
+                        ctaHref: "/urunlerimiz",
+                        image: "",
+                      },
+                    ],
+                  })
+                }
+              >
+                <Plus className="w-4 h-4 mr-1" /> Slayt ekle
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSite({ ...site, slides: defaultAhenkAgencySite().slides })}
+              >
+                Varsayılan 3 slayt
+              </Button>
+            </div>
           </AccordionContent>
         </AccordionItem>
 

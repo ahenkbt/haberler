@@ -321,7 +321,7 @@ export function isAhenkAgencyGeoPath(pathname: string | null | undefined): boole
   if (p === "/iletisim" || p === "/contact") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
-  if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
+  if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai" || p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
   return false;
 }
 
@@ -340,6 +340,9 @@ export function geoEntityPageTitle(entity: GeoSiteEntity, path = "/"): string {
     if (p === "/hizmetler" || p === "/hizmetlerimiz") return `Hizmetler — ${entity.officialName}`;
     if (p === "/iletisim" || p === "/contact") return `İletişim — ${entity.officialName}`;
     if (p === "/aiaddin") return `Aiaddin — ${entity.officialName}`;
+    if (p === "/urunlerimiz") return `Ürünlerimiz — ${entity.officialName}`;
+    if (p === "/asistan-ai") return `Ahenk Asistan AI — ${entity.officialName}`;
+    if (p === "/whatsapp-cagri-merkezi") return `WhatsApp çağrı merkezi — ${entity.officialName}`;
     if (p === "/polis-ai" || p === "/polisai") return `Polis AI — ${entity.officialName}`;
     if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") {
       return `Yapay zeka destekli çağrı merkezi CRM — ${entity.officialName}`;

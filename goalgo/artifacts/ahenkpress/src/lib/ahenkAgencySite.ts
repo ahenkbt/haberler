@@ -65,6 +65,22 @@ export type AhenkFaq = {
   a: string;
 };
 
+export type AhenkNavItem = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+export function defaultAhenkNavItems(): AhenkNavItem[] {
+  return [
+    { id: "home", label: "Anasayfa", href: "/" },
+    { id: "about", label: "Hakkımızda", href: "/hakkimizda" },
+    { id: "products", label: "Ürünlerimiz", href: "/urunlerimiz" },
+    { id: "services", label: "Hizmetlerimiz", href: "/hizmetlerimiz" },
+    { id: "contact", label: "İletişim", href: "/iletisim" },
+  ];
+}
+
 export type AhenkTextBlock = {
   title: string;
   text: string;
@@ -166,6 +182,7 @@ export type AhenkAgencySite = {
   heroSecondaryLabel: string;
   heroSecondaryHref: string;
   heroImage: string;
+  navItems: AhenkNavItem[];
   softwareTitle: string;
   softwareLead: string;
   softwareSectors: AhenkContentCard[];
@@ -742,11 +759,12 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     heroTitle: "yekpare.net hazır web sitesi",
     heroSubtitle:
       "Ahenk BT, yekpare.net üzerinde hazır web siteleri üretir. Haber siteleri HM editör altyapısıyla, sektör siteleri yekpare.net servis sağlayıcı vitrinleriyle yayına alınır.",
-    heroCtaLabel: "Polis AI",
-    heroCtaHref: "#demolar",
+    heroCtaLabel: "Ahenk Asistan AI",
+    heroCtaHref: "/asistan-ai",
     heroSecondaryLabel: "Özel yazılım için iletişim",
     heroSecondaryHref: "/iletisim",
     heroImage: AHENK_PHOTOS.hero,
+    navItems: defaultAhenkNavItems(),
     softwareTitle: "Web yazılımı — tüm sektörler",
     softwareLead:
       "Avukat ve doktor sitelerinde online randevu ile görüntülü danışmanlık; restoranda QR menü, POS, kasiyer, garson, kurye ve stok; emlak, okul, sürücü kursu, güzellik ve kurumsal web sitesi. Yapay zeka destekli, 1-3 günde teslim.",
@@ -776,14 +794,14 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     ctaTitle: "Ofisimizde misafirimiz olun",
     ctaText:
       "Yazılım, ajans veya yayın projeniz için sizi Ankara, Londra veya Batum ofisimizde ağırlamaktan mutluluk duyarız.",
-    servicesTitle: "Çağrı merkezi ve operasyon",
+    servicesTitle: "Hizmetlerimiz",
     servicesLead:
-      "Web yazılımı ve ajansın ardından: çağrı merkezi, müşteri hizmetleri, insan kaynakları, e-ticaret destek ve kurumsal organizasyon.",
+      "Ajans stüdyosu, çağrı merkezi ve operasyon: grafik, film, reklam, SEO, müşteri hizmetleri ve sipariş hattı.",
     servicesHeroImage: AHENK_PHOTOS.servicesHero,
     landingKicker: "Ahenk Bilgi Teknolojileri",
     landingTitle: "Haber sitesi yazılımı — sunucu ve domain dahil",
     landingLead:
-      "Yapay zeka destekli haber sitesi yazılımı ve kurumsal web sitesi. 2026 sonuna kadar kampanya 10.000 TL (20.000 TL yerine); 2027’den itibaren 20.000 TL. Teslim 1–3 gün.",
+      "Yapay zeka destekli haber sitesi yazılımı ve kurumsal web sitesi. Sunucu ve domain pakete dahildir. Teslim 1–3 gün.",
     landingCtaLabel: "Teklif / başvuru",
     landingFeatures: defaultAhenkLandingFeatures(),
     offices: [
@@ -820,28 +838,30 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     ],
     slides: [
       {
-        id: "yazilim",
-        title: "Sektör yazılımı",
-        subtitle: "Avukat, doktor, dernek ve kurumsal markalar için prestij web yazılımı.",
-        ctaLabel: "Yazılımı incele",
-        ctaHref: "/yazilim",
-        image: AHENK_PHOTOS.hero,
+        id: "urunler",
+        title: "Ürünlerimiz",
+        subtitle:
+          "Asistan AI, WhatsApp çağrı merkezi, Polis AI, yekpare.net, Aiaddin, PBX CRM, Haber Merkezi, YekTube ve web yazılımı.",
+        ctaLabel: "Ürünleri incele",
+        ctaHref: "/urunlerimiz",
+        image: "/ahenk-asistan-ai/hero.png",
       },
       {
-        id: "ajans",
-        title: "Ajans stüdyosu",
-        subtitle: "Grafik, film, sosyal medya, SEO ve dijital reklam tek imzada.",
-        ctaLabel: "Ajans",
-        ctaHref: "/ajans",
+        id: "hizmetler",
+        title: "Hizmetlerimiz",
+        subtitle: "Ajans stüdyosu ve çağrı merkezi operasyonu: grafik, film, reklam, SEO, müşteri hizmetleri.",
+        ctaLabel: "Hizmetleri incele",
+        ctaHref: "/hizmetlerimiz",
         image: AHENK_PHOTOS.agency,
       },
       {
-        id: "yayin",
-        title: "Haber Merkezi ürünleri",
-        subtitle: "YekTube, Haberler, haber haritası ve white-label Haber Merkezi.",
-        ctaLabel: "Haber Merkezi",
-        ctaHref: "/haber-merkezi",
-        image: AHENK_PHOTOS.news,
+        id: "hakkimizda",
+        title: "Hakkımızda",
+        subtitle:
+          "Ahenk Bilgi Teknolojileri; Londra, Ankara, Batum, Bakü ve Cheyenne ofisleriyle yazılım, ajans ve kurumsal operasyonu tek çatıda yönetir.",
+        ctaLabel: "Hakkımızda",
+        ctaHref: "/hakkimizda",
+        image: AHENK_PHOTOS.about,
       },
     ],
     services: [
@@ -988,10 +1008,17 @@ function mergeOffices(raw: unknown, defaults: AhenkAgencyOffice[]): AhenkAgencyO
   return items.length ? items : defaults;
 }
 
+function shouldRefreshHomeSlides(raw: unknown): boolean {
+  if (!Array.isArray(raw) || raw.length === 0) return true;
+  const ids = raw.filter(isRecord).map((s) => str(s.id, ""));
+  return ids.some((id) => id === "yazilim" || id === "yayin" || id === "ajans");
+}
+
 function mergeSlides(raw: unknown, defaults: AhenkAgencySlide[]): AhenkAgencySlide[] {
+  if (shouldRefreshHomeSlides(raw)) return defaults;
   if (!Array.isArray(raw) || raw.length === 0) return defaults;
   const byId = new Map(defaults.map((d) => [d.id, d]));
-  const items = raw
+  const items: AhenkAgencySlide[] = raw
     .filter(isRecord)
     .map((s, i) => {
       const id = str(s.id, `slide-${i}`);
@@ -1001,12 +1028,17 @@ function mergeSlides(raw: unknown, defaults: AhenkAgencySlide[]): AhenkAgencySli
         title: str(s.title, ""),
         subtitle: str(s.subtitle, ""),
         ctaLabel: str(s.ctaLabel, "İncele"),
-        ctaHref: str(s.ctaHref, "/hizmetler"),
+        ctaHref: str(s.ctaHref, "/hizmetlerimiz"),
         image: safeAhenkImageUrl(s.image, fallback?.image ?? ""),
       };
     })
     .filter((s) => s.title);
-  return items.length ? items : defaults;
+  if (!items.length) return defaults;
+  const have = new Set(items.map((s) => s.id));
+  for (const d of defaults) {
+    if (!have.has(d.id)) items.push(d);
+  }
+  return items;
 }
 
 function mergeServices(raw: unknown, defaults: AhenkAgencyService[]): AhenkAgencyService[] {
@@ -1143,6 +1175,19 @@ function mergeFaqs(raw: unknown, defaults: AhenkFaq[]): AhenkFaq[] {
   return items;
 }
 
+function mergeNavItems(raw: unknown, defaults: AhenkNavItem[]): AhenkNavItem[] {
+  if (!Array.isArray(raw) || !raw.length) return defaults;
+  const items = raw
+    .filter(isRecord)
+    .map((n, i) => ({
+      id: str(n.id, `nav-${i}`),
+      label: str(n.label, ""),
+      href: str(n.href, ""),
+    }))
+    .filter((n) => n.label && n.href);
+  return items.length ? items : defaults;
+}
+
 function looksLikePricedHomeCopy(value: unknown): boolean {
   return /10\.000|10000\s*TL|Kurumsal 10/i.test(String(value ?? ""));
 }
@@ -1202,6 +1247,7 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
         ? defaults.heroSecondaryHref
         : str(data.heroSecondaryHref, defaults.heroSecondaryHref),
       heroImage: safeAhenkImageUrl(data.heroImage, defaults.heroImage),
+      navItems: mergeNavItems(data.navItems, defaults.navItems),
       softwareTitle: useNewCopy ? defaults.softwareTitle : str(data.softwareTitle, defaults.softwareTitle),
       softwareLead:
         useNewCopy || !String(data.softwareLead || "").includes("görüntülü")
@@ -1228,7 +1274,10 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       aboutImage: safeAhenkImageUrl(data.aboutImage, defaults.aboutImage),
       ctaTitle: str(data.ctaTitle, defaults.ctaTitle),
       ctaText: str(data.ctaText, defaults.ctaText),
-      servicesTitle: useNewCopy ? defaults.servicesTitle : str(data.servicesTitle, defaults.servicesTitle),
+      servicesTitle:
+        useNewCopy || /çağrı merkezi ve operasyon/i.test(String(data.servicesTitle ?? ""))
+          ? defaults.servicesTitle
+          : str(data.servicesTitle, defaults.servicesTitle),
       servicesLead: useNewCopy ? defaults.servicesLead : str(data.servicesLead, defaults.servicesLead),
       servicesHeroImage: safeAhenkImageUrl(data.servicesHeroImage, defaults.servicesHeroImage),
       landingKicker: str(data.landingKicker, defaults.landingKicker),

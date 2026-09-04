@@ -378,6 +378,7 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/iletisim" || p === "/contact") return true;
   if (p === "/ucretsiz-haber-sitesi") return true;
   if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai") return true;
+  if (p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi") return true;
   if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
@@ -415,7 +416,10 @@ export function buildAhenkLlmsTxtFallback(origin) {
 
 Resmi kurumsal site: ${o}/
 Hakkımızda: ${o}/hakkimizda
-Hizmetler: ${o}/hizmetler
+Hizmetler: ${o}/hizmetlerimiz
+Ürünlerimiz: ${o}/urunlerimiz
+Asistan AI: ${o}/asistan-ai
+WhatsApp çağrı merkezi: ${o}/whatsapp-cagri-merkezi
 İletişim: ${o}/iletisim
 Aiaddin: ${o}/aiaddin
 Polis AI: ${o}/polis-ai

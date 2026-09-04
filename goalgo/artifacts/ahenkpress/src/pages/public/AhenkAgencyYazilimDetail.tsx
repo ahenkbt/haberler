@@ -6,7 +6,6 @@ import {
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { ahenkAliasSlug } from "@/lib/ahenkAgencySeo";
-import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
 import { findAhenkContentCard, safeAhenkImageUrl } from "@/lib/ahenkAgencySite";
 
 export default function AhenkAgencyYazilimDetail() {
@@ -32,9 +31,8 @@ export default function AhenkAgencyYazilimDetail() {
   }
 
   const src = safeAhenkImageUrl(card.image, site.heroImage);
-  const parentHref = isAgency ? "/ajans" : "/yazilim";
-  const parentLabel = isAgency ? "Ajans" : "Yazılım";
-  const pkg = ahenkPackageFromFields(site);
+  const parentHref = isAgency ? "/hizmetlerimiz" : "/yazilim";
+  const parentLabel = isAgency ? "Hizmetlerimiz" : "Yazılım";
 
   return (
     <AhenkAgencyChrome title={card.title} description={card.excerpt}>
@@ -61,7 +59,7 @@ export default function AhenkAgencyYazilimDetail() {
           <div className="ahenk-prose" dangerouslySetInnerHTML={{ __html: card.bodyHtml }} />
           <div style={{ marginTop: 24, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href="/iletisim" className="ahenk-btn">
-              Teklif alın — {pkg.display}
+              Teklif alın
             </Link>
             <a
               className="ahenk-btn ahenk-btn-light"

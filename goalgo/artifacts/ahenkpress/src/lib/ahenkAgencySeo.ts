@@ -108,7 +108,7 @@ export function ahenkHubSeo(path: string): { title: string; description: string;
   const n = normalizeAhenkPath(path);
   if (n === "/web-tasarimi" || n === "/web-tasarim") {
     return {
-      title: "Web Tasarımı | Kurumsal Web Sitesi 10.000 TL · 3 Günde Teslim",
+      title: "Web Tasarımı | Kurumsal Web Sitesi · 3 Günde Teslim",
       description:
         "Web tasarımı ve kurumsal web sitesi. Yapay zeka destekli, mobil uyumlu, 1-3 günde teslim. Avukat, doktor, haber, restoran ve tüm sektörler.",
       h1: "Web tasarımı",
@@ -118,14 +118,14 @@ export function ahenkHubSeo(path: string): { title: string; description: string;
     return {
       title: "Mobil Uyumlu Yazılım | Web Yazılımı 1-3 Günde Teslim",
       description:
-        "Mobil uyumlu web yazılımı ve web tasarımı. Haber scripti, avukat sitesi, doktor sitesi, restoran sitesi. Kurumsal paket 10.000 TL.",
+        "Mobil uyumlu web yazılımı ve web tasarımı. Haber scripti, avukat sitesi, doktor sitesi, restoran sitesi.",
       h1: "Mobil uyumlu yazılım",
     };
   }
   return {
     title: "Web Yazılımı | Haber Sitesi Yazılımı, Avukat Sitesi, Doktor Sitesi",
     description:
-      "Yapay zeka destekli web yazılımı: haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi. 1-3 günde teslim. Kurumsal web sitesi 10.000 TL.",
+      "Yapay zeka destekli web yazılımı: haber sitesi yazılımı, haber scripti, web tasarımı, avukat sitesi, doktor sitesi, restoran sitesi. 1-3 günde teslim.",
     h1: "Web yazılımı",
   };
 }

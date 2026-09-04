@@ -154,7 +154,7 @@ export default function AhenkPbxLanding() {
   return (
     <AhenkAgencyChrome
       title="Yapay zeka destekli çağrı merkezi CRM | Ahenk PBX"
-      description="ÇM CRM: Peri AI asistanı, listeli arama, FreePBX, WhatsApp, veri kazıma, AI satış temsilcisi ve Geliver kargo. Temsilci başı 700 TL; 10 kişide 7.000 TL."
+      description="ÇM CRM: Peri AI asistanı, listeli arama, FreePBX, WhatsApp, veri kazıma, AI satış temsilcisi ve Geliver kargo. pbx.goalgo.org"
     >
       <AhenkPageHero
         crumb={
@@ -163,25 +163,9 @@ export default function AhenkPbxLanding() {
           </>
         }
         title="Yapay zeka destekli çağrı merkezi CRM"
-        lead="ÇM CRM; temsilci, FreePBX, listeli arama, WhatsApp, veri kazıma ve Peri — şans perin asistanını tek yazılımda birleştirir. Kullanım pbx.goalgo.org üzerinden, aylık temsilci paketiyle."
+        lead="ÇM CRM; temsilci, FreePBX, listeli arama, WhatsApp, veri kazıma ve Peri — şans perin asistanını tek yazılımda birleştirir. Giriş: pbx.goalgo.org."
         image={AHENK_PHOTOS.callCenter}
       />
-
-      <section className="ahenk-price" id="fiyat">
-        <div className="ahenk-price-inner">
-          <div>
-            <span className="ahenk-kicker">Kullanım ücreti</span>
-            <strong>{formatTry(PBX_BASE_PER_AGENT_TL)} / temsilci</strong>
-            <p>
-              10 temsilci {formatTry(7000)} · 20 temsilci {formatTry(13000)} · 30 temsilci {formatTry(18000)}. Her +10
-              temsilcide kişi başı {formatTry(PBX_TIER_DISCOUNT_TL)} düşer, {PBX_MAX_AGENTS} ajana kadar.
-            </p>
-          </div>
-          <a className="ahenk-btn" href={wa} target="_blank" rel="noreferrer">
-            WhatsApp ile teklif
-          </a>
-        </div>
-      </section>
 
       <section className="ahenk-section" id="peri">
         <h2>Peri — şans perin</h2>
@@ -295,10 +279,9 @@ export default function AhenkPbxLanding() {
       ) : null}
 
       <section className="ahenk-section" id="paketler">
-        <h2>Aylık paketler</h2>
+        <h2>Paketler</h2>
         <p className="ahenk-lead">
-          Taban {formatTry(PBX_BASE_PER_AGENT_TL)} / temsilci. Hacim arttıkça birim fiyat düşer — 20 kişilik pakette
-          14.000 TL değil {formatTry(13000)}; 30 kişide 21.000 TL değil {formatTry(18000)}.
+          Kullanım hakkı temsilci sayısına göre. Detay tablo aşağıda; teklif için WhatsApp.
         </p>
         <div className="ahenk-table-wrap">
           <table className="ahenk-table">
@@ -332,8 +315,8 @@ export default function AhenkPbxLanding() {
           <a className="ahenk-btn ahenk-btn-ghost" href={PBX_APP_URL} target="_blank" rel="noreferrer">
             pbx.goalgo.org giriş
           </a>
-          <Link href="/hizmetler" className="ahenk-btn ahenk-btn-light">
-            Çağrı merkezi hizmetleri
+          <Link href="/hizmetlerimiz" className="ahenk-btn ahenk-btn-light">
+            Hizmetlerimiz
           </Link>
         </div>
       </section>

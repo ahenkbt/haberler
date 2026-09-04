@@ -23,7 +23,7 @@ import {
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import {
   isExternalAhenkHref,
-  AHENK_REMOVED_SERVICE_SLUGS,
+  defaultAhenkNavItems,
   safeAhenkImageUrl,
   type AhenkAgencySite,
   type AhenkContentCard,
@@ -36,19 +36,6 @@ import {
   normalizeAhenkPath,
 } from "@/lib/ahenkAgencySeo";
 import "@/styles/ahenkAgency.css";
-
-const NAV = [
-  { href: "/", label: "Anasayfa" },
-  { href: "/web-yazilimi", label: "Web Yazılımı" },
-  { href: "/ajans", label: "Ajans" },
-  { href: "/polis-ai", label: "Polis AI" },
-  { href: "/aiaddin", label: "Aiaddin" },
-  { href: "/cagri-merkezi-crm", label: "PBX CRM" },
-  { href: "/haber-merkezi", label: "Haber Merkezi" },
-  { href: "/yekpare", label: "Yekpare" },
-  { href: "/hakkimizda", label: "Hakkımızda" },
-  { href: "/iletisim", label: "İletişim" },
-];
 
 export function AhenkServiceIcon({ name, className }: { name: string; className?: string }) {
   const cls = className ?? "w-5 h-5";
@@ -88,6 +75,38 @@ export function AhenkServiceIcon({ name, className }: { name: string; className?
 
 function navActive(path: string, href: string): boolean {
   if (href === "/") return path === "/";
+  if (href === "/urunlerimiz") {
+    return (
+      path === "/urunlerimiz" ||
+      path === "/asistan-ai" ||
+      path === "/whatsapp-cagri-merkezi" ||
+      path === "/polis-ai" ||
+      path === "/polisai" ||
+      path === "/aiaddin" ||
+      path === "/cagri-merkezi-crm" ||
+      path === "/yekpare" ||
+      path === "/haber-merkezi" ||
+      path === "/yektube" ||
+      path === "/haberler" ||
+      path === "/newsmap" ||
+      path === "/web-yazilimi"
+    );
+  }
+  if (href === "/hizmetlerimiz") {
+    return (
+      path === "/hizmetlerimiz" ||
+      path === "/hizmetler" ||
+      path.startsWith("/hizmet/") ||
+      path.startsWith("/icerik/") ||
+      path === "/ajans" ||
+      path === "/yazilim/grafik-tasarim" ||
+      path === "/yazilim/web-yazilim" ||
+      path === "/yazilim/sosyal-medya" ||
+      path === "/yazilim/video-film" ||
+      path === "/yazilim/dijital-reklam" ||
+      path === "/yazilim/seo-buyume"
+    );
+  }
   if (href === "/web-yazilimi") {
     return (
       path === "/yazilim" ||
@@ -97,12 +116,7 @@ function navActive(path: string, href: string): boolean {
     );
   }
   if (href === "/cagri-merkezi-crm") {
-    return (
-      path === "/cagri-merkezi-crm" ||
-      path === "/yapay-zeka-cagri-merkezi" ||
-      path === "/hizmetler" ||
-      path.startsWith("/hizmet/")
-    );
+    return path === "/cagri-merkezi-crm" || path === "/yapay-zeka-cagri-merkezi";
   }
   return path === href || path.startsWith(`${href}/`);
 }
@@ -269,6 +283,7 @@ export function AhenkAgencyChrome({
   const [location] = useLocation();
   const path = normalizeAhenkPath((location.split("?")[0] ?? "/").trim() || "/");
   const [open, setOpen] = useState(false);
+  const nav = site.navItems?.length ? site.navItems : defaultAhenkNavItems();
   const wa = ahenkWhatsAppHref(
     site.whatsappTel || site.phoneTel,
     "Merhaba, web yazılımı / kurumsal web sitesi hakkında bilgi almak istiyorum.",
@@ -313,9 +328,9 @@ export function AhenkAgencyChrome({
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <nav className={`ahenk-nav ${open ? "is-open" : ""}`}>
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <Link
-                key={item.href}
+                key={item.id || item.href}
                 href={item.href}
                 className={navActive(path, item.href) ? "is-active" : ""}
               >
@@ -397,26 +412,32 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
           </p>
         </div>
         <div>
-          <h3>Yazılım</h3>
+          <h3>Menü</h3>
           <div style={{ display: "grid", gap: 6 }}>
-            {site.softwareSectors.slice(0, 6).map((s) => (
-              <Link key={s.slug} href={s.href}>
-                {s.title}
-              </Link>
-            ))}
+            {(site.navItems?.length ? site.navItems : defaultAhenkNavItems())
+              .filter((n) => n.href !== "/")
+              .map((n) => (
+                <Link key={n.id || n.href} href={n.href}>
+                  {n.label}
+                </Link>
+              ))}
           </div>
         </div>
         <div>
-          <h3>Çağrı merkezi</h3>
+          <h3>Ürünler</h3>
           <div style={{ display: "grid", gap: 6 }}>
-            {site.services
-              .filter((s) => !AHENK_REMOVED_SERVICE_SLUGS.has(s.slug))
-              .slice(0, 6)
-              .map((s) => (
-              <Link key={s.slug} href={`/hizmet/${s.slug}`}>
-                {s.title}
-              </Link>
-            ))}
+            <Link href="/asistan-ai">Ahenk Asistan AI</Link>
+            <Link href="/whatsapp-cagri-merkezi">WhatsApp çağrı merkezi</Link>
+            <Link href="/polis-ai">Polis AI</Link>
+            <Link href="/haber-merkezi">Haber Merkezi</Link>
+            <Link href="/yektube">YekTube</Link>
+            <Link href="/haberler">Haberler</Link>
+            <Link href="/newsmap">Haber haritası</Link>
+            <Link href="/cagri-merkezi-crm">PBX CRM</Link>
+            <Link href="/aiaddin">Aiaddin</Link>
+            <a href="https://yekpare.net" target="_blank" rel="noreferrer">
+              yekpare.net
+            </a>
           </div>
         </div>
         <div>
@@ -427,17 +448,9 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             {site.hoursSunday}
           </p>
           <p style={{ marginTop: 10 }}>
-            <Link href="/haber-merkezi">Haber Merkezi</Link>
+            <Link href="/urunlerimiz">Ürünlerimiz</Link>
             {" · "}
-            <Link href="/polis-ai">Polis AI</Link>
-            {" · "}
-            <Link href="/aiaddin">Aiaddin</Link>
-            {" · "}
-            <Link href="/cagri-merkezi-crm">PBX CRM</Link>
-            {" · "}
-            <a href="https://yekpare.net" target="_blank" rel="noreferrer">
-              Yekpare.net
-            </a>
+            <Link href="/hizmetlerimiz">Hizmetlerimiz</Link>
           </p>
           <p>
             <strong style={{ color: "#fff" }}>{site.phone}</strong>
