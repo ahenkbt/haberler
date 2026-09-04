@@ -86,7 +86,14 @@ export type AhenkTextBlock = {
   text: string;
 };
 
-export const AHENK_REMOVED_SERVICE_SLUGS = new Set(["temizlik-hizmetleri"]);
+export const AHENK_REMOVED_SERVICE_SLUGS = new Set(["temizlik-hizmetleri", "kurumsal-organizasyon"]);
+
+/** Kayıtlı vitrinde yoksa Hizmetlerimiz’e eklenen danışmanlık kartları. */
+export const AHENK_SERVICE_APPEND_SLUGS = [
+  "uluslararasi-sirket-kurulusu",
+  "e-ticaret-odeme-kuruluslari",
+  "dijital-gocebe-e-residency",
+] as const;
 
 export function defaultAhenkLandingFeatures(): AhenkTextBlock[] {
   return [
@@ -796,7 +803,7 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
       "Yazılım, ajans veya yayın projeniz için sizi Ankara, Londra veya Batum ofisimizde ağırlamaktan mutluluk duyarız.",
     servicesTitle: "Hizmetlerimiz",
     servicesLead:
-      "Ajans stüdyosu, çağrı merkezi ve operasyon: grafik, film, reklam, SEO, müşteri hizmetleri ve sipariş hattı.",
+      "Ajans, çağrı merkezi ve uluslararası danışmanlık: şirket kuruluşu, ödeme kuruluşu kaydı, e-Residency, grafik, film ve müşteri hizmetleri.",
     servicesHeroImage: AHENK_PHOTOS.servicesHero,
     landingKicker: "Ahenk Bilgi Teknolojileri",
     landingTitle: "Haber sitesi yazılımı — sunucu ve domain dahil",
@@ -865,6 +872,67 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
       },
     ],
     services: [
+      {
+        slug: "uluslararasi-sirket-kurulusu",
+        title: "Uluslararası şirket ve STK kuruluşu",
+        excerpt:
+          "İngiltere ve ABD başta olmak üzere dünyanın herhangi bir ülkesinde şirket, dernek, vakıf, kooperatif ve STK kuruluş danışmanlığı. Vergi beyannamesi ve uluslararası banka hesabı.",
+        icon: "building",
+        image: AHENK_PHOTOS.corporate,
+        bodyHtml: `<h2>Uluslararası şirket ve STK kuruluş danışmanlığı</h2>
+<p>Ahenk Bilgi Teknolojileri; İngiltere ve Amerika Birleşik Devletleri öncelikli olmak üzere dünyanın herhangi bir ülkesinde şirket, dernek, vakıf, kooperatif ve sivil toplum kuruluşu açılışında danışmanlık verir. Süreç yönlendirme, evrak hazırlığı ve yerel çözüm ortaklarıyla koordinasyon bu kapsamdadır.</p>
+<h3>Kuruluş türleri</h3>
+<ul>
+<li>Limited, LLC, C-Corp ve benzeri ticari şirketler</li>
+<li>Dernek, vakıf, kooperatif ve STK</li>
+<li>Holding, şube ve temsilcilik yapıları</li>
+</ul>
+<h3>Öncelikli ülkeler</h3>
+<p>İngiltere ve ABD (Cheyenne / Wyoming ofisimiz dahil) sık çalışılan hatlardır. Avrupa, Körfez, Kafkasya ve diğer yargı çevrelerinde de aynı danışmanlık modeli uygulanır.</p>
+<h3>Vergi ve beyan</h3>
+<p>Kuruluş sonrası vergi numarası, dönemsel beyanname takvimi ve muhasebe/ödeme takvimi konusunda yönlendirme yapılır. Yerel yükümlülükler ülke mevzuatına göre netleştirilir.</p>
+<h3>Uluslararası banka hesabı</h3>
+<p>Şirket veya kuruluş adına banka hesabı açılış sürecinde evrak seti, KYC hazırlığı ve banka eşleştirmesi danışmanlığı sunulur.</p>
+<p>Bu hizmet hukuki temsil değil; süreç ve operasyon danışmanlığıdır. Resmî tescil, noter ve vergi işlemleri ilgili ülkede yetkili merciler ve çözüm ortakları üzerinden yürür.</p>`,
+      },
+      {
+        slug: "e-ticaret-odeme-kuruluslari",
+        title: "E-ticaret ve ödeme kuruluşu kaydı",
+        excerpt:
+          "Stripe, Wise, Payoneer, Cenoa ve benzeri e-ticaret / online ödeme kuruluşlarına kayıt danışmanlığı. Hesap açılışı ve evrak yönlendirmesi.",
+        icon: "cart",
+        image: AHENK_PHOTOS.shop,
+        bodyHtml: `<h2>E-ticaret ve online ödeme kuruluşu kaydı</h2>
+<p>Uluslararası satış ve tahsilat için ödeme ve e-ticaret altyapılarına kayıt sürecini danışmanlık olarak yönetiriz. Şirket kuruluşundan ayrı bir hizmettir: mevcut veya yeni işletmenizin Stripe, Wise, Payoneer, Cenoa ve benzeri platformlara kabulünü hedefler.</p>
+<h3>Kapsam</h3>
+<ul>
+<li>Stripe hesap ve ödeme kabulü başvurusu</li>
+<li>Wise (çok para birimli hesap)</li>
+<li>Payoneer</li>
+<li>Cenoa ve benzeri fintech / e-ticaret tahsilat hatları</li>
+<li>Pazaryeri ve ödeme ağ geçidi kayıtları</li>
+</ul>
+<h3>Nasıl ilerler</h3>
+<p>Şirket evrakı, faaliyet açıklaması, web vitrini ve KYC dosyası hazırlanır; platformun istediği ek belgeler tamamlanır. Red veya ek evrak taleplerinde dosya güncellenir.</p>
+<p>Onay kararı ilgili ödeme kuruluşuna aittir. Ahenk süreç, evrak ve takip danışmanlığı verir.</p>`,
+      },
+      {
+        slug: "dijital-gocebe-e-residency",
+        title: "Dijital göçebe ve e-Residency",
+        excerpt:
+          "Estonya e-Residency; İspanya ve Portekiz dijital göçebe programları. Uzaktan şirket ve oturum danışmanlığı.",
+        icon: "map",
+        image: AHENK_PHOTOS.city,
+        bodyHtml: `<h2>Dijital göçebe ve e-Residency danışmanlığı</h2>
+<p>Uzaktan çalışan girişimci ve yazılım ekipleri için Estonya, İspanya ve Portekiz hatlarında danışmanlık sunarız.</p>
+<h3>Estonya e-Residency</h3>
+<p>e-Residency ile dijital kimlik, uzaktan şirket yönetimi ve Avrupa içi operasyon altyapısı. Başvuru dosyası, şirket kurulumu ve banka/ödeme eşlemesi bu pakette yönlendirilir.</p>
+<h3>İspanya dijital göçebe</h3>
+<p>İspanya dijital göçebe / uzaktan çalışma oturum süreçlerinde evrak, gelir belgesi ve başvuru takvimi danışmanlığı.</p>
+<h3>Portekiz dijital göçebe</h3>
+<p>Portekiz D8 ve benzeri dijital göçebe oturum programlarında dosya hazırlığı ve süreç takibi.</p>
+<p>Vize ve oturum kararı ilgili ülkenin resmi makamlarına aittir. Ahenk hazırlık, kontrol listesi ve başvuru danışmanlığı sağlar.</p>`,
+      },
       {
         slug: "musteri-hizmetleri",
         title: "Müşteri Hizmetleri",
@@ -979,17 +1047,6 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
 <p>Müşterileriniz masadaki QR kodu telefonlarına okutarak ürünlerinize erişir ve hiçbir fiziksel temasa gerek kalmadan kolaylıkla siparişlerini verir.</p>
 <p>Dijital QR menü, ürünlerinizi düzenli, anlaşılır ve etkileyici şekilde sunmanıza yardımcı olur.</p>`,
       },
-      {
-        slug: "kurumsal-organizasyon",
-        title: "Kurumsal Organizasyon",
-        excerpt: "Şirket etkinlikleri, fuar, festival ve kurumsal davetlerin uçtan uca planlanması.",
-        icon: "building",
-        image: AHENK_PHOTOS.event,
-        bodyHtml: `<h2>Kurumsal Organizasyon</h2>
-<p>Ahenk Bilgi Teknolojileri olarak firmaların kurumsal değer ve prensiplerini analiz ederek onların beklentileri doğrultusunda hareket etmekteyiz.</p>
-<p>Hayalinizdeki organizasyonun oluşturulma aşamasında size her adımda yardımcı olacak tecrübeli, eğitimli ve yenilikçi bir ekip olarak davet planınızın en başından en sonuna kadar yanınızdayız.</p>
-<p>Şirket organizasyonlarının yanı sıra belediyeler, meslek odaları, dernekler ve vakıflar ile sergi, konser, tiyatro, fuar, yerel ve yöresel festival organizasyonu hizmeti de vermekteyiz.</p>`,
-      },
     ],
   };
 }
@@ -1065,7 +1122,12 @@ function mergeServices(raw: unknown, defaults: AhenkAgencyService[]): AhenkAgenc
       };
     })
     .filter((s) => s.slug && s.title && !AHENK_REMOVED_SERVICE_SLUGS.has(s.slug));
-  return items.length ? items : defaults;
+  if (!items.length) return defaults.filter((s) => !AHENK_REMOVED_SERVICE_SLUGS.has(s.slug));
+  const seen = new Set(items.map((s) => s.slug));
+  const extra = defaults.filter(
+    (d) => (AHENK_SERVICE_APPEND_SLUGS as readonly string[]).includes(d.slug) && !seen.has(d.slug),
+  );
+  return extra.length ? [...extra, ...items] : items;
 }
 
 function mergeFeatureList(raw: unknown, fallback?: string[]): string[] | undefined {
@@ -1278,7 +1340,10 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
         useNewCopy || /çağrı merkezi ve operasyon/i.test(String(data.servicesTitle ?? ""))
           ? defaults.servicesTitle
           : str(data.servicesTitle, defaults.servicesTitle),
-      servicesLead: useNewCopy ? defaults.servicesLead : str(data.servicesLead, defaults.servicesLead),
+      servicesLead:
+        useNewCopy || !/e-Residency|ödeme kuruluşu/i.test(String(data.servicesLead ?? ""))
+          ? defaults.servicesLead
+          : str(data.servicesLead, defaults.servicesLead),
       servicesHeroImage: safeAhenkImageUrl(data.servicesHeroImage, defaults.servicesHeroImage),
       landingKicker: str(data.landingKicker, defaults.landingKicker),
       landingTitle: str(data.landingTitle, defaults.landingTitle),

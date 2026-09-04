@@ -66,6 +66,9 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 
 ## Hizmetlerimiz
 - Hizmetlerimiz: https://ahenk.net.tr/hizmetlerimiz
+- Uluslararası şirket / dernek / vakıf / kooperatif / STK kuruluşu: https://ahenk.net.tr/hizmet/uluslararasi-sirket-kurulusu
+- E-ticaret ve ödeme kuruluşu kaydı (Stripe, Wise, Payoneer, Cenoa): https://ahenk.net.tr/hizmet/e-ticaret-odeme-kuruluslari
+- Dijital göçebe ve e-Residency (Estonya, İspanya, Portekiz): https://ahenk.net.tr/hizmet/dijital-gocebe-e-residency
 - Ajans stüdyosu ve çağrı merkezi operasyonu aynı sayfada.
 
 ## Sitemap
