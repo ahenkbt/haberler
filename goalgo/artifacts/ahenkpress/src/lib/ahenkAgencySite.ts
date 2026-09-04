@@ -742,7 +742,7 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     heroTitle: "yekpare.net hazır web sitesi",
     heroSubtitle:
       "Ahenk BT, yekpare.net üzerinde hazır web siteleri üretir. Haber siteleri HM editör altyapısıyla, sektör siteleri yekpare.net servis sağlayıcı vitrinleriyle yayına alınır.",
-    heroCtaLabel: "Canlı demolar",
+    heroCtaLabel: "Polis AI",
     heroCtaHref: "#demolar",
     heroSecondaryLabel: "Özel yazılım için iletişim",
     heroSecondaryHref: "/iletisim",

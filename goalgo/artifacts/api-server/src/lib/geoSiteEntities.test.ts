@@ -39,6 +39,7 @@ describe("geoSiteEntities", () => {
     expect(isAhenkAgencyGeoPath("/hakkimizda")).toBe(true);
     expect(isAhenkAgencyGeoPath("/haberler")).toBe(false);
     expect(isAhenkAgencyGeoPath("/aiaddin")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/polis-ai")).toBe(true);
     expect(isAhenkAgencyGeoPath("/cagri-merkezi-crm")).toBe(true);
   });
 

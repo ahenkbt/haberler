@@ -1469,7 +1469,7 @@ function isAhenkAgencyGeoPath(pathname) {
   if (p === "/iletisim" || p === "/contact") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
-  if (p === "/aiaddin" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
+  if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
   return false;
 }
 

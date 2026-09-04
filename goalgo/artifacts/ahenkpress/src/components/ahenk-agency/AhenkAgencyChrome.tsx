@@ -41,6 +41,7 @@ const NAV = [
   { href: "/", label: "Anasayfa" },
   { href: "/web-yazilimi", label: "Web Yazılımı" },
   { href: "/ajans", label: "Ajans" },
+  { href: "/polis-ai", label: "Polis AI" },
   { href: "/aiaddin", label: "Aiaddin" },
   { href: "/cagri-merkezi-crm", label: "PBX CRM" },
   { href: "/haber-merkezi", label: "Haber Merkezi" },
@@ -427,6 +428,8 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
           </p>
           <p style={{ marginTop: 10 }}>
             <Link href="/haber-merkezi">Haber Merkezi</Link>
+            {" · "}
+            <Link href="/polis-ai">Polis AI</Link>
             {" · "}
             <Link href="/aiaddin">Aiaddin</Link>
             {" · "}

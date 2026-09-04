@@ -98,6 +98,7 @@ import AhenkAgencyYekpare from "./pages/public/AhenkAgencyYekpare";
 import AhenkHaberSitesiLanding from "./pages/public/AhenkHaberSitesiLanding";
 import AhenkPbxLanding from "./pages/public/AhenkPbxLanding";
 import AhenkAiaddinLanding from "./pages/public/AhenkAiaddinLanding";
+import AhenkPolisAiLanding from "./pages/public/AhenkPolisAiLanding";
 import { AHENK_HUB_PATHS, AHENK_SLUG_ALIASES } from "@/lib/ahenkAgencySeo";
 import UstaPaneli from "./pages/public/UstaPaneli";
 import ServisElemanPaneli from "./pages/public/ServisElemanPaneli";
@@ -836,6 +837,8 @@ export default function App() {
       <Route path="/haber-merkezi">{() => (isAhenkAgencyHost() ? <AhenkAgencyHaberMerkezi /> : <Redirect to="/habermerkezi" />)}</Route>
       <Route path="/yekpare">{() => (isAhenkAgencyHost() ? <AhenkAgencyYekpare /> : <Redirect to="/" />)}</Route>
       <Route path="/aiaddin">{() => (isAhenkAgencyHost() ? <AhenkAiaddinLanding /> : <Redirect to="/" />)}</Route>
+      <Route path="/polis-ai">{() => (isAhenkAgencyHost() ? <AhenkPolisAiLanding /> : <Redirect to="/" />)}</Route>
+      <Route path="/polisai">{() => (isAhenkAgencyHost() ? <Redirect to="/polis-ai" /> : <Redirect to="/" />)}</Route>
       <Route path="/cagri-merkezi-crm">{() => (isAhenkAgencyHost() ? <AhenkPbxLanding /> : <Redirect to="/" />)}</Route>
       <Route path="/yapay-zeka-cagri-merkezi">
         {() => (isAhenkAgencyHost() ? <Redirect to="/cagri-merkezi-crm" /> : <Redirect to="/ai-cagri-merkezi" />)}

@@ -5,6 +5,7 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 
 ## Teklif
 - yekpare.net hazır web sitesi (ücretsiz liste, harita, sarı sayfalar, reklam trafiği)
+- Polis AI (yapım aşamasında — akıllı şehir ve bireysel güvenlik): https://ahenk.net.tr/polis-ai
 - Özel yazılımlar: iletişime geçin — https://ahenk.net.tr/iletisim
 - Kampanya fiyatı yalnızca detay sayfalarında: https://ahenk.net.tr/kurumsal-web-sitesi
 - WhatsApp: 0541 313 62 45 (https://wa.me/905413136245)
@@ -39,6 +40,13 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 - Çağrı merkezi hizmetleri: https://ahenk.net.tr/hizmetler
 - Yapay zeka destekli çağrı merkezi CRM (Ahenk PBX): https://ahenk.net.tr/cagri-merkezi-crm
 - PBX giriş: https://pbx.goalgo.org/
+
+## Polis AI
+- Tanıtım: https://ahenk.net.tr/polis-ai
+- Sunum PDF: https://ahenk.net.tr/ahenk-polis-ai/Polis-AI-Presentation.pdf
+- Hedef yayın: web, App Store, Play Store (çok yakında)
+- PIN paneli: https://polisai.net
+- Ahenk BT projesi; resmi kamu uygulaması değildir. 112 PIN, legal-tech, kategorik ihbar, siber/aile kalkanı.
 
 ## Yazılım ürünleri
 - Aiaddin (kurumsal yapay zeka IDE): https://ahenk.net.tr/aiaddin
