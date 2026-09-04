@@ -267,6 +267,7 @@ export function buildAhenkOrganizationJsonLd(site: AhenkAgencySite, origin: stri
       "https://ahenk.net.tr/haber-merkezi",
       "https://aiaddin.net/",
       "https://pbx.goalgo.org/",
+      "https://ahenk.net.tr/polis-ai",
     ],
     contactPoint: [
       {

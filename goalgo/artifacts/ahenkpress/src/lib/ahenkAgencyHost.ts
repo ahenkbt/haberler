@@ -42,6 +42,7 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (n === "/iletisim" || n === "/contact") return true;
   if (n === "/ucretsiz-haber-sitesi") return true;
   if (n === "/aiaddin") return true;
+  if (n === "/polis-ai" || n === "/polisai") return true;
   if (n === "/cagri-merkezi-crm" || n === "/yapay-zeka-cagri-merkezi") return true;
   return false;
 }

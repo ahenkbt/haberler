@@ -11,13 +11,7 @@ import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { ahenkCallCenterServices, ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
 import { AHENK_PHOTOS, safeAhenkImageUrl, type AhenkContentCard } from "@/lib/ahenkAgencySite";
 import { formatTry, PBX_BASE_PER_AGENT_TL, pbxMonthlyTl } from "@/lib/ahenkPbxPricing";
-import {
-  HM_EDITOR_DEMOS,
-  YEKPARE_ECOSYSTEM_POINTS,
-  YEKPARE_HOME_FAQS,
-  YEKPARE_SERVICE_DEMOS,
-  type AhenkDemoLink,
-} from "@/lib/ahenkYekpareDemos";
+import { YEKPARE_ECOSYSTEM_POINTS, YEKPARE_HOME_FAQS } from "@/lib/ahenkYekpareDemos";
 
 function hideHomeCampaignPrice(text: string): string {
   return text
@@ -34,20 +28,6 @@ function sectorForHome(item: AhenkContentCard): AhenkContentCard {
     title: hideHomeCampaignPrice(item.title),
     excerpt: hideHomeCampaignPrice(item.excerpt),
   };
-}
-
-function DemoGrid({ items }: { items: AhenkDemoLink[] }) {
-  return (
-    <div className="ahenk-demo-list">
-      {items.map((item) => (
-        <a key={item.href} className="ahenk-demo-link" href={item.href} target="_blank" rel="noreferrer">
-          <span className="ahenk-kicker">{item.note}</span>
-          <strong>{item.title}</strong>
-          <span className="ahenk-demo-url">{item.href.replace(/^https?:\/\//, "")}</span>
-        </a>
-      ))}
-    </div>
-  );
 }
 
 export default function AhenkAgencyHome() {
@@ -82,8 +62,8 @@ export default function AhenkAgencyHome() {
             </p>
             <p className="ahenk-hero-ai">Özel yazılımlar için bizimle iletişime geçin.</p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <a className="ahenk-btn" href="#demolar">
-                Canlı demolar
+              <a className="ahenk-btn" href="#polis-ai">
+                Polis AI
               </a>
               <Link href="/iletisim" className="ahenk-btn ahenk-btn-ghost">
                 Özel yazılım için iletişim
@@ -112,23 +92,31 @@ export default function AhenkAgencyHome() {
         </div>
       </section>
 
-      <section className="ahenk-section" id="demolar">
-        <h2>Canlı demo örnekleri</h2>
-        <p className="ahenk-lead">
-          Mevcut örnekler yekpare.net servis sağlayıcı siteleri ve HM editör haber siteleri üzerindendir. Kendi
-          yazılımınız için özel geliştirme istiyorsanız bizimle iletişime geçin.
-        </p>
-        <h3 className="ahenk-subhead">yekpare.net servis sağlayıcı</h3>
-        <DemoGrid items={YEKPARE_SERVICE_DEMOS} />
-        <h3 className="ahenk-subhead">HM editör siteleri</h3>
-        <DemoGrid items={HM_EDITOR_DEMOS} />
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
-          <a className="ahenk-btn" href="https://yekpare.net" target="_blank" rel="noreferrer">
-            yekpare.net
-          </a>
-          <Link href="/iletisim" className="ahenk-btn ahenk-btn-light">
-            Özel yazılımlar için iletişime geçin
-          </Link>
+      <section className="ahenk-polis-home" id="polis-ai">
+        <div className="ahenk-polis-home-visual" aria-hidden>
+          <img src="/ahenk-polis-ai/02-vatandas-poster.jpg" alt="" />
+        </div>
+        <div className="ahenk-polis-home-copy">
+          <span className="ahenk-kicker">Yapım aşamasında · web · App Store · Play Store</span>
+          <h2>Polis AI</h2>
+          <p>
+            Akıllı şehir ve bireysel güvenlik ekosistemi. Tek tuşla sessiz ihbar, yapay zeka risk analizi, 112’ye
+            otomatik sesli anons ve <strong>polisai.net</strong> PIN ile canlı konum / görüntü. Legal-tech avukat
+            pazaryeri, kategorik ihbar (polis · trafik · zabıta) ve siber / aile kalkanı.
+          </p>
+          <ul>
+            <li>PIN protokolü: operatör uygulama yüklemeden canlı veriye bakar.</li>
+            <li>Vatandaş: sesli acil durum, canlı medya, interaktif hukuk, siber suç önleme.</li>
+            <li>Saha: olay yeri tutanak, görsel analitik, siber devriye — proje hedefi.</li>
+          </ul>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
+            <Link href="/polis-ai" className="ahenk-btn">
+              Detaylı sunum
+            </Link>
+            <a className="ahenk-btn ahenk-btn-ghost" href="/ahenk-polis-ai/Polis-AI-Presentation.pdf" download>
+              PDF indir
+            </a>
+          </div>
         </div>
       </section>
 
@@ -169,10 +157,23 @@ export default function AhenkAgencyHome() {
       <section className="ahenk-section" id="urunler">
         <h2>Yazılım ürünlerimiz</h2>
         <p className="ahenk-lead">
-          Kurumsal yapay zeka IDE (Aiaddin) ve yapay zeka destekli çağrı merkezi CRM (Ahenk PBX). Detaylı sayfalar
-          ahenk.net.tr üzerinde; ürün girişleri aiaddin.net ve pbx.goalgo.org.
+          Polis AI (yapım aşamasında), kurumsal yapay zeka IDE (Aiaddin) ve çağrı merkezi CRM (Ahenk PBX).
         </p>
-        <div className="ahenk-grid ahenk-grid-2">
+        <div className="ahenk-grid">
+          <AhenkSmartLink href="/polis-ai" className="ahenk-card ahenk-card-media">
+            <span className="ahenk-card-photo ahenk-card-photo-sm">
+              <img src="/ahenk-polis-ai/01-nedir.jpg" alt="Polis AI" loading="lazy" />
+            </span>
+            <span className="ahenk-card-body">
+              <span className="ahenk-kicker">polisai.net</span>
+              <h3>Polis AI — akıllı güvenlik</h3>
+              <p>
+                112 PIN protokolü, legal-tech, şehir ihbar akışı. App Store ve Play Store çok yakında. Sunum ve PDF
+                detay sayfasında.
+              </p>
+              <span className="ahenk-card-cta">Polis AI sunumu →</span>
+            </span>
+          </AhenkSmartLink>
           <AhenkSmartLink href="/aiaddin" className="ahenk-card ahenk-card-media">
             <span className="ahenk-card-photo ahenk-card-photo-sm">
               <img src={AHENK_PHOTOS.code} alt="Aiaddin" loading="lazy" />
