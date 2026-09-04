@@ -41,6 +41,9 @@ describe("geoSiteEntities", () => {
     expect(isAhenkAgencyGeoPath("/aiaddin")).toBe(true);
     expect(isAhenkAgencyGeoPath("/polis-ai")).toBe(true);
     expect(isAhenkAgencyGeoPath("/cagri-merkezi-crm")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/urunlerimiz")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/asistan-ai")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/whatsapp-cagri-merkezi")).toBe(true);
   });
 
   it("builds Googlebot HTML that names the domain", () => {

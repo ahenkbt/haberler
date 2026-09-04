@@ -6,6 +6,10 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 ## Teklif
 - yekpare.net hazır web sitesi (ücretsiz liste, harita, sarı sayfalar, reklam trafiği)
 - Polis AI (yapım aşamasında — akıllı şehir ve bireysel güvenlik): https://ahenk.net.tr/polis-ai
+- Ahenk Asistan AI: https://ahenk.net.tr/asistan-ai
+- WhatsApp çağrı merkezi: https://ahenk.net.tr/whatsapp-cagri-merkezi
+- Ürünlerimiz: https://ahenk.net.tr/urunlerimiz
+- Hizmetlerimiz: https://ahenk.net.tr/hizmetlerimiz
 - Özel yazılımlar: iletişime geçin — https://ahenk.net.tr/iletisim
 - Kampanya fiyatı yalnızca detay sayfalarında: https://ahenk.net.tr/kurumsal-web-sitesi
 - WhatsApp: 0541 313 62 45 (https://wa.me/905413136245)
@@ -45,21 +49,24 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 - Tanıtım: https://ahenk.net.tr/polis-ai
 - Sunum PDF: https://ahenk.net.tr/ahenk-polis-ai/Polis-AI-Presentation.pdf
 - Hedef yayın: web, App Store, Play Store (çok yakında)
-- PIN paneli: https://polisai.net
 - Ahenk BT projesi; resmi kamu uygulaması değildir. 112 PIN, legal-tech, kategorik ihbar, siber/aile kalkanı.
 
 ## Yazılım ürünleri
+- Ürünlerimiz: https://ahenk.net.tr/urunlerimiz
+- Ahenk Asistan AI: https://ahenk.net.tr/asistan-ai
+- WhatsApp çağrı merkezi: https://ahenk.net.tr/whatsapp-cagri-merkezi
 - Aiaddin (kurumsal yapay zeka IDE): https://ahenk.net.tr/aiaddin
 - Aiaddin ürün sitesi: https://aiaddin.net/
-- Aiaddin fiyat: Free $0 / Pro $20 / Enterprise özel — https://aiaddin.net/pricing
-- Ahenk PBX kullanım: temsilci başı 700 TL; 10→7.000, 20→13.000, 30→18.000 TL. Her +10 temsilcide −50 TL/kişi, 50 ajana kadar.
-
-## Yayın ürünleri
+- Ahenk PBX: https://ahenk.net.tr/cagri-merkezi-crm
 - Haber Merkezi: https://ahenk.net.tr/haber-merkezi
 - YekTube: https://ahenk.net.tr/yektube
 - Haberler: https://ahenk.net.tr/haberler
 - Haber haritası: https://ahenk.net.tr/newsmap
 - Yekpare: https://yekpare.net
+
+## Hizmetlerimiz
+- Hizmetlerimiz: https://ahenk.net.tr/hizmetlerimiz
+- Ajans stüdyosu ve çağrı merkezi operasyonu aynı sayfada.
 
 ## Sitemap
 - https://ahenk.net.tr/sitemap.xml

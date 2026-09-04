@@ -111,22 +111,6 @@ export default function AhenkAiaddinLanding() {
         image={AHENK_PHOTOS.code}
       />
 
-      <section className="ahenk-price">
-        <div className="ahenk-price-inner">
-          <div>
-            <span className="ahenk-kicker">aiaddin.net</span>
-            <strong>Free $0 · Pro $20 · Enterprise</strong>
-            <p>
-              Fast Request = platform anahtarıyla AI isteği. Kendi anahtarınızla (BYOK) kredi düşmez. Güncel paketler
-              aiaddin.net/pricing adresinde.
-            </p>
-          </div>
-          <a className="ahenk-btn" href={AIADDIN_URL} target="_blank" rel="noreferrer">
-            aiaddin.net’i aç
-          </a>
-        </div>
-      </section>
-
       <section className="ahenk-section">
         <h2>Cursor seviyesinde, tarayıcıda</h2>
         <p className="ahenk-lead">
@@ -144,7 +128,7 @@ export default function AhenkAiaddinLanding() {
       </section>
 
       <section className="ahenk-section" id="fiyat">
-        <h2>Aiaddin fiyatları</h2>
+        <h2>Paketler</h2>
         <p className="ahenk-lead">
           Kaynak:{" "}
           <a href={AIADDIN_PRICING_URL} target="_blank" rel="noreferrer">

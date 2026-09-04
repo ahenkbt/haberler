@@ -9,29 +9,51 @@ import { ahenkOperationalServices } from "@/lib/ahenkAgencySeo";
 
 export default function AhenkAgencyHizmetler() {
   const site = useAhenkAgencySite();
-  const services = ahenkOperationalServices(site);
+  const ops = ahenkOperationalServices(site).filter((s) => s.slug !== "ajans-hizmetleri");
+  const items = [
+    ...site.agencyOffers.map((item) => ({
+      slug: item.slug,
+      href: item.href,
+      image: item.image,
+      title: item.title,
+      excerpt: item.excerpt,
+      icon: item.icon,
+    })),
+    ...ops.map((svc) => ({
+      slug: svc.slug,
+      href: `/hizmet/${svc.slug}`,
+      image: svc.image,
+      title: svc.title,
+      excerpt: svc.excerpt,
+      icon: svc.icon,
+    })),
+  ];
+
   return (
-    <AhenkAgencyChrome title={site.servicesTitle} description={site.servicesLead}>
+    <AhenkAgencyChrome
+      title="Hizmetlerimiz | Ajans ve çağrı merkezi | Ahenk BT"
+      description="Ahenk Bilgi Teknolojileri hizmetleri: ajans stüdyosu, grafik, film, reklam, SEO, müşteri hizmetleri ve çağrı merkezi operasyonu."
+    >
       <AhenkPageHero
         crumb={
           <>
-            <Link href="/">Anasayfa</Link> / Çağrı merkezi
+            <Link href="/">Anasayfa</Link> / Hizmetlerimiz
           </>
         }
-        title={site.servicesTitle}
-        lead={site.servicesLead}
-        image={site.servicesHeroImage}
+        title="Hizmetlerimiz"
+        lead="Ajans stüdyosu, çağrı merkezi ve operasyon. Grafik, film, reklam, SEO, müşteri hizmetleri ve sipariş hattı aynı çatıda."
+        image={site.agencyOffers[0]?.image || site.servicesHeroImage}
       />
       <section className="ahenk-section">
         <div className="ahenk-grid">
-          {services.map((svc) => (
+          {items.map((item) => (
             <AhenkMediaCard
-              key={svc.slug}
-              href={`/hizmet/${svc.slug}`}
-              image={svc.image}
-              title={svc.title}
-              excerpt={svc.excerpt}
-              icon={svc.icon}
+              key={item.slug}
+              href={item.href}
+              image={item.image}
+              title={item.title}
+              excerpt={item.excerpt}
+              icon={item.icon}
               cta="İncele"
             />
           ))}

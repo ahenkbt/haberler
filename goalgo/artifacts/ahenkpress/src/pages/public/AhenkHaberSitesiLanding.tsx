@@ -43,7 +43,9 @@ export default function AhenkHaberSitesiLanding() {
     `Merhaba, haber sitesi yazılımı istiyorum. Paket ${pkg.display}.`,
   );
   const title = site.landingTitle || "Haber sitesi yazılımı — sunucu ve domain dahil";
-  const lead = site.landingLead || pkg.note;
+  const lead =
+    site.landingLead ||
+    "Yapay zeka destekli haber sitesi yazılımı ve kurumsal web sitesi. Sunucu ve domain pakete dahildir. Teslim 1–3 gün.";
   const kicker = site.landingKicker || site.brandName;
   const cta = site.landingCtaLabel || "Teklif / başvuru";
   const features = site.landingFeatures?.length ? site.landingFeatures : [];
@@ -98,7 +100,7 @@ export default function AhenkHaberSitesiLanding() {
   return (
     <AhenkAgencyChrome
       title={`${title} | ${site.brandName}`}
-      description={`${lead} ${pkg.note}`}
+      description={`${lead}`}
     >
       <AhenkPageHero
         crumb={
@@ -110,26 +112,6 @@ export default function AhenkHaberSitesiLanding() {
         lead={lead}
         image={site.heroImage}
       />
-
-      <section className="ahenk-price" id="fiyat">
-        <div className="ahenk-price-inner">
-          <div>
-            <span className="ahenk-kicker">{kicker}</span>
-            <strong>{pkg.display}</strong>
-            <p>
-              {pkg.note} Teslim 1–3 gün.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a className="ahenk-btn" href="#basvuru-formu">
-              {cta}
-            </a>
-            <a className="ahenk-btn ahenk-btn-ghost" href={wa} target="_blank" rel="noreferrer">
-              WhatsApp {site.phone}
-            </a>
-          </div>
-        </div>
-      </section>
 
       <section className="ahenk-section">
         <h2>Haber sitesi yazılımı özellikleri</h2>
@@ -144,6 +126,21 @@ export default function AhenkHaberSitesiLanding() {
               <p>{item.text}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="ahenk-section" id="fiyat">
+        <h2>Paket</h2>
+        <p className="ahenk-lead">
+          {pkg.note} Teslim 1–3 gün. {pkg.display}
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a className="ahenk-btn" href="#basvuru-formu">
+            {cta}
+          </a>
+          <a className="ahenk-btn ahenk-btn-ghost" href={wa} target="_blank" rel="noreferrer">
+            WhatsApp {site.phone}
+          </a>
         </div>
       </section>
 

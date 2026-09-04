@@ -19,7 +19,7 @@ export default function AhenkAgencyHizmetDetail() {
         <div className="ahenk-section">
           <h2>Hizmet bulunamadı</h2>
           <p className="ahenk-lead">Aradığınız hizmet sayfası yok veya kaldırılmış olabilir.</p>
-          <Link href="/hizmetler" className="ahenk-btn">
+          <Link href="/hizmetlerimiz" className="ahenk-btn">
             Tüm hizmetler
           </Link>
         </div>
@@ -34,7 +34,7 @@ export default function AhenkAgencyHizmetDetail() {
       <AhenkPageHero
         crumb={
           <>
-            <Link href="/">Anasayfa</Link> / <Link href="/hizmetler">Hizmetler</Link> / {service.title}
+            <Link href="/">Anasayfa</Link> / <Link href="/hizmetlerimiz">Hizmetlerimiz</Link> / {service.title}
           </>
         }
         title={service.title}
