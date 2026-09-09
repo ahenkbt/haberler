@@ -65,7 +65,7 @@ const FAQS = [
   },
   {
     q: "Başvuru nereye düşer?",
-    a: "Form Ahenk Bilgi Teknolojileri kariyer kaydına iletilir. Uygun adaylarla en kısa sürede iletişime geçilir.",
+    a: "Form yönetim paneline düşer (Kariyer başvuruları). Uygun adaylarla en kısa sürede iletişime geçilir.",
   },
 ];
 
@@ -123,12 +123,6 @@ export default function Kariyer() {
         }
         cvDataUrl = await fileToDataUrl(cvFile);
         cvFileName = cvFile.name;
-      }
-      if (!cvDataUrl && !cvUrl.trim()) {
-        setDone("err");
-        setErrText("CV dosyası veya CV bağlantısı zorunludur.");
-        setSending(false);
-        return;
       }
       const res = await fetch(apiUrl("/api/career/apply"), {
         method: "POST",
@@ -292,7 +286,7 @@ export default function Kariyer() {
               />
             </label>
             <label>
-              CV (PDF, en fazla 5 MB)
+              CV (PDF, en fazla 5 MB) — isteğe bağlı
               <input
                 type="file"
                 accept="application/pdf,.pdf"

@@ -145,10 +145,10 @@ export const adminNavSections: AdminNavSection[] = [
     title: "Görünüm & site",
     items: [
       { name: "Panel hesapları", icon: Users, href: "/admin/panel-hesaplari", permission: "dashboard", fullAdminOnly: true },
+      { name: "Kariyer başvuruları", icon: Briefcase, href: "/admin/kariyer-basvurulari", permission: "kariyer" },
       { name: "Genel Ayarlar", icon: Package, href: "/admin/ayarlar", permission: "site_ayarlari" },
       { name: "Servis sağlayıcılar — başvurular", icon: Briefcase, href: "/admin/servis-saglayicilar", permission: "servis_saglayicilar" },
       { name: "İş ortağı başvuruları", icon: ShoppingCart, href: "/admin/is-ortaklari", permission: "is_ortaklari" },
-      { name: "Kariyer başvuruları", icon: Briefcase, href: "/admin/kariyer-basvurulari", permission: "kariyer" },
       { name: "Tema Ayarları", icon: Settings, href: "/admin/tema-ayarlari", permission: "site_ayarlari" },
       { name: "Yekpare Haberler (vitrin)", icon: SlidersHorizontal, href: "/admin/yekpare-haberler", permission: "site_ayarlari" },
       { name: "Anasayfa Tasarımı", icon: LayoutTemplate, href: "/admin/anasayfa-tasarim", permission: "site_ayarlari" },

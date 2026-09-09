@@ -37,20 +37,13 @@ async function handler(req, res) {
 
   if (data.cvDataUrl) {
     const parsed = parseCvDataUrl(data.cvDataUrl);
-    if (!parsed) {
-      json(res, 400, { error: "CV dosyası geçersiz veya 5 MB sınırını aşıyor (PDF)." });
-      return;
+    if (parsed) {
+      const saved = await saveCvBuffer(parsed.buf, { cvFileName: data.cvFileName });
+      if (saved) {
+        cvUrl = saved.url;
+        cvFileName = saved.fileName;
+      }
     }
-    const saved = await saveCvBuffer(parsed.buf, { cvFileName: data.cvFileName });
-    if (!saved) {
-      json(res, 503, {
-        error:
-          "CV dosyası şu an yüklenemiyor. Lütfen CV bağlantısı (LinkedIn / Drive) ile tekrar deneyin.",
-      });
-      return;
-    }
-    cvUrl = saved.url;
-    cvFileName = saved.fileName;
   }
 
   const row = {
@@ -74,17 +67,12 @@ async function handler(req, res) {
       return;
     }
 
-    if (inserted.reason === "no_database_url") {
-      await saveViaSiteContact(row, cvUrl);
-      json(res, 201, {
-        ok: true,
-        message: "Başvurunuz alındı. En kısa sürede sizinle iletişime geçeceğiz.",
-        fallback: "site_contact",
-      });
-      return;
-    }
-
-    json(res, 500, { error: "Başvuru kaydedilemedi." });
+    await saveViaSiteContact(row, cvUrl);
+    json(res, 201, {
+      ok: true,
+      message: "Başvurunuz alındı. En kısa sürede sizinle iletişime geçeceğiz.",
+      fallback: "site_contact",
+    });
   } catch (e) {
     try {
       await saveViaSiteContact(row, cvUrl);
