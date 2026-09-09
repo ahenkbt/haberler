@@ -1,7 +1,7 @@
 import { getGetDashboardSummaryQueryKey, useGetDashboardSummary } from "@workspace/api-client-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Newspaper, LayoutGrid, Rss, RssIcon, MonitorPlay, FileText, Store, ShoppingCart, UtensilsCrossed, Package } from "lucide-react";
+import { Newspaper, LayoutGrid, Rss, RssIcon, MonitorPlay, FileText, Store, ShoppingCart, UtensilsCrossed, Package, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -32,6 +32,8 @@ export default function Dashboard() {
   });
   const [delivStats, setDelivStats] = useState<DeliveryStats | null>(null);
   const [delivLoading, setDelivLoading] = useState(true);
+  const [careerStats, setCareerStats] = useState<{ total: number; unread: number } | null>(null);
+  const [careerLoading, setCareerLoading] = useState(true);
 
   useEffect(() => {
     void (async () => {
@@ -52,6 +54,7 @@ export default function Dashboard() {
   const showNewsBlock =
     access.full || (access.perms?.includes("dashboard") ?? false) || (access.perms?.includes("haberler") ?? false);
   const showDelivBlock = access.full || (access.perms?.includes("teslimat") ?? false);
+  const showCareerBlock = access.full || (access.perms?.includes("kariyer") ?? false);
 
   useEffect(() => {
     if (!showDelivBlock) {
@@ -66,6 +69,29 @@ export default function Dashboard() {
       })
       .catch(() => setDelivLoading(false));
   }, [showDelivBlock]);
+
+  useEffect(() => {
+    if (!showCareerBlock) {
+      setCareerLoading(false);
+      return;
+    }
+    void (async () => {
+      try {
+        const [all, unread] = await Promise.all([
+          fetch("/api/career/admin/applications?page=1", { credentials: "include" }).then((r) => r.json()),
+          fetch("/api/career/admin/applications?page=1&unread=1", { credentials: "include" }).then((r) => r.json()),
+        ]);
+        setCareerStats({
+          total: Number(all.total ?? 0),
+          unread: Number(unread.total ?? 0),
+        });
+      } catch {
+        setCareerStats({ total: 0, unread: 0 });
+      } finally {
+        setCareerLoading(false);
+      }
+    })();
+  }, [showCareerBlock]);
 
   const quickNav = adminNavSectionsFiltered({ panelFullAdmin: access.full, permissions: access.perms });
 
@@ -104,6 +130,20 @@ export default function Dashboard() {
               <StatCard title="E-Ticaret Mağazası" value={delivStats?.ecomVendors} icon={ShoppingCart} isLoading={delivLoading} color="blue" />
               <StatCard title="Toplam Sipariş" value={delivStats?.totalOrders} icon={Package} isLoading={delivLoading} color="green" />
               <StatCard title="Ürün / Menü" value={delivStats?.totalMenuItems} icon={LayoutGrid} isLoading={delivLoading} color="purple" />
+            </div>
+          </div>
+        ) : null}
+
+        {showCareerBlock ? (
+          <div>
+            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Kariyer başvuruları</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/admin/kariyer-basvurulari" className="block">
+                <StatCard title="Toplam başvuru" value={careerStats?.total} icon={Briefcase} isLoading={careerLoading} color="green" />
+              </Link>
+              <Link href="/admin/kariyer-basvurulari" className="block">
+                <StatCard title="Okunmamış" value={careerStats?.unread} icon={Briefcase} isLoading={careerLoading} color="orange" />
+              </Link>
             </div>
           </div>
         ) : null}

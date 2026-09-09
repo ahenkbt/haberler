@@ -3,12 +3,18 @@ import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { denyUnlessAdminMaintenance } from "../lib/admin-guard.js";
 import { extFromMime, saveMediaBuffer } from "../lib/mediaUploadService.js";
+import { logger } from "../lib/logger.js";
+import {
+  CAREER_POSITION_SLUG,
+  CAREER_POSITION_TITLE,
+  careerContactFallbackPayload,
+  executeSqlRows,
+  parseCvDataUrl,
+  parseKariyerContactMessage,
+  validateCareerApplyBody,
+} from "../lib/careerInbox.js";
 
 const router = Router();
-
-const MAX_CV_BYTES = 5 * 1024 * 1024;
-const POSITION_SLUG = "cagri-merkezi-satis";
-const POSITION_TITLE = "Çağrı Merkezi Satış Temsilcileri";
 
 async function ensureCareerTable(): Promise<void> {
   await db.execute(sql`
@@ -31,92 +37,195 @@ async function ensureCareerTable(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await db.execute(sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS source_kind TEXT NOT NULL DEFAULT 'kariyer'`);
+  await db.execute(sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS source_contact_id INTEGER`);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS career_applications_created_at_idx
+    ON career_applications (created_at DESC)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS career_applications_is_read_idx
+    ON career_applications (is_read, created_at DESC)
+  `);
 }
 
-function parseCvDataUrl(raw: string): { mime: string; buf: Buffer } | null {
-  const dataUrl = String(raw ?? "").trim();
-  const m = dataUrl.match(/^data:(application\/pdf);base64,(.+)$/i);
-  if (!m) return null;
+async function saveCareerContactFallback(data: {
+  fullName: string;
+  email: string;
+  phone: string;
+  city?: string | null;
+  experienceYears?: string | null;
+  coverLetter: string;
+  cvUrl?: string | null;
+}): Promise<void> {
+  const payload = careerContactFallbackPayload(data);
+  await db.execute(sql`ALTER TABLE site_contact_messages ADD COLUMN IF NOT EXISTS page_source TEXT DEFAULT 'iletisim'`);
+  await db.execute(sql`
+    INSERT INTO site_contact_messages (name, email, phone, subject, message, page_source)
+    VALUES (
+      ${payload.name}, ${payload.email}, ${payload.phone}, ${payload.subject},
+      ${payload.message}, ${payload.pageSource}
+    )
+  `);
+}
+
+async function insertCareerApplication(row: {
+  fullName: string;
+  email: string;
+  phone: string;
+  city: string | null;
+  experienceYears: string | null;
+  coverLetter: string;
+  cvUrl: string | null;
+  cvFileName: string | null;
+  reviewNote: string | null;
+  sourceKind?: string;
+  sourceContactId?: number | null;
+  createdAt?: unknown;
+}): Promise<number | null> {
+  const createdAt = row.createdAt ?? null;
+  const inserted = createdAt
+    ? await db.execute(sql`
+        INSERT INTO career_applications (
+          position_slug, position_title, full_name, email, phone, city,
+          experience_years, cover_letter, cv_url, cv_file_name, review_note,
+          source_kind, source_contact_id, created_at
+        ) VALUES (
+          ${CAREER_POSITION_SLUG}, ${CAREER_POSITION_TITLE}, ${row.fullName}, ${row.email}, ${row.phone},
+          ${row.city}, ${row.experienceYears}, ${row.coverLetter}, ${row.cvUrl}, ${row.cvFileName},
+          ${row.reviewNote}, ${row.sourceKind ?? "kariyer"}, ${row.sourceContactId ?? null},
+          ${createdAt}
+        )
+        RETURNING id
+      `)
+    : await db.execute(sql`
+        INSERT INTO career_applications (
+          position_slug, position_title, full_name, email, phone, city,
+          experience_years, cover_letter, cv_url, cv_file_name, review_note,
+          source_kind, source_contact_id
+        ) VALUES (
+          ${CAREER_POSITION_SLUG}, ${CAREER_POSITION_TITLE}, ${row.fullName}, ${row.email}, ${row.phone},
+          ${row.city}, ${row.experienceYears}, ${row.coverLetter}, ${row.cvUrl}, ${row.cvFileName},
+          ${row.reviewNote}, ${row.sourceKind ?? "kariyer"}, ${row.sourceContactId ?? null}
+        )
+        RETURNING id
+      `);
+  const id = Number(executeSqlRows(inserted)[0]?.id);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+async function importKariyerContactFallbacks(): Promise<void> {
   try {
-    const buf = Buffer.from(m[2].replace(/\s/g, ""), "base64");
-    if (!buf.length || buf.length > MAX_CV_BYTES) return null;
-    return { mime: m[1].toLowerCase(), buf };
-  } catch {
-    return null;
+    const contacts = await db.execute(sql`
+      SELECT id, name, email, phone, message, is_read, created_at
+      FROM site_contact_messages
+      WHERE COALESCE(page_source, '') = 'kariyer'
+      ORDER BY created_at DESC
+      LIMIT 300
+    `);
+    for (const raw of executeSqlRows(contacts)) {
+      const contactId = Number(raw.id);
+      if (!Number.isFinite(contactId) || contactId < 1) continue;
+      const already = await db.execute(sql`
+        SELECT id FROM career_applications WHERE source_contact_id = ${contactId} LIMIT 1
+      `);
+      if (executeSqlRows(already).length) continue;
+      const parsed = parseKariyerContactMessage(raw);
+      if (!parsed.fullName || !parsed.email || !parsed.coverLetter) continue;
+      await insertCareerApplication({
+        fullName: parsed.fullName,
+        email: parsed.email,
+        phone: parsed.phone || "—",
+        city: parsed.city || null,
+        experienceYears: parsed.experienceYears || null,
+        coverLetter: parsed.coverLetter,
+        cvUrl: parsed.cvUrl || null,
+        cvFileName: parsed.cvUrl ? "cv.pdf" : null,
+        reviewNote: `İletişim yedeğinden aktarıldı (#${contactId})`,
+        sourceKind: "site_contact",
+        sourceContactId: contactId,
+        createdAt: raw.created_at,
+      });
+    }
+  } catch (err) {
+    logger.warn({ err }, "[career] iletişim yedeği aktarılamadı");
   }
 }
 
 router.post("/career/apply", async (req, res): Promise<void> => {
-  const body = req.body as Record<string, unknown>;
-  const fullName = String(body.fullName ?? "").trim();
-  const email = String(body.email ?? "").trim();
-  const phone = String(body.phone ?? "").trim();
-  const city = body.city != null ? String(body.city).trim().slice(0, 120) : "";
-  const experienceYears =
-    body.experienceYears != null ? String(body.experienceYears).trim().slice(0, 40) : "";
-  const coverLetter = String(body.coverLetter ?? "").trim();
-  const cvUrlInput = body.cvUrl != null ? String(body.cvUrl).trim().slice(0, 2000) : "";
-  const cvDataUrl = body.cvDataUrl != null ? String(body.cvDataUrl).trim() : "";
-  const cvFileName = body.cvFileName != null ? String(body.cvFileName).trim().slice(0, 255) : "";
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const validated = validateCareerApplyBody(body);
+  if ("error" in validated) {
+    res.status(validated.status).json({ error: validated.error });
+    return;
+  }
+  const data = validated.data;
 
-  if (!fullName || !email || !phone || !coverLetter) {
-    res.status(400).json({ error: "Ad soyad, e-posta, telefon ve ön yazı zorunludur." });
-    return;
-  }
-  if (fullName.length > 200 || email.length > 200 || phone.length > 40 || coverLetter.length > 8000) {
-    res.status(400).json({ error: "Girdi çok uzun." });
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    res.status(400).json({ error: "Geçerli bir e-posta girin." });
-    return;
-  }
-  if (!cvUrlInput && !cvDataUrl) {
-    res.status(400).json({ error: "CV dosyası veya CV bağlantısı zorunludur." });
-    return;
-  }
+  let cvUrl: string | null = data.cvUrlInput || null;
+  let storedFileName: string | null = data.cvFileName || null;
+  let reviewNote: string | null = null;
 
-  let cvUrl = cvUrlInput || null;
-  let storedFileName = cvFileName || null;
-
-  if (cvDataUrl) {
-    const parsed = parseCvDataUrl(cvDataUrl);
+  if (data.cvDataUrl) {
+    const parsed = parseCvDataUrl(data.cvDataUrl);
     if (!parsed) {
-      res.status(400).json({ error: "CV dosyası geçersiz veya 5 MB sınırını aşıyor (PDF)." });
-      return;
+      reviewNote = "CV dosyası geçersiz veya 5 MB sınırını aşıyor; başvuru yine kaydedildi.";
+    } else {
+      const ext = extFromMime(parsed.mime);
+      if (!ext) {
+        reviewNote = "CV dosya türü desteklenmedi (PDF beklenir); başvuru yine kaydedildi.";
+      } else {
+        try {
+          const saved = await saveMediaBuffer(parsed.buf, { ext, mime: parsed.mime, prefix: "cv-" });
+          cvUrl = saved.url;
+          storedFileName = data.cvFileName || "cv.pdf";
+        } catch (err) {
+          logger.error({ err }, "[career] CV yüklenemedi — başvuru metin olarak kaydediliyor");
+          reviewNote = "CV depolanamadı; başvuru metin olarak kaydedildi.";
+        }
+      }
     }
-    const ext = extFromMime(parsed.mime);
-    if (!ext) {
-      res.status(400).json({ error: "Desteklenmeyen CV dosya türü (yalnızca PDF)." });
-      return;
-    }
-    try {
-      const saved = await saveMediaBuffer(parsed.buf, { ext, mime: parsed.mime });
-      cvUrl = saved.url;
-      storedFileName = cvFileName || "cv.pdf";
-    } catch {
-      res.status(500).json({ error: "CV yüklenemedi." });
-      return;
-    }
-  } else if (cvUrlInput && !/^https?:\/\//i.test(cvUrlInput)) {
-    res.status(400).json({ error: "CV bağlantısı http veya https ile başlamalıdır." });
-    return;
   }
 
   try {
     await ensureCareerTable();
-    await db.execute(sql`
-      INSERT INTO career_applications (
-        position_slug, position_title, full_name, email, phone, city,
-        experience_years, cover_letter, cv_url, cv_file_name
-      ) VALUES (
-        ${POSITION_SLUG}, ${POSITION_TITLE}, ${fullName}, ${email}, ${phone},
-        ${city || null}, ${experienceYears || null}, ${coverLetter}, ${cvUrl}, ${storedFileName}
-      )
-    `);
-    res.status(201).json({ ok: true, message: "Başvurunuz alındı. En kısa sürede sizinle iletişime geçeceğiz." });
-  } catch {
-    res.status(500).json({ error: "Başvuru kaydedilemedi." });
+    const id = await insertCareerApplication({
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      city: data.city || null,
+      experienceYears: data.experienceYears || null,
+      coverLetter: data.coverLetter,
+      cvUrl,
+      cvFileName: storedFileName,
+      reviewNote,
+    });
+    if (!id) throw new Error("career insert returned no id");
+    res.status(201).json({
+      ok: true,
+      id,
+      message: "Başvurunuz alındı. En kısa sürede sizinle iletişime geçeceğiz.",
+    });
+  } catch (err) {
+    logger.error({ err }, "[career] career_applications insert failed — iletişim yedeğine yazılıyor");
+    try {
+      await saveCareerContactFallback({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        city: data.city,
+        experienceYears: data.experienceYears,
+        coverLetter: data.coverLetter,
+        cvUrl,
+      });
+      res.status(201).json({
+        ok: true,
+        message: "Başvurunuz alındı. En kısa sürede sizinle iletişime geçeceğiz.",
+        fallback: "site_contact",
+      });
+    } catch (fallbackErr) {
+      logger.error({ err: fallbackErr }, "[career] iletişim yedeği de başarısız");
+      res.status(500).json({ error: "Başvuru kaydedilemedi." });
+    }
   }
 });
 
@@ -129,11 +238,12 @@ router.get("/career/admin/applications", async (req, res): Promise<void> => {
 
   try {
     await ensureCareerTable();
+    await importKariyerContactFallbacks();
     const rows = unreadOnly
       ? await db.execute(sql`
           SELECT id, position_slug, position_title, full_name, email, phone, city,
                  experience_years, cover_letter, cv_url, cv_file_name, is_read, status,
-                 review_note, reviewed_at, created_at
+                 review_note, reviewed_at, created_at, source_kind, source_contact_id
           FROM career_applications
           WHERE is_read = false
           ORDER BY created_at DESC
@@ -142,7 +252,7 @@ router.get("/career/admin/applications", async (req, res): Promise<void> => {
       : await db.execute(sql`
           SELECT id, position_slug, position_title, full_name, email, phone, city,
                  experience_years, cover_letter, cv_url, cv_file_name, is_read, status,
-                 review_note, reviewed_at, created_at
+                 review_note, reviewed_at, created_at, source_kind, source_contact_id
           FROM career_applications
           ORDER BY created_at DESC
           LIMIT ${limit} OFFSET ${offset}
@@ -150,9 +260,10 @@ router.get("/career/admin/applications", async (req, res): Promise<void> => {
     const totalRow = unreadOnly
       ? await db.execute(sql`SELECT COUNT(*)::int AS c FROM career_applications WHERE is_read = false`)
       : await db.execute(sql`SELECT COUNT(*)::int AS c FROM career_applications`);
-    const total = Number((totalRow.rows[0] as { c: number }).c);
-    res.json({ applications: rows.rows, total, page, limit });
+    const total = Number(executeSqlRows(totalRow)[0]?.c ?? 0);
+    res.json({ applications: executeSqlRows(rows), total, page, limit });
   } catch (e) {
+    logger.error({ err: e }, "[career] admin list failed");
     res.status(500).json({ error: String(e) });
   }
 });

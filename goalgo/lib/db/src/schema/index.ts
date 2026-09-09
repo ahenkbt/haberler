@@ -21,6 +21,7 @@ export * from "./yacht";
 export * from "./vip-service";
 export * from "./delivery";
 export * from "./partners";
+export * from "./career";
 export * from "./transport";
 export * from "./serviceTypes";
 export * from "./trAddress";

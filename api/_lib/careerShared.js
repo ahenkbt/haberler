@@ -59,9 +59,6 @@ function validateApplyBody(body) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "Geçerli bir e-posta girin.", status: 400 };
   }
-  if (!cvUrlInput && !cvDataUrl) {
-    return { error: "CV dosyası veya CV bağlantısı zorunludur.", status: 400 };
-  }
   if (cvUrlInput && !/^https?:\/\//i.test(cvUrlInput)) {
     return { error: "CV bağlantısı http veya https ile başlamalıdır.", status: 400 };
   }

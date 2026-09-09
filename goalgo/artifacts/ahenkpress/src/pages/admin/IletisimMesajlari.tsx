@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Mail, Check } from "lucide-react";
@@ -27,7 +28,9 @@ export default function IletisimMesajlari() {
   const load = useCallback(async (p = 1) => {
     setLoading(true);
     try {
-      const r = await fetch(`/api/site/admin/contact-messages?page=${p}`).then((x) => x.json());
+      const r = await fetch(`/api/site/admin/contact-messages?page=${p}`, {
+        credentials: "include",
+      }).then((x) => x.json());
       setMessages(r.messages ?? []);
       setTotal(r.total ?? 0);
       setPage(p);
@@ -55,7 +58,11 @@ export default function IletisimMesajlari() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">İletişim formu</h1>
             <p className="text-sm text-gray-500 mt-1">
-              {total} kayıt · <span className="font-mono text-xs">/iletisim</span>,{" "}
+              {total} kayıt · Kariyer başvuruları asıl olarak{" "}
+              <Link href="/admin/kariyer-basvurulari" className="text-indigo-600 hover:underline">
+                Kariyer başvuruları
+              </Link>{" "}
+              kutusundadır. · <span className="font-mono text-xs">/iletisim</span>,{" "}
               <span className="font-mono text-xs">ahenk.net.tr iletişim</span>,{" "}
               <span className="font-mono text-xs">/iletisim-kunye</span>,{" "}
               <span className="font-mono text-xs">/ucretsiz-haber-sitesi</span>,{" "}

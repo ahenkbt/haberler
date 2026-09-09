@@ -60,6 +60,8 @@ async function ensureCareerTable(client) {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await client.query(`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS source_kind TEXT NOT NULL DEFAULT 'kariyer'`);
+  await client.query(`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS source_contact_id INTEGER`);
 }
 
 async function insertCareerApplication(row) {
@@ -104,7 +106,7 @@ async function listCareerApplications({ page = 1, unreadOnly = false }) {
     const rows = await client.query(
       `SELECT id, position_slug, position_title, full_name, email, phone, city,
               experience_years, cover_letter, cv_url, cv_file_name, is_read, status,
-              review_note, reviewed_at, created_at
+              review_note, reviewed_at, created_at, source_kind, source_contact_id
        FROM career_applications
        ${where}
        ORDER BY created_at DESC

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Check, ExternalLink, Mail, Phone, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/lib/apiBase";
 
 interface CareerApplication {
   id: number;
@@ -20,6 +21,8 @@ interface CareerApplication {
   review_note: string | null;
   reviewed_at: string | null;
   created_at: string;
+  source_kind?: string | null;
+  source_contact_id?: number | null;
 }
 
 export default function KariyerBasvurulari() {
@@ -29,24 +32,37 @@ export default function KariyerBasvurulari() {
   const [loading, setLoading] = useState(true);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [error, setError] = useState("");
 
   const load = useCallback(async (p = 1, unread = unreadOnly) => {
     setLoading(true);
+    setError("");
     try {
       const qs = new URLSearchParams({ page: String(p) });
       if (unread) qs.set("unread", "1");
-      const r = await fetch(`/api/career/admin/applications?${qs.toString()}`);
+      const r = await apiFetch(`/api/career/admin/applications?${qs.toString()}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
       const data = (await r.json()) as {
         applications?: CareerApplication[];
         total?: number;
         page?: number;
+        error?: string;
       };
-      setApplications(data.applications ?? []);
+      if (!r.ok) {
+        setApplications([]);
+        setTotal(0);
+        setError(typeof data.error === "string" ? data.error : "Başvurular yüklenemedi.");
+        return;
+      }
+      setApplications(Array.isArray(data.applications) ? data.applications : []);
       setTotal(data.total ?? 0);
       setPage(data.page ?? p);
     } catch {
       setApplications([]);
       setTotal(0);
+      setError("Başvurular yüklenemedi.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +73,11 @@ export default function KariyerBasvurulari() {
   }, [load, unreadOnly]);
 
   const markRead = async (id: number) => {
-    await fetch(`/api/career/admin/applications/${id}/read`, { method: "PATCH" });
+    await apiFetch(`/api/career/admin/applications/${id}/read`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
     void load(page, unreadOnly);
   };
 
@@ -73,7 +93,7 @@ export default function KariyerBasvurulari() {
               <h1 className="text-2xl font-bold text-gray-900">Kariyer başvuruları</h1>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              {total} kayıt · <span className="font-mono text-xs">/kariyer</span>
+              {total} kayıt · <span className="font-mono text-xs">/kariyer</span> formu doğrudan bu kutuya düşer.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -91,6 +111,10 @@ export default function KariyerBasvurulari() {
           </div>
         </div>
 
+        {error ? (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
+        ) : null}
+
         {loading && applications.length === 0 ? (
           <p className="py-12 text-center text-gray-500">Yükleniyor...</p>
         ) : applications.length === 0 ? (
@@ -103,6 +127,7 @@ export default function KariyerBasvurulari() {
           <ul className="space-y-3">
             {applications.map((app) => {
               const expanded = expandedId === app.id;
+              const fromContact = app.source_kind === "site_contact";
               return (
                 <li
                   key={app.id}
@@ -132,6 +157,11 @@ export default function KariyerBasvurulari() {
                         </span>
                         {app.city ? <span>{app.city}</span> : null}
                         {app.experience_years ? <span>Deneyim: {app.experience_years}</span> : null}
+                        {fromContact ? (
+                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-mono uppercase text-gray-500">
+                            iletişim yedeği
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
@@ -166,7 +196,9 @@ export default function KariyerBasvurulari() {
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </div>
-                      ) : null}
+                      ) : (
+                        <p className="text-xs text-gray-500">CV eklenmemiş veya depolanamadı.</p>
+                      )}
                       {app.review_note ? (
                         <p className="text-xs text-gray-500">Not: {app.review_note}</p>
                       ) : null}
