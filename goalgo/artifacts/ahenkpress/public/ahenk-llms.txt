@@ -42,6 +42,8 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 ## Ajans ve çağrı merkezi
 - Ajans: https://ahenk.net.tr/ajans
 - Çağrı merkezi hizmetleri: https://ahenk.net.tr/hizmetler
+- Çağrı merkezi kariyer / iş başvurusu: https://ahenk.net.tr/kariyer
+- Ürün satışı ve çalışma esasları: https://ahenk.net.tr/urun-satisi
 - Yapay zeka destekli çağrı merkezi CRM (Ahenk PBX): https://ahenk.net.tr/cagri-merkezi-crm
 - PBX giriş: https://pbx.goalgo.org/
 

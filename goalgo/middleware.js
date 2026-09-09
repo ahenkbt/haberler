@@ -1470,6 +1470,7 @@ function isAhenkAgencyGeoPath(pathname) {
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
   if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai" || p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
+  if (p === "/kariyer" || p === "/urun-satisi") return true;
   return false;
 }
 

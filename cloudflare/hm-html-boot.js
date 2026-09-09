@@ -380,6 +380,7 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai") return true;
   if (p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi") return true;
   if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
+  if (p === "/kariyer" || p === "/urun-satisi") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
   if (p === "/yazilim" || p.startsWith("/yazilim/") || p === "/ajans" || p === "/haber-merkezi" || p === "/yekpare") {
@@ -424,6 +425,8 @@ WhatsApp çağrı merkezi: ${o}/whatsapp-cagri-merkezi
 Aiaddin: ${o}/aiaddin
 Polis AI: ${o}/polis-ai
 Çağrı merkezi CRM: ${o}/cagri-merkezi-crm
+Kariyer / çağrı merkezi: ${o}/kariyer
+Ürün satışı çalışma esasları: ${o}/urun-satisi
 
 ## Kimlik
 

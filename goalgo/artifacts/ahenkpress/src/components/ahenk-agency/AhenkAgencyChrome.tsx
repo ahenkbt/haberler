@@ -118,6 +118,9 @@ function navActive(path: string, href: string): boolean {
   if (href === "/cagri-merkezi-crm") {
     return path === "/cagri-merkezi-crm" || path === "/yapay-zeka-cagri-merkezi";
   }
+  if (href === "/kariyer") {
+    return path === "/kariyer" || path === "/urun-satisi";
+  }
   return path === href || path.startsWith(`${href}/`);
 }
 
@@ -434,6 +437,8 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <Link href="/haberler">Haberler</Link>
             <Link href="/newsmap">Haber haritası</Link>
             <Link href="/cagri-merkezi-crm">PBX CRM</Link>
+            <Link href="/kariyer">Kariyer / çağrı merkezi</Link>
+            <Link href="/urun-satisi">Ürün satışı esasları</Link>
             <Link href="/aiaddin">Aiaddin</Link>
             <a href="https://yekpare.net" target="_blank" rel="noreferrer">
               yekpare.net
