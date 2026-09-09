@@ -25,6 +25,14 @@ describe("container-env", () => {
     assert.equal("ASSETS" in vars, false);
   });
 
+  it("forwards CONTAINER_ROLL so image rollouts restart the API process", () => {
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://neon/neondb",
+      SESSION_SECRET: "sixteen-chars-ok",
+      CONTAINER_ROLL: "kariyer-232-20260909",
+    });
+    assert.equal(vars.CONTAINER_ROLL, "kariyer-232-20260909");
+
   it("forwards R2/S3 credentials when present", () => {
     const vars = buildContainerEnv({
       DATABASE_URL: "postgres://neon/neondb",
