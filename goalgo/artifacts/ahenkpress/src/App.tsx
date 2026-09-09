@@ -83,6 +83,7 @@ import SifreYenile from "./pages/public/SifreYenile";
 import IsOrtagi from "./pages/public/IsOrtagi";
 import IsOrtagiBasvuru from "./pages/public/IsOrtagiBasvuru";
 import Kariyer from "./pages/public/Kariyer";
+import AhenkUrunSatisi from "./pages/public/AhenkUrunSatisi";
 import PremiumBasarili from "./pages/public/PremiumBasarili";
 import Iletisim from "./pages/public/Iletisim";
 import AhenkAgencyHome from "./pages/public/AhenkAgencyHome";
@@ -839,6 +840,7 @@ export default function App() {
       <Route path="/haber-merkezi">{() => (isAhenkAgencyHost() ? <AhenkAgencyHaberMerkezi /> : <Redirect to="/habermerkezi" />)}</Route>
       <Route path="/yekpare">{() => (isAhenkAgencyHost() ? <AhenkAgencyYekpare /> : <Redirect to="/" />)}</Route>
       <Route path="/urunlerimiz">{() => (isAhenkAgencyHost() ? <AhenkUrunlerimiz /> : <Redirect to="/" />)}</Route>
+      <Route path="/urun-satisi">{() => <AhenkUrunSatisi />}</Route>
       <Route path="/asistan-ai">{() => (isAhenkAgencyHost() ? <AhenkAsistanLanding /> : <Redirect to="/" />)}</Route>
       <Route path="/whatsapp-cagri-merkezi">{() => (isAhenkAgencyHost() ? <AhenkWhatsappCagriLanding /> : <Redirect to="/" />)}</Route>
       <Route path="/aiaddin">{() => (isAhenkAgencyHost() ? <AhenkAiaddinLanding /> : <Redirect to="/" />)}</Route>
@@ -1243,7 +1245,7 @@ export default function App() {
         }
       </Route>
       <Route path="/ai-cagri-merkezi">{() => <PublicLayout><AiCagriMerkeziLanding /></PublicLayout>}</Route>
-      <Route path="/kariyer">{() => <PublicLayout><Kariyer /></PublicLayout>}</Route>
+      <Route path="/kariyer">{() => <Kariyer />}</Route>
       <Route path="/hizmetler/ai-cagri-merkezi">
         <Redirect to="/ai-cagri-merkezi" />
       </Route>

@@ -46,14 +46,18 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (n === "/aiaddin") return true;
   if (n === "/polis-ai" || n === "/polisai") return true;
   if (n === "/cagri-merkezi-crm" || n === "/yapay-zeka-cagri-merkezi") return true;
+  if (n === "/kariyer" || n === "/urun-satisi") return true;
   return false;
 }
 
 export function isAhenkAgencySurface(path?: string, host?: string | null): boolean {
-  if (!isAhenkAgencyHost(host)) return false;
   if (path == null) {
     if (typeof window === "undefined") return false;
     path = window.location.pathname || "/";
   }
+  const p = (path.split("?")[0] ?? "").trim().toLowerCase() || "/";
+  const n = p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p;
+  if (n === "/kariyer" || n === "/urun-satisi") return true;
+  if (!isAhenkAgencyHost(host)) return false;
   return isAhenkAgencyPublicPath(path);
 }

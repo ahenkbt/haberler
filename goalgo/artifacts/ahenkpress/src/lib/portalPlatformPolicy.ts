@@ -117,6 +117,7 @@ const PORTAL_ALLOWED_PUBLIC_EXACT = new Set([
   "/sifre-sifirla",
   "/sifre-yenile",
   "/kariyer",
+  "/urun-satisi",
   "/lisans-aktivasyon",
 ]);
 

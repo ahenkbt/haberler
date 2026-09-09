@@ -1,190 +1,343 @@
-import { useEffect } from "react";
-import {
-  ArrowRight,
-  Briefcase,
-  Check,
-  PhoneCall,
-  Sparkles,
-  Target,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { useState, type FormEvent } from "react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { applySocialShareMeta, resetSeoToSiteDefaults } from "@/lib/pageSeo";
 import {
-  SADE_HERO_EYEBROW_CLASS,
-  SADE_HERO_ICON_CLASS,
-  SADE_HERO_SHELL_CLASS,
-  YEKPARE_SADE_TEAL,
-} from "@/lib/yekpareSadeTheme";
+  AhenkAgencyChrome,
+  AhenkFaqList,
+  AhenkPageHero,
+} from "@/components/ahenk-agency/AhenkAgencyChrome";
+import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
+import { apiUrl } from "@/lib/apiBase";
+import { AHENK_PHOTOS } from "@/lib/ahenkAgencySite";
+
+const SERVICES = [
+  {
+    title: "Giden arama ve ürün tanıtımı",
+    text: "Kurumsal hedef kitleye yönelik outbound çağrı, tanıtım senaryosu ve sipariş teyidi. Temsilciler kişisel tahsilat yapmaz; ödeme resmi hesaplara yönlendirilir.",
+  },
+  {
+    title: "Müşteri hizmetleri ve CRM",
+    text: "Gelen/giden çağrı, not, randevu ve sonuç kaydı aynı operasyon masasında tutulur. pbx.goalgo.org üzerinden CRM ve PBX altyapısı kullanılır.",
+  },
+  {
+    title: "Home-office çağrı operasyonu",
+    text: "Uzaktan çalışma modeli: oryantasyon, kısmi süreli sözleşme ve sistem log’larına dayalı puantaj. Kalite için tüm görüşmeler kayıt altındadır.",
+  },
+  {
+    title: "Eğitim, kalite ve KVKK",
+    text: "Santral, script ve veri kullanımı eğitimi; ses kaydı, log sorumluluğu ve KVKK uyumu. Veriler yalnızca ilgili proje kapsamında kullanılır.",
+  },
+];
+
+const AUDIENCE = [
+  {
+    title: "Eğitim kurumları",
+    text: "Türkiye genelindeki resmi ve özel okullar ile okul idarecileri.",
+  },
+  {
+    title: "Yerel yönetimler",
+    text: "Mahalle ve köy muhtarları ile yerel idare iletişim noktaları.",
+  },
+  {
+    title: "Kamu kurumları",
+    text: "Bakanlıkların il ve ilçe müdürlükleri ve kamu yetkilileri.",
+  },
+];
 
 const QUALITIES = [
-  "İkna kabiliyeti yüksek, enerjisiyle telefona hayat verebilen",
-  "Diksiyonu düzgün ve hedef odaklı çalışan",
-  "Satışın bir tutku olduğunu bilen",
-  "Özgüveni yüksek ve ikna gücüyle gelirini katlamayı hedefleyen",
+  "Diksiyonu düzgün, saygın ve profesyonel dil kullanan",
+  "Hedef odaklı, düzenli home-office çalışabilen",
+  "CRM / santral yazılımını öğrenmeye açık",
+  "KVKK ve kurumsal temsil kurallarına riayet eden",
 ];
 
-const BENEFITS = [
-  "Tamamen performans odaklı yüksek prim sistemi",
-  "İşin uzmanlarından profesyonel satış ve ürün eğitimleri",
-  "Türkiye'nin yerli teknoloji girişiminde kariyer fırsatı",
+const FAQS = [
+  {
+    q: "Başvurmadan önce ne okumalıyım?",
+    a: "Ürün satışı ve çalışma esasları metnini (/urun-satisi) okuyup onaylamanız gerekir. Formu göndermeniz, bu koşulları kabul ettiğiniz anlamına gelir.",
+  },
+  {
+    q: "Çalışma modeli nedir?",
+    a: "İlk hafta günde 4 saat oryantasyon ve staj; ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi. Puantaj, pbx.goalgo.org ve CRM log kayıtlarına dayanır.",
+  },
+  {
+    q: "Bu bir bağış veya yardım toplama işi mi?",
+    a: "Hayır. Anlaşmalı sivil toplum kuruluşlarının iktisadi işletmeleri bünyesinde yürütülen ticari ürün satış ve tanıtım operasyonudur.",
+  },
+  {
+    q: "Başvuru nereye düşer?",
+    a: "Form Ahenk Bilgi Teknolojileri kariyer kaydına iletilir. Uygun adaylarla en kısa sürede iletişime geçilir.",
+  },
 ];
 
-const APPLY_HREF = "/iletisim-kunye";
+const MAX_CV_BYTES = 5 * 1024 * 1024;
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error ?? new Error("Dosya okunamadı"));
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function Kariyer() {
-  useEffect(() => {
-    applySocialShareMeta({
-      title: "Kariyer — Çağrı Merkezi Satış Temsilcileri | Türk Ekosistemi",
-      descriptionPrimary:
-        "Türk Ekosistemi ailesine katılın. Türkiye'nin yerli Süper App'inde çağrı merkezi satış temsilcisi olarak yüksek kazanç potansiyeli ve prim usulü çalışma modeli.",
-      canonicalPath: "/kariyer",
-    });
-    return () => resetSeoToSiteDefaults();
-  }, []);
+  const site = useAhenkAgencySite();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [experienceYears, setExperienceYears] = useState("");
+  const [coverLetter, setCoverLetter] = useState("");
+  const [cvUrl, setCvUrl] = useState("");
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [accepted, setAccepted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState<null | "ok" | "err">(null);
+  const [errText, setErrText] = useState("");
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!accepted) {
+      setDone("err");
+      setErrText("Çalışma esasları metnini okuyup onaylamanız gerekir.");
+      return;
+    }
+    setSending(true);
+    setDone(null);
+    setErrText("");
+    try {
+      let cvDataUrl = "";
+      let cvFileName = "";
+      if (cvFile) {
+        if (cvFile.type !== "application/pdf" && !cvFile.name.toLowerCase().endsWith(".pdf")) {
+          setDone("err");
+          setErrText("CV yalnızca PDF olmalıdır.");
+          setSending(false);
+          return;
+        }
+        if (cvFile.size > MAX_CV_BYTES) {
+          setDone("err");
+          setErrText("CV 5 MB sınırını aşıyor.");
+          setSending(false);
+          return;
+        }
+        cvDataUrl = await fileToDataUrl(cvFile);
+        cvFileName = cvFile.name;
+      }
+      if (!cvDataUrl && !cvUrl.trim()) {
+        setDone("err");
+        setErrText("CV dosyası veya CV bağlantısı zorunludur.");
+        setSending(false);
+        return;
+      }
+      const res = await fetch(apiUrl("/api/career/apply"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone,
+          city,
+          experienceYears,
+          coverLetter,
+          cvUrl: cvUrl.trim() || undefined,
+          cvDataUrl: cvDataUrl || undefined,
+          cvFileName: cvFileName || undefined,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+      if (!res.ok) {
+        setDone("err");
+        setErrText(typeof data.error === "string" ? data.error : "Başvuru gönderilemedi.");
+        return;
+      }
+      setDone("ok");
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setCity("");
+      setExperienceYears("");
+      setCoverLetter("");
+      setCvUrl("");
+      setCvFile(null);
+      setAccepted(false);
+    } catch {
+      setDone("err");
+      setErrText("Bağlantı hatası. Lütfen tekrar deneyin.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
-    <div className="sade-public-page flex min-w-0 flex-1 flex-col text-slate-900">
-      <section className={`sade-public-hero ${SADE_HERO_SHELL_CLASS} rounded-b-[2rem]`}>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(3,157,85,0.14),transparent_55%),radial-gradient(ellipse_at_85%_20%,rgba(15,118,110,0.12),transparent_40%)]" />
-        <div className="relative mx-auto max-w-4xl px-4 py-16 text-center sm:py-20">
-          <div className={SADE_HERO_ICON_CLASS}>
-            <Briefcase className="h-8 w-8 text-white" />
-          </div>
-          <p className={SADE_HERO_EYEBROW_CLASS}>Kariyer</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
-            Türk Ekosistemi ailesine katılmaya hazır mısınız?
-          </h1>
-          <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Türkiye&apos;nin yeni nesil yerli arama motoru ve &quot;Süper App&quot; uygulaması turk.eco olarak,
-            dijital dünyada işletmelerin görünürlüğünü artırıyor ve kullanıcılarımıza tek bir uygulama üzerinden
-            hayatlarını kolaylaştıracak kapsamlı çözümler sunuyoruz. Büyüyen ekibimizde, Türkiye genelindeki
-            işletmeleri dijital dünyamıza kazandıracak{" "}
-            <strong className="text-slate-900">Çağrı Merkezi Satış Temsilcileri</strong> arıyoruz!
+    <AhenkAgencyChrome
+      title="Çağrı Merkezi | Ahenk Bilgi Teknolojileri"
+      description="Ahenk Bilgi Teknolojileri çağrı merkezi hizmetleri ve Vatan İletişim Merkezi müşteri temsilcisi iş başvurusu."
+    >
+      <AhenkPageHero
+        crumb={
+          <>
+            <Link href="/">Anasayfa</Link> / Çağrı merkezi
+          </>
+        }
+        title="Ahenk BT ailesine katılmaya hazır mısınız?"
+        lead={`${site.brandName} çağrı merkezi ve müşteri hizmetleri operasyonu. Home-office müşteri temsilcisi kadromuza katılın.`}
+        image={AHENK_PHOTOS.callCenter}
+      />
+
+      <section className="ahenk-section">
+        <h2>Çağrı merkezi hizmetleri</h2>
+        <p className="ahenk-lead">
+          Ahenk Bilgi Teknolojileri; çağrı merkezi, müşteri ilişkileri yönetimi ve ürün tanıtım operasyonları yürütür.
+          Temsilcilerimiz pbx.goalgo.org üzerindeki CRM ve PBX altyapısı ile Türkiye genelinde kurumsal hedef kitleye
+          ulaşır. Yazılım ürünümüz için{" "}
+          <Link href="/cagri-merkezi-crm">çağrı merkezi CRM</Link> sayfasına bakabilirsiniz.
+        </p>
+        <div className="ahenk-career-grid">
+          {SERVICES.map((item) => (
+            <article key={item.title} className="ahenk-career-card">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="ahenk-section">
+        <h2>Çalışma sahası</h2>
+        <p className="ahenk-lead">Müşteri hizmetleri temsilcilerimiz belirlenmiş kurumsal kitle ile iletişim kurar.</p>
+        <div className="ahenk-career-grid">
+          {AUDIENCE.map((item) => (
+            <article key={item.title} className="ahenk-career-card">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="ahenk-section ahenk-split">
+        <div>
+          <h2>Kimi arıyoruz?</h2>
+          <ul className="ahenk-mods">
+            {QUALITIES.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h2>Çalışma modeli</h2>
+          <p>
+            İlk hafta günde 4 saat oryantasyon ve staj; ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi.
+            Puantaj, sistem giriş-çıkış ve log kayıtlarına göre tutulur. Ayrıntılar ve yasal çerçeve{" "}
+            <Link href="/urun-satisi">ürün satışı ve çalışma esasları</Link> sayfasındadır.
           </p>
-          <Button asChild size="lg" className="sade-btn-primary mt-8 gap-2">
-            <Link href={APPLY_HREF}>
-              Hemen başvur
-              <ArrowRight className="h-4 w-4" />
+          <p>
+            <Link href="/urun-satisi" className="ahenk-btn ahenk-btn-light">
+              Çalışma esaslarını oku
             </Link>
-          </Button>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-slate-200/80 shadow-sm">
-            <CardHeader>
-              <Sparkles className="h-8 w-8" style={{ color: YEKPARE_SADE_TEAL }} />
-              <CardTitle className="text-xl">Neden Türk Ekosistemi?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm leading-relaxed text-slate-600">
-              <p>
-                Biz bir &quot;Süper App&quot;iz. Sadece bir arama motoru değil; kullanıcıların alışverişten randevuya,
-                konum bazlı ihtiyaçlardan dijital hizmetlere kadar her şeyi bulabildiği devasa bir ekosistemiz.
-                İşletmeler için ise; harita kayıtlarından profesyonel firma profillerine kadar dijital vitrinlerini
-                oluşturdukları bir merkeziz.
-              </p>
-              <p>
-                <strong className="text-slate-900">Modelimiz şeffaftır:</strong> Diğer platformların aksine, işletmeleri
-                komisyon yükü altında ezmiyoruz. Abonelik modelimizle işletmelere sürdürülebilir, tahmin edilebilir ve
-                uygun maliyetli bir çözüm sunuyoruz.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200/80 shadow-sm">
-            <CardHeader>
-              <Users className="h-8 w-8" style={{ color: YEKPARE_SADE_TEAL }} />
-              <CardTitle className="text-xl">Kimi arıyoruz?</CardTitle>
-              <CardDescription>Ekibimize katılacak ideal aday profili</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-sm text-slate-600">
-                {QUALITIES.map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section className="border-y bg-slate-50 py-14">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 md:grid-cols-2">
-          <Card className="border-slate-200/80 bg-white shadow-sm">
-            <CardHeader>
-              <Target className="h-8 w-8" style={{ color: YEKPARE_SADE_TEAL }} />
-              <CardTitle className="text-xl">İşletmelerimize neler sunuyoruz?</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm leading-relaxed text-slate-600">
-              Türk Ekosistemi üzerinde; restoranlardan kafelere, tamir servislerinden butik mağazalara, hukuk bürolarından
-              sağlık kuruluşlarına kadar her sektörü dijital dünyada görünür kılıyoruz.
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200/80 bg-white shadow-sm">
-            <CardHeader>
-              <TrendingUp className="h-8 w-8" style={{ color: YEKPARE_SADE_TEAL }} />
-              <CardTitle className="text-xl">Kazanç ve yan haklar</CardTitle>
-              <CardDescription>Prim usulü çalışma modeli</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm leading-relaxed text-slate-600">
-                Bu pozisyonda yüksek kazanç potansiyeli sunan &quot;Prim Usulü&quot; çalışma modeli uygulanmaktadır.
-                Başarılı olduğunuz sürece kazancınızın sınırı yoktur.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-600">
-                {BENEFITS.map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section id="basvuru" className="mx-auto max-w-2xl px-4 py-16 pb-24">
-        <div className="mb-8 text-center">
-          <PhoneCall className="mx-auto h-8 w-8" style={{ color: YEKPARE_SADE_TEAL }} />
-          <h2 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">Başvuru</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
-            Siz de Türkiye&apos;nin yerli gücüne ortak olmak ve yüksek kazançlı bir satış kariyerine adım atmak
-            istiyorsanız, güncel CV&apos;nizi ve kısa bir ön yazınızı iletişim formumuz üzerinden iletebilirsiniz.
           </p>
-          <p className="mt-4 text-sm font-semibold text-slate-800">Türk Ekosistemi – Türkiye&apos;nin Dijital Geleceği.</p>
         </div>
-
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Çağrı Merkezi Satış Temsilcisi başvurusu</CardTitle>
-            <CardDescription>
-              Başvurunuzu iletişim sayfamızdaki form aracılığıyla gönderebilirsiniz.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4 pb-8">
-            <p className="text-center text-sm leading-relaxed text-slate-600">
-              Mesajınızda pozisyon adını (<strong className="text-slate-900">Çağrı Merkezi Satış Temsilcisi</strong>),
-              iletişim bilgilerinizi ve CV&apos;nizi belirtmeniz yeterlidir.
-            </p>
-            <Button asChild size="lg" className="sade-btn-primary w-full gap-2 sm:w-auto">
-              <Link href={APPLY_HREF}>
-                İletişim formuna git
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
       </section>
-    </div>
+
+      <section className="ahenk-section" id="basvuru">
+        <div className="ahenk-split">
+          <form className="ahenk-form" onSubmit={(e) => void submit(e)}>
+            <h2>İş başvurusu</h2>
+            <p className="ahenk-lead">
+              Çağrı Merkezi Müşteri Temsilcisi pozisyonu için formu doldurun. CV olarak PDF yükleyebilir veya bir
+              bağlantı bırakabilirsiniz.
+            </p>
+            {done === "ok" ? (
+              <div className="ahenk-msg ahenk-msg-ok">Başvurunuz alındı. En kısa sürede sizinle iletişime geçeceğiz.</div>
+            ) : null}
+            {done === "err" ? <div className="ahenk-msg ahenk-msg-err">{errText}</div> : null}
+            <label>
+              Ad soyad
+              <input required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ad soyad" />
+            </label>
+            <label>
+              E-posta
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-posta"
+              />
+            </label>
+            <label>
+              Telefon
+              <input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Telefon" />
+            </label>
+            <label>
+              Şehir
+              <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Şehir" />
+            </label>
+            <label>
+              Deneyim
+              <input
+                value={experienceYears}
+                onChange={(e) => setExperienceYears(e.target.value)}
+                placeholder="Örn. 2 yıl çağrı merkezi"
+              />
+            </label>
+            <label>
+              Ön yazı
+              <textarea
+                required
+                value={coverLetter}
+                onChange={(e) => setCoverLetter(e.target.value)}
+                placeholder="Kısa ön yazınız"
+              />
+            </label>
+            <label>
+              CV (PDF, en fazla 5 MB)
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+            <label>
+              veya CV bağlantısı
+              <input
+                type="url"
+                value={cvUrl}
+                onChange={(e) => setCvUrl(e.target.value)}
+                placeholder="https://…"
+              />
+            </label>
+            <label className="ahenk-consent">
+              <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+              <span>
+                <Link href="/urun-satisi">Ürün satışı ve çalışma esasları</Link> metnini okudum, anladım ve kabul
+                ediyorum.
+              </span>
+            </label>
+            <button type="submit" className="ahenk-btn" disabled={sending || !accepted}>
+              {sending ? "Gönderiliyor…" : "Başvuruyu gönder"}
+            </button>
+          </form>
+          <aside>
+            <h2>Başvuru notu</h2>
+            <p>
+              Formu göndermeden önce <Link href="/urun-satisi">ön onay metnini</Link> okumanız gerekir. Metni kabul
+              etmeden başvuru butonu açılmaz.
+            </p>
+            <p>
+              <strong>GSM:</strong> <a href={`tel:${site.phoneTel}`}>{site.phone}</a>
+              <br />
+              <strong>E-posta:</strong> <a href={`mailto:${site.email}`}>{site.email}</a>
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section className="ahenk-section">
+        <h2>Sık sorulanlar</h2>
+        <AhenkFaqList faqs={FAQS} />
+      </section>
+    </AhenkAgencyChrome>
   );
 }

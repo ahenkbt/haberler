@@ -749,6 +749,13 @@
   gap: 12px;
 }
 
+.ahenk-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ahenk-muted);
+}
+
 .ahenk-form input,
 .ahenk-form textarea {
   width: 100%;
@@ -762,6 +769,140 @@
 
 .ahenk-form textarea {
   min-height: 140px;
+}
+
+.ahenk-form input[type="checkbox"],
+.ahenk-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--ahenk-gold);
+}
+
+.ahenk-form input[type="file"] {
+  padding: 8px;
+}
+
+.ahenk-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.ahenk-legal-doc {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
+}
+
+.ahenk-legal-doc h2 {
+  color: #fff;
+  margin: 2rem 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.ahenk-legal-doc h3 {
+  color: #fff;
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+.ahenk-legal-warn {
+  border: 1px solid rgba(232, 176, 74, 0.45);
+  background: rgba(232, 176, 74, 0.08);
+  padding: 14px 16px;
+  border-radius: 10px;
+  color: #f3e6c4;
+  margin: 16px 0;
+}
+
+.ahenk-table-wrap {
+  overflow-x: auto;
+  margin: 16px 0 8px;
+}
+
+.ahenk-spec {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ahenk-spec th,
+.ahenk-spec td {
+  border: 1px solid var(--ahenk-line);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ahenk-spec thead th {
+  background: rgba(8, 18, 32, 0.9);
+  color: #fff;
+}
+
+.ahenk-consent-box {
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid var(--ahenk-line);
+  border-radius: 12px;
+  background: rgba(8, 18, 32, 0.55);
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.ahenk-consent,
+.ahenk-form label.ahenk-consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--ahenk-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ahenk-consent-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ahenk-muted);
+}
+
+.ahenk-career-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ahenk-career-card {
+  border: 1px solid var(--ahenk-line);
+  border-radius: 12px;
+  padding: 18px 16px;
+  background: rgba(8, 18, 32, 0.55);
+}
+
+.ahenk-career-card h3 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 16px;
+}
+
+.ahenk-career-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ahenk-muted);
+}
+
+#basvuru {
+  scroll-margin-top: 96px;
+}
+
+@media (max-width: 800px) {
+  .ahenk-career-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ahenk-footer {
