@@ -201,7 +201,7 @@ export default function PanelHesaplari() {
             </div>
             <div>
               <Label>E-posta (isteğe bağlı)</Label>
-              <Input className="mt-1" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="ornek@turknet.app" />
+              <Input className="mt-1" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="ornek@ahenk.net.tr" />
             </div>
           </div>
           <div>

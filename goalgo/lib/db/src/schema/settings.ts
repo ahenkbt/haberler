@@ -2,12 +2,12 @@ import { pgTable, text, serial, boolean, integer, decimal, timestamp } from "dri
 
 export const siteSettingsTable = pgTable("site_settings", {
   id: serial("id").primaryKey(),
-  siteName: text("site_name").notNull().default("Türk Ekosistemi"),
+  siteName: text("site_name").notNull().default("Ahenk Bilgi Teknolojileri"),
   tagline: text("tagline").notNull().default(
-    "Haber Video Haritalar Sipariş Alışveriş Rezervasyon ve İlan Portalı",
+    "Web yazılımı, haber sitesi ve ajans — Ahenk Bilgi Teknolojileri.",
   ),
-  logoText1: text("logo_text_1").notNull().default("Yek"),
-  logoText2: text("logo_text_2").notNull().default("pare"),
+  logoText1: text("logo_text_1").notNull().default("Ahenk"),
+  logoText2: text("logo_text_2").notNull().default("BT"),
   primaryColor: text("primary_color").notNull().default("#CC0000"),
   secondaryColor: text("secondary_color").notNull().default("#1F2937"),
   navbarBg: text("navbar_bg").notNull().default("#FFFFFF"),
@@ -18,10 +18,10 @@ export const siteSettingsTable = pgTable("site_settings", {
   financeBg: text("finance_bg").notNull().default("#0F172A"),
   footerText: text("footer_text")
     .notNull()
-    .default("Yekpare — haber, video, harita, sipariş ve ilan portalı."),
+    .default("Ahenk Bilgi Teknolojileri (ahenk.net.tr); web yazılımı, haber sitesi yazılımı, ajans ve çağrı merkezi çözümleri."),
   copyrightText: text("copyright_text")
     .notNull()
-    .default("© Yekpare. Tüm hakları saklıdır."),
+    .default("© Ahenk Bilgi Teknolojileri. Tüm hakları saklıdır."),
   address: text("address"),
   phone: text("phone"),
   email: text("email"),

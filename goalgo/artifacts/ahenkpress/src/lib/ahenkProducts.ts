@@ -90,19 +90,11 @@ export const AHENK_PRODUCTS: AhenkProductTile[] = [
   },
   {
     slug: "haberler",
-    title: "Haberler",
-    kicker: "Günlük vitrin",
-    excerpt: "Son dakika, kategori akışı ve haber vitrini.",
+    title: "AHENK HABER",
+    kicker: "Canlı demo",
+    excerpt: "Haber sitesi yazılımının canlı demosu. Manşet, kategori ve haber detayı ahenk.net.tr/haberler.",
     href: "/haberler",
     image: AHENK_PHOTOS.news,
-  },
-  {
-    slug: "haber-haritasi",
-    title: "Haber haritası",
-    kicker: "Newsmap",
-    excerpt: "Coğrafyaya pinlenen haber keşfi. Türkiye ve dünya akışı haritada.",
-    href: "/newsmap",
-    image: AHENK_PHOTOS.newsmap,
   },
   {
     slug: "web-yazilimi",

@@ -381,6 +381,8 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi") return true;
   if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
   if (p === "/kariyer" || p === "/urun-satisi") return true;
+  if (p === "/destek" || p === "/sss" || p === "/iletisim-kunye" || p === "/kunye") return true;
+  if (p === "/haberler") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
   if (p === "/yazilim" || p.startsWith("/yazilim/") || p === "/ajans" || p === "/haber-merkezi" || p === "/yekpare") {

@@ -1,3 +1,8 @@
+import {
+  applyLegacyGoalgoAsYekpareDisplay,
+  looksLikeSiteSettingsPayload,
+} from "./legacy-site-branding";
+
 export type CustomFetchOptions = RequestInit & {
   responseType?: "json" | "text" | "blob" | "auto";
 };
@@ -152,6 +157,26 @@ function getStringField(value: unknown, key: string): string | undefined {
 
   const trimmed = candidate.trim();
   return trimmed === "" ? undefined : trimmed;
+}
+
+function isSiteSettingsApiUrl(url: string): boolean {
+  const path = url.split("?")[0] ?? url;
+  try {
+    if (/^https?:\/\//i.test(path)) {
+      return new URL(path).pathname.replace(/\/+$/, "") === "/api/settings";
+    }
+  } catch {
+    /* relative */
+  }
+  return path.replace(/\/+$/, "") === "/api/settings" || /\/api\/settings$/.test(path.replace(/\/+$/, ""));
+}
+
+function maybeOverlaySiteSettings<T>(method: string, url: string, data: T): T {
+  if ((method !== "GET" && method !== "PUT" && method !== "PATCH") || !isSiteSettingsApiUrl(url)) {
+    return data;
+  }
+  if (!looksLikeSiteSettingsPayload(data)) return data;
+  return applyLegacyGoalgoAsYekpareDisplay(data) as T;
 }
 
 function truncate(text: string, maxLength = 300): string {
@@ -401,6 +426,7 @@ export async function customFetch<T = unknown>(
       throw new ApiError(response, errorData, requestInfo);
     }
 
-    return (await parseSuccessBody(response, responseType, requestInfo)) as T;
+    const body = (await parseSuccessBody(response, responseType, requestInfo)) as T;
+    return maybeOverlaySiteSettings(method, requestInfo.url, body);
   }
 }

@@ -1,0 +1,90 @@
+.ahenk-haber {
+  min-height: 100dvh;
+  background: #f4f6f8;
+  color: #0f172a;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+.ahenk-haber-demo {
+  background: #06101c;
+  color: #f3d98a;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 8px 16px;
+}
+.ahenk-haber-demo a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.ahenk-haber-header {
+  background: #fff;
+  border-bottom: 3px solid #c81e1e;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.ahenk-haber-header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ahenk-haber-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a;
+  text-decoration: none;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  font-size: 22px;
+}
+.ahenk-haber-brand img {
+  height: 36px;
+  width: auto;
+}
+.ahenk-haber-brand em {
+  color: #c81e1e;
+  font-style: normal;
+}
+.ahenk-haber-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.ahenk-haber-nav a {
+  color: #0f172a;
+  text-decoration: none;
+}
+.ahenk-haber-nav a:hover {
+  color: #c81e1e;
+}
+.ahenk-haber-cats {
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+}
+.ahenk-haber-footer {
+  background: #06101c;
+  color: #9aa8bc;
+  padding: 28px 20px;
+  text-align: center;
+  font-size: 13px;
+}
+.ahenk-haber-footer a {
+  color: #f3d98a;
+}
+.ahenk-haber-footer p + p {
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  .ahenk-haber-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

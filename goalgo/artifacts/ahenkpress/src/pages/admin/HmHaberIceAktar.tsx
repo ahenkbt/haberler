@@ -322,7 +322,7 @@ export default function HmHaberIceAktar() {
               <p className="text-xs text-gray-500 mt-2">
                 Kategori: AHB slug’ları (Gundem, oZEL, Ankara, Ekonomi) Goalgo slug’larına eşlenir (ör. oZEL →{" "}
                 <code className="text-xs bg-gray-100 px-1 rounded">ozel-haber</code>). Eşleşmezse aşağıdan varsayılan
-                kategori seçin. İstekler turknet.app üzerinden Vercel vekili ile Railway’e gider; içe aktarım{" "}
+                kategori seçin. İstekler ahenk.net.tr API üzerinden işlenir; içe aktarım{" "}
                 {BATCH_LIMIT} haber/istek parçalar halinde otomatik devam eder.
               </p>
             </div>

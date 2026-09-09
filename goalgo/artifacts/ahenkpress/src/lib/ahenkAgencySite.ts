@@ -4,6 +4,12 @@ import {
   AHENK_LOGO_WORDMARK,
   ahenkResolvedPackage,
 } from "@/lib/ahenkCampaignPrice";
+import {
+  isLegacyPortalBrandAssetUrl,
+  isLegacyPortalSiteName,
+  normalizePortalDisplayName,
+  PORTAL_DEFAULT_TAGLINE,
+} from "@/lib/portalBrand";
 
 /** Ahenk Bilgi Teknolojileri ajans vitrini — arşiv içeriği + admin override. */
 
@@ -77,6 +83,7 @@ export function defaultAhenkNavItems(): AhenkNavItem[] {
     { id: "about", label: "Hakkımızda", href: "/hakkimizda" },
     { id: "products", label: "Ürünlerimiz", href: "/urunlerimiz" },
     { id: "services", label: "Hizmetlerimiz", href: "/hizmetlerimiz" },
+    { id: "career", label: "Kariyer", href: "/kariyer" },
     { id: "contact", label: "İletişim", href: "/iletisim" },
   ];
 }
@@ -699,21 +706,12 @@ function defaultPlatformProducts(): AhenkContentCard[] {
     ),
     card(
       "haberler",
-      "Haberler",
-      "Günlük haber vitrini, son dakika ve kategori akışı.",
+      "AHENK HABER",
+      "Haber sitesi yazılımının canlı demosu: manşet, kategori ve haber detayı.",
       "news",
       "/haberler",
-      `<p>Canlı haber vitrini ahenk.net.tr/haberler adresinde yayınlanır.</p>`,
+      `<p>Canlı demo ahenk.net.tr/haberler adresinde AHENK HABER başlığıyla yayınlanır.</p>`,
       AHENK_PHOTOS.news,
-    ),
-    card(
-      "haber-haritasi",
-      "Haber haritası",
-      "Newsmap: coğrafyaya pinlenen haber keşfi.",
-      "map",
-      "/newsmap",
-      `<p>Haber haritası dünya ve Türkiye üzerindeki akışı görselleştirir. ahenk.net.tr/newsmap</p>`,
-      AHENK_PHOTOS.newsmap,
     ),
   ];
 }
@@ -735,16 +733,16 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
   return {
     version: 2,
     brandName: "Ahenk Bilgi Teknolojileri",
-    tagline: "yekpare.net hazır web sitesi — Ahenk Bilgi Teknolojileri.",
+    tagline: PORTAL_DEFAULT_TAGLINE,
     phone: "0541 313 62 45",
     phoneTel: "+905413136245",
     whatsappTel: "+905413136245",
     email: AHENK_CORPORATE_EMAIL,
     logoUrl: AHENK_LOGO_WORDMARK,
     logoMarkUrl: AHENK_LOGO_MARK,
-    seoTitle: "Ahenk BT | yekpare.net hazır web sitesi",
+    seoTitle: "Ahenk Bilgi Teknolojileri | ahenk.net.tr",
     seoDescription:
-      "Ahenk Bilgi Teknolojileri, yekpare.net hazır web siteleri üretir. Haber siteleri (HM editör) ve servis sağlayıcı vitrinleri. Ücretsiz liste, harita, sarı sayfalar, sipariş ve rezervasyon. Özel yazılımlar için iletişime geçin.",
+      "Ahenk Bilgi Teknolojileri; web yazılımı, haber sitesi yazılımı, ajans ve çağrı merkezi çözümleri. Resmi alan adı ahenk.net.tr.",
     seoKeywords:
       "web yazılımı, web tasarımı, haber sitesi yazılımı, haber scripti, avukat sitesi, doktor sitesi, restoran sitesi, kurumsal web sitesi, mobil uyumlu yazılım, web ofisi, webintek",
     aiDeliveryLead: "Yapay zeka destekli tüm sektörlerden web yazılımı yapıyoruz. 1-3 günde teslim ediyoruz.",
@@ -781,13 +779,13 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     agencyOffers: defaultAgencyOffers(),
     yekpare: defaultYekpare(),
     platformTitle: "Yayın ürünleri",
-    platformLead: "YekTube, Haberler, haber haritası ve Haber Merkezi — ahenk.net.tr/haber-merkezi",
+    platformLead: "YekTube, AHENK HABER ve Haber Merkezi — ahenk.net.tr/haber-merkezi",
     platformProducts: defaultPlatformProducts(),
     haberMerkeziTitle: "Haber Merkezi ürün ailesi",
     haberMerkeziLead:
-      "YekTube, günlük Haberler vitrini, Newsmap haber haritası ve white-label Haber Merkezi yazılımı aynı çatıda.",
-    haberMerkeziHtml: `<p>Ahenk’in yayın katmanı dört üründen oluşur. Haber Merkezi ile kendi gazetenizi kurarsınız; Haberler canlı vitrindir; YekTube video ve canlı TV’dir; haber haritası coğrafi keşiftir.</p>
-<p>Canlı uygulamalar mevcut adreslerinde çalışmaya devam eder. Bu sayfa ürünleri kurumsal dilde tanıtır.</p>`,
+      "YekTube, günlük AHENK HABER demosu ve white-label Haber Merkezi yazılımı aynı çatıda.",
+    haberMerkeziHtml: `<p>Ahenk’in yayın katmanı: Haber Merkezi ile kendi gazetenizi kurarsınız; AHENK HABER canlı vitrin demosudur; YekTube video ve canlı TV’dir.</p>
+<p>Canlı demo: <a href="/haberler">ahenk.net.tr/haberler</a>. Haber sitesi yazılımı için <a href="/haber-sitesi-yazilimi">başvuru</a>.</p>`,
     yekparePageTitle: "Yekpare.net",
     yekparePageHtml: `<p><strong>Yekpare.net</strong> hazır web sitelerinin yayınlandığı ekosistemdir. Ahenk Bilgi Teknolojileri (Ahenk BT) bu hazır siteleri üretir: haber siteleri HM editör altyapısıyla, sektör vitrinleri yekpare.net servis sağlayıcı siteleriyle.</p>
 <p>yekpare.net üzerinde listelenmek ücretsizdir. Reklamlar trafiği artırır; haritalar kaydı, sarı sayfalar ve onbinlerce işletme kaydı aynı sistemdedir. Sipariş, satış ve rezervasyon bu ağdan gelir.</p>
@@ -1238,16 +1236,26 @@ function mergeFaqs(raw: unknown, defaults: AhenkFaq[]): AhenkFaq[] {
 }
 
 function mergeNavItems(raw: unknown, defaults: AhenkNavItem[]): AhenkNavItem[] {
-  if (!Array.isArray(raw) || !raw.length) return defaults;
-  const items = raw
-    .filter(isRecord)
-    .map((n, i) => ({
-      id: str(n.id, `nav-${i}`),
-      label: str(n.label, ""),
-      href: str(n.href, ""),
-    }))
-    .filter((n) => n.label && n.href);
-  return items.length ? items : defaults;
+  const base =
+    Array.isArray(raw) && raw.length
+      ? raw
+          .filter(isRecord)
+          .map((n, i) => ({
+            id: str(n.id, `nav-${i}`),
+            label: str(n.label, ""),
+            href: str(n.href, ""),
+          }))
+          .filter((n) => n.label && n.href && n.href !== "/urun-satisi" && n.href !== "/newsmap")
+      : [];
+  const items = base.length ? base : defaults.map((n) => ({ ...n }));
+  const hasKariyer = items.some((n) => n.href === "/kariyer" || n.id === "career");
+  if (!hasKariyer) {
+    const kariyer = { id: "career", label: "Kariyer", href: "/kariyer" };
+    const contactIdx = items.findIndex((n) => n.href === "/iletisim" || n.id === "contact");
+    if (contactIdx >= 0) items.splice(contactIdx, 0, kariyer);
+    else items.push(kariyer);
+  }
+  return items;
 }
 
 function looksLikePricedHomeCopy(value: unknown): boolean {
@@ -1325,7 +1333,9 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       yekpare: mergePromo(data.yekpare, defaults.yekpare),
       platformTitle: str(data.platformTitle, defaults.platformTitle),
       platformLead: str(data.platformLead, defaults.platformLead),
-      platformProducts: mergeCards(data.platformProducts, defaults.platformProducts),
+      platformProducts: mergeCards(data.platformProducts, defaults.platformProducts).filter(
+        (c) => c.href !== "/newsmap" && c.slug !== "haber-haritasi",
+      ),
       haberMerkeziTitle: str(data.haberMerkeziTitle, defaults.haberMerkeziTitle),
       haberMerkeziLead: str(data.haberMerkeziLead, defaults.haberMerkeziLead),
       haberMerkeziHtml: str(data.haberMerkeziHtml, defaults.haberMerkeziHtml),
@@ -1390,6 +1400,70 @@ export function findAhenkContentCard(site: AhenkAgencySite, slug: string): Ahenk
     site.platformProducts.find(match) ??
     null
   );
+}
+
+export function ahenkTelFromDisplay(phone: string, fallback: string): string {
+  const d = String(phone ?? "").replace(/\D/g, "");
+  if (d.length < 10) return fallback;
+  if (d.startsWith("90") && d.length >= 12) return `+${d}`;
+  if (d.startsWith("0") && d.length >= 11) return `+90${d.slice(1)}`;
+  if (d.length === 10) return `+90${d}`;
+  return fallback;
+}
+
+/** Tema / Genel Ayarlar alanlarını ajans vitrinine yansıtır. */
+export type AhenkSiteSettingsOverlay = {
+  siteName?: string | null;
+  tagline?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  whatsapp?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+  bankIban?: string | null;
+  bankAccountHolder?: string | null;
+  bankNameBranch?: string | null;
+};
+
+export function applySiteSettingsToAhenkAgency(
+  site: AhenkAgencySite,
+  settings: AhenkSiteSettingsOverlay | null | undefined,
+): AhenkAgencySite {
+  const sanitized: AhenkAgencySite = {
+    ...site,
+    brandName: normalizePortalDisplayName(site.brandName),
+    tagline: isLegacyPortalSiteName(site.tagline) ? PORTAL_DEFAULT_TAGLINE : site.tagline,
+  };
+  if (!settings) return sanitized;
+  const brand = normalizePortalDisplayName(settings.siteName);
+  const taglineRaw = String(settings.tagline ?? "").trim();
+  const tagline = !taglineRaw || isLegacyPortalSiteName(taglineRaw) ? PORTAL_DEFAULT_TAGLINE : taglineRaw;
+  const phone = String(settings.phone ?? "").trim();
+  const email = String(settings.email ?? "").trim();
+  const wa = String(settings.whatsapp ?? "").trim();
+  const logo = String(settings.logoUrl ?? "").trim();
+  const mark = String(settings.faviconUrl ?? "").trim();
+  const iban = String(settings.bankIban ?? "").replace(/\s+/g, "");
+  const holder = String(settings.bankAccountHolder ?? "").trim();
+  const bank = String(settings.bankNameBranch ?? "").trim();
+  return {
+    ...sanitized,
+    brandName: brand || sanitized.brandName,
+    tagline,
+    phone: phone || sanitized.phone,
+    phoneTel: phone ? ahenkTelFromDisplay(phone, sanitized.phoneTel) : sanitized.phoneTel,
+    whatsappTel: wa
+      ? ahenkTelFromDisplay(wa, sanitized.whatsappTel)
+      : phone
+        ? ahenkTelFromDisplay(phone, sanitized.whatsappTel)
+        : sanitized.whatsappTel,
+    email: email || sanitized.email,
+    logoUrl: logo && !isLegacyPortalBrandAssetUrl(logo) ? logo : sanitized.logoUrl,
+    logoMarkUrl: mark && !isLegacyPortalBrandAssetUrl(mark) ? mark : sanitized.logoMarkUrl,
+    iban: iban || sanitized.iban,
+    ibanHolder: holder || sanitized.ibanHolder,
+    ibanBank: bank || sanitized.ibanBank,
+  };
 }
 
 export function ahenkAgencyJsonFromSettings(settings: unknown): string | null {

@@ -29,9 +29,10 @@ describe("container-env", () => {
     const vars = buildContainerEnv({
       DATABASE_URL: "postgres://neon/neondb",
       SESSION_SECRET: "sixteen-chars-ok",
-      CONTAINER_ROLL: "kariyer-232-20260909",
+      CONTAINER_ROLL: "ahenk-admin-brand-20260909",
     });
-    assert.equal(vars.CONTAINER_ROLL, "kariyer-232-20260909");
+    assert.equal(vars.CONTAINER_ROLL, "ahenk-admin-brand-20260909");
+  });
 
   it("forwards R2/S3 credentials when present", () => {
     const vars = buildContainerEnv({

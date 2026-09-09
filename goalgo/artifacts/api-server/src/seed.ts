@@ -337,19 +337,15 @@ async function main() {
   );
 
   await db.insert(siteSettingsTable).values({
-    siteName: "Türk Ekosistemi",
-    tagline: "Haberler, Yektube, Haber Merkezi ve Newsmap",
-    address: "Kırşehir, Türkiye",
-    phone: "+90 386 000 00 00",
-    email: "yekparenet@gmail.com",
-    facebook: "https://facebook.com/yekpare",
-    twitter: "https://x.com/yekpare",
-    instagram: "https://instagram.com/yekpare",
-    youtube: "https://youtube.com/@yekpare",
-    logoText1: "Türk",
-    logoText2: "Ekosistemi",
-    footerText: "Türk Ekosistemi — haber, video, Newsmap ve Haber Merkezi.",
-    copyrightText: "© Türk Ekosistemi. Tüm hakları saklıdır.",
+    siteName: "Ahenk Bilgi Teknolojileri",
+    tagline: "Web yazılımı, haber sitesi ve ajans — Ahenk Bilgi Teknolojileri.",
+    address: "Başak Mah. Özalp Caddesi 5/2 Mamak / Ankara",
+    phone: "0541 313 62 45",
+    email: "bilgi@ahenk.net.tr",
+    logoText1: "Ahenk",
+    logoText2: "BT",
+    footerText: "Ahenk Bilgi Teknolojileri (ahenk.net.tr); web yazılımı, haber sitesi yazılımı, ajans ve çağrı merkezi çözümleri.",
+    copyrightText: "© Ahenk Bilgi Teknolojileri. Tüm hakları saklıdır.",
   });
 
   console.log("Seed complete.");

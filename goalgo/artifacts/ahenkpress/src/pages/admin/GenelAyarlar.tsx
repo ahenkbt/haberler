@@ -1648,10 +1648,9 @@ export default function GenelAyarlar() {
             <div>
               <h2 className="text-lg font-bold text-gray-900">Google Search Console — çoklu portal domain</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Ana portalın birden fazla alan adıyla (turk.eco, turknet.app, getirsepeti.com.tr, goalgo.org vb.)
-                aynı sitede yayınlanması için her domaini Google Search Console&apos;da <strong>ayrı mülk</strong> olarak
-                ekleyin. Sitemap her domainde kendi kökünden okunur:{" "}
-                <code className="bg-gray-100 px-1 rounded">https://ALAN-ADINIZ/sitemap.xml</code>
+                Ana portalın alan adı <strong>ahenk.net.tr</strong>’dir. Google Search Console’da bu mülk kullanılır.
+                Sitemap:{" "}
+                <code className="bg-gray-100 px-1 rounded">https://ahenk.net.tr/sitemap.xml</code>
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 Ek portal domainleri sunucu ortam değişkeni{" "}
@@ -1660,12 +1659,12 @@ export default function GenelAyarlar() {
                 <code className="bg-gray-100 px-1 rounded text-xs">getirsepeti.com.tr,goalgo.org</code>
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                Aşağıdaki <strong>varsayılan</strong> alan turk.eco (ve www) içindir. Diğer portal domainleri için
+                Aşağıdaki <strong>varsayılan</strong> alan ahenk.net.tr (ve www) içindir. Diğer bağlı domainler için
                 alttaki satırlara domain başına GSC HTML etiketini girin.
               </p>
             </div>
             <div>
-              <Label>Varsayılan Google doğrulama (turk.eco / portal kökü)</Label>
+              <Label>Varsayılan Google doğrulama (ahenk.net.tr)</Label>
               <Textarea
                 value={googleSiteVerification}
                 onChange={(e) => setGoogleSiteVerification(e.target.value)}
@@ -1690,8 +1689,7 @@ export default function GenelAyarlar() {
               </div>
               {portalHostVerifications.length === 0 ? (
                 <p className="text-xs text-gray-500">
-                  Örnek: turk.eco, getirsepeti.com.tr, goalgo.org — her biri için GSC&apos;de ayrı mülk açıp HTML
-                  etiketini buraya kaydedin.
+                  Örnek: ahenk.net.tr — GSC HTML etiketini buraya kaydedin.
                 </p>
               ) : null}
               {portalHostVerifications.map((row, i) => (
@@ -1703,7 +1701,7 @@ export default function GenelAyarlar() {
                         prev.map((r, j) => (j === i ? { ...r, host: e.target.value } : r)),
                       )
                     }
-                    placeholder="turk.eco"
+                    placeholder="ahenk.net.tr"
                     className="font-mono text-sm"
                   />
                   <Textarea
@@ -1755,9 +1753,9 @@ export default function GenelAyarlar() {
                 Search Console → Sitemap&apos;ler bölümüne aşağıdaki ana dizini ekleyin. Haber, sipariş, alışveriş, turizm
                 ve keşfet işletmeleri otomatik güncellenir.
               </p>
-              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://turk.eco/sitemap.xml</code>
+              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://ahenk.net.tr/sitemap.xml</code>
               <p className="text-xs text-gray-500">
-                Diğer portal domainlerinde aynı yol: <code>https://turk.eco/sitemap.xml</code>,{" "}
+                Diğer portal domainlerinde aynı yol: <code>https://ahenk.net.tr/sitemap.xml</code>,{" "}
                 <code>https://getirsepeti.com.tr/sitemap.xml</code> — URL&apos;ler o domain kökünü kullanır.
               </p>
               <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1">
@@ -1769,7 +1767,7 @@ export default function GenelAyarlar() {
               </ul>
               <p className="text-xs text-gray-400">
                 Eski <code>/api/sitemap/…</code> yolları da çalışır; Search Console için yalnızca{" "}
-                <code>https://turk.eco/sitemap.xml</code> yeterlidir.
+                <code>https://ahenk.net.tr/sitemap.xml</code> yeterlidir.
               </p>
               <p className="text-xs text-gray-500">
                 Haber siteleri (ör. suhaberajansi.com) için ayrı mülk doğrulaması:{" "}
@@ -1782,7 +1780,7 @@ export default function GenelAyarlar() {
                 ChatGPT, Perplexity ve Google AI özetleri için <code className="bg-gray-100 px-1 rounded">/llms.txt</code> dosyası
                 yayında; robots.txt AI botlarına izin verir. İşletme ve haber sayfalarında Schema.org JSON-LD otomatik eklenir.
               </p>
-              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://turk.eco/llms.txt</code>
+              <code className="block text-xs bg-gray-50 border rounded p-3 break-all">https://ahenk.net.tr/llms.txt</code>
             </div>
           </div>
         </TabsContent>

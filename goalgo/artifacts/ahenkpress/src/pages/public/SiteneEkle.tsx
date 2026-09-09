@@ -18,8 +18,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 
+import { PORTAL_ORIGIN } from "@/lib/portalBrand";
+
 function origin(): string {
-  if (typeof window === "undefined") return "https://turk.eco";
+  if (typeof window === "undefined") return PORTAL_ORIGIN;
   return window.location.origin;
 }
 

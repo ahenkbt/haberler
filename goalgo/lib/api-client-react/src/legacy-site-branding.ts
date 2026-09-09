@@ -1,24 +1,43 @@
 import type { SiteSettings } from "./generated/api.schemas";
 
 /**
- * Eski dağıtımlarda DB’de "Goalgo" / Goal+go kalmış olabilir; tüm UI bu cevabı kullanır.
- * Yönetimden kayıt edince gerçek değerler gelir — burada sadece görüntü düzeltmesi.
- * Orval ile `api.ts` yeniden üretilirse `getSiteSettings` / `updateSiteSettings` çıktısına bu fonksiyonu tekrar sarın.
+ * Eski dağıtımlarda DB’de Goalgo / Yekpare / Türk Ekosistemi kalmış olabilir.
+ * Yönetimden kayıt edince gerçek değerler gelir — burada görüntü düzeltmesi.
  */
+export function looksLikeSiteSettingsPayload(data: unknown): data is SiteSettings {
+  if (!data || typeof data !== "object") return false;
+  const rec = data as Record<string, unknown>;
+  return typeof rec.siteName === "string" && typeof rec.tagline === "string";
+}
+
 export function applyLegacyGoalgoAsYekpareDisplay(s: SiteSettings): SiteSettings {
-  const repl = (t: string) => t.replace(/goalgo/gi, "Yekpare");
+  const legacy = /goalgo|yekpare|türk\s*ekosistemi|turk\s*ekosistemi|turknet|türknet|turk\.eco/i;
+  const ahenk = "Ahenk Bilgi Teknolojileri";
   let { siteName, tagline, footerText, copyrightText, logoText1, logoText2 } = s;
+  if (legacy.test(String(siteName ?? "")) || !String(siteName ?? "").trim()) siteName = ahenk;
+  if (legacy.test(String(tagline ?? "")) || /keşfet.*sipariş|şehir.*yekpare/i.test(String(tagline ?? ""))) {
+    tagline = "Web yazılımı, haber sitesi ve ajans — Ahenk Bilgi Teknolojileri.";
+  }
   const foot = footerText ?? "";
   const copy = copyrightText ?? "";
-  if (/goalgo/i.test(siteName)) siteName = repl(siteName);
-  if (/goalgo/i.test(tagline)) tagline = repl(tagline);
-  if (/goalgo/i.test(foot)) footerText = repl(foot);
-  if (/goalgo/i.test(copy)) copyrightText = repl(copy);
-  const g1 = logoText1.trim().toLowerCase();
-  const g2 = logoText2.trim().toLowerCase();
-  if ((g1 === "goal" && g2 === "go") || (g1 === "goalgo" && g2 === "")) {
-    logoText1 = "Yek";
-    logoText2 = "pare";
+  if (legacy.test(foot) || !foot.trim() || /pazaryeri|firma rehberi|newsmap/i.test(foot)) {
+    footerText =
+      "Ahenk Bilgi Teknolojileri (ahenk.net.tr); web yazılımı, haber sitesi yazılımı, ajans ve çağrı merkezi çözümleri.";
+  }
+  if (legacy.test(copy) || !copy.trim()) {
+    copyrightText = "© Ahenk Bilgi Teknolojileri. Tüm hakları saklıdır.";
+  }
+  const g1 = String(logoText1 ?? "").trim().toLowerCase();
+  const g2 = String(logoText2 ?? "").trim().toLowerCase();
+  if (
+    !g1 ||
+    (g1 === "yek" && g2 === "pare") ||
+    (g1 === "yekpare" && g2 === "") ||
+    (g1 === "goal" && g2 === "go") ||
+    (g1 === "türk" || g1 === "turk")
+  ) {
+    logoText1 = "Ahenk";
+    logoText2 = "BT";
   }
   return {
     ...s,

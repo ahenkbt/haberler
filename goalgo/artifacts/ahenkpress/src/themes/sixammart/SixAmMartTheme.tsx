@@ -113,6 +113,8 @@ import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl }
 import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmNewsMapModule } from "@/components/HmNewsMapModule";
 import { DunyadanKisaKisaBand } from "@/components/DunyadanKisaKisaBand";
+import { isAhenkAgencyHost } from "@/lib/ahenkAgencyHost";
+import { AhenkHaberChrome } from "@/components/ahenk-agency/AhenkHaberChrome";
 
 const API = "/api";
 
@@ -1510,6 +1512,7 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
   }, [items, featuredSlides, activeCategory]);
   const categoryTitle = STANDARD_PORTAL_NEWS_TABS.find((c) => c.slug === activeCategory)?.label;
   const showEditorial = !activeCategory;
+  const ahenkHaber = isAhenkAgencyHost();
 
   const categoryNav = (
     <NewsCategorySubNav
@@ -1534,9 +1537,10 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
         );
       case "headlineGrid":
         return featuredSlides.length ? (
-          <SadeNewsHeadlineGrid slides={featuredSlides} sideItems={featuredSideItems} showQuickAccess={showQuickLinks} />
+          <SadeNewsHeadlineGrid slides={featuredSlides} sideItems={featuredSideItems} showQuickAccess={showQuickLinks && !ahenkHaber} />
         ) : null;
       case "newsMapModule":
+        if (ahenkHaber) return null;
         return (
           <HmNewsMapModule
             linkMode="yekpare"
@@ -1547,8 +1551,10 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
       case "worldBriefs":
         return <DunyadanKisaKisaBand accent={SADE_ACCENT} className="mb-6" />;
       case "yekpareHaberler":
+        if (ahenkHaber) return null;
         return <SadeYekpareHaberlerBlock items={portalCategoryPool} href="/tum-haberler" />;
       case "recentVideosSidebar":
+        if (ahenkHaber) return null;
         return (
           <HmRecentVideosBox
             videoTvHref={(sourceId, videoId) => `/yp/kanal/${sourceId}/${encodeURIComponent(videoId)}`}
@@ -1627,11 +1633,20 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
               </p>
               <div className="grid gap-1">
                 {[
-                  { label: "Son dakika", href: "/kategori/son-dakika" },
-                  { label: "Tüm haberler", href: "/tum-haberler" },
-                  { label: "Yazarlar", href: "/yazarlar" },
-                  { label: "Haber merkezi", href: "/habermerkezi" },
-                  { label: "Ana sayfa", href: "/" },
+                  ...(ahenkHaber
+                    ? [
+                        { label: "AHENK HABER", href: "/haberler" },
+                        { label: "Haber sitesi yazılımı", href: "/haber-sitesi-yazilimi" },
+                        { label: "Ahenk BT", href: "/" },
+                        { label: "İletişim", href: "/iletisim" },
+                      ]
+                    : [
+                        { label: "Son dakika", href: "/kategori/son-dakika" },
+                        { label: "Tüm haberler", href: "/tum-haberler" },
+                        { label: "Yazarlar", href: "/yazarlar" },
+                        { label: "Haber merkezi", href: "/habermerkezi" },
+                        { label: "Ana sayfa", href: "/" },
+                      ]),
                 ].map((l) => (
                   <Link key={l.href} href={l.href} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-sky-50 hover:text-[#0EA5E9]">
                     {l.label}
@@ -1659,16 +1674,24 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
       <SadeFinanceWeatherStrip showFinance={showFinance} showWeather={showWeather} variant="header" />
     ) : null;
 
-  return (
-    <Shell
-      staticLocationLabel="Türkiye"
-      searchPlaceholder="Haberlerde ara"
-      showHeaderSearch={false}
-      headerSearchReplacement={headerFinanceTicker}
-      subHeader={categoryNav}
-      heroChrome={false}
-      portalNewsPage={portalNewsHost}
-    >
+  const newsFrame = (body: ReactNode) =>
+    ahenkHaber ? (
+      <AhenkHaberChrome subHeader={categoryNav}>{body}</AhenkHaberChrome>
+    ) : (
+      <Shell
+        staticLocationLabel="Türkiye"
+        searchPlaceholder="Haberlerde ara"
+        showHeaderSearch={false}
+        headerSearchReplacement={headerFinanceTicker}
+        subHeader={categoryNav}
+        heroChrome={false}
+        portalNewsPage={portalNewsHost}
+      >
+        {body}
+      </Shell>
+    );
+
+  return newsFrame(
       <main
         className={`relative z-[5] mx-auto w-full max-w-[1440px] bg-white px-4 pb-8 ${SADE_PUBLIC_POST_HERO_MAIN_CLASS}`}
         data-hm-vitrin-theme="news"
@@ -1685,7 +1708,7 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
             ))}
           </div>
         ) : null}
-        {showEditorial ? (
+        {showEditorial && !ahenkHaber ? (
           <div className={SADE_PUBLIC_POST_HERO_STACK_CLASS}>
             <SadeHomeCitiesBandCompact />
           </div>
@@ -1704,7 +1727,6 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
           </div>
         ) : null}
       </main>
-    </Shell>
   );
 }
 
@@ -1806,8 +1828,13 @@ export function SixAmMartNewsDetailPage() {
     [news],
   );
 
-  return (
-    <Shell staticLocationLabel="Türkiye" searchPlaceholder="Haberlerde ara">
+  const ahenkHaber = isAhenkAgencyHost();
+  const detailShell = (body: ReactNode) =>
+    ahenkHaber ? <AhenkHaberChrome title={news?.title || "AHENK HABER"}>{body}</AhenkHaberChrome> : (
+      <Shell staticLocationLabel="Türkiye" searchPlaceholder="Haberlerde ara">{body}</Shell>
+    );
+
+  return detailShell(
       <main className={`hm-article-detail-page mx-auto w-full max-w-screen-xl px-4 pb-6 md:pb-8 ${SADE_PUBLIC_POST_HERO_MAIN_CLASS}`}>
         <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500">
           <Link href="/" className="text-[#0284C7] hover:underline">Anasayfa</Link>
@@ -1895,7 +1922,6 @@ export function SixAmMartNewsDetailPage() {
           </section>
         ) : null}
       </main>
-    </Shell>
   );
 }
 

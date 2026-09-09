@@ -17,8 +17,8 @@ import { yektubeWatchPath } from "@/lib/yektubeUrls";
 
 import "@/styles/turkecoYandexHome.css";
 
-const HOME_BRAND = "turk.eco";
-const HOME_TAGLINE = "haber video portalı";
+const HOME_BRAND = PORTAL_HOST;
+const HOME_TAGLINE = "web yazılımı ve ajans";
 
 type VideoRow = {
   id: number;

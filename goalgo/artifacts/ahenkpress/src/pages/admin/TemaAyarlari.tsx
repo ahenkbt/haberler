@@ -188,9 +188,14 @@ export default function TemaAyarlari() {
         <div>
           <h2 className="text-xl font-bold">Görünüm & renkler</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Menü sırası, modüller ve iletişim için{" "}
+            Bu alanlar kamu sitesine yansır: üst marka, slogan, logo ve sekme ikonu. Menü sırası, iletişim ve
+            sayfa metinleri için{" "}
             <Link href="/admin/ayarlar" className="text-[#e61e25] hover:underline font-medium">
               Genel Ayarlar
+            </Link>
+            {" · "}
+            <Link href="/admin/ahenk-ajans" className="text-[#e61e25] hover:underline font-medium">
+              Ahenk Ajans Sitesi
             </Link>
             .
           </p>

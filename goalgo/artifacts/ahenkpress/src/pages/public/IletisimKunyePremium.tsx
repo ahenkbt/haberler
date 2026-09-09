@@ -92,13 +92,13 @@ export default function IletisimKunyePremium() {
             className="md:hidden shrink-0 py-2.5 px-4 text-center font-black text-xs tracking-[0.25em] text-white uppercase"
             style={{ backgroundColor: ACCENT }}
           >
-            YEKPARE
+            AHENK
           </div>
           <div
             className="hidden md:flex w-14 shrink-0 flex-col items-center justify-center py-8 font-black text-[10px] tracking-[0.2em] text-white uppercase"
             style={{ backgroundColor: ACCENT, writingMode: "vertical-rl" }}
           >
-            YEKPARE
+            AHENK
           </div>
           <div className="flex-1 p-6 sm:p-8">
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: ACCENT }}>
@@ -124,8 +124,8 @@ export default function IletisimKunyePremium() {
                   <Phone className="w-4 h-4 shrink-0" />
                   Telefon
                 </div>
-                <a href="tel:+905322291892" className="text-xl sm:text-2xl font-black text-white hover:opacity-90">
-                  0532 229 18 92
+                <a href="tel:+905413136245" className="text-xl sm:text-2xl font-black text-white hover:opacity-90">
+                  0541 313 62 45
                 </a>
               </div>
               <div className="sm:col-span-2 space-y-1">
@@ -133,25 +133,25 @@ export default function IletisimKunyePremium() {
                   <Mail className="w-4 h-4 shrink-0" />
                   E-posta
                 </div>
-                <a href="mailto:ahenkbt@gmail.com" className="text-sm sm:text-base text-white underline font-semibold break-all">
-                  ahenkbt@gmail.com
+                <a href="mailto:bilgi@ahenk.net.tr" className="text-sm sm:text-base text-white underline font-semibold break-all">
+                  bilgi@ahenk.net.tr
                 </a>
               </div>
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href="https://turk.eco"
+                href="https://ahenk.net.tr"
                 className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-black text-white shadow-lg transition hover:opacity-90"
                 style={{ backgroundColor: ACCENT }}
               >
-                turk.eco
+                ahenk.net.tr
               </a>
               <Link
-                href="/destek"
+                href="/iletisim"
                 className="inline-flex items-center justify-center rounded-xl border-2 px-5 py-2.5 text-sm font-bold transition hover:bg-white/5"
                 style={{ borderColor: ACCENT, color: ACCENT }}
               >
-                Destek talebi
+                İletişim
               </Link>
             </div>
           </div>

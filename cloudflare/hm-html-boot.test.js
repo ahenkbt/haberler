@@ -99,7 +99,9 @@ describe("hm-html-boot", () => {
     assert.equal(isAhenkAgencyHost("www.ahenk.net.tr"), true);
     assert.equal(isAhenkAgencyGeoPath("/"), true);
     assert.equal(isAhenkAgencyGeoPath("/hakkimizda"), true);
-    assert.equal(isAhenkAgencyGeoPath("/haberler"), false);
+    assert.equal(isAhenkAgencyGeoPath("/haberler"), true);
+    assert.equal(isAhenkAgencyGeoPath("/destek"), true);
+    assert.equal(isAhenkAgencyGeoPath("/iletisim-kunye"), true);
     assert.equal(isAhenkAgencyGeoPath("/web-yazilimi"), true);
     assert.equal(isAhenkAgencyGeoPath("/avukat-sitesi"), true);
     assert.equal(isAhenkAgencyGeoPath("/ucretsiz-haber-sitesi"), true);

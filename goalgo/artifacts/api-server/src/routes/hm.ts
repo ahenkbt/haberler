@@ -5859,7 +5859,7 @@ router.get("/hm/pwa-store", async (_req, res): Promise<void> => {
       portalOrigin: portal,
       yekpare: {
         displayName: PORTAL_SITE_NAME,
-        tagline: "Haber, video, Newsmap ve Haber Merkezi",
+        tagline: "Haber, video ve Haber Merkezi",
         icon: portalIcon,
         installQuery: "yekpare=1",
       },

@@ -33,7 +33,7 @@ function SidebarContent({
   const { logout } = useAuth();
   const { data: siteSettings } = useGetSiteSettings();
   const adminBrand = panelBrandTitle(siteSettings?.siteName);
-  const brandInitial = (adminBrand.charAt(0) || "Y").toUpperCase();
+  const brandInitial = (adminBrand.charAt(0) || "A").toUpperCase();
 
   const [openSections, setOpenSections] = useState<string[]>(() => adminNavSectionIdsOpenForLocation(location));
 
@@ -252,7 +252,7 @@ export function AdminLayout({ children, title }: { children: React.ReactNode; ti
             <div className="max-w-lg rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-950">
               <p className="font-semibold">
                 {isPortalNewsPlatformHost() && isPortalRetiredAdminPath(location)
-                  ? "Bu modül turk.eco haber platformunda kapalıdır."
+                  ? "Bu modül ahenk.net.tr haber platformunda kapalıdır."
                   : "Bu bölüme erişim yetkiniz yok."}
               </p>
               <p className="text-sm mt-2 text-amber-900/90">
