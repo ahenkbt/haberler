@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import {
   ahenkAgencyJsonFromSettings,
+  applySiteSettingsToAhenkAgency,
   parseAhenkAgencySiteFromJson,
   type AhenkAgencySite,
 } from "@/lib/ahenkAgencySite";
@@ -9,7 +10,11 @@ import {
 export function useAhenkAgencySite(): AhenkAgencySite {
   const { data: settings } = useGetSiteSettings();
   return useMemo(
-    () => parseAhenkAgencySiteFromJson(ahenkAgencyJsonFromSettings(settings)),
+    () =>
+      applySiteSettingsToAhenkAgency(
+        parseAhenkAgencySiteFromJson(ahenkAgencyJsonFromSettings(settings)),
+        settings,
+      ),
     [settings],
   );
 }

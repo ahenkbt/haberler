@@ -91,6 +91,8 @@ import AhenkAgencyHizmetler from "./pages/public/AhenkAgencyHizmetler";
 import AhenkAgencyHizmetDetail from "./pages/public/AhenkAgencyHizmetDetail";
 import AhenkAgencyHakkimizda from "./pages/public/AhenkAgencyHakkimizda";
 import AhenkAgencyIletisim from "./pages/public/AhenkAgencyIletisim";
+import AhenkDestek from "./pages/public/AhenkDestek";
+import { AhenkAgencyChrome } from "./components/ahenk-agency/AhenkAgencyChrome";
 import AhenkAgencyYazilim from "./pages/public/AhenkAgencyYazilim";
 import AhenkAgencyYazilimDetail from "./pages/public/AhenkAgencyYazilimDetail";
 import AhenkAgencyHaberMerkezi from "./pages/public/AhenkAgencyHaberMerkezi";
@@ -775,6 +777,13 @@ function PortalNewsPlatformRouteGate() {
   return null;
 }
 
+function AhenkOrPublicLayout({ children }: { children: React.ReactNode }) {
+  if (isAhenkAgencyHost()) {
+    return <AhenkAgencyChrome>{children}</AhenkAgencyChrome>;
+  }
+  return <PublicLayout>{children}</PublicLayout>;
+}
+
 export default function App() {
   useYekpareTheme();
   const [location] = useLocation();
@@ -1034,18 +1043,22 @@ export default function App() {
       <Route path="/sari-sayfalar">{() => <Redirect to="/" />}</Route>
       <Route path="/resmi-ilanlar">{() => <PublicLayout><ResmiIlanlarPublic /></PublicLayout>}</Route>
       <Route path="/lisans-aktivasyon">{() => <PublicLayout><LisansAktivasyonu /></PublicLayout>}</Route>
-      <Route path={/^\/maps\/place\/[^/]+\/(?:@|%40)[^/?#]*$/i}>{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path={/^\/maps\/(?:@|%40)[^/?#]*$/i}>{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path={/^\/maps\/?$/}>{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path={/^\/map\/?$/}>{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path="/maps">{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path="/map">{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path="/haritalar/tam-ekran">{() => <Redirect to="/newsmap" replace />}</Route>
-      <Route path="/haritalar">{() => <Redirect to="/newsmap" />}</Route>
+      <Route path={/^\/maps\/place\/[^/]+\/(?:@|%40)[^/?#]*$/i}>{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path={/^\/maps\/(?:@|%40)[^/?#]*$/i}>{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path={/^\/maps\/?$/}>{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path={/^\/map\/?$/}>{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path="/maps">{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path="/map">{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path="/haritalar/tam-ekran">{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} replace />}</Route>
+      <Route path="/haritalar">{() => <Redirect to={isAhenkAgencyHost() ? "/" : "/newsmap"} />}</Route>
       <Route path="/newsmap">{() => (
+        isAhenkAgencyHost() ? (
+          <Redirect to="/" replace />
+        ) : (
         <YekparePortalHubOnlyRoute>
           <LazyRouteChunk><NewsmapRoute /></LazyRouteChunk>
         </YekparePortalHubOnlyRoute>
+        )
       )}</Route>
       <Route path="/kesfet/premium-basarili">{() => <Redirect to="/" />}</Route>
       <Route path="/kesfet/sarisayfalar/:id">{() => <Redirect to="/" />}</Route>
@@ -1173,13 +1186,17 @@ export default function App() {
       <Route path="/is-ortagi/basvuru">{() => <SadeAwarePublicLayout chrome searchPlaceholder="Başvuru ve maşaza ara"><IsOrtagiBasvuru /></SadeAwarePublicLayout>}</Route>
       <Route path="/is-ortagi">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ış ortaklışı ve maşaza ara"><IsOrtagi /></SadeAwarePublicLayout>}</Route>
       <Route path="/kunye">
-        {() => (
-          <HmPortalOrDomainStandardPage segment="kunye">
-            <PublicLayout>
-              <KunyePage />
-            </PublicLayout>
-          </HmPortalOrDomainStandardPage>
-        )}
+        {() =>
+          isAhenkAgencyHost() ? (
+            <AhenkAgencyIletisim variant="kunye" />
+          ) : (
+            <HmPortalOrDomainStandardPage segment="kunye">
+              <PublicLayout>
+                <KunyePage />
+              </PublicLayout>
+            </HmPortalOrDomainStandardPage>
+          )
+        }
       </Route>
       <Route path="/hakkinda">
         {() =>
@@ -1556,15 +1573,25 @@ export default function App() {
           )
         }
       </Route>
-      <Route path="/destek">{() => <PublicLayout><Destek /></PublicLayout>}</Route>
-      <Route path="/mesafeli-satis-sozlesmesi">{() => <PublicLayout><MesafeliSatisSozlesmesiPage /></PublicLayout>}</Route>
-      <Route path="/on-bilgilendirme">{() => <PublicLayout><OnBilgilendirmePage /></PublicLayout>}</Route>
-      <Route path="/gizlilik-kvkk">{() => <PublicLayout><KvkkPage /></PublicLayout>}</Route>
-      <Route path="/iade-degisim">{() => <PublicLayout><IadeDegisimPage /></PublicLayout>}</Route>
-      <Route path="/teslimat-kargo">{() => <PublicLayout><TeslimatKargoPage /></PublicLayout>}</Route>
-      <Route path="/kullanim-kosullari">{() => <PublicLayout><KullanimKosullariPage /></PublicLayout>}</Route>
-      <Route path="/sss">{() => <PublicLayout><SssPage /></PublicLayout>}</Route>
-      <Route path="/iletisim-kunye">{() => <PublicLayout><IletisimKunyePage /></PublicLayout>}</Route>
+      <Route path="/destek">{() => (isAhenkAgencyHost() ? <AhenkDestek /> : <PublicLayout><Destek /></PublicLayout>)}</Route>
+      <Route path="/mesafeli-satis-sozlesmesi">{() => <AhenkOrPublicLayout><MesafeliSatisSozlesmesiPage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/on-bilgilendirme">{() => <AhenkOrPublicLayout><OnBilgilendirmePage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/gizlilik-kvkk">{() => <AhenkOrPublicLayout><KvkkPage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/iade-degisim">{() => <AhenkOrPublicLayout><IadeDegisimPage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/teslimat-kargo">{() => <AhenkOrPublicLayout><TeslimatKargoPage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/kullanim-kosullari">{() => <AhenkOrPublicLayout><KullanimKosullariPage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/sss">{() => <AhenkOrPublicLayout><SssPage /></AhenkOrPublicLayout>}</Route>
+      <Route path="/iletisim-kunye">
+        {() =>
+          isAhenkAgencyHost() ? (
+            <AhenkAgencyIletisim variant="kunye" />
+          ) : (
+            <PublicLayout>
+              <IletisimKunyePage />
+            </PublicLayout>
+          )
+        }
+      </Route>
       {/* Turizm — Yekpare site chrome + tema içerik gövdesi */}
       <Route path="/turizm/rezervasyon/:ref">{() => <TurizmRoute><BookingCoreRezervasyonOnay /></TurizmRoute>}</Route>
       <Route path="/turizm/tur/:slug">{() => <TurizmRoute><TurizmDetay /></TurizmRoute>}</Route>

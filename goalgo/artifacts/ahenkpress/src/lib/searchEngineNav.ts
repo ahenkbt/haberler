@@ -194,7 +194,6 @@ export function shouldSkipSearchEnginePublicChrome(path: string): boolean {
 export const PORTAL_NEWS_PLATFORM_PILLS: SearchEngineCategoryPill[] = [
   { id: "haberler", label: "Haberler", href: "/haberler", emoji: "📰" },
   { id: "videolar", label: "Videolar", href: "/yektube", emoji: "▶️" },
-  { id: "newsmap", label: "Newsmap", href: "/newsmap", emoji: "🗺️" },
   { id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi", emoji: "📡" },
 ];
 

@@ -312,7 +312,7 @@ export function SadeYekpareHaberlerBlock({
     return (
       <section className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-black text-slate-950">Yekpare Haberler</h2>
+          <h2 className="text-lg font-black text-slate-950">AHENK HABER</h2>
           <Link href={href} className="text-xs font-black uppercase tracking-wide text-[#039D55] hover:underline">
             Tümü
           </Link>
@@ -328,7 +328,7 @@ export function SadeYekpareHaberlerBlock({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#039D55]">Editör siteleri</p>
-          <h2 className="text-lg font-black text-slate-950">Yekpare Haberler</h2>
+          <h2 className="text-lg font-black text-slate-950">AHENK HABER</h2>
         </div>
         <Link href={href} className="text-xs font-black uppercase tracking-wide text-[#039D55] hover:underline">
           Tümü

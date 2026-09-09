@@ -39,7 +39,7 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (n === "/yekpare") return true;
   if (isAhenkKeywordPath(n)) return true;
   if (n === "/hakkimizda" || n === "/about") return true;
-  if (n === "/iletisim" || n === "/contact") return true;
+  if (n === "/iletisim" || n === "/contact" || n === "/iletisim-kunye" || n === "/kunye") return true;
   if (n === "/ucretsiz-haber-sitesi") return true;
   if (n === "/urunlerimiz") return true;
   if (n === "/asistan-ai" || n === "/whatsapp-cagri-merkezi") return true;
@@ -47,6 +47,18 @@ export function isAhenkAgencyPublicPath(path: string): boolean {
   if (n === "/polis-ai" || n === "/polisai") return true;
   if (n === "/cagri-merkezi-crm" || n === "/yapay-zeka-cagri-merkezi") return true;
   if (n === "/kariyer" || n === "/urun-satisi") return true;
+  if (n === "/destek" || n === "/sss") return true;
+  if (
+    n === "/gizlilik-kvkk" ||
+    n === "/kullanim-kosullari" ||
+    n === "/mesafeli-satis-sozlesmesi" ||
+    n === "/on-bilgilendirme" ||
+    n === "/iade-degisim" ||
+    n === "/teslimat-kargo"
+  ) {
+    return true;
+  }
+  if (n === "/haberler" || n.startsWith("/haberler/") || n.startsWith("/haber/")) return true;
   return false;
 }
 

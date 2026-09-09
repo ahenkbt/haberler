@@ -74,7 +74,7 @@ function moveArrayItem<T>(items: T[], index: number, dir: -1 | 1): T[] {
 
 const NEWS_HOME_MODULE_LABELS: Record<(typeof HM_NEWS_HOME_MODULE_ORDER)[number], string> = {
   breakingBand: "Son dakika / finans bandı",
-  yekpareSearchBox: "Yekpare arama kutusu",
+  yekpareSearchBox: "Arama kutusu",
   googleNewsBand: "Kutu içi RSS",
   tepeManset: "Tepe Manşet (üst numaralı band)",
   hero: "Manşet slider + hızlı erişim",
@@ -91,11 +91,11 @@ const NEWS_HOME_MODULE_LABELS: Record<(typeof HM_NEWS_HOME_MODULE_ORDER)[number]
   ahenkEkonomiGrid: "EKONOMİ 4×2 grid",
   ahenkSonEklenenler: "Son Eklenenler",
   ahenkPopulerHaberler: "Popüler Haberler",
-  portal3ThemeBlock: "Yekpare Haberler",
+  portal3ThemeBlock: "AHENK HABER",
   esenThemeBlock: "MANŞET HABER",
   esenLeadPack: "Gündemde Öne Çıkanlar",
   featuredCategoryStrip: "Kategori vitrini",
-  yekpareKategorilerKutusu: "Yekpare Kategoriler Kutusu",
+  yekpareKategorilerKutusu: "Kategoriler kutusu",
   leadListSidebar: "Büyük haber + sağ liste bloğu",
   mediaDarkBlock: "Video / galeri koyu blok",
   recentVideosSidebar: "Son eklenen videolar (sol kategori + 4×2 grid)",
@@ -270,7 +270,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
       await queryClient.invalidateQueries({ queryKey: getGetSiteSettingsQueryKey() });
       writeNewsSiteLayoutPrefs(next);
       dispatchHmLayoutUpdated("portal");
-      toast({ title: "Yekpare haber vitrini kaydedildi", description: r.siteName });
+      toast({ title: "AHENK HABER vitrini kaydedildi", description: r.siteName });
     } catch (e) {
       toast({
         title: "Kaydedilemedi",
@@ -430,19 +430,18 @@ export default function YekpareHaberlerVitrinAyarlari() {
 
   if (isLoading) {
     return (
-      <AdminLayout title="Yekpare Haberler (vitrin)">
+      <AdminLayout title="AHENK HABER (vitrin)">
         <div className="p-8 text-sm text-slate-600">Yükleniyor…</div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout title="Yekpare Haberler (vitrin)">
+    <AdminLayout title="AHENK HABER (vitrin)">
       <div className="max-w-3xl space-y-6">
         <p className="text-sm text-slate-600">
-          Bu ekran `turk.eco/haberler` sayfasının vitrin düzenini yönetir (editör sitesindeki “Vitrin ayarları” ile aynı mantık).
-          Sade tema `/haberler` modülleri aşaşıdaki anahtarlarla açılıp kapatılır; manşet, yazarlar ve Atatürk bandı varsayılan açıktır.
-          Son gelişmeler, son dakika, namaz/günün sözü ve RSS son dakika kart bandı `/haberler` düzeninden kaldırıldı (admin açsa bile gösterilmez).
+          Bu ekran `ahenk.net.tr/haberler` (AHENK HABER) canlı demo vitrinini yönetir. Tema Ayarları’ndaki site adı, logo ve slogan
+          yönetim paneli ile kamu sayfalarına yansır. Manşet, yazarlar ve Atatürk bandı varsayılan açıktır.
         </p>
 
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
@@ -482,7 +481,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
             className="mt-0 space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 px-4 py-4 sm:px-5 data-[state=inactive]:hidden"
           >
               <div className="min-w-0 text-left">
-                <p className="text-base font-black tracking-tight text-slate-900">Yekpare /haberler (Sade) modülleri</p>
+                <p className="text-base font-black tracking-tight text-slate-900">AHENK HABER /haberler modülleri</p>
                 <p className="mt-1 text-sm font-normal text-slate-600">
                   Manşet, piyasa/hava, son dakika, yazarlar, Tarih ve Millî Günler bandı — portal haber sayfası.
                 </p>
@@ -491,7 +490,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
                 <div className="px-4 py-3">
                   <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Modül görünürlüğü</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Kapalı modüller yalnızca turk.eco/haberler sayfasında gizlenir. Kaldırılan modüller:{" "}
+                    Kapalı modüller yalnızca ahenk.net.tr/haberler sayfasında gizlenir. Kaldırılan modüller:{" "}
                     {SADE_NEWS_PORTAL_RETIRED_MODULE_IDS.map((id) => SADE_NEWS_PORTAL_MODULE_LABELS[id]).join(", ")}.
                   </p>
                 </div>
@@ -1065,7 +1064,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
                 <ToggleRow id="yek-hm-news-slider" label="Manşet slider" checked={p.hmNewsSliderEnabled !== false} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsSliderEnabled", c)} />
                 <ToggleRow id="yek-hm-news-rss-headline" label="RSS haberleri manşette göster" checked={p.hmNewsRssHeadlineEnabled !== false} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsRssHeadlineEnabled", c)} />
                 <ToggleRow id="yek-hm-news-google-news-band" label="Kutu içi RSS" checked={p.hmNewsGoogleNewsBandEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsGoogleNewsBandEnabled", c)} />
-                <ToggleRow id="yek-hm-news-portal3-block" label="Yekpare Haberler (editör sitelerinden manuel haberler)" checked={p.hmNewsPortal3ThemeBlockEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsPortal3ThemeBlockEnabled", c)} />
+                <ToggleRow id="yek-hm-news-portal3-block" label="AHENK HABER (editör sitelerinden manuel haberler)" checked={p.hmNewsPortal3ThemeBlockEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsPortal3ThemeBlockEnabled", c)} />
                 <ToggleRow id="yek-hm-news-esen-block" label="MANŞET HABER kutusu (yalnızca manuel haberler)" checked={p.hmNewsEsenThemeBlockEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsEsenThemeBlockEnabled", c)} />
                 <ToggleRow id="yek-hm-news-lead-list-sidebar" label="Büyük haber + sağ liste bloğu" checked={resolveHmNewsHomeModuleEnabled(p, "leadListSidebar")} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsLeadListSidebarEnabled", c)} />
                 <ToggleRow id="yek-hm-news-media-dark-block" label={mediaGalleryBlockLabel("mediaDarkBlock")} checked={resolveHmNewsHomeModuleEnabled(p, "mediaDarkBlock")} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsMediaDarkBlockEnabled", c)} />

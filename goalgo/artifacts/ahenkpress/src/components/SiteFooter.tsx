@@ -181,7 +181,7 @@ export function SiteFooter() {
               rel="noopener noreferrer"
               className="inline-block mt-2 text-[10px] text-slate-500 hover:text-[#0f766e] transition-colors"
             >
-              Altyapı: turk.eco
+              Altyapı: ahenk.net.tr
             </a>
             <a
               href="https://ahenk.net.tr"

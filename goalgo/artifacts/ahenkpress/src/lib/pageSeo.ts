@@ -1009,7 +1009,7 @@ export function buildYekpareOrganizationJsonLd(baseOrigin?: string): Record<stri
     "@type": "Organization",
     "@id": `${base}/#organization`,
     name: PORTAL_BRAND_SHORT,
-    alternateName: ["Türk Ekosistemi Arama Motoru", "Ahenk", "ahenk.net.tr", "Turk.eco"],
+    alternateName: ["Ahenk Bilgi Teknolojileri", "Ahenk BT", "ahenk.net.tr"],
     url: base,
     logo: { "@type": "ImageObject", url: `${base}/icon-512.png` },
     description:

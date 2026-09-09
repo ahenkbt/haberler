@@ -447,9 +447,9 @@ export default function RssKampanyaEditor() {
                 onCheckedChange={(c) => setForm((prev: any) => ({ ...prev, includeYekpareHaber: c === true }))}
               />
               <label htmlFor="yekpare-haber" className="cursor-pointer text-sm leading-tight">
-                <span className="font-semibold">Yekpare Haber</span>
+                <span className="font-semibold">AHENK HABER</span>
                 <span className="text-muted-foreground block text-[11px] mt-0.5">
-                  Merkez haber akışı (turknet.app / haberler). İstemezseniz işaretlemeyin; yalnızca seçtiğiniz HM
+                  Merkez haber akışı (ahenk.net.tr /haberler). İstemezseniz işaretlemeyin; yalnızca seçtiğiniz HM
                   sitelerine düşer.
                 </span>
               </label>

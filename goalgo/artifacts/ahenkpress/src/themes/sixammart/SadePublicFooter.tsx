@@ -10,11 +10,12 @@ import {
 } from "@workspace/site-nav";
 import { TURIZM_FOOTER_MODULES, isTurizmSubmenuItemActive } from "@/themes/turizm/turizmRoutes";
 import { YekpareFooterDisclaimer } from "@/components/YekpareFooterDisclaimer";
+import { portalCopyrightFallback, portalNavBrandText } from "@/lib/portalNavBrand";
+import { PORTAL_DEFAULT_FOOTER_TEXT } from "@/lib/portalBrand";
 import "@/styles/sade-public-footer.css";
 
 const APP_STORE_LINKS = [
   { label: "Haber Merkezi", href: "/habermerkezi" },
-  { label: "Newsmap", href: "/newsmap" },
   { label: "Haberler", href: "/haberler" },
   { label: "Videolar", href: "/yektube" },
 ] as const;
@@ -22,7 +23,6 @@ const APP_STORE_LINKS = [
 const SADE_PUBLIC_LINKS = [
   { label: "Haberler", href: "/haberler" },
   { label: "Videolar", href: "/yektube" },
-  { label: "Newsmap", href: "/newsmap" },
   { label: "Haber Merkezi", href: "/habermerkezi" },
   { label: "Destek", href: "/destek" },
 ] as const;
@@ -148,7 +148,7 @@ function TurizmFooterBody() {
         </div>
         <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
         <div className="yekpare-public-footer__bar">
-          <span>© {new Date().getFullYear()} Türk Ekosistemi Seyahat</span>
+          <span>{portalCopyrightFallback(settings).replace("Tüm hakları saklıdır.", "Seyahat")}</span>
           {legalLinks.length > 0 ? (
             <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
               {legalLinks.map((item, i) => (
@@ -171,19 +171,18 @@ function DefaultFooterBody() {
     () => parseFooterLegalLinksJson((settings as { footerLegalLinksJson?: string | null } | undefined)?.footerLegalLinksJson ?? null),
     [settings],
   );
-  const footerText =
-    settings?.footerText?.trim() ||
-    "Türk Ekosistemi'nde haber, video, Newsmap ve Haber Merkezi tek kullanıcı deneyiminde buluşur.";
+  const brand = portalNavBrandText(settings);
+  const footerText = settings?.footerText?.trim() || PORTAL_DEFAULT_FOOTER_TEXT;
 
   return (
     <div className="yekpare-public-footer__main">
       <div className="yekpare-public-footer__grid yekpare-public-footer__grid--default">
         <div>
           <div className="mb-4 flex items-center gap-3">
-            <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label="Türk Ekosistemi ana sayfa">
+            <Link href="/" className="yekpare-public-footer__brand-logo-link" aria-label={`${brand} ana sayfa`}>
               <img
                 src={logoSrc}
-                alt="Türk Ekosistemi"
+                alt={brand}
                 className="yekpare-public-footer__brand-logo"
                 width={160}
                 height={40}
@@ -196,11 +195,11 @@ function DefaultFooterBody() {
         <FooterCol title="Hizmetler" links={[...SADE_PUBLIC_LINKS.slice(0, 4)]} />
         <FooterCol title="Hesap" links={[...ACCOUNT_LINKS]} />
         <FooterCol title="Platform" links={[...APP_STORE_LINKS]} />
-        <FooterCol title="Türk Ekosistemi" links={[...SADE_PUBLIC_LINKS]} />
+        <FooterCol title={brand} links={[...SADE_PUBLIC_LINKS]} />
       </div>
       <YekpareFooterDisclaimer className="yekpare-public-footer__disclaimer" />
       <div className="yekpare-public-footer__bar">
-        <span>© {new Date().getFullYear()} Türk Ekosistemi. Tüm hakları saklıdır.</span>
+        <span>{settings?.copyrightText?.trim() || portalCopyrightFallback(settings)}</span>
         {legalLinks.length > 0 ? (
           <nav className="yekpare-public-footer__legal" aria-label="Yasal bağlantılar">
             {legalLinks.map((item, i) => (

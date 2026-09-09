@@ -14,12 +14,11 @@ export type MainNavKey = (typeof MAIN_NAV_KEY_ORDER)[number];
 
 const ALLOWED = new Set<string>(MAIN_NAV_KEY_ORDER);
 /**
- * Seyahat / Sarı Sayfalar / Keşfet (maps hub) — turk.eco’da kapalı.
- * `haritalar` anahtarı Newsmap olarak kalır.
+ * Seyahat / Sarı Sayfalar / Keşfet / Newsmap — ahenk.net.tr’de kapalı.
  */
-export const PORTAL_RETIRED_NAV_KEYS = new Set<MainNavKey>(["turizm", "firmaRehberi", "kesfet"]);
+export const PORTAL_RETIRED_NAV_KEYS = new Set<MainNavKey>(["turizm", "firmaRehberi", "kesfet", "haritalar"]);
 /** Üst menüde her zaman gösterilecek çekirdek modüller. */
-const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["haberler", "yektube", "haritalar"];
+const REQUIRED_PLATFORM_NAV_KEYS: MainNavKey[] = ["haberler", "yektube"];
 const REQUIRED_TOP_NAV_KEYS: MainNavKey[] = [];
 
 export const MAIN_NAV_LABELS: Record<MainNavKey, string> = {
@@ -48,7 +47,6 @@ export const MAIN_NAV_HREF: Record<MainNavKey, string> = {
 const FOOTER_NAV_DEFAULT: MainNavKey[] = [
   "haberler",
   "yektube",
-  "haritalar",
   "iletisim",
 ];
 
@@ -61,7 +59,6 @@ export function defaultNavMenuItems(): NavMenuItem[] {
   return [
     { kind: "module", key: "haberler" },
     { kind: "module", key: "yektube" },
-    { kind: "module", key: "haritalar" },
     { kind: "link", id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi" },
   ];
 }
@@ -138,7 +135,9 @@ function isStalePublicNavLink(label: string, href: string): boolean {
       new RegExp(`\\b${word}\\b`).test(text),
     ) ||
     href.trim() === "#" ||
-    /^javascript:/i.test(href.trim())
+    /^javascript:/i.test(href.trim()) ||
+    /newsmap/i.test(href) ||
+    /haber\s*haritas/i.test(label)
   );
 }
 

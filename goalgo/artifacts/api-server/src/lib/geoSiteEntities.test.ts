@@ -37,7 +37,9 @@ describe("geoSiteEntities", () => {
     expect(isHmGeoEntityPath("/haber/ornek")).toBe(false);
     expect(isAhenkAgencyGeoPath("/")).toBe(true);
     expect(isAhenkAgencyGeoPath("/hakkimizda")).toBe(true);
-    expect(isAhenkAgencyGeoPath("/haberler")).toBe(false);
+    expect(isAhenkAgencyGeoPath("/haberler")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/destek")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/iletisim-kunye")).toBe(true);
     expect(isAhenkAgencyGeoPath("/aiaddin")).toBe(true);
     expect(isAhenkAgencyGeoPath("/polis-ai")).toBe(true);
     expect(isAhenkAgencyGeoPath("/cagri-merkezi-crm")).toBe(true);

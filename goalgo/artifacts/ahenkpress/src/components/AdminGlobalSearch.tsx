@@ -13,7 +13,7 @@ type Props = {
 export function AdminGlobalSearch({
   className = "",
   inputClassName = "",
-  placeholder = "Panelde ara: Gemini, haberler, turizm, ayarlar…",
+  placeholder = "Panelde ara: Gemini, haberler, kariyer, ayarlar…",
   autoFocus = false,
 }: Props) {
   const [, navigate] = useLocation();

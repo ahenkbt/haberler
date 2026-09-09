@@ -88,7 +88,6 @@ function navActive(path: string, href: string): boolean {
       path === "/haber-merkezi" ||
       path === "/yektube" ||
       path === "/haberler" ||
-      path === "/newsmap" ||
       path === "/web-yazilimi"
     );
   }
@@ -119,7 +118,10 @@ function navActive(path: string, href: string): boolean {
     return path === "/cagri-merkezi-crm" || path === "/yapay-zeka-cagri-merkezi";
   }
   if (href === "/kariyer") {
-    return path === "/kariyer" || path === "/urun-satisi";
+    return path === "/kariyer";
+  }
+  if (href === "/iletisim") {
+    return path === "/iletisim" || path === "/iletisim-kunye" || path === "/kunye" || path === "/destek";
   }
   return path === href || path.startsWith(`${href}/`);
 }
@@ -352,7 +354,7 @@ export function AhenkAgencyChrome({
         href={wa}
         target="_blank"
         rel="noreferrer"
-        aria-label="WhatsApp 0541 313 62 45"
+        aria-label={`WhatsApp ${site.phone}`}
       >
         <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden>
           <path
@@ -434,11 +436,8 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <Link href="/polis-ai">Polis AI</Link>
             <Link href="/haber-merkezi">Haber Merkezi</Link>
             <Link href="/yektube">YekTube</Link>
-            <Link href="/haberler">Haberler</Link>
-            <Link href="/newsmap">Haber haritası</Link>
+            <Link href="/haberler">AHENK HABER</Link>
             <Link href="/cagri-merkezi-crm">PBX CRM</Link>
-            <Link href="/kariyer">Kariyer / çağrı merkezi</Link>
-            <Link href="/urun-satisi">Ürün satışı esasları</Link>
             <Link href="/aiaddin">Aiaddin</Link>
             <a href="https://yekpare.net" target="_blank" rel="noreferrer">
               yekpare.net
@@ -453,9 +452,11 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             {site.hoursSunday}
           </p>
           <p style={{ marginTop: 10 }}>
-            <Link href="/urunlerimiz">Ürünlerimiz</Link>
+            <Link href="/iletisim">İletişim</Link>
             {" · "}
-            <Link href="/hizmetlerimiz">Hizmetlerimiz</Link>
+            <Link href="/destek">Destek</Link>
+            {" · "}
+            <Link href="/iletisim-kunye">Künye</Link>
           </p>
           <p>
             <strong style={{ color: "#fff" }}>{site.phone}</strong>

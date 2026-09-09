@@ -22,7 +22,6 @@ export const PORTAL_DEFAULT_MAIN_NAV_JSON = JSON.stringify({
   items: [
     { type: "module", key: "haberler" },
     { type: "module", key: "yektube" },
-    { type: "link", id: "newsmap", label: "Newsmap", href: "/newsmap" },
     { type: "link", id: "habermerkezi", label: "Haber Merkezi", href: "/habermerkezi" },
   ],
 });
@@ -30,7 +29,6 @@ export const PORTAL_DEFAULT_MAIN_NAV_JSON = JSON.stringify({
 export const PORTAL_DEFAULT_FOOTER_NAV_JSON = JSON.stringify([
   "haberler",
   "yektube",
-  "haritalar",
   "iletisim",
 ]);
 
@@ -46,4 +44,4 @@ export const PORTAL_DEFAULT_HOME_SECTIONS_JSON = JSON.stringify([
 ]);
 
 export const PORTAL_DEFAULT_FOOTER_TEXT =
-  "Türk Ekosistemi; haber, video, Newsmap ve Haber Merkezi ile Türkiye'nin dijital haber vitrinidir.";
+  "Ahenk Bilgi Teknolojileri (ahenk.net.tr); web yazılımı, haber sitesi yazılımı, ajans ve çağrı merkezi çözümleri.";

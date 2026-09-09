@@ -1,13 +1,26 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
+import { AhenkAgencyChrome, AhenkFaqList, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { apiUrl } from "@/lib/apiBase";
 
-export default function AhenkAgencyIletisim({ variant = "iletisim" }: { variant?: "iletisim" | "kunye" }) {
+const FAQS = [
+  {
+    q: "Destek talebi nereye düşer?",
+    a: "Form yönetim paneline (İletişim mesajları / Destek talepleri) düşer. Ahenk ekibi en kısa sürede dönüş yapar.",
+  },
+  {
+    q: "Haber sitesi veya web yazılımı için ne yazmalıyım?",
+    a: "İstediğiniz sektörü, alan adını ve teslim süresini belirtin. Haber sitesi yazılımı için /haber-sitesi-yazilimi ve canlı demo için /haberler sayfalarına bakabilirsiniz.",
+  },
+  {
+    q: "Çağrı merkezi başvurusu buradan mı?",
+    a: "Hayır. Kariyer başvuruları /kariyer formundan alınır. Destek sayfası teknik ve kurumsal sorular içindir.",
+  },
+];
+
+export default function AhenkDestek() {
   const site = useAhenkAgencySite();
-  const kunye = variant === "kunye";
-  const pageTitle = kunye ? "İletişim · Künye" : "İletişim";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,9 +43,9 @@ export default function AhenkAgencyIletisim({ variant = "iletisim" }: { variant?
           name,
           email,
           phone,
-          subject,
+          subject: subject.trim() || "Destek talebi",
           message,
-          pageSource: kunye ? "ahenk-agency/iletisim-kunye" : "ahenk-agency/iletisim",
+          pageSource: "ahenk-agency/destek",
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -56,90 +69,53 @@ export default function AhenkAgencyIletisim({ variant = "iletisim" }: { variant?
   }
 
   return (
-    <AhenkAgencyChrome title={pageTitle} description="Ahenk Bilgi Teknolojileri iletişim, künye ve ofis bilgileri.">
+    <AhenkAgencyChrome
+      title="Destek | Ahenk Bilgi Teknolojileri"
+      description="Ahenk BT teknik destek ve kurumsal talep formu. Giriş zorunlu değildir."
+    >
       <AhenkPageHero
         crumb={
           <>
-            <Link href="/">Anasayfa</Link> / {pageTitle}
+            <Link href="/">Anasayfa</Link> / Destek
           </>
         }
-        title={pageTitle}
-        lead={`${site.phone} · ${site.email}`}
+        title="Destek"
+        lead={`${site.phone} · ${site.email} · Giriş gerekmez.`}
         image={site.aboutImage}
       />
       <section className="ahenk-section ahenk-split">
         <form className="ahenk-form" onSubmit={(e) => void submit(e)}>
-          <h2>Bize yazın</h2>
-          <p className="ahenk-lead">Mesajınız yönetim paneline düşer; mevcut iletişim formu altyapısı kullanılır.</p>
-          {done === "ok" ? <div className="ahenk-msg ahenk-msg-ok">Mesajınız iletildi.</div> : null}
+          <h2>Destek talebi</h2>
+          <p className="ahenk-lead">
+            Web yazılımı, haber sitesi, asistan AI veya yayın sorunları için yazın. Mesajınız yönetim paneline düşer.
+          </p>
+          {done === "ok" ? <div className="ahenk-msg ahenk-msg-ok">Talebiniz iletildi.</div> : null}
           {done === "err" ? <div className="ahenk-msg ahenk-msg-err">{errText}</div> : null}
           <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ad soyad" />
           <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-posta" />
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Telefon" />
           <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Konu" />
-          <textarea required value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Mesajınız" />
+          <textarea required value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Sorununuz veya talebiniz" />
           <button type="submit" className="ahenk-btn" disabled={sending}>
             {sending ? "Gönderiliyor…" : "Gönder"}
           </button>
         </form>
         <aside>
-          <h2>İletişim bilgileri</h2>
+          <h2>İletişim</h2>
           <p>
             <strong>GSM:</strong> <a href={`tel:${site.phoneTel}`}>{site.phone}</a>
           </p>
           <p>
-            <strong>WhatsApp:</strong>{" "}
-            <a
-              href={`https://wa.me/905413136245?text=${encodeURIComponent("Merhaba, web yazılımı hakkında bilgi almak istiyorum.")}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {site.phone}
-            </a>
-          </p>
-          <p>
             <strong>E-posta:</strong> <a href={`mailto:${site.email}`}>{site.email}</a>
           </p>
-          {kunye ? (
-            <>
-              <p>
-                <strong>Unvan:</strong> {site.brandName}
-              </p>
-              <p>
-                <strong>Web:</strong>{" "}
-                <a href="https://ahenk.net.tr" rel="noreferrer">
-                  ahenk.net.tr
-                </a>
-              </p>
-            </>
-          ) : null}
-          <p className="ahenk-iban">
-            <strong>IBAN</strong>
-            <br />
-            {site.ibanBank} · {site.ibanHolder}
-            <br />
-            <span className="ahenk-iban-num">{site.iban}</span>
-          </p>
           <p>
-            {site.pricePeriodNote}
-            <br />
-            {site.aiDeliveryLead}
+            <Link href="/iletisim">İletişim</Link>
+            {" · "}
+            <Link href="/iletisim-kunye">Künye</Link>
+            {" · "}
+            <Link href="/haberler">AHENK HABER demosu</Link>
           </p>
-          <p>
-            {site.hoursWeekday}
-            <br />
-            {site.hoursSunday}
-          </p>
-          <div className="ahenk-offices" style={{ gridTemplateColumns: "1fr", marginTop: 18 }}>
-            {site.offices.map((o) => (
-              <article key={o.id} className="ahenk-office">
-                <h3>
-                  {o.flag} {o.country}
-                </h3>
-                <p>{o.address}</p>
-              </article>
-            ))}
-          </div>
+          <AhenkFaqList faqs={FAQS} />
         </aside>
       </section>
     </AhenkAgencyChrome>

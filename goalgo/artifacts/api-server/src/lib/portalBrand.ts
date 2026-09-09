@@ -17,10 +17,38 @@ export const PORTAL_ALIAS_HOSTS = [
   "getirsepeti.com.tr",
 ] as const;
 
-export const PORTAL_SITE_NAME = "Türk Ekosistemi";
-export const PORTAL_BRAND_SHORT = "Türk Ekosistemi";
-export const PWA_STORE_NAME = "Türk Ekosistemi";
+export const PORTAL_SITE_NAME = "Ahenk Bilgi Teknolojileri";
+export const PORTAL_BRAND_SHORT = "Ahenk Bilgi Teknolojileri";
+export const PWA_STORE_NAME = "Ahenk Bilgi Teknolojileri";
 export const PWA_ICON_PATH = "/icon-192.svg";
+export const PORTAL_DEFAULT_LOGO_TEXT_1 = "Ahenk";
+export const PORTAL_DEFAULT_LOGO_TEXT_2 = "BT";
+export const PORTAL_DEFAULT_TAGLINE = "Web yazılımı, haber sitesi ve ajans — Ahenk Bilgi Teknolojileri.";
+export const PORTAL_DEFAULT_COPYRIGHT_TEXT = "© Ahenk Bilgi Teknolojileri. Tüm hakları saklıdır.";
+
+const LEGACY_BRAND_RE =
+  /türk\s*ekosistemi|turk\s*ekosistemi|yekpare(?:\.net)?|türknet|turknet|turk\.eco|goalgo/gi;
+
+export function isLegacyPortalSiteName(name: string | null | undefined): boolean {
+  const t = String(name ?? "").trim();
+  if (!t) return true;
+  LEGACY_BRAND_RE.lastIndex = 0;
+  return LEGACY_BRAND_RE.test(t);
+}
+
+export function normalizePortalDisplayName(name: string | null | undefined): string {
+  const t = String(name ?? "").trim();
+  if (!t || isLegacyPortalSiteName(t)) return PORTAL_BRAND_SHORT;
+  return t.replace(/\s{2,}/g, " ").trim() || PORTAL_BRAND_SHORT;
+}
+
+export function isLegacyPortalLogoPair(part1: string | null | undefined, part2: string | null | undefined): boolean {
+  const a = String(part1 ?? "").trim();
+  const b = String(part2 ?? "").trim();
+  if (!a) return true;
+  const joined = `${a} ${b}`.trim().toLowerCase();
+  return joined === "yek pare" || joined === "yekpare" || a.toLowerCase() === "yek" || /türk|turk|yekpare|goalgo/i.test(a);
+}
 
 /** Virgülle: getirsepeti.com.tr,goalgo.org,www.goalgo.org */
 export function parsePortalExtraHosts(): string[] {

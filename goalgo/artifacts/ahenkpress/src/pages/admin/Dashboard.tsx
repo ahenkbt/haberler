@@ -101,9 +101,9 @@ export default function Dashboard() {
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-bold text-gray-800 mb-1">Hızlı arama</h2>
           <p className="text-xs text-gray-500 mb-3">
-            Gemini API, Yekpare AI, haberler, turizm, mağaza, sipariş, kullanıcılar, SEO ve diğer yönetim sayfalarına doğrudan gidin.
+            Gemini API, AHENK HABER, kariyer, ayarlar, SEO ve diğer yönetim sayfalarına doğrudan gidin.
           </p>
-          <AdminGlobalSearch autoFocus placeholder="Örn. Gemini API, haberler, turizm, sipariş, ayarlar…" />
+          <AdminGlobalSearch autoFocus placeholder="Örn. Gemini API, haberler, kariyer, ayarlar…" />
         </div>
 
         {showNewsBlock ? (

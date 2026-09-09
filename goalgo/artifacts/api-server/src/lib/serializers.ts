@@ -32,6 +32,16 @@ import {
   sanitizePortalBrandFaviconUrl,
   sanitizePortalBrandLogoUrl,
 } from "./portal-brand-assets.js";
+import {
+  isLegacyPortalLogoPair,
+  isLegacyPortalSiteName,
+  PORTAL_DEFAULT_COPYRIGHT_TEXT,
+  PORTAL_DEFAULT_LOGO_TEXT_1,
+  PORTAL_DEFAULT_LOGO_TEXT_2,
+  PORTAL_DEFAULT_TAGLINE,
+  PORTAL_SITE_NAME,
+} from "./portalBrand.js";
+import { PORTAL_DEFAULT_FOOTER_TEXT } from "./portal-platform-policy.js";
 
 export type NewsContext = {
   categories: Map<number, Category>;
@@ -303,19 +313,39 @@ function maskTokenLast4(value: string | null | undefined): string | null {
 
 export function serializeSettings(row: SiteSettingsRow) {
   const extraFooter = row as SiteSettingsRow & { footerInfoLinksJson?: string | null };
+  const siteName = isLegacyPortalSiteName(row.siteName) ? PORTAL_SITE_NAME : row.siteName;
+  const taglineRaw = String(row.tagline ?? "");
+  const tagline =
+    isLegacyPortalSiteName(taglineRaw) || /keşfet.*sipariş|şehir.*yekpare/i.test(taglineRaw)
+      ? PORTAL_DEFAULT_TAGLINE
+      : row.tagline;
+  const logoPair = isLegacyPortalLogoPair(row.logoText1, row.logoText2)
+    ? { logoText1: PORTAL_DEFAULT_LOGO_TEXT_1, logoText2: PORTAL_DEFAULT_LOGO_TEXT_2 }
+    : { logoText1: row.logoText1, logoText2: row.logoText2 };
+  const footerRaw = String(row.footerText ?? "");
+  const footerText =
+    !footerRaw.trim() ||
+    isLegacyPortalSiteName(footerRaw) ||
+    /pazaryeri|firma rehberi|newsmap/i.test(footerRaw)
+      ? PORTAL_DEFAULT_FOOTER_TEXT
+      : row.footerText;
+  const copyrightText =
+    !String(row.copyrightText ?? "").trim() || isLegacyPortalSiteName(row.copyrightText)
+      ? PORTAL_DEFAULT_COPYRIGHT_TEXT
+      : row.copyrightText;
   return {
-    siteName: row.siteName,
-    tagline: row.tagline,
-    logoText1: row.logoText1,
-    logoText2: row.logoText2,
+    siteName,
+    tagline,
+    logoText1: logoPair.logoText1,
+    logoText2: logoPair.logoText2,
     primaryColor: row.primaryColor,
     secondaryColor: row.secondaryColor,
     navbarBg: row.navbarBg,
     navbarText: row.navbarText,
     breakingBg: row.breakingBg,
     financeBg: row.financeBg,
-    footerText: row.footerText,
-    copyrightText: row.copyrightText,
+    footerText,
+    copyrightText,
     address: row.address,
     phone: row.phone,
     email: row.email,

@@ -26,6 +26,15 @@ import {
 } from "../lib/seo-verification";
 import { isLegacyPortalBrandAssetUrl } from "../lib/portal-brand-assets";
 import {
+  isLegacyPortalLogoPair,
+  isLegacyPortalSiteName,
+  PORTAL_DEFAULT_COPYRIGHT_TEXT,
+  PORTAL_DEFAULT_LOGO_TEXT_1,
+  PORTAL_DEFAULT_LOGO_TEXT_2,
+  PORTAL_DEFAULT_TAGLINE,
+  PORTAL_SITE_NAME,
+} from "../lib/portalBrand.js";
+import {
   PORTAL_DEFAULT_FOOTER_NAV_JSON,
   PORTAL_DEFAULT_FOOTER_TEXT,
   PORTAL_DEFAULT_HOME_SECTIONS_JSON,
@@ -92,7 +101,7 @@ async function ensureExtraSettingsColumns() {
 
 let ensuredPortalBrandTrim = false;
 
-/** turk.eco markası + seyahat/sarı sayfalar/keşfet kapalı. */
+/** ahenk.net.tr markası + seyahat/sarı sayfalar/keşfet kapalı. */
 async function ensurePortalBrandAndModuleTrim() {
   if (ensuredPortalBrandTrim) return;
   ensuredPortalBrandTrim = true;
@@ -101,6 +110,10 @@ async function ensurePortalBrandAndModuleTrim() {
       .select({
         id: siteSettingsTable.id,
         siteName: siteSettingsTable.siteName,
+        tagline: siteSettingsTable.tagline,
+        logoText1: siteSettingsTable.logoText1,
+        logoText2: siteSettingsTable.logoText2,
+        copyrightText: siteSettingsTable.copyrightText,
         logoUrl: siteSettingsTable.logoUrl,
         faviconUrl: siteSettingsTable.faviconUrl,
         modulesEnabledJson: siteSettingsTable.modulesEnabledJson,
@@ -108,27 +121,42 @@ async function ensurePortalBrandAndModuleTrim() {
         footerNavJson: siteSettingsTable.footerNavJson,
         homeSectionsJson: siteSettingsTable.homeSectionsJson,
         footerText: siteSettingsTable.footerText,
+        phone: siteSettingsTable.phone,
+        email: siteSettingsTable.email,
       })
       .from(siteSettingsTable)
       .limit(1);
     if (!row) return;
-    const name = String(row.siteName ?? "").trim().toLowerCase();
     const patch: Partial<typeof siteSettingsTable.$inferInsert> = {};
-    if (!name || name === "yekpare" || name === "yekpare.net" || name.includes("yekpare")) {
-      patch.siteName = "Türk Ekosistemi";
+    if (isLegacyPortalSiteName(row.siteName)) {
+      patch.siteName = PORTAL_SITE_NAME;
+    }
+    if (isLegacyPortalLogoPair(row.logoText1, row.logoText2)) {
+      patch.logoText1 = PORTAL_DEFAULT_LOGO_TEXT_1;
+      patch.logoText2 = PORTAL_DEFAULT_LOGO_TEXT_2;
+    }
+    if (isLegacyPortalSiteName(row.tagline) || /keşfet.*sipariş|şehir.*yekpare/i.test(String(row.tagline ?? ""))) {
+      patch.tagline = PORTAL_DEFAULT_TAGLINE;
     }
     patch.modulesEnabledJson = PORTAL_DEFAULT_MODULES_JSON;
     patch.mainNavJson = PORTAL_DEFAULT_MAIN_NAV_JSON;
     patch.footerNavJson = PORTAL_DEFAULT_FOOTER_NAV_JSON;
     patch.homeSectionsJson = PORTAL_DEFAULT_HOME_SECTIONS_JSON;
-    if (!String(row.footerText ?? "").trim() || /yekpare|pazaryeri|firma rehberi/i.test(String(row.footerText))) {
+    if (
+      !String(row.footerText ?? "").trim() ||
+      isLegacyPortalSiteName(row.footerText) ||
+      /pazaryeri|firma rehberi|newsmap/i.test(String(row.footerText))
+    ) {
       patch.footerText = PORTAL_DEFAULT_FOOTER_TEXT;
     }
+    if (!String(row.copyrightText ?? "").trim() || isLegacyPortalSiteName(row.copyrightText)) {
+      patch.copyrightText = PORTAL_DEFAULT_COPYRIGHT_TEXT;
+    }
     if (isLegacyPortalBrandAssetUrl(row.logoUrl)) {
-      patch.logoUrl = null;
+      patch.logoUrl = "/ahenk-brand/ahenk-logo.png";
     }
     if (isLegacyPortalBrandAssetUrl(row.faviconUrl)) {
-      patch.faviconUrl = null;
+      patch.faviconUrl = "/ahenk-brand/ahenk-mark.png";
     }
     if (Object.keys(patch).length > 0) {
       await db.update(siteSettingsTable).set(patch).where(eq(siteSettingsTable.id, row.id));
@@ -145,7 +173,7 @@ async function getOrCreate() {
   if (rows[0]) return rows[0];
   const [row] = await db
     .insert(siteSettingsTable)
-    .values({ siteName: "Türk Ekosistemi" })
+    .values({ siteName: PORTAL_SITE_NAME })
     .returning();
   return row;
 }
@@ -189,7 +217,7 @@ router.get("/public/portal-seo", async (req, res): Promise<void> => {
   const host = normalizeHostKey(fwd || String(req.get("host") ?? ""));
   const seoVerification = resolveSeoVerificationForHost(store, host);
   res.json({
-    siteName: host === "ahenk.net.tr" ? "Ahenk Bilgi Teknolojileri" : row.siteName,
+    siteName: host === "ahenk.net.tr" || host === "www.ahenk.net.tr" ? PORTAL_SITE_NAME : row.siteName,
     host: host || null,
     seoVerification,
   });

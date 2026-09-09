@@ -1,9 +1,10 @@
 import { Link } from "wouter";
 
 import { usePortalBrandVisuals } from "@/hooks/usePortalBrandVisuals";
-import { PORTAL_DEFAULT_LOGO_PATH } from "@/lib/portalBrand";
+import { PORTAL_DEFAULT_LOGO_PATH, PORTAL_SEARCH_TAGLINE } from "@/lib/portalBrand";
+import { portalNavBrandText } from "@/lib/portalNavBrand";
 
-/** Varsayılan turk.eco logosu (DB boşken). */
+/** Varsayılan portal logosu (DB boşken). */
 export const YEKPARE_SUPER_APP_LOGO_SRC = PORTAL_DEFAULT_LOGO_PATH;
 
 export type SearchEngineHeaderBrandLogoProps = {
@@ -17,7 +18,8 @@ export function SearchEngineHeaderBrandLogo({
   className = "",
   compact = false,
 }: SearchEngineHeaderBrandLogoProps) {
-  const { logoSrc } = usePortalBrandVisuals();
+  const { logoSrc, settings } = usePortalBrandVisuals();
+  const brand = portalNavBrandText(settings);
   return (
     <Link
       href="/"
@@ -28,11 +30,11 @@ export function SearchEngineHeaderBrandLogo({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="turk.eco ana sayfa"
+      aria-label={`${brand} ana sayfa`}
     >
       <img
         src={logoSrc}
-        alt="turk.eco — haber video portalı"
+        alt={`${brand} — ${PORTAL_SEARCH_TAGLINE}`}
         className="seh-header-brand-logo-img"
         width={compact ? 44 : 96}
         height={compact ? 44 : 96}
@@ -49,7 +51,8 @@ export type SearchEngineHeroBrandLogoProps = {
 
 /** Anasayfa hero logosu — site ayarları veya varsayılan logo1. */
 export function SearchEngineHeroBrandLogo({ className = "" }: SearchEngineHeroBrandLogoProps) {
-  const { logoSrc } = usePortalBrandVisuals();
+  const { logoSrc, settings } = usePortalBrandVisuals();
+  const brand = portalNavBrandText(settings);
   return (
     <Link
       href="/"
@@ -62,11 +65,11 @@ export function SearchEngineHeroBrandLogo({ className = "" }: SearchEngineHeroBr
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="turk.eco ana sayfa"
+      aria-label={`${brand} ana sayfa`}
     >
       <img
         src={logoSrc}
-        alt="turk.eco — haber video portalı"
+        alt={`${brand} — ${PORTAL_SEARCH_TAGLINE}`}
         className="yekpare-brand-logo-img seh-hero-brand-logo-img seh-hero-brand-logo-img--home"
         width={220}
         height={220}
