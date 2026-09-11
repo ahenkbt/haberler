@@ -14,12 +14,14 @@ import { getHmHiddenCategoryIds, getHmHiddenCategorySlugs } from "./hm-public-la
 import { filterPortalAuthorPeerIds } from "./hm-sync-source.js";
 import { hasKoseAuthorId, isKoseArticle } from "./kose-article.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "./hm-global-news-category.js";
-import { enrichSerializedNewsListImages, isSiteLocalNewsRow } from "./news-list-image-enrich.js";
+import { enrichSerializedNewsListImages, isSiteLocalNewsRow, withTimeoutOrFallback } from "./news-list-image-enrich.js";
 import { applyNewsSiteOverrides } from "./hybrid-news-merge.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isHmCorporateLayout, parseHmLayoutJson, resolveHmCorporateAuthorsEnabledFromLayout } from "./hm-editor-categories.js";
 import { centralNewsRowBelongsToCorporateSite } from "./hm-corporate-news-policy.js";
 import { shouldHideAuthorOnAnkaraHmSite } from "./hm-vatanhaber-author-block.js";
+
+export const NEWS_PAGE_BUNDLE_BUDGET_MS = 5_000;
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 type SerializedArticle = ReturnType<typeof serializeNews> | ReturnType<typeof serializeHmMakaleAsNews>;
@@ -204,12 +206,17 @@ export async function resolveNewsArticleBySlug(
   if (!row && !mak) return null;
 
   if (mak) {
-    await dualWriteUpdate(hmMakalelerTable, { views: mak.views + 1 }, eq(hmMakalelerTable.id, mak.id));
+    // Görüntü sayacı yanıtı bloklamasın — Hostinger dual-write 30sn+ TTFB olabiliyor.
+    void dualWriteUpdate(hmMakalelerTable, { views: mak.views + 1 }, eq(hmMakalelerTable.id, mak.id)).catch(
+      (err) => console.error("[news-page-bundle/views-makale]", err instanceof Error ? err.message : err),
+    );
     return serializeHmMakaleAsNews({ ...mak, views: mak.views + 1 }, ctx);
   }
 
   if (siteScoped && !(await newsRowBelongsToSite(row!, siteId!, readDb, isCorporate))) return null;
-  await dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id));
+  void dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id)).catch((err) =>
+    console.error("[news-page-bundle/views]", err instanceof Error ? err.message : err),
+  );
   return serializeNews({ ...row!, views: row!.views + 1 }, ctx);
 }
 
@@ -442,33 +449,70 @@ async function enrichDetailBundleArticles(
   return merged;
 }
 
+const emptySidebar = (): NewsPageBundle["sidebar"] => ({ authors: [], popular: [] });
+
+export function wrapArticleAsNewsPageBundle(article: SerializedArticle | null): NewsPageBundle {
+  return { article, related: [], kose: null, sidebar: emptySidebar() };
+}
+
+async function settleBundlePart<T>(label: string, promise: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await withTimeoutOrFallback(promise, 2_500, fallback);
+  } catch (err) {
+    console.error(`[news-page-bundle] ${label}`, err instanceof Error ? err.message.slice(0, 180) : err);
+    return fallback;
+  }
+}
+
 export async function buildNewsPageBundle(slug: string, siteId: number | null): Promise<NewsPageBundle> {
   const ctx = await loadNewsContext();
   let article = await resolveNewsArticleBySlug(slug, siteId);
-  let related = article ? await loadRelatedArticles(article, siteId, ctx) : [];
+  if (!article) return wrapArticleAsNewsPageBundle(null);
 
-  let kose: NewsPageBundle["kose"] = null;
-  const authorsPublicEnabled = await resolveHmSiteAuthorsPublicEnabled(siteId);
-  if (authorsPublicEnabled && article && isKoseArticle(article) && hasKoseAuthorId(article) && article.authorId) {
-    const [author, moreArticles, otherAuthors] = await Promise.all([
-      loadKoseAuthor(article.authorId, siteId),
-      loadKoseMoreArticles(article.authorId, siteId, article.slug, ctx),
-      loadKoseOtherAuthors(article.authorId, siteId),
-    ]);
-    kose = { author, moreArticles: await enrichDetailBundleArticles(moreArticles, siteId), otherAuthors };
-  }
-
-  const [sidebarAuthors, sidebarPopular] = await Promise.all([
-    loadSidebarAuthors(siteId),
-    loadSidebarPopular(siteId, ctx),
+  const [relatedRaw, authorsPublicEnabled, sidebarAuthors, sidebarPopular] = await Promise.all([
+    settleBundlePart("related", loadRelatedArticles(article, siteId, ctx), [] as SerializedArticle[]),
+    settleBundlePart("authors-enabled", resolveHmSiteAuthorsPublicEnabled(siteId), true),
+    settleBundlePart("sidebar-authors", loadSidebarAuthors(siteId), [] as Awaited<ReturnType<typeof loadSidebarAuthors>>),
+    settleBundlePart("sidebar-popular", loadSidebarPopular(siteId, ctx), [] as SerializedArticle[]),
   ]);
 
+  let kose: NewsPageBundle["kose"] = null;
+  if (authorsPublicEnabled && isKoseArticle(article) && hasKoseAuthorId(article) && article.authorId) {
+    const [author, moreArticles, otherAuthors] = await Promise.all([
+      settleBundlePart("kose-author", loadKoseAuthor(article.authorId, siteId), null),
+      settleBundlePart(
+        "kose-more",
+        loadKoseMoreArticles(article.authorId, siteId, article.slug, ctx),
+        [] as SerializedArticle[],
+      ),
+      settleBundlePart("kose-others", loadKoseOtherAuthors(article.authorId, siteId), []),
+    ]);
+    const moreEnriched = await settleBundlePart(
+      "kose-more-images",
+      enrichDetailBundleArticles(moreArticles, siteId),
+      moreArticles,
+    );
+    kose = { author, moreArticles: moreEnriched, otherAuthors };
+  }
+
   if (article) {
-    const [enrichedArticle] = await enrichDetailBundleArticles([article], siteId);
+    const [enrichedArticle] = await settleBundlePart(
+      "article-images",
+      enrichDetailBundleArticles([article], siteId),
+      [article],
+    );
     if (enrichedArticle) article = enrichedArticle;
   }
-  related = await enrichDetailBundleArticles(related, siteId);
-  const popular = await enrichDetailBundleArticles(sidebarPopular, siteId);
+  const related = await settleBundlePart(
+    "related-images",
+    enrichDetailBundleArticles(relatedRaw, siteId),
+    relatedRaw,
+  );
+  const popular = await settleBundlePart(
+    "popular-images",
+    enrichDetailBundleArticles(sidebarPopular, siteId),
+    sidebarPopular,
+  );
 
   return {
     article,
@@ -476,6 +520,18 @@ export async function buildNewsPageBundle(slug: string, siteId: number | null): 
     kose,
     sidebar: { authors: sidebarAuthors, popular },
   };
+}
+
+/** İlgili/sidebar takılırsa bile haberi 5sn içinde döndür. */
+export async function buildNewsPageBundleFast(slug: string, siteId: number | null): Promise<NewsPageBundle> {
+  const built = await withTimeoutOrFallback(
+    buildNewsPageBundle(slug, siteId).then((bundle) => ({ ok: true as const, bundle })),
+    NEWS_PAGE_BUNDLE_BUDGET_MS,
+    { ok: false as const, bundle: null },
+  );
+  if (built.ok && built.bundle) return built.bundle;
+  const article = await resolveNewsArticleBySlug(slug, siteId);
+  return wrapArticleAsNewsPageBundle(article);
 }
 
 const PAGE_BUNDLE_TTL_MS = 45_000;

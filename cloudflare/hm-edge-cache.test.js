@@ -35,6 +35,17 @@ describe("hm-edge-cache", () => {
   it("caches public HM news APIs and skips fresh/page-content", () => {
     assert.equal(isHmEdgeCacheablePath("/api/hm/home-bundle", "slug=su"), true);
     assert.equal(isHmEdgeCacheablePath("/api/news/hybrid", "siteId=2&dbFirst=1"), true);
+    assert.equal(
+      isHmEdgeCacheablePath(
+        "/api/news/page-bundle/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+        "siteId=3",
+      ),
+      true,
+    );
+    assert.equal(
+      isHmEdgeCacheablePath("/api/news/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", ""),
+      true,
+    );
     assert.equal(isHmEdgeCacheablePath("/api/hm/meta/by-slug/su", "domain=suhaber.net"), true);
     assert.equal(isHmEdgeCacheablePath("/api/hm/home-bundle", "fresh=1"), false);
     assert.equal(isHmEdgeCacheablePath("/api/hm/meta/by-slug/su", "includePageContent=1"), false);

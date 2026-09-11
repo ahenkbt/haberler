@@ -17,7 +17,7 @@ import {
   UpdateNewsBody,
 } from "@workspace/api-zod";
 import { loadNewsContext, slugify } from "../lib/news-context";
-import { buildNewsPageBundle, invalidateNewsPageBundleCache, readNewsPageBundleCache, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
+import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, readNewsPageBundleCache, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import {
   serializeHmMakaleAsNews,
   serializeHmMakaleListItem,
@@ -971,7 +971,20 @@ router.get("/news/page-bundle/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  const bundle = await buildNewsPageBundle(String(raw ?? ""), siteScoped ? siteId : null);
+  let bundle: Awaited<ReturnType<typeof buildNewsPageBundleFast>>;
+  try {
+    bundle = await buildNewsPageBundleFast(String(raw ?? ""), siteScoped ? siteId : null);
+  } catch (err) {
+    console.error("[news/page-bundle]", err instanceof Error ? err.message : err);
+    try {
+      const article = await resolveNewsArticleBySlug(String(raw ?? ""), siteScoped ? siteId : null);
+      bundle = wrapArticleAsNewsPageBundle(article);
+    } catch (inner) {
+      console.error("[news/page-bundle/fallback]", inner instanceof Error ? inner.message : inner);
+      res.status(500).json({ ok: false, error: "Sunucu hatası" });
+      return;
+    }
+  }
   if (!bundle.article) {
     const siteSlugQ = req.query.siteSlug;
     const siteSlug = String(siteSlugQ ?? "").trim() || null;
@@ -1115,11 +1128,11 @@ router.get("/news/:id", async (req, res): Promise<void> => {
   }
 
   if (mak) {
-    await dualWriteUpdate(
+    void dualWriteUpdate(
       hmMakalelerTable,
       { views: mak.views + 1 },
       eq(hmMakalelerTable.id, mak.id),
-    );
+    ).catch((err) => console.error("[news/:id/views-makale]", err instanceof Error ? err.message : err));
     const serialized = serializeHmMakaleAsNews({ ...mak, views: mak.views + 1 }, ctx);
     res.json(serialized);
     return;
@@ -1129,7 +1142,9 @@ router.get("/news/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "News not found" });
     return;
   }
-  await dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id));
+  void dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id)).catch((err) =>
+    console.error("[news/:id/views]", err instanceof Error ? err.message : err),
+  );
   const serialized = serializeNews({ ...row!, views: row!.views + 1 }, ctx);
   const isSiteLocal = row!.siteId != null && row!.siteId > 0;
   if (siteScoped || isSiteLocal) {

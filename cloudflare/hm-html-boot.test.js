@@ -9,6 +9,7 @@ import {
   injectHmHtmlBoot,
   buildHmBootPaintHtml,
   listKnownHmEditorSites,
+  parseHmNewsArticlePath,
   raceHmHtmlBoot,
   withBudget,
   buildGeoRobotsTxt,
@@ -48,7 +49,20 @@ describe("hm-html-boot", () => {
   it("reads /tr/{slug} and domain fallback for HTML boot", () => {
     assert.equal(hmHomeSlugFromPath("/tr/vatanhaber", "vatanhaber.net"), "vatanhaber");
     assert.equal(hmHomeSlugFromPath("/", "ankarahabergundemi.com"), "ankarahabergundemi");
+    assert.equal(hmHomeSlugFromPath("/tr/asg", "ankarasehirgazetesi.com"), "asg");
+    assert.equal(
+      hmHomeSlugFromPath("/tr/asg/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),
+      "asg",
+    );
+    assert.equal(
+      hmHomeSlugFromPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),
+      "asg",
+    );
     assert.equal(isHmPublicHomeHtmlPath("/tr/asg", "ankarasehirgazetesi.com"), true);
+    assert.equal(
+      isHmPublicHomeHtmlPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),
+      false,
+    );
   });
 
   it("injects bundle JSON after charset so the early IIFE can read it", () => {
@@ -67,6 +81,32 @@ describe("hm-html-boot", () => {
     assert.match(out, /id="hm-boot-paint"/);
     assert.match(out, /Ankara Haber Gündemi/);
     assert.ok(out.indexOf("hm-boot-paint") < out.indexOf('id="root"'));
+  });
+
+  it("parses haber paths and injects article JSON without homepage paint", () => {
+    assert.deepEqual(
+      parseHmNewsArticlePath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti"),
+      { kind: "haber", slug: "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti" },
+    );
+    assert.equal(
+      parseHmNewsArticlePath("/tr/asg/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti")?.slug,
+      "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+    );
+    const html = '<html><head><meta charset="UTF-8" /></head><body><div id="root"></div></body></html>';
+    const out = injectHmHtmlBoot(html, {
+      siteId: 3,
+      slug: "asg",
+      skipPaint: true,
+      articleSlug: "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+      articleBundle: {
+        article: { title: "Ankabir’den Vali Canpolat’a Hayırlı Olsun Ziyareti" },
+        related: [],
+        kose: null,
+        sidebar: { authors: [], popular: [] },
+      },
+    });
+    assert.match(out, /__YEKPARE_HM_ARTICLE_BUNDLE__/);
+    assert.equal(out.includes("hm-boot-paint"), false);
   });
 
   it("lists unique known editor hosts for keepalive warm", () => {

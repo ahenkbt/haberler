@@ -27,11 +27,18 @@ import {
   HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
   shouldFillHybridSiteRssAtEdge,
 } from "./hm-hybrid-rss-edge.js";
+import {
+  isNewsPageBundlePath,
+  newsPageBundleSlug,
+  wrapArticleAsPageBundle,
+} from "./hm-news-article-edge.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
   getHmEdgeCache,
   isHmEdgeCacheableRequest,
+  isHmNewsArticleCachePath,
   putHmEdgeCache,
+  matchHmEdgeCache,
   resolveHmEdgeCache,
   warmKnownHmNewsSites,
 } from "./hm-edge-cache.js";
@@ -51,6 +58,7 @@ import {
   isAhenkAgencyHost,
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
+  parseHmNewsArticlePath,
   isSharePreviewUserAgent,
   listKnownHmEditorSites,
   raceHmHtmlBoot,
@@ -804,6 +812,7 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     out.set("x-yekpare-hm-og-rewrite", hmHostSlug);
   }
   const homeHtml = incoming && isHmPublicHomeHtmlPath(incoming.pathname, incoming.hostname);
+  const articlePath = incoming ? parseHmNewsArticlePath(incoming.pathname) : null;
   if (homeHtml && env && incoming) {
     const slug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname);
     if (slug) {
@@ -837,6 +846,70 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       }
     } catch (err) {
       console.error("[hm-html-boot]", String(err?.message || err).slice(0, 180));
+    }
+  } else if (articlePath && hmHostSlug && env && incoming) {
+    const articleSlug = articlePath.slug;
+    out.append("Link", `</api/news/${encodeURIComponent(articleSlug)}>; rel=preload; as=fetch; crossorigin`);
+    out.append(
+      "Link",
+      `</api/news/page-bundle/${encodeURIComponent(articleSlug)}>; rel=preload; as=fetch; crossorigin`,
+    );
+    try {
+      const origin = upstreamOrigin(env, incoming);
+      const boot = await withBudget(
+        raceHmHtmlBoot({
+          fetchApi,
+          origin,
+          env,
+          incoming,
+          cache: getHmEdgeCache(),
+          waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
+        }),
+      );
+      const edgeCache = getHmEdgeCache();
+      let articleBundle = null;
+      const siteId = Number(boot?.siteId || 0);
+      const candidates = [];
+      if (Number.isFinite(siteId) && siteId > 0) {
+        candidates.push(
+          `${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}?siteId=${siteId}`,
+        );
+        candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}?siteId=${siteId}`);
+      }
+      candidates.push(`${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}`);
+      candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}`);
+      for (const url of candidates) {
+        const hit = await matchHmEdgeCache(edgeCache, url);
+        if (!hit?.ok) continue;
+        const json = await hit.clone().json().catch(() => null);
+        if (json?.article && String(json.article.title || "").trim()) {
+          articleBundle = json;
+          break;
+        }
+        if (json && String(json.title || "").trim()) {
+          articleBundle = wrapArticleAsPageBundle(json);
+          break;
+        }
+      }
+      if (boot || articleBundle) {
+        html = injectHmHtmlBoot(html, {
+          ...(boot || {
+            slug: hmHostSlug,
+            host: incoming.hostname,
+            siteId: Number.isFinite(siteId) && siteId > 0 ? siteId : 0,
+            savedAt: Date.now(),
+          }),
+          articleSlug,
+          articleBundle,
+          skipPaint: true,
+        });
+        out.set(
+          "x-yekpare-hm-html-boot",
+          articleBundle ? "article-cache" : boot?.fromCache ? "article-meta-cache" : "article-meta",
+        );
+      }
+    } catch (err) {
+      console.error("[hm-html-boot/article]", String(err?.message || err).slice(0, 180));
     }
   }
   return new Response(html, {
@@ -1048,7 +1121,8 @@ function isCacheableHmNewsApi(pathname) {
     p === "/api/news/featured" ||
     p === "/api/news/breaking" ||
     // /api/categories ASLA kenar cache'lenmez — admin silme sonrası bayat liste dönmesin.
-    p === "/api/authors"
+    p === "/api/authors" ||
+    isHmNewsArticleCachePath(p)
   );
 }
 
@@ -1179,6 +1253,30 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
 
 async function fetchUpstreamWithRetry(env, url, init, cfOpts, retries = 2) {
   return fetchApiWithRetry(env, url, { ...init, cf: cfOpts }, retries);
+}
+
+async function maybeRecoverNewsPageBundle(env, origin, init, incoming, upstream) {
+  if (upstream?.ok) return null;
+  if (!isNewsPageBundlePath(incoming.pathname)) return null;
+  const slug = newsPageBundleSlug(incoming.pathname);
+  if (!slug) return null;
+  try {
+    const articleUrl = `${origin}/api/news/${encodeURIComponent(slug)}${incoming.search || ""}`;
+    const articleRes = await fetchApi(env, articleUrl, { ...init, method: "GET" });
+    if (!articleRes?.ok) return null;
+    const article = await articleRes.json().catch(() => null);
+    if (!article || typeof article !== "object" || !String(article.title || "").trim()) return null;
+    const headers = new Headers({
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "public, max-age=30, s-maxage=90, stale-while-revalidate=300",
+      "x-yekpare-frontend": FRONTEND_TAG,
+      "x-yekpare-upstream": origin,
+      "x-yekpare-page-bundle-recover": "article",
+    });
+    return new Response(JSON.stringify(wrapArticleAsPageBundle(article)), { status: 200, headers });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -2611,11 +2709,13 @@ export default {
     try {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
+      const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
       const upstream = await fetchUpstreamWithRetry(
         env,
         target.toString(),
         proxyOpts,
         cfOpts,
+        pageBundleRetries,
       );
       if (staleEdgeFallback && (!upstream || !upstream.ok || upstream.status >= 500)) {
         const headers = new Headers(staleEdgeFallback.headers);
@@ -2625,6 +2725,8 @@ export default {
           headers,
         });
       }
+      const recoveredBundle = await maybeRecoverNewsPageBundle(env, origin, proxyOpts, incoming, upstream);
+      if (recoveredBundle) return rememberPublicApi(recoveredBundle);
       const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
         waitUntil,
       });

@@ -93,16 +93,38 @@ export function shouldInstantHmRootRedirect(method, pathname, hostname) {
   return Boolean(hmDomainSlugFallback(hostname));
 }
 
+/** /haber/{slug} ve /tr/{site}/haber/{slug} — HTML boot + preload. */
+export function parseHmNewsArticlePath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  const nested = p.match(/^\/(?:tr|hm)\/[^/]+\/(haber|makale)\/([^/]+)$/i);
+  if (nested?.[2]) {
+    try {
+      return { kind: String(nested[1] || "haber").toLowerCase(), slug: decodeURIComponent(nested[2]) };
+    } catch {
+      return { kind: String(nested[1] || "haber").toLowerCase(), slug: nested[2] };
+    }
+  }
+  const root = p.match(/^\/(haber|makale)\/([^/]+)$/i);
+  if (root?.[2]) {
+    try {
+      return { kind: String(root[1] || "haber").toLowerCase(), slug: decodeURIComponent(root[2]) };
+    } catch {
+      return { kind: String(root[1] || "haber").toLowerCase(), slug: root[2] };
+    }
+  }
+  return null;
+}
+
 export function hmHomeSlugFromPath(pathname, hostname) {
   const path = String(pathname || "").replace(/\/+$/, "") || "/";
-  const m = path.match(/^\/tr\/([^/]+)$/i) || path.match(/^\/hm\/([^/]+)$/i);
+  const m = path.match(/^\/tr\/([^/]+)/i) || path.match(/^\/hm\/([^/]+)/i);
   if (m?.[1]) {
     return String(m[1])
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "");
   }
-  if (path === "/") return hmDomainSlugFallback(hostname);
+  if (path === "/" || parseHmNewsArticlePath(path)) return hmDomainSlugFallback(hostname);
   return "";
 }
 
@@ -266,6 +288,16 @@ export function injectHmHtmlBoot(html, boot) {
       })};`,
     );
   }
+  if (boot.articleBundle && boot.articleSlug) {
+    const articleJson = safeJsonScript({
+      slug: boot.articleSlug,
+      savedAt: boot.savedAt || Date.now(),
+      bundle: boot.articleBundle,
+    });
+    if (articleJson.length <= HM_HTML_BOOT_MAX_JSON_CHARS) {
+      parts.push(`window.__YEKPARE_HM_ARTICLE_BUNDLE__=${articleJson};`);
+    }
+  }
   let out = html;
   if (parts.length > 0) {
     const tag = `<script>${parts.join("")}</script>`;
@@ -279,7 +311,7 @@ export function injectHmHtmlBoot(html, boot) {
       out = `${tag}${out}`;
     }
   }
-  const paint = buildHmBootPaintHtml(boot);
+  const paint = boot.skipPaint ? "" : buildHmBootPaintHtml(boot);
   if (paint) {
     if (out.includes('<div id="root"></div>')) {
       out = out.replace('<div id="root"></div>', `${paint}<div id="root"></div>`);

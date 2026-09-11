@@ -19,6 +19,29 @@ const CACHEABLE_EXACT = new Set([
   "/api/authors",
 ]);
 
+const NEWS_ARTICLE_RESERVED = new Set([
+  "hybrid",
+  "featured",
+  "breaking",
+  "popular",
+  "by-category",
+  "hm-nearest-slug",
+  "deleted-redirect",
+  "page-bundle",
+  "tepe-featured",
+  "authors",
+]);
+
+export function isHmNewsArticleCachePath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  if (/^\/api\/news\/page-bundle\/[^/]+$/.test(p)) return true;
+  const m = /^\/api\/news\/([^/]+)$/.exec(p);
+  if (!m) return false;
+  const seg = decodeURIComponent(m[1] || "");
+  if (!seg || NEWS_ARTICLE_RESERVED.has(seg) || seg.startsWith("hm-")) return false;
+  return true;
+}
+
 export function getHmEdgeCache() {
   try {
     if (typeof caches !== "undefined" && caches.default) return caches.default;
@@ -35,6 +58,7 @@ export function isHmEdgeCacheablePath(pathname, search = "") {
   if (qs.get("includePageContent") === "1") return false;
   if (CACHEABLE_EXACT.has(p)) return true;
   if (p.startsWith("/api/hm/meta/")) return true;
+  if (isHmNewsArticleCachePath(p)) return true;
   return false;
 }
 

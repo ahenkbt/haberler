@@ -65,4 +65,15 @@ interface Window {
     slug?: string;
     savedAt?: number;
   };
+  /** Worker / index.html — haber detay page-bundle (page-bundle 5xx olsa bile gövde). */
+  __YEKPARE_HM_ARTICLE_BUNDLE__?: {
+    slug?: string;
+    savedAt?: number;
+    bundle?: {
+      article?: { title?: string; slug?: string } | null;
+      related?: unknown[];
+      kose?: unknown;
+      sidebar?: { authors?: unknown[]; popular?: unknown[] };
+    };
+  };
 }

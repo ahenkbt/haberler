@@ -4,11 +4,12 @@ import { tr } from "date-fns/locale";
 import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { apiUrl, resolveClientMediaSrc, rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
-import { fetchPublicJson } from "@/lib/fetchPublicJson";
+import { resolveClientMediaSrc, rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
+import { fetchHmNewsPageBundle, readHmNewsArticleBoot } from "@/lib/fetchHmNewsPageBundle";
 import { fetchHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { readHmNewsArticleBundleCache, writeHmNewsArticleBundleCache } from "@/lib/hmNewsArticleCache";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { resolveHmDomainSlugHint, writeHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { applyHmNewsArticleMeta, applyHmNewsSiteHomeMeta, applyNewsArticleStructuredData, resetSeoToSiteDefaults } from "@/lib/pageSeo";
@@ -98,26 +99,23 @@ export default function HaberDetay() {
   const { data: settings } = useGetSiteSettings();
   const siteIdForQuery = hmCtx?.siteId ?? null;
   const cachedBundle = useMemo(
-    () => readHmNewsArticleBundleCache(siteIdForQuery, slug) as NewsPageBundle | undefined,
+    () =>
+      (readHmNewsArticleBundleCache(siteIdForQuery, slug) as NewsPageBundle | undefined) ??
+      readHmNewsArticleBoot<NewsItem>(slug),
     [siteIdForQuery, slug],
   );
 
   const {
     data: bundle,
     isPending: isLoading,
+    isError: bundleFailed,
+    refetch: refetchBundle,
   } = useQuery<NewsPageBundle | null>({
     queryKey: ["/api/news/page-bundle", slug, siteIdForQuery ?? "portal"],
     queryFn: async () => {
-      const q = siteIdForQuery != null ? `?siteId=${encodeURIComponent(String(siteIdForQuery))}` : "";
-      const { ok, data } = await fetchPublicJson<NewsPageBundle>(
-        apiUrl(`/api/news/page-bundle/${encodeURIComponent(slug)}${q}`),
-        { timeoutMs: 12_000, retries: 1 },
-      );
-      if (ok && data) {
-        writeHmNewsArticleBundleCache(siteIdForQuery, slug, data);
-        return data;
-      }
-      return null;
+      const data = await fetchHmNewsPageBundle<NewsItem>(slug, siteIdForQuery);
+      if (data?.article) writeHmNewsArticleBundleCache(siteIdForQuery, slug, data);
+      return data;
     },
     enabled: Boolean(slug),
     staleTime: 5 * 60_000,
@@ -158,7 +156,7 @@ export default function HaberDetay() {
     if (!slug || !path.startsWith("/haber/")) return;
     if (isDefaultPortalHost(host)) return;
     let cancelled = false;
-    const cachedSlug = resolveHmDomainSlugHint(host);
+    const cachedSlug = resolveHmDomainSlugHint(host) || resolveKnownHmEditorSlug(host);
     if (cachedSlug) {
       navigate(
         `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(cachedSlug)}/haber/${encodeURIComponent(slug)}`,
@@ -379,6 +377,23 @@ export default function HaberDetay() {
         <div className="min-h-screen hm-article-detail-page">
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <p className="text-sm text-gray-500">İlgili haberler aranıyor…</p>
+          </div>
+        </div>
+      );
+    }
+    if (bundleFailed) {
+      return (
+        <div className="min-h-screen hm-article-detail-page">
+          <div className="flex flex-col items-center justify-center h-64 gap-4 px-4 text-center">
+            <p className="text-xl font-bold text-gray-600">Haber şu an yüklenemedi.</p>
+            <button
+              type="button"
+              className="hover:underline font-semibold"
+              style={{ color: accent }}
+              onClick={() => void refetchBundle()}
+            >
+              Tekrar dene
+            </button>
           </div>
         </div>
       );

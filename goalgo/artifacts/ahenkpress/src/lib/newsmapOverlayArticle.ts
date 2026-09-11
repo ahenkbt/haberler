@@ -1,5 +1,5 @@
-import { apiUrl, normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
-import { fetchPublicJson } from "@/lib/fetchPublicJson";
+import { normalizeAiNewsHtml, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
+import { fetchHmNewsPageBundle } from "@/lib/fetchHmNewsPageBundle";
 import { fetchPortalRssPreview, type PortalRssPreview } from "@/hooks/useHomeHybridNews";
 import { isNewsmapRssOnlyHeadline } from "@/lib/haberHaritasiOverlaySourceUrl";
 import type { HmMapCityHeadline } from "@/lib/hmMapCityNews";
@@ -79,20 +79,22 @@ function mapRssPreview(preview: PortalRssPreview): NewsmapOverlayArticle {
 }
 
 async function fetchDbArticle(slug: string, siteId?: number | null): Promise<NewsmapOverlayArticle | null> {
-  const q = siteId != null && siteId > 0 ? `?siteId=${encodeURIComponent(String(siteId))}` : "";
-  const { ok, data } = await fetchPublicJson<{
-    article?: {
-      title?: string;
-      spot?: string | null;
-      summary?: string | null;
-      description?: string | null;
-      content?: string | null;
-      imageUrl?: string | null;
-      authorName?: string | null;
-    } | null;
-  }>(apiUrl(`/api/news/page-bundle/${encodeURIComponent(slug)}${q}`), { retries: 1, timeoutMs: 12_000 });
+  let data: Awaited<ReturnType<typeof fetchHmNewsPageBundle<{
+    title?: string;
+    spot?: string | null;
+    summary?: string | null;
+    description?: string | null;
+    content?: string | null;
+    imageUrl?: string | null;
+    authorName?: string | null;
+  }>>> | null = null;
+  try {
+    data = await fetchHmNewsPageBundle(slug, siteId ?? null);
+  } catch {
+    return null;
+  }
   const article = data?.article;
-  if (!ok || !article?.title) return null;
+  if (!article?.title) return null;
   const spot =
     String(article.spot ?? article.summary ?? article.description ?? "").trim() || null;
   const content = String(article.content ?? "").trim();
