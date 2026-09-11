@@ -661,10 +661,18 @@ function coercePublicHybridNewsHrefFromItem(item: HybridNewsItem): string {
 
 /** Hibrit liste yanıtında kapak görsellerini RSS önbelleği / havuz kaynağıyla hizalar. */
 export async function enrichHybridNewsListImages(items: HybridNewsItem[]): Promise<HybridNewsItem[]> {
-  const enriched = await enrichSerializedNewsListImages(
-    items as unknown as Parameters<typeof enrichSerializedNewsListImages>[0],
-  );
-  return enriched as unknown as HybridNewsItem[];
+  try {
+    const enriched = await enrichSerializedNewsListImages(
+      items as unknown as Parameters<typeof enrichSerializedNewsListImages>[0],
+    );
+    return enriched as unknown as HybridNewsItem[];
+  } catch (err) {
+    console.error(
+      "[hybrid-news-images]",
+      err instanceof Error ? err.message.slice(0, 180) : err,
+    );
+    return items;
+  }
 }
 
 /** Harici kaynak URL'lerini API yanıtından çıkarır; RSS href her zaman site içi kalır. */

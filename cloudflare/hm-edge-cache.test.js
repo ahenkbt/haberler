@@ -142,4 +142,25 @@ describe("hm-edge-cache", () => {
     const tagged = tagHmEdgeCacheResponse(new Response("ok"), "hit");
     assert.equal(tagged.headers.get("x-yekpare-edge-cache"), "hit");
   });
+
+  it("aliases slug home-bundle cache to siteId URL", async () => {
+    const cache = memoryCache();
+    const slugUrl = "https://ankarasehirgazetesi.com/api/hm/home-bundle?slug=asg&sliderLimit=15";
+    await putHmEdgeCache(
+      cache,
+      slugUrl,
+      new Response(JSON.stringify({ siteId: 3, featured: [{ title: "Ankara" }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const alias = await matchHmEdgeCache(
+      cache,
+      "https://ankarasehirgazetesi.com/api/hm/home-bundle?siteId=3&sliderLimit=15",
+    );
+    assert.ok(alias);
+    const body = await alias.json();
+    assert.equal(body.siteId, 3);
+    assert.equal(body.featured[0].title, "Ankara");
+  });
 });

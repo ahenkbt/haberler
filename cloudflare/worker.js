@@ -22,6 +22,11 @@ import {
   injectKhNeonNewsIntoPublicResponse,
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
+import {
+  hybridEdgeFillHttpStatus,
+  HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
+  shouldFillHybridSiteRssAtEdge,
+} from "./hm-hybrid-rss-edge.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
   getHmEdgeCache,
@@ -1165,7 +1170,7 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
     // home-bundle: ilk boyama; 90s kenar + SWR.
     const p = String(pathname || "").split("?")[0] || "";
     if (p === "/api/hm/home-bundle") {
-      return { cacheTtl: 90, cacheEverything: true };
+      return { cacheTtl: 600, cacheEverything: true };
     }
     return { cacheTtl: 120, cacheEverything: true };
   }
@@ -2102,6 +2107,7 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
             "user-agent": "YekpareSiteRssEdge/1.0",
           },
           cf: { cacheTtl: 180, cacheEverything: true },
+          signal: AbortSignal.timeout(HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS),
         });
         if (!res.ok) return [];
         const entries = parseFeedEntries(await res.text(), perFeed);
@@ -2243,8 +2249,23 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   const existingCategoryHits = categorySlug
     ? existing.filter((item) => hybridItemMatchesCategorySlug(item, categorySlug))
     : existing;
-  // Genel istekte RSS zaten doluysa dokunma. Kategori isteğinde hedef slug yoksa doldur.
-  if (rssCount > 0 && (!categorySlug || existingCategoryHits.length > 0)) return null;
+  const dbFirst =
+    incoming.searchParams.get("dbFirst") === "1" ||
+    incoming.searchParams.get("dbFirst") === "true";
+  if (
+    !shouldFillHybridSiteRssAtEdge({
+      method: request.method,
+      pathname: incoming.pathname,
+      upstreamOk: Boolean(upstream?.ok),
+      dbFirst,
+      rssCount,
+      itemCount: existing.length,
+      categorySlug,
+      categoryHitCount: existingCategoryHits.length,
+    })
+  ) {
+    return null;
+  }
 
   const origin = upstreamOrigin(env, incoming);
   const { enabled, feeds } = await loadSiteRssFeedRowsFromMeta(env, origin, incoming, siteId);
@@ -2308,7 +2329,10 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   outHeaders.set("x-yekpare-site-rss", "edge-fill");
   if (categorySlug) outHeaders.set("x-yekpare-site-rss-category", categorySlug);
   outHeaders.delete("content-length");
-  return new Response(JSON.stringify(next), { status: upstream.status, headers: outHeaders });
+  return new Response(JSON.stringify(next), {
+    status: hybridEdgeFillHttpStatus(Boolean(upstream?.ok), page.length),
+    headers: outHeaders,
+  });
 }
 
 export default {
@@ -2661,8 +2685,8 @@ export default {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
         const p = String(upstreamPath || "").split("?")[0] || "";
         if (p === "/api/hm/home-bundle") {
-          out.set("cache-control", "public, max-age=30, s-maxage=90, stale-while-revalidate=300");
-          out.set("cdn-cache-control", "public, max-age=90, stale-while-revalidate=300");
+          out.set("cache-control", "public, max-age=60, s-maxage=600, stale-while-revalidate=3600");
+          out.set("cdn-cache-control", "public, max-age=600, stale-while-revalidate=3600");
         } else {
           if (!out.get("cache-control")) {
             out.set(

@@ -19,7 +19,12 @@ export function readHmHomeBundleBoot(siteId: number): HmHomeBundleBoot["bundle"]
   const bundle = early.bundle;
   if (!bundle || typeof bundle !== "object") return undefined;
   const featured = Array.isArray(bundle.featured) ? bundle.featured : [];
-  if (featured.length === 0 && !Array.isArray(bundle.breaking) && !Array.isArray(bundle.popular)) {
+  const extra =
+    (Array.isArray(bundle.centerHeadlines) ? bundle.centerHeadlines.length : 0) +
+    (Array.isArray(bundle.manualEditor) ? bundle.manualEditor.length : 0) +
+    (Array.isArray(bundle.breaking) ? bundle.breaking.length : 0) +
+    (Array.isArray(bundle.popular) ? bundle.popular.length : 0);
+  if (featured.length === 0 && extra === 0) {
     return undefined;
   }
   return bundle;
