@@ -1,0 +1,21 @@
+{
+  "name": "Yekpare (goalgo) dev",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "api-server",
+      "command": "cd goalgo && DATABASE_URL=postgresql://goalgo:goalgo@127.0.0.1:5432/goalgo SESSION_SECRET=dev_local_session_secret_change_me_0123456789 NODE_ENV=development PORT=3000 pnpm run dev:api",
+      "description": "Express API (build + migrate + serve) on http://localhost:3000"
+    },
+    {
+      "name": "web",
+      "command": "cd goalgo && pnpm run dev:web",
+      "description": "ahenkpress React/Vite frontend on http://localhost:5173 (proxies /api to :3000)"
+    }
+  ],
+  "ports": [
+    { "name": "web", "port": 5173 },
+    { "name": "api", "port": 3000 }
+  ]
+}
