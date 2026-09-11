@@ -83,22 +83,47 @@ async function newsRowBelongsToSite(
   return readCat.length > 0 || mainCat.length > 0;
 }
 
+/** Panelden eklenen haber: slug+siteId tek sorgu — site layout / corporate / makale yok. */
+export async function resolveLocalSiteNewsBySlug(
+  rawSlug: string,
+  siteId: number,
+): Promise<SerializedArticle | null> {
+  const slugKey = String(rawSlug ?? "").trim();
+  if (!slugKey || !Number.isFinite(siteId) || siteId <= 0 || /^\d+$/.test(slugKey)) return null;
+  const readDb = getNewsDbForRead();
+  const [row] = await readDb
+    .select()
+    .from(newsTable)
+    .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
+    .limit(1);
+  if (!row || String(row.slug ?? "").trim() !== slugKey) return null;
+  const ctx = await loadNewsContext();
+  void dualWriteUpdate(newsTable, { views: row.views + 1 }, eq(newsTable.id, row.id)).catch((err) =>
+    console.error("[news/local-slug/views]", err instanceof Error ? err.message : err),
+  );
+  return serializeNews({ ...row, views: row.views + 1 }, ctx);
+}
+
 export async function resolveNewsArticleBySlug(
   rawSlug: string,
   siteId: number | null,
 ): Promise<SerializedArticle | null> {
+  // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." parseInt ile yanlış id'ye düşmesin.
+  const slugKey = String(rawSlug ?? "").trim();
+  const numericId = /^\d+$/.test(slugKey) ? parseInt(slugKey, 10) : NaN;
+  const siteScoped = siteId != null && siteId > 0;
+  if (siteScoped && Number.isNaN(numericId)) {
+    const local = await resolveLocalSiteNewsBySlug(slugKey, siteId!);
+    if (local) return local;
+  }
+
   const ctx = await loadNewsContext();
   const readDb = getNewsDbForRead();
-  const siteScoped = siteId != null && siteId > 0;
   let isCorporate = false;
   if (siteScoped) {
     const site = await getHmNewsSiteByIdCompat(siteId!);
     isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
   }
-
-  // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." parseInt ile yanlış id'ye düşmesin.
-  const slugKey = String(rawSlug ?? "").trim();
-  const numericId = /^\d+$/.test(slugKey) ? parseInt(slugKey, 10) : NaN;
   let row: typeof newsTable.$inferSelect | undefined;
 
   const acceptRowForSlug = (candidate: typeof newsTable.$inferSelect | undefined) => {

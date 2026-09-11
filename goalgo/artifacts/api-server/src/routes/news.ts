@@ -17,7 +17,7 @@ import {
   UpdateNewsBody,
 } from "@workspace/api-zod";
 import { loadNewsContext, slugify } from "../lib/news-context";
-import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, readNewsPageBundleCache, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
+import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, readNewsPageBundleCache, resolveLocalSiteNewsBySlug, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import {
   serializeHmMakaleAsNews,
   serializeHmMakaleListItem,
@@ -1005,15 +1005,27 @@ router.get("/news/page-bundle/:slug", async (req, res): Promise<void> => {
 
 router.get("/news/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const ctx = await loadNewsContext();
-  const readDb = getNewsDbForRead();
-
   const siteIdRaw = req.query.siteId;
   const siteId =
     siteIdRaw !== undefined && siteIdRaw !== null && String(siteIdRaw).trim() !== ""
       ? parseInt(String(siteIdRaw), 10)
       : NaN;
   const siteScoped = Number.isFinite(siteId) && siteId > 0;
+  const slugKeyFast = String(raw ?? "").trim();
+  if (siteScoped && slugKeyFast) {
+    try {
+      const local = await resolveLocalSiteNewsBySlug(slugKeyFast, siteId);
+      if (local) {
+        res.json(local);
+        return;
+      }
+    } catch (err) {
+      console.error("[news/:id/local]", err instanceof Error ? err.message : err);
+    }
+  }
+
+  const ctx = await loadNewsContext();
+  const readDb = getNewsDbForRead();
   let isCorporate = false;
   if (siteScoped) {
     const site = await getHmNewsSiteByIdCompat(siteId);
