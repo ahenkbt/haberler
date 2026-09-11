@@ -1708,6 +1708,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           popular: Array.isArray(hmHomeBundleBoot.popular) ? hmHomeBundleBoot.popular : [],
         }
       : undefined,
+    initialDataUpdatedAt: hmHomeBundleBoot ? Date.now() : undefined,
     placeholderData: (previous) => previous,
   });
   const useHmHomeBundle = Boolean(hmHomeBundle);

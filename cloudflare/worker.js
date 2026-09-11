@@ -24,6 +24,13 @@ import {
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
+  getHmEdgeCache,
+  isHmEdgeCacheableRequest,
+  putHmEdgeCache,
+  resolveHmEdgeCache,
+  warmKnownHmNewsSites,
+} from "./hm-edge-cache.js";
+import {
   buildAhenkAiTxtFallback,
   buildAhenkAgencyEntityHtml,
   buildAhenkLlmsTxtFallback,
@@ -40,6 +47,7 @@ import {
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
   isSharePreviewUserAgent,
+  listKnownHmEditorSites,
   raceHmHtmlBoot,
   rewriteSpaShellOgForHmHost,
   sanitizeOgShareImages,
@@ -761,7 +769,7 @@ async function proxyRootSitemap(request, env, incoming) {
 }
 
 /** CF Assets'ten HTML yanıtını SW purge boot ile sar. */
-async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname, env, incoming }) {
+async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname, env, incoming, waitUntil }) {
   const out = new Headers(assetResp.headers);
   out.delete("content-encoding");
   out.delete("transfer-encoding");
@@ -803,10 +811,22 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     }
     try {
       const origin = upstreamOrigin(env, incoming);
-      const boot = await withBudget(raceHmHtmlBoot({ fetchApi, origin, env, incoming }));
+      const boot = await withBudget(
+        raceHmHtmlBoot({
+          fetchApi,
+          origin,
+          env,
+          incoming,
+          cache: getHmEdgeCache(),
+          waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
+        }),
+      );
       if (boot) {
         html = injectHmHtmlBoot(html, boot);
-        out.set("x-yekpare-hm-html-boot", boot.bundle ? "bundle" : "meta");
+        out.set(
+          "x-yekpare-hm-html-boot",
+          `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
+        );
         const hero = firstHmBootImageUrl(boot.bundle, incoming.origin);
         if (hero) out.append("Link", `<${hero}>; rel=preload; as=image`);
       }
@@ -821,7 +841,7 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
 }
 
 /** SPA + statik: ASSETS; yoksa null (API/Container vekiline düş). */
-async function tryServeAssets(request, env, incoming) {
+async function tryServeAssets(request, env, incoming, waitUntil) {
   if (!env.ASSETS) return null;
   if (isApiPath(incoming.pathname)) return null;
 
@@ -875,7 +895,7 @@ async function tryServeAssets(request, env, incoming) {
         return respondAssetHtml(
           request,
           new Response(html, { status: assetResp.status, headers: assetResp.headers }),
-          { oneShotPurge, purgeCookie, hostname: incoming.hostname, env, incoming },
+          { oneShotPurge, purgeCookie, hostname: incoming.hostname, env, incoming, waitUntil },
         );
       } catch {
         return null;
@@ -887,6 +907,7 @@ async function tryServeAssets(request, env, incoming) {
       hostname: incoming.hostname,
       env,
       incoming,
+      waitUntil,
     });
   }
 
@@ -1088,7 +1109,16 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     return null;
   }
 
-  // Su + KH: Neon meta (KH editör veri kenarı Neon'a yazıyor).
+  // Su + KH: meta 200 ise Neon onarımını arka planda yap (TTFB'yi 5-7sn şişirme).
+  // 404'te hâlâ senkron fallback — aksi halde ilk ziyarette boş kalır.
+  if ((isSuBrand || isKhBrand) && upstream.ok) {
+    const job = ensureBrandHmSiteMeta(env, { domain, slug }).catch((err) => {
+      console.error("[hm-brand-db-ensure/bg]", String(err?.message || err).slice(0, 200));
+    });
+    if (typeof opts.waitUntil === "function") opts.waitUntil(job);
+    return null;
+  }
+
   // Diğer markalar: yalnızca upstream 404 iken fallback.
   if (!isSuBrand && !isKhBrand && upstream.status !== 404) return null;
 
@@ -2516,7 +2546,12 @@ export default {
     const edgeRssPreview = await serveEdgeRssPreview(request, env, incoming);
     if (edgeRssPreview) return edgeRssPreview;
 
-    const fromAssets = await tryServeAssets(request, env, incoming);
+    const fromAssets = await tryServeAssets(
+      request,
+      env,
+      incoming,
+      typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : undefined,
+    );
     if (fromAssets) return fromAssets;
 
     const origin = upstreamOrigin(env, incoming);
@@ -2525,6 +2560,29 @@ export default {
     const target = new URL(upstreamPath + incoming.search, origin);
     const oneShotPurge = shouldOneShotPurge(request, incoming.hostname);
     const purgeCookie = purgeCookieName(incoming.hostname);
+    const waitUntil = typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : undefined;
+    const edgeCache = getHmEdgeCache();
+    const cacheablePublicApi = isHmEdgeCacheableRequest(request, incoming.pathname, incoming.search);
+    let staleEdgeFallback = null;
+    if (cacheablePublicApi && edgeCache) {
+      const resolved = await resolveHmEdgeCache(edgeCache, incoming.href, {
+        waitUntil,
+        revalidate: async () => {
+          const fresh = await fetchApi(env, target.toString(), proxyInit(request, origin, incoming));
+          if (fresh?.ok) await putHmEdgeCache(edgeCache, incoming.href, fresh);
+        },
+      });
+      if (resolved.response) return resolved.response;
+      staleEdgeFallback = resolved.cached;
+    }
+
+    const rememberPublicApi = (resp) => {
+      if (cacheablePublicApi && edgeCache && resp && resp.ok) {
+        const job = putHmEdgeCache(edgeCache, incoming.href, resp.clone());
+        if (waitUntil) waitUntil(job);
+      }
+      return resp;
+    };
 
     try {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
@@ -2535,10 +2593,18 @@ export default {
         proxyOpts,
         cfOpts,
       );
+      if (staleEdgeFallback && (!upstream || !upstream.ok || upstream.status >= 500)) {
+        const headers = new Headers(staleEdgeFallback.headers);
+        headers.set("x-yekpare-edge-cache", "stale-error");
+        return new Response(staleEdgeFallback.body, {
+          status: staleEdgeFallback.status,
+          headers,
+        });
+      }
       const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
-        waitUntil: typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : undefined,
+        waitUntil,
       });
-      if (brandMeta) return brandMeta;
+      if (brandMeta) return rememberPublicApi(brandMeta);
       const repaired = await maybeRepairMismatchedNewsJson(
         env,
         origin,
@@ -2548,7 +2614,7 @@ export default {
         upstreamPath,
         upstream,
       );
-      if (repaired) return repaired;
+      if (repaired) return rememberPublicApi(repaired);
 
       const out = copyUpstreamHeadersForBrowser(upstream);
       out.delete("content-encoding");
@@ -2620,13 +2686,13 @@ export default {
         );
         const enrichedBase = filteredEnriched || siteRssEnriched;
         const withKhNeon = await injectKhNeonNewsIntoPublicResponse(env, incoming, enrichedBase);
-        return withKhNeon || enrichedBase;
+        return rememberPublicApi(withKhNeon || enrichedBase);
       }
 
       const filteredNews = await maybeFilterHmPublicNewsUpstream(incoming, upstream, out);
       if (filteredNews) {
         const withKhNeon = await injectKhNeonNewsIntoPublicResponse(env, incoming, filteredNews);
-        return withKhNeon || filteredNews;
+        return rememberPublicApi(withKhNeon || filteredNews);
       }
 
       const ct = String(out.get("content-type") || "").toLowerCase();
@@ -2657,8 +2723,13 @@ export default {
         });
       }
 
-      return new Response(upstream.body, { status: upstream.status, headers: out });
+      return rememberPublicApi(new Response(upstream.body, { status: upstream.status, headers: out }));
     } catch (err) {
+      if (staleEdgeFallback) {
+        const headers = new Headers(staleEdgeFallback.headers);
+        headers.set("x-yekpare-edge-cache", "stale-error");
+        return new Response(staleEdgeFallback.body, { status: staleEdgeFallback.status, headers });
+      }
       return new Response(
         JSON.stringify({
           error: "api_unavailable",
@@ -2674,5 +2745,27 @@ export default {
         },
       );
     }
+  },
+  async scheduled(_event, env, ctx) {
+    const waitUntil = typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : async (p) => p;
+    waitUntil(
+      (async () => {
+        const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
+        try {
+          await fetchApi(env, `${origin}/api/healthz`);
+        } catch (err) {
+          console.error("[hm-keepalive/healthz]", String(err?.message || err).slice(0, 160));
+        }
+        try {
+          await warmKnownHmNewsSites(env, {
+            fetchApi,
+            cache: getHmEdgeCache(),
+            sites: listKnownHmEditorSites(),
+          });
+        } catch (err) {
+          console.error("[hm-keepalive/warm]", String(err?.message || err).slice(0, 160));
+        }
+      })(),
+    );
   },
 };

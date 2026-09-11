@@ -7,6 +7,9 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 account_id = "16f5b996194174624e7969a3658bd2bb"
 
+[triggers]
+crons = ["*/4 * * * *"]
+
 [assets]
 directory = "artifacts/ahenkpress/dist/public"
 binding = "ASSETS"
