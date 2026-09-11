@@ -5,7 +5,11 @@ import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "r
 import { useQuery } from "@tanstack/react-query";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { resolveClientMediaSrc, rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
-import { fetchHmNewsPageBundle, readHmNewsArticleBoot } from "@/lib/fetchHmNewsPageBundle";
+import {
+  fetchHmNewsPageBundle,
+  readHmHeadlineAsPageBundle,
+  readHmNewsArticleBoot,
+} from "@/lib/fetchHmNewsPageBundle";
 import { fetchHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { readHmNewsArticleBundleCache, writeHmNewsArticleBundleCache } from "@/lib/hmNewsArticleCache";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
@@ -82,6 +86,7 @@ type NewsPageBundle = {
     popular: NewsItem[];
   };
   redirect?: { status: 301; location: string; searchQuery: string };
+  fetchFailed?: boolean;
 };
 
 function isKoseVitrinArticle(n: NewsItem | null): boolean {
@@ -101,7 +106,8 @@ export default function HaberDetay() {
   const cachedBundle = useMemo(
     () =>
       (readHmNewsArticleBundleCache(siteIdForQuery, slug) as NewsPageBundle | undefined) ??
-      (readHmNewsArticleBoot<NewsItem>(slug) as NewsPageBundle | undefined),
+      (readHmNewsArticleBoot<NewsItem>(slug) as NewsPageBundle | undefined) ??
+      (readHmHeadlineAsPageBundle<NewsItem>(slug, siteIdForQuery) as NewsPageBundle | undefined),
     [siteIdForQuery, slug],
   );
 
@@ -114,7 +120,7 @@ export default function HaberDetay() {
     queryKey: ["/api/news/page-bundle", slug, siteIdForQuery ?? "portal"],
     queryFn: async (): Promise<NewsPageBundle | null> => {
       const data = await fetchHmNewsPageBundle<NewsItem>(slug, siteIdForQuery);
-      if (data?.article) writeHmNewsArticleBundleCache(siteIdForQuery, slug, data);
+      if (data?.article && !data.fetchFailed) writeHmNewsArticleBundleCache(siteIdForQuery, slug, data);
       return data as NewsPageBundle;
     },
     enabled: Boolean(slug),
@@ -398,7 +404,7 @@ export default function HaberDetay() {
         </div>
       );
     }
-    if (hmCtx) return <HmRedirectToSonDakika />;
+    if (hmCtx && !bundle?.fetchFailed) return <HmRedirectToSonDakika />;
     return (
     <div className="min-h-screen hm-article-detail-page">
       <div className="flex flex-col items-center justify-center h-64 gap-4">
