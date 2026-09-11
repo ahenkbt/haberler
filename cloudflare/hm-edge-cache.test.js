@@ -14,6 +14,7 @@ import {
   readHmHtmlBootFromCache,
   resolveHmEdgeCache,
   tagHmEdgeCacheResponse,
+  warmKnownHmNewsSites,
 } from "./hm-edge-cache.js";
 
 function memoryCache() {
@@ -173,5 +174,37 @@ describe("hm-edge-cache", () => {
     const body = await alias.json();
     assert.equal(body.siteId, 3);
     assert.equal(body.featured[0].title, "Ankara");
+  });
+
+  it("warms only meta and home-bundle endpoints for known sites", async () => {
+    const cache = memoryCache();
+    const calls = [];
+    const fetchApi = async (_env, url) => {
+      calls.push(String(url));
+      if (String(url).includes("/api/hm/meta/by-slug/")) {
+        return new Response(JSON.stringify({ id: 2 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ siteId: 2 }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+
+    const res = await warmKnownHmNewsSites(
+      {},
+      {
+        fetchApi,
+        cache,
+        sites: [{ host: "suhaber.net", slug: "su" }],
+      },
+    );
+
+    assert.equal(res.length, 1);
+    assert.equal(calls.length, 2);
+    assert.equal(calls.some((u) => u.includes("/api/news/hybrid")), false);
+    assert.equal(calls.some((u) => u.includes("/api/news?")), false);
   });
 });
