@@ -10,6 +10,8 @@ import {
   buildHmBootPaintHtml,
   listKnownHmEditorSites,
   parseHmNewsArticlePath,
+  findHmBundleHeadlineBySlug,
+  buildHmNewsArticleOgHtml,
   raceHmHtmlBoot,
   withBudget,
   buildGeoRobotsTxt,
@@ -107,6 +109,35 @@ describe("hm-html-boot", () => {
     });
     assert.match(out, /__YEKPARE_HM_ARTICLE_BUNDLE__/);
     assert.equal(out.includes("hm-boot-paint"), false);
+  });
+
+  it("builds WhatsApp article OG from a home-bundle headline", () => {
+    const item = findHmBundleHeadlineBySlug(
+      {
+        featured: [
+          {
+            slug: "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+            title: "Ankabir’den Vali Canpolat’a Hayırlı Olsun Ziyareti",
+            spot: "Vali ziyareti",
+            imageUrl: "https://cdn.example/haber.jpg",
+          },
+        ],
+      },
+      "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+    );
+    assert.equal(item.title.includes("Ankabir"), true);
+    const html = buildHmNewsArticleOgHtml({
+      origin: "https://ankarasehirgazetesi.com",
+      path: "/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+      siteName: "Ankara Şehir Gazetesi",
+      title: item.title,
+      description: item.spot,
+      image: item.imageUrl,
+    });
+    assert.match(html, /og:title" content="Ankabir/);
+    assert.match(html, /og:image" content="https:\/\/cdn.example\/haber.jpg"/);
+    assert.match(html, /og:type" content="article"/);
+    assert.match(html, /og:site_name" content="Ankara Şehir Gazetesi"/);
   });
 
   it("lists unique known editor hosts for keepalive warm", () => {
