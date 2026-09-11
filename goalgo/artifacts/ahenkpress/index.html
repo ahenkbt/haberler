@@ -433,7 +433,54 @@
               .catch(function () {});
           }
 
+          function prefetchHmNewsArticle() {
+            var path = (location.pathname || "").replace(/\/+$/, "") || "/";
+            var m = path.match(/\/(?:haber|makale)\/([^/?#]+)/i);
+            if (!m) return;
+            var slug = "";
+            try {
+              slug = decodeURIComponent(m[1] || "");
+            } catch (e) {
+              slug = m[1] || "";
+            }
+            if (!slug) return;
+            if (
+              window.__YEKPARE_HM_ARTICLE_BUNDLE__ &&
+              window.__YEKPARE_HM_ARTICLE_BUNDLE__.bundle &&
+              window.__YEKPARE_HM_ARTICLE_BUNDLE__.bundle.article &&
+              String(window.__YEKPARE_HM_ARTICLE_BUNDLE__.bundle.article.title || "").trim()
+            ) {
+              return;
+            }
+            function applyArticle(data, fromBundle) {
+              if (!data) return;
+              var bundle =
+                fromBundle && data.article
+                  ? data
+                  : { article: data, related: [], kose: null, sidebar: { authors: [], popular: [] } };
+              if (!bundle.article || !String(bundle.article.title || "").trim()) return;
+              window.__YEKPARE_HM_ARTICLE_BUNDLE__ = { slug: slug, savedAt: Date.now(), bundle: bundle };
+            }
+            fetch("/api/news/" + encodeURIComponent(slug))
+              .then(function (r) {
+                return r.ok ? r.json() : null;
+              })
+              .then(function (data) {
+                applyArticle(data, false);
+              })
+              .catch(function () {});
+            fetch("/api/news/page-bundle/" + encodeURIComponent(slug))
+              .then(function (r) {
+                return r.ok ? r.json() : null;
+              })
+              .then(function (data) {
+                applyArticle(data, true);
+              })
+              .catch(function () {});
+          }
+
           var p = (location.pathname || "").replace(/\/+$/, "") || "/";
+          prefetchHmNewsArticle();
           var tr = p.match(/^\/tr\/([^/?#]+)/i);
           var hm = p.match(/^\/hm\/([^/?#]+)/i);
           var seg = tr ? tr[1] : hm ? hm[1] : null;

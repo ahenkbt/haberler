@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db as mainDb, getNewsDbForRead, newsTable, portalRssItemsTable } from "@workspace/db";
 import { isCorporateOriginCentralNewsRef } from "./hm-corporate-news-policy.js";
 import { loadCorporateHmSiteIds } from "./hm-yekpare-news-sync.js";
@@ -14,30 +14,74 @@ import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
 export type { NewsListImageEnrichInput } from "./news-list-image-enrich-logic.js";
 export { isSiteLocalNewsRow, shouldRefreshNewsListImageFromSource } from "./news-list-image-enrich-logic.js";
 
+/** Anasayfa/hibrit TTFB — portal_rss_items IN sorgusu Hostinger'da 70sn+ 500 olabiliyor. */
+export const RSS_IMAGE_LOOKUP_TIMEOUT_MS = 1_200;
+export const RSS_IMAGE_LOOKUP_MAX_URLS = 40;
+
 function normalizeListImageUrl(raw: string | null | undefined): string | null {
   const value = String(raw ?? "").trim();
   if (!value) return null;
   return normalizePublicMediaUrl(value) ?? value;
 }
 
-async function loadRssCacheImagesBySourceUrl(urls: string[]): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
-  const unique = [...new Set(urls.map((url) => normalizeRssSourceUrl(url) ?? url.trim().toLowerCase()).filter(Boolean))];
-  if (!unique.length) return out;
-
-  const dedupeKeys = unique.flatMap((url) => {
+export function buildRssImageLookupDedupeKeys(urls: readonly string[]): string[] {
+  const unique = [
+    ...new Set(
+      urls
+        .map((url) => normalizeRssSourceUrl(url) ?? String(url || "").trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ].slice(0, RSS_IMAGE_LOOKUP_MAX_URLS);
+  const keys = new Set<string>();
+  for (const url of unique) {
     const normalized = normalizeRssSourceUrl(url) ?? url;
-    const keys = new Set<string>();
     keys.add(`link:${normalized.toLowerCase()}`);
     keys.add(`link:${url.toLowerCase()}`);
-    return [...keys];
-  });
+  }
+  return [...keys];
+}
 
-  const rows = await mainDb
-    .select({ link: portalRssItemsTable.link, imageUrl: portalRssItemsTable.imageUrl, dedupeKey: portalRssItemsTable.dedupeKey })
-    .from(portalRssItemsTable)
-    .where(inArray(portalRssItemsTable.dedupeKey, [...new Set(dedupeKeys)]))
-    .limit(500);
+export async function withTimeoutOrFallback<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function loadRssCacheImagesBySourceUrl(urls: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const dedupeKeys = buildRssImageLookupDedupeKeys(urls);
+  if (!dedupeKeys.length) return out;
+
+  let rows: Array<{ link: string | null; imageUrl: string | null; dedupeKey: string | null }> = [];
+  try {
+    const lookup = mainDb.transaction(async (tx) => {
+      await tx.execute(sql`SET LOCAL statement_timeout = '1200ms'`);
+      return tx
+        .select({
+          link: portalRssItemsTable.link,
+          imageUrl: portalRssItemsTable.imageUrl,
+          dedupeKey: portalRssItemsTable.dedupeKey,
+        })
+        .from(portalRssItemsTable)
+        .where(inArray(portalRssItemsTable.dedupeKey, dedupeKeys))
+        .limit(500);
+    });
+    rows = await withTimeoutOrFallback(lookup, RSS_IMAGE_LOOKUP_TIMEOUT_MS, []);
+  } catch (err) {
+    console.error(
+      "[news-list-image-enrich/rss]",
+      err instanceof Error ? err.message.slice(0, 180) : err,
+    );
+    return out;
+  }
 
   for (const row of rows) {
     const img = normalizeListImageUrl(row.imageUrl);
@@ -91,7 +135,20 @@ export async function enrichSerializedNewsListImages<T extends NewsListImageEnri
   items: T[],
 ): Promise<T[]> {
   if (!items.length) return items;
+  try {
+    return await enrichSerializedNewsListImagesUnsafe(items);
+  } catch (err) {
+    console.error(
+      "[news-list-image-enrich]",
+      err instanceof Error ? err.message.slice(0, 180) : err,
+    );
+    return items;
+  }
+}
 
+async function enrichSerializedNewsListImagesUnsafe<T extends NewsListImageEnrichInput>(
+  items: T[],
+): Promise<T[]> {
   const corporateSiteIds = await loadCorporateHmSiteIds();
   const rssUrls: string[] = [];
   const poolRefs: Array<{ siteId: number; id: number }> = [];

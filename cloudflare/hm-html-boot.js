@@ -11,6 +11,8 @@ import {
 } from "./hm-edge-cache.js";
 
 export const HM_HTML_BOOT_BUDGET_MS = 280;
+/** WhatsApp/Facebook crawler — og-html container 15sn+ asılı kalmasın. */
+export const HM_SOCIAL_OG_BUDGET_MS = 800;
 const HM_HTML_BOOT_MAX_JSON_CHARS = 180_000;
 
 export function withBudget(promise, ms = HM_HTML_BOOT_BUDGET_MS) {
@@ -93,16 +95,38 @@ export function shouldInstantHmRootRedirect(method, pathname, hostname) {
   return Boolean(hmDomainSlugFallback(hostname));
 }
 
+/** /haber/{slug} ve /tr/{site}/haber/{slug} — HTML boot + preload. */
+export function parseHmNewsArticlePath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  const nested = p.match(/^\/(?:tr|hm)\/[^/]+\/(haber|makale)\/([^/]+)$/i);
+  if (nested?.[2]) {
+    try {
+      return { kind: String(nested[1] || "haber").toLowerCase(), slug: decodeURIComponent(nested[2]) };
+    } catch {
+      return { kind: String(nested[1] || "haber").toLowerCase(), slug: nested[2] };
+    }
+  }
+  const root = p.match(/^\/(haber|makale)\/([^/]+)$/i);
+  if (root?.[2]) {
+    try {
+      return { kind: String(root[1] || "haber").toLowerCase(), slug: decodeURIComponent(root[2]) };
+    } catch {
+      return { kind: String(root[1] || "haber").toLowerCase(), slug: root[2] };
+    }
+  }
+  return null;
+}
+
 export function hmHomeSlugFromPath(pathname, hostname) {
   const path = String(pathname || "").replace(/\/+$/, "") || "/";
-  const m = path.match(/^\/tr\/([^/]+)$/i) || path.match(/^\/hm\/([^/]+)$/i);
+  const m = path.match(/^\/tr\/([^/]+)/i) || path.match(/^\/hm\/([^/]+)/i);
   if (m?.[1]) {
     return String(m[1])
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "");
   }
-  if (path === "/") return hmDomainSlugFallback(hostname);
+  if (path === "/" || parseHmNewsArticlePath(path)) return hmDomainSlugFallback(hostname);
   return "";
 }
 
@@ -138,6 +162,40 @@ export function firstHmBootImageUrl(bundle, origin) {
     }
   }
   return "";
+}
+
+export function absHmOgImageUrl(origin, raw) {
+  const o = String(origin || "").replace(/\/+$/, "");
+  const v = String(raw || "").trim();
+  if (!v) return o ? `${o}/apple-touch-icon.png` : "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith("//")) return `https:${v}`;
+  if (v.startsWith("/") && o) return `${o}${v}`;
+  return o ? `${o}/${v}` : v;
+}
+
+export function findHmBundleHeadlineBySlug(bundle, slug) {
+  const want = String(slug || "")
+    .trim()
+    .toLowerCase();
+  if (!want || !bundle) return null;
+  const lists = [
+    bundle.featured,
+    bundle.centerHeadlines,
+    bundle.manualEditor,
+    bundle.breaking,
+    bundle.popular,
+  ];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      const s = String(item?.slug || "")
+        .trim()
+        .toLowerCase();
+      if (s === want && String(item?.title || "").trim()) return item;
+    }
+  }
+  return null;
 }
 
 function escPaint(s) {
@@ -266,6 +324,16 @@ export function injectHmHtmlBoot(html, boot) {
       })};`,
     );
   }
+  if (boot.articleBundle && boot.articleSlug) {
+    const articleJson = safeJsonScript({
+      slug: boot.articleSlug,
+      savedAt: boot.savedAt || Date.now(),
+      bundle: boot.articleBundle,
+    });
+    if (articleJson.length <= HM_HTML_BOOT_MAX_JSON_CHARS) {
+      parts.push(`window.__YEKPARE_HM_ARTICLE_BUNDLE__=${articleJson};`);
+    }
+  }
   let out = html;
   if (parts.length > 0) {
     const tag = `<script>${parts.join("")}</script>`;
@@ -279,7 +347,7 @@ export function injectHmHtmlBoot(html, boot) {
       out = `${tag}${out}`;
     }
   }
-  const paint = buildHmBootPaintHtml(boot);
+  const paint = boot.skipPaint ? "" : buildHmBootPaintHtml(boot);
   if (paint) {
     if (out.includes('<div id="root"></div>')) {
       out = out.replace('<div id="root"></div>', `${paint}<div id="root"></div>`);
@@ -725,6 +793,61 @@ export function sanitizeOgShareImages(html, origin) {
     )
     .replace(/https?:\/\/[^"'\s\\]+\/data:image\/[^"'\s\\]*/gi, fallback)
     .replace(/"data:image\/[^"]*"/gi, `"${fallback}"`);
+}
+
+export function buildHmNewsArticleOgHtml(opts) {
+  const origin = String(opts?.origin || "").replace(/\/+$/, "");
+  const path = String(opts?.path || "/").startsWith("/") ? String(opts.path) : `/${opts?.path || ""}`;
+  const siteName = String(opts?.siteName || "").trim() || "Haber";
+  const title = String(opts?.title || "").trim() || siteName;
+  const description = String(opts?.description || "").trim() || title;
+  const image = absHmOgImageUrl(origin, opts?.image);
+  const canonical = `${origin}${path}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: title,
+    description,
+    image,
+    mainEntityOfPage: canonical,
+    url: canonical,
+    inLanguage: "tr-TR",
+    publisher: {
+      "@type": "NewsMediaOrganization",
+      name: siteName,
+      url: `${origin}/`,
+    },
+  };
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${escHtml(title)}</title>
+<meta name="description" content="${escHtml(description)}"/>
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"/>
+<link rel="canonical" href="${escHtml(canonical)}"/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="${escHtml(canonical)}"/>
+<meta property="og:title" content="${escHtml(title)}"/>
+<meta property="og:description" content="${escHtml(description)}"/>
+<meta property="og:image" content="${escHtml(image)}"/>
+<meta property="og:image:secure_url" content="${escHtml(image)}"/>
+<meta property="og:site_name" content="${escHtml(siteName)}"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${escHtml(title)}"/>
+<meta name="twitter:description" content="${escHtml(description)}"/>
+<meta name="twitter:image" content="${escHtml(image)}"/>
+<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+</head>
+<body>
+<article>
+<h1>${escHtml(title)}</h1>
+<p>${escHtml(description)}</p>
+<p><a href="${escHtml(canonical)}">${escHtml(canonical)}</a></p>
+</article>
+</body>
+</html>`;
 }
 
 export function buildHmSiteEntityHtml(slug, origin, pathname) {

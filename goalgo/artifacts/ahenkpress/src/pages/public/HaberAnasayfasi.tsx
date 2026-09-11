@@ -1669,6 +1669,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   /** P1-1: HM anasayfa featured + breaking + popular tek istek. */
   const hmHomeBundleEnabled = siteId != null && !isCorporateTheme;
+  const hmHomeBundleSlug = String(hmSlugProp ?? hmCtx?.slug ?? "").trim();
   const hmHomeBundleBoot = useMemo(
     () => (siteId != null && siteId > 0 ? readHmHomeBundleBoot(siteId) : undefined),
     [siteId],
@@ -1685,12 +1686,20 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     breaking: any[];
     popular: any[];
   }>({
-    queryKey: ["/api/hm/home-bundle", siteId, HM_HOME_HEADLINE_SLIDER_MIN, mansetCategorySlug ?? ""],
+    queryKey: [
+      "/api/hm/home-bundle",
+      siteId,
+      hmHomeBundleSlug || "",
+      HM_HOME_HEADLINE_SLIDER_MIN,
+      mansetCategorySlug ?? "",
+    ],
     queryFn: () => {
       const qs = new URLSearchParams({
-        siteId: String(siteId),
         sliderLimit: String(HM_HOME_HEADLINE_SLIDER_MIN),
       });
+      // HTML preload + kenar cache slug= kullanır; siteId ayrı anahtar ısınmamış colo'da 40sn origin olur.
+      if (hmHomeBundleSlug) qs.set("slug", hmHomeBundleSlug);
+      else qs.set("siteId", String(siteId));
       if (mansetCategorySlug) qs.set("mansetCategorySlug", mansetCategorySlug);
       return apiRequest(`/api/hm/home-bundle?${qs.toString()}`);
     },
@@ -2840,12 +2849,16 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     return sortNewsByRecency(fresh);
   }, [featured, latestNewsPool, allItems, bandNewsItems, sliderNews, popular]);
   const siteHasAnyNews = moduleSectionSourcePool.length > 0;
-  const hasInstantNewsPool = latestMergedHasItems || hybridHeadlineReady;
+  const hasInstantNewsPool =
+    latestMergedHasItems || hybridHeadlineReady || bundleInstantPool.length > 0;
   /** Hibrit önbellek / DB gelene kadar metin yerine skeleton veya sessiz bekleme. */
   const homeNewsBootstrapping =
     !dbNewsReady &&
     !hasInstantNewsPool &&
-    (latestDbPending || latestBandDbPending || (useHybridHomeNewsPool && hybridBootstrapPending));
+    (latestDbPending ||
+      latestBandDbPending ||
+      (useHybridHomeNewsPool && hybridBootstrapPending) ||
+      (hmHomeBundleEnabled && !hmHomeBundleSettled));
 
   const homeCategoryBoxFetchSlugs = useMemo(() => {
     const slugs = new Set<string>();

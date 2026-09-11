@@ -806,9 +806,11 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
 
       // Site içi RSS açıkken soğuk cache: kısa warm bekle (otomasyon/cooldown atlanır).
       // Anasayfa dbFirst yolunda aksi halde RSS hiç dolmuyordu (bg warm otomasyona bağlıydı).
+      // DB zaten doluysa 2sn RSS ısınması ilk boyamayı geciktirmesin.
       if (
         includeCachedRss &&
         mapRssItems.length === 0 &&
+        dbResult.items.length < 8 &&
         hmAccess?.hybridRssEnabled === true &&
         !hmAccess.isCorporate
       ) {
@@ -857,7 +859,15 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         ctx: scopeNewsContextForSite(ctx, siteId),
       });
       const imageEnriched = await enrichHybridNewsListImages(merged.items);
-      const enrichedRaw = await enrichHybridNewsItemsWithOrigins(imageEnriched);
+      let enrichedRaw = imageEnriched;
+      try {
+        enrichedRaw = await enrichHybridNewsItemsWithOrigins(imageEnriched);
+      } catch (err) {
+        console.error(
+          "[news/hybrid/dbFirst-origin]",
+          err instanceof Error ? err.message.slice(0, 180) : err,
+        );
+      }
       const enriched = editorPool ? applyEditorSourceAttribution(enrichedRaw, siteId!) : enrichedRaw;
       const siteGlobalPolicy = buildSiteGlobalCategoryPolicy({
         newsmapMode: yekparePoolOnly ? false : newsmapMode,
@@ -1183,7 +1193,15 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     });
 
     const imageEnriched = await enrichHybridNewsListImages(merged.items);
-    const enrichedRaw = await enrichHybridNewsItemsWithOrigins(imageEnriched);
+    let enrichedRaw = imageEnriched;
+    try {
+      enrichedRaw = await enrichHybridNewsItemsWithOrigins(imageEnriched);
+    } catch (err) {
+      console.error(
+        "[news/hybrid/origin]",
+        err instanceof Error ? err.message.slice(0, 180) : err,
+      );
+    }
     const enriched = editorPool ? applyEditorSourceAttribution(enrichedRaw, siteId!) : enrichedRaw;
     const siteGlobalPolicy = buildSiteGlobalCategoryPolicy({
       newsmapMode,

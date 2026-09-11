@@ -315,11 +315,24 @@ export async function buildHmHomeBundle(
   const corporateStrict = isHmCorporateLayout(layout);
   const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
-  const settle = <T,>(label: string, p: Promise<T[]>) =>
-    p.catch((err) => {
-      console.error(`[hm-home-bundle] ${label}`, err instanceof Error ? err.message : err);
-      return [] as T[];
+  const settle = <T,>(label: string, p: Promise<T[]>) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<T[]>((resolve) => {
+      timer = setTimeout(() => {
+        console.error(`[hm-home-bundle] ${label} timeout`);
+        resolve([] as T[]);
+      }, 4_000);
     });
+    return Promise.race([
+      p.catch((err) => {
+        console.error(`[hm-home-bundle] ${label}`, err instanceof Error ? err.message : err);
+        return [] as T[];
+      }),
+      timeout,
+    ]).finally(() => {
+      if (timer) clearTimeout(timer);
+    });
+  };
   let [featured, siteMansetEditor, latestEditor, breaking, popular] = await Promise.all([
     settle("featured", loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict)),
     settle(

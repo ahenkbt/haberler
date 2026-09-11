@@ -22,11 +22,24 @@ import {
   injectKhNeonNewsIntoPublicResponse,
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
+import {
+  hybridEdgeFillHttpStatus,
+  HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
+  shouldFillHybridSiteRssAtEdge,
+} from "./hm-hybrid-rss-edge.js";
+import {
+  isNewsPageBundlePath,
+  newsPageBundleSlug,
+  wrapArticleAsPageBundle,
+} from "./hm-news-article-edge.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
   getHmEdgeCache,
   isHmEdgeCacheableRequest,
+  isHmNewsArticleCachePath,
   putHmEdgeCache,
+  matchHmEdgeCache,
+  readHmHtmlBootFromCache,
   resolveHmEdgeCache,
   warmKnownHmNewsSites,
 } from "./hm-edge-cache.js";
@@ -37,21 +50,26 @@ import {
   buildGeoRobotsTxt,
   buildHmAiTxtFallback,
   buildHmLlmsTxtFallback,
+  buildHmNewsArticleOgHtml,
   buildHmSiteEntityHtml,
   firstHmBootImageUrl,
+  findHmBundleHeadlineBySlug,
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
+  hmSlugDisplayName,
   injectHmHtmlBoot,
   isAhenkAgencyGeoPath,
   isAhenkAgencyHost,
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
+  parseHmNewsArticlePath,
   isSharePreviewUserAgent,
   listKnownHmEditorSites,
   raceHmHtmlBoot,
   rewriteSpaShellOgForHmHost,
   sanitizeOgShareImages,
   shouldInstantHmRootRedirect,
+  HM_SOCIAL_OG_BUDGET_MS,
   withBudget,
 } from "./hm-html-boot.js";
 import { sitemapFailXml, toGscWebSitemapXml, isGscWebSitemapPath } from "./sitemap-fail-xml.js";
@@ -799,6 +817,7 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     out.set("x-yekpare-hm-og-rewrite", hmHostSlug);
   }
   const homeHtml = incoming && isHmPublicHomeHtmlPath(incoming.pathname, incoming.hostname);
+  const articlePath = incoming ? parseHmNewsArticlePath(incoming.pathname) : null;
   if (homeHtml && env && incoming) {
     const slug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname);
     if (slug) {
@@ -832,6 +851,70 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       }
     } catch (err) {
       console.error("[hm-html-boot]", String(err?.message || err).slice(0, 180));
+    }
+  } else if (articlePath && hmHostSlug && env && incoming) {
+    const articleSlug = articlePath.slug;
+    out.append("Link", `</api/news/${encodeURIComponent(articleSlug)}>; rel=preload; as=fetch; crossorigin`);
+    out.append(
+      "Link",
+      `</api/news/page-bundle/${encodeURIComponent(articleSlug)}>; rel=preload; as=fetch; crossorigin`,
+    );
+    try {
+      const origin = upstreamOrigin(env, incoming);
+      const boot = await withBudget(
+        raceHmHtmlBoot({
+          fetchApi,
+          origin,
+          env,
+          incoming,
+          cache: getHmEdgeCache(),
+          waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
+        }),
+      );
+      const edgeCache = getHmEdgeCache();
+      let articleBundle = null;
+      const siteId = Number(boot?.siteId || 0);
+      const candidates = [];
+      if (Number.isFinite(siteId) && siteId > 0) {
+        candidates.push(
+          `${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}?siteId=${siteId}`,
+        );
+        candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}?siteId=${siteId}`);
+      }
+      candidates.push(`${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}`);
+      candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}`);
+      for (const url of candidates) {
+        const hit = await matchHmEdgeCache(edgeCache, url);
+        if (!hit?.ok) continue;
+        const json = await hit.clone().json().catch(() => null);
+        if (json?.article && String(json.article.title || "").trim()) {
+          articleBundle = json;
+          break;
+        }
+        if (json && String(json.title || "").trim()) {
+          articleBundle = wrapArticleAsPageBundle(json);
+          break;
+        }
+      }
+      if (boot || articleBundle) {
+        html = injectHmHtmlBoot(html, {
+          ...(boot || {
+            slug: hmHostSlug,
+            host: incoming.hostname,
+            siteId: Number.isFinite(siteId) && siteId > 0 ? siteId : 0,
+            savedAt: Date.now(),
+          }),
+          articleSlug,
+          articleBundle,
+          skipPaint: true,
+        });
+        out.set(
+          "x-yekpare-hm-html-boot",
+          articleBundle ? "article-cache" : boot?.fromCache ? "article-meta-cache" : "article-meta",
+        );
+      }
+    } catch (err) {
+      console.error("[hm-html-boot/article]", String(err?.message || err).slice(0, 180));
     }
   }
   return new Response(html, {
@@ -1043,7 +1126,8 @@ function isCacheableHmNewsApi(pathname) {
     p === "/api/news/featured" ||
     p === "/api/news/breaking" ||
     // /api/categories ASLA kenar cache'lenmez — admin silme sonrası bayat liste dönmesin.
-    p === "/api/authors"
+    p === "/api/authors" ||
+    isHmNewsArticleCachePath(p)
   );
 }
 
@@ -1165,7 +1249,7 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
     // home-bundle: ilk boyama; 90s kenar + SWR.
     const p = String(pathname || "").split("?")[0] || "";
     if (p === "/api/hm/home-bundle") {
-      return { cacheTtl: 90, cacheEverything: true };
+      return { cacheTtl: 600, cacheEverything: true };
     }
     return { cacheTtl: 120, cacheEverything: true };
   }
@@ -1174,6 +1258,30 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
 
 async function fetchUpstreamWithRetry(env, url, init, cfOpts, retries = 2) {
   return fetchApiWithRetry(env, url, { ...init, cf: cfOpts }, retries);
+}
+
+async function maybeRecoverNewsPageBundle(env, origin, init, incoming, upstream) {
+  if (upstream?.ok) return null;
+  if (!isNewsPageBundlePath(incoming.pathname)) return null;
+  const slug = newsPageBundleSlug(incoming.pathname);
+  if (!slug) return null;
+  try {
+    const articleUrl = `${origin}/api/news/${encodeURIComponent(slug)}${incoming.search || ""}`;
+    const articleRes = await fetchApi(env, articleUrl, { ...init, method: "GET" });
+    if (!articleRes?.ok) return null;
+    const article = await articleRes.json().catch(() => null);
+    if (!article || typeof article !== "object" || !String(article.title || "").trim()) return null;
+    const headers = new Headers({
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "public, max-age=30, s-maxage=90, stale-while-revalidate=300",
+      "x-yekpare-frontend": FRONTEND_TAG,
+      "x-yekpare-upstream": origin,
+      "x-yekpare-page-bundle-recover": "article",
+    });
+    return new Response(JSON.stringify(wrapArticleAsPageBundle(article)), { status: 200, headers });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1518,10 +1626,65 @@ async function fetchHmSlugForHost(env, apiOrigin, host) {
   }
 }
 
+function socialOgHtmlResponse(request, html, ogTag) {
+  const headers = new Headers({
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "public, max-age=300, s-maxage=300",
+    "cdn-cache-control": "public, max-age=300",
+    "x-yekpare-frontend": FRONTEND_TAG,
+    "x-yekpare-og": ogTag,
+    "x-robots-tag": "index, follow, max-image-preview:large, max-snippet:-1",
+  });
+  if (request.method === "HEAD") return new Response(null, { status: 200, headers });
+  return new Response(html, { status: 200, headers });
+}
+
+function articleFieldsFromJson(json) {
+  const article = json?.article && typeof json.article === "object" ? json.article : json;
+  if (!article || typeof article !== "object") return null;
+  const title = String(article.title || "").trim();
+  if (!title) return null;
+  return {
+    title,
+    slug: String(article.slug || "").trim(),
+    description: String(article.spot || article.summary || article.description || title).trim(),
+    imageUrl: article.imageUrl || article.image || article.thumbnailUrl || "",
+  };
+}
+
+async function loadCachedHmArticleForOg(incoming, slug, siteSlug) {
+  const cache = getHmEdgeCache();
+  const origin = incoming.origin;
+  const urls = [
+    `${origin}/api/news/${encodeURIComponent(slug)}`,
+    `${origin}/api/news/page-bundle/${encodeURIComponent(slug)}`,
+  ];
+  for (const url of urls) {
+    const hit = await matchHmEdgeCache(cache, url);
+    if (!hit?.ok) continue;
+    const json = await hit.clone().json().catch(() => null);
+    const fields = articleFieldsFromJson(json);
+    if (fields) return fields;
+  }
+  if (siteSlug) {
+    const boot = await readHmHtmlBootFromCache(cache, origin, siteSlug, incoming.hostname);
+    const item = findHmBundleHeadlineBySlug(boot?.bundle, slug);
+    if (item?.title) {
+      return {
+        title: String(item.title).trim(),
+        slug,
+        description: String(item.spot || item.summary || item.description || item.title).trim(),
+        imageUrl: item.imageUrl || item.image || item.thumbnailUrl || "",
+      };
+    }
+  }
+  return null;
+}
+
 /**
  * Sosyal önizleme botları: SPA index.html (turk.eco OG) yerine
  * /api/public/og-html ile haber başlık/açıklama/görsel döndür.
- * (Vercel middleware / Netlify edge CF Worker yolunda çalışmadığı için burada tekrarlanır.)
+ * Container asılırsa kenar cache / site entity ile 800ms içinde cevap ver.
  */
 async function socialPreviewOgHtml(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -1533,29 +1696,52 @@ async function socialPreviewOgHtml(request, env, incoming) {
   const apiOrigin = upstreamOrigin(env, incoming);
   const isHmSlugPath = /^\/tr\/[^/]+(?:\/.*)?$/.test(cleanPath);
   const fallbackSlug = !isPortalHost(host) && !isAhenkAgencyHost(host) ? hmDomainSlugFallback(host) : "";
-  const apiSlug = !isPortalHost(host) && !isAhenkAgencyHost(host) ? await fetchHmSlugForHost(env, apiOrigin, host) : null;
-  const hmSlug = apiSlug || fallbackSlug || "";
+  const hmSlug =
+    fallbackSlug ||
+    (!isPortalHost(host) && !isAhenkAgencyHost(host)
+      ? await withBudget(fetchHmSlugForHost(env, apiOrigin, host), 400)
+      : "") ||
+    "";
   const hmBound = Boolean(hmSlug);
   const isCustomHmDomainPath = hmBound;
   const isPortalSharePath = (isPortalHost(host) || !hmBound) && isPortalOgSharePath(cleanPath);
   const isAhenkAgencyPath = isAhenkAgencyHost(host) && isAhenkAgencyGeoPath(cleanPath);
   if (!isHmSlugPath && !isCustomHmDomainPath && !isPortalSharePath && !isAhenkAgencyPath) return null;
 
+  const articlePath = parseHmNewsArticlePath(cleanPath);
+  if (articlePath && hmSlug) {
+    const cachedArticle = await loadCachedHmArticleForOg(incoming, articlePath.slug, hmSlug);
+    if (cachedArticle?.title) {
+      const html = buildHmNewsArticleOgHtml({
+        origin: incoming.origin,
+        path: `/${articlePath.kind}/${encodeURIComponent(articlePath.slug)}`,
+        siteName: hmSlugDisplayName(hmSlug),
+        title: cachedArticle.title,
+        description: cachedArticle.description,
+        image: cachedArticle.imageUrl,
+      });
+      return socialOgHtmlResponse(request, html, "article-cache");
+    }
+  }
+
   const target = new URL("/api/public/og-html", apiOrigin);
   target.searchParams.set("path", cleanPath);
   target.searchParams.set("origin", incoming.origin);
 
   try {
-    const upstream = await fetchApi(env, target.toString(), {
-      headers: {
-        accept: "text/html",
-        "user-agent": request.headers.get("user-agent") ?? "",
-        "x-forwarded-host": incoming.host,
-        "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
-      },
-      cf: { cacheTtl: 0, cacheEverything: false },
-    });
-    if (!upstream.ok) {
+    const upstream = await withBudget(
+      fetchApi(env, target.toString(), {
+        headers: {
+          accept: "text/html",
+          "user-agent": request.headers.get("user-agent") ?? "",
+          "x-forwarded-host": incoming.host,
+          "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
+        },
+        cf: { cacheTtl: 0, cacheEverything: false },
+      }),
+      HM_SOCIAL_OG_BUDGET_MS,
+    );
+    if (!upstream || !upstream.ok) {
       if (isAhenkAgencyPath) return ahenkAgencyEntityResponse(request, cleanPath);
       if (hmSlug) return hmSiteEntityResponse(request, hmSlug, incoming.origin, cleanPath);
       return null;
@@ -2102,6 +2288,7 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
             "user-agent": "YekpareSiteRssEdge/1.0",
           },
           cf: { cacheTtl: 180, cacheEverything: true },
+          signal: AbortSignal.timeout(HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS),
         });
         if (!res.ok) return [];
         const entries = parseFeedEntries(await res.text(), perFeed);
@@ -2243,8 +2430,23 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   const existingCategoryHits = categorySlug
     ? existing.filter((item) => hybridItemMatchesCategorySlug(item, categorySlug))
     : existing;
-  // Genel istekte RSS zaten doluysa dokunma. Kategori isteğinde hedef slug yoksa doldur.
-  if (rssCount > 0 && (!categorySlug || existingCategoryHits.length > 0)) return null;
+  const dbFirst =
+    incoming.searchParams.get("dbFirst") === "1" ||
+    incoming.searchParams.get("dbFirst") === "true";
+  if (
+    !shouldFillHybridSiteRssAtEdge({
+      method: request.method,
+      pathname: incoming.pathname,
+      upstreamOk: Boolean(upstream?.ok),
+      dbFirst,
+      rssCount,
+      itemCount: existing.length,
+      categorySlug,
+      categoryHitCount: existingCategoryHits.length,
+    })
+  ) {
+    return null;
+  }
 
   const origin = upstreamOrigin(env, incoming);
   const { enabled, feeds } = await loadSiteRssFeedRowsFromMeta(env, origin, incoming, siteId);
@@ -2308,7 +2510,10 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   outHeaders.set("x-yekpare-site-rss", "edge-fill");
   if (categorySlug) outHeaders.set("x-yekpare-site-rss-category", categorySlug);
   outHeaders.delete("content-length");
-  return new Response(JSON.stringify(next), { status: upstream.status, headers: outHeaders });
+  return new Response(JSON.stringify(next), {
+    status: hybridEdgeFillHttpStatus(Boolean(upstream?.ok), page.length),
+    headers: outHeaders,
+  });
 }
 
 export default {
@@ -2587,11 +2792,13 @@ export default {
     try {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
+      const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
       const upstream = await fetchUpstreamWithRetry(
         env,
         target.toString(),
         proxyOpts,
         cfOpts,
+        pageBundleRetries,
       );
       if (staleEdgeFallback && (!upstream || !upstream.ok || upstream.status >= 500)) {
         const headers = new Headers(staleEdgeFallback.headers);
@@ -2601,6 +2808,8 @@ export default {
           headers,
         });
       }
+      const recoveredBundle = await maybeRecoverNewsPageBundle(env, origin, proxyOpts, incoming, upstream);
+      if (recoveredBundle) return rememberPublicApi(recoveredBundle);
       const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
         waitUntil,
       });
@@ -2661,8 +2870,8 @@ export default {
         // API zaten s-maxage veriyor; Worker no-store ile ezmesin.
         const p = String(upstreamPath || "").split("?")[0] || "";
         if (p === "/api/hm/home-bundle") {
-          out.set("cache-control", "public, max-age=30, s-maxage=90, stale-while-revalidate=300");
-          out.set("cdn-cache-control", "public, max-age=90, stale-while-revalidate=300");
+          out.set("cache-control", "public, max-age=60, s-maxage=600, stale-while-revalidate=3600");
+          out.set("cdn-cache-control", "public, max-age=600, stale-while-revalidate=3600");
         } else {
           if (!out.get("cache-control")) {
             out.set(

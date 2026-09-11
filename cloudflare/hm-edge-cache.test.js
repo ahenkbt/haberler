@@ -35,6 +35,17 @@ describe("hm-edge-cache", () => {
   it("caches public HM news APIs and skips fresh/page-content", () => {
     assert.equal(isHmEdgeCacheablePath("/api/hm/home-bundle", "slug=su"), true);
     assert.equal(isHmEdgeCacheablePath("/api/news/hybrid", "siteId=2&dbFirst=1"), true);
+    assert.equal(
+      isHmEdgeCacheablePath(
+        "/api/news/page-bundle/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
+        "siteId=3",
+      ),
+      true,
+    );
+    assert.equal(
+      isHmEdgeCacheablePath("/api/news/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", ""),
+      true,
+    );
     assert.equal(isHmEdgeCacheablePath("/api/hm/meta/by-slug/su", "domain=suhaber.net"), true);
     assert.equal(isHmEdgeCacheablePath("/api/hm/home-bundle", "fresh=1"), false);
     assert.equal(isHmEdgeCacheablePath("/api/hm/meta/by-slug/su", "includePageContent=1"), false);
@@ -141,5 +152,26 @@ describe("hm-edge-cache", () => {
     assert.equal(boot.fromCache, true);
     const tagged = tagHmEdgeCacheResponse(new Response("ok"), "hit");
     assert.equal(tagged.headers.get("x-yekpare-edge-cache"), "hit");
+  });
+
+  it("aliases slug home-bundle cache to siteId URL", async () => {
+    const cache = memoryCache();
+    const slugUrl = "https://ankarasehirgazetesi.com/api/hm/home-bundle?slug=asg&sliderLimit=15";
+    await putHmEdgeCache(
+      cache,
+      slugUrl,
+      new Response(JSON.stringify({ siteId: 3, featured: [{ title: "Ankara" }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const alias = await matchHmEdgeCache(
+      cache,
+      "https://ankarasehirgazetesi.com/api/hm/home-bundle?siteId=3&sliderLimit=15",
+    );
+    assert.ok(alias);
+    const body = await alias.json();
+    assert.equal(body.siteId, 3);
+    assert.equal(body.featured[0].title, "Ankara");
   });
 });

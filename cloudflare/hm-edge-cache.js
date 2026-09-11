@@ -19,6 +19,29 @@ const CACHEABLE_EXACT = new Set([
   "/api/authors",
 ]);
 
+const NEWS_ARTICLE_RESERVED = new Set([
+  "hybrid",
+  "featured",
+  "breaking",
+  "popular",
+  "by-category",
+  "hm-nearest-slug",
+  "deleted-redirect",
+  "page-bundle",
+  "tepe-featured",
+  "authors",
+]);
+
+export function isHmNewsArticleCachePath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "";
+  if (/^\/api\/news\/page-bundle\/[^/]+$/.test(p)) return true;
+  const m = /^\/api\/news\/([^/]+)$/.exec(p);
+  if (!m) return false;
+  const seg = decodeURIComponent(m[1] || "");
+  if (!seg || NEWS_ARTICLE_RESERVED.has(seg) || seg.startsWith("hm-")) return false;
+  return true;
+}
+
 export function getHmEdgeCache() {
   try {
     if (typeof caches !== "undefined" && caches.default) return caches.default;
@@ -35,6 +58,7 @@ export function isHmEdgeCacheablePath(pathname, search = "") {
   if (qs.get("includePageContent") === "1") return false;
   if (CACHEABLE_EXACT.has(p)) return true;
   if (p.startsWith("/api/hm/meta/")) return true;
+  if (isHmNewsArticleCachePath(p)) return true;
   return false;
 }
 
@@ -101,6 +125,14 @@ export async function matchHmEdgeCache(cache, url) {
 }
 
 export async function putHmEdgeCache(cache, url, response) {
+  const stored = await putHmEdgeCacheOnce(cache, url, response);
+  if (stored) {
+    await aliasHmHomeBundleCache(cache, url, response);
+  }
+  return stored;
+}
+
+async function putHmEdgeCacheOnce(cache, url, response) {
   if (!cache || typeof cache.put !== "function" || !response) return false;
   if (!response.ok) return false;
   try {
@@ -119,6 +151,31 @@ export async function putHmEdgeCache(cache, url, response) {
     return true;
   } catch {
     return false;
+  }
+}
+
+/** HTML boot slug=... ile ısınır; React siteId=... ister — aynı gövdeyi iki anahtara yaz. */
+async function aliasHmHomeBundleCache(cache, url, response) {
+  try {
+    const u = new URL(hmEdgeCacheKeyUrl(url));
+    const path = u.pathname.replace(/\/+$/, "") || "/";
+    if (path !== "/api/hm/home-bundle") return;
+    if (u.searchParams.get("siteId")) return;
+    const body = await response.clone().json();
+    const siteId = Number(body?.siteId);
+    if (!Number.isFinite(siteId) || siteId <= 0) return;
+    const slider = u.searchParams.get("sliderLimit") || "15";
+    const alias = `${u.origin}/api/hm/home-bundle?siteId=${siteId}&sliderLimit=${encodeURIComponent(slider)}`;
+    await putHmEdgeCacheOnce(
+      cache,
+      alias,
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+  } catch {
+    /* alias best-effort */
   }
 }
 
@@ -248,20 +305,56 @@ export async function warmKnownHmNewsSites(env, { fetchApi, cache, sites }) {
       "x-forwarded-proto": "https",
     };
     try {
-      const [metaRes, bundleRes] = await Promise.all([
-        fetchApi(env, metaUrl, { headers }),
-        fetchApi(env, bundleUrl, { headers }),
-      ]);
-      if (cache) {
-        if (jsonOk(metaRes)) await putHmEdgeCache(cache, metaUrl, metaRes);
-        if (jsonOk(bundleRes)) await putHmEdgeCache(cache, bundleUrl, bundleRes);
+      let warmTimer;
+      try {
+        await Promise.race([
+          (async () => {
+          const [metaRes, bundleRes] = await Promise.all([
+            fetchApi(env, metaUrl, { headers }),
+            fetchApi(env, bundleUrl, { headers }),
+          ]);
+          if (cache) {
+            if (jsonOk(metaRes)) await putHmEdgeCache(cache, metaUrl, metaRes);
+            if (jsonOk(bundleRes)) await putHmEdgeCache(cache, bundleUrl, bundleRes);
+          }
+          let siteId = 0;
+          if (jsonOk(metaRes)) {
+            const meta = await metaRes.clone().json().catch(() => null);
+            siteId = Number(meta?.id || 0);
+          }
+          if ((!Number.isFinite(siteId) || siteId <= 0) && jsonOk(bundleRes)) {
+            const bundle = await bundleRes.clone().json().catch(() => null);
+            siteId = Number(bundle?.siteId || 0);
+          }
+          if (cache && Number.isFinite(siteId) && siteId > 0) {
+            const hybridUrl = `${origin}/api/news/hybrid?siteId=${siteId}&limit=24&offset=0&rssScope=all&dbFirst=1`;
+            const newsUrl = `${origin}/api/news?siteId=${siteId}&status=published&limit=40`;
+            try {
+              const [hybridRes, newsRes] = await Promise.all([
+                fetchApi(env, hybridUrl, { headers }),
+                fetchApi(env, newsUrl, { headers }),
+              ]);
+              if (jsonOk(hybridRes)) await putHmEdgeCache(cache, hybridUrl, hybridRes);
+              if (jsonOk(newsRes)) await putHmEdgeCache(cache, newsUrl, newsRes);
+            } catch {
+              /* hybrid/news warm best-effort */
+            }
+          }
+          results.push({
+            host,
+            slug,
+            meta: jsonOk(metaRes),
+            bundle: jsonOk(bundleRes),
+            siteId: Number.isFinite(siteId) && siteId > 0 ? siteId : undefined,
+          });
+        })(),
+          new Promise((_, reject) => {
+            warmTimer = setTimeout(() => reject(new Error("warm timeout")), 12_000);
+          }),
+        ]);
+      } finally {
+        if (warmTimer) clearTimeout(warmTimer);
       }
-      results.push({
-        host,
-        slug,
-        meta: jsonOk(metaRes),
-        bundle: jsonOk(bundleRes),
-      });
     } catch (err) {
       results.push({ host, slug, error: String(err?.message || err).slice(0, 120) });
     }
