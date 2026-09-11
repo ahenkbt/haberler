@@ -326,20 +326,6 @@ export async function warmKnownHmNewsSites(env, { fetchApi, cache, sites }) {
             const bundle = await bundleRes.clone().json().catch(() => null);
             siteId = Number(bundle?.siteId || 0);
           }
-          if (cache && Number.isFinite(siteId) && siteId > 0) {
-            const hybridUrl = `${origin}/api/news/hybrid?siteId=${siteId}&limit=24&offset=0&rssScope=all&dbFirst=1`;
-            const newsUrl = `${origin}/api/news?siteId=${siteId}&status=published&limit=40`;
-            try {
-              const [hybridRes, newsRes] = await Promise.all([
-                fetchApi(env, hybridUrl, { headers }),
-                fetchApi(env, newsUrl, { headers }),
-              ]);
-              if (jsonOk(hybridRes)) await putHmEdgeCache(cache, hybridUrl, hybridRes);
-              if (jsonOk(newsRes)) await putHmEdgeCache(cache, newsUrl, newsRes);
-            } catch {
-              /* hybrid/news warm best-effort */
-            }
-          }
           results.push({
             host,
             slug,
