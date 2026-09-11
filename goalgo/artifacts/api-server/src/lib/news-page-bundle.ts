@@ -522,14 +522,16 @@ export async function buildNewsPageBundle(slug: string, siteId: number | null): 
   };
 }
 
+const PAGE_BUNDLE_TIMEOUT = { timedOut: true } as const;
+
 /** İlgili/sidebar takılırsa bile haberi 5sn içinde döndür. */
 export async function buildNewsPageBundleFast(slug: string, siteId: number | null): Promise<NewsPageBundle> {
-  const built = await withTimeoutOrFallback(
-    buildNewsPageBundle(slug, siteId).then((bundle) => ({ ok: true as const, bundle })),
+  const built = await withTimeoutOrFallback<NewsPageBundle | typeof PAGE_BUNDLE_TIMEOUT>(
+    buildNewsPageBundle(slug, siteId),
     NEWS_PAGE_BUNDLE_BUDGET_MS,
-    { ok: false as const, bundle: null },
+    PAGE_BUNDLE_TIMEOUT,
   );
-  if (built.ok && built.bundle) return built.bundle;
+  if (!("timedOut" in built)) return built;
   const article = await resolveNewsArticleBySlug(slug, siteId);
   return wrapArticleAsNewsPageBundle(article);
 }

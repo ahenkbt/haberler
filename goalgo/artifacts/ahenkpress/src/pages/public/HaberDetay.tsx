@@ -101,7 +101,7 @@ export default function HaberDetay() {
   const cachedBundle = useMemo(
     () =>
       (readHmNewsArticleBundleCache(siteIdForQuery, slug) as NewsPageBundle | undefined) ??
-      readHmNewsArticleBoot<NewsItem>(slug),
+      (readHmNewsArticleBoot<NewsItem>(slug) as NewsPageBundle | undefined),
     [siteIdForQuery, slug],
   );
 
