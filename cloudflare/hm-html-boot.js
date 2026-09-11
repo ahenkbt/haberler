@@ -2,7 +2,14 @@
  * HM editör siteleri — HTML ilk boyama.
  * Kök / bekleyen meta API'siz /tr/{slug}'a düşer; HTML'e kısa süreli home-bundle gömülür.
  * fetchApi Container yolunda AbortSignal'i siler; TTFB'yi withBudget keser.
+ * Kenar cache hit ise origin beklenmez; manşet HTML'i React'ten önce boyanır.
  */
+import {
+  getHmEdgeCache,
+  readHmHtmlBootFromCache,
+  storeHmHtmlBootInCache,
+} from "./hm-edge-cache.js";
+
 export const HM_HTML_BOOT_BUDGET_MS = 280;
 const HM_HTML_BOOT_MAX_JSON_CHARS = 180_000;
 
@@ -61,6 +68,22 @@ export function hmDomainSlugFallback(hostname) {
   );
 }
 
+/** Cron ısındırma + kenar cache — www tekrarı yok. */
+export function listKnownHmEditorSites() {
+  const seen = new Set();
+  const out = [];
+  for (const [hostRaw, slug] of Object.entries(HM_DOMAIN_SLUG_FALLBACKS)) {
+    const host = String(hostRaw || "")
+      .toLowerCase()
+      .replace(/^www\./, "");
+    const s = String(slug || "").trim();
+    if (!host || !s || seen.has(host)) continue;
+    seen.add(host);
+    out.push({ host, slug: s });
+  }
+  return out;
+}
+
 /** Bilinen HM alanında kök GET — meta API beklemeden 308. */
 export function shouldInstantHmRootRedirect(method, pathname, hostname) {
   const m = String(method || "GET").toUpperCase();
@@ -117,6 +140,104 @@ export function firstHmBootImageUrl(bundle, origin) {
   return "";
 }
 
+function escPaint(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function bootHeadlineItems(bundle) {
+  const lists = [
+    bundle?.featured,
+    bundle?.centerHeadlines,
+    bundle?.manualEditor,
+    bundle?.breaking,
+    bundle?.popular,
+  ];
+  const seen = new Set();
+  const items = [];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      const title = String(item?.title || item?.headline || "").trim();
+      if (!title) continue;
+      const key = title.toLocaleLowerCase("tr-TR");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const slug = String(item?.slug || "").trim();
+      const href = slug ? `/haber/${encodeURIComponent(slug)}` : "#";
+      items.push({
+        title,
+        href,
+        image: String(item?.imageUrl || item?.featuredImage || item?.image || item?.thumbnailUrl || "").trim(),
+      });
+      if (items.length >= 8) return items;
+    }
+  }
+  return items;
+}
+
+const HM_BOOT_PAINT_HIDE = `<script>
+(function(){
+  var paint=document.getElementById("hm-boot-paint");
+  var root=document.getElementById("root");
+  if(!paint) return;
+  function hide(){
+    if(!paint||!paint.parentNode) return;
+    if(root&&root.querySelector("[data-hm-vitrin-theme],.hm-vitrin-root,.hm-classic-root,article")){
+      paint.parentNode.removeChild(paint);
+    }
+  }
+  if(root&&typeof MutationObserver==="function"){
+    new MutationObserver(hide).observe(root,{childList:true,subtree:true});
+  }
+  setTimeout(hide,250);
+  setTimeout(function(){ if(paint&&paint.parentNode) paint.parentNode.removeChild(paint); },10000);
+})();
+</script>`;
+
+/** React 4MB JS indirmeden manşet görünsün. */
+export function buildHmBootPaintHtml(boot) {
+  if (!boot || typeof boot !== "object") return "";
+  const items = bootHeadlineItems(boot.bundle);
+  if (items.length === 0) return "";
+  const name = escPaint(
+    boot.meta?.displayName || hmSlugDisplayName(boot.slug) || boot.slug || "Haber",
+  );
+  const heroItem = items[0];
+  const sides = items.slice(1, 7);
+  const heroImg = heroItem?.image
+    ? `<img src="${escPaint(heroItem.image)}" alt="" width="800" height="450" decoding="async"/>`
+    : "";
+  const sideHtml = sides
+    .map(
+      (it) =>
+        `<a class="hm-boot-side" href="${escPaint(it.href)}"><span>${escPaint(it.title)}</span></a>`,
+    )
+    .join("");
+  return `<div id="hm-boot-paint" role="status" aria-live="polite">
+<style>
+#hm-boot-paint{position:fixed;inset:0;z-index:2147483000;background:#fff;color:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif;overflow:auto}
+#hm-boot-paint .hm-boot-bar{background:#0f172a;color:#fff;padding:14px 16px;font-weight:700;font-size:18px}
+#hm-boot-paint .hm-boot-grid{max-width:1100px;margin:0 auto;padding:14px 12px 24px;display:grid;gap:12px}
+@media(min-width:800px){#hm-boot-paint .hm-boot-grid{grid-template-columns:1.4fr .8fr;align-items:start}}
+#hm-boot-paint .hm-boot-hero{display:block;text-decoration:none;color:inherit}
+#hm-boot-paint .hm-boot-hero img{width:100%;height:auto;max-height:360px;object-fit:cover;border-radius:12px;background:#e2e8f0}
+#hm-boot-paint .hm-boot-hero h2{margin:10px 0 0;font-size:22px;line-height:1.25}
+#hm-boot-paint .hm-boot-side{display:block;padding:10px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;text-decoration:none;font-weight:600;font-size:15px;line-height:1.35}
+#hm-boot-paint .hm-boot-note{margin:8px 16px 0;color:#64748b;font-size:12px}
+</style>
+<div class="hm-boot-bar">${name}</div>
+<p class="hm-boot-note">Manşet yükleniyor…</p>
+<div class="hm-boot-grid">
+<a class="hm-boot-hero" href="${escPaint(heroItem.href)}">${heroImg}<h2>${escPaint(heroItem.title)}</h2></a>
+<div>${sideHtml}</div>
+</div>
+</div>${HM_BOOT_PAINT_HIDE}`;
+}
+
 export function injectHmHtmlBoot(html, boot) {
   if (!html || !boot || typeof boot !== "object") return html;
   const parts = [];
@@ -145,26 +266,35 @@ export function injectHmHtmlBoot(html, boot) {
       })};`,
     );
   }
-  if (parts.length === 0) return html;
-  const tag = `<script>${parts.join("")}</script>`;
-  const charset = html.match(/<meta charset=["']UTF-8["']\s*\/?>/i);
-  if (charset && charset.index != null) {
-    const at = charset.index + charset[0].length;
-    return `${html.slice(0, at)}\n${tag}${html.slice(at)}`;
+  let out = html;
+  if (parts.length > 0) {
+    const tag = `<script>${parts.join("")}</script>`;
+    const charset = out.match(/<meta charset=["']UTF-8["']\s*\/?>/i);
+    if (charset && charset.index != null) {
+      const at = charset.index + charset[0].length;
+      out = `${out.slice(0, at)}\n${tag}${out.slice(at)}`;
+    } else if (out.includes("</head>")) {
+      out = out.replace("</head>", `${tag}\n</head>`);
+    } else {
+      out = `${tag}${out}`;
+    }
   }
-  if (html.includes("</head>")) return html.replace("</head>", `${tag}\n</head>`);
-  return `${tag}${html}`;
+  const paint = buildHmBootPaintHtml(boot);
+  if (paint) {
+    if (out.includes('<div id="root"></div>')) {
+      out = out.replace('<div id="root"></div>', `${paint}<div id="root"></div>`);
+    } else if (out.includes("<body>")) {
+      out = out.replace("<body>", `<body>${paint}`);
+    }
+  }
+  return out;
 }
 
 function jsonOk(res) {
   return Boolean(res && res.ok);
 }
 
-/**
- * Kenar cache hit ise ~50ms; miss ise bütçe dolunca HTML'i geciktirme.
- * @param {{ fetchApi: Function, origin: string, env: object, incoming: URL }} opts
- */
-export async function raceHmHtmlBoot(opts) {
+async function fetchHmHtmlBootFromOrigin(opts) {
   const { fetchApi, origin, env, incoming } = opts || {};
   const slug = hmHomeSlugFromPath(incoming?.pathname, incoming?.hostname);
   if (!slug || typeof fetchApi !== "function" || !origin) return null;
@@ -174,28 +304,59 @@ export async function raceHmHtmlBoot(opts) {
     "x-forwarded-host": incoming.host || domain,
     "x-forwarded-proto": "https",
   };
-  const cfCache = { cacheTtl: 60, cacheEverything: true };
+  const metaUrl = `${origin}/api/hm/meta/by-slug/${encodeURIComponent(slug)}?domain=${encodeURIComponent(domain)}`;
+  const bundleUrl = `${origin}/api/hm/home-bundle?slug=${encodeURIComponent(slug)}&sliderLimit=15`;
+  const [metaRes, bundleRes] = await Promise.all([
+    fetchApi(env, metaUrl, { headers }),
+    fetchApi(env, bundleUrl, { headers }),
+  ]);
+  const meta = jsonOk(metaRes) ? await metaRes.json().catch(() => null) : null;
+  const bundle = jsonOk(bundleRes) ? await bundleRes.json().catch(() => null) : null;
+  const siteId = Number(meta?.id || bundle?.siteId);
+  if (!Number.isFinite(siteId) || siteId <= 0) {
+    return meta?.id ? { siteId: Number(meta.id), slug, host: domain, savedAt: Date.now(), meta, bundle: null } : null;
+  }
+  return {
+    siteId,
+    slug,
+    host: domain,
+    savedAt: Date.now(),
+    meta: meta && typeof meta === "object" ? meta : null,
+    bundle: bundle && typeof bundle === "object" ? bundle : null,
+  };
+}
+
+/**
+ * Kenar cache hit ise origin beklenmez; miss ise bütçe dolunca HTML'i geciktirme.
+ * @param {{ fetchApi: Function, origin: string, env: object, incoming: URL, cache?: Cache, waitUntil?: Function }} opts
+ */
+export async function raceHmHtmlBoot(opts) {
+  const { origin, incoming, cache, waitUntil } = opts || {};
+  const slug = hmHomeSlugFromPath(incoming?.pathname, incoming?.hostname);
+  if (!slug || !origin) return null;
+  const domain = String(incoming?.hostname || "").toLowerCase();
+  const edgeCache = cache || getHmEdgeCache();
   try {
-    const metaUrl = `${origin}/api/hm/meta/by-slug/${encodeURIComponent(slug)}?domain=${encodeURIComponent(domain)}`;
-    const bundleUrl = `${origin}/api/hm/home-bundle?slug=${encodeURIComponent(slug)}&sliderLimit=15`;
-    const [metaRes, bundleRes] = await Promise.all([
-      fetchApi(env, metaUrl, { headers, cf: cfCache }),
-      fetchApi(env, bundleUrl, { headers, cf: cfCache }),
-    ]);
-    const meta = jsonOk(metaRes) ? await metaRes.json().catch(() => null) : null;
-    const bundle = jsonOk(bundleRes) ? await bundleRes.json().catch(() => null) : null;
-    const siteId = Number(meta?.id || bundle?.siteId);
-    if (!Number.isFinite(siteId) || siteId <= 0) {
-      return meta?.id ? { siteId: Number(meta.id), slug, host: domain, savedAt: Date.now(), meta, bundle: null } : null;
+    const cached = await readHmHtmlBootFromCache(edgeCache, origin, slug, domain);
+    if (cached && (cached.bundle || cached.meta)) {
+      if (typeof waitUntil === "function") {
+        waitUntil(
+          fetchHmHtmlBootFromOrigin(opts)
+            .then((fresh) => (fresh ? storeHmHtmlBootInCache(edgeCache, origin, slug, domain, fresh) : null))
+            .catch((err) => {
+              console.error("[hm-html-boot/refresh]", String(err?.message || err).slice(0, 160));
+            }),
+        );
+      }
+      return cached;
     }
-    return {
-      siteId,
-      slug,
-      host: domain,
-      savedAt: Date.now(),
-      meta: meta && typeof meta === "object" ? meta : null,
-      bundle: bundle && typeof bundle === "object" ? bundle : null,
-    };
+    const fresh = await fetchHmHtmlBootFromOrigin(opts);
+    if (fresh && edgeCache) {
+      const store = storeHmHtmlBootInCache(edgeCache, origin, slug, domain, fresh);
+      if (typeof waitUntil === "function") waitUntil(store);
+      else await store.catch(() => null);
+    }
+    return fresh;
   } catch {
     return null;
   }

@@ -7,6 +7,9 @@ import {
   isHmPublicHomeHtmlPath,
   firstHmBootImageUrl,
   injectHmHtmlBoot,
+  buildHmBootPaintHtml,
+  listKnownHmEditorSites,
+  raceHmHtmlBoot,
   withBudget,
   buildGeoRobotsTxt,
   buildHmLlmsTxtFallback,
@@ -20,6 +23,7 @@ import {
   rewriteSpaShellOgForHmHost,
   sanitizeOgShareImages,
 } from "./hm-html-boot.js";
+import { putHmEdgeCache } from "./hm-edge-cache.js";
 
 describe("hm-html-boot", () => {
   it("maps known editor domains to slugs", () => {
@@ -49,16 +53,94 @@ describe("hm-html-boot", () => {
 
   it("injects bundle JSON after charset so the early IIFE can read it", () => {
     const html =
-      '<html><head><meta charset="UTF-8" /><script>window.__EARLY__=1</script></head><body></body></html>';
+      '<html><head><meta charset="UTF-8" /><script>window.__EARLY__=1</script></head><body><div id="root"></div></body></html>';
     const out = injectHmHtmlBoot(html, {
       siteId: 8,
       slug: "ankarahabergundemi",
-      bundle: { siteId: 8, featured: [{ title: "<img>" }] },
+      meta: { id: 8, slug: "ankarahabergundemi", displayName: "Ankara Haber Gündemi" },
+      bundle: { siteId: 8, featured: [{ title: "<img>", slug: "haber-1", imageUrl: "https://cdn.example/a.jpg" }] },
     });
     assert.match(out, /__YEKPARE_HM_HOME_BUNDLE__/);
     assert.match(out, /\\u003cimg>/);
     assert.ok(out.indexOf("<img>") === -1);
     assert.ok(out.indexOf("__YEKPARE_HM_HOME_BUNDLE__") < out.indexOf("__EARLY__"));
+    assert.match(out, /id="hm-boot-paint"/);
+    assert.match(out, /Ankara Haber Gündemi/);
+    assert.ok(out.indexOf("hm-boot-paint") < out.indexOf('id="root"'));
+  });
+
+  it("lists unique known editor hosts for keepalive warm", () => {
+    const sites = listKnownHmEditorSites();
+    const hosts = sites.map((s) => s.host);
+    assert.ok(hosts.includes("suhaber.net"));
+    assert.ok(hosts.includes("vatanhaber.net"));
+    assert.equal(hosts.includes("www.suhaber.net"), false);
+    assert.equal(
+      sites.find((s) => s.host === "kirsehirhaber.org")?.slug,
+      "kirsehirhaber",
+    );
+  });
+
+  it("builds a paint overlay from featured headlines", () => {
+    const html = buildHmBootPaintHtml({
+      slug: "su",
+      meta: { displayName: "Su Haber" },
+      bundle: {
+        featured: [
+          { title: "Birinci", slug: "birinci", imageUrl: "https://cdn.example/a.jpg" },
+          { title: "İkinci", slug: "ikinci" },
+        ],
+      },
+    });
+    assert.match(html, /Su Haber/);
+    assert.match(html, /Birinci/);
+    assert.match(html, /ikinci/);
+    assert.match(html, /hm-boot-paint/);
+  });
+
+  it("raceHmHtmlBoot prefers edge cache and does not wait on origin", async () => {
+    const cache = {
+      store: new Map(),
+      async match(req) {
+        return this.store.get(typeof req === "string" ? req : req.url) || null;
+      },
+      async put(req, res) {
+        this.store.set(typeof req === "string" ? req : req.url, res);
+      },
+    };
+    const origin = "https://suhaber.net";
+    await putHmEdgeCache(
+      cache,
+      `${origin}/api/hm/meta/by-slug/su?domain=suhaber.net`,
+      new Response(JSON.stringify({ id: 2, slug: "su", displayName: "Su Haber" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    await putHmEdgeCache(
+      cache,
+      `${origin}/api/hm/home-bundle?slug=su&sliderLimit=15`,
+      new Response(JSON.stringify({ siteId: 2, featured: [{ title: "Manşet", slug: "manset" }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    let originHits = 0;
+    const boot = await raceHmHtmlBoot({
+      fetchApi: async () => {
+        originHits += 1;
+        await new Promise((r) => setTimeout(r, 50));
+        return new Response("{}", { status: 500 });
+      },
+      origin,
+      env: {},
+      incoming: new URL("https://suhaber.net/tr/su"),
+      cache,
+    });
+    assert.equal(boot.fromCache, true);
+    assert.equal(boot.siteId, 2);
+    assert.equal(boot.bundle.featured[0].title, "Manşet");
+    assert.equal(originHits, 0);
   });
 
   it("picks first http(s) cover for preload", () => {

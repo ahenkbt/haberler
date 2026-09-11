@@ -18,7 +18,7 @@ import {
 export class GoalgoApiContainer extends Container {
   defaultPort = CONTAINER_PORT;
   requiredPorts = [CONTAINER_PORT];
-  sleepAfter = "30m";
+  sleepAfter = "2h";
   enableInternet = true;
 
   constructor(ctx, env) {
