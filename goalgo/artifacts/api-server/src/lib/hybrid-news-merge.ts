@@ -2,7 +2,6 @@
 import { getNewsDbForRead, db as mainDb, newsTable, categoriesTable, newsSiteOverridesTable } from "@workspace/db";
 import {
   buildHmSyncDedupeKey,
-  excludeCorporateOriginCentralNewsSql,
   loadCorporateHmSiteIds,
 } from "./hm-yekpare-news-sync.js";
 import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
@@ -32,6 +31,7 @@ import { resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "./news
 import {
   enrichSerializedNewsListImages,
   filterHiddenPoolNewsItems,
+  withTimeoutOrFallback,
 } from "./news-list-image-enrich.js";
 import { ensureNewsPublicSubmissionColumns } from "./news-public-submission-schema.js";
 import { PORTAL_ORIGIN } from "./portalBrand.js";
@@ -292,9 +292,7 @@ export async function loadPortalDbNews(opts: {
       not(sql`${newsTable.rssSourceUrl} LIKE 'yekpare-hm-sync:%:news:%'`),
     )!,
   ];
-  const corporateSiteIds = await loadCorporateHmSiteIds();
-  const corporateExcl = excludeCorporateOriginCentralNewsSql(corporateSiteIds);
-  if (corporateExcl) conds.push(corporateExcl);
+  // Kurumsal sync/pool LIKE + COUNT(*) Hostinger'da 8sn+ 500 — JS filtresi aynı işi yapar.
 
   if (opts.q) {
     const pattern = `%${opts.q}%`;
@@ -309,28 +307,36 @@ export async function loadPortalDbNews(opts: {
 
   const where = and(...conds);
   const ctx = await loadNewsContext();
-  const [rows, totalRows] = await Promise.all([
-    getNewsDbForRead()
-      .select(newsListSelectFields)
-      .from(newsTable)
-      .where(where)
-      .orderBy(desc(newsTable.createdAt))
-      .limit(opts.limit + opts.offset + 100),
-    getNewsDbForRead()
-      .select({ count: sql<number>`count(*)::int` })
-      .from(newsTable)
-      .where(where),
-  ]);
+  const fetchLimit = Math.min(opts.limit + opts.offset + 100, 400);
+  let rows: Array<Parameters<typeof serializeNewsListItem>[0]> = [];
+  try {
+    rows = await withTimeoutOrFallback(
+      getNewsDbForRead()
+        .select(newsListSelectFields)
+        .from(newsTable)
+        .where(where)
+        .orderBy(desc(newsTable.createdAt))
+        .limit(fetchLimit),
+      2_500,
+      [],
+    );
+  } catch (err) {
+    console.error("[loadPortalDbNews]", err instanceof Error ? err.message.slice(0, 180) : err);
+    rows = [];
+  }
 
-  return {
-    items: excludeKoseFromEditorialNewsList(
-      filterNonCorporateOriginCentralNewsItems(
-        rows.map((r) => serializeNewsListItem(r, ctx)),
-        corporateSiteIds,
-      ),
+  const corporateSiteIds = await withTimeoutOrFallback(
+    loadCorporateHmSiteIds(),
+    800,
+    new Set<number>(),
+  );
+  const items = excludeKoseFromEditorialNewsList(
+    filterNonCorporateOriginCentralNewsItems(
+      rows.map((r) => serializeNewsListItem(r, ctx)),
+      corporateSiteIds,
     ),
-    total: totalRows[0]?.count ?? 0,
-  };
+  );
+  return { items, total: items.length };
 }
 
 /** HM editör sitesi havuz seçenekleri — public vitrinde merkez canlı birleşmez (onaylı yerel kopya gerekir). */

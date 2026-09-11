@@ -406,7 +406,7 @@ async function fetchHybridNews(params: {
   const qs = new URLSearchParams({
     limit: String(params.limit),
     offset: String(params.offset ?? 0),
-    fresh: "1",
+    dbFirst: "1",
   });
   if (params.categorySlug) qs.set("categorySlug", params.categorySlug);
   if (params.rssOnly) qs.set("rssOnly", "1");
