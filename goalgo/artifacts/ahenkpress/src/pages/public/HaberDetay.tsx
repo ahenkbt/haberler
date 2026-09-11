@@ -112,10 +112,10 @@ export default function HaberDetay() {
     refetch: refetchBundle,
   } = useQuery<NewsPageBundle | null>({
     queryKey: ["/api/news/page-bundle", slug, siteIdForQuery ?? "portal"],
-    queryFn: async () => {
+    queryFn: async (): Promise<NewsPageBundle | null> => {
       const data = await fetchHmNewsPageBundle<NewsItem>(slug, siteIdForQuery);
       if (data?.article) writeHmNewsArticleBundleCache(siteIdForQuery, slug, data);
-      return data;
+      return data as NewsPageBundle;
     },
     enabled: Boolean(slug),
     staleTime: 5 * 60_000,
