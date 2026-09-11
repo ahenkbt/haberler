@@ -801,8 +801,27 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         }
       }
 
-      const [dbResult, rssBundle] = await Promise.all([loadDbResult(), loadCachedRssBundle()]);
-      let { mapRssItems, mapFeedLabels, mapFeedGeoById } = rssBundle;
+      const rssBundleP = loadCachedRssBundle().catch((err) => {
+        console.error(
+          "[news/hybrid/dbFirst-rss]",
+          err instanceof Error ? err.message.slice(0, 180) : err,
+        );
+        return {
+          mapRssItems: [] as Awaited<ReturnType<typeof loadCachedRssBundle>>["mapRssItems"],
+          mapFeedLabels: {} as Awaited<ReturnType<typeof loadCachedRssBundle>>["mapFeedLabels"],
+          mapFeedGeoById: {} as Awaited<ReturnType<typeof loadCachedRssBundle>>["mapFeedGeoById"],
+        };
+      });
+      let dbResult = { items: [] as Awaited<ReturnType<typeof loadDbResult>>["items"], total: 0 };
+      try {
+        dbResult = await loadDbResult();
+      } catch (err) {
+        console.error(
+          "[news/hybrid/dbFirst-db]",
+          err instanceof Error ? err.message.slice(0, 180) : err,
+        );
+      }
+      let { mapRssItems, mapFeedLabels, mapFeedGeoById } = await rssBundleP;
 
       // Site içi RSS açıkken soğuk cache: kısa warm bekle (otomasyon/cooldown atlanır).
       // Anasayfa dbFirst yolunda aksi halde RSS hiç dolmuyordu (bg warm otomasyona bağlıydı).

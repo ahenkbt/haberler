@@ -28,7 +28,10 @@ import {
   shouldFillHybridSiteRssAtEdge,
 } from "./hm-hybrid-rss-edge.js";
 import {
+  findNewsItemBySlug,
+  headlineToArticle,
   isNewsPageBundlePath,
+  newsArticleSlugFromApiPath,
   newsPageBundleSlug,
   wrapArticleAsPageBundle,
 } from "./hm-news-article-edge.js";
@@ -896,6 +899,13 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
           break;
         }
       }
+      if (!articleBundle && boot?.bundle) {
+        const fromManset = headlineToArticle(
+          findHmBundleHeadlineBySlug(boot.bundle, articleSlug),
+          articleSlug,
+        );
+        if (fromManset) articleBundle = wrapArticleAsPageBundle(fromManset);
+      }
       if (boot || articleBundle) {
         html = injectHmHtmlBoot(html, {
           ...(boot || {
@@ -1283,6 +1293,55 @@ async function maybeRecoverNewsPageBundle(env, origin, init, incoming, upstream)
     return null;
   }
 }
+
+async function findCachedHeadlineForArticleSlug(incoming, edgeCache, slug) {
+  const siteSlug = hmDomainSlugFallback(incoming.hostname);
+  if (!siteSlug || !edgeCache) return null;
+  const boot = await readHmHtmlBootFromCache(edgeCache, incoming.origin, siteSlug, incoming.hostname);
+  const fromBundle = findHmBundleHeadlineBySlug(boot?.bundle, slug);
+  if (fromBundle) return fromBundle;
+  const siteId = Number(boot?.siteId || boot?.meta?.id || boot?.bundle?.siteId);
+  if (!Number.isFinite(siteId) || siteId <= 0) return null;
+  const origin = incoming.origin;
+  const urls = [
+    `${origin}/api/hm/home-bundle?siteId=${siteId}&sliderLimit=15`,
+    `${origin}/api/news?siteId=${siteId}&status=published&limit=40`,
+    `${origin}/api/news/hybrid?siteId=${siteId}&limit=24&offset=0&rssScope=all&dbFirst=1`,
+  ];
+  for (const url of urls) {
+    const hit = await matchHmEdgeCache(edgeCache, url);
+    if (!hit?.ok) continue;
+    const json = await hit.clone().json().catch(() => null);
+    const row = findHmBundleHeadlineBySlug(json, slug) || findNewsItemBySlug(json, slug);
+    if (row) return row;
+  }
+  return null;
+}
+
+async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
+  if (!edgeCache) return null;
+  const path = incoming.pathname;
+  if (!isNewsPageBundlePath(path) && !isHmNewsArticleCachePath(path)) return null;
+  const slug = newsArticleSlugFromApiPath(path);
+  if (!slug) return null;
+  try {
+    const headline = await findCachedHeadlineForArticleSlug(incoming, edgeCache, slug);
+    const article = headlineToArticle(headline, slug);
+    if (!article) return null;
+    const payload = isNewsPageBundlePath(path) ? wrapArticleAsPageBundle(article) : article;
+    const headers = new Headers({
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "public, max-age=30, s-maxage=90, stale-while-revalidate=300",
+      "x-yekpare-frontend": FRONTEND_TAG,
+      "x-yekpare-page-bundle-recover": "home-bundle",
+    });
+    return new Response(JSON.stringify(payload), { status: 200, headers });
+  } catch {
+    return null;
+  }
+}
+
+const HM_ORIGIN_BUDGET_MS = 2_500;
 
 /**
  * Eski API: parseInt("2026-yili-...") → id 2026 (yanlış haber).
@@ -2790,16 +2849,35 @@ export default {
     };
 
     try {
+      const homeFill = await maybeFillArticleFromHomeBundle(incoming, edgeCache);
+      if (homeFill) {
+        if (waitUntil) {
+          waitUntil(
+            withBudget(
+              fetchApi(env, target.toString(), proxyInit(apiRequest, origin, incoming)),
+              HM_ORIGIN_BUDGET_MS,
+            )
+              .then((fresh) => (fresh?.ok ? putHmEdgeCache(edgeCache, incoming.href, fresh) : null))
+              .catch(() => null),
+          );
+        }
+        return rememberPublicApi(homeFill);
+      }
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
-      const upstream = await fetchUpstreamWithRetry(
-        env,
-        target.toString(),
-        proxyOpts,
-        cfOpts,
-        pageBundleRetries,
+      const originMs = cacheablePublicApi ? HM_ORIGIN_BUDGET_MS : 20_000;
+      const upstream = await withBudget(
+        fetchUpstreamWithRetry(
+          env,
+          target.toString(),
+          proxyOpts,
+          cfOpts,
+          pageBundleRetries,
+        ),
+        originMs,
       );
+      const originTimedOut = !upstream;
       if (staleEdgeFallback && (!upstream || !upstream.ok || upstream.status >= 500)) {
         const headers = new Headers(staleEdgeFallback.headers);
         headers.set("x-yekpare-edge-cache", "stale-error");
@@ -2808,8 +2886,23 @@ export default {
           headers,
         });
       }
-      const recoveredBundle = await maybeRecoverNewsPageBundle(env, origin, proxyOpts, incoming, upstream);
-      if (recoveredBundle) return rememberPublicApi(recoveredBundle);
+      if (!originTimedOut) {
+        const recoveredBundle = await withBudget(
+          maybeRecoverNewsPageBundle(env, origin, proxyOpts, incoming, upstream),
+          HM_ORIGIN_BUDGET_MS,
+        );
+        if (recoveredBundle) return rememberPublicApi(recoveredBundle);
+      }
+      if (!upstream) {
+        return new Response(JSON.stringify({ ok: false, error: "Sunucu meşgul" }), {
+          status: 503,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "x-yekpare-frontend": FRONTEND_TAG,
+            "x-yekpare-origin-budget": "timeout",
+          },
+        });
+      }
       const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
         waitUntil,
       });
