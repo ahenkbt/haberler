@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { db as mainDb, dualWriteUpdate, getNewsDbForRead, newsTable, portalRssItemsTable } from "@workspace/db";
 import { fetchArticlePageImageUrl } from "./articlePageImage.js";
 import { listHmNewsSitesCompat } from "./hm-site-compat.js";
@@ -177,6 +177,40 @@ export async function backfillHmRssMissingImages(opts?: {
       if (rows.length >= limit) break;
     }
     if (rows.length >= limit) break;
+  }
+
+  // Anasayfa featured çoğu merkez havuz (site_id NULL) — site-yerel tarama bunları kaçırır.
+  if (rows.length < limit) {
+    const found = await readDb
+      .select({
+        id: newsTable.id,
+        siteId: newsTable.siteId,
+        title: newsTable.title,
+        slug: newsTable.slug,
+        imageUrl: newsTable.imageUrl,
+        rssSourceUrl: newsTable.rssSourceUrl,
+        isEditorManual: newsTable.isEditorManual,
+        tags: newsTable.tags,
+      })
+      .from(newsTable)
+      .where(
+        and(
+          isNull(newsTable.siteId),
+          eq(newsTable.status, "published"),
+          eq(newsTable.isEditorManual, false),
+          isNotNull(newsTable.rssSourceUrl),
+          or(
+            sql`NULLIF(BTRIM(COALESCE(${newsTable.imageUrl}, '')), '') IS NULL`,
+            sql`${newsTable.imageUrl} LIKE 'data:%'`,
+            sql`${newsTable.imageUrl} LIKE '%haber-gorsel-hazirlaniyor%'`,
+          )!,
+        ),
+      )
+      .orderBy(desc(newsTable.createdAt))
+      .limit(limit - rows.length);
+    for (const row of found) {
+      if (shouldBackfillMissingRssNewsImage(row)) rows.push(row);
+    }
   }
 
   const articleUrls = rows

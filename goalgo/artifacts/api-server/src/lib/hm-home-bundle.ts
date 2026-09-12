@@ -18,6 +18,7 @@ import {
 } from "./hm-corporate-news-policy.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
+import { filterNewsItemsWithUsableCover } from "./news-display-image.js";
 import { HM_TEPE_MANSET_ITEM_COUNT, selectTepeMansetItems } from "./hm-tepe-manset-select.js";
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
@@ -370,5 +371,13 @@ export async function buildHmHomeBundle(
     [...featured, ...siteMansetEditor, ...latestEditor, ...breaking, ...popular],
     HM_TEPE_MANSET_ITEM_COUNT,
   );
-  return { siteId, featured, tepeManset, manualEditor, centerHeadlines, breaking, popular };
+  return {
+    siteId,
+    featured: filterNewsItemsWithUsableCover(featured),
+    tepeManset: filterNewsItemsWithUsableCover(tepeManset),
+    manualEditor: filterNewsItemsWithUsableCover(manualEditor),
+    centerHeadlines: filterNewsItemsWithUsableCover(centerHeadlines),
+    breaking: filterNewsItemsWithUsableCover(breaking),
+    popular: filterNewsItemsWithUsableCover(popular),
+  };
 }

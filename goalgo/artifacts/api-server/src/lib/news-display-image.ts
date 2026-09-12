@@ -1,4 +1,5 @@
 import { mediaObjectExists, publicUploadPath } from "./mediaUploadService";
+import { isMissingNewsCoverImage } from "./hm-tepe-manset-select.js";
 
 const UPLOAD_PATH_RE = /\/api\/media\/uploads\/([a-zA-Z0-9._-]+)/g;
 
@@ -111,4 +112,24 @@ export function resolveNewsItemImageFallbackUrl(item: {
     }
   }
   return null;
+}
+
+const PLACEHOLDER_COVER_RE =
+  /haber-gorsel-hazirlaniyor|gorsel-hazirlan|gorsel_hazirlan|(?:^|[/_-])(?:placeholder|no-image|noimage)(?:[._/-]|$)/i;
+
+/** Anasayfa / home-bundle: boş, data-URI ve «Görsel Hazırlanmaktadır» kapak sayılmaz. */
+export function isUsableNewsCoverUrl(src: string | null | undefined): boolean {
+  if (isMissingNewsCoverImage(src)) return false;
+  if (PLACEHOLDER_COVER_RE.test(String(src ?? "").trim())) return false;
+  return true;
+}
+
+export function newsItemHasUsableCover(item: Parameters<typeof resolveNewsItemImageUrl>[0]): boolean {
+  return isUsableNewsCoverUrl(resolveNewsItemImageUrl(item)) || isUsableNewsCoverUrl(resolveNewsItemImageFallbackUrl(item));
+}
+
+export function filterNewsItemsWithUsableCover<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
+  items: readonly T[],
+): T[] {
+  return items.filter((item) => newsItemHasUsableCover(item));
 }

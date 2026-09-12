@@ -17,7 +17,7 @@ import {
   UpdateNewsBody,
 } from "@workspace/api-zod";
 import { loadNewsContext, slugify } from "../lib/news-context";
-import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, readNewsPageBundleCache, resolveLocalSiteNewsBySlug, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
+import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, isVisibleCentralPoolNewsForHmSite, readNewsPageBundleCache, resolveLocalSiteNewsBySlug, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import {
   serializeHmMakaleAsNews,
   serializeHmMakaleListItem,
@@ -106,7 +106,8 @@ async function newsRowBelongsToSite(
       siteId,
     );
   }
-  // Haber siteleri: yalnızca exclusive kategori ile bu siteye ait merkez satırlar.
+  if (isVisibleCentralPoolNewsForHmSite(row, siteId)) return true;
+  // Haber siteleri: exclusive kategori veya vitrin merkez havuzu.
   if (row.categoryId == null) return false;
   const [readCat, mainCat] = await Promise.all([
     readDb
@@ -1060,6 +1061,18 @@ router.get("/news/:id", async (req, res): Promise<void> => {
     row = acceptRowForSlug(siteLocal);
   }
 
+  if (!row && siteScoped && !isCorporate) {
+    try {
+      const resolved = await resolveNewsArticleBySlug(slugKey, siteId);
+      if (resolved) {
+        res.json(resolved);
+        return;
+      }
+    } catch (err) {
+      console.error("[news/:id/central-pool-early]", err instanceof Error ? err.message : err);
+    }
+  }
+
   if (!row && siteScoped) {
     const [scoped] = await readDb
       .select()
@@ -1134,6 +1147,15 @@ router.get("/news/:id", async (req, res): Promise<void> => {
   }
 
   if (!row && !mak) {
+    try {
+      const resolved = await resolveNewsArticleBySlug(slugKey, siteScoped ? siteId : null);
+      if (resolved) {
+        res.json(resolved);
+        return;
+      }
+    } catch (err) {
+      console.error("[news/:id/central-pool]", err instanceof Error ? err.message : err);
+    }
     res.status(404).json({ error: "News not found" });
     return;
   }

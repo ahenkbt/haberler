@@ -375,7 +375,7 @@ export default function HaberDetay() {
   );
 
   if (isLoading && !news) return (
-    <div className="min-h-screen hm-article-detail-page">
+    <div className="min-h-screen bg-white hm-article-detail-page">
       <div className="flex items-center justify-center h-64">
         <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${accent} transparent transparent transparent` }} />
       </div>
@@ -385,7 +385,7 @@ export default function HaberDetay() {
   if (!news) {
     if (bundle?.redirect?.location) {
       return (
-        <div className="min-h-screen hm-article-detail-page">
+        <div className="min-h-screen bg-white hm-article-detail-page">
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <p className="text-sm text-gray-500">İlgili haberler aranıyor…</p>
           </div>
@@ -394,7 +394,7 @@ export default function HaberDetay() {
     }
     if (bundleFailed) {
       return (
-        <div className="min-h-screen hm-article-detail-page">
+        <div className="min-h-screen bg-white hm-article-detail-page">
           <div className="flex flex-col items-center justify-center h-64 gap-4 px-4 text-center">
             <p className="text-xl font-bold text-gray-600">Haber şu an yüklenemedi.</p>
             <button
@@ -411,7 +411,7 @@ export default function HaberDetay() {
     }
     if (hmCtx && !bundle?.fetchFailed) return <HmRedirectToSonDakika />;
     return (
-    <div className="min-h-screen hm-article-detail-page">
+    <div className="min-h-screen bg-white hm-article-detail-page">
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-xl font-bold text-gray-600">Haber bulunamadı.</p>
         <Link href="/" className="hover:underline font-semibold" style={{ color: accent }}>
