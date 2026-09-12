@@ -82,6 +82,11 @@ import {
 } from "../lib/hm-ahb-haber-import";
 import { runHmWordPressWxrImport } from "../lib/hm-wp-wxr-import";
 import {
+  parseVkdWaybackPayload,
+  runHmVkdWaybackImport,
+  VKD_WAYBACK_DEFAULT_SITE_SLUG,
+} from "../lib/hm-vkd-wayback-import";
+import {
   mergeWpTemplatePagesIntoLayout,
   normalizeHmWpTemplatePageForSave,
   parseHmWpTemplatePageSource,
@@ -1920,6 +1925,85 @@ router.post("/hm/admin/vkd-restore-pages", async (req, res): Promise<void> => {
       error: e instanceof Error ? e.message : String(e),
     });
   }
+});
+
+async function runVkdWaybackImportRequest(
+  req: Request,
+  res: Response,
+  site: { id: number; slug: string },
+): Promise<void> {
+  const body = req.body as {
+    payload?: unknown;
+    dryRun?: unknown;
+    skipImages?: unknown;
+  };
+  const dryRun =
+    String(body.dryRun ?? "").toLowerCase() === "1" ||
+    String(body.dryRun ?? "").toLowerCase() === "true" ||
+    body.dryRun === true;
+  const skipImages =
+    String(body.skipImages ?? "").toLowerCase() === "1" ||
+    String(body.skipImages ?? "").toLowerCase() === "true" ||
+    body.skipImages === true;
+  const payload = parseVkdWaybackPayload(body.payload);
+  if (!payload.items.length) {
+    res.status(400).json({ error: "Wayback haber payload boş (payload.items)." });
+    return;
+  }
+  const lines: string[] = [];
+  try {
+    const result = await runHmVkdWaybackImport({
+      siteId: site.id,
+      siteSlug: site.slug,
+      payload,
+      dryRun,
+      skipImages,
+      log: (line) => lines.push(line),
+    });
+    if (!dryRun && result.newsAdded > 0) {
+      triggerHmYekpareSyncForSite(site.id);
+    }
+    res.json({
+      ok: true,
+      siteId: site.id,
+      siteSlug: site.slug,
+      dryRun,
+      skipImages,
+      ...result,
+      log: lines,
+    });
+  } catch (e: unknown) {
+    res.status(500).json({
+      error: e instanceof Error ? e.message : String(e),
+      log: lines,
+    });
+  }
+}
+
+/** Yönetim: Wayback VKD haber JSON → `news` (site slug varsayılan `vkd`). */
+router.post("/hm/admin/import-vkd-wayback", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  const siteSlug = String((req.body as { siteSlug?: unknown }).siteSlug ?? VKD_WAYBACK_DEFAULT_SITE_SLUG)
+    .trim()
+    .toLowerCase() || VKD_WAYBACK_DEFAULT_SITE_SLUG;
+  const site = await getActiveHmNewsSiteBySlugCompat(siteSlug);
+  if (!site) {
+    res.status(404).json({ error: `HM site bulunamadı: ${siteSlug}` });
+    return;
+  }
+  await runVkdWaybackImportRequest(req, res, { id: site.id, slug: site.slug });
+});
+
+/** HM editör: aynı Wayback içe aktarma (yalnızca oturumdaki site). */
+router.post("/hm/editor/import-vkd-wayback", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  const site = await getHmNewsSiteByIdCompat(ctx.siteId);
+  if (!site) {
+    res.status(404).json({ error: "Haber sitesi bulunamadı" });
+    return;
+  }
+  await runVkdWaybackImportRequest(req, res, { id: site.id, slug: site.slug });
 });
 
 /** Yönetim: VKD üst menüsüne yalnızca eksik maddeleri ekler (editör ayarlarını silmez). */

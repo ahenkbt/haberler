@@ -37,9 +37,9 @@ export function isManualOrWxrNewsRow(row: {
 }): boolean {
   if (row.isEditorManual === true) return true;
   const ref = String(row.rssSourceUrl ?? "").trim();
-  if (ref.startsWith("wp-wxr:")) return true;
+  if (ref.startsWith("wp-wxr:") || ref.startsWith("vkd-wayback:")) return true;
   const tags = row.tags ?? [];
-  if (tags.includes("wp-import")) return true;
+  if (tags.includes("wp-import") || tags.includes("vkd-wayback")) return true;
   return false;
 }
 
