@@ -180,8 +180,9 @@ async function resolvePanelLogin(username: string, password: string): Promise<Pa
       const mapped = await mapDbRowToPanelLogin(row, password);
       if (mapped) return mapped;
     }
-  } catch {
-    /* tablo yoksa veya hata */
+  } catch (err) {
+    /* tablo yoksa veya bağlantı hatası — boş 401 yerine log */
+    console.error("[panel-admin] resolvePanelLogin failed:", err instanceof Error ? err.message : err);
   }
   return null;
 }
