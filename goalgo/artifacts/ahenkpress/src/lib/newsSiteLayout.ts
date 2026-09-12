@@ -16,7 +16,7 @@ import {
   VKD_ACCOUNT_NAME,
   VKD_DONATION_ACCOUNTS,
 } from "./vkdPublicContact";
-import { VATAN_DEFAULT_SLIDER_ITEMS, VATAN_MENU_ITEMS, VATAN_THEME_ID } from "./hmVatanTheme";
+import { mergeVkdVatanMenuItems, VATAN_DEFAULT_SLIDER_ITEMS, VATAN_THEME_ID } from "./hmVatanTheme";
 export type MansetVariant =
   | "split"
   | "full-thumbs"
@@ -2552,24 +2552,22 @@ const VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML = `<ul class="vkv-donation-bullets"><
 
 const VKD_DONATION_CHIP_ITEMS = ["🎖️ GAZİ HAKLARI", "🎓 EĞİTİM BURSU", "📜 TOPLUMSAL FAYDA"];
 
-/** VKD sitesi: Vatan teması, varsayılan hatıra slider’ı ve eksik menü maddeleri. */
+/** VKD sitesi: Vatan teması, hatıra slider’ı, tam IA menüsü ve mevcut hafıza modülleri. */
 export function applyVkdVatanThemeToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
   const slides = (prefs.corporateSliderItems ?? []).filter(
     (item) => item.active !== false && String(item.title ?? "").trim(),
   );
-  const menu = [...(prefs.hmCorporateMenuItems ?? [])];
-  const have = new Set(menu.map((item) => item.id));
-  for (const item of VATAN_MENU_ITEMS) {
-    if (!have.has(item.id)) {
-      menu.push({ ...item, enabled: true });
-    }
-  }
   return {
     ...prefs,
     hmVitrinTheme: VATAN_THEME_ID,
     hmCorporateLayoutWidth: prefs.hmCorporateLayoutWidth ?? "contained",
+    hmCorporateMenuPrimaryOnly: false,
+    hmCorporateAtaturkCornerEnabled: true,
+    hmCorporateCulturePortalBandEnabled: true,
+    hmCorporateWarsSectionEnabled: true,
+    hmCorporateNationalDaysSectionEnabled: true,
     corporateSliderItems: slides.length ? prefs.corporateSliderItems : [...VATAN_DEFAULT_SLIDER_ITEMS],
-    hmCorporateMenuItems: menu,
+    hmCorporateMenuItems: mergeVkdVatanMenuItems(prefs.hmCorporateMenuItems ?? []) as HmCorporateMenuItem[],
   };
 }
 

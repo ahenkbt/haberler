@@ -16,6 +16,7 @@ export const VATAN_ASSETS = {
   haklar: `${VATAN_ASSET_BASE}/haklar.jpg`,
   guvenlikGucleri: `${VATAN_ASSET_BASE}/guvenlik-gucleri.jpg`,
   sehitlerimiz: `${VATAN_ASSET_BASE}/sehitlerimiz.jpg`,
+  ataturk: `${VATAN_ASSET_BASE}/ataturk.jpg`,
 } as const;
 
 export const VATAN_COLORS = {
@@ -110,6 +111,50 @@ export const VATAN_MEMORIAL_CARDS: VatanMemorialCard[] = [
       "18 Mart, 19 Mayıs, 30 Ağustos, 29 Ekim ve diğer millî günler. Anlamı, tarihi, vefa programı.",
     image: VATAN_ASSETS.milliGunler,
     imageAlt: "Anadolu şafağı, hilal ve gelincik motifli geometrik manzara",
+  },
+];
+
+/** Anasayfa ikinci ızgara — Atatürk Köşesi ve mevcut kurum/hafıza sayfaları. */
+export const VATAN_HERITAGE_CARDS: VatanMemorialCard[] = [
+  {
+    slug: "ataturk",
+    href: "/ataturk",
+    title: "Atatürk Köşesi",
+    kicker: "Cumhuriyet hafızası",
+    excerpt:
+      "Hayatı, kronoloji, Altı Ok ve sözler. Mevcut köşe sayfalarına saygıyla, resmî tarihe bağlı giriş.",
+    image: VATAN_ASSETS.ataturk,
+    imageAlt: "Alacakaranlıkta granit sütunlu anıt terası ve Türk bayrağı",
+  },
+  {
+    slug: "kultur-portali",
+    href: "/kultur-portali",
+    title: "Kültür Portalı",
+    kicker: "Müze · sanat · yer",
+    excerpt:
+      "Kültür ve Turizm Bakanlığı portalına bağlı gezilecek yerler, müzeler ve sanat başlıkları.",
+    image: VATAN_ASSETS.milliGunler,
+    imageAlt: "Anadolu şafağı ve geometrik gelincik motifi",
+  },
+  {
+    slug: "savaslar",
+    href: "/savaslar",
+    title: "Savaşlar ve Harekât",
+    kicker: "Tarih sayfaları",
+    excerpt:
+      "Çanakkale, Kurtuluş, Kore ve Kıbrıs. Mevcut savaş sayfalarına kurumsal tarih girişi.",
+    image: VATAN_ASSETS.canakkaleHero,
+    imageAlt: "Çanakkale kıyısında bayrak ve anıt",
+  },
+  {
+    slug: "hakkimizda",
+    href: "/hakkimizda",
+    title: "Derneğimiz",
+    kicker: "Kurumsal",
+    excerpt:
+      "Hakkımızda, genel başkan, faaliyetler ve bağış. Dernek sayfaları aynı adreslerde durur.",
+    image: VATAN_ASSETS.sehitlerimiz,
+    imageAlt: "Anıt terasında yanan ebedî ateş",
   },
 ];
 
@@ -377,10 +422,58 @@ export const VATAN_DEFAULT_SLIDER_ITEMS = [
   },
 ];
 
-export const VATAN_MENU_ITEMS: { id: string; label: string; href: string; parentId: string }[] = [
+export type VatanMenuSeed = {
+  id: string;
+  label: string;
+  href: string;
+  parentId?: string;
+};
+
+/** VKD menüsüne eklenecek eksik maddeler — mevcut öğelerin ayarı korunur. */
+export const VATAN_MENU_ITEMS: VatanMenuSeed[] = [
   { id: "vkd-menu-kah-teror", label: "Terörle Mücadele Şehitleri", href: "/terorle-mucadele", parentId: "vkd-menu-kahramanlar" },
   { id: "vkd-menu-kah-guvenlik", label: "Güvenlik Güçleri", href: "/guvenlik-gucleri", parentId: "vkd-menu-kahramanlar" },
+  { id: "vkd-menu-kur-vakif", label: "Vakfımız", href: "/vakif", parentId: "vkd-menu-kurumsal" },
+  { id: "vkd-menu-sos-burs", label: "Burs Programı", href: "/burs", parentId: "vkd-menu-sosyal" },
+  { id: "vkd-menu-tarih-kultur", label: "Kültür Portalı", href: "/kultur-portali", parentId: "vkd-menu-tarih" },
+  { id: "vkd-menu-ataturk", label: "ATATÜRK", href: "#" },
+  { id: "vkd-menu-ataturk-kose", label: "Atatürk Köşesi", href: "/ataturk", parentId: "vkd-menu-ataturk" },
+  { id: "vkd-menu-ataturk-hayati", label: "Atatürk'ün Hayatı", href: "/ataturk/hayati", parentId: "vkd-menu-ataturk" },
+  { id: "vkd-menu-ataturk-kronoloji", label: "Atatürk Kronolojisi", href: "/ataturk/kronoloji", parentId: "vkd-menu-ataturk" },
+  { id: "vkd-menu-ataturk-ilkeler", label: "Atatürk İlkeleri", href: "/ataturk/ilkeler", parentId: "vkd-menu-ataturk" },
+  { id: "vkd-menu-ataturk-sozleri", label: "Atatürk Sözleri", href: "/ataturk/sozleri", parentId: "vkd-menu-ataturk" },
 ];
+
+export function mergeVkdVatanMenuItems<T extends { id: string; parentId?: string | null }>(
+  existing: T[],
+): Array<T | (VatanMenuSeed & { enabled: true })> {
+  const next: Array<T | (VatanMenuSeed & { enabled: true })> = [...existing];
+  const have = new Set(next.map((item) => item.id));
+  for (const seed of VATAN_MENU_ITEMS) {
+    if (have.has(seed.id)) continue;
+    const row = { ...seed, enabled: true as const };
+    const parentId = seed.parentId;
+    if (parentId) {
+      let insertAt = -1;
+      for (let i = next.length - 1; i >= 0; i--) {
+        if (next[i].id === parentId || next[i].parentId === parentId) {
+          insertAt = i + 1;
+          break;
+        }
+      }
+      if (insertAt >= 0) next.splice(insertAt, 0, row);
+      else next.push(row);
+    } else if (seed.id === "vkd-menu-ataturk") {
+      const kunyeIdx = next.findIndex((item) => item.id === "vkd-menu-kunye");
+      if (kunyeIdx >= 0) next.splice(kunyeIdx, 0, row);
+      else next.push(row);
+    } else {
+      next.push(row);
+    }
+    have.add(seed.id);
+  }
+  return next;
+}
 
 const VATAN_LONGFORM_SLUGS = new Set(Object.keys(VATAN_LONGFORM_PAGES));
 

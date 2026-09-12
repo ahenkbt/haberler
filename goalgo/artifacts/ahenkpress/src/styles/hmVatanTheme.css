@@ -204,10 +204,18 @@
   font-size: 0.98rem;
 }
 
+.vatan-hub__intro--second {
+  margin-top: clamp(36px, 5vw, 64px);
+}
+
 .vatan-hub__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.vatan-hub__grid--heritage {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .vatan-card {
@@ -298,6 +306,35 @@
   align-items: flex-end;
   background: #071422;
   overflow: hidden;
+}
+
+.vatan-hero--compact {
+  min-height: min(42vh, 360px);
+}
+
+.vatan-chip-nav {
+  gap: 8px;
+}
+
+.vatan-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(232, 213, 163, 0.35);
+  color: #fff8ee !important;
+  font-family: var(--vatan-sans, "Oswald", sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: rgba(7, 20, 34, 0.28);
+}
+
+.vatan-chip:hover,
+.vatan-chip--on {
+  border-color: var(--vatan-gold);
+  color: var(--vatan-gold-soft) !important;
+  background: rgba(140, 26, 46, 0.35);
 }
 
 .vatan-hero__img {
@@ -445,8 +482,47 @@ a.vatan-mini:hover {
   color: var(--vatan-crimson);
 }
 
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home > div {
+  background: #fbf8f2 !important;
+  border-color: #e6ddd0 !important;
+  border-top-color: var(--vatan-gold) !important;
+}
+
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home blockquote {
+  color: var(--vatan-navy);
+}
+
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home cite,
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home a {
+  color: var(--vatan-crimson) !important;
+}
+
+[data-hm-vitrin-theme="vatan"] .vkv-culture-strip,
+[data-hm-vitrin-theme="vatan"] .vkv-info-tabs {
+  background: #fffdf8;
+  border-top: 1px solid #e6ddd0;
+}
+
+[data-hm-vitrin-theme="vatan"] .vkv-culture-strip-head span,
+[data-hm-vitrin-theme="vatan"] .vkv-info-kicker {
+  color: var(--vatan-gold);
+}
+
+[data-hm-vitrin-theme="vatan"] .vkv-culture-strip-head strong,
+[data-hm-vitrin-theme="vatan"] .vkv-info-head h2 {
+  color: var(--vatan-navy);
+  font-family: var(--vatan-serif);
+}
+
+@media (max-width: 1100px) {
+  .vatan-hub__grid--heritage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 980px) {
-  .vatan-hub__grid {
+  .vatan-hub__grid,
+  .vatan-hub__grid--heritage {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -217,7 +217,9 @@ function Remembrance({ page }: { page: WarPage }) {
 
 function WarsIndex() {
   const h = useHmPublicHref();
+  const ctx = useHmPublicLinkContextOptional();
   const innerClass = useHeritageContentShell();
+  const vatan = ctx?.layoutPrefs.hmVitrinTheme === "vatan";
   return (
     <Shell>
       <Hero
@@ -226,6 +228,8 @@ function WarsIndex() {
         subtitle="Zaferler ve anma sayfaları"
         summary="Çanakkale'den Millî Mücadele'ye, Kore'den Kıbrıs'a uzanan kurumsal tarih sayfaları."
         innerClass={innerClass}
+        image={vatan ? VATAN_ASSETS.canakkaleHero : undefined}
+        imageAlt="Çanakkale kıyısında bayrak ve anıt"
       >
         <StatsGrid stats={HM_WAR_PAGES.map((page) => ({ value: page.year, label: page.shortTitle }))} />
       </Hero>
@@ -259,7 +263,15 @@ function WarDetail({ page }: { page: WarPage }) {
 
   return (
     <Shell>
-      <Hero eyebrow={page.eyebrow} title={page.title} subtitle={page.subtitle} summary={page.summary} innerClass={innerClass}>
+      <Hero
+        eyebrow={page.eyebrow}
+        title={page.title}
+        subtitle={page.subtitle}
+        summary={page.summary}
+        innerClass={innerClass}
+        image={ctx?.layoutPrefs.hmVitrinTheme === "vatan" ? VATAN_ASSETS.canakkaleHero : undefined}
+        imageAlt="Çanakkale kıyısında bayrak ve anıt"
+      >
         <StatsGrid stats={page.stats} />
       </Hero>
 
@@ -591,8 +603,34 @@ export function HmCorporateCulturePortalPage() {
     if (typeof document !== "undefined") document.title = `Kültür Portalı | ${ctx?.displayName ?? "Haber Merkezi"}`;
   }, [ctx?.displayName]);
 
+  const vatan = ctx?.layoutPrefs.hmVitrinTheme === "vatan";
+
   return (
     <Shell>
+      {vatan ? (
+        <header className="vatan-hero vatan-hero--compact">
+          <img
+            className="vatan-hero__img"
+            src={VATAN_ASSETS.milliGunler}
+            alt="Anadolu şafağı ve geometrik gelincik motifi"
+            fetchPriority="high"
+            decoding="async"
+            width={1280}
+            height={720}
+          />
+          <div className="vatan-hero__shade" />
+          <div className={`vatan-hero__inner ${innerClass}`}>
+            <p className="vatan-hero__kicker">Kültür ve Turizm</p>
+            <h1 className="vatan-hero__title">
+              Kültür Portalı
+              <em>{active.title}</em>
+            </h1>
+            <p className="vatan-hero__lead">
+              Bakanlık portalı canlı gömülüdür. Gezilecek yerler, müzeler ve sanat başlıkları aynı adreste kalır.
+            </p>
+          </div>
+        </header>
+      ) : null}
       <section className="overflow-x-hidden bg-[#F5F2ED] py-3 md:py-6">
         <div className={innerClass}>
           <CulturePortalMobileSelect activeSlug={active.slug} />

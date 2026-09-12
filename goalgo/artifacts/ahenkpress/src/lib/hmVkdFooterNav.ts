@@ -54,6 +54,17 @@ export const VKD_FOOTER_MEMORIAL_SPECS: { id: string; label: string; href: strin
   { id: "vkd-menu-tarih-milli", label: "Millî Günler", href: "/milli-gunler" },
 ];
 
+/** VKD footer «Atatürk» — mevcut köşe ve tarih sayfaları. */
+export const VKD_FOOTER_ATATURK_SPECS: { id: string; label: string; href: string }[] = [
+  { id: "vkd-menu-ataturk-kose", label: "Atatürk Köşesi", href: "/ataturk" },
+  { id: "vkd-menu-ataturk-hayati", label: "Hayatı", href: "/ataturk/hayati" },
+  { id: "vkd-menu-ataturk-kronoloji", label: "Kronoloji", href: "/ataturk/kronoloji" },
+  { id: "vkd-menu-ataturk-ilkeler", label: "İlkeler", href: "/ataturk/ilkeler" },
+  { id: "vkd-menu-ataturk-sozleri", label: "Sözleri", href: "/ataturk/sozleri" },
+  { id: "vkd-menu-tarih-savaslar", label: "Savaşlar", href: "/savaslar" },
+  { id: "vkd-menu-tarih-kultur", label: "Kültür Portalı", href: "/kultur-portali" },
+];
+
 /** VKD footer «Haber kategorileri» — yalnızca bu slug'lar (sıra sabit). */
 export const VKD_FOOTER_CATEGORY_LINKS: { label: string; slug: string }[] = [
   { label: "Derneğimiz", slug: "dernegimiz" },
@@ -102,9 +113,22 @@ export function buildVkdCorporateFooterMenuGroups(opts: VkdFooterNavOpts): HmCor
     });
   }
 
+  const ataturkLinks: HmCorporateFooterLink[] = [];
+  for (const spec of VKD_FOOTER_ATATURK_SPECS) {
+    const href = resolveStoredHmHref(h, spec.href);
+    if (!href || href === "#") continue;
+    ataturkLinks.push({
+      key: spec.id,
+      label: spec.label,
+      href,
+      external: isExternalHmHref(href),
+    });
+  }
+
   const groups: HmCorporateFooterMenuGroup[] = [];
   if (links.length) groups.push({ key: "vkd-menu-kurumsal", heading: "KURUMSAL", links });
   if (memorialLinks.length) groups.push({ key: "vkd-menu-hatira", heading: "HATIRA", links: memorialLinks });
+  if (ataturkLinks.length) groups.push({ key: "vkd-menu-ataturk", heading: "ATATÜRK", links: ataturkLinks });
   return groups;
 }
 

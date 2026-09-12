@@ -145,8 +145,12 @@ export function isKurumsalOrSosyalHizmetRoot(key: string, label: string): boolea
   const norm = normalizeCorporateMenuLabel(label);
   if (id === "vkd-menu-kurumsal" || id.endsWith("-kurumsal") || id.includes("menu-kurumsal")) return true;
   if (id === "vkd-menu-sosyal" || id.includes("menu-sosyal")) return true;
+  if (id === "vkd-menu-kahramanlar" || id.endsWith("-kahramanlar")) return true;
+  if (id === "vkd-menu-tarih" || id.endsWith("-tarih")) return true;
+  if (id === "vkd-menu-ataturk" || id.endsWith("-ataturk")) return true;
   if (norm === "kurumsal" || norm.startsWith("kurumsal ")) return true;
   if (norm.includes("sosyal") && norm.includes("hizmet")) return true;
+  if (norm === "kahramanlarimiz" || norm === "tarih" || norm === "ataturk") return true;
   return false;
 }
 

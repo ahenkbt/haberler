@@ -22,6 +22,7 @@ import {
   SADE_EDITORIAL_PAGE_BG,
   SADE_HERO_GLOW_CLASS,
 } from "@/lib/yekpareSadeTheme";
+import { isHmVatanThemeId, VATAN_ASSETS } from "@/lib/hmVatanTheme";
 
 const VALID_SLUGS = new Set<AtaturkPageSlug>(["kose", "hayati", "kronoloji", "ilkeler", "sozleri"]);
 
@@ -59,16 +60,22 @@ function SectionShell({
   );
 }
 
-function AtaturkNav({ activeSlug }: { activeSlug: AtaturkPageSlug }) {
+function AtaturkNav({ activeSlug, vatan }: { activeSlug: AtaturkPageSlug; vatan?: boolean }) {
   const h = useHmPublicHref();
   return (
-    <div className="mt-8 flex flex-wrap gap-2">
+    <div className={`mt-8 flex flex-wrap gap-2${vatan ? " vatan-chip-nav" : ""}`}>
       {ATATURK_CORNER_LINKS.map((item) => (
         <Link
           key={item.slug}
           href={h(ataturkCornerPath(item.slug))}
           className={`transition ${
-            activeSlug === item.slug ? SADE_EDITORIAL_NAV_ACTIVE_CLASS : SADE_EDITORIAL_NAV_IDLE_CLASS
+            vatan
+              ? activeSlug === item.slug
+                ? "vatan-chip vatan-chip--on"
+                : "vatan-chip"
+              : activeSlug === item.slug
+                ? SADE_EDITORIAL_NAV_ACTIVE_CLASS
+                : SADE_EDITORIAL_NAV_IDLE_CLASS
           }`}
         >
           {item.title}
@@ -297,6 +304,37 @@ export default function HmAtaturkCornerPage() {
 
   if (!activeSlug || !page) {
     return <Redirect replace to={h("/ataturk")} />;
+  }
+
+  const vatan = isHmVatanThemeId(ctx?.layoutPrefs.hmVitrinTheme);
+
+  if (vatan) {
+    return (
+      <div className="vatan-page min-h-screen">
+        <header className="vatan-hero">
+          <img
+            className="vatan-hero__img"
+            src={VATAN_ASSETS.ataturk}
+            alt="Alacakaranlıkta granit sütunlu anıt terası ve Türk bayrağı"
+            fetchPriority="high"
+            decoding="async"
+            width={1280}
+            height={720}
+          />
+          <div className="vatan-hero__shade" />
+          <div className={`vatan-hero__inner ${innerClass}`}>
+            <p className="vatan-hero__kicker">Atatürk Köşesi</p>
+            <h1 className="vatan-hero__title">
+              {page.title}
+              <em>{page.eyebrow}</em>
+            </h1>
+            <p className="vatan-hero__lead">{page.summary}</p>
+            <AtaturkNav activeSlug={activeSlug} vatan />
+          </div>
+        </header>
+        <PageBody slug={activeSlug} innerClass={innerClass} />
+      </div>
+    );
   }
 
   return (
