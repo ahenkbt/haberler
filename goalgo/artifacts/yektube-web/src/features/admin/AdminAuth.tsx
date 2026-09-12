@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type MutableRef
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminLogin, adminLogout, fetchAdminStatus, hmEditorLogin, hmEditorYektubeAdminSession } from "@/lib/adminApi";
 import { listenForHmEditorJwtFromParent, readHmEditorEmail, readHmEditorJwt, readHmEditorSiteSlug, writeHmEditorJwt, writeHmEditorSession } from "@/lib/hmEditorBridge";
-import { isAdminEmbedLight } from "./adminEmbedTheme";
+import { isAdminEmbedLight, isAdminHmEmbed } from "./adminEmbedTheme";
 
 type AdminAuthCtx = {
   ready: boolean;
@@ -43,22 +43,23 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!embedLight || data?.panelBootstrap) return;
+    if (!isAdminHmEmbed() || data?.panelBootstrap) return;
     const token = readHmEditorJwt();
     if (token) tryBootstrapFromToken(token, qc, autoBootstrapAttempted);
-  }, [embedLight, data?.panelBootstrap, qc]);
+  }, [data?.panelBootstrap, qc]);
 
   useEffect(() => {
-    if (!embedLight || data?.panelBootstrap) return;
+    if (!isAdminHmEmbed() || data?.panelBootstrap) return;
     return listenForHmEditorJwtFromParent((token) => {
       writeHmEditorJwt(token);
       tryBootstrapFromToken(token, qc, autoBootstrapAttempted);
       void qc.invalidateQueries({ queryKey: ["admin-status"] });
     });
-  }, [embedLight, data?.panelBootstrap, qc]);
+  }, [data?.panelBootstrap, qc]);
 
   const login = async (username: string, password: string) => {
-    if (embedLight) {
+    // Light theme is default Studio UI — not HM iframe. Only real embed uses site-slug login.
+    if (isAdminHmEmbed()) {
       const slug = readHmEditorSiteSlug();
       const email = username.trim().toLowerCase();
       if (!slug || !email || !password) {

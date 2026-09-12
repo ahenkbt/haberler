@@ -1,7 +1,12 @@
 import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { eq, ne, sql as drizzleSql, and as drizzleAnd, and, count, or } from "drizzle-orm";
-import { db } from "@workspace/db";
+import {
+  db,
+  getYektubeDbForRead,
+  getYektubeDbForPrimaryWrite,
+  isYektubeDatabaseConfigured,
+} from "@workspace/db";
 import { siteMembersTable, panelAdminUsersTable } from "@workspace/db/schema";
 import { trySendSiteOutboundWhatsApp } from "../lib/whatsapp";
 import { denyUnlessFullPanelAdmin, isPanelFullAdminSession } from "../lib/admin-guard.js";
@@ -12,6 +17,14 @@ import {
 } from "../lib/panel-permissions.js";
 
 const router = Router();
+
+function panelAdminReadDb() {
+  return isYektubeDatabaseConfigured() ? getYektubeDbForRead() : db;
+}
+function panelAdminWriteDb() {
+  return isYektubeDatabaseConfigured() ? getYektubeDbForPrimaryWrite() : db;
+}
+
 
 let siteMembersTierSchemaPromise: Promise<void> | null = null;
 /** Eski veritabanlarında `site_members` ilan kotası / işletme premium kolonları yoksa ekler. */
@@ -53,7 +66,8 @@ let panelAdminSchemaPromise: Promise<void> | null = null;
 function ensurePanelAdminUsersSchema(): Promise<void> {
   if (panelAdminSchemaPromise) return panelAdminSchemaPromise;
   panelAdminSchemaPromise = (async () => {
-    await db.execute(drizzleSql`
+    const padb = panelAdminWriteDb();
+    await padb.execute(drizzleSql`
       CREATE TABLE IF NOT EXISTS panel_admin_users (
         id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
         username text NOT NULL UNIQUE,
@@ -64,7 +78,7 @@ function ensurePanelAdminUsersSchema(): Promise<void> {
         updated_at timestamp NOT NULL DEFAULT now()
       )
     `);
-    await db.execute(
+    await padb.execute(
       drizzleSql`ALTER TABLE panel_admin_users ADD COLUMN IF NOT EXISTS permissions_json TEXT`,
     );
   })().catch((e) => {
@@ -77,7 +91,8 @@ function ensurePanelAdminUsersSchema(): Promise<void> {
 /** Eski kurulum: tablo boşsa env’deki ADMIN_PANEL_* ile ilk kayıtları oluşturur (aynı şifre). */
 async function seedPanelAdminsFromEnvIfEmpty(): Promise<void> {
   await ensurePanelAdminUsersSchema();
-  const [cntRow] = await db.select({ c: count() }).from(panelAdminUsersTable);
+  const padb = panelAdminWriteDb();
+  const [cntRow] = await padb.select({ c: count() }).from(panelAdminUsersTable);
   if (Number(cntRow?.c ?? 0) > 0) return;
   const pass = String(process.env["ADMIN_PANEL_PASSWORD"] ?? "").trim();
   const usersRaw = String(process.env["ADMIN_PANEL_USERNAMES"] ?? "").trim();
@@ -88,7 +103,7 @@ async function seedPanelAdminsFromEnvIfEmpty(): Promise<void> {
     const email = a.includes("@") ? a.trim().toLowerCase() : null;
     const username = email ?? a;
     try {
-      await db.insert(panelAdminUsersTable).values({
+      await padb.insert(panelAdminUsersTable).values({
         username,
         email,
         passwordHash: hash,
@@ -147,7 +162,7 @@ async function resolvePanelLogin(username: string, password: string): Promise<Pa
   try {
     await seedPanelAdminsFromEnvIfEmpty();
     const uLower = u.toLowerCase();
-    const rows = await db
+    const rows = await panelAdminReadDb()
       .select()
       .from(panelAdminUsersTable)
       .where(
@@ -301,7 +316,7 @@ router.get("/panel-admins", async (req, res): Promise<void> => {
   if (!denyUnlessFullPanelAdmin(req, res)) return;
   try {
     await ensurePanelAdminUsersSchema();
-    const rows = await db
+    const rows = await panelAdminReadDb()
       .select({
         id: panelAdminUsersTable.id,
         username: panelAdminUsersTable.username,
@@ -354,7 +369,7 @@ router.post("/panel-admins", async (req, res): Promise<void> => {
       const permNorm = normalizePanelPermissionsInput(b.permissions);
       permissionsJson = permNorm == null ? null : JSON.stringify(permNorm);
     }
-    const [row] = await db
+    const [row] = await panelAdminWriteDb()
       .insert(panelAdminUsersTable)
       .values({ username, email, passwordHash, permissionsJson, isActive: true })
       .returning({
@@ -425,7 +440,7 @@ router.patch("/panel-admins/:id", async (req, res): Promise<void> => {
       return;
     }
     if (patch.isActive === false) {
-      const [otherActive] = await db
+      const [otherActive] = await panelAdminReadDb()
         .select({ c: count() })
         .from(panelAdminUsersTable)
         .where(and(eq(panelAdminUsersTable.isActive, true), ne(panelAdminUsersTable.id, id)));
@@ -434,7 +449,7 @@ router.patch("/panel-admins/:id", async (req, res): Promise<void> => {
         return;
       }
     }
-    const [row] = await db.update(panelAdminUsersTable).set(patch as any).where(eq(panelAdminUsersTable.id, id)).returning({
+    const [row] = await panelAdminWriteDb().update(panelAdminUsersTable).set(patch as any).where(eq(panelAdminUsersTable.id, id)).returning({
       id: panelAdminUsersTable.id,
       username: panelAdminUsersTable.username,
       email: panelAdminUsersTable.email,
@@ -477,13 +492,13 @@ router.delete("/panel-admins/:id", async (req, res): Promise<void> => {
   }
   try {
     await ensurePanelAdminUsersSchema();
-    const [target] = await db.select().from(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id)).limit(1);
+    const [target] = await panelAdminReadDb().select().from(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id)).limit(1);
     if (!target) {
       res.status(404).json({ success: false, error: "Kayıt bulunamadı." });
       return;
     }
     if (target.isActive) {
-      const [otherActive] = await db
+      const [otherActive] = await panelAdminReadDb()
         .select({ c: count() })
         .from(panelAdminUsersTable)
         .where(and(eq(panelAdminUsersTable.isActive, true), ne(panelAdminUsersTable.id, id)));
@@ -492,7 +507,7 @@ router.delete("/panel-admins/:id", async (req, res): Promise<void> => {
         return;
       }
     }
-    await db.delete(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id));
+    await panelAdminWriteDb().delete(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });

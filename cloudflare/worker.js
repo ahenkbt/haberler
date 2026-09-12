@@ -85,6 +85,7 @@ import {
 } from "./yektube-spa.js";
 
 export { GoalgoApiContainer } from "./goalgo-api-container.js";
+export { YektubeApiContainer } from "./yektube-api-container.js";
 /**
  * Cookie sürümü — artırınca tüm ziyaretçilerde Netlify SW yeniden temizlenir.
  * (Eski cookie ile purge atlanınca /tr/vkd Netlify 404 görünmeye devam ediyordu.)

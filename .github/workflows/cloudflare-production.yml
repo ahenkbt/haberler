@@ -30,6 +30,7 @@ on:
       - "scripts/ensure-yektube-cloudflare-assets.mjs"
       - "cloudflare/**"
       - "wrangler.toml"
+      - "wrangler.yektube.toml"
       - "package.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/cloudflare-production.yml"
@@ -299,3 +300,61 @@ jobs:
           printf '%s\n' "$body" | head -c 400
           echo
           exit 1
+
+  deploy-yektube:
+    name: Deploy Yektube Worker
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Skip without token
+        id: gate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || '' }}
+        run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping yektube deploy (no CLOUDFLARE_API_TOKEN)"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@v6
+        if: steps.gate.outputs.skip != 'true'
+      - uses: actions/setup-node@v6
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: docker/setup-buildx-action@v3
+        if: steps.gate.outputs.skip != 'true'
+      - name: Install root deps
+        if: steps.gate.outputs.skip != 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Build SPA
+        if: steps.gate.outputs.skip != 'true'
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile && pnpm --filter @workspace/ahenkpress run build
+      - name: Deploy yektube wrangler
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: "16f5b996194174624e7969a3658bd2bb"
+        run: |
+          set -euo pipefail
+          sleep 15
+          pnpm exec wrangler deploy -c wrangler.yektube.toml
+      - name: Sync yektube secrets
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          YEKTUBE_DATABASE_URL: ${{ secrets.YEKTUBE_DATABASE_URL || '' }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET || '' }}
+        run: |
+          set -euo pipefail
+          put() { [ -n "${2:-}" ] || return 0; printf '%s' "$2" | pnpm exec wrangler secret put "$1" -c wrangler.yektube.toml; }
+          put YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
+          put YEKTUBE_DB_READ yektube
+          put YEKTUBE_DB_WRITE yektube
+          put DATABASE_URL "$YEKTUBE_DATABASE_URL"
+          put SESSION_SECRET "$SESSION_SECRET"
+

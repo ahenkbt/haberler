@@ -18,7 +18,11 @@ Haber cluster’ına (`NEWS_DATABASE_URL`) benzer bir model kullanılır; Yektub
 | `yektube_playlist_items` | Liste videoları |
 | `yektube_member_prefs` | Bildirim / gizlilik tercihleri |
 
-**Ana DB’de kalır:** `site_members`, `panel_admin_users`, `site_settings` (YouTube API anahtarı vb.).
+**Ana / Neon DB’de kalır:** `site_members`, `site_settings` (HM / haber).
+
+**Yektube DB’de (Faz 1):** `panel_admin_users` — Studio `/yp/admin` Neon’a bağlı değil.
+
+**Cloudflare:** `yektube.com` → Worker `yektube` (`wrangler.yektube.toml`); haber/HM → Worker `haberler`.
 
 ---
 

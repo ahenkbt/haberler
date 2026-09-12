@@ -1,0 +1,61 @@
+# Yektube isolated Worker — yektube.com only (haber/HM on wrangler.toml)
+name = "yektube"
+compatibility_date = "2025-07-15"
+main = "cloudflare/worker.js"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+account_id = "16f5b996194174624e7969a3658bd2bb"
+
+[observability]
+enabled = true
+
+[assets]
+directory = "artifacts/ahenkpress/dist/public"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[vars]
+API_ORIGIN = ""
+CONTAINER_ROLL = "yektube-isolated-worker-20260912"
+HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
+S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
+S3_BUCKET = "yekpare-media"
+S3_REGION = "auto"
+S3_FORCE_PATH_STYLE = "true"
+R2_ACCOUNT_ID = "fb9fc9dc1991b7cc17ba58ab3c2e8726"
+S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
+YEKTUBE_DB_READ = "yektube"
+YEKTUBE_DB_WRITE = "yektube"
+
+[[containers]]
+class_name = "YektubeApiContainer"
+image = "./goalgo/Dockerfile.cloudflare"
+max_instances = 4
+instance_type = "standard-3"
+
+[[durable_objects.bindings]]
+name = "GOALGO_API"
+class_name = "YektubeApiContainer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["YektubeApiContainer"]
+
+[[routes]]
+pattern = "yektube.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.yektube.com"
+custom_domain = true
+
+[[routes]]
+pattern = "yektube.com/*"
+zone_name = "yektube.com"
+
+[[routes]]
+pattern = "www.yektube.com/*"
+zone_name = "yektube.com"
