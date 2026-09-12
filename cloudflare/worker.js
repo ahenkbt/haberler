@@ -2867,7 +2867,12 @@ export default {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
-      const originMs = cacheablePublicApi ? HM_ORIGIN_BUDGET_MS : 20_000;
+      // Isolated yektube Worker: first container boot often >20s (image+migrate).
+      const originMs = isYektubeDedicatedHost(incoming.hostname)
+        ? 120_000
+        : cacheablePublicApi
+          ? HM_ORIGIN_BUDGET_MS
+          : 20_000;
       const upstream = await withBudget(
         fetchUpstreamWithRetry(
           env,
