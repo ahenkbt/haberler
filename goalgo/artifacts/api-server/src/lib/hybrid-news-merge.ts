@@ -359,8 +359,9 @@ export function resolveEditorScopedPoolOpts(hmAccess: {
     activatedSlugs: hmAccess.activatedCategorySlugs,
     activationDefault: hmAccess.isCorporate ? "none" : "all",
     hiddenPoolNewsIds: hmAccess.hiddenPoolNewsIds,
-    // Public hybrid: asla merkez canlı merge — havuz alımı açıksa bile taslak/onay gerekir.
-    excludeCentralPool: true,
+    // Haber siteleri: merkez RSS havuzu (site_id NULL) canlı birleşir.
+    // Kurumsal (VKD vb.): merkez sızıntısı yok — yalnızca site-yerel satırlar.
+    excludeCentralPool: hmAccess.isCorporate === true,
     allowCrossSiteManualNews: hmAccess.isCorporate ? false : !poolReceiveOff && hmAccess.allowCrossSiteManualNews,
     yekparePoolReceiveEnabled: hmAccess.isCorporate ? false : !poolReceiveOff,
   };
