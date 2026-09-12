@@ -53,6 +53,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          YEKTUBE_DATABASE_URL: ${{ secrets.YEKTUBE_DATABASE_URL || '' }}
+          YEKTUBE_DB_READ: ${{ secrets.YEKTUBE_DB_READ || '' }}
+          YEKTUBE_DB_WRITE: ${{ secrets.YEKTUBE_DB_WRITE || '' }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET || vars.SESSION_SECRET }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
@@ -210,6 +213,15 @@ jobs:
             done
           }
           put_secret DATABASE_URL "$DATABASE_URL"
+          if [ -n "${YEKTUBE_DATABASE_URL:-}" ]; then
+            put_secret YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
+          fi
+          if [ -n "${YEKTUBE_DB_READ:-}" ]; then
+            put_secret YEKTUBE_DB_READ "$YEKTUBE_DB_READ"
+          fi
+          if [ -n "${YEKTUBE_DB_WRITE:-}" ]; then
+            put_secret YEKTUBE_DB_WRITE "$YEKTUBE_DB_WRITE"
+          fi
           put_secret SESSION_SECRET "$SESSION_SECRET"
           if [ -n "${HM_EDITOR_JWT_SECRET}" ]; then
             put_secret HM_EDITOR_JWT_SECRET "$HM_EDITOR_JWT_SECRET"

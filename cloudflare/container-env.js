@@ -21,8 +21,8 @@ export const CONTAINER_DEFAULTS = {
   MEDIA_STORAGE_MODE: "s3",
   SITE_PUBLIC_ORIGIN: "https://ahenk.net.tr",
   LEGACY_MEDIA_ORIGIN: "0",
-  YEKTUBE_DB_READ: "main",
-  YEKTUBE_DB_WRITE: "main",
+  YEKTUBE_DB_READ: "yektube",
+  YEKTUBE_DB_WRITE: "yektube",
   NEWS_DB_READ: "main",
   NEWS_DB_WRITE: "main",
   USE_NATIVE_AI_CALL: "true",
@@ -58,6 +58,8 @@ const FORWARD_KEYS = [
   "CONTAINER_ROLL",
   "NEWS_DATABASE_URL",
   "YEKTUBE_DATABASE_URL",
+  "YEKTUBE_DB_READ",
+  "YEKTUBE_DB_WRITE",
   "CORS_ORIGIN",
 ];
 
