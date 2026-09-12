@@ -280,6 +280,7 @@ router.get("/news", async (req, res): Promise<void> => {
       const poolOpts = resolveEditorScopedPoolOpts(hmAccess);
       const { items: merged } = await loadEditorScopedDbNews({
         siteId,
+        siteSlug: hmAccess.slug,
         categorySlug,
         q,
         limit: Math.min(limit + offset + 200, 600),
@@ -661,6 +662,7 @@ router.get("/news/by-category/:categorySlug", async (req, res): Promise<void> =>
       const poolOpts = resolveEditorScopedPoolOpts(hmAccess);
       const { items: merged } = await loadEditorScopedDbNews({
         siteId,
+        siteSlug: hmAccess.slug,
         categorySlug: slug,
         limit: Math.min(limit + offset + 200, 600),
         offset: 0,

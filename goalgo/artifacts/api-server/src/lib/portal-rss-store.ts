@@ -275,18 +275,26 @@ export async function readPortalRssItemsForFeeds(
   const conds: SQL[] = [inArray(portalRssItemsTable.feedId, feedIds)];
   if (cutoff) conds.push(sql`${portalRssItemsTable.cachedAt} > ${cutoff}`);
 
-  const rows = await mainDb
-    .select()
-    .from(portalRssItemsTable)
-    .where(and(...conds))
-    .orderBy(desc(portalRssItemsTable.publishedAt))
-    .limit(MAX_READ_PER_QUERY);
+  try {
+    const rows = await mainDb
+      .select()
+      .from(portalRssItemsTable)
+      .where(and(...conds))
+      .orderBy(desc(portalRssItemsTable.publishedAt))
+      .limit(MAX_READ_PER_QUERY);
 
-  // Global tekilleştir: aynı makale birden çok feed altında farklı kategoriyle
-  // bulunabilir; tek kanonik kategoriye indir, sonra kategoriye göre süz.
-  const items = dedupePortalRssItemsByKey(rows.map(rowToPortalRssItem));
-  if (!categorySlug) return items;
-  return items.filter((item) => feedMatchesCategorySlug(item.categorySlug, categorySlug));
+    // Global tekilleştir: aynı makale birden çok feed altında farklı kategoriyle
+    // bulunabilir; tek kanonik kategoriye indir, sonra kategoriye göre süz.
+    const items = dedupePortalRssItemsByKey(rows.map(rowToPortalRssItem));
+    if (!categorySlug) return items;
+    return items.filter((item) => feedMatchesCategorySlug(item.categorySlug, categorySlug));
+  } catch (err) {
+    console.error(
+      "[portal-rss-store/read]",
+      err instanceof Error ? err.message.slice(0, 180) : err,
+    );
+    return [];
+  }
 }
 
 /** Sabit RSS öğe kimliğine (itemKey) göre kalıcı depodan haber bulur. */

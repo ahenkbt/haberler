@@ -213,6 +213,7 @@ async function loadWorldBriefDbNews(
     const poolOpts = resolveEditorScopedPoolOpts(hmAccess);
     const bundle = await loadEditorScopedDbNews({
       siteId,
+      siteSlug: hmAccess.slug,
       categorySlug: DUNYA_CATEGORY_SLUG,
       limit: fetchLimit,
       offset: 0,

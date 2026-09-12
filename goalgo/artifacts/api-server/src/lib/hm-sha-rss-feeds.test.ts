@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   categorySlugFromShaFeed,
+  expandShaListingCategorySlugs,
   isShaCampaign,
   isShaHost,
+  isShaTargetSiteSlug,
   SHA_RSS_FEEDS,
   SHA_TARGET_SITE_SLUGS,
   shaFeedUrls,
@@ -38,5 +40,16 @@ describe("SHA RSS feed eşlemesi", () => {
       }),
     ).toBe(true);
     expect(isShaCampaign({ tags: ["ntv"], feeds: ["https://www.ntv.com.tr/gundem.rss"] })).toBe(false);
+  });
+
+  it("ASG/AHG yerel listesi ankara SHA satırlarını da çeker", () => {
+    expect(isShaTargetSiteSlug("asg")).toBe(true);
+    expect(isShaTargetSiteSlug("ankarahabergundemi")).toBe(true);
+    expect(isShaTargetSiteSlug("ahg")).toBe(true);
+    expect(isShaTargetSiteSlug("vkd")).toBe(false);
+    expect(expandShaListingCategorySlugs("yerel", "asg")).toEqual(["yerel", "ankara"]);
+    expect(expandShaListingCategorySlugs("ankara", "ankarahabergundemi")).toEqual(["ankara", "yerel"]);
+    expect(expandShaListingCategorySlugs("gundem", "asg")).toEqual(["gundem"]);
+    expect(expandShaListingCategorySlugs("yerel", "vkd")).toEqual(["yerel"]);
   });
 });

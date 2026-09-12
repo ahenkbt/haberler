@@ -44,6 +44,7 @@ import {
   normalizePortalCategorySlug,
 } from "./portal-category-slug.js";
 import { rssCategorySlugsMatch } from "./hm-rss-category-aliases.js";
+import { expandShaListingCategorySlugs } from "./hm-sha-rss-feeds.js";
 import { portalRssTitleKey, portalRssInternalHref, type PortalRssItem } from "./portal-rss-fetch.js";
 import {
   filterGlobalCategoryNewsItems,
@@ -273,8 +274,29 @@ function rssToHybrid(
   };
 }
 
+async function resolvePortalListingCategoryIds(opts: {
+  categorySlug?: string;
+  categorySlugs?: string[];
+}): Promise<number[] | null> {
+  const slugs = (opts.categorySlugs?.length
+    ? opts.categorySlugs
+    : opts.categorySlug
+      ? [opts.categorySlug]
+      : [])
+    .map((s) => String(s ?? "").trim().toLowerCase())
+    .filter(Boolean);
+  if (!slugs.length) return null;
+  const ids = new Set<number>();
+  for (const slug of slugs) {
+    for (const id of await findPortalCategoryIdsBySlug(slug)) ids.add(id);
+  }
+  return [...ids];
+}
+
 export async function loadPortalDbNews(opts: {
   categorySlug?: string;
+  /** SHA ASG/AHG: yerel+ankara birlikte. */
+  categorySlugs?: string[];
   q?: string;
   limit: number;
   offset: number;
@@ -299,8 +321,8 @@ export async function loadPortalDbNews(opts: {
     conds.push(or(ilike(newsTable.title, pattern), ilike(newsTable.spot, pattern))!);
   }
 
-  if (opts.categorySlug) {
-    const portalCategoryIds = await findPortalCategoryIdsBySlug(opts.categorySlug);
+  const portalCategoryIds = await resolvePortalListingCategoryIds(opts);
+  if (portalCategoryIds) {
     if (portalCategoryIds.length === 0) return { items: [], total: 0 };
     conds.push(inArray(newsTable.categoryId, portalCategoryIds));
   }
@@ -389,6 +411,8 @@ export function filterPoolCopiesWhenReceiveDisabled<T>(
 export async function loadEditorScopedDbNews(opts: {
   siteId: number;
   categorySlug?: string;
+  /** ASG/AHG — SHA yerel↔ankara genişletmesi için. */
+  siteSlug?: string | null;
   q?: string;
   limit: number;
   offset: number;
@@ -424,14 +448,23 @@ export async function loadEditorScopedDbNews(opts: {
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
   const publicFreshnessWindow = opts.publicFreshnessWindow === true;
+  const listingSlugs = expandShaListingCategorySlugs(opts.categorySlug, opts.siteSlug);
+  const categorySlugs = listingSlugs.length > 1 ? listingSlugs : undefined;
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
   const [portal, editor] = await Promise.all([
     excludeCentralPool
       ? Promise.resolve({ items: [] as DbSerialized[], total: 0 })
-      : loadPortalDbNews({ categorySlug: opts.categorySlug, q: opts.q, limit: fetchLimit, offset: 0 }),
+      : loadPortalDbNews({
+          categorySlug: opts.categorySlug,
+          categorySlugs,
+          q: opts.q,
+          limit: fetchLimit,
+          offset: 0,
+        }),
     loadHmSiteDbNews({
       siteId: opts.siteId,
       categorySlug: opts.categorySlug,
+      categorySlugs,
       q: opts.q,
       limit: fetchLimit,
       offset: 0,
@@ -585,6 +618,7 @@ export async function applyNewsSiteOverrides(
 export async function loadHmSiteDbNews(opts: {
   siteId: number;
   categorySlug?: string;
+  categorySlugs?: string[];
   q?: string;
   limit: number;
   offset: number;
@@ -610,30 +644,46 @@ export async function loadHmSiteDbNews(opts: {
     conds.push(or(ilike(newsTable.title, pattern), ilike(newsTable.spot, pattern))!);
   }
 
-  if (opts.categorySlug) {
-    const catIds = await findCategoryIdsForScope(opts.categorySlug, opts.siteId);
-    if (!catIds.length) return { items: [], total: 0 };
-    conds.push(catIds.length === 1 ? eq(newsTable.categoryId, catIds[0]!) : inArray(newsTable.categoryId, catIds));
+  const listingSlugs = (opts.categorySlugs?.length
+    ? opts.categorySlugs
+    : opts.categorySlug
+      ? [opts.categorySlug]
+      : [])
+    .map((s) => String(s ?? "").trim().toLowerCase())
+    .filter(Boolean);
+  if (listingSlugs.length) {
+    const catIds = new Set<number>();
+    for (const slug of listingSlugs) {
+      for (const id of await findCategoryIdsForScope(slug, opts.siteId)) catIds.add(id);
+    }
+    if (!catIds.size) return { items: [], total: 0 };
+    const ids = [...catIds];
+    conds.push(ids.length === 1 ? eq(newsTable.categoryId, ids[0]!) : inArray(newsTable.categoryId, ids));
   }
 
   const where = and(...conds);
   const ctx = scopeNewsContextForSite(await loadNewsContext(), opts.siteId);
-  const [rows, totalRows] = await Promise.all([
-    getNewsDbForRead()
-      .select(newsListSelectFields)
-      .from(newsTable)
-      .where(where)
-      .orderBy(desc(newsTable.createdAt))
-      .limit(opts.limit + opts.offset + 100),
-    getNewsDbForRead()
-      .select({ count: sql<number>`count(*)::int` })
-      .from(newsTable)
-      .where(where),
-  ]);
+  let rows: Array<Parameters<typeof serializeNewsListItem>[0]> = [];
+  try {
+    rows = await withTimeoutOrFallback(
+      getNewsDbForRead()
+        .select(newsListSelectFields)
+        .from(newsTable)
+        .where(where)
+        .orderBy(desc(newsTable.createdAt))
+        .limit(opts.limit + opts.offset + 100),
+      2_500,
+      [],
+    );
+  } catch (err) {
+    console.error("[loadHmSiteDbNews]", err instanceof Error ? err.message.slice(0, 180) : err);
+    rows = [];
+  }
 
+  const items = excludeKoseFromEditorialNewsList(rows.map((r) => serializeNewsListItem(r, ctx)));
   return {
-    items: excludeKoseFromEditorialNewsList(rows.map((r) => serializeNewsListItem(r, ctx))),
-    total: totalRows[0]?.count ?? 0,
+    items,
+    total: items.length,
   };
 }
 

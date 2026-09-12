@@ -39,6 +39,7 @@ import {
 } from "@/lib/hmHeadlinePool";
 import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
 import { markHmSpaReady } from "@/lib/hmSpaReady";
+import { buildHmCategoryHybridPath, buildHmCategoryNewsFallbackPath } from "@/lib/hmCategoryNewsQuery";
 
 const PAGE_SIZE = 60;
 /** Manşet altı kategori grid kutusu — ilk sayfa (4×5). PR #474 manşet dedupe korunur. */
@@ -309,20 +310,38 @@ export default function KategoriDetay() {
     queryKey: [useHybridCategory ? "/api/news/hybrid" : "/api/news/by-category", normalizedSlug || slug, siteIdEff ?? "all", "infinite", PAGE_SIZE],
     queryFn: async ({ pageParam }) => {
       const offset = typeof pageParam === "number" ? pageParam : 0;
+      const categorySlug = normalizedSlug || slug;
+      if (useHybridCategory) {
+        try {
+          const raw = (await apiRequest(
+            buildHmCategoryHybridPath({
+              slug: categorySlug,
+              siteId: siteIdEff,
+              limit: PAGE_SIZE,
+              offset,
+            }),
+          )) as CategoryNewsPage;
+          return normalizeCategoryNewsPage(raw);
+        } catch {
+          const raw = (await apiRequest(
+            buildHmCategoryNewsFallbackPath({
+              slug: categorySlug,
+              siteId: siteIdEff,
+              limit: PAGE_SIZE,
+              offset,
+            }),
+          )) as CategoryNewsPage;
+          return normalizeCategoryNewsPage(raw);
+        }
+      }
       const params = new URLSearchParams({
         limit: String(PAGE_SIZE),
         offset: String(offset),
         includeTotal: "1",
       });
       if (siteIdEff != null) params.set("siteId", String(siteIdEff));
-      if (useHybridCategory) {
-        params.set("categorySlug", normalizedSlug || slug);
-        params.set("rssScope", "all");
-        const raw = (await apiRequest(`/api/news/hybrid?${params.toString()}`)) as CategoryNewsPage;
-        return normalizeCategoryNewsPage(raw);
-      }
       const raw = (await apiRequest(
-        `/api/news/by-category/${encodeURIComponent(normalizedSlug || slug)}?${params.toString()}`,
+        `/api/news/by-category/${encodeURIComponent(categorySlug)}?${params.toString()}`,
       )) as CategoryNewsPage;
       return normalizeCategoryNewsPage(raw);
     },
