@@ -16,6 +16,11 @@ import {
   excludeYekparePoolNewsSql,
   isExternalManualEditorNewsForSite,
 } from "./hm-corporate-news-policy.js";
+import {
+  isHmPublishGroupSharedEditorNews,
+  publicHmSiteNewsScopeSql,
+  resolveHmPublishGroupSiteIds,
+} from "./hm-publish-groups.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
 import { filterNewsItemsWithUsableCover } from "./news-display-image.js";
@@ -25,11 +30,11 @@ type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
 const CENTER_HEADLINE_DEFAULT_LIMIT = 15;
 
-/** Haber siteleri public vitrin: yalnızca bu site_id (merkez exclusive-cat sızıntısı yok). */
+/** Haber siteleri public vitrin: bu site_id + publish-group editör satırları. */
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number, corporateStrict = false): Promise<SQL> {
   void readDb;
   if (corporateStrict) return strictCorporateSiteNewsScopeSql(siteId);
-  return eq(newsTable.siteId, siteId);
+  return publicHmSiteNewsScopeSql(siteId);
 }
 
 function filterPublicEditorNewsItems(
@@ -37,12 +42,15 @@ function filterPublicEditorNewsItems(
   siteId: number,
   corporateStrict: boolean,
   _maxAgeMs: number | null = null,
+  groupSiteIds?: readonly number[] | null,
 ): SerializedNewsListItem[] {
   void corporateStrict;
   void _maxAgeMs;
   return items.filter((item) => {
-    if (isExternalManualEditorNewsForSite(item, siteId)) return false;
-    if (item.siteId != null && item.siteId !== siteId) return false;
+    if (isExternalManualEditorNewsForSite(item, siteId, groupSiteIds)) return false;
+    if (item.siteId != null && item.siteId !== siteId && !isHmPublishGroupSharedEditorNews(item, siteId, groupSiteIds)) {
+      return false;
+    }
     return true;
   });
 }
@@ -74,6 +82,7 @@ async function resolveCategoryFilterCondition(
     .where(
       or(
         eq(categoriesTable.exclusiveSiteId, siteId),
+        inArray(categoriesTable.exclusiveSiteId, await resolveHmPublishGroupSiteIds(siteId)),
         isNull(categoriesTable.exclusiveSiteId),
       )!,
     );
@@ -359,12 +368,13 @@ export async function buildHmHomeBundle(
     breaking = filterCorporatePublicNewsItems(breaking, corpOpts);
     popular = filterCorporatePublicNewsItems(popular, corpOpts);
   } else {
-    featured = filterPublicEditorNewsItems(featured, siteId, false);
-    siteMansetEditor = filterPublicEditorNewsItems(siteMansetEditor, siteId, false);
-    latestEditor = filterPublicEditorNewsItems(latestEditor, siteId, false);
+    const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
+    featured = filterPublicEditorNewsItems(featured, siteId, false, null, groupSiteIds);
+    siteMansetEditor = filterPublicEditorNewsItems(siteMansetEditor, siteId, false, null, groupSiteIds);
+    latestEditor = filterPublicEditorNewsItems(latestEditor, siteId, false, null, groupSiteIds);
     manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
-    breaking = filterPublicEditorNewsItems(breaking, siteId, false);
-    popular = filterPublicEditorNewsItems(popular, siteId, false);
+    breaking = filterPublicEditorNewsItems(breaking, siteId, false, null, groupSiteIds);
+    popular = filterPublicEditorNewsItems(popular, siteId, false, null, groupSiteIds);
   }
   const centerHeadlines = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
   const tepeManset = selectTepeMansetItems(

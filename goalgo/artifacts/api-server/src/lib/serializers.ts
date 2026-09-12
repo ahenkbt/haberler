@@ -46,6 +46,8 @@ import { PORTAL_DEFAULT_FOOTER_TEXT } from "./portal-platform-policy.js";
 export type NewsContext = {
   categories: Map<number, Category>;
   authors: Map<number, { id: number; name: string }>;
+  /** siteId → named publish group (ASG+AHG). Used so edge filters keep the shared row. */
+  publishGroupBySiteId?: Map<number, { id: string; siteIds: number[] }>;
 };
 
 /** List endpoints — omit heavy `content` column at DB and JSON layers. */
@@ -94,6 +96,20 @@ function serializeNewsContent(row: NewsRow): string | null {
   if (raw == null) return null;
   if (!shouldStripHaberlerArticleContent(row)) return raw;
   return stripHaberlerShareAndChrome(String(raw));
+}
+
+function serializePublishGroupFields(
+  row: Pick<NewsRow, "siteId" | "isEditorManual" | "siteOnly">,
+  ctx: NewsContext,
+): { publishGroupId: string | null; publishGroupSiteIds: number[] | null } {
+  const group = row.siteId != null ? ctx.publishGroupBySiteId?.get(row.siteId) : undefined;
+  if (!group || group.siteIds.length < 2) {
+    return { publishGroupId: null, publishGroupSiteIds: null };
+  }
+  if (row.isEditorManual !== true && row.siteOnly !== true) {
+    return { publishGroupId: null, publishGroupSiteIds: null };
+  }
+  return { publishGroupId: group.id, publishGroupSiteIds: group.siteIds };
 }
 
 /** Site-local haberlerde kapak yalnızca DB'deki imageUrl — havuz/RSS zenginleştirmesi yok. */
@@ -150,6 +166,7 @@ export function serializeNews(row: NewsRow, ctx: NewsContext) {
     isEditorManual: row.isEditorManual ?? false,
     siteOnly: row.siteOnly ?? false,
     ownerSiteId: row.ownerSiteId ?? null,
+    ...serializePublishGroupFields(row, ctx),
     isFoodRecipe: row.isFoodRecipe ?? false,
     foodRecipeCategorySlug: row.foodRecipeCategorySlug ?? null,
     hmSyncKind,

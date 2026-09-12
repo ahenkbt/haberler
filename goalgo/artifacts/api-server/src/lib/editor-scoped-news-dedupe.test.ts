@@ -43,6 +43,25 @@ describe("dedupeEditorScopedDbNewsItems", () => {
     expect(out[0]?.id).toBe(102);
   });
 
+  it("keeps publish-group peer editor news over a same-title RSS row", () => {
+    const localRss = {
+      id: 10,
+      siteId: EDITOR_SITE_ID,
+      title: "Deneme 1",
+      slug: "deneme-1-rss",
+    };
+    const peerManual = {
+      id: 11,
+      siteId: 3,
+      title: "Deneme 1",
+      slug: "deneme-1",
+      isEditorManual: true,
+    };
+    const out = dedupeEditorScopedDbNewsItems([localRss, peerManual], EDITOR_SITE_ID, [3, EDITOR_SITE_ID]);
+    expect(out).toHaveLength(1);
+    expect(out[0]?.id).toBe(11);
+  });
+
   it("dedupes duplicate site rows by normalized title", () => {
     const a = { id: 1, siteId: EDITOR_SITE_ID, title: "  Aynı Haber  ", slug: "haber-a" };
     const b = { id: 2, siteId: EDITOR_SITE_ID, title: "aynı haber", slug: "haber-b" };

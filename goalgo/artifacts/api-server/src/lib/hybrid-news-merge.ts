@@ -23,7 +23,12 @@ import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
 import { newsRowVisibleOnHmSiteByRssTarget } from "./rss-campaign-target.js";
 import { sanitizeCumhaRssSpot } from "./rssCumhaExclude.js";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
-import { suSiteNewsScopeCondition } from "./hm-su-domain-repair.js";
+import { SU_CANONICAL_SITE_ID, suSiteNewsScopeCondition } from "./hm-su-domain-repair.js";
+import {
+  isHmPublishGroupSharedEditorNews,
+  resolveHmPublishGroupSiteIds,
+  hmPublishGroupEditorNewsScopeSql,
+} from "./hm-publish-groups.js";
 import { sanitizeDisplayText } from "./sanitizeDisplayText.js";
 import { serializeNewsListItem, newsListSelectFields, type NewsContext, type SerializedNewsListItem } from "./serializers.js";
 import { normalizePublicMediaUrl } from "./normalizePublicMediaUrl.js";
@@ -121,14 +126,19 @@ export type PortalHybridFeedGeo = {
 
 type DbSerialized = SerializedNewsListItem;
 
-export function scopeNewsContextForSite(ctx: NewsContext, siteId: number | null): NewsContext {
+export function scopeNewsContextForSite(
+  ctx: NewsContext,
+  siteId: number | null,
+  peerSiteIds?: readonly number[] | null,
+): NewsContext {
   if (siteId == null) return ctx;
+  const allowed = new Set<number>([siteId, ...(peerSiteIds ?? []).filter((id) => Number.isFinite(id) && id > 0)]);
   return {
     ...ctx,
     categories: new Map(
       [...ctx.categories.entries()].filter(([, category]) => {
         const exclusiveSiteId = category.exclusiveSiteId;
-        return exclusiveSiteId == null || exclusiveSiteId === siteId;
+        return exclusiveSiteId == null || allowed.has(exclusiveSiteId);
       }),
     ),
   };
@@ -161,24 +171,33 @@ export function shouldApplyActivatedPoolCategoryFilter(categorySlug?: string | n
 export async function findCategoryIdsForScope(
   categorySlug: string,
   siteId: number | null,
+  peerSiteIds?: readonly number[] | null,
 ): Promise<number[]> {
   const slug = normalizePortalCategorySlug(categorySlug);
   if (!slug) return [];
   const allIds = await findAllCategoryIdsByCanonicalSlug(slug);
   if (!allIds.length) return [];
   if (siteId == null) return allIds;
+  const allowedExclusive = new Set<number>([
+    siteId,
+    ...(peerSiteIds ?? []).filter((id) => Number.isFinite(id) && id > 0),
+  ]);
   const rows = await getNewsDbForRead()
     .select({ id: categoriesTable.id, exclusiveSiteId: categoriesTable.exclusiveSiteId })
     .from(categoriesTable)
     .where(inArray(categoriesTable.id, allIds));
   const scoped = rows
-    .filter((row) => row.exclusiveSiteId == null || row.exclusiveSiteId === siteId)
+    .filter((row) => row.exclusiveSiteId == null || allowedExclusive.has(row.exclusiveSiteId))
     .map((row) => row.id);
   return scoped.length > 0 ? scoped : allIds;
 }
 
-export async function findCategoryForScope(categorySlug: string, siteId: number | null): Promise<{ id: number } | null> {
-  const ids = await findCategoryIdsForScope(categorySlug, siteId);
+export async function findCategoryForScope(
+  categorySlug: string,
+  siteId: number | null,
+  peerSiteIds?: readonly number[] | null,
+): Promise<{ id: number } | null> {
+  const ids = await findCategoryIdsForScope(categorySlug, siteId, peerSiteIds);
   const first = ids[0];
   return first != null ? { id: first } : null;
 }
@@ -424,6 +443,7 @@ export async function loadEditorScopedDbNews(opts: {
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
   const publicFreshnessWindow = opts.publicFreshnessWindow === true;
+  const groupSiteIds = await resolveHmPublishGroupSiteIds(opts.siteId);
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
   const [portal, editor] = await Promise.all([
     excludeCentralPool
@@ -437,11 +457,12 @@ export async function loadEditorScopedDbNews(opts: {
       offset: 0,
       publicFreshnessWindow,
       publicFreshnessMaxAgeMs: opts.publicFreshnessMaxAgeMs,
+      groupSiteIds,
     }),
   ]);
 
   if (excludeCentralPool) {
-    let items = dedupeEditorScopedDbNewsItems(editor.items, opts.siteId);
+    let items = dedupeEditorScopedDbNewsItems(editor.items, opts.siteId, groupSiteIds);
     items = items.filter((item) => {
       const ref = String(item.rssSourceUrl ?? "").trim();
       // Sync merkez kopyaları yerel sitede olmamalı.
@@ -463,7 +484,7 @@ export async function loadEditorScopedDbNews(opts: {
       }
       // Kesin kural: başka sitenin manuel/yerel satırı bu sitede çıkmaz.
       // (Onaylı yekpare-hm-pool kopyaları site_id=bu site olduğu için geçer.)
-      if (isExternalManualEditorNewsForSite(item, opts.siteId)) return false;
+      if (isExternalManualEditorNewsForSite(item, opts.siteId, groupSiteIds)) return false;
       return true;
     });
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
@@ -515,9 +536,9 @@ export async function loadEditorScopedDbNews(opts: {
     if (rssUrl && localRssSourceUrls.has(rssUrl)) return false;
     const syncKey = String(item.rssSourceUrl ?? "").trim();
     if (syncKey && localSyncKeys.has(syncKey)) return false;
-    if (!centralNewsRowVisibleOnHmEditorSite(item, opts.siteId)) return false;
+    if (!centralNewsRowVisibleOnHmEditorSite(item, opts.siteId, groupSiteIds)) return false;
     if (!newsRowVisibleOnHmSiteByRssTarget(item, opts.siteId)) return false;
-    if (isExternalManualEditorNewsForSite(item, opts.siteId)) return false;
+    if (isExternalManualEditorNewsForSite(item, opts.siteId, groupSiteIds)) return false;
     return true;
   });
 
@@ -527,6 +548,7 @@ export async function loadEditorScopedDbNews(opts: {
   let items = dedupeEditorScopedDbNewsItems(
     [...editor.items, ...filterHiddenPoolNewsItems(portalItems, opts.hiddenPoolNewsIds)],
     opts.siteId,
+    groupSiteIds,
   );
   items = filterPoolCopiesWhenReceiveDisabled(items, opts.yekparePoolReceiveEnabled);
   items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
@@ -592,9 +614,15 @@ export async function loadHmSiteDbNews(opts: {
   publicFreshnessWindow?: boolean;
   /** true iken kullanılan max yaş (ms). Varsayılan: HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS. */
   publicFreshnessMaxAgeMs?: number;
+  groupSiteIds?: readonly number[] | null;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   await ensureNewsPublicSubmissionColumns();
-  const conds: SQL[] = [eq(newsTable.status, "published"), suSiteNewsScopeCondition(opts.siteId)];
+  const groupSiteIds = opts.groupSiteIds ?? (await resolveHmPublishGroupSiteIds(opts.siteId));
+  const siteScope =
+    opts.siteId === SU_CANONICAL_SITE_ID
+      ? suSiteNewsScopeCondition(opts.siteId)
+      : hmPublishGroupEditorNewsScopeSql(opts.siteId, groupSiteIds);
+  const conds: SQL[] = [eq(newsTable.status, "published"), siteScope];
   if (opts.publicFreshnessWindow === true) {
     const maxAge =
       typeof opts.publicFreshnessMaxAgeMs === "number" && opts.publicFreshnessMaxAgeMs > 0
@@ -611,13 +639,13 @@ export async function loadHmSiteDbNews(opts: {
   }
 
   if (opts.categorySlug) {
-    const catIds = await findCategoryIdsForScope(opts.categorySlug, opts.siteId);
+    const catIds = await findCategoryIdsForScope(opts.categorySlug, opts.siteId, groupSiteIds);
     if (!catIds.length) return { items: [], total: 0 };
     conds.push(catIds.length === 1 ? eq(newsTable.categoryId, catIds[0]!) : inArray(newsTable.categoryId, catIds));
   }
 
   const where = and(...conds);
-  const ctx = scopeNewsContextForSite(await loadNewsContext(), opts.siteId);
+  const ctx = scopeNewsContextForSite(await loadNewsContext(), opts.siteId, groupSiteIds);
   const [rows, totalRows] = await Promise.all([
     getNewsDbForRead()
       .select(newsListSelectFields)
@@ -843,21 +871,29 @@ function makaleSyncCondition(): SQL {
 }
 
 /** Editör havuzu için site kapsamı: kendi haberleri + Yekpare merkez (site_id NULL). */
-function newsSiteScopeForPool(siteId: number, includePortalPool: boolean): SQL {
-  // Public vitrin: yalnızca bu sitenin satırları (havuz onaylı kopyalar site_id ile gelir).
+function newsSiteScopeForPool(
+  siteId: number,
+  includePortalPool: boolean,
+  groupSiteIds?: readonly number[] | null,
+): SQL {
+  // Public vitrin: bu site + publish-group editör satırları.
   // Merkez (site_id NULL) canlı birleşmez — manuel haber sızıntısını önler.
   void includePortalPool;
-  return eq(newsTable.siteId, siteId);
+  return hmPublishGroupEditorNewsScopeSql(siteId, groupSiteIds);
 }
 
-function editorialDbConditions(siteId: number | null, includePortalPool = false): SQL[] {
+function editorialDbConditions(
+  siteId: number | null,
+  includePortalPool = false,
+  groupSiteIds?: readonly number[] | null,
+): SQL[] {
   const conds: SQL[] = [
     eq(newsTable.status, "published"),
     isNull(newsTable.authorId),
   ];
   if (siteId != null) {
     // Site kilitli: manuel + onaylı havuz kopyaları (yekpare-hm-pool:) + rss-auto dahil.
-    conds.push(newsSiteScopeForPool(siteId, includePortalPool));
+    conds.push(newsSiteScopeForPool(siteId, includePortalPool, groupSiteIds));
     conds.push(
       or(
         isNull(newsTable.rssSourceUrl),
@@ -880,12 +916,16 @@ function editorialDbConditions(siteId: number | null, includePortalPool = false)
   return conds;
 }
 
-function authorDbConditions(siteId: number | null, includePortalPool = false): SQL[] {
+function authorDbConditions(
+  siteId: number | null,
+  includePortalPool = false,
+  groupSiteIds?: readonly number[] | null,
+): SQL[] {
   const conds: SQL[] = [
     eq(newsTable.status, "published"),
     or(isNotNull(newsTable.authorId), makaleSyncCondition())!,
   ];
-  if (siteId != null) conds.push(newsSiteScopeForPool(siteId, includePortalPool));
+  if (siteId != null) conds.push(newsSiteScopeForPool(siteId, includePortalPool, groupSiteIds));
   else {
     conds.push(isNull(newsTable.siteId));
     conds.push(eq(newsTable.siteOnly, false));
@@ -955,27 +995,27 @@ async function loadScopedDbPool(opts: {
   activatedSlugs?: string[];
   activationDefault?: "all" | "none";
 }): Promise<DbSerialized[]> {
+  const groupSiteIds = opts.siteId != null ? await resolveHmPublishGroupSiteIds(opts.siteId) : [];
   const baseConds =
     opts.kind === "editorial"
-      ? editorialDbConditions(opts.siteId, opts.includePortalPool === true)
-      : authorDbConditions(opts.siteId, opts.includePortalPool === true);
+      ? editorialDbConditions(opts.siteId, opts.includePortalPool === true, groupSiteIds)
+      : authorDbConditions(opts.siteId, opts.includePortalPool === true, groupSiteIds);
   const conds = [...baseConds];
 
   if (opts.categorySlug) {
     // Editör havuzunda kategori hem siteye özel hem de global slug ile eşleşebilir.
     if (opts.siteId != null && opts.includePortalPool) {
-      const [siteCat, globalIds] = await Promise.all([
-        findCategoryForScope(opts.categorySlug, opts.siteId),
+      const [siteCatIds, globalIds] = await Promise.all([
+        findCategoryIdsForScope(opts.categorySlug, opts.siteId, groupSiteIds),
         findPortalCategoryIdsBySlug(opts.categorySlug),
       ]);
-      const ids = new Set<number>(globalIds);
-      if (siteCat) ids.add(siteCat.id);
+      const ids = new Set<number>([...globalIds, ...siteCatIds]);
       if (ids.size === 0) return [];
       conds.push(inArray(newsTable.categoryId, [...ids]));
     } else {
-      const cat = await findCategoryForScope(opts.categorySlug, opts.siteId);
-      if (!cat) return [];
-      conds.push(eq(newsTable.categoryId, cat.id));
+      const catIds = await findCategoryIdsForScope(opts.categorySlug, opts.siteId, groupSiteIds);
+      if (!catIds.length) return [];
+      conds.push(catIds.length === 1 ? eq(newsTable.categoryId, catIds[0]!) : inArray(newsTable.categoryId, catIds));
     }
   }
 
@@ -995,9 +1035,10 @@ async function loadScopedDbPool(opts: {
     // Yalnızca bu sitenin satırları; yabancı manuel / sync sızıntısı yok.
     serialized = serialized.filter(
       (item) =>
-        item.siteId === opts.siteId &&
-        !isExternalManualEditorNewsForSite(item, opts.siteId!) &&
-        centralNewsRowVisibleOnHmEditorSite(item, opts.siteId!),
+        (item.siteId === opts.siteId ||
+          isHmPublishGroupSharedEditorNews(item, opts.siteId!, groupSiteIds)) &&
+        !isExternalManualEditorNewsForSite(item, opts.siteId!, groupSiteIds) &&
+        centralNewsRowVisibleOnHmEditorSite(item, opts.siteId!, groupSiteIds),
     );
   }
   if (opts.kind === "editorial") return serialized.filter((item) => !isAuthorArticle(item));
