@@ -5,7 +5,7 @@ import {
   isHmNewsPlaceholderSrc,
   isUsableNewsCoverSrc,
 } from "./hmNewsPlaceholder";
-import { filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
+import { filterNewsItemsWithCoverImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
 
 describe("haber görsel placeholder", () => {
   it("data URI SVG içinde «Görsel Hazırlanmaktadır» yazar", () => {
@@ -35,5 +35,14 @@ describe("haber görsel placeholder", () => {
       { title: "Placeholder", imageUrl: HM_NEWS_PLACEHOLDER_SVG },
     ]);
     expect(kept.map((item) => item.title)).toEqual(["Resimli"]);
+  });
+
+  it("kategori kartı spot HTML içinden kapak çözer", () => {
+    expect(
+      resolveNewsItemImageUrl({
+        imageUrl: "",
+        spot: `<p><img src="https://cdn.example.com/body.jpg" alt=""></p>`,
+      }),
+    ).toBe("https://cdn.example.com/body.jpg");
   });
 });

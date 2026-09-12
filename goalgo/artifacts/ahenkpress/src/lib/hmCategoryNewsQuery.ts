@@ -56,3 +56,13 @@ export function shaCityNewsSlugsMatch(
   const city = (slug: string) => slug === "yerel" || slug === "ankara" || slug.endsWith("-yerel") || slug.endsWith("-ankara");
   return city(item) && city(want);
 }
+
+/** Hibrit 200 + boş dizi (iç timeout) — /api/news yedeğine geç. */
+export function shouldUseCategoryNewsFallback(
+  page: { items?: unknown[] | null } | unknown[] | null | undefined,
+): boolean {
+  if (page == null) return true;
+  if (Array.isArray(page)) return page.length === 0;
+  const items = Array.isArray(page.items) ? page.items : [];
+  return items.length === 0;
+}

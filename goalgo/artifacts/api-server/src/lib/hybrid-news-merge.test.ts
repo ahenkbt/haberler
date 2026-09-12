@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   filterPoolCopiesWhenReceiveDisabled,
+  publicEditorScopedNewsFetchLimit,
   resolveEditorScopedPoolOpts,
   shouldApplyActivatedPoolCategoryFilter,
 } from "./hybrid-news-merge.js";
+
+describe("publicEditorScopedNewsFetchLimit", () => {
+  it("kategori yedeğini 200+ satır çekmeden sınırlar", () => {
+    expect(publicEditorScopedNewsFetchLimit(60, 0)).toBe(84);
+    expect(publicEditorScopedNewsFetchLimit(5, 0)).toBe(29);
+    expect(publicEditorScopedNewsFetchLimit(500, 0)).toBe(160);
+  });
+});
 
 describe("shouldApplyActivatedPoolCategoryFilter", () => {
   it("genel akışta aktivasyon filtresi uygulanır", () => {

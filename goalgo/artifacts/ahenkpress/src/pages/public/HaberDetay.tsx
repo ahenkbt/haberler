@@ -1,7 +1,5 @@
 import { useParams, Link, useLocation } from "wouter";
-import { format } from "date-fns";
-import { tr } from "date-fns/locale";
-import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "react";
+import { useEffect, useMemo, useCallback, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { resolveClientMediaSrc, rewriteInlineHtmlImgSrc, normalizeAiNewsHtml } from "@/lib/apiBase";
@@ -32,7 +30,7 @@ import { stackedNewsArticleKey, useNewsInfiniteScroll } from "@/hooks/useNewsInf
 import { EditorialNewsDetailHeader } from "@/components/EditorialNewsDetailHeader";
 import { NewsArticleBody } from "@/components/NewsArticleBody";
 import { resolveNewsExcerpt } from "@/lib/resolveNewsExcerpt";
-import { estimateNewsReadMinutes, filterNewsDisplayTags } from "@/lib/newsArticleMetrics";
+import { estimateNewsReadMinutes, filterNewsDisplayTags, formatNewsDateLabel } from "@/lib/newsArticleMetrics";
 import { NewsShareButtons } from "@/components/news/NewsShareButtons";
 import { resolveSadeAccent, SADE_PUBLIC_POST_HERO_BODY_CLASS } from "@/lib/yekpareSadeTheme";
 import {
@@ -587,7 +585,7 @@ function ArticleBody({
             title={article.title}
             categoryName={article.categoryName}
             categoryVariant={isPortalLayout ? "eyebrow" : "badge"}
-            dateLabel={format(new Date(article.createdAt), "d MMMM yyyy, HH:mm", { locale: tr })}
+            dateLabel={formatNewsDateLabel(article.createdAt, "d MMMM yyyy, HH:mm")}
             readMin={readMin}
             excerpt={excerpt}
             imageSrc={heroImageSrc}
@@ -697,7 +695,7 @@ function RelatedNewsBox({
                   {item.title}
                 </h3>
                 <p className="mt-1 text-[11px] font-semibold text-slate-400">
-                  {format(new Date(item.createdAt), "d MMM yyyy", { locale: tr })}
+                  {formatNewsDateLabel(item.createdAt, "d MMM yyyy")}
                 </p>
               </div>
             </Link>

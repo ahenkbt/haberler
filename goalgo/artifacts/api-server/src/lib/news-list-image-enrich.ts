@@ -4,7 +4,12 @@ import { isCorporateOriginCentralNewsRef } from "./hm-corporate-news-policy.js";
 import { loadCorporateHmSiteIds } from "./hm-yekpare-news-sync.js";
 import { parseHmPoolRef } from "./hm-sync-source.js";
 import { normalizePublicMediaUrl } from "./normalizePublicMediaUrl.js";
-import { resolveNewsItemImageUrl } from "./news-display-image.js";
+import { extractNewsCoverFromHtml, resolveNewsItemImageUrl } from "./news-display-image.js";
+import {
+  loadShaRssCoverByArticleUrl,
+  lookupShaRssCover,
+  rssSourceNeedsShaCoverLookup,
+} from "./hm-sha-rss-covers.js";
 import {
   shouldRefreshNewsListImageFromSource,
   type NewsListImageEnrichInput,
@@ -174,25 +179,34 @@ async function enrichSerializedNewsListImagesUnsafe<T extends NewsListImageEnric
     if (rssUrl) rssUrls.push(rssUrl);
   }
 
-  const [rssImages, poolImages] = await Promise.all([
+  const needsShaCover = items.some(
+    (item) =>
+      rssSourceNeedsShaCoverLookup(item.rssSourceUrl) &&
+      (shouldRefreshNewsListImageFromSource(item) || shouldBackfillMissingRssNewsImage(item)),
+  );
+  const [rssImages, poolImages, shaImages] = await Promise.all([
     loadRssCacheImagesBySourceUrl(rssUrls),
     loadPoolRefSourceImages(poolRefs),
+    needsShaCover
+      ? withTimeoutOrFallback(loadShaRssCoverByArticleUrl(), 1_500, new Map<string, string>())
+      : Promise.resolve(new Map<string, string>()),
   ]);
 
   const persistIds: Array<{ id: number; imageUrl: string }> = [];
   const nextItems = items.map((item) => {
     const refresh = shouldRefreshNewsListImageFromSource(item);
     const backfill = shouldBackfillMissingRssNewsImage(item);
-    if (!refresh && !backfill) return item;
+    const fromHtml = extractNewsCoverFromHtml(item.spot, item.rssSourceUrl);
+    if (!refresh && !backfill && !fromHtml) return item;
     if (isCorporateOriginCentralNewsRef(item.rssSourceUrl, corporateSiteIds)) return item;
 
-    let candidate: string | null = null;
+    let candidate: string | null = fromHtml;
     const poolRef = parseHmPoolRef(item.rssSourceUrl);
-    if (poolRef) candidate = poolImages.get(poolRefCacheKey(poolRef.siteId, poolRef.id)) ?? null;
+    if (!candidate && poolRef) candidate = poolImages.get(poolRefCacheKey(poolRef.siteId, poolRef.id)) ?? null;
 
     const rssUrl = normalizeRssSourceUrl(String(item.rssSourceUrl ?? ""));
     if (!candidate && rssUrl) {
-      candidate = rssImages.get(rssUrl) ?? null;
+      candidate = rssImages.get(rssUrl) ?? lookupShaRssCover(shaImages, rssUrl);
     }
     if (!candidate) return item;
 

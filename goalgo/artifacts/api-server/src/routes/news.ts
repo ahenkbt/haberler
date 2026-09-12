@@ -51,6 +51,7 @@ import {
   filterPoolCopiesWhenReceiveDisabled,
   findCategoryIdsForScope,
   loadEditorScopedDbNews,
+  publicEditorScopedNewsFetchLimit,
   resolveEditorScopedPoolOpts,
 } from "../lib/hybrid-news-merge.js";
 import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
@@ -293,7 +294,7 @@ router.get("/news", async (req, res): Promise<void> => {
         siteSlug: hmAccess.slug,
         categorySlug,
         q,
-        limit: Math.min(limit + offset + 200, 600),
+        limit: publicEditorScopedNewsFetchLimit(limit, offset),
         offset: 0,
         ...poolOpts,
         // /sondakika ve tüm haber listesi arşivdir — 12 saat kesme yok.
@@ -674,7 +675,7 @@ router.get("/news/by-category/:categorySlug", async (req, res): Promise<void> =>
         siteId,
         siteSlug: hmAccess.slug,
         categorySlug: slug,
-        limit: Math.min(limit + offset + 200, 600),
+        limit: publicEditorScopedNewsFetchLimit(limit, offset),
         offset: 0,
         ...poolOpts,
         // Kategori vitrinleri: yayınlanmış yerel haberler (yaş kesimi yok).

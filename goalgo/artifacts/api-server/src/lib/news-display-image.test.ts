@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  extractNewsCoverFromHtml,
   filterNewsItemsWithUsableCover,
   isUsableNewsCoverUrl,
   newsItemHasUsableCover,
+  resolveNewsItemImageUrl,
 } from "./news-display-image.js";
 
 describe("anasayfa kapak filtresi", () => {
@@ -24,5 +26,34 @@ describe("anasayfa kapak filtresi", () => {
     const kept = filterNewsItemsWithUsableCover(items);
     expect(kept.map((item) => item.title)).toEqual(["Resimli", "Yedek"]);
     expect(newsItemHasUsableCover(items[1])).toBe(false);
+  });
+
+  it("kategori listesi görselsiz satırları silmez — homepage filtresi kategoriye uygulanmaz", () => {
+    const items = [
+      { title: "Ankara 1", categorySlug: "ankara", imageUrl: "" },
+      { title: "Ankara 2", categorySlug: "ankara", imageUrl: null },
+    ];
+    expect(filterNewsItemsWithUsableCover(items)).toEqual([]);
+    expect(items).toHaveLength(2);
+  });
+
+  it("SHA enclosure / spot HTML içinden kapak çözer", () => {
+    const shaXml = `
+      <item>
+        <title>SYM</title>
+        <link>https://sehirhaberajansi.com.tr/haber/sym-1</link>
+        <enclosure url="https://sehirhaberajansi.com.tr/uploads/1789121609_6aa3d449aa727.jpeg" length="0" type="image/jpeg" />
+        <media:content url="https://sehirhaberajansi.com.tr/uploads/1789121609_6aa3d449aa727.jpeg" medium="image" />
+      </item>
+    `;
+    expect(extractNewsCoverFromHtml(shaXml, "https://sehirhaberajansi.com.tr/haber/sym-1")).toContain(
+      "sehirhaberajansi.com.tr/uploads/",
+    );
+    expect(
+      resolveNewsItemImageUrl({
+        imageUrl: "",
+        spot: `<img src="https://yozgatmedya.com/wp-content/uploads/a.jpg" />`,
+      }),
+    ).toContain("yozgatmedya.com");
   });
 });

@@ -1590,6 +1590,13 @@ html[data-home-theme="night"] body {
   color: #f1f5f9;
 }
 
+/* Haber detay first-paint yokken gece teması boş #root'u tam koyu ekran yapmasın. */
+html[data-yekpare-theme="night"] #root:empty,
+html[data-home-theme="night"] #root:empty {
+  min-height: 100dvh;
+  background: #ffffff;
+}
+
 .yekpare-chrome-shell[data-yekpare-theme="night"],
 .yekpare-chrome-shell[data-home-theme="night"],
 html[data-yekpare-theme="night"] .yekpare-chrome-shell,

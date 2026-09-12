@@ -5,6 +5,11 @@ import { listHmNewsSitesCompat } from "./hm-site-compat.js";
 import { isMissingNewsCoverImage } from "./hm-tepe-manset-select.js";
 import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
 import { extractRssCoverImage } from "./rssItemMedia.js";
+import {
+  loadShaRssCoverByArticleUrl,
+  lookupShaRssCover,
+  rssSourceNeedsShaCoverLookup,
+} from "./hm-sha-rss-covers.js";
 
 export type RssMissingImageRow = {
   id: number;
@@ -217,6 +222,8 @@ export async function backfillHmRssMissingImages(opts?: {
     .map((row) => articleUrlForRssImageBackfill(row.rssSourceUrl))
     .filter((url): url is string => Boolean(url));
   const cached = await loadCachedRssImages(articleUrls);
+  const needsSha = rows.some((row) => rssSourceNeedsShaCoverLookup(row.rssSourceUrl));
+  const shaCovers = needsSha ? await loadShaRssCoverByArticleUrl() : new Map<string, string>();
 
   let updated = 0;
   let skipped = 0;
@@ -228,13 +235,14 @@ export async function backfillHmRssMissingImages(opts?: {
       continue;
     }
     const cacheKey = (normalizeRssSourceUrl(pageUrl) ?? pageUrl).toLowerCase();
+    const shaCached = lookupShaRssCover(shaCovers, pageUrl);
     let scraped: string | null = null;
-    if (scrape && !cached.get(cacheKey)) {
+    if (scrape && !cached.get(cacheKey) && !shaCached) {
       scraped = await fetchArticlePageImageUrl(pageUrl, 5_000);
     }
     const next = pickRssBackfillImageUrl({
       pageUrl,
-      cachedImageUrl: cached.get(cacheKey) ?? null,
+      cachedImageUrl: cached.get(cacheKey) ?? shaCached,
       scrapedImageUrl: scraped,
     });
     if (!next) {

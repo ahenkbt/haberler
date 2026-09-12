@@ -1,5 +1,7 @@
-import { mediaObjectExists, publicUploadPath } from "./mediaUploadService";
+import { parseMetaImageFromHtml } from "./articlePageImage.js";
 import { isMissingNewsCoverImage } from "./hm-tepe-manset-select.js";
+import { mediaObjectExists, publicUploadPath } from "./mediaUploadService";
+import { extractRssCoverImage } from "./rssItemMedia.js";
 
 const UPLOAD_PATH_RE = /\/api\/media\/uploads\/([a-zA-Z0-9._-]+)/g;
 
@@ -59,8 +61,22 @@ export async function newsRowHasResolvableDisplayImage(
   return uploadPathExists(resolved);
 }
 
-/** Liste/kart API — yalnızca kayıtlı kapak alanları; içerik/HTML veya peer yedek yok. */
-export function resolveNewsItemImageUrl(item: {
+/** Spot / gövde / RSS XML içinden og:image veya enclosure kapak. */
+export function extractNewsCoverFromHtml(
+  html: string | null | undefined,
+  pageUrl?: string | null,
+): string | null {
+  const raw = String(html ?? "");
+  if (!raw.trim()) return null;
+  const page = String(pageUrl ?? "").trim();
+  const fromMeta = parseMetaImageFromHtml(raw, page || "https://example.invalid/");
+  if (fromMeta && isUsableNewsCoverUrl(fromMeta)) return fromMeta;
+  const fromRss = extractRssCoverImage(raw, raw, page);
+  if (fromRss && isUsableNewsCoverUrl(fromRss)) return fromRss;
+  return null;
+}
+
+type NewsImageFields = {
   imageUrl?: string | null;
   featuredImage?: string | null;
   thumbnailUrl?: string | null;
@@ -68,7 +84,13 @@ export function resolveNewsItemImageUrl(item: {
   imageFallbackUrl?: string | null;
   image?: string | null;
   enclosure?: { url?: string | null } | string | null;
-} | null | undefined): string | null {
+  spot?: string | null;
+  content?: string | null;
+  rssSourceUrl?: string | null;
+};
+
+/** Liste/kart API — kayıtlı kapak alanları, yoksa spot/gövde enclosure. */
+export function resolveNewsItemImageUrl(item: NewsImageFields | null | undefined): string | null {
   if (!item) return null;
   const enclosure =
     typeof item.enclosure === "string"
@@ -83,9 +105,13 @@ export function resolveNewsItemImageUrl(item: {
     enclosure,
   ]) {
     const s = String(raw ?? "").trim();
+    if (s && isUsableNewsCoverUrl(s)) return s;
     if (s) return s;
   }
-  return null;
+  return (
+    extractNewsCoverFromHtml(item.spot, item.rssSourceUrl) ||
+    extractNewsCoverFromHtml(item.content, item.rssSourceUrl)
+  );
 }
 
 /** WebP mirror veya yerel upload yoksa harici kapak yedeği. */

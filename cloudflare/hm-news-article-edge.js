@@ -1,6 +1,11 @@
 /**
  * Haber detay page-bundle 5xx olunca /api/news/:slug ile 200 paket üret.
+ * HTML first-paint: kenar cache miss olsa da origin'den kısa bütçeyle çek.
  */
+import { matchHmEdgeCache, putHmEdgeCache } from "./hm-edge-cache.js";
+
+/** Article HTML boot — cache miss'te origin'e bu kadar izin ver (boş koyu ekran yerine gövde). */
+export const HM_ARTICLE_PAINT_BUDGET_MS = 1_500;
 
 export function wrapArticleAsPageBundle(article) {
   return {
@@ -88,4 +93,108 @@ export function jsonArticleResponse(body, recoverTag) {
     },
     body: JSON.stringify(body),
   };
+}
+
+/** /api/news/:slug veya page-bundle JSON → HaberDetay / first-paint paketi. */
+export function articleBundleFromJson(json) {
+  if (!json || typeof json !== "object") return null;
+  if (json.article && String(json.article.title || "").trim()) {
+    return {
+      article: json.article,
+      related: Array.isArray(json.related) ? json.related : [],
+      kose: json.kose ?? null,
+      sidebar:
+        json.sidebar && typeof json.sidebar === "object"
+          ? json.sidebar
+          : { authors: [], popular: [] },
+    };
+  }
+  if (String(json.title || "").trim()) return wrapArticleAsPageBundle(json);
+  return null;
+}
+
+function articleCacheCandidateUrls(origin, slug, siteId) {
+  const enc = encodeURIComponent(slug);
+  const urls = [];
+  if (Number.isFinite(siteId) && siteId > 0) {
+    urls.push(`${origin}/api/news/page-bundle/${enc}?siteId=${siteId}`);
+    urls.push(`${origin}/api/news/${enc}?siteId=${siteId}`);
+  }
+  // SHA / merkez havuz satırları siteId NULL — portalsız URL önce cache'de olabilir.
+  urls.push(`${origin}/api/news/page-bundle/${enc}`);
+  urls.push(`${origin}/api/news/${enc}`);
+  return urls;
+}
+
+export async function readHmArticleBundleFromEdgeCache(edgeCache, origin, slug, siteId) {
+  if (!edgeCache || !origin || !slug) return null;
+  for (const url of articleCacheCandidateUrls(origin, slug, siteId)) {
+    const hit = await matchHmEdgeCache(edgeCache, url);
+    if (!hit?.ok) continue;
+    const json = await hit.clone().json().catch(() => null);
+    const bundle = articleBundleFromJson(json);
+    if (bundle) return bundle;
+  }
+  return null;
+}
+
+export async function fetchHmArticleBundleFromOrigin(opts) {
+  const { fetchApi, env, origin, slug, siteId, incoming } = opts || {};
+  if (typeof fetchApi !== "function" || !origin || !slug) return null;
+  const host = String(incoming?.host || incoming?.hostname || "").toLowerCase();
+  const headers = {
+    accept: "application/json",
+    "x-forwarded-host": host,
+    "x-forwarded-proto": "https",
+  };
+  const enc = encodeURIComponent(slug);
+  // Merkez havuz (siteId NULL) ASG/AHG vitrininde sık — portalsız dene, sonra siteId.
+  const urls = [`${origin}/api/news/${enc}`];
+  if (Number.isFinite(siteId) && siteId > 0) {
+    urls.push(`${origin}/api/news/${enc}?siteId=${siteId}`);
+    urls.push(`${origin}/api/news/page-bundle/${enc}?siteId=${siteId}`);
+  }
+  urls.push(`${origin}/api/news/page-bundle/${enc}`);
+
+  for (const url of urls) {
+    try {
+      const res = await fetchApi(env, url, { headers, method: "GET" });
+      if (!res?.ok) continue;
+      const json = await res.json().catch(() => null);
+      const bundle = articleBundleFromJson(json);
+      if (bundle) return bundle;
+    } catch {
+      /* next candidate */
+    }
+  }
+  return null;
+}
+
+/** Kenar cache, yoksa origin — article HTML first-paint için. */
+export async function resolveHmArticleBundleForPaint(opts) {
+  const { edgeCache, publicOrigin, origin, slug, siteId, fetchApi, env, incoming, waitUntil } =
+    opts || {};
+  const cached = await readHmArticleBundleFromEdgeCache(edgeCache, publicOrigin || origin, slug, siteId);
+  if (cached) return { bundle: cached, fromCache: true };
+  const fresh = await fetchHmArticleBundleFromOrigin({
+    fetchApi,
+    env,
+    origin,
+    slug,
+    siteId,
+    incoming,
+  });
+  if (fresh && edgeCache && publicOrigin) {
+    const cacheUrl = `${publicOrigin}/api/news/${encodeURIComponent(slug)}`;
+    const store = putHmEdgeCache(
+      edgeCache,
+      cacheUrl,
+      new Response(JSON.stringify(fresh.article), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+    if (typeof waitUntil === "function") waitUntil(store);
+  }
+  return { bundle: fresh, fromCache: false };
 }
