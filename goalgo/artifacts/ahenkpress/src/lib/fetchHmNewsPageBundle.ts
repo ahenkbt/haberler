@@ -142,6 +142,8 @@ export async function fetchHmNewsPageBundle<TArticle extends { title?: string }>
 
   const local = readHmHeadlineAsPageBundle<TArticle>(slug, siteId);
   if (local) return local;
+  const boot = readHmNewsArticleBoot<TArticle>(slug);
+  if (boot) return boot;
   if (scoped.bundled.status === 404 || scoped.article.status === 404) {
     return scoped.bundled.data ?? wrapNewsArticleAsPageBundle<TArticle>(null);
   }

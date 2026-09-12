@@ -34,6 +34,9 @@ import {
   newsArticleSlugFromApiPath,
   newsPageBundleSlug,
   wrapArticleAsPageBundle,
+  readHmArticleBundleFromEdgeCache,
+  resolveHmArticleBundleForPaint,
+  HM_ARTICLE_PAINT_BUDGET_MS,
 } from "./hm-news-article-edge.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
@@ -874,40 +877,46 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     );
     try {
       const origin = upstreamOrigin(env, incoming);
-      const boot = await withBudget(
+      const edgeCache = getHmEdgeCache();
+      const waitUntilFn = typeof waitUntil === "function" ? waitUntil : undefined;
+      const bootP = withBudget(
         raceHmHtmlBoot({
           fetchApi,
           origin,
           env,
           incoming,
-          cache: getHmEdgeCache(),
-          waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
+          cache: edgeCache,
+          waitUntil: waitUntilFn,
         }),
       );
-      const edgeCache = getHmEdgeCache();
-      let articleBundle = null;
+      // Kenar cache paralel — siteId henüz yoksa portalsız /api/news/:slug dene.
+      const cachedArticleP = readHmArticleBundleFromEdgeCache(
+        edgeCache,
+        incoming.origin,
+        articleSlug,
+        0,
+      );
+      const boot = await bootP;
       const siteId = Number(boot?.siteId || 0);
-      const candidates = [];
-      if (Number.isFinite(siteId) && siteId > 0) {
-        candidates.push(
-          `${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}?siteId=${siteId}`,
+      let articleBundle = await cachedArticleP;
+      let articleFromCache = Boolean(articleBundle);
+      if (!articleBundle) {
+        const painted = await withBudget(
+          resolveHmArticleBundleForPaint({
+            edgeCache,
+            publicOrigin: incoming.origin,
+            origin,
+            slug: articleSlug,
+            siteId,
+            fetchApi,
+            env,
+            incoming,
+            waitUntil: waitUntilFn,
+          }),
+          HM_ARTICLE_PAINT_BUDGET_MS,
         );
-        candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}?siteId=${siteId}`);
-      }
-      candidates.push(`${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}`);
-      candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}`);
-      for (const url of candidates) {
-        const hit = await matchHmEdgeCache(edgeCache, url);
-        if (!hit?.ok) continue;
-        const json = await hit.clone().json().catch(() => null);
-        if (json?.article && String(json.article.title || "").trim()) {
-          articleBundle = json;
-          break;
-        }
-        if (json && String(json.title || "").trim()) {
-          articleBundle = wrapArticleAsPageBundle(json);
-          break;
-        }
+        articleBundle = painted?.bundle || null;
+        articleFromCache = Boolean(painted?.fromCache);
       }
       if (!articleBundle && boot?.bundle) {
         const fromManset = headlineToArticle(
@@ -931,7 +940,13 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
         });
         out.set(
           "x-yekpare-hm-html-boot",
-          articleBundle ? "article-cache" : boot?.fromCache ? "article-meta-cache" : "article-meta",
+          articleBundle
+            ? articleFromCache
+              ? "article-cache"
+              : "article-origin"
+            : boot?.fromCache
+              ? "article-meta-cache"
+              : "article-meta",
         );
         if (articleBundle) out.set("x-yekpare-hm-first-paint", "article");
       }

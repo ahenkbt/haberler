@@ -1,6 +1,23 @@
 /** Haber detay: okuma süresi, görünür etiketler (iç sistem etiketleri hariç). */
+import { format, isValid } from "date-fns";
+import { tr } from "date-fns/locale";
 
 export const INTERNAL_NEWS_TAGS = new Set(["rss-auto", "meta-ai", "haber-gonder", "haber"]);
+
+/** date-fns `format` Invalid Date'de RangeError atar — boş bırak, sayfayı düşürme. */
+export function formatNewsDateLabel(
+  value: string | number | Date | null | undefined,
+  pattern: string,
+): string {
+  if (value == null || value === "") return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (!isValid(d)) return "";
+  try {
+    return format(d, pattern, { locale: tr });
+  } catch {
+    return "";
+  }
+}
 
 export function filterNewsDisplayTags(tags: string[] | null | undefined): string[] {
   return (tags ?? []).filter((raw) => {

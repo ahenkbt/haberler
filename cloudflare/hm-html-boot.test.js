@@ -128,7 +128,13 @@ describe("hm-html-boot", () => {
     assert.match(out, /Ankabir/);
     assert.match(out, /Vali ziyareti/);
     assert.match(out, /hm-first-paint-hold/);
+    assert.match(out, /spaPainted/);
+    assert.match(out, /hm-article-detail-page/);
     assert.equal(out.includes("Manşet yükleniyor"), false);
+    assert.equal(
+      out.includes("setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000)"),
+      false,
+    );
   });
 
   it("paints a category list from the embedded home-bundle", () => {

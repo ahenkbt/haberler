@@ -625,9 +625,11 @@ function resolveHmFirstPaintHtml(boot) {
   return buildHmClassicHomePaintHtml(boot);
 }
 
-/** Klasik HTML, React #root'u silene kadar tıklanabilir kalsın. */
+/** Klasik HTML, React #root'u silene kadar tıklanabilir kalsın.
+ * 12sn sonra yalnızca React gerçekten boyadıysa kaldır — aksi halde boş koyu ekran kalır.
+ */
 export function buildHmFirstPaintHoldScript() {
-  return `<script>(function(){var r=document.getElementById("root");if(!r)return;var p=r.querySelector("[data-hm-first-paint]");if(!p)return;var h=document.createElement("div");h.id="hm-first-paint-hold";h.setAttribute("data-hm-first-paint-hold",p.getAttribute("data-hm-first-paint")||"classic");h.style.cssText="position:fixed;inset:0;z-index:2147483000;overflow:auto;background:#fff";h.appendChild(p.cloneNode(true));r.parentNode.insertBefore(h,r);document.documentElement.setAttribute("data-hm-spa-pending","1");window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;var el=document.getElementById("hm-first-paint-hold");if(el&&el.parentNode)el.parentNode.removeChild(el);document.documentElement.removeAttribute("data-hm-spa-pending");};setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
+  return `<script>(function(){var r=document.getElementById("root");if(!r)return;var p=r.querySelector("[data-hm-first-paint]");if(!p)return;var h=document.createElement("div");h.id="hm-first-paint-hold";h.setAttribute("data-hm-first-paint-hold",p.getAttribute("data-hm-first-paint")||"classic");h.style.cssText="position:fixed;inset:0;z-index:2147483000;overflow:auto;background:#fff";h.appendChild(p.cloneNode(true));r.parentNode.insertBefore(h,r);document.documentElement.setAttribute("data-hm-spa-pending","1");window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;var el=document.getElementById("hm-first-paint-hold");if(el&&el.parentNode)el.parentNode.removeChild(el);document.documentElement.removeAttribute("data-hm-spa-pending");};function spaPainted(){var root=document.getElementById("root");if(!root)return false;return Boolean(root.querySelector(".hm-article-detail-page")||root.querySelector(".hm-vitrin-root")||root.querySelector(".hm-classic-root")||root.querySelector("[data-hm-first-paint]"));}setTimeout(function(){try{if(window.__YEKPARE_SPA_READY__)return;if(spaPainted())window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
 }
 
 /** @deprecated overlay kaldırıldı; klasik anasayfa ilk boyama. */

@@ -7,6 +7,8 @@ import {
   headlineToArticle,
   wrapArticleAsPageBundle,
   findNewsItemBySlug,
+  articleBundleFromJson,
+  fetchHmArticleBundleFromOrigin,
 } from "./hm-news-article-edge.js";
 
 describe("hm-news-article-edge", () => {
@@ -44,7 +46,7 @@ describe("hm-news-article-edge", () => {
       },
       "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
     );
-    assert.equal(article.content, "Vali ziyareti");
+    assert.equal(article.content, "");
     const bundle = wrapArticleAsPageBundle(article);
     assert.equal(bundle.article.title.includes("Ankabir"), true);
   });
@@ -67,5 +69,50 @@ describe("hm-news-article-edge", () => {
     );
     assert.equal(hit.slug, slug);
     assert.equal(findNewsItemBySlug({ items: [{ title: "Yok", slug: "baska" }] }, slug), null);
+  });
+
+  it("builds a page-bundle from /api/news JSON so article first-paint has a title", () => {
+    const slug = "serhat-kilic-in-olumuyle-gundeme-geldi-oyuncularin-guvencesizligi-artik-kaniksan-1789220211156-2-m";
+    const fromRow = articleBundleFromJson({
+      title: "Serhat Kılıç",
+      slug,
+      content: "<p>Gövde</p>",
+    });
+    assert.equal(fromRow.article.title, "Serhat Kılıç");
+    assert.match(fromRow.article.content, /Gövde/);
+    const fromBundle = articleBundleFromJson({
+      article: { title: "Paket", slug, content: "<p>x</p>" },
+      related: [{ title: "Benzer" }],
+    });
+    assert.equal(fromBundle.article.title, "Paket");
+    assert.equal(fromBundle.related.length, 1);
+    assert.equal(articleBundleFromJson({ slug }), null);
+  });
+
+  it("fetches unscoped /api/news/:slug first so SHA pool articles paint", async () => {
+    const slug = "serhat-kilic-in-olumuyle-gundeme-geldi-oyuncularin-guvencesizligi-artik-kaniksan-1789220211156-2-m";
+    const urls = [];
+    const bundle = await fetchHmArticleBundleFromOrigin({
+      origin: "https://origin.example",
+      slug,
+      siteId: 3,
+      incoming: { host: "ankarasehirgazetesi.com" },
+      fetchApi: async (_env, url) => {
+        urls.push(url);
+        if (String(url).includes("siteId=")) {
+          return { ok: false, json: async () => ({}) };
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            title: "Serhat Kılıç",
+            slug,
+            content: "<p>Gövde</p>",
+          }),
+        };
+      },
+    });
+    assert.equal(urls[0], `https://origin.example/api/news/${encodeURIComponent(slug)}`);
+    assert.equal(bundle.article.title, "Serhat Kılıç");
   });
 });
