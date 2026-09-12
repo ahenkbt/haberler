@@ -183,6 +183,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          YEKTUBE_DATABASE_URL: ${{ secrets.YEKTUBE_DATABASE_URL || '' }}
+          YEKTUBE_DB_READ: ${{ secrets.YEKTUBE_DB_READ || '' }}
+          YEKTUBE_DB_WRITE: ${{ secrets.YEKTUBE_DB_WRITE || '' }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET || vars.SESSION_SECRET }}
           HM_EDITOR_JWT_SECRET: ${{ secrets.HM_EDITOR_JWT_SECRET || '' }}
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
@@ -230,6 +233,45 @@ jobs:
             put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
           fi
           echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
+
+      - name: Sync YEKTUBE Worker secrets
+        # Neon cutover sonrası DATABASE_URL sync skip olsa bile YEKTUBE_* kaybolmasın
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
+          YEKTUBE_DATABASE_URL: ${{ secrets.YEKTUBE_DATABASE_URL || '' }}
+          YEKTUBE_DB_READ: ${{ secrets.YEKTUBE_DB_READ || '' }}
+          YEKTUBE_DB_WRITE: ${{ secrets.YEKTUBE_DB_WRITE || '' }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="$2"
+            [ -n "$value" ] || return 0
+            local attempt=1
+            local max=4
+            while true; do
+              out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || true
+              printf '%s\n' "$out"
+              if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
+                return 0
+              fi
+              if [ "$attempt" -ge "$max" ]; then
+                echo "::error::$name wrangler secret put failed after ${max} attempts"
+                return 1
+              fi
+              sleep $((attempt * 8))
+              attempt=$((attempt + 1))
+            done
+          }
+          if [ -z "${YEKTUBE_DATABASE_URL:-}" ]; then
+            echo "::notice::YEKTUBE_DATABASE_URL secret yok — atlandı"
+            exit 0
+          fi
+          put_secret YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
+          put_secret YEKTUBE_DB_READ "${YEKTUBE_DB_READ:-yektube}"
+          put_secret YEKTUBE_DB_WRITE "${YEKTUBE_DB_WRITE:-yektube}"
 
       - name: Redeploy Worker so Container picks up DATABASE_URL
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true' && steps.live_db.outputs.skip_secrets != 'true'
