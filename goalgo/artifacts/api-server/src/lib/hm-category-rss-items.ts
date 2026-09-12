@@ -54,6 +54,7 @@ export async function loadHmCategoryRssFeedItems(opts: {
   const loadDbItems = () =>
     loadEditorScopedDbNews({
       siteId: opts.siteId,
+      siteSlug: hmAccess.slug,
       categorySlug,
       limit: fetchLimit,
       offset: 0,

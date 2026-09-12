@@ -26,6 +26,7 @@ import {
   refreshPortalRssFeedsOnVisit,
 } from "../lib/portal-rss-cache.js";
 import { getPortalRssItemsForHybridMerge } from "../lib/portal-rss-hybrid-read.js";
+import { resolveHybridDbFirstFlag } from "../lib/hm-hybrid-db-first.js";
 import { readPortalRssItemsForFeeds, incrementPortalRssItemView } from "../lib/portal-rss-store.js";
 import {
   filterForeignOnlyPortalHybridRssFeeds,
@@ -238,9 +239,21 @@ function publicNewsCacheKey(req: Request): string | null {
   const offset = Math.max(Number(req.query.offset ?? 0) || 0, 0);
   const rssScopeRaw = String(req.query.rssScope ?? "").trim();
   const rssScope = rssScopeRaw === "box" ? "box" : rssScopeRaw === "all" ? "all" : "site";
-  const dbFirst =
-    String(req.query.dbFirst ?? "").trim() === "1" ||
-    String(req.query.dbFirst ?? "").trim() === "true";
+  const dbFirst = resolveHybridDbFirstFlag({
+    dbFirstQuery: typeof req.query.dbFirst === "string" ? req.query.dbFirst : null,
+    rssOnly:
+      String(req.query.rssOnly ?? "").trim() === "1" ||
+      String(req.query.source ?? "").trim() === "rss",
+    newsmapMode:
+      String(req.query.newsmap ?? "").trim() === "1" ||
+      String(req.query.newsmap ?? "").trim() === "true",
+    poolBrowse:
+      String(req.query.poolBrowse ?? "").trim() === "1" ||
+      String(req.query.poolBrowse ?? "").trim() === "true",
+    rssScope,
+    siteId,
+    categorySlug,
+  });
   const yekparePoolOnly =
     String(req.query.yekparePool ?? "").trim() === "1" ||
     String(req.query.yekparePool ?? "").trim() === "true";
@@ -486,6 +499,7 @@ router.get("/news/pool", async (req, res): Promise<void> => {
         siteId != null
           ? await loadEditorScopedDbNews({
               siteId,
+              siteSlug: poolAccess?.slug,
               categorySlug: slug,
               q,
               limit: perCatLimit,
@@ -605,10 +619,6 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     String(req.query.global ?? "").trim() === "true" ||
     String(req.query.newsmap ?? "").trim() === "1" ||
     String(req.query.newsmap ?? "").trim() === "true";
-  const dbFirst =
-    !rssOnly &&
-    (String(req.query.dbFirst ?? "").trim() === "1" ||
-      String(req.query.dbFirst ?? "").trim() === "true");
   const yekparePoolOnly =
     String(req.query.yekparePool ?? "").trim() === "1" ||
     String(req.query.yekparePool ?? "").trim() === "true";
@@ -616,6 +626,15 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
   const poolBrowse =
     String(req.query.poolBrowse ?? "").trim() === "1" ||
     String(req.query.poolBrowse ?? "").trim() === "true";
+  const dbFirst = resolveHybridDbFirstFlag({
+    dbFirstQuery: typeof req.query.dbFirst === "string" ? req.query.dbFirst : null,
+    rssOnly,
+    newsmapMode,
+    poolBrowse,
+    rssScope,
+    siteId,
+    categorySlug,
+  });
   const freshPortalVisit =
     String(req.query.fresh ?? "").trim() === "1" ||
     String(req.query.fresh ?? "").trim() === "true";
@@ -698,6 +717,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         return editorPool
           ? loadEditorScopedDbNews({
               siteId: siteId!,
+              siteSlug: hmAccess?.slug,
               categorySlug,
               q,
               limit: dbLimit,
@@ -1130,6 +1150,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
         : editorPool
           ? loadEditorScopedDbNews({
               siteId: siteId!,
+              siteSlug: hmAccess?.slug,
               categorySlug,
               q,
               limit: hybridPoolLimit,

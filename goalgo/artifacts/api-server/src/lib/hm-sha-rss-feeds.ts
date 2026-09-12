@@ -73,6 +73,35 @@ export function categorySlugFromShaFeed(feedUrl: string): string | null {
   return canon || "gundem";
 }
 
+export function isShaTargetSiteSlug(slug: string | null | undefined): boolean {
+  const s = String(slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  if (!s) return false;
+  if ((SHA_TARGET_SITE_SLUGS as readonly string[]).includes(s)) return true;
+  if (s === "ahg") return true;
+  return s.includes("ankarasehirgazetesi") || s.includes("ankarahabergundemi");
+}
+
+/**
+ * SHA yerel feed’i `ankara` olarak yazılır. ASG/AHG nav’ında hem YEREL hem ANKARA
+ * olduğu için kategori listesi iki slug’ı birlikte çeker.
+ */
+export function expandShaListingCategorySlugs(
+  categorySlug: string | null | undefined,
+  siteSlug?: string | null,
+): string[] {
+  const slug = String(categorySlug ?? "")
+    .trim()
+    .toLowerCase();
+  if (!slug) return [];
+  if (!isShaTargetSiteSlug(siteSlug)) return [slug];
+  if (slug === "yerel" || slug.endsWith("-yerel")) return [slug, "ankara"];
+  if (slug === "ankara" || slug.endsWith("-ankara")) return [slug, "yerel"];
+  return [slug];
+}
+
 export function isShaCampaign(campaign: {
   tags?: string[] | null;
   feeds?: unknown;

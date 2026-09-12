@@ -335,6 +335,7 @@ export function HmRssNewsBand({
         params.set("siteId", String(categoryQuerySiteId));
         params.set("rssScope", "all");
         params.set("categorySlug", activeSlug);
+        params.set("dbFirst", "1");
         const raw = await apiRequest(`/api/news/hybrid?${params.toString()}`);
         return Array.isArray(raw) ? raw : ((raw as { items?: unknown[] })?.items ?? []);
       }
