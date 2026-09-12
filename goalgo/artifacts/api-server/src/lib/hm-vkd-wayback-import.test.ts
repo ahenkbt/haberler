@@ -9,6 +9,7 @@ import {
   parseVkdWaybackPayload,
   resolveVkdArchivedImage,
   selectVkdHaberCdxRows,
+  resolveImportableImageUrl,
   toWaybackImageUrl,
   waybackSourceKey,
 } from "./hm-vkd-wayback-import.js";
@@ -50,6 +51,17 @@ describe("VKD Wayback URL helpers", () => {
     expect(isVkdHaberArticleUrl("https://vatankahramanlari.org.tr/haberler.html")).toBe(false);
     expect(isVkdHaberArticleUrl("https://vatankahramanlari.org.tr/haber/uploads/logo/x.png")).toBe(false);
     expect(isVkdHaberArticleUrl("https://vatankahramanlari.org.tr/haber/15-temmuz-mesaji.html")).toBe(true);
+    expect(
+      isVkdHaberArticleUrl(
+        "https://vatankahramanlari.org.tr/haber/erbilin-turk-kimligi-ve-tarihi-gercekler",
+      ),
+    ).toBe(true);
+    expect(
+      isVkdHaberArticleUrl(
+        "http://vatankahramanlari.org.tr/haber/rusyanin-dagistan-boelgesinde-art-arda-silahli-saldirilar-15i-polis-toplam-19-kisi-hayatini-kaybetti",
+      ),
+    ).toBe(true);
+    expect(isVkdHaberArticleUrl("https://vatankahramanlari.org.tr/haber/not-in-inventory")).toBe(false);
   });
 
   it("rewrites content images to Wayback im_ and skips logos", () => {
@@ -73,6 +85,18 @@ describe("VKD Wayback URL helpers", () => {
         "20250806055214",
       ),
     ).toBeNull();
+    expect(
+      toWaybackImageUrl(
+        "https://www.altayli.net/wp-content/uploads/2016/02/Erbil-1.jpg",
+        "20250806055214",
+      ),
+    ).toBeNull();
+    expect(
+      resolveImportableImageUrl(
+        "https://cdn1.ntv.com.tr/gorsel/DAp1l-NBaEWViQc8SRKZ-A.jpg?width=1080",
+        "20250806055214",
+      ),
+    ).toContain("cdn1.ntv.com.tr");
   });
 
   it("parses Turkish date labels as UTC+3 local wall time", () => {
@@ -164,6 +188,33 @@ describe("VKD Wayback extract", () => {
       catalog,
     });
     expect(plane).toContain("20-askerimiz-sehit-oldu");
+  });
+
+  it("extracts newspaper CMS pages without .html and keeps inventory slugs", () => {
+    const html = `<!DOCTYPE html><html><head>
+<title>Erbil'in Türk kimliği</title>
+<meta property="og:title" content="Erbil'in Türk kimliği ve tarihi gerçekler"/>
+<meta property="article:published_time" content="2024-06-14 19:02:24"/>
+<meta property="og:image" content="https://vatankahramanlari.org.tr/haber/uploads/images/202406/image_870x580_666c69931de84.jpg"/>
+</head><body>
+<div class="post-content">
+  <div class="post-image"><img src="/haber/uploads/images/202406/image_870x580_666c69931de84.jpg" alt="kapak"></div>
+  <div class="post-text">
+    <p>Erbil tarih boyunca Türk kimliğini korumuştur.</p>
+    <p>İkinci paragraf.</p>
+  </div>
+</div>
+</body></html>`;
+    const article = extractVkdWaybackArticle(html, {
+      originalUrl: "http://vatankahramanlari.org.tr/haber/erbilin-turk-kimligi-ve-tarihi-gercekler",
+      timestamp: "20250806055214",
+    });
+    expect(article?.slug).toBe("erbilin-turk-kimligi-ve-tarihi-gercekler");
+    expect(article?.title).toContain("Erbil");
+    expect(article?.date).toBe("2024-06-14T16:02:24.000Z");
+    expect(article?.featuredImageUrl).toContain("/haber/uploads/images/202406/");
+    expect(article?.content).toContain("Türk kimliğini");
+    expect(article?.categorySlug).toBe("faaliyetlerimiz");
   });
 
   it("parses payload and builds idempotent source keys", () => {

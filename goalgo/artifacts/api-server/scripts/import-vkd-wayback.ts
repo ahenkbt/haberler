@@ -9,7 +9,7 @@
  * `--apply` için DATABASE_URL gerekir.
  * `--apply-remote` için ADMIN_MAINTENANCE_SECRET + X-Yekpare-Admin-Secret gerekir.
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as dotenvConfig } from "dotenv";
@@ -22,11 +22,15 @@ dotenvConfig({ path: path.join(__dirname, "../.env") });
 import {
   crawlVkdWaybackArticles,
   emptyVkdWaybackPayload,
+  extractVkdWaybackArticle,
+  mergeVkdWaybackArticles,
   parseVkdWaybackPayload,
   runHmVkdWaybackImport,
   toAhbHaberExport,
+  VKD_WAYBACK_DEFAULT_SITE_ID,
   VKD_WAYBACK_DEFAULT_SITE_SLUG,
   VKD_WAYBACK_PREFERRED_SNAPSHOT,
+  type VkdWaybackArticle,
   type VkdWaybackPayload,
 } from "../src/lib/hm-vkd-wayback-import";
 
@@ -99,6 +103,7 @@ async function main() {
   const snapshot = argVal("--snapshot") ?? VKD_WAYBACK_PREFERRED_SNAPSHOT;
   const apiBase = (argVal("--api") ?? DEFAULT_API).trim();
   const doCrawl = hasFlag("--crawl");
+  const ingestDir = argVal("--ingest-html-dir");
   const applyRemoteFlag = hasFlag("--apply-remote");
   const applyDb = hasFlag("--apply");
   const skipImages = hasFlag("--skip-images");
@@ -109,12 +114,13 @@ async function main() {
   if (hasFlag("--help") || hasFlag("-h")) {
     console.log(`Kullanım:
   --crawl                 CDX + anasayfa bağlantılarından haber çek
+  --ingest-html-dir=PATH  kayıtlı Wayback HTML (slug.html) birleştir
   --payload=PATH          JSON (varsayılan: goalgo/data/vkd/wayback-haber.json)
   --dry-run               DB yazmadan önizleme (varsayılan)
   --apply                 DATABASE_URL ile yaz
   --apply-remote          ADMIN_MAINTENANCE_SECRET ile canlı API
   --api=URL               uzak API kökü (varsayılan ${DEFAULT_API})
-  --site-slug=vkd
+  --site-slug=vkd         (siteId ${VKD_WAYBACK_DEFAULT_SITE_ID})
   --skip-images           görselleri yeniden barındırma
   --limit=N               crawl üst sınırı
   --snapshot=YYYYMMDDhhmmss`);
@@ -122,6 +128,34 @@ async function main() {
   }
 
   let payload = await loadOrEmptyPayload(payloadPath);
+  if (ingestDir) {
+    const dir = path.resolve(ingestDir);
+    const files = (await readdir(dir)).filter((f) => f.toLowerCase().endsWith(".html"));
+    const extra: VkdWaybackArticle[] = [];
+    for (const file of files) {
+      const slug = file.replace(/\.html$/i, "");
+      const html = await readFile(path.join(dir, file), "utf8");
+      const article = extractVkdWaybackArticle(html, {
+        originalUrl: `https://vatankahramanlari.org.tr/haber/${slug}`,
+        timestamp: snapshot,
+      });
+      if (!article) {
+        console.error(`[atla] ayrıştırılamadı ${file}`);
+        continue;
+      }
+      extra.push(article);
+      console.log(
+        `[ok] ${article.slug} [${article.categorySlug}] ${article.featuredImageUrl ? "kapak" : "kapaksız"} ${article.content.length}c`,
+      );
+    }
+    payload = {
+      ...payload,
+      crawledAt: new Date().toISOString(),
+      snapshot,
+      items: mergeVkdWaybackArticles([payload.items, extra]),
+    };
+    await writePayload(payloadPath, payload);
+  }
   if (doCrawl) {
     console.log(`Wayback taranıyor (snapshot ${snapshot})…`);
     payload = await crawlVkdWaybackArticles({
@@ -163,7 +197,11 @@ async function main() {
       spot: item.spot?.slice(0, 180) ?? null,
     }));
     await mk(path.dirname(reportPath), { recursive: true });
-    await wf(reportPath, `${JSON.stringify({ dryRun: true, siteSlug, items: preview }, null, 2)}\n`, "utf8");
+    await wf(
+      reportPath,
+      `${JSON.stringify({ dryRun: true, siteId: VKD_WAYBACK_DEFAULT_SITE_ID, siteSlug, liveHost: "vatankahramanlari.org", items: preview }, null, 2)}\n`,
+      "utf8",
+    );
     console.log(`Dry-run önizleme: ${reportPath}`);
     console.log("DB yazmak için --apply (DATABASE_URL) veya --apply-remote kullanın.");
     for (const row of preview.slice(0, 8)) {
@@ -183,6 +221,10 @@ async function main() {
   const [site] = await db.select().from(hmNewsSitesTable).where(eq(hmNewsSitesTable.slug, siteSlug)).limit(1);
   if (!site) {
     console.error(`HM site bulunamadı: slug=${siteSlug}`);
+    process.exit(1);
+  }
+  if (siteSlug === VKD_WAYBACK_DEFAULT_SITE_SLUG && site.id !== VKD_WAYBACK_DEFAULT_SITE_ID) {
+    console.error(`Beklenen vkd siteId=${VKD_WAYBACK_DEFAULT_SITE_ID}, bulunan ${site.id}`);
     process.exit(1);
   }
 

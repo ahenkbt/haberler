@@ -7,7 +7,7 @@
 /** VKD kurumsal vitrin kategorileri — `hm-corporate-news-policy` ile aynı. */
 export const VKD_WAYBACK_CATEGORY_SLUGS = ["dernegimiz", "faaliyetlerimiz", "sehit-gazi"] as const;
 
-function slugify(input: string): string {
+function slugify(input: string, max = 160): string {
   return input
     .toLowerCase()
     .replace(/[ıİ]/g, "i")
@@ -18,14 +18,68 @@ function slugify(input: string): string {
     .replace(/[ğĞ]/g, "g")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "haber";
+    .slice(0, max) || "haber";
 }
 
 export const VKD_WAYBACK_SOURCE_PREFIX = "vkd-wayback:";
 export const VKD_WAYBACK_TAG = "vkd-wayback";
 export const VKD_WAYBACK_DEFAULT_SITE_SLUG = "vkd";
+export const VKD_WAYBACK_DEFAULT_SITE_ID = 7;
 export const VKD_WAYBACK_PREFERRED_SNAPSHOT = "20250806055214";
 export const VKD_LEGACY_HOSTS = ["vatankahramanlari.org.tr", "www.vatankahramanlari.org.tr"] as const;
+
+/** Coordinator inventory — 47 slugs to publish to HM siteId 7. */
+export const VKD_WAYBACK_INVENTORY_SLUGS = [
+  "abb-kultur-ve-tabiat-varliklari-daire-baskanina-ziyaret",
+  "ak-parti-genel-merkezine-hayirli-olsun-ziyareti",
+  "ampute-milli-takimimiz-kirsehir-de-kampa-girdi",
+  "askeri-ucagimiz-dustu-20-askerimiz-sehit-oldu",
+  "azerbaycanli-gazilerden-vatan-kahramanlari-dernegi-ne-anlamli-ziyaret",
+  "aziz-milletimizin-basi-sagolsun",
+  "baskent-e-deger-odulleri",
+  "dyp-genel-baskani-cenk-kupeli-ye-ziyaret",
+  "erbilin-turk-kimligi-ve-tarihi-gercekler",
+  "gazeteciler-cemiyetini-ziyaret-ettik",
+  "gazi-ismail-temiz-den-jandarma-albay-atilla-kilinckaya-ya-ziyaret",
+  "gazi-ismail-temiz-den-tedas-genel-mudur-yardimcisi-dr-mehmet-erdogan-a-ziyaret",
+  "gazi-ismail-temiz-in-kizi-dunyaevine-girdi",
+  "genel-baskan-mustafa-ozdemir-ile-roportaj",
+  "i-balkan-savasi-ve-bulgar-ordusunda-ermeni-boelugu",
+  "ismimize-benzer-dernek-uyarisi",
+  "kahramanlarin-izinde-vatanin-hizmetindeyiz",
+  "kibris-gazisi-sadik-coskun-hayatini-kaybetti",
+  "kultur-ve-turizm-bakan-yardimcisi-gokhan-yazgi-ya-ziyaret",
+  "kultur-ve-turizm-bakanimizla-bir-araya-geldik",
+  "kulturun-tasiyicisi-olmaya-devam-ediyoruz",
+  "mhp-genel-baskan-yardimicisi-prof-dr-ahmet-selim-yurdakul-a-ziyaret",
+  "milletimizin-basi-sag-olsun",
+  "mugla-milletvekili-selcuk-ozdag-i-ziyaret",
+  "mustafa-ozdemir-siyasi-partilerle-bayramlasti",
+  "omuz-omuza-bir-omur-elveda-silah-arkadasim",
+  "onursal-uyeler",
+  "oz-metal-is-sendikasi-ndan-vatan-kahramanlari-dernegi-ne-anlamli-ziyaret",
+  "rusyanin-dagistan-boelgesinde-art-arda-silahli-saldirilar-15i-polis-toplam-19-kisi-hayatini-kaybetti",
+  "sehit-aileleri-federasyonu-na-ziyaret",
+  "trt-yoneticileri-ve-sanatcilarla-anlamli-bulusma",
+  "turizm-dunyasinin-uluslararasi-temsilcileri-ankara-ordu-evi-nde-agirlandi",
+  "turk-kadini-nin-gururu-astsubay-busra-bilge-demir",
+  "turk-kara-ordusu-ne-zaman-kuruldu",
+  "turkiye-ampute-milli-futbol-takimimiz-amp-futbol-cup-2025-te-sampiyon-oldu",
+  "vakif-haftasi-etkinlikleri",
+  "vatan-kahramanlari-dernegi",
+  "vatan-kahramanlari-dernegi-arama-kurtarma-teskilati",
+  "vatan-kahramanlari-dernegi-baskani-mustafa-ozdemir-den-15-temmuz-mesaji",
+  "vatan-kahramanlari-dernegi-herkese-acik-her-zaman-hazir",
+  "vatan-kahramanlari-dernegi-nden-adana-cikarmasi",
+  "vatan-kahramanlari-dernegi-nden-federasyon-karari",
+  "vatan-kahramanlari-dernegi-ne-ziyaretler-suruyor",
+  "vatan-kahramanlari-dernegi-sehit-yakinlari-ve-gaziler-baskanligi",
+  "vatan-kahramanlari-dernegi-vatan-kahramanlari-savunma-hizmetleri-ltd-sti",
+  "yeni-yiliniz-kutlu-olsun",
+  "yesil-vatan-turkiye-agaclandirma-merkezi",
+] as const;
+
+const VKD_INVENTORY_SLUG_SET = new Set<string>(VKD_WAYBACK_INVENTORY_SLUGS);
 
 export type VkdWaybackCategorySlug = (typeof VKD_WAYBACK_CATEGORY_SLUGS)[number];
 
@@ -122,7 +176,7 @@ const NAMED_ENTITIES: Record<string, string> = {
 const SKIP_IMAGE_RE =
   /\/(?:logo|diller|favicon|assets|css|js|vendor|font-icons|pwa)\b|\/uploads\/logo\//i;
 const CONTENT_IMAGE_RE =
-  /\/uploads\/haberler\/|\/uploads\/images\/|\/wp-content\/uploads\/|\/tema\/belediye\/uploads\/(?!logo|diller|favicon)/i;
+  /\/uploads\/haberler\/|\/haber\/uploads\/images\/|\/uploads\/images\/|\/wp-content\/uploads\/|\/tema\/belediye\/uploads\/(?!logo|diller|favicon)/i;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -180,6 +234,15 @@ export function normalizeVkdCanonicalUrl(raw: string): string | null {
   }
 }
 
+export function haberSlugFromPath(pathname: string): string | null {
+  const m = String(pathname ?? "")
+    .toLowerCase()
+    .match(/^\/haber\/([^/]+?)(?:\.html)?$/i);
+  if (!m?.[1]) return null;
+  const slug = decodeURIComponent(m[1]).replace(/\.html$/i, "").toLowerCase();
+  return slug && slug !== "haber" ? slug : null;
+}
+
 export function isVkdHaberArticleUrl(raw: string): boolean {
   const canonical = normalizeVkdCanonicalUrl(raw);
   if (!canonical) return false;
@@ -188,16 +251,26 @@ export function isVkdHaberArticleUrl(raw: string): boolean {
   if (path.includes("/haber/assets/") || path.includes("/haber/uploads/") || path.includes("/haber/manifest")) {
     return false;
   }
+  const slug = haberSlugFromPath(path);
+  if (slug && VKD_INVENTORY_SLUG_SET.has(slug)) return true;
   return /^\/haber\/[a-z0-9][a-z0-9-]*\.html$/i.test(path);
 }
 
 export function slugFromVkdHaberUrl(raw: string): string | null {
   const canonical = normalizeVkdCanonicalUrl(raw);
   if (!canonical) return null;
-  const m = new URL(canonical).pathname.match(/^\/haber\/([^/]+?)(?:\.html)?$/i);
-  if (!m?.[1]) return null;
-  const slug = slugify(decodeURIComponent(m[1]));
+  const rawSlug = haberSlugFromPath(new URL(canonical).pathname);
+  if (!rawSlug) return null;
+  if (VKD_INVENTORY_SLUG_SET.has(rawSlug)) return rawSlug;
+  const slug = slugify(rawSlug);
   return slug && slug !== "haber" ? slug : null;
+}
+
+export function inventoryCanonicalUrls(): string[] {
+  return VKD_WAYBACK_INVENTORY_SLUGS.flatMap((slug) => [
+    `https://vatankahramanlari.org.tr/haber/${slug}.html`,
+    `https://vatankahramanlari.org.tr/haber/${slug}`,
+  ]);
 }
 
 export function waybackReplayUrl(timestamp: string, original: string, modifier = ""): string {
@@ -241,8 +314,8 @@ export function toWaybackImageUrl(src: string, timestamp: string, pageUrl?: stri
       u.protocol = "https:";
       u.hostname = "vatankahramanlari.org.tr";
       absolute = u.toString();
-    } else if (/^https?:$/i.test(u.protocol)) {
-      absolute = u.toString();
+    } else {
+      return null;
     }
   } catch {
     return null;
@@ -250,6 +323,24 @@ export function toWaybackImageUrl(src: string, timestamp: string, pageUrl?: stri
   if (!absolute || !isVkdContentImageUrl(absolute)) return null;
   const ts = String(timestamp || VKD_WAYBACK_PREFERRED_SNAPSHOT).replace(/\D/g, "").slice(0, 14);
   return waybackReplayUrl(ts, absolute, "im_");
+}
+
+/** Wayback `im_/` when the file is on the old VKD host; otherwise keep an off-host https URL for R2 rehost. */
+export function resolveImportableImageUrl(src: string, timestamp: string, pageUrl?: string): string | null {
+  const archived = toWaybackImageUrl(src, timestamp, pageUrl);
+  if (archived) return archived;
+  let raw = fixBrokenVkdHostPath(decodeHtmlEntities(String(src ?? "").trim()));
+  if (!raw || raw.startsWith("data:") || raw.startsWith("javascript:")) return null;
+  if (raw.startsWith("//")) raw = `https:${raw}`;
+  try {
+    const u = new URL(raw, "https://vatankahramanlari.org.tr/");
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    if (host === "vatankahramanlari.org.tr" || host.endsWith(".archive.org")) return null;
+    if (!/^https?:$/i.test(u.protocol) || SKIP_IMAGE_RE.test(u.href)) return null;
+    return u.href;
+  } catch {
+    return null;
+  }
 }
 
 export function parseTurkishDateLabel(label: string): Date | null {
@@ -267,6 +358,32 @@ export function parseTurkishDateLabel(label: string): Date | null {
   const hour = m[4] != null ? Number(m[4]) : 12;
   const minute = m[5] != null ? Number(m[5]) : 0;
   const d = new Date(Date.UTC(year, month - 1, day, hour - 3, minute, 0));
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+export function parseFlexibleDate(raw: string): Date | null {
+  const labeled = parseTurkishDateLabel(raw);
+  if (labeled) return labeled;
+  const m = String(raw ?? "")
+    .trim()
+    .match(
+      /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/,
+    );
+  if (m) {
+    const year = Number(m[1]);
+    const month = Number(m[2]);
+    const day = Number(m[3]);
+    const hour = Number(m[4]);
+    const minute = Number(m[5]);
+    const second = Number(m[6] ?? 0);
+    if (m[7]) {
+      const d = new Date(String(raw).trim().replace(" ", "T"));
+      return Number.isFinite(d.getTime()) ? d : null;
+    }
+    const d = new Date(Date.UTC(year, month - 1, day, hour - 3, minute, second));
+    return Number.isFinite(d.getTime()) ? d : null;
+  }
+  const d = new Date(String(raw ?? "").trim());
   return Number.isFinite(d.getTime()) ? d : null;
 }
 
@@ -369,7 +486,8 @@ function stripCmsChrome(html: string): string {
   out = cutBeforeClass(out, "addthis_inline_share_toolbox_34zm");
   out = out
     .replace(/<div[^>]*class=["'][^"']*\bpost-img\b[^"']*["'][^>]*>[\s\S]*?<\/div>/i, "")
-    .replace(/<div[^>]*class=["'][^"']*\bpost-meta\b[^"']*["'][^>]*>[\s\S]*?<\/div>/i, "");
+    .replace(/<div[^>]*class=["'][^"']*\bpost-meta\b[^"']*["'][^>]*>[\s\S]*?<\/div>/i, "")
+    .replace(/<div[^>]*class=["'][^"']*\b(?:bn-content|col-bn-ds)\b[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, "");
   return out
     .replace(/<script\b[\s\S]*?<\/script>/gi, "")
     .replace(/<style\b[\s\S]*?<\/style>/gi, "")
@@ -402,7 +520,7 @@ function rewriteContentImages(html: string, timestamp: string, pageUrl: string):
   const urls: string[] = [];
   const seen = new Set<string>();
   const next = html.replace(/<img\b([^>]*?)\bsrc=["']([^"']+)["']([^>]*)>/gi, (all, pre: string, src: string, post: string) => {
-    const rewritten = toWaybackImageUrl(src, timestamp, pageUrl);
+    const rewritten = resolveImportableImageUrl(src, timestamp, pageUrl);
     if (!rewritten) return "";
     if (!seen.has(rewritten)) {
       seen.add(rewritten);
@@ -430,10 +548,14 @@ export function extractVkdWaybackArticle(
     return null;
   }
 
-  const detail = extractByClass(raw, "innerPageNewsDetail") ?? "";
+  const belediyeDetail = extractByClass(raw, "innerPageNewsDetail") ?? "";
+  const newspaperDetail =
+    extractByClass(raw, "post-text") ?? extractByClass(raw, "post-content") ?? "";
+  const detail = belediyeDetail.trim() ? belediyeDetail : newspaperDetail;
   const pageTitle =
     extractByClass(raw, "innerPageContent")
       ?.match(/<div[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>\s*<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] ??
+    raw.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ??
     "";
   const title = decodeHtmlEntities(
     (pageTitle || metaContent(raw, "og:title") || raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "")
@@ -444,23 +566,35 @@ export function extractVkdWaybackArticle(
     .replace(/\s*[|\-–]\s*Vatan Kahramanlar[ıi] Derneğ[iı].*$/i, "")
     .trim();
   if (!title) return null;
-  if (slugify(title) === "vatan-kahramanlari-dernegi" && !detail.trim()) return null;
+  const urlSlug = slugFromVkdHaberUrl(canonical);
+  if (slugify(title) === "vatan-kahramanlari-dernegi" && !detail.trim() && urlSlug !== "vatan-kahramanlari-dernegi") {
+    return null;
+  }
 
   const dateLabel = decodeHtmlEntities(
     (detail.match(/<span[^>]*class=["'][^"']*meta-date[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] ?? "")
       .replace(/<[^>]+>/g, " ")
       .trim(),
   ) || null;
-  const when = dateLabel ? parseTurkishDateLabel(dateLabel) : null;
+  const publishedMeta = metaContent(raw, "article:published_time") || metaContent(raw, "article:modified_time");
+  const when = dateLabel
+    ? parseTurkishDateLabel(dateLabel)
+    : publishedMeta
+      ? parseFlexibleDate(publishedMeta)
+      : null;
 
-  const postImg = extractByClass(detail, "post-img") ?? "";
+  const postImg =
+    extractByClass(detail, "post-img") ??
+    extractByClass(raw, "post-img") ??
+    extractByClass(raw, "post-image") ??
+    "";
   const gallery = extractByClass(detail, "innerGalleryDetail") ?? "";
   const featuredRaw =
     firstImgSrc(postImg) ||
     metaContent(raw, "og:image") ||
     collectHrefAndImg(gallery).find((u) => !/\/kucuk\//i.test(u)) ||
     null;
-  const featuredImageUrl = featuredRaw ? toWaybackImageUrl(featuredRaw, timestamp, canonical) : null;
+  const featuredImageUrl = featuredRaw ? resolveImportableImageUrl(featuredRaw, timestamp, canonical) : null;
 
   let body = stripCmsChrome(detail);
   if (!body) {
@@ -470,7 +604,7 @@ export function extractVkdWaybackArticle(
   body = decodeHtmlEntities(body);
   const rewritten = rewriteContentImages(body, timestamp, canonical);
   const galleryFull = collectHrefAndImg(gallery)
-    .map((u) => toWaybackImageUrl(u, timestamp, canonical))
+    .map((u) => resolveImportableImageUrl(u, timestamp, canonical))
     .filter((u): u is string => !!u && !/\/kucuk\//i.test(u));
   const extraFigs = galleryFull
     .filter((u) => u !== featuredImageUrl && !rewritten.urls.includes(u))
@@ -480,7 +614,7 @@ export function extractVkdWaybackArticle(
   if (!content) content = `<p>${title}</p>`;
 
   const bodyImageUrls = [...new Set([...rewritten.urls, ...galleryFull, featuredImageUrl].filter((u): u is string => !!u))];
-  const slug = slugFromVkdHaberUrl(canonical) || slugify(title);
+  const slug = urlSlug || slugify(title);
   const categorySlug = mapVkdWaybackCategory(title, content);
 
   return {
@@ -489,8 +623,8 @@ export function extractVkdWaybackArticle(
     canonicalUrl: canonical,
     sourceUrl: waybackReplayUrl(timestamp, canonical),
     timestamp,
-    date: when ? when.toISOString() : null,
-    dateLabel,
+    date: when ? when.toISOString() : publishedMeta ? publishedMeta : null,
+    dateLabel: dateLabel || (publishedMeta ? publishedMeta : null),
     categorySlug,
     spot: textSpot(content),
     content,
@@ -523,7 +657,10 @@ export function parseVkdWaybackPayload(raw: unknown): VkdWaybackPayload {
     if (!title || !canonical || !isVkdHaberArticleUrl(canonical)) continue;
     if (seen.has(canonical)) continue;
     seen.add(canonical);
-    const slug = slugify(String(r.slug ?? "") || slugFromVkdHaberUrl(canonical) || title);
+    const rawSlug = String(r.slug ?? "").trim().toLowerCase();
+    const slug = VKD_INVENTORY_SLUG_SET.has(rawSlug)
+      ? rawSlug
+      : slugify(rawSlug || slugFromVkdHaberUrl(canonical) || title);
     const content = String(r.content ?? `<p>${title}</p>`);
     const categorySlug = mapVkdWaybackCategory(title, content);
     const bodyImageUrls = Array.isArray(r.bodyImageUrls)
@@ -554,17 +691,26 @@ export function parseVkdWaybackPayload(raw: unknown): VkdWaybackPayload {
   };
 }
 
+function articleKeepScore(item: VkdWaybackArticle): number {
+  return (
+    (item.content?.length ?? 0) +
+    (item.featuredImageUrl ? 10_000 : 0) +
+    (item.canonicalUrl.endsWith(".html") ? 100 : 0)
+  );
+}
+
 export function mergeVkdWaybackArticles(lists: VkdWaybackArticle[][]): VkdWaybackArticle[] {
-  const out: VkdWaybackArticle[] = [];
-  const seen = new Set<string>();
+  const byKey = new Map<string, VkdWaybackArticle>();
   for (const list of lists) {
     for (const item of list) {
-      if (seen.has(item.canonicalUrl)) continue;
-      seen.add(item.canonicalUrl);
-      out.push(item);
+      const key = item.slug || item.canonicalUrl;
+      const prev = byKey.get(key);
+      if (!prev || articleKeepScore(item) > articleKeepScore(prev)) {
+        byKey.set(key, item);
+      }
     }
   }
-  return out.sort((a, b) => String(a.date ?? "").localeCompare(String(b.date ?? "")));
+  return [...byKey.values()].sort((a, b) => String(a.date ?? "").localeCompare(String(b.date ?? "")));
 }
 
 export function extractHaberLinksFromHtml(html: string): string[] {
@@ -693,21 +839,34 @@ export async function fetchVkdHaberImageCdx(opts?: {
   fetchImpl?: typeof fetch;
 }): Promise<VkdCdxRow[]> {
   const fetchImpl = opts?.fetchImpl ?? fetch;
-  const url =
-    "https://web.archive.org/cdx/search/cdx?url=vatankahramanlari.org.tr/tema/belediye/uploads/haberler/*&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=500";
-  const res = await fetchImpl(url, {
-    headers: { "User-Agent": "Yekpare-VKD-WaybackImporter/1.0" },
-    signal: AbortSignal.timeout(45_000),
-  });
-  if (!res.ok) return [];
-  const data = (await res.json()) as unknown;
-  if (!Array.isArray(data)) return [];
+  const queries = [
+    "https://web.archive.org/cdx/search/cdx?url=vatankahramanlari.org.tr/tema/belediye/uploads/haberler/*&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=500",
+    "https://web.archive.org/cdx/search/cdx?url=vatankahramanlari.org.tr/haber/uploads/images/*&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=400",
+  ];
   const rows: VkdCdxRow[] = [];
-  for (const row of data.slice(1)) {
-    if (!Array.isArray(row) || row.length < 2) continue;
-    const original = String(row[1] ?? "");
-    if (!/\/tema\/belediye\/uploads\/haberler\//i.test(original)) continue;
-    rows.push({ timestamp: String(row[0] ?? ""), original });
+  const seen = new Set<string>();
+  for (const url of queries) {
+    const res = await fetchImpl(url, {
+      headers: { "User-Agent": "Yekpare-VKD-WaybackImporter/1.0" },
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (!res.ok) continue;
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) continue;
+    for (const row of data.slice(1)) {
+      if (!Array.isArray(row) || row.length < 2) continue;
+      const original = String(row[1] ?? "");
+      if (
+        !/\/tema\/belediye\/uploads\/haberler\//i.test(original) &&
+        !/\/haber\/uploads\/images\//i.test(original)
+      ) {
+        continue;
+      }
+      const key = original.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push({ timestamp: String(row[0] ?? ""), original });
+    }
   }
   return rows;
 }
@@ -756,7 +915,9 @@ export async function crawlVkdWaybackArticles(opts?: {
   const delayMs = opts?.delayMs ?? 220;
   const log = opts?.log ?? (() => {});
   const cdx = await fetchVkdWaybackCdx({ fetchImpl, preferredSnapshot: preferred });
-  const extras = (opts?.extraUrls ?? []).map((u) => normalizeVkdCanonicalUrl(u)).filter((u): u is string => !!u);
+  const extras = [...inventoryCanonicalUrls(), ...(opts?.extraUrls ?? [])]
+    .map((u) => normalizeVkdCanonicalUrl(u))
+    .filter((u): u is string => !!u);
   const seeds = new Map<string, string>();
   for (const row of cdx) seeds.set(row.original, row.timestamp);
   for (const extra of extras) if (!seeds.has(extra)) seeds.set(extra, preferred);
@@ -787,27 +948,39 @@ export async function crawlVkdWaybackArticles(opts?: {
   const limited = typeof opts?.limit === "number" ? targets.slice(0, Math.max(0, opts.limit)) : targets;
   const items: VkdWaybackArticle[] = [];
   for (const row of limited) {
-    const url = waybackReplayUrl(row.timestamp, row.original);
-    try {
-      const res = await fetchImpl(url, {
-        headers: { "User-Agent": "Yekpare-VKD-WaybackImporter/1.0" },
-        signal: AbortSignal.timeout(45_000),
-        redirect: "follow",
-      });
-      if (!res.ok) {
-        log(`[atla] HTTP ${res.status} ${row.original}`);
-        continue;
+    const alt =
+      row.original.endsWith(".html")
+        ? row.original.replace(/\.html$/i, "")
+        : `${row.original}.html`;
+    const candidates = [
+      { original: row.original, url: waybackReplayUrl(row.timestamp, row.original, "id_") },
+      { original: row.original, url: waybackReplayUrl(row.timestamp, row.original) },
+      { original: alt, url: waybackReplayUrl(row.timestamp, alt, "id_") },
+    ];
+    let article: VkdWaybackArticle | null = null;
+    for (const candidate of candidates) {
+      try {
+        const res = await fetchImpl(candidate.url, {
+          headers: { "User-Agent": "Yekpare-VKD-WaybackImporter/1.0" },
+          signal: AbortSignal.timeout(45_000),
+          redirect: "follow",
+        });
+        if (!res.ok) continue;
+        const html = await res.text();
+        article = extractVkdWaybackArticle(html, {
+          originalUrl: candidate.original,
+          timestamp: row.timestamp,
+        });
+        if (article) break;
+      } catch {
+        /* try next Wayback form */
       }
-      const html = await res.text();
-      const article = extractVkdWaybackArticle(html, { originalUrl: row.original, timestamp: row.timestamp });
-      if (!article) {
-        log(`[atla] ayrıştırılamadı ${row.original}`);
-        continue;
-      }
+    }
+    if (!article) {
+      log(`[atla] ayrıştırılamadı ${row.original}`);
+    } else {
       items.push(article);
       log(`[ok] ${article.slug} (${article.categorySlug})`);
-    } catch (e) {
-      log(`[atla] ${row.original}: ${e instanceof Error ? e.message : String(e)}`);
     }
     if (delayMs > 0) await sleep(delayMs);
   }
@@ -928,6 +1101,9 @@ export async function runHmVkdWaybackImport(params: {
   };
 
   const siteSlug = (params.siteSlug ?? VKD_WAYBACK_DEFAULT_SITE_SLUG).trim().toLowerCase();
+  if (params.siteId !== VKD_WAYBACK_DEFAULT_SITE_ID && siteSlug === VKD_WAYBACK_DEFAULT_SITE_SLUG) {
+    warn(`[site] beklenen siteId=${VKD_WAYBACK_DEFAULT_SITE_ID} (vkd), gelen ${params.siteId}`);
+  }
   if (!params.dryRun) {
     const { ensureVkdCorporateSiteCategories } = await import("./hm-corporate-news-policy.js");
     await ensureVkdCorporateSiteCategories(params.siteId, siteSlug);

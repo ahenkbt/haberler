@@ -1,7 +1,57 @@
 {
   "dryRun": true,
+  "siteId": 7,
   "siteSlug": "vkd",
+  "liveHost": "vatankahramanlari.org",
   "items": [
+    {
+      "title": "I. Balkan Savaşı Ve Bulgar Ordusunda Ermeni Bölüğü",
+      "slug": "i-balkan-savasi-ve-bulgar-ordusunda-ermeni-boelugu",
+      "categorySlug": "faaliyetlerimiz",
+      "date": "2024-06-14T13:36:32.000Z",
+      "dateLabel": "2024-06-14 16:36:32",
+      "canonicalUrl": "https://vatankahramanlari.org.tr/haber/i-balkan-savasi-ve-bulgar-ordusunda-ermeni-boelugu",
+      "sourceUrl": "https://web.archive.org/web/20250806055214/https://vatankahramanlari.org.tr/haber/i-balkan-savasi-ve-bulgar-ordusunda-ermeni-boelugu",
+      "featuredImageUrl": "https://web.archive.org/web/20250806055214im_/https://vatankahramanlari.org.tr/haber/uploads/images/202406/image_870x_666c476277cd8.jpg",
+      "imageCountInBody": 2,
+      "spot": "I. Balkan Savaşı Ve Bulgar Ordusunda Ermeni Bölüğü Yrd. Doç. Dr. İbrahim KAMİL 1789 Fransız İhtilali’nin yaygınlaştırdığı milliyetçilik hareketlerinden en fazla Balkanlar etkilenmi"
+    },
+    {
+      "title": "Türk Kara Ordusu Ne Zaman Kuruldu",
+      "slug": "turk-kara-ordusu-ne-zaman-kuruldu",
+      "categorySlug": "faaliyetlerimiz",
+      "date": "2024-06-14T13:44:17.000Z",
+      "dateLabel": "2024-06-14 16:44:17",
+      "canonicalUrl": "https://vatankahramanlari.org.tr/haber/turk-kara-ordusu-ne-zaman-kuruldu",
+      "sourceUrl": "https://web.archive.org/web/20250806055214/https://vatankahramanlari.org.tr/haber/turk-kara-ordusu-ne-zaman-kuruldu",
+      "featuredImageUrl": "https://web.archive.org/web/20250806055214im_/https://vatankahramanlari.org.tr/haber/uploads/images/202406/image_870x_666c493268466.jpg",
+      "imageCountInBody": 2,
+      "spot": "Türk Kara Ordusu Ne Zaman Kuruldu Hüseyin Nihâl ATSIZ Kara Kuvvetleri Komutanı radyoda yaptığı konuşma ile Türk Kara Kuvvetlerinin 600. kuruluş yılını kutladığı gibi daha yüksek ka"
+    },
+    {
+      "title": "Erbil’in Türk Kimliği ve Tarihi Gerçekler",
+      "slug": "erbilin-turk-kimligi-ve-tarihi-gercekler",
+      "categorySlug": "faaliyetlerimiz",
+      "date": "2024-06-14T16:02:24.000Z",
+      "dateLabel": "2024-06-14 19:02:24",
+      "canonicalUrl": "https://vatankahramanlari.org.tr/haber/erbilin-turk-kimligi-ve-tarihi-gercekler",
+      "sourceUrl": "https://web.archive.org/web/20250806055214/https://vatankahramanlari.org.tr/haber/erbilin-turk-kimligi-ve-tarihi-gercekler",
+      "featuredImageUrl": "https://web.archive.org/web/20250806055214im_/https://vatankahramanlari.org.tr/haber/uploads/images/202406/image_870x_666c699331703.jpg",
+      "imageCountInBody": 15,
+      "spot": "Erbil’in Türk Kimliği ve Tarihi Gerçekler Ali KERKÜKLÜ Er­bil, Kerkük gibi bir Türk şeh­ridir. Türk­men­le­rin yoğun yer­le­şim mer­kez­le­rin­den bi­ri­dir. Erbil şeh­ri al­tın ça"
+    },
+    {
+      "title": "Rusya'nın Dağıstan bölgesinde art arda silahlı saldırılar: 15'i polis toplam 19 kişi hayatını kaybetti",
+      "slug": "rusyanin-dagistan-boelgesinde-art-arda-silahli-saldirilar-15i-polis-toplam-19-kisi-hayatini-kaybetti",
+      "categorySlug": "sehit-gazi",
+      "date": "2024-06-24T10:26:50.000Z",
+      "dateLabel": "2024-06-24 13:26:50",
+      "canonicalUrl": "https://vatankahramanlari.org.tr/haber/rusyanin-dagistan-boelgesinde-art-arda-silahli-saldirilar-15i-polis-toplam-19-kisi-hayatini-kaybetti",
+      "sourceUrl": "https://web.archive.org/web/20250806055214/https://vatankahramanlari.org.tr/haber/rusyanin-dagistan-boelgesinde-art-arda-silahli-saldirilar-15i-polis-toplam-19-kisi-hayatini-kaybetti",
+      "featuredImageUrl": "https://cdn1.ntv.com.tr/gorsel/DAp1l-NBaEWViQc8SRKZ-A.jpg?width=1080&mode=crop&scale=both",
+      "imageCountInBody": 11,
+      "spot": "Rusya'ya bağlı Dağıstan Özerk Cumhuriyeti Başkanı Sergey Melikov, Mahaçkale şehrindeki silahlı saldırıda hayatını kaybeden polislerin sayısının 15'i geçtiğini belirtti. Ölenlerin a"
+    },
     {
       "title": "Vatan Kahramanları Derneği Arama Kurtarma Teşkilatı",
       "slug": "vatan-kahramanlari-dernegi-arama-kurtarma-teskilati",
