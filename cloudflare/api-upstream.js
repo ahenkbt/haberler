@@ -66,6 +66,14 @@ function requestInitWithoutCf(init) {
  * Render’a düşmez.
  */
 export async function fetchApi(env, url, init = {}) {
+  // Explicit API_ORIGIN wins (yektube Worker can proxy to haberler container while
+  // its own Container binding is still provisioning / failing to start).
+  const configured = configuredApiOrigin(env);
+  if (configured) {
+    const parsed = new URL(String(url), `${configured}/`);
+    return fetch(`${configured}${parsed.pathname}${parsed.search}`, init);
+  }
+
   const stub = await getApiStub(env);
   if (stub) {
     const reqInit = requestInitWithoutCf(init);
@@ -77,12 +85,7 @@ export async function fetchApi(env, url, init = {}) {
     return stub.fetch(new Request(String(url), reqInit));
   }
 
-  const configured = configuredApiOrigin(env);
-  if (!configured) {
-    throw new Error("api_unavailable");
-  }
-  const parsed = new URL(String(url), `${configured}/`);
-  return fetch(`${configured}${parsed.pathname}${parsed.search}`, init);
+  throw new Error("api_unavailable");
 }
 
 export async function fetchApiWithRetry(env, url, init = {}, retries = 2) {
