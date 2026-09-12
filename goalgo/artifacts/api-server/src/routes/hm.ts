@@ -156,7 +156,8 @@ import {
 } from "../lib/hm-editor-cross-site-repair.js";
 import { isHmCrossSiteSharedEditorEmail } from "../lib/hm-editor-shared-email.js";
 import { repairHmTepeMansetSystem } from "../lib/hm-tepe-manset-repair.js";
-import { HM_TEPE_MANSET_OPT_IN_REV } from "../lib/hm-tepe-manset-layout.js";
+import { HM_TEPE_MANSET_DEFAULT_ON_REV } from "../lib/hm-tepe-manset-layout.js";
+import { backfillHmRssMissingImages } from "../lib/hm-rss-missing-image.js";
 import {
   applyHmRssNewsPolicyToLayout,
   DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS,
@@ -552,8 +553,8 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmNewsHeaderMenuEnabled: true,
     hmNewsStripMenuEnabled: false,
     hmNewsSliderEnabled: true,
-    hmNewsTepeMansetEnabled: false,
-    hmTepeMansetOptInRev: HM_TEPE_MANSET_OPT_IN_REV,
+    hmNewsTepeMansetEnabled: true,
+    hmTepeMansetOptInRev: HM_TEPE_MANSET_DEFAULT_ON_REV,
     hmNewsRssHeadlineEnabled: false,
     hmNewsBreakingBandEnabled: true,
     hmNewsGoogleNewsBandEnabled: !isCorporate,
@@ -2107,7 +2108,7 @@ router.post("/hm/admin/repair-kh-editor", async (req, res): Promise<void> => {
   }
 });
 
-/** Yönetim: Tepe manşet opt-in geçişi + manşet bayrak onarımı. */
+/** Yönetim: Tepe manşet default-on geçişi + manşet bayrak onarımı. */
 router.post("/hm/admin/repair-tepe-manset", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
@@ -2116,6 +2117,29 @@ router.post("/hm/admin/repair-tepe-manset", async (req, res): Promise<void> => {
       ...result,
       ok: result.ok,
       message: result.detail || "Tepe manşet onarımı tamamlandı",
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+/** Yönetim: resimsiz RSS haberlerine kaynak og:image / enclosure yazar. */
+router.post("/hm/admin/backfill-rss-images", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const siteIdRaw = Number((req.body as { siteId?: unknown } | undefined)?.siteId);
+    const limitRaw = Number((req.body as { limit?: unknown } | undefined)?.limit);
+    const result = await backfillHmRssMissingImages({
+      siteId: Number.isFinite(siteIdRaw) && siteIdRaw > 0 ? siteIdRaw : undefined,
+      limit: Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 80,
+      scrape: true,
+    });
+    res.json({
+      ...result,
+      message: result.detail,
     });
   } catch (e) {
     res.status(500).json({

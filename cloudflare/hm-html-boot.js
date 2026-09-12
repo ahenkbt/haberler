@@ -144,6 +144,7 @@ function safeJsonScript(value) {
 /** İlk haber görseli — Link: rel=preload as=image */
 export function firstHmBootImageUrl(bundle, origin) {
   const lists = [
+    bundle?.tepeManset,
     bundle?.featured,
     bundle?.centerHeadlines,
     bundle?.manualEditor,
@@ -181,6 +182,7 @@ export function findHmBundleHeadlineBySlug(bundle, slug) {
     .toLowerCase();
   if (!want || !bundle) return null;
   const lists = [
+    bundle.tepeManset,
     bundle.featured,
     bundle.centerHeadlines,
     bundle.manualEditor,
@@ -275,6 +277,7 @@ function bootNavItems(boot) {
 
 function bootHeadlineItems(bundle, origin) {
   const lists = [
+    bundle?.tepeManset,
     bundle?.featured,
     bundle?.centerHeadlines,
     bundle?.manualEditor,

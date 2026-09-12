@@ -407,6 +407,15 @@ export default function HaberSiteleri() {
               variant="outline"
               size="sm"
               disabled={repairing !== null}
+              onClick={() => void runAdminRepair("/api/hm/admin/backfill-rss-images", "RSS görsel backfill")}
+            >
+              {repairing === "/api/hm/admin/backfill-rss-images" ? "Onarılıyor…" : "RSS görsellerini doldur"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
               onClick={() => void runAdminRepair("/api/hm/admin/repair-asg-editor", "ASG editör onarımı")}
             >
               {repairing === "/api/hm/admin/repair-asg-editor" ? "Onarılıyor…" : "ASG editör onar"}

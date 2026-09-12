@@ -78,7 +78,7 @@ function filterHomeBundle(payload, siteId, opts = {}) {
   if (!payload || typeof payload !== "object") return payload;
   const next = { ...payload, siteId: payload.siteId ?? siteId };
   const filterOpts = { allowCentralRss: opts.allowCentralRss === true };
-  for (const key of ["featured", "manualEditor", "centerHeadlines", "breaking", "popular"]) {
+  for (const key of ["featured", "tepeManset", "manualEditor", "centerHeadlines", "breaking", "popular"]) {
     if (Array.isArray(payload[key])) next[key] = filterItemArray(payload[key], siteId, filterOpts);
   }
   return next;

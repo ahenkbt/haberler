@@ -30,7 +30,7 @@ function headlineFromHomeBundle(bundle: unknown, slug: string): Record<string, u
   const want = slug.trim().toLowerCase();
   if (!want) return null;
   const rec = bundle as Record<string, unknown>;
-  const lists = [rec.featured, rec.centerHeadlines, rec.manualEditor, rec.breaking, rec.popular];
+  const lists = [rec.tepeManset, rec.featured, rec.centerHeadlines, rec.manualEditor, rec.breaking, rec.popular];
   for (const list of lists) {
     if (!Array.isArray(list)) continue;
     for (const item of list) {

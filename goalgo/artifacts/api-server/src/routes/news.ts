@@ -310,7 +310,7 @@ router.get("/news", async (req, res): Promise<void> => {
       if (offset === 0 && !q) {
         res.setHeader("Cache-Control", "public, max-age=30, s-maxage=120, stale-while-revalidate=300");
       }
-      res.json({ items: pageItems, total: totalForResponse });
+      res.json({ items: await enrichSerializedNewsListImages(pageItems), total: totalForResponse });
       return;
     }
   }
@@ -412,9 +412,8 @@ router.get("/news", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "public, max-age=30, s-maxage=120, stale-while-revalidate=300");
   }
 
-  const siteScopedList = Number.isFinite(siteId) && siteId > 0;
   res.json({
-    items: siteScopedList ? deduped : await enrichSerializedNewsListImages(deduped),
+    items: await enrichSerializedNewsListImages(deduped),
     total: totalForResponse,
   });
 });
@@ -513,7 +512,7 @@ router.get("/news/featured", async (req, res): Promise<void> => {
   });
 
   const featuredItems = excludeKoseFromEditorialNewsList(enriched.map((e) => e.item));
-  res.json(siteScoped ? featuredItems : await enrichSerializedNewsListImages(featuredItems));
+  res.json(await enrichSerializedNewsListImages(featuredItems));
 });
 
 router.get("/news/breaking", async (req, res): Promise<void> => {

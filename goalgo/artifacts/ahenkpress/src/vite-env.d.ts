@@ -52,6 +52,7 @@ interface Window {
     bundle: {
       siteId?: number;
       featured?: unknown[];
+      tepeManset?: unknown[];
       manualEditor?: unknown[];
       centerHeadlines?: unknown[];
       breaking?: unknown[];

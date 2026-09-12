@@ -10,7 +10,7 @@ import {
 import { ensureHmSiteEditorUsernameColumn } from "./hm-editor-profile.js";
 import { ensureHmNewsSiteWritableColumns, listHmNewsSitesCompat } from "./hm-site-compat.js";
 import { sanitizeHmPublicLayoutRecord } from "./hm-layout-sanitize.js";
-import { HM_TEPE_MANSET_OPT_IN_REV } from "./hm-tepe-manset-layout.js";
+import { HM_TEPE_MANSET_DEFAULT_ON_REV } from "./hm-tepe-manset-layout.js";
 import {
   DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS,
   HM_RSS_KARMA_DEFAULTS_REV,
@@ -67,8 +67,8 @@ function defaultKhLayoutJson(): string {
     hmChromeColorMode: "light",
     hmNewsHeaderMenuEnabled: true,
     hmNewsSliderEnabled: true,
-    hmNewsTepeMansetEnabled: false,
-    hmTepeMansetOptInRev: HM_TEPE_MANSET_OPT_IN_REV,
+    hmNewsTepeMansetEnabled: true,
+    hmTepeMansetOptInRev: HM_TEPE_MANSET_DEFAULT_ON_REV,
     hmNewsHomeModuleOrder: [
       "tepeManset",
       "hero",
@@ -290,8 +290,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
         ...parsed,
         hmVitrinTheme: parsed.hmVitrinTheme || "esen",
         mansetVariant: parsed.mansetVariant || "center-trio",
-        hmNewsTepeMansetEnabled: parsed.hmNewsTepeMansetEnabled === true,
-        // Opt-in rev'i varsayılandan kopyalama — boot onarımı bir kez kapatabilsin.
+        hmNewsTepeMansetEnabled: parsed.hmNewsTepeMansetEnabled !== false,
         hmTepeMansetOptInRev: parsed.hmTepeMansetOptInRev,
         hmNewsSliderEnabled: true,
         hmNewsBreakingBandEnabled: true,
