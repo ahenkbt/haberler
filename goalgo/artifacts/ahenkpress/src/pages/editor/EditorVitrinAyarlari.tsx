@@ -28,6 +28,7 @@ import {
   HM_NEWS_HOME_MODULE_ORDER,
   HM_NEWS_EDITOR_HOME_MODULE_ORDER,
   defaultNewsSiteLayoutPrefs,
+  isHmCorporateLayoutKind,
   hmNewsThemePresetPatch,
   resolveHmHomeModuleOrder,
   resolveHmNewsHomeModuleEnabled,
@@ -269,7 +270,7 @@ export default function EditorVitrinAyarlari() {
     });
   }, [newsHomeOrder, p]);
   const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
-  const isCorporateEditorSite = p.hmVitrinTheme === "corporate";
+  const isCorporateEditorSite = isHmCorporateLayoutKind(p, site?.slug);
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
   const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
@@ -2334,10 +2335,12 @@ export default function EditorVitrinAyarlari() {
           </div>
         </div>
 
-        <ButtonReset
-          disabled={saving}
-          onReset={() => void commit({ ...defaultNewsSiteLayoutPrefs })}
-        />
+        {!isCorporateEditorSite ? (
+          <ButtonReset
+            disabled={saving}
+            onReset={() => void commit({ ...defaultNewsSiteLayoutPrefs })}
+          />
+        ) : null}
       </div>
     </EditorLayout>
   );

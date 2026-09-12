@@ -27,7 +27,7 @@ import {
   defaultNewsSiteLayoutPrefs,
   mergeNewsSiteLayoutForSave,
   parseNewsSiteLayoutFromJson,
-  pickVitrinLayoutPatchForSave,
+  pickChangedVitrinLayoutKeys,
   type NewsSiteLayoutPrefs,
   type NewsSiteLayoutSaveOptions,
 } from "@/lib/newsSiteLayout";
@@ -212,7 +212,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
       : mergedPrefs;
     const layoutPayload =
       opts?.vitrinOnly === true
-        ? pickVitrinLayoutPatchForSave(vitrinBase)
+        ? pickChangedVitrinLayoutKeys(newsLayoutPrefs, vitrinBase, site?.slug)
         : opts?.layoutPatch
           ? (opts.layoutPatch as Record<string, unknown>)
           : mergedPrefs;
@@ -252,7 +252,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         layoutJson = undefined;
       }
       if (layoutJson) {
-        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson));
+        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson, site?.slug));
       } else {
         setNewsLayoutPrefs(mergedPrefs);
       }
@@ -311,7 +311,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         layoutJson = undefined;
       }
       if (layoutJson) {
-        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson));
+        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson, site?.slug));
       } else {
         setNewsLayoutPrefs((prev) => ({
           ...prev,

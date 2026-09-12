@@ -42,6 +42,7 @@ import {
   collectHmRssCategoryNavItems,
   resolveHmUnifiedRssFeedRows,
   normalizeHmVitrinTheme,
+  isHmCorporateLayoutKind,
   isHmNewsRetiredHomeModule,
   filterHmHomeModulesForPortalHub,
   isHmNewsCorporateOnlyHomeModule,
@@ -1562,6 +1563,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       : `mx-auto max-w-screen-xl px-3${extra ? ` ${extra}` : ""}`;
   const corporateDonation = layoutPrefs.hmCorporateDonation ?? null;
   const vitrinTheme = normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme);
+  const isCorporateTheme = isHmCorporateLayoutKind(layoutPrefs, hmSlugProp ?? hmCtx?.slug);
   const themeAccentFallback = hmVitrinAccentHex(vitrinTheme ?? "default");
   const fromLpColor =
     (layoutPrefs.hmPrimaryColor?.trim() ?? "").length >= 3 ? layoutPrefs.hmPrimaryColor!.trim() : "";
@@ -1570,13 +1572,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     themeAccentFallback ||
     resolveSadeAccent(settings?.primaryColor) ||
     DEFAULT_RED;
-  const isCorporateTheme = vitrinTheme === "corporate";
   const isClassicTheme = vitrinTheme === "classic";
   const isPortal3Theme = vitrinTheme === "portal3";
   const isEsenTheme = vitrinTheme === "esen";
   /** Portal `/haberler` — `hmRssNewsBand.css` yalnızca `[data-hm-vitrin-theme]` altında; HM'de üst `hm-vitrin-root` verir. */
   const vitrinThemeAttr =
-    vitrinTheme === "corporate"
+    isCorporateTheme
       ? "corporate"
       : vitrinTheme === "gold"
         ? "gold"

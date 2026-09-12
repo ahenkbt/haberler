@@ -638,8 +638,16 @@ ${buildHmClassicChromeInner(boot, origin)}
 </div>`;
 }
 
+/** Kurumsal / dernek siteleri klasik haber manşet ilk boyamasına düşmesin. */
+export function isCorporateHmHtmlBoot(boot) {
+  const theme = String(boot?.meta?.layout?.hmVitrinTheme || "").trim().toLowerCase();
+  if (theme === "corporate" || theme === "kurumsal") return true;
+  const slug = String(boot?.slug || "").trim().toLowerCase();
+  return slug === "vkd" || slug === "vatankahramanlari" || slug.includes("vatankahramanlari");
+}
+
 function resolveHmFirstPaintHtml(boot) {
-  if (!boot || boot.skipPaint) return "";
+  if (!boot || boot.skipPaint || isCorporateHmHtmlBoot(boot)) return "";
   const kind = String(boot.paintKind || "").trim().toLowerCase();
   if (kind === "article") return buildHmClassicArticlePaintHtml(boot);
   if (kind === "category") return buildHmClassicCategoryPaintHtml(boot);

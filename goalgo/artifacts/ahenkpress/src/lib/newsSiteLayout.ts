@@ -56,6 +56,49 @@ export function isHmRetiredVitrinThemeRaw(theme: string | null | undefined): boo
   return HM_RETIRED_VITRIN_THEME_RAW.has(String(theme ?? "").trim().toLowerCase());
 }
 
+/**
+ * HM anasayfa düzen türü.
+ *
+ * 1. `layout_json.hmVitrinTheme` = `corporate` | `kurumsal` → corporate (`HmCorporateHome`)
+ * 2. Bilinen kurumsal slug (`vkd`, `vatankahramanlari`) → corporate (tema boş/haber varsayılanı olsa bile)
+ * 3. Aksi halde → news (esen/classic/portal3/… gazete anasayfası)
+ *
+ * Editör vitrin kaydı kurumsal temayı haber temasına çeviremez.
+ */
+export type HmLayoutKind = "corporate" | "news";
+
+export const HM_KNOWN_CORPORATE_SITE_SLUGS = ["vkd", "vatankahramanlari"] as const;
+
+export function isCorporateHmVitrinTheme(theme: string | null | undefined): boolean {
+  const raw = String(theme ?? "").trim().toLowerCase();
+  return raw === "corporate" || raw === "kurumsal";
+}
+
+export function isKnownCorporateHmSiteSlug(siteSlug: string | null | undefined): boolean {
+  const slug = String(siteSlug ?? "").trim().toLowerCase();
+  if (!slug) return false;
+  if ((HM_KNOWN_CORPORATE_SITE_SLUGS as readonly string[]).includes(slug)) return true;
+  return slug.includes("vatankahramanlari");
+}
+
+export function resolveHmLayoutKind(
+  prefs: { hmVitrinTheme?: unknown } | null | undefined,
+  siteSlug?: string | null,
+): HmLayoutKind {
+  if (isCorporateHmVitrinTheme(typeof prefs?.hmVitrinTheme === "string" ? prefs.hmVitrinTheme : undefined)) {
+    return "corporate";
+  }
+  if (isKnownCorporateHmSiteSlug(siteSlug)) return "corporate";
+  return "news";
+}
+
+export function isHmCorporateLayoutKind(
+  prefs: { hmVitrinTheme?: unknown } | null | undefined,
+  siteSlug?: string | null,
+): boolean {
+  return resolveHmLayoutKind(prefs, siteSlug) === "corporate";
+}
+
 /** Eski ajans temalarını Papatya (news) ile değiştirir; wsj/business/gazete → classic (Sümbül yalnızca açık seçim). */
 export function normalizeHmVitrinTheme(theme: string | null | undefined): HmVitrinThemeId {
   const raw = String(theme ?? "news").trim().toLowerCase();
@@ -73,6 +116,17 @@ export function normalizeHmVitrinTheme(theme: string | null | undefined): HmVitr
   if (raw === "news" || raw === "haber" || raw === "default") return "news";
   if (raw === "ankara" || raw === "gold") return raw as HmVitrinThemeId;
   return "news";
+}
+
+/** Parse / editor: kurumsal slug veya kayıtlı tema kaybolursa corporate'a sabitle. */
+export function resolveStoredHmVitrinTheme(
+  themeRaw: string | null | undefined,
+  siteSlug?: string | null,
+): HmVitrinThemeId {
+  if (isKnownCorporateHmSiteSlug(siteSlug)) return "corporate";
+  const raw = String(themeRaw ?? "").trim().toLowerCase();
+  if (raw === "corporate" || raw === "kurumsal") return "corporate";
+  return normalizeHmVitrinTheme(raw || "news");
 }
 
 /** Kaldırılan anasayfa modülleri (ajans/WSJ blokları, kategori haber kutuları). */
@@ -3084,13 +3138,23 @@ export function sanitizeHmPublicLayoutPrefs(
 }
 
 /** API'den gelen `layout_json` metnini güvenli biçimde tercihlere çevirir. */
+function emptyNewsSiteLayoutPrefsForSlug(siteSlug?: string | null): NewsSiteLayoutPrefs {
+  const base = { ...defaultNewsSiteLayoutPrefs };
+  if (isKnownCorporateHmSiteSlug(siteSlug)) {
+    const corporate = { ...base, hmVitrinTheme: "corporate" as const };
+    return siteSlug?.trim().toLowerCase() === "vkd" || String(siteSlug ?? "").toLowerCase().includes("vatankahramanlari")
+      ? applyVkdDonationToLayoutPrefs(corporate)
+      : corporate;
+  }
+  return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
+}
+
 export function parseNewsSiteLayoutFromJson(
   raw: string | null | undefined,
   siteSlug?: string | null,
 ): NewsSiteLayoutPrefs {
   if (!raw || !String(raw).trim()) {
-    const base = { ...defaultNewsSiteLayoutPrefs };
-    return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
+    return emptyNewsSiteLayoutPrefsForSlug(siteSlug);
   }
   try {
     const j = JSON.parse(raw) as Partial<NewsSiteLayoutPrefs>;
@@ -3258,7 +3322,7 @@ export function parseNewsSiteLayoutFromJson(
       typeof waRaw === "string" && waRaw.replace(/\D/g, "").length > 0 ? waRaw.replace(/\D/g, "") : null;
     const themeRaw = String((j as { hmVitrinTheme?: unknown }).hmVitrinTheme ?? "").trim().toLowerCase();
     const retiredTheme = isHmRetiredVitrinThemeRaw(themeRaw);
-    const hmVitrinTheme = normalizeHmVitrinTheme(themeRaw || "news");
+    const hmVitrinTheme = resolveStoredHmVitrinTheme(themeRaw, siteSlug);
     const mansetRaw = String((j as { mansetVariant?: unknown }).mansetVariant ?? "").trim().toLowerCase();
     const mansetVariant: MansetVariant =
       mansetRaw === "full-thumbs" ||
@@ -3641,9 +3705,7 @@ export function parseNewsSiteLayoutFromJson(
       siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(layoutResult) : layoutResult;
     return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
   } catch {
-    const base = { ...defaultNewsSiteLayoutPrefs };
-    const withVkd = siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
-    return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
+    return sanitizeHmPublicLayoutPrefs(emptyNewsSiteLayoutPrefsForSlug(siteSlug), siteSlug);
   }
 }
 
@@ -3676,6 +3738,39 @@ export function pickVitrinLayoutPatchForSave(prefs: NewsSiteLayoutPrefs): Record
   delete raw.vkdPageSyncVersion;
   delete raw.vkdMenuSyncVersion;
   return raw;
+}
+
+function hmLayoutFieldEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null && b == null) return true;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Vitrin kaydı: yalnızca gerçekten değişen alanlar.
+ * Tam `NewsSiteLayoutPrefs` (haber varsayılanlarıyla doldurulmuş) göndermek
+ * kurumsal `hmVitrinTheme` + slider/bant alanlarını ezmesin.
+ */
+export function pickChangedVitrinLayoutKeys(
+  base: NewsSiteLayoutPrefs,
+  next: NewsSiteLayoutPrefs,
+  siteSlug?: string | null,
+): Record<string, unknown> {
+  const raw = pickVitrinLayoutPatchForSave(next);
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!hmLayoutFieldEqual((base as Record<string, unknown>)[key], value)) {
+      out[key] = value;
+    }
+  }
+  if (isHmCorporateLayoutKind(base, siteSlug) && out.hmVitrinTheme != null && !isCorporateHmVitrinTheme(String(out.hmVitrinTheme))) {
+    delete out.hmVitrinTheme;
+  }
+  return out;
 }
 
 /** Editör kaydında eski sekme / stale state yüzünden sayfa listesinin silinmesini önler. */

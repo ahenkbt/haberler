@@ -7,6 +7,7 @@ import {
   isHmPublicHomeHtmlPath,
   firstHmBootImageUrl,
   injectHmHtmlBoot,
+  isCorporateHmHtmlBoot,
   buildHmBootPaintHtml,
   buildHmClassicHomePaintHtml,
   buildHmClassicArticlePaintHtml,
@@ -302,6 +303,24 @@ describe("hm-html-boot", () => {
     assert.ok(html.indexOf("Tepe manşet haber") < html.indexOf("Eski featured"));
     assert.equal(html.includes("Manşet yükleniyor"), false);
     assert.match(html, /data-hm-first-paint="classic"/);
+  });
+
+  it("skips classic news first-paint on corporate / VKD homes", () => {
+    const vkdBoot = {
+      slug: "vkd",
+      host: "vatankahramanlari.org",
+      meta: { displayName: "Vatan Kahramanları", layout: { hmVitrinTheme: "corporate" } },
+      bundle: { featured: [{ title: "Haber", slug: "haber" }] },
+    };
+    assert.equal(isCorporateHmHtmlBoot(vkdBoot), true);
+    const html = injectHmHtmlBoot(
+      '<html><head><meta charset="UTF-8" /></head><body><div id="root"></div></body></html>',
+      { ...vkdBoot, skipPaint: false },
+    );
+    assert.equal(html.includes("data-hm-first-paint"), false);
+    assert.equal(html.includes("hm-classic-root"), false);
+    assert.match(html, /__YEKPARE_HM_NESTED_META__/);
+    assert.equal(isCorporateHmHtmlBoot({ slug: "asg", meta: { layout: { hmVitrinTheme: "esen" } } }), false);
   });
 
   it("raceHmHtmlBoot prefers edge cache and does not wait on origin", async () => {
