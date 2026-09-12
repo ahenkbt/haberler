@@ -9,7 +9,8 @@ export function isHmTelifPageSlug(slug: string): boolean {
 export function isHmCorporateVitrinSite(
   layoutPrefs: Pick<NewsSiteLayoutPrefs, "hmVitrinTheme"> | null | undefined,
 ): boolean {
-  return layoutPrefs?.hmVitrinTheme === "corporate";
+  const t = String(layoutPrefs?.hmVitrinTheme ?? "").trim().toLowerCase();
+  return t === "corporate" || t === "vatan";
 }
 
 export function resolveHmTelifExtraPage(pages: HmExtraPage[] | null | undefined): HmExtraPage | undefined {

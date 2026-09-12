@@ -87,7 +87,7 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
     return () => {};
   }, [page, site.displayName, site.domain, site.layoutPrefs.faviconUrl, site.layoutPrefs.logoUrl, site.slug]);
 
-  const isCorporate = site.layoutPrefs.hmVitrinTheme === "corporate";
+  const isCorporate = site.layoutPrefs.hmVitrinTheme === "corporate" || site.layoutPrefs.hmVitrinTheme === "vatan";
 
   const pageBodySafe = useMemo(() => {
     if (!page?.bodyHtml) return "";
@@ -129,7 +129,7 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
             {pageBodySafe.trim() ? (
               <div
                 ref={bodyRef}
-                className="hm-custom-page-body hm-custom-page-body--corporate max-w-none overflow-x-hidden"
+                className={`hm-custom-page-body hm-custom-page-body--corporate max-w-none overflow-x-hidden${site.layoutPrefs.hmVitrinTheme === "vatan" ? " hm-custom-page-body--vatan" : ""}`}
                 data-hm-page-slug={page.slug}
                 dangerouslySetInnerHTML={{ __html: pageBodySafe }}
               />

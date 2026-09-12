@@ -641,7 +641,7 @@ ${buildHmClassicChromeInner(boot, origin)}
 /** Kurumsal / dernek siteleri klasik haber manşet ilk boyamasına düşmesin. */
 export function isCorporateHmHtmlBoot(boot) {
   const theme = String(boot?.meta?.layout?.hmVitrinTheme || "").trim().toLowerCase();
-  if (theme === "corporate" || theme === "kurumsal") return true;
+  if (theme === "corporate" || theme === "kurumsal" || theme === "vatan") return true;
   const slug = String(boot?.slug || "").trim().toLowerCase();
   return slug === "vkd" || slug === "vatankahramanlari" || slug.includes("vatankahramanlari");
 }

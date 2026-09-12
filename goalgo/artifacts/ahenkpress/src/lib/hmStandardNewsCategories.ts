@@ -55,5 +55,5 @@ export function mergeHmStandardNewsCategoryRows<T extends HmStandardNewsCategory
 
 export function isHmCorporateVitrinTheme(theme: unknown): boolean {
   const t = String(theme ?? "").trim().toLowerCase();
-  return t === "corporate" || t === "kurumsal";
+  return t === "corporate" || t === "kurumsal" || t === "vatan";
 }

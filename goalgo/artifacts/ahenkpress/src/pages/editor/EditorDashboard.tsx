@@ -24,7 +24,7 @@ const cards = [
 
 export default function EditorDashboard() {
   const hm = useHmEditorOptional();
-  const isCorporateSite = normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "corporate";
+  const isCorporateSite = normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "corporate" || normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "vatan";
   const visibleCards = cards.filter((card) => isCorporateSite || !card.corporateOnly);
 
   return (

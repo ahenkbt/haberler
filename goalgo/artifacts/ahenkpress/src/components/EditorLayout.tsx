@@ -26,7 +26,8 @@ function EditorSidebar({ onClose }: { onClose?: () => void }) {
   const hm = useHmEditorOptional();
   const { logout: hmLogout, site } = hm ?? { logout: () => {}, site: null };
   const isCorporateEditor =
-    normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "corporate";
+    normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "corporate" ||
+    normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "vatan";
   const corporateAuthorsEnabled = resolveHmCorporateAuthorsEnabled(hm?.newsLayoutPrefs);
   const visibleNavItems = editorNavItems.filter((item) => {
     if (item.href === "/editor/kose-yazarlari" && isCorporateEditor && !corporateAuthorsEnabled) {

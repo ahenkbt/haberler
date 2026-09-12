@@ -43,6 +43,7 @@ import {
   resolveHmUnifiedRssFeedRows,
   normalizeHmVitrinTheme,
   isHmCorporateLayoutKind,
+  isHmCorporateLikeTheme,
   isHmNewsRetiredHomeModule,
   filterHmHomeModulesForPortalHub,
   isHmNewsCorporateOnlyHomeModule,
@@ -1577,8 +1578,14 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const isEsenTheme = vitrinTheme === "esen";
   /** Portal `/haberler` — `hmRssNewsBand.css` yalnızca `[data-hm-vitrin-theme]` altında; HM'de üst `hm-vitrin-root` verir. */
   const vitrinThemeAttr =
-    isCorporateTheme
+    vitrinTheme === "vatan"
+      ? "vatan"
+      : vitrinTheme === "corporate"
       ? "corporate"
+      : isCorporateTheme
+      ? isHmCorporateLikeTheme(vitrinTheme)
+        ? vitrinTheme
+        : "vatan"
       : vitrinTheme === "gold"
         ? "gold"
         : vitrinTheme === "ankara"

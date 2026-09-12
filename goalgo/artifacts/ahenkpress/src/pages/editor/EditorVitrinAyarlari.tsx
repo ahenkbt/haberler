@@ -29,6 +29,7 @@ import {
   HM_NEWS_EDITOR_HOME_MODULE_ORDER,
   defaultNewsSiteLayoutPrefs,
   isHmCorporateLayoutKind,
+  isHmCorporateLikeTheme,
   hmNewsThemePresetPatch,
   resolveHmHomeModuleOrder,
   resolveHmNewsHomeModuleEnabled,
@@ -199,11 +200,18 @@ export default function EditorVitrinAyarlari() {
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
 
-  const commit = async (patch: Partial<NewsSiteLayoutPrefs>) => {
+  const commit = async (
+    patch: Partial<NewsSiteLayoutPrefs>,
+    saveOpts?: { allowStockLayoutReset?: boolean },
+  ) => {
     const next = { ...newsLayoutPrefs, ...patch };
     setP(next);
     setSaving(true);
-    const r = await saveNewsSiteLayout(next, { vitrinOnly: true, layoutPatch: patch });
+    const r = await saveNewsSiteLayout(next, {
+      vitrinOnly: true,
+      layoutPatch: patch,
+      allowStockLayoutReset: saveOpts?.allowStockLayoutReset,
+    });
     setSaving(false);
     if (!r.ok) {
       toast({
@@ -270,7 +278,7 @@ export default function EditorVitrinAyarlari() {
     });
   }, [newsHomeOrder, p]);
   const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
-  const isCorporateEditorSite = isHmCorporateLayoutKind(p, site?.slug);
+  const isCorporateEditorSite = isHmCorporateLayoutKind(p, site?.slug) || isHmCorporateLikeTheme(p.hmVitrinTheme);
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
   const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
@@ -555,12 +563,12 @@ export default function EditorVitrinAyarlari() {
             <Button type="button" variant="outline" size="sm" asChild>
               <Link
                 href={
-                  p.hmVitrinTheme === "corporate"
+                  isCorporateEditorSite
                     ? "/editor/menuler?location=hmCorporateMenuItems"
                     : "/editor/menuler?location=hmNewsFooterMenuItems"
                 }
               >
-                {p.hmVitrinTheme === "corporate" ? "Footer menüsü" : "Footer / sidebar menüleri"}
+                {isCorporateEditorSite ? "Footer menüsü" : "Footer / sidebar menüleri"}
               </Link>
             </Button>
           </div>
@@ -635,23 +643,20 @@ export default function EditorVitrinAyarlari() {
               </p>
               <Select
                 value={
-                  p.hmVitrinTheme === "classic" ||
-                  p.hmVitrinTheme === "portal3" ||
-                  p.hmVitrinTheme === "esen" ||
-                  p.hmVitrinTheme === "manset24" ||
-                  p.hmVitrinTheme === "renkli" ||
-                  p.hmVitrinTheme === "ahenkhaber" ||
-                  p.hmVitrinTheme === "modern"
+                  HM_VITRIN_THEME_NEWS_EDITOR_OPTIONS.some((option) => option.value === p.hmVitrinTheme)
                     ? p.hmVitrinTheme
-                    : "news"
+                    : p.hmVitrinTheme === "ankara" || p.hmVitrinTheme === "gold"
+                      ? p.hmVitrinTheme
+                      : p.hmVitrinTheme || "news"
                 }
                 disabled={saving}
-                onValueChange={(v) =>
+                onValueChange={(v) => {
+                  if (v === p.hmVitrinTheme) return;
                   void commit({
                     ...hmNewsThemePresetPatch(v),
                     hmVitrinTheme: v as NewsSiteLayoutPrefs["hmVitrinTheme"],
-                  })
-                }
+                  });
+                }}
               >
                 <SelectTrigger className="mt-2">
                   <SelectValue />
@@ -2312,8 +2317,8 @@ export default function EditorVitrinAyarlari() {
           <div>
             <Label className="font-semibold text-slate-900">Footer ve sidebar menüleri</Label>
             <p className="mt-1 text-xs text-slate-500">
-              {p.hmVitrinTheme === "corporate"
-                ? "Kurumsal temada alt bilgi menüsü üst menü ile aynıdır. Haber kategorileri Kategoriler sayfasındaki «Vitrinde» anahtarı ile yönetilir."
+              {isCorporateEditorSite
+                ? "Kurumsal / Vatan temada alt bilgi menüsü üst menü ile aynıdır. Haber kategorileri Kategoriler sayfasındaki «Vitrinde» anahtarı ile yönetilir."
                 : "Footer Sayfalar sütunu ile anasayfa sidebar başlantılarını WordPress tarzı menü editöründen yönetin."}
             </p>
           </div>
@@ -2321,12 +2326,12 @@ export default function EditorVitrinAyarlari() {
             <Button type="button" variant="outline" size="sm" asChild>
               <Link
                 href={
-                  p.hmVitrinTheme === "corporate"
+                  isCorporateEditorSite
                     ? "/editor/menuler?location=hmCorporateMenuItems"
                     : "/editor/menuler?location=hmNewsFooterMenuItems"
                 }
               >
-                {p.hmVitrinTheme === "corporate" ? "Üst / footer menüsünü düzenle" : "Footer menüsünü düzenle"}
+                {isCorporateEditorSite ? "Üst / footer menüsünü düzenle" : "Footer menüsünü düzenle"}
               </Link>
             </Button>
             <Button type="button" variant="outline" size="sm" asChild>
@@ -2338,7 +2343,7 @@ export default function EditorVitrinAyarlari() {
         {!isCorporateEditorSite ? (
           <ButtonReset
             disabled={saving}
-            onReset={() => void commit({ ...defaultNewsSiteLayoutPrefs })}
+            onReset={() => void commit({ ...defaultNewsSiteLayoutPrefs }, { allowStockLayoutReset: true })}
           />
         ) : null}
       </div>

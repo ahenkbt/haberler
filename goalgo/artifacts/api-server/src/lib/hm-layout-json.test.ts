@@ -6,9 +6,10 @@ import {
 } from "./hm-layout-json.js";
 
 describe("HM layout kind + vitrin merge", () => {
-  it("theme corporate/kurumsal veya vkd slug → corporate", () => {
+  it("theme corporate/kurumsal/vatan veya vkd slug → corporate", () => {
     expect(resolveHmLayoutKind({ hmVitrinTheme: "corporate" })).toBe("corporate");
     expect(resolveHmLayoutKind({ hmVitrinTheme: "kurumsal" })).toBe("corporate");
+    expect(resolveHmLayoutKind({ hmVitrinTheme: "vatan" })).toBe("corporate");
     expect(resolveHmLayoutKind({ hmVitrinTheme: "esen" }, "vkd")).toBe("corporate");
     expect(resolveHmLayoutKind({ hmVitrinTheme: "news" }, "vatankahramanlari")).toBe("corporate");
     expect(resolveHmLayoutKind({ hmVitrinTheme: "esen" }, "asg")).toBe("news");
@@ -47,5 +48,40 @@ describe("HM layout kind + vitrin merge", () => {
     );
     expect(locked.hmVitrinTheme).toBe("corporate");
     expect(locked.mansetVariant).toBe("center-trio");
+  });
+
+  it("vatan temasını haber varsayılanına düşürmez", () => {
+    const merged = mergeHmLayoutPatch(
+      { hmVitrinTheme: "vatan", tickerFinance: true },
+      { hmVitrinTheme: "esen", tickerFinance: false },
+      { vitrinOnly: true, siteSlug: "vkd" },
+    );
+    expect(merged.hmVitrinTheme).toBe("vatan");
+    expect(merged.tickerFinance).toBe(false);
+  });
+
+  it("haber sitesi stok dump ile özel vitrin düzenini ezmez", () => {
+    const prev = {
+      hmVitrinTheme: "classic",
+      hmNewsHomeModuleOrder: ["hero", "latestGrid", "authorsStrip"],
+      mansetVariant: "magazine-grid",
+      tickerFinance: true,
+    };
+    const incoming = {
+      hmVitrinTheme: "esen",
+      hmNewsHomeModuleOrder: ["tepeManset", "hero", "breakingBand"],
+      mansetVariant: "center-trio",
+      tickerFinance: false,
+      tickerWeather: true,
+      logoUrl: null,
+      hmPrimaryColor: "#c00",
+      hybridRssEnabled: true,
+      showPlatformNav: false,
+    };
+    const merged = mergeHmLayoutPatch(prev, incoming, { vitrinOnly: true, siteSlug: "asg" });
+    expect(merged.hmVitrinTheme).toBe("classic");
+    expect(merged.hmNewsHomeModuleOrder).toEqual(prev.hmNewsHomeModuleOrder);
+    expect(merged.mansetVariant).toBe("magazine-grid");
+    expect(merged.tickerFinance).toBe(false);
   });
 });

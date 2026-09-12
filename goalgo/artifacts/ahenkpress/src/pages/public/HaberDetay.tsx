@@ -171,7 +171,7 @@ export default function HaberDetay() {
 
   const siteIdEff = hmCtx?.siteId ?? news?.siteId ?? null;
   const corporateAuthorsEnabled = resolveHmCorporateAuthorsEnabled(hmCtx?.layoutPrefs);
-  const isCorporateTheme = normalizeHmVitrinTheme(hmCtx?.layoutPrefs?.hmVitrinTheme) === "corporate";
+  const isCorporateTheme = normalizeHmVitrinTheme(hmCtx?.layoutPrefs?.hmVitrinTheme) === "corporate" || normalizeHmVitrinTheme(hmCtx?.layoutPrefs?.hmVitrinTheme) === "vatan";
   const showKosePublic = !isCorporateTheme || corporateAuthorsEnabled;
   const koseArticle =
     showKosePublic &&

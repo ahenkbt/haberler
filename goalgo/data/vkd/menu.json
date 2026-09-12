@@ -18,6 +18,8 @@
     { "id": "vkd-menu-kah-kahramanlar", "label": "Kahramanlar", "href": "/kahramanlar", "parentId": "vkd-menu-kahramanlar", "enabled": true },
     { "id": "vkd-menu-kah-turk-dunyasi", "label": "Türk Dünyası Kahramanları", "href": "/turk-dunyasi-kahramanlari", "parentId": "vkd-menu-kahramanlar", "enabled": true },
     { "id": "vkd-menu-kah-sehitler", "label": "Şehitlerimiz", "href": "/sehitlerimiz", "parentId": "vkd-menu-kahramanlar", "enabled": true },
+    { "id": "vkd-menu-kah-teror", "label": "Terörle Mücadele Şehitleri", "href": "/terorle-mucadele", "parentId": "vkd-menu-kahramanlar", "enabled": true },
+    { "id": "vkd-menu-kah-guvenlik", "label": "Güvenlik Güçleri", "href": "/guvenlik-gucleri", "parentId": "vkd-menu-kahramanlar", "enabled": true },
     { "id": "vkd-menu-kah-sehitlikler", "label": "Şehitliklerimiz", "href": "/sehitliklerimiz", "parentId": "vkd-menu-kahramanlar", "enabled": true },
     { "id": "vkd-menu-kah-gaziler", "label": "Gazilerimiz", "href": "/gazilerimiz", "parentId": "vkd-menu-kahramanlar", "enabled": true },
     { "id": "vkd-menu-kah-vefa", "label": "Vefa Galerisi", "href": "/vefa-galerisi", "parentId": "vkd-menu-kahramanlar", "enabled": true },

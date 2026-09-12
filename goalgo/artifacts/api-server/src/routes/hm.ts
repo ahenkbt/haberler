@@ -110,6 +110,7 @@ import {
   hmLayoutTabIconUrl,
   mergeHmLayoutPatch,
   parseHmLayoutRecord,
+  resolveHmLayoutKind,
   stringifyHmLayoutMerged,
 } from "../lib/hm-layout-json";
 import {
@@ -3266,7 +3267,13 @@ router.patch("/hm/editor/site-seo-verification", async (req, res): Promise<void>
 router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
-  const b = req.body as { layout?: unknown; vitrinOnly?: boolean; allowClearExtraPages?: boolean; allowClearCorporatePageHtml?: boolean };
+  const b = req.body as {
+    layout?: unknown;
+    vitrinOnly?: boolean;
+    allowClearExtraPages?: boolean;
+    allowClearCorporatePageHtml?: boolean;
+    allowStockLayoutReset?: boolean;
+  };
   const [row] = await newsReadDb()
     .select({ layoutJson: hmNewsSitesTable.layoutJson, slug: hmNewsSitesTable.slug })
     .from(hmNewsSitesTable)
@@ -3291,9 +3298,15 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
     }
   }
   const siteSlug = String(row?.slug ?? "").trim().toLowerCase();
-  const merged = applyHmRssNewsPolicyToLayout(
-    mergeHmLayoutPatch(prev, inc, { vitrinOnly: b.vitrinOnly === true, siteSlug }),
-  );
+  const mergedPatch = mergeHmLayoutPatch(prev, inc, {
+    vitrinOnly: b.vitrinOnly === true,
+    siteSlug,
+    allowStockLayoutReset: b.allowStockLayoutReset === true,
+  });
+  const merged =
+    b.vitrinOnly === true && resolveHmLayoutKind(mergedPatch, siteSlug) === "news"
+      ? mergedPatch
+      : applyHmRssNewsPolicyToLayout(mergedPatch);
   const touchesVkdEditorContent =
     siteSlug === VKD_SITE_SLUG &&
     b.vitrinOnly !== true &&

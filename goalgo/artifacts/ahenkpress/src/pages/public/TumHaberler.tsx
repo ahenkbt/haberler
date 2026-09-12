@@ -551,7 +551,7 @@ export default function TumHaberler({ view = "index" }: { view?: TumHaberlerView
     return parseNewsSiteLayoutFromJson(raw, null);
   }, [hmCtx, settings?.newsLayoutJson]);
   const layoutPrefs = hmCtx?.layoutPrefs ?? portalLayoutPrefs;
-  const isCorporate = layoutPrefs?.hmVitrinTheme === "corporate";
+  const isCorporate = layoutPrefs?.hmVitrinTheme === "corporate" || layoutPrefs?.hmVitrinTheme === "vatan";
   /** Portal — `hmRssNewsBand.css` yalnızca `[data-hm-vitrin-theme]` altında çalışır. */
   const vitrinThemeAttr = (() => {
     const theme = normalizeHmVitrinTheme(layoutPrefs?.hmVitrinTheme);

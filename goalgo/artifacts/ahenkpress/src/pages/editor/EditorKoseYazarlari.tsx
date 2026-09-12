@@ -31,7 +31,7 @@ type AuthorRow = {
 export default function EditorKoseYazarlari() {
   const { site, newsLayoutPrefs } = useHmEditor();
   const [, setLocation] = useLocation();
-  const isCorporateSite = normalizeHmVitrinTheme(newsLayoutPrefs.hmVitrinTheme) === "corporate";
+  const isCorporateSite = normalizeHmVitrinTheme(newsLayoutPrefs.hmVitrinTheme) === "corporate" || normalizeHmVitrinTheme(newsLayoutPrefs.hmVitrinTheme) === "vatan";
   const corporateAuthorsEnabled = resolveHmCorporateAuthorsEnabled(newsLayoutPrefs);
   const qc = useQueryClient();
   const { toast } = useToast();

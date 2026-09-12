@@ -48,7 +48,8 @@ export function hmRequestFormPath(): string {
 }
 
 export function isHmCorporateTheme(p: NewsSiteLayoutPrefs | null | undefined): boolean {
-  return p?.hmVitrinTheme === "corporate";
+  const t = String(p?.hmVitrinTheme ?? "").trim().toLowerCase();
+  return t === "corporate" || t === "vatan";
 }
 
 export function normalizeHmRequestCategories(raw: unknown): HmRequestCategory[] | null {

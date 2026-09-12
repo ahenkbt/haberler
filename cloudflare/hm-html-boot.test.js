@@ -322,6 +322,10 @@ describe("hm-html-boot", () => {
     assert.equal(html.includes("hm-classic-root"), false);
     assert.match(html, /__YEKPARE_HM_NESTED_META__/);
     assert.equal(isCorporateHmHtmlBoot({ slug: "asg", meta: { layout: { hmVitrinTheme: "esen" } } }), false);
+    assert.equal(
+      isCorporateHmHtmlBoot({ slug: "vkd", meta: { layout: { hmVitrinTheme: "vatan" } } }),
+      true,
+    );
   });
 
   it("raceHmHtmlBoot prefers edge cache and does not wait on origin", async () => {

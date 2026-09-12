@@ -177,7 +177,7 @@ export function buildCorporateHeaderNavItems(opts: BuildCorporateNavOpts): HmCor
     showVideoTvLink = true,
     newsAuthorsEnabled = resolveHmCorporateAuthorsEnabled(layoutPrefs),
     newsRssEnabled = layoutPrefs.hmNewsRssLinksEnabled !== false,
-    requestFormEnabled = layoutPrefs.hmVitrinTheme === "corporate"
+    requestFormEnabled = layoutPrefs.hmVitrinTheme === "corporate" || layoutPrefs.hmVitrinTheme === "vatan"
       ? resolveHmCorporateRequestFormEnabled(layoutPrefs)
       : resolveHmNewsRequestFormEnabled(layoutPrefs),
   } = opts;

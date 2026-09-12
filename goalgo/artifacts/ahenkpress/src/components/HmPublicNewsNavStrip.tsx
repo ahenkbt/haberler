@@ -239,10 +239,10 @@ export function HmPublicNewsNavStrip({
 
   const layoutPrefs: NewsSiteLayoutPrefs | null = ctx?.layoutPrefs ?? null;
   const effectiveLayoutPrefs = useHmEffectiveLayoutPrefs() ?? layoutPrefs;
-  const corporateNav = layoutPrefs?.hmVitrinTheme === "corporate";
+  const corporateNav = layoutPrefs?.hmVitrinTheme === "corporate" || layoutPrefs?.hmVitrinTheme === "vatan";
   const newsNavEnabled = resolveHmNewsHeaderMenuEnabled(layoutPrefs);
   const newsAuthorsEnabled = layoutPrefs
-    ? layoutPrefs.hmVitrinTheme === "corporate"
+    ? layoutPrefs.hmVitrinTheme === "corporate" || layoutPrefs.hmVitrinTheme === "vatan"
       ? resolveHmCorporateAuthorsEnabled(layoutPrefs)
       : resolveHmNewsAnyAuthorsEnabled(layoutPrefs)
     : true;

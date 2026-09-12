@@ -212,7 +212,9 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
       : mergedPrefs;
     const layoutPayload =
       opts?.vitrinOnly === true
-        ? pickChangedVitrinLayoutKeys(newsLayoutPrefs, vitrinBase, site?.slug)
+        ? pickChangedVitrinLayoutKeys(newsLayoutPrefs, vitrinBase, site?.slug, {
+            allowStockLayoutReset: opts?.allowStockLayoutReset,
+          })
         : opts?.layoutPatch
           ? (opts.layoutPatch as Record<string, unknown>)
           : mergedPrefs;
@@ -225,6 +227,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
           vitrinOnly: opts?.vitrinOnly === true,
           allowClearExtraPages: opts?.allowClearExtraPages === true,
           allowClearCorporatePageHtml: opts?.allowClearCorporatePageHtml === true,
+          allowStockLayoutReset: opts?.allowStockLayoutReset === true,
         }),
       });
       const text = await res.text().catch(() => "");

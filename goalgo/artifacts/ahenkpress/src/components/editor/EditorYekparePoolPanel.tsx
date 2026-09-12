@@ -174,7 +174,7 @@ export function EditorYekparePoolPanel({ categorySlug, onCategorySlugChange }: E
   const { toast } = useToast();
   const sid = site?.id ?? null;
   const vitrinTheme = String(newsLayoutPrefs.hmVitrinTheme ?? "").trim().toLowerCase();
-  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal";
+  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal" || vitrinTheme === "vatan";
 
   if (isCorporateSite) {
     return (
