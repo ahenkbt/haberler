@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   campaignRequiresCoverImage,
+  campaignWritesPerHmSite,
   findDuplicateNews,
   isMidnightTrCampaign,
   newsHasCoverImage,
@@ -68,5 +69,28 @@ describe("RSS kampanya dedupe + görsel yükseltme", () => {
     expect(isMidnightTrCampaign({ active: true, intervalMinutes: 1440, tags: [], feeds: [] })).toBe(true);
     expect(isMidnightTrCampaign({ active: false, tags: ["midnight-tr"] })).toBe(false);
     expect(isMidnightTrCampaign({ active: true, tags: ["ntv"], intervalMinutes: 30, feeds: [] })).toBe(false);
+  });
+
+  it("SHA + Vatanhaber her siteye yazar; diğer kampanyalar shared havuza gider", () => {
+    expect(
+      campaignWritesPerHmSite({
+        tags: ["sehirhaberajansi", "midnight-tr"],
+        name: "Şehir Haber Ajansı → ASG + AHG",
+      }),
+    ).toBe(true);
+    expect(
+      campaignWritesPerHmSite({
+        tags: [],
+        feeds: ["https://sehirhaberajansi.com.tr/rss.php?kategori=yerel"],
+      }),
+    ).toBe(true);
+    expect(campaignWritesPerHmSite({ tags: ["vatanhaber-ankara"], feeds: [] })).toBe(true);
+    expect(
+      campaignWritesPerHmSite({
+        tags: ["ntv"],
+        feeds: ["https://www.ntv.com.tr/gundem.rss"],
+        name: "NTV",
+      }),
+    ).toBe(false);
   });
 });

@@ -18,6 +18,7 @@ import {
 } from "./portal-rss-store.js";
 import { hmRssIntegrationModeFromLayout, readHmPublicLayout, type HmRssIntegrationMode } from "./hm-public-layout.js";
 import { isWithinRssPersistSlot } from "./rss-automation-control.js";
+import { expandFeedIdsForSharedPoolQuery } from "./portal-rss-shared-pool.js";
 
 /**
  * "Kutu içi RSS" (box scope) beslemeleri kalıcı DB havuzuna YAZILMAZ — canlı kalır.
@@ -41,7 +42,7 @@ async function rssIntegrationModeForFeed(feedId: string): Promise<HmRssIntegrati
   return "portal";
 }
 
-/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi: yalnızca gece 01:00 veya persistToDb. */
+/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi: yalnızca 02:00/09:00 TR veya persistToDb. */
 export async function shouldSkipRssDbForFeed(
   feedId: string,
   opts?: { persistToDb?: boolean },
@@ -410,7 +411,17 @@ async function collectCachedItems(
     return true;
   });
 
-  const cachedFeeds = await Promise.all(activeFeeds.map(async (feed) => ({ feed, cached: await readCache(feed.id) })));
+  const cachedFeeds = await Promise.all(
+    activeFeeds.map(async (feed) => {
+      const ids = expandFeedIdsForSharedPoolQuery([feed]);
+      let cached: FeedCachePayload | null = null;
+      for (const id of ids) {
+        cached = await readCache(id);
+        if (cached?.items?.length) break;
+      }
+      return { feed, cached };
+    }),
+  );
   for (const { cached } of cachedFeeds) {
     if (!cached) continue;
     for (const item of cached.items) all.push(item);

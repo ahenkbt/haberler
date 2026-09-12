@@ -15,7 +15,7 @@ import {
 import { categoryBoxItemKey } from "@/lib/hmCategoryBoxItems";
 import { hmCategorySlug } from "@/lib/hmCategorySlug";
 
-const DEFAULT_FETCH_LIMIT = 12;
+const DEFAULT_FETCH_LIMIT = 20;
 /** Mobilde onlarca kategori hybrid isteği yerine üstteki kutular önce. */
 const DEFAULT_EAGER_REMOTE_MAX = 4;
 const DEFAULT_TOTAL_REMOTE_MAX = 8;

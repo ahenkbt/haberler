@@ -4,6 +4,7 @@ export type HmHomeBundleBoot = {
   bundle: {
     siteId?: number;
     featured?: unknown[];
+    tepeManset?: unknown[];
     manualEditor?: unknown[];
     centerHeadlines?: unknown[];
     breaking?: unknown[];
@@ -20,6 +21,7 @@ export function readHmHomeBundleBoot(siteId: number): HmHomeBundleBoot["bundle"]
   if (!bundle || typeof bundle !== "object") return undefined;
   const featured = Array.isArray(bundle.featured) ? bundle.featured : [];
   const extra =
+    (Array.isArray(bundle.tepeManset) ? bundle.tepeManset.length : 0) +
     (Array.isArray(bundle.centerHeadlines) ? bundle.centerHeadlines.length : 0) +
     (Array.isArray(bundle.manualEditor) ? bundle.manualEditor.length : 0) +
     (Array.isArray(bundle.breaking) ? bundle.breaking.length : 0) +

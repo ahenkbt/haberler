@@ -23,5 +23,8 @@ export const PG_ADVISORY_LOCKS = {
   KESFET_NIGHT_SCRAPER: 740_003,
   PORTAL_RSS_AI_META: 740_004,
   YEKTUBE_VIDEO_DAILY: 740_005,
-  HM_RSS_MIDNIGHT: 740_006,
+  /** main’de üretimde kullanılıyor — id değişmesin */
+  HM_TEPE_MANSET_DAILY: 740_006,
+  /** SHA + Vatanhaber Ankara 00:00 TR — tepe manşetten ayrı kilit */
+  HM_RSS_MIDNIGHT: 740_007,
 } as const;

@@ -126,6 +126,7 @@ export async function syncPortalRssItemsToNewsTable(
 
   let inserted = 0;
   let skipped = 0;
+  const batchTitles: string[] = [];
 
   for (const item of items) {
     const title = decodeHtmlEntities(String(item.title ?? "").trim());
@@ -145,7 +146,7 @@ export async function syncPortalRssItemsToNewsTable(
     const categoryId = categoryRow?.id ?? null;
 
     const sourceUrl = normalizeRssSourceUrl(item.link);
-    if (await rssArticleAlreadyImported(null, sourceUrl, title)) {
+    if (await rssArticleAlreadyImported(null, sourceUrl, title, { extraTitles: batchTitles })) {
       await refreshPortalRssNewsImageFromItem({ siteId: null, sourceUrl, imageUrl: item.imageUrl, title });
       skipped += 1;
       continue;
@@ -186,6 +187,7 @@ export async function syncPortalRssItemsToNewsTable(
 
     if (created) {
       inserted += 1;
+      batchTitles.push(title);
       void enqueuePortalRssMetaRewriteJob(created.id, title, spot).catch(() => {});
       void removeNewsSlugRedirect(slug, null).catch(() => {});
       scheduleGoogleNewsIndexing(created);

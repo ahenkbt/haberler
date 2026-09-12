@@ -1105,8 +1105,8 @@ export default function EditorVitrinAyarlari() {
             />
             <ToggleRow
               id="hm-news-tepe-manset"
-              label="Tepe Manşet sistemi (varsayılan kapalı)"
-              checked={p.hmNewsTepeMansetEnabled === true}
+              label="Tepe Manşet sistemi (varsayılan açık)"
+              checked={p.hmNewsTepeMansetEnabled !== false}
               disabled={saving}
               onChange={(c) => toggleDefaultOn("hmNewsTepeMansetEnabled", c)}
             />
@@ -1686,7 +1686,7 @@ export default function EditorVitrinAyarlari() {
             </Label>
             <p className="text-xs text-slate-500">
               RSS adresleri saatte bir canlı çekilir ve siteye kaydedilmeden gösterilir (görseller indirilmez).
-              Gece 01:00’de o ana kadar gösterilen öğeler veritabanına yazılır. Haberler site içinde açılır.
+              02:00 ve 09:00 TR’de o ana kadar gösterilen öğeler veritabanına yazılır. Haberler site içinde açılır.
             </p>
             <Select value={rssIntegrationMode} onValueChange={(v) => setRssIntegrationMode(v as HmRssIntegrationMode)} disabled={saving}>
               <SelectTrigger id="hm-rss-integration-mode" className="max-w-md">
@@ -2113,8 +2113,8 @@ export default function EditorVitrinAyarlari() {
             />
             <ToggleRow
               id="hm-corporate-tepe-manset"
-              label="Tepe Manşet sistemi (varsayılan kapalı)"
-              checked={p.hmNewsTepeMansetEnabled === true}
+              label="Tepe Manşet sistemi (varsayılan açık)"
+              checked={p.hmNewsTepeMansetEnabled !== false}
               disabled={saving}
               onChange={(c) => toggleDefaultOn("hmNewsTepeMansetEnabled", c)}
             />

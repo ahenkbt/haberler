@@ -10,7 +10,7 @@ import { startPortalRssScheduler } from "./portal-rss-scheduler.js";
  * RSS arka plan otomasyonu — site_settings boşsa varsayılan AÇIK; RSS_AUTOMATION=0 ile kapatılır.
  *
  * Saatlik: RSS adresleri çekilir, bellek/Redis önbelleğine yazılır (DB/görsel indirme yok).
- * Gece 01:00 TR: gösterilen öğeler portal_rss_items + haber tablosuna kaydedilir.
+ * 02:00 ve 09:00 TR: gösterilen öğeler portal_rss_items + haber tablosuna kaydedilir.
  *
  * Gündüz test için: RSS_AUTOMATION_ALL_DAY=1
  * Manuel «Önbelleği yenile» / «Çalıştır» uçları slot dışında da anında çalışır.
@@ -18,9 +18,11 @@ import { startPortalRssScheduler } from "./portal-rss-scheduler.js";
  * Ayar: site_settings.background_jobs_json → { rssAutomationEnabled: boolean }
  */
 /** @deprecated Saatlik canlı yenileme; geriye dönük etiket. */
-export const RSS_SCHEDULED_HOURS_TR = [1, 9, 15] as const;
-/** Kalıcı DB kaydı yalnızca bu saatte (Europe/Istanbul). */
-export const RSS_PERSIST_HOUR_TR = 1;
+export const RSS_SCHEDULED_HOURS_TR = [2, 9] as const;
+/** Kalıcı DB / kategori news import saatleri (Europe/Istanbul). */
+export const RSS_PERSIST_HOURS_TR = [2, 9] as const;
+/** @deprecated İlk persist saati; RSS_PERSIST_HOURS_TR kullanın. */
+export const RSS_PERSIST_HOUR_TR = RSS_PERSIST_HOURS_TR[0];
 /** Planlı slotta tick penceresi (dakika) — tüm saat boyunca değil, yalnızca slot başı. */
 export const RSS_SCHEDULED_SLOT_WINDOW_MIN = 20;
 const RSS_TZ_OFFSET_MIN = 3 * 60;
@@ -96,11 +98,19 @@ export function isWithinRssScheduledSlot(now = new Date()): boolean {
   return minute < windowMin;
 }
 
-/** Gece 01:00 TR — canlı gösterilen RSS öğeleri DB'ye yazılır. */
+/** Europe/Istanbul gününün 00:00 anı (UTC Date). */
+export function getTurkeyDayStartUtc(now = new Date()): Date {
+  const { hour, minute } = getTurkeyHourMinute(now);
+  const msIntoDay =
+    (hour * 60 + minute) * 60_000 + now.getUTCSeconds() * 1000 + now.getUTCMilliseconds();
+  return new Date(now.getTime() - msIntoDay);
+}
+
+/** 02:00 ve 09:00 TR — canlı gösterilen RSS öğeleri DB'ye yazılır. */
 export function isWithinRssPersistSlot(now = new Date()): boolean {
   if (process.env.RSS_AUTOMATION_ALL_DAY === "1") return true;
   const { hour, minute } = getTurkeyHourMinute(now);
-  if (hour !== RSS_PERSIST_HOUR_TR) return false;
+  if (!(RSS_PERSIST_HOURS_TR as readonly number[]).includes(hour)) return false;
   const windowMin = Math.min(
     59,
     Math.max(1, Number(process.env.RSS_SCHEDULE_SLOT_WINDOW_MIN) || RSS_SCHEDULED_SLOT_WINDOW_MIN),
@@ -114,12 +124,12 @@ export function isWithinRssNightWindow(now = new Date()): boolean {
 }
 
 function rssScheduleSlots(): string[] {
-  return ["saatlik canlı", "01:00 DB kayıt"];
+  return ["saatlik canlı", "02:00 DB kayıt", "09:00 DB kayıt"];
 }
 
 function rssScheduleLabel(): string {
   if (process.env.RSS_AUTOMATION_ALL_DAY === "1") return "7/24 (RSS_AUTOMATION_ALL_DAY=1)";
-  return "Saatlik canlı gösterim; gece 01:00 TR kalıcı kayıt";
+  return "Saatlik canlı gösterim; 02:00 ve 09:00 TR kalıcı kayıt";
 }
 
 /** Bir sonraki saat başı (dakika 0) — canlı RSS yenileme. */
@@ -258,7 +268,7 @@ export async function bootstrapRssAutomationFromSettings(log: Logger): Promise<(
     const settings = await getRssAutomationSettings();
     if (!settings.rssAutomationEnabled) {
       await setRssAutomationEnabled(true, log);
-      log.info("[rss-automation] site ayarı kapalıydı — portal RSS otomasyonu açıldı (saatlik canlı, 01:00 DB)");
+      log.info("[rss-automation] site ayarı kapalıydı — portal RSS otomasyonu açıldı (saatlik canlı, 02:00/09:00 DB)");
     }
   }
   const shouldRun = await isRssAutomationEnabledInDbOrEnv();

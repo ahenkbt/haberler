@@ -758,7 +758,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
           ]),
         );
         let cachedMapRss = await getPortalRssItemsForHybridMerge(mapActiveFeeds, categorySlug, {
-          usePersistentPool: siteId == null && rssScope === "all",
+          usePersistentPool: rssScope === "all",
         });
         if (editorPool && shouldApplyActivatedPoolCategoryFilter(categorySlug)) {
           cachedMapRss = filterRssItemsByActivatedSet(
@@ -1146,7 +1146,7 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
             : loadPortalDbNews({ categorySlug, q, limit: hybridPoolLimit, offset: 0 }),
       mergeRssFromCache
         ? getPortalRssItemsForHybridMerge(feeds, categorySlug, {
-            usePersistentPool: siteId == null && rssScope === "all",
+            usePersistentPool: rssScope === "all",
           })
         : Promise.resolve([]),
       loadNewsContext(),
@@ -1337,7 +1337,7 @@ router.get("/news/hybrid/infinite", async (req, res): Promise<void> => {
     const [rssItemsRaw, ctx] = await Promise.all([
       mergeRssFromCache
         ? getPortalRssItemsForHybridMerge(feeds, categorySlug, {
-            usePersistentPool: siteId == null && rssScope === "all",
+            usePersistentPool: rssScope === "all",
           })
         : Promise.resolve([]),
       loadNewsContext(),

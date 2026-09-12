@@ -8,8 +8,12 @@ import {
   firstHmBootImageUrl,
   injectHmHtmlBoot,
   buildHmBootPaintHtml,
+  buildHmClassicHomePaintHtml,
+  buildHmClassicArticlePaintHtml,
+  buildHmClassicCategoryPaintHtml,
   listKnownHmEditorSites,
   parseHmNewsArticlePath,
+  parseHmNewsCategoryPath,
   findHmBundleHeadlineBySlug,
   buildHmNewsArticleOgHtml,
   raceHmHtmlBoot,
@@ -65,6 +69,9 @@ describe("hm-html-boot", () => {
       isHmPublicHomeHtmlPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),
       false,
     );
+    assert.equal(parseHmNewsCategoryPath("/kategori/ankara")?.slug, "ankara");
+    assert.equal(parseHmNewsCategoryPath("/tr/asg/kategori/gundem")?.slug, "gundem");
+    assert.equal(hmHomeSlugFromPath("/kategori/ankara", "ankarasehirgazetesi.com"), "asg");
   });
 
   it("injects bundle JSON after charset so the early IIFE can read it", () => {
@@ -80,12 +87,15 @@ describe("hm-html-boot", () => {
     assert.match(out, /\\u003cimg>/);
     assert.ok(out.indexOf("<img>") === -1);
     assert.ok(out.indexOf("__YEKPARE_HM_HOME_BUNDLE__") < out.indexOf("__EARLY__"));
-    assert.match(out, /id="hm-boot-paint"/);
+    assert.equal(out.includes("hm-boot-paint"), false);
+    assert.equal(out.includes("Manşet yükleniyor"), false);
+    assert.match(out, /data-hm-first-paint="classic"/);
     assert.match(out, /Ankara Haber Gündemi/);
-    assert.ok(out.indexOf("hm-boot-paint") < out.indexOf('id="root"'));
+    assert.match(out, /Piyasa · Hava/);
+    assert.match(out, /<div id="root">[\s\S]*data-hm-first-paint="classic"/);
   });
 
-  it("parses haber paths and injects article JSON without homepage paint", () => {
+  it("parses haber paths and injects article first-paint plus JSON boot", () => {
     assert.deepEqual(
       parseHmNewsArticlePath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti"),
       { kind: "haber", slug: "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti" },
@@ -98,10 +108,15 @@ describe("hm-html-boot", () => {
     const out = injectHmHtmlBoot(html, {
       siteId: 3,
       slug: "asg",
-      skipPaint: true,
+      skipPaint: false,
+      paintKind: "article",
       articleSlug: "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
       articleBundle: {
-        article: { title: "Ankabir’den Vali Canpolat’a Hayırlı Olsun Ziyareti" },
+        article: {
+          title: "Ankabir’den Vali Canpolat’a Hayırlı Olsun Ziyareti",
+          spot: "Vali ziyareti",
+          content: "<p>Anıtkabir’de gerçekleştirilen ziyaret.</p>",
+        },
         related: [],
         kose: null,
         sidebar: { authors: [], popular: [] },
@@ -109,6 +124,39 @@ describe("hm-html-boot", () => {
     });
     assert.match(out, /__YEKPARE_HM_ARTICLE_BUNDLE__/);
     assert.equal(out.includes("hm-boot-paint"), false);
+    assert.match(out, /data-hm-first-paint="article"/);
+    assert.match(out, /Ankabir/);
+    assert.match(out, /Vali ziyareti/);
+    assert.match(out, /hm-first-paint-hold/);
+    assert.equal(out.includes("Manşet yükleniyor"), false);
+  });
+
+  it("paints a category list from the embedded home-bundle", () => {
+    const html = buildHmClassicCategoryPaintHtml({
+      slug: "asg",
+      host: "ankarasehirgazetesi.com",
+      categorySlug: "ankara",
+      meta: { displayName: "Ankara Şehir Gazetesi" },
+      bundle: {
+        featured: [
+          { title: "Ankara haberi", slug: "ankara-1", categorySlug: "ankara" },
+          { title: "Spor haberi", slug: "spor-1", categorySlug: "spor" },
+        ],
+        centerHeadlines: [{ title: "İkinci Ankara", slug: "ankara-2", categorySlug: "ankara" }],
+      },
+    });
+    assert.match(html, /data-hm-first-paint="category"/);
+    assert.match(html, /Ankara haberi/);
+    assert.match(html, /\/haber\/ankara-1/);
+    assert.match(html, /İkinci Ankara/);
+    const article = buildHmClassicArticlePaintHtml({
+      slug: "asg",
+      host: "ankarasehirgazetesi.com",
+      articleSlug: "ankara-1",
+      articleBundle: { article: { title: "Ankara haberi", spot: "Özet" } },
+    });
+    assert.match(article, /data-hm-first-paint="article"/);
+    assert.match(article, /Ankara haberi/);
   });
 
   it("builds WhatsApp article OG from a home-bundle headline", () => {
@@ -152,9 +200,10 @@ describe("hm-html-boot", () => {
     );
   });
 
-  it("builds a paint overlay from featured headlines", () => {
+  it("builds classic homepage first paint (not the yükleniyor overlay)", () => {
     const html = buildHmBootPaintHtml({
       slug: "su",
+      host: "suhaber.net",
       meta: { displayName: "Su Haber" },
       bundle: {
         featured: [
@@ -166,7 +215,75 @@ describe("hm-html-boot", () => {
     assert.match(html, /Su Haber/);
     assert.match(html, /Birinci/);
     assert.match(html, /ikinci/);
-    assert.match(html, /hm-boot-paint/);
+    assert.match(html, /data-hm-first-paint="classic"/);
+    assert.match(html, /Piyasa · Hava/);
+    assert.match(html, /Anasayfa/);
+    assert.match(html, /hm-fp-num/);
+    assert.equal(html.includes("hm-boot-paint"), false);
+    assert.equal(html.includes("Manşet yükleniyor"), false);
+  });
+
+  it("seeds ASG-style chrome from editor menu + numbered manşet 1–5", () => {
+    const html = buildHmClassicHomePaintHtml({
+      slug: "asg",
+      host: "ankarasehirgazetesi.com",
+      meta: {
+        displayName: "Ankara Şehir Gazetesi",
+        layout: {
+          hmVitrinTheme: "esen",
+          faviconUrl: "/api/media/uploads/logo.png",
+          logoUrl: "data:image/png;base64,AAAA",
+          hmCorporateMenuItems: [
+            { label: "Anasayfa", href: "/tr/asg", enabled: true },
+            { label: "Sondakika", href: "/sondakika", enabled: true },
+            { label: "Tüm Haberler", href: "/tr/asg/tum-haberler", enabled: true },
+            { label: "Yerel", href: "/kategori/yerel", enabled: true },
+            { label: "Ankara", href: "/kategori/ankara", enabled: true },
+            { label: "Gündem", href: "/kategori/gundem", enabled: true },
+            { label: "Dünya", href: "/kategori/dunya", enabled: true },
+            { label: "Ekonomi", href: "/kategori/ekonomi", enabled: true },
+            { label: "Spor", href: "/kategori/spor", enabled: true },
+            { label: "Künye", href: "/kunye", enabled: true },
+            { label: "Video TV", href: "/video-tv", enabled: true },
+          ],
+        },
+      },
+      bundle: {
+        featured: [
+          { title: "Ankabir ziyareti", slug: "ankabir", imageUrl: "/api/media/uploads/hero.jpg" },
+          { title: "İkinci", slug: "ikinci", imageUrl: "https://cdn.example/b.jpg" },
+          { title: "Üçüncü", slug: "ucuncu" },
+          { title: "Dördüncü", slug: "dorduncu" },
+          { title: "Beşinci", slug: "besinci" },
+        ],
+      },
+    });
+    assert.match(html, /Ankara Şehir Gazetesi|logo\.png/);
+    assert.equal(html.includes("data:image"), false);
+    assert.match(html, /https:\/\/ankarasehirgazetesi\.com\/api\/media\/uploads\/hero\.jpg/);
+    assert.match(html, />1<\/a>/);
+    assert.match(html, />5<\/a>/);
+    assert.match(html, /Tüm Haberler/);
+    assert.match(html, /USD\/TRY/);
+    assert.match(html, /Gram Altın/);
+    assert.equal(html.includes("Manşet yükleniyor"), false);
+  });
+
+  it("prefers home-bundle tepeManset for classic first-paint headlines", () => {
+    const html = buildHmClassicHomePaintHtml({
+      slug: "vatanhaber",
+      host: "vatanhaber.net",
+      meta: { displayName: "Vatan Haber" },
+      bundle: {
+        tepeManset: [{ title: "Tepe manşet haber", slug: "tepe-haber", imageUrl: "https://cdn.example/tepe.jpg" }],
+        featured: [{ title: "Eski featured", slug: "eski-featured", imageUrl: "https://cdn.example/old.jpg" }],
+      },
+    });
+    assert.match(html, /Tepe manşet haber/);
+    assert.match(html, /tepe-haber/);
+    assert.ok(html.indexOf("Tepe manşet haber") < html.indexOf("Eski featured"));
+    assert.equal(html.includes("Manşet yükleniyor"), false);
+    assert.match(html, /data-hm-first-paint="classic"/);
   });
 
   it("raceHmHtmlBoot prefers edge cache and does not wait on origin", async () => {

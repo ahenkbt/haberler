@@ -27,6 +27,7 @@ import { resolveHmEditorCategoryId } from "./hm-editor-categories.js";
 import { categorySlugFromShaFeed } from "./hm-sha-rss-feeds.js";
 import {
   campaignRequiresCoverImage,
+  campaignWritesPerHmSite,
   findDuplicateNews,
   newsHasCoverImage,
   rssCampaignItemLimit,
@@ -34,6 +35,13 @@ import {
   sortByPublishedAtAsc,
   type RssDedupeNewsRow,
 } from "./rss-campaign-dedupe.js";
+import {
+  resolveRssCampaignSharedPublishTargets,
+  rssCampaignSharedFeedConfig,
+} from "./portal-rss-shared-pool.js";
+import { upsertPortalRssItems } from "./portal-rss-store.js";
+import { portalRssTitleKey } from "./portal-rss-fetch.js";
+import { createHash } from "node:crypto";
 
 export type RssCampaignRunResult = {
   added: number;
@@ -262,7 +270,12 @@ export async function executeRssCampaignRun(
     return { added: 0, skipped: 0, upgraded: 0, errors: 1, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
   }
 
-  const existingBySite = await loadExistingNewsBySite(siteTargets);
+  // SHA/Vatanhaber: ASG+AHG (ve diğer hedefler) için ayrı siteId satırı.
+  // Diğer kampanyalar: shared RSS havuzuna tek merkez satır.
+  const publishTargets = campaignWritesPerHmSite(campaign)
+    ? siteTargets
+    : resolveRssCampaignSharedPublishTargets(siteTargets);
+  const existingBySite = await loadExistingNewsBySite(publishTargets);
 
   const itemLimit = rssCampaignItemLimit(campaign.dailyLimit);
   const sourceType = String(campaign.sourceType ?? "rss").toLowerCase();
@@ -429,7 +442,7 @@ export async function executeRssCampaignRun(
         const targetsToAdd: (number | null)[] = [];
         const targetsToUpgrade: { siteId: number | null; existing: RssDedupeNewsRow }[] = [];
 
-        for (const siteId of siteTargets) {
+        for (const siteId of publishTargets) {
           const bag = existingBySite.get(siteTargetKey(siteId)) ?? [];
           const dup = findDuplicateNews(bag, sourceKey, cleanTitle);
           if (dup) {
@@ -449,6 +462,35 @@ export async function executeRssCampaignRun(
         const imageUrl = await mirrorRssImportImageUrl(item.imageUrl, cleanTitle, {
           force: campaign.downloadImages === true,
         });
+        const sharedFeed = rssCampaignSharedFeedConfig({
+          campaignId,
+          categorySlug: String(campaign.categorySlug || "gundem"),
+          feedUrl,
+        });
+        const titleKey = portalRssTitleKey(cleanTitle);
+        const itemKey = createHash("sha1")
+          .update(sourceKey || titleKey)
+          .digest("hex")
+          .slice(0, 16);
+        try {
+          await upsertPortalRssItems(sharedFeed, [
+            {
+              id: itemKey,
+              title: cleanTitle,
+              link: item.link,
+              spot: rssSpot,
+              contentHtml,
+              imageUrl: imageUrl ?? null,
+              publishedAt: publishedAt.toISOString(),
+              cachedAt: new Date().toISOString(),
+              titleKey,
+              feedId: sharedFeed.id,
+              categorySlug: sharedFeed.categorySlug,
+            },
+          ]);
+        } catch {
+          /* news satırı yine yazılır */
+        }
 
         for (const { siteId, existing } of targetsToUpgrade) {
           await dualWriteUpdate(

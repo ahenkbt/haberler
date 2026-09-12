@@ -30,7 +30,7 @@ import { parseHmLayoutRecord } from "./hm-layout-json.js";
  * Site içi RSS (`hybridRssEnabled`): zamanlayıcı o sitenin `hm-*-site-*` feed’lerini
  * de tarar. "Kutu içi RSS" (box scope) DB'ye yazılmaz — o widget canlı kalır.
  *
- * Otomatik çalışma: saatlik canlı önbellek; gece 01:00 TR kalıcı DB kaydı.
+ * Otomatik çalışma: saatlik canlı önbellek; 02:00 ve 09:00 TR kalıcı DB kaydı.
  * Manuel: POST /api/admin/portal-rss/refresh.
  */
 const PER_FEED_CONCURRENCY = Math.min(
@@ -155,7 +155,7 @@ export function startPortalRssScheduler(log: Logger, intervalMs = 60 * 60_000): 
             try {
               const batch = await importPortalRssNewsByCategoryBatch();
               if (batch.inserted > 0) {
-                log.info(batch, "[portal-rss] gece 01:00 kategori batch news import tamamlandı");
+                log.info(batch, "[portal-rss] 02:00/09:00 TR kategori batch news import tamamlandı");
               }
             } catch (e) {
               log.debug({ err: e }, "[portal-rss] kategori batch news import atlandı");

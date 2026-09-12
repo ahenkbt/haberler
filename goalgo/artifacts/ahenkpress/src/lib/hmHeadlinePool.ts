@@ -1,10 +1,13 @@
 import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
 
+import { isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
+
 /**
  * Manşet havuzu tazelik kuralları:
  * - Editör / DB manuel haber: yaş kesimi yok (önceki haberler sitede kalsın).
  * - RSS: en fazla 24 saat (RSS_HEADLINE_MAX_AGE_MS).
- * - Tepe manşet: editörün `isFeatured` manuel haberleri.
+ * - Tepe manşet: görselli manuel önce; yoksa önem (featured / breaking / views / recency);
+ *   otomatik slotlar güne göre yenilenir. Resimsiz manuel tepeye girmez.
  */
 
 export const RSS_HEADLINE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -190,16 +193,121 @@ export function filterHmMansetNews<T>(items: readonly T[]): T[] {
   return items.filter(isHmMansetNewsItem);
 }
 
-/** Tepe Manşet üst band: yalnızca editör «Manşet» (`isFeatured`) manuel DB haberleri — yedek yok. */
+const TR_TEPE_DAY_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+function tepeMansetCoverOk(n: unknown): boolean {
+  const item = n as {
+    imageUrl?: string | null;
+    featuredImage?: string | null;
+    thumbnailUrl?: string | null;
+    image?: string | null;
+  };
+  return [item.imageUrl, item.featuredImage, item.thumbnailUrl, item.image].some((src) =>
+    isUsableNewsCoverSrc(src),
+  );
+}
+
+/** Görselli manuel / site-manuel / featured manşet. Resimsiz manuel elenir. */
+export function isTepeMansetManualEligible(n: unknown): boolean {
+  if (!tepeMansetCoverOk(n)) return false;
+  if (isRssHybridItem(n) || isYekparePoolNewsItem(n)) return false;
+  const item = n as { isEditorManual?: boolean };
+  if (item.isEditorManual === true) return true;
+  if (isHmMansetNewsItem(n) || isHmSiteMansetNewsItem(n)) return true;
+  return false;
+}
+
+export function tepeMansetDayKey(nowMs = Date.now()): string {
+  return new Date(nowMs + TR_TEPE_DAY_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+export function tepeMansetImportanceScore(n: unknown, nowMs = Date.now()): number {
+  const item = n as {
+    isFeatured?: boolean;
+    isBreaking?: boolean;
+    isSiteManset?: boolean;
+    views?: number;
+  };
+  let score = 0;
+  if (item.isFeatured === true) score += 1000;
+  if (item.isBreaking === true) score += 400;
+  if (item.isSiteManset === true) score += 300;
+  if (isHmEditorManualNewsItem(n)) score += 200;
+  const views = Number(item.views ?? 0);
+  if (Number.isFinite(views) && views > 0) score += Math.min(views, 500);
+  const recency = newsItemRecencyMs(n);
+  if (recency > 0) {
+    const ageHours = (nowMs - recency) / 3_600_000;
+    if (Number.isFinite(ageHours) && ageHours >= 0) score += Math.max(0, 240 - ageHours);
+  }
+  return score;
+}
+
+function sortTepeByImportance<T>(items: readonly T[], nowMs: number): T[] {
+  return [...items].sort((a, b) => {
+    const delta = tepeMansetImportanceScore(b, nowMs) - tepeMansetImportanceScore(a, nowMs);
+    if (delta !== 0) return delta;
+    return newsItemRecencyMs(b) - newsItemRecencyMs(a);
+  });
+}
+
+function rotateByDayKey<T>(items: readonly T[], dayKey: string, take: number): T[] {
+  if (take <= 0) return [];
+  if (items.length <= take) return [...items];
+  let hash = 0;
+  for (let i = 0; i < dayKey.length; i += 1) hash = (hash * 31 + dayKey.charCodeAt(i)) >>> 0;
+  const offset = hash % items.length;
+  return [...items.slice(offset), ...items.slice(0, offset)].slice(0, take);
+}
+
+/**
+ * Tepe Manşet:
+ * 1) Görselli manuel / manşet haberleri önce
+ * 2) Manuel varsa karışık slayt (manuel sabit, otomatik slotlar güne göre)
+ * 3) Uygun manuel yoksa önem sırası + günlük otomatik yenileme
+ * 4) Resimsiz manuel asla seçilmez
+ */
 export function buildTepeMansetPool(opts: {
   items: readonly unknown[];
   limit?: number;
+  nowMs?: number;
 }): any[] {
   const limit = opts.limit ?? 5;
-  const pool = sortNewsByRecency(
-    filterHmMansetNews(filterHmEditorManualNews(opts.items)),
+  const nowMs = opts.nowMs ?? Date.now();
+  const withCover = opts.items.filter((item) => tepeMansetCoverOk(item));
+  const manuals = sortTepeByImportance(withCover.filter(isTepeMansetManualEligible), nowMs);
+  const dayKey = tepeMansetDayKey(nowMs);
+  const seen = new Set<string>();
+  const takeUnique = (pool: readonly unknown[], count: number): unknown[] => {
+    const out: unknown[] = [];
+    for (const item of pool) {
+      if (out.length >= count) break;
+      const key = newsKeyOf(item as Parameters<typeof newsKeyOf>[0]);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+    return out;
+  };
+
+  if (manuals.length === 0) {
+    const ranked = sortTepeByImportance(withCover, nowMs);
+    const window = ranked.slice(0, Math.max(limit * 3, limit));
+    return takeUnique(rotateByDayKey(window, `${dayKey}:auto`, window.length), limit);
+  }
+
+  const featuredManuals = manuals.filter(isHmMansetNewsItem);
+  const otherManuals = manuals.filter((item) => !isHmMansetNewsItem(item));
+  const selectedManuals = takeUnique([...featuredManuals, ...otherManuals], limit);
+  const remaining = limit - selectedManuals.length;
+  if (remaining <= 0) return selectedManuals;
+  const autoRanked = sortTepeByImportance(
+    withCover.filter((item) => !seen.has(newsKeyOf(item as Parameters<typeof newsKeyOf>[0]))),
+    nowMs,
   );
-  return pool.slice(0, limit);
+  const autoWindow = autoRanked.slice(0, Math.max(remaining * 3, remaining));
+  const autoPicks = rotateByDayKey(autoWindow, `${dayKey}:auto`, autoWindow.length);
+  return [...selectedManuals, ...takeUnique(autoPicks, remaining)];
 }
 
 export function isYekparePoolNewsItem(n: unknown): boolean {

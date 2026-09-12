@@ -60,6 +60,7 @@ import { ensureRssCampaignSchema } from "./lib/ensure-rss-campaign-schema.js";
 import { scheduleHmYekpareNewsStartupSync } from "./lib/hm-yekpare-news-sync.js";
 import { scheduleYektubeStartupRefresh } from "./routes/video.js";
 import { startYektubeVideoDailyScheduler } from "./lib/yektube-video-scheduler.js";
+import { startHmTepeMansetDailyScheduler } from "./lib/hm-tepe-manset-daily.js";
 import { bootstrapSiteMailboxFromEnv, startSiteMailboxAutoSync } from "./lib/siteMailbox.js";
 import { ensureGlobalMapNewsFeedsSeeded } from "./lib/global-map-news-feeds.js";
 import { getMediaUploadRoot } from "./lib/mediaUploadRoot";
@@ -546,7 +547,7 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[hm-editor-cross-site] HM_EDITOR_CROSS_SITE_REPAIR=0 — atlandı");
   }
 
-  // Tepe manşet: bir kerelik opt-in (tüm sitelerde varsayılan kapalı)
+  // Tepe manşet: bir kerelik default-on (tüm sitelerde açık)
   if (envJobFlag("HM_TEPE_MANSET_REPAIR", true)) {
     setTimeout(() => {
       void repairHmTepeMansetSystem()
@@ -555,6 +556,12 @@ const server = app.listen(port, listenHost, (err) => {
     }, 18_100).unref();
   } else {
     logger.info("[hm-tepe-manset] HM_TEPE_MANSET_REPAIR=0 — atlandı");
+  }
+
+  if (envJobFlag("HM_TEPE_MANSET_DAILY", true)) {
+    schedulerStops.push(startHmTepeMansetDailyScheduler(logger));
+  } else {
+    logger.info("[hm-tepe-manset-daily] HM_TEPE_MANSET_DAILY=0 — atlandı");
   }
 
   // Haber siteleri: RSS karma varsayılan açık; kurumsal sitelere RSS haber yazılmaz.

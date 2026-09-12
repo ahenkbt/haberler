@@ -66,6 +66,7 @@ import {
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
   parseHmNewsArticlePath,
+  parseHmNewsCategoryPath,
   isSharePreviewUserAgent,
   listKnownHmEditorSites,
   raceHmHtmlBoot,
@@ -121,7 +122,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "yektube.com",
   "www.yektube.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260802d";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260912a";
 
 const PORTAL_HOSTS = new Set([
   "ahenk.net.tr",
@@ -845,12 +846,14 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
         }),
       );
       if (boot) {
-        // skipPaint: avoid "Manşet yükleniyor…" overlay while React hydrates (same as article path)
-        html = injectHmHtmlBoot(html, { ...boot, skipPaint: true });
+        // Home: seed classic chrome into #root (logo/menu/market/numbered manşet).
+        // skipPaint stays on article path only — no "Manşet yükleniyor…" overlay.
+        html = injectHmHtmlBoot(html, { ...boot, skipPaint: false });
         out.set(
           "x-yekpare-hm-html-boot",
           `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
         );
+        out.set("x-yekpare-hm-first-paint", "classic");
         const hero = firstHmBootImageUrl(boot.bundle, incoming.origin);
         if (hero) out.append("Link", `<${hero}>; rel=preload; as=image`);
       }
@@ -918,15 +921,47 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
           }),
           articleSlug,
           articleBundle,
-          skipPaint: true,
+          paintKind: "article",
+          skipPaint: false,
         });
         out.set(
           "x-yekpare-hm-html-boot",
           articleBundle ? "article-cache" : boot?.fromCache ? "article-meta-cache" : "article-meta",
         );
+        if (articleBundle) out.set("x-yekpare-hm-first-paint", "article");
       }
     } catch (err) {
       console.error("[hm-html-boot/article]", String(err?.message || err).slice(0, 180));
+    }
+  } else if (incoming && parseHmNewsCategoryPath(incoming.pathname) && hmHostSlug && env) {
+    const categorySlug = parseHmNewsCategoryPath(incoming.pathname).slug;
+    try {
+      const origin = upstreamOrigin(env, incoming);
+      const boot = await withBudget(
+        raceHmHtmlBoot({
+          fetchApi,
+          origin,
+          env,
+          incoming,
+          cache: getHmEdgeCache(),
+          waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
+        }),
+      );
+      if (boot) {
+        html = injectHmHtmlBoot(html, {
+          ...boot,
+          categorySlug,
+          paintKind: "category",
+          skipPaint: false,
+        });
+        out.set(
+          "x-yekpare-hm-html-boot",
+          `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
+        );
+        out.set("x-yekpare-hm-first-paint", "category");
+      }
+    } catch (err) {
+      console.error("[hm-html-boot/category]", String(err?.message || err).slice(0, 180));
     }
   }
   return new Response(html, {

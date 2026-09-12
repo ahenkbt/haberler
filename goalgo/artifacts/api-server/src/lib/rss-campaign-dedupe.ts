@@ -42,6 +42,32 @@ export function campaignRequiresCoverImage(
   return urls.some((u) => u.includes("vatanhaber.net") && u.includes("ankara"));
 }
 
+/**
+ * SHA / Vatanhaber gece kampanyaları her hedef siteye ayrı `news` satırı yazar.
+ * Diğer kampanyalar shared RSS havuzuna tek merkez satır yazar.
+ */
+export function campaignWritesPerHmSite(campaign: {
+  tags?: string[] | null;
+  feeds?: unknown;
+  name?: string | null;
+}): boolean {
+  const tags = Array.isArray(campaign.tags) ? campaign.tags.map((t) => String(t).toLowerCase()) : [];
+  if (
+    tags.includes("midnight-tr") ||
+    tags.includes("sehirhaberajansi") ||
+    tags.includes(VATANHABER_ANKARA_CAMPAIGN_TAG)
+  ) {
+    return true;
+  }
+  const name = String(campaign.name ?? "");
+  if (name.includes("Şehir Haber Ajansı") || name.includes("Vatanhaber Ankara")) return true;
+  const feeds = Array.isArray(campaign.feeds) ? campaign.feeds : [];
+  return feeds.some((f) => {
+    const u = String(f ?? "").toLowerCase();
+    return u.includes("sehirhaberajansi.com.tr") || (u.includes("vatanhaber.net") && u.includes("ankara"));
+  });
+}
+
 export function isMidnightTrCampaign(campaign: {
   active?: boolean | null;
   tags?: string[] | null;
