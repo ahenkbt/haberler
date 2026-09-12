@@ -10,10 +10,9 @@ import { HmEditorProvider } from "./contexts/HmEditorContext";
 
 import { getResolvedApiBaseForClient } from "./lib/apiBase";
 
-import App from "./App";
-
 import { bootstrapYekpareDocumentTheme } from "./hooks/useYekpareTheme";
 import { purgeHmVisitorThemePreference } from "./lib/hmChromeThemePreference";
+import { shouldUseHmPublicApp } from "./lib/hmPublicAppEntry";
 
 import "./index.css";
 
@@ -104,21 +103,21 @@ void queryClient.prefetchQuery({
 bootstrapYekpareDocumentTheme();
 purgeHmVisitorThemePreference();
 
-createRoot(document.getElementById("root")!).render(
+const rootEl = document.getElementById("root")!;
+const host = window.location.hostname;
+const loadRoot = shouldUseHmPublicApp(host)
+  ? import("./HmPublicApp")
+  : import("./App");
 
-  <QueryClientProvider client={queryClient}>
-
-    <AuthProvider>
-
-      <HmEditorProvider>
-
-        <App />
-
-      </HmEditorProvider>
-
-    </AuthProvider>
-
-  </QueryClientProvider>,
-
-);
+void loadRoot.then(({ default: Root }) => {
+  createRoot(rootEl).render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <HmEditorProvider>
+          <Root />
+        </HmEditorProvider>
+      </AuthProvider>
+    </QueryClientProvider>,
+  );
+});
 

@@ -52,6 +52,22 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/leaflet") || id.includes("node_modules/@types/leaflet")) {
+            return "vendor-leaflet";
+          }
+          if (id.includes("node_modules/@tiptap") || id.includes("node_modules/prosemirror")) {
+            return "vendor-tiptap";
+          }
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/sip.js")) {
+            return "vendor-heavy";
+          }
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     port,

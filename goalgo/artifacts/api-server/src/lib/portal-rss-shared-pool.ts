@@ -25,6 +25,14 @@ export function expandFeedIdsForSharedPoolQuery(
   return [...ids];
 }
 
+/** Kampanya N site seçse de tek merkez satır yazılır; siteler okuma birleşiminde görür. */
+export function resolveRssCampaignSharedPublishTargets(
+  siteTargets: (number | null)[],
+): (number | null)[] {
+  if (!Array.isArray(siteTargets) || siteTargets.length === 0) return [];
+  return [null];
+}
+
 export function rssCampaignSharedFeedConfig(opts: {
   campaignId: number;
   categorySlug: string;

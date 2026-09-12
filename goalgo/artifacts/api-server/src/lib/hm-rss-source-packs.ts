@@ -10,7 +10,7 @@ export type HmRssSourcePackFlags = {
   dirilis?: boolean;
   birgun?: boolean;
   yerel?: boolean;
-  /** Her beslemeden son 5 benzersiz haber. */
+  /** Her beslemeden son 20 benzersiz haber (kategori havuzu). */
   karmaCek?: boolean;
 };
 
@@ -21,7 +21,7 @@ export type HmRssSourcePackFeed = {
   categoryKey: string;
 };
 
-export const HM_RSS_KARMA_MAX_ITEMS = 5;
+export const HM_RSS_KARMA_MAX_ITEMS = 20;
 
 const NTV: HmRssSourcePackFeed[] = [
   { id: "ntv-son-dakika", label: "Son Dakika", url: "https://www.ntv.com.tr/son-dakika.rss", categoryKey: "gundem" },

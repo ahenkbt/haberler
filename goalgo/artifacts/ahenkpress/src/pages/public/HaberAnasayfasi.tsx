@@ -91,7 +91,8 @@ import { HmSidebarBalancedGrid } from "@/components/HmSidebarBalancedGrid";
 import { HmNewsMansetSplit } from "@/components/HmNewsMansetSplit";
 import { HmMansetHomeIconBand } from "@/components/HmMansetHomeIconBand";
 import { HmFinanceWeatherPlacementBand } from "@/components/HmFinanceWeatherPlacementBand";
-import { HmRssNewsBand, type HmRssCategoryTab } from "@/components/HmRssNewsBand";
+import { type HmRssCategoryTab } from "@/components/HmRssNewsBand";
+import { markHmSpaReady } from "@/lib/hmSpaReady";
 import { CULTURE_PORTAL_ITEMS, HM_WAR_PAGES, NATIONAL_DAY_HIGHLIGHTS, corporateWarPath, culturePortalPath } from "@/lib/hmCorporateHeritage";
 import { HM_LAYOUT_UPDATED_EVENT } from "@/lib/hmLayoutUpdatedEvent";
 import { resolveSadeAccent, SADE_PUBLIC_POST_HERO_BODY_CLASS, YEKPARE_SADE_ACCENT } from "@/lib/yekpareSadeTheme";
@@ -2851,6 +2852,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const siteHasAnyNews = moduleSectionSourcePool.length > 0;
   const hasInstantNewsPool =
     latestMergedHasItems || hybridHeadlineReady || bundleInstantPool.length > 0;
+
+  useEffect(() => {
+    if (hasInstantNewsPool) markHmSpaReady();
+  }, [hasInstantNewsPool]);
   /** Hibrit önbellek / DB gelene kadar metin yerine skeleton veya sessiz bekleme. */
   const homeNewsBootstrapping =
     !dbNewsReady &&

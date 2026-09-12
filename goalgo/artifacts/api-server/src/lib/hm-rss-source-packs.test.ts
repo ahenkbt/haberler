@@ -25,8 +25,8 @@ describe("hm rss source packs", () => {
     expect(politika?.categoryKey).toBe("politika");
   });
 
-  it("karma çek 5 öğe; tanımsız layout’ta tüm paketler + karma açık", () => {
-    expect(HM_RSS_KARMA_MAX_ITEMS).toBe(5);
+  it("karma çek 20 öğe; tanımsız layout’ta tüm paketler + karma açık", () => {
+    expect(HM_RSS_KARMA_MAX_ITEMS).toBe(20);
     const unset = parseHmRssSourcePackFlags(undefined);
     expect(unset).toEqual(DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS);
     expect(parseHmRssSourcePackFlags({})).toEqual(DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS);

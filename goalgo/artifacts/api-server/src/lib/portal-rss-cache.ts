@@ -18,6 +18,7 @@ import {
 } from "./portal-rss-store.js";
 import { hmRssIntegrationModeFromLayout, readHmPublicLayout, type HmRssIntegrationMode } from "./hm-public-layout.js";
 import { isWithinRssPersistSlot } from "./rss-automation-control.js";
+import { expandFeedIdsForSharedPoolQuery } from "./portal-rss-shared-pool.js";
 
 /**
  * "Kutu içi RSS" (box scope) beslemeleri kalıcı DB havuzuna YAZILMAZ — canlı kalır.
@@ -410,7 +411,17 @@ async function collectCachedItems(
     return true;
   });
 
-  const cachedFeeds = await Promise.all(activeFeeds.map(async (feed) => ({ feed, cached: await readCache(feed.id) })));
+  const cachedFeeds = await Promise.all(
+    activeFeeds.map(async (feed) => {
+      const ids = expandFeedIdsForSharedPoolQuery([feed]);
+      let cached: FeedCachePayload | null = null;
+      for (const id of ids) {
+        cached = await readCache(id);
+        if (cached?.items?.length) break;
+      }
+      return { feed, cached };
+    }),
+  );
   for (const { cached } of cachedFeeds) {
     if (!cached) continue;
     for (const item of cached.items) all.push(item);
