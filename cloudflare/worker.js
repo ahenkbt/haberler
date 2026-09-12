@@ -1341,7 +1341,7 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
   }
 }
 
-const HM_ORIGIN_BUDGET_MS = 2_500;
+const HM_ORIGIN_BUDGET_MS = 12_000; // cold-start / yektube load: 2.5s was too tight → HM 503 origin-budget
 
 /**
  * Eski API: parseInt("2026-yili-...") → id 2026 (yanlış haber).
