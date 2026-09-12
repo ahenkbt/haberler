@@ -19,10 +19,10 @@ import {
 const router = Router();
 
 function panelAdminReadDb() {
-  return isYektubeDatabaseConfigured() ? getYektubeDbForRead() : db;
+  return isYektubeDatabaseConfigured ? getYektubeDbForRead() : db;
 }
 function panelAdminWriteDb() {
-  return isYektubeDatabaseConfigured() ? getYektubeDbForPrimaryWrite() : db;
+  return isYektubeDatabaseConfigured ? getYektubeDbForPrimaryWrite() : db;
 }
 
 
