@@ -1,3 +1,5 @@
+import { isHmCorporateLikeTheme } from "./hm-corporate-like-theme.js";
+
 /** Tüm HM sitelerde VKD/kurumsal şablon sızıntısını temizler (Neon layout_json). */
 export const HM_LAYOUT_SANITIZE_REV = "hm-layout-sanitize-20260727a";
 
@@ -29,10 +31,7 @@ function normalizeSlug(raw: unknown): string {
 }
 
 function isCorporateTheme(theme: unknown): boolean {
-  const t = String(theme ?? "")
-    .trim()
-    .toLowerCase();
-  return t === "corporate" || t === "kurumsal";
+  return isHmCorporateLikeTheme(theme);
 }
 
 function pathOnlyHref(href: unknown): string {

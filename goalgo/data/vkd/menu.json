@@ -7,6 +7,7 @@
     { "id": "vkd-menu-kur-baskan", "label": "Genel Başkan", "href": "/baskan", "parentId": "vkd-menu-kurumsal", "enabled": true },
     { "id": "vkd-menu-kur-faaliyetler", "label": "Faaliyetler", "href": "/faaliyetler", "parentId": "vkd-menu-kurumsal", "enabled": true },
     { "id": "vkd-menu-kur-dernegimiz", "label": "Derneğimiz", "href": "/kategori/dernegimiz", "parentId": "vkd-menu-kurumsal", "enabled": true },
+    { "id": "vkd-menu-kur-vakif", "label": "Vakfımız", "href": "/vakif", "parentId": "vkd-menu-kurumsal", "enabled": true },
     { "id": "vkd-menu-kur-isbirligi", "label": "İşbirliği", "href": "/isbirligi", "parentId": "vkd-menu-kurumsal", "enabled": true },
     { "id": "vkd-menu-kur-hizmet", "label": "Hizmet Bölgelerimiz", "href": "/hizmet-bolgesi", "parentId": "vkd-menu-kurumsal", "enabled": true },
     { "id": "vkd-menu-kur-hukuk", "label": "Hukuk ve Savunuculuk", "href": "/hukuk-savunuculuk", "parentId": "vkd-menu-kurumsal", "enabled": true },
@@ -25,6 +26,7 @@
     { "id": "vkd-menu-kah-vefa", "label": "Vefa Galerisi", "href": "/vefa-galerisi", "parentId": "vkd-menu-kahramanlar", "enabled": true },
     { "id": "vkd-menu-sosyal", "label": "SOSYAL HİZMETLER", "href": "#", "enabled": true },
     { "id": "vkd-menu-sos-haklar", "label": "Şehit-Gazi Hakları", "href": "/sehit-gazi-haklari", "parentId": "vkd-menu-sosyal", "enabled": true },
+    { "id": "vkd-menu-sos-burs", "label": "Burs Programı", "href": "/burs", "parentId": "vkd-menu-sosyal", "enabled": true },
     { "id": "vkd-menu-sos-uluslararasi", "label": "Uluslararası Ş-G Hakları", "href": "/uluslararasi-sehit-gazi-haklari", "parentId": "vkd-menu-sosyal", "enabled": true },
     { "id": "vkd-menu-sos-yurtici", "label": "Yurtiçi Kuruluşlar", "href": "/turkiye-sehit-gazi-dernekleri", "parentId": "vkd-menu-sosyal", "enabled": true },
     { "id": "vkd-menu-sos-yurtdisi", "label": "Yurtdışı Kuruluşlar", "href": "/dunya-sehit-gazi-kuruluslari", "parentId": "vkd-menu-sosyal", "enabled": true },
@@ -37,9 +39,16 @@
     { "id": "vkd-menu-tarih-kore", "label": "Kore Savaşı", "href": "/savaslar/kore-savasi", "parentId": "vkd-menu-tarih", "enabled": true },
     { "id": "vkd-menu-tarih-kibris", "label": "Kıbrıs Barış Harekâtı", "href": "/savaslar/kibris-baris-harekati", "parentId": "vkd-menu-tarih", "enabled": true },
     { "id": "vkd-menu-tarih-milli", "label": "Millî Günler", "href": "/milli-gunler", "parentId": "vkd-menu-tarih", "enabled": true },
+    { "id": "vkd-menu-tarih-kultur", "label": "Kültür Portalı", "href": "/kultur-portali", "parentId": "vkd-menu-tarih", "enabled": true },
+    { "id": "vkd-menu-ataturk", "label": "ATATÜRK", "href": "#", "enabled": true },
+    { "id": "vkd-menu-ataturk-kose", "label": "Atatürk Köşesi", "href": "/ataturk", "parentId": "vkd-menu-ataturk", "enabled": true },
+    { "id": "vkd-menu-ataturk-hayati", "label": "Atatürk'ün Hayatı", "href": "/ataturk/hayati", "parentId": "vkd-menu-ataturk", "enabled": true },
+    { "id": "vkd-menu-ataturk-kronoloji", "label": "Atatürk Kronolojisi", "href": "/ataturk/kronoloji", "parentId": "vkd-menu-ataturk", "enabled": true },
+    { "id": "vkd-menu-ataturk-ilkeler", "label": "Atatürk İlkeleri", "href": "/ataturk/ilkeler", "parentId": "vkd-menu-ataturk", "enabled": true },
+    { "id": "vkd-menu-ataturk-sozleri", "label": "Atatürk Sözleri", "href": "/ataturk/sozleri", "parentId": "vkd-menu-ataturk", "enabled": true },
     { "id": "vkd-menu-kunye", "label": "KÜNYE", "href": "/kunye", "enabled": true },
     { "id": "vkd-menu-talep-formu", "label": "TALEP FORMU", "href": "/talep-formu", "enabled": true },
     { "id": "vkd-menu-video-tv", "label": "Video TV", "href": "/video-tv", "enabled": true }
   ],
-  "hmCorporateMenuPrimaryOnly": true
+  "hmCorporateMenuPrimaryOnly": false
 }

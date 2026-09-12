@@ -3,6 +3,8 @@
  * Aktif paketin feed’leri site içi hibrit akışa eklenir; görseller harici URL olarak kalır.
  */
 
+import { isHmCorporateLikeTheme } from "./hm-corporate-like-theme.js";
+
 export type HmRssSourcePackId = "ntv" | "dirilis" | "birgun" | "yerel";
 
 export type HmRssSourcePackFlags = {
@@ -127,8 +129,7 @@ export function isHmRssKarmaDefaultsRevCurrent(raw: unknown): boolean {
 }
 
 function isCorporateHmVitrinTheme(theme: unknown): boolean {
-  const t = String(theme ?? "").trim().toLowerCase();
-  return t === "corporate" || t === "kurumsal";
+  return isHmCorporateLikeTheme(theme);
 }
 
 function packObjectHasAnyFlag(raw: unknown): raw is Record<string, unknown> {

@@ -1,3 +1,5 @@
+import { isHmCorporateLikeTheme } from "./hm-corporate-like-theme.js";
+
 /** VKD gibi sitelerde `hmExtraPages` HTML ile layout_json büyüyebilir; üst sınır import scriptleriyle uyumlu. */
 export const HM_LAYOUT_JSON_MAX_CHARS = 2_000_000;
 
@@ -20,10 +22,7 @@ export type HmLayoutKind = "corporate" | "news";
 export const HM_KNOWN_CORPORATE_SITE_SLUGS = ["vkd", "vatankahramanlari"] as const;
 
 export function isCorporateHmVitrinTheme(theme: unknown): boolean {
-  const t = String(theme ?? "")
-    .trim()
-    .toLowerCase();
-  return t === "corporate" || t === "kurumsal" || t === "vatan";
+  return isHmCorporateLikeTheme(theme);
 }
 
 export function isKnownCorporateHmSiteSlug(siteSlug: unknown): boolean {

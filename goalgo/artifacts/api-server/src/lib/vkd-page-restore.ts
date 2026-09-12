@@ -22,11 +22,14 @@ export const VKD_REQUIRED_MENU_IDS = [
   "vkd-menu-tarih-canakkale-sehit",
   "vkd-menu-kah-teror",
   "vkd-menu-kah-guvenlik",
+  "vkd-menu-ataturk",
+  "vkd-menu-ataturk-kose",
+  "vkd-menu-tarih-kultur",
   "vkd-menu-video-tv",
 ] as const;
 const LAYOUT_JSON_MAX = 1_000_000;
 export const VKD_PAGE_SYNC_VERSION = 7;
-export const VKD_MENU_SYNC_VERSION = 7;
+export const VKD_MENU_SYNC_VERSION = 8;
 
 /** Menü/footer'da link verilen kritik kurumsal sayfalar — eksikse geri yükleme tetiklenir. */
 export const VKD_REQUIRED_PAGE_SLUGS = [

@@ -15,6 +15,7 @@ import {
   isHmRssKarmaDefaultsRevCurrent,
   parseHmRssSourcePackFlags,
 } from "./hm-rss-source-packs.js";
+import { isHmCorporateLikeTheme } from "./hm-corporate-like-theme.js";
 
 export type PortalHybridRssFeedConfig = {
   id: string;
@@ -444,8 +445,7 @@ function parseActivatedCategorySlugs(layout: Record<string, unknown>): string[] 
  *  - Kurumsal site: genel kategoriler varsayılan PASİF (yalnızca kendi kategorileri + manuel haberleri).
  */
 export function isCorporateHmLayout(layout: Record<string, unknown>): boolean {
-  const t = String((layout as { hmVitrinTheme?: unknown }).hmVitrinTheme ?? "").trim().toLowerCase();
-  return t === "corporate" || t === "kurumsal";
+  return isHmCorporateLikeTheme((layout as { hmVitrinTheme?: unknown }).hmVitrinTheme);
 }
 
 export async function resolveHmHybridRssAccess(siteId: number): Promise<{

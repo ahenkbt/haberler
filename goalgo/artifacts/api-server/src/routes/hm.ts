@@ -106,6 +106,10 @@ import {
   resolveHmEditorCategoryId,
 } from "../lib/hm-editor-categories";
 import {
+  isHmCorporateLikeTheme,
+  resolveDefaultHmNewsSiteLayoutTheme,
+} from "../lib/hm-corporate-like-theme.js";
+import {
   assertHmLayoutJsonSize,
   hmLayoutTabIconUrl,
   mergeHmLayoutPatch,
@@ -547,14 +551,15 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     ? (incoming as Record<string, unknown>)
     : {};
   const theme = String(inc.hmVitrinTheme ?? "").trim().toLowerCase();
-  const isCorporate = theme === "corporate" || theme === "kurumsal";
+  const isCorporate = isHmCorporateLikeTheme(theme);
+  const defaultTheme = resolveDefaultHmNewsSiteLayoutTheme(theme);
   const boxRows = DEFAULT_HM_RSS_ROWS.map((row) => ({
     ...row,
     categoryKey: row.id,
   }));
   const siteRows = DEFAULT_HM_SITE_RSS_ROWS.map((row) => ({ ...row }));
   const base: Record<string, unknown> = {
-    hmVitrinTheme: isCorporate ? "corporate" : "esen",
+    hmVitrinTheme: defaultTheme,
     mansetVariant: "center-trio",
     hmChromeColorMode: "light",
     hmNewsHeaderMenuEnabled: true,

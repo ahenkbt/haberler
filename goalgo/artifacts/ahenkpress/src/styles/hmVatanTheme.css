@@ -49,12 +49,24 @@
   background: var(--vatan-ivory);
 }
 
-/* ── Chrome: logo + nav + footer ── */
+/* ── Chrome: logo + nav + footer — stored white bars must not win ── */
 [data-hm-vitrin-theme="vatan"] .hm-public-site-header,
-[data-hm-vitrin-theme="vatan"] [data-hm-chrome="logo-bar"] {
+[data-hm-vitrin-theme="vatan"] [data-hm-chrome="logo-bar"],
+[data-hm-vitrin-theme="vatan"] .hm-site-header-band,
+[data-hm-vitrin-theme="vatan"] .hm-site-header-band--contained-outer,
+[data-hm-vitrin-theme="vatan"] .hm-chrome-contained-shell {
   background: var(--vatan-navy-deep) !important;
+  background-color: var(--vatan-navy-deep) !important;
   color: #f6f1e8;
-  border-bottom: 1px solid rgba(201, 168, 76, 0.22);
+  box-shadow: none !important;
+  max-width: none !important;
+}
+
+[data-hm-vitrin-theme="vatan"] .hm-public-site-header img,
+[data-hm-vitrin-theme="vatan"] [data-hm-chrome="logo-bar"] img {
+  background: transparent !important;
+  box-shadow: none !important;
+  ring: none;
 }
 
 [data-hm-vitrin-theme="vatan"] .hm-news-nav-row,
@@ -119,8 +131,14 @@
   background: var(--vatan-ivory);
 }
 
+[data-hm-vitrin-theme="vatan"] .vatan-portal-home,
+[data-hm-vitrin-theme="vatan"] .vkv-corporate-home.vatan-portal-home {
+  max-width: none;
+}
+
 [data-hm-vitrin-theme="vatan"] .vkv-hero {
-  min-height: min(72vh, 640px);
+  min-height: min(88vh, 820px);
+  width: 100%;
   background: var(--vatan-navy-deep);
 }
 
@@ -142,6 +160,9 @@
 [data-hm-vitrin-theme="vatan"] .vkv-slide-title {
   font-family: var(--vatan-serif);
   font-weight: 700;
+  font-size: clamp(2.6rem, 6vw, 5.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
 }
 
 [data-hm-vitrin-theme="vatan"] .vkv-slide-title-accent {
@@ -160,33 +181,37 @@
   color: #fff8e8;
 }
 
-/* ── Memorial hub ── */
-.vatan-hub {
-  padding: clamp(28px, 4vw, 56px) 0 8px;
+/* ── Heritage portal (Çanakkale Tarihî Alan hissi: tam görsel kart) ── */
+.vatan-portal {
+  width: 100%;
 }
 
-.vatan-hub__intro {
+.vatan-portal__block {
+  padding: clamp(36px, 5vw, 72px) clamp(16px, 4vw, 48px);
+}
+
+.vatan-portal__intro {
   display: grid;
-  gap: 10px;
-  margin-bottom: 22px;
-  max-width: 42rem;
+  gap: 12px;
+  margin-bottom: 28px;
+  max-width: 40rem;
 }
 
 .vatan-hub__kicker {
   margin: 0;
   font-family: var(--vatan-sans, "Oswald", sans-serif);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--vatan-crimson);
+  color: var(--vatan-gold);
 }
 
 .vatan-hub__title {
   margin: 0;
   font-family: var(--vatan-serif, georgia, serif);
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
-  line-height: 1.15;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.05;
   color: var(--vatan-navy);
 }
 
@@ -201,88 +226,200 @@
   margin: 0;
   color: var(--vatan-muted);
   line-height: 1.75;
-  font-size: 0.98rem;
+  font-size: 1.05rem;
 }
 
-.vatan-hub__grid {
+.vatan-feat {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.vatan-mosaic {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
-.vatan-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  overflow: hidden;
-  background: #fff;
-  border: 1px solid #e6ddd0;
-  text-decoration: none;
-  color: inherit;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+.vatan-mosaic--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.vatan-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--vatan-crimson);
-  box-shadow: 0 14px 32px rgba(11, 28, 51, 0.1);
-}
-
-.vatan-card__media {
+.vatan-tile {
   position: relative;
-  aspect-ratio: 16 / 9;
+  display: block;
+  min-height: 280px;
   overflow: hidden;
-  background: var(--vatan-navy);
+  color: #fff8ee;
+  text-decoration: none;
+  background: #071422;
 }
 
-.vatan-card__media img {
+.vatan-tile--xl {
+  min-height: min(58vh, 520px);
+}
+
+.vatan-tile img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scale(1.02);
+  transition: transform 700ms ease;
 }
 
-.vatan-card__kicker {
+.vatan-tile:hover img {
+  transform: scale(1.07);
+}
+
+.vatan-tile__shade {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 4px 10px;
-  background: rgba(7, 20, 34, 0.78);
-  color: var(--vatan-gold-soft);
-  font-family: var(--vatan-sans, "Oswald", sans-serif);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 20, 34, 0.08) 20%, rgba(7, 20, 34, 0.82) 100%);
 }
 
-.vatan-card__body {
-  display: flex;
-  flex-direction: column;
+.vatan-tile__copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
   gap: 8px;
-  padding: 16px 16px 18px;
-  flex: 1;
+  padding: 28px 24px 24px;
 }
 
-.vatan-card__title {
-  margin: 0;
+.vatan-tile__kicker {
+  font-family: var(--vatan-sans, "Oswald", sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--vatan-gold-soft);
+}
+
+.vatan-tile__title {
   font-family: var(--vatan-serif, georgia, serif);
-  font-size: 1.2rem;
+  font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+  line-height: 1.1;
+}
+
+.vatan-tile__excerpt {
+  max-width: 36rem;
+  color: rgba(246, 241, 232, 0.78);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.vatan-find {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(40px, 6vw, 72px) clamp(16px, 4vw, 48px);
+  background:
+    linear-gradient(120deg, #071422 0%, #1a0c12 55%, #8c1a2e 140%);
+  color: #fff8ee;
+}
+
+.vatan-find h2 {
+  margin: 8px 0 10px;
+  font-family: var(--vatan-serif, georgia, serif);
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.vatan-find p {
+  margin: 0;
+  max-width: 34rem;
+  color: rgba(246, 241, 232, 0.78);
+  line-height: 1.7;
+}
+
+.vatan-find__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vatan-find__btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 22px;
+  background: var(--vatan-crimson);
+  color: #fff !important;
+  font-family: var(--vatan-sans, "Oswald", sans-serif);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.vatan-find__btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(232, 213, 163, 0.45);
+}
+
+.vatan-duyuru {
+  padding: clamp(36px, 5vw, 64px) clamp(16px, 4vw, 48px) 80px;
+}
+
+.vatan-duyuru__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 24px;
+  margin-bottom: 18px;
+}
+
+.vatan-duyuru__head h2 {
+  margin: 0;
+  flex: 1;
+  font-family: var(--vatan-serif, georgia, serif);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
   color: var(--vatan-navy);
 }
 
-.vatan-card__excerpt {
-  margin: 0;
-  flex: 1;
-  color: var(--vatan-muted);
-  font-size: 0.9rem;
-  line-height: 1.65;
+.vatan-duyuru__all {
+  font-family: var(--vatan-sans, "Oswald", sans-serif);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--vatan-crimson);
+  text-decoration: none;
 }
 
-.vatan-card__cta {
-  font-family: var(--vatan-sans, "Oswald", sans-serif);
-  font-size: 11px;
-  letter-spacing: 0.14em;
+.vatan-duyuru__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #e6ddd0;
+}
+
+.vatan-duyuru__list a {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e6ddd0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.vatan-duyuru__list time {
+  color: var(--vatan-gold);
+  font-size: 12px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--vatan-crimson);
+}
+
+.vatan-duyuru__list strong {
+  font-family: var(--vatan-serif, georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--vatan-navy);
 }
 
 /* ── Longform memorial pages ── */
@@ -298,6 +435,35 @@
   align-items: flex-end;
   background: #071422;
   overflow: hidden;
+}
+
+.vatan-hero--compact {
+  min-height: min(42vh, 360px);
+}
+
+.vatan-chip-nav {
+  gap: 8px;
+}
+
+.vatan-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(232, 213, 163, 0.35);
+  color: #fff8ee !important;
+  font-family: var(--vatan-sans, "Oswald", sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: rgba(7, 20, 34, 0.28);
+}
+
+.vatan-chip:hover,
+.vatan-chip--on {
+  border-color: var(--vatan-gold);
+  color: var(--vatan-gold-soft) !important;
+  background: rgba(140, 26, 46, 0.35);
 }
 
 .vatan-hero__img {
@@ -445,20 +611,77 @@ a.vatan-mini:hover {
   color: var(--vatan-crimson);
 }
 
-@media (max-width: 980px) {
-  .vatan-hub__grid {
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home {
+  margin: 0 !important;
+  padding: 0 clamp(16px, 4vw, 48px) clamp(36px, 5vw, 64px);
+}
+
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home > div {
+  background: #0b1c33 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: #fff8ee;
+}
+
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home blockquote {
+  color: var(--vatan-navy);
+}
+
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home cite,
+[data-hm-vitrin-theme="vatan"] .hm-ataturk-band--home a {
+  color: var(--vatan-crimson) !important;
+}
+
+[data-hm-vitrin-theme="vatan"] .vkv-culture-strip,
+[data-hm-vitrin-theme="vatan"] .vkv-info-tabs {
+  background: #fffdf8;
+  border-top: 1px solid #e6ddd0;
+}
+
+[data-hm-vitrin-theme="vatan"] .vkv-culture-strip-head span,
+[data-hm-vitrin-theme="vatan"] .vkv-info-kicker {
+  color: var(--vatan-gold);
+}
+
+[data-hm-vitrin-theme="vatan"] .vkv-culture-strip-head strong,
+[data-hm-vitrin-theme="vatan"] .vkv-info-head h2 {
+  color: var(--vatan-navy);
+  font-family: var(--vatan-serif);
+}
+
+@media (max-width: 1100px) {
+  .vatan-mosaic--four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+@media (max-width: 980px) {
+  .vatan-feat,
+  .vatan-mosaic,
+  .vatan-mosaic--four {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .vatan-tile--xl {
+    min-height: 360px;
+  }
+}
+
 @media (max-width: 640px) {
-  .vatan-hub__grid,
+  .vatan-feat,
+  .vatan-mosaic,
+  .vatan-mosaic--four,
   .vatan-mini-grid {
     grid-template-columns: 1fr;
   }
 
+  .vatan-duyuru__list a {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
   [data-hm-vitrin-theme="vatan"] .vkv-hero {
-    min-height: 70vw;
+    min-height: 78vw;
   }
 }
 
