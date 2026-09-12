@@ -134,6 +134,17 @@ export function filterNewsItemsWithUsableCover<T extends Parameters<typeof resol
   return items.filter((item) => newsItemHasUsableCover(item));
 }
 
+/**
+ * Prefer items with a real cover; if none have one, keep the original list
+ * so KH / text vitrin sections are not wiped to "Henüz haber yok".
+ */
+export function preferCoveredThenFallback<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
+  items: readonly T[],
+): T[] {
+  const covered = filterNewsItemsWithUsableCover(items);
+  return covered.length > 0 ? covered : [...items];
+}
+
 /** Hybrid / kategori kutusu sayfalama: kapaksız satırlar total’e girmez. */
 export function paginateNewsItemsWithUsableCover<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
   items: readonly T[],

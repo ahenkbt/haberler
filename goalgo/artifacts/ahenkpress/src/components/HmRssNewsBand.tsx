@@ -692,11 +692,17 @@ export function HmRssNewsBand({
                 return next;
               });
             };
+            const card = (
+              <Link href={newsHref(item)} className="hm-rss-news-band__card" data-hm-news-row>
+                {cardContent}
+              </Link>
+            );
+            if (!requireCoverImage) {
+              return <div key={item.id}>{card}</div>;
+            }
             return (
               <HmHomeCoverGate key={item.id} item={item} onHidden={hideCard}>
-                <Link href={newsHref(item)} className="hm-rss-news-band__card" data-hm-news-row>
-                  {cardContent}
-                </Link>
+                {card}
               </HmHomeCoverGate>
             );
           })}

@@ -23,7 +23,7 @@ import {
 } from "./hm-publish-groups.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
-import { filterNewsItemsWithUsableCover } from "./news-display-image.js";
+import { filterNewsItemsWithUsableCover, preferCoveredThenFallback } from "./news-display-image.js";
 import { HM_TEPE_MANSET_ITEM_COUNT, selectTepeMansetItems } from "./hm-tepe-manset-select.js";
 import {
   loadHomepageLocalPreferredNews,
@@ -441,14 +441,31 @@ export async function buildHmHomeBundle(
     );
     return [...localPicks, ...rest];
   })();
+  const featuredOut = localPref
+    ? preferCoveredThenFallback(featured.length > 0 ? featured : sectionPool).slice(0, limit)
+    : filterNewsItemsWithUsableCover(featured);
+  const tepeOut = localPref
+    ? preferCoveredThenFallback(tepeManset.length > 0 ? tepeManset : sectionPool).slice(
+        0,
+        HM_TEPE_MANSET_ITEM_COUNT,
+      )
+    : filterNewsItemsWithUsableCover(tepeManset);
+  const breakingOut = localPref
+    ? preferCoveredThenFallback(breaking.length > 0 ? breaking : sectionPool).slice(0, 15)
+    : filterNewsItemsWithUsableCover(breaking);
+  const popularOut = localPref
+    ? preferCoveredThenFallback(popular.length > 0 ? popular : sectionPool).slice(0, 12)
+    : filterNewsItemsWithUsableCover(popular);
   return {
     siteId,
-    featured: filterNewsItemsWithUsableCover(featured),
-    tepeManset: filterNewsItemsWithUsableCover(tepeManset),
-    manualEditor: filterNewsItemsWithUsableCover(manualEditor),
+    featured: featuredOut,
+    tepeManset: tepeOut,
+    manualEditor: localPref
+      ? preferCoveredThenFallback(manualEditor.length > 0 ? manualEditor : sectionPool).slice(0, limit)
+      : filterNewsItemsWithUsableCover(manualEditor),
     // Text list: keep items without covers so Öne Çıkanlar can still fill.
     centerHeadlines,
-    breaking: filterNewsItemsWithUsableCover(breaking),
-    popular: filterNewsItemsWithUsableCover(popular),
+    breaking: breakingOut,
+    popular: popularOut,
   };
 }

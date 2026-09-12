@@ -24,7 +24,17 @@ export const KH_SITE_SLUG = "kirsehirhaber";
 export const KH_DISPLAY_NAME = "KIRŞEHİR HABER PORTALI";
 export const KH_DOMAINS = ["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"] as const;
 /** Eski / alternatif slug'lar — yalnızca bulmak için; yazarken kanonik `kirsehirhaber` kullanılır. */
-const KH_LEGACY_SLUGS = ["kirsehirhaber", "kirsehir", "kh"] as const;
+export const KH_LEGACY_SLUGS = ["kirsehirhaber", "kirsehir", "kh"] as const;
+
+export function isKhNewsHost(domain: string | null | undefined): boolean {
+  const host = normalizeHost(domain);
+  return Boolean(host) && (KH_DOMAINS as readonly string[]).includes(host);
+}
+
+export function isKhNewsSlug(slug: string | null | undefined): boolean {
+  const s = normalizeSlug(slug);
+  return (KH_LEGACY_SLUGS as readonly string[]).includes(s);
+}
 
 export type KhSiteEnsureResult = {
   siteId: number | null;
@@ -315,20 +325,24 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
     layoutJson = defaultKhLayoutJson();
   }
 
-  await dualWriteUpdate(
-    hmNewsSitesTable,
-    {
-      slug: KH_SITE_SLUG,
-      displayName: target.displayName?.trim() || KH_DISPLAY_NAME,
-      domain: KH_DOMAINS[0],
-      domain2: KH_DOMAINS[1],
-      domain3: KH_DOMAINS[2],
-      layoutJson,
-      active: true,
-      updatedAt: new Date(),
-    },
-    eq(hmNewsSitesTable.id, target.id),
-  );
+  const khPatch = {
+    slug: KH_SITE_SLUG,
+    displayName: target.displayName?.trim() || KH_DISPLAY_NAME,
+    domain: KH_DOMAINS[0],
+    domain2: KH_DOMAINS[1],
+    domain3: KH_DOMAINS[2],
+    layoutJson,
+    active: true,
+    updatedAt: new Date(),
+  };
+  try {
+    await dualWriteUpdate(hmNewsSitesTable, khPatch, eq(hmNewsSitesTable.id, target.id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/unique|duplicate/i.test(msg)) throw err;
+    await releaseKhDomainsFromOthers(target.id);
+    await dualWriteUpdate(hmNewsSitesTable, khPatch, eq(hmNewsSitesTable.id, target.id));
+  }
   await ensureEditorForKh(target.id);
 
   return {

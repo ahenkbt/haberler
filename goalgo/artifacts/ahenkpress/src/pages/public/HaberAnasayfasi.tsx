@@ -1677,6 +1677,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   /** P1-1: HM anasayfa featured + breaking + popular tek istek. */
   const hmHomeBundleEnabled = siteId != null && !isCorporateTheme;
   const hmHomeBundleSlug = String(hmSlugProp ?? hmCtx?.slug ?? "").trim();
+  const khHomePref = useMemo(
+    () => resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId),
+    [hmHomeBundleSlug, layoutPrefs, siteId],
+  );
   const hmHomeBundleBoot = useMemo(
     () => (siteId != null && siteId > 0 ? readHmHomeBundleBoot(siteId) : undefined),
     [siteId],
@@ -2523,8 +2527,16 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
   const latestNewsPool = useMemo(
     () =>
-      sortNewsByRecency(mergeUniqueNews(bandNewsItems, allItems).filter(isHeadlineFreshEnough)).slice(0, 80),
-    [bandNewsItems, allItems],
+      sortNewsByRecency(
+        mergeUniqueNews(
+          asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
+          bandNewsItems,
+          allItems,
+          khHomePref ? asArray((latest as { items?: unknown })?.items) : [],
+          khHomePref ? asArray((latestBandRaw as { items?: unknown })?.items) : [],
+        ).filter(isHeadlineFreshEnough),
+      ).slice(0, 80),
+    [bandNewsItems, allItems, hmHomeBundle, khHomePref, latest, latestBandRaw],
   );
 
   const tumHaberlerHref = h(
@@ -3821,7 +3833,20 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         if (!effectiveLatestGridMain && !showLatestGridSidebar) return null;
 
         const latestGridTabPool = sortNewsByRecency(
-          mergeUniqueNews(hybridBootstrapMapped, hybridBandItems, bandNewsItems, allItems, popular),
+          mergeUniqueNews(
+            asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
+            hybridBootstrapMapped,
+            hybridBandItems,
+            bandNewsItems,
+            allItems,
+            popular,
+            khHomePref
+              ? asArray((latest as { items?: unknown } | undefined)?.items)
+              : [],
+            khHomePref
+              ? asArray((latestBandRaw as { items?: unknown } | undefined)?.items)
+              : [],
+          ),
         ).slice(0, 80);
         const latestGridItems = padNewsItemsToLimit(
           latestGridTabPool,
@@ -3842,7 +3867,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               titleHref={tumHaberlerHref}
               items={visible.length > 0 ? visible : latestGridTabPool}
               tabSourceItems={latestGridTabPool}
-              requireCoverImage
+              requireCoverImage={!khHomePref}
               categoryTabs={tabStripCats}
               initialCategorySlug=""
               accent={accent}

@@ -143,7 +143,7 @@ import {
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
-import { ensureKhNewsSite } from "../lib/hm-kh-site-ensure.js";
+import { ensureKhNewsSite, isKhNewsHost, isKhNewsSlug, KH_SITE_SLUG } from "../lib/hm-kh-site-ensure.js";
 import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import {
@@ -1032,6 +1032,13 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     }
     row = await getActiveHmNewsSiteBySlugCompat(slug);
   }
+  if ((!row || !row.active) && isKhNewsSlug(slug)) {
+    await ensureKhNewsSite({ dryRun: false }).catch(() => null);
+    row = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
+    if (!row || !row.active) {
+      row = await getActiveHmNewsSiteBySlugCompat(slug);
+    }
+  }
   if (!row || !row.active) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
@@ -1050,6 +1057,13 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
   if (!row && isKnownHmBrandDomain(host)) {
     await ensureHmBrandSiteForMeta({ domain: host }).catch(() => null);
     row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+  }
+  if (!row && isKhNewsHost(host)) {
+    await ensureKhNewsSite({ dryRun: false }).catch(() => null);
+    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+    if (!row) {
+      row = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
+    }
   }
   if (!row) {
     res.status(404).json({ error: "Site bulunamadı" });

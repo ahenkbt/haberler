@@ -829,8 +829,144 @@ async function ensureKhAuthorsClearedOnRow(sql, row) {
   return { ...row, layout_json: JSON.stringify(next) };
 }
 
+const KH_CANONICAL_DOMAINS = ["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"];
+
+function defaultKhLayoutJson() {
+  return JSON.stringify({
+    hmVitrinTheme: "esen",
+    mansetVariant: "center-trio",
+    showPlatformNav: false,
+    hmChromeColorMode: "light",
+    hmNewsHeaderMenuEnabled: true,
+    hmNewsSliderEnabled: true,
+    hmNewsTepeMansetEnabled: true,
+    hmNewsHomeModuleOrder: [
+      "tepeManset",
+      "hero",
+      "breakingBand",
+      "googleNewsBand",
+      "esenLeadPack",
+      "mansetAd",
+      "authorsStrip",
+      "latestGrid",
+    ],
+    hmNewsBreakingBandEnabled: true,
+    hmNewsGoogleNewsBandEnabled: true,
+    hmNewsCategorySectionsEnabled: true,
+    hmNewsQuickLinksEnabled: true,
+    hmNewsAuthorsEnabled: true,
+    hmNewsHorizontalAuthorsEnabled: true,
+    hmNewsSidebarAuthorsEnabled: true,
+    hmNewsSidebarEnabled: true,
+    hmNewsSidebarCategoriesEnabled: true,
+    hmNewsFooterEnabled: true,
+    hmNewsFooterCategoriesEnabled: true,
+    hmNewsEsenLeadPackEnabled: true,
+    hmNewsVideoTvEnabled: true,
+    sadeNewsCitiesBandEnabled: true,
+    hybridRssEnabled: true,
+    hmYekparePoolReceiveEnabled: true,
+    hmHomepageLocalCity: "kirsehir",
+    hmRssIntegrationMode: "live",
+    hmAllowCrossSiteManualNews: true,
+    hmFooterAboutHtml:
+      "Kırşehir Haber, kentin gündemini, yerel gelişmeleri ve Türkiye’den seçilmiş haberleri okuyucuya ulaştıran dijital haber platformudur.",
+  });
+}
+
+function rowLooksLikeKh(row) {
+  const slug = normalizeSlug(row?.slug);
+  if (slug === "kirsehirhaber" || slug === "kh" || slug === "kirsehir") return true;
+  for (const d of [row?.domain, row?.domain2, row?.domain3]) {
+    const host = normalizeHost(d);
+    if (KH_CANONICAL_DOMAINS.includes(host)) return true;
+  }
+  return false;
+}
+
+async function bindKhDomainsOnRow(sql, row) {
+  if (!sql || !row?.id || !rowLooksLikeKh(row)) return row;
+  const have = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(d));
+  const alreadyBound =
+    have[0] === KH_CANONICAL_DOMAINS[0] &&
+    have[1] === KH_CANONICAL_DOMAINS[1] &&
+    have[2] === KH_CANONICAL_DOMAINS[2];
+  if (alreadyBound && normalizeSlug(row.slug) === "kirsehirhaber") return row;
+
+  for (const host of KH_CANONICAL_DOMAINS) {
+    try {
+      await sql`
+        UPDATE hm_news_sites
+        SET domain = CASE WHEN lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${host} THEN NULL ELSE domain END,
+            domain2 = CASE WHEN lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${host} THEN NULL ELSE domain2 END,
+            domain3 = CASE WHEN lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) = ${host} THEN NULL ELSE domain3 END,
+            updated_at = NOW()
+        WHERE id <> ${row.id}
+      `;
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] kh domain release", String(err?.message || err).slice(0, 160));
+    }
+  }
+
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET slug = ${"kirsehirhaber"},
+          domain = ${KH_CANONICAL_DOMAINS[0]},
+          domain2 = ${KH_CANONICAL_DOMAINS[1]},
+          domain3 = ${KH_CANONICAL_DOMAINS[2]},
+          active = true,
+          updated_at = NOW()
+      WHERE id = ${row.id}
+    `;
+    return {
+      ...row,
+      slug: "kirsehirhaber",
+      domain: KH_CANONICAL_DOMAINS[0],
+      domain2: KH_CANONICAL_DOMAINS[1],
+      domain3: KH_CANONICAL_DOMAINS[2],
+      active: true,
+    };
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh domain bind", String(err?.message || err).slice(0, 200));
+    return row;
+  }
+}
+
+async function createKhSiteOnNeon(sql) {
+  const layout = defaultKhLayoutJson();
+  const contact = JSON.stringify({ phone: "", email: "editor@kirsehirhaber.org", address: "Kırşehir" });
+  try {
+    const rows = await sql`
+      INSERT INTO hm_news_sites (
+        slug, domain, domain2, domain3, display_name, description,
+        contact_json, layout_json, active, created_at, updated_at
+      ) VALUES (
+        ${"kirsehirhaber"},
+        ${KH_CANONICAL_DOMAINS[0]},
+        ${KH_CANONICAL_DOMAINS[1]},
+        ${KH_CANONICAL_DOMAINS[2]},
+        ${"KIRŞEHİR HABER PORTALI"},
+        ${"Kırşehir’in dijital haber platformu"},
+        ${contact}::jsonb,
+        ${layout}::jsonb,
+        true,
+        NOW(),
+        NOW()
+      )
+      RETURNING id, slug, domain, domain2, domain3, display_name, description,
+                contact_json, layout_json, active, created_at, updated_at
+    `;
+    return rows?.[0] || null;
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh site create", String(err?.message || err).slice(0, 200));
+    return null;
+  }
+}
+
 async function ensureKhSiteRow(sql, row) {
-  let next = await ensureKhVideoMenuOnRow(sql, row);
+  let next = await bindKhDomainsOnRow(sql, row);
+  next = await ensureKhVideoMenuOnRow(sql, next);
   next = await ensureKhAuthorsClearedOnRow(sql, next);
   next = await ensureHmLayoutSanitizedOnRow(sql, next);
   return next;
@@ -1268,6 +1404,18 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     if (bySlug?.[0]) {
       const row = await ensureKhSiteRow(sql, bySlug[0]);
       return { meta: serializeMetaRow(row), action: "lookup_slug" };
+    }
+  }
+
+  const isKhBinding =
+    binding.slug === "kirsehirhaber" ||
+    binding.slug === "kh" ||
+    KH_CANONICAL_DOMAINS.includes(host);
+  if (isKhBinding) {
+    const created = await createKhSiteOnNeon(sql);
+    if (created?.id) {
+      const row = await ensureKhSiteRow(sql, created);
+      return { meta: serializeMetaRow(row), action: "created_kh" };
     }
   }
 

@@ -73,14 +73,19 @@ function normalizeSiteSlug(value: unknown): string {
     .replace(/^\/+|\/+$/g, "");
 }
 
+function khPrefForViewer(siteId?: number | null): HmHomepageLocalPref {
+  const id = Number.isFinite(siteId) && (siteId as number) > 0 ? Math.trunc(siteId as number) : KIRSEHIR_HABER_SITE_ID;
+  return id === KIRSEHIR_HABER_SITE_ID ? KIRSEHIR_PREF : { ...KIRSEHIR_PREF, siteId: id };
+}
+
 export function resolveHomepageLocalPref(
   siteSlug: string | null | undefined,
   _layout?: unknown,
   siteId?: number | null,
 ): HmHomepageLocalPref | null {
   void _layout;
-  if (siteId === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
-  if (SLUG_TO_SITE_ID[normalizeSiteSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  if (siteId === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
+  if (SLUG_TO_SITE_ID[normalizeSiteSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
   return null;
 }
 
