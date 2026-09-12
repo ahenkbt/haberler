@@ -3496,7 +3496,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                         </Link>
                         </HmHomeCoverGate>
                       ))}
-                      {splitSidePlaceholderCount > 0}
+                      {splitSidePlaceholderCount > 0
                         ? Array.from({ length: splitSidePlaceholderCount }, (_, index) => (
                             <VitrinSideHeadlineSkeleton key={`split-side-sk-${index}`} className="min-h-[94px] lg:h-full" />
                           ))
