@@ -42,7 +42,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @workspace/api-server run build
 
 ENV NODE_ENV=production
-ENV CONTAINER_ROLL=hm-shared-rss-pool-20260912134240
+ENV CONTAINER_ROLL=hm-yektube-stub-20260912c
 
 EXPOSE 3000
 

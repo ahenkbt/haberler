@@ -26,6 +26,7 @@ import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { hmVitrinAccentHex } from "@/lib/hmVitrinThemeTokens";
 import { apiRequest } from "@/lib/queryClient";
 import { recommendationVideoTitle } from "@/lib/yektubeVideoClassify";
+import { fetchHmYektubeCatalog } from "@/lib/hmYektubeCatalogClient";
 import { hmPublicVideoTvHomeHref, hmPublicVideoTvWatchHref } from "@/lib/hmVideoTvPublicPaths";
 
 import "@/styles/hmIndexLanding.css";
@@ -178,14 +179,8 @@ export default function HmEditorIndexLandingPage({ onEnterSite }: Props) {
   });
 
   const { data: recentVideos = [] } = useQuery({
-    queryKey: ["/api/video/videos", "hm-index-landing"],
-    queryFn: async () => {
-      const params = new URLSearchParams({ limit: "4", excludeStories: "true", newsOnly: "true", mixChannels: "true" });
-      const res = await fetch(`/api/video/videos?${params}`);
-      if (!res.ok) return [];
-      const data = (await res.json()) as { items?: RecentVideo[] };
-      return data.items ?? [];
-    },
+    queryKey: ["/api/hm/yektube/videos", "hm-index-landing"],
+    queryFn: () => fetchHmYektubeCatalog({ limit: 4 }),
     staleTime: 120_000,
   });
 

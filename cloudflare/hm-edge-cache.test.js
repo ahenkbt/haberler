@@ -35,6 +35,8 @@ function memoryCache() {
 describe("hm-edge-cache", () => {
   it("caches public HM news APIs and skips fresh/page-content", () => {
     assert.equal(isHmEdgeCacheablePath("/api/hm/home-bundle", "slug=su"), true);
+    assert.equal(isHmEdgeCacheablePath("/api/hm/yektube/videos", "limit=36"), true);
+    assert.equal(isHmEdgeCacheablePath("/api/hm/yektube/categories", ""), true);
     assert.equal(isHmEdgeCacheablePath("/api/news/hybrid", "siteId=2&dbFirst=1"), true);
     assert.equal(
       isHmEdgeCacheablePath(

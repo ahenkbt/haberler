@@ -12,6 +12,8 @@ export const HM_EDGE_STATUS_HEADER = "x-yekpare-edge-cache";
 
 const CACHEABLE_EXACT = new Set([
   "/api/hm/home-bundle",
+  "/api/hm/yektube/videos",
+  "/api/hm/yektube/categories",
   "/api/news",
   "/api/news/hybrid",
   "/api/news/featured",
