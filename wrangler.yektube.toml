@@ -17,9 +17,9 @@ not_found_handling = "single-page-application"
 run_worker_first = true
 
 [vars]
-API_ORIGIN = ""
+API_ORIGIN = "https://ahenk.net.tr"
 SITE_PUBLIC_ORIGIN = "https://yektube.com"
-CONTAINER_ROLL = "yektube-goalgo-bind-no-delete-20260912"
+CONTAINER_ROLL = "yektube-api-via-ahenk-20260912"
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
