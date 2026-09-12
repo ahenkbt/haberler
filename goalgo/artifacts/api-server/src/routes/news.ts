@@ -17,7 +17,7 @@ import {
   UpdateNewsBody,
 } from "@workspace/api-zod";
 import { loadNewsContext, slugify } from "../lib/news-context";
-import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, isVisibleCentralPoolNewsForHmSite, readNewsPageBundleCache, resolveLocalSiteNewsBySlug, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
+import { buildNewsPageBundleFast, invalidateNewsPageBundleCache, isVisibleCentralPoolNewsForHmSite, readNewsPageBundleCache, resolveNewsArticleBySlug, wrapArticleAsNewsPageBundle, writeNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import {
   serializeHmMakaleAsNews,
   serializeHmMakaleListItem,
@@ -1023,183 +1023,20 @@ router.get("/news/:id", async (req, res): Promise<void> => {
       ? parseInt(String(siteIdRaw), 10)
       : NaN;
   const siteScoped = Number.isFinite(siteId) && siteId > 0;
-  const slugKeyFast = String(raw ?? "").trim();
-  if (siteScoped && slugKeyFast) {
-    try {
-      const local = await resolveLocalSiteNewsBySlug(slugKeyFast, siteId);
-      if (local) {
-        res.json(local);
-        return;
-      }
-    } catch (err) {
-      console.error("[news/:id/local]", err instanceof Error ? err.message : err);
-    }
-  }
-
-  const ctx = await loadNewsContext();
-  const readDb = getNewsDbForRead();
-  let isCorporate = false;
-  if (siteScoped) {
-    const site = await getHmNewsSiteByIdCompat(siteId);
-    isCorporate = isHmCorporateLayout(parseHmLayoutJson(site?.layoutJson != null ? String(site.layoutJson) : null));
-  }
-
-  // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." → yanlış id olmasın.
   const slugKey = String(raw ?? "").trim();
-  const numericId = /^\d+$/.test(slugKey) ? parseInt(slugKey, 10) : NaN;
-  let row: typeof newsTable.$inferSelect | undefined;
-  const acceptRowForSlug = (candidate: typeof newsTable.$inferSelect | undefined) => {
-    if (!candidate) return undefined;
-    if (Number.isNaN(numericId) && String(candidate.slug ?? "").trim() !== slugKey) return undefined;
-    return candidate;
-  };
-
-  if (!Number.isNaN(numericId)) {
-    [row] = await readDb
-      .select()
-      .from(newsTable)
-      .where(eq(newsTable.id, numericId));
-    if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
-      const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
-      if (!isHmPublishGroupSharedEditorNews(row, siteId, groupSiteIds)) row = undefined;
+  try {
+    // page-bundle ile aynı çözüm — exclusive-cat OR + görsel enrich asılmasın.
+    const article = await resolveNewsArticleBySlug(slugKey, siteScoped ? siteId : null);
+    if (article) {
+      res.json(article);
+      return;
     }
-  }
-
-  if (!row && siteScoped) {
-    const [siteLocal] = await readDb
-      .select()
-      .from(newsTable)
-      .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
-      .limit(1);
-    row = acceptRowForSlug(siteLocal);
-  }
-
-  if (!row && siteScoped && !isCorporate) {
-    try {
-      const resolved = await resolveNewsArticleBySlug(slugKey, siteId);
-      if (resolved) {
-        res.json(resolved);
-        return;
-      }
-    } catch (err) {
-      console.error("[news/:id/central-pool-early]", err instanceof Error ? err.message : err);
-    }
-  }
-
-  if (!row && siteScoped) {
-    const [scoped] = await readDb
-      .select()
-      .from(newsTable)
-      .where(and(eq(newsTable.slug, slugKey), await newsSiteScopeCondition(readDb, siteId)))
-      .limit(1);
-    row = acceptRowForSlug(scoped);
-  }
-
-  if (!row && siteScoped && isCorporate) {
-    const [corp] = await readDb
-      .select()
-      .from(newsTable)
-      .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
-      .limit(1);
-    row = acceptRowForSlug(corp);
-  }
-
-  if (!row && !siteScoped) {
-    const [portalRow] = await readDb
-      .select()
-      .from(newsTable)
-      .where(eq(newsTable.slug, slugKey));
-    row = acceptRowForSlug(portalRow);
-  }
-
-  let mak: typeof hmMakalelerTable.$inferSelect | undefined;
-  if (!row && Number.isFinite(siteId) && siteId > 0) {
-    const [m] = await getNewsDbForRead()
-      .select()
-      .from(hmMakalelerTable)
-      .where(and(eq(hmMakalelerTable.slug, slugKey), eq(hmMakalelerTable.siteId, siteId)))
-      .limit(1);
-    if (m && m.status === "published") mak = m;
-    if (!mak) {
-      const [mainM] = await mainDb
-        .select()
-        .from(hmMakalelerTable)
-        .where(and(eq(hmMakalelerTable.slug, slugKey), eq(hmMakalelerTable.siteId, siteId)))
-        .limit(1);
-      if (mainM && mainM.status === "published") mak = mainM;
-    }
-  }
-
-  if (!row && !mak) {
-    if (!Number.isNaN(numericId)) {
-      [row] = await mainDb.select().from(newsTable).where(eq(newsTable.id, numericId));
-      if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
-        const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
-        if (!isHmPublishGroupSharedEditorNews(row, siteId, groupSiteIds)) row = undefined;
-      }
-    }
-    if (!row && siteScoped) {
-      const [siteLocal] = await mainDb
-        .select()
-        .from(newsTable)
-        .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
-        .limit(1);
-      row = acceptRowForSlug(siteLocal);
-    }
-    if (!row && siteScoped && isCorporate) {
-      const [corp] = await mainDb
-        .select()
-        .from(newsTable)
-        .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
-        .limit(1);
-      row = acceptRowForSlug(corp);
-    }
-    if (!row && !siteScoped) {
-      const [portalRow] = await mainDb.select().from(newsTable).where(eq(newsTable.slug, slugKey));
-      row = acceptRowForSlug(portalRow);
-    }
-  }
-
-  if (!row && !mak) {
-    try {
-      const resolved = await resolveNewsArticleBySlug(slugKey, siteScoped ? siteId : null);
-      if (resolved) {
-        res.json(resolved);
-        return;
-      }
-    } catch (err) {
-      console.error("[news/:id/central-pool]", err instanceof Error ? err.message : err);
-    }
-    res.status(404).json({ error: "News not found" });
+  } catch (err) {
+    console.error("[news/:id]", err instanceof Error ? err.message : err);
+    res.status(500).json({ error: "Sunucu hatası" });
     return;
   }
-
-  if (mak) {
-    void dualWriteUpdate(
-      hmMakalelerTable,
-      { views: mak.views + 1 },
-      eq(hmMakalelerTable.id, mak.id),
-    ).catch((err) => console.error("[news/:id/views-makale]", err instanceof Error ? err.message : err));
-    const serialized = serializeHmMakaleAsNews({ ...mak, views: mak.views + 1 }, ctx);
-    res.json(serialized);
-    return;
-  }
-
-  if (siteScoped && !(await newsRowBelongsToSite(row!, siteId, readDb, isCorporate))) {
-    res.status(404).json({ error: "News not found" });
-    return;
-  }
-  void dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id)).catch((err) =>
-    console.error("[news/:id/views]", err instanceof Error ? err.message : err),
-  );
-  const serialized = serializeNews({ ...row!, views: row!.views + 1 }, ctx);
-  const isSiteLocal = row!.siteId != null && row!.siteId > 0;
-  if (siteScoped || isSiteLocal) {
-    res.json(serialized);
-    return;
-  }
-  const [enriched] = await enrichSerializedNewsListImages([serialized]);
-  res.json(enriched ?? serialized);
+  res.status(404).json({ error: "News not found" });
 });
 
 router.post("/news", async (req, res): Promise<void> => {

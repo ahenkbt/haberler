@@ -4,8 +4,8 @@ import { isHmReservedRouteSegment } from "@/lib/hmExtraPageLookup";
 
 /** Eski kısa yol: `/{siteSlug}/haber/{id}` → `/tr/{siteSlug}/haber/{id}` */
 export function HmShortHaberPathRedirect() {
-  const params = useParams<{ slug: string; id: string }>();
-  const slug = String(params.slug ?? "").trim();
+  const params = useParams<{ slug?: string; siteSlug?: string; id?: string }>();
+  const slug = String(params.siteSlug ?? params.slug ?? "").trim();
   const id = String(params.id ?? "").trim();
   if (!slug || !id || isHmReservedRouteSegment(slug)) {
     return (

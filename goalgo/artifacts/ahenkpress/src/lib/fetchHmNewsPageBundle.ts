@@ -1,5 +1,6 @@
 import { apiUrl } from "@/lib/apiBase";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
+import { hmNewsArticleSlugsMatch } from "@/lib/hmHaberPathSlug";
 import { readHmHomeBundleBoot } from "@/lib/hmHomeBundleBoot";
 import { readHmHomeHybridNewsCache } from "@/lib/hmHomeHybridNewsCache";
 
@@ -90,7 +91,10 @@ export function readHmNewsArticleBoot<TArticle extends { title?: string }>(
   const boot = window.__YEKPARE_HM_ARTICLE_BUNDLE__;
   if (!boot?.bundle || typeof boot.bundle !== "object") return undefined;
   const bootSlug = String(boot.slug || "").trim();
-  if (bootSlug && bootSlug !== slug) return undefined;
+  const articleSlug = String((boot.bundle as HmNewsPageBundle<TArticle>)?.article?.slug || "").trim();
+  if (bootSlug && !hmNewsArticleSlugsMatch(bootSlug, slug) && !hmNewsArticleSlugsMatch(articleSlug, slug)) {
+    return undefined;
+  }
   const bundle = boot.bundle as HmNewsPageBundle<TArticle>;
   if (!hasArticleTitle(bundle.article)) return undefined;
   return bundle;
@@ -111,7 +115,12 @@ async function fetchNewsArticlePair<TArticle extends { title?: string }>(
     retries: 0,
   });
   const articleP = fetchPublicJson<TArticle>(articleUrl, { timeoutMs: 8_000, retries: 0 });
-  return { bundled: await bundledP, article: await articleP };
+  const bundled = await bundledP;
+  // /api/news/:slug siteId ile 8sn asılı kalabiliyor; page-bundle geldiyse beklemeyin.
+  if (bundled.ok && (hasArticleTitle(bundled.data?.article) || bundled.data?.redirect?.location)) {
+    return { bundled, article: { ok: false, status: 0, data: null, retried: false } };
+  }
+  return { bundled, article: await articleP };
 }
 
 function bundleFromPair<TArticle extends { title?: string }>(

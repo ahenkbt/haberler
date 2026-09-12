@@ -82,6 +82,10 @@ import {
   rewriteSpaShellOgForHmHost,
   sanitizeOgShareImages,
   shouldInstantHmRootRedirect,
+  articleBundleFromPayload,
+  hmArticlePageBundleUrls,
+  HM_ARTICLE_BOOT_BUDGET_MS,
+  HM_HTML_BOOT_BUDGET_MS,
   HM_SOCIAL_OG_BUDGET_MS,
   withBudget,
 } from "./hm-html-boot.js";
@@ -871,14 +875,13 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     }
   } else if (articlePath && hmHostSlug && env && incoming) {
     const articleSlug = articlePath.slug;
-    out.append("Link", `</api/news/${encodeURIComponent(articleSlug)}>; rel=preload; as=fetch; crossorigin`);
     out.append(
       "Link",
       `</api/news/page-bundle/${encodeURIComponent(articleSlug)}>; rel=preload; as=fetch; crossorigin`,
     );
     try {
       const origin = upstreamOrigin(env, incoming);
-      const boot = await withBudget(
+      const bootP = withBudget(
         raceHmHtmlBoot({
           fetchApi,
           origin,
@@ -887,31 +890,35 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
           cache: getHmEdgeCache(),
           waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
         }),
+        HM_HTML_BOOT_BUDGET_MS,
       );
+      const originBundleP = withBudget(
+        fetchApi(env, `${origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}`, {
+          headers: { accept: "application/json" },
+        }).then(async (r) => (r && r.ok ? r.json().catch(() => null) : null)),
+        HM_ARTICLE_BOOT_BUDGET_MS,
+      );
+      const boot = await bootP;
       const edgeCache = getHmEdgeCache();
-      let articleBundle = null;
+      let articleBundle = articleBundleFromPayload(await originBundleP);
       const siteId = Number(boot?.siteId || 0);
-      const candidates = [];
-      if (Number.isFinite(siteId) && siteId > 0) {
-        candidates.push(
-          `${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}?siteId=${siteId}`,
-        );
-        candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}?siteId=${siteId}`);
-      }
-      candidates.push(`${incoming.origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}`);
-      candidates.push(`${incoming.origin}/api/news/${encodeURIComponent(articleSlug)}`);
+      const candidates = hmArticlePageBundleUrls(incoming.origin, articleSlug, siteId);
       for (const url of candidates) {
+        if (articleBundle) break;
         const hit = await matchHmEdgeCache(edgeCache, url);
         if (!hit?.ok) continue;
-        const json = await hit.clone().json().catch(() => null);
-        if (json?.article && String(json.article.title || "").trim()) {
-          articleBundle = json;
-          break;
-        }
-        if (json && String(json.title || "").trim()) {
-          articleBundle = wrapArticleAsPageBundle(json);
-          break;
-        }
+        articleBundle = articleBundleFromPayload(await hit.clone().json().catch(() => null));
+      }
+      if (!articleBundle && Number.isFinite(siteId) && siteId > 0) {
+        const scoped = await withBudget(
+          fetchApi(
+            env,
+            `${origin}/api/news/page-bundle/${encodeURIComponent(articleSlug)}?siteId=${siteId}`,
+            { headers: { accept: "application/json" } },
+          ).then(async (r) => (r && r.ok ? r.json().catch(() => null) : null)),
+          400,
+        );
+        articleBundle = articleBundleFromPayload(scoped);
       }
       if (!articleBundle && boot?.bundle) {
         const fromManset = headlineToArticle(
