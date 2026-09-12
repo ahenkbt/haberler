@@ -86,7 +86,12 @@ jobs:
             echo "::error::Cloudflare containers preflight failed (HTTP $status) for account $ACCOUNT_ID."
             exit 1
           fi
-          api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-containers-me.json 2>/dev/null || echo false)"
+          api_parse=0
+          api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-containers-me.json 2>/dev/null)" || api_parse=$?
+          if [ "$api_parse" -ne 0 ]; then
+            echo "::error::Cloudflare containers preflight returned an unreadable JSON response for account $ACCOUNT_ID."
+            exit 1
+          fi
           if [ "$api_success" != "true" ]; then
             echo "::error::Cloudflare containers preflight failed at API level for account $ACCOUNT_ID (success=false)."
             exit 1
@@ -350,7 +355,12 @@ jobs:
               echo "skip=true" >> "$GITHUB_OUTPUT"
               echo "::warning::Skipping yektube deploy: CLOUDFLARE_API_TOKEN lacks Workers Containers access for account $CLOUDFLARE_ACCOUNT_ID."
             elif [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
-              api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-yektube-me.json 2>/dev/null || echo false)"
+              api_parse=0
+              api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-yektube-me.json 2>/dev/null)" || api_parse=$?
+              if [ "$api_parse" -ne 0 ]; then
+                echo "::error::Cloudflare containers preflight returned an unreadable JSON response for yektube deploy."
+                exit 1
+              fi
               if [ "$api_success" != "true" ]; then
                 echo "::error::Cloudflare containers preflight failed at API level for yektube deploy (success=false)."
                 exit 1
