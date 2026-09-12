@@ -26,7 +26,7 @@ run_worker_first = true
 # Boş = aynı origin /api → Container. onrender.com kullanılmaz.
 API_ORIGIN = ""
 # Warm container'ı yeni imaja almak için (Ahenk marka + ayarlar).
-CONTAINER_ROLL = "api-origin-budget-120s-20260912"
+CONTAINER_ROLL = "hm-skip-paint-no-spot-20260912"
 # KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 # Medya: Worker hesabında R2 kapalı (API 10042). Binding, Dashboard'da R2 açılınca eklenir.

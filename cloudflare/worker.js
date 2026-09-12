@@ -845,7 +845,8 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
         }),
       );
       if (boot) {
-        html = injectHmHtmlBoot(html, boot);
+        // skipPaint: avoid "Manşet yükleniyor…" overlay while React hydrates (same as article path)
+        html = injectHmHtmlBoot(html, { ...boot, skipPaint: true });
         out.set(
           "x-yekpare-hm-html-boot",
           `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
@@ -1332,7 +1333,7 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
     const payload = isNewsPageBundlePath(path) ? wrapArticleAsPageBundle(article) : article;
     const headers = new Headers({
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=30, s-maxage=90, stale-while-revalidate=300",
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
       "x-yekpare-frontend": FRONTEND_TAG,
       "x-yekpare-page-bundle-recover": "home-bundle",
     });
@@ -2862,7 +2863,8 @@ export default {
               .catch(() => null),
           );
         }
-        return rememberPublicApi(homeFill);
+        // Recovered manset stub must NOT enter public edge cache (spot≠full content)
+        return homeFill;
       }
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
