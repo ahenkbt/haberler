@@ -14,6 +14,7 @@ describe("homepage local pref", () => {
     expect(resolveHomepageLocalPref("kirsehirhaber")?.cityKey).toBe("kirsehir");
     expect(resolveHomepageLocalPref("kh")?.cityKey).toBe("kirsehir");
     expect(resolveHomepageLocalPref(null, null, 494)?.siteId).toBe(494);
+    expect(resolveHomepageLocalPref("kirsehirhaber", null, 506)?.siteId).toBe(506);
     expect(resolveHomepageLocalPref("asg")).toBeNull();
     expect(resolveHomepageLocalPref("ankarahabergundemi")).toBeNull();
     expect(resolveHomepageLocalPref("asg", { hmHomepageLocalCity: "kirsehir" })).toBeNull();

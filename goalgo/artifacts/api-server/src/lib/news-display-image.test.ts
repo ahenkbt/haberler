@@ -4,6 +4,7 @@ import {
   isUsableNewsCoverUrl,
   newsItemHasUsableCover,
   paginateNewsItemsWithUsableCover,
+  preferCoveredThenFallback,
 } from "./news-display-image.js";
 
 describe("anasayfa kapak filtresi", () => {
@@ -39,6 +40,22 @@ describe("anasayfa kapak filtresi", () => {
     expect(page.total).toBe(3);
     expect(page.items.map((item) => item.title)).toEqual(["A", "C"]);
     expect(paginateNewsItemsWithUsableCover(items, 2, 2).items.map((item) => item.title)).toEqual(["E"]);
+  });
+
+  it("keeps coverless rows when no usable cover exists (KH vitrin fallback)", () => {
+    const coverless = [
+      { title: "Kırşehir haber", imageUrl: null },
+      { title: "Yerel", imageUrl: "" },
+    ];
+    expect(preferCoveredThenFallback(coverless).map((item) => item.title)).toEqual([
+      "Kırşehir haber",
+      "Yerel",
+    ]);
+    const mixed = [
+      { title: "Boş", imageUrl: "" },
+      { title: "Kapak", imageUrl: "https://cdn.example.com/k.jpg" },
+    ];
+    expect(preferCoveredThenFallback(mixed).map((item) => item.title)).toEqual(["Kapak"]);
   });
 });
 

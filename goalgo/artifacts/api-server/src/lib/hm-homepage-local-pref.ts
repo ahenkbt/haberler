@@ -81,15 +81,20 @@ function normalizeSlug(value: unknown): string {
     .replace(/^\/+|\/+$/g, "");
 }
 
-/** Site 494 / kirsehirhaber only — layout overrides on other slugs are ignored. */
+function khPrefForViewer(siteId?: number | null): HmHomepageLocalPref {
+  const id = Number.isFinite(siteId) && (siteId as number) > 0 ? Math.trunc(siteId as number) : KIRSEHIR_HABER_SITE_ID;
+  return id === KIRSEHIR_HABER_SITE_ID ? KIRSEHIR_PREF : { ...KIRSEHIR_PREF, siteId: id };
+}
+
+/** Kırşehir Haber only — layout overrides on other slugs are ignored. Viewer siteId wins when provided. */
 export function resolveHomepageLocalPref(
   siteSlug: string | null | undefined,
   _layout?: Record<string, unknown> | null,
   siteId?: number | null,
 ): HmHomepageLocalPref | null {
   void _layout;
-  if (siteId === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
-  if (SLUG_TO_SITE_ID[normalizeSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  if (siteId === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
+  if (SLUG_TO_SITE_ID[normalizeSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
   return null;
 }
 

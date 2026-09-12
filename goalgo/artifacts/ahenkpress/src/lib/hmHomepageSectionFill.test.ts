@@ -25,6 +25,21 @@ describe("hmHomepageSectionFill", () => {
     expect(resolveHomepageLocalPref("asg", { hmHomepageLocalCity: "kirsehir" })).toBeNull();
     expect(resolveHomepageLocalPref("kirsehirhaber")?.cityKey).toBe("kirsehir");
     expect(resolveHomepageLocalPref(null, null, 494)?.siteId).toBe(494);
+    expect(resolveHomepageLocalPref("kirsehirhaber", null, 506)?.siteId).toBe(506);
+  });
+
+  it("fills Öne Çıkanlar left column from coverless backfill", () => {
+    const { left, right } = pickEsenLeadPackColumns({
+      pool: [],
+      backfillPool: [
+        item(1, "Kırşehir emniyet", "gundem", { imageUrl: null }),
+        item(2, "Mucur haberi", "yerel", { imageUrl: "" }),
+      ],
+      leftCount: 6,
+      rightCount: 2,
+    });
+    expect(left.length).toBeGreaterThan(0);
+    expect(right).toHaveLength(0);
   });
 
   it("fills Öne Çıkanlar left column from backfill when unused pool is empty", () => {
