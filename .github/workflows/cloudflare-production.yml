@@ -236,6 +236,7 @@ jobs:
           echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
 
       - name: Sync YEKTUBE Worker secrets
+        continue-on-error: true
         # Neon cutover sonrası DATABASE_URL sync skip olsa bile YEKTUBE_* kaybolmasın
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
         env:
@@ -303,8 +304,9 @@ jobs:
 
   deploy-yektube:
     name: Deploy Yektube Worker
+    needs: deploy
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' && needs.deploy.result == 'success' }}
     steps:
       - uses: actions/checkout@v6
       - name: Skip without token
