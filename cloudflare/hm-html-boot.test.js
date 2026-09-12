@@ -227,6 +227,23 @@ describe("hm-html-boot", () => {
     assert.equal(html.includes("Manşet yükleniyor"), false);
   });
 
+  it("prefers home-bundle tepeManset for classic first-paint headlines", () => {
+    const html = buildHmClassicHomePaintHtml({
+      slug: "vatanhaber",
+      host: "vatanhaber.net",
+      meta: { displayName: "Vatan Haber" },
+      bundle: {
+        tepeManset: [{ title: "Tepe manşet haber", slug: "tepe-haber", imageUrl: "https://cdn.example/tepe.jpg" }],
+        featured: [{ title: "Eski featured", slug: "eski-featured", imageUrl: "https://cdn.example/old.jpg" }],
+      },
+    });
+    assert.match(html, /Tepe manşet haber/);
+    assert.match(html, /tepe-haber/);
+    assert.ok(html.indexOf("Tepe manşet haber") < html.indexOf("Eski featured"));
+    assert.equal(html.includes("Manşet yükleniyor"), false);
+    assert.match(html, /data-hm-first-paint="classic"/);
+  });
+
   it("raceHmHtmlBoot prefers edge cache and does not wait on origin", async () => {
     const cache = {
       store: new Map(),

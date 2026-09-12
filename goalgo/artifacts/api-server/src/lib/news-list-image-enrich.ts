@@ -10,6 +10,10 @@ import {
   type NewsListImageEnrichInput,
 } from "./news-list-image-enrich-logic.js";
 import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
+import {
+  persistNewsImageUrl,
+  shouldBackfillMissingRssNewsImage,
+} from "./hm-rss-missing-image.js";
 
 export type { NewsListImageEnrichInput } from "./news-list-image-enrich-logic.js";
 export { isSiteLocalNewsRow, shouldRefreshNewsListImageFromSource } from "./news-list-image-enrich-logic.js";
@@ -155,7 +159,7 @@ async function enrichSerializedNewsListImagesUnsafe<T extends NewsListImageEnric
   const seenPool = new Set<string>();
 
   for (const item of items) {
-    if (!shouldRefreshNewsListImageFromSource(item)) continue;
+    if (!shouldRefreshNewsListImageFromSource(item) && !shouldBackfillMissingRssNewsImage(item)) continue;
     if (isCorporateOriginCentralNewsRef(item.rssSourceUrl, corporateSiteIds)) continue;
     const poolRef = parseHmPoolRef(item.rssSourceUrl);
     if (poolRef) {
@@ -175,8 +179,11 @@ async function enrichSerializedNewsListImagesUnsafe<T extends NewsListImageEnric
     loadPoolRefSourceImages(poolRefs),
   ]);
 
-  return items.map((item) => {
-    if (!shouldRefreshNewsListImageFromSource(item)) return item;
+  const persistIds: Array<{ id: number; imageUrl: string }> = [];
+  const nextItems = items.map((item) => {
+    const refresh = shouldRefreshNewsListImageFromSource(item);
+    const backfill = shouldBackfillMissingRssNewsImage(item);
+    if (!refresh && !backfill) return item;
     if (isCorporateOriginCentralNewsRef(item.rssSourceUrl, corporateSiteIds)) return item;
 
     let candidate: string | null = null;
@@ -191,8 +198,15 @@ async function enrichSerializedNewsListImagesUnsafe<T extends NewsListImageEnric
 
     const current = normalizeListImageUrl(resolveNewsItemImageUrl(item));
     if (current === candidate) return item;
+    if (backfill && Number.isFinite(item.id) && item.id > 0) {
+      persistIds.push({ id: item.id, imageUrl: candidate });
+    }
     return { ...item, imageUrl: candidate };
   });
+  if (persistIds.length > 0) {
+    void Promise.allSettled(persistIds.map((row) => persistNewsImageUrl(row.id, row.imageUrl)));
+  }
+  return nextItems;
 }
 
 /** Editör Yekpare havuzundan gizlenen merkez haber id'leri. */

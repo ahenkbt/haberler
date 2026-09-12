@@ -1234,8 +1234,8 @@ export function resolveHmNewsEditorModuleEnabled(
     case "hero":
       return p.hmNewsSliderEnabled !== false;
     case "tepeManset":
-      // Varsayılan kapalı — editör panelden açar
-      return p.hmNewsTepeMansetEnabled === true;
+      // Varsayılan açık — editör panelden kapatabilir
+      return p.hmNewsTepeMansetEnabled !== false;
     case "mansetAd":
       return p.hmNewsMansetAdModuleEnabled !== false;
     case "authorsStrip":
@@ -2621,7 +2621,7 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsIndexLandingEnabled: false,
   hmNewsYekpareFeaturesEnabled: false,
   hmNewsSliderEnabled: true,
-  hmNewsTepeMansetEnabled: false,
+  hmNewsTepeMansetEnabled: true,
   hmNewsRssHeadlineEnabled: false,
   hmNewsBreakingBandEnabled: true,
   hmNewsGoogleNewsBandEnabled: false,
@@ -3473,8 +3473,8 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsIndexLandingEnabled: normalizeDefaultHiddenToggle(newsIndexLandingEnabledRaw),
       hmNewsYekpareFeaturesEnabled: normalizeDefaultHiddenToggle(newsYekpareFeaturesEnabledRaw),
       hmNewsSliderEnabled: normalizeDefaultVisibleToggle(newsSliderEnabledRaw),
-      /** Tepe manşet: varsayılan kapalı — editör panelden açar */
-      hmNewsTepeMansetEnabled: normalizeDefaultHiddenToggle(newsTepeMansetEnabledRaw),
+      /** Tepe manşet: varsayılan açık — layout'ta açıkça false ise kapalı */
+      hmNewsTepeMansetEnabled: normalizeDefaultVisibleToggle(newsTepeMansetEnabledRaw),
       hmTepeMansetOptInRev,
       hmNewsRssHeadlineEnabled: normalizeDefaultHiddenToggle(newsRssHeadlineEnabledRaw),
       hmNewsBreakingBandEnabled: normalizeDefaultVisibleToggle(newsBreakingBandEnabledRaw),

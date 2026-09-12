@@ -18,6 +18,7 @@ import {
 } from "./hm-corporate-news-policy.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
+import { HM_TEPE_MANSET_ITEM_COUNT, selectTepeMansetItems } from "./hm-tepe-manset-select.js";
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
@@ -297,6 +298,7 @@ async function loadPopularForSite(
 export type HmHomeBundle = {
   siteId: number;
   featured: SerializedNewsListItem[];
+  tepeManset: SerializedNewsListItem[];
   manualEditor: SerializedNewsListItem[];
   centerHeadlines: SerializedNewsListItem[];
   breaking: SerializedNewsListItem[];
@@ -364,5 +366,9 @@ export async function buildHmHomeBundle(
     popular = filterPublicEditorNewsItems(popular, siteId, false);
   }
   const centerHeadlines = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
-  return { siteId, featured, manualEditor, centerHeadlines, breaking, popular };
+  const tepeManset = selectTepeMansetItems(
+    [...featured, ...siteMansetEditor, ...latestEditor, ...breaking, ...popular],
+    HM_TEPE_MANSET_ITEM_COUNT,
+  );
+  return { siteId, featured, tepeManset, manualEditor, centerHeadlines, breaking, popular };
 }

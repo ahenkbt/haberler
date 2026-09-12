@@ -56,15 +56,16 @@ describe("manset pools", () => {
     imageUrl: "https://example.com/r.jpg",
   };
 
-  it("tepe manşet yalnızca isFeatured — eski manuel kalır", () => {
+  it("tepe manşet görselli isFeatured manuel haberi önce seçer", () => {
     const pool = buildTepeMansetPool({
       items: [featuredOld, latestA, latestB, rss],
       limit: 5,
     });
-    expect(pool.map((x) => x.id)).toEqual([1]);
+    expect(pool[0]?.id).toBe(1);
+    expect(pool.map((x) => x.id)).toEqual(expect.arrayContaining([1]));
   });
 
-  it("tepe manşet harici RSS kaynaklı isFeatured haberleri eler", () => {
+  it("tepe manşet harici RSS kaynaklı isFeatured haberleri manuel saymaz", () => {
     const featuredRss = {
       id: 9,
       title: "RSS manşet kaçak",
@@ -77,7 +78,34 @@ describe("manset pools", () => {
       items: [featuredOld, featuredRss, rss],
       limit: 5,
     });
-    expect(pool.map((x) => x.id)).toEqual([1]);
+    expect(pool[0]?.id).toBe(1);
+    expect(pool.some((x) => x.id === 9 && pool[0]?.id === 9)).toBe(false);
+  });
+
+  it("tepe manşet resimsiz manuel haberi eler ve önem ile doldurur", () => {
+    const noImageManual = {
+      id: 77,
+      title: "Resimsiz manuel",
+      isEditorManual: true,
+      isFeatured: true,
+      createdAt: hoursAgoIso(1),
+      imageUrl: "",
+    };
+    const pool = buildTepeMansetPool({
+      items: [noImageManual, latestA, latestB],
+      limit: 5,
+    });
+    expect(pool.map((x) => x.id)).not.toContain(77);
+    expect(pool.map((x) => x.id)).toEqual(expect.arrayContaining([2, 3]));
+  });
+
+  it("tepe manşet uygun manuel yoksa önem sırasıyla otomatik dolar", () => {
+    const pool = buildTepeMansetPool({
+      items: [latestA, latestB, rss],
+      limit: 3,
+    });
+    expect(pool.length).toBeGreaterThan(0);
+    expect(pool.every((x) => x.imageUrl)).toBe(true);
   });
 
   it("site manşet seçilmemişse son haberleri seçer (RSS hariç)", () => {
