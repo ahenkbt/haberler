@@ -12,13 +12,15 @@ function trDate(hour: number, minute: number): Date {
 }
 
 describe("RSS kampanya 00:00 TR slot", () => {
-  it("gece 00:00 TR penceresinde çalışır, 01:00 portal persist ile çakışmaz", () => {
+  it("gece 00:00 TR penceresinde çalışır, 02:00/09:00 portal persist ile çakışmaz", () => {
     expect(RSS_CAMPAIGN_MIDNIGHT_HOUR_TR).toBe(0);
     expect(isWithinRssCampaignMidnightSlot(trDate(0, 0))).toBe(true);
     expect(isWithinRssCampaignMidnightSlot(trDate(0, 19))).toBe(true);
     expect(isWithinRssCampaignMidnightSlot(trDate(0, 21))).toBe(false);
     expect(isWithinRssCampaignMidnightSlot(trDate(1, 5))).toBe(false);
-    expect(isWithinRssPersistSlot(trDate(1, 5))).toBe(true);
+    expect(isWithinRssCampaignMidnightSlot(trDate(2, 5))).toBe(false);
+    expect(isWithinRssPersistSlot(trDate(2, 5))).toBe(true);
+    expect(isWithinRssPersistSlot(trDate(9, 5))).toBe(true);
     expect(isWithinRssPersistSlot(trDate(0, 5))).toBe(false);
   });
 

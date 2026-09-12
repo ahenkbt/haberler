@@ -1,6 +1,6 @@
 /**
  * RSS kampanya gece 00:00 Europe/Istanbul — SHA (ASG+AHG) + Vatanhaber Ankara.
- * Portal saatlik / 01:00 kalıcı RSS otomasyonuna dokunmaz.
+ * Portal saatlik / 02:00+09:00 TR kalıcı RSS otomasyonuna dokunmaz.
  */
 import type { Logger } from "pino";
 import { getNewsDbForRead, rssCampaignsTable } from "@workspace/db";
