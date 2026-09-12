@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, isNotNull } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, isNotNull, or } from "drizzle-orm";
 import {
   getNewsDbForRead,
   dualWriteInsert,
@@ -23,10 +23,22 @@ import { mirrorRssImportImageUrl } from "./portal-rss-image-mirror.js";
 import { logger } from "./logger";
 import { ensureRssCampaignSchema } from "./ensure-rss-campaign-schema.js";
 import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
+import { resolveHmEditorCategoryId } from "./hm-editor-categories.js";
+import { categorySlugFromShaFeed } from "./hm-sha-rss-feeds.js";
+import {
+  campaignRequiresCoverImage,
+  findDuplicateNews,
+  newsHasCoverImage,
+  rssCampaignItemLimit,
+  shouldUpgradeMissingImage,
+  sortByPublishedAtAsc,
+  type RssDedupeNewsRow,
+} from "./rss-campaign-dedupe.js";
 
 export type RssCampaignRunResult = {
   added: number;
   skipped: number;
+  upgraded: number;
   errors: number;
   message?: string;
 };
@@ -79,71 +91,57 @@ function resolveCampaignRssContent(item: {
   return `<p>${item.rssSpot}</p>`;
 }
 
-async function loadExistingSourceUrlsBySite(
+async function loadExistingNewsBySite(
   siteTargets: (number | null)[],
-): Promise<Map<string, Set<string>>> {
-  const out = new Map<string, Set<string>>();
+): Promise<Map<string, RssDedupeNewsRow[]>> {
+  const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const out = new Map<string, RssDedupeNewsRow[]>();
   for (const siteId of siteTargets) {
-    const cond =
-      siteId == null ? isNull(newsTable.siteId) : eq(newsTable.siteId, siteId);
+    const siteCond = siteId == null ? isNull(newsTable.siteId) : eq(newsTable.siteId, siteId);
     const rows = await getNewsDbForRead()
-      .select({ rssSourceUrl: newsTable.rssSourceUrl })
+      .select({
+        id: newsTable.id,
+        rssSourceUrl: newsTable.rssSourceUrl,
+        title: newsTable.title,
+        imageUrl: newsTable.imageUrl,
+      })
       .from(newsTable)
-      .where(and(cond, isNotNull(newsTable.rssSourceUrl)));
-    const set = new Set<string>();
-    for (const r of rows) {
-      if (r.rssSourceUrl) set.add(r.rssSourceUrl);
-    }
-    out.set(siteTargetKey(siteId), set);
+      .where(and(siteCond, or(isNotNull(newsTable.rssSourceUrl), gte(newsTable.createdAt, since))));
+    out.set(siteTargetKey(siteId), rows);
   }
   return out;
 }
 
-async function loadRecentTitlesBySite(
-  siteTargets: (number | null)[],
-): Promise<Map<string, Set<string>>> {
-  const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
-  const out = new Map<string, Set<string>>();
-  for (const siteId of siteTargets) {
-    const cond =
-      siteId == null
-        ? and(isNull(newsTable.siteId), gte(newsTable.createdAt, since))
-        : and(eq(newsTable.siteId, siteId), gte(newsTable.createdAt, since));
-    const rows = await getNewsDbForRead().select({ title: newsTable.title }).from(newsTable).where(cond);
-    out.set(siteTargetKey(siteId), new Set(rows.map((r) => r.title)));
-  }
-  return out;
-}
-
-function isAlreadyImported(
+function markImportedNews(
   siteId: number | null,
-  sourceUrl: string | null,
-  title: string,
-  sourceBySite: Map<string, Set<string>>,
-  titlesBySite: Map<string, Set<string>>,
-): boolean {
-  const key = siteTargetKey(siteId);
-  if (sourceUrl) {
-    return sourceBySite.get(key)?.has(sourceUrl) ?? false;
-  }
-  return titlesBySite.get(key)?.has(title) ?? false;
-}
-
-function markImported(
-  siteId: number | null,
-  sourceUrl: string | null,
-  title: string,
-  sourceBySite: Map<string, Set<string>>,
-  titlesBySite: Map<string, Set<string>>,
+  row: RssDedupeNewsRow,
+  bySite: Map<string, RssDedupeNewsRow[]>,
 ): void {
   const key = siteTargetKey(siteId);
-  if (sourceUrl) {
-    if (!sourceBySite.has(key)) sourceBySite.set(key, new Set());
-    sourceBySite.get(key)!.add(sourceUrl);
-  } else {
-    if (!titlesBySite.has(key)) titlesBySite.set(key, new Set());
-    titlesBySite.get(key)!.add(title);
+  if (!bySite.has(key)) bySite.set(key, []);
+  bySite.get(key)!.push(row);
+}
+
+async function resolveCampaignCategoryId(
+  siteId: number | null,
+  slug: string,
+  cache: Map<string, number | null>,
+): Promise<number | null> {
+  const key = `${siteId ?? "central"}:${slug}`;
+  if (cache.has(key)) return cache.get(key) ?? null;
+  let id: number | null = null;
+  if (siteId != null) {
+    id = await resolveHmEditorCategoryId(siteId, slug);
   }
+  if (id == null) {
+    const [cat] = await getNewsDbForRead()
+      .select({ id: categoriesTable.id })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.slug, slug));
+    id = cat?.id ?? null;
+  }
+  cache.set(key, id);
+  return id;
 }
 
 async function resolveRssCampaignTargets(
@@ -221,16 +219,16 @@ export async function executeRssCampaignRun(
     .from(rssCampaignsTable)
     .where(eq(rssCampaignsTable.id, campaignId));
   if (!campaign) {
-    return { added: 0, skipped: 0, errors: 1, message: "Kampanya bulunamadı" };
+    return { added: 0, skipped: 0, upgraded: 0, errors: 1, message: "Kampanya bulunamadı" };
   }
-
-  const [cat] = await getNewsDbForRead()
-    .select()
-    .from(categoriesTable)
-    .where(eq(categoriesTable.slug, campaign.categorySlug));
 
   const feedUrls: string[] = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
   const siteTargets = await resolveRssCampaignTargets(campaign, opts);
+  const categoryCache = new Map<string, number | null>();
+  const requireImage = campaignRequiresCoverImage(
+    Array.isArray(campaign.tags) ? (campaign.tags as string[]) : [],
+    campaign.feeds,
+  );
 
   if (siteTargets.length === 0) {
     await dualWriteInsert(rssLogsTable,{
@@ -243,6 +241,7 @@ export async function executeRssCampaignRun(
     return {
       added: 0,
       skipped: 0,
+      upgraded: 0,
       errors: 1,
       message: "Kampanyada hedef site / merkez akış seçilmedi.",
     };
@@ -250,6 +249,7 @@ export async function executeRssCampaignRun(
 
   let added = 0;
   let skipped = 0;
+  let upgraded = 0;
   let errors = 0;
 
   if (feedUrls.length === 0) {
@@ -259,13 +259,12 @@ export async function executeRssCampaignRun(
       action: "run",
       message: "Kampanyaya henüz RSS feed URL'i eklenmemiş.",
     });
-    return { added: 0, skipped: 0, errors: 1, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
+    return { added: 0, skipped: 0, upgraded: 0, errors: 1, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
   }
 
-  const sourceBySite = await loadExistingSourceUrlsBySite(siteTargets);
-  const titlesBySite = await loadRecentTitlesBySite(siteTargets);
+  const existingBySite = await loadExistingNewsBySite(siteTargets);
 
-  const itemLimit = Math.min(30, campaign.dailyLimit > 0 ? campaign.dailyLimit : 20);
+  const itemLimit = rssCampaignItemLimit(campaign.dailyLimit);
   const sourceType = String(campaign.sourceType ?? "rss").toLowerCase();
   const useHaberlerScrape = sourceType === "haberler";
   const useHtmlScrape = sourceType === "html";
@@ -407,10 +406,18 @@ export async function executeRssCampaignRun(
         .filter((i) => i.title.length > 3);
     }
 
+    // Eskiden yeniye — createdAt/publishedAt feed tarihinden gelir.
+    campaignItems = sortByPublishedAtAsc(campaignItems);
+    const feedCategorySlug = categorySlugFromShaFeed(feedUrl) ?? campaign.categorySlug;
+
     for (const item of campaignItems) {
       try {
         const cleanTitle = item.title.replace(/<[^>]*>/g, "").trim().slice(0, 200);
         if (!cleanTitle) {
+          skipped++;
+          continue;
+        }
+        if (requireImage && !newsHasCoverImage(item.imageUrl)) {
           skipped++;
           continue;
         }
@@ -420,15 +427,22 @@ export async function executeRssCampaignRun(
           (isHaberlerComUrl(feedUrl) ? "Haberler.com'dan kazınmıştır." : "RSS'ten aktarılmıştır.");
         const sourceKey = normalizeRssSourceUrl(item.link);
         const targetsToAdd: (number | null)[] = [];
+        const targetsToUpgrade: { siteId: number | null; existing: RssDedupeNewsRow }[] = [];
 
         for (const siteId of siteTargets) {
-          if (isAlreadyImported(siteId, sourceKey, cleanTitle, sourceBySite, titlesBySite)) {
-            skipped++;
+          const bag = existingBySite.get(siteTargetKey(siteId)) ?? [];
+          const dup = findDuplicateNews(bag, sourceKey, cleanTitle);
+          if (dup) {
+            if (shouldUpgradeMissingImage(dup.imageUrl, item.imageUrl)) {
+              targetsToUpgrade.push({ siteId, existing: dup });
+            } else {
+              skipped++;
+            }
             continue;
           }
           targetsToAdd.push(siteId);
         }
-        if (targetsToAdd.length === 0) continue;
+        if (targetsToAdd.length === 0 && targetsToUpgrade.length === 0) continue;
 
         const contentHtml = resolveCampaignRssContent({ ...item, rssSpot });
         const publishedAt = item.publishedAt;
@@ -436,7 +450,25 @@ export async function executeRssCampaignRun(
           force: campaign.downloadImages === true,
         });
 
+        for (const { siteId, existing } of targetsToUpgrade) {
+          await dualWriteUpdate(
+            newsTable,
+            {
+              imageUrl: imageUrl ?? existing.imageUrl ?? null,
+              spot: rssSpot,
+              content: contentHtml,
+              rssSourceUrl: sourceKey ?? existing.rssSourceUrl ?? null,
+              updatedAt: new Date(),
+            },
+            eq(newsTable.id, existing.id),
+          );
+          existing.imageUrl = imageUrl ?? existing.imageUrl ?? null;
+          existing.rssSourceUrl = sourceKey ?? existing.rssSourceUrl ?? null;
+          upgraded++;
+        }
+
         for (const siteId of targetsToAdd) {
+          const categoryId = await resolveCampaignCategoryId(siteId, feedCategorySlug, categoryCache);
           const slugSuffix = `${Date.now()}-${added}-${siteId ?? "m"}-${Math.random().toString(36).slice(2, 7)}`;
           await dualWriteInsert(newsTable, {
             title: cleanTitle,
@@ -444,7 +476,7 @@ export async function executeRssCampaignRun(
             spot: rssSpot,
             content: contentHtml,
             imageUrl: imageUrl ?? null,
-            categoryId: cat?.id ?? null,
+            categoryId,
             status: "published",
             isFeatured: campaign.headline,
             isBreaking: campaign.headline,
@@ -455,7 +487,11 @@ export async function executeRssCampaignRun(
             createdAt: publishedAt,
             updatedAt: publishedAt,
           });
-          markImported(siteId, sourceKey, cleanTitle, sourceBySite, titlesBySite);
+          markImportedNews(
+            siteId,
+            { id: -added, rssSourceUrl: sourceKey, title: cleanTitle, imageUrl: imageUrl ?? null },
+            existingBySite,
+          );
           added++;
         }
       } catch {
@@ -472,21 +508,23 @@ export async function executeRssCampaignRun(
 
   const message =
     added > 0
-      ? `${added} haber başarıyla eklendi (tam içerik ile)`
-      : skipped > 0
-        ? `${skipped} haber zaten vardı, yeni haber eklenmedi`
-        : errors > 0
-          ? `Haber eklenemedi — ${errors} feed hatası. İşlem loglarına bakın.`
-          : "Feed'de eklenecek yeni haber bulunamadı";
+      ? `${added} haber başarıyla eklendi (tam içerik ile)${upgraded > 0 ? `, ${upgraded} görsel yükseltildi` : ""}`
+      : upgraded > 0
+        ? `${upgraded} habere görsel eklendi, yeni haber yok`
+        : skipped > 0
+          ? `${skipped} haber zaten vardı, yeni haber eklenmedi`
+          : errors > 0
+            ? `Haber eklenemedi — ${errors} feed hatası. İşlem loglarına bakın.`
+            : "Feed'de eklenecek yeni haber bulunamadı";
 
   await dualWriteInsert(rssLogsTable,{
     campaignId,
-    level: added > 0 ? "success" : errors > 0 ? "error" : "warn",
+    level: added > 0 || upgraded > 0 ? "success" : errors > 0 ? "error" : "warn",
     action: "run",
-    message: `${added} haber eklendi (tam içerik), ${skipped} atlandı`,
+    message: `${added} haber eklendi (tam içerik), ${upgraded} görsel yükseltildi, ${skipped} atlandı`,
   });
 
-  return { added, skipped, errors, message };
+  return { added, skipped, upgraded, errors, message };
 }
 
 /** Vekil 504 önlemek için HTTP yanıtından önce döner; iş `executeRssCampaignRun` ile arka planda sürer. */

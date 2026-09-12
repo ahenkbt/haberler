@@ -38,6 +38,20 @@ export function normalizeHmSiteIds(raw: unknown): number[] {
   return [];
 }
 
+export function mergeSharedCampaignHmSiteIds(
+  existingIds: unknown,
+  siteId: number,
+): number[] {
+  const prev = normalizeHmSiteIds(existingIds);
+  if (Number.isFinite(siteId) && siteId > 0 && !prev.includes(siteId)) prev.push(siteId);
+  return prev.length ? prev : [siteId];
+}
+
+export function shaTargetsAreDualSite(hmSiteIds: unknown, asgId: number, ahgId: number): boolean {
+  const ids = normalizeHmSiteIds(hmSiteIds);
+  return ids.includes(asgId) && ids.includes(ahgId);
+}
+
 export function rssCampaignOwnedByHmSite(
   campaign: { hmSiteIds?: unknown; includeYekpareHaber?: boolean | null },
   siteId: number,

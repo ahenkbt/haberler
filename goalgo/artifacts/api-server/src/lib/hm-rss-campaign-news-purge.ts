@@ -21,6 +21,8 @@ const AHG_SLUG = "ankarahabergundemi";
 const AHG_HOST = "ankarahabergundemi.com";
 const SHA_HOST = "sehirhaberajansi.com.tr";
 const PURGE_REV = "ahg-sha-rss-news-20260817a";
+/** SHA içeriği tekrar ASG+AHG’de isteniyor — tek seferlik silme kapalı. */
+export const AHG_SHA_PURGE_DISABLED = true;
 
 function siteMatchesAhg(row: {
   slug?: string | null;
@@ -97,6 +99,9 @@ async function purgeAhgRssCampaignNewsNow(): Promise<{
   deletedSites: number;
   reason?: string;
 }> {
+  if (AHG_SHA_PURGE_DISABLED) {
+    return { ok: true, deletedSites: 0, reason: "disabled-sha-wanted-on-ahg-asg" };
+  }
   const sites = await getNewsDbForRead()
     .select({
       id: hmNewsSitesTable.id,
