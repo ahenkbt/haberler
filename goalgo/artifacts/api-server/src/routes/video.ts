@@ -142,6 +142,33 @@ import {
   withLocalResolveBudget,
 } from "../lib/youtubeStreamFallback.js";
 
+
+/** List/browse selects: skip description/seo_description (Hostinger CPU — ~270MB text). */
+const videosListSelect = {
+  id: videosTable.id,
+  sourceId: videosTable.sourceId,
+  platform: videosTable.platform,
+  videoId: videosTable.videoId,
+  title: videosTable.title,
+  seoTitle: videosTable.seoTitle,
+  description: sql<string | null>`NULL`.as("description"),
+  seoDescription: sql<string | null>`NULL`.as("seo_description"),
+  seoUpdatedAt: videosTable.seoUpdatedAt,
+  thumbnail: videosTable.thumbnail,
+  channelName: videosTable.channelName,
+  channelId: videosTable.channelId,
+  publishedAt: videosTable.publishedAt,
+  duration: videosTable.duration,
+  categorySlug: videosTable.categorySlug,
+  isFeatured: videosTable.isFeatured,
+  isHeadline: videosTable.isHeadline,
+  isStory: videosTable.isStory,
+  sortOrder: videosTable.sortOrder,
+  active: videosTable.active,
+  embedAllowed: videosTable.embedAllowed,
+  createdAt: videosTable.createdAt,
+};
+
 const router: IRouter = Router();
 const db = getYektubeDbForRead();
 
@@ -1037,7 +1064,7 @@ async function enrichPlaylistsForChannel(
 
       if (sourceId) {
         const dbVideos = await db
-          .select()
+          .select(videosListSelect)
           .from(videosTable)
           .where(and(eq(videosTable.sourceId, sourceId), eq(videosTable.active, true)))
           .orderBy(desc(videosTable.id))
@@ -1142,7 +1169,7 @@ router.get("/video/live", async (_req, res): Promise<void> => {
     const liveDbVideos =
       liveSourceIds.length > 0
         ? await db
-            .select()
+            .select(videosListSelect)
             .from(videosTable)
             .where(and(eq(videosTable.active, true), inArray(videosTable.sourceId, liveSourceIds)))
             .orderBy(desc(videosTable.id))
@@ -1273,7 +1300,7 @@ router.get("/video/sources", async (_req, res): Promise<void> => {
         limit: 200,
         loadSources: async () => db.select().from(videoSourcesTable).orderBy(videoSourcesTable.id),
         loadVideos: async () =>
-          db.select().from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id)).limit(4000),
+          db.select(videosListSelect).from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id)).limit(4000),
         firstVideoThumbBySourceIds,
         updateDb: async (table, id, coverUrl) => {
           const url = normalizeYoutubeCoverUrl(coverUrl);
@@ -2102,7 +2129,7 @@ router.get("/video/shorts", async (req, res): Promise<void> => {
     const fastLimit = Math.min(Math.max(limit * 12, 120), 480);
     const fastRows = shuffleBySeed(
       await db
-        .select()
+        .select(videosListSelect)
         .from(videosTable)
         .where(and(eq(videosTable.active, true), embeddableVideoCondition, eq(videosTable.isStory, true)))
         .orderBy(desc(videosTable.id))
@@ -2177,7 +2204,7 @@ router.get("/video/shorts", async (req, res): Promise<void> => {
 
   let rows = shuffleBySeed(
     await db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(where)
       .orderBy(desc(videosTable.id))
@@ -2189,7 +2216,7 @@ router.get("/video/shorts", async (req, res): Promise<void> => {
   if (rows.length === 0 && sourceId && !Number.isNaN(sourceId)) {
     rows = shuffleBySeed(
       await db
-        .select()
+        .select(videosListSelect)
         .from(videosTable)
         .where(and(eq(videosTable.active, true), eq(videosTable.sourceId, sourceId)))
         .orderBy(desc(videosTable.id))
@@ -2215,7 +2242,7 @@ router.get("/video/shorts", async (req, res): Promise<void> => {
     const scanOffset = Math.max(0, (poolOrderSeed % 12) * Math.floor(poolLimit / 2));
     const fallbackRows = shuffleBySeed(
       await db
-        .select()
+        .select(videosListSelect)
         .from(videosTable)
         .where(and(eq(videosTable.active, true), eq(videosTable.isStory, true)))
         .orderBy(desc(videosTable.id))
@@ -2227,7 +2254,7 @@ router.get("/video/shorts", async (req, res): Promise<void> => {
     if (filtered.length === 0) {
       const broadRows = shuffleBySeed(
         await db
-          .select()
+          .select(videosListSelect)
           .from(videosTable)
           .where(eq(videosTable.active, true))
           .orderBy(desc(videosTable.id))
@@ -2253,7 +2280,7 @@ router.get("/video/shorts", async (req, res): Promise<void> => {
     const hasStart = filtered.some((r) => r.videoId === startVideoId);
     if (!hasStart) {
       const [startRow] = await db
-        .select()
+        .select(videosListSelect)
         .from(videosTable)
         .where(and(eq(videosTable.active, true), eq(videosTable.videoId, startVideoId)))
         .limit(1);
@@ -2394,7 +2421,7 @@ router.post("/video/fix-playback", async (req, res): Promise<void> => {
         limit: 400,
         loadSources: async () => db.select().from(videoSourcesTable).orderBy(videoSourcesTable.id),
         loadVideos: async () =>
-          db.select().from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id)).limit(6000),
+          db.select(videosListSelect).from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id)).limit(6000),
         firstVideoThumbBySourceIds,
         updateDb: async (table, id, coverUrl) => {
           const url = normalizeYoutubeCoverUrl(coverUrl);
@@ -2853,7 +2880,7 @@ router.get("/video/videos/random", async (req, res): Promise<void> => {
   if (excludeIds.length > 0) conds.push(notInArray(videosTable.id, excludeIds));
 
   const rows = await db
-    .select()
+    .select(videosListSelect)
     .from(videosTable)
     .where(and(...conds))
     .orderBy(sql`RANDOM()`)
@@ -3286,7 +3313,7 @@ router.get("/video/videos/:id/similar", async (req, res): Promise<void> => {
   if (current.sourceId) {
     const otherSourceConds = [...baseConds, notInArray(videosTable.sourceId, [current.sourceId])];
     const rows = await db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(and(...otherSourceConds))
       .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
@@ -3302,7 +3329,7 @@ router.get("/video/videos/:id/similar", async (req, res): Promise<void> => {
   // 2) Hâlâ azsa — aynı kategoriden uzun videolar (aynı kanal dahil, yalnızca uzun)
   if (items.length < limit && current.categorySlug) {
     const rows = await db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(and(...baseConds, notInArray(videosTable.id, [...excludeIds])))
       .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
@@ -3318,7 +3345,7 @@ router.get("/video/videos/:id/similar", async (req, res): Promise<void> => {
   // 3) Kategori yoksa — kaynak içi uzun videolar (shorts hariç)
   if (items.length < limit && current.sourceId && !current.categorySlug) {
     const rows = await db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(
         and(
@@ -3352,7 +3379,7 @@ router.get("/video/videos/:id/similar", async (req, res): Promise<void> => {
   // Türkçe benzer içerik önceliği — yabancı (ör. Tay/İngilizce) GMMTV vb. yerine TR videolar
   if (items.length < limit && current.categorySlug) {
     const trRows = await db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(and(...baseConds, notInArray(videosTable.id, [...excludeIds])))
       .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
@@ -3402,7 +3429,7 @@ router.get("/video/videos/:id/channel-more", async (req, res): Promise<void> => 
 
   const [rows, countRow] = await Promise.all([
     db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(and(...conds))
       .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
@@ -3484,12 +3511,12 @@ router.post("/video/backfill-covers", async (req, res): Promise<void> => {
       loadVideos: async (ids) => {
         if (ids?.length) {
           return db
-            .select()
+            .select(videosListSelect)
             .from(videosTable)
             .where(and(eq(videosTable.active, true), inArray(videosTable.sourceId, ids)))
             .orderBy(desc(videosTable.id));
         }
-        return db.select().from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id));
+        return db.select(videosListSelect).from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id));
       },
       firstVideoThumbBySourceIds,
       updateDb: async (table, id, coverUrl) => {
@@ -3593,7 +3620,7 @@ router.get("/video/videos", async (req, res): Promise<void> => {
    */
   if (search && /^[A-Za-z0-9_-]{11}$/.test(search)) {
     const exactRows = await db
-      .select()
+      .select(videosListSelect)
       .from(videosTable)
       .where(and(eq(videosTable.active, true), embeddableVideoCondition, eq(videosTable.videoId, search)))
       .orderBy(desc(videosTable.id))
@@ -3725,7 +3752,7 @@ router.get("/video/videos", async (req, res): Promise<void> => {
     const newsLimit = Math.min(400, poolLimit);
     const [newsRows, generalRows, totalRowsResult] = await Promise.all([
       db
-        .select()
+        .select(videosListSelect)
         .from(videosTable)
         .where(and(...newsConds))
         .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
@@ -3733,7 +3760,7 @@ router.get("/video/videos", async (req, res): Promise<void> => {
       newsOnly
         ? Promise.resolve([] as (typeof videosTable.$inferSelect)[])
         : db
-            .select()
+            .select(videosListSelect)
             .from(videosTable)
             .where(baseWhere)
             .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
@@ -3751,7 +3778,7 @@ router.get("/video/videos", async (req, res): Promise<void> => {
     } catch (err) {
       logger.warn({ err }, "[video] news-first mix failed; falling back to standard pool");
       const [rows, totalRowsResult] = await Promise.all([
-        db.select().from(videosTable).where(baseWhere).orderBy(desc(videosTable.publishedAt), desc(videosTable.id)).limit(poolLimit).offset(poolOffset),
+        db.select(videosListSelect).from(videosTable).where(baseWhere).orderBy(desc(videosTable.publishedAt), desc(videosTable.id)).limit(poolLimit).offset(poolOffset),
         db.select({ count: sql<number>`count(*)::int` }).from(videosTable).where(baseWhere),
       ]);
       rawRows = rows;
@@ -3759,7 +3786,7 @@ router.get("/video/videos", async (req, res): Promise<void> => {
     }
   } else {
     const [rows, totalRowsResult] = await Promise.all([
-      db.select().from(videosTable).where(baseWhere).orderBy(desc(videosTable.publishedAt), desc(videosTable.id)).limit(poolLimit).offset(poolOffset),
+      db.select(videosListSelect).from(videosTable).where(baseWhere).orderBy(desc(videosTable.publishedAt), desc(videosTable.id)).limit(poolLimit).offset(poolOffset),
       db.select({ count: sql<number>`count(*)::int` }).from(videosTable).where(baseWhere),
     ]);
     rawRows = rows;
