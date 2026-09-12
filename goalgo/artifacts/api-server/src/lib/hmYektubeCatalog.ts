@@ -6,7 +6,7 @@
  * Yektube `videos` okuması (getYektubeDbForRead) + kısa TTL bellek önbelleği.
  */
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { getYektubeDbForRead, videosTable } from "@workspace/db";
+import { db as mainDb, getYektubeDbForRead, videosTable } from "@workspace/db";
 import { mixVideosForNewsSiteFeed, mixVideosNewsOnly } from "./videoMix.js";
 import { slugifyVideoCategory } from "./yektubeCategoryCatalog.js";
 import { logger } from "./logger.js";
@@ -241,11 +241,10 @@ function writeCache(key: string, body: HmYektubeCatalogResponse): void {
   memoryCache.set(key, { expiresAt: Date.now() + HM_YEKTUBE_CATALOG_TTL_MS, body });
 }
 
-async function selectRecentRows(opts: {
-  categorySlugs?: string[];
-  limit: number;
-}): Promise<HmYektubeCatalogRow[]> {
-  const db = getYektubeDbForRead();
+async function selectRecentRowsFrom(
+  db: ReturnType<typeof getYektubeDbForRead>,
+  opts: { categorySlugs?: string[]; limit: number },
+): Promise<HmYektubeCatalogRow[]> {
   const conds = [eq(videosTable.active, true), eq(videosTable.isStory, false)];
   if (opts.categorySlugs && opts.categorySlugs.length > 0) {
     conds.push(inArray(videosTable.categorySlug, opts.categorySlugs));
@@ -257,6 +256,18 @@ async function selectRecentRows(opts: {
     .orderBy(desc(videosTable.id))
     .limit(opts.limit);
   return rows as HmYektubeCatalogRow[];
+}
+
+async function selectRecentRows(opts: {
+  categorySlugs?: string[];
+  limit: number;
+}): Promise<HmYektubeCatalogRow[]> {
+  try {
+    return await selectRecentRowsFrom(getYektubeDbForRead(), opts);
+  } catch (err) {
+    logger.warn({ err, opts }, "[hm-yektube] yektube-db catalog select failed; trying main");
+    return await selectRecentRowsFrom(mainDb, opts);
+  }
 }
 
 /** Var olan env adı — yeni secret uydurulmaz. Yoksa upstream denemesi yapılmaz. */
