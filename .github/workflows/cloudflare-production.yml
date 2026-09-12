@@ -66,9 +66,16 @@ jobs:
           fi
           # ACCOUNT_ID wrangler.toml / cf-fix ile aynı varsayılan
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
+            ACCOUNT_ID="16f5b996194174624e7969a3658bd2bb"
           else
-            echo "ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
+            ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
+          fi
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
+          status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-containers-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/containers/me" || true)"
+          if [ "$status" = "401" ] || [ "$status" = "403" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping deploy: CLOUDFLARE_API_TOKEN does not have Workers Containers access for account $ACCOUNT_ID."
+            exit 0
           fi
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
             echo "sync_secrets=false" >> "$GITHUB_OUTPUT"
@@ -313,12 +320,19 @@ jobs:
         id: gate
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping yektube deploy (no CLOUDFLARE_API_TOKEN)"
           else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-yektube-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/containers/me" || true)"
+            if [ "$status" = "401" ] || [ "$status" = "403" ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "::warning::Skipping yektube deploy: CLOUDFLARE_API_TOKEN lacks Workers Containers access for account $CLOUDFLARE_ACCOUNT_ID."
+            else
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
       - uses: pnpm/action-setup@v6
         if: steps.gate.outputs.skip != 'true'
@@ -358,4 +372,3 @@ jobs:
           put YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put SESSION_SECRET "$SESSION_SECRET"
-
