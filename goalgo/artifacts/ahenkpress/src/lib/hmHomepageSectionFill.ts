@@ -75,7 +75,7 @@ function normalizeSiteSlug(value: unknown): string {
 
 export function resolveHomepageLocalPref(
   siteSlug: string | null | undefined,
-  _layout?: { hmHomepageLocalCity?: string | null } | null,
+  _layout?: unknown,
   siteId?: number | null,
 ): HmHomepageLocalPref | null {
   void _layout;
