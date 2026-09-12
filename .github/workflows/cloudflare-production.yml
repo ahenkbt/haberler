@@ -84,8 +84,6 @@ jobs:
           fi
           if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
             echo "::error::Cloudflare containers preflight failed (HTTP $status) for account $ACCOUNT_ID."
-            head -c 400 /tmp/cf-containers-me.json || true
-            echo
             exit 1
           fi
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
@@ -350,8 +348,6 @@ jobs:
               echo "skip=false" >> "$GITHUB_OUTPUT"
             else
               echo "::error::Cloudflare containers preflight returned HTTP $status for yektube deploy (account $CLOUDFLARE_ACCOUNT_ID)."
-              head -c 300 /tmp/cf-yektube-me.json || true
-              echo
               exit 1
             fi
           fi
