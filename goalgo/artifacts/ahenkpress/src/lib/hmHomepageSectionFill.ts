@@ -207,6 +207,11 @@ export function pickEsenLeadPackColumns<T>(opts: {
 }): { left: T[]; right: T[] } {
   const wide = mergeUniqueNews(opts.pool, opts.backfillPool ?? []) as T[];
   const ranked = preferLocalThenFill(wide, opts.localPref, opts.siteId, wide.length) as T[];
+  const coverOk = (item: T) => isUsableNewsCoverSrc((item as { imageUrl?: string | null }).imageUrl);
+  const coverCount = ranked.filter(coverOk).length;
+  const leftMin = wide.length > 0 ? 1 : 0;
+  const rightTake = Math.min(opts.rightCount, Math.max(0, wide.length - leftMin), coverCount);
+  const leftTake = Math.min(opts.leftCount, Math.max(0, wide.length - rightTake));
   const seen = new Set<string>();
   const take = (source: readonly T[], limit: number, coverOnly: boolean): T[] => {
     const out: T[] = [];
@@ -214,27 +219,17 @@ export function pickEsenLeadPackColumns<T>(opts: {
       if (out.length >= limit) break;
       const key = newsKeyOf(item as Parameters<typeof newsKeyOf>[0]);
       if (!key || seen.has(key)) continue;
-      if (coverOnly && !isUsableNewsCoverSrc((item as { imageUrl?: string | null }).imageUrl)) continue;
+      if (coverOnly && !coverOk(item)) continue;
       seen.add(key);
       out.push(item);
     }
     return out;
   };
-  const left = take(ranked, opts.leftCount, false);
-  if (left.length < opts.leftCount) {
-    for (const item of wide) {
-      if (left.length >= opts.leftCount) break;
-      const key = newsKeyOf(item as Parameters<typeof newsKeyOf>[0]);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      left.push(item);
-    }
+  const right = take(ranked, rightTake, true);
+  const left = take(ranked, leftTake, false);
+  if (left.length < leftTake) {
+    left.push(...take(wide, leftTake - left.length, false));
   }
-  const rightCover = take(ranked, opts.rightCount, true);
-  const right =
-    rightCover.length >= opts.rightCount
-      ? rightCover
-      : [...rightCover, ...take(wide, opts.rightCount - rightCover.length, false)];
   return { left, right };
 }
 

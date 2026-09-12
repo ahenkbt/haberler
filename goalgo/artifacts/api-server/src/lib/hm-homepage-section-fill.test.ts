@@ -70,6 +70,20 @@ describe("homepage section fill", () => {
     expect(left.some((row) => row.id === right[0]?.id)).toBe(false);
   });
 
+  it("fills a full 6+2 Öne Çıkanlar pack from a mixed pool", () => {
+    const pool = [1, 2, 3, 4, 5, 6, 7, 8].map((id) =>
+      item(id, `Haber ${id}`, ["gundem", "dunya", "spor", "ekonomi"][id % 4]!),
+    );
+    const { left, right } = pickLeadPackColumns({
+      pool,
+      leftCount: 6,
+      rightCount: 2,
+      hasCover: (row) => Boolean(row.imageUrl),
+    });
+    expect(left).toHaveLength(6);
+    expect(right).toHaveLength(2);
+  });
+
   it("keeps API category rows when a client-side slug filter would empty the page", () => {
     const all = [item(1, "Havuz haberi", "gundem")];
     expect(keepCategoryItemsOrFallback([], all)).toEqual(all);

@@ -41,6 +41,19 @@ describe("hmHomepageSectionFill", () => {
     expect(left.map((row) => row.id)).not.toContain(right[0]?.id);
   });
 
+  it("fills a full 6+2 Öne Çıkanlar pack from a mixed pool", () => {
+    const pool = [1, 2, 3, 4, 5, 6, 7, 8].map((id) =>
+      item(id, `Haber ${id}`, ["gundem", "dunya", "spor", "ekonomi"][id % 4]!),
+    );
+    const { left, right } = pickEsenLeadPackColumns({
+      pool,
+      leftCount: 6,
+      rightCount: 2,
+    });
+    expect(left).toHaveLength(6);
+    expect(right).toHaveLength(2);
+  });
+
   it("prefers Kırşehir headlines on tepe manşet then falls back", () => {
     const pref = resolveHomepageLocalPref("kirsehirhaber");
     const pool = buildTepeMansetPoolPreferringLocal({

@@ -161,6 +161,12 @@ export function pickLeadPackColumns<T extends HomepageFillItem>(opts: {
     opts.siteId,
     Math.max(opts.leftCount + opts.rightCount, wide.length),
   );
+  const coverOk = (item: T) => (opts.hasCover ? opts.hasCover(item) : Boolean(item.imageUrl));
+  const coverCount = ranked.filter(coverOk).length;
+  // Never starve the text column: keep ≥1 left item whenever any news exists.
+  const leftMin = wide.length > 0 ? 1 : 0;
+  const rightTake = Math.min(opts.rightCount, Math.max(0, wide.length - leftMin), coverCount);
+  const leftTake = Math.min(opts.leftCount, Math.max(0, wide.length - rightTake));
   const seen = new Set<string>();
   const take = (source: readonly T[], limit: number, coverOnly: boolean): T[] => {
     const out: T[] = [];
@@ -168,26 +174,16 @@ export function pickLeadPackColumns<T extends HomepageFillItem>(opts: {
       if (out.length >= limit) break;
       const key = homepageItemKey(item);
       if (seen.has(key)) continue;
-      if (coverOnly && opts.hasCover && !opts.hasCover(item)) continue;
+      if (coverOnly && !coverOk(item)) continue;
       seen.add(key);
       out.push(item);
     }
     return out;
   };
-  const left = take(ranked, opts.leftCount, false);
-  if (left.length < opts.leftCount) {
-    for (const item of wide) {
-      if (left.length >= opts.leftCount) break;
-      const key = homepageItemKey(item);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      left.push(item);
-    }
+  const right = take(ranked, rightTake, true);
+  const left = take(ranked, leftTake, false);
+  if (left.length < leftTake) {
+    left.push(...take(wide, leftTake - left.length, false));
   }
-  const rightPreferred = take(ranked, opts.rightCount, true);
-  const right =
-    rightPreferred.length >= opts.rightCount
-      ? rightPreferred
-      : [...rightPreferred, ...take(wide, opts.rightCount - rightPreferred.length, false)];
   return { left, right };
 }
