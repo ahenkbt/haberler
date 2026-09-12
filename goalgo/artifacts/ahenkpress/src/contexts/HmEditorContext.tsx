@@ -27,7 +27,7 @@ import {
   defaultNewsSiteLayoutPrefs,
   mergeNewsSiteLayoutForSave,
   parseNewsSiteLayoutFromJson,
-  pickVitrinLayoutPatchForSave,
+  pickChangedVitrinLayoutKeys,
   type NewsSiteLayoutPrefs,
   type NewsSiteLayoutSaveOptions,
 } from "@/lib/newsSiteLayout";
@@ -212,7 +212,9 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
       : mergedPrefs;
     const layoutPayload =
       opts?.vitrinOnly === true
-        ? pickVitrinLayoutPatchForSave(vitrinBase)
+        ? pickChangedVitrinLayoutKeys(newsLayoutPrefs, vitrinBase, site?.slug, {
+            allowStockLayoutReset: opts?.allowStockLayoutReset,
+          })
         : opts?.layoutPatch
           ? (opts.layoutPatch as Record<string, unknown>)
           : mergedPrefs;
@@ -225,6 +227,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
           vitrinOnly: opts?.vitrinOnly === true,
           allowClearExtraPages: opts?.allowClearExtraPages === true,
           allowClearCorporatePageHtml: opts?.allowClearCorporatePageHtml === true,
+          allowStockLayoutReset: opts?.allowStockLayoutReset === true,
         }),
       });
       const text = await res.text().catch(() => "");
@@ -252,7 +255,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         layoutJson = undefined;
       }
       if (layoutJson) {
-        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson));
+        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson, site?.slug));
       } else {
         setNewsLayoutPrefs(mergedPrefs);
       }
@@ -311,7 +314,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         layoutJson = undefined;
       }
       if (layoutJson) {
-        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson));
+        setNewsLayoutPrefs(parseNewsSiteLayoutFromJson(layoutJson, site?.slug));
       } else {
         setNewsLayoutPrefs((prev) => ({
           ...prev,

@@ -42,6 +42,7 @@ import {
   collectHmRssCategoryNavItems,
   resolveHmUnifiedRssFeedRows,
   normalizeHmVitrinTheme,
+  isHmCorporateLayoutKind,
   isHmCorporateLikeTheme,
   isHmNewsRetiredHomeModule,
   filterHmHomeModulesForPortalHub,
@@ -1563,6 +1564,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       : `mx-auto max-w-screen-xl px-3${extra ? ` ${extra}` : ""}`;
   const corporateDonation = layoutPrefs.hmCorporateDonation ?? null;
   const vitrinTheme = normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme);
+  const isCorporateTheme = isHmCorporateLayoutKind(layoutPrefs, hmSlugProp ?? hmCtx?.slug);
   const themeAccentFallback = hmVitrinAccentHex(vitrinTheme ?? "default");
   const fromLpColor =
     (layoutPrefs.hmPrimaryColor?.trim() ?? "").length >= 3 ? layoutPrefs.hmPrimaryColor!.trim() : "";
@@ -1571,7 +1573,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     themeAccentFallback ||
     resolveSadeAccent(settings?.primaryColor) ||
     DEFAULT_RED;
-  const isCorporateTheme = isHmCorporateLikeTheme(vitrinTheme);
   const isClassicTheme = vitrinTheme === "classic";
   const isPortal3Theme = vitrinTheme === "portal3";
   const isEsenTheme = vitrinTheme === "esen";
@@ -1581,6 +1582,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       ? "vatan"
       : vitrinTheme === "corporate"
       ? "corporate"
+      : isCorporateTheme
+      ? isHmCorporateLikeTheme(vitrinTheme)
+        ? vitrinTheme
+        : "vatan"
       : vitrinTheme === "gold"
         ? "gold"
         : vitrinTheme === "ankara"

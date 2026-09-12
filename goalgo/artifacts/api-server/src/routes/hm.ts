@@ -110,6 +110,7 @@ import {
   hmLayoutTabIconUrl,
   mergeHmLayoutPatch,
   parseHmLayoutRecord,
+  resolveHmLayoutKind,
   stringifyHmLayoutMerged,
 } from "../lib/hm-layout-json";
 import {
@@ -3266,9 +3267,15 @@ router.patch("/hm/editor/site-seo-verification", async (req, res): Promise<void>
 router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
-  const b = req.body as { layout?: unknown; vitrinOnly?: boolean; allowClearExtraPages?: boolean; allowClearCorporatePageHtml?: boolean };
+  const b = req.body as {
+    layout?: unknown;
+    vitrinOnly?: boolean;
+    allowClearExtraPages?: boolean;
+    allowClearCorporatePageHtml?: boolean;
+    allowStockLayoutReset?: boolean;
+  };
   const [row] = await newsReadDb()
-    .select({ layoutJson: hmNewsSitesTable.layoutJson })
+    .select({ layoutJson: hmNewsSitesTable.layoutJson, slug: hmNewsSitesTable.slug })
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.id, ctx.siteId));
   const prev = parseHmLayoutRecord(row?.layoutJson != null ? String(row.layoutJson) : null);
@@ -3290,12 +3297,16 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
       delete inc.hmCorporatePageHtml;
     }
   }
-  const merged = applyHmRssNewsPolicyToLayout(mergeHmLayoutPatch(prev, inc, { vitrinOnly: b.vitrinOnly === true }));
-  const [siteMeta] = await newsReadDb()
-    .select({ slug: hmNewsSitesTable.slug })
-    .from(hmNewsSitesTable)
-    .where(eq(hmNewsSitesTable.id, ctx.siteId));
-  const siteSlug = String(siteMeta?.slug ?? "").trim().toLowerCase();
+  const siteSlug = String(row?.slug ?? "").trim().toLowerCase();
+  const mergedPatch = mergeHmLayoutPatch(prev, inc, {
+    vitrinOnly: b.vitrinOnly === true,
+    siteSlug,
+    allowStockLayoutReset: b.allowStockLayoutReset === true,
+  });
+  const merged =
+    b.vitrinOnly === true && resolveHmLayoutKind(mergedPatch, siteSlug) === "news"
+      ? mergedPatch
+      : applyHmRssNewsPolicyToLayout(mergedPatch);
   const touchesVkdEditorContent =
     siteSlug === VKD_SITE_SLUG &&
     b.vitrinOnly !== true &&
@@ -3366,11 +3377,16 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
     return;
   }
   const [row] = await newsReadDb()
-    .select({ layoutJson: hmNewsSitesTable.layoutJson })
+    .select({ layoutJson: hmNewsSitesTable.layoutJson, slug: hmNewsSitesTable.slug })
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.id, ctx.siteId));
   const prev = parseHmLayoutRecord(row?.layoutJson != null ? String(row.layoutJson) : null);
-  const merged = applyHmRssNewsPolicyToLayout(mergeHmLayoutPatch(prev, patch, { vitrinOnly: true }));
+  const merged = applyHmRssNewsPolicyToLayout(
+    mergeHmLayoutPatch(prev, patch, {
+      vitrinOnly: true,
+      siteSlug: row?.slug != null ? String(row.slug) : null,
+    }),
+  );
   let raw: string;
   try {
     raw = stringifyHmLayoutMerged(merged);

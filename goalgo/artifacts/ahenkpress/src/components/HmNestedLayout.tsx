@@ -8,7 +8,7 @@ import { HmPublicSiteHeader } from "@/components/HmPublicSiteHeader";
 import { HmPublicSiteFooter } from "@/components/HmPublicSiteFooter";
 import { HmFooterMarketSearchBand } from "@/components/HmFooterMarketSearchBand";
 import { hasConfiguredHmHeaderMenu } from "@/lib/hmCorporateNavMenu";
-import { parseNewsSiteLayoutFromJson, normalizeHmVitrinTheme, isHmCorporateLikeTheme, resolveFinanceWeatherBelowMenu, resolveHeaderPreset, resolveHmNewsHeaderMenuEnabled, resolveHmNewsVideoTvEnabled, resolveShowYekpareIconMenu } from "@/lib/newsSiteLayout";
+import { parseNewsSiteLayoutFromJson, normalizeHmVitrinTheme, isHmCorporateLayoutKind, isHmCorporateLikeTheme, resolveFinanceWeatherBelowMenu, resolveHeaderPreset, resolveHmNewsHeaderMenuEnabled, resolveHmNewsVideoTvEnabled, resolveShowYekpareIconMenu } from "@/lib/newsSiteLayout";
 import { AppNav, APP_MOBILE_BOTTOM_NAV_HEIGHT, APP_NAV_HEIGHT } from "@/components/AppNav";
 import { HmPublicNewsNavStrip, HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX } from "@/components/HmPublicNewsNavStrip";
 import {
@@ -494,7 +494,7 @@ export function HmNestedLayout({
   const showPlatformNav = layoutPrefs.showPlatformNav === true;
   const portalHubOnly = isYekparePortalHubOnly(hostKey, slug);
   const videoTvRouteAllowed = isHmVideoTvAllowed(hostKey, slug);
-  const isCorporateTheme = isHmCorporateLikeTheme(layoutPrefs.hmVitrinTheme);
+  const isCorporateTheme = isHmCorporateLayoutKind(layoutPrefs, slug) || isHmCorporateLikeTheme(layoutPrefs.hmVitrinTheme);
   const isClassicTheme = layoutPrefs.hmVitrinTheme === "classic";
   const isPortal3Theme = layoutPrefs.hmVitrinTheme === "portal3";
   const isEsenTheme = layoutPrefs.hmVitrinTheme === "esen";
