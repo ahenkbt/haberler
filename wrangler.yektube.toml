@@ -19,7 +19,7 @@ run_worker_first = true
 [vars]
 API_ORIGIN = ""
 SITE_PUBLIC_ORIGIN = "https://yektube.com"
-CONTAINER_ROLL = "api-origin-budget-120s-20260912"
+CONTAINER_ROLL = "yektube-goalgo-bind-no-delete-20260912"
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
@@ -47,7 +47,6 @@ new_sqlite_classes = ["YektubeApiContainer"]
 
 [[migrations]]
 tag = "v2"
-deleted_classes = ["YektubeApiContainer"]
 new_sqlite_classes = ["GoalgoApiContainer"]
 
 [[routes]]
