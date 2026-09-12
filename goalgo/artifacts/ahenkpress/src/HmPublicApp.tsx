@@ -22,6 +22,7 @@ import HmPublicAraRoute from "./pages/public/HmPublicAraRoute";
 import HmPublicYazarlarRoute from "./pages/public/HmPublicYazarlarRoute";
 import HmPublicYazarYazilariRoute from "./pages/public/HmPublicYazarYazilariRoute";
 import { HmNestedLayout } from "@/components/HmNestedLayout";
+import { EditorRouteErrorBoundary } from "./components/EditorRouteErrorBoundary";
 import { RouteChunkFallback } from "./components/RouteChunkFallback";
 import { hmPwaManifestApiPath } from "./lib/hmPublicLinks";
 import { HM_PUBLIC_EDITOR_WILDCARD_PATH } from "./lib/hmPublicEditorRoute";
@@ -53,7 +54,11 @@ function HmPublicShell({ children }: { children: ReactNode }) {
 }
 
 function LazyChunk({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<RouteChunkFallback />}>{children}</Suspense>;
+  return (
+    <EditorRouteErrorBoundary>
+      <Suspense fallback={<RouteChunkFallback />}>{children}</Suspense>
+    </EditorRouteErrorBoundary>
+  );
 }
 
 function HmTrVideoTvPathAliasRedirect() {

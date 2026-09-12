@@ -1,6 +1,8 @@
+import { lazy, Suspense } from "react";
 import { Redirect, Route, Switch } from "wouter";
+import { EditorRouteErrorBoundary } from "@/components/EditorRouteErrorBoundary";
 import { HmEditorRoute } from "@/components/HmEditorRoute";
-import HaberEditor from "@/pages/admin/HaberEditor";
+import { RouteChunkFallback } from "@/components/RouteChunkFallback";
 import EditorDashboard from "@/pages/editor/EditorDashboard";
 import EditorHaberler from "@/pages/editor/EditorHaberler";
 import EditorYekpareHaberleri from "@/pages/editor/EditorYekpareHaberleri";
@@ -28,6 +30,20 @@ import EditorProfil from "@/pages/editor/EditorProfil";
 import EditorRssKampanyalari from "@/pages/editor/EditorRssKampanyalari";
 import EditorRssKampanyaEditor from "@/pages/editor/EditorRssKampanyaEditor";
 import EditorRssLoglar from "@/pages/editor/EditorRssLoglar";
+
+const HaberEditor = lazy(() => import("@/pages/admin/HaberEditor"));
+
+function HaberEditorPage() {
+  return (
+    <HmEditorRoute>
+      <EditorRouteErrorBoundary fallbackHref="/editor/haberler">
+        <Suspense fallback={<RouteChunkFallback />}>
+          <HaberEditor />
+        </Suspense>
+      </EditorRouteErrorBoundary>
+    </HmEditorRoute>
+  );
+}
 
 /** HM özel alanı — editör yüzeyi ayrı chunk (haber vitrini 4MB portal yığınını çekmez). */
 export default function HmEditorRoutes() {
@@ -62,20 +78,8 @@ export default function HmEditorRoutes() {
           </HmEditorRoute>
         )}
       </Route>
-      <Route path="/editor/haberler/yeni">
-        {() => (
-          <HmEditorRoute>
-            <HaberEditor />
-          </HmEditorRoute>
-        )}
-      </Route>
-      <Route path="/editor/haberler/:id/duzenle">
-        {() => (
-          <HmEditorRoute>
-            <HaberEditor />
-          </HmEditorRoute>
-        )}
-      </Route>
+      <Route path="/editor/haberler/yeni">{() => <HaberEditorPage />}</Route>
+      <Route path="/editor/haberler/:id/duzenle">{() => <HaberEditorPage />}</Route>
       <Route path="/editor/haberler">
         {() => (
           <HmEditorRoute>

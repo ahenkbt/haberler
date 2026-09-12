@@ -39,4 +39,10 @@ describe("hmPublicEditorRoute — HmPublicApp editor wrapper", () => {
     expect(hmPublicAppLoadsEditorRoutes("/editor")).toBe(true);
     expect(hmPublicAppLoadsEditorRoutes("/haber/yeni")).toBe(false);
   });
+
+  it("explains the video: no spinner because the parent route never mounted LazyChunk", () => {
+    // Instant blank + no RouteChunkFallback spinner = Switch miss, not a pending chunk.
+    expect(hmPublicEditorNamedRestStarMatches("/editor/haberler/yeni")).toBe(false);
+    expect(hmPublicEditorWildcardMatches("/editor/haberler/yeni")).toBe(true);
+  });
 });

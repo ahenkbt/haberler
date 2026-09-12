@@ -83,6 +83,7 @@ export function NewsContentEditor({ value, onChange, className }: Props) {
   const galleryFileRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },

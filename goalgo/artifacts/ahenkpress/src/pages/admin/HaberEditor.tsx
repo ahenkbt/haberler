@@ -23,7 +23,7 @@ import { apiUrl, extractApiMediaPath, resolveClientMediaSrc } from "@/lib/apiBas
 import { readHmJwt, readHmSite } from "@/lib/hmSession";
 import { clearHmNewsArticleBundleCache } from "@/lib/hmNewsArticleCache";
 import { readHmAuthorJwt, readHmAuthorPayload } from "@/lib/hmAuthorSession";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, asArray } from "@/lib/queryClient";
 import { HM_EDITOR_CATEGORIES_QUERY_KEY, HM_EDITOR_NEWS_QUERY_KEY } from "@/lib/hmEditorQueryKeys";
 import { HM_AUTHOR_NEWS_QUERY_KEY } from "@/lib/hmAuthorNewsQueryKey";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
@@ -137,7 +137,9 @@ export default function HaberEditor() {
       >,
     enabled: isAuthorHm && authorSiteId != null && authorSiteId > 0,
   });
-  const categories = isAuthorHm ? authorHmCategories : isEditorHm ? hmEditorCategories : portalCategories;
+  const categories = asArray<{ name: string; slug: string }>(
+    isAuthorHm ? authorHmCategories : isEditorHm ? hmEditorCategories : portalCategories,
+  ).filter((c) => String(c?.slug ?? "").trim().length > 0);
   const hmSiteForAuthors = isEditorHm ? readHmSite() : null;
   const { data: authorsHm } = useQuery({
     queryKey: ["/api/authors", "hm-editor-haber", hmSiteForAuthors?.id],
@@ -152,19 +154,24 @@ export default function HaberEditor() {
     queryFn: () => apiRequest("/api/authors") as Promise<{ id: number; name: string; title?: string | null }[]>,
     enabled: !isEditorHm && !isAuthorHm,
   });
-  const authors = isEditorHm ? authorsHm : authorsPortal;
+  const authors = asArray<{ id: number; name: string; title?: string | null }>(
+    isEditorHm ? authorsHm : authorsPortal,
+  ).filter((a) => a && a.id != null);
 
   const { data: foodRecipeCategories = [] } = useQuery<Array<{ slug: string; name: string }>>({
     queryKey: ["/api/delivery/subcategories", "haber-editor-food"],
     queryFn: async () => {
-      const cats = (await apiRequest("/api/delivery/categories?module=food")) as Array<{ id: number; slug?: string }>;
+      const cats = asArray<{ id: number; slug?: string }>(
+        await apiRequest("/api/delivery/categories?module=food").catch(() => []),
+      );
       const yemek = cats.find((c) => String(c.slug ?? "").toLowerCase() === "yemek") ?? cats[0];
       if (!yemek?.id) return [];
-      const rows = (await apiRequest(`/api/delivery/subcategories?categoryId=${encodeURIComponent(String(yemek.id))}`)) as Array<{
-        slug: string;
-        name: string;
-      }>;
-      return Array.isArray(rows) ? rows : [];
+      const rows = asArray<{ slug: string; name: string }>(
+        await apiRequest(`/api/delivery/subcategories?categoryId=${encodeURIComponent(String(yemek.id))}`).catch(
+          () => [],
+        ),
+      );
+      return rows.filter((c) => String(c.slug ?? "").trim());
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -263,10 +270,12 @@ export default function HaberEditor() {
     if (idx < 0) return;
     const q = new URLSearchParams(location.slice(idx + 1));
     const raw = (q.get("kategori") ?? q.get("category") ?? "").trim();
-    if (!raw || !categories?.length) return;
-    const match = categories.find(
-      (c) => c.slug.toLowerCase() === raw.toLowerCase() || c.name.trim().toLowerCase() === raw.toLowerCase(),
-    );
+    if (!raw || !categories.length) return;
+    const match = categories.find((c) => {
+      const slug = String(c.slug ?? "").toLowerCase();
+      const name = String(c.name ?? "").trim().toLowerCase();
+      return slug === raw.toLowerCase() || name === raw.toLowerCase();
+    });
     const slug = match?.slug ?? "";
     if (!slug) return;
     setForm((prev) => (prev.categorySlug ? prev : { ...prev, categorySlug: slug }));
@@ -592,7 +601,7 @@ export default function HaberEditor() {
                   <SelectValue placeholder="Kategori Seçin" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories?.map((c) => (
+                  {categories.map((c) => (
                     <SelectItem key={c.slug} value={c.slug}>
                       {c.name}
                     </SelectItem>
@@ -630,7 +639,11 @@ export default function HaberEditor() {
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Yazar Seçin" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">Yazar Yok</SelectItem>
-                    {authors?.map(a => <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>)}
+                    {authors.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
