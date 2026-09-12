@@ -31,6 +31,8 @@ import { resyncAllVendorsToMap } from "./lib/vendor-map-sync";
 import { resyncAllEtkinlikVenuesToMap } from "./lib/etkinlik-venue-map-sync";
 import { ensurePortalRssItemViewsSchema } from "./lib/portal-rss-store.js";
 import { bootstrapRssAutomationFromSettings } from "./lib/rss-automation-control.js";
+import { startRssCampaignMidnightScheduler } from "./lib/rss-campaign-midnight-scheduler.js";
+import { ensureHmSharedRssCampaigns } from "./lib/hm-rss-campaign-seed.js";
 import { startHmPoolAutoScheduler } from "./lib/hmPoolAutoScheduler";
 import { bootstrapKesfetNightScraperFromSettings } from "./routes/map";
 import { scheduleInsaatfirmalarimAutoImport, startInsaatfirmalarimQueueWatchdog } from "./lib/insaatfirmalarim-jobs.js";
@@ -334,6 +336,17 @@ const server = app.listen(port, listenHost, (err) => {
       if (stop) schedulerStops.push(stop);
     })
     .catch((err) => logger.warn({ err }, "[rss-automation] bootstrap atlandı"));
+
+  if (envJobFlag("HM_RSS_MIDNIGHT_SYNC", true)) {
+    schedulerStops.push(startRssCampaignMidnightScheduler(logger));
+    setTimeout(() => {
+      void ensureHmSharedRssCampaigns()
+        .then((r) => logger.info(r, "[hm-rss-seed] SHA + Vatanhaber kampanyaları"))
+        .catch((err) => logger.warn({ err }, "[hm-rss-seed] kampanya seed atlandı"));
+    }, 18_000).unref();
+  } else {
+    logger.info("[hm-rss-midnight] HM_RSS_MIDNIGHT_SYNC=0 — 00:00 TR SHA/Vatanhaber kapalı");
+  }
 
   schedulerStops.push(startHmPoolAutoScheduler(logger, 90_000));
 

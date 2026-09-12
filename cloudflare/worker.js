@@ -2694,6 +2694,7 @@ export default {
     }
     if (hostKey === "ankarahabergundemi.com") {
       try {
+        // SHA içerik AHG+ASG’de isteniyor — purge no-op (eski silmeyi tekrarlamaz).
         const job = purgeAhgRssCampaignNewsOnNeon(env).catch((err) => {
           console.error("[hm-ahg-rss-news-purge]", String(err?.message || err).slice(0, 200));
         });

@@ -19,9 +19,12 @@ import { ensureRssCampaignSchema } from "../lib/ensure-rss-campaign-schema.js";
 import { preflightRssCampaignRun, scheduleRssCampaignRun } from "../lib/rssCampaignRun.js";
 import {
   campaignIdFromRequestPath,
+  mergeSharedCampaignHmSiteIds,
   parsePositiveInt,
   rssCampaignOwnedByHmSite,
 } from "../lib/hm-rss-campaigns.js";
+import { isShaCampaign } from "../lib/hm-sha-rss-feeds.js";
+import { isMidnightTrCampaign } from "../lib/rss-campaign-dedupe.js";
 import {
   deleteNewsImportedByRssCampaign,
   purgeAhgRssCampaignNewsOnce,
@@ -207,7 +210,10 @@ router.put("/hm/editor/rss/campaigns/:id", async (req, res): Promise<void> => {
     sourceLang: d.sourceLang ?? null,
     targetLang: d.targetLang ?? null,
     translateEngine: d.translateEngine ?? null,
-    hmSiteIds: [ctx.siteId],
+    hmSiteIds:
+      isShaCampaign(existing) || isMidnightTrCampaign(existing)
+        ? mergeSharedCampaignHmSiteIds(existing.hmSiteIds, ctx.siteId)
+        : [ctx.siteId],
     includeYekpareHaber: false,
     haberlerFilterByTags: d.haberlerFilterByTags ?? false,
   });

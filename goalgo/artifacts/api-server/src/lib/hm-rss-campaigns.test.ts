@@ -3,10 +3,12 @@ import {
   campaignIdFromRequestPath,
   collectFeedHosts,
   hostFromMaybeUrl,
+  mergeSharedCampaignHmSiteIds,
   normalizeHmSiteIds,
   parsePositiveInt,
   rssCampaignOwnedByHmSite,
   rssSourceMatchesHosts,
+  shaTargetsAreDualSite,
 } from "./hm-rss-campaigns.js";
 
 describe("normalizeHmSiteIds", () => {
@@ -54,6 +56,21 @@ describe("campaignIdFromRequestPath", () => {
     expect(campaignIdFromRequestPath(undefined, "/api/hm/editor/rss/campaigns/8")).toBe(8);
     expect(campaignIdFromRequestPath(undefined, "/api/hm/editor/rss/campaigns/8/run")).toBe(8);
     expect(campaignIdFromRequestPath(undefined, "/api/hm/editor/rss/campaigns")).toBe(null);
+  });
+});
+
+describe("mergeSharedCampaignHmSiteIds", () => {
+  it("editör kaydı SHA çift hedefi silmez", () => {
+    expect(mergeSharedCampaignHmSiteIds([3, 7], 3)).toEqual([3, 7]);
+    expect(mergeSharedCampaignHmSiteIds([3], 7)).toEqual([3, 7]);
+  });
+});
+
+describe("shaTargetsAreDualSite", () => {
+  it("ASG + AHG siteId ikilisini tanır", () => {
+    expect(shaTargetsAreDualSite([3, 7], 3, 7)).toBe(true);
+    expect(shaTargetsAreDualSite("{3,7}", 3, 7)).toBe(true);
+    expect(shaTargetsAreDualSite([3], 3, 7)).toBe(false);
   });
 });
 
