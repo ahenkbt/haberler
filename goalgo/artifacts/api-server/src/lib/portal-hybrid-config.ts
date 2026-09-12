@@ -42,7 +42,7 @@ export function resolveHmHybridFeedLoadScope(rssScope: string): HmHybridRssScope
 
 const BOX_RSS_MAX_ITEMS = 10;
 const SITE_RSS_MAX_ITEMS = 12;
-const PORTAL_RSS_MAX_ITEMS = 20;
+const PORTAL_RSS_MAX_ITEMS = 10;
 
 function normalizeRssUrl(raw: unknown): string {
   const t = String(raw ?? "").trim();
