@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   filterPoolCopiesWhenReceiveDisabled,
+  resolveEditorScopedPoolOpts,
   shouldApplyActivatedPoolCategoryFilter,
 } from "./hybrid-news-merge.js";
 
@@ -15,6 +16,30 @@ describe("shouldApplyActivatedPoolCategoryFilter", () => {
     expect(shouldApplyActivatedPoolCategoryFilter("asayis")).toBe(false);
     expect(shouldApplyActivatedPoolCategoryFilter("asayiş")).toBe(false);
     expect(shouldApplyActivatedPoolCategoryFilter(" gundem ")).toBe(false);
+  });
+});
+
+describe("resolveEditorScopedPoolOpts", () => {
+  it("haber sitelerinde merkez havuzu birleştirir", () => {
+    const opts = resolveEditorScopedPoolOpts({
+      isCorporate: false,
+      activatedCategorySlugs: [],
+      hiddenPoolNewsIds: [],
+      allowCrossSiteManualNews: true,
+    });
+    expect(opts.excludeCentralPool).toBe(false);
+    expect(opts.activationDefault).toBe("all");
+  });
+
+  it("kurumsal sitelerde merkez havuzu gizler", () => {
+    const opts = resolveEditorScopedPoolOpts({
+      isCorporate: true,
+      activatedCategorySlugs: [],
+      hiddenPoolNewsIds: [],
+      allowCrossSiteManualNews: true,
+    });
+    expect(opts.excludeCentralPool).toBe(true);
+    expect(opts.activationDefault).toBe("none");
   });
 });
 

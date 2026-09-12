@@ -38,6 +38,7 @@ import {
   sortNewsByRecency,
 } from "@/lib/hmHeadlinePool";
 import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
+import { markHmSpaReady } from "@/lib/hmSpaReady";
 
 const PAGE_SIZE = 60;
 /** Manşet altı kategori grid kutusu — ilk sayfa (4×5). PR #474 manşet dedupe korunur. */
@@ -335,6 +336,10 @@ export default function KategoriDetay() {
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (!isLoading) markHmSpaReady();
+  }, [isLoading]);
 
   const news = useMemo(() => {
     const pages = newsPages?.pages ?? [];

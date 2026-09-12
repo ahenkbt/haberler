@@ -23,6 +23,13 @@ import { mirrorRssImportImageUrl } from "./portal-rss-image-mirror.js";
 import { logger } from "./logger";
 import { ensureRssCampaignSchema } from "./ensure-rss-campaign-schema.js";
 import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
+import {
+  resolveRssCampaignSharedPublishTargets,
+  rssCampaignSharedFeedConfig,
+} from "./portal-rss-shared-pool.js";
+import { upsertPortalRssItems } from "./portal-rss-store.js";
+import { portalRssTitleKey } from "./portal-rss-fetch.js";
+import { createHash } from "node:crypto";
 
 export type RssCampaignRunResult = {
   added: number;
@@ -262,8 +269,9 @@ export async function executeRssCampaignRun(
     return { added: 0, skipped: 0, errors: 1, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
   }
 
-  const sourceBySite = await loadExistingSourceUrlsBySite(siteTargets);
-  const titlesBySite = await loadRecentTitlesBySite(siteTargets);
+  const publishTargets = resolveRssCampaignSharedPublishTargets(siteTargets);
+  const sourceBySite = await loadExistingSourceUrlsBySite(publishTargets);
+  const titlesBySite = await loadRecentTitlesBySite(publishTargets);
 
   const itemLimit = Math.min(30, campaign.dailyLimit > 0 ? campaign.dailyLimit : 20);
   const sourceType = String(campaign.sourceType ?? "rss").toLowerCase();
@@ -421,7 +429,7 @@ export async function executeRssCampaignRun(
         const sourceKey = normalizeRssSourceUrl(item.link);
         const targetsToAdd: (number | null)[] = [];
 
-        for (const siteId of siteTargets) {
+        for (const siteId of publishTargets) {
           if (isAlreadyImported(siteId, sourceKey, cleanTitle, sourceBySite, titlesBySite)) {
             skipped++;
             continue;
@@ -435,6 +443,35 @@ export async function executeRssCampaignRun(
         const imageUrl = await mirrorRssImportImageUrl(item.imageUrl, cleanTitle, {
           force: campaign.downloadImages === true,
         });
+        const sharedFeed = rssCampaignSharedFeedConfig({
+          campaignId,
+          categorySlug: String(campaign.categorySlug || "gundem"),
+          feedUrl,
+        });
+        const titleKey = portalRssTitleKey(cleanTitle);
+        const itemKey = createHash("sha1")
+          .update(sourceKey || titleKey)
+          .digest("hex")
+          .slice(0, 16);
+        try {
+          await upsertPortalRssItems(sharedFeed, [
+            {
+              id: itemKey,
+              title: cleanTitle,
+              link: item.link,
+              spot: rssSpot,
+              contentHtml,
+              imageUrl: imageUrl ?? null,
+              publishedAt: publishedAt.toISOString(),
+              cachedAt: new Date().toISOString(),
+              titleKey,
+              feedId: sharedFeed.id,
+              categorySlug: sharedFeed.categorySlug,
+            },
+          ]);
+        } catch {
+          /* news satırı yine yazılır */
+        }
 
         for (const siteId of targetsToAdd) {
           const slugSuffix = `${Date.now()}-${added}-${siteId ?? "m"}-${Math.random().toString(36).slice(2, 7)}`;

@@ -44,6 +44,7 @@ import {
 import { hasKoseAuthorId, isKoseArticle, resolveArticlePublicPath } from "@/lib/isKoseArticle";
 import { HmNewsImage } from "@/components/HmNewsImage";
 import { normalizeHmVitrinTheme, resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
+import { markHmSpaReady } from "@/lib/hmSpaReady";
 
 interface NewsItem {
   id: number;
@@ -130,6 +131,10 @@ export default function HaberDetay() {
   });
 
   const news = bundle?.article ?? null;
+
+  useEffect(() => {
+    if (news) markHmSpaReady();
+  }, [news]);
 
   useEffect(() => {
     if (news || isLoading) return;

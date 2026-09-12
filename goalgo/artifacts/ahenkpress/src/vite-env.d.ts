@@ -66,6 +66,9 @@ interface Window {
     slug?: string;
     savedAt?: number;
   };
+  /** Worker first-paint hold — React hazır olunca klasik kabuğu kaldırır. */
+  __YEKPARE_HM_RELEASE_FIRST_PAINT__?: () => void;
+  __YEKPARE_SPA_READY__?: boolean;
   /** Worker / index.html — haber detay page-bundle (page-bundle 5xx olsa bile gövde). */
   __YEKPARE_HM_ARTICLE_BUNDLE__?: {
     slug?: string;

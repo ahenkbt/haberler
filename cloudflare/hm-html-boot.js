@@ -127,7 +127,9 @@ export function hmHomeSlugFromPath(pathname, hostname) {
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "");
   }
-  if (path === "/" || parseHmNewsArticlePath(path)) return hmDomainSlugFallback(hostname);
+  if (path === "/" || parseHmNewsArticlePath(path) || parseHmNewsCategoryPath(path)) {
+    return hmDomainSlugFallback(hostname);
+  }
   return "";
 }
 
@@ -135,6 +137,33 @@ export function isHmPublicHomeHtmlPath(pathname, hostname) {
   const path = String(pathname || "").replace(/\/+$/, "") || "/";
   if (path === "/" && hmDomainSlugFallback(hostname)) return true;
   return /^\/tr\/[^/]+$/i.test(path) || /^\/hm\/[^/]+$/i.test(path);
+}
+
+/** /kategori/{slug} ve /tr/{site}/kategori/{slug} */
+export function parseHmNewsCategoryPath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  const nested = p.match(/^\/(?:tr|hm)\/[^/]+\/kategori\/([^/]+)$/i);
+  if (nested?.[1]) {
+    try {
+      return { slug: decodeURIComponent(nested[1]).trim().toLowerCase() };
+    } catch {
+      return { slug: String(nested[1]).trim().toLowerCase() };
+    }
+  }
+  const root = p.match(/^\/kategori\/([^/]+)$/i);
+  if (root?.[1]) {
+    try {
+      return { slug: decodeURIComponent(root[1]).trim().toLowerCase() };
+    } catch {
+      return { slug: String(root[1]).trim().toLowerCase() };
+    }
+  }
+  return null;
+}
+
+export function isHmPublicCategoryHtmlPath(pathname, hostname) {
+  if (!parseHmNewsCategoryPath(pathname)) return false;
+  return Boolean(hmHomeSlugFromPath(pathname, hostname));
 }
 
 function safeJsonScript(value) {
@@ -275,7 +304,17 @@ function bootNavItems(boot) {
   return items.length > 0 ? items : defaultHmBootNav(boot?.slug);
 }
 
-function bootHeadlineItems(bundle, origin) {
+function itemCategorySlug(item) {
+  return String(item?.categorySlug || item?.category || item?.categoryKey || "")
+    .trim()
+    .toLowerCase();
+}
+
+function bootHeadlineItems(bundle, origin, opts) {
+  const limit = Number(opts?.limit) > 0 ? Number(opts.limit) : 20;
+  const wantCat = String(opts?.categorySlug || "")
+    .trim()
+    .toLowerCase();
   const lists = [
     bundle?.tepeManset,
     bundle?.featured,
@@ -286,6 +325,7 @@ function bootHeadlineItems(bundle, origin) {
   ];
   const seen = new Set();
   const items = [];
+  const unmatched = [];
   for (const list of lists) {
     if (!Array.isArray(list)) continue;
     for (const item of list) {
@@ -300,8 +340,19 @@ function bootHeadlineItems(bundle, origin) {
         item?.imageUrl || item?.featuredImage || item?.image || item?.thumbnailUrl,
         origin,
       );
-      items.push({ title, href, image });
-      if (items.length >= 12) return items;
+      const row = { title, href, image, categorySlug: itemCategorySlug(item) };
+      if (wantCat && row.categorySlug && row.categorySlug !== wantCat) {
+        unmatched.push(row);
+        continue;
+      }
+      items.push(row);
+      if (items.length >= limit) return items;
+    }
+  }
+  if (wantCat && items.length < Math.min(8, limit)) {
+    for (const row of unmatched) {
+      items.push(row);
+      if (items.length >= limit) break;
     }
   }
   return items;
@@ -344,7 +395,18 @@ const HM_CLASSIC_FIRST_PAINT_CSS = `.hm-fp{margin:0;background:#fff;color:#0f172
 .hm-fp-nums{flex-direction:row;justify-content:center}
 .hm-fp-cards{grid-template-columns:1fr}
 .hm-fp-market{width:100%}
-}`;
+}
+.hm-fp-article{padding:18px 0 28px;max-width:760px}
+.hm-fp-kicker{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#e11d48;margin:0 0 8px}
+.hm-fp-article h1{margin:0 0 12px;font-size:clamp(26px,4vw,40px);line-height:1.15;font-weight:800}
+.hm-fp-spot{margin:0 0 16px;font-size:18px;line-height:1.45;color:#334155}
+.hm-fp-hero{margin:0 0 16px;border-radius:10px;overflow:hidden;background:#1e293b}
+.hm-fp-hero img{width:100%;height:auto;display:block;max-height:420px;object-fit:cover}
+.hm-fp-body{font-size:17px;line-height:1.65;color:#1e293b}
+.hm-fp-list{list-style:none;margin:16px 0 24px;padding:0}
+.hm-fp-list a{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.hm-fp-list img{width:96px;height:64px;object-fit:cover;border-radius:6px;flex-shrink:0;background:#e2e8f0}
+.hm-fp-list span{font-weight:700;font-size:16px;line-height:1.35}`;
 
 /** Klasik tam anasayfa ilk boyama — overlay / "Manşet yükleniyor…" yok. */
 export function buildHmClassicHomePaintHtml(boot) {
@@ -416,6 +478,158 @@ function bootBrandMarkUrl(boot, origin) {
   return bootPublicMediaUrl(layout.logoUrl, origin) || bootPublicMediaUrl(layout.faviconUrl, origin);
 }
 
+function bootPlainText(html, max) {
+  const n = Number(max) > 0 ? Number(max) : 900;
+  return String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, n);
+}
+
+function buildHmClassicChromeInner(boot, origin) {
+  const name = boot.meta?.displayName || hmSlugDisplayName(boot.slug) || boot.slug || "Haber";
+  const homeHref = boot.slug ? `/tr/${encodeURIComponent(String(boot.slug))}` : "/";
+  const mark = bootBrandMarkUrl(boot, origin);
+  const nav = bootNavItems(boot);
+  const brandImg = mark
+    ? `<img src="${escPaint(mark)}" alt="${escPaint(name)}" width="220" height="52" decoding="async"/>`
+    : `<div class="hm-fp-name">${escPaint(name)}</div>`;
+  const rates = HM_FP_FALLBACK_RATES.map(
+    (r) =>
+      `<span class="hm-fp-rate"><b>${escPaint(r.label)}</b> ${escPaint(r.value)} <span class="${r.dir === "down" ? "hm-fp-down" : "hm-fp-up"}">${escPaint(r.change)}</span></span>`,
+  ).join("");
+  const navHtml = nav
+    .map((it) => `<a href="${escPaint(it.href)}">${escPaint(it.label)}</a>`)
+    .join("");
+  return `<div class="hm-fp-top">
+<a class="hm-fp-brand" href="${escPaint(homeHref)}">${brandImg}</a>
+<div class="hm-fp-market" role="region" aria-label="Piyasa">
+<span class="hm-fp-market-kicker">Piyasa · Hava</span>
+${rates}
+<span class="hm-fp-search">Ara</span>
+</div>
+</div>
+<nav class="hm-fp-nav" aria-label="Ana menü">${navHtml}</nav>`;
+}
+
+/** Haber detay — JS beklemeden başlık/spot/görsel + kısa gövde. */
+export function buildHmClassicArticlePaintHtml(boot) {
+  if (!boot || typeof boot !== "object") return "";
+  const article =
+    boot.articleBundle && typeof boot.articleBundle === "object"
+      ? boot.articleBundle.article || boot.articleBundle
+      : null;
+  const title = String(article?.title || "").trim();
+  if (!title) return "";
+  const origin = bootOrigin(boot);
+  const theme = String(boot.meta?.layout?.hmVitrinTheme || "").trim() || "default";
+  const image = bootPublicMediaUrl(
+    article?.imageUrl || article?.featuredImage || article?.image || article?.thumbnailUrl,
+    origin,
+  );
+  const spot = bootPlainText(article?.spot || article?.summary || article?.description || "", 360);
+  const body = bootPlainText(article?.content || "", 1100);
+  const hero = image
+    ? `<div class="hm-fp-hero"><img src="${escPaint(image)}" alt="" width="800" height="450" decoding="async"/></div>`
+    : "";
+  return `<div class="hm-fp hm-classic-root" data-hm-first-paint="article" data-hm-vitrin-theme="${escPaint(theme)}">
+<style>${HM_CLASSIC_FIRST_PAINT_CSS}</style>
+<div class="hm-fp-wrap">
+${buildHmClassicChromeInner(boot, origin)}
+<article class="hm-fp-article">
+<p class="hm-fp-kicker">Haber</p>
+<h1>${escPaint(title)}</h1>
+${spot ? `<p class="hm-fp-spot">${escPaint(spot)}</p>` : ""}
+${hero}
+${body ? `<p class="hm-fp-body">${escPaint(body)}</p>` : ""}
+</article>
+</div>
+</div>`;
+}
+
+function humanizeCategorySlug(slug) {
+  const raw = String(slug || "").trim();
+  if (!raw) return "Kategori";
+  const map = {
+    gundem: "Gündem",
+    yerel: "Yerel",
+    ankara: "Ankara",
+    dunya: "Dünya",
+    ekonomi: "Ekonomi",
+    spor: "Spor",
+    siyaset: "Siyaset",
+    politika: "Siyaset",
+    saglik: "Sağlık",
+    teknoloji: "Teknoloji",
+    egitim: "Eğitim",
+    yasam: "Yaşam",
+    magazin: "Magazin",
+    "kultur-sanat": "Kültür Sanat",
+    asayis: "Asayiş",
+  };
+  if (map[raw]) return map[raw];
+  return raw
+    .split("-")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toLocaleUpperCase("tr-TR") + w.slice(1))
+    .join(" ");
+}
+
+/** Kategori listesi — gömülü home-bundle'dan tıklanabilir başlıklar. */
+export function buildHmClassicCategoryPaintHtml(boot) {
+  if (!boot || typeof boot !== "object") return "";
+  const origin = bootOrigin(boot);
+  const cat = String(boot.categorySlug || "").trim().toLowerCase();
+  const items = bootHeadlineItems(boot.bundle, origin, { limit: 20, categorySlug: cat });
+  if (items.length === 0) return "";
+  const theme = String(boot.meta?.layout?.hmVitrinTheme || "").trim() || "default";
+  const label = humanizeCategorySlug(cat);
+  const rows = items
+    .map((it) => {
+      const img = it.image
+        ? `<img src="${escPaint(it.image)}" alt="" width="96" height="64" decoding="async"/>`
+        : "";
+      return `<li><a href="${escPaint(it.href)}">${img}<span>${escPaint(it.title)}</span></a></li>`;
+    })
+    .join("");
+  return `<div class="hm-fp hm-classic-root" data-hm-first-paint="category" data-hm-vitrin-theme="${escPaint(theme)}">
+<style>${HM_CLASSIC_FIRST_PAINT_CSS}</style>
+<div class="hm-fp-wrap">
+${buildHmClassicChromeInner(boot, origin)}
+<section class="hm-fp-article" aria-label="${escPaint(label)}">
+<p class="hm-fp-kicker">Kategori</p>
+<h1>${escPaint(label)}</h1>
+<ul class="hm-fp-list">${rows}</ul>
+</section>
+</div>
+</div>`;
+}
+
+function resolveHmFirstPaintHtml(boot) {
+  if (!boot || boot.skipPaint) return "";
+  const kind = String(boot.paintKind || "").trim().toLowerCase();
+  if (kind === "article") return buildHmClassicArticlePaintHtml(boot);
+  if (kind === "category") return buildHmClassicCategoryPaintHtml(boot);
+  if (boot.articleBundle && boot.articleSlug && kind !== "home") {
+    const articlePaint = buildHmClassicArticlePaintHtml(boot);
+    if (articlePaint) return articlePaint;
+  }
+  if (boot.categorySlug) {
+    const catPaint = buildHmClassicCategoryPaintHtml(boot);
+    if (catPaint) return catPaint;
+  }
+  return buildHmClassicHomePaintHtml(boot);
+}
+
+/** Klasik HTML, React #root'u silene kadar tıklanabilir kalsın. */
+export function buildHmFirstPaintHoldScript() {
+  return `<script>(function(){var r=document.getElementById("root");if(!r)return;var p=r.querySelector("[data-hm-first-paint]");if(!p)return;var h=document.createElement("div");h.id="hm-first-paint-hold";h.setAttribute("data-hm-first-paint-hold",p.getAttribute("data-hm-first-paint")||"classic");h.style.cssText="position:fixed;inset:0;z-index:2147483000;overflow:auto;background:#fff";h.appendChild(p.cloneNode(true));r.parentNode.insertBefore(h,r);document.documentElement.setAttribute("data-hm-spa-pending","1");window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;var el=document.getElementById("hm-first-paint-hold");if(el&&el.parentNode)el.parentNode.removeChild(el);document.documentElement.removeAttribute("data-hm-spa-pending");};setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
+}
+
 /** @deprecated overlay kaldırıldı; klasik anasayfa ilk boyama. */
 export function buildHmBootPaintHtml(boot) {
   return buildHmClassicHomePaintHtml(boot);
@@ -472,7 +686,7 @@ export function injectHmHtmlBoot(html, boot) {
       out = `${tag}${out}`;
     }
   }
-  const paint = boot.skipPaint ? "" : buildHmClassicHomePaintHtml(boot);
+  const paint = resolveHmFirstPaintHtml(boot);
   if (paint) {
     if (out.includes('<div id="root"></div>')) {
       out = out.replace('<div id="root"></div>', `<div id="root">${paint}</div>`);
@@ -480,6 +694,11 @@ export function injectHmHtmlBoot(html, boot) {
       out = out.replace('<div id="root">', `<div id="root">${paint}`);
     } else if (out.includes("<body>")) {
       out = out.replace("<body>", `<body><div id="root">${paint}</div>`);
+    }
+    if (out.includes("</body>")) {
+      out = out.replace("</body>", `${buildHmFirstPaintHoldScript()}</body>`);
+    } else {
+      out += buildHmFirstPaintHoldScript();
     }
   }
   return out;

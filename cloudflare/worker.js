@@ -66,6 +66,7 @@ import {
   isHmAiKnowledgePath,
   isHmPublicHomeHtmlPath,
   parseHmNewsArticlePath,
+  parseHmNewsCategoryPath,
   isSharePreviewUserAgent,
   listKnownHmEditorSites,
   raceHmHtmlBoot,
@@ -920,15 +921,47 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
           }),
           articleSlug,
           articleBundle,
-          skipPaint: true,
+          paintKind: "article",
+          skipPaint: false,
         });
         out.set(
           "x-yekpare-hm-html-boot",
           articleBundle ? "article-cache" : boot?.fromCache ? "article-meta-cache" : "article-meta",
         );
+        if (articleBundle) out.set("x-yekpare-hm-first-paint", "article");
       }
     } catch (err) {
       console.error("[hm-html-boot/article]", String(err?.message || err).slice(0, 180));
+    }
+  } else if (incoming && parseHmNewsCategoryPath(incoming.pathname) && hmHostSlug && env) {
+    const categorySlug = parseHmNewsCategoryPath(incoming.pathname).slug;
+    try {
+      const origin = upstreamOrigin(env, incoming);
+      const boot = await withBudget(
+        raceHmHtmlBoot({
+          fetchApi,
+          origin,
+          env,
+          incoming,
+          cache: getHmEdgeCache(),
+          waitUntil: typeof waitUntil === "function" ? waitUntil : undefined,
+        }),
+      );
+      if (boot) {
+        html = injectHmHtmlBoot(html, {
+          ...boot,
+          categorySlug,
+          paintKind: "category",
+          skipPaint: false,
+        });
+        out.set(
+          "x-yekpare-hm-html-boot",
+          `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
+        );
+        out.set("x-yekpare-hm-first-paint", "category");
+      }
+    } catch (err) {
+      console.error("[hm-html-boot/category]", String(err?.message || err).slice(0, 180));
     }
   }
   return new Response(html, {
