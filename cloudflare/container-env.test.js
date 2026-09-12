@@ -137,4 +137,16 @@ describe("container-env", () => {
     assert.equal(clean.url, "https://turk.eco/api/healthz");
     assert.equal(clean.signal.aborted, false);
   });
+
+  it("forwards ADMIN_PANEL_* secrets into container env", () => {
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://u:p@h/db",
+      SESSION_SECRET: "0123456789abcdef",
+      ADMIN_PANEL_PASSWORD: "secret-pass",
+      ADMIN_PANEL_USERNAMES: "ahenkbt,nailkabali",
+    });
+    assert.equal(vars.ADMIN_PANEL_PASSWORD, "secret-pass");
+    assert.equal(vars.ADMIN_PANEL_USERNAMES, "ahenkbt,nailkabali");
+  });
+
 });
