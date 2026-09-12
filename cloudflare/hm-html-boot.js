@@ -2,7 +2,8 @@
  * HM editör siteleri — HTML ilk boyama.
  * Kök / bekleyen meta API'siz /tr/{slug}'a düşer; HTML'e kısa süreli home-bundle gömülür.
  * fetchApi Container yolunda AbortSignal'i siler; TTFB'yi withBudget keser.
- * Kenar cache hit ise origin beklenmez; manşet HTML'i React'ten önce boyanır.
+ * Kenar cache hit ise origin beklenmez; klasik anasayfa (logo/menü/piyasa/manşet)
+ * #root içine ekilir — "Manşet yükleniyor…" overlay yok.
  */
 import {
   getHmEdgeCache,
@@ -206,7 +207,73 @@ function escPaint(s) {
     .replace(/"/g, "&quot;");
 }
 
-function bootHeadlineItems(bundle) {
+const HM_FP_FALLBACK_RATES = [
+  { label: "USD/TRY", value: "34,12", change: "+0,08", dir: "up" },
+  { label: "EUR/TRY", value: "36,88", change: "-0,02", dir: "down" },
+  { label: "Gram Altın", value: "3.245 ₺", change: "+12", dir: "up" },
+];
+
+function bootOrigin(boot) {
+  const host = String(boot?.host || boot?.meta?.domain || "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .split(":")[0]
+    .trim();
+  if (host) return `https://${host}`;
+  return "";
+}
+
+/** http(s) veya site-relative; data: URI ve aşırı uzun URL yok. */
+function bootPublicMediaUrl(raw, origin) {
+  const v = String(raw || "").trim();
+  if (!v || /^data:/i.test(v) || v.length > 2048) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith("//")) return `https:${v}`;
+  if (v.startsWith("/")) {
+    const o = String(origin || "").replace(/\/+$/, "");
+    return o ? `${o}${v}` : v;
+  }
+  return "";
+}
+
+function defaultHmBootNav(slug) {
+  const s = String(slug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "");
+  const home = s ? `/tr/${encodeURIComponent(s)}` : "/";
+  const all = s ? `/tr/${encodeURIComponent(s)}/tum-haberler` : "/tum-haberler";
+  return [
+    { label: "Anasayfa", href: home },
+    { label: "Sondakika", href: "/sondakika" },
+    { label: "Tüm Haberler", href: all },
+    { label: "Yerel", href: "/kategori/yerel" },
+    { label: "Ankara", href: "/kategori/ankara" },
+    { label: "Gündem", href: "/kategori/gundem" },
+    { label: "Dünya", href: "/kategori/dunya" },
+    { label: "Ekonomi", href: "/kategori/ekonomi" },
+    { label: "Spor", href: "/kategori/spor" },
+    { label: "Künye", href: "/kunye" },
+    { label: "Video TV", href: "/video-tv" },
+  ];
+}
+
+function bootNavItems(boot) {
+  const layout = boot?.meta?.layout && typeof boot.meta.layout === "object" ? boot.meta.layout : {};
+  const raw = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
+  const items = [];
+  for (const it of raw) {
+    if (!it || it.enabled === false) continue;
+    const label = String(it.label || "").trim();
+    if (!label) continue;
+    const href = String(it.href || "").trim() || "#";
+    items.push({ label, href });
+    if (items.length >= 14) break;
+  }
+  return items.length > 0 ? items : defaultHmBootNav(boot?.slug);
+}
+
+function bootHeadlineItems(bundle, origin) {
   const lists = [
     bundle?.featured,
     bundle?.centerHeadlines,
@@ -226,74 +293,129 @@ function bootHeadlineItems(bundle) {
       seen.add(key);
       const slug = String(item?.slug || "").trim();
       const href = slug ? `/haber/${encodeURIComponent(slug)}` : "#";
-      items.push({
-        title,
-        href,
-        image: String(item?.imageUrl || item?.featuredImage || item?.image || item?.thumbnailUrl || "").trim(),
-      });
-      if (items.length >= 8) return items;
+      const image = bootPublicMediaUrl(
+        item?.imageUrl || item?.featuredImage || item?.image || item?.thumbnailUrl,
+        origin,
+      );
+      items.push({ title, href, image });
+      if (items.length >= 12) return items;
     }
   }
   return items;
 }
 
-const HM_BOOT_PAINT_HIDE = `<script>
-(function(){
-  var paint=document.getElementById("hm-boot-paint");
-  var root=document.getElementById("root");
-  if(!paint) return;
-  function hide(){
-    if(!paint||!paint.parentNode) return;
-    if(root&&root.querySelector("[data-hm-vitrin-theme],.hm-vitrin-root,.hm-classic-root,article")){
-      paint.parentNode.removeChild(paint);
-    }
-  }
-  if(root&&typeof MutationObserver==="function"){
-    new MutationObserver(hide).observe(root,{childList:true,subtree:true});
-  }
-  setTimeout(hide,250);
-  setTimeout(function(){ if(paint&&paint.parentNode) paint.parentNode.removeChild(paint); },10000);
-})();
-</script>`;
+const HM_CLASSIC_FIRST_PAINT_CSS = `.hm-fp{margin:0;background:#fff;color:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif}
+.hm-fp *{box-sizing:border-box}
+.hm-fp a{color:inherit;text-decoration:none}
+.hm-fp-wrap{max-width:1180px;margin:0 auto;padding:0 12px}
+.hm-fp-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:10px 0 8px}
+.hm-fp-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.hm-fp-brand img{display:block;max-height:52px;max-width:min(240px,42vw);width:auto;height:auto;object-fit:contain}
+.hm-fp-name{font-weight:800;font-size:20px;letter-spacing:-.02em;line-height:1.15}
+.hm-fp-market{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-width:0}
+.hm-fp-market-kicker{display:flex;align-items:center;gap:6px;color:#e11d48;font-size:12px;font-weight:800}
+.hm-fp-rate{display:flex;align-items:baseline;gap:5px;font-size:12px;white-space:nowrap}
+.hm-fp-rate b{font-weight:700}
+.hm-fp-up{color:#059669;font-weight:700}
+.hm-fp-down{color:#e11d48;font-weight:700}
+.hm-fp-search{border:1px solid #e2e8f0;border-radius:999px;padding:6px 12px;color:#94a3b8;font-size:12px;min-width:7rem}
+.hm-fp-nav{display:flex;flex-wrap:wrap;gap:2px 0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:2px 0}
+.hm-fp-nav a{padding:9px 10px;font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#334155}
+.hm-fp-nav a:first-child{color:#e11d48}
+.hm-fp-tepe{display:flex;align-items:stretch;min-height:18rem;margin:12px 0 14px;overflow:hidden;border-radius:8px;background:#000;color:#fff}
+.hm-fp-nums{display:flex;flex-direction:column;flex-shrink:0;gap:6px;padding:10px 8px;background:#111}
+.hm-fp-num{display:flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:3px;color:rgba(255,255,255,.72);font-size:14px;font-weight:800}
+.hm-fp-num.is-active{background:#e11d48;color:#fff}
+.hm-fp-panel{display:grid;flex:1;min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+.hm-fp-headline{display:flex;align-items:center;padding:24px 22px;background:#000}
+.hm-fp-headline h2{margin:0;font-size:clamp(22px,3vw,34px);line-height:1.2;font-weight:800}
+.hm-fp-media{min-height:220px;background:#1e293b}
+.hm-fp-media img{width:100%;height:100%;object-fit:cover;display:block;min-height:220px}
+.hm-fp-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-bottom:20px}
+.hm-fp-card{display:block;border-radius:10px;overflow:hidden;background:#0f172a;color:#fff;min-height:160px;position:relative}
+.hm-fp-card img{width:100%;height:100%;object-fit:cover;min-height:160px;display:block}
+.hm-fp-card span{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.78));font-weight:700;font-size:14px;line-height:1.3}
+@media(max-width:800px){
+.hm-fp-panel{grid-template-columns:1fr}
+.hm-fp-tepe{flex-direction:column}
+.hm-fp-nums{flex-direction:row;justify-content:center}
+.hm-fp-cards{grid-template-columns:1fr}
+.hm-fp-market{width:100%}
+}`;
 
-/** React 4MB JS indirmeden manşet görünsün. */
-export function buildHmBootPaintHtml(boot) {
+/** Klasik tam anasayfa ilk boyama — overlay / "Manşet yükleniyor…" yok. */
+export function buildHmClassicHomePaintHtml(boot) {
   if (!boot || typeof boot !== "object") return "";
-  const items = bootHeadlineItems(boot.bundle);
-  if (items.length === 0) return "";
-  const name = escPaint(
-    boot.meta?.displayName || hmSlugDisplayName(boot.slug) || boot.slug || "Haber",
-  );
-  const heroItem = items[0];
-  const sides = items.slice(1, 7);
-  const heroImg = heroItem?.image
-    ? `<img src="${escPaint(heroItem.image)}" alt="" width="800" height="450" decoding="async"/>`
-    : "";
-  const sideHtml = sides
-    .map(
-      (it) =>
-        `<a class="hm-boot-side" href="${escPaint(it.href)}"><span>${escPaint(it.title)}</span></a>`,
-    )
+  const origin = bootOrigin(boot);
+  const items = bootHeadlineItems(boot.bundle, origin);
+  const name = boot.meta?.displayName || hmSlugDisplayName(boot.slug) || boot.slug || "Haber";
+  const theme = String(boot.meta?.layout?.hmVitrinTheme || "").trim() || "default";
+  const homeHref = boot.slug ? `/tr/${encodeURIComponent(String(boot.slug))}` : "/";
+  const mark = bootBrandMarkUrl(boot, origin);
+  const nav = bootNavItems(boot);
+  const slides = items.slice(0, 5);
+  const hero = slides[0] || null;
+  const cards = items.slice(1, 4);
+  const brandImg = mark
+    ? `<img src="${escPaint(mark)}" alt="${escPaint(name)}" width="220" height="52" decoding="async"/>`
+    : `<div class="hm-fp-name">${escPaint(name)}</div>`;
+  const rates = HM_FP_FALLBACK_RATES.map(
+    (r) =>
+      `<span class="hm-fp-rate"><b>${escPaint(r.label)}</b> ${escPaint(r.value)} <span class="${r.dir === "down" ? "hm-fp-down" : "hm-fp-up"}">${escPaint(r.change)}</span></span>`,
+  ).join("");
+  const navHtml = nav
+    .map((it) => `<a href="${escPaint(it.href)}">${escPaint(it.label)}</a>`)
     .join("");
-  return `<div id="hm-boot-paint" role="status" aria-live="polite">
-<style>
-#hm-boot-paint{position:fixed;inset:0;z-index:2147483000;background:#fff;color:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif;overflow:auto}
-#hm-boot-paint .hm-boot-bar{background:#0f172a;color:#fff;padding:14px 16px;font-weight:700;font-size:18px}
-#hm-boot-paint .hm-boot-grid{max-width:1100px;margin:0 auto;padding:14px 12px 24px;display:grid;gap:12px}
-@media(min-width:800px){#hm-boot-paint .hm-boot-grid{grid-template-columns:1.4fr .8fr;align-items:start}}
-#hm-boot-paint .hm-boot-hero{display:block;text-decoration:none;color:inherit}
-#hm-boot-paint .hm-boot-hero img{width:100%;height:auto;max-height:360px;object-fit:cover;border-radius:12px;background:#e2e8f0}
-#hm-boot-paint .hm-boot-hero h2{margin:10px 0 0;font-size:22px;line-height:1.25}
-#hm-boot-paint .hm-boot-side{display:block;padding:10px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;text-decoration:none;font-weight:600;font-size:15px;line-height:1.35}
-#hm-boot-paint .hm-boot-note{margin:8px 16px 0;color:#64748b;font-size:12px}
-</style>
-<div class="hm-boot-bar">${name}</div>
-<p class="hm-boot-note">Manşet yükleniyor…</p>
-<div class="hm-boot-grid">
-<a class="hm-boot-hero" href="${escPaint(heroItem.href)}">${heroImg}<h2>${escPaint(heroItem.title)}</h2></a>
-<div>${sideHtml}</div>
+  const nums = slides
+    .map((it, i) => {
+      const active = i === 0 ? " is-active" : "";
+      return `<a class="hm-fp-num${active}" href="${escPaint(it.href)}" aria-label="${i + 1}. manşet">${i + 1}</a>`;
+    })
+    .join("");
+  const heroImg = hero?.image
+    ? `<img src="${escPaint(hero.image)}" alt="" width="800" height="450" decoding="async"/>`
+    : "";
+  const heroTitle = hero
+    ? `<a class="hm-fp-headline" href="${escPaint(hero.href)}"><h2>${escPaint(hero.title)}</h2></a>`
+    : `<div class="hm-fp-headline"><h2>${escPaint(name)}</h2></div>`;
+  const cardsHtml = cards
+    .map((it) => {
+      const img = it.image
+        ? `<img src="${escPaint(it.image)}" alt="" width="400" height="220" decoding="async"/>`
+        : "";
+      return `<a class="hm-fp-card" href="${escPaint(it.href)}">${img}<span>${escPaint(it.title)}</span></a>`;
+    })
+    .join("");
+  return `<div class="hm-fp hm-classic-root" data-hm-first-paint="classic" data-hm-vitrin-theme="${escPaint(theme)}">
+<style>${HM_CLASSIC_FIRST_PAINT_CSS}</style>
+<div class="hm-fp-wrap">
+<div class="hm-fp-top">
+<a class="hm-fp-brand" href="${escPaint(homeHref)}">${brandImg}</a>
+<div class="hm-fp-market" role="region" aria-label="Piyasa">
+<span class="hm-fp-market-kicker">Piyasa · Hava</span>
+${rates}
+<span class="hm-fp-search">Ara</span>
 </div>
-</div>${HM_BOOT_PAINT_HIDE}`;
+</div>
+<nav class="hm-fp-nav" aria-label="Ana menü">${navHtml}</nav>
+${
+  slides.length > 0
+    ? `<section class="hm-fp-tepe" aria-label="Tepe manşet"><nav class="hm-fp-nums" aria-label="Manşet sırası">${nums}</nav><div class="hm-fp-panel">${heroTitle}<div class="hm-fp-media">${heroImg}</div></div></section>`
+    : ""
+}
+${cardsHtml ? `<div class="hm-fp-cards">${cardsHtml}</div>` : ""}
+</div>
+</div>`;
+}
+
+function bootBrandMarkUrl(boot, origin) {
+  const layout = boot?.meta?.layout && typeof boot.meta.layout === "object" ? boot.meta.layout : {};
+  return bootPublicMediaUrl(layout.logoUrl, origin) || bootPublicMediaUrl(layout.faviconUrl, origin);
+}
+
+/** @deprecated overlay kaldırıldı; klasik anasayfa ilk boyama. */
+export function buildHmBootPaintHtml(boot) {
+  return buildHmClassicHomePaintHtml(boot);
 }
 
 export function injectHmHtmlBoot(html, boot) {
@@ -347,12 +469,14 @@ export function injectHmHtmlBoot(html, boot) {
       out = `${tag}${out}`;
     }
   }
-  const paint = boot.skipPaint ? "" : buildHmBootPaintHtml(boot);
+  const paint = boot.skipPaint ? "" : buildHmClassicHomePaintHtml(boot);
   if (paint) {
     if (out.includes('<div id="root"></div>')) {
-      out = out.replace('<div id="root"></div>', `${paint}<div id="root"></div>`);
+      out = out.replace('<div id="root"></div>', `<div id="root">${paint}</div>`);
+    } else if (out.includes('<div id="root">')) {
+      out = out.replace('<div id="root">', `<div id="root">${paint}`);
     } else if (out.includes("<body>")) {
-      out = out.replace("<body>", `<body>${paint}`);
+      out = out.replace("<body>", `<body><div id="root">${paint}</div>`);
     }
   }
   return out;
