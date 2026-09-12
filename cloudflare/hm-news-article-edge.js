@@ -66,12 +66,15 @@ export function findNewsItemBySlug(payload, slug) {
 export function headlineToArticle(item, slug) {
   if (!item || !String(item.title || "").trim()) return null;
   const spot = String(item.spot || item.summary || item.description || "").trim();
-  const content = String(item.content || spot || "").trim();
+  // Manset/list headlines rarely carry full body — never invent content from spot
+  // (UI would show özet as gövde after edge recover + cache).
+  const rawContent = String(item.content || "").trim();
+  const content = rawContent && rawContent !== spot ? rawContent : "";
   return {
     ...item,
     slug: String(item.slug || slug || "").trim(),
     spot: spot || null,
-    content: content || spot || String(item.title),
+    content,
   };
 }
 
@@ -80,7 +83,7 @@ export function jsonArticleResponse(body, recoverTag) {
     status: 200,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=30, s-maxage=90, stale-while-revalidate=300",
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
       "x-yekpare-page-bundle-recover": recoverTag,
     },
     body: JSON.stringify(body),
