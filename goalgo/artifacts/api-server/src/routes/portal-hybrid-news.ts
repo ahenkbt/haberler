@@ -68,6 +68,7 @@ import {
   mergePortalHybridRssFeedLists,
 } from "../lib/global-map-news-feeds.js";
 import { loadWorldBriefs } from "../lib/world-briefs-service.js";
+import { ensureHmCategoryListingNotEmpty } from "../lib/hm-category-listing-fallback.js";
 import { filterHmCategoryContentGuard, passesHmCategoryContentGuard } from "../lib/hm-category-content-guard.js";
 import {
   filterNewsItemsForSiteGlobalPolicy,
@@ -836,6 +837,23 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       let dbResult = { items: [] as Awaited<ReturnType<typeof loadDbResult>>["items"], total: 0 };
       try {
         dbResult = await loadDbResult();
+        if (
+          categorySlug &&
+          dbResult.items.length === 0 &&
+          siteId != null &&
+          hmAccess &&
+          !hmAccess.isCorporate
+        ) {
+          const filled = await ensureHmCategoryListingNotEmpty({
+            items: dbResult.items,
+            siteId,
+            siteSlug: hmAccess.slug,
+            categorySlug,
+            limit: dbLimit,
+            corporate: false,
+          });
+          dbResult = { items: filled, total: filled.length };
+        }
       } catch (err) {
         console.error(
           "[news/hybrid/dbFirst-db]",

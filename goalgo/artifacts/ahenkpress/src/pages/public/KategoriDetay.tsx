@@ -37,6 +37,7 @@ import {
   HM_LEAD_LIST_SIDEBAR_TOTAL,
   sortNewsByRecency,
 } from "@/lib/hmHeadlinePool";
+import { keepCategoryItemsOrFallback } from "@/lib/hmHomepageSectionFill";
 import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
 import { markHmSpaReady } from "@/lib/hmSpaReady";
 import { buildHmCategoryHybridPath, buildHmCategoryNewsFallbackPath } from "@/lib/hmCategoryNewsQuery";
@@ -373,7 +374,8 @@ export default function KategoriDetay() {
       }
     }
     const want = normalizedSlug || slug;
-    return out.filter((item) => hmNewsItemMatchesHomeCategorySlug(item, want, categoryMatchContext));
+    const matched = out.filter((item) => hmNewsItemMatchesHomeCategorySlug(item, want, categoryMatchContext));
+    return keepCategoryItemsOrFallback(matched, out);
   }, [newsPages?.pages, normalizedSlug, slug, categoryMatchContext]);
 
   useEffect(() => {

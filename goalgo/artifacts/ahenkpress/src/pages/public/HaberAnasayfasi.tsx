@@ -42,6 +42,7 @@ import {
   collectHmRssCategoryNavItems,
   resolveHmUnifiedRssFeedRows,
   normalizeHmVitrinTheme,
+  isHmCorporateLayoutKind,
   isHmCorporateLikeTheme,
   isHmNewsRetiredHomeModule,
   filterHmHomeModulesForPortalHub,
@@ -113,7 +114,6 @@ import {
   buildHeadlineSidePrimaryPool,
   buildHomeHeroDedupeSeedItems,
   buildManualHeadlineOnlyPool,
-  buildTepeMansetPool,
   buildRssAwareHeadlinePool,
   createHeadlineVisitSeed,
   createHomeNewsDedupeTracker,
@@ -151,6 +151,11 @@ import {
   sortNewsByRecency,
   sliderHeadlineKeys,
 } from "@/lib/hmHeadlinePool";
+import {
+  buildTepeMansetPoolPreferringLocal,
+  pickEsenLeadPackColumns,
+  resolveHomepageLocalPref,
+} from "@/lib/hmHomepageSectionFill";
 import { HmCategoryBoxGrid } from "@/components/HmCategoryBoxLayout";
 import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
 import { HmNewsImage, HmHomeCoverGate, filterNewsItemsWithCoverImage, newsItemHasCoverImage } from "@/components/HmNewsImage";
@@ -430,45 +435,6 @@ function padNewsItemsToLimit<T>(
   const result = out.slice(0, limit);
   dedupe?.rememberMany(result);
   return result;
-}
-
-/** Kategori seçiliyken yalnızca eşleşen haberler; «Tümü»nde eksik slotlar havuzdan doldurulur. */
-function pickCategoryAwareNewsColumns<T>(
-  pool: readonly T[],
-  leftCount: number,
-  rightCount: number,
-  categorySlug: string,
-  matchContext: HmHomeCategoryMatchContext | undefined,
-  backfillPool?: readonly T[],
-): { left: T[]; right: T[] } {
-  const filtered = categorySlug
-    ? pool.filter((item) => newsMatchesCategory(item, categorySlug, matchContext))
-    : pool;
-  const primary = sortNewsByRecency(filtered);
-  const widen = sortNewsByRecency(
-    mergeUniqueNews([...primary], [...(backfillPool ?? pool)]) as T[],
-  );
-  const seen = new Set<string>();
-  const take = (source: readonly T[], limit: number, allowBackfill: boolean): T[] => {
-    const out: T[] = [];
-    const pushFrom = (list: readonly T[]) => {
-      for (const item of list) {
-        if (out.length >= limit) break;
-        if (isItemAliasSeen(item, seen)) continue;
-        rememberItemAliasKeys(item, seen);
-        out.push(item);
-      }
-    };
-    pushFrom(source);
-    if (allowBackfill && out.length < limit) {
-      pushFrom(widen);
-    }
-    return out;
-  };
-  const allowBackfill = !categorySlug;
-  const left = take(primary, leftCount, allowBackfill);
-  const right = take(primary, rightCount, allowBackfill);
-  return { left, right };
 }
 
 function cssToken(value: string): string {
@@ -1598,6 +1564,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       : `mx-auto max-w-screen-xl px-3${extra ? ` ${extra}` : ""}`;
   const corporateDonation = layoutPrefs.hmCorporateDonation ?? null;
   const vitrinTheme = normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme);
+  const isCorporateTheme = isHmCorporateLayoutKind(layoutPrefs, hmSlugProp ?? hmCtx?.slug);
   const themeAccentFallback = hmVitrinAccentHex(vitrinTheme ?? "default");
   const fromLpColor =
     (layoutPrefs.hmPrimaryColor?.trim() ?? "").length >= 3 ? layoutPrefs.hmPrimaryColor!.trim() : "";
@@ -1606,7 +1573,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     themeAccentFallback ||
     resolveSadeAccent(settings?.primaryColor) ||
     DEFAULT_RED;
-  const isCorporateTheme = isHmCorporateLikeTheme(vitrinTheme);
   const isClassicTheme = vitrinTheme === "classic";
   const isPortal3Theme = vitrinTheme === "portal3";
   const isEsenTheme = vitrinTheme === "esen";
@@ -1616,6 +1582,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       ? "vatan"
       : vitrinTheme === "corporate"
       ? "corporate"
+      : isCorporateTheme
+      ? isHmCorporateLikeTheme(vitrinTheme)
+        ? vitrinTheme
+        : "vatan"
       : vitrinTheme === "gold"
         ? "gold"
         : vitrinTheme === "ankara"
@@ -2158,12 +2128,15 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       asArray(hmHomeBundle?.popular),
       allItems,
     ).filter(keepEditorial);
-    const pool = buildTepeMansetPool({
+    const localPref = resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId);
+    const pool = buildTepeMansetPoolPreferringLocal({
       items: source,
+      localPref,
+      siteId,
       limit: HM_TEPE_MANSET_ITEM_COUNT,
     });
     return filterNewsItemsWithCoverImage(pool).slice(0, HM_TEPE_MANSET_ITEM_COUNT);
-  }, [tepeMansetEnabled, tepeFeaturedStrict, hmHomeBundle, corporateFeaturedNews, allItems]);
+  }, [tepeMansetEnabled, tepeFeaturedStrict, hmHomeBundle, corporateFeaturedNews, allItems, hmHomeBundleSlug, layoutPrefs, siteId]);
   const tepeMansetActive = tepeMansetEnabled && tepeMansetItems.length > 0;
   const manualHeadlinePool = useMemo(
     () => buildManualHeadlineOnlyPool({ manualItems: featured, latestItems: allItems, limit: HM_HOME_HEADLINE_SLIDER_LIMIT }),
@@ -4267,6 +4240,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         if (!resolveHmNewsHomeModuleEnabled(layoutPrefs, "esenLeadPack")) return null;
         const leadPackBasePool = sortNewsByRecency(
           mergeUniqueNews(
+            asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
             latestNewsPool,
             bandNewsItems,
             allItems,
@@ -4280,35 +4254,26 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           classicHeadlineSliderItems,
         );
         const leadPackUnused = homeNewsDedupe.filterUnused(leadPackPoolExcludingSlider);
-        const leadPackColumnsRaw = pickCategoryAwareNewsColumns(
-          leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider,
-          HM_ESEN_LEAD_PACK_LEFT_COUNT,
-          HM_ESEN_LEAD_PACK_RIGHT_COUNT,
-          featuredCategorySlug,
-          homeCategoryMatchContext,
-          leadPackPoolExcludingSlider,
-        );
-        const leadPackLeftIds = new Set(
-          leadPackColumnsRaw.left.map((n) => String(n.id ?? n.slug ?? "")).filter(Boolean),
-        );
-        const leadPackRightCover = filterNewsItemsWithCoverImage(
-          leadPackPoolExcludingSlider.filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? ""))),
-        ).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
-        const leadPackRightFallback =
-          leadPackRightCover.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
-            ? leadPackRightCover
-            : filterNewsItemsWithCoverImage(
-                mergeUniqueNews(hybridBandItems, hybridMansetRssItems, leadPackPoolExcludingSlider),
-              )
-                .filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? "")))
-                .slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
-        const leadPackColumns = {
-          left: leadPackColumnsRaw.left,
-          right:
-            leadPackRightFallback.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
-              ? leadPackRightFallback
-              : filterNewsItemsWithCoverImage(leadPackColumnsRaw.right).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
-        };
+        const leadPackPrimary = featuredCategorySlug
+          ? (leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider).filter((item) =>
+              newsMatchesCategory(item, featuredCategorySlug, homeCategoryMatchContext),
+            )
+          : leadPackUnused.length > 0
+            ? leadPackUnused
+            : leadPackPoolExcludingSlider;
+        const leadPackColumns = pickEsenLeadPackColumns({
+          pool: leadPackPrimary.length > 0 ? leadPackPrimary : leadPackPoolExcludingSlider,
+          backfillPool: mergeUniqueNews(
+            leadPackPoolExcludingSlider,
+            hybridBandItems,
+            hybridMansetRssItems,
+            asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
+          ),
+          leftCount: HM_ESEN_LEAD_PACK_LEFT_COUNT,
+          rightCount: HM_ESEN_LEAD_PACK_RIGHT_COUNT,
+          localPref: resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId),
+          siteId,
+        });
         const hasLeadPackContent =
           leadPackColumns.left.length > 0 || leadPackColumns.right.length > 0;
         if (!hasLeadPackContent && leadPackBasePool.length === 0) {
@@ -4543,6 +4508,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     // Bu yüzden burada rememberModuleItems çağırmıyoruz — hero render sırasında claim eder.
     const leadPackBasePool = sortNewsByRecency(
       mergeUniqueNews(
+        asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
         latestNewsPool,
         bandNewsItems,
         allItems,
@@ -4557,36 +4523,26 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       classicHeadlineSliderItems,
     );
     const leadPackUnused = homeNewsDedupe.filterUnused(leadPackPoolExcludingSlider);
-    const leadPackColumnsRaw = pickCategoryAwareNewsColumns(
-      leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider,
-      HM_ESEN_LEAD_PACK_LEFT_COUNT,
-      HM_ESEN_LEAD_PACK_RIGHT_COUNT,
-      featuredCategorySlug,
-      homeCategoryMatchContext,
-      leadPackPoolExcludingSlider,
-    );
-    // Sağda 2 foto kart: görselli haberleri tercih et (boş beyaz kutu kalmasın).
-    const leadPackLeftIds = new Set(
-      leadPackColumnsRaw.left.map((n) => String(n.id ?? n.slug ?? "")).filter(Boolean),
-    );
-    const leadPackRightCover = filterNewsItemsWithCoverImage(
-      leadPackPoolExcludingSlider.filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? ""))),
-    ).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
-    const leadPackRightFallback =
-      leadPackRightCover.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
-        ? leadPackRightCover
-        : filterNewsItemsWithCoverImage(
-            mergeUniqueNews(hybridBandItems, hybridMansetRssItems, leadPackPoolExcludingSlider),
-          )
-            .filter((n) => !leadPackLeftIds.has(String(n.id ?? n.slug ?? "")))
-            .slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT);
-    const leadPackColumns = {
-      left: leadPackColumnsRaw.left,
-      right:
-        leadPackRightFallback.length >= HM_ESEN_LEAD_PACK_RIGHT_COUNT
-          ? leadPackRightFallback
-          : filterNewsItemsWithCoverImage(leadPackColumnsRaw.right).slice(0, HM_ESEN_LEAD_PACK_RIGHT_COUNT),
-    };
+    const leadPackPrimary = featuredCategorySlug
+      ? (leadPackUnused.length > 0 ? leadPackUnused : leadPackPoolExcludingSlider).filter((item) =>
+          newsMatchesCategory(item, featuredCategorySlug, homeCategoryMatchContext),
+        )
+      : leadPackUnused.length > 0
+        ? leadPackUnused
+        : leadPackPoolExcludingSlider;
+    const leadPackColumns = pickEsenLeadPackColumns({
+      pool: leadPackPrimary.length > 0 ? leadPackPrimary : leadPackPoolExcludingSlider,
+      backfillPool: mergeUniqueNews(
+        leadPackPoolExcludingSlider,
+        hybridBandItems,
+        hybridMansetRssItems,
+        asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
+      ),
+      leftCount: HM_ESEN_LEAD_PACK_LEFT_COUNT,
+      rightCount: HM_ESEN_LEAD_PACK_RIGHT_COUNT,
+      localPref: resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId),
+      siteId,
+    });
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);
     const esenTodayHighlightItems = pickSidebarNews(todayHighlightMini, 6);
     // Lead pack kapalıyken: solda metin, sağda 2 fotoğraflı kart (tüm esen siteler).

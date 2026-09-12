@@ -28,6 +28,8 @@ import {
   HM_NEWS_HOME_MODULE_ORDER,
   HM_NEWS_EDITOR_HOME_MODULE_ORDER,
   defaultNewsSiteLayoutPrefs,
+  isHmCorporateLayoutKind,
+  isHmCorporateLikeTheme,
   hmNewsThemePresetPatch,
   resolveHmHomeModuleOrder,
   resolveHmNewsHomeModuleEnabled,
@@ -67,7 +69,6 @@ import {
   type HmNewsHomeModuleId,
   type HmCorporateHomeModuleId,
   type NewsSiteLayoutPrefs,
-  isHmCorporateLikeTheme,
   HM_HUB_ONLY_HOME_MODULE_IDS,
   HM_HEADER_RIGHT_SLOT_EDITOR_OPTIONS,
   resolveHmHeaderRightSlot,
@@ -199,11 +200,18 @@ export default function EditorVitrinAyarlari() {
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
 
-  const commit = async (patch: Partial<NewsSiteLayoutPrefs>) => {
+  const commit = async (
+    patch: Partial<NewsSiteLayoutPrefs>,
+    saveOpts?: { allowStockLayoutReset?: boolean },
+  ) => {
     const next = { ...newsLayoutPrefs, ...patch };
     setP(next);
     setSaving(true);
-    const r = await saveNewsSiteLayout(next, { vitrinOnly: true, layoutPatch: patch });
+    const r = await saveNewsSiteLayout(next, {
+      vitrinOnly: true,
+      layoutPatch: patch,
+      allowStockLayoutReset: saveOpts?.allowStockLayoutReset,
+    });
     setSaving(false);
     if (!r.ok) {
       toast({
@@ -270,7 +278,7 @@ export default function EditorVitrinAyarlari() {
     });
   }, [newsHomeOrder, p]);
   const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
-  const isCorporateEditorSite = isHmCorporateLikeTheme(p.hmVitrinTheme);
+  const isCorporateEditorSite = isHmCorporateLayoutKind(p, site?.slug) || isHmCorporateLikeTheme(p.hmVitrinTheme);
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
   const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
@@ -635,23 +643,18 @@ export default function EditorVitrinAyarlari() {
               </p>
               <Select
                 value={
-                  p.hmVitrinTheme === "classic" ||
-                  p.hmVitrinTheme === "portal3" ||
-                  p.hmVitrinTheme === "esen" ||
-                  p.hmVitrinTheme === "manset24" ||
-                  p.hmVitrinTheme === "renkli" ||
-                  p.hmVitrinTheme === "ahenkhaber" ||
-                  p.hmVitrinTheme === "modern"
+                  typeof p.hmVitrinTheme === "string" && p.hmVitrinTheme
                     ? p.hmVitrinTheme
                     : "news"
                 }
                 disabled={saving}
-                onValueChange={(v) =>
+                onValueChange={(v) => {
+                  if (v === p.hmVitrinTheme) return;
                   void commit({
                     ...hmNewsThemePresetPatch(v),
                     hmVitrinTheme: v as NewsSiteLayoutPrefs["hmVitrinTheme"],
-                  })
-                }
+                  });
+                }}
               >
                 <SelectTrigger className="mt-2">
                   <SelectValue />
@@ -2335,19 +2338,12 @@ export default function EditorVitrinAyarlari() {
           </div>
         </div>
 
-        <ButtonReset
-          disabled={saving}
-          onReset={() => {
-            if (isCorporateEditorSite) {
-              void commit({
-                ...defaultNewsSiteLayoutPrefs,
-                hmVitrinTheme: p.hmVitrinTheme === "vatan" ? "vatan" : "corporate",
-              });
-              return;
-            }
-            void commit({ ...defaultNewsSiteLayoutPrefs });
-          }}
-        />
+        {!isCorporateEditorSite ? (
+          <ButtonReset
+            disabled={saving}
+            onReset={() => void commit({ ...defaultNewsSiteLayoutPrefs }, { allowStockLayoutReset: true })}
+          />
+        ) : null}
       </div>
     </EditorLayout>
   );

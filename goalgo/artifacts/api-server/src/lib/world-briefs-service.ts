@@ -22,6 +22,8 @@ import { isTurkishWorldBriefContent } from "./turkishContent.js";
 const DUNYA_CATEGORY_SLUG = "dunya";
 const DEFAULT_ITEMS_PER_FEED = 3;
 const MAX_ITEMS_PER_FEED = 8;
+/** Homepage /kisa-kisa strip: no image slots (avoids broken camera placeholders). */
+export const WORLD_BRIEFS_SHOW_IMAGES_DEFAULT = false;
 const DB_RETENTION_MS = 14 * 24 * 60 * 60_000;
 const WARM_TIMEOUT_MS = 12_000;
 const NTV_DUNYA_RSS_URL = "https://www.ntv.com.tr/dunya.rss";
@@ -168,7 +170,7 @@ function dbItemToWorldBrief(item: {
     countryCode: null,
     countryName: null,
     continent: "global",
-    imageUrl: item.imageUrl?.trim() ? item.imageUrl.trim() : null,
+    imageUrl: WORLD_BRIEFS_SHOW_IMAGES_DEFAULT && item.imageUrl?.trim() ? item.imageUrl.trim() : null,
   };
 }
 
@@ -191,7 +193,7 @@ function rssRowToWorldBrief(row: typeof portalRssItemsTable.$inferSelect): World
     countryCode,
     countryName,
     continent: "global",
-    imageUrl: row.imageUrl?.trim() ? row.imageUrl.trim() : null,
+    imageUrl: WORLD_BRIEFS_SHOW_IMAGES_DEFAULT && row.imageUrl?.trim() ? row.imageUrl.trim() : null,
   };
 }
 
@@ -219,7 +221,20 @@ async function loadWorldBriefDbNews(
       offset: 0,
       ...poolOpts,
     });
-    return bundle.items.map((row) => ({
+    if (bundle.items.length > 0) {
+      return bundle.items.map((row) => ({
+        id: row.id,
+        title: row.title,
+        spot: row.spot,
+        href: `/haber/${row.slug}`,
+        publishedAt: row.createdAt,
+        categoryName: row.categoryName || "Dünya",
+        imageUrl: row.imageUrl,
+      }));
+    }
+    if (poolOpts.excludeCentralPool) return [];
+    const portal = await loadPortalDbNews({ categorySlug: DUNYA_CATEGORY_SLUG, limit: fetchLimit, offset: 0 });
+    return portal.items.map((row) => ({
       id: row.id,
       title: row.title,
       spot: row.spot,
@@ -243,8 +258,8 @@ async function loadWorldBriefDbNews(
 }
 
 /**
- * Dünyadan Kısa Kısa — Türkçe `dunya` kategorisi.
- * Editör sitelerinde site Dünya haberleri + NTV Dünya RSS (Neon `portal_rss_items`).
+ * Dünyadan Kısa Kısa — sitenin `dunya` kategorisi (manuel + havuz).
+ * RSS yalnızca kategori boşsa yedek; görseller varsayılan kapalı.
  */
 export async function loadWorldBriefs(opts?: {
   perFeed?: number;
@@ -260,22 +275,25 @@ export async function loadWorldBriefs(opts?: {
   const cutoff = new Date(Date.now() - DB_RETENTION_MS);
   const warm = opts?.warmCache !== false;
 
-  const dunyaFeeds = await resolveWorldBriefDunyaFeeds(siteId);
-  if (warm) {
-    try {
-      await warmWorldBriefDunyaFeeds(dunyaFeeds);
-    } catch (err) {
-      console.warn(
-        "[world-briefs] dunya RSS warm failed",
-        err instanceof Error ? err.message : err,
-      );
-    }
-  }
+  const dbItems = await loadWorldBriefDbNews(siteId, fetchLimit);
+  const haveCategoryNews = dbItems.length >= Math.max(perFeed, 3);
 
-  const feedIds = dunyaFeeds.map((feed) => feed.id).filter(Boolean);
-  const [rssRows, dbItems] = await Promise.all([
-    feedIds.length
-      ? db
+  let rssRows: Array<typeof portalRssItemsTable.$inferSelect> = [];
+  if (!haveCategoryNews) {
+    const dunyaFeeds = await resolveWorldBriefDunyaFeeds(siteId);
+    if (warm) {
+      try {
+        await warmWorldBriefDunyaFeeds(dunyaFeeds);
+      } catch (err) {
+        console.warn(
+          "[world-briefs] dunya RSS warm failed",
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }
+    const feedIds = dunyaFeeds.map((feed) => feed.id).filter(Boolean);
+    rssRows = feedIds.length
+      ? await db
           .select()
           .from(portalRssItemsTable)
           .where(
@@ -287,9 +305,8 @@ export async function loadWorldBriefs(opts?: {
           )
           .orderBy(desc(portalRssItemsTable.publishedAt))
           .limit(fetchLimit)
-      : Promise.resolve([]),
-    loadWorldBriefDbNews(siteId, fetchLimit),
-  ]);
+      : [];
+  }
 
   const seen = new Set<string>();
   const allItems: WorldBriefItem[] = [];
@@ -302,9 +319,9 @@ export async function loadWorldBriefs(opts?: {
     allItems.push(item);
   };
 
-  // Önce taze RSS (NTV Dünya), sonra site/portal Dünya kategorisi DB haberleri.
-  for (const row of rssRows) pushItem(rssRowToWorldBrief(row));
+  // Önce sitenin Dünya kategorisi; RSS yalnızca kategori boşsa.
   for (const row of dbItems) pushItem(dbItemToWorldBrief(row));
+  for (const row of rssRows) pushItem(rssRowToWorldBrief(row));
 
   allItems.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   const turkishItems = filterWorldBriefItems(allItems);

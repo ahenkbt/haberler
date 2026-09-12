@@ -39,7 +39,7 @@ async function verifyHmEditorSessionInner(token: string): Promise<HmEditorSessio
   return {
     status: "ok",
     data: j,
-    newsLayoutPrefs: parseNewsSiteLayoutFromJson(j.site.layoutJson ?? null),
+    newsLayoutPrefs: parseNewsSiteLayoutFromJson(j.site.layoutJson ?? null, j.site.slug),
     seoVerification: j.site.seoVerification ?? null,
   };
 }

@@ -57,10 +57,10 @@
 }
 
 .dunyadan-kisa-kisa-band__card {
-  flex: 0 0 min(12.5rem, 62vw);
+  flex: 0 0 min(14rem, 68vw);
   scroll-snap-align: start;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   overflow: hidden;
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.24);
@@ -77,17 +77,13 @@
 }
 
 .dunyadan-kisa-kisa-band__card--skeleton {
-  min-height: 9.5rem;
+  min-height: 6.5rem;
   animation: pulse 1.2s ease-in-out infinite;
   background: rgba(226, 232, 240, 0.65);
 }
 
 .dunyadan-kisa-kisa-band__media {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  max-height: 5.5rem;
-  overflow: hidden;
-  background: #e2e8f0;
+  display: none;
 }
 
 .dunyadan-kisa-kisa-band__img {
@@ -107,6 +103,15 @@
   font-size: 0.95rem;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.dunyadan-kisa-kisa-band__flag--text {
+  position: static;
+  display: inline-block;
+  margin-bottom: 0.15rem;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
 }
 
 .dunyadan-kisa-kisa-band__body {
@@ -156,4 +161,9 @@
 
 .dunyadan-kisa-kisa-page__band .hm-rss-news-band__head {
   margin-bottom: 0.5rem;
+}
+
+.dunyadan-kisa-kisa-page .hm-rss-news-band__media,
+.dunyadan-kisa-kisa-page .hm-news-image-root {
+  display: none;
 }

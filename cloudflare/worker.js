@@ -70,6 +70,7 @@ import {
   hmHomeSlugFromPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
+  isCorporateHmHtmlBoot,
   isAhenkAgencyGeoPath,
   isAhenkAgencyHost,
   isHmAiKnowledgePath,
@@ -859,16 +860,20 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
         }),
       );
       if (boot) {
-        // Home: seed classic chrome into #root (logo/menu/market/numbered manşet).
-        // skipPaint stays on article path only — no "Manşet yükleniyor…" overlay.
-        html = injectHmHtmlBoot(html, { ...boot, skipPaint: false });
+        const corporateHome = isCorporateHmHtmlBoot(boot);
+        // Haber siteleri: klasik chrome #root. Kurumsal: haber manşet boyaması yok.
+        html = injectHmHtmlBoot(html, { ...boot, skipPaint: corporateHome });
         out.set(
           "x-yekpare-hm-html-boot",
           `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
         );
-        out.set("x-yekpare-hm-first-paint", "classic");
-        const hero = firstHmBootImageUrl(boot.bundle, incoming.origin);
-        if (hero) out.append("Link", `<${hero}>; rel=preload; as=image`);
+        if (!corporateHome) {
+          out.set("x-yekpare-hm-first-paint", "classic");
+          const hero = firstHmBootImageUrl(boot.bundle, incoming.origin);
+          if (hero) out.append("Link", `<${hero}>; rel=preload; as=image`);
+        } else {
+          out.set("x-yekpare-hm-first-paint", "corporate");
+        }
       }
     } catch (err) {
       console.error("[hm-html-boot]", String(err?.message || err).slice(0, 180));

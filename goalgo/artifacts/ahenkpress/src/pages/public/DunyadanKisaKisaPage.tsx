@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { Globe2 } from "lucide-react";
-import { HmNewsImage } from "@/components/HmNewsImage";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { countryCodeToFlagEmoji } from "@/lib/countryFlagEmoji";
@@ -42,7 +41,7 @@ function resolveVitrinThemeAttr(theme: string | null | undefined): string {
   return "news";
 }
 
-/** `/kisa-kisa` — kıta/ülke gruplu küresel haber listesi (görselli). */
+/** `/kisa-kisa` — kıta/ülke gruplu küresel haber listesi (metin; görsel kapalı). */
 export default function DunyadanKisaKisaPage() {
   const h = useHmPublicHref();
   const hmCtx = useHmPublicLinkContextOptional();
@@ -135,15 +134,12 @@ export default function DunyadanKisaKisaPage() {
                   className="hm-rss-news-band__card"
                   data-hm-news-row
                 >
-                  <div className="hm-rss-news-band__media">
-                    <HmNewsImage src={item.imageUrl} alt={item.title} className="hm-rss-news-band__img" loading="lazy" />
+                  <div className="hm-rss-news-band__body">
                     {item.countryName || item.countryCode ? (
                       <span className="hm-rss-news-band__badge" style={{ background: accent }}>
                         {countryCodeToFlagEmoji(item.countryCode)} {item.countryName || item.feedLabel}
                       </span>
                     ) : null}
-                  </div>
-                  <div className="hm-rss-news-band__body">
                     <h3 className="hm-rss-news-band__headline">{item.title}</h3>
                     {item.spot ? <p className="hm-rss-news-band__excerpt">{item.spot}</p> : null}
                     <p className="dunyadan-kisa-kisa-page__card-meta">

@@ -81,7 +81,7 @@ describe("corporate-like vitrin theme (Vatan / kurumsal)", () => {
       { hmVitrinTheme: "corporate" },
       { hmVitrinTheme: "news" },
     );
-    expect(explicitGenelAyarlar.hmVitrinTheme).toBe("news");
+    expect(explicitGenelAyarlar.hmVitrinTheme).toBe("corporate");
   });
 
   it("RSS policy does not write news karma defaults onto Vatan", () => {

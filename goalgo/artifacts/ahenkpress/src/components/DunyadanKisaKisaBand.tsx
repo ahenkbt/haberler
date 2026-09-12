@@ -1,7 +1,6 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ChevronRight, Globe2 } from "lucide-react";
-import { HmNewsImage } from "@/components/HmNewsImage";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { countryCodeToFlagEmoji } from "@/lib/countryFlagEmoji";
 import { useWorldBriefs } from "@/hooks/useWorldBriefs";
@@ -98,15 +97,12 @@ export function DunyadanKisaKisaBand({
               className="dunyadan-kisa-kisa-band__card"
               role="listitem"
             >
-              <div className="dunyadan-kisa-kisa-band__media">
-                <HmNewsImage src={item.imageUrl} alt={item.title} className="dunyadan-kisa-kisa-band__img" loading="lazy" />
+              <div className="dunyadan-kisa-kisa-band__body">
                 {item.countryCode || item.countryName ? (
-                  <span className="dunyadan-kisa-kisa-band__flag" aria-hidden>
+                  <span className="dunyadan-kisa-kisa-band__flag dunyadan-kisa-kisa-band__flag--text" aria-hidden>
                     {countryCodeToFlagEmoji(item.countryCode)}
                   </span>
                 ) : null}
-              </div>
-              <div className="dunyadan-kisa-kisa-band__body">
                 <p className="dunyadan-kisa-kisa-band__meta">
                   {item.countryName ? <span>{item.countryName}</span> : null}
                   {item.countryName && item.sourceName ? <span> · </span> : null}

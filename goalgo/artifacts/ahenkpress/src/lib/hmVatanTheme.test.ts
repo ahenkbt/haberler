@@ -17,6 +17,7 @@ import {
   isHmCorporateLikeTheme,
   mergeNewsSiteLayoutForSave,
   normalizeHmVitrinTheme,
+  pickChangedVitrinLayoutKeys,
   pickVitrinLayoutPatchForSave,
   sanitizeHmPublicLayoutPrefs,
 } from "./newsSiteLayout";
@@ -113,6 +114,12 @@ describe("Vatan theme", () => {
       vatan.hmVitrinTheme,
     );
     expect(vitrinPatch.hmVitrinTheme).toBeUndefined();
+    const changed = pickChangedVitrinLayoutKeys(
+      vatan,
+      { ...vatan, ...defaultNewsSiteLayoutPrefs, hmVitrinTheme: "esen" },
+      "vkd",
+    );
+    expect(changed.hmVitrinTheme).toBeUndefined();
 
     const merged = mergeNewsSiteLayoutForSave(vatan, { ...defaultNewsSiteLayoutPrefs }, { vitrinOnly: true });
     expect(merged.hmVitrinTheme).toBe("vatan");

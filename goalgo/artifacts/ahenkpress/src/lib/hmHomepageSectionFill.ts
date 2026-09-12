@@ -1,0 +1,299 @@
+/**
+ * Homepage Tepe Manşet / Gündemde Öne Çıkanlar fill.
+ * Kırşehir Haber prefers city-matching items; all HM news sites mix categories
+ * and backfill so Öne Çıkanlar is never a blank "Henüz haber yok" slot.
+ */
+
+import {
+  buildTepeMansetPool,
+  mergeUniqueNews,
+  newsKeyOf,
+  sortNewsByRecency,
+} from "@/lib/hmHeadlinePool";
+import { isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
+
+export const KIRSEHIR_HABER_SITE_ID = 494;
+
+export type HmHomepageLocalPref = {
+  cityKey: string;
+  siteId: number;
+  cityKeywords: readonly string[];
+  categorySlugs: readonly string[];
+  ownedCategorySlugs: readonly string[];
+};
+
+const KIRSEHIR_PREF: HmHomepageLocalPref = {
+  cityKey: "kirsehir",
+  siteId: KIRSEHIR_HABER_SITE_ID,
+  cityKeywords: [
+    "kırşehir",
+    "kirsehir",
+    "kirşehir",
+    "kırsehir",
+    "kirsehri",
+    "kırşehri",
+    "mucur",
+    "kaman",
+    "çiçekdağı",
+    "cicekdagi",
+    "akpınar",
+    "akpinar",
+    "boztepe",
+    "akçakent",
+    "akcakent",
+  ],
+  categorySlugs: ["kirsehir"],
+  ownedCategorySlugs: ["yerel", "kirsehir"],
+};
+
+const SLUG_TO_SITE_ID: Record<string, number> = {
+  kirsehirhaber: KIRSEHIR_HABER_SITE_ID,
+  kirsehir: KIRSEHIR_HABER_SITE_ID,
+  kh: KIRSEHIR_HABER_SITE_ID,
+};
+
+export function foldHmNewsText(value: unknown): string {
+  return String(value ?? "")
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ı/g, "i")
+    .replace(/İ/g, "i")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c");
+}
+
+function normalizeSiteSlug(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+}
+
+export function resolveHomepageLocalPref(
+  siteSlug: string | null | undefined,
+  _layout?: unknown,
+  siteId?: number | null,
+): HmHomepageLocalPref | null {
+  void _layout;
+  if (siteId === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  if (SLUG_TO_SITE_ID[normalizeSiteSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  return null;
+}
+
+export function newsItemIsSiteOwned(item: { siteId?: number | null; ownerSiteId?: number | null }, siteId: number): boolean {
+  if (!Number.isFinite(siteId) || siteId <= 0) return false;
+  return item.siteId === siteId || item.ownerSiteId === siteId;
+}
+
+function categoryMatchesSlugs(
+  item: { categorySlug?: string | null; categoryName?: string | null },
+  slugs: readonly string[],
+): boolean {
+  const slug = foldHmNewsText(item.categorySlug);
+  const name = foldHmNewsText(item.categoryName);
+  return slugs.some((want) => {
+    const folded = foldHmNewsText(want);
+    return Boolean(folded) && (slug === folded || name === folded || slug.endsWith(`-${folded}`));
+  });
+}
+
+export function newsItemHasKhEditorialFlag(item: {
+  isTepeManset?: boolean | null;
+  isSiteManset?: boolean | null;
+  isFeatured?: boolean | null;
+  isEditorManual?: boolean | null;
+}): boolean {
+  return (
+    item.isTepeManset === true ||
+    item.isSiteManset === true ||
+    item.isFeatured === true ||
+    item.isEditorManual === true
+  );
+}
+
+export function newsItemMatchesHomepageLocalPref(
+  item: {
+    siteId?: number | null;
+    ownerSiteId?: number | null;
+    title?: string | null;
+    spot?: string | null;
+    content?: string | null;
+    tags?: string[] | null;
+    slug?: string | null;
+    categorySlug?: string | null;
+    categoryName?: string | null;
+    regionKey?: string | null;
+    regionLabel?: string | null;
+    isTepeManset?: boolean | null;
+    isSiteManset?: boolean | null;
+    isFeatured?: boolean | null;
+    isEditorManual?: boolean | null;
+  },
+  pref: HmHomepageLocalPref | null | undefined,
+  siteId?: number | null,
+): boolean {
+  if (!pref) return false;
+  const viewerId = siteId ?? pref.siteId;
+  const owned = newsItemIsSiteOwned(item, viewerId);
+  const hay = foldHmNewsText(
+    [
+      item.title,
+      item.spot,
+      item.slug,
+      item.content,
+      item.regionKey,
+      item.regionLabel,
+      ...(Array.isArray(item.tags) ? item.tags : []),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+  const textHit = pref.cityKeywords.some((kw) => {
+    const folded = foldHmNewsText(kw);
+    return folded.length >= 3 && hay.includes(folded);
+  });
+  if (owned) {
+    return newsItemHasKhEditorialFlag(item) || categoryMatchesSlugs(item, pref.ownedCategorySlugs) || textHit;
+  }
+  if (textHit) return true;
+  return categoryMatchesSlugs(item, pref.categorySlugs);
+}
+
+function categoryKeyOf(item: { categorySlug?: string | null; categoryName?: string | null }): string {
+  const slug = String(item.categorySlug ?? "")
+    .trim()
+    .toLocaleLowerCase("tr-TR");
+  if (slug) return slug;
+  return String(item.categoryName ?? "").trim().toLocaleLowerCase("tr-TR") || "diger";
+}
+
+export function pickDiversifiedByCategory<T>(items: readonly T[], limit: number): T[] {
+  const target = Math.min(Math.max(limit, 0), 40);
+  if (target === 0) return [];
+  const ranked = sortNewsByRecency([...items]);
+  const buckets = new Map<string, T[]>();
+  const keyOrder: string[] = [];
+  for (const item of ranked) {
+    const cat = categoryKeyOf(item as { categorySlug?: string | null; categoryName?: string | null });
+    if (!buckets.has(cat)) {
+      buckets.set(cat, []);
+      keyOrder.push(cat);
+    }
+    buckets.get(cat)!.push(item);
+  }
+  const cursors = new Map<string, number>(keyOrder.map((k) => [k, 0]));
+  const seen = new Set<string>();
+  const out: T[] = [];
+  let progressed = true;
+  while (out.length < target && progressed) {
+    progressed = false;
+    for (const cat of keyOrder) {
+      if (out.length >= target) break;
+      const bucket = buckets.get(cat) ?? [];
+      let cursor = cursors.get(cat) ?? 0;
+      while (cursor < bucket.length) {
+        const item = bucket[cursor]!;
+        cursor += 1;
+        const key = newsKeyOf(item as Parameters<typeof newsKeyOf>[0]);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(item);
+        progressed = true;
+        break;
+      }
+      cursors.set(cat, cursor);
+    }
+  }
+  return out;
+}
+
+export function preferLocalThenFill<T>(
+  items: readonly T[],
+  pref: HmHomepageLocalPref | null | undefined,
+  siteId: number | null | undefined,
+  limit: number,
+): T[] {
+  const target = Math.min(Math.max(limit, 0), 80);
+  if (!pref) return pickDiversifiedByCategory(items, target);
+  const local = items.filter((item) =>
+    newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], pref, siteId),
+  );
+  const rest = items.filter(
+    (item) => !newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], pref, siteId),
+  );
+  return mergeUniqueNews(pickDiversifiedByCategory(local, target), pickDiversifiedByCategory(rest, target)).slice(
+    0,
+    target,
+  );
+}
+
+export function pickEsenLeadPackColumns<T>(opts: {
+  pool: readonly T[];
+  backfillPool?: readonly T[];
+  leftCount: number;
+  rightCount: number;
+  localPref?: HmHomepageLocalPref | null;
+  siteId?: number | null;
+}): { left: T[]; right: T[] } {
+  const wide = mergeUniqueNews(opts.pool, opts.backfillPool ?? []) as T[];
+  const ranked = preferLocalThenFill(wide, opts.localPref, opts.siteId, wide.length) as T[];
+  const coverOk = (item: T) => isUsableNewsCoverSrc((item as { imageUrl?: string | null }).imageUrl);
+  const coverCount = ranked.filter(coverOk).length;
+  const leftMin = wide.length > 0 ? 1 : 0;
+  const rightTake = Math.min(opts.rightCount, Math.max(0, wide.length - leftMin), coverCount);
+  const leftTake = Math.min(opts.leftCount, Math.max(0, wide.length - rightTake));
+  const seen = new Set<string>();
+  const take = (source: readonly T[], limit: number, coverOnly: boolean): T[] => {
+    const out: T[] = [];
+    for (const item of source) {
+      if (out.length >= limit) break;
+      const key = newsKeyOf(item as Parameters<typeof newsKeyOf>[0]);
+      if (!key || seen.has(key)) continue;
+      if (coverOnly && !coverOk(item)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+    return out;
+  };
+  const right = take(ranked, rightTake, true);
+  const left = take(ranked, leftTake, false);
+  if (left.length < leftTake) {
+    left.push(...take(wide, leftTake - left.length, false));
+  }
+  return { left, right };
+}
+
+export function buildTepeMansetPoolPreferringLocal(opts: {
+  items: readonly unknown[];
+  localPref?: HmHomepageLocalPref | null;
+  siteId?: number | null;
+  limit?: number;
+}): any[] {
+  const limit = opts.limit ?? 5;
+  if (!opts.localPref) return buildTepeMansetPool({ items: opts.items, limit });
+  const local = opts.items.filter((item) =>
+    newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
+  );
+  const flagged = local.filter((item) => (item as { isTepeManset?: boolean }).isTepeManset === true);
+  const flaggedPicks = buildTepeMansetPool({ items: flagged, limit });
+  if (flaggedPicks.length >= limit) return flaggedPicks;
+  const localPicks = mergeUniqueNews(flaggedPicks, buildTepeMansetPool({ items: local, limit })).slice(0, limit);
+  if (localPicks.length >= limit) return localPicks;
+  const rest = opts.items.filter(
+    (item) => !newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
+  );
+  return mergeUniqueNews(localPicks, buildTepeMansetPool({ items: rest, limit: limit - localPicks.length })).slice(
+    0,
+    limit,
+  );
+}
+
+/** Category page: keep matched rows; if the filter emptied the list, keep API items. */
+export function keepCategoryItemsOrFallback<T>(matched: readonly T[], all: readonly T[]): T[] {
+  if (matched.length > 0) return [...matched];
+  return [...all];
+}
