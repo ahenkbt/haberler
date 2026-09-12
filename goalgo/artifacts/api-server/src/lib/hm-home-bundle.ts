@@ -341,7 +341,7 @@ export async function buildHmHomeBundle(
   const corporateStrict = isHmCorporateLayout(layout);
   const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
-  const localPref = corporateStrict ? null : resolveHomepageLocalPref(siteSlug, layout);
+  const localPref = corporateStrict ? null : resolveHomepageLocalPref(siteSlug, layout, siteId);
   const settle = <T,>(label: string, p: Promise<T[]>) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<T[]>((resolve) => {
@@ -378,7 +378,7 @@ export async function buildHmHomeBundle(
     ),
     settle(
       "shared-fallback",
-      corporateStrict ? Promise.resolve([]) : loadHomepageSharedFallbackNews(siteId, 40),
+      localPref ? loadHomepageSharedFallbackNews(siteId, 40) : Promise.resolve([]),
     ),
   ]);
   let manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
@@ -412,19 +412,29 @@ export async function buildHmHomeBundle(
     popular,
   );
   const centerFromLegacy = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
-  const centerHeadlines = preferLocalThenFill(
-    mergeUniqueHomepageItems(centerFromLegacy, sectionPool),
-    localPref,
-    siteId,
-    limit,
-  );
+  const centerHeadlines = localPref
+    ? preferLocalThenFill(
+        mergeUniqueHomepageItems(centerFromLegacy, sectionPool),
+        localPref,
+        siteId,
+        limit,
+      )
+    : centerFromLegacy;
   const tepeManset = (() => {
     const fallbackPool = [...featured, ...siteMansetEditor, ...latestEditor, ...breaking, ...popular];
     if (!localPref) return selectTepeMansetItems(fallbackPool, HM_TEPE_MANSET_ITEM_COUNT);
     const localRows = sectionPool.filter((item) => newsItemMatchesHomepageLocalPref(item, localPref, siteId));
-    const localPicks = selectTepeMansetItems(localRows, HM_TEPE_MANSET_ITEM_COUNT);
+    const flagged = localRows.filter((item) => item.isTepeManset === true);
+    const flaggedPicks = selectTepeMansetItems(flagged, HM_TEPE_MANSET_ITEM_COUNT);
+    if (flaggedPicks.length >= HM_TEPE_MANSET_ITEM_COUNT) return flaggedPicks;
+    const used = new Set(flaggedPicks.map((item) => String(item.id ?? item.slug ?? "")));
+    const localRest = selectTepeMansetItems(
+      localRows.filter((item) => !used.has(String(item.id ?? item.slug ?? ""))),
+      HM_TEPE_MANSET_ITEM_COUNT - flaggedPicks.length,
+    );
+    const localPicks = [...flaggedPicks, ...localRest];
     if (localPicks.length >= HM_TEPE_MANSET_ITEM_COUNT) return localPicks;
-    const used = new Set(localPicks.map((item) => String(item.id ?? item.slug ?? "")));
+    localPicks.forEach((item) => used.add(String(item.id ?? item.slug ?? "")));
     const rest = selectTepeMansetItems(
       sectionPool.filter((item) => !used.has(String(item.id ?? item.slug ?? ""))),
       HM_TEPE_MANSET_ITEM_COUNT - localPicks.length,

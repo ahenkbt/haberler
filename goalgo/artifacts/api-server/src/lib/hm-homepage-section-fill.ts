@@ -3,8 +3,8 @@
  *
  * Tepe Manşet (home-bundle.tepeManset):
  *   1) Site-owned / manuel / manşet-tagged rows (existing tepe selector)
- *   2) For kirsehirhaber (or layout.hmHomepageLocalCity): Kırşehir-matching
- *      manuel + RSS / central-pool rows
+ *   2) For kirsehirhaber (site 494) only: is_tepe_manset / Yerel / Kırşehir
+ *      + city-matching manuel + RSS / central-pool rows
  *   3) Remaining slots: importance / recency from the shared pool (never empty
  *      when any publishable news exists)
  *

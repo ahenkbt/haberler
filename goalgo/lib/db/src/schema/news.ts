@@ -21,7 +21,9 @@ export const newsTable = pgTable("news", {
   senderPhone: text("sender_phone"),
   status: text("status").notNull().default("draft"),
   isFeatured: boolean("is_featured").notNull().default(false),
-  /** Alt (site) manşet slider — tepe manşet (`isFeatured`) ayrıdır. */
+  /** Tepe manşet bandı — `is_featured` / site manşet ayrıdır (0118). */
+  isTepeManset: boolean("is_tepe_manset").notNull().default(false),
+  /** Alt (site) manşet slider — tepe manşet (`isFeatured` / `isTepeManset`) ayrıdır. */
   isSiteManset: boolean("is_site_manset").notNull().default(false),
   isBreaking: boolean("is_breaking").notNull().default(false),
   views: integer("views").notNull().default(0),

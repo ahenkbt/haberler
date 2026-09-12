@@ -27,7 +27,7 @@ export async function ensureHmCategoryListingNotEmpty<T extends SerializedNewsLi
   layout?: Record<string, unknown> | null;
 }): Promise<T[]> {
   const limit = Math.min(Math.max(opts.limit, 1), 80);
-  const pref = resolveHomepageLocalPref(opts.siteSlug, opts.layout);
+  const pref = resolveHomepageLocalPref(opts.siteSlug, opts.layout, opts.siteId);
   const localFirst = reorderListingPreferringLocal(opts.items, pref, opts.siteId);
   if (localFirst.length > 0 || opts.corporate) {
     return localFirst.slice(0, Math.max(localFirst.length, 0));

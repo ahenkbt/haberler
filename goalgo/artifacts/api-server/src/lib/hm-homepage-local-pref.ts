@@ -1,9 +1,10 @@
 /**
- * Site-scoped homepage / listing preference.
+ * Kırşehir Haber only (hm_news_sites.id = 494, slug `kirsehirhaber`).
  *
- * Kırşehir Haber (`kirsehirhaber`) prefers city-matching rows from the site
- * inventory and the shared central pool (site_id NULL). Other HM sites stay on
- * the shared-pool default unless layout sets `hmHomepageLocalCity`.
+ * Tepe Manşet / Gündemde Öne Çıkanlar prefer Neon flags
+ * (`is_tepe_manset`, `is_site_manset`, `is_featured`, `is_editor_manual`)
+ * plus Yerel / Kırşehir category rows on that site. Other HM sites keep
+ * their existing homepage selectors.
  */
 
 import { and, desc, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
@@ -16,14 +17,22 @@ import {
   type SerializedNewsListItem,
 } from "./serializers.js";
 
+/** Live Neon `hm_news_sites.id` for kirsehirhaber.org */
+export const KIRSEHIR_HABER_SITE_ID = 494;
+
 export type HmHomepageLocalPref = {
   cityKey: string;
+  siteId: number;
   cityKeywords: readonly string[];
+  /** Always-local categories (pool + site). */
   categorySlugs: readonly string[];
+  /** Local only when site_id / owner_site_id is this site. */
+  ownedCategorySlugs: readonly string[];
 };
 
 const KIRSEHIR_PREF: HmHomepageLocalPref = {
   cityKey: "kirsehir",
+  siteId: KIRSEHIR_HABER_SITE_ID,
   cityKeywords: [
     "kırşehir",
     "kirsehir",
@@ -42,16 +51,13 @@ const KIRSEHIR_PREF: HmHomepageLocalPref = {
     "akcakent",
   ],
   categorySlugs: ["kirsehir"],
+  ownedCategorySlugs: ["yerel", "kirsehir"],
 };
 
-const CITY_PACKS: Record<string, HmHomepageLocalPref> = {
-  kirsehir: KIRSEHIR_PREF,
-};
-
-const SLUG_TO_CITY: Record<string, string> = {
-  kirsehirhaber: "kirsehir",
-  kirsehir: "kirsehir",
-  kh: "kirsehir",
+const SLUG_TO_SITE_ID: Record<string, number> = {
+  kirsehirhaber: KIRSEHIR_HABER_SITE_ID,
+  kirsehir: KIRSEHIR_HABER_SITE_ID,
+  kh: KIRSEHIR_HABER_SITE_ID,
 };
 
 export function foldHmNewsText(value: unknown): string {
@@ -75,15 +81,16 @@ function normalizeSlug(value: unknown): string {
     .replace(/^\/+|\/+$/g, "");
 }
 
+/** Site 494 / kirsehirhaber only — layout overrides on other slugs are ignored. */
 export function resolveHomepageLocalPref(
   siteSlug: string | null | undefined,
-  layout?: Record<string, unknown> | null,
+  _layout?: Record<string, unknown> | null,
+  siteId?: number | null,
 ): HmHomepageLocalPref | null {
-  const fromLayout = normalizeSlug(layout?.hmHomepageLocalCity);
-  const fromSlug = SLUG_TO_CITY[normalizeSlug(siteSlug)] ?? "";
-  const cityKey = fromLayout || fromSlug;
-  if (!cityKey) return null;
-  return CITY_PACKS[cityKey] ?? null;
+  void _layout;
+  if (siteId === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  if (SLUG_TO_SITE_ID[normalizeSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  return null;
 }
 
 export function newsItemIsSiteOwned(
@@ -96,10 +103,27 @@ export function newsItemIsSiteOwned(
   return false;
 }
 
-function categoryMatchesLocal(item: { categorySlug?: string | null; categoryName?: string | null }, pref: HmHomepageLocalPref): boolean {
+export function newsItemHasKhEditorialFlag(item: {
+  isTepeManset?: boolean | null;
+  isSiteManset?: boolean | null;
+  isFeatured?: boolean | null;
+  isEditorManual?: boolean | null;
+}): boolean {
+  return (
+    item.isTepeManset === true ||
+    item.isSiteManset === true ||
+    item.isFeatured === true ||
+    item.isEditorManual === true
+  );
+}
+
+function categoryMatchesSlugs(
+  item: { categorySlug?: string | null; categoryName?: string | null },
+  slugs: readonly string[],
+): boolean {
   const slug = foldHmNewsText(item.categorySlug);
   const name = foldHmNewsText(item.categoryName);
-  return pref.categorySlugs.some((want) => {
+  return slugs.some((want) => {
     const folded = foldHmNewsText(want);
     if (!folded) return false;
     return slug === folded || name === folded || slug.endsWith(`-${folded}`) || name.includes(folded);
@@ -138,7 +162,10 @@ function textMatchesLocalKeywords(
   });
 }
 
-/** Site-owned rows always match; central-pool rows need city/geo/category signal. */
+/**
+ * Site 494: flags / Yerel / Kırşehir / city text.
+ * Central-pool rows need Kırşehir text or `kirsehir` category — generic `yerel` is not enough.
+ */
 export function newsItemMatchesHomepageLocalPref(
   item: {
     siteId?: number | null;
@@ -152,15 +179,36 @@ export function newsItemMatchesHomepageLocalPref(
     categoryName?: string | null;
     regionKey?: string | null;
     regionLabel?: string | null;
+    isTepeManset?: boolean | null;
+    isSiteManset?: boolean | null;
+    isFeatured?: boolean | null;
+    isEditorManual?: boolean | null;
   },
   pref: HmHomepageLocalPref | null | undefined,
   siteId?: number | null,
 ): boolean {
   if (!pref) return false;
-  if (siteId != null && newsItemIsSiteOwned(item, siteId)) return true;
-  if (textMatchesLocalKeywords(item, pref)) return true;
-  if (categoryMatchesLocal(item, pref) && textMatchesLocalKeywords(item, pref)) return true;
-  return categoryMatchesLocal(item, pref);
+  const viewerId = siteId ?? pref.siteId;
+  const owned = newsItemIsSiteOwned(item, viewerId);
+  const textHit = textMatchesLocalKeywords(item, pref);
+  if (owned) {
+    return (
+      newsItemHasKhEditorialFlag(item) ||
+      categoryMatchesSlugs(item, pref.ownedCategorySlugs) ||
+      textHit
+    );
+  }
+  if (textHit) return true;
+  return categoryMatchesSlugs(item, pref.categorySlugs);
+}
+
+function categoryIdInSlugsSql(slugs: readonly string[]): SQL {
+  const lowered = slugs.map((s) => s.toLowerCase());
+  return sql`${newsTable.categoryId} IN (
+    SELECT id FROM categories
+    WHERE lower(slug) IN (${sql.join(lowered.map((s) => sql`${s}`), sql`, `)})
+       OR lower(name) IN (${sql.join(lowered.map((s) => sql`${s}`), sql`, `)})
+  )`;
 }
 
 export function homepageLocalTextMatchSql(pref: HmHomepageLocalPref): SQL {
@@ -176,14 +224,23 @@ export function homepageLocalTextMatchSql(pref: HmHomepageLocalPref): SQL {
     parts.push(sql`EXISTS (SELECT 1 FROM unnest(COALESCE(${newsTable.tags}, ARRAY[]::text[])) AS t WHERE t ILIKE ${pattern})`);
   }
   if (pref.categorySlugs.length > 0) {
-    const slugs = pref.categorySlugs.map((s) => s.toLowerCase());
-    parts.push(sql`${newsTable.categoryId} IN (
-      SELECT id FROM categories
-      WHERE lower(slug) IN (${sql.join(slugs.map((s) => sql`${s}`), sql`, `)})
-         OR lower(name) IN (${sql.join(slugs.map((s) => sql`${s}`), sql`, `)})
-    )`);
+    parts.push(categoryIdInSlugsSql(pref.categorySlugs));
   }
   if (parts.length === 0) return sql`false`;
+  return or(...parts)!;
+}
+
+function homepageLocalOwnedMatchSql(pref: HmHomepageLocalPref): SQL {
+  const parts: SQL[] = [
+    eq(newsTable.isTepeManset, true),
+    eq(newsTable.isFeatured, true),
+    eq(newsTable.isSiteManset, true),
+    eq(newsTable.isEditorManual, true),
+    homepageLocalTextMatchSql(pref),
+  ];
+  if (pref.ownedCategorySlugs.length > 0) {
+    parts.push(categoryIdInSlugsSql(pref.ownedCategorySlugs));
+  }
   return or(...parts)!;
 }
 
@@ -195,8 +252,7 @@ async function serializePublishedRows(
 }
 
 /**
- * Site-owned rows plus central-pool items that match the city preference.
- * Manual editor news and RSS imports are both eligible.
+ * Site-owned flagged / Yerel / Kırşehir rows, plus central-pool city matches.
  */
 export async function loadHomepageLocalPreferredNews(
   siteId: number,
@@ -204,26 +260,30 @@ export async function loadHomepageLocalPreferredNews(
   limit: number,
 ): Promise<SerializedNewsListItem[]> {
   const take = Math.min(Math.max(limit, 1), 80);
-  const matchSql = homepageLocalTextMatchSql(pref);
+  const owned = or(eq(newsTable.siteId, siteId), eq(newsTable.ownerSiteId, siteId))!;
+  const poolMatch = and(isNull(newsTable.siteId), eq(newsTable.siteOnly, false), homepageLocalTextMatchSql(pref))!;
   const rows = await getNewsDbForRead()
     .select(newsListSelectFields)
     .from(newsTable)
     .where(
       and(
         eq(newsTable.status, "published"),
-        or(
-          eq(newsTable.siteId, siteId),
-          eq(newsTable.ownerSiteId, siteId),
-          and(isNull(newsTable.siteId), eq(newsTable.siteOnly, false), matchSql)!,
-        )!,
+        or(and(owned, homepageLocalOwnedMatchSql(pref))!, poolMatch)!,
       ),
     )
-    .orderBy(desc(newsTable.createdAt), desc(newsTable.updatedAt))
+    .orderBy(
+      desc(newsTable.isTepeManset),
+      desc(newsTable.isFeatured),
+      desc(newsTable.isSiteManset),
+      desc(newsTable.isEditorManual),
+      desc(newsTable.createdAt),
+      desc(newsTable.updatedAt),
+    )
     .limit(take);
   return serializePublishedRows(rows);
 }
 
-/** Shared fallback: this site + central pool latest (never used to empty a section). */
+/** Shared fallback: this site + central pool latest (KH only). */
 export async function loadHomepageSharedFallbackNews(
   siteId: number,
   limit: number,
@@ -242,4 +302,3 @@ export async function loadHomepageSharedFallbackNews(
     .limit(take);
   return serializePublishedRows(rows);
 }
-

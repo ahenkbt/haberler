@@ -22,7 +22,9 @@ describe("hmHomepageSectionFill", () => {
   it("does not apply Kırşehir pref to ASG/AHG", () => {
     expect(resolveHomepageLocalPref("asg")).toBeNull();
     expect(resolveHomepageLocalPref("ankarahabergundemi")).toBeNull();
+    expect(resolveHomepageLocalPref("asg", { hmHomepageLocalCity: "kirsehir" })).toBeNull();
     expect(resolveHomepageLocalPref("kirsehirhaber")?.cityKey).toBe("kirsehir");
+    expect(resolveHomepageLocalPref(null, null, 494)?.siteId).toBe(494);
   });
 
   it("fills Öne Çıkanlar left column from backfill when unused pool is empty", () => {
@@ -52,6 +54,22 @@ describe("hmHomepageSectionFill", () => {
     });
     expect(left).toHaveLength(6);
     expect(right).toHaveLength(2);
+  });
+
+  it("prefers is_tepe_manset on site 494 before other local headlines", () => {
+    const pref = resolveHomepageLocalPref("kirsehirhaber");
+    const pool = buildTepeMansetPoolPreferringLocal({
+      items: [
+        item(1, "Kırşehir gündem", "yerel"),
+        item(2, "Tepe manşet", "gundem", { isTepeManset: true, siteId: 494 }),
+        item(3, "Mbappé gol attı", "spor"),
+      ],
+      localPref: pref,
+      siteId: 494,
+      limit: 3,
+    });
+    expect(pool[0]?.title).toMatch(/Tepe manşet/i);
+    expect(pool.length).toBe(3);
   });
 
   it("prefers Kırşehir headlines on tepe manşet then falls back", () => {

@@ -2120,7 +2120,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       asArray(hmHomeBundle?.popular),
       allItems,
     ).filter(keepEditorial);
-    const localPref = resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs);
+    const localPref = resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId);
     const pool = buildTepeMansetPoolPreferringLocal({
       items: source,
       localPref,
@@ -4263,7 +4263,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           ),
           leftCount: HM_ESEN_LEAD_PACK_LEFT_COUNT,
           rightCount: HM_ESEN_LEAD_PACK_RIGHT_COUNT,
-          localPref: resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs),
+          localPref: resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId),
           siteId,
         });
         const hasLeadPackContent =
@@ -4532,7 +4532,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       ),
       leftCount: HM_ESEN_LEAD_PACK_LEFT_COUNT,
       rightCount: HM_ESEN_LEAD_PACK_RIGHT_COUNT,
-      localPref: resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs),
+      localPref: resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId),
       siteId,
     });
     const esenSidebarPopularItems = pickSidebarNews(popular.length > 0 ? popular : classicLatestMini, 6);

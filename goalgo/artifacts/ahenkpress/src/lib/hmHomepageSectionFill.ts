@@ -12,14 +12,19 @@ import {
 } from "@/lib/hmHeadlinePool";
 import { isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
 
+export const KIRSEHIR_HABER_SITE_ID = 494;
+
 export type HmHomepageLocalPref = {
   cityKey: string;
+  siteId: number;
   cityKeywords: readonly string[];
   categorySlugs: readonly string[];
+  ownedCategorySlugs: readonly string[];
 };
 
 const KIRSEHIR_PREF: HmHomepageLocalPref = {
   cityKey: "kirsehir",
+  siteId: KIRSEHIR_HABER_SITE_ID,
   cityKeywords: [
     "kırşehir",
     "kirsehir",
@@ -38,13 +43,13 @@ const KIRSEHIR_PREF: HmHomepageLocalPref = {
     "akcakent",
   ],
   categorySlugs: ["kirsehir"],
+  ownedCategorySlugs: ["yerel", "kirsehir"],
 };
 
-const CITY_PACKS: Record<string, HmHomepageLocalPref> = { kirsehir: KIRSEHIR_PREF };
-const SLUG_TO_CITY: Record<string, string> = {
-  kirsehirhaber: "kirsehir",
-  kirsehir: "kirsehir",
-  kh: "kirsehir",
+const SLUG_TO_SITE_ID: Record<string, number> = {
+  kirsehirhaber: KIRSEHIR_HABER_SITE_ID,
+  kirsehir: KIRSEHIR_HABER_SITE_ID,
+  kh: KIRSEHIR_HABER_SITE_ID,
 };
 
 export function foldHmNewsText(value: unknown): string {
@@ -70,18 +75,44 @@ function normalizeSiteSlug(value: unknown): string {
 
 export function resolveHomepageLocalPref(
   siteSlug: string | null | undefined,
-  layout?: { hmHomepageLocalCity?: string | null } | null,
+  _layout?: { hmHomepageLocalCity?: string | null } | null,
+  siteId?: number | null,
 ): HmHomepageLocalPref | null {
-  const fromLayout = normalizeSiteSlug(layout?.hmHomepageLocalCity);
-  const fromSlug = SLUG_TO_CITY[normalizeSiteSlug(siteSlug)] ?? "";
-  const cityKey = fromLayout || fromSlug;
-  if (!cityKey) return null;
-  return CITY_PACKS[cityKey] ?? null;
+  void _layout;
+  if (siteId === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  if (SLUG_TO_SITE_ID[normalizeSiteSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return KIRSEHIR_PREF;
+  return null;
 }
 
 export function newsItemIsSiteOwned(item: { siteId?: number | null; ownerSiteId?: number | null }, siteId: number): boolean {
   if (!Number.isFinite(siteId) || siteId <= 0) return false;
   return item.siteId === siteId || item.ownerSiteId === siteId;
+}
+
+function categoryMatchesSlugs(
+  item: { categorySlug?: string | null; categoryName?: string | null },
+  slugs: readonly string[],
+): boolean {
+  const slug = foldHmNewsText(item.categorySlug);
+  const name = foldHmNewsText(item.categoryName);
+  return slugs.some((want) => {
+    const folded = foldHmNewsText(want);
+    return Boolean(folded) && (slug === folded || name === folded || slug.endsWith(`-${folded}`));
+  });
+}
+
+export function newsItemHasKhEditorialFlag(item: {
+  isTepeManset?: boolean | null;
+  isSiteManset?: boolean | null;
+  isFeatured?: boolean | null;
+  isEditorManual?: boolean | null;
+}): boolean {
+  return (
+    item.isTepeManset === true ||
+    item.isSiteManset === true ||
+    item.isFeatured === true ||
+    item.isEditorManual === true
+  );
 }
 
 export function newsItemMatchesHomepageLocalPref(
@@ -97,12 +128,17 @@ export function newsItemMatchesHomepageLocalPref(
     categoryName?: string | null;
     regionKey?: string | null;
     regionLabel?: string | null;
+    isTepeManset?: boolean | null;
+    isSiteManset?: boolean | null;
+    isFeatured?: boolean | null;
+    isEditorManual?: boolean | null;
   },
   pref: HmHomepageLocalPref | null | undefined,
   siteId?: number | null,
 ): boolean {
   if (!pref) return false;
-  if (siteId != null && newsItemIsSiteOwned(item, siteId)) return true;
+  const viewerId = siteId ?? pref.siteId;
+  const owned = newsItemIsSiteOwned(item, viewerId);
   const hay = foldHmNewsText(
     [
       item.title,
@@ -120,13 +156,11 @@ export function newsItemMatchesHomepageLocalPref(
     const folded = foldHmNewsText(kw);
     return folded.length >= 3 && hay.includes(folded);
   });
+  if (owned) {
+    return newsItemHasKhEditorialFlag(item) || categoryMatchesSlugs(item, pref.ownedCategorySlugs) || textHit;
+  }
   if (textHit) return true;
-  const slug = foldHmNewsText(item.categorySlug);
-  const name = foldHmNewsText(item.categoryName);
-  return pref.categorySlugs.some((want) => {
-    const folded = foldHmNewsText(want);
-    return Boolean(folded) && (slug === folded || name === folded || slug.endsWith(`-${folded}`));
-  });
+  return categoryMatchesSlugs(item, pref.categorySlugs);
 }
 
 function categoryKeyOf(item: { categorySlug?: string | null; categoryName?: string | null }): string {
@@ -244,7 +278,10 @@ export function buildTepeMansetPoolPreferringLocal(opts: {
   const local = opts.items.filter((item) =>
     newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
   );
-  const localPicks = buildTepeMansetPool({ items: local, limit });
+  const flagged = local.filter((item) => (item as { isTepeManset?: boolean }).isTepeManset === true);
+  const flaggedPicks = buildTepeMansetPool({ items: flagged, limit });
+  if (flaggedPicks.length >= limit) return flaggedPicks;
+  const localPicks = mergeUniqueNews(flaggedPicks, buildTepeMansetPool({ items: local, limit })).slice(0, limit);
   if (localPicks.length >= limit) return localPicks;
   const rest = opts.items.filter(
     (item) => !newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
