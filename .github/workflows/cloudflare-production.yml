@@ -66,9 +66,35 @@ jobs:
           fi
           # ACCOUNT_ID wrangler.toml / cf-fix ile aynı varsayılan
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
+            ACCOUNT_ID="16f5b996194174624e7969a3658bd2bb"
           else
-            echo "ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
+            ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
+          fi
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
+          curl_exit=0
+          status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-containers-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/containers/me")" || curl_exit=$?
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "::error::Cloudflare containers preflight request failed (curl exit $curl_exit) for account $ACCOUNT_ID."
+            exit 1
+          fi
+          if [ "$status" = "401" ] || [ "$status" = "403" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping deploy: CLOUDFLARE_API_TOKEN does not have Workers Containers access for account $ACCOUNT_ID."
+            exit 0
+          fi
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::Cloudflare containers preflight failed (HTTP $status) for account $ACCOUNT_ID."
+            exit 1
+          fi
+          api_parse=0
+          api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-containers-me.json 2>/dev/null)" || api_parse=$?
+          if [ "$api_parse" -ne 0 ]; then
+            echo "::error::Cloudflare containers preflight returned an unreadable JSON response for account $ACCOUNT_ID."
+            exit 1
+          fi
+          if [ "$api_success" != "true" ]; then
+            echo "::error::Cloudflare containers preflight failed at API level for account $ACCOUNT_ID (success=false)."
+            exit 1
           fi
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
             echo "sync_secrets=false" >> "$GITHUB_OUTPUT"
@@ -313,12 +339,37 @@ jobs:
         id: gate
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping yektube deploy (no CLOUDFLARE_API_TOKEN)"
           else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            curl_exit=0
+            status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-yektube-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/containers/me")" || curl_exit=$?
+            if [ "$curl_exit" -ne 0 ]; then
+              echo "::error::Cloudflare containers preflight request failed for yektube deploy (curl exit $curl_exit)."
+              exit 1
+            fi
+            if [ "$status" = "401" ] || [ "$status" = "403" ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "::warning::Skipping yektube deploy: CLOUDFLARE_API_TOKEN lacks Workers Containers access for account $CLOUDFLARE_ACCOUNT_ID."
+            elif [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
+              api_parse=0
+              api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-yektube-me.json 2>/dev/null)" || api_parse=$?
+              if [ "$api_parse" -ne 0 ]; then
+                echo "::error::Cloudflare containers preflight returned an unreadable JSON response for yektube deploy."
+                exit 1
+              fi
+              if [ "$api_success" != "true" ]; then
+                echo "::error::Cloudflare containers preflight failed at API level for yektube deploy (success=false)."
+                exit 1
+              fi
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Cloudflare containers preflight returned HTTP $status for yektube deploy (account $CLOUDFLARE_ACCOUNT_ID)."
+              exit 1
+            fi
           fi
       - uses: pnpm/action-setup@v6
         if: steps.gate.outputs.skip != 'true'
@@ -358,4 +409,3 @@ jobs:
           put YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put SESSION_SECRET "$SESSION_SECRET"
-
