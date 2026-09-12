@@ -203,11 +203,11 @@ function sortNewsItemsByAddDate(items: SerializedNewsListItem[]): SerializedNews
 
 /**
  * Homepage pick order (home-bundle):
- * - Tepe Manşet: manuel/manşet first; kirsehirhaber prefers Kırşehir-matching
- *   manuel+RSS/pool rows; remaining slots from the shared pool.
- * - Gündemde Öne Çıkanlar (`centerHeadlines`): local-preferred (if any), then a
- *   mixed cross-category round-robin, then recency — never empty when the
- *   network has publishable news.
+ * - Tepe Manşet: manuel/manşet first. Site 494 (kirsehirhaber) prefers
+ *   `is_tepe_manset` + Yerel/Kırşehir + city-matching rows, then shared pool.
+ *   Other HM sites keep the existing tepe selector.
+ * - Gündemde Öne Çıkanlar (`centerHeadlines`): site 494 uses local-preferred
+ *   then mixed fill; other sites keep `buildCenterHeadlinesFromItems`.
  *
  * Orta (site) manşet:
  * 1) `isSiteManset` işaretli haberler varsa yalnızca onlar
