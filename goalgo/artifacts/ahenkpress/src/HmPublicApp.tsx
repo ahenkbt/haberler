@@ -24,6 +24,7 @@ import HmPublicYazarYazilariRoute from "./pages/public/HmPublicYazarYazilariRout
 import { HmNestedLayout } from "@/components/HmNestedLayout";
 import { RouteChunkFallback } from "./components/RouteChunkFallback";
 import { hmPwaManifestApiPath } from "./lib/hmPublicLinks";
+import { HM_PUBLIC_EDITOR_WILDCARD_PATH } from "./lib/hmPublicEditorRoute";
 import { markHmSpaReady } from "./lib/hmSpaReady";
 import { useYekpareTheme } from "@/hooks/useYekpareTheme";
 import KunyePage from "./pages/public/KunyePage";
@@ -84,7 +85,8 @@ export default function HmPublicApp() {
         <Router hook={useHmCustomDomainLocation}>
           <HmCustomDomainPathRedirect />
           <Switch>
-            <Route path="/editor/:rest*">
+            {/* `/editor/*` — `:rest*` is one segment and misses /haberler/yeni */}
+            <Route path={HM_PUBLIC_EDITOR_WILDCARD_PATH}>
               {() => (
                 <LazyChunk>
                   <HmEditorRoutes />
