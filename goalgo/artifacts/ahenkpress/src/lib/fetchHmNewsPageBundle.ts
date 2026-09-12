@@ -91,7 +91,9 @@ export function readHmNewsArticleBoot<TArticle extends { title?: string }>(
   const boot = window.__YEKPARE_HM_ARTICLE_BUNDLE__;
   if (!boot?.bundle || typeof boot.bundle !== "object") return undefined;
   const bootSlug = String(boot.slug || "").trim();
-  const articleSlug = String((boot.bundle as HmNewsPageBundle<TArticle>)?.article?.slug || "").trim();
+  const articleSlug = String(
+    (boot.bundle as { article?: { slug?: string } | null }).article?.slug || "",
+  ).trim();
   if (bootSlug && !hmNewsArticleSlugsMatch(bootSlug, slug) && !hmNewsArticleSlugsMatch(articleSlug, slug)) {
     return undefined;
   }

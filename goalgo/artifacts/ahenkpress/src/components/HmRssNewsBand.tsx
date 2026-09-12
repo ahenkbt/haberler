@@ -459,7 +459,7 @@ export function HmRssNewsBand({
         : maxVisibleItems == null || maxVisibleItems <= 0
           ? pool.length
           : maxVisibleItems;
-    return takeVisibleHomeCoverItems(pool, hiddenCoverKeys, homeCoverItemKey, limit);
+    return takeVisibleHomeCoverItems<HmRssNewsBandItem>(pool, hiddenCoverKeys, homeCoverItemKey, limit);
   }, [apiExtraItems, filteredAll, hiddenCoverKeys, inlineLoadMore, inlineVisibleLimit, maxVisibleItems]);
 
   const canLoadMoreInline = useMemo(() => {

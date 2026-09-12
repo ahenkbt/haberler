@@ -47,11 +47,9 @@ export function nextHmNewsImageSrc(chain: readonly string[], current: string): s
   return chain[idx + 1] ?? null;
 }
 
-export function homeCoverItemKey(item: {
-  id?: string | number | null;
-  slug?: string | null;
-  title?: string | null;
-}): string {
+export function homeCoverItemKey<
+  T extends { id?: string | number | null; slug?: string | null; title?: string | null },
+>(item: T): string {
   return String(item.id ?? item.slug ?? item.title ?? "").trim();
 }
 
