@@ -1,0 +1,27 @@
+<?php
+/**
+ * Yektube Postgres bağlantısı — wp-config / db.php benzeri yerel dosya.
+ *
+ * Kullanım:
+ *   1) Bu dosyayı kopyala:  cp config/yektube.db.php.example config/yektube.db.php
+ *   2) Aşağıdaki değerleri doldur (gerçek şifre).
+ *   3) config/yektube.db.php git'e EKLENMEZ (.gitignore).
+ *
+ * Production (Cloudflare Container) hâlâ Worker / GitHub Secrets
+ * YEKTUBE_DATABASE_URL ile çalışır; bu dosya yerel veya VPS kopyası içindir.
+ * Public repo'ya gerçek credential yazmayın.
+ */
+declare(strict_types=1);
+
+return [
+    'host' => '127.0.0.1',
+    'port' => 32768,
+    'database' => 'yektube',
+    'username' => 'YOUR_DB_USER',
+    'password' => 'YOUR_DB_PASSWORD',
+    'sslmode' => 'disable',
+    // İsteğe bağlı tam URL (yukarıdakilerden üretilebilir):
+    // 'url' => 'postgresql://USER:PASSWORD@HOST:32768/yektube?sslmode=disable',
+    'read' => 'yektube',
+    'write' => 'yektube',
+];
