@@ -86,6 +86,11 @@ jobs:
             echo "::error::Cloudflare containers preflight failed (HTTP $status) for account $ACCOUNT_ID."
             exit 1
           fi
+          api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-containers-me.json 2>/dev/null || echo false)"
+          if [ "$api_success" != "true" ]; then
+            echo "::error::Cloudflare containers preflight failed at API level for account $ACCOUNT_ID (success=false)."
+            exit 1
+          fi
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
             echo "sync_secrets=false" >> "$GITHUB_OUTPUT"
             echo "::error::DATABASE_URL / SESSION_SECRET yok — Worker hâlâ eski Neon URL ile kalır."
@@ -345,6 +350,11 @@ jobs:
               echo "skip=true" >> "$GITHUB_OUTPUT"
               echo "::warning::Skipping yektube deploy: CLOUDFLARE_API_TOKEN lacks Workers Containers access for account $CLOUDFLARE_ACCOUNT_ID."
             elif [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
+              api_success="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("true" if data.get("success") is True else "false")' /tmp/cf-yektube-me.json 2>/dev/null || echo false)"
+              if [ "$api_success" != "true" ]; then
+                echo "::error::Cloudflare containers preflight failed at API level for yektube deploy (success=false)."
+                exit 1
+              fi
               echo "skip=false" >> "$GITHUB_OUTPUT"
             else
               echo "::error::Cloudflare containers preflight returned HTTP $status for yektube deploy (account $CLOUDFLARE_ACCOUNT_ID)."
