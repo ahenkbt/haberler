@@ -2,7 +2,7 @@
 # Secrets:
 #   CLOUDFLARE_API_TOKEN
 #   CLOUDFLARE_ACCOUNT_ID
-#   DATABASE_URL          (Hostinger: postgresql://…@HOST:32768/… — neon.tech olmamalı)
+#   DATABASE_URL          (Neon: postgresql://…@….neon.tech/neondb (haber) + Hostinger yektube ayrı)
 #   SESSION_SECRET        (min 16 chars)
 # Optional: AGENTLABS_URL, HM_EDITOR_JWT_SECRET, ADMIN_MAINTENANCE_SECRET,
 #           R2_CF_API_TOKEN (fb9f hesap API token; 16f5 CLOUDFLARE_API_TOKEN değil)
@@ -81,10 +81,6 @@ jobs:
           echo "database_host=${host:-none}"
           echo "database_port=${port:-default}"
           case "$host" in
-            *neon.tech*)
-              echo "::error::GitHub DATABASE_URL hâlâ Neon (neon.tech). Secret değerini Hostinger URL'si yapın."
-              exit 1
-              ;;
             ""|none)
               echo "::error::DATABASE_URL parse edilemedi (host boş)."
               exit 1
@@ -168,14 +164,14 @@ jobs:
             body=$(curl -fsS -m 25 -A "$UA" "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 -A "$UA" "https://vatanhaber.net/api/healthz" || true)
             provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
             echo "live-check attempt=$i dbProvider=${provider:-empty}"
-            if [ "$provider" = "hostinger" ]; then
+            if [ "$provider" = "neon" ] || [ "$provider" = "hostinger" ]; then
               break
             fi
             sleep 8
           done
-          if [ "$provider" = "hostinger" ]; then
+          if [ "$provider" = "neon" ] || [ "$provider" = "hostinger" ]; then
             echo "skip_secrets=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Canlı dbProvider=hostinger — DATABASE_URL secret put atlanıyor."
+            echo "::notice::Canlı dbProvider uygun — gerekirse secret put devam."
           else
             echo "skip_secrets=false" >> "$GITHUB_OUTPUT"
           fi
@@ -241,7 +237,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
         run: pnpm exec wrangler deploy
 
-      - name: Verify live dbProvider is hostinger
+      - name: Verify live dbProvider is neon (or hostinger)
         if: steps.cf.outputs.enabled == 'true'
         run: |
           set -euo pipefail
@@ -250,13 +246,13 @@ jobs:
             body=$(curl -fsS -m 25 -A "$UA" "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 -A "$UA" "https://vatanhaber.net/api/healthz" || true)
             provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
             echo "attempt=$i dbProvider=${provider:-empty}"
-            if [ "$provider" = "hostinger" ]; then
+            if [ "$provider" = "neon" ] || [ "$provider" = "hostinger" ]; then
               echo "Hostinger Postgres canlı."
               exit 0
             fi
             sleep 15
           done
-          echo "::error::ahenk.net.tr/api/healthz hâlâ dbProvider=${provider:-unknown} (hostinger bekleniyor). GitHub DATABASE_URL neon.tech içeriyor olabilir veya Container eski env ile uyuyor."
+          echo "::error::ahenk.net.tr/api/healthz hâlâ dbProvider=${provider:-unknown} (neon bekleniyor). DATABASE_URL / Container env kontrol edin."
           printf '%s\n' "$body" | head -c 400
           echo
           exit 1
