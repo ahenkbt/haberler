@@ -6,3 +6,8 @@
 # Cloudflare / Netlify root publish copy (scripts/*-root-build.mjs)
 /artifacts/
 node_modules/
+
+# Yektube DB credentials (copy from *.example — never commit real passwords)
+/config/yektube.db.php
+**/yektube.db.php
+!**/yektube.db.php.example
