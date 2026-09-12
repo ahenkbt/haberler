@@ -492,7 +492,7 @@ router.delete("/panel-admins/:id", async (req, res): Promise<void> => {
   }
   try {
     await ensurePanelAdminUsersSchema();
-    const [target] = await db.select().from(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id)).limit(1);
+    const [target] = await panelAdminReadDb().select().from(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id)).limit(1);
     if (!target) {
       res.status(404).json({ success: false, error: "Kayıt bulunamadı." });
       return;
