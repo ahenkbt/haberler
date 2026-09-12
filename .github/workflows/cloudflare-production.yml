@@ -354,9 +354,8 @@ jobs:
         run: |
           set -euo pipefail
           put() { [ -n "${2:-}" ] || return 0; printf '%s' "$2" | pnpm exec wrangler secret put "$1" -c wrangler.yektube.toml; }
+          # YEKTUBE_DB_READ/WRITE live in wrangler.yektube.toml [vars] — do not secret-put (10053)
           put YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
-          put YEKTUBE_DB_READ yektube
-          put YEKTUBE_DB_WRITE yektube
           put DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put SESSION_SECRET "$SESSION_SECRET"
 
