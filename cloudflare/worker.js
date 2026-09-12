@@ -3058,6 +3058,15 @@ export default {
 
       const ct = String(out.get("content-type") || "").toLowerCase();
       if (ct.includes("text/html")) {
+        if (
+          isHmYektubeCatalogPath(upstreamPath) ||
+          isHmYektubeCatalogPath(incoming.pathname)
+        ) {
+          return hmYektubeCatalogDegradeResponse(
+            isHmYektubeCatalogPath(upstreamPath) ? upstreamPath : incoming.pathname,
+            "html-upstream",
+          );
+        }
         out.set("cache-control", "no-store, max-age=0, must-revalidate");
         // Eski Netlify SW temizliği: yalnızca JS boot + cookie.
         // Clear-Site-Data HTML navigasyonunda Chrome'da ERR_FAILED yapabiliyor

@@ -39,17 +39,29 @@ export function resolveApiOrigin(env, incomingOrigin) {
   return CANONICAL_API_ORIGIN;
 }
 
+/** Warm DO `api` eski imajı tutar; CONTAINER_ROLL değişince yeni instance aç. */
+export function apiContainerInstanceName(env) {
+  const roll = String(env?.CONTAINER_ROLL || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return roll || "api";
+}
+
 export async function getApiStub(env) {
   if (!env?.GOALGO_API) return null;
+  const instance = apiContainerInstanceName(env);
   try {
     const { getContainer } = await import("@cloudflare/containers");
-    return getContainer(env.GOALGO_API, "api");
+    return getContainer(env.GOALGO_API, instance);
   } catch {
     if (typeof env.GOALGO_API.getByName === "function") {
-      return env.GOALGO_API.getByName("api");
+      return env.GOALGO_API.getByName(instance);
     }
     if (typeof env.GOALGO_API.idFromName === "function") {
-      return env.GOALGO_API.get(env.GOALGO_API.idFromName("api"));
+      return env.GOALGO_API.get(env.GOALGO_API.idFromName(instance));
     }
     return null;
   }

@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   CANONICAL_API_ORIGIN,
+  apiContainerInstanceName,
   configuredApiOrigin,
   isForbiddenLegacyOrigin,
   resolveApiOrigin,
@@ -31,6 +32,15 @@ describe("api-upstream", () => {
     assert.equal(
       configuredApiOrigin({ API_ORIGIN: "https://example.test" }),
       "https://example.test",
+    );
+  });
+
+  it("names the API container from CONTAINER_ROLL so rolls start a new instance", () => {
+    assert.equal(apiContainerInstanceName({}), "api");
+    assert.equal(apiContainerInstanceName({ CONTAINER_ROLL: "" }), "api");
+    assert.equal(
+      apiContainerInstanceName({ CONTAINER_ROLL: "hm-yektube-stub-20260912c" }),
+      "hm-yektube-stub-20260912c",
     );
   });
 
