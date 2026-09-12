@@ -1176,16 +1176,49 @@ export function HmCorporateHome({
   };
 
   const isVatanHome = isHmVatanThemeId(layoutPrefs?.hmVitrinTheme);
+  const vatanHiddenModules = new Set<HmCorporateHomeModuleId>([
+    "googleNewsBand",
+    "culturePortal",
+    "mansetAd",
+    "mainNews",
+    "popularCities",
+    "rssBand",
+    "authorsStrip",
+    "homeMiddleAd",
+    "latestGrid",
+    "heritageInfo",
+  ]);
 
   return (
-    <div className="hm-vitrin-home vkv-corporate-home">
+    <div className={`hm-vitrin-home vkv-corporate-home${isVatanHome ? " vatan-portal-home" : ""}`}>
       {isVatanHome && !orderedModules.includes("hero") ? <HmVatanMemorialHome /> : null}
       {orderedModules.map((moduleId) => (
         <Fragment key={moduleId}>
-          {renderModule(moduleId)}
+          {isVatanHome && vatanHiddenModules.has(moduleId) ? null : renderModule(moduleId)}
           {isVatanHome && moduleId === "hero" ? <HmVatanMemorialHome /> : null}
         </Fragment>
       ))}
+      {isVatanHome && continuationNewsItems.length > 0 ? (
+        <section className="vatan-duyuru" aria-label="Duyurular">
+          <div className="vatan-duyuru__head">
+            <p className="vatan-hub__kicker">Duyurular</p>
+            <h2>Güncel yazılar</h2>
+            <Link href={tumHaberlerHref} className="vatan-duyuru__all">
+              Tüm haberler
+            </Link>
+          </div>
+          <ul className="vatan-duyuru__list">
+            {continuationNewsItems.slice(0, 5).map((item) => (
+              <li key={String(item.id)}>
+                <Link href={h(newsHref(item))}>
+                  <time>{formatDate(item.createdAt)}</time>
+                  <strong>{item.title}</strong>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {showFallbackDonation && corporateDonation ? <HmCorporateDonationBand donation={corporateDonation} /> : null}
     </div>
   );

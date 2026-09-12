@@ -17,6 +17,7 @@ import {
   isHmCorporateLikeTheme,
   normalizeHmVitrinTheme,
 } from "./newsSiteLayout";
+import { isHmHeaderChromeContained, isHmSiteLayoutContained } from "./hmChromeLayout";
 
 describe("Vatan theme", () => {
   it("registers theme id vatan", () => {
@@ -82,11 +83,12 @@ describe("Vatan theme", () => {
     });
     expect(next.hmVitrinTheme).toBe("vatan");
     expect(isHmCorporateLikeTheme(next.hmVitrinTheme)).toBe(true);
+    expect(next.hmCorporateLayoutWidth).toBe("full");
+    expect(next.hmChromeColorMode).toBe("dark");
+    expect(isHmSiteLayoutContained(next)).toBe(false);
+    expect(isHmHeaderChromeContained(next)).toBe(false);
     expect(next.hmCorporateMenuPrimaryOnly).toBe(false);
     expect(next.hmCorporateAtaturkCornerEnabled).toBe(true);
-    expect(next.hmCorporateCulturePortalBandEnabled).toBe(true);
-    expect(next.hmCorporateWarsSectionEnabled).toBe(true);
-    expect(next.hmCorporateNationalDaysSectionEnabled).toBe(true);
     expect(next.corporateSliderItems?.some((item) => item.imageUrl === VATAN_ASSETS.canakkaleHero)).toBe(true);
     expect(next.hmCorporateMenuItems?.some((item) => item.id === "vkd-menu-kah-teror")).toBe(true);
     expect(next.hmCorporateMenuItems?.some((item) => item.id === "vkd-menu-ataturk")).toBe(true);

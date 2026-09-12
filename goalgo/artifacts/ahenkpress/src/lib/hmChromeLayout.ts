@@ -77,10 +77,11 @@ export function isLightBackgroundHex(hex: string): boolean {
   return lum > 0.62;
 }
 
-/** Haber + kurumsal: editörde “Ortalı” seçiliyken true (1280px). */
+/** Haber + kurumsal: editörde “Ortalı” seçiliyken true (1280px). Vatan her zaman tam genişlik. */
 export function isHmSiteLayoutContained(
   layoutPrefs: { hmCorporateLayoutWidth?: string | null; hmVitrinTheme?: string | null } | null | undefined,
 ): boolean {
+  if (String(layoutPrefs?.hmVitrinTheme ?? "").trim().toLowerCase() === "vatan") return false;
   return layoutPrefs?.hmCorporateLayoutWidth !== "full";
 }
 
@@ -156,6 +157,7 @@ export function isHmHeaderChromeContained(
     | null
     | undefined,
 ): boolean {
+  if (String(layoutPrefs?.hmVitrinTheme ?? "").trim().toLowerCase() === "vatan") return false;
   if (layoutPrefs?.hmCorporateLayoutWidth === "full") return false;
   if (layoutPrefs?.hmHeaderChromeFullBleed === true) return false;
   return true;

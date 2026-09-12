@@ -1,4 +1,4 @@
--- VKD Vatan: Atatürk Köşesi + heritage modules stay on corporate-like layout
+-- VKD Vatan: full-bleed dark heritage chrome (not contained news layout)
 UPDATE hm_news_sites
 SET
   layout_json = jsonb_set(
@@ -11,20 +11,20 @@ SET
             '"vatan"'::jsonb,
             true
           ),
-          '{hmCorporateMenuPrimaryOnly}',
-          'false'::jsonb,
+          '{hmCorporateLayoutWidth}',
+          '"full"'::jsonb,
           true
         ),
-        '{hmCorporateAtaturkCornerEnabled}',
+        '{hmHeaderChromeFullBleed}',
         'true'::jsonb,
         true
       ),
-      '{hmCorporateCulturePortalBandEnabled}',
-      'true'::jsonb,
+      '{hmChromeColorMode}',
+      '"dark"'::jsonb,
       true
     ),
-    '{hmCorporateWarsSectionEnabled}',
-    'true'::jsonb,
+    '{hmLogoBarBackground}',
+    '"#071422"'::jsonb,
     true
   )::text,
   updated_at = now()
@@ -33,9 +33,14 @@ WHERE slug = 'vkd';
 UPDATE hm_news_sites
 SET
   layout_json = jsonb_set(
-    COALESCE(layout_json::jsonb, '{}'::jsonb),
-    '{hmCorporateNationalDaysSectionEnabled}',
-    'true'::jsonb,
+    jsonb_set(
+      COALESCE(layout_json::jsonb, '{}'::jsonb),
+      '{hmNavBarBackground}',
+      '"#0B1C33"'::jsonb,
+      true
+    ),
+    '{hmCorporateMenuPrimaryOnly}',
+    'false'::jsonb,
     true
   )::text,
   updated_at = now()
