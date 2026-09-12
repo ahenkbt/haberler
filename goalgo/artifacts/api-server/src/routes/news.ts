@@ -49,7 +49,7 @@ import {
 import { recategorizeMisclassifiedSporBatch } from "../lib/recategorizeMisclassifiedSpor.js";
 import {
   filterPoolCopiesWhenReceiveDisabled,
-  findCategoryForScope,
+  findCategoryIdsForScope,
   loadEditorScopedDbNews,
   resolveEditorScopedPoolOpts,
 } from "../lib/hybrid-news-merge.js";
@@ -62,6 +62,11 @@ import {
 } from "../lib/hm-corporate-news-policy.js";
 import { isHmCorporateLayout, parseHmLayoutJson } from "../lib/hm-editor-categories.js";
 import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat.js";
+import {
+  isHmPublishGroupSharedEditorNews,
+  publicHmSiteNewsScopeSql,
+  resolveHmPublishGroupSiteIds,
+} from "../lib/hm-publish-groups.js";
 
 const router: IRouter = Router();
 
@@ -72,10 +77,10 @@ router.use((_req, _res, next) => {
 });
 
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number): Promise<SQL> {
-  // Editör haber siteleri: yalnızca bu site_id — merkez exclusive-cat / sync sızıntısı yok.
+  // Editör haber siteleri: bu site_id + ASG/AHG publish-group editör satırları.
   // (Havuz onaylı kopyalar zaten site_id = alan site ile yazılır.)
   void readDb;
-  return eq(newsTable.siteId, siteId);
+  return publicHmSiteNewsScopeSql(siteId);
 }
 
 async function newsRowBelongsToSite(
@@ -85,7 +90,10 @@ async function newsRowBelongsToSite(
   isCorporate: boolean,
 ): Promise<boolean> {
   if (row.siteId === siteId) return true;
-  if (row.siteId != null) return false;
+  if (row.siteId != null) {
+    const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
+    return isHmPublishGroupSharedEditorNews(row, siteId, groupSiteIds);
+  }
   if (isCorporate) {
     if (row.categoryId == null) return false;
     const [cat] = await readDb
@@ -210,9 +218,11 @@ async function buildNewsListWhere(readDb: NewsReadDb, opts: {
       else return sql`false`;
     } else {
       const siteIdForCat = hmScoped && Number.isFinite(opts.siteId) ? opts.siteId : null;
-      const cat = await findCategoryForScope(opts.categorySlug, siteIdForCat);
-      if (cat) conds.push(eq(newsTable.categoryId, cat.id));
-      else return sql`false`;
+      const groupSiteIds = siteIdForCat != null ? await resolveHmPublishGroupSiteIds(siteIdForCat) : [];
+      const catIds = await findCategoryIdsForScope(opts.categorySlug, siteIdForCat, groupSiteIds);
+      if (catIds.length > 0) {
+        conds.push(catIds.length === 1 ? eq(newsTable.categoryId, catIds[0]!) : inArray(newsTable.categoryId, catIds));
+      } else return sql`false`;
     }
   }
   return conds.length ? and(...conds) : undefined;
@@ -1050,7 +1060,8 @@ router.get("/news/:id", async (req, res): Promise<void> => {
       .from(newsTable)
       .where(eq(newsTable.id, numericId));
     if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
-      row = undefined;
+      const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
+      if (!isHmPublishGroupSharedEditorNews(row, siteId, groupSiteIds)) row = undefined;
     }
   }
 
@@ -1123,7 +1134,8 @@ router.get("/news/:id", async (req, res): Promise<void> => {
     if (!Number.isNaN(numericId)) {
       [row] = await mainDb.select().from(newsTable).where(eq(newsTable.id, numericId));
       if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
-        row = undefined;
+        const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
+        if (!isHmPublishGroupSharedEditorNews(row, siteId, groupSiteIds)) row = undefined;
       }
     }
     if (!row && siteScoped) {

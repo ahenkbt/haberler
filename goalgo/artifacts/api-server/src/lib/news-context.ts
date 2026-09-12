@@ -1,5 +1,7 @@
 import { db, getNewsDbForRead, categoriesTable, authorsTable } from "@workspace/db";
 import type { NewsContext } from "./serializers";
+import { indexHmPublishGroupsBySiteId } from "./hm-publish-groups.js";
+import { listHmNewsSitesCompat } from "./hm-site-compat.js";
 
 let cachedContext: { value: NewsContext; expiresAt: number } | null = null;
 let inflightContext: Promise<NewsContext> | null = null;
@@ -19,16 +21,18 @@ export async function loadNewsContext(): Promise<NewsContext> {
 
   inflightContext = (async () => {
     const rdb = getNewsDbForRead();
-    const [cats, auths] = await Promise.all([
+    const [cats, auths, sites] = await Promise.all([
       /* Kategori yazımları ana DB'de; haber okuma cluster'ı ile senkron gecikmesi olmasın. */
       db.select().from(categoriesTable),
       rdb
         .select({ id: authorsTable.id, name: authorsTable.name })
         .from(authorsTable),
+      listHmNewsSitesCompat().catch(() => []),
     ]);
     const value = {
       categories: new Map(cats.map((c) => [c.id, c])),
       authors: new Map(auths.map((a) => [a.id, a])),
+      publishGroupBySiteId: indexHmPublishGroupsBySiteId(sites),
     };
     cachedContext = { value, expiresAt: Date.now() + NEWS_CONTEXT_CACHE_MS };
     return value;

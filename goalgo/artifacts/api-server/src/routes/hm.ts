@@ -190,6 +190,7 @@ import {
 import { normalizeSeoVerification } from "../lib/seo-verification.js";
 import { buildHmHomeBundle } from "../lib/hm-home-bundle.js";
 import { findHmEditorEditableNewsRow, hmEditorSiteNewsWhere } from "../lib/hm-editor-news-access.js";
+import { resolveHmPublishGroupSiteIds } from "../lib/hm-publish-groups.js";
 import { invalidateNewsPageBundleCache } from "../lib/news-page-bundle.js";
 import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
 import {
@@ -4969,7 +4970,10 @@ router.get("/hm/editor/news", async (req, res): Promise<void> => {
       sql`(${newsTable.title} ILIKE ${like} OR ${newsTable.slug} ILIKE ${like} OR COALESCE(${newsTable.spot}, '') ILIKE ${like})`,
     );
   }
-  const where = hmEditorSiteNewsWhere(ctx.siteId, conds.length ? and(...conds) : undefined);
+  const groupSiteIds = await resolveHmPublishGroupSiteIds(ctx.siteId);
+  const where = hmEditorSiteNewsWhere(ctx.siteId, conds.length ? and(...conds) : undefined, {
+    peerSiteIds: groupSiteIds,
+  });
   // updatedAt: yeni düzenlenen / eklenen haberler listenin başında görünsün.
   const [rows, totalRows] = await Promise.all([
     newsReadDb()
@@ -5307,7 +5311,7 @@ router.post("/hm/editor/news", async (req, res): Promise<void> => {
   const data = parsed.data;
   const hmAccess = await resolveHmHybridRssAccess(ctx.siteId);
   const isCorporateEditor = hmAccess?.isCorporate === true;
-  // Manuel editör haberleri her zaman yalnızca bu sitede görünür.
+  // Tek satır; site_only merkez havuza gitmez. ASG+AHG publish-group vitrinde paylaşılır.
   const siteOnly = true;
   const newsCtx = await loadNewsContext();
   const categoryId = await resolveCategoryIdForHmEditor(ctx.siteId, data.categorySlug);
@@ -5477,7 +5481,7 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
   const data = parsed.data;
   const hmAccess = await resolveHmHybridRssAccess(ctx.siteId);
   const isCorporateEditor = hmAccess?.isCorporate === true;
-  // Manuel editör haberleri her zaman yalnızca bu sitede görünür.
+  // Tek satır kalır; publish-group üyelerinde (ASG+AHG) aynı kayıt görünür.
   const siteOnly = true;
   const newsCtx = await loadNewsContext();
   const categoryId = await resolveCategoryIdForHmEditor(ctx.siteId, data.categorySlug);
@@ -5511,9 +5515,9 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
       isSiteManset: data.isSiteManset ?? false,
       isBreaking: data.isBreaking ?? false,
       tags,
-      siteId: ctx.siteId,
+      siteId: existing.siteId ?? ctx.siteId,
       siteOnly,
-      ownerSiteId: ctx.siteId,
+      ownerSiteId: existing.ownerSiteId ?? existing.siteId ?? ctx.siteId,
       isFoodRecipe: data.isFoodRecipe ?? false,
       foodRecipeCategorySlug: data.isFoodRecipe ? (data.foodRecipeCategorySlug?.trim().toLowerCase() || null) : null,
       isEditorManual: true,
@@ -5525,7 +5529,10 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
     return;
   }
   invalidateNewsPageBundleCache({ slug: row.slug, siteId: ctx.siteId });
-  /* Düzenleme merkez havuza yansımaz — paylaşılan haberler diğer sitelerde eski sürümle kalır. */
+  if (existing.siteId != null && existing.siteId !== ctx.siteId) {
+    invalidateNewsPageBundleCache({ slug: row.slug, siteId: existing.siteId });
+  }
+  /* Tek kaynak satır — merkez havuza yansımaz; publish-group vitrin aynı kaydı okur. */
   res.json(serializeNews(row, newsCtx));
 });
 

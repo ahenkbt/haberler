@@ -20,6 +20,11 @@ import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isHmCorporateLayout, parseHmLayoutJson, resolveHmCorporateAuthorsEnabledFromLayout } from "./hm-editor-categories.js";
 import { centralNewsRowBelongsToCorporateSite, centralNewsRowVisibleOnHmEditorSite } from "./hm-corporate-news-policy.js";
 import { newsRowVisibleOnHmSiteByRssTarget } from "./rss-campaign-target.js";
+import {
+  isHmPublishGroupSharedEditorNews,
+  publicHmSiteNewsScopeSql,
+  resolveHmPublishGroupSiteIds,
+} from "./hm-publish-groups.js";
 import { shouldHideAuthorOnAnkaraHmSite } from "./hm-vatanhaber-author-block.js";
 
 export const NEWS_PAGE_BUNDLE_BUDGET_MS = 5_000;
@@ -28,13 +33,14 @@ type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 type SerializedArticle = ReturnType<typeof serializeNews> | ReturnType<typeof serializeHmMakaleAsNews>;
 
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number) {
+  const groupScope = await publicHmSiteNewsScopeSql(siteId);
   const ownedCategories = await readDb
     .select({ id: categoriesTable.id })
     .from(categoriesTable)
     .where(eq(categoriesTable.exclusiveSiteId, siteId));
   const ownedCategoryIds = ownedCategories.map((row) => row.id).filter((id) => Number.isFinite(id) && id > 0);
-  if (ownedCategoryIds.length === 0) return eq(newsTable.siteId, siteId);
-  return or(eq(newsTable.siteId, siteId), and(isNull(newsTable.siteId), inArray(newsTable.categoryId, ownedCategoryIds)))!;
+  if (ownedCategoryIds.length === 0) return groupScope;
+  return or(groupScope, and(isNull(newsTable.siteId), inArray(newsTable.categoryId, ownedCategoryIds)))!;
 }
 
 async function newsRowBelongsToSite(
@@ -44,7 +50,10 @@ async function newsRowBelongsToSite(
   isCorporate: boolean,
 ): Promise<boolean> {
   if (row.siteId === siteId) return true;
-  if (row.siteId != null) return false;
+  if (row.siteId != null) {
+    const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);
+    return isHmPublishGroupSharedEditorNews(row, siteId, groupSiteIds);
+  }
   if (isCorporate) {
     if (row.categoryId == null) return false;
     const [cat] = await readDb
@@ -212,7 +221,8 @@ export async function resolveNewsArticleBySlug(
     [row] = await readDb.select().from(newsTable).where(eq(newsTable.id, numericId));
     // Site kapsamındaysa önce bu siteye ait satırı tercih et.
     if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
-      row = undefined;
+      const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId!);
+      if (!isHmPublishGroupSharedEditorNews(row, siteId!, groupSiteIds)) row = undefined;
     }
   }
   if (!row && siteScoped) {
@@ -272,7 +282,8 @@ export async function resolveNewsArticleBySlug(
     if (!Number.isNaN(numericId)) {
       [row] = await mainDb.select().from(newsTable).where(eq(newsTable.id, numericId));
       if (row && siteScoped && row.siteId != null && row.siteId !== siteId) {
-        row = undefined;
+        const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId!);
+        if (!isHmPublishGroupSharedEditorNews(row, siteId!, groupSiteIds)) row = undefined;
       }
     }
     if (!row && siteScoped) {

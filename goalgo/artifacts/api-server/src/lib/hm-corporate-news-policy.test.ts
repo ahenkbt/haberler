@@ -230,5 +230,20 @@ describe("hm-corporate-news-policy", () => {
         7,
       ),
     ).toBe(true);
+    // ASG+AHG publish group: peer editor-manual is not external.
+    expect(
+      isExternalManualEditorNewsForSite(
+        { siteId: 3, rssSourceUrl: null, isEditorManual: true, siteOnly: true },
+        8,
+        [3, 8],
+      ),
+    ).toBe(false);
+    expect(
+      isExternalManualEditorNewsForSite(
+        { siteId: 3, rssSourceUrl: null, isEditorManual: false, siteOnly: false },
+        8,
+        [3, 8],
+      ),
+    ).toBe(true);
   });
 });

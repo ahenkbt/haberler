@@ -12,6 +12,7 @@ import { deriveCleanCategorySlug, isHmCorporateLayout } from "./hm-editor-catego
 import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
 import { isKoseArticle, type KoseArticleLike } from "./kose-article.js";
 import { parseHmPoolRef, parseHmSyncDedupeKey } from "./hm-sync-source.js";
+import { isHmPublishGroupSharedEditorNews } from "./hm-publish-groups.js";
 
 /** Public editör haber sitesi vitrin: yaş kesimi yok — yayınlanmış manuel haberler listelenir. */
 export const HM_PUBLIC_EDITOR_NEWS_MAX_AGE_MS = Number.POSITIVE_INFINITY;
@@ -257,9 +258,10 @@ export function resolveCorporateRepairCategorySlug(opts: {
 }
 
 /**
- * Kesin kural: Manuel / site_only haber yalnızca eklendiği editör sitesinde görünür.
- * Başka sitede görünmesi için editörün havuzdan «haber olarak ekle» ile onaylaması gerekir
- * (yerel `yekpare-hm-pool:` kopyası, site_id = alan site).
+ * Kesin kural: Manuel / site_only haber yalnızca eklendiği editör sitesinde görünür
+ * — publish-group üyeleri (ASG+AHG) hariç: aynı satır her iki sitede görünür.
+ * Başka (grup dışı) sitede görünmesi için editörün havuzdan «haber olarak ekle» ile
+ * onaylaması gerekir (yerel `yekpare-hm-pool:` kopyası, site_id = alan site).
  *
  * Merkez sync (`yekpare-hm-sync:*:news:*`) diğer editör sitelerinde canlı birleşmez.
  */
@@ -272,10 +274,13 @@ export function isExternalManualEditorNewsForSite(
     siteOnly?: boolean | null;
   },
   editorSiteId: number,
+  groupSiteIds?: readonly number[] | null,
 ): boolean {
   if (!Number.isFinite(editorSiteId) || editorSiteId <= 0) return false;
   // Bu sitenin kendi satırı (manuel veya havuz onaylı kopya) dış değil.
   if (row.siteId != null && row.siteId === editorSiteId) return false;
+  // ASG+AHG publish group: aynı editör haberi tek satır, her iki sitede görünür.
+  if (isHmPublishGroupSharedEditorNews(row, editorSiteId, groupSiteIds)) return false;
 
   const rssUrl = String(row.rssSourceUrl ?? "").trim();
   const sync = parseHmSyncDedupeKey(rssUrl);
@@ -308,8 +313,12 @@ export function centralNewsRowVisibleOnHmEditorSite(
     siteOnly?: boolean | null;
   } & KoseArticleLike,
   editorSiteId: number,
+  groupSiteIds?: readonly number[] | null,
 ): boolean {
-  if (row.siteId != null) return row.siteId === editorSiteId;
+  if (row.siteId != null) {
+    if (row.siteId === editorSiteId) return true;
+    return isHmPublishGroupSharedEditorNews(row, editorSiteId, groupSiteIds);
+  }
 
   // Merkez satır: site_only / manuel asla başka sitede görünmez.
   if (row.siteOnly === true || row.isEditorManual === true) return false;
