@@ -25,6 +25,13 @@ import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
 import { filterNewsItemsWithUsableCover } from "./news-display-image.js";
 import { HM_TEPE_MANSET_ITEM_COUNT, selectTepeMansetItems } from "./hm-tepe-manset-select.js";
+import {
+  loadHomepageLocalPreferredNews,
+  loadHomepageSharedFallbackNews,
+  newsItemMatchesHomepageLocalPref,
+  resolveHomepageLocalPref,
+} from "./hm-homepage-local-pref.js";
+import { mergeUniqueHomepageItems, preferLocalThenFill } from "./hm-homepage-section-fill.js";
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
@@ -195,6 +202,13 @@ function sortNewsItemsByAddDate(items: SerializedNewsListItem[]): SerializedNews
 }
 
 /**
+ * Homepage pick order (home-bundle):
+ * - Tepe Manşet: manuel/manşet first. Site 494 (kirsehirhaber) prefers
+ *   `is_tepe_manset` + Yerel/Kırşehir + city-matching rows, then shared pool.
+ *   Other HM sites keep the existing tepe selector.
+ * - Gündemde Öne Çıkanlar (`centerHeadlines`): site 494 uses local-preferred
+ *   then mixed fill; other sites keep `buildCenterHeadlinesFromItems`.
+ *
  * Orta (site) manşet:
  * 1) `isSiteManset` işaretli haberler varsa yalnızca onlar
  * 2) yoksa en son eklenenler (`isFeatured` burada elenmez — tepe ayırımı istemcide)
@@ -327,6 +341,7 @@ export async function buildHmHomeBundle(
   const corporateStrict = isHmCorporateLayout(layout);
   const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
+  const localPref = corporateStrict ? null : resolveHomepageLocalPref(siteSlug, layout, siteId);
   const settle = <T,>(label: string, p: Promise<T[]>) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<T[]>((resolve) => {
@@ -345,7 +360,7 @@ export async function buildHmHomeBundle(
       if (timer) clearTimeout(timer);
     });
   };
-  let [featured, siteMansetEditor, latestEditor, breaking, popular] = await Promise.all([
+  let [featured, siteMansetEditor, latestEditor, breaking, popular, localPreferred, sharedFallback] = await Promise.all([
     settle("featured", loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict)),
     settle(
       "site-manset",
@@ -357,6 +372,14 @@ export async function buildHmHomeBundle(
     ),
     settle("breaking", loadBreakingForSite(siteId, corporateStrict, poolReceiveEnabled)),
     settle("popular", loadPopularForSite(siteId, 12, corporateStrict, poolReceiveEnabled)),
+    settle(
+      "local-pref",
+      localPref ? loadHomepageLocalPreferredNews(siteId, localPref, 40) : Promise.resolve([]),
+    ),
+    settle(
+      "shared-fallback",
+      localPref ? loadHomepageSharedFallbackNews(siteId, 40) : Promise.resolve([]),
+    ),
   ]);
   let manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
   if (corporateStrict) {
@@ -375,18 +398,56 @@ export async function buildHmHomeBundle(
     manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
     breaking = filterPublicEditorNewsItems(breaking, siteId, false, null, groupSiteIds);
     popular = filterPublicEditorNewsItems(popular, siteId, false, null, groupSiteIds);
+    localPreferred = filterPublicEditorNewsItems(localPreferred, siteId, false, null, groupSiteIds);
+    sharedFallback = filterPublicEditorNewsItems(sharedFallback, siteId, false, null, groupSiteIds);
   }
-  const centerHeadlines = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
-  const tepeManset = selectTepeMansetItems(
-    [...featured, ...siteMansetEditor, ...latestEditor, ...breaking, ...popular],
-    HM_TEPE_MANSET_ITEM_COUNT,
+  const sectionPool = mergeUniqueHomepageItems(
+    localPreferred,
+    featured,
+    siteMansetEditor,
+    latestEditor,
+    manualEditor,
+    sharedFallback,
+    breaking,
+    popular,
   );
+  const centerFromLegacy = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
+  const centerHeadlines = localPref
+    ? preferLocalThenFill(
+        mergeUniqueHomepageItems(centerFromLegacy, sectionPool),
+        localPref,
+        siteId,
+        limit,
+      )
+    : centerFromLegacy;
+  const tepeManset = (() => {
+    const fallbackPool = [...featured, ...siteMansetEditor, ...latestEditor, ...breaking, ...popular];
+    if (!localPref) return selectTepeMansetItems(fallbackPool, HM_TEPE_MANSET_ITEM_COUNT);
+    const localRows = sectionPool.filter((item) => newsItemMatchesHomepageLocalPref(item, localPref, siteId));
+    const flagged = localRows.filter((item) => item.isTepeManset === true);
+    const flaggedPicks = selectTepeMansetItems(flagged, HM_TEPE_MANSET_ITEM_COUNT);
+    if (flaggedPicks.length >= HM_TEPE_MANSET_ITEM_COUNT) return flaggedPicks;
+    const used = new Set(flaggedPicks.map((item) => String(item.id ?? item.slug ?? "")));
+    const localRest = selectTepeMansetItems(
+      localRows.filter((item) => !used.has(String(item.id ?? item.slug ?? ""))),
+      HM_TEPE_MANSET_ITEM_COUNT - flaggedPicks.length,
+    );
+    const localPicks = [...flaggedPicks, ...localRest];
+    if (localPicks.length >= HM_TEPE_MANSET_ITEM_COUNT) return localPicks;
+    localPicks.forEach((item) => used.add(String(item.id ?? item.slug ?? "")));
+    const rest = selectTepeMansetItems(
+      sectionPool.filter((item) => !used.has(String(item.id ?? item.slug ?? ""))),
+      HM_TEPE_MANSET_ITEM_COUNT - localPicks.length,
+    );
+    return [...localPicks, ...rest];
+  })();
   return {
     siteId,
     featured: filterNewsItemsWithUsableCover(featured),
     tepeManset: filterNewsItemsWithUsableCover(tepeManset),
     manualEditor: filterNewsItemsWithUsableCover(manualEditor),
-    centerHeadlines: filterNewsItemsWithUsableCover(centerHeadlines),
+    // Text list: keep items without covers so Öne Çıkanlar can still fill.
+    centerHeadlines,
     breaking: filterNewsItemsWithUsableCover(breaking),
     popular: filterNewsItemsWithUsableCover(popular),
   };

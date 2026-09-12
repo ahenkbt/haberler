@@ -97,6 +97,7 @@ function defaultKhLayoutJson(): string {
     hmRssSourcePacks: { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
     hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
     hmYekparePoolReceiveEnabled: true,
+    hmHomepageLocalCity: "kirsehir",
     hmRssIntegrationMode: "live",
     /** İlk açılışta havuz haberleriyle dolu görünsün */
     hmAllowCrossSiteManualNews: true,
@@ -300,6 +301,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
         hmRssSourcePacks: { ...DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS },
         hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
         hmYekparePoolReceiveEnabled: true,
+        hmHomepageLocalCity: parsed.hmHomepageLocalCity || "kirsehir",
         hmAllowCrossSiteManualNews: parsed.hmAllowCrossSiteManualNews ?? true,
         hmNewsHomeModuleOrder:
           Array.isArray(parsed.hmNewsHomeModuleOrder) && parsed.hmNewsHomeModuleOrder.length > 0

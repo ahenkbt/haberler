@@ -12,6 +12,7 @@ export type TepeMansetCandidate = {
   source?: string | null;
   isEditorManual?: boolean | null;
   isFeatured?: boolean | null;
+  isTepeManset?: boolean | null;
   isSiteManset?: boolean | null;
   isBreaking?: boolean | null;
   views?: number | null;

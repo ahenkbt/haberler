@@ -54,6 +54,7 @@ import {
   resolveEditorScopedPoolOpts,
 } from "../lib/hybrid-news-merge.js";
 import { resolveHmHybridRssAccess } from "../lib/portal-hybrid-config.js";
+import { ensureHmCategoryListingNotEmpty } from "../lib/hm-category-listing-fallback.js";
 import { filterGlobalCategoryNewsItems, HM_GLOBAL_NEWS_CATEGORY_SLUG } from "../lib/hm-global-news-category.js";
 import {
   filterCorporatePublicNewsItems,
@@ -312,6 +313,16 @@ router.get("/news", async (req, res): Promise<void> => {
         );
       }
       filtered = excludeKoseFromEditorialNewsList(filtered);
+      if (categorySlug && filtered.length === 0 && hmAccess && !hmAccess.isCorporate) {
+        filtered = await ensureHmCategoryListingNotEmpty({
+          items: filtered,
+          siteId,
+          siteSlug: hmAccess.slug,
+          categorySlug,
+          limit,
+          corporate: false,
+        });
+      }
       filtered.sort(
         (a, b) =>
           new Date(String(b.createdAt ?? 0)).getTime() -
@@ -688,6 +699,16 @@ router.get("/news/by-category/:categorySlug", async (req, res): Promise<void> =>
         filtered = filterCorporatePublicNewsItems(filtered, { siteSlug: hmAccess.slug });
       }
       filtered = filterHmCategoryContentGuard(filtered, slugNorm);
+      if (filtered.length === 0 && !hmAccess.isCorporate) {
+        filtered = await ensureHmCategoryListingNotEmpty({
+          items: filtered,
+          siteId,
+          siteSlug: hmAccess.slug,
+          categorySlug: slugNorm,
+          limit,
+          corporate: false,
+        });
+      }
       filtered.sort(
         (a, b) =>
           new Date(String(b.createdAt ?? 0)).getTime() -
