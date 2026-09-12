@@ -42,7 +42,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @workspace/api-server run build
 
 ENV NODE_ENV=production
-ENV CONTAINER_ROLL=kariyer-232-20260909
+ENV CONTAINER_ROLL=hm-shared-rss-pool-202609121331
 
 EXPOSE 3000
 
