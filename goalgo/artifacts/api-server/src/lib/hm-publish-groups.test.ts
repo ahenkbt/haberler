@@ -1,20 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
+  HM_ANKARAHABERGUNDEMI_SITE_ID,
+  HM_ASG_SITE_ID,
   HM_EDITOR_PUBLISH_GROUP_ID,
+  HM_EDITOR_PUBLISH_GROUP_SITE_IDS,
   HM_EDITOR_PUBLISH_GROUP_SLUGS,
   HM_PUBLISH_GROUPS,
+  HM_VKD_SITE_ID,
   indexHmPublishGroupsBySiteId,
+  isHmEditorPublishGroupSiteId,
   isHmPublishGroupSharedEditorNews,
   publishGroupDefForSite,
   siteMatchesPublishGroupSlug,
 } from "./hm-publish-groups.js";
 
 describe("hm-publish-groups", () => {
-  it("uses live slugs asg + ankarahabergundemi only", () => {
+  it("pins the admin-panel pair: siteId 3 asg + siteId 8 ankarahabergundemi", () => {
     expect(HM_PUBLISH_GROUPS).toHaveLength(1);
     expect(HM_PUBLISH_GROUPS[0]?.id).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect([...HM_EDITOR_PUBLISH_GROUP_SITE_IDS]).toEqual([HM_ASG_SITE_ID, HM_ANKARAHABERGUNDEMI_SITE_ID]);
     expect([...HM_EDITOR_PUBLISH_GROUP_SLUGS]).toEqual(["asg", "ankarahabergundemi"]);
     expect(HM_EDITOR_PUBLISH_GROUP_SLUGS).not.toContain("ahg");
+    expect(isHmEditorPublishGroupSiteId(3)).toBe(true);
+    expect(isHmEditorPublishGroupSiteId(8)).toBe(true);
+    expect(isHmEditorPublishGroupSiteId(HM_VKD_SITE_ID)).toBe(false);
   });
 
   it("matches DB rows by live slug or host — never invented ahg", () => {
@@ -29,6 +38,9 @@ describe("hm-publish-groups", () => {
     expect(
       publishGroupDefForSite({ slug: "news", domain: "ankarahabergundemi.com" })?.id,
     ).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect(publishGroupDefForSite({ id: 3 })?.id).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect(publishGroupDefForSite({ id: 8 })?.id).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect(publishGroupDefForSite({ id: 7, slug: "vkd" })).toBeNull();
     expect(publishGroupDefForSite({ slug: "vkd" })).toBeNull();
     expect(publishGroupDefForSite({ slug: "vatankahramanlari", domain: "vatankahramanlari.org" })).toBeNull();
     expect(publishGroupDefForSite({ slug: "su" })).toBeNull();
@@ -50,6 +62,15 @@ describe("hm-publish-groups", () => {
     expect(both.get(8)).toEqual({ id: HM_EDITOR_PUBLISH_GROUP_ID, siteIds: [3, 8] });
     expect(both.has(7)).toBe(false);
     expect(both.has(99)).toBe(false);
+
+    const byIdOnly = indexHmPublishGroupsBySiteId([
+      { id: 3, slug: "legacy", domain: null, domain2: null, domain3: null, active: true },
+      { id: 8, slug: "legacy-2", domain: null, domain2: null, domain3: null, active: true },
+      { id: 7, slug: "vkd", domain: "vatankahramanlari.org", domain2: null, domain3: null, active: true },
+    ]);
+    expect(byIdOnly.get(3)?.siteIds).toEqual([3, 8]);
+    expect(byIdOnly.get(8)?.siteIds).toEqual([3, 8]);
+    expect(byIdOnly.has(7)).toBe(false);
   });
 
   it("shares only editor-manual / site-only rows inside the group", () => {

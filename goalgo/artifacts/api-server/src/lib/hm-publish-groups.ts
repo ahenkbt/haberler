@@ -1,11 +1,13 @@
 /**
  * Named HM editor publish group — one news row, visible on every member site.
  *
- * Live hosts (Cloudflare `x-yekpare-hm-redirect`):
- *   ankarasehirgazetesi.com → hm_news_sites.slug `asg`
- *   ankarahabergundemi.com  → hm_news_sites.slug `ankarahabergundemi`
- * Do not treat `ahg` as a slug. Members are resolved from `hm_news_sites`
- * by those live slugs or matching domains. RSS pool and VKD stay out.
+ * Confirmed ahenk.net.tr/admin Haber Siteleri (2026-09-12):
+ *   siteId 3 — Ankara Şehir Gazetesi — slug `asg` — ankarasehirgazetesi.com
+ *   siteId 8 — Ankara Haber Gündemi — slug `ankarahabergundemi` — ankarahabergundemi.com
+ * VKD is siteId 7 — never a member. Do not treat `ahg` as a slug.
+ *
+ * Resolve by those stable ids first; slug/domain from hm_news_sites is fallback
+ * if ids are remapped. RSS pool stays out.
  */
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { newsTable } from "@workspace/db";
@@ -17,17 +19,29 @@ export const HM_EDITOR_PUBLISH_GROUP_ID = "asg-ankarahabergundemi" as const;
 /** Canonical hm_news_sites.slug values from live redirects. */
 export const HM_EDITOR_PUBLISH_GROUP_SLUGS = ["asg", "ankarahabergundemi"] as const;
 
+/** Stable hm_news_sites.id from admin panel — prefer these over invented slugs. */
+export const HM_ASG_SITE_ID = 3;
+export const HM_ANKARAHABERGUNDEMI_SITE_ID = 8;
+export const HM_EDITOR_PUBLISH_GROUP_SITE_IDS = [HM_ASG_SITE_ID, HM_ANKARAHABERGUNDEMI_SITE_ID] as const;
+export const HM_VKD_SITE_ID = 7;
+
 export type HmPublishGroupDef = {
   id: string;
   slugs: readonly string[];
+  siteIds: readonly number[];
 };
 
 export const HM_PUBLISH_GROUPS: readonly HmPublishGroupDef[] = [
   {
     id: HM_EDITOR_PUBLISH_GROUP_ID,
     slugs: HM_EDITOR_PUBLISH_GROUP_SLUGS,
+    siteIds: HM_EDITOR_PUBLISH_GROUP_SITE_IDS,
   },
 ];
+
+export function isHmEditorPublishGroupSiteId(siteId: number): boolean {
+  return siteId === HM_ASG_SITE_ID || siteId === HM_ANKARAHABERGUNDEMI_SITE_ID;
+}
 
 export type HmPublishGroupIndexEntry = {
   id: string;
@@ -93,12 +107,16 @@ export function siteMatchesPublishGroupSlug(
 }
 
 export function publishGroupDefForSite(site: {
+  id?: number | null;
   slug?: string | null;
   domain?: string | null;
   domain2?: string | null;
   domain3?: string | null;
 }): HmPublishGroupDef | null {
+  const id = Number(site.id);
+  if (id === HM_VKD_SITE_ID) return null;
   for (const group of HM_PUBLISH_GROUPS) {
+    if (Number.isFinite(id) && id > 0 && group.siteIds.includes(id)) return group;
     if (group.slugs.some((slug) => siteMatchesPublishGroupSlug(site, slug))) return group;
   }
   return null;
@@ -122,8 +140,12 @@ export function indexHmPublishGroupsBySiteId(
 
   const out = new Map<number, HmPublishGroupIndexEntry>();
   for (const [groupId, siteIds] of membersByGroup) {
-    if (siteIds.length < 2) continue;
-    const sorted = [...siteIds].sort((a, b) => a - b);
+    const group = HM_PUBLISH_GROUPS.find((g) => g.id === groupId);
+    const pinned = (group?.siteIds ?? []).filter((id) => siteIds.includes(id));
+    // Prefer the confirmed pair (3 + 8) when both rows exist — no extra aliases.
+    const members = pinned.length >= 2 ? [...pinned] : siteIds.filter((id) => id !== HM_VKD_SITE_ID);
+    if (members.length < 2) continue;
+    const sorted = [...members].sort((a, b) => a - b);
     const entry = { id: groupId, siteIds: sorted };
     for (const siteId of sorted) out.set(siteId, entry);
   }
@@ -194,6 +216,7 @@ export async function resolveHmPublishGroup(siteId: number): Promise<HmPublishGr
 export async function resolveHmPublishGroupSiteIds(siteId: number): Promise<number[]> {
   const group = await resolveHmPublishGroup(siteId);
   if (group?.siteIds.length) return group.siteIds;
+  if (isHmEditorPublishGroupSiteId(siteId)) return [...HM_EDITOR_PUBLISH_GROUP_SITE_IDS];
   return Number.isFinite(siteId) && siteId > 0 ? [siteId] : [];
 }
 
