@@ -20,11 +20,13 @@ export const VKD_REQUIRED_MENU_IDS = [
   "vkd-menu-kahramanlar",
   "vkd-menu-tarih-savaslar",
   "vkd-menu-tarih-canakkale-sehit",
+  "vkd-menu-kah-teror",
+  "vkd-menu-kah-guvenlik",
   "vkd-menu-video-tv",
 ] as const;
 const LAYOUT_JSON_MAX = 1_000_000;
 export const VKD_PAGE_SYNC_VERSION = 7;
-export const VKD_MENU_SYNC_VERSION = 6;
+export const VKD_MENU_SYNC_VERSION = 7;
 
 /** Menü/footer'da link verilen kritik kurumsal sayfalar — eksikse geri yükleme tetiklenir. */
 export const VKD_REQUIRED_PAGE_SLUGS = [
@@ -369,6 +371,10 @@ async function runVkdSync(dataDir: string, opts: { allowFullRestore: boolean }):
     (await readDb.select().from(hmNewsSitesTable).where(eq(hmNewsSitesTable.slug, VKD_SITE_SLUG)).limit(1))[0]?.layoutJson,
   );
   await applyVkdDonationLayoutPatch(latestLayout);
+  if (String(latestLayout.hmVitrinTheme ?? "").toLowerCase() !== "vatan") {
+    await applyDeltaToDb({ hmVitrinTheme: "vatan" });
+    log("vitrin teması vatan olarak işaretlendi");
+  }
   log("tamam");
 }
 

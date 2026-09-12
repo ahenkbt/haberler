@@ -7,7 +7,7 @@ import { normalizeHmVitrinTheme, resolveHmNewsVideoTvEnabled } from "@/lib/newsS
 export function HmVideoTvEnabledGate({ children }: { children: ReactNode }) {
   const ctx = useHmPublicLinkContextOptional();
   const enabled = resolveHmNewsVideoTvEnabled(ctx?.layoutPrefs);
-  const isCorporateSite = normalizeHmVitrinTheme(ctx?.layoutPrefs?.hmVitrinTheme) === "corporate";
+  const isCorporateSite = normalizeHmVitrinTheme(ctx?.layoutPrefs?.hmVitrinTheme) === "corporate" || normalizeHmVitrinTheme(ctx?.layoutPrefs?.hmVitrinTheme) === "vatan";
 
   if (!ctx) {
     return (

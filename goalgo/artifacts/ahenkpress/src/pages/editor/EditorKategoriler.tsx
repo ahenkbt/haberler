@@ -87,7 +87,7 @@ export default function EditorKategoriler() {
 
   const sid = site?.id;
   const vitrinTheme = String(newsLayoutPrefs.hmVitrinTheme ?? "").trim().toLowerCase();
-  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal";
+  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal" || vitrinTheme === "vatan";
   const { data: cats = [], isLoading } = useQuery({
     queryKey: [...HM_EDITOR_CATEGORIES_QUERY_KEY],
     queryFn: () => hmFetchJson<Cat[]>("/api/hm/editor/categories"),

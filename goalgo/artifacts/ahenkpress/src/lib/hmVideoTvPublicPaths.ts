@@ -28,7 +28,7 @@ export function isHmEditorNewsVideoTvSite(
     .replace(/^\/+|\/+$/g, "");
   if (!s || s === "yekpare") return false;
   if (isYekparePortalHubOnly(host, s)) return false;
-  if (layoutPrefs && normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme) === "corporate") return false;
+  if (layoutPrefs && (normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme) === "corporate" || normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme) === "vatan")) return false;
   if (isKhHmSite(host, s)) return true;
   const h = normalizeHost(host);
   if (h && isKnownHmCustomHost(h)) return true;

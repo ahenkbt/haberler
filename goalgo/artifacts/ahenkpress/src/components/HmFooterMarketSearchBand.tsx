@@ -21,7 +21,7 @@ export function HmFooterMarketSearchBand() {
   const ctx = useHmPublicLinkContextOptional();
   const layoutPrefs = ctx?.layoutPrefs ?? null;
   const chromeLayoutPrefs = useHmEffectiveLayoutPrefs() ?? layoutPrefs;
-  const corporateHeader = layoutPrefs?.hmVitrinTheme === "corporate";
+  const corporateHeader = layoutPrefs?.hmVitrinTheme === "corporate" || layoutPrefs?.hmVitrinTheme === "vatan";
   const isSumbulTheme = normalizeHmVitrinTheme(layoutPrefs?.hmVitrinTheme) === "sumbul";
   const showFinanceWeather =
     !corporateHeader &&

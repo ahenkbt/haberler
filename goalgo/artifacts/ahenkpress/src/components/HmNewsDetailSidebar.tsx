@@ -66,7 +66,7 @@ export function HmNewsDetailSidebar({
   const hmHybridRssEnabled = siteId != null && isHmHybridRssEnabled(layoutPrefs);
   const showAuthorsPanel = useMemo(() => {
     const theme = normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme);
-    if (theme === "corporate") return resolveHmCorporateAuthorsEnabled(layoutPrefs);
+    if (theme === "corporate" || theme === "vatan") return resolveHmCorporateAuthorsEnabled(layoutPrefs);
     return resolveHmNewsSidebarAuthorsEnabled(layoutPrefs);
   }, [layoutPrefs]);
 

@@ -43,6 +43,17 @@ export const VKD_FOOTER_KURUMSAL_SPECS: { id: string; label: string; href: strin
   { id: "vkd-menu-kur-bagis", label: "Bağış", href: "/bagis" },
 ];
 
+/** VKD footer «Hatıra» — Vatan teması anma yolları. */
+export const VKD_FOOTER_MEMORIAL_SPECS: { id: string; label: string; href: string }[] = [
+  { id: "vkd-menu-kah-sehitler", label: "Şehitlerimiz", href: "/sehitlerimiz" },
+  { id: "vkd-menu-tarih-canakkale-sehit", label: "Çanakkale Şehitleri", href: "/canakkale-sehitleri" },
+  { id: "vkd-menu-kah-sehitlikler", label: "Şehitliklerimiz", href: "/sehitliklerimiz" },
+  { id: "vkd-menu-kah-teror", label: "Terörle Mücadele", href: "/terorle-mucadele" },
+  { id: "vkd-menu-kah-guvenlik", label: "Güvenlik Güçleri", href: "/guvenlik-gucleri" },
+  { id: "vkd-menu-sos-haklar", label: "Şehit-Gazi Hakları", href: "/sehit-gazi-haklari" },
+  { id: "vkd-menu-tarih-milli", label: "Millî Günler", href: "/milli-gunler" },
+];
+
 /** VKD footer «Haber kategorileri» — yalnızca bu slug'lar (sıra sabit). */
 export const VKD_FOOTER_CATEGORY_LINKS: { label: string; slug: string }[] = [
   { label: "Derneğimiz", slug: "dernegimiz" },
@@ -79,7 +90,22 @@ export function buildVkdCorporateFooterMenuGroups(opts: VkdFooterNavOpts): HmCor
     });
   }
 
-  return links.length ? [{ key: "vkd-menu-kurumsal", heading: "KURUMSAL", links }] : [];
+  const memorialLinks: HmCorporateFooterLink[] = [];
+  for (const spec of VKD_FOOTER_MEMORIAL_SPECS) {
+    const href = resolveStoredHmHref(h, spec.href);
+    if (!href || href === "#") continue;
+    memorialLinks.push({
+      key: spec.id,
+      label: spec.label,
+      href,
+      external: isExternalHmHref(href),
+    });
+  }
+
+  const groups: HmCorporateFooterMenuGroup[] = [];
+  if (links.length) groups.push({ key: "vkd-menu-kurumsal", heading: "KURUMSAL", links });
+  if (memorialLinks.length) groups.push({ key: "vkd-menu-hatira", heading: "HATIRA", links: memorialLinks });
+  return groups;
 }
 
 export function filterVkdFooterCategoryLinks(

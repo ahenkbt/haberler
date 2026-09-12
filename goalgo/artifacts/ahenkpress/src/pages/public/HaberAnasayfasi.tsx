@@ -42,6 +42,7 @@ import {
   collectHmRssCategoryNavItems,
   resolveHmUnifiedRssFeedRows,
   normalizeHmVitrinTheme,
+  isHmCorporateLikeTheme,
   isHmNewsRetiredHomeModule,
   filterHmHomeModulesForPortalHub,
   isHmNewsCorporateOnlyHomeModule,
@@ -1570,13 +1571,15 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     themeAccentFallback ||
     resolveSadeAccent(settings?.primaryColor) ||
     DEFAULT_RED;
-  const isCorporateTheme = vitrinTheme === "corporate";
+  const isCorporateTheme = isHmCorporateLikeTheme(vitrinTheme);
   const isClassicTheme = vitrinTheme === "classic";
   const isPortal3Theme = vitrinTheme === "portal3";
   const isEsenTheme = vitrinTheme === "esen";
   /** Portal `/haberler` — `hmRssNewsBand.css` yalnızca `[data-hm-vitrin-theme]` altında; HM'de üst `hm-vitrin-root` verir. */
   const vitrinThemeAttr =
-    vitrinTheme === "corporate"
+    vitrinTheme === "vatan"
+      ? "vatan"
+      : vitrinTheme === "corporate"
       ? "corporate"
       : vitrinTheme === "gold"
         ? "gold"

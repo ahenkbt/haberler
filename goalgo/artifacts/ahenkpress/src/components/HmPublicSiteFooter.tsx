@@ -119,7 +119,7 @@ export function HmPublicSiteFooter({
     ? "/video"
     : `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/video-tv`;
   const about = (layoutPrefs.hmFooterAboutHtml ?? "").trim();
-  const isCorporateTheme = layoutPrefs.hmVitrinTheme === "corporate";
+  const isCorporateTheme = layoutPrefs.hmVitrinTheme === "corporate" || layoutPrefs.hmVitrinTheme === "vatan";
   const siteLayoutContained = isHmSiteLayoutContained(layoutPrefs);
   const showFooter = layoutPrefs.hmNewsFooterEnabled !== false;
   const aboutDisplay = useMemo(() => {

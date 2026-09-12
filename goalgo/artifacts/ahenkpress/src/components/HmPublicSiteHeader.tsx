@@ -22,6 +22,7 @@ import { HmNewsCategoriesDropdown } from "@/components/HmNewsCategoriesDropdown"
 import { useHmPublicNewsCategoryMenu } from "@/hooks/useHmPublicNewsCategoryMenu";
 import {
   normalizeHmVitrinTheme,
+  isHmCorporateLikeTheme,
   resolveHeaderPreset,
   resolveHmHeaderRightBannerUrl,
   resolveHmHeaderRightSlot,
@@ -68,7 +69,7 @@ export function HmPublicSiteHeader({
   const chromeLayoutPrefs = useHmEffectiveLayoutPrefs() ?? layoutPrefs;
   const { data: adSlots = [] } = useListAds();
   const newsNavEnabled = resolveHmNewsHeaderMenuEnabled(layoutPrefs);
-  const corporateHeader = layoutPrefs?.hmVitrinTheme === "corporate";
+  const corporateHeader = isHmCorporateLikeTheme(layoutPrefs?.hmVitrinTheme);
   const showHeaderCategories = newsNavEnabled || corporateHeader;
   const {
     enabled: categoriesMenuEnabled,

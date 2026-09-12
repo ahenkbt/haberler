@@ -38,6 +38,8 @@ import {
 import { HmCorporateDonationBand } from "@/components/HmCorporateDonationSections";
 import { isLegacyHmDonationHtml, stripLegacyHmDonationHtml } from "@/lib/hmLegacyDonationHtml";
 import { HmSehitSearchModule } from "@/components/HmSehitSearchModule";
+import { HmVatanMemorialHome } from "@/components/HmVatanMemorialHome";
+import { isHmVatanThemeId } from "@/lib/hmVatanTheme";
 import { HmRssNewsBand, type HmRssCategoryTab } from "@/components/HmRssNewsBand";
 import { resolveLatestGridOpeningCategorySlug } from "@/lib/hmHomeModuleCategories";
 import { hmCategorySlug, humanizeNewsCategorySlug } from "@/lib/hmCategorySlug";
@@ -1173,10 +1175,16 @@ export function HmCorporateHome({
     }
   };
 
+  const isVatanHome = isHmVatanThemeId(layoutPrefs?.hmVitrinTheme);
+
   return (
     <div className="hm-vitrin-home vkv-corporate-home">
+      {isVatanHome && !orderedModules.includes("hero") ? <HmVatanMemorialHome /> : null}
       {orderedModules.map((moduleId) => (
-        <Fragment key={moduleId}>{renderModule(moduleId)}</Fragment>
+        <Fragment key={moduleId}>
+          {renderModule(moduleId)}
+          {isVatanHome && moduleId === "hero" ? <HmVatanMemorialHome /> : null}
+        </Fragment>
       ))}
       {showFallbackDonation && corporateDonation ? <HmCorporateDonationBand donation={corporateDonation} /> : null}
     </div>

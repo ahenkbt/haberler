@@ -3,12 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { apiUrl } from "@/lib/apiBase";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
-import {
-  SADE_EDITORIAL_EYEBROW_CLASS,
-  SADE_EDITORIAL_HERO_SECTION_CLASS,
-  SADE_HERO_GLOW_CLASS,
-} from "@/lib/yekpareSadeTheme";
 import { HmSehitSearchModule } from "@/components/HmSehitSearchModule";
+import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
 
 type ProvinceStat = { province: string; total: number };
 type DistrictStat = { district: string; total: number };
@@ -183,39 +179,46 @@ export default function HmCanakkaleSehitleriPage() {
   );
 
   return (
-    <div className="min-w-0 bg-[#F5F1EB] text-[#16181C]">
-      <section className={SADE_EDITORIAL_HERO_SECTION_CLASS}>
-        <div className={SADE_HERO_GLOW_CLASS} />
-        <div className={`${shellClass} relative z-[1]`}>
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-10">
-            <div>
-              <div className={`mb-4 ${SADE_EDITORIAL_EYEBROW_CLASS}`}>Çanakkale Cephesi</div>
-              <h1 className="font-serif text-3xl font-bold leading-tight text-slate-950 md:text-4xl">
-                Çanakkale
-                <span className="mt-1 block bg-gradient-to-br from-[#C9A84C] via-[#e8c96a] to-[#C9A84C] bg-clip-text italic text-transparent">
-                  Şehitlerimiz
-                </span>
-              </h1>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600 md:text-base">
-                Çanakkale Cephesi şehit listesi; ad, baba adı, il, ilçe ve sıra numarasına göre sorgulanabilir.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                <div className="rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm">
-                  <div className="font-serif text-2xl font-bold text-[#0f766e]">{meta ? formatNumber(meta.total) : "…"}</div>
-                  <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Kayıtlı Şehit</div>
-                </div>
-                {topProvinces[0] ? (
-                  <div className="rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm">
-                    <div className="font-serif text-sm font-bold text-[#0f766e]">{topProvinces[0].province}</div>
-                    <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
-                      En çok ({formatNumber(topProvinces[0].total)})
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+    <div className="vatan-page min-w-0 bg-[#F6F1E8] text-[#16181C]">
+      <header className="vatan-hero">
+        <img
+          className="vatan-hero__img"
+          src={VATAN_ASSETS.canakkaleHero}
+          alt="Çanakkale kıyısında bayrak, anıt ve gelincikler"
+          fetchPriority="high"
+          decoding="async"
+          width={1280}
+          height={720}
+        />
+        <div className="vatan-hero__shade" />
+        <div className={`vatan-hero__inner ${shellClass}`}>
+          <p className="vatan-hero__kicker">Çanakkale Cephesi · 1915</p>
+          <h1 className="vatan-hero__title">
+            Çanakkale
+            <em>şehitlerimiz</em>
+          </h1>
+          <p className="vatan-hero__lead">
+            Çanakkale Cephesi şehit listesi; ad, baba adı, il, ilçe ve sıra numarasına göre sorgulanabilir. Kayıtlar resmî derlemedir.
+          </p>
+        </div>
+      </header>
+      <section className={`${shellClass} relative z-[1] py-8`}>
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-10">
+          <div className="flex flex-wrap gap-2.5">
+            <div className="rounded-xl border border-[#E6DDD0] bg-white px-4 py-3 shadow-sm">
+              <div className="font-serif text-2xl font-bold text-[#8C1A2E]">{meta ? formatNumber(meta.total) : "…"}</div>
+              <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Kayıtlı Şehit</div>
             </div>
-            <div className="w-full min-w-0">{searchModule}</div>
+            {topProvinces[0] ? (
+              <div className="rounded-xl border border-[#E6DDD0] bg-white px-4 py-3 shadow-sm">
+                <div className="font-serif text-sm font-bold text-[#8C1A2E]">{topProvinces[0].province}</div>
+                <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+                  En çok ({formatNumber(topProvinces[0].total)})
+                </div>
+              </div>
+            ) : null}
           </div>
+          <div className="w-full min-w-0">{searchModule}</div>
         </div>
       </section>
 

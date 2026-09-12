@@ -8,6 +8,8 @@ import { findHmExtraPageBySlug, normalizeHmExtraPageSlug } from "@/lib/hmExtraPa
 import { HmCustomPageContent, type HmCustomPageSite } from "@/pages/public/HmCustomPage";
 import HmSehitlerimizPage from "@/pages/public/HmSehitlerimizPage";
 import HmCanakkaleSehitleriPage from "@/pages/public/HmCanakkaleSehitleriPage";
+import HmVatanLongformPage from "@/pages/public/HmVatanLongformPage";
+import { isVatanLongformSlug } from "@/lib/hmVatanTheme";
 
 function HmSubpageSeo({ segment, label }: { segment: string; label: string }) {
   const ctx = useHmPublicLinkContextOptional();
@@ -107,6 +109,10 @@ function HmPublicStandardExtraPageBody({
 
   if (normalizedSegment === "canakkale-sehitleri") {
     return <HmCanakkaleSehitleriPage />;
+  }
+
+  if (isVatanLongformSlug(normalizedSegment)) {
+    return <HmVatanLongformPage slug={normalizedSegment} />;
   }
 
   if (!ctx) {

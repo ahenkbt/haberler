@@ -63,7 +63,7 @@ export function HmMobileBottomNav() {
   const navColors = useMemo(() => resolveHmNavLinkColor(chromePrefs, accent), [chromePrefs, accent]);
 
   const newsAuthorsEnabled = layoutPrefs
-    ? layoutPrefs.hmVitrinTheme === "corporate"
+    ? layoutPrefs.hmVitrinTheme === "corporate" || layoutPrefs.hmVitrinTheme === "vatan"
       ? resolveHmCorporateAuthorsEnabled(layoutPrefs)
       : resolveHmNewsAnyAuthorsEnabled(layoutPrefs)
     : true;

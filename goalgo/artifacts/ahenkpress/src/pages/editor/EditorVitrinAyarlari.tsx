@@ -269,7 +269,7 @@ export default function EditorVitrinAyarlari() {
     });
   }, [newsHomeOrder, p]);
   const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
-  const isCorporateEditorSite = p.hmVitrinTheme === "corporate";
+  const isCorporateEditorSite = p.hmVitrinTheme === "corporate" || p.hmVitrinTheme === "vatan";
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
   const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
@@ -554,12 +554,12 @@ export default function EditorVitrinAyarlari() {
             <Button type="button" variant="outline" size="sm" asChild>
               <Link
                 href={
-                  p.hmVitrinTheme === "corporate"
+                  isCorporateEditorSite
                     ? "/editor/menuler?location=hmCorporateMenuItems"
                     : "/editor/menuler?location=hmNewsFooterMenuItems"
                 }
               >
-                {p.hmVitrinTheme === "corporate" ? "Footer menüsü" : "Footer / sidebar menüleri"}
+                {isCorporateEditorSite ? "Footer menüsü" : "Footer / sidebar menüleri"}
               </Link>
             </Button>
           </div>
@@ -2311,8 +2311,8 @@ export default function EditorVitrinAyarlari() {
           <div>
             <Label className="font-semibold text-slate-900">Footer ve sidebar menüleri</Label>
             <p className="mt-1 text-xs text-slate-500">
-              {p.hmVitrinTheme === "corporate"
-                ? "Kurumsal temada alt bilgi menüsü üst menü ile aynıdır. Haber kategorileri Kategoriler sayfasındaki «Vitrinde» anahtarı ile yönetilir."
+              {isCorporateEditorSite
+                ? "Kurumsal / Vatan temada alt bilgi menüsü üst menü ile aynıdır. Haber kategorileri Kategoriler sayfasındaki «Vitrinde» anahtarı ile yönetilir."
                 : "Footer Sayfalar sütunu ile anasayfa sidebar başlantılarını WordPress tarzı menü editöründen yönetin."}
             </p>
           </div>
@@ -2320,12 +2320,12 @@ export default function EditorVitrinAyarlari() {
             <Button type="button" variant="outline" size="sm" asChild>
               <Link
                 href={
-                  p.hmVitrinTheme === "corporate"
+                  isCorporateEditorSite
                     ? "/editor/menuler?location=hmCorporateMenuItems"
                     : "/editor/menuler?location=hmNewsFooterMenuItems"
                 }
               >
-                {p.hmVitrinTheme === "corporate" ? "Üst / footer menüsünü düzenle" : "Footer menüsünü düzenle"}
+                {isCorporateEditorSite ? "Üst / footer menüsünü düzenle" : "Footer menüsünü düzenle"}
               </Link>
             </Button>
             <Button type="button" variant="outline" size="sm" asChild>
