@@ -643,11 +643,9 @@ export default function EditorVitrinAyarlari() {
               </p>
               <Select
                 value={
-                  HM_VITRIN_THEME_NEWS_EDITOR_OPTIONS.some((option) => option.value === p.hmVitrinTheme)
+                  typeof p.hmVitrinTheme === "string" && p.hmVitrinTheme
                     ? p.hmVitrinTheme
-                    : p.hmVitrinTheme === "ankara" || p.hmVitrinTheme === "gold"
-                      ? p.hmVitrinTheme
-                      : p.hmVitrinTheme || "news"
+                    : "news"
                 }
                 disabled={saving}
                 onValueChange={(v) => {
