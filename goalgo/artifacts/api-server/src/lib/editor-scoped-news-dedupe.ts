@@ -50,9 +50,16 @@ function editorScopedNewsRecencyMs(item: EditorScopedNewsItem): number {
 }
 
 /** site manuel > site kopyası > merkez havuz — anasayfa mergeUniqueNews ile uyumlu. */
-function editorScopedNewsPriority(item: EditorScopedNewsItem, editorSiteId: number): number {
+function editorScopedNewsPriority(
+  item: EditorScopedNewsItem,
+  editorSiteId: number,
+  groupSiteIds?: readonly number[] | null,
+): number {
+  const inGroup =
+    item.siteId === editorSiteId ||
+    (item.siteId != null && (groupSiteIds ?? []).includes(item.siteId));
+  if (inGroup && item.isEditorManual) return 3;
   if (item.siteId === editorSiteId) {
-    if (item.isEditorManual) return 3;
     const ref = String(item.rssSourceUrl ?? "").trim();
     if (ref.startsWith("yekpare-hm-pool:") || ref.startsWith("yekpare-hm-sync:")) return 2;
     return 2;
@@ -89,6 +96,7 @@ function editorScopedNewsAliasKeys(item: EditorScopedNewsItem): string[] {
 export function dedupeEditorScopedDbNewsItems<T extends EditorScopedNewsItem>(
   items: T[],
   editorSiteId: number,
+  groupSiteIds?: readonly number[] | null,
 ): T[] {
   const aliasIndex = new Map<string, number>();
   const out: T[] = [];
@@ -104,8 +112,8 @@ export function dedupeEditorScopedDbNewsItems<T extends EditorScopedNewsItem>(
     }
     if (conflictIdx != null) {
       const existing = out[conflictIdx]!;
-      const newPriority = editorScopedNewsPriority(item, editorSiteId);
-      const oldPriority = editorScopedNewsPriority(existing, editorSiteId);
+      const newPriority = editorScopedNewsPriority(item, editorSiteId, groupSiteIds);
+      const oldPriority = editorScopedNewsPriority(existing, editorSiteId, groupSiteIds);
       const replace =
         newPriority > oldPriority ||
         (newPriority === oldPriority && editorScopedNewsRecencyMs(item) > editorScopedNewsRecencyMs(existing));

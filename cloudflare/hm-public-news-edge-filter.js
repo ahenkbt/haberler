@@ -47,8 +47,12 @@ export function hmPublicNewsItemAllowed(item, siteId, opts = {}) {
   const manual = item.isEditorManual === true || item.siteOnly === true;
   const allowCentralRss = opts.allowCentralRss === true;
 
-  // Kesin: başka sitenin yerel satırı yok.
-  if (sid != null && Number(sid) !== Number(siteId)) return false;
+  // Kesin: başka sitenin yerel satırı yok — publish-group editör satırı hariç (ASG+AHG).
+  if (sid != null && Number(sid) !== Number(siteId)) {
+    const groupIds = Array.isArray(item.publishGroupSiteIds) ? item.publishGroupSiteIds : [];
+    const inGroup = groupIds.some((id) => Number(id) === Number(siteId));
+    if (!(manual && inGroup)) return false;
+  }
 
   // Merkez sync — yabancı kaynak asla; null site_id sync kopyası da yok.
   if (isYekpareSyncRef(rss)) {
@@ -65,8 +69,9 @@ export function hmPublicNewsItemAllowed(item, siteId, opts = {}) {
     return false;
   }
 
-  // Bu sitenin satırı — manuel dahil (yalnızca kendi site_id'si).
-  return Number(sid) === Number(siteId);
+  if (Number(sid) === Number(siteId)) return true;
+  const groupIds = Array.isArray(item.publishGroupSiteIds) ? item.publishGroupSiteIds : [];
+  return manual && groupIds.some((id) => Number(id) === Number(siteId));
 }
 
 function filterItemArray(items, siteId, opts) {

@@ -57,4 +57,45 @@ describe("hm-public-news-edge-filter", () => {
       true,
     );
   });
+
+  it("allows ASG+AHG publish-group editor news on the peer site", () => {
+    assert.equal(
+      hmPublicNewsItemAllowed(
+        {
+          id: 20,
+          siteId: 3,
+          isEditorManual: true,
+          siteOnly: true,
+          publishGroupSiteIds: [3, 8],
+        },
+        8,
+      ),
+      true,
+    );
+    assert.equal(
+      hmPublicNewsItemAllowed(
+        {
+          id: 21,
+          siteId: 3,
+          isEditorManual: false,
+          siteOnly: false,
+          publishGroupSiteIds: [3, 8],
+        },
+        8,
+      ),
+      false,
+    );
+    assert.equal(
+      hmPublicNewsItemAllowed(
+        {
+          id: 22,
+          siteId: 3,
+          isEditorManual: true,
+          publishGroupSiteIds: [3, 8],
+        },
+        7,
+      ),
+      false,
+    );
+  });
 });
