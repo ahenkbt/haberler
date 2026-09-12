@@ -1342,7 +1342,7 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
   }
 }
 
-const HM_ORIGIN_BUDGET_MS = 12_000; // cold-start / yektube load: 2.5s was too tight → HM 503 origin-budget
+const HM_ORIGIN_BUDGET_MS = 60_000; // cold container boot; 12s still too tight after dual-worker rolls
 
 /**
  * Eski API: parseInt("2026-yili-...") → id 2026 (yanlış haber).
@@ -2867,12 +2867,12 @@ export default {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
-      // Isolated yektube Worker: first container boot often >20s (image+migrate).
+      // Cold container boot after CONTAINER_ROLL often exceeds 20–60s; keep warm path fast via edge cache.
       const originMs = isYektubeDedicatedHost(incoming.hostname)
         ? 120_000
         : cacheablePublicApi
           ? HM_ORIGIN_BUDGET_MS
-          : 20_000;
+          : 120_000;
       const upstream = await withBudget(
         fetchUpstreamWithRetry(
           env,
