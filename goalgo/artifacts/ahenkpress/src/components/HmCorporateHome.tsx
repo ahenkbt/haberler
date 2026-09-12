@@ -363,14 +363,16 @@ function CorporateHeroSlider({
           </h1>
           <p className="vkv-slide-exc">{fallbackDescription}</p>
           <div className="vkv-slide-actions">
-            <Link href={tumHaberlerHref} className="vkv-slide-btn vkv-slide-btn--primary">
-              Haberleri İncele <ChevronRight className="h-4 w-4" />
+            <Link href="/hakkimizda" className="vkv-slide-btn vkv-slide-btn--primary">
+              Kurumu Tanı <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link href="/sehitlerimiz" className="vkv-slide-btn vkv-slide-btn--secondary">
+              Şehitlerimiz
             </Link>
             <Link href={tumHaberlerHref} className="vkv-slide-btn vkv-slide-btn--secondary">
-              Tüm Haberler
+              Haberler
             </Link>
           </div>
-          <p className="vkv-slide-help">Slider Yönetimi bölümünden manuel görsel, başlık ve bağlantı ekleyebilirsiniz.</p>
         </div>
       </section>
     );

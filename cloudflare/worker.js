@@ -845,7 +845,8 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
         }),
       );
       if (boot) {
-        html = injectHmHtmlBoot(html, boot);
+        // skipPaint: avoid "Manşet yükleniyor…" overlay while React hydrates (same as article path)
+        html = injectHmHtmlBoot(html, { ...boot, skipPaint: true });
         out.set(
           "x-yekpare-hm-html-boot",
           `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
@@ -1332,7 +1333,7 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
     const payload = isNewsPageBundlePath(path) ? wrapArticleAsPageBundle(article) : article;
     const headers = new Headers({
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=30, s-maxage=90, stale-while-revalidate=300",
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
       "x-yekpare-frontend": FRONTEND_TAG,
       "x-yekpare-page-bundle-recover": "home-bundle",
     });
@@ -1342,7 +1343,7 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
   }
 }
 
-const HM_ORIGIN_BUDGET_MS = 12_000; // cold-start / yektube load: 2.5s was too tight → HM 503 origin-budget
+const HM_ORIGIN_BUDGET_MS = 60_000; // cold container boot; 12s still too tight after dual-worker rolls
 
 /**
  * Eski API: parseInt("2026-yili-...") → id 2026 (yanlış haber).
@@ -2862,12 +2863,18 @@ export default {
               .catch(() => null),
           );
         }
-        return rememberPublicApi(homeFill);
+        // Recovered manset stub must NOT enter public edge cache (spot≠full content)
+        return homeFill;
       }
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
-      const originMs = cacheablePublicApi ? HM_ORIGIN_BUDGET_MS : 20_000;
+      // Cold container boot after CONTAINER_ROLL often exceeds 20–60s; keep warm path fast via edge cache.
+      const originMs = isYektubeDedicatedHost(incoming.hostname)
+        ? 120_000
+        : cacheablePublicApi
+          ? HM_ORIGIN_BUDGET_MS
+          : 120_000;
       const upstream = await withBudget(
         fetchUpstreamWithRetry(
           env,
