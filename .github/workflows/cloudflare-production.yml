@@ -169,11 +169,12 @@ jobs:
             fi
             sleep 8
           done
-          if [ "$provider" = "neon" ] || [ "$provider" = "hostinger" ]; then
+          if [ "$provider" = "neon" ]; then
             echo "skip_secrets=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Canlı dbProvider uygun — gerekirse secret put devam."
+            echo "::notice::Canlı dbProvider=neon — DATABASE_URL secret put atlanıyor."
           else
             echo "skip_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::dbProvider=${provider:-empty} — Neon DATABASE_URL sync edilecek."
           fi
 
       - name: Sync Worker DATABASE_URL
@@ -246,8 +247,8 @@ jobs:
             body=$(curl -fsS -m 25 -A "$UA" "https://ahenk.net.tr/api/healthz" || curl -fsS -m 25 -A "$UA" "https://vatanhaber.net/api/healthz" || true)
             provider=$(printf '%s' "$body" | sed -n 's/.*"dbProvider":"\([^"]*\)".*/\1/p' | head -1)
             echo "attempt=$i dbProvider=${provider:-empty}"
-            if [ "$provider" = "neon" ] || [ "$provider" = "hostinger" ]; then
-              echo "Hostinger Postgres canlı."
+            if [ "$provider" = "neon" ]; then
+              echo "Neon Postgres canlı."
               exit 0
             fi
             sleep 15
