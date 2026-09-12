@@ -6,6 +6,10 @@
  * container process.env'e düşmez; start() env ile iletilir.
  * İlk açılış (imaj + migrate) 20s varsayılan port timeout'unu aşar;
  * fetch() request.signal ile iptal edilmez.
+ *
+ * İki sınıf: GoalgoApiContainer (haberler) ve YektubeApiContainer (yektube).
+ * Cloudflare her Worker için ayrı DO class + migration ister; aynı Dockerfile
+ * yeniden kullanılır, CPU max_instances worker bazında ayrılır.
  */
 import { Container } from "@cloudflare/containers";
 import {
@@ -15,7 +19,7 @@ import {
   requestWithoutAbort,
 } from "./container-env.js";
 
-export class GoalgoApiContainer extends Container {
+class GoalgoApiContainerBase extends Container {
   defaultPort = CONTAINER_PORT;
   requiredPorts = [CONTAINER_PORT];
   sleepAfter = "2h";
@@ -64,3 +68,9 @@ export class GoalgoApiContainer extends Container {
     return this.containerFetch(requestWithoutAbort(request), this.defaultPort);
   }
 }
+
+/** Haberler / HM portal Worker (wrangler.toml). */
+export class GoalgoApiContainer extends GoalgoApiContainerBase {}
+
+/** Yektube dedicated Worker (wrangler.yektube.toml) — ayrı instance pool. */
+export class YektubeApiContainer extends GoalgoApiContainerBase {}

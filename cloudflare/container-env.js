@@ -61,6 +61,7 @@ const FORWARD_KEYS = [
   "YEKTUBE_DB_READ",
   "YEKTUBE_DB_WRITE",
   "CORS_ORIGIN",
+  "SITE_PUBLIC_ORIGIN",
 ];
 
 function nonEmptyString(value) {

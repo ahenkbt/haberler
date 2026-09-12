@@ -43,24 +43,25 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!isAdminHmEmbed() || data?.panelBootstrap) return;
+    if (!embedLight || data?.panelBootstrap) return;
     const token = readHmEditorJwt();
     if (token) tryBootstrapFromToken(token, qc, autoBootstrapAttempted);
-  }, [data?.panelBootstrap, qc]);
+  }, [embedLight, data?.panelBootstrap, qc]);
 
   useEffect(() => {
-    if (!isAdminHmEmbed() || data?.panelBootstrap) return;
+    if (!embedLight || data?.panelBootstrap) return;
     return listenForHmEditorJwtFromParent((token) => {
       writeHmEditorJwt(token);
       tryBootstrapFromToken(token, qc, autoBootstrapAttempted);
       void qc.invalidateQueries({ queryKey: ["admin-status"] });
     });
-  }, [data?.panelBootstrap, qc]);
+  }, [embedLight, data?.panelBootstrap, qc]);
 
   const login = async (username: string, password: string) => {
-    // Light theme is default Studio UI — not HM iframe. Only real embed uses site-slug login.
-    if (isAdminHmEmbed()) {
-      const slug = readHmEditorSiteSlug();
+    // Light theme is default for Studio; only HM iframe embed requires site slug.
+    const slug = readHmEditorSiteSlug();
+    const hmEmbedLogin = embedLight && (isAdminHmEmbed() || Boolean(slug)) && Boolean(slug);
+    if (hmEmbedLogin) {
       const email = username.trim().toLowerCase();
       if (!slug || !email || !password) {
         throw new Error("Site, e-posta ve şifre gerekli.");
@@ -71,6 +72,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       }
       writeHmEditorSession(session.token, session.site, session.editor);
     } else {
+      // Standalone /yp/admin (yektube.com) — panel_admin_users on YEKTUBE DB
       await adminLogin(username, password);
     }
     await qc.invalidateQueries({ queryKey: ["admin-status"] });
@@ -109,6 +111,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const embedLight = isAdminEmbedLight();
+  const hmEmbedLogin = embedLight && (isAdminHmEmbed() || Boolean(readHmEditorSiteSlug())) && Boolean(readHmEditorSiteSlug());
 
   if (!ready) {
     return (
@@ -142,12 +145,12 @@ export function AdminGate({ children }: { children: ReactNode }) {
         >
           <h1 className={`text-xl font-bold ${embedLight ? "text-zinc-900" : "text-white"}`}>Yektube Studio</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {embedLight
+            {hmEmbedLogin
               ? "Editör paneli e-posta ve şifrenizle giriş yapın."
-              : "Yekpare yönetici oturumu gerekir."}
+              : "Yektube Studio yönetici oturumu (YEKTUBE DB)."}
           </p>
           <label className="mt-4 block text-xs font-medium text-zinc-500">
-            {embedLight ? "E-posta" : "Kullanıcı adı"}
+            {hmEmbedLogin ? "E-posta" : "Kullanıcı adı veya e-posta"}
             <input
               className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm ${
                 embedLight
@@ -157,7 +160,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
               value={user}
               onChange={(e) => setUser(e.target.value)}
               autoComplete="username"
-              type={embedLight ? "email" : "text"}
+              type={hmEmbedLogin ? "email" : "text"}
             />
           </label>
           <label className="mt-3 block text-xs font-medium text-zinc-500">

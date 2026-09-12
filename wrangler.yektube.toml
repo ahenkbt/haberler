@@ -1,7 +1,9 @@
-# Yektube isolated Worker — yektube.com only (haber/HM on wrangler.toml)
+# Yektube dedicated Worker — CPU/container isolated from haberler (HM portal).
+# Deploy: pnpm exec wrangler deploy -c wrangler.yektube.toml
+# Secrets: DATABASE_URL, SESSION_SECRET, YEKTUBE_DATABASE_URL, YEKTUBE_DB_READ/WRITE, S3_*
 name = "yektube"
 compatibility_date = "2025-07-15"
-main = "cloudflare/worker.js"
+main = "cloudflare/yektube-worker.js"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 account_id = "16f5b996194174624e7969a3658bd2bb"
@@ -9,7 +11,11 @@ account_id = "16f5b996194174624e7969a3658bd2bb"
 [observability]
 enabled = true
 
+# No HM cron / portal crons on this Worker.
+# [triggers] omitted intentionally.
+
 [assets]
+# Same SPA publish dir as haberler (nested /yektube-v2). Build once via build:cloudflare.
 directory = "artifacts/ahenkpress/dist/public"
 binding = "ASSETS"
 html_handling = "none"
@@ -18,8 +24,12 @@ run_worker_first = true
 
 [vars]
 API_ORIGIN = ""
-CONTAINER_ROLL = "yektube-isolated-worker-20260912"
-HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
+CONTAINER_ROLL = "yektube-split-standard-3-20260912"
+# YEKTUBE-focused defaults (container-env FORWARD + CONTAINER_DEFAULTS)
+YEKTUBE_DB_READ = "yektube"
+YEKTUBE_DB_WRITE = "yektube"
+SITE_PUBLIC_ORIGIN = "https://yektube.com"
+# Shared R2 media (same as haberler)
 S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 S3_BUCKET = "yekpare-media"
@@ -27,15 +37,15 @@ S3_REGION = "auto"
 S3_FORCE_PATH_STYLE = "true"
 R2_ACCOUNT_ID = "fb9fc9dc1991b7cc17ba58ab3c2e8726"
 S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
-YEKTUBE_DB_READ = "yektube"
-YEKTUBE_DB_WRITE = "yektube"
 
+# Separate Durable Object / Container class — isolates CPU from haberler.
 [[containers]]
 class_name = "YektubeApiContainer"
 image = "./goalgo/Dockerfile.cloudflare"
-max_instances = 4
+max_instances = 2
 instance_type = "standard-3"
 
+# Binding name stays GOALGO_API so shared worker.js / api-upstream.js keep working.
 [[durable_objects.bindings]]
 name = "GOALGO_API"
 class_name = "YektubeApiContainer"
@@ -44,6 +54,7 @@ class_name = "YektubeApiContainer"
 tag = "v1"
 new_sqlite_classes = ["YektubeApiContainer"]
 
+# Routes / custom domains — ONLY Yektube apex (+ zone routes).
 [[routes]]
 pattern = "yektube.com"
 custom_domain = true

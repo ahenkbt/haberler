@@ -17,12 +17,11 @@ Haber cluster’ına (`NEWS_DATABASE_URL`) benzer bir model kullanılır; Yektub
 | `yektube_playlists` | Kullanıcı listeleri |
 | `yektube_playlist_items` | Liste videoları |
 | `yektube_member_prefs` | Bildirim / gizlilik tercihleri |
+| `panel_admin_users` | **Faz 1** — Yektube Studio (`/yp/admin`) paneli girişi |
 
-**Ana / Neon DB’de kalır:** `site_members`, `site_settings` (HM / haber).
+**Ana DB’de kalır:** `site_members`, `site_settings` (YouTube API anahtarı vb.).
 
-**Yektube DB’de (Faz 1):** `panel_admin_users` — Studio `/yp/admin` Neon’a bağlı değil.
-
-**Cloudflare:** `yektube.com` → Worker `yektube` (`wrangler.yektube.toml`); haber/HM → Worker `haberler`.
+> **Faz 1 auth:** `panel_admin_users` artık YEKTUBE DB’de de tutulur. API `resolvePanelLogin` önce `YEKTUBE_DATABASE_URL` hedefine bakar, sonra ana DB’ye düşer. Tohum: `scripts/seed-yektube-panel-admin.example.sql` (bcrypt hash; düz şifre yok). Cloudflare’de Yektube trafiği ayrı Worker (`wrangler.yektube.toml`, sınıf `YektubeApiContainer`).
 
 ---
 

@@ -1,12 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { eq, ne, sql as drizzleSql, and as drizzleAnd, and, count, or } from "drizzle-orm";
-import {
-  db,
-  getYektubeDbForRead,
-  getYektubeDbForPrimaryWrite,
-  isYektubeDatabaseConfigured,
-} from "@workspace/db";
+import { db, yektubeDb, isYektubeDatabaseConfigured } from "@workspace/db";
 import { siteMembersTable, panelAdminUsersTable } from "@workspace/db/schema";
 import { trySendSiteOutboundWhatsApp } from "../lib/whatsapp";
 import { denyUnlessFullPanelAdmin, isPanelFullAdminSession } from "../lib/admin-guard.js";
@@ -17,14 +12,6 @@ import {
 } from "../lib/panel-permissions.js";
 
 const router = Router();
-
-function panelAdminReadDb() {
-  return isYektubeDatabaseConfigured() ? getYektubeDbForRead() : db;
-}
-function panelAdminWriteDb() {
-  return isYektubeDatabaseConfigured() ? getYektubeDbForPrimaryWrite() : db;
-}
-
 
 let siteMembersTierSchemaPromise: Promise<void> | null = null;
 /** Eski veritabanlarında `site_members` ilan kotası / işletme premium kolonları yoksa ekler. */
@@ -61,13 +48,19 @@ export function isPremiumBusinessMember(m: {
   return t.getTime() > Date.now();
 }
 
-let panelAdminSchemaPromise: Promise<void> | null = null;
+/** Faz 1: Studio panel auth — YEKTUBE DB önce, sonra ana DB. */
+function panelAdminDbTargets(): Array<typeof db> {
+  const targets: Array<typeof db> = [];
+  if (isYektubeDatabaseConfigured && yektubeDb) {
+    targets.push(yektubeDb as typeof db);
+  }
+  targets.push(db);
+  return targets;
+}
 
-function ensurePanelAdminUsersSchema(): Promise<void> {
-  if (panelAdminSchemaPromise) return panelAdminSchemaPromise;
-  panelAdminSchemaPromise = (async () => {
-    const padb = panelAdminWriteDb();
-    await padb.execute(drizzleSql`
+function ensurePanelAdminUsersSchemaOn(target: typeof db): Promise<void> {
+  return (async () => {
+    await target.execute(drizzleSql`
       CREATE TABLE IF NOT EXISTS panel_admin_users (
         id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
         username text NOT NULL UNIQUE,
@@ -78,9 +71,19 @@ function ensurePanelAdminUsersSchema(): Promise<void> {
         updated_at timestamp NOT NULL DEFAULT now()
       )
     `);
-    await padb.execute(
+    await target.execute(
       drizzleSql`ALTER TABLE panel_admin_users ADD COLUMN IF NOT EXISTS permissions_json TEXT`,
     );
+  })();
+}
+
+let panelAdminSchemaPromise: Promise<void> | null = null;
+function ensurePanelAdminUsersSchema(): Promise<void> {
+  if (panelAdminSchemaPromise) return panelAdminSchemaPromise;
+  panelAdminSchemaPromise = (async () => {
+    for (const target of panelAdminDbTargets()) {
+      await ensurePanelAdminUsersSchemaOn(target);
+    }
   })().catch((e) => {
     panelAdminSchemaPromise = null;
     throw e;
@@ -91,26 +94,27 @@ function ensurePanelAdminUsersSchema(): Promise<void> {
 /** Eski kurulum: tablo boşsa env’deki ADMIN_PANEL_* ile ilk kayıtları oluşturur (aynı şifre). */
 async function seedPanelAdminsFromEnvIfEmpty(): Promise<void> {
   await ensurePanelAdminUsersSchema();
-  const padb = panelAdminWriteDb();
-  const [cntRow] = await padb.select({ c: count() }).from(panelAdminUsersTable);
-  if (Number(cntRow?.c ?? 0) > 0) return;
   const pass = String(process.env["ADMIN_PANEL_PASSWORD"] ?? "").trim();
   const usersRaw = String(process.env["ADMIN_PANEL_USERNAMES"] ?? "").trim();
   if (!pass || !usersRaw) return;
   const allowed = usersRaw.split(",").map((s) => s.trim()).filter(Boolean);
   const hash = await bcrypt.hash(pass, 10);
-  for (const a of allowed) {
-    const email = a.includes("@") ? a.trim().toLowerCase() : null;
-    const username = email ?? a;
-    try {
-      await padb.insert(panelAdminUsersTable).values({
-        username,
-        email,
-        passwordHash: hash,
-        isActive: true,
-      });
-    } catch {
-      /* unique vs race */
+  for (const target of panelAdminDbTargets()) {
+    const [cntRow] = await target.select({ c: count() }).from(panelAdminUsersTable);
+    if (Number(cntRow?.c ?? 0) > 0) continue;
+    for (const a of allowed) {
+      const email = a.includes("@") ? a.trim().toLowerCase() : null;
+      const username = email ?? a;
+      try {
+        await target.insert(panelAdminUsersTable).values({
+          username,
+          email,
+          passwordHash: hash,
+          isActive: true,
+        });
+      } catch {
+        /* unique vs race */
+      }
     }
   }
 }
@@ -162,23 +166,30 @@ async function resolvePanelLogin(username: string, password: string): Promise<Pa
   try {
     await seedPanelAdminsFromEnvIfEmpty();
     const uLower = u.toLowerCase();
-    const rows = await panelAdminReadDb()
-      .select()
-      .from(panelAdminUsersTable)
-      .where(
-        and(
-          eq(panelAdminUsersTable.isActive, true),
-          or(
-            eq(panelAdminUsersTable.username, u),
-            drizzleSql`lower(${panelAdminUsersTable.username}) = ${uLower}`,
-            drizzleSql`lower(${panelAdminUsersTable.email}) = ${uLower}`,
-          ),
-        ),
-      )
-      .limit(5);
-    for (const row of rows) {
-      const mapped = await mapDbRowToPanelLogin(row, password);
-      if (mapped) return mapped;
+    // YEKTUBE DB (Hostinger) first — /yp/admin Studio Faz 1
+    for (const target of panelAdminDbTargets()) {
+      try {
+        const rows = await target
+          .select()
+          .from(panelAdminUsersTable)
+          .where(
+            and(
+              eq(panelAdminUsersTable.isActive, true),
+              or(
+                eq(panelAdminUsersTable.username, u),
+                drizzleSql`lower(${panelAdminUsersTable.username}) = ${uLower}`,
+                drizzleSql`lower(${panelAdminUsersTable.email}) = ${uLower}`,
+              ),
+            ),
+          )
+          .limit(5);
+        for (const row of rows) {
+          const mapped = await mapDbRowToPanelLogin(row, password);
+          if (mapped) return mapped;
+        }
+      } catch {
+        /* bu hedefte tablo yoksa veya hata — sonraki DB */
+      }
     }
   } catch {
     /* tablo yoksa veya hata */
@@ -316,7 +327,7 @@ router.get("/panel-admins", async (req, res): Promise<void> => {
   if (!denyUnlessFullPanelAdmin(req, res)) return;
   try {
     await ensurePanelAdminUsersSchema();
-    const rows = await panelAdminReadDb()
+    const rows = await db
       .select({
         id: panelAdminUsersTable.id,
         username: panelAdminUsersTable.username,
@@ -369,7 +380,7 @@ router.post("/panel-admins", async (req, res): Promise<void> => {
       const permNorm = normalizePanelPermissionsInput(b.permissions);
       permissionsJson = permNorm == null ? null : JSON.stringify(permNorm);
     }
-    const [row] = await panelAdminWriteDb()
+    const [row] = await db
       .insert(panelAdminUsersTable)
       .values({ username, email, passwordHash, permissionsJson, isActive: true })
       .returning({
@@ -440,7 +451,7 @@ router.patch("/panel-admins/:id", async (req, res): Promise<void> => {
       return;
     }
     if (patch.isActive === false) {
-      const [otherActive] = await panelAdminReadDb()
+      const [otherActive] = await db
         .select({ c: count() })
         .from(panelAdminUsersTable)
         .where(and(eq(panelAdminUsersTable.isActive, true), ne(panelAdminUsersTable.id, id)));
@@ -449,7 +460,7 @@ router.patch("/panel-admins/:id", async (req, res): Promise<void> => {
         return;
       }
     }
-    const [row] = await panelAdminWriteDb().update(panelAdminUsersTable).set(patch as any).where(eq(panelAdminUsersTable.id, id)).returning({
+    const [row] = await db.update(panelAdminUsersTable).set(patch as any).where(eq(panelAdminUsersTable.id, id)).returning({
       id: panelAdminUsersTable.id,
       username: panelAdminUsersTable.username,
       email: panelAdminUsersTable.email,
@@ -492,13 +503,13 @@ router.delete("/panel-admins/:id", async (req, res): Promise<void> => {
   }
   try {
     await ensurePanelAdminUsersSchema();
-    const [target] = await panelAdminReadDb().select().from(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id)).limit(1);
+    const [target] = await db.select().from(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id)).limit(1);
     if (!target) {
       res.status(404).json({ success: false, error: "Kayıt bulunamadı." });
       return;
     }
     if (target.isActive) {
-      const [otherActive] = await panelAdminReadDb()
+      const [otherActive] = await db
         .select({ c: count() })
         .from(panelAdminUsersTable)
         .where(and(eq(panelAdminUsersTable.isActive, true), ne(panelAdminUsersTable.id, id)));
@@ -507,7 +518,7 @@ router.delete("/panel-admins/:id", async (req, res): Promise<void> => {
         return;
       }
     }
-    await panelAdminWriteDb().delete(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id));
+    await db.delete(panelAdminUsersTable).where(eq(panelAdminUsersTable.id, id));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });

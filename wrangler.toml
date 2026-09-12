@@ -26,7 +26,7 @@ run_worker_first = true
 # Boş = aynı origin /api → Container. onrender.com kullanılmaz.
 API_ORIGIN = ""
 # Warm container'ı yeni imaja almak için (Ahenk marka + ayarlar).
-CONTAINER_ROLL = "yektube-worker-split-20260912"
+CONTAINER_ROLL = "cf-standard-3-x4-20260912"
 # KH kenar login → API JWT köprüsü (api-server HM_EDGE_BRIDGE_SECRET ile aynı)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
 # Medya: Worker hesabında R2 kapalı (API 10042). Binding, Dashboard'da R2 açılınca eklenir.
@@ -96,7 +96,10 @@ zone_name = "ankarahabergundemi.com"
 pattern = "www.ankarahabergundemi.com"
 zone_name = "ankarahabergundemi.com"
 
-# Yektube özel alan — ahenk.net.tr/yp kanonik yüzü (yektube.com)
+# yektube.com / www.yektube.com → ayrı Worker `yektube` (wrangler.yektube.toml).
+# Bu (haberler) Worker artık Yektube trafiğini karşılamaz.
+
+# Error 1016: zone aktif ama origin yok — custom_domain Worker DNS oluşturur
 [[routes]]
 pattern = "ankarasehirgazetesi.com"
 custom_domain = true
