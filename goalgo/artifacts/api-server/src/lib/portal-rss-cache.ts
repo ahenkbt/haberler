@@ -41,7 +41,7 @@ async function rssIntegrationModeForFeed(feedId: string): Promise<HmRssIntegrati
   return "portal";
 }
 
-/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi: yalnızca gece 01:00 veya persistToDb. */
+/** Kutu içi RSS «anlık» — kalıcı DB'ye yazılmaz. Site içi: yalnızca 02:00/09:00 TR veya persistToDb. */
 export async function shouldSkipRssDbForFeed(
   feedId: string,
   opts?: { persistToDb?: boolean },

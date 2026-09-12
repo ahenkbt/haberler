@@ -1,67 +1,53 @@
+import { and, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import { db, newsTable } from "@workspace/db";
 import type { PortalHybridRssFeedConfig } from "./portal-hybrid-config.js";
 import { enabledPortalHybridRssFeeds, loadPortalHybridRssFeeds } from "./portal-hybrid-config.js";
 import { isBoxScopeFeedId } from "./portal-rss-cache.js";
-import { portalRssTitleKey, type PortalRssItem } from "./portal-rss-fetch.js";
 import { readPortalRssItemsForFeeds } from "./portal-rss-store.js";
 import {
   isPortalRssSyncToNewsEnabled,
   syncPortalRssItemsToNewsTable,
 } from "./portal-rss-auto-import.js";
-import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
+import { getTurkeyDayStartUtc } from "./rss-automation-control.js";
 import { logger } from "./logger.js";
 import { schedulePortalNewsSitemapPing } from "./sitemap-search-engine-ping.js";
+import {
+  allocateRssImportDailyBudget,
+  capRssItemsPerFeed,
+  dedupeCategoryRssBatchItems,
+  groupPortalRssItemsByCategory,
+  PORTAL_RSS_NEWS_IMPORT_DAILY_BUDGET,
+  PORTAL_RSS_NEWS_IMPORT_PER_CATEGORY,
+  PORTAL_RSS_NEWS_IMPORT_PER_FEED,
+} from "./portal-rss-import-select.js";
 
-/** Kategori başına gece RSS → news hedefi (benzersiz yayın). */
-export const PORTAL_RSS_NEWS_IMPORT_PER_CATEGORY = 20;
+export {
+  allocateRssImportDailyBudget,
+  capRssItemsPerFeed,
+  dedupeCategoryRssBatchItems,
+  groupPortalRssItemsByCategory,
+  PORTAL_RSS_NEWS_IMPORT_DAILY_BUDGET,
+  PORTAL_RSS_NEWS_IMPORT_PER_CATEGORY,
+  PORTAL_RSS_NEWS_IMPORT_PER_FEED,
+} from "./portal-rss-import-select.js";
 
-function titleKeyWords(key: string): Set<string> {
-  return new Set(key.split(/\s+/).filter((w) => w.length >= 3));
-}
-
-function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 || b.size === 0) return 0;
-  let inter = 0;
-  for (const w of a) if (b.has(w)) inter += 1;
-  const union = a.size + b.size - inter;
-  return union > 0 ? inter / union : 0;
-}
-
-/** Aynı kategori batch'inde URL + başlık benzerliği ile tekilleştir. */
-export function dedupeCategoryRssBatchItems(items: PortalRssItem[]): PortalRssItem[] {
-  const seenLinks = new Set<string>();
-  const seenTitleKeys: string[] = [];
-  const seenTitleWordSets: Set<string>[] = [];
-  const sorted = [...items].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
-  const out: PortalRssItem[] = [];
-
-  for (const item of sorted) {
-    const link = normalizeRssSourceUrl(item.link);
-    if (link && seenLinks.has(link)) continue;
-
-    const titleKey = portalRssTitleKey(item.title);
-    if (titleKey && seenTitleKeys.includes(titleKey)) continue;
-
-    if (titleKey) {
-      const words = titleKeyWords(titleKey);
-      let fuzzyDup = false;
-      for (const prev of seenTitleWordSets) {
-        if (jaccardSimilarity(words, prev) >= 0.78) {
-          fuzzyDup = true;
-          break;
-        }
-      }
-      if (fuzzyDup) continue;
-      seenTitleKeys.push(titleKey);
-      seenTitleWordSets.push(words);
-    }
-
-    if (link) seenLinks.add(link);
-    out.push(item);
-  }
-
-  return out;
+export async function remainingPortalRssDailyBudget(
+  now = new Date(),
+  dailyBudget = PORTAL_RSS_NEWS_IMPORT_DAILY_BUDGET,
+): Promise<number> {
+  const start = getTurkeyDayStartUtc(now);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(newsTable)
+    .where(
+      and(
+        isNull(newsTable.siteId),
+        isNotNull(newsTable.rssSourceUrl),
+        gte(newsTable.createdAt, start),
+      ),
+    );
+  const used = Number(row?.count ?? 0);
+  return Math.max(0, dailyBudget - (Number.isFinite(used) ? used : 0));
 }
 
 function pickFeedForCategory(
@@ -76,55 +62,64 @@ function pickFeedForCategory(
       label: slug,
       url: "",
       enabled: true,
-      maxItems: PORTAL_RSS_NEWS_IMPORT_PER_CATEGORY,
+      maxItems: PORTAL_RSS_NEWS_IMPORT_PER_FEED,
     }
   );
 }
 
 /**
- * RSS havuzundan kategori başına en fazla N benzersiz haberi `news` tablosuna aktarır.
- * Aynı gündem kaynağından gelen yinelenen başlıklar tek makale olarak yayınlanır.
+ * RSS havuzundan her kategoriye haber aktarır (çapraz kaynak tekil, günlük ~100).
+ * Aynı gündem / farklı kaynak başlıkları tek makale olarak yayınlanır.
  */
 export async function importPortalRssNewsByCategoryBatch(
   limitPerCategory = PORTAL_RSS_NEWS_IMPORT_PER_CATEGORY,
-): Promise<{ categories: number; inserted: number; skipped: number }> {
-  if (!isPortalRssSyncToNewsEnabled()) return { categories: 0, inserted: 0, skipped: 0 };
+): Promise<{ categories: number; inserted: number; skipped: number; dailyRemaining: number }> {
+  if (!isPortalRssSyncToNewsEnabled()) {
+    return { categories: 0, inserted: 0, skipped: 0, dailyRemaining: 0 };
+  }
 
   const feeds = (await loadPortalHybridRssFeeds(null, "all")).filter(
     (feed) => feed.enabled && feed.url && !isBoxScopeFeedId(feed.id),
   );
   const activeFeeds = enabledPortalHybridRssFeeds(feeds);
-  if (!activeFeeds.length) return { categories: 0, inserted: 0, skipped: 0 };
+  if (!activeFeeds.length) return { categories: 0, inserted: 0, skipped: 0, dailyRemaining: 0 };
 
   const items = await readPortalRssItemsForFeeds(activeFeeds);
-  const byCategory = new Map<string, PortalRssItem[]>();
-  for (const item of items) {
-    const cat = String(item.categorySlug ?? "gundem").trim().toLowerCase() || "gundem";
-    const list = byCategory.get(cat) ?? [];
-    list.push(item);
-    byCategory.set(cat, list);
-  }
+  const perFeedCapped = capRssItemsPerFeed(items, PORTAL_RSS_NEWS_IMPORT_PER_FEED);
+  const crossSource = dedupeCategoryRssBatchItems(perFeedCapped);
+  const byCategory = groupPortalRssItemsByCategory(crossSource);
+
+  const dailyRemaining = await remainingPortalRssDailyBudget();
+  const allocated = allocateRssImportDailyBudget(byCategory, dailyRemaining, limitPerCategory);
 
   let inserted = 0;
   let skipped = 0;
   let categories = 0;
 
-  for (const [categorySlug, catItems] of byCategory) {
-    if (!catItems.length) continue;
-    categories += 1;
-    const deduped = dedupeCategoryRssBatchItems(catItems);
-    const feed = pickFeedForCategory(activeFeeds, categorySlug);
-    const batch = deduped.slice(0, limitPerCategory);
+  for (const [categorySlug, batch] of allocated) {
     if (!batch.length) continue;
+    categories += 1;
+    const feed = pickFeedForCategory(activeFeeds, categorySlug);
     const res = await syncPortalRssItemsToNewsTable(feed, batch);
     inserted += res.inserted;
     skipped += res.skipped;
   }
 
   if (inserted > 0) {
-    logger.info({ categories, inserted, skipped, limitPerCategory }, "[portal-rss] kategori batch news import");
+    logger.info(
+      {
+        categories,
+        inserted,
+        skipped,
+        limitPerCategory,
+        perFeed: PORTAL_RSS_NEWS_IMPORT_PER_FEED,
+        dailyBudget: PORTAL_RSS_NEWS_IMPORT_DAILY_BUDGET,
+        dailyRemainingBefore: dailyRemaining,
+      },
+      "[portal-rss] kategori batch news import",
+    );
     schedulePortalNewsSitemapPing();
   }
 
-  return { categories, inserted, skipped };
+  return { categories, inserted, skipped, dailyRemaining: Math.max(0, dailyRemaining - inserted) };
 }

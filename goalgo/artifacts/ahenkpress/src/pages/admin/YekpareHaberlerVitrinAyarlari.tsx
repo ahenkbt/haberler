@@ -564,11 +564,12 @@ export default function YekpareHaberlerVitrinAyarlari() {
                   <div className="min-w-0">
                     <p className="font-black text-slate-900">RSS otomasyonu (zamanlanmış)</p>
                     <p className="text-xs text-slate-600 mt-1">
-                      Varsayılan kapalı. Açıkken yalnızca RSS çekimi günde 3 kez —{" "}
-                      {rssAutomation?.schedule?.label ?? "09:00, 15:00, 21:00"} (
-                      {rssAutomation?.schedule?.timezone ?? "Europe/Istanbul"}) — otomatik çalışır.
-                      Her slotta kategori başına 20 benzersiz haber <code className="text-xs">news</code> tablosuna
-                      aktarılır; havuz temizliği 180 günde bir uygulanır.
+                      Varsayılan kapalı. Açıkken saatlik canlı önbellek yenilenir; kalıcı yayın günde 2 kez —{" "}
+                      {rssAutomation?.schedule?.label ?? "02:00 ve 09:00 TR kalıcı kayıt"} (
+                      {rssAutomation?.schedule?.timezone ?? "Europe/Istanbul"}) — çalışır.
+                      Her koşuda kaynak başına 10, kategori başına 10 benzersiz haber; çapraz kaynak
+                      tekilleştirme ile günde yaklaşık 100 <code className="text-xs">news</code> kaydı.
+                      Havuz temizliği 180 günde bir uygulanır.
                     </p>
                     {rssAutomation ? (
                       <p className="text-[11px] text-slate-500 mt-1">
@@ -600,7 +601,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
                         toast({
                           title: checked ? "RSS otomasyonu açıldı" : "RSS otomasyonu kapatıldı",
                           description: checked
-                            ? `Günde 3 kez (${rssAutomation?.schedule?.label ?? "09:00, 15:00, 21:00"} TR) RSS çekimi otomatik çalışır.`
+                            ? `Saatlik canlı; kalıcı yayın 02:00 ve 09:00 TR (${rssAutomation?.schedule?.label ?? "02:00 ve 09:00 TR kalıcı kayıt"}).`
                             : "Arka plan RSS botları durduruldu.",
                         });
                       } catch (e) {
@@ -847,8 +848,8 @@ export default function YekpareHaberlerVitrinAyarlari() {
                   <div className="min-w-0">
                     <p className="font-black text-slate-900">Kategori RSS kaynakları</p>
                     <p className="text-xs text-slate-500">
-                      Her kaynak en fazla 20 öğe çeker; kategori başına gece otomasyonu 20 benzersiz haberi{" "}
-                      <code className="text-xs">news</code> tablosuna aktarır.{" "}
+                      Her kaynak en fazla 10 öğe çeker; 02:00 ve 09:00 TR otomasyonu kategori başına 10 benzersiz haberi{" "}
+                      <code className="text-xs">news</code> tablosuna aktarır (günde ≈100, çapraz kaynak tekil).{" "}
                       <code className="text-xs">portal_rss_items</code> havuzu 180 gün (6 ay) saklanır —{" "}
                       <code className="text-xs">news</code> kayıtları kalıcıdır. Değişiklikten sonra kaydedin ve yenileyin.
                     </p>

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  getTurkeyDayStartUtc,
   isWithinRssPersistSlot,
   isWithinRssScheduledSlot,
-  RSS_PERSIST_HOUR_TR,
+  RSS_PERSIST_HOURS_TR,
 } from "./rss-automation-control.js";
 
 function trDate(hour: number, minute: number): Date {
@@ -17,10 +18,20 @@ describe("rss automation slots", () => {
     expect(isWithinRssScheduledSlot(trDate(10, 21))).toBe(false);
   });
 
-  it("kalıcı kayıt yalnızca gece 01:00 TR", () => {
-    expect(RSS_PERSIST_HOUR_TR).toBe(1);
-    expect(isWithinRssPersistSlot(trDate(1, 5))).toBe(true);
-    expect(isWithinRssPersistSlot(trDate(9, 5))).toBe(false);
+  it("kalıcı kayıt 02:00 ve 09:00 TR pencereleridir", () => {
+    expect([...RSS_PERSIST_HOURS_TR]).toEqual([2, 9]);
+    expect(isWithinRssPersistSlot(trDate(2, 0))).toBe(true);
+    expect(isWithinRssPersistSlot(trDate(2, 19))).toBe(true);
+    expect(isWithinRssPersistSlot(trDate(2, 21))).toBe(false);
+    expect(isWithinRssPersistSlot(trDate(9, 5))).toBe(true);
+    expect(isWithinRssPersistSlot(trDate(9, 19))).toBe(true);
+    expect(isWithinRssPersistSlot(trDate(1, 5))).toBe(false);
     expect(isWithinRssPersistSlot(trDate(15, 0))).toBe(false);
+  });
+
+  it("Türkiye gün başlangıcı 00:00 TR’dir", () => {
+    const noon = trDate(12, 30);
+    const start = getTurkeyDayStartUtc(noon);
+    expect(start.toISOString()).toBe(trDate(0, 0).toISOString());
   });
 });
