@@ -1141,8 +1141,8 @@ async function importYoutubePlaylistsForSource(row: VideoSourceRow): Promise<{ c
 
 router.get("/video/categories", async (_req, res): Promise<void> => {
   try {
-    await mergeDuplicateCategorySlugs().catch(() => undefined);
     const items = await getVideoCategoryCatalog();
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=120, stale-while-revalidate=300");
     res.json({ items });
   } catch (err) {
     logger.error({ err }, "[video] categories failed");
@@ -1300,7 +1300,7 @@ router.get("/video/sources", async (_req, res): Promise<void> => {
         limit: 200,
         loadSources: async () => db.select().from(videoSourcesTable).orderBy(videoSourcesTable.id),
         loadVideos: async () =>
-          db.select(videosListSelect).from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id)).limit(4000),
+          db.select(videosListSelect).from(videosTable).where(eq(videosTable.active, true)).orderBy(desc(videosTable.id)).limit(200),
         firstVideoThumbBySourceIds,
         updateDb: async (table, id, coverUrl) => {
           const url = normalizeYoutubeCoverUrl(coverUrl);

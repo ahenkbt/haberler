@@ -108,8 +108,32 @@ export type CategoryCatalogEntry = {
   videoCount: number;
 };
 
+const CATALOG_CACHE_TTL_MS = 60_000;
+let catalogCache: { expiresAt: number; items: CategoryCatalogEntry[] } | null = null;
+let distinctActiveSlugCache: { expiresAt: number; slugs: string[] } | null = null;
+
+export function invalidateVideoCategoryCatalogCache(): void {
+  catalogCache = null;
+  distinctActiveSlugCache = null;
+}
+
+async function distinctActiveVideoCategorySlugs(): Promise<string[]> {
+  if (distinctActiveSlugCache && distinctActiveSlugCache.expiresAt > Date.now()) {
+    return distinctActiveSlugCache.slugs;
+  }
+  const rows = await db
+    .selectDistinct({ categorySlug: videosTable.categorySlug })
+    .from(videosTable)
+    .where(eq(videosTable.active, true));
+  const slugs = rows.map((row) => row.categorySlug).filter((slug): slug is string => Boolean(slug?.trim()));
+  distinctActiveSlugCache = { expiresAt: Date.now() + CATALOG_CACHE_TTL_MS, slugs };
+  return slugs;
+}
+
 /** Aktif videoları olan + admin sabit listesi birleşik kategori listesi */
 export async function getVideoCategoryCatalog(): Promise<CategoryCatalogEntry[]> {
+  if (catalogCache && catalogCache.expiresAt > Date.now()) return catalogCache.items;
+
   let customLabels: Record<string, string> = {};
   try {
     const { loadSectionConfig } = await import("./yektubeSectionConfig.js");
@@ -140,22 +164,31 @@ export async function getVideoCategoryCatalog(): Promise<CategoryCatalogEntry[]>
   for (const slug of byNorm.keys()) slugSet.add(slug);
   for (const slug of Object.keys(customLabels)) slugSet.add(slug);
 
-  return [...slugSet]
+  const items = [...slugSet]
     .map((slug) => ({
       slug,
       label: customLabels[slug] ?? categoryDisplayLabel(slug),
       videoCount: byNorm.get(slug) ?? 0,
     }))
     .sort((a, b) => a.label.localeCompare(b.label, "tr"));
+
+  catalogCache = { expiresAt: Date.now() + CATALOG_CACHE_TTL_MS, items };
+  return items;
 }
 
-/** Yinelenen slug varyantlarını tek kanonik slug altında birleştirir */
+/**
+ * Yinelenen slug varyantlarını tek kanonik slug altında birleştirir.
+ * Admin / bakım only — asla public list endpoint'lerinden çağırma.
+ * DISTINCT slug kullanır; ~756k video satırını belleğe çekmez.
+ */
 export async function mergeDuplicateCategorySlugs(): Promise<{ sourcesUpdated: number; videosUpdated: number }> {
-  const sources = await db.select({ id: videoSourcesTable.id, categorySlug: videoSourcesTable.categorySlug }).from(videoSourcesTable);
-  const videos = await db.select({ id: videosTable.id, categorySlug: videosTable.categorySlug }).from(videosTable);
+  const [sourceRows, videoRows] = await Promise.all([
+    db.selectDistinct({ categorySlug: videoSourcesTable.categorySlug }).from(videoSourcesTable),
+    db.selectDistinct({ categorySlug: videosTable.categorySlug }).from(videosTable),
+  ]);
 
   const canonicalByRaw = new Map<string, string>();
-  for (const row of [...sources, ...videos]) {
+  for (const row of [...sourceRows, ...videoRows]) {
     const raw = row.categorySlug?.trim();
     if (!raw) continue;
     canonicalByRaw.set(raw, slugifyVideoCategory(raw));
@@ -182,6 +215,7 @@ export async function mergeDuplicateCategorySlugs(): Promise<{ sourcesUpdated: n
 
   if (sourcesUpdated || videosUpdated) {
     logger.info({ sourcesUpdated, videosUpdated }, "[video] merged duplicate category slugs");
+    invalidateVideoCategoryCatalogCache();
   }
   return { sourcesUpdated, videosUpdated };
 }
@@ -277,13 +311,10 @@ export async function reconcileVideoCategoriesFromSources(): Promise<number> {
 /** Aynı normalize slug'a düşen tüm ham slug'lar — filtre sorguları için */
 export async function rawSlugsForCategory(normalizedSlug: string): Promise<string[]> {
   const norm = canonicalVideoCategorySlug(normalizedSlug);
-  const rows = await db
-    .selectDistinct({ categorySlug: videosTable.categorySlug })
-    .from(videosTable)
-    .where(eq(videosTable.active, true));
+  const slugs = await distinctActiveVideoCategorySlugs();
   const out = new Set<string>();
-  for (const row of rows) {
-    const raw = row.categorySlug?.trim();
+  for (const slug of slugs) {
+    const raw = slug.trim();
     if (!raw) continue;
     if (canonicalVideoCategorySlug(raw) === norm) out.add(raw);
   }
