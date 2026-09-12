@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, X } from "lucide-react";
 import { Link } from "wouter";
-import { HmNewsImage, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl, newsItemHasCoverImage } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl, newsItemHasCoverImage } from "@/components/HmNewsImage";
+import { homeCoverItemKey, takeVisibleHomeCoverItems } from "@/lib/hmNewsImageFail";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { HM_HOME_LATEST_BAND_ITEM_COUNT } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
@@ -285,7 +286,7 @@ export function HmRssNewsBand({
   categoriesHref,
   allNewsHref,
   loadMoreBatchSize,
-  requireCoverImage = false,
+  requireCoverImage = true,
 }: Props) {
   const h = useHmPublicHref();
   const [activeSlug, setActiveSlug] = useState(normalizeSlug(initialCategorySlug));
@@ -295,6 +296,7 @@ export function HmRssNewsBand({
   const batchSize = Math.max(loadMoreBatchSize ?? baseVisibleLimit, 6);
   const [inlineVisibleLimit, setInlineVisibleLimit] = useState(baseVisibleLimit);
   const [apiExtraItems, setApiExtraItems] = useState<HmRssNewsBandItem[]>([]);
+  const [hiddenCoverKeys, setHiddenCoverKeys] = useState<Set<string>>(() => new Set());
   const [apiOffset, setApiOffset] = useState(0);
   const [apiExhausted, setApiExhausted] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -307,6 +309,7 @@ export function HmRssNewsBand({
 
   useEffect(() => {
     setActiveSlug(normalizeSlug(initialCategorySlug));
+    setHiddenCoverKeys(new Set());
   }, [initialCategorySlug]);
 
   useEffect(() => {
@@ -438,18 +441,26 @@ export function HmRssNewsBand({
   ]);
 
   const filtered = useMemo(() => {
-    if (inlineLoadMore) {
-      const localSlice = filteredAll.slice(0, inlineVisibleLimit);
-      const seen = new Set(localSlice.map((item) => String(item.id ?? item.slug ?? item.title ?? "")));
-      const extras = apiExtraItems.filter((item) => {
-        const key = String(item.id ?? item.slug ?? item.title ?? "");
-        return key && !seen.has(key);
-      });
-      return [...localSlice, ...extras];
-    }
-    if (maxVisibleItems == null || maxVisibleItems <= 0) return filteredAll;
-    return filteredAll.slice(0, maxVisibleItems);
-  }, [apiExtraItems, filteredAll, inlineLoadMore, inlineVisibleLimit, maxVisibleItems]);
+    const pool = (() => {
+      if (inlineLoadMore) {
+        const localSlice = filteredAll.slice(0, Math.max(inlineVisibleLimit, filteredAll.length));
+        const seen = new Set(localSlice.map((item) => homeCoverItemKey(item)));
+        const extras = apiExtraItems.filter((item) => {
+          const key = homeCoverItemKey(item);
+          return key && !seen.has(key);
+        });
+        return [...localSlice, ...extras];
+      }
+      return filteredAll;
+    })();
+    const limit =
+      inlineLoadMore
+        ? inlineVisibleLimit
+        : maxVisibleItems == null || maxVisibleItems <= 0
+          ? pool.length
+          : maxVisibleItems;
+    return takeVisibleHomeCoverItems<HmRssNewsBandItem>(pool, hiddenCoverKeys, homeCoverItemKey, limit);
+  }, [apiExtraItems, filteredAll, hiddenCoverKeys, inlineLoadMore, inlineVisibleLimit, maxVisibleItems]);
 
   const canLoadMoreInline = useMemo(() => {
     if (!inlineLoadMore) return false;
@@ -647,7 +658,6 @@ export function HmRssNewsBand({
           {filtered.map((item, index) => {
             const catColor = resolveCategoryColor(item, accent, hmCategoryColors);
             const excerpt = newsExcerpt(item);
-            const isRss = isRssNewsItem(item);
             const cardContent = (
               <>
                 <div className="hm-rss-news-band__media">
@@ -658,6 +668,7 @@ export function HmRssNewsBand({
                     className="hm-rss-news-band__img"
                     loading={index < 8 ? "eager" : "lazy"}
                     priority={index < 8}
+                    onUnavailable="hide"
                   />
                   {item.categoryName ? (
                     <span className="hm-rss-news-band__badge" style={{ background: catColor }}>
@@ -671,22 +682,22 @@ export function HmRssNewsBand({
                 </div>
               </>
             );
-            if (isRss) {
-              return (
-                <Link
-                  key={item.id}
-                  href={newsHref(item)}
-                  className="hm-rss-news-band__card"
-                  data-hm-news-row
-                >
+            const hideCard = () => {
+              const key = homeCoverItemKey(item);
+              if (!key) return;
+              setHiddenCoverKeys((prev) => {
+                if (prev.has(key)) return prev;
+                const next = new Set(prev);
+                next.add(key);
+                return next;
+              });
+            };
+            return (
+              <HmHomeCoverGate key={item.id} item={item} onHidden={hideCard}>
+                <Link href={newsHref(item)} className="hm-rss-news-band__card" data-hm-news-row>
                   {cardContent}
                 </Link>
-              );
-            }
-            return (
-              <Link key={item.id} href={newsHref(item)} className="hm-rss-news-band__card" data-hm-news-row>
-                {cardContent}
-              </Link>
+              </HmHomeCoverGate>
             );
           })}
         </div>

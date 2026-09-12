@@ -14,6 +14,8 @@ import {
   listKnownHmEditorSites,
   parseHmNewsArticlePath,
   parseHmNewsCategoryPath,
+  articleBundleFromPayload,
+  hmArticlePageBundleUrls,
   findHmBundleHeadlineBySlug,
   buildHmNewsArticleOgHtml,
   raceHmHtmlBoot,
@@ -104,6 +106,22 @@ describe("hm-html-boot", () => {
       parseHmNewsArticlePath("/tr/asg/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti")?.slug,
       "ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti",
     );
+    assert.equal(
+      parseHmNewsArticlePath(
+        "/haber/cevre-sehircilik-ve-i-klim-degisikligi-bakanligi-nda-gorev-degisikligi-1789220219760-5-m",
+      )?.slug,
+      "cevre-sehircilik-ve-i-klim-degisikligi-bakanligi-nda-gorev-degisikligi-1789220219760-5-m",
+    );
+    assert.deepEqual(
+      hmArticlePageBundleUrls("https://ankarasehirgazetesi.com", "haber-1", 3),
+      [
+        "https://ankarasehirgazetesi.com/api/news/page-bundle/haber-1?siteId=3",
+        "https://ankarasehirgazetesi.com/api/news/page-bundle/haber-1",
+      ],
+    );
+    assert.equal(articleBundleFromPayload({ article: { title: "Başlık" } })?.article?.title, "Başlık");
+    assert.equal(articleBundleFromPayload({ title: "Düz satır" })?.article?.title, "Düz satır");
+    assert.equal(articleBundleFromPayload({ article: { title: "" } }), null);
     const html = '<html><head><meta charset="UTF-8" /></head><body><div id="root"></div></body></html>';
     const out = injectHmHtmlBoot(html, {
       siteId: 3,

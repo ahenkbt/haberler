@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { ChevronRight, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { HmNewsImage } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import { splitCategoryBoxItems } from "@/lib/hmCategoryBoxItems";
 import { HM_LEAD_LIST_SIDEBAR_TOTAL } from "@/lib/hmHeadlinePool";
@@ -86,6 +86,7 @@ function LeadListHeroCard({
 }) {
   const categoryLabel = itemCategoryLabel(item, categoryFallback);
   return (
+    <HmHomeCoverGate item={item}>
     <Link
       href={getItemHref(item)}
       className={`hm-vitrin-card group relative block min-h-[180px] overflow-hidden rounded-xl bg-slate-900 shadow transition hover:-translate-y-0.5 hover:shadow-lg ${className}`}
@@ -97,6 +98,7 @@ function LeadListHeroCard({
         loading="eager"
         priority
         wrapperClassName="absolute inset-0"
+        onUnavailable="hide"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
@@ -115,6 +117,7 @@ function LeadListHeroCard({
         </p>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -135,6 +138,7 @@ function LeadListSideCard({
 }) {
   const categoryLabel = itemCategoryLabel(item, categoryFallback);
   return (
+    <HmHomeCoverGate item={item}>
     <Link
       href={getItemHref(item)}
       className={`group flex min-h-[84px] gap-3 rounded px-1 py-3 transition-colors hover:bg-gray-50 ${className}`}
@@ -145,6 +149,7 @@ function LeadListSideCard({
           alt={newsDisplayTitle(item.title)}
           className="transition-transform group-hover:scale-105"
           loading="eager"
+          onUnavailable="hide"
         />
       </div>
       <div className="min-w-0 flex-1">
@@ -158,6 +163,7 @@ function LeadListSideCard({
         </p>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -178,6 +184,7 @@ function LeadListMobileCard({
 }) {
   const categoryLabel = itemCategoryLabel(item, categoryFallback);
   return (
+    <HmHomeCoverGate item={item}>
     <Link
       href={getItemHref(item)}
       className={`hm-vitrin-card group flex flex-col overflow-hidden rounded-xl shadow transition-all hover:-translate-y-0.5 hover:shadow-lg ${className}`}
@@ -188,6 +195,7 @@ function LeadListMobileCard({
           alt={newsDisplayTitle(item.title)}
           className="transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
+          onUnavailable="hide"
         />
         <span
           className="absolute left-2 top-2 rounded-sm px-2 py-0.5 text-[9px] font-black uppercase text-white"
@@ -206,6 +214,7 @@ function LeadListMobileCard({
         </p>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 

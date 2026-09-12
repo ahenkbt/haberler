@@ -1,45 +1,24 @@
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
-import { readHmDomainSlugCache, writeHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
-import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
+import { writeHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import HmPublicHaberDetayRoute from "@/pages/public/HmPublicHaberDetayRoute";
 import { SixAmMartNewsDetailPage } from "@/themes/sixammart/SixAmMartTheme";
 
 /**
  * `/haber/:id` — özel HM alanında vitrin detayı; turk.eco'te SixAmMart haber detayı.
  * Temiz URL (`/haber/slug`) wouter iç yoluna çevrilmeden önce de doğru sayfayı açar.
+ * ASG / AHG gibi editör alanlarında meta 404 olsa bile SixAmMart gece kabuğuna (#020617) düşülmez.
  */
 export default function HmOrPortalHaberDetailRoute() {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
   const isCustomDomain = !!host && !isDefaultPortalHost(host);
-  const knownSlug = isCustomDomain ? resolveKnownHmEditorSlug(host) : undefined;
-  const cachedSlug = isCustomDomain ? readHmDomainSlugCache(host) : undefined;
-
-  const { data, isFetched } = useHmMetaByDomain(host, {
-    enabled: isCustomDomain && !cachedSlug && !knownSlug,
-    timeoutMs: 12_000,
-    retry: 1,
-  });
 
   if (!isCustomDomain) {
     return <SixAmMartNewsDetailPage />;
   }
 
-  const hmSlug = cachedSlug ?? knownSlug ?? data?.slug;
-  if (hmSlug) {
-    if (data?.slug) writeHmDomainSlugCache(host, data.slug);
-    else if (knownSlug) writeHmDomainSlugCache(host, knownSlug);
-    return <HmPublicHaberDetayRoute />;
-  }
-
-  if (!isFetched) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-white px-4 text-sm text-slate-600">
-        Haber yükleniyor…
-      </div>
-    );
-  }
-
-  return <SixAmMartNewsDetailPage />;
+  const knownSlug = resolveKnownHmEditorSlug(host);
+  if (knownSlug) writeHmDomainSlugCache(host, knownSlug);
+  return <HmPublicHaberDetayRoute />;
 }

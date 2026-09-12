@@ -1,6 +1,11 @@
-import { useEffect, useState, type ImgHTMLAttributes } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ImgHTMLAttributes, type ReactNode } from "react";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { HM_NEWS_PLACEHOLDER_SVG, isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
+import {
+  buildHmNewsImageSrcChain,
+  nextHmNewsImageSrc,
+  type HmNewsImageFailBehavior,
+} from "@/lib/hmNewsImageFail";
 import { cn } from "@/lib/utils";
 
 export function resolveHmNewsImageSrc(url: string | null | undefined): string {
@@ -85,6 +90,52 @@ export function filterNewsItemsWithCoverImage<T extends Parameters<typeof resolv
 
 type NewsImageItem = Parameters<typeof resolveNewsItemImageUrl>[0];
 
+type HmHomeCoverGateValue = {
+  reportUnavailable: () => void;
+};
+
+const HmHomeCoverGateContext = createContext<HmHomeCoverGateValue | null>(null);
+
+function useHmHomeCoverGate(): HmHomeCoverGateValue | null {
+  return useContext(HmHomeCoverGateContext);
+}
+
+function homeCoverKey(item: NewsImageItem | undefined): string {
+  if (!item) return "";
+  return `${resolveNewsItemImageUrl(item)}|${resolveNewsItemImageFallbackUrl(item)}`;
+}
+
+/**
+ * Anasayfa / kategori kutusu kartı: kapak yoksa veya yükleme tükenirse kartı unmount eder.
+ * Haber detay / editör bu sarmalayıcıyı kullanmaz — orada placeholder kalır.
+ */
+export function HmHomeCoverGate({
+  item,
+  children,
+  onHidden,
+}: {
+  item?: NewsImageItem;
+  children: ReactNode;
+  onHidden?: () => void;
+}) {
+  const [hidden, setHidden] = useState(() => (item ? !newsItemHasCoverImage(item) : false));
+  const key = homeCoverKey(item);
+
+  useEffect(() => {
+    setHidden(item ? !newsItemHasCoverImage(item) : false);
+  }, [item, key]);
+
+  const reportUnavailable = useCallback(() => {
+    setHidden(true);
+    onHidden?.();
+  }, [onHidden]);
+
+  const value = useMemo(() => ({ reportUnavailable }), [reportUnavailable]);
+
+  if (hidden) return null;
+  return <HmHomeCoverGateContext.Provider value={value}>{children}</HmHomeCoverGateContext.Provider>;
+}
+
 type HmNewsImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   src?: string | null;
   /** Birincil src başarısız olursa (ör. WebP mirror 404) denenecek harici yedek URL. */
@@ -94,6 +145,12 @@ type HmNewsImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   wrapperClassName?: string;
   /** Manset / above-the-fold — eager load, hızlı görünüm. */
   priority?: boolean;
+  /**
+   * `hide`: birincil+yedek+vekil tükenince görseli (ve varsa HmHomeCoverGate kartını) kaldır.
+   * Varsayılan: gate içinde hide, aksi halde placeholder.
+   */
+  onUnavailable?: HmNewsImageFailBehavior;
+  onUnavailableChange?: (unavailable: boolean) => void;
 };
 
 function isLocalMediaUploadSrc(url: string): boolean {
@@ -114,8 +171,8 @@ export function pickFastNewsImageSrc(primary: string, fallback: string): string 
 
 /**
  * Haber görselleri: kaynak URL varsa hemen göster.
- * Yerel upload 404 ise harici RSS yedeğine, o da kırılırsa
- * «Görsel Hazırlanmaktadır» varsayılanına düş.
+ * Yerel upload 404 ise harici RSS yedeğine, o da kırılırsa aynı-köken vekile,
+ * o da tükenirse `onUnavailable` davranışına düş.
  */
 export function HmNewsImage({
   src,
@@ -127,28 +184,46 @@ export function HmNewsImage({
   loading,
   priority = false,
   fetchPriority,
+  onUnavailable,
+  onUnavailableChange,
   ...rest
 }: HmNewsImageProps) {
+  const gate = useHmHomeCoverGate();
+  const failBehavior: HmNewsImageFailBehavior = onUnavailable ?? (gate ? "hide" : "placeholder");
   const fromItem = item ? resolveNewsItemImageUrl(item) : "";
   const fallbackFromItem = item ? resolveNewsItemImageFallbackUrl(item) : "";
   const resolvedPrimary = resolveHmNewsImageSrc(src || fromItem);
   const resolvedFallback = resolveHmNewsImageSrc(fallbackSrc || fallbackFromItem);
-  const initial = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
+  const chain = useMemo(() => {
+    const fast = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
+    const other = fast === resolvedFallback ? resolvedPrimary : resolvedFallback;
+    const rawChain = buildHmNewsImageSrcChain(fast, other);
+    return rawChain.map((entry) => resolveHmNewsImageSrc(entry)).filter(Boolean);
+  }, [resolvedPrimary, resolvedFallback]);
+  const initial = chain[0] ?? "";
   const [activeSrc, setActiveSrc] = useState(initial);
   const [failed, setFailed] = useState(!initial);
 
   useEffect(() => {
-    const next = pickFastNewsImageSrc(resolvedPrimary, resolvedFallback);
+    const next = chain[0] ?? "";
     setActiveSrc(next);
     setFailed(!next);
-  }, [resolvedPrimary, resolvedFallback]);
+  }, [chain]);
+
+  const unavailable = !activeSrc || failed;
+  const showPlaceholder = unavailable && failBehavior === "placeholder";
+
+  useEffect(() => {
+    onUnavailableChange?.(unavailable);
+    if (unavailable && failBehavior === "hide") {
+      gate?.reportUnavailable();
+    }
+  }, [unavailable, failBehavior, gate, onUnavailableChange]);
 
   const imgLoading = loading ?? (priority ? "eager" : "lazy");
-  const showPlaceholder = !activeSrc || failed;
 
   const onImageError = () => {
-    const other =
-      activeSrc === resolvedFallback ? resolvedPrimary : resolvedFallback;
+    const other = nextHmNewsImageSrc(chain, activeSrc);
     if (other && other !== activeSrc) {
       setActiveSrc(other);
       setFailed(false);
@@ -156,6 +231,10 @@ export function HmNewsImage({
     }
     setFailed(true);
   };
+
+  if (unavailable && failBehavior === "hide") {
+    return null;
+  }
 
   return (
     <span

@@ -36,4 +36,12 @@ describe("haber görsel placeholder", () => {
     ]);
     expect(kept.map((item) => item.title)).toEqual(["Resimli"]);
   });
+
+  it("harici URL string’i kapak sayılır; runtime fail ayrı hide zincirine bırakılır", () => {
+    const kept = filterNewsItemsWithCoverImage([
+      { title: "SHA", imageUrl: "https://sehirhaberajansi.com.tr/uploads/reha.jpg" },
+    ]);
+    expect(kept).toHaveLength(1);
+  });
 });
+

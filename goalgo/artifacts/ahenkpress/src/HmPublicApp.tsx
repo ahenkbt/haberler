@@ -10,7 +10,6 @@ import { useHmCustomDomainLocation } from "@/hooks/useHmCustomDomainLocation";
 import { HmPortalOrDomainStandardPage } from "./components/HmPortalOrDomainStandardPage";
 import HmSitePublic from "./pages/public/HmSitePublic";
 import HmPublicExtraPageSlugRoute from "./pages/public/HmPublicExtraPageSlugRoute";
-import HmOrPortalHaberDetailRoute from "./pages/public/HmOrPortalHaberDetailRoute";
 import HmPublicHaberDetayRoute from "./pages/public/HmPublicHaberDetayRoute";
 import { HmShortHaberPathRedirect } from "./components/HmShortHaberPathRedirect";
 import HmPublicKategoriRoute from "./pages/public/HmPublicKategoriRoute";
@@ -263,8 +262,20 @@ export default function HmPublicApp() {
                 </HmPublicShell>
               )}
             </Route>
-            <Route path="/haber/:id">{() => <HmOrPortalHaberDetailRoute />}</Route>
-            <Route path="/makale/:id">{() => <HmOrPortalHaberDetailRoute />}</Route>
+            <Route path="/haber/:id">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicHaberDetayRoute />
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/makale/:id">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicHaberDetayRoute />
+                </HmPublicShell>
+              )}
+            </Route>
             <Route path="/kategori/:slug">
               {() => (
                 <HmPublicShell>

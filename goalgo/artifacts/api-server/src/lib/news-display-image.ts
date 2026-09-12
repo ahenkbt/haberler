@@ -133,3 +133,18 @@ export function filterNewsItemsWithUsableCover<T extends Parameters<typeof resol
 ): T[] {
   return items.filter((item) => newsItemHasUsableCover(item));
 }
+
+/** Hybrid / kategori kutusu sayfalama: kapaksız satırlar total’e girmez. */
+export function paginateNewsItemsWithUsableCover<T extends Parameters<typeof resolveNewsItemImageUrl>[0]>(
+  items: readonly T[],
+  offset: number,
+  limit: number,
+): { items: T[]; total: number } {
+  const covered = filterNewsItemsWithUsableCover(items);
+  const start = Math.max(0, Math.trunc(offset) || 0);
+  const take = Math.max(0, Math.trunc(limit) || 0);
+  return {
+    items: covered.slice(start, start + take),
+    total: covered.length,
+  };
+}

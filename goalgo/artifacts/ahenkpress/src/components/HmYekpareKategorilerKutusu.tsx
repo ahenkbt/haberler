@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
 import { HmCategoryThumbList } from "@/components/HmCategoryBoxLayout";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
 import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import {
@@ -33,14 +33,16 @@ function YekpareSmallCard({
   getItemHref: (item: YekpareKategoriKutuItem) => string;
 }) {
   return (
+    <HmHomeCoverGate item={item}>
     <Link href={getItemHref(item)} className="group flex min-w-0 flex-col gap-1 overflow-hidden rounded-lg border border-slate-100 p-1.5 transition hover:bg-slate-50">
       <div className="aspect-[16/10] w-full overflow-hidden rounded-md bg-slate-100">
-        <HmNewsImage src={resolveNewsItemImageUrl(item)} alt={displayTitle(item.title)} loading="lazy" className="transition group-hover:scale-105" />
+        <HmNewsImage src={resolveNewsItemImageUrl(item)} alt={displayTitle(item.title)} loading="lazy" className="transition group-hover:scale-105" onUnavailable="hide" />
       </div>
       <p className="line-clamp-2 text-[10px] font-bold leading-snug text-slate-800 group-hover:text-[var(--hm-accent,#0EA5E9)]">
         {displayTitle(item.title)}
       </p>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -118,6 +120,7 @@ export function HmYekpareCategoryBox({
         ))}
       </div>
       <div className="hm-yekpare-kutu-desktop hidden gap-3 md:grid md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <HmHomeCoverGate item={displayLead}>
         <Link href={getItemHref(displayLead)} className="group relative overflow-hidden rounded-xl bg-slate-100">
           <div className="aspect-[4/3]">
             <HmNewsImage
@@ -125,6 +128,7 @@ export function HmYekpareCategoryBox({
               alt={displayTitle(displayLead.title)}
               className="transition group-hover:scale-105"
               loading="lazy"
+              onUnavailable="hide"
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
@@ -132,6 +136,7 @@ export function HmYekpareCategoryBox({
             <p className="line-clamp-2 text-sm font-black leading-snug text-white">{displayTitle(displayLead.title)}</p>
           </div>
         </Link>
+        </HmHomeCoverGate>
         <HmCategoryThumbList
           items={desktopSideItems}
           getHref={getItemHref}

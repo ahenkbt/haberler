@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { HmNewsImage, filterNewsItemsWithCoverImage, newsItemHasCoverImage } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, filterNewsItemsWithCoverImage, newsItemHasCoverImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import {
   CATEGORY_BOX_DESKTOP_LIST_SLOTS,
@@ -25,17 +25,19 @@ function HmCategorySmallCard({
   getHref: (item: CategoryBoxItem) => string;
 }) {
   return (
+    <HmHomeCoverGate item={item}>
     <Link
       href={getHref(item)}
       className="group flex min-w-0 flex-col gap-1 overflow-hidden rounded-lg border border-slate-100 bg-white p-1.5 transition hover:border-slate-200 hover:bg-slate-50"
     >
       <div className="aspect-[16/10] w-full overflow-hidden rounded-md bg-slate-100">
-        <HmNewsImage item={item} alt={displayTitle(item.title)} loading="lazy" className="transition group-hover:scale-105" />
+        <HmNewsImage item={item} alt={displayTitle(item.title)} loading="lazy" className="transition group-hover:scale-105" onUnavailable="hide" />
       </div>
       <p className="line-clamp-2 text-[10px] font-bold leading-snug text-slate-900 group-hover:text-[var(--hm-accent,#e61e25)]">
         {displayTitle(item.title)}
       </p>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -58,8 +60,8 @@ export function HmCategoryThumbList({
       data-hm-cat-slug={categorySlug || undefined}
     >
       {items.map((item, index) => (
+        <HmHomeCoverGate key={`${item.slug ?? item.id ?? index}:${index}`} item={item}>
         <Link
-          key={`${item.slug ?? item.id ?? index}:${index}`}
           href={getHref(item)}
           className="hm-category-box-thumb-row group flex min-h-[3.75rem] w-full min-w-0 items-start gap-2.5 rounded-lg border border-slate-100 p-1.5 transition hover:bg-slate-50 sm:rounded-none sm:border-0 sm:border-b sm:border-slate-100 sm:px-2 sm:py-2.5 last:sm:border-b-0"
         >
@@ -69,6 +71,7 @@ export function HmCategoryThumbList({
               alt={displayTitle(item.title)}
               loading="lazy"
               className="h-full w-full object-cover transition group-hover:scale-105"
+              onUnavailable="hide"
             />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden py-0.5">
@@ -77,6 +80,7 @@ export function HmCategoryThumbList({
             </p>
           </div>
         </Link>
+        </HmHomeCoverGate>
       ))}
     </div>
   );
@@ -122,7 +126,7 @@ export function HmCategoryFeaturedLead({
   return (
     <Link href={getHref(item)} className={`group min-w-0 overflow-hidden rounded-xl bg-white shadow-sm ${className}`.trim()}>
       <div className="hm-manset-img-frame hm-manset-img-frame--thumb">
-        <HmNewsImage item={item} alt={displayTitle(item.title)} className="transition duration-500 group-hover:scale-105" />
+        <HmNewsImage item={item} alt={displayTitle(item.title)} className="transition duration-500 group-hover:scale-105" onUnavailable="hide" />
       </div>
       <div className="p-3">
         <p className="text-[10px] font-black tracking-wide" style={{ color }}>
@@ -158,6 +162,7 @@ export function HmCategoryBoxGrid({
   const desktopListItems = coveredList.slice(0, CATEGORY_BOX_DESKTOP_LIST_SLOTS);
   const mobileItems = [lead, ...coveredList].slice(0, CATEGORY_BOX_MOBILE_QUAD_TOTAL);
   return (
+    <HmHomeCoverGate item={lead}>
     <div
       className={`hm-category-box-grid ${className}`.trim()}
       data-hm-cat-slug={categorySlug || undefined}
@@ -175,5 +180,6 @@ export function HmCategoryBoxGrid({
         <HmCategoryThumbList items={desktopListItems} getHref={getHref} categorySlug={categorySlug} />
       </div>
     </div>
+    </HmHomeCoverGate>
   );
 }

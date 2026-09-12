@@ -10,17 +10,13 @@ import {
   readHmHeadlineAsPageBundle,
   readHmNewsArticleBoot,
 } from "@/lib/fetchHmNewsPageBundle";
-import { fetchHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 import { readHmNewsArticleBundleCache, writeHmNewsArticleBundleCache } from "@/lib/hmNewsArticleCache";
-import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
-import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
-import { resolveHmDomainSlugHint, writeHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
+import { resolveHmHaberPathSlug } from "@/lib/hmHaberPathSlug";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { applyHmNewsArticleMeta, applyHmNewsSiteHomeMeta, applyNewsArticleStructuredData, resetSeoToSiteDefaults } from "@/lib/pageSeo";
 import { PORTAL_BRAND_SHORT } from "@/lib/portalBrand";
 import { hmPublicSeoPath, hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { rewriteNewsBodyLinksForHm } from "@/lib/rewriteNewsBodyLinksForHm";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import HmRedirectToSonDakika from "@/pages/public/HmRedirectToSonDakika";
 import { HmYekpareFeaturesBand } from "@/components/HmYekpareFeaturesBand";
 import {
@@ -94,14 +90,19 @@ function isKoseVitrinArticle(n: NewsItem | null): boolean {
   return isKoseArticle(n);
 }
 
+function formatNewsDateLabel(raw: string | null | undefined, pattern: string): string {
+  if (!raw) return "";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return "";
+  return format(date, pattern, { locale: tr });
+}
+
 export default function HaberDetay() {
   const params = useParams();
-  const slug = params.id!;
   const [location, navigate] = useLocation();
+  const slug = resolveHmHaberPathSlug(params, location);
   const hmCtx = useHmPublicLinkContextOptional();
   const h = useHmPublicHref();
-  const host =
-    typeof window !== "undefined" ? (window.location.hostname.toLowerCase().split(":")[0] ?? "") : "";
   const { data: settings } = useGetSiteSettings();
   const siteIdForQuery = hmCtx?.siteId ?? null;
   const cachedBundle = useMemo(
@@ -160,38 +161,6 @@ export default function HaberDetay() {
       navigate(target, { replace: true });
     }
   }, [location, slug, news, navigate, h, articlePublicPath]);
-
-  /** Özel alanda eski `/haber/...` adresi → `/tr/{siteSlug}/haber/...` */
-  useEffect(() => {
-    const path = (location.split("?")[0] ?? "").trim();
-    if (!slug || !path.startsWith("/haber/")) return;
-    if (isDefaultPortalHost(host)) return;
-    let cancelled = false;
-    const cachedSlug = resolveHmDomainSlugHint(host) || resolveKnownHmEditorSlug(host);
-    if (cachedSlug) {
-      navigate(
-        `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(cachedSlug)}/haber/${encodeURIComponent(slug)}`,
-        { replace: true },
-      );
-      return;
-    }
-    void (async () => {
-      try {
-        const meta = await fetchHmMetaByDomain(host, { timeoutMs: 12_000, retries: 1 });
-        if (!meta?.slug || cancelled) return;
-        writeHmDomainSlugCache(host, meta.slug);
-        navigate(
-          `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(meta.slug)}/haber/${encodeURIComponent(slug)}`,
-          { replace: true },
-        );
-      } catch {
-        /* ignore */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [location, slug, host, navigate]);
 
   const relatedItems = useMemo(() => {
     const rows = bundle?.related ?? [];
@@ -587,7 +556,7 @@ function ArticleBody({
             title={article.title}
             categoryName={article.categoryName}
             categoryVariant={isPortalLayout ? "eyebrow" : "badge"}
-            dateLabel={format(new Date(article.createdAt), "d MMMM yyyy, HH:mm", { locale: tr })}
+            dateLabel={formatNewsDateLabel(article.createdAt, "d MMMM yyyy, HH:mm")}
             readMin={readMin}
             excerpt={excerpt}
             imageSrc={heroImageSrc}
@@ -697,7 +666,7 @@ function RelatedNewsBox({
                   {item.title}
                 </h3>
                 <p className="mt-1 text-[11px] font-semibold text-slate-400">
-                  {format(new Date(item.createdAt), "d MMM yyyy", { locale: tr })}
+                  {formatNewsDateLabel(item.createdAt, "d MMM yyyy")}
                 </p>
               </div>
             </Link>

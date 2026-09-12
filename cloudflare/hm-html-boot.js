@@ -14,6 +14,8 @@ import {
 export const HM_HTML_BOOT_BUDGET_MS = 280;
 /** WhatsApp/Facebook crawler — og-html container 15sn+ asılı kalmasın. */
 export const HM_SOCIAL_OG_BUDGET_MS = 800;
+/** Haber detay HTML — page-bundle origin (kenar cache miss). */
+export const HM_ARTICLE_BOOT_BUDGET_MS = 900;
 const HM_HTML_BOOT_MAX_JSON_CHARS = 180_000;
 
 export function withBudget(promise, ms = HM_HTML_BOOT_BUDGET_MS) {
@@ -97,6 +99,33 @@ export function shouldInstantHmRootRedirect(method, pathname, hostname) {
 }
 
 /** /haber/{slug} ve /tr/{site}/haber/{slug} — HTML boot + preload. */
+export function hmArticlePageBundleUrls(origin, slug, siteId) {
+  const enc = encodeURIComponent(String(slug || "").trim());
+  if (!enc) return [];
+  const o = String(origin || "").replace(/\/+$/, "");
+  const urls = [];
+  const sid = Number(siteId);
+  if (Number.isFinite(sid) && sid > 0) {
+    urls.push(`${o}/api/news/page-bundle/${enc}?siteId=${sid}`);
+  }
+  urls.push(`${o}/api/news/page-bundle/${enc}`);
+  return urls;
+}
+
+export function articleBundleFromPayload(json) {
+  if (!json || typeof json !== "object") return null;
+  if (json.article && String(json.article.title || "").trim()) return json;
+  if (String(json.title || "").trim()) {
+    return {
+      article: json,
+      related: Array.isArray(json.related) ? json.related : [],
+      kose: json.kose ?? null,
+      sidebar: json.sidebar && typeof json.sidebar === "object" ? json.sidebar : { authors: [], popular: [] },
+    };
+  }
+  return null;
+}
+
 export function parseHmNewsArticlePath(pathname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
   const nested = p.match(/^\/(?:tr|hm)\/[^/]+\/(haber|makale)\/([^/]+)$/i);

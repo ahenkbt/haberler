@@ -168,7 +168,7 @@ export async function ensureHmSharedRssCampaigns(): Promise<HmSharedRssSeedResul
       sourceType: "rss",
       intervalMinutes: 1440,
       dailyLimit: 80,
-      downloadImages: false,
+      downloadImages: true,
       headline: false,
       hmSiteIds: shaTargets,
       includeYekpareHaber: false,

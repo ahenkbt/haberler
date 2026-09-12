@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link } from "wouter";
-import { HmNewsImage } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, newsItemHasCoverImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 
 export const HM_TEPE_MANSET_ITEM_COUNT = 5;
@@ -18,7 +18,7 @@ export function HmTepeManset({
   getItemHref: (item: any) => string;
   accent?: string;
 }) {
-  const slides = items.slice(0, HM_TEPE_MANSET_ITEM_COUNT);
+  const slides = items.filter((item) => newsItemHasCoverImage(item)).slice(0, HM_TEPE_MANSET_ITEM_COUNT);
   const [activeIndex, setActiveIndex] = useState(0);
   const safeIndex = slides.length > 0 ? Math.min(activeIndex, slides.length - 1) : 0;
   const active = slides[safeIndex];
@@ -59,6 +59,7 @@ export function HmTepeManset({
         </Link>
 
         <div className="hm-tepe-manset__media">
+          <HmHomeCoverGate item={active}>
           <HmNewsImage
             item={active}
             alt={newsDisplayTitle(active.title)}
@@ -66,7 +67,9 @@ export function HmTepeManset({
             loading="eager"
             priority
             wrapperClassName="hm-tepe-manset__img-wrap"
+            onUnavailable="hide"
           />
+          </HmHomeCoverGate>
           <div className="hm-tepe-manset__media-fade" aria-hidden />
         </div>
       </div>

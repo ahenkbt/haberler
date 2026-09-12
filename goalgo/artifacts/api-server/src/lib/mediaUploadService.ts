@@ -319,7 +319,7 @@ function externalImageUrlCandidates(raw: string): string[] {
   return out.slice(0, 10);
 }
 
-function imageFetchHeaders(url: string): HeadersInit {
+export function imageFetchHeaders(url: string): HeadersInit {
   let referer: string | undefined;
   try {
     const u = new URL(url);
@@ -376,7 +376,7 @@ function isPrivateAddress(addr: string): boolean {
   return false;
 }
 
-async function isAllowedExternalImageUrl(raw: string): Promise<boolean> {
+export async function isAllowedExternalImageUrl(raw: string): Promise<boolean> {
   let parsed: URL;
   try {
     parsed = new URL(raw);
