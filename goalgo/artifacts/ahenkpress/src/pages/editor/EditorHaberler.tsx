@@ -182,7 +182,7 @@ export default function EditorHaberler() {
   const [tab, setTab] = useState<HaberlerTab>(() => readTabFromLocation(location));
   const [categorySlug, setCategorySlug] = useState(() => readKategoriFromLocation(location));
   const vitrinTheme = String(newsLayoutPrefs.hmVitrinTheme ?? "").trim().toLowerCase();
-  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal";
+  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal" || vitrinTheme === "vatan";
 
   useEffect(() => {
     setTab(readTabFromLocation(location));

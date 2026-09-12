@@ -25,6 +25,7 @@ import "@/styles/dunyadanKisaKisa.css";
 const PAGE_PER_FEED = 8;
 
 function resolveVitrinThemeAttr(theme: string | null | undefined): string {
+  if (theme === "vatan") return "vatan";
   if (theme === "corporate") return "corporate";
   if (theme === "gold") return "gold";
   if (theme === "ankara") return "ankara";
@@ -81,7 +82,7 @@ export default function DunyadanKisaKisaPage() {
   }, [hmCtx]);
 
   const pageBg = hmCtx ? "var(--hm-page-bg, #ffffff)" : "#ffffff";
-  const contentMax = layoutPrefs?.hmVitrinTheme === "corporate" ? "max-w-[1280px]" : "max-w-screen-xl";
+  const contentMax = layoutPrefs?.hmVitrinTheme === "corporate" || layoutPrefs?.hmVitrinTheme === "vatan" ? "max-w-[1280px]" : "max-w-screen-xl";
 
   return (
     <div className="min-h-screen" data-hm-vitrin-theme={vitrinThemeAttr} style={{ background: pageBg }}>

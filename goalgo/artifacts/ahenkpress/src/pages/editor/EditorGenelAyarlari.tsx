@@ -363,7 +363,7 @@ export default function EditorGenelAyarlari() {
   const corporateWarsSectionEnabled = p.hmCorporateWarsSectionEnabled === true;
   const corporateNationalDaysSectionEnabled = p.hmCorporateNationalDaysSectionEnabled === true;
   const corporateLayoutWidth: HmCorporateLayoutWidth = p.hmCorporateLayoutWidth === "contained" ? "contained" : "full";
-  const isCorporateSite = p.hmVitrinTheme === "corporate";
+  const isCorporateSite = p.hmVitrinTheme === "corporate" || p.hmVitrinTheme === "vatan";
   const editorSettingsSections = useMemo(() => {
     if (isCorporateSite) return EDITOR_SETTINGS_SECTIONS;
     return [
@@ -1878,12 +1878,13 @@ export default function EditorGenelAyarlari() {
             <Label className="font-semibold text-slate-900">Vitrin teması</Label>
             <p className="text-xs text-slate-500">
               <strong>HABER</strong> mevcut haber sitesi temasıdır. <strong>KURUMSAL</strong> aynı haber özelliklerini
-              premium kurumsal düzenle sunar. Renk paleti aşağıdaki Kırmızı / Gold / Mavi seçenekleriyle tüm siteye yayılır.
+              premium kurumsal düzenle sunar. <strong>VATAN</strong> hatıra / anıt temasıdır (VKD). Renk paleti aşağıdaki
+              Kırmızı / Gold / Mavi seçenekleriyle tüm siteye yayılır.
             </p>
             <RadioGroup
-              value={p.hmVitrinTheme === "corporate" ? "corporate" : "news"}
+              value={p.hmVitrinTheme === "vatan" ? "vatan" : p.hmVitrinTheme === "corporate" ? "corporate" : "news"}
               onValueChange={(val) => {
-                const v = val as Extract<HmVitrinThemeId, "news" | "corporate">;
+                const v = val as Extract<HmVitrinThemeId, "news" | "corporate" | "vatan">;
                 void commit({ hmVitrinTheme: v });
               }}
               disabled={saving}
@@ -1909,6 +1910,17 @@ export default function EditorGenelAyarlari() {
                     aria-hidden
                   />
                   KURUMSAL (premium kurumsal vitrin)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="vatan" id="hm-theme-vatan" />
+                <Label htmlFor="hm-theme-vatan" className="flex cursor-pointer items-center gap-2 font-normal text-sm">
+                  <span
+                    className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm border border-slate-300 shadow-sm"
+                    style={{ backgroundColor: HM_VITRIN_THEME.vatan.accent }}
+                    aria-hidden
+                  />
+                  VATAN (hatıra / anıt teması — bordo, lacivert, altın)
                 </Label>
               </div>
             </RadioGroup>

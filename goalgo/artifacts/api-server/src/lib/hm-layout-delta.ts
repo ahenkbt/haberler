@@ -21,6 +21,8 @@ export type HmLayoutDeltaInput = {
   overwritePages?: unknown;
   vkdPageSyncVersion?: unknown;
   vkdMenuSyncVersion?: unknown;
+  /** VKD Vatan teması gibi vitrin anahtarı. */
+  hmVitrinTheme?: unknown;
 };
 
 type CorporateMenuItem = Record<string, unknown> & { id?: string };
@@ -112,6 +114,10 @@ export function applyHmLayoutDelta(
 
   if (typeof delta.vkdMenuSyncVersion === "number" && Number.isFinite(delta.vkdMenuSyncVersion)) {
     layout.vkdMenuSyncVersion = delta.vkdMenuSyncVersion;
+  }
+
+  if (typeof delta.hmVitrinTheme === "string" && delta.hmVitrinTheme.trim()) {
+    layout.hmVitrinTheme = delta.hmVitrinTheme.trim().toLowerCase();
   }
 
   return { layout, updatedPages, menuUpdated };

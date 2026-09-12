@@ -20,7 +20,7 @@ export function HmSonDakikaChromeBand({ stickyTopPx, embedInVideoTvChrome = fals
   const layoutPrefs = ctx?.layoutPrefs ?? null;
   const chromeLayoutPrefs = useHmEffectiveLayoutPrefs() ?? layoutPrefs;
   const enabled = layoutPrefs?.hmNewsBreakingBandEnabled !== false;
-  const corporateHeader = layoutPrefs?.hmVitrinTheme === "corporate";
+  const corporateHeader = layoutPrefs?.hmVitrinTheme === "corporate" || layoutPrefs?.hmVitrinTheme === "vatan";
   const list = useHmHeaderSonDakikaItems("breaking");
 
   if (!enabled || corporateHeader || !layoutPrefs || list.length === 0) return null;

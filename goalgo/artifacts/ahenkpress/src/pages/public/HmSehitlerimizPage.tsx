@@ -4,12 +4,8 @@ import { ExternalLink, Search } from "lucide-react";
 import { apiUrl } from "@/lib/apiBase";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
-import {
-  SADE_EDITORIAL_EYEBROW_CLASS,
-  SADE_EDITORIAL_HERO_SECTION_CLASS,
-  SADE_HERO_GLOW_CLASS,
-} from "@/lib/yekpareSadeTheme";
 import { HmSehitSearchModule } from "@/components/HmSehitSearchModule";
+import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
 
 type MsbSehitRecord = {
   id: string;
@@ -133,54 +129,56 @@ export default function HmSehitlerimizPage() {
   }, [data?.items, years]);
 
   return (
-    <div className="min-w-0 bg-[#F5F1EB] text-[#16181C]">
-      <section className={SADE_EDITORIAL_HERO_SECTION_CLASS}>
-        <div className={SADE_HERO_GLOW_CLASS} />
-        <div className={`${shellClass} relative z-[1]`}>
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-10">
-            <div className="min-w-0">
-              <div className={`mb-4 ${SADE_EDITORIAL_EYEBROW_CLASS}`}>
-                Vatan Kahramanları Derneği
+    <div className="vatan-page min-w-0 bg-[#F6F1E8] text-[#16181C]">
+      <header className="vatan-hero">
+        <img
+          className="vatan-hero__img"
+          src={VATAN_ASSETS.sehitlerimiz}
+          alt="Anıt terasında yanan ebedî ateş"
+          fetchPriority="high"
+          decoding="async"
+          width={1280}
+          height={720}
+        />
+        <div className="vatan-hero__shade" />
+        <div className={`vatan-hero__inner ${shellClass}`}>
+          <p className="vatan-hero__kicker">Vatan Kahramanları Derneği</p>
+          <h1 className="vatan-hero__title">
+            Şehitlerimizi
+            <em>minnetle anıyoruz</em>
+          </h1>
+          <p className="vatan-hero__lead">
+            Millî Savunma Bakanlığı kaynaklı kayıt. Ad, rütbe ve yıl ile arayın. İsimler resmî listededir; bu sayfada uydurma kahramanlık hikâyesi yoktur.
+          </p>
+        </div>
+      </header>
+      <section className={`${shellClass} relative z-[1] py-8`}>
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-10">
+          <div className="min-w-0">
+            <div className="flex flex-row flex-wrap items-stretch gap-2.5">
+              <div className="shrink-0 rounded-xl border border-[#E6DDD0] bg-white px-4 py-3 shadow-sm">
+                <div className="font-serif text-2xl font-bold text-[#8C1A2E]">{years.length || "…"}</div>
+                <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Yıl ({stats.yearSpan})</div>
               </div>
-              <h1 className="font-serif text-3xl font-bold leading-tight text-slate-950 md:text-5xl">
-                Şehitlerimizi
-                <span className="mt-1 block bg-gradient-to-br from-[#C9A84C] via-[#e8c96a] to-[#C9A84C] bg-clip-text italic text-transparent">
-                  Minnetle Anıyoruz
-                </span>
-              </h1>
-              <div className="mt-6 flex flex-row flex-wrap items-stretch gap-2.5">
-                <div className="shrink-0 rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm">
-                  <div className="font-serif text-2xl font-bold text-[#0f766e]">{years.length || "…"}</div>
-                  <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Yıl ({stats.yearSpan})</div>
-                </div>
-                {stats.peakYear ? (
-                  <div className="shrink-0 rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm">
-                    <div className="font-serif text-sm font-bold text-[#0f766e]">{stats.peakYear}</div>
-                    <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
-                      En yoğun yıl ({stats.peakCount})
-                    </div>
+              {stats.peakYear ? (
+                <div className="shrink-0 rounded-xl border border-[#E6DDD0] bg-white px-4 py-3 shadow-sm">
+                  <div className="font-serif text-sm font-bold text-[#8C1A2E]">{stats.peakYear}</div>
+                  <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+                    En yoğun yıl ({stats.peakCount})
                   </div>
-                ) : null}
-              </div>
-              <div className="mt-6 max-w-xl rounded-xl border border-emerald-100 bg-white px-5 py-4 shadow-sm">
-                <p className="font-serif text-sm italic leading-7 text-slate-700">
-                  Ne mutlu Türk milletinin bir ferdi olarak bu vatan için canını verebilen kahramanlara.
-                </p>
-                <span className="mt-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
-                  — Gazi Mustafa Kemal Atatürk
-                </span>
-              </div>
+                </div>
+              ) : null}
             </div>
-            <div className="w-full min-w-0">
-              <HmSehitSearchModule
-                variant="embedded"
-                activeKind="tsk"
-                showKindTabs
-                showFullListLinks
-                initialQ={search}
-                onTskSearch={(q) => setSearch(q.trim())}
-              />
-            </div>
+          </div>
+          <div className="w-full min-w-0">
+            <HmSehitSearchModule
+              variant="embedded"
+              activeKind="tsk"
+              showKindTabs
+              showFullListLinks
+              initialQ={search}
+              onTskSearch={(q) => setSearch(q.trim())}
+            />
           </div>
         </div>
       </section>

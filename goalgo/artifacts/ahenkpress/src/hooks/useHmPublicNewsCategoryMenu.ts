@@ -76,7 +76,7 @@ export function useHmPublicNewsCategoryMenu() {
     [apiCats, layoutPrefs, siteId, siteSlug],
   );
 
-  const isCorporateSite = layoutPrefs?.hmVitrinTheme === "corporate";
+  const isCorporateSite = layoutPrefs?.hmVitrinTheme === "corporate" || layoutPrefs?.hmVitrinTheme === "vatan";
 
   const rssCategoryRows = useMemo(
     () =>

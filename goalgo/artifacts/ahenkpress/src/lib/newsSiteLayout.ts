@@ -16,6 +16,7 @@ import {
   VKD_ACCOUNT_NAME,
   VKD_DONATION_ACCOUNTS,
 } from "./vkdPublicContact";
+import { VATAN_DEFAULT_SLIDER_ITEMS, VATAN_MENU_ITEMS, VATAN_THEME_ID } from "./hmVatanTheme";
 export type MansetVariant =
   | "split"
   | "full-thumbs"
@@ -44,6 +45,7 @@ export type HmVitrinThemeId =
   | "ahenkhaber"
   | "modern"
   | "corporate"
+  | "vatan"
   | "default"
   | "ankara"
   | "gold"
@@ -63,6 +65,7 @@ export function normalizeHmVitrinTheme(theme: string | null | undefined): HmVitr
   if (raw === "sumbul" || raw === "yekpare") return "sumbul";
   if (raw === "ajans" || raw === "agency" || raw === "aa") return "news";
   if (raw === "corporate" || raw === "kurumsal") return "corporate";
+  if (raw === "vatan") return "vatan";
   if (raw === "classic" || raw === "klasik" || raw === "portal") return "classic";
   if (raw === "portal3" || raw === "portal-3" || raw === "ucuncu") return "portal3";
   if (raw === "esen" || raw === "esenhaber" || raw === "esen-home") return "esen";
@@ -73,6 +76,12 @@ export function normalizeHmVitrinTheme(theme: string | null | undefined): HmVitr
   if (raw === "news" || raw === "haber" || raw === "default") return "news";
   if (raw === "ankara" || raw === "gold") return raw as HmVitrinThemeId;
   return "news";
+}
+
+/** Kurumsal vitrin ailesi: `corporate` ve VKD hatıra teması `vatan`. */
+export function isHmCorporateLikeTheme(theme: string | null | undefined): boolean {
+  const t = normalizeHmVitrinTheme(theme);
+  return t === "corporate" || t === VATAN_THEME_ID;
 }
 
 /** Kaldırılan anasayfa modülleri (ajans/WSJ blokları, kategori haber kutuları). */
@@ -374,7 +383,7 @@ export function resolveHmHeaderRightSlot(
 ): HmHeaderRightSlotId | null {
   const explicit = parseHmHeaderRightSlot(prefs?.hmHeaderRightSlot);
   if (explicit) return explicit;
-  if (normalizeHmVitrinTheme(prefs?.hmVitrinTheme) === "corporate") return "text-search";
+  if (isHmCorporateLikeTheme(prefs?.hmVitrinTheme)) return "text-search";
   if (
     resolveFinanceWeatherAtLogoSide(prefs) &&
     (normalizeHmVitrinTheme(prefs?.hmVitrinTheme) === "sumbul" ||
@@ -431,7 +440,7 @@ export function resolveShowYekpareIconMenu(
 export function resolveHmNavStripTransparent(
   prefs: NewsSiteLayoutPrefs | null | undefined,
 ): boolean {
-  if (normalizeHmVitrinTheme(prefs?.hmVitrinTheme) === "corporate") return false;
+  if (isHmCorporateLikeTheme(prefs?.hmVitrinTheme)) return false;
   if (parseHeaderPreset(prefs?.headerPreset) === "trabzonik") return false;
   const preset = parseYekpareMenuPreset(prefs?.yekpareMenuPreset);
   return preset === "yekpare-icons" || preset === "custom";
@@ -986,6 +995,7 @@ export const HM_VITRIN_THEME_SHORT_LABELS: Partial<Record<HmVitrinThemeId, strin
   ahenkhaber: HM_VITRIN_THEME_FLOWER_LABELS.ahenkhaber,
   modern: HM_VITRIN_THEME_FLOWER_LABELS.modern,
   corporate: HM_VITRIN_THEME_FLOWER_LABELS.corporate,
+  vatan: HM_VITRIN_THEME_FLOWER_LABELS.vatan,
   ankara: HM_VITRIN_THEME_FLOWER_LABELS.ankara,
   gold: HM_VITRIN_THEME_FLOWER_LABELS.gold,
   sumbul: HM_VITRIN_THEME_FLOWER_LABELS.sumbul,
@@ -1067,7 +1077,7 @@ export function isHmNewsModuleCompatibleWithTheme(
   moduleId: HmNewsHomeModuleId,
 ): boolean {
   if (moduleId === "esenLeadPack") {
-    return normalizeHmVitrinTheme(theme) !== "corporate";
+    return !isHmCorporateLikeTheme(theme);
   }
   const mapped = HM_NEWS_MODULE_THEME_MAP[moduleId];
   if (!mapped?.length) return true;
@@ -1090,7 +1100,7 @@ export function resolveHmNewsClassicHeroLatestEnabled(
   if (p.hmNewsClassicHeroLatestEnabled === true) return true;
   if (p.hmNewsClassicHeroLatestEnabled === false) return false;
   const theme = normalizeHmVitrinTheme(p.hmVitrinTheme);
-  if (theme === "corporate" || theme === "ahenkhaber") return false;
+  if (isHmCorporateLikeTheme(theme) || theme === "ahenkhaber") return false;
   return (
     theme === "classic" ||
     theme === "portal3" ||
@@ -1126,12 +1136,12 @@ export function shouldShowHmNewsEditorModule(
   theme: HmVitrinThemeId | string | null | undefined,
   moduleId: HmNewsHomeModuleId,
 ): boolean {
-  if (normalizeHmVitrinTheme(theme) !== "corporate" && isHmNewsCorporateOnlyHomeModule(moduleId)) {
+  if (!isHmCorporateLikeTheme(theme) && isHmNewsCorporateOnlyHomeModule(moduleId)) {
     return false;
   }
   /** Gündemde Öne Çıkanlar — tüm haber siteleri editör modüllerinde (kurumsal vitrin hariç). */
   if (moduleId === "esenLeadPack") {
-    return normalizeHmVitrinTheme(theme) !== "corporate";
+    return !isHmCorporateLikeTheme(theme);
   }
   if (isHmNewsVitrinToggleModule(moduleId)) {
     return isHmNewsModuleCompatibleWithTheme(theme, moduleId);
@@ -2542,6 +2552,31 @@ const VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML = `<ul class="vkv-donation-bullets"><
 
 const VKD_DONATION_CHIP_ITEMS = ["🎖️ GAZİ HAKLARI", "🎓 EĞİTİM BURSU", "📜 TOPLUMSAL FAYDA"];
 
+/** VKD sitesi: Vatan teması, varsayılan hatıra slider’ı ve eksik menü maddeleri. */
+export function applyVkdVatanThemeToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
+  const slides = (prefs.corporateSliderItems ?? []).filter(
+    (item) => item.active !== false && String(item.title ?? "").trim(),
+  );
+  const menu = [...(prefs.hmCorporateMenuItems ?? [])];
+  const have = new Set(menu.map((item) => item.id));
+  for (const item of VATAN_MENU_ITEMS) {
+    if (!have.has(item.id)) {
+      menu.push({ ...item, enabled: true });
+    }
+  }
+  return {
+    ...prefs,
+    hmVitrinTheme: VATAN_THEME_ID,
+    hmCorporateLayoutWidth: prefs.hmCorporateLayoutWidth ?? "contained",
+    corporateSliderItems: slides.length ? prefs.corporateSliderItems : [...VATAN_DEFAULT_SLIDER_ITEMS],
+    hmCorporateMenuItems: menu,
+  };
+}
+
+export function applyVkdPublicLayoutDefaults(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
+  return applyVkdVatanThemeToLayoutPrefs(applyVkdDonationToLayoutPrefs(prefs));
+}
+
 /** VKD sitesi: API/DB boşsa destek bandı + IBAN varsayılanları (canlı vitrin). */
 export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
   if (!isHmDonationActive(prefs.hmCorporateDonation)) return prefs;
@@ -2928,7 +2963,7 @@ export function isHmNewsVideoTvFlagEnabled(p: NewsSiteLayoutPrefs | null | undef
 
 /** HABER vitrinde Video TV / Yektube (turk.eco/yp) modülü açık mı? */
 export function resolveHmNewsVideoTvEnabled(p: NewsSiteLayoutPrefs | null | undefined): boolean {
-  if (normalizeHmVitrinTheme(p?.hmVitrinTheme) === "corporate") return false;
+  if (isHmCorporateLikeTheme(p?.hmVitrinTheme)) return false;
   if (isHmNewsVideoTvFlagEnabled(p)) return true;
   return hasHmConfiguredVideoTvNavLink(p);
 }
@@ -2950,7 +2985,7 @@ function normalizeThemeDefaultHiddenToggle(
 export function isHmHybridRssEnabled(
   p?: Pick<NewsSiteLayoutPrefs, "hybridRssEnabled" | "hmVitrinTheme"> | null,
 ): boolean {
-  if (p?.hmVitrinTheme === "corporate") return false;
+  if (isHmCorporateLikeTheme(p?.hmVitrinTheme)) return false;
   return p?.hybridRssEnabled !== false;
 }
 
@@ -3048,7 +3083,7 @@ export function sanitizeHmPublicLayoutPrefs(
     .trim()
     .toLowerCase();
   const theme = normalizeHmVitrinTheme(prefs.hmVitrinTheme);
-  if (theme === "corporate" && slug === "vkd") return prefs;
+  if (isHmCorporateLikeTheme(theme) && slug === "vkd") return prefs;
 
   const next: NewsSiteLayoutPrefs = { ...prefs };
 
@@ -3070,7 +3105,7 @@ export function sanitizeHmPublicLayoutPrefs(
     );
   }
 
-  if (theme !== "corporate") {
+  if (!isHmCorporateLikeTheme(theme)) {
     next.hmCorporateAtaturkCornerEnabled = false;
     next.hmCorporateCulturePortalBandEnabled = false;
     next.hmCorporateWarsSectionEnabled = false;
@@ -3090,7 +3125,7 @@ export function parseNewsSiteLayoutFromJson(
 ): NewsSiteLayoutPrefs {
   if (!raw || !String(raw).trim()) {
     const base = { ...defaultNewsSiteLayoutPrefs };
-    return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
+    return siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdPublicLayoutDefaults(base) : base;
   }
   try {
     const j = JSON.parse(raw) as Partial<NewsSiteLayoutPrefs>;
@@ -3278,7 +3313,7 @@ export function parseNewsSiteLayoutFromJson(
     const hmHeaderRightBannerUrl = hmHeaderRightBannerUrlRaw ? hmHeaderRightBannerUrlRaw.slice(0, 2000) : null;
     const hmHeaderRightCustomTextRaw = String((j as { hmHeaderRightCustomText?: unknown }).hmHeaderRightCustomText ?? "").trim();
     const hmHeaderRightCustomText = hmHeaderRightCustomTextRaw ? hmHeaderRightCustomTextRaw.slice(0, 500) : null;
-    const isCorporateTheme = hmVitrinTheme === "corporate";
+    const isCorporateTheme = isHmCorporateLikeTheme(hmVitrinTheme);
     const corporateLayoutWidthRaw = String((j as { hmCorporateLayoutWidth?: unknown }).hmCorporateLayoutWidth ?? "")
       .trim()
       .toLowerCase();
@@ -3638,11 +3673,11 @@ export function parseNewsSiteLayoutFromJson(
       ).filter((id) => !isHmNewsRetiredHomeModule(id)),
     };
     const withVkd =
-      siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(layoutResult) : layoutResult;
+      siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdPublicLayoutDefaults(layoutResult) : layoutResult;
     return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
   } catch {
     const base = { ...defaultNewsSiteLayoutPrefs };
-    const withVkd = siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdDonationToLayoutPrefs(base) : base;
+    const withVkd = siteSlug?.trim().toLowerCase() === "vkd" ? applyVkdPublicLayoutDefaults(base) : base;
     return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
   }
 }

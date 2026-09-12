@@ -61,7 +61,7 @@ export function HmVideoTvShell({ children }: { children: ReactNode }) {
   const stackTopPx = showPlatformNav ? 52 : 0;
   const logo = layoutPrefs.logoUrl?.trim();
   const vitrinThemeAttr =
-    layoutPrefs.hmVitrinTheme === "ankara" || layoutPrefs.hmVitrinTheme === "gold" || layoutPrefs.hmVitrinTheme === "corporate"
+    layoutPrefs.hmVitrinTheme === "ankara" || layoutPrefs.hmVitrinTheme === "gold" || layoutPrefs.hmVitrinTheme === "corporate" || layoutPrefs.hmVitrinTheme === "vatan"
       ? layoutPrefs.hmVitrinTheme
       : undefined;
 

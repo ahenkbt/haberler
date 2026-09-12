@@ -22,9 +22,19 @@ import {
   SADE_EDITORIAL_PAGE_BG,
   SADE_HERO_GLOW_CLASS,
 } from "@/lib/yekpareSadeTheme";
+import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen text-slate-900" style={{ background: SADE_EDITORIAL_PAGE_BG }}>{children}</div>;
+  const ctx = useHmPublicLinkContextOptional();
+  const vatan = ctx?.layoutPrefs.hmVitrinTheme === "vatan";
+  return (
+    <div
+      className={vatan ? "vatan-page min-h-screen text-slate-900" : "min-h-screen text-slate-900"}
+      style={{ background: vatan ? "#F6F1E8" : SADE_EDITORIAL_PAGE_BG }}
+    >
+      {children}
+    </div>
+  );
 }
 
 function useHeritageContentShell(): string {
@@ -39,6 +49,8 @@ function Hero({
   summary,
   children,
   innerClass,
+  image,
+  imageAlt,
 }: {
   eyebrow: string;
   title: string;
@@ -46,7 +58,26 @@ function Hero({
   summary: string;
   children?: React.ReactNode;
   innerClass: string;
+  image?: string;
+  imageAlt?: string;
 }) {
+  if (image) {
+    return (
+      <header className="vatan-hero">
+        <img className="vatan-hero__img" src={image} alt={imageAlt ?? ""} fetchPriority="high" decoding="async" width={1280} height={720} />
+        <div className="vatan-hero__shade" />
+        <div className={`vatan-hero__inner ${innerClass}`}>
+          <p className="vatan-hero__kicker">{eyebrow}</p>
+          <h1 className="vatan-hero__title">
+            {title}
+            {subtitle ? <em>{subtitle}</em> : null}
+          </h1>
+          <p className="vatan-hero__lead">{summary}</p>
+          {children ? <div className="mt-6">{children}</div> : null}
+        </div>
+      </header>
+    );
+  }
   return (
     <section className={SADE_EDITORIAL_HERO_SECTION_CLASS}>
       <div className={SADE_HERO_GLOW_CLASS} />
@@ -316,6 +347,8 @@ export function HmCorporateNationalDaysPage() {
         subtitle="Anma Takvimi"
         summary="Türkiye'nin resmî millî günleri, zafer bayramları, anma törenleri ve il il kurtuluş günleri. Şehitlerimizi ve gazilerimizi saygıyla anıyoruz."
         innerClass={innerClass}
+        image={ctx?.layoutPrefs.hmVitrinTheme === "vatan" ? VATAN_ASSETS.milliGunler : undefined}
+        imageAlt="Anadolu şafağı, hilal ve gelincik motifli manzara"
       >
         <StatsGrid
           stats={[

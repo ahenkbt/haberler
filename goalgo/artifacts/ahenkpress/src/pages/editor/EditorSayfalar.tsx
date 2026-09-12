@@ -290,7 +290,7 @@ export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?:
                     disabled={saving}
                     minHeightClass="min-h-[260px]"
                     importSource={pg.importSource}
-                    corporatePreview={newsLayoutPrefs.hmVitrinTheme === "corporate"}
+                    corporatePreview={newsLayoutPrefs.hmVitrinTheme === "corporate" || newsLayoutPrefs.hmVitrinTheme === "vatan"}
                     previewSite={
                       site
                         ? { id: site.id, slug: site.slug, domain: site.domain ?? null }

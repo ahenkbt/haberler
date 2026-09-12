@@ -26,6 +26,14 @@ export const HM_VITRIN_THEME = {
     pageMuted: "#ffffff",
     tickerLabelHi: "#d4af37",
   },
+  vatan: {
+    accent: "#8c1a2e",
+    accent2: "#0b1c33",
+    brandLabel: "#c9a84c",
+    pageBg: "#f6f1e8",
+    pageMuted: "#fbf8f2",
+    tickerLabelHi: "#c9a84c",
+  },
   classic: {
     accent: "#b00020",
     accent2: "#071b34",
@@ -111,6 +119,7 @@ export type HmResolvedColorPalette = "red" | "gold" | "blue";
  * | ahenkhaber | #cc0000 kırmızı          | Begonya    |
  * | modern     | dinamik / site rengi     | Yasemin    |
  * | corporate  | #0d63b6 mavi             | Orkide     |
+ * | vatan      | #8c1a2e bordo            | Gelincik   |
  * | ankara     | #c40021 kırmızı          | Kızıl Lale |
  * | gold       | #b8941e altın            | Sarı Lale  |
  */
@@ -125,6 +134,7 @@ export const HM_VITRIN_THEME_FLOWER_LABELS = {
   ahenkhaber: "Begonya",
   modern: "Yasemin",
   corporate: "Orkide",
+  vatan: "Gelincik",
   ankara: "Kızıl Lale",
   gold: "Sarı Lale",
   sumbul: "Sümbül",
@@ -143,6 +153,7 @@ export function hmVitrinAccentHex(theme: string | null | undefined): string {
   if (theme === "ankara") return HM_VITRIN_THEME.ankara.accent;
   if (theme === "gold") return HM_VITRIN_THEME.gold.accent;
   if (theme === "corporate") return HM_VITRIN_THEME.corporate.accent;
+  if (theme === "vatan") return HM_VITRIN_THEME.vatan.accent;
   if (theme === "classic") return HM_VITRIN_THEME.classic.accent;
   if (theme === "portal3") return HM_VITRIN_THEME.portal3.accent;
   if (theme === "esen") return HM_VITRIN_THEME.esen.accent;
@@ -188,6 +199,7 @@ export function resolveHmColorPalette(
   if (palette === "red" || palette === "gold" || palette === "blue") return palette;
   if (theme === "gold") return "gold";
   if (theme === "corporate") return "blue";
+  if (theme === "vatan") return "red";
   if (theme === "classic") return "red";
   if (theme === "portal3") return "red";
   if (theme === "esen") return "red";
@@ -472,6 +484,7 @@ export const HM_FLOWER_THEME_EDITOR_OPTIONS = [
   { themeKey: "modern", flower: HM_VITRIN_THEME_FLOWER_LABELS.modern, description: "Modern haber vitrini" },
   { themeKey: "sumbul", flower: HM_VITRIN_THEME_FLOWER_LABELS.sumbul, description: "Yekpare haber teması (mavi)" },
   { themeKey: "corporate", flower: HM_VITRIN_THEME_FLOWER_LABELS.corporate, description: "Kurumsal mavi" },
+  { themeKey: "vatan", flower: HM_VITRIN_THEME_FLOWER_LABELS.vatan, description: "Vatan hatıra teması (bordo / lacivert / altın)" },
   { themeKey: "ankara", flower: HM_VITRIN_THEME_FLOWER_LABELS.ankara, description: "Ankara kırmızısı" },
   { themeKey: "gold", flower: HM_VITRIN_THEME_FLOWER_LABELS.gold, description: "Altın premium" },
 ] as const;
@@ -530,6 +543,7 @@ export function resolveFlowerThemeKeyFromVitrin(vitrinTheme: string | null | und
   const key = String(vitrinTheme ?? "news").trim().toLowerCase();
   if (key === "default") return "news";
   if (key === "corporate") return "corporate";
+  if (key === "vatan") return "vatan";
   if (HM_FLOWER_THEME_EDITOR_OPTIONS.some((opt) => opt.themeKey === key)) return key;
   return "news";
 }
