@@ -175,9 +175,10 @@ jobs:
 
       # wrangler secret put production'a yazar. versions secret put yeni bir
       # sürüm üretir; onu @100% yapmak eski Neon DATABASE_URL'i geri getirir
-      # (32356785593 → 5807ec05). Canlı zaten Hostinger ise secret put atlanır —
-      # "latest version isn't currently deployed" Workers Builds yarışında job'u
-      # kırmasın diye. versions deploy @100% KULLANILMAZ.
+      # (32356785593 → 5807ec05). Canlı Neon ise DATABASE_URL secret put atlanır
+      # (haber DB'yi Hostinger'a çekmemek için). YEKTUBE_* yine yazılır ve
+      # sonraki Redeploy adımı skip_secrets'ten bağımsız çalışır.
+      # versions deploy @100% KULLANILMAZ.
       - name: Skip secret sync when Hostinger is already live
         id: live_db
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
@@ -262,6 +263,7 @@ jobs:
           echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
 
       - name: Sync YEKTUBE Worker secrets
+        id: yektube_secrets
         continue-on-error: true
         # Neon cutover sonrası DATABASE_URL sync skip olsa bile YEKTUBE_* kaybolmasın
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
@@ -273,6 +275,7 @@ jobs:
           YEKTUBE_DB_WRITE: ${{ secrets.YEKTUBE_DB_WRITE || '' }}
         run: |
           set -euo pipefail
+          echo "uploaded=false" >> "$GITHUB_OUTPUT"
           put_secret() {
             local name="$1"
             local value="$2"
@@ -300,13 +303,52 @@ jobs:
           put_secret YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put_secret YEKTUBE_DB_READ "${YEKTUBE_DB_READ:-yektube}"
           put_secret YEKTUBE_DB_WRITE "${YEKTUBE_DB_WRITE:-yektube}"
+          echo "uploaded=true" >> "$GITHUB_OUTPUT"
 
-      - name: Redeploy Worker so Container picks up DATABASE_URL
-        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true' && steps.live_db.outputs.skip_secrets != 'true'
+      # secret put yalnızca Worker'a yazar. Warm Container process.env eski kalır
+      # (start() no-op). skip_secrets=true (canlı Neon) DATABASE_URL put'u atlar
+      # ama YEKTUBE_* yine yüklenir — Container'ı her zaman yeniden başlat.
+      # CONTAINER_ROLL değişmezse aynı DO instance eski env ile ısınır.
+      - name: Redeploy Worker so Container picks up YEKTUBE_* / DATABASE_URL
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy
+          YEKTUBE_SECRETS_UPLOADED: ${{ steps.yektube_secrets.outputs.uploaded || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ "${YEKTUBE_SECRETS_UPLOADED}" = "true" ]; then
+            echo "YEKTUBE_* secret put succeeded — rolling haberler Container so start() copies Worker secrets."
+          else
+            echo "YEKTUBE_* secret put skipped/failed — still rolling Container so existing Worker secrets are picked up."
+          fi
+          roll="yt-env-$(date -u +%Y%m%d%H%M%S)"
+          python3 -c "
+          import pathlib, re, sys
+          p = pathlib.Path('wrangler.toml')
+          text = p.read_text()
+          roll = sys.argv[1]
+          new, n = re.subn(r'(CONTAINER_ROLL\\s*=\\s*)\"[^\"]+\"', lambda m: m.group(1) + '\"' + roll + '\"', text, count=1)
+          if n != 1:
+              raise SystemExit(f'CONTAINER_ROLL replace failed in {p} (n={n})')
+          p.write_text(new)
+          print(f'CONTAINER_ROLL={roll}')
+          " "$roll"
+          attempt=1
+          max=6
+          while true; do
+            if pnpm exec wrangler deploy; then
+              exit 0
+            fi
+            if [ "$attempt" -ge "$max" ]; then
+              echo "::error::wrangler deploy (secret pickup) failed after ${max} attempts"
+              exit 1
+            fi
+            sleep_s=$((attempt * 12))
+            echo "wrangler deploy failed (attempt ${attempt}/${max}); retry in ${sleep_s}s"
+            sleep "$sleep_s"
+            attempt=$((attempt + 1))
+          done
 
       - name: Verify live dbProvider is neon (or hostinger)
         if: steps.cf.outputs.enabled == 'true'
@@ -397,6 +439,7 @@ jobs:
           sleep 15
           pnpm exec wrangler deploy -c wrangler.yektube.toml
       - name: Sync yektube secrets
+        id: yt_secrets
         if: steps.gate.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -404,8 +447,37 @@ jobs:
           SESSION_SECRET: ${{ secrets.SESSION_SECRET || '' }}
         run: |
           set -euo pipefail
+          echo "uploaded=false" >> "$GITHUB_OUTPUT"
           put() { [ -n "${2:-}" ] || return 0; printf '%s' "$2" | pnpm exec wrangler secret put "$1" -c wrangler.yektube.toml; }
           # YEKTUBE_DB_READ/WRITE live in wrangler.yektube.toml [vars] — do not secret-put (10053)
+          if [ -z "${YEKTUBE_DATABASE_URL:-}" ]; then
+            echo "::notice::YEKTUBE_DATABASE_URL secret yok — yektube Worker secret sync atlandı"
+            exit 0
+          fi
           put YEKTUBE_DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put DATABASE_URL "$YEKTUBE_DATABASE_URL"
           put SESSION_SECRET "$SESSION_SECRET"
+          echo "uploaded=true" >> "$GITHUB_OUTPUT"
+
+      # API_ORIGIN stays https://ahenk.net.tr (no haberler route conflict).
+      # secret put after deploy leaves a warm yektube Container without YEKTUBE_DATABASE_URL.
+      - name: Redeploy yektube Worker so Container picks up YEKTUBE_DATABASE_URL
+        if: steps.gate.outputs.skip != 'true' && steps.yt_secrets.outputs.uploaded == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: "16f5b996194174624e7969a3658bd2bb"
+        run: |
+          set -euo pipefail
+          roll="yt-wkr-$(date -u +%Y%m%d%H%M%S)"
+          python3 -c "
+          import pathlib, re, sys
+          p = pathlib.Path('wrangler.yektube.toml')
+          text = p.read_text()
+          roll = sys.argv[1]
+          new, n = re.subn(r'(CONTAINER_ROLL\\s*=\\s*)\"[^\"]+\"', lambda m: m.group(1) + '\"' + roll + '\"', text, count=1)
+          if n != 1:
+              raise SystemExit(f'CONTAINER_ROLL replace failed in {p} (n={n})')
+          p.write_text(new)
+          print(f'CONTAINER_ROLL={roll}')
+          " "$roll"
+          pnpm exec wrangler deploy -c wrangler.yektube.toml
