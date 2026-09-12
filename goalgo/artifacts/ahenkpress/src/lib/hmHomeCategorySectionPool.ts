@@ -175,6 +175,24 @@ export function hmNewsItemMatchesHomeCategorySlug(
   return false;
 }
 
+/**
+ * `/kategori/:slug` listesi: eşleşen satırları göster.
+ * API zaten kategoriye indirdiyse, kapak/alias post-filtresi listeyi boşaltmasın
+ * (ASG `/kategori/ankara` — total≈100, imageUrl boş).
+ */
+export function keepScopedCategoryPageItems<T>(
+  items: readonly T[],
+  categorySlug: string,
+  ctx: HmHomeCategoryMatchContext,
+): T[] {
+  const want = normalizeNewsCategorySlug(categorySlug);
+  if (!items.length) return [];
+  if (!want) return [...items];
+  const matched = items.filter((item) => hmNewsItemMatchesHomeCategorySlug(item, want, ctx));
+  if (matched.length > 0) return matched;
+  return [...items];
+}
+
 /** Kategori kutusu havuzu: API fetch → önceden seçilmiş → eşleşen havuz → (isteğe bağlı) site geneli. */
 export function resolveHomeCategorySectionPool<
   T extends { title?: string | null; publishedAt?: string | null; createdAt?: string | null; date?: string | null },

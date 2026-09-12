@@ -9,6 +9,19 @@ export function resolveHmNewsImageSrc(url: string | null | undefined): string {
   return resolveClientMediaSrc(u) || u;
 }
 
+function extractCoverFromHtml(html: string | null | undefined): string {
+  const raw = String(html ?? "");
+  if (!raw.trim()) return "";
+  const og =
+    raw.match(/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/i)?.[1] ??
+    raw.match(/content=["']([^"']+)["'][^>]*property=["']og:image(?::secure_url)?["']/i)?.[1];
+  if (og && isUsableNewsCoverSrc(og)) return og.trim();
+  const img =
+    raw.match(/<img\b[^>]*\b(?:src|data-src)=["'](https?:\/\/[^"'>\s]+)["']/i)?.[1] ??
+    raw.match(/url=["']?(https?:\/\/[^"'>\s]+\.(?:jpe?g|png|webp|gif)[^"'>\s]*)/i)?.[1];
+  return img && isUsableNewsCoverSrc(img) ? img.trim() : "";
+}
+
 /** Haber kartları — API/RSS farklı alan adlarından görsel URL. */
 export function resolveNewsItemImageUrl(
   item:
@@ -20,6 +33,9 @@ export function resolveNewsItemImageUrl(
         thumbnailUrl?: string | null;
         thumbnail?: string | null;
         enclosure?: { url?: string | null } | string | null;
+        spot?: string | null;
+        content?: string | null;
+        contentHtml?: string | null;
       }
     | null
     | undefined,
@@ -33,7 +49,7 @@ export function resolveNewsItemImageUrl(
     const s = String(raw ?? "").trim();
     if (s && isUsableNewsCoverSrc(s)) return s;
   }
-  return "";
+  return extractCoverFromHtml(item.spot) || extractCoverFromHtml(item.content) || extractCoverFromHtml(item.contentHtml);
 }
 
 /** WebP mirror hazır değilse veya yerel upload 404 ise harici kapak yedeği. */

@@ -15,7 +15,7 @@ import { inArray } from "drizzle-orm";
 import { displayNewsTitle } from "./rssTitleRepair.js";
 import { sanitizeDisplayText } from "./sanitizeDisplayText.js";
 import { normalizePublicMediaUrl } from "./normalizePublicMediaUrl.js";
-import { resolveNewsItemImageUrl } from "./news-display-image.js";
+import { extractNewsCoverFromHtml, resolveNewsItemImageUrl } from "./news-display-image.js";
 import { stripHaberlerShareAndChrome } from "./haberlerArticleHtmlCleanup.js";
 import { parseSeoVerificationJson } from "./seo-verification.js";
 import { resolveVideoCoverUrl, isUsableYoutubeCover, normalizeYoutubeCoverUrl } from "./youtubeCoverImages.js";
@@ -112,16 +112,19 @@ function serializePublishGroupFields(
   return { publishGroupId: group.id, publishGroupSiteIds: group.siteIds };
 }
 
-/** Site-local haberlerde kapak yalnızca DB'deki imageUrl — havuz/RSS zenginleştirmesi yok. */
-function serializeNewsCoverImageUrl(row: Pick<NewsRow, "siteId" | "imageUrl">): string | null {
+/** Site-local haberlerde havuz/RSS peer yok; aynı satırın spot/enclosure kapağı kullanılabilir. */
+function serializeNewsCoverImageUrl(
+  row: Pick<NewsRow, "siteId" | "imageUrl" | "spot"> & { rssSourceUrl?: string | null },
+): string | null {
   if (row.siteId != null && row.siteId > 0) {
     const stored = String(row.imageUrl ?? "").trim();
-    if (!stored) return null;
-    return normalizePublicMediaUrl(stored) ?? stored;
+    if (stored) return normalizePublicMediaUrl(stored) ?? stored;
+    return extractNewsCoverFromHtml(row.spot, row.rssSourceUrl);
   }
   return (
     normalizePublicMediaUrl(resolveNewsItemImageUrl(row)) ??
     resolveNewsItemImageUrl(row) ??
+    extractNewsCoverFromHtml(row.spot, row.rssSourceUrl) ??
     row.imageUrl
   );
 }

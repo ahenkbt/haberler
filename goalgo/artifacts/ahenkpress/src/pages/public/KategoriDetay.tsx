@@ -16,7 +16,7 @@ import { isHmHybridRssEnabled, resolveHmUnifiedRssFeedRows } from "@/lib/newsSit
 import { hmCategorySlug, humanizeNewsCategorySlug, normalizeNewsCategorySlug } from "@/lib/hmCategorySlug";
 import {
   buildHmKnownCanonicalCategorySlugs,
-  hmNewsItemMatchesHomeCategorySlug,
+  keepScopedCategoryPageItems,
   type HmHomeCategoryMatchContext,
 } from "@/lib/hmHomeCategorySectionPool";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG, isHmGlobalNewsCategorySlug } from "@/lib/hmGlobalNewsCategory";
@@ -39,7 +39,11 @@ import {
 } from "@/lib/hmHeadlinePool";
 import { hmSiteContentShellClass } from "@/lib/hmChromeLayout";
 import { markHmSpaReady } from "@/lib/hmSpaReady";
-import { buildHmCategoryHybridPath, buildHmCategoryNewsFallbackPath } from "@/lib/hmCategoryNewsQuery";
+import {
+  buildHmCategoryHybridPath,
+  buildHmCategoryNewsFallbackPath,
+  shouldUseCategoryNewsFallback,
+} from "@/lib/hmCategoryNewsQuery";
 
 const PAGE_SIZE = 60;
 /** Manşet altı kategori grid kutusu — ilk sayfa (4×5). PR #474 manşet dedupe korunur. */
@@ -321,18 +325,20 @@ export default function KategoriDetay() {
               offset,
             }),
           )) as CategoryNewsPage;
-          return normalizeCategoryNewsPage(raw);
+          const page = normalizeCategoryNewsPage(raw);
+          if (!shouldUseCategoryNewsFallback(page)) return page;
         } catch {
-          const raw = (await apiRequest(
-            buildHmCategoryNewsFallbackPath({
-              slug: categorySlug,
-              siteId: siteIdEff,
-              limit: PAGE_SIZE,
-              offset,
-            }),
-          )) as CategoryNewsPage;
-          return normalizeCategoryNewsPage(raw);
+          /* hibrit 5xx/timeout — /api/news */
         }
+        const raw = (await apiRequest(
+          buildHmCategoryNewsFallbackPath({
+            slug: categorySlug,
+            siteId: siteIdEff,
+            limit: PAGE_SIZE,
+            offset,
+          }),
+        )) as CategoryNewsPage;
+        return normalizeCategoryNewsPage(raw);
       }
       const params = new URLSearchParams({
         limit: String(PAGE_SIZE),
@@ -373,7 +379,7 @@ export default function KategoriDetay() {
       }
     }
     const want = normalizedSlug || slug;
-    return out.filter((item) => hmNewsItemMatchesHomeCategorySlug(item, want, categoryMatchContext));
+    return keepScopedCategoryPageItems(out, want, categoryMatchContext);
   }, [newsPages?.pages, normalizedSlug, slug, categoryMatchContext]);
 
   useEffect(() => {

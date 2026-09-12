@@ -5,6 +5,8 @@ export type NewsListImageEnrichInput = {
   rssSourceUrl?: string | null;
   isEditorManual?: boolean | null;
   tags?: string[] | null;
+  spot?: string | null;
+  content?: string | null;
 };
 
 /** Site-local haber satırları asla havuz/sync/RSS ile zenginleştirilmez. */

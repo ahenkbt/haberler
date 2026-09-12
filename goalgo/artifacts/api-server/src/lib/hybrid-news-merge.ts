@@ -203,6 +203,12 @@ export async function findCategoryForScope(
   return first != null ? { id: first } : null;
 }
 
+export function publicEditorScopedNewsFetchLimit(limit: number, offset: number): number {
+  const page = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 20;
+  const off = Number.isFinite(offset) && offset > 0 ? Math.floor(offset) : 0;
+  return Math.min(Math.max(page + off + 24, page), 160);
+}
+
 function dbToHybrid(item: DbSerialized, source: "db" | "author" = "db", rssImageUrl?: string | null): HybridNewsItem {
   const slug = item.slug;
   const ownImage = resolveNewsItemImageUrl(item);
