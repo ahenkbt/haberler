@@ -39,6 +39,16 @@ const HmPublicVideoTvLayoutMod = lazy(() =>
 );
 const FotoGaleriPublic = lazy(() => import("./pages/public/FotoGaleriPublic"));
 const HaberGonder = lazy(() => import("./pages/public/HaberGonder"));
+const HmAtaturkCornerPage = lazy(() => import("./pages/public/HmAtaturkCornerPage"));
+const HmCorporateWarsPage = lazy(() =>
+  import("./pages/public/HmCorporateHeritagePages").then((m) => ({ default: m.HmCorporateWarsPage })),
+);
+const HmCorporateNationalDaysPage = lazy(() =>
+  import("./pages/public/HmCorporateHeritagePages").then((m) => ({ default: m.HmCorporateNationalDaysPage })),
+);
+const HmCorporateCulturePortalPage = lazy(() =>
+  import("./pages/public/HmCorporateHeritagePages").then((m) => ({ default: m.HmCorporateCulturePortalPage })),
+);
 
 function HmPublicShell({ children }: { children: ReactNode }) {
   return (
@@ -197,6 +207,73 @@ export default function HmPublicApp() {
                   <HmNestedLayout>
                     <LazyChunk>
                       <HaberGonder />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            {/* Kurumsal miras sayfaları — segmentler HM_RESERVED_HM_ROUTE_SEGMENTS'te; `/tr/:slug/:pageSlug`'a düşmemeli. */}
+            <Route path="/tr/:slug/savaslar/:warSlug">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmCorporateWarsPage />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/tr/:slug/savaslar">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmCorporateWarsPage />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/tr/:slug/milli-gunler">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmCorporateNationalDaysPage />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/tr/:slug/kultur-portali">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmCorporateCulturePortalPage />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/tr/:slug/ataturk/:pageSlug">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmAtaturkCornerPage />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/tr/:slug/ataturk">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmAtaturkCornerPage />
                     </LazyChunk>
                   </HmNestedLayout>
                 </HmPublicShell>
