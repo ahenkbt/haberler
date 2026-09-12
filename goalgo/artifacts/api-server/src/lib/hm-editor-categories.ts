@@ -4,6 +4,7 @@ import { normalizeNewsCategorySlug } from "./categorySort";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG, isHmOptInNewsCategorySlug } from "./hm-global-news-category.js";
 import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
 import { filterCorporatePublicCategoryRows, VKD_PUBLIC_NEWS_CATEGORY_SLUGS } from "./hm-corporate-news-policy.js";
+import { isHmCorporateLikeTheme } from "./hm-corporate-like-theme.js";
 
 /** layoutJson.hmActivatedCategorySlugs → normalize edilmiş, tekilleştirilmiş slug listesi. */
 export function parseHmActivatedCategorySlugs(layout: Record<string, unknown>): string[] {
@@ -30,8 +31,7 @@ export function parseHmLayoutJson(raw: string | null | undefined): Record<string
 }
 
 export function isHmCorporateLayout(layout: Record<string, unknown>): boolean {
-  const theme = String(layout.hmVitrinTheme ?? "").trim().toLowerCase();
-  return theme === "corporate" || theme === "kurumsal";
+  return isHmCorporateLikeTheme(layout.hmVitrinTheme);
 }
 
 /** KURUMSAL vitrinde köşe yazarları; tanımsızsa kapalı. */

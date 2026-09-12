@@ -1,3 +1,5 @@
+import { isHmCorporateLikeTheme, isHmNewsFallbackVitrinTheme } from "./hm-corporate-like-theme.js";
+
 /** VKD gibi sitelerde `hmExtraPages` HTML ile layout_json büyüyebilir; üst sınır import scriptleriyle uyumlu. */
 export const HM_LAYOUT_JSON_MAX_CHARS = 2_000_000;
 
@@ -84,6 +86,14 @@ export function mergeHmLayoutPatch(
       ...(prev.hmCategoryColors as Record<string, unknown>),
       ...(inc.hmCategoryColors as Record<string, unknown>),
     };
+  }
+  // Vitrin-only PATCH must never flip corporate/VKD/Vatan onto news/esen defaults.
+  // Explicit theme changes go through Genel Ayarlar (not vitrinOnly).
+  if (opts?.vitrinOnly && isHmCorporateLikeTheme(prev.hmVitrinTheme)) {
+    const nextTheme = merged.hmVitrinTheme;
+    if (!isHmCorporateLikeTheme(nextTheme) || isHmNewsFallbackVitrinTheme(nextTheme)) {
+      merged.hmVitrinTheme = prev.hmVitrinTheme;
+    }
   }
   return merged;
 }

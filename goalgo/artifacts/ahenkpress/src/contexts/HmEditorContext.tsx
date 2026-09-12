@@ -212,7 +212,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
       : mergedPrefs;
     const layoutPayload =
       opts?.vitrinOnly === true
-        ? pickVitrinLayoutPatchForSave(vitrinBase)
+        ? pickVitrinLayoutPatchForSave(vitrinBase, newsLayoutPrefs.hmVitrinTheme)
         : opts?.layoutPatch
           ? (opts.layoutPatch as Record<string, unknown>)
           : mergedPrefs;

@@ -15,7 +15,10 @@ import {
   applyVkdVatanThemeToLayoutPrefs,
   defaultNewsSiteLayoutPrefs,
   isHmCorporateLikeTheme,
+  mergeNewsSiteLayoutForSave,
   normalizeHmVitrinTheme,
+  pickVitrinLayoutPatchForSave,
+  sanitizeHmPublicLayoutPrefs,
 } from "./newsSiteLayout";
 import { isHmHeaderChromeContained, isHmSiteLayoutContained } from "./hmChromeLayout";
 
@@ -96,5 +99,27 @@ describe("Vatan theme", () => {
     const kunyeIdx = next.hmCorporateMenuItems?.findIndex((item) => item.id === "vkd-menu-kunye") ?? -1;
     expect(ataturkIdx).toBeGreaterThanOrEqual(0);
     expect(kunyeIdx).toBeGreaterThan(ataturkIdx);
+    expect(next.hmVitrinTheme).not.toBe("esen");
+    expect(next.hmVitrinTheme).not.toBe("news");
+  });
+
+  it("does not let vitrin-only saves flip Vatan or corporate onto news defaults", () => {
+    const vatan = applyVkdVatanThemeToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmVitrinTheme: "corporate",
+    });
+    const vitrinPatch = pickVitrinLayoutPatchForSave(
+      { ...vatan, ...defaultNewsSiteLayoutPrefs, hmVitrinTheme: "esen" },
+      vatan.hmVitrinTheme,
+    );
+    expect(vitrinPatch.hmVitrinTheme).toBeUndefined();
+
+    const merged = mergeNewsSiteLayoutForSave(vatan, { ...defaultNewsSiteLayoutPrefs }, { vitrinOnly: true });
+    expect(merged.hmVitrinTheme).toBe("vatan");
+    expect(isHmCorporateLikeTheme(merged.hmVitrinTheme)).toBe(true);
+
+    const sanitized = sanitizeHmPublicLayoutPrefs(vatan, "vkd");
+    expect(sanitized.hmVitrinTheme).toBe("vatan");
+    expect(sanitized.hmCorporateAtaturkCornerEnabled).toBe(true);
   });
 });

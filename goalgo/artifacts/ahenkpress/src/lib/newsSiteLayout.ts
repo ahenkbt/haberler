@@ -3705,13 +3705,21 @@ const HM_LAYOUT_MENU_SAVE_KEYS = [
 ] as const;
 
 /** Vitrin PATCH — sayfa HTML + menü alanları sunucudaki kayıttan kalır. */
-export function pickVitrinLayoutPatchForSave(prefs: NewsSiteLayoutPrefs): Record<string, unknown> {
+export function pickVitrinLayoutPatchForSave(
+  prefs: NewsSiteLayoutPrefs,
+  currentTheme?: string | null,
+): Record<string, unknown> {
   const raw = { ...prefs } as Record<string, unknown>;
   for (const k of HM_LAYOUT_HEAVY_SAVE_KEYS) delete raw[k];
   for (const k of HM_LAYOUT_MENU_SAVE_KEYS) delete raw[k];
   delete raw.vkdEditorTouchedAt;
   delete raw.vkdPageSyncVersion;
   delete raw.vkdMenuSyncVersion;
+  const themeToProtect = currentTheme ?? prefs.hmVitrinTheme;
+  // Kurumsal / Vatan vitrin kaydı tema anahtarını haber/esen varsayılanına yazmasın.
+  if (isHmCorporateLikeTheme(themeToProtect)) {
+    delete raw.hmVitrinTheme;
+  }
   return raw;
 }
 
@@ -3743,6 +3751,10 @@ export function mergeNewsSiteLayoutForSave(
     merged.hmCorporatePageHtml = Object.keys(next).length > 0 ? next : undefined;
   } else if (patch.hmCorporatePageHtml === null && opts?.allowClearCorporatePageHtml === true) {
     merged.hmCorporatePageHtml = undefined;
+  }
+
+  if (opts?.vitrinOnly && isHmCorporateLikeTheme(base.hmVitrinTheme) && !isHmCorporateLikeTheme(merged.hmVitrinTheme)) {
+    merged.hmVitrinTheme = base.hmVitrinTheme;
   }
 
   return merged;

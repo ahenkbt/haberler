@@ -67,6 +67,7 @@ import {
   type HmNewsHomeModuleId,
   type HmCorporateHomeModuleId,
   type NewsSiteLayoutPrefs,
+  isHmCorporateLikeTheme,
   HM_HUB_ONLY_HOME_MODULE_IDS,
   HM_HEADER_RIGHT_SLOT_EDITOR_OPTIONS,
   resolveHmHeaderRightSlot,
@@ -269,7 +270,7 @@ export default function EditorVitrinAyarlari() {
     });
   }, [newsHomeOrder, p]);
   const corporateHomeOrder = resolveHmHomeModuleOrder(p.hmCorporateHomeModuleOrder, HM_CORPORATE_HOME_MODULE_ORDER);
-  const isCorporateEditorSite = p.hmVitrinTheme === "corporate" || p.hmVitrinTheme === "vatan";
+  const isCorporateEditorSite = isHmCorporateLikeTheme(p.hmVitrinTheme);
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
   const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
@@ -2336,7 +2337,16 @@ export default function EditorVitrinAyarlari() {
 
         <ButtonReset
           disabled={saving}
-          onReset={() => void commit({ ...defaultNewsSiteLayoutPrefs })}
+          onReset={() => {
+            if (isCorporateEditorSite) {
+              void commit({
+                ...defaultNewsSiteLayoutPrefs,
+                hmVitrinTheme: p.hmVitrinTheme === "vatan" ? "vatan" : "corporate",
+              });
+              return;
+            }
+            void commit({ ...defaultNewsSiteLayoutPrefs });
+          }}
         />
       </div>
     </EditorLayout>

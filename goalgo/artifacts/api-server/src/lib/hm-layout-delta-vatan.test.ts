@@ -6,4 +6,15 @@ describe("hm-layout-delta Vatan theme", () => {
     const { layout } = applyHmLayoutDelta({ hmVitrinTheme: "corporate" }, { hmVitrinTheme: "vatan" });
     expect(layout.hmVitrinTheme).toBe("vatan");
   });
+
+  it("does not treat a Vatan delta as a news-home default", () => {
+    const { layout } = applyHmLayoutDelta(
+      { hmVitrinTheme: "corporate", hmCorporateAtaturkCornerEnabled: true },
+      { hmVitrinTheme: "vatan" },
+    );
+    expect(layout.hmVitrinTheme).toBe("vatan");
+    expect(layout.hmVitrinTheme).not.toBe("esen");
+    expect(layout.hmVitrinTheme).not.toBe("news");
+    expect(layout.hmCorporateAtaturkCornerEnabled).toBe(true);
+  });
 });
