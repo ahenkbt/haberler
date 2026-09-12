@@ -47,7 +47,7 @@ export function hmPublicNewsItemAllowed(item, siteId, opts = {}) {
   const manual = item.isEditorManual === true || item.siteOnly === true;
   const allowCentralRss = opts.allowCentralRss === true;
 
-  // Kesin: başka sitenin yerel satırı yok — publish-group editör satırı hariç (ASG+AHG).
+  // Kesin: başka sitenin yerel satırı yok — publish-group editör satırı hariç (asg + ankarahabergundemi).
   if (sid != null && Number(sid) !== Number(siteId)) {
     const groupIds = Array.isArray(item.publishGroupSiteIds) ? item.publishGroupSiteIds : [];
     const inGroup = groupIds.some((id) => Number(id) === Number(siteId));

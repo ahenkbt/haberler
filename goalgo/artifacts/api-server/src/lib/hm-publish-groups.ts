@@ -1,33 +1,31 @@
 /**
- * Named HM editor publish groups — one news row, visible on every member site.
+ * Named HM editor publish group — one news row, visible on every member site.
  *
- * ASG (ankarasehirgazetesi.com, slug `asg`) and AHG (ankarahabergundemi.com,
- * slug `ankarahabergundemi`) share editor-manual / site_only stories.
- * RSS campaign copies, Yekpare central pool, and VKD stay out of this group.
+ * Live hosts (Cloudflare `x-yekpare-hm-redirect`):
+ *   ankarasehirgazetesi.com → hm_news_sites.slug `asg`
+ *   ankarahabergundemi.com  → hm_news_sites.slug `ankarahabergundemi`
+ * Do not treat `ahg` as a slug. Members are resolved from `hm_news_sites`
+ * by those live slugs or matching domains. RSS pool and VKD stay out.
  */
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { newsTable } from "@workspace/db";
 import { listHmNewsSitesCompat, type HmNewsSiteCompatRow } from "./hm-site-compat.js";
 
-export const HM_ASG_AHG_PUBLISH_GROUP_ID = "asg-ahg" as const;
+/** Internal group id — not an HM site slug. */
+export const HM_EDITOR_PUBLISH_GROUP_ID = "asg-ankarahabergundemi" as const;
+
+/** Canonical hm_news_sites.slug values from live redirects. */
+export const HM_EDITOR_PUBLISH_GROUP_SLUGS = ["asg", "ankarahabergundemi"] as const;
 
 export type HmPublishGroupDef = {
   id: string;
-  /** Canonical hm_news_sites.slug values. */
   slugs: readonly string[];
-  /** Extra slug tokens (user-facing aliases, domain stems). */
-  slugAliases: readonly string[];
-  /** Hostname fragments that identify a member. */
-  domainHints: readonly string[];
 };
 
-/** Only ASG+AHG unless another named group is added here. */
 export const HM_PUBLISH_GROUPS: readonly HmPublishGroupDef[] = [
   {
-    id: HM_ASG_AHG_PUBLISH_GROUP_ID,
-    slugs: ["asg", "ankarahabergundemi"],
-    slugAliases: ["ankarasehirgazetesi", "ahg"],
-    domainHints: ["ankarasehirgazetesi", "ankarahabergundemi"],
+    id: HM_EDITOR_PUBLISH_GROUP_ID,
+    slugs: HM_EDITOR_PUBLISH_GROUP_SLUGS,
   },
 ];
 
@@ -54,11 +52,44 @@ function normHost(raw: unknown): string {
     .replace(/^www\./, "");
 }
 
+function siteHosts(site: {
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+}): string[] {
+  return [site.domain, site.domain2, site.domain3].map(normHost).filter(Boolean);
+}
+
+/** Domain fallback when a row’s slug is missing — never the invented short code `ahg`. */
+function hostMatchesLiveSlug(host: string, slug: string): boolean {
+  if (slug === "asg") return host.includes("ankarasehirgazetesi");
+  if (slug === "ankarahabergundemi") return host.includes("ankarahabergundemi");
+  return false;
+}
+
 export function isSharedEditorPublishNews(row: {
   isEditorManual?: boolean | null;
   siteOnly?: boolean | null;
 }): boolean {
   return row.isEditorManual === true || row.siteOnly === true;
+}
+
+/** Same resolution as SHA seed: exact live slug, or domain of that host. */
+export function siteMatchesPublishGroupSlug(
+  site: {
+    slug?: string | null;
+    domain?: string | null;
+    domain2?: string | null;
+    domain3?: string | null;
+  },
+  slug: string,
+): boolean {
+  const want = normSlug(slug);
+  if (!HM_EDITOR_PUBLISH_GROUP_SLUGS.includes(want as (typeof HM_EDITOR_PUBLISH_GROUP_SLUGS)[number])) {
+    return false;
+  }
+  if (normSlug(site.slug) === want) return true;
+  return siteHosts(site).some((host) => hostMatchesLiveSlug(host, want));
 }
 
 export function publishGroupDefForSite(site: {
@@ -67,13 +98,8 @@ export function publishGroupDefForSite(site: {
   domain2?: string | null;
   domain3?: string | null;
 }): HmPublishGroupDef | null {
-  const slug = normSlug(site.slug);
-  const hosts = [site.domain, site.domain2, site.domain3].map(normHost).filter(Boolean);
-
   for (const group of HM_PUBLISH_GROUPS) {
-    if (group.slugs.includes(slug) || group.slugAliases.includes(slug)) return group;
-    if (group.domainHints.some((hint) => slug.includes(hint))) return group;
-    if (hosts.some((host) => group.domainHints.some((hint) => host.includes(hint)))) return group;
+    if (group.slugs.some((slug) => siteMatchesPublishGroupSlug(site, slug))) return group;
   }
   return null;
 }
@@ -82,7 +108,6 @@ export function indexHmPublishGroupsBySiteId(
   sites: Array<Pick<HmNewsSiteCompatRow, "id" | "slug" | "domain" | "domain2" | "domain3" | "active">>,
 ): Map<number, HmPublishGroupIndexEntry> {
   const membersByGroup = new Map<string, number[]>();
-  const groupById = new Map<string, HmPublishGroupDef>();
 
   for (const site of sites) {
     if (site.active === false) continue;
@@ -90,7 +115,6 @@ export function indexHmPublishGroupsBySiteId(
     if (!Number.isFinite(id) || id <= 0) continue;
     const group = publishGroupDefForSite(site);
     if (!group) continue;
-    groupById.set(group.id, group);
     const list = membersByGroup.get(group.id) ?? [];
     if (!list.includes(id)) list.push(id);
     membersByGroup.set(group.id, list);

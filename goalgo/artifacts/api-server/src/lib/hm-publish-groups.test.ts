@@ -1,32 +1,40 @@
 import { describe, expect, it } from "vitest";
 import {
-  HM_ASG_AHG_PUBLISH_GROUP_ID,
+  HM_EDITOR_PUBLISH_GROUP_ID,
+  HM_EDITOR_PUBLISH_GROUP_SLUGS,
   HM_PUBLISH_GROUPS,
   indexHmPublishGroupsBySiteId,
   isHmPublishGroupSharedEditorNews,
   publishGroupDefForSite,
+  siteMatchesPublishGroupSlug,
 } from "./hm-publish-groups.js";
 
 describe("hm-publish-groups", () => {
-  it("defines only the ASG+AHG named group", () => {
+  it("uses live slugs asg + ankarahabergundemi only", () => {
     expect(HM_PUBLISH_GROUPS).toHaveLength(1);
-    expect(HM_PUBLISH_GROUPS[0]?.id).toBe(HM_ASG_AHG_PUBLISH_GROUP_ID);
-    expect(HM_PUBLISH_GROUPS[0]?.slugs).toEqual(["asg", "ankarahabergundemi"]);
+    expect(HM_PUBLISH_GROUPS[0]?.id).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect([...HM_EDITOR_PUBLISH_GROUP_SLUGS]).toEqual(["asg", "ankarahabergundemi"]);
+    expect(HM_EDITOR_PUBLISH_GROUP_SLUGS).not.toContain("ahg");
   });
 
-  it("matches ASG/AHG by slug, alias, or domain — not VKD", () => {
-    expect(publishGroupDefForSite({ slug: "asg" })?.id).toBe(HM_ASG_AHG_PUBLISH_GROUP_ID);
-    expect(publishGroupDefForSite({ slug: "ankarahabergundemi" })?.id).toBe(HM_ASG_AHG_PUBLISH_GROUP_ID);
-    expect(publishGroupDefForSite({ slug: "ahg" })?.id).toBe(HM_ASG_AHG_PUBLISH_GROUP_ID);
-    expect(publishGroupDefForSite({ slug: "news", domain: "www.ankarasehirgazetesi.com" })?.id).toBe(
-      HM_ASG_AHG_PUBLISH_GROUP_ID,
-    );
+  it("matches DB rows by live slug or host — never invented ahg", () => {
+    expect(publishGroupDefForSite({ slug: "asg" })?.id).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect(publishGroupDefForSite({ slug: "ankarahabergundemi" })?.id).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect(publishGroupDefForSite({ slug: "ahg" })).toBeNull();
+    expect(siteMatchesPublishGroupSlug({ slug: "ahg" }, "ankarahabergundemi")).toBe(false);
+    expect(siteMatchesPublishGroupSlug({ slug: "ahg" }, "ahg")).toBe(false);
+    expect(
+      publishGroupDefForSite({ slug: "news", domain: "www.ankarasehirgazetesi.com" })?.id,
+    ).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
+    expect(
+      publishGroupDefForSite({ slug: "news", domain: "ankarahabergundemi.com" })?.id,
+    ).toBe(HM_EDITOR_PUBLISH_GROUP_ID);
     expect(publishGroupDefForSite({ slug: "vkd" })).toBeNull();
     expect(publishGroupDefForSite({ slug: "vatankahramanlari", domain: "vatankahramanlari.org" })).toBeNull();
     expect(publishGroupDefForSite({ slug: "su" })).toBeNull();
   });
 
-  it("indexes a group only when both members exist", () => {
+  it("indexes a group only when both live members exist in hm_news_sites", () => {
     const onlyAsg = indexHmPublishGroupsBySiteId([
       { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", domain2: null, domain3: null, active: true },
     ]);
@@ -36,10 +44,12 @@ describe("hm-publish-groups", () => {
       { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", domain2: null, domain3: null, active: true },
       { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", domain2: null, domain3: null, active: true },
       { id: 7, slug: "vkd", domain: "vatankahramanlari.org", domain2: null, domain3: null, active: true },
+      { id: 99, slug: "ahg", domain: "example.com", domain2: null, domain3: null, active: true },
     ]);
-    expect(both.get(3)).toEqual({ id: HM_ASG_AHG_PUBLISH_GROUP_ID, siteIds: [3, 8] });
-    expect(both.get(8)).toEqual({ id: HM_ASG_AHG_PUBLISH_GROUP_ID, siteIds: [3, 8] });
+    expect(both.get(3)).toEqual({ id: HM_EDITOR_PUBLISH_GROUP_ID, siteIds: [3, 8] });
+    expect(both.get(8)).toEqual({ id: HM_EDITOR_PUBLISH_GROUP_ID, siteIds: [3, 8] });
     expect(both.has(7)).toBe(false);
+    expect(both.has(99)).toBe(false);
   });
 
   it("shares only editor-manual / site-only rows inside the group", () => {
