@@ -9,7 +9,9 @@ describe("isManualOrWxrNewsRow", () => {
   it("detects editor manual and WXR imports", () => {
     expect(isManualOrWxrNewsRow({ isEditorManual: true })).toBe(true);
     expect(isManualOrWxrNewsRow({ rssSourceUrl: "wp-wxr:vatankahramanlari.org:42" })).toBe(true);
+    expect(isManualOrWxrNewsRow({ rssSourceUrl: "vkd-wayback:https://vatankahramanlari.org.tr/haber/x.html" })).toBe(true);
     expect(isManualOrWxrNewsRow({ tags: ["wp-import", "faaliyetlerimiz"] })).toBe(true);
+    expect(isManualOrWxrNewsRow({ tags: ["vkd-wayback", "faaliyetlerimiz"] })).toBe(true);
   });
 
   it("rejects plain pool copies without manual markers", () => {

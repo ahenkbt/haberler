@@ -14,6 +14,7 @@
     "db:migrate:yektube-data": "node ./scripts/migrate-yektube-data-to-cluster.mjs",
     "import:tr-address": "node ./scripts/import-tr-address-data.mjs",
     "import:hm-kose": "node --env-file=../../.env --env-file=.env --import tsx ./scripts/import-hm-kose-ahb.ts",
+    "import:vkd-wayback": "node --import tsx ./scripts/import-vkd-wayback.ts",
     "import:geliver-xml": "node --import tsx ./scripts/import-geliver-merchant-xml.ts",
     "scrape:insaatfirmalarim": "node --import tsx ./scripts/scrape-insaatfirmalarim.ts",
     "scrape:yatport": "node --import tsx ./scripts/scrape-yatport.ts",
