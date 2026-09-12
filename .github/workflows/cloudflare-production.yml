@@ -77,6 +77,12 @@ jobs:
             echo "::warning::Skipping deploy: CLOUDFLARE_API_TOKEN does not have Workers Containers access for account $ACCOUNT_ID."
             exit 0
           fi
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::Cloudflare containers preflight failed (HTTP $status) for account $ACCOUNT_ID."
+            head -c 400 /tmp/cf-containers-me.json || true
+            echo
+            exit 1
+          fi
           if [ -z "$DATABASE_URL" ] || [ -z "$SESSION_SECRET" ]; then
             echo "sync_secrets=false" >> "$GITHUB_OUTPUT"
             echo "::error::DATABASE_URL / SESSION_SECRET yok — Worker hâlâ eski Neon URL ile kalır."
@@ -330,8 +336,13 @@ jobs:
             if [ "$status" = "401" ] || [ "$status" = "403" ]; then
               echo "skip=true" >> "$GITHUB_OUTPUT"
               echo "::warning::Skipping yektube deploy: CLOUDFLARE_API_TOKEN lacks Workers Containers access for account $CLOUDFLARE_ACCOUNT_ID."
-            else
+            elif [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
               echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "::warning::Skipping yektube deploy: Cloudflare containers preflight returned HTTP $status for account $CLOUDFLARE_ACCOUNT_ID."
+              head -c 300 /tmp/cf-yektube-me.json || true
+              echo
             fi
           fi
       - uses: pnpm/action-setup@v6
