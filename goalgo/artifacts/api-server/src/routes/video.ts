@@ -107,6 +107,8 @@ import {
   youtubeVideoCoverUrl,
 } from "../lib/youtubeCoverImages";
 import {
+  ADMIN_CATEGORY_SLUGS,
+  categoryDisplayLabel,
   getVideoCategoryCatalog,
   mergeDuplicateCategorySlugs,
   categoryVideoFilterCondition,
@@ -1145,8 +1147,14 @@ router.get("/video/categories", async (_req, res): Promise<void> => {
     res.setHeader("Cache-Control", "public, max-age=60, s-maxage=120, stale-while-revalidate=300");
     res.json({ items });
   } catch (err) {
-    logger.error({ err }, "[video] categories failed");
-    res.status(500).json({ error: "Kategoriler yüklenemedi" });
+    logger.error({ err }, "[video] categories failed; serving static admin catalog");
+    const items = ADMIN_CATEGORY_SLUGS.map((slug) => ({
+      slug,
+      label: categoryDisplayLabel(slug),
+      videoCount: 0,
+    }));
+    res.setHeader("Cache-Control", "public, max-age=15");
+    res.json({ items });
   }
 });
 
