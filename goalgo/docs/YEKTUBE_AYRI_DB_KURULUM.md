@@ -145,3 +145,15 @@ Studio girişi **Yekpare yönetici hesabı** ile yapılır; ayrı Yektube şifre
 - API `.env` / Railway: `ADMIN_PANEL_USERNAMES`, `ADMIN_PANEL_PASSWORD`
 - İlk kurulumda `panel_admin_users` boşsa env ile otomatik tohumlanır
 - Üye girişi (`/kutuphane`): `site_members` — normal Yekpare e-posta/şifre
+
+---
+
+## Yerel / VPS config dosyası (`yektube.db.php`)
+
+WordPress `wp-config.php` benzeri dosya yolu:
+
+1. `config/yektube.db.php.example` → `config/yektube.db.php` kopyala
+2. Host / port / user / password doldur
+3. `config/yektube.db.php` **gitignore**’dadır — public repo’ya commit etme
+
+Production Cloudflare Container bağlantısı için `YEKTUBE_DATABASE_URL` Worker secret / GitHub Actions secret kullanın (bu dosya otomatik yüklenmez).
