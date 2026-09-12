@@ -307,9 +307,10 @@ describe("hm-html-boot", () => {
 
   it("skips classic news first-paint on corporate / VKD homes", () => {
     const vkdBoot = {
+      siteId: 8,
       slug: "vkd",
       host: "vatankahramanlari.org",
-      meta: { displayName: "Vatan Kahramanları", layout: { hmVitrinTheme: "corporate" } },
+      meta: { id: 8, displayName: "Vatan Kahramanları", layout: { hmVitrinTheme: "corporate" } },
       bundle: { featured: [{ title: "Haber", slug: "haber" }] },
     };
     assert.equal(isCorporateHmHtmlBoot(vkdBoot), true);
