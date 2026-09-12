@@ -58,6 +58,7 @@ import {
   filterHiddenPoolNewsItems,
 } from "../lib/news-list-image-enrich.js";
 import { enrichHybridNewsItemsWithOrigins } from "../lib/hybrid-news-origin.js";
+import { paginateNewsItemsWithUsableCover } from "../lib/news-display-image.js";
 import { loadNewsContext } from "../lib/news-context.js";
 import { portalRssInternalHref, normalizePortalRssCachedContentHtml, rssSourceNameFromUrl } from "../lib/portal-rss-fetch.js";
 import { sanitizeCumhaRssSpot } from "../lib/rssCumhaExclude.js";
@@ -923,8 +924,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
       if (yekparePoolOnly && siteId != null) {
         visibleAll = visibleAll.filter((item) => item.publishedOnSiteId == null);
       }
-      const totalOut = visibleAll.length;
-      const visibleItems = visibleAll.slice(offset, offset + limit);
+      const paged = paginateNewsItemsWithUsableCover(visibleAll, offset, limit);
+      const totalOut = paged.total;
+      const visibleItems = paged.items;
       const bgFeedScope = resolveEditorSiteHybridFeedScope({
         siteHybridRssOn,
         yekparePoolOnly,
@@ -1258,8 +1260,9 @@ router.get("/news/hybrid", async (req, res): Promise<void> => {
     if (portalHomeFeed) {
       visibleAll = interleavePortalHomeRssFirst(visibleAll);
     }
-    const totalFull = visibleAll.length;
-    const visibleItems = visibleAll.slice(offset, offset + limit);
+    const paged = paginateNewsItemsWithUsableCover(visibleAll, offset, limit);
+    const totalFull = paged.total;
+    const visibleItems = paged.items;
 
     if (includeRss && rssItems.length === 0 && activeFeeds.length > 0) {
       const cacheStatus = await getPortalRssCacheStatus(feeds);

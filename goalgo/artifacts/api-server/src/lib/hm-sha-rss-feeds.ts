@@ -13,7 +13,7 @@
  *   saglik          → saglik
  *   egitim          → egitim
  *
- * Görseller `imageUrl` link olarak kalır (`downloadImages=false`).
+ * Görseller kampanya `downloadImages=true` ile R2’ye aynalanır (hotlink/404 kırılmasın).
  * Aynı haber ASG + AHG’ye ayrı `siteId` satırı olarak yazılır.
  */
 import { canonicalizeRssCategorySlug } from "./hm-rss-category-aliases.js";

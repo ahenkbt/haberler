@@ -23,6 +23,7 @@ import {
   isHmGlobalNewsCategorySlug,
 } from "./hm-global-news-category.js";
 import { filterCorporatePublicNewsItems } from "./hm-corporate-news-policy.js";
+import { filterNewsItemsWithUsableCover } from "./news-display-image.js";
 
 const HM_CATEGORY_RSS_DEFAULT_LIMIT = 20;
 const HM_CATEGORY_RSS_MAX_LIMIT = 50;
@@ -74,7 +75,7 @@ export async function loadHmCategoryRssFeedItems(opts: {
     if (hmAccess.isCorporate) {
       items = filterCorporatePublicNewsItems(items, { siteSlug: hmAccess.slug });
     }
-    return items;
+    return filterNewsItemsWithUsableCover(items);
   }
 
   const feeds = (await loadPortalHybridRssFeeds(opts.siteId, "all")).filter((feed) => !isBoxScopeFeedId(feed.id));
@@ -128,7 +129,7 @@ export async function loadHmCategoryRssFeedItems(opts: {
   if (hmAccess.isCorporate) {
     visibleItems = filterCorporatePublicNewsItems(visibleItems, { siteSlug: hmAccess.slug });
   }
-  return visibleItems;
+  return filterNewsItemsWithUsableCover(visibleItems);
 }
 
 export function hmCategoryRssItemPublicLink(

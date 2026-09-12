@@ -9,6 +9,7 @@ import { handlePremiumStripeWebhook } from "./routes/premium";
 import { handleGeliverWebhook } from "./routes/providers";
 import { logger } from "./lib/logger";
 import { sendPublicMediaUpload } from "./lib/mediaUploadPublicGet.js";
+import { sendPublicNewsCoverProxy } from "./lib/news-cover-public-get.js";
 import { getSessionSecret } from "./lib/secrets.js";
 import { setupFrontendStatic } from "./lib/frontendStatic.js";
 import {
@@ -66,6 +67,7 @@ app.use(
 app.use(cors(buildCorsOptions()));
 /** Oturum / JSON / genel API rate limit dışında — liste sayfalarındaki çok sayıda görsel isteği */
 app.get("/api/media/uploads/:name", sendPublicMediaUpload);
+app.get("/api/media/news-cover", sendPublicNewsCoverProxy);
 app.post(
   "/api/delivery/checkout/stripe-webhook",
   express.raw({ type: ["application/json", "application/json; charset=utf-8"] }),

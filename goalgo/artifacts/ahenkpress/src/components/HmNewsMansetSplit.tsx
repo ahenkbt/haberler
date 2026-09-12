@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Clock, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
-import { HmNewsImage, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { useHeadlineSliderInteraction } from "@/hooks/useHeadlineSliderInteraction";
@@ -87,6 +87,7 @@ export function HmNewsHeroSlider({
             className="hm-vitrin-hero-img h-full w-full object-cover"
             priority
             loading="eager"
+            onUnavailable="hide"
           />
         </div>
         <div className="hm-vitrin-hero-overlay pointer-events-none absolute inset-0 z-10" />
@@ -172,7 +173,7 @@ export function HmNewsHeroSlider({
               }}
             >
               <div className="h-[52px] w-[76px] overflow-hidden sm:h-16 sm:w-24">
-                <HmNewsImage item={s} alt="" loading="lazy" />
+                <HmNewsImage item={s} alt="" loading="lazy" onUnavailable="hide" />
               </div>
             </button>
           ))}
@@ -217,8 +218,8 @@ export function HmNewsMansetSplit({
           style={{ ["--hm-split-side-rows" as string]: "2" }}
         >
           {sideSlides.map((n) => (
+            <HmHomeCoverGate key={`side-${n.id}-${resolveNewsItemImageUrl(n) || n.title}`} item={n}>
             <Link
-              key={`side-${n.id}-${resolveNewsItemImageUrl(n) || n.title}`}
               href={h(`/haber/${n.slug || n.id}`)}
               className={`hm-vitrin-card group flex overflow-hidden rounded-xl p-2.5 shadow transition-all hover:-translate-y-0.5 hover:shadow-md lg:h-full ${
                 sideDense
@@ -238,6 +239,7 @@ export function HmNewsMansetSplit({
                   alt={n.title}
                   className="transition-transform group-hover:scale-105"
                   loading="lazy"
+                  onUnavailable="hide"
                 />
               </div>
               <div className="flex min-w-0 flex-1 flex-col justify-center">
@@ -255,6 +257,7 @@ export function HmNewsMansetSplit({
                 </p>
               </div>
             </Link>
+            </HmHomeCoverGate>
           ))}
         </div>
         {quickLinks && quickLinks.length > 0 ? (

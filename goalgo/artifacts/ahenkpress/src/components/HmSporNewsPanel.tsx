@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { HmNewsImage, resolveNewsItemImageFallbackUrl, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, resolveNewsItemImageFallbackUrl, resolveNewsItemImageUrl } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import {
   fetchHybridNewsList,
@@ -177,8 +177,8 @@ export function HmSporNewsPanel({
             {leads.length > 0 ? (
               <div className="hm-spor-news-leads">
                 {leads.map((n, index) => (
+                  <HmHomeCoverGate key={`lead-${n.id ?? n.slug ?? index}`} item={n}>
                   <Link
-                    key={`lead-${n.id ?? n.slug ?? index}`}
                     href={resolveHref(n)}
                     className="hm-spor-news-lead group"
                   >
@@ -188,19 +188,21 @@ export function HmSporNewsPanel({
                         fallbackSrc={resolveNewsItemImageFallbackUrl(n)}
                         alt={newsTitle(n.title)}
                         loading={index === 0 ? "eager" : "lazy"}
+                        onUnavailable="hide"
                       />
                       <div className="hm-spor-news-lead-shade" aria-hidden />
                       <h3 className="hm-spor-news-lead-title">{newsTitle(n.title)}</h3>
                     </div>
                   </Link>
+                  </HmHomeCoverGate>
                 ))}
               </div>
             ) : null}
             {cards.length > 0 ? (
               <div className="hm-spor-news-cards">
                 {cards.map((n, index) => (
+                  <HmHomeCoverGate key={`card-${n.id ?? n.slug ?? index}`} item={n}>
                   <Link
-                    key={`card-${n.id ?? n.slug ?? index}`}
                     href={resolveHref(n)}
                     className="hm-spor-module-card group"
                   >
@@ -210,10 +212,12 @@ export function HmSporNewsPanel({
                         fallbackSrc={resolveNewsItemImageFallbackUrl(n)}
                         alt={newsTitle(n.title)}
                         loading="lazy"
+                        onUnavailable="hide"
                       />
                     </div>
                     <h3>{newsTitle(n.title)}</h3>
                   </Link>
+                  </HmHomeCoverGate>
                 ))}
               </div>
             ) : null}

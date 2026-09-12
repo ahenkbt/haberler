@@ -152,7 +152,7 @@ import {
 } from "@/lib/hmHeadlinePool";
 import { HmCategoryBoxGrid } from "@/components/HmCategoryBoxLayout";
 import { HmSporNewsPanel } from "@/components/HmSporNewsPanel";
-import { HmNewsImage, filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
+import { HmNewsImage, HmHomeCoverGate, filterNewsItemsWithCoverImage, newsItemHasCoverImage } from "@/components/HmNewsImage";
 import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmTepeManset, HM_TEPE_MANSET_ITEM_COUNT } from "@/components/HmTepeManset";
 import {
@@ -580,10 +580,11 @@ function CardHoriz({
   const thumbClass =
     size === "lg" ? "w-28 aspect-[16/10]" : size === "md" ? "w-20 aspect-[16/10]" : "w-16 aspect-[16/10]";
   return (
+    <HmHomeCoverGate item={n}>
     <Link href={hybridNewsItemHref(n, h)}
       className={`group flex gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors rounded px-1 ${className}`}>
       <div className={`relative shrink-0 overflow-hidden rounded-lg ${thumbClass}`}>
-        <HmNewsImage item={n} alt={newsDisplayTitle(n.title)} className="transition-transform group-hover:scale-105" loading="lazy" />
+        <HmNewsImage item={n} alt={newsDisplayTitle(n.title)} className="transition-transform group-hover:scale-105" loading="lazy" onUnavailable="hide" />
       </div>
       <div className="flex-1 min-w-0">
         {n.categoryName && (
@@ -595,6 +596,7 @@ function CardHoriz({
         </p>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -614,13 +616,14 @@ function CardVert({
 }) {
   const h = useHmPublicHref();
   return (
+    <HmHomeCoverGate item={n}>
     <Link href={hybridNewsItemHref(n, h)}
       className={`hm-vitrin-card group flex flex-col overflow-hidden rounded-xl shadow transition-all hover:-translate-y-0.5 hover:shadow-lg ${className}`}>
       <div
         className="hm-vitrin-card-thumb relative shrink-0 overflow-hidden"
         style={imgHeight ? { height: imgHeight } : undefined}
       >
-        <HmNewsImage item={n} alt={newsDisplayTitle(n.title)} className="transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        <HmNewsImage item={n} alt={newsDisplayTitle(n.title)} className="transition-transform duration-500 group-hover:scale-105" loading="lazy" onUnavailable="hide" />
         {n.categoryName && (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-sm text-[9px] font-black uppercase text-white"
             style={{ background: catColor(n, accent, hmCategoryColors) }}>{n.categoryName}</span>
@@ -636,6 +639,7 @@ function CardVert({
         </p>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -656,10 +660,20 @@ function HeroSlider({
   hmCategoryColors?: Record<string, string> | null;
 }) {
   const h = useHmPublicHref();
-  const len = slides.length;
+  const [failedKeys, setFailedKeys] = useState<Set<string>>(() => new Set());
+  const usableSlides = useMemo(
+    () =>
+      slides.filter((s) => {
+        const key = String(s?.id ?? s?.slug ?? "");
+        if (key && failedKeys.has(key)) return false;
+        return newsItemHasCoverImage(s);
+      }),
+    [failedKeys, slides],
+  );
+  const len = usableSlides.length;
   const slider = useHeadlineSliderInteraction(len);
   const idx = slider.index;
-  const n = slides[idx];
+  const n = usableSlides[idx];
   if (!n) return null;
 
   return (
@@ -678,6 +692,18 @@ function HeroSlider({
           className="hm-vitrin-hero-img w-full h-full object-cover"
           priority
           loading="eager"
+          onUnavailable="hide"
+          onUnavailableChange={(unavailable) => {
+            if (!unavailable) return;
+            const key = String(n.id ?? n.slug ?? "");
+            if (!key) return;
+            setFailedKeys((prev) => {
+              if (prev.has(key)) return prev;
+              const next = new Set(prev);
+              next.add(key);
+              return next;
+            });
+          }}
         />
       </div>
       {/* Gradient overlay — tıklamaları engellemesin; başlantı / kontroller üstte */}
@@ -729,7 +755,7 @@ function HeroSlider({
       {/* Dots */}
       {len > 1 && (
         <div className="absolute bottom-3 right-4 z-[25] flex gap-1.5">
-          {slides.map((_, i) => (
+          {usableSlides.map((_, i) => (
             <button type="button" key={i} onClick={() => slider.setIndex(i)}
               className={`rounded-full transition-all ${i === idx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"}`} />
           ))}
@@ -738,7 +764,7 @@ function HeroSlider({
     </div>
     {thumbStripBelow && len > 1 && (
       <div className="flex gap-2 overflow-x-auto pb-1 pt-1" style={{ scrollbarWidth: "none" }}>
-        {slides.map((s, i) => (
+        {usableSlides.map((s, i) => (
           <button
             key={s.id}
             type="button"
@@ -747,7 +773,7 @@ function HeroSlider({
             style={{ borderColor: i === idx ? accent : "transparent", boxShadow: i === idx ? `0 0 0 2px ${accent}44` : undefined }}
           >
             <div className="h-[52px] w-[76px] overflow-hidden sm:h-16 sm:w-24">
-              <HmNewsImage item={s} alt="" loading="lazy" />
+              <HmNewsImage item={s} alt="" loading="lazy" onUnavailable="hide" />
             </div>
           </button>
         ))}
@@ -755,7 +781,7 @@ function HeroSlider({
     )}
     {numberedTabsBelow && len > 1 && (
       <div className="hm-headline-number-tabs flex items-center overflow-x-auto rounded-b-xl bg-slate-950 px-3 py-2" style={{ scrollbarWidth: "none" }}>
-        {slides.map((s, i) => (
+        {usableSlides.map((s, i) => (
           <button
             key={s.id ?? `${s.slug ?? "slide"}-${i}`}
             type="button"
@@ -818,6 +844,7 @@ function HeadlineOverlayCard({
 }) {
   const h = useHmPublicHref();
   return (
+    <HmHomeCoverGate item={n}>
     <Link
       href={hybridNewsItemHref(n, h)}
       className={`hm-vitrin-card group relative block min-h-[180px] overflow-hidden rounded-xl bg-slate-900 shadow transition hover:-translate-y-0.5 hover:shadow-lg ${className}`}
@@ -829,6 +856,7 @@ function HeadlineOverlayCard({
         loading="eager"
         priority
         wrapperClassName="absolute inset-0"
+        onUnavailable="hide"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-3">
@@ -847,6 +875,7 @@ function HeadlineOverlayCard({
         </p>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -1234,7 +1263,7 @@ function FeaturedCategoryTabs({
 
 function ClassicImage({ n, className = "" }: { n: any; className?: string }) {
   return (
-    <HmNewsImage item={n} alt={n?.title ?? ""} className={className} loading="lazy" />
+    <HmNewsImage item={n} alt={n?.title ?? ""} className={className} loading="lazy" onUnavailable="hide" />
   );
 }
 
@@ -1287,6 +1316,7 @@ function ClassicFeatureCard({
   const h = useHmPublicHref();
   const color = catColor(n, accent, hmCategoryColors);
   return (
+    <HmHomeCoverGate item={n}>
     <Link href={hybridNewsItemHref(n, h)} className={`hm-classic-feature-card ${large ? "hm-classic-feature-card--large" : ""}`}>
       <ClassicImage n={n} />
       <div className="hm-classic-feature-shade" />
@@ -1296,6 +1326,7 @@ function ClassicFeatureCard({
         <time>{newsCardDate(n)}</time>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -1361,6 +1392,7 @@ function ClassicCompactCard({
   const h = useHmPublicHref();
   const color = catColor(n, accent, hmCategoryColors);
   return (
+    <HmHomeCoverGate item={n}>
     <Link href={hybridNewsItemHref(n, h)} className={`hm-classic-compact-card ${horizontal ? "hm-classic-compact-card--horizontal" : ""}`}>
       <ClassicImage n={n} />
       <div className="hm-classic-compact-body">
@@ -1369,6 +1401,7 @@ function ClassicCompactCard({
         <time>{newsCardDate(n)}</time>
       </div>
     </Link>
+    </HmHomeCoverGate>
   );
 }
 
@@ -3439,7 +3472,8 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                       style={{ ["--hm-split-side-rows" as string]: String(HM_MANSET_SPLIT_SIDE_ROWS) }}
                     >
                       {splitSideItems.map((n: any) => (
-                        <Link key={n.id ?? n.slug} href={hybridNewsItemHref(n, h)}
+                        <HmHomeCoverGate key={n.id ?? n.slug} item={n}>
+                        <Link href={hybridNewsItemHref(n, h)}
                           className="hm-vitrin-card group flex min-h-[94px] gap-2.5 overflow-hidden rounded-xl p-2.5 shadow transition-all hover:-translate-y-0.5 hover:shadow-md lg:h-full xl:min-h-0">
                           <div className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-lg bg-white sm:h-[72px] sm:w-[72px] xl:h-[78px] xl:w-[78px]">
                             <HmNewsImage
@@ -3447,6 +3481,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                               alt={newsDisplayTitle(n.title)}
                               className="transition-transform group-hover:scale-105"
                               loading="lazy"
+                              onUnavailable="hide"
                             />
                           </div>
                           <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -3459,8 +3494,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
                             </p>
                           </div>
                         </Link>
+                        </HmHomeCoverGate>
                       ))}
-                      {splitSidePlaceholderCount > 0
+                      {splitSidePlaceholderCount > 0}
                         ? Array.from({ length: splitSidePlaceholderCount }, (_, index) => (
                             <VitrinSideHeadlineSkeleton key={`split-side-sk-${index}`} className="min-h-[94px] lg:h-full" />
                           ))
@@ -3830,6 +3866,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               titleHref={tumHaberlerHref}
               items={visible.length > 0 ? visible : latestGridTabPool}
               tabSourceItems={latestGridTabPool}
+              requireCoverImage
               categoryTabs={tabStripCats}
               initialCategorySlug=""
               accent={accent}

@@ -108,7 +108,7 @@ function AhenkStoryThumb({
 }) {
   return (
     <div className={`hm-ahenk-story-thumb ${large ? "hm-ahenk-story-thumb--large" : ""}`.trim()}>
-      <HmNewsImage item={n} alt={newsTitle(n.title)} loading={large ? "eager" : "lazy"} />
+      <HmNewsImage item={n} alt={newsTitle(n.title)} loading={large ? "eager" : "lazy"} onUnavailable="hide" />
       {badge ? (
         <span className="hm-ahenk-story-badge" style={{ background: badgeColor ?? "#cc0000" }}>
           {badge}

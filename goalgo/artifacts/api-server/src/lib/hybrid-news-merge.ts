@@ -32,7 +32,11 @@ import {
 import { sanitizeDisplayText } from "./sanitizeDisplayText.js";
 import { serializeNewsListItem, newsListSelectFields, type NewsContext, type SerializedNewsListItem } from "./serializers.js";
 import { normalizePublicMediaUrl } from "./normalizePublicMediaUrl.js";
-import { resolveNewsItemImageUrl, resolveNewsItemImageFallbackUrl } from "./news-display-image.js";
+import {
+  filterNewsItemsWithUsableCover,
+  resolveNewsItemImageUrl,
+  resolveNewsItemImageFallbackUrl,
+} from "./news-display-image.js";
 import {
   enrichSerializedNewsListImages,
   filterHiddenPoolNewsItems,
@@ -1221,9 +1225,9 @@ export async function pickNextHybridInfiniteItem(opts: {
     : [];
 
   const pools: Record<HybridRotateSource, HybridNewsItem[]> = {
-    db: dbPool,
-    rss: rssPool,
-    author: authorPool,
+    db: filterNewsItemsWithUsableCover(dbPool),
+    rss: filterNewsItemsWithUsableCover(rssPool),
+    author: filterNewsItemsWithUsableCover(authorPool),
   };
 
   const maxAttempts = HYBRID_ROTATE_SOURCES.length * 6;
@@ -1240,9 +1244,9 @@ export async function pickNextHybridInfiniteItem(opts: {
         source,
         exhausted: false,
         pools: {
-          db: dbPool.length,
-          rss: rssPool.length,
-          author: authorPool.length,
+          db: pools.db.length,
+          rss: pools.rss.length,
+          author: pools.author.length,
         },
       };
     }
@@ -1254,9 +1258,9 @@ export async function pickNextHybridInfiniteItem(opts: {
     source: null,
     exhausted: true,
     pools: {
-      db: dbPool.length,
-      rss: rssPool.length,
-      author: authorPool.length,
+      db: pools.db.length,
+      rss: pools.rss.length,
+      author: pools.author.length,
     },
   };
 }

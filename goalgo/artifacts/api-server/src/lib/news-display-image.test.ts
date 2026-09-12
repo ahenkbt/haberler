@@ -3,6 +3,7 @@ import {
   filterNewsItemsWithUsableCover,
   isUsableNewsCoverUrl,
   newsItemHasUsableCover,
+  paginateNewsItemsWithUsableCover,
 } from "./news-display-image.js";
 
 describe("anasayfa kapak filtresi", () => {
@@ -25,4 +26,19 @@ describe("anasayfa kapak filtresi", () => {
     expect(kept.map((item) => item.title)).toEqual(["Resimli", "Yedek"]);
     expect(newsItemHasUsableCover(items[1])).toBe(false);
   });
+
+  it("hybrid sayfalama kapaksız satırları total’den düşer", () => {
+    const items = [
+      { title: "A", imageUrl: "https://cdn.example.com/a.jpg" },
+      { title: "B", imageUrl: "" },
+      { title: "C", imageUrl: "https://cdn.example.com/c.jpg" },
+      { title: "D", imageUrl: "/hm/haber-gorsel-hazirlaniyor.svg" },
+      { title: "E", imageUrl: "https://cdn.example.com/e.jpg" },
+    ];
+    const page = paginateNewsItemsWithUsableCover(items, 0, 2);
+    expect(page.total).toBe(3);
+    expect(page.items.map((item) => item.title)).toEqual(["A", "C"]);
+    expect(paginateNewsItemsWithUsableCover(items, 2, 2).items.map((item) => item.title)).toEqual(["E"]);
+  });
 });
+
