@@ -121,7 +121,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "yektube.com",
   "www.yektube.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260802d";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260912a";
 
 const PORTAL_HOSTS = new Set([
   "ahenk.net.tr",
@@ -845,12 +845,14 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
         }),
       );
       if (boot) {
-        // skipPaint: avoid "Manşet yükleniyor…" overlay while React hydrates (same as article path)
-        html = injectHmHtmlBoot(html, { ...boot, skipPaint: true });
+        // Home: seed classic chrome into #root (logo/menu/market/numbered manşet).
+        // skipPaint stays on article path only — no "Manşet yükleniyor…" overlay.
+        html = injectHmHtmlBoot(html, { ...boot, skipPaint: false });
         out.set(
           "x-yekpare-hm-html-boot",
           `${boot.bundle ? "bundle" : "meta"}${boot.fromCache ? "-cache" : ""}`,
         );
+        out.set("x-yekpare-hm-first-paint", "classic");
         const hero = firstHmBootImageUrl(boot.bundle, incoming.origin);
         if (hero) out.append("Link", `<${hero}>; rel=preload; as=image`);
       }
