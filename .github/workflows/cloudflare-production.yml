@@ -71,7 +71,12 @@ jobs:
             ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
           fi
           echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
-          status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-containers-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/containers/me" || true)"
+          curl_exit=0
+          status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-containers-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/containers/me")" || curl_exit=$?
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "::error::Cloudflare containers preflight request failed (curl exit $curl_exit) for account $ACCOUNT_ID."
+            exit 1
+          fi
           if [ "$status" = "401" ] || [ "$status" = "403" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Skipping deploy: CLOUDFLARE_API_TOKEN does not have Workers Containers access for account $ACCOUNT_ID."
@@ -332,7 +337,13 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping yektube deploy (no CLOUDFLARE_API_TOKEN)"
           else
-            status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-yektube-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/containers/me" || true)"
+            curl_exit=0
+            status="$(curl -sS --oauth2-bearer "$CLOUDFLARE_API_TOKEN" -o /tmp/cf-yektube-me.json -w "%{http_code}" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/containers/me")" || curl_exit=$?
+            if [ "$curl_exit" -ne 0 ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "::warning::Skipping yektube deploy: Cloudflare containers preflight request failed (curl exit $curl_exit)."
+              exit 0
+            fi
             if [ "$status" = "401" ] || [ "$status" = "403" ]; then
               echo "skip=true" >> "$GITHUB_OUTPUT"
               echo "::warning::Skipping yektube deploy: CLOUDFLARE_API_TOKEN lacks Workers Containers access for account $CLOUDFLARE_ACCOUNT_ID."
