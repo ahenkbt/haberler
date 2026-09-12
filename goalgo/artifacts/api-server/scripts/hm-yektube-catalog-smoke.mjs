@@ -67,6 +67,9 @@ async function liveSmoke() {
     if (url.includes("/videos") && json.persistedToNews !== false) {
       throw new Error(`${url} persistedToNews must be false`);
     }
+    if (url.includes("/videos") && json.source === "degraded") {
+      throw new Error(`${url} still degraded — container/Worker RSS fallback not live`);
+    }
   }
   console.log("ok live");
 }

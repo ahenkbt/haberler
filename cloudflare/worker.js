@@ -38,6 +38,10 @@ import {
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
   hmYektubeCatalogDegradeResponse,
+  hmYektubeCatalogJsonResponse,
+  hmYektubeCatalogRssFillBody,
+  hmYektubeCatalogShouldFillFromRss,
+  hmYektubeCatalogVideosOrRss,
   isHmYektubeCatalogPath,
   shouldDegradeHmYektubeCatalog,
 } from "./hm-yektube-catalog-edge.js";
@@ -2946,7 +2950,7 @@ export default {
       }
       if (!upstream) {
         if (isHmYektubeCatalogPath(upstreamPath)) {
-          return hmYektubeCatalogDegradeResponse(upstreamPath, "timeout");
+          return hmYektubeCatalogVideosOrRss(upstreamPath, incoming.searchParams, "timeout");
         }
         return new Response(JSON.stringify({ ok: false, error: "Sunucu meşgul" }), {
           status: 503,
@@ -2961,7 +2965,7 @@ export default {
         isHmYektubeCatalogPath(upstreamPath) &&
         shouldDegradeHmYektubeCatalog(upstream.status, upstream.headers.get("content-type"))
       ) {
-        return hmYektubeCatalogDegradeResponse(upstreamPath, `status-${upstream.status || 0}`);
+        return hmYektubeCatalogVideosOrRss(upstreamPath, incoming.searchParams, `status-${upstream.status || 0}`);
       }
       const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
         waitUntil,
@@ -3063,8 +3067,9 @@ export default {
           isHmYektubeCatalogPath(upstreamPath) ||
           isHmYektubeCatalogPath(incoming.pathname)
         ) {
-          return hmYektubeCatalogDegradeResponse(
+          return hmYektubeCatalogVideosOrRss(
             isHmYektubeCatalogPath(upstreamPath) ? upstreamPath : incoming.pathname,
+            incoming.searchParams,
             "html-upstream",
           );
         }
@@ -3094,12 +3099,34 @@ export default {
         });
       }
 
+      if (isHmYektubeCatalogPath(upstreamPath) && ct.includes("json")) {
+        const text = await upstream.text();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = null;
+        }
+        if (hmYektubeCatalogShouldFillFromRss(upstreamPath, parsed)) {
+          const filled = await hmYektubeCatalogRssFillBody(incoming.searchParams);
+          if (filled) return rememberPublicApi(hmYektubeCatalogJsonResponse(filled, "rss"));
+        }
+        return rememberPublicApi(new Response(text, { status: upstream.status, headers: out }));
+      }
+
       return rememberPublicApi(new Response(upstream.body, { status: upstream.status, headers: out }));
     } catch (err) {
       if (staleEdgeFallback) {
         const headers = new Headers(staleEdgeFallback.headers);
         headers.set("x-yekpare-edge-cache", "stale-error");
         return new Response(staleEdgeFallback.body, { status: staleEdgeFallback.status, headers });
+      }
+      if (isHmYektubeCatalogPath(incoming.pathname) || isHmYektubeCatalogPath(upstreamPath)) {
+        return hmYektubeCatalogVideosOrRss(
+          isHmYektubeCatalogPath(upstreamPath) ? upstreamPath : incoming.pathname,
+          incoming.searchParams,
+          "proxy-error",
+        );
       }
       return new Response(
         JSON.stringify({

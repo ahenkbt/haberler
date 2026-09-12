@@ -6,9 +6,10 @@
  * Yektube `videos` okuması (getYektubeDbForRead) + kısa TTL bellek önbelleği.
  */
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { getYektubeDbForRead, videosTable } from "@workspace/db";
+import { db as mainDb, getYektubeDbForRead, setYektubeReadMainFallback, videosTable } from "@workspace/db";
 import { mixVideosForNewsSiteFeed, mixVideosNewsOnly } from "./videoMix.js";
 import { slugifyVideoCategory } from "./yektubeCategoryCatalog.js";
+import { fetchHmYektubeYoutubeRssCatalog } from "./hmYektubeYoutubeRss.js";
 import { logger } from "./logger.js";
 
 /** yektube-core YEKTUBE_ORIGIN ile aynı — api-server o pakete bağımlı değil. */
@@ -129,7 +130,7 @@ export type HmYektubeCatalogQuery = {
 export type HmYektubeCatalogResponse = {
   items: HmYektubeCatalogItem[];
   total: number;
-  source: "yektube-db" | "yektube-upstream" | "degraded";
+  source: "yektube-db" | "yektube-upstream" | "yektube-rss" | "degraded";
   persistedToNews: false;
 };
 
@@ -241,11 +242,10 @@ function writeCache(key: string, body: HmYektubeCatalogResponse): void {
   memoryCache.set(key, { expiresAt: Date.now() + HM_YEKTUBE_CATALOG_TTL_MS, body });
 }
 
-async function selectRecentRows(opts: {
-  categorySlugs?: string[];
-  limit: number;
-}): Promise<HmYektubeCatalogRow[]> {
-  const db = getYektubeDbForRead();
+async function selectRecentRowsFrom(
+  db: ReturnType<typeof getYektubeDbForRead>,
+  opts: { categorySlugs?: string[]; limit: number },
+): Promise<HmYektubeCatalogRow[]> {
   const conds = [eq(videosTable.active, true), eq(videosTable.isStory, false)];
   if (opts.categorySlugs && opts.categorySlugs.length > 0) {
     conds.push(inArray(videosTable.categorySlug, opts.categorySlugs));
@@ -257,6 +257,20 @@ async function selectRecentRows(opts: {
     .orderBy(desc(videosTable.id))
     .limit(opts.limit);
   return rows as HmYektubeCatalogRow[];
+}
+
+async function selectRecentRows(opts: {
+  categorySlugs?: string[];
+  limit: number;
+}): Promise<HmYektubeCatalogRow[]> {
+  try {
+    const rows = await selectRecentRowsFrom(getYektubeDbForRead(), opts);
+    if (rows.length > 0) return rows;
+  } catch (err) {
+    logger.warn({ err, opts }, "[hm-yektube] yektube-db catalog select failed; trying main");
+    setYektubeReadMainFallback(true);
+  }
+  return selectRecentRowsFrom(mainDb, opts);
 }
 
 /** Var olan env adı — yeni secret uydurulmaz. Yoksa upstream denemesi yapılmaz. */
@@ -337,18 +351,37 @@ export async function loadHmYektubeCatalog(
       }
     }
     const items = mixHmYektubeCatalog(rows, query);
-    const body: HmYektubeCatalogResponse = {
-      items,
-      total: items.length,
-      source: "yektube-db",
-      persistedToNews: false,
-    };
-    writeCache(key, body);
-    return body;
+    if (items.length > 0) {
+      const body: HmYektubeCatalogResponse = {
+        items,
+        total: items.length,
+        source: "yektube-db",
+        persistedToNews: false,
+      };
+      writeCache(key, body);
+      return body;
+    }
   } catch (err) {
     logger.warn({ err, query }, "[hm-yektube] catalog read failed");
-    return { items: [], total: 0, source: "degraded", persistedToNews: false };
   }
+
+  try {
+    const rssItems = await fetchHmYektubeYoutubeRssCatalog(query);
+    if (rssItems.length > 0) {
+      const body: HmYektubeCatalogResponse = {
+        items: rssItems,
+        total: rssItems.length,
+        source: "yektube-rss",
+        persistedToNews: false,
+      };
+      writeCache(key, body);
+      return body;
+    }
+  } catch (err) {
+    logger.warn({ err, query }, "[hm-yektube] youtube rss catalog failed");
+  }
+
+  return { items: [], total: 0, source: "degraded", persistedToNews: false };
 }
 
 export function emptyHmYektubeCatalog(): HmYektubeCatalogResponse {

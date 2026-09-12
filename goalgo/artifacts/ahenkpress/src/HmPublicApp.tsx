@@ -227,6 +227,28 @@ export default function HmPublicApp() {
                 </HmPublicShell>
               )}
             </Route>
+            <Route path="/tr/:slug/videolar/:rest*">
+              {() => (
+                <HmPublicShell>
+                  <LazyChunk>
+                    <HmPublicVideoTvLayoutMod>
+                      <HmPublicVideoTvRoute />
+                    </HmPublicVideoTvLayoutMod>
+                  </LazyChunk>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/tr/:slug/videolar">
+              {() => (
+                <HmPublicShell>
+                  <LazyChunk>
+                    <HmPublicVideoTvLayoutMod>
+                      <HmPublicVideoTvRoute />
+                    </HmPublicVideoTvLayoutMod>
+                  </LazyChunk>
+                </HmPublicShell>
+              )}
+            </Route>
             <Route path="/tr/:slug/:pageSlug">
               {() => (
                 <HmPublicShell>

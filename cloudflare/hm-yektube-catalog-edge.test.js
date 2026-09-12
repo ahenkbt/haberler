@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   hmYektubeCatalogDegradeBody,
+  hmYektubeCatalogShouldFillFromRss,
   isHmYektubeCatalogPath,
   shouldDegradeHmYektubeCatalog,
 } from "./hm-yektube-catalog-edge.js";
@@ -29,5 +30,14 @@ describe("hm-yektube-catalog-edge", () => {
     assert.deepEqual(videos.items, []);
     const cats = hmYektubeCatalogDegradeBody("/api/hm/yektube/categories");
     assert.equal(cats.persistedToNews, false);
+    assert.equal(Array.isArray(cats.items) && cats.items.length > 0, true);
+    assert.equal(cats.items[0].slug, "haberler");
+  });
+
+  it("fills videos from RSS only when items are empty", () => {
+    assert.equal(hmYektubeCatalogShouldFillFromRss("/api/hm/yektube/videos", { items: [] }), true);
+    assert.equal(hmYektubeCatalogShouldFillFromRss("/api/hm/yektube/videos", { items: [{ id: 1 }] }), false);
+    assert.equal(hmYektubeCatalogShouldFillFromRss("/api/hm/yektube/categories", { items: [] }), false);
   });
 });
+

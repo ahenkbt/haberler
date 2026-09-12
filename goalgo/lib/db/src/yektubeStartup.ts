@@ -83,6 +83,14 @@ export async function logYektubeDbStartupHint(): Promise<void> {
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (read === "yektube" && configured && yektubeDb) {
+      setYektubeReadMainFallback(true);
+      console.error(
+        `[yektube-db] KRİTİK: Yektube cluster okunamadı (${msg.slice(0, 200)}) — ` +
+          "okuma geçici olarak ana DB'den yapılıyor.",
+      );
+      return;
+    }
     console.error(
       `[yektube-db] KRİTİK: video tabloları okunamadı (${msg.slice(0, 200)}). ` +
         "Şema oluşmadıysa deploy logunda [yektube-db-migrate] hata arayın veya pnpm run db:migrate:yektube çalıştırın.",
