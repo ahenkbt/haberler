@@ -37,6 +37,11 @@ import {
 } from "./hm-news-article-edge.js";
 import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
+  hmYektubeCatalogDegradeResponse,
+  isHmYektubeCatalogPath,
+  shouldDegradeHmYektubeCatalog,
+} from "./hm-yektube-catalog-edge.js";
+import {
   getHmEdgeCache,
   isHmEdgeCacheableRequest,
   isHmNewsArticleCachePath,
@@ -2939,6 +2944,9 @@ export default {
         if (recoveredBundle) return rememberPublicApi(recoveredBundle);
       }
       if (!upstream) {
+        if (isHmYektubeCatalogPath(upstreamPath)) {
+          return hmYektubeCatalogDegradeResponse(upstreamPath, "timeout");
+        }
         return new Response(JSON.stringify({ ok: false, error: "Sunucu meşgul" }), {
           status: 503,
           headers: {
@@ -2947,6 +2955,12 @@ export default {
             "x-yekpare-origin-budget": "timeout",
           },
         });
+      }
+      if (
+        isHmYektubeCatalogPath(upstreamPath) &&
+        shouldDegradeHmYektubeCatalog(upstream.status, upstream.headers.get("content-type"))
+      ) {
+        return hmYektubeCatalogDegradeResponse(upstreamPath, `status-${upstream.status || 0}`);
       }
       const brandMeta = await maybeEnsureBrandMetaResponse(env, incoming, upstream, {
         waitUntil,
