@@ -15,6 +15,7 @@ const OPTIONAL_PUBLIC_GET = [
   "/ads",
   "/video",
   "/hm/meta/",
+  "/hm/yektube",
   "/hm/showcase-sites",
   "/hm/makale",
   "/hm/pwa-",
@@ -219,6 +220,18 @@ function optionalPublicGetFallbackBody(pathname, method, search = "") {
   }
   if (p.startsWith("/api/broadcasts")) {
     return JSON.stringify([]);
+  }
+  if (p === "/api/hm/yektube/categories") {
+    return JSON.stringify({
+      items: YEKTUBE_CATEGORY_SLUGS.map((slug) => ({
+        slug,
+        label: YEKTUBE_CATEGORY_LABELS[slug] ?? slug,
+      })),
+      persistedToNews: false,
+    });
+  }
+  if (p === "/api/hm/yektube/videos") {
+    return JSON.stringify({ items: [], total: 0, source: "degraded", persistedToNews: false });
   }
   if (p === "/api/video/categories") {
     return JSON.stringify({ items: yektubeCategoryCatalogFallback() });
@@ -1960,6 +1973,8 @@ export default async function middleware(request) {
         ? 35000
         : p === "/api/video/live"
           ? 20000
+          : p.startsWith("/api/hm/yektube")
+            ? 12000
           : p.startsWith("/api/video/videos") || p.startsWith("/api/video/shorts")
             ? 45000
             : 6500;

@@ -1168,6 +1168,8 @@ function isCacheableHmNewsApi(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
   return (
     p === "/api/hm/home-bundle" ||
+    p === "/api/hm/yektube/videos" ||
+    p === "/api/hm/yektube/categories" ||
     p === "/api/news" ||
     p === "/api/news/hybrid" ||
     p === "/api/news/featured" ||

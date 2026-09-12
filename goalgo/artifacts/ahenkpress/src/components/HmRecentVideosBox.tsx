@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ChevronRight, Play } from "lucide-react";
 import { YektubeVideoThumb } from "@/components/YektubeVideoThumb";
+import { fetchHmYektubeCatalog, type HmYektubeCatalogVideo } from "@/lib/hmYektubeCatalogClient";
 import { isLongFormVideo, recommendationVideoTitle } from "@/lib/yektubeVideoClassify";
 import { VIDEO_TV_CATEGORY_LABELS, VIDEO_TV_NAV_SLUGS } from "@/lib/videoTvCategories";
 
@@ -10,16 +11,7 @@ export const HM_RECENT_VIDEOS_COLS = 4;
 export const HM_RECENT_VIDEOS_ROWS = 2;
 export const HM_RECENT_VIDEOS_LIMIT = HM_RECENT_VIDEOS_COLS * HM_RECENT_VIDEOS_ROWS;
 
-type RecentVideo = {
-  id: number;
-  sourceId?: number | null;
-  videoId: string;
-  title: string;
-  thumbnail?: string | null;
-  channelName?: string | null;
-  duration?: string | null;
-  isStory?: boolean;
-};
+type RecentVideo = HmYektubeCatalogVideo;
 
 type Props = {
   videoTvHref: (sourceId: number, videoId: string) => string;
@@ -28,24 +20,12 @@ type Props = {
 };
 
 async function fetchRecentVideos(categorySlug: string | null, seed: number): Promise<RecentVideo[]> {
-  const mixed = !categorySlug;
-  const params = new URLSearchParams({
-    limit: String(HM_RECENT_VIDEOS_LIMIT),
-    excludeStories: "true",
+  const items = await fetchHmYektubeCatalog({
+    limit: HM_RECENT_VIDEOS_LIMIT,
+    categorySlug,
+    seed: categorySlug ? null : seed,
   });
-  if (categorySlug) {
-    params.set("categorySlug", categorySlug);
-    params.set("longFormOnly", "true");
-  } else {
-    params.set("newsOnly", "true");
-    params.set("mixChannels", "true");
-    params.set("seed", String(seed));
-  }
-  const res = await fetch(`/api/video/videos?${params}`);
-  if (!res.ok) return [];
-  const data = (await res.json()) as { items?: RecentVideo[] };
-  const items = data.items ?? [];
-  if (mixed) return items;
+  if (!categorySlug) return items;
   return items.filter((v) =>
     isLongFormVideo({ isStory: v.isStory, title: v.title, duration: v.duration ?? null }),
   );
@@ -71,7 +51,7 @@ function RecentVideoCard({
   compact?: boolean;
 }) {
   const sourceId = video.sourceId ?? 0;
-  const href = sourceId > 0 ? videoTvHref(sourceId, video.videoId) : null;
+  const href = sourceId > 0 ? videoTvHref(sourceId, video.videoId) : video.watchUrl ?? null;
   const title = recommendationVideoTitle(video.title, video.channelName);
   const card = (
     <>
@@ -114,6 +94,13 @@ function RecentVideoCard({
     </>
   );
 
+  if (href && /^https?:\/\//i.test(href)) {
+    return (
+      <a href={href} className="group block min-w-0" target="_blank" rel="noreferrer">
+        {card}
+      </a>
+    );
+  }
   if (href) {
     return (
       <Link href={href} className="group block min-w-0">
@@ -196,7 +183,7 @@ export function HmRecentVideosBox({ videoTvHref, listHref, accent = "#039D55" }:
   const newsSeed = useMemo(() => Math.floor(Math.random() * 1_000_000_000), []);
 
   const { data: videos = [], isLoading, isFetching } = useQuery({
-    queryKey: ["/api/video/videos/hm-recent", categorySlug ?? "news", newsSeed],
+    queryKey: ["/api/hm/yektube/videos", "hm-recent", categorySlug ?? "news", newsSeed],
     queryFn: () => fetchRecentVideos(categorySlug, newsSeed),
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,

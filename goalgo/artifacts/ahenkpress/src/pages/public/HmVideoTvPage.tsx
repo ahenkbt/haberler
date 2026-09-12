@@ -13,43 +13,22 @@ import { hmVitrinAccentHex } from "@/lib/hmVitrinThemeTokens";
 import { useHmVideoTvSiteBrand } from "@/lib/hmVideoTvSiteBrand";
 import { parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 import { isLongFormVideo, recommendationVideoTitle } from "@/lib/yektubeVideoClassify";
+import { fetchHmYektubeCatalog, type HmYektubeCatalogVideo } from "@/lib/hmYektubeCatalogClient";
 import { VIDEO_TV_CATEGORY_LABELS, VIDEO_TV_NAV_SLUGS } from "@/lib/videoTvCategories";
 import { yektubeCanliTvPath, yektubeWatchPath } from "@/lib/yektubeUrls";
 import { useEffect } from "react";
 
-type VideoRow = {
-  id: number;
-  sourceId?: number | null;
-  videoId: string;
-  title: string;
-  thumbnail?: string | null;
-  channelName?: string | null;
-  duration?: string | null;
-  isStory?: boolean;
-  categorySlug?: string;
-};
+type VideoRow = HmYektubeCatalogVideo;
 
 const PAGE_LIMIT = 36;
 
 async function fetchVideoTvFeed(categorySlug: string | null, seed: number): Promise<VideoRow[]> {
-  const mixed = !categorySlug;
-  const params = new URLSearchParams({
-    limit: String(PAGE_LIMIT),
-    excludeStories: "true",
+  const items = await fetchHmYektubeCatalog({
+    limit: PAGE_LIMIT,
+    categorySlug,
+    seed: categorySlug ? null : seed,
   });
-  if (categorySlug) {
-    params.set("categorySlug", categorySlug);
-    params.set("longFormOnly", "true");
-  } else {
-    params.set("newsOnly", "true");
-    params.set("mixChannels", "true");
-    params.set("seed", String(seed));
-  }
-  const res = await fetch(`/api/video/videos?${params}`);
-  if (!res.ok) return [];
-  const data = (await res.json()) as { items?: VideoRow[] };
-  const items = data.items ?? [];
-  if (mixed) return items;
+  if (!categorySlug) return items;
   return items.filter((v) =>
     isLongFormVideo({ isStory: v.isStory, title: v.title, duration: v.duration ?? null }),
   );
@@ -78,7 +57,7 @@ export default function HmVideoTvPage() {
   const newsSeed = useMemo(() => Math.floor(Math.random() * 1_000_000_000), []);
 
   const { data: videos = [], isLoading } = useQuery({
-    queryKey: ["/api/video/videos/hm-video-tv", categorySlug ?? "news", newsSeed],
+    queryKey: ["/api/hm/yektube/videos", "hm-video-tv", categorySlug ?? "news", newsSeed],
     queryFn: () => fetchVideoTvFeed(categorySlug, newsSeed),
     staleTime: 3 * 60 * 1000,
   });
@@ -168,7 +147,7 @@ export default function HmVideoTvPage() {
           {videos.map((v) => {
             const sourceId = v.sourceId ?? 0;
             const href =
-              sourceId > 0 ? yektubeWatchPath(sourceId, v.videoId, pathHome) : null;
+              sourceId > 0 ? yektubeWatchPath(sourceId, v.videoId, pathHome) : v.watchUrl ?? null;
             const title = recommendationVideoTitle(v.title, v.channelName);
             const card = (
               <>
@@ -199,6 +178,13 @@ export default function HmVideoTvPage() {
                 ) : null}
               </>
             );
+            if (href && /^https?:\/\//i.test(href)) {
+              return (
+                <a key={v.id} href={href} className="group block min-w-0" target="_blank" rel="noreferrer">
+                  {card}
+                </a>
+              );
+            }
             return href ? (
               <Link key={v.id} href={href} className="group block min-w-0">
                 {card}

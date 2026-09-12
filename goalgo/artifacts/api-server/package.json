@@ -38,6 +38,7 @@
     "start:with-migrate": "node ./scripts/start-production.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "smoke:hm-yektube": "node ./scripts/hm-yektube-catalog-smoke.mjs",
     "test:hybrid-news-href": "node --import tsx ./scripts/assert-hybrid-news-href.ts",
     "test:wiki-slug-titles": "node --import tsx ./scripts/assert-wiki-slug-titles.ts",
     "test:wiki-slug-live": "node --import tsx ./scripts/assert-wiki-slug-live.ts",
