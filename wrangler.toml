@@ -168,23 +168,8 @@ zone_name = "suhaber.net"
 # belediyehizmet.com kaldırıldı.
 
 # Kırşehir Haber (/tr/kh)
-# kirsehirhaber.org: zone CF'de (NS hazır) — Worker routes + originless DNS açık.
-# kirsehri.com / kirsehir.net: zone yoksa deploy kırılır; DNS gelince açılır.
-[[routes]]
-pattern = "kirsehirhaber.org"
-custom_domain = true
-
-[[routes]]
-pattern = "www.kirsehirhaber.org"
-custom_domain = true
-
-[[routes]]
-pattern = "kirsehirhaber.org/*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "www.kirsehirhaber.org/*"
-zone_name = "kirsehirhaber.org"
+# kirşehirhaber.org zone erişimi bu workflow tokenında yok; route yönetimi ayrı Worker/account'ta.
+# Bu worker deploy'unda route ekleme/senkronizasyonu kapalı tutulur.
 
 # [[routes]]
 # pattern = "kirsehri.com"
@@ -212,4 +197,3 @@ zone_name = "kirsehirhaber.org"
 # zone_name = "kirsehir.net"
 
 # redeploy trigger 2026-08-18T15:20:00Z — r2.dev public URL + boş bucket gerçeği
-
