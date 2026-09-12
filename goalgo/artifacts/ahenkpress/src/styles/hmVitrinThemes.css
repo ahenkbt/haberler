@@ -8483,3 +8483,116 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
   margin-right: auto;
   margin-left: auto;
 }
+/* === VKD ULTRA PREMIUM 2026-09-12 === */
+/* Design language inspired by monumental heritage portals — original CSS, no scraped assets */
+@keyframes vkv-hero-kenburns {
+  0% { transform: scale(1.05) translate3d(0, 0, 0); }
+  100% { transform: scale(1.14) translate3d(-1.5%, -1%, 0); }
+}
+@keyframes vkv-fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes vkv-gold-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+[data-hm-vitrin-theme="corporate"] .vkv-hero {
+  min-height: clamp(420px, 68vh, 720px);
+  isolation: isolate;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-hero::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 3px;
+  z-index: 5;
+  background: linear-gradient(90deg, transparent, var(--hm-corporate-gold, #d6a33a), #f3d48a, var(--hm-corporate-gold, #d6a33a), transparent);
+  background-size: 200% 100%;
+  animation: vkv-gold-shimmer 8s linear infinite;
+  pointer-events: none;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-hero--empty {
+  background-image:
+    linear-gradient(105deg, rgba(4, 19, 39, 0.92) 8%, rgba(7, 31, 61, 0.72) 46%, rgba(4, 19, 39, 0.35) 100%),
+    url("/vkd/vkd-hero-vatan.png");
+  background-size: cover;
+  background-position: center 28%;
+  background-repeat: no-repeat;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-hero--empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url("/vkd/vkd-hero-vatan.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.35;
+  animation: vkv-hero-kenburns 22s ease-in-out alternate infinite;
+  pointer-events: none;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-img {
+  animation: vkv-hero-kenburns 24s ease-in-out alternate infinite;
+  transform-origin: center center;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide.active .vkv-slide-img {
+  animation-play-state: running;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-body {
+  z-index: 3;
+  animation: vkv-fade-up 0.85s ease both;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-eyebrow {
+  letter-spacing: 0.22em;
+  color: var(--hm-corporate-gold, #d6a33a);
+  border: 1px solid color-mix(in srgb, var(--hm-corporate-gold, #d6a33a) 45%, transparent);
+  background: color-mix(in srgb, var(--hm-corporate-gold, #d6a33a) 12%, transparent);
+  padding: 0.35rem 0.75rem;
+  display: inline-block;
+  margin-bottom: 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-title {
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  font-size: clamp(1.85rem, 4.2vw, 3.35rem);
+  line-height: 1.08;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-title-accent {
+  color: var(--hm-corporate-gold, #d6a33a);
+  display: block;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-btn--primary {
+  background: linear-gradient(135deg, var(--hm-corporate-gold, #d6a33a), #f0c56a);
+  color: #1a1205;
+  border: none;
+  box-shadow: 0 10px 28px rgba(214, 163, 58, 0.28);
+}
+[data-hm-vitrin-theme="corporate"] .vkv-slide-btn--primary:hover {
+  filter: brightness(1.06);
+}
+[data-hm-vitrin-theme="corporate"] .vkv-quick-links,
+[data-hm-vitrin-theme="corporate"] .vkv-quicklinks,
+[data-hm-vitrin-theme="corporate"] .vkv-section-head {
+  animation: vkv-fade-up 0.7s ease both;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-card,
+[data-hm-vitrin-theme="corporate"] .vkv-link-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+[data-hm-vitrin-theme="corporate"] .vkv-card:hover,
+[data-hm-vitrin-theme="corporate"] .vkv-link-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(4, 19, 39, 0.16);
+  border-color: color-mix(in srgb, var(--hm-corporate-gold, #d6a33a) 55%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-hm-vitrin-theme="corporate"] .vkv-hero--empty::before,
+  [data-hm-vitrin-theme="corporate"] .vkv-slide-img,
+  [data-hm-vitrin-theme="corporate"] .vkv-hero::after,
+  [data-hm-vitrin-theme="corporate"] .vkv-slide-body {
+    animation: none !important;
+  }
+}
