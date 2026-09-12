@@ -23,6 +23,8 @@ export const HM_RESERVED_HM_ROUTE_SEGMENTS = new Set([
   "kultur-portali",
   "ataturk",
   "foto-galeri",
+  "video",
+  "videolar",
   "video-tv",
   "yemek-tarifleri",
   "sayfa",

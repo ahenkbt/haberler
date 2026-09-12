@@ -35,6 +35,7 @@ export {
   dualWriteYektubeUpdate,
   dualWriteYektubeDelete,
   isYektubeReadMainFallback,
+  setYektubeReadMainFallback,
   type YektubeDbReadMode,
   type YektubeDbWriteMode,
 } from "./yektubeCluster";

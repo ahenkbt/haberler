@@ -280,6 +280,8 @@ export function HmPublicNewsNavStrip({
   const videoActive =
     locPath === normPath(pathOnlyHref(hmVideoTvHref)) ||
     locPath.endsWith("/video") ||
+    locPath.endsWith("/videolar") ||
+    locPath.includes("/videolar/") ||
     locPath.includes("/video-tv");
   const talepFormuActive = locPath === normPath(pathOnlyHref(talepFormuHref));
   const requestFormEnabled = corporateNav
