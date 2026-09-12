@@ -5,6 +5,7 @@ import {
   isHmNewsPlaceholderSrc,
   isUsableNewsCoverSrc,
 } from "./hmNewsPlaceholder";
+import { filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
 
 describe("haber görsel placeholder", () => {
   it("data URI SVG içinde «Görsel Hazırlanmaktadır» yazar", () => {
@@ -25,5 +26,14 @@ describe("haber görsel placeholder", () => {
     expect(isUsableNewsCoverSrc(HM_NEWS_PLACEHOLDER_SVG)).toBe(false);
     expect(isUsableNewsCoverSrc("/hm/haber-gorsel-hazirlaniyor.svg")).toBe(false);
     expect(isUsableNewsCoverSrc("https://cdn.example.com/cover.jpg")).toBe(true);
+  });
+
+  it("anasayfa listesinden görselsiz haberi çıkarır", () => {
+    const kept = filterNewsItemsWithCoverImage([
+      { title: "Resimli", imageUrl: "https://cdn.example.com/a.jpg" },
+      { title: "Boş", imageUrl: "" },
+      { title: "Placeholder", imageUrl: HM_NEWS_PLACEHOLDER_SVG },
+    ]);
+    expect(kept.map((item) => item.title)).toEqual(["Resimli"]);
   });
 });

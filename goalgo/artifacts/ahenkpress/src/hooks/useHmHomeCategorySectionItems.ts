@@ -14,6 +14,7 @@ import {
 } from "@/lib/hmHomeCategorySectionPool";
 import { categoryBoxItemKey } from "@/lib/hmCategoryBoxItems";
 import { hmCategorySlug } from "@/lib/hmCategorySlug";
+import { filterNewsItemsWithCoverImage } from "@/components/HmNewsImage";
 
 const DEFAULT_FETCH_LIMIT = 20;
 /** Mobilde onlarca kategori hybrid isteği yerine üstteki kutular önce. */
@@ -101,7 +102,7 @@ export function useHmHomeCategorySectionItems(opts: {
             timeoutMs: HM_HYBRID_CATEGORY_FETCH_TIMEOUT_MS,
             retries: 0,
           });
-          return deferSimilarNewsItems(items.map(mapHybridNewsToBandItem));
+          return filterNewsItemsWithCoverImage(deferSimilarNewsItems(items.map(mapHybridNewsToBandItem)));
         },
         staleTime: 60 * 1000,
         // Sonsuz spinner olmasın: tek deneme + kısa timeout ile sorgu her koşulda hızlı
@@ -142,8 +143,9 @@ export function useHmHomeCategorySectionItems(opts: {
         backfill.push(item);
         if (backfill.length >= limit) break;
       }
-      if (backfill.length > 0) {
-        bySlug.set(slug, backfill);
+      const covered = filterNewsItemsWithCoverImage(backfill);
+      if (covered.length > 0) {
+        bySlug.set(slug, covered);
       }
     });
 

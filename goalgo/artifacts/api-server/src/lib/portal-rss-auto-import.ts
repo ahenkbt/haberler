@@ -16,6 +16,7 @@ import { enabledPortalHybridRssFeeds, loadPortalHybridRssFeeds } from "./portal-
 import { isBoxScopeFeedId } from "./portal-rss-cache.js";
 import { enqueuePortalRssMetaRewriteJob } from "./portal-rss-ai-meta.js";
 import { mirrorRssImportImageUrl } from "./portal-rss-image-mirror.js";
+import { resolveRssImportCoverImage } from "./rss-import-cover.js";
 import { deriveRssImportNewsTags } from "./newsAutoTags.js";
 import { scheduleGoogleNewsIndexing } from "./google-news-indexing.js";
 import { removeNewsSlugRedirect } from "./news-slug-redirect.js";
@@ -66,7 +67,11 @@ export async function refreshPortalRssNewsImageFromItem(opts: {
 }): Promise<boolean> {
   const sourceUrl = normalizeRssSourceUrl(String(opts.sourceUrl ?? ""));
   const title = String(opts.title ?? "").trim() || sourceUrl || "haber";
-  const incoming = await mirrorRssImportImageUrl(opts.imageUrl, title);
+  const resolvedCover = await resolveRssImportCoverImage({
+    existing: opts.imageUrl,
+    link: sourceUrl,
+  });
+  const incoming = await mirrorRssImportImageUrl(resolvedCover, title);
   if (!sourceUrl || !incoming) return false;
 
   const cond =
@@ -156,7 +161,12 @@ export async function syncPortalRssItemsToNewsTable(
     const publishedAt = new Date(item.publishedAt);
     const ts = Number.isFinite(publishedAt.getTime()) ? publishedAt : new Date();
 
-    const imageUrl = await mirrorRssImportImageUrl(item.imageUrl, title);
+    const resolvedCover = await resolveRssImportCoverImage({
+      existing: item.imageUrl,
+      link: item.link,
+      descriptionHtml: item.spot,
+    });
+    const imageUrl = await mirrorRssImportImageUrl(resolvedCover, title);
 
     const [created] = await dualWriteInsert(newsTable, {
       title,

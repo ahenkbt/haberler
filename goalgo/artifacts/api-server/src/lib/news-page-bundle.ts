@@ -12,13 +12,14 @@ import { loadNewsContext } from "./news-context.js";
 import { serializeHmMakaleAsNews, serializeNews, type NewsContext, type SerializedNewsListItem } from "./serializers.js";
 import { getHmHiddenCategoryIds, getHmHiddenCategorySlugs } from "./hm-public-layout.js";
 import { filterPortalAuthorPeerIds } from "./hm-sync-source.js";
-import { hasKoseAuthorId, isKoseArticle } from "./kose-article.js";
+import { hasKoseAuthorId, isKoseArticle, type KoseArticleLike } from "./kose-article.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "./hm-global-news-category.js";
 import { enrichSerializedNewsListImages, isSiteLocalNewsRow, withTimeoutOrFallback } from "./news-list-image-enrich.js";
 import { applyNewsSiteOverrides } from "./hybrid-news-merge.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isHmCorporateLayout, parseHmLayoutJson, resolveHmCorporateAuthorsEnabledFromLayout } from "./hm-editor-categories.js";
-import { centralNewsRowBelongsToCorporateSite } from "./hm-corporate-news-policy.js";
+import { centralNewsRowBelongsToCorporateSite, centralNewsRowVisibleOnHmEditorSite } from "./hm-corporate-news-policy.js";
+import { newsRowVisibleOnHmSiteByRssTarget } from "./rss-campaign-target.js";
 import { shouldHideAuthorOnAnkaraHmSite } from "./hm-vatanhaber-author-block.js";
 
 export const NEWS_PAGE_BUNDLE_BUDGET_MS = 5_000;
@@ -65,8 +66,8 @@ async function newsRowBelongsToSite(
       siteId,
     );
   }
-  // Haber siteleri: merkez satır yalnızca özel kategori (exclusiveSiteId) ile bu siteye aitse.
-  // Canlı havuz sızıntısı / yanlış slug için “her yayınlanmış merkez benimdir” kuralı kaldırıldı.
+  // Haber siteleri: vitrinde listelenen merkez havuz (RSS kampanya / hybrid) + exclusive kategori.
+  if (isVisibleCentralPoolNewsForHmSite(row, siteId)) return true;
   if (row.categoryId == null) return false;
   const [readCat, mainCat] = await Promise.all([
     readDb
@@ -81,6 +82,80 @@ async function newsRowBelongsToSite(
       .limit(1),
   ]);
   return readCat.length > 0 || mainCat.length > 0;
+}
+
+function toHmEditorVisibilityRow(row: {
+  siteId?: number | null;
+  rssSourceUrl?: string | null;
+  authorId?: number | null;
+  isEditorManual?: boolean | null;
+  siteOnly?: boolean | null;
+  categorySlug?: string | null;
+  contentKind?: string | null;
+  hmSyncKind?: string | null;
+}): {
+  siteId?: number | null;
+  rssSourceUrl?: string | null;
+  authorId?: number | null;
+  isEditorManual?: boolean | null;
+  siteOnly?: boolean | null;
+} & KoseArticleLike {
+  const contentKind =
+    row.contentKind === "makale" || row.contentKind === "news" ? row.contentKind : undefined;
+  const hmSyncKind =
+    row.hmSyncKind === "makale" || row.hmSyncKind === "news"
+      ? row.hmSyncKind
+      : row.hmSyncKind == null
+        ? null
+        : undefined;
+  return {
+    siteId: row.siteId,
+    rssSourceUrl: row.rssSourceUrl,
+    authorId: row.authorId,
+    isEditorManual: row.isEditorManual,
+    siteOnly: row.siteOnly,
+    categorySlug: row.categorySlug ?? undefined,
+    contentKind,
+    hmSyncKind,
+  };
+}
+
+/**
+ * Merkez `news` (site_id NULL) — başka sitenin satırı değil.
+ * Anasayfa/hybrid bu satırları listeler; `/haber/{slug}?siteId=` aynı kuralı kullanmalı.
+ */
+export function isVisibleCentralPoolNewsForHmSite(
+  row: {
+    siteId?: number | null;
+    rssSourceUrl?: string | null;
+    authorId?: number | null;
+    isEditorManual?: boolean | null;
+    siteOnly?: boolean | null;
+    tags?: string[] | null;
+    categorySlug?: string | null;
+    contentKind?: string | null;
+    hmSyncKind?: string | null;
+  },
+  siteId: number,
+): boolean {
+  if (!Number.isFinite(siteId) || siteId <= 0) return false;
+  if (row.siteId != null) return row.siteId === siteId;
+  if (!centralNewsRowVisibleOnHmEditorSite(toHmEditorVisibilityRow(row), siteId)) return false;
+  return newsRowVisibleOnHmSiteByRssTarget(row, siteId);
+}
+
+async function lookupPublishedCentralNewsBySlug(
+  db: NewsReadDb,
+  slugKey: string,
+  siteId: number,
+): Promise<typeof newsTable.$inferSelect | undefined> {
+  const [pool] = await db
+    .select()
+    .from(newsTable)
+    .where(and(eq(newsTable.slug, slugKey), isNull(newsTable.siteId), eq(newsTable.status, "published")))
+    .limit(1);
+  if (!pool) return undefined;
+  return isVisibleCentralPoolNewsForHmSite(pool, siteId) ? pool : undefined;
 }
 
 /** Panelden eklenen haber: slug+siteId tek sorgu — site layout / corporate / makale yok. */
@@ -148,6 +223,10 @@ export async function resolveNewsArticleBySlug(
       .limit(1);
     row = acceptRowForSlug(siteLocal);
   }
+  // Merkez havuz slug'ı exclusive-cat OR taramasından önce — o sorgu timeout üretebiliyor.
+  if (!row && siteScoped && !isCorporate) {
+    row = acceptRowForSlug(await lookupPublishedCentralNewsBySlug(readDb, slugKey, siteId!));
+  }
   if (!row && siteScoped) {
     const [scoped] = await readDb
       .select()
@@ -165,7 +244,6 @@ export async function resolveNewsArticleBySlug(
       .limit(1);
     row = acceptRowForSlug(corp);
   }
-  // HM site: global slug fallback yok — başka sitenin / merkez çakışması yanlış haber üretir.
   // Portal (siteId yok): eski davranış.
   if (!row && !siteScoped) {
     const [portalRow] = await readDb.select().from(newsTable).where(eq(newsTable.slug, slugKey));
@@ -204,6 +282,9 @@ export async function resolveNewsArticleBySlug(
         .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId!)))
         .limit(1);
       row = acceptRowForSlug(siteLocal);
+    }
+    if (!row && siteScoped && !isCorporate) {
+      row = acceptRowForSlug(await lookupPublishedCentralNewsBySlug(mainDb as NewsReadDb, slugKey, siteId!));
     }
     if (!row && siteScoped) {
       const [scoped] = await mainDb

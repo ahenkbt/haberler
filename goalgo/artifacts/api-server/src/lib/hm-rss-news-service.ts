@@ -43,6 +43,7 @@ import {
 } from "./hm-editor-categories.js";
 import { findPortalGlobalCategoryBySlug } from "./portal-category-slug.js";
 import { refreshPortalRssNewsImageFromItem } from "./portal-rss-auto-import.js";
+import { resolveRssImportCoverImage } from "./rss-import-cover.js";
 import { syncHmEditorContentToYekpare } from "./hm-yekpare-news-sync.js";
 import { mirrorMediaUrlToDisk } from "./mediaBulkMigrate.js";
 import {
@@ -464,7 +465,11 @@ export async function importHmRssNewsToSite(
   const publishedAt = new Date(item.publishedAt);
   const ts = Number.isFinite(publishedAt.getTime()) ? publishedAt : new Date();
 
-  let imageUrl = item.imageUrl;
+  let imageUrl = await resolveRssImportCoverImage({
+    existing: item.imageUrl,
+    link: item.link,
+    descriptionHtml: item.spot,
+  });
   if (imageUrl && /^https?:\/\//i.test(String(imageUrl))) {
     const mirrored = await mirrorMediaUrlToDisk(String(imageUrl), { title, hashSeed: String(imageUrl) });
     if (mirrored) imageUrl = mirrored;

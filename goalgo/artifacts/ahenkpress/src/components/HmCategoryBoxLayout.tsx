@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { HmNewsImage } from "@/components/HmNewsImage";
+import { HmNewsImage, filterNewsItemsWithCoverImage, newsItemHasCoverImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 import {
   CATEGORY_BOX_DESKTOP_LIST_SLOTS,
@@ -153,9 +153,10 @@ export function HmCategoryBoxGrid({
   className?: string;
   categorySlug?: string;
 }) {
-  if (!lead) return null;
-  const desktopListItems = listItems.slice(0, CATEGORY_BOX_DESKTOP_LIST_SLOTS);
-  const mobileItems = [lead, ...listItems].slice(0, CATEGORY_BOX_MOBILE_QUAD_TOTAL);
+  if (!lead || !newsItemHasCoverImage(lead)) return null;
+  const coveredList = filterNewsItemsWithCoverImage(listItems);
+  const desktopListItems = coveredList.slice(0, CATEGORY_BOX_DESKTOP_LIST_SLOTS);
+  const mobileItems = [lead, ...coveredList].slice(0, CATEGORY_BOX_MOBILE_QUAD_TOTAL);
   return (
     <div
       className={`hm-category-box-grid ${className}`.trim()}

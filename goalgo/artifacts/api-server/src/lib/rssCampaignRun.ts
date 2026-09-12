@@ -19,6 +19,7 @@ import { scrapeListingPageItems } from "./rssHtmlScrape.js";
 import { parseFeedItems } from "./rssFeedParse.js";
 import { coerceNewsPublishedAt, extractHtmlArticlePublishedAt } from "./rssPublishedDate.js";
 import { extractRssContentEncoded, extractRssCoverImage } from "./rssItemMedia.js";
+import { resolveRssImportCoverImage } from "./rss-import-cover.js";
 import { mirrorRssImportImageUrl } from "./portal-rss-image-mirror.js";
 import { logger } from "./logger";
 import { ensureRssCampaignSchema } from "./ensure-rss-campaign-schema.js";
@@ -459,7 +460,12 @@ export async function executeRssCampaignRun(
 
         const contentHtml = resolveCampaignRssContent({ ...item, rssSpot });
         const publishedAt = item.publishedAt;
-        const imageUrl = await mirrorRssImportImageUrl(item.imageUrl, cleanTitle, {
+        const resolvedCover = await resolveRssImportCoverImage({
+          existing: item.imageUrl,
+          descriptionHtml: item.description,
+          link: item.link,
+        });
+        const imageUrl = await mirrorRssImportImageUrl(resolvedCover, cleanTitle, {
           force: campaign.downloadImages === true,
         });
         const sharedFeed = rssCampaignSharedFeedConfig({

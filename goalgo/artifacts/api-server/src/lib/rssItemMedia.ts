@@ -33,10 +33,14 @@ export function extractRssContentEncoded(raw: string): string {
 
 function collectImgSrcs(html: string, link: string, out: string[], limit: number): void {
   if (!html || out.length >= limit) return;
-  const re = /<img\b[^>]+src=["']([^"']+)["']/gi;
+  const re = /<img\b[^>]*>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null && out.length < limit) {
-    const abs = absolutizeImageUrl(link, m[1]);
+    const tag = m[0];
+    const src =
+      tag.match(/\b(?:src|data-src|data-original|data-lazy-src|data-lazy)=["']([^"']+)["']/i)?.[1] ??
+      tag.match(/\bsrcset=["']([^"'\s,]+)/i)?.[1];
+    const abs = absolutizeImageUrl(link, src);
     if (abs && !out.includes(abs)) out.push(abs);
   }
 }
@@ -60,8 +64,11 @@ export function extractRssImageUrls(
   const mediaCandidates = [
     rawItem.match(/<media:thumbnail\b[^>]*url=["']([^"']+)["']/i)?.[1],
     rawItem.match(/<media:content\b[^>]*medium=["']image["'][^>]*url=["']([^"']+)["']/i)?.[1],
+    rawItem.match(/<media:content\b[^>]*type=["']image\/[^"']+["'][^>]*url=["']([^"']+)["']/i)?.[1],
+    rawItem.match(/<media:content\b[^>]*url=["']([^"']+)["'][^>]*type=["']image\/[^"']+["']/i)?.[1],
     rawItem.match(/<media:content\b[^>]*url=["']([^"']+)["']/i)?.[1],
     rawItem.match(/<itunes:image\b[^>]*href=["']([^"']+)["']/i)?.[1],
+    rawItem.match(/<media:thumbnail[^>]*>\s*<!\[CDATA\[(https?:\/\/[^\]]+)\]\]>/i)?.[1],
   ];
   for (const c of mediaCandidates) pushUrl(c);
 
@@ -75,7 +82,12 @@ export function extractRssImageUrls(
   if (encBlock && urls.length < max) {
     const encUrl = encBlock.match(/\burl=["']([^"']+)["']/i)?.[1];
     const encType = encBlock.match(/\btype=["']([^"']+)["']/i)?.[1] ?? "";
-    if (encUrl && (/image\//i.test(encType) || /\.(jpe?g|png|gif|webp|svg)(\?|#|$)/i.test(encUrl))) {
+    if (
+      encUrl &&
+      (/image\//i.test(encType) ||
+        /\.(jpe?g|png|gif|webp|avif|svg)(\?|#|$)/i.test(encUrl) ||
+        /\/(?:uploads?|media|images?|files|static\/content|resim)\//i.test(encUrl))
+    ) {
       pushUrl(encUrl);
     }
   }
