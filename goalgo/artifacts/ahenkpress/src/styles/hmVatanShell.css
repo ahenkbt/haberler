@@ -421,14 +421,16 @@
 [data-vatan-shell] .vatan-brand__logo {
   display: block;
   width: auto;
-  height: 48px;
-  max-width: 200px;
+  height: 52px;
+  max-width: min(240px, 58vw);
   object-fit: contain;
-  transition: height 260ms var(--vatan-ease);
+  object-position: left center;
+  transition: height 260ms var(--vatan-ease), max-width 260ms var(--vatan-ease);
 }
 
 [data-vatan-shell] .vatan-header--solid .vatan-brand__logo {
-  height: 36px;
+  height: 40px;
+  max-width: min(200px, 52vw);
 }
 
 [data-vatan-shell] .vatan-brand__mark {
@@ -449,42 +451,11 @@
   background: var(--vatan-gold);
 }
 
-[data-vatan-shell] .vatan-brand__lockup {
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-[data-vatan-shell] .vatan-brand__name {
-  font: 600 0.75rem / 1 var(--vatan-text);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-[data-vatan-shell] .vatan-brand__tag {
-  font: 400 0.6875rem / 1 var(--vatan-text);
-  letter-spacing: 0.08em;
-  color: var(--vatan-gold-soft);
-  white-space: nowrap;
-}
-
-/* With the serif wordmark the name is already visible: only the tagline joins at 2xl. */
-[data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup .vatan-brand__name {
-  display: none;
-}
-
-@media (min-width: 1280px) {
-  [data-vatan-shell] .vatan-brand__logo + .vatan-brand__lockup {
-    display: flex;
-  }
-}
-
-@media (min-width: 1536px) {
-  [data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup {
-    display: flex;
-  }
+/* Official lockup PNG already carries the name. Never show a second wordmark beside it. */
+[data-vatan-shell] .vatan-brand__lockup,
+[data-vatan-shell] .vatan-brand__logo + .vatan-brand__lockup,
+[data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup {
+  display: none !important;
 }
 
 [data-vatan-shell] .vatan-header__nav {
@@ -822,6 +793,12 @@
   list-style: none;
 }
 
+[data-vatan-shell] .vatan-mobile__utils--tail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--vatan-line);
+}
+
 [data-vatan-shell] .vatan-mobile__util {
   font: 500 0.75rem / 1 var(--vatan-text);
   letter-spacing: 0.1em;
@@ -923,8 +900,8 @@
   padding: 0.5rem 0;
 }
 
-/* ───────────────────────── 8. Home · S1 Hero ───────────────────────── */
-[data-vatan-shell] .vatan-hero {
+/* ───────────────────────── 8. Heroes: home stage vs interior banners ───────────────────────── */
+[data-vatan-shell] .vatan-hero--home {
   position: relative;
   display: grid;
   height: min(100svh, 960px);
@@ -936,10 +913,28 @@
 }
 
 @media (max-width: 767px) {
-  [data-vatan-shell] .vatan-hero {
+  [data-vatan-shell] .vatan-hero--home {
     height: min(100svh, 720px);
     min-height: 560px;
   }
+}
+
+/* Interior pages reuse `.vatan-hero` — keep a short banner, not the homepage 100svh stage. */
+[data-vatan-shell] .vatan-page .vatan-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: auto;
+  min-height: 176px;
+  max-height: none;
+  color: var(--vatan-on-dark);
+  background: var(--vatan-navy-deep);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero--compact {
+  min-height: 148px;
 }
 
 [data-vatan-shell] .vatan-hero__media {
@@ -955,19 +950,29 @@
   height: 100%;
   object-fit: cover;
   object-position: 60% 50%;
+}
+
+[data-vatan-shell] .vatan-hero--home .vatan-hero__img {
   opacity: 0;
   transform: scale(1);
   transition: opacity 1200ms ease-in-out;
   will-change: opacity, transform;
 }
 
-[data-vatan-shell] .vatan-hero__img.is-active {
+[data-vatan-shell] .vatan-hero--home .vatan-hero__img.is-active {
   opacity: 1;
   animation: vatan-kenburns var(--vatan-slide-ms, 8000ms) linear forwards;
 }
 
-[data-vatan-shell] .vatan-hero--static .vatan-hero__img.is-active {
+[data-vatan-shell] .vatan-hero--home.vatan-hero--static .vatan-hero__img.is-active {
   animation: none;
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero__img {
+  opacity: 1;
+  transform: none;
+  animation: none;
+  will-change: auto;
 }
 
 @keyframes vatan-kenburns {
@@ -999,11 +1004,21 @@
 [data-vatan-shell] .vatan-hero__inner {
   position: relative;
   z-index: 1;
+}
+
+[data-vatan-shell] .vatan-hero--home .vatan-hero__inner {
   display: grid;
   grid-template-rows: 1fr auto;
   align-items: center;
   padding-top: var(--vatan-header-h);
   padding-bottom: clamp(6rem, 12vh, 8rem);
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero__inner {
+  display: block;
+  width: 100%;
+  padding-top: 1.05rem;
+  padding-bottom: 1.2rem;
 }
 
 [data-vatan-shell] .vatan-hero__copy {
@@ -1021,6 +1036,59 @@
   text-wrap: balance;
 }
 
+[data-vatan-shell] .vatan-page .vatan-hero__title {
+  font: 700 clamp(1.55rem, 2.6vw, 2.4rem) / 1.08 var(--vatan-display);
+  max-width: 20ch;
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero__lead {
+  margin: 0.55rem 0 0;
+  max-width: 48ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--vatan-on-dark-muted);
+}
+
+[data-vatan-shell] .vatan-page .vatan-chip-nav {
+  margin-top: 0.85rem;
+}
+
+/* Shared heritage/Atatürk bodies still use sade teal tokens — remap under Vatan. */
+[data-vatan-shell] .vatan-page .bg-\[\#0f766e\] {
+  background-color: var(--vatan-crimson);
+}
+
+[data-vatan-shell] .vatan-page .bg-\[\#0f766e\]\/10 {
+  background-color: color-mix(in srgb, var(--vatan-crimson) 10%, transparent);
+}
+
+[data-vatan-shell] .vatan-page .text-\[\#0f766e\] {
+  color: var(--vatan-crimson);
+}
+
+[data-vatan-shell] .vatan-page .text-\[\#0f766e\]\/15 {
+  color: color-mix(in srgb, var(--vatan-crimson) 15%, transparent);
+}
+
+[data-vatan-shell] .vatan-page .border-\[\#0f766e\]\/15 {
+  border-color: color-mix(in srgb, var(--vatan-crimson) 15%, transparent);
+}
+
+/* Editor CMS templates (hakkımızda, faaliyetler…) — same compact banner, not 100vh. */
+[data-vatan-shell] .ms-hero {
+  min-height: 0;
+  justify-content: flex-end;
+  padding: 1.75rem var(--vatan-gutter) 1.85rem;
+}
+
+[data-vatan-shell] .tp-hero {
+  padding: 1.5rem 0 1.35rem;
+}
+
+[data-vatan-shell] .ib-hero {
+  padding: 1.65rem 1.5rem 1.5rem;
+}
+
 [data-vatan-shell] .vatan-hero__lead {
   color: rgba(246, 241, 232, 0.86);
   max-width: 52ch;
@@ -1033,20 +1101,20 @@
   margin-top: 0.5rem;
 }
 
-[data-vatan-shell] .vatan-hero__eyebrow,
-[data-vatan-shell] .vatan-hero__title,
-[data-vatan-shell] .vatan-hero__lead,
-[data-vatan-shell] .vatan-hero__actions {
+[data-vatan-shell] .vatan-hero--home .vatan-hero__eyebrow,
+[data-vatan-shell] .vatan-hero--home .vatan-hero__title,
+[data-vatan-shell] .vatan-hero--home .vatan-hero__lead,
+[data-vatan-shell] .vatan-hero--home .vatan-hero__actions {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 700ms var(--vatan-ease), transform 700ms var(--vatan-ease);
   transition-delay: calc(200ms + var(--i, 0) * 90ms);
 }
 
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__eyebrow,
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__title,
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__lead,
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__actions {
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__eyebrow,
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__title,
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__lead,
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__actions {
   opacity: 1;
   transform: none;
 }
@@ -1485,6 +1553,10 @@
   margin: clamp(1.75rem, 3vw, 2.75rem) 0 0;
   padding-top: clamp(1.25rem, 2vw, 2rem);
   border-top: 1px solid var(--vatan-line);
+}
+
+[data-vatan-shell] .vatan-figures--1 {
+  grid-template-columns: minmax(160px, 240px);
 }
 
 [data-vatan-shell] .vatan-figures dt {
@@ -1945,6 +2017,12 @@
   color: var(--vatan-muted);
 }
 
+[data-vatan-shell] .vatan-iban__payee {
+  grid-column: 1 / -1;
+  font-size: var(--vatan-t-small);
+  color: var(--vatan-ink);
+}
+
 [data-vatan-shell] .vatan-iban__code {
   font: 600 clamp(1rem, 1.4vw, 1.2rem) / 1.3 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
@@ -1974,6 +2052,10 @@
   margin: 0.75rem 0 0;
   font-size: var(--vatan-t-small);
   color: var(--vatan-crimson);
+}
+
+[data-vatan-shell] .vatan-sec .vatan-iban {
+  margin-top: 1.5rem;
 }
 
 [data-vatan-shell] .vatan-support__actions {
@@ -2046,8 +2128,10 @@
   align-content: start;
 }
 
-[data-vatan-shell] .vatan-footer .vatan-brand__logo {
-  height: 44px;
+[data-vatan-shell] .vatan-footer .vatan-brand__logo,
+[data-vatan-shell] .vatan-brand--compact .vatan-brand__logo {
+  height: 48px;
+  max-width: 220px;
 }
 
 [data-vatan-shell] .vatan-footer__mission {
@@ -2072,6 +2156,35 @@
 
 [data-vatan-shell] .vatan-footer__contact a:hover {
   color: var(--vatan-gold-soft);
+}
+
+[data-vatan-shell] .vatan-footer__accounts {
+  margin: 0.65rem 0 0;
+  padding: 0.65rem 0 0;
+  border-top: 1px solid var(--vatan-line);
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+[data-vatan-shell] .vatan-footer__accounts-bank {
+  display: block;
+  color: var(--vatan-on-dark-muted);
+}
+
+[data-vatan-shell] .vatan-footer__accounts-iban {
+  display: block;
+  color: var(--vatan-on-dark);
+  font: 600 0.8125rem / 1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+[data-vatan-shell] .vatan-footer__accounts-payee {
+  display: block;
+  color: var(--vatan-gold-soft);
+  font-size: 0.75rem;
 }
 
 [data-vatan-shell] .vatan-footer__social {

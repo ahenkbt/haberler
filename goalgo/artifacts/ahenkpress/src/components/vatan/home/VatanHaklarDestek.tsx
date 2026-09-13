@@ -17,11 +17,11 @@ export function VatanHaklarDestek() {
           <VatanSectionHead
             numeral="03"
             eyebrow="Haklar ve Destek"
-            title="Kanun açık,"
-            accent="başvuru sade olmalı."
+            title="Haklarınız var."
+            accent="Yanınızdayız."
             align="stack"
             id="vatan-s5-title"
-            lead="Şehit yakınları ve gaziler; aylık, tazminat, eğitim, sağlık, istihdam ve sosyal yardım haklarına sahiptir. Dernek dinler, sadeleştirir ve doğru kuruma yönlendirir."
+            lead="Aylık, eğitim, sağlık… hepsi sizin hakkınız. Gelin, dinleyelim; yolunu birlikte bulalım."
           />
           <VatanHairlineList
             ariaLabel="Haklar ve destek sayfaları"

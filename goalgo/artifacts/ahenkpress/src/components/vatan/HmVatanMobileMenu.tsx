@@ -55,6 +55,7 @@ export function HmVatanMobileMenu({
   onClose,
   groups,
   utilityLinks,
+  newsLinks = [],
   site,
   homeHref,
 }: {
@@ -62,6 +63,8 @@ export function HmVatanMobileMenu({
   onClose: () => void;
   groups: VatanNavGroup[];
   utilityLinks: VatanNavLink[];
+  /** Editor-stored news roots; rendered last, after every other link. */
+  newsLinks?: VatanNavLink[];
   site: HmNestedMetaCached;
   homeHref: string;
 }) {
@@ -120,6 +123,17 @@ export function HmVatanMobileMenu({
         {utilityLinks.length ? (
           <ul className="vatan-mobile__utils" role="list" aria-label="Diğer bağlantılar">
             {utilityLinks.map((link) => (
+              <li key={link.key}>
+                <VatanLink href={link.href} className="vatan-mobile__util" onClick={onClose}>
+                  {link.label}
+                </VatanLink>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {newsLinks.length ? (
+          <ul className="vatan-mobile__utils vatan-mobile__utils--tail" role="list" aria-label="Haber bağlantıları">
+            {newsLinks.map((link) => (
               <li key={link.key}>
                 <VatanLink href={link.href} className="vatan-mobile__util" onClick={onClose}>
                   {link.label}

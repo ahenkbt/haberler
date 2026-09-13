@@ -9,7 +9,7 @@ export function VatanTarihPanels() {
   return (
     <section className="vatan-section vatan-section--ivory vatan-history" aria-labelledby="vatan-s8-title">
       <div className="vatan-wrap">
-        <VatanSectionHead numeral="06" eyebrow="Tarih" title="Savaşlar ve harekât." id="vatan-s8-title" lead="Çanakkale’den Kıbrıs’a — kurumsal tarih girişi, resmî kaynaklara bağlı." />
+        <VatanSectionHead numeral="06" eyebrow="Tarih" title="Tarihimizden sayfalar." id="vatan-s8-title" lead="Çanakkale’den Kıbrıs’a, milletimizin yazdığı destanlar." />
         <ul className="vatan-panels" role="list">
           {VATAN_WAR_PANELS.map((p, i) => (
             <li key={p.slug} className="vatan-reveal" data-reveal-i={i}>

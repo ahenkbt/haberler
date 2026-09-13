@@ -35,8 +35,13 @@ export type VatanNavModel = {
   primaryGroups: VatanNavGroup[];
   /** Group roots beyond the limit — rendered inside a single "Daha Fazla" panel. */
   overflowGroups: VatanNavGroup[];
-  /** Roots that are plain links (KÜNYE, TALEP FORMU, Video TV …) + Haberler. */
+  /** Roots that are plain links (KÜNYE, TALEP FORMU, Video TV …). Never news. */
   utilityLinks: VatanNavLink[];
+  /**
+   * Editor-stored news roots (e.g. HABERLER → /tum-haberler). Surfaced only at the
+   * very end of the mobile menu — never in the desktop header or mega panel.
+   */
+  newsLinks: VatanNavLink[];
 };
 
 export const VATAN_PRIMARY_GROUP_LIMIT = 5;
@@ -56,6 +61,23 @@ export function resolveVatanHref(h: (path: string) => string, href: string): str
   if (!isRealHref(raw)) return "#";
   if (isHmPublicNavExternal(raw)) return raw;
   return h(raw.startsWith("/") ? raw : `/${raw}`);
+}
+
+const NEWS_HREF_RE = /^\/?(tum-haberler|haberler|haber|son-dakika|gundem|manset)(\/|\?|#|$)/i;
+const NEWS_LABEL_RE = /haber|son dakika|gündem|manşet|duyuru/i;
+
+/**
+ * A menu item whose target is the news listing / news detail. Editor category
+ * pages (`/kategori/*`) are deliberately NOT treated as news: they are content
+ * sections the editor named (e.g. "Derneğimiz").
+ */
+export function isVatanNewsMenuItem(item: Pick<HmCorporateMenuItem, "label" | "href">): boolean {
+  const raw = String(item.href ?? "").trim();
+  if (isRealHref(raw) && !isHmPublicNavExternal(raw)) {
+    const path = raw.replace(/^\/tr\/[^/]+/, "");
+    if (NEWS_HREF_RE.test(path)) return true;
+  }
+  return NEWS_LABEL_RE.test(cleanLabel(item.label));
 }
 
 function toLink(h: (path: string) => string, item: HmCorporateMenuItem): VatanNavLink | null {
@@ -83,13 +105,29 @@ export function buildVatanNavModel(
 
   const groups: VatanNavGroup[] = [];
   const utilityLinks: VatanNavLink[] = [];
+  const newsLinks: VatanNavLink[] = [];
 
   for (const root of roots) {
     const label = cleanLabel(root.label);
     if (!label) continue;
     if (!opts.showVideoTvLink && isHmCorporateMenuVideoTvItem(root)) continue;
-    const children = (childrenByParent.get(root.id) ?? [])
-      .filter((c) => !(!opts.showVideoTvLink && isHmCorporateMenuVideoTvItem(c)))
+    const rawChildren = (childrenByParent.get(root.id) ?? []).filter(
+      (c) => !(!opts.showVideoTvLink && isHmCorporateMenuVideoTvItem(c)),
+    );
+
+    if (isVatanNewsMenuItem(root)) {
+      // Stored news root: keep it reachable (mobile menu tail) but out of the desktop chrome.
+      const rootLink = toLink(h, root);
+      if (rootLink) newsLinks.push(rootLink);
+      for (const c of rawChildren) {
+        const l = toLink(h, c);
+        if (l) newsLinks.push(l);
+      }
+      continue;
+    }
+
+    const children = rawChildren
+      .filter((c) => !isVatanNewsMenuItem(c))
       .map((c) => toLink(h, c))
       .filter((c): c is VatanNavLink => c != null);
     if (children.length > 0) {
@@ -101,16 +139,11 @@ export function buildVatanNavModel(
     if (link) utilityLinks.push(link);
   }
 
-  const hasNewsLink = utilityLinks.some((l) => /\/tum-haberler(\/|\?|$)/.test(l.href));
-  if (!hasNewsLink) {
-    const href = h("/tum-haberler");
-    utilityLinks.push({ key: "vatan-utility-haberler", label: "Haberler", href, external: false });
-  }
-
   return {
     primaryGroups: groups.slice(0, VATAN_PRIMARY_GROUP_LIMIT),
     overflowGroups: groups.slice(VATAN_PRIMARY_GROUP_LIMIT),
     utilityLinks,
+    newsLinks,
   };
 }
 
