@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { isKhNewsHost, isKhNewsSlug, KH_DOMAINS, KH_SITE_SLUG } from "./hm-kh-site-ensure.js";
+
+const ensureSrc = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "hm-kh-site-ensure.ts"), "utf8");
 
 describe("KH site identity", () => {
   it("recognizes kirsehirhaber hosts with www / scheme stripped", () => {
@@ -23,5 +28,10 @@ describe("KH site identity", () => {
 
   it("keeps the three public KH domains", () => {
     expect([...KH_DOMAINS]).toEqual(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
+  });
+
+  it("defaults KH vitrin to YEREL/GÜNDEM category slots", () => {
+    expect(ensureSrc).toContain('hmClassicAraMansetCategorySlugs: ["yerel", "gundem"]');
+    expect(ensureSrc).toContain('hmNewsFeaturedCategoryStripSlugs: ["yerel", "gundem"]');
   });
 });

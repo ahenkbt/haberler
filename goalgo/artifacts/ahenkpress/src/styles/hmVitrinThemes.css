@@ -4046,6 +4046,18 @@
   -webkit-line-clamp: 3;
 }
 
+[data-hm-vitrin-theme="esen"] .hm-classic-feature-card--text,
+[data-hm-vitrin-theme="esen"] .hm-classic-feature-card--text.hm-classic-feature-card--large {
+  min-height: 0;
+  background: #ffffff;
+  color: #111111;
+}
+
+[data-hm-vitrin-theme="esen"] .hm-classic-feature-card--text .hm-classic-feature-body {
+  position: static;
+  padding: 16px;
+}
+
 [data-hm-vitrin-theme="esen"] .hm-classic-feature-card--large h3 {
   font-size: clamp(1.25rem, 2.15vw, 2.05rem);
 }
@@ -8315,6 +8327,28 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
   order: -20;
 }
 
+.hm-classic-feature-card:has(.hm-classic-feature-shade) h3,
+.hm-classic-feature-card:has(.hm-classic-feature-shade) time {
+  color: #ffffff;
+}
+
+.hm-classic-feature-card--text {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 0 rgba(17, 17, 17, 0.06);
+}
+
+.hm-classic-feature-card--text .hm-classic-feature-body {
+  position: static;
+  padding: 16px;
+}
+
+.hm-classic-feature-card--text h3,
+.hm-classic-feature-card--text time {
+  color: #111111 !important;
+}
+
 .hm-tepe-manset {
   display: flex;
   align-items: stretch;
@@ -8325,6 +8359,43 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
   border-radius: 0.5rem;
   background: #000;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.hm-tepe-manset--coverless,
+.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  min-height: 0;
+}
+
+.hm-tepe-manset--coverless .hm-tepe-manset__nums,
+.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__nums {
+  background: #f8fafc;
+}
+
+.hm-tepe-manset--coverless .hm-tepe-manset__num,
+.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__num {
+  color: #334155;
+}
+
+.hm-tepe-manset--coverless .hm-tepe-manset__panel,
+.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__panel {
+  grid-template-columns: 1fr;
+}
+
+.hm-tepe-manset--coverless .hm-tepe-manset__headline,
+.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__headline {
+  background: #ffffff;
+  color: #111111;
+}
+
+.hm-tepe-manset--coverless .hm-tepe-manset__title,
+.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__title {
+  color: #111111;
+}
+
+.hm-tepe-manset__media:not(:has(img)) {
+  display: none;
 }
 
 .hm-tepe-manset__nums {

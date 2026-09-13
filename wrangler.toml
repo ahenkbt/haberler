@@ -167,33 +167,24 @@ zone_name = "suhaber.net"
 # suhaberajansi.com iptal — Worker route yok (cf-detached-domains). Kanonik: suhaber.net (/tr/su)
 # belediyehizmet.com kaldırıldı.
 
-# Kırşehir Haber (/tr/kh)
-# kirşehirhaber.org zone erişimi bu workflow tokenında yok; route yönetimi ayrı Worker/account'ta.
-# Bu worker deploy'unda route ekleme/senkronizasyonu kapalı tutulur.
+# Kırşehir Haber (/tr/kirsehirhaber)
+# Zone CF hesabında (id 52d54697…) ama A/AAAA yok → tarayıcı NXDOMAIN.
+# custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kaydı oluşturur.
+# kirsehri.com Natro park; kirsehir.net zone/kayıt yok — bu worker'a bağlama.
+[[routes]]
+pattern = "kirsehirhaber.org"
+custom_domain = true
 
-# [[routes]]
-# pattern = "kirsehri.com"
-# custom_domain = true
-# [[routes]]
-# pattern = "www.kirsehri.com"
-# custom_domain = true
-# [[routes]]
-# pattern = "kirsehri.com/*"
-# zone_name = "kirsehri.com"
-# [[routes]]
-# pattern = "www.kirsehri.com/*"
-# zone_name = "kirsehri.com"
-# [[routes]]
-# pattern = "kirsehir.net"
-# custom_domain = true
-# [[routes]]
-# pattern = "www.kirsehir.net"
-# custom_domain = true
-# [[routes]]
-# pattern = "kirsehir.net/*"
-# zone_name = "kirsehir.net"
-# [[routes]]
-# pattern = "www.kirsehir.net/*"
-# zone_name = "kirsehir.net"
+[[routes]]
+pattern = "www.kirsehirhaber.org"
+custom_domain = true
+
+[[routes]]
+pattern = "kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
 
 # redeploy trigger 2026-08-18T15:20:00Z — r2.dev public URL + boş bucket gerçeği

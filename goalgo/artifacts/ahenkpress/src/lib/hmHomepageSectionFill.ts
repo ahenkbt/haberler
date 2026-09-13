@@ -272,6 +272,11 @@ export function pickEsenLeadPackColumns<T>(opts: {
   return { left, right };
 }
 
+function itemHasUsableCover(item: unknown): boolean {
+  const row = item as { imageUrl?: string | null; imageFallbackUrl?: string | null };
+  return isUsableNewsCoverSrc(row.imageUrl) || isUsableNewsCoverSrc(row.imageFallbackUrl);
+}
+
 export function buildTepeMansetPoolPreferringLocal(opts: {
   items: readonly unknown[];
   localPref?: HmHomepageLocalPref | null;
@@ -279,8 +284,10 @@ export function buildTepeMansetPoolPreferringLocal(opts: {
   limit?: number;
 }): any[] {
   const limit = opts.limit ?? 5;
-  if (!opts.localPref) return buildTepeMansetPool({ items: opts.items, limit });
-  const local = opts.items.filter((item) =>
+  // Photo slot: drop coverless rows first so KH does not paint a black tepe panel.
+  const items = opts.items.filter(itemHasUsableCover);
+  if (!opts.localPref) return buildTepeMansetPool({ items, limit });
+  const local = items.filter((item) =>
     newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
   );
   const flagged = local.filter((item) => (item as { isTepeManset?: boolean }).isTepeManset === true);
@@ -288,7 +295,7 @@ export function buildTepeMansetPoolPreferringLocal(opts: {
   if (flaggedPicks.length >= limit) return flaggedPicks;
   const localPicks = mergeUniqueNews(flaggedPicks, buildTepeMansetPool({ items: local, limit })).slice(0, limit);
   if (localPicks.length >= limit) return localPicks;
-  const rest = opts.items.filter(
+  const rest = items.filter(
     (item) => !newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
   );
   return mergeUniqueNews(localPicks, buildTepeMansetPool({ items: rest, limit: limit - localPicks.length })).slice(

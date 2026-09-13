@@ -20,7 +20,7 @@ import {
   resolveHmBreakingRssCategoryKey,
   type HmBreakingRssFeedRow,
 } from "@/lib/newsSiteLayout";
-import { shaCityNewsSlugsMatch } from "@/lib/hmCategoryNewsQuery";
+import { khCityNewsSlugsMatch, shaCityNewsSlugsMatch } from "@/lib/hmCategoryNewsQuery";
 
 export type HmHomeCategoryMatchContext = {
   knownCanonicalSlugs: ReadonlySet<string>;
@@ -151,6 +151,10 @@ export function hmNewsItemMatchesHomeCategorySlug(
   if (canonicalSlugs.some((slug) => rssCategorySlugsMatch(slug, want))) return true;
   if (canonicalSlugs.some((slug) => shaCityNewsSlugsMatch(slug, want, prefixes))) return true;
   if (shaCityNewsSlugsMatch(hmCategorySlug((item as { categorySlug?: unknown }).categorySlug), want, prefixes)) {
+    return true;
+  }
+  if (canonicalSlugs.some((slug) => khCityNewsSlugsMatch(slug, want, prefixes))) return true;
+  if (khCityNewsSlugsMatch(hmCategorySlug((item as { categorySlug?: unknown }).categorySlug), want, prefixes)) {
     return true;
   }
 

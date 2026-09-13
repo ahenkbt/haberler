@@ -658,24 +658,31 @@ export function HmRssNewsBand({
           {filtered.map((item, index) => {
             const catColor = resolveCategoryColor(item, accent, hmCategoryColors);
             const excerpt = newsExcerpt(item);
+            const hasCover = newsItemHasCoverImage(item);
             const cardContent = (
               <>
-                <div className="hm-rss-news-band__media">
-                  <HmNewsImage
-                    src={resolveNewsItemImageUrl(item)}
-                    fallbackSrc={resolveNewsItemImageFallbackUrl(item)}
-                    alt={item.title}
-                    className="hm-rss-news-band__img"
-                    loading={index < 8 ? "eager" : "lazy"}
-                    priority={index < 8}
-                    onUnavailable="hide"
-                  />
-                  {item.categoryName ? (
-                    <span className="hm-rss-news-band__badge" style={{ background: catColor }}>
-                      {item.categoryName}
-                    </span>
-                  ) : null}
-                </div>
+                {hasCover ? (
+                  <div className="hm-rss-news-band__media">
+                    <HmNewsImage
+                      src={resolveNewsItemImageUrl(item)}
+                      fallbackSrc={resolveNewsItemImageFallbackUrl(item)}
+                      alt={item.title}
+                      className="hm-rss-news-band__img"
+                      loading={index < 8 ? "eager" : "lazy"}
+                      priority={index < 8}
+                      onUnavailable="hide"
+                    />
+                    {item.categoryName ? (
+                      <span className="hm-rss-news-band__badge" style={{ background: catColor }}>
+                        {item.categoryName}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : item.categoryName ? (
+                  <span className="hm-rss-news-band__badge hm-rss-news-band__badge--inline" style={{ background: catColor }}>
+                    {item.categoryName}
+                  </span>
+                ) : null}
                 <div className="hm-rss-news-band__body">
                   <h3 className="hm-rss-news-band__headline">{item.title}</h3>
                   {excerpt ? <p className="hm-rss-news-band__excerpt">{excerpt}</p> : null}
@@ -693,7 +700,7 @@ export function HmRssNewsBand({
               });
             };
             const card = (
-              <Link href={newsHref(item)} className="hm-rss-news-band__card" data-hm-news-row>
+              <Link href={newsHref(item)} className={`hm-rss-news-band__card${hasCover ? "" : " hm-rss-news-band__card--text"}`} data-hm-news-row>
                 {cardContent}
               </Link>
             );

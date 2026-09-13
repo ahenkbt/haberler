@@ -1282,18 +1282,37 @@ function ClassicFeatureCard({
 }) {
   const h = useHmPublicHref();
   const color = catColor(n, accent, hmCategoryColors);
+  const [coverFailed, setCoverFailed] = useState(false);
+  const itemKey = `${n?.id ?? ""}:${n?.slug ?? ""}:${n?.imageUrl ?? ""}`;
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [itemKey]);
+  const hasCover = newsItemHasCoverImage(n) && !coverFailed;
   return (
-    <HmHomeCoverGate item={n}>
-    <Link href={hybridNewsItemHref(n, h)} className={`hm-classic-feature-card ${large ? "hm-classic-feature-card--large" : ""}`}>
-      <ClassicImage n={n} />
-      <div className="hm-classic-feature-shade" />
+    <Link
+      href={hybridNewsItemHref(n, h)}
+      className={`hm-classic-feature-card${large ? " hm-classic-feature-card--large" : ""}${hasCover ? "" : " hm-classic-feature-card--text"}`}
+    >
+      {hasCover ? (
+        <>
+          <HmNewsImage
+            item={n}
+            alt={n?.title ?? ""}
+            loading="lazy"
+            onUnavailable="hide"
+            onUnavailableChange={(unavailable) => {
+              if (unavailable) setCoverFailed(true);
+            }}
+          />
+          <div className="hm-classic-feature-shade" />
+        </>
+      ) : null}
       <div className="hm-classic-feature-body">
         <ClassicBadge label={n.categoryName} color={color} />
         <h3>{newsDisplayTitle(n.title)}</h3>
         <time>{newsCardDate(n)}</time>
       </div>
     </Link>
-    </HmHomeCoverGate>
   );
 }
 
@@ -1563,7 +1582,10 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       ? hmSiteContentShellClass(layoutPrefs, extra)
       : `mx-auto max-w-screen-xl px-3${extra ? ` ${extra}` : ""}`;
   const corporateDonation = layoutPrefs.hmCorporateDonation ?? null;
-  const vitrinTheme = normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme);
+  const khLayoutPref = resolveHomepageLocalPref(hmSlugProp ?? hmCtx?.slug, layoutPrefs, siteId);
+  const vitrinThemeRaw = normalizeHmVitrinTheme(layoutPrefs.hmVitrinTheme);
+  const vitrinTheme =
+    khLayoutPref && (vitrinThemeRaw === "news" || !layoutPrefs.hmVitrinTheme) ? "esen" : vitrinThemeRaw;
   const isCorporateTheme = isHmCorporateLayoutKind(layoutPrefs, hmSlugProp ?? hmCtx?.slug);
   const themeAccentFallback = hmVitrinAccentHex(vitrinTheme ?? "default");
   const fromLpColor =
@@ -2130,6 +2152,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       asArray(hmHomeBundle?.manualEditor),
       asArray(hmHomeBundle?.breaking),
       asArray(hmHomeBundle?.popular),
+      asArray((hmHomeBundle as { centerHeadlines?: unknown[] } | undefined)?.centerHeadlines),
       allItems,
     ).filter(keepEditorial);
     const localPref = resolveHomepageLocalPref(hmHomeBundleSlug, layoutPrefs, siteId);
@@ -2324,6 +2347,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     for (const c of sortedDbRows) {
       bySlug.set(c.slug, { label: c.label, slug: c.slug, sortOrder: c.sortOrder });
     }
+    if (khHomePref && !bySlug.has("yerel") && !navHiddenSet.has("yerel")) {
+      bySlug.set("yerel", { label: "Yerel", slug: "yerel", sortOrder: 0 });
+    }
 
     // Kurumsal vitrin: yalnızca editörde açık kategoriler; haber sitesi RSS sekmelerini korur.
     if (!isCorporateTheme) {
@@ -2338,7 +2364,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
     const rows = sortHmCategoriesForNav(Array.from(bySlug.values()), layoutPrefs.hmCategorySortSlugs);
     return [{ label: "TÜMÜ", slug: "" }, ...rows.map((c) => ({ label: formatTrDisplayLabel(c.label), slug: c.slug }))];
-  }, [publicApiCats, activeGlobalSlugs, bandNewsItems, isCorporateTheme, layoutPrefs.hmCategorySortSlugs, navHiddenSet]);
+  }, [publicApiCats, activeGlobalSlugs, bandNewsItems, isCorporateTheme, layoutPrefs.hmCategorySortSlugs, navHiddenSet, khHomePref]);
 
   const tickerBreaking = useMemo(() => {
     if (breaking.length > 0) {
@@ -2389,6 +2415,9 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
 
     if (!isCorporateTheme) {
       const bySlug = new Map(fromApi.map((c) => [c.slug, c]));
+      if (khHomePref && !bySlug.has("yerel") && !navHiddenSet.has("yerel")) {
+        bySlug.set("yerel", { title: "Yerel", slug: "yerel", color: pick("yerel", accent) });
+      }
       for (const std of HM_STANDARD_NEWS_CATEGORIES) {
         if (navHiddenSet.has(std.slug) || !activeGlobalSlugs.has(std.slug)) continue;
         if (!bySlug.has(std.slug)) {
@@ -2410,7 +2439,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       slug: c.slug,
       color: pick(c.slug, PALETTE[c.slug] ?? accent),
     }));
-  }, [publicApiCats, activeGlobalSlugs, hmCat, accent, isCorporateTheme, navHiddenSet]);
+  }, [publicApiCats, activeGlobalSlugs, hmCat, accent, isCorporateTheme, navHiddenSet, khHomePref]);
 
   const siteSlugPrefixes = useMemo(() => {
     const slug = String(hmSlugProp ?? hmCtx?.slug ?? "").trim();
@@ -2680,9 +2709,15 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         );
         if (fallback.length > 0) return fallback.slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
       }
+      if (khHomePref) {
+        const textSlides = (tepeMansetActive ? excludeHeadlineSliderItems(pool, tepeMansetItems) : pool)
+          .filter(isHeadlineFreshEnough)
+          .slice(0, HM_HOME_HEADLINE_SLIDER_LIMIT);
+        if (textSlides.length > 0) return textSlides;
+      }
       return withoutTepe.filter(isHeadlineFreshEnough);
     },
-    [siteId, centerMansetSliderItems, sliderNews, classicHeadlinePool, latestNewsPool, allItems, bandNewsItems, popular, tepeMansetActive, tepeMansetItems],
+    [siteId, centerMansetSliderItems, sliderNews, classicHeadlinePool, latestNewsPool, allItems, bandNewsItems, popular, tepeMansetActive, tepeMansetItems, khHomePref],
   );
   const classicLatestMini = useMemo(() => {
     const pool = filterNewsItemsWithCoverImage(mergeUniqueNews(bandNewsItems, allItems, popular, sliderSide));
@@ -2746,7 +2781,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       return { ...cs, items };
     });
 
-    const preferredSlugs = selectedSlugs.length > 0 ? selectedSlugs : ["gundem", "spor"];
+    const preferredSlugs = selectedSlugs.length > 0 ? selectedSlugs : khHomePref ? ["yerel", "gundem"] : ["gundem", "spor"];
     const preferred = preferredSlugs
       .map((slug) => bySection.find((section) => section.slug === slug))
       .filter(Boolean) as Array<(typeof bySection)[number]>;
@@ -2775,7 +2810,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       color: accent,
       items: dedupeCategoryBoxItems(sortNewsByRecency(sourcePool)).slice(0, CATEGORY_BOX_DISPLAY_TOTAL),
     }];
-  }, [CAT_SECTIONS, activeTab, allItems, bandNewsItems, latestNewsPool, sliderNews, currentCategoryName, accent, layoutPrefs.hmClassicAraMansetCategorySlugs, newsCategorySectionsEnabled, homeCategoryMatchContext]);
+  }, [CAT_SECTIONS, activeTab, allItems, bandNewsItems, latestNewsPool, sliderNews, currentCategoryName, accent, layoutPrefs.hmClassicAraMansetCategorySlugs, newsCategorySectionsEnabled, homeCategoryMatchContext, khHomePref]);
 
   const featuredCategoryStripSections = useMemo(() => {
     const manualSlugs = normalizeCategorySlugList(layoutPrefs.hmNewsFeaturedCategoryStripSlugs);
@@ -4610,8 +4645,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       const esenSidePoolBase = tepeMansetActive
         ? excludeHeadlineSliderItems(esenSidePoolRaw, tepeMansetItems)
         : esenSidePoolRaw;
-      // Yan kartlarda görsel şart — resmi olmayan haberler gösterilmez.
-      const esenSidePool = filterNewsItemsWithCoverImage(esenSidePoolBase);
+      // Yan kartlarda görsel tercih; KH'de kapaksız yerel haberler açık metin kartına düşer.
+      const esenCoveredSides = filterNewsItemsWithCoverImage(esenSidePoolBase);
+      const esenSidePool =
+        khHomePref && esenCoveredSides.length < 3
+          ? mergeUniqueNews(esenCoveredSides, esenSidePoolBase)
+          : esenCoveredSides;
       const sideItems = pickHeroSideHeadlines({
         pool: esenSidePool,
         widenPools: [
@@ -4619,6 +4658,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
           filterNewsItemsWithCoverImage(latestNewsPool),
           filterNewsItemsWithCoverImage(popular),
           filterNewsItemsWithCoverImage(classicLatestMini),
+          khHomePref ? latestNewsPool : [],
         ],
         sliderItems: slides,
         sideCount: 3,

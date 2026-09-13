@@ -34,6 +34,37 @@ export function buildHmCategoryNewsFallbackPath(opts: {
   return `/api/news/?${params.toString()}`;
 }
 
+export function isKhTargetSiteSlug(slug: string | null | undefined): boolean {
+  const s = String(slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  return s === "kirsehirhaber" || s === "kh" || s === "kirsehir";
+}
+
+export function khCityNewsSlugsMatch(
+  itemSlug: string | null | undefined,
+  wantSlug: string | null | undefined,
+  siteSlugPrefixes: readonly string[] = [],
+): boolean {
+  if (!siteSlugPrefixes.some((prefix) => isKhTargetSiteSlug(prefix))) return false;
+  const item = String(itemSlug ?? "")
+    .trim()
+    .toLowerCase();
+  const want = String(wantSlug ?? "")
+    .trim()
+    .toLowerCase();
+  if (!item || !want) return false;
+  const city = (slug: string) =>
+    slug === "yerel" ||
+    slug === "kirsehir" ||
+    slug === "kirsehri" ||
+    slug.endsWith("-yerel") ||
+    slug.endsWith("-kirsehir") ||
+    slug.endsWith("-kirsehri");
+  return city(item) && city(want);
+}
+
 export function isShaTargetSiteSlug(slug: string | null | undefined): boolean {
   const s = String(slug ?? "")
     .trim()

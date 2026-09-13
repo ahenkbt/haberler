@@ -108,6 +108,9 @@ function defaultKhLayoutJson(): string {
     hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
     hmYekparePoolReceiveEnabled: true,
     hmHomepageLocalCity: "kirsehir",
+    hmClassicAraMansetCategorySlugs: ["yerel", "gundem"],
+    hmNewsFeaturedCategoryStripSlugs: ["yerel", "gundem"],
+    hmCategorySortSlugs: ["yerel", "gundem", "dunya", "ekonomi", "politika", "spor", "teknoloji"],
     hmRssIntegrationMode: "live",
     /** İlk açılışta havuz haberleriyle dolu görünsün */
     hmAllowCrossSiteManualNews: true,
@@ -312,6 +315,15 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
         hmRssKarmaDefaultsRev: HM_RSS_KARMA_DEFAULTS_REV,
         hmYekparePoolReceiveEnabled: true,
         hmHomepageLocalCity: parsed.hmHomepageLocalCity || "kirsehir",
+        hmClassicAraMansetCategorySlugs: Array.isArray(parsed.hmClassicAraMansetCategorySlugs)
+          ? parsed.hmClassicAraMansetCategorySlugs
+          : defaults.hmClassicAraMansetCategorySlugs,
+        hmNewsFeaturedCategoryStripSlugs: Array.isArray(parsed.hmNewsFeaturedCategoryStripSlugs)
+          ? parsed.hmNewsFeaturedCategoryStripSlugs
+          : defaults.hmNewsFeaturedCategoryStripSlugs,
+        hmCategorySortSlugs: Array.isArray(parsed.hmCategorySortSlugs)
+          ? parsed.hmCategorySortSlugs
+          : defaults.hmCategorySortSlugs,
         hmAllowCrossSiteManualNews: parsed.hmAllowCrossSiteManualNews ?? true,
         hmNewsHomeModuleOrder:
           Array.isArray(parsed.hmNewsHomeModuleOrder) && parsed.hmNewsHomeModuleOrder.length > 0

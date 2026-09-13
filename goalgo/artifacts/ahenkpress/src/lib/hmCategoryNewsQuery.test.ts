@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildHmCategoryHybridPath,
   buildHmCategoryNewsFallbackPath,
+  isKhTargetSiteSlug,
   isShaTargetSiteSlug,
+  khCityNewsSlugsMatch,
   shaCityNewsSlugsMatch,
 } from "./hmCategoryNewsQuery";
 
@@ -27,5 +29,13 @@ describe("hmCategoryNewsQuery", () => {
     expect(shaCityNewsSlugsMatch("yerel", "ankara", ["ankarahabergundemi"])).toBe(true);
     expect(shaCityNewsSlugsMatch("ankara", "yerel", ["vkd"])).toBe(false);
     expect(shaCityNewsSlugsMatch("gundem", "yerel", ["asg"])).toBe(false);
+  });
+
+  it("KH yerel↔kırşehir eşleşmesini açar; diğer sitelerde kapatır", () => {
+    expect(isKhTargetSiteSlug("kirsehirhaber")).toBe(true);
+    expect(khCityNewsSlugsMatch("kirsehir", "yerel", ["kirsehirhaber"])).toBe(true);
+    expect(khCityNewsSlugsMatch("yerel", "kirsehir", ["kh"])).toBe(true);
+    expect(khCityNewsSlugsMatch("kirsehir", "yerel", ["asg"])).toBe(false);
+    expect(khCityNewsSlugsMatch("gundem", "yerel", ["kirsehirhaber"])).toBe(false);
   });
 });
