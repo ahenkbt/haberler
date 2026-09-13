@@ -38,7 +38,9 @@ function PillarIcon({ id }: { id: VatanMissionPillar["id"] }) {
 export function VatanDernekBand() {
   const h = useHmPublicHref();
   const f = VATAN_ASSOCIATION_FIGURES;
-  const showFigures = f.kurulusYili != null && f.subeSayisi != null && f.bursluOgrenci != null;
+  const figures = (Object.keys(VATAN_FIGURE_LABELS) as Array<keyof typeof VATAN_FIGURE_LABELS>)
+    .map((key) => ({ key, value: f[key], label: VATAN_FIGURE_LABELS[key] }))
+    .filter((row) => row.value != null && String(row.value).trim() !== "");
 
   return (
     <section className="vatan-section vatan-section--navy vatan-dernek" aria-labelledby="vatan-s4-title">
@@ -56,20 +58,14 @@ export function VatanDernekBand() {
             </li>
           ))}
         </ul>
-        {showFigures ? (
-          <dl className="vatan-figures vatan-reveal">
-            <div>
-              <dt>{VATAN_FIGURE_LABELS.kurulusYili}</dt>
-              <dd>{f.kurulusYili}</dd>
-            </div>
-            <div>
-              <dt>{VATAN_FIGURE_LABELS.subeSayisi}</dt>
-              <dd>{f.subeSayisi}</dd>
-            </div>
-            <div>
-              <dt>{VATAN_FIGURE_LABELS.bursluOgrenci}</dt>
-              <dd>{f.bursluOgrenci}</dd>
-            </div>
+        {figures.length ? (
+          <dl className={`vatan-figures vatan-figures--${figures.length} vatan-reveal`}>
+            {figures.map((row) => (
+              <div key={row.key}>
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
           </dl>
         ) : null}
         <div className="vatan-actions vatan-reveal" data-reveal-i={3}>

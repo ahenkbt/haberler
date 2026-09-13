@@ -123,15 +123,15 @@ export const VATAN_MISSION_PILLARS: VatanMissionPillar[] = [
   },
 ];
 
-/** [TO BE SUPPLIED BY THE ASSOCIATION] — row is hidden while any value is null. */
+/** Association-supplied figures. Null values are omitted; never invent placeholders. */
 export const VATAN_ASSOCIATION_FIGURES: {
-  kurulusYili: number | null;
-  subeSayisi: number | null;
-  bursluOgrenci: number | null;
+  kurulusYili: number | string | null;
+  subeSayisi: number | string | null;
+  bursluOgrenci: number | string | null;
 } = {
   kurulusYili: null,
   subeSayisi: null,
-  bursluOgrenci: null,
+  bursluOgrenci: "500+",
 };
 
 export const VATAN_FIGURE_LABELS = {

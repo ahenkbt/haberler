@@ -8,6 +8,7 @@ export const VATAN_THEME_ID = "vatan" as const;
 export const VATAN_ASSET_BASE = "/vkd/vatan";
 
 export const VATAN_ASSETS = {
+  logo: `${VATAN_ASSET_BASE}/logo.png`,
   canakkaleHero: `${VATAN_ASSET_BASE}/canakkale-hero.jpg`,
   memorialPillars: `${VATAN_ASSET_BASE}/memorial-pillars.jpg`,
   milliGunler: `${VATAN_ASSET_BASE}/milli-gunler.jpg`,

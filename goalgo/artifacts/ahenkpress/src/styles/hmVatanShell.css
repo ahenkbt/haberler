@@ -421,14 +421,16 @@
 [data-vatan-shell] .vatan-brand__logo {
   display: block;
   width: auto;
-  height: 48px;
-  max-width: 200px;
+  height: 52px;
+  max-width: min(240px, 58vw);
   object-fit: contain;
-  transition: height 260ms var(--vatan-ease);
+  object-position: left center;
+  transition: height 260ms var(--vatan-ease), max-width 260ms var(--vatan-ease);
 }
 
 [data-vatan-shell] .vatan-header--solid .vatan-brand__logo {
-  height: 36px;
+  height: 40px;
+  max-width: min(200px, 52vw);
 }
 
 [data-vatan-shell] .vatan-brand__mark {
@@ -820,6 +822,12 @@
   margin: 1.25rem 0 0;
   padding: 0;
   list-style: none;
+}
+
+[data-vatan-shell] .vatan-mobile__utils--tail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--vatan-line);
 }
 
 [data-vatan-shell] .vatan-mobile__util {
@@ -1487,6 +1495,10 @@
   border-top: 1px solid var(--vatan-line);
 }
 
+[data-vatan-shell] .vatan-figures--1 {
+  grid-template-columns: minmax(160px, 240px);
+}
+
 [data-vatan-shell] .vatan-figures dt {
   font: 600 var(--vatan-t-eyebrow) / 1 var(--vatan-text);
   letter-spacing: 0.18em;
@@ -2046,8 +2058,10 @@
   align-content: start;
 }
 
-[data-vatan-shell] .vatan-footer .vatan-brand__logo {
-  height: 44px;
+[data-vatan-shell] .vatan-footer .vatan-brand__logo,
+[data-vatan-shell] .vatan-brand--compact .vatan-brand__logo {
+  height: 48px;
+  max-width: 220px;
 }
 
 [data-vatan-shell] .vatan-footer__mission {
