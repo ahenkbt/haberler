@@ -1052,31 +1052,48 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     res.status(400).json({ error: "domain query gerekli" });
     return;
   }
-  const domainCandidates = domainLookupCandidates(host);
-  let row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
-  if (!row && isKnownHmBrandDomain(host)) {
-    await ensureHmBrandSiteForMeta({ domain: host }).catch(() => null);
-    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
-  }
-  if (!row && isKhNewsHost(host)) {
-    await ensureKhNewsSite({ dryRun: false }).catch(() => null);
-    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
-    if (!row) {
-      row = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
+  try {
+    const domainCandidates = domainLookupCandidates(host);
+    let row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+    if (!row && isKnownHmBrandDomain(host)) {
+      await ensureHmBrandSiteForMeta({ domain: host }).catch(() => null);
+      row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
     }
+    if (!row && isKhNewsHost(host)) {
+      await ensureKhNewsSite({ dryRun: false }).catch(() => null);
+      row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+      if (!row) {
+        row = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
+      }
+    }
+    if (!row) {
+      res.status(404).json({ error: "Site bulunamadı" });
+      return;
+    }
+    if (wantsHmMetaPageContent(req)) {
+      res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+      res.setHeader("CDN-Cache-Control", "no-store");
+    } else {
+      res.setHeader("Cache-Control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
+      res.setHeader("CDN-Cache-Control", "public, max-age=20");
+    }
+    res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
+  } catch (err) {
+    console.error("[hm/meta/by-domain]", err);
+    if (isKhNewsHost(host)) {
+      try {
+        const fallback = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
+        if (fallback) {
+          res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+          res.json(serializeHmMetaRow(fallback, { includePageContent: wantsHmMetaPageContent(req) }));
+          return;
+        }
+      } catch {
+        /* keep 500 below */
+      }
+    }
+    res.status(500).json({ error: "Site meta yüklenemedi" });
   }
-  if (!row) {
-    res.status(404).json({ error: "Site bulunamadı" });
-    return;
-  }
-  if (wantsHmMetaPageContent(req)) {
-    res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
-    res.setHeader("CDN-Cache-Control", "no-store");
-  } else {
-    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
-    res.setHeader("CDN-Cache-Control", "public, max-age=20");
-  }
-  res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
 });
 
 /** P1-1: HM anasayfa — featured + breaking + popular tek round-trip. */

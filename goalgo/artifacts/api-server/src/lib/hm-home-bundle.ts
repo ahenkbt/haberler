@@ -26,6 +26,7 @@ import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
 import { filterNewsItemsWithUsableCover, newsItemHasUsableCover } from "./news-display-image.js";
 import { HM_TEPE_MANSET_ITEM_COUNT, selectTepeMansetItems } from "./hm-tepe-manset-select.js";
 import {
+  loadHomepageCoveredFallbackNews,
   loadHomepageLocalPreferredNews,
   loadHomepageSharedFallbackNews,
   newsItemMatchesHomepageLocalPref,
@@ -360,7 +361,8 @@ export async function buildHmHomeBundle(
       if (timer) clearTimeout(timer);
     });
   };
-  let [featured, siteMansetEditor, latestEditor, breaking, popular, localPreferred, sharedFallback] = await Promise.all([
+  let [featured, siteMansetEditor, latestEditor, breaking, popular, localPreferred, sharedFallback, coveredFallback] =
+    await Promise.all([
     settle("featured", loadFeaturedForSite(siteId, fetchLimit, categorySlug, corporateStrict)),
     settle(
       "site-manset",
@@ -379,6 +381,10 @@ export async function buildHmHomeBundle(
     settle(
       "shared-fallback",
       localPref ? loadHomepageSharedFallbackNews(siteId, 40) : Promise.resolve([]),
+    ),
+    settle(
+      "covered-fallback",
+      localPref ? loadHomepageCoveredFallbackNews(siteId, 40) : Promise.resolve([]),
     ),
   ]);
   let manualEditor = siteMansetEditor.length > 0 ? siteMansetEditor : latestEditor;
@@ -441,9 +447,12 @@ export async function buildHmHomeBundle(
     );
     return [...localPicks, ...rest];
   })();
+  // Photo slots only — do not run coveredFallback through editor-site filters
+  // (those drop other-site public covers that KH tepe needs when local news is coverless).
+  const photoPool = mergeUniqueHomepageItems(sectionPool, coveredFallback);
   const featuredOut = localPref
     ? fillCoveredPreferringLocal<SerializedNewsListItem>(
-        mergeUniqueHomepageItems<SerializedNewsListItem>(featured, sectionPool),
+        mergeUniqueHomepageItems<SerializedNewsListItem>(featured, photoPool),
         localPref,
         siteId,
         limit,
@@ -452,7 +461,7 @@ export async function buildHmHomeBundle(
     : filterNewsItemsWithUsableCover(featured);
   const tepeOut = localPref
     ? fillCoveredPreferringLocal<SerializedNewsListItem>(
-        mergeUniqueHomepageItems<SerializedNewsListItem>(tepeManset, sectionPool),
+        mergeUniqueHomepageItems<SerializedNewsListItem>(tepeManset, photoPool),
         localPref,
         siteId,
         HM_TEPE_MANSET_ITEM_COUNT,
@@ -461,7 +470,7 @@ export async function buildHmHomeBundle(
     : filterNewsItemsWithUsableCover(tepeManset);
   const breakingOut = localPref
     ? fillCoveredPreferringLocal<SerializedNewsListItem>(
-        mergeUniqueHomepageItems<SerializedNewsListItem>(breaking, sectionPool),
+        mergeUniqueHomepageItems<SerializedNewsListItem>(breaking, photoPool),
         localPref,
         siteId,
         15,
@@ -470,7 +479,7 @@ export async function buildHmHomeBundle(
     : filterNewsItemsWithUsableCover(breaking);
   const popularOut = localPref
     ? fillCoveredPreferringLocal<SerializedNewsListItem>(
-        mergeUniqueHomepageItems<SerializedNewsListItem>(popular, sectionPool),
+        mergeUniqueHomepageItems<SerializedNewsListItem>(popular, photoPool),
         localPref,
         siteId,
         12,
@@ -483,7 +492,7 @@ export async function buildHmHomeBundle(
     tepeManset: tepeOut,
     manualEditor: localPref
       ? fillCoveredPreferringLocal<SerializedNewsListItem>(
-          mergeUniqueHomepageItems<SerializedNewsListItem>(manualEditor, sectionPool),
+          mergeUniqueHomepageItems<SerializedNewsListItem>(manualEditor, photoPool),
           localPref,
           siteId,
           limit,
