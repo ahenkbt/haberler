@@ -136,7 +136,7 @@ const FORCE_PURGE_HOSTS = new Set([
   "yektube.com",
   "www.yektube.com",
 ]);
-const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260912a";
+const FORCE_PURGE_COOKIE = "__yekpare_sw_purged_hm_20260913a";
 
 const PORTAL_HOSTS = new Set([
   "ahenk.net.tr",
