@@ -54,7 +54,12 @@ export function VatanDestekOl({ layoutPrefs, slug }: { layoutPrefs: NewsSiteLayo
   const isVkd = isVkdSiteSlug(slug);
   const storedTitle = layoutPrefs.hmCorporateDonation?.title?.trim() ?? "";
   // The platform's generic default is a news-publisher line; never show it on the Vatan home.
-  const title = !storedTitle || /^kurumsal yayıncılı[ğş]a destek/i.test(storedTitle) ? "Çalışmalarımıza destek olun." : storedTitle;
+  const title =
+    !storedTitle ||
+    /^kurumsal yayıncılı[ğş]a destek/i.test(storedTitle) ||
+    /^çalışmalarımıza destek olun\.?$/i.test(storedTitle)
+      ? "Değerli desteklerinize teşekkür ederiz."
+      : storedTitle;
 
   const copyIban = useCallback(async (ibanRaw: string) => {
     const text = compactIban(ibanRaw);

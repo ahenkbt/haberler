@@ -16,7 +16,7 @@ export const VATAN_HOME_HERO_V2 = {
   title: "Hatırayı yaşatmak,",
   accent: "hakkı savunmak.",
   lead:
-    "Şehitlerimizin adı resmî kayıttadır. Derneğimiz hatırayı yaşatır, ailelerin yanında durur, millî günleri sükûnetle anar.",
+    "Şehitlerimizin, gazilerimizin ve kıymetli ailelerinin yanındayız. Anıları yaşatmak, birbirimize sahip çıkmak için buradayız.",
   primaryHref: "/canakkale-sehitleri",
   primaryLabel: "Şehit Sorgula",
   secondaryHref: "/sehitliklerimiz",
@@ -37,7 +37,7 @@ export const VATAN_SEARCH_SOURCES: { id: VatanSearchSource; label: string; href:
   { id: "msb", label: "MSB Şehit Listesi", shortLabel: "MSB", href: "/sehitlerimiz" },
 ];
 
-export const VATAN_SEARCH_HELPER = "Kayıtlar Millî Savunma Bakanlığı ve Çanakkale şehit listelerine dayanır.";
+export const VATAN_SEARCH_HELPER = "Çanakkale şehitlerimizde veya MSB listesinde isim arayabilirsiniz.";
 
 export type VatanMosaicTile = {
   slug: string;
@@ -55,8 +55,8 @@ export const VATAN_MOSAIC_TILES: VatanMosaicTile[] = [
     slug: "sehitliklerimiz",
     href: "/sehitliklerimiz",
     title: "Şehitliklerimiz",
-    kicker: "Hafıza mekânları",
-    excerpt: "Gelibolu’dan Edirnekapı’ya, yurt içi ve yurt dışı şehitlikler. Ziyaret ve vefa rehberi.",
+    kicker: "Ziyaret",
+    excerpt: "Gelibolu’dan Edirnekapı’ya, yurt içi ve yurt dışı şehitliklerimiz.",
     image: VATAN_ASSETS.sehitlik,
     imageAlt: "Taş kabartma yaprak ve çiçek motifli şehitlik levhası",
     size: "xl",
@@ -92,7 +92,7 @@ export const VATAN_MOSAIC_TILES: VatanMosaicTile[] = [
     slug: "sehitlerimiz",
     href: "/sehitlerimiz",
     title: "Şehitlerimiz",
-    kicker: "MSB kaydı",
+    kicker: "Şehitlerimiz",
     image: VATAN_ASSETS.sehitlerimiz,
     imageAlt: "Gece vakti anıt terasında yanan ebedî ateş",
     size: "sm",
@@ -109,17 +109,17 @@ export const VATAN_MISSION_PILLARS: VatanMissionPillar[] = [
   {
     id: "hatira",
     title: "Hatıra",
-    text: "Şehitliklerin, isimlerin ve millî günlerin hatırasını süslemeden, resmî kayda bağlı kalarak yaşatırız.",
+    text: "Şehitlerimizin anısını yaşatırız. İsimleri unutulmasın, hatıraları dilden dile gezsin diye.",
   },
   {
     id: "hak",
     title: "Hak",
-    text: "Şehit yakınları ve gazilerin kanunla tanınmış haklarını izler, başvuruyu sadeleştirir, doğru kuruma yönlendiririz.",
+    text: "Haklarını takip eder, başvuruda yanlarında oluruz. Doğru kapıyı birlikte ararız.",
   },
   {
     id: "vefa",
     title: "Vefa",
-    text: "Ailelerin yanında dururuz. Gösteriş değil süreklilik; program değil, her yıl aynı gün aynı sükûnet.",
+    text: "Aileleri yalnız bırakmayız. Kapımız her zaman açıktır.",
   },
 ];
 
@@ -137,7 +137,7 @@ export const VATAN_ASSOCIATION_FIGURES: {
 export const VATAN_FIGURE_LABELS = {
   kurulusYili: "Kuruluş",
   subeSayisi: "Şube / temsilcilik",
-  bursluOgrenci: "Burs verilen öğrenci",
+  bursluOgrenci: "Burslu öğrencimiz",
 } as const;
 
 export type VatanLinkRow = {
@@ -147,10 +147,10 @@ export type VatanLinkRow = {
 };
 
 export const VATAN_RIGHTS_ROWS: VatanLinkRow[] = [
-  { href: "/sehit-gazi-haklari", title: "Şehit-Gazi Hakları", text: "Aylık, tazminat, eğitim, sağlık ve istihdam haklarının kamuya açık çerçevesi." },
-  { href: "/burs", title: "Burs Programı", text: "Şehit ve gazi çocukları için dönem dönem ilan edilen eğitim bursları." },
-  { href: "/hukuk-savunuculuk", title: "Hukuk ve Savunuculuk", text: "Başvuru yolları, evrak listesi ve kurumlar arası yönlendirme." },
-  { href: "/talep-formu", title: "Talep Formu", text: "Somut başvurular ve kayıt düzeltme bildirimleri için tek form." },
+  { href: "/sehit-gazi-haklari", title: "Şehit-Gazi Hakları", text: "Aylık, eğitim, sağlık ve işe yerleşme haklarınız için yanınızdayız." },
+  { href: "/burs", title: "Burs Programı", text: "Şehit ve gazi çocuklarımız için burs. Dönem dönem duyururuz." },
+  { href: "/hukuk-savunuculuk", title: "Hukuk ve Savunuculuk", text: "Başvuruda evrakı sadeleştirir, doğru kapıya yönlendiririz." },
+  { href: "/talep-formu", title: "Talep Formu", text: "Bir sorunuz, bir talebiniz varsa bize yazın." },
 ];
 
 export const VATAN_RIGHTS_NOTE_LINKS: { href: string; label: string }[] = [
@@ -245,15 +245,15 @@ export const VATAN_SUPPORT_LINKS: { href: string; label: string }[] = [
   { href: "/isbirligi", label: "İşbirliği" },
 ];
 
-export const VATAN_SUPPORT_NOTE = "Bağış makbuzu ve vergi istisnası için derneğe ulaşın.";
+export const VATAN_SUPPORT_NOTE = "Desteğiniz için teşekkür ederiz. Sorunuz olursa bizi arayın.";
 
 /** Mega-menu right-column image by editor root id, with label-keyword fallback. */
 export const VATAN_NAV_GROUP_IMAGES: Record<string, { image: string; caption: string }> = {
-  "vkd-menu-kurumsal": { image: VATAN_ASSETS.memorialPillars, caption: "Dernek, vakıf ve işbirliği — kurumsal çerçeve." },
-  "vkd-menu-kahramanlar": { image: VATAN_ASSETS.sehitlerimiz, caption: "Şehitlerimiz, gazilerimiz ve isimleri resmî kayıtta." },
-  "vkd-menu-sosyal": { image: VATAN_ASSETS.haklar, caption: "Haklar, burs ve başvuru — kanun açık, başvuru sade." },
-  "vkd-menu-tarih": { image: VATAN_ASSETS.canakkaleHero, caption: "Çanakkale’den Kıbrıs’a savaşlar, harekât ve millî günler." },
-  "vkd-menu-ataturk": { image: VATAN_ASSETS.ataturk, caption: "Hayatı, kronolojisi, ilkeleri ve sözleri." },
+  "vkd-menu-kurumsal": { image: VATAN_ASSETS.memorialPillars, caption: "Derneğimiz, vakfımız ve birlikte yürüdüğümüz yol." },
+  "vkd-menu-kahramanlar": { image: VATAN_ASSETS.sehitlerimiz, caption: "Şehitlerimiz, gazilerimiz ve kıymetli aileleri." },
+  "vkd-menu-sosyal": { image: VATAN_ASSETS.haklar, caption: "Haklar, burs ve başvuru. Yanınızdayız." },
+  "vkd-menu-tarih": { image: VATAN_ASSETS.canakkaleHero, caption: "Çanakkale’den Kıbrıs’a, unutmadığımız günler ve destanlar." },
+  "vkd-menu-ataturk": { image: VATAN_ASSETS.ataturk, caption: "Hayatı, ilkeleri ve sözleri." },
 };
 
 export function resolveVatanNavGroupImage(rootId: string, label: string): { image: string; caption: string } {
@@ -268,6 +268,6 @@ export function resolveVatanNavGroupImage(rootId: string, label: string): { imag
   return { image: VATAN_ASSETS.memorialPillars, caption: "Vatan Kahramanları Derneği" };
 }
 
-export const VATAN_FOOTER_MISSION = "Şehit ve gazi hatırasını yaşatan, ailelerin yanında duran dernek.";
+export const VATAN_FOOTER_MISSION = "Şehitlerimizin anısını yaşatır, ailelerimizin yanında dururuz.";
 export const VATAN_HEADER_TAGLINE = "Hatıra · Hak · Vefa";
 export const VATAN_WORDMARK = "Vatan Kahramanları Derneği";

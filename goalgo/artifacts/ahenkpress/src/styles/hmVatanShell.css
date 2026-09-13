@@ -451,42 +451,11 @@
   background: var(--vatan-gold);
 }
 
-[data-vatan-shell] .vatan-brand__lockup {
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-[data-vatan-shell] .vatan-brand__name {
-  font: 600 0.75rem / 1 var(--vatan-text);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-[data-vatan-shell] .vatan-brand__tag {
-  font: 400 0.6875rem / 1 var(--vatan-text);
-  letter-spacing: 0.08em;
-  color: var(--vatan-gold-soft);
-  white-space: nowrap;
-}
-
-/* With the serif wordmark the name is already visible: only the tagline joins at 2xl. */
-[data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup .vatan-brand__name {
-  display: none;
-}
-
-@media (min-width: 1280px) {
-  [data-vatan-shell] .vatan-brand__logo + .vatan-brand__lockup {
-    display: flex;
-  }
-}
-
-@media (min-width: 1536px) {
-  [data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup {
-    display: flex;
-  }
+/* Official lockup PNG already carries the name. Never show a second wordmark beside it. */
+[data-vatan-shell] .vatan-brand__lockup,
+[data-vatan-shell] .vatan-brand__logo + .vatan-brand__lockup,
+[data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup {
+  display: none !important;
 }
 
 [data-vatan-shell] .vatan-header__nav {

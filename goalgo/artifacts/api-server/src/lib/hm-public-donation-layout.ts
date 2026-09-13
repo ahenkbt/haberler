@@ -85,7 +85,7 @@ export function applyVkdDonationLayoutDefaults(layout: Record<string, unknown>):
   o.accounts = VKD_DONATION_ACCOUNTS.map((row) => ({ ...row }));
   const title = String(o.title ?? "").trim();
   if (!title || /^kurumsal yayıncılığa destek/i.test(title)) {
-    o.title = "Çalışmalarımıza Destek Olun.";
+    o.title = "Değerli desteklerinize teşekkür ederiz.";
   }
   if (!String(band.highlightsHtml ?? "").trim() && !String(band.text ?? "").trim()) {
     band.highlightsHtml = VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML;
@@ -99,7 +99,7 @@ export function applyVkdDonationLayoutDefaults(layout: Record<string, unknown>):
   }
   const bandTitle = String(band.title ?? "").trim();
   if (!bandTitle || /^desteğiniz haber merkezinin yanında$/i.test(bandTitle)) {
-    band.title = "Çalışmalarımıza Destek Olun.";
+    band.title = "Değerli desteklerinize teşekkür ederiz.";
   }
   o.supportBand = band;
   next.hmCorporateDonation = o;

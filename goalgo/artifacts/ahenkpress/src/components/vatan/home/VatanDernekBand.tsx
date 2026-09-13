@@ -46,7 +46,7 @@ export function VatanDernekBand() {
     <section className="vatan-section vatan-section--navy vatan-dernek" aria-labelledby="vatan-s4-title">
       <img className="vatan-dernek__bg" src={VATAN_ASSETS.memorialPillars} alt="" loading="lazy" decoding="async" aria-hidden="true" />
       <div className="vatan-wrap vatan-dernek__inner">
-        <VatanSectionHead numeral="02" eyebrow="Dernek" title="Hatıra, hak ve vefa —" accent="tek çatıda." align="stack" id="vatan-s4-title" />
+        <VatanSectionHead numeral="02" eyebrow="Dernek" title="Biz kimiz," accent="ne için buradayız." align="stack" id="vatan-s4-title" />
         <ul className="vatan-pillars" role="list">
           {VATAN_MISSION_PILLARS.map((p, i) => (
             <li key={p.id} className="vatan-pillar vatan-reveal" data-reveal-i={i}>
