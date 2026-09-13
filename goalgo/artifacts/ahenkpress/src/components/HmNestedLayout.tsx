@@ -62,6 +62,8 @@ import { HM_LAYOUT_UPDATED_EVENT } from "@/lib/hmLayoutUpdatedEvent";
 import { useIsMobile, useIsHmCompactViewport } from "@/hooks/use-mobile";
 import { resolveIsHmSiteHomeRoot } from "@/hooks/useIsHmSiteHomeRoot";
 import HmEditorIndexLandingPage from "@/pages/public/HmEditorIndexLandingPage";
+import { isHmVatanThemeId } from "@/lib/hmVatanTheme";
+import { HmVatanSiteShell } from "@/components/vatan/HmVatanSiteShell";
 import "@/styles/hmIndexLanding.css";
 import "@/styles/hmMobileShell.css";
 
@@ -850,6 +852,41 @@ function HmNestedLayoutVitrinRoot({
     ["--hm-nav-pill-active-text" as string]: navLinkColors.activePillText,
     ["--hm-nav-link-hover" as string]: navLinkColors.linkHover,
   } as CSSProperties;
+
+  /**
+   * Vatan (VKD) bespoke shell — own fixed header, `<main>`, footer. Everything above
+   * (meta, SEO, link/theme providers, index landing) is shared; only the chrome swaps.
+   * `vatan` stays in the corporate-like family: this branch is additive, not a reclassification.
+   */
+  if (isCorporateTheme && isHmVatanThemeId(layoutPrefs.hmVitrinTheme) && !showHaritalarEmbed) {
+    return (
+      <div
+        className="hm-vitrin-root vatan-root flex min-h-[100dvh] min-w-0 w-full flex-1 flex-col"
+        data-hm-vitrin-theme="vatan"
+        data-vatan-shell=""
+        data-hm-chrome-mode="dark"
+        data-hm-site-layout="full"
+        data-hm-corporate-layout="full"
+        data-hm-header-chrome="full"
+        data-hm-video-tv={isVideoTvPage ? "native" : undefined}
+        style={Object.keys(rootStyleBase).length > 0 ? rootStyleBase : undefined}
+      >
+        {showPlatformNav ? <AppNav /> : null}
+        <HmVatanSiteShell
+          site={effectiveData}
+          layoutPrefs={layoutPrefs}
+          isHomeRoot={isHomeRoot}
+          pathOnly={pathOnly}
+          showVideoTvLink={showVideoTvLink}
+          headerBandRef={headerBandRef}
+          topOffsetPx={stackTopPx}
+          hideFooter={!showNewsFooter}
+        >
+          {mainChildren}
+        </HmVatanSiteShell>
+      </div>
+    );
+  }
 
   return (
     <div

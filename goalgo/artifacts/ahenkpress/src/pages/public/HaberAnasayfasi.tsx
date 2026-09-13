@@ -221,6 +221,7 @@ import {
   resolveHmPublicActiveGlobalSlugs,
   resolveHmPublicHiddenCategorySlugs,
 } from "@/lib/hmPublicCategoryFilter";
+import { HmVatanHome } from "@/components/vatan/HmVatanHome";
 import "@/styles/hmThemeBlockHeadline.css";
 
 const LazyHmNewsMapModule = lazy(() =>
@@ -4410,6 +4411,13 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
       </HmLazyHomeSection>
     );
   };
+
+  // Vatan (VKD) secondary guard: any caller reaching this component with the vatan theme
+  // (portal path, editor preview) gets the bespoke static home, never the corporate branch.
+  // Sits at the same post-hooks position as the corporate return below.
+  if (isCorporateTheme && vitrinTheme === "vatan") {
+    return <HmVatanHome layoutPrefs={layoutPrefs} slug={String(hmSlugProp ?? hmCtx?.slug ?? "")} />;
+  }
 
   if (isCorporateTheme) {
     const corporateTepeMansetEnabled = resolveHmNewsEditorModuleEnabled(layoutPrefs, "tepeManset", { portalHubOnly });
