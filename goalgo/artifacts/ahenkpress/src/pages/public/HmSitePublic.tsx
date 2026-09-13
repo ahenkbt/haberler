@@ -6,6 +6,8 @@ import { applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { isHmVatanThemeId } from "@/lib/hmVatanTheme";
+import { HmVatanHome } from "@/components/vatan/HmVatanHome";
 
 class HmHomeErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -69,6 +71,15 @@ function HmHomeBody() {
   const ctx = useHmPublicLinkContextOptional();
   if (!ctx) return null;
   const hmBareChrome = ctx.layoutPrefs.showPlatformNav !== true;
+
+  // Vatan (VKD): bespoke static home — HaberAnasayfasi and its news/RSS/ads queries never mount.
+  if (isHmVatanThemeId(ctx.layoutPrefs.hmVitrinTheme)) {
+    return (
+      <HmHomeErrorBoundary>
+        <HmVatanHome layoutPrefs={ctx.layoutPrefs} slug={ctx.slug} />
+      </HmHomeErrorBoundary>
+    );
+  }
 
   return (
     <HmHomeErrorBoundary>
