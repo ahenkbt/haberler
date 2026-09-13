@@ -18,6 +18,7 @@ import "./index.css";
 
 import "./styles/hmVitrinThemes.css";
 import "./styles/hmVatanTheme.css";
+import "./styles/hmVatanShell.css";
 
 import "./styles/hmRssNewsBand.css";
 
