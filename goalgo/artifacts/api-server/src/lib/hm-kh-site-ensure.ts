@@ -223,6 +223,35 @@ async function releaseKhDomainsFromOthers(keepSiteId: number): Promise<void> {
   }
 }
 
+/** Newer race-created KH rows steal slug lookup and serve an empty vitrin. */
+async function parkNewerKhDuplicateSites(keepSiteId: number): Promise<void> {
+  const sites = await listHmNewsSitesCompat();
+  for (const row of sites) {
+    if (row.id === keepSiteId) continue;
+    if (!pickKhTargetSite([row])) continue;
+    await dualWriteUpdate(
+      hmNewsSitesTable,
+      {
+        slug: `kirsehirhaber-dup-${row.id}`,
+        domain: hostMatches(row.domain, KH_DOMAINS[0]) || hostMatches(row.domain, KH_DOMAINS[1]) || hostMatches(row.domain, KH_DOMAINS[2])
+          ? null
+          : row.domain,
+        domain2:
+          hostMatches(row.domain2, KH_DOMAINS[0]) || hostMatches(row.domain2, KH_DOMAINS[1]) || hostMatches(row.domain2, KH_DOMAINS[2])
+            ? null
+            : row.domain2,
+        domain3:
+          hostMatches(row.domain3, KH_DOMAINS[0]) || hostMatches(row.domain3, KH_DOMAINS[1]) || hostMatches(row.domain3, KH_DOMAINS[2])
+            ? null
+            : row.domain3,
+        active: false,
+        updatedAt: new Date(),
+      },
+      eq(hmNewsSitesTable.id, row.id),
+    );
+  }
+}
+
 export function pickKhTargetSite<
   T extends {
     id: number;
@@ -296,6 +325,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
         return { siteId: null, action: "error", detail: "insert boş", domains: [...KH_DOMAINS] };
       }
       await releaseKhDomainsFromOthers(created.id);
+      await parkNewerKhDuplicateSites(created.id);
       await ensureEditorForKh(created.id);
       return {
         siteId: created.id,
@@ -312,6 +342,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   }
 
   await releaseKhDomainsFromOthers(target.id);
+  await parkNewerKhDuplicateSites(target.id);
 
   let layoutJson = target.layoutJson;
   try {

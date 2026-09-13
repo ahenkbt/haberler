@@ -30,6 +30,11 @@ describe("KH site identity", () => {
     expect([...KH_DOMAINS]).toEqual(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
   });
 
+  it("parks newer KH slug clones so home-bundle cannot bind an empty site", () => {
+    expect(ensureSrc).toContain("kirsehirhaber-dup-");
+    expect(ensureSrc).toContain("parkNewerKhDuplicateSites");
+  });
+
   it("picks the oldest KH row so ensure does not create 506 then 515", () => {
     const picked = pickKhTargetSite([
       { id: 515, slug: "kirsehirhaber", domain: null, domain2: null, domain3: null },

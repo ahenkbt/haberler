@@ -143,7 +143,7 @@ import {
   repairStaleSuBrandOnHmSites,
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
-import { ensureKhNewsSite, isKhNewsHost, isKhNewsSlug, KH_SITE_SLUG } from "../lib/hm-kh-site-ensure.js";
+import { ensureKhNewsSite, isKhNewsHost, isKhNewsSlug, KH_SITE_SLUG, pickKhTargetSite } from "../lib/hm-kh-site-ensure.js";
 import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import {
@@ -1102,8 +1102,14 @@ router.get("/hm/home-bundle", async (req, res): Promise<void> => {
   if (!Number.isFinite(siteId) || siteId <= 0) {
     const slug = normalizeSlug(String(req.query.slug ?? ""));
     if (slug) {
-      const bySlug = await getActiveHmNewsSiteBySlugCompat(slug);
-      siteId = Number(bySlug?.id);
+      if (isKhNewsSlug(slug)) {
+        const kh = pickKhTargetSite(await listHmNewsSitesCompat());
+        siteId = Number(kh?.id);
+      }
+      if (!Number.isFinite(siteId) || siteId <= 0) {
+        const bySlug = await getActiveHmNewsSiteBySlugCompat(slug);
+        siteId = Number(bySlug?.id);
+      }
     }
   }
   if (!Number.isFinite(siteId) || siteId <= 0) {
