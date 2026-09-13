@@ -1084,6 +1084,27 @@
   margin-top: 0.85rem;
 }
 
+/* Shared heritage/Atatürk bodies still use sade teal tokens — remap under Vatan. */
+[data-vatan-shell] .vatan-page .bg-\[\#0f766e\] {
+  background-color: var(--vatan-crimson);
+}
+
+[data-vatan-shell] .vatan-page .bg-\[\#0f766e\]\/10 {
+  background-color: color-mix(in srgb, var(--vatan-crimson) 10%, transparent);
+}
+
+[data-vatan-shell] .vatan-page .text-\[\#0f766e\] {
+  color: var(--vatan-crimson);
+}
+
+[data-vatan-shell] .vatan-page .text-\[\#0f766e\]\/15 {
+  color: color-mix(in srgb, var(--vatan-crimson) 15%, transparent);
+}
+
+[data-vatan-shell] .vatan-page .border-\[\#0f766e\]\/15 {
+  border-color: color-mix(in srgb, var(--vatan-crimson) 15%, transparent);
+}
+
 /* Editor CMS templates (hakkımızda, faaliyetler…) — same compact banner, not 100vh. */
 [data-vatan-shell] .ms-hero {
   min-height: 0;

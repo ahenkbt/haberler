@@ -5,8 +5,11 @@ import { HmVideoTvContextProvider, type HmVideoTvLayoutValue } from "@/contexts/
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { resolveHmVideoTvPathHome } from "@/lib/hmVideoTvPublicPaths";
+import { isHmVatanThemeId } from "@/lib/hmVatanTheme";
 
 const HM_HEADER_BAND_PX = 72;
+/** Matches `--vatan-header-h-solid`; Vatan chrome has no news-nav strip. */
+const VATAN_HEADER_BAND_PX = 64;
 
 /**
  * Haber sitesi Video TV — tek HM kabuğu.
@@ -27,7 +30,10 @@ function HmVideoTvContextBridge({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
   const value = useMemo((): HmVideoTvLayoutValue | null => {
     if (!ctx?.slug) return null;
-    const contentStickyTopPx = isMobile ? 0 : HM_HEADER_BAND_PX + HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX;
+    const vatan = isHmVatanThemeId(ctx.layoutPrefs.hmVitrinTheme);
+    const headerPx = vatan ? VATAN_HEADER_BAND_PX : HM_HEADER_BAND_PX;
+    const stripPx = vatan ? 0 : HM_PUBLIC_NEWS_NAV_STRIP_HEIGHT_PX;
+    const contentStickyTopPx = isMobile ? 0 : headerPx + stripPx;
     const host =
       typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
     return {
@@ -36,7 +42,7 @@ function HmVideoTvContextBridge({ children }: { children: ReactNode }) {
       contentStickyTopPx,
       displayName: ctx.displayName,
     };
-  }, [ctx?.slug, ctx?.displayName, isMobile]);
+  }, [ctx?.slug, ctx?.displayName, ctx?.layoutPrefs.hmVitrinTheme, isMobile]);
 
   return <HmVideoTvContextProvider value={value}>{children}</HmVideoTvContextProvider>;
 }
