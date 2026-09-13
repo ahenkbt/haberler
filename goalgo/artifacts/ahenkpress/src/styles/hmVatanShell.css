@@ -141,13 +141,13 @@
 }
 
 [data-vatan-shell] .vatan-eyebrow__numeral {
-  font: 600 1.05rem / 1 var(--vatan-display);
+  font: 600 1.15rem / 1 var(--vatan-display);
   letter-spacing: 0.04em;
   font-variant-numeric: lining-nums;
 }
 
 [data-vatan-shell] .vatan-h2 {
-  margin: 0.55em 0 0;
+  margin: 0.4em 0 0;
   font: 600 var(--vatan-t-h2) / 1.05 var(--vatan-display);
   letter-spacing: -0.01em;
   color: inherit;
@@ -390,11 +390,18 @@
 
 [data-vatan-shell] .vatan-header__inner {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1rem 2rem;
+  gap: 0.75rem;
   height: var(--vatan-header-h);
   transition: height 260ms var(--vatan-ease);
+}
+
+@media (min-width: 1024px) {
+  [data-vatan-shell] .vatan-header__inner {
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem 2rem;
+  }
 }
 
 [data-vatan-shell] .vatan-header--solid .vatan-header__inner {
@@ -408,6 +415,7 @@
   color: inherit;
   text-decoration: none;
   min-width: 0;
+  overflow: hidden;
 }
 
 [data-vatan-shell] .vatan-brand__logo {
@@ -429,8 +437,8 @@
 }
 
 [data-vatan-shell] .vatan-brand__mark-text {
-  font: 700 1.05rem / 1 var(--vatan-display);
-  letter-spacing: 0.06em;
+  font: 700 clamp(0.75rem, 0.3rem + 2vw, 1.05rem) / 1 var(--vatan-display);
+  letter-spacing: clamp(0.02em, 0.01em + 0.3vw, 0.06em);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -462,17 +470,20 @@
   white-space: nowrap;
 }
 
-[data-vatan-shell] .vatan-brand__logo + .vatan-brand__lockup .vatan-brand__name {
+/* With the serif wordmark the name is already visible: only the tagline joins at 2xl. */
+[data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup .vatan-brand__name {
   display: none;
 }
 
 @media (min-width: 1280px) {
-  [data-vatan-shell] .vatan-brand__lockup {
+  [data-vatan-shell] .vatan-brand__logo + .vatan-brand__lockup {
     display: flex;
   }
+}
 
-  [data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup .vatan-brand__name {
-    display: none;
+@media (min-width: 1536px) {
+  [data-vatan-shell] .vatan-brand__mark + .vatan-brand__lockup {
+    display: flex;
   }
 }
 
@@ -576,6 +587,21 @@
 @media (min-width: 1024px) and (max-width: 1279px) {
   [data-vatan-shell] .vatan-header__cta--sorgu {
     display: none;
+  }
+}
+
+/* Five uppercase roots plus two CTAs must fit between the brand and the actions
+   at 1024–1535px; the full nav scale returns once the lockup has room too. */
+@media (min-width: 1024px) and (max-width: 1535px) {
+  [data-vatan-shell] .vatan-nav__root {
+    padding: 0 0.55rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  [data-vatan-shell] .vatan-nav__root::after {
+    left: 0.55rem;
+    right: 0.55rem;
   }
 }
 
