@@ -74,6 +74,13 @@ import {
   resolveHmHeaderRightSlot,
   type HmHeaderRightSlotId,
 } from "@/lib/newsSiteLayout";
+import { isHmVatanThemeId } from "@/lib/hmVatanTheme";
+import {
+  VATAN_HOME_MODULE_LABELS,
+  VATAN_HOME_MODULE_ORDER,
+  resolveVatanHomeHiddenModules,
+  resolveVatanHomeModuleOrder,
+} from "@/lib/hmVatanEditorHome";
 import {
   HM_RSS_KARMA_DEFAULTS_REV,
   HM_RSS_SOURCE_PACK_OPTIONS,
@@ -282,6 +289,9 @@ export default function EditorVitrinAyarlari() {
   const activeThemeLabel = hmVitrinThemeFlowerLabel(p.hmVitrinTheme);
   const corporateEditorHomeOrder = corporateHomeOrder.filter((id) => id !== "googleNewsBand");
   const corporateEditorHomeDefaults = HM_CORPORATE_HOME_MODULE_ORDER.filter((id) => id !== "googleNewsBand");
+  const isVatanEditorSite = isHmVatanThemeId(p.hmVitrinTheme);
+  const vatanHomeOrder = resolveVatanHomeModuleOrder(p);
+  const vatanHomeHidden = resolveVatanHomeHiddenModules(p);
   const rssRows = resolveHmBreakingRssFeedRows(p);
   const siteRssRows = resolveHmSiteRssFeedRows(p);
   const rssIntegrationMode = resolveHmRssIntegrationMode(p);
@@ -1902,10 +1912,13 @@ export default function EditorVitrinAyarlari() {
           >
             <AccordionTrigger className="py-4 hover:no-underline">
               <div className="min-w-0 flex-1 pr-3 text-left">
-                <p className="text-base font-black tracking-tight text-slate-900">KURUMSAL modüller</p>
+                <p className="text-base font-black tracking-tight text-slate-900">
+                  {isVatanEditorSite ? "VATAN / kurumsal modüller" : "KURUMSAL modüller"}
+                </p>
                 <p className="mt-1 text-sm font-normal text-slate-600">
-                  Yalnızca şirket, vakıf, dernek gibi kurumsal siteler içindir. Genel ayarlarda vitrin teması
-                  KURUMSAL seçiliyse uygulanır; haber sitesi temasını etkilemez.
+                  {isVatanEditorSite
+                    ? "Vatan anasayfa sırası bu panelden yönetilir. Slider ve mozaik görselleri Genel ayarlar’daki Tepe Manşet ve Bant bölümlerindedir."
+                    : "Yalnızca şirket, vakıf, dernek gibi kurumsal siteler içindir. Genel ayarlarda vitrin teması KURUMSAL seçiliyse uygulanır; haber sitesi temasını etkilemez."}
                 </p>
               </div>
             </AccordionTrigger>
@@ -1921,6 +1934,11 @@ export default function EditorVitrinAyarlari() {
               <TabsTrigger value="corporate-sira" className="px-3 py-2 text-sm">
                 Modül sırası
               </TabsTrigger>
+              {isVatanEditorSite ? (
+                <TabsTrigger value="vatan-sira" className="px-3 py-2 text-sm">
+                  Vatan anasayfa
+                </TabsTrigger>
+              ) : null}
             </TabsList>
 
             <TabsContent value="corporate-header" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
@@ -2305,6 +2323,36 @@ export default function EditorVitrinAyarlari() {
           />
             </TabsContent>
 
+            {isVatanEditorSite ? (
+            <TabsContent value="vatan-sira" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
+          <ModuleOrderEditor
+            title="Vatan anasayfa sırası"
+            description="vatankahramanlari.org anasayfa bölümleri. Slider görselleri Genel ayarlar → Slider yönetimi; mozaik kartları Bant yönetimi (en az 2 görselli bant). Kapalı bölümler sırada kalsa bile görünmez."
+            items={vatanHomeOrder}
+            labels={VATAN_HOME_MODULE_LABELS}
+            defaults={VATAN_HOME_MODULE_ORDER}
+            disabled={saving}
+            enableDragDrop
+            getModuleEnabled={(moduleId) => !vatanHomeHidden.has(moduleId)}
+            onModuleEnabledChange={(moduleId, checked) => {
+              const next = new Set(p.hmVatanHomeHiddenModules ?? []);
+              if (checked) next.delete(moduleId);
+              else next.add(moduleId);
+              void commit({ ...p, hmVatanHomeHiddenModules: [...next] });
+            }}
+            onChange={(items) => setP({ ...p, hmVatanHomeModuleOrder: items })}
+            onSave={(items) => void commit({ ...p, hmVatanHomeModuleOrder: items })}
+            onReset={() =>
+              void commit({
+                ...p,
+                hmVatanHomeModuleOrder: [...VATAN_HOME_MODULE_ORDER],
+                hmVatanHomeHiddenModules: [],
+              })
+            }
+          />
+            </TabsContent>
+            ) : null}
+
           </Tabs>
             </AccordionContent>
           </AccordionItem>
@@ -2316,7 +2364,9 @@ export default function EditorVitrinAyarlari() {
             <Label className="font-semibold text-slate-900">Footer ve sidebar menüleri</Label>
             <p className="mt-1 text-xs text-slate-500">
               {isCorporateEditorSite
-                ? "Kurumsal / Vatan temada alt bilgi menüsü üst menü ile aynıdır. Haber kategorileri Kategoriler sayfasındaki «Vitrinde» anahtarı ile yönetilir."
+                ? isVatanEditorSite
+                  ? "Vatan temasında üst menü hem başlık hem footer sütunlarını besler. Footer menüsüne öğe eklerseniz footer yalnızca onu kullanır."
+                  : "Kurumsal / Vatan temada alt bilgi menüsü üst menü ile aynıdır. Haber kategorileri Kategoriler sayfasındaki «Vitrinde» anahtarı ile yönetilir."
                 : "Footer Sayfalar sütunu ile anasayfa sidebar başlantılarını WordPress tarzı menü editöründen yönetin."}
             </p>
           </div>

@@ -34,10 +34,10 @@ export type VatanSearchSource = "canakkale" | "msb";
 
 export const VATAN_SEARCH_SOURCES: { id: VatanSearchSource; label: string; href: string; shortLabel: string }[] = [
   { id: "canakkale", label: "Çanakkale Şehitleri", shortLabel: "Çanakkale", href: "/canakkale-sehitleri" },
-  { id: "msb", label: "MSB Şehit Listesi", shortLabel: "MSB", href: "/sehitlerimiz" },
+  { id: "msb", label: "TSK Şehitleri", shortLabel: "TSK", href: "/terorle-mucadele" },
 ];
 
-export const VATAN_SEARCH_HELPER = "Çanakkale şehitlerimizde veya MSB listesinde isim arayabilirsiniz.";
+export const VATAN_SEARCH_HELPER = "Çanakkale şehitlerimizde veya TSK listesinde isim arayabilirsiniz.";
 
 export type VatanMosaicTile = {
   slug: string;

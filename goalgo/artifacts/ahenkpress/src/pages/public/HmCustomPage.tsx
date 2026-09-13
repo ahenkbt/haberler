@@ -14,6 +14,7 @@ import {
   prepareHmCustomPageBodyHtml,
   shouldUseHmTemplatePageBody,
 } from "@/lib/prepareHmCustomPageBodyHtml";
+import { extraPageBodyHtmlOf, findHmExtraPageBySlug } from "@/lib/hmExtraPageLookup";
 import { hmContainedPageShellClass, hmFullWidthPageShellClass, isHmSiteLayoutContained } from "@/lib/hmChromeLayout";
 import "@/styles/hmVkdCorporatePages.css";
 
@@ -67,10 +68,28 @@ class HmCustomPageErrorBoundary extends Component<{ children: ReactNode; resetKe
 
 export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site: HmCustomPageSite }) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
-  const page = useMemo(() => {
+  const listedPage = useMemo(() => {
     const requestedSlug = normalizeCustomPageSlug(pageSlug);
     return (site.layoutPrefs.hmExtraPages ?? []).find((p) => p.enabled && normalizeCustomPageSlug(p.slug) === requestedSlug);
   }, [site.layoutPrefs.hmExtraPages, pageSlug]);
+  const listedHtml = extraPageBodyHtmlOf(listedPage);
+  const { data: fetchedLayout, isFetched: fetchedFullHtml } = useQuery({
+    queryKey: ["/api/hm/meta/by-slug", site.slug, "page-html", normalizeCustomPageSlug(pageSlug)],
+    queryFn: async () => {
+      const r = await fetch(apiUrl(`/api/hm/meta/by-slug/${encodeURIComponent(site.slug)}?includePageContent=1`));
+      if (!r.ok) throw new Error("notfound");
+      const text = await r.text();
+      const meta = JSON.parse(text) as HmMeta;
+      return parseNewsSiteLayoutFromJson(meta.layout != null ? JSON.stringify(meta.layout) : null, site.slug);
+    },
+    enabled: Boolean(listedPage) && !listedHtml && site.slug.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const page = useMemo(() => {
+    if (!listedPage) return undefined;
+    if (listedHtml) return listedPage;
+    return findHmExtraPageBySlug(fetchedLayout?.hmExtraPages, listedPage.slug) ?? listedPage;
+  }, [listedPage, listedHtml, fetchedLayout]);
 
   useEffect(() => {
     if (!page) return;
@@ -97,6 +116,7 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
       site: { slug: site.slug, siteId: site.id, domain: site.domain ?? null },
     });
   }, [page?.bodyHtml, page?.importSource, isCorporate, site.domain, site.id, site.slug]);
+  const htmlPending = Boolean(listedPage) && !pageBodySafe.trim() && !listedHtml && !fetchedFullHtml;
 
   useHmCustomPageEnhancements(bodyRef, site, page?.slug ?? pageSlug, page?.title ?? pageSlug, pageBodySafe);
 
@@ -133,8 +153,10 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
                 data-hm-page-slug={page.slug}
                 dangerouslySetInnerHTML={{ __html: pageBodySafe }}
               />
+            ) : htmlPending ? (
+              <div className="min-h-[40vh]" aria-busy="true" aria-label="Sayfa yükleniyor" />
             ) : (
-              <div className="px-4 py-8 text-sm text-slate-600">Sayfa içeriği güvenli önizleme için boş görünüyor.</div>
+              <h1 className="px-4 py-10 text-2xl font-black tracking-tight text-slate-900">{page.title}</h1>
             )}
           </HmCustomPageErrorBoundary>
         ) : (
@@ -149,9 +171,9 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
                   className="hm-custom-page-body prose prose-slate max-w-none px-6 py-8"
                   dangerouslySetInnerHTML={{ __html: pageBodySafe }}
                 />
-              ) : (
-                <div className="px-6 py-8 text-sm text-slate-600">Sayfa içeriği güvenli önizleme için boş görünüyor.</div>
-              )}
+              ) : htmlPending ? (
+                <div className="min-h-[24vh]" aria-busy="true" aria-label="Sayfa yükleniyor" />
+              ) : null}
             </HmCustomPageErrorBoundary>
           </article>
         )}

@@ -5,7 +5,7 @@ import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
 import { VatanButton } from "@/components/vatan/ui/VatanButton";
 import { VatanSectionHead } from "@/components/vatan/ui/VatanSectionHead";
 
-export function VatanMilliGunler() {
+export function VatanMilliGunler({ numeral = "04" }: { numeral?: string }) {
   const h = useHmPublicHref();
   const { upcoming, today } = useMemo(() => {
     const md = resolveIstanbulMonthDay();
@@ -17,7 +17,7 @@ export function VatanMilliGunler() {
       <img className="vatan-days__bg" src={VATAN_ASSETS.milliGunler} alt="" loading="lazy" decoding="async" aria-hidden="true" />
       <div className="vatan-wrap vatan-days__inner">
         <VatanSectionHead
-          numeral="04"
+          numeral={numeral}
           eyebrow="Millî Günler"
           title="Unutmadığımız günler."
           lead="Her yıl aynı günlerde bir araya gelir, şehitlerimizi ve millî günlerimizi anarız."

@@ -60,7 +60,7 @@ export default function HmCanakkaleSehitleriPage() {
     staleTime: 60 * 60 * 1000,
   });
 
-  const { data: provinces, isLoading: provincesLoading } = useQuery({
+  const { data: provinces, isLoading: provincesLoading, isError: provincesError, error: provincesErr, refetch: refetchProvinces } = useQuery({
     queryKey: ["/api/vkd/canakkale-sehitleri/stats/provinces"],
     queryFn: async () => {
       const r = await fetch(apiUrl("/api/vkd/canakkale-sehitleri/stats/provinces"));
@@ -343,7 +343,7 @@ export default function HmCanakkaleSehitleriPage() {
           </section>
         )}
 
-        <details className="group rounded-xl border border-[#E4DDD5] bg-white shadow-sm">
+        <details open className="group rounded-xl border border-[#E4DDD5] bg-white shadow-sm">
           <summary className="cursor-pointer list-none px-5 py-4 md:px-6">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -362,6 +362,21 @@ export default function HmCanakkaleSehitleriPage() {
                   <div className="flex justify-center py-10">
                     <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#0f766e] border-t-transparent" />
                   </div>
+                ) : provincesError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-800">
+                    <p>{(provincesErr as Error)?.message || "İl listesi alınamadı."}</p>
+                    <button
+                      type="button"
+                      className="mt-3 text-[11px] font-bold uppercase tracking-wide text-[#0f766e] hover:underline"
+                      onClick={() => void refetchProvinces()}
+                    >
+                      Yeniden dene
+                    </button>
+                  </div>
+                ) : !(provinces ?? []).length ? (
+                  <p className="rounded-lg border border-dashed border-[#E4DDD5] px-4 py-8 text-center text-sm text-[#6B7280]">
+                    İl kayıtları henüz yüklenmemiş. Şehit sorgulama kutusundan ad veya il yazarak arayabilirsiniz.
+                  </p>
                 ) : (
                   <div className="overflow-x-auto rounded-lg border border-[#E4DDD5]">
                     <table className="min-w-[360px] w-full text-left text-sm">

@@ -1089,8 +1089,9 @@ export default function EditorGenelAyarlari() {
               <div>
                 <Label className="font-semibold text-slate-900">Slider yönetimi</Label>
                 <p className="text-xs text-slate-500 mt-1">
-                  Kurumsal ana slider burada yönetilir; haberlerdeki &quot;Manşette göster&quot; işareti bu alanı etkilemez.
-                  Boş bırakılırsa vitrinde site adı ve açıklamasından oluşan sade bir karşılama alanı görünür.
+                  {p.hmVitrinTheme === "vatan"
+                    ? "Vatan anasayfa kahraman slider’ının arka plan görselleri ve ilk iki slaytın buton linkleri buradan gelir. Başlık metni (Hatırayı yaşatmak) sabittir."
+                    : "Kurumsal ana slider burada yönetilir; haberlerdeki \"Manşette göster\" işareti bu alanı etkilemez. Boş bırakılırsa vitrinde site adı ve açıklamasından oluşan sade bir karşılama alanı görünür."}
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" className="gap-1" disabled={saving} onClick={addCorporateSliderItem}>
@@ -1263,8 +1264,9 @@ export default function EditorGenelAyarlari() {
               <div>
                 <Label className="font-semibold text-slate-900">Bant yönetimi</Label>
                 <p className="text-xs text-slate-500 mt-1">
-                  Sliderın hemen altındaki koyu hızlı erişim bandını yönetir. Boş bırakılırsa Hızlı Erişim Yönetimi veya
-                  varsayılan turizm/kültür kutuları kullanılır.
+                  {p.hmVitrinTheme === "vatan"
+                    ? "En az 2 görselli aktif bant kartı kaydederseniz Vatan anasayfa mozaği (Şehitliklerimiz) bu kartlarla değişir. Aksi halde varsayılan mozaik + Sayfalar başlıkları kullanılır."
+                    : "Sliderın hemen altındaki koyu hızlı erişim bandını yönetir. Boş bırakılırsa Hızlı Erişim Yönetimi veya varsayılan turizm/kültür kutuları kullanılır."}
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" className="gap-1" disabled={saving} onClick={addCorporateBandItem}>

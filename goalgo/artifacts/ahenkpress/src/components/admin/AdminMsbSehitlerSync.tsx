@@ -58,7 +58,7 @@ export function AdminMsbSehitlerSync() {
           <h2 className="text-sm font-black uppercase tracking-widest text-red-900">VKD · Şehitlerimiz verisi</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-red-950/80">
             Mehmetçik arşivi (202 kayıt) repoda yüklüdür; MSB&apos;den Ekim 2025 sonrası kayıtlar kazınır. Liste{" "}
-            <strong>/sehitlerimiz</strong> sayfasında görünür. Bu işlem yalnızca Yekpare yönetici panelinden çalışır.
+            <strong>/terorle-mucadele</strong> (TSK Şehitleri) sayfasında görünür. Bu işlem yalnızca Yekpare yönetici panelinden çalışır.
           </p>
         </div>
         <Button

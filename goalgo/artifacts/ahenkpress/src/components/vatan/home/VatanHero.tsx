@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { prefersReducedMotion } from "@/hooks/useVatanScrolled";
-import { VATAN_HOME_HERO_V2 } from "@/lib/hmVatanHomeContent";
+import type { VatanResolvedHero } from "@/lib/hmVatanEditorHome";
 import { VatanButton } from "@/components/vatan/ui/VatanButton";
 
-export function VatanHero() {
+export function VatanHero({ hero }: { hero: VatanResolvedHero }) {
   const h = useHmPublicHref();
-  const slides = VATAN_HOME_HERO_V2.slides;
+  const slides = hero.slides;
   const [active, setActive] = useState(0);
   const [autoplay, setAutoplay] = useState(() => !prefersReducedMotion());
   const [mounted, setMounted] = useState(false);
@@ -21,11 +21,11 @@ export function VatanHero() {
     if (!autoplay || slides.length < 2) return undefined;
     timer.current = window.setInterval(() => {
       setActive((i) => (i + 1) % slides.length);
-    }, VATAN_HOME_HERO_V2.slideIntervalMs);
+    }, hero.slideIntervalMs);
     return () => {
       if (timer.current != null) window.clearInterval(timer.current);
     };
-  }, [autoplay, slides.length, active]);
+  }, [autoplay, slides.length, active, hero.slideIntervalMs]);
 
   const reduced = !autoplay;
 
@@ -33,7 +33,7 @@ export function VatanHero() {
     <section
       className={`vatan-hero vatan-hero--home${mounted ? " is-mounted" : ""}${reduced ? " vatan-hero--static" : ""}`}
       aria-label="Vatan Kahramanları Derneği"
-      style={{ ["--vatan-slide-ms" as string]: `${VATAN_HOME_HERO_V2.slideIntervalMs}ms` }}
+      style={{ ["--vatan-slide-ms" as string]: `${hero.slideIntervalMs}ms` }}
     >
       <div className="vatan-hero__media" aria-hidden="true">
         {slides.map((slide, i) => (
@@ -57,20 +57,20 @@ export function VatanHero() {
       <div className="vatan-wrap vatan-hero__inner">
         <div className="vatan-hero__copy">
           <p className="vatan-eyebrow vatan-hero__eyebrow" style={{ ["--i" as string]: 0 }}>
-            {VATAN_HOME_HERO_V2.eyebrow}
+            {hero.eyebrow}
           </p>
           <h1 className="vatan-hero__title" style={{ ["--i" as string]: 1 }}>
-            {VATAN_HOME_HERO_V2.title} <em>{VATAN_HOME_HERO_V2.accent}</em>
+            {hero.title} <em>{hero.accent}</em>
           </h1>
           <p className="vatan-lead vatan-hero__lead" style={{ ["--i" as string]: 2 }}>
-            {VATAN_HOME_HERO_V2.lead}
+            {hero.lead}
           </p>
           <div className="vatan-hero__actions" style={{ ["--i" as string]: 3 }}>
-            <VatanButton href={h(VATAN_HOME_HERO_V2.primaryHref)} variant="primary" arrow>
-              {VATAN_HOME_HERO_V2.primaryLabel}
+            <VatanButton href={h(hero.primaryHref)} variant="primary" arrow>
+              {hero.primaryLabel}
             </VatanButton>
-            <VatanButton href={h(VATAN_HOME_HERO_V2.secondaryHref)} variant="outline">
-              {VATAN_HOME_HERO_V2.secondaryLabel}
+            <VatanButton href={h(hero.secondaryHref)} variant="outline">
+              {hero.secondaryLabel}
             </VatanButton>
           </div>
         </div>
@@ -94,7 +94,7 @@ export function VatanHero() {
             ))}
           </div>
           <a className="vatan-hero__cue" href="#hafiza-mekanlari">
-            <span>{VATAN_HOME_HERO_V2.scrollCueLabel}</span>
+            <span>{hero.scrollCueLabel}</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
               <path d="m3 5 4 4 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

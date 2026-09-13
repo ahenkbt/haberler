@@ -51,6 +51,24 @@ export function findHmExtraPageBySlug(
   return (pages ?? []).find((p) => p.enabled && normalizeHmExtraPageSlug(p.slug) === wanted);
 }
 
+function rawExtraPageRows(layout: unknown): Array<Record<string, unknown>> {
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) return [];
+  const pages = (layout as { hmExtraPages?: unknown }).hmExtraPages;
+  if (!Array.isArray(pages)) return [];
+  return pages.filter((row): row is Record<string, unknown> => !!row && typeof row === "object" && !Array.isArray(row));
+}
+
+/** Slim public meta strips `bodyHtml`; parsed prefs then look like an empty page. */
+export function hmRawExtraPagesMissingBodyHtml(layout: unknown): boolean {
+  const pages = rawExtraPageRows(layout);
+  if (!pages.length) return false;
+  return pages.every((page) => !Object.prototype.hasOwnProperty.call(page, "bodyHtml"));
+}
+
+export function extraPageBodyHtmlOf(page: Pick<HmExtraPage, "bodyHtml"> | null | undefined): string {
+  return String(page?.bodyHtml ?? "").trim();
+}
+
 /** Vitrin sayfa yolu: `/tr/{site}/{slug}` ( `/sayfa/` yok ). */
 export function hmPublicExtraPagePath(slug: string): string {
   const s = slug.trim().replace(/^\/+|\/+$/g, "");

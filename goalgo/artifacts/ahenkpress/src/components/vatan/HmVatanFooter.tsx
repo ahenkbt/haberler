@@ -4,6 +4,7 @@ import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { buildVatanFooterGroups } from "@/lib/hmVatanNav";
 import { VATAN_FOOTER_MISSION } from "@/lib/hmVatanHomeContent";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { isVkdSiteSlug } from "@/lib/hmVkdFooterNav";
 import { resolveHmCorporateRequestFormEnabled, hmRequestFormPath } from "@/lib/hmRequestForm";
 import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
@@ -57,7 +58,10 @@ export function HmVatanFooter({
   showVideoTvLink: boolean;
 }) {
   const h = useHmPublicHref();
-  const groups = useMemo(() => buildVatanFooterGroups(layoutPrefs, h), [layoutPrefs, h]);
+  const groups = useMemo(
+    () => buildVatanFooterGroups(layoutPrefs, h, { showVideoTvLink }),
+    [layoutPrefs, h, showVideoTvLink],
+  );
   const year = new Date().getFullYear();
   const isVkd = isVkdSiteSlug(site.slug);
   const hostKey = typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
@@ -81,6 +85,11 @@ export function HmVatanFooter({
   if (s?.xUrl?.trim()) socials.push({ key: "x", label: "X", href: s.xUrl.trim() });
   if (s?.youtubeUrl?.trim()) socials.push({ key: "youtube", label: "YouTube", href: s.youtubeUrl.trim() });
 
+  const missionRaw = (layoutPrefs.hmFooterAboutHtml ?? "").trim();
+  const missionLooksHtml = /<[a-z][\s\S]*>/i.test(missionRaw);
+  const missionHtml = missionLooksHtml ? sanitizeHtml(missionRaw) : "";
+  const missionText = missionRaw && !missionLooksHtml ? missionRaw : VATAN_FOOTER_MISSION;
+
   const legal: { key: string; label: string; href: string }[] = [
     { key: "kunye", label: "Künye", href: h("/kunye") },
   ];
@@ -95,7 +104,11 @@ export function HmVatanFooter({
       <div className="vatan-wrap vatan-footer__inner">
         <div className="vatan-footer__brand">
           <VatanBrand logoUrl={layoutPrefs.logoUrl?.trim() || undefined} displayName={site.displayName} homeHref={h("/")} compact />
-          <p className="vatan-footer__mission">{VATAN_FOOTER_MISSION}</p>
+          {missionHtml ? (
+            <div className="vatan-footer__mission" dangerouslySetInnerHTML={{ __html: missionHtml }} />
+          ) : (
+            <p className="vatan-footer__mission">{missionText}</p>
+          )}
           <address className="vatan-footer__contact">
             {address ? <span>{address}</span> : null}
             {isVkd ? <VatanIbanAccounts variant="footer" /> : null}

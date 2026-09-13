@@ -251,14 +251,14 @@ export const VATAN_LONGFORM_PAGES: Record<string, VatanLongformPage> = {
         eyebrow: "Kayıt",
         title: "İsimlerini arayın",
         body: [
-          "Millî Savunma Bakanlığı, Jandarma ve Emniyet şehit duyurularını kendi kanallarından yayımlar. Sitemizde MSB listesine /sehitlerimiz adresinden bakabilirsiniz.",
+          "Millî Savunma Bakanlığı TSK şehit duyurularını kendi kanallarından yayımlar. Sitemizde TSK listesine /terorle-mucadele adresinden bakabilirsiniz.",
           "Bir ismi burada uydurmak veya süslemek, aileye ihanettir. Eksik bir satır görürseniz bize yazın; kaynağı birlikte kontrol ederiz.",
         ],
         cards: [
           {
-            title: "MSB şehit listesi",
+            title: "TSK şehit listesi",
             text: "Kara, deniz ve hava. Ad, rütbe ve yılla arayın.",
-            href: "/sehitlerimiz",
+            href: "/terorle-mucadele",
           },
           {
             title: "Haklar rehberi",
@@ -299,8 +299,8 @@ export const VATAN_LONGFORM_PAGES: Record<string, VatanLongformPage> = {
         cards: [
           {
             title: "Türk Silahlı Kuvvetleri",
-            text: "Kara, Deniz, Hava. Şehit listesine /sehitlerimiz sayfasından bakabilirsiniz.",
-            href: "/sehitlerimiz",
+            text: "Kara, Deniz, Hava. Şehit listesine /terorle-mucadele sayfasından bakabilirsiniz.",
+            href: "/terorle-mucadele",
           },
           {
             title: "Jandarma ve Sahil Güvenlik",

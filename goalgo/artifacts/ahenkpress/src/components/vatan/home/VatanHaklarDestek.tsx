@@ -5,7 +5,7 @@ import { VatanHairlineList } from "@/components/vatan/ui/VatanHairlineList";
 import { VatanLink } from "@/components/vatan/ui/VatanLink";
 import { VatanSectionHead } from "@/components/vatan/ui/VatanSectionHead";
 
-export function VatanHaklarDestek() {
+export function VatanHaklarDestek({ numeral = "03" }: { numeral?: string }) {
   const h = useHmPublicHref();
   return (
     <section className="vatan-section vatan-section--ivory vatan-split" aria-labelledby="vatan-s5-title">
@@ -15,7 +15,7 @@ export function VatanHaklarDestek() {
         </figure>
         <div className="vatan-split__body">
           <VatanSectionHead
-            numeral="03"
+            numeral={numeral}
             eyebrow="Haklar ve Destek"
             title="Haklarınız var."
             accent="Yanınızdayız."

@@ -6,7 +6,7 @@ import { VatanButton } from "@/components/vatan/ui/VatanButton";
 import { VatanHairlineList } from "@/components/vatan/ui/VatanHairlineList";
 import { VatanSectionHead } from "@/components/vatan/ui/VatanSectionHead";
 
-export function VatanAtaturkKosesi() {
+export function VatanAtaturkKosesi({ numeral = "05" }: { numeral?: string }) {
   const h = useHmPublicHref();
   const quote = ATATURK_QUOTES[0];
 
@@ -24,7 +24,7 @@ export function VatanAtaturkKosesi() {
           />
         </figure>
         <div className="vatan-split__body">
-          <VatanSectionHead numeral="05" eyebrow="Atatürk Köşesi" title="O’nu anmak," accent="O’nu anlamak." align="stack" id="vatan-s7-title" />
+          <VatanSectionHead numeral={numeral} eyebrow="Atatürk Köşesi" title="O’nu anmak," accent="O’nu anlamak." align="stack" id="vatan-s7-title" />
           {quote ? (
             <blockquote className="vatan-quote vatan-reveal">
               <p>“{quote.text}”</p>

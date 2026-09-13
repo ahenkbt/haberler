@@ -837,6 +837,10 @@ export type NewsSiteLayoutPrefs = {
   hmNewsVideoTvManualLink?: string | null;
   /** KURUMSAL tema anasayfa modül sırası. Bilinmeyen/eksik modüller varsayılan sıraya tamamlanır. */
   hmCorporateHomeModuleOrder?: string[] | null;
+  /** Vatan teması anasayfa bölüm sırası (slider, sorgu, mozaik…). */
+  hmVatanHomeModuleOrder?: string[] | null;
+  /** Vatan anasayfasında gizlenen bölüm id’leri. */
+  hmVatanHomeHiddenModules?: string[] | null;
   /** HABER teması footer sayfa menüsü. Boşsa varsayılan footer sayfaları kullanılır. */
   hmNewsFooterMenuItems?: HmNewsMenuItem[] | null;
   /** HABER teması sağ sidebar manuel başlantıları. */
@@ -2776,6 +2780,8 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmNewsWsjEditorialGridEnabled: false,
   hmNewsHomeModuleOrder: [...HM_NEWS_HOME_MODULE_ORDER],
   hmCorporateHomeModuleOrder: [...HM_CORPORATE_HOME_MODULE_ORDER],
+  hmVatanHomeModuleOrder: undefined,
+  hmVatanHomeHiddenModules: undefined,
   sadeNewsPublicInfoEnabled: false,
   sadeNewsNewsletterEnabled: true,
   sadeNewsTimelineEnabled: false,
@@ -3494,6 +3500,14 @@ export function parseNewsSiteLayoutFromJson(
       ),
       hmCorporateDonation,
     );
+    const hmVatanHomeModuleOrderRaw = (j as { hmVatanHomeModuleOrder?: unknown }).hmVatanHomeModuleOrder;
+    const hmVatanHomeModuleOrder = Array.isArray(hmVatanHomeModuleOrderRaw)
+      ? hmVatanHomeModuleOrderRaw.map((item) => String(item ?? "").trim()).filter(Boolean).slice(0, 16)
+      : undefined;
+    const hmVatanHomeHiddenRaw = (j as { hmVatanHomeHiddenModules?: unknown }).hmVatanHomeHiddenModules;
+    const hmVatanHomeHiddenModules = Array.isArray(hmVatanHomeHiddenRaw)
+      ? hmVatanHomeHiddenRaw.map((item) => String(item ?? "").trim()).filter(Boolean).slice(0, 16)
+      : undefined;
     const sadeNewsPortalModuleOrderRaw = (j as { sadeNewsPortalModuleOrder?: unknown }).sadeNewsPortalModuleOrder;
     const sadeNewsPortalModuleOrder = migrateSadeNewsPortalModuleOrder(
       Array.isArray(sadeNewsPortalModuleOrderRaw)
@@ -3722,6 +3736,8 @@ export function parseNewsSiteLayoutFromJson(
       hmNewsVideoTvPlaylistId,
       hmNewsVideoTvManualLink,
       hmCorporateHomeModuleOrder: hmCorporateHomeModuleOrder ?? [...HM_CORPORATE_HOME_MODULE_ORDER],
+      hmVatanHomeModuleOrder: hmVatanHomeModuleOrder?.length ? hmVatanHomeModuleOrder : undefined,
+      hmVatanHomeHiddenModules: hmVatanHomeHiddenModules?.length ? hmVatanHomeHiddenModules : undefined,
       sadeNewsPortalModuleOrder: resolveHmHomeModuleOrder(
         sadeNewsPortalModuleOrder,
         SADE_NEWS_PORTAL_ACTIVE_MODULE_ORDER,

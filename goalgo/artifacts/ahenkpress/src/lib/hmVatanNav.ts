@@ -183,7 +183,25 @@ function specGroup(
 export function buildVatanFooterGroups(
   layoutPrefs: NewsSiteLayoutPrefs,
   h: (path: string) => string,
+  opts?: { showVideoTvLink?: boolean },
 ): HmCorporateFooterMenuGroup[] {
+  const manual = (layoutPrefs.hmNewsFooterMenuItems ?? []).filter((item) => item && item.enabled !== false);
+  if (manual.length) {
+    const links = [];
+    for (const item of manual) {
+      const link = toLink(h, item);
+      if (link) links.push(link);
+    }
+    if (links.length) return [{ key: "footer-menu", heading: "Menü", links }];
+  }
+
+  const nav = buildVatanNavModel(layoutPrefs, h, { showVideoTvLink: opts?.showVideoTvLink !== false });
+  const fromHeader = [...nav.primaryGroups, ...nav.overflowGroups]
+    .slice(0, 4)
+    .map((group) => ({ key: group.key, heading: group.label, links: group.children }))
+    .filter((group) => group.links.length > 0);
+  if (fromHeader.length) return fromHeader;
+
   const stored = new Map<string, HmCorporateMenuItem>();
   for (const item of layoutPrefs.hmCorporateMenuItems ?? []) stored.set(item.id, item);
   const groups = [
