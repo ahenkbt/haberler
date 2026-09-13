@@ -50,10 +50,12 @@ function cardSubtitle(item: MsbSehitRecord): string {
   return item.martyrdomDate ?? item.registry ?? "";
 }
 
-export default function HmSehitlerimizPage() {
+export default function HmSehitlerimizPage({ variant = "default" }: { variant?: "default" | "tsk" }) {
   const ctx = useHmPublicLinkContextOptional();
   const queryClient = useQueryClient();
   const shellClass = hmSiteContentShellClass(ctx?.layoutPrefs);
+  const isTsk = variant === "tsk";
+  const pageTitle = isTsk ? "TSK Şehitleri" : "Şehitlerimiz";
 
   const [activeYear, setActiveYear] = useState<number | "all">("all");
   const [search, setSearch] = useState("");
@@ -79,8 +81,8 @@ export default function HmSehitlerimizPage() {
 
   useEffect(() => {
     if (!ctx) return;
-    document.title = `Şehitlerimiz · ${ctx.displayName}`;
-  }, [ctx]);
+    document.title = `${pageTitle} · ${ctx.displayName}`;
+  }, [ctx, pageTitle]);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get("q");
@@ -142,13 +144,15 @@ export default function HmSehitlerimizPage() {
         />
         <div className="vatan-hero__shade" />
         <div className={`vatan-hero__inner ${shellClass}`}>
-          <p className="vatan-hero__kicker">Vatan Kahramanları Derneği</p>
+          <p className="vatan-hero__kicker">{isTsk ? "Terörle Mücadele · TSK" : "Vatan Kahramanları Derneği"}</p>
           <h1 className="vatan-hero__title">
-            Şehitlerimizi
+            {isTsk ? "TSK Şehitlerini" : "Şehitlerimizi"}
             <em>minnetle anıyoruz</em>
           </h1>
           <p className="vatan-hero__lead">
-            Şehitlerimizin isimlerini burada arayabilirsiniz. Ad, rütbe veya yılla bakın.
+            {isTsk
+              ? "Terörle mücadelede hayatını veren TSK şehitlerimizin isimlerini ad, rütbe veya yılla arayabilirsiniz."
+              : "Şehitlerimizin isimlerini burada arayabilirsiniz. Ad, rütbe veya yılla bakın."}
           </p>
         </div>
       </header>
@@ -262,7 +266,7 @@ export default function HmSehitlerimizPage() {
                   {search.trim() ? ` · "${search.trim()}"` : ""}
                 </div>
                 <h2 className="font-serif text-2xl font-bold md:text-3xl">
-                  {activeYear === "all" ? "Şehitlerimiz" : `${activeYear} Yılı Şehitlerimiz`}
+                  {activeYear === "all" ? pageTitle : `${activeYear} Yılı ${pageTitle}`}
                 </h2>
               </div>
               <div className="text-right">

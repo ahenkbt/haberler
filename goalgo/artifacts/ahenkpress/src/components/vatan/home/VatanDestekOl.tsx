@@ -41,7 +41,15 @@ function resolveAccounts(layoutPrefs: NewsSiteLayoutPrefs, slug: string): VkdDon
   return stored;
 }
 
-export function VatanDestekOl({ layoutPrefs, slug }: { layoutPrefs: NewsSiteLayoutPrefs; slug: string }) {
+export function VatanDestekOl({
+  layoutPrefs,
+  slug,
+  numeral = "07",
+}: {
+  layoutPrefs: NewsSiteLayoutPrefs;
+  slug: string;
+  numeral?: string;
+}) {
   const h = useHmPublicHref();
   const isVkd = isVkdSiteSlug(slug);
   const donationActive = isVkd || isHmDonationActive(layoutPrefs.hmCorporateDonation) || layoutPrefs.hmCorporateDonation == null;
@@ -58,7 +66,7 @@ export function VatanDestekOl({ layoutPrefs, slug }: { layoutPrefs: NewsSiteLayo
   return (
     <section className="vatan-section vatan-section--crimson vatan-support" aria-labelledby="vatan-s9-title">
       <div className="vatan-wrap">
-        <VatanSectionHead numeral="07" eyebrow="Destek Ol" title={title} align="stack" id="vatan-s9-title" />
+        <VatanSectionHead numeral={numeral} eyebrow="Destek Ol" title={title} align="stack" id="vatan-s9-title" />
         <div className={`vatan-support__grid${accounts.length ? "" : " vatan-support__grid--no-iban"}`}>
           {accounts.length ? (
             <div className="vatan-reveal">

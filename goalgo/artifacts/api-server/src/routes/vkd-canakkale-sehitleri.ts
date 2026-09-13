@@ -35,6 +35,7 @@ router.get("/vkd/canakkale-sehitleri/meta", async (_req, res): Promise<void> => 
 
 router.get("/vkd/canakkale-sehitleri/stats/provinces", async (_req, res): Promise<void> => {
   try {
+    await ensureVkdModuleTables();
     const rows = await db
       .select({
         province: vkdCanakkaleSehitleriTable.province,
@@ -64,6 +65,7 @@ router.get("/vkd/canakkale-sehitleri/stats/districts", async (req, res): Promise
   }
 
   try {
+    await ensureVkdModuleTables();
     const rows = await db
       .select({
         district: vkdCanakkaleSehitleriTable.district,
@@ -115,6 +117,7 @@ router.get("/vkd/canakkale-sehitleri/search", async (req, res): Promise<void> =>
   const whereClause = conditions.length ? and(...conditions) : undefined;
 
   try {
+    await ensureVkdModuleTables();
     const [totalRow] = await db
       .select({ total: count() })
       .from(vkdCanakkaleSehitleriTable)

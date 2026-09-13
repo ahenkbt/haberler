@@ -4,12 +4,12 @@ import { VatanArrow } from "@/components/vatan/ui/VatanButton";
 import { VatanLink } from "@/components/vatan/ui/VatanLink";
 import { VatanSectionHead } from "@/components/vatan/ui/VatanSectionHead";
 
-export function VatanTarihPanels() {
+export function VatanTarihPanels({ numeral = "06" }: { numeral?: string }) {
   const h = useHmPublicHref();
   return (
     <section className="vatan-section vatan-section--ivory vatan-history" aria-labelledby="vatan-s8-title">
       <div className="vatan-wrap">
-        <VatanSectionHead numeral="06" eyebrow="Tarih" title="Tarihimizden sayfalar." id="vatan-s8-title" lead="Çanakkale’den Kıbrıs’a, milletimizin yazdığı destanlar." />
+        <VatanSectionHead numeral={numeral} eyebrow="Tarih" title="Tarihimizden sayfalar." id="vatan-s8-title" lead="Çanakkale’den Kıbrıs’a, milletimizin yazdığı destanlar." />
         <ul className="vatan-panels" role="list">
           {VATAN_WAR_PANELS.map((p, i) => (
             <li key={p.slug} className="vatan-reveal" data-reveal-i={i}>

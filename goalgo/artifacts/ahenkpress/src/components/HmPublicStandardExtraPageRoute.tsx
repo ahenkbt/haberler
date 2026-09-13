@@ -105,16 +105,12 @@ function HmPublicStandardExtraPageBody({
     return () => {};
   }, [ctx, extraPage, pageLabel, segment]);
 
-  if (normalizedSegment === "sehitlerimiz") {
-    return <HmSehitlerimizPage />;
-  }
-
   if (normalizedSegment === "canakkale-sehitleri") {
     return <HmCanakkaleSehitleriPage />;
   }
 
-  if (isVatanLongformSlug(normalizedSegment)) {
-    return <HmVatanLongformPage slug={normalizedSegment} />;
+  if (normalizedSegment === "terorle-mucadele") {
+    return <HmSehitlerimizPage variant="tsk" />;
   }
 
   if (!ctx) {
@@ -130,6 +126,14 @@ function HmPublicStandardExtraPageBody({
 
   if (extraPage) {
     return <HmCustomPageContent pageSlug={extraPage.slug} site={hmCustomPageSiteFromCtx(ctx)} />;
+  }
+
+  if (normalizedSegment === "sehitlerimiz") {
+    return <HmSehitlerimizPage />;
+  }
+
+  if (isVatanLongformSlug(normalizedSegment)) {
+    return <HmVatanLongformPage slug={normalizedSegment} />;
   }
 
   return fallback ?? <HmExtraPageMissing segment={segment} />;

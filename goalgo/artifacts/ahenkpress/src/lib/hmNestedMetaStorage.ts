@@ -68,12 +68,50 @@ export function readHmNestedMetaCache(pathSlugRaw: string): HmNestedMetaStored |
   }
 }
 
+function extraPageSlugOf(row: Record<string, unknown>): string {
+  return String(row.slug ?? "")
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase();
+}
+
+function extraPagesOf(layout: unknown): Array<Record<string, unknown>> {
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) return [];
+  const pages = (layout as { hmExtraPages?: unknown }).hmExtraPages;
+  if (!Array.isArray(pages)) return [];
+  return pages.filter((row): row is Record<string, unknown> => !!row && typeof row === "object" && !Array.isArray(row));
+}
+
+/** Slim meta answers must not wipe extra-page HTML already cached from a full fetch. */
+export function mergeHmNestedMetaPageHtml(prev: HmNestedMetaCached | undefined, next: HmNestedMetaCached): HmNestedMetaCached {
+  if (!prev?.layout) return next;
+  const nextLayout = next.layout;
+  if (!nextLayout || typeof nextLayout !== "object" || Array.isArray(nextLayout)) return next;
+  const nextPages = extraPagesOf(nextLayout);
+  if (!nextPages.length) return next;
+  const prevBySlug = new Map(extraPagesOf(prev.layout).map((row) => [extraPageSlugOf(row), row] as const));
+  let changed = false;
+  const mergedPages = nextPages.map((page) => {
+    const body = String(page.bodyHtml ?? "").trim();
+    if (body) return page;
+    const prevPage = prevBySlug.get(extraPageSlugOf(page));
+    const prevBody = String(prevPage?.bodyHtml ?? "").trim();
+    if (!prevBody) return page;
+    changed = true;
+    return { ...page, bodyHtml: prevBody };
+  });
+  if (!changed) return next;
+  return { ...next, layout: { ...(nextLayout as Record<string, unknown>), hmExtraPages: mergedPages } };
+}
+
 export function writeHmNestedMetaCache(pathSlugRaw: string, data: HmNestedMetaCached): void {
   if (typeof window === "undefined") return;
   const pathSlug = normalizeHmSlugSegment(pathSlugRaw);
   if (!pathSlug) return;
   try {
-    const payload: HmNestedMetaStored = { data, updatedAt: Date.now() };
+    const existing = readHmNestedMetaCache(pathSlugRaw);
+    const merged = mergeHmNestedMetaPageHtml(existing?.data, data);
+    const payload: HmNestedMetaStored = { data: merged, updatedAt: Date.now() };
     localStorage.setItem(hmNestedMetaStorageKey(pathSlug), JSON.stringify(payload));
   } catch {
     /* quota / private mode */

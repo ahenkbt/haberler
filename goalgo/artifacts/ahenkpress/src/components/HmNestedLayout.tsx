@@ -56,7 +56,7 @@ import {
 import { HmChromeThemeProvider, useHmChromeThemeOptional } from "@/contexts/HmChromeThemeContext";
 import { resolveHmColorPalette, resolveHmCategoryColorCssVars, resolveHmEditorAccentCssVars } from "@/lib/hmVitrinThemeTokens";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
-import { isHmReservedRouteSegment, isLikelyHmExtraPagePublicPath } from "@/lib/hmExtraPageLookup";
+import { hmRawExtraPagesMissingBodyHtml, isHmReservedRouteSegment, isLikelyHmExtraPagePublicPath } from "@/lib/hmExtraPageLookup";
 import { clearHmNestedMetaCache } from "@/lib/hmNestedMetaCache";
 import { HM_LAYOUT_UPDATED_EVENT } from "@/lib/hmLayoutUpdatedEvent";
 import { useIsMobile, useIsHmCompactViewport } from "@/hooks/use-mobile";
@@ -398,6 +398,7 @@ export function HmNestedLayout({
 
   const queryClient = useQueryClient();
   const storedMeta = useMemo(() => readHmNestedMetaCache(slug), [slug]);
+  const storedMetaMissingPageHtml = hmRawExtraPagesMissingBodyHtml(storedMeta?.data?.layout);
   const pathOnlyForHome = (location.split("?")[0] ?? "/").trim();
   const isHomeRoot = resolveIsHmSiteHomeRoot(pathOnlyForHome, slug);
   const [indexLandingDismissed, setIndexLandingDismissed] = useState(false);
@@ -420,8 +421,8 @@ export function HmNestedLayout({
     enabled: slug.length > 0,
     // Anasayfa ilk boyamasını meta refetch ile bloklamayın; layout event ile invalidate edilir.
     staleTime: indexLandingGate && isHomeRoot ? 30 * 1000 : needsFreshMeta ? 0 : 30 * 1000,
-    initialData: storedMeta?.data,
-    initialDataUpdatedAt: storedMeta?.updatedAt,
+    initialData: needsFreshMeta && storedMetaMissingPageHtml ? undefined : storedMeta?.data,
+    initialDataUpdatedAt: needsFreshMeta && storedMetaMissingPageHtml ? undefined : storedMeta?.updatedAt,
     refetchOnMount: needsFreshMeta ? "always" : storedMeta?.data && isHomeRoot ? false : true,
     refetchOnWindowFocus: needsFreshMeta,
     retry: 1,

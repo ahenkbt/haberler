@@ -91,7 +91,7 @@ export function HmSehitSearchModule({
   });
 
   const canakkaleHref = h("/canakkale-sehitleri");
-  const tskHref = h("/sehitlerimiz");
+  const tskHref = h("/terorle-mucadele");
   const kindLabel = useMemo(
     () =>
       kind === "canakkale"

@@ -368,7 +368,7 @@ function CorporateHeroSlider({
             <Link href="/hakkimizda" className="vkv-slide-btn vkv-slide-btn--primary">
               Kurumu Tanı <ChevronRight className="h-4 w-4" />
             </Link>
-            <Link href="/sehitlerimiz" className="vkv-slide-btn vkv-slide-btn--secondary">
+            <Link href="/terorle-mucadele" className="vkv-slide-btn vkv-slide-btn--secondary">
               Şehitlerimiz
             </Link>
             <Link href={tumHaberlerHref} className="vkv-slide-btn vkv-slide-btn--secondary">

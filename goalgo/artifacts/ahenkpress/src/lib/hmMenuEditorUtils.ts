@@ -22,7 +22,7 @@ export const HM_MENU_LOCATIONS: {
     key: "hmCorporateMenuItems",
     label: "Üst menü",
     description:
-      "Logo bandının altındaki ana menü (Anasayfa, Sondakika, Video TV vb.). Kaydettikten sonra canlı sitede Ctrl+F5 ile yenileyin. Boş bırakılırsa varsayılan kısayollar kullanılır.",
+      "Logo bandının altındaki ana menü. Vatan temasında hem üst mega menü hem footer sütunları buradan gelir. Kaydettikten sonra canlı sitede Ctrl+F5 ile yenileyin.",
     allowNesting: true,
   },
   {
@@ -36,7 +36,7 @@ export const HM_MENU_LOCATIONS: {
     key: "hmNewsFooterMenuItems",
     label: "Footer menüsü",
     description:
-      "Alt bilgideki Menü sütunu. Buraya öğe eklerseniz üst menüden bağımsız listelenir; boş bırakırsanız kurumsal temada üst menü grupları, haber temasında varsayılan footer linkleri kullanılır.",
+      "Alt bilgideki menü. Vatan temasında buraya öğe eklerseniz footer sütunları üst menüden bağımsız bu listeye döner; boş bırakırsanız üst menü grupları kullanılır.",
     allowNesting: false,
   },
   {
