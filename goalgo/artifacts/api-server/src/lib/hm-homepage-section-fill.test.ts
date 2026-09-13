@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveHomepageLocalPref } from "./hm-homepage-local-pref.js";
 import { keepCategoryItemsOrFallback } from "./hm-category-listing-fallback.js";
 import {
+  fillCoveredPreferringLocal,
   pickDiversifiedByCategory,
   pickLeadPackColumns,
   preferLocalThenFill,
@@ -82,6 +83,17 @@ describe("homepage section fill", () => {
     });
     expect(left).toHaveLength(6);
     expect(right).toHaveLength(2);
+  });
+
+  it("photo slots keep covered local first and never dump coverless rows", () => {
+    const pref = resolveHomepageLocalPref("kirsehirhaber");
+    const pool = [
+      { ...item(1, "Kapaksız Kırşehir", "yerel"), imageUrl: "" },
+      item(2, "Kapaklı ulusal", "dunya"),
+      { ...item(3, "Kapaklı Kırşehir", "yerel"), imageUrl: "/img/3.jpg" },
+    ];
+    const picked = fillCoveredPreferringLocal(pool, pref, 494, 3, (row) => Boolean(row.imageUrl));
+    expect(picked.map((row) => row.id)).toEqual([3, 2]);
   });
 
   it("keeps API category rows when a client-side slug filter would empty the page", () => {

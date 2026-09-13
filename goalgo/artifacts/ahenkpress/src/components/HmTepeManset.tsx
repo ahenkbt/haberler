@@ -1,12 +1,16 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { HmNewsImage, HmHomeCoverGate, newsItemHasCoverImage } from "@/components/HmNewsImage";
+import { HmNewsImage, newsItemHasCoverImage } from "@/components/HmNewsImage";
 import { decodeHtmlEntities } from "@/lib/decodeHtmlEntities";
 
 export const HM_TEPE_MANSET_ITEM_COUNT = 5;
 
 function newsDisplayTitle(raw: unknown): string {
   return decodeHtmlEntities(String(raw ?? ""));
+}
+
+function slideKey(item: { id?: unknown; slug?: unknown }, index: number): string {
+  return String(item.id ?? item.slug ?? index);
 }
 
 export function HmTepeManset({
@@ -18,8 +22,19 @@ export function HmTepeManset({
   getItemHref: (item: any) => string;
   accent?: string;
 }) {
-  const slides = items.filter((item) => newsItemHasCoverImage(item)).slice(0, HM_TEPE_MANSET_ITEM_COUNT);
+  const [failedKeys, setFailedKeys] = useState<Set<string>>(() => new Set());
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const photoSlides = useMemo(
+    () =>
+      items
+        .filter((item) => newsItemHasCoverImage(item))
+        .filter((item, index) => !failedKeys.has(slideKey(item, index)))
+        .slice(0, HM_TEPE_MANSET_ITEM_COUNT),
+    [items, failedKeys],
+  );
+  const coverless = photoSlides.length === 0;
+  const slides = coverless ? items.filter(Boolean).slice(0, HM_TEPE_MANSET_ITEM_COUNT) : photoSlides;
   const safeIndex = slides.length > 0 ? Math.min(activeIndex, slides.length - 1) : 0;
   const active = slides[safeIndex];
   const selectIndex = useCallback((index: number) => {
@@ -29,7 +44,11 @@ export function HmTepeManset({
   if (!active) return null;
 
   return (
-    <section className="hm-tepe-manset mb-4" data-hm-home-module="tepeManset" aria-label="Tepe manşet">
+    <section
+      className={`hm-tepe-manset mb-4${coverless ? " hm-tepe-manset--coverless" : ""}`}
+      data-hm-home-module="tepeManset"
+      aria-label="Tepe manşet"
+    >
       <nav className="hm-tepe-manset__nums" aria-label="Manşet sırası">
         {slides.map((item, index) => {
           const isActive = index === safeIndex;
@@ -58,20 +77,30 @@ export function HmTepeManset({
           <h2 className="hm-tepe-manset__title">{newsDisplayTitle(active.title)}</h2>
         </Link>
 
-        <div className="hm-tepe-manset__media">
-          <HmHomeCoverGate item={active}>
-          <HmNewsImage
-            item={active}
-            alt={newsDisplayTitle(active.title)}
-            className="hm-tepe-manset__img"
-            loading="eager"
-            priority
-            wrapperClassName="hm-tepe-manset__img-wrap"
-            onUnavailable="hide"
-          />
-          </HmHomeCoverGate>
-          <div className="hm-tepe-manset__media-fade" aria-hidden />
-        </div>
+        {coverless ? null : (
+          <div className="hm-tepe-manset__media">
+            <HmNewsImage
+              item={active}
+              alt={newsDisplayTitle(active.title)}
+              className="hm-tepe-manset__img"
+              loading="eager"
+              priority
+              wrapperClassName="hm-tepe-manset__img-wrap"
+              onUnavailable="hide"
+              onUnavailableChange={(unavailable) => {
+                if (!unavailable) return;
+                const key = slideKey(active, safeIndex);
+                setFailedKeys((prev) => {
+                  if (prev.has(key)) return prev;
+                  const next = new Set(prev);
+                  next.add(key);
+                  return next;
+                });
+              }}
+            />
+            <div className="hm-tepe-manset__media-fade" aria-hidden />
+          </div>
+        )}
       </div>
     </section>
   );

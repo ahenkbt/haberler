@@ -23,7 +23,7 @@ import {
 } from "./hm-publish-groups.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
 import { filterPoolCopiesWhenReceiveDisabled } from "./hybrid-news-merge.js";
-import { filterNewsItemsWithUsableCover, preferCoveredThenFallback } from "./news-display-image.js";
+import { filterNewsItemsWithUsableCover, newsItemHasUsableCover } from "./news-display-image.js";
 import { HM_TEPE_MANSET_ITEM_COUNT, selectTepeMansetItems } from "./hm-tepe-manset-select.js";
 import {
   loadHomepageLocalPreferredNews,
@@ -31,7 +31,7 @@ import {
   newsItemMatchesHomepageLocalPref,
   resolveHomepageLocalPref,
 } from "./hm-homepage-local-pref.js";
-import { mergeUniqueHomepageItems, preferLocalThenFill } from "./hm-homepage-section-fill.js";
+import { fillCoveredPreferringLocal, mergeUniqueHomepageItems, preferLocalThenFill } from "./hm-homepage-section-fill.js";
 
 type NewsReadDb = ReturnType<typeof getNewsDbForRead>;
 
@@ -442,26 +442,53 @@ export async function buildHmHomeBundle(
     return [...localPicks, ...rest];
   })();
   const featuredOut = localPref
-    ? preferCoveredThenFallback(featured.length > 0 ? featured : sectionPool).slice(0, limit)
+    ? fillCoveredPreferringLocal<SerializedNewsListItem>(
+        mergeUniqueHomepageItems<SerializedNewsListItem>(featured, sectionPool),
+        localPref,
+        siteId,
+        limit,
+        newsItemHasUsableCover,
+      )
     : filterNewsItemsWithUsableCover(featured);
   const tepeOut = localPref
-    ? preferCoveredThenFallback(tepeManset.length > 0 ? tepeManset : sectionPool).slice(
-        0,
+    ? fillCoveredPreferringLocal<SerializedNewsListItem>(
+        mergeUniqueHomepageItems<SerializedNewsListItem>(tepeManset, sectionPool),
+        localPref,
+        siteId,
         HM_TEPE_MANSET_ITEM_COUNT,
+        newsItemHasUsableCover,
       )
     : filterNewsItemsWithUsableCover(tepeManset);
   const breakingOut = localPref
-    ? preferCoveredThenFallback(breaking.length > 0 ? breaking : sectionPool).slice(0, 15)
+    ? fillCoveredPreferringLocal<SerializedNewsListItem>(
+        mergeUniqueHomepageItems<SerializedNewsListItem>(breaking, sectionPool),
+        localPref,
+        siteId,
+        15,
+        newsItemHasUsableCover,
+      )
     : filterNewsItemsWithUsableCover(breaking);
   const popularOut = localPref
-    ? preferCoveredThenFallback(popular.length > 0 ? popular : sectionPool).slice(0, 12)
+    ? fillCoveredPreferringLocal<SerializedNewsListItem>(
+        mergeUniqueHomepageItems<SerializedNewsListItem>(popular, sectionPool),
+        localPref,
+        siteId,
+        12,
+        newsItemHasUsableCover,
+      )
     : filterNewsItemsWithUsableCover(popular);
   return {
     siteId,
     featured: featuredOut,
     tepeManset: tepeOut,
     manualEditor: localPref
-      ? preferCoveredThenFallback(manualEditor.length > 0 ? manualEditor : sectionPool).slice(0, limit)
+      ? fillCoveredPreferringLocal<SerializedNewsListItem>(
+          mergeUniqueHomepageItems<SerializedNewsListItem>(manualEditor, sectionPool),
+          localPref,
+          siteId,
+          limit,
+          newsItemHasUsableCover,
+        )
       : filterNewsItemsWithUsableCover(manualEditor),
     // Text list: keep items without covers so Öne Çıkanlar can still fill.
     centerHeadlines,

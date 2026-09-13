@@ -867,6 +867,9 @@ function defaultKhLayoutJson() {
     hybridRssEnabled: true,
     hmYekparePoolReceiveEnabled: true,
     hmHomepageLocalCity: "kirsehir",
+    hmClassicAraMansetCategorySlugs: ["yerel", "gundem"],
+    hmNewsFeaturedCategoryStripSlugs: ["yerel", "gundem"],
+    hmCategorySortSlugs: ["yerel", "gundem", "dunya", "ekonomi", "politika", "spor", "teknoloji"],
     hmRssIntegrationMode: "live",
     hmAllowCrossSiteManualNews: true,
     hmFooterAboutHtml:

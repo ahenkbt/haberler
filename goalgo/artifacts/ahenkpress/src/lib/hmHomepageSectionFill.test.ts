@@ -103,6 +103,20 @@ describe("hmHomepageSectionFill", () => {
     expect(pool.length).toBe(3);
   });
 
+  it("tepe manşet drops coverless local rows so KH does not paint black blocks", () => {
+    const pref = resolveHomepageLocalPref("kirsehirhaber");
+    const pool = buildTepeMansetPoolPreferringLocal({
+      items: [
+        item(1, "Kırşehir kapaksız", "yerel", { imageUrl: null }),
+        item(2, "Ulusal kapaklı", "dunya"),
+      ],
+      localPref: pref,
+      siteId: 494,
+      limit: 3,
+    });
+    expect(pool.map((row) => row.title)).toEqual(["Ulusal kapaklı"]);
+  });
+
   it("keeps category API items when the client filter would empty the page", () => {
     const all = [item(1, "Havuz haberi", "gundem")];
     expect(keepCategoryItemsOrFallback([], all)).toEqual(all);

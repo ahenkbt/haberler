@@ -145,6 +145,21 @@ export function preferLocalThenFill<T extends HomepageFillItem>(
   ).slice(0, target);
 }
 
+/**
+ * Photo slots (tepe / featured / breaking): local+cover first, then any cover.
+ * Never fall back to coverless rows — those paint black blocks on KH.
+ */
+export function fillCoveredPreferringLocal<T extends HomepageFillItem>(
+  items: readonly T[],
+  pref: HmHomepageLocalPref | null | undefined,
+  siteId: number | null | undefined,
+  limit: number,
+  hasCover: (item: T) => boolean,
+): T[] {
+  const target = Math.min(Math.max(limit, 0), 80);
+  return preferLocalThenFill(items.filter(hasCover), pref, siteId, target);
+}
+
 export function pickLeadPackColumns<T extends HomepageFillItem>(opts: {
   pool: readonly T[];
   backfillPool?: readonly T[];
