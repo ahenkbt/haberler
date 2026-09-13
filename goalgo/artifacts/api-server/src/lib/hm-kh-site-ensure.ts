@@ -223,6 +223,56 @@ async function releaseKhDomainsFromOthers(keepSiteId: number): Promise<void> {
   }
 }
 
+/** Newer race-created KH rows steal slug lookup and serve an empty vitrin. */
+async function parkNewerKhDuplicateSites(keepSiteId: number): Promise<void> {
+  const sites = await listHmNewsSitesCompat();
+  for (const row of sites) {
+    if (row.id === keepSiteId) continue;
+    if (!pickKhTargetSite([row])) continue;
+    await dualWriteUpdate(
+      hmNewsSitesTable,
+      {
+        slug: `kirsehirhaber-dup-${row.id}`,
+        domain: hostMatches(row.domain, KH_DOMAINS[0]) || hostMatches(row.domain, KH_DOMAINS[1]) || hostMatches(row.domain, KH_DOMAINS[2])
+          ? null
+          : row.domain,
+        domain2:
+          hostMatches(row.domain2, KH_DOMAINS[0]) || hostMatches(row.domain2, KH_DOMAINS[1]) || hostMatches(row.domain2, KH_DOMAINS[2])
+            ? null
+            : row.domain2,
+        domain3:
+          hostMatches(row.domain3, KH_DOMAINS[0]) || hostMatches(row.domain3, KH_DOMAINS[1]) || hostMatches(row.domain3, KH_DOMAINS[2])
+            ? null
+            : row.domain3,
+        active: false,
+        updatedAt: new Date(),
+      },
+      eq(hmNewsSitesTable.id, row.id),
+    );
+  }
+}
+
+export function pickKhTargetSite<
+  T extends {
+    id: number;
+    slug?: string | null;
+    domain?: string | null;
+    domain2?: string | null;
+    domain3?: string | null;
+  },
+>(sites: readonly T[]): T | undefined {
+  const hits = sites.filter(
+    (s) =>
+      isKhNewsSlug(s.slug) ||
+      KH_DOMAINS.some(
+        (host) =>
+          hostMatches(s.domain, host) || hostMatches(s.domain2, host) || hostMatches(s.domain3, host),
+      ),
+  );
+  if (hits.length === 0) return undefined;
+  return hits.reduce((oldest, row) => (row.id < oldest.id ? row : oldest));
+}
+
 function findKhTarget(
   sites: Array<{
     id: number;
@@ -234,16 +284,7 @@ function findKhTarget(
     layoutJson?: string | null;
   }>,
 ) {
-  for (const legacy of KH_LEGACY_SLUGS) {
-    const hit = sites.find((s) => normalizeSlug(s.slug) === legacy);
-    if (hit) return hit;
-  }
-  return sites.find((s) =>
-    KH_DOMAINS.some(
-      (host) =>
-        hostMatches(s.domain, host) || hostMatches(s.domain2, host) || hostMatches(s.domain3, host),
-    ),
-  );
+  return pickKhTargetSite(sites);
 }
 
 /**
@@ -255,7 +296,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   await ensureHmNewsSiteWritableColumns();
 
   const sites = await listHmNewsSitesCompat();
-  const target = findKhTarget(sites);
+  let target = findKhTarget(sites);
 
   if (dryRun) {
     return {
@@ -267,32 +308,41 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   }
 
   if (!target) {
-    const [created] = await dualWriteInsert(hmNewsSitesTable, {
-      slug: KH_SITE_SLUG,
-      domain: KH_DOMAINS[0],
-      domain2: KH_DOMAINS[1],
-      domain3: KH_DOMAINS[2],
-      displayName: KH_DISPLAY_NAME,
-      description: "Kırşehir’in dijital haber platformu",
-      contactJson: JSON.stringify({ phone: "", email: "editor@kirsehirhaber.org", address: "Kırşehir" }),
-      layoutJson: defaultKhLayoutJson(),
-      verificationJson: null,
-      active: true,
-    });
-    if (!created) {
-      return { siteId: null, action: "error", detail: "insert boş", domains: [...KH_DOMAINS] };
+    try {
+      const [created] = await dualWriteInsert(hmNewsSitesTable, {
+        slug: KH_SITE_SLUG,
+        domain: KH_DOMAINS[0],
+        domain2: KH_DOMAINS[1],
+        domain3: KH_DOMAINS[2],
+        displayName: KH_DISPLAY_NAME,
+        description: "Kırşehir’in dijital haber platformu",
+        contactJson: JSON.stringify({ phone: "", email: "editor@kirsehirhaber.org", address: "Kırşehir" }),
+        layoutJson: defaultKhLayoutJson(),
+        verificationJson: null,
+        active: true,
+      });
+      if (!created) {
+        return { siteId: null, action: "error", detail: "insert boş", domains: [...KH_DOMAINS] };
+      }
+      await releaseKhDomainsFromOthers(created.id);
+      await parkNewerKhDuplicateSites(created.id);
+      await ensureEditorForKh(created.id);
+      return {
+        siteId: created.id,
+        action: "created",
+        detail: "kirsehirhaber site + domains",
+        domains: [...KH_DOMAINS],
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/unique|duplicate/i.test(msg)) throw err;
+      target = findKhTarget(await listHmNewsSitesCompat());
+      if (!target) throw err;
     }
-    await releaseKhDomainsFromOthers(created.id);
-    await ensureEditorForKh(created.id);
-    return {
-      siteId: created.id,
-      action: "created",
-      detail: "kirsehirhaber site + domains",
-      domains: [...KH_DOMAINS],
-    };
   }
 
   await releaseKhDomainsFromOthers(target.id);
+  await parkNewerKhDuplicateSites(target.id);
 
   let layoutJson = target.layoutJson;
   try {
