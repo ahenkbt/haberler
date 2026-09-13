@@ -931,8 +931,8 @@
   padding: 0.5rem 0;
 }
 
-/* ───────────────────────── 8. Home · S1 Hero ───────────────────────── */
-[data-vatan-shell] .vatan-hero {
+/* ───────────────────────── 8. Heroes: home stage vs interior banners ───────────────────────── */
+[data-vatan-shell] .vatan-hero--home {
   position: relative;
   display: grid;
   height: min(100svh, 960px);
@@ -944,10 +944,28 @@
 }
 
 @media (max-width: 767px) {
-  [data-vatan-shell] .vatan-hero {
+  [data-vatan-shell] .vatan-hero--home {
     height: min(100svh, 720px);
     min-height: 560px;
   }
+}
+
+/* Interior pages reuse `.vatan-hero` — keep a short banner, not the homepage 100svh stage. */
+[data-vatan-shell] .vatan-page .vatan-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: auto;
+  min-height: 176px;
+  max-height: none;
+  color: var(--vatan-on-dark);
+  background: var(--vatan-navy-deep);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero--compact {
+  min-height: 148px;
 }
 
 [data-vatan-shell] .vatan-hero__media {
@@ -963,19 +981,29 @@
   height: 100%;
   object-fit: cover;
   object-position: 60% 50%;
+}
+
+[data-vatan-shell] .vatan-hero--home .vatan-hero__img {
   opacity: 0;
   transform: scale(1);
   transition: opacity 1200ms ease-in-out;
   will-change: opacity, transform;
 }
 
-[data-vatan-shell] .vatan-hero__img.is-active {
+[data-vatan-shell] .vatan-hero--home .vatan-hero__img.is-active {
   opacity: 1;
   animation: vatan-kenburns var(--vatan-slide-ms, 8000ms) linear forwards;
 }
 
-[data-vatan-shell] .vatan-hero--static .vatan-hero__img.is-active {
+[data-vatan-shell] .vatan-hero--home.vatan-hero--static .vatan-hero__img.is-active {
   animation: none;
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero__img {
+  opacity: 1;
+  transform: none;
+  animation: none;
+  will-change: auto;
 }
 
 @keyframes vatan-kenburns {
@@ -1007,11 +1035,21 @@
 [data-vatan-shell] .vatan-hero__inner {
   position: relative;
   z-index: 1;
+}
+
+[data-vatan-shell] .vatan-hero--home .vatan-hero__inner {
   display: grid;
   grid-template-rows: 1fr auto;
   align-items: center;
   padding-top: var(--vatan-header-h);
   padding-bottom: clamp(6rem, 12vh, 8rem);
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero__inner {
+  display: block;
+  width: 100%;
+  padding-top: 1.05rem;
+  padding-bottom: 1.2rem;
 }
 
 [data-vatan-shell] .vatan-hero__copy {
@@ -1029,6 +1067,38 @@
   text-wrap: balance;
 }
 
+[data-vatan-shell] .vatan-page .vatan-hero__title {
+  font: 700 clamp(1.55rem, 2.6vw, 2.4rem) / 1.08 var(--vatan-display);
+  max-width: 20ch;
+}
+
+[data-vatan-shell] .vatan-page .vatan-hero__lead {
+  margin: 0.55rem 0 0;
+  max-width: 48ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--vatan-on-dark-muted);
+}
+
+[data-vatan-shell] .vatan-page .vatan-chip-nav {
+  margin-top: 0.85rem;
+}
+
+/* Editor CMS templates (hakkımızda, faaliyetler…) — same compact banner, not 100vh. */
+[data-vatan-shell] .ms-hero {
+  min-height: 0;
+  justify-content: flex-end;
+  padding: 1.75rem var(--vatan-gutter) 1.85rem;
+}
+
+[data-vatan-shell] .tp-hero {
+  padding: 1.5rem 0 1.35rem;
+}
+
+[data-vatan-shell] .ib-hero {
+  padding: 1.65rem 1.5rem 1.5rem;
+}
+
 [data-vatan-shell] .vatan-hero__lead {
   color: rgba(246, 241, 232, 0.86);
   max-width: 52ch;
@@ -1041,20 +1111,20 @@
   margin-top: 0.5rem;
 }
 
-[data-vatan-shell] .vatan-hero__eyebrow,
-[data-vatan-shell] .vatan-hero__title,
-[data-vatan-shell] .vatan-hero__lead,
-[data-vatan-shell] .vatan-hero__actions {
+[data-vatan-shell] .vatan-hero--home .vatan-hero__eyebrow,
+[data-vatan-shell] .vatan-hero--home .vatan-hero__title,
+[data-vatan-shell] .vatan-hero--home .vatan-hero__lead,
+[data-vatan-shell] .vatan-hero--home .vatan-hero__actions {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 700ms var(--vatan-ease), transform 700ms var(--vatan-ease);
   transition-delay: calc(200ms + var(--i, 0) * 90ms);
 }
 
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__eyebrow,
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__title,
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__lead,
-[data-vatan-shell] .vatan-hero.is-mounted .vatan-hero__actions {
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__eyebrow,
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__title,
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__lead,
+[data-vatan-shell] .vatan-hero--home.is-mounted .vatan-hero__actions {
   opacity: 1;
   transform: none;
 }
