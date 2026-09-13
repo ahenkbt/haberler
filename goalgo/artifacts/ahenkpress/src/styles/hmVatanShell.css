@@ -2017,6 +2017,12 @@
   color: var(--vatan-muted);
 }
 
+[data-vatan-shell] .vatan-iban__payee {
+  grid-column: 1 / -1;
+  font-size: var(--vatan-t-small);
+  color: var(--vatan-ink);
+}
+
 [data-vatan-shell] .vatan-iban__code {
   font: 600 clamp(1rem, 1.4vw, 1.2rem) / 1.3 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
@@ -2046,6 +2052,10 @@
   margin: 0.75rem 0 0;
   font-size: var(--vatan-t-small);
   color: var(--vatan-crimson);
+}
+
+[data-vatan-shell] .vatan-sec .vatan-iban {
+  margin-top: 1.5rem;
 }
 
 [data-vatan-shell] .vatan-support__actions {
@@ -2146,6 +2156,35 @@
 
 [data-vatan-shell] .vatan-footer__contact a:hover {
   color: var(--vatan-gold-soft);
+}
+
+[data-vatan-shell] .vatan-footer__accounts {
+  margin: 0.65rem 0 0;
+  padding: 0.65rem 0 0;
+  border-top: 1px solid var(--vatan-line);
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+[data-vatan-shell] .vatan-footer__accounts-bank {
+  display: block;
+  color: var(--vatan-on-dark-muted);
+}
+
+[data-vatan-shell] .vatan-footer__accounts-iban {
+  display: block;
+  color: var(--vatan-on-dark);
+  font: 600 0.8125rem / 1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+[data-vatan-shell] .vatan-footer__accounts-payee {
+  display: block;
+  color: var(--vatan-gold-soft);
+  font-size: 0.75rem;
 }
 
 [data-vatan-shell] .vatan-footer__social {

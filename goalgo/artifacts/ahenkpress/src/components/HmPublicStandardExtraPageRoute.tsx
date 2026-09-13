@@ -9,7 +9,9 @@ import { HmCustomPageContent, type HmCustomPageSite } from "@/pages/public/HmCus
 import HmSehitlerimizPage from "@/pages/public/HmSehitlerimizPage";
 import HmCanakkaleSehitleriPage from "@/pages/public/HmCanakkaleSehitleriPage";
 import HmVatanLongformPage from "@/pages/public/HmVatanLongformPage";
-import { isVatanLongformSlug } from "@/lib/hmVatanTheme";
+import HmVatanBagisPage from "@/pages/public/HmVatanBagisPage";
+import { isHmVatanThemeId, isVatanLongformSlug } from "@/lib/hmVatanTheme";
+import { isVkdSiteSlug } from "@/lib/hmVkdFooterNav";
 
 function HmSubpageSeo({ segment, label }: { segment: string; label: string }) {
   const ctx = useHmPublicLinkContextOptional();
@@ -117,6 +119,13 @@ function HmPublicStandardExtraPageBody({
 
   if (!ctx) {
     return <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-slate-500">Sayfa yükleniyor…</div>;
+  }
+
+  if (
+    (normalizedSegment === "bagis" || normalizedSegment === "bagis-yap") &&
+    (isHmVatanThemeId(ctx.layoutPrefs.hmVitrinTheme) || isVkdSiteSlug(ctx.slug))
+  ) {
+    return <HmVatanBagisPage />;
   }
 
   if (extraPage) {
