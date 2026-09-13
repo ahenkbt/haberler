@@ -260,7 +260,16 @@ async function fixZone(name) {
     body: { purge_everything: true },
   });
   console.log(`[fix] purge ok=${purge.ok}`);
-  return true;
+
+  const apexAnswers = await publicDnsProbe(name);
+  const hasAddress = Array.isArray(apexAnswers) && apexAnswers.length > 0;
+  if (!hasAddress) {
+    console.error(
+      `[fix] ORIGINLESS ${name} — public DNS has no A/AAAA. Token needs Zone.DNS Edit, or wrangler custom_domain deploy.`,
+    );
+    return { ok: true, originless: true };
+  }
+  return { ok: true, originless: false };
 }
 
 async function uploadWorkerScriptViaApi() {
@@ -346,10 +355,22 @@ async function main() {
     script: SCRIPT,
   });
   let ok = 0;
+  const originless = [];
   for (const z of ZONES) {
-    if (await fixZone(z)) ok += 1;
+    const result = await fixZone(z);
+    if (result === true || result?.ok) ok += 1;
+    if (result?.originless) originless.push(z);
   }
   console.log(`\n[fix] zones fixed: ${ok}/${ZONES.length}`);
+  const mustResolve = new Set(["kirsehirhaber.org", "ahenk.net.tr"]);
+  const blocking = originless.filter((z) => mustResolve.has(z));
+  if (originless.length) {
+    console.error(`[fix] originless (no public A/AAAA): ${originless.join(", ")}`);
+  }
+  if (blocking.length) {
+    console.error(`[fix] FATAL NXDOMAIN: ${blocking.join(", ")}`);
+    process.exitCode = 1;
+  }
   // Worker + SPA Assets deploy yalnızca Cloudflare Production workflow'da.
   // Burada script-only API upload ASSETS bağını düşürüp production'ı bozuyordu;
   // cron/push DNS-only kalır (CF_FIX_FORCE_WORKER_DEPLOY=1 ile istisna).
