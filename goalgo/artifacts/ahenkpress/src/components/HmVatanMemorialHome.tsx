@@ -73,7 +73,7 @@ export function HmVatanMemorialHome() {
         <div className="vatan-find__copy">
           <p className="vatan-hub__kicker">Kayıt</p>
           <h2>Şehidini bul</h2>
-          <p>MSB ve Çanakkale listeleri resmî kayıttadır. Ad ile saygıyla arayın.</p>
+          <p>Çanakkale şehitlerimizde veya MSB listesinde isim arayabilirsiniz.</p>
         </div>
         <div className="vatan-find__actions">
           <Link href={h("/sehitlerimiz")} className="vatan-find__btn">
@@ -92,7 +92,7 @@ export function HmVatanMemorialHome() {
             Atatürk Köşesi
             <em>ve açık sayfalar</em>
           </h2>
-          <p className="vatan-hub__lead">Köşe, kültür, savaşlar ve dernek — mevcut adresler menüde ve burada durur.</p>
+          <p className="vatan-hub__lead">Atatürk Köşesi, kültür, savaşlar ve derneğimiz — hepsi burada.</p>
         </header>
         <div className="vatan-mosaic vatan-mosaic--four">
           {VATAN_HERITAGE_CARDS.map((card) => (

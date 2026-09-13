@@ -69,8 +69,8 @@ export function HmVatanSearchOverlay({ open, onClose }: { open: boolean; onClose
           <VatanLink href={withQuery(h("/canakkale-sehitleri"), q)} className="vatan-searchlayer__quicklink" onClick={onClose}>
             Şehit sorgula
           </VatanLink>
-          <VatanLink href={withQuery(h("/ara"), q)} className="vatan-searchlayer__quicklink" onClick={onClose}>
-            Haberlerde ara
+          <VatanLink href={withQuery(h("/sehitlerimiz"), q)} className="vatan-searchlayer__quicklink" onClick={onClose}>
+            MSB şehit listesi
           </VatanLink>
         </div>
       </form>

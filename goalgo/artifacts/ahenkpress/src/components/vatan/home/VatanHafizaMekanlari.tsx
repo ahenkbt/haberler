@@ -10,9 +10,9 @@ export function VatanHafizaMekanlari() {
       <div className="vatan-wrap">
         <VatanSectionHead
           numeral="01"
-          eyebrow="Hafıza Mekânları"
-          title="Toprak, taş ve isim."
-          lead="Şehitlikler, kayıtlar ve vefa yolları — tek bakışta."
+          eyebrow="Şehitliklerimiz"
+          title="Şehitliklerimiz ve kahramanlarımız."
+          lead="Şehitliklerimizi gezin, isimlerini arayın, hatıralarına sahip çıkın."
           id="vatan-s3-title"
         />
         <div className="vatan-mosaic">

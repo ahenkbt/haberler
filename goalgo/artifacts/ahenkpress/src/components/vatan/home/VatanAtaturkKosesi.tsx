@@ -24,7 +24,7 @@ export function VatanAtaturkKosesi() {
           />
         </figure>
         <div className="vatan-split__body">
-          <VatanSectionHead numeral="05" eyebrow="Atatürk Köşesi" title="Cumhuriyetin" accent="hafızası." align="stack" id="vatan-s7-title" />
+          <VatanSectionHead numeral="05" eyebrow="Atatürk Köşesi" title="O’nu anmak," accent="O’nu anlamak." align="stack" id="vatan-s7-title" />
           {quote ? (
             <blockquote className="vatan-quote vatan-reveal">
               <p>“{quote.text}”</p>

@@ -198,7 +198,7 @@ export default function HmCanakkaleSehitleriPage() {
             <em>şehitlerimiz</em>
           </h1>
           <p className="vatan-hero__lead">
-            Çanakkale Cephesi şehit listesi; ad, baba adı, il, ilçe ve sıra numarasına göre sorgulanabilir. Kayıtlar resmî derlemedir.
+            Çanakkale’de yatan şehitlerimizi adıyla, baba adıyla veya memleketiyle arayabilirsiniz.
           </p>
         </div>
       </header>

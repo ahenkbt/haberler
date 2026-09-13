@@ -148,7 +148,7 @@ export default function HmSehitlerimizPage() {
             <em>minnetle anıyoruz</em>
           </h1>
           <p className="vatan-hero__lead">
-            Millî Savunma Bakanlığı kaynaklı kayıt. Ad, rütbe ve yıl ile arayın. İsimler resmî listededir; bu sayfada uydurma kahramanlık hikâyesi yoktur.
+            Şehitlerimizin isimlerini burada arayabilirsiniz. Ad, rütbe veya yılla bakın.
           </p>
         </div>
       </header>

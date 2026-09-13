@@ -226,7 +226,7 @@ function WarsIndex() {
         eyebrow="Tarih · Savaşlar"
         title="Türk Milletinin Savaşları"
         subtitle="Zaferler ve anma sayfaları"
-        summary="Çanakkale'den Millî Mücadele'ye, Kore'den Kıbrıs'a uzanan kurumsal tarih sayfaları."
+        summary={vatan ? "Çanakkale’den Kıbrıs’a, milletimizin yazdığı destanlar." : "Çanakkale'den Millî Mücadele'ye, Kore'den Kıbrıs'a uzanan kurumsal tarih sayfaları."}
         innerClass={innerClass}
         image={vatan ? VATAN_ASSETS.canakkaleHero : undefined}
         imageAlt="Çanakkale kıyısında bayrak ve anıt"
@@ -351,13 +351,15 @@ export function HmCorporateNationalDaysPage() {
     if (typeof document !== "undefined") document.title = `Millî Günler | ${ctx?.displayName ?? "Haber Merkezi"}`;
   }, [ctx?.displayName]);
 
+  const vatan = ctx?.layoutPrefs.hmVitrinTheme === "vatan";
+
   return (
     <Shell>
       <Hero
         eyebrow="Millî Günler & Anma Törenleri"
         title="Millî ve Zafer Günleri"
         subtitle="Anma Takvimi"
-        summary="Türkiye'nin resmî millî günleri, zafer bayramları, anma törenleri ve il il kurtuluş günleri. Şehitlerimizi ve gazilerimizi saygıyla anıyoruz."
+        summary={vatan ? "Her yıl aynı günlerde bir araya gelir, şehitlerimizi ve millî günlerimizi anarız." : "Türkiye'nin resmî millî günleri, zafer bayramları, anma törenleri ve il il kurtuluş günleri. Şehitlerimizi ve gazilerimizi saygıyla anıyoruz."}
         innerClass={innerClass}
         image={ctx?.layoutPrefs.hmVitrinTheme === "vatan" ? VATAN_ASSETS.milliGunler : undefined}
         imageAlt="Anadolu şafağı, hilal ve gelincik motifli manzara"

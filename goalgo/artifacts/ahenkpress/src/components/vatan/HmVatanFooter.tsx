@@ -10,6 +10,7 @@ import { isHmVideoTvAllowed, isYekparePortalHubOnly } from "@/lib/hmPortalHosts"
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { VKD_CONTACT_ADDRESS, VKD_CONTACT_PHONE_DISPLAY, VKD_CONTACT_PHONE_TEL } from "@/lib/vkdPublicContact";
 import { VatanBrand } from "@/components/vatan/HmVatanHeader";
+import { VatanIbanAccounts } from "@/components/vatan/ui/VatanIbanAccounts";
 import { VatanLink } from "@/components/vatan/ui/VatanLink";
 
 type Social = { key: string; label: string; href: string };
@@ -97,6 +98,7 @@ export function HmVatanFooter({
           <p className="vatan-footer__mission">{VATAN_FOOTER_MISSION}</p>
           <address className="vatan-footer__contact">
             {address ? <span>{address}</span> : null}
+            {isVkd ? <VatanIbanAccounts variant="footer" /> : null}
             {phone ? <a href={phoneTel}>{phone}</a> : null}
             {email ? <a href={`mailto:${email}`}>{email}</a> : null}
           </address>

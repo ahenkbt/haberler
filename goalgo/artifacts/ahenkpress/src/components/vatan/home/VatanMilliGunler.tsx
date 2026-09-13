@@ -19,8 +19,8 @@ export function VatanMilliGunler() {
         <VatanSectionHead
           numeral="04"
           eyebrow="Millî Günler"
-          title="Anmanın takvimi."
-          lead="Millî günler haber değil, hatıradır. Her yıl aynı gün, aynı sükûnetle."
+          title="Unutmadığımız günler."
+          lead="Her yıl aynı günlerde bir araya gelir, şehitlerimizi ve millî günlerimizi anarız."
           id="vatan-s6-title"
         />
         <ol className="vatan-rail" aria-label="Millî günler">

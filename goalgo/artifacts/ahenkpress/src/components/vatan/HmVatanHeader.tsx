@@ -10,12 +10,10 @@ import {
   type RefObject,
 } from "react";
 import { Link } from "wouter";
-import { resolveClientMediaSrc } from "@/lib/apiBase";
 import type { HmNestedMetaCached } from "@/lib/hmNestedMetaStorage";
 import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { buildVatanNavModel, VATAN_OVERFLOW_GROUP_LABEL, type VatanNavGroup } from "@/lib/hmVatanNav";
-import { VATAN_HEADER_TAGLINE, VATAN_WORDMARK } from "@/lib/hmVatanHomeContent";
 import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
 import { VatanButton } from "@/components/vatan/ui/VatanButton";
 import { VatanLink } from "@/components/vatan/ui/VatanLink";
@@ -48,31 +46,19 @@ function Chevron() {
 }
 
 export function VatanBrand({
-  logoUrl,
   displayName,
   homeHref,
   compact = false,
 }: {
-  logoUrl: string | undefined;
+  /** Kept for call-site compatibility; chrome always uses the official lockup. */
+  logoUrl?: string;
   displayName: string;
   homeHref: string;
   compact?: boolean;
 }) {
-  const logo = logoUrl ? resolveClientMediaSrc(logoUrl) || logoUrl : "";
   return (
-    <Link href={homeHref} className={`vatan-brand${compact ? " vatan-brand--compact" : ""}`} aria-label={`${displayName} — anasayfa`}>
-      {logo ? (
-        <img className="vatan-brand__logo" src={logo} alt="" width={160} height={48} decoding="async" />
-      ) : (
-        <span className="vatan-brand__mark" aria-hidden="true">
-          <span className="vatan-brand__mark-text">{VATAN_WORDMARK}</span>
-          <span className="vatan-brand__mark-rule" />
-        </span>
-      )}
-      <span className="vatan-brand__lockup">
-        <span className="vatan-brand__name">{displayName}</span>
-        <span className="vatan-brand__tag">{VATAN_HEADER_TAGLINE}</span>
-      </span>
+    <Link href={homeHref} className={`vatan-brand vatan-brand--official${compact ? " vatan-brand--compact" : ""}`} aria-label={`${displayName} — anasayfa`}>
+      <img className="vatan-brand__logo" src={VATAN_ASSETS.logo} alt="" width={350} height={90} decoding="async" />
     </Link>
   );
 }
@@ -337,13 +323,15 @@ export function HmVatanHeader({
                   {activeGroup.imageCaption ? <figcaption>{activeGroup.imageCaption}</figcaption> : null}
                 </figure>
               ) : null}
-              <div className="vatan-mega__rail">
-                {nav.utilityLinks.map((link) => (
-                  <VatanLink key={link.key} href={link.href} className="vatan-mega__util" onClick={() => setOpenKey(null)}>
-                    {link.label}
-                  </VatanLink>
-                ))}
-              </div>
+              {nav.utilityLinks.length ? (
+                <div className="vatan-mega__rail">
+                  {nav.utilityLinks.map((link) => (
+                    <VatanLink key={link.key} href={link.href} className="vatan-mega__util" onClick={() => setOpenKey(null)}>
+                      {link.label}
+                    </VatanLink>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -357,6 +345,7 @@ export function HmVatanHeader({
         }}
         groups={[...nav.primaryGroups, ...nav.overflowGroups]}
         utilityLinks={nav.utilityLinks}
+        newsLinks={nav.newsLinks}
         site={site}
         homeHref={homeHref}
       />

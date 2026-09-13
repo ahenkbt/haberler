@@ -26,7 +26,7 @@ export function VatanSehitSorgu() {
             <p className="vatan-eyebrow vatan-eyebrow--crimson" id={`${inputId}-title`}>
               Şehit Sorgula
             </p>
-            <div className="vatan-segment" role="radiogroup" aria-label="Kayıt kaynağı">
+            <div className="vatan-segment" role="radiogroup" aria-label="Hangi listede arayalım">
               {VATAN_SEARCH_SOURCES.map((s) => (
                 <button
                   key={s.id}

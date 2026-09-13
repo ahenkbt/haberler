@@ -31,7 +31,7 @@ export function VatanHero() {
 
   return (
     <section
-      className={`vatan-hero${mounted ? " is-mounted" : ""}${reduced ? " vatan-hero--static" : ""}`}
+      className={`vatan-hero vatan-hero--home${mounted ? " is-mounted" : ""}${reduced ? " vatan-hero--static" : ""}`}
       aria-label="Vatan Kahramanları Derneği"
       style={{ ["--vatan-slide-ms" as string]: `${VATAN_HOME_HERO_V2.slideIntervalMs}ms` }}
     >

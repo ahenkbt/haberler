@@ -430,7 +430,7 @@
 
 .vatan-hero {
   position: relative;
-  min-height: min(58vh, 520px);
+  min-height: 176px;
   display: flex;
   align-items: flex-end;
   background: #071422;
@@ -438,7 +438,7 @@
 }
 
 .vatan-hero--compact {
-  min-height: min(42vh, 360px);
+  min-height: 148px;
 }
 
 .vatan-chip-nav {
@@ -486,7 +486,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: 48px 0 40px;
+  padding: 18px 0 20px;
 }
 
 .vatan-hero__kicker,

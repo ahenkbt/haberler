@@ -63,7 +63,7 @@ function SectionShell({
 function AtaturkNav({ activeSlug, vatan }: { activeSlug: AtaturkPageSlug; vatan?: boolean }) {
   const h = useHmPublicHref();
   return (
-    <div className={`mt-8 flex flex-wrap gap-2${vatan ? " vatan-chip-nav" : ""}`}>
+    <div className={`flex flex-wrap gap-2${vatan ? " vatan-chip-nav mt-4" : " mt-8"}`}>
       {ATATURK_CORNER_LINKS.map((item) => (
         <Link
           key={item.slug}

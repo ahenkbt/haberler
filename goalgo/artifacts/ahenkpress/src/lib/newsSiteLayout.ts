@@ -2664,7 +2664,7 @@ export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsS
     ...prefs,
     hmCorporateDonation: {
       ...prev,
-      title: !title || /^kurumsal yayıncılı[ğş]a destek/i.test(title) ? "Çalışmalarımıza Destek Olun." : prev.title,
+      title: !title || /^kurumsal yayıncılı[ğş]a destek/i.test(title) ? "Değerli desteklerinize teşekkür ederiz." : prev.title,
       iban: ziraat.iban,
       accountName: VKD_ACCOUNT_NAME,
       accounts: VKD_DONATION_ACCOUNTS.map((row) => ({ ...row })),
@@ -2673,7 +2673,7 @@ export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsS
         ...band,
         title:
           !bandTitle || /^deste[ğş]iniz haber merkezinin yanında$/i.test(bandTitle)
-            ? "Çalışmalarımıza Destek Olun."
+            ? "Değerli desteklerinize teşekkür ederiz."
             : band.title,
         highlightsHtml: highlightsHtml
           ? band.highlightsHtml
