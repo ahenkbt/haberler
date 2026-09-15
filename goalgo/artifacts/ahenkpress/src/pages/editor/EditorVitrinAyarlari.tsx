@@ -201,11 +201,13 @@ export default function EditorVitrinAyarlari() {
   const [headerBannerUploading, setHeaderBannerUploading] = useState(false);
   const headerBannerFileRef = useRef<HTMLInputElement>(null);
   const pRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
+  const persistedRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
   const commitSeqRef = useRef(0);
 
   useEffect(() => {
     setP(newsLayoutPrefs);
     pRef.current = newsLayoutPrefs;
+    persistedRef.current = newsLayoutPrefs;
     setHeaderRightBannerDraft(newsLayoutPrefs.hmHeaderRightBannerUrl ?? "");
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
@@ -219,8 +221,7 @@ export default function EditorVitrinAyarlari() {
     saveOpts?: { allowStockLayoutReset?: boolean },
   ) => {
     const requestId = ++commitSeqRef.current;
-    const prevSnapshot = pRef.current;
-    const next = { ...prevSnapshot, ...patch };
+    const next = { ...pRef.current, ...patch };
     setP(next);
     try {
       setSaving(true);
@@ -240,10 +241,11 @@ export default function EditorVitrinAyarlari() {
           description: serverError || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
           variant: "destructive",
         });
-        setP(prevSnapshot);
+        setP(persistedRef.current);
         return;
       }
       if (requestId !== commitSeqRef.current) return;
+      persistedRef.current = next;
       toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
     } catch (err) {
       if (requestId !== commitSeqRef.current) return;
@@ -252,7 +254,7 @@ export default function EditorVitrinAyarlari() {
         description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
         variant: "destructive",
       });
-      setP(prevSnapshot);
+      setP(persistedRef.current);
     } finally {
       if (requestId === commitSeqRef.current) setSaving(false);
     }
