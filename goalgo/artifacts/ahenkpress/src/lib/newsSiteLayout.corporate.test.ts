@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyVkdDonationToLayoutPrefs,
   defaultNewsSiteLayoutPrefs,
   hmNewsThemePresetPatch,
   isHmCorporateLayoutKind,
@@ -108,5 +109,95 @@ describe("HM corporate layout kind", () => {
       allowStockLayoutReset: true,
     });
     expect(reset.hmVitrinTheme).toBe(defaultNewsSiteLayoutPrefs.hmVitrinTheme);
+  });
+
+  it("appends VKD fraud warning under donation support content", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          title: "Desteğiniz için teşekkür ederiz.",
+          highlightsHtml: "<p>Bağışlarınızı aşağıdaki hesaplardan yapabilirsiniz.</p>",
+          items: ["x", "y", "z"],
+        },
+      },
+    });
+    const html = next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "";
+    expect(html).toContain("derneğimizin adını kullanarak");
+    expect(html).toContain("ödeme talep edenlere itibar etmeyiniz");
+  });
+
+  it("appends VKD fraud warning to donation support plain text fallback", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          title: "Desteğiniz için teşekkür ederiz.",
+          text: "Bağışlarınızı aşağıdaki hesaplardan yapabilirsiniz.",
+          highlightsHtml: null,
+          items: ["x", "y", "z"],
+        },
+      },
+    });
+    const text = next.hmCorporateDonation?.supportBand?.text ?? "";
+    expect(text).toContain("Derneğimizin adını kullanarak");
+    expect(text).toContain("ödeme talep edenlere itibar etmeyiniz");
+  });
+
+  it("does not duplicate VKD fraud warning when already present", () => {
+    const warning =
+      "Derneğimizin adını kullanarak aşağıdaki bağış hesapları haricinde şahıs adı ve ibanı paylaşarak ödeme talep edenlere itibar etmeyiniz.";
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          highlightsHtml: `<p>${warning}</p>`,
+        },
+      },
+    });
+    const html = next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "";
+    expect(html.match(/ödeme talep edenlere itibar etmeyiniz/g)?.length ?? 0).toBe(1);
+  });
+
+  it("appends the full warning when only one warning fragment exists", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          highlightsHtml: "<p>Derneğimizin adını kullanarak sahte hesap gönderebilirler.</p>",
+        },
+      },
+    });
+    const html = next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "";
+    expect(html).toContain("ödeme talep edenlere itibar etmeyiniz");
+  });
+
+  it("keeps text empty when highlights exist and injects warning into highlights only", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          text: "Bu metin highlights varken kullanılmamalı.",
+          highlightsHtml: "<p>Highlights aktif</p>",
+        },
+      },
+    });
+    expect(next.hmCorporateDonation?.supportBand?.text).toBeNull();
+    expect(next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "").toContain("Derneğimizin adını kullanarak");
   });
 });

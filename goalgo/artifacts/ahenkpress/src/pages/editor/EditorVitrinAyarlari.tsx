@@ -200,35 +200,89 @@ export default function EditorVitrinAyarlari() {
   const [headerRightTextDraft, setHeaderRightTextDraft] = useState("");
   const [headerBannerUploading, setHeaderBannerUploading] = useState(false);
   const headerBannerFileRef = useRef<HTMLInputElement>(null);
+  const pRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
+  const persistedRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
+  const commitSeqRef = useRef(0);
+  const confirmedCommitSeqRef = useRef(0);
 
   useEffect(() => {
     setP(newsLayoutPrefs);
+    pRef.current = newsLayoutPrefs;
+    if (commitSeqRef.current === confirmedCommitSeqRef.current) {
+      persistedRef.current = newsLayoutPrefs;
+    }
     setHeaderRightBannerDraft(newsLayoutPrefs.hmHeaderRightBannerUrl ?? "");
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
+
+  useEffect(() => {
+    pRef.current = p;
+  }, [p]);
+
+  const rollbackPatchToPersisted = (patch: Partial<NewsSiteLayoutPrefs>) => {
+    const persisted = persistedRef.current;
+    const keys = Object.keys(patch) as Array<keyof NewsSiteLayoutPrefs>;
+    if (keys.length > 0) {
+      setP((prev) => {
+        const next = { ...prev };
+        for (const key of keys) {
+          next[key] = persisted[key];
+        }
+        return next;
+      });
+    }
+    if ("hmHeaderRightBannerUrl" in patch || "hmHeaderRightSlot" in patch) {
+      setHeaderRightBannerDraft(persisted.hmHeaderRightBannerUrl ?? "");
+    }
+    if ("hmHeaderRightCustomText" in patch || "hmHeaderRightSlot" in patch) {
+      setHeaderRightTextDraft(persisted.hmHeaderRightCustomText ?? "");
+    }
+  };
 
   const commit = async (
     patch: Partial<NewsSiteLayoutPrefs>,
     saveOpts?: { allowStockLayoutReset?: boolean },
   ) => {
-    const next = { ...newsLayoutPrefs, ...patch };
+    const requestId = ++commitSeqRef.current;
+    const next = { ...pRef.current, ...patch };
     setP(next);
-    setSaving(true);
-    const r = await saveNewsSiteLayout(next, {
-      vitrinOnly: true,
-      layoutPatch: patch,
-      allowStockLayoutReset: saveOpts?.allowStockLayoutReset,
-    });
-    setSaving(false);
-    if (!r.ok) {
+    try {
+      setSaving(true);
+      const r = await saveNewsSiteLayout(next, {
+        vitrinOnly: true,
+        layoutPatch: patch,
+        allowStockLayoutReset: saveOpts?.allowStockLayoutReset,
+      });
+      if (!r || typeof r !== "object" || typeof r.ok !== "boolean") {
+        throw new Error("Geçersiz vitrin kaydetme yanıtı alındı.");
+      }
+      if (!r.ok) {
+        if (requestId !== commitSeqRef.current) return;
+        const serverError = typeof r.error === "string" ? r.error.slice(0, 220) : "";
+        toast({
+          title: "Kaydedilemedi",
+          description: serverError || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
+          variant: "destructive",
+        });
+        rollbackPatchToPersisted(patch);
+        return;
+      }
+      if (requestId > confirmedCommitSeqRef.current) {
+        confirmedCommitSeqRef.current = requestId;
+        persistedRef.current = next;
+      }
+      if (requestId !== commitSeqRef.current) return;
+      toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
+    } catch (err) {
+      if (requestId !== commitSeqRef.current) return;
       toast({
         title: "Kaydedilemedi",
-        description: r.error.slice(0, 220) || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
+        description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
         variant: "destructive",
       });
-      setP(newsLayoutPrefs);
-    } else {
-      toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
+      rollbackPatchToPersisted(patch);
+    } finally {
+      if (requestId === commitSeqRef.current) setSaving(false);
     }
   };
 
@@ -2299,7 +2353,14 @@ export default function EditorVitrinAyarlari() {
               label="Destek bandı"
               checked={p.hmCorporateDonation?.enabled === true}
               disabled={saving}
-              onChange={(c) => void commit({ ...p, hmCorporateDonation: { ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!), enabled: c } })}
+              onChange={(c) =>
+                void commit({
+                  hmCorporateDonation: {
+                    ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!),
+                    enabled: c,
+                  },
+                })
+              }
             />
           </div>
             </TabsContent>
@@ -2338,13 +2399,12 @@ export default function EditorVitrinAyarlari() {
               const next = new Set(p.hmVatanHomeHiddenModules ?? []);
               if (checked) next.delete(moduleId);
               else next.add(moduleId);
-              void commit({ ...p, hmVatanHomeHiddenModules: [...next] });
+              void commit({ hmVatanHomeHiddenModules: [...next] });
             }}
             onChange={(items) => setP({ ...p, hmVatanHomeModuleOrder: items })}
-            onSave={(items) => void commit({ ...p, hmVatanHomeModuleOrder: items })}
+            onSave={(items) => void commit({ hmVatanHomeModuleOrder: items })}
             onReset={() =>
               void commit({
-                ...p,
                 hmVatanHomeModuleOrder: [...VATAN_HOME_MODULE_ORDER],
                 hmVatanHomeHiddenModules: [],
               })

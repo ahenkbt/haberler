@@ -2617,9 +2617,29 @@ function normalizeHmCorporateDonation(raw: unknown): HmCorporateDonationSettings
   };
 }
 
+const VKD_DONATION_FRAUD_WARNING =
+  "Derneğimizin adını kullanarak aşağıdaki bağış hesapları haricinde şahıs adı ve ibanı paylaşarak ödeme talep edenlere itibar etmeyiniz.";
+
 const VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML = `<ul class="vkv-donation-bullets"><li>🎖️ Gazilerimizin haklarının korunması ve iyileştirilmesi için hukuki ve sosyal destek</li><li>🎓 Şehit ve gazi çocuklarına eğitim bursları</li><li>📜 Türk kahramanlarının hikâyelerinin gelecek nesillere aktarılması</li></ul>`;
 
 const VKD_DONATION_CHIP_ITEMS = ["🎖️ GAZİ HAKLARI", "🎓 EĞİTİM BURSU", "📜 TOPLUMSAL FAYDA"];
+
+function hasVkdDonationFraudWarning(content: string): boolean {
+  const t = content.toLocaleLowerCase("tr-TR");
+  return t.includes("derneğimizin adını kullanarak") && t.includes("ödeme talep edenlere itibar etmeyiniz");
+}
+
+function ensureVkdDonationFraudWarningHtml(htmlRaw: string): string {
+  const html = htmlRaw.trim();
+  if (!html || hasVkdDonationFraudWarning(html)) return html;
+  return `${html}<p class="vkv-donation-warning">${VKD_DONATION_FRAUD_WARNING}</p>`;
+}
+
+function ensureVkdDonationFraudWarningText(textRaw: string): string {
+  const text = textRaw.trim();
+  if (!text || hasVkdDonationFraudWarning(text)) return text;
+  return `${text}\n${VKD_DONATION_FRAUD_WARNING}`;
+}
 
 /** VKD sitesi: Vatan teması, hatıra slider’ı, tam IA menüsü ve mevcut hafıza modülleri. */
 export function applyVkdVatanThemeToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
@@ -2662,6 +2682,12 @@ export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsS
   const bandTitle = (band.title ?? "").trim();
   const highlightsHtml = (band.highlightsHtml ?? "").trim();
   const leadText = (band.text ?? "").trim();
+  const fallbackHighlightsHtml = leadText ? null : VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML;
+  const resolvedHighlightsHtml = highlightsHtml || fallbackHighlightsHtml;
+  const resolvedText = highlightsHtml ? null : leadText || null;
+  const warnedHighlightsHtml = resolvedHighlightsHtml ? ensureVkdDonationFraudWarningHtml(resolvedHighlightsHtml) : null;
+  const warnedText =
+    warnedHighlightsHtml == null && resolvedText ? ensureVkdDonationFraudWarningText(resolvedText) : resolvedText;
   const ziraat = VKD_DONATION_ACCOUNTS[0]!;
 
   return {
@@ -2679,12 +2705,8 @@ export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsS
           !bandTitle || /^deste[ğş]iniz haber merkezinin yanında$/i.test(bandTitle)
             ? "Değerli desteklerinize teşekkür ederiz."
             : band.title,
-        highlightsHtml: highlightsHtml
-          ? band.highlightsHtml
-          : leadText
-            ? null
-            : VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML,
-        text: highlightsHtml ? null : leadText || null,
+        highlightsHtml: warnedHighlightsHtml,
+        text: warnedText,
         items: !items.length || genericItems ? VKD_DONATION_CHIP_ITEMS : band.items,
       },
     },

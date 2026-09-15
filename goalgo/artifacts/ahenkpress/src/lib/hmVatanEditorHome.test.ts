@@ -104,6 +104,42 @@ describe("Vatan editor home bindings", () => {
     expect(visible).toEqual(VATAN_HOME_MODULE_ORDER.filter((id) => id !== "wars" && id !== "nationalDays"));
   });
 
+  it("falls back to legacy corporate toggles when Vatan hidden list is not customized", () => {
+    const visible = resolveVatanVisibleHomeModules(
+      prefs({
+        hmSehitSearchEnabled: false,
+        hmCorporateAtaturkCornerEnabled: false,
+        hmCorporateWarsSectionEnabled: false,
+        hmCorporateNationalDaysSectionEnabled: false,
+        hmCorporateDonation: {
+          ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+          enabled: false,
+        },
+      }),
+    );
+    expect(visible).toEqual(
+      VATAN_HOME_MODULE_ORDER.filter(
+        (id) =>
+          id !== "sehitSearch" &&
+          id !== "ataturk" &&
+          id !== "wars" &&
+          id !== "nationalDays" &&
+          id !== "donation",
+      ),
+    );
+  });
+
+  it("treats explicit empty Vatan hidden list as an override", () => {
+    const visible = resolveVatanVisibleHomeModules(
+      prefs({
+        hmVatanHomeHiddenModules: [],
+        hmSehitSearchEnabled: false,
+        hmCorporateAtaturkCornerEnabled: false,
+      }),
+    );
+    expect(visible).toEqual(VATAN_HOME_MODULE_ORDER);
+  });
+
   it("builds footer columns from Üst menü groups", () => {
     const groups = buildVatanFooterGroups(
       prefs({
