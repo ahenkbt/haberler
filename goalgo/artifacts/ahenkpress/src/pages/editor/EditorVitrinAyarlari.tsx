@@ -452,6 +452,22 @@ export default function EditorVitrinAyarlari() {
     return modules.some((item) => isVatanModuleVisible(item));
   };
 
+  const vatanModuleTogglePatch = (
+    moduleId: VatanHomeModuleId,
+    checked: boolean,
+  ): Partial<NewsSiteLayoutPrefs> =>
+    moduleId === "ataturk"
+      ? applyHmCorporateEditorModuleTogglePatch(p, "ataturkCorner", checked)
+      : moduleId === "sehitSearch"
+        ? applyHmCorporateEditorModuleTogglePatch(p, "sehitSearch", checked)
+        : moduleId === "wars"
+          ? { hmCorporateWarsSectionEnabled: checked }
+          : moduleId === "nationalDays"
+            ? { hmCorporateNationalDaysSectionEnabled: checked }
+            : moduleId === "donation"
+              ? applyHmCorporateEditorModuleTogglePatch(p, "donationSupport", checked)
+              : {};
+
   const syncVatanHomeHiddenModulesPatch = (
     patch: Partial<NewsSiteLayoutPrefs>,
     moduleIds: readonly VatanHomeModuleId[] = [],
@@ -2457,7 +2473,10 @@ export default function EditorVitrinAyarlari() {
               const next = new Set(vatanHomeHidden);
               if (checked) next.delete(moduleId);
               else next.add(moduleId);
-              void commit({ hmVatanHomeHiddenModules: [...next] });
+              void commit({
+                ...vatanModuleTogglePatch(moduleId, checked),
+                hmVatanHomeHiddenModules: [...next],
+              });
             }}
             onChange={(items) => setP({ ...p, hmVatanHomeModuleOrder: items })}
             onSave={(items) => void commit({ hmVatanHomeModuleOrder: items })}
