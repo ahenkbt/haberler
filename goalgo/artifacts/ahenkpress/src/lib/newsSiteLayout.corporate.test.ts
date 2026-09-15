@@ -168,6 +168,22 @@ describe("HM corporate layout kind", () => {
     expect(html.match(/ödeme talep edenlere itibar etmeyiniz/g)?.length ?? 0).toBe(1);
   });
 
+  it("appends the full warning when only one warning fragment exists", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          highlightsHtml: "<p>Derneğimizin adını kullanarak sahte hesap gönderebilirler.</p>",
+        },
+      },
+    });
+    const html = next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "";
+    expect(html).toContain("ödeme talep edenlere itibar etmeyiniz");
+  });
+
   it("keeps text empty when highlights exist and injects warning into highlights only", () => {
     const next = applyVkdDonationToLayoutPrefs({
       ...defaultNewsSiteLayoutPrefs,

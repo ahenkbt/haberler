@@ -2626,7 +2626,7 @@ const VKD_DONATION_CHIP_ITEMS = ["🎖️ GAZİ HAKLARI", "🎓 EĞİTİM BURSU"
 
 function hasVkdDonationFraudWarning(content: string): boolean {
   const t = content.toLocaleLowerCase("tr-TR");
-  return t.includes("derneğimizin adını kullanarak") || t.includes("ödeme talep edenlere itibar etmeyiniz");
+  return t.includes("derneğimizin adını kullanarak") && t.includes("ödeme talep edenlere itibar etmeyiniz");
 }
 
 function ensureVkdDonationFraudWarningHtml(htmlRaw: string): string {
