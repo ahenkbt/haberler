@@ -104,6 +104,21 @@ describe("Vatan theme", () => {
     expect(next.hmVitrinTheme).not.toBe("news");
   });
 
+  it("preserves saved Vatan legacy toggle choices while applying theme chrome", () => {
+    const next = applyVkdVatanThemeToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmVitrinTheme: "corporate",
+      hmCorporateAtaturkCornerEnabled: false,
+      hmCorporateWarsSectionEnabled: true,
+      hmCorporateNationalDaysSectionEnabled: true,
+    });
+    expect(next.hmCorporateAtaturkCornerEnabled).toBe(false);
+    expect(next.hmCorporateWarsSectionEnabled).toBe(true);
+    expect(next.hmCorporateNationalDaysSectionEnabled).toBe(true);
+    expect(next.hmVitrinTheme).toBe("vatan");
+    expect(next.hmChromeColorMode).toBe("dark");
+  });
+
   it("does not let vitrin-only saves flip Vatan or corporate onto news defaults", () => {
     const vatan = applyVkdVatanThemeToLayoutPrefs({
       ...defaultNewsSiteLayoutPrefs,

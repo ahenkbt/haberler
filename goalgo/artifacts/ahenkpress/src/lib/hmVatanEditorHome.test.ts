@@ -7,7 +7,7 @@ import {
 } from "./hmVatanEditorHome";
 import { VATAN_ASSETS, VATAN_DEFAULT_SLIDER_ITEMS } from "./hmVatanTheme";
 import { VATAN_HOME_HERO_V2, VATAN_MOSAIC_TILES } from "./hmVatanHomeContent";
-import { defaultNewsSiteLayoutPrefs, type NewsSiteLayoutPrefs } from "./newsSiteLayout";
+import { defaultNewsSiteLayoutPrefs, parseNewsSiteLayoutFromJson, type NewsSiteLayoutPrefs } from "./newsSiteLayout";
 import { buildVatanFooterGroups } from "./hmVatanNav";
 
 function prefs(patch: Partial<NewsSiteLayoutPrefs>): NewsSiteLayoutPrefs {
@@ -138,6 +138,32 @@ describe("Vatan editor home bindings", () => {
       }),
     );
     expect(visible).toEqual(VATAN_HOME_MODULE_ORDER);
+  });
+
+  it("keeps an explicit empty Vatan hidden list after parsing", () => {
+    const parsed = parseNewsSiteLayoutFromJson(
+      JSON.stringify({
+        hmVitrinTheme: "vatan",
+        hmVatanHomeHiddenModules: [],
+        hmSehitSearchEnabled: false,
+        hmCorporateAtaturkCornerEnabled: false,
+        hmCorporateWarsSectionEnabled: false,
+        hmCorporateNationalDaysSectionEnabled: false,
+        hmCorporateDonation: { enabled: false },
+      }),
+      "vkd",
+    );
+    expect(resolveVatanVisibleHomeModules(parsed)).toEqual(VATAN_HOME_MODULE_ORDER);
+  });
+
+  it("seeds missing VKD Vatan module defaults as visible", () => {
+    const parsed = parseNewsSiteLayoutFromJson(JSON.stringify({ hmVitrinTheme: "vatan" }), "vkd");
+    expect(parsed.hmSehitSearchEnabled).toBe(true);
+    expect(parsed.hmCorporateAtaturkCornerEnabled).toBe(true);
+    expect(parsed.hmCorporateWarsSectionEnabled).toBe(true);
+    expect(parsed.hmCorporateNationalDaysSectionEnabled).toBe(true);
+    expect(parsed.hmCorporateDonation?.enabled).toBe(true);
+    expect(resolveVatanVisibleHomeModules(parsed)).toEqual(VATAN_HOME_MODULE_ORDER);
   });
 
   it("builds footer columns from Üst menü groups", () => {
