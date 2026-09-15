@@ -234,9 +234,10 @@ export default function EditorVitrinAyarlari() {
       }
       if (!r.ok) {
         if (requestId !== commitSeqRef.current) return;
+        const serverError = typeof r.error === "string" ? r.error.slice(0, 220) : "";
         toast({
           title: "Kaydedilemedi",
-          description: r.error.slice(0, 220) || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
+          description: serverError || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
           variant: "destructive",
         });
         setP(prevSnapshot);
