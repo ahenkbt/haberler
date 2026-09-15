@@ -2683,7 +2683,7 @@ export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsS
   const highlightsHtml = (band.highlightsHtml ?? "").trim();
   const leadText = (band.text ?? "").trim();
   const fallbackHighlightsHtml = leadText ? null : VKD_DONATION_SUPPORT_HIGHLIGHTS_HTML;
-  const resolvedHighlightsHtml = highlightsHtml ? band.highlightsHtml : fallbackHighlightsHtml;
+  const resolvedHighlightsHtml = highlightsHtml || fallbackHighlightsHtml;
   const resolvedText = highlightsHtml ? null : leadText || null;
   const warnedHighlightsHtml = resolvedHighlightsHtml ? ensureVkdDonationFraudWarningHtml(resolvedHighlightsHtml) : null;
   const warnedText =
