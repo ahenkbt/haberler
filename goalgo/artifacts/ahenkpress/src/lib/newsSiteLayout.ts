@@ -2671,7 +2671,7 @@ function seedVkdPublicLayoutPrefs(
       : (prefs.hmVatanHomeHiddenModules ?? []),
     hmCorporateDonation: {
       ...donation,
-      enabled: donationRaw && hasOwnLayoutKey(donationRaw, "enabled") ? donation.enabled === true : true,
+      enabled: donationRaw && hasOwnLayoutKey(donationRaw, "enabled") ? donation.enabled : true,
     },
   };
 }
