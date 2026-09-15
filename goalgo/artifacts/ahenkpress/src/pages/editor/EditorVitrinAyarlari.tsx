@@ -221,7 +221,7 @@ export default function EditorVitrinAyarlari() {
     setP(next);
     try {
       setSaving(true);
-      const r = await saveNewsSiteLayout(newsLayoutPrefs, {
+      const r = await saveNewsSiteLayout(next, {
         vitrinOnly: true,
         layoutPatch: patch,
         allowStockLayoutReset: saveOpts?.allowStockLayoutReset,

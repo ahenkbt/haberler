@@ -129,4 +129,24 @@ describe("HM corporate layout kind", () => {
     expect(html).toContain("derneğimizin adını kullanarak");
     expect(html).toContain("ödeme talep edenlere itibar etmeyiniz");
   });
+
+  it("appends VKD fraud warning to donation support plain text fallback", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          title: "Desteğiniz için teşekkür ederiz.",
+          text: "Bağışlarınızı aşağıdaki hesaplardan yapabilirsiniz.",
+          highlightsHtml: null,
+          items: ["x", "y", "z"],
+        },
+      },
+    });
+    const text = next.hmCorporateDonation?.supportBand?.text ?? "";
+    expect(text).toContain("Derneğimizin adını kullanarak");
+    expect(text).toContain("ödeme talep edenlere itibar etmeyiniz");
+  });
 });
