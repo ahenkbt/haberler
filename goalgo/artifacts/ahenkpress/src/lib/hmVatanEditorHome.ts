@@ -147,7 +147,7 @@ export function resolveVatanMosaicTiles(prefs: NewsSiteLayoutPrefs): VatanMosaic
 
 export function resolveVatanHomeHiddenModules(prefs: NewsSiteLayoutPrefs): Set<VatanHomeModuleId> {
   const hidden = new Set<VatanHomeModuleId>();
-  const hasVatanOverrides = (prefs.hmVatanHomeHiddenModules?.length ?? 0) > 0;
+  const hasVatanOverrides = Array.isArray(prefs.hmVatanHomeHiddenModules);
   const allowed = new Set<string>(VATAN_HOME_MODULE_ORDER);
   for (const raw of prefs.hmVatanHomeHiddenModules ?? []) {
     const id = String(raw ?? "").trim();

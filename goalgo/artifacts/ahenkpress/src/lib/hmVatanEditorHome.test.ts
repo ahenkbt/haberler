@@ -129,6 +129,17 @@ describe("Vatan editor home bindings", () => {
     );
   });
 
+  it("treats explicit empty Vatan hidden list as an override", () => {
+    const visible = resolveVatanVisibleHomeModules(
+      prefs({
+        hmVatanHomeHiddenModules: [],
+        hmSehitSearchEnabled: false,
+        hmCorporateAtaturkCornerEnabled: false,
+      }),
+    );
+    expect(visible).toEqual(VATAN_HOME_MODULE_ORDER);
+  });
+
   it("builds footer columns from Üst menü groups", () => {
     const groups = buildVatanFooterGroups(
       prefs({
