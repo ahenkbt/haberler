@@ -217,7 +217,8 @@ export default function EditorVitrinAyarlari() {
     patch: Partial<NewsSiteLayoutPrefs>,
     saveOpts?: { allowStockLayoutReset?: boolean },
   ) => {
-    const next = { ...pRef.current, ...patch };
+    const prevSnapshot = pRef.current;
+    const next = { ...prevSnapshot, ...patch };
     setP(next);
     try {
       setSaving(true);
@@ -235,7 +236,7 @@ export default function EditorVitrinAyarlari() {
           description: r.error.slice(0, 220) || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
           variant: "destructive",
         });
-        setP(newsLayoutPrefs);
+        setP(prevSnapshot);
         return;
       }
       toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
@@ -245,7 +246,7 @@ export default function EditorVitrinAyarlari() {
         description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
         variant: "destructive",
       });
-      setP(newsLayoutPrefs);
+      setP(prevSnapshot);
     } finally {
       setSaving(false);
     }
