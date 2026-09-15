@@ -208,7 +208,9 @@ export default function EditorVitrinAyarlari() {
   useEffect(() => {
     setP(newsLayoutPrefs);
     pRef.current = newsLayoutPrefs;
-    persistedRef.current = newsLayoutPrefs;
+    if (commitSeqRef.current === confirmedCommitSeqRef.current) {
+      persistedRef.current = newsLayoutPrefs;
+    }
     setHeaderRightBannerDraft(newsLayoutPrefs.hmHeaderRightBannerUrl ?? "");
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
