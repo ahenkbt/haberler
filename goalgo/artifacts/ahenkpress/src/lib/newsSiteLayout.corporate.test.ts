@@ -149,4 +149,39 @@ describe("HM corporate layout kind", () => {
     expect(text).toContain("Derneğimizin adını kullanarak");
     expect(text).toContain("ödeme talep edenlere itibar etmeyiniz");
   });
+
+  it("does not duplicate VKD fraud warning when already present", () => {
+    const warning =
+      "Derneğimizin adını kullanarak aşağıdaki bağış hesapları haricinde şahıs adı ve ibanı paylaşarak ödeme talep edenlere itibar etmeyiniz.";
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          highlightsHtml: `<p>${warning}</p>`,
+        },
+      },
+    });
+    const html = next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "";
+    expect(html.match(/ödeme talep edenlere itibar etmeyiniz/g)?.length ?? 0).toBe(1);
+  });
+
+  it("keeps text empty when highlights exist and injects warning into highlights only", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          text: "Bu metin highlights varken kullanılmamalı.",
+          highlightsHtml: "<p>Highlights aktif</p>",
+        },
+      },
+    });
+    expect(next.hmCorporateDonation?.supportBand?.text).toBeNull();
+    expect(next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "").toContain("Derneğimizin adını kullanarak");
+  });
 });
