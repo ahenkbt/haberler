@@ -1,6 +1,10 @@
 import { useCallback, useState } from "react";
 import { Copy } from "lucide-react";
 import type { HmCorporateDonationAccount, HmCorporateDonationSettings } from "@/lib/newsSiteLayout";
+import {
+  VKD_DONATION_WARNING_NOTICE,
+  isVkdDonationAccountName,
+} from "@/lib/vkdPublicContact";
 
 function formatIbanDisplay(iban: string): string {
   const compact = iban.replace(/\s+/g, "").toUpperCase();
@@ -40,6 +44,7 @@ export function HmCorporateIbanDonationCard({
   const rows = donationAccountRows(donation);
   const [copied, setCopied] = useState<string | null>(null);
   const [copyError, setCopyError] = useState("");
+  const showVkdWarning = rows.some((row) => isVkdDonationAccountName(row.accountName));
 
   const copyIban = useCallback(async (ibanRaw: string) => {
     if (!ibanRaw) return;
@@ -105,6 +110,11 @@ export function HmCorporateIbanDonationCard({
           <p className="mt-4 text-sm text-slate-500">IBAN bilgisi henüz tanımlanmadı.</p>
         )}
         {copyError ? <p className="mt-2 text-xs text-red-600">{copyError}</p> : null}
+        {showVkdWarning ? (
+          <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-700">
+            {VKD_DONATION_WARNING_NOTICE}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -132,6 +142,11 @@ export function HmCorporateIbanDonationCard({
         <p className="vkv-donation-iban-missing">IBAN bilgisi henüz tanımlanmadı.</p>
       )}
       {copyError ? <div className="vkv-donation-error">{copyError}</div> : null}
+      {showVkdWarning ? (
+        <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-700">
+          {VKD_DONATION_WARNING_NOTICE}
+        </p>
+      ) : null}
     </div>
   );
 }

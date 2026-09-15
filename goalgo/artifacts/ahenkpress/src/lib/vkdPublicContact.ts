@@ -24,6 +24,8 @@ export const VKD_DONATION_ACCOUNTS: readonly VkdDonationAccount[] = [
 export const VKD_CONTACT_PHONE_DISPLAY = "0532 272 71 09";
 export const VKD_CONTACT_PHONE_TEL = "+905322727109";
 export const VKD_CONTACT_ADDRESS = "Meşrutiyet Cad. Karanfil Sokak 4/91 Çankaya Ankara";
+export const VKD_DONATION_WARNING_NOTICE =
+  "Derneğimizin adını kullanarak aşağıdaki bağış hesapları haricinde şahıs adı ve ibanı paylaşarak ödeme talep edenlere itibar etmeyiniz.";
 
 const STALE_IBAN_COMPACT = new Set([
   "TR660010300000000084074471",
@@ -49,4 +51,8 @@ export function isStaleVkdAccountName(name: string | null | undefined): boolean 
   const n = String(name ?? "").trim();
   if (!n) return true;
   return /savunma\s+hizmetleri/i.test(n);
+}
+
+export function isVkdDonationAccountName(name: string | null | undefined): boolean {
+  return String(name ?? "").trim().toUpperCase() === VKD_ACCOUNT_NAME;
 }

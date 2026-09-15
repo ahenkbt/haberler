@@ -4,8 +4,10 @@ import {
   VKD_CONTACT_ADDRESS,
   VKD_CONTACT_PHONE_DISPLAY,
   VKD_DONATION_ACCOUNTS,
+  VKD_DONATION_WARNING_NOTICE,
   compactIban,
   formatIbanDisplay,
+  isVkdDonationAccountName,
   isStaleVkdAccountName,
   isStaleVkdIban,
 } from "./vkdPublicContact";
@@ -37,5 +39,11 @@ describe("vkdPublicContact", () => {
     expect(VKD_CONTACT_PHONE_DISPLAY).toBe("0532 272 71 09");
     expect(VKD_CONTACT_ADDRESS).toContain("Meşrutiyet Cad. Karanfil Sokak 4/91");
     expect(VKD_CONTACT_ADDRESS).toContain("Çankaya Ankara");
+  });
+
+  it("publishes the donation fraud warning only for the VKD account name", () => {
+    expect(VKD_DONATION_WARNING_NOTICE).toContain("şahıs adı ve ibanı paylaşarak ödeme talep edenlere");
+    expect(isVkdDonationAccountName(VKD_ACCOUNT_NAME)).toBe(true);
+    expect(isVkdDonationAccountName("Başka Dernek")).toBe(false);
   });
 });
