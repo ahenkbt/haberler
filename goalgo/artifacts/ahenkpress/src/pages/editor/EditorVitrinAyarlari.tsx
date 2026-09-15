@@ -216,6 +216,13 @@ export default function EditorVitrinAyarlari() {
     pRef.current = p;
   }, [p]);
 
+  const rollbackToPersisted = () => {
+    const persisted = persistedRef.current;
+    setP(persisted);
+    setHeaderRightBannerDraft(persisted.hmHeaderRightBannerUrl ?? "");
+    setHeaderRightTextDraft(persisted.hmHeaderRightCustomText ?? "");
+  };
+
   const commit = async (
     patch: Partial<NewsSiteLayoutPrefs>,
     saveOpts?: { allowStockLayoutReset?: boolean },
@@ -241,7 +248,7 @@ export default function EditorVitrinAyarlari() {
           description: serverError || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
           variant: "destructive",
         });
-        setP(persistedRef.current);
+        rollbackToPersisted();
         return;
       }
       if (requestId !== commitSeqRef.current) return;
@@ -254,7 +261,7 @@ export default function EditorVitrinAyarlari() {
         description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
         variant: "destructive",
       });
-      setP(persistedRef.current);
+      rollbackToPersisted();
     } finally {
       if (requestId === commitSeqRef.current) setSaving(false);
     }
