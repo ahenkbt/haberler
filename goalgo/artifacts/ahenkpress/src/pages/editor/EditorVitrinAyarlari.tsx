@@ -203,13 +203,11 @@ export default function EditorVitrinAyarlari() {
   const pRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
   const persistedRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
   const commitSeqRef = useRef(0);
-  const confirmedCommitSeqRef = useRef(0);
 
   useEffect(() => {
     setP(newsLayoutPrefs);
     pRef.current = newsLayoutPrefs;
     persistedRef.current = newsLayoutPrefs;
-    confirmedCommitSeqRef.current = commitSeqRef.current;
     setHeaderRightBannerDraft(newsLayoutPrefs.hmHeaderRightBannerUrl ?? "");
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
@@ -246,11 +244,8 @@ export default function EditorVitrinAyarlari() {
         setP(persistedRef.current);
         return;
       }
-      if (requestId > confirmedCommitSeqRef.current) {
-        confirmedCommitSeqRef.current = requestId;
-        persistedRef.current = next;
-      }
       if (requestId !== commitSeqRef.current) return;
+      persistedRef.current = next;
       toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
     } catch (err) {
       if (requestId !== commitSeqRef.current) return;
