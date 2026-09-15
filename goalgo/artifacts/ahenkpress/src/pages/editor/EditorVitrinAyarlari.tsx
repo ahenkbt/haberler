@@ -217,11 +217,24 @@ export default function EditorVitrinAyarlari() {
     pRef.current = p;
   }, [p]);
 
-  const rollbackToPersisted = () => {
+  const rollbackPatchToPersisted = (patch: Partial<NewsSiteLayoutPrefs>) => {
     const persisted = persistedRef.current;
-    setP(persisted);
-    setHeaderRightBannerDraft(persisted.hmHeaderRightBannerUrl ?? "");
-    setHeaderRightTextDraft(persisted.hmHeaderRightCustomText ?? "");
+    const keys = Object.keys(patch) as Array<keyof NewsSiteLayoutPrefs>;
+    if (keys.length > 0) {
+      setP((prev) => {
+        const next = { ...prev };
+        for (const key of keys) {
+          next[key] = persisted[key];
+        }
+        return next;
+      });
+    }
+    if ("hmHeaderRightBannerUrl" in patch || "hmHeaderRightSlot" in patch) {
+      setHeaderRightBannerDraft(persisted.hmHeaderRightBannerUrl ?? "");
+    }
+    if ("hmHeaderRightCustomText" in patch || "hmHeaderRightSlot" in patch) {
+      setHeaderRightTextDraft(persisted.hmHeaderRightCustomText ?? "");
+    }
   };
 
   const commit = async (
@@ -249,7 +262,7 @@ export default function EditorVitrinAyarlari() {
           description: serverError || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
           variant: "destructive",
         });
-        rollbackToPersisted();
+        rollbackPatchToPersisted(patch);
         return;
       }
       if (requestId > confirmedCommitSeqRef.current) {
@@ -265,7 +278,7 @@ export default function EditorVitrinAyarlari() {
         description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
         variant: "destructive",
       });
-      rollbackToPersisted();
+      rollbackPatchToPersisted(patch);
     } finally {
       if (requestId === commitSeqRef.current) setSaving(false);
     }
