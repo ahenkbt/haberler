@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyVkdDonationToLayoutPrefs,
   defaultNewsSiteLayoutPrefs,
   hmNewsThemePresetPatch,
   isHmCorporateLayoutKind,
@@ -108,5 +109,24 @@ describe("HM corporate layout kind", () => {
       allowStockLayoutReset: true,
     });
     expect(reset.hmVitrinTheme).toBe(defaultNewsSiteLayoutPrefs.hmVitrinTheme);
+  });
+
+  it("appends VKD fraud warning under donation support content", () => {
+    const next = applyVkdDonationToLayoutPrefs({
+      ...defaultNewsSiteLayoutPrefs,
+      hmCorporateDonation: {
+        ...defaultNewsSiteLayoutPrefs.hmCorporateDonation!,
+        enabled: true,
+        supportBand: {
+          enabled: true,
+          title: "Desteğiniz için teşekkür ederiz.",
+          highlightsHtml: "<p>Bağışlarınızı aşağıdaki hesaplardan yapabilirsiniz.</p>",
+          items: ["x", "y", "z"],
+        },
+      },
+    });
+    const html = next.hmCorporateDonation?.supportBand?.highlightsHtml ?? "";
+    expect(html).toContain("derneğimizin adını kullanarak");
+    expect(html).toContain("ödeme talep edenlere itibar etmeyiniz");
   });
 });

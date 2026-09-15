@@ -147,11 +147,18 @@ export function resolveVatanMosaicTiles(prefs: NewsSiteLayoutPrefs): VatanMosaic
 
 export function resolveVatanHomeHiddenModules(prefs: NewsSiteLayoutPrefs): Set<VatanHomeModuleId> {
   const hidden = new Set<VatanHomeModuleId>();
+  const hasVatanOverrides = (prefs.hmVatanHomeHiddenModules?.length ?? 0) > 0;
   const allowed = new Set<string>(VATAN_HOME_MODULE_ORDER);
   for (const raw of prefs.hmVatanHomeHiddenModules ?? []) {
     const id = String(raw ?? "").trim();
     if (allowed.has(id)) hidden.add(id as VatanHomeModuleId);
   }
+  if (hasVatanOverrides) return hidden;
+  if (prefs.hmSehitSearchEnabled === false) hidden.add("sehitSearch");
+  if (prefs.hmCorporateAtaturkCornerEnabled === false) hidden.add("ataturk");
+  if (prefs.hmCorporateWarsSectionEnabled === false) hidden.add("wars");
+  if (prefs.hmCorporateNationalDaysSectionEnabled === false) hidden.add("nationalDays");
+  if (prefs.hmCorporateDonation?.enabled === false) hidden.add("donation");
   return hidden;
 }
 

@@ -200,35 +200,54 @@ export default function EditorVitrinAyarlari() {
   const [headerRightTextDraft, setHeaderRightTextDraft] = useState("");
   const [headerBannerUploading, setHeaderBannerUploading] = useState(false);
   const headerBannerFileRef = useRef<HTMLInputElement>(null);
+  const pRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
 
   useEffect(() => {
     setP(newsLayoutPrefs);
+    pRef.current = newsLayoutPrefs;
     setHeaderRightBannerDraft(newsLayoutPrefs.hmHeaderRightBannerUrl ?? "");
     setHeaderRightTextDraft(newsLayoutPrefs.hmHeaderRightCustomText ?? "");
   }, [newsLayoutPrefs]);
+
+  useEffect(() => {
+    pRef.current = p;
+  }, [p]);
 
   const commit = async (
     patch: Partial<NewsSiteLayoutPrefs>,
     saveOpts?: { allowStockLayoutReset?: boolean },
   ) => {
-    const next = { ...newsLayoutPrefs, ...patch };
+    const next = { ...pRef.current, ...patch };
     setP(next);
-    setSaving(true);
-    const r = await saveNewsSiteLayout(next, {
-      vitrinOnly: true,
-      layoutPatch: patch,
-      allowStockLayoutReset: saveOpts?.allowStockLayoutReset,
-    });
-    setSaving(false);
-    if (!r.ok) {
+    try {
+      setSaving(true);
+      const r = await saveNewsSiteLayout(newsLayoutPrefs, {
+        vitrinOnly: true,
+        layoutPatch: patch,
+        allowStockLayoutReset: saveOpts?.allowStockLayoutReset,
+      });
+      if (!r || typeof r !== "object" || typeof r.ok !== "boolean") {
+        throw new Error("Geçersiz vitrin kaydetme yanıtı alındı.");
+      }
+      if (!r.ok) {
+        toast({
+          title: "Kaydedilemedi",
+          description: r.error.slice(0, 220) || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
+          variant: "destructive",
+        });
+        setP(newsLayoutPrefs);
+        return;
+      }
+      toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
+    } catch (err) {
       toast({
         title: "Kaydedilemedi",
-        description: r.error.slice(0, 220) || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
+        description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
         variant: "destructive",
       });
       setP(newsLayoutPrefs);
-    } else {
-      toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -2299,7 +2318,14 @@ export default function EditorVitrinAyarlari() {
               label="Destek bandı"
               checked={p.hmCorporateDonation?.enabled === true}
               disabled={saving}
-              onChange={(c) => void commit({ ...p, hmCorporateDonation: { ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!), enabled: c } })}
+              onChange={(c) =>
+                void commit({
+                  hmCorporateDonation: {
+                    ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!),
+                    enabled: c,
+                  },
+                })
+              }
             />
           </div>
             </TabsContent>
@@ -2338,13 +2364,12 @@ export default function EditorVitrinAyarlari() {
               const next = new Set(p.hmVatanHomeHiddenModules ?? []);
               if (checked) next.delete(moduleId);
               else next.add(moduleId);
-              void commit({ ...p, hmVatanHomeHiddenModules: [...next] });
+              void commit({ hmVatanHomeHiddenModules: [...next] });
             }}
             onChange={(items) => setP({ ...p, hmVatanHomeModuleOrder: items })}
-            onSave={(items) => void commit({ ...p, hmVatanHomeModuleOrder: items })}
+            onSave={(items) => void commit({ hmVatanHomeModuleOrder: items })}
             onReset={() =>
               void commit({
-                ...p,
                 hmVatanHomeModuleOrder: [...VATAN_HOME_MODULE_ORDER],
                 hmVatanHomeHiddenModules: [],
               })
