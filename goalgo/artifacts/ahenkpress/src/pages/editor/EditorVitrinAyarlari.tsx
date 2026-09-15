@@ -80,6 +80,7 @@ import {
   VATAN_HOME_MODULE_ORDER,
   resolveVatanHomeHiddenModules,
   resolveVatanHomeModuleOrder,
+  type VatanHomeModuleId,
 } from "@/lib/hmVatanEditorHome";
 import {
   HM_RSS_KARMA_DEFAULTS_REV,
@@ -224,11 +225,11 @@ export default function EditorVitrinAyarlari() {
     const keys = Object.keys(patch) as Array<keyof NewsSiteLayoutPrefs>;
     if (keys.length > 0) {
       setP((prev) => {
-        const next = { ...prev };
+        const next: Record<string, unknown> = { ...prev };
         for (const key of keys) {
-          next[key] = persisted[key];
+          next[String(key)] = persisted[key];
         }
-        return next;
+        return next as NewsSiteLayoutPrefs;
       });
     }
     if ("hmHeaderRightBannerUrl" in patch || "hmHeaderRightSlot" in patch) {
@@ -432,8 +433,71 @@ export default function EditorVitrinAyarlari() {
     void commit({ [key]: checked ? true : false });
   };
 
+  const vatanModulesForCorporateModule = (moduleId: HmCorporateHomeModuleId): readonly VatanHomeModuleId[] =>
+    moduleId === "sehitSearch"
+      ? ["sehitSearch"]
+      : moduleId === "ataturkCorner"
+        ? ["ataturk"]
+        : moduleId === "heritageInfo"
+          ? ["wars", "nationalDays"]
+          : moduleId === "donationSupport"
+            ? ["donation"]
+            : [];
+
+  const isVatanModuleVisible = (moduleId: VatanHomeModuleId): boolean => !vatanHomeHidden.has(moduleId);
+
+  const isVatanCorporateModuleVisible = (moduleId: HmCorporateHomeModuleId): boolean => {
+    const modules = vatanModulesForCorporateModule(moduleId);
+    if (!modules.length) return resolveHmCorporateEditorModuleEnabled(p, moduleId);
+    return modules.some((item) => isVatanModuleVisible(item));
+  };
+
+  const vatanModuleTogglePatch = (
+    moduleId: VatanHomeModuleId,
+    checked: boolean,
+  ): Partial<NewsSiteLayoutPrefs> =>
+    moduleId === "ataturk"
+      ? applyHmCorporateEditorModuleTogglePatch(p, "ataturkCorner", checked)
+      : moduleId === "sehitSearch"
+        ? applyHmCorporateEditorModuleTogglePatch(p, "sehitSearch", checked)
+        : moduleId === "wars"
+          ? { hmCorporateWarsSectionEnabled: checked }
+          : moduleId === "nationalDays"
+            ? { hmCorporateNationalDaysSectionEnabled: checked }
+            : moduleId === "donation"
+              ? applyHmCorporateEditorModuleTogglePatch(p, "donationSupport", checked)
+              : {};
+
+  const syncVatanHomeHiddenModulesPatch = (
+    patch: Partial<NewsSiteLayoutPrefs>,
+    moduleIds: readonly VatanHomeModuleId[] = [],
+    checked?: boolean,
+  ): Partial<NewsSiteLayoutPrefs> => {
+    if (!isVatanEditorSite || checked == null || moduleIds.length === 0) return patch;
+    const nextHidden = new Set<VatanHomeModuleId>(vatanHomeHidden);
+    for (const moduleId of moduleIds) {
+      if (checked) nextHidden.delete(moduleId);
+      else nextHidden.add(moduleId);
+    }
+    return { ...patch, hmVatanHomeHiddenModules: Array.from(nextHidden) };
+  };
+
+  const toggleVatanAwareDefaultOn = (
+    key: keyof NewsSiteLayoutPrefs,
+    checked: boolean,
+    moduleIds: readonly VatanHomeModuleId[] = [],
+  ) => {
+    void commit(syncVatanHomeHiddenModulesPatch({ [key]: checked ? true : false }, moduleIds, checked));
+  };
+
   const toggleCorporateModule = (moduleId: HmCorporateHomeModuleId, checked: boolean) => {
-    void commit({ ...p, ...applyHmCorporateEditorModuleTogglePatch(p, moduleId, checked) });
+    void commit(
+      syncVatanHomeHiddenModulesPatch(
+        applyHmCorporateEditorModuleTogglePatch(p, moduleId, checked),
+        vatanModulesForCorporateModule(moduleId),
+        checked,
+      ),
+    );
   };
 
   const corporateMainNewsLayout = resolveHmCorporateMainNewsLayout(p);
@@ -2316,9 +2380,9 @@ export default function EditorVitrinAyarlari() {
             <ToggleRow
               id="hm-corporate-ataturk"
               label="Atatürk Köşesi"
-              checked={p.hmCorporateAtaturkCornerEnabled === true}
+              checked={isVatanEditorSite ? isVatanModuleVisible("ataturk") : p.hmCorporateAtaturkCornerEnabled === true}
               disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmCorporateAtaturkCornerEnabled", c)}
+              onChange={(c) => toggleVatanAwareDefaultOn("hmCorporateAtaturkCornerEnabled", c, ["ataturk"])}
             />
             <ToggleRow
               id="hm-corporate-popular-cities"
@@ -2330,35 +2394,41 @@ export default function EditorVitrinAyarlari() {
             <ToggleRow
               id="hm-corporate-sehit"
               label="Şehit sorgulama modülü"
-              checked={p.hmSehitSearchEnabled === true}
+              checked={isVatanEditorSite ? isVatanModuleVisible("sehitSearch") : p.hmSehitSearchEnabled === true}
               disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmSehitSearchEnabled", c)}
+              onChange={(c) => toggleVatanAwareDefaultOn("hmSehitSearchEnabled", c, ["sehitSearch"])}
             />
             <ToggleRow
               id="hm-corporate-wars"
               label="Savaşlar bilgi bölümü"
-              checked={p.hmCorporateWarsSectionEnabled === true}
+              checked={isVatanEditorSite ? isVatanModuleVisible("wars") : p.hmCorporateWarsSectionEnabled === true}
               disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmCorporateWarsSectionEnabled", c)}
+              onChange={(c) => toggleVatanAwareDefaultOn("hmCorporateWarsSectionEnabled", c, ["wars"])}
             />
             <ToggleRow
               id="hm-corporate-national-days"
               label="Millî günler bilgi bölümü"
-              checked={p.hmCorporateNationalDaysSectionEnabled === true}
+              checked={isVatanEditorSite ? isVatanModuleVisible("nationalDays") : p.hmCorporateNationalDaysSectionEnabled === true}
               disabled={saving}
-              onChange={(c) => toggleDefaultOn("hmCorporateNationalDaysSectionEnabled", c)}
+              onChange={(c) => toggleVatanAwareDefaultOn("hmCorporateNationalDaysSectionEnabled", c, ["nationalDays"])}
             />
             <ToggleRow
               id="hm-corporate-support"
               label="Destek bandı"
-              checked={p.hmCorporateDonation?.enabled === true}
+              checked={isVatanEditorSite ? isVatanModuleVisible("donation") : p.hmCorporateDonation?.enabled === true}
               disabled={saving}
               onChange={(c) =>
                 void commit({
-                  hmCorporateDonation: {
-                    ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!),
-                    enabled: c,
-                  },
+                  ...syncVatanHomeHiddenModulesPatch(
+                    {
+                      hmCorporateDonation: {
+                        ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!),
+                        enabled: c,
+                      },
+                    },
+                    ["donation"],
+                    c,
+                  ),
                 })
               }
             />
@@ -2374,7 +2444,11 @@ export default function EditorVitrinAyarlari() {
             defaults={corporateEditorHomeDefaults}
             disabled={saving}
             enableDragDrop
-            getModuleEnabled={(moduleId) => resolveHmCorporateEditorModuleEnabled(p, moduleId as HmCorporateHomeModuleId)}
+            getModuleEnabled={(moduleId) =>
+              isVatanEditorSite
+                ? isVatanCorporateModuleVisible(moduleId as HmCorporateHomeModuleId)
+                : resolveHmCorporateEditorModuleEnabled(p, moduleId as HmCorporateHomeModuleId)
+            }
             onModuleEnabledChange={(moduleId, checked) =>
               toggleCorporateModule(moduleId as HmCorporateHomeModuleId, checked)
             }
@@ -2396,10 +2470,13 @@ export default function EditorVitrinAyarlari() {
             enableDragDrop
             getModuleEnabled={(moduleId) => !vatanHomeHidden.has(moduleId)}
             onModuleEnabledChange={(moduleId, checked) => {
-              const next = new Set(p.hmVatanHomeHiddenModules ?? []);
+              const next = new Set(vatanHomeHidden);
               if (checked) next.delete(moduleId);
               else next.add(moduleId);
-              void commit({ hmVatanHomeHiddenModules: [...next] });
+              void commit({
+                ...vatanModuleTogglePatch(moduleId, checked),
+                hmVatanHomeHiddenModules: [...next],
+              });
             }}
             onChange={(items) => setP({ ...p, hmVatanHomeModuleOrder: items })}
             onSave={(items) => void commit({ hmVatanHomeModuleOrder: items })}
