@@ -2656,16 +2656,6 @@ function seedVkdPublicLayoutPrefs(
   const donation = prefs.hmCorporateDonation ?? { ...defaultHmCorporateDonation };
   return {
     ...prefs,
-    hmCorporateAtaturkCornerEnabled: hasOwnLayoutKey(raw, "hmCorporateAtaturkCornerEnabled")
-      ? prefs.hmCorporateAtaturkCornerEnabled
-      : true,
-    hmCorporateWarsSectionEnabled: hasOwnLayoutKey(raw, "hmCorporateWarsSectionEnabled")
-      ? prefs.hmCorporateWarsSectionEnabled
-      : true,
-    hmCorporateNationalDaysSectionEnabled: hasOwnLayoutKey(raw, "hmCorporateNationalDaysSectionEnabled")
-      ? prefs.hmCorporateNationalDaysSectionEnabled
-      : true,
-    hmSehitSearchEnabled: hasOwnLayoutKey(raw, "hmSehitSearchEnabled") ? prefs.hmSehitSearchEnabled : true,
     hmVatanHomeHiddenModules: prefs.hmVatanHomeHiddenModules ?? [],
     hmCorporateDonation: {
       ...donation,

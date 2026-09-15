@@ -158,10 +158,7 @@ describe("Vatan editor home bindings", () => {
 
   it("seeds missing VKD Vatan module defaults as visible", () => {
     const parsed = parseNewsSiteLayoutFromJson(JSON.stringify({ hmVitrinTheme: "vatan" }), "vkd");
-    expect(parsed.hmSehitSearchEnabled).toBe(true);
-    expect(parsed.hmCorporateAtaturkCornerEnabled).toBe(true);
-    expect(parsed.hmCorporateWarsSectionEnabled).toBe(true);
-    expect(parsed.hmCorporateNationalDaysSectionEnabled).toBe(true);
+    expect(parsed.hmVatanHomeHiddenModules).toEqual([]);
     expect(parsed.hmCorporateDonation?.enabled).toBe(true);
     expect(resolveVatanVisibleHomeModules(parsed)).toEqual(VATAN_HOME_MODULE_ORDER);
   });
