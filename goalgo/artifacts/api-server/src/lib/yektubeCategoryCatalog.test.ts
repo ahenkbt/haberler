@@ -32,4 +32,13 @@ describe("yektubeCategoryCatalog", () => {
     expect(src).toContain('router.post("/video/fix-playback"');
     expect(src).toMatch(/router\.post\("\/video\/fix-playback"[\s\S]*mergeDuplicateCategorySlugs/);
   });
+
+  it("loads the public video list via selectVideoPool instead of Promise.all + count(*)", () => {
+    const src = readFileSync(join(here, "../routes/video.ts"), "utf8");
+    expect(src).toContain("async function selectVideoPool");
+    expect(src).toMatch(/router\.get\("\/video\/videos"[\s\S]*selectVideoPool\(/);
+    expect(src).not.toMatch(
+      /db\.select\(videosListSelect\)[\s\S]{0,200}Promise\.all\(\[[\s\S]{0,400}count\(\*\)::int/,
+    );
+  });
 });

@@ -3558,6 +3558,58 @@ router.post("/video/backfill-covers", async (req, res): Promise<void> => {
 const VIDEO_LIST_RESPONSE_TTL_MS = 45_000;
 const VIDEO_LIST_RESPONSE_MAX_ENTRIES = 200;
 const videoListResponseCache = new Map<string, { expiresAt: number; body: unknown }>();
+const VIDEO_TOTAL_CACHE_TTL_MS = 60_000;
+const videoTotalCache = new Map<string, { expiresAt: number; total: number }>();
+
+/** List first (LIMIT), then optional count(*) — never fail the homepage because COUNT scanned 756k rows. */
+async function selectVideoPool(opts: {
+  where: ReturnType<typeof and>;
+  limit: number;
+  offset: number;
+  totalCacheKey?: string;
+}): Promise<{ rows: (typeof videosTable.$inferSelect)[]; total: number }> {
+  const rows = (await db
+    .select(videosListSelect)
+    .from(videosTable)
+    .where(opts.where)
+    .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
+    .limit(opts.limit)
+    .offset(opts.offset)) as (typeof videosTable.$inferSelect)[];
+
+  const cacheKey = opts.totalCacheKey ?? "";
+  const cached = cacheKey ? videoTotalCache.get(cacheKey) : undefined;
+  if (cached && cached.expiresAt > Date.now()) {
+    return { rows, total: Math.max(cached.total, rows.length + opts.offset) };
+  }
+
+  const filledPage = rows.length >= opts.limit;
+  const approxTotal = filledPage ? Math.max(10_000, rows.length + opts.offset + opts.limit) : rows.length + opts.offset;
+
+  if (cacheKey) {
+    setImmediate(() => {
+      db.select({ count: sql<number>`count(*)::int` })
+        .from(videosTable)
+        .where(opts.where)
+        .then((countRows) => {
+          const total = Number(countRows[0]?.count ?? 0);
+          videoTotalCache.set(cacheKey, { expiresAt: Date.now() + VIDEO_TOTAL_CACHE_TTL_MS, total });
+        })
+        .catch((err) => logger.warn({ err }, "[video] videos count(*) background skipped"));
+    });
+    return { rows, total: approxTotal };
+  }
+
+  try {
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(videosTable)
+      .where(opts.where);
+    return { rows, total: Number(countRow?.count ?? 0) };
+  } catch (err) {
+    logger.warn({ err }, "[video] videos count(*) skipped");
+    return { rows, total: approxTotal };
+  }
+}
 
 function serveVideoListCached(req: Request, res: Response): boolean {
   if (req.method !== "GET") return false;
@@ -3591,6 +3643,7 @@ function serveVideoListCached(req: Request, res: Response): boolean {
 
 router.get("/video/videos", async (req, res): Promise<void> => {
   if (serveVideoListCached(req, res)) return;
+  try {
   const categorySlug = typeof req.query.categorySlug === "string" ? req.query.categorySlug : undefined;
   const sourceId = typeof req.query.sourceId === "string" ? parseInt(req.query.sourceId) : undefined;
   const featured = req.query.featured === "true";
@@ -3758,47 +3811,45 @@ router.get("/video/videos", async (req, res): Promise<void> => {
     newsConds.push(or(...newsOrParts)!);
 
     const newsLimit = Math.min(400, poolLimit);
-    const [newsRows, generalRows, totalRowsResult] = await Promise.all([
-      db
-        .select(videosListSelect)
-        .from(videosTable)
-        .where(and(...newsConds))
-        .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
-        .limit(newsLimit),
+    const newsWhere = and(...newsConds);
+    const [newsPool, generalPool] = await Promise.all([
+      selectVideoPool({
+        where: newsWhere,
+        limit: newsLimit,
+        offset: 0,
+        totalCacheKey: newsOnly ? "videos:news-only" : undefined,
+      }),
       newsOnly
-        ? Promise.resolve([] as (typeof videosTable.$inferSelect)[])
-        : db
-            .select(videosListSelect)
-            .from(videosTable)
-            .where(baseWhere)
-            .orderBy(desc(videosTable.publishedAt), desc(videosTable.id))
-            .limit(poolLimit)
-            .offset(poolOffset),
-      newsOnly
-        ? db
-            .select({ count: sql<number>`count(*)::int` })
-            .from(videosTable)
-            .where(and(...newsConds))
-        : db.select({ count: sql<number>`count(*)::int` }).from(videosTable).where(baseWhere),
+        ? Promise.resolve({ rows: [] as (typeof videosTable.$inferSelect)[], total: 0 })
+        : selectVideoPool({
+            where: baseWhere,
+            limit: poolLimit,
+            offset: poolOffset,
+            totalCacheKey: "videos:home-pool",
+          }),
     ]);
-    rawRows = newsOnly ? newsRows : dedupeVideosByVideoId([...newsRows, ...generalRows]);
-    totalRows = totalRowsResult;
+    rawRows = newsOnly ? newsPool.rows : dedupeVideosByVideoId([...newsPool.rows, ...generalPool.rows]);
+    totalRows = [{ count: newsOnly ? newsPool.total : generalPool.total }];
     } catch (err) {
       logger.warn({ err }, "[video] news-first mix failed; falling back to standard pool");
-      const [rows, totalRowsResult] = await Promise.all([
-        db.select(videosListSelect).from(videosTable).where(baseWhere).orderBy(desc(videosTable.publishedAt), desc(videosTable.id)).limit(poolLimit).offset(poolOffset),
-        db.select({ count: sql<number>`count(*)::int` }).from(videosTable).where(baseWhere),
-      ]);
-      rawRows = rows;
-      totalRows = totalRowsResult;
+      const pool = await selectVideoPool({
+        where: baseWhere,
+        limit: poolLimit,
+        offset: poolOffset,
+        totalCacheKey: "videos:home-pool",
+      });
+      rawRows = pool.rows;
+      totalRows = [{ count: pool.total }];
     }
   } else {
-    const [rows, totalRowsResult] = await Promise.all([
-      db.select(videosListSelect).from(videosTable).where(baseWhere).orderBy(desc(videosTable.publishedAt), desc(videosTable.id)).limit(poolLimit).offset(poolOffset),
-      db.select({ count: sql<number>`count(*)::int` }).from(videosTable).where(baseWhere),
-    ]);
-    rawRows = rows;
-    totalRows = totalRowsResult;
+    const pool = await selectVideoPool({
+      where: baseWhere,
+      limit: poolLimit,
+      offset: poolOffset,
+      totalCacheKey: search || sourceId ? undefined : browseCategory ? `videos:cat:${categorySlug}` : "videos:home-pool",
+    });
+    rawRows = pool.rows;
+    totalRows = [{ count: pool.total }];
   }
 
   let filteredRows = dedupeVideosByVideoId(
@@ -3918,6 +3969,10 @@ router.get("/video/videos", async (req, res): Promise<void> => {
     items,
     total: totalRows[0]?.count ?? 0,
   });
+  } catch (err) {
+    logger.error({ err }, "[video] videos list failed");
+    res.status(500).json({ error: "Videolar yüklenemedi" });
+  }
 });
 
 router.patch("/video/videos/bulk", async (req, res): Promise<void> => {
