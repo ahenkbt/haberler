@@ -8349,6 +8349,29 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
   color: #111111 !important;
 }
 
+/* Kapak img gizlenince shade DOM'da kalır → siyah kart + koyu başlık.
+   Tema esen olmasa bile boş fotoğraf overlay'ini kapat. */
+.hm-classic-feature-card:not(:has(img)):not(:has(.hm-news-image-root img)) {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #e5e7eb;
+  min-height: 0;
+}
+
+.hm-classic-feature-card:not(:has(img)) .hm-classic-feature-shade {
+  display: none;
+}
+
+.hm-classic-feature-card:not(:has(img)) .hm-classic-feature-body {
+  position: static;
+  padding: 16px;
+}
+
+.hm-classic-feature-card:not(:has(img)) h3,
+.hm-classic-feature-card:not(:has(img)) time {
+  color: #111111 !important;
+}
+
 .hm-tepe-manset {
   display: flex;
   align-items: stretch;
@@ -8362,35 +8385,35 @@ html[data-hm-manset-variant-early="center-trio"] [data-hm-vitrin-theme="portal3"
 }
 
 .hm-tepe-manset--coverless,
-.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) {
+.hm-tepe-manset:not(:has(img)) {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   min-height: 0;
 }
 
 .hm-tepe-manset--coverless .hm-tepe-manset__nums,
-.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__nums {
+.hm-tepe-manset:not(:has(img)) .hm-tepe-manset__nums {
   background: #f8fafc;
 }
 
 .hm-tepe-manset--coverless .hm-tepe-manset__num,
-.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__num {
+.hm-tepe-manset:not(:has(img)) .hm-tepe-manset__num {
   color: #334155;
 }
 
 .hm-tepe-manset--coverless .hm-tepe-manset__panel,
-.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__panel {
+.hm-tepe-manset:not(:has(img)) .hm-tepe-manset__panel {
   grid-template-columns: 1fr;
 }
 
 .hm-tepe-manset--coverless .hm-tepe-manset__headline,
-.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__headline {
+.hm-tepe-manset:not(:has(img)) .hm-tepe-manset__headline {
   background: #ffffff;
   color: #111111;
 }
 
 .hm-tepe-manset--coverless .hm-tepe-manset__title,
-.hm-tepe-manset:not(:has(.hm-tepe-manset__media)) .hm-tepe-manset__title {
+.hm-tepe-manset:not(:has(img)) .hm-tepe-manset__title {
   color: #111111;
 }
 

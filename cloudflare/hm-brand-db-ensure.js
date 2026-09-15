@@ -936,7 +936,62 @@ async function bindKhDomainsOnRow(sql, row) {
   }
 }
 
+async function findExistingKhRowOnNeon(sql) {
+  try {
+    const rows = await sql`
+      SELECT id, slug, domain, domain2, domain3, display_name, description,
+             contact_json, layout_json, active, created_at, updated_at
+      FROM hm_news_sites
+      WHERE lower(trim(both '/' from coalesce(slug, ''))) IN ('kirsehirhaber', 'kirsehir', 'kh')
+         OR lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+         OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+         OR lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+      ORDER BY id ASC
+      LIMIT 1
+    `;
+    return rows?.[0] || null;
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh existing lookup", String(err?.message || err).slice(0, 160));
+    return null;
+  }
+}
+
+async function parkNewerKhDuplicatesOnNeon(sql, keepId) {
+  if (!sql || !keepId) return;
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET slug = 'kirsehirhaber-dup-' || id::text,
+          domain = CASE
+            WHEN lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+            THEN NULL ELSE domain END,
+          domain2 = CASE
+            WHEN lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+            THEN NULL ELSE domain2 END,
+          domain3 = CASE
+            WHEN lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+            THEN NULL ELSE domain3 END,
+          active = false,
+          updated_at = NOW()
+      WHERE id <> ${keepId}
+        AND (
+          lower(trim(both '/' from coalesce(slug, ''))) IN ('kirsehirhaber', 'kirsehir', 'kh')
+          OR lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+          OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+          OR lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+        )
+    `;
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh park dups", String(err?.message || err).slice(0, 160));
+  }
+}
+
 async function createKhSiteOnNeon(sql) {
+  const existing = await findExistingKhRowOnNeon(sql);
+  if (existing?.id) {
+    await parkNewerKhDuplicatesOnNeon(sql, existing.id);
+    return existing;
+  }
   const layout = defaultKhLayoutJson();
   const contact = JSON.stringify({ phone: "", email: "editor@kirsehirhaber.org", address: "Kırşehir" });
   try {
@@ -969,6 +1024,7 @@ async function createKhSiteOnNeon(sql) {
 
 async function ensureKhSiteRow(sql, row) {
   let next = await bindKhDomainsOnRow(sql, row);
+  if (next?.id) await parkNewerKhDuplicatesOnNeon(sql, next.id);
   next = await ensureKhVideoMenuOnRow(sql, next);
   next = await ensureKhAuthorsClearedOnRow(sql, next);
   next = await ensureHmLayoutSanitizedOnRow(sql, next);

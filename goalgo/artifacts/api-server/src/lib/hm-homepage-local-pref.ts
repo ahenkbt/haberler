@@ -7,7 +7,7 @@
  * their existing homepage selectors.
  */
 
-import { and, desc, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { getNewsDbForRead, newsTable } from "@workspace/db";
 import { loadNewsContext } from "./news-context.js";
 import { excludeKoseFromEditorialNewsList } from "./kose-article.js";
@@ -288,6 +288,16 @@ export async function loadHomepageLocalPreferredNews(
   return serializePublishedRows(rows);
 }
 
+function homepageUsableCoverSql(): SQL {
+  return and(
+    isNotNull(newsTable.imageUrl),
+    sql`length(btrim(${newsTable.imageUrl})) > 8`,
+    sql`${newsTable.imageUrl} not ilike 'data:%'`,
+    sql`${newsTable.imageUrl} not ilike '%haber-gorsel-hazirlaniyor%'`,
+    sql`${newsTable.imageUrl} not ilike '%gorsel-hazirlan%'`,
+  )!;
+}
+
 /** Shared fallback: this site + central pool latest (KH only). */
 export async function loadHomepageSharedFallbackNews(
   siteId: number,
@@ -301,6 +311,37 @@ export async function loadHomepageSharedFallbackNews(
       and(
         eq(newsTable.status, "published"),
         or(eq(newsTable.siteId, siteId), and(isNull(newsTable.siteId), eq(newsTable.siteOnly, false))!)!,
+      ),
+    )
+    .orderBy(desc(newsTable.createdAt), desc(newsTable.updatedAt))
+    .limit(take);
+  return serializePublishedRows(rows);
+}
+
+/**
+ * Photo slots only: rows that actually have a usable cover.
+ * Latest-N shared fallback is often all coverless local gundem, so tepe/featured
+ * stay empty and first-paint paints a black hero. This query skips those.
+ * Includes central-pool + this site + other public (non-manual, not site-only) covers.
+ */
+export async function loadHomepageCoveredFallbackNews(
+  siteId: number,
+  limit: number,
+): Promise<SerializedNewsListItem[]> {
+  const take = Math.min(Math.max(limit, 1), 80);
+  const rows = await getNewsDbForRead()
+    .select(newsListSelectFields)
+    .from(newsTable)
+    .where(
+      and(
+        eq(newsTable.status, "published"),
+        homepageUsableCoverSql(),
+        or(
+          eq(newsTable.siteId, siteId),
+          eq(newsTable.ownerSiteId, siteId),
+          and(isNull(newsTable.siteId), eq(newsTable.siteOnly, false))!,
+          and(eq(newsTable.siteOnly, false), sql`coalesce(${newsTable.isEditorManual}, false) = false`)!,
+        )!,
       ),
     )
     .orderBy(desc(newsTable.createdAt), desc(newsTable.updatedAt))

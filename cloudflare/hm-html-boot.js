@@ -387,6 +387,15 @@ function bootHeadlineItems(bundle, origin, opts) {
   return items;
 }
 
+/** Photo tepe first: covered headlines, then coverless fill so 1–5 stays populated. */
+export function bootHomeTepeItems(bundle, origin) {
+  const all = bootHeadlineItems(bundle, origin, { limit: 20 });
+  const covered = all.filter((it) => it.image);
+  const rest = all.filter((it) => !it.image);
+  if (covered.length === 0) return rest.slice(0, 5);
+  return [...covered, ...rest].slice(0, 5);
+}
+
 const HM_CLASSIC_FIRST_PAINT_CSS = `.hm-fp{margin:0;background:#fff;color:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif}
 .hm-fp *{box-sizing:border-box}
 .hm-fp a{color:inherit;text-decoration:none}
@@ -406,18 +415,26 @@ const HM_CLASSIC_FIRST_PAINT_CSS = `.hm-fp{margin:0;background:#fff;color:#0f172
 .hm-fp-nav a{padding:9px 10px;font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#334155}
 .hm-fp-nav a:first-child{color:#e11d48}
 .hm-fp-tepe{display:flex;align-items:stretch;min-height:18rem;margin:12px 0 14px;overflow:hidden;border-radius:8px;background:#000;color:#fff}
+.hm-fp-tepe:not(:has(img)),.hm-fp-tepe--coverless{background:#fff;color:#0f172a;border:1px solid #e2e8f0;min-height:0}
 .hm-fp-nums{display:flex;flex-direction:column;flex-shrink:0;gap:6px;padding:10px 8px;background:#111}
+.hm-fp-tepe:not(:has(img)) .hm-fp-nums,.hm-fp-tepe--coverless .hm-fp-nums{background:#f8fafc}
 .hm-fp-num{display:flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:3px;color:rgba(255,255,255,.72);font-size:14px;font-weight:800}
+.hm-fp-tepe:not(:has(img)) .hm-fp-num,.hm-fp-tepe--coverless .hm-fp-num{color:#334155}
 .hm-fp-num.is-active{background:#e11d48;color:#fff}
 .hm-fp-panel{display:grid;flex:1;min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+.hm-fp-tepe:not(:has(img)) .hm-fp-panel,.hm-fp-tepe--coverless .hm-fp-panel{grid-template-columns:1fr}
 .hm-fp-headline{display:flex;align-items:center;padding:24px 22px;background:#000}
+.hm-fp-tepe:not(:has(img)) .hm-fp-headline,.hm-fp-tepe--coverless .hm-fp-headline{background:#fff;color:#0f172a}
 .hm-fp-headline h2{margin:0;font-size:clamp(22px,3vw,34px);line-height:1.2;font-weight:800}
 .hm-fp-media{min-height:220px;background:#1e293b}
+.hm-fp-tepe:not(:has(img)) .hm-fp-media,.hm-fp-tepe--coverless .hm-fp-media{display:none}
 .hm-fp-media img{width:100%;height:100%;object-fit:cover;display:block;min-height:220px}
 .hm-fp-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-bottom:20px}
 .hm-fp-card{display:block;border-radius:10px;overflow:hidden;background:#0f172a;color:#fff;min-height:160px;position:relative}
+.hm-fp-card:not(:has(img)),.hm-fp-card--text{background:#fff;color:#0f172a;border:1px solid #e2e8f0;min-height:7rem}
 .hm-fp-card img{width:100%;height:100%;object-fit:cover;min-height:160px;display:block}
 .hm-fp-card span{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.78));font-weight:700;font-size:14px;line-height:1.3}
+.hm-fp-card:not(:has(img)) span,.hm-fp-card--text span{position:static;padding:14px 16px;background:none;color:#0f172a}
 @media(max-width:800px){
 .hm-fp-panel{grid-template-columns:1fr}
 .hm-fp-tepe{flex-direction:column}
@@ -441,7 +458,7 @@ const HM_CLASSIC_FIRST_PAINT_CSS = `.hm-fp{margin:0;background:#fff;color:#0f172
 export function buildHmClassicHomePaintHtml(boot) {
   if (!boot || typeof boot !== "object") return "";
   const origin = bootOrigin(boot);
-  const items = bootHeadlineItems(boot.bundle, origin);
+  const items = bootHomeTepeItems(boot.bundle, origin);
   const name = boot.meta?.displayName || hmSlugDisplayName(boot.slug) || boot.slug || "Haber";
   const theme = String(boot.meta?.layout?.hmVitrinTheme || "").trim() || "default";
   const homeHref = boot.slug ? `/tr/${encodeURIComponent(String(boot.slug))}` : "/";
@@ -450,6 +467,7 @@ export function buildHmClassicHomePaintHtml(boot) {
   const slides = items.slice(0, 5);
   const hero = slides[0] || null;
   const cards = items.slice(1, 4);
+  const tepeClass = hero?.image ? "hm-fp-tepe" : "hm-fp-tepe hm-fp-tepe--coverless";
   const brandImg = mark
     ? `<img src="${escPaint(mark)}" alt="${escPaint(name)}" width="220" height="52" decoding="async"/>`
     : `<div class="hm-fp-name">${escPaint(name)}</div>`;
@@ -477,7 +495,8 @@ export function buildHmClassicHomePaintHtml(boot) {
       const img = it.image
         ? `<img src="${escPaint(it.image)}" alt="" width="400" height="220" decoding="async"/>`
         : "";
-      return `<a class="hm-fp-card" href="${escPaint(it.href)}">${img}<span>${escPaint(it.title)}</span></a>`;
+      const cardClass = it.image ? "hm-fp-card" : "hm-fp-card hm-fp-card--text";
+      return `<a class="${cardClass}" href="${escPaint(it.href)}">${img}<span>${escPaint(it.title)}</span></a>`;
     })
     .join("");
   return `<div class="hm-fp hm-classic-root" data-hm-first-paint="classic" data-hm-vitrin-theme="${escPaint(theme)}">
@@ -494,7 +513,7 @@ ${rates}
 <nav class="hm-fp-nav" aria-label="Ana menü">${navHtml}</nav>
 ${
   slides.length > 0
-    ? `<section class="hm-fp-tepe" aria-label="Tepe manşet"><nav class="hm-fp-nums" aria-label="Manşet sırası">${nums}</nav><div class="hm-fp-panel">${heroTitle}<div class="hm-fp-media">${heroImg}</div></div></section>`
+    ? `<section class="${tepeClass}" aria-label="Tepe manşet"><nav class="hm-fp-nums" aria-label="Manşet sırası">${nums}</nav><div class="hm-fp-panel">${heroTitle}<div class="hm-fp-media">${heroImg}</div></div></section>`
     : ""
 }
 ${cardsHtml ? `<div class="hm-fp-cards">${cardsHtml}</div>` : ""}

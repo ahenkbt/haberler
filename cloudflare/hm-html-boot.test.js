@@ -288,6 +288,41 @@ describe("hm-html-boot", () => {
     assert.equal(html.includes("Manşet yükleniyor"), false);
   });
 
+  it("paints coverless KH headlines as a light strip instead of a black tepe", () => {
+    const html = buildHmClassicHomePaintHtml({
+      slug: "kirsehirhaber",
+      host: "kirsehirhaber.org",
+      meta: { displayName: "KIRŞEHİR HABER PORTALI", layout: { hmVitrinTheme: "esen" } },
+      bundle: {
+        tepeManset: [],
+        featured: [],
+        centerHeadlines: [
+          { title: "Kırşehir’de yasa dışı bahis", slug: "bahis-engeli" },
+          { title: "Emniyet operasyonu", slug: "emniyet" },
+          { title: "Kaçak tütün", slug: "tutun" },
+        ],
+      },
+    });
+    assert.match(html, /hm-fp-tepe hm-fp-tepe--coverless/);
+    assert.match(html, /hm-fp-card--text/);
+    assert.match(html, /Kırşehir’de yasa dışı bahis/);
+  });
+
+  it("puts a covered national headline ahead of coverless local ones", () => {
+    const html = buildHmClassicHomePaintHtml({
+      slug: "kirsehirhaber",
+      host: "kirsehirhaber.org",
+      meta: { displayName: "KIRŞEHİR HABER PORTALI" },
+      bundle: {
+        centerHeadlines: [{ title: "Kapaksız yerel", slug: "yerel-1" }],
+        featured: [{ title: "Kapaklı ulusal", slug: "ulusal-1", imageUrl: "https://cdn.example/hero.jpg" }],
+      },
+    });
+    assert.ok(html.indexOf("Kapaklı ulusal") < html.indexOf("Kapaksız yerel"));
+    assert.match(html, /cdn\.example\/hero\.jpg/);
+    assert.match(html, /<section class="hm-fp-tepe" aria-label="Tepe manşet">/);
+  });
+
   it("prefers home-bundle tepeManset for classic first-paint headlines", () => {
     const html = buildHmClassicHomePaintHtml({
       slug: "vatanhaber",
