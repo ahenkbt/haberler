@@ -2649,6 +2649,7 @@ function seedVkdPublicLayoutPrefs(
   prefs: NewsSiteLayoutPrefs,
   raw?: Record<string, unknown> | null,
 ): NewsSiteLayoutPrefs {
+  const hasDonationKey = hasOwnLayoutKey(raw, "hmCorporateDonation");
   const donationRaw =
     raw?.hmCorporateDonation && typeof raw.hmCorporateDonation === "object" && !Array.isArray(raw.hmCorporateDonation)
       ? (raw.hmCorporateDonation as Record<string, unknown>)
@@ -2659,7 +2660,7 @@ function seedVkdPublicLayoutPrefs(
     hmVatanHomeHiddenModules: prefs.hmVatanHomeHiddenModules ?? [],
     hmCorporateDonation: {
       ...donation,
-      enabled: donationRaw && hasOwnLayoutKey(donationRaw, "enabled") ? donation.enabled : true,
+      enabled: !hasDonationKey || (donationRaw != null && !hasOwnLayoutKey(donationRaw, "enabled")) ? true : donation.enabled,
     },
   };
 }
