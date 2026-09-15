@@ -2655,12 +2655,13 @@ function seedVkdPublicLayoutPrefs(
       ? (raw.hmCorporateDonation as Record<string, unknown>)
       : null;
   const donation = prefs.hmCorporateDonation ?? { ...defaultHmCorporateDonation };
+  const shouldSeedDonationEnabled = !hasDonationKey || (donationRaw != null && !hasOwnLayoutKey(donationRaw, "enabled"));
   return {
     ...prefs,
     hmVatanHomeHiddenModules: prefs.hmVatanHomeHiddenModules ?? [],
     hmCorporateDonation: {
       ...donation,
-      enabled: !hasDonationKey || (donationRaw != null && !hasOwnLayoutKey(donationRaw, "enabled")) ? true : donation.enabled,
+      enabled: shouldSeedDonationEnabled ? true : donation.enabled,
     },
   };
 }

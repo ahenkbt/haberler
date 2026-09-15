@@ -163,6 +163,13 @@ describe("Vatan editor home bindings", () => {
     expect(resolveVatanVisibleHomeModules(parsed)).toEqual(VATAN_HOME_MODULE_ORDER);
   });
 
+  it("preserves an explicit null donation payload while still seeding Vatan visibility", () => {
+    const parsed = parseNewsSiteLayoutFromJson(JSON.stringify({ hmVitrinTheme: "vatan", hmCorporateDonation: null }), "vkd");
+    expect(parsed.hmCorporateDonation?.enabled).toBe(false);
+    expect(parsed.hmVatanHomeHiddenModules).toEqual([]);
+    expect(resolveVatanVisibleHomeModules(parsed)).toEqual(VATAN_HOME_MODULE_ORDER);
+  });
+
   it("builds footer columns from Üst menü groups", () => {
     const groups = buildVatanFooterGroups(
       prefs({
