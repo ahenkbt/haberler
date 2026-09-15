@@ -244,8 +244,8 @@ export default function EditorVitrinAyarlari() {
         setP(persistedRef.current);
         return;
       }
-      if (requestId !== commitSeqRef.current) return;
       persistedRef.current = next;
+      if (requestId !== commitSeqRef.current) return;
       toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
     } catch (err) {
       if (requestId !== commitSeqRef.current) return;
