@@ -201,6 +201,7 @@ export default function EditorVitrinAyarlari() {
   const [headerBannerUploading, setHeaderBannerUploading] = useState(false);
   const headerBannerFileRef = useRef<HTMLInputElement>(null);
   const pRef = useRef<NewsSiteLayoutPrefs>(newsLayoutPrefs);
+  const commitSeqRef = useRef(0);
 
   useEffect(() => {
     setP(newsLayoutPrefs);
@@ -217,6 +218,7 @@ export default function EditorVitrinAyarlari() {
     patch: Partial<NewsSiteLayoutPrefs>,
     saveOpts?: { allowStockLayoutReset?: boolean },
   ) => {
+    const requestId = ++commitSeqRef.current;
     const prevSnapshot = pRef.current;
     const next = { ...prevSnapshot, ...patch };
     setP(next);
@@ -231,6 +233,7 @@ export default function EditorVitrinAyarlari() {
         throw new Error("Geçersiz vitrin kaydetme yanıtı alındı.");
       }
       if (!r.ok) {
+        if (requestId !== commitSeqRef.current) return;
         toast({
           title: "Kaydedilemedi",
           description: r.error.slice(0, 220) || "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
@@ -239,8 +242,10 @@ export default function EditorVitrinAyarlari() {
         setP(prevSnapshot);
         return;
       }
+      if (requestId !== commitSeqRef.current) return;
       toast({ title: "Vitrin ayarları kaydedildi", description: site?.displayName ?? undefined });
     } catch (err) {
+      if (requestId !== commitSeqRef.current) return;
       toast({
         title: "Kaydedilemedi",
         description: err instanceof Error ? err.message.slice(0, 220) : "Sunucuya yazılamadı; oturumunuzu kontrol edin.",
@@ -248,7 +253,7 @@ export default function EditorVitrinAyarlari() {
       });
       setP(prevSnapshot);
     } finally {
-      setSaving(false);
+      if (requestId === commitSeqRef.current) setSaving(false);
     }
   };
 
