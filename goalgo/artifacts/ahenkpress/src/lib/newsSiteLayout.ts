@@ -2666,9 +2666,7 @@ function seedVkdPublicLayoutPrefs(
       ? prefs.hmCorporateNationalDaysSectionEnabled
       : true,
     hmSehitSearchEnabled: hasOwnLayoutKey(raw, "hmSehitSearchEnabled") ? prefs.hmSehitSearchEnabled : true,
-    hmVatanHomeHiddenModules: hasOwnLayoutKey(raw, "hmVatanHomeHiddenModules")
-      ? (prefs.hmVatanHomeHiddenModules ?? [])
-      : (prefs.hmVatanHomeHiddenModules ?? []),
+    hmVatanHomeHiddenModules: prefs.hmVatanHomeHiddenModules ?? [],
     hmCorporateDonation: {
       ...donation,
       enabled: donationRaw && hasOwnLayoutKey(donationRaw, "enabled") ? donation.enabled : true,
