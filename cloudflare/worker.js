@@ -1,9 +1,9 @@
 /**
- * SPA → Workers Static Assets (ASSETS); /api → Cloudflare Container (Neon + R2).
- * ASSETS yoksa SPA 404; API Container bağından gider. Render kullanılmaz.
- * Eski Netlify SW / cache için TEK SEFERLIK purge (JS boot + cookie).
- * Clear-Site-Data HTML yanıtlarında kullanılmaz — Chrome navigasyonu ERR_FAILED
- * ile düşürüp cookie yazılmadan döngüye sokabiliyor (turk.eco/admin).
+ * SPA ÔåÆ Workers Static Assets (ASSETS); /api ÔåÆ Cloudflare Container (Neon + R2).
+ * ASSETS yoksa SPA 404; API Container ba─ş─▒ndan gider. Render kullan─▒lmaz.
+ * Eski Netlify SW / cache i├ğin TEK SEFERLIK purge (JS boot + cookie).
+ * Clear-Site-Data HTML yan─▒tlar─▒nda kullan─▒lmaz ÔÇö Chrome navigasyonu ERR_FAILED
+ * ile d├╝┼ş├╝r├╝p cookie yaz─▒lmadan d├Âng├╝ye sokabiliyor (turk.eco/admin).
  */
 import {
   brandMetaJsonResponse,
@@ -102,8 +102,8 @@ import {
 export { GoalgoApiContainer } from "./goalgo-api-container.js";
 export { YektubeApiContainer } from "./yektube-api-container.js";
 /**
- * Cookie sürümü — artırınca tüm ziyaretçilerde Netlify SW yeniden temizlenir.
- * (Eski cookie ile purge atlanınca /tr/vkd Netlify 404 görünmeye devam ediyordu.)
+ * Cookie s├╝r├╝m├╝ ÔÇö art─▒r─▒nca t├╝m ziyaret├ğilerde Netlify SW yeniden temizlenir.
+ * (Eski cookie ile purge atlan─▒nca /tr/vkd Netlify 404 g├Âr├╝nmeye devam ediyordu.)
  */
 const PURGE_COOKIE = "__yekpare_sw_purged_v20260717a";
 /**
@@ -119,6 +119,8 @@ const FORCE_PURGE_HOSTS = new Set([
   "www.vatanhaber.net",
   "vatankahramanlari.org",
   "www.vatankahramanlari.org",
+  "vatankahramanlari.org.tr",
+  "www.vatankahramanlari.org.tr",
   "ankarasehirgazetesi.com",
   "www.ankarasehirgazetesi.com",
   "ankarahabergundemi.com",
@@ -151,20 +153,20 @@ const PORTAL_HOSTS = new Set([
   "haberler.ahenkbt.workers.dev",
 ]);
 
-/** www.ahenk.net.tr + iptal turk.eco → ahenk.net.tr. */
+/** www.ahenk.net.tr + iptal turk.eco ÔåÆ ahenk.net.tr. */
 const CANONICAL_PORTAL_ORIGIN = "https://ahenk.net.tr";
 const APEX_PORTAL_REDIRECT_HOSTS = new Set(["www.ahenk.net.tr", "turk.eco", "www.turk.eco"]);
 
-/** suhaberajansi.com iptal → suhaber.net. */
+/** suhaberajansi.com iptal ÔåÆ suhaber.net. */
 const CANONICAL_SU_ORIGIN = "https://suhaber.net";
 const LEGACY_SU_REDIRECT_HOSTS = new Set(["suhaberajansi.com", "www.suhaberajansi.com"]);
 
-/** ahenk.net.tr/yp → yektube.com (kanonik Yektube alanı). */
+/** ahenk.net.tr/yp ÔåÆ yektube.com (kanonik Yektube alan─▒). */
 const CANONICAL_YEKTUBE_ORIGIN = "https://yektube.com";
 const YEKTUBE_DEDICATED_HOSTS = new Set(["yektube.com", "www.yektube.com"]);
 const APEX_YEKTUBE_REDIRECT_HOSTS = new Set(["www.yektube.com"]);
 
-/** Eski Netlify SW'yi öldürür; kendini de kaldırır. */
+/** Eski Netlify SW'yi ├Âld├╝r├╝r; kendini de kald─▒r─▒r. */
 const KILL_SW = `/* yekpare-netlify-purge */
 self.addEventListener('install', (e) => { self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
@@ -189,7 +191,7 @@ self.addEventListener('fetch', (e) => {
 });
 `;
 
-/** Tek seferlik SW unregister (+ gerektiğinde bir reload). Cookie ile tekrarlanmaz. */
+/** Tek seferlik SW unregister (+ gerekti─şinde bir reload). Cookie ile tekrarlanmaz. */
 function purgeBootScript(cookieName) {
   return `
 <script>
@@ -216,7 +218,7 @@ function purgeBootScript(cookieName) {
       });
     }).then(function () {
       try {
-        // Netlify + bayat HM tema/meta localStorage anahtarlarını temizle
+        // Netlify + bayat HM tema/meta localStorage anahtarlar─▒n─▒ temizle
         var rm = [];
         for (var i = 0; i < localStorage.length; i++) {
           var k = localStorage.key(i);
@@ -260,7 +262,7 @@ function purgeBootScript(cookieName) {
 
 /**
  * Her HTML'de: yeni SW register engelle + kalan Netlify SW'yi unregister et.
- * Clear-Site-Data yapmaz (editör JWT korunur); sadece SW katmanını öldürür.
+ * Clear-Site-Data yapmaz (edit├Âr JWT korunur); sadece SW katman─▒n─▒ ├Âld├╝r├╝r.
  */
 const SW_BLOCK_BOOT = `
 <script>
@@ -279,7 +281,7 @@ const SW_BLOCK_BOOT = `
         return Promise.all(keys.map(function (k) { return caches.delete(k); }));
       });
     }).then(function () {
-      // Kontrollü bir kez yenile — Netlify "Site not found" SW yanıtını düşür
+      // Kontroll├╝ bir kez yenile ÔÇö Netlify "Site not found" SW yan─▒t─▒n─▒ d├╝┼ş├╝r
       try {
         var u = new URL(location.href);
         if (!u.searchParams.has('_sw_kill')) {
@@ -324,7 +326,7 @@ function needsForcePurge(hostname) {
   return FORCE_PURGE_HOSTS.has(h) || FORCE_PURGE_HOSTS.has(h.replace(/^www\./, ""));
 }
 
-/** true → Clear-Site-Data + purge boot; false → atla */
+/** true ÔåÆ Clear-Site-Data + purge boot; false ÔåÆ atla */
 function shouldOneShotPurge(request, hostname) {
   if (needsForcePurge(hostname)) {
     return !cookieHas(request, FORCE_PURGE_COOKIE);
@@ -387,10 +389,10 @@ function proxyInit(request, origin, incoming) {
 }
 
 /**
- * Upstream Set-Cookie'leri tarayıcıya güvenli aktar.
- * - getSetCookie ile çoklu çerez kaybını önle (+ boşsa headers.get fallback)
- * - Domain=onrender.com vb. kaldır → çerez turk.eco hostuna yazılsın (admin giriş)
- * - SameSite=None → Lax (aynı origin /api vekili; Chrome third-party cookie engeli admin girişi kırıyordu)
+ * Upstream Set-Cookie'leri taray─▒c─▒ya g├╝venli aktar.
+ * - getSetCookie ile ├ğoklu ├ğerez kayb─▒n─▒ ├Ânle (+ bo┼şsa headers.get fallback)
+ * - Domain=onrender.com vb. kald─▒r ÔåÆ ├ğerez turk.eco hostuna yaz─▒ls─▒n (admin giri┼ş)
+ * - SameSite=None ÔåÆ Lax (ayn─▒ origin /api vekili; Chrome third-party cookie engeli admin giri┼şi k─▒r─▒yordu)
  */
 function collectUpstreamSetCookies(upstream) {
   const fromGetter =
@@ -429,7 +431,7 @@ function copyUpstreamHeadersForBrowser(upstream) {
   return out;
 }
 
-/** Oturum / giriş uçları — kenar ve tarayıcı önbelleği yasak. */
+/** Oturum / giri┼ş u├ğlar─▒ ÔÇö kenar ve taray─▒c─▒ ├Ânbelle─şi yasak. */
 function isAuthSessionApiPath(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
   return (
@@ -461,7 +463,7 @@ function isApiPath(pathname) {
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
-/** Kök sitemap .xml → /api/sitemap/* (Googlebot HTML SPA almasın). */
+/** K├Âk sitemap .xml ÔåÆ /api/sitemap/* (Googlebot HTML SPA almas─▒n). */
 function rootSitemapApiPath(pathname, hostname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
   if (p === "/sitemap.xml" || p === "/sitemap-web.xml") {
@@ -527,9 +529,9 @@ function rewriteSitemapOrigins(xml, publicOrigin) {
 }
 
 /**
- * GSC video sitemap: player_loc / content_loc <loc> ile aynı olamaz.
- * Eski API hâlâ player_loc=loc yazıyorsa edge’de YouTube embed’e çevir;
- * watch?v= content_loc satırlarını kaldır (gerçek medya dosyası değil).
+ * GSC video sitemap: player_loc / content_loc <loc> ile ayn─▒ olamaz.
+ * Eski API h├ól├ó player_loc=loc yaz─▒yorsa edgeÔÇÖde YouTube embedÔÇÖe ├ğevir;
+ * watch?v= content_loc sat─▒rlar─▒n─▒ kald─▒r (ger├ğek medya dosyas─▒ de─şil).
  */
 function rewriteYektubeVideoSitemapXml(xml) {
   return String(xml || "").replace(/<url>([\s\S]*?)<\/url>/g, (block) => {
@@ -545,7 +547,7 @@ function rewriteYektubeVideoSitemapXml(xml) {
     const player = playerM ? playerM[2].trim() : "";
     let videoId = contentM ? decodeURIComponent(contentM[1].trim()) : "";
     if (!videoId && loc) {
-      // .../title-slug-{youtubeId} — YouTube id genelde 11 karakter
+      // .../title-slug-{youtubeId} ÔÇö YouTube id genelde 11 karakter
       const seg = loc.split("/").pop() || "";
       const idM = /(?:^|-)([A-Za-z0-9_-]{11})$/.exec(seg);
       if (idM) videoId = idM[1];
@@ -557,7 +559,7 @@ function rewriteYektubeVideoSitemapXml(xml) {
         `<video:player_loc$1>${embed}</video:player_loc>`,
       );
     }
-    // watch?v= content_loc gerçek medya dosyası değil — kaldır
+    // watch?v= content_loc ger├ğek medya dosyas─▒ de─şil ÔÇö kald─▒r
     next = next.replace(
       /\n?\s*<video:content_loc>\s*https?:\/\/(?:www\.)?youtube\.com\/watch\?v=[^<]+<\/video:content_loc>/gi,
       "",
@@ -566,7 +568,7 @@ function rewriteYektubeVideoSitemapXml(xml) {
   });
 }
 
-/** Bare /sitemap → /sitemap.xml (GSC «bilinmiyor» HTML girişini kes). */
+/** Bare /sitemap ÔåÆ /sitemap.xml (GSC ┬½bilinmiyor┬╗ HTML giri┼şini kes). */
 function redirectBareSitemapPath(request, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
@@ -581,7 +583,7 @@ function redirectBareSitemapPath(request, incoming) {
   });
 }
 
-/** ahenk.net.tr web yazılım vitrini — haber sitemap yerine ajans haritası. */
+/** ahenk.net.tr web yaz─▒l─▒m vitrini ÔÇö haber sitemap yerine ajans haritas─▒. */
 function serveAhenkAgencyRobots(request, incoming) {
   if (!isAhenkAgencyHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -668,7 +670,7 @@ function serveDynamicRobotsTxt(request, incoming) {
   return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
 }
 
-/** HM özel alan — siteye özel llms.txt / ai.txt (SPA public/llms.txt portal metnini ezmesin). */
+/** HM ├Âzel alan ÔÇö siteye ├Âzel llms.txt / ai.txt (SPA public/llms.txt portal metnini ezmesin). */
 async function proxyHmAiKnowledgeText(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   if (!isHmAiKnowledgePath(incoming.pathname)) return null;
@@ -805,7 +807,7 @@ async function proxyRootSitemap(request, env, incoming) {
   }
 }
 
-/** CF Assets'ten HTML yanıtını SW purge boot ile sar. */
+/** CF Assets'ten HTML yan─▒t─▒n─▒ SW purge boot ile sar. */
 async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie, hostname, env, incoming, waitUntil }) {
   const out = new Headers(assetResp.headers);
   out.delete("content-encoding");
@@ -861,7 +863,7 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       );
       if (boot) {
         const corporateHome = isCorporateHmHtmlBoot(boot);
-        // Haber siteleri: klasik chrome #root. Kurumsal: haber manşet boyaması yok.
+        // Haber siteleri: klasik chrome #root. Kurumsal: haber man┼şet boyamas─▒ yok.
         html = injectHmHtmlBoot(html, { ...boot, skipPaint: corporateHome });
         out.set(
           "x-yekpare-hm-html-boot",
@@ -991,7 +993,7 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   });
 }
 
-/** SPA + statik: ASSETS; yoksa null (API/Container vekiline düş). */
+/** SPA + statik: ASSETS; yoksa null (API/Container vekiline d├╝┼ş). */
 async function tryServeAssets(request, env, incoming, waitUntil) {
   if (!env.ASSETS) return null;
   if (isApiPath(incoming.pathname)) return null;
@@ -1003,7 +1005,7 @@ async function tryServeAssets(request, env, incoming, waitUntil) {
   const wantsStatic =
     isStaticAssetPath(incoming.pathname) || isStaticAssetPath(assetPathForFetch);
 
-  // .xml sitemap yollarını SPA index.html'e düşürme — proxy kaçırırsa boş XML yerine HTML olmasın
+  // .xml sitemap yollar─▒n─▒ SPA index.html'e d├╝┼ş├╝rme ÔÇö proxy ka├ğ─▒r─▒rsa bo┼ş XML yerine HTML olmas─▒n
   if (incoming.pathname.toLowerCase().endsWith(".xml") && !wantsStatic) {
     return null;
   }
@@ -1012,9 +1014,9 @@ async function tryServeAssets(request, env, incoming, waitUntil) {
   let ct = String(assetResp.headers.get("content-type") || "").toLowerCase();
 
   /**
-   * CF Assets `not_found_handling=single-page-application` eksik dosyada 200 + HTML döner.
-   * /yektube-v2/assets/*.js HTML gelirse tarayıcı JS çalıştıramaz → /yp beyaz ekran.
-   * Statik istekte HTML = miss → Container vekili (dosyalar image'da varsa).
+   * CF Assets `not_found_handling=single-page-application` eksik dosyada 200 + HTML d├Âner.
+   * /yektube-v2/assets/*.js HTML gelirse taray─▒c─▒ JS ├ğal─▒┼şt─▒ramaz ÔåÆ /yp beyaz ekran.
+   * Statik istekte HTML = miss ÔåÆ Container vekili (dosyalar image'da varsa).
    */
   if (wantsStatic) {
     if (!assetResp.ok || ct.includes("text/html")) {
@@ -1036,7 +1038,7 @@ async function tryServeAssets(request, env, incoming, waitUntil) {
   }
 
   if (ct.includes("text/html")) {
-    // /yp → yektube-v2/index.html rewrite sonrası Assets portal index döndüyse Container'a bırak
+    // /yp ÔåÆ yektube-v2/index.html rewrite sonras─▒ Assets portal index d├Ând├╝yse Container'a b─▒rak
     if (yektubeRewrite || isYektubeSurfacePath(incoming.pathname)) {
       try {
         const html = await assetResp.clone().text();
@@ -1087,7 +1089,7 @@ function isYektubeEmbedRequest(incoming) {
   return hm != null && String(hm).trim() !== "";
 }
 
-/** Portal (turk.eco) Yektube yüzey yollarını kanonik /yp düzenine çevir. */
+/** Portal (turk.eco) Yektube y├╝zey yollar─▒n─▒ kanonik /yp d├╝zenine ├ğevir. */
 function mapPortalYektubePathToDedicated(pathname) {
   const raw = String(pathname || "/") || "/";
   const path = raw.replace(/\/+$/, "") || "/";
@@ -1102,8 +1104,8 @@ function mapPortalYektubePathToDedicated(pathname) {
 }
 
 /**
- * turk.eco/yp (ve diğer Yektube yüzeyleri) → https://yektube.com/...
- * HM iframe (embed=1 / hm=) aynı origin'de kalsın.
+ * turk.eco/yp (ve di─şer Yektube y├╝zeyleri) ÔåÆ https://yektube.com/...
+ * HM iframe (embed=1 / hm=) ayn─▒ origin'de kals─▒n.
  */
 function redirectPortalYektubeToCanonical(request, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -1111,7 +1113,7 @@ function redirectPortalYektubeToCanonical(request, incoming) {
   if (isYektubeDedicatedHost(incoming.hostname)) return null;
   if (isYektubeEmbedRequest(incoming)) return null;
   if (!isYektubeSurfacePath(incoming.pathname)) return null;
-  // Asset uzantılı istekleri (js/css/png) domain değiştirme
+  // Asset uzant─▒l─▒ istekleri (js/css/png) domain de─şi┼ştirme
   const last = (incoming.pathname.split("/").pop() || "");
   if (last.includes(".") && !/\.html?$/i.test(last)) return null;
 
@@ -1129,7 +1131,7 @@ function redirectPortalYektubeToCanonical(request, incoming) {
 }
 
 /**
- * yektube.com kök + eski yollar → /yp (turk.eco/yp ile aynı yüzey).
+ * yektube.com k├Âk + eski yollar ÔåÆ /yp (turk.eco/yp ile ayn─▒ y├╝zey).
  */
 function redirectYektubeDedicatedHost(request, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -1157,7 +1159,7 @@ function redirectYektubeDedicatedHost(request, incoming) {
   } else if (path === "/v2" || path.startsWith("/v2/")) {
     nextPath = path.replace(/^\/v2(?=\/|$)/, "/yp") || "/yp/";
   } else if (path === "/yektube-v2" || path.startsWith("/yektube-v2/")) {
-    // Asset yolu (/yektube-v2/assets/...) rewrite'ta kalır
+    // Asset yolu (/yektube-v2/assets/...) rewrite'ta kal─▒r
     if (path.startsWith("/yektube-v2/assets/") || /\.[a-z0-9]+$/i.test(path)) return null;
     nextPath = path.replace(/^\/yektube-v2(?=\/|$)/, "/yp") || "/yp/";
   } else if (path === "/yektube" || path.startsWith("/yektube/")) {
@@ -1182,8 +1184,8 @@ function redirectYektubeDedicatedHost(request, incoming) {
 }
 
 /**
- * HM haber listeleri — edge cache.
- * Public meta kısa kenar önbelleği (includePageContent/fresh hariç); editör kaydı purge eder.
+ * HM haber listeleri ÔÇö edge cache.
+ * Public meta k─▒sa kenar ├Ânbelle─şi (includePageContent/fresh hari├ğ); edit├Âr kayd─▒ purge eder.
  */
 function isCacheableHmNewsApi(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
@@ -1195,7 +1197,7 @@ function isCacheableHmNewsApi(pathname) {
     p === "/api/news/hybrid" ||
     p === "/api/news/featured" ||
     p === "/api/news/breaking" ||
-    // /api/categories ASLA kenar cache'lenmez — admin silme sonrası bayat liste dönmesin.
+    // /api/categories ASLA kenar cache'lenmez ÔÇö admin silme sonras─▒ bayat liste d├Ânmesin.
     p === "/api/authors" ||
     isHmNewsArticleCachePath(p)
   );
@@ -1206,7 +1208,7 @@ function isHmMetaApiPath(pathname) {
   return p.startsWith("/api/hm/meta/");
 }
 
-/** Su markası: domain onarımını uygula ve kanonik /tr/su metasını tercih et. Diğer markalar: yalnız 404.
+/** Su markas─▒: domain onar─▒m─▒n─▒ uygula ve kanonik /tr/su metas─▒n─▒ tercih et. Di─şer markalar: yaln─▒z 404.
  * @param {{ waitUntil?: (p: Promise<unknown>) => void }} [opts]
  */
 async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) {
@@ -1247,7 +1249,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     slugKey === "asg" ||
     normalizeHost(domain).includes("ankarasehirgazetesi");
 
-  // ASG: yazar + köşe yazısını arka planda hizala (makale kopyası meta yanıtını geciktirmesin).
+  // ASG: yazar + k├Â┼şe yaz─▒s─▒n─▒ arka planda hizala (makale kopyas─▒ meta yan─▒t─▒n─▒ geciktirmesin).
   if (isAsgBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "asg" }).catch((err) => {
       console.error("[hm-brand-db-ensure/asg-authors-makale]", String(err?.message || err).slice(0, 200));
@@ -1255,7 +1257,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     if (typeof opts.waitUntil === "function") {
       opts.waitUntil(job);
     } else {
-      // waitUntil yoksa kısa fingerprint no-op için yine de dene; uzun kopya riskli
+      // waitUntil yoksa k─▒sa fingerprint no-op i├ğin yine de dene; uzun kopya riskli
       try {
         await Promise.race([job, new Promise((r) => setTimeout(r, 2500))]);
       } catch (_) {}
@@ -1263,8 +1265,8 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     return null;
   }
 
-  // Su + KH: meta 200 ise Neon onarımını arka planda yap (TTFB'yi 5-7sn şişirme).
-  // 404'te hâlâ senkron fallback — aksi halde ilk ziyarette boş kalır.
+  // Su + KH: meta 200 ise Neon onar─▒m─▒n─▒ arka planda yap (TTFB'yi 5-7sn ┼şi┼şirme).
+  // 404'te h├ól├ó senkron fallback ÔÇö aksi halde ilk ziyarette bo┼ş kal─▒r.
   if ((isSuBrand || isKhBrand) && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug }).catch((err) => {
       console.error("[hm-brand-db-ensure/bg]", String(err?.message || err).slice(0, 200));
@@ -1273,7 +1275,7 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     return null;
   }
 
-  // Diğer markalar: yalnızca upstream 404 iken fallback.
+  // Di─şer markalar: yaln─▒zca upstream 404 iken fallback.
   if (!isSuBrand && !isKhBrand && upstream.status !== 404) return null;
 
   try {
@@ -1299,11 +1301,11 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
   if (isStaticAssetPath(pathname)) {
     return { cacheTtl: 86400, cacheEverything: true };
   }
-  // Admin / oturum — asla kenar önbelleği yok.
+  // Admin / oturum ÔÇö asla kenar ├Ânbelle─şi yok.
   if (isAuthSessionApiPath(pathname)) {
     return { cacheTtl: 0, cacheEverything: false };
   }
-  // Tema/layout meta — kısa kenar önbelleği (editör yayınında purgeHmSitePublicEdgeCache).
+  // Tema/layout meta ÔÇö k─▒sa kenar ├Ânbelle─şi (edit├Âr yay─▒n─▒nda purgeHmSitePublicEdgeCache).
   if (isHmMetaApiPath(pathname)) {
     const qs = new URLSearchParams(String(search || "").replace(/^\?/, ""));
     if (qs.get("includePageContent") === "1" || qs.get("fresh") === "1") {
@@ -1404,8 +1406,8 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
 const HM_ORIGIN_BUDGET_MS = 60_000; // cold container boot; 12s still too tight after dual-worker rolls
 
 /**
- * Eski API: parseInt("2026-yili-...") → id 2026 (yanlış haber).
- * Edge’de slug uyuşmazlığını yakala; listeden doğru id’yi bulup bundle’ı yeniden çek.
+ * Eski API: parseInt("2026-yili-...") ÔåÆ id 2026 (yanl─▒┼ş haber).
+ * EdgeÔÇÖde slug uyu┼şmazl─▒─ş─▒n─▒ yakala; listeden do─şru idÔÇÖyi bulup bundleÔÇÖ─▒ yeniden ├ğek.
  */
 function parseNewsSlugApiRequest(pathname) {
   const p = String(pathname || "").split("?")[0] || "";
@@ -1416,7 +1418,7 @@ function parseNewsSlugApiRequest(pathname) {
   m = /^\/api\/news\/([^/]+)\/?$/.exec(p);
   if (!m) return null;
   const seg = decodeURIComponent(m[1]);
-  // Statik alt yollar — dokunma.
+  // Statik alt yollar ÔÇö dokunma.
   if (
     seg === "hybrid" ||
     seg === "featured" ||
@@ -1462,7 +1464,7 @@ async function maybeRepairMismatchedNewsJson(env, origin, init, method, incoming
   const parsed = parseNewsSlugApiRequest(upstreamPath);
   if (!parsed) return null;
   const slug = parsed.slug;
-  // Saf sayısal id isteği — bilinçli id lookup; dokunma.
+  // Saf say─▒sal id iste─şi ÔÇö bilin├ğli id lookup; dokunma.
   if (/^\d+$/.test(slug)) return null;
 
   const ct = String(upstreamRes.headers.get("content-type") || "").toLowerCase();
@@ -1482,7 +1484,7 @@ async function maybeRepairMismatchedNewsJson(env, origin, init, method, incoming
         ? body
         : null;
   const gotSlug = article ? String(article.slug || "").trim() : "";
-  // Yanlış haber (slug uyuşmuyor) veya boş sonuç — listeden id bul.
+  // Yanl─▒┼ş haber (slug uyu┼şmuyor) veya bo┼ş sonu├ğ ÔÇö listeden id bul.
   if (gotSlug && gotSlug === slug) return null;
 
   const siteIdRaw = incoming.searchParams.get("siteId");
@@ -1553,8 +1555,8 @@ function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
 }
 
 /**
- * Edge soft-redirect: HM özel alan kökü → /tr/{slug}
- * (Vercel middleware CF Worker yolunda çalışmadığı için Worker'da tekrarlanır.)
+ * Edge soft-redirect: HM ├Âzel alan k├Âk├╝ ÔåÆ /tr/{slug}
+ * (Vercel middleware CF Worker yolunda ├ğal─▒┼şmad─▒─ş─▒ i├ğin Worker'da tekrarlan─▒r.)
  */
 async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -1564,7 +1566,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
   const domain = incoming.hostname.toLowerCase();
   const fallbackSlug = hmDomainSlugFallback(domain);
 
-  // HM özel alanda /admin → /editor (turk.eco/admin'e atma)
+  // HM ├Âzel alanda /admin ÔåÆ /editor (turk.eco/admin'e atma)
   if (fallbackSlug || !isPortalHost(domain)) {
     const bare = path.toLowerCase();
     if (bare === "/admin" || bare === "/admin/giris" || bare.startsWith("/admin/")) {
@@ -1586,7 +1588,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
 
   if (path !== "/") return null;
 
-  // Bilinen HM alanları: meta API bekleme (0.5–2s TTFB). Slug tablosu yeterli.
+  // Bilinen HM alanlar─▒: meta API bekleme (0.5ÔÇô2s TTFB). Slug tablosu yeterli.
   if (shouldInstantHmRootRedirect(request.method, path, domain) && fallbackSlug) {
     if (ctx && typeof ctx.waitUntil === "function") {
       const origin = upstreamOrigin(env, incoming);
@@ -1629,7 +1631,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
         return hmCustomDomainRootRedirectResponse(incoming, request, slug, "meta");
       }
     } else if (metaRes.status === 404 && fallbackSlug) {
-      // Meta 404 — Neon'da marka siteyi oluştur/bağla (sonraki /api/hm/meta çağrıları için).
+      // Meta 404 ÔÇö Neon'da marka siteyi olu┼ştur/ba─şla (sonraki /api/hm/meta ├ğa─şr─▒lar─▒ i├ğin).
       try {
         await ensureBrandHmSiteMeta(env, { domain, slug: fallbackSlug });
       } catch (err) {
@@ -1640,18 +1642,18 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
     /* fallback below */
   }
 
-  // Meta yok/404: bilinen HM editör alanlarında asla Yekpare portal anasayfasına düşme.
+  // Meta yok/404: bilinen HM edit├Âr alanlar─▒nda asla Yekpare portal anasayfas─▒na d├╝┼şme.
   if (fallbackSlug) {
     return hmCustomDomainRootRedirectResponse(incoming, request, fallbackSlug, "fallback");
   }
   if (needsForcePurge(domain)) {
-    // FORCE_PURGE listesindeki alanlar editör siteleri — portal SPA gösterme.
+    // FORCE_PURGE listesindeki alanlar edit├Âr siteleri ÔÇö portal SPA g├Âsterme.
     return new Response(
       `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Haber sitesi</title>
 <meta name="robots" content="noindex"><meta http-equiv="refresh" content="2;url=/editor">
 <style>body{font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#fff;color:#111}
 p{max-width:28rem;text-align:center;line-height:1.5}</style></head>
-<body><p>Bu alan adı bir haber sitesine aittir. Yapılandırma tamamlanıyor…</p></body></html>`,
+<body><p>Bu alan ad─▒ bir haber sitesine aittir. Yap─▒land─▒rma tamamlan─▒yorÔÇĞ</p></body></html>`,
       {
         status: 503,
         headers: {
@@ -1667,7 +1669,7 @@ p{max-width:28rem;text-align:center;line-height:1.5}</style></head>
   return null;
 }
 
-/** WhatsApp / Facebook / Telegram vb. — JS çalıştırmaz, SPA index.html OG'sini okur. */
+/** WhatsApp / Facebook / Telegram vb. ÔÇö JS ├ğal─▒┼şt─▒rmaz, SPA index.html OG'sini okur. */
 function isSocialPreviewBot(request) {
   return isSharePreviewUserAgent(request.headers.get("user-agent") ?? "");
 }
@@ -1680,7 +1682,7 @@ function isOgProxySkipPath(pathname) {
     p.startsWith("/_next/") ||
     p.startsWith("/yektube-v2/") ||
     p.startsWith("/yp/") ||
-    // Googlebot sitemap tararken OG HTML dönmesin (HM custom domain)
+    // Googlebot sitemap tararken OG HTML d├Ânmesin (HM custom domain)
     /\.xml$/i.test(p) ||
     p === "/robots.txt" ||
     p === "/sitemap.xml" ||
@@ -1690,7 +1692,7 @@ function isOgProxySkipPath(pathname) {
   );
 }
 
-/** Portal paylaşım yolları (middleware / Netlify edge ile aynı). */
+/** Portal payla┼ş─▒m yollar─▒ (middleware / Netlify edge ile ayn─▒). */
 function isPortalOgSharePath(pathname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
   if (
@@ -1801,9 +1803,9 @@ async function loadCachedHmArticleForOg(incoming, slug, siteSlug) {
 }
 
 /**
- * Sosyal önizleme botları: SPA index.html (turk.eco OG) yerine
- * /api/public/og-html ile haber başlık/açıklama/görsel döndür.
- * Container asılırsa kenar cache / site entity ile 800ms içinde cevap ver.
+ * Sosyal ├Ânizleme botlar─▒: SPA index.html (turk.eco OG) yerine
+ * /api/public/og-html ile haber ba┼şl─▒k/a├ğ─▒klama/g├Ârsel d├Ând├╝r.
+ * Container as─▒l─▒rsa kenar cache / site entity ile 800ms i├ğinde cevap ver.
  */
 async function socialPreviewOgHtml(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -1916,7 +1918,7 @@ function ahenkAgencyEntityResponse(request, pathname) {
 }
 
 const NTV_DUNYA_RSS_URL = "https://www.ntv.com.tr/dunya.rss";
-const WORLD_BRIEFS_TR_CHARS = /[çğıöşüÇĞİÖŞÜıI]/;
+const WORLD_BRIEFS_TR_CHARS = /[├ğ─ş─▒├Â┼ş├╝├ç─Ş─░├û┼Ş├£─▒I]/;
 const WORLD_BRIEFS_EN_WORDS =
   /\b(the|and|for|with|from|news|breaking|live|report|says|world|global|update|today|latest)\b/i;
 
@@ -1953,7 +1955,7 @@ function isTurkishWorldBriefTitle(title) {
   if (!t) return false;
   if (WORLD_BRIEFS_TR_CHARS.test(t)) return true;
   if (WORLD_BRIEFS_EN_WORDS.test(t) && !WORLD_BRIEFS_TR_CHARS.test(t)) return false;
-  return /[ğüşıöçĞÜŞİÖÇ]/.test(t) || /\b(ve|bir|için|ile|bu|da|de|haber|türkiye)\b/i.test(t);
+  return /[─ş├╝┼ş─▒├Â├ğ─Ş├£┼Ş─░├û├ç]/.test(t) || /\b(ve|bir|i├ğin|ile|bu|da|de|haber|t├╝rkiye)\b/i.test(t);
 }
 
 function hashRssEdgeId(link) {
@@ -1974,7 +1976,7 @@ function escapeHtmlText(value) {
     .replace(/"/g, "&quot;");
 }
 
-/** RSS gövdesindeki harici bağlantıları kaldırır (yalnızca metin kalır) — NTV’ye sızma olmasın. */
+/** RSS g├Âvdesindeki harici ba─şlant─▒lar─▒ kald─▒r─▒r (yaln─▒zca metin kal─▒r) ÔÇö NTVÔÇÖye s─▒zma olmas─▒n. */
 function stripExternalAnchorsFromHtml(html) {
   return String(html || "")
     .replace(/<a\b[^>]*\bhref\s*=\s*["']https?:\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, "$1")
@@ -2008,8 +2010,8 @@ function parseNtvDunyaAtom(xml, limit = 24) {
       spot,
       href: `/haberler/rss/${encodeURIComponent(edgeId)}`,
       publishedAt: new Date(published).toISOString(),
-      sourceName: "Dünya",
-      feedLabel: "Dünya",
+      sourceName: "D├╝nya",
+      feedLabel: "D├╝nya",
       countryCode: null,
       countryName: null,
       continent: "global",
@@ -2022,8 +2024,8 @@ function parseNtvDunyaAtom(xml, limit = 24) {
 }
 
 /**
- * Edge: Dünyadan Kısa Kısa — NTV Dünya RSS (API gecikmesinde donmasın).
- * İsteğe bağlı siteId ile upstream Dünya DB haberlerini de birleştirir.
+ * Edge: D├╝nyadan K─▒sa K─▒sa ÔÇö NTV D├╝nya RSS (API gecikmesinde donmas─▒n).
+ * ─░ste─şe ba─şl─▒ siteId ile upstream D├╝nya DB haberlerini de birle┼ştirir.
  */
 async function serveWorldBriefsEdge(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -2106,7 +2108,7 @@ async function serveWorldBriefsEdge(request, env, incoming) {
               if (edgeId) href = `/haberler/rss/${encodeURIComponent(edgeId)}`;
             }
           }
-          // Harici originUrl (NTV vb.) kart href’i olmaz — site içi yol şart.
+          // Harici originUrl (NTV vb.) kart hrefÔÇÖi olmaz ÔÇö site i├ği yol ┼şart.
           if (!href || /^https?:\/\//i.test(href) || /^\/\//.test(href)) continue;
           push({
             id: isRss
@@ -2122,8 +2124,8 @@ async function serveWorldBriefsEdge(request, env, incoming) {
             spot: row.spot || null,
             href,
             publishedAt: row.publishedAt || row.createdAt || new Date().toISOString(),
-            sourceName: row.categoryName || "Dünya",
-            feedLabel: row.categoryName || "Dünya",
+            sourceName: row.categoryName || "D├╝nya",
+            feedLabel: row.categoryName || "D├╝nya",
             countryCode: null,
             countryName: null,
             continent: "global",
@@ -2138,7 +2140,7 @@ async function serveWorldBriefsEdge(request, env, incoming) {
 
   items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   const slice = items.slice(0, itemCap).map((item) => {
-    // İstemciye harici originUrl verme — kartlar yalnızca site içi href kullanır.
+    // ─░stemciye harici originUrl verme ÔÇö kartlar yaln─▒zca site i├ği href kullan─▒r.
     const { originUrl: _originUrl, ...publicItem } = item;
     return publicItem;
   });
@@ -2149,7 +2151,7 @@ async function serveWorldBriefsEdge(request, env, incoming) {
         : [
             {
               id: "global",
-              label: "Küresel",
+              label: "K├╝resel",
               items: slice,
               countries: [],
             },
@@ -2176,12 +2178,12 @@ function slugifyCategoryKey(raw) {
   return String(raw || "")
     .trim()
     .toLocaleLowerCase("tr-TR")
-    .replace(/ı/g, "i")
-    .replace(/ğ/g, "g")
-    .replace(/ü/g, "u")
-    .replace(/ş/g, "s")
-    .replace(/ö/g, "o")
-    .replace(/ç/g, "c")
+    .replace(/─▒/g, "i")
+    .replace(/─ş/g, "g")
+    .replace(/├╝/g, "u")
+    .replace(/┼ş/g, "s")
+    .replace(/├Â/g, "o")
+    .replace(/├ğ/g, "c")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
@@ -2251,12 +2253,12 @@ async function loadSiteRssFeedRowsFromMeta(env, origin, incoming, siteId) {
     const enabled = layout.hybridRssEnabled === true;
     const modeRaw = String(layout.hmRssIntegrationMode || "live").trim().toLowerCase();
     const mode =
-      modeRaw === "persistent" || modeRaw === "kalici" || modeRaw === "kalıcı"
+      modeRaw === "persistent" || modeRaw === "kalici" || modeRaw === "kal─▒c─▒"
         ? "persistent"
         : modeRaw === "manual" || modeRaw === "manuel"
           ? "manual"
           : "live";
-    // Kutu içi + site içi RSS — aynı kategoride birden fazla URL korunur.
+    // Kutu i├ği + site i├ği RSS ÔÇö ayn─▒ kategoride birden fazla URL korunur.
     const boxRows = Array.isArray(layout.hmNewsBreakingRssFeedRows)
       ? layout.hmNewsBreakingRssFeedRows
       : [];
@@ -2300,7 +2302,7 @@ async function findEdgeRssEntryById(env, itemId, origin, incoming) {
   const meta = await loadSiteRssFeedRowsFromMeta(env, origin, incoming, null);
   const feeds = [
     ...(meta.feeds || []),
-    { id: "dunya", label: "Dünya", url: NTV_DUNYA_RSS_URL },
+    { id: "dunya", label: "D├╝nya", url: NTV_DUNYA_RSS_URL },
   ];
   const seenUrls = new Set();
   for (const feed of feeds) {
@@ -2330,8 +2332,8 @@ async function findEdgeRssEntryById(env, itemId, origin, incoming) {
 }
 
 /**
- * Edge RSS detay — `/haberler/rss/edge-*` site içi önizleme (NTV’ye dışarı atmaz).
- * Anlık modda feed içeriği; kalıcı/manuel için de önce site içi gövde gösterilir.
+ * Edge RSS detay ÔÇö `/haberler/rss/edge-*` site i├ği ├Ânizleme (NTVÔÇÖye d─▒┼şar─▒ atmaz).
+ * Anl─▒k modda feed i├ğeri─şi; kal─▒c─▒/manuel i├ğin de ├Ânce site i├ği g├Âvde g├Âsterilir.
  */
 async function serveEdgeRssPreview(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -2344,7 +2346,7 @@ async function serveEdgeRssPreview(request, env, incoming) {
   const origin = upstreamOrigin(env, incoming);
   const found = await findEdgeRssEntryById(env, itemId, origin, incoming);
   if (!found) {
-    return new Response(JSON.stringify({ error: "RSS haber bulunamadı" }), {
+    return new Response(JSON.stringify({ error: "RSS haber bulunamad─▒" }), {
       status: 404,
       headers: {
         "content-type": "application/json; charset=utf-8",
@@ -2358,8 +2360,8 @@ async function serveEdgeRssPreview(request, env, incoming) {
   const spot = entry.spot || null;
   const rawContentHtml =
     entry.contentHtml ||
-    (spot ? `<p>${escapeHtmlText(spot.replace(/…$/, "").trim())}</p>` : null);
-  // Editör sitelerinde gövde içi NTV vb. harici <a> kaldırılır; kart tıklaması zaten site içi.
+    (spot ? `<p>${escapeHtmlText(spot.replace(/ÔÇĞ$/, "").trim())}</p>` : null);
+  // Edit├Âr sitelerinde g├Âvde i├ği NTV vb. harici <a> kald─▒r─▒l─▒r; kart t─▒klamas─▒ zaten site i├ği.
   const contentHtml = rawContentHtml ? stripExternalAnchorsFromHtml(rawContentHtml) : null;
   const siteIdRaw = Number(incoming.searchParams.get("siteId") || 0);
   const isEditorSite = Number.isFinite(siteIdRaw) && siteIdRaw > 0;
@@ -2372,16 +2374,16 @@ async function serveEdgeRssPreview(request, env, incoming) {
     href: `/haberler/rss/${encodeURIComponent(edgeKey)}`,
     publishedAt: entry.publishedAt,
     categorySlug: slugifyCategoryKey(feed.id || feed.label) || "dunya",
-    categoryName: feed.label || "Dünya",
+    categoryName: feed.label || "D├╝nya",
     categoryColor: "#CC0000",
     feedId: `edge-site-${slugifyCategoryKey(feed.id || feed.label) || "dunya"}`,
-    feedLabel: feed.label || "Dünya",
+    feedLabel: feed.label || "D├╝nya",
     sourceName: isEditorSite ? "Yekpare Haberleri" : feed.label || "RSS",
-    // Editör sitelerinde kaynak bağlantısı yok; haber yalnızca site içinde açılır.
+    // Edit├Âr sitelerinde kaynak ba─şlant─▒s─▒ yok; haber yaln─▒zca site i├ğinde a├ğ─▒l─▒r.
     feedUrl: isEditorSite ? null : feed.url || null,
     sourceScope: isEditorSite ? "editor" : "portal",
     readCount: null,
-    // Editör vitrininde originUrl gösterme/sızdırma — NTV’ye çıkış yolu olmasın.
+    // Edit├Âr vitrininde originUrl g├Âsterme/s─▒zd─▒rma ÔÇö NTVÔÇÖye ├ğ─▒k─▒┼ş yolu olmas─▒n.
     originUrl: isEditorSite ? null : entry.href,
   };
 
@@ -2455,9 +2457,9 @@ async function fetchSiteRssHybridItems(feeds, perFeed = 4) {
 }
 
 /**
- * Site içi RSS açıkken API cache boş kalırsa Cloudflare edge NTV/site feed’lerini doldurur.
+ * Site i├ği RSS a├ğ─▒kken API cache bo┼ş kal─▒rsa Cloudflare edge NTV/site feedÔÇÖlerini doldurur.
  */
-/** RSS anahtar ↔ site kategori (son-dakika/turkiye → gundem). */
+/** RSS anahtar Ôåö site kategori (son-dakika/turkiye ÔåÆ gundem). */
 const RSS_CATEGORY_ALIAS_GROUPS = [
   ["gundem", "sondakika", "son-dakika", "turkiye", "turkey"],
   ["dunya", "world"],
@@ -2517,7 +2519,7 @@ function prioritizeFeedsForCategory(feeds, categorySlug) {
       rest.push(feed);
     }
   }
-  // Kategori isteğinde önce eşleşen feed’ler; yoksa tümünü dene (slug sapması).
+  // Kategori iste─şinde ├Ânce e┼şle┼şen feedÔÇÖler; yoksa t├╝m├╝n├╝ dene (slug sapmas─▒).
   return matched.length ? matched : feeds;
 }
 
@@ -2599,7 +2601,7 @@ async function enrichHybridWithSiteRssEdge(request, env, incoming, upstream, out
   const filteredRss = categorySlug
     ? mergedRss.filter((item) => hybridItemMatchesCategorySlug(item, categorySlug))
     : mergedRss;
-  // Kategori isteğinde eşleşen RSS yoksa boş edge-fill dönme (üst akışı koru).
+  // Kategori iste─şinde e┼şle┼şen RSS yoksa bo┼ş edge-fill d├Ânme (├╝st ak─▒┼ş─▒ koru).
   if (!filteredRss.length) return null;
 
   const baseItems = categorySlug ? existingCategoryHits : existing;
@@ -2640,7 +2642,7 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
-    // www.ahenk.net.tr / turk.eco → ahenk.net.tr
+    // www.ahenk.net.tr / turk.eco ÔåÆ ahenk.net.tr
     if (APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
       return new Response(null, {
@@ -2653,7 +2655,7 @@ export default {
       });
     }
 
-    // suhaberajansi.com → suhaber.net
+    // suhaberajansi.com ÔåÆ suhaber.net
     if (LEGACY_SU_REDIRECT_HOSTS.has(hostKeyEarly)) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_SU_ORIGIN);
       return new Response(null, {
@@ -2666,7 +2668,7 @@ export default {
       });
     }
 
-    // www.yektube.com → apex
+    // www.yektube.com ÔåÆ apex
     if (APEX_YEKTUBE_REDIRECT_HOSTS.has(String(incoming.hostname || "").toLowerCase().split(":")[0])) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_YEKTUBE_ORIGIN);
       return new Response(null, {
@@ -2679,11 +2681,11 @@ export default {
       });
     }
 
-    // turk.eco/yp → yektube.com/yp
+    // turk.eco/yp ÔåÆ yektube.com/yp
     const portalYektubeRedirect = redirectPortalYektubeToCanonical(request, incoming);
     if (portalYektubeRedirect) return portalYektubeRedirect;
 
-    // yektube.com / → /yp/ (+ eski yollar)
+    // yektube.com / ÔåÆ /yp/ (+ eski yollar)
     const dedicatedYektubeRedirect = redirectYektubeDedicatedHost(request, incoming);
     if (dedicatedYektubeRedirect) return dedicatedYektubeRedirect;
 
@@ -2699,7 +2701,7 @@ export default {
       });
     }
 
-    // Ortak editör (sehirgazetesiankara): ASG + AHB senkron + username.
+    // Ortak edit├Âr (sehirgazetesiankara): ASG + AHB senkron + username.
     const hostKey = hostKeyEarly;
     if (
       hostKey === "ankarasehirgazetesi.com" ||
@@ -2717,7 +2719,7 @@ export default {
     }
     if (hostKey === "ankarahabergundemi.com") {
       try {
-        // SHA içerik AHG+ASG’de isteniyor — purge no-op (eski silmeyi tekrarlamaz).
+        // SHA i├ğerik AHG+ASGÔÇÖde isteniyor ÔÇö purge no-op (eski silmeyi tekrarlamaz).
         const job = purgeAhgRssCampaignNewsOnNeon(env).catch((err) => {
           console.error("[hm-ahg-rss-news-purge]", String(err?.message || err).slice(0, 200));
         });
@@ -2726,7 +2728,7 @@ export default {
         console.error("[hm-ahg-rss-news-purge]", String(err?.message || err).slice(0, 200));
       }
     }
-    // Kırşehir: ikinci editör hesabı (yekpare@gmail.com) — paralel oturum.
+    // K─▒r┼şehir: ikinci edit├Âr hesab─▒ (yekpare@gmail.com) ÔÇö paralel oturum.
     if (
       hostKey === "kirsehirhaber.org" ||
       hostKey === "kirsehri.com" ||
@@ -2742,7 +2744,7 @@ export default {
         console.error("[hm-kh-yekpare-editor]", String(err?.message || err).slice(0, 200));
       }
     }
-    // Tüm editör siteleri: RSS varsayılanları arka planda (sayfa/API'yi bekletme).
+    // T├╝m edit├Âr siteleri: RSS varsay─▒lanlar─▒ arka planda (sayfa/API'yi bekletme).
     {
       const bootPath = incoming.pathname.replace(/\/+$/, "") || "/";
       if (
@@ -2768,7 +2770,7 @@ export default {
     const mediaPutProxy = await handleMediaR2PutProxy(request, env);
     if (mediaPutProxy) return mediaPutProxy;
 
-    // Haber görselleri — R2'de varsa Container'a gitmeden kenardan.
+    // Haber g├Ârselleri ÔÇö R2'de varsa Container'a gitmeden kenardan.
     const mediaMiss = {};
     try {
       const mediaGet = await handleMediaGetFromR2(request, env, mediaMiss);
@@ -2777,7 +2779,7 @@ export default {
       console.error("[media-r2-get]", String(err?.message || err).slice(0, 200));
     }
 
-    // Editör görsel yükleme — kenar JWT + R2.
+    // Edit├Âr g├Ârsel y├╝kleme ÔÇö kenar JWT + R2.
     try {
       const mediaEdge = await handleHmEditorMediaUploadEdge(request, env);
       if (mediaEdge) return mediaEdge;
@@ -2785,8 +2787,8 @@ export default {
       console.error("[hm-editor-media-edge]", String(err?.message || err).slice(0, 200));
     }
 
-    // Editör login + /me + profil + layout — kenarda Neon (tüm HM siteleri).
-    // clone: kenar null dönerse (KH dışı layout / captcha) body Container'a bozulmadan gitsin.
+    // Edit├Âr login + /me + profil + layout ÔÇö kenarda Neon (t├╝m HM siteleri).
+    // clone: kenar null d├Ânerse (KH d─▒┼ş─▒ layout / captcha) body Container'a bozulmadan gitsin.
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
@@ -2810,7 +2812,7 @@ export default {
       console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
     }
 
-    // HM editör haber/yazar/makale — kenar JWT ile Neon (tüm siteler).
+    // HM edit├Âr haber/yazar/makale ÔÇö kenar JWT ile Neon (t├╝m siteler).
     try {
       const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
       const edgeMethod = String(request.method || "GET").toUpperCase();
@@ -2840,7 +2842,7 @@ export default {
 
     const apiRequest = request;
 
-    // Sosyal / Googlebot kökte 308'e düşmeden site adı+logo OG görsün.
+    // Sosyal / Googlebot k├Âkte 308'e d├╝┼şmeden site ad─▒+logo OG g├Ârs├╝n.
     const ogHtml = await socialPreviewOgHtml(request, env, incoming);
     if (ogHtml) return ogHtml;
 
@@ -2922,13 +2924,13 @@ export default {
               .catch(() => null),
           );
         }
-        // Recovered manset stub must NOT enter public edge cache (spot≠full content)
+        // Recovered manset stub must NOT enter public edge cache (spotÔëáfull content)
         return homeFill;
       }
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
-      // Cold container boot after CONTAINER_ROLL often exceeds 20–60s; keep warm path fast via edge cache.
+      // Cold container boot after CONTAINER_ROLL often exceeds 20ÔÇô60s; keep warm path fast via edge cache.
       const originMs = isYektubeDedicatedHost(incoming.hostname)
         ? 120_000
         : cacheablePublicApi
@@ -2964,7 +2966,7 @@ export default {
         if (isHmYektubeCatalogPath(upstreamPath)) {
           return hmYektubeCatalogVideosOrRss(upstreamPath, incoming.searchParams, "timeout");
         }
-        return new Response(JSON.stringify({ ok: false, error: "Sunucu meşgul" }), {
+        return new Response(JSON.stringify({ ok: false, error: "Sunucu me┼şgul" }), {
           status: 503,
           headers: {
             "content-type": "application/json; charset=utf-8",
@@ -3086,9 +3088,9 @@ export default {
           );
         }
         out.set("cache-control", "no-store, max-age=0, must-revalidate");
-        // Eski Netlify SW temizliği: yalnızca JS boot + cookie.
+        // Eski Netlify SW temizli─şi: yaln─▒zca JS boot + cookie.
         // Clear-Site-Data HTML navigasyonunda Chrome'da ERR_FAILED yapabiliyor
-        // (özellikle /admin); cookie de yazılamadan döngü oluşuyor.
+        // (├Âzellikle /admin); cookie de yaz─▒lamadan d├Âng├╝ olu┼şuyor.
         if (oneShotPurge) {
           out.append(
             "set-cookie",
