@@ -1,6 +1,6 @@
 /**
- * API kökeni — yalnızca Cloudflare Container veya (test için) harici origin.
- * Render / onrender.com asla kullanılmaz.
+ * API k├Âkeni ÔÇö yaln─▒zca Cloudflare Container veya (test i├ğin) harici origin.
+ * Render / onrender.com asla kullan─▒lmaz.
  */
 export const FRONTEND_TAG = "cloudflare-worker";
 export const CANONICAL_API_ORIGIN = "https://ahenk.net.tr";
@@ -12,7 +12,7 @@ export function isForbiddenLegacyOrigin(origin) {
   return FORBIDDEN_ORIGIN_RE.test(String(origin || ""));
 }
 
-/** wrangler [vars] / secret: boş veya onrender → yok say. */
+/** wrangler [vars] / secret: bo┼ş veya onrender ÔåÆ yok say. */
 export function configuredApiOrigin(env) {
   const raw = String(env?.API_ORIGIN || env?.RENDER_API_ORIGIN || "")
     .trim()
@@ -26,8 +26,8 @@ export function hasApiContainer(env) {
 }
 
 /**
- * URL inşası için kök. Gerçek HTTP Container üzerinden gider.
- * incomingOrigin verilirse aynı-origin (turk.eco, HM alanları).
+ * URL in┼şas─▒ i├ğin k├Âk. Ger├ğek HTTP Container ├╝zerinden gider.
+ * incomingOrigin verilirse ayn─▒-origin (turk.eco, HM alanlar─▒).
  */
 export function resolveApiOrigin(env, incomingOrigin) {
   const configured = configuredApiOrigin(env);
@@ -39,7 +39,7 @@ export function resolveApiOrigin(env, incomingOrigin) {
   return CANONICAL_API_ORIGIN;
 }
 
-/** Warm DO `api` eski imajı tutar; CONTAINER_ROLL değişince yeni instance aç. */
+/** Warm DO `api` eski imaj─▒ tutar; CONTAINER_ROLL de─şi┼şince yeni instance a├ğ. */
 export function apiContainerInstanceName(env) {
   const roll = String(env?.CONTAINER_ROLL || "")
     .trim()
@@ -74,8 +74,8 @@ function requestInitWithoutCf(init) {
 }
 
 /**
- * /api istekleri: Container varsa oraya; yoksa (ve origin yasaklı değilse) harici fetch.
- * Render’a düşmez.
+ * /api istekleri: Container varsa oraya; yoksa (ve origin yasakl─▒ de─şilse) harici fetch.
+ * RenderÔÇÖa d├╝┼şmez.
  */
 export async function fetchApi(env, url, init = {}) {
   // Explicit API_ORIGIN wins (yektube Worker can proxy to haberler container while
