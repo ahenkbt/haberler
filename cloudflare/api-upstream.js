@@ -52,11 +52,11 @@ export function apiContainerInstanceName(env) {
 
 export async function getApiStub(env) {
   if (!env?.GOALGO_API) return null;
-  const instance = apiContainerInstanceName(env);
   try {
-    const { getContainer } = await import("@cloudflare/containers");
-    return getContainer(env.GOALGO_API, instance);
+    const { getRandom } = await import("@cloudflare/containers");
+    return await getRandom(env.GOALGO_API, API_CONTAINER_INSTANCES);
   } catch {
+    const instance = apiContainerInstanceName(env);
     if (typeof env.GOALGO_API.getByName === "function") {
       return env.GOALGO_API.getByName(instance);
     }
