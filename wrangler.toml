@@ -1,5 +1,5 @@
-# SPA: Workers Static Assets ┬À /api ÔåÆ Cloudflare Container (Neon + R2)
-# Workers Builds / cloudflare-production: build SPA ÔåÆ wrangler deploy
+# SPA: Workers Static Assets Ôö¼├Ç /api ├ö├Ñ├å Cloudflare Container (Neon + R2)
+# Workers Builds / cloudflare-production: build SPA ├ö├Ñ├å wrangler deploy
 name = "haberler"
 compatibility_date = "2025-07-15"
 main = "cloudflare/worker.js"
@@ -16,31 +16,31 @@ crons = ["*/4 * * * *"]
 [assets]
 directory = "artifacts/ahenkpress/dist/public"
 binding = "ASSETS"
-# none: /yektube-v2/index.html dosyay─▒ 307'siz servis etsin (auto-trailing-slash
-# nested SPA'y─▒ k├Âk portal index.html'e d├╝┼ş├╝r├╝yordu).
+# none: /yektube-v2/index.html dosyayÔöÇÔûÆ 307'siz servis etsin (auto-trailing-slash
+# nested SPA'yÔöÇÔûÆ kÔö£├ék portal index.html'e dÔö£ÔòØÔö╝┼şÔö£ÔòØrÔö£ÔòØyordu).
 html_handling = "none"
 not_found_handling = "single-page-application"
 run_worker_first = true
 
 [vars]
-# Bo┼ş = ayn─▒ origin /api ÔåÆ Container. onrender.com kullan─▒lmaz.
+# BoÔö╝┼ş = aynÔöÇÔûÆ origin /api ├ö├Ñ├å Container. onrender.com kullanÔöÇÔûÆlmaz.
 API_ORIGIN = ""
-# Warm container'─▒ yeni imaja almak i├ğin (Ahenk marka + ayarlar).
+# Warm container'ÔöÇÔûÆ yeni imaja almak iÔö£─şin (Ahenk marka + ayarlar).
 CONTAINER_ROLL = "hm-yektube-secrets-20260912f"
-# KH kenar login ÔåÆ API JWT k├Âpr├╝s├╝ (api-server HM_EDGE_BRIDGE_SECRET ile ayn─▒)
+# KH kenar login ├ö├Ñ├å API JWT kÔö£├éprÔö£ÔòØsÔö£ÔòØ (api-server HM_EDGE_BRIDGE_SECRET ile aynÔöÇÔûÆ)
 HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
-# Medya: Worker hesab─▒nda R2 kapal─▒ (API 10042). Binding, Dashboard'da R2 a├ğ─▒l─▒nca eklenir.
-# Kapaklar Render dual-write R2 hesab─▒nda (fb9fÔÇĞ), wrangler account_id (16f5ÔÇĞ) de─şil.
-# GitHub S3_ENDPOINT yap─▒┼şt─▒rmas─▒ (~362 karakter) secret olarak ezerdi; workflow
-# art─▒k GitHub secret'─▒n─▒ yazmaz, kanonik fb9f hostunu put eder.
+# Medya: Worker hesabÔöÇÔûÆnda R2 kapalÔöÇÔûÆ (API 10042). Binding, Dashboard'da R2 aÔö£─şÔöÇÔûÆlÔöÇÔûÆnca eklenir.
+# Kapaklar Render dual-write R2 hesabÔöÇÔûÆnda (fb9f├ö├ç─Ş), wrangler account_id (16f5├ö├ç─Ş) deÔöÇ┼şil.
+# GitHub S3_ENDPOINT yapÔöÇÔûÆÔö╝┼ştÔöÇÔûÆrmasÔöÇÔûÆ (~362 karakter) secret olarak ezerdi; workflow
+# artÔöÇÔûÆk GitHub secret'ÔöÇÔûÆnÔöÇÔûÆ yazmaz, kanonik fb9f hostunu put eder.
 S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 S3_BUCKET = "yekpare-media"
 S3_REGION = "auto"
 S3_FORCE_PATH_STYLE = "true"
-# R2 REST (api.cloudflare.com) ÔÇö Dashboard secret R2_CF_API_TOKEN. Git'e yaz─▒lmaz.
+# R2 REST (api.cloudflare.com) ├ö├ç├Â Dashboard secret R2_CF_API_TOKEN. Git'e yazÔöÇÔûÆlmaz.
 R2_ACCOUNT_ID = "fb9fc9dc1991b7cc17ba58ab3c2e8726"
-# Bucket Settings ÔåÆ Public development URL (nesne yoksa 404; S3_ENDPOINT'e /yekpare-media eklenmez).
+# Bucket Settings ├ö├Ñ├å Public development URL (nesne yoksa 404; S3_ENDPOINT'e /yekpare-media eklenmez).
 S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
 
 [[containers]]
@@ -57,12 +57,12 @@ class_name = "GoalgoApiContainer"
 tag = "v1"
 new_sqlite_classes = ["GoalgoApiContainer"]
 
-# yekpare.net / turk.eco / suhaberajansi.com bu worker'dan kald─▒r─▒ld─▒.
-# Tekrar ba─şlanmas─▒n diye scripts/cf-detached-domains.mjs her DNS/cutover ├ğal─▒┼şt─▒rmas─▒nda s├Âker.
+# yekpare.net / turk.eco / suhaberajansi.com bu worker'dan kaldÔöÇÔûÆrÔöÇÔûÆldÔöÇÔûÆ.
+# Tekrar baÔöÇ┼şlanmasÔöÇÔûÆn diye scripts/cf-detached-domains.mjs her DNS/cutover Ôö£─şalÔöÇÔûÆÔö╝┼ştÔöÇÔûÆrmasÔöÇÔûÆnda sÔö£├éker.
 
-# Ana portal ÔÇö zone DNS kayd─▒ bo┼ş (A/AAAA yok ÔåÆ taray─▒c─▒ NXDOMAIN).
-# custom_domain Worker hostname + anycast A kayd─▒ olu┼şturur; zone_name/* trafi─şi kar┼ş─▒lar.
-# DNS kayd─▒ varken custom_domain 100117 verir; ┼şu an kay─▒t yok.
+# Ana portal ├ö├ç├Â zone DNS kaydÔöÇÔûÆ boÔö╝┼ş (A/AAAA yok ├ö├Ñ├å tarayÔöÇÔûÆcÔöÇÔûÆ NXDOMAIN).
+# custom_domain Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur; zone_name/* trafiÔöÇ┼şi karÔö╝┼şÔöÇÔûÆlar.
+# DNS kaydÔöÇÔûÆ varken custom_domain 100117 verir; Ôö╝┼şu an kayÔöÇÔûÆt yok.
 [[routes]]
 pattern = "ahenk.net.tr"
 custom_domain = true
@@ -79,7 +79,7 @@ zone_name = "ahenk.net.tr"
 pattern = "www.ahenk.net.tr/*"
 zone_name = "ahenk.net.tr"
 
-# HM edit├Âr siteleri (Cloudflare zone ÔåÆ Worker ÔåÆ Container / Neon)
+# HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
 [[routes]]
 pattern = "ankarahabergundemi.com/*"
 zone_name = "ankarahabergundemi.com"
@@ -96,7 +96,7 @@ zone_name = "ankarahabergundemi.com"
 pattern = "www.ankarahabergundemi.com"
 zone_name = "ankarahabergundemi.com"
 
-# Yektube ├Âzel alan ÔÇö ahenk.net.tr/yp kanonik y├╝z├╝ (yektube.com)
+# Yektube Ôö£├ézel alan ├ö├ç├Â ahenk.net.tr/yp kanonik yÔö£ÔòØzÔö£ÔòØ (yektube.com)
 [[routes]]
 pattern = "ankarasehirgazetesi.com"
 custom_domain = true
@@ -130,6 +130,22 @@ pattern = "www.vatankahramanlari.org"
 zone_name = "vatankahramanlari.org"
 
 [[routes]]
+pattern = "vatankahramanlari.org.tr/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
 pattern = "vatanhaber.net/*"
 zone_name = "vatanhaber.net"
 
@@ -145,8 +161,8 @@ zone_name = "vatanhaber.net"
 pattern = "www.vatanhaber.net"
 zone_name = "vatanhaber.net"
 
-# Su Haber ÔÇö kanonik Google alan─▒ suhaber.net (suhaberajansi.com iptal, detach).
-# Zone CF'de ve A/CNAME kay─▒tlar─▒ var: custom_domain 100117 ile wrangler deploy k─▒r─▒l─▒r.
+# Su Haber ├ö├ç├Â kanonik Google alanÔöÇÔûÆ suhaber.net (suhaberajansi.com iptal, detach).
+# Zone CF'de ve A/CNAME kayÔöÇÔûÆtlarÔöÇÔûÆ var: custom_domain 100117 ile wrangler deploy kÔöÇÔûÆrÔöÇÔûÆlÔöÇÔûÆr.
 # vatanhaber.net gibi zone_name Worker route kullan (DNS'e dokunma).
 [[routes]]
 pattern = "suhaber.net/*"
@@ -164,13 +180,13 @@ zone_name = "suhaber.net"
 pattern = "www.suhaber.net"
 zone_name = "suhaber.net"
 
-# suhaberajansi.com iptal ÔÇö Worker route yok (cf-detached-domains). Kanonik: suhaber.net (/tr/su)
-# belediyehizmet.com kald─▒r─▒ld─▒.
+# suhaberajansi.com iptal ├ö├ç├Â Worker route yok (cf-detached-domains). Kanonik: suhaber.net (/tr/su)
+# belediyehizmet.com kaldÔöÇÔûÆrÔöÇÔûÆldÔöÇÔûÆ.
 
-# K─▒r┼şehir Haber (/tr/kirsehirhaber)
-# Zone CF hesab─▒nda (id 52d54697ÔÇĞ) ama A/AAAA yok ÔåÆ taray─▒c─▒ NXDOMAIN.
-# custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kayd─▒ olu┼şturur.
-# kirsehri.com Natro park; kirsehir.net zone/kay─▒t yok ÔÇö bu worker'a ba─şlama.
+# KÔöÇÔûÆrÔö╝┼şehir Haber (/tr/kirsehirhaber)
+# Zone CF hesabÔöÇÔûÆnda (id 52d54697├ö├ç─Ş) ama A/AAAA yok ├ö├Ñ├å tarayÔöÇÔûÆcÔöÇÔûÆ NXDOMAIN.
+# custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur.
+# kirsehri.com Natro park; kirsehir.net zone/kayÔöÇÔûÆt yok ├ö├ç├Â bu worker'a baÔöÇ┼şlama.
 [[routes]]
 pattern = "kirsehirhaber.org"
 custom_domain = true
@@ -187,4 +203,4 @@ zone_name = "kirsehirhaber.org"
 pattern = "www.kirsehirhaber.org/*"
 zone_name = "kirsehirhaber.org"
 
-# redeploy trigger 2026-08-18T15:20:00Z ÔÇö r2.dev public URL + bo┼ş bucket ger├ğe─şi
+# redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi
