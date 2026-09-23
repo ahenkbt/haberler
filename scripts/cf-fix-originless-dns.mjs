@@ -24,6 +24,8 @@ const ZONES = [
   // suhaberajansi.com iptal — DETACHED_ZONES
   // belediyehizmet.com kaldırıldı — kanonik alan suhaber.net
   "kirsehirhaber.org",
+  "trafikdernegi.com",
+  "tgd.tc",
   // Yektube — ahenk.net.tr/yp kanonik alan adı
   "yektube.com",
   // kirsehri.com / kirsehir.net: zone CF hesabında yoksa atlanır; eklenince listeye alınır

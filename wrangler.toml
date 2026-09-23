@@ -203,4 +203,37 @@ zone_name = "kirsehirhaber.org"
 pattern = "www.kirsehirhaber.org/*"
 zone_name = "kirsehirhaber.org"
 
+# Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc
+[[routes]]
+pattern = "trafikdernegi.com"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "tgd.tc"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/*"
+zone_name = "tgd.tc"
+
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi
