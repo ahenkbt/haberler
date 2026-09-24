@@ -4,6 +4,10 @@
 # for the Yekpare (goalgo) app. Safe to re-run.
 set -euo pipefail
 
+# Never let corepack block on an interactive "download pnpm?" prompt during an
+# unattended boot.
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GOALGO_DIR="$REPO_ROOT/goalgo"
 
@@ -45,6 +49,8 @@ fi
 
 # 5) Dependencies.
 corepack enable >/dev/null 2>&1 || true
+# Pre-provision the pinned pnpm so later shells (terminals) never hit a prompt.
+corepack prepare pnpm@9.15.5 --activate >/dev/null 2>&1 || true
 echo "[install] installing goalgo dependencies..."
 cd "$GOALGO_DIR"
 pnpm install --frozen-lockfile

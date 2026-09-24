@@ -5,11 +5,11 @@
   "terminals": [
     {
       "name": "api-server",
-      "command": "cd /workspace/goalgo/artifacts/api-server && pnpm run build && node --env-file=/workspace/goalgo/.env --enable-source-maps ./dist/index.mjs"
+      "command": "export COREPACK_ENABLE_DOWNLOAD_PROMPT=0 && cd /workspace/goalgo/artifacts/api-server && pnpm run build && node --env-file=/workspace/goalgo/.env --enable-source-maps ./dist/index.mjs"
     },
     {
       "name": "web",
-      "command": "cd /workspace/goalgo && pnpm run dev:web"
+      "command": "export COREPACK_ENABLE_DOWNLOAD_PROMPT=0 && cd /workspace/goalgo && pnpm run dev:web"
     }
   ],
   "ports": [3000, 5173]

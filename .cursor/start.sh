@@ -5,6 +5,8 @@
 # role/db, and applies any pending migrations.
 set -euo pipefail
 
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GOALGO_DIR="$REPO_ROOT/goalgo"
 
