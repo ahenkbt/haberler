@@ -1,0 +1,16 @@
+{
+  "name": "Yekpare (goalgo) dev",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "api-server",
+      "command": "cd /workspace/goalgo/artifacts/api-server && pnpm run build && node --env-file=/workspace/goalgo/.env --enable-source-maps ./dist/index.mjs"
+    },
+    {
+      "name": "web",
+      "command": "cd /workspace/goalgo && pnpm run dev:web"
+    }
+  ],
+  "ports": [3000, 5173]
+}
