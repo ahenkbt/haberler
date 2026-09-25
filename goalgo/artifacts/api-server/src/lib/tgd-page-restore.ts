@@ -166,6 +166,11 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   }
   if (!Array.isArray(next.hmVatanHomeHiddenModules)) {
     next.hmVatanHomeHiddenModules = ["sehitSearch", "ataturk", "wars"];
+  } else if (needsCopy) {
+    // TGD mozaik kutuları (projeler/çalışmalar) açılsın — eski VKD şehit mozaik gizlemesi kalksın.
+    next.hmVatanHomeHiddenModules = (next.hmVatanHomeHiddenModules as unknown[])
+      .map((id) => String(id ?? "").trim())
+      .filter((id) => id && id !== "mosaic");
   }
 
   if (needsPages) {
