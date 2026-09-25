@@ -4,6 +4,7 @@ import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { buildVatanFooterGroups } from "@/lib/hmVatanNav";
 import { VATAN_FOOTER_MISSION } from "@/lib/hmVatanHomeContent";
+import { isTgdHmSiteSlug } from "@/lib/hmVatanHomeCopy";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { isVkdSiteSlug } from "@/lib/hmVkdFooterNav";
 import { resolveHmCorporateRequestFormEnabled, hmRequestFormPath } from "@/lib/hmRequestForm";
@@ -88,7 +89,11 @@ export function HmVatanFooter({
   const missionRaw = (layoutPrefs.hmFooterAboutHtml ?? "").trim();
   const missionLooksHtml = /<[a-z][\s\S]*>/i.test(missionRaw);
   const missionHtml = missionLooksHtml ? sanitizeHtml(missionRaw) : "";
-  const missionText = missionRaw && !missionLooksHtml ? missionRaw : VATAN_FOOTER_MISSION;
+  const missionText = missionRaw && !missionLooksHtml
+    ? missionRaw
+    : isTgdHmSiteSlug(site.slug)
+      ? "Yolumuz hayat, önceliğimiz güvenlik. Bilinç, eğitim ve denetim kültürüyle daha güvenli bir trafik."
+      : VATAN_FOOTER_MISSION;
 
   const legal: { key: string; label: string; href: string }[] = [
     { key: "kunye", label: "Künye", href: h("/kunye") },

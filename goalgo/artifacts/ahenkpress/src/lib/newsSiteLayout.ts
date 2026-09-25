@@ -17,6 +17,7 @@ import {
   VKD_DONATION_ACCOUNTS,
 } from "./vkdPublicContact";
 import { mergeVkdVatanMenuItems, VATAN_DEFAULT_SLIDER_ITEMS, VATAN_THEME_ID } from "./hmVatanTheme";
+import { normalizeHmVatanHomeCopy, type HmVatanHomeCopy, TGD_VATAN_HOME_COPY, isTgdHmSiteSlug } from "./hmVatanHomeCopy";
 export type MansetVariant =
   | "split"
   | "full-thumbs"
@@ -72,7 +73,7 @@ export function isHmRetiredVitrinThemeRaw(theme: string | null | undefined): boo
  */
 export type HmLayoutKind = "corporate" | "news";
 
-export const HM_KNOWN_CORPORATE_SITE_SLUGS = ["vkd", "vatankahramanlari"] as const;
+export const HM_KNOWN_CORPORATE_SITE_SLUGS = ["vkd", "vatankahramanlari", "trafik"] as const;
 
 export function isCorporateHmVitrinTheme(theme: string | null | undefined): boolean {
   const raw = String(theme ?? "").trim().toLowerCase();
@@ -83,7 +84,7 @@ export function isKnownCorporateHmSiteSlug(siteSlug: string | null | undefined):
   const slug = String(siteSlug ?? "").trim().toLowerCase();
   if (!slug) return false;
   if ((HM_KNOWN_CORPORATE_SITE_SLUGS as readonly string[]).includes(slug)) return true;
-  return slug.includes("vatankahramanlari");
+  return slug.includes("vatankahramanlari") || slug.includes("trafikdernegi");
 }
 
 export function resolveHmLayoutKind(
@@ -144,6 +145,7 @@ export function resolveStoredHmVitrinTheme(
   if (isKnownCorporateHmSiteSlug(siteSlug)) {
     const slug = String(siteSlug ?? "").trim().toLowerCase();
     if (slug === "vkd" || slug.includes("vatankahramanlari")) return "vatan";
+    if (slug === "trafik" || slug.includes("trafikdernegi")) return "vatan";
     return "corporate";
   }
   return normalizeHmVitrinTheme(raw || "news");
@@ -841,6 +843,8 @@ export type NewsSiteLayoutPrefs = {
   hmVatanHomeModuleOrder?: string[] | null;
   /** Vatan anasayfasında gizlenen bölüm id’leri. */
   hmVatanHomeHiddenModules?: string[] | null;
+  /** Vatan anasayfa metin/görsel kopyası (hero, dernek, haklar, mozaik…). Editör panelinden yönetilir. */
+  hmVatanHomeCopy?: HmVatanHomeCopy | null;
   /** HABER teması footer sayfa menüsü. Boşsa varsayılan footer sayfaları kullanılır. */
   hmNewsFooterMenuItems?: HmNewsMenuItem[] | null;
   /** HABER teması sağ sidebar manuel başlantıları. */
@@ -2689,6 +2693,26 @@ export function applyVkdPublicLayoutDefaults(prefs: NewsSiteLayoutPrefs): NewsSi
   return applyVkdVatanThemeToLayoutPrefs(applyVkdDonationToLayoutPrefs(prefs));
 }
 
+/** Trafik Güvenliği Derneği: Vatan kabuğu + TGD anasayfa kopyası. */
+export function applyTgdVatanThemeToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
+  const slides = (prefs.corporateSliderItems ?? []).filter(
+    (item) => item.active !== false && String(item.title ?? "").trim(),
+  );
+  return {
+    ...prefs,
+    hmVitrinTheme: VATAN_THEME_ID,
+    hmCorporateLayoutWidth: "full",
+    hmHeaderChromeFullBleed: true,
+    hmChromeColorMode: "dark",
+    hmLogoBarBackground: "#0B3D2E",
+    hmNavBarBackground: "#0F766E",
+    hmCorporateMenuPrimaryOnly: false,
+    hmVatanHomeHiddenModules: prefs.hmVatanHomeHiddenModules ?? ["sehitSearch", "ataturk", "wars"],
+    hmVatanHomeCopy: prefs.hmVatanHomeCopy ?? { ...TGD_VATAN_HOME_COPY },
+    corporateSliderItems: slides.length ? prefs.corporateSliderItems : prefs.corporateSliderItems,
+  };
+}
+
 /** VKD sitesi: API/DB boşsa destek bandı + IBAN varsayılanları (canlı vitrin). */
 export function applyVkdDonationToLayoutPrefs(prefs: NewsSiteLayoutPrefs): NewsSiteLayoutPrefs {
   if (!isHmDonationActive(prefs.hmCorporateDonation)) return prefs;
@@ -2825,6 +2849,7 @@ export const defaultNewsSiteLayoutPrefs: NewsSiteLayoutPrefs = {
   hmCorporateHomeModuleOrder: [...HM_CORPORATE_HOME_MODULE_ORDER],
   hmVatanHomeModuleOrder: undefined,
   hmVatanHomeHiddenModules: undefined,
+  hmVatanHomeCopy: undefined,
   sadeNewsPublicInfoEnabled: false,
   sadeNewsNewsletterEnabled: true,
   sadeNewsTimelineEnabled: false,
@@ -3242,6 +3267,9 @@ function emptyNewsSiteLayoutPrefsForSlug(siteSlug?: string | null): NewsSiteLayo
     if (slug === "vkd" || slug.includes("vatankahramanlari")) {
       return applyVkdPublicLayoutDefaults(seedVkdPublicLayoutPrefs(base));
     }
+    if (isTgdHmSiteSlug(slug)) {
+      return applyTgdVatanThemeToLayoutPrefs(base);
+    }
     return { ...base, hmVitrinTheme: "corporate" as const };
   }
   return base;
@@ -3551,6 +3579,7 @@ export function parseNewsSiteLayoutFromJson(
     const hmVatanHomeHiddenModules = Array.isArray(hmVatanHomeHiddenRaw)
       ? hmVatanHomeHiddenRaw.map((item) => String(item ?? "").trim()).filter(Boolean).slice(0, 16)
       : undefined;
+    const hmVatanHomeCopy = normalizeHmVatanHomeCopy((j as { hmVatanHomeCopy?: unknown }).hmVatanHomeCopy);
     const sadeNewsPortalModuleOrderRaw = (j as { sadeNewsPortalModuleOrder?: unknown }).sadeNewsPortalModuleOrder;
     const sadeNewsPortalModuleOrder = migrateSadeNewsPortalModuleOrder(
       Array.isArray(sadeNewsPortalModuleOrderRaw)
@@ -3783,6 +3812,7 @@ export function parseNewsSiteLayoutFromJson(
         Array.isArray(hmVatanHomeModuleOrderRaw) ? (hmVatanHomeModuleOrder ?? []) : undefined,
       hmVatanHomeHiddenModules:
         Array.isArray(hmVatanHomeHiddenRaw) ? (hmVatanHomeHiddenModules ?? []) : undefined,
+      hmVatanHomeCopy: hmVatanHomeCopy ?? undefined,
       sadeNewsPortalModuleOrder: resolveHmHomeModuleOrder(
         sadeNewsPortalModuleOrder,
         SADE_NEWS_PORTAL_ACTIVE_MODULE_ORDER,
@@ -3814,7 +3844,16 @@ export function parseNewsSiteLayoutFromJson(
     const withVkd =
       siteSlug?.trim().toLowerCase() === "vkd"
         ? applyVkdPublicLayoutDefaults(seedVkdPublicLayoutPrefs(layoutResult, j as Record<string, unknown>))
-        : layoutResult;
+        : isTgdHmSiteSlug(siteSlug)
+          ? {
+              ...applyTgdVatanThemeToLayoutPrefs(layoutResult),
+              // Preserve editor-saved copy when present; seed only if missing.
+              hmVatanHomeCopy: layoutResult.hmVatanHomeCopy ?? TGD_VATAN_HOME_COPY,
+              hmVatanHomeHiddenModules: Array.isArray(hmVatanHomeHiddenRaw)
+                ? layoutResult.hmVatanHomeHiddenModules
+                : applyTgdVatanThemeToLayoutPrefs(layoutResult).hmVatanHomeHiddenModules,
+            }
+          : layoutResult;
     return sanitizeHmPublicLayoutPrefs(withVkd, siteSlug);
   } catch {
     return sanitizeHmPublicLayoutPrefs(emptyNewsSiteLayoutPrefsForSlug(siteSlug), siteSlug);

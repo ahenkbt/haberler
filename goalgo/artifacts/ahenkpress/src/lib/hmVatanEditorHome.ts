@@ -1,6 +1,7 @@
 /**
  * Vatan public home/chrome bindings to HM editor layout fields.
  * Defaults keep the current VKD look when the editor has not customized a surface.
+ * Trafik (TGD) sites fall back to traffic-safety copy via hmVatanHomeCopy.
  */
 import type { HmCorporateBandItem, HmCorporateSliderItem, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { findHmExtraPageBySlug } from "@/lib/hmExtraPageLookup";
@@ -11,6 +12,10 @@ import {
   type VatanHeroSlide,
   type VatanMosaicTile,
 } from "@/lib/hmVatanHomeContent";
+import {
+  resolveVatanHeroCopyDefaults,
+  resolveVatanMosaicTilesFromCopy,
+} from "@/lib/hmVatanHomeCopy";
 
 export const VATAN_HOME_MODULE_ORDER = [
   "hero",
@@ -29,9 +34,9 @@ export type VatanHomeModuleId = (typeof VATAN_HOME_MODULE_ORDER)[number];
 export const VATAN_HOME_MODULE_LABELS: Record<VatanHomeModuleId, string> = {
   hero: "Anasayfa slider (Tepe Manşet)",
   sehitSearch: "Şehit sorgulama",
-  mosaic: "Şehitlik / kahraman mozaği (bant yönetimi)",
+  mosaic: "Mozaik / vitrin kutuları (bant veya Vatan kopya)",
   dernek: "Dernek bandı",
-  rights: "Haklar ve destek",
+  rights: "Haklar / uzmanlık ve destek",
   nationalDays: "Millî günler",
   ataturk: "Atatürk Köşesi",
   wars: "Tarih panelleri",
@@ -77,7 +82,7 @@ function isStockVatanSlider(items: HmCorporateSliderItem[]): boolean {
 }
 
 /** Background slides: editor Tepe Manşet images, else the branded Vatan set. */
-export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs): VatanHeroSlide[] {
+export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs, _siteSlug?: string | null): VatanHeroSlide[] {
   const items = activeSliderItems(prefs);
   if (!items.length || isStockVatanSlider(items)) return [...VATAN_HOME_HERO_V2.slides];
   const fromEditor = items
@@ -95,9 +100,11 @@ export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs): VatanHeroSli
 }
 
 /**
- * Keep the branded H1; CTAs follow the first two slider links when the editor set them.
+ * Hero copy from hmVatanHomeCopy (or site defaults); CTAs follow the first two
+ * Tepe Manşet links when the editor customized slides.
  */
-export function resolveVatanHero(prefs: NewsSiteLayoutPrefs): VatanResolvedHero {
+export function resolveVatanHero(prefs: NewsSiteLayoutPrefs, siteSlug?: string | null): VatanResolvedHero {
+  const copyDefaults = resolveVatanHeroCopyDefaults(prefs.hmVatanHomeCopy, siteSlug);
   const items = activeSliderItems(prefs);
   const custom = items.length > 0 && !isStockVatanSlider(items);
   const first = custom ? items[0] : undefined;
@@ -105,22 +112,22 @@ export function resolveVatanHero(prefs: NewsSiteLayoutPrefs): VatanResolvedHero 
   const firstHref = String(first?.href ?? "").trim();
   const secondHref = String(second?.href ?? "").trim();
   return {
-    eyebrow: VATAN_HOME_HERO_V2.eyebrow,
-    title: VATAN_HOME_HERO_V2.title,
-    accent: VATAN_HOME_HERO_V2.accent,
-    lead: VATAN_HOME_HERO_V2.lead,
-    primaryHref: firstHref && firstHref !== "#" ? firstHref : VATAN_HOME_HERO_V2.primaryHref,
-    primaryLabel: firstHref && firstHref !== "#" && first?.title?.trim() ? first.title.trim() : VATAN_HOME_HERO_V2.primaryLabel,
-    secondaryHref: secondHref && secondHref !== "#" ? secondHref : VATAN_HOME_HERO_V2.secondaryHref,
+    eyebrow: copyDefaults.eyebrow,
+    title: copyDefaults.title,
+    accent: copyDefaults.accent,
+    lead: copyDefaults.lead,
+    primaryHref: firstHref && firstHref !== "#" ? firstHref : copyDefaults.primaryHref,
+    primaryLabel: firstHref && firstHref !== "#" && first?.title?.trim() ? first.title.trim() : copyDefaults.primaryLabel,
+    secondaryHref: secondHref && secondHref !== "#" ? secondHref : copyDefaults.secondaryHref,
     secondaryLabel:
-      secondHref && secondHref !== "#" && second?.title?.trim() ? second.title.trim() : VATAN_HOME_HERO_V2.secondaryLabel,
-    scrollCueLabel: VATAN_HOME_HERO_V2.scrollCueLabel,
-    slides: resolveVatanHeroSlides(prefs),
+      secondHref && secondHref !== "#" && second?.title?.trim() ? second.title.trim() : copyDefaults.secondaryLabel,
+    scrollCueLabel: copyDefaults.scrollCueLabel,
+    slides: resolveVatanHeroSlides(prefs, siteSlug),
     slideIntervalMs: VATAN_HOME_HERO_V2.slideIntervalMs,
   };
 }
 
-export function resolveVatanMosaicTiles(prefs: NewsSiteLayoutPrefs): VatanMosaicTile[] {
+export function resolveVatanMosaicTiles(prefs: NewsSiteLayoutPrefs, siteSlug?: string | null): VatanMosaicTile[] {
   const bands = activeBandItems(prefs).filter((item) => String(item.imageUrl ?? "").trim());
   if (bands.length >= 2) {
     return bands.slice(0, 5).map((item, index): VatanMosaicTile => {
@@ -138,6 +145,8 @@ export function resolveVatanMosaicTiles(prefs: NewsSiteLayoutPrefs): VatanMosaic
       };
     });
   }
+  const fromCopy = resolveVatanMosaicTilesFromCopy(prefs.hmVatanHomeCopy, siteSlug);
+  if (fromCopy?.length) return fromCopy;
   return VATAN_MOSAIC_TILES.map((tile) => {
     const page = findHmExtraPageBySlug(prefs.hmExtraPages, tile.slug);
     const title = page?.title?.trim();

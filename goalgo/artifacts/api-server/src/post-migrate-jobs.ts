@@ -128,6 +128,13 @@ export async function runPostMigrateJobs(): Promise<void> {
   }
 
   try {
+    const { syncTgdPagesFromData } = await import("./lib/tgd-page-restore.js");
+    await syncTgdPagesFromData();
+  } catch (err) {
+    console.warn("[post-migrate] TGD sayfa onarımı hatası:", err instanceof Error ? err.message : err);
+  }
+
+  try {
     await fixVendorCoordinates();
   } catch (err) {
     console.warn("[post-migrate] vendor koordinat düzeltme hatası:", err instanceof Error ? err.message : err);

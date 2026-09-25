@@ -32,7 +32,7 @@ export function VatanHero({ hero }: { hero: VatanResolvedHero }) {
   return (
     <section
       className={`vatan-hero vatan-hero--home${mounted ? " is-mounted" : ""}${reduced ? " vatan-hero--static" : ""}`}
-      aria-label="Vatan Kahramanları Derneği"
+      aria-label={hero.eyebrow || "Anasayfa"}
       style={{ ["--vatan-slide-ms" as string]: `${hero.slideIntervalMs}ms` }}
     >
       <div className="vatan-hero__media" aria-hidden="true">

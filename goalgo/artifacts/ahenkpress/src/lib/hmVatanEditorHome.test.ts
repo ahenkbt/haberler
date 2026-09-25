@@ -63,6 +63,19 @@ describe("Vatan editor home bindings", () => {
     expect(hero.title).toBe(VATAN_HOME_HERO_V2.title);
   });
 
+  it("uses TGD hero copy for trafik slug even when slider is empty", () => {
+    const hero = resolveVatanHero(prefs({ corporateSliderItems: [] }), "trafik");
+    expect(hero.eyebrow).toMatch(/Trafik Güvenliği/i);
+    expect(hero.title).toMatch(/Yolumuz hayat/i);
+    expect(hero.primaryHref).toBe("/tgu-nedir");
+  });
+
+  it("uses TGD mosaic tiles when band is empty on trafik", () => {
+    const tiles = resolveVatanMosaicTiles(prefs({ corporateBandItems: [] }), "trafik");
+    expect(tiles[0]?.slug).toContain("projeler");
+    expect(tiles[0]?.title).toMatch(/Proje/i);
+  });
+
   it("replaces mosaic tiles when at least two band items have images", () => {
     const tiles = resolveVatanMosaicTiles(
       prefs({

@@ -1,0 +1,120 @@
+{
+  "hmVatanHomeCopy": {
+    "hero": {
+      "eyebrow": "Trafik Güvenliği Derneği",
+      "title": "Yolumuz hayat,",
+      "accent": "önceliğimiz güvenlik.",
+      "lead": "Trafik kazaları kader değildir. Bilinç, eğitim ve profesyonel denetimle sıfır kaza hedefine birlikte yürüyoruz.",
+      "primaryHref": "/tgu-nedir",
+      "primaryLabel": "TGU Nedir?",
+      "secondaryHref": "/hakkimizda",
+      "secondaryLabel": "Derneği Tanıyın",
+      "scrollCueLabel": "Keşfet"
+    },
+    "dernek": {
+      "eyebrow": "Dernek",
+      "title": "Güvenli ulaşım kültürü",
+      "accent": "için buradayız.",
+      "lead": "Toplumsal farkındalık, bilimsel projeler ve paydaş işbirliğiyle yollarımızı daha güvenli hale getiriyoruz.",
+      "pillars": [
+        {
+          "id": "egitim",
+          "title": "Eğitim",
+          "text": "Okullarda, sürücü kurslarında ve kamuya açık alanlarda emniyet kemeri, hız ve yaya önceliği bilincini yaygınlaştırırız."
+        },
+        {
+          "id": "denetim",
+          "title": "Denetim",
+          "text": "Tesis içi trafik güvenliği uzmanlığı ve bağımsız denetimle özel alanlardaki kaza riskini azaltırız."
+        },
+        {
+          "id": "isbirligi",
+          "title": "İşbirliği",
+          "text": "Emniyet, jandarma, belediyeler ve özel sektörle köprü kurarak uygulanabilir çözümler üretiriz."
+        }
+      ],
+      "ctaLabel": "Hakkımızda",
+      "ctaHref": "/hakkimizda"
+    },
+    "rights": {
+      "eyebrow": "Uzmanlık ve Destek",
+      "title": "Trafik güvenliği bir meslektir.",
+      "accent": "Yanınızdayız.",
+      "lead": "AVM'den şantiyeye, hastaneden otogara — tesisiniz için doğru TGU seviyesini ve denetim modelini birlikte belirleyelim.",
+      "rows": [
+        {
+          "href": "/seviye-1-trafik-guvenligi-uzmani-uygulayici",
+          "title": "Seviye 1 Uygulayıcı",
+          "text": "Sahada trafik planını uygulayan uzman kadro."
+        },
+        {
+          "href": "/seviye-2-trafik-guvenligi-ic-denetcisi",
+          "title": "Seviye 2 İç Denetçi",
+          "text": "Ekip yönetimi, prosedür denetimi ve olay inceleme."
+        },
+        {
+          "href": "/trafik-guvenligi-bas-denetcisi",
+          "title": "Seviye 3 Baş Denetçi",
+          "text": "Risk analizi, sistem kurulumu ve baş denetçi raporu."
+        },
+        {
+          "href": "/bagimsiz-denetci",
+          "title": "Bağımsız Denetçi",
+          "text": "KOBİ'ler için periyodik, tarafsız denetim modeli."
+        }
+      ]
+    },
+    "mosaic": {
+      "eyebrow": "Trafik & Yaşam",
+      "title": "Projeler ve çalışmalar",
+      "tiles": [
+        {
+          "slug": "trafik-yasam/projeler",
+          "href": "/trafik-yasam/projeler",
+          "title": "Projeler",
+          "kicker": "Saha & inovasyon",
+          "excerpt": "Kütüphane, akademi, yapay zeka ve güvenli adım seferberlikleri.",
+          "image": "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4f38e77a7.jpg",
+          "imageAlt": "TGD projeleri",
+          "size": "xl"
+        },
+        {
+          "slug": "trafik-yasam/calismalar",
+          "href": "/trafik-yasam/calismalar",
+          "title": "Çalışmalar",
+          "kicker": "Eğitim & istihdam",
+          "image": "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f8d7b483df.jpg",
+          "imageAlt": "TGD çalışmaları",
+          "size": "sm"
+        },
+        {
+          "slug": "tgu-nedir",
+          "href": "/tgu-nedir",
+          "title": "TGU Nedir?",
+          "kicker": "Meslek",
+          "image": "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4dbaa9330.jpg",
+          "imageAlt": "Trafik Güvenliği Uzmanlığı",
+          "size": "sm"
+        },
+        {
+          "slug": "iktisadi-isletme",
+          "href": "/iktisadi-isletme",
+          "title": "İktisadi İşletme",
+          "kicker": "Hizmetler Ltd. Şti.",
+          "image": "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4e4f17d8d.jpg",
+          "imageAlt": "Trafik Güvenliği Hizmetleri",
+          "size": "sm"
+        },
+        {
+          "slug": "trafik-guvenligi-dernegi-tuzugu",
+          "href": "/trafik-guvenligi-dernegi-tuzugu",
+          "title": "Tüzük",
+          "kicker": "Kurumsal",
+          "image": "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4bc9e684f.jpg",
+          "imageAlt": "Dernek tüzüğü",
+          "size": "sm"
+        }
+      ]
+    }
+  }
+}

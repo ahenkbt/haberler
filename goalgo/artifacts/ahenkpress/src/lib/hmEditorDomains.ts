@@ -11,6 +11,9 @@ export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "ankarasehirgazetesi.com": "asg",
   "vatankahramanlari.org": "vkd",
   "vatanhaber.net": "vatanhaber",
+  "trafikdernegi.com": "trafik",
+  "tgd.tc": "trafik",
+  "trafik.gd": "trafik",
 };
 
 function normalizeHostKey(host: string): string {

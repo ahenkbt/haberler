@@ -82,6 +82,8 @@ import {
   resolveVatanHomeModuleOrder,
   type VatanHomeModuleId,
 } from "@/lib/hmVatanEditorHome";
+import type { HmVatanHomeCopy, HmVatanHomeSectionCopy } from "@/lib/hmVatanHomeCopy";
+import { TGD_VATAN_HOME_COPY, isTgdHmSiteSlug } from "@/lib/hmVatanHomeCopy";
 import {
   HM_RSS_KARMA_DEFAULTS_REV,
   HM_RSS_SOURCE_PACK_OPTIONS,
@@ -2057,6 +2059,11 @@ export default function EditorVitrinAyarlari() {
                   Vatan anasayfa
                 </TabsTrigger>
               ) : null}
+              {isVatanEditorSite ? (
+                <TabsTrigger value="vatan-icerik" className="px-3 py-2 text-sm">
+                  Vatan içerik / görsel
+                </TabsTrigger>
+              ) : null}
             </TabsList>
 
             <TabsContent value="corporate-header" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
@@ -2462,7 +2469,7 @@ export default function EditorVitrinAyarlari() {
             <TabsContent value="vatan-sira" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
           <ModuleOrderEditor
             title="Vatan anasayfa sırası"
-            description="vatankahramanlari.org anasayfa bölümleri. Slider görselleri Genel ayarlar → Slider yönetimi; mozaik kartları Bant yönetimi (en az 2 görselli bant). Kapalı bölümler sırada kalsa bile görünmez."
+            description="Anasayfa bölümleri. Slider görselleri Genel ayarlar → Slider yönetimi; mozaik kartları Bant yönetimi (en az 2 görselli bant) veya «Vatan içerik / görsel» sekmesindeki mozaik kutuları. Kapalı bölümler sırada kalsa bile görünmez."
             items={vatanHomeOrder}
             labels={VATAN_HOME_MODULE_LABELS}
             defaults={VATAN_HOME_MODULE_ORDER}
@@ -2487,6 +2494,127 @@ export default function EditorVitrinAyarlari() {
               })
             }
           />
+            </TabsContent>
+            ) : null}
+
+            {isVatanEditorSite ? (
+            <TabsContent value="vatan-icerik" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                <div>
+                  <Label className="font-semibold text-slate-900">Vatan tema kutuları (metin + görsel)</Label>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Hero başlığı, dernek bandı, haklar/uzmanlık ve bölüm arka plan görselleri buradan değişir. Slider
+                    görselleri için{" "}
+                    <Link href="/editor/genel-ayarlar#hm-corporate-slider" className="font-semibold text-red-600 hover:underline">
+                      Genel ayarlar → Tepe Manşet
+                    </Link>
+                    ; logo için Genel ayarlar → Logo.
+                  </p>
+                </div>
+                {(
+                  [
+                    { key: "hero" as const, label: "Hero (başlık / CTA metni)" },
+                    { key: "dernek" as const, label: "Dernek bandı" },
+                    { key: "rights" as const, label: "Haklar / uzmanlık ve destek" },
+                    { key: "nationalDays" as const, label: "Millî günler bandı" },
+                    { key: "ataturk" as const, label: "Atatürk Köşesi görseli" },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const section = (p.hmVatanHomeCopy?.[key] ?? {}) as HmVatanHomeSectionCopy;
+                  const patchSection = (next: HmVatanHomeSectionCopy) => {
+                    const copy: HmVatanHomeCopy = { ...(p.hmVatanHomeCopy ?? {}) };
+                    copy[key] = next;
+                    setP({ ...p, hmVatanHomeCopy: copy });
+                  };
+                  const saveSection = () => {
+                    const copy: HmVatanHomeCopy = { ...(p.hmVatanHomeCopy ?? {}) };
+                    copy[key] = section;
+                    void commit({ hmVatanHomeCopy: copy });
+                  };
+                  return (
+                    <div key={key} className="rounded-lg border border-slate-100 bg-slate-50/70 p-3 space-y-2">
+                      <p className="text-sm font-semibold text-slate-800">{label}</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Üst etiket</Label>
+                          <Input
+                            value={section.eyebrow ?? ""}
+                            disabled={saving}
+                            onChange={(e) => patchSection({ ...section, eyebrow: e.target.value })}
+                            onBlur={saveSection}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Başlık</Label>
+                          <Input
+                            value={section.title ?? ""}
+                            disabled={saving}
+                            onChange={(e) => patchSection({ ...section, title: e.target.value })}
+                            onBlur={saveSection}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Vurgu (italik)</Label>
+                          <Input
+                            value={section.accent ?? ""}
+                            disabled={saving}
+                            onChange={(e) => patchSection({ ...section, accent: e.target.value })}
+                            onBlur={saveSection}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Görsel URL</Label>
+                          <Input
+                            value={section.imageUrl ?? ""}
+                            disabled={saving}
+                            placeholder="https://… veya /api/media/…"
+                            onChange={(e) => patchSection({ ...section, imageUrl: e.target.value })}
+                            onBlur={() => {
+                              const trimmedRaw = String(section.imageUrl ?? "").trim();
+                              const trimmed = trimmedRaw ? toPersistedPublicMediaUrl(trimmedRaw) : null;
+                              patchSection({ ...section, imageUrl: trimmed });
+                              const copy: HmVatanHomeCopy = { ...(p.hmVatanHomeCopy ?? {}) };
+                              copy[key] = { ...section, imageUrl: trimmed };
+                              void commit({ hmVatanHomeCopy: copy });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Kısa metin</Label>
+                        <Input
+                          value={section.lead ?? ""}
+                          disabled={saving}
+                          onChange={(e) => patchSection({ ...section, lead: e.target.value })}
+                          onBlur={saveSection}
+                        />
+                      </div>
+                      {section.imageUrl ? (
+                        <img
+                          src={resolveClientMediaSrc(section.imageUrl) || section.imageUrl}
+                          alt=""
+                          className="mt-1 h-20 w-full max-w-xs rounded object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={saving}
+                    onClick={() =>
+                      void commit({
+                        hmVatanHomeCopy: isTgdHmSiteSlug(site?.slug) ? { ...TGD_VATAN_HOME_COPY } : null,
+                      })
+                    }
+                  >
+                    {isTgdHmSiteSlug(site?.slug) ? "TGD varsayılan metinleri yükle" : "Vatan kopyasını temizle"}
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
             ) : null}
 
