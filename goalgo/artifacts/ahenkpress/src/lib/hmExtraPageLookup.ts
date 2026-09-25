@@ -43,12 +43,44 @@ export function normalizeHmExtraPageSlug(raw: string): string {
     .toLowerCase();
 }
 
+/**
+ * Exact slug match first; then WordPress-style `slug-2` / `slug-3` duplicates
+ * (lowest N wins). If the request itself is `slug-N`, also try the base `slug`
+ * (canonical restore may have pruned numbered copies while CDN still serves them).
+ */
 export function findHmExtraPageBySlug(
   pages: HmExtraPage[] | null | undefined,
   slug: string,
 ): HmExtraPage | undefined {
   const wanted = normalizeHmExtraPageSlug(slug);
-  return (pages ?? []).find((p) => p.enabled && normalizeHmExtraPageSlug(p.slug) === wanted);
+  if (!wanted) return undefined;
+  const enabled = (pages ?? []).filter((p) => p && p.enabled !== false);
+  const exact = enabled.find((p) => normalizeHmExtraPageSlug(p.slug) === wanted);
+  if (exact) return exact;
+
+  const prefix = `${wanted}-`;
+  let best: HmExtraPage | undefined;
+  let bestN = Number.POSITIVE_INFINITY;
+  for (const page of enabled) {
+    const s = normalizeHmExtraPageSlug(page.slug);
+    if (!s.startsWith(prefix)) continue;
+    const rest = s.slice(prefix.length);
+    if (!/^\d+$/.test(rest)) continue;
+    const n = Number(rest);
+    if (n < bestN) {
+      bestN = n;
+      best = page;
+    }
+  }
+  if (best) return best;
+
+  const numbered = /^(.*)-(\d+)$/.exec(wanted);
+  if (numbered?.[1]) {
+    const base = numbered[1];
+    const baseExact = enabled.find((p) => normalizeHmExtraPageSlug(p.slug) === base);
+    if (baseExact) return baseExact;
+  }
+  return undefined;
 }
 
 function rawExtraPageRows(layout: unknown): Array<Record<string, unknown>> {

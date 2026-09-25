@@ -129,7 +129,7 @@ export async function runPostMigrateJobs(): Promise<void> {
 
   try {
     const { syncTgdPagesFromData } = await import("./lib/tgd-page-restore.js");
-    await syncTgdPagesFromData();
+    await syncTgdPagesFromData({ forceFull: true });
   } catch (err) {
     console.warn("[post-migrate] TGD sayfa onarımı hatası:", err instanceof Error ? err.message : err);
   }
