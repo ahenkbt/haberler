@@ -984,8 +984,8 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.setHeader("CDN-Cache-Control", "no-store");
   } else {
-    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
-    res.setHeader("CDN-Cache-Control", "public, max-age=20");
+    res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=15");
+    res.setHeader("CDN-Cache-Control", "public, max-age=5");
   }
 
   const queryDomain = typeof req.query.domain === "string" ? req.query.domain : "";
@@ -1074,8 +1074,8 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.setHeader("CDN-Cache-Control", "no-store");
   } else {
-    res.setHeader("Cache-Control", "public, max-age=15, s-maxage=20, stale-while-revalidate=60");
-    res.setHeader("CDN-Cache-Control", "public, max-age=20");
+    res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=15");
+    res.setHeader("CDN-Cache-Control", "public, max-age=5");
   }
   res.json(serializeHmMetaRow(row, { includePageContent: wantsHmMetaPageContent(req) }));
 });

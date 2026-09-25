@@ -125,7 +125,8 @@ function HmPublicStandardExtraPageBody({
   }
 
   if (extraPage) {
-    return <HmCustomPageContent pageSlug={extraPage.slug} site={hmCustomPageSiteFromCtx(ctx)} />;
+    /** URL'deki kanonik slug ile aç — WP `-2` kopyası slim meta'da olsa bile full içerik kanoniğe düşer. */
+    return <HmCustomPageContent pageSlug={segment} site={hmCustomPageSiteFromCtx(ctx)} />;
   }
 
   if (normalizedSegment === "sehitlerimiz") {

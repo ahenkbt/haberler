@@ -45,6 +45,11 @@ function CategorySlugFallback({ segment }: { segment: string }) {
     return <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-slate-500">Sayfa yükleniyor…</div>;
   }
   if (hasDbCategory || hasRssCategory) return <KategoriDetay />;
+  /** Vatan/kurumsal sitelerde bilinmeyen slug → sondakika değil, “yayınlanmamış” uyarısı. */
+  const theme = String(ctx.layoutPrefs.hmVitrinTheme ?? "").toLowerCase();
+  if (theme === "vatan" || theme === "corporate") {
+    return <MissingExtraPage segment={segment} />;
+  }
   return <HmRedirectToSonDakika />;
 }
 

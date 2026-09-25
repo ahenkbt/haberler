@@ -69,8 +69,7 @@ class HmCustomPageErrorBoundary extends Component<{ children: ReactNode; resetKe
 export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site: HmCustomPageSite }) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const listedPage = useMemo(() => {
-    const requestedSlug = normalizeCustomPageSlug(pageSlug);
-    return (site.layoutPrefs.hmExtraPages ?? []).find((p) => p.enabled && normalizeCustomPageSlug(p.slug) === requestedSlug);
+    return findHmExtraPageBySlug(site.layoutPrefs.hmExtraPages, pageSlug);
   }, [site.layoutPrefs.hmExtraPages, pageSlug]);
   const listedHtml = extraPageBodyHtmlOf(listedPage);
   const { data: fetchedLayout, isFetched: fetchedFullHtml } = useQuery({
@@ -88,8 +87,12 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
   const page = useMemo(() => {
     if (!listedPage) return undefined;
     if (listedHtml) return listedPage;
-    return findHmExtraPageBySlug(fetchedLayout?.hmExtraPages, listedPage.slug) ?? listedPage;
-  }, [listedPage, listedHtml, fetchedLayout]);
+    return (
+      findHmExtraPageBySlug(fetchedLayout?.hmExtraPages, pageSlug) ??
+      findHmExtraPageBySlug(fetchedLayout?.hmExtraPages, listedPage.slug) ??
+      listedPage
+    );
+  }, [listedPage, listedHtml, fetchedLayout, pageSlug]);
 
   useEffect(() => {
     if (!page) return;
