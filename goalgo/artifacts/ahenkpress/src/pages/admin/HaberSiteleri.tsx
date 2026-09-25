@@ -316,14 +316,18 @@ export default function HaberSiteleri() {
     }
   }
 
-  async function runAdminRepair(path: string, label: string) {
+  async function runAdminRepair(
+    path: string,
+    label: string,
+    body: Record<string, unknown> = { dryRun: false },
+  ) {
     setRepairing(path);
     try {
       await ensureAdminPanelBootstrap();
       const r = await apiFetch(apiUrl(path), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dryRun: false }),
+        body: JSON.stringify(body),
       });
       const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string; ok?: boolean };
       if (!r.ok) throw new Error(j.error || j.message || "Onarım başarısız");
@@ -336,6 +340,38 @@ export default function HaberSiteleri() {
     } catch (e) {
       toast({
         title: `${label} başarısız`,
+        description: String((e as Error)?.message ?? e).slice(0, 480),
+        variant: "destructive",
+      });
+    } finally {
+      setRepairing(null);
+    }
+  }
+
+  /** TGD arşiv + anasayfa kopyası — forceFull ile iki geçiş (eksik sayfa / kopya tamamlansın). */
+  async function runTgdRestore() {
+    const path = "/api/hm/admin/tgd-restore-pages";
+    setRepairing(path);
+    try {
+      await ensureAdminPanelBootstrap();
+      for (let i = 0; i < 2; i++) {
+        const r = await apiFetch(apiUrl(path), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ forceFull: true }),
+        });
+        const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string; ok?: boolean };
+        if (!r.ok) throw new Error(j.error || j.message || "TGD yükleme başarısız");
+      }
+      toast({
+        title: "TGD arşiv yükleme",
+        description: "Trafik Güvenliği Derneği sayfaları ve anasayfa kopyası güncellendi",
+      });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await refetch();
+    } catch (e) {
+      toast({
+        title: "TGD arşiv yükleme başarısız",
         description: String((e as Error)?.message ?? e).slice(0, 480),
         variant: "destructive",
       });
@@ -477,6 +513,15 @@ export default function HaberSiteleri() {
               }
             >
               {repairing === "/api/hm/admin/repair-editor-cross-site" ? "Onarılıyor…" : "Çift e-posta onar"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={repairing !== null}
+              onClick={() => void runTgdRestore()}
+            >
+              {repairing === "/api/hm/admin/tgd-restore-pages" ? "Yükleniyor…" : "TGD arşiv yükle"}
             </Button>
           </div>
         </div>
