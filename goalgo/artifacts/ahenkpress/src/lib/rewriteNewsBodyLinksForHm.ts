@@ -1,7 +1,7 @@
 import { hmPublicHref } from "@/lib/hmPublicLinks";
 import { isLikelyHmExtraPagePublicPath } from "@/lib/hmExtraPageLookup";
 
-const PORTAL_HOSTS = /^(?:www\.)?(?:yekpare\.net|turk\.eco|turknet\.app)$/i;
+const PORTAL_HOSTS = /^(?:www\.)?(?:ahenk\.net\.tr|yekpare\.net|turk\.eco|turknet\.app)$/i;
 
 function pathOnly(p: string): string {
   const t = p.trim().split("#")[0] ?? "";

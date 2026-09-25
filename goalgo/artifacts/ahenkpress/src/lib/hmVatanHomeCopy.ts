@@ -246,8 +246,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
   mosaic: {
     tiles: [
       {
-        slug: "trafik-yasam/projeler",
-        href: "/trafik-yasam/projeler",
+        slug: "trafik-yasam-projeler",
+        href: "/trafik-yasam-projeler",
         title: "Projeler",
         kicker: "Saha & inovasyon",
         excerpt: "Kütüphane, akademi, yapay zeka ve güvenli adım seferberlikleri.",
@@ -257,8 +257,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         size: "xl",
       },
       {
-        slug: "trafik-yasam/calismalar",
-        href: "/trafik-yasam/calismalar",
+        slug: "trafik-yasam-calismalar",
+        href: "/trafik-yasam-calismalar",
         title: "Çalışmalar",
         kicker: "Eğitim & istihdam",
         image:

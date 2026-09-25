@@ -154,11 +154,19 @@ export function hmPublicHref(
   const slug = String(opts.slug ?? "").trim();
   const pageHost =
     typeof window !== "undefined" ? normalizeHmHostKey(window.location.hostname) : "";
-  const useRelative =
-    !opts.forceAbsolute && pageHost && isHmPublicHostForSite(pageHost, opts);
-  const origin = useRelative
-    ? null
-    : hmPublicSiteOrigin(resolveHmPublicDomainFromSite(opts, pageHost));
+  /**
+   * Göreli (köksüz) yollar yalnızca sitenin kendi özel alanında kullanılır
+   * (`trafikdernegi.com/haber/...`). Portal hub'da (`ahenk.net.tr`) `/tr/{slug}/...`
+   * zorunlu — aksi halde menü linkleri ana portala düşüp boş sayfa açar.
+   */
+  const onPortalHub = Boolean(pageHost) && isDefaultPortalHost(pageHost);
+  const onSiteCustomDomain =
+    Boolean(pageHost) && !onPortalHub && isHmPublicHostForSite(pageHost, opts);
+  const useRelative = !opts.forceAbsolute && onSiteCustomDomain;
+  const origin =
+    useRelative || (onPortalHub && !opts.forceAbsolute)
+      ? null
+      : hmPublicSiteOrigin(resolveHmPublicDomainFromSite(opts, pageHost));
 
   const needsSiteIdOnNested =
     siteId != null &&

@@ -1,21 +1,36 @@
 /**
  * Trafik Güvenliği Derneği — seed archive pages + Vatan home copy into layout_json.
+ *
+ * Not: HM özel sayfa rotası tek segment (`/tr/:slug/:pageSlug`). Bu yüzden
+ * `trafik-yasam/projeler` yerine `trafik-yasam-projeler` kullanılır.
+ * WP import'un ürettiği `slug-2` / `slug-3` kopyaları menüyü boş sayfaya düşürmesin
+ * diye kanonik slug'a upsert edilir (forceFull'da gövde de yenilenir).
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
 import { dualWriteUpdate, getNewsDbForRead, hmNewsSitesTable } from "@workspace/db";
-import { applyHmLayoutDelta, parseHmLayoutJson, type HmLayoutDeltaInput } from "./hm-layout-delta.js";
+import { parseHmLayoutJson } from "./hm-layout-delta.js";
 
 export const TGD_SITE_SLUG = "trafik";
 export const TGD_EDITOR_TOUCHED_KEY = "tgdEditorTouchedAt";
-export const TGD_PAGE_SYNC_VERSION = 1;
+/** Bump: kanonik slug upsert + WP -N duplicate prune. */
+export const TGD_PAGE_SYNC_VERSION = 2;
 
 type TgdManifest = {
   pageSyncVersion?: number;
   pageCount?: number;
   siteSlug?: string;
+};
+
+type TgdPageSeed = {
+  id: string;
+  slug: string;
+  title: string;
+  bodyHtml: string;
+  enabled: boolean;
+  fullWidth: boolean;
 };
 
 function resolveTgdDataDir(): string {
@@ -52,15 +67,43 @@ function readJsonFile<T>(filePath: string): T | null {
   }
 }
 
-function loadPageDeltas(dataDir: string): HmLayoutDeltaInput[] {
+/** Nested path → tek segment (rota `/tr/:site/:pageSlug`). */
+export function normalizeTgdPageSlug(raw: string): string {
+  return String(raw ?? "")
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase()
+    .replace(/\//g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function loadPageSeeds(dataDir: string): TgdPageSeed[] {
   const files = readdirSync(dataDir)
     .filter((name) => /^pages-\d+\.json$/i.test(name))
     .sort();
-  const out: HmLayoutDeltaInput[] = [];
+  const out: TgdPageSeed[] = [];
+  const seen = new Set<string>();
   for (const file of files) {
-    const payload = readJsonFile<HmLayoutDeltaInput>(path.join(dataDir, file));
-    if (payload?.pageUpdates && Array.isArray(payload.pageUpdates) && payload.pageUpdates.length) {
-      out.push({ ...payload, overwritePages: false });
+    const payload = readJsonFile<{ pageUpdates?: unknown[] }>(path.join(dataDir, file));
+    if (!payload?.pageUpdates || !Array.isArray(payload.pageUpdates)) continue;
+    for (const raw of payload.pageUpdates) {
+      if (!raw || typeof raw !== "object") continue;
+      const row = raw as Record<string, unknown>;
+      const slug = normalizeTgdPageSlug(String(row.slug ?? ""));
+      const title = String(row.title ?? "").trim();
+      const bodyHtml = String(row.bodyHtml ?? row.html ?? "").trim();
+      const id = String(row.id ?? `tgd-${slug}`).trim() || `tgd-${slug}`;
+      if (!slug || !title || !bodyHtml || seen.has(slug)) continue;
+      seen.add(slug);
+      out.push({
+        id,
+        slug,
+        title,
+        bodyHtml,
+        enabled: row.enabled === false ? false : true,
+        fullWidth: row.fullWidth === false ? false : true,
+      });
     }
   }
   return out;
@@ -78,9 +121,7 @@ function presentPageSlugs(layout: Record<string, unknown>): Set<string> {
   if (!Array.isArray(pages)) return out;
   for (const page of pages) {
     if (!page || typeof page !== "object") continue;
-    const slug = String((page as { slug?: string }).slug ?? "")
-      .trim()
-      .toLowerCase();
+    const slug = normalizeTgdPageSlug(String((page as { slug?: string }).slug ?? ""));
     if (slug) out.add(slug);
   }
   return out;
@@ -90,9 +131,93 @@ const TGD_REQUIRED_PAGE_SLUGS = [
   "hakkimizda",
   "trafik-guvenligi-uzmani",
   "tgu-nedir",
-  "trafik-yasam/projeler",
-  "trafik-yasam/calismalar",
+  "seviye-1-trafik-guvenligi-uzmani-uygulayici",
+  "seviye-2-trafik-guvenligi-ic-denetcisi",
+  "trafik-guvenligi-bas-denetcisi",
+  "bagimsiz-denetci",
+  "trafik-yasam-projeler",
+  "trafik-yasam-calismalar",
 ] as const;
+
+/**
+ * Kanonik TGD sayfalarını exact slug ile yazar.
+ * WP import'un `slug-2` / `slug-3` kopyalarını forceFull'da budar.
+ */
+export function upsertTgdExtraPages(
+  layout: Record<string, unknown>,
+  seeds: TgdPageSeed[],
+  opts: { overwriteBodies: boolean; pruneNumericDuplicates: boolean },
+): { layout: Record<string, unknown>; upserted: number; pruned: number } {
+  const existingRaw = Array.isArray(layout.hmExtraPages) ? [...(layout.hmExtraPages as unknown[])] : [];
+  const pages: Array<Record<string, unknown>> = existingRaw
+    .filter((p): p is Record<string, unknown> => !!p && typeof p === "object" && !Array.isArray(p))
+    .map((p) => ({ ...p }));
+
+  const indexBySlug = new Map<string, number>();
+  for (let i = 0; i < pages.length; i++) {
+    const slug = normalizeTgdPageSlug(String(pages[i]?.slug ?? ""));
+    if (slug && !indexBySlug.has(slug)) indexBySlug.set(slug, i);
+  }
+
+  const canonical = new Set(seeds.map((s) => s.slug));
+  let upserted = 0;
+
+  for (const seed of seeds) {
+    const idx = indexBySlug.get(seed.slug);
+    if (idx == null) {
+      pages.push({
+        id: seed.id,
+        slug: seed.slug,
+        title: seed.title,
+        bodyHtml: seed.bodyHtml,
+        enabled: seed.enabled,
+        fullWidth: seed.fullWidth,
+        importSource: "tgd-archive",
+        importedAt: new Date().toISOString(),
+      });
+      indexBySlug.set(seed.slug, pages.length - 1);
+      upserted += 1;
+      continue;
+    }
+    const cur = pages[idx]!;
+    const hasBody = String(cur.bodyHtml ?? "").trim().length > 0;
+    if (opts.overwriteBodies || !hasBody) {
+      pages[idx] = {
+        ...cur,
+        id: String(cur.id ?? seed.id),
+        slug: seed.slug,
+        title: seed.title,
+        bodyHtml: seed.bodyHtml,
+        enabled: seed.enabled,
+        fullWidth: seed.fullWidth,
+        importSource: cur.importSource ?? "tgd-archive",
+      };
+      upserted += 1;
+    }
+  }
+
+  let pruned = 0;
+  let nextPages = pages;
+  if (opts.pruneNumericDuplicates) {
+    nextPages = pages.filter((page) => {
+      const slug = normalizeTgdPageSlug(String(page.slug ?? ""));
+      const m = /^(.*)-(\d+)$/.exec(slug);
+      if (!m) return true;
+      const base = m[1] ?? "";
+      if (canonical.has(base) && indexBySlug.has(base)) {
+        pruned += 1;
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return {
+    layout: { ...layout, hmExtraPages: nextPages },
+    upserted,
+    pruned,
+  };
+}
 
 async function findTgdSite(): Promise<{ id: number; layoutJson: string | null } | null> {
   const rows = await getNewsDbForRead()
@@ -147,11 +272,11 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   const present = presentPageSlugs(layout);
   const missingRequired = TGD_REQUIRED_PAGE_SLUGS.filter((slug) => !present.has(slug));
   const needsPages = opts?.forceFull === true || missingRequired.length > 0 || currentVersion < targetVersion;
-  const needsCopy = layout.hmVatanHomeCopy == null || typeof layout.hmVatanHomeCopy !== "object";
+  const needsCopy =
+    opts?.forceFull === true || layout.hmVatanHomeCopy == null || typeof layout.hmVatanHomeCopy !== "object";
   const needsTheme = String(layout.hmVitrinTheme ?? "").toLowerCase() !== "vatan";
 
   if (editorTouched && !opts?.forceFull) {
-    // Still fill missing pages / theme / copy without overwriting editor bodies.
     if (!needsPages && !needsCopy && !needsTheme) {
       console.info("[tgd-sync] editör dokunmuş — atlandı");
       return;
@@ -167,17 +292,22 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   if (!Array.isArray(next.hmVatanHomeHiddenModules)) {
     next.hmVatanHomeHiddenModules = ["sehitSearch", "ataturk", "wars"];
   } else if (needsCopy) {
-    // TGD mozaik kutuları (projeler/çalışmalar) açılsın — eski VKD şehit mozaik gizlemesi kalksın.
     next.hmVatanHomeHiddenModules = (next.hmVatanHomeHiddenModules as unknown[])
       .map((id) => String(id ?? "").trim())
       .filter((id) => id && id !== "mosaic");
   }
 
+  let upserted = 0;
+  let pruned = 0;
   if (needsPages) {
-    for (const delta of loadPageDeltas(dataDir)) {
-      const applied = applyHmLayoutDelta(next, { ...delta, overwritePages: false });
-      next = applied.layout;
-    }
+    const seeds = loadPageSeeds(dataDir);
+    const result = upsertTgdExtraPages(next, seeds, {
+      overwriteBodies: opts?.forceFull === true || currentVersion < targetVersion,
+      pruneNumericDuplicates: opts?.forceFull === true || currentVersion < targetVersion,
+    });
+    next = result.layout;
+    upserted = result.upserted;
+    pruned = result.pruned;
     next.tgdPageSyncVersion = targetVersion;
   }
 
@@ -192,6 +322,6 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
     eq(hmNewsSitesTable.id, site.id),
   );
   console.info(
-    `[tgd-sync] site #${site.id} güncellendi (pages=${needsPages} copy=${needsCopy} theme=${needsTheme})`,
+    `[tgd-sync] site #${site.id} güncellendi (pages=${needsPages} upserted=${upserted} pruned=${pruned} copy=${needsCopy} theme=${needsTheme})`,
   );
 }

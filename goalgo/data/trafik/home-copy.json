@@ -69,8 +69,8 @@
       "title": "Projeler ve çalışmalar",
       "tiles": [
         {
-          "slug": "trafik-yasam/projeler",
-          "href": "/trafik-yasam/projeler",
+          "slug": "trafik-yasam-projeler",
+          "href": "/trafik-yasam-projeler",
           "title": "Projeler",
           "kicker": "Saha & inovasyon",
           "excerpt": "Kütüphane, akademi, yapay zeka ve güvenli adım seferberlikleri.",
@@ -79,8 +79,8 @@
           "size": "xl"
         },
         {
-          "slug": "trafik-yasam/calismalar",
-          "href": "/trafik-yasam/calismalar",
+          "slug": "trafik-yasam-calismalar",
+          "href": "/trafik-yasam-calismalar",
           "title": "Çalışmalar",
           "kicker": "Eğitim & istihdam",
           "image": "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f8d7b483df.jpg",
