@@ -192,6 +192,15 @@ const server = app.listen(port, listenHost, (err) => {
     logger.info("[vkd-sync] VKD_SYNC_ON_START≠1 — startup sync atlandı");
   }
 
+  if (process.env.SKIP_TGD_SYNC !== "1" && (process.env.TGD_SYNC_ON_START === "1" || process.env.VKD_SYNC_ON_START === "1")) {
+    setTimeout(() => {
+      void import("./lib/tgd-page-restore.js")
+        .then(({ syncTgdPagesFromData }) => syncTgdPagesFromData())
+        .then(() => logger.info("[tgd-sync] startup sync tamamlandı"))
+        .catch((err) => logger.warn({ err }, "[tgd-sync] startup sync atlandı veya başarısız"));
+    }, 10_000).unref();
+  }
+
   startSiteMailboxAutoSync(logger);
 
   const schedulerStops: Array<() => void> = [];

@@ -34,6 +34,7 @@ import {
   panelHasPermission,
 } from "../lib/admin-guard";
 import { syncVkdPagesFromData, syncVkdMenuPartialFromData, VKD_EDITOR_TOUCHED_KEY, VKD_SITE_SLUG } from "../lib/vkd-page-restore.js";
+import { syncTgdPagesFromData, TGD_EDITOR_TOUCHED_KEY, TGD_SITE_SLUG } from "../lib/tgd-page-restore.js";
 import { parseHmEditorFromRequest } from "../lib/hmEditorJwt.js";
 import { getSessionSecret } from "../lib/secrets";
 import { verifyLoginMathCaptcha } from "../lib/loginMathCaptcha.js";
@@ -1949,6 +1950,21 @@ router.post("/hm/admin/vkd-restore-pages", async (req, res): Promise<void> => {
   }
 });
 
+/** Yönetim: Trafik Güvenliği Derneği arşiv sayfalarını data/trafik paketinden DB'ye yazar. */
+router.post("/hm/admin/tgd-restore-pages", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const forceFull = (req.body as { forceFull?: boolean } | undefined)?.forceFull === true;
+    await syncTgdPagesFromData({ forceFull });
+    res.json({ ok: true, message: "TGD sayfa geri yükleme tamamlandı" });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
 async function runVkdWaybackImportRequest(
   req: Request,
   res: Response,
@@ -3337,6 +3353,17 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
       inc.hmCorporateMenuPrimaryOnly !== undefined);
   if (touchesVkdEditorContent) {
     merged[VKD_EDITOR_TOUCHED_KEY] = new Date().toISOString();
+  }
+  const touchesTgdEditorContent =
+    siteSlug === TGD_SITE_SLUG &&
+    (inc.hmExtraPages !== undefined ||
+      inc.hmVatanHomeCopy !== undefined ||
+      inc.hmCorporateMenuItems !== undefined ||
+      inc.corporateSliderItems !== undefined ||
+      inc.corporateBandItems !== undefined ||
+      inc.logoUrl !== undefined);
+  if (touchesTgdEditorContent) {
+    merged[TGD_EDITOR_TOUCHED_KEY] = new Date().toISOString();
   }
   let raw: string;
   try {

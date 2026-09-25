@@ -54,6 +54,12 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.vatankahramanlari.org.tr": "vkd",
   "vatanhaber.net": "vatanhaber",
   "www.vatanhaber.net": "vatanhaber",
+  "trafikdernegi.com": "trafik",
+  "www.trafikdernegi.com": "trafik",
+  "tgd.tc": "trafik",
+  "www.tgd.tc": "trafik",
+  "trafik.gd": "trafik",
+  "www.trafik.gd": "trafik",
 };
 
 export function normalizeHmBootHost(hostname) {

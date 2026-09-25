@@ -46,19 +46,21 @@ function Chevron() {
 }
 
 export function VatanBrand({
+  logoUrl,
   displayName,
   homeHref,
   compact = false,
 }: {
-  /** Kept for call-site compatibility; chrome always uses the official lockup. */
+  /** Editor Genel ayarlar → logo; boşsa Vatan varsayılan kilidi. */
   logoUrl?: string;
   displayName: string;
   homeHref: string;
   compact?: boolean;
 }) {
+  const src = String(logoUrl ?? "").trim() || VATAN_ASSETS.logo;
   return (
     <Link href={homeHref} className={`vatan-brand vatan-brand--official${compact ? " vatan-brand--compact" : ""}`} aria-label={`${displayName} — anasayfa`}>
-      <img className="vatan-brand__logo" src={VATAN_ASSETS.logo} alt="" width={350} height={90} decoding="async" />
+      <img className="vatan-brand__logo" src={src} alt="" width={350} height={90} decoding="async" />
     </Link>
   );
 }

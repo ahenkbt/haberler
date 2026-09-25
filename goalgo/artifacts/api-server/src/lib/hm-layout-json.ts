@@ -19,7 +19,7 @@ export const HM_LAYOUT_JSON_MAX_CHARS = 2_000_000;
  */
 export type HmLayoutKind = "corporate" | "news";
 
-export const HM_KNOWN_CORPORATE_SITE_SLUGS = ["vkd", "vatankahramanlari"] as const;
+export const HM_KNOWN_CORPORATE_SITE_SLUGS = ["vkd", "vatankahramanlari", "trafik"] as const;
 
 export function isCorporateHmVitrinTheme(theme: unknown): boolean {
   return isHmCorporateLikeTheme(theme);
@@ -31,7 +31,7 @@ export function isKnownCorporateHmSiteSlug(siteSlug: unknown): boolean {
     .toLowerCase();
   if (!slug) return false;
   if ((HM_KNOWN_CORPORATE_SITE_SLUGS as readonly string[]).includes(slug)) return true;
-  return slug.includes("vatankahramanlari");
+  return slug.includes("vatankahramanlari") || slug.includes("trafikdernegi");
 }
 
 export function resolveHmLayoutKind(

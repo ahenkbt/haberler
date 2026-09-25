@@ -100,7 +100,7 @@ export const VATAN_MOSAIC_TILES: VatanMosaicTile[] = [
 ];
 
 export type VatanMissionPillar = {
-  id: "hatira" | "hak" | "vefa";
+  id: "hatira" | "hak" | "vefa" | "egitim" | "denetim" | "isbirligi";
   title: string;
   text: string;
 };
@@ -260,12 +260,12 @@ export function resolveVatanNavGroupImage(rootId: string, label: string): { imag
   const direct = VATAN_NAV_GROUP_IMAGES[rootId];
   if (direct) return direct;
   const l = label.toLocaleLowerCase("tr-TR");
-  if (l.includes("kurum")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-kurumsal"];
+  if (l.includes("kurum") || l.includes("dernek")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-kurumsal"];
   if (l.includes("kahraman") || l.includes("şehit")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-kahramanlar"];
-  if (l.includes("sosyal") || l.includes("hak")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-sosyal"];
-  if (l.includes("tarih")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-tarih"];
+  if (l.includes("sosyal") || l.includes("hak") || l.includes("uzman") || l.includes("tgu")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-sosyal"];
+  if (l.includes("tarih") || l.includes("yaşam") || l.includes("proje")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-tarih"];
   if (l.includes("atatürk")) return VATAN_NAV_GROUP_IMAGES["vkd-menu-ataturk"];
-  return { image: VATAN_ASSETS.memorialPillars, caption: "Vatan Kahramanları Derneği" };
+  return { image: VATAN_ASSETS.memorialPillars, caption: label || "Menü" };
 }
 
 export const VATAN_FOOTER_MISSION = "Şehitlerimizin anısını yaşatır, ailelerimizin yanında dururuz.";

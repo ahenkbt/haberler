@@ -8,6 +8,7 @@ import {
   vatanHomeNumeral,
   type VatanHomeModuleId,
 } from "@/lib/hmVatanEditorHome";
+import { resolveVatanDernekSection, resolveVatanRightsSection } from "@/lib/hmVatanHomeCopy";
 import { VatanHero } from "@/components/vatan/home/VatanHero";
 import { VatanSehitSorgu } from "@/components/vatan/home/VatanSehitSorgu";
 import { VatanHafizaMekanlari } from "@/components/vatan/home/VatanHafizaMekanlari";
@@ -29,14 +30,16 @@ const NUMBERED: ReadonlySet<VatanHomeModuleId> = new Set([
 ]);
 
 /**
- * Vatan homepage. Copy/assets stay evergreen; order, slider, mosaic and
- * donation surfaces read the same layoutPrefs the editor already saves.
+ * Vatan homepage. Order, slider, mosaic, dernek/rights images and copy
+ * read the same layoutPrefs the editor already saves (hmVatanHomeCopy).
  */
 export function HmVatanHome({ layoutPrefs, slug }: { layoutPrefs: NewsSiteLayoutPrefs; slug: string }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useVatanReveal(rootRef);
-  const hero = useMemo(() => resolveVatanHero(layoutPrefs), [layoutPrefs]);
-  const mosaicTiles = useMemo(() => resolveVatanMosaicTiles(layoutPrefs), [layoutPrefs]);
+  const hero = useMemo(() => resolveVatanHero(layoutPrefs, slug), [layoutPrefs, slug]);
+  const mosaicTiles = useMemo(() => resolveVatanMosaicTiles(layoutPrefs, slug), [layoutPrefs, slug]);
+  const dernek = useMemo(() => resolveVatanDernekSection(layoutPrefs.hmVatanHomeCopy, slug), [layoutPrefs.hmVatanHomeCopy, slug]);
+  const rights = useMemo(() => resolveVatanRightsSection(layoutPrefs.hmVatanHomeCopy, slug), [layoutPrefs.hmVatanHomeCopy, slug]);
   const modules = useMemo(() => resolveVatanVisibleHomeModules(layoutPrefs), [layoutPrefs]);
   const numerals = useMemo(() => {
     const map = new Map<VatanHomeModuleId, string>();
@@ -58,15 +61,23 @@ export function HmVatanHome({ layoutPrefs, slug }: { layoutPrefs: NewsSiteLayout
           case "sehitSearch":
             return <VatanSehitSorgu key={id} />;
           case "mosaic":
-            return <VatanHafizaMekanlari key={id} tiles={mosaicTiles} numeral={numerals.get(id)} />;
+            return (
+              <VatanHafizaMekanlari
+                key={id}
+                tiles={mosaicTiles}
+                layoutPrefs={layoutPrefs}
+                siteSlug={slug}
+                numeral={numerals.get(id)}
+              />
+            );
           case "dernek":
-            return <VatanDernekBand key={id} numeral={numerals.get(id)} />;
+            return <VatanDernekBand key={id} content={dernek} numeral={numerals.get(id)} />;
           case "rights":
-            return <VatanHaklarDestek key={id} numeral={numerals.get(id)} />;
+            return <VatanHaklarDestek key={id} content={rights} siteSlug={slug} numeral={numerals.get(id)} />;
           case "nationalDays":
-            return <VatanMilliGunler key={id} numeral={numerals.get(id)} />;
+            return <VatanMilliGunler key={id} layoutPrefs={layoutPrefs} siteSlug={slug} numeral={numerals.get(id)} />;
           case "ataturk":
-            return <VatanAtaturkKosesi key={id} numeral={numerals.get(id)} />;
+            return <VatanAtaturkKosesi key={id} layoutPrefs={layoutPrefs} numeral={numerals.get(id)} />;
           case "wars":
             return <VatanTarihPanels key={id} numeral={numerals.get(id)} />;
           case "donation":
