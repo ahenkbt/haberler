@@ -16,10 +16,13 @@ describe("hmTgdPremiumPage", () => {
 <h2>Görevler</h2>
 <ul><li>Risk analizi</li></ul>
 </div>`;
-    const parsed = parseHmTgdPremiumBody(html, "Fallback");
+    const parsed = parseHmTgdPremiumBody(html, "Fallback", "trafik-guvenligi-bas-denetcisi");
     expect(parsed.title).toBe("Seviye 3 Baş Denetçi");
     expect(parsed.lead).toMatch(/Sistem kurucu/);
     expect(parsed.heroImage).toBe("https://example.com/hero.jpg");
+    expect(parsed.eyebrow).toMatch(/Seviye 3/);
+    expect(parsed.stats).toHaveLength(4);
+    expect(parsed.related.some((r) => r.href.includes("tgu-nedir"))).toBe(true);
     expect(parsed.bodyHtml).toContain("<h2>Görevler</h2>");
     expect(parsed.bodyHtml).not.toContain("<h1>");
     expect(parsed.bodyHtml).not.toContain("hero.jpg");

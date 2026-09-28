@@ -576,6 +576,42 @@
   }
 }
 
+/** TGD — VKD burs header gibi sade: kompakt logo, dar nav, az CTA. */
+[data-vatan-shell] .vatan-header--tgd {
+  --vatan-header-h: 72px;
+  --vatan-header-h-solid: 64px;
+}
+
+[data-vatan-shell] .vatan-header--tgd.vatan-header--solid {
+  background-color: rgba(7, 20, 34, 0.96);
+}
+
+[data-vatan-shell] .vatan-header--tgd .vatan-brand__logo,
+[data-vatan-shell] .vatan-header--tgd.vatan-header--solid .vatan-brand__logo {
+  height: 36px;
+  max-width: min(168px, 42vw);
+}
+
+[data-vatan-shell] .vatan-header--tgd .vatan-nav {
+  gap: 0.1rem;
+}
+
+[data-vatan-shell] .vatan-header--tgd .vatan-nav__root {
+  padding-inline: 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.11em;
+}
+
+[data-vatan-shell] .vatan-header--tgd .vatan-header__actions {
+  gap: 0.4rem;
+}
+
+[data-vatan-shell] .vatan-header--tgd .vatan-header__cta {
+  padding-inline: 0.85rem;
+  min-height: 34px;
+  font-size: 0.7rem;
+}
+
 /* ───────────────────────── 5. Mega panel ───────────────────────── */
 [data-vatan-shell] .vatan-mega {
   position: absolute;
