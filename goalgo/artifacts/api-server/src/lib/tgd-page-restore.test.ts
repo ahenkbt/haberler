@@ -7,6 +7,21 @@ describe("tgd-page-restore upsert", () => {
     expect(normalizeTgdPageSlug("/tgu-nedir/")).toBe("tgu-nedir");
   });
 
+  it("rewrites nested menu hrefs to flat canonical paths", async () => {
+    const { normalizeTgdMenuHref, rewriteTgdCorporateMenuHrefs } = await import("./tgd-page-restore.js");
+    expect(normalizeTgdMenuHref("/trafik-yasam/projeler")).toBe("/trafik-yasam-projeler");
+    expect(normalizeTgdMenuHref("/trafik-rehberi")).toBe("/trafik-rehberi");
+    expect(normalizeTgdMenuHref("/trafik-yasam/trafik-rehberi")).toBe("/trafik-rehberi");
+    const { layout, rewritten } = rewriteTgdCorporateMenuHrefs({
+      hmCorporateMenuItems: [
+        { id: "a", href: "/trafik-yasam/projeler", label: "Projeler" },
+        { id: "b", href: "/tgu-nedir", label: "TGU" },
+      ],
+    });
+    expect(rewritten).toBe(1);
+    expect((layout.hmCorporateMenuItems as Array<{ href: string }>)[0]?.href).toBe("/trafik-yasam-projeler");
+  });
+
   it("writes canonical slugs and prunes WP -N duplicates on overwrite", () => {
     const layout = {
       hmExtraPages: [
