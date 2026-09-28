@@ -15,6 +15,7 @@ import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
 import { buildVatanNavModel, VATAN_OVERFLOW_GROUP_LABEL, type VatanNavGroup } from "@/lib/hmVatanNav";
 import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
+import { isTgdHmSiteSlug } from "@/lib/hmVatanHomeCopy";
 import { VatanButton } from "@/components/vatan/ui/VatanButton";
 import { VatanLink } from "@/components/vatan/ui/VatanLink";
 import { HmVatanMobileMenu } from "@/components/vatan/HmVatanMobileMenu";
@@ -87,7 +88,16 @@ export function HmVatanHeader({
   topOffsetPx?: number;
 }) {
   const h = useHmPublicHref();
-  const nav = useMemo(() => buildVatanNavModel(layoutPrefs, h, { showVideoTvLink }), [layoutPrefs, h, showVideoTvLink]);
+  const isTgd = isTgdHmSiteSlug(site.slug);
+  const nav = useMemo(
+    () =>
+      buildVatanNavModel(layoutPrefs, h, {
+        showVideoTvLink,
+        /** TGD: VKD burs gibi 4 kök + “Daha Fazla” — üst şerit sade kalsın. */
+        primaryGroupLimit: isTgd ? 4 : undefined,
+      }),
+    [layoutPrefs, h, showVideoTvLink, isTgd],
+  );
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -98,7 +108,8 @@ export function HmVatanHeader({
   const searchBtnRef = useRef<HTMLButtonElement | null>(null);
   const panelId = useId();
 
-  const solid = scrolled || !isHomeRoot || openKey != null;
+  /** TGD iç sayfalarda her zaman solid; anasayfada da daha sade tek sıra. */
+  const solid = scrolled || !isHomeRoot || openKey != null || isTgd;
 
   const overflowGroup: VatanNavGroup | null = useMemo(() => {
     if (nav.overflowGroups.length === 0) return null;
@@ -203,7 +214,7 @@ export function HmVatanHeader({
           rootRef.current = el;
           if (bandRef) (bandRef as { current: HTMLElement | null }).current = el;
         }}
-        className={`vatan-header${solid ? " vatan-header--solid" : " vatan-header--clear"}${openKey ? " vatan-header--mega-open" : ""}`}
+        className={`vatan-header${solid ? " vatan-header--solid" : " vatan-header--clear"}${openKey ? " vatan-header--mega-open" : ""}${isTgd ? " vatan-header--tgd" : ""}`}
         role="banner"
         data-vatan-header-state={solid ? "solid" : "transparent"}
         style={style}
@@ -212,7 +223,12 @@ export function HmVatanHeader({
         onBlur={onHeaderBlur}
       >
         <div className="vatan-wrap vatan-header__inner">
-          <VatanBrand logoUrl={layoutPrefs.logoUrl?.trim() || undefined} displayName={site.displayName} homeHref={homeHref} />
+          <VatanBrand
+            logoUrl={layoutPrefs.logoUrl?.trim() || undefined}
+            displayName={site.displayName}
+            homeHref={homeHref}
+            compact={isTgd}
+          />
 
           <nav className="vatan-header__nav" aria-label="Ana menü">
             <ul className="vatan-nav" role="list">
@@ -274,12 +290,25 @@ export function HmVatanHeader({
             >
               <SearchIcon />
             </button>
-            <VatanButton href={h("/canakkale-sehitleri")} variant="outline" className="vatan-header__cta vatan-header__cta--sorgu">
-              Şehit Sorgula
-            </VatanButton>
-            <VatanButton href={h("/bagis")} variant="primary" className="vatan-header__cta vatan-header__cta--destek">
-              Destek Ol
-            </VatanButton>
+            {isTgd ? (
+              <>
+                <VatanButton href={h("/tgu-nedir")} variant="outline" className="vatan-header__cta vatan-header__cta--sorgu">
+                  TGU Nedir?
+                </VatanButton>
+                <VatanButton href={h("/iletisim")} variant="primary" className="vatan-header__cta vatan-header__cta--destek">
+                  İletişim
+                </VatanButton>
+              </>
+            ) : (
+              <>
+                <VatanButton href={h("/canakkale-sehitleri")} variant="outline" className="vatan-header__cta vatan-header__cta--sorgu">
+                  Şehit Sorgula
+                </VatanButton>
+                <VatanButton href={h("/bagis")} variant="primary" className="vatan-header__cta vatan-header__cta--destek">
+                  Destek Ol
+                </VatanButton>
+              </>
+            )}
             <button
               ref={hamburgerRef}
               type="button"
@@ -319,13 +348,13 @@ export function HmVatanHeader({
                   ))}
                 </ul>
               </div>
-              {activeGroup.key !== OVERFLOW_KEY ? (
+              {activeGroup.key !== OVERFLOW_KEY && !isTgd ? (
                 <figure className="vatan-mega__figure">
                   <img src={activeGroup.image} alt="" loading="lazy" decoding="async" width={640} height={360} />
                   {activeGroup.imageCaption ? <figcaption>{activeGroup.imageCaption}</figcaption> : null}
                 </figure>
               ) : null}
-              {nav.utilityLinks.length ? (
+              {!isTgd && nav.utilityLinks.length ? (
                 <div className="vatan-mega__rail">
                   {nav.utilityLinks.map((link) => (
                     <VatanLink key={link.key} href={link.href} className="vatan-mega__util" onClick={() => setOpenKey(null)}>

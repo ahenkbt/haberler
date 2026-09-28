@@ -18,7 +18,6 @@ import { extraPageBodyHtmlOf, findHmExtraPageBySlug } from "@/lib/hmExtraPageLoo
 import {
   hmContainedPageShellClass,
   hmFullWidthPageShellClass,
-  hmSiteContentShellClass,
   isHmSiteLayoutContained,
 } from "@/lib/hmChromeLayout";
 import { isHmTgdPremiumBody, parseHmTgdPremiumBody } from "@/lib/hmTgdPremiumPage";
@@ -125,6 +124,16 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
     Boolean(page?.bodyHtml) &&
     (site.slug === "trafik" || isHmTgdPremiumBody(page?.bodyHtml ?? "", page?.importSource));
 
+  const tgdPremium = useMemo(() => {
+    if (!useTgdPremium || !page?.bodyHtml) return null;
+    const prepared = prepareHmCustomPageBodyHtml(page.bodyHtml, {
+      corporate: true,
+      importSource: page.importSource,
+      site: { slug: site.slug, siteId: site.id, domain: site.domain ?? null },
+    });
+    return parseHmTgdPremiumBody(prepared, page.title, page.slug || pageSlug);
+  }, [useTgdPremium, page?.bodyHtml, page?.importSource, page?.title, page?.slug, pageSlug, site.domain, site.id, site.slug]);
+
   const pageBodySafe = useMemo(() => {
     if (!page?.bodyHtml) return "";
     const prepared = prepareHmCustomPageBodyHtml(page.bodyHtml, {
@@ -133,18 +142,20 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
       site: { slug: site.slug, siteId: site.id, domain: site.domain ?? null },
     });
     if (!useTgdPremium) return prepared;
-    return parseHmTgdPremiumBody(prepared, page.title).bodyHtml;
-  }, [page?.bodyHtml, page?.importSource, page?.title, isCorporate, useTgdPremium, site.domain, site.id, site.slug]);
-
-  const tgdPremium = useMemo(() => {
-    if (!useTgdPremium || !page?.bodyHtml) return null;
-    const prepared = prepareHmCustomPageBodyHtml(page.bodyHtml, {
-      corporate: true,
-      importSource: page.importSource,
-      site: { slug: site.slug, siteId: site.id, domain: site.domain ?? null },
-    });
-    return parseHmTgdPremiumBody(prepared, page.title);
-  }, [useTgdPremium, page?.bodyHtml, page?.importSource, page?.title, site.domain, site.id, site.slug]);
+    return tgdPremium?.bodyHtml ?? parseHmTgdPremiumBody(prepared, page.title, page.slug || pageSlug).bodyHtml;
+  }, [
+    page?.bodyHtml,
+    page?.importSource,
+    page?.title,
+    page?.slug,
+    pageSlug,
+    isCorporate,
+    useTgdPremium,
+    tgdPremium?.bodyHtml,
+    site.domain,
+    site.id,
+    site.slug,
+  ]);
 
   const htmlPending = Boolean(listedPage) && !pageBodySafe.trim() && !listedHtml && !fetchedFullHtml;
 
@@ -170,32 +181,72 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
   const shellClass = isContained
     ? hmContainedPageShellClass("hm-custom-page-shell flex-1 py-0")
     : `${hmFullWidthPageShellClass()} hm-custom-page-shell flex-1 py-0`;
-  const contentShell = hmSiteContentShellClass(site.layoutPrefs);
 
   if (useTgdPremium && tgdPremium) {
     const heroSrc = tgdPremium.heroImage.trim() || VATAN_ASSETS.guvenlikGucleri;
+    const homeHref = hmPublicHref("/", { domain: site.domain, slug: site.slug, siteId: site.id });
+    const linkCtx = { domain: site.domain, slug: site.slug, siteId: site.id };
+    const activeSlug = normalizeCustomPageSlug(page.slug || pageSlug);
     return (
       <div className="flex min-w-0 flex-1 flex-col">
-        <article className="vatan-page hm-tgd-premium">
-          <header className="vatan-hero">
-            <img
-              className="vatan-hero__img"
-              src={heroSrc}
-              alt=""
-              fetchPriority="high"
-              decoding="async"
-              width={1600}
-              height={900}
-            />
-            <div className="vatan-hero__shade" />
-            <div className={`vatan-hero__inner ${contentShell}`}>
-              <p className="vatan-hero__kicker">{site.displayName || "Trafik Güvenliği Derneği"}</p>
-              <h1 className="vatan-hero__title">{tgdPremium.title}</h1>
-              {tgdPremium.lead ? <p className="vatan-hero__lead">{tgdPremium.lead}</p> : null}
+        <article className="hm-tgd-ultra">
+          <header className="hm-tgd-ultra__hero">
+            <div className="hm-tgd-ultra__hero-bg" aria-hidden="true">
+              <img src={heroSrc} alt="" fetchPriority="high" decoding="async" width={1600} height={900} />
+            </div>
+            <div className="hm-tgd-ultra__wrap hm-tgd-ultra__hero-grid">
+              <div>
+                <p className="hm-tgd-ultra__badge">{tgdPremium.eyebrow}</p>
+                <h1 className="hm-tgd-ultra__title">{tgdPremium.title}</h1>
+                {tgdPremium.lead ? <p className="hm-tgd-ultra__lead">{tgdPremium.lead}</p> : null}
+              </div>
+              {tgdPremium.stats.length > 0 ? (
+                <div className="hm-tgd-ultra__stats" role="list">
+                  {tgdPremium.stats.map((stat) => (
+                    <div key={`${stat.value}-${stat.label}`} className="hm-tgd-ultra__stat" role="listitem">
+                      <span className="hm-tgd-ultra__stat-value">{stat.value}</span>
+                      <span className="hm-tgd-ultra__stat-label">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </header>
-          <section className="vatan-sec">
-            <div className={contentShell}>
+
+          {tgdPremium.related.length > 0 ? (
+            <nav className="hm-tgd-ultra__subnav" aria-label="İlgili sayfalar">
+              <div className="hm-tgd-ultra__wrap hm-tgd-ultra__subnav-inner">
+                {tgdPremium.related.map((item) => {
+                  const itemSlug = normalizeCustomPageSlug(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={hmPublicHref(item.href, linkCtx)}
+                      className={itemSlug === activeSlug ? "is-active" : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
+          ) : null}
+
+          <div className="hm-tgd-ultra__wrap">
+            <nav className="hm-tgd-ultra__bc" aria-label="Sayfa konumu">
+              <Link href={homeHref}>Ana Sayfa</Link>
+              <span className="hm-tgd-ultra__bc-sep" aria-hidden="true">
+                ›
+              </span>
+              <span>{tgdPremium.title}</span>
+            </nav>
+          </div>
+
+          <section className="hm-tgd-ultra__body">
+            <div className="hm-tgd-ultra__wrap">
+              <div className="hm-tgd-ultra__section-head">
+                <p className="hm-tgd-ultra__section-badge">Program içeriği</p>
+              </div>
               <HmCustomPageErrorBoundary resetKey={`${page.slug}-${pageBodySafe.length}`}>
                 {pageBodySafe.trim() ? (
                   <div

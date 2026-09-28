@@ -90,7 +90,7 @@ function toLink(h: (path: string) => string, item: HmCorporateMenuItem): VatanNa
 export function buildVatanNavModel(
   layoutPrefs: NewsSiteLayoutPrefs,
   h: (path: string) => string,
-  opts: { showVideoTvLink: boolean },
+  opts: { showVideoTvLink: boolean; primaryGroupLimit?: number },
 ): VatanNavModel {
   const items = (layoutPrefs.hmCorporateMenuItems ?? []).filter((it) => it && it.enabled !== false);
   const roots = items.filter((it) => !String(it.parentId ?? "").trim());
@@ -139,9 +139,14 @@ export function buildVatanNavModel(
     if (link) utilityLinks.push(link);
   }
 
+  const primaryLimit =
+    typeof opts.primaryGroupLimit === "number" && opts.primaryGroupLimit > 0
+      ? opts.primaryGroupLimit
+      : VATAN_PRIMARY_GROUP_LIMIT;
+
   return {
-    primaryGroups: groups.slice(0, VATAN_PRIMARY_GROUP_LIMIT),
-    overflowGroups: groups.slice(VATAN_PRIMARY_GROUP_LIMIT),
+    primaryGroups: groups.slice(0, primaryLimit),
+    overflowGroups: groups.slice(primaryLimit),
     utilityLinks,
     newsLinks,
   };
