@@ -1,0 +1,191 @@
+/**
+ * Trafik Güvenliği Derneği — Vatan premium arşiv sayfa gövdesi.
+ * Kabuk: `.vatan-page` / `.vatan-hero` (HmCustomPage). Gövde: `.hm-tgd-prose .hm-tgd-page`.
+ */
+
+.hm-tgd-premium {
+  background: var(--vatan-ivory, #f6f1e8);
+}
+
+.hm-tgd-prose .hm-tgd-page {
+  max-width: 46rem;
+  color: #3d4451;
+  font-size: 1.02rem;
+  line-height: 1.85;
+}
+
+.hm-tgd-prose .hm-tgd-page > *:first-child {
+  margin-top: 0;
+}
+
+.hm-tgd-prose .hm-tgd-page h2,
+.hm-tgd-prose .hm-tgd-page h3,
+.hm-tgd-prose .hm-tgd-page h4 {
+  margin: 2.25rem 0 0.85rem;
+  font-family: var(--vatan-serif, "Cormorant Garamond", Georgia, serif);
+  font-weight: 700;
+  color: var(--vatan-navy, #0b1c33);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.hm-tgd-prose .hm-tgd-page h2 {
+  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+}
+
+.hm-tgd-prose .hm-tgd-page h3 {
+  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
+}
+
+.hm-tgd-prose .hm-tgd-page h4 {
+  font-size: 1.1rem;
+  color: var(--vatan-crimson, #8c1a2e);
+}
+
+.hm-tgd-prose .hm-tgd-page p {
+  margin: 0 0 1.05rem;
+  max-width: 46rem;
+}
+
+.hm-tgd-prose .hm-tgd-page a {
+  color: var(--vatan-crimson, #8c1a2e);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.hm-tgd-prose .hm-tgd-page a:hover {
+  color: var(--vatan-crimson-deep, #6b1222);
+}
+
+.hm-tgd-prose .hm-tgd-page ul,
+.hm-tgd-prose .hm-tgd-page ol {
+  margin: 0 0 1.35rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.65rem;
+  max-width: 46rem;
+}
+
+.hm-tgd-prose .hm-tgd-page li {
+  position: relative;
+  padding: 0.85rem 1rem 0.85rem 2.35rem;
+  background: #fffdf8;
+  border: 1px solid #e6ddd0;
+}
+
+.hm-tgd-prose .hm-tgd-page li::before {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  top: 1.2rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--vatan-gold, #c9a84c);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.18);
+}
+
+.hm-tgd-prose .hm-tgd-page ol {
+  counter-reset: tgd-ol;
+}
+
+.hm-tgd-prose .hm-tgd-page ol > li {
+  counter-increment: tgd-ol;
+  padding-left: 2.75rem;
+}
+
+.hm-tgd-prose .hm-tgd-page ol > li::before {
+  content: counter(tgd-ol);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  left: 0.85rem;
+  top: 0.9rem;
+  font-family: var(--vatan-sans, "Oswald", sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--vatan-crimson, #8c1a2e);
+}
+
+.hm-tgd-prose .hm-tgd-page strong,
+.hm-tgd-prose .hm-tgd-page b {
+  color: var(--vatan-navy, #0b1c33);
+  font-weight: 700;
+}
+
+.hm-tgd-prose .hm-tgd-page hr {
+  border: 0;
+  height: 1px;
+  margin: 2rem 0;
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.55), transparent);
+}
+
+.hm-tgd-prose .hm-tgd-page img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  margin: 1.25rem 0;
+  border: 1px solid #e6ddd0;
+}
+
+.hm-tgd-prose .hm-tgd-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.75rem 0 0.5rem;
+  max-width: none;
+}
+
+.hm-tgd-prose .hm-tgd-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e6ddd0;
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hm-tgd-prose .hm-tgd-card:hover {
+  border-color: var(--vatan-crimson, #8c1a2e);
+  box-shadow: 0 10px 28px rgba(11, 28, 51, 0.08);
+  transform: translateY(-2px);
+}
+
+.hm-tgd-prose .hm-tgd-card a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hm-tgd-prose .hm-tgd-card img {
+  margin: 0;
+  max-height: 180px;
+  border: 0;
+}
+
+.hm-tgd-prose .hm-tgd-card h3 {
+  margin: 0.9rem 1rem 0.35rem;
+  font-size: 1.05rem;
+}
+
+.hm-tgd-prose .hm-tgd-card p {
+  margin: 0 1rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #5c6170;
+}
+
+@media (max-width: 720px) {
+  .hm-tgd-prose .hm-tgd-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .hm-tgd-prose .hm-tgd-page li {
+    padding-left: 2.1rem;
+  }
+}

@@ -15,8 +15,16 @@ import {
   shouldUseHmTemplatePageBody,
 } from "@/lib/prepareHmCustomPageBodyHtml";
 import { extraPageBodyHtmlOf, findHmExtraPageBySlug } from "@/lib/hmExtraPageLookup";
-import { hmContainedPageShellClass, hmFullWidthPageShellClass, isHmSiteLayoutContained } from "@/lib/hmChromeLayout";
+import {
+  hmContainedPageShellClass,
+  hmFullWidthPageShellClass,
+  hmSiteContentShellClass,
+  isHmSiteLayoutContained,
+} from "@/lib/hmChromeLayout";
+import { isHmTgdPremiumBody, parseHmTgdPremiumBody } from "@/lib/hmTgdPremiumPage";
+import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
 import "@/styles/hmVkdCorporatePages.css";
+import "@/styles/hmTgdPremiumPages.css";
 
 type HmMeta = {
   id: number;
@@ -110,15 +118,34 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
   }, [page, site.displayName, site.domain, site.layoutPrefs.faviconUrl, site.layoutPrefs.logoUrl, site.slug]);
 
   const isCorporate = site.layoutPrefs.hmVitrinTheme === "corporate" || site.layoutPrefs.hmVitrinTheme === "vatan";
+  const isVatan = site.layoutPrefs.hmVitrinTheme === "vatan";
+  /** Trafik sitesi + TGD arşiv HTML / tgd-archive kaynağı → Vatan premium kabuk. */
+  const useTgdPremium =
+    isVatan &&
+    Boolean(page?.bodyHtml) &&
+    (site.slug === "trafik" || isHmTgdPremiumBody(page?.bodyHtml ?? "", page?.importSource));
 
   const pageBodySafe = useMemo(() => {
     if (!page?.bodyHtml) return "";
-    return prepareHmCustomPageBodyHtml(page.bodyHtml, {
+    const prepared = prepareHmCustomPageBodyHtml(page.bodyHtml, {
       corporate: isCorporate,
       importSource: page.importSource,
       site: { slug: site.slug, siteId: site.id, domain: site.domain ?? null },
     });
-  }, [page?.bodyHtml, page?.importSource, isCorporate, site.domain, site.id, site.slug]);
+    if (!useTgdPremium) return prepared;
+    return parseHmTgdPremiumBody(prepared, page.title).bodyHtml;
+  }, [page?.bodyHtml, page?.importSource, page?.title, isCorporate, useTgdPremium, site.domain, site.id, site.slug]);
+
+  const tgdPremium = useMemo(() => {
+    if (!useTgdPremium || !page?.bodyHtml) return null;
+    const prepared = prepareHmCustomPageBodyHtml(page.bodyHtml, {
+      corporate: true,
+      importSource: page.importSource,
+      site: { slug: site.slug, siteId: site.id, domain: site.domain ?? null },
+    });
+    return parseHmTgdPremiumBody(prepared, page.title);
+  }, [useTgdPremium, page?.bodyHtml, page?.importSource, page?.title, site.domain, site.id, site.slug]);
+
   const htmlPending = Boolean(listedPage) && !pageBodySafe.trim() && !listedHtml && !fetchedFullHtml;
 
   useHmCustomPageEnhancements(bodyRef, site, page?.slug ?? pageSlug, page?.title ?? pageSlug, pageBodySafe);
@@ -143,6 +170,50 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
   const shellClass = isContained
     ? hmContainedPageShellClass("hm-custom-page-shell flex-1 py-0")
     : `${hmFullWidthPageShellClass()} hm-custom-page-shell flex-1 py-0`;
+  const contentShell = hmSiteContentShellClass(site.layoutPrefs);
+
+  if (useTgdPremium && tgdPremium) {
+    const heroSrc = tgdPremium.heroImage.trim() || VATAN_ASSETS.guvenlikGucleri;
+    return (
+      <div className="flex min-w-0 flex-1 flex-col">
+        <article className="vatan-page hm-tgd-premium">
+          <header className="vatan-hero">
+            <img
+              className="vatan-hero__img"
+              src={heroSrc}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              width={1600}
+              height={900}
+            />
+            <div className="vatan-hero__shade" />
+            <div className={`vatan-hero__inner ${contentShell}`}>
+              <p className="vatan-hero__kicker">{site.displayName || "Trafik Güvenliği Derneği"}</p>
+              <h1 className="vatan-hero__title">{tgdPremium.title}</h1>
+              {tgdPremium.lead ? <p className="vatan-hero__lead">{tgdPremium.lead}</p> : null}
+            </div>
+          </header>
+          <section className="vatan-sec">
+            <div className={contentShell}>
+              <HmCustomPageErrorBoundary resetKey={`${page.slug}-${pageBodySafe.length}`}>
+                {pageBodySafe.trim() ? (
+                  <div
+                    ref={bodyRef}
+                    className="hm-custom-page-body hm-custom-page-body--corporate hm-custom-page-body--vatan hm-tgd-prose max-w-none overflow-x-hidden"
+                    data-hm-page-slug={page.slug}
+                    dangerouslySetInnerHTML={{ __html: pageBodySafe }}
+                  />
+                ) : htmlPending ? (
+                  <div className="min-h-[40vh]" aria-busy="true" aria-label="Sayfa yükleniyor" />
+                ) : null}
+              </HmCustomPageErrorBoundary>
+            </div>
+          </section>
+        </article>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
