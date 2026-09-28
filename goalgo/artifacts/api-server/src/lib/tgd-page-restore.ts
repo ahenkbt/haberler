@@ -15,8 +15,8 @@ import { parseHmLayoutJson } from "./hm-layout-delta.js";
 
 export const TGD_SITE_SLUG = "trafik";
 export const TGD_EDITOR_TOUCHED_KEY = "tgdEditorTouchedAt";
-/** Bump: kanonik slug upsert + WP -N duplicate prune. */
-export const TGD_PAGE_SYNC_VERSION = 2;
+/** Bump: nested menü href → flat slug + trafik-rehberi seed. */
+export const TGD_PAGE_SYNC_VERSION = 3;
 
 type TgdManifest = {
   pageSyncVersion?: number;
@@ -137,7 +137,48 @@ const TGD_REQUIRED_PAGE_SLUGS = [
   "bagimsiz-denetci",
   "trafik-yasam-projeler",
   "trafik-yasam-calismalar",
+  "trafik-rehberi",
 ] as const;
+
+/** Menüdeki WP nested path'leri tek-segment kanonik slug'a çevirir. */
+const TGD_MENU_HREF_ALIASES: Record<string, string> = {
+  "/trafik-yasam/projeler": "/trafik-yasam-projeler",
+  "/trafik-yasam/calismalar": "/trafik-yasam-calismalar",
+  "/trafik-yasam/trafik-rehberi": "/trafik-rehberi",
+  "/trafik-yasam/sehir-trafik": "/trafik-yasam-sehir-trafik",
+};
+
+export function normalizeTgdMenuHref(href: string): string {
+  const raw = String(href ?? "").trim();
+  if (!raw || raw === "#") return raw;
+  const pathOnly = raw.split(/[?#]/)[0] ?? raw;
+  const q = raw.slice(pathOnly.length);
+  const normPath = (pathOnly.startsWith("/") ? pathOnly : `/${pathOnly}`).toLowerCase();
+  const aliased = TGD_MENU_HREF_ALIASES[normPath];
+  if (aliased) return `${aliased}${q}`;
+  return raw;
+}
+
+export function rewriteTgdCorporateMenuHrefs(layout: Record<string, unknown>): {
+  layout: Record<string, unknown>;
+  rewritten: number;
+} {
+  const items = layout.hmCorporateMenuItems;
+  if (!Array.isArray(items) || items.length === 0) {
+    return { layout, rewritten: 0 };
+  }
+  let rewritten = 0;
+  const next = items.map((row) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) return row;
+    const cur = row as Record<string, unknown>;
+    const href = String(cur.href ?? "");
+    const fixed = normalizeTgdMenuHref(href);
+    if (fixed === href) return cur;
+    rewritten += 1;
+    return { ...cur, href: fixed };
+  });
+  return { layout: { ...layout, hmCorporateMenuItems: next }, rewritten };
+}
 
 /**
  * Kanonik TGD sayfalarını exact slug ile yazar.
@@ -275,9 +316,18 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   const needsCopy =
     opts?.forceFull === true || layout.hmVatanHomeCopy == null || typeof layout.hmVatanHomeCopy !== "object";
   const needsTheme = String(layout.hmVitrinTheme ?? "").toLowerCase() !== "vatan";
+  const needsMenuHrefRewrite = (() => {
+    const items = layout.hmCorporateMenuItems;
+    if (!Array.isArray(items)) return false;
+    return items.some((row) => {
+      if (!row || typeof row !== "object") return false;
+      const href = String((row as { href?: string }).href ?? "");
+      return normalizeTgdMenuHref(href) !== href;
+    });
+  })();
 
   if (editorTouched && !opts?.forceFull) {
-    if (!needsPages && !needsCopy && !needsTheme) {
+    if (!needsPages && !needsCopy && !needsTheme && !needsMenuHrefRewrite) {
       console.info("[tgd-sync] editör dokunmuş — atlandı");
       return;
     }
@@ -311,6 +361,10 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
     next.tgdPageSyncVersion = targetVersion;
   }
 
+  const menuFix = rewriteTgdCorporateMenuHrefs(next);
+  next = menuFix.layout;
+  const menuRewritten = menuFix.rewritten;
+
   const serialized = JSON.stringify(next);
   if (serialized === String(site.layoutJson ?? "")) {
     console.info("[tgd-sync] değişiklik yok");
@@ -322,6 +376,6 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
     eq(hmNewsSitesTable.id, site.id),
   );
   console.info(
-    `[tgd-sync] site #${site.id} güncellendi (pages=${needsPages} upserted=${upserted} pruned=${pruned} copy=${needsCopy} theme=${needsTheme})`,
+    `[tgd-sync] site #${site.id} güncellendi (pages=${needsPages} upserted=${upserted} pruned=${pruned} menuHref=${menuRewritten} copy=${needsCopy} theme=${needsTheme})`,
   );
 }

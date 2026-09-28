@@ -1552,6 +1552,20 @@ export default function App() {
           </YekparePortalHubOnlyRoute>
         </HmPublicShell>
       )}</Route>
+      <Route path="/tr/:slug/:seg1/:seg2/:seg3">
+        {() => (
+          <HmPublicShell>
+            <HmPublicExtraPageSlugRoute />
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/tr/:slug/:seg1/:seg2">
+        {() => (
+          <HmPublicShell>
+            <HmPublicExtraPageSlugRoute />
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/tr/:slug/:pageSlug">
         {() => (
           <HmPublicShell>

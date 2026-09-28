@@ -21,6 +21,15 @@ describe("findHmExtraPageBySlug", () => {
     expect(findHmExtraPageBySlug(pages, "seviye-1-trafik-guvenligi-uzmani-uygulayici")?.title).toBe("Seviye 1");
   });
 
+  it("maps nested WP paths onto flat slugs", () => {
+    const pages = [
+      page({ slug: "trafik-yasam-projeler", title: "Projeler" }),
+      page({ slug: "trafik-rehberi", title: "Rehber" }),
+    ];
+    expect(findHmExtraPageBySlug(pages, "trafik-yasam/projeler")?.title).toBe("Projeler");
+    expect(findHmExtraPageBySlug(pages, "trafik-yasam/trafik-rehberi")?.title).toBe("Rehber");
+  });
+
   it("falls back to lowest numbered WordPress duplicate", () => {
     const pages = [
       page({ slug: "seviye-1-trafik-guvenligi-uzmani-uygulayici-3", title: "N3" }),

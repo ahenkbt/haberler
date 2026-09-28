@@ -40,45 +40,70 @@ export function normalizeHmExtraPageSlug(raw: string): string {
   return String(raw ?? "")
     .trim()
     .replace(/^\/+|\/+$/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\//g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * WP nested paths (`trafik-yasam/projeler`) and short aliases map onto
+ * canonical single-segment extra-page slugs.
+ */
+export function hmExtraPageSlugCandidates(raw: string): string[] {
+  const wanted = normalizeHmExtraPageSlug(raw);
+  if (!wanted) return [];
+  const out: string[] = [wanted];
+  /** Menü `/trafik-rehberi`, arşiv yolu `/trafik-yasam/trafik-rehberi`. */
+  if (wanted === "trafik-rehberi") out.push("trafik-yasam-trafik-rehberi");
+  if (wanted === "trafik-yasam-trafik-rehberi") out.push("trafik-rehberi");
+  return [...new Set(out)];
 }
 
 /**
  * Exact slug match first; then WordPress-style `slug-2` / `slug-3` duplicates
  * (lowest N wins). If the request itself is `slug-N`, also try the base `slug`
  * (canonical restore may have pruned numbered copies while CDN still serves them).
+ * Nested path requests (`a/b`) are normalized to `a-b`.
  */
 export function findHmExtraPageBySlug(
   pages: HmExtraPage[] | null | undefined,
   slug: string,
 ): HmExtraPage | undefined {
-  const wanted = normalizeHmExtraPageSlug(slug);
-  if (!wanted) return undefined;
+  const candidates = hmExtraPageSlugCandidates(slug);
+  if (!candidates.length) return undefined;
   const enabled = (pages ?? []).filter((p) => p && p.enabled !== false);
-  const exact = enabled.find((p) => normalizeHmExtraPageSlug(p.slug) === wanted);
-  if (exact) return exact;
 
-  const prefix = `${wanted}-`;
-  let best: HmExtraPage | undefined;
-  let bestN = Number.POSITIVE_INFINITY;
-  for (const page of enabled) {
-    const s = normalizeHmExtraPageSlug(page.slug);
-    if (!s.startsWith(prefix)) continue;
-    const rest = s.slice(prefix.length);
-    if (!/^\d+$/.test(rest)) continue;
-    const n = Number(rest);
-    if (n < bestN) {
-      bestN = n;
-      best = page;
-    }
+  for (const wanted of candidates) {
+    const exact = enabled.find((p) => normalizeHmExtraPageSlug(p.slug) === wanted);
+    if (exact) return exact;
   }
-  if (best) return best;
 
-  const numbered = /^(.*)-(\d+)$/.exec(wanted);
-  if (numbered?.[1]) {
-    const base = numbered[1];
-    const baseExact = enabled.find((p) => normalizeHmExtraPageSlug(p.slug) === base);
-    if (baseExact) return baseExact;
+  for (const wanted of candidates) {
+    const prefix = `${wanted}-`;
+    let best: HmExtraPage | undefined;
+    let bestN = Number.POSITIVE_INFINITY;
+    for (const page of enabled) {
+      const s = normalizeHmExtraPageSlug(page.slug);
+      if (!s.startsWith(prefix)) continue;
+      const rest = s.slice(prefix.length);
+      if (!/^\d+$/.test(rest)) continue;
+      const n = Number(rest);
+      if (n < bestN) {
+        bestN = n;
+        best = page;
+      }
+    }
+    if (best) return best;
+  }
+
+  for (const wanted of candidates) {
+    const numbered = /^(.*)-(\d+)$/.exec(wanted);
+    if (numbered?.[1]) {
+      const base = numbered[1];
+      const baseExact = enabled.find((p) => normalizeHmExtraPageSlug(p.slug) === base);
+      if (baseExact) return baseExact;
+    }
   }
   return undefined;
 }
