@@ -251,8 +251,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         title: "Projeler",
         kicker: "Saha & inovasyon",
         excerpt: "Kütüphane, akademi, yapay zeka ve güvenli adım seferberlikleri.",
-        image:
-          "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4f38e77a7.jpg",
+        image: "",
         imageAlt: "TGD projeleri",
         size: "xl",
       },
@@ -261,8 +260,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/trafik-yasam-calismalar",
         title: "Çalışmalar",
         kicker: "Eğitim & istihdam",
-        image:
-          "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f8d7b483df.jpg",
+        image: "",
         imageAlt: "TGD çalışmaları",
         size: "sm",
       },
@@ -271,8 +269,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/tgu-nedir",
         title: "TGU Nedir?",
         kicker: "Meslek",
-        image:
-          "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4dbaa9330.jpg",
+        image: "",
         imageAlt: "Trafik Güvenliği Uzmanlığı",
         size: "sm",
       },
@@ -281,8 +278,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/iktisadi-isletme",
         title: "İktisadi İşletme",
         kicker: "Hizmetler Ltd. Şti.",
-        image:
-          "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4e4f17d8d.jpg",
+        image: "",
         imageAlt: "Trafik Güvenliği Hizmetleri",
         size: "sm",
       },
@@ -291,8 +287,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/trafik-guvenligi-dernegi-tuzugu",
         title: "Tüzük",
         kicker: "Kurumsal",
-        image:
-          "https://web.archive.org/web/20260422120158im_/https://trafikdernegi.com/uploads/images/202511/image_430x256_690f4bc9e684f.jpg",
+        image: "",
         imageAlt: "Dernek tüzüğü",
         size: "sm",
       },

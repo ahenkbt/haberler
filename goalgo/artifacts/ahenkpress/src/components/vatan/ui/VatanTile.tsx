@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { VatanArrow } from "@/components/vatan/ui/VatanButton";
 import { VatanLink } from "@/components/vatan/ui/VatanLink";
 
@@ -17,28 +18,37 @@ export function VatanTile({
   title: string;
   kicker?: string;
   excerpt?: string;
-  image: string;
-  imageAlt: string;
+  image?: string;
+  imageAlt?: string;
   size?: "xl" | "sm";
   eager?: boolean;
   className?: string;
   revealIndex?: number;
 }) {
+  const src = String(image ?? "").trim();
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImg = Boolean(src) && !imgFailed;
+
   return (
     <VatanLink
       href={href}
-      className={`vatan-tile vatan-tile--${size} vatan-reveal${className ? ` ${className}` : ""}`}
+      className={`vatan-tile vatan-tile--${size}${showImg ? "" : " vatan-tile--no-img"} vatan-reveal${className ? ` ${className}` : ""}`}
       data-reveal-i={revealIndex}
     >
-      <img
-        className="vatan-tile__img"
-        src={image}
-        alt={imageAlt}
-        loading={eager ? "eager" : "lazy"}
-        decoding="async"
-        width={1280}
-        height={720}
-      />
+      {showImg ? (
+        <img
+          className="vatan-tile__img"
+          src={src}
+          alt={imageAlt || title}
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          width={1280}
+          height={720}
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <span className="vatan-tile__fallback" aria-hidden="true" />
+      )}
       <span className="vatan-tile__scrim" aria-hidden="true" />
       <span className="vatan-tile__arrow" aria-hidden="true">
         <VatanArrow />

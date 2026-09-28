@@ -46,6 +46,14 @@ export function prepareHmCustomPageBodyHtml(
     });
   }
 
+  /** TGD arşiv görselleri (trafikdernegi uploads / ölü Wayback im_) tarayıcıda kırık ikon üretmesin. */
+  if (opts.site?.slug === "trafik" || opts.importSource === "tgd-archive") {
+    html = html.replace(
+      /<img\b[^>]*\bsrc=["'][^"']*(?:trafikdernegi\.com\/uploads|trafik\.gd\/uploads|web\.archive\.org\/web\/\d+im_\/https?:\/\/trafikdernegi\.com\/uploads)[^"']*["'][^>]*>/gi,
+      "",
+    );
+  }
+
   if (typeof window !== "undefined") {
     html = rewriteInlineHtmlImgSrc(html);
   }

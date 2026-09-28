@@ -1439,6 +1439,18 @@
   transition: transform 600ms ease-out;
 }
 
+[data-vatan-shell] .vatan-tile__fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 70% at 70% 20%, rgba(140, 26, 46, 0.35) 0%, transparent 55%),
+    linear-gradient(155deg, #071422 0%, #0b1c33 45%, #1a0a12 100%);
+}
+
+[data-vatan-shell] .vatan-tile--no-img .vatan-tile__scrim {
+  background: linear-gradient(180deg, rgba(7, 20, 34, 0.2) 0%, rgba(7, 20, 34, 0.78) 100%);
+}
+
 [data-vatan-shell] .vatan-tile:hover .vatan-tile__img {
   transform: scale(1.04);
 }

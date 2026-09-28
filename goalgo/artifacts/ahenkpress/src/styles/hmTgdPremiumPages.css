@@ -399,10 +399,46 @@
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.hm-tgd-prose .hm-tgd-card--text {
+  min-height: 9.5rem;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.hm-tgd-prose .hm-tgd-card--text > a,
+.hm-tgd-prose .hm-tgd-card--text.hm-tgd-card--nolink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+  padding: 1.15rem 1.2rem 1.2rem;
+  border-top: 3px solid var(--tgd-crimson);
+}
+
+.hm-tgd-prose .hm-tgd-card--nolink {
+  cursor: default;
+}
+
+.hm-tgd-prose .hm-tgd-card__more {
+  margin-top: auto;
+  font-family: var(--tgd-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tgd-crimson);
+}
+
 .hm-tgd-prose .hm-tgd-card:hover {
   border-color: rgba(140, 26, 46, 0.45);
   box-shadow: 0 16px 34px -18px rgba(7, 20, 34, 0.35);
   transform: translateY(-2px);
+}
+
+.hm-tgd-prose .hm-tgd-card--nolink:hover {
+  transform: none;
+  box-shadow: 0 12px 28px -22px rgba(7, 20, 34, 0.4);
+  border-color: var(--tgd-line);
 }
 
 .hm-tgd-prose .hm-tgd-card a {
@@ -421,10 +457,18 @@
   font-size: 1.05rem;
 }
 
+.hm-tgd-prose .hm-tgd-card--text h3 {
+  margin: 0;
+}
+
 .hm-tgd-prose .hm-tgd-card p {
   margin: 0 1rem 1.1rem;
   font-size: 0.9rem;
   line-height: 1.65;
+}
+
+.hm-tgd-prose .hm-tgd-card--text p {
+  margin: 0;
 }
 
 @media (max-width: 900px) {

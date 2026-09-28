@@ -15,8 +15,8 @@ import { parseHmLayoutJson } from "./hm-layout-delta.js";
 
 export const TGD_SITE_SLUG = "trafik";
 export const TGD_EDITOR_TOUCHED_KEY = "tgdEditorTouchedAt";
-/** Bump: nested menü href → flat slug + trafik-rehberi seed. */
-export const TGD_PAGE_SYNC_VERSION = 3;
+/** Bump: real Wayback article bodies + no broken upload images. */
+export const TGD_PAGE_SYNC_VERSION = 4;
 
 type TgdManifest = {
   pageSyncVersion?: number;
@@ -314,7 +314,10 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   const missingRequired = TGD_REQUIRED_PAGE_SLUGS.filter((slug) => !present.has(slug));
   const needsPages = opts?.forceFull === true || missingRequired.length > 0 || currentVersion < targetVersion;
   const needsCopy =
-    opts?.forceFull === true || layout.hmVatanHomeCopy == null || typeof layout.hmVatanHomeCopy !== "object";
+    opts?.forceFull === true ||
+    currentVersion < targetVersion ||
+    layout.hmVatanHomeCopy == null ||
+    typeof layout.hmVatanHomeCopy !== "object";
   const needsTheme = String(layout.hmVitrinTheme ?? "").toLowerCase() !== "vatan";
   const needsMenuHrefRewrite = (() => {
     const items = layout.hmCorporateMenuItems;
