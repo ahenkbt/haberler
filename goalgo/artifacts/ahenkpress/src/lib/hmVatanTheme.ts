@@ -6,6 +6,7 @@
 export const VATAN_THEME_ID = "vatan" as const;
 
 export const VATAN_ASSET_BASE = "/vkd/vatan";
+export const TGD_MOSAIC_ASSET_BASE = "/tgd/mosaic";
 
 export const VATAN_ASSETS = {
   logo: `${VATAN_ASSET_BASE}/logo.png`,
@@ -18,6 +19,15 @@ export const VATAN_ASSETS = {
   guvenlikGucleri: `${VATAN_ASSET_BASE}/guvenlik-gucleri.jpg`,
   sehitlerimiz: `${VATAN_ASSET_BASE}/sehitlerimiz.jpg`,
   ataturk: `${VATAN_ASSET_BASE}/ataturk.jpg`,
+} as const;
+
+/** TGD anasayfa “Projeler ve çalışmalar” mozaiği — içerik temalı özel görseller. */
+export const TGD_MOSAIC_ASSETS = {
+  projeler: `${TGD_MOSAIC_ASSET_BASE}/projeler.jpg`,
+  calismalar: `${TGD_MOSAIC_ASSET_BASE}/calismalar.jpg`,
+  tguNedir: `${TGD_MOSAIC_ASSET_BASE}/tgu-nedir.jpg`,
+  iktisadiIsletme: `${TGD_MOSAIC_ASSET_BASE}/iktisadi-isletme.jpg`,
+  tuzuk: `${TGD_MOSAIC_ASSET_BASE}/tuzuk.jpg`,
 } as const;
 
 export const VATAN_COLORS = {

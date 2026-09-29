@@ -15,8 +15,8 @@ import { parseHmLayoutJson } from "./hm-layout-delta.js";
 
 export const TGD_SITE_SLUG = "trafik";
 export const TGD_EDITOR_TOUCHED_KEY = "tgdEditorTouchedAt";
-/** Bump: real Wayback article bodies + no broken upload images. */
-export const TGD_PAGE_SYNC_VERSION = 4;
+/** Bump: TGD mosaic content images + real archive articles. */
+export const TGD_PAGE_SYNC_VERSION = 5;
 
 type TgdManifest = {
   pageSyncVersion?: number;

@@ -9,7 +9,7 @@ import {
   VATAN_MOSAIC_TILES,
   VATAN_RIGHTS_ROWS,
 } from "@/lib/hmVatanHomeContent";
-import { VATAN_ASSETS } from "@/lib/hmVatanTheme";
+import { TGD_MOSAIC_ASSETS, VATAN_ASSETS } from "@/lib/hmVatanTheme";
 
 export type HmVatanHomeSectionCopy = {
   eyebrow?: string | null;
@@ -251,8 +251,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         title: "Projeler",
         kicker: "Saha & inovasyon",
         excerpt: "Kütüphane, akademi, yapay zeka ve güvenli adım seferberlikleri.",
-        image: "",
-        imageAlt: "TGD projeleri",
+        image: TGD_MOSAIC_ASSETS.projeler,
+        imageAlt: "Modern kavşak ve akıllı ulaşım altyapısı — TGD projeleri",
         size: "xl",
       },
       {
@@ -260,8 +260,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/trafik-yasam-calismalar",
         title: "Çalışmalar",
         kicker: "Eğitim & istihdam",
-        image: "",
-        imageAlt: "TGD çalışmaları",
+        image: TGD_MOSAIC_ASSETS.calismalar,
+        imageAlt: "Trafik güvenliği eğitim ve istihdam çalışmaları",
         size: "sm",
       },
       {
@@ -269,8 +269,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/tgu-nedir",
         title: "TGU Nedir?",
         kicker: "Meslek",
-        image: "",
-        imageAlt: "Trafik Güvenliği Uzmanlığı",
+        image: TGD_MOSAIC_ASSETS.tguNedir,
+        imageAlt: "Trafik Güvenliği Uzmanı sahada görevde",
         size: "sm",
       },
       {
@@ -278,8 +278,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/iktisadi-isletme",
         title: "İktisadi İşletme",
         kicker: "Hizmetler Ltd. Şti.",
-        image: "",
-        imageAlt: "Trafik Güvenliği Hizmetleri",
+        image: TGD_MOSAIC_ASSETS.iktisadiIsletme,
+        imageAlt: "Trafik güvenliği danışmanlık ve hizmetleri",
         size: "sm",
       },
       {
@@ -287,8 +287,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
         href: "/trafik-guvenligi-dernegi-tuzugu",
         title: "Tüzük",
         kicker: "Kurumsal",
-        image: "",
-        imageAlt: "Dernek tüzüğü",
+        image: TGD_MOSAIC_ASSETS.tuzuk,
+        imageAlt: "Dernek tüzüğü ve kurumsal belgeler",
         size: "sm",
       },
     ],
@@ -416,16 +416,24 @@ export function resolveVatanMosaicTilesFromCopy(
 ): VatanMosaicTile[] | null {
   const tiles = resolveVatanHomeCopyBundle(prefsCopy, siteSlug).mosaic?.tiles;
   if (!tiles?.length) return null;
+  const tgdDefaults = isTgdHmSiteSlug(siteSlug) ? TGD_VATAN_HOME_COPY.mosaic?.tiles ?? [] : [];
   return tiles.slice(0, 5).map((tile, index): VatanMosaicTile => {
     const fallback = VATAN_MOSAIC_TILES[index] ?? VATAN_MOSAIC_TILES[0]!;
+    const tgdFallback = tgdDefaults[index];
+    const image =
+      String(tile.image ?? "").trim() ||
+      String(tgdFallback?.image ?? "").trim() ||
+      fallback.image;
     return {
       slug: String(tile.slug ?? fallback.slug).trim() || fallback.slug,
       href: String(tile.href ?? fallback.href).trim() || fallback.href,
       title: String(tile.title ?? fallback.title).trim() || fallback.title,
       kicker: String(tile.kicker ?? fallback.kicker).trim() || fallback.kicker,
       excerpt: tile.excerpt ? String(tile.excerpt).trim() : fallback.excerpt,
-      image: String(tile.image ?? fallback.image).trim() || fallback.image,
-      imageAlt: String(tile.imageAlt ?? tile.title ?? fallback.imageAlt).trim() || fallback.imageAlt,
+      image,
+      imageAlt:
+        String(tile.imageAlt ?? tile.title ?? tgdFallback?.imageAlt ?? fallback.imageAlt).trim() ||
+        fallback.imageAlt,
       size: tile.size === "xl" || tile.size === "sm" ? tile.size : index === 0 ? "xl" : "sm",
     };
   });
