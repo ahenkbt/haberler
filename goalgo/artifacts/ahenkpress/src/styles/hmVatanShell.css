@@ -1396,6 +1396,23 @@
     aspect-ratio: auto;
   }
 
+  /** TGD: sol büyük kart + sağda 2×2 açık ızgara (dar dikey şerit olmasın). */
+  [data-vatan-shell] .vatan-mosaic--traffic {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-rows: minmax(210px, min(22vw, 300px));
+  }
+
+  [data-vatan-shell] .vatan-mosaic--traffic .vatan-tile--xl {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+
+  [data-vatan-shell] .vatan-mosaic--traffic .vatan-tile--sm {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 0;
+  }
+
   [data-vatan-shell] .vatan-mosaic__tile--canakkale-sehitleri {
     grid-column: 8 / 11;
     grid-row: 1;
