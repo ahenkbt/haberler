@@ -34,7 +34,7 @@ export function VatanHafizaMekanlari({
           }
           id="vatan-s3-title"
         />
-        <div className="vatan-mosaic">
+        <div className={`vatan-mosaic${isTraffic ? " vatan-mosaic--traffic" : ""}`}>
           {tiles.map((tile, i) => (
             <VatanTile
               key={tile.slug}
