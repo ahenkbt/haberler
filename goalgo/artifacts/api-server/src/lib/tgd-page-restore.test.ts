@@ -1,10 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { normalizeTgdPageSlug, upsertTgdExtraPages } from "./tgd-page-restore.js";
+import { normalizeTgdPageSlug, needsTgdSliderSeedUpgrade, upsertTgdExtraPages } from "./tgd-page-restore.js";
 
 describe("tgd-page-restore upsert", () => {
   it("normalizes nested slugs to single segment", () => {
     expect(normalizeTgdPageSlug("trafik-yasam/projeler")).toBe("trafik-yasam-projeler");
     expect(normalizeTgdPageSlug("/tgu-nedir/")).toBe("tgu-nedir");
+  });
+
+  it("flags stale external CDN and nested slider hrefs for upgrade", () => {
+    expect(needsTgdSliderSeedUpgrade([])).toBe(true);
+    expect(
+      needsTgdSliderSeedUpgrade([
+        {
+          href: "/trafik-yasam/projeler",
+          imageUrl: "https://trthaberstatic.cdn.wp.trt.com.tr/resimler/1.jpg",
+        },
+      ]),
+    ).toBe(true);
+    expect(
+      needsTgdSliderSeedUpgrade([
+        { href: "/hakkimizda", imageUrl: "/tgd/slider/dernek.jpg" },
+        { href: "/trafik-guvenligi-uzmani", imageUrl: "/tgd/slider/egitim.jpg" },
+      ]),
+    ).toBe(false);
   });
 
   it("rewrites nested menu hrefs to flat canonical paths", async () => {

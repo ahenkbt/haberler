@@ -1,0 +1,34 @@
+{
+  "corporateSliderItems": [
+    {
+      "id": "trafik-slide-dernek",
+      "title": "Trafik Güvenliği Derneği",
+      "subtitle": "Yolumuz hayat, önceliğimiz güvenlik. Bilinçlendirme, eğitim ve denetim kültürüyle daha güvenli bir trafik.",
+      "href": "/hakkimizda",
+      "imageUrl": "/tgd/slider/dernek.jpg",
+      "color": "#8C1A2E",
+      "order": 1,
+      "active": true
+    },
+    {
+      "id": "trafik-slide-tgu",
+      "title": "Trafik Güvenliği Uzmanı Eğitimleri",
+      "subtitle": "Seviye 1 Uygulayıcı, Seviye 2 İç Denetçi, Seviye 3 Baş Denetçi ve Bağımsız Denetçi sertifika programları.",
+      "href": "/trafik-guvenligi-uzmani",
+      "imageUrl": "/tgd/slider/egitim.jpg",
+      "color": "#0B1C33",
+      "order": 2,
+      "active": true
+    },
+    {
+      "id": "trafik-slide-projeler",
+      "title": "Projeler ve Çalışmalar",
+      "subtitle": "Trafik Güvenliği Kütüphanesi, Güvenli Sürüş Akademisi, Trafikte Yapay Zeka ve daha fazlası.",
+      "href": "/trafik-yasam-projeler",
+      "imageUrl": "/tgd/slider/projeler.jpg",
+      "color": "#C9A84C",
+      "order": 3,
+      "active": true
+    }
+  ]
+}

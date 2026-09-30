@@ -15,8 +15,8 @@ import { parseHmLayoutJson } from "./hm-layout-delta.js";
 
 export const TGD_SITE_SLUG = "trafik";
 export const TGD_EDITOR_TOUCHED_KEY = "tgdEditorTouchedAt";
-/** Bump: TGD mosaic content images + real archive articles. */
-export const TGD_PAGE_SYNC_VERSION = 5;
+/** Bump: TGD Tepe Manşet local slider images + flat CTA hrefs. */
+export const TGD_PAGE_SYNC_VERSION = 6;
 
 type TgdManifest = {
   pageSyncVersion?: number;
@@ -113,6 +113,58 @@ function loadHomeCopy(dataDir: string): Record<string, unknown> | null {
   const payload = readJsonFile<{ hmVatanHomeCopy?: unknown }>(path.join(dataDir, "home-copy.json"));
   if (!payload?.hmVatanHomeCopy || typeof payload.hmVatanHomeCopy !== "object") return null;
   return payload.hmVatanHomeCopy as Record<string, unknown>;
+}
+
+type TgdSliderSeedItem = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  href: string;
+  imageUrl: string;
+  color?: string | null;
+  order: number;
+  active: boolean;
+};
+
+function loadSliderItems(dataDir: string): TgdSliderSeedItem[] | null {
+  const payload = readJsonFile<{ corporateSliderItems?: unknown }>(path.join(dataDir, "slider.json"));
+  if (!payload?.corporateSliderItems || !Array.isArray(payload.corporateSliderItems)) return null;
+  const out: TgdSliderSeedItem[] = [];
+  for (const raw of payload.corporateSliderItems) {
+    if (!raw || typeof raw !== "object") continue;
+    const row = raw as Record<string, unknown>;
+    const id = String(row.id ?? "").trim();
+    const title = String(row.title ?? "").trim();
+    const href = String(row.href ?? "").trim();
+    const imageUrl = String(row.imageUrl ?? "").trim();
+    if (!id || !title || !href || !imageUrl) continue;
+    out.push({
+      id,
+      title,
+      subtitle: String(row.subtitle ?? "").trim() || undefined,
+      href,
+      imageUrl,
+      color: row.color == null ? null : String(row.color),
+      order: Number(row.order ?? out.length + 1) || out.length + 1,
+      active: row.active === false ? false : true,
+    });
+  }
+  return out.length ? out : null;
+}
+
+/** Eski harici CDN / nested path Tepe Manşet satırlarını TGD yerel setine yükselt. */
+export function needsTgdSliderSeedUpgrade(items: unknown): boolean {
+  if (!Array.isArray(items) || items.length === 0) return true;
+  return items.some((raw) => {
+    if (!raw || typeof raw !== "object") return true;
+    const row = raw as Record<string, unknown>;
+    const href = String(row.href ?? "").trim();
+    const img = String(row.imageUrl ?? "").trim();
+    if (href.includes("/trafik-yasam/")) return true;
+    if (/mapfre\.com|trthaberstatic|wp\.trt\.com/i.test(img)) return true;
+    if (!img) return true;
+    return false;
+  });
 }
 
 function presentPageSlugs(layout: Record<string, unknown>): Set<string> {
@@ -318,6 +370,10 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
     currentVersion < targetVersion ||
     layout.hmVatanHomeCopy == null ||
     typeof layout.hmVatanHomeCopy !== "object";
+  const needsSlider =
+    opts?.forceFull === true ||
+    currentVersion < targetVersion ||
+    needsTgdSliderSeedUpgrade(layout.corporateSliderItems);
   const needsTheme = String(layout.hmVitrinTheme ?? "").toLowerCase() !== "vatan";
   const needsMenuHrefRewrite = (() => {
     const items = layout.hmCorporateMenuItems;
@@ -330,7 +386,7 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   })();
 
   if (editorTouched && !opts?.forceFull) {
-    if (!needsPages && !needsCopy && !needsTheme && !needsMenuHrefRewrite) {
+    if (!needsPages && !needsCopy && !needsSlider && !needsTheme && !needsMenuHrefRewrite) {
       console.info("[tgd-sync] editör dokunmuş — atlandı");
       return;
     }
@@ -341,6 +397,10 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
   if (needsCopy) {
     const homeCopy = loadHomeCopy(dataDir);
     if (homeCopy) next.hmVatanHomeCopy = homeCopy;
+  }
+  if (needsSlider) {
+    const sliderItems = loadSliderItems(dataDir);
+    if (sliderItems) next.corporateSliderItems = sliderItems;
   }
   if (!Array.isArray(next.hmVatanHomeHiddenModules)) {
     next.hmVatanHomeHiddenModules = ["sehitSearch", "ataturk", "wars"];
@@ -362,6 +422,8 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
     upserted = result.upserted;
     pruned = result.pruned;
     next.tgdPageSyncVersion = targetVersion;
+  } else if (needsSlider || needsCopy) {
+    next.tgdPageSyncVersion = targetVersion;
   }
 
   const menuFix = rewriteTgdCorporateMenuHrefs(next);
@@ -379,6 +441,6 @@ export async function syncTgdPagesFromData(opts?: { forceFull?: boolean }): Prom
     eq(hmNewsSitesTable.id, site.id),
   );
   console.info(
-    `[tgd-sync] site #${site.id} güncellendi (pages=${needsPages} upserted=${upserted} pruned=${pruned} menuHref=${menuRewritten} copy=${needsCopy} theme=${needsTheme})`,
+    `[tgd-sync] site #${site.id} güncellendi (pages=${needsPages} upserted=${upserted} pruned=${pruned} menuHref=${menuRewritten} copy=${needsCopy} slider=${needsSlider} theme=${needsTheme})`,
   );
 }
