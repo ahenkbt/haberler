@@ -9,7 +9,7 @@ import {
   VATAN_MOSAIC_TILES,
   VATAN_RIGHTS_ROWS,
 } from "@/lib/hmVatanHomeContent";
-import { TGD_MOSAIC_ASSETS, VATAN_ASSETS } from "@/lib/hmVatanTheme";
+import { TGD_MOSAIC_ASSETS, TGD_SLIDER_ASSETS, VATAN_ASSETS } from "@/lib/hmVatanTheme";
 
 export type HmVatanHomeSectionCopy = {
   eyebrow?: string | null;
@@ -180,10 +180,10 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
     title: "Yolumuz hayat,",
     accent: "önceliğimiz güvenlik.",
     lead: "Trafik kazaları kader değildir. Bilinç, eğitim ve profesyonel denetimle sıfır kaza hedefine birlikte yürüyoruz.",
-    primaryHref: "/tgu-nedir",
-    primaryLabel: "TGU Nedir?",
-    secondaryHref: "/hakkimizda",
-    secondaryLabel: "Derneği Tanıyın",
+    primaryHref: "/hakkimizda",
+    primaryLabel: "Trafik Güvenliği Derneği",
+    secondaryHref: "/trafik-guvenligi-uzmani",
+    secondaryLabel: "Trafik Güvenliği Uzmanı Eğitimleri",
     scrollCueLabel: "Keşfet",
   },
   dernek: {
@@ -191,7 +191,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
     title: "Güvenli ulaşım kültürü",
     accent: "için buradayız.",
     lead: "Toplumsal farkındalık, bilimsel projeler ve paydaş işbirliğiyle yollarımızı daha güvenli hale getiriyoruz.",
-    imageUrl: "https://trthaberstatic.cdn.wp.trt.com.tr/resimler/1050000/1051520.jpg",
+    imageUrl: TGD_SLIDER_ASSETS.egitim,
     imageAlt: "Trafik güvenliği eğitimi ve saha çalışması",
     pillars: [
       {
@@ -218,7 +218,7 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
     title: "Trafik güvenliği bir meslektir.",
     accent: "Yanınızdayız.",
     lead: "AVM'den şantiyeye, hastaneden otogara — tesisiniz için doğru TGU seviyesini ve denetim modelini birlikte belirleyelim.",
-    imageUrl: "https://www.mapfre.com.tr/blog/wp-content/uploads/2021/10/bilinmesi_gereken_tr_icjbq.jpg",
+    imageUrl: TGD_SLIDER_ASSETS.dernek,
     imageAlt: "Trafik güvenliği uzmanlığı",
     rows: [
       {

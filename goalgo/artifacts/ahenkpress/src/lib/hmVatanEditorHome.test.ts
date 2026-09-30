@@ -63,11 +63,47 @@ describe("Vatan editor home bindings", () => {
     expect(hero.title).toBe(VATAN_HOME_HERO_V2.title);
   });
 
-  it("uses TGD hero copy for trafik slug even when slider is empty", () => {
+  it("uses TGD hero copy and local slider assets for trafik slug", () => {
     const hero = resolveVatanHero(prefs({ corporateSliderItems: [] }), "trafik");
     expect(hero.eyebrow).toMatch(/Trafik Güvenliği/i);
     expect(hero.title).toMatch(/Yolumuz hayat/i);
-    expect(hero.primaryHref).toBe("/tgu-nedir");
+    expect(hero.primaryHref).toBe("/hakkimizda");
+    expect(hero.primaryLabel).toMatch(/Trafik Güvenliği Derneği/i);
+    expect(hero.secondaryHref).toBe("/trafik-guvenligi-uzmani");
+    expect(hero.slides.map((s) => s.image)).toEqual([
+      "/tgd/slider/dernek.jpg",
+      "/tgd/slider/egitim.jpg",
+      "/tgd/slider/projeler.jpg",
+    ]);
+  });
+
+  it("upgrades stale Mapfre/TRT Tepe Manşet rows to local TGD slider assets", () => {
+    const hero = resolveVatanHero(
+      prefs({
+        corporateSliderItems: [
+          {
+            id: "trafik-slide-dernek",
+            title: "Trafik Güvenliği Derneği",
+            href: "/hakkimizda",
+            imageUrl: "https://www.mapfre.com.tr/blog/wp-content/uploads/2021/10/old.jpg",
+            order: 1,
+            active: true,
+          },
+          {
+            id: "trafik-slide-projeler",
+            title: "Projeler",
+            href: "/trafik-yasam/projeler",
+            imageUrl: "https://trthaberstatic.cdn.wp.trt.com.tr/resimler/1.jpg",
+            order: 2,
+            active: true,
+          },
+        ],
+      }),
+      "trafik",
+    );
+    expect(hero.slides.every((s) => s.image.startsWith("/tgd/slider/"))).toBe(true);
+    expect(hero.primaryHref).toBe("/hakkimizda");
+    expect(hero.secondaryHref).toBe("/trafik-guvenligi-uzmani");
   });
 
   it("uses TGD mosaic tiles when band is empty on trafik", () => {

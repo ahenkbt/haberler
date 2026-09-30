@@ -5,7 +5,11 @@
  */
 import type { HmCorporateBandItem, HmCorporateSliderItem, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { findHmExtraPageBySlug } from "@/lib/hmExtraPageLookup";
-import { VATAN_DEFAULT_SLIDER_ITEMS } from "@/lib/hmVatanTheme";
+import {
+  needsTgdCorporateSliderUpgrade,
+  TGD_DEFAULT_SLIDER_ITEMS,
+  VATAN_DEFAULT_SLIDER_ITEMS,
+} from "@/lib/hmVatanTheme";
 import {
   VATAN_HOME_HERO_V2,
   VATAN_MOSAIC_TILES,
@@ -13,6 +17,7 @@ import {
   type VatanMosaicTile,
 } from "@/lib/hmVatanHomeContent";
 import {
+  isTgdHmSiteSlug,
   resolveVatanHeroCopyDefaults,
   resolveVatanMosaicTilesFromCopy,
 } from "@/lib/hmVatanHomeCopy";
@@ -81,9 +86,21 @@ function isStockVatanSlider(items: HmCorporateSliderItem[]): boolean {
   });
 }
 
-/** Background slides: editor Tepe Manşet images, else the branded Vatan set. */
-export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs, _siteSlug?: string | null): VatanHeroSlide[] {
+function tgdFallbackSlides(): VatanHeroSlide[] {
+  return TGD_DEFAULT_SLIDER_ITEMS.map((item) => ({
+    id: item.id,
+    image: item.imageUrl,
+    alt: item.subtitle,
+  }));
+}
+
+/** Background slides: editor Tepe Manşet images, else branded Vatan / TGD set. */
+export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs, siteSlug?: string | null): VatanHeroSlide[] {
+  const isTgd = isTgdHmSiteSlug(siteSlug);
   const items = activeSliderItems(prefs);
+  if (isTgd && (!items.length || isStockVatanSlider(items) || needsTgdCorporateSliderUpgrade(items))) {
+    return tgdFallbackSlides();
+  }
   if (!items.length || isStockVatanSlider(items)) return [...VATAN_HOME_HERO_V2.slides];
   const fromEditor = items
     .map((item, index): VatanHeroSlide | null => {
@@ -96,7 +113,8 @@ export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs, _siteSlug?: s
       };
     })
     .filter((item): item is VatanHeroSlide => item != null);
-  return fromEditor.length ? fromEditor : [...VATAN_HOME_HERO_V2.slides];
+  if (fromEditor.length) return fromEditor;
+  return isTgd ? tgdFallbackSlides() : [...VATAN_HOME_HERO_V2.slides];
 }
 
 /**
@@ -105,10 +123,13 @@ export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs, _siteSlug?: s
  */
 export function resolveVatanHero(prefs: NewsSiteLayoutPrefs, siteSlug?: string | null): VatanResolvedHero {
   const copyDefaults = resolveVatanHeroCopyDefaults(prefs.hmVatanHomeCopy, siteSlug);
+  const isTgd = isTgdHmSiteSlug(siteSlug);
   const items = activeSliderItems(prefs);
-  const custom = items.length > 0 && !isStockVatanSlider(items);
-  const first = custom ? items[0] : undefined;
-  const second = custom ? items[1] : undefined;
+  const useTgdSlides = isTgd && (!items.length || isStockVatanSlider(items) || needsTgdCorporateSliderUpgrade(items));
+  const effectiveItems = useTgdSlides ? [...TGD_DEFAULT_SLIDER_ITEMS] : items;
+  const custom = effectiveItems.length > 0 && (useTgdSlides || !isStockVatanSlider(items));
+  const first = custom ? effectiveItems[0] : undefined;
+  const second = custom ? effectiveItems[1] : undefined;
   const firstHref = String(first?.href ?? "").trim();
   const secondHref = String(second?.href ?? "").trim();
   return {

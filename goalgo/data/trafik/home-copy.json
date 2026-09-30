@@ -5,10 +5,10 @@
       "title": "Yolumuz hayat,",
       "accent": "önceliğimiz güvenlik.",
       "lead": "Trafik kazaları kader değildir. Bilinç, eğitim ve profesyonel denetimle sıfır kaza hedefine birlikte yürüyoruz.",
-      "primaryHref": "/tgu-nedir",
-      "primaryLabel": "TGU Nedir?",
-      "secondaryHref": "/hakkimizda",
-      "secondaryLabel": "Derneği Tanıyın",
+      "primaryHref": "/hakkimizda",
+      "primaryLabel": "Trafik Güvenliği Derneği",
+      "secondaryHref": "/trafik-guvenligi-uzmani",
+      "secondaryLabel": "Trafik Güvenliği Uzmanı Eğitimleri",
       "scrollCueLabel": "Keşfet"
     },
     "dernek": {
@@ -16,6 +16,8 @@
       "title": "Güvenli ulaşım kültürü",
       "accent": "için buradayız.",
       "lead": "Toplumsal farkındalık, bilimsel projeler ve paydaş işbirliğiyle yollarımızı daha güvenli hale getiriyoruz.",
+      "imageUrl": "/tgd/slider/egitim.jpg",
+      "imageAlt": "Trafik güvenliği eğitimi ve saha çalışması",
       "pillars": [
         {
           "id": "egitim",
@@ -41,6 +43,8 @@
       "title": "Trafik güvenliği bir meslektir.",
       "accent": "Yanınızdayız.",
       "lead": "AVM'den şantiyeye, hastaneden otogara — tesisiniz için doğru TGU seviyesini ve denetim modelini birlikte belirleyelim.",
+      "imageUrl": "/tgd/slider/dernek.jpg",
+      "imageAlt": "Trafik güvenliği uzmanlığı",
       "rows": [
         {
           "href": "/seviye-1-trafik-guvenligi-uzmani-uygulayici",

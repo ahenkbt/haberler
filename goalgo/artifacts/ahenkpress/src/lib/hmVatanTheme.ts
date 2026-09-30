@@ -30,6 +30,15 @@ export const TGD_MOSAIC_ASSETS = {
   tuzuk: `${TGD_MOSAIC_ASSET_BASE}/tuzuk.jpg`,
 } as const;
 
+export const TGD_SLIDER_ASSET_BASE = "/tgd/slider";
+
+/** TGD Tepe Manşet / corporate slider arka planları. */
+export const TGD_SLIDER_ASSETS = {
+  dernek: `${TGD_SLIDER_ASSET_BASE}/dernek.jpg`,
+  egitim: `${TGD_SLIDER_ASSET_BASE}/egitim.jpg`,
+  projeler: `${TGD_SLIDER_ASSET_BASE}/projeler.jpg`,
+} as const;
+
 export const VATAN_COLORS = {
   crimson: "#8C1A2E",
   crimsonDeep: "#6B1222",
@@ -432,6 +441,56 @@ export const VATAN_DEFAULT_SLIDER_ITEMS = [
     active: true,
   },
 ];
+
+/** Trafik Güvenliği Derneği — Tepe Manşet / corporate slider varsayılanları. */
+export const TGD_DEFAULT_SLIDER_ITEMS = [
+  {
+    id: "trafik-slide-dernek",
+    title: "Trafik Güvenliği Derneği",
+    subtitle: "Yolumuz hayat, önceliğimiz güvenlik. Bilinçlendirme, eğitim ve denetim kültürüyle daha güvenli bir trafik.",
+    href: "/hakkimizda",
+    imageUrl: TGD_SLIDER_ASSETS.dernek,
+    color: VATAN_COLORS.crimson,
+    order: 1,
+    active: true,
+  },
+  {
+    id: "trafik-slide-tgu",
+    title: "Trafik Güvenliği Uzmanı Eğitimleri",
+    subtitle: "Seviye 1 Uygulayıcı, Seviye 2 İç Denetçi, Seviye 3 Baş Denetçi ve Bağımsız Denetçi sertifika programları.",
+    href: "/trafik-guvenligi-uzmani",
+    imageUrl: TGD_SLIDER_ASSETS.egitim,
+    color: VATAN_COLORS.navy,
+    order: 2,
+    active: true,
+  },
+  {
+    id: "trafik-slide-projeler",
+    title: "Projeler ve Çalışmalar",
+    subtitle: "Trafik Güvenliği Kütüphanesi, Güvenli Sürüş Akademisi, Trafikte Yapay Zeka ve daha fazlası.",
+    href: "/trafik-yasam-projeler",
+    imageUrl: TGD_SLIDER_ASSETS.projeler,
+    color: VATAN_COLORS.gold,
+    order: 3,
+    active: true,
+  },
+];
+
+/** Eski harici CDN / nested path slider’larını TGD özel setine yükselt. */
+export function needsTgdCorporateSliderUpgrade(
+  items: Array<{ href?: string | null; imageUrl?: string | null } | null | undefined> | null | undefined,
+): boolean {
+  const list = (items ?? []).filter((item): item is { href?: string | null; imageUrl?: string | null } => !!item);
+  if (!list.length) return true;
+  return list.some((item) => {
+    const href = String(item.href ?? "").trim();
+    const img = String(item.imageUrl ?? "").trim();
+    if (href.includes("/trafik-yasam/")) return true;
+    if (/mapfre\.com|trthaberstatic|wp\.trt\.com/i.test(img)) return true;
+    if (!img) return true;
+    return false;
+  });
+}
 
 export type VatanMenuSeed = {
   id: string;

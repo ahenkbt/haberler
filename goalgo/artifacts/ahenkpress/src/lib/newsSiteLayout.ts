@@ -16,7 +16,13 @@ import {
   VKD_ACCOUNT_NAME,
   VKD_DONATION_ACCOUNTS,
 } from "./vkdPublicContact";
-import { mergeVkdVatanMenuItems, VATAN_DEFAULT_SLIDER_ITEMS, VATAN_THEME_ID } from "./hmVatanTheme";
+import {
+  mergeVkdVatanMenuItems,
+  needsTgdCorporateSliderUpgrade,
+  TGD_DEFAULT_SLIDER_ITEMS,
+  VATAN_DEFAULT_SLIDER_ITEMS,
+  VATAN_THEME_ID,
+} from "./hmVatanTheme";
 import { normalizeHmVatanHomeCopy, type HmVatanHomeCopy, TGD_VATAN_HOME_COPY, isTgdHmSiteSlug } from "./hmVatanHomeCopy";
 export type MansetVariant =
   | "split"
@@ -2698,6 +2704,7 @@ export function applyTgdVatanThemeToLayoutPrefs(prefs: NewsSiteLayoutPrefs): New
   const slides = (prefs.corporateSliderItems ?? []).filter(
     (item) => item.active !== false && String(item.title ?? "").trim(),
   );
+  const useTgdSlides = !slides.length || needsTgdCorporateSliderUpgrade(slides);
   return {
     ...prefs,
     hmVitrinTheme: VATAN_THEME_ID,
@@ -2709,7 +2716,7 @@ export function applyTgdVatanThemeToLayoutPrefs(prefs: NewsSiteLayoutPrefs): New
     hmCorporateMenuPrimaryOnly: false,
     hmVatanHomeHiddenModules: prefs.hmVatanHomeHiddenModules ?? ["sehitSearch", "ataturk", "wars"],
     hmVatanHomeCopy: prefs.hmVatanHomeCopy ?? { ...TGD_VATAN_HOME_COPY },
-    corporateSliderItems: slides.length ? prefs.corporateSliderItems : prefs.corporateSliderItems,
+    corporateSliderItems: useTgdSlides ? [...TGD_DEFAULT_SLIDER_ITEMS] : prefs.corporateSliderItems,
   };
 }
 
