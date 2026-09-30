@@ -158,6 +158,37 @@ const HM: GeoSiteEntity[] = [
       },
     ],
   },
+  {
+    slug: "trafik",
+    domain: "trafikdernegi.com",
+    extraDomains: ["tgd.tc", "trafik.gd"],
+    officialName: "Trafik Güvenliği Derneği",
+    alternateName: ["TGD", "trafikdernegi.com", "tgd.tc", "TGU", "Trafik Derneği"],
+    type: "Organization",
+    description:
+      "Trafik Güvenliği Derneği (TGD, trafikdernegi.com); trafik kazalarını önlemeyi savunan Ankara merkezli sivil toplum kuruluşudur. Sloganı: Yolumuz Hayat, Önceliğimiz Güvenlik. Trafik Güvenliği Uzmanlığı (TGU) mesleğini tanımlar.",
+    disambiguatingDescription:
+      "trafikdernegi.com resmi dernek sitesidir; gazete değildir. tgd.tc ve trafik.gd aynı kuruma aittir.",
+    notToBeConfusedWith: ["Trafik polisi", "Özel güvenlik şirketleri", "Genel haber siteleri"],
+    aboutPath: "/hakkinda",
+    telephone: "+90 532 229 18 92",
+    faq: [
+      {
+        question: "Trafik Güvenliği Derneği nedir?",
+        answer:
+          "TGD, Ankara merkezli sivil toplum kuruluşudur. Eğitim, denetim ve TGU mesleki standartlarıyla sıfır kaza hedefine çalışır. Resmi sitesi trafikdernegi.com'dur.",
+      },
+      {
+        question: "TGU nedir?",
+        answer:
+          "Trafik Güvenliği Uzmanlığı; AVM, fabrika, hastane ve şantiye gibi alanlarda tesis içi trafik güvenliğini yöneten üç seviyeli meslektir.",
+      },
+      {
+        question: "trafikdernegi.com kimin sitesi?",
+        answer: "Trafik Güvenliği Derneği'nin resmi kurumsal web sitesidir.",
+      },
+    ],
+  },
 ];
 
 function normHost(host: string | null | undefined): string {

@@ -34,4 +34,31 @@ describe("hmAiKnowledge", () => {
     expect(ai).toContain("site_type: organization");
     expect(ai).toContain("canonical_domain: ahenk.net.tr");
   });
+
+  it("builds Trafik Güvenliği Derneği GEO files for Gemini/ChatGPT", () => {
+    const llms = buildHmLlmsTxt(
+      {
+        slug: "trafik",
+        displayName: "Trafik Güvenliği Derneği",
+        domain: "trafikdernegi.com",
+        description: "Yolumuz Hayat, Önceliğimiz Güvenlik.",
+      },
+      "https://trafikdernegi.com",
+    );
+    expect(llms).toContain("Trafik Güvenliği Derneği");
+    expect(llms).toContain("https://trafikdernegi.com/tgu-nedir");
+    expect(llms).toContain("Seviye 1 Uygulayıcı");
+    expect(llms).toContain("NGO");
+    expect(llms).toContain("sivil toplum");
+    expect(llms).not.toContain("Tür: NewsMediaOrganization\n");
+
+    const ai = buildHmAiTxt(
+      { slug: "trafik", displayName: "Trafik Güvenliği Derneği", domain: "trafikdernegi.com" },
+      "https://trafikdernegi.com",
+    );
+    expect(ai).toContain("site_type: ngo_organization");
+    expect(ai).toContain("canonical_domain: trafikdernegi.com");
+    expect(ai).toContain("tgu_nedir: https://trafikdernegi.com/tgu-nedir");
+    expect(ai).toContain("+90 532 229 18 92");
+  });
 });

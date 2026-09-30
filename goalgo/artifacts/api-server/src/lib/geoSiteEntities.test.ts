@@ -21,6 +21,23 @@ describe("geoSiteEntities", () => {
     expect(geoEntityBySlug("vatanhaber")?.domain).toBe("vatanhaber.net");
     expect(geoEntityByDomain("suhaber.net")?.officialName).toBe("Su Haber");
     expect(geoEntityByDomain("kirsehirhaber.org")?.officialName).toBe("Kırşehir Haber");
+    expect(geoEntityBySlug("trafik")?.officialName).toBe("Trafik Güvenliği Derneği");
+    expect(geoEntityByDomain("trafikdernegi.com")?.type).toBe("Organization");
+    expect(geoEntityByDomain("tgd.tc")?.domain).toBe("trafikdernegi.com");
+  });
+
+  it("builds TGD NGO JSON-LD and titles for ChatGPT/Gemini GEO", () => {
+    const entity = geoEntityBySlug("trafik")!;
+    expect(geoEntityPageTitle(entity, "/")).toBe("Trafik Güvenliği Derneği — trafikdernegi.com");
+    expect(geoEntityPageTitle(entity, "/tgu-nedir")).toContain("TGU");
+    expect(isHmGeoEntityPath("/hakkimizda")).toBe(true);
+    expect(isHmGeoEntityPath("/tgu-nedir")).toBe(true);
+    const org = geoOrganizationJsonLd(entity, "https://trafikdernegi.com");
+    expect(org["@type"]).toEqual(["NGO", "Organization"]);
+    expect(org.telephone).toBe("+90 532 229 18 92");
+    const html = geoEntityVisibleBodyHtml(entity, "https://trafikdernegi.com");
+    expect(html).toContain("Trafik Güvenliği Uzmanlığı");
+    expect(html).toContain("sıfır kaza");
   });
 
   it("resolves ahenk.net.tr as Ahenk Bilgi Teknolojileri", () => {

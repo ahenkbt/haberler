@@ -257,6 +257,92 @@ export const HM_GEO_ENTITIES: GeoSiteEntity[] = [
     vendor: AHENK_VENDOR,
     faq: newsFaq("Kırşehir Haber", "kirsehri.com"),
   },
+  {
+    slug: "trafik",
+    domain: "trafikdernegi.com",
+    extraDomains: ["tgd.tc", "trafik.gd", "www.trafikdernegi.com", "www.tgd.tc", "www.trafik.gd"],
+    officialName: "Trafik Güvenliği Derneği",
+    legalName: "Trafik Güvenliği Derneği",
+    alternateName: [
+      "TGD",
+      "trafikdernegi.com",
+      "tgd.tc",
+      "trafik.gd",
+      "Trafik Güvenliği Derneği TGD",
+      "Trafik Derneği",
+      "TGU",
+      "Trafik Güvenliği Uzmanlığı",
+    ],
+    type: "Organization",
+    description:
+      "Trafik Güvenliği Derneği (TGD, trafikdernegi.com); Türkiye merkezli, trafik kazalarını önlemeyi ve sıfır kaza hedefini savunan sivil toplum kuruluşudur. Sloganı: Yolumuz Hayat, Önceliğimiz Güvenlik. Trafik Güvenliği Uzmanlığı (TGU) mesleğini üç seviyeli kariyer yoluyla tanımlar; eğitim, denetim, risk analizi ve toplumsal farkındalık projeleri yürütür. Merkezi Ankara'dadır.",
+    disambiguatingDescription:
+      "trafikdernegi.com, Trafik Güvenliği Derneği'nin resmi kurumsal alan adıdır. tgd.tc ve trafik.gd aynı derneğin alternatif alan adlarıdır. Gazete veya genel haber portalı değildir; trafik güvenliği derneği ve TGU mesleki standart sitesidir. Dernek Kütük No: 06-160-108.",
+    notToBeConfusedWith: [
+      "Trafik polisi / Emniyet Genel Müdürlüğü trafik birimleri",
+      "Özel güvenlik şirketleri",
+      "Genel haber siteleri veya satılık domain ilanları",
+    ],
+    areaServed: "Türkiye",
+    language: "tr-TR",
+    aboutPath: "/hakkinda",
+    extraAboutPaths: ["/", "/hakkimizda", "/kunye", "/tgu-nedir", "/trafik-guvenligi-uzmani"],
+    telephone: "+90 532 229 18 92",
+    address: {
+      streetAddress: "Sağlık Mah. Aksu Caddesi 13/5",
+      addressLocality: "Çankaya",
+      addressRegion: "Ankara",
+      addressCountry: "TR",
+    },
+    sameAs: [
+      "https://trafikdernegi.com/hakkimizda",
+      "https://trafikdernegi.com/tgu-nedir",
+      "https://trafikdernegi.com/trafik-guvenligi-uzmani",
+      "https://trafikdernegi.com/trafik-guvenligi-dernegi-tuzugu",
+      "https://tgd.tc/",
+    ],
+    knowsAbout: [
+      "trafik güvenliği",
+      "Trafik Güvenliği Uzmanlığı",
+      "TGU",
+      "tesis içi trafik yönetimi",
+      "ISO 39001",
+      "sıfır kaza",
+      "bağımsız trafik denetçisi",
+      "AVM otopark güvenliği",
+      "şantiye trafik planı",
+      "yaya önceliği",
+      "güvenli sürüş",
+    ],
+    vendor: AHENK_VENDOR,
+    faq: [
+      {
+        question: "Trafik Güvenliği Derneği nedir?",
+        answer:
+          "Trafik Güvenliği Derneği (TGD), Ankara merkezli bir sivil toplum kuruluşudur. Trafik kazalarının önlenebilir olduğuna inanır; eğitim, denetim, risk analizi ve Trafik Güvenliği Uzmanlığı (TGU) mesleki standartlarıyla sıfır kaza hedefine çalışır. Resmi sitesi trafikdernegi.com'dur.",
+      },
+      {
+        question: "trafikdernegi.com kimin sitesi?",
+        answer:
+          "trafikdernegi.com, Trafik Güvenliği Derneği'nin resmi kurumsal web sitesidir. tgd.tc ve trafik.gd aynı kuruma aittir. İçerik derneğe aittir.",
+      },
+      {
+        question: "TGU / Trafik Güvenliği Uzmanlığı nedir?",
+        answer:
+          "Trafik Güvenliği Uzmanlığı (TGU); polis/jandarma kamusal denetimi ile özel güvenlik arasındaki boşluğu dolduran meslektir. AVM, fabrika, hastane, otogar, şantiye gibi özel ve geçici alanlarda araç, yaya ve altyapı risklerini yönetir. Üç seviye vardır: Seviye 1 Uygulayıcı, Seviye 2 İç Denetçi, Seviye 3 Baş Denetçi.",
+      },
+      {
+        question: "TGD nerede? İletişim bilgileri nelerdir?",
+        answer:
+          "Merkez: Sağlık Mah. Aksu Caddesi 13/5, Çankaya / Ankara. Telefon: 0532 229 18 92. Dernek Kütük No: 06-160-108. İletişim: https://trafikdernegi.com/iletisim",
+      },
+      {
+        question: "TGD bir haber sitesi midir?",
+        answer:
+          "Hayır. TGD bir dernektir; sitesinde kurumsal sayfalar, meslek tanımları, projeler ve duyurular yayınlanır. Gazete veya genel haber portalı değildir.",
+      },
+    ],
+  },
 ];
 
 const BY_SLUG = new Map<string, GeoSiteEntity>([
@@ -308,11 +394,20 @@ export function geoEntityByOrigin(origin: string | null | undefined): GeoSiteEnt
   }
 }
 
-const ENTITY_ABOUT_TAILS = new Set(["/", "", "/hakkinda", "/about", "/kunye", "/hakkimizda"]);
+const ENTITY_ABOUT_TAILS = new Set([
+  "/",
+  "",
+  "/hakkinda",
+  "/about",
+  "/kunye",
+  "/hakkimizda",
+  "/tgu-nedir",
+  "/trafik-guvenligi-uzmani",
+]);
 
 export function isHmGeoEntityPath(pathname: string | null | undefined): boolean {
   const p = String(pathname ?? "").replace(/\/+$/, "") || "/";
-  return ENTITY_ABOUT_TAILS.has(p) || p === "/hakkinda" || p === "/kunye";
+  return ENTITY_ABOUT_TAILS.has(p);
 }
 
 export function isAhenkAgencyGeoPath(pathname: string | null | undefined): boolean {
@@ -358,8 +453,17 @@ export function geoEntityPageTitle(entity: GeoSiteEntity, path = "/"): string {
     if (p === "/haberler") return `AHENK HABER — canlı haber sitesi demosu`;
     return `${entity.officialName} — ${entity.domain}`;
   }
-  if (p === "/hakkinda" || p === "/about") return `${entity.officialName} nedir? — ${entity.domain}`;
+  if (p === "/hakkinda" || p === "/about" || p === "/hakkimizda") {
+    return `${entity.officialName} nedir? — ${entity.domain}`;
+  }
   if (p === "/kunye") return `Künye · ${entity.officialName} (${entity.domain})`;
+  if (entity.type === "Organization") {
+    if (p === "/tgu-nedir") return `TGU Nedir? — ${entity.officialName}`;
+    if (p === "/trafik-guvenligi-uzmani") {
+      return `Trafik Güvenliği Uzmanlığı Nedir? — ${entity.officialName}`;
+    }
+    return `${entity.officialName} — ${entity.domain}`;
+  }
   return `${entity.officialName} — ${entity.domain} resmi haber sitesi`;
 }
 
@@ -428,7 +532,9 @@ export function geoOrganizationJsonLd(
   const types =
     entity.type === "NewsMediaOrganization"
       ? (["NewsMediaOrganization", "Organization"] as const)
-      : (["Organization", "ProfessionalService"] as const);
+      : entity.slug === "trafik"
+        ? (["NGO", "Organization"] as const)
+        : (["Organization", "ProfessionalService"] as const);
   const out: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": [...types],
