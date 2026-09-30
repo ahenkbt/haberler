@@ -74,8 +74,8 @@
           "title": "Projeler",
           "kicker": "Saha & inovasyon",
           "excerpt": "Kütüphane, akademi, yapay zeka ve güvenli adım seferberlikleri.",
-          "image": "",
-          "imageAlt": "TGD projeleri",
+          "image": "/tgd/mosaic/projeler.jpg",
+          "imageAlt": "Modern kavşak ve akıllı ulaşım altyapısı — TGD projeleri",
           "size": "xl"
         },
         {
@@ -83,8 +83,8 @@
           "href": "/trafik-yasam-calismalar",
           "title": "Çalışmalar",
           "kicker": "Eğitim & istihdam",
-          "image": "",
-          "imageAlt": "TGD çalışmaları",
+          "image": "/tgd/mosaic/calismalar.jpg",
+          "imageAlt": "Trafik güvenliği eğitim ve istihdam çalışmaları",
           "size": "sm"
         },
         {
@@ -92,8 +92,8 @@
           "href": "/tgu-nedir",
           "title": "TGU Nedir?",
           "kicker": "Meslek",
-          "image": "",
-          "imageAlt": "Trafik Güvenliği Uzmanlığı",
+          "image": "/tgd/mosaic/tgu-nedir.jpg",
+          "imageAlt": "Trafik Güvenliği Uzmanı sahada görevde",
           "size": "sm"
         },
         {
@@ -101,8 +101,8 @@
           "href": "/iktisadi-isletme",
           "title": "İktisadi İşletme",
           "kicker": "Hizmetler Ltd. Şti.",
-          "image": "",
-          "imageAlt": "Trafik Güvenliği Hizmetleri",
+          "image": "/tgd/mosaic/iktisadi-isletme.jpg",
+          "imageAlt": "Trafik güvenliği danışmanlık ve hizmetleri",
           "size": "sm"
         },
         {
@@ -110,8 +110,8 @@
           "href": "/trafik-guvenligi-dernegi-tuzugu",
           "title": "Tüzük",
           "kicker": "Kurumsal",
-          "image": "",
-          "imageAlt": "Dernek tüzüğü",
+          "image": "/tgd/mosaic/tuzuk.jpg",
+          "imageAlt": "Dernek tüzüğü ve kurumsal belgeler",
           "size": "sm"
         }
       ]
