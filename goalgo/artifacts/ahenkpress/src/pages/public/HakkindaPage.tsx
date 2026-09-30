@@ -37,11 +37,17 @@ export default function HakkindaPage() {
       faviconUrl: ctx?.layoutPrefs.faviconUrl,
     });
     if (entity && origin) {
+      const orgTypes =
+        entity.type === "Organization"
+          ? entity.slug === "trafik"
+            ? (["NGO", "Organization"] as const)
+            : (["Organization"] as const)
+          : (["NewsMediaOrganization", "Organization"] as const);
       applyJsonLd(
         [
           {
             "@context": "https://schema.org",
-            "@type": ["NewsMediaOrganization", "Organization"],
+            "@type": [...orgTypes],
             "@id": `${origin}/#organization`,
             name: entity.officialName,
             alternateName: entity.alternateName,
@@ -51,6 +57,7 @@ export default function HakkindaPage() {
             identifier: { "@type": "PropertyValue", name: "domain", value: entity.domain },
             areaServed: { "@type": "Country", name: "Türkiye" },
             inLanguage: "tr-TR",
+            ...(entity.telephone ? { telephone: entity.telephone } : {}),
           },
           {
             "@context": "https://schema.org",

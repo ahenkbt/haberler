@@ -23,12 +23,14 @@ import {
   withBudget,
   buildGeoRobotsTxt,
   buildHmLlmsTxtFallback,
+  buildHmAiTxtFallback,
   isHmAiKnowledgePath,
   isAhenkAgencyHost,
   isAhenkAgencyGeoPath,
   buildAhenkLlmsTxtFallback,
   buildAhenkAgencyEntityHtml,
   buildHmSiteEntityHtml,
+  hmSlugDisplayName,
   isSharePreviewUserAgent,
   rewriteSpaShellOgForHmHost,
   sanitizeOgShareImages,
@@ -442,6 +444,23 @@ describe("hm-html-boot", () => {
     assert.equal(isSharePreviewUserAgent("WhatsApp/2.23.20.0"), true);
     assert.equal(isSharePreviewUserAgent("facebookexternalhit/1.1"), true);
     assert.equal(isSharePreviewUserAgent("Mozilla/5.0 Chrome/120"), false);
+  });
+
+  it("builds Trafik Güvenliği Derneği GEO entity for AI crawlers", () => {
+    assert.equal(hmSlugDisplayName("trafik"), "Trafik Güvenliği Derneği");
+    const html = buildHmSiteEntityHtml("trafik", "https://trafikdernegi.com", "/");
+    assert.match(html, /Trafik Güvenliği Derneği — trafikdernegi\.com/);
+    assert.match(html, /"@type":\["NGO","Organization"\]/);
+    assert.match(html, /tgu-nedir/);
+    assert.match(html, /Yolumuz Hayat/);
+    assert.equal(/resmi haber sitesi/.test(html), false);
+    const llms = buildHmLlmsTxtFallback("trafik", "https://trafikdernegi.com");
+    assert.match(llms, /Trafik Güvenliği Derneği/);
+    assert.match(llms, /TGU/);
+    assert.match(llms, /0532 229 18 92/);
+    const ai = buildHmAiTxtFallback("trafik", "https://trafikdernegi.com");
+    assert.match(ai, /site_type: ngo_organization/);
+    assert.match(ai, /canonical_domain: trafikdernegi\.com/);
   });
 
   it("rewrites SPA Ahenk OG tags on editor hosts", () => {

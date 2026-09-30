@@ -417,7 +417,37 @@ const HM_STATIC_SITEMAP_PATHS: Array<{ path: string; priority: string; changefre
   { path: "/iletisim", priority: "0.4", changefreq: "monthly" },
   { path: "/ara", priority: "0.5", changefreq: "weekly" },
   { path: "/foto-galeri", priority: "0.5", changefreq: "weekly" },
+  { path: "/llms.txt", priority: "0.3", changefreq: "weekly" },
+  { path: "/ai.txt", priority: "0.3", changefreq: "weekly" },
 ];
+
+/** Trafik Güvenliği Derneği kurumsal sayfa öncelikleri (GEO / GSC). */
+const TGD_PAGE_SITEMAP_PRIORITY: Record<string, string> = {
+  hakkimizda: "0.9",
+  "tgu-nedir": "0.9",
+  "trafik-guvenligi-uzmani": "0.85",
+  "seviye-1-trafik-guvenligi-uzmani-uygulayici": "0.8",
+  "seviye-2-trafik-guvenligi-ic-denetcisi": "0.8",
+  "trafik-guvenligi-bas-denetcisi": "0.8",
+  "bagimsiz-denetci": "0.75",
+  "trafik-guvenligi-dernegi-tuzugu": "0.7",
+  "iktisadi-isletme": "0.65",
+  "trafik-yasam-projeler": "0.7",
+  "trafik-yasam-calismalar": "0.65",
+  "trafik-rehberi": "0.7",
+  "trafik-guvenligi-uzmani-egitimleri": "0.75",
+};
+
+function hmExtraPageSitemapPriority(siteSlug: string, pageSlug: string): string {
+  if (siteSlug === "trafik") {
+    return TGD_PAGE_SITEMAP_PRIORITY[pageSlug] ?? "0.55";
+  }
+  return "0.45";
+}
+
+function sitemapToday(): string {
+  return new Date().toISOString().split("T")[0];
+}
 
 function newsSitemapMediaOrigin(base: string, loc: string): string {
   const b = String(base ?? "").replace(/\/+$/, "");
@@ -818,14 +848,20 @@ router.get("/news-hm-:hmSlug-sayfalar.xml", async (req, res): Promise<void> => {
       const loc = hmPublicContentUrl(site.slug, path, urlDomain, portalBase);
       if (seen.has(loc)) continue;
       seen.add(loc);
-      urls.push(urlXmlEntry(loc, { priority, changefreq }));
+      urls.push(urlXmlEntry(loc, { priority, changefreq, lastmod: sitemapToday() }));
     }
 
     for (const page of hmEnabledExtraPages(layout)) {
       const loc = hmPublicContentUrl(site.slug, `/${encodeURIComponent(page.slug)}`, urlDomain, portalBase);
       if (seen.has(loc)) continue;
       seen.add(loc);
-      urls.push(urlXmlEntry(loc, { changefreq: "monthly", priority: "0.45" }));
+      urls.push(
+        urlXmlEntry(loc, {
+          changefreq: "monthly",
+          priority: hmExtraPageSitemapPriority(site.slug, page.slug),
+          lastmod: sitemapToday(),
+        }),
+      );
     }
 
     sendUrlset(res, urls.join("\n"));
@@ -1121,13 +1157,19 @@ async function sendHmSitePrimaryUrlset(
     const loc = hmPublicContentUrl(site.slug, path, urlDomain, portalBase);
     if (staticSeen.has(loc)) continue;
     staticSeen.add(loc);
-    staticParts.push(urlXmlEntry(loc, { priority, changefreq }));
+    staticParts.push(urlXmlEntry(loc, { priority, changefreq, lastmod: sitemapToday() }));
   }
   for (const page of hmEnabledExtraPages(layout)) {
     const loc = hmPublicContentUrl(site.slug, `/${encodeURIComponent(page.slug)}`, urlDomain, portalBase);
     if (staticSeen.has(loc)) continue;
     staticSeen.add(loc);
-    staticParts.push(urlXmlEntry(loc, { changefreq: "monthly", priority: "0.45" }));
+    staticParts.push(
+      urlXmlEntry(loc, {
+        changefreq: "monthly",
+        priority: hmExtraPageSitemapPriority(site.slug, page.slug),
+        lastmod: sitemapToday(),
+      }),
+    );
   }
   const staticUrls = staticParts.join("\n");
 
