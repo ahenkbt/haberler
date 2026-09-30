@@ -67,14 +67,20 @@ describe("Vatan editor home bindings", () => {
     const hero = resolveVatanHero(prefs({ corporateSliderItems: [] }), "trafik");
     expect(hero.eyebrow).toMatch(/Trafik Güvenliği/i);
     expect(hero.title).toMatch(/Yolumuz hayat/i);
+    expect(hero.accent).toMatch(/önceliğimiz güvenlik/i);
     expect(hero.primaryHref).toBe("/hakkimizda");
     expect(hero.primaryLabel).toMatch(/Trafik Güvenliği Derneği/i);
-    expect(hero.secondaryHref).toBe("/trafik-guvenligi-uzmani");
+    expect(hero.secondaryHref).toBe("/trafik-yasam-projeler");
+    expect(hero.secondaryLabel).toMatch(/Projeler/i);
     expect(hero.slides.map((s) => s.image)).toEqual([
       "/tgd/slider/dernek.jpg",
-      "/tgd/slider/egitim.jpg",
       "/tgd/slider/projeler.jpg",
+      "/tgd/slider/calismalar.jpg",
     ]);
+    expect(hero.slides[1]?.title).toMatch(/Projelerle güvenli yollar/i);
+    expect(hero.slides[2]?.title).toMatch(/Çalışmalarımızla farkındalık/i);
+    expect(hero.slides[1]?.ctaHref).toBe("/trafik-yasam-projeler");
+    expect(hero.slides[2]?.ctaHref).toBe("/trafik-yasam-calismalar");
   });
 
   it("upgrades stale Mapfre/TRT Tepe Manşet rows to local TGD slider assets", () => {
@@ -90,9 +96,9 @@ describe("Vatan editor home bindings", () => {
             active: true,
           },
           {
-            id: "trafik-slide-projeler",
-            title: "Projeler",
-            href: "/trafik-yasam/projeler",
+            id: "trafik-slide-tgu",
+            title: "TGU",
+            href: "/trafik-guvenligi-uzmani",
             imageUrl: "https://trthaberstatic.cdn.wp.trt.com.tr/resimler/1.jpg",
             order: 2,
             active: true,
@@ -102,8 +108,58 @@ describe("Vatan editor home bindings", () => {
       "trafik",
     );
     expect(hero.slides.every((s) => s.image.startsWith("/tgd/slider/"))).toBe(true);
+    expect(hero.slides.map((s) => s.ctaHref)).toEqual([
+      "/hakkimizda",
+      "/trafik-yasam-projeler",
+      "/trafik-yasam-calismalar",
+    ]);
     expect(hero.primaryHref).toBe("/hakkimizda");
-    expect(hero.secondaryHref).toBe("/trafik-guvenligi-uzmani");
+    expect(hero.secondaryHref).toBe("/trafik-yasam-projeler");
+  });
+
+  it("lets editor Tepe Manşet headline override the fixed home-copy hero title", () => {
+    const hero = resolveVatanHero(
+      prefs({
+        corporateSliderItems: [
+          {
+            id: "a",
+            title: "Dernek CTA",
+            headline: "Yeni manşet başlığı, italik vurgu.",
+            subtitle: "Yeni lead metni burada.",
+            href: "/hakkimizda",
+            imageUrl: "/tgd/slider/dernek.jpg",
+            order: 1,
+            active: true,
+          },
+          {
+            id: "b",
+            title: "Projeler CTA",
+            headline: "Projeler manşeti, ikinci satır.",
+            subtitle: "Projeler lead.",
+            href: "/trafik-yasam-projeler",
+            imageUrl: "/tgd/slider/projeler.jpg",
+            order: 2,
+            active: true,
+          },
+          {
+            id: "c",
+            title: "Çalışmalar CTA",
+            headline: "Çalışmalar manşeti, üçüncü satır.",
+            subtitle: "Çalışmalar lead.",
+            href: "/trafik-yasam-calismalar",
+            imageUrl: "/tgd/slider/calismalar.jpg",
+            order: 3,
+            active: true,
+          },
+        ],
+      }),
+      "trafik",
+    );
+    expect(hero.title).toBe("Yeni manşet başlığı,");
+    expect(hero.accent).toBe("italik vurgu.");
+    expect(hero.lead).toBe("Yeni lead metni burada.");
+    expect(hero.slides[1]?.title).toBe("Projeler manşeti,");
+    expect(hero.slides[2]?.ctaHref).toBe("/trafik-yasam-calismalar");
   });
 
   it("uses TGD mosaic tiles when band is empty on trafik", () => {

@@ -86,12 +86,46 @@ function isStockVatanSlider(items: HmCorporateSliderItem[]): boolean {
   });
 }
 
+/** "Yolumuz hayat, önceliğimiz güvenlik." → title + italik accent. */
+export function splitVatanHeroHeadline(raw: string): { title: string; accent: string } {
+  const text = String(raw ?? "").trim().replace(/\s+/g, " ");
+  if (!text) return { title: "", accent: "" };
+  const pipe = text.split("|").map((part) => part.trim()).filter(Boolean);
+  if (pipe.length >= 2) return { title: pipe[0]!, accent: pipe.slice(1).join(" ") };
+  const m = /^(.+?,)\s+(.+)$/.exec(text);
+  if (m) return { title: m[1]!.trim(), accent: m[2]!.trim() };
+  return { title: text, accent: "" };
+}
+
+function sliderItemToHeroSlide(
+  item: HmCorporateSliderItem,
+  index: number,
+  opts?: { preferTitleAsHeadline?: boolean },
+): VatanHeroSlide | null {
+  const image = String(item.imageUrl ?? "").trim();
+  if (!image) return null;
+  const ctaLabel = String(item.title ?? "").trim();
+  const headlineRaw =
+    String(item.headline ?? "").trim() || (opts?.preferTitleAsHeadline ? ctaLabel : "");
+  const split = headlineRaw ? splitVatanHeroHeadline(headlineRaw) : { title: "", accent: "" };
+  const lead = String(item.subtitle ?? "").trim();
+  const ctaHref = String(item.href ?? "").trim();
+  return {
+    id: item.id || `slide-${index + 1}`,
+    image,
+    alt: lead || ctaLabel || `Slider ${index + 1}`,
+    title: split.title || undefined,
+    accent: split.accent || undefined,
+    lead: lead || undefined,
+    ctaLabel: ctaLabel || undefined,
+    ctaHref: ctaHref && ctaHref !== "#" ? ctaHref : undefined,
+  };
+}
+
 function tgdFallbackSlides(): VatanHeroSlide[] {
-  return TGD_DEFAULT_SLIDER_ITEMS.map((item) => ({
-    id: item.id,
-    image: item.imageUrl,
-    alt: item.subtitle,
-  }));
+  return TGD_DEFAULT_SLIDER_ITEMS.map((item, index) =>
+    sliderItemToHeroSlide(item, index, { preferTitleAsHeadline: true }),
+  ).filter((item): item is VatanHeroSlide => item != null);
 }
 
 /** Background slides: editor Tepe Manşet images, else branded Vatan / TGD set. */
@@ -103,23 +137,15 @@ export function resolveVatanHeroSlides(prefs: NewsSiteLayoutPrefs, siteSlug?: st
   }
   if (!items.length || isStockVatanSlider(items)) return [...VATAN_HOME_HERO_V2.slides];
   const fromEditor = items
-    .map((item, index): VatanHeroSlide | null => {
-      const image = String(item.imageUrl ?? "").trim();
-      if (!image) return null;
-      return {
-        id: item.id || `slide-${index + 1}`,
-        image,
-        alt: String(item.subtitle ?? item.title ?? "").trim() || `Slider ${index + 1}`,
-      };
-    })
+    .map((item, index) => sliderItemToHeroSlide(item, index, { preferTitleAsHeadline: isTgd }))
     .filter((item): item is VatanHeroSlide => item != null);
   if (fromEditor.length) return fromEditor;
   return isTgd ? tgdFallbackSlides() : [...VATAN_HOME_HERO_V2.slides];
 }
 
 /**
- * Hero copy from hmVatanHomeCopy (or site defaults); CTAs follow the first two
- * Tepe Manşet links when the editor customized slides.
+ * Hero copy from hmVatanHomeCopy (or site defaults); Tepe Manşet slides carry
+ * per-slide title/lead/CTAs when the editor customized them (or TGD defaults).
  */
 export function resolveVatanHero(prefs: NewsSiteLayoutPrefs, siteSlug?: string | null): VatanResolvedHero {
   const copyDefaults = resolveVatanHeroCopyDefaults(prefs.hmVatanHomeCopy, siteSlug);
@@ -128,22 +154,29 @@ export function resolveVatanHero(prefs: NewsSiteLayoutPrefs, siteSlug?: string |
   const useTgdSlides = isTgd && (!items.length || isStockVatanSlider(items) || needsTgdCorporateSliderUpgrade(items));
   const effectiveItems = useTgdSlides ? [...TGD_DEFAULT_SLIDER_ITEMS] : items;
   const custom = effectiveItems.length > 0 && (useTgdSlides || !isStockVatanSlider(items));
-  const first = custom ? effectiveItems[0] : undefined;
-  const second = custom ? effectiveItems[1] : undefined;
-  const firstHref = String(first?.href ?? "").trim();
-  const secondHref = String(second?.href ?? "").trim();
+  const slides = resolveVatanHeroSlides(prefs, siteSlug);
+  const first = custom ? slides[0] : undefined;
+  const second = custom ? slides[1] : undefined;
+  const firstHref = String(first?.ctaHref ?? "").trim();
+  const secondHref = String(second?.ctaHref ?? "").trim();
+  const firstHeadline = first?.title?.trim();
+  const firstAccent = first?.accent?.trim() ?? "";
+  const firstLead = first?.lead?.trim();
   return {
     eyebrow: copyDefaults.eyebrow,
-    title: copyDefaults.title,
-    accent: copyDefaults.accent,
-    lead: copyDefaults.lead,
+    title: firstHeadline || copyDefaults.title,
+    accent: firstHeadline ? firstAccent : copyDefaults.accent,
+    lead: firstLead || copyDefaults.lead,
     primaryHref: firstHref && firstHref !== "#" ? firstHref : copyDefaults.primaryHref,
-    primaryLabel: firstHref && firstHref !== "#" && first?.title?.trim() ? first.title.trim() : copyDefaults.primaryLabel,
+    primaryLabel:
+      firstHref && firstHref !== "#" && first?.ctaLabel?.trim() ? first.ctaLabel.trim() : copyDefaults.primaryLabel,
     secondaryHref: secondHref && secondHref !== "#" ? secondHref : copyDefaults.secondaryHref,
     secondaryLabel:
-      secondHref && secondHref !== "#" && second?.title?.trim() ? second.title.trim() : copyDefaults.secondaryLabel,
+      secondHref && secondHref !== "#" && second?.ctaLabel?.trim()
+        ? second.ctaLabel.trim()
+        : copyDefaults.secondaryLabel,
     scrollCueLabel: copyDefaults.scrollCueLabel,
-    slides: resolveVatanHeroSlides(prefs, siteSlug),
+    slides,
     slideIntervalMs: VATAN_HOME_HERO_V2.slideIntervalMs,
   };
 }

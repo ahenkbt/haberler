@@ -15,8 +15,8 @@ import { parseHmLayoutJson } from "./hm-layout-delta.js";
 
 export const TGD_SITE_SLUG = "trafik";
 export const TGD_EDITOR_TOUCHED_KEY = "tgdEditorTouchedAt";
-/** Bump: TGD Tepe Manşet local slider images + flat CTA hrefs. */
-export const TGD_PAGE_SYNC_VERSION = 6;
+/** Bump: per-slide hero headlines + projeler/çalışmalar Tepe Manşet. */
+export const TGD_PAGE_SYNC_VERSION = 7;
 
 type TgdManifest = {
   pageSyncVersion?: number;
@@ -118,6 +118,7 @@ function loadHomeCopy(dataDir: string): Record<string, unknown> | null {
 type TgdSliderSeedItem = {
   id: string;
   title: string;
+  headline?: string;
   subtitle?: string;
   href: string;
   imageUrl: string;
@@ -141,6 +142,7 @@ function loadSliderItems(dataDir: string): TgdSliderSeedItem[] | null {
     out.push({
       id,
       title,
+      headline: String(row.headline ?? "").trim() || undefined,
       subtitle: String(row.subtitle ?? "").trim() || undefined,
       href,
       imageUrl,
@@ -155,9 +157,13 @@ function loadSliderItems(dataDir: string): TgdSliderSeedItem[] | null {
 /** Eski harici CDN / nested path Tepe Manşet satırlarını TGD yerel setine yükselt. */
 export function needsTgdSliderSeedUpgrade(items: unknown): boolean {
   if (!Array.isArray(items) || items.length === 0) return true;
-  return items.some((raw) => {
-    if (!raw || typeof raw !== "object") return true;
-    const row = raw as Record<string, unknown>;
+  const rows = items.filter((raw): raw is Record<string, unknown> => !!raw && typeof raw === "object");
+  if (!rows.length) return true;
+  const hrefs = rows.map((row) => String(row.href ?? "").trim());
+  if (!hrefs.some((href) => href.includes("trafik-yasam-projeler"))) return true;
+  if (!hrefs.some((href) => href.includes("trafik-yasam-calismalar"))) return true;
+  if (rows.some((row) => String(row.id ?? "") === "trafik-slide-tgu")) return true;
+  return rows.some((row) => {
     const href = String(row.href ?? "").trim();
     const img = String(row.imageUrl ?? "").trim();
     if (href.includes("/trafik-yasam/")) return true;

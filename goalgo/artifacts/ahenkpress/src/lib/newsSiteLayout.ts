@@ -346,6 +346,8 @@ export type HmCorporateQuickLink = {
 export type HmCorporateSliderItem = {
   id: string;
   title: string;
+  /** Vatan hero büyük manşet başlığı; boşsa `title` kullanılır. */
+  headline?: string | null;
   subtitle?: string | null;
   href?: string | null;
   imageUrl?: string | null;
@@ -2466,6 +2468,7 @@ function normalizeHmCorporateSliderItems(raw: unknown): HmCorporateSliderItem[] 
       return {
         id: normalizeId(o.id, `slider-${index + 1}`),
         title,
+        headline: normalizeOptionalText(o.headline, 160),
         subtitle: normalizeOptionalText(o.subtitle, 260),
         href: href || null,
         imageUrl: normalizeOptionalText(o.imageUrl ?? o.image, 500),

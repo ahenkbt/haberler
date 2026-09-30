@@ -182,8 +182,8 @@ export const TGD_VATAN_HOME_COPY: HmVatanHomeCopy = {
     lead: "Trafik kazaları kader değildir. Bilinç, eğitim ve profesyonel denetimle sıfır kaza hedefine birlikte yürüyoruz.",
     primaryHref: "/hakkimizda",
     primaryLabel: "Trafik Güvenliği Derneği",
-    secondaryHref: "/trafik-guvenligi-uzmani",
-    secondaryLabel: "Trafik Güvenliği Uzmanı Eğitimleri",
+    secondaryHref: "/trafik-yasam-projeler",
+    secondaryLabel: "Projeler",
     scrollCueLabel: "Keşfet",
   },
   dernek: {
