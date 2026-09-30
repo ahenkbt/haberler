@@ -37,6 +37,7 @@ export const TGD_SLIDER_ASSETS = {
   dernek: `${TGD_SLIDER_ASSET_BASE}/dernek.jpg`,
   egitim: `${TGD_SLIDER_ASSET_BASE}/egitim.jpg`,
   projeler: `${TGD_SLIDER_ASSET_BASE}/projeler.jpg`,
+  calismalar: `${TGD_SLIDER_ASSET_BASE}/calismalar.jpg`,
 } as const;
 
 export const VATAN_COLORS = {
@@ -447,7 +448,9 @@ export const TGD_DEFAULT_SLIDER_ITEMS = [
   {
     id: "trafik-slide-dernek",
     title: "Trafik Güvenliği Derneği",
-    subtitle: "Yolumuz hayat, önceliğimiz güvenlik. Bilinçlendirme, eğitim ve denetim kültürüyle daha güvenli bir trafik.",
+    headline: "Yolumuz hayat, önceliğimiz güvenlik.",
+    subtitle:
+      "Trafik kazaları kader değildir. Bilinç, eğitim ve profesyonel denetimle sıfır kaza hedefine birlikte yürüyoruz.",
     href: "/hakkimizda",
     imageUrl: TGD_SLIDER_ASSETS.dernek,
     color: VATAN_COLORS.crimson,
@@ -455,33 +458,47 @@ export const TGD_DEFAULT_SLIDER_ITEMS = [
     active: true,
   },
   {
-    id: "trafik-slide-tgu",
-    title: "Trafik Güvenliği Uzmanı Eğitimleri",
-    subtitle: "Seviye 1 Uygulayıcı, Seviye 2 İç Denetçi, Seviye 3 Baş Denetçi ve Bağımsız Denetçi sertifika programları.",
-    href: "/trafik-guvenligi-uzmani",
-    imageUrl: TGD_SLIDER_ASSETS.egitim,
+    id: "trafik-slide-projeler",
+    title: "Projeler",
+    headline: "Projelerle güvenli yollar, hayat kurtarır.",
+    subtitle:
+      "Trafik Güvenliği Kütüphanesi, Güvenli Sürüş Akademisi, Trafikte Yapay Zeka ve saha seferberlikleri.",
+    href: "/trafik-yasam-projeler",
+    imageUrl: TGD_SLIDER_ASSETS.projeler,
     color: VATAN_COLORS.navy,
     order: 2,
     active: true,
   },
   {
-    id: "trafik-slide-projeler",
-    title: "Projeler ve Çalışmalar",
-    subtitle: "Trafik Güvenliği Kütüphanesi, Güvenli Sürüş Akademisi, Trafikte Yapay Zeka ve daha fazlası.",
-    href: "/trafik-yasam-projeler",
-    imageUrl: TGD_SLIDER_ASSETS.projeler,
+    id: "trafik-slide-calismalar",
+    title: "Çalışmalar",
+    headline: "Çalışmalarımızla farkındalık, sahada güçlenir.",
+    subtitle:
+      "Eğitim, istihdam ve toplum seferberlikleriyle trafik kültürünü sahada güçlendiriyoruz.",
+    href: "/trafik-yasam-calismalar",
+    imageUrl: TGD_SLIDER_ASSETS.calismalar,
     color: VATAN_COLORS.gold,
     order: 3,
     active: true,
   },
 ];
 
-/** Eski harici CDN / nested path slider’larını TGD özel setine yükselt. */
+/** Eski harici CDN / nested path / TGU-orta-slayt setlerini TGD özel setine yükselt. */
 export function needsTgdCorporateSliderUpgrade(
-  items: Array<{ href?: string | null; imageUrl?: string | null } | null | undefined> | null | undefined,
+  items: Array<
+    | { id?: string | null; href?: string | null; imageUrl?: string | null }
+    | null
+    | undefined
+  > | null | undefined,
 ): boolean {
-  const list = (items ?? []).filter((item): item is { href?: string | null; imageUrl?: string | null } => !!item);
+  const list = (items ?? []).filter(
+    (item): item is { id?: string | null; href?: string | null; imageUrl?: string | null } => !!item,
+  );
   if (!list.length) return true;
+  const hrefs = list.map((item) => String(item.href ?? "").trim());
+  if (!hrefs.some((href) => href.includes("trafik-yasam-projeler"))) return true;
+  if (!hrefs.some((href) => href.includes("trafik-yasam-calismalar"))) return true;
+  if (list.some((item) => item.id === "trafik-slide-tgu")) return true;
   return list.some((item) => {
     const href = String(item.href ?? "").trim();
     const img = String(item.imageUrl ?? "").trim();

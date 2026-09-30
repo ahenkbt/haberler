@@ -19,8 +19,15 @@ describe("tgd-page-restore upsert", () => {
     ).toBe(true);
     expect(
       needsTgdSliderSeedUpgrade([
+        { id: "trafik-slide-dernek", href: "/hakkimizda", imageUrl: "/tgd/slider/dernek.jpg" },
+        { id: "trafik-slide-tgu", href: "/trafik-guvenligi-uzmani", imageUrl: "/tgd/slider/egitim.jpg" },
+      ]),
+    ).toBe(true);
+    expect(
+      needsTgdSliderSeedUpgrade([
         { href: "/hakkimizda", imageUrl: "/tgd/slider/dernek.jpg" },
-        { href: "/trafik-guvenligi-uzmani", imageUrl: "/tgd/slider/egitim.jpg" },
+        { href: "/trafik-yasam-projeler", imageUrl: "/tgd/slider/projeler.jpg" },
+        { href: "/trafik-yasam-calismalar", imageUrl: "/tgd/slider/calismalar.jpg" },
       ]),
     ).toBe(false);
   });

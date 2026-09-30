@@ -9,6 +9,16 @@ export type VatanHeroSlide = {
   id: string;
   image: string;
   alt: string;
+  /** Büyük manşet başlığı; yoksa site varsayılan hero metni kullanılır. */
+  title?: string;
+  /** İtalik vurgu satırı (başlığın ikinci parçası). */
+  accent?: string;
+  /** Manşet alt metni. */
+  lead?: string;
+  /** Birincil CTA etiketi. */
+  ctaLabel?: string;
+  /** Birincil CTA hedefi. */
+  ctaHref?: string;
 };
 
 export const VATAN_HOME_HERO_V2 = {

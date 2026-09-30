@@ -153,6 +153,7 @@ function cleanCorporateSliderItems(items: HmCorporateSliderItem[]): HmCorporateS
       return {
         id: item.id.trim() || `slider-${index + 1}`,
         title,
+        headline: item.headline?.trim() || null,
         subtitle: item.subtitle?.trim() || null,
         href: item.href?.trim() || null,
         imageUrl: item.imageUrl?.trim() || null,
@@ -1155,7 +1156,7 @@ export default function EditorGenelAyarlari() {
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
                       <div>
-                        <Label className="text-xs text-slate-600">Başlık</Label>
+                        <Label className="text-xs text-slate-600">Buton metni</Label>
                         <Input
                           className="mt-1"
                           value={item.title}
@@ -1183,6 +1184,26 @@ export default function EditorGenelAyarlari() {
                           }
                         />
                       </div>
+                    </div>
+                    <div className="mt-3">
+                      <Label className="text-xs text-slate-600">Manşet başlığı</Label>
+                      <Input
+                        className="mt-1"
+                        value={item.headline ?? ""}
+                        disabled={saving}
+                        placeholder="Boşsa buton metni kullanılır. Örn: Yolumuz hayat, önceliğimiz güvenlik."
+                        onChange={(e) =>
+                          setP({
+                            ...p,
+                            corporateSliderItems: corporateSliderItems.map((x) =>
+                              x.id === item.id ? { ...x, headline: e.target.value } : x,
+                            ),
+                          })
+                        }
+                      />
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Anasayfa hero’daki büyük başlık. Virgülden sonrası italik vurgu olur.
+                      </p>
                     </div>
                     <div className="mt-3">
                       <Label className="text-xs text-slate-600">Alt açıklama</Label>
