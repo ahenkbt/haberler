@@ -44,6 +44,15 @@ describe("api-upstream", () => {
     );
   });
 
+  it("includes CONTAINER_ROLL in every random instance name", async () => {
+    const { apiContainerInstanceNames } = await import("./api-upstream.js");
+    assert.deepEqual(apiContainerInstanceNames({ CONTAINER_ROLL: "php-news-sites-20261004a" }, 3), [
+      "php-news-sites-20261004a-0",
+      "php-news-sites-20261004a-1",
+      "php-news-sites-20261004a-2",
+    ]);
+  });
+
   it("falls back to incoming host then ahenk.net.tr", () => {
     assert.equal(
       resolveApiOrigin({}, "https://ankarahabergundemi.com"),
