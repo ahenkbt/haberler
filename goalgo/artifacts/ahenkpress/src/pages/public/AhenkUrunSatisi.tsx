@@ -21,7 +21,7 @@ export default function AhenkUrunSatisi() {
   return (
     <AhenkAgencyChrome
       title="Ürün Satışı | Ahenk Bilgi Teknolojileri"
-      description="Vatan İletişim Merkezi çağrı merkezi müşteri temsilcisi iş başvurusu ve çalışma esasları ön onay metni."
+      description="Müşteri temsilcisi iş başvurusu: tam zamanlı ofisten veya home-office / kısmi süreli çalışma esasları ön onay metni."
     >
       <AhenkPageHero
         crumb={
@@ -30,17 +30,72 @@ export default function AhenkUrunSatisi() {
           </>
         }
         title="Ürün satışı ve çalışma esasları"
-        lead="Başvuru formunu doldurmadan önce çalışma şartlarını, hukuki esasları ve operasyon süreçlerini okuyunuz."
+        lead="Tam zamanlı ofisten veya home-office / kısmi süreli çalışabilirsiniz. Başvuru formunu doldurmadan önce çalışma şartlarını, hukuki esasları ve operasyon süreçlerini okuyunuz."
         image={AHENK_PHOTOS.callCenter}
       />
+
+      <section className="ahenk-section ahenk-legal-doc" id="tam-zamanli-ofis">
+        <p className="ahenk-kicker">Açık pozisyon</p>
+        <h2>Tam Zamanlı Ofisten Çalışma — Müşteri Temsilcisi</h2>
+        <p>
+          Vakıf İktisadi İşletmesi ürünlerinin satışı (ahenk.net.tr/urun-satisi) ve Vakıf TürkAta Haber Ajansı
+          abonelik satış süreçlerinde Türkiye genelinde kamu kurum yöneticileri ile görüşmeler gerçekleştirecek Müşteri
+          Temsilcileri arıyoruz.
+        </p>
+        <h3>Çalışma Şartları &amp; İmkanlar</h3>
+        <div className="ahenk-table-wrap">
+          <table className="ahenk-spec">
+            <thead>
+              <tr>
+                <th>Başlık</th>
+                <th>Detay</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Çalışma Saatleri</th>
+                <td>Hafta içi 09:00 - 17:00 | Cumartesi 09:00 - 15:00 (Pazar tatil)</td>
+              </tr>
+              <tr>
+                <th>İmkanlar</th>
+                <td>Asgari Ücret + SGK + Yemek</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Mülakat &amp; Adres</h3>
+        <p>Sağlık Mah. Aksu Cad. 13/5 Sıhhıye - Çankaya / Ankara</p>
+        <p>
+          Başvuru ve yüz yüze mülakat için hafta içi 09:00 - 17:00 saatleri arasında doğrudan adresimize gelebilir veya
+          güncel CV’nizi{" "}
+          <a
+            href="https://wa.me/905322291892"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--ahenk-gold-2)", textDecoration: "underline" }}
+          >
+            WhatsApp +90 532 229 18 92
+          </a>{" "}
+          hattı üzerinden bize iletebilirsiniz.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+          <a className="ahenk-btn" href="https://wa.me/905322291892" target="_blank" rel="noreferrer">
+            WhatsApp +90 532 229 18 92
+          </a>
+          <Link href="/kariyer#basvuru" className="ahenk-btn ahenk-btn-light">
+            İş başvurusuna git
+          </Link>
+        </div>
+      </section>
 
       <article className="ahenk-section ahenk-legal-doc">
         <p className="ahenk-kicker">AHENK BİLGİ TEKNOLOJİLERİ</p>
         <h2>Vatan İletişim Merkezi — Çağrı Merkezi Müşteri Temsilcisi İş Başvurusu ve Çalışma Esasları Ön Onay Metni</h2>
         <p className="ahenk-lead">
           Lütfen başvuru formunu doldurmadan önce aşağıda yer alan çalışma şartlarını, hukuki esasları ve operasyon
-          süreçlerini dikkatle okuyunuz. Başvuru formunu göndermeniz durumunda işbu metinde yer alan koşulları
-          okuduğunuz, anladığınız ve kabul ettiğiniz varsayılacaktır.
+          süreçlerini dikkatle okuyunuz. Tam zamanlı ofisten çalışma veya home-office / kısmi süreli çalışma
+          seçeneklerinden biriyle başvurabilirsiniz. Başvuru formunu göndermeniz durumunda işbu metinde yer alan
+          koşulları okuduğunuz, anladığınız ve kabul ettiğiniz varsayılacaktır.
         </p>
 
         <h2>1. Biz kimiz &amp; hukuki çerçeve</h2>
@@ -117,7 +172,8 @@ export default function AhenkUrunSatisi() {
 
         <h2>4. Home-office çalışma şartları, oryantasyon ve staj süreci</h2>
         <p>
-          Çağrı Merkezi Müşteri Temsilcisi pozisyonumuz Home-Office (Uzaktan Çalışma) modeline dayanmaktadır.
+          Home-office (uzaktan çalışma) seçeneği kısmi süreli modele dayanır. Başvuru sahipleri tam zamanlı ofisten
+          veya bu home-office / kısmi süreli modelle çalışabilir.
         </p>
         <h3>A) 1. Hafta: Oryantasyon, eğitim ve staj süresi</h3>
         <ul>
@@ -176,9 +232,10 @@ export default function AhenkUrunSatisi() {
         <p>
           Yukarıda yer alan Ahenk Bilgi Teknolojileri — Vatan İletişim Merkezi İş Başvuru ve Çalışma Esasları Metni’ni
           okudum, anladım. Projenin anlaşmalı olunan sivil toplum kuruluşlarının iktisadi işletmeleri bünyesinde
-          yürütülen bir ürün satış/tanıtım faaliyeti olduğunu, 1 haftalık (günde 4 saat) staj/eğitim sürecini takiben
-          Kısmi Süreli İş Sözleşmesi ve SGK girişi ile pbx.goalgo.org log kayıtları üzerinden puantaj tutularak
-          çalışılacağını kabul ve beyan ederim.
+          yürütülen bir ürün satış/tanıtım faaliyeti olduğunu; tam zamanlı ofisten çalışma veya home-office / kısmi
+          süreli çalışma seçeneklerinden biri ile çalışılabileceğini kabul ve beyan ederim. Home-office / kısmi süreli
+          seçenekte 1 haftalık (günde 4 saat) staj/eğitim sürecini takiben Kısmi Süreli İş Sözleşmesi ve SGK girişi ile
+          pbx.goalgo.org log kayıtları üzerinden puantaj tutulur.
         </p>
 
         <div className="ahenk-consent-box">
