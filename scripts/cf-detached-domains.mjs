@@ -13,6 +13,30 @@
 // bağlı route / custom domain sökülür; yektube Worker'ının custom domain'leri ve DNS korunur (script/service filtresi).
 export const DETACHED_ZONES = ["yekpare.net", "turk.eco", "suhaberajansi.com", "yektube.com"];
 
+// Ön yüzü PHP temasında olan, Worker'da yalnızca panel/API route'ları (wrangler.toml) bulunan zone'lar.
+// Bunlar hiçbir zaman "ayrılmış" sayılmaz: DETACHED_ZONES'a yanlışlıkla eklense bile route'ları sökülmez.
+export const PHP_THEME_ZONES = [
+  "turkatahaber.com",
+  "ankarasehirgazetesi.com",
+  "ankarahabergundemi.com",
+  "kirsehirhaber.org",
+  "vatanhaber.net",
+  "suhaber.net",
+  "sehitgazi.org.tr",
+  "yerel.net.tr",
+  "turksav.org",
+  "dunyasaglik.org",
+  "yesilvatan.gen.tr",
+];
+
+export function isPhpThemeZone(name) {
+  const h = String(name ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
+  return PHP_THEME_ZONES.includes(h);
+}
+
 export function isDetachedZone(name) {
   const h = String(name ?? "")
     .trim()
@@ -61,6 +85,10 @@ async function deleteCustomDomains(request, { accountId, script, zoneName, log }
  */
 export async function detachRemovedDomains(request, { accountId, script, log = console.log }) {
   for (const zoneName of DETACHED_ZONES) {
+    if (isPhpThemeZone(zoneName)) {
+      log(`[detach] ${zoneName}: PHP tema zone'u — panel/API route'ları korunur, atlandı`);
+      continue;
+    }
     const zones = await request(`/zones?name=${encodeURIComponent(zoneName)}&account.id=${accountId}`);
     const zoneId = zones.json?.result?.[0]?.id;
     if (!zoneId) {
