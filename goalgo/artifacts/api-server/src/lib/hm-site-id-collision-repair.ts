@@ -168,33 +168,14 @@ async function repairOneDb(opts: {
       if (!slug) continue;
       // /tr/su editör haberleri siteId=2'de — su satırını asla yeni id'ye taşıma.
       if (slug === "su" || slug === "suhaber") continue;
+      // kirsehirhaber'i max(id)+1 yapmak her boot'ta yeni public site id üretiyordu.
+      if (slug === "kirsehirhaber" || slug === "kirsehir" || slug === "kh" || slug.startsWith("kirsehirhaber-retired-")) {
+        continue;
+      }
       maxId += 1;
       const toId = maxId;
       await reassignSiteId({ fromId: id, toId, slug, dryRun, writeSql });
       reassigned.push({ slug, fromId: id, toId, db: label });
-    }
-  }
-
-  // kirsehirhaber ile tr aynı id (tek satırlık mirror overwrite sonrası sapma)
-  if (!reassigned.some((r) => r.db === label && r.slug === "kirsehirhaber")) {
-    const kirsehir = rows.find((r) => normSlug(r.slug) === "kirsehirhaber");
-    const tr = rows.find((r) => normSlug(r.slug) === "tr");
-    if (kirsehir && tr && Number(kirsehir.id) === Number(tr.id)) {
-      maxId += 1;
-      const toId = maxId;
-      await reassignSiteId({
-        fromId: Number(kirsehir.id),
-        toId,
-        slug: "kirsehirhaber",
-        dryRun,
-        writeSql,
-      });
-      reassigned.push({
-        slug: "kirsehirhaber",
-        fromId: Number(kirsehir.id),
-        toId,
-        db: label,
-      });
     }
   }
 

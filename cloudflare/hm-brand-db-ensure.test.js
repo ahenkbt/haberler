@@ -62,6 +62,24 @@ function createDb(seed) {
       if (row && json) row.layout_json = json;
       return [];
     }
+    if (text.includes("active = false") && text.includes("id::text")) {
+      const keepId = values[values.length - 1];
+      for (const row of state.sites) {
+        if (Number(row.id) === Number(keepId)) continue;
+        const slug = String(row.slug || "")
+          .trim()
+          .toLowerCase()
+          .replace(/^\/+|\/+$/g, "");
+        if (slug === "kirsehirhaber" || slug === "kh" || slug === "kirsehir") {
+          row.active = false;
+          row.slug = `kirsehirhaber-retired-${row.id}`;
+          row.domain = null;
+          row.domain2 = null;
+          row.domain3 = null;
+        }
+      }
+      return [];
+    }
     if (text.includes("UPDATE hm_news_sites") && text.includes("slug")) {
       const id = values[values.length - 1];
       const row = state.sites.find((item) => Number(item.id) === Number(id));
@@ -122,6 +140,14 @@ describe("pickKhCanonicalSite", () => {
     ]);
     assert.equal(picked.row.id, 944);
     assert.deepEqual(picked.retiredIds, [1077]);
+  });
+
+  it("does not pin 944 when that row is a different site", () => {
+    const picked = pickKhCanonicalSite([
+      site(944, { slug: "tr", active: true }),
+      site(1121, { slug: "kirsehirhaber", active: true }),
+    ]);
+    assert.equal(picked.row.id, 1121);
   });
 
   it("does not resurrect an inactive 944 over the active row the site is serving", () => {
@@ -202,8 +228,31 @@ describe("KH by-domain meta author clear", () => {
     assert.equal(db.state.makaleDeletes, 0);
     const other = db.state.sites.find((row) => row.id === 1077);
     assert.ok(other);
+    assert.equal(other.active, false);
+    assert.equal(other.slug, "kirsehirhaber-retired-1077");
     assert.equal(other.domain, null);
     assert.equal(db.state.authors.length, 1);
     assert.equal(db.state.makaleler.length, 1);
+  });
+
+  it("does not insert when several KH rows already exist, and keeps one id", async () => {
+    const db = createDb({
+      sites: [
+        site(1121, { layout_json: layout({ hmKhAuthorsClearRev: KH_AUTHORS_CLEAR_REV }) }),
+        site(1118, { layout_json: layout({ hmKhAuthorsClearRev: KH_AUTHORS_CLEAR_REV }) }),
+      ],
+    });
+    const ids = [];
+    for (let i = 0; i < 3; i += 1) {
+      const result = await ensureKhBrandMetaOnSql(db.sql);
+      ids.push(result.meta.id);
+      assert.equal(result.meta.domain, "kirsehirhaber.org");
+    }
+    assert.deepEqual(ids, [1118, 1118, 1118]);
+    assert.equal(db.state.inserts, 0);
+    assert.equal(db.state.sites.length, 2);
+    const extra = db.state.sites.find((row) => row.id === 1121);
+    assert.equal(extra.active, false);
+    assert.equal(extra.slug, "kirsehirhaber-retired-1121");
   });
 });

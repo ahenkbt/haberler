@@ -223,26 +223,98 @@ async function releaseKhDomainsFromOthers(keepSiteId: number): Promise<void> {
   }
 }
 
-function findKhTarget(
-  sites: Array<{
-    id: number;
-    slug: string | null;
-    domain: string | null;
-    domain2?: string | null;
-    domain3?: string | null;
-    displayName?: string | null;
-    layoutJson?: string | null;
-  }>,
-) {
-  for (const legacy of KH_LEGACY_SLUGS) {
-    const hit = sites.find((s) => normalizeSlug(s.slug) === legacy);
-    if (hit) return hit;
+/** Retired duplicates keep their row and content, but must not win by-domain or slug lookup. */
+export const KH_RETIRED_SLUG_PREFIX = "kirsehirhaber-retired-";
+
+export function isRetiredKhSlug(slug: string | null | undefined): boolean {
+  return normalizeSlug(slug).startsWith(KH_RETIRED_SLUG_PREFIX);
+}
+
+export type KhSitePickRow = {
+  id: number;
+  slug: string | null;
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+  active?: boolean | null;
+};
+
+function rowIsKhSite(row: KhSitePickRow): boolean {
+  if (isKhNewsSlug(row.slug) || isRetiredKhSlug(row.slug)) return true;
+  return KH_DOMAINS.some(
+    (host) =>
+      hostMatches(row.domain, host) ||
+      hostMatches(row.domain2, host) ||
+      hostMatches(row.domain3, host),
+  );
+}
+
+/**
+ * One stable row. Prefer the active `kirsehirhaber` slug with the lowest id
+ * (LiveBridge 944 when that row is still active). Never the newest throwaway.
+ * Retired rows are reused only when nothing else is left, so ensure does not insert.
+ */
+export function pickStableKhSite<T extends KhSitePickRow>(sites: T[]): T | null {
+  const kh = (Array.isArray(sites) ? sites : []).filter((row) => row && Number(row.id) > 0 && rowIsKhSite(row));
+  const live = kh.filter((row) => !isRetiredKhSlug(row.slug));
+  const pool = live.length ? live : kh;
+  const exact = pool.filter((row) => normalizeSlug(row.slug) === KH_SITE_SLUG);
+  const exactActive = exact.filter((row) => row.active !== false);
+  const active = pool.filter((row) => row.active !== false);
+  const candidates = exactActive.length ? exactActive : exact.length ? exact : active.length ? active : pool;
+  const pinned = candidates.find((row) => Number(row.id) === 944 && normalizeSlug(row.slug) === KH_SITE_SLUG);
+  if (pinned) return pinned;
+  return [...candidates].sort((a, b) => Number(a.id) - Number(b.id))[0] ?? null;
+}
+
+async function retireExtraKhRows(
+  sites: Array<{ id: number; slug: string | null }>,
+  keepId: number,
+): Promise<void> {
+  for (const row of sites) {
+    if (!row || row.id === keepId) continue;
+    if (!isKhNewsSlug(row.slug) || isRetiredKhSlug(row.slug)) continue;
+    await dualWriteUpdate(
+      hmNewsSitesTable,
+      {
+        active: false,
+        slug: `${KH_RETIRED_SLUG_PREFIX}${row.id}`,
+        domain: null,
+        domain2: null,
+        domain3: null,
+        updatedAt: new Date(),
+      },
+      eq(hmNewsSitesTable.id, row.id),
+    );
   }
-  return sites.find((s) =>
-    KH_DOMAINS.some(
-      (host) =>
-        hostMatches(s.domain, host) || hostMatches(s.domain2, host) || hostMatches(s.domain3, host),
-    ),
+}
+
+async function bindKhDomains(siteId: number): Promise<void> {
+  const full = {
+    slug: KH_SITE_SLUG,
+    domain: KH_DOMAINS[0],
+    domain2: KH_DOMAINS[1],
+    domain3: KH_DOMAINS[2],
+    active: true,
+    updatedAt: new Date(),
+  };
+  try {
+    await dualWriteUpdate(hmNewsSitesTable, full, eq(hmNewsSitesTable.id, siteId));
+    return;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/unique|duplicate|domain2|domain3|column/i.test(msg)) throw err;
+  }
+  await releaseKhDomainsFromOthers(siteId);
+  await dualWriteUpdate(
+    hmNewsSitesTable,
+    {
+      slug: KH_SITE_SLUG,
+      domain: KH_DOMAINS[0],
+      active: true,
+      updatedAt: new Date(),
+    },
+    eq(hmNewsSitesTable.id, siteId),
   );
 }
 
@@ -255,7 +327,7 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   await ensureHmNewsSiteWritableColumns();
 
   const sites = await listHmNewsSitesCompat();
-  const target = findKhTarget(sites);
+  const target = pickStableKhSite(sites);
 
   if (dryRun) {
     return {
@@ -292,7 +364,9 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
     };
   }
 
+  await retireExtraKhRows(sites, target.id);
   await releaseKhDomainsFromOthers(target.id);
+  await bindKhDomains(target.id);
 
   let layoutJson = target.layoutJson;
   try {
@@ -337,23 +411,21 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
     layoutJson = defaultKhLayoutJson();
   }
 
-  const khPatch = {
-    slug: KH_SITE_SLUG,
-    displayName: target.displayName?.trim() || KH_DISPLAY_NAME,
-    domain: KH_DOMAINS[0],
-    domain2: KH_DOMAINS[1],
-    domain3: KH_DOMAINS[2],
-    layoutJson,
-    active: true,
-    updatedAt: new Date(),
-  };
   try {
-    await dualWriteUpdate(hmNewsSitesTable, khPatch, eq(hmNewsSitesTable.id, target.id));
+    await dualWriteUpdate(
+      hmNewsSitesTable,
+      {
+        displayName: target.displayName?.trim() || KH_DISPLAY_NAME,
+        layoutJson,
+        updatedAt: new Date(),
+      },
+      eq(hmNewsSitesTable.id, target.id),
+    );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!/unique|duplicate/i.test(msg)) throw err;
-    await releaseKhDomainsFromOthers(target.id);
-    await dualWriteUpdate(hmNewsSitesTable, khPatch, eq(hmNewsSitesTable.id, target.id));
+    console.error(
+      "[hm-kh] layout update",
+      err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+    );
   }
   await ensureEditorForKh(target.id);
 

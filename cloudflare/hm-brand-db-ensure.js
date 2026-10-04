@@ -886,6 +886,7 @@ function defaultKhLayoutJson() {
 function rowLooksLikeKh(row) {
   const slug = normalizeSlug(row?.slug);
   if (slug === "kirsehirhaber" || slug === "kh" || slug === "kirsehir") return true;
+  if (slug.startsWith("kirsehirhaber-retired-")) return true;
   for (const d of [row?.domain, row?.domain2, row?.domain3]) {
     const host = normalizeHost(d);
     if (KH_CANONICAL_DOMAINS.includes(host)) return true;
@@ -893,15 +894,7 @@ function rowLooksLikeKh(row) {
   return false;
 }
 
-async function bindKhDomainsOnRow(sql, row) {
-  if (!sql || !row?.id || !rowLooksLikeKh(row)) return row;
-  const have = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(d));
-  const alreadyBound =
-    have[0] === KH_CANONICAL_DOMAINS[0] &&
-    have[1] === KH_CANONICAL_DOMAINS[1] &&
-    have[2] === KH_CANONICAL_DOMAINS[2];
-  if (alreadyBound && normalizeSlug(row.slug) === "kirsehirhaber") return row;
-
+async function releaseKhDomainsFromOthers(sql, keepId) {
   for (const host of KH_CANONICAL_DOMAINS) {
     try {
       await sql`
@@ -910,13 +903,64 @@ async function bindKhDomainsOnRow(sql, row) {
             domain2 = CASE WHEN lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${host} THEN NULL ELSE domain2 END,
             domain3 = CASE WHEN lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) = ${host} THEN NULL ELSE domain3 END,
             updated_at = NOW()
-        WHERE id <> ${row.id}
+        WHERE id <> ${keepId}
       `;
     } catch (err) {
       console.error("[hm-brand-db-ensure] kh domain release", String(err?.message || err).slice(0, 160));
     }
   }
+}
 
+/** Extra KH rows stay in the table. They stop winning by-domain and slug lookup. */
+async function retireExtraKhRows(sql, keepId) {
+  if (!sql || !keepId) return;
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET active = false,
+          slug = ${"kirsehirhaber-retired-"} || id::text,
+          domain = CASE
+            WHEN lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net') THEN NULL
+            ELSE domain
+          END,
+          domain2 = CASE
+            WHEN lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net') THEN NULL
+            ELSE domain2
+          END,
+          domain3 = CASE
+            WHEN lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net') THEN NULL
+            ELSE domain3
+          END,
+          updated_at = NOW()
+      WHERE id <> ${keepId}
+        AND lower(trim(both '/' from coalesce(slug, ''))) IN ('kirsehirhaber', 'kirsehir', 'kh')
+    `;
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh retire extras", String(err?.message || err).slice(0, 200));
+  }
+}
+
+async function bindKhDomainsOnRow(sql, row) {
+  if (!sql || !row?.id || !rowLooksLikeKh(row)) return row;
+  await retireExtraKhRows(sql, row.id);
+
+  const have = [row.domain, row.domain2, row.domain3].map((d) => normalizeHost(d));
+  const alreadyBound =
+    have[0] === KH_CANONICAL_DOMAINS[0] &&
+    have[1] === KH_CANONICAL_DOMAINS[1] &&
+    have[2] === KH_CANONICAL_DOMAINS[2];
+  if (alreadyBound && normalizeSlug(row.slug) === "kirsehirhaber" && isActiveSiteRow(row)) return row;
+
+  await releaseKhDomainsFromOthers(sql, row.id);
+
+  const bound = {
+    ...row,
+    slug: "kirsehirhaber",
+    domain: KH_CANONICAL_DOMAINS[0],
+    domain2: KH_CANONICAL_DOMAINS[1],
+    domain3: KH_CANONICAL_DOMAINS[2],
+    active: true,
+  };
   try {
     await sql`
       UPDATE hm_news_sites
@@ -928,16 +972,25 @@ async function bindKhDomainsOnRow(sql, row) {
           updated_at = NOW()
       WHERE id = ${row.id}
     `;
-    return {
-      ...row,
-      slug: "kirsehirhaber",
-      domain: KH_CANONICAL_DOMAINS[0],
-      domain2: KH_CANONICAL_DOMAINS[1],
-      domain3: KH_CANONICAL_DOMAINS[2],
-      active: true,
-    };
+    return bound;
   } catch (err) {
-    console.error("[hm-brand-db-ensure] kh domain bind", String(err?.message || err).slice(0, 200));
+    const msg = String(err?.message || err);
+    console.error("[hm-brand-db-ensure] kh domain bind", msg.slice(0, 200));
+    if (!/unique|duplicate|domain2|domain3|column/i.test(msg)) return row;
+  }
+
+  try {
+    await sql`
+      UPDATE hm_news_sites
+      SET slug = ${"kirsehirhaber"},
+          domain = ${KH_CANONICAL_DOMAINS[0]},
+          active = true,
+          updated_at = NOW()
+      WHERE id = ${row.id}
+    `;
+    return { ...bound, domain2: row.domain2 ?? null, domain3: row.domain3 ?? null };
+  } catch (err) {
+    console.error("[hm-brand-db-ensure] kh domain bind retry", String(err?.message || err).slice(0, 200));
     return row;
   }
 }
@@ -977,6 +1030,10 @@ function isActiveSiteRow(row) {
   return row?.active === true || row?.active === 1 || row?.active === "t" || row?.active === "true";
 }
 
+export function isRetiredKhSlug(slug) {
+  return normalizeSlug(slug).startsWith("kirsehirhaber-retired-");
+}
+
 /**
  * One KH row serves kirsehirhaber.org. Prefer the LiveBridge pin when that row
  * is still active; otherwise keep the active row already on the public site.
@@ -984,14 +1041,18 @@ function isActiveSiteRow(row) {
  */
 export function pickKhCanonicalSite(rows) {
   const list = (Array.isArray(rows) ? rows : []).filter((row) => row && Number(row.id) > 0);
-  const active = list.filter((row) => isActiveSiteRow(row));
-  const pool = active.length ? active : list;
-  const pinned = pool.find((row) => Number(row.id) === KH_CANONICAL_SITE_ID) || null;
-  const bySlug = pool
-    .filter((row) => normalizeSlug(row.slug) === "kirsehirhaber")
-    .sort((a, b) => Number(a.id) - Number(b.id));
-  const byId = [...pool].sort((a, b) => Number(a.id) - Number(b.id));
-  const row = pinned || bySlug[0] || byId[0] || null;
+  const live = list.filter((row) => !isRetiredKhSlug(row.slug));
+  const poolSource = live.length ? live : list;
+  const active = poolSource.filter((row) => isActiveSiteRow(row));
+  const pool = active.length ? active : poolSource;
+  const exact = pool.filter((row) => normalizeSlug(row.slug) === "kirsehirhaber");
+  const candidates = exact.length ? exact : pool;
+  const pinned =
+    candidates.find(
+      (row) => Number(row.id) === KH_CANONICAL_SITE_ID && normalizeSlug(row.slug) === "kirsehirhaber",
+    ) || null;
+  const byId = [...candidates].sort((a, b) => Number(a.id) - Number(b.id));
+  const row = pinned || byId[0] || null;
   const retiredIds = list
     .filter((candidate) => row && Number(candidate.id) !== Number(row.id))
     .map((candidate) => Number(candidate.id));
@@ -1006,6 +1067,7 @@ async function resolveKhCanonicalSite(sql) {
            contact_json, layout_json, active, created_at, updated_at
     FROM hm_news_sites
     WHERE lower(trim(both '/' from coalesce(slug, ''))) IN ('kirsehirhaber', 'kirsehir', 'kh')
+       OR lower(trim(both '/' from coalesce(slug, ''))) LIKE 'kirsehirhaber-retired-%'
        OR lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
        OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
        OR lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
