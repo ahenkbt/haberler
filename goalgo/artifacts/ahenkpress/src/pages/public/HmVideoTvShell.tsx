@@ -1,6 +1,7 @@
 /** @deprecated Yektube v1 HM kabuğu — v2 geçişinde `HmVideoTvRoute` iframe. */
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "wouter";
+import { Link } from "wouter";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { apiUrl } from "@/lib/apiBase";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,7 @@ function browserHostname(): string {
 }
 
 export function HmVideoTvShell({ children }: { children: ReactNode }) {
-  const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
+  const slug = useHmDomainSlugFromHost();
   const hostKey = browserHostname();
 
   const { data, isLoading, error } = useQuery({

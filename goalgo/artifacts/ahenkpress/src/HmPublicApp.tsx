@@ -607,7 +607,7 @@ export default function HmPublicApp() {
                 </HmPublicShell>
               )}
             </Route>
-            <Route path="/kategori/:slug">
+            <Route path="/kategori/:catSlug">
               {() => (
                 <HmPublicShell>
                   <HmPublicKategoriRoute />
@@ -663,7 +663,95 @@ export default function HmPublicApp() {
                 </HmPortalOrDomainStandardPage>
               )}
             </Route>
+            <Route path="/yazarlar">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicYazarlarRoute />
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/yazar/:authorKey">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicYazarYazilariRoute />
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/kisa-kisa">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicKisaKisaRoute />
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/video-tv/:rest*">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+            <Route path="/video-tv">{() => <HmTrVideoTvPathAliasRedirect />}</Route>
+            <Route path="/video/:rest*">
+              {() => (
+                <HmPublicShell>
+                  <LazyChunk>
+                    <HmPublicVideoTvLayoutMod>
+                      <HmPublicVideoTvRoute />
+                    </HmPublicVideoTvLayoutMod>
+                  </LazyChunk>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/video">
+              {() => (
+                <HmPublicShell>
+                  <LazyChunk>
+                    <HmPublicVideoTvLayoutMod>
+                      <HmPublicVideoTvRoute />
+                    </HmPublicVideoTvLayoutMod>
+                  </LazyChunk>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/videolar/:rest*">
+              {() => (
+                <HmPublicShell>
+                  <LazyChunk>
+                    <HmPublicVideoTvLayoutMod>
+                      <HmPublicVideoTvRoute />
+                    </HmPublicVideoTvLayoutMod>
+                  </LazyChunk>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/videolar">
+              {() => (
+                <HmPublicShell>
+                  <LazyChunk>
+                    <HmPublicVideoTvLayoutMod>
+                      <HmPublicVideoTvRoute />
+                    </HmPublicVideoTvLayoutMod>
+                  </LazyChunk>
+                </HmPublicShell>
+              )}
+            </Route>
             <Route path="/:siteSlug/haber/:id">{() => <HmShortHaberPathRedirect />}</Route>
+            <Route path="/:seg1/:seg2/:seg3">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicExtraPageSlugRoute />
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/:seg1/:seg2">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicExtraPageSlugRoute />
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/:pageSlug">
+              {() => (
+                <HmPublicShell>
+                  <HmPublicExtraPageSlugRoute />
+                </HmPublicShell>
+              )}
+            </Route>
             <Route path="/">
               {() => (
                 <HmPublicShell>

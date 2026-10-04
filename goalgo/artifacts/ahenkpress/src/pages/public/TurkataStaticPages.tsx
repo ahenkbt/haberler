@@ -180,7 +180,6 @@ export function TurkataIletisimPage() {
             <a href={`mailto:${TURKATA_EMAIL}`}>{TURKATA_EMAIL}</a>
           </dd>
         </dl>
-        <Facts />
       </article>
     </TurkataHaberChrome>
   );

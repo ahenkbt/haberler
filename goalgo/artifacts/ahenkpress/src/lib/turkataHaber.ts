@@ -144,6 +144,7 @@ export function isTurkataPublicPath(path: string): boolean {
   if (p === "/kunye" || p === "/iletisim" || p === "/iletisim-kunye" || p === "/contact") return true;
   if (p === "/haberler/kunye" || p === "/haberler/hakkimizda" || p === "/haberler/iletisim") return true;
   if (p.startsWith("/kategori/")) return true;
+  if (p === "/yazarlar" || p.startsWith("/yazar/")) return true;
   if (p.startsWith("/admin") || p.startsWith("/editor") || p.startsWith("/api")) return true;
   return false;
 }
