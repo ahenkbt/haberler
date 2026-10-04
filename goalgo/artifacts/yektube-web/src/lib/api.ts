@@ -439,6 +439,7 @@ export async function fetchYoutubeVideoMeta(youtubeVideoId: string): Promise<{
   description: string;
   duration: string | null;
   thumbnail?: string;
+  channelTitle?: string;
   isLive?: boolean;
   liveBroadcastContent?: "live" | "upcoming" | "none";
 } | null> {

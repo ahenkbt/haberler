@@ -80,12 +80,46 @@ pattern = "www.ahenk.net.tr/*"
 zone_name = "ahenk.net.tr"
 
 # HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
+# ankarahabergundemi.com (apex) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex custom_domain ve "ankarahabergundemi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "ankarahabergundemi.com/*"
+pattern = "ankarahabergundemi.com/editor*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
-pattern = "ankarahabergundemi.com"
+pattern = "ankarahabergundemi.com/api/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/admin*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/panel*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/haber-merkezi*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/assets/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/sw.js"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/llms.txt"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/ai.txt"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/manifest.json"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
@@ -97,17 +131,51 @@ pattern = "www.ankarahabergundemi.com"
 zone_name = "ankarahabergundemi.com"
 
 # Yektube Ôö£├ézel alan ├ö├ç├Â ahenk.net.tr/yp kanonik yÔö£ÔòØzÔö£ÔòØ (yektube.com)
+# ankarasehirgazetesi.com (apex) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex custom_domain ve "ankarasehirgazetesi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "ankarasehirgazetesi.com"
-custom_domain = true
+pattern = "ankarasehirgazetesi.com/editor*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/api/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/admin*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/panel*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/haber-merkezi*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/assets/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/sw.js"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/llms.txt"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/ai.txt"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/manifest.json"
+zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
-
-[[routes]]
-pattern = "ankarasehirgazetesi.com/*"
-zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com/*"
@@ -205,17 +273,54 @@ zone_name = "kirsehirhaber.org"
 
 # TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.
 # custom_domain Worker hostname + anycast A kaydı oluşturur (kirsehirhaber.org ile aynı).
-[[routes]]
-pattern = "turkatahaber.com"
-custom_domain = true
-
+# turkatahaber.com (apex) ön yüzü 04.10.2026'dan beri PHP temasında (VPS, A 187.77.84.201 proxied).
+# Worker yalnızca panel/API yollarını alır. Apex custom_domain ve "turkatahaber.com/*" catch-all route'u
+# BİLEREK yok: wrangler deploy bunları geri eklerse site eski ön yüze döner. /assets/theme.* route'u
+# (Worker'sız) Cloudflare panelinden yönetilir.
 [[routes]]
 pattern = "www.turkatahaber.com"
 custom_domain = true
 
 [[routes]]
-pattern = "turkatahaber.com/*"
+pattern = "turkatahaber.com/editor*"
 zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/api/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/admin*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/panel*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/haber-merkezi*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/assets/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/sw.js"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/llms.txt"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/ai.txt"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/manifest.json"
+zone_name = "turkatahaber.com"
+
 
 [[routes]]
 pattern = "www.turkatahaber.com/*"

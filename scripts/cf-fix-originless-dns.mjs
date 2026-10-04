@@ -31,6 +31,10 @@ const ZONES = [
   // kirsehri.com / kirsehir.net: zone CF hesabında yoksa atlanır; eklenince listeye alınır
 ];
 
+// Apex ön yüzü PHP temasında olan siteler: apex catch-all route / apex custom domain / apex DNS bu script tarafından
+// GERİ EKLENMEZ (aksi halde cron her 20 dk siteyi eski ön yüze döndürür). www ve panel/API route'ları wrangler.toml'da.
+const PHP_THEME_APEX = new Set(["ankarahabergundemi.com", "ankarasehirgazetesi.com"]);
+
 function token() {
   return process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";
 }
@@ -135,7 +139,10 @@ async function ensureRoutes(zoneId, zoneName) {
   const list = await cf(`/zones/${zoneId}/workers/routes`);
   const existing = list.json?.result || [];
   const byPattern = new Map(existing.map((r) => [r.pattern, r]));
-  for (const pattern of [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`]) {
+  const patterns = PHP_THEME_APEX.has(zoneName)
+    ? [`www.${zoneName}/*`, `www.${zoneName}`]
+    : [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`];
+  for (const pattern of patterns) {
     const row = byPattern.get(pattern);
     if (row?.id) {
       const r = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, {
@@ -231,10 +238,10 @@ async function fixZone(name) {
     return false;
   }
   console.log(`[fix] zone id=${zone.id} status=${zone.status}`);
-  await ensureOriginlessDns(zone.id, name, "@", name);
+  if (!PHP_THEME_APEX.has(name)) await ensureOriginlessDns(zone.id, name, "@", name);
   await ensureOriginlessDns(zone.id, name, "www", `www.${name}`);
   await ensureRoutes(zone.id, name);
-  await attachCustomDomain(name);
+  if (!PHP_THEME_APEX.has(name)) await attachCustomDomain(name);
   await attachCustomDomain(`www.${name}`);
 
   const dnsList = await cf(`/zones/${zone.id}/dns_records?per_page=100`);

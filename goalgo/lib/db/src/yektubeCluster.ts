@@ -5,7 +5,10 @@ import { db } from "./connection";
 import { isYektubeDatabaseConfigured, yektubeDb } from "./yektubeDb";
 import * as schema from "./schema";
 
-/** Yektube cluster eksikse okumayı ana DB'ye al (deploy sonrası startup'ta ayarlanır). */
+/**
+ * Yektube cluster okunamıyorsa okumayı ana DB'ye al.
+ * Startup probe ve istek içi sorgu hatası (bağlantı veya eksik tablo/kolon) aynı bayrağı açar.
+ */
 let readUsesMainFallback = false;
 
 export type YektubeDbReadMode = "main" | "yektube";
@@ -58,10 +61,238 @@ export function getYektubeDbInstance(): YektubeDatabase {
   return (yektubeDb ?? db) as YektubeDatabase;
 }
 
+const YEKTUBE_READ_FALLBACK_CODES = new Set([
+  "42P01", // undefined_table
+  "42703", // undefined_column
+  "3F000", // invalid_schema_name
+  "3D000", // invalid_catalog_name
+  "08000",
+  "08001",
+  "08003",
+  "08004",
+  "08006",
+  "08007",
+  "57P01",
+  "57P02",
+  "57P03",
+  "53300",
+  "28P01",
+  "28000",
+  "42501", // insufficient_privilege
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "ECONNRESET",
+  "EPIPE",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+]);
+
+const YEKTUBE_READ_FALLBACK_MESSAGE =
+  /does not exist|connection terminated|connection refused|timeout exceeded when trying to connect|password authentication failed|too many clients|remaining connection slots|the database system is (?:starting up|shutting down)|getaddrinfo|socket hang up|Client has encountered a connection error|ECONNRESET|ECONNREFUSED/i;
+
+type ReadCall = { prop: PropertyKey; args: unknown[] };
+
+function walkErrorNodes(err: unknown): object[] {
+  const out: object[] = [];
+  const seen = new Set<unknown>();
+  const stack: unknown[] = [err];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || typeof current !== "object" || seen.has(current)) continue;
+    seen.add(current);
+    out.push(current);
+    const rec = current as { cause?: unknown; errors?: unknown };
+    if (rec.cause) stack.push(rec.cause);
+    if (Array.isArray(rec.errors)) stack.push(...rec.errors);
+  }
+  return out;
+}
+
+/** Bağlantı kopması veya eksik tablo/kolon — ana DB'ye düşülebilir. Sözdizimi ve unique ihlali değil. */
+export function isYektubeReadFallbackError(err: unknown): boolean {
+  for (const node of walkErrorNodes(err)) {
+    const code = "code" in node && typeof (node as { code?: unknown }).code === "string" ? (node as { code: string }).code : "";
+    if (code && YEKTUBE_READ_FALLBACK_CODES.has(code)) return true;
+    const message = node instanceof Error ? node.message : "";
+    if (message && YEKTUBE_READ_FALLBACK_MESSAGE.test(message)) return true;
+  }
+  if (typeof err === "string" && YEKTUBE_READ_FALLBACK_MESSAGE.test(err)) return true;
+  return false;
+}
+
+/**
+ * Startup'ın okuma hedefini seçmesi.
+ * Ana DB probe'u başarısızsa yektube'a yapışmayı bırakma: eski kod her hatada
+ * `setYektubeReadMainFallback(true)` diyordu; ana DB'de video tablosu yoksa
+ * (haber kümesi ayrılmış DATABASE_URL) tüm /video okumaları 500 oluyordu.
+ */
+export function decideYektubeReadFallback(input: {
+  readMode: YektubeDbReadMode;
+  configured: boolean;
+  yektubeProbeOk: boolean;
+  mainProbeOk: boolean;
+  yektubeLagging: boolean;
+}): boolean {
+  if (input.readMode !== "yektube" || !input.configured) return false;
+  if (!input.mainProbeOk) return false;
+  if (!input.yektubeProbeOk) return true;
+  return input.yektubeLagging;
+}
+
+function replayReadCalls(root: object, calls: ReadCall[]): unknown {
+  let current: unknown = root;
+  for (const call of calls) {
+    const fn = (current as Record<PropertyKey, unknown>)[call.prop];
+    if (typeof fn !== "function") {
+      throw new Error(`[yektube-db] fallback replay: ${String(call.prop)} fonksiyon değil`);
+    }
+    current = (fn as (...args: unknown[]) => unknown).apply(current, call.args);
+  }
+  return current;
+}
+
+let lastReadFallbackLogAt = 0;
+let suppressedReadFallbackLogs = 0;
+
+function logYektubeReadFallback(err: unknown): void {
+  const now = Date.now();
+  const message = err instanceof Error ? err.message : String(err);
+  const code = walkErrorNodes(err)
+    .map((node) => ("code" in node && typeof (node as { code?: unknown }).code === "string" ? (node as { code: string }).code : ""))
+    .find(Boolean);
+  if (now - lastReadFallbackLogAt < 15_000) {
+    suppressedReadFallbackLogs += 1;
+    return;
+  }
+  const extra = suppressedReadFallbackLogs > 0 ? ` (önceki ${suppressedReadFallbackLogs} benzer hata özetlendi)` : "";
+  suppressedReadFallbackLogs = 0;
+  lastReadFallbackLogAt = now;
+  console.error(
+    `[yektube-db] sorgu başarısız${code ? ` [${code}]` : ""} (${message.slice(0, 240)})${extra} — bu istek ana DB'den deneniyor.`,
+  );
+}
+
+type QueryFallbackOptions = {
+  onRecovered?: () => void;
+  shouldFallback?: (err: unknown) => boolean;
+};
+
+async function recoverReadQuery(
+  err: unknown,
+  calls: ReadCall[],
+  fallback: object,
+  opts: QueryFallbackOptions | undefined,
+): Promise<unknown> {
+  const shouldFallback = opts?.shouldFallback ?? isYektubeReadFallbackError;
+  if (!shouldFallback(err)) throw err;
+  logYektubeReadFallback(err);
+  const value = await Promise.resolve(replayReadCalls(fallback, calls));
+  opts?.onRecovered?.();
+  return value;
+}
+
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === "object" || typeof value === "function") &&
+    value !== null &&
+    typeof (value as { then?: unknown }).then === "function"
+  );
+}
+
+function withReadFallback(result: unknown, calls: ReadCall[], fallback: object, opts: QueryFallbackOptions | undefined): unknown {
+  if (result instanceof Promise) {
+    return result.then(
+      (value) => value,
+      (err) => recoverReadQuery(err, calls, fallback, opts),
+    );
+  }
+  if (!isThenable(result)) return result;
+
+  return new Proxy(result as object, {
+    get(target, prop, receiver) {
+      if (prop === "then") {
+        return (
+          onFulfilled?: ((value: unknown) => unknown) | null,
+          onRejected?: ((reason: unknown) => unknown) | null,
+        ) =>
+          Promise.resolve(target as PromiseLike<unknown>).then(
+            (value) => (onFulfilled ? onFulfilled(value) : value),
+            (err) => recoverReadQuery(err, calls, fallback, opts).then(onFulfilled ?? undefined, onRejected ?? undefined),
+          );
+      }
+      if (prop === "catch") {
+        return (onRejected?: ((reason: unknown) => unknown) | null) =>
+          (receiver as PromiseLike<unknown>).then(undefined, onRejected ?? undefined);
+      }
+      if (prop === "finally") {
+        return (onFinally?: (() => void) | null) =>
+          (receiver as PromiseLike<unknown>).then(
+            (value) => {
+              onFinally?.();
+              return value;
+            },
+            (err) => {
+              onFinally?.();
+              throw err;
+            },
+          );
+      }
+      const value = Reflect.get(target, prop, target);
+      if (typeof value !== "function") return value;
+      return (...args: unknown[]) => {
+        const nextCalls = [...calls, { prop, args }];
+        try {
+          const next = (value as (...a: unknown[]) => unknown).apply(target, args);
+          return withReadFallback(next, nextCalls, fallback, opts);
+        } catch (err) {
+          return recoverReadQuery(err, nextCalls, fallback, opts);
+        }
+      };
+    },
+  });
+}
+
+/** Sorgu zincirini primary'de çalıştırır; bağlantı veya eksik tablo/kolon hatasında aynı zinciri fallback'te tekrarlar. */
+export function createQueryFallbackProxy<T extends object>(primary: T, fallback: T, opts?: QueryFallbackOptions): T {
+  return new Proxy(primary, {
+    get(target, prop) {
+      const value = Reflect.get(target, prop, target);
+      if (typeof value !== "function") return value;
+      return (...args: unknown[]) => {
+        const calls: ReadCall[] = [{ prop, args }];
+        try {
+          const result = (value as (...a: unknown[]) => unknown).apply(target, args);
+          return withReadFallback(result, calls, fallback, opts);
+        } catch (err) {
+          return recoverReadQuery(err, calls, fallback, opts);
+        }
+      };
+    },
+  }) as T;
+}
+
+let yektubeReadPinnedLogged = false;
+
+const yektubeReadFallbackProxy: YektubeDatabase | null = yektubeDb
+  ? createQueryFallbackProxy(yektubeDb as YektubeDatabase, db as YektubeDatabase, {
+      onRecovered: () => {
+        if (!readUsesMainFallback && !yektubeReadPinnedLogged) {
+          yektubeReadPinnedLogged = true;
+          console.error(
+            "[yektube-db] yektube okuması bu süreçte başarısız; sonraki istekler ana DB'den gidecek (konteyner yeniden açılınca yektube tekrar denenir).",
+          );
+        }
+        setYektubeReadMainFallback(true);
+      },
+    })
+  : null;
+
 function pickYektubeReadDatabase(): YektubeDatabase {
   const mode = getYektubeDbReadMode();
-  if (mode === "yektube" && isYektubeDatabaseConfigured && yektubeDb && !readUsesMainFallback) {
-    return yektubeDb as YektubeDatabase;
+  if (mode === "yektube" && isYektubeDatabaseConfigured && yektubeReadFallbackProxy && !readUsesMainFallback) {
+    return yektubeReadFallbackProxy;
   }
   return db as YektubeDatabase;
 }
@@ -85,7 +316,7 @@ export function isYektubeReadMainFallback(): boolean {
   return readUsesMainFallback;
 }
 
-/** Okuma hedefi — YEKTUBE_DB_READ (`main` veya `yektube`); proxy ile startup fallback destekler. */
+/** Okuma hedefi — YEKTUBE_DB_READ (`main` veya `yektube`); startup ve istek içi fallback destekler. */
 export function getYektubeDbForRead(): YektubeDatabase {
   return readDbProxy;
 }

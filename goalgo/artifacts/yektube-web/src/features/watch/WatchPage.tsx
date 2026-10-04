@@ -28,6 +28,7 @@ import { useOptionalMusicPlayer } from "@/features/music/MusicContext";
 import { WatchDetailMetaBar, watchChannelHref } from "@/components/WatchDetailMetaBar";
 import { useMobileHomeHeaderSlot } from "@/components/MobileHomeHeaderSlot";
 import { isEmbedMode } from "@/lib/runtimeConfig";
+import { isYoutubeVideoId } from "@/lib/yektubeLive";
 import { readBackgroundPlayback, writeBackgroundPlayback } from "@/lib/yektubePlaybackPrefs";
 
 function parseSourceIdFromRef(ref: string): number | null {
@@ -95,6 +96,9 @@ export function WatchPage() {
       return items.find((v) => v.videoId === videoId) ?? null;
     },
     enabled: valid,
+    // DB kaydı yalnızca başlık/kanal zenginleştirmesi içindir; API 5xx iken
+    // fetchWithRetry + react-query retry ~50 sn "Video yükleniyor…" bekletiyordu.
+    retry: false,
   });
 
   const { data: sourceFromVideo } = useQuery({
@@ -146,7 +150,8 @@ export function WatchPage() {
   const title = decodeHtml(
     video?.title ?? ytMeta?.title ?? (videoLoading || sourceLoading || ytMetaLoading ? "Yükleniyor…" : videoId),
   );
-  const channelName = effectiveSource?.name ?? video?.sourceName ?? video?.channelName ?? "Kanal";
+  const channelName =
+    effectiveSource?.name ?? video?.sourceName ?? video?.channelName ?? ytMeta?.channelTitle ?? "Kanal";
   const description = (video?.description?.trim() || ytMeta?.description?.trim() || "").trim();
   const logoUrl = effectiveSource?.logoUrl?.trim() ?? ytMeta?.thumbnail?.trim();
 
@@ -179,6 +184,8 @@ export function WatchPage() {
   const embed = isEmbedMode();
   const headerSlot = useMobileHomeHeaderSlot();
   const channelHref = watchChannelHref(effectiveSource, channelRef, effectiveChannelId);
+  /** YouTube kimliği geçerliyse oynatıcı DB/meta yanıtını beklemeden açılır. */
+  const canPlayWithoutDb = !isHosted && isYoutubeVideoId(videoId);
   const titleLoading = videoLoading && !ytMeta?.title;
   const detailInTopChrome = embed || !isMobile;
 
@@ -259,7 +266,7 @@ export function WatchPage() {
       <div className="mx-auto flex max-w-[1750px] flex-col gap-4 px-0 lg:flex-row lg:gap-6 lg:p-6">
         <div className="min-w-0 flex-1">
           <div className="aspect-video w-full bg-black lg:overflow-hidden lg:rounded-xl">
-            {videoLoading && !ytMeta?.title ? (
+            {videoLoading && !ytMeta?.title && !canPlayWithoutDb ? (
               <div className="flex h-full w-full items-center justify-center bg-black text-sm text-white/70">Video yükleniyor…</div>
             ) : (
               <YoutubePlayer

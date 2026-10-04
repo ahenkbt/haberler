@@ -5939,12 +5939,18 @@ router.get("/map/location-info", async (req, res): Promise<void> => {
 /* — CATEGORIES ─────────────────────────────────────────────────── */
 
 router.get("/map/categories", async (_req, res): Promise<void> => {
-  const rows = await db
-    .select()
-    .from(mapCategoriesTable)
-    .where(eq(mapCategoriesTable.isActive, true))
-    .orderBy(asc(mapCategoriesTable.sortOrder), asc(mapCategoriesTable.name));
-  res.json({ success: true, data: rows });
+  try {
+    const rows = await db
+      .select()
+      .from(mapCategoriesTable)
+      .where(eq(mapCategoriesTable.isActive, true))
+      .orderBy(asc(mapCategoriesTable.sortOrder), asc(mapCategoriesTable.name));
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[map] /map/categories okunamadı (${msg.slice(0, 200)}) — boş katalog`);
+    res.json({ success: true, data: [] });
+  }
 });
 
 router.post("/map/categories", async (req, res): Promise<void> => {
