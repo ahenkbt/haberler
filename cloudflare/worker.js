@@ -90,6 +90,20 @@ import {
   HM_SOCIAL_OG_BUDGET_MS,
   withBudget,
 } from "./hm-html-boot.js";
+import {
+  articleFieldsFromNewsPayload,
+  isAhenkNewsMirrorPath,
+  isTurkataDynamicSeoPath,
+  isTurkataHaberHost,
+  isTurkataSeoPath,
+  isTurkataWwwHost,
+  rewriteAhenkNewsCanonicalHtml,
+  rewriteTurkataSpaHtml,
+  turkataArticleSlug,
+  turkataDynamicSeoBody,
+  turkataStaticSeoBody,
+  TURKATA_ORIGIN,
+} from "./turkata-haber.js";
 import { sitemapFailXml, toGscWebSitemapXml, isGscWebSitemapPath } from "./sitemap-fail-xml.js";
 import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
@@ -838,6 +852,10 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     out.set("x-yekpare-hm-og-rewrite", hmHostSlug);
   }
   const homeHtml = incoming && isHmPublicHomeHtmlPath(incoming.pathname, incoming.hostname);
+  if (homeHtml && hmHostSlug) {
+    const homePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+    if (homePath === "/") out.set("x-yekpare-hm-home", "direct");
+  }
   const articlePath = incoming ? parseHmNewsArticlePath(incoming.pathname) : null;
   if (homeHtml && env && incoming) {
     const slug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname);
@@ -987,10 +1005,84 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       console.error("[hm-html-boot/category]", String(err?.message || err).slice(0, 180));
     }
   }
+  if (incoming && isTurkataHaberHost(hostname)) {
+    const slug = turkataArticleSlug(incoming.pathname);
+    let article = null;
+    if (slug && env) article = await loadTurkataArticle(env, incoming, slug);
+    html = rewriteTurkataSpaHtml(html, { pathname: incoming.pathname, article });
+    out.set("x-yekpare-turkata-seo", article ? "article" : "shell");
+  } else if (incoming && isAhenkAgencyHost(hostname) && isAhenkNewsMirrorPath(incoming.pathname)) {
+    html = rewriteAhenkNewsCanonicalHtml(html, incoming.pathname);
+    out.set("x-yekpare-news-canonical", "turkatahaber.com");
+  }
   return new Response(html, {
     status: assetResp.status,
     headers: out,
   });
+}
+
+async function loadTurkataArticle(env, incoming, slug) {
+  const origin = upstreamOrigin(env, incoming);
+  const urls = [
+    `${origin}/api/news/${encodeURIComponent(slug)}`,
+    `${origin}/api/news/page-bundle/${encodeURIComponent(slug)}`,
+  ];
+  for (const url of urls) {
+    try {
+      const res = await withBudget(
+        fetchApi(env, url, { headers: { accept: "application/json" } }),
+        900,
+      );
+      if (!res?.ok) continue;
+      const json = await res.json().catch(() => null);
+      const fields = articleFieldsFromNewsPayload(json);
+      if (fields) return fields;
+    } catch {
+      /* sonraki aday */
+    }
+  }
+  return null;
+}
+
+async function loadTurkataHybridItems(env, incoming) {
+  const origin = upstreamOrigin(env, incoming);
+  const items = [];
+  for (let offset = 0; offset < 300; offset += 100) {
+    const url = `${origin}/api/news/hybrid?limit=100&offset=${offset}&dbFirst=1&rssScope=all`;
+    try {
+      const res = await withBudget(
+        fetchApi(env, url, { headers: { accept: "application/json" } }),
+        2500,
+      );
+      if (!res?.ok) break;
+      const data = await res.json().catch(() => null);
+      const batch = Array.isArray(data?.items) ? data.items : [];
+      items.push(...batch);
+      if (batch.length < 100) break;
+    } catch {
+      break;
+    }
+  }
+  return items;
+}
+
+async function serveTurkataSeo(request, env, incoming) {
+  if (!isTurkataHaberHost(incoming.hostname)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (!isTurkataSeoPath(incoming.pathname)) return null;
+  let payload = turkataStaticSeoBody(incoming.pathname);
+  if (!payload && isTurkataDynamicSeoPath(incoming.pathname)) {
+    const items = await loadTurkataHybridItems(env, incoming);
+    payload = turkataDynamicSeoBody(incoming.pathname, items);
+  }
+  if (!payload) return null;
+  const headers = new Headers({
+    "content-type": payload.contentType,
+    "cache-control": "public, max-age=300",
+    "x-yekpare-frontend": "cloudflare-turkata-seo",
+  });
+  if (request.method === "HEAD") return new Response(null, { status: 200, headers });
+  return new Response(payload.body, { status: 200, headers });
 }
 
 /** SPA + statik: ASSETS; yoksa null (API/Container vekiline d├╝┼ş). */
@@ -1536,29 +1628,12 @@ async function maybeRepairMismatchedNewsJson(env, origin, init, method, incoming
   }
 }
 
-function hmCustomDomainRootRedirectResponse(incoming, request, slug, via) {
-  const loc = `${incoming.origin}/tr/${encodeURIComponent(slug)}${incoming.search || ""}`;
-  const headers = {
-    location: loc,
-    "cache-control": "public, max-age=30",
-    "cdn-cache-control": "public, max-age=30",
-    "x-yekpare-frontend": FRONTEND_TAG,
-    "x-yekpare-hm-redirect": slug,
-    "x-yekpare-hm-redirect-via": via,
-  };
-  if (needsForcePurge(incoming.hostname) && !cookieHas(request, FORCE_PURGE_COOKIE)) {
-    headers["set-cookie"] =
-      `${FORCE_PURGE_COOKIE}=1; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
-    headers["x-yekpare-purge"] = "hm-force-redirect";
-  }
-  return new Response(null, { status: 308, headers });
-}
-
 /**
  * Edge soft-redirect: HM ├Âzel alan k├Âk├╝ ÔåÆ /tr/{slug}
  * (Vercel middleware CF Worker yolunda ├ğal─▒┼şmad─▒─ş─▒ i├ğin Worker'da tekrarlan─▒r.)
  */
 async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
+  if (isTurkataHaberHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = incoming.pathname.replace(/\/+$/, "") || "/";
   if (isPortalHost(incoming.hostname)) return null;
@@ -1607,7 +1682,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
         ).catch(() => null),
       );
     }
-    return hmCustomDomainRootRedirectResponse(incoming, request, fallbackSlug, "fallback-instant");
+    return null;
   }
 
   const origin = upstreamOrigin(env, incoming);
@@ -1628,7 +1703,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
       const meta = await metaRes.json().catch(() => null);
       const slug = String(meta?.slug || "").trim();
       if (slug) {
-        return hmCustomDomainRootRedirectResponse(incoming, request, slug, "meta");
+        return null;
       }
     } else if (metaRes.status === 404 && fallbackSlug) {
       // Meta 404 ÔÇö Neon'da marka siteyi olu┼ştur/ba─şla (sonraki /api/hm/meta ├ğa─şr─▒lar─▒ i├ğin).
@@ -1644,7 +1719,7 @@ async function redirectHmCustomDomainRoot(request, env, incoming, ctx) {
 
   // Meta yok/404: bilinen HM edit├Âr alanlar─▒nda asla Yekpare portal anasayfas─▒na d├╝┼şme.
   if (fallbackSlug) {
-    return hmCustomDomainRootRedirectResponse(incoming, request, fallbackSlug, "fallback");
+    return null;
   }
   if (needsForcePurge(domain)) {
     // FORCE_PURGE listesindeki alanlar edit├Âr siteleri ÔÇö portal SPA g├Âsterme.
@@ -1808,6 +1883,7 @@ async function loadCachedHmArticleForOg(incoming, slug, siteSlug) {
  * Container as─▒l─▒rsa kenar cache / site entity ile 800ms i├ğinde cevap ver.
  */
 async function socialPreviewOgHtml(request, env, incoming) {
+  if (isTurkataHaberHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   if (!isSocialPreviewBot(request)) return null;
   if (isOgProxySkipPath(incoming.pathname)) return null;
@@ -2642,6 +2718,34 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
+    if (isTurkataWwwHost(incoming.hostname)) {
+      const bare = incoming.pathname.replace(/\/+$/, "") || "/";
+      const path = bare === "/haberler" ? "/" : incoming.pathname;
+      const dest = new URL(path + incoming.search, TURKATA_ORIGIN);
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: dest.toString(),
+          "cache-control": "public, max-age=3600",
+          "x-yekpare-frontend": "canonical-turkata-redirect",
+        },
+      });
+    }
+    if (
+      isTurkataHaberHost(incoming.hostname) &&
+      (request.method === "GET" || request.method === "HEAD") &&
+      (incoming.pathname.replace(/\/+$/, "") || "/") === "/haberler"
+    ) {
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: `${TURKATA_ORIGIN}/`,
+          "cache-control": "public, max-age=3600",
+          "x-yekpare-frontend": "canonical-turkata-listing",
+        },
+      });
+    }
+
     // www.ahenk.net.tr / turk.eco ÔåÆ ahenk.net.tr
     if (APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
       const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
@@ -2851,6 +2955,9 @@ export default {
 
     const bareSitemap = redirectBareSitemapPath(request, incoming);
     if (bareSitemap) return bareSitemap;
+
+    const turkataSeo = await serveTurkataSeo(request, env, incoming);
+    if (turkataSeo) return turkataSeo;
 
     const ahenkRobots = serveAhenkAgencyRobots(request, incoming);
     if (ahenkRobots) return ahenkRobots;

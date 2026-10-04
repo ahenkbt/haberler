@@ -6,7 +6,7 @@ export default function AhenkUrunlerimiz() {
   return (
     <AhenkAgencyChrome
       title="Ürünlerimiz | Ahenk Bilgi Teknolojileri"
-      description="Ahenk Asistan AI, WhatsApp çağrı merkezi, Polis AI, yekpare.net, Aiaddin, PBX CRM, Haber Merkezi, YekTube, AHENK HABER ve web yazılımı."
+      description="Ahenk Asistan AI, WhatsApp çağrı merkezi, Polis AI, yekpare.net, Aiaddin, PBX CRM, Haber Merkezi, YekTube, TürkAta Haber Ajansı ve web yazılımı."
     >
       <AhenkPageHero
         crumb={
@@ -15,7 +15,7 @@ export default function AhenkUrunlerimiz() {
           </>
         }
         title="Ürünlerimiz"
-        lead="Yapay zeka asistanından hazır siteye, çağrı merkezi CRM’den Haber Merkezi, YekTube ve AHENK HABER demosuna — Ahenk BT yazılım ailesi."
+        lead="Yapay zeka asistanından hazır siteye, çağrı merkezi CRM’den Haber Merkezi, YekTube ve TürkAta Haber Ajansı’na — Ahenk BT yazılım ailesi."
         image={AHENK_PRODUCTS[0]?.image}
       />
       <section className="ahenk-section">

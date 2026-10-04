@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
+import { AHENK_LOGO_MARK, AHENK_LOGO_WORDMARK } from "@/lib/ahenkCampaignPrice";
 import {
   isExternalAhenkHref,
   defaultAhenkNavItems,
@@ -322,7 +323,7 @@ export function AhenkAgencyChrome({
       <header className="ahenk-header">
         <div className="ahenk-header-inner">
           <Link href="/" className="ahenk-brand" aria-label={site.brandName}>
-            <AhenkHeaderLogo site={site} />
+            <AhenkWordmark site={site} variant="header" />
           </Link>
           <button
             type="button"
@@ -369,31 +370,51 @@ export function AhenkAgencyChrome({
   );
 }
 
-function AhenkHeaderLogo({ site }: { site: AhenkAgencySite }) {
-  const wordmark = safeAhenkImageUrl(site.logoUrl, "/ahenk-brand/ahenk-logo.png");
-  const mark = safeAhenkImageUrl(site.logoMarkUrl, "/ahenk-brand/ahenk-mark.png");
-  const src = wordmark || mark;
-  if (!src) return <span className="ahenk-mark">A</span>;
+function AhenkWordmark({ site, variant }: { site: AhenkAgencySite; variant: "header" | "footer" }) {
+  const bundled = AHENK_LOGO_WORDMARK;
+  const fromSettings = safeAhenkImageUrl(site.logoUrl, bundled);
+  const src = fromSettings && !fromSettings.includes("/api/media/uploads/") ? fromSettings : bundled;
+  const [srcFailed, setSrcFailed] = useState(false);
+  const [markFailed, setMarkFailed] = useState(false);
+  const className = variant === "header" ? "ahenk-brand-lockup" : "ahenk-footer-wordmark";
+  if (srcFailed) {
+    return (
+      <span className="ahenk-brand-fallback">
+        {markFailed ? (
+          <span className="ahenk-mark" aria-hidden>
+            A
+          </span>
+        ) : (
+          <img
+            src={AHENK_LOGO_MARK}
+            alt=""
+            width={40}
+            height={40}
+            onError={() => setMarkFailed(true)}
+          />
+        )}
+        <span>Ahenk Bilgi Teknolojileri</span>
+      </span>
+    );
+  }
   return (
     <img
-      className={wordmark ? "ahenk-brand-lockup" : "ahenk-mark-img"}
+      className={className}
       src={src}
-      alt={site.brandName}
+      alt="Ahenk Bilgi Teknolojileri"
+      width={240}
+      height={48}
+      onError={() => setSrcFailed(true)}
     />
   );
 }
 
 function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
-  const wordmark = safeAhenkImageUrl(site.logoUrl, "/ahenk-brand/ahenk-logo.png");
   return (
     <footer className="ahenk-footer">
       <div className="ahenk-footer-grid">
         <div>
-          {wordmark ? (
-            <img className="ahenk-footer-wordmark" src={wordmark} alt={site.brandName} />
-          ) : (
-            <h3>{site.brandName}</h3>
-          )}
+          <AhenkWordmark site={site} variant="footer" />
           <p>{site.tagline}</p>
           <p style={{ marginTop: 12 }}>
             <Phone className="inline w-4 h-4 mr-1" />
@@ -436,7 +457,7 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <Link href="/polis-ai">Polis AI</Link>
             <Link href="/haber-merkezi">Haber Merkezi</Link>
             <Link href="/yektube">YekTube</Link>
-            <Link href="/haberler">AHENK HABER</Link>
+            <Link href="/turkata-haber-ajansi">TürkAta Haber Ajansı</Link>
             <Link href="/cagri-merkezi-crm">PBX CRM</Link>
             <Link href="/aiaddin">Aiaddin</Link>
             <a href="https://yekpare.net" target="_blank" rel="noreferrer">

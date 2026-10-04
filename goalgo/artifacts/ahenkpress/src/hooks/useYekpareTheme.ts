@@ -42,8 +42,14 @@ export function resolveEffectiveYekpareTheme(
   return override ?? resolveAutoYekpareTheme(now);
 }
 
+function isHmNewsBootDocument(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("hm-news-boot");
+}
+
 /** Apply before React paint so every route inherits html/body theme attrs. */
 export function bootstrapYekpareDocumentTheme(now = new Date()) {
+  if (isHmNewsBootDocument()) return;
   applyYekpareDocumentTheme(resolveEffectiveYekpareTheme(readStoredOverride(), now));
 }
 
@@ -72,6 +78,7 @@ export function useYekpareTheme() {
   const theme: YekpareThemeMode = override ?? autoTheme;
 
   useLayoutEffect(() => {
+    if (isHmNewsBootDocument()) return;
     applyYekpareDocumentTheme(theme);
   }, [theme]);
 

@@ -159,6 +159,33 @@ const HM: GeoSiteEntity[] = [
     ],
   },
   {
+    slug: "turkata",
+    domain: "turkatahaber.com",
+    extraDomains: ["www.turkatahaber.com"],
+    officialName: "TÜRKATA HABER AJANSI",
+    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "TÜRKATA"],
+    type: "NewsMediaOrganization",
+    description:
+      "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",
+    email: "bilgi@turkatahaber.com",
+    telephone: "+905322291892",
+    disambiguatingDescription:
+      "turkatahaber.com, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. ahenk.net.tr/haberler aynı akışın eski adresidir; kanonik site turkatahaber.com’dur.",
+    aboutPath: "/hakkimizda",
+    faq: [
+      {
+        question: "TÜRKATA HABER AJANSI nedir?",
+        answer:
+          "TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. Resmi sitesi turkatahaber.com’dur.",
+      },
+      {
+        question: "TÜRKATA HABER AJANSI kime bağlıdır?",
+        answer:
+          "Türk Kültürünü Araştırma ve Tanıtma Vakfı’na bağlıdır. Vakıf 1998’de kurulmuştur. Vakıf siteleri turkatav.org ve tukav.org adresleridir.",
+      },
+    ],
+  },
+  {
     slug: "trafik",
     domain: "trafikdernegi.com",
     extraDomains: ["tgd.tc", "trafik.gd"],

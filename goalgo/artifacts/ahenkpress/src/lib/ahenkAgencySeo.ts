@@ -2,6 +2,7 @@
 
 import { applyJsonLd, buildBreadcrumbJsonLd } from "@/lib/pageSeo";
 import { AHENK_BT_ENTITY } from "@/lib/geoSiteEntities";
+import { sharedNewsCanonicalUrl } from "@/lib/turkataHaber";
 import { ahenkPackageFromFields } from "@/lib/ahenkCampaignPrice";
 import { YEKPARE_HOME_FAQS } from "@/lib/ahenkYekpareDemos";
 import {
@@ -164,7 +165,8 @@ export function applyAhenkAgencySeo(opts: {
   const origin = window.location.origin.replace(/\/+$/, "");
   const path = normalizeAhenkPath(opts.path);
   const canonPath = ahenkCanonicalPath(path);
-  const canonical = `${origin}${canonPath === "/" ? "/" : canonPath}`;
+  const canonical =
+    sharedNewsCanonicalUrl(path) ?? `${origin}${canonPath === "/" ? "/" : canonPath}`;
   const brand = opts.site.brandName;
   const title = opts.title.includes(brand) ? opts.title : `${opts.title} | ${brand}`;
   const desc = opts.description || opts.site.seoDescription || opts.site.tagline;

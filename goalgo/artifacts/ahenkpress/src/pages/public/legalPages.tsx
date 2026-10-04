@@ -5,7 +5,16 @@ import { useMemo } from "react";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { parseLegalPagesJson, type LegalPageKey } from "@workspace/site-nav";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import { isAhenkAgencyHost } from "@/lib/ahenkAgencyHost";
 import IletisimKunyePremium from "./IletisimKunyePremium";
+
+const VATAN_SOSYAL_LTD = /vatan\s+sosyal\s+h[iıİI]zmetler\s+ltd\.?/gi;
+
+/** Shared Yekpare legal HTML names another company. On ahenk.net.tr the employer is Ahenk Bilgi Teknolojileri. */
+export function ahenkLegalCompanyHtml(html: string): string {
+  if (!isAhenkAgencyHost()) return html;
+  return html.replace(VATAN_SOSYAL_LTD, "Ahenk Bilgi Teknolojileri");
+}
 
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -32,7 +41,7 @@ function LegalPageView({ pageKey }: { pageKey: LegalPageKey }) {
 
   return (
     <Shell title={page.title}>
-      <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.bodyHtml) }} />
+      <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(ahenkLegalCompanyHtml(page.bodyHtml)) }} />
     </Shell>
   );
 }

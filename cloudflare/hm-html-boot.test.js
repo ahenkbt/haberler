@@ -47,7 +47,7 @@ describe("hm-html-boot", () => {
     assert.equal(hmDomainSlugFallback("ahenk.net.tr"), "");
   });
 
-  it("redirects known HM roots instantly without waiting for meta", () => {
+  it("recognizes known HM roots so the worker can serve home HTML at /", () => {
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "ankarahabergundemi.com"), true);
     assert.equal(shouldInstantHmRootRedirect("GET", "/tr/ankarahabergundemi", "ankarahabergundemi.com"), false);
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "turk.eco"), false);
@@ -425,6 +425,7 @@ describe("hm-html-boot", () => {
     assert.equal(isAhenkAgencyGeoPath("/yapay-zeka-cagri-merkezi"), true);
     assert.equal(isAhenkAgencyGeoPath("/kariyer"), true);
     assert.equal(isAhenkAgencyGeoPath("/urun-satisi"), true);
+    assert.equal(isAhenkAgencyGeoPath("/turkata-haber-ajansi"), true);
     const llms = buildAhenkLlmsTxtFallback("https://ahenk.net.tr");
     assert.match(llms, /Ahenk Bilgi Teknolojileri/);
     assert.match(llms, /ahenk\.net\.tr/);
@@ -478,6 +479,8 @@ describe("hm-html-boot", () => {
     assert.match(out, /og:url" content="https:\/\/vatanhaber\.net\/"/);
     assert.equal(out.includes("https://ahenk.net.tr/opengraph.jpg"), false);
     assert.match(out, /NewsMediaOrganization/);
+    assert.match(out, /hm-news-boot/);
+    assert.match(out, /id="hm-news-boot-css"/);
     const ahenk = rewriteSpaShellOgForHmHost(spa, "ahenk.net.tr", "https://ahenk.net.tr");
     assert.match(ahenk, /Ahenk Bilgi Teknolojileri/);
   });

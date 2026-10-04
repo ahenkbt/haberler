@@ -92,6 +92,16 @@ export type HmPublicSiteFooterProps = {
   siteDisplayName?: string | null;
   /** Sunucudaki site iletişim kaydı (alt şerit sağ) */
   contact?: HmPublicSiteContact;
+  /** İletişim başlığının üstünde düz satır (ör. Genel Müdürlük). */
+  contactLead?: string | null;
+  /** Telefon etiketi. Varsayılan "Tel". */
+  phoneLabel?: string;
+  /** tel: bağlantısı. Boşsa görünen numaradaki boşluklar silinir. */
+  phoneTel?: string | null;
+  /** Köşe yazarı girişi satırını özel menüye ekle. Varsayılan true. */
+  appendAuthorLogin?: boolean;
+  /** Alt satırdaki altyapı etiketi. */
+  infrastructureLabel?: string;
 };
 
 /**
@@ -105,6 +115,11 @@ export function HmPublicSiteFooter({
   className = "",
   siteDisplayName = null,
   contact = null,
+  contactLead = null,
+  phoneLabel = "Tel",
+  phoneTel = null,
+  appendAuthorLogin = true,
+  infrastructureLabel = "Haber merkezi altyapısı",
 }: HmPublicSiteFooterProps) {
   const h = useHmPublicHref();
   const hmCtx = useHmPublicLinkContextOptional();
@@ -257,7 +272,7 @@ export function HmPublicSiteFooter({
       : defaultPageLinks;
   const pageLinks = footerMatchesHeaderMenu
     ? pageLinksBase
-    : pageLinksBase.some((item) => isAuthorLoginFooterHref(item.href))
+    : !appendAuthorLogin || pageLinksBase.some((item) => isAuthorLoginFooterHref(item.href))
       ? pageLinksBase
       : [...pageLinksBase, authorLoginLink];
 
@@ -319,7 +334,11 @@ export function HmPublicSiteFooter({
                 {categoryLinks.map((c) => (
                   <li key={c.slug}>
                     <Link
-                      href={h(`/kategori/${encodeURIComponent(c.slug)}?siteId=${encodeURIComponent(String(siteId))}`)}
+                      href={h(
+                        `/kategori/${encodeURIComponent(c.slug)}${
+                          siteId > 0 ? `?siteId=${encodeURIComponent(String(siteId))}` : ""
+                        }`,
+                      )}
                       className={HM_FOOTER_LINK_CLASS}
                     >
                       {c.label}
@@ -396,11 +415,15 @@ export function HmPublicSiteFooter({
               {showIletisimBlock ? (
                 <div>
                   <h3 className={HM_FOOTER_HEADING_CLASS}>İletişim</h3>
+                  {contactLead ? <p className={`mt-3 font-semibold ${HM_FOOTER_BODY_CLASS}`}>{contactLead}</p> : null}
                   <ul className={`mt-3 space-y-2 ${HM_FOOTER_BODY_CLASS}`}>
                     {effectiveContact?.phone ? (
                       <li>
-                        <span className="text-[color:var(--hm-footer-text,rgba(203,213,225,0.65))]">Tel: </span>
-                        <a href={`tel:${effectiveContact.phone.replace(/\s/g, "")}`} className={HM_FOOTER_LINK_EMPHASIS_CLASS}>
+                        <span className="text-[color:var(--hm-footer-text,rgba(203,213,225,0.65))]">{phoneLabel}: </span>
+                        <a
+                          href={`tel:${phoneTel || effectiveContact.phone.replace(/\s/g, "")}`}
+                          className={HM_FOOTER_LINK_EMPHASIS_CLASS}
+                        >
                           {effectiveContact.phone}
                         </a>
                       </li>
@@ -470,7 +493,7 @@ export function HmPublicSiteFooter({
 
         <p className="mt-10 border-t border-[color:var(--hm-header-border,rgba(255,255,255,0.1))] pt-6 text-center text-xs text-[color:var(--hm-footer-text,rgba(203,213,225,0.88))]">
           <span className="mt-1 block sm:mt-0 sm:inline">
-            Haber merkezi altyapısı:{" "}
+            {infrastructureLabel}:{" "}
             <a href="https://ahenk.net.tr" className="text-[color:var(--hm-footer-link-hover,var(--hm-brand-label,#f87171))] hover:underline" rel="noreferrer">
               Ahenk Bilgi Teknolojileri
             </a>

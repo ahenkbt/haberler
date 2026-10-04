@@ -1364,17 +1364,9 @@ async function proxyHmAiKnowledgeText(request, incoming, host) {
   }
 }
 
-/** HM özel alan adında kök `/` → `/tr/{slug}` (SPA yüklenmeden, portal anasayfası flash'ını önler). */
-async function redirectHmCustomDomainRoot(request, incoming, host) {
-  if (request.method !== "GET" && request.method !== "HEAD") return null;
-  const pathOnly = incoming.pathname.replace(/\/+$/, "") || "/";
-  if (pathOnly !== "/") return null;
-  if (isDefaultPortalHost(host) || isLocalOrPreviewHost(host)) return null;
-  const slug = await fetchHmSlugForHost(railwayApiOrigin(request.url), host);
-  if (!slug) return null;
-  const dest = new URL(`/tr/${encodeURIComponent(slug)}`, incoming.origin);
-  dest.search = incoming.search;
-  return Response.redirect(dest.toString(), 308);
+/** HM kökü `/` aynı belgede kalır. /tr/{slug} 308'i ikinci doküman ve başka kabuk flaşıydı. */
+async function redirectHmCustomDomainRoot(_request, _incoming, _host) {
+  return null;
 }
 
 function isStaticAssetPath(pathname) {
@@ -1820,30 +1812,6 @@ export default async function middleware(request) {
 
     const appSuffix = pathname.replace(/^\/call-center-app/, "") || "/";
     return proxyToAgentLabs(upstreamBase, appSuffix, request);
-  }
-
-  const hostsRaw = process.env.HM_NEWS_CENTER_BRAND_HOSTS;
-  const brandHosts =
-    hostsRaw !== undefined && hostsRaw !== null
-      ? String(hostsRaw)
-          .split(",")
-          .map((s) => s.trim().toLowerCase())
-          .filter(Boolean)
-      : ["suhaber.net", "www.suhaber.net"];
-
-  const homePathRaw = String(process.env.HM_NEWS_CENTER_BRAND_HOME_PATH ?? "/tr/su").trim();
-  const homePath = homePathRaw.startsWith("/") ? homePathRaw : `/${homePathRaw}`;
-  const forceCanonicalRoot = String(process.env.HM_NEWS_CENTER_ROOT_REDIRECT_URL ?? "").trim();
-
-  if (brandHosts.length > 0 && brandHosts.includes(host) && !pathname.startsWith("/api")) {
-    const pathOnly = pathname.replace(/\/+$/, "") || "/";
-    if (pathOnly === "/" && !/^\/(assets\/|_next\/)/i.test(pathname)) {
-      const dest =
-        forceCanonicalRoot && /^https?:\/\//i.test(forceCanonicalRoot)
-          ? `${forceCanonicalRoot.replace(/\/+$/, "")}${incoming.search}`
-          : `${incoming.origin}${homePath}${incoming.search}`;
-      return Response.redirect(dest, 308);
-    }
   }
 
   if (!pathname.startsWith("/api")) {

@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { isTurkataHaberHost } from "@/lib/turkataHaber";
 import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { readHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import { toHmCustomDomainCleanPath, toHmInternalTrPath } from "@/lib/hmCustomDomainCleanPath";
@@ -36,7 +37,7 @@ export function useHmCustomDomainLocation(): [
 ] {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
-  const useCleanUrls = !!host && !isDefaultPortalHost(host);
+  const useCleanUrls = !!host && !isDefaultPortalHost(host) && !isTurkataHaberHost(host);
 
   const subscribe = useCallback((onChange: () => void) => {
     // wouter, history.pushState/replaceState'i monkey-patch'leyip aynı adla event yayar;

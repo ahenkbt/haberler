@@ -56,7 +56,7 @@ const POSITIONS = [
     text: "Hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00 (Pazar tatil). Asgari ücret, SGK ve yemek. Oryantasyon ve staj süreci (1. hafta, günde 4 saat) bu pozisyon için de geçerlidir. Mülakat ve adres: Sağlık Mah. Aksu Cad. 13/5 Sıhhıye - Çankaya / Ankara.",
   },
   {
-    title: "Müşteri Temsilcisi (Home-office, Kısmi Süreli)",
+    title: "Home Ofis Part Time İş Başvurusu ve Çalışma Esasları",
     text: "Uzaktan çalışma: ilk hafta günde 4 saat oryantasyon ve staj, ardından kısmi süreli sözleşme ve resmi SGK girişi. Puantaj sistem log kayıtlarına dayanır.",
   },
 ];
@@ -68,7 +68,7 @@ const FAQS = [
   },
   {
     q: "Çalışma modeli nedir?",
-    a: "İki seçenek vardır: tam zamanlı ofisten çalışma (hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00, Pazar tatil; asgari ücret, SGK ve yemek) veya home-office / kısmi süreli model. Oryantasyon ve staj süreci (ilk hafta, günde 4 saat) tam zamanlı ofisten çalışma için de geçerlidir. Home-office seçeneğinde ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi yapılır; puantaj pbx.goalgo.org ve CRM log kayıtlarına dayanır.",
+    a: "İki seçenek vardır: tam zamanlı ofisten çalışma (hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00, Pazar tatil; asgari ücret, SGK ve yemek) veya Home Ofis Part Time İş Başvurusu ve Çalışma Esasları (uzaktan, kısmi süreli). Oryantasyon ve staj süreci (ilk hafta, günde 4 saat) tam zamanlı ofisten çalışma için de geçerlidir. Home-office seçeneğinde ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi yapılır; puantaj pbx.goalgo.org ve CRM log kayıtlarına dayanır.",
   },
   {
     q: "Bu bir bağış veya yardım toplama işi mi?",
@@ -177,7 +177,7 @@ export default function Kariyer() {
   return (
     <AhenkAgencyChrome
       title="Çağrı Merkezi | Ahenk Bilgi Teknolojileri"
-      description="Ahenk Bilgi Teknolojileri çağrı merkezi hizmetleri ve Vatan İletişim Merkezi müşteri temsilcisi iş başvurusu."
+      description="Ahenk Bilgi Teknolojileri çağrı merkezi: tam zamanlı ofisten müşteri temsilcisi ve Home Ofis Part Time İş Başvurusu ve Çalışma Esasları."
     >
       <AhenkPageHero
         crumb={
@@ -186,7 +186,7 @@ export default function Kariyer() {
           </>
         }
         title="Ahenk BT ailesine katılmaya hazır mısınız?"
-        lead={`${site.brandName} çağrı merkezi ve müşteri hizmetleri operasyonu. Tam zamanlı ofisten veya home-office / kısmi süreli müşteri temsilcisi kadrolarımıza katılın.`}
+        lead={`${site.brandName} çağrı merkezi ve müşteri hizmetleri operasyonu. Tam zamanlı ofisten çalışabilir veya Home Ofis Part Time İş Başvurusu ve Çalışma Esasları kapsamında başvurabilirsiniz.`}
         image={AHENK_PHOTOS.callCenter}
       />
 
@@ -335,8 +335,8 @@ export default function Kariyer() {
             <label className="ahenk-consent">
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
               <span>
-                <Link href="/urun-satisi">Ürün satışı ve çalışma esasları</Link> metnini okudum, anladım ve kabul
-                ediyorum.
+                <Link href="/urun-satisi">Home Ofis Part Time İş Başvurusu ve Çalışma Esasları</Link> metnini
+                okudum, anladım ve kabul ediyorum. Tam zamanlı ofisten çalışma ilanı aynı sayfadadır.
               </span>
             </label>
             <button type="submit" className="ahenk-btn" disabled={sending || !accepted}>

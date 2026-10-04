@@ -203,6 +203,24 @@ zone_name = "kirsehirhaber.org"
 pattern = "www.kirsehirhaber.org/*"
 zone_name = "kirsehirhaber.org"
 
+# TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.
+# custom_domain Worker hostname + anycast A kaydı oluşturur (kirsehirhaber.org ile aynı).
+[[routes]]
+pattern = "turkatahaber.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.turkatahaber.com"
+custom_domain = true
+
+[[routes]]
+pattern = "turkatahaber.com/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/*"
+zone_name = "turkatahaber.com"
+
 # Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc
 [[routes]]
 pattern = "trafikdernegi.com"

@@ -24,6 +24,14 @@ describe("geoSiteEntities", () => {
     expect(geoEntityBySlug("trafik")?.officialName).toBe("Trafik Güvenliği Derneği");
     expect(geoEntityByDomain("trafikdernegi.com")?.type).toBe("Organization");
     expect(geoEntityByDomain("tgd.tc")?.domain).toBe("trafikdernegi.com");
+    expect(geoEntityByDomain("www.turkatahaber.com")?.officialName).toBe("TÜRKATA HABER AJANSI");
+    expect(geoEntityBySlug("turkata")?.foundingDate).toBe("1998");
+    expect(geoEntityBySlug("turkata")?.alternateName).toContain("THA");
+    expect(geoEntityBySlug("turkata")?.legalName).toBe("Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.");
+    expect(geoEntityBySlug("turkata")?.address?.streetAddress).toBe("Sağlık Mah. Aksu Cad. 13/5");
+    expect(geoEntityBySlug("turkata")?.legalAddress?.streetAddress).toBe("Meşrutiyet Mah. Karanfil Sok. 4/91");
+    expect(geoEntityBySlug("turkata")?.vendor?.address?.streetAddress).toBe("Başak Mah. Özalp Cad. 5/2");
+    expect(geoEntityBySlug("turkata")?.vendor?.address?.addressLocality).toBe("Mamak");
   });
 
   it("builds TGD NGO JSON-LD and titles for ChatGPT/Gemini GEO", () => {
@@ -65,6 +73,10 @@ describe("geoSiteEntities", () => {
     expect(isAhenkAgencyGeoPath("/whatsapp-cagri-merkezi")).toBe(true);
     expect(isAhenkAgencyGeoPath("/kariyer")).toBe(true);
     expect(isAhenkAgencyGeoPath("/urun-satisi")).toBe(true);
+    expect(isAhenkAgencyGeoPath("/turkata-haber-ajansi")).toBe(true);
+    expect(geoEntityPageTitle(AHENK_BT_ENTITY, "/turkata-haber-ajansi")).toBe(
+      "TürkAta Haber Ajansı — Ahenk Bilgi Teknolojileri",
+    );
   });
 
   it("builds Googlebot HTML that names the domain", () => {
