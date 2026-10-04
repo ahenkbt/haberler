@@ -1455,7 +1455,34 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
 
   // Su + KH: meta 200 ise Neon onar─▒m─▒n─▒ arka planda yap (TTFB'yi 5-7sn ┼şi┼şirme).
   // 404'te h├ól├ó senkron fallback ÔÇö aksi halde ilk ziyarette bo┼ş kal─▒r.
-  if ((isSuBrand || isKhBrand) && upstream.ok) {
+  // KH must answer from the pinned row. A background repair left the container's
+  // newest empty row (null domain, new id) as the public by-domain body.
+  if (isKhBrand) {
+    try {
+      const ensured = await ensureBrandHmSiteMeta(env, { domain, slug });
+      const pinnedId = Number(ensured?.meta?.id);
+      const pinnedDomain = normalizeHost(ensured?.meta?.domain);
+      if (pinnedId > 0 && pinnedDomain === "kirsehirhaber.org") {
+        let upstreamId = 0;
+        let upstreamDomain = "";
+        if (upstream?.ok) {
+          const body = await upstream.clone().json().catch(() => null);
+          upstreamId = Number(body?.id) || 0;
+          upstreamDomain = normalizeHost(body?.domain);
+        }
+        if (upstreamId !== pinnedId || upstreamDomain !== "kirsehirhaber.org") {
+          return brandMetaJsonResponse(ensured.meta, {
+            "x-yekpare-hm-brand-ensure-action": ensured.action || "kh-canonical",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[hm-brand-db-ensure/kh]", String(err?.message || err).slice(0, 200));
+    }
+    if (upstream.ok) return null;
+  }
+
+  if (isSuBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug }).catch((err) => {
       console.error("[hm-brand-db-ensure/bg]", String(err?.message || err).slice(0, 200));
     });
