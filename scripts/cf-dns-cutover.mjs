@@ -137,7 +137,7 @@ async function main() {
   });
 
   // Custom hostnames on Worker (requires zone ownership)
-  for (const host of ["ankarasehirgazetesi.com", "www.ankarasehirgazetesi.com", "turknet.app", "www.turknet.app"]) {
+  for (const host of ["turknet.app", "www.turknet.app"]) {
     await attachWorkerHostname(auth, host);
   }
 

@@ -122,7 +122,7 @@ zone_name = "ankarahabergundemi.com"
 pattern = "ankarahabergundemi.com/manifest.json"
 zone_name = "ankarahabergundemi.com"
 
-# Yektube Ôö£├ézel alan ├ö├ç├Â ahenk.net.tr/yp kanonik yÔö£ÔòØzÔö£ÔòØ (yektube.com)
+# yektube.com zone route'ları burada YOK: sahibi `yektube` Worker'ı (wrangler.yektube.toml). /api oradan API_ORIGIN ile ahenk.net.tr'ye gider.
 # ankarasehirgazetesi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
 # apex/www custom_domain ve "ankarasehirgazetesi.com/*", "www.ankarasehirgazetesi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
@@ -242,20 +242,46 @@ zone_name = "vatanhaber.net"
 # Su Haber ├ö├ç├Â kanonik Google alanÔöÇÔûÆ suhaber.net (suhaberajansi.com iptal, detach).
 # Zone CF'de ve A/CNAME kayÔöÇÔûÆtlarÔöÇÔûÆ var: custom_domain 100117 ile wrangler deploy kÔöÇÔûÆrÔöÇÔûÆlÔöÇÔûÆr.
 # vatanhaber.net gibi zone_name Worker route kullan (DNS'e dokunma).
+# suhaber.net (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "suhaber.net/*", "www.suhaber.net/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "suhaber.net/*"
+pattern = "suhaber.net/editor*"
 zone_name = "suhaber.net"
 
 [[routes]]
-pattern = "suhaber.net"
+pattern = "suhaber.net/api/*"
 zone_name = "suhaber.net"
 
 [[routes]]
-pattern = "www.suhaber.net/*"
+pattern = "suhaber.net/admin*"
 zone_name = "suhaber.net"
 
 [[routes]]
-pattern = "www.suhaber.net"
+pattern = "suhaber.net/panel*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/haber-merkezi*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/assets/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/sw.js"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/llms.txt"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/ai.txt"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/manifest.json"
 zone_name = "suhaber.net"
 
 # suhaberajansi.com iptal ├ö├ç├Â Worker route yok (cf-detached-domains). Kanonik: suhaber.net (/tr/su)
