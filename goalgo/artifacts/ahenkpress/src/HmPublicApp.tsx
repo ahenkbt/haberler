@@ -113,6 +113,10 @@ export default function HmPublicApp() {
   useYekpareTheme();
 
   useLayoutEffect(() => {
+    markHmSpaReady();
+  }, []);
+
+  useLayoutEffect(() => {
     const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
     if (!link) return;
     const host = window.location.hostname.toLowerCase().split(":")[0] ?? "";

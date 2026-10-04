@@ -97,6 +97,7 @@ import {
   isTurkataHaberHost,
   isTurkataSeoPath,
   isTurkataWwwHost,
+  portalHaberlerArticleAliasPath,
   rewriteAhenkNewsCanonicalHtml,
   rewriteTurkataSpaHtml,
   turkataArticleSlug,
@@ -2086,8 +2087,8 @@ function parseNtvDunyaAtom(xml, limit = 24) {
       spot,
       href: `/haberler/rss/${encodeURIComponent(edgeId)}`,
       publishedAt: new Date(published).toISOString(),
-      sourceName: "D├╝nya",
-      feedLabel: "D├╝nya",
+      sourceName: "Dünya",
+      feedLabel: "Dünya",
       countryCode: null,
       countryName: null,
       continent: "global",
@@ -2100,8 +2101,8 @@ function parseNtvDunyaAtom(xml, limit = 24) {
 }
 
 /**
- * Edge: D├╝nyadan K─▒sa K─▒sa ÔÇö NTV D├╝nya RSS (API gecikmesinde donmas─▒n).
- * ─░ste─şe ba─şl─▒ siteId ile upstream D├╝nya DB haberlerini de birle┼ştirir.
+ * Edge: Dünyadan K─▒sa K─▒sa ÔÇö NTV Dünya RSS (API gecikmesinde donmas─▒n).
+ * ─░ste─şe ba─şl─▒ siteId ile upstream Dünya DB haberlerini de birle┼ştirir.
  */
 async function serveWorldBriefsEdge(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -2200,8 +2201,8 @@ async function serveWorldBriefsEdge(request, env, incoming) {
             spot: row.spot || null,
             href,
             publishedAt: row.publishedAt || row.createdAt || new Date().toISOString(),
-            sourceName: row.categoryName || "D├╝nya",
-            feedLabel: row.categoryName || "D├╝nya",
+            sourceName: row.categoryName || "Dünya",
+            feedLabel: row.categoryName || "Dünya",
             countryCode: null,
             countryName: null,
             continent: "global",
@@ -2378,7 +2379,7 @@ async function findEdgeRssEntryById(env, itemId, origin, incoming) {
   const meta = await loadSiteRssFeedRowsFromMeta(env, origin, incoming, null);
   const feeds = [
     ...(meta.feeds || []),
-    { id: "dunya", label: "D├╝nya", url: NTV_DUNYA_RSS_URL },
+    { id: "dunya", label: "Dünya", url: NTV_DUNYA_RSS_URL },
   ];
   const seenUrls = new Set();
   for (const feed of feeds) {
@@ -2450,10 +2451,10 @@ async function serveEdgeRssPreview(request, env, incoming) {
     href: `/haberler/rss/${encodeURIComponent(edgeKey)}`,
     publishedAt: entry.publishedAt,
     categorySlug: slugifyCategoryKey(feed.id || feed.label) || "dunya",
-    categoryName: feed.label || "D├╝nya",
+    categoryName: feed.label || "Dünya",
     categoryColor: "#CC0000",
     feedId: `edge-site-${slugifyCategoryKey(feed.id || feed.label) || "dunya"}`,
-    feedLabel: feed.label || "D├╝nya",
+    feedLabel: feed.label || "Dünya",
     sourceName: isEditorSite ? "Yekpare Haberleri" : feed.label || "RSS",
     // Edit├Âr sitelerinde kaynak ba─şlant─▒s─▒ yok; haber yaln─▒zca site i├ğinde a├ğ─▒l─▒r.
     feedUrl: isEditorSite ? null : feed.url || null,
@@ -2718,9 +2719,11 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
+    const haberlerArticleAlias = portalHaberlerArticleAliasPath(incoming.pathname);
+
     if (isTurkataWwwHost(incoming.hostname)) {
       const bare = incoming.pathname.replace(/\/+$/, "") || "/";
-      const path = bare === "/haberler" ? "/" : incoming.pathname;
+      const path = haberlerArticleAlias || (bare === "/haberler" ? "/" : incoming.pathname);
       const dest = new URL(path + incoming.search, TURKATA_ORIGIN);
       return new Response(null, {
         status: 301,
@@ -2748,13 +2751,25 @@ export default {
 
     // www.ahenk.net.tr / turk.eco ÔåÆ ahenk.net.tr
     if (APEX_PORTAL_REDIRECT_HOSTS.has(hostKeyEarly)) {
-      const dest = new URL(incoming.pathname + incoming.search, CANONICAL_PORTAL_ORIGIN);
+      const dest = new URL((haberlerArticleAlias || incoming.pathname) + incoming.search, CANONICAL_PORTAL_ORIGIN);
       return new Response(null, {
         status: 301,
         headers: {
           Location: dest.toString(),
           "cache-control": "public, max-age=3600",
           "x-yekpare-frontend": "canonical-portal-redirect",
+        },
+      });
+    }
+
+    if (haberlerArticleAlias && (request.method === "GET" || request.method === "HEAD")) {
+      const dest = new URL(haberlerArticleAlias + incoming.search, incoming.origin);
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: dest.toString(),
+          "cache-control": "public, max-age=3600",
+          "x-yekpare-frontend": "portal-haberler-article-alias",
         },
       });
     }

@@ -279,7 +279,7 @@ function escPaint(s) {
 const HM_FP_FALLBACK_RATES = [
   { label: "USD/TRY", value: "34,12", change: "+0,08", dir: "up" },
   { label: "EUR/TRY", value: "36,88", change: "-0,02", dir: "down" },
-  { label: "Gram Alt─▒n", value: "3.245 Ôé║", change: "+12", dir: "up" },
+  { label: "Gram Altın", value: "3.245 Ôé║", change: "+12", dir: "up" },
 ];
 
 function bootOrigin(boot) {
@@ -319,7 +319,7 @@ function defaultHmBootNav(slug) {
     { label: "Yerel", href: "/kategori/yerel" },
     { label: "Ankara", href: "/kategori/ankara" },
     { label: "G├╝ndem", href: "/kategori/gundem" },
-    { label: "D├╝nya", href: "/kategori/dunya" },
+    { label: "Dünya", href: "/kategori/dunya" },
     { label: "Ekonomi", href: "/kategori/ekonomi" },
     { label: "Spor", href: "/kategori/spor" },
     { label: "K├╝nye", href: "/kunye" },
@@ -495,7 +495,7 @@ export function buildHmClassicHomePaintHtml(boot) {
 <div class="hm-fp-top">
 <a class="hm-fp-brand" href="${escPaint(homeHref)}">${brandImg}</a>
 <div class="hm-fp-market" role="region" aria-label="Piyasa">
-<span class="hm-fp-market-kicker">Piyasa ┬À Hava</span>
+<span class="hm-fp-market-kicker">Piyasa · Hava</span>
 ${rates}
 <span class="hm-fp-search">Ara</span>
 </div>
@@ -546,7 +546,7 @@ function buildHmClassicChromeInner(boot, origin) {
   return `<div class="hm-fp-top">
 <a class="hm-fp-brand" href="${escPaint(homeHref)}">${brandImg}</a>
 <div class="hm-fp-market" role="region" aria-label="Piyasa">
-<span class="hm-fp-market-kicker">Piyasa ┬À Hava</span>
+<span class="hm-fp-market-kicker">Piyasa · Hava</span>
 ${rates}
 <span class="hm-fp-search">Ara</span>
 </div>
@@ -596,7 +596,7 @@ function humanizeCategorySlug(slug) {
     gundem: "G├╝ndem",
     yerel: "Yerel",
     ankara: "Ankara",
-    dunya: "D├╝nya",
+    dunya: "Dünya",
     ekonomi: "Ekonomi",
     spor: "Spor",
     siyaset: "Siyaset",
@@ -671,9 +671,35 @@ function resolveHmFirstPaintHtml(boot) {
   return buildHmClassicHomePaintHtml(boot);
 }
 
-/** Klasik HTML, React #root'u silene kadar t─▒klanabilir kals─▒n. */
+/**
+ * SEO / ilk boya metni #root içinde kalır (tarayıcı ve Google ham HTML).
+ * Kullanıcıya görünmez: clip, display:none değil. Kabuk #root dışında.
+ */
+export const HM_NEWS_BOOT_CSS =
+  "html.hm-news-boot,html.hm-news-boot body{background:#fff!important;color:#111}" +
+  "html.hm-news-boot:not(.hm-spa-ready),html.hm-news-boot:not(.hm-spa-ready) body{min-height:100vh;overflow:hidden}" +
+  "html.hm-news-boot:not(.hm-spa-ready) #root{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}" +
+  "#seo-boot-shell{display:none}" +
+  "html.hm-news-boot:not(.hm-spa-ready) #seo-boot-shell{display:flex;position:fixed;inset:0;z-index:2147483000;box-sizing:border-box;background:#fff;color:#111;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Georgia,'Times New Roman',serif}" +
+  "#seo-boot-shell .seo-boot-mark{margin:0;font-size:1.35rem;letter-spacing:.04em;font-weight:700;text-align:center;padding:0 24px}" +
+  "#seo-boot-mark[hidden]{display:none!important}" +
+  "#seo-boot-logo{width:min(240px,72vw);height:auto}" +
+  "#seo-boot-logo[hidden]{display:none!important}" +
+  "#seo-boot-shell .seo-boot-bar{width:9rem;height:3px;background:#e5e5e5;border-radius:999px;overflow:hidden;position:relative}" +
+  "#seo-boot-shell .seo-boot-bar:before{content:'';position:absolute;left:0;top:0;bottom:0;width:40%;background:#9f1239;animation:seo-boot-bar 1s ease-in-out infinite}" +
+  "@keyframes seo-boot-bar{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}";
+
+export const SEO_BOOT_SHELL_MARKUP =
+  '<div id="seo-boot-shell" aria-hidden="true"><img id="seo-boot-logo" alt="" width="220" height="72" hidden><p id="seo-boot-mark" class="seo-boot-mark"></p><div class="seo-boot-bar"></div></div>';
+
+/** Marka kabuğunu kaldırır. İlk boyayı ekrana klonlamaz. */
+export function buildSeoBootReleaseScript() {
+  return `<script>(function(){var root=document.getElementById("root");if(root&&document.documentElement.classList.contains("hm-news-boot"))root.setAttribute("aria-hidden","true");var mark=document.getElementById("seo-boot-mark");var logo=document.getElementById("seo-boot-logo");var host=(location.hostname||"").toLowerCase().replace(/^www\\./,"").split(":")[0];var brand=document.documentElement.getAttribute("data-boot-brand")||"";if(!brand){var t=(document.title||"").split("|")[0].split("\\u2014")[0].trim();if(t&&t!=="Ahenk Bilgi Teknolojileri")brand=t;}if(mark&&brand&&!mark.textContent)mark.textContent=brand;if(logo&&host==="turkatahaber.com"){logo.src="/turkata/turkata-logo.webp";logo.alt=brand||"TÜRKATA HABER AJANSI";logo.hidden=false;logo.addEventListener("error",function(){logo.hidden=true;if(mark)mark.hidden=false;});if(mark)mark.hidden=true;}window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;document.documentElement.classList.add("hm-spa-ready");var shell=document.getElementById("seo-boot-shell");if(shell&&shell.parentNode)shell.parentNode.removeChild(shell);var hold=document.getElementById("hm-first-paint-hold");if(hold&&hold.parentNode)hold.parentNode.removeChild(hold);var live=document.getElementById("root");if(live)live.removeAttribute("aria-hidden");document.documentElement.removeAttribute("data-hm-spa-pending");};setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
+}
+
+/** @deprecated Klonlanan overlay kalktı; kabuk bırakma betiği duruyor. */
 export function buildHmFirstPaintHoldScript() {
-  return `<script>(function(){var r=document.getElementById("root");if(!r)return;var p=r.querySelector("[data-hm-first-paint]");if(!p)return;var h=document.createElement("div");h.id="hm-first-paint-hold";h.setAttribute("data-hm-first-paint-hold",p.getAttribute("data-hm-first-paint")||"classic");h.style.cssText="position:fixed;inset:0;z-index:2147483000;overflow:auto;background:#fff";h.appendChild(p.cloneNode(true));r.parentNode.insertBefore(h,r);document.documentElement.setAttribute("data-hm-spa-pending","1");window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;var el=document.getElementById("hm-first-paint-hold");if(el&&el.parentNode)el.parentNode.removeChild(el);document.documentElement.removeAttribute("data-hm-spa-pending");};setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
+  return buildSeoBootReleaseScript();
 }
 
 /** @deprecated overlay kald─▒r─▒ld─▒; klasik anasayfa ilk boyama. */
@@ -741,10 +767,10 @@ export function injectHmHtmlBoot(html, boot) {
     } else if (out.includes("<body>")) {
       out = out.replace("<body>", `<body><div id="root">${paint}</div>`);
     }
-    if (out.includes("</body>")) {
-      out = out.replace("</body>", `${buildHmFirstPaintHoldScript()}</body>`);
-    } else {
-      out += buildHmFirstPaintHoldScript();
+    if (!out.includes("__YEKPARE_HM_RELEASE_FIRST_PAINT__")) {
+      const release = buildHmFirstPaintHoldScript();
+      if (out.includes("</body>")) out = out.replace("</body>", `${release}</body>`);
+      else out += release;
     }
   }
   return out;
@@ -1257,7 +1283,7 @@ export function rewriteSpaShellOgForHmHost(html, hostname, origin) {
   return markHmNewsBootHtml(out);
 }
 
-/** HM / turkata belgesi: beyaz kabuk, Ahenk/Yekpare gövdesi ilk karede görünmesin. */
+/** HM / turkata belgesi: SEO metni klipslenir, marka kabuğu #root dışında kalır. */
 export function markHmNewsBootHtml(html) {
   let out = String(html || "");
   if (!/\bhm-news-boot\b/.test(out)) {
@@ -1267,10 +1293,19 @@ export function markHmNewsBootHtml(html) {
       out = out.replace(/<html\b/i, '<html class="hm-news-boot"');
     }
   }
-  if (!out.includes('id="hm-news-boot-css"') && out.includes("</head>")) {
-    const css =
-      '<style id="hm-news-boot-css">html.hm-news-boot,html.hm-news-boot body{background:#fff!important;color:#111}html.hm-news-boot #root:empty{min-height:100vh;background:#fff}</style>';
-    out = out.replace("</head>", `${css}\n</head>`);
+  const style = `<style id="hm-news-boot-css">${HM_NEWS_BOOT_CSS}</style>`;
+  if (out.includes('id="hm-news-boot-css"')) {
+    out = out.replace(/<style id="hm-news-boot-css">[\s\S]*?<\/style>/i, style);
+  } else if (out.includes("</head>")) {
+    out = out.replace("</head>", `${style}\n</head>`);
+  }
+  if (!out.includes('id="seo-boot-shell"') && /<body\b/i.test(out)) {
+    out = out.replace(/<body\b([^>]*)>/i, `<body$1>\n${SEO_BOOT_SHELL_MARKUP}`);
+  }
+  if (!out.includes("__YEKPARE_HM_RELEASE_FIRST_PAINT__")) {
+    const script = buildSeoBootReleaseScript();
+    if (out.includes("</body>")) out = out.replace("</body>", `${script}\n</body>`);
+    else out += script;
   }
   return out;
 }

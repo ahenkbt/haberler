@@ -97,6 +97,10 @@ describe("hm-html-boot", () => {
     assert.match(out, /data-hm-first-paint="classic"/);
     assert.match(out, /Ankara Haber Gündemi/);
     assert.match(out, /Piyasa · Hava/);
+    assert.match(out, />Dünya</);
+    assert.equal(out.includes("D\u251c\u255dnya"), false);
+    assert.equal(out.includes("cloneNode"), false);
+    assert.match(out, /hm-spa-ready/);
     assert.match(out, /<div id="root">[\s\S]*data-hm-first-paint="classic"/);
   });
 
@@ -149,6 +153,7 @@ describe("hm-html-boot", () => {
     assert.match(out, /Ankabir/);
     assert.match(out, /Vali ziyareti/);
     assert.match(out, /hm-first-paint-hold/);
+    assert.equal(out.includes("cloneNode"), false);
     assert.equal(out.includes("Manşet yükleniyor"), false);
   });
 

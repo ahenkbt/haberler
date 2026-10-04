@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiUrl } from "@/lib/apiBase";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
+import { repairWorldBriefsPayload } from "@/lib/worldBriefsDisplay";
 
 export type WorldBriefItem = {
   id: string;
@@ -54,7 +55,7 @@ async function fetchWorldBriefs(
   if (!result.ok || !result.data) {
     return { continents: [], totalItems: 0, feedCount: 0, checkedAt: new Date().toISOString() };
   }
-  return result.data;
+  return repairWorldBriefsPayload(result.data);
 }
 
 export function useWorldBriefs(perFeed = 3, enabled = true) {
