@@ -53,3 +53,57 @@ export function isGscWebSitemapPath(pathname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
   return p === "/sitemap.xml" || p === "/sitemap-web.xml";
 }
+
+function sitemapPathOnly(pathname) {
+  return String(pathname || "").split("?")[0].replace(/\/+$/, "") || "/";
+}
+
+/** Public sitemap files and /api/sitemap/*.xml — never pass a container 500 through as HTML. */
+export function isSitemapFailSoftPath(pathname) {
+  const lower = sitemapPathOnly(pathname).toLowerCase();
+  if (lower.startsWith("/api/sitemap/") && lower.endsWith(".xml")) return true;
+  if (!lower.endsWith(".xml")) return false;
+  if (
+    lower === "/sitemap.xml" ||
+    lower === "/sitemap-web.xml" ||
+    lower === "/sitemap-index.xml" ||
+    lower === "/sitemap-news.xml" ||
+    lower === "/sitemap-pages.xml" ||
+    lower === "/google-news.xml" ||
+    lower === "/news-yekpare-google-news.xml"
+  ) {
+    return true;
+  }
+  if (lower.startsWith("/news-hm-") || lower.startsWith("/news-hm/")) return true;
+  if (lower.startsWith("/news-yekpare")) return true;
+  return false;
+}
+
+/**
+ * Fail-soft body shape. API index/news-hm files are the public web sitemap
+ * when the container errors, so the fallback stays a homepage urlset.
+ */
+export function sitemapFailPublicPath(pathname) {
+  const p = sitemapPathOnly(pathname);
+  const lower = p.toLowerCase();
+  if (
+    lower === "/api/sitemap/index.xml" ||
+    lower === "/api/sitemap/news-yekpare.xml" ||
+    /^\/api\/sitemap\/news-hm-[^/]+\.xml$/i.test(lower)
+  ) {
+    return "/sitemap.xml";
+  }
+  if (lower.endsWith("/google-news.xml") || lower.endsWith("-google-news.xml")) return "/google-news.xml";
+  return p;
+}
+
+/** 5xx or a 2xx that is not XML. 404 stays 404. */
+export function sitemapUpstreamShouldFailSoft(pathname, status, contentType) {
+  if (!isSitemapFailSoftPath(pathname)) return false;
+  const code = Number(status) || 0;
+  if (code === 0 || code >= 500) return true;
+  if (code < 200 || code >= 300) return false;
+  const ct = String(contentType || "").toLowerCase();
+  if (ct.includes("xml") || ct.includes("text/plain")) return false;
+  return true;
+}
