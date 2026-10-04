@@ -1,6 +1,9 @@
 -- Yeni PHP tema haber siteleri canlı HM kaydı (sehitgazi.org.tr, yerel.net.tr, turksav.org, dunyasaglik.org, yesilvatan.gen.tr).
 -- Ad/açıklama/künye/logo/preset tema DB'sinden (231/232/233/236/237), RSS satırları tema importer feed'leri, modüller ve RSS
--- revizyonları ASG (site 3, haber "esen" teması), editör hesapları ASG ile aynı. Site 7'de sehitgazi.org.tr varsa kaldırılır.
+-- revizyonları ASG (site 3, haber "esen" teması). ASG editör hesapları kopyalanmaz.
+-- Her sitenin (5 yeni + 6 mevcut PHP tema sitesi) bilgi@<alan> editörü vardır: kullanıcı adı = e-posta = şifre.
+-- Şifre bcryptjs cost 10 ($2b$); /hm/editor/login bcrypt.compare ile doğrulanır. Aktif hm_site_editors satırı tam editör yetkisidir (ayrı rol sütunu yok).
+-- Mevcut editör satırlarına dokunulmaz; bilgi@ varsa yalnızca o satırın hash'i güncellenir ve aktif edilir. Site 7'de sehitgazi.org.tr varsa kaldırılır.
 -- İdempotent; hata olursa WARNING verip hiçbir satırı değiştirmez (container açılışını engellemez).
 -- Yedek: hm_news_sites_bak_20261004_newsites, hm_site_editors_bak_20261004_newsites.
 DO $newsites$
@@ -13,7 +16,13 @@ DECLARE
   v_id integer;
   v_slug text;
   v_dom text;
+  v_login text;
+  v_hash text;
+  v_editor_id integer;
+  v_site_name text;
+  v_set_username boolean;
   r record;
+  ed record;
 BEGIN
  BEGIN
   -- Backups of every row this block can touch (kept; drop by hand once verified).
@@ -29,7 +38,9 @@ BEGIN
     CREATE TABLE hm_site_editors_bak_20261004_newsites AS
       SELECT now() AS backed_up_at, e.* FROM hm_site_editors e
       WHERE e.site_id IN (SELECT id FROM hm_news_sites WHERE id = 3 OR slug = 'asg'
-                          OR lower(trim(coalesce(domain, ''))) IN ('yerel.net.tr', 'sehitgazi.org.tr', 'turksav.org', 'yesilvatan.gen.tr', 'dunyasaglik.org', 'www.yerel.net.tr', 'www.sehitgazi.org.tr', 'www.turksav.org', 'www.yesilvatan.gen.tr', 'www.dunyasaglik.org'));
+                          OR lower(trim(coalesce(domain, ''))) IN ('yerel.net.tr', 'sehitgazi.org.tr', 'turksav.org', 'yesilvatan.gen.tr', 'dunyasaglik.org', 'www.yerel.net.tr', 'www.sehitgazi.org.tr', 'www.turksav.org', 'www.yesilvatan.gen.tr', 'www.dunyasaglik.org', 'turkatahaber.com', 'ankarasehirgazetesi.com', 'ankarahabergundemi.com', 'kirsehirhaber.org', 'vatanhaber.net', 'suhaber.net', 'www.turkatahaber.com', 'www.ankarasehirgazetesi.com', 'www.ankarahabergundemi.com', 'www.kirsehirhaber.org', 'www.vatanhaber.net', 'www.suhaber.net')
+                          OR lower(trim(coalesce(domain2, ''))) IN ('yerel.net.tr', 'sehitgazi.org.tr', 'turksav.org', 'yesilvatan.gen.tr', 'dunyasaglik.org', 'www.yerel.net.tr', 'www.sehitgazi.org.tr', 'www.turksav.org', 'www.yesilvatan.gen.tr', 'www.dunyasaglik.org', 'turkatahaber.com', 'ankarasehirgazetesi.com', 'ankarahabergundemi.com', 'kirsehirhaber.org', 'vatanhaber.net', 'suhaber.net', 'www.turkatahaber.com', 'www.ankarasehirgazetesi.com', 'www.ankarahabergundemi.com', 'www.kirsehirhaber.org', 'www.vatanhaber.net', 'www.suhaber.net')
+                          OR lower(trim(coalesce(domain3, ''))) IN ('yerel.net.tr', 'sehitgazi.org.tr', 'turksav.org', 'yesilvatan.gen.tr', 'dunyasaglik.org', 'www.yerel.net.tr', 'www.sehitgazi.org.tr', 'www.turksav.org', 'www.yesilvatan.gen.tr', 'www.dunyasaglik.org', 'turkatahaber.com', 'ankarasehirgazetesi.com', 'ankarahabergundemi.com', 'kirsehirhaber.org', 'vatanhaber.net', 'suhaber.net', 'www.turkatahaber.com', 'www.ankarasehirgazetesi.com', 'www.ankarahabergundemi.com', 'www.kirsehirhaber.org', 'www.vatanhaber.net', 'www.suhaber.net'));
   END IF;
 
   -- Site 7 (VKD): drop sehitgazi.org.tr if it is listed as one of its domains (no-op otherwise).
@@ -108,26 +119,92 @@ BEGIN
         WHERE id = v_id;
       RAISE NOTICE 'newsites: updated % id=%', r.domain, v_id;
     END IF;
+  END LOOP;
 
-    -- Same editor accounts (email/username + password hash) as Ankara Şehir Gazetesi.
-    IF v_src IS NOT NULL THEN
-      IF v_has_username THEN
+  -- bilgi@<domain> editor for the 5 new sites and the 6 existing PHP theme sites.
+  -- Lookup is by domain/domain2/domain3 (apex or www), never by a fixed site id.
+  -- Other editor rows are left untouched. If bilgi@ already exists, refresh its hash and mark it active.
+  FOR ed IN SELECT * FROM (VALUES
+      ('yerel.net.tr', '$2b$10$ocrBRuPewOwUULRCMtdDg.R2tLgI3ec/AKx.MQZ37pjUT7pzlNI3.'),
+      ('sehitgazi.org.tr', '$2b$10$SShDX/4MVS1gyrrIgV2DUuxWdDyi5UdMWILVsL2atTOjmWiUUcmZe'),
+      ('turksav.org', '$2b$10$iVhVrqq0WYCZA7qbcq4xkO1nd841rBGcdMVnqI/JtjrzZ.QIuJG5i'),
+      ('yesilvatan.gen.tr', '$2b$10$pyv8raN657u/pU8SDqjCMub4pgWiLIm1QztjTK7cxgH9qGCKTrxK6'),
+      ('dunyasaglik.org', '$2b$10$azQ4T3eyCsGOP8lFiWLqr.mq8JPO6QUVv8CLDKfrUkzTYWU3nP5Tq'),
+      ('turkatahaber.com', '$2b$10$t63EmkC51F9aAq5J9wCNp.cJeq8gj6S8wnL66m/GOLZW1.URBcac6'),
+      ('ankarasehirgazetesi.com', '$2b$10$jexrll7lr24r7t5KFhTrEej5hZ1Okqa37Q.xXQy9wuWjNRv1Y9Ngy'),
+      ('ankarahabergundemi.com', '$2b$10$dKBa8rot7RY1fI3lsSTPh.H4BkmPJjxl.r9ETnxTQpkCE1sOuf3IW'),
+      ('kirsehirhaber.org', '$2b$10$p8ELn.jbIs4DNUbzvxjVu.peZdmst1pTcQyyiib1H5SspRXyCp1mS'),
+      ('vatanhaber.net', '$2b$10$WcUWqTIg4ua6UuRzcK/7Fes6JQgMLb.F3usmN1LbPLakQdMb9Ahji'),
+      ('suhaber.net', '$2b$10$hIg5DcsA3ygjrkhW8SUTfOyqFiAYLy6v5w9XjLaVLciTXICcug2O2')
+    ) AS t(domain, password_hash)
+  LOOP
+    v_dom := lower(ed.domain);
+    v_login := 'bilgi@' || v_dom;
+    v_hash := ed.password_hash;
+    v_id := NULL;
+    v_site_name := NULL;
+    v_editor_id := NULL;
+    SELECT s.id, s.display_name INTO v_id, v_site_name
+      FROM hm_news_sites s
+      WHERE lower(trim(coalesce(s.domain, ''))) IN (v_dom, 'www.' || v_dom)
+         OR lower(trim(coalesce(s.domain2, ''))) IN (v_dom, 'www.' || v_dom)
+         OR lower(trim(coalesce(s.domain3, ''))) IN (v_dom, 'www.' || v_dom)
+      ORDER BY s.active DESC, s.id
+      LIMIT 1;
+    IF v_id IS NULL THEN
+      RAISE NOTICE 'newsites editor: no hm_news_sites row for %', v_dom;
+      CONTINUE;
+    END IF;
+
+    SELECT id INTO v_editor_id FROM hm_site_editors
+      WHERE site_id = v_id AND lower(trim(email)) = v_login
+      ORDER BY id
+      LIMIT 1;
+
+    v_set_username := false;
+    IF v_has_username THEN
+      SELECT NOT EXISTS (
+        SELECT 1 FROM hm_site_editors x
+        WHERE x.site_id = v_id
+          AND lower(trim(coalesce(x.username, ''))) = v_login
+          AND (v_editor_id IS NULL OR x.id <> v_editor_id)
+      ) INTO v_set_username;
+    END IF;
+
+    IF v_editor_id IS NULL THEN
+      IF v_has_username AND v_set_username THEN
         INSERT INTO hm_site_editors (site_id, email, username, password_hash, display_name, is_active, created_at, updated_at)
-        SELECT DISTINCT ON (lower(e.email)) v_id, e.email, e.username, e.password_hash, e.display_name, true, now(), now()
-          FROM hm_site_editors e
-          WHERE e.site_id = v_src AND e.is_active
-            AND NOT EXISTS (SELECT 1 FROM hm_site_editors x WHERE x.site_id = v_id AND lower(x.email) = lower(e.email))
-          ORDER BY lower(e.email), e.updated_at DESC
-        ON CONFLICT DO NOTHING;
+        VALUES (v_id, v_login, v_login, v_hash, v_site_name, true, now(), now());
+      ELSIF v_has_username THEN
+        INSERT INTO hm_site_editors (site_id, email, password_hash, display_name, is_active, created_at, updated_at)
+        VALUES (v_id, v_login, v_hash, v_site_name, true, now(), now());
+        RAISE NOTICE 'newsites editor: % username left empty; another editor already has it', v_login;
       ELSE
         INSERT INTO hm_site_editors (site_id, email, password_hash, display_name, is_active, created_at, updated_at)
-        SELECT DISTINCT ON (lower(e.email)) v_id, e.email, e.password_hash, e.display_name, true, now(), now()
-          FROM hm_site_editors e
-          WHERE e.site_id = v_src AND e.is_active
-            AND NOT EXISTS (SELECT 1 FROM hm_site_editors x WHERE x.site_id = v_id AND lower(x.email) = lower(e.email))
-          ORDER BY lower(e.email), e.updated_at DESC
-        ON CONFLICT DO NOTHING;
+        VALUES (v_id, v_login, v_hash, v_site_name, true, now(), now());
       END IF;
+      RAISE NOTICE 'newsites editor: created % on site %', v_login, v_id;
+    ELSE
+      IF v_has_username AND v_set_username THEN
+        UPDATE hm_site_editors
+          SET email = v_login,
+              username = v_login,
+              password_hash = v_hash,
+              is_active = true,
+              updated_at = now()
+          WHERE id = v_editor_id;
+      ELSE
+        UPDATE hm_site_editors
+          SET email = v_login,
+              password_hash = v_hash,
+              is_active = true,
+              updated_at = now()
+          WHERE id = v_editor_id;
+        IF v_has_username AND NOT v_set_username THEN
+          RAISE NOTICE 'newsites editor: % password refreshed; username kept because another editor owns it', v_login;
+        END IF;
+      END IF;
+      RAISE NOTICE 'newsites editor: updated % on site %', v_login, v_id;
     END IF;
   END LOOP;
  EXCEPTION WHEN others THEN
