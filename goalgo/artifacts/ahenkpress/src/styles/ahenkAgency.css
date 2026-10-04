@@ -1232,6 +1232,89 @@
   line-height: 1.6;
 }
 
+.ahenk-fold {
+  border: 1px solid var(--ahenk-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(16, 32, 54, 0.92), rgba(8, 18, 32, 0.92));
+  margin: 12px 0;
+}
+
+.ahenk-fold-sub {
+  background: rgba(5, 9, 16, 0.45);
+}
+
+.ahenk-fold-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  min-height: 48px;
+}
+
+.ahenk-fold-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ahenk-fold-summary::marker {
+  content: "";
+}
+
+.ahenk-fold-summary::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  border-right: 2px solid var(--ahenk-gold-2);
+  border-bottom: 2px solid var(--ahenk-gold-2);
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.ahenk-fold[open] > .ahenk-fold-summary::after {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.ahenk-section .ahenk-fold-summary h2,
+.ahenk-legal-doc .ahenk-fold-summary h2,
+.ahenk-section .ahenk-fold-summary h3,
+.ahenk-legal-doc .ahenk-fold-summary h3 {
+  margin: 0;
+  flex: 1;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.ahenk-section .ahenk-fold-summary h2,
+.ahenk-legal-doc .ahenk-fold-summary h2 {
+  font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+}
+
+.ahenk-section .ahenk-fold-summary h3,
+.ahenk-legal-doc .ahenk-fold-summary h3 {
+  font-size: 1rem;
+}
+
+.ahenk-fold-summary:focus-visible {
+  outline: 2px solid var(--ahenk-gold);
+  outline-offset: -2px;
+  border-radius: 12px;
+}
+
+.ahenk-fold-body {
+  padding: 0 16px 16px;
+}
+
+.ahenk-folds-article {
+  padding-bottom: 8px;
+}
+
+.ahenk-fold-consent {
+  padding-top: 0;
+}
+
 .ahenk-iban {
   font-size: 13px;
   line-height: 1.55;
