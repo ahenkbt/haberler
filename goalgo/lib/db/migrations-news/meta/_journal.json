@@ -71,6 +71,13 @@
       "when": 1782001000000,
       "tag": "0009_news_site_manset",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782002000000,
+      "tag": "0011_hm_llm_provider_keys",
+      "breakpoints": true
     }
   ]
 }

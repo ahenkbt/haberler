@@ -27,6 +27,7 @@ export * from "./serviceTypes";
 export * from "./trAddress";
 export * from "./panel-admin";
 export * from "./hm";
+export * from "./hm-llm-keys";
 export * from "./vkd-canakkale-sehitleri";
 export * from "./vkd-msb-sehitler";
 export * from "./etkinlik";

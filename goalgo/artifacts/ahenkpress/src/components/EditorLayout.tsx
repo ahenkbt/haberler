@@ -30,6 +30,7 @@ function EditorSidebar({ onClose }: { onClose?: () => void }) {
     normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "vatan";
   const corporateAuthorsEnabled = resolveHmCorporateAuthorsEnabled(hm?.newsLayoutPrefs);
   const visibleNavItems = editorNavItems.filter((item) => {
+    if (item.newsOnly && isCorporateEditor) return false;
     if (item.href === "/editor/kose-yazarlari" && isCorporateEditor && !corporateAuthorsEnabled) {
       return false;
     }

@@ -7,13 +7,7 @@ import {
 } from "@workspace/db";
 import { normalizeRssSourceUrl, rssArticleAlreadyImported } from "./rssImportDedupe";
 import { coerceNewsPublishedAt } from "./rssPublishedDate.js";
-import {
-  callChatForPreferredProvider,
-  getSiteIntegrationKeys,
-  hasChatApiKeyForProvider,
-  mergeChatKeysFromAiAndSite,
-  missingProviderKeyMessage,
-} from "./aiChatProviders.js";
+import { callChatWithLlmChain } from "./hm-llm-chat.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "./aiNewsPrompts.js";
 import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { fetchTopicNewsItems, probeTopicItemImages } from "./topicNewsFetcher.js";
@@ -88,12 +82,6 @@ export async function executeAiTopicRun(opts: {
   }
 
   const s = await getAiSettingsRow();
-  const siteKeys = await getSiteIntegrationKeys();
-  const chatKeys = mergeChatKeysFromAiAndSite(s, siteKeys);
-
-  if (!hasChatApiKeyForProvider(chatKeys, chatKeys.preferredProvider)) {
-    return { ok: false, error: missingProviderKeyMessage(chatKeys.preferredProvider) };
-  }
 
   const count = Math.max(1, Math.min(50, Number(opts.count) || 10));
   const categoryId =
@@ -153,11 +141,9 @@ export async function executeAiTopicRun(opts: {
     });
     const userPrompt = `Güncel haber konusu: "${topic}"\nKaynak başlık: "${item.title}"\nÖzet: "${item.desc.slice(0, 600)}"\n\nBu gelişmeyi özgün bir haber olarak yeniden yaz (makale veya deneme değil; ters piramit, kısa paragraflar).\n${aiNewsUserJsonHint(s.wordCount)}`;
 
-    const aiOut = await callChatForPreferredProvider(chatKeys.preferredProvider, {
-      openaiApiKey: chatKeys.openaiApiKey,
-      openaiModel: chatKeys.openaiModel,
-      geminiApiKey: chatKeys.geminiApiKey,
-      deepseekApiKey: chatKeys.deepseekApiKey,
+    const chainSiteId = siteTargets.length === 1 && siteTargets[0] != null ? siteTargets[0] : null;
+    const aiOut = await callChatWithLlmChain({
+      siteId: chainSiteId,
       system: systemPrompt,
       user: userPrompt,
       temperature: 0.7,

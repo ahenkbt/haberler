@@ -1,4 +1,5 @@
 import { AdminLayout } from "@/components/AdminLayout";
+import { LlmProviderKeysPanel } from "@/components/LlmProviderKeysPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1398,6 +1399,7 @@ export default function GenelAyarlar() {
                 <strong>Yekpare AI</strong> site rehberi sohbeti, ürün açıklaması ve haber robotu bu anahtarları kullanır.
                 Google Places ve Maps sunucu anahtarları yalnızca <strong>Harita</strong> sekmesindedir.
               </p>
+              <LlmProviderKeysPanel mode="global" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <GoogleAiGeminiInfoCard variant="admin" />

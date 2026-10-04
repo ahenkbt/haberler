@@ -15,6 +15,7 @@ import EditorVideoGaleri from "@/pages/editor/EditorVideoGaleri";
 import EditorVideoTvYonetimi from "@/pages/editor/EditorVideoTvYonetimi";
 import EditorMedya from "@/pages/editor/EditorMedya";
 import EditorGenelAyarlari from "@/pages/editor/EditorGenelAyarlari";
+import EditorYapayZeka from "@/pages/editor/EditorYapayZeka";
 import EditorReklamAlanlari from "@/pages/editor/EditorReklamAlanlari";
 import EditorManset from "@/pages/editor/EditorManset";
 import EditorKategoriler from "@/pages/editor/EditorKategoriler";
@@ -193,6 +194,13 @@ export default function HmEditorRoutes() {
         {() => (
           <HmEditorRoute>
             <EditorGenelAyarlari />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/yapay-zeka">
+        {() => (
+          <HmEditorRoute>
+            <EditorYapayZeka />
           </HmEditorRoute>
         )}
       </Route>

@@ -686,6 +686,24 @@ router.put("/settings", async (req, res): Promise<void> => {
   if ("travelpayoutsApiToken" in integrationPayload || "travelpayoutsMarker" in integrationPayload) {
     clearTravelpayoutsConfigCache();
   }
+  if (
+    "openaiApiKey" in integrationPayload ||
+    "openaiModel" in integrationPayload ||
+    "geminiApiKey" in integrationPayload
+  ) {
+    const { syncLegacyGlobalFromSettings } = await import("../lib/hm-llm-store.js");
+    await syncLegacyGlobalFromSettings({
+      ...("openaiApiKey" in integrationPayload
+        ? { openaiApiKey: (integrationPayload.openaiApiKey as string | null) ?? "" }
+        : {}),
+      ...("openaiModel" in integrationPayload && integrationPayload.openaiModel
+        ? { openaiModel: String(integrationPayload.openaiModel) }
+        : {}),
+      ...("geminiApiKey" in integrationPayload
+        ? { geminiApiKey: (integrationPayload.geminiApiKey as string | null) ?? "" }
+        : {}),
+    });
+  }
   res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   res.json(serializeSettings(row));
 });

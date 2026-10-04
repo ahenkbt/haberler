@@ -166,6 +166,14 @@ router.put("/ai/settings", async (req, res): Promise<void> => {
     .where(eq(aiSettingsTable.id, current.id))
     .returning();
 
+  if (updateData.openaiApiKey !== undefined || updateData.openaiModel) {
+    const { syncLegacyGlobalFromSettings } = await import("../lib/hm-llm-store.js");
+    await syncLegacyGlobalFromSettings({
+      ...(updateData.openaiApiKey !== undefined ? { openaiApiKey: String(updateData.openaiApiKey ?? "") } : {}),
+      ...(updateData.openaiModel ? { openaiModel: String(updateData.openaiModel) } : {}),
+    });
+  }
+
   res.json({
     ok: true,
     ...row,

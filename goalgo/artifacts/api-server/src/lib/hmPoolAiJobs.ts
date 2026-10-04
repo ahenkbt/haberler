@@ -11,12 +11,8 @@ import {
   hmNewsSitesTable,
   newsTable,
 } from "@workspace/db";
-import {
-  callChatWithOpenAiGeminiFallback,
-  getSiteIntegrationKeys,
-  hasAnyChatApiKey,
-  mergeChatKeysFromAiAndSite,
-} from "./aiChatProviders.js";
+import { callChatWithLlmChain } from "./hm-llm-chat.js";
+import { resolveLlmAttempts } from "./hm-llm-store.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "./aiNewsPrompts.js";
 import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { isCorporateHmSiteRow } from "./hm-yekpare-news-sync.js";
@@ -253,32 +249,13 @@ export async function processOneHmAiJob(jobId: number): Promise<{ ok: boolean; n
       return { ok: true, newsId: created.id };
     }
 
-    const siteKeys = await getSiteIntegrationKeys();
-    const chatKeys = mergeChatKeysFromAiAndSite(ai, siteKeys);
-    if (!hasAnyChatApiKey(chatKeys)) {
-      await dualWriteUpdate(
-        hmAiJobsTable,
-        {
-          status: "failed",
-          errorMessage:
-            "OpenAI veya Gemini anahtarı yok (AI İçerik Robotu → Ayarlar veya Genel Ayarlar → Entegrasyonlar)",
-          updatedAt: new Date(),
-        },
-        eq(hmAiJobsTable.id, jobId),
-      );
-      await refreshPoolItemStatus(claimed.poolItemId);
-      return { ok: false, error: "AI anahtarı tanımlı değil" };
-    }
-
     const langInstruction =
       ai.language === "tr" ? "Metni Türkçe yaz." : "Write in English.";
     const system = aiNewsSystemPrompt({ langInstruction, extra: "Metni tamamen özgünleştir." });
     const user = `Kaynak başlık: ${src.title}\nÖzet: ${(src.spot ?? "").slice(0, 400)}\nİçerik:\n${(src.content ?? "").slice(0, 6000)}\n\n${aiNewsUserJsonHint(ai.wordCount)}`;
 
-    const aiOut = await callChatWithOpenAiGeminiFallback({
-      openaiApiKey: chatKeys.openaiApiKey,
-      openaiModel: chatKeys.openaiModel,
-      geminiApiKey: chatKeys.geminiApiKey,
+    const aiOut = await callChatWithLlmChain({
+      siteId: targetSiteId,
       system,
       user,
       temperature: 0.72,
@@ -411,9 +388,8 @@ export async function requeueFailedHmAiJobs(limit = 50): Promise<number> {
 }
 
 export async function getHmPoolAiKeysReady(): Promise<boolean> {
-  const ai = await getAiSettingsRow();
-  const siteKeys = await getSiteIntegrationKeys();
-  return hasAnyChatApiKey(mergeChatKeysFromAiAndSite(ai, siteKeys));
+  const attempts = await resolveLlmAttempts(null);
+  return attempts.length > 0;
 }
 
 /** Sıradaki `queued` işleri işler (admin tetiklemesi veya cron). */
