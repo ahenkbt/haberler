@@ -593,7 +593,9 @@ export function geoOrganizationJsonLd(
   logoUrl?: string | null,
 ): Record<string, unknown> {
   const base = origin.replace(/\/+$/, "");
-  const logo = String(logoUrl ?? "").trim() || `${base}/icon-512.png`;
+  const logo =
+    String(logoUrl ?? "").trim() ||
+    (entity.slug === "turkata" ? `${base}/turkata/turkata-mark.png` : `${base}/icon-512.png`);
   const types =
     entity.type === "NewsMediaOrganization"
       ? (["NewsMediaOrganization", "Organization"] as const)

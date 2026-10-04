@@ -1,57 +1,27 @@
 import { Link } from "wouter";
 import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
-import {
-  TURKATA_ADDRESS_LINE,
-  TURKATA_BRAND,
-  TURKATA_DEPARTMENTS,
-  TURKATA_DESCRIPTION,
-  TURKATA_FOUNDATION,
-  TURKATA_FOUNDATION_ALT_URL,
-  TURKATA_FOUNDATION_URL,
-  TURKATA_FOUNDING_DATE,
-  TURKATA_MISSION,
-  TURKATA_ORIGIN,
-} from "@/lib/turkataHaber";
+import { TurkataAboutBody } from "@/pages/public/TurkataStaticPages";
+import { TURKATA_ABOUT_INTRO, TURKATA_ABOUT_TAGLINE, TURKATA_ABOUT_TITLE, TURKATA_ORIGIN } from "@/lib/turkataHaber";
 
 export default function AhenkTurkataHaberAjansi() {
   return (
-    <AhenkAgencyChrome title="TürkAta Haber Ajansı | Ahenk Bilgi Teknolojileri" description={TURKATA_DESCRIPTION}>
+    <AhenkAgencyChrome title="TürkAta Haber Ajansı | Ahenk Bilgi Teknolojileri" description={TURKATA_ABOUT_INTRO[0]}>
       <AhenkPageHero
         crumb={
           <>
             <Link href="/">Anasayfa</Link> / TürkAta Haber Ajansı
           </>
         }
-        title="TürkAta Haber Ajansı"
-        lead={TURKATA_DESCRIPTION}
+        title={TURKATA_ABOUT_TITLE}
+        lead={TURKATA_ABOUT_TAGLINE}
       />
-      <section className="ahenk-section">
-        <p className="ahenk-lead">{TURKATA_MISSION}</p>
-        <p>
-          <a className="ahenk-btn" href={TURKATA_ORIGIN}>
-            turkatahaber.com — resmi site
-          </a>
-        </p>
-      </section>
       <section className="ahenk-section ahenk-detail">
         <div>
-          <h2>Misyonumuz</h2>
-          <p>{TURKATA_MISSION}</p>
-          <h2>Haber müdürlükleri</h2>
-          <ul className="ahenk-mods">
-            {TURKATA_DEPARTMENTS.map((name) => (
-              <li key={name}>{name}</li>
-            ))}
-          </ul>
-          <h2>Kurum</h2>
+          <TurkataAboutBody />
           <p>
-            {TURKATA_BRAND}, {TURKATA_FOUNDATION}’nın haber ajansıdır. Vakıf {TURKATA_FOUNDING_DATE} yılında
-            kurulmuştur. Yayın dili Türkçedir. Adres: {TURKATA_ADDRESS_LINE}.
-          </p>
-          <p>
-            Vakıf siteleri: <a href={TURKATA_FOUNDATION_URL}>turkatav.org</a>
-            {" · "}
-            <a href={TURKATA_FOUNDATION_ALT_URL}>tukav.org</a>
+            <a className="ahenk-btn" href={TURKATA_ORIGIN}>
+              turkatahaber.com — resmi site
+            </a>
           </p>
         </div>
       </section>
