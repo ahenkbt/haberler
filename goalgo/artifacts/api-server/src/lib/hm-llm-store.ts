@@ -45,11 +45,19 @@ export type LlmProviderPatch = {
 };
 
 let ensurePromise: Promise<void> | null = null;
+let plaintextUpgrade: Promise<void> | null = null;
+
+const STALE_EMPTY_MODELS: Record<LlmProviderId, readonly string[]> = {
+  evren: ["auto"],
+  nvidia: ["meta/llama-3.1-8b-instruct"],
+  gemini: ["gemini-2.0-flash-lite"],
+  openai: ["gpt-4o-mini"],
+};
 
 const DDL = sql`
   CREATE TABLE IF NOT EXISTS hm_llm_provider_keys (
     id serial PRIMARY KEY,
-    site_id integer REFERENCES hm_news_sites (id) ON DELETE CASCADE,
+    site_id integer,
     provider text NOT NULL,
     api_key_enc text NOT NULL DEFAULT '',
     api_key_last4 text NOT NULL DEFAULT '',
@@ -63,6 +71,10 @@ const DDL = sql`
   )
 `;
 
+const DDL_DROP_FK = sql`
+  ALTER TABLE hm_llm_provider_keys DROP CONSTRAINT IF EXISTS hm_llm_provider_keys_site_id_fkey
+`;
+
 const DDL_INDEX = sql`
   CREATE UNIQUE INDEX IF NOT EXISTS hm_llm_provider_keys_scope_provider_uidx
     ON hm_llm_provider_keys ((COALESCE(site_id, 0)), provider)
@@ -70,28 +82,30 @@ const DDL_INDEX = sql`
 
 async function execDdl(database: { execute: (query: ReturnType<typeof sql>) => Promise<unknown> }): Promise<void> {
   await database.execute(DDL);
+  await database.execute(DDL_DROP_FK);
   await database.execute(DDL_INDEX);
 }
 
 export function ensureHmLlmProviderKeysTable(): Promise<void> {
-  if (ensurePromise) return ensurePromise;
-  ensurePromise = (async () => {
-    await execDdl(db);
-    if (newsDb) {
-      try {
-        await execDdl(newsDb);
-      } catch (err) {
-        console.error("[hm-llm] haber DB tablo hazırlığı başarısız:", err instanceof Error ? err.message : err);
+  if (!ensurePromise) {
+    ensurePromise = (async () => {
+      await execDdl(db);
+      if (newsDb) {
+        try {
+          await execDdl(newsDb);
+        } catch (err) {
+          console.error("[hm-llm] haber DB tablo hazırlığı başarısız:", err instanceof Error ? err.message : err);
+        }
       }
-    }
-    await seedGlobalDefaults();
-    await copyLegacyGlobalKeysIfEmpty();
-    await upgradePlaintextKeys();
-  })().catch((err) => {
-    ensurePromise = null;
-    throw err;
-  });
-  return ensurePromise;
+      await seedGlobalDefaults();
+      await copyLegacyGlobalKeysIfEmpty();
+      await refreshEmptyDefaultModels();
+    })().catch((err) => {
+      ensurePromise = null;
+      throw err;
+    });
+  }
+  return ensurePromise.then(() => upgradePlaintextKeys());
 }
 
 function readDb() {
@@ -174,19 +188,43 @@ async function writeKeyMaterial(id: number, plaintext: string, model?: string): 
   );
 }
 
-async function upgradePlaintextKeys(): Promise<void> {
-  if (!hmLlmKeySecret()) return;
+async function refreshEmptyDefaultModels(): Promise<void> {
   const rows = await readDb().select().from(hmLlmProviderKeysTable);
   for (const row of rows) {
-    if (!isPlaintextLlmStorage(row.apiKeyEnc)) continue;
-    const plain = decryptLlmApiKey(row.apiKeyEnc);
-    if (!plain) continue;
+    if (!isLlmProviderId(row.provider)) continue;
+    if (String(row.apiKeyEnc ?? "").trim()) continue;
+    const current = String(row.model ?? "").trim();
+    const next = defaultLlmModel(row.provider);
+    if (current === next) continue;
+    if (current && !STALE_EMPTY_MODELS[row.provider].includes(current)) continue;
     await dualWriteUpdate(
       hmLlmProviderKeysTable,
-      { apiKeyEnc: encryptLlmApiKey(plain), updatedAt: new Date() },
+      { model: next, updatedAt: new Date() },
       eq(hmLlmProviderKeysTable.id, row.id),
     );
   }
+}
+
+async function upgradePlaintextKeys(): Promise<void> {
+  if (!hmLlmKeySecret()) return;
+  if (plaintextUpgrade) return plaintextUpgrade;
+  plaintextUpgrade = (async () => {
+    const rows = await readDb().select().from(hmLlmProviderKeysTable);
+    for (const row of rows) {
+      if (!isPlaintextLlmStorage(row.apiKeyEnc)) continue;
+      const plain = decryptLlmApiKey(row.apiKeyEnc);
+      if (!plain) continue;
+      await dualWriteUpdate(
+        hmLlmProviderKeysTable,
+        { apiKeyEnc: encryptLlmApiKey(plain), updatedAt: new Date() },
+        eq(hmLlmProviderKeysTable.id, row.id),
+      );
+    }
+  })().catch((err) => {
+    plaintextUpgrade = null;
+    throw err;
+  });
+  return plaintextUpgrade;
 }
 
 function rowHasKey(row: HmLlmProviderKeyRow | undefined): boolean {
