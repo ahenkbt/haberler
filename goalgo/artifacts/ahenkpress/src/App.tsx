@@ -35,6 +35,7 @@ import { shouldSkipSearchEnginePublicChrome } from "@/lib/searchEngineNav";
 import { YektubeStandaloneRoute } from "@/components/YektubeV2Gateway";
 import { YektubeDedicatedHostGate } from "@/components/YektubeDedicatedHostRedirect";
 import { useYekpareTheme } from "@/hooks/useYekpareTheme";
+import { markHmSpaReady } from "@/lib/hmSpaReady";
 
 import HaberEditor from "./pages/admin/HaberEditor";
 import Login from "./pages/admin/Login";
@@ -835,6 +836,10 @@ export default function App() {
     !isPwaStandaloneDisplay();
 
   useLayoutEffect(() => {
+    markHmSpaReady();
+  }, []);
+
+  useLayoutEffect(() => {
     const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
     if (!link) return;
     const host = typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
@@ -971,6 +976,7 @@ export default function App() {
       <Route path="/kisa-kisa">{() => <DunyadanKisaKisaPage />}</Route>
       <Route path="/tum-haberler">{() => <HmPartnerOrPublicLayout><TumHaberler /></HmPartnerOrPublicLayout>}</Route>
       <Route path="/haber/:id">{() => <HmOrPortalHaberDetailRoute />}</Route>
+      <Route path="/haberler/haber/:id">{() => <HmShortHaberPathRedirect />}</Route>
       <Route path="/makale/:id">{() => <HmOrPortalHaberDetailRoute />}</Route>
       <Route path="/kategori/:slug">{() => (isTurkataHaberHost() ? <TurkataHaberChrome title="Kategori"><KategoriDetay /></TurkataHaberChrome> : <PublicLayout><KategoriDetay /></PublicLayout>)}</Route>
       <Route path="/video-tv/kanal/:id/:videoId">{() => <LegacyVideoTvKanalRedirect />}</Route>

@@ -8,7 +8,7 @@
 
     <!-- Primary Meta Tags -->
     <title>Ahenk Bilgi Teknolojileri</title>
-    <style id="hm-news-boot-css">html.hm-news-boot,html.hm-news-boot body{background:#fff!important;color:#111}html.hm-news-boot #root:empty{min-height:100vh;background:#fff}</style>
+    <style id="hm-news-boot-css">html.hm-news-boot,html.hm-news-boot body{background:#fff!important;color:#111}html.hm-news-boot:not(.hm-spa-ready),html.hm-news-boot:not(.hm-spa-ready) body{min-height:100vh;overflow:hidden}html.hm-news-boot:not(.hm-spa-ready) #root{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}#seo-boot-shell{display:none}html.hm-news-boot:not(.hm-spa-ready) #seo-boot-shell{display:flex;position:fixed;inset:0;z-index:2147483000;box-sizing:border-box;background:#fff;color:#111;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Georgia,"Times New Roman",serif}#seo-boot-shell .seo-boot-mark{margin:0;font-size:1.35rem;letter-spacing:.04em;font-weight:700;text-align:center;padding:0 24px}#seo-boot-mark[hidden]{display:none!important}#seo-boot-logo{width:min(240px,72vw);height:auto}#seo-boot-logo[hidden]{display:none!important}#seo-boot-shell .seo-boot-bar{width:9rem;height:3px;background:#e5e5e5;border-radius:999px;overflow:hidden;position:relative}#seo-boot-shell .seo-boot-bar:before{content:"";position:absolute;left:0;top:0;bottom:0;width:40%;background:#9f1239;animation:seo-boot-bar 1s ease-in-out infinite}@keyframes seo-boot-bar{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}</style>
     <script>
       (function () {
         try {
@@ -57,6 +57,9 @@
           if (hostEarly === "turkatahaber.com") {
             document.title = "TÜRKATA HABER AJANSI";
             document.documentElement.lang = "tr";
+            document.documentElement.setAttribute("data-boot-brand", "TÜRKATA HABER AJANSI");
+          } else if (hmEarlyName) {
+            document.documentElement.setAttribute("data-boot-brand", hmEarlyName);
           }
           if (hostEarly === "ahenk.net.tr" && ahenkAgencyPath) {
             document.title = "Ahenk Bilgi Teknolojileri";
@@ -867,7 +870,58 @@
 
   </head>
   <body>
+    <div id="seo-boot-shell" aria-hidden="true">
+      <img id="seo-boot-logo" alt="" width="220" height="72" hidden />
+      <p id="seo-boot-mark" class="seo-boot-mark"></p>
+      <div class="seo-boot-bar"></div>
+    </div>
     <div id="root"></div>
+    <script>
+      (function () {
+        var host = (location.hostname || "").toLowerCase().replace(/^www\./, "").split(":")[0];
+        var mark = document.getElementById("seo-boot-mark");
+        var logo = document.getElementById("seo-boot-logo");
+        var brand = document.documentElement.getAttribute("data-boot-brand") || "";
+        if (!brand) {
+          var title = (document.title || "").split("|")[0].split("—")[0].trim();
+          if (title && title !== "Ahenk Bilgi Teknolojileri") brand = title;
+        }
+        if (mark && brand && !mark.textContent) mark.textContent = brand;
+        if (logo && host === "turkatahaber.com") {
+          logo.src = "/turkata/turkata-logo.webp";
+          logo.alt = brand || "TÜRKATA HABER AJANSI";
+          logo.addEventListener("load", function () {
+            if (mark) mark.hidden = true;
+          });
+          logo.addEventListener("error", function () {
+            logo.hidden = true;
+            if (mark) mark.hidden = false;
+          });
+          logo.hidden = false;
+        }
+        var root = document.getElementById("root");
+        if (root && document.documentElement.classList.contains("hm-news-boot")) {
+          root.setAttribute("aria-hidden", "true");
+        }
+        window.__YEKPARE_HM_RELEASE_FIRST_PAINT__ = function () {
+          if (window.__YEKPARE_SPA_READY__) return;
+          window.__YEKPARE_SPA_READY__ = true;
+          document.documentElement.classList.add("hm-spa-ready");
+          var shell = document.getElementById("seo-boot-shell");
+          if (shell && shell.parentNode) shell.parentNode.removeChild(shell);
+          var hold = document.getElementById("hm-first-paint-hold");
+          if (hold && hold.parentNode) hold.parentNode.removeChild(hold);
+          var live = document.getElementById("root");
+          if (live) live.removeAttribute("aria-hidden");
+          document.documentElement.removeAttribute("data-hm-spa-pending");
+        };
+        setTimeout(function () {
+          try {
+            window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();
+          } catch (e) {}
+        }, 12000);
+      })();
+    </script>
     <script>
       (function () {
         var RELOAD_KEY = "hm-chunk-reload-once";

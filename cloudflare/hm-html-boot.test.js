@@ -97,6 +97,10 @@ describe("hm-html-boot", () => {
     assert.match(out, /data-hm-first-paint="classic"/);
     assert.match(out, /Ankara Haber Gündemi/);
     assert.match(out, /Piyasa · Hava/);
+    assert.match(out, />Dünya</);
+    assert.equal(out.includes("D\u251c\u255dnya"), false);
+    assert.equal(out.includes("cloneNode"), false);
+    assert.match(out, /hm-spa-ready/);
     assert.match(out, /<div id="root">[\s\S]*data-hm-first-paint="classic"/);
   });
 
@@ -149,6 +153,7 @@ describe("hm-html-boot", () => {
     assert.match(out, /Ankabir/);
     assert.match(out, /Vali ziyareti/);
     assert.match(out, /hm-first-paint-hold/);
+    assert.equal(out.includes("cloneNode"), false);
     assert.equal(out.includes("Manşet yükleniyor"), false);
   });
 
@@ -481,6 +486,10 @@ describe("hm-html-boot", () => {
     assert.match(out, /NewsMediaOrganization/);
     assert.match(out, /hm-news-boot/);
     assert.match(out, /id="hm-news-boot-css"/);
+    const alreadyStyled = `<html lang="tr"><head><style id="hm-news-boot-css">html.hm-news-boot #root{color:#111}</style></head><body><div id="root"></div></body></html>`;
+    const styled = rewriteSpaShellOgForHmHost(alreadyStyled, "ankarasehirgazetesi.com", "https://ankarasehirgazetesi.com");
+    assert.match(styled, /<html[^>]*\bhm-news-boot\b/);
+    assert.match(styled, /clip-path:inset\(50%\)/);
     const ahenk = rewriteSpaShellOgForHmHost(spa, "ahenk.net.tr", "https://ahenk.net.tr");
     assert.match(ahenk, /Ahenk Bilgi Teknolojileri/);
   });

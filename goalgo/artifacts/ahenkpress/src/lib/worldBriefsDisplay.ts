@@ -1,5 +1,37 @@
-import type { WorldBriefContinentGroup, WorldBriefItem } from "@/hooks/useWorldBriefs";
+import type { WorldBriefContinentGroup, WorldBriefItem, WorldBriefsResponse } from "@/hooks/useWorldBriefs";
 import { isExternalNewsHref, portalRssPreviewPath } from "@/lib/hybridNewsHref";
+
+/** Edge kaynağındaki bozuk "Dünya" dizisi (U+251C U+255D). Doğru etiket UTF-8 Dünya. */
+const DUNYA_MOJIBAKE = "D\u251c\u255dnya";
+
+export function repairDunyaLabel(value: unknown): string {
+  return String(value ?? "").split(DUNYA_MOJIBAKE).join("Dünya");
+}
+
+function repairWorldBriefItem(item: WorldBriefItem): WorldBriefItem {
+  return {
+    ...item,
+    sourceName: repairDunyaLabel(item.sourceName),
+    feedLabel: repairDunyaLabel(item.feedLabel),
+  };
+}
+
+/** Dünya şerit etiketi, worker deploy edilmeden önceki yanıtta da düzgün görünsün. */
+export function repairWorldBriefsPayload<T extends WorldBriefsResponse>(data: T): T {
+  return {
+    ...data,
+    continents: (data.continents ?? []).map((continent) => ({
+      ...continent,
+      label: repairDunyaLabel(continent.label),
+      items: (continent.items ?? []).map(repairWorldBriefItem),
+      countries: (continent.countries ?? []).map((country) => ({
+        ...country,
+        name: repairDunyaLabel(country.name),
+        items: (country.items ?? []).map(repairWorldBriefItem),
+      })),
+    })),
+  };
+}
 
 export function isWorldBriefInternalRssPreviewPath(href: string): boolean {
   return /\/haberler\/rss\//i.test(String(href ?? "").trim());

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { WorldBriefItem } from "@/hooks/useWorldBriefs";
-import { isWorldBriefInternalRssPreviewPath, resolveWorldBriefHref } from "@/lib/worldBriefsDisplay";
+import {
+  isWorldBriefInternalRssPreviewPath,
+  repairDunyaLabel,
+  repairWorldBriefsPayload,
+  resolveWorldBriefHref,
+} from "@/lib/worldBriefsDisplay";
 
 function brief(partial: Partial<WorldBriefItem> & Pick<WorldBriefItem, "id">): WorldBriefItem {
   return {
@@ -43,6 +48,28 @@ describe("worldBriefsDisplay", () => {
 
   it("falls back to kisa-kisa when href is empty", () => {
     expect(resolveWorldBriefHref(h, brief({ id: "x", href: "" }))).toBe("/asg/kisa-kisa?siteId=3");
+  });
+
+  it("repairs the edge Dünya mojibake on world-brief labels", () => {
+    const broken = `D${String.fromCharCode(0x251c, 0x255d)}nya`;
+    expect(repairDunyaLabel(broken)).toBe("Dünya");
+    expect(repairDunyaLabel("Dünya")).toBe("Dünya");
+    const repaired = repairWorldBriefsPayload({
+      continents: [
+        {
+          id: "global",
+          label: broken,
+          items: [brief({ id: "edge-1", sourceName: broken, feedLabel: broken })],
+          countries: [],
+        },
+      ],
+      totalItems: 1,
+      feedCount: 1,
+      checkedAt: "2026-10-04T00:00:00.000Z",
+    });
+    expect(repaired.continents[0]?.label).toBe("Dünya");
+    expect(repaired.continents[0]?.items[0]?.sourceName).toBe("Dünya");
+    expect(repaired.continents[0]?.items[0]?.feedLabel).toBe("Dünya");
   });
 
   it("preserves safe internal article paths", () => {

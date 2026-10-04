@@ -554,6 +554,14 @@ export function rewriteTurkataSpaHtml(html, opts) {
   return markHmNewsBootHtml(out);
 }
 
+/** `/haberler/haber/:slug` portal makalesidir; HM site slug'ı değildir. */
+export function portalHaberlerArticleAliasPath(pathname) {
+  const path = String(pathname || "").split("?")[0].split("#")[0];
+  const match = path.match(/^\/haberler\/haber\/([^/]+)\/?$/);
+  if (!match || !match[1]) return null;
+  return `/haber/${match[1]}`;
+}
+
 /** ahenk.net.tr/haberler ve haber detayı — canonical turkatahaber.com. Başlık ajans vitrininde kalır. */
 export function rewriteAhenkNewsCanonicalHtml(html, pathname) {
   if (!isAhenkNewsMirrorPath(pathname)) return String(html || "");

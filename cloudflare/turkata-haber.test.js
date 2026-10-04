@@ -11,6 +11,7 @@ import {
   isAhenkNewsMirrorPath,
   isRecentGoogleNewsItem,
   isTurkataHaberHost,
+  portalHaberlerArticleAliasPath,
   rewriteAhenkNewsCanonicalHtml,
   rewriteTurkataSpaHtml,
   turkataCanonicalUrl,
@@ -57,6 +58,21 @@ describe("turkata haber host", () => {
   });
 });
 
+describe("portal haberler article alias", () => {
+  it("maps /haberler/haber/:slug to the portal article path", () => {
+    assert.equal(
+      portalHaberlerArticleAliasPath("/haberler/haber/ornek-haber"),
+      "/haber/ornek-haber",
+    );
+    assert.equal(
+      portalHaberlerArticleAliasPath("/haberler/haber/ornek-haber/"),
+      "/haber/ornek-haber",
+    );
+    assert.equal(portalHaberlerArticleAliasPath("/haber/ornek-haber"), null);
+    assert.equal(portalHaberlerArticleAliasPath("/tr/asg/haber/ornek-haber"), null);
+  });
+});
+
 describe("turkata spa html", () => {
   it("injects home title, geo, canonical, hreflang and organization JSON-LD", () => {
     const html = rewriteTurkataSpaHtml(SHELL, { pathname: "/" });
@@ -73,6 +89,12 @@ describe("turkata spa html", () => {
     assert.match(html, /https:\/\/tukav\.org/);
     assert.doesNotMatch(html, /data-yekpare-portal-jsonld/);
     assert.match(html, /<h1>TÜRKATA HABER AJANSI<\/h1>/);
+    assert.match(html, /<div id="root">[\s\S]*<h1>TÜRKATA HABER AJANSI<\/h1>/);
+    assert.match(html, /id="seo-boot-shell"/);
+    assert.match(html, /clip-path:inset\(50%\)/);
+    assert.match(html, /hm-spa-ready/);
+    assert.doesNotMatch(html, /cloneNode/);
+    assert.doesNotMatch(html, /#root\{display:none/);
     assert.match(html, /"alternateName":\["THA"/);
     assert.match(html, /Tükav Gaziler Eğitim Kültür Hizmetleri Ltd\. Şti\./);
     assert.match(html, /Meşrutiyet Mah\. Karanfil Sok\. 4\/91/);
