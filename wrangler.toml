@@ -80,8 +80,8 @@ pattern = "www.ahenk.net.tr/*"
 zone_name = "ahenk.net.tr"
 
 # HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
-# ankarahabergundemi.com (apex) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
-# apex custom_domain ve "ankarahabergundemi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
+# ankarahabergundemi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "ankarahabergundemi.com/*", "www.ankarahabergundemi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
 pattern = "ankarahabergundemi.com/editor*"
 zone_name = "ankarahabergundemi.com"
@@ -122,17 +122,9 @@ zone_name = "ankarahabergundemi.com"
 pattern = "ankarahabergundemi.com/manifest.json"
 zone_name = "ankarahabergundemi.com"
 
-[[routes]]
-pattern = "www.ankarahabergundemi.com/*"
-zone_name = "ankarahabergundemi.com"
-
-[[routes]]
-pattern = "www.ankarahabergundemi.com"
-zone_name = "ankarahabergundemi.com"
-
 # Yektube Ôö£├ézel alan ├ö├ç├Â ahenk.net.tr/yp kanonik yÔö£ÔòØzÔö£ÔòØ (yektube.com)
-# ankarasehirgazetesi.com (apex) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
-# apex custom_domain ve "ankarasehirgazetesi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
+# ankarasehirgazetesi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "ankarasehirgazetesi.com/*", "www.ankarasehirgazetesi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
 pattern = "ankarasehirgazetesi.com/editor*"
 zone_name = "ankarasehirgazetesi.com"
@@ -174,14 +166,6 @@ pattern = "ankarasehirgazetesi.com/manifest.json"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
-pattern = "www.ankarasehirgazetesi.com"
-custom_domain = true
-
-[[routes]]
-pattern = "www.ankarasehirgazetesi.com/*"
-zone_name = "ankarasehirgazetesi.com"
-
-[[routes]]
 pattern = "vatankahramanlari.org/*"
 zone_name = "vatankahramanlari.org"
 
@@ -213,20 +197,46 @@ zone_name = "vatankahramanlari.org.tr"
 pattern = "www.vatankahramanlari.org.tr"
 zone_name = "vatankahramanlari.org.tr"
 
+# vatanhaber.net (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "vatanhaber.net/*", "www.vatanhaber.net/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "vatanhaber.net/*"
+pattern = "vatanhaber.net/editor*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "vatanhaber.net"
+pattern = "vatanhaber.net/api/*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "www.vatanhaber.net/*"
+pattern = "vatanhaber.net/admin*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "www.vatanhaber.net"
+pattern = "vatanhaber.net/panel*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/haber-merkezi*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/assets/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/sw.js"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/llms.txt"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/ai.txt"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/manifest.json"
 zone_name = "vatanhaber.net"
 
 # Su Haber ├ö├ç├Â kanonik Google alanÔöÇÔûÆ suhaber.net (suhaberajansi.com iptal, detach).
@@ -255,20 +265,46 @@ zone_name = "suhaber.net"
 # Zone CF hesabÔöÇÔûÆnda (id 52d54697├ö├ç─Ş) ama A/AAAA yok ├ö├Ñ├å tarayÔöÇÔûÆcÔöÇÔûÆ NXDOMAIN.
 # custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur.
 # kirsehri.com Natro park; kirsehir.net zone/kayÔöÇÔûÆt yok ├ö├ç├Â bu worker'a baÔöÇ┼şlama.
+# kirsehirhaber.org (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "kirsehirhaber.org/*", "www.kirsehirhaber.org/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "kirsehirhaber.org"
-custom_domain = true
-
-[[routes]]
-pattern = "www.kirsehirhaber.org"
-custom_domain = true
-
-[[routes]]
-pattern = "kirsehirhaber.org/*"
+pattern = "kirsehirhaber.org/editor*"
 zone_name = "kirsehirhaber.org"
 
 [[routes]]
-pattern = "www.kirsehirhaber.org/*"
+pattern = "kirsehirhaber.org/api/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/admin*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/panel*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/haber-merkezi*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/assets/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/sw.js"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/llms.txt"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/ai.txt"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/manifest.json"
 zone_name = "kirsehirhaber.org"
 
 # TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.

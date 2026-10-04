@@ -12,7 +12,8 @@ import {
 } from "@workspace/db";
 import { CreateAuthorBody } from "@workspace/api-zod";
 import { denyUnlessAdminMaintenance, denyUnlessAdminMaintenanceAny } from "../lib/admin-guard";
-import { normalizePublicMediaUrl } from "../lib/normalizePublicMediaUrl.js";
+import { parseHmEditorFromRequest } from "../lib/hmEditorJwt.js";
+import { serializeAuthorClient } from "../lib/public-content-privacy.js";
 import { distributeAuthorArticlesToHmSites } from "../lib/author-distribute-articles";
 import {
   authorMatchKey,
@@ -83,12 +84,14 @@ function pickCanonicalAuthors(rows: AuthorRow[]): { canonical: AuthorRow; allIds
   return out;
 }
 
-function authorPublicJson(row: typeof authorsTable.$inferSelect) {
-  const { passwordHash: _p, avatarUrl, ...rest } = row;
-  return {
-    ...rest,
-    avatarUrl: normalizePublicMediaUrl(avatarUrl) ?? avatarUrl,
-  };
+function authorIncludesEmail(req: Request, hmSiteId: number | null | undefined): boolean {
+  const editor = parseHmEditorFromRequest(req);
+  if (!editor || hmSiteId == null || hmSiteId <= 0) return false;
+  return editor.siteId === hmSiteId;
+}
+
+function authorPublicJson(row: typeof authorsTable.$inferSelect, includeEmail = false) {
+  return serializeAuthorClient(row, { includeEmail });
 }
 
 function parseHmSiteListFilter(req: Request): number | null {
@@ -165,8 +168,10 @@ router.get("/authors/:id", async (req, res): Promise<void> => {
       )
       .orderBy(desc(newsTable.createdAt))
       .limit(1);
+    const includeEmail = authorIncludesEmail(req, canonical.hmSiteId);
+    if (includeEmail) res.setHeader("Cache-Control", "private, no-store");
     res.json({
-      ...authorPublicJson(canonical),
+      ...authorPublicJson(canonical, includeEmail),
       articleCount: countRow?.c ?? 0,
       latestArticle: latest
         ? { id: latest.id, title: latest.title, slug: latest.slug }
@@ -174,7 +179,9 @@ router.get("/authors/:id", async (req, res): Promise<void> => {
     });
     return;
   }
-  res.json(authorPublicJson(author));
+  const includeEmail = authorIncludesEmail(req, author.hmSiteId);
+  if (includeEmail) res.setHeader("Cache-Control", "private, no-store");
+  res.json(authorPublicJson(author, includeEmail));
 });
 
 router.get("/authors", async (req, res): Promise<void> => {
@@ -314,9 +321,11 @@ router.get("/authors", async (req, res): Promise<void> => {
       if (ao !== bo) return ao - bo;
       return b.id - a.id;
     });
+    const includeEmail = authorIncludesEmail(req, hmSiteId);
+    if (includeEmail) res.setHeader("Cache-Control", "private, no-store");
     res.json(
       sortedAuthors.map((r) => ({
-        ...authorPublicJson(r),
+        ...authorPublicJson(r, includeEmail),
         articleCount: countMap.get(r.id) ?? 0,
         latestArticle: latestMap.get(r.id) ?? null,
       })),
@@ -382,7 +391,7 @@ router.get("/authors", async (req, res): Promise<void> => {
     }
   }
   const payload = grouped.map(({ canonical }) => ({
-    ...authorPublicJson(canonical),
+    ...authorPublicJson(canonical, false),
     articleCount: countMap.get(canonical.id) ?? 0,
     latestArticle: latestMap.get(canonical.id) ?? null,
   }));
@@ -403,7 +412,7 @@ router.post("/authors", async (req, res): Promise<void> => {
     .where(and(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalized}`, isNull(authorsTable.hmSiteId)))
     .limit(1);
   if (existing) {
-    res.status(200).json(authorPublicJson(existing));
+    res.status(200).json(authorPublicJson(existing, true));
     return;
   }
   const [row] = await dualWriteInsert(authorsTable, {
@@ -412,7 +421,7 @@ router.post("/authors", async (req, res): Promise<void> => {
       avatarUrl: parsed.data.avatarUrl ?? null,
       bio: parsed.data.bio ?? null,
     });
-  res.status(201).json(authorPublicJson(row));
+  res.status(201).json(authorPublicJson(row, true));
 });
 
 router.delete("/authors/:id", async (req, res): Promise<void> => {

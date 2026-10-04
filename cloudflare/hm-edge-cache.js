@@ -58,16 +58,26 @@ export function isHmEdgeCacheablePath(pathname, search = "") {
   const qs = new URLSearchParams(String(search || "").replace(/^\?/, ""));
   if (qs.get("fresh") === "1" || qs.get("fresh") === "true") return false;
   if (qs.get("includePageContent") === "1") return false;
+  const status = String(qs.get("status") || "").trim().toLowerCase();
+  if (status && status !== "published") return false;
+  if (String(qs.get("siteScope") || "").trim().toLowerCase() === "admin") return false;
   if (CACHEABLE_EXACT.has(p)) return true;
   if (p.startsWith("/api/hm/meta/")) return true;
   if (isHmNewsArticleCachePath(p)) return true;
   return false;
 }
 
+/** Panel/member session. Privileged news JSON must not enter the public edge cache. */
+export function requestHasPanelSessionCookie(request) {
+  const raw = String(request?.headers?.get?.("cookie") || "");
+  return /(?:^|;\s*)connect\.sid=/.test(raw);
+}
+
 export function isHmEdgeCacheableRequest(request, pathname, search) {
   const method = String(request?.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") return false;
   if (request?.headers?.get?.("authorization")) return false;
+  if (requestHasPanelSessionCookie(request)) return false;
   return isHmEdgeCacheablePath(pathname, search);
 }
 
@@ -134,9 +144,15 @@ export async function putHmEdgeCache(cache, url, response) {
   return stored;
 }
 
+function responseIsPrivatelyCached(response) {
+  const cc = String(response?.headers?.get?.("cache-control") || "");
+  return /private|no-store/i.test(cc);
+}
+
 async function putHmEdgeCacheOnce(cache, url, response) {
   if (!cache || typeof cache.put !== "function" || !response) return false;
   if (!response.ok) return false;
+  if (responseIsPrivatelyCached(response)) return false;
   try {
     const buf = await response.clone().arrayBuffer();
     if (!buf || buf.byteLength === 0 || buf.byteLength > HM_EDGE_MAX_BODY_BYTES) return false;

@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { and, desc, eq, gte, ilike, inArray, isNull, not, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { adminNewsListScopeCondition, propagateAdminNewsDelete } from "../lib/news-delete-propagation.js";
 import {
@@ -26,6 +26,8 @@ import {
   newsListSelectFields,
 } from "../lib/serializers";
 import { denyUnlessAdminMaintenance, panelHasPermission } from "../lib/admin-guard";
+import { parseHmEditorFromRequest } from "../lib/hmEditorJwt.js";
+import type { StaffContentViewer } from "../lib/public-content-privacy.js";
 import { filterHmCategoryContentGuard } from "../lib/hm-category-content-guard.js";
 import { getHmHiddenCategoryIds, getHmHiddenCategorySlugs } from "../lib/hm-public-layout";
 import { filterPortalAuthorPeerIds, normalizeArticleTitle } from "../lib/hm-sync-source";
@@ -229,6 +231,14 @@ async function buildNewsListWhere(readDb: NewsReadDb, opts: {
   return conds.length ? and(...conds) : undefined;
 }
 
+function newsStaffViewer(req: Request): StaffContentViewer {
+  const editor = parseHmEditorFromRequest(req);
+  return {
+    admin: panelHasPermission(req, "haberler") || panelHasPermission(req, "hm_sites"),
+    editorSiteId: editor?.siteId ?? null,
+  };
+}
+
 router.get("/news", async (req, res): Promise<void> => {
   const q = typeof req.query.q === "string" ? req.query.q : undefined;
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
@@ -408,7 +418,11 @@ router.get("/news", async (req, res): Promise<void> => {
     totalForResponse = mainTotalRows[0]?.count ?? 0;
   }
 
-  const serialized = rowsForResponse.map((r) => serializeNewsListItem(r, ctx));
+  const includeSubmitterContact =
+    adminNewsAccess && (siteScope === "admin" || (!!status && status !== "published"));
+  const serialized = rowsForResponse.map((r) =>
+    serializeNewsListItem(r, ctx, { includeSubmitterContact }),
+  );
   const deduped =
     Number.isFinite(authorId) && siteScope === "portal"
       ? (() => {
@@ -431,7 +445,9 @@ router.get("/news", async (req, res): Promise<void> => {
     Number.isFinite(siteId) &&
     siteId > 0 &&
     !q;
-  if (isPublicHmList) {
+  if (includeSubmitterContact) {
+    res.setHeader("Cache-Control", "private, no-store");
+  } else if (isPublicHmList) {
     res.setHeader("Cache-Control", "public, max-age=30, s-maxage=120, stale-while-revalidate=300");
   }
 
@@ -1047,8 +1063,13 @@ router.get("/news/:id", async (req, res): Promise<void> => {
   const slugKey = String(raw ?? "").trim();
   try {
     // page-bundle ile aynı çözüm — exclusive-cat OR + görsel enrich asılmasın.
-    const article = await resolveNewsArticleBySlug(slugKey, siteScoped ? siteId : null);
+    const viewer = newsStaffViewer(req);
+    const numericIdRequest = /^\d+$/.test(slugKey);
+    const article = await resolveNewsArticleBySlug(slugKey, siteScoped ? siteId : null, { viewer });
     if (article) {
+      if (numericIdRequest && (viewer.admin || viewer.editorSiteId != null)) {
+        res.setHeader("Cache-Control", "private, no-store");
+      }
       res.json(article);
       return;
     }
@@ -1114,7 +1135,7 @@ router.post("/news", async (req, res): Promise<void> => {
     void removeNewsSlugRedirect(row.slug, row.siteId ?? null).catch(() => {});
     scheduleGoogleNewsIndexing(row);
   }
-  res.status(201).json(serializeNews(row, ctx));
+  res.status(201).json(serializeNews(row, ctx, { includeSubmitterContact: true }));
 });
 
 router.put("/news/:id", async (req, res): Promise<void> => {
@@ -1182,7 +1203,7 @@ router.put("/news/:id", async (req, res): Promise<void> => {
   void removeNewsSlugRedirect(row.slug, row.siteId ?? null).catch(() => {});
   scheduleGoogleNewsIndexing(row);
   invalidateNewsPageBundleCache({ slug: row.slug, siteId: row.siteId });
-  res.json(serializeNews(row, ctx));
+  res.json(serializeNews(row, ctx, { includeSubmitterContact: true }));
 });
 
 /** Türkçe olmayan haberleri global kategoriye taşır (news + portal RSS havuzu). */
