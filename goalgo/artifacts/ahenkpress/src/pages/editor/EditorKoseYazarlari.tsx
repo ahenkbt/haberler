@@ -61,7 +61,10 @@ export default function EditorKoseYazarlari() {
     queryKey: ["/api/authors", "hm-editor", site?.id],
     queryFn: async () => {
       if (!site?.id) return [];
-      const r = await fetch(apiUrl(`/api/authors?hmSiteId=${encodeURIComponent(String(site.id))}`));
+      const t = readHmJwt();
+      const r = await fetch(apiUrl(`/api/authors?hmSiteId=${encodeURIComponent(String(site.id))}`), {
+        headers: t ? { Authorization: `Bearer ${t}` } : {},
+      });
       if (!r.ok) throw new Error("list");
       return (await r.json()) as AuthorRow[];
     },

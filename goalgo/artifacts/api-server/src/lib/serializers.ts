@@ -127,13 +127,21 @@ function serializeNewsCoverImageUrl(row: Pick<NewsRow, "siteId" | "imageUrl">): 
   );
 }
 
-export function serializeNews(row: NewsRow, ctx: NewsContext) {
+export type SerializeNewsOptions = {
+  /**
+   * Editor/admin responses may include the submitter's name, email, and phone.
+   * Public list/detail/page-bundle responses omit them.
+   */
+  includeSubmitterContact?: boolean;
+};
+
+export function serializeNews(row: NewsRow, ctx: NewsContext, opts?: SerializeNewsOptions) {
   const hmSyncKind = parseHmSyncSourceKind(row.rssSourceUrl);
   const isSyncedMakale = hmSyncKind === "makale";
   const cat = row.categoryId ? ctx.categories.get(row.categoryId) : undefined;
   const author = row.authorId ? ctx.authors.get(row.authorId) : undefined;
   const contentKind = isSyncedMakale ? ("makale" as const) : ("news" as const);
-  return {
+  const base = {
     id: row.id,
     siteId: row.siteId ?? null,
     title: sanitizeDisplayText(
@@ -155,9 +163,6 @@ export function serializeNews(row: NewsRow, ctx: NewsContext) {
     categoryColor: isSyncedMakale ? "#0ea5e9" : (cat?.color ?? "#CC0000"),
     authorId: row.authorId,
     authorName: author?.name != null ? sanitizeDisplayText(author.name) : null,
-    senderFullName: row.senderFullName ?? null,
-    senderEmail: row.senderEmail ?? null,
-    senderPhone: row.senderPhone ?? null,
     status: row.status,
     isFeatured: row.isFeatured,
     isTepeManset: row.isTepeManset ?? false,
@@ -177,6 +182,13 @@ export function serializeNews(row: NewsRow, ctx: NewsContext) {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+  if (!opts?.includeSubmitterContact) return base;
+  return {
+    ...base,
+    senderFullName: row.senderFullName ?? null,
+    senderEmail: row.senderEmail ?? null,
+    senderPhone: row.senderPhone ?? null,
+  };
 }
 
 export type NewsListRow = Omit<NewsRow, "content"> & { content?: string | null };
@@ -189,9 +201,13 @@ export function stripSerializedNewsListContent<T extends { content?: unknown }>(
 export type SerializedNews = ReturnType<typeof serializeNews>;
 export type SerializedNewsListItem = Omit<SerializedNews, "content">;
 
-export function serializeNewsListItem(row: NewsListRow, ctx: NewsContext): SerializedNewsListItem {
+export function serializeNewsListItem(
+  row: NewsListRow,
+  ctx: NewsContext,
+  opts?: SerializeNewsOptions,
+): SerializedNewsListItem {
   return stripSerializedNewsListContent(
-    serializeNews({ ...row, content: row.content ?? null } as NewsRow, ctx),
+    serializeNews({ ...row, content: row.content ?? null } as NewsRow, ctx, opts),
   );
 }
 

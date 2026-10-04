@@ -29,6 +29,7 @@ import {
   recoverYatportWorker,
 } from "../lib/yatport-jobs.js";
 import { db } from "@workspace/db";
+import { serializePublicUserReview } from "../lib/public-content-privacy.js";
 import {
   mapBusinessesTable,
   mapBusinessImagesTable,
@@ -12682,7 +12683,7 @@ router.get("/map/businesses/:id/user-reviews", async (req, res): Promise<void> =
     const reviews = await db.select().from(mapUserReviewsTable)
       .where(and(eq(mapUserReviewsTable.businessId, bizId), eq(mapUserReviewsTable.status, "approved")))
       .orderBy(desc(mapUserReviewsTable.createdAt));
-    res.json({ success: true, data: reviews });
+    res.json({ success: true, data: reviews.map((row) => serializePublicUserReview(row)) });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
 });
 
@@ -12751,7 +12752,11 @@ router.post("/map/businesses/:id/user-reviews", async (req, res): Promise<void> 
       photos: safePhotos as any,
       status: "pending",
     }).returning();
-    res.json({ success: true, data: review, message: "Yorumunuz incelemeye alındı. Onaylandıktan sonra yayınlanacak." });
+    res.json({
+      success: true,
+      data: review ? serializePublicUserReview(review) : null,
+      message: "Yorumunuz incelemeye alındı. Onaylandıktan sonra yayınlanacak.",
+    });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
 });
 

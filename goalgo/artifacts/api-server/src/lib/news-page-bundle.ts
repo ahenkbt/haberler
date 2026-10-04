@@ -10,6 +10,13 @@ import {
 } from "@workspace/db";
 import { loadNewsContext } from "./news-context.js";
 import { serializeHmMakaleAsNews, serializeNews, type NewsContext, type SerializedNewsListItem } from "./serializers.js";
+import {
+  mayExposeNewsRow,
+  mayIncludeSubmitterContact,
+  isPubliclyPublishedStatus,
+  serializeAuthorClient,
+  type StaffContentViewer,
+} from "./public-content-privacy.js";
 import { getHmHiddenCategoryIds, getHmHiddenCategorySlugs } from "./hm-public-layout.js";
 import { filterPortalAuthorPeerIds } from "./hm-sync-source.js";
 import { hasKoseAuthorId, isKoseArticle, type KoseArticleLike } from "./kose-article.js";
@@ -168,6 +175,11 @@ async function lookupPublishedCentralNewsBySlug(
 }
 
 /** Panelden eklenen haber: slug+siteId tek sorgu — site layout / corporate / makale yok. */
+export type ResolveNewsArticleOptions = {
+  /** Present on GET /api/news/:id. Slug and page-bundle reads stay public. */
+  viewer?: StaffContentViewer | null;
+};
+
 export async function resolveLocalSiteNewsBySlug(
   rawSlug: string,
   siteId: number,
@@ -181,6 +193,7 @@ export async function resolveLocalSiteNewsBySlug(
     .where(and(eq(newsTable.slug, slugKey), eq(newsTable.siteId, siteId)))
     .limit(1);
   if (!row || String(row.slug ?? "").trim() !== slugKey) return null;
+  if (!isPubliclyPublishedStatus(row.status)) return null;
   const ctx = await loadNewsContext();
   void dualWriteUpdate(newsTable, { views: row.views + 1 }, eq(newsTable.id, row.id)).catch((err) =>
     console.error("[news/local-slug/views]", err instanceof Error ? err.message : err),
@@ -191,6 +204,7 @@ export async function resolveLocalSiteNewsBySlug(
 export async function resolveNewsArticleBySlug(
   rawSlug: string,
   siteId: number | null,
+  opts?: ResolveNewsArticleOptions,
 ): Promise<SerializedArticle | null> {
   // Yalnızca tamamen sayısal id — "2026-yili-..." / "15-temmuz-..." parseInt ile yanlış id'ye düşmesin.
   const slugKey = String(rawSlug ?? "").trim();
@@ -320,6 +334,11 @@ export async function resolveNewsArticleBySlug(
     }
   }
 
+  const numericIdRequest = !Number.isNaN(numericId);
+  if (row && !mayExposeNewsRow(row, { viewer: opts?.viewer ?? null, numericIdRequest })) {
+    row = undefined;
+  }
+
   if (!row && !mak) return null;
 
   if (mak) {
@@ -334,7 +353,12 @@ export async function resolveNewsArticleBySlug(
   void dualWriteUpdate(newsTable, { views: row!.views + 1 }, eq(newsTable.id, row!.id)).catch((err) =>
     console.error("[news-page-bundle/views]", err instanceof Error ? err.message : err),
   );
-  return serializeNews({ ...row!, views: row!.views + 1 }, ctx);
+  return serializeNews({ ...row!, views: row!.views + 1 }, ctx, {
+    includeSubmitterContact: mayIncludeSubmitterContact(row!, {
+      viewer: opts?.viewer ?? null,
+      numericIdRequest,
+    }),
+  });
 }
 
 async function loadRelatedArticles(
@@ -385,8 +409,7 @@ async function loadKoseAuthor(authorId: number, siteId: number | null) {
   const [author] = await readDb.select().from(authorsTable).where(eq(authorsTable.id, authorId));
   if (!author) return null;
   if (siteId != null && author.hmSiteId != null && author.hmSiteId !== siteId) return null;
-  const { passwordHash: _p, ...rest } = author;
-  return rest;
+  return serializeAuthorClient(author);
 }
 
 async function loadKoseMoreArticles(
@@ -439,7 +462,7 @@ async function loadKoseOtherAuthors(authorId: number, siteId: number | null) {
             authorTitle: r.title,
           }),
       )
-      .map(({ passwordHash: _p, ...rest }) => rest);
+      .map((row) => serializeAuthorClient(row));
   }
   const portalPeers = await readDb
     .select({ id: authorsTable.id, name: authorsTable.name })
@@ -450,7 +473,7 @@ async function loadKoseOtherAuthors(authorId: number, siteId: number | null) {
   const peerIds = filterPortalAuthorPeerIds(author.name, portalPeers, author.id).filter((id) => id !== authorId);
   if (peerIds.length === 0) return [];
   const rows = await readDb.select().from(authorsTable).where(inArray(authorsTable.id, peerIds));
-  return rows.map(({ passwordHash: _p, ...rest }) => rest);
+  return rows.map((row) => serializeAuthorClient(row));
 }
 
 async function resolveHmSiteAuthorsPublicEnabled(siteId: number | null): Promise<boolean> {
@@ -482,7 +505,7 @@ async function loadSidebarAuthors(siteId: number | null) {
             authorTitle: r.title,
           }),
       )
-      .map(({ passwordHash: _p, ...rest }) => rest);
+      .map((row) => serializeAuthorClient(row));
   }
   const rows = await readDb
     .select()
@@ -490,7 +513,7 @@ async function loadSidebarAuthors(siteId: number | null) {
     .where(isNull(authorsTable.hmSiteId))
     .orderBy(desc(authorsTable.id))
     .limit(12);
-  return rows.map(({ passwordHash: _p, ...rest }) => rest);
+  return rows.map((row) => serializeAuthorClient(row));
 }
 
 async function loadSidebarPopular(siteId: number | null, ctx: NewsContext) {

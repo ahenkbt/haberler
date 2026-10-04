@@ -60,7 +60,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     activeCampaigns: campaigns.filter((c) => c.active).length,
     totalAddedByRss: campaigns.reduce((s, c) => s + c.addedCount, 0),
     totalVideoSources: videoCountRow[0]?.c ?? 0,
-    recentNews: recent.map((r) => serializeNews(r, ctx)),
+    recentNews: recent.map((r) => serializeNews(r, ctx, { includeSubmitterContact: true })),
   });
 });
 

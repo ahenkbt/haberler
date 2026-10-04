@@ -64,6 +64,17 @@ describe("hm-edge-cache", () => {
       ),
       false,
     );
+    assert.equal(
+      isHmEdgeCacheableRequest(
+        { method: "GET", headers: new Headers({ cookie: "connect.sid=abc" }) },
+        "/api/news/12",
+        "",
+      ),
+      false,
+    );
+    assert.equal(isHmEdgeCacheablePath("/api/news", "siteScope=admin&status=all"), false);
+    assert.equal(isHmEdgeCacheablePath("/api/news", "status=draft&siteId=3"), false);
+    assert.equal(isHmEdgeCacheablePath("/api/news", "status=published&siteId=3"), true);
   });
 
   it("normalizes cache keys by dropping fresh and sorting query", () => {
@@ -101,6 +112,21 @@ describe("hm-edge-cache", () => {
       headers: { "x-yekpare-edge-cached-at": String(Date.now() - HM_EDGE_STALE_MS - 1000) },
     });
     assert.equal(hmEdgeCacheFreshness(expired), "expired");
+  });
+
+  it("does not store private news responses", async () => {
+    const cache = memoryCache();
+    const url = "https://suhaber.net/api/news/12";
+    const stored = await putHmEdgeCache(
+      cache,
+      url,
+      new Response(JSON.stringify({ senderEmail: "a@b.c", status: "draft" }), {
+        status: 200,
+        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
+      }),
+    );
+    assert.equal(stored, false);
+    assert.equal(await matchHmEdgeCache(cache, url), null);
   });
 
   it("resolveHmEdgeCache returns stale immediately and schedules revalidate", async () => {

@@ -41,6 +41,11 @@ import { verifyLoginMathCaptcha } from "../lib/loginMathCaptcha.js";
 import { loadNewsContext, slugify } from "../lib/news-context";
 import { deriveNewsTagsFromContent } from "../lib/newsAutoTags.js";
 import { serializeHmMakaleAsNews, serializeNews } from "../lib/serializers";
+import {
+  resolveMakaleListStatus,
+  serializeAuthorClient,
+  staffMayReadSiteDrafts,
+} from "../lib/public-content-privacy.js";
 import { sendEmail } from "../lib/email";
 import {
   ensureHmMailboxTables,
@@ -687,6 +692,10 @@ function parseHmSeoVerification(raw: string | null | undefined): HmSeoVerificati
 
 function parseHmEditor(req: Request): { editorId: number; siteId: number } | null {
   return parseHmEditorFromRequest(req);
+}
+
+function serializeStaffNews(row: Parameters<typeof serializeNews>[0], ctx: Parameters<typeof serializeNews>[1]) {
+  return serializeNews(row, ctx, { includeSubmitterContact: true });
 }
 
 function denyUnlessHmEditor(req: Request, res: Response): { editorId: number; siteId: number } | null {
@@ -1818,10 +1827,22 @@ router.get("/hm/makale", async (req, res): Promise<void> => {
     res.status(400).json({ error: "siteId gerekli" });
     return;
   }
-  const status = typeof req.query.status === "string" ? req.query.status : "published";
+  const editor = parseHmEditor(req);
+  const mayReadUnpublished = staffMayReadSiteDrafts(
+    {
+      admin: panelHasPermission(req, "haberler") || panelHasPermission(req, "hm_sites"),
+      editorSiteId: editor?.siteId ?? null,
+    },
+    siteId,
+  );
+  const requestedStatus = typeof req.query.status === "string" ? req.query.status : "published";
+  const status = resolveMakaleListStatus(requestedStatus, mayReadUnpublished);
+  if (status !== "published") {
+    res.setHeader("Cache-Control", "private, no-store");
+  }
   const lim = Math.min(Number(req.query.limit ?? 100) || 100, 200);
   const conds = [eq(hmMakalelerTable.siteId, siteId)];
-  if (status && status !== "all") conds.push(eq(hmMakalelerTable.status, status));
+  if (status !== "all") conds.push(eq(hmMakalelerTable.status, status));
   if (Number.isFinite(authorId) && authorId > 0) conds.push(eq(hmMakalelerTable.authorId, authorId));
   let rows = await newsReadDb()
     .select()
@@ -1859,7 +1880,9 @@ router.get("/hm/makale", async (req, res): Promise<void> => {
       .where(and(...newsConds))
       .orderBy(desc(newsTable.createdAt))
       .limit(lim);
-    const fromNews = newsRows.map((r) => serializeNews(r, ctx));
+    const fromNews = newsRows.map((r) =>
+      mayReadUnpublished ? serializeStaffNews(r, ctx) : serializeNews(r, ctx),
+    );
     const merged = [...fromHm, ...fromNews].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
@@ -4155,9 +4178,8 @@ router.post("/hm/editor/authors", async (req, res): Promise<void> => {
       try {
         const [row] = await dualWriteUpdate(authorsTable, patch, eq(authorsTable.id, existingName.id));
         const src = row ?? existingName;
-        const { passwordHash: _ph, ...safe } = src;
         triggerHmYekpareSyncForSite(ctx.siteId);
-        res.status(200).json(safe);
+        res.status(200).json(serializeAuthorClient(src, { includeEmail: true }));
         return;
       } catch (e: unknown) {
         const uniqueViolation =
@@ -4169,8 +4191,7 @@ router.post("/hm/editor/authors", async (req, res): Promise<void> => {
         throw e;
       }
     }
-    const { passwordHash: _ph, ...safe } = existingName;
-    res.status(200).json(safe);
+    res.status(200).json(serializeAuthorClient(existingName, { includeEmail: true }));
     return;
   }
   try {
@@ -4192,9 +4213,8 @@ router.post("/hm/editor/authors", async (req, res): Promise<void> => {
       res.status(500).json({ error: "Yazar oluşturulamadı" });
       return;
     }
-    const { passwordHash: _ph, ...safe } = row;
     triggerHmYekpareSyncForSite(ctx.siteId);
-    res.status(201).json(safe);
+    res.status(201).json(serializeAuthorClient(row, { includeEmail: true }));
   } catch (e: unknown) {
     const uniqueViolation =
       e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505";
@@ -4290,8 +4310,7 @@ router.put("/hm/editor/authors/:id", async (req, res): Promise<void> => {
       res.status(404).json({ error: "Yazar bulunamadı" });
       return;
     }
-    const { passwordHash: _ph, ...safe } = row;
-    res.json(safe);
+    res.json(serializeAuthorClient(row, { includeEmail: true }));
   } catch (e: unknown) {
     const uniqueViolation =
       e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505";
@@ -4540,8 +4559,7 @@ router.post("/hm/editor/pool/authors/:id/publish", async (req, res): Promise<voi
     copied += 1;
   }
   triggerHmYekpareSyncForSite(ctx.siteId);
-  const { passwordHash: _ph, ...safe } = targetAuthor;
-  res.status(201).json({ author: safe, copied });
+  res.status(201).json({ author: serializeAuthorClient(targetAuthor, { includeEmail: true }), copied });
 });
 
 /* —— Köşe yazarı (JWT typ: hm_author) ————————————————————————— */
@@ -4578,7 +4596,6 @@ router.post("/hm/author/login", async (req, res): Promise<void> => {
   const token = jwt.sign({ typ: JWT_TYP_AUTHOR, aid: author.id, sid: site.id }, hmJwtSecret(), {
     expiresIn: "60d",
   });
-  const { passwordHash: _ph, ...safeAuthor } = author;
   res.json({
     token,
     site: {
@@ -4588,7 +4605,7 @@ router.post("/hm/author/login", async (req, res): Promise<void> => {
       domain2: site.domain2 ?? null,
       displayName: site.displayName,
     },
-    author: { id: safeAuthor.id, name: safeAuthor.name, email: safeAuthor.email ?? emailRaw },
+    author: { id: author.id, name: author.name, email: author.email ?? emailRaw },
   });
 });
 
@@ -4707,8 +4724,7 @@ router.get("/hm/author/me", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Yazar bulunamadı." });
     return;
   }
-  const { passwordHash: _p, ...safe } = author;
-  res.json(safe);
+  res.json(serializeAuthorClient(author, { includeEmail: true }));
 });
 
 router.patch("/hm/author/me/password", async (req, res): Promise<void> => {
@@ -4756,7 +4772,7 @@ router.get("/hm/author/news", async (req, res): Promise<void> => {
     newsReadDb().select({ count: sql<number>`count(*)::int` }).from(newsTable).where(where),
   ]);
   res.json({
-    items: rows.map((r) => serializeNews(r, newsCtx)),
+    items: rows.map((r) => serializeStaffNews(r, newsCtx)),
     total: totalRows[0]?.count ?? 0,
   });
 });
@@ -4778,7 +4794,7 @@ router.get("/hm/author/news/:id", async (req, res): Promise<void> => {
     return;
   }
   const newsCtx = await loadNewsContext();
-  res.json(serializeNews(row, newsCtx));
+  res.json(serializeStaffNews(row, newsCtx));
 });
 
 router.post("/hm/author/news", async (req, res): Promise<void> => {
@@ -4822,7 +4838,7 @@ router.post("/hm/author/news", async (req, res): Promise<void> => {
     res.status(500).json({ error: "Kayıt oluşturulamadı" });
     return;
   }
-  res.status(201).json(serializeNews(row, newsCtx));
+  res.status(201).json(serializeStaffNews(row, newsCtx));
 });
 
 router.put("/hm/author/news/:id", async (req, res): Promise<void> => {
@@ -4882,7 +4898,7 @@ router.put("/hm/author/news/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Haber bulunamadı." });
     return;
   }
-  res.json(serializeNews(row, newsCtx));
+  res.json(serializeStaffNews(row, newsCtx));
 });
 
 router.delete("/hm/author/news/:id", async (req, res): Promise<void> => {
@@ -5057,7 +5073,7 @@ router.get("/hm/editor/news", async (req, res): Promise<void> => {
     newsReadDb().select({ count: sql<number>`count(*)::int` }).from(newsTable).where(where),
   ]);
   res.json({
-    items: rows.map((r) => serializeNews(r, newsCtx)),
+    items: rows.map((r) => serializeStaffNews(r, newsCtx)),
     total: totalRows[0]?.count ?? 0,
   });
 });
@@ -5166,7 +5182,7 @@ router.get("/hm/editor/news/:id", async (req, res): Promise<void> => {
     return;
   }
   const newsCtx = await loadNewsContext();
-  res.json(serializeNews(row, newsCtx));
+  res.json(serializeStaffNews(row, newsCtx));
 });
 
 router.get("/hm/editor/pool/news", async (req, res): Promise<void> => {
@@ -5250,9 +5266,9 @@ router.post("/hm/editor/pool/news/bulk-publish", async (req, res): Promise<void>
           { status: "published" },
           eq(newsTable.id, existing.id),
         );
-        items.push(serializeNews(updated ?? existing, newsCtx));
+        items.push(serializeStaffNews(updated ?? existing, newsCtx));
       } else {
-        items.push(serializeNews(existing, newsCtx));
+        items.push(serializeStaffNews(existing, newsCtx));
       }
       continue;
     }
@@ -5276,7 +5292,7 @@ router.post("/hm/editor/pool/news/bulk-publish", async (req, res): Promise<void>
       isEditorManual: false,
       rssSourceUrl: poolRef,
     });
-    if (created) items.push(serializeNews(created, newsCtx));
+    if (created) items.push(serializeStaffNews(created, newsCtx));
   }
   if (wantStatus === "published" && items.length) {
     triggerHmYekpareSyncForSite(ctx.siteId);
@@ -5332,11 +5348,11 @@ router.post("/hm/editor/pool/news/:id/publish", async (req, res): Promise<void> 
         eq(newsTable.id, existing.id),
       );
       const newsCtx = await loadNewsContext();
-      res.json(serializeNews(updated ?? existing, newsCtx));
+      res.json(serializeStaffNews(updated ?? existing, newsCtx));
       return;
     }
     const newsCtx = await loadNewsContext();
-    res.json(serializeNews(existing, newsCtx));
+    res.json(serializeStaffNews(existing, newsCtx));
     return;
   }
   const categoryId = await cloneCategoryIdForHmTarget(src.categoryId, ctx.siteId);
@@ -5368,7 +5384,7 @@ router.post("/hm/editor/pool/news/:id/publish", async (req, res): Promise<void> 
     triggerHmYekpareSyncForSite(ctx.siteId);
   }
   const newsCtx = await loadNewsContext();
-  res.status(201).json(serializeNews(created, newsCtx));
+  res.status(201).json(serializeStaffNews(created, newsCtx));
 });
 
 router.post("/hm/editor/news", async (req, res): Promise<void> => {
@@ -5426,7 +5442,7 @@ router.post("/hm/editor/news", async (req, res): Promise<void> => {
     res.status(500).json({ error: "Kayıt oluşturulamadı" });
     return;
   }
-  res.status(201).json(serializeNews(row, newsCtx));
+  res.status(201).json(serializeStaffNews(row, newsCtx));
 });
 
 router.patch("/hm/editor/news/:id/flags", async (req, res): Promise<void> => {
@@ -5463,7 +5479,7 @@ router.patch("/hm/editor/news/:id/flags", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Haber bulunamadı" });
     return;
   }
-  res.json(serializeNews(row, newsCtx));
+  res.json(serializeStaffNews(row, newsCtx));
 });
 
 router.post("/hm/editor/news/bulk-flags", async (req, res): Promise<void> => {
@@ -5604,7 +5620,7 @@ router.put("/hm/editor/news/:id", async (req, res): Promise<void> => {
     invalidateNewsPageBundleCache({ slug: row.slug, siteId: existing.siteId });
   }
   /* Tek kaynak satır — merkez havuza yansımaz; publish-group vitrin aynı kaydı okur. */
-  res.json(serializeNews(row, newsCtx));
+  res.json(serializeStaffNews(row, newsCtx));
 });
 
 router.delete("/hm/editor/news/:id", async (req, res): Promise<void> => {
@@ -5656,7 +5672,7 @@ router.get("/hm/editor/makale", async (req, res): Promise<void> => {
   }
 
   const makSer = makRows.map((r) => serializeHmMakaleAsNews(r, newsCtx));
-  const newsSer = newsBlogRows.map((r) => serializeNews(r, newsCtx));
+  const newsSer = newsBlogRows.map((r) => serializeStaffNews(r, newsCtx));
   const merged = [...makSer, ...newsSer].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
