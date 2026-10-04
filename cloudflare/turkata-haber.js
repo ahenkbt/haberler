@@ -48,6 +48,39 @@ export const TURKATA_PEOPLE = [
 export const TURKATA_DESCRIPTION =
   "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. Genel Müdürlük: Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.";
 
+export const TURKATA_LOGO_PATH = "/turkata/turkata-logo.png";
+export const TURKATA_OG_IMAGE_PATH = "/turkata/og-default.png";
+export const TURKATA_ABOUT_TITLE = "TürkAta Haber Ajansı – Hakkımızda";
+export const TURKATA_ABOUT_INTRO = [
+  "TürkAta Haber Ajansı; Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde, 1998 yılından bu yana süre gelen çeyrek asırlık kurumsal birikim ve toplumsal sorumluluk bilinciyle yayın hayatını sürdürmektedir.",
+  "Temel amacımız; Türkiye’nin dört bir yanında fedakârca görev yapan kamu kurumlarımızın, yerel yönetimlerimizin, muhtarlıklarımızın, eğitim camiamızın, sivil toplum kuruluşlarımızın ve özel sektör temsilcilerimizin dinamizmini, hizmetlerini ve başarılarını tarafsız bir yayıncılık anlayışıyla kamuoyuna aktarmaktır.",
+];
+export const TURKATA_ABOUT_MISSION_TITLE = 'Misyonumuz: "Sesiniz, Gücünüz ve Tanıtım Yüzünüz"';
+export const TURKATA_ABOUT_MISSION =
+  "Çağımızın dijital iletişim dinamiklerini geleneksel gazetecilik ilkeleriyle harmanlayan ajansımız; mahallelerimizin, okullarımızın ve kurumlarımızın adeta sesi ve dijital hafızası olmaktadır.";
+export const TURKATA_ABOUT_MISSION_POINTS = [
+  "Yerel Yönetimler ve Muhtarlıklar: Mahallelerin ihtiyaçlarını, yapılan çalışmaları ve bölgesel güzellikleri ulusal ve dijital gündeme taşıyoruz.",
+  "Eğitim ve Kamu Kurumları: Okullarımızın ve kamu birimlerimizin örnek projelerini, başarılarını ve tanıtım materyallerini dijital mecralarımızda öne çıkarıyoruz.",
+  "Sivil Toplum ve Sektörel Tanıtım: STK’ların ve kurumların hizmet odaklı vizyonunu hedef kitleleriyle buluşturuyoruz.",
+];
+export const TURKATA_ABOUT_REACH =
+  "Hazırladığımız özel tanıtım haberleri, röportajlar ve görsel içerikler; turkatahaber.com portalımız başta olmak üzere, ajansımıza bağlı haber ağlarında ve sosyal medya kanallarında geniş kitlelere ulaştırılmaktadır.";
+export const TURKATA_ABOUT_SOCIAL_TITLE = "Sosyal Sorumluluk ve Eğitim Bütçesine Katkı";
+export const TURKATA_ABOUT_SOCIAL = [
+  "TürkAta Haber Ajansı, yalnızca bir haber portalı değil; aynı zamanda sosyal sorumluluk bilinciyle çalışan bir geleceğe yatırım projesidir.",
+  "Ajansımızın saha ve yayın faaliyetlerinde; vakfımızdan burs alan başta şehit ve gazi çocuklarımız olmak üzere üniversite öğrencilerimiz aktif görev almaktadır. Tanıtım ve haber çalışmalarımız kapsamında sağlanan her türlü gönüllü destek ve katkı; bu öğrencilerimizin eğitim hayatlarına birer burs desteği olarak dönmektedir.",
+];
+export const TURKATA_ABOUT_PRINCIPLES_TITLE = "Yayın İlkelerimiz ve Yapımız";
+export const TURKATA_ABOUT_PRINCIPLES_LEAD =
+  "Ankara merkezli yayın organımız; alanında uzmanlaşmış Yerel Yönetimler Haber Müdürlüğü, Kamu Haber Müdürlüğü, STK ve Sektörel Haber Müdürlükleri ile kurumsal ve profesyonel bir yapıda hizmet vermektedir.";
+export const TURKATA_ABOUT_PRINCIPLES = [
+  "Süreklilik ve Kalite: Paydaşlarımızın ve kurumlarımızın ihtiyaçlarına özel, hızlı ve esnek içerik üretimi.",
+  "Dijital Görünürlük: Modern yapay zekâ ve yeni nesil medya teknolojilerini kullanarak hızlı, estetik ve etkileşimi yüksek içerik tasarımı.",
+  "Toplumsal Fayda: Yerel başarıları görünür kılarak kurumların ve yöneticilerin toplumsal bağlarını güçlendirmek.",
+];
+export const TURKATA_ABOUT_CLOSE =
+  "Türk Kültürünü Araştırma ve Tanıtma Vakfı güvencesiyle, Türkiye'nin her köşesindeki emeği, hizmeti ve değeri kamuoyuyla buluşturmaya gururla devam ediyoruz.";
+
 const GOOGLE_NEWS_MAX_AGE_MS = 48 * 60 * 60 * 1000;
 
 export function normalizeTurkataHost(hostname) {
@@ -246,7 +279,9 @@ function organizationNode() {
     department: TURKATA_DEPARTMENTS.map((name) => ({ "@type": "Organization", name })),
     logo: {
       "@type": "ImageObject",
-      url: `${TURKATA_ORIGIN}/turkata/turkata-wordmark.svg`,
+      url: `${TURKATA_ORIGIN}${TURKATA_LOGO_PATH}`,
+      width: 960,
+      height: 313,
     },
   };
 }
@@ -300,8 +335,8 @@ function pageCopy(kind, article) {
   }
   if (kind === "about") {
     return {
-      title: `Hakkımızda | ${TURKATA_BRAND}`,
-      description: TURKATA_DESCRIPTION,
+      title: TURKATA_ABOUT_TITLE,
+      description: TURKATA_ABOUT_INTRO[0],
       ogType: "website",
     };
   }
@@ -368,7 +403,12 @@ function newsArticleLd(article, canonical, image) {
       telephone: TURKATA_PHONE_TEL,
       email: TURKATA_EMAIL,
       address: postalAddress(TURKATA_LEGAL_STREET, TURKATA_LOCALITY, TURKATA_REGION, TURKATA_LEGAL_NAME),
-      logo: { "@type": "ImageObject", url: `${TURKATA_ORIGIN}/turkata/turkata-wordmark.svg` },
+      logo: {
+        "@type": "ImageObject",
+        url: `${TURKATA_ORIGIN}${TURKATA_LOGO_PATH}`,
+        width: 960,
+        height: 313,
+      },
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
     inLanguage: "tr-TR",
@@ -387,7 +427,7 @@ function jsonLdForPage(kind, canonical, article, image) {
 
 function absImage(imageUrl) {
   const u = String(imageUrl || "").trim();
-  if (!u) return `${TURKATA_ORIGIN}/apple-touch-icon.png`;
+  if (!u) return `${TURKATA_ORIGIN}${TURKATA_OG_IMAGE_PATH}`;
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
   return `${TURKATA_ORIGIN}${u.startsWith("/") ? "" : "/"}${u}`;
 }
@@ -400,16 +440,24 @@ function visibleBody(kind, article) {
     return `<article><h1>${escHtml(article.title)}</h1><p>${escHtml(article.description || "")}</p>${img}</article>`;
   }
   if (kind === "about") {
-    const deps = TURKATA_DEPARTMENTS.map((d) => `<li>${escHtml(d)}</li>`).join("");
+    const intro = TURKATA_ABOUT_INTRO.map((p) => `<p>${escHtml(p)}</p>`).join("");
+    const missionPoints = TURKATA_ABOUT_MISSION_POINTS.map((p) => `<li>${escHtml(p)}</li>`).join("");
+    const social = TURKATA_ABOUT_SOCIAL.map((p) => `<p>${escHtml(p)}</p>`).join("");
+    const principles = TURKATA_ABOUT_PRINCIPLES.map((p) => `<li>${escHtml(p)}</li>`).join("");
     return `<article>
-<h1>Hakkımızda</h1>
-<p>${escHtml(TURKATA_DESCRIPTION)}</p>
-<h2>Misyonumuz</h2>
-<p>${escHtml(TURKATA_BRAND)}, ${escHtml(TURKATA_FOUNDATION)}’nın haber ajansıdır. Yerel yönetimler, kamu ile sivil toplum ve sektör gündemini Türkçe yayınlar.</p>
-<h2>Haber müdürlükleri</h2>
-<ul>${deps}</ul>
-<p>Kuruluş yılı (vakıf): ${TURKATA_FOUNDING_DATE}. Adres: ${escHtml(TURKATA_ADDRESS_LINE)}.</p>
-<p><a href="${TURKATA_FOUNDATION_URL}">${escHtml(TURKATA_FOUNDATION)}</a> · <a href="${TURKATA_FOUNDATION_ALT_URL}">tukav.org</a></p>
+<h1>${escHtml(TURKATA_ABOUT_TITLE)}</h1>
+<p>${escHtml(TURKATA_TAGLINE)}</p>
+${intro}
+<h2>${escHtml(TURKATA_ABOUT_MISSION_TITLE)}</h2>
+<p>${escHtml(TURKATA_ABOUT_MISSION)}</p>
+<ul>${missionPoints}</ul>
+<p>${escHtml(TURKATA_ABOUT_REACH)}</p>
+<h2>${escHtml(TURKATA_ABOUT_SOCIAL_TITLE)}</h2>
+${social}
+<h2>${escHtml(TURKATA_ABOUT_PRINCIPLES_TITLE)}</h2>
+<p>${escHtml(TURKATA_ABOUT_PRINCIPLES_LEAD)}</p>
+<ul>${principles}</ul>
+<p>${escHtml(TURKATA_ABOUT_CLOSE)}</p>
 </article>`;
   }
   if (kind === "imprint") {
@@ -489,12 +537,20 @@ export function rewriteTurkataSpaHtml(html, opts) {
     /<script type="application\/ld\+json"[^>]*data-yekpare-portal-jsonld="1"[^>]*>[\s\S]*?<\/script>/gi,
     "",
   );
+  out = out.replace(/<link\s+[^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon|manifest)["'][^>]*>/gi, "");
+  const iconTags = [
+    '<link rel="icon" href="/turkata/favicon.ico" sizes="any">',
+    '<link rel="icon" type="image/png" sizes="32x32" href="/turkata/favicon-32.png">',
+    '<link rel="icon" type="image/png" sizes="192x192" href="/turkata/icon-192.png">',
+    '<link rel="apple-touch-icon" sizes="180x180" href="/turkata/apple-touch-icon.png">',
+    '<link rel="manifest" href="/turkata/manifest.webmanifest">',
+  ].join("");
   const ldTag = `<script type="application/ld+json" data-turkata-jsonld="1">${JSON.stringify(ld)}</script>`;
   const body = visibleBody(kind, article);
   if (/id=["']root["']/.test(out)) {
     out = out.replace(/<div id="root">\s*<\/div>/i, `<div id="root">${body}</div>`);
   }
-  out = out.replace(/<\/head>/i, `${ldTag}\n</head>`);
+  out = out.replace(/<\/head>/i, `${iconTags}${ldTag}\n</head>`);
   return markHmNewsBootHtml(out);
 }
 

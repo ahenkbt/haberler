@@ -9,6 +9,7 @@ import { HmPublicLinkProvider, useHmPublicLinkContextOptional } from "@/contexts
 import { hmPublicHref, hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
 import { useHmCustomPageEnhancements } from "@/lib/hmCustomPageEnhancements";
 import {
   prepareHmCustomPageBodyHtml,
@@ -310,7 +311,8 @@ export function HmCustomPageContent({ pageSlug, site }: { pageSlug: string; site
 export default function HmCustomPage() {
   const params = useParams<{ slug: string; pageSlug: string }>();
   const hmCtx = useHmPublicLinkContextOptional();
-  const siteSlug = String(params?.slug ?? "").trim();
+  const hostSlug = useHmDomainSlugFromHost();
+  const siteSlug = String(params?.slug ?? "").trim() || hostSlug;
   const pageSlugEnc = String(params?.pageSlug ?? "").trim();
   const pageSlug = (() => {
     try {

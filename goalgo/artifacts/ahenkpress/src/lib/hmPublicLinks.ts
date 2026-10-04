@@ -1,5 +1,6 @@
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { isLikelyHmExtraPagePublicPath } from "@/lib/hmExtraPageLookup";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 import { isHmCustomDomainInfrastructurePath } from "@/lib/hmCustomDomainTrPath";
 
@@ -117,6 +118,14 @@ function normalizeHmPublicContentPath(pathname: string): string {
   return pathname;
 }
 
+/** Bilinen kök HM alanı (domain kaydı boş olsa bile) bu slug'ın kendi sitesi mi? */
+export function isKnownRootModeHostForSlug(pageHost: string, slug: string | null | undefined): boolean {
+  if (!pageHost || isDefaultPortalHost(pageHost)) return false;
+  const known = resolveKnownHmEditorSlug(pageHost);
+  const wanted = String(slug ?? "").trim().toLowerCase();
+  return !!known && !!wanted && known.trim().toLowerCase() === wanted;
+}
+
 /** Özel alan veya portal için SEO canonical yolu. */
 export function hmPublicSeoPath(
   segmentPath: string,
@@ -125,7 +134,11 @@ export function hmPublicSeoPath(
   const path = segmentPath.startsWith("/") ? segmentPath : `/${segmentPath}`;
   const pageHost =
     typeof window !== "undefined" ? normalizeHmHostKey(window.location.hostname) : "";
-  if (pageHost && isHmPublicHostForSite(pageHost, opts) && !isDefaultPortalHost(pageHost)) {
+  if (
+    pageHost &&
+    !isDefaultPortalHost(pageHost) &&
+    (isHmPublicHostForSite(pageHost, opts) || isKnownRootModeHostForSlug(pageHost, opts.slug))
+  ) {
     return path;
   }
   const slug = String(opts.slug ?? "").trim();
@@ -161,7 +174,9 @@ export function hmPublicHref(
    */
   const onPortalHub = Boolean(pageHost) && isDefaultPortalHost(pageHost);
   const onSiteCustomDomain =
-    Boolean(pageHost) && !onPortalHub && isHmPublicHostForSite(pageHost, opts);
+    Boolean(pageHost) &&
+    !onPortalHub &&
+    (isHmPublicHostForSite(pageHost, opts) || isKnownRootModeHostForSlug(pageHost, slug));
   const useRelative = !opts.forceAbsolute && onSiteCustomDomain;
   const origin =
     useRelative || (onPortalHub && !opts.forceAbsolute)

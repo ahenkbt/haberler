@@ -1,5 +1,6 @@
 import { Redirect, useParams } from "wouter";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
 
 /** Özel alanda `/yazar/:id` → `/tr/{siteSlug}/yazar/:id` */
@@ -8,11 +9,20 @@ export default function HmRootYazarRedirect() {
   const key = String(authorKey ?? "").trim();
   const host =
     typeof window !== "undefined" ? (window.location.hostname.toLowerCase().split(":")[0] ?? "") : "";
+  const knownSlug = host ? resolveKnownHmEditorSlug(host) : undefined;
 
   const { data, isLoading, isError } = useHmMetaByDomain(host, {
-    enabled: host.length > 0 && key.length > 0,
+    enabled: host.length > 0 && key.length > 0 && !knownSlug,
     retry: false,
   });
+
+  if (knownSlug && key) {
+    return (
+      <Redirect
+        to={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(knownSlug)}/yazar/${encodeURIComponent(key)}`}
+      />
+    );
+  }
 
   if (!key) {
     return (

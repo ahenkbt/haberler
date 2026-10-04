@@ -84,6 +84,7 @@ export function defaultAhenkNavItems(): AhenkNavItem[] {
     { id: "products", label: "Ürünlerimiz", href: "/urunlerimiz" },
     { id: "services", label: "Hizmetlerimiz", href: "/hizmetlerimiz" },
     { id: "career", label: "Kariyer", href: "/kariyer" },
+    { id: "turkata", label: "TürkAta Haber Ajansı", href: "/turkata-haber-ajansi" },
     { id: "contact", label: "İletişim", href: "/iletisim" },
   ];
 }
@@ -1270,6 +1271,13 @@ function mergeNavItems(raw: unknown, defaults: AhenkNavItem[]): AhenkNavItem[] {
           )
       : [];
   const items = base.length ? base : defaults.map((n) => ({ ...n }));
+  const hasTurkata = items.some((n) => n.href === "/turkata-haber-ajansi");
+  if (!hasTurkata) {
+    const turkata = { id: "turkata", label: "TürkAta Haber Ajansı", href: "/turkata-haber-ajansi" };
+    const contactIdx = items.findIndex((n) => n.href === "/iletisim" || n.id === "contact");
+    if (contactIdx >= 0) items.splice(contactIdx, 0, turkata);
+    else items.push(turkata);
+  }
   const hasKariyer = items.some((n) => n.href === "/kariyer" || n.id === "career");
   if (!hasKariyer) {
     const kariyer = { id: "career", label: "Kariyer", href: "/kariyer" };

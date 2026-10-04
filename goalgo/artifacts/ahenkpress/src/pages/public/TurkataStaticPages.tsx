@@ -1,82 +1,74 @@
-import { TurkataHaberChrome } from "@/components/turkata-haber/TurkataHaberChrome";
+import { TurkataHaberChrome, TurkataLogo } from "@/components/turkata-haber/TurkataHaberChrome";
 import {
+  TURKATA_ABOUT_CLOSE,
+  TURKATA_ABOUT_INTRO,
+  TURKATA_ABOUT_MISSION,
+  TURKATA_ABOUT_MISSION_POINTS,
+  TURKATA_ABOUT_MISSION_TITLE,
+  TURKATA_ABOUT_PRINCIPLES,
+  TURKATA_ABOUT_PRINCIPLES_LEAD,
+  TURKATA_ABOUT_PRINCIPLES_TITLE,
+  TURKATA_ABOUT_REACH,
+  TURKATA_ABOUT_SOCIAL,
+  TURKATA_ABOUT_SOCIAL_TITLE,
+  TURKATA_ABOUT_TAGLINE,
+  TURKATA_ABOUT_TITLE,
   TURKATA_ADDRESS_LINE,
   TURKATA_BRAND,
   TURKATA_DEPARTMENTS,
-  TURKATA_DESCRIPTION,
   TURKATA_EMAIL,
   TURKATA_FOUNDATION,
   TURKATA_FOUNDATION_ADDRESS_LINE,
-  TURKATA_FOUNDATION_ALT_URL,
-  TURKATA_FOUNDATION_URL,
   TURKATA_FOUNDING_DATE,
   TURKATA_KUNYE_TITLE,
   TURKATA_LEGAL_ADDRESS_LINE,
   TURKATA_LEGAL_NAME,
-  TURKATA_MISSION,
   TURKATA_OFFICE,
   TURKATA_PEOPLE,
   TURKATA_PHONE_DISPLAY,
   TURKATA_PHONE_TEL,
   TURKATA_STATEMENT,
   TURKATA_TAGLINE,
-  TURKATA_WORDMARK,
 } from "@/lib/turkataHaber";
 
-function Facts() {
+/** hakkimizda.md gövdesi. Başlık ve slogan ayrı verilir; metin birebir. */
+export function TurkataAboutBody() {
   return (
-    <dl className="turkata-facts">
-      <dt>Yayın adı</dt>
-      <dd>{TURKATA_BRAND}</dd>
-      <dt>Bağlı olduğu vakıf</dt>
-      <dd>
-        {TURKATA_FOUNDATION} ({TURKATA_FOUNDING_DATE})
-      </dd>
-      <dt>Vakıf adresi</dt>
-      <dd>{TURKATA_FOUNDATION_ADDRESS_LINE}</dd>
-      <dt>Vakıf siteleri</dt>
-      <dd>
-        <a href={TURKATA_FOUNDATION_URL}>turkatav.org</a>
-        {" · "}
-        <a href={TURKATA_FOUNDATION_ALT_URL}>tukav.org</a>
-      </dd>
-      <dt>Genel Müdürlük</dt>
-      <dd>{TURKATA_ADDRESS_LINE}</dd>
-      <dt>Gsm</dt>
-      <dd>
-        <a href={`tel:${TURKATA_PHONE_TEL}`}>{TURKATA_PHONE_DISPLAY}</a>
-      </dd>
-      <dt>E-posta</dt>
-      <dd>
-        <a href={`mailto:${TURKATA_EMAIL}`}>{TURKATA_EMAIL}</a>
-      </dd>
-    </dl>
+    <>
+      {TURKATA_ABOUT_INTRO.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+      <h2>{TURKATA_ABOUT_MISSION_TITLE}</h2>
+      <p>{TURKATA_ABOUT_MISSION}</p>
+      <ul>
+        {TURKATA_ABOUT_MISSION_POINTS.map((point) => (
+          <li key={point}>{point}</li>
+        ))}
+      </ul>
+      <p>{TURKATA_ABOUT_REACH}</p>
+      <h2>{TURKATA_ABOUT_SOCIAL_TITLE}</h2>
+      {TURKATA_ABOUT_SOCIAL.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+      <h2>{TURKATA_ABOUT_PRINCIPLES_TITLE}</h2>
+      <p>{TURKATA_ABOUT_PRINCIPLES_LEAD}</p>
+      <ul>
+        {TURKATA_ABOUT_PRINCIPLES.map((point) => (
+          <li key={point}>{point}</li>
+        ))}
+      </ul>
+      <p>{TURKATA_ABOUT_CLOSE}</p>
+    </>
   );
 }
 
 export function TurkataHakkimizdaPage() {
   return (
-    <TurkataHaberChrome title="Hakkımızda" description={TURKATA_DESCRIPTION}>
+    <TurkataHaberChrome title={TURKATA_ABOUT_TITLE} description={TURKATA_ABOUT_INTRO[0]}>
       <article className="turkata-page">
-        <h1>Hakkımızda</h1>
-        <p className="turkata-lead">{TURKATA_STATEMENT}</p>
-        <p>{TURKATA_DESCRIPTION}</p>
-        <h2>Misyonumuz</h2>
-        <p>{TURKATA_MISSION}</p>
-        <p>{TURKATA_TAGLINE}.</p>
-        <h2>Haber müdürlükleri</h2>
-        <ul>
-          {TURKATA_DEPARTMENTS.map((name) => (
-            <li key={name}>{name}</li>
-          ))}
-        </ul>
-        <h2>Kurum</h2>
-        <p>
-          {TURKATA_BRAND}, {TURKATA_FOUNDATION} bünyesinde {TURKATA_FOUNDING_DATE}’den bu yana yayın
-          yapar. Resmi vakıf siteleri <a href={TURKATA_FOUNDATION_URL}>turkatav.org</a> ve{" "}
-          <a href={TURKATA_FOUNDATION_ALT_URL}>tukav.org</a> adresleridir.
-        </p>
-        <Facts />
+        <h1>{TURKATA_ABOUT_TITLE}</h1>
+        <p className="turkata-lead">{TURKATA_ABOUT_TAGLINE}</p>
+        <TurkataAboutBody />
       </article>
     </TurkataHaberChrome>
   );
@@ -90,7 +82,7 @@ export function TurkataKunyePage() {
     >
       <article className="turkata-kunye">
         <header className="turkata-kunye-mast">
-          <img src={TURKATA_WORDMARK} alt="TürkAta Haber Ajansı" width={280} height={56} />
+          <TurkataLogo height={72} />
           <p className="turkata-kunye-kicker">Künye</p>
           <h1>{TURKATA_OFFICE}</h1>
           <p className="turkata-kunye-statement">{TURKATA_STATEMENT}</p>
@@ -188,7 +180,6 @@ export function TurkataIletisimPage() {
             <a href={`mailto:${TURKATA_EMAIL}`}>{TURKATA_EMAIL}</a>
           </dd>
         </dl>
-        <Facts />
       </article>
     </TurkataHaberChrome>
   );

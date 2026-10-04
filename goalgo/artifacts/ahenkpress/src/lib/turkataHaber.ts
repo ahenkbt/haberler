@@ -29,7 +29,14 @@ export const TURKATA_PHONE_DISPLAY = "0532 229 18 92";
 export const TURKATA_PHONE_TEL = "+905322291892";
 export const TURKATA_EMAIL = "bilgi@turkatahaber.com";
 export const TURKATA_KUNYE_TITLE = "Künye | TürkAta Haber Ajansı";
+/** Resmi kilit; SVG yalnızca görsel yüklenemezse yedek. */
+export const TURKATA_LOGO = "/turkata/turkata-logo.png";
+export const TURKATA_LOGO_WEBP = "/turkata/turkata-logo.webp";
 export const TURKATA_WORDMARK = "/turkata/turkata-wordmark.svg";
+export const TURKATA_MARK = "/turkata/turkata-mark.png";
+export const TURKATA_OG_IMAGE = "/turkata/og-default.png";
+export const TURKATA_APPLE_TOUCH = "/turkata/apple-touch-icon.png";
+export const TURKATA_FAVICON = "/turkata/favicon-32.png";
 export const TURKATA_LAT = 39.9272;
 export const TURKATA_LNG = 32.8548;
 export const TURKATA_PEOPLE = [
@@ -48,6 +55,40 @@ export const TURKATA_DESCRIPTION =
 
 export const TURKATA_MISSION =
   "TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. Yerel yönetimler, kamu kurumları ile sivil toplum ve sektör gündemini Türkçe olarak kamuoyuna aktarır.";
+
+/** hakkimizda.md — resmi metin. Yalnızca Misyonomuz → Misyonumuz düzeltmesi uygulandı; dosyada yazım zaten Misyonumuz. */
+export const TURKATA_ABOUT_TITLE = "TürkAta Haber Ajansı – Hakkımızda";
+export const TURKATA_ABOUT_TAGLINE = TURKATA_TAGLINE;
+export const TURKATA_ABOUT_INTRO = [
+  "TürkAta Haber Ajansı; Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde, 1998 yılından bu yana süre gelen çeyrek asırlık kurumsal birikim ve toplumsal sorumluluk bilinciyle yayın hayatını sürdürmektedir.",
+  "Temel amacımız; Türkiye’nin dört bir yanında fedakârca görev yapan kamu kurumlarımızın, yerel yönetimlerimizin, muhtarlıklarımızın, eğitim camiamızın, sivil toplum kuruluşlarımızın ve özel sektör temsilcilerimizin dinamizmini, hizmetlerini ve başarılarını tarafsız bir yayıncılık anlayışıyla kamuoyuna aktarmaktır.",
+] as const;
+export const TURKATA_ABOUT_MISSION_TITLE = 'Misyonumuz: "Sesiniz, Gücünüz ve Tanıtım Yüzünüz"';
+export const TURKATA_ABOUT_MISSION =
+  "Çağımızın dijital iletişim dinamiklerini geleneksel gazetecilik ilkeleriyle harmanlayan ajansımız; mahallelerimizin, okullarımızın ve kurumlarımızın adeta sesi ve dijital hafızası olmaktadır.";
+export const TURKATA_ABOUT_MISSION_POINTS = [
+  "Yerel Yönetimler ve Muhtarlıklar: Mahallelerin ihtiyaçlarını, yapılan çalışmaları ve bölgesel güzellikleri ulusal ve dijital gündeme taşıyoruz.",
+  "Eğitim ve Kamu Kurumları: Okullarımızın ve kamu birimlerimizin örnek projelerini, başarılarını ve tanıtım materyallerini dijital mecralarımızda öne çıkarıyoruz.",
+  "Sivil Toplum ve Sektörel Tanıtım: STK’ların ve kurumların hizmet odaklı vizyonunu hedef kitleleriyle buluşturuyoruz.",
+] as const;
+export const TURKATA_ABOUT_REACH =
+  "Hazırladığımız özel tanıtım haberleri, röportajlar ve görsel içerikler; turkatahaber.com portalımız başta olmak üzere, ajansımıza bağlı haber ağlarında ve sosyal medya kanallarında geniş kitlelere ulaştırılmaktadır.";
+export const TURKATA_ABOUT_SOCIAL_TITLE = "Sosyal Sorumluluk ve Eğitim Bütçesine Katkı";
+export const TURKATA_ABOUT_SOCIAL = [
+  "TürkAta Haber Ajansı, yalnızca bir haber portalı değil; aynı zamanda sosyal sorumluluk bilinciyle çalışan bir geleceğe yatırım projesidir.",
+  "Ajansımızın saha ve yayın faaliyetlerinde; vakfımızdan burs alan başta şehit ve gazi çocuklarımız olmak üzere üniversite öğrencilerimiz aktif görev almaktadır. Tanıtım ve haber çalışmalarımız kapsamında sağlanan her türlü gönüllü destek ve katkı; bu öğrencilerimizin eğitim hayatlarına birer burs desteği olarak dönmektedir.",
+] as const;
+export const TURKATA_ABOUT_PRINCIPLES_TITLE = "Yayın İlkelerimiz ve Yapımız";
+export const TURKATA_ABOUT_PRINCIPLES_LEAD =
+  "Ankara merkezli yayın organımız; alanında uzmanlaşmış Yerel Yönetimler Haber Müdürlüğü, Kamu Haber Müdürlüğü, STK ve Sektörel Haber Müdürlükleri ile kurumsal ve profesyonel bir yapıda hizmet vermektedir.";
+export const TURKATA_ABOUT_PRINCIPLES = [
+  "Süreklilik ve Kalite: Paydaşlarımızın ve kurumlarımızın ihtiyaçlarına özel, hızlı ve esnek içerik üretimi.",
+  "Dijital Görünürlük: Modern yapay zekâ ve yeni nesil medya teknolojilerini kullanarak hızlı, estetik ve etkileşimi yüksek içerik tasarımı.",
+  "Toplumsal Fayda: Yerel başarıları görünür kılarak kurumların ve yöneticilerin toplumsal bağlarını güçlendirmek.",
+] as const;
+export const TURKATA_ABOUT_CLOSE =
+  "Türk Kültürünü Araştırma ve Tanıtma Vakfı güvencesiyle, Türkiye'nin her köşesindeki emeği, hizmeti ve değeri kamuoyuyla buluşturmaya gururla devam ediyoruz.";
+export const TURKATA_FOOTER_ABOUT_HTML = `<p><strong>${TURKATA_ABOUT_TAGLINE}</strong></p><p>${TURKATA_ABOUT_INTRO[0]}</p>`;
 
 const HOSTS = new Set(["turkatahaber.com", "www.turkatahaber.com"]);
 
@@ -103,6 +144,7 @@ export function isTurkataPublicPath(path: string): boolean {
   if (p === "/kunye" || p === "/iletisim" || p === "/iletisim-kunye" || p === "/contact") return true;
   if (p === "/haberler/kunye" || p === "/haberler/hakkimizda" || p === "/haberler/iletisim") return true;
   if (p.startsWith("/kategori/")) return true;
+  if (p === "/yazarlar" || p.startsWith("/yazar/")) return true;
   if (p.startsWith("/admin") || p.startsWith("/editor") || p.startsWith("/api")) return true;
   return false;
 }
@@ -117,6 +159,32 @@ function upsertMeta(attr: "name" | "property", key: string, content: string) {
     document.head.appendChild(el);
   }
   el.setAttribute("content", content);
+}
+
+function ensureTurkataIcons() {
+  if (typeof document === "undefined") return;
+  const specs: { rel: string; href: string; sizes?: string; type?: string }[] = [
+    { rel: "icon", href: "/turkata/favicon.ico" },
+    { rel: "icon", href: TURKATA_FAVICON, sizes: "32x32", type: "image/png" },
+    { rel: "icon", href: "/turkata/icon-192.png", sizes: "192x192", type: "image/png" },
+    { rel: "apple-touch-icon", href: TURKATA_APPLE_TOUCH, sizes: "180x180", type: "image/png" },
+    { rel: "manifest", href: "/turkata/manifest.webmanifest" },
+  ];
+  document.head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"], link[rel="manifest"]').forEach((el) => {
+    const href = el.getAttribute("href") || "";
+    if (!href.includes("/turkata/")) el.remove();
+  });
+  for (const spec of specs) {
+    let el = document.head.querySelector(`link[rel="${spec.rel}"][href="${spec.href}"]`) as HTMLLinkElement | null;
+    if (!el) {
+      el = document.createElement("link");
+      el.rel = spec.rel;
+      document.head.appendChild(el);
+    }
+    el.href = spec.href;
+    if (spec.sizes) el.setAttribute("sizes", spec.sizes);
+    if (spec.type) el.type = spec.type;
+  }
 }
 
 function upsertLink(rel: string, href: string, hreflang?: string) {
@@ -198,7 +266,12 @@ export function turkataOrganizationJsonLd(): Record<string, unknown> {
     founder: personNode(TURKATA_PEOPLE[0]),
     employee: TURKATA_PEOPLE.map(personNode),
     department: TURKATA_DEPARTMENTS.map((name) => ({ "@type": "Organization", name })),
-    logo: { "@type": "ImageObject", url: `${TURKATA_ORIGIN}${TURKATA_WORDMARK}` },
+    logo: {
+      "@type": "ImageObject",
+      url: `${TURKATA_ORIGIN}${TURKATA_LOGO}`,
+      width: 960,
+      height: 313,
+    },
   };
 }
 
@@ -243,7 +316,7 @@ export type TurkataArticleSeo = {
 
 function absImage(imageUrl?: string | null): string {
   const u = String(imageUrl ?? "").trim();
-  if (!u) return `${TURKATA_ORIGIN}/apple-touch-icon.png`;
+  if (!u) return `${TURKATA_ORIGIN}${TURKATA_OG_IMAGE}`;
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
   return `${TURKATA_ORIGIN}${u.startsWith("/") ? "" : "/"}${u}`;
 }
@@ -260,9 +333,13 @@ export function applyTurkataDocumentSeo(opts: {
   const canonical = turkataCanonicalUrl(opts.path);
   const brand = TURKATA_BRAND;
   const title =
-    opts.title === brand || opts.title.includes("|") || opts.title.includes(brand)
+    opts.title === brand ||
+    opts.title.includes("|") ||
+    opts.title.includes(brand) ||
+    opts.title.includes("TürkAta Haber Ajansı")
       ? opts.title
       : `${opts.title} | ${brand}`;
+  ensureTurkataIcons();
   const image = absImage(opts.image);
   document.title = title;
   document.documentElement.lang = "tr";
@@ -327,7 +404,7 @@ export function applyTurkataDocumentSeo(opts: {
         telephone: TURKATA_PHONE_TEL,
         email: TURKATA_EMAIL,
         address: postalAddress(TURKATA_LEGAL_STREET, TURKATA_LOCALITY, TURKATA_REGION, TURKATA_LEGAL_NAME),
-        logo: { "@type": "ImageObject", url: `${TURKATA_ORIGIN}${TURKATA_WORDMARK}` },
+        logo: { "@type": "ImageObject", url: `${TURKATA_ORIGIN}${TURKATA_LOGO}`, width: 960, height: 313 },
       },
       mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
       inLanguage: "tr-TR",

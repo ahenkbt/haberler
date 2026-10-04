@@ -18,6 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
 }
 .turkata-haber-brand {
@@ -26,9 +27,14 @@
   text-decoration: none;
 }
 .turkata-haber-brand img {
-  height: 44px;
+  height: 72px;
   width: auto;
   display: block;
+}
+@media (max-width: 720px) {
+  .turkata-haber-brand img {
+    height: 56px;
+  }
 }
 .turkata-haber-nav {
   display: flex;
@@ -91,7 +97,7 @@
     repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(139, 30, 63, 0.08) 8px, rgba(139, 30, 63, 0.08) 9px);
 }
 .turkata-kunye-mast img {
-  height: 56px;
+  height: 72px;
   width: auto;
   margin: 0 auto 12px;
 }

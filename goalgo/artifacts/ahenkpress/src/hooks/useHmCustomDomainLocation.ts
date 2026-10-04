@@ -3,7 +3,8 @@ import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 import { isTurkataHaberHost } from "@/lib/turkataHaber";
 import { resolveKnownHmEditorSlug } from "@/lib/hmEditorDomains";
 import { readHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
-import { toHmCustomDomainCleanPath, toHmInternalTrPath } from "@/lib/hmCustomDomainCleanPath";
+import { toHmCustomDomainCleanPath } from "@/lib/hmCustomDomainCleanPath";
+import { resolveRootModeWouterPath } from "@/lib/resolveRootModeWouterPath";
 import { readVendorDomainMetaCache } from "@/lib/vendorDomainStorage";
 import {
   toVendorCustomDomainCleanPath,
@@ -55,7 +56,7 @@ export function useHmCustomDomainLocation(): [
     const binding = resolveCustomDomainBinding(host);
     if (!binding) return raw;
     if (binding.kind === "hm") {
-      return toHmInternalTrPath(raw, binding.slug) ?? raw;
+      return resolveRootModeWouterPath(host, raw, binding.slug);
     }
     return toVendorInternalStorefrontPath(raw, binding.storefrontPath) ?? raw;
   }, [host, useCleanUrls]);
@@ -80,7 +81,7 @@ export function useHmCustomDomainLocation(): [
       let internal = to;
       let clean = to;
       if (binding.kind === "hm") {
-        internal = toHmInternalTrPath(to, binding.slug) ?? to;
+        internal = resolveRootModeWouterPath(host, to, binding.slug);
         clean = toHmCustomDomainCleanPath(internal, binding.slug);
       } else {
         internal = toVendorInternalStorefrontPath(to, binding.storefrontPath) ?? to;

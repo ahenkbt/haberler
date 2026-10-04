@@ -3,18 +3,12 @@ import { defaultNewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import {
   TURKATA_ADDRESS_LINE,
   TURKATA_EMAIL,
-  TURKATA_FOUNDATION,
-  TURKATA_FOUNDING_DATE,
+  TURKATA_FOOTER_ABOUT_HTML,
   TURKATA_OFFICE,
   TURKATA_PHONE_DISPLAY,
   TURKATA_PHONE_TEL,
-  TURKATA_STATEMENT,
-  TURKATA_TAGLINE,
   turkataSitePath,
 } from "@/lib/turkataHaber";
-
-const ABOUT_HTML = `<p><strong>${TURKATA_STATEMENT}</strong></p>
-<p>TürkAta Haber Ajansı, ${TURKATA_FOUNDATION} bünyesinde ${TURKATA_FOUNDING_DATE}’den bu yana yayın yapar. ${TURKATA_TAGLINE}.</p>`;
 
 export function TurkataNewsFooter() {
   return (
@@ -36,7 +30,7 @@ export function TurkataNewsFooter() {
         }}
         layoutPrefs={{
           ...defaultNewsSiteLayoutPrefs,
-          hmFooterAboutHtml: ABOUT_HTML,
+          hmFooterAboutHtml: TURKATA_FOOTER_ABOUT_HTML,
           hmNewsRssLinksEnabled: false,
           hmNewsVideoTvEnabled: false,
           hmNewsFooterMenuItems: [

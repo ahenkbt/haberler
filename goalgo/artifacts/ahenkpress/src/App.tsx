@@ -1072,11 +1072,21 @@ export default function App() {
       <Route path="/siparis/:rest*">{() => <Redirect to="/" />}</Route>
       <Route path="/siparis">{() => <Redirect to="/" />}</Route>
       <Route path="/yazarlar">{() => (
-        <HmPortalOrDomainStandardPage segment="yazarlar">
-          <HmPartnerOrPublicLayout><Yazarlar /></HmPartnerOrPublicLayout>
-        </HmPortalOrDomainStandardPage>
+        isTurkataHaberHost() ? (
+          <TurkataHaberChrome title="Yazarlar"><Yazarlar /></TurkataHaberChrome>
+        ) : (
+          <HmPortalOrDomainStandardPage segment="yazarlar">
+            <HmPartnerOrPublicLayout><Yazarlar /></HmPartnerOrPublicLayout>
+          </HmPortalOrDomainStandardPage>
+        )
       )}</Route>
-      <Route path="/yazar/:authorKey">{() => <HmPartnerOrPublicLayout><YazarAuthorRoute /></HmPartnerOrPublicLayout>}</Route>
+      <Route path="/yazar/:authorKey">{() => (
+        isTurkataHaberHost() ? (
+          <TurkataHaberChrome title="Yazar"><YazarAuthorRoute /></TurkataHaberChrome>
+        ) : (
+          <HmPartnerOrPublicLayout><YazarAuthorRoute /></HmPartnerOrPublicLayout>
+        )
+      )}</Route>
       <Route path="/foto-galeri/:id">{() => <PublicLayout><FotoGaleriPublic /></PublicLayout>}</Route>
       <Route path="/foto-galeri">{() => <PublicLayout><FotoGaleriPublic /></PublicLayout>}</Route>
       <Route path="/video-galeri/:id" component={VideoGaleriToYektubeRedirect} />

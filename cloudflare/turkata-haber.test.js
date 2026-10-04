@@ -81,6 +81,24 @@ describe("turkata spa html", () => {
     assert.match(html, /bilgi@turkatahaber\.com/);
     assert.match(html, /Nail Türkoğlu/);
     assert.doesNotMatch(html, /Başka Mah/);
+    assert.match(html, /property="og:image" content="https:\/\/turkatahaber\.com\/turkata\/og-default\.png"/);
+    assert.match(html, /"url":"https:\/\/turkatahaber\.com\/turkata\/turkata-logo\.png"/);
+    assert.match(html, /"width":960,"height":313/);
+    assert.match(html, /href="\/turkata\/favicon-32\.png"/);
+    assert.match(html, /href="\/turkata\/apple-touch-icon\.png"/);
+    assert.doesNotMatch(html, /turkata-wordmark\.svg/);
+  });
+
+  it("renders the official about page verbatim", () => {
+    const html = rewriteTurkataSpaHtml(SHELL, { pathname: "/hakkimizda" });
+    assert.match(html, /<title>TürkAta Haber Ajansı – Hakkımızda<\/title>/);
+    assert.match(html, /Yerelin Sesini Geleceğe Taşıyan Güvenilir Haber Ağı/);
+    assert.match(html, /çeyrek asırlık kurumsal birikim/);
+    assert.match(html, /Misyonumuz: &quot;Sesiniz, Gücünüz ve Tanıtım Yüzünüz&quot;/);
+    assert.match(html, /Sosyal Sorumluluk ve Eğitim Bütçesine Katkı/);
+    assert.match(html, /Yayın İlkelerimiz ve Yapımız/);
+    assert.doesNotMatch(html, /Misyonomuz/);
+    assert.doesNotMatch(html, /<h2>Haber müdürlükleri<\/h2>/);
   });
 
   it("titles the imprint exactly and lists the three addresses", () => {
