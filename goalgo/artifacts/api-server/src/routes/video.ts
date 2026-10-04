@@ -6,6 +6,7 @@ import {
   dualWriteYektubeInsert,
   dualWriteYektubeUpdate,
   getYektubeDbForRead,
+  isYektubeReadFallbackError,
   videoSourcesTable,
   videosTable,
 } from "@workspace/db";
@@ -173,6 +174,40 @@ const videosListSelect = {
 
 const router: IRouter = Router();
 const db = getYektubeDbForRead();
+
+/** Public video okuması her iki DB'de de düşerse 500 yerine boş gövde. */
+function publicVideoRead(
+  label: string,
+  emptyBody: unknown,
+  handler: (req: Request, res: Response) => Promise<void>,
+): (req: Request, res: Response) => Promise<void> {
+  return async (req, res) => {
+    try {
+      await handler(req, res);
+    } catch (err) {
+      if (res.headersSent) throw err;
+      if (!isYektubeReadFallbackError(err)) throw err;
+      logger.error({ err }, `[video] ${label} okunamadı; boş yanıt`);
+      res.json(emptyBody);
+    }
+  };
+}
+
+function missingOnVideoRead(
+  label: string,
+  handler: (req: Request, res: Response) => Promise<void>,
+): (req: Request, res: Response) => Promise<void> {
+  return async (req, res) => {
+    try {
+      await handler(req, res);
+    } catch (err) {
+      if (res.headersSent) throw err;
+      if (!isYektubeReadFallbackError(err)) throw err;
+      logger.error({ err }, `[video] ${label} okunamadı`);
+      res.status(404).json({ error: "Kaynak bulunamadı" });
+    }
+  };
+}
 
 /** Toplu güncelleme — aynı anda tek iş */
 let bulkVideoUpdateRunning = false;
@@ -1207,8 +1242,8 @@ router.get("/video/live", async (_req, res): Promise<void> => {
       videos: [...tvVideos, ...channelLiveVideos],
     });
   } catch (err) {
-    logger.error({ err }, "[video] live feed failed");
-    res.status(500).json({ error: "Canlı yayınlar yüklenemedi" });
+    logger.error({ err }, "[video] live feed failed; empty catalog");
+    res.json({ sources: [], tvVideos: [], channelLiveVideos: [], videos: [] });
   }
 });
 
@@ -1275,7 +1310,7 @@ router.get("/video/og/watch-by-path", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/video/sources/by-ref/:ref", async (req, res): Promise<void> => {
+router.get("/video/sources/by-ref/:ref", missingOnVideoRead("sources/by-ref", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.ref) ? req.params.ref[0] : req.params.ref;
   const ref = String(raw ?? "").trim();
   if (!ref) {
@@ -1292,9 +1327,9 @@ router.get("/video/sources/by-ref/:ref", async (req, res): Promise<void> => {
   const etag = buildVideoSourceEtag(row);
   if (applyConditionalJsonEtag(req, res, etag)) return;
   res.json(payload);
-});
+}));
 
-router.get("/video/sources", async (_req, res): Promise<void> => {
+router.get("/video/sources", publicVideoRead("sources", [], async (_req, res): Promise<void> => {
   const rows = (await db
     .select()
     .from(videoSourcesTable)
@@ -1323,7 +1358,7 @@ router.get("/video/sources", async (_req, res): Promise<void> => {
     });
   }
   res.json(rows.map((row) => serializeLiveAwareSource(row, thumbs)));
-});
+}));
 
 function serializeLiveAwareSource(row: VideoSourceRow, thumbs: Map<number, string>) {
   const base = serializeSourceWithCoverFallback(row, thumbs);
@@ -1334,7 +1369,7 @@ function serializeLiveAwareSource(row: VideoSourceRow, thumbs: Map<number, strin
   };
 }
 
-router.get("/video/sources/:id", async (req, res): Promise<void> => {
+router.get("/video/sources/:id", missingOnVideoRead("sources/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(String(raw), 10);
   if (Number.isNaN(id)) {
@@ -1364,7 +1399,7 @@ router.get("/video/sources/:id", async (req, res): Promise<void> => {
   }
   const thumbs = coverOverride ? new Map([[id, coverOverride]]) : new Map<number, string>();
   res.json(serializeSourceWithCoverFallback(row, thumbs));
-});
+}));
 
 /**
  * Kanal kapak + logo (YouTube Data API yok) — HTML sayfasından ytInitialData.
@@ -2874,7 +2909,7 @@ router.post("/video/import-top-channels", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/video/videos/random", async (req, res): Promise<void> => {
+router.get("/video/videos/random", publicVideoRead("videos/random", { items: [], total: 0 }, async (req, res): Promise<void> => {
   const limit = Math.min(Number(req.query.limit ?? 16) || 16, 50);
   const categorySlug = typeof req.query.categorySlug === "string" ? req.query.categorySlug.trim() : undefined;
   const excludeRaw = typeof req.query.exclude === "string" ? req.query.exclude : "";
@@ -2895,7 +2930,7 @@ router.get("/video/videos/random", async (req, res): Promise<void> => {
     .limit(limit);
 
   res.json({ items: rows.map((row) => serializeVideo(row)), total: rows.length });
-});
+}));
 
 router.get("/video/youtube-meta/:youtubeVideoId", async (req, res): Promise<void> => {
   const youtubeVideoId = String(req.params.youtubeVideoId ?? "").trim();
@@ -2903,8 +2938,8 @@ router.get("/video/youtube-meta/:youtubeVideoId", async (req, res): Promise<void
     res.status(400).json({ error: "Geçersiz video ID" });
     return;
   }
-  const map = await fetchYoutubeVideoSnippetMap([youtubeVideoId]);
-  const meta = map.get(youtubeVideoId);
+  const map = await fetchYoutubeVideoSnippetMap([youtubeVideoId]).catch(() => new Map());
+  const meta = map.get(youtubeVideoId) ?? (await fetchYoutubeOembedSnippet(youtubeVideoId));
   if (!meta) {
     if (await proxyYoutubeRequestToFallback(req, res)) return;
     res.status(404).json({ error: "Video meta bulunamadı" });
@@ -2912,6 +2947,32 @@ router.get("/video/youtube-meta/:youtubeVideoId", async (req, res): Promise<void
   }
   res.json(meta);
 });
+
+/** Data API anahtarı/kotası yokken bile başlık + kapak: anahtarsız YouTube oEmbed. */
+async function fetchYoutubeOembedSnippet(videoId: string) {
+  try {
+    const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(
+      `https://www.youtube.com/watch?v=${videoId}`,
+    )}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(4_000) });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { title?: string; author_name?: string; thumbnail_url?: string };
+    const title = String(j.title ?? "").trim();
+    if (!title) return null;
+    return {
+      videoId,
+      title: title.slice(0, 500),
+      description: "",
+      duration: null,
+      thumbnail: j.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      channelTitle: j.author_name || undefined,
+      liveBroadcastContent: "none" as const,
+      isLive: false,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /** Google Translate ile SEO meta — orijinal başlık DB/UI'da kalır */
 router.get("/video/seo-meta/status", async (_req, res): Promise<void> => {
@@ -3589,7 +3650,7 @@ function serveVideoListCached(req: Request, res: Response): boolean {
   return false;
 }
 
-router.get("/video/videos", async (req, res): Promise<void> => {
+router.get("/video/videos", publicVideoRead("videos", { items: [], total: 0 }, async (req, res): Promise<void> => {
   if (serveVideoListCached(req, res)) return;
   const categorySlug = typeof req.query.categorySlug === "string" ? req.query.categorySlug : undefined;
   const sourceId = typeof req.query.sourceId === "string" ? parseInt(req.query.sourceId) : undefined;
@@ -3918,7 +3979,7 @@ router.get("/video/videos", async (req, res): Promise<void> => {
     items,
     total: totalRows[0]?.count ?? 0,
   });
-});
+}));
 
 router.patch("/video/videos/bulk", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
