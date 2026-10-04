@@ -32,8 +32,9 @@ const ZONES = [
 ];
 
 // Apex ön yüzü PHP temasında olan siteler: apex catch-all route / apex custom domain / apex DNS bu script tarafından
-// GERİ EKLENMEZ (aksi halde cron her 20 dk siteyi eski ön yüze döndürür). www ve panel/API route'ları wrangler.toml'da.
-const PHP_THEME_APEX = new Set(["ankarahabergundemi.com", "ankarasehirgazetesi.com"]);
+// GERİ EKLENMEZ (aksi halde cron her 20 dk siteyi eski ön yüze döndürür). www de PHP origin'de (301 → apex): www DNS/route/custom domain da
+// eklenmez. Panel/API route'ları wrangler.toml'da.
+const PHP_THEME_APEX = new Set(["ankarahabergundemi.com", "ankarasehirgazetesi.com", "kirsehirhaber.org", "vatanhaber.net"]);
 
 function token() {
   return process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";
@@ -140,7 +141,7 @@ async function ensureRoutes(zoneId, zoneName) {
   const existing = list.json?.result || [];
   const byPattern = new Map(existing.map((r) => [r.pattern, r]));
   const patterns = PHP_THEME_APEX.has(zoneName)
-    ? [`www.${zoneName}/*`, `www.${zoneName}`]
+    ? []
     : [`${zoneName}/*`, zoneName, `www.${zoneName}/*`, `www.${zoneName}`];
   for (const pattern of patterns) {
     const row = byPattern.get(pattern);
@@ -239,10 +240,10 @@ async function fixZone(name) {
   }
   console.log(`[fix] zone id=${zone.id} status=${zone.status}`);
   if (!PHP_THEME_APEX.has(name)) await ensureOriginlessDns(zone.id, name, "@", name);
-  await ensureOriginlessDns(zone.id, name, "www", `www.${name}`);
+  if (!PHP_THEME_APEX.has(name)) await ensureOriginlessDns(zone.id, name, "www", `www.${name}`);
   await ensureRoutes(zone.id, name);
   if (!PHP_THEME_APEX.has(name)) await attachCustomDomain(name);
-  await attachCustomDomain(`www.${name}`);
+  if (!PHP_THEME_APEX.has(name)) await attachCustomDomain(`www.${name}`);
 
   const dnsList = await cf(`/zones/${zone.id}/dns_records?per_page=100`);
   const dnsRows = (dnsList.json?.result || []).filter((r) =>
