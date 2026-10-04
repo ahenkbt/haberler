@@ -97,12 +97,16 @@ import {
   isTurkataHaberHost,
   isTurkataSeoPath,
   isTurkataWwwHost,
+  mergeTurkataStaticPagesIntoUrlset,
   portalHaberlerArticleAliasPath,
   rewriteAhenkNewsCanonicalHtml,
+  rewriteTurkataSitemapXml,
   rewriteTurkataSpaHtml,
   turkataArticleSlug,
   turkataDynamicSeoBody,
+  turkataSitemapFromUpstream,
   turkataStaticSeoBody,
+  turkataUpstreamSitemapApiPath,
   TURKATA_ORIGIN,
 } from "./turkata-haber.js";
 import { sitemapFailXml, toGscWebSitemapXml, isGscWebSitemapPath } from "./sitemap-fail-xml.js";
@@ -481,6 +485,10 @@ function isApiPath(pathname) {
 /** K├Âk sitemap .xml ÔåÆ /api/sitemap/* (Googlebot HTML SPA almas─▒n). */
 function rootSitemapApiPath(pathname, hostname) {
   const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  if (isTurkataHaberHost(hostname)) {
+    const turkataApi = turkataUpstreamSitemapApiPath(p);
+    if (turkataApi) return turkataApi;
+  }
   if (p === "/sitemap.xml" || p === "/sitemap-web.xml") {
     // GSC submitted file must be a urlset. HM index.xml was a sitemapindex (0 pages)
     // until the Container rolled; news-hm-{slug}.xml already has the article URLs.
@@ -795,11 +803,17 @@ async function proxyRootSitemap(request, env, incoming) {
       return failXml(upstream.status >= 500 ? 503 : upstream.status || 503);
     }
     let text = rewriteSitemapOrigins(await upstream.text(), incoming.origin);
+    if (isTurkataHaberHost(incoming.hostname)) {
+      text = rewriteTurkataSitemapXml(text);
+    }
     if (/^\/yektube-videos-\d+\.xml$/i.test(pathOnly) || /yektube-videos-\d+/i.test(apiPath)) {
       text = rewriteYektubeVideoSitemapXml(text);
     }
     if (isGscWebSitemapPath(pathOnly)) {
       text = toGscWebSitemapXml(text);
+      if (isTurkataHaberHost(incoming.hostname)) {
+        text = mergeTurkataStaticPagesIntoUrlset(text);
+      }
     }
     const headers = xmlHeaders();
     headers.set(
@@ -1067,23 +1081,75 @@ async function loadTurkataHybridItems(env, incoming) {
   return items;
 }
 
+async function loadTurkataUpstreamSitemap(env, incoming, apiPath) {
+  const origin = upstreamOrigin(env, incoming);
+  try {
+    const res = await withBudget(
+      fetchApiWithRetry(
+        env,
+        `${origin}${apiPath}`,
+        {
+          headers: {
+            accept: "application/xml, text/xml, */*",
+            "x-forwarded-host": incoming.host,
+            "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
+          },
+        },
+        1,
+      ),
+      12000,
+    );
+    if (!res?.ok) return { ok: false, xml: "" };
+    const ct = String(res.headers.get("content-type") || "").toLowerCase();
+    if (!ct.includes("xml") && !ct.includes("text/plain") && !ct.includes("text/xml")) {
+      return { ok: false, xml: "" };
+    }
+    const xml = await res.text();
+    if (!xml.includes("<urlset")) return { ok: false, xml: "" };
+    return { ok: true, xml };
+  } catch {
+    return { ok: false, xml: "" };
+  }
+}
+
+function turkataSeoHttpResponse(request, payload, extraHeaders) {
+  const headers = new Headers({
+    "content-type": payload.contentType,
+    "cache-control": payload.failed ? "no-store" : "public, max-age=300",
+    "x-yekpare-frontend": "cloudflare-turkata-seo",
+    ...(extraHeaders || {}),
+  });
+  if (payload.failed) {
+    headers.set("x-yekpare-sitemap-error", "1");
+    headers.set("retry-after", "60");
+  }
+  if (request.method === "HEAD") return new Response(null, { status: payload.status || 200, headers });
+  return new Response(payload.body, { status: payload.status || 200, headers });
+}
+
 async function serveTurkataSeo(request, env, incoming) {
   if (!isTurkataHaberHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
-  if (!isTurkataSeoPath(incoming.pathname)) return null;
-  let payload = turkataStaticSeoBody(incoming.pathname);
-  if (!payload && isTurkataDynamicSeoPath(incoming.pathname)) {
-    const items = await loadTurkataHybridItems(env, incoming);
-    payload = turkataDynamicSeoBody(incoming.pathname, items);
+  const upstreamPath = turkataUpstreamSitemapApiPath(incoming.pathname);
+  if (!upstreamPath && !isTurkataSeoPath(incoming.pathname)) return null;
+  try {
+    if (upstreamPath) {
+      const loaded = await loadTurkataUpstreamSitemap(env, incoming, upstreamPath);
+      const payload = turkataSitemapFromUpstream(incoming.pathname, loaded);
+      return turkataSeoHttpResponse(request, payload, { "x-yekpare-sitemap-api": upstreamPath });
+    }
+    let payload = turkataStaticSeoBody(incoming.pathname);
+    if (!payload && isTurkataDynamicSeoPath(incoming.pathname)) {
+      const items = await loadTurkataHybridItems(env, incoming);
+      payload = turkataDynamicSeoBody(incoming.pathname, items);
+    }
+    if (!payload) return null;
+    return turkataSeoHttpResponse(request, { ...payload, status: 200, failed: false });
+  } catch {
+    if (!upstreamPath) return null;
+    const payload = turkataSitemapFromUpstream(incoming.pathname, { ok: false, xml: "" });
+    return turkataSeoHttpResponse(request, payload, { "x-yekpare-sitemap-api": upstreamPath });
   }
-  if (!payload) return null;
-  const headers = new Headers({
-    "content-type": payload.contentType,
-    "cache-control": "public, max-age=300",
-    "x-yekpare-frontend": "cloudflare-turkata-seo",
-  });
-  if (request.method === "HEAD") return new Response(null, { status: 200, headers });
-  return new Response(payload.body, { status: 200, headers });
 }
 
 /** SPA + statik: ASSETS; yoksa null (API/Container vekiline d├╝┼ş). */

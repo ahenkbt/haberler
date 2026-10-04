@@ -187,6 +187,11 @@ function xmlHeader() {
   return '<?xml version="1.0" encoding="UTF-8"?>\n';
 }
 
+/** Portal news stream on the TürkAta host — not the agency brand name. */
+function portalSitemapPublicationName(req: import("express").Request): string {
+  return normalizeRequestHost(req) === "turkatahaber.com" ? "TÜRKATA HABER AJANSI" : PORTAL_BRAND_SHORT;
+}
+
 function escXml(s: string) {
   return s
     .replace(/&/g, "&amp;")
@@ -514,7 +519,7 @@ function newsUrlXmlBlock(
 router.get("/news-yekpare.xml", async (req, res): Promise<void> => {
   try {
     const base = resolvePortalRequestOrigin(req);
-    const pubName = PORTAL_BRAND_SHORT;
+    const pubName = portalSitemapPublicationName(req);
     const mediaOrigin = base.replace(/\/+$/, "");
     const articles = dedupeNewsSitemapRows(
       await db
@@ -576,7 +581,7 @@ router.get("/news-yekpare-cat-:catSlug.xml", async (req, res): Promise<void> => 
         .then((rows) => rows.map(mapJoinedNewsSitemapRow)),
     );
 
-    const pubName = `${PORTAL_BRAND_SHORT} — ${cat.name ?? catSlug}`;
+    const pubName = `${portalSitemapPublicationName(req)} — ${cat.name ?? catSlug}`;
     if (articles.length === 0) {
       sendUrlset(res, "");
       return;
@@ -923,7 +928,7 @@ router.get("/news-yekpare-google-news.xml", async (req, res): Promise<void> => {
       res,
       articles,
       (a) => yekpareArticleUrl(a.slug, base),
-      PORTAL_BRAND_SHORT,
+      portalSitemapPublicationName(req),
       base.replace(/\/+$/, ""),
     );
   } catch {
@@ -1041,7 +1046,7 @@ router.get("/google-news.xml", async (req, res): Promise<void> => {
       res,
       articles,
       (a) => yekpareArticleUrl(a.slug, base),
-      PORTAL_BRAND_SHORT,
+      portalSitemapPublicationName(req),
       base.replace(/\/+$/, ""),
     );
   } catch {
@@ -1220,7 +1225,7 @@ router.get("/news.xml", async (req, res): Promise<void> => {
 
     const urls = articles
       .map((a) =>
-        newsUrlXmlBlock(yekpareArticleUrl(a.slug, base), a, PORTAL_BRAND_SHORT, true, { mediaOrigin }),
+        newsUrlXmlBlock(yekpareArticleUrl(a.slug, base), a, portalSitemapPublicationName(req), true, { mediaOrigin }),
       )
       .join("\n");
 

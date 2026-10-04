@@ -5,6 +5,7 @@
  */
 
 import { markHmNewsBootHtml } from "./hm-html-boot.js";
+import { sitemapFailXml, toGscWebSitemapXml } from "./sitemap-fail-xml.js";
 
 export const TURKATA_APEX_HOST = "turkatahaber.com";
 export const TURKATA_WWW_HOST = "www.turkatahaber.com";
@@ -688,15 +689,20 @@ export function turkataItemPath(item) {
 }
 
 function publicationDate(item) {
-  return isoDate(item?.publishedAt || item?.createdAt || item?.date || "");
+  return isoDate(item?.publishedAt || item?.createdAt || item?.date || item?.updatedAt || "");
 }
 
-export function isRecentGoogleNewsItem(item, now = Date.now()) {
-  const iso = publicationDate(item);
+function withinGoogleNewsWindow(iso, now) {
   if (!iso) return false;
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return false;
   return now - t <= GOOGLE_NEWS_MAX_AGE_MS && t <= now + 5 * 60 * 1000;
+}
+
+/** Yayın veya güncelleme son 48 saatteyse (API sitemap ile aynı kural). */
+export function isRecentGoogleNewsItem(item, now = Date.now()) {
+  const stamps = [item?.publishedAt, item?.createdAt, item?.updatedAt, item?.dateModified, item?.date];
+  return stamps.some((value) => withinGoogleNewsWindow(isoDate(value), now));
 }
 
 function urlNode(loc, extra) {
@@ -774,11 +780,98 @@ export function buildTurkataSitemapIndexXml() {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</sitemapindex>\n`;
 }
 
+const TURKATA_SITEMAP_REWRITE_ORIGINS = [
+  "https://www.ahenk.net.tr",
+  "http://www.ahenk.net.tr",
+  "https://ahenk.net.tr",
+  "http://ahenk.net.tr",
+  "https://www.turk.eco",
+  "http://www.turk.eco",
+  "https://turk.eco",
+  "http://turk.eco",
+  "https://goalgo-production.up.railway.app",
+  "http://goalgo-production.up.railway.app",
+  "https://goalgo-y7ze.onrender.com",
+  "http://goalgo-y7ze.onrender.com",
+];
+
+const TURKATA_STATIC_SITEMAP_PAGES = ["/", "/hakkimizda", "/kunye", "/iletisim"];
+
+/**
+ * turkatahaber.com is not an HM slug. The shared proxy maps /sitemap.xml to
+ * /api/sitemap/index.xml for unknown hosts, and that route 500s. These files
+ * are the portal article urlsets instead.
+ */
+export function turkataUpstreamSitemapApiPath(pathname) {
+  const p = normalizeTurkataPath(pathname).toLowerCase();
+  if (p === "/sitemap.xml" || p === "/sitemap-web.xml" || p === "/sitemap-news.xml") {
+    return "/api/sitemap/news-yekpare.xml";
+  }
+  if (p === "/google-news.xml") return "/api/sitemap/google-news.xml";
+  return null;
+}
+
+export function rewriteTurkataSitemapXml(xml) {
+  let out = String(xml || "");
+  for (const bad of TURKATA_SITEMAP_REWRITE_ORIGINS) {
+    if (out.includes(bad)) out = out.split(bad).join(TURKATA_ORIGIN);
+  }
+  out = out.replace(
+    /<news:name>[^<]*<\/news:name>/g,
+    `<news:name>${xmlEscape(TURKATA_BRAND)}</news:name>`,
+  );
+  return out;
+}
+
+export function mergeTurkataStaticPagesIntoUrlset(xml) {
+  let out = String(xml || "");
+  if (!out.includes("<urlset")) {
+    out =
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>\n`;
+  }
+  const inserts = [];
+  for (const path of TURKATA_STATIC_SITEMAP_PAGES) {
+    const loc = path === "/" ? `${TURKATA_ORIGIN}/` : `${TURKATA_ORIGIN}${path}`;
+    if (out.includes(`<loc>${loc}</loc>`)) continue;
+    inserts.push(urlNode(loc, ""));
+  }
+  if (!inserts.length) return out;
+  const idx = out.lastIndexOf("</urlset>");
+  if (idx === -1) return out;
+  return `${out.slice(0, idx)}${inserts.join("\n")}\n${out.slice(idx)}`;
+}
+
+/** Upstream article XML → public TürkAta sitemap, or sitemapFailXml when the API failed. */
+export function turkataSitemapFromUpstream(pathname, upstream) {
+  const p = normalizeTurkataPath(pathname).toLowerCase();
+  const xml = String(upstream?.xml || "");
+  if (upstream?.ok !== true || !xml.includes("<urlset")) {
+    return {
+      status: 503,
+      contentType: "application/xml; charset=utf-8",
+      body: sitemapFailXml(p, TURKATA_ORIGIN),
+      failed: true,
+    };
+  }
+  let body = rewriteTurkataSitemapXml(xml);
+  if (p === "/sitemap.xml" || p === "/sitemap-web.xml") {
+    body = toGscWebSitemapXml(body);
+    body = mergeTurkataStaticPagesIntoUrlset(body);
+  }
+  return {
+    status: 200,
+    contentType: "application/xml; charset=utf-8",
+    body,
+    failed: false,
+  };
+}
+
 export function turkataStaticSeoBody(pathname) {
   const p = normalizeTurkataPath(pathname).toLowerCase();
   if (p === "/robots.txt") return { contentType: "text/plain; charset=utf-8", body: buildTurkataRobotsTxt() };
   if (p === "/llms.txt" || p === "/ai.txt") return { contentType: "text/plain; charset=utf-8", body: buildTurkataLlmsTxt() };
-  if (p === "/sitemap.xml") return { contentType: "application/xml; charset=utf-8", body: buildTurkataSitemapIndexXml() };
+  if (p === "/sitemap-index.xml") return { contentType: "application/xml; charset=utf-8", body: buildTurkataSitemapIndexXml() };
   if (p === "/sitemap-pages.xml") return { contentType: "application/xml; charset=utf-8", body: buildTurkataPagesSitemapXml() };
   return null;
 }
@@ -786,14 +879,12 @@ export function turkataStaticSeoBody(pathname) {
 export function turkataDynamicSeoBody(pathname, items) {
   const p = normalizeTurkataPath(pathname).toLowerCase();
   if (p === "/llms-full.txt") return { contentType: "text/plain; charset=utf-8", body: buildTurkataLlmsFullTxt(items) };
-  if (p === "/sitemap-news.xml") return { contentType: "application/xml; charset=utf-8", body: buildTurkataNewsSitemapXml(items) };
-  if (p === "/google-news.xml") return { contentType: "application/xml; charset=utf-8", body: buildTurkataGoogleNewsSitemapXml(items) };
   return null;
 }
 
 export function isTurkataDynamicSeoPath(pathname) {
   const p = normalizeTurkataPath(pathname).toLowerCase();
-  return p === "/llms-full.txt" || p === "/sitemap-news.xml" || p === "/google-news.xml";
+  return p === "/llms-full.txt";
 }
 
 export function isTurkataSeoPath(pathname) {

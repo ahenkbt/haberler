@@ -50,6 +50,8 @@ export function resolvePortalRequestOrigin(req: Request): string {
     .toLowerCase();
   const rawHost = fwd || String(req.get("host") ?? "");
   const host = normalizePortalHostKey(rawHost);
+  // Canonical news host. Keep this origin on sitemap <loc> values.
+  if (host === "turkatahaber.com") return "https://turkatahaber.com";
   if (host && isPortalHostname(host)) {
     const proto = String(req.get("x-forwarded-proto") ?? "https").split(",")[0]?.trim() || "https";
     return canonicalSitemapOrigin(`${proto}://${host}`);

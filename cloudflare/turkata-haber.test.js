@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { sitemapFailXml } from "./sitemap-fail-xml.js";
 import {
   TURKATA_BRAND,
   TURKATA_DESCRIPTION,
@@ -16,6 +17,8 @@ import {
   rewriteTurkataSpaHtml,
   turkataCanonicalUrl,
   turkataPageKind,
+  turkataSitemapFromUpstream,
+  turkataUpstreamSitemapApiPath,
 } from "./turkata-haber.js";
 
 const SHELL = `<!DOCTYPE html>
@@ -201,6 +204,17 @@ describe("turkata seo files", () => {
     ];
     assert.equal(isRecentGoogleNewsItem(items[0], now), true);
     assert.equal(isRecentGoogleNewsItem(items[1], now), false);
+    assert.equal(
+      isRecentGoogleNewsItem(
+        {
+          title: "Guncel",
+          publishedAt: "2026-09-01T00:00:00.000Z",
+          updatedAt: "2026-10-04T08:00:00.000Z",
+        },
+        now,
+      ),
+      true,
+    );
     const news = buildTurkataGoogleNewsSitemapXml(items, now);
     assert.match(news, /https:\/\/turkatahaber\.com\/haber\/yeni/);
     assert.match(news, /<news:name>TÜRKATA HABER AJANSI<\/news:name>/);
@@ -210,5 +224,68 @@ describe("turkata seo files", () => {
     assert.match(web, /haber\/yeni/);
     assert.match(web, /haber\/eski/);
     assert.match(web, /cdn\.example\/y\.jpg/);
+  });
+
+  it("maps turkata sitemaps to article urlsets, not the index route that 500s", async () => {
+    const { hmDomainSlugFallback } = await import("./hm-html-boot.js");
+    assert.equal(hmDomainSlugFallback("turkatahaber.com"), "");
+    assert.equal(hmDomainSlugFallback("vatanhaber.net"), "vatanhaber");
+    assert.equal(turkataUpstreamSitemapApiPath("/sitemap.xml"), "/api/sitemap/news-yekpare.xml");
+    assert.equal(turkataUpstreamSitemapApiPath("/google-news.xml"), "/api/sitemap/google-news.xml");
+    assert.equal(turkataUpstreamSitemapApiPath("/sitemap-news.xml"), "/api/sitemap/news-yekpare.xml");
+  });
+
+  it("rewrites ahenk article URLs into a GSC urlset on the happy path", () => {
+    const upstream = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://ahenk.net.tr/haber/ornek-haber</loc>
+    <lastmod>2026-10-04</lastmod>
+    <news:news>
+      <news:publication>
+        <news:name>Ahenk Bilgi Teknolojileri</news:name>
+        <news:language>tr</news:language>
+      </news:publication>
+      <news:publication_date>2026-10-03T10:00:00.000Z</news:publication_date>
+      <news:title>Ornek</news:title>
+    </news:news>
+  </url>
+</urlset>`;
+    const web = turkataSitemapFromUpstream("/sitemap.xml", { ok: true, xml: upstream });
+    assert.equal(web.status, 200);
+    assert.equal(web.failed, false);
+    assert.match(web.body, /<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9">/);
+    assert.doesNotMatch(web.body, /<sitemapindex/);
+    assert.doesNotMatch(web.body, /xmlns:news/);
+    assert.doesNotMatch(web.body, /ahenk\.net\.tr/);
+    assert.match(web.body, /<loc>https:\/\/turkatahaber\.com\/haber\/ornek-haber<\/loc>/);
+    assert.match(web.body, /<loc>https:\/\/turkatahaber\.com\/<\/loc>/);
+    assert.match(web.body, /<loc>https:\/\/turkatahaber\.com\/hakkimizda<\/loc>/);
+
+    const news = turkataSitemapFromUpstream("/google-news.xml", { ok: true, xml: upstream });
+    assert.equal(news.status, 200);
+    assert.match(news.body, /<loc>https:\/\/turkatahaber\.com\/haber\/ornek-haber<\/loc>/);
+    assert.match(news.body, /<news:name>TÜRKATA HABER AJANSI<\/news:name>/);
+    assert.match(news.body, /xmlns:news=/);
+    assert.doesNotMatch(news.body, /Ahenk Bilgi Teknolojileri/);
+  });
+
+  it("uses sitemapFailXml when the upstream sitemap fails", () => {
+    for (const path of ["/sitemap.xml", "/google-news.xml"]) {
+      const failed = turkataSitemapFromUpstream(path, { ok: false, xml: "Sitemap hatası" });
+      assert.equal(failed.status, 503);
+      assert.equal(failed.failed, true);
+      assert.equal(failed.body, sitemapFailXml(path, TURKATA_ORIGIN));
+      const html = turkataSitemapFromUpstream(path, {
+        ok: true,
+        xml: "<!doctype html><title>500</title>",
+      });
+      assert.equal(html.status, 503);
+      assert.equal(html.body, sitemapFailXml(path, TURKATA_ORIGIN));
+    }
+    const home = sitemapFailXml("/sitemap.xml", TURKATA_ORIGIN);
+    assert.match(home, /<urlset /);
+    assert.doesNotMatch(home, /<sitemapindex/);
+    assert.match(home, /<loc>https:\/\/turkatahaber\.com\/<\/loc>/);
   });
 });
