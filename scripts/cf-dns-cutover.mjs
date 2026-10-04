@@ -6,7 +6,7 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { detachRemovedDomains } from "./cf-detached-domains.mjs";
+import { detachRemovedDomains, isPhpThemeZone } from "./cf-detached-domains.mjs";
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "16f5b996194174624e7969a3658bd2bb";
 const API = "https://api.cloudflare.com/client/v4";
@@ -85,6 +85,11 @@ async function getZoneId(auth, name) {
 }
 
 async function attachWorkerHostname(auth, hostname) {
+  // PHP tema siteleri: apex/www custom domain Worker'a bağlanmaz (ön yüz VPS'te; Worker yalnızca panel/API route'ları).
+  if (isPhpThemeZone(hostname)) {
+    console.log(`[cutover] workers/domains ${hostname} skip (PHP tema sitesi)`);
+    return true;
+  }
   // Workers Domains (custom domains) API
   const r = await cf(
     `/accounts/${ACCOUNT_ID}/workers/domains`,

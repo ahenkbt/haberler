@@ -36,7 +36,21 @@ const ZONES = [
 // Apex ön yüzü PHP temasında olan siteler: apex catch-all route / apex custom domain / apex DNS bu script tarafından
 // GERİ EKLENMEZ (aksi halde cron her 20 dk siteyi eski ön yüze döndürür). www de PHP origin'de (301 → apex): www DNS/route/custom domain da
 // eklenmez. Panel/API route'ları wrangler.toml'da.
-const PHP_THEME_APEX = new Set(["ankarahabergundemi.com", "ankarasehirgazetesi.com", "kirsehirhaber.org", "suhaber.net", "vatanhaber.net"]);
+// Yeni PHP tema siteleri (sehitgazi.org.tr, yerel.net.tr, turksav.org, dunyasaglik.org, yesilvatan.gen.tr) ZONES'ta BİLEREK yok:
+// cron bu zone'lara hiç dokunmaz (DNS/route/custom domain/purge). Burada da listelidirler ki biri ZONES'a eklerse
+// apex/www yine Worker'a çevrilmesin.
+const PHP_THEME_APEX = new Set([
+  "ankarahabergundemi.com",
+  "ankarasehirgazetesi.com",
+  "kirsehirhaber.org",
+  "suhaber.net",
+  "vatanhaber.net",
+  "sehitgazi.org.tr",
+  "yerel.net.tr",
+  "turksav.org",
+  "dunyasaglik.org",
+  "yesilvatan.gen.tr",
+]);
 
 function token() {
   return process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";

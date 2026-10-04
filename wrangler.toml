@@ -388,6 +388,215 @@ zone_name = "turkatahaber.com"
 pattern = "www.turkatahaber.com/*"
 zone_name = "turkatahaber.com"
 
+# Yeni PHP tema haber siteleri (04.10.2026): sehitgazi.org.tr, yerel.net.tr, turksav.org, dunyasaglik.org, yesilvatan.gen.tr.
+# Apex + www→apex 301 ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca HM Editör panel/API yollarını alır.
+# apex/www custom_domain ve "<alan>/*", "www.<alan>/*" catch-all BİLEREK yok (deploy geri eklerse site PHP temasından düşer).
+# "<alan>/assets/theme.*" route'u (Worker'sız, PHP temanın CSS/JS'i) Cloudflare panelinden yönetilir.
+
+# sehitgazi.org.tr
+[[routes]]
+pattern = "sehitgazi.org.tr/editor*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/api/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/admin*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/panel*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/haber-merkezi*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/assets/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/sw.js"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/llms.txt"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/ai.txt"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/manifest.json"
+zone_name = "sehitgazi.org.tr"
+
+# yerel.net.tr
+[[routes]]
+pattern = "yerel.net.tr/editor*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/api/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/admin*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/panel*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/haber-merkezi*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/assets/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/sw.js"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/llms.txt"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/ai.txt"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/manifest.json"
+zone_name = "yerel.net.tr"
+
+# turksav.org
+[[routes]]
+pattern = "turksav.org/editor*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/api/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/admin*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/panel*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/haber-merkezi*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/assets/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/sw.js"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/llms.txt"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/ai.txt"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/manifest.json"
+zone_name = "turksav.org"
+
+# dunyasaglik.org
+[[routes]]
+pattern = "dunyasaglik.org/editor*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/api/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/admin*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/panel*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/haber-merkezi*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/assets/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/sw.js"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/llms.txt"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/ai.txt"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/manifest.json"
+zone_name = "dunyasaglik.org"
+
+# yesilvatan.gen.tr
+[[routes]]
+pattern = "yesilvatan.gen.tr/editor*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/api/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/admin*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/panel*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/haber-merkezi*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/assets/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/sw.js"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/llms.txt"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/ai.txt"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/manifest.json"
+zone_name = "yesilvatan.gen.tr"
 # Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc
 [[routes]]
 pattern = "trafikdernegi.com"
