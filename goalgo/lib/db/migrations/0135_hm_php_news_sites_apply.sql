@@ -1,9 +1,11 @@
--- 0134 journal when=1777566046710 (2026-04-30). Drizzle applies a file only when that when is
--- greater than the latest drizzle.__drizzle_migrations.created_at. If that high-water mark is a
--- real Date.now() from 2026-10, 0133 and 0134 are skipped forever and the API stays up with no rows.
--- This copy uses when=1800000000000 (after 2026-10-04). The NEXT migration in THIS folder must use
--- a when greater than 1800000000000 or drizzle will skip it.
--- The same statement is also in the news-cluster folder so a NEWS_DB_READ=news database gets the rows.
+-- Journal when values are 2026-10-04 timestamps just after now (1791153652496, 1791153653496, 1791153654496),
+-- not a future month. Drizzle skips any later migration whose when is below the latest
+-- drizzle.__drizzle_migrations.created_at, so a January 2027 stamp would hide every
+-- migration authored with Date.now() before that date.
+-- 0133 and 0134 keep their SQL. Their journal whens moved up with this file so the
+-- folder stays in created_at order and a stale April 2026 when cannot sit ahead of a
+-- later high-water mark and be skipped.
+-- Same statement is in the news-cluster migrations so NEWS_DATABASE_URL receives the rows.
 -- 0133 retry. 0133 tek bir EXCEPTION bloğundaydı: bir satır hata verirse (ASG layout_json nesne değilse,
 -- layout_json jsonb iken trim(), bozuk JSON) tüm INSERT'ler geri alınır ama drizzle migration uygulanmış sayılır.
 -- Bu dosya aynı veriyi yazar; her site ve her editör kendi alt işlemindedir. Şablon layout'u güvenli değilse boş nesne kullanılır.
