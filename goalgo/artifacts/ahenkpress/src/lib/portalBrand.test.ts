@@ -11,6 +11,7 @@ import {
   defaultAhenkAgencySite,
   defaultAhenkNavItems,
 } from "./ahenkAgencySite";
+import { AHENK_LOGO_MARK, AHENK_LOGO_WORDMARK } from "./ahenkCampaignPrice";
 import { isAhenkAgencyPublicPath } from "./ahenkAgencyHost";
 
 describe("Ahenk portal brand", () => {
@@ -34,6 +35,7 @@ describe("Ahenk portal brand", () => {
     expect(isAhenkAgencyPublicPath("/destek")).toBe(true);
     expect(isAhenkAgencyPublicPath("/iletisim-kunye")).toBe(true);
     expect(isAhenkAgencyPublicPath("/haberler")).toBe(true);
+    expect(isAhenkAgencyPublicPath("/turkata-haber-ajansi")).toBe(true);
     expect(isAhenkAgencyPublicPath("/newsmap")).toBe(false);
   });
 
@@ -59,5 +61,15 @@ describe("Ahenk portal brand", () => {
     expect(custom.tagline).toContain("Ahenk Bilgi Teknolojileri");
     expect(custom.email).toBe("destek@ahenk.net.tr");
     expect(custom.phoneTel).toBe("+905551112233");
+  });
+
+  it("does not use the 404 media-upload logo on the Ahenk header", () => {
+    const broken = "/api/media/uploads/1785675981610-bdd41db2c0085bfb.webp";
+    const merged = applySiteSettingsToAhenkAgency(defaultAhenkAgencySite(), {
+      logoUrl: broken,
+      faviconUrl: broken,
+    });
+    expect(merged.logoUrl).toBe(AHENK_LOGO_WORDMARK);
+    expect(merged.logoMarkUrl).toBe(AHENK_LOGO_MARK);
   });
 });

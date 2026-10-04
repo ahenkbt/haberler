@@ -31,12 +31,6 @@ export function AhenkHaberChrome({
 
   return (
     <div className="ahenk-haber">
-      <div className="ahenk-haber-demo">
-        Canlı demo — Ahenk haber sitesi yazılımı ·{" "}
-        <Link href="/haber-sitesi-yazilimi">Yazılımı inceleyin</Link>
-        {" · "}
-        <Link href="/">Ahenk BT</Link>
-      </div>
       <header className="ahenk-haber-header">
         <div className="ahenk-haber-header-inner">
           <Link href="/haberler" className="ahenk-haber-brand" aria-label="AHENK HABER">

@@ -8,11 +8,41 @@
 
     <!-- Primary Meta Tags -->
     <title>Ahenk Bilgi Teknolojileri</title>
+    <style id="hm-news-boot-css">html.hm-news-boot,html.hm-news-boot body{background:#fff!important;color:#111}html.hm-news-boot #root:empty{min-height:100vh;background:#fff}</style>
     <script>
       (function () {
         try {
           var hostEarly = (location.hostname || "").toLowerCase().replace(/^www\./, "").split(":")[0];
           var pathEarly = (location.pathname || "/").replace(/\/+$/, "") || "/";
+          var HM_EARLY_TITLES = {
+            "ankarasehirgazetesi.com": "Ankara Şehir Gazetesi",
+            "kirsehirhaber.org": "Kırşehir Haber",
+            "kirsehri.com": "Kırşehir Haber",
+            "kirsehir.net": "Kırşehir Haber",
+            "suhaber.net": "Su Haber",
+            "suhaberajansi.com": "Su Haber",
+            "ankarahabergundemi.com": "Ankara Haber Gündemi",
+            "vatanhaber.net": "Vatan Haber",
+            "vatankahramanlari.org": "Vatan Kahramanları",
+            "vatankahramanlari.org.tr": "Vatan Kahramanları",
+            "trafikdernegi.com": "Trafik Güvenliği Derneği",
+            "tgd.tc": "Trafik Güvenliği Derneği",
+            "trafik.gd": "Trafik Güvenliği Derneği"
+          };
+          var hmEarlyName = HM_EARLY_TITLES[hostEarly] || "";
+          if (hostEarly === "turkatahaber.com" || hmEarlyName) {
+            document.documentElement.classList.add("hm-news-boot");
+            var bootTheme = document.querySelector('meta[name="theme-color"]');
+            if (!bootTheme) {
+              bootTheme = document.createElement("meta");
+              bootTheme.setAttribute("name", "theme-color");
+              document.head.appendChild(bootTheme);
+            }
+            bootTheme.setAttribute("content", "#ffffff");
+          }
+          if (hmEarlyName) {
+            document.title = hmEarlyName + " — " + hostEarly + " resmi haber sitesi";
+          }
           var ahenkAgencyPath =
             pathEarly === "/" ||
             pathEarly === "/hizmetler" ||
@@ -21,8 +51,13 @@
             pathEarly === "/iletisim" ||
             pathEarly === "/kariyer" ||
             pathEarly === "/urun-satisi" ||
+            pathEarly === "/turkata-haber-ajansi" ||
             pathEarly.indexOf("/hizmet/") === 0 ||
             pathEarly.indexOf("/icerik/") === 0;
+          if (hostEarly === "turkatahaber.com") {
+            document.title = "TÜRKATA HABER AJANSI";
+            document.documentElement.lang = "tr";
+          }
           if (hostEarly === "ahenk.net.tr" && ahenkAgencyPath) {
             document.title = "Ahenk Bilgi Teknolojileri";
             var descEl = document.querySelector('meta[name="description"]');
@@ -511,6 +546,11 @@
           }
 
           var host = (location.hostname || "").toLowerCase().split(":")[0];
+          if (host === "turkatahaber.com" || host === "www.turkatahaber.com") {
+            document.title = "TÜRKATA HABER AJANSI";
+            document.documentElement.lang = "tr";
+            return;
+          }
           var portal =
             !host ||
             host === "turk.eco" ||
@@ -549,16 +589,17 @@
               prefetchHmDomainMeta(host);
             }
             var human = host.replace(/^www\./, "");
+            var earlyName = HM_EARLY_TITLES[human] || "";
             var earlyCanonical = location.origin.replace(/\/+$/, "") + "/";
-            document.title = human + " — Haber";
+            if (!earlyName) document.title = human + " — Haber";
             var canon = document.querySelector('link[rel="canonical"]');
             if (canon) canon.href = earlyCanonical;
             var ogUrl = document.querySelector('meta[property="og:url"]');
             if (ogUrl) ogUrl.setAttribute("content", earlyCanonical);
             var og2 = document.querySelector('meta[property="og:site_name"]');
-            if (og2) og2.setAttribute("content", human);
+            if (og2) og2.setAttribute("content", earlyName || human);
             var ap2 = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-            if (ap2) ap2.setAttribute("content", human);
+            if (ap2) ap2.setAttribute("content", earlyName || human);
           }
         } catch (e) {}
       })();
@@ -593,6 +634,42 @@
     <meta name="twitter:title" content="Ahenk Bilgi Teknolojileri" />
     <meta name="twitter:description" content="Ahenk Bilgi Teknolojileri (ahenk.net.tr) — ajans, müşteri hizmetleri, insan kaynakları ve kurumsal bilgi teknolojileri çözümleri." />
     <meta name="twitter:image" content="https://ahenk.net.tr/opengraph.jpg" />
+    <script>
+      (function () {
+        try {
+          var host = (location.hostname || "").toLowerCase().replace(/^www\./, "").split(":")[0];
+          var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+          var news =
+            path === "/haberler" ||
+            path.indexOf("/haber/") === 0 ||
+            path.indexOf("/makale/") === 0 ||
+            path.indexOf("/haberler/rss/") === 0;
+          if (host !== "turkatahaber.com" && !(host === "ahenk.net.tr" && news)) return;
+          var canonPath = path === "/haberler" ? "/" : path;
+          var canon = "https://turkatahaber.com" + (canonPath === "/" ? "/" : canonPath);
+          var link = document.querySelector('link[rel="canonical"]');
+          if (link) link.href = canon;
+          var og = document.querySelector('meta[property="og:url"]');
+          if (og) og.setAttribute("content", canon);
+          if (host === "turkatahaber.com") {
+            document.title = path === "/" || path === "/haberler" ? "TÜRKATA HABER AJANSI" : document.title;
+            document.documentElement.lang = "tr";
+            var desc = document.querySelector('meta[name="description"]');
+            if (desc && (path === "/" || path === "/haberler")) {
+              desc.setAttribute(
+                "content",
+                "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. Genel Müdürlük: Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",
+              );
+            }
+            ["geo.region", "geo.placename", "ICBM"].forEach(function (name, i) {
+              var el = document.querySelector('meta[name="' + name + '"]');
+              if (!el) return;
+              el.setAttribute("content", ["TR-06", "Ankara", "39.9272, 32.8548"][i]);
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- PWA -->
     <meta name="theme-color" content="#0f766e" />

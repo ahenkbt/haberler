@@ -31,13 +31,26 @@ export type GeoSiteEntity = {
   email?: string;
   telephone?: string;
   address?: GeoPostalAddress;
+  /** Resmi tüzel kişilik adresi (ajansın işletme adresinden ayrıysa). */
+  legalAddress?: GeoPostalAddress;
   sameAs?: string[];
+  foundingDate?: string;
   knowsAbout?: string[];
-  vendor?: { name: string; url: string };
+  vendor?: { name: string; url: string; address?: GeoPostalAddress };
   faq: GeoFaqItem[];
 };
 
 const AHENK_VENDOR = { name: "Ahenk Bilgi Teknolojileri", url: "https://ahenk.net.tr" } as const;
+const TURKATA_FOUNDATION = {
+  name: "Türk Kültürünü Araştırma ve Tanıtma Vakfı",
+  url: "https://turkatav.org",
+  address: {
+    streetAddress: "Başak Mah. Özalp Cad. 5/2",
+    addressLocality: "Mamak",
+    addressRegion: "Ankara",
+    addressCountry: "TR",
+  },
+} as const;
 
 function newsFaq(name: string, domain: string, extra?: GeoFaqItem[]): GeoFaqItem[] {
   return [
@@ -343,6 +356,57 @@ export const HM_GEO_ENTITIES: GeoSiteEntity[] = [
       },
     ],
   },
+  {
+    slug: "turkata",
+    domain: "turkatahaber.com",
+    extraDomains: ["www.turkatahaber.com"],
+    officialName: "TÜRKATA HABER AJANSI",
+    legalName: "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
+    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "TÜRKATA"],
+    type: "NewsMediaOrganization",
+    description:
+      "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",
+    disambiguatingDescription:
+      "turkatahaber.com, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. ahenk.net.tr/haberler aynı akışın eski adresidir.",
+    areaServed: "Türkiye",
+    language: "tr-TR",
+    aboutPath: "/hakkimizda",
+    extraAboutPaths: ["/", "/kunye", "/iletisim"],
+    foundingDate: "1998",
+    email: "bilgi@turkatahaber.com",
+    telephone: "+905322291892",
+    address: {
+      streetAddress: "Sağlık Mah. Aksu Cad. 13/5",
+      addressLocality: "Çankaya",
+      addressRegion: "Ankara",
+      addressCountry: "TR",
+    },
+    legalAddress: {
+      streetAddress: "Meşrutiyet Mah. Karanfil Sok. 4/91",
+      addressLocality: "Çankaya",
+      addressRegion: "Ankara",
+      addressCountry: "TR",
+    },
+    sameAs: ["https://turkatav.org", "https://tukav.org"],
+    knowsAbout: [
+      "Yerel Yönetimler Haber Müdürlüğü",
+      "Kamu Haber Müdürlüğü",
+      "STK ve Sektörel Haber Müdürlükleri",
+    ],
+    vendor: TURKATA_FOUNDATION,
+    faq: [
+      {
+        question: "TÜRKATA HABER AJANSI nedir?",
+        answer:
+          "TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. Resmi sitesi turkatahaber.com’dur.",
+      },
+      {
+        question: "TÜRKATA HABER AJANSI kime bağlıdır?",
+        answer:
+          "Türk Kültürünü Araştırma ve Tanıtma Vakfı’na bağlıdır. Vakıf 1998’de kurulmuştur. Vakıf siteleri turkatav.org ve tukav.org adresleridir.",
+      },
+    ],
+  },
 ];
 
 const BY_SLUG = new Map<string, GeoSiteEntity>([
@@ -417,7 +481,7 @@ export function isAhenkAgencyGeoPath(pathname: string | null | undefined): boole
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
   if (p === "/bilgi/ahenk-bilgi-teknolojileri" || p === "/bilgi/ahenk-nedir") return true;
   if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai" || p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi" || p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
-  if (p === "/kariyer" || p === "/urun-satisi") return true;
+  if (p === "/kariyer" || p === "/urun-satisi" || p === "/turkata-haber-ajansi") return true;
   if (p === "/destek" || p === "/sss" || p === "/iletisim-kunye" || p === "/kunye") return true;
   if (p === "/haberler") return true;
   return false;
@@ -447,6 +511,7 @@ export function geoEntityPageTitle(entity: GeoSiteEntity, path = "/"): string {
     }
     if (p === "/kariyer") return `Çağrı merkezi kariyer — ${entity.officialName}`;
     if (p === "/urun-satisi") return `Ürün satışı ve çalışma esasları — ${entity.officialName}`;
+    if (p === "/turkata-haber-ajansi") return `TürkAta Haber Ajansı — ${entity.officialName}`;
     if (p === "/destek") return `Destek — ${entity.officialName}`;
     if (p === "/sss") return `Sık sorulan sorular — ${entity.officialName}`;
     if (p === "/iletisim-kunye" || p === "/kunye") return `İletişim · Künye — ${entity.officialName}`;
@@ -549,15 +614,23 @@ export function geoOrganizationJsonLd(
     image: logo,
     inLanguage: entity.language,
     areaServed: { "@type": "Country", name: entity.areaServed },
-    address: entity.address
-      ? {
-          "@type": "PostalAddress",
-          streetAddress: entity.address.streetAddress,
-          addressLocality: entity.address.addressLocality,
-          addressRegion: entity.address.addressRegion,
-          addressCountry: entity.address.addressCountry,
-        }
-      : { "@type": "PostalAddress", addressCountry: "TR" },
+    address: (() => {
+      const toPostal = (address: GeoPostalAddress, name?: string) => ({
+        "@type": "PostalAddress",
+        ...(name ? { name } : {}),
+        streetAddress: address.streetAddress,
+        addressLocality: address.addressLocality,
+        addressRegion: address.addressRegion,
+        addressCountry: address.addressCountry,
+      });
+      const rows = [
+        entity.address ? toPostal(entity.address) : null,
+        entity.legalAddress ? toPostal(entity.legalAddress, entity.legalName) : null,
+      ].filter(Boolean);
+      if (rows.length === 1) return rows[0];
+      if (rows.length > 1) return rows;
+      return { "@type": "PostalAddress", addressCountry: "TR" };
+    })(),
     identifier: {
       "@type": "PropertyValue",
       name: "domain",
@@ -573,6 +646,17 @@ export function geoOrganizationJsonLd(
       "@type": "Organization",
       name: entity.vendor.name,
       url: entity.vendor.url,
+      ...(entity.vendor.address
+        ? {
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: entity.vendor.address.streetAddress,
+              addressLocality: entity.vendor.address.addressLocality,
+              addressRegion: entity.vendor.address.addressRegion,
+              addressCountry: entity.vendor.address.addressCountry,
+            },
+          }
+        : {}),
     };
   }
   return out;

@@ -96,7 +96,7 @@ const UrunSatisiFolds = memo(function UrunSatisiFolds() {
 
       <article className="ahenk-section ahenk-legal-doc ahenk-folds-article">
         <p className="ahenk-kicker">AHENK BİLGİ TEKNOLOJİLERİ</p>
-        <h2>Vatan İletişim Merkezi — Çağrı Merkezi Müşteri Temsilcisi İş Başvurusu ve Çalışma Esasları Ön Onay Metni</h2>
+        <h2>Home Ofis Part Time İş Başvurusu ve Çalışma Esasları</h2>
         <p className="ahenk-lead">
           Lütfen başvuru formunu doldurmadan önce aşağıda yer alan çalışma şartlarını, hukuki esasları ve operasyon
           süreçlerini dikkatle okuyunuz. Tam zamanlı ofisten çalışma veya home-office / kısmi süreli çalışma
@@ -106,7 +106,7 @@ const UrunSatisiFolds = memo(function UrunSatisiFolds() {
 
         <Fold title="1. Biz kimiz & hukuki çerçeve">
           <p>
-            Ahenk Bilgi Teknolojileri (Vatan Sosyal Hizmetler Ltd.) (ahenk.net.tr); ajans hizmetleri, çağrı merkezi ve
+            Ahenk Bilgi Teknolojileri (ahenk.net.tr); ajans hizmetleri, çağrı merkezi ve
             müşteri ilişkileri yönetimi, e-ticaret operasyonları, dijital pazarlama ve kurumsal yazılım altyapıları
             sunan köklü bir teknoloji ve hizmet şirketidir. Şirketimiz, 20 yılı aşkın süredir Türkiye’nin önde gelen
             sivil toplum kuruluşlarıyla stratejik ortaklıklar yürütmektedir.
@@ -248,8 +248,7 @@ const UrunSatisiFolds = memo(function UrunSatisiFolds() {
 
         <Fold title="6. Başvuru sahibi onam beyanı">
           <p>
-            Yukarıda yer alan Ahenk Bilgi Teknolojileri — Vatan İletişim Merkezi İş Başvuru ve Çalışma Esasları
-            Metni’ni okudum, anladım. Projenin anlaşmalı olunan sivil toplum kuruluşlarının iktisadi işletmeleri
+            Yukarıda yer alan Home Ofis Part Time İş Başvurusu ve Çalışma Esasları metnini okudum, anladım. Projenin anlaşmalı olunan sivil toplum kuruluşlarının iktisadi işletmeleri
             bünyesinde yürütülen bir ürün satış/tanıtım faaliyeti olduğunu; tam zamanlı ofisten çalışma veya
             home-office / kısmi süreli çalışma seçeneklerinden biri ile çalışılabileceğini kabul ve beyan ederim.
             Oryantasyon ve staj süreci (1 haftalık, günde 4 saat) tam zamanlı ofisten çalışma için de geçerlidir.
@@ -278,7 +277,7 @@ export default function AhenkUrunSatisi() {
   return (
     <AhenkAgencyChrome
       title="Ürün Satışı | Ahenk Bilgi Teknolojileri"
-      description="Müşteri temsilcisi iş başvurusu: tam zamanlı ofisten veya home-office / kısmi süreli çalışma esasları ön onay metni."
+      description="Tam zamanlı ofisten müşteri temsilcisi ilanı ve Home Ofis Part Time İş Başvurusu ve Çalışma Esasları."
     >
       <AhenkPageHero
         crumb={

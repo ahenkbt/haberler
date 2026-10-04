@@ -90,10 +90,10 @@ export const AHENK_PRODUCTS: AhenkProductTile[] = [
   },
   {
     slug: "haberler",
-    title: "AHENK HABER",
-    kicker: "Canlı demo",
-    excerpt: "Haber sitesi yazılımının canlı demosu. Manşet, kategori ve haber detayı ahenk.net.tr/haberler.",
-    href: "/haberler",
+    title: "TürkAta Haber Ajansı",
+    kicker: "Haber ajansı",
+    excerpt: "Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansı. Resmi site turkatahaber.com.",
+    href: "/turkata-haber-ajansi",
     image: AHENK_PHOTOS.news,
   },
   {

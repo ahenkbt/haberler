@@ -16,6 +16,8 @@ import { estimateNewsReadMinutes } from "@/lib/newsArticleMetrics";
 import { NewsShareButtons } from "@/components/news/NewsShareButtons";
 import { RssNewsDisclaimer } from "@/components/news/RssNewsDisclaimer";
 import { stripExternalAnchorsFromHtml } from "@/lib/sanitizeHtml";
+import { applyTurkataDocumentSeo, isTurkataHaberHost, sharedNewsCanonicalUrl } from "@/lib/turkataHaber";
+import { isAhenkAgencyHost } from "@/lib/ahenkAgencyHost";
 
 const SADE_ACCENT = "#0EA5E9";
 function fmtDate(value: string | null | undefined): string {
@@ -160,6 +162,41 @@ export function PortalRssNewsPreviewPage() {
       : !loading && !item?.title
         ? "Haber bulunamadı veya süresi dolmuş olabilir."
         : null;
+
+  useEffect(() => {
+    if (!item?.title) return;
+    const path = typeof window !== "undefined" ? window.location.pathname : "/haberler/rss";
+    if (isTurkataHaberHost()) {
+      applyTurkataDocumentSeo({
+        title: item.title,
+        description: item.spot || item.title,
+        path,
+        image: item.imageUrl,
+        article: {
+          headline: item.title,
+          description: item.spot,
+          path,
+          imageUrl: item.imageUrl,
+          datePublished: item.publishedAt,
+          dateModified: item.publishedAt,
+          authorName: item.feedLabel,
+          categoryName: item.categoryName,
+        },
+      });
+      return;
+    }
+    if (isAhenkAgencyHost()) {
+      const canon = sharedNewsCanonicalUrl(path);
+      if (!canon || typeof document === "undefined") return;
+      let link = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "canonical";
+        document.head.appendChild(link);
+      }
+      link.href = canon;
+    }
+  }, [item]);
 
   useEffect(() => {
     const slug = String(item?.canonicalSlug ?? "").trim();

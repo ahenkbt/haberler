@@ -83,6 +83,31 @@
   border-radius: 8px;
 }
 
+.ahenk-brand-fallback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ahenk-brand-fallback img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  background: #000;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.ahenk-brand-fallback > span:last-child {
+  font-size: 14px;
+  max-width: 11rem;
+}
+
 .ahenk-mark-img {
   width: 46px;
   height: 46px;

@@ -1,0 +1,239 @@
+.turkata-haber {
+  min-height: 100dvh;
+  background: #f4f6f8;
+  color: #0f172a;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+.turkata-haber-header {
+  background: #fff;
+  border-bottom: 3px solid #8b1e3f;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.turkata-haber-header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.turkata-haber-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+.turkata-haber-brand img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+.turkata-haber-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.turkata-haber-nav a {
+  color: #0f172a;
+  text-decoration: none;
+}
+.turkata-haber-nav a:hover {
+  color: #8b1e3f;
+}
+.turkata-haber-cats {
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+}
+.turkata-statement-bar {
+  margin: 0;
+  padding: 14px 20px;
+  text-align: center;
+  background: #1a1020;
+  color: #f4efe8;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+.turkata-footer-host {
+  --hm-footer-bg: #140c12;
+  --hm-nav-strip-bg: #140c12;
+  --hm-header-bg: #140c12;
+  --hm-footer-heading: #e7c2c8;
+  --hm-footer-text: rgba(236, 226, 220, 0.9);
+  --hm-footer-link: #f7f1ea;
+  --hm-footer-link-hover: #ffffff;
+  --hm-header-border: rgba(255, 255, 255, 0.08);
+  --hm-brand-label: #e7c2c8;
+}
+.turkata-page .turkata-lead,
+.turkata-kunye-statement {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  color: #1a1020;
+}
+.turkata-kunye {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 16px 72px;
+}
+.turkata-kunye-mast {
+  text-align: center;
+  padding: 28px 16px 32px;
+  border-top: 4px solid #1a1020;
+  border-bottom: 1px solid #1a1020;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(139, 30, 63, 0.08) 8px, rgba(139, 30, 63, 0.08) 9px);
+}
+.turkata-kunye-mast img {
+  height: 56px;
+  width: auto;
+  margin: 0 auto 12px;
+}
+.turkata-kunye-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #8b1e3f;
+}
+.turkata-kunye h1 {
+  margin: 8px 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #1a1020;
+}
+.turkata-kunye-tagline {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+.turkata-kunye-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+}
+@media (min-width: 800px) {
+  .turkata-kunye-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .turkata-kunye-grid .turkata-kunye-card:first-child {
+    grid-column: 1 / -1;
+  }
+}
+.turkata-kunye-card {
+  background: #fff;
+  border: 1px solid #e7e0d8;
+  border-top: 3px solid #8b1e3f;
+  border-radius: 14px;
+  padding: 20px 22px 8px;
+  box-shadow: 0 10px 30px rgba(26, 16, 32, 0.04);
+}
+.turkata-kunye-card h2,
+.turkata-kunye-card h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  color: #1a1020;
+}
+.turkata-kunye-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+}
+.turkata-kunye-card h3 {
+  margin: 18px 0 8px;
+  font-size: 1rem;
+}
+.turkata-kunye-org {
+  margin: 0 0 12px;
+  font-weight: 800;
+  color: #8b1e3f;
+}
+.turkata-kunye-card dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+@media (min-width: 700px) {
+  .turkata-kunye-card dl {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.turkata-kunye-card dt {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.turkata-kunye-card dd {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.turkata-kunye-card a {
+  color: #8b1e3f;
+}
+.turkata-kunye-card ul {
+  margin: 0 0 12px;
+  padding-left: 1.1rem;
+}
+.turkata-kunye-card li,
+.turkata-kunye-card p {
+  line-height: 1.6;
+}
+.turkata-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+.turkata-page h1 {
+  font-size: 2rem;
+  font-weight: 900;
+  margin: 0 0 12px;
+}
+.turkata-page h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 28px 0 8px;
+  color: #8b1e3f;
+}
+.turkata-page p,
+.turkata-page li {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.turkata-page ul {
+  padding-left: 1.2rem;
+}
+.turkata-page a {
+  color: #8b1e3f;
+  font-weight: 700;
+}
+.turkata-facts {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.turkata-facts dt {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.turkata-facts dd {
+  margin: 0 0 8px;
+  font-weight: 700;
+}

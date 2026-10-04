@@ -238,6 +238,23 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return Boolean(v) && typeof v === "object" && !Array.isArray(v);
 }
 
+/**
+ * Tema ayarlarındaki `/api/media/uploads/…` logosu canlıda 404.
+ * Örnek: /api/media/uploads/1785675981610-bdd41db2c0085bfb.webp
+ * (worker: x-yekpare-media miss, S3 404). Paketteki /ahenk-brand dosyası 200 döner.
+ */
+export function isMissingAhenkMediaLogo(url: string | null | undefined): boolean {
+  const t = String(url ?? "").trim().toLowerCase();
+  if (!t) return false;
+  return t.includes("/api/media/uploads/");
+}
+
+export function ahenkBundledLogoUrl(candidate: string, fallback: string): string {
+  const logo = candidate.trim();
+  if (!logo || isLegacyPortalBrandAssetUrl(logo) || isMissingAhenkMediaLogo(logo)) return fallback;
+  return logo;
+}
+
 /** https veya site-içi yol. javascript: ve data: reddedilir. */
 export function safeAhenkImageUrl(v: unknown, fallback = ""): string {
   const s = typeof v === "string" ? v.trim() : "";
@@ -706,11 +723,11 @@ function defaultPlatformProducts(): AhenkContentCard[] {
     ),
     card(
       "haberler",
-      "AHENK HABER",
-      "Haber sitesi yazılımının canlı demosu: manşet, kategori ve haber detayı.",
+      "TürkAta Haber Ajansı",
+      "Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansı. Resmi site turkatahaber.com.",
       "news",
-      "/haberler",
-      `<p>Canlı demo ahenk.net.tr/haberler adresinde AHENK HABER başlığıyla yayınlanır.</p>`,
+      "/turkata-haber-ajansi",
+      `<p>TÜRKATA HABER AJANSI, 1998 yılında kurulan Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. Resmi site <a href="https://turkatahaber.com">turkatahaber.com</a>.</p>`,
       AHENK_PHOTOS.news,
     ),
   ];
@@ -1246,6 +1263,11 @@ function mergeNavItems(raw: unknown, defaults: AhenkNavItem[]): AhenkNavItem[] {
             href: str(n.href, ""),
           }))
           .filter((n) => n.label && n.href && n.href !== "/urun-satisi" && n.href !== "/newsmap")
+          .map((n) =>
+            n.label.trim().toLocaleLowerCase("tr-TR") === "ahenk haber"
+              ? { ...n, label: "TürkAta Haber Ajansı", href: "/turkata-haber-ajansi" }
+              : n,
+          )
       : [];
   const items = base.length ? base : defaults.map((n) => ({ ...n }));
   const hasKariyer = items.some((n) => n.href === "/kariyer" || n.id === "career");
@@ -1333,9 +1355,18 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       yekpare: mergePromo(data.yekpare, defaults.yekpare),
       platformTitle: str(data.platformTitle, defaults.platformTitle),
       platformLead: str(data.platformLead, defaults.platformLead),
-      platformProducts: mergeCards(data.platformProducts, defaults.platformProducts).filter(
-        (c) => c.href !== "/newsmap" && c.slug !== "haber-haritasi",
-      ),
+      platformProducts: mergeCards(data.platformProducts, defaults.platformProducts)
+        .filter((c) => c.href !== "/newsmap" && c.slug !== "haber-haritasi")
+        .map((c) =>
+          c.slug === "haberler" || c.title.trim().toLocaleLowerCase("tr-TR") === "ahenk haber"
+            ? {
+                ...c,
+                title: "TürkAta Haber Ajansı",
+                href: "/turkata-haber-ajansi",
+                excerpt: "Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansı. Resmi site turkatahaber.com.",
+              }
+            : c,
+        ),
       haberMerkeziTitle: str(data.haberMerkeziTitle, defaults.haberMerkeziTitle),
       haberMerkeziLead: str(data.haberMerkeziLead, defaults.haberMerkeziLead),
       haberMerkeziHtml: str(data.haberMerkeziHtml, defaults.haberMerkeziHtml),
@@ -1458,8 +1489,8 @@ export function applySiteSettingsToAhenkAgency(
         ? ahenkTelFromDisplay(phone, sanitized.whatsappTel)
         : sanitized.whatsappTel,
     email: email || sanitized.email,
-    logoUrl: logo && !isLegacyPortalBrandAssetUrl(logo) ? logo : sanitized.logoUrl,
-    logoMarkUrl: mark && !isLegacyPortalBrandAssetUrl(mark) ? mark : sanitized.logoMarkUrl,
+    logoUrl: ahenkBundledLogoUrl(logo, sanitized.logoUrl),
+    logoMarkUrl: ahenkBundledLogoUrl(mark, sanitized.logoMarkUrl),
     iban: iban || sanitized.iban,
     ibanHolder: holder || sanitized.ibanHolder,
     ibanBank: bank || sanitized.ibanBank,

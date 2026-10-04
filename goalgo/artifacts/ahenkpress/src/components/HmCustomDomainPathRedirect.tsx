@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useLayoutEffect, useMemo } from "react";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
+import { isTurkataHaberHost } from "@/lib/turkataHaber";
 import { hmCustomDomainCanonicalizeBrowserUrl } from "@/lib/hmCustomDomainCleanPath";
 import { readHmDomainSlugCache, writeHmDomainSlugCache } from "@/lib/hmNestedMetaStorage";
 import { useHmMetaByDomain } from "@/lib/fetchHmMetaByDomain";
@@ -20,21 +21,22 @@ export function HmCustomDomainPathRedirect() {
     [host],
   );
 
+  const turkata = isTurkataHaberHost(host);
   const { data } = useHmMetaByDomain(host, {
-    enabled: typeof window !== "undefined" && !!host && !isDefaultPortalHost(host),
+    enabled: typeof window !== "undefined" && !!host && !isDefaultPortalHost(host) && !turkata,
     retry: false,
   });
 
   const slug = data?.slug ?? cachedSlug;
 
   useLayoutEffect(() => {
-    if (!slug || isDefaultPortalHost(host)) return;
+    if (!slug || isDefaultPortalHost(host) || turkata) return;
     if (data?.slug) writeHmDomainSlugCache(host, data.slug);
     const clean = hmCustomDomainCanonicalizeBrowserUrl(slug);
     if (!clean) return;
     window.history.replaceState(window.history.state, "", clean);
     window.dispatchEvent(new PopStateEvent("popstate"));
-  }, [host, loc, slug, data?.slug]);
+  }, [host, loc, slug, data?.slug, turkata]);
 
   return null;
 }

@@ -3,6 +3,7 @@ import { Switch, Route, Redirect, useLocation, useParams, useRoute, useSearch, R
 import { apiUrl } from "@/lib/apiBase";
 import { isConfiguredPortalHost, isEffectivePortalHost, isHmVideoTvAllowed } from "@/lib/hmPortalHosts";
 import { isAhenkAgencyHost, isAhenkAgencyPublicPath, isAhenkAgencySurface } from "@/lib/ahenkAgencyHost";
+import { isTurkataHaberHost, isTurkataPublicPath } from "@/lib/turkataHaber";
 import {
   isPortalNewsPlatformHost,
   isPortalRetiredPublicPath,
@@ -90,6 +91,9 @@ import AhenkAgencyHome from "./pages/public/AhenkAgencyHome";
 import AhenkAgencyHizmetler from "./pages/public/AhenkAgencyHizmetler";
 import AhenkAgencyHizmetDetail from "./pages/public/AhenkAgencyHizmetDetail";
 import AhenkAgencyHakkimizda from "./pages/public/AhenkAgencyHakkimizda";
+import AhenkTurkataHaberAjansi from "./pages/public/AhenkTurkataHaberAjansi";
+import { TurkataHakkimizdaPage, TurkataIletisimPage, TurkataKunyePage } from "./pages/public/TurkataStaticPages";
+import { TurkataHaberChrome } from "./components/turkata-haber/TurkataHaberChrome";
 import AhenkAgencyIletisim from "./pages/public/AhenkAgencyIletisim";
 import AhenkDestek from "./pages/public/AhenkDestek";
 import { AhenkAgencyChrome } from "./components/ahenk-agency/AhenkAgencyChrome";
@@ -681,6 +685,9 @@ function HmPublicShell({ children }: { children: React.ReactNode }) {
 function PortalHomeRoute() {
   const host =
     typeof window !== "undefined" ? window.location.hostname.toLowerCase().split(":")[0] ?? "" : "";
+  if (isTurkataHaberHost(host)) {
+    return <SixAmMartNewsPage />;
+  }
   if (isAhenkAgencyHost(host)) {
     return <AhenkAgencyHome />;
   }
@@ -763,6 +770,36 @@ function RouteScrollRestoration() {
 }
 
 /** turk.eco: keşfet, turizm, harita pazaryeri, ödeme vb. rotaları haber vitrinine yönlendir. */
+function TurkataHaberRouteGate() {
+  const [location, setLocation] = useLocation();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isTurkataHaberHost()) return;
+    const pathOnly = (location.split("?")[0] ?? "").trim() || "/";
+    if (!isTurkataPublicPath(pathOnly)) {
+      setLocation("/");
+      return;
+    }
+    const bare = pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly;
+    if (bare === "/haberler/kunye") {
+      setLocation("/kunye");
+      return;
+    }
+    if (bare === "/haberler/hakkimizda") {
+      setLocation("/hakkimizda");
+      return;
+    }
+    if (bare === "/haberler/iletisim") {
+      setLocation("/iletisim");
+      return;
+    }
+    if (bare === "/haberler" || bare === "/hakkinda" || bare === "/about") {
+      setLocation(bare === "/haberler" ? "/" : "/hakkimizda");
+    }
+  }, [location, setLocation]);
+  return null;
+}
+
 function PortalNewsPlatformRouteGate() {
   const [location, setLocation] = useLocation();
   useEffect(() => {
@@ -794,6 +831,7 @@ export default function App() {
     !pathNoQuery.startsWith("/uygulamayi-indir") &&
     !isHmSitePublicChromePath(pathNoQuery) &&
     !isAhenkAgencySurface(pathNoQuery) &&
+    !isTurkataHaberHost() &&
     !isPwaStandaloneDisplay();
 
   useLayoutEffect(() => {
@@ -822,6 +860,7 @@ export default function App() {
     <VendorCustomDomainPathRedirect />
     <RouteScrollRestoration />
     <PortalNewsPlatformRouteGate />
+    <TurkataHaberRouteGate />
     <Switch>
       {/* Public routes — all wrapped with AppNav */}
       <Route path="/servisler/:slug">{() => <ServiceMarketingDetail />}</Route>
@@ -859,7 +898,8 @@ export default function App() {
       <Route path="/yapay-zeka-cagri-merkezi">
         {() => (isAhenkAgencyHost() ? <Redirect to="/cagri-merkezi-crm" /> : <Redirect to="/ai-cagri-merkezi" />)}
       </Route>
-      <Route path="/hakkimizda">{() => (isAhenkAgencyHost() ? <AhenkAgencyHakkimizda /> : <Redirect to="/" />)}</Route>
+      <Route path="/hakkimizda">{() => (isTurkataHaberHost() ? <TurkataHakkimizdaPage /> : isAhenkAgencyHost() ? <AhenkAgencyHakkimizda /> : <Redirect to="/" />)}</Route>
+      <Route path="/turkata-haber-ajansi">{() => (isAhenkAgencyHost() ? <AhenkTurkataHaberAjansi /> : <Redirect to="/" />)}</Route>
       <Route path="/">{() => <PortalHomeRoute />}</Route>
       <Route path="/home">{() => <SixAmMartHomeModuleRedirect />}</Route>
       {/* Canlı Yayın TV playlist — parametreli rotalar önce */}
@@ -922,14 +962,17 @@ export default function App() {
       <Route path="/canli-tv">{() => <Redirect to="/canlitv" />}</Route>
       <Route path="/embed/haber">{() => <HaberEmbedWidget />}</Route>
       <Route path="/sitene-ekle">{() => <SadeAwarePublicLayout chrome searchPlaceholder="Yekpare'de yayın ve işletme ara"><SiteneEkle /></SadeAwarePublicLayout>}</Route>
-      <Route path="/haberler/rss/:itemId">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ışletme, ürün veya haber ara"><PortalRssNewsPreviewPage /></SadeAwarePublicLayout>}</Route>
-      <Route path="/haberler">{() => <SixAmMartNewsPage />}</Route>
+      <Route path="/haberler/rss/:itemId">{() => (isTurkataHaberHost() ? <TurkataHaberChrome><PortalRssNewsPreviewPage /></TurkataHaberChrome> : <SadeAwarePublicLayout chrome searchPlaceholder="ışletme, ürün veya haber ara"><PortalRssNewsPreviewPage /></SadeAwarePublicLayout>)}</Route>
+      <Route path="/haberler/kunye">{() => <TurkataKunyePage />}</Route>
+      <Route path="/haberler/hakkimizda">{() => <TurkataHakkimizdaPage />}</Route>
+      <Route path="/haberler/iletisim">{() => <TurkataIletisimPage />}</Route>
+      <Route path="/haberler">{() => (isTurkataHaberHost() ? <Redirect to="/" /> : <SixAmMartNewsPage />)}</Route>
       <Route path="/sondakika">{() => <HmPartnerOrPublicLayout><TumHaberler view="list" /></HmPartnerOrPublicLayout>}</Route>
       <Route path="/kisa-kisa">{() => <DunyadanKisaKisaPage />}</Route>
       <Route path="/tum-haberler">{() => <HmPartnerOrPublicLayout><TumHaberler /></HmPartnerOrPublicLayout>}</Route>
       <Route path="/haber/:id">{() => <HmOrPortalHaberDetailRoute />}</Route>
       <Route path="/makale/:id">{() => <HmOrPortalHaberDetailRoute />}</Route>
-      <Route path="/kategori/:slug">{() => <PublicLayout><KategoriDetay /></PublicLayout>}</Route>
+      <Route path="/kategori/:slug">{() => (isTurkataHaberHost() ? <TurkataHaberChrome title="Kategori"><KategoriDetay /></TurkataHaberChrome> : <PublicLayout><KategoriDetay /></PublicLayout>)}</Route>
       <Route path="/video-tv/kanal/:id/:videoId">{() => <LegacyVideoTvKanalRedirect />}</Route>
       <Route path="/video-tv/kanal/:id">{() => <LegacyVideoTvKanalRedirect />}</Route>
       <Route path="/video/canlitv/kanal/:id">
@@ -1187,7 +1230,9 @@ export default function App() {
       <Route path="/is-ortagi">{() => <SadeAwarePublicLayout chrome searchPlaceholder="ış ortaklışı ve maşaza ara"><IsOrtagi /></SadeAwarePublicLayout>}</Route>
       <Route path="/kunye">
         {() =>
-          isAhenkAgencyHost() ? (
+          isTurkataHaberHost() ? (
+            <TurkataKunyePage />
+          ) : isAhenkAgencyHost() ? (
             <AhenkAgencyIletisim variant="kunye" />
           ) : (
             <HmPortalOrDomainStandardPage segment="kunye">
@@ -1200,7 +1245,7 @@ export default function App() {
       </Route>
       <Route path="/hakkinda">
         {() =>
-          isAhenkAgencyHost() ? (
+          isTurkataHaberHost() || isAhenkAgencyHost() ? (
             <Redirect to="/hakkimizda" />
           ) : (
             <HmPortalOrDomainStandardPage segment="hakkinda">
@@ -1576,7 +1621,9 @@ export default function App() {
       <Route path="/tr/:slug">{() => <HmPublicShell><HmSitePublic /></HmPublicShell>}</Route>
       <Route path="/iletisim">
         {() =>
-          isAhenkAgencyHost() ? (
+          isTurkataHaberHost() ? (
+            <TurkataIletisimPage />
+          ) : isAhenkAgencyHost() ? (
             <AhenkAgencyIletisim />
           ) : (
             <HmPortalOrDomainStandardPage segment="iletisim">

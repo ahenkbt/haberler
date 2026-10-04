@@ -114,7 +114,13 @@ import { HmAuthorAvatar } from "@/components/HmAuthorAvatar";
 import { HmNewsMapModule } from "@/components/HmNewsMapModule";
 import { DunyadanKisaKisaBand } from "@/components/DunyadanKisaKisaBand";
 import { isAhenkAgencyHost } from "@/lib/ahenkAgencyHost";
-import { AhenkHaberChrome } from "@/components/ahenk-agency/AhenkHaberChrome";
+import { TurkataHaberChrome } from "@/components/turkata-haber/TurkataHaberChrome";
+import {
+  isTurkataHaberHost,
+  TURKATA_BRAND,
+  TURKATA_DESCRIPTION,
+  type TurkataArticleSeo,
+} from "@/lib/turkataHaber";
 
 const API = "/api";
 
@@ -127,6 +133,14 @@ const NEWS_CATEGORY_MODULES = [
   { slug: "dunya", label: "Dünya", color: "#2563eb" },
   { slug: "teknoloji", label: "Teknoloji", color: "#7c3aed" },
   { slug: "kultur", label: "Kültür", color: "#9333ea" },
+] as const;
+
+/** Ajans haber vitrini: güncel kaydı olan dört kategori, masaüstünde 2×2. */
+const BRANDED_NEWS_CATEGORY_MODULES = [
+  { slug: "gundem", label: "Gündem", color: SADE_ACCENT },
+  { slug: "ekonomi", label: "Ekonomi", color: "#f97316" },
+  { slug: "dunya", label: "Dünya", color: "#2563eb" },
+  { slug: "politika", label: "Politika", color: "#b45309" },
 ] as const;
 
 const STANDARD_PORTAL_NEWS_TABS: HmRssCategoryTab[] = [
@@ -370,6 +384,7 @@ type NewsCardItem = {
   rssSourceUrl?: string | null;
   createdAt?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   source?: "db" | "rss";
   feedLabel?: string | null;
   href?: string | null;
@@ -1513,6 +1528,8 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
   const categoryTitle = STANDARD_PORTAL_NEWS_TABS.find((c) => c.slug === activeCategory)?.label;
   const showEditorial = !activeCategory;
   const ahenkHaber = isAhenkAgencyHost();
+  const turkataHaber = isTurkataHaberHost();
+  const brandedNews = ahenkHaber || turkataHaber;
 
   const categoryNav = (
     <NewsCategorySubNav
@@ -1537,10 +1554,10 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
         );
       case "headlineGrid":
         return featuredSlides.length ? (
-          <SadeNewsHeadlineGrid slides={featuredSlides} sideItems={featuredSideItems} showQuickAccess={showQuickLinks && !ahenkHaber} />
+          <SadeNewsHeadlineGrid slides={featuredSlides} sideItems={featuredSideItems} showQuickAccess={showQuickLinks && !brandedNews} />
         ) : null;
       case "newsMapModule":
-        if (ahenkHaber) return null;
+        if (brandedNews) return null;
         return (
           <HmNewsMapModule
             linkMode="yekpare"
@@ -1551,10 +1568,10 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
       case "worldBriefs":
         return <DunyadanKisaKisaBand accent={SADE_ACCENT} className="mb-6" />;
       case "yekpareHaberler":
-        if (ahenkHaber) return null;
+        if (brandedNews) return null;
         return <SadeYekpareHaberlerBlock items={portalCategoryPool} href="/tum-haberler" />;
       case "recentVideosSidebar":
-        if (ahenkHaber) return null;
+        if (brandedNews) return null;
         return (
           <HmRecentVideosBox
             videoTvHref={(sourceId, videoId) => `/yp/kanal/${sourceId}/${encodeURIComponent(videoId)}`}
@@ -1572,16 +1589,21 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
         return <SadePublicInfoCards />;
       case "timeline":
         return timelineItems.length ? <SadeEditorialTimeline items={timelineItems} /> : null;
-      case "categoryModules":
+      case "categoryModules": {
+        const modules = brandedNews ? BRANDED_NEWS_CATEGORY_MODULES : NEWS_CATEGORY_MODULES;
         return (
-          <Section title="Kategori modülleri" subtitle="Gündem, ekonomi, spor ve daha fazlası.">
-            <div className="grid gap-4 lg:grid-cols-2">
-              {NEWS_CATEGORY_MODULES.map((cat) => (
+          <Section
+            title="Kategori modülleri"
+            subtitle={brandedNews ? "Gündem, ekonomi, dünya ve politika." : "Gündem, ekonomi, spor ve daha fazlası."}
+          >
+            <div className={`grid gap-4 ${brandedNews ? "md:grid-cols-2" : "lg:grid-cols-2"}`}>
+              {modules.map((cat) => (
                 <SadeCategoryNewsModule key={cat.slug} slug={cat.slug} label={cat.label} color={cat.color} />
               ))}
             </div>
           </Section>
         );
+      }
       case "newsletter":
         return <SadeNewsletterCta />;
       case "ataturkBand":
@@ -1633,9 +1655,16 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
               </p>
               <div className="grid gap-1">
                 {[
-                  ...(ahenkHaber
+                  ...(turkataHaber
                     ? [
-                        { label: "AHENK HABER", href: "/haberler" },
+                        { label: "TÜRKATA HABER AJANSI", href: "/" },
+                        { label: "Hakkımızda", href: "/hakkimizda" },
+                        { label: "Künye", href: "/kunye" },
+                        { label: "İletişim", href: "/iletisim" },
+                      ]
+                    : ahenkHaber
+                    ? [
+                        { label: "TürkAta Haber Ajansı", href: "/turkata-haber-ajansi" },
                         { label: "Haber sitesi yazılımı", href: "/haber-sitesi-yazilimi" },
                         { label: "Ahenk BT", href: "/" },
                         { label: "İletişim", href: "/iletisim" },
@@ -1675,8 +1704,10 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
     ) : null;
 
   const newsFrame = (body: ReactNode) =>
-    ahenkHaber ? (
-      <AhenkHaberChrome subHeader={categoryNav}>{body}</AhenkHaberChrome>
+    brandedNews ? (
+      <TurkataHaberChrome subHeader={categoryNav} title={TURKATA_BRAND} description={TURKATA_DESCRIPTION}>
+        {body}
+      </TurkataHaberChrome>
     ) : (
       <Shell
         staticLocationLabel="Türkiye"
@@ -1708,7 +1739,7 @@ export function SixAmMartNewsPage({ all = false }: { all?: boolean }) {
             ))}
           </div>
         ) : null}
-        {showEditorial && !ahenkHaber ? (
+        {showEditorial && !brandedNews ? (
           <div className={SADE_PUBLIC_POST_HERO_STACK_CLASS}>
             <SadeHomeCitiesBandCompact />
           </div>
@@ -1829,8 +1860,45 @@ export function SixAmMartNewsDetailPage() {
   );
 
   const ahenkHaber = isAhenkAgencyHost();
+  const turkataHaber = isTurkataHaberHost();
+  const turkataArticle: TurkataArticleSeo | null =
+    turkataHaber && news
+      ? {
+          headline: news.title,
+          description: excerpt,
+          path: typeof window !== "undefined" ? window.location.pathname : `/haber/${slug}`,
+          imageUrl: image,
+          datePublished: news.publishedAt || news.createdAt || null,
+          dateModified: news.updatedAt || news.publishedAt || news.createdAt || null,
+          authorName: news.authorName || null,
+          categoryName: news.categoryName || null,
+        }
+      : null;
   const detailShell = (body: ReactNode) =>
-    ahenkHaber ? <AhenkHaberChrome title={news?.title || "AHENK HABER"}>{body}</AhenkHaberChrome> : (
+    turkataHaber || ahenkHaber ? (
+      <TurkataHaberChrome
+        title={news?.title || TURKATA_BRAND}
+        description={excerpt || TURKATA_DESCRIPTION}
+        image={image}
+        article={
+          turkataArticle ??
+          (ahenkHaber && news
+            ? {
+                headline: news.title,
+                description: excerpt,
+                path: typeof window !== "undefined" ? window.location.pathname : `/haber/${slug}`,
+                imageUrl: image,
+                datePublished: news.publishedAt || news.createdAt || null,
+                dateModified: news.updatedAt || news.publishedAt || news.createdAt || null,
+                authorName: news.authorName || null,
+                categoryName: news.categoryName || null,
+              }
+            : null)
+        }
+      >
+        {body}
+      </TurkataHaberChrome>
+    ) : (
       <Shell staticLocationLabel="Türkiye" searchPlaceholder="Haberlerde ara">{body}</Shell>
     );
 
@@ -1839,7 +1907,7 @@ export function SixAmMartNewsDetailPage() {
         <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500">
           <Link href="/" className="text-[#0284C7] hover:underline">Anasayfa</Link>
           <span>/</span>
-          <Link href="/haberler" className="text-[#0284C7] hover:underline">Haberler</Link>
+          <Link href={turkataHaber ? "/" : "/haberler"} className="text-[#0284C7] hover:underline">Haberler</Link>
           {news?.categoryName ? (
             <>
               <span>/</span>
@@ -1916,7 +1984,7 @@ export function SixAmMartNewsDetailPage() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-950">Diğer haberler</h2>
-              <Link href="/tum-haberler" className="text-sm font-black text-[#0284C7]">Tüm haberler</Link>
+              <Link href={turkataHaber ? "/" : "/tum-haberler"} className="text-sm font-black text-[#0284C7]">Tüm haberler</Link>
             </div>
             <div className="grid gap-4 md:grid-cols-3">{related.map((item) => <NewsCard key={item.id} item={item} />)}</div>
           </section>

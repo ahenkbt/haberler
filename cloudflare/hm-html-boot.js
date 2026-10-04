@@ -98,6 +98,7 @@ export function listKnownHmEditorSites() {
 }
 
 /** Bilinen HM alan─▒nda k├Âk GET ÔÇö meta API beklemeden 308. */
+/** Known HM root: serve tenant HTML at `/` (no 308). */
 export function shouldInstantHmRootRedirect(method, pathname, hostname) {
   const m = String(method || "GET").toUpperCase();
   if (m !== "GET" && m !== "HEAD") return false;
@@ -1082,7 +1083,7 @@ export function isAhenkAgencyGeoPath(pathname) {
   if (p === "/aiaddin" || p === "/polis-ai" || p === "/polisai") return true;
   if (p === "/urunlerimiz" || p === "/asistan-ai" || p === "/whatsapp-cagri-merkezi") return true;
   if (p === "/cagri-merkezi-crm" || p === "/yapay-zeka-cagri-merkezi") return true;
-  if (p === "/kariyer" || p === "/urun-satisi") return true;
+  if (p === "/kariyer" || p === "/urun-satisi" || p === "/turkata-haber-ajansi") return true;
   if (p === "/destek" || p === "/sss" || p === "/iletisim-kunye" || p === "/kunye") return true;
   if (p === "/haberler") return true;
   if (p.startsWith("/hizmet/") || p.startsWith("/icerik/")) return true;
@@ -1252,6 +1253,24 @@ export function rewriteSpaShellOgForHmHost(html, hostname, origin) {
       "",
     );
     out = out.replace(/<\/head>/i, `${ldTag}\n</head>`);
+  }
+  return markHmNewsBootHtml(out);
+}
+
+/** HM / turkata belgesi: beyaz kabuk, Ahenk/Yekpare gövdesi ilk karede görünmesin. */
+export function markHmNewsBootHtml(html) {
+  let out = String(html || "");
+  if (!/\bhm-news-boot\b/.test(out)) {
+    if (/<html\b[^>]*\bclass=/i.test(out)) {
+      out = out.replace(/<html\b([^>]*?)\bclass=(["'])/i, '<html$1class=$2hm-news-boot ');
+    } else if (/<html\b/i.test(out)) {
+      out = out.replace(/<html\b/i, '<html class="hm-news-boot"');
+    }
+  }
+  if (!out.includes('id="hm-news-boot-css"') && out.includes("</head>")) {
+    const css =
+      '<style id="hm-news-boot-css">html.hm-news-boot,html.hm-news-boot body{background:#fff!important;color:#111}html.hm-news-boot #root:empty{min-height:100vh;background:#fff}</style>';
+    out = out.replace("</head>", `${css}\n</head>`);
   }
   return out;
 }
