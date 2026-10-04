@@ -9,7 +9,9 @@
  * DNS kayıtlarına dokunulmaz: alan adı başka bir projede/Worker'da yayında olabilir.
  */
 
-export const DETACHED_ZONES = ["yekpare.net", "turk.eco", "suhaberajansi.com"];
+// yektube.com: alan adı `yektube` Worker'ında (wrangler.yektube.toml custom domain). Buradan yalnızca `haberler`e
+// bağlı route / custom domain sökülür; yektube Worker'ının custom domain'leri ve DNS korunur (script/service filtresi).
+export const DETACHED_ZONES = ["yekpare.net", "turk.eco", "suhaberajansi.com", "yektube.com"];
 
 export function isDetachedZone(name) {
   const h = String(name ?? "")

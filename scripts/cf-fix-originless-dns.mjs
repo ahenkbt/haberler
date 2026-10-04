@@ -26,15 +26,17 @@ const ZONES = [
   "kirsehirhaber.org",
   "trafikdernegi.com",
   "tgd.tc",
-  // Yektube — ahenk.net.tr/yp kanonik alan adı
-  "yektube.com",
+  // yektube.com BİLEREK yok: zone'un sahibi ayrı `yektube` Worker'ı (wrangler.yektube.toml, custom domain).
+  // Burada olunca cron her 20 dk yektube.com route'larını `haberler`e bağlıyor ve `wrangler deploy -c
+  // wrangler.yektube.toml` 10020 ("route already exists, used by Worker: haberler") ile düşüyordu.
+  // /api trafiği yektube Worker'ı içinden API_ORIGIN=https://ahenk.net.tr ile haberler'e gider; zone route'u gerekmez.
   // kirsehri.com / kirsehir.net: zone CF hesabında yoksa atlanır; eklenince listeye alınır
 ];
 
 // Apex ön yüzü PHP temasında olan siteler: apex catch-all route / apex custom domain / apex DNS bu script tarafından
 // GERİ EKLENMEZ (aksi halde cron her 20 dk siteyi eski ön yüze döndürür). www de PHP origin'de (301 → apex): www DNS/route/custom domain da
 // eklenmez. Panel/API route'ları wrangler.toml'da.
-const PHP_THEME_APEX = new Set(["ankarahabergundemi.com", "ankarasehirgazetesi.com", "kirsehirhaber.org", "vatanhaber.net"]);
+const PHP_THEME_APEX = new Set(["ankarahabergundemi.com", "ankarasehirgazetesi.com", "kirsehirhaber.org", "suhaber.net", "vatanhaber.net"]);
 
 function token() {
   return process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";
