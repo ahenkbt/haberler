@@ -943,15 +943,22 @@
     {
       "idx": 135,
       "version": "7",
-      "when": 1777565046710,
+      "when": 1791153652496,
       "tag": "0133_hm_php_news_sites",
       "breakpoints": true
     },
     {
       "idx": 136,
       "version": "7",
-      "when": 1777566046710,
+      "when": 1791153653496,
       "tag": "0134_hm_php_news_sites_retry",
+      "breakpoints": true
+    },
+    {
+      "idx": 137,
+      "version": "7",
+      "when": 1791153654496,
+      "tag": "0135_hm_php_news_sites_apply",
       "breakpoints": true
     }
   ]
