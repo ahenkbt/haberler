@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildLlmAttempts,
+  defaultLlmModel,
   isMaskedKeyPlaceholder,
   maskApiKeyLast4,
   statusFromOwnKeys,
@@ -9,6 +10,13 @@ import {
 import { decryptLlmApiKey, encryptLlmApiKey } from "./hm-llm-crypto.js";
 
 describe("hm llm catalog", () => {
+  it("uses the cheap default models", () => {
+    expect(defaultLlmModel("evren")).toBe("deepseek-v4-flash");
+    expect(defaultLlmModel("nvidia")).toBe("nvidia/nemotron-3.5-lightning");
+    expect(defaultLlmModel("gemini")).toBe("gemini-3.1-flash-lite");
+    expect(defaultLlmModel("openai")).toBe("gpt-5-nano");
+  });
+
   it("masks only the last 4 characters", () => {
     expect(maskApiKeyLast4("wxyz")).toBe("••••wxyz");
     expect(maskApiKeyLast4("")).toBe("");

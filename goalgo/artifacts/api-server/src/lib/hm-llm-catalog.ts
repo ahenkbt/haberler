@@ -43,26 +43,26 @@ const CATALOG: Record<
 > = {
   evren: {
     label: "Evren",
-    description: "Yerli Evren LLM geçidi. Varsayılan model auto (Evren seçer).",
-    model: "auto",
+    description: "Yerli Evren LLM geçidi. Varsayılan: deepseek-v4-flash.",
+    model: "deepseek-v4-flash",
     priority: 10,
   },
   nvidia: {
     label: "NVIDIA NIM",
-    description: "Küçük ücretsiz instruct modeli. Varsayılan: meta/llama-3.1-8b-instruct.",
-    model: "meta/llama-3.1-8b-instruct",
+    description: "Ucuz NIM modeli. Varsayılan: nvidia/nemotron-3.5-lightning.",
+    model: "nvidia/nemotron-3.5-lightning",
     priority: 20,
   },
   gemini: {
     label: "Google Gemini",
-    description: "Ucuz Flash-Lite modeli. Varsayılan: gemini-2.0-flash-lite.",
-    model: "gemini-2.0-flash-lite",
+    description: "Ucuz Flash-Lite modeli. Varsayılan: gemini-3.1-flash-lite.",
+    model: "gemini-3.1-flash-lite",
     priority: 30,
   },
   openai: {
     label: "OpenAI",
-    description: "Ucuz mini model. Varsayılan: gpt-4o-mini.",
-    model: "gpt-4o-mini",
+    description: "Ucuz nano model. Varsayılan: gpt-5-nano.",
+    model: "gpt-5-nano",
     priority: 40,
   },
 };

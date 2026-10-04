@@ -1,5 +1,5 @@
 import { callGeminiChat, callOpenAIChat, type ChatCallResult } from "./aiChatProviders.js";
-import type { LlmAttempt, LlmProviderId } from "./hm-llm-catalog.js";
+import { defaultLlmModel, type LlmAttempt, type LlmProviderId } from "./hm-llm-catalog.js";
 import { recordLlmAttempt, resolveLlmAttempts } from "./hm-llm-store.js";
 
 const EVREN_BASE = (process.env.EVREN_API_BASE ?? "https://evren-llmapi.ssyz.org.tr/v1").replace(/\/$/, "");
@@ -18,7 +18,7 @@ async function callGeminiModel(
   user: string,
   temperature: number,
 ): Promise<ChatCallResult> {
-  const chosen = (model || "gemini-2.0-flash-lite").trim();
+  const chosen = (model || defaultLlmModel("gemini")).trim();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(chosen)}:generateContent`;
   try {
     const res = await fetch(url, {

@@ -25,6 +25,15 @@ describe("container-env", () => {
     assert.equal("ASSETS" in vars, false);
   });
 
+  it("forwards HM_LLM_KEY_SECRET so the container can decrypt provider keys", () => {
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://neon/neondb",
+      SESSION_SECRET: "sixteen-chars-ok",
+      HM_LLM_KEY_SECRET: "llm-secret-value",
+    });
+    assert.equal(vars.HM_LLM_KEY_SECRET, "llm-secret-value");
+  });
+
   it("forwards CONTAINER_ROLL so image rollouts restart the API process", () => {
     const vars = buildContainerEnv({
       DATABASE_URL: "postgres://neon/neondb",
