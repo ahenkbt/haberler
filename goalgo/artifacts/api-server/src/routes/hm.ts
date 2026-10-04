@@ -1120,10 +1120,19 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
       arr.push(e);
       bySite.set(e.siteId, arr);
     }
+    let ownLlm = new Map<number, string[]>();
+    try {
+      const { listOwnLlmProviderNamesBySite } = await import("../lib/hm-llm-store.js");
+      ownLlm = await listOwnLlmProviderNamesBySite();
+    } catch {
+      ownLlm = new Map();
+    }
     res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.json({
       items: sites.map((s) => ({
         ...s,
+        ownLlmProviders: ownLlm.get(s.id) ?? [],
+        hasOwnLlmKeys: (ownLlm.get(s.id) ?? []).length > 0,
         editors: (bySite.get(s.id) ?? []).map((e) => ({
           id: e.id,
           email: e.email,

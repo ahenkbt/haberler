@@ -12,6 +12,7 @@ const cards = [
   { title: "Hızlı Erişim Yönetimi", desc: "Kurumsal slider altı koyu kısayol kutuları.", href: "/editor/genel-ayarlar#hm-corporate-quick-links", icon: Settings, corporateOnly: true },
   { title: "Menü yönetimi", desc: "Logo menü ve şerit menü — öğe ekle, sırala, aktif/pasif.", href: "/editor/menuler", icon: FileBox, corporateOnly: false },
   { title: "Genel ayarlar", desc: "Logo yükleme, renk, üst menü.", href: "/editor/genel-ayarlar", icon: Settings, corporateOnly: false },
+  { title: "Yapay zekâ", desc: "Evren, NVIDIA, Gemini ve OpenAI anahtarları. Yalnızca bu site.", href: "/editor/yapay-zeka", icon: Sparkles, corporateOnly: false, newsOnly: true },
   { title: "Vitrin ayarları", desc: "Haber ve kurumsal modüller, sıralama.", href: "/editor/vitrin", vatanHref: "/editor/vitrin", icon: LayoutGrid, corporateOnly: false },
   { title: "Reklam alanları", desc: "Yekpare ile aynı slot isimleri.", href: "/editor/reklam-alanlari", icon: Megaphone, corporateOnly: false },
   { title: "Kategoriler", desc: "Siteye özel kategori + vitrinde göster/gizle.", href: "/editor/kategoriler", icon: Tags, corporateOnly: false },
@@ -37,7 +38,10 @@ export default function EditorDashboard() {
   const theme = normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme);
   const isCorporateSite = theme === "corporate" || theme === "vatan";
   const isVatanSite = isHmVatanThemeId(theme);
-  const visibleCards = cards.filter((card) => isCorporateSite || !card.corporateOnly);
+  const visibleCards = cards.filter((card) => {
+    if ("newsOnly" in card && card.newsOnly && isCorporateSite) return false;
+    return isCorporateSite || !card.corporateOnly;
+  });
 
   return (
     <EditorLayout title="Özet">

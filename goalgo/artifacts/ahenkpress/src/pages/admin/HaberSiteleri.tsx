@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ExternalLink, Globe2, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
+import { LlmProviderKeysPanel } from "@/components/LlmProviderKeysPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,8 @@ type HmSiteRow = {
   displayName: string;
   description?: string | null;
   active: boolean;
+  hasOwnLlmKeys?: boolean;
+  ownLlmProviders?: string[];
   layoutJson?: string | null;
   hybridRssEnabled?: boolean;
   contact?: { phone?: string; email?: string; address?: string; notes?: string };
@@ -412,6 +415,13 @@ export default function HaberSiteleri() {
   return (
     <AdminLayout title="Haber Siteleri">
       <div className="space-y-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-lg font-black text-gray-900">Haber Merkezi yapay zekâ anahtarları</h2>
+          <p className="mt-1 mb-4 text-sm text-gray-600">
+            Merkez anahtarları tüm haber sitelerinin yedeğidir. Sitenin kendi anahtarı varsa önce o kullanılır.
+          </p>
+          <LlmProviderKeysPanel mode="global" />
+        </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-black text-gray-900">Haber Siteleri</h1>
@@ -705,6 +715,11 @@ export default function HaberSiteleri() {
                             </span>
                             <h3 className="text-base font-black text-gray-900">{site.displayName}</h3>
                             <Badge variant={site.active ? "default" : "secondary"}>{site.active ? "Aktif" : "Pasif"}</Badge>
+                            {site.hasOwnLlmKeys ? (
+                              <Badge variant="outline">Kendi API{(site.ownLlmProviders ?? []).length ? `: ${(site.ownLlmProviders ?? []).join(", ")}` : ""}</Badge>
+                            ) : (
+                              <Badge variant="secondary">Merkez API</Badge>
+                            )}
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">/{site.slug}</span>
                           </div>
                           {site.description ? <p className="mb-3 text-sm text-gray-600 line-clamp-2">{site.description}</p> : null}
