@@ -205,17 +205,54 @@ zone_name = "kirsehirhaber.org"
 
 # TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.
 # custom_domain Worker hostname + anycast A kaydı oluşturur (kirsehirhaber.org ile aynı).
-[[routes]]
-pattern = "turkatahaber.com"
-custom_domain = true
-
+# turkatahaber.com (apex) ön yüzü 04.10.2026'dan beri PHP temasında (VPS, A 187.77.84.201 proxied).
+# Worker yalnızca panel/API yollarını alır. Apex custom_domain ve "turkatahaber.com/*" catch-all route'u
+# BİLEREK yok: wrangler deploy bunları geri eklerse site eski ön yüze döner. /assets/theme.* route'u
+# (Worker'sız) Cloudflare panelinden yönetilir.
 [[routes]]
 pattern = "www.turkatahaber.com"
 custom_domain = true
 
 [[routes]]
-pattern = "turkatahaber.com/*"
+pattern = "turkatahaber.com/editor*"
 zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/api/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/admin*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/panel*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/haber-merkezi*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/assets/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/sw.js"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/llms.txt"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/ai.txt"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/manifest.json"
+zone_name = "turkatahaber.com"
+
 
 [[routes]]
 pattern = "www.turkatahaber.com/*"
