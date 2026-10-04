@@ -53,7 +53,7 @@ const QUALITIES = [
 const POSITIONS = [
   {
     title: "Müşteri Temsilcisi (Tam Zamanlı, Ofisten)",
-    text: "Hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00 (Pazar tatil). Asgari ücret, SGK ve yemek. Mülakat ve adres: Sağlık Mah. Aksu Cad. 13/5 Sıhhıye - Çankaya / Ankara.",
+    text: "Hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00 (Pazar tatil). Asgari ücret, SGK ve yemek. Oryantasyon ve staj süreci (1. hafta, günde 4 saat) bu pozisyon için de geçerlidir. Mülakat ve adres: Sağlık Mah. Aksu Cad. 13/5 Sıhhıye - Çankaya / Ankara.",
   },
   {
     title: "Müşteri Temsilcisi (Home-office, Kısmi Süreli)",
@@ -68,7 +68,7 @@ const FAQS = [
   },
   {
     q: "Çalışma modeli nedir?",
-    a: "İki seçenek vardır: tam zamanlı ofisten çalışma (hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00, Pazar tatil; asgari ücret, SGK ve yemek) veya home-office / kısmi süreli model (ilk hafta günde 4 saat oryantasyon ve staj; ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi; puantaj pbx.goalgo.org ve CRM log kayıtlarına dayanır).",
+    a: "İki seçenek vardır: tam zamanlı ofisten çalışma (hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00, Pazar tatil; asgari ücret, SGK ve yemek) veya home-office / kısmi süreli model. Oryantasyon ve staj süreci (ilk hafta, günde 4 saat) tam zamanlı ofisten çalışma için de geçerlidir. Home-office seçeneğinde ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi yapılır; puantaj pbx.goalgo.org ve CRM log kayıtlarına dayanır.",
   },
   {
     q: "Bu bir bağış veya yardım toplama işi mi?",
@@ -251,8 +251,9 @@ export default function Kariyer() {
           <h2>Çalışma modeli</h2>
           <p>
             Tam zamanlı ofisten çalışma veya home-office / kısmi süreli çalışma seçeneklerinden biriyle başvurabilirsiniz.
-            Home-office seçeneğinde ilk hafta günde 4 saat oryantasyon ve staj vardır; ardından kısmi süreli iş
-            sözleşmesi ve resmi SGK girişi yapılır. Puantaj, sistem giriş-çıkış ve log kayıtlarına göre tutulur.
+            Oryantasyon ve staj süreci (ilk hafta, günde 4 saat) tam zamanlı ofisten çalışma için de geçerlidir.
+            Home-office seçeneğinde ardından kısmi süreli iş sözleşmesi ve resmi SGK girişi yapılır. Puantaj, sistem
+            giriş-çıkış ve log kayıtlarına göre tutulur.
             Ayrıntılar ve yasal çerçeve <Link href="/urun-satisi">ürün satışı ve çalışma esasları</Link> sayfasındadır.
           </p>
           <p>
