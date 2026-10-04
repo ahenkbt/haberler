@@ -1414,8 +1414,8 @@ export async function injectKhNeonNewsIntoPublicResponse(env, incomingUrl, respo
 }
 
 /**
- * KH sitesindeki tüm köşe yazarlarını sil + vitrin yazar modüllerini kapat.
- * Brand ensure / meta isteğinde bir kez (rev) uygulanır.
+ * KH sitesindeki köşe yazarlarını siler. Yalnızca kayıtlı rev henüz yokken,
+ * ensureKhAuthorsClearedOnRow içinden bir kez çağrılır. Yazar modül bayraklarına dokunmaz.
  */
 export async function clearKhAuthorsAndDisableModules(sql, siteId) {
   if (!sql || !siteId) return { deleted: 0 };

@@ -666,7 +666,14 @@ async function ensureKhVideoMenuOnRow(sql, row) {
   return { ...row, layout_json: JSON.stringify(next) };
 }
 
-const KH_AUTHORS_CLEAR_REV = "kh-authors-clear-20260727b";
+/** Do not bump: a new value would wipe Kırşehir Haber authors again. */
+export const KH_AUTHORS_CLEAR_REV = "kh-authors-clear-20260727b";
+/**
+ * LiveBridge / PHP theme sync pin for kirsehirhaber.org.
+ * Reused only while that row is still an active KH site. A missing or inactive
+ * 944 must not be resurrected over the row the public site is already serving.
+ */
+export const KH_CANONICAL_SITE_ID = 944;
 const HM_LAYOUT_SANITIZE_REV = "hm-layout-sanitize-20260727a";
 
 const CORPORATE_ONLY_MODULES = new Set([
@@ -778,8 +785,22 @@ async function ensureHmLayoutSanitizedOnRow(sql, row) {
   return { ...row, layout_json: JSON.stringify(next) };
 }
 
-/** KH: köşe yazarlarını Neon'dan sil + vitrin yazar modüllerini kapat (bir kerelik rev). */
-async function ensureKhAuthorsClearedOnRow(sql, row) {
+function parseLayoutJson(raw) {
+  let layout = {};
+  try {
+    layout = raw ? JSON.parse(String(raw)) : {};
+  } catch {
+    layout = {};
+  }
+  if (!layout || typeof layout !== "object" || Array.isArray(layout)) return {};
+  return layout;
+}
+
+/**
+ * KH yazar temizliği gerçekten bir kez. Rev satırda varsa yazar, köşe yazısı ve
+ * editörün açtığı yazar modülleri olduğu gibi kalır. Rev yükseltmeyin.
+ */
+export async function ensureKhAuthorsClearedOnRow(sql, row) {
   if (!row) return row;
   const slug = normalizeSlug(row.slug);
   const hosts = [row.domain, row.domain2, row.domain3].map(normalizeHost);
@@ -790,34 +811,19 @@ async function ensureKhAuthorsClearedOnRow(sql, row) {
     hosts.some((h) => h === "kirsehirhaber.org" || h === "kirsehri.com" || h === "kirsehir.net");
   if (!isKh) return row;
 
-  let layout = {};
-  try {
-    layout = row.layout_json ? JSON.parse(String(row.layout_json)) : {};
-  } catch {
-    layout = {};
-  }
-  if (!layout || typeof layout !== "object" || Array.isArray(layout)) layout = {};
+  const layout = parseLayoutJson(row.layout_json);
+  if (String(layout.hmKhAuthorsClearRev || "") === KH_AUTHORS_CLEAR_REV) return row;
 
-  const already = String(layout.hmKhAuthorsClearRev || "") === KH_AUTHORS_CLEAR_REV;
-  // Rev uygulanmış olsa bile kalan yazarları temizle (senkron sızıntısı)
   try {
     const { clearKhAuthorsAndDisableModules } = await import("./hm-editor-kh-data-edge.js");
     await clearKhAuthorsAndDisableModules(sql, row.id);
   } catch (err) {
     console.error("[hm-brand-db-ensure] kh authors clear", String(err?.message || err).slice(0, 200));
+    return row;
   }
 
-  if (already) return row;
-
-  const order = Array.isArray(layout.hmNewsHomeModuleOrder)
-    ? layout.hmNewsHomeModuleOrder.filter((id) => id !== "authorsStrip")
-    : layout.hmNewsHomeModuleOrder;
   const next = {
     ...layout,
-    hmNewsAuthorsEnabled: false,
-    hmNewsHorizontalAuthorsEnabled: false,
-    hmNewsSidebarAuthorsEnabled: false,
-    hmNewsHomeModuleOrder: order,
     hmKhAuthorsClearRev: KH_AUTHORS_CLEAR_REV,
   };
   await sql`
@@ -967,12 +973,80 @@ async function createKhSiteOnNeon(sql) {
   }
 }
 
+function isActiveSiteRow(row) {
+  return row?.active === true || row?.active === 1 || row?.active === "t" || row?.active === "true";
+}
+
+/**
+ * One KH row serves kirsehirhaber.org. Prefer the LiveBridge pin when that row
+ * is still active; otherwise keep the active row already on the public site.
+ * Other matches are reported, never deleted.
+ */
+export function pickKhCanonicalSite(rows) {
+  const list = (Array.isArray(rows) ? rows : []).filter((row) => row && Number(row.id) > 0);
+  const active = list.filter((row) => isActiveSiteRow(row));
+  const pool = active.length ? active : list;
+  const pinned = pool.find((row) => Number(row.id) === KH_CANONICAL_SITE_ID) || null;
+  const bySlug = pool
+    .filter((row) => normalizeSlug(row.slug) === "kirsehirhaber")
+    .sort((a, b) => Number(a.id) - Number(b.id));
+  const byId = [...pool].sort((a, b) => Number(a.id) - Number(b.id));
+  const row = pinned || bySlug[0] || byId[0] || null;
+  const retiredIds = list
+    .filter((candidate) => row && Number(candidate.id) !== Number(row.id))
+    .map((candidate) => Number(candidate.id));
+  return { row, retiredIds };
+}
+
+let khCanonicalLogKey = "";
+
+async function resolveKhCanonicalSite(sql) {
+  const rows = await sql`
+    SELECT id, slug, domain, domain2, domain3, display_name, description,
+           contact_json, layout_json, active, created_at, updated_at
+    FROM hm_news_sites
+    WHERE lower(trim(both '/' from coalesce(slug, ''))) IN ('kirsehirhaber', 'kirsehir', 'kh')
+       OR lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+       OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+       OR lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) IN ('kirsehirhaber.org', 'kirsehri.com', 'kirsehir.net')
+    ORDER BY id ASC
+  `;
+  const picked = pickKhCanonicalSite(rows || []);
+  const key = `${picked.row?.id ?? "none"}:${picked.retiredIds.join(",")}`;
+  if (key !== khCanonicalLogKey) {
+    khCanonicalLogKey = key;
+    if (picked.row?.id) {
+      console.error(
+        "[hm-brand-db-ensure] kh canonical site",
+        String(picked.row.id),
+        picked.retiredIds.length ? `retire by hand: ${picked.retiredIds.join(",")}` : "no extra rows",
+      );
+    }
+  }
+  return picked;
+}
+
 async function ensureKhSiteRow(sql, row) {
   let next = await bindKhDomainsOnRow(sql, row);
   next = await ensureKhVideoMenuOnRow(sql, next);
   next = await ensureKhAuthorsClearedOnRow(sql, next);
   next = await ensureHmLayoutSanitizedOnRow(sql, next);
   return next;
+}
+
+/** by-domain meta: reuse the existing KH row and bind its domain. Do not mint another. */
+export async function ensureKhBrandMetaOnSql(sql) {
+  const resolved = await resolveKhCanonicalSite(sql);
+  if (resolved?.row) {
+    const row = await ensureKhSiteRow(sql, resolved.row);
+    return { meta: serializeMetaRow(row), action: "kh_canonical" };
+  }
+  const created = await createKhSiteOnNeon(sql);
+  if (created?.id) {
+    const row = await ensureKhSiteRow(sql, created);
+    return { meta: serializeMetaRow(row), action: "created_kh" };
+  }
+  return null;
 }
 
 /**
@@ -1336,6 +1410,19 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     }
   }
 
+  const isKhBinding =
+    binding.slug === "kirsehirhaber" ||
+    binding.slug === "kh" ||
+    KH_CANONICAL_DOMAINS.includes(host);
+  if (isKhBinding) {
+    try {
+      return await ensureKhBrandMetaOnSql(sql);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] kh canonical", String(err?.message || err).slice(0, 240));
+      return null;
+    }
+  }
+
   // 1) Domain ile bul — admin hangi siteye verdiyse onu döndür
   if (host) {
     const byDomain = await sql`
@@ -1407,18 +1494,6 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     if (bySlug?.[0]) {
       const row = await ensureKhSiteRow(sql, bySlug[0]);
       return { meta: serializeMetaRow(row), action: "lookup_slug" };
-    }
-  }
-
-  const isKhBinding =
-    binding.slug === "kirsehirhaber" ||
-    binding.slug === "kh" ||
-    KH_CANONICAL_DOMAINS.includes(host);
-  if (isKhBinding) {
-    const created = await createKhSiteOnNeon(sql);
-    if (created?.id) {
-      const row = await ensureKhSiteRow(sql, created);
-      return { meta: serializeMetaRow(row), action: "created_kh" };
     }
   }
 
