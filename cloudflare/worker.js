@@ -109,7 +109,14 @@ import {
   turkataUpstreamSitemapApiPath,
   TURKATA_ORIGIN,
 } from "./turkata-haber.js";
-import { sitemapFailXml, toGscWebSitemapXml, isGscWebSitemapPath } from "./sitemap-fail-xml.js";
+import {
+  sitemapFailXml,
+  toGscWebSitemapXml,
+  isGscWebSitemapPath,
+  isSitemapFailSoftPath,
+  sitemapFailPublicPath,
+  sitemapUpstreamShouldFailSoft,
+} from "./sitemap-fail-xml.js";
 import { handleMediaEdgeHealth, handleMediaGetFromR2, handleMediaR2PutProxy, parseMediaUploadFname } from "./hm-editor-media-s3-edge.js";
 import {
   fetchStaticAssets,
@@ -771,7 +778,9 @@ async function proxyRootSitemap(request, env, incoming) {
   const failXml = (status) => {
     const headers = xmlHeaders({ "retry-after": "60" });
     headers.set("x-yekpare-sitemap-error", "1");
-    const body = sitemapFailXml(pathOnly, incoming.origin);
+    headers.set("cache-control", "no-store");
+    headers.set("cdn-cache-control", "no-store");
+    const body = sitemapFailXml(sitemapFailPublicPath(pathOnly), incoming.origin);
     if (request.method === "HEAD") return new Response(null, { status, headers });
     return new Response(body, { status, headers });
   };
@@ -784,20 +793,24 @@ async function proxyRootSitemap(request, env, incoming) {
     }
     target.searchParams.set("xfh", incoming.host);
     const targetUrl = target.toString();
-    const upstream = await fetchApiWithRetry(env, targetUrl, {
-      method: request.method === "HEAD" ? "GET" : request.method,
-      headers: {
-        accept: "application/xml, text/xml, */*",
-        "x-forwarded-host": incoming.host,
-        "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
-        "user-agent": request.headers.get("user-agent") || "yekpare-sitemap-proxy",
-      },
-      cf: {
-        cacheTtl: isGscWebSitemapPath(pathOnly) ? 0 : pathOnly === "/google-news.xml" ? 600 : 300,
-        cacheEverything: !isGscWebSitemapPath(pathOnly),
-      },
-      redirect: "manual",
-    });
+    const upstream = await withBudget(
+      fetchApiWithRetry(env, targetUrl, {
+        method: request.method === "HEAD" ? "GET" : request.method,
+        headers: {
+          accept: "application/xml, text/xml, */*",
+          "x-forwarded-host": incoming.host,
+          "x-forwarded-proto": incoming.protocol.replace(":", "") || "https",
+          "user-agent": request.headers.get("user-agent") || "yekpare-sitemap-proxy",
+        },
+        cf: {
+          cacheTtl: isGscWebSitemapPath(pathOnly) ? 0 : pathOnly === "/google-news.xml" ? 600 : 300,
+          cacheEverything: !isGscWebSitemapPath(pathOnly),
+        },
+        redirect: "manual",
+      }),
+      SITEMAP_UPSTREAM_BUDGET_MS,
+    );
+    if (!upstream) return failXml(503);
     const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
     if (!upstream.ok || (!ct.includes("xml") && !ct.includes("text/plain") && !ct.includes("text/xml"))) {
       return failXml(upstream.status >= 500 ? 503 : upstream.status || 503);
@@ -834,6 +847,22 @@ async function proxyRootSitemap(request, env, incoming) {
   } catch {
     return failXml(503);
   }
+}
+
+/** Container HTML/text 500 (Express "Sitemap hatası") must not reach Google as HTTP 500. */
+function sitemapEdgeFailResponse(request, incoming) {
+  const headers = new Headers({
+    "content-type": "application/xml; charset=utf-8",
+    "x-content-type-options": "nosniff",
+    "cache-control": "no-store",
+    "cdn-cache-control": "no-store",
+    "retry-after": "60",
+    "x-yekpare-frontend": "cloudflare-sitemap-proxy",
+    "x-yekpare-sitemap-error": "1",
+  });
+  const body = sitemapFailXml(sitemapFailPublicPath(incoming.pathname), incoming.origin);
+  if (request.method === "HEAD") return new Response(null, { status: 503, headers });
+  return new Response(body, { status: 503, headers });
 }
 
 /** CF Assets'ten HTML yan─▒t─▒n─▒ SW purge boot ile sar. */
@@ -1563,6 +1592,8 @@ async function maybeFillArticleFromHomeBundle(incoming, edgeCache) {
 }
 
 const HM_ORIGIN_BUDGET_MS = 60_000; // cold container boot; 12s still too tight after dual-worker rolls
+/** Sitemap upstream hang must not become a platform HTTP 500 (worker 1101). */
+const SITEMAP_UPSTREAM_BUDGET_MS = 20_000;
 
 /**
  * Eski API: parseInt("2026-yili-...") ÔåÆ id 2026 (yanl─▒┼ş haber).
@@ -3151,6 +3182,7 @@ export default {
         if (recoveredBundle) return rememberPublicApi(recoveredBundle);
       }
       if (!upstream) {
+        if (isSitemapFailSoftPath(incoming.pathname)) return sitemapEdgeFailResponse(request, incoming);
         if (isHmYektubeCatalogPath(upstreamPath)) {
           return hmYektubeCatalogVideosOrRss(upstreamPath, incoming.searchParams, "timeout");
         }
@@ -3264,6 +3296,9 @@ export default {
       }
 
       const ct = String(out.get("content-type") || "").toLowerCase();
+      if (sitemapUpstreamShouldFailSoft(incoming.pathname, upstream.status, ct)) {
+        return sitemapEdgeFailResponse(request, incoming);
+      }
       if (ct.includes("text/html")) {
         if (
           isHmYektubeCatalogPath(upstreamPath) ||
@@ -3323,6 +3358,7 @@ export default {
         headers.set("x-yekpare-edge-cache", "stale-error");
         return new Response(staleEdgeFallback.body, { status: staleEdgeFallback.status, headers });
       }
+      if (isSitemapFailSoftPath(incoming.pathname)) return sitemapEdgeFailResponse(request, incoming);
       if (isHmYektubeCatalogPath(incoming.pathname) || isHmYektubeCatalogPath(upstreamPath)) {
         return hmYektubeCatalogVideosOrRss(
           isHmYektubeCatalogPath(upstreamPath) ? upstreamPath : incoming.pathname,
