@@ -39,7 +39,7 @@ export function resolveApiOrigin(env, incomingOrigin) {
   return CANONICAL_API_ORIGIN;
 }
 
-/** Warm DO `api` eski imaj─▒ tutar; CONTAINER_ROLL de─şi┼şince yeni instance a├ğ. */
+/** Warm DO `api` eski imajı tutar; CONTAINER_ROLL değişince yeni instance aç. */
 export function apiContainerInstanceName(env) {
   const roll = String(env?.CONTAINER_ROLL || "")
     .trim()
@@ -50,19 +50,27 @@ export function apiContainerInstanceName(env) {
   return roll || "api";
 }
 
+/** getRandom() sabit "0".."n" isimlerine gider ve CONTAINER_ROLL'u yok sayar; sıcak instance eski imajda kalır. */
+export function apiContainerInstanceNames(env, count = API_CONTAINER_INSTANCES) {
+  const roll = apiContainerInstanceName(env);
+  const n = Math.max(1, Math.min(20, Number(count) || 1));
+  return Array.from({ length: n }, (_, i) => `${roll}-${i}`.slice(0, 63));
+}
+
 export async function getApiStub(env) {
   if (!env?.GOALGO_API) return null;
+  const names = apiContainerInstanceNames(env);
+  const name = names[Math.floor(Math.random() * names.length)];
+  if (typeof env.GOALGO_API.getByName === "function") {
+    return env.GOALGO_API.getByName(name);
+  }
+  if (typeof env.GOALGO_API.idFromName === "function") {
+    return env.GOALGO_API.get(env.GOALGO_API.idFromName(name));
+  }
   try {
     const { getRandom } = await import("@cloudflare/containers");
     return await getRandom(env.GOALGO_API, API_CONTAINER_INSTANCES);
   } catch {
-    const instance = apiContainerInstanceName(env);
-    if (typeof env.GOALGO_API.getByName === "function") {
-      return env.GOALGO_API.getByName(instance);
-    }
-    if (typeof env.GOALGO_API.idFromName === "function") {
-      return env.GOALGO_API.get(env.GOALGO_API.idFromName(instance));
-    }
     return null;
   }
 }
