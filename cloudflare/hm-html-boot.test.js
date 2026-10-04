@@ -486,6 +486,10 @@ describe("hm-html-boot", () => {
     assert.match(out, /NewsMediaOrganization/);
     assert.match(out, /hm-news-boot/);
     assert.match(out, /id="hm-news-boot-css"/);
+    const alreadyStyled = `<html lang="tr"><head><style id="hm-news-boot-css">html.hm-news-boot #root{color:#111}</style></head><body><div id="root"></div></body></html>`;
+    const styled = rewriteSpaShellOgForHmHost(alreadyStyled, "ankarasehirgazetesi.com", "https://ankarasehirgazetesi.com");
+    assert.match(styled, /<html[^>]*\bhm-news-boot\b/);
+    assert.match(styled, /clip-path:inset\(50%\)/);
     const ahenk = rewriteSpaShellOgForHmHost(spa, "ahenk.net.tr", "https://ahenk.net.tr");
     assert.match(ahenk, /Ahenk Bilgi Teknolojileri/);
   });

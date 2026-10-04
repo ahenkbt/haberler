@@ -890,12 +890,14 @@
         if (logo && host === "turkatahaber.com") {
           logo.src = "/turkata/turkata-logo.webp";
           logo.alt = brand || "TÜRKATA HABER AJANSI";
-          logo.hidden = false;
+          logo.addEventListener("load", function () {
+            if (mark) mark.hidden = true;
+          });
           logo.addEventListener("error", function () {
             logo.hidden = true;
             if (mark) mark.hidden = false;
           });
-          if (mark) mark.hidden = true;
+          logo.hidden = false;
         }
         var root = document.getElementById("root");
         if (root && document.documentElement.classList.contains("hm-news-boot")) {
