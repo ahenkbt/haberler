@@ -68,6 +68,18 @@ describe("resolveRootModeWouterPath", () => {
     expect(hmPublicHref("/ozel-sayfa", site)).toBe("/ozel-sayfa");
   });
 
+  it("emits root URLs on a known HM host even when the site record has no domain", () => {
+    vi.stubGlobal("window", {
+      location: { hostname: "kirsehirhaber.org" },
+    });
+    const site = { domain: null, slug: "kirsehirhaber", siteId: 943 };
+    expect(hmPublicHref("/haber/ornek-haber", site)).toBe("/haber/ornek-haber");
+    expect(hmPublicHref("/kategori/gundem", site)).toBe("/kategori/gundem");
+    expect(hmPublicHref("/yazar/524", site)).toBe("/yazar/524");
+    expect(hmPublicHref("/video", site)).toBe("/video");
+    expect(hmPublicHref("/kunye", site)).toBe("/kunye");
+  });
+
   it("keeps /tr/{slug} links when the same site is opened on ahenk.net.tr", () => {
     vi.stubGlobal("window", {
       location: { hostname: "ahenk.net.tr" },
