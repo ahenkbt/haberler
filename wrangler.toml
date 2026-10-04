@@ -80,12 +80,46 @@ pattern = "www.ahenk.net.tr/*"
 zone_name = "ahenk.net.tr"
 
 # HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
+# ankarahabergundemi.com (apex) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex custom_domain ve "ankarahabergundemi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "ankarahabergundemi.com/*"
+pattern = "ankarahabergundemi.com/editor*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
-pattern = "ankarahabergundemi.com"
+pattern = "ankarahabergundemi.com/api/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/admin*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/panel*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/haber-merkezi*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/assets/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/sw.js"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/llms.txt"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/ai.txt"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/manifest.json"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
@@ -97,17 +131,51 @@ pattern = "www.ankarahabergundemi.com"
 zone_name = "ankarahabergundemi.com"
 
 # Yektube Ôö£├ézel alan ├ö├ç├Â ahenk.net.tr/yp kanonik yÔö£ÔòØzÔö£ÔòØ (yektube.com)
+# ankarasehirgazetesi.com (apex) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex custom_domain ve "ankarasehirgazetesi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
 [[routes]]
-pattern = "ankarasehirgazetesi.com"
-custom_domain = true
+pattern = "ankarasehirgazetesi.com/editor*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/api/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/admin*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/panel*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/haber-merkezi*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/assets/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/sw.js"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/llms.txt"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/ai.txt"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/manifest.json"
+zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com"
 custom_domain = true
-
-[[routes]]
-pattern = "ankarasehirgazetesi.com/*"
-zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com/*"
