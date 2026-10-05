@@ -898,6 +898,11 @@ export type NewsSiteLayoutPrefs = {
   hmAllowCrossSiteManualNews?: boolean;
   /** HM vitrin menü / anasayfa bloklarında kategori sırası (slug listesi, üstten alta). */
   hmCategorySortSlugs?: string[] | null;
+  /**
+   * Kategori şeridi beyaz listesi. Dizi varsa (boş dizi dahil) şeritte yalnızca bu slug'lar kalır.
+   * Alan yoksa şerit, gizlenenler dışında tüm kategorileri gösterir. Canlı PHP siteleri bu listeyi kullanır.
+   */
+  hmNavOnlyCategorySlugs?: string[] | null;
   /** Klasik haber temasında ara manşet kategori blokları için seçili slug listesi. Boşsa otomatik kategori akışı kullanılır. */
   hmClassicAraMansetCategorySlugs?: string[] | null;
   /** Renkli kategori şeridi (featuredCategoryStrip) için gösterilecek kategori slug listesi. Boşsa otomatik dağıtım. */
@@ -915,6 +920,11 @@ export type NewsSiteLayoutPrefs = {
    * Boşsa tema kendi varsayılan yerleşimini kullanır.
    */
   hmYsMansetPreset?: "odatv" | "sabah" | "takvim" | "mynet" | "nefes" | null;
+  /**
+   * Eski manşet yerleşim anahtarı (`odatv`, `sabah`, `takvim`, `mynet`, `nefes`).
+   * `hmYsMansetPreset` boşsa editör ve PHP tema bunu okur.
+   */
+  hmNewsYsMansetLayout?: "odatv" | "sabah" | "takvim" | "mynet" | "nefes" | null;
   /** Footer sloganı. PHP tema `hmYsSlogan` doluysa site açıklamasının yerine bunu basar. */
   hmYsSlogan?: string | null;
   /** Haber sayfası paylaş düğmeleri. Tanımsızsa PHP tema açık kabul eder. */

@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowDown, ArrowUp, ChevronsUp, Combine, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { nextYsCategoryVisibilityPatch, readYsNavOnlySlugs, ysCategoryNavVisible } from "@/lib/yenisafakEditorLayout";
 
 type Cat = {
   id: number;
@@ -84,6 +85,11 @@ export default function EditorKategoriler() {
     () => new Set(hidden.map((s) => normalizeNewsCategorySlug(s)).filter(Boolean)),
     [hidden],
   );
+  const navOnly = useMemo(() => {
+    const slugs = readYsNavOnlySlugs(newsLayoutPrefs);
+    if (!slugs) return null;
+    return slugs.map((slug) => normalizeNewsCategorySlug(slug)).filter(Boolean);
+  }, [newsLayoutPrefs]);
 
   const sid = site?.id;
   const vitrinTheme = String(newsLayoutPrefs.hmVitrinTheme ?? "").trim().toLowerCase();
@@ -194,13 +200,9 @@ export default function EditorKategoriler() {
   const setNavVisible = async (slug: string, visible: boolean) => {
     const s = normalizeNewsCategorySlug(slug);
     if (!s) return;
-    const nextHidden = new Set(hiddenSet);
-    if (visible) nextHidden.delete(s);
-    else nextHidden.add(s);
-    const arr = [...nextHidden].sort();
     setSaving(true);
     const r = await saveNewsSiteLayout(newsLayoutPrefs, {
-      layoutPatch: { hmNavHiddenCategorySlugs: arr.length ? arr : null },
+      layoutPatch: nextYsCategoryVisibilityPatch([...hiddenSet], navOnly, s, visible),
     });
     setSaving(false);
     if (!r.ok) {
@@ -440,6 +442,9 @@ export default function EditorKategoriler() {
         <p className="text-sm text-slate-600">
           Aşağıdaki liste bu siteye özel kategorilerdir. Vitrinde göster/gizle ve sıralama yalnızca bunlar için geçerlidir.
           Haber eklerken de aynı liste kullanılır.
+          {navOnly
+            ? " Bu sitede kategori şeridi kayıtlı listeyle sınırlıdır; açık olanlar o listededir."
+            : ""}
         </p>
 
         <div className="rounded-md border bg-white overflow-x-auto">
@@ -464,7 +469,7 @@ export default function EditorKategoriler() {
               ) : (
                 cats.map((c, index) => {
                   const slug = normalizeNewsCategorySlug(c.slug);
-                  const visible = slug.length > 0 && !hiddenSet.has(slug);
+                  const visible = ysCategoryNavVisible(slug, hiddenSet, navOnly);
                   return (
                     <TableRow key={c.id}>
                       <TableCell className="w-[108px]">

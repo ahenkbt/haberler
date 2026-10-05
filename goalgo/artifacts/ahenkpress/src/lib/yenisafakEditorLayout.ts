@@ -172,7 +172,50 @@ export function normalizeYsMansetPreset(value: unknown): YsMansetPresetId | null
 }
 
 export function readYsMansetPreset(prefs: NewsSiteLayoutPrefs | null | undefined): YsMansetPresetId | null {
-  return normalizeYsMansetPreset(prefs?.hmYsMansetPreset);
+  return normalizeYsMansetPreset(prefs?.hmYsMansetPreset) ?? normalizeYsMansetPreset(prefs?.hmNewsYsMansetLayout);
+}
+
+/** `hmNavOnlyCategorySlugs` dizi ise beyaz liste aktiftir. Alan yoksa null. */
+export function readYsNavOnlySlugs(prefs: NewsSiteLayoutPrefs | null | undefined): string[] | null {
+  const raw = prefs?.hmNavOnlyCategorySlugs;
+  if (!Array.isArray(raw)) return null;
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const slug = String(item ?? "").trim().toLowerCase();
+    if (!slug || seen.has(slug)) continue;
+    seen.add(slug);
+    out.push(slug);
+  }
+  return out;
+}
+
+/** Gizli slug her zaman kapalıdır. Beyaz liste varsa slug listede olmalıdır. */
+export function ysCategoryNavVisible(slug: string, hidden: ReadonlySet<string>, navOnly: readonly string[] | null): boolean {
+  if (!slug || hidden.has(slug)) return false;
+  if (navOnly) return navOnly.includes(slug);
+  return true;
+}
+
+export function nextYsCategoryVisibilityPatch(
+  hidden: readonly string[],
+  navOnly: readonly string[] | null,
+  slug: string,
+  visible: boolean,
+): { hmNavHiddenCategorySlugs: string[] | null; hmNavOnlyCategorySlugs?: string[] } {
+  const nextHidden = new Set(hidden);
+  if (visible) nextHidden.delete(slug);
+  else nextHidden.add(slug);
+  const hiddenList = [...nextHidden].sort();
+  const patch: { hmNavHiddenCategorySlugs: string[] | null; hmNavOnlyCategorySlugs?: string[] } = {
+    hmNavHiddenCategorySlugs: hiddenList.length > 0 ? hiddenList : null,
+  };
+  if (navOnly) {
+    const nextOnly = navOnly.filter((item) => item !== slug);
+    if (visible) nextOnly.push(slug);
+    patch.hmNavOnlyCategorySlugs = nextOnly;
+  }
+  return patch;
 }
 
 function readMappedString(
@@ -307,6 +350,7 @@ export function buildYenisafakLayoutPatch(
   const patch: Record<string, unknown> = {
     hmVitrinTheme: "yenisafak",
     hmYsMansetPreset: snapshot.preset,
+    hmNewsYsMansetLayout: snapshot.preset,
     hmYsSlogan: snapshot.slogan.trim() || null,
     hmYsKunye: normalizeYsKunye(snapshot.kunye),
     hmPrimaryColor: hexOrNull(snapshot.primaryColor),
