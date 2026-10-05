@@ -14,13 +14,16 @@ import {
   readHmEditorPagesDraft,
   writeHmEditorPagesDraft,
 } from "@/lib/hmEditorPageDraft";
-import { hmPublicExtraPagePreviewHref } from "@/lib/hmExtraPageLookup";
+import { hmPublicExtraPagePreviewHref, normalizeHmExtraPageSlug } from "@/lib/hmExtraPageLookup";
 import {
   isHmEditorProtectedStandardSlug,
   isHmEditorStubExtraPageId,
   mergeHmEditorTelifExtraPage,
   upsertHmEditorExtraPage,
 } from "@/lib/hmEditorStandardExtraPages";
+import { HM_TELIF_KULLANIM_SLUG } from "@/lib/hmTelifDefaults";
+import { isHmCorporateLayoutKind } from "@/lib/newsSiteLayout";
+import { EditorYenisafakSayfalar } from "@/pages/editor/EditorYenisafakSayfalar";
 import { Trash2, Plus, ExternalLink, Loader2 } from "lucide-react";
 import { EditorHmHtmlField } from "@/components/EditorHmHtmlField";
 
@@ -30,8 +33,44 @@ function extraPagesMatchServer(pages: HmExtraPage[], server: HmExtraPage[] | nul
   return JSON.stringify(pages) === JSON.stringify(server ?? []);
 }
 
-export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?: string }) {
+export function EditorSayfalarContent({ className = "max-w-5xl", hideTelif = false }: { className?: string; hideTelif?: boolean }) {
   const { site, newsLayoutPrefs, saveNewsSiteLayout, refreshMe } = useHmEditor();
+  const isCorporateSite = isHmCorporateLayoutKind(newsLayoutPrefs, site?.slug);
+  if (!hideTelif && !isCorporateSite) {
+    return (
+      <div className={`space-y-10 ${className}`}>
+        <EditorYenisafakSayfalar />
+        <EditorSayfalarContent className="w-full" hideTelif />
+      </div>
+    );
+  }
+  return (
+    <EditorSayfalarList
+      className={className}
+      hideTelif={hideTelif}
+      site={site}
+      newsLayoutPrefs={newsLayoutPrefs}
+      saveNewsSiteLayout={saveNewsSiteLayout}
+      refreshMe={refreshMe}
+    />
+  );
+}
+
+function EditorSayfalarList({
+  className = "max-w-5xl",
+  hideTelif = false,
+  site,
+  newsLayoutPrefs,
+  saveNewsSiteLayout,
+  refreshMe,
+}: {
+  className?: string;
+  hideTelif?: boolean;
+  site: ReturnType<typeof useHmEditor>["site"];
+  newsLayoutPrefs: ReturnType<typeof useHmEditor>["newsLayoutPrefs"];
+  saveNewsSiteLayout: ReturnType<typeof useHmEditor>["saveNewsSiteLayout"];
+  refreshMe: ReturnType<typeof useHmEditor>["refreshMe"];
+}) {
   const { toast } = useToast();
   const [extra, setExtra] = useState<HmExtraPage[]>(() => newsLayoutPrefs.hmExtraPages ?? []);
   const [saving, setSaving] = useState(false);
@@ -43,7 +82,12 @@ export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?:
 
   const hmBase = site?.slug ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}` : "";
 
-  const displayPages = useMemo(() => mergeHmEditorTelifExtraPage(extra), [extra]);
+  const displayPages = useMemo(() => {
+    if (hideTelif) {
+      return extra.filter((page) => normalizeHmExtraPageSlug(page.slug) !== HM_TELIF_KULLANIM_SLUG);
+    }
+    return mergeHmEditorTelifExtraPage(extra);
+  }, [extra, hideTelif]);
 
   const extraDirty = useMemo(
     () => !extraPagesMatchServer(extra, newsLayoutPrefs.hmExtraPages),
@@ -68,7 +112,7 @@ export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?:
   }, [newsLayoutPrefs.hmExtraPages, extraDirty, extra.length]);
 
   useEffect(() => {
-    if (legacyCorpClearAttemptedRef.current || !site?.id) return;
+    if (hideTelif || legacyCorpClearAttemptedRef.current || !site?.id) return;
     const corp = newsLayoutPrefs.hmCorporatePageHtml;
     const hasLegacyCorp = corp && LEGACY_CORPORATE_KEYS.some((k) => (corp[k] ?? "").trim());
     if (!hasLegacyCorp) return;
@@ -78,7 +122,7 @@ export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?:
       layoutPatch: { hmCorporatePageHtml: { kunye: "", iletisim: "", reklam: "", abonelik: "" } },
       allowClearCorporatePageHtml: true,
     });
-  }, [site?.id, newsLayoutPrefs.hmCorporatePageHtml, newsLayoutPrefs, saveNewsSiteLayout]);
+  }, [hideTelif, site?.id, newsLayoutPrefs.hmCorporatePageHtml, newsLayoutPrefs, saveNewsSiteLayout]);
 
   const saveExtra = async (pages: HmExtraPage[], opts?: { silent?: boolean }) => {
     setSaving(true);
@@ -178,20 +222,31 @@ export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?:
   return (
     <div className={`space-y-8 ${className}`}>
       <section className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-        Tüm sayfa içerikleri buradan yönetilir. Adres yapısı:{" "}
-        {hmBase ? (
-          <code className="rounded bg-white px-1 text-xs">{hmBase}/kunye</code>
+        {hideTelif ? (
+          <>
+            Ek sayfalar. Hakkımızda, künye ve iletişim yukarıdaki kayıtlardan yayınlanır. Buradaki liste yalnızca
+            onlara eklenen özel sayfalardır.
+          </>
         ) : (
-          "/tr/site-slug/kunye"
-        )}{" "}
-        ( <code className="rounded bg-white px-1 text-xs">/sayfa/</code> yok ). Künye için slug{" "}
-        <strong>kunye</strong>, iletişim için <strong>iletisim</strong>, telif için{" "}
-        <strong>telif-kullanim</strong> kullanın. Genişlik: 1280px.
+          <>
+            Tüm sayfa içerikleri buradan yönetilir. Adres yapısı:{" "}
+            {hmBase ? (
+              <code className="rounded bg-white px-1 text-xs">{hmBase}/kunye</code>
+            ) : (
+              "/tr/site-slug/kunye"
+            )}{" "}
+            ( <code className="rounded bg-white px-1 text-xs">/sayfa/</code> yok ). Künye için slug{" "}
+            <strong>kunye</strong>, iletişim için <strong>iletisim</strong>, telif için{" "}
+            <strong>telif-kullanim</strong> kullanın. Genişlik: 1280px.
+          </>
+        )}
       </section>
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Sayfalar</h2>
+          <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">
+            {hideTelif ? "Ek sayfalar" : "Sayfalar"}
+          </h2>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" disabled={saving} onClick={handleRefreshFromServer}>
               Sunucudan yenile
@@ -219,8 +274,9 @@ export function EditorSayfalarContent({ className = "max-w-5xl" }: { className?:
         <div className="space-y-8">
           {displayPages.length === 0 ? (
             <p className="rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">
-              Henüz sayfa yok. Künye için slug <strong>kunye</strong>, iletişim için <strong>iletisim</strong>, abonelik
-              için <strong>abonelik</strong>, telif için <strong>telif-kullanim</strong> kullanın.
+              {hideTelif
+                ? "Ek sayfa yok. Yeni bir sayfa ekleyebilirsiniz."
+                : "Henüz sayfa yok. Künye için slug kunye, iletişim için iletisim, abonelik için abonelik, telif için telif-kullanim kullanın."}
             </p>
           ) : (
             displayPages.map((pg) => {

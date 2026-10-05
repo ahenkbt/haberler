@@ -61,7 +61,9 @@ export default function EditorDashboard() {
             ? vatanDescs[c.title] ?? c.desc
             : isCorporateSite && c.title === "Vitrin ayarları"
               ? "VKD Tema modülleri, sıra ve aç/kapa."
-              : c.desc;
+              : !isCorporateSite && c.title === "Sayfalar"
+                ? "Hakkımızda, künye ve iletişim."
+                : c.desc;
           return (
             <Link key={`${c.title}-${href}`} href={href}>
               <Card className="h-full border-slate-200 hover:border-slate-300 hover:shadow-md transition-shadow cursor-pointer">

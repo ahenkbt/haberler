@@ -9,9 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { useToast } from "@/hooks/use-toast";
-import type { HmYsKunye, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
+import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import {
   YS_AD_SLOTS,
+  YS_KUNYE_FIELDS,
   YS_MANSET_PRESETS,
   YS_MODULES,
   buildYenisafakLayoutPatch,
@@ -21,18 +22,6 @@ import {
   type YsMansetPresetId,
 } from "@/lib/yenisafakEditorLayout";
 
-const KUNYE_FIELDS: Array<{ key: keyof HmYsKunye; label: string; multiline?: boolean }> = [
-  { key: "lead", label: "Üst not", multiline: true },
-  { key: "yayin", label: "Yayın" },
-  { key: "genelMudur", label: "Genel müdür" },
-  { key: "yayinYonetmeni", label: "Genel yayın yönetmeni" },
-  { key: "yaziIsleri", label: "Yazı işleri müdürü" },
-  { key: "address", label: "Adres" },
-  { key: "phone", label: "Telefon" },
-  { key: "email", label: "E-posta" },
-  { key: "tuzel", label: "Tüzel kişilik" },
-  { key: "yayinIlkeleri", label: "Yayın ilkeleri", multiline: true },
-];
 
 function moveRow(rows: YsEditorSnapshot["modules"], index: number, dir: -1 | 1) {
   const nextIndex = index + dir;
@@ -355,7 +344,7 @@ export default function EditorYenisafakVitrin() {
             Dolu alanlar <code>hmYsKunye</code> olarak saklanır. Boş bırakılan künye, temanın mevcut metnini değiştirmez.
           </p>
           <div className="grid gap-3">
-            {KUNYE_FIELDS.map((field) => (
+            {YS_KUNYE_FIELDS.map((field) => (
               <div key={field.key} className="space-y-1">
                 <Label className="text-xs">{field.label}</Label>
                 {field.multiline ? (

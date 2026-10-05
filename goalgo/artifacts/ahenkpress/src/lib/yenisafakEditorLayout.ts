@@ -3,7 +3,7 @@
  * Anahtarlar `php-theme/src/Modules.php` ile aynı: ys anahtarı varsa o kazanır,
  * yoksa eski vitrin anahtarı, o da yoksa modül açık kalır.
  */
-import type { HmAdSlotState, HmYsKunye, NewsSiteLayoutPrefs } from "./newsSiteLayout";
+import type { HmAdSlotState, HmCorporatePageHtml, HmYsKunye, NewsSiteLayoutPrefs } from "./newsSiteLayout";
 
 export const YS_MANSET_PRESETS = [
   {
@@ -385,4 +385,45 @@ export function phpEnabledModules(layout: Record<string, unknown>): Array<{ id: 
   }).filter((row): row is { id: YsModuleId; category: string; count: number; rank: number } => row != null);
   rows.sort((a, b) => a.rank - b.rank);
   return rows.map(({ rank: _rank, ...row }) => row);
+}
+
+/** PHP `page.php` rotaları. Telif şablonu bu listede yoktur. */
+export const YS_SITE_PAGES = [
+  { slug: "hakkimizda", title: "Hakkımızda", path: "/hakkimizda" },
+  { slug: "kunye", title: "Künye", path: "/kunye" },
+  { slug: "iletisim", title: "İletişim", path: "/iletisim" },
+] as const;
+
+export const YS_KUNYE_FIELDS: Array<{ key: keyof HmYsKunye; label: string; multiline?: boolean }> = [
+  { key: "lead", label: "Üst not", multiline: true },
+  { key: "yayin", label: "Yayın" },
+  { key: "genelMudur", label: "Genel müdür" },
+  { key: "yayinYonetmeni", label: "Genel yayın yönetmeni" },
+  { key: "yaziIsleri", label: "Yazı işleri müdürü" },
+  { key: "address", label: "Adres" },
+  { key: "phone", label: "Telefon" },
+  { key: "email", label: "E-posta" },
+  { key: "tuzel", label: "Tüzel kişilik" },
+  { key: "yayinIlkeleri", label: "Yayın ilkeleri", multiline: true },
+];
+
+export function buildYsAboutPagePatch(html: string): { hmFooterAboutHtml: string | null } {
+  return { hmFooterAboutHtml: html.trim() || null };
+}
+
+export function buildYsKunyePagePatch(kunye: HmYsKunye): { hmYsKunye: HmYsKunye | null } {
+  return { hmYsKunye: normalizeYsKunye(kunye) };
+}
+
+/** Bir sayfa HTML anahtarını günceller; diğer künye/iletişim/reklam/abonelik metinlerini korur. */
+export function buildYsCorporatePageHtmlPatch(
+  current: HmCorporatePageHtml | null | undefined,
+  key: "kunye" | "iletisim",
+  html: string,
+): { hmCorporatePageHtml: HmCorporatePageHtml | null } {
+  const next: HmCorporatePageHtml = { ...(current ?? {}) };
+  const text = html.trim();
+  if (text) next[key] = text;
+  else delete next[key];
+  return { hmCorporatePageHtml: Object.keys(next).length > 0 ? next : null };
 }

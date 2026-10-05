@@ -3412,6 +3412,40 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   res.json({ ok: true, layoutJson: raw });
 });
 
+router.patch("/hm/editor/site-contact", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  const b = req.body as { phone?: unknown; email?: unknown; address?: unknown };
+  const [row] = await newsReadDb()
+    .select({ contactJson: hmNewsSitesTable.contactJson })
+    .from(hmNewsSitesTable)
+    .where(eq(hmNewsSitesTable.id, ctx.siteId));
+  const prev: Record<string, string> = {};
+  try {
+    const parsed = row?.contactJson ? JSON.parse(String(row.contactJson)) : {};
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+        if (typeof value === "string") prev[key] = value;
+      }
+    }
+  } catch {
+    /* keep empty prev */
+  }
+  const clip = (value: unknown, max: number) => String(value ?? "").trim().slice(0, max);
+  const next = {
+    ...prev,
+    phone: clip(b.phone ?? prev.phone, 40),
+    email: clip(b.email ?? prev.email, 160),
+    address: clip(b.address ?? prev.address, 400),
+  };
+  await dualWriteUpdate(
+    hmNewsSitesTable,
+    { contactJson: JSON.stringify(next), updatedAt: new Date() },
+    eq(hmNewsSitesTable.id, ctx.siteId),
+  );
+  res.json({ ok: true, contact: { phone: next.phone, email: next.email, address: next.address } });
+});
+
 /** Editör: vitrin/tema/meta kenar + tarayıcı önbelleğini boşalt. */
 router.post("/hm/editor/purge-public-cache", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);

@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import { defaultNewsSiteLayoutPrefs, parseNewsSiteLayoutFromJson } from "./newsSiteLayout";
 import {
   buildYenisafakLayoutPatch,
+  buildYsAboutPagePatch,
+  buildYsCorporatePageHtmlPatch,
+  buildYsKunyePagePatch,
   phpEnabledModules,
   phpModuleIsOn,
   readYsEditorSnapshot,
+  YS_SITE_PAGES,
 } from "./yenisafakEditorLayout";
 
 describe("Yenişafak layout contract", () => {
@@ -89,5 +93,22 @@ describe("Yenişafak layout contract", () => {
     const rows = readYsEditorSnapshot(parsed).modules;
     expect(rows[0]?.id).toBe("ysGallery");
     expect(rows.find((row) => row.id === "ysManset")?.count).toBe(5);
+  });
+
+  it("sayfa kayıt yaması telif şablonu yazmaz; künye ve iletişim HTML’i birbirini silmez", () => {
+    expect(YS_SITE_PAGES.map((page) => page.slug)).toEqual(["hakkimizda", "kunye", "iletisim"]);
+    expect(buildYsAboutPagePatch("  <p>Biz</p>  ")).toEqual({ hmFooterAboutHtml: "<p>Biz</p>" });
+    expect(buildYsAboutPagePatch("   ")).toEqual({ hmFooterAboutHtml: null });
+    expect(buildYsKunyePagePatch({ genelMudur: " Ada ", email: "" })).toEqual({
+      hmYsKunye: { genelMudur: "Ada" },
+    });
+    expect(
+      buildYsCorporatePageHtmlPatch({ iletisim: "<p>Ara</p>", reklam: "<p>Reklam</p>" }, "kunye", "<p>Künye</p>"),
+    ).toEqual({
+      hmCorporatePageHtml: { iletisim: "<p>Ara</p>", reklam: "<p>Reklam</p>", kunye: "<p>Künye</p>" },
+    });
+    expect(buildYsCorporatePageHtmlPatch({ kunye: "<p>Künye</p>" }, "kunye", "  ")).toEqual({
+      hmCorporatePageHtml: null,
+    });
   });
 });
