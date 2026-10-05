@@ -135,6 +135,44 @@ function slugify(input) {
   return s || `haber-${Date.now().toString(36)}`;
 }
 
+/** Yayın adresi /haber/:slug hem news hem hm_makaleler'den çözülür; iki tabloda da aynı site için slug tek olmalı. */
+function slugCandidate(base, i) {
+  return i === 0 ? base : `${base}-${i + 1}`;
+}
+
+/** Bu site için /haber/:slug adresini news satırı (site veya merkez havuz) karşılıyor mu? */
+async function newsSlugTaken(sql, siteId, slug) {
+  try {
+    const rows = await sql`
+      SELECT id FROM news
+      WHERE lower(trim(both '/' from slug)) = lower(trim(both '/' from ${slug}))
+        AND (site_id = ${siteId} OR site_id IS NULL OR (site_only = true AND owner_site_id = ${siteId}))
+      LIMIT 1
+    `;
+    return Boolean(rows?.[0]);
+  } catch (err) {
+    console.error("[hm-slug-news]", String(err?.message || err).slice(0, 120));
+    return false;
+  }
+}
+
+/** Bu site için slug hm_makaleler'de kullanılıyor mu? (excludeId: güncellenen makalenin kendisi) */
+async function makaleSlugTaken(sql, siteId, slug, excludeId = null) {
+  try {
+    const rows = await sql`
+      SELECT id FROM hm_makaleler
+      WHERE site_id = ${siteId}
+        AND lower(trim(both '/' from slug)) = lower(trim(both '/' from ${slug}))
+        AND (${excludeId}::int IS NULL OR id <> ${excludeId}::int)
+      LIMIT 1
+    `;
+    return Boolean(rows?.[0]);
+  } catch (err) {
+    console.error("[hm-slug-makale]", String(err?.message || err).slice(0, 120));
+    return false;
+  }
+}
+
 /** Neon HTTP: JS dizisini tek text[] parametresi olarak güvenle bağla. */
 function toPgTextArrayLiteral(tags) {
   if (!Array.isArray(tags) || tags.length === 0) return "{}";
@@ -371,7 +409,48 @@ async function loadNewsWithCategory(sql, siteId, id) {
   }
 }
 
-async function handleAuthorsList(sql, siteId) {
+/**
+ * Yazar başına yayımlı makale sayısı + son yazı (önce hm_makaleler, yoksa yazara bağlı news).
+ * Container /api/authors?hmSiteId ile aynı alanlar: articleCount, latestArticle {id,title,slug}.
+ */
+async function loadAuthorArticleStats(sql, siteId) {
+  const countMap = new Map();
+  const latestMap = new Map();
+  try {
+    const stats = await sql`
+      SELECT author_id, count(*)::int AS c
+      FROM hm_makaleler
+      WHERE site_id = ${siteId} AND status = 'published' AND author_id IS NOT NULL
+      GROUP BY author_id
+    `;
+    for (const r of stats || []) countMap.set(Number(r.author_id), r.c ?? 0);
+    const latestMakale = await sql`
+      SELECT DISTINCT ON (author_id) author_id, id, title, slug
+      FROM hm_makaleler
+      WHERE site_id = ${siteId} AND status = 'published' AND author_id IS NOT NULL
+      ORDER BY author_id, created_at DESC, id DESC
+    `;
+    for (const r of latestMakale || []) {
+      latestMap.set(Number(r.author_id), { id: r.id, title: String(r.title ?? ""), slug: String(r.slug ?? "") });
+    }
+    const latestNews = await sql`
+      SELECT DISTINCT ON (author_id) author_id, id, title, slug
+      FROM news
+      WHERE site_id = ${siteId} AND status = 'published' AND author_id IS NOT NULL
+      ORDER BY author_id, created_at DESC, id DESC
+    `;
+    for (const r of latestNews || []) {
+      const aid = Number(r.author_id);
+      if (latestMap.has(aid)) continue;
+      latestMap.set(aid, { id: r.id, title: String(r.title ?? ""), slug: String(r.slug ?? "") });
+    }
+  } catch (err) {
+    console.error("[hm-authors-stats]", String(err?.message || err).slice(0, 160));
+  }
+  return { countMap, latestMap };
+}
+
+export async function handleAuthorsList(sql, siteId) {
   await ensureAuthorsSortOrderColumn(sql);
   const rows = await sql`
     SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
@@ -379,7 +458,16 @@ async function handleAuthorsList(sql, siteId) {
     WHERE hm_site_id = ${siteId}
     ORDER BY COALESCE(hm_sort_order, 2147483647) ASC, id ASC
   `;
-  return jsonResponse(200, (rows || []).map(serializeAuthor));
+  const list = rows || [];
+  const { countMap, latestMap } = list.length ? await loadAuthorArticleStats(sql, siteId) : { countMap: new Map(), latestMap: new Map() };
+  return jsonResponse(
+    200,
+    list.map((r) => ({
+      ...serializeAuthor(r),
+      articleCount: countMap.get(Number(r.id)) ?? 0,
+      latestArticle: latestMap.get(Number(r.id)) ?? null,
+    })),
+  );
 }
 
 async function handleCreateAuthor(sql, siteId, body) {
@@ -923,8 +1011,10 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
   // slug çakışırsa benzersizleştir; aynı slug zaten varsa idempotent dön (çift kayıt önleme)
   let lastErr = "";
   for (let i = 0; i < 8; i += 1) {
-    const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
+    const trySlug = slugCandidate(slug, i);
     try {
+      // Aynı site köşe yazısı (hm_makaleler) bu slug'ı kullanıyorsa /haber/:slug onu gölgelemesin.
+      if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
       const existing = await sql`
         SELECT n.*, c.slug AS category_slug
         FROM news n
@@ -1202,7 +1292,7 @@ async function handleGetMakale(sql, siteId, id) {
   return jsonResponse(200, serializeMakaleRow(row));
 }
 
-async function handleCreateMakale(sql, siteId, body) {
+export async function handleCreateMakale(sql, siteId, body) {
   const title = String(body?.title || "").trim();
   if (!title) return jsonResponse(400, { error: "title gerekli" });
   const slugRaw = typeof body?.slug === "string" ? body.slug.trim() : "";
@@ -1215,9 +1305,29 @@ async function handleCreateMakale(sql, siteId, body) {
   if (authorId === undefined) authorId = null;
   const status = body?.status === "published" || body?.status === "draft" ? body.status : "draft";
 
+  // Panel kaydı tekrar denendiğinde (zaman aşımı / çift tıklama) aynı yazı üç kez açılmasın:
+  // aynı site + yazar + başlık son 10 dakikada varsa onu döndür.
+  try {
+    const dup = await sql`
+      SELECT * FROM hm_makaleler
+      WHERE site_id = ${siteId}
+        AND author_id IS NOT DISTINCT FROM ${authorId}
+        AND lower(regexp_replace(btrim(title), '\\s+', ' ', 'g')) = lower(regexp_replace(btrim(${title}), '\\s+', ' ', 'g'))
+        AND created_at > NOW() - INTERVAL '10 minutes'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    if (dup?.[0]) return jsonResponse(200, serializeMakaleRow(dup[0]));
+  } catch (err) {
+    console.error("[hm-makale-dup-check]", String(err?.message || err).slice(0, 160));
+  }
+
   let lastErr = "";
-  for (let i = 0; i < 8; i += 1) {
-    const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
+  for (let i = 0; i < 12; i += 1) {
+    const trySlug = slugCandidate(slug, i);
+    // /haber/:slug önce news'ten çözülür; news veya başka bir makale bu slug'ı aldıysa -2, -3 … ekle.
+    if (await newsSlugTaken(sql, siteId, trySlug)) continue;
+    if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
     try {
       const rows = await sql`
         INSERT INTO hm_makaleler (
@@ -1240,7 +1350,7 @@ async function handleCreateMakale(sql, siteId, body) {
         });
       }
       if (/unique|duplicate/i.test(msg)) {
-        if (i < 7) continue;
+        if (i < 11) continue;
         return jsonResponse(409, { error: "Bu slug bu sitede zaten kullanılıyor" });
       }
       console.error("[hm-makale-create]", msg.slice(0, 200));
@@ -1264,10 +1374,20 @@ async function handleUpdateMakale(sql, siteId, id, body) {
   const title =
     typeof body?.title === "string" ? body.title.trim() : existing.title;
   if (!title) return jsonResponse(400, { error: "title gerekli" });
-  const slug =
+  let slug =
     typeof body?.slug === "string" && body.slug.trim()
       ? slugify(body.slug.trim())
       : existing.slug;
+  if (slug !== existing.slug) {
+    const base = slug;
+    for (let i = 0; i < 12; i += 1) {
+      const candidate = slugCandidate(base, i);
+      if (await newsSlugTaken(sql, siteId, candidate)) continue;
+      if (await makaleSlugTaken(sql, siteId, candidate, id)) continue;
+      slug = candidate;
+      break;
+    }
+  }
   const spot =
     "spot" in (body || {})
       ? typeof body.spot === "string"

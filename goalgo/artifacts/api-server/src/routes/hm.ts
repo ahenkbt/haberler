@@ -5760,6 +5760,37 @@ router.get("/hm/editor/makale/:id", async (req, res): Promise<void> => {
   res.json(serializeHmMakaleAsNews(row, newsCtx));
 });
 
+/**
+ * /haber/:slug hem `news` hem `hm_makaleler`'den çözülür (PHP tema önce news'e bakar).
+ * Aynı sitede her iki tabloda da boş olan ilk slug'ı döndürür (base, base-2, base-3 …).
+ */
+async function uniqueMakaleSlugForSite(siteId: number, base: string, excludeMakaleId: number | null = null): Promise<string> {
+  for (let i = 0; i < 12; i += 1) {
+    const candidate = i === 0 ? base : `${base}-${i + 1}`;
+    const [newsHit] = await newsReadDb()
+      .select({ id: newsTable.id })
+      .from(newsTable)
+      .where(
+        and(
+          eq(newsTable.slug, candidate),
+          or(eq(newsTable.siteId, siteId), isNull(newsTable.siteId), and(eq(newsTable.siteOnly, true), eq(newsTable.ownerSiteId, siteId))),
+        ),
+      )
+      .limit(1);
+    if (newsHit) continue;
+    const makaleConds = [eq(hmMakalelerTable.siteId, siteId), eq(hmMakalelerTable.slug, candidate)];
+    if (excludeMakaleId != null) makaleConds.push(ne(hmMakalelerTable.id, excludeMakaleId));
+    const [makaleHit] = await newsReadDb()
+      .select({ id: hmMakalelerTable.id })
+      .from(hmMakalelerTable)
+      .where(and(...makaleConds))
+      .limit(1);
+    if (makaleHit) continue;
+    return candidate;
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
 router.post("/hm/editor/makale", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
@@ -5770,7 +5801,6 @@ router.post("/hm/editor/makale", async (req, res): Promise<void> => {
     return;
   }
   const slugRaw = typeof b.slug === "string" ? b.slug.trim() : "";
-  const slug = slugRaw || slugify(title);
   const spot = typeof b.spot === "string" ? b.spot : null;
   const content = typeof b.content === "string" ? b.content : null;
   const imageUrl = typeof b.imageUrl === "string" ? b.imageUrl.trim() : null;
@@ -5781,6 +5811,28 @@ router.post("/hm/editor/makale", async (req, res): Promise<void> => {
   const status = b.status === "published" || b.status === "draft" ? b.status : "draft";
 
   const newsCtx = await loadNewsContext();
+
+  // Panel kaydı tekrar denenirse (zaman aşımı / çift tıklama) aynı yazı iki kez açılmasın.
+  const normalizedTitle = title.replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+  const [recentDuplicate] = await newsReadDb()
+    .select()
+    .from(hmMakalelerTable)
+    .where(
+      and(
+        eq(hmMakalelerTable.siteId, ctx.siteId),
+        authorId == null ? isNull(hmMakalelerTable.authorId) : eq(hmMakalelerTable.authorId, authorId),
+        sql`lower(regexp_replace(btrim(${hmMakalelerTable.title}), '\\s+', ' ', 'g')) = ${normalizedTitle}`,
+        gt(hmMakalelerTable.createdAt, new Date(Date.now() - 10 * 60_000)),
+      ),
+    )
+    .orderBy(desc(hmMakalelerTable.createdAt))
+    .limit(1);
+  if (recentDuplicate) {
+    res.status(200).json(serializeHmMakaleAsNews(recentDuplicate, newsCtx));
+    return;
+  }
+
+  const slug = await uniqueMakaleSlugForSite(ctx.siteId, slugify(slugRaw || title));
   try {
     const [inserted] = await dualWriteInsert(hmMakalelerTable, {
         siteId: ctx.siteId,
@@ -5824,7 +5876,9 @@ router.put("/hm/editor/makale/:id", async (req, res): Promise<void> => {
   const b = req.body as Record<string, unknown>;
   const patch: Partial<typeof hmMakalelerTable.$inferInsert> = {};
   if (typeof b.title === "string") patch.title = b.title.trim();
-  if (typeof b.slug === "string") patch.slug = b.slug.trim();
+  if (typeof b.slug === "string" && b.slug.trim() && b.slug.trim() !== existing.slug) {
+    patch.slug = await uniqueMakaleSlugForSite(ctx.siteId, slugify(b.slug.trim()), id);
+  }
   if ("spot" in b) patch.spot = typeof b.spot === "string" ? b.spot : null;
   if ("content" in b) patch.content = typeof b.content === "string" ? b.content : null;
   if ("imageUrl" in b) patch.imageUrl = typeof b.imageUrl === "string" ? b.imageUrl.trim() : null;
