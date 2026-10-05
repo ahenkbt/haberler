@@ -858,6 +858,25 @@ router.get("/hm/meta/slugs", async (req, res): Promise<void> => {
   res.json(dedupeHmSitesById(rows).sort((a, b) => a.slug.localeCompare(b.slug)));
 });
 
+function readShowcaseLayout(raw: string | null): Record<string, unknown> {
+  try {
+    if (raw == null || !raw.trim()) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+  } catch {
+    /* bozuk layout tanıtım listesini düşürmesin */
+  }
+  return {};
+}
+
+function showcaseLogoUrl(layout: Record<string, unknown>): string | null {
+  for (const key of ["logoUrl", "logo", "faviconUrl"]) {
+    const value = layout[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
+}
+
 /** Tanıtım sayfası: aktif haber merkezi siteleri (logo + alan adı). Yeni site eklendikçe liste güncellenir. */
 router.get("/hm/showcase-sites", async (_req, res): Promise<void> => {
   try {
@@ -873,29 +892,35 @@ router.get("/hm/showcase-sites", async (_req, res): Promise<void> => {
       .where(eq(hmNewsSitesTable.active, true))
       .orderBy(desc(hmNewsSitesTable.createdAt));
 
-    const out = rows.map((row) => {
-      let logoUrl: string | null = null;
-      try {
-        const raw = row.layoutJson != null ? String(row.layoutJson).trim() : "";
-        if (raw) {
-          const j = JSON.parse(raw) as { logoUrl?: unknown; logo?: unknown };
-          const fromLogoUrl = typeof j.logoUrl === "string" ? j.logoUrl.trim() : "";
-          const fromLogo = typeof j.logo === "string" ? j.logo.trim() : "";
-          const u = fromLogoUrl || fromLogo;
-          logoUrl = u.length > 0 ? u : null;
-        }
-      } catch {
-        logoUrl = null;
+    const bySlug = new Map<
+      string,
+      {
+        slug: string;
+        displayName: string;
+        domain: string | null;
+        logoUrl: string | null;
+        createdAt: (typeof rows)[number]["createdAt"];
+        newsSite: boolean;
+        publicSuspended: boolean;
       }
-      return {
+    >();
+    for (const row of rows) {
+      const layout = readShowcaseLayout(row.layoutJson != null ? String(row.layoutJson) : null);
+      const logoUrl = showcaseLogoUrl(layout);
+      const item = {
         slug: row.slug,
         displayName: row.displayName,
         domain: row.domain,
         logoUrl,
         createdAt: row.createdAt,
+        newsSite: resolveHmLayoutKind(layout, row.slug) === "news",
+        publicSuspended: layout.hmPublicSuspended === true,
       };
-    });
-    res.json(out);
+      const prev = bySlug.get(item.slug);
+      if (!prev || (!prev.logoUrl && item.logoUrl)) bySlug.set(item.slug, item);
+    }
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60");
+    res.json([...bySlug.values()]);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : "showcase" });
   }
