@@ -131,4 +131,40 @@ if ($off->shareEnabled() !== false || count($off->headerTools()) !== 4) {
     $fail('share off or strip disabled should restore defaults');
 }
 
+$legacy = new Site(5, 'yesilvatan', 'Yeşil Vatan', '', 'yesilvatan.gen.tr', ['hmNewsYsMansetLayout' => 'takvim'], [], '#2e7d32', '', 'yesilvatan.gen.tr', '', 'https://yesilvatan.gen.tr', []);
+if ($legacy->mansetPreset() !== 'takvim') {
+    $fail('legacy preset');
+}
+$both = new Site(6, 'asg', 'ASG', '', 'asg.com', ['hmYsMansetPreset' => 'mynet', 'hmNewsYsMansetLayout' => 'sabah'], [], '#c8102e', '', 'asg.com', '', 'https://asg.com', []);
+if ($both->mansetPreset() !== 'mynet') {
+    $fail('new preset should win');
+}
+
+$nav = Modules::navCategories(
+    [
+        'hmNavOnlyCategorySlugs' => ['Savunma Sanayi', 'tsk', 'gundem'],
+        'hmNavHiddenCategorySlugs' => ['tsk'],
+        'hmNewsExtraCategories' => [['tsk', 'TSK'], ['savunma-sanayi', 'Savunma']],
+        'hmCategorySortSlugs' => ['gundem', 'savunma-sanayi'],
+    ],
+    ['gundem' => 'Gündem DB'],
+    ['gundem' => 'Gündem', 'spor' => 'Spor'],
+);
+$navIds = array_column($nav, 'slug');
+if ($navIds !== ['gundem', 'savunma-sanayi']) {
+    $fail('nav only ' . json_encode($nav, JSON_UNESCAPED_UNICODE));
+}
+if (($nav[0]['name'] ?? '') !== 'Gündem DB' || ($nav[1]['name'] ?? '') !== 'Savunma') {
+    $fail('nav names');
+}
+$open = Modules::navCategories([], ['ozel' => 'Özel'], ['gundem' => 'Gündem']);
+$openIds = array_column($open, 'slug');
+if (($openIds[0] ?? '') !== 'gundem' || !in_array('ozel', $openIds, true)) {
+    $fail('open nav ' . implode(',', $openIds));
+}
+$none = Modules::navCategories(['hmNavOnlyCategorySlugs' => []], ['gundem' => 'Gündem'], ['gundem' => 'Gündem', 'spor' => 'Spor']);
+if ($none !== []) {
+    $fail('empty whitelist');
+}
+
 fwrite(STDOUT, "ok\n");

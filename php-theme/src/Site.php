@@ -64,10 +64,19 @@ final class Site
         return $this->slug === 'turkatahaber';
     }
 
-    /** Editor `hmYsMansetPreset`. Empty means the theme default layout. */
+    /** Editor `hmYsMansetPreset`, otherwise the older `hmNewsYsMansetLayout`. */
     public function mansetPreset(): string
     {
-        $raw = strtolower(trim((string) ($this->layout['hmYsMansetPreset'] ?? '')));
+        $direct = $this->presetId($this->layout['hmYsMansetPreset'] ?? null);
+        if ($direct !== '') {
+            return $direct;
+        }
+        return $this->presetId($this->layout['hmNewsYsMansetLayout'] ?? null);
+    }
+
+    private function presetId(mixed $value): string
+    {
+        $raw = strtolower(trim((string) $value));
         return in_array($raw, ['odatv', 'sabah', 'takvim', 'mynet', 'nefes'], true) ? $raw : '';
     }
 
