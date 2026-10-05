@@ -13,6 +13,9 @@ use Yenisafak\Html;
 /** @var array<string, mixed>|null $jsonLd */
 $logoSrc = $site->logo;
 $logoLocal = $logoSrc !== '' && str_starts_with($logoSrc, '/');
+$preset = $site->mansetPreset();
+$secondary = $site->secondaryColor();
+$headerAd = $site->adSlot('header');
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -43,7 +46,7 @@ $logoLocal = $logoSrc !== '' && str_starts_with($logoSrc, '/');
     <script type="application/ld+json"><?= Html::json($jsonLd) ?></script>
   <?php endif; ?>
 </head>
-<body class="ys" style="--ys-accent: <?= Html::e($site->accent) ?>">
+<body class="ys<?= $preset !== '' ? ' ys-preset-' . Html::e($preset) : '' ?>" style="--ys-accent: <?= Html::e($site->accent) ?><?= $secondary !== '' ? '; --ys-secondary: ' . Html::e($secondary) : '' ?>">
   <a class="ys-skip" href="#icerik">İçeriğe geç</a>
   <header class="ys-header">
     <div class="ys-bar">
@@ -61,6 +64,13 @@ $logoLocal = $logoSrc !== '' && str_starts_with($logoSrc, '/');
         <a href="<?= Html::e($site->path('/iletisim')) ?>">İletişim</a>
       </nav>
     </div>
+    <?php if ($headerAd !== null): ?>
+      <div class="ys-wrap ys-ad" data-ad-slot="header">
+        <?php if ($headerAd['href'] !== ''): ?><a href="<?= Html::e($headerAd['href']) ?>" rel="noopener sponsored"><?php endif; ?>
+          <img src="<?= Html::e(Html::src($site->basePath, $headerAd['image'])) ?>" alt="" width="728" height="90">
+        <?php if ($headerAd['href'] !== ''): ?></a><?php endif; ?>
+      </div>
+    <?php endif; ?>
     <nav class="ys-cats" aria-label="Kategoriler">
       <?php foreach ($site->categories as $cat): ?>
         <a href="<?= Html::e($site->path('/kategori/' . $cat['slug'])) ?>"><?= Html::e($cat['name']) ?></a>
@@ -73,7 +83,7 @@ $logoLocal = $logoSrc !== '' && str_starts_with($logoSrc, '/');
   <footer class="ys-footer">
     <div class="ys-wrap">
       <p class="ys-footer-name"><?= Html::e($site->name) ?></p>
-      <p><?= Html::e($site->description) ?></p>
+      <p><?= Html::e($site->slogan()) ?></p>
       <nav aria-label="Alt">
         <a href="<?= Html::e($site->path('/kunye')) ?>">Künye</a>
         <a href="<?= Html::e($site->path('/hakkimizda')) ?>">Hakkımızda</a>

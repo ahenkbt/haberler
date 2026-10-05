@@ -63,4 +63,74 @@ final class Site
     {
         return $this->slug === 'turkatahaber';
     }
+
+    /** Editor `hmYsMansetPreset`. Empty means the theme default layout. */
+    public function mansetPreset(): string
+    {
+        $raw = strtolower(trim((string) ($this->layout['hmYsMansetPreset'] ?? '')));
+        return in_array($raw, ['odatv', 'sabah', 'takvim', 'mynet', 'nefes'], true) ? $raw : '';
+    }
+
+    public function secondaryColor(): string
+    {
+        $raw = trim((string) ($this->layout['hmSecondaryColor'] ?? ''));
+        return preg_match('/^#[0-9a-fA-F]{6}$/', $raw) === 1 ? $raw : '';
+    }
+
+    /** Editor `hmYsSlogan`, otherwise the site description column. */
+    public function slogan(): string
+    {
+        $slogan = trim((string) ($this->layout['hmYsSlogan'] ?? ''));
+        return $slogan !== '' ? $slogan : $this->description;
+    }
+
+    /** @return array<string, string> */
+    public function kunye(): array
+    {
+        $raw = $this->layout['hmYsKunye'] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+        $keys = ['lead', 'yayin', 'genelMudur', 'yayinYonetmeni', 'yaziIsleri', 'address', 'phone', 'email', 'tuzel', 'yayinIlkeleri'];
+        $out = [];
+        foreach ($keys as $key) {
+            $text = trim((string) ($raw[$key] ?? ''));
+            if ($text !== '') {
+                $out[$key] = $text;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Enabled image ad from `hmAdSlots`.
+     *
+     * @return array{image: string, href: string}|null
+     */
+    public function adSlot(string $slotKey): ?array
+    {
+        $slots = $this->layout['hmAdSlots'] ?? null;
+        if (!is_array($slots)) {
+            return null;
+        }
+        foreach ($slots as $slot) {
+            if (!is_array($slot) || (string) ($slot['slotKey'] ?? '') !== $slotKey) {
+                continue;
+            }
+            $enabled = $slot['enabled'] ?? false;
+            if ($enabled !== true && $enabled !== 1 && $enabled !== '1' && $enabled !== 'true') {
+                return null;
+            }
+            $image = trim((string) ($slot['imageMediaUrl'] ?? ''));
+            if ($image === '' || preg_match('#^(https?:)?//|^/#', $image) !== 1) {
+                return null;
+            }
+            $href = trim((string) ($slot['imageClickUrl'] ?? ''));
+            if ($href !== '' && preg_match('#^(https?:)?//|^/#', $href) !== 1) {
+                $href = '';
+            }
+            return ['image' => $image, 'href' => $href];
+        }
+        return null;
+    }
 }

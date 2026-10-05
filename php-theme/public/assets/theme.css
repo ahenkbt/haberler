@@ -93,3 +93,12 @@ img { max-width: 100%; height: auto; display: block; }
 @media (prefers-reduced-motion: reduce) {
   .ys-ticker-track { overflow-x: auto; }
 }
+.ys-ad { padding: 12px 0; }
+.ys-ad img { margin: 0 auto; max-height: 120px; width: auto; }
+body.ys-preset-odatv .ys-slide-copy strong { font-size: 1.7rem; }
+body.ys-preset-sabah .ys-hero { grid-template-columns: 1fr; }
+body.ys-preset-sabah .ys-side { grid-template-columns: 1fr 1fr; }
+body.ys-preset-takvim { --ys-bg: #0b1220; --ys-surface: #132033; }
+body.ys-preset-mynet .ys-blocks { grid-template-columns: 1fr 1fr 1fr; }
+body.ys-preset-nefes { color-scheme: light; --ys-bg: #f6f3ee; --ys-surface: #fff; --ys-text: #1c1917; --ys-muted: #57534e; --ys-line: rgba(0,0,0,.08); }
+body.ys-preset-nefes .ys-header, body.ys-preset-nefes .ys-footer { background: #fff; color: #1c1917; }
