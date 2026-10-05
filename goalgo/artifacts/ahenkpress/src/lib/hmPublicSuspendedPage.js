@@ -344,26 +344,6 @@ export const HM_PUBLIC_SUSPENDED_PAGE_HTML = `<!DOCTYPE html>
 
         </div>
 
-        <!-- Critical Warning Box -->
-        <div class="glass-card rounded-2xl p-6 sm:p-8 border-l-4 border-l-red-500 mb-12 relative overflow-hidden">
-            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-                <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
-                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-base font-bold text-white mb-1 flex items-center gap-2">
-                            ÖNEMLİ BİLGİLENDİRME & VERİ SİLİNME UYARISI
-                        </h4>
-                        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed max-w-3xl">
-                            Askıya alınan web sitelerinde gerekli finansal, hukuki veya teknik yükümlülükler belirli zaman dilimi içerisinde yerine getirilmediği takdirde; <span class="text-red-400 font-semibold underline underline-offset-2">veri kaybını önlemek adına site verileri koruma süresi sonunda sistemden kalıcı olarak silinecek</span> ve erişim tamamen kapatılacaktır.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Reminder -->
         <div class="glass-card rounded-2xl p-6 sm:p-8 border-l-4 border-l-amber-400 mb-12 relative overflow-hidden">
             <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -386,6 +366,26 @@ export const HM_PUBLIC_SUSPENDED_PAGE_HTML = `<!DOCTYPE html>
                 <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
                     Ödeme dekontu ve yasal belgeler tarafımıza mail ile ulaştırıldığında yayınınız derhal aktif edilecektir.
                 </p>
+            </div>
+        </div>
+
+        <!-- Critical Warning Box -->
+        <div class="glass-card rounded-2xl p-6 sm:p-8 border-l-4 border-l-red-500 mb-12 relative overflow-hidden">
+            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+                            ÖNEMLİ BİLGİLENDİRME & VERİ SİLİNME UYARISI
+                        </h4>
+                        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed max-w-3xl">
+                            Askıya alınan web sitelerinde gerekli finansal, hukuki veya teknik yükümlülükler belirli zaman dilimi içerisinde yerine getirilmediği takdirde; <span class="text-red-400 font-semibold underline underline-offset-2">veri kaybını önlemek adına site verileri koruma süresi sonunda sistemden kalıcı olarak silinecek</span> ve erişim tamamen kapatılacaktır.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
 
