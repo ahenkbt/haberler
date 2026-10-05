@@ -85,3 +85,17 @@ Düşük / Orta — ...
 - PR URL
 - Sonraki madde (henüz başlama)
 - Blocker varsa net yaz
+
+---
+
+## Cloud Agent yerel ortam
+
+Ortam açılışında Postgres 16 gelir. `goalgo` rolü ve `yekpare` / `haber_merkezi` veritabanları 127.0.0.1 üzerinde trust ile hazırdır. `goalgo/.env` ve `haber-merkezi/.env` üretilir; git’e girmez.
+
+- API: `http://127.0.0.1:3000` (`GET /api/healthz`)
+- Web: `http://127.0.0.1:5173` (`/api` istekleri Vite tarafından 3000’e gider)
+- Haber Merkezi: `http://127.0.0.1:3100` (`GET /healthz`)
+
+`lib/db/migrations` boş bir veritabanında baştan uygulanamaz (örnek: sonraki SQL `openai_api_key` kolonunu arar; Drizzle tüm zinciri tek transaction’da geri alır). Boş veritabanında şema bir kez `pnpm --filter @workspace/db run push-force` ile kurulur. API açıldıktan sonra bu komutu tekrar çalıştırma: `push-force`, yalnızca SQL seed ile oluşan tabloları (ör. `site_contact_messages`) siler. Açılış `SKIP_DB_MIGRATE=1` ve `SKIP_TR_ADDRESS_IMPORT=1` kullanır; sokak sicilinin tamamı boot sırasında içe aktarılmaz.
+
+Doğrulama (`cd goalgo`): `pnpm run typecheck`, `pnpm run test`, `pnpm run security:check`.
