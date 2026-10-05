@@ -6,11 +6,17 @@ import {
   buildYsCorporatePageHtmlPatch,
   buildYsKunyePagePatch,
   nextYsCategoryVisibilityPatch,
+  PHP_THEME_LAYOUT_KEYS,
+  PHP_THEME_LEGACY_ONLY_LAYOUT_KEYS,
   phpEnabledModules,
   phpModuleIsOn,
   readYsEditorSnapshot,
   readYsMansetPreset,
+  YS_AD_SLOTS,
+  YS_MANSET_PRESETS,
+  YS_MODULES,
   YS_SITE_PAGES,
+  YS_SPA_MARKER_LAYOUT_KEYS,
   ysCategoryNavVisible,
 } from "./yenisafakEditorLayout";
 
@@ -149,5 +155,120 @@ describe("Yenişafak layout contract", () => {
     expect(buildYsCorporatePageHtmlPatch({ kunye: "<p>Künye</p>" }, "kunye", "  ")).toEqual({
       hmCorporatePageHtml: null,
     });
+  });
+});
+
+/**
+ * `php-theme/src/Modules.php` → `Modules::DEFS` birebir kopyası.
+ * PHP değişirse bu tablo ve `YS_MODULES` birlikte güncellenir.
+ */
+const PHP_MODULE_DEFS: Record<
+  string,
+  { category: string; count: number; toggles: string[]; aliases: string[] }
+> = {
+  ysTicker: {
+    category: "gundem",
+    count: 12,
+    toggles: ["hmNewsYsTickerEnabled", "hmNewsBreakingBandEnabled"],
+    aliases: ["ysTicker", "breakingBand"],
+  },
+  ysManset: {
+    category: "gundem",
+    count: 8,
+    toggles: ["hmNewsYsMansetEnabled", "hmNewsSliderEnabled", "hmNewsTepeMansetEnabled"],
+    aliases: ["ysManset", "hero", "tepeManset"],
+  },
+  ysSide: {
+    category: "gundem",
+    count: 4,
+    toggles: ["hmNewsYsSideHeadlinesEnabled", "hmNewsLeadListSidebarEnabled"],
+    aliases: ["ysSide", "ysSideHeadlines", "leadListSidebar"],
+  },
+  ysCategories: {
+    category: "",
+    count: 4,
+    toggles: ["hmNewsYsCategoryBlocksEnabled", "hmNewsCategorySectionsEnabled", "hmNewsYekpareKategorilerKutusuEnabled"],
+    aliases: ["ysCategories", "ysCategoryBlocks", "yekpareKategorilerKutusu", "featuredCategoryStrip"],
+  },
+  ysVideo: {
+    category: "",
+    count: 8,
+    toggles: ["hmNewsYsVideoBandEnabled", "hmNewsRecentVideosSidebarEnabled"],
+    aliases: ["ysVideo", "ysVideoBand", "recentVideosSidebar"],
+  },
+  ysAuthors: {
+    category: "",
+    count: 8,
+    toggles: ["hmNewsYsAuthorsEnabled", "hmNewsAuthorsEnabled"],
+    aliases: ["ysAuthors", "authorsStrip", "ahenkGununSesiAuthors"],
+  },
+  ysMostRead: {
+    category: "gundem",
+    count: 8,
+    toggles: ["hmNewsYsMostReadEnabled", "hmNewsAhenkPopulerHaberlerEnabled"],
+    aliases: ["ysMostRead", "ahenkPopulerHaberler"],
+  },
+  ysGallery: {
+    category: "kultur-sanat",
+    count: 6,
+    toggles: ["hmNewsYsGalleryEnabled", "hmNewsMediaDarkBlockEnabled"],
+    aliases: ["ysGallery", "mediaDarkBlock", "culturePortal"],
+  },
+};
+
+describe("PHP tema anahtar sözleşmesi", () => {
+  it("YS_MODULES PHP Modules::DEFS ile aynı modül, alias, kategori ve adet listesini taşır", () => {
+    expect(YS_MODULES.map((def) => def.id)).toEqual(Object.keys(PHP_MODULE_DEFS));
+    for (const def of YS_MODULES) {
+      const php = PHP_MODULE_DEFS[def.id]!;
+      expect([...def.aliases]).toEqual(php.aliases);
+      expect(def.defaultCategory).toBe(php.category);
+      expect(def.defaultCount).toBe(php.count);
+      expect(php.toggles[0]).toBe(def.toggleKey);
+      expect(php.toggles[1]).toBe(def.legacyToggleKey);
+      for (const toggle of php.toggles) {
+        expect(PHP_THEME_LAYOUT_KEYS).toContain(toggle);
+      }
+    }
+  });
+
+  it("manşet presetleri ve reklam slotları PHP Site::presetId / templates ile aynıdır", () => {
+    expect(YS_MANSET_PRESETS.map((item) => item.id)).toEqual(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+    expect(YS_AD_SLOTS.map((slot) => slot.slotKey)).toEqual(["header", "block_strip", "home_block_fill"]);
+  });
+
+  it("vitrin kayıt yaması yalnızca PHP'nin okuduğu anahtarları ve SPA tema işaretini yazar", () => {
+    const snapshot = readYsEditorSnapshot(defaultNewsSiteLayoutPrefs);
+    const patch = buildYenisafakLayoutPatch(defaultNewsSiteLayoutPrefs, snapshot);
+    const allowed = new Set<string>([...PHP_THEME_LAYOUT_KEYS, ...YS_SPA_MARKER_LAYOUT_KEYS]);
+    const unexpected = Object.keys(patch).filter((key) => !allowed.has(key));
+    expect(unexpected).toEqual([]);
+    expect(patch.hmVitrinTheme).toBe("yenisafak");
+    for (const key of [
+      "hmYsMansetPreset",
+      "hmNewsYsMansetLayout",
+      "hmPrimaryColor",
+      "hmSecondaryColor",
+      "hmYsSlogan",
+      "hmYsKunye",
+      "logoUrl",
+      "hmNewsHomeModuleOrder",
+      "hmNewsHomeModuleCategorySlugs",
+      "hmNewsHomeModuleItemCounts",
+      "hmAdSlots",
+    ]) {
+      expect(Object.prototype.hasOwnProperty.call(patch, key)).toBe(true);
+    }
+    // Eski TSX tema anahtarları yazılmaz.
+    for (const key of ["mansetVariant", "hmChromeColorMode", "hmNewsEsenThemeBlockEnabled", "hmNewsPortal3ThemeBlockEnabled"]) {
+      expect(Object.prototype.hasOwnProperty.call(patch, key)).toBe(false);
+    }
+  });
+
+  it("PHP anahtar listesi tekrarsızdır ve eski-yalnız anahtarla kesişmez", () => {
+    expect(new Set(PHP_THEME_LAYOUT_KEYS).size).toBe(PHP_THEME_LAYOUT_KEYS.length);
+    for (const key of PHP_THEME_LEGACY_ONLY_LAYOUT_KEYS) {
+      expect(PHP_THEME_LAYOUT_KEYS as readonly string[]).not.toContain(key);
+    }
   });
 });
