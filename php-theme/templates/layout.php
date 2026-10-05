@@ -40,7 +40,7 @@ $headerAd = $site->adSlot('header');
   <?php endif; ?>
   <meta name="twitter:title" content="<?= Html::e($title) ?>">
   <meta name="twitter:description" content="<?= Html::e($description) ?>">
-  <link rel="icon" href="<?= Html::e($site->path('/favicon.svg')) ?>" type="image/svg+xml">
+  <link rel="icon" href="<?= Html::e($site->faviconHref()) ?>">
   <link rel="stylesheet" href="<?= Html::e($site->path('/assets/theme.css')) ?>">
   <?php if ($jsonLd !== null): ?>
     <script type="application/ld+json"><?= Html::json($jsonLd) ?></script>
@@ -58,10 +58,9 @@ $headerAd = $site->adSlot('header');
         <?php endif; ?>
       </a>
       <nav class="ys-tools" aria-label="Site">
-        <a href="<?= Html::e($site->path('/video')) ?>">Video</a>
-        <a href="<?= Html::e($site->path('/hakkimizda')) ?>">Hakkımızda</a>
-        <a href="<?= Html::e($site->path('/kunye')) ?>">Künye</a>
-        <a href="<?= Html::e($site->path('/iletisim')) ?>">İletişim</a>
+        <?php foreach ($site->headerTools() as $item): ?>
+          <a href="<?= Html::e($item['href']) ?>"><?= Html::e($item['label']) ?></a>
+        <?php endforeach; ?>
       </nav>
     </div>
     <?php if ($headerAd !== null): ?>
@@ -71,10 +70,28 @@ $headerAd = $site->adSlot('header');
         <?php if ($headerAd['href'] !== ''): ?></a><?php endif; ?>
       </div>
     <?php endif; ?>
-    <nav class="ys-cats" aria-label="Kategoriler">
-      <?php foreach ($site->categories as $cat): ?>
-        <a href="<?= Html::e($site->path('/kategori/' . $cat['slug'])) ?>"><?= Html::e($cat['name']) ?></a>
-      <?php endforeach; ?>
+    <?php $mainMenu = $site->mainMenu(); ?>
+    <nav class="ys-cats" aria-label="<?= $mainMenu === [] ? 'Kategoriler' : 'Ana menü' ?>">
+      <?php if ($mainMenu === []): ?>
+        <?php foreach ($site->categories as $cat): ?>
+          <a href="<?= Html::e($site->path('/kategori/' . $cat['slug'])) ?>"><?= Html::e($cat['name']) ?></a>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <?php foreach ($mainMenu as $item): ?>
+          <?php if ($item['children'] === []): ?>
+            <a href="<?= Html::e($item['href']) ?>"><?= Html::e($item['label']) ?></a>
+          <?php else: ?>
+            <span class="ys-drop">
+              <a href="<?= Html::e($item['href']) ?>"><?= Html::e($item['label']) ?></a>
+              <span class="ys-drop-menu">
+                <?php foreach ($item['children'] as $child): ?>
+                  <a href="<?= Html::e($child['href']) ?>"><?= Html::e($child['label']) ?></a>
+                <?php endforeach; ?>
+              </span>
+            </span>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </nav>
   </header>
   <main id="icerik">
@@ -84,11 +101,18 @@ $headerAd = $site->adSlot('header');
     <div class="ys-wrap">
       <p class="ys-footer-name"><?= Html::e($site->name) ?></p>
       <p><?= Html::e($site->slogan()) ?></p>
+      <?php $social = $site->socialLinks(); ?>
+      <?php if ($social !== []): ?>
+        <nav class="ys-social" aria-label="Sosyal">
+          <?php foreach ($social as $item): ?>
+            <a href="<?= Html::e($item['href']) ?>" rel="noopener noreferrer"><?= Html::e($item['label']) ?></a>
+          <?php endforeach; ?>
+        </nav>
+      <?php endif; ?>
       <nav aria-label="Alt">
-        <a href="<?= Html::e($site->path('/kunye')) ?>">Künye</a>
-        <a href="<?= Html::e($site->path('/hakkimizda')) ?>">Hakkımızda</a>
-        <a href="<?= Html::e($site->path('/iletisim')) ?>">İletişim</a>
-        <a href="<?= Html::e($site->path('/sitemap.xml')) ?>">Site haritası</a>
+        <?php foreach ($site->footerLinks() as $item): ?>
+          <a href="<?= Html::e($item['href']) ?>"><?= Html::e($item['label']) ?></a>
+        <?php endforeach; ?>
       </nav>
     </div>
   </footer>

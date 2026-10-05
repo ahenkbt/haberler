@@ -105,6 +105,17 @@ final class App
             }
             $categories[] = ['slug' => $slug, 'name' => $name];
         }
+        $sort = [];
+        if (is_array($layout['hmCategorySortSlugs'] ?? null)) {
+            foreach ($layout['hmCategorySortSlugs'] as $index => $slug) {
+                $sort[Modules::slug((string) $slug)] = (int) $index;
+            }
+        }
+        if ($sort !== []) {
+            usort($categories, static function (array $a, array $b) use ($sort): int {
+                return ($sort[$a['slug']] ?? 1000) <=> ($sort[$b['slug']] ?? 1000);
+            });
+        }
         $origin = in_array($bare, ['turkatahaber.com', 'ahenk.net.tr'], true) || (string) $row['slug'] === 'turkatahaber'
             ? 'https://turkatahaber.com'
             : 'https://' . ((string) ($row['domain'] ?: $bare));

@@ -81,4 +81,54 @@ if ($empty->mansetPreset() !== '' || $empty->slogan() !== 'Site açıklaması' |
     $fail('empty layout should keep theme defaults');
 }
 
+$menuLayout = [
+    'hmCorporateMenuItems' => [
+        ['id' => 'gundem', 'label' => 'Gündem', 'href' => '/hm/turkatahaber/kategori/gundem', 'enabled' => true],
+        ['id' => 'child', 'label' => 'Alt', 'href' => '/kategori/spor', 'parentId' => 'gundem', 'enabled' => true],
+        ['id' => 'off', 'label' => 'Gizli', 'href' => '/video', 'enabled' => false],
+    ],
+    'hmNewsStripMenuItems' => [
+        ['id' => 'video', 'label' => 'Videolar', 'href' => '/video', 'enabled' => true],
+    ],
+    'hmNewsFooterMenuItems' => [
+        ['id' => 'kunye', 'label' => 'Künye', 'href' => 'https://example.com/kunye', 'enabled' => true],
+    ],
+    'hmNewsSidebarMenuItems' => [
+        ['id' => 'rss', 'label' => 'RSS', 'href' => '/sitemap.xml', 'enabled' => true],
+    ],
+    'hmFooterSocial' => ['xUrl' => 'https://x.com/turkata', 'facebookUrl' => 'javascript:alert(1)'],
+    'faviconUrl' => '/brand/icon.png',
+    'hmFooterAboutHtml' => '<p>Hakkında</p><script>alert(1)</script>',
+];
+$menuSite = new Site(3, 'asg', 'ASG', 'Açıklama', 'asg.com', $menuLayout, [], '#c8102e', '', 'asg.com', '', 'https://asg.com', []);
+$main = $menuSite->mainMenu();
+if (count($main) !== 1 || $main[0]['href'] !== '/kategori/gundem' || ($main[0]['children'][0]['label'] ?? '') !== 'Alt') {
+    $fail('main menu ' . json_encode($main, JSON_UNESCAPED_UNICODE));
+}
+$tools = $menuSite->headerTools();
+if (count($tools) !== 1 || $tools[0]['label'] !== 'Videolar' || $tools[0]['href'] !== '/video') {
+    $fail('header tools');
+}
+$footer = $menuSite->footerLinks();
+if ($footer[0]['href'] !== 'https://example.com/kunye' || ($footer[1]['label'] ?? '') !== 'RSS') {
+    $fail('footer');
+}
+$social = $menuSite->socialLinks();
+if (count($social) !== 1 || $social[0]['label'] !== 'X') {
+    $fail('social');
+}
+if ($menuSite->faviconHref() !== '/brand/icon.png') {
+    $fail('favicon');
+}
+if (!str_contains($menuSite->aboutHtml(), 'Hakkında') || str_contains($menuSite->aboutHtml(), 'script')) {
+    $fail('about html');
+}
+if ($empty->shareEnabled() !== true) {
+    $fail('share default');
+}
+$off = new Site(4, 'asg', 'ASG', '', 'asg.com', ['hmYsShareEnabled' => false, 'hmNewsStripMenuEnabled' => false, 'hmNewsStripMenuItems' => [['id' => 'a', 'label' => 'Özel', 'href' => '/video', 'enabled' => true]]], [], '#c8102e', '', 'asg.com', '', 'https://asg.com', []);
+if ($off->shareEnabled() !== false || count($off->headerTools()) !== 4) {
+    $fail('share off or strip disabled should restore defaults');
+}
+
 fwrite(STDOUT, "ok\n");

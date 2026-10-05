@@ -30,6 +30,9 @@ $kunye = $site->kunye();
       <h2 id="yayin-ilkeleri">Yayın ilkeleri</h2>
       <p><?= Html::e($kunye['yayinIlkeleri']) ?></p>
     <?php endif; ?>
+  <?php elseif ($page === 'kunye' && $site->pageHtml('kunye') !== ''): ?>
+    <h1>Künye</h1>
+    <div class="ys-body"><?= $site->pageHtml('kunye') ?></div>
   <?php elseif ($page === 'kunye'): ?>
     <h1>Künye</h1>
     <?php if ($site->isTurkata()): ?>
@@ -51,6 +54,9 @@ $kunye = $site->kunye();
       <?php if ($address !== ''): ?><p><?= Html::e($address) ?></p><?php endif; ?>
       <?php if ($email !== ''): ?><p><?= Html::e($email) ?></p><?php endif; ?>
     <?php endif; ?>
+  <?php elseif ($page === 'hakkimizda' && $site->aboutHtml() !== ''): ?>
+    <h1>Hakkımızda</h1>
+    <div class="ys-body"><?= $site->aboutHtml() ?></div>
   <?php elseif ($page === 'hakkimizda'): ?>
     <h1>Hakkımızda</h1>
     <?php if ($site->isTurkata()): ?>
@@ -59,6 +65,9 @@ $kunye = $site->kunye();
     <?php else: ?>
       <p><?= Html::e($site->description !== '' ? $site->description : $site->name) ?></p>
     <?php endif; ?>
+  <?php elseif ($site->pageHtml('iletisim') !== ''): ?>
+    <h1>İletişim</h1>
+    <div class="ys-body"><?= $site->pageHtml('iletisim') ?></div>
   <?php else: ?>
     <h1>İletişim</h1>
     <ul>

@@ -93,6 +93,13 @@ img { max-width: 100%; height: auto; display: block; }
 @media (prefers-reduced-motion: reduce) {
   .ys-ticker-track { overflow-x: auto; }
 }
+.ys-drop { position: relative; display: inline-flex; }
+.ys-drop-menu { display: none; position: absolute; top: 100%; left: 0; min-width: 180px; background: #101010; border: 1px solid var(--ys-line); z-index: 5; }
+.ys-drop:hover .ys-drop-menu, .ys-drop:focus-within .ys-drop-menu { display: grid; }
+.ys-drop-menu a { display: block; padding: 8px 12px; }
+.ys-social, .ys-share { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.ys-share { margin-top: 18px; font-weight: 800; }
+.ys-share a, .ys-social a { color: var(--ys-accent); }
 .ys-ad { padding: 12px 0; }
 .ys-ad img { margin: 0 auto; max-height: 120px; width: auto; }
 body.ys-preset-odatv .ys-slide-copy strong { font-size: 1.7rem; }
