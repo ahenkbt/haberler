@@ -5,10 +5,13 @@ import {
   buildYsAboutPagePatch,
   buildYsCorporatePageHtmlPatch,
   buildYsKunyePagePatch,
+  nextYsCategoryVisibilityPatch,
   phpEnabledModules,
   phpModuleIsOn,
   readYsEditorSnapshot,
+  readYsMansetPreset,
   YS_SITE_PAGES,
+  ysCategoryNavVisible,
 } from "./yenisafakEditorLayout";
 
 describe("Yenişafak layout contract", () => {
@@ -56,6 +59,7 @@ describe("Yenişafak layout contract", () => {
 
     expect(patch.hmVitrinTheme).toBe("yenisafak");
     expect(patch.hmYsMansetPreset).toBe("nefes");
+    expect(patch.hmNewsYsMansetLayout).toBe("nefes");
     expect(patch.hmPrimaryColor).toBe("#0a7cb5");
     expect(patch.hmYsSlogan).toBe("Yerelin sesi");
     expect(patch.hmNewsYsGalleryEnabled).toBe(false);
@@ -93,6 +97,41 @@ describe("Yenişafak layout contract", () => {
     const rows = readYsEditorSnapshot(parsed).modules;
     expect(rows[0]?.id).toBe("ysGallery");
     expect(rows.find((row) => row.id === "ysManset")?.count).toBe(5);
+  });
+
+  it("eski hmNewsYsMansetLayout manşet önayarını açar ve kayıt iki anahtarı da yazar", () => {
+    expect(readYsMansetPreset({ ...defaultNewsSiteLayoutPrefs, hmNewsYsMansetLayout: "sabah" })).toBe("sabah");
+    expect(
+      readYsMansetPreset({
+        ...defaultNewsSiteLayoutPrefs,
+        hmYsMansetPreset: "mynet",
+        hmNewsYsMansetLayout: "sabah",
+      }),
+    ).toBe("mynet");
+    const snapshot = readYsEditorSnapshot({ ...defaultNewsSiteLayoutPrefs, hmNewsYsMansetLayout: "takvim" });
+    expect(snapshot.preset).toBe("takvim");
+    const patch = buildYenisafakLayoutPatch(defaultNewsSiteLayoutPrefs, snapshot);
+    expect(patch.hmYsMansetPreset).toBe("takvim");
+    expect(patch.hmNewsYsMansetLayout).toBe("takvim");
+  });
+
+  it("kategori beyaz listesi vitrin anahtarını ve gizlenenleri birlikte günceller", () => {
+    const only = ["gundem", "spor"];
+    expect(ysCategoryNavVisible("gundem", new Set(), only)).toBe(true);
+    expect(ysCategoryNavVisible("ekonomi", new Set(), only)).toBe(false);
+    expect(ysCategoryNavVisible("gundem", new Set(["gundem"]), only)).toBe(false);
+    expect(ysCategoryNavVisible("ekonomi", new Set(), null)).toBe(true);
+    expect(nextYsCategoryVisibilityPatch([], only, "ekonomi", true)).toEqual({
+      hmNavHiddenCategorySlugs: null,
+      hmNavOnlyCategorySlugs: ["gundem", "spor", "ekonomi"],
+    });
+    expect(nextYsCategoryVisibilityPatch([], only, "spor", false)).toEqual({
+      hmNavHiddenCategorySlugs: ["spor"],
+      hmNavOnlyCategorySlugs: ["gundem"],
+    });
+    expect(nextYsCategoryVisibilityPatch(["spor"], null, "spor", true)).toEqual({
+      hmNavHiddenCategorySlugs: null,
+    });
   });
 
   it("sayfa kayıt yaması telif şablonu yazmaz; künye ve iletişim HTML’i birbirini silmez", () => {
