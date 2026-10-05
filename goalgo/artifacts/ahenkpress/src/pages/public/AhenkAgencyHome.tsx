@@ -341,11 +341,6 @@ export default function AhenkAgencyHome() {
               Hazır yekpare.net sitesi dışında kurumunuza özel yazılım, entegrasyon veya yayın kurgusu için Ahenk BT
               ofisleri ve WhatsApp hattı açık.
             </p>
-            <p className="ahenk-iban" style={{ marginTop: 12 }}>
-              {site.ibanBank} · {site.ibanHolder}
-              <br />
-              <span className="ahenk-iban-num">{site.iban}</span>
-            </p>
           </div>
           <a className="ahenk-btn" href={wa} target="_blank" rel="noreferrer">
             WhatsApp {site.phone}

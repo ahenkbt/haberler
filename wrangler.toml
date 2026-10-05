@@ -705,4 +705,14 @@ zone_name = "tgd.tc"
 pattern = "www.tgd.tc/*"
 zone_name = "tgd.tc"
 
+# tukav.org iletişim kaydı goalgo.org STK API'sinden gelir. Yalnızca /api/stk
+# haberler worker'ına alınır; vitrin eski statik dosyada kalır.
+[[routes]]
+pattern = "tukav.org/api/stk*"
+zone_name = "tukav.org"
+
+[[routes]]
+pattern = "www.tukav.org/api/stk*"
+zone_name = "tukav.org"
+
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi
