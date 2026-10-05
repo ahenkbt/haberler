@@ -301,6 +301,45 @@ export default function EditorYenisafakVitrin() {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <Label className="font-semibold text-slate-900">Menü, kategoriler ve paylaşım</Label>
+          <p className="text-xs text-slate-500">
+            Ana menü kategori şeridinin yerine geçer. Şerit menü logo yanındaki bağlantılardır. Footer alt menüdür.
+            Kategori sırası ve gizleme ayrı sayfadadır. Hakkımızda, sosyal bağlantılar ve favicon Genel ayarlardadır.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link href="/editor/menuler?location=hmCorporateMenuItems">Ana menü</Link>
+            </Button>
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link href="/editor/menuler?location=hmNewsStripMenuItems">Üst bağlantılar</Link>
+            </Button>
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link href="/editor/menuler?location=hmNewsFooterMenuItems">Footer</Link>
+            </Button>
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link href="/editor/kategoriler">Kategoriler</Link>
+            </Button>
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link href="/editor/genel-ayarlar#hm-footer-settings">Hakkımızda ve sosyal</Link>
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Haber paylaşım düğmeleri</p>
+              <p className="text-[11px] text-slate-500">X, Facebook, WhatsApp ve Telegram. Kapalıysa haber sayfasında çıkmaz.</p>
+            </div>
+            <Switch
+              checked={newsLayoutPrefs.hmYsShareEnabled !== false}
+              disabled={saving}
+              onCheckedChange={(checked) => {
+                void saveNewsSiteLayout(newsLayoutPrefs, { layoutPatch: { hmYsShareEnabled: checked } });
+              }}
+              aria-label="Paylaşım düğmeleri"
+            />
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
           <Label className="font-semibold text-slate-900">Slogan</Label>
           <Input
             value={draft.slogan}

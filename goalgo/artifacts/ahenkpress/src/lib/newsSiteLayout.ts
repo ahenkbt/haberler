@@ -917,6 +917,8 @@ export type NewsSiteLayoutPrefs = {
   hmYsMansetPreset?: "odatv" | "sabah" | "takvim" | "mynet" | "nefes" | null;
   /** Footer sloganı. PHP tema `hmYsSlogan` doluysa site açıklamasının yerine bunu basar. */
   hmYsSlogan?: string | null;
+  /** Haber sayfası paylaş düğmeleri. Tanımsızsa PHP tema açık kabul eder. */
+  hmYsShareEnabled?: boolean;
   /** Künye alanları. PHP tema `hmYsKunye` doluysa statik künye metninin yerine bunu basar. */
   hmYsKunye?: HmYsKunye | null;
   /** Yenişafak anasayfa modülleri. Doluysa PHP `Modules.php` bu anahtarı eski takma adlardan önce okur. */
