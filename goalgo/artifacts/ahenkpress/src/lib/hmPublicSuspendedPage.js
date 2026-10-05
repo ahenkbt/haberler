@@ -364,6 +364,31 @@ export const HM_PUBLIC_SUSPENDED_PAGE_HTML = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- Reminder -->
+        <div class="glass-card rounded-2xl p-6 sm:p-8 border-l-4 border-l-amber-400 mb-12 relative overflow-hidden">
+            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <h4 class="text-base font-bold text-white mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-amber-400"></i>
+                    HATIRLATMA
+                </h4>
+                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed mb-4">
+                    Sitenizin tekrar <strong class="text-white font-semibold">aktif hale getirilebilmesi için</strong> aşağıdaki gerekliliklerin tamamlanarak <a href="mailto:bilgi@ahenk.net.tr" class="text-amber-300 font-semibold hover:text-amber-200">e-posta adresimize</a> iletilmesi gerekmektedir:
+                </p>
+                <ul class="space-y-2 text-xs sm:text-sm text-gray-300 mb-4 list-disc pl-5">
+                    <li><strong class="text-white font-semibold">Ödeme Dekontu:</strong> Kullanım ücreti ödemesine ait dekont,</li>
+                    <li><strong class="text-white font-semibold">Yasal Belgeler:</strong> Vergi Levhası, Basın Savcılığı Haber Sitesi Alındı Belgesi ve Sorumlu Yazı İşleri Müdürü Belgesi,</li>
+                    <li><strong class="text-white font-semibold">Meslek Odası Belgesi:</strong> Meslek Odası Kayıt Belgesi.</li>
+                </ul>
+                <p class="text-xs sm:text-sm text-amber-200 leading-relaxed mb-3">
+                    5187 sayılı Basın Kanunu uyarınca, kayıtsız haber sitelerinin yayın yapması kanunen suçtur.
+                </p>
+                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                    Ödeme dekontu ve yasal belgeler tarafımıza mail ile ulaştırıldığında yayınınız derhal aktif edilecektir.
+                </p>
+            </div>
+        </div>
+
         <!-- Contact & Resolution Actions -->
         <div class="glass-card rounded-3xl p-8 sm:p-10 border border-gray-700/50 shadow-2xl relative overflow-hidden">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
