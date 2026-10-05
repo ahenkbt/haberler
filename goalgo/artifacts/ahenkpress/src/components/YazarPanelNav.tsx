@@ -1,11 +1,17 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { clearHmAuthorSession } from "@/lib/hmAuthorSession";
-import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
+import { clearHmAuthorSession, readHmAuthorPayload } from "@/lib/hmAuthorSession";
+import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicAuthorHref, hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 
 export function YazarPanelNav({ slug }: { slug: string }) {
-  const h = useHmPublicHref();
+  const ctx = useHmPublicLinkContextOptional();
+  const authorPayload = readHmAuthorPayload();
+  /** Vitrin bağlantıları için site alan adları: vitrin bağlamı → yazar oturumu → yalnız slug. */
+  const publicSite =
+    ctx ?? (authorPayload?.site && authorPayload.site.slug === slug ? authorPayload.site : { slug });
+  const authorId = authorPayload?.site?.slug === slug ? authorPayload?.author?.id ?? null : null;
   const enc = encodeURIComponent(slug);
   const base = `/${HM_SITE_PUBLIC_PREFIX}/${enc}/yazar`;
   return (
@@ -19,8 +25,15 @@ export function YazarPanelNav({ slug }: { slug: string }) {
       <Button variant="outline" size="sm" asChild>
         <Link href={`${base}/sifre`}>Şifre değiştir</Link>
       </Button>
+      {authorId != null ? (
+        <Button variant="ghost" size="sm" asChild>
+          <a href={hmPublicAuthorHref(publicSite, authorId)} target="_blank" rel="noopener noreferrer">
+            Yazar sayfam
+          </a>
+        </Button>
+      ) : null}
       <Button variant="ghost" size="sm" asChild>
-        <Link href={h("/")}>Vitrine dön</Link>
+        <a href={hmPublicHomeHref(publicSite)}>Vitrine dön</a>
       </Button>
       <Button
         variant="ghost"

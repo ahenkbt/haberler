@@ -9,10 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest, asArray } from "@/lib/queryClient";
 import { useHmEditor } from "@/contexts/HmEditorContext";
-import { Link } from "wouter";
 import { ExternalLink, Eye, ImageIcon, Images, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicPathHref } from "@/lib/hmPublicSiteUrl";
 import { uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
 
 export default function EditorFotoGaleri() {
@@ -29,9 +28,7 @@ export default function EditorFotoGaleri() {
   const coverFileRef = useRef<HTMLInputElement>(null);
   const itemFileRef = useRef<HTMLInputElement>(null);
 
-  const hmFotoPublic = site?.slug
-    ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}/foto-galeri`
-    : "/foto-galeri";
+  const hmFotoPublic = site?.slug ? hmPublicPathHref(site, "/foto-galeri") : "/foto-galeri";
 
   const { data: galleriesData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/foto-galeri", "hm-editor"],
@@ -148,10 +145,10 @@ export default function EditorFotoGaleri() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href={hmFotoPublic} target="_blank" rel="noopener noreferrer">
+              <a href={hmFotoPublic} target="_blank" rel="noopener noreferrer">
                 Vitrinde önizle
                 <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
-              </Link>
+              </a>
             </Button>
             <Button
               size="sm"
