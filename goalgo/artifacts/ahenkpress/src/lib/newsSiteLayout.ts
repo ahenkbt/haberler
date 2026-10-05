@@ -56,7 +56,8 @@ export type HmVitrinThemeId =
   | "default"
   | "ankara"
   | "gold"
-  | "sumbul";
+  | "sumbul"
+  | "yenisafak";
 
 /** Kaldırılan vitrin temaları (Menekşe/ajans). Sümbül eski `wsj` anahtarı ile geri geldi. */
 const HM_RETIRED_VITRIN_THEME_RAW = new Set(["ajans", "agency", "aa"]);
@@ -128,6 +129,7 @@ export function normalizeHmVitrinTheme(theme: string | null | undefined): HmVitr
   if (raw === "modern" || raw === "modern-haber" || raw === "haber-modern") return "modern";
   if (raw === "news" || raw === "haber" || raw === "default") return "news";
   if (raw === "ankara" || raw === "gold") return raw as HmVitrinThemeId;
+  if (raw === "yenisafak" || raw === "yenişafak" || raw === "yeni-safak") return "yenisafak";
   return "news";
 }
 
@@ -541,6 +543,20 @@ export function resolveFinanceWeatherInSidebar(prefs: NewsSiteLayoutPrefs | null
   return resolveTickerPlacement(prefs) === "sidebar";
 }
 
+/** Yenişafak künye. Boş alanlar PHP temasında atlanır. */
+export type HmYsKunye = {
+  lead?: string | null;
+  yayin?: string | null;
+  genelMudur?: string | null;
+  yayinYonetmeni?: string | null;
+  yaziIsleri?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  tuzel?: string | null;
+  yayinIlkeleri?: string | null;
+};
+
 export type NewsSiteLayoutPrefs = {
   mansetVariant: MansetVariant;
   /** Manşet orta slider kategori filtresi; boşsa tüm kategoriler + yalnızca manşet alanında son dakika. */
@@ -833,6 +849,8 @@ export type NewsSiteLayoutPrefs = {
   hmNewsHomeModuleOrder?: string[] | null;
   /** HABER teması: anasayfa haber modülü -> kategori slug filtresi. Boşsa modül tüm haber havuzunu kullanır. */
   hmNewsHomeModuleCategorySlugs?: HmNewsHomeModuleCategorySlugs | null;
+  /** Anasayfa modülü başına haber adedi. Yenişafak takma adları (`ysManset` vb.) dahil. */
+  hmNewsHomeModuleItemCounts?: Record<string, number> | null;
   /** HABER teması: galeri koyu blokları için kaynak (Foto / Video Galeri / Video TV / Karma). */
   hmNewsHomeModuleGallerySources?: HmNewsHomeModuleGallerySources | null;
   /** Video TV seçiliyken kanal / oynatma listesi; Video Galeri seçiliyken manuel Video TV bağlantısı. */
@@ -890,8 +908,26 @@ export type NewsSiteLayoutPrefs = {
   hmYekpareCategoryBoxCount?: number | null;
   /** Yekpare Kategoriler Kutusu: kutu başına haber sayısı (1 öne çıkan + liste). Varsayılan 5. */
   hmYekpareKategorilerKutusuItemCount?: number | null;
-  /** Vitrin zemini ve üst şerit tonları (`styles/hmVitrinThemes.css`). */
+  /** Vitrin zemini ve üst şerit tonları (`styles/hmVitrinThemes.css`). Haber sitelerinde `yenisafak`. */
   hmVitrinTheme?: HmVitrinThemeId | null;
+  /**
+   * Yenişafak manşet yerleşimi. PHP tema `body.ys-preset-*` olarak okur.
+   * Boşsa tema kendi varsayılan yerleşimini kullanır.
+   */
+  hmYsMansetPreset?: "odatv" | "sabah" | "takvim" | "mynet" | "nefes" | null;
+  /** Footer sloganı. PHP tema `hmYsSlogan` doluysa site açıklamasının yerine bunu basar. */
+  hmYsSlogan?: string | null;
+  /** Künye alanları. PHP tema `hmYsKunye` doluysa statik künye metninin yerine bunu basar. */
+  hmYsKunye?: HmYsKunye | null;
+  /** Yenişafak anasayfa modülleri. Doluysa PHP `Modules.php` bu anahtarı eski takma adlardan önce okur. */
+  hmNewsYsTickerEnabled?: boolean;
+  hmNewsYsMansetEnabled?: boolean;
+  hmNewsYsSideHeadlinesEnabled?: boolean;
+  hmNewsYsCategoryBlocksEnabled?: boolean;
+  hmNewsYsVideoBandEnabled?: boolean;
+  hmNewsYsAuthorsEnabled?: boolean;
+  hmNewsYsMostReadEnabled?: boolean;
+  hmNewsYsGalleryEnabled?: boolean;
   /** Kurumsal temada gövde genişlişi: `full` kenardan kenara, `contained` ortalı/max-width. */
   hmCorporateLayoutWidth?: HmCorporateLayoutWidth | null;
   /**
@@ -1666,6 +1702,53 @@ export function shouldShowHmDonationIbanCard(
   return resolveHmDonationIbanModule(orderedModules, theme) === moduleId;
 }
 
+/** PHP Yenişafak `Modules.php` sıra takma adları. Parse bunları silmemeli. */
+const YS_HOME_MODULE_ORDER_IDS = [
+  "ysTicker",
+  "breakingBand",
+  "ysManset",
+  "hero",
+  "tepeManset",
+  "ysSide",
+  "ysSideHeadlines",
+  "leadListSidebar",
+  "ysCategories",
+  "ysCategoryBlocks",
+  "yekpareKategorilerKutusu",
+  "featuredCategoryStrip",
+  "ysVideo",
+  "ysVideoBand",
+  "recentVideosSidebar",
+  "ysAuthors",
+  "authorsStrip",
+  "ahenkGununSesiAuthors",
+  "ysMostRead",
+  "ahenkPopulerHaberler",
+  "ysGallery",
+  "mediaDarkBlock",
+  "culturePortal",
+] as const;
+
+function normalizeNewsHomeModuleOrder(raw: unknown): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  const allowed = new Set<string>([...HM_NEWS_HOME_MODULE_ORDER, ...YS_HOME_MODULE_ORDER_IDS]);
+  const seen = new Set<string>();
+  const next: string[] = [];
+  for (const item of raw) {
+    const id = String(item ?? "").trim();
+    if (!allowed.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    next.push(id);
+  }
+  const hasYenisafak = next.some((id) => id.startsWith("ys"));
+  if (!hasYenisafak) {
+    for (const id of HM_NEWS_HOME_MODULE_ORDER) {
+      if (!seen.has(id)) next.push(id);
+    }
+  }
+  return next.length ? next : null;
+}
+
 function normalizeHomeModuleOrder(raw: unknown, defaults: readonly string[]): string[] | null {
   if (!Array.isArray(raw)) return null;
   const allowed = new Set(defaults);
@@ -1705,7 +1788,7 @@ export function resolveHmHomeModuleOrder<T extends string>(
 
 function normalizeHmNewsHomeModuleCategorySlugs(raw: unknown): HmNewsHomeModuleCategorySlugs | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const allowed = new Set<string>(HM_NEWS_HOME_MODULE_ORDER);
+  const allowed = new Set<string>([...HM_NEWS_HOME_MODULE_ORDER, ...YS_HOME_MODULE_ORDER_IDS]);
   const galleryModules = new Set<string>(["mediaDarkBlock", "agencyDarkSpotlight"]);
   const out: HmNewsHomeModuleCategorySlugs = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
@@ -3550,9 +3633,8 @@ export function parseNewsSiteLayoutFromJson(
       typeof yekpareBoxCountRaw === "number" && Number.isFinite(yekpareBoxCountRaw)
         ? normalizeYekpareCategoryBoxCount(Math.round(yekpareBoxCountRaw))
         : undefined;
-    const hmNewsHomeModuleOrder = normalizeHomeModuleOrder(
+    const hmNewsHomeModuleOrder = normalizeNewsHomeModuleOrder(
       (j as { hmNewsHomeModuleOrder?: unknown }).hmNewsHomeModuleOrder,
-      HM_NEWS_HOME_MODULE_ORDER,
     );
     const hmNewsHomeModuleCategorySlugs = normalizeHmNewsHomeModuleCategorySlugs(
       (j as { hmNewsHomeModuleCategorySlugs?: unknown }).hmNewsHomeModuleCategorySlugs,
@@ -3843,9 +3925,9 @@ export function parseNewsSiteLayoutFromJson(
     }
     layoutResult = {
       ...layoutResult,
-      hmNewsHomeModuleOrder: resolveHmHomeModuleOrder(layoutResult.hmNewsHomeModuleOrder, HM_NEWS_HOME_MODULE_ORDER).filter(
-        (id) => !isHmNewsRetiredHomeModule(id),
-      ),
+      hmNewsHomeModuleOrder: (
+        normalizeNewsHomeModuleOrder(layoutResult.hmNewsHomeModuleOrder) ?? [...HM_NEWS_HOME_MODULE_ORDER]
+      ).filter((id) => !isHmNewsRetiredHomeModule(id)),
       hmCorporateHomeModuleOrder: resolveHmHomeModuleOrder(
         layoutResult.hmCorporateHomeModuleOrder,
         HM_CORPORATE_HOME_MODULE_ORDER,

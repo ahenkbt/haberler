@@ -20,7 +20,13 @@ import {
   UserRound,
 } from "lucide-react";
 
-export type EditorNavItem = { name: string; icon: LucideIcon; href: string; newsOnly?: boolean };
+export type EditorNavItem = {
+  name: string;
+  icon: LucideIcon;
+  href: string;
+  newsOnly?: boolean;
+  corporateOnly?: boolean;
+};
 
 export const editorNavItems: EditorNavItem[] = [
   { name: "Özet", icon: LayoutDashboard, href: "/editor" },
@@ -28,7 +34,7 @@ export const editorNavItems: EditorNavItem[] = [
   { name: "Genel ayarlar", icon: Settings, href: "/editor/genel-ayarlar" },
   { name: "Yapay zekâ", icon: Sparkles, href: "/editor/yapay-zeka", newsOnly: true },
   { name: "Vitrin ayarları", icon: LayoutGrid, href: "/editor/vitrin" },
-  { name: "Tepe Manşet", icon: Sparkles, href: "/editor/manset" },
+  { name: "Tepe Manşet", icon: Sparkles, href: "/editor/manset", corporateOnly: true },
   { name: "Haberler", icon: Newspaper, href: "/editor/haberler" },
   { name: "RSS Kampanyaları", icon: Rss, href: "/editor/rss-kampanyalari" },
   { name: "İletişim", icon: Mail, href: "/editor/iletisim" },

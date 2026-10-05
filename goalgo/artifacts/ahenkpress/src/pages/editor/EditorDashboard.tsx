@@ -4,16 +4,16 @@ import { Link } from "wouter";
 import { Newspaper, Users, FileBox, Images, Video, LayoutGrid, Settings, Sparkles, Megaphone, Tags, ScrollText } from "lucide-react";
 import { useHmEditorOptional } from "@/contexts/HmEditorContext";
 import { isHmVatanThemeId } from "@/lib/hmVatanTheme";
-import { normalizeHmVitrinTheme } from "@/lib/newsSiteLayout";
+import { isHmCorporateLayoutKind, normalizeHmVitrinTheme } from "@/lib/newsSiteLayout";
 
 const cards = [
-  { title: "Slider Yönetimi", desc: "Kurumsal vitrinin üst manuel slider haberleri.", href: "/editor/manset", vatanHref: "/editor/genel-ayarlar#hm-corporate-slider", icon: Sparkles, corporateOnly: false },
-  { title: "Bant Yönetimi", desc: "Slider altındaki son dakika haber bandı.", href: "/editor/manset", vatanHref: "/editor/genel-ayarlar#hm-corporate-band", icon: LayoutGrid, corporateOnly: false },
+  { title: "Slider Yönetimi", desc: "Kurumsal vitrinin üst manuel slider haberleri.", href: "/editor/manset", vatanHref: "/editor/genel-ayarlar#hm-corporate-slider", icon: Sparkles, corporateOnly: true },
+  { title: "Bant Yönetimi", desc: "Slider altındaki son dakika haber bandı.", href: "/editor/manset", vatanHref: "/editor/genel-ayarlar#hm-corporate-band", icon: LayoutGrid, corporateOnly: true },
   { title: "Hızlı Erişim Yönetimi", desc: "Kurumsal slider altı koyu kısayol kutuları.", href: "/editor/genel-ayarlar#hm-corporate-quick-links", icon: Settings, corporateOnly: true },
   { title: "Menü yönetimi", desc: "Logo menü ve şerit menü — öğe ekle, sırala, aktif/pasif.", href: "/editor/menuler", icon: FileBox, corporateOnly: false },
   { title: "Genel ayarlar", desc: "Logo yükleme, renk, üst menü.", href: "/editor/genel-ayarlar", icon: Settings, corporateOnly: false },
   { title: "Yapay zekâ", desc: "Evren, NVIDIA, Gemini ve OpenAI anahtarları. Yalnızca bu site.", href: "/editor/yapay-zeka", icon: Sparkles, corporateOnly: false, newsOnly: true },
-  { title: "Vitrin ayarları", desc: "Haber ve kurumsal modüller, sıralama.", href: "/editor/vitrin", vatanHref: "/editor/vitrin", icon: LayoutGrid, corporateOnly: false },
+  { title: "Vitrin ayarları", desc: "Yenişafak modülleri, manşet yerleşimi, reklam ve künye.", href: "/editor/vitrin", vatanHref: "/editor/vitrin", icon: LayoutGrid, corporateOnly: false },
   { title: "Reklam alanları", desc: "Yekpare ile aynı slot isimleri.", href: "/editor/reklam-alanlari", icon: Megaphone, corporateOnly: false },
   { title: "Kategoriler", desc: "Siteye özel kategori + vitrinde göster/gizle.", href: "/editor/kategoriler", icon: Tags, corporateOnly: false },
   { title: "Haberler", desc: "Manuel haber; yayında havuza düşer.", href: "/editor/haberler", icon: Newspaper, corporateOnly: false },
@@ -36,7 +36,7 @@ const vatanDescs: Record<string, string> = {
 export default function EditorDashboard() {
   const hm = useHmEditorOptional();
   const theme = normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme);
-  const isCorporateSite = theme === "corporate" || theme === "vatan";
+  const isCorporateSite = isHmCorporateLayoutKind(hm?.newsLayoutPrefs, hm?.site?.slug);
   const isVatanSite = isHmVatanThemeId(theme);
   const visibleCards = cards.filter((card) => {
     if ("newsOnly" in card && card.newsOnly && isCorporateSite) return false;
@@ -57,7 +57,11 @@ export default function EditorDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {visibleCards.map((c) => {
           const href = isVatanSite && "vatanHref" in c && c.vatanHref ? c.vatanHref : c.href;
-          const desc = isVatanSite ? vatanDescs[c.title] ?? c.desc : c.desc;
+          const desc = isVatanSite
+            ? vatanDescs[c.title] ?? c.desc
+            : isCorporateSite && c.title === "Vitrin ayarları"
+              ? "VKD Tema modülleri, sıra ve aç/kapa."
+              : c.desc;
           return (
             <Link key={`${c.title}-${href}`} href={href}>
               <Card className="h-full border-slate-200 hover:border-slate-300 hover:shadow-md transition-shadow cursor-pointer">

@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useHmEditorOptional } from "@/contexts/HmEditorContext";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { editorNavItems, editorNavIsActive } from "@/lib/editorNavSections";
-import { normalizeHmVitrinTheme, resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
+import { isHmCorporateLayoutKind, resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { normalizePortalDisplayName } from "@/lib/portalBrand";
 import { clearHmSitePublicCaches } from "@/lib/hmSitePublicCacheClear";
@@ -25,12 +25,11 @@ function EditorSidebar({ onClose }: { onClose?: () => void }) {
   const { logout: adminLogout } = useAuth();
   const hm = useHmEditorOptional();
   const { logout: hmLogout, site } = hm ?? { logout: () => {}, site: null };
-  const isCorporateEditor =
-    normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "corporate" ||
-    normalizeHmVitrinTheme(hm?.newsLayoutPrefs?.hmVitrinTheme) === "vatan";
+  const isCorporateEditor = isHmCorporateLayoutKind(hm?.newsLayoutPrefs, site?.slug);
   const corporateAuthorsEnabled = resolveHmCorporateAuthorsEnabled(hm?.newsLayoutPrefs);
   const visibleNavItems = editorNavItems.filter((item) => {
     if (item.newsOnly && isCorporateEditor) return false;
+    if (item.corporateOnly && !isCorporateEditor) return false;
     if (item.href === "/editor/kose-yazarlari" && isCorporateEditor && !corporateAuthorsEnabled) {
       return false;
     }

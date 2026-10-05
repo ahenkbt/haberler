@@ -15,19 +15,14 @@ import type {
   HmCorporateQuickLink,
   HmCorporateSliderItem,
   HmFooterSocialLinks,
-  HmVitrinThemeId,
   NewsSiteLayoutPrefs,
 } from "@/lib/newsSiteLayout";
-import { HM_SUBSCRIPTION_REVENUE_SHARE_PERCENT } from "@/lib/hmCommerce";
+import { isHmCorporateLayoutKind } from "@/lib/newsSiteLayout";
 import {
-  HM_VITRIN_THEME,
-  HM_FLOWER_THEME_EDITOR_OPTIONS,
-  hmFlowerThemeColorPreset,
-  resolveActiveFlowerThemeKey,
-  resolveFlowerThemeKeyFromVitrin,
   resolveHmColorPalette,
   resolveHmEditorSecondaryFallback,
 } from "@/lib/hmVitrinThemeTokens";
+import { YS_MANSET_PRESETS, normalizeYsMansetPreset } from "@/lib/yenisafakEditorLayout";
 import { compressInlineImageFile } from "@/lib/compressInlineImage";
 import { resolveClientMediaSrc, toPersistedPublicMediaUrl } from "@/lib/apiBase";
 import { ArrowDown, ArrowUp, FileCode2, FileUp, Loader2, Plus, Trash2, Upload } from "lucide-react";
@@ -309,28 +304,6 @@ export default function EditorGenelAyarlari() {
     });
   };
 
-  const applyFlowerThemeColors = (themeKey: string) => {
-    const preset = hmFlowerThemeColorPreset(themeKey);
-    setCatHexDraft({});
-    void commit({
-      ...p,
-      hmPrimaryColor: preset.hmPrimaryColor,
-      hmSecondaryColor: preset.hmSecondaryColor,
-      hmColorPalette: preset.hmColorPalette,
-      hmCategoryColors: { ...preset.hmCategoryColors },
-    });
-  };
-
-  const activeFlowerThemeKey = useMemo(
-    () => resolveActiveFlowerThemeKey(p.hmPrimaryColor, p.hmSecondaryColor, p.hmCategoryColors),
-    [p.hmPrimaryColor, p.hmSecondaryColor, p.hmCategoryColors],
-  );
-
-  const vitrinFlowerThemeKey = useMemo(
-    () => resolveFlowerThemeKeyFromVitrin(p.hmVitrinTheme),
-    [p.hmVitrinTheme],
-  );
-
   const setHmCategoryColor = (slug: string, value: string) => {
     const row = HM_CATEGORY_COLOR_ROWS.find((r) => r.slug === slug);
     const fb = row?.defaultHex ?? accentFallback;
@@ -364,7 +337,7 @@ export default function EditorGenelAyarlari() {
   const corporateWarsSectionEnabled = p.hmCorporateWarsSectionEnabled === true;
   const corporateNationalDaysSectionEnabled = p.hmCorporateNationalDaysSectionEnabled === true;
   const corporateLayoutWidth: HmCorporateLayoutWidth = p.hmCorporateLayoutWidth === "contained" ? "contained" : "full";
-  const isCorporateSite = p.hmVitrinTheme === "corporate" || p.hmVitrinTheme === "vatan";
+  const isCorporateSite = isHmCorporateLayoutKind(p, site?.slug);
   const editorSettingsSections = useMemo(() => {
     if (isCorporateSite) return EDITOR_SETTINGS_SECTIONS;
     return [
@@ -885,6 +858,7 @@ export default function EditorGenelAyarlari() {
             </Button>
           </div>
 
+          {isCorporateSite ? (
           <div className="rounded-lg border border-blue-100 bg-blue-50/70 p-4 space-y-4 xl:col-span-2">
             <div>
               <Label className="font-semibold text-slate-900">
@@ -961,6 +935,7 @@ export default function EditorGenelAyarlari() {
               ) : null}
             </div>
           </div>
+          ) : null}
 
           {isCorporateSite ? (
           <>
@@ -1085,6 +1060,8 @@ export default function EditorGenelAyarlari() {
           </>
           ) : null}
 
+          {isCorporateSite ? (
+          <>
           <div id="hm-corporate-slider" className="scroll-mt-32 rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-4 xl:col-span-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1442,6 +1419,8 @@ export default function EditorGenelAyarlari() {
               </Button>
             </div>
           </div>
+          </>
+          ) : null}
 
           {isCorporateSite ? (
           <>
@@ -1898,62 +1877,78 @@ export default function EditorGenelAyarlari() {
           </div>
 
           <div id="hm-vitrin-theme-controls" className="scroll-mt-32 rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-3">
-            <Label className="font-semibold text-slate-900">Vitrin teması</Label>
-            <p className="text-xs text-slate-500">
-              <strong>HABER</strong> mevcut haber sitesi temasıdır. <strong>KURUMSAL</strong> aynı haber özelliklerini
-              premium kurumsal düzenle sunar. <strong>VATAN</strong> hatıra / anıt temasıdır (VKD). Renk paleti aşağıdaki
-              Kırmızı / Gold / Mavi seçenekleriyle tüm siteye yayılır.
-            </p>
-            <RadioGroup
-              value={p.hmVitrinTheme === "vatan" ? "vatan" : p.hmVitrinTheme === "corporate" ? "corporate" : "news"}
-              onValueChange={(val) => {
-                const v = val as Extract<HmVitrinThemeId, "news" | "corporate" | "vatan">;
-                void commit({ hmVitrinTheme: v });
-              }}
-              disabled={saving}
-              className="flex flex-col gap-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="news" id="hm-theme-news" />
-                <Label htmlFor="hm-theme-news" className="flex cursor-pointer items-center gap-2 font-normal text-sm">
-                  <span
-                    className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm border border-slate-300 shadow-sm"
-                    style={{ backgroundColor: "#e61e25" }}
-                    aria-hidden
-                  />
-                  HABER (mevcut haber vitrini)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="corporate" id="hm-theme-corporate" />
-                <Label htmlFor="hm-theme-corporate" className="flex cursor-pointer items-center gap-2 font-normal text-sm">
-                  <span
-                    className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm border border-slate-300 shadow-sm"
-                    style={{ backgroundColor: HM_VITRIN_THEME.corporate.accent }}
-                    aria-hidden
-                  />
-                  KURUMSAL (premium kurumsal vitrin)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="vatan" id="hm-theme-vatan" />
-                <Label htmlFor="hm-theme-vatan" className="flex cursor-pointer items-center gap-2 font-normal text-sm">
-                  <span
-                    className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm border border-slate-300 shadow-sm"
-                    style={{ backgroundColor: HM_VITRIN_THEME.vatan.accent }}
-                    aria-hidden
-                  />
-                  VATAN (hatıra / anıt teması — bordo, lacivert, altın)
-                </Label>
-              </div>
-            </RadioGroup>
+            {isCorporateSite ? (
+              <>
+                <Label className="font-semibold text-slate-900">Kurumsal tema</Label>
+                <p className="text-xs text-slate-500">
+                  Haber sitesi temaları bu panelde yok. <strong>VKD Tema</strong> kurumsal dernek vitrinidir.{" "}
+                  <strong>VATAN tema</strong> hatıra anasayfasıdır; modül kutularının metin ve görselleri vitrin
+                  ayarlarındaki VATAN tema sekmesinden düzenlenir.
+                </p>
+                <RadioGroup
+                  value={p.hmVitrinTheme === "vatan" ? "vatan" : "corporate"}
+                  onValueChange={(val) => {
+                    const v = val === "vatan" ? "vatan" : "corporate";
+                    void commit({ hmVitrinTheme: v });
+                  }}
+                  disabled={saving}
+                  className="flex flex-col gap-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="corporate" id="hm-theme-vkd" />
+                    <Label htmlFor="hm-theme-vkd" className="cursor-pointer font-normal text-sm">
+                      VKD Tema
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="vatan" id="hm-theme-vatan" />
+                    <Label htmlFor="hm-theme-vatan" className="cursor-pointer font-normal text-sm">
+                      VATAN tema
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </>
+            ) : (
+              <>
+                <Label className="font-semibold text-slate-900">Yenişafak tema</Label>
+                <p className="text-xs text-slate-500">
+                  Tema kilitlidir. HABER, KURUMSAL ve VATAN seçilemez. Manşet yerleşimi ve modüller{" "}
+                  <Link href="/editor/vitrin" className="font-semibold text-red-600 hover:underline">
+                    Vitrin ayarları
+                  </Link>{" "}
+                  sayfasında kaydedilir.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {YS_MANSET_PRESETS.map((preset) => {
+                    const active = normalizeYsMansetPreset(p.hmYsMansetPreset) === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => void commit({ hmVitrinTheme: "yenisafak", hmYsMansetPreset: preset.id })}
+                        className={`rounded-lg border px-3 py-2 text-left ${
+                          active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-800"
+                        }`}
+                      >
+                        <span className="block text-sm font-bold">{preset.label}</span>
+                        <span className={`mt-0.5 block text-[11px] ${active ? "text-white/70" : "text-slate-500"}`}>
+                          {preset.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
+          {isCorporateSite ? (
           <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-3">
-            <Label className="font-semibold text-slate-900">Site genişliği (haber + kurumsal)</Label>
+            <Label className="font-semibold text-slate-900">Site genişliği</Label>
             <p className="text-xs text-slate-500">
-              Haber ve kurumsal vitrinde gövde, özel sayfalar ve üst şeritlerin genişliğini seçin. Ortalı seçenek içeriği
-              1280px ile ortalar; tam genişlik kenardan kenara görünümü korur.
+              VKD Tema ve VATAN tema gövdesinin genişliği. Ortalı seçenek içeriği 1280px ile ortalar; tam genişlik
+              kenardan kenara görünümü korur.
             </p>
             <RadioGroup
               value={corporateLayoutWidth}
@@ -1980,12 +1975,14 @@ export default function EditorGenelAyarlari() {
               </div>
             </RadioGroup>
           </div>
+          ) : null}
 
           <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4">
             <Label className="font-semibold text-slate-900">Site vurgu renkleri</Label>
             <p className="text-xs text-slate-500 mt-1 mb-2">
-              Manşet, şerit, kartlar, footer ve genel vurgular için ana renk ve uyumlu 2. renk. Kırmızı, Gold veya Mavi
-              seçimi tüm HABER ve KURUMSAL vitrinde premium palet olarak uygulanır.
+              {isCorporateSite
+                ? "VKD Tema ve VATAN tema vurgusu. Ana renk ve ikinci renk anasayfaya yazılır."
+                : "Yenişafak vurgusu. Ana renk PHP temada --ys-accent olarak hmPrimaryColor alanından okunur."}
             </p>
             <div className="mb-3 grid gap-2 sm:grid-cols-3">
               {HM_PREMIUM_PALETTES.map((palette) => {
@@ -2086,68 +2083,6 @@ export default function EditorGenelAyarlari() {
                 </div>
               </div>
             </div>
-            <div className="mt-4 border-t border-slate-200 pt-4 space-y-3">
-              <Label className="font-semibold text-slate-900">Çiçek teması renklerini uygula</Label>
-              <p className="text-xs text-slate-500">
-                Vitrin temalarının çiçek adlarıyla eşleşen ana + uyumlu 2. renk paletini site vurgusu ve kategori
-                renklerine tek tıkla uygular. Seçimler{" "}
-                <code className="rounded bg-white px-1 text-[11px]">hmPrimaryColor</code>,{" "}
-                <code className="rounded bg-white px-1 text-[11px]">hmSecondaryColor</code> ve{" "}
-                <code className="rounded bg-white px-1 text-[11px]">hmCategoryColors</code> alanlarına kaydedilir.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={saving}
-                  onClick={() => applyFlowerThemeColors(vitrinFlowerThemeKey)}
-                >
-                  Mevcut vitrin temasından uygula
-                </Button>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {HM_FLOWER_THEME_EDITOR_OPTIONS.map((option) => {
-                  const preset = hmFlowerThemeColorPreset(option.themeKey);
-                  const active = activeFlowerThemeKey === option.themeKey;
-                  return (
-                    <button
-                      key={option.themeKey}
-                      type="button"
-                      disabled={saving}
-                      onClick={() => applyFlowerThemeColors(option.themeKey)}
-                      className={`rounded-lg border px-3 py-2 text-left transition ${
-                        active
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2 text-sm font-black">
-                        <span className="inline-flex items-center gap-1" aria-hidden>
-                          <span
-                            className="h-4 w-4 rounded-full border border-white/50 shadow-sm"
-                            style={{ backgroundColor: preset.hmPrimaryColor }}
-                            title="Ana renk"
-                          />
-                          <span
-                            className="h-4 w-4 rounded-full border border-slate-200 shadow-sm"
-                            style={{ backgroundColor: preset.hmSecondaryColor }}
-                            title="2. renk"
-                          />
-                        </span>
-                        {option.flower}
-                      </span>
-                      <span className={`mt-0.5 block text-[11px] ${active ? "text-white/65" : "text-slate-500"}`}>
-                        {option.description}
-                        <span className="block font-mono text-[10px] opacity-90">
-                          Ana {preset.hmPrimaryColor} · 2. {preset.hmSecondaryColor}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
           <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4">
@@ -2208,24 +2143,6 @@ export default function EditorGenelAyarlari() {
             </Button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-100 bg-slate-50/80 p-4">
-            <div className="min-w-0">
-              <Label htmlFor="hm-show-nav" className="font-semibold text-slate-900 cursor-pointer">
-                Üstte Yekpare menüsü
-              </Label>
-              <p className="text-xs text-slate-500 mt-1 max-w-md">
-                Açıkken ziyaretçiler Haberler, Yektube, Keşfet vb. ana portal çubuğunu görür; kapalıyken yalnızca haber
-                merkezi vitrininiz görünür.
-              </p>
-            </div>
-            <Switch
-              id="hm-show-nav"
-              disabled={saving}
-              checked={p.showPlatformNav === true}
-              onCheckedChange={(c) => void commit({ ...p, showPlatformNav: !!c })}
-            />
-          </div>
-
           <div id="hm-wordpress-tools" className="scroll-mt-32 rounded-lg border border-indigo-100 bg-indigo-50/50 p-4 space-y-4">
             <div>
               <p className="text-sm font-bold text-slate-900">WordPress araçları</p>
@@ -2271,54 +2188,6 @@ export default function EditorGenelAyarlari() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-violet-100 bg-violet-50/60 p-4 space-y-4">
-          <div>
-            <Label className="font-semibold text-slate-900">Yekpare haber havuzu</Label>
-            <p className="text-xs text-slate-500 mt-1">
-              Yekpare kategorileri açık olsa bile havuz alışverişini ayrı ayrı kapatabilirsiniz.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-violet-100 bg-white px-3 py-3">
-            <div>
-              <Label htmlFor="hm-yekpare-pool-receive" className="font-semibold text-slate-800">
-                Yekpare Haber Havuzu — haber alımı
-              </Label>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Açıkken editör «Yekpare havuzu»ndan taslak alıp onaylayabilir. Kapalıyken başka site
-                haberi public vitrinde çıkmaz; otomatik canlı birleşim yoktur.
-              </p>
-            </div>
-            <Switch
-              id="hm-yekpare-pool-receive"
-              checked={p.hmYekparePoolReceiveEnabled !== false}
-              disabled={saving}
-              onCheckedChange={(checked) => void commit({ ...p, hmYekparePoolReceiveEnabled: checked ? true : false })}
-            />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-violet-100 bg-white px-3 py-3">
-            <div>
-              <Label htmlFor="hm-yekpare-pool-send" className="font-semibold text-slate-800">
-                Haberleri havuza gönder
-              </Label>
-              <p className="text-[11px] text-slate-500 mt-0.5">Kapalıyken site haberleriniz merkez havuza senkron edilmez.</p>
-            </div>
-            <Switch
-              id="hm-yekpare-pool-send"
-              checked={p.hmYekparePoolSendEnabled !== false}
-              disabled={saving}
-              onCheckedChange={(checked) => void commit({ ...p, hmYekparePoolSendEnabled: checked ? true : false })}
-            />
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 space-y-2">
-          <p className="text-sm font-bold text-slate-900">Yekpare komisyonu</p>
-          <p className="text-sm text-slate-700 leading-relaxed">
-            Başarılı abonelik ödemelerinde haber merkezi payı:{" "}
-            <strong className="text-amber-900">%{HM_SUBSCRIPTION_REVENUE_SHARE_PERCENT}</strong>. Bu oran Yekpare üzerinden
-            tahsil edilen abonelik tutarı üzerinden hesaplanır; tahsilat ve hakediş takvimi Yekpare operasyonuna bağlıdır.
-          </p>
-        </div>
           </div>
         </TabsContent>
 
