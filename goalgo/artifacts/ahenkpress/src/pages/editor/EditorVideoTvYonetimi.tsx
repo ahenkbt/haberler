@@ -10,7 +10,7 @@ import {
   resolveHmVideoTvSiteLogoUrl,
 } from "@/lib/hmVideoTvSiteBrand";
 import { isHmNewsVideoTvFlagEnabled } from "@/lib/newsSiteLayout";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicPathHref } from "@/lib/hmPublicSiteUrl";
 
 /** Aynı origin — HM editör oturumu + /api çerezleri; middleware /yp/admin'a izin verir. */
 const YEKTUBE_ADMIN_EMBED = "/yp/admin?embed=1";
@@ -23,9 +23,7 @@ export default function EditorVideoTvYonetimi() {
   const siteName = site?.displayName?.trim() || "Haber";
   const siteLogoUrl = resolveHmVideoTvSiteLogoUrl(newsLayoutPrefs.logoUrl, newsLayoutPrefs.faviconUrl);
   const moduleTitle = hmVideoTvModuleTitle(siteName);
-  const publicVideoTvHref = site?.slug
-    ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}/video-tv`
-    : null;
+  const publicVideoTvHref = site?.slug ? hmPublicPathHref(site, "/video-tv") : null;
 
   const postJwtToIframe = useCallback(() => {
     const jwt = token ?? readHmJwt();
@@ -75,7 +73,7 @@ export default function EditorVideoTvYonetimi() {
           </div>
         </div>
         {publicVideoTvHref ? (
-          <Link
+          <a
             href={publicVideoTvHref}
             target="_blank"
             rel="noopener noreferrer"
@@ -83,7 +81,7 @@ export default function EditorVideoTvYonetimi() {
           >
             Video TV vitrini
             <ExternalLink className="h-4 w-4" />
-          </Link>
+          </a>
         ) : null}
       </div>
 

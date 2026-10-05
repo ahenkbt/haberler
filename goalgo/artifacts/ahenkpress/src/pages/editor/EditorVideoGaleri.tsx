@@ -21,7 +21,7 @@ import {
   Video,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicPathHref } from "@/lib/hmPublicSiteUrl";
 import { uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
 
 export default function EditorVideoGaleri() {
@@ -39,9 +39,7 @@ export default function EditorVideoGaleri() {
   const videoFileRef = useRef<HTMLInputElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
 
-  const hmVideoTv = site?.slug
-    ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}/video-tv`
-    : "/yektube";
+  const hmVideoTv = site?.slug ? hmPublicPathHref(site, "/video-tv") : "/yektube";
   const legacyGalleryPath = (id: number) => `/video-galeri/${id}`;
 
   const { data: galleriesData, isLoading } = useQuery<any[]>({
@@ -165,10 +163,10 @@ export default function EditorVideoGaleri() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href={hmVideoTv} target="_blank" rel="noopener noreferrer">
+              <a href={hmVideoTv} target="_blank" rel="noopener noreferrer">
                 Video TV vitrini
                 <ExternalLink className="ml-1.5 w-3.5 h-3.5" />
-              </Link>
+              </a>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href="/yektube" target="_blank" rel="noopener noreferrer">

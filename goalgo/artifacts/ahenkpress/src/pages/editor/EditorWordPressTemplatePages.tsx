@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiUrl, rewriteInlineHtmlImgSrc } from "@/lib/apiBase";
 import { readHmJwt } from "@/lib/hmSession";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicPathHref } from "@/lib/hmPublicSiteUrl";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { sanitizeHmImportedTemplateHtml } from "@/lib/hmImportedTemplateHtml";
 
@@ -110,6 +111,11 @@ export default function EditorWordPressTemplatePages() {
   const pageUrl = (slug: string): string => {
     const clean = slugHint(slug);
     return hmBase && clean ? `${hmBase}/sayfa/${encodeURIComponent(clean)}` : "";
+  };
+  /** Gerçek vitrin adresi (özel alan / PHP tema); tam sayfa açılır. */
+  const pagePublicHref = (slug: string): string => {
+    const clean = slugHint(slug);
+    return site?.slug && clean ? hmPublicPathHref(site, `/sayfa/${encodeURIComponent(clean)}`) : "";
   };
 
   const parseError = async (res: Response): Promise<string> => {
@@ -374,9 +380,14 @@ export default function EditorWordPressTemplatePages() {
                           {row.removedPhpBlocks ? <Badge variant="secondary">{row.removedPhpBlocks} PHP blok temizlendi</Badge> : null}
                         </div>
                         {url ? (
-                          <Link href={url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-red-600 hover:underline">
+                          <a
+                            href={pagePublicHref(row.slug)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold text-red-600 hover:underline"
+                          >
                             {url} <ExternalLink className="inline h-3 w-3" />
-                          </Link>
+                          </a>
                         ) : null}
                       </div>
                       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
