@@ -13,7 +13,7 @@ import { ChevronRight, ChevronLeft, Clock, Flame, TrendingUp } from "lucide-reac
 import { APP_NAV_HEIGHT } from "@/components/AppNav";
 import { useGetSiteSettings, getGetSiteSettingsQueryKey, getListAdsQueryOptions } from "@workspace/api-client-react";
 import { useNewsSiteLayoutPrefs } from "@/hooks/useNewsSiteLayout";
-import type { HmCorporateDonationSettings, HmNewsHomeModuleId, MansetVariant, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
+import type { HmNewsHomeModuleId, MansetVariant, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import {
   HM_HOME_LATEST_BAND_ITEM_COUNT,
   HM_NEWS_HOME_MODULE_ORDER,
@@ -25,7 +25,6 @@ import {
   isHmNewsVitrinToggleModule,
   resolveHmNewsHomeModuleGallerySource,
   resolveHmNewsHomeModuleGalleryVideoTvRef,
-  resolveHmDonationIbanModule,
   resolveHmHomeModuleOrder,
   resolveHmNewsAnyAuthorsEnabled,
   resolveHmNewsHorizontalAuthorsEnabled,
@@ -85,7 +84,6 @@ import { HmPopularCitiesSection } from "@/components/HmPopularCitiesSection";
 import { DunyadanKisaKisaBand } from "@/components/DunyadanKisaKisaBand";
 import { HmCorporateHome } from "@/components/HmCorporateHome";
 import { coercePublicHybridNewsHref } from "@/lib/hybridNewsHref";
-import { HmCorporateIbanDonationCard } from "@/components/HmCorporateIbanDonationCard";
 import { isLegacyHmDonationHtml, stripLegacyHmDonationHtml } from "@/lib/hmLegacyDonationHtml";
 import { HmAtaturkCornerBand } from "@/components/HmAtaturkCornerBand";
 import { HmAuthorsStrip } from "@/components/HmAuthorsStrip";
@@ -1094,50 +1092,6 @@ function NewsHeritageInfoSection({
           </div>
         </article>
       ) : null}
-    </section>
-  );
-}
-
-function NewsDonationSupport({ donation, accent }: { donation: HmCorporateDonationSettings; accent: string }) {
-  const band = donation.supportBand;
-  const items = (band?.enabled !== false ? (band?.items ?? []) : [])
-    .filter((item) => item.trim())
-    .slice(0, 3);
-  const title = donation.title || band?.title || "Desteğiniz haber merkezinin yanında";
-  const highlightsHtml = (band?.highlightsHtml ?? "").trim();
-
-  return (
-    <section className="hm-vitrin-card mb-8 overflow-hidden rounded-2xl shadow">
-      <div className="grid gap-0 lg:grid-cols-[1fr_340px]">
-        <div
-          className="p-5 text-white"
-          style={{ background: "linear-gradient(135deg,var(--hm-header-bg,#111827),var(--hm-nav-strip-bg,#1f2937))" }}
-        >
-          <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--hm-brand-label,#d4af37)" }}>
-            Destek Bandı
-          </p>
-          <h2 className="mt-1 text-xl font-black leading-tight">{title}</h2>
-          {highlightsHtml ? (
-            <div
-              className="mt-3 max-w-2xl text-sm leading-relaxed text-white/85 [&_li]:mb-2 [&_ul]:list-none [&_ul]:p-0"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(highlightsHtml) }}
-            />
-          ) : null}
-          {items.length ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {items.map((item, index) => (
-                <span
-                  key={`${item}-${index}`}
-                  className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-white/85"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <HmCorporateIbanDonationCard donation={donation} variant="news" accent={accent} showHeading={false} />
-      </div>
     </section>
   );
 }
@@ -2504,12 +2458,12 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
   const stripDonationChromeFromSlot = useCallback(
     (raw: string) => {
       let h = raw ?? "";
-      if (isHmDonationActive(corporateDonation) && h.trim()) {
-        h = isLegacyHmDonationHtml(h) ? stripLegacyHmDonationHtml(h) : h;
-      }
+      if (!h.trim()) return h;
+      const shouldStrip = isCorporateTheme ? isHmDonationActive(corporateDonation) : true;
+      if (shouldStrip && isLegacyHmDonationHtml(h)) h = stripLegacyHmDonationHtml(h);
       return h;
     },
-    [corporateDonation],
+    [corporateDonation, isCorporateTheme],
   );
 
   const mansetBelowHtmlDisplay = useMemo(() => {
@@ -2672,8 +2626,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
     ],
   );
   const newsAuthorsStripModuleEnabled = orderedNewsModules.includes("authorsStrip");
-  const newsDonationIbanModule = resolveHmDonationIbanModule(orderedNewsModules, "news");
-  const showNewsFallbackDonation = isHmDonationActive(corporateDonation) && newsDonationIbanModule == null;
   const classicHeadlinePool = useMemo(() => {
     const pool = mergeUniqueNews(sliderNews, sliderSide, latestNewsPool, allItems, popular);
     return sortNewsByRecency(preferFreshHeadlineCandidates(pool));
@@ -4072,9 +4024,7 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         );
       }
       case "donationSupport":
-        return isHmDonationActive(corporateDonation) && layoutPrefs.hmCorporateDonation?.enabled === true ? (
-          <NewsDonationSupport donation={corporateDonation!} accent={accent} />
-        ) : null;
+        return null;
       case "ahenkIconCategoryRow":
         if (!resolveHmNewsHomeModuleEnabled(layoutPrefs, "ahenkIconCategoryRow")) return null;
         return <HmAhenkIconCategoryRow kategoriHref={ahenkKategoriHref} />;
@@ -4927,10 +4877,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               <Fragment key={`esen-extra-${moduleId}`}>{renderSafeNewsHomeModule(moduleId)}</Fragment>
             ))}
 
-          {showNewsFallbackDonation && corporateDonation ? (
-            <NewsDonationSupport donation={corporateDonation} accent={accent} />
-          ) : null}
-
           {hmCtx ? <HmYekpareFeaturesBand className="mt-6" /> : null}
         </main>
 
@@ -5485,10 +5431,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
               <Fragment key={`classic-extra-${moduleId}`}>{renderSafeNewsHomeModule(moduleId)}</Fragment>
             ))}
 
-          {showNewsFallbackDonation && corporateDonation ? (
-            <NewsDonationSupport donation={corporateDonation} accent={accent} />
-          ) : null}
-
           {hmCtx ? <HmYekpareFeaturesBand className="mt-6" /> : null}
         </main>
 
@@ -5583,9 +5525,6 @@ export default function HaberAnasayfasi(props: HaberAnasayfasiProps = {}) {
         {orderedNewsModules.map((moduleId) => (
           <Fragment key={moduleId}>{renderSafeNewsHomeModule(moduleId)}</Fragment>
         ))}
-        {showNewsFallbackDonation && corporateDonation ? (
-          <NewsDonationSupport donation={corporateDonation} accent={accent} />
-        ) : null}
         {hmCtx ? <HmYekpareFeaturesBand className="mt-6" /> : null}
       </div>
 

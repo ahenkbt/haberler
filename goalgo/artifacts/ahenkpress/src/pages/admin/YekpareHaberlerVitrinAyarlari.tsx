@@ -243,6 +243,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
   useEffect(() => setP(initialPrefs), [initialPrefs]);
 
   const newsHomeOrder = resolveHmHomeModuleOrder(p.hmNewsHomeModuleOrder, HM_NEWS_HOME_MODULE_ORDER);
+  const newsHomeOrderForEditor = newsHomeOrder.filter((id) => id !== "donationSupport");
   const isNewsEditorModuleActive = (moduleId: HmNewsHomeModuleId) => resolveHmNewsEditorModuleEnabled(p, moduleId);
   const newsCategoryAssignableModules = useMemo(() => {
     const assignable = new Set(HM_NEWS_HOME_MODULE_CATEGORY_ASSIGNABLE);
@@ -1076,7 +1077,6 @@ export default function YekpareHaberlerVitrinAyarlari() {
                 <ToggleRow id="yek-hm-news-sehit" label="Şehit sorgulama modülü" checked={p.hmSehitSearchEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmSehitSearchEnabled", c)} />
                 <ToggleRow id="yek-hm-news-history" label="Tarih / savaşlar bandı" checked={p.hmCorporateWarsSectionEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmCorporateWarsSectionEnabled", c)} />
                 <ToggleRow id="yek-hm-news-national-days" label="Millî günler bandı" checked={p.hmCorporateNationalDaysSectionEnabled === true} disabled={saving} onChange={(c) => toggleDefaultOn("hmCorporateNationalDaysSectionEnabled", c)} />
-                <ToggleRow id="yek-hm-news-support" label="Destek bandı" checked={p.hmCorporateDonation?.enabled === true} disabled={saving} onChange={(c) => void commit({ ...p, hmCorporateDonation: { ...(p.hmCorporateDonation ?? defaultNewsSiteLayoutPrefs.hmCorporateDonation!), enabled: c } })} />
                 <ToggleRow id="yek-hm-news-quick" label="Slider yanındaki hızlı erişim" checked={p.hmNewsQuickLinksEnabled !== false} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsQuickLinksEnabled", c)} />
                 <ToggleRow id="yek-hm-news-horizontal-authors" label="yatay köşe yazarları" checked={resolveHmNewsHorizontalAuthorsEnabled(p)} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsHorizontalAuthorsEnabled", c)} />
                 <ToggleRow id="yek-hm-news-sidebar-authors" label="sidebar köşe yazarları" checked={resolveHmNewsSidebarAuthorsEnabled(p)} disabled={saving} onChange={(c) => toggleDefaultOn("hmNewsSidebarAuthorsEnabled", c)} />
@@ -1139,7 +1139,7 @@ export default function YekpareHaberlerVitrinAyarlari() {
               <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
                 <p className="font-black text-slate-900">Modül sırası (Haber teması)</p>
                 <div className="space-y-2">
-                  {newsHomeOrder.map((id, idx) => (
+                  {newsHomeOrderForEditor.map((id, idx) => (
                     <div
                       key={id}
                       className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
@@ -1150,7 +1150,15 @@ export default function YekpareHaberlerVitrinAyarlari() {
                           type="button"
                           size="sm"
                           variant="ghost"
-                          onClick={() => setP({ ...p, hmNewsHomeModuleOrder: moveArrayItem(newsHomeOrder, idx, -1) as any })}
+                          onClick={() =>
+                            setP({
+                              ...p,
+                              hmNewsHomeModuleOrder: [
+                                ...moveArrayItem(newsHomeOrderForEditor, idx, -1),
+                                ...(newsHomeOrder.includes("donationSupport") ? (["donationSupport"] as const) : []),
+                              ] as any,
+                            })
+                          }
                           disabled={idx === 0 || saving}
                           title="Yukarı"
                         >
@@ -1160,8 +1168,16 @@ export default function YekpareHaberlerVitrinAyarlari() {
                           type="button"
                           size="sm"
                           variant="ghost"
-                          onClick={() => setP({ ...p, hmNewsHomeModuleOrder: moveArrayItem(newsHomeOrder, idx, 1) as any })}
-                          disabled={idx === newsHomeOrder.length - 1 || saving}
+                          onClick={() =>
+                            setP({
+                              ...p,
+                              hmNewsHomeModuleOrder: [
+                                ...moveArrayItem(newsHomeOrderForEditor, idx, 1),
+                                ...(newsHomeOrder.includes("donationSupport") ? (["donationSupport"] as const) : []),
+                              ] as any,
+                            })
+                          }
+                          disabled={idx === newsHomeOrderForEditor.length - 1 || saving}
                           title="Aşaşı"
                         >
                           <ArrowDown className="w-4 h-4" />
