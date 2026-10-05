@@ -291,8 +291,9 @@ zone_name = "suhaber.net"
 # Zone CF hesabÔöÇÔûÆnda (id 52d54697├ö├ç─Ş) ama A/AAAA yok ├ö├Ñ├å tarayÔöÇÔûÆcÔöÇÔûÆ NXDOMAIN.
 # custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur.
 # kirsehri.com Natro park; kirsehir.net zone/kayÔöÇÔûÆt yok ├ö├ç├Â bu worker'a baÔöÇ┼şlama.
-# kirsehirhaber.org (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
-# apex/www custom_domain ve "kirsehirhaber.org/*", "www.kirsehirhaber.org/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
+# kirsehirhaber.org (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A).
+# "kirsehirhaber.org/*" askı kapısıdır: kamu sayfası askı yazısını basar, yayındayken alt istek VPS PHP’ye gider.
+# Bu yol SPA asset’ine düşmemeli. Apex custom_domain yine yok.
 [[routes]]
 pattern = "kirsehirhaber.org/editor*"
 zone_name = "kirsehirhaber.org"
@@ -331,6 +332,15 @@ zone_name = "kirsehirhaber.org"
 
 [[routes]]
 pattern = "kirsehirhaber.org/manifest.json"
+zone_name = "kirsehirhaber.org"
+
+# Kamu sayfalar (/, /haber/…). Panel ve /api/* yukarıdaki yollarda kalır; aynı Worker.
+[[routes]]
+pattern = "kirsehirhaber.org/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/*"
 zone_name = "kirsehirhaber.org"
 
 # TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.

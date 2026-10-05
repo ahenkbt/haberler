@@ -22,6 +22,7 @@ import {
   injectKhNeonNewsIntoPublicResponse,
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
+import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import {
   hybridEdgeFillHttpStatus,
   HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
@@ -2842,6 +2843,9 @@ export default {
   async fetch(request, env, ctx) {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
+
+    const khSuspended = await khPublicSuspensionResponse(request, env, incoming);
+    if (khSuspended) return khSuspended;
 
     const haberlerArticleAlias = portalHaberlerArticleAliasPath(incoming.pathname);
 
