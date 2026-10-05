@@ -24,7 +24,7 @@ import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { readHmJwt } from "@/lib/hmSession";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import type { HmCorporateMenuItem, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
-import { resolveHmNewsVideoTvEnabled } from "@/lib/newsSiteLayout";
+import { isHmCorporateLayoutKind, resolveHmNewsVideoTvEnabled } from "@/lib/newsSiteLayout";
 import { ExternalLink } from "lucide-react";
 
 type Cat = { id: number; name: string; slug: string };
@@ -63,7 +63,7 @@ function readItemsForLocation(
   siteSlug?: string | null,
 ): HmCorporateMenuItem[] {
   const raw = (prefs[key] ?? []) as HmCorporateMenuItem[];
-  if (key !== "hmCorporateMenuItems" || !raw.length) return raw;
+  if (!isHmCorporateLayoutKind(prefs, siteSlug) || key !== "hmCorporateMenuItems" || !raw.length) return raw;
   const withoutVideoTv = resolveHmNewsVideoTvEnabled(prefs)
     ? raw
     : raw.filter((item) => !isHmCorporateMenuVideoTvItem(item));
@@ -85,7 +85,17 @@ export default function EditorMenuler() {
   );
   const [saving, setSaving] = useState(false);
 
+  const isCorporateSite = isHmCorporateLayoutKind(newsLayoutPrefs, site?.slug);
   const locationMeta = HM_MENU_LOCATIONS.find((loc) => loc.key === menuLocation)!;
+  const locationCopy = isCorporateSite
+    ? locationMeta.description
+    : menuLocation === "hmCorporateMenuItems"
+      ? "Kategori şeridi. Öğe varsa kategorilerin yerine bu menü basılır; boşsa kategori sırası kullanılır. Adresler /kategori/slug biçimindedir."
+      : menuLocation === "hmNewsStripMenuItems"
+        ? "Logo yanındaki bağlantılar. Boşsa Video, Hakkımızda, Künye ve İletişim gösterilir."
+        : menuLocation === "hmNewsFooterMenuItems"
+          ? "Alt menü. Boşsa Künye, Hakkımızda, İletişim ve site haritası gösterilir."
+          : "Alt menüye eklenen ikinci bağlantı grubu. Boşsa gösterilmez.";
   const hmBase = site?.slug ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}` : "";
 
   const { data: cats = [] } = useQuery({
@@ -119,7 +129,7 @@ export default function EditorMenuler() {
     const saveMeta = HM_MENU_LOCATIONS.find((loc) => loc.key === saveKey)!;
     const cleaned = cleanHmMenuItems(items, { allowNesting: saveMeta.allowNesting });
     const normalized =
-      saveKey === "hmCorporateMenuItems" && cleaned?.length
+      isCorporateSite && saveKey === "hmCorporateMenuItems" && cleaned?.length
         ? ensureCorporateMenuVideoTvAtEnd(cleaned, hmBase, {
             videoTvEnabled: resolveHmNewsVideoTvEnabled(newsLayoutPrefs),
             skipAutoVideoTv: isKhEditorSiteSlug(site?.slug),
@@ -203,29 +213,55 @@ export default function EditorMenuler() {
                       : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
                   }`}
                 >
-                  <span className="font-semibold">{loc.label}</span>
+                  <span className="font-semibold">
+                    {isCorporateSite
+                      ? loc.label
+                      : loc.key === "hmCorporateMenuItems"
+                        ? "Ana menü"
+                        : loc.key === "hmNewsStripMenuItems"
+                          ? "Üst bağlantılar"
+                          : loc.key === "hmNewsSidebarMenuItems"
+                            ? "Ek footer"
+                            : loc.label}
+                  </span>
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-slate-500">{locationMeta.description}</p>
+            <p className="mt-2 text-xs text-slate-500">{locationCopy}</p>
             <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-950">
-              <strong>Logo menü</strong> logo yanındaki üst menüde her zaman açıktır; <strong>Şerit menü</strong> mobilde sayfa
-              altında sabit durur. <strong>Footer menüsü</strong> alt bilgi sütununda görünür. Her öğe için sağdaki anahtar ile{" "}
-              <strong>aktif/pasif</strong> yapabilirsiniz. Kaydettikten sonra vitrini yenileyin.
+              {isCorporateSite ? (
+                <>
+                  <strong>Logo menü</strong> logo yanındaki üst menüde her zaman açıktır; <strong>Şerit menü</strong> mobilde
+                  sayfa altında sabit durur. <strong>Footer menüsü</strong> alt bilgi sütununda görünür.
+                </>
+              ) : (
+                <>
+                  <strong>Üst menü</strong> kategori şerididir. <strong>Şerit menü</strong> logo yanındaki bağlantılardır.{" "}
+                  <strong>Footer</strong> alt menüdür. Haber sitelerinde Video TV öğesi kendiliğinden eklenmez.
+                </>
+              )}{" "}
+              Her öğe için sağdaki anahtar ile <strong>aktif/pasif</strong> yapabilirsiniz. Kaydettikten sonra siteyi
+              yenileyin.
             </p>
             {menuLocation === "hmNewsStripMenuItems" ? (
               <div className="mt-3 flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                 <div>
                   <Label htmlFor="hm-editor-strip-menu-enabled" className="text-sm font-semibold text-slate-900">
-                    Şerit menüsünü vitrinde göster
+                    {isCorporateSite ? "Şerit menüsünü vitrinde göster" : "Özel üst bağlantıları kullan"}
                   </Label>
                   <p className="text-[11px] text-slate-600">
-                    Varsayılan kapalı. Açıkken aşağıdaki öğeler mobilde sayfa altında sabit şerit menüde listelenir.
+                    {isCorporateSite
+                      ? "Varsayılan kapalı. Açıkken aşağıdaki öğeler mobilde sayfa altında sabit şerit menüde listelenir."
+                      : "Kapalıyken logo yanında Video, Hakkımızda, Künye ve İletişim kalır. Açıkken aşağıdaki liste onların yerine geçer."}
                   </p>
                 </div>
                 <Switch
                   id="hm-editor-strip-menu-enabled"
-                  checked={newsLayoutPrefs.hmNewsStripMenuEnabled === true}
+                  checked={
+                    isCorporateSite
+                      ? newsLayoutPrefs.hmNewsStripMenuEnabled === true
+                      : newsLayoutPrefs.hmNewsStripMenuEnabled !== false
+                  }
                   disabled={saving}
                   onCheckedChange={(checked) => {
                     void saveNewsSiteLayout(newsLayoutPrefs, {

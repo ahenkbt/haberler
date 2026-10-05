@@ -1746,7 +1746,7 @@ export default function EditorGenelAyarlari() {
           <div id="hm-footer-settings" className="scroll-mt-32 rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-3">
             <Label className="font-semibold text-slate-900">Alt bilgi — Site hakkında</Label>
             <p className="text-xs text-slate-500 mt-1 mb-2">
-              Vitrin altbilgisinde &quot;Site hakkında&quot; bölümünde gösterilir. Kısa metin veya sınırlı HTML (bağlantı, kalın vb.).
+              Hakkımızda sayfası ve footer metni. Kısa metin veya sınırlı HTML. Sosyal adresler alt şeritte, PHP temada footer’da görünür.
             </p>
             <Textarea
               className="min-h-[100px] text-sm font-mono"
