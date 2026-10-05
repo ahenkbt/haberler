@@ -292,8 +292,8 @@ zone_name = "suhaber.net"
 # custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur.
 # kirsehri.com Natro park; kirsehir.net zone/kayÔöÇÔûÆt yok ├ö├ç├Â bu worker'a baÔöÇ┼şlama.
 # kirsehirhaber.org (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A).
-# "kirsehirhaber.org/*" askı kapısıdır: kamu sayfası askı yazısını basar, yayındayken alt istek VPS PHP’ye gider.
-# Bu yol SPA asset’ine düşmemeli. Apex custom_domain yine yok.
+# "kirsehirhaber.org/*" php-edge-cache Worker'ındadır; haberler'e alınamaz (10020).
+# Askı yazısı aşağıdaki dar kalıplardan (/, /haber*, /kategori*) gelir. Apex custom_domain yine yok.
 [[routes]]
 pattern = "kirsehirhaber.org/editor*"
 zone_name = "kirsehirhaber.org"
@@ -334,13 +334,78 @@ zone_name = "kirsehirhaber.org"
 pattern = "kirsehirhaber.org/manifest.json"
 zone_name = "kirsehirhaber.org"
 
-# Kamu sayfalar (/, /haber/…). Panel ve /api/* yukarıdaki yollarda kalır; aynı Worker.
+# php-edge-cache zaten "kirsehirhaber.org/*" ve "www.kirsehirhaber.org/*" sahibi.
+# Aynı kalıp 10020 verir ve haberler deploy'u düşer. Daha dar kalıplar o catch-all'dan önceliklidir.
 [[routes]]
-pattern = "kirsehirhaber.org/*"
+pattern = "kirsehirhaber.org/"
 zone_name = "kirsehirhaber.org"
 
 [[routes]]
-pattern = "www.kirsehirhaber.org/*"
+pattern = "kirsehirhaber.org/haber*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/kategori*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/kunye*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/hakkimizda*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/iletisim*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/video*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/videolar*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/yazar*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/burc*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/burclar*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/hava-durumu*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/puan-durumu*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/rss.xml"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/sitemap.xml"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/haber*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/kategori*"
 zone_name = "kirsehirhaber.org"
 
 # TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.
