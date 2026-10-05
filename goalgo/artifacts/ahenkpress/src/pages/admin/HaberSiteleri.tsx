@@ -713,7 +713,7 @@ export default function HaberSiteleri() {
                 <h2 className="text-lg font-black text-gray-900">Kayıtlı Haber Siteleri</h2>
                 <p className="text-xs text-gray-500">{sites.length} site · Site ID (1, 2, 3…) listede</p>
                 <p className="mt-1 max-w-xl text-xs text-gray-500">
-                  Askıya al, site girişine «{HM_PUBLIC_SUSPENDED_NOTICE}» yazar. Aktif anahtarı siteyi gizler.
+                  Askıya al, site girişine «Site neden askıya alınır» başlığını ve ahenk.net.tr bağlantılı lisans metnini yazar. Aktif anahtarı siteyi gizler.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
