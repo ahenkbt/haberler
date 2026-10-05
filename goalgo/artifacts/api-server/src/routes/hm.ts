@@ -119,6 +119,7 @@ import {
   assertHmLayoutJsonSize,
   hmLayoutTabIconUrl,
   mergeHmLayoutPatch,
+  mirrorHmLiveMansetLayout,
   parseHmLayoutRecord,
   resolveHmLayoutKind,
   stringifyHmLayoutMerged,
@@ -1357,7 +1358,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         ...(inc.hmCategoryColors as Record<string, unknown>),
       };
     }
-    patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(merged));
+    patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(merged, inc)));
   }
   if (typeof b.active === "boolean") patch.active = b.active;
 

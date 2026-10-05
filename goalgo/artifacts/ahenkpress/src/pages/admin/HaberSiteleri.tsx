@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
-import { parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
+import { HM_PUBLIC_SUSPENDED_NOTICE, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
 type HmEditor = {
   id: number;
@@ -42,6 +42,7 @@ type HmSiteRow = {
   ownLlmProviders?: string[];
   layoutJson?: string | null;
   hybridRssEnabled?: boolean;
+  publicSuspended?: boolean;
   contact?: { phone?: string; email?: string; address?: string; notes?: string };
   seoVerification?: SeoVerification | null;
   editors?: HmEditor[];
@@ -97,7 +98,11 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
   const items = Array.isArray(j.items)
     ? j.items.map((site) => {
         const layout = parseNewsSiteLayoutFromJson(site.layoutJson ?? null, site.slug ?? null);
-        return { ...site, hybridRssEnabled: layout.hybridRssEnabled === true };
+        return {
+          ...site,
+          hybridRssEnabled: layout.hybridRssEnabled === true,
+          publicSuspended: isHmPublicSuspended(layout),
+        };
       })
     : [];
   return { items: [...items].sort((a, b) => a.id - b.id) };
@@ -208,6 +213,7 @@ export default function HaberSiteleri() {
   const [saving, setSaving] = useState(false);
   const [repairing, setRepairing] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [suspendingId, setSuspendingId] = useState<number | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/hm/sites", "admin-panel"],
@@ -380,6 +386,29 @@ export default function HaberSiteleri() {
       });
     } finally {
       setRepairing(null);
+    }
+  }
+
+  async function togglePublicSuspended(site: HmSiteRow) {
+    const next = site.publicSuspended !== true;
+    setSuspendingId(site.id);
+    try {
+      await ensureAdminPanelBootstrap();
+      const r = await apiFetch(apiUrl(`/api/hm/sites/${site.id}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layoutJson: { hmPublicSuspended: next } }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      toast({
+        title: next ? "Site askıya alındı" : "Site yayına alındı",
+        description: next ? HM_PUBLIC_SUSPENDED_NOTICE : `${site.displayName} yeniden açıldı.`,
+      });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+    } catch (e) {
+      toast({ title: "Askı durumu değişmedi", description: String(e).slice(0, 180), variant: "destructive" });
+    } finally {
+      setSuspendingId(null);
     }
   }
 
@@ -683,6 +712,9 @@ export default function HaberSiteleri() {
               <div>
                 <h2 className="text-lg font-black text-gray-900">Kayıtlı Haber Siteleri</h2>
                 <p className="text-xs text-gray-500">{sites.length} site · Site ID (1, 2, 3…) listede</p>
+                <p className="mt-1 max-w-xl text-xs text-gray-500">
+                  Askıya al, site girişine «{HM_PUBLIC_SUSPENDED_NOTICE}» yazar. Aktif anahtarı siteyi gizler.
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Input className="sm:w-64" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Site ID, ad, slug veya domain…" />
@@ -715,6 +747,7 @@ export default function HaberSiteleri() {
                             </span>
                             <h3 className="text-base font-black text-gray-900">{site.displayName}</h3>
                             <Badge variant={site.active ? "default" : "secondary"}>{site.active ? "Aktif" : "Pasif"}</Badge>
+                            {site.publicSuspended ? <Badge variant="outline">Askıda</Badge> : null}
                             {site.hasOwnLlmKeys ? (
                               <Badge variant="outline">Kendi API{(site.ownLlmProviders ?? []).length ? `: ${(site.ownLlmProviders ?? []).join(", ")}` : ""}</Badge>
                             ) : (
@@ -746,6 +779,15 @@ export default function HaberSiteleri() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant={site.publicSuspended ? "default" : "outline"}
+                            size="sm"
+                            disabled={suspendingId === site.id}
+                            onClick={() => void togglePublicSuspended(site)}
+                          >
+                            {suspendingId === site.id ? "Kaydediliyor…" : site.publicSuspended ? "Yayına al" : "Askıya al"}
+                          </Button>
                           <label className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700">
                             Aktif
                             <Switch checked={site.active} onCheckedChange={() => toggleActive(site)} />

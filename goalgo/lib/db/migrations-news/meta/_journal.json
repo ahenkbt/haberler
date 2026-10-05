@@ -85,6 +85,13 @@
       "when": 1791153654496,
       "tag": "0012_hm_php_news_sites",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791153655496,
+      "tag": "0013_hm_manset_live_key_and_suspend",
+      "breakpoints": true
     }
   ]
 }

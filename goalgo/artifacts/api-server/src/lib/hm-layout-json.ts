@@ -205,6 +205,33 @@ export function preserveCustomNewsVitrinArrangement(
   return out;
 }
 
+const HM_LIVE_MANSET_PRESETS = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+
+function normalizeLiveMansetPreset(value: unknown): string | null {
+  if (value == null) return null;
+  const preset = String(value).trim().toLowerCase();
+  return HM_LIVE_MANSET_PRESETS.has(preset) ? preset : null;
+}
+
+/**
+ * Canlı PHP teması `hmNewsYsMansetLayout` okur. Editör `hmYsMansetPreset` yazınca
+ * aynı değer canlı anahtara da yazılır. Preset yoksa eski canlı anahtar korunur.
+ */
+export function mirrorHmLiveMansetLayout(
+  merged: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...merged };
+  const incomingHasPreset = Object.prototype.hasOwnProperty.call(incoming, "hmYsMansetPreset");
+  const preset = normalizeLiveMansetPreset(next.hmYsMansetPreset);
+  if (incomingHasPreset) {
+    next.hmNewsYsMansetLayout = preset;
+    return next;
+  }
+  if (preset) next.hmNewsYsMansetLayout = preset;
+  return next;
+}
+
 export function mergeHmLayoutPatch(
   prev: Record<string, unknown>,
   incoming: Record<string, unknown>,
@@ -232,7 +259,7 @@ export function mergeHmLayoutPatch(
     };
   }
   merged = preserveCorporateHmLayoutKind(prev, merged, opts?.siteSlug);
-  return merged;
+  return mirrorHmLiveMansetLayout(merged, inc);
 }
 
 export function stringifyHmLayoutMerged(merged: Record<string, unknown>): string {

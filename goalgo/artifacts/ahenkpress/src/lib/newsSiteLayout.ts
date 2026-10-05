@@ -925,6 +925,11 @@ export type NewsSiteLayoutPrefs = {
    * `hmYsMansetPreset` boşsa editör ve PHP tema bunu okur.
    */
   hmNewsYsMansetLayout?: "odatv" | "sabah" | "takvim" | "mynet" | "nefes" | null;
+  /**
+   * true ise kamu vitrini yerine askı yazısı gösterilir. `active=false` siteyi gizler;
+   * bu bayrak siteyi açık tutup girişe sabit metni basar.
+   */
+  hmPublicSuspended?: boolean;
   /** Footer sloganı. PHP tema `hmYsSlogan` doluysa site açıklamasının yerine bunu basar. */
   hmYsSlogan?: string | null;
   /** Haber sayfası paylaş düğmeleri. Tanımsızsa PHP tema açık kabul eder. */
@@ -3380,6 +3385,13 @@ function emptyNewsSiteLayoutPrefsForSlug(siteSlug?: string | null): NewsSiteLayo
   return base;
 }
 
+export const HM_PUBLIC_SUSPENDED_NOTICE =
+  "Bu site askıya alınmıştır. Bilgi ve iletişim için ahenkbt@gmail.com";
+
+export function isHmPublicSuspended(layout: { hmPublicSuspended?: unknown } | null | undefined): boolean {
+  return layout?.hmPublicSuspended === true;
+}
+
 export function parseNewsSiteLayoutFromJson(
   raw: string | null | undefined,
   siteSlug?: string | null,
@@ -3700,6 +3712,7 @@ export function parseNewsSiteLayoutFromJson(
       .sadeNewsHistoryNationalDaysBandEnabled;
     const parsed: NewsSiteLayoutPrefs = {
       ...merged,
+      hmPublicSuspended: merged.hmPublicSuspended === true,
       mansetVariant,
       mansetCategorySlug,
       logoUrl: logoUrl ?? undefined,

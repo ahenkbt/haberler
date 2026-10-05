@@ -157,6 +157,24 @@ function stripNonVitrinLayoutKeys(incoming) {
   return out;
 }
 
+const HM_LIVE_MANSET_PRESETS = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+
+/** Canlı PHP `hmNewsYsMansetLayout` okur; editör preset'i aynı değere çekilir. */
+function mirrorLiveMansetLayout(merged, incoming) {
+  const next = { ...merged };
+  const incomingHasPreset = Object.prototype.hasOwnProperty.call(incoming || {}, "hmYsMansetPreset");
+  const raw = next.hmYsMansetPreset;
+  const preset =
+    raw == null || String(raw).trim() === "" ? null : String(raw).trim().toLowerCase();
+  const known = preset && HM_LIVE_MANSET_PRESETS.has(preset) ? preset : null;
+  if (incomingHasPreset) {
+    next.hmNewsYsMansetLayout = known;
+    return next;
+  }
+  if (known) next.hmNewsYsMansetLayout = known;
+  return next;
+}
+
 function mergeLayoutPatch(prev, incoming, opts = {}) {
   const inc = opts.vitrinOnly ? stripNonVitrinLayoutKeys(incoming) : incoming;
   const merged = { ...prev, ...inc };
@@ -178,7 +196,7 @@ function mergeLayoutPatch(prev, incoming, opts = {}) {
       ...inc.hmCategoryColors,
     };
   }
-  return merged;
+  return mirrorLiveMansetLayout(merged, inc);
 }
 
 async function isKhEditorSite(sql, siteId) {
