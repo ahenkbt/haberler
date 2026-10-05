@@ -84,4 +84,45 @@ describe("HM layout kind + vitrin merge", () => {
     expect(merged.mansetVariant).toBe("magazine-grid");
     expect(merged.tickerFinance).toBe(false);
   });
+
+  it("hmYsMansetPreset canlı PHP anahtarına kopyalanır", () => {
+    const merged = mergeHmLayoutPatch(
+      { hmNewsYsMansetLayout: "nefes" },
+      { hmYsMansetPreset: "mynet" },
+      { vitrinOnly: true, siteSlug: "kirsehirhaber" },
+    );
+    expect(merged.hmYsMansetPreset).toBe("mynet");
+    expect(merged.hmNewsYsMansetLayout).toBe("mynet");
+  });
+
+  it("kayıtlı preset sonraki kayıtta canlı anahtarı günceller", () => {
+    const merged = mergeHmLayoutPatch(
+      { hmYsMansetPreset: "mynet", hmNewsYsMansetLayout: "nefes", hmPublicSuspended: true },
+      { hmPrimaryColor: "#111111" },
+      { vitrinOnly: true, siteSlug: "kirsehirhaber" },
+    );
+    expect(merged.hmNewsYsMansetLayout).toBe("mynet");
+    expect(merged.hmPublicSuspended).toBe(true);
+    expect(merged.hmPrimaryColor).toBe("#111111");
+  });
+
+  it("preset yoksa eski canlı manşet anahtarını ezmez", () => {
+    const merged = mergeHmLayoutPatch(
+      { hmNewsYsMansetLayout: "takvim" },
+      { hmPrimaryColor: "#222222" },
+      { vitrinOnly: true },
+    );
+    expect(merged.hmNewsYsMansetLayout).toBe("takvim");
+    expect(merged.hmYsMansetPreset).toBeUndefined();
+  });
+
+  it("preset temizlenince canlı anahtar da temizlenir", () => {
+    const merged = mergeHmLayoutPatch(
+      { hmYsMansetPreset: "mynet", hmNewsYsMansetLayout: "mynet" },
+      { hmYsMansetPreset: null },
+      { vitrinOnly: true },
+    );
+    expect(merged.hmYsMansetPreset).toBeNull();
+    expect(merged.hmNewsYsMansetLayout).toBeNull();
+  });
 });
