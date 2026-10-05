@@ -1,5 +1,7 @@
 import { useParams } from "wouter";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { readHmAuthorPayload } from "@/lib/hmAuthorSession";
+import { hmSiteNewsPreviewHrefPrefix } from "@/lib/hmSitePreviewHref";
 import { YazarPanelNav } from "@/components/YazarPanelNav";
 import { HaberlerInner } from "@/pages/admin/HaberlerInner";
 
@@ -8,6 +10,10 @@ export default function YazarHaberler() {
   const slug = String(params?.slug ?? "").trim();
   const enc = encodeURIComponent(slug);
   const base = `/${HM_SITE_PUBLIC_PREFIX}/${enc}/yazar`;
+  const authorSite = readHmAuthorPayload()?.site ?? null;
+  const previewPrefix =
+    (authorSite?.slug === slug ? hmSiteNewsPreviewHrefPrefix(authorSite) : null) ??
+    `/${HM_SITE_PUBLIC_PREFIX}/${enc}/haber`;
 
   return (
     <div className="mx-auto max-w-screen-lg px-3 py-6">
@@ -17,7 +23,7 @@ export default function YazarHaberler() {
         categoriesHref={null}
         showBulkDelete={false}
         hmAuthorApi
-        newsPreviewHrefPrefix={`/${HM_SITE_PUBLIC_PREFIX}/${enc}/haber`}
+        newsPreviewHrefPrefix={previewPrefix}
       />
     </div>
   );

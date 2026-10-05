@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { apiUrl } from "@/lib/apiBase";
 import { readHmJwt, readHmSite } from "@/lib/hmSession";
 import { readHmAuthorJwt } from "@/lib/hmAuthorSession";
+import { isAbsolutePreviewHref } from "@/lib/hmSitePreviewHref";
 import {
   HM_EDITOR_CATEGORIES_QUERY_KEY,
   HM_EDITOR_MAKALE_QUERY_KEY,
@@ -943,14 +944,24 @@ export function HaberlerInner({
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {previewPrefix ? (
-                        <Button variant="ghost" size="icon" asChild title="Vitrinde önizle">
-                          <Link
-                            href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
+                        <Button variant="ghost" size="icon" asChild title="Sitede gör">
+                          {isAbsolutePreviewHref(previewPrefix) ? (
+                            <a
+                              href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <Link
+                              href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          )}
                         </Button>
                       ) : null}
                       {hmEditorMakaleApi && news.contentKind === "makale" ? (
