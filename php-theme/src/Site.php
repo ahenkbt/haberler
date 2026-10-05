@@ -64,6 +64,12 @@ final class Site
         return $this->slug === 'turkatahaber';
     }
 
+    /** Admin askı bayrağı. Aktiflikten ayrıdır; kamu sayfaları sabit yazıyı basar. */
+    public function publicSuspended(): bool
+    {
+        return ($this->layout['hmPublicSuspended'] ?? null) === true;
+    }
+
     /** Editor `hmYsMansetPreset`, otherwise the older `hmNewsYsMansetLayout`. */
     public function mansetPreset(): string
     {
