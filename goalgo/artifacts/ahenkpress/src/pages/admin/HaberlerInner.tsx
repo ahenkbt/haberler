@@ -120,7 +120,7 @@ export type HaberlerInnerProps = {
   /** “Yeni haber” butonunun gideceği adres (örn. `?kategori=blog`). */
   newNewsHref?: string | null;
   newNewsButtonLabel?: string | null;
-  /** Örn. `/tr/site-slug/haber` — vitrinde haberi yeni sekmede aç. */
+  /** Mutlak vitrin öneki (`https://…/haber`) — PHP tema / portal; düz `<a>` ile yeni sekmede aç. */
   newsPreviewHrefPrefix?: string | null;
   extraActions?: ReactNode;
 };
@@ -943,14 +943,14 @@ export function HaberlerInner({
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {previewPrefix ? (
-                        <Button variant="ghost" size="icon" asChild title="Vitrinde önizle">
-                          <Link
+                        <Button variant="ghost" size="icon" asChild title="Sitede gör">
+                          <a
                             href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
                             <Eye className="w-4 h-4" />
-                          </Link>
+                          </a>
                         </Button>
                       ) : null}
                       {hmEditorMakaleApi && news.contentKind === "makale" ? (

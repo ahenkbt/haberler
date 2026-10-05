@@ -60,6 +60,9 @@ const FORWARD_KEYS = [
   "AGENTLABS_URL",
   "CONTAINER_ROLL",
   "NEWS_DATABASE_URL",
+  // Ayrı haber DB'si (PHP tema okuması) için Worker secret'ı ile dual yazma açılabilsin; yoksa main/main kalır.
+  "NEWS_DB_READ",
+  "NEWS_DB_WRITE",
   "YEKTUBE_DATABASE_URL",
   "YEKTUBE_DB_READ",
   "YEKTUBE_DB_WRITE",

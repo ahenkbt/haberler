@@ -165,6 +165,17 @@ zone_name = "ankarasehirgazetesi.com"
 pattern = "ankarasehirgazetesi.com/manifest.json"
 zone_name = "ankarasehirgazetesi.com"
 
+# Eski SPA linkleri (/tr/asg/haber/:slug?siteId=3) PHP temada 404 veriyordu. Worker bunları
+# php-theme-legacy-redirect.js ile /haber/:slug vb. adreslere 301 atar; /tr/asg/yazar/giris|haberler|haber/*
+# (köşe yazarı paneli) SPA'da kalır. Catch-all "ankarasehirgazetesi.com/*" yine BİLEREK yok.
+[[routes]]
+pattern = "ankarasehirgazetesi.com/tr/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/tr/*"
+zone_name = "ankarasehirgazetesi.com"
+
 [[routes]]
 pattern = "vatankahramanlari.org/*"
 zone_name = "vatankahramanlari.org"

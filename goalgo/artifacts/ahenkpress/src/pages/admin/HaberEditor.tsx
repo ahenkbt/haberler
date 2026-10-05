@@ -128,14 +128,25 @@ export default function HaberEditor() {
     },
     enabled: isEditorHm && !isAuthorHm,
   });
-  const authorSiteId = isAuthorHm ? readHmAuthorPayload()?.site.id : null;
-  const { data: authorHmCategories } = useQuery({
-    queryKey: ["/api/categories", "hm-author-editor", authorSiteId],
-    queryFn: () =>
-      apiRequest(`/api/categories?siteId=${encodeURIComponent(String(authorSiteId))}`) as Promise<
-        { name: string; slug: string }[]
-      >,
-    enabled: isAuthorHm && authorSiteId != null && authorSiteId > 0,
+  const { data: authorHmCategories, isError: authorCategoriesFailed, error: authorCategoriesError } = useQuery({
+    queryKey: ["/api/hm/author/categories"],
+    queryFn: async () => {
+      const t = readHmAuthorJwt();
+      if (!t) throw new Error("Köşe yazarı oturumu yok");
+      const r = await fetch(apiUrl("/api/hm/author/categories"), {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (r.ok) return r.json() as Promise<{ name: string; slug: string }[]>;
+      // Kenar uç yoksa (Container'a düştü) sitenin herkese açık kategori listesine dön.
+      const siteId = readHmAuthorPayload()?.site.id;
+      if (r.status === 404 && siteId) {
+        return apiRequest(`/api/categories?siteId=${encodeURIComponent(String(siteId))}`) as Promise<
+          { name: string; slug: string }[]
+        >;
+      }
+      throw new Error((await r.text()).slice(0, 180));
+    },
+    enabled: isAuthorHm,
   });
   const categories = isAuthorHm ? authorHmCategories : isEditorHm ? hmEditorCategories : portalCategories;
   const hmSiteForAuthors = isEditorHm ? readHmSite() : null;
@@ -599,6 +610,14 @@ export default function HaberEditor() {
                   ))}
                 </SelectContent>
               </Select>
+              {isAuthorHm && authorCategoriesFailed ? (
+                <p className="mt-1.5 text-xs text-red-600">
+                  Kategoriler yüklenemedi:{" "}
+                  {authorCategoriesError instanceof Error
+                    ? authorCategoriesError.message
+                    : String(authorCategoriesError)}
+                </p>
+              ) : null}
               {isEditorHm && !isAuthorHm && hmEditorCategoriesFailed ? (
                 <p className="mt-1.5 text-xs text-red-600">
                   Kategoriler yüklenemedi:{" "}

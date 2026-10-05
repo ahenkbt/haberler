@@ -159,6 +159,39 @@ async function mirrorRowsToNewsDb<T extends PgTable>(table: T, rows: T["$inferSe
   }
 }
 
+/** Ayrı haber DB'si (NEWS_DATABASE_URL) tanımlı ve yazma modu onu besliyor mu? */
+export function shouldMirrorToNewsDb(): boolean {
+  return shouldMirrorMainWriteToNewsDb(getNewsDbWriteMode());
+}
+
+/**
+ * Kenar (Worker/Neon) yazdığı satırı aynı id ile haber DB'sine kopyalar (varsa günceller).
+ * Mirror kapalıysa false döner; hata fırlatmaz.
+ */
+export async function mirrorRowToNewsDb<T extends PgTable>(table: T, row: T["$inferSelect"]): Promise<boolean> {
+  if (!shouldMirrorToNewsDb()) return false;
+  try {
+    await mirrorRowsToNewsDb(table, [row]);
+    return true;
+  } catch (err) {
+    logMirrorFailure("mirror-row", err);
+    return false;
+  }
+}
+
+/** Kenar silmesini haber DB'sine yansıt (id ile). */
+export async function deleteRowFromNewsDb<T extends PgTable>(table: T, id: number): Promise<boolean> {
+  if (!shouldMirrorToNewsDb() || !newsDb) return false;
+  try {
+    const cols = getTableColumns(table);
+    await (newsDb as NewsDatabase).delete(table).where(eq(cols.id, id));
+    return true;
+  } catch (err) {
+    logMirrorFailure("mirror-delete", err);
+    return false;
+  }
+}
+
 /** INSERT — dual-write: önce ana DB, sonra aynı id ile haber DB. */
 export async function dualWriteInsert<T extends PgTable>(
   table: T,

@@ -23,6 +23,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
+import { phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
@@ -2849,6 +2850,10 @@ export default {
     const khSuspended = await khPublicSuspensionResponse(request, env, incoming);
     if (khSuspended) return khSuspended;
 
+    // PHP tema siteleri: eski SPA linkleri (/tr/asg/haber/:s?siteId=3) PHP adresine 301; yazar paneli SPA'da kalır.
+    const phpThemeLegacy = phpThemeLegacyRedirectResponse(request, incoming);
+    if (phpThemeLegacy) return phpThemeLegacy;
+
     const tukavContact = await handleTukavContactEdge(request);
     if (tukavContact) return tukavContact;
 
@@ -3087,6 +3092,8 @@ export default {
           edgePath === "/api/hm/editor/news" ||
           edgePath === "/api/hm/editor/makale" ||
           edgePath === "/api/hm/editor/makale/bulk-delete" ||
+          edgePath === "/api/hm/author/news" ||
+          /^\/api\/hm\/author\/news\/\d+$/.test(edgePath) ||
           edgePath === "/api/hm/editor/rss/campaigns" ||
           /^\/api\/hm\/editor\/authors\/\d+$/.test(edgePath) ||
           /^\/api\/hm\/editor\/pool\/authors\/\d+\/publish$/.test(edgePath) ||

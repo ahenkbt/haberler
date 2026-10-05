@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
 const JWT_TYP = "hm_editor";
+const JWT_TYP_AUTHOR = "hm_author";
 const KH_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
 
 const STANDARD_CATEGORIES = [
@@ -52,6 +53,26 @@ function collectJwtSecretStrings(env) {
     if (s && !out.includes(s)) out.push(s);
   }
   return out;
+}
+
+async function parseAuthorJwt(request, env) {
+  const { jwtVerify } = await import("jose");
+  const h = String(request.headers.get("authorization") || "").trim();
+  const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
+  if (!token) return null;
+  for (const secret of collectJwtSecretStrings(env)) {
+    try {
+      const key = new TextEncoder().encode(secret);
+      const { payload } = await jwtVerify(token, key);
+      const authorId = asPositiveInt(payload?.aid);
+      const siteId = asPositiveInt(payload?.sid);
+      if (payload?.typ !== JWT_TYP_AUTHOR || authorId == null || siteId == null) continue;
+      return { authorId, siteId };
+    } catch {
+      /* sonraki secret */
+    }
+  }
+  return null;
 }
 
 async function parseEditorJwt(request, env) {
@@ -112,6 +133,44 @@ function slugify(input) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
   return s || `haber-${Date.now().toString(36)}`;
+}
+
+/** Yayın adresi /haber/:slug hem news hem hm_makaleler'den çözülür; iki tabloda da aynı site için slug tek olmalı. */
+function slugCandidate(base, i) {
+  return i === 0 ? base : `${base}-${i + 1}`;
+}
+
+/** Bu site için /haber/:slug adresini news satırı (site veya merkez havuz) karşılıyor mu? */
+async function newsSlugTaken(sql, siteId, slug) {
+  try {
+    const rows = await sql`
+      SELECT id FROM news
+      WHERE lower(trim(both '/' from slug)) = lower(trim(both '/' from ${slug}))
+        AND (site_id = ${siteId} OR site_id IS NULL OR (site_only = true AND owner_site_id = ${siteId}))
+      LIMIT 1
+    `;
+    return Boolean(rows?.[0]);
+  } catch (err) {
+    console.error("[hm-slug-news]", String(err?.message || err).slice(0, 120));
+    return false;
+  }
+}
+
+/** Bu site için slug hm_makaleler'de kullanılıyor mu? (excludeId: güncellenen makalenin kendisi) */
+async function makaleSlugTaken(sql, siteId, slug, excludeId = null) {
+  try {
+    const rows = await sql`
+      SELECT id FROM hm_makaleler
+      WHERE site_id = ${siteId}
+        AND lower(trim(both '/' from slug)) = lower(trim(both '/' from ${slug}))
+        AND (${excludeId}::int IS NULL OR id <> ${excludeId}::int)
+      LIMIT 1
+    `;
+    return Boolean(rows?.[0]);
+  } catch (err) {
+    console.error("[hm-slug-makale]", String(err?.message || err).slice(0, 120));
+    return false;
+  }
 }
 
 /** Neon HTTP: JS dizisini tek text[] parametresi olarak güvenle bağla. */
@@ -217,6 +276,52 @@ async function loadActiveEditor(sql, editorId, siteId) {
 
 function apiOrigin(env, incoming) {
   return resolveApiOrigin(env, incoming?.origin);
+}
+
+const MIRROR_BUDGET_MS = 2500;
+/** Aynı isolate içinde env nesnesi tek olduğundan istek girişinde set edilir; handler imzaları değişmez. */
+let mirrorEnv = null;
+
+export function setNewsMirrorEnv(env) {
+  mirrorEnv = env || null;
+}
+
+/**
+ * Neon yazımından sonra Container'daki /api/hm/bridge/mirror ucuna en-iyi-çaba kopya isteği.
+ * Container NEWS_DATABASE_URL + NEWS_DB_WRITE=dual ise satır ayrı haber DB'sine (PHP tema okuması) yazılır.
+ * Hata/zaman aşımı yutulur; panel yanıtı etkilenmez.
+ * @param {"hm_makaleler"|"news"|"authors"} table
+ * @param {"upsert"|"delete"} op
+ * @param {Record<string, unknown>|number} rowOrId
+ */
+export async function mirrorNewsDbWrite(table, op, rowOrId) {
+  const env = mirrorEnv;
+  if (!env || (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim())) return false;
+  const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
+  if (!secret) return false;
+  const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
+  try {
+    const res = await Promise.race([
+      fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-yekpare-hm-edge-bridge": secret,
+        },
+        body: JSON.stringify(payload),
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("mirror-timeout")), MIRROR_BUDGET_MS)),
+    ]);
+    if (!res?.ok) {
+      console.error("[hm-news-mirror]", table, op, res?.status);
+      return false;
+    }
+    const data = await res.json().catch(() => ({}));
+    return data?.mirrored === true;
+  } catch (err) {
+    console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
+    return false;
+  }
 }
 
 function serializeAuthor(row) {
@@ -350,7 +455,48 @@ async function loadNewsWithCategory(sql, siteId, id) {
   }
 }
 
-async function handleAuthorsList(sql, siteId) {
+/**
+ * Yazar başına yayımlı makale sayısı + son yazı (önce hm_makaleler, yoksa yazara bağlı news).
+ * Container /api/authors?hmSiteId ile aynı alanlar: articleCount, latestArticle {id,title,slug}.
+ */
+async function loadAuthorArticleStats(sql, siteId) {
+  const countMap = new Map();
+  const latestMap = new Map();
+  try {
+    const stats = await sql`
+      SELECT author_id, count(*)::int AS c
+      FROM hm_makaleler
+      WHERE site_id = ${siteId} AND status = 'published' AND author_id IS NOT NULL
+      GROUP BY author_id
+    `;
+    for (const r of stats || []) countMap.set(Number(r.author_id), r.c ?? 0);
+    const latestMakale = await sql`
+      SELECT DISTINCT ON (author_id) author_id, id, title, slug
+      FROM hm_makaleler
+      WHERE site_id = ${siteId} AND status = 'published' AND author_id IS NOT NULL
+      ORDER BY author_id, created_at DESC, id DESC
+    `;
+    for (const r of latestMakale || []) {
+      latestMap.set(Number(r.author_id), { id: r.id, title: String(r.title ?? ""), slug: String(r.slug ?? "") });
+    }
+    const latestNews = await sql`
+      SELECT DISTINCT ON (author_id) author_id, id, title, slug
+      FROM news
+      WHERE site_id = ${siteId} AND status = 'published' AND author_id IS NOT NULL
+      ORDER BY author_id, created_at DESC, id DESC
+    `;
+    for (const r of latestNews || []) {
+      const aid = Number(r.author_id);
+      if (latestMap.has(aid)) continue;
+      latestMap.set(aid, { id: r.id, title: String(r.title ?? ""), slug: String(r.slug ?? "") });
+    }
+  } catch (err) {
+    console.error("[hm-authors-stats]", String(err?.message || err).slice(0, 160));
+  }
+  return { countMap, latestMap };
+}
+
+export async function handleAuthorsList(sql, siteId) {
   await ensureAuthorsSortOrderColumn(sql);
   const rows = await sql`
     SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
@@ -358,7 +504,16 @@ async function handleAuthorsList(sql, siteId) {
     WHERE hm_site_id = ${siteId}
     ORDER BY COALESCE(hm_sort_order, 2147483647) ASC, id ASC
   `;
-  return jsonResponse(200, (rows || []).map(serializeAuthor));
+  const list = rows || [];
+  const { countMap, latestMap } = list.length ? await loadAuthorArticleStats(sql, siteId) : { countMap: new Map(), latestMap: new Map() };
+  return jsonResponse(
+    200,
+    list.map((r) => ({
+      ...serializeAuthor(r),
+      articleCount: countMap.get(Number(r.id)) ?? 0,
+      latestArticle: latestMap.get(Number(r.id)) ?? null,
+    })),
+  );
 }
 
 async function handleCreateAuthor(sql, siteId, body) {
@@ -411,6 +566,7 @@ async function handleCreateAuthor(sql, siteId, body) {
     `;
     const row = rows?.[0];
     if (!row) return jsonResponse(500, { error: "Yazar oluşturulamadı" });
+    await mirrorNewsDbWrite("authors", "upsert", row);
     return jsonResponse(201, serializeAuthor(row));
   } catch (err) {
     const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
@@ -865,7 +1021,7 @@ async function handleEditorNews(sql, siteId, url, env) {
   return jsonResponse(200, { items: [], total: 0, source: "neon-empty" });
 }
 
-async function handleCreateNews(sql, siteId, body) {
+async function handleCreateNews(sql, siteId, body, opts = {}) {
   await ensureNewsWritableColumns(sql);
 
   const title = String(body?.title || "").trim();
@@ -882,13 +1038,13 @@ async function handleCreateNews(sql, siteId, body) {
     ? body.tags.map((t) => String(t).trim()).filter(Boolean)
     : [];
   const tagsLiteral = toPgTextArrayLiteral(tags);
-  let authorId = asPositiveInt(body?.authorId);
+  let authorId = opts.lockAuthorId != null ? opts.lockAuthorId : asPositiveInt(body?.authorId);
   const imageUrl = body?.imageUrl != null ? String(body.imageUrl).trim() || null : null;
   const spot = body?.spot != null ? String(body.spot) : null;
   const content = body?.content != null ? String(body.content) : null;
-  const isFeatured = body?.isFeatured === true;
-  const isSiteManset = body?.isSiteManset === true;
-  const isBreaking = body?.isBreaking === true;
+  const isFeatured = opts.lockAuthorId != null ? false : body?.isFeatured === true;
+  const isSiteManset = opts.lockAuthorId != null ? false : body?.isSiteManset === true;
+  const isBreaking = opts.lockAuthorId != null ? false : body?.isBreaking === true;
   const senderFullName = body?.senderFullName != null ? String(body.senderFullName) : null;
   const senderEmail = body?.senderEmail != null ? String(body.senderEmail) : null;
   const senderPhone = body?.senderPhone != null ? String(body.senderPhone) : null;
@@ -902,8 +1058,10 @@ async function handleCreateNews(sql, siteId, body) {
   // slug çakışırsa benzersizleştir; aynı slug zaten varsa idempotent dön (çift kayıt önleme)
   let lastErr = "";
   for (let i = 0; i < 8; i += 1) {
-    const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
+    const trySlug = slugCandidate(slug, i);
     try {
+      // Aynı site köşe yazısı (hm_makaleler) bu slug'ı kullanıyorsa /haber/:slug onu gölgelemesin.
+      if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
       const existing = await sql`
         SELECT n.*, c.slug AS category_slug
         FROM news n
@@ -915,6 +1073,9 @@ async function handleCreateNews(sql, siteId, body) {
       `;
       const hit = Array.isArray(existing) ? existing[0] : existing?.rows?.[0];
       if (hit) {
+        if (opts.lockAuthorId != null && Number(hit.author_id) !== Number(opts.lockAuthorId)) {
+          continue;
+        }
         return jsonResponse(200, serializeNewsRow(hit, hit.category_slug || categorySlug));
       }
 
@@ -938,12 +1099,18 @@ async function handleCreateNews(sql, siteId, body) {
       `;
       const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
       if (!row) return createFailResponse("INSERT boş döndü");
+      await mirrorNewsDbWrite("news", "upsert", row);
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
       const msg = String(err?.message || err);
       lastErr = msg;
       // Silinmiş yazar FK'si — yazarsız tekrar dene
       if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
+        if (opts.lockAuthorId != null) {
+          return jsonResponse(400, {
+            error: "Köşe yazarı kaydı bulunamadı. Editör panelinden yazarın bu siteye bağlı olduğundan emin olun.",
+          });
+        }
         authorId = null;
         i -= 1;
         continue;
@@ -982,6 +1149,7 @@ async function handleCreateNews(sql, siteId, body) {
             } catch {
               /* kolon yoksa yok say */
             }
+            await mirrorNewsDbWrite("news", "upsert", row);
             return jsonResponse(201, serializeNewsRow(row, categorySlug));
           }
         } catch (err2) {
@@ -1060,6 +1228,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
     `;
     const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
+    await mirrorNewsDbWrite("news", "upsert", row);
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
     const msg = String(err?.message || err);
@@ -1107,6 +1276,7 @@ async function handleDeleteNews(sql, siteId, id) {
   const existing = await loadNewsWithCategory(sql, siteId, id);
   if (!existing) return jsonResponse(404, { error: "Haber bulunamadı" });
   await sql`DELETE FROM news WHERE id = ${id}`;
+  await mirrorNewsDbWrite("news", "delete", id);
   return jsonResponse(200, { ok: true });
 }
 
@@ -1173,7 +1343,7 @@ async function handleGetMakale(sql, siteId, id) {
   return jsonResponse(200, serializeMakaleRow(row));
 }
 
-async function handleCreateMakale(sql, siteId, body) {
+export async function handleCreateMakale(sql, siteId, body) {
   const title = String(body?.title || "").trim();
   if (!title) return jsonResponse(400, { error: "title gerekli" });
   const slugRaw = typeof body?.slug === "string" ? body.slug.trim() : "";
@@ -1186,9 +1356,29 @@ async function handleCreateMakale(sql, siteId, body) {
   if (authorId === undefined) authorId = null;
   const status = body?.status === "published" || body?.status === "draft" ? body.status : "draft";
 
+  // Panel kaydı tekrar denendiğinde (zaman aşımı / çift tıklama) aynı yazı üç kez açılmasın:
+  // aynı site + yazar + başlık son 10 dakikada varsa onu döndür.
+  try {
+    const dup = await sql`
+      SELECT * FROM hm_makaleler
+      WHERE site_id = ${siteId}
+        AND author_id IS NOT DISTINCT FROM ${authorId}
+        AND lower(regexp_replace(btrim(title), '\\s+', ' ', 'g')) = lower(regexp_replace(btrim(${title}), '\\s+', ' ', 'g'))
+        AND created_at > NOW() - INTERVAL '10 minutes'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    if (dup?.[0]) return jsonResponse(200, serializeMakaleRow(dup[0]));
+  } catch (err) {
+    console.error("[hm-makale-dup-check]", String(err?.message || err).slice(0, 160));
+  }
+
   let lastErr = "";
-  for (let i = 0; i < 8; i += 1) {
-    const trySlug = i === 0 ? slug : `${slug}-${i + 1}`;
+  for (let i = 0; i < 12; i += 1) {
+    const trySlug = slugCandidate(slug, i);
+    // /haber/:slug önce news'ten çözülür; news veya başka bir makale bu slug'ı aldıysa -2, -3 … ekle.
+    if (await newsSlugTaken(sql, siteId, trySlug)) continue;
+    if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
     try {
       const rows = await sql`
         INSERT INTO hm_makaleler (
@@ -1200,6 +1390,7 @@ async function handleCreateMakale(sql, siteId, body) {
       `;
       const row = rows?.[0];
       if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+      await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
       return jsonResponse(201, serializeMakaleRow(row));
     } catch (err) {
       const msg = String(err?.message || err);
@@ -1211,7 +1402,7 @@ async function handleCreateMakale(sql, siteId, body) {
         });
       }
       if (/unique|duplicate/i.test(msg)) {
-        if (i < 7) continue;
+        if (i < 11) continue;
         return jsonResponse(409, { error: "Bu slug bu sitede zaten kullanılıyor" });
       }
       console.error("[hm-makale-create]", msg.slice(0, 200));
@@ -1235,10 +1426,20 @@ async function handleUpdateMakale(sql, siteId, id, body) {
   const title =
     typeof body?.title === "string" ? body.title.trim() : existing.title;
   if (!title) return jsonResponse(400, { error: "title gerekli" });
-  const slug =
+  let slug =
     typeof body?.slug === "string" && body.slug.trim()
       ? slugify(body.slug.trim())
       : existing.slug;
+  if (slug !== existing.slug) {
+    const base = slug;
+    for (let i = 0; i < 12; i += 1) {
+      const candidate = slugCandidate(base, i);
+      if (await newsSlugTaken(sql, siteId, candidate)) continue;
+      if (await makaleSlugTaken(sql, siteId, candidate, id)) continue;
+      slug = candidate;
+      break;
+    }
+  }
   const spot =
     "spot" in (body || {})
       ? typeof body.spot === "string"
@@ -1281,6 +1482,7 @@ async function handleUpdateMakale(sql, siteId, id, body) {
     `;
     const row = rows?.[0];
     if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
+    await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
     return jsonResponse(200, serializeMakaleRow(row));
   } catch (err) {
     const msg = String(err?.message || err);
@@ -1320,6 +1522,7 @@ async function handleDeleteMakale(sql, siteId, id) {
     RETURNING id
   `;
   if (!rows?.[0]) return jsonResponse(404, { error: "Makale bulunamadı" });
+  await mirrorNewsDbWrite("hm_makaleler", "delete", id);
   return new Response(null, {
     status: 204,
     headers: {
@@ -1344,7 +1547,10 @@ async function handleBulkDeleteMakale(sql, siteId, body) {
       WHERE id = ${id} AND site_id = ${siteId}
       RETURNING id
     `;
-    if (rows?.[0]) deleted += 1;
+    if (rows?.[0]) {
+      deleted += 1;
+      await mirrorNewsDbWrite("hm_makaleler", "delete", id);
+    }
   }
   return jsonResponse(200, { deleted });
 }
@@ -1726,10 +1932,135 @@ async function handleEditorRssCampaignRun(sql, env, request, siteId, id) {
   }
 }
 
+async function loadAuthorOnSite(sql, authorId, siteId) {
+  const rows = await sql`
+    SELECT id, name, hm_site_id
+    FROM authors
+    WHERE id = ${authorId} AND hm_site_id = ${siteId}
+    LIMIT 1
+  `;
+  return rows?.[0] || null;
+}
+
+async function handleAuthorNewsList(sql, siteId, authorId, incomingUrl) {
+  const limit = Math.min(asPositiveInt(incomingUrl.searchParams.get("limit")) || 50, 200);
+  const offsetRaw = parseInt(String(incomingUrl.searchParams.get("offset") || "0"), 10);
+  const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? offsetRaw : 0;
+  const rows = await sql`
+    SELECT n.*, c.slug AS category_slug
+    FROM news n
+    LEFT JOIN categories c ON c.id = n.category_id
+    WHERE n.site_id = ${siteId} AND n.author_id = ${authorId}
+    ORDER BY n.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  const countRows = await sql`
+    SELECT count(*)::int AS count
+    FROM news
+    WHERE site_id = ${siteId} AND author_id = ${authorId}
+  `;
+  return jsonResponse(200, {
+    items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
+    total: countRows?.[0]?.count ?? 0,
+  });
+}
+
+async function handleAuthorNewsGet(sql, siteId, authorId, id) {
+  const row = await loadNewsWithCategory(sql, siteId, id);
+  if (!row || Number(row.author_id) !== authorId) {
+    return jsonResponse(404, { error: "Haber bulunamadı." });
+  }
+  return jsonResponse(200, serializeNewsRow(row, row.category_slug));
+}
+
+async function handleAuthorNewsDelete(sql, siteId, authorId, id) {
+  const rows = await sql`
+    DELETE FROM news
+    WHERE id = ${id} AND site_id = ${siteId} AND author_id = ${authorId}
+    RETURNING id
+  `;
+  if (!rows?.[0]) return jsonResponse(404, { error: "Haber bulunamadı." });
+  await mirrorNewsDbWrite("news", "delete", id);
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
+      "cdn-cache-control": "no-store",
+      "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+    },
+  });
+}
+
+/**
+ * Köşe yazarı makalesi Container zaman aşımına düşmeden Neon'a yazılır.
+ * @returns {Promise<Response|null>}
+ */
+async function handleAuthorArticleEdge(request, env, incomingUrl, path, method) {
+  const isNews =
+    path === "/api/hm/author/news" || /^\/api\/hm\/author\/news\/\d+$/.test(path);
+  const isCategories = path === "/api/hm/author/categories";
+  if (!isNews && !isCategories) return null;
+
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const author = await parseAuthorJwt(request, env);
+  if (!author) {
+    if (!auth.startsWith("Bearer ")) {
+      return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
+    }
+    return null;
+  }
+  const sql = sqlClient(env);
+  if (!sql) return null;
+  const owned = await loadAuthorOnSite(sql, author.authorId, author.siteId);
+  if (!owned) return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
+
+  if (isCategories && method === "GET") return handleCategories(sql, author.siteId);
+  if (isCategories) return jsonResponse(405, { error: "Yöntem desteklenmiyor" });
+
+  if (path === "/api/hm/author/news" && method === "GET") {
+    return handleAuthorNewsList(sql, author.siteId, author.authorId, incomingUrl);
+  }
+  if (path === "/api/hm/author/news" && method === "POST") {
+    const body = await readJsonBody(request);
+    return handleCreateNews(
+      sql,
+      author.siteId,
+      { ...body, authorId: author.authorId },
+      { lockAuthorId: author.authorId },
+    );
+  }
+
+  const idMatch = path.match(/^\/api\/hm\/author\/news\/(\d+)$/);
+  const id = asPositiveInt(idMatch?.[1]);
+  if (id == null) return jsonResponse(400, { error: "id" });
+  if (method === "GET") return handleAuthorNewsGet(sql, author.siteId, author.authorId, id);
+  if (method === "PUT") {
+    const body = await readJsonBody(request);
+    const existing = await loadNewsWithCategory(sql, author.siteId, id);
+    if (!existing || Number(existing.author_id) !== author.authorId) {
+      return jsonResponse(404, { error: "Haber bulunamadı." });
+    }
+    const {
+      isFeatured: _featured,
+      isSiteManset: _manset,
+      isBreaking: _breaking,
+      authorId: _authorId,
+      ...authorUpdate
+    } = body || {};
+    return handleUpdateNews(sql, author.siteId, id, {
+      ...authorUpdate,
+      authorId: author.authorId,
+    });
+  }
+  if (method === "DELETE") return handleAuthorNewsDelete(sql, author.siteId, author.authorId, id);
+  return jsonResponse(405, { error: "Yöntem desteklenmiyor" });
+}
+
 /**
  * @returns {Promise<Response|null>}
  */
 export async function handleKhEditorDataEdge(request, env, incomingUrl) {
+  setNewsMirrorEnv(env);
   const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
 
@@ -1743,6 +2074,14 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     if (!sql) return null;
     if (!(await isHmNewsSite(sql, hmSiteId))) return null;
     return handleAuthorsList(sql, hmSiteId);
+  }
+
+  if (path.startsWith("/api/hm/author/")) {
+    const authorArticle = await handleAuthorArticleEdge(request, env, incomingUrl, path, method);
+    if (authorArticle) return authorArticle;
+    if (path === "/api/hm/author/news" || path.startsWith("/api/hm/author/news/") || path === "/api/hm/author/categories") {
+      return null;
+    }
   }
 
   if (!path.startsWith("/api/hm/editor/")) return null;
