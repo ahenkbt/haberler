@@ -1,7 +1,61 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { TurkataAboutBody } from "@/pages/public/TurkataStaticPages";
-import { TURKATA_ABOUT_INTRO, TURKATA_ABOUT_TAGLINE, TURKATA_ABOUT_TITLE, TURKATA_ORIGIN } from "@/lib/turkataHaber";
+import { apiUrl, resolveClientMediaSrc } from "@/lib/apiBase";
+import { fetchPublicJson } from "@/lib/fetchPublicJson";
+import { thaSubscriberHref, thaSubscriberSites, type ThaShowcaseSite } from "@/lib/thaSubscriberSites";
+import { TURKATA_ABOUT_INTRO, TURKATA_ABOUT_TAGLINE, TURKATA_ABOUT_TITLE, TURKATA_ORIGIN, TURKATA_WORDMARK } from "@/lib/turkataHaber";
+
+const THA_SUBSCRIBER_HEADING =
+  "Ahenk Bilgi Teknolojileri Haber Alt yapısını kullanan THA TürkAta Haber Ajansı abonesi haber siteleri";
+
+function subscriberLogoSrc(site: ThaShowcaseSite): string {
+  if (site.logoUrl) return resolveClientMediaSrc(site.logoUrl);
+  if (site.slug === "turkatahaber") return TURKATA_WORDMARK;
+  return "";
+}
+
+function ThaSubscriberSites() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["/api/hm/showcase-sites", "tha-subscribers"],
+    queryFn: async () => {
+      const { ok, status, data: body } = await fetchPublicJson<ThaShowcaseSite[]>(apiUrl("/api/hm/showcase-sites"));
+      if (!ok) throw new Error(`HTTP ${status}`);
+      return thaSubscriberSites(Array.isArray(body) ? body : []);
+    },
+    staleTime: 60_000,
+    retry: 2,
+  });
+  const sites = data ?? [];
+
+  return (
+    <section className="ahenk-section" aria-labelledby="tha-subscriber-sites">
+      <h2 id="tha-subscriber-sites">{THA_SUBSCRIBER_HEADING}</h2>
+      {isLoading ? <p className="ahenk-lead">Yükleniyor…</p> : null}
+      {isError ? <p className="ahenk-lead">Haber siteleri şu anda listelenemedi.</p> : null}
+      {!isLoading && !isError && sites.length === 0 ? <p className="ahenk-lead">Yayında haber sitesi yok.</p> : null}
+      {sites.length > 0 ? (
+        <ul className="ahenk-subscriber-logos">
+          {sites.map((site) => {
+            const logoSrc = subscriberLogoSrc(site);
+            return (
+              <li key={site.slug}>
+                <a className="ahenk-subscriber-logo" href={thaSubscriberHref(site)} title={site.displayName}>
+                  {logoSrc ? (
+                    <img src={logoSrc} alt={site.displayName} />
+                  ) : (
+                    <span>{site.displayName}</span>
+                  )}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
 
 export default function AhenkTurkataHaberAjansi() {
   return (
@@ -25,6 +79,7 @@ export default function AhenkTurkataHaberAjansi() {
           </p>
         </div>
       </section>
+      <ThaSubscriberSites />
       <section className="ahenk-cta">
         <div className="ahenk-cta-inner">
           <div>
