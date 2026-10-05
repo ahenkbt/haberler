@@ -339,17 +339,19 @@ export default function EditorGenelAyarlari() {
   const corporateLayoutWidth: HmCorporateLayoutWidth = p.hmCorporateLayoutWidth === "contained" ? "contained" : "full";
   const isCorporateSite = isHmCorporateLayoutKind(p, site?.slug);
   const editorSettingsSections = useMemo(() => {
-    if (isCorporateSite) return EDITOR_SETTINGS_SECTIONS;
-    return [
-      ...EDITOR_SETTINGS_SECTIONS.filter(
-        (section) => section.href !== "#hm-corporate-menu" && section.href !== "#hm-corporate-ataturk-corner",
-      ),
-      {
-        href: "#hm-corporate-donation",
-        label: "Bağış / destek",
-        description: "Bağış kutusu ve alt destek bandı",
-      },
-    ];
+    if (isCorporateSite) {
+      return [
+        ...EDITOR_SETTINGS_SECTIONS,
+        {
+          href: "#hm-corporate-donation",
+          label: "Bağış / destek",
+          description: "Bağış kutusu ve alt destek bandı",
+        },
+      ];
+    }
+    return EDITOR_SETTINGS_SECTIONS.filter(
+      (section) => section.href !== "#hm-corporate-menu" && section.href !== "#hm-corporate-ataturk-corner",
+    );
   }, [isCorporateSite]);
   const corporateRequestCategories = p.hmCorporateRequestCategories ?? [...DEFAULT_CORPORATE_REQUEST_CATEGORIES];
   const newsRequestCategories = p.hmNewsRequestCategories ?? [...DEFAULT_NEWS_REQUEST_CATEGORIES];
@@ -1630,13 +1632,14 @@ export default function EditorGenelAyarlari() {
             </div>
           )}
 
+          {isCorporateSite ? (
           <div id="hm-corporate-donation" className="scroll-mt-32 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4 space-y-4 xl:col-span-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <Label className="font-semibold text-slate-900">Bağış kutusu ve alt destek bandı</Label>
                 <p className="text-xs text-slate-500 mt-1">
-                  Tüm haber merkezi vitrinlerinde anasayfada IBAN kutusu ve &quot;IBAN Kopyala&quot; gösterilir (hero, destek bandı
-                  veya alt bağış modülü sırasına göre tek konumda). Bağış aktifken IBAN ve hesap adını doldurun.
+                  VKD Tema ve VATAN tema anasayfasında IBAN kutusu ve alt destek bandı gösterilir. Haber sitelerinde bu
+                  alan yoktur. Bağış aktifken IBAN ve hesap adını doldurun.
                 </p>
               </div>
               <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-700">
@@ -1742,6 +1745,7 @@ export default function EditorGenelAyarlari() {
               </Button>
             </div>
           </div>
+          ) : null}
 
           <div id="hm-footer-settings" className="scroll-mt-32 rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-3">
             <Label className="font-semibold text-slate-900">Alt bilgi — Site hakkında</Label>
