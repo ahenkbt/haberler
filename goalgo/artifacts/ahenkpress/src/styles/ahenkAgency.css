@@ -1691,7 +1691,7 @@
   gap: 14px;
 }
 
-.ahenk-subscriber-logo {
+.ahenk-agency a.ahenk-subscriber-logo {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1708,7 +1708,8 @@
   text-decoration: none;
 }
 
-.ahenk-subscriber-logo:hover {
+.ahenk-agency a.ahenk-subscriber-logo:hover {
+  color: #102033;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
