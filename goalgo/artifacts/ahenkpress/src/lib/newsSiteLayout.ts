@@ -6,7 +6,6 @@ import { normalizeHmRequestCategories, type HmRequestCategory } from "./hmReques
 import { hmCategorySlug } from "./hmCategorySlug";
 import { canonicalizeRssCategorySlug } from "./hmRssCategoryAliases";
 import { parseHmRssSourcePackFlags, type HmRssSourcePackFlags, DEFAULT_HM_NEWS_RSS_SOURCE_PACK_FLAGS, HM_RSS_KARMA_DEFAULTS_REV, HM_RSS_SOURCE_PACKS_ALL_OFF, isHmRssKarmaDefaultsRevCurrent } from "./hmRssSourcePacks";
-import { HM_VITRIN_THEME_FLOWER_LABELS, hmVitrinThemeFlowerLabel } from "./hmVitrinThemeTokens";
 import { normalizeYekpareCategoryBoxCount, normalizeYekpareKutuItemCount } from "./hmCategoryBoxItems";
 import type { HmMediaGalleryHomeModuleId, HmMediaGallerySourceId, HmNewsGallerySpotlightMode, HmNewsHomeModuleGalleryVideoTvRefs } from "./hmMediaSpotlightPool";
 import { hmGallerySpotlightModeToSourceId, normalizeHmMediaGallerySourceId, normalizeHmNewsGallerySpotlightMode, normalizeHmNewsHomeModuleGalleryVideoTvRefs, resolveHmNewsGalleryVideoTvRef } from "./hmMediaSpotlightPool";
@@ -41,7 +40,17 @@ export type HmCorporateMainNewsLayout = "manset-side" | "lead-side-grid";
 /** Üst krom (header, nav, son dakika, piyasa): açık/koyu; `auto` = vitrin teması varsayılanı. */
 export type HmChromeColorMode = "light" | "dark" | "auto";
 
-/** Haber merkezi vitrin görünümü. `news` mevcut haber teması, dişerleri haber portalı varyantlarıdır. */
+/**
+ * Haber merkezi vitrin görünümü.
+ *
+ * - `yenisafak`: haber sitelerinin tek teması. Özel alanlar PHP temadan (`php-theme/`) yayınlanır;
+ *   editör yalnızca PHP'nin okuduğu anahtarları yazar (`lib/yenisafakEditorLayout.ts`).
+ * - `corporate` / `vatan`: kurumsal dernek siteleri (VKD, TGD) — SPA `HmCorporateHome` / `HmVatanHome`.
+ * - Diğerleri (`news`, `classic`, `portal3`, `esen`, `manset24`, `renkli`, `ahenkhaber`, `modern`,
+ *   `ankara`, `gold`, `sumbul`, `default`): ESKİ TSX haber temaları. Editörde seçilemez; yalnızca
+ *   `layout_json` içinde kayıtlı eski değerleri okumak ve `/tr/{slug}` SPA yedek görünümünü
+ *   ayakta tutmak için kalır. Yeni kayıt bu değerleri yazmaz.
+ */
 export type HmVitrinThemeId =
   | "news"
   | "classic"
@@ -1048,14 +1057,6 @@ const HM_NEWS_THEME_DEFAULT_MODULES: Partial<Record<HmVitrinThemeId, HmNewsHomeM
   sumbul: ["hero", "authorsStrip", "yekpareKategorilerKutusu", "worldBriefs", "latestGrid"],
 };
 
-/** Modül sırası editöründe gösterilmez — yapısal üst bant (döviz/hava ayrı şeritte). */
-export const HM_NEWS_STRUCTURAL_HOME_MODULE_IDS = ["breakingBand"] as const;
-
-/** Editör modül sırası listesi (yapısal modüller hariç). */
-export const HM_NEWS_EDITOR_HOME_MODULE_ORDER = HM_NEWS_HOME_MODULE_ORDER.filter(
-  (id) => !(HM_NEWS_STRUCTURAL_HOME_MODULE_IDS as readonly string[]).includes(id),
-);
-
 const HM_NEWS_THEME_MODULE_TOGGLE_KEYS: Partial<Record<HmNewsHomeModuleId, keyof NewsSiteLayoutPrefs>> = {
   ahenkIconCategoryRow: "hmNewsAhenkIconCategoryRowEnabled",
   ahenkGununSesiAuthors: "hmNewsAhenkGununSesiAuthorsEnabled",
@@ -1117,54 +1118,6 @@ export const HM_NEWS_VITRIN_TOGGLE_MODULE_IDS = Object.keys(
   HM_NEWS_VITRIN_TOGGLE_MODULE_LABELS,
 ) as HmNewsHomeModuleId[];
 
-/** Editör modül etiketlerinde tema çiçek adları (`HM_VITRIN_THEME_FLOWER_LABELS`). */
-export const HM_VITRIN_THEME_SHORT_LABELS: Partial<Record<HmVitrinThemeId, string>> = {
-  news: HM_VITRIN_THEME_FLOWER_LABELS.news,
-  default: HM_VITRIN_THEME_FLOWER_LABELS.default,
-  classic: HM_VITRIN_THEME_FLOWER_LABELS.classic,
-  portal3: HM_VITRIN_THEME_FLOWER_LABELS.portal3,
-  esen: HM_VITRIN_THEME_FLOWER_LABELS.esen,
-  manset24: HM_VITRIN_THEME_FLOWER_LABELS.manset24,
-  renkli: HM_VITRIN_THEME_FLOWER_LABELS.renkli,
-  ahenkhaber: HM_VITRIN_THEME_FLOWER_LABELS.ahenkhaber,
-  modern: HM_VITRIN_THEME_FLOWER_LABELS.modern,
-  corporate: HM_VITRIN_THEME_FLOWER_LABELS.corporate,
-  vatan: HM_VITRIN_THEME_FLOWER_LABELS.vatan,
-  ankara: HM_VITRIN_THEME_FLOWER_LABELS.ankara,
-  gold: HM_VITRIN_THEME_FLOWER_LABELS.gold,
-  sumbul: HM_VITRIN_THEME_FLOWER_LABELS.sumbul,
-};
-
-/** Haber vitrin editörü — tema seçici satırları (depolama anahtarı + çiçek adı). */
-export const HM_VITRIN_THEME_NEWS_EDITOR_OPTIONS = [
-  { value: "news", label: `${HM_VITRIN_THEME_FLOWER_LABELS.news} (mevcut varsayılan tema)` },
-  {
-    value: "classic",
-    label: `${HM_VITRIN_THEME_FLOWER_LABELS.classic} — klasik haber portalı (lacivert / kırmızı)`,
-  },
-  {
-    value: "portal3",
-    label: `${HM_VITRIN_THEME_FLOWER_LABELS.portal3} — gazete portalı (gri zemin / kırmızı vurgu)`,
-  },
-  { value: "esen", label: `${HM_VITRIN_THEME_FLOWER_LABELS.esen} — uzun magazin ana sayfa` },
-  {
-    value: "manset24",
-    label: `${HM_VITRIN_THEME_FLOWER_LABELS.manset24} — koyu son dakika teması (kırmızı vurgu)`,
-  },
-  { value: "renkli", label: `${HM_VITRIN_THEME_FLOWER_LABELS.renkli} — renkli kategori teması` },
-  {
-    value: "ahenkhaber",
-    label: `${HM_VITRIN_THEME_FLOWER_LABELS.ahenkhaber} — Ahenk Haber (koyu nav / kırmızı vurgu)`,
-  },
-  { value: "modern", label: `${HM_VITRIN_THEME_FLOWER_LABELS.modern} — modern haber vitrini` },
-  {
-    value: "sumbul",
-    label: `${HM_VITRIN_THEME_FLOWER_LABELS.sumbul} — Yekpare haber teması (mavi vurgu, kategori kutuları)`,
-  },
-] as const satisfies ReadonlyArray<{ value: HmVitrinThemeId; label: string }>;
-
-export { hmVitrinThemeFlowerLabel, HM_VITRIN_THEME_FLOWER_LABELS };
-
 /** Modülün birincil / tipik kullanıldığı vitrin temaları (editör etiketi için). */
 export const HM_NEWS_MODULE_THEME_MAP: Partial<Record<HmNewsHomeModuleId, HmVitrinThemeId[]>> = {
   ahenkGununSesiAuthors: ["ahenkhaber"],
@@ -1187,24 +1140,6 @@ export const HM_NEWS_MODULE_THEME_MAP: Partial<Record<HmNewsHomeModuleId, HmVitr
   recentVideosSidebar: ["classic", "portal3"],
 };
 
-export function formatHmNewsModuleEditorLabel(
-  moduleId: HmNewsHomeModuleId,
-  baseLabel: string,
-  currentTheme?: HmVitrinThemeId | string | null,
-): string {
-  const themes = HM_NEWS_MODULE_THEME_MAP[moduleId];
-  if (themes?.length) {
-    const prefix = themes
-      .map((themeId) => HM_VITRIN_THEME_SHORT_LABELS[themeId] ?? hmVitrinThemeFlowerLabel(themeId))
-      .join(" / ");
-    return `${prefix}: ${baseLabel}`;
-  }
-  if (currentTheme) {
-    return `${hmVitrinThemeFlowerLabel(currentTheme)}: ${baseLabel}`;
-  }
-  return baseLabel;
-}
-
 /** Modül yalnızca belirli vitrin temalarında kullanılıyorsa seçili tema ile uyumlu mu? */
 export function isHmNewsModuleCompatibleWithTheme(
   theme: HmVitrinThemeId | string | null | undefined,
@@ -1216,14 +1151,6 @@ export function isHmNewsModuleCompatibleWithTheme(
   const mapped = HM_NEWS_MODULE_THEME_MAP[moduleId];
   if (!mapped?.length) return true;
   return mapped.includes(normalizeHmVitrinTheme(theme));
-}
-
-/** Editörde modül aç/kapa — tema kısıtlı modüller yanlış temada etkinleştirilemez. */
-export function canEnableHmNewsEditorModuleForTheme(
-  theme: HmVitrinThemeId | string | null | undefined,
-  moduleId: HmNewsHomeModuleId,
-): boolean {
-  return isHmNewsModuleCompatibleWithTheme(theme, moduleId);
 }
 
 /** Haber vitrinlerinde manşet sağ «Son Haberler» kutusu — editör toggle. */
@@ -1263,30 +1190,6 @@ export const HM_NEWS_CORPORATE_ONLY_HOME_MODULE_IDS = [
 
 export function isHmNewsCorporateOnlyHomeModule(moduleId: HmNewsHomeModuleId): boolean {
   return (HM_NEWS_CORPORATE_ONLY_HOME_MODULE_IDS as readonly string[]).includes(moduleId);
-}
-
-/** Haber vitrin editöründe modül satırı / toggle gösterilsin mi? */
-export function shouldShowHmNewsEditorModule(
-  theme: HmVitrinThemeId | string | null | undefined,
-  moduleId: HmNewsHomeModuleId,
-): boolean {
-  if (!isHmCorporateLikeTheme(theme) && isHmNewsCorporateOnlyHomeModule(moduleId)) {
-    return false;
-  }
-  /** Gündemde Öne Çıkanlar — tüm haber siteleri editör modüllerinde (kurumsal vitrin hariç). */
-  if (moduleId === "esenLeadPack") {
-    return !isHmCorporateLikeTheme(theme);
-  }
-  if (isHmNewsVitrinToggleModule(moduleId)) {
-    return isHmNewsModuleCompatibleWithTheme(theme, moduleId);
-  }
-  return true;
-}
-
-export function hasAnyHmNewsVitrinToggleModuleEnabled(
-  p: Parameters<typeof resolveHmNewsHomeModuleEnabled>[0],
-): boolean {
-  return HM_NEWS_VITRIN_TOGGLE_MODULE_IDS.some((moduleId) => resolveHmNewsHomeModuleEnabled(p, moduleId));
 }
 
 export function isHmNewsHomeModuleDefaultEnabledForTheme(
@@ -1413,71 +1316,6 @@ export function resolveHmNewsEditorModuleEnabled(
   }
 }
 
-/** Editör modül sırası satırından aç/kapa — mevcut tercih anahtarlarına yansıtılır. */
-export function applyHmNewsEditorModuleTogglePatch(
-  p: NewsSiteLayoutPrefs,
-  moduleId: HmNewsHomeModuleId,
-  checked: boolean,
-): Partial<NewsSiteLayoutPrefs> {
-  const themeToggleKey = HM_NEWS_THEME_MODULE_TOGGLE_KEYS[moduleId];
-  if (themeToggleKey) {
-    return { [themeToggleKey]: checked };
-  }
-  switch (moduleId) {
-    case "breakingBand":
-      return { hmNewsBreakingBandEnabled: checked };
-    case "yekpareSearchBox":
-      return { hmNewsSearchBoxEnabled: checked };
-    case "googleNewsBand":
-      return { hmNewsGoogleNewsBandEnabled: checked };
-    case "hero":
-      return { hmNewsSliderEnabled: checked };
-    case "tepeManset":
-      return { hmNewsTepeMansetEnabled: checked };
-    case "mansetAd":
-      return { hmNewsMansetAdModuleEnabled: checked };
-    case "authorsStrip":
-      return { hmNewsHorizontalAuthorsEnabled: checked };
-    case "popularCities":
-      return { sadeNewsCitiesBandEnabled: checked };
-    case "newsMapModule":
-      return { hmNewsMapModuleEnabled: checked };
-    case "sporModule":
-      return { hmNewsSporModuleEnabled: checked };
-    case "worldBriefs":
-      return { hmNewsWorldBriefsEnabled: checked };
-    case "yemekHaber":
-      return { hmNewsYemekHaberEnabled: checked };
-    case "culturePortal":
-      return { hmCorporateCulturePortalBandEnabled: checked };
-    case "ataturkCorner":
-      return { hmCorporateAtaturkCornerEnabled: checked };
-    case "sehitSearch":
-      return { hmSehitSearchEnabled: checked };
-    case "heritageInfo":
-      return {
-        hmCorporateWarsSectionEnabled: checked,
-        hmCorporateNationalDaysSectionEnabled: checked,
-      };
-    case "homeMiddleAd":
-      return { hmNewsHomeMiddleAdModuleEnabled: checked };
-    case "latestGrid":
-      return {
-        hmNewsLatestGridMainEnabled: checked,
-        hmNewsLatestGridSidebarEnabled: checked,
-      };
-    case "donationSupport":
-      return {
-        hmCorporateDonation: {
-          ...(p.hmCorporateDonation ?? {}),
-          enabled: checked,
-        },
-      };
-    default:
-      return {};
-  }
-}
-
 export function parseHmCorporateMainNewsLayout(raw: unknown): HmCorporateMainNewsLayout | undefined {
   const v = String(raw ?? "")
     .trim()
@@ -1591,7 +1429,7 @@ export function applyHmCorporateEditorModuleTogglePatch(
   }
 }
 
-/** Tema değişiminde varsayılan modül aç/kapa + sıra; RSS ve genel tercihler korunur. */
+/** Kaldırılmış tema (`ajans` vb.) kaydı okunurken varsayılan modül düzeni. Editör tema seçici kullanmaz. */
 export function hmNewsThemePresetPatch(theme: HmVitrinThemeId | string | null | undefined): Partial<NewsSiteLayoutPrefs> {
   const themeId = normalizeHmVitrinTheme(theme);
   const enabledSet = new Set(HM_NEWS_THEME_DEFAULT_MODULES[themeId] ?? []);
