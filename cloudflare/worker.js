@@ -3087,6 +3087,8 @@ export default {
           edgePath === "/api/hm/editor/news" ||
           edgePath === "/api/hm/editor/makale" ||
           edgePath === "/api/hm/editor/makale/bulk-delete" ||
+          edgePath === "/api/hm/author/news" ||
+          /^\/api\/hm\/author\/news\/\d+$/.test(edgePath) ||
           edgePath === "/api/hm/editor/rss/campaigns" ||
           /^\/api\/hm\/editor\/authors\/\d+$/.test(edgePath) ||
           /^\/api\/hm\/editor\/pool\/authors\/\d+\/publish$/.test(edgePath) ||

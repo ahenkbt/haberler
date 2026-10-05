@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
 const JWT_TYP = "hm_editor";
+const JWT_TYP_AUTHOR = "hm_author";
 const KH_HOSTS = new Set(["kirsehirhaber.org", "kirsehri.com", "kirsehir.net"]);
 
 const STANDARD_CATEGORIES = [
@@ -52,6 +53,26 @@ function collectJwtSecretStrings(env) {
     if (s && !out.includes(s)) out.push(s);
   }
   return out;
+}
+
+async function parseAuthorJwt(request, env) {
+  const { jwtVerify } = await import("jose");
+  const h = String(request.headers.get("authorization") || "").trim();
+  const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
+  if (!token) return null;
+  for (const secret of collectJwtSecretStrings(env)) {
+    try {
+      const key = new TextEncoder().encode(secret);
+      const { payload } = await jwtVerify(token, key);
+      const authorId = asPositiveInt(payload?.aid);
+      const siteId = asPositiveInt(payload?.sid);
+      if (payload?.typ !== JWT_TYP_AUTHOR || authorId == null || siteId == null) continue;
+      return { authorId, siteId };
+    } catch {
+      /* sonraki secret */
+    }
+  }
+  return null;
 }
 
 async function parseEditorJwt(request, env) {
@@ -865,7 +886,7 @@ async function handleEditorNews(sql, siteId, url, env) {
   return jsonResponse(200, { items: [], total: 0, source: "neon-empty" });
 }
 
-async function handleCreateNews(sql, siteId, body) {
+async function handleCreateNews(sql, siteId, body, opts = {}) {
   await ensureNewsWritableColumns(sql);
 
   const title = String(body?.title || "").trim();
@@ -882,13 +903,13 @@ async function handleCreateNews(sql, siteId, body) {
     ? body.tags.map((t) => String(t).trim()).filter(Boolean)
     : [];
   const tagsLiteral = toPgTextArrayLiteral(tags);
-  let authorId = asPositiveInt(body?.authorId);
+  let authorId = opts.lockAuthorId != null ? opts.lockAuthorId : asPositiveInt(body?.authorId);
   const imageUrl = body?.imageUrl != null ? String(body.imageUrl).trim() || null : null;
   const spot = body?.spot != null ? String(body.spot) : null;
   const content = body?.content != null ? String(body.content) : null;
-  const isFeatured = body?.isFeatured === true;
-  const isSiteManset = body?.isSiteManset === true;
-  const isBreaking = body?.isBreaking === true;
+  const isFeatured = opts.lockAuthorId != null ? false : body?.isFeatured === true;
+  const isSiteManset = opts.lockAuthorId != null ? false : body?.isSiteManset === true;
+  const isBreaking = opts.lockAuthorId != null ? false : body?.isBreaking === true;
   const senderFullName = body?.senderFullName != null ? String(body.senderFullName) : null;
   const senderEmail = body?.senderEmail != null ? String(body.senderEmail) : null;
   const senderPhone = body?.senderPhone != null ? String(body.senderPhone) : null;
@@ -915,6 +936,9 @@ async function handleCreateNews(sql, siteId, body) {
       `;
       const hit = Array.isArray(existing) ? existing[0] : existing?.rows?.[0];
       if (hit) {
+        if (opts.lockAuthorId != null && Number(hit.author_id) !== Number(opts.lockAuthorId)) {
+          continue;
+        }
         return jsonResponse(200, serializeNewsRow(hit, hit.category_slug || categorySlug));
       }
 
@@ -944,6 +968,11 @@ async function handleCreateNews(sql, siteId, body) {
       lastErr = msg;
       // Silinmiş yazar FK'si — yazarsız tekrar dene
       if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
+        if (opts.lockAuthorId != null) {
+          return jsonResponse(400, {
+            error: "Köşe yazarı kaydı bulunamadı. Editör panelinden yazarın bu siteye bağlı olduğundan emin olun.",
+          });
+        }
         authorId = null;
         i -= 1;
         continue;
@@ -1726,6 +1755,129 @@ async function handleEditorRssCampaignRun(sql, env, request, siteId, id) {
   }
 }
 
+async function loadAuthorOnSite(sql, authorId, siteId) {
+  const rows = await sql`
+    SELECT id, name, hm_site_id
+    FROM authors
+    WHERE id = ${authorId} AND hm_site_id = ${siteId}
+    LIMIT 1
+  `;
+  return rows?.[0] || null;
+}
+
+async function handleAuthorNewsList(sql, siteId, authorId, incomingUrl) {
+  const limit = Math.min(asPositiveInt(incomingUrl.searchParams.get("limit")) || 50, 200);
+  const offsetRaw = parseInt(String(incomingUrl.searchParams.get("offset") || "0"), 10);
+  const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? offsetRaw : 0;
+  const rows = await sql`
+    SELECT n.*, c.slug AS category_slug
+    FROM news n
+    LEFT JOIN categories c ON c.id = n.category_id
+    WHERE n.site_id = ${siteId} AND n.author_id = ${authorId}
+    ORDER BY n.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  const countRows = await sql`
+    SELECT count(*)::int AS count
+    FROM news
+    WHERE site_id = ${siteId} AND author_id = ${authorId}
+  `;
+  return jsonResponse(200, {
+    items: (rows || []).map((r) => serializeNewsRow(r, r.category_slug)),
+    total: countRows?.[0]?.count ?? 0,
+  });
+}
+
+async function handleAuthorNewsGet(sql, siteId, authorId, id) {
+  const row = await loadNewsWithCategory(sql, siteId, id);
+  if (!row || Number(row.author_id) !== authorId) {
+    return jsonResponse(404, { error: "Haber bulunamadı." });
+  }
+  return jsonResponse(200, serializeNewsRow(row, row.category_slug));
+}
+
+async function handleAuthorNewsDelete(sql, siteId, authorId, id) {
+  const rows = await sql`
+    DELETE FROM news
+    WHERE id = ${id} AND site_id = ${siteId} AND author_id = ${authorId}
+    RETURNING id
+  `;
+  if (!rows?.[0]) return jsonResponse(404, { error: "Haber bulunamadı." });
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "cache-control": "private, no-store, max-age=0, must-revalidate",
+      "cdn-cache-control": "no-store",
+      "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+    },
+  });
+}
+
+/**
+ * Köşe yazarı makalesi Container zaman aşımına düşmeden Neon'a yazılır.
+ * @returns {Promise<Response|null>}
+ */
+async function handleAuthorArticleEdge(request, env, incomingUrl, path, method) {
+  const isNews =
+    path === "/api/hm/author/news" || /^\/api\/hm\/author\/news\/\d+$/.test(path);
+  const isCategories = path === "/api/hm/author/categories";
+  if (!isNews && !isCategories) return null;
+
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const author = await parseAuthorJwt(request, env);
+  if (!author) {
+    if (!auth.startsWith("Bearer ")) {
+      return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
+    }
+    return null;
+  }
+  const sql = sqlClient(env);
+  if (!sql) return null;
+  const owned = await loadAuthorOnSite(sql, author.authorId, author.siteId);
+  if (!owned) return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
+
+  if (isCategories && method === "GET") return handleCategories(sql, author.siteId);
+  if (isCategories) return jsonResponse(405, { error: "Yöntem desteklenmiyor" });
+
+  if (path === "/api/hm/author/news" && method === "GET") {
+    return handleAuthorNewsList(sql, author.siteId, author.authorId, incomingUrl);
+  }
+  if (path === "/api/hm/author/news" && method === "POST") {
+    const body = await readJsonBody(request);
+    return handleCreateNews(
+      sql,
+      author.siteId,
+      { ...body, authorId: author.authorId },
+      { lockAuthorId: author.authorId },
+    );
+  }
+
+  const idMatch = path.match(/^\/api\/hm\/author\/news\/(\d+)$/);
+  const id = asPositiveInt(idMatch?.[1]);
+  if (id == null) return jsonResponse(400, { error: "id" });
+  if (method === "GET") return handleAuthorNewsGet(sql, author.siteId, author.authorId, id);
+  if (method === "PUT") {
+    const body = await readJsonBody(request);
+    const existing = await loadNewsWithCategory(sql, author.siteId, id);
+    if (!existing || Number(existing.author_id) !== author.authorId) {
+      return jsonResponse(404, { error: "Haber bulunamadı." });
+    }
+    const {
+      isFeatured: _featured,
+      isSiteManset: _manset,
+      isBreaking: _breaking,
+      authorId: _authorId,
+      ...authorUpdate
+    } = body || {};
+    return handleUpdateNews(sql, author.siteId, id, {
+      ...authorUpdate,
+      authorId: author.authorId,
+    });
+  }
+  if (method === "DELETE") return handleAuthorNewsDelete(sql, author.siteId, author.authorId, id);
+  return jsonResponse(405, { error: "Yöntem desteklenmiyor" });
+}
+
 /**
  * @returns {Promise<Response|null>}
  */
@@ -1743,6 +1895,14 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     if (!sql) return null;
     if (!(await isHmNewsSite(sql, hmSiteId))) return null;
     return handleAuthorsList(sql, hmSiteId);
+  }
+
+  if (path.startsWith("/api/hm/author/")) {
+    const authorArticle = await handleAuthorArticleEdge(request, env, incomingUrl, path, method);
+    if (authorArticle) return authorArticle;
+    if (path === "/api/hm/author/news" || path.startsWith("/api/hm/author/news/") || path === "/api/hm/author/categories") {
+      return null;
+    }
   }
 
   if (!path.startsWith("/api/hm/editor/")) return null;
