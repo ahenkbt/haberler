@@ -166,5 +166,13 @@ $none = Modules::navCategories(['hmNavOnlyCategorySlugs' => []], ['gundem' => 'G
 if ($none !== []) {
     $fail('empty whitelist');
 }
+$suspended = new Site(7, 'kirsehirhaber', 'Kırşehir', '', 'kirsehirhaber.org', ['hmPublicSuspended' => true], [], '#c8102e', '', 'kirsehirhaber.org', '', 'https://kirsehirhaber.org', []);
+if (!$suspended->publicSuspended()) {
+    $fail('suspended');
+}
+$openSite = new Site(8, 'asg', 'ASG', '', 'asg.com', ['hmPublicSuspended' => false], [], '#c8102e', '', 'asg.com', '', 'https://asg.com', []);
+if ($openSite->publicSuspended()) {
+    $fail('not suspended');
+}
 
 fwrite(STDOUT, "ok\n");

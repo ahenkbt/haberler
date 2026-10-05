@@ -65,7 +65,39 @@ final class App
         }
 
         $site = $this->buildSite($row, $host, $bare, $basePath);
+        if ($site->publicSuspended() && !$this->suspensionExempt($path)) {
+            $this->suspended($site);
+            return;
+        }
         $this->route($site, $path);
+    }
+
+    private function suspensionExempt(string $path): bool
+    {
+        return in_array($path, ['/healthz', '/robots.txt', '/sitemap.xml', '/google-news.xml'], true);
+    }
+
+    private function suspended(Site $site): void
+    {
+        $email = 'ahenkbt@gmail.com';
+        $message = 'Bu site askıya alınmıştır. Bilgi ve iletişim için ' . $email;
+        http_response_code(200);
+        header('Content-Type: text/html; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: public, max-age=30, s-maxage=30');
+        header('X-Hm-Public-Suspended: 1');
+        $name = htmlspecialchars($site->name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $body = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $body = str_replace(
+            $email,
+            '<a href="mailto:' . $email . '">' . $email . '</a>',
+            $body,
+        );
+        echo '<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+            . $name
+            . '</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#fff;color:#0f172a"><p style="max-width:36rem;padding:2rem;text-align:center;font-size:1.25rem;font-weight:650;line-height:1.5">'
+            . $body
+            . '</p></body></html>';
     }
 
     /** @param array<string, mixed> $row */
