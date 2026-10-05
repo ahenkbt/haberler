@@ -79,25 +79,29 @@ final class App
 
     private function suspended(Site $site): void
     {
-        $email = 'ahenkbt@gmail.com';
-        $message = 'Bu site askıya alınmıştır. Bilgi ve iletişim için ' . $email;
+        $title = 'Site neden askıya alınır';
+        $host = 'ahenk.net.tr';
+        $message = '1 ahenk.net.tr hesabına aylık 50 usd olan lisans ücreti yatırılmadığı durumlarda, suç ve suçluyu öven haberler yapıldığında veya site altındaki ajans üyeliği ve yazılım firması adı ve linki kabul edilmediğinde siteniz askıya alınır ve bir süre sonra kapatılır';
         http_response_code(200);
         header('Content-Type: text/html; charset=utf-8');
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: public, max-age=30, s-maxage=30');
         header('X-Hm-Public-Suspended: 1');
-        $name = htmlspecialchars($site->name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $pageTitle = htmlspecialchars($site->name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ' — ' . $safeTitle;
         $body = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $body = str_replace(
-            $email,
-            '<a href="mailto:' . $email . '">' . $email . '</a>',
+            $host,
+            '<a href="https://' . $host . '">' . $host . '</a>',
             $body,
         );
         echo '<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
-            . $name
-            . '</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#fff;color:#0f172a"><p style="max-width:36rem;padding:2rem;text-align:center;font-size:1.25rem;font-weight:650;line-height:1.5">'
+            . $pageTitle
+            . '</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#fff;color:#0f172a"><div style="max-width:40rem;padding:2rem;text-align:center"><h1 style="margin:0 0 1rem;font-size:1.75rem;line-height:1.25">'
+            . $safeTitle
+            . '</h1><p style="margin:0;font-size:1.15rem;font-weight:650;line-height:1.55">'
             . $body
-            . '</p></body></html>';
+            . '</p></div></body></html>';
     }
 
     /** @param array<string, mixed> $row */
