@@ -113,13 +113,6 @@ export default function AhenkAgencyIletisim({ variant = "iletisim" }: { variant?
               </p>
             </>
           ) : null}
-          <p className="ahenk-iban">
-            <strong>IBAN</strong>
-            <br />
-            {site.ibanBank} · {site.ibanHolder}
-            <br />
-            <span className="ahenk-iban-num">{site.iban}</span>
-          </p>
           <p>
             {site.pricePeriodNote}
             <br />

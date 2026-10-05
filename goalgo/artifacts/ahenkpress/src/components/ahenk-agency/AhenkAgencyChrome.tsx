@@ -429,13 +429,6 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <Mail className="inline w-4 h-4 mr-1" />
             <a href={`mailto:${site.email}`}>{site.email}</a>
           </p>
-          <p className="ahenk-iban" style={{ marginTop: 12 }}>
-            <strong>{site.ibanBank}</strong>
-            <br />
-            {site.ibanHolder}
-            <br />
-            <span className="ahenk-iban-num">{site.iban}</span>
-          </p>
         </div>
         <div>
           <h3>Menü</h3>

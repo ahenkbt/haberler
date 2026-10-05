@@ -24,6 +24,7 @@ import {
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
+import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
   hybridEdgeFillHttpStatus,
   HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
@@ -2847,6 +2848,9 @@ export default {
 
     const khSuspended = await khPublicSuspensionResponse(request, env, incoming);
     if (khSuspended) return khSuspended;
+
+    const tukavContact = await handleTukavContactEdge(request);
+    if (tukavContact) return tukavContact;
 
     const haberlerArticleAlias = portalHaberlerArticleAliasPath(incoming.pathname);
 

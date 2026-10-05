@@ -155,8 +155,8 @@ export function defaultAhenkFaqs(): AhenkFaq[] {
       a: "Tüm web yazılımları mobil uyumludur. Telefon, tablet ve masaüstünde aynı hız ve SEO temeliyle teslim edilir.",
     },
     {
-      q: "Ödeme IBAN bilgisi nedir?",
-      a: "Kuveyt Türk · Nail TÜRKOĞLU · TR160020500000041593000001. Kurumsal e-posta bilgi@ahenk.net.tr. WhatsApp hattı 0541 313 62 45.",
+      q: "Ödeme ve teklif için nasıl ulaşılır?",
+      a: "Kurumsal e-posta bilgi@ahenk.net.tr. WhatsApp hattı 0541 313 62 45.",
     },
   ];
 }
@@ -772,9 +772,9 @@ export function defaultAhenkAgencySite(): AhenkAgencySite {
     priceCampaignAmount: "10000",
     priceRegularAmount: "20000",
     priceIncludesNote: "Sunucu ve domain dahildir.",
-    ibanBank: "Kuveyt Türk",
-    ibanHolder: "Nail TÜRKOĞLU",
-    iban: "TR160020500000041593000001",
+    ibanBank: "",
+    ibanHolder: "",
+    iban: "",
     faqs: defaultAhenkFaqs(),
     hoursWeekday: "Pazartesi - Cumartesi 09:00 - 18:00",
     hoursSunday: "Pazar: Kapalı",
@@ -1239,15 +1239,30 @@ function mergePromo(raw: unknown, defaults: AhenkPromoBlock): AhenkPromoBlock {
   };
 }
 
+const PUBLISHED_AHENK_IBAN = "TR160020500000041593000001";
+
+function faqPublishesBankAccount(faq: { q: string; a: string }): boolean {
+  const q = faq.q.toLocaleLowerCase("tr-TR");
+  const compact = `${faq.q} ${faq.a}`.replace(/\s+/g, "").toUpperCase();
+  return q.includes("iban") || compact.includes(PUBLISHED_AHENK_IBAN) || compact.includes("KUVEYTTÜRK");
+}
+
+function withoutBankAccountFaqs(faqs: AhenkFaq[]): AhenkFaq[] {
+  return faqs.filter((f) => !faqPublishesBankAccount(f));
+}
+
 function mergeFaqs(raw: unknown, defaults: AhenkFaq[]): AhenkFaq[] {
-  if (!Array.isArray(raw) || raw.length === 0) return defaults;
-  const items = raw
-    .filter(isRecord)
-    .map((f) => ({ q: str(f.q, ""), a: str(f.a, "") }))
-    .filter((f) => f.q && f.a);
-  if (!items.length) return defaults;
+  const safeDefaults = withoutBankAccountFaqs(defaults);
+  if (!Array.isArray(raw) || raw.length === 0) return safeDefaults;
+  const items = withoutBankAccountFaqs(
+    raw
+      .filter(isRecord)
+      .map((f) => ({ q: str(f.q, ""), a: str(f.a, "") }))
+      .filter((f) => f.q && f.a),
+  );
+  if (!items.length) return safeDefaults;
   const seen = new Set(items.map((f) => f.q.trim().toLowerCase()));
-  for (const d of defaults) {
+  for (const d of safeDefaults) {
     if (!seen.has(d.q.trim().toLowerCase())) items.push(d);
   }
   return items;
@@ -1329,9 +1344,9 @@ export function parseAhenkAgencySiteFromJson(raw: string | null | undefined): Ah
       priceCampaignAmount: str(data.priceCampaignAmount, defaults.priceCampaignAmount),
       priceRegularAmount: str(data.priceRegularAmount, defaults.priceRegularAmount),
       priceIncludesNote: str(data.priceIncludesNote, defaults.priceIncludesNote),
-      ibanBank: str(data.ibanBank, defaults.ibanBank),
-      ibanHolder: str(data.ibanHolder, defaults.ibanHolder),
-      iban: str(data.iban, defaults.iban).replace(/\s+/g, ""),
+      ibanBank: "",
+      ibanHolder: "",
+      iban: "",
       faqs: mergeFaqs(data.faqs, defaults.faqs),
       hoursWeekday: str(data.hoursWeekday, defaults.hoursWeekday),
       hoursSunday: str(data.hoursSunday, defaults.hoursSunday),
@@ -1472,6 +1487,9 @@ export function applySiteSettingsToAhenkAgency(
     ...site,
     brandName: normalizePortalDisplayName(site.brandName),
     tagline: isLegacyPortalSiteName(site.tagline) ? PORTAL_DEFAULT_TAGLINE : site.tagline,
+    iban: "",
+    ibanHolder: "",
+    ibanBank: "",
   };
   if (!settings) return sanitized;
   const brand = normalizePortalDisplayName(settings.siteName);
@@ -1482,9 +1500,6 @@ export function applySiteSettingsToAhenkAgency(
   const wa = String(settings.whatsapp ?? "").trim();
   const logo = String(settings.logoUrl ?? "").trim();
   const mark = String(settings.faviconUrl ?? "").trim();
-  const iban = String(settings.bankIban ?? "").replace(/\s+/g, "");
-  const holder = String(settings.bankAccountHolder ?? "").trim();
-  const bank = String(settings.bankNameBranch ?? "").trim();
   return {
     ...sanitized,
     brandName: brand || sanitized.brandName,
@@ -1499,9 +1514,9 @@ export function applySiteSettingsToAhenkAgency(
     email: email || sanitized.email,
     logoUrl: ahenkBundledLogoUrl(logo, sanitized.logoUrl),
     logoMarkUrl: ahenkBundledLogoUrl(mark, sanitized.logoMarkUrl),
-    iban: iban || sanitized.iban,
-    ibanHolder: holder || sanitized.ibanHolder,
-    ibanBank: bank || sanitized.ibanBank,
+    iban: "",
+    ibanHolder: "",
+    ibanBank: "",
   };
 }
 

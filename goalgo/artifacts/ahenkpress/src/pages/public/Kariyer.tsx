@@ -53,7 +53,7 @@ const QUALITIES = [
 const POSITIONS = [
   {
     title: "Müşteri Temsilcisi (Tam Zamanlı, Ofisten)",
-    text: "Hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00 (Pazar tatil). Asgari ücret, SGK ve yemek. Oryantasyon ve staj süreci (1. hafta, günde 4 saat) bu pozisyon için de geçerlidir. Mülakat ve adres: Sağlık Mah. Aksu Cad. 13/5 Sıhhıye - Çankaya / Ankara.",
+    text: "Hafta içi 09:00 - 17:00, Cumartesi 09:00 - 15:00 (Pazar tatil). Asgari ücret, SGK ve yemek. Oryantasyon ve staj süreci (1. hafta, günde 4 saat) bu pozisyon için de geçerlidir.",
   },
   {
     title: "Home Ofis Part Time İş Başvurusu ve Çalışma Esasları",
