@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { EditorLayout } from "@/components/EditorLayout";
 import { HaberlerInner } from "@/pages/admin/HaberlerInner";
-import { EditorYekparePoolPanel } from "@/components/editor/EditorYekparePoolPanel";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { Button } from "@/components/ui/button";
@@ -176,27 +175,24 @@ function EditorNewsSubmissionsPanel() {
 }
 
 export default function EditorHaberler() {
-  const { site, newsLayoutPrefs } = useHmEditor();
+  const { site } = useHmEditor();
   const [location, setLocation] = useLocation();
   const pathBase = useMemo(() => (location.split("?")[0] ?? "").trim() || "/editor/haberler", [location]);
   const [tab, setTab] = useState<HaberlerTab>(() => readTabFromLocation(location));
   const [categorySlug, setCategorySlug] = useState(() => readKategoriFromLocation(location));
-  const vitrinTheme = String(newsLayoutPrefs.hmVitrinTheme ?? "").trim().toLowerCase();
-  const isCorporateSite = vitrinTheme === "corporate" || vitrinTheme === "kurumsal" || vitrinTheme === "vatan";
-
   useEffect(() => {
     setTab(readTabFromLocation(location));
     setCategorySlug(readKategoriFromLocation(location));
   }, [location]);
 
   useEffect(() => {
-    if (!isCorporateSite || tab !== "yekpare") return;
+    if (tab !== "yekpare") return;
     setTab("kendi");
     const params = new URLSearchParams();
     if (categorySlug) params.set("kategori", categorySlug);
     const qs = params.toString();
     setLocation(qs ? `${pathBase}?${qs}` : pathBase);
-  }, [isCorporateSite, tab, categorySlug, pathBase, setLocation]);
+  }, [tab, categorySlug, pathBase, setLocation]);
 
   const pushQuery = (nextTab: HaberlerTab, nextCategory: string) => {
     const params = new URLSearchParams();
@@ -221,9 +217,8 @@ export default function EditorHaberler() {
         }}
         className="space-y-4"
       >
-        <TabsList className={`grid w-full max-w-md ${isCorporateSite ? "grid-cols-1" : "grid-cols-2"}`}>
+        <TabsList className="grid w-full max-w-md grid-cols-1">
           <TabsTrigger value="kendi">Kendi haberlerim</TabsTrigger>
-          {!isCorporateSite ? <TabsTrigger value="yekpare">Yekpare havuzu</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="kendi" className="mt-0 space-y-4">
@@ -246,17 +241,6 @@ export default function EditorHaberler() {
           />
         </TabsContent>
 
-        {!isCorporateSite ? (
-          <TabsContent value="yekpare" className="mt-0">
-            <EditorYekparePoolPanel
-              categorySlug={categorySlug}
-              onCategorySlugChange={(slug) => {
-                setCategorySlug(slug);
-                pushQuery("yekpare", slug);
-              }}
-            />
-          </TabsContent>
-        ) : null}
       </Tabs>
     </EditorLayout>
   );

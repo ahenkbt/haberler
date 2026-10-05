@@ -9,6 +9,7 @@ import {
 } from "@/lib/hmMediaSpotlightPool";
 import { HmModuleGallerySourceEditor, hmMediaGalleryBlockLabel } from "@/components/HmModuleGallerySourceEditor";
 import { EditorLayout } from "@/components/EditorLayout";
+import EditorYenisafakVitrin from "@/pages/editor/EditorYenisafakVitrin";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -675,9 +676,49 @@ export default function EditorVitrinAyarlari() {
     });
   };
 
+  if (!isCorporateEditorSite) {
+    return <EditorYenisafakVitrin />;
+  }
+
   return (
     <EditorLayout title="Vitrin ayarları">
       <div className="max-w-3xl space-y-8">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <div>
+            <Label className="font-semibold text-slate-900">Kurumsal tema</Label>
+            <p className="mt-1 text-xs text-slate-600">
+              Bu sitede haber vitrini ayarları yok. <strong>VKD Tema</strong> kurumsal dernek vitrinidir.{" "}
+              <strong>VATAN tema</strong> hatıra anasayfasıdır; modül metin ve görselleri trafik sitesindeki gibi bu
+              panelden düzenlenir.
+            </p>
+          </div>
+          <Select
+            value={p.hmVitrinTheme === "vatan" ? "vatan" : "corporate"}
+            disabled={saving}
+            onValueChange={(value) => {
+              const theme = value === "vatan" ? "vatan" : "corporate";
+              void saveNewsSiteLayout(
+                { ...p, hmVitrinTheme: theme },
+                { layoutPatch: { hmVitrinTheme: theme } },
+              ).then((result) => {
+                if (!result.ok) {
+                  toast({ title: "Tema kaydedilemedi", description: result.error.slice(0, 180), variant: "destructive" });
+                  return;
+                }
+                setP({ ...p, hmVitrinTheme: theme });
+                toast({ title: theme === "vatan" ? "VATAN tema kaydedildi" : "VKD Tema kaydedildi" });
+              });
+            }}
+          >
+            <SelectTrigger className="max-w-md bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="corporate">VKD Tema</SelectItem>
+              <SelectItem value="vatan">VATAN tema</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
           <div>
             <Label className="font-semibold text-slate-900">Üst menü</Label>
@@ -2033,12 +2074,12 @@ export default function EditorVitrinAyarlari() {
             <AccordionTrigger className="py-4 hover:no-underline">
               <div className="min-w-0 flex-1 pr-3 text-left">
                 <p className="text-base font-black tracking-tight text-slate-900">
-                  {isVatanEditorSite ? "VATAN / kurumsal modüller" : "KURUMSAL modüller"}
+                  {isVatanEditorSite ? "VATAN tema modülleri" : "VKD Tema modülleri"}
                 </p>
                 <p className="mt-1 text-sm font-normal text-slate-600">
                   {isVatanEditorSite
                     ? "Vatan anasayfa sırası bu panelden yönetilir. Slider ve mozaik görselleri Genel ayarlar’daki Tepe Manşet ve Bant bölümlerindedir."
-                    : "Yalnızca şirket, vakıf, dernek gibi kurumsal siteler içindir. Genel ayarlarda vitrin teması KURUMSAL seçiliyse uygulanır; haber sitesi temasını etkilemez."}
+                    : "VKD Tema kurumsal vitrinidir. Modül aç/kapa ve sıra buradan, slider ve bant içerikleri Genel ayarlardan düzenlenir. Haber sitesi ayarları bu temada gösterilmez."}
                 </p>
               </div>
             </AccordionTrigger>
@@ -2240,11 +2281,8 @@ export default function EditorVitrinAyarlari() {
             <div className="px-4 py-3">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Kurumsal modülleri</p>
             <p className="mt-1 text-xs text-slate-500">
-              Kapattışınız modüller yalnızca KURUMSAL vitrininde gizlenir. Haber sitesi modülleri bu temada gösterilmez. Tema seçimi:{" "}
-              <Link href="/editor/genel-ayarlar#hm-vitrin-theme-controls" className="font-semibold text-red-600 hover:underline">
-                Genel ayarlar ↔ KURUMSAL vitrin
-              </Link>
-              . Tepe manşet ve bant içerikleri{" "}
+              Kapattığınız modüller yalnızca seçili kurumsal temada gizlenir. Haber sitesi modülleri burada yoktur. Tema yukarıdan
+              seçilir. Tepe manşet ve bant içerikleri{" "}
               <Link href="/editor/manset" className="font-semibold text-red-600 hover:underline">
                 Tepe Manşet
               </Link>{" "}
@@ -2501,7 +2539,7 @@ export default function EditorVitrinAyarlari() {
             <TabsContent value="vatan-icerik" forceMount className="mt-0 space-y-4 data-[state=inactive]:hidden">
               <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
                 <div>
-                  <Label className="font-semibold text-slate-900">Vatan tema kutuları (metin + görsel)</Label>
+                  <Label className="font-semibold text-slate-900">VATAN tema kutuları (metin + görsel)</Label>
                   <p className="mt-1 text-xs text-slate-500">
                     Hero başlığı, dernek bandı, haklar/uzmanlık ve bölüm arka plan görselleri buradan değişir. Slider
                     görselleri için{" "}
