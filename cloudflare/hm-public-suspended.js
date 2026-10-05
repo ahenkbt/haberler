@@ -1,14 +1,11 @@
 /** Kırşehir haber alanları. Ön yüz VPS PHP’dedir; Worker yalnızca askı kapısı için araya girer. */
+import { HM_PUBLIC_SUSPENDED_PAGE_HTML } from "../goalgo/artifacts/ahenkpress/src/lib/hmPublicSuspendedPage.js";
+
 const KH_PUBLIC_HOSTS = new Set([
   "kirsehirhaber.org",
   "kirsehri.com",
   "kirsehir.net",
 ]);
-
-const TITLE = "Site neden askıya alınır";
-const HOST = "ahenk.net.tr";
-const NOTICE =
-  "1 ahenk.net.tr hesabına aylık 50 usd olan lisans ücreti yatırılmadığı durumlarda, suç ve suçluyu öven haberler yapıldığında veya site altındaki ajans üyeliği ve yazılım firması adı ve linki kabul edilmediğinde siteniz askıya alınır ve bir süre sonra kapatılır";
 
 const FLAG_CACHE_MS = 30_000;
 let flagCache = { at: 0, flag: /** @type {boolean | null} */ (null) };
@@ -75,9 +72,7 @@ export function khSuspendedFlagFromRows(rows) {
 }
 
 export function khSuspensionHtml() {
-  const link = `<a href="https://${HOST}">${HOST}</a>`;
-  const body = NOTICE.replaceAll(HOST, link);
-  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${TITLE}</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#fff;color:#0f172a"><div style="max-width:40rem;padding:2rem;text-align:center"><h1 style="margin:0 0 1rem;font-size:1.75rem;line-height:1.25">${TITLE}</h1><p style="margin:0;font-size:1.15rem;font-weight:650;line-height:1.55">${body}</p></div></body></html>`;
+  return HM_PUBLIC_SUSPENDED_PAGE_HTML;
 }
 
 function suspensionResponse(request) {

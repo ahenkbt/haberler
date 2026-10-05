@@ -30,10 +30,12 @@ describe("Kırşehir kamu askı kapısı", () => {
     );
   });
 
-  it("askı sayfasında başlık ve ahenk.net.tr linki vardır", () => {
+  it("askı sayfası Ahenk bilgilendirme sayfasıdır", () => {
     const html = khSuspensionHtml();
-    assert.match(html, /Site neden askıya alınır/);
+    assert.match(html, /Hizmet Geçici Olarak/);
+    assert.match(html, /Askıya Alınmıştır/);
     assert.match(html, /href="https:\/\/ahenk\.net\.tr"/);
-    assert.match(html, /aylık 50 usd/);
+    assert.match(html, /bilgi@ahenk\.net\.tr/);
+    assert.match(html, /Tüm Nedenler \(8\)/);
   });
 });

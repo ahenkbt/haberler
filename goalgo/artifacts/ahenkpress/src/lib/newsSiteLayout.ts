@@ -3385,13 +3385,6 @@ function emptyNewsSiteLayoutPrefsForSlug(siteSlug?: string | null): NewsSiteLayo
   return base;
 }
 
-export const HM_PUBLIC_SUSPENDED_TITLE = "Site neden askıya alınır";
-
-export const HM_PUBLIC_SUSPENDED_LINK_HOST = "ahenk.net.tr";
-
-export const HM_PUBLIC_SUSPENDED_NOTICE =
-  "1 ahenk.net.tr hesabına aylık 50 usd olan lisans ücreti yatırılmadığı durumlarda, suç ve suçluyu öven haberler yapıldığında veya site altındaki ajans üyeliği ve yazılım firması adı ve linki kabul edilmediğinde siteniz askıya alınır ve bir süre sonra kapatılır";
-
 export function isHmPublicSuspended(layout: { hmPublicSuspended?: unknown } | null | undefined): boolean {
   return layout?.hmPublicSuspended === true;
 }

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
-import { HM_PUBLIC_SUSPENDED_NOTICE, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
+import { isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
 type HmEditor = {
   id: number;
@@ -413,7 +413,7 @@ export default function HaberSiteleri() {
       patchSiteList(site.id, { publicSuspended: next });
       toast({
         title: next ? "Site askıya alındı" : "Site yayına alındı",
-        description: next ? HM_PUBLIC_SUSPENDED_NOTICE : `${site.displayName} yeniden açıldı.`,
+        description: next ? "Ziyaretçiler Ahenk askı sayfasını görür." : `${site.displayName} yeniden açıldı.`,
       });
       void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
     } catch (e) {
@@ -726,7 +726,7 @@ export default function HaberSiteleri() {
                 <h2 className="text-lg font-black text-gray-900">Kayıtlı Haber Siteleri</h2>
                 <p className="text-xs text-gray-500">{sites.length} site · Site ID (1, 2, 3…) listede</p>
                 <p className="mt-1 max-w-xl text-xs text-gray-500">
-                  Askıya al, site girişine «Site neden askıya alınır» başlığını ve ahenk.net.tr bağlantılı lisans metnini yazar. Aktif anahtarı siteyi gizler.
+                  Askıya al, site girişine Ahenk Bilgi Teknolojileri askı sayfasını yazar. Aktif anahtarı siteyi gizler.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
