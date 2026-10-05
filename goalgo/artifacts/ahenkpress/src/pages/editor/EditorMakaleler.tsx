@@ -1,7 +1,7 @@
 import { EditorLayout } from "@/components/EditorLayout";
 import { HaberlerInner } from "@/pages/admin/HaberlerInner";
 import { useHmEditor } from "@/contexts/HmEditorContext";
-import { hmSiteNewsPreviewHrefPrefix } from "@/lib/hmSitePreviewHref";
+import { hmPublicSiteBase } from "@/lib/hmPublicSiteUrl";
 
 /**
  * AHB içe aktarılan köşe metinleri (`hm_makaleler`). `news` tablosundaki “blog” kategorili
@@ -9,7 +9,7 @@ import { hmSiteNewsPreviewHrefPrefix } from "@/lib/hmSitePreviewHref";
  */
 export default function EditorMakaleler() {
   const { site } = useHmEditor();
-  const newsPreviewHrefPrefix = hmSiteNewsPreviewHrefPrefix(site);
+  const newsPreviewHrefPrefix = site?.slug ? `${hmPublicSiteBase(site)}/haber` : null;
   return (
     <EditorLayout title="Köşe makaleleri (AHB)">
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 space-y-2">

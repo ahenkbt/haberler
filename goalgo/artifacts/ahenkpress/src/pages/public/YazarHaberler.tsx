@@ -1,7 +1,7 @@
 import { useParams } from "wouter";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { readHmAuthorPayload } from "@/lib/hmAuthorSession";
-import { hmSiteNewsPreviewHrefPrefix } from "@/lib/hmSitePreviewHref";
+import { hmPublicSiteBase } from "@/lib/hmPublicSiteUrl";
 import { YazarPanelNav } from "@/components/YazarPanelNav";
 import { HaberlerInner } from "@/pages/admin/HaberlerInner";
 
@@ -11,9 +11,8 @@ export default function YazarHaberler() {
   const enc = encodeURIComponent(slug);
   const base = `/${HM_SITE_PUBLIC_PREFIX}/${enc}/yazar`;
   const authorSite = readHmAuthorPayload()?.site ?? null;
-  const previewPrefix =
-    (authorSite?.slug === slug ? hmSiteNewsPreviewHrefPrefix(authorSite) : null) ??
-    `/${HM_SITE_PUBLIC_PREFIX}/${enc}/haber`;
+  const publicSite = authorSite?.slug === slug ? authorSite : { slug };
+  const previewPrefix = slug ? `${hmPublicSiteBase(publicSite)}/haber` : null;
 
   return (
     <div className="mx-auto max-w-screen-lg px-3 py-6">

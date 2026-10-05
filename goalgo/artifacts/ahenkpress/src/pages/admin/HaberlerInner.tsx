@@ -20,7 +20,6 @@ import { format } from "date-fns";
 import { apiUrl } from "@/lib/apiBase";
 import { readHmJwt, readHmSite } from "@/lib/hmSession";
 import { readHmAuthorJwt } from "@/lib/hmAuthorSession";
-import { isAbsolutePreviewHref } from "@/lib/hmSitePreviewHref";
 import {
   HM_EDITOR_CATEGORIES_QUERY_KEY,
   HM_EDITOR_MAKALE_QUERY_KEY,
@@ -121,7 +120,7 @@ export type HaberlerInnerProps = {
   /** “Yeni haber” butonunun gideceği adres (örn. `?kategori=blog`). */
   newNewsHref?: string | null;
   newNewsButtonLabel?: string | null;
-  /** Örn. `/tr/site-slug/haber` — vitrinde haberi yeni sekmede aç. */
+  /** Mutlak vitrin öneki (`https://…/haber`) — PHP tema / portal; düz `<a>` ile yeni sekmede aç. */
   newsPreviewHrefPrefix?: string | null;
   extraActions?: ReactNode;
 };
@@ -945,23 +944,13 @@ export function HaberlerInner({
                     <div className="flex justify-end gap-2">
                       {previewPrefix ? (
                         <Button variant="ghost" size="icon" asChild title="Sitede gör">
-                          {isAbsolutePreviewHref(previewPrefix) ? (
-                            <a
-                              href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </a>
-                          ) : (
-                            <Link
-                              href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Link>
-                          )}
+                          <a
+                            href={`${previewPrefix}/${encodeURIComponent(news.slug)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </a>
                         </Button>
                       ) : null}
                       {hmEditorMakaleApi && news.contentKind === "makale" ? (

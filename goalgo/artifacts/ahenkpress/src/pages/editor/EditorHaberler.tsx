@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EditorLayout } from "@/components/EditorLayout";
 import { HaberlerInner } from "@/pages/admin/HaberlerInner";
 import { useHmEditor } from "@/contexts/HmEditorContext";
-import { hmSiteNewsPreviewHrefPrefix } from "@/lib/hmSitePreviewHref";
+import { hmPublicSiteBase } from "@/lib/hmPublicSiteUrl";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiUrl } from "@/lib/apiBase";
@@ -202,8 +202,8 @@ export default function EditorHaberler() {
     setLocation(qs ? `${pathBase}?${qs}` : pathBase);
   };
 
-  // Özel alanı olan sitede (ör. ankarasehirgazetesi.com PHP tema) https://alan/haber/:slug; yoksa /tr/{slug}/haber.
-  const newsPreviewHrefPrefix = hmSiteNewsPreviewHrefPrefix(site);
+  // Mutlak URL: özel alan → PHP tema; yoksa portal https://ahenk.net.tr/tr/{slug}/haber.
+  const newsPreviewHrefPrefix = site?.slug ? `${hmPublicSiteBase(site)}/haber` : null;
 
   return (
     <EditorLayout title="Haberler">

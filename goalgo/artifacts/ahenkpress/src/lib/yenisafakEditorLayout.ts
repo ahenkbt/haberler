@@ -133,6 +133,73 @@ export const YS_MODULES: readonly YsModuleDef[] = [
   },
 ] as const;
 
+/**
+ * PHP temanın (`php-theme/src/App.php`, `Site.php`, `Modules.php`, `templates/*.php`)
+ * `hm_news_sites.layout_json` içinden okuduğu anahtarların tamamı. Panelde haber sitesi
+ * görünümü için yalnızca bu anahtarlar anlamlıdır; eski TSX tema anahtarları
+ * (`mansetVariant`, `hmChromeColorMode`, `hmNews*ThemeBlockEnabled` vb.) PHP tarafından okunmaz.
+ */
+export const PHP_THEME_LAYOUT_KEYS = [
+  // App.php → buildSite
+  "hmPrimaryColor",
+  "logoUrl",
+  // Site.php
+  "hmPublicSuspended",
+  "hmYsMansetPreset",
+  "hmNewsYsMansetLayout",
+  "hmSecondaryColor",
+  "hmYsSlogan",
+  "hmYsKunye",
+  "hmAdSlots",
+  "faviconUrl",
+  "hmYsShareEnabled",
+  "hmFooterAboutHtml",
+  "hmCorporatePageHtml",
+  "hmFooterSocial",
+  "hmCorporateMenuItems",
+  "hmNewsStripMenuEnabled",
+  "hmNewsStripMenuItems",
+  "hmNewsFooterMenuItems",
+  "hmNewsSidebarMenuItems",
+  // Modules.php → enabled
+  "hmNewsHomeModuleOrder",
+  "hmNewsHomeModuleCategorySlugs",
+  "hmNewsHomeModuleItemCounts",
+  "hmNewsYsTickerEnabled",
+  "hmNewsBreakingBandEnabled",
+  "hmNewsYsMansetEnabled",
+  "hmNewsSliderEnabled",
+  "hmNewsTepeMansetEnabled",
+  "hmNewsYsSideHeadlinesEnabled",
+  "hmNewsLeadListSidebarEnabled",
+  "hmNewsYsCategoryBlocksEnabled",
+  "hmNewsCategorySectionsEnabled",
+  "hmNewsYekpareKategorilerKutusuEnabled",
+  "hmNewsYsVideoBandEnabled",
+  "hmNewsRecentVideosSidebarEnabled",
+  "hmNewsYsAuthorsEnabled",
+  "hmNewsAuthorsEnabled",
+  "hmNewsYsMostReadEnabled",
+  "hmNewsAhenkPopulerHaberlerEnabled",
+  "hmNewsYsGalleryEnabled",
+  "hmNewsMediaDarkBlockEnabled",
+  // Modules.php → navCategories
+  "hmNavHiddenCategorySlugs",
+  "hmNavOnlyCategorySlugs",
+  "hmCategorySortSlugs",
+] as const satisfies ReadonlyArray<keyof NewsSiteLayoutPrefs>;
+
+export type PhpThemeLayoutKey = (typeof PHP_THEME_LAYOUT_KEYS)[number];
+
+/**
+ * PHP tarafından okunup paneldeki tip sözleşmesinde yer almayan eski anahtar.
+ * Hiçbir panel sayfası yazmaz; kategoriler veritabanı satırlarından gelir.
+ */
+export const PHP_THEME_LEGACY_ONLY_LAYOUT_KEYS = ["hmNewsExtraCategories"] as const;
+
+/** PHP okumaz; SPA `/tr/{slug}` yedek görünümünün haber sitesini tek temaya sabitlemesi için yazılır. */
+export const YS_SPA_MARKER_LAYOUT_KEYS = ["hmVitrinTheme"] as const satisfies ReadonlyArray<keyof NewsSiteLayoutPrefs>;
+
 export const YS_AD_SLOTS = [
   { slotKey: "header", name: "Üst reklam", description: "Logo yanı. PHP `data-ad-slot=header`." },
   { slotKey: "block_strip", name: "Blok şeridi", description: "Kategori blokları arası. PHP `data-ad-slot=block_strip`." },

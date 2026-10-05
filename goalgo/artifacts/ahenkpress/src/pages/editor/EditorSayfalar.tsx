@@ -4,7 +4,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "wouter";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +13,8 @@ import {
   readHmEditorPagesDraft,
   writeHmEditorPagesDraft,
 } from "@/lib/hmEditorPageDraft";
-import { hmPublicExtraPagePreviewHref, normalizeHmExtraPageSlug } from "@/lib/hmExtraPageLookup";
+import { hmPublicExtraPagePath, hmPublicExtraPagePreviewHref, normalizeHmExtraPageSlug } from "@/lib/hmExtraPageLookup";
+import { hmPublicPathHref } from "@/lib/hmPublicSiteUrl";
 import {
   isHmEditorProtectedStandardSlug,
   isHmEditorStubExtraPageId,
@@ -213,6 +213,11 @@ function EditorSayfalarList({
   };
 
   const slugPreview = (slug: string) => hmPublicExtraPagePreviewHref(hmBase, slug);
+  /** Önizle: gerçek vitrine (özel alan / PHP tema) tam sayfa; SPA içi yönlendirme değil. */
+  const slugPreviewHref = (slug: string): string => {
+    const path = hmPublicExtraPagePath(slug);
+    return site?.slug && path ? hmPublicPathHref(site, path) : "";
+  };
 
   const handleRefreshFromServer = () => {
     forceExtraSyncRef.current = true;
@@ -372,9 +377,9 @@ function EditorSayfalarList({
                   </div>
                   <div className="flex flex-col gap-2">
                     <Button type="button" variant="outline" size="sm" disabled={saving || !(pg.slug ?? "").trim()} asChild>
-                      <Link href={slugPreview(pg.slug) || "#"} target="_blank" rel="noreferrer">
+                      <a href={slugPreviewHref(pg.slug) || "#"} target="_blank" rel="noopener noreferrer">
                         Önizle <ExternalLink className="ml-1 inline h-3 w-3" />
-                      </Link>
+                      </a>
                     </Button>
                     <Button
                       type="button"

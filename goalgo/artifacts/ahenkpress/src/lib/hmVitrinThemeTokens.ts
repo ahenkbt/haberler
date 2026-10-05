@@ -103,51 +103,6 @@ export const HM_VITRIN_THEME = {
 export type HmVitrinThemeKey = keyof typeof HM_VITRIN_THEME;
 export type HmResolvedColorPalette = "red" | "gold" | "blue";
 
-/**
- * Vitrin tema anahtarı → Türkçe çiçek adı (baskın accent rengine göre).
- * `hmVitrinTheme` depolama/API anahtarları değişmez; yalnızca editör ve vitrin etiketleri.
- *
- * | Anahtar    | Accent (HM_VITRIN_THEME) | Çiçek      |
- * |------------|--------------------------|------------|
- * | news       | site birincil / nötr     | Papatya    |
- * | default    | news ile aynı            | Papatya    |
- * | classic    | #b00020 kırmızı          | Karanfil   |
- * | portal3    | #e30613 kırmızı          | Lale       |
- * | esen       | #e30613 kırmızı          | Gül        |
- * | manset24   | #e11d48 pembe-kırmızı    | Kardelen   |
- * | renkli     | #f97316 turuncu          | Zambak     |
- * | ahenkhaber | #cc0000 kırmızı          | Begonya    |
- * | modern     | dinamik / site rengi     | Yasemin    |
- * | corporate  | #0d63b6 mavi             | Orkide     |
- * | vatan      | #8c1a2e bordo            | Gelincik   |
- * | ankara     | #c40021 kırmızı          | Kızıl Lale |
- * | gold       | #b8941e altın            | Sarı Lale  |
- */
-export const HM_VITRIN_THEME_FLOWER_LABELS = {
-  news: "Papatya",
-  default: "Papatya",
-  classic: "Karanfil",
-  portal3: "Lale",
-  esen: "Gül",
-  manset24: "Kardelen",
-  renkli: "Zambak",
-  ahenkhaber: "Begonya",
-  modern: "Yasemin",
-  corporate: "Orkide",
-  vatan: "Gelincik",
-  ankara: "Kızıl Lale",
-  gold: "Sarı Lale",
-  sumbul: "Sümbül",
-} as const;
-
-export type HmVitrinThemeFlowerLabelId = keyof typeof HM_VITRIN_THEME_FLOWER_LABELS;
-
-/** Editör / UI için çiçek adı; bilinmeyen anahtarlarda Papatya. */
-export function hmVitrinThemeFlowerLabel(theme: string | null | undefined): string {
-  const key = String(theme ?? "news").trim().toLowerCase() as HmVitrinThemeFlowerLabelId;
-  return HM_VITRIN_THEME_FLOWER_LABELS[key] ?? HM_VITRIN_THEME_FLOWER_LABELS.news;
-}
-
 /** `hmPrimaryColor` yokken sekme / accent için */
 export function hmVitrinAccentHex(theme: string | null | undefined): string {
   if (theme === "ankara") return HM_VITRIN_THEME.ankara.accent;
@@ -472,25 +427,6 @@ export function hmFlowerThemeColorPreset(theme: string | null | undefined): HmFl
   };
 }
 
-/** Genel ayarlar editöründe seçilebilir çiçek temaları (Papatya tek kart). */
-export const HM_FLOWER_THEME_EDITOR_OPTIONS = [
-  { themeKey: "news", flower: HM_VITRIN_THEME_FLOWER_LABELS.news, description: "Beyaz zemin, kırmızı vurgu" },
-  { themeKey: "classic", flower: HM_VITRIN_THEME_FLOWER_LABELS.classic, description: "Karanfil kırmızı + lacivert" },
-  { themeKey: "portal3", flower: HM_VITRIN_THEME_FLOWER_LABELS.portal3, description: "Gazete kırmızısı" },
-  { themeKey: "esen", flower: HM_VITRIN_THEME_FLOWER_LABELS.esen, description: "Magazin kırmızısı" },
-  { themeKey: "manset24", flower: HM_VITRIN_THEME_FLOWER_LABELS.manset24, description: "Pembe-kırmızı son dakika" },
-  { themeKey: "renkli", flower: HM_VITRIN_THEME_FLOWER_LABELS.renkli, description: "Turuncu, renkli kategoriler" },
-  { themeKey: "ahenkhaber", flower: HM_VITRIN_THEME_FLOWER_LABELS.ahenkhaber, description: "Ahenk Haber kırmızısı" },
-  { themeKey: "modern", flower: HM_VITRIN_THEME_FLOWER_LABELS.modern, description: "Modern haber vitrini" },
-  { themeKey: "sumbul", flower: HM_VITRIN_THEME_FLOWER_LABELS.sumbul, description: "Yekpare haber teması (mavi)" },
-  { themeKey: "corporate", flower: HM_VITRIN_THEME_FLOWER_LABELS.corporate, description: "Kurumsal mavi" },
-  { themeKey: "vatan", flower: HM_VITRIN_THEME_FLOWER_LABELS.vatan, description: "Vatan hatıra teması (bordo / lacivert / altın)" },
-  { themeKey: "ankara", flower: HM_VITRIN_THEME_FLOWER_LABELS.ankara, description: "Ankara kırmızısı" },
-  { themeKey: "gold", flower: HM_VITRIN_THEME_FLOWER_LABELS.gold, description: "Altın premium" },
-] as const;
-
-export type HmFlowerThemeEditorOption = (typeof HM_FLOWER_THEME_EDITOR_OPTIONS)[number];
-
 function normalizeHexForCompare(hex: string | null | undefined): string {
   const t = String(hex ?? "").trim().toLowerCase();
   if (/^#[0-9a-f]{3}$/.test(t)) {
@@ -498,29 +434,6 @@ function normalizeHexForCompare(hex: string | null | undefined): string {
     return `#${x[0]}${x[0]}${x[1]}${x[1]}${x[2]}${x[2]}`;
   }
   return t;
-}
-
-/** Mevcut site renkleri hangi çiçek preset'ine denk geliyor (yoksa null). */
-export function resolveActiveFlowerThemeKey(
-  primaryHex: string | null | undefined,
-  secondaryHex: string | null | undefined,
-  categoryColors: Record<string, string> | null | undefined,
-): string | null {
-  const primary = normalizeHexForCompare(primaryHex);
-  if (!primary) return null;
-  const secondary = normalizeHexForCompare(secondaryHex);
-
-  for (const opt of HM_FLOWER_THEME_EDITOR_OPTIONS) {
-    const preset = hmFlowerThemeColorPreset(opt.themeKey);
-    if (normalizeHexForCompare(preset.hmPrimaryColor) !== primary) continue;
-    if (secondary && normalizeHexForCompare(preset.hmSecondaryColor) !== secondary) continue;
-    const cats = categoryColors ?? {};
-    const allMatch = HM_CATEGORY_COLOR_SLUGS.every(
-      (slug) => normalizeHexForCompare(cats[slug]) === normalizeHexForCompare(preset.hmCategoryColors[slug]),
-    );
-    if (allMatch) return opt.themeKey;
-  }
-  return null;
 }
 
 /** Editör renk seçicisi için uyumlu 2. renk varsayılanı (vitrin teması veya birincil renk). */
@@ -536,14 +449,4 @@ export function resolveHmEditorSecondaryFallback(
   const themeTokens = themeKey in HM_VITRIN_THEME ? HM_VITRIN_THEME[themeKey as keyof typeof HM_VITRIN_THEME] : null;
   if (themeTokens) return themeTokens.accent2;
   return preset.hmSecondaryColor;
-}
-
-/** Aktif vitrin temasından çiçek preset anahtarı (corporate/news ayrımı dahil). */
-export function resolveFlowerThemeKeyFromVitrin(vitrinTheme: string | null | undefined): string {
-  const key = String(vitrinTheme ?? "news").trim().toLowerCase();
-  if (key === "default") return "news";
-  if (key === "corporate") return "corporate";
-  if (key === "vatan") return "vatan";
-  if (HM_FLOWER_THEME_EDITOR_OPTIONS.some((opt) => opt.themeKey === key)) return key;
-  return "news";
 }

@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import { isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
 type HmEditor = {
@@ -748,7 +748,7 @@ export default function HaberSiteleri() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredSites.map((site) => {
-                  const publicHref = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}`;
+                  const publicHref = hmPublicHomeHref(site);
                   const domains = [site.domain, site.domain2, site.domain3].filter(Boolean) as string[];
                   return (
                     <article key={`${site.id}-${site.slug}`} className="p-5">
@@ -770,8 +770,8 @@ export default function HaberSiteleri() {
                           </div>
                           {site.description ? <p className="mb-3 text-sm text-gray-600 line-clamp-2">{site.description}</p> : null}
                           <div className="flex flex-wrap gap-2 text-xs">
-                            <a href={publicHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 font-semibold text-red-700 hover:bg-red-100">
-                              <ExternalLink className="h-3 w-3" /> Portal vitrini
+                            <a href={publicHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 font-semibold text-red-700 hover:bg-red-100">
+                              <ExternalLink className="h-3 w-3" /> Siteyi gör
                             </a>
                             {domains.map((domain) => (
                               <a key={domain} href={`https://${domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-200">

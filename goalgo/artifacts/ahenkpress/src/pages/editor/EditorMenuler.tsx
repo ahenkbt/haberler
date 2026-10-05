@@ -23,6 +23,7 @@ import {
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { readHmJwt } from "@/lib/hmSession";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import type { HmCorporateMenuItem, NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import { isHmCorporateLayoutKind, resolveHmNewsVideoTvEnabled } from "@/lib/newsSiteLayout";
 import { ExternalLink } from "lucide-react";
@@ -191,10 +192,10 @@ export default function EditorMenuler() {
             </div>
             {hmBase ? (
               <Button variant="outline" size="sm" asChild>
-                <Link href={hmBase} target="_blank" rel="noopener noreferrer">
+                <a href={hmPublicHomeHref(site)} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Vitrini aç
-                </Link>
+                </a>
               </Button>
             ) : null}
           </div>

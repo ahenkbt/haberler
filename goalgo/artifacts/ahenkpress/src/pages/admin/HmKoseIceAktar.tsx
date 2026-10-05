@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicCategoryHref } from "@/lib/hmPublicSiteUrl";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,9 @@ import { ExternalLink, FileJson2 } from "lucide-react";
 type HmSiteRow = {
   id: number;
   slug: string;
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
   displayName: string;
   active: boolean;
 };
@@ -254,14 +257,15 @@ export default function HmKoseIceAktar() {
                       .filter((s) => selectedSiteIds.includes(s.id))
                       .map((s) => (
                         <div key={s.id}>
-                          <Link
-                            href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(s.slug)}/kategori/blog?siteId=${s.id}`}
+                          <a
+                            href={hmPublicCategoryHref(s, "blog")}
                             className="text-red-600 hover:underline inline-flex items-center gap-0.5"
                             target="_blank"
+                            rel="noopener noreferrer"
                           >
                             {s.displayName}
                             <ExternalLink className="w-3 h-3" />
-                          </Link>
+                          </a>
                         </div>
                       ))}
                   </div>

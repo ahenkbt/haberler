@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/AdminLayout";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { hmPublicCategoryHref, hmPublicNewsHref } from "@/lib/hmPublicSiteUrl";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -25,7 +25,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type HmSiteRow = { id: number; slug: string; displayName: string; active: boolean };
+type HmSiteRow = {
+  id: number;
+  slug: string;
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+  displayName: string;
+  active: boolean;
+};
 
 type MakaleRow = {
   id: number;
@@ -86,7 +94,8 @@ export default function HmKoseMakaleler() {
   });
 
   const items = makData?.items ?? [];
-  const selectedSlug = sites.find((s) => s.id === effectiveSiteId)?.slug ?? "";
+  const selectedSite = sites.find((s) => s.id === effectiveSiteId) ?? null;
+  const selectedSlug = selectedSite?.slug ?? "";
 
   const deleteMakale = async (makaleId: number) => {
     if (effectiveSiteId == null) return;
@@ -173,9 +182,9 @@ export default function HmKoseMakaleler() {
             {effectiveSiteId != null && selectedSlug ? (
               <a
                 className="text-xs font-semibold text-red-600 hover:underline inline-flex items-center gap-1"
-                href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(selectedSlug)}/kategori/blog`}
+                href={hmPublicCategoryHref(selectedSite, "blog")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 Vitrinde blog
                 <ExternalLink className="h-3 w-3" />
@@ -225,9 +234,9 @@ export default function HmKoseMakaleler() {
                         {selectedSlug ? (
                           <a
                             className="text-xs font-semibold text-red-600 hover:underline inline-flex items-center gap-1"
-                            href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(selectedSlug)}/haber/${m.id}`}
+                            href={hmPublicNewsHref(selectedSite, m.slug?.trim() || m.id)}
                             target="_blank"
-                            rel="noreferrer"
+                            rel="noopener noreferrer"
                           >
                             Görüntüle
                             <ExternalLink className="h-3 w-3" />

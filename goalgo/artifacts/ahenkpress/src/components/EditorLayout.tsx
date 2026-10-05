@@ -8,8 +8,7 @@ import { useHmEditorOptional } from "@/contexts/HmEditorContext";
 import { useGetSiteSettings } from "@workspace/api-client-react";
 import { editorNavItems, editorNavIsActive } from "@/lib/editorNavSections";
 import { isHmCorporateLayoutKind, resolveHmCorporateAuthorsEnabled } from "@/lib/newsSiteLayout";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
-import { hmSitePreviewOrigin } from "@/lib/hmSitePreviewHref";
+import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import { normalizePortalDisplayName } from "@/lib/portalBrand";
 import { clearHmSitePublicCaches } from "@/lib/hmSitePublicCacheClear";
 import { useToast } from "@/hooks/use-toast";
@@ -146,10 +145,8 @@ export function EditorLayout({ children, title }: { children: React.ReactNode; t
   const [mobileOpen, setMobileOpen] = useState(false);
   const hm = useHmEditorOptional();
   const site = hm?.site ?? null;
-  // Özel alanı olan site (ör. PHP temalı ankarasehirgazetesi.com) kendi kökünde açılır; yoksa portal /tr/{slug}.
-  const publicSiteOrigin = hmSitePreviewOrigin(site);
-  const publicHmHref =
-    publicSiteOrigin ?? (site?.slug ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}` : "/");
+  /** Mutlak URL + düz `<a>`: vitrin PHP temadan (özel alan) tam sayfa açılır; wouter SPA içinde eski temayı açmasın. */
+  const publicHmHref = hmPublicHomeHref(site);
 
   useEffect(() => {
     const prev = document.title;
@@ -191,15 +188,9 @@ export function EditorLayout({ children, title }: { children: React.ReactNode; t
             </div>
           </div>
           <Button variant="outline" size="sm" asChild>
-            {publicSiteOrigin ? (
-              <a href={`${publicSiteOrigin}/`} target="_blank" rel="noopener noreferrer">
-                Siteyi gör →
-              </a>
-            ) : (
-              <Link href={publicHmHref} target="_blank" rel="noopener noreferrer">
-                Siteyi gör →
-              </Link>
-            )}
+            <a href={publicHmHref} target="_blank" rel="noopener noreferrer">
+              Siteyi gör →
+            </a>
           </Button>
         </header>
         <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
