@@ -29,6 +29,7 @@ import {
 import { runConsolidateSitePrefixCategories } from "./consolidate-site-prefix-categories";
 import { isHmCorporateLayout, parseHmLayoutJson } from "./hm-editor-categories.js";
 import { yekparePoolSendEnabledFromLayout } from "./hm-public-layout.js";
+import { mirrorHmSiteSourceRowsToNewsDb } from "./hm-news-db-source-mirror.js";
 
 /** Kurumsal vitrin siteleri Yekpare merkez havuzuna senkron edilmez. */
 export function isCorporateHmSiteRow(site: Pick<HmNewsSiteRow, "layoutJson">): boolean {
@@ -92,6 +93,9 @@ export type YekpareHmSyncResult = {
   makaleDeduped: number;
   categoriesCreated: number;
   authorLinksRepaired: number;
+  /** Ayrı haber DB'sine (PHP tema) kopyalanan HM kaynak satırları; ayna kapalıysa 0 kalır. */
+  sourceAuthorsMirrored: number;
+  sourceMakalelerMirrored: number;
   errors: string[];
 };
 
@@ -723,6 +727,8 @@ export async function syncHmEditorContentToYekpare(opts?: {
     makaleDeduped: 0,
     categoriesCreated: 0,
     authorLinksRepaired: 0,
+    sourceAuthorsMirrored: 0,
+    sourceMakalelerMirrored: 0,
     errors: [],
   };
 
@@ -763,6 +769,17 @@ export async function syncHmEditorContentToYekpare(opts?: {
     if (!dryRun) {
       await syncSiteNews(ctx, stats, categoriesById);
       await syncSiteMakaleler(ctx, stats);
+      // Kenarın Neon'a yazdığı hm_makaleler / yazar satırları PHP temanın okuduğu haber DB'sine de gitsin.
+      try {
+        const mirrored = await mirrorHmSiteSourceRowsToNewsDb(site.id);
+        if (mirrored) {
+          stats.sourceAuthorsMirrored += mirrored.authorsMirrored;
+          stats.sourceMakalelerMirrored += mirrored.makalelerMirrored;
+          stats.errors.push(...mirrored.errors);
+        }
+      } catch (e) {
+        stats.errors.push(`source-mirror (${site.slug}): ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
   }
 

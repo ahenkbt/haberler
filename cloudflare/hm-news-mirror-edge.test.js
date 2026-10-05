@@ -61,3 +61,25 @@ test("NEWS_DB_WRITE / NEWS_DB_READ Worker secret'ı Container'a iletilir; yoksa 
   assert.equal(dual.NEWS_DB_READ, "main");
   assert.equal(dual.NEWS_DATABASE_URL, "postgres://u:p@h/db");
 });
+
+test("Container ayna kapalı dönerse (mirrored:false) false döner ve nedeni loglanır", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  const warnings = [];
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ mirrored: false, reason: "no-news-database-url" }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  console.warn = (...args) => warnings.push(args.map(String).join(" "));
+  try {
+    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_SECRET: "s" });
+    assert.equal(await mirrorNewsDbWrite("hm_makaleler", "upsert", { id: 35921 }), false);
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /hm_makaleler upsert no-news-database-url/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+    setNewsMirrorEnv(null);
+  }
+});

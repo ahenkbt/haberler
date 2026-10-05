@@ -317,6 +317,10 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
       return false;
     }
     const data = await res.json().catch(() => ({}));
+    if (data?.mirrored !== true) {
+      // Container'da NEWS_DATABASE_URL yok / NEWS_DB_WRITE=main: PHP tema bu satırı görmez (wrangler tail'de görünsün).
+      console.warn("[hm-news-mirror] atlandı", table, op, String(data?.reason || "unknown"));
+    }
     return data?.mirrored === true;
   } catch (err) {
     console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
