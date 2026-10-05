@@ -21,6 +21,9 @@ export {
   dualWriteInsert,
   dualWriteUpdate,
   dualWriteDelete,
+  shouldMirrorToNewsDb,
+  mirrorRowToNewsDb,
+  deleteRowFromNewsDb,
   type NewsDbReadMode,
   type NewsDbWriteMode,
 } from "./newsCluster";

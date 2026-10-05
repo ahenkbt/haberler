@@ -278,6 +278,52 @@ function apiOrigin(env, incoming) {
   return resolveApiOrigin(env, incoming?.origin);
 }
 
+const MIRROR_BUDGET_MS = 2500;
+/** Aynı isolate içinde env nesnesi tek olduğundan istek girişinde set edilir; handler imzaları değişmez. */
+let mirrorEnv = null;
+
+export function setNewsMirrorEnv(env) {
+  mirrorEnv = env || null;
+}
+
+/**
+ * Neon yazımından sonra Container'daki /api/hm/bridge/mirror ucuna en-iyi-çaba kopya isteği.
+ * Container NEWS_DATABASE_URL + NEWS_DB_WRITE=dual ise satır ayrı haber DB'sine (PHP tema okuması) yazılır.
+ * Hata/zaman aşımı yutulur; panel yanıtı etkilenmez.
+ * @param {"hm_makaleler"|"news"|"authors"} table
+ * @param {"upsert"|"delete"} op
+ * @param {Record<string, unknown>|number} rowOrId
+ */
+export async function mirrorNewsDbWrite(table, op, rowOrId) {
+  const env = mirrorEnv;
+  if (!env || (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim())) return false;
+  const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
+  if (!secret) return false;
+  const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
+  try {
+    const res = await Promise.race([
+      fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-yekpare-hm-edge-bridge": secret,
+        },
+        body: JSON.stringify(payload),
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("mirror-timeout")), MIRROR_BUDGET_MS)),
+    ]);
+    if (!res?.ok) {
+      console.error("[hm-news-mirror]", table, op, res?.status);
+      return false;
+    }
+    const data = await res.json().catch(() => ({}));
+    return data?.mirrored === true;
+  } catch (err) {
+    console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
+    return false;
+  }
+}
+
 function serializeAuthor(row) {
   return {
     id: row.id,
@@ -520,6 +566,7 @@ async function handleCreateAuthor(sql, siteId, body) {
     `;
     const row = rows?.[0];
     if (!row) return jsonResponse(500, { error: "Yazar oluşturulamadı" });
+    await mirrorNewsDbWrite("authors", "upsert", row);
     return jsonResponse(201, serializeAuthor(row));
   } catch (err) {
     const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
@@ -1052,6 +1099,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
       `;
       const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
       if (!row) return createFailResponse("INSERT boş döndü");
+      await mirrorNewsDbWrite("news", "upsert", row);
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
       const msg = String(err?.message || err);
@@ -1101,6 +1149,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
             } catch {
               /* kolon yoksa yok say */
             }
+            await mirrorNewsDbWrite("news", "upsert", row);
             return jsonResponse(201, serializeNewsRow(row, categorySlug));
           }
         } catch (err2) {
@@ -1179,6 +1228,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
     `;
     const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
+    await mirrorNewsDbWrite("news", "upsert", row);
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
     const msg = String(err?.message || err);
@@ -1226,6 +1276,7 @@ async function handleDeleteNews(sql, siteId, id) {
   const existing = await loadNewsWithCategory(sql, siteId, id);
   if (!existing) return jsonResponse(404, { error: "Haber bulunamadı" });
   await sql`DELETE FROM news WHERE id = ${id}`;
+  await mirrorNewsDbWrite("news", "delete", id);
   return jsonResponse(200, { ok: true });
 }
 
@@ -1339,6 +1390,7 @@ export async function handleCreateMakale(sql, siteId, body) {
       `;
       const row = rows?.[0];
       if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+      await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
       return jsonResponse(201, serializeMakaleRow(row));
     } catch (err) {
       const msg = String(err?.message || err);
@@ -1430,6 +1482,7 @@ async function handleUpdateMakale(sql, siteId, id, body) {
     `;
     const row = rows?.[0];
     if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
+    await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
     return jsonResponse(200, serializeMakaleRow(row));
   } catch (err) {
     const msg = String(err?.message || err);
@@ -1469,6 +1522,7 @@ async function handleDeleteMakale(sql, siteId, id) {
     RETURNING id
   `;
   if (!rows?.[0]) return jsonResponse(404, { error: "Makale bulunamadı" });
+  await mirrorNewsDbWrite("hm_makaleler", "delete", id);
   return new Response(null, {
     status: 204,
     headers: {
@@ -1493,7 +1547,10 @@ async function handleBulkDeleteMakale(sql, siteId, body) {
       WHERE id = ${id} AND site_id = ${siteId}
       RETURNING id
     `;
-    if (rows?.[0]) deleted += 1;
+    if (rows?.[0]) {
+      deleted += 1;
+      await mirrorNewsDbWrite("hm_makaleler", "delete", id);
+    }
   }
   return jsonResponse(200, { deleted });
 }
@@ -1923,6 +1980,7 @@ async function handleAuthorNewsDelete(sql, siteId, authorId, id) {
     RETURNING id
   `;
   if (!rows?.[0]) return jsonResponse(404, { error: "Haber bulunamadı." });
+  await mirrorNewsDbWrite("news", "delete", id);
   return new Response(null, {
     status: 204,
     headers: {
@@ -2002,6 +2060,7 @@ async function handleAuthorArticleEdge(request, env, incomingUrl, path, method) 
  * @returns {Promise<Response|null>}
  */
 export async function handleKhEditorDataEdge(request, env, incomingUrl) {
+  setNewsMirrorEnv(env);
   const path = String(incomingUrl.pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
 
