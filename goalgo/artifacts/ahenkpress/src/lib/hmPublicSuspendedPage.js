@@ -68,6 +68,17 @@ export const HM_PUBLIC_SUSPENDED_PAGE_HTML = `<!DOCTYPE html>
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
+        .aski-fold summary {
+            list-style: none;
+            cursor: pointer;
+        }
+        .aski-fold summary::-webkit-details-marker {
+            display: none;
+        }
+        .aski-fold[open] .aski-chevron {
+            transform: rotate(180deg);
+        }
+
         .glass-card-interactive {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -344,47 +355,73 @@ export const HM_PUBLIC_SUSPENDED_PAGE_HTML = `<!DOCTYPE html>
 
         </div>
 
-        <!-- Reminder -->
+        <!-- Reminder accordion -->
         <div class="glass-card rounded-2xl p-6 sm:p-8 border-l-4 border-l-amber-400 mb-12 relative overflow-hidden">
             <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="relative z-10">
                 <h4 class="text-base font-bold text-white mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-bell text-amber-400"></i>
-                    HATIRLATMA
+                    HATIRLATMA UYARISI
                 </h4>
-                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed mb-4">
-                    Sitenizin tekrar <strong class="text-white font-semibold">aktif hale getirilebilmesi için</strong> aşağıdaki gerekliliklerin tamamlanarak <a href="mailto:bilgi@ahenk.net.tr" class="text-amber-300 font-semibold hover:text-amber-200">e-posta adresimize</a> iletilmesi gerekmektedir:
+                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed mb-3">
+                    Sitenize ait hizmet; altyapı kullanım şartları, ödeme süreçleri ve yasal mevzuat gereksinimleri sebebiyle geçici olarak askıya alınmıştır.
                 </p>
-                <ul class="space-y-2 text-xs sm:text-sm text-gray-300 mb-4 list-disc pl-5">
-                    <li><strong class="text-white font-semibold">Ödeme Dekontu:</strong> Kullanım ücreti ödemesine ait dekont,</li>
-                    <li><strong class="text-white font-semibold">Yasal Belgeler:</strong> Vergi Levhası, Basın Savcılığı Haber Sitesi Alındı Belgesi ve Sorumlu Yazı İşleri Müdürü Belgesi,</li>
-                    <li><strong class="text-white font-semibold">Meslek Odası Belgesi:</strong> Meslek Odası Kayıt Belgesi.</li>
-                </ul>
-                <p class="text-xs sm:text-sm text-amber-200 leading-relaxed mb-3">
-                    5187 sayılı Basın Kanunu uyarınca, kayıtsız haber sitelerinin yayın yapması kanunen suçtur.
+                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed mb-5">
+                    Sitenizin yayına tekrar açılabilmesi ve sistemin aktif hale getirilebilmesi için aşağıda belirtilen bilgi ve belgelerin tarafımıza iletilmesi gerekmektedir:
                 </p>
-                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
-                    Ödeme dekontu ve yasal belgeler tarafımıza mail ile ulaştırıldığında yayınınız derhal aktif edilecektir.
-                </p>
-            </div>
-        </div>
-
-        <!-- Critical Warning Box -->
-        <div class="glass-card rounded-2xl p-6 sm:p-8 border-l-4 border-l-red-500 mb-12 relative overflow-hidden">
-            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-                <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
-                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-base font-bold text-white mb-1 flex items-center gap-2">
-                            ÖNEMLİ BİLGİLENDİRME & VERİ SİLİNME UYARISI
-                        </h4>
-                        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed max-w-3xl">
+                <div class="space-y-3">
+                    <details class="aski-fold rounded-xl border border-amber-500/25 bg-gray-950/50">
+                        <summary class="flex items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-white">
+                            <span>GEREKLİ BELGELER</span>
+                            <i class="aski-chevron fa-solid fa-chevron-down text-amber-400 text-xs transition-transform"></i>
+                        </summary>
+                        <div class="px-4 pb-4 text-xs sm:text-sm text-gray-300 leading-relaxed">
+                            <ul class="space-y-2 list-disc pl-5">
+                                <li><strong class="text-white font-semibold">Ödeme Dekontu:</strong> Kullanım ücreti ödemesine ait dekont,</li>
+                                <li>
+                                    <strong class="text-white font-semibold">Yasal ve Kurumsal Belgeler:</strong>
+                                    <ul class="mt-2 space-y-1 list-disc pl-5">
+                                        <li>Vergi Levhası,</li>
+                                        <li>İmza Sirküsü,</li>
+                                        <li>Basın Savcılığı İzin / Alındı Belgesi,</li>
+                                        <li>Meslek Odası Kayıt Belgesi.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <p class="mt-4">
+                                Ödeme dekontu ve belirtilen yasal belgeler <a href="mailto:bilgi@ahenk.net.tr" class="text-amber-300 font-semibold hover:text-amber-200">e-posta adresimize</a> iletildiğinde yayınınız derhal aktif edilecektir.
+                            </p>
+                        </div>
+                    </details>
+                    <details class="aski-fold rounded-xl border border-amber-500/25 bg-gray-950/50">
+                        <summary class="flex items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-white">
+                            <span>YASAL ZORUNLULUKLAR VE BİLGİLENDİRME</span>
+                            <i class="aski-chevron fa-solid fa-chevron-down text-amber-400 text-xs transition-transform"></i>
+                        </summary>
+                        <div class="px-4 pb-4 space-y-4 text-xs sm:text-sm text-gray-300 leading-relaxed">
+                            <p>
+                                <strong class="text-white font-semibold">İnternet Haber Sitesi Statüsü ve Beyanname Zorunluluğu:</strong>
+                                5187 sayılı Basın Kanunu kapsamındaki haklardan yararlanabilmek, resmi olarak "internet haber sitesi" vasfı kazanabilmek ve yasal yayın faaliyeti yürütebilmek için yetkili mercilere beyanname verilerek Alındı Belgesi'nin alınmış olması zorunludur. Kayıtsız ve belgesiz yayın yapılması kanunen suç teşkil etmektedir.
+                            </p>
+                            <p>
+                                <strong class="text-white font-semibold">İçerik Koruma, Arşiv ve Yayın Yükümlülükleri:</strong>
+                                5187 sayılı Kanun uyarınca; yayımlanan içeriklerin doğruluğunun sağlanması, arşiv/içerik muhafaza yükümlülüklerinin yerine getirilmesi, Düzeltme ve Cevap Hakkı (Tekzip) ilkelerine uyulması ve cezai sorumluluk doğuracak hususlarda yasal standartların korunması gerekmektedir.
+                            </p>
+                            <p>
+                                <strong class="text-white font-semibold">Cezai Sorumluluk ve Dezenformasyon Maddesi:</strong>
+                                Türk Ceza Kanunu (TCK) Madde 217/A uyarınca "Halkı yanıltıcı bilgiyi alenen yayma" (dezenformasyon) suçu kapsamında doğabilecek idari ve cezai yaptırımların önüne geçilebilmesi adına, işletmeci/yayıncı bilgilerini doğrulayan yukarıdaki yasal belgelerin sistemimizde tanımlı olması hukuki bir zorunluluktur.
+                            </p>
+                        </div>
+                    </details>
+                    <details class="aski-fold rounded-xl border border-red-500/30 bg-gray-950/50">
+                        <summary class="flex items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-white">
+                            <span>ÖNEMLİ BİLGİLENDİRME &amp; VERİ SİLİNME UYARISI</span>
+                            <i class="aski-chevron fa-solid fa-chevron-down text-red-400 text-xs transition-transform"></i>
+                        </summary>
+                        <div class="px-4 pb-4 text-xs sm:text-sm text-gray-300 leading-relaxed">
                             Askıya alınan web sitelerinde gerekli finansal, hukuki veya teknik yükümlülükler belirli zaman dilimi içerisinde yerine getirilmediği takdirde; <span class="text-red-400 font-semibold underline underline-offset-2">veri kaybını önlemek adına site verileri koruma süresi sonunda sistemden kalıcı olarak silinecek</span> ve erişim tamamen kapatılacaktır.
-                        </p>
-                    </div>
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
