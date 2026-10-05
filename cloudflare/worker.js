@@ -23,6 +23,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
+import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import {
   hybridEdgeFillHttpStatus,
   HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
@@ -3057,6 +3058,17 @@ export default {
       if (profileEdge) return profileEdge;
     } catch (err) {
       console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
+    }
+
+    // Askıya al / Aktif — Container 120 sn beklenmeden Neon. Tam site formu null kalır.
+    try {
+      const edgePath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+      if (String(request.method || "").toUpperCase() === "PATCH" && /^\/api\/hm\/sites\/\d+$/.test(edgePath)) {
+        const adminSite = await handleHmAdminSiteEdge(request.clone(), env, { ...incoming, pathname: edgePath });
+        if (adminSite) return adminSite;
+      }
+    } catch (err) {
+      console.error("[hm-admin-site-edge]", String(err?.message || err).slice(0, 200));
     }
 
     // HM edit├Âr haber/yazar/makale ÔÇö kenar JWT ile Neon (t├╝m siteler).

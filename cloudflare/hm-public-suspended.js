@@ -13,6 +13,11 @@ const NOTICE =
 const FLAG_CACHE_MS = 30_000;
 let flagCache = { at: 0, flag: /** @type {boolean | null} */ (null) };
 
+/** Admin kenar yazısı aynı isolate içinde eski bayrağı tutmasın. */
+export function clearKhSuspendedFlagCache() {
+  flagCache = { at: 0, flag: null };
+}
+
 export function normalizeKhHost(raw) {
   return String(raw || "")
     .trim()

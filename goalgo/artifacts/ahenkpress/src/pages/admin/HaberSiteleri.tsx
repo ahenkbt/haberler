@@ -389,6 +389,16 @@ export default function HaberSiteleri() {
     }
   }
 
+  function patchSiteList(siteId: number, patch: Partial<HmSiteRow>) {
+    qc.setQueryData<{ items: HmSiteRow[] }>(["/api/hm/sites", "admin-panel"], (old) => {
+      if (!old?.items) return old;
+      return {
+        ...old,
+        items: old.items.map((row) => (row.id === siteId ? { ...row, ...patch } : row)),
+      };
+    });
+  }
+
   async function togglePublicSuspended(site: HmSiteRow) {
     const next = site.publicSuspended !== true;
     setSuspendingId(site.id);
@@ -400,11 +410,12 @@ export default function HaberSiteleri() {
         body: JSON.stringify({ layoutJson: { hmPublicSuspended: next } }),
       });
       if (!r.ok) throw new Error(await r.text());
+      patchSiteList(site.id, { publicSuspended: next });
       toast({
         title: next ? "Site askıya alındı" : "Site yayına alındı",
         description: next ? HM_PUBLIC_SUSPENDED_NOTICE : `${site.displayName} yeniden açıldı.`,
       });
-      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
     } catch (e) {
       toast({ title: "Askı durumu değişmedi", description: String(e).slice(0, 180), variant: "destructive" });
     } finally {
@@ -413,15 +424,17 @@ export default function HaberSiteleri() {
   }
 
   async function toggleActive(site: HmSiteRow) {
+    const next = !site.active;
     try {
       await ensureAdminPanelBootstrap();
       const r = await apiFetch(apiUrl(`/api/hm/sites/${site.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !site.active }),
+        body: JSON.stringify({ active: next }),
       });
       if (!r.ok) throw new Error(await r.text());
-      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      patchSiteList(site.id, { active: next });
+      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
     } catch (e) {
       toast({ title: "Durum değiştirilemedi", description: String(e).slice(0, 180), variant: "destructive" });
     }
@@ -724,7 +737,7 @@ export default function HaberSiteleri() {
               </div>
             </div>
 
-            {error ? (
+            {error && sites.length === 0 ? (
               <div className="m-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 {(error as Error).message}
               </div>
