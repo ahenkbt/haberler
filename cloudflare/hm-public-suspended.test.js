@@ -37,5 +37,9 @@ describe("Kırşehir kamu askı kapısı", () => {
     assert.match(html, /href="https:\/\/ahenk\.net\.tr"/);
     assert.match(html, /bilgi@ahenk\.net\.tr/);
     assert.match(html, /Tüm Nedenler \(8\)/);
+    assert.match(html, /HATIRLATMA/);
+    assert.match(html, /Ödeme Dekontu/);
+    assert.match(html, /5187 sayılı Basın Kanunu/);
+    assert.ok(html.indexOf("HATIRLATMA") < html.indexOf("ÖNEMLİ BİLGİLENDİRME"));
   });
 });
