@@ -82,40 +82,11 @@ final class App
         if ($logo === '' && (string) $row['slug'] === 'turkatahaber') {
             $logo = '/brand/turkata-wordmark.svg';
         }
-        $hidden = [];
-        if (is_array($layout['hmNavHiddenCategorySlugs'] ?? null)) {
-            foreach ($layout['hmNavHiddenCategorySlugs'] as $slug) {
-                $hidden[Modules::slug((string) $slug)] = true;
-            }
-        }
         $bySlug = [];
         foreach ($this->repo->categories((int) $row['id']) as $cat) {
             $bySlug[$cat['slug']] = $cat['name'];
         }
-        $categories = [];
-        foreach (self::CANONICAL_CATEGORIES as $slug => $name) {
-            if (isset($hidden[$slug])) {
-                continue;
-            }
-            $categories[] = ['slug' => $slug, 'name' => $bySlug[$slug] ?? $name];
-        }
-        foreach ($bySlug as $slug => $name) {
-            if (isset($hidden[$slug]) || isset(self::CANONICAL_CATEGORIES[$slug])) {
-                continue;
-            }
-            $categories[] = ['slug' => $slug, 'name' => $name];
-        }
-        $sort = [];
-        if (is_array($layout['hmCategorySortSlugs'] ?? null)) {
-            foreach ($layout['hmCategorySortSlugs'] as $index => $slug) {
-                $sort[Modules::slug((string) $slug)] = (int) $index;
-            }
-        }
-        if ($sort !== []) {
-            usort($categories, static function (array $a, array $b) use ($sort): int {
-                return ($sort[$a['slug']] ?? 1000) <=> ($sort[$b['slug']] ?? 1000);
-            });
-        }
+        $categories = Modules::navCategories($layout, $bySlug, self::CANONICAL_CATEGORIES);
         $origin = in_array($bare, ['turkatahaber.com', 'ahenk.net.tr'], true) || (string) $row['slug'] === 'turkatahaber'
             ? 'https://turkatahaber.com'
             : 'https://' . ((string) ($row['domain'] ?: $bare));
