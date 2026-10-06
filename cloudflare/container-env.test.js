@@ -184,7 +184,7 @@ describe("container-env", () => {
       },
     };
     let running = true;
-    let stopped = 0;
+    let destroyed = 0;
     const next = containerEnvFingerprint({
       NEWS_DATABASE_URL: "postgres://u:p@h/db",
       NEWS_DB_WRITE: "dual",
@@ -192,28 +192,28 @@ describe("container-env", () => {
     const recycled = await stopContainerIfEnvFingerprintChanged({
       isRunning: () => running,
       stop: async () => {
-        stopped += 1;
-        running = false;
+        throw new Error("stop should not run when destroy is available");
       },
       destroy: async () => {
-        throw new Error("destroy should not run after stop");
+        destroyed += 1;
+        running = false;
       },
       storage,
       fingerprint: next,
     });
     assert.equal(recycled, true);
-    assert.equal(stopped, 1);
+    assert.equal(destroyed, 1);
     await rememberContainerEnvFingerprint(storage, next);
     const again = await stopContainerIfEnvFingerprintChanged({
       isRunning: () => true,
-      stop: async () => {
-        stopped += 1;
+      destroy: async () => {
+        destroyed += 1;
       },
       storage,
       fingerprint: next,
     });
     assert.equal(again, false);
-    assert.equal(stopped, 1);
+    assert.equal(destroyed, 1);
   });
 
 });

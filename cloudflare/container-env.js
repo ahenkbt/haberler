@@ -157,6 +157,7 @@ export function containerEnvFingerprint(envVars = {}) {
 /**
  * Worker secret'ı son start()'tan sonra değiştiyse (veya hiç kaydedilmediyse) çalışan isolate'i durdur.
  * CONTAINER_ROLL artırmadan NEWS_DATABASE_URL gibi sonradan put edilen secret'ların yeni process.env'e düşmesi için.
+ * SIGTERM (stop) ile hemen ardından start() yarışır ve süreç 143 ile ölür; bu yüzden destroy() (SIGKILL) kullanılır.
  */
 export async function stopContainerIfEnvFingerprintChanged({
   isRunning,
@@ -167,13 +168,14 @@ export async function stopContainerIfEnvFingerprintChanged({
 }) {
   const last = await storage.get(CONTAINER_ENV_FP_STORAGE_KEY);
   if (typeof isRunning !== "function" || !isRunning() || last === fingerprint) return false;
-  await stop();
+  if (typeof destroy === "function") {
+    await destroy();
+  } else if (typeof stop === "function") {
+    await stop();
+  }
   const deadline = Date.now() + 45_000;
   while (isRunning() && Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  if (isRunning() && typeof destroy === "function") {
-    await destroy();
   }
   return true;
 }

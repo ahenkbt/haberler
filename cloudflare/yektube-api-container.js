@@ -41,15 +41,17 @@ export class YektubeApiContainer extends Container {
     const envVars = buildContainerEnv(this.env);
     this.envVars = envVars;
     const fingerprint = containerEnvFingerprint(envVars);
-    await stopContainerIfEnvFingerprintChanged({
-      isRunning: () => Boolean(this.container?.running),
-      stop: () => this.stop(),
-      destroy: () => this.destroy(),
-      storage: this.ctx.storage,
-      fingerprint,
-    });
 
     try {
+      await this.ctx.blockConcurrencyWhile(async () => {
+        await stopContainerIfEnvFingerprintChanged({
+          isRunning: () => Boolean(this.container?.running),
+          stop: () => this.stop(),
+          destroy: () => this.destroy(),
+          storage: this.ctx.storage,
+          fingerprint,
+        });
+      });
       await this.startAndWaitForPorts({
         ports: [this.defaultPort],
         startOptions: {
