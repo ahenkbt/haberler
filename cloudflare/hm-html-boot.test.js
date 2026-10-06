@@ -5,6 +5,9 @@ import {
   shouldInstantHmRootRedirect,
   hmHomeSlugFromPath,
   isHmAuthorPanelPath,
+  isHmEditorPanelPath,
+  shouldRewriteSpaShellOgForPath,
+  injectHmEditorPanelBoot,
   isHmPublicHomeHtmlPath,
   firstHmBootImageUrl,
   injectHmHtmlBoot,
@@ -60,6 +63,27 @@ describe("hm-html-boot", () => {
     assert.match(html, /__YEKPARE_HM_DOMAIN_BOOT__/);
     assert.match(html, /Köşe yazarı girişi/);
     assert.match(html, /\/api\/hm\/author\/login/);
+  });
+
+  it("boots ASG /editor without the news first-paint overlay", () => {
+    assert.equal(isHmEditorPanelPath("/editor"), true);
+    assert.equal(isHmEditorPanelPath("/editor/giris"), true);
+    assert.equal(isHmEditorPanelPath("/editor/haberler"), true);
+    assert.equal(isHmEditorPanelPath("/haber/ornek"), false);
+    assert.equal(shouldRewriteSpaShellOgForPath("/editor"), false);
+    assert.equal(shouldRewriteSpaShellOgForPath("/editor/giris"), false);
+    assert.equal(shouldRewriteSpaShellOgForPath("/koseyazari/giris"), false);
+    assert.equal(shouldRewriteSpaShellOgForPath("/"), true);
+    const html = injectHmEditorPanelBoot(
+      '<html><head><meta charset="UTF-8"></head><body><div id="root"></div></body></html>',
+      "asg",
+      "ankarasehirgazetesi.com",
+    );
+    assert.match(html, /__YEKPARE_HM_DOMAIN_BOOT__/);
+    assert.match(html, /"slug":"asg"/);
+    assert.match(html, /hm-editor-spa-ready/);
+    assert.match(html, /hm-spa-ready/);
+    assert.equal(html.includes("seo-boot-shell"), false);
   });
 
   it("recognizes known HM roots so the worker can serve home HTML at /", () => {

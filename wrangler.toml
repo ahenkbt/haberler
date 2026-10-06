@@ -180,7 +180,15 @@ pattern = "ankarasehirgazetesi.com/editor*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
+pattern = "www.ankarasehirgazetesi.com/editor*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
 pattern = "ankarasehirgazetesi.com/api/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/api/*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
@@ -197,6 +205,10 @@ zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "ankarasehirgazetesi.com/assets/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/assets/*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
