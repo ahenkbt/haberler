@@ -121,6 +121,67 @@ export function missingContainerBootSecrets(workerEnv = {}) {
   return missing;
 }
 
+/** Ayrı haber/yektube DB secret'ları start() anındaki process.env'e kilitlenir; sonraki wrangler secret put sıcak VM'i güncellemez. */
+export const CONTAINER_ENV_FINGERPRINT_KEYS = [
+  "NEWS_DATABASE_URL",
+  "NEWS_DB_WRITE",
+  "NEWS_DB_READ",
+  "YEKTUBE_DATABASE_URL",
+  "YEKTUBE_DB_WRITE",
+  "YEKTUBE_DB_READ",
+];
+
+const CONTAINER_ENV_FP_STORAGE_KEY = "containerEnvFp";
+
+function fnv1aHex(str) {
+  let h = 2166136261;
+  const s = String(str);
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16);
+}
+
+/**
+ * Secret değerlerini loglamadan, start() env'inin değişip değişmediğini DO storage ile kıyaslamak için.
+ * URL'nin kendisi fingerprint'e açık yazılmaz (uzunluk + hash).
+ */
+export function containerEnvFingerprint(envVars = {}) {
+  return CONTAINER_ENV_FINGERPRINT_KEYS.map((key) => {
+    const value = String(envVars[key] ?? "");
+    return `${key}:${value.length}:${fnv1aHex(value)}`;
+  }).join("|");
+}
+
+/**
+ * Worker secret'ı son start()'tan sonra değiştiyse (veya hiç kaydedilmediyse) çalışan isolate'i durdur.
+ * CONTAINER_ROLL artırmadan NEWS_DATABASE_URL gibi sonradan put edilen secret'ların yeni process.env'e düşmesi için.
+ */
+export async function stopContainerIfEnvFingerprintChanged({
+  isRunning,
+  stop,
+  destroy,
+  storage,
+  fingerprint,
+}) {
+  const last = await storage.get(CONTAINER_ENV_FP_STORAGE_KEY);
+  if (typeof isRunning !== "function" || !isRunning() || last === fingerprint) return false;
+  await stop();
+  const deadline = Date.now() + 45_000;
+  while (isRunning() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  if (isRunning() && typeof destroy === "function") {
+    await destroy();
+  }
+  return true;
+}
+
+export async function rememberContainerEnvFingerprint(storage, fingerprint) {
+  await storage.put(CONTAINER_ENV_FP_STORAGE_KEY, fingerprint);
+}
+
 /** Incoming Worker request.signal start()/port wait'i iptal etmesin. */
 export function requestWithoutAbort(request) {
   const headers = new Headers(request.headers);

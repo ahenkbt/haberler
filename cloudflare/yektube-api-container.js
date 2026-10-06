@@ -11,8 +11,11 @@ import { Container } from "@cloudflare/containers";
 import {
   CONTAINER_PORT,
   buildContainerEnv,
+  containerEnvFingerprint,
   missingContainerBootSecrets,
+  rememberContainerEnvFingerprint,
   requestWithoutAbort,
+  stopContainerIfEnvFingerprintChanged,
 } from "./container-env.js";
 
 export class YektubeApiContainer extends Container {
@@ -37,6 +40,14 @@ export class YektubeApiContainer extends Container {
 
     const envVars = buildContainerEnv(this.env);
     this.envVars = envVars;
+    const fingerprint = containerEnvFingerprint(envVars);
+    await stopContainerIfEnvFingerprintChanged({
+      isRunning: () => Boolean(this.container?.running),
+      stop: () => this.stop(),
+      destroy: () => this.destroy(),
+      storage: this.ctx.storage,
+      fingerprint,
+    });
 
     try {
       await this.startAndWaitForPorts({
@@ -51,6 +62,7 @@ export class YektubeApiContainer extends Container {
           waitInterval: 500,
         },
       });
+      await rememberContainerEnvFingerprint(this.ctx.storage, fingerprint);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (/no Container instance|provisioning/i.test(msg)) {

@@ -3,10 +3,13 @@ import assert from "node:assert/strict";
 import {
   CONTAINER_DEFAULTS,
   buildContainerEnv,
+  containerEnvFingerprint,
   hasDatabaseUrl,
   hasS3MediaConfig,
   missingContainerBootSecrets,
+  rememberContainerEnvFingerprint,
   requestWithoutAbort,
+  stopContainerIfEnvFingerprintChanged,
 } from "./container-env.js";
 
 describe("container-env", () => {
@@ -156,6 +159,61 @@ describe("container-env", () => {
     });
     assert.equal(vars.ADMIN_PANEL_PASSWORD, "secret-pass");
     assert.equal(vars.ADMIN_PANEL_USERNAMES, "ahenkbt,nailkabali");
+  });
+
+  it("fingerprints NEWS_* without embedding the database URL", () => {
+    const url = "postgres://news:secret@db.example/haber";
+    const fp = containerEnvFingerprint({ NEWS_DATABASE_URL: url, NEWS_DB_WRITE: "dual" });
+    assert.equal(fp.includes(url), false);
+    assert.equal(fp.includes("secret"), false);
+    assert.match(fp, /NEWS_DATABASE_URL:\d+:/);
+    const empty = containerEnvFingerprint({});
+    assert.notEqual(fp, empty);
+    assert.equal(
+      containerEnvFingerprint({ NEWS_DATABASE_URL: url, NEWS_DB_WRITE: "dual" }),
+      fp,
+    );
+  });
+
+  it("stops a warm container when the NEWS env fingerprint changes", async () => {
+    const store = new Map([["containerEnvFp", containerEnvFingerprint({})]]);
+    const storage = {
+      get: async (k) => store.get(k),
+      put: async (k, v) => {
+        store.set(k, v);
+      },
+    };
+    let running = true;
+    let stopped = 0;
+    const next = containerEnvFingerprint({
+      NEWS_DATABASE_URL: "postgres://u:p@h/db",
+      NEWS_DB_WRITE: "dual",
+    });
+    const recycled = await stopContainerIfEnvFingerprintChanged({
+      isRunning: () => running,
+      stop: async () => {
+        stopped += 1;
+        running = false;
+      },
+      destroy: async () => {
+        throw new Error("destroy should not run after stop");
+      },
+      storage,
+      fingerprint: next,
+    });
+    assert.equal(recycled, true);
+    assert.equal(stopped, 1);
+    await rememberContainerEnvFingerprint(storage, next);
+    const again = await stopContainerIfEnvFingerprintChanged({
+      isRunning: () => true,
+      stop: async () => {
+        stopped += 1;
+      },
+      storage,
+      fingerprint: next,
+    });
+    assert.equal(again, false);
+    assert.equal(stopped, 1);
   });
 
 });
