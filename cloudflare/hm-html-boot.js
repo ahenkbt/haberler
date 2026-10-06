@@ -33,6 +33,7 @@ export function withBudget(promise, ms = HM_HTML_BOOT_BUDGET_MS) {
   });
 }
 
+/** turkatahaber.com bu tabloda yok: ajans anasayfası / sitemap, HM kök boot olmasın. Yazar paneli slug'ı SPA `hmEditorDomains.ts`. */
 const HM_DOMAIN_SLUG_FALLBACKS = {
   "suhaber.net": "su",
   "www.suhaber.net": "su",

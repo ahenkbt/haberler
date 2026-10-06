@@ -13,6 +13,8 @@ function normalizeHostKey(host: string): string {
 export function isKnownHmCustomHost(host: string): boolean {
   const h = normalizeHostKey(host);
   if (!h || isConfiguredPortalHost(h)) return false;
+  // Ajans portalı: yazar paneli slug'ı var, slim HM app / kök vitrin yok.
+  if (h === "turkatahaber.com") return false;
   if (resolveKnownHmEditorSlug(h)) return true;
   return !!resolveHmDomainSlugHint(host);
 }
