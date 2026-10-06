@@ -111,6 +111,12 @@ export function buildContainerEnv(workerEnv = {}) {
   if (!hasS3MediaConfig(vars)) {
     vars.SKIP_MEDIA_STORAGE_CHECK = "1";
   }
+  // Canlı imaj news-db-migrate başarısız olursa process.exit(1) → isolate kalkmaz.
+  // PHP haber DB şeması VPS'te; CF Container dual-write için URL yeter, migrate atlanır.
+  if (nonEmptyString(vars.NEWS_DATABASE_URL)) {
+    if (!nonEmptyString(workerEnv.SKIP_NEWS_DB_MIGRATE)) vars.SKIP_NEWS_DB_MIGRATE = "1";
+    if (!nonEmptyString(workerEnv.SKIP_NEWS_DATA_MIGRATE)) vars.SKIP_NEWS_DATA_MIGRATE = "1";
+  }
   return vars;
 }
 
@@ -119,6 +125,83 @@ export function missingContainerBootSecrets(workerEnv = {}) {
   if (!hasDatabaseUrl(workerEnv)) missing.push("DATABASE_URL");
   if (!hasSessionSecret(workerEnv)) missing.push("SESSION_SECRET");
   return missing;
+}
+
+/** Ayrı haber/yektube DB secret'ları start() anındaki process.env'e kilitlenir; sonraki wrangler secret put sıcak VM'i güncellemez. */
+export const CONTAINER_ENV_FINGERPRINT_KEYS = [
+  "NEWS_DATABASE_URL",
+  "NEWS_DB_WRITE",
+  "NEWS_DB_READ",
+  "YEKTUBE_DATABASE_URL",
+  "YEKTUBE_DB_WRITE",
+  "YEKTUBE_DB_READ",
+];
+
+const CONTAINER_ENV_FP_STORAGE_KEY = "containerEnvFp";
+
+function fnv1aHex(str) {
+  let h = 2166136261;
+  const s = String(str);
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16);
+}
+
+/**
+ * Secret değerlerini loglamadan, start() env'inin değişip değişmediğini DO storage ile kıyaslamak için.
+ * URL'nin kendisi fingerprint'e açık yazılmaz (uzunluk + hash).
+ */
+export function containerEnvFingerprint(envVars = {}) {
+  return CONTAINER_ENV_FINGERPRINT_KEYS.map((key) => {
+    const value = String(envVars[key] ?? "");
+    return `${key}:${value.length}:${fnv1aHex(value)}`;
+  }).join("|");
+}
+
+/**
+ * Worker secret'ı son start()'tan sonra değiştiyse (veya hiç kaydedilmediyse) çalışan isolate'i durdur.
+ * CONTAINER_ROLL artırmadan NEWS_DATABASE_URL gibi sonradan put edilen secret'ların yeni process.env'e düşmesi için.
+ * SIGTERM (stop) ile hemen ardından start() yarışır ve süreç 143 ile ölür; bu yüzden destroy() (SIGKILL) kullanılır.
+ */
+export async function stopContainerIfEnvFingerprintChanged({
+  isRunning,
+  stop,
+  destroy,
+  storage,
+  fingerprint,
+}) {
+  const last = await storage.get(CONTAINER_ENV_FP_STORAGE_KEY);
+  // İlk boot: çalışan isolate'i öldürme (max_instances / 143). Fingerprint start sonrası kaydedilir;
+  // sonraki secret değişiminde recycle edilir.
+  if (last == null || last === fingerprint) return false;
+  if (typeof isRunning !== "function" || !isRunning()) return false;
+  let destroyedOk = false;
+  try {
+    if (typeof destroy === "function") {
+      await destroy();
+      destroyedOk = true;
+    } else if (typeof stop === "function") {
+      await stop();
+      destroyedOk = true;
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // SIGTERM/önceki recycle sonrası instance slot boşalmamış olabilir; start() denenecek.
+    if (!/no container instance|try again later|not running/i.test(msg)) throw err;
+  }
+  if (destroyedOk) {
+    const deadline = Date.now() + 20_000;
+    while (isRunning() && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  return true;
+}
+
+export async function rememberContainerEnvFingerprint(storage, fingerprint) {
+  await storage.put(CONTAINER_ENV_FP_STORAGE_KEY, fingerprint);
 }
 
 /** Incoming Worker request.signal start()/port wait'i iptal etmesin. */
