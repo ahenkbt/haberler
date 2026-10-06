@@ -2406,7 +2406,11 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     const newsSql = neonNewsSqlClient(env);
     if (newsSql) {
       try {
-        const phpAuthors = await raceTimeout(loadPhpSiteAuthors(newsSql, hmSiteId, sql), 1800, "php-authors");
+        const phpAuthors = await raceTimeout(
+          loadPhpSiteAuthors(newsSql, hmSiteId, sql, incomingUrl?.hostname),
+          1800,
+          "php-authors",
+        );
         if (phpAuthors?.length) {
           if (sql) {
             void syncPhpAuthorsToWorker(sql, newsSql, hmSiteId).catch((err) => {

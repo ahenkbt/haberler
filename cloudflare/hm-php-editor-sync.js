@@ -20,9 +20,27 @@ function catRow(r, id) {
   };
 }
 
-export async function resolvePhpSiteId(newsSql, workerSql, siteId) {
+export async function resolvePhpSiteId(newsSql, workerSql, siteId, hostname) {
   const sid = asPositiveInt(siteId);
-  if (!newsSql || !sid) return sid;
+  if (!newsSql) return sid;
+  const host = String(hostname || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .split(":")[0];
+  if (host && host !== "ahenk.net.tr" && !host.endsWith(".workers.dev")) {
+    try {
+      const phpHost = await newsSql`
+        SELECT id FROM hm_news_sites
+        WHERE lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${host}
+           OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${host}
+        LIMIT 1
+      `;
+      if (phpHost?.[0]?.id) return Number(phpHost[0].id);
+    } catch (err) {
+      console.error("[php-site-host]", String(err?.message || err).slice(0, 140));
+    }
+  }
   if (workerSql) {
     try {
       const w = await workerSql`SELECT slug, domain FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
@@ -146,8 +164,9 @@ export async function syncPhpCategoriesToWorker(workerSql, newsSql, siteId) {
   return out;
 }
 
-export async function loadPhpSiteAuthors(newsSql, siteId, workerSql) {
-  const phpSiteId = (await resolvePhpSiteId(newsSql, workerSql, siteId)) || asPositiveInt(siteId);
+export async function loadPhpSiteAuthors(newsSql, siteId, workerSql, hostname) {
+  const phpSiteId =
+    (await resolvePhpSiteId(newsSql, workerSql, siteId, hostname)) || asPositiveInt(siteId);
   if (!newsSql || !phpSiteId) return [];
   const rows = await newsSql`
     SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash
