@@ -13,6 +13,7 @@ import {
   isRecentGoogleNewsItem,
   isTurkataHaberHost,
   portalHaberlerArticleAliasPath,
+  isTurkataAuthorPanelPath,
   rewriteAhenkNewsCanonicalHtml,
   rewriteTurkataSpaHtml,
   turkataCanonicalUrl,
@@ -112,6 +113,18 @@ describe("turkata spa html", () => {
     assert.match(html, /href="\/turkata\/favicon-32\.png"/);
     assert.match(html, /href="\/turkata\/apple-touch-icon\.png"/);
     assert.doesNotMatch(html, /turkata-wordmark\.svg/);
+    assert.doesNotMatch(html, /__YEKPARE_HM_DOMAIN_BOOT__/);
+  });
+
+  it("boots the HM author-panel slug on /yazar/giris", () => {
+    assert.equal(isTurkataAuthorPanelPath("/yazar/giris"), true);
+    assert.equal(isTurkataAuthorPanelPath("/yazar/sifre"), true);
+    assert.equal(isTurkataAuthorPanelPath("/yazar/haberler"), true);
+    assert.equal(isTurkataAuthorPanelPath("/yazar/ahmet"), false);
+    const html = rewriteTurkataSpaHtml(SHELL, { pathname: "/yazar/giris" });
+    assert.match(html, /__YEKPARE_HM_DOMAIN_BOOT__/);
+    assert.match(html, /"slug":"turkatahaber"/);
+    assert.match(html, /"host":"turkatahaber.com"/);
   });
 
   it("renders the official about page verbatim", () => {
