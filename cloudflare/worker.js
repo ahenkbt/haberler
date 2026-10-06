@@ -2875,6 +2875,15 @@ export default {
         if (earlyEdge) return earlyEdge;
       } catch (err) {
         console.error("[hm-editor-data-early]", String(err?.message || err).slice(0, 180));
+        if (earlyPath === "/api/authors") {
+          return new Response("[]", {
+            status: 200,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+            },
+          });
+        }
         if (earlyPath === "/api/hm/author/login") {
           return new Response(JSON.stringify({ error: "E-posta veya şifre hatalı." }), {
             status: 401,
