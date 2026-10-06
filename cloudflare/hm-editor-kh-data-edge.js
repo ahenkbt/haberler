@@ -2410,6 +2410,23 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     } catch (err) {
       console.error("[hm-authors-site]", String(err?.message || err).slice(0, 120));
     }
+    const newsSql = neonNewsSqlClient(env);
+    if (newsSql) {
+      try {
+        const phpAuthors = await raceTimeout(loadPhpSiteAuthors(newsSql, hmSiteId, sql), 1800, "php-authors");
+        if (phpAuthors?.length) {
+          void syncPhpAuthorsToWorker(sql, newsSql, hmSiteId).catch((err) => {
+            console.error("[hm-authors-php]", String(err?.message || err).slice(0, 160));
+          });
+          return jsonResponse(
+            200,
+            phpAuthors.map((r) => serializeAuthor(r)),
+          );
+        }
+      } catch (err) {
+        console.error("[hm-authors-php-fast]", String(err?.message || err).slice(0, 160));
+      }
+    }
     return handleAuthorsList(sql, hmSiteId, env);
   }
 
