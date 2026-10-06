@@ -13,6 +13,20 @@ const PHP_THEME_PUBLIC_HOSTS = new Map([
   ["www.ankarasehirgazetesi.com", "ankarasehirgazetesi.com"],
 ]);
 
+/** PHP origin siteleri — /yazar/giris* Worker rotası var, /koseyazari/* henüz yok. */
+const PHP_KOSE_ORIGIN_HOSTS = new Set([
+  "ankarahabergundemi.com",
+  "ankarasehirgazetesi.com",
+  "vatanhaber.net",
+  "suhaber.net",
+  "turkatahaber.com",
+  "sehitgazi.org.tr",
+  "yerel.net.tr",
+  "turksav.org",
+  "dunyasaglik.org",
+  "yesilvatan.gen.tr",
+]);
+
 /** Eski SPA yollarında site slug'ından önce gelen önekler. */
 const LEGACY_PREFIXES = new Set(["tr", "hm"]);
 
@@ -94,6 +108,9 @@ export function koseyazariPanelRedirectResponse(request, incoming) {
   if (method !== "GET" && method !== "HEAD") return null;
   const nextPath = koseyazariPanelRedirectPath(incoming.pathname);
   if (!nextPath) return null;
+  const host = normalizeHostname(incoming.hostname).replace(/^www\./, "");
+  // PHP tema origin'inde /koseyazari/* henüz Worker rotası değil — 301 origin 404 yapar.
+  if (PHP_KOSE_ORIGIN_HOSTS.has(host)) return null;
   const dest = new URL(incoming.href);
   dest.pathname = nextPath;
   return new Response(null, {

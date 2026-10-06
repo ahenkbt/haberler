@@ -70,11 +70,18 @@ test("/yazar/giris paneli /koseyazari/giris adresine 301 gider; kamu yazar sayfa
   assert.equal(koseyazariPanelRedirectPath("/tr/asg/yazar/giris"), "/tr/asg/koseyazari/giris");
   assert.equal(koseyazariPanelRedirectPath("/yazar/a526"), null);
   assert.equal(koseyazariPanelRedirectPath("/yazarlar"), null);
-  const res = koseyazariPanelRedirectResponse(
-    new Request("https://yesilvatan.gen.tr/yazar/giris"),
-    new URL("https://yesilvatan.gen.tr/yazar/giris"),
+  const portal = koseyazariPanelRedirectResponse(
+    new Request("https://ahenk.net.tr/tr/asg/yazar/giris"),
+    new URL("https://ahenk.net.tr/tr/asg/yazar/giris"),
   );
-  assert.ok(res);
-  assert.equal(res.status, 301);
-  assert.equal(res.headers.get("location"), "https://yesilvatan.gen.tr/koseyazari/giris");
+  assert.ok(portal);
+  assert.equal(portal.status, 301);
+  assert.equal(portal.headers.get("location"), "https://ahenk.net.tr/tr/asg/koseyazari/giris");
+  assert.equal(
+    koseyazariPanelRedirectResponse(
+      new Request("https://yesilvatan.gen.tr/yazar/giris"),
+      new URL("https://yesilvatan.gen.tr/yazar/giris"),
+    ),
+    null,
+  );
 });
