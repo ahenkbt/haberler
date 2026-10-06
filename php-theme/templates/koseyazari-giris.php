@@ -6,7 +6,7 @@ use Yenisafak\Html;
 
 /** @var Yenisafak\Site $site */
 $slug = Html::e($site->slug);
-$haberler = Html::e($site->path('/yazar/haberler'));
+$haberler = Html::e($site->path('/koseyazari/haberler'));
 ?>
 <div class="ys-wrap ys-static" style="max-width:28rem;margin:3rem auto;">
   <h1>Köşe yazarı girişi</h1>
@@ -30,7 +30,7 @@ $haberler = Html::e($site->path('/yazar/haberler'));
 <script>
 (function(){
   var slug = <?= json_encode($site->slug, JSON_UNESCAPED_UNICODE) ?>;
-  var next = <?= json_encode($site->path('/yazar/haberler'), JSON_UNESCAPED_UNICODE) ?>;
+  var next = <?= json_encode($site->path('/koseyazari/haberler'), JSON_UNESCAPED_UNICODE) ?>;
   var f = document.getElementById("hm-kose-giris-form");
   if (!f) return;
   f.addEventListener("submit", function(ev){
