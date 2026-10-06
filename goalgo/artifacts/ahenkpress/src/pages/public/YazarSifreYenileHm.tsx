@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiUrl } from "@/lib/apiBase";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 
 export default function YazarSifreYenileHm() {
   const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
+  const hostSlug = useHmDomainSlugFromHost();
+  const slug = String(params?.slug ?? "").trim() || hostSlug;
   const h = useHmPublicHref();
   const [token, setToken] = useState("");
   const [pw1, setPw1] = useState("");
@@ -57,7 +59,7 @@ export default function YazarSifreYenileHm() {
     }
   };
 
-  const giris = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/yazar/giris`;
+  const giris = hmAuthorPanelHref(slug, "giris");
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">

@@ -14,6 +14,11 @@ export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "trafikdernegi.com": "trafik",
   "tgd.tc": "trafik",
   "trafik.gd": "trafik",
+  "yesilvatan.gen.tr": "yesilvatan",
+  "yerel.net.tr": "yerelnet",
+  "sehitgazi.org.tr": "sehitgazi",
+  "dunyasaglik.org": "dunyasaglik",
+  "turksav.org": "turksav",
 };
 
 function normalizeHostKey(host: string): string {

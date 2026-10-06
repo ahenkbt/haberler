@@ -2,8 +2,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { clearHmAuthorSession, readHmAuthorPayload } from "@/lib/hmAuthorSession";
 import { useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { hmPublicAuthorHref, hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 
 export function YazarPanelNav({ slug }: { slug: string }) {
   const ctx = useHmPublicLinkContextOptional();
@@ -12,18 +12,20 @@ export function YazarPanelNav({ slug }: { slug: string }) {
   const publicSite =
     ctx ?? (authorPayload?.site && authorPayload.site.slug === slug ? authorPayload.site : { slug });
   const authorId = authorPayload?.site?.slug === slug ? authorPayload?.author?.id ?? null : null;
-  const enc = encodeURIComponent(slug);
-  const base = `/${HM_SITE_PUBLIC_PREFIX}/${enc}/yazar`;
+  const haberlerHref = hmAuthorPanelHref(slug, "haberler");
+  const yeniHref = hmAuthorPanelHref(slug, "haber/yeni");
+  const sifreHref = hmAuthorPanelHref(slug, "sifre");
+  const girisHref = hmAuthorPanelHref(slug, "giris");
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
       <Button variant="outline" size="sm" asChild>
-        <Link href={`${base}/haberler`}>Makalelerim</Link>
+        <Link href={haberlerHref}>Makalelerim</Link>
       </Button>
       <Button size="sm" className="bg-[#e61e25] hover:bg-[#c9181e] text-white" asChild>
-        <Link href={`${base}/haber/yeni`}>Yeni makale</Link>
+        <Link href={yeniHref}>Yeni makale</Link>
       </Button>
       <Button variant="outline" size="sm" asChild>
-        <Link href={`${base}/sifre`}>Şifre değiştir</Link>
+        <Link href={sifreHref}>Şifre değiştir</Link>
       </Button>
       {authorId != null ? (
         <Button variant="ghost" size="sm" asChild>
@@ -42,7 +44,7 @@ export function YazarPanelNav({ slug }: { slug: string }) {
         type="button"
         onClick={() => {
           clearHmAuthorSession();
-          window.location.href = `${base}/giris`;
+          window.location.href = girisHref;
         }}
       >
         Çıkış

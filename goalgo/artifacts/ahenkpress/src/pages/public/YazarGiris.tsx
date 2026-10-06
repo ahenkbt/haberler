@@ -11,11 +11,13 @@ import {
   type HmAuthorStoredPayload,
 } from "@/lib/hmAuthorSession";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 
 export default function YazarGiris() {
   const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
+  const hostSlug = useHmDomainSlugFromHost();
+  const slug = String(params?.slug ?? "").trim() || hostSlug;
   const h = useHmPublicHref();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +28,7 @@ export default function YazarGiris() {
   const existingT = readHmAuthorJwt();
   const existingP = readHmAuthorPayload();
   if (existingT && existingP?.site?.slug === slug) {
-    return <Redirect to={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/yazar/haberler`} />;
+    return <Redirect to={hmAuthorPanelHref(slug, "haberler")} />;
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -50,7 +52,7 @@ export default function YazarGiris() {
         return;
       }
       writeHmAuthorSession(j.token, { site: j.site, author: j.author });
-      window.location.href = `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/yazar/haberler`;
+      window.location.href = hmAuthorPanelHref(slug, "haberler");
     } catch {
       setErr("Bağlantı hatası");
     } finally {
@@ -101,7 +103,7 @@ export default function YazarGiris() {
           </Button>
           <p className="text-center text-sm">
             <Link
-              href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/yazar/sifremi-unuttum`}
+              href={hmAuthorPanelHref(slug, "sifremi-unuttum")}
               className="text-red-600 hover:underline"
             >
               Şifremi unuttum

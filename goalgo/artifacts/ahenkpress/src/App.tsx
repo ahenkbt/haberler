@@ -1087,6 +1087,66 @@ export default function App() {
           </HmPortalOrDomainStandardPage>
         )
       )}</Route>
+      <Route path="/yazar/giris">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarGiris />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/yazar/sifremi-unuttum">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarSifremiUnuttum />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/yazar/sifre-yenile">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarSifreYenileHm />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/yazar/haberler">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <YazarHaberler />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/yazar/sifre">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <YazarSifre />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/yazar/haber/:id">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <HaberEditor />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/yazar/:authorKey">{() => (
         isTurkataHaberHost() ? (
           <TurkataHaberChrome title="Yazar"><YazarAuthorRoute /></TurkataHaberChrome>

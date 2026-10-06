@@ -1,15 +1,16 @@
 import { useParams } from "wouter";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { readHmAuthorPayload } from "@/lib/hmAuthorSession";
 import { hmPublicSiteBase } from "@/lib/hmPublicSiteUrl";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 import { YazarPanelNav } from "@/components/YazarPanelNav";
 import { HaberlerInner } from "@/pages/admin/HaberlerInner";
 
 export default function YazarHaberler() {
   const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
-  const enc = encodeURIComponent(slug);
-  const base = `/${HM_SITE_PUBLIC_PREFIX}/${enc}/yazar`;
+  const hostSlug = useHmDomainSlugFromHost();
+  const slug = String(params?.slug ?? "").trim() || hostSlug;
+  const base = hmAuthorPanelHref(slug, "haber").replace(/\/haber$/, "");
   const authorSite = readHmAuthorPayload()?.site ?? null;
   const publicSite = authorSite?.slug === slug ? authorSite : { slug };
   const previewPrefix = slug ? `${hmPublicSiteBase(publicSite)}/haber` : null;

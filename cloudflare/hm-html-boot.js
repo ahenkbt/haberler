@@ -60,6 +60,16 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.tgd.tc": "trafik",
   "trafik.gd": "trafik",
   "www.trafik.gd": "trafik",
+  "yesilvatan.gen.tr": "yesilvatan",
+  "www.yesilvatan.gen.tr": "yesilvatan",
+  "yerel.net.tr": "yerelnet",
+  "www.yerel.net.tr": "yerelnet",
+  "sehitgazi.org.tr": "sehitgazi",
+  "www.sehitgazi.org.tr": "sehitgazi",
+  "dunyasaglik.org": "dunyasaglik",
+  "www.dunyasaglik.org": "dunyasaglik",
+  "turksav.org": "turksav",
+  "www.turksav.org": "turksav",
 };
 
 export function normalizeHmBootHost(hostname) {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "wouter";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,7 +80,8 @@ function YazarSifreForm({ slug }: { slug: string }) {
 
 export default function YazarSifre() {
   const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
+  const hostSlug = useHmDomainSlugFromHost();
+  const slug = String(params?.slug ?? "").trim() || hostSlug;
   return (
     <div className="mx-auto max-w-screen-lg px-3 py-6">
       <YazarSifreForm slug={slug} />

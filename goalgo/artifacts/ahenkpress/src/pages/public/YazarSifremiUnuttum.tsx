@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiUrl } from "@/lib/apiBase";
 import { useHmPublicHref } from "@/contexts/HmPublicLinkContext";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 
 export default function YazarSifremiUnuttum() {
   const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
+  const hostSlug = useHmDomainSlugFromHost();
+  const slug = String(params?.slug ?? "").trim() || hostSlug;
   const h = useHmPublicHref();
   const [email, setEmail] = useState("");
   const [err, setErr] = useState("");
@@ -46,7 +48,7 @@ export default function YazarSifremiUnuttum() {
     <div className="mx-auto max-w-md px-4 py-12">
       <p className="mb-6 text-sm text-slate-600">
         <Link
-          href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/yazar/giris`}
+          href={hmAuthorPanelHref(slug, "giris")}
           className="font-semibold text-red-600 hover:underline"
         >
           ← Girişe dön
