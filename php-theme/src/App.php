@@ -177,6 +177,21 @@ final class App
             $this->author($site, $m[1]);
             return;
         }
+        if (preg_match('#^/koseyazari/(sifre.*|haber.*)$#', $path, $m) === 1) {
+            $this->redirect($site->path('/yazar/' . $m[1]));
+            return;
+        }
+        if ($path === '/koseyazari/giris') {
+            $this->html(
+                $site,
+                'Köşe yazarı girişi',
+                'Editörün tanımladığı e-posta ve şifre ile giriş yapın.',
+                $this->render('koseyazari-giris', ['site' => $site]),
+                200,
+                '/koseyazari/giris'
+            );
+            return;
+        }
         if ($path === '/video') {
             $this->video($site);
             return;

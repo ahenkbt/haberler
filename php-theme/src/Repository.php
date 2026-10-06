@@ -75,10 +75,10 @@ final class Repository
     /** @return list<array<string, mixed>> */
     public function stories(int $siteId, string $category, int $limit, int $offset = 0): array
     {
-        $limit = max(1, min(60, $limit));
+        $limit = max(1, min(180, $limit));
         $offset = max(0, $offset);
         $sql = $this->storySql($category !== '');
-        $sql .= ' ORDER BY published_at DESC LIMIT :lim OFFSET :off';
+        $sql .= ' ORDER BY is_featured DESC, is_site_manset DESC, is_breaking DESC, published_at DESC LIMIT :lim OFFSET :off';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue('site', $siteId, PDO::PARAM_INT);
         if ($category !== '') {
@@ -269,15 +269,32 @@ final class Repository
     public function authorStories(int $siteId, int $authorId, int $limit): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT slug AS public_slug, title, spot, image_url, \'\' AS credit, \'\' AS source_url,
-                    \'\' AS category_slug, created_at AS published_at, views, \'column\' AS kind
-             FROM hm_makaleler
-             WHERE site_id = :site AND author_id = :author AND status = \'published\'
-             ORDER BY created_at DESC
+            'SELECT public_slug, title, spot, image_url, credit, source_url, category_slug, published_at, views, kind
+             FROM (
+               SELECT m.slug AS public_slug, m.title, m.spot, m.image_url, \'\' AS credit, \'\' AS source_url,
+                      \'\' AS category_slug, m.created_at AS published_at, m.views, \'column\' AS kind
+               FROM hm_makaleler m
+               WHERE m.site_id = :site AND m.author_id = :author AND m.status = \'published\'
+               UNION ALL
+               SELECT n.slug AS public_slug, n.title, n.spot, n.image_url, \'\' AS credit, \'\' AS source_url,
+                      COALESCE(c.slug, \'\') AS category_slug, n.created_at AS published_at, n.views, \'news\' AS kind
+               FROM news n
+               LEFT JOIN categories c ON c.id = n.category_id
+               WHERE n.site_id = :site2 AND n.author_id = :author2 AND n.status = \'published\'
+                 AND NOT EXISTS (
+                   SELECT 1 FROM hm_makaleler m2
+                   WHERE m2.site_id = n.site_id
+                     AND m2.author_id = n.author_id
+                     AND lower(btrim(m2.slug)) = lower(btrim(n.slug))
+                 )
+             ) stories
+             ORDER BY published_at DESC
              LIMIT :lim'
         );
         $stmt->bindValue('site', $siteId, PDO::PARAM_INT);
         $stmt->bindValue('author', $authorId, PDO::PARAM_INT);
+        $stmt->bindValue('site2', $siteId, PDO::PARAM_INT);
+        $stmt->bindValue('author2', $authorId, PDO::PARAM_INT);
         $stmt->bindValue('lim', max(1, min(40, $limit)), PDO::PARAM_INT);
         $stmt->execute();
         return array_map([$this, 'mapStory'], $stmt->fetchAll());
@@ -359,13 +376,17 @@ final class Repository
         return "SELECT * FROM (
             SELECT 'rss-' || id::text AS public_slug, title, spot, image_url,
                    COALESCE(source_name, '') AS credit, COALESCE(link, '') AS source_url,
-                   category_slug, published_at, 0 AS views, 'rss' AS kind
+                   category_slug, published_at, 0 AS views, 'rss' AS kind,
+                   false AS is_featured, false AS is_site_manset, false AS is_breaking
             FROM portal_rss_items
             WHERE (site_id IS NULL OR site_id = :site) {$catRss}
             UNION ALL
             SELECT n.slug, COALESCE(o.title, n.title), COALESCE(o.spot, n.spot), COALESCE(o.image_url, n.image_url),
                    '' AS credit, COALESCE(n.rss_source_url, '') AS source_url,
-                   COALESCE(c.slug, '') AS category_slug, n.created_at, n.views, 'news' AS kind
+                   COALESCE(c.slug, '') AS category_slug, n.created_at, n.views, 'news' AS kind,
+                   COALESCE(n.is_featured, false) AS is_featured,
+                   COALESCE(n.is_site_manset, false) AS is_site_manset,
+                   COALESCE(n.is_breaking, false) AS is_breaking
             FROM news n
             LEFT JOIN categories c ON c.id = n.category_id
             LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site
@@ -393,6 +414,9 @@ final class Repository
             'category' => Modules::slug((string) ($row['category_slug'] ?? '')),
             'publishedAt' => (string) $row['published_at'],
             'kind' => (string) ($row['kind'] ?? 'news'),
+            'isFeatured' => !empty($row['is_featured']),
+            'isSiteManset' => !empty($row['is_site_manset']),
+            'isBreaking' => !empty($row['is_breaking']),
         ];
     }
 
