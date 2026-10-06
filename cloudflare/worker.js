@@ -2862,22 +2862,29 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
-    // Köşe yazarı girişi: Container / askı / medya zincirinden önce, <3s 401/200.
+    // Köşe yazarı girişi + editör listeleri: Container / askı zincirinden önce.
     const earlyPath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
-    if (earlyPath === "/api/hm/author/login" && String(request.method || "").toUpperCase() === "POST") {
+    const earlyMethod = String(request.method || "").toUpperCase();
+    if (
+      (earlyPath === "/api/hm/author/login" && earlyMethod === "POST") ||
+      (earlyPath === "/api/authors" && earlyMethod === "GET") ||
+      (earlyPath.startsWith("/api/hm/editor/") && (earlyMethod === "GET" || earlyMethod === "POST" || earlyMethod === "PUT" || earlyMethod === "PATCH" || earlyMethod === "DELETE"))
+    ) {
       try {
-        const earlyLogin = await handleKhEditorDataEdge(request, env, incoming);
-        if (earlyLogin) return earlyLogin;
+        const earlyEdge = await handleKhEditorDataEdge(request, env, incoming);
+        if (earlyEdge) return earlyEdge;
       } catch (err) {
-        console.error("[hm-author-login-early]", String(err?.message || err).slice(0, 180));
-        return new Response(JSON.stringify({ error: "E-posta veya şifre hatalı." }), {
-          status: 401,
-          headers: {
-            "content-type": "application/json; charset=utf-8",
-            "cache-control": "private, no-store",
-            "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
-          },
-        });
+        console.error("[hm-editor-data-early]", String(err?.message || err).slice(0, 180));
+        if (earlyPath === "/api/hm/author/login") {
+          return new Response(JSON.stringify({ error: "E-posta veya şifre hatalı." }), {
+            status: 401,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "private, no-store",
+              "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+            },
+          });
+        }
       }
     }
 

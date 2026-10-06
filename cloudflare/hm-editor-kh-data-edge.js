@@ -250,7 +250,7 @@ let authorsSortColumnEnsured = false;
 async function ensureAuthorsSortOrderColumn(sql) {
   if (authorsSortColumnEnsured || !sql) return;
   try {
-    await sql.query("ALTER TABLE authors ADD COLUMN IF NOT EXISTS hm_sort_order INTEGER");
+    await raceTimeout(sql.query("ALTER TABLE authors ADD COLUMN IF NOT EXISTS hm_sort_order INTEGER"), 700, "authors-col");
   } catch (err) {
     console.error("[hm-authors-ensure-col]", String(err?.message || err).slice(0, 140));
   }
@@ -2404,7 +2404,12 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     if (!hmSiteId) return null;
     const sql = sqlClient(env);
     if (!sql) return null;
-    if (!(await isHmNewsSite(sql, hmSiteId))) return null;
+    try {
+      const ok = await raceTimeout(isHmNewsSite(sql, hmSiteId), 1500, "is-hm");
+      if (!ok) return null;
+    } catch (err) {
+      console.error("[hm-authors-site]", String(err?.message || err).slice(0, 120));
+    }
     return handleAuthorsList(sql, hmSiteId, env);
   }
 
