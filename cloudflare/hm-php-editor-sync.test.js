@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  loadPhpSiteAuthors,
   loadPhpSiteCategories,
+  resolvePhpSiteId,
   syncPhpAuthorsToWorker,
   syncPhpCategoriesToWorker,
 } from "./hm-php-editor-sync.js";
@@ -86,6 +88,44 @@ test("PHP kategorileri Worker'a kopyalanır", async () => {
   assert.equal(out.length, 1);
   assert.equal(out[0].slug, "cevre");
   assert.equal(worker.categories.length, 1);
+});
+
+test("Worker site id 1090 PHP slug ile 236 olur", async () => {
+  const php = {
+    categories: [{ id: 11, name: "Çevre", slug: "cevre", color: "#16a34a", exclusive_site_id: 236, sort_order: 1 }],
+    authors: [{ id: 583, name: "Nail Türkoğlu", hm_site_id: 236, email: null }],
+    sites: [{ id: 236, slug: "yesilvatan", domain: "yesilvatan.gen.tr" }],
+    nextId: 100,
+  };
+  const worker = {
+    categories: [],
+    authors: [],
+    sites: [{ id: 1090, slug: "yesilvatan", domain: "yesilvatan.gen.tr" }],
+    nextId: 200,
+  };
+  function sqlFor(tables) {
+    const inner = memorySql(tables);
+    const wrapped = async (strings, ...values) => {
+      const text = strings.join("?");
+      if (/FROM hm_news_sites/i.test(text) && /WHERE id =/i.test(text)) {
+        const [id] = values;
+        const hit = (tables.sites || []).find((s) => Number(s.id) === Number(id));
+        return hit ? [hit] : [];
+      }
+      if (/FROM hm_news_sites/i.test(text) && /lower\(slug\)/i.test(text)) {
+        const [slug] = values;
+        const hit = (tables.sites || []).find((s) => String(s.slug).toLowerCase() === String(slug));
+        return hit ? [hit] : [];
+      }
+      return inner(strings, ...values);
+    };
+    return wrapped;
+  }
+  const phpId = await resolvePhpSiteId(sqlFor(php), sqlFor(worker), 1090);
+  assert.equal(phpId, 236);
+  const authors = await loadPhpSiteAuthors(sqlFor(php), 1090, sqlFor(worker));
+  assert.equal(authors.length, 1);
+  assert.equal(authors[0].name, "Nail Türkoğlu");
 });
 
 test("PHP yazarları Worker listesine eklenir", async () => {

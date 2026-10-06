@@ -2862,6 +2862,25 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
+    // Köşe yazarı girişi: Container / askı / medya zincirinden önce, <3s 401/200.
+    const earlyPath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+    if (earlyPath === "/api/hm/author/login" && String(request.method || "").toUpperCase() === "POST") {
+      try {
+        const earlyLogin = await handleKhEditorDataEdge(request, env, incoming);
+        if (earlyLogin) return earlyLogin;
+      } catch (err) {
+        console.error("[hm-author-login-early]", String(err?.message || err).slice(0, 180));
+        return new Response(JSON.stringify({ error: "E-posta veya şifre hatalı." }), {
+          status: 401,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "private, no-store",
+            "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+          },
+        });
+      }
+    }
+
     const khSuspended = await khPublicSuspensionResponse(request, env, incoming);
     if (khSuspended) return khSuspended;
 

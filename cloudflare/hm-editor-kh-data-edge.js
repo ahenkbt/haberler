@@ -4,7 +4,13 @@
  */
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
-import { syncPhpAuthorsToWorker, syncPhpCategoriesToWorker } from "./hm-php-editor-sync.js";
+import {
+  loadPhpSiteAuthors,
+  loadPhpSiteCategories,
+  resolvePhpSiteId,
+  syncPhpAuthorsToWorker,
+  syncPhpCategoriesToWorker,
+} from "./hm-php-editor-sync.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
@@ -304,7 +310,20 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
   if (shouldEdgeDualWriteNewsDb(env)) {
     const newsSql = neonNewsSqlClient(env);
     if (newsSql) {
-      const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, rowOrId);
+      let payload = rowOrId;
+      if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
+        const workerSql = sqlClient(env);
+        const sid = asPositiveInt(payload.site_id ?? payload.siteId);
+        if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
+          try {
+            const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
+            if (s?.[0]?.slug) payload = { ...payload, site_slug: s[0].slug };
+          } catch (err) {
+            console.error("[hm-news-mirror-slug]", String(err?.message || err).slice(0, 120));
+          }
+        }
+      }
+      const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
       if (direct?.mirrored === true) return true;
       console.warn("[hm-news-mirror] kenar dual-write atlandı", table, op, String(direct?.reason || "unknown"));
     }
@@ -402,6 +421,25 @@ async function handleCategories(sql, siteId, env) {
       if (phpMapped.length) return jsonResponse(200, phpMapped);
     } catch (err) {
       console.error("[kh-cat-php]", String(err?.message || err).slice(0, 160));
+    }
+    try {
+      const phpOnly = await loadPhpSiteCategories(newsSql, siteId, sql);
+      if (phpOnly.length) {
+        return jsonResponse(
+          200,
+          phpOnly.map((r) => ({
+            id: r.id,
+            name: r.name,
+            slug: r.slug,
+            color: r.color || "#e61e25",
+            exclusiveSiteId: r.exclusive_site_id ?? null,
+            sortOrder: r.sort_order ?? 0,
+            newsCount: 0,
+          })),
+        );
+      }
+    } catch (err) {
+      console.error("[kh-cat-php-list]", String(err?.message || err).slice(0, 160));
     }
   }
   await ensureStandardCategories(sql);
@@ -538,7 +576,23 @@ export async function handleAuthorsList(sql, siteId, env) {
     WHERE hm_site_id = ${siteId}
     ORDER BY COALESCE(hm_sort_order, 2147483647) ASC, id ASC
   `;
-  const list = rows || [];
+  let list = rows || [];
+  if (newsSql) {
+    try {
+      const phpAuthors = await loadPhpSiteAuthors(newsSql, siteId, sql);
+      const seenEmail = new Set(list.map((r) => String(r.email || "").trim().toLowerCase()).filter(Boolean));
+      const seenId = new Set(list.map((r) => Number(r.id)));
+      for (const p of phpAuthors) {
+        const em = String(p.email || "").trim().toLowerCase();
+        if ((em && seenEmail.has(em)) || seenId.has(Number(p.id))) continue;
+        list.push(p);
+        if (em) seenEmail.add(em);
+        seenId.add(Number(p.id));
+      }
+    } catch (err) {
+      console.error("[hm-authors-php-list]", String(err?.message || err).slice(0, 160));
+    }
+  }
   const { countMap, latestMap } = list.length ? await loadAuthorArticleStats(sql, siteId) : { countMap: new Map(), latestMap: new Map() };
   return jsonResponse(
     200,
@@ -2063,6 +2117,15 @@ async function resolveActiveSiteBySlug(sql, slugRaw) {
   return rows?.[0] || null;
 }
 
+function raceTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timeout`)), ms);
+    }),
+  ]);
+}
+
 async function handleAuthorLogin(request, env, incomingUrl) {
   let b;
   try {
@@ -2084,14 +2147,19 @@ async function handleAuthorLogin(request, env, incomingUrl) {
   }
 
   const sql = sqlClient(env);
-  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
-  if (!jwtSecretBytes(env)) return jsonResponse(503, { error: "Oturum anahtarı eksik." });
+  const newsSql = neonNewsSqlClient(env);
+  if (!sql && !newsSql) return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
+  if (!jwtSecretBytes(env)) return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
 
-  let site = await resolveActiveSiteBySlug(sql, siteSlug);
+  try {
+  let site = sql ? await raceTimeout(resolveActiveSiteBySlug(sql, siteSlug), 1800, "site-worker") : null;
+  if (!site && newsSql) site = await raceTimeout(resolveActiveSiteBySlug(newsSql, siteSlug), 1800, "site-php");
   if (!site) {
     const host = normalizeHost(b.domain || incomingUrl?.hostname);
-    if (host) {
-      const byHost = await sql`
+    const db = sql || newsSql;
+    if (host && db) {
+      const byHost = await raceTimeout(
+        db`
         SELECT id, slug, domain, domain2, display_name
         FROM hm_news_sites
         WHERE active = true
@@ -2102,50 +2170,31 @@ async function handleAuthorLogin(request, env, incomingUrl) {
           )
         ORDER BY id ASC
         LIMIT 1
-      `;
+      `,
+        1800,
+        "site-host",
+      );
       site = byHost?.[0] || null;
     }
   }
   if (!site) return jsonResponse(404, { error: "Haber sitesi bulunamadı." });
 
-  const authors = await sql`
-    SELECT id, name, email, password_hash
-    FROM authors
-    WHERE hm_site_id = ${site.id}
-      AND lower(email) = ${emailRaw}
-      AND password_hash IS NOT NULL
-    LIMIT 1
-  `;
-  let author = authors?.[0];
-  if (!author?.password_hash) {
-    const newsSql = neonNewsSqlClient(env);
-    if (newsSql) {
-      try {
-        const phpAuthors = await newsSql`
-          SELECT id, name, email, password_hash, title, avatar_url, bio, hm_sort_order
-          FROM authors
-          WHERE hm_site_id = ${site.id}
-            AND lower(email) = ${emailRaw}
-            AND password_hash IS NOT NULL
-          LIMIT 1
-        `;
-        const phpAuthor = phpAuthors?.[0];
-        if (phpAuthor?.password_hash) {
-          await syncPhpAuthorsToWorker(sql, newsSql, site.id);
-          const again = await sql`
-            SELECT id, name, email, password_hash
-            FROM authors
-            WHERE hm_site_id = ${site.id}
-              AND lower(email) = ${emailRaw}
-              AND password_hash IS NOT NULL
-            LIMIT 1
-          `;
-          author = again?.[0] || phpAuthor;
-        }
-      } catch (err) {
-        console.error("[hm-author-login-php]", String(err?.message || err).slice(0, 160));
-      }
-    }
+  const lookupAuthor = async (db, hmSiteId) => {
+    if (!db) return null;
+    const authors = await db`
+      SELECT id, name, email, password_hash
+      FROM authors
+      WHERE hm_site_id = ${hmSiteId}
+        AND lower(email) = ${emailRaw}
+        AND password_hash IS NOT NULL
+      LIMIT 1
+    `;
+    return authors?.[0] || null;
+  };
+  const phpSiteId = newsSql ? await raceTimeout(resolvePhpSiteId(newsSql, sql, site.id), 1800, "php-site") : site.id;
+  let author = sql ? await raceTimeout(lookupAuthor(sql, site.id), 1800, "author-worker") : null;
+  if (!author?.password_hash && newsSql) {
+    author = await raceTimeout(lookupAuthor(newsSql, phpSiteId || site.id), 1800, "author-php");
   }
   if (!author?.password_hash) {
     return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
@@ -2165,6 +2214,10 @@ async function handleAuthorLogin(request, env, incomingUrl) {
     },
     author: { id: author.id, name: author.name, email: author.email ?? emailRaw },
   });
+  } catch (err) {
+    console.error("[hm-author-login]", String(err?.message || err).slice(0, 180));
+    return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
+  }
 }
 
 async function handleAuthorMeGet(request, env) {

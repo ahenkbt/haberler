@@ -20,15 +20,85 @@ function catRow(r, id) {
   };
 }
 
-export async function loadPhpSiteCategories(newsSql, siteId) {
-  if (!newsSql || !asPositiveInt(siteId)) return [];
+export async function resolvePhpSiteId(newsSql, workerSql, siteId) {
+  const sid = asPositiveInt(siteId);
+  if (!newsSql || !sid) return sid;
+  if (workerSql) {
+    try {
+      const w = await workerSql`SELECT slug, domain FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
+      const slug = String(w?.[0]?.slug || "")
+        .trim()
+        .toLowerCase();
+      if (slug) {
+        const php = await newsSql`SELECT id FROM hm_news_sites WHERE lower(slug) = ${slug} LIMIT 1`;
+        if (php?.[0]?.id) return Number(php[0].id);
+      }
+      const domain = String(w?.[0]?.domain || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^www\./, "");
+      if (domain) {
+        const php = await newsSql`
+          SELECT id FROM hm_news_sites
+          WHERE lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${domain}
+          LIMIT 1
+        `;
+        if (php?.[0]?.id) return Number(php[0].id);
+      }
+    } catch (err) {
+      console.error("[php-site-id]", String(err?.message || err).slice(0, 140));
+    }
+  }
+  try {
+    const phpSame = await newsSql`SELECT id FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
+    if (phpSame?.[0]?.id) return Number(phpSame[0].id);
+  } catch {
+    /* ignore */
+  }
+  return sid;
+}
+
+export async function loadPhpSiteCategories(newsSql, siteId, workerSql) {
+  const phpSiteId = (await resolvePhpSiteId(newsSql, workerSql, siteId)) || asPositiveInt(siteId);
+  if (!newsSql || !phpSiteId) return [];
   const exclusive = await newsSql`
     SELECT id, name, slug, color, exclusive_site_id, sort_order
     FROM categories
-    WHERE exclusive_site_id = ${siteId}
+    WHERE exclusive_site_id = ${phpSiteId}
     ORDER BY sort_order ASC, id ASC
   `;
   if (exclusive?.length) return exclusive;
+  try {
+    const layout = await newsSql`
+      SELECT layout_json FROM hm_news_sites WHERE id = ${phpSiteId} LIMIT 1
+    `;
+    const raw = layout?.[0]?.layout_json;
+    const obj = typeof raw === "string" ? JSON.parse(raw) : raw || {};
+    const slugs = []
+      .concat(obj.hmNavOnlyCategorySlugs || [])
+      .concat(obj.hmNewsCategoryBarItems || [])
+      .concat(obj.hmNewsNavItems || [])
+      .concat(obj.hmNewsExtraCategories || [])
+      .flatMap((x) => {
+        if (typeof x === "string") return [x];
+        if (Array.isArray(x)) return [x[0]];
+        return [x?.slug, x?.href];
+      })
+      .map((s) => String(s || "").replace(/^\/kategori\//, "").trim().toLowerCase())
+      .filter((s) => s && !s.includes("/"));
+    const unique = [...new Set(slugs)];
+    if (unique.length) {
+      const rows = await newsSql`
+        SELECT id, name, slug, color, exclusive_site_id, sort_order
+        FROM categories
+        WHERE lower(slug) = ANY(${unique})
+        ORDER BY sort_order ASC, id ASC
+      `;
+      if (rows?.length) return rows;
+    }
+  } catch (err) {
+    console.error("[php-cat-layout]", String(err?.message || err).slice(0, 140));
+  }
   const shared = await newsSql`
     SELECT id, name, slug, color, exclusive_site_id, sort_order
     FROM categories
@@ -39,7 +109,7 @@ export async function loadPhpSiteCategories(newsSql, siteId) {
 }
 
 export async function syncPhpCategoriesToWorker(workerSql, newsSql, siteId) {
-  const phpRows = await loadPhpSiteCategories(newsSql, siteId);
+  const phpRows = await loadPhpSiteCategories(newsSql, siteId, workerSql);
   if (!phpRows.length) return [];
   const out = [];
   for (const r of phpRows) {
@@ -47,7 +117,7 @@ export async function syncPhpCategoriesToWorker(workerSql, newsSql, siteId) {
       .trim()
       .toLowerCase();
     if (!slug) continue;
-    const exclusive = asPositiveInt(r.exclusive_site_id) || siteId;
+    const exclusive = siteId;
     let hit = await workerSql`
       SELECT id, name, slug, color, exclusive_site_id, sort_order
       FROM categories
@@ -76,19 +146,20 @@ export async function syncPhpCategoriesToWorker(workerSql, newsSql, siteId) {
   return out;
 }
 
-export async function loadPhpSiteAuthors(newsSql, siteId) {
-  if (!newsSql || !asPositiveInt(siteId)) return [];
+export async function loadPhpSiteAuthors(newsSql, siteId, workerSql) {
+  const phpSiteId = (await resolvePhpSiteId(newsSql, workerSql, siteId)) || asPositiveInt(siteId);
+  if (!newsSql || !phpSiteId) return [];
   const rows = await newsSql`
     SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash
     FROM authors
-    WHERE hm_site_id = ${siteId}
+    WHERE hm_site_id = ${phpSiteId}
     ORDER BY COALESCE(hm_sort_order, 2147483647) ASC, id ASC
   `;
   return rows || [];
 }
 
 export async function syncPhpAuthorsToWorker(workerSql, newsSql, siteId) {
-  const phpRows = await loadPhpSiteAuthors(newsSql, siteId);
+  const phpRows = await loadPhpSiteAuthors(newsSql, siteId, workerSql);
   for (const r of phpRows) {
     const email = r.email ? String(r.email).trim().toLowerCase() : null;
     let existing = [];
@@ -99,10 +170,10 @@ export async function syncPhpAuthorsToWorker(workerSql, newsSql, siteId) {
         LIMIT 1
       `;
     }
-    if (!existing?.[0] && r.id) {
+    if (!existing?.[0] && r.name) {
       existing = await workerSql`
         SELECT id FROM authors
-        WHERE id = ${r.id} AND (hm_site_id IS NULL OR hm_site_id = ${siteId})
+        WHERE hm_site_id = ${siteId} AND name = ${r.name}
         LIMIT 1
       `;
     }
