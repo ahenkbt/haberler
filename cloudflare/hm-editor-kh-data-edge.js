@@ -2427,7 +2427,12 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
         console.error("[hm-authors-php-fast]", String(err?.message || err).slice(0, 160));
       }
     }
-    return handleAuthorsList(sql, hmSiteId, env);
+    try {
+      return await raceTimeout(handleAuthorsList(sql, hmSiteId, env), 2000, "authors-list");
+    } catch (err) {
+      console.error("[hm-authors-list]", String(err?.message || err).slice(0, 160));
+      return jsonResponse(200, []);
+    }
   }
 
   if (path.startsWith("/api/hm/author/")) {
