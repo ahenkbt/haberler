@@ -858,11 +858,16 @@ async function verifyLoginMathCaptcha(env, tokenRaw, answerRaw) {
   return answer === expected;
 }
 
-async function handleEditorLogin(request, env, incomingUrl) {
-  const sql = sqlClient(env);
-  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
-  if (!jwtSecretBytes(env)) return jsonResponse(503, { error: "Oturum anahtarı eksik." });
+function raceTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timeout`)), ms);
+    }),
+  ]);
+}
 
+async function handleEditorLogin(request, env, incomingUrl) {
   let b;
   try {
     b = await request.json();
@@ -870,18 +875,30 @@ async function handleEditorLogin(request, env, incomingUrl) {
     return jsonResponse(400, { error: "Geçersiz JSON" });
   }
 
+  // Container'a düşme: boş/eksik gövde ve geçersiz captcha kenarda 400.
   if (!(await verifyLoginMathCaptcha(env, b.captchaToken, b.captchaAnswer))) {
-    // Eski (Render imzalı) captcha olabilir — Render login'e düş.
-    return null;
+    return jsonResponse(400, { error: "Güvenlik doğrulaması hatalı veya süresi doldu." });
   }
 
-  // Captcha Worker'da doğrulandıktan sonra Render'a düşme — secret uyuşmazlığında
-  // "Güvenlik doğrulaması hatalı" döner. Hata olursa burada 503 ver.
+  const loginRaw = String(b.login ?? b.email ?? b.username ?? "").trim();
+  const password = String(b.password ?? "");
+  if (!loginRaw || !password) {
+    return jsonResponse(400, { error: "slug, e-posta/kullanıcı adı ve şifre gerekli" });
+  }
+
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
+  if (!jwtSecretBytes(env)) return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
+
   try {
-    return await completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b);
+    return await raceTimeout(
+      completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b),
+      2500,
+      "hm-editor-login",
+    );
   } catch (err) {
     console.error("[hm-editor-login-edge]", String(err?.message || err).slice(0, 200));
-    return jsonResponse(503, { error: "Giriş servisi geçici olarak kullanılamıyor. Lütfen tekrar deneyin." });
+    return jsonResponse(401, { error: "E-posta, kullanıcı adı veya şifre hatalı" });
   }
 }
 
@@ -1388,11 +1405,12 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
     if (!issued) return null;
     return jsonResponse(200, issued);
   }
-  // Hostinger / klasik Postgres: Neon HTTP sürücüsü çalışmaz → Container.
-  if (!isNeonServerlessUrl(env?.DATABASE_URL)) return null;
+  // Login asla Container'a düşmesin (origin budget 503). Captcha/şifre kenarda kalır.
   if (path === "/api/hm/editor/login" && method === "POST") {
     return handleEditorLogin(request, env, incomingUrl);
   }
+  // Hostinger / klasik Postgres: Neon HTTP sürücüsü çalışmaz → Container.
+  if (!isNeonServerlessUrl(env?.DATABASE_URL)) return null;
   if (path === "/api/hm/editor/me" && method === "GET") {
     const auth = String(request.headers.get("authorization") || "").trim();
     const ctx = await parseEditorJwt(request, env);
