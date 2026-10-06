@@ -2,7 +2,8 @@
  * HM editör veri API — kenar JWT + Neon.
  * Tanımsız rotalar: null → Worker Container vekili.
  */
-import { neonSqlClient } from "./neon-edge-db.js";
+import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
+import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
@@ -287,8 +288,9 @@ export function setNewsMirrorEnv(env) {
 }
 
 /**
- * Neon yazımından sonra Container'daki /api/hm/bridge/mirror ucuna en-iyi-çaba kopya isteği.
- * Container NEWS_DATABASE_URL + NEWS_DB_WRITE=dual ise satır ayrı haber DB'sine (PHP tema okuması) yazılır.
+ * Neon yazımından sonra PHP tema DB'sine (NEWS_DATABASE_URL) kopya.
+ * 1) Kenar ikinci Neon istemcisi — Container'a ihtiyaç yok.
+ * 2) Container /api/hm/bridge/mirror yedek (NEWS_DB_WRITE=dual).
  * Hata/zaman aşımı yutulur; panel yanıtı etkilenmez.
  * @param {"hm_makaleler"|"news"|"authors"} table
  * @param {"upsert"|"delete"} op
@@ -296,7 +298,18 @@ export function setNewsMirrorEnv(env) {
  */
 export async function mirrorNewsDbWrite(table, op, rowOrId) {
   const env = mirrorEnv;
-  if (!env || (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim())) return false;
+  if (!env) return false;
+
+  if (shouldEdgeDualWriteNewsDb(env)) {
+    const newsSql = neonNewsSqlClient(env);
+    if (newsSql) {
+      const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, rowOrId);
+      if (direct?.mirrored === true) return true;
+      console.warn("[hm-news-mirror] kenar dual-write atlandı", table, op, String(direct?.reason || "unknown"));
+    }
+  }
+
+  if (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim()) return false;
   const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
   if (!secret) return false;
   const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
@@ -318,7 +331,6 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     }
     const data = await res.json().catch(() => ({}));
     if (data?.mirrored !== true) {
-      // Container'da NEWS_DATABASE_URL yok / NEWS_DB_WRITE=main: PHP tema bu satırı görmez (wrangler tail'de görünsün).
       console.warn("[hm-news-mirror] atlandı", table, op, String(data?.reason || "unknown"));
     }
     return data?.mirrored === true;
@@ -1103,7 +1115,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
       `;
       const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
       if (!row) return createFailResponse("INSERT boş döndü");
-      await mirrorNewsDbWrite("news", "upsert", row);
+      await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
       const msg = String(err?.message || err);
@@ -1153,7 +1165,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
             } catch {
               /* kolon yoksa yok say */
             }
-            await mirrorNewsDbWrite("news", "upsert", row);
+            await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
             return jsonResponse(201, serializeNewsRow(row, categorySlug));
           }
         } catch (err2) {
@@ -1232,7 +1244,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
     `;
     const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
-    await mirrorNewsDbWrite("news", "upsert", row);
+    await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
     const msg = String(err?.message || err);
@@ -1273,6 +1285,7 @@ async function handlePatchNewsFlags(sql, siteId, id, body) {
   `;
   const row = rows?.[0];
   if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
+  await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: existing.category_slug });
   return jsonResponse(200, serializeNewsRow(row, existing.category_slug));
 }
 
