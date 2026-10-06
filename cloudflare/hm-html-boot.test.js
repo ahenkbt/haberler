@@ -8,6 +8,7 @@ import {
   isHmPublicHomeHtmlPath,
   firstHmBootImageUrl,
   injectHmHtmlBoot,
+  injectHmAuthorPanelBoot,
   isCorporateHmHtmlBoot,
   buildHmBootPaintHtml,
   buildHmClassicHomePaintHtml,
@@ -54,6 +55,10 @@ describe("hm-html-boot", () => {
     assert.equal(isHmAuthorPanelPath("/yazar/giris"), true);
     assert.equal(isHmAuthorPanelPath("/yazar/a526"), false);
     assert.equal(hmHomeSlugFromPath("/yazar/haberler", "ankarasehirgazetesi.com"), "asg");
+    const html = injectHmAuthorPanelBoot('<html><body><div id="root"></div></body></html>', "yesilvatan", "yesilvatan.gen.tr");
+    assert.match(html, /__YEKPARE_HM_DOMAIN_BOOT__/);
+    assert.match(html, /Köşe yazarı girişi/);
+    assert.match(html, /\/api\/hm\/author\/login/);
   });
 
   it("recognizes known HM roots so the worker can serve home HTML at /", () => {

@@ -75,6 +75,7 @@ import {
   isHmAuthorPanelPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
+  injectHmAuthorPanelBoot,
   isCorporateHmHtmlBoot,
   isAhenkAgencyGeoPath,
   isAhenkAgencyHost,
@@ -898,12 +899,13 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
     const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
     if (authorSlug) {
-      html = injectHmHtmlBoot(html, {
-        slug: authorSlug,
-        host: String(hostname || "")
+      html = injectHmAuthorPanelBoot(
+        html,
+        authorSlug,
+        String(hostname || "")
           .toLowerCase()
           .replace(/^www\./, ""),
-      });
+      );
       out.set("x-yekpare-hm-author-boot", authorSlug);
     }
   }
