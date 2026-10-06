@@ -216,19 +216,23 @@ describe("container-env", () => {
     assert.equal(recycled, true);
     assert.equal(destroyed, 1);
 
-    const emptyStore = {
+  it("does not destroy a warm container on first boot (no stored fingerprint)", async () => {
+    const storage = {
       get: async () => undefined,
       put: async () => {},
     };
-    const swallowed = await stopContainerIfEnvFingerprintChanged({
+    let destroyed = 0;
+    const skipped = await stopContainerIfEnvFingerprintChanged({
       isRunning: () => true,
       destroy: async () => {
-        throw new Error("There is no container instance that can be provided to this Durable Object, try again later");
+        destroyed += 1;
       },
-      storage: emptyStore,
-      fingerprint: next,
+      storage,
+      fingerprint: containerEnvFingerprint({ NEWS_DATABASE_URL: "postgres://u:p@h/db" }),
     });
-    assert.equal(swallowed, true);
+    assert.equal(skipped, false);
+    assert.equal(destroyed, 0);
+  });
     await rememberContainerEnvFingerprint(storage, next);
     const again = await stopContainerIfEnvFingerprintChanged({
       isRunning: () => true,

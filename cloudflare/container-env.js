@@ -173,7 +173,10 @@ export async function stopContainerIfEnvFingerprintChanged({
   fingerprint,
 }) {
   const last = await storage.get(CONTAINER_ENV_FP_STORAGE_KEY);
-  if (typeof isRunning !== "function" || !isRunning() || last === fingerprint) return false;
+  // İlk boot: çalışan isolate'i öldürme (max_instances / 143). Fingerprint start sonrası kaydedilir;
+  // sonraki secret değişiminde recycle edilir.
+  if (last == null || last === fingerprint) return false;
+  if (typeof isRunning !== "function" || !isRunning()) return false;
   let destroyedOk = false;
   try {
     if (typeof destroy === "function") {
