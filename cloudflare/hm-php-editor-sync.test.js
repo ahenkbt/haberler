@@ -128,6 +128,88 @@ test("Worker site id 1090 PHP slug ile 236 olur", async () => {
   assert.equal(authors[0].name, "Nail Türkoğlu");
 });
 
+test("Worker 1087 yerelnet PHP 231 olur; ASG 3 aynı id kalır", async () => {
+  const php = {
+    categories: [],
+    authors: [
+      { id: 10, name: "Yerel Yazar", hm_site_id: 231, email: null },
+      { id: 20, name: "ASG Yazar", hm_site_id: 3, email: null },
+    ],
+    sites: [
+      { id: 231, slug: "yerelnet", domain: "yerel.net.tr" },
+      { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com" },
+    ],
+    nextId: 100,
+  };
+  const worker = {
+    categories: [],
+    authors: [],
+    sites: [
+      { id: 1087, slug: "yerelnet", domain: "yerel.net.tr" },
+      { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com" },
+    ],
+    nextId: 200,
+  };
+  function sqlFor(tables) {
+    const inner = memorySql(tables);
+    return async (strings, ...values) => {
+      const text = strings.join("?");
+      if (/FROM hm_news_sites/i.test(text) && /WHERE id =/i.test(text)) {
+        const hit = (tables.sites || []).find((s) => Number(s.id) === Number(values[0]));
+        return hit ? [hit] : [];
+      }
+      if (/FROM hm_news_sites/i.test(text) && /lower\(slug\)/i.test(text)) {
+        const hit = (tables.sites || []).find((s) => String(s.slug).toLowerCase() === String(values[0]));
+        return hit ? [hit] : [];
+      }
+      return inner(strings, ...values);
+    };
+  }
+  assert.equal(await resolvePhpSiteId(sqlFor(php), sqlFor(worker), 1087), 231);
+  assert.equal(await resolvePhpSiteId(sqlFor(php), sqlFor(worker), 3), 3);
+  const yerel = await loadPhpSiteAuthors(sqlFor(php), 1087, sqlFor(worker));
+  assert.equal(yerel[0].name, "Yerel Yazar");
+  const asg = await loadPhpSiteAuthors(sqlFor(php), 3, sqlFor(worker));
+  assert.equal(asg[0].name, "ASG Yazar");
+});
+
+test("Worker id tablosu PHP twilight-pine id'lerine düşer (bitter DB yokken)", async () => {
+  const php = {
+    categories: [],
+    authors: [],
+    sites: [
+      { id: 1, slug: "vatanhaber", domain: "vatanhaber.net" },
+      { id: 2, slug: "su", domain: "suhaber.net" },
+      { id: 8, slug: "ahg", domain: "ankarahabergundemi.com" },
+      { id: 230, slug: "turkatahaber", domain: "turkatahaber.com" },
+      { id: 232, slug: "sehitgazi", domain: "sehitgazi.org.tr" },
+      { id: 233, slug: "turksav", domain: "turksav.org" },
+      { id: 237, slug: "dunyasaglik", domain: "dunyasaglik.org" },
+    ],
+    nextId: 100,
+  };
+  const emptyWorker = { categories: [], authors: [], sites: [], nextId: 1 };
+  function sqlFor(tables) {
+    return async (strings, ...values) => {
+      const text = strings.join("?");
+      if (/FROM hm_news_sites/i.test(text) && /WHERE id =/i.test(text)) {
+        const hit = (tables.sites || []).find((s) => Number(s.id) === Number(values[0]));
+        return hit ? [hit] : [];
+      }
+      return [];
+    };
+  }
+  const phpSql = sqlFor(php);
+  const workerSql = sqlFor(emptyWorker);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 1), 1);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 2), 2);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 8), 8);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 1088), 232);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 1089), 233);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 1091), 237);
+  assert.equal(await resolvePhpSiteId(phpSql, workerSql, 1132), 230);
+});
+
 test("PHP yazarları Worker listesine eklenir", async () => {
   const php = {
     categories: [],
