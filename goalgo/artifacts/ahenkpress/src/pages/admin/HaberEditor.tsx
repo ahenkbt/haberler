@@ -26,7 +26,8 @@ import { readHmAuthorJwt, readHmAuthorPayload } from "@/lib/hmAuthorSession";
 import { apiRequest } from "@/lib/queryClient";
 import { HM_EDITOR_CATEGORIES_QUERY_KEY, HM_EDITOR_NEWS_QUERY_KEY } from "@/lib/hmEditorQueryKeys";
 import { HM_AUTHOR_NEWS_QUERY_KEY } from "@/lib/hmAuthorNewsQueryKey";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 import { YazarPanelNav } from "@/components/YazarPanelNav";
 import { useEffect, useState, useRef } from "react";
 import { Upload, Wand2, Loader2, ImageIcon, X, Images } from "lucide-react";
@@ -63,12 +64,11 @@ function AuthorHmChrome({ title, slug, children }: { title: string; slug: string
 export default function HaberEditor() {
   const [location, setLocation] = useLocation();
   const params = useParams<{ id?: string; slug?: string }>();
+  const hostSlug = useHmDomainSlugFromHost();
   const pathNoQuery = (location.split("?")[0] ?? "").trim();
   const isEditorHm = pathNoQuery.startsWith("/editor/haberler");
-  const isAuthorHm = new RegExp(`\\/(?:hm|${HM_SITE_PUBLIC_PREFIX})\\/[^/]+\\/yazar\\/haber\\/`).test(
-    pathNoQuery,
-  );
-  const authorSlug = String(params.slug ?? "").trim();
+  const isAuthorHm = /\/yazar\/haber(?:\/|$)/.test(pathNoQuery);
+  const authorSlug = String(params.slug ?? "").trim() || hostSlug;
   const isEditing = !!params.id && params.id !== "yeni";
   const id = isEditing ? parseInt(params.id!, 10) : 0;
   const idValid = isEditing && Number.isFinite(id) && id > 0;
@@ -381,7 +381,7 @@ export default function HaberEditor() {
     };
 
     const back = isAuthorHm
-      ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(authorSlug)}/yazar/haberler`
+      ? hmAuthorPanelHref(authorSlug, "haberler")
       : isEditorHm
         ? "/editor/haberler"
         : "/admin/haberler";

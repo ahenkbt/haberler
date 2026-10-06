@@ -121,6 +121,32 @@ zone_name = "ankarahabergundemi.com"
 [[routes]]
 pattern = "ankarahabergundemi.com/manifest.json"
 zone_name = "ankarahabergundemi.com"
+# ankarahabergundemi.com köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "ankarahabergundemi.com/yazar/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/yazar/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/yazar/haber*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/yazar/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/yazar/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/yazar/haber*"
+zone_name = "ankarahabergundemi.com"
+
 
 # yektube.com zone route'ları burada YOK: sahibi `yektube` Worker'ı (wrangler.yektube.toml). /api oradan API_ORIGIN ile ahenk.net.tr'ye gider.
 # ankarasehirgazetesi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
@@ -164,6 +190,32 @@ zone_name = "ankarasehirgazetesi.com"
 [[routes]]
 pattern = "ankarasehirgazetesi.com/manifest.json"
 zone_name = "ankarasehirgazetesi.com"
+# ankarasehirgazetesi.com köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/yazar/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/yazar/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/yazar/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/yazar/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/yazar/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/yazar/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
 
 # Eski SPA linkleri (/tr/asg/haber/:slug?siteId=3) PHP temada 404 veriyordu. Worker bunları
 # php-theme-legacy-redirect.js ile /haber/:slug vb. adreslere 301 atar; /tr/asg/yazar/giris|haberler|haber/*
@@ -249,6 +301,32 @@ zone_name = "vatanhaber.net"
 [[routes]]
 pattern = "vatanhaber.net/manifest.json"
 zone_name = "vatanhaber.net"
+# vatanhaber.net köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "vatanhaber.net/yazar/giris*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/yazar/sifre*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/yazar/haber*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/yazar/giris*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/yazar/sifre*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/yazar/haber*"
+zone_name = "vatanhaber.net"
+
 
 # Su Haber ├ö├ç├Â kanonik Google alanÔöÇÔûÆ suhaber.net (suhaberajansi.com iptal, detach).
 # Zone CF'de ve A/CNAME kayÔöÇÔûÆtlarÔöÇÔûÆ var: custom_domain 100117 ile wrangler deploy kÔöÇÔûÆrÔöÇÔûÆlÔöÇÔûÆr.
@@ -294,6 +372,32 @@ zone_name = "suhaber.net"
 [[routes]]
 pattern = "suhaber.net/manifest.json"
 zone_name = "suhaber.net"
+# suhaber.net köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "suhaber.net/yazar/giris*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/yazar/sifre*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/yazar/haber*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/yazar/giris*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/yazar/sifre*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/yazar/haber*"
+zone_name = "suhaber.net"
+
 
 # suhaberajansi.com iptal ├ö├ç├Â Worker route yok (cf-detached-domains). Kanonik: suhaber.net (/tr/su)
 # belediyehizmet.com kaldÔöÇÔûÆrÔöÇÔûÆldÔöÇÔûÆ.
@@ -468,6 +572,32 @@ zone_name = "turkatahaber.com"
 [[routes]]
 pattern = "turkatahaber.com/manifest.json"
 zone_name = "turkatahaber.com"
+# turkatahaber.com köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "turkatahaber.com/yazar/giris*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/yazar/sifre*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/yazar/haber*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/yazar/giris*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/yazar/sifre*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/yazar/haber*"
+zone_name = "turkatahaber.com"
+
 
 
 [[routes]]
@@ -519,6 +649,32 @@ zone_name = "sehitgazi.org.tr"
 [[routes]]
 pattern = "sehitgazi.org.tr/manifest.json"
 zone_name = "sehitgazi.org.tr"
+# sehitgazi.org.tr köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "sehitgazi.org.tr/yazar/giris*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/yazar/sifre*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/yazar/haber*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/yazar/giris*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/yazar/sifre*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/yazar/haber*"
+zone_name = "sehitgazi.org.tr"
+
 
 # yerel.net.tr
 [[routes]]
@@ -560,6 +716,32 @@ zone_name = "yerel.net.tr"
 [[routes]]
 pattern = "yerel.net.tr/manifest.json"
 zone_name = "yerel.net.tr"
+# yerel.net.tr köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "yerel.net.tr/yazar/giris*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/yazar/sifre*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/yazar/haber*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/yazar/giris*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/yazar/sifre*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/yazar/haber*"
+zone_name = "yerel.net.tr"
+
 
 # turksav.org
 [[routes]]
@@ -601,6 +783,32 @@ zone_name = "turksav.org"
 [[routes]]
 pattern = "turksav.org/manifest.json"
 zone_name = "turksav.org"
+# turksav.org köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "turksav.org/yazar/giris*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/yazar/sifre*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/yazar/haber*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/yazar/giris*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/yazar/sifre*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/yazar/haber*"
+zone_name = "turksav.org"
+
 
 # dunyasaglik.org
 [[routes]]
@@ -642,6 +850,32 @@ zone_name = "dunyasaglik.org"
 [[routes]]
 pattern = "dunyasaglik.org/manifest.json"
 zone_name = "dunyasaglik.org"
+# dunyasaglik.org köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "dunyasaglik.org/yazar/giris*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/yazar/sifre*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/yazar/haber*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/yazar/giris*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/yazar/sifre*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/yazar/haber*"
+zone_name = "dunyasaglik.org"
+
 
 # yesilvatan.gen.tr
 [[routes]]
@@ -683,6 +917,32 @@ zone_name = "yesilvatan.gen.tr"
 [[routes]]
 pattern = "yesilvatan.gen.tr/manifest.json"
 zone_name = "yesilvatan.gen.tr"
+# yesilvatan.gen.tr köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/yazar/giris*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/yazar/sifre*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/yazar/haber*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/yazar/giris*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/yazar/sifre*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/yazar/haber*"
+zone_name = "yesilvatan.gen.tr"
+
 # Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc
 [[routes]]
 pattern = "trafikdernegi.com"

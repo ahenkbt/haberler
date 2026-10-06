@@ -6,7 +6,8 @@ describe("shouldUseHmPublicApp", () => {
     expect(shouldUseHmPublicApp("ankarasehirgazetesi.com")).toBe(true);
     expect(shouldUseHmPublicApp("kirsehirhaber.org")).toBe(true);
     expect(shouldUseHmPublicApp("www.vatanhaber.net")).toBe(true);
-    expect(shouldUseHmPublicApp("suhaber.net")).toBe(true);
+    expect(shouldUseHmPublicApp("yesilvatan.gen.tr")).toBe(true);
+    expect(shouldUseHmPublicApp("yerel.net.tr")).toBe(true);
   });
 
   it("keeps the full portal app on hub hosts", () => {

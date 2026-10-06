@@ -1,20 +1,20 @@
 import { Redirect, useParams } from "wouter";
 import { readHmAuthorJwt, readHmAuthorPayload } from "@/lib/hmAuthorSession";
-import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
+import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { hmAuthorPanelHref } from "@/lib/hmAuthorPanelPath";
 
 /** Köşe yazarı JWT yoksa veya slug eşleşmiyorsa girişe yönlendirir. */
 export function HmAuthorRoute({ children }: { children: React.ReactNode }) {
   const params = useParams<{ slug: string }>();
-  const slug = String(params?.slug ?? "").trim();
+  const hostSlug = useHmDomainSlugFromHost();
+  const slug = String(params?.slug ?? "").trim() || hostSlug;
   const token = readHmAuthorJwt();
   const payload = readHmAuthorPayload();
   if (!token || !payload?.site?.slug) {
-    return <Redirect to={slug ? `/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug)}/yazar/giris` : "/"} />;
+    return <Redirect to={slug ? hmAuthorPanelHref(slug, "giris") : "/"} />;
   }
-  if (payload.site.slug !== slug) {
-    return (
-      <Redirect to={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(payload.site.slug)}/yazar/haberler`} />
-    );
+  if (slug && payload.site.slug !== slug) {
+    return <Redirect to={hmAuthorPanelHref(payload.site.slug, "haberler")} />;
   }
   return <>{children}</>;
 }

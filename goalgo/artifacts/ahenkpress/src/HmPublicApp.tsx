@@ -674,6 +674,78 @@ export default function HmPublicApp() {
                 </HmPublicShell>
               )}
             </Route>
+            <Route path="/yazar/giris">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <YazarGiris />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/yazar/sifremi-unuttum">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <YazarSifremiUnuttum />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/yazar/sifre-yenile">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <YazarSifreYenileHm />
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/yazar/haberler">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmAuthorRoute>
+                        <YazarHaberler />
+                      </HmAuthorRoute>
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/yazar/sifre">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmAuthorRoute>
+                        <YazarSifre />
+                      </HmAuthorRoute>
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
+            <Route path="/yazar/haber/:id">
+              {() => (
+                <HmPublicShell>
+                  <HmNestedLayout>
+                    <LazyChunk>
+                      <HmAuthorRoute>
+                        <HaberEditor />
+                      </HmAuthorRoute>
+                    </LazyChunk>
+                  </HmNestedLayout>
+                </HmPublicShell>
+              )}
+            </Route>
             <Route path="/yazar/:authorKey">
               {() => (
                 <HmPublicShell>
