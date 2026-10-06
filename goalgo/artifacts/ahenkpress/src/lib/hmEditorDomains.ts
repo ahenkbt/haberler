@@ -1,6 +1,11 @@
 /**
  * Bilinen editör haber sitesi alanları — meta 404 olsa bile Yekpare portal anasayfasına düşülmez.
  * Worker `cloudflare/hm-html-boot.js` alan→slug tablosu ile senkron tutulmalı.
+ *
+ * turkatahaber.com ajans portalıdır (HM public app / kök vitrin boot değil).
+ * Köşe yazarı paneli `/yazar/giris` yine HM site slug'ı `turkatahaber` ister;
+ * meta/by-domain bu hostta 500 verdiği için tablo yedeği şarttır.
+ * Worker HM_DOMAIN_SLUG_FALLBACKS'e eklenmez — anasayfa ajans SEO kabuğu kalır.
  */
 export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "suhaber.net": "su",
@@ -19,6 +24,7 @@ export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "sehitgazi.org.tr": "sehitgazi",
   "dunyasaglik.org": "dunyasaglik",
   "turksav.org": "turksav",
+  "turkatahaber.com": "turkatahaber",
 };
 
 function normalizeHostKey(host: string): string {
