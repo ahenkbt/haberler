@@ -30,10 +30,12 @@ export async function resolvePhpSiteId(newsSql, workerSql, siteId, hostname) {
     .split(":")[0];
   if (host && host !== "ahenk.net.tr" && !host.endsWith(".workers.dev")) {
     try {
+      const slugGuess = host.split(".")[0];
       const phpHost = await newsSql`
         SELECT id FROM hm_news_sites
-        WHERE lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${host}
-           OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${host}
+        WHERE lower(slug) = ${slugGuess}
+           OR lower(coalesce(domain, '')) LIKE ${"%" + host + "%"}
+           OR lower(coalesce(domain2, '')) LIKE ${"%" + host + "%"}
         LIMIT 1
       `;
       if (phpHost?.[0]?.id) return Number(phpHost[0].id);
