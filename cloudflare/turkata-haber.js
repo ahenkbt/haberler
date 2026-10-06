@@ -157,6 +157,12 @@ export function turkataPageKind(pathname) {
   return "other";
 }
 
+/** Köşe yazarı paneli — canlı SPA slug'ı `turkatahaber` (meta/by-domain 500). */
+export function isTurkataAuthorPanelPath(pathname) {
+  const p = normalizeTurkataPath(pathname).toLowerCase();
+  return p.startsWith("/yazar/giris") || p.startsWith("/yazar/sifre") || p.startsWith("/yazar/haber");
+}
+
 function escHtml(s) {
   return String(s || "")
     .replace(/&/g, "&amp;")
@@ -547,11 +553,17 @@ export function rewriteTurkataSpaHtml(html, opts) {
     '<link rel="manifest" href="/turkata/manifest.webmanifest">',
   ].join("");
   const ldTag = `<script type="application/ld+json" data-turkata-jsonld="1">${JSON.stringify(ld)}</script>`;
+  const authorBoot = isTurkataAuthorPanelPath(pathname)
+    ? `<script>window.__YEKPARE_HM_DOMAIN_BOOT__=${JSON.stringify({
+        slug: "turkatahaber",
+        host: "turkatahaber.com",
+      })};</script>`
+    : "";
   const body = visibleBody(kind, article);
   if (/id=["']root["']/.test(out)) {
     out = out.replace(/<div id="root">\s*<\/div>/i, `<div id="root">${body}</div>`);
   }
-  out = out.replace(/<\/head>/i, `${iconTags}${ldTag}\n</head>`);
+  out = out.replace(/<\/head>/i, `${iconTags}${ldTag}${authorBoot}\n</head>`);
   return markHmNewsBootHtml(out);
 }
 
