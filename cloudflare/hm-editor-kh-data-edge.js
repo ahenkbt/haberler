@@ -2401,23 +2401,18 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     const hmSiteId =
       asPositiveInt(incomingUrl.searchParams.get("hmSiteId")) ||
       asPositiveInt(incomingUrl.searchParams.get("siteId"));
-    if (!hmSiteId) return null;
+    if (!hmSiteId) return jsonResponse(200, []);
     const sql = sqlClient(env);
-    if (!sql) return null;
-    try {
-      const ok = await raceTimeout(isHmNewsSite(sql, hmSiteId), 1500, "is-hm");
-      if (!ok) return null;
-    } catch (err) {
-      console.error("[hm-authors-site]", String(err?.message || err).slice(0, 120));
-    }
     const newsSql = neonNewsSqlClient(env);
     if (newsSql) {
       try {
         const phpAuthors = await raceTimeout(loadPhpSiteAuthors(newsSql, hmSiteId, sql), 1800, "php-authors");
         if (phpAuthors?.length) {
-          void syncPhpAuthorsToWorker(sql, newsSql, hmSiteId).catch((err) => {
-            console.error("[hm-authors-php]", String(err?.message || err).slice(0, 160));
-          });
+          if (sql) {
+            void syncPhpAuthorsToWorker(sql, newsSql, hmSiteId).catch((err) => {
+              console.error("[hm-authors-php]", String(err?.message || err).slice(0, 160));
+            });
+          }
           return jsonResponse(
             200,
             phpAuthors.map((r) => serializeAuthor(r)),
@@ -2427,6 +2422,7 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
         console.error("[hm-authors-php-fast]", String(err?.message || err).slice(0, 160));
       }
     }
+    if (!sql) return jsonResponse(200, []);
     try {
       return await raceTimeout(handleAuthorsList(sql, hmSiteId, env), 2000, "authors-list");
     } catch (err) {
