@@ -168,14 +168,25 @@ export async function stopContainerIfEnvFingerprintChanged({
 }) {
   const last = await storage.get(CONTAINER_ENV_FP_STORAGE_KEY);
   if (typeof isRunning !== "function" || !isRunning() || last === fingerprint) return false;
-  if (typeof destroy === "function") {
-    await destroy();
-  } else if (typeof stop === "function") {
-    await stop();
+  let destroyedOk = false;
+  try {
+    if (typeof destroy === "function") {
+      await destroy();
+      destroyedOk = true;
+    } else if (typeof stop === "function") {
+      await stop();
+      destroyedOk = true;
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // SIGTERM/önceki recycle sonrası instance slot boşalmamış olabilir; start() denenecek.
+    if (!/no container instance|try again later|not running/i.test(msg)) throw err;
   }
-  const deadline = Date.now() + 45_000;
-  while (isRunning() && Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, 250));
+  if (destroyedOk) {
+    const deadline = Date.now() + 20_000;
+    while (isRunning() && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
   }
   return true;
 }

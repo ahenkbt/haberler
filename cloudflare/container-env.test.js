@@ -203,6 +203,20 @@ describe("container-env", () => {
     });
     assert.equal(recycled, true);
     assert.equal(destroyed, 1);
+
+    const emptyStore = {
+      get: async () => undefined,
+      put: async () => {},
+    };
+    const swallowed = await stopContainerIfEnvFingerprintChanged({
+      isRunning: () => true,
+      destroy: async () => {
+        throw new Error("There is no container instance that can be provided to this Durable Object, try again later");
+      },
+      storage: emptyStore,
+      fingerprint: next,
+    });
+    assert.equal(swallowed, true);
     await rememberContainerEnvFingerprint(storage, next);
     const again = await stopContainerIfEnvFingerprintChanged({
       isRunning: () => true,
