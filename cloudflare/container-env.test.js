@@ -161,6 +161,18 @@ describe("container-env", () => {
     assert.equal(vars.ADMIN_PANEL_USERNAMES, "ahenkbt,nailkabali");
   });
 
+  it("sets SKIP_NEWS_DB_MIGRATE when forwarding NEWS_DATABASE_URL so boot does not exit 1", () => {
+    const vars = buildContainerEnv({
+      DATABASE_URL: "postgres://neon/neondb",
+      SESSION_SECRET: "sixteen-chars-ok",
+      NEWS_DATABASE_URL: "postgres://u:p@h/db",
+      NEWS_DB_WRITE: "dual",
+    });
+    assert.equal(vars.SKIP_NEWS_DB_MIGRATE, "1");
+    assert.equal(vars.SKIP_NEWS_DATA_MIGRATE, "1");
+    assert.equal(vars.NEWS_DATABASE_URL, "postgres://u:p@h/db");
+  });
+
   it("fingerprints NEWS_* without embedding the database URL", () => {
     const url = "postgres://news:secret@db.example/haber";
     const fp = containerEnvFingerprint({ NEWS_DATABASE_URL: url, NEWS_DB_WRITE: "dual" });

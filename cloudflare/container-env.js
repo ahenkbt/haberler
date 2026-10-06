@@ -111,6 +111,12 @@ export function buildContainerEnv(workerEnv = {}) {
   if (!hasS3MediaConfig(vars)) {
     vars.SKIP_MEDIA_STORAGE_CHECK = "1";
   }
+  // Canlı imaj news-db-migrate başarısız olursa process.exit(1) → isolate kalkmaz.
+  // PHP haber DB şeması VPS'te; CF Container dual-write için URL yeter, migrate atlanır.
+  if (nonEmptyString(vars.NEWS_DATABASE_URL)) {
+    if (!nonEmptyString(workerEnv.SKIP_NEWS_DB_MIGRATE)) vars.SKIP_NEWS_DB_MIGRATE = "1";
+    if (!nonEmptyString(workerEnv.SKIP_NEWS_DATA_MIGRATE)) vars.SKIP_NEWS_DATA_MIGRATE = "1";
+  }
   return vars;
 }
 
