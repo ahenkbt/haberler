@@ -4,9 +4,11 @@ import {
   hmDomainSlugFallback,
   shouldInstantHmRootRedirect,
   hmHomeSlugFromPath,
+  isHmAuthorPanelPath,
   isHmPublicHomeHtmlPath,
   firstHmBootImageUrl,
   injectHmHtmlBoot,
+  injectHmAuthorPanelBoot,
   isCorporateHmHtmlBoot,
   buildHmBootPaintHtml,
   buildHmClassicHomePaintHtml,
@@ -49,6 +51,17 @@ describe("hm-html-boot", () => {
     assert.equal(hmDomainSlugFallback("ahenk.net.tr"), "");
   });
 
+  it("treats köşe yazarı panel paths as slug-boot HTML", () => {
+    assert.equal(isHmAuthorPanelPath("/yazar/giris"), true);
+    assert.equal(isHmAuthorPanelPath("/koseyazari/giris"), true);
+    assert.equal(isHmAuthorPanelPath("/yazar/a526"), false);
+    assert.equal(hmHomeSlugFromPath("/yazar/haberler", "ankarasehirgazetesi.com"), "asg");
+    const html = injectHmAuthorPanelBoot('<html><body><div id="root"></div></body></html>', "yesilvatan", "yesilvatan.gen.tr");
+    assert.match(html, /__YEKPARE_HM_DOMAIN_BOOT__/);
+    assert.match(html, /Köşe yazarı girişi/);
+    assert.match(html, /\/api\/hm\/author\/login/);
+  });
+
   it("recognizes known HM roots so the worker can serve home HTML at /", () => {
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "ankarahabergundemi.com"), true);
     assert.equal(shouldInstantHmRootRedirect("GET", "/tr/ankarahabergundemi", "ankarahabergundemi.com"), false);
@@ -71,6 +84,10 @@ describe("hm-html-boot", () => {
       hmHomeSlugFromPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),
       "asg",
     );
+    assert.equal(hmHomeSlugFromPath("/yazar/giris", "yesilvatan.gen.tr"), "yesilvatan");
+    assert.equal(hmHomeSlugFromPath("/koseyazari/giris", "yesilvatan.gen.tr"), "yesilvatan");
+    assert.equal(hmHomeSlugFromPath("/tr/asg/yazar/giris", "ahenk.net.tr"), "asg");
+    assert.equal(hmHomeSlugFromPath("/tr/asg/koseyazari/giris", "ahenk.net.tr"), "asg");
     assert.equal(isHmPublicHomeHtmlPath("/tr/asg", "ankarasehirgazetesi.com"), true);
     assert.equal(
       isHmPublicHomeHtmlPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),

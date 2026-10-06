@@ -3,7 +3,7 @@
  * Worker `cloudflare/hm-html-boot.js` alan→slug tablosu ile senkron tutulmalı.
  *
  * turkatahaber.com ajans portalıdır (HM public app / kök vitrin boot değil).
- * Köşe yazarı paneli `/yazar/giris` yine HM site slug'ı `turkatahaber` ister;
+ * Köşe yazarı paneli `/koseyazari/giris` yine HM site slug'ı `turkatahaber` ister;
  * meta/by-domain bu hostta 500 verdiği için tablo yedeği şarttır.
  * Worker HM_DOMAIN_SLUG_FALLBACKS'e eklenmez — anasayfa ajans SEO kabuğu kalır.
  */

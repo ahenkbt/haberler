@@ -36,11 +36,14 @@ export default function YazarGiris() {
     setErr("");
     setLoading(true);
     try {
+      const ac = new AbortController();
+      const t = window.setTimeout(() => ac.abort(), 12_000);
       const r = await fetch(apiUrl("/api/hm/author/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password, siteSlug: slug }),
-      });
+        signal: ac.signal,
+      }).finally(() => window.clearTimeout(t));
       const j = (await r.json().catch(() => ({}))) as {
         token?: string;
         site?: HmAuthorStoredPayload["site"];
@@ -53,8 +56,11 @@ export default function YazarGiris() {
       }
       writeHmAuthorSession(j.token, { site: j.site, author: j.author });
       window.location.href = hmAuthorPanelHref(slug, "haberler");
-    } catch {
-      setErr("Bağlantı hatası");
+    } catch (err) {
+      const aborted =
+        (err instanceof DOMException && err.name === "AbortError") ||
+        (err instanceof Error && err.name === "AbortError");
+      setErr(aborted ? "Sunucu yanıt vermedi. Kenar giriş uçunu kontrol edin." : "Bağlantı hatası");
     } finally {
       setLoading(false);
     }

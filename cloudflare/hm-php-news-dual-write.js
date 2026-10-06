@@ -53,6 +53,16 @@ function tsOrNow(v) {
   return String(v);
 }
 
+async function applyTepeManset(sql, newsId, flag) {
+  const id = asPositiveInt(newsId);
+  if (!sql || !id) return;
+  try {
+    await sql`UPDATE news SET is_tepe_manset = ${flag} WHERE id = ${id}`;
+  } catch (err) {
+    console.error("[php-dual-tepe]", String(err?.message || err).slice(0, 120));
+  }
+}
+
 async function resolvePhpCategoryId(sql, row) {
   const slug = String(pick(row, "category_slug", "categorySlug") || "")
     .trim()
@@ -165,7 +175,18 @@ export async function edgeDeleteHmMakale(sql, id) {
 }
 
 export async function edgeUpsertNews(sql, row) {
-  const siteId = asPositiveInt(pick(row, "site_id", "siteId"));
+  let siteId = asPositiveInt(pick(row, "site_id", "siteId"));
+  const siteSlug = String(pick(row, "site_slug", "siteSlug") || "")
+    .trim()
+    .toLowerCase();
+  if (sql && siteSlug) {
+    try {
+      const hit = await sql`SELECT id FROM hm_news_sites WHERE lower(slug) = ${siteSlug} LIMIT 1`;
+      if (hit?.[0]?.id) siteId = Number(hit[0].id);
+    } catch {
+      /* keep worker site id */
+    }
+  }
   const title = String(pick(row, "title") || "").trim();
   const slug = String(pick(row, "slug") || "").trim();
   if (!sql || !siteId || !title || !slug) return { mirrored: false, reason: "news-row" };
@@ -179,9 +200,11 @@ export async function edgeUpsertNews(sql, row) {
   const isFeatured = asBool(pick(row, "is_featured", "isFeatured"));
   const isBreaking = asBool(pick(row, "is_breaking", "isBreaking"));
   const isSiteManset = asBool(pick(row, "is_site_manset", "isSiteManset"));
+  const isTepeManset = asBool(pick(row, "is_tepe_manset", "isTepeManset", "is_featured", "isFeatured"));
   const isEditorManual = asBool(pick(row, "is_editor_manual", "isEditorManual"), true);
   const siteOnly = asBool(pick(row, "site_only", "siteOnly"), true);
-  const ownerSiteId = asPositiveInt(pick(row, "owner_site_id", "ownerSiteId")) || siteId;
+  let ownerSiteId = asPositiveInt(pick(row, "owner_site_id", "ownerSiteId")) || siteId;
+  if (siteSlug) ownerSiteId = siteId;
   const createdAt = tsOrNow(pick(row, "created_at", "createdAt"));
   const updatedAt = tsOrNow(pick(row, "updated_at", "updatedAt"));
   const id = asPositiveInt(pick(row, "id"));
@@ -212,6 +235,7 @@ export async function edgeUpsertNews(sql, row) {
         updated_at = ${updatedAt}
       WHERE id = ${bySlug[0].id}
     `;
+    await applyTepeManset(sql, bySlug[0].id, isTepeManset);
     return { mirrored: true, id: Number(bySlug[0].id), via: "slug" };
   }
 
@@ -229,6 +253,7 @@ export async function edgeUpsertNews(sql, row) {
           ${siteId}, ${isEditorManual}, ${siteOnly}, ${ownerSiteId}, ${createdAt}, ${updatedAt}
         )
       `;
+      await applyTepeManset(sql, id, isTepeManset);
       return { mirrored: true, id, via: "same-id" };
     }
     if (Number(byId[0].site_id) === siteId) {
@@ -252,6 +277,7 @@ export async function edgeUpsertNews(sql, row) {
           updated_at = ${updatedAt}
         WHERE id = ${id}
       `;
+      await applyTepeManset(sql, id, isTepeManset);
       return { mirrored: true, id, via: "id-update" };
     }
   }
@@ -268,6 +294,7 @@ export async function edgeUpsertNews(sql, row) {
     )
     RETURNING id
   `;
+  await applyTepeManset(sql, inserted?.[0]?.id, isTepeManset);
   return { mirrored: true, id: Number(inserted?.[0]?.id), via: "new-id" };
 }
 
@@ -287,6 +314,7 @@ export async function edgeUpsertAuthor(sql, row) {
   const avatarUrl = asText(pick(row, "avatar_url", "avatarUrl"));
   const bio = asText(pick(row, "bio"));
   const email = asText(pick(row, "email"));
+  const passwordHash = asText(pick(row, "password_hash", "passwordHash"));
   const sort = asInt(pick(row, "hm_sort_order", "hmSortOrder"));
 
   const byId = await sql`SELECT id, hm_site_id FROM authors WHERE id = ${id} LIMIT 1`;
@@ -301,6 +329,7 @@ export async function edgeUpsertAuthor(sql, row) {
         avatar_url = ${avatarUrl},
         bio = ${bio},
         email = ${email},
+        password_hash = COALESCE(${passwordHash}, password_hash),
         hm_sort_order = COALESCE(${sort}, hm_sort_order),
         hm_site_id = COALESCE(${hmSiteId}, hm_site_id)
       WHERE id = ${id}
@@ -309,8 +338,8 @@ export async function edgeUpsertAuthor(sql, row) {
     return { mirrored: true, id, via: "author-update" };
   }
   await sql`
-    INSERT INTO authors (id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email)
-    VALUES (${id}, ${name}, ${title}, ${avatarUrl}, ${bio}, ${hmSiteId}, ${sort ?? 0}, ${email})
+    INSERT INTO authors (id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash)
+    VALUES (${id}, ${name}, ${title}, ${avatarUrl}, ${bio}, ${hmSiteId}, ${sort ?? 0}, ${email}, ${passwordHash})
   `;
   return { mirrored: true, id, via: "author-insert" };
 }

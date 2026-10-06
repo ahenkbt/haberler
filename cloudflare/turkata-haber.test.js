@@ -118,6 +118,7 @@ describe("turkata spa html", () => {
 
   it("boots the HM author-panel slug on /yazar/giris", () => {
     assert.equal(isTurkataAuthorPanelPath("/yazar/giris"), true);
+    assert.equal(isTurkataAuthorPanelPath("/koseyazari/giris"), true);
     assert.equal(isTurkataAuthorPanelPath("/yazar/sifre"), true);
     assert.equal(isTurkataAuthorPanelPath("/yazar/haberler"), true);
     assert.equal(isTurkataAuthorPanelPath("/yazar/ahmet"), false);

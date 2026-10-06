@@ -128,7 +128,15 @@ pattern = "ankarahabergundemi.com/yazar/giris*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
+pattern = "ankarahabergundemi.com/koseyazari/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
 pattern = "ankarahabergundemi.com/yazar/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/koseyazari/sifre*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
@@ -136,7 +144,15 @@ pattern = "ankarahabergundemi.com/yazar/haber*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
+pattern = "ankarahabergundemi.com/koseyazari/haber*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
 pattern = "www.ankarahabergundemi.com/yazar/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/koseyazari/giris*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
@@ -144,7 +160,15 @@ pattern = "www.ankarahabergundemi.com/yazar/sifre*"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
+pattern = "www.ankarahabergundemi.com/koseyazari/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
 pattern = "www.ankarahabergundemi.com/yazar/haber*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/koseyazari/haber*"
 zone_name = "ankarahabergundemi.com"
 
 
@@ -197,7 +221,15 @@ pattern = "ankarasehirgazetesi.com/yazar/giris*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
+pattern = "ankarasehirgazetesi.com/koseyazari/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
 pattern = "ankarasehirgazetesi.com/yazar/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/koseyazari/sifre*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
@@ -205,7 +237,15 @@ pattern = "ankarasehirgazetesi.com/yazar/haber*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
+pattern = "ankarasehirgazetesi.com/koseyazari/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
 pattern = "www.ankarasehirgazetesi.com/yazar/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/koseyazari/giris*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
@@ -213,7 +253,15 @@ pattern = "www.ankarasehirgazetesi.com/yazar/sifre*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
+pattern = "www.ankarasehirgazetesi.com/koseyazari/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
 pattern = "www.ankarasehirgazetesi.com/yazar/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/koseyazari/haber*"
 zone_name = "ankarasehirgazetesi.com"
 
 
@@ -308,7 +356,15 @@ pattern = "vatanhaber.net/yazar/giris*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
+pattern = "vatanhaber.net/koseyazari/giris*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
 pattern = "vatanhaber.net/yazar/sifre*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/koseyazari/sifre*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
@@ -316,7 +372,15 @@ pattern = "vatanhaber.net/yazar/haber*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
+pattern = "vatanhaber.net/koseyazari/haber*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
 pattern = "www.vatanhaber.net/yazar/giris*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/koseyazari/giris*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
@@ -324,7 +388,15 @@ pattern = "www.vatanhaber.net/yazar/sifre*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
+pattern = "www.vatanhaber.net/koseyazari/sifre*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
 pattern = "www.vatanhaber.net/yazar/haber*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/koseyazari/haber*"
 zone_name = "vatanhaber.net"
 
 
@@ -379,7 +451,15 @@ pattern = "suhaber.net/yazar/giris*"
 zone_name = "suhaber.net"
 
 [[routes]]
+pattern = "suhaber.net/koseyazari/giris*"
+zone_name = "suhaber.net"
+
+[[routes]]
 pattern = "suhaber.net/yazar/sifre*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/koseyazari/sifre*"
 zone_name = "suhaber.net"
 
 [[routes]]
@@ -387,7 +467,15 @@ pattern = "suhaber.net/yazar/haber*"
 zone_name = "suhaber.net"
 
 [[routes]]
+pattern = "suhaber.net/koseyazari/haber*"
+zone_name = "suhaber.net"
+
+[[routes]]
 pattern = "www.suhaber.net/yazar/giris*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/koseyazari/giris*"
 zone_name = "suhaber.net"
 
 [[routes]]
@@ -395,7 +483,15 @@ pattern = "www.suhaber.net/yazar/sifre*"
 zone_name = "suhaber.net"
 
 [[routes]]
+pattern = "www.suhaber.net/koseyazari/sifre*"
+zone_name = "suhaber.net"
+
+[[routes]]
 pattern = "www.suhaber.net/yazar/haber*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/koseyazari/haber*"
 zone_name = "suhaber.net"
 
 
@@ -579,7 +675,15 @@ pattern = "turkatahaber.com/yazar/giris*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
+pattern = "turkatahaber.com/koseyazari/giris*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
 pattern = "turkatahaber.com/yazar/sifre*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/koseyazari/sifre*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
@@ -587,7 +691,15 @@ pattern = "turkatahaber.com/yazar/haber*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
+pattern = "turkatahaber.com/koseyazari/haber*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
 pattern = "www.turkatahaber.com/yazar/giris*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/koseyazari/giris*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
@@ -595,7 +707,15 @@ pattern = "www.turkatahaber.com/yazar/sifre*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
+pattern = "www.turkatahaber.com/koseyazari/sifre*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
 pattern = "www.turkatahaber.com/yazar/haber*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/koseyazari/haber*"
 zone_name = "turkatahaber.com"
 
 
@@ -656,7 +776,15 @@ pattern = "sehitgazi.org.tr/yazar/giris*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
+pattern = "sehitgazi.org.tr/koseyazari/giris*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
 pattern = "sehitgazi.org.tr/yazar/sifre*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/koseyazari/sifre*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
@@ -664,7 +792,15 @@ pattern = "sehitgazi.org.tr/yazar/haber*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
+pattern = "sehitgazi.org.tr/koseyazari/haber*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
 pattern = "www.sehitgazi.org.tr/yazar/giris*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/koseyazari/giris*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
@@ -672,7 +808,15 @@ pattern = "www.sehitgazi.org.tr/yazar/sifre*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
+pattern = "www.sehitgazi.org.tr/koseyazari/sifre*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
 pattern = "www.sehitgazi.org.tr/yazar/haber*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/koseyazari/haber*"
 zone_name = "sehitgazi.org.tr"
 
 
@@ -723,7 +867,15 @@ pattern = "yerel.net.tr/yazar/giris*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
+pattern = "yerel.net.tr/koseyazari/giris*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
 pattern = "yerel.net.tr/yazar/sifre*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/koseyazari/sifre*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
@@ -731,7 +883,15 @@ pattern = "yerel.net.tr/yazar/haber*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
+pattern = "yerel.net.tr/koseyazari/haber*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
 pattern = "www.yerel.net.tr/yazar/giris*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/koseyazari/giris*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
@@ -739,7 +899,15 @@ pattern = "www.yerel.net.tr/yazar/sifre*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
+pattern = "www.yerel.net.tr/koseyazari/sifre*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
 pattern = "www.yerel.net.tr/yazar/haber*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/koseyazari/haber*"
 zone_name = "yerel.net.tr"
 
 
@@ -790,7 +958,15 @@ pattern = "turksav.org/yazar/giris*"
 zone_name = "turksav.org"
 
 [[routes]]
+pattern = "turksav.org/koseyazari/giris*"
+zone_name = "turksav.org"
+
+[[routes]]
 pattern = "turksav.org/yazar/sifre*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/koseyazari/sifre*"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -798,7 +974,15 @@ pattern = "turksav.org/yazar/haber*"
 zone_name = "turksav.org"
 
 [[routes]]
+pattern = "turksav.org/koseyazari/haber*"
+zone_name = "turksav.org"
+
+[[routes]]
 pattern = "www.turksav.org/yazar/giris*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/koseyazari/giris*"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -806,7 +990,15 @@ pattern = "www.turksav.org/yazar/sifre*"
 zone_name = "turksav.org"
 
 [[routes]]
+pattern = "www.turksav.org/koseyazari/sifre*"
+zone_name = "turksav.org"
+
+[[routes]]
 pattern = "www.turksav.org/yazar/haber*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/koseyazari/haber*"
 zone_name = "turksav.org"
 
 
@@ -857,7 +1049,15 @@ pattern = "dunyasaglik.org/yazar/giris*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
+pattern = "dunyasaglik.org/koseyazari/giris*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
 pattern = "dunyasaglik.org/yazar/sifre*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/koseyazari/sifre*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
@@ -865,7 +1065,15 @@ pattern = "dunyasaglik.org/yazar/haber*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
+pattern = "dunyasaglik.org/koseyazari/haber*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
 pattern = "www.dunyasaglik.org/yazar/giris*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/koseyazari/giris*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
@@ -873,7 +1081,15 @@ pattern = "www.dunyasaglik.org/yazar/sifre*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
+pattern = "www.dunyasaglik.org/koseyazari/sifre*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
 pattern = "www.dunyasaglik.org/yazar/haber*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/koseyazari/haber*"
 zone_name = "dunyasaglik.org"
 
 
@@ -924,7 +1140,15 @@ pattern = "yesilvatan.gen.tr/yazar/giris*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
+pattern = "yesilvatan.gen.tr/koseyazari/giris*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
 pattern = "yesilvatan.gen.tr/yazar/sifre*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/koseyazari/sifre*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -932,7 +1156,15 @@ pattern = "yesilvatan.gen.tr/yazar/haber*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
+pattern = "yesilvatan.gen.tr/koseyazari/haber*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
 pattern = "www.yesilvatan.gen.tr/yazar/giris*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/koseyazari/giris*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -940,7 +1172,15 @@ pattern = "www.yesilvatan.gen.tr/yazar/sifre*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
+pattern = "www.yesilvatan.gen.tr/koseyazari/sifre*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
 pattern = "www.yesilvatan.gen.tr/yazar/haber*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/koseyazari/haber*"
 zone_name = "yesilvatan.gen.tr"
 
 # Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc

@@ -23,7 +23,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
-import { phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
+import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
@@ -72,8 +72,10 @@ import {
   findHmBundleHeadlineBySlug,
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
+  isHmAuthorPanelPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
+  injectHmAuthorPanelBoot,
   isCorporateHmHtmlBoot,
   isAhenkAgencyGeoPath,
   isAhenkAgencyHost,
@@ -894,6 +896,19 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   }
   let html = rewriteHtml(await assetResp.text(), { oneShotPurge, purgeCookie });
   const hmHostSlug = hmDomainSlugFallback(hostname);
+  if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
+    const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
+    if (authorSlug) {
+      html = injectHmAuthorPanelBoot(
+        html,
+        authorSlug,
+        String(hostname || "")
+          .toLowerCase()
+          .replace(/^www\./, ""),
+      );
+      out.set("x-yekpare-hm-author-boot", authorSlug);
+    }
+  }
   if (hmHostSlug && !isAhenkAgencyHost(hostname)) {
     const ogOrigin = incoming?.origin || `https://${String(hostname || "").replace(/^www\./, "")}`;
     html = rewriteSpaShellOgForHmHost(html, hostname, ogOrigin);
@@ -2847,8 +2862,46 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
+    // Köşe yazarı girişi + editör listeleri: Container / askı zincirinden önce.
+    const earlyPath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+    const earlyMethod = String(request.method || "").toUpperCase();
+    if (
+      (earlyPath === "/api/hm/author/login" && earlyMethod === "POST") ||
+      (earlyPath === "/api/authors" && earlyMethod === "GET") ||
+      (earlyPath.startsWith("/api/hm/editor/") && (earlyMethod === "GET" || earlyMethod === "POST" || earlyMethod === "PUT" || earlyMethod === "PATCH" || earlyMethod === "DELETE"))
+    ) {
+      try {
+        const earlyEdge = await handleKhEditorDataEdge(request, env, incoming);
+        if (earlyEdge) return earlyEdge;
+      } catch (err) {
+        console.error("[hm-editor-data-early]", String(err?.message || err).slice(0, 180));
+        if (earlyPath === "/api/authors") {
+          return new Response("[]", {
+            status: 200,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+            },
+          });
+        }
+        if (earlyPath === "/api/hm/author/login") {
+          return new Response(JSON.stringify({ error: "E-posta veya şifre hatalı." }), {
+            status: 401,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "private, no-store",
+              "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+            },
+          });
+        }
+      }
+    }
+
     const khSuspended = await khPublicSuspensionResponse(request, env, incoming);
     if (khSuspended) return khSuspended;
+
+    const koseyazariPanel = koseyazariPanelRedirectResponse(request, incoming);
+    if (koseyazariPanel) return koseyazariPanel;
 
     // PHP tema siteleri: eski SPA linkleri (/tr/asg/haber/:s?siteId=3) PHP adresine 301; yazar paneli SPA'da kalır.
     const phpThemeLegacy = phpThemeLegacyRedirectResponse(request, incoming);
@@ -3092,6 +3145,9 @@ export default {
           edgePath === "/api/hm/editor/news" ||
           edgePath === "/api/hm/editor/makale" ||
           edgePath === "/api/hm/editor/makale/bulk-delete" ||
+          edgePath === "/api/hm/author/login" ||
+          edgePath === "/api/hm/author/me" ||
+          edgePath === "/api/hm/author/me/password" ||
           edgePath === "/api/hm/author/news" ||
           /^\/api\/hm\/author\/news\/\d+$/.test(edgePath) ||
           edgePath === "/api/hm/editor/rss/campaigns" ||
