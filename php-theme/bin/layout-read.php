@@ -110,7 +110,9 @@ if (count($tools) !== 1 || $tools[0]['label'] !== 'Videolar' || $tools[0]['href'
     $fail('header tools');
 }
 $footer = $menuSite->footerLinks();
-if ($footer[0]['href'] !== 'https://example.com/kunye' || ($footer[1]['label'] ?? '') !== 'RSS') {
+$footerHrefs = array_column($footer, 'href');
+$footerLabels = array_column($footer, 'label');
+if ($footer[0]['href'] !== 'https://example.com/kunye' || !in_array('RSS', $footerLabels, true) || !in_array('/koseyazari/giris', $footerHrefs, true)) {
     $fail('footer');
 }
 $social = $menuSite->socialLinks();
@@ -173,6 +175,10 @@ if (!$suspended->publicSuspended()) {
 $openSite = new Site(8, 'asg', 'ASG', '', 'asg.com', ['hmPublicSuspended' => false], [], '#c8102e', '', 'asg.com', '', 'https://asg.com', []);
 if ($openSite->publicSuspended()) {
     $fail('not suspended');
+}
+$footer = array_column($openSite->footerLinks(), 'href');
+if (!in_array('/koseyazari/giris', $footer, true)) {
+    $fail('footer koseyazari login');
 }
 
 fwrite(STDOUT, "ok\n");

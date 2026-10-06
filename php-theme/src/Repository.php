@@ -75,10 +75,10 @@ final class Repository
     /** @return list<array<string, mixed>> */
     public function stories(int $siteId, string $category, int $limit, int $offset = 0): array
     {
-        $limit = max(1, min(60, $limit));
+        $limit = max(1, min(180, $limit));
         $offset = max(0, $offset);
         $sql = $this->storySql($category !== '');
-        $sql .= ' ORDER BY published_at DESC LIMIT :lim OFFSET :off';
+        $sql .= ' ORDER BY is_featured DESC, is_site_manset DESC, is_breaking DESC, published_at DESC LIMIT :lim OFFSET :off';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue('site', $siteId, PDO::PARAM_INT);
         if ($category !== '') {
@@ -376,13 +376,17 @@ final class Repository
         return "SELECT * FROM (
             SELECT 'rss-' || id::text AS public_slug, title, spot, image_url,
                    COALESCE(source_name, '') AS credit, COALESCE(link, '') AS source_url,
-                   category_slug, published_at, 0 AS views, 'rss' AS kind
+                   category_slug, published_at, 0 AS views, 'rss' AS kind,
+                   false AS is_featured, false AS is_site_manset, false AS is_breaking
             FROM portal_rss_items
             WHERE (site_id IS NULL OR site_id = :site) {$catRss}
             UNION ALL
             SELECT n.slug, COALESCE(o.title, n.title), COALESCE(o.spot, n.spot), COALESCE(o.image_url, n.image_url),
                    '' AS credit, COALESCE(n.rss_source_url, '') AS source_url,
-                   COALESCE(c.slug, '') AS category_slug, n.created_at, n.views, 'news' AS kind
+                   COALESCE(c.slug, '') AS category_slug, n.created_at, n.views, 'news' AS kind,
+                   COALESCE(n.is_featured, false) AS is_featured,
+                   COALESCE(n.is_site_manset, false) AS is_site_manset,
+                   COALESCE(n.is_breaking, false) AS is_breaking
             FROM news n
             LEFT JOIN categories c ON c.id = n.category_id
             LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site
@@ -410,6 +414,9 @@ final class Repository
             'category' => Modules::slug((string) ($row['category_slug'] ?? '')),
             'publishedAt' => (string) $row['published_at'],
             'kind' => (string) ($row['kind'] ?? 'news'),
+            'isFeatured' => !empty($row['is_featured']),
+            'isSiteManset' => !empty($row['is_site_manset']),
+            'isBreaking' => !empty($row['is_breaking']),
         ];
     }
 

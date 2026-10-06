@@ -247,6 +247,17 @@ final class Site
                 ['label' => 'Site haritası', 'href' => $this->path('/sitemap.xml')],
             ];
         }
+        $hasAuthorLogin = false;
+        foreach ($items as $item) {
+            if (str_contains((string) ($item['href'] ?? ''), '/koseyazari/giris')
+                || str_contains((string) ($item['href'] ?? ''), '/yazar/giris')) {
+                $hasAuthorLogin = true;
+                break;
+            }
+        }
+        if (!$hasAuthorLogin) {
+            $items[] = ['label' => 'Köşe yazarı girişi', 'href' => $this->path('/koseyazari/giris')];
+        }
         foreach ($this->menuFlat('hmNewsSidebarMenuItems') as $extra) {
             $items[] = $extra;
         }
