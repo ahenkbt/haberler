@@ -4,6 +4,7 @@ import {
   hmDomainSlugFallback,
   shouldInstantHmRootRedirect,
   hmHomeSlugFromPath,
+  isHmAuthorPanelPath,
   isHmPublicHomeHtmlPath,
   firstHmBootImageUrl,
   injectHmHtmlBoot,
@@ -49,6 +50,12 @@ describe("hm-html-boot", () => {
     assert.equal(hmDomainSlugFallback("ahenk.net.tr"), "");
   });
 
+  it("treats köşe yazarı panel paths as slug-boot HTML", () => {
+    assert.equal(isHmAuthorPanelPath("/yazar/giris"), true);
+    assert.equal(isHmAuthorPanelPath("/yazar/a526"), false);
+    assert.equal(hmHomeSlugFromPath("/yazar/haberler", "ankarasehirgazetesi.com"), "asg");
+  });
+
   it("recognizes known HM roots so the worker can serve home HTML at /", () => {
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "ankarahabergundemi.com"), true);
     assert.equal(shouldInstantHmRootRedirect("GET", "/tr/ankarahabergundemi", "ankarahabergundemi.com"), false);
@@ -71,6 +78,8 @@ describe("hm-html-boot", () => {
       hmHomeSlugFromPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),
       "asg",
     );
+    assert.equal(hmHomeSlugFromPath("/yazar/giris", "yesilvatan.gen.tr"), "yesilvatan");
+    assert.equal(hmHomeSlugFromPath("/tr/asg/yazar/giris", "ahenk.net.tr"), "asg");
     assert.equal(isHmPublicHomeHtmlPath("/tr/asg", "ankarasehirgazetesi.com"), true);
     assert.equal(
       isHmPublicHomeHtmlPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),

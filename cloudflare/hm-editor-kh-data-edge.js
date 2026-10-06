@@ -1037,6 +1037,58 @@ async function handleEditorNews(sql, siteId, url, env) {
   return jsonResponse(200, { items: [], total: 0, source: "neon-empty" });
 }
 
+/**
+ * Köşe yazarı `news` satırı PHP yazar sayfasında görünsün diye hm_makaleler'e de yazılır.
+ */
+async function upsertMakaleFromAuthorNews(sql, row) {
+  const siteId = asPositiveInt(row?.site_id);
+  const authorId = asPositiveInt(row?.author_id);
+  const title = String(row?.title || "").trim();
+  const slug = String(row?.slug || "").trim();
+  if (!sql || !siteId || !authorId || !title || !slug) return;
+  const spot = row?.spot != null ? String(row.spot) : null;
+  const content = row?.content != null ? String(row.content) : null;
+  const imageUrl = row?.image_url != null ? String(row.image_url) : null;
+  const status = String(row?.status || "published");
+  try {
+    const existing = await sql`
+      SELECT * FROM hm_makaleler
+      WHERE site_id = ${siteId}
+        AND author_id = ${authorId}
+        AND lower(trim(both '/' from slug)) = lower(trim(both '/' from ${slug}))
+      LIMIT 1
+    `;
+    let makale = existing?.[0];
+    if (makale) {
+      const updated = await sql`
+        UPDATE hm_makaleler SET
+          title = ${title},
+          spot = ${spot},
+          content = ${content},
+          image_url = ${imageUrl},
+          status = ${status},
+          updated_at = NOW()
+        WHERE id = ${makale.id}
+        RETURNING *
+      `;
+      makale = updated?.[0] || makale;
+    } else {
+      const inserted = await sql`
+        INSERT INTO hm_makaleler (
+          site_id, author_id, title, slug, spot, content, image_url, status, created_at, updated_at
+        ) VALUES (
+          ${siteId}, ${authorId}, ${title}, ${slug}, ${spot}, ${content}, ${imageUrl}, ${status}, NOW(), NOW()
+        )
+        RETURNING *
+      `;
+      makale = inserted?.[0];
+    }
+    if (makale) await mirrorNewsDbWrite("hm_makaleler", "upsert", makale);
+  } catch (err) {
+    console.error("[hm-author-news-makale]", String(err?.message || err).slice(0, 180));
+  }
+}
+
 async function handleCreateNews(sql, siteId, body, opts = {}) {
   await ensureNewsWritableColumns(sql);
 
@@ -1116,6 +1168,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
       const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
       if (!row) return createFailResponse("INSERT boş döndü");
       await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+      await upsertMakaleFromAuthorNews(sql, row);
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
       const msg = String(err?.message || err);
@@ -1166,6 +1219,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
               /* kolon yoksa yok say */
             }
             await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+            await upsertMakaleFromAuthorNews(sql, row);
             return jsonResponse(201, serializeNewsRow(row, categorySlug));
           }
         } catch (err2) {
@@ -1245,6 +1299,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
     const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
     await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+    await upsertMakaleFromAuthorNews(sql, row);
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
     const msg = String(err?.message || err);
@@ -1951,12 +2006,171 @@ async function handleEditorRssCampaignRun(sql, env, request, siteId, id) {
 
 async function loadAuthorOnSite(sql, authorId, siteId) {
   const rows = await sql`
-    SELECT id, name, hm_site_id
+    SELECT id, name, email, hm_site_id
     FROM authors
     WHERE id = ${authorId} AND hm_site_id = ${siteId}
     LIMIT 1
   `;
   return rows?.[0] || null;
+}
+
+async function signAuthorJwt(env, authorId, siteId) {
+  const { SignJWT } = await import("jose");
+  const key = jwtSecretBytes(env);
+  if (!key) throw new Error("SESSION_SECRET eksik");
+  const aid = asPositiveInt(authorId);
+  const sid = asPositiveInt(siteId);
+  if (aid == null || sid == null) throw new Error("Geçersiz yazar/site id");
+  return new SignJWT({ typ: JWT_TYP_AUTHOR, aid, sid })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("60d")
+    .sign(key);
+}
+
+async function resolveActiveSiteBySlug(sql, slugRaw) {
+  const slug = String(slugRaw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  if (!slug) return null;
+  const rows = await sql`
+    SELECT id, slug, domain, domain2, display_name
+    FROM hm_news_sites
+    WHERE active = true
+      AND lower(trim(both '/' from slug)) = ${slug}
+    ORDER BY id ASC
+    LIMIT 1
+  `;
+  return rows?.[0] || null;
+}
+
+async function handleAuthorLogin(request, env, incomingUrl) {
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+
+  const siteSlug = String(b.siteSlug ?? b.slug ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  const emailRaw = String(b.email ?? "")
+    .trim()
+    .toLowerCase();
+  const passwordRaw = String(b.password ?? "");
+  if (!siteSlug || !emailRaw || !passwordRaw) {
+    return jsonResponse(400, { error: "siteSlug, e-posta ve şifre gerekli." });
+  }
+
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+  if (!jwtSecretBytes(env)) return jsonResponse(503, { error: "Oturum anahtarı eksik." });
+
+  let site = await resolveActiveSiteBySlug(sql, siteSlug);
+  if (!site) {
+    const host = normalizeHost(b.domain || incomingUrl?.hostname);
+    if (host) {
+      const byHost = await sql`
+        SELECT id, slug, domain, domain2, display_name
+        FROM hm_news_sites
+        WHERE active = true
+          AND (
+            lower(regexp_replace(regexp_replace(coalesce(domain, ''), '^www\\.', ''), '\\.$', '')) = ${host}
+            OR lower(regexp_replace(regexp_replace(coalesce(domain2, ''), '^www\\.', ''), '\\.$', '')) = ${host}
+            OR lower(regexp_replace(regexp_replace(coalesce(domain3, ''), '^www\\.', ''), '\\.$', '')) = ${host}
+          )
+        ORDER BY id ASC
+        LIMIT 1
+      `;
+      site = byHost?.[0] || null;
+    }
+  }
+  if (!site) return jsonResponse(404, { error: "Haber sitesi bulunamadı." });
+
+  const authors = await sql`
+    SELECT id, name, email, password_hash
+    FROM authors
+    WHERE hm_site_id = ${site.id}
+      AND lower(email) = ${emailRaw}
+      AND password_hash IS NOT NULL
+    LIMIT 1
+  `;
+  const author = authors?.[0];
+  if (!author?.password_hash) {
+    return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
+  }
+  const ok = await bcrypt.compare(passwordRaw, author.password_hash);
+  if (!ok) return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
+
+  const token = await signAuthorJwt(env, author.id, site.id);
+  return jsonResponse(200, {
+    token,
+    site: {
+      id: site.id,
+      slug: site.slug,
+      domain: site.domain,
+      domain2: site.domain2 ?? null,
+      displayName: site.display_name,
+    },
+    author: { id: author.id, name: author.name, email: author.email ?? emailRaw },
+  });
+}
+
+async function handleAuthorMeGet(request, env) {
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const ctx = await parseAuthorJwt(request, env);
+  if (!ctx) {
+    return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
+  }
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+  const author = await loadAuthorOnSite(sql, ctx.authorId, ctx.siteId);
+  if (!author) return jsonResponse(404, { error: "Yazar bulunamadı." });
+  void auth;
+  return jsonResponse(200, serializeAuthor(author));
+}
+
+async function handleAuthorPasswordPatch(request, env) {
+  const ctx = await parseAuthorJwt(request, env);
+  if (!ctx) {
+    return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
+  }
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+  const current = String(b.currentPassword ?? "");
+  const nextPw = String(b.newPassword ?? "");
+  if (nextPw.length < 8) {
+    return jsonResponse(400, { error: "Yeni şifre en az 8 karakter olmalı." });
+  }
+  const rows = await sql`
+    SELECT id, password_hash FROM authors
+    WHERE id = ${ctx.authorId} AND hm_site_id = ${ctx.siteId}
+    LIMIT 1
+  `;
+  const author = rows?.[0];
+  if (!author?.password_hash) {
+    return jsonResponse(400, { error: "Şifre bu hesap için tanımlı değil." });
+  }
+  if (!current || !(await bcrypt.compare(current, author.password_hash))) {
+    return jsonResponse(401, { error: "Mevcut şifre yanlış." });
+  }
+  const passwordHash = await bcrypt.hash(nextPw, 10);
+  const updated = await sql`
+    UPDATE authors SET password_hash = ${passwordHash}
+    WHERE id = ${author.id}
+    RETURNING id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash
+  `;
+  if (updated?.[0]) await mirrorNewsDbWrite("authors", "upsert", updated[0]);
+  return jsonResponse(200, { ok: true });
 }
 
 async function handleAuthorNewsList(sql, siteId, authorId, incomingUrl) {
@@ -2094,6 +2308,15 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   }
 
   if (path.startsWith("/api/hm/author/")) {
+    if (path === "/api/hm/author/login" && method === "POST") {
+      return handleAuthorLogin(request, env, incomingUrl);
+    }
+    if (path === "/api/hm/author/me" && method === "GET") {
+      return handleAuthorMeGet(request, env);
+    }
+    if (path === "/api/hm/author/me/password" && method === "PATCH") {
+      return handleAuthorPasswordPatch(request, env);
+    }
     const authorArticle = await handleAuthorArticleEdge(request, env, incomingUrl, path, method);
     if (authorArticle) return authorArticle;
     if (path === "/api/hm/author/news" || path.startsWith("/api/hm/author/news/") || path === "/api/hm/author/categories") {

@@ -167,6 +167,19 @@ export function parseHmNewsArticlePath(pathname) {
   return null;
 }
 
+/** Köşe yazarı paneli — kamu `/yazar/a526` değil. */
+export function isHmAuthorPanelPath(pathname) {
+  const p = String(pathname || "")
+    .split("?")[0]
+    .replace(/\/+$/, "")
+    .toLowerCase() || "/";
+  return (
+    /(?:^|\/)yazar\/giris(?:\/|$)/.test(p) ||
+    /(?:^|\/)yazar\/sifre/.test(p) ||
+    /(?:^|\/)yazar\/haber(?:ler)?(?:\/|$)/.test(p)
+  );
+}
+
 export function hmHomeSlugFromPath(pathname, hostname) {
   const path = String(pathname || "").replace(/\/+$/, "") || "/";
   const m = path.match(/^\/tr\/([^/]+)/i) || path.match(/^\/hm\/([^/]+)/i);
@@ -176,7 +189,12 @@ export function hmHomeSlugFromPath(pathname, hostname) {
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "");
   }
-  if (path === "/" || parseHmNewsArticlePath(path) || parseHmNewsCategoryPath(path)) {
+  if (
+    path === "/" ||
+    parseHmNewsArticlePath(path) ||
+    parseHmNewsCategoryPath(path) ||
+    isHmAuthorPanelPath(path)
+  ) {
     return hmDomainSlugFallback(hostname);
   }
   return "";

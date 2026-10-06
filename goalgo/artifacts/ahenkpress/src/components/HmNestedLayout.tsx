@@ -25,6 +25,7 @@ import { isHmHaritalarPublicPath, isHmNewsmapPublicPath } from "@/lib/hmHaritala
 import { HmPublicLinkProvider } from "@/contexts/HmPublicLinkContext";
 import { HmDeferredAdSlotStrip } from "@/components/HmDeferredAdSlotStrip";
 import { useHmDomainSlugFromHost } from "@/hooks/useHmDomainSlugFromHost";
+import { isHmAuthorPanelPath } from "@/lib/hmAuthorPanelPath";
 import { HmChromeWidthShell } from "@/components/HmChromeWidthShell";
 import { isDefaultPortalHost, isHmVideoTvAllowed, isKhHmSite, isYekparePortalHubOnly } from "@/lib/hmPortalHosts";
 import { applyHmSiteVerificationMeta, applyHmSiteBranding, type HmSeoVerification } from "@/lib/pageSeo";
@@ -392,6 +393,7 @@ export function HmNestedLayout({
   const resolvedSlug = useHmDomainSlugFromHost();
   const [location] = useLocation();
   const slug = String(resolvedSlug || params?.slug || "").trim();
+  const authorPanel = isHmAuthorPanelPath(location);
   const hostKey = typeof window !== "undefined" ? browserHostname() : "";
   const needsFreshMeta = isEditorManagedContentRoute(location.split("?")[0] ?? "");
   const headerBandRef = useRef<HTMLDivElement>(null);
@@ -623,7 +625,7 @@ export function HmNestedLayout({
     );
   }
 
-  if (error && !effectiveData) {
+  if (error && !effectiveData && !authorPanel) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center space-y-4">
         <p className="text-slate-700 font-medium">{formatHmNestedLoadError(error)}</p>
@@ -635,6 +637,7 @@ export function HmNestedLayout({
   }
 
   if (!effectiveData) {
+    if (authorPanel) return <>{children}</>;
     return <HmNestedLoadingShell slug={slug} early={storedMeta?.data ?? null} />;
   }
 

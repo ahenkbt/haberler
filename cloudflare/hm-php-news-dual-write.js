@@ -287,6 +287,7 @@ export async function edgeUpsertAuthor(sql, row) {
   const avatarUrl = asText(pick(row, "avatar_url", "avatarUrl"));
   const bio = asText(pick(row, "bio"));
   const email = asText(pick(row, "email"));
+  const passwordHash = asText(pick(row, "password_hash", "passwordHash"));
   const sort = asInt(pick(row, "hm_sort_order", "hmSortOrder"));
 
   const byId = await sql`SELECT id, hm_site_id FROM authors WHERE id = ${id} LIMIT 1`;
@@ -301,6 +302,7 @@ export async function edgeUpsertAuthor(sql, row) {
         avatar_url = ${avatarUrl},
         bio = ${bio},
         email = ${email},
+        password_hash = COALESCE(${passwordHash}, password_hash),
         hm_sort_order = COALESCE(${sort}, hm_sort_order),
         hm_site_id = COALESCE(${hmSiteId}, hm_site_id)
       WHERE id = ${id}
@@ -309,8 +311,8 @@ export async function edgeUpsertAuthor(sql, row) {
     return { mirrored: true, id, via: "author-update" };
   }
   await sql`
-    INSERT INTO authors (id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email)
-    VALUES (${id}, ${name}, ${title}, ${avatarUrl}, ${bio}, ${hmSiteId}, ${sort ?? 0}, ${email})
+    INSERT INTO authors (id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash)
+    VALUES (${id}, ${name}, ${title}, ${avatarUrl}, ${bio}, ${hmSiteId}, ${sort ?? 0}, ${email}, ${passwordHash})
   `;
   return { mirrored: true, id, via: "author-insert" };
 }

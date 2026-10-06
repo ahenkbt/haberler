@@ -72,6 +72,7 @@ import {
   findHmBundleHeadlineBySlug,
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
+  isHmAuthorPanelPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
   isCorporateHmHtmlBoot,
@@ -894,6 +895,18 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   }
   let html = rewriteHtml(await assetResp.text(), { oneShotPurge, purgeCookie });
   const hmHostSlug = hmDomainSlugFallback(hostname);
+  if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
+    const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
+    if (authorSlug) {
+      html = injectHmHtmlBoot(html, {
+        slug: authorSlug,
+        host: String(hostname || "")
+          .toLowerCase()
+          .replace(/^www\./, ""),
+      });
+      out.set("x-yekpare-hm-author-boot", authorSlug);
+    }
+  }
   if (hmHostSlug && !isAhenkAgencyHost(hostname)) {
     const ogOrigin = incoming?.origin || `https://${String(hostname || "").replace(/^www\./, "")}`;
     html = rewriteSpaShellOgForHmHost(html, hostname, ogOrigin);
@@ -3092,6 +3105,9 @@ export default {
           edgePath === "/api/hm/editor/news" ||
           edgePath === "/api/hm/editor/makale" ||
           edgePath === "/api/hm/editor/makale/bulk-delete" ||
+          edgePath === "/api/hm/author/login" ||
+          edgePath === "/api/hm/author/me" ||
+          edgePath === "/api/hm/author/me/password" ||
           edgePath === "/api/hm/author/news" ||
           /^\/api\/hm\/author\/news\/\d+$/.test(edgePath) ||
           edgePath === "/api/hm/editor/rss/campaigns" ||

@@ -1,6 +1,19 @@
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
 import { isDefaultPortalHost } from "@/lib/hmPortalHosts";
 
+/** Köşe yazarı paneli — kamu `/yazar/a526` değil. */
+export function isHmAuthorPanelPath(pathname: string): boolean {
+  const p = String(pathname ?? "")
+    .split("?")[0]
+    .replace(/\/+$/, "")
+    .toLowerCase() || "/";
+  return (
+    /(?:^|\/)yazar\/giris(?:\/|$)/.test(p) ||
+    /(?:^|\/)yazar\/sifre/.test(p) ||
+    /(?:^|\/)yazar\/haber(?:ler)?(?:\/|$)/.test(p)
+  );
+}
+
 function normalizeHost(host: string | null | undefined): string {
   return String(host ?? "")
     .toLowerCase()

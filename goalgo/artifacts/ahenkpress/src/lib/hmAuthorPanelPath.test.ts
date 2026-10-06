@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { hmAuthorPanelHref } from "./hmAuthorPanelPath";
+import { hmAuthorPanelHref, isHmAuthorPanelPath } from "./hmAuthorPanelPath";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -23,5 +23,15 @@ describe("hmAuthorPanelHref", () => {
   it("reads window.location when pageHost is omitted", () => {
     vi.stubGlobal("window", { location: { hostname: "yerel.net.tr" } });
     expect(hmAuthorPanelHref("yerelnet", "giris")).toBe("/yazar/giris");
+  });
+});
+
+describe("isHmAuthorPanelPath", () => {
+  it("matches login and writer panel, not public author pages", () => {
+    expect(isHmAuthorPanelPath("/yazar/giris")).toBe(true);
+    expect(isHmAuthorPanelPath("/tr/asg/yazar/haberler")).toBe(true);
+    expect(isHmAuthorPanelPath("/yazar/haber/yeni")).toBe(true);
+    expect(isHmAuthorPanelPath("/yazar/a526")).toBe(false);
+    expect(isHmAuthorPanelPath("/yazarlar")).toBe(false);
   });
 });
