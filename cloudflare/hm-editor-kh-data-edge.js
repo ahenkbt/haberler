@@ -2191,7 +2191,9 @@ async function handleAuthorLogin(request, env, incomingUrl) {
     `;
     return authors?.[0] || null;
   };
-  const phpSiteId = newsSql ? await raceTimeout(resolvePhpSiteId(newsSql, sql, site.id), 1800, "php-site") : site.id;
+  const phpSiteId = newsSql
+    ? await raceTimeout(resolvePhpSiteId(newsSql, sql, site.id, incomingUrl?.hostname), 1800, "php-site")
+    : site.id;
   let author = sql ? await raceTimeout(lookupAuthor(sql, site.id), 1800, "author-worker") : null;
   if (!author?.password_hash && newsSql) {
     author = await raceTimeout(lookupAuthor(newsSql, phpSiteId || site.id), 1800, "author-php");

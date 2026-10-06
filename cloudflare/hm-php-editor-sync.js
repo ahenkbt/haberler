@@ -171,7 +171,7 @@ export async function loadPhpSiteAuthors(newsSql, siteId, workerSql, hostname) {
     (await resolvePhpSiteId(newsSql, workerSql, siteId, hostname)) || asPositiveInt(siteId);
   if (!newsSql || !phpSiteId) return [];
   const rows = await newsSql`
-    SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email, password_hash
+    SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
     FROM authors
     WHERE hm_site_id = ${phpSiteId}
     ORDER BY COALESCE(hm_sort_order, 2147483647) ASC, id ASC
