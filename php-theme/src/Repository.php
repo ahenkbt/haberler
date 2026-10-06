@@ -269,15 +269,32 @@ final class Repository
     public function authorStories(int $siteId, int $authorId, int $limit): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT slug AS public_slug, title, spot, image_url, \'\' AS credit, \'\' AS source_url,
-                    \'\' AS category_slug, created_at AS published_at, views, \'column\' AS kind
-             FROM hm_makaleler
-             WHERE site_id = :site AND author_id = :author AND status = \'published\'
-             ORDER BY created_at DESC
+            'SELECT public_slug, title, spot, image_url, credit, source_url, category_slug, published_at, views, kind
+             FROM (
+               SELECT m.slug AS public_slug, m.title, m.spot, m.image_url, \'\' AS credit, \'\' AS source_url,
+                      \'\' AS category_slug, m.created_at AS published_at, m.views, \'column\' AS kind
+               FROM hm_makaleler m
+               WHERE m.site_id = :site AND m.author_id = :author AND m.status = \'published\'
+               UNION ALL
+               SELECT n.slug AS public_slug, n.title, n.spot, n.image_url, \'\' AS credit, \'\' AS source_url,
+                      COALESCE(c.slug, \'\') AS category_slug, n.created_at AS published_at, n.views, \'news\' AS kind
+               FROM news n
+               LEFT JOIN categories c ON c.id = n.category_id
+               WHERE n.site_id = :site2 AND n.author_id = :author2 AND n.status = \'published\'
+                 AND NOT EXISTS (
+                   SELECT 1 FROM hm_makaleler m2
+                   WHERE m2.site_id = n.site_id
+                     AND m2.author_id = n.author_id
+                     AND lower(btrim(m2.slug)) = lower(btrim(n.slug))
+                 )
+             ) stories
+             ORDER BY published_at DESC
              LIMIT :lim'
         );
         $stmt->bindValue('site', $siteId, PDO::PARAM_INT);
         $stmt->bindValue('author', $authorId, PDO::PARAM_INT);
+        $stmt->bindValue('site2', $siteId, PDO::PARAM_INT);
+        $stmt->bindValue('author2', $authorId, PDO::PARAM_INT);
         $stmt->bindValue('lim', max(1, min(40, $limit)), PDO::PARAM_INT);
         $stmt->execute();
         return array_map([$this, 'mapStory'], $stmt->fetchAll());
