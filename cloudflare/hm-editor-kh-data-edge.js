@@ -4,6 +4,7 @@
  */
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
+import { syncPhpAuthorsToWorker, syncPhpCategoriesToWorker } from "./hm-php-editor-sync.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
@@ -393,7 +394,16 @@ async function ensureStandardCategories(sql) {
   }
 }
 
-async function handleCategories(sql, siteId) {
+async function handleCategories(sql, siteId, env) {
+  const newsSql = neonNewsSqlClient(env);
+  if (newsSql) {
+    try {
+      const phpMapped = await syncPhpCategoriesToWorker(sql, newsSql, siteId);
+      if (phpMapped.length) return jsonResponse(200, phpMapped);
+    } catch (err) {
+      console.error("[kh-cat-php]", String(err?.message || err).slice(0, 160));
+    }
+  }
   await ensureStandardCategories(sql);
   const rows = await sql`
     SELECT id, name, slug, color, exclusive_site_id, sort_order
@@ -512,8 +522,16 @@ async function loadAuthorArticleStats(sql, siteId) {
   return { countMap, latestMap };
 }
 
-export async function handleAuthorsList(sql, siteId) {
+export async function handleAuthorsList(sql, siteId, env) {
   await ensureAuthorsSortOrderColumn(sql);
+  const newsSql = neonNewsSqlClient(env);
+  if (newsSql) {
+    try {
+      await syncPhpAuthorsToWorker(sql, newsSql, siteId);
+    } catch (err) {
+      console.error("[hm-authors-php]", String(err?.message || err).slice(0, 160));
+    }
+  }
   const rows = await sql`
     SELECT id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
     FROM authors
@@ -2098,7 +2116,37 @@ async function handleAuthorLogin(request, env, incomingUrl) {
       AND password_hash IS NOT NULL
     LIMIT 1
   `;
-  const author = authors?.[0];
+  let author = authors?.[0];
+  if (!author?.password_hash) {
+    const newsSql = neonNewsSqlClient(env);
+    if (newsSql) {
+      try {
+        const phpAuthors = await newsSql`
+          SELECT id, name, email, password_hash, title, avatar_url, bio, hm_sort_order
+          FROM authors
+          WHERE hm_site_id = ${site.id}
+            AND lower(email) = ${emailRaw}
+            AND password_hash IS NOT NULL
+          LIMIT 1
+        `;
+        const phpAuthor = phpAuthors?.[0];
+        if (phpAuthor?.password_hash) {
+          await syncPhpAuthorsToWorker(sql, newsSql, site.id);
+          const again = await sql`
+            SELECT id, name, email, password_hash
+            FROM authors
+            WHERE hm_site_id = ${site.id}
+              AND lower(email) = ${emailRaw}
+              AND password_hash IS NOT NULL
+            LIMIT 1
+          `;
+          author = again?.[0] || phpAuthor;
+        }
+      } catch (err) {
+        console.error("[hm-author-login-php]", String(err?.message || err).slice(0, 160));
+      }
+    }
+  }
   if (!author?.password_hash) {
     return jsonResponse(401, { error: "E-posta veya şifre hatalı." });
   }
@@ -2245,7 +2293,7 @@ async function handleAuthorArticleEdge(request, env, incomingUrl, path, method) 
   const owned = await loadAuthorOnSite(sql, author.authorId, author.siteId);
   if (!owned) return jsonResponse(401, { error: "Köşe yazarı oturumu gerekli (Bearer token)." });
 
-  if (isCategories && method === "GET") return handleCategories(sql, author.siteId);
+  if (isCategories && method === "GET") return handleCategories(sql, author.siteId, env);
   if (isCategories) return jsonResponse(405, { error: "Yöntem desteklenmiyor" });
 
   if (path === "/api/hm/author/news" && method === "GET") {
@@ -2304,7 +2352,7 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     const sql = sqlClient(env);
     if (!sql) return null;
     if (!(await isHmNewsSite(sql, hmSiteId))) return null;
-    return handleAuthorsList(sql, hmSiteId);
+    return handleAuthorsList(sql, hmSiteId, env);
   }
 
   if (path.startsWith("/api/hm/author/")) {
@@ -2351,7 +2399,7 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   if (!editor) return auth.startsWith("Bearer ") ? null : jsonResponse(401, { error: "Geçersiz oturum" });
 
   if (path === "/api/hm/editor/categories" && method === "GET") {
-    return handleCategories(sql, ctx.siteId);
+    return handleCategories(sql, ctx.siteId, env);
   }
 
   if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") {

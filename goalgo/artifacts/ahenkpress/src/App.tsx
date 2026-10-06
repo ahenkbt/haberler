@@ -1087,11 +1087,29 @@ export default function App() {
           </HmPortalOrDomainStandardPage>
         )
       )}</Route>
+      <Route path="/koseyazari/giris">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarGiris />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/yazar/giris">
         {() => (
           <HmPublicShell>
             <HmNestedLayout>
               <YazarGiris />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/koseyazari/sifremi-unuttum">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarSifremiUnuttum />
             </HmNestedLayout>
           </HmPublicShell>
         )}
@@ -1105,11 +1123,31 @@ export default function App() {
           </HmPublicShell>
         )}
       </Route>
+      <Route path="/koseyazari/sifre-yenile">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarSifreYenileHm />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/yazar/sifre-yenile">
         {() => (
           <HmPublicShell>
             <HmNestedLayout>
               <YazarSifreYenileHm />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/koseyazari/haberler">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <YazarHaberler />
+              </HmAuthorRoute>
             </HmNestedLayout>
           </HmPublicShell>
         )}
@@ -1125,12 +1163,34 @@ export default function App() {
           </HmPublicShell>
         )}
       </Route>
+      <Route path="/koseyazari/sifre">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <YazarSifre />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/yazar/sifre">
         {() => (
           <HmPublicShell>
             <HmNestedLayout>
               <HmAuthorRoute>
                 <YazarSifre />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/koseyazari/haber/:id">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <HaberEditor />
               </HmAuthorRoute>
             </HmNestedLayout>
           </HmPublicShell>
@@ -1392,11 +1452,29 @@ export default function App() {
       <Route path="/:slug/haber/:id">{() => <HmShortHaberPathRedirect />}</Route>
       <Route path="/tr/:slug/haber/:id">{() => <HmPublicShell><HmPublicHaberDetayRoute /></HmPublicShell>}</Route>
       <Route path="/tr/:slug/makale/:id">{() => <HmPublicShell><HmPublicHaberDetayRoute /></HmPublicShell>}</Route>
+      <Route path="/tr/:slug/koseyazari/giris">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarGiris />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/tr/:slug/yazar/giris">
         {() => (
           <HmPublicShell>
             <HmNestedLayout>
               <YazarGiris />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/tr/:slug/koseyazari/sifremi-unuttum">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarSifremiUnuttum />
             </HmNestedLayout>
           </HmPublicShell>
         )}
@@ -1410,11 +1488,31 @@ export default function App() {
           </HmPublicShell>
         )}
       </Route>
+      <Route path="/tr/:slug/koseyazari/sifre-yenile">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <YazarSifreYenileHm />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/tr/:slug/yazar/sifre-yenile">
         {() => (
           <HmPublicShell>
             <HmNestedLayout>
               <YazarSifreYenileHm />
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/tr/:slug/koseyazari/haberler">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <YazarHaberler />
+              </HmAuthorRoute>
             </HmNestedLayout>
           </HmPublicShell>
         )}
@@ -1430,12 +1528,34 @@ export default function App() {
           </HmPublicShell>
         )}
       </Route>
+      <Route path="/tr/:slug/koseyazari/sifre">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <YazarSifre />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
       <Route path="/tr/:slug/yazar/sifre">
         {() => (
           <HmPublicShell>
             <HmNestedLayout>
               <HmAuthorRoute>
                 <YazarSifre />
+              </HmAuthorRoute>
+            </HmNestedLayout>
+          </HmPublicShell>
+        )}
+      </Route>
+      <Route path="/tr/:slug/koseyazari/haber/:id">
+        {() => (
+          <HmPublicShell>
+            <HmNestedLayout>
+              <HmAuthorRoute>
+                <HaberEditor />
               </HmAuthorRoute>
             </HmNestedLayout>
           </HmPublicShell>

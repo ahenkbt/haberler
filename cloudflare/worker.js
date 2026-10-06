@@ -23,7 +23,7 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
-import { phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
+import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
@@ -2864,6 +2864,9 @@ export default {
 
     const khSuspended = await khPublicSuspensionResponse(request, env, incoming);
     if (khSuspended) return khSuspended;
+
+    const koseyazariPanel = koseyazariPanelRedirectResponse(request, incoming);
+    if (koseyazariPanel) return koseyazariPanel;
 
     // PHP tema siteleri: eski SPA linkleri (/tr/asg/haber/:s?siteId=3) PHP adresine 301; yazar paneli SPA'da kalır.
     const phpThemeLegacy = phpThemeLegacyRedirectResponse(request, incoming);

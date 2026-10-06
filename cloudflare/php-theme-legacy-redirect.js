@@ -71,6 +71,42 @@ export function phpThemeLegacyRedirectPath(pathname) {
 }
 
 /**
+ * `/yazar/giris|sifre*|haber*` → `/koseyazari/...` (kamu `/yazar/a{id}` dokunulmaz).
+ * @param {string} pathname
+ * @returns {string | null}
+ */
+export function koseyazariPanelRedirectPath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  const m = p.match(
+    /^((?:\/(?:tr|hm)\/[^/]+)?)\/yazar\/(giris|sifremi-unuttum|sifre-yenile|sifre|haberler|haber(?:\/.*)?)$/i,
+  );
+  if (!m) return null;
+  return `${m[1]}/koseyazari/${m[2]}`;
+}
+
+/**
+ * @param {Request} request
+ * @param {URL} incoming
+ * @returns {Response | null}
+ */
+export function koseyazariPanelRedirectResponse(request, incoming) {
+  const method = String(request?.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return null;
+  const nextPath = koseyazariPanelRedirectPath(incoming.pathname);
+  if (!nextPath) return null;
+  const dest = new URL(incoming.href);
+  dest.pathname = nextPath;
+  return new Response(null, {
+    status: 301,
+    headers: {
+      Location: dest.toString(),
+      "cache-control": "public, max-age=300",
+      "x-yekpare-frontend": "koseyazari-panel-redirect",
+    },
+  });
+}
+
+/**
  * Worker girişinde, SPA varlıkları sunulmadan önce çağrılır.
  * @param {Request} request
  * @param {URL} incoming

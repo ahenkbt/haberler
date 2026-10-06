@@ -160,7 +160,14 @@ export function turkataPageKind(pathname) {
 /** Köşe yazarı paneli — canlı SPA slug'ı `turkatahaber` (meta/by-domain 500). */
 export function isTurkataAuthorPanelPath(pathname) {
   const p = normalizeTurkataPath(pathname).toLowerCase();
-  return p.startsWith("/yazar/giris") || p.startsWith("/yazar/sifre") || p.startsWith("/yazar/haber");
+  return (
+    p.startsWith("/yazar/giris") ||
+    p.startsWith("/yazar/sifre") ||
+    p.startsWith("/yazar/haber") ||
+    p.startsWith("/koseyazari/giris") ||
+    p.startsWith("/koseyazari/sifre") ||
+    p.startsWith("/koseyazari/haber")
+  );
 }
 
 function escHtml(s) {

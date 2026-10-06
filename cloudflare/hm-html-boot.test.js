@@ -53,6 +53,7 @@ describe("hm-html-boot", () => {
 
   it("treats köşe yazarı panel paths as slug-boot HTML", () => {
     assert.equal(isHmAuthorPanelPath("/yazar/giris"), true);
+    assert.equal(isHmAuthorPanelPath("/koseyazari/giris"), true);
     assert.equal(isHmAuthorPanelPath("/yazar/a526"), false);
     assert.equal(hmHomeSlugFromPath("/yazar/haberler", "ankarasehirgazetesi.com"), "asg");
     const html = injectHmAuthorPanelBoot('<html><body><div id="root"></div></body></html>', "yesilvatan", "yesilvatan.gen.tr");
@@ -84,7 +85,9 @@ describe("hm-html-boot", () => {
       "asg",
     );
     assert.equal(hmHomeSlugFromPath("/yazar/giris", "yesilvatan.gen.tr"), "yesilvatan");
+    assert.equal(hmHomeSlugFromPath("/koseyazari/giris", "yesilvatan.gen.tr"), "yesilvatan");
     assert.equal(hmHomeSlugFromPath("/tr/asg/yazar/giris", "ahenk.net.tr"), "asg");
+    assert.equal(hmHomeSlugFromPath("/tr/asg/koseyazari/giris", "ahenk.net.tr"), "asg");
     assert.equal(isHmPublicHomeHtmlPath("/tr/asg", "ankarasehirgazetesi.com"), true);
     assert.equal(
       isHmPublicHomeHtmlPath("/haber/ankabir-den-vali-canpolat-a-hayirli-olsun-ziyareti", "ankarasehirgazetesi.com"),

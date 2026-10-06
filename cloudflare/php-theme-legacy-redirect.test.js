@@ -4,6 +4,8 @@ import {
   isPhpThemePublicHost,
   phpThemeLegacyRedirectPath,
   phpThemeLegacyRedirectResponse,
+  koseyazariPanelRedirectPath,
+  koseyazariPanelRedirectResponse,
 } from "./php-theme-legacy-redirect.js";
 
 function run(url, method = "GET") {
@@ -50,22 +52,6 @@ test("kategori, yazarlar, sayısal yazar ve site kökü eşlemeleri", () => {
   assert.equal(phpThemeLegacyRedirectPath("/tr/asg/"), "/");
 });
 
-test("köşe yazarı paneli SPA'da kalır (yönlendirme yok)", () => {
-  for (const p of [
-    "/tr/asg/yazar/giris",
-    "/tr/asg/yazar/sifremi-unuttum",
-    "/tr/asg/yazar/sifre-yenile",
-    "/tr/asg/yazar/haberler",
-    "/tr/asg/yazar/sifre",
-    "/tr/asg/yazar/haber/yeni",
-    "/tr/asg/yazar/haber/12345",
-    "/tr/asg/yazar/huseyin-akin",
-  ]) {
-    assert.equal(phpThemeLegacyRedirectPath(p), null, p);
-    assert.equal(run(`https://ankarasehirgazetesi.com${p}`), null, p);
-  }
-});
-
 test("PHP temada karşılığı olmayan yollar ve GET dışı istekler dokunulmaz", () => {
   assert.equal(phpThemeLegacyRedirectPath("/tr/asg/sondakika"), null);
   assert.equal(phpThemeLegacyRedirectPath("/tr/asg/haber"), null);
@@ -73,5 +59,22 @@ test("PHP temada karşılığı olmayan yollar ve GET dışı istekler dokunulma
   assert.equal(phpThemeLegacyRedirectPath("/editor/haberler"), null);
   assert.equal(phpThemeLegacyRedirectPath("/api/hm/author/news"), null);
   assert.equal(phpThemeLegacyRedirectPath("/haber/x"), null);
+  assert.equal(phpThemeLegacyRedirectPath("/tr/asg/yazar/giris"), null);
   assert.equal(run("https://ankarasehirgazetesi.com/tr/asg/haber/x", "POST"), null);
+});
+
+test("/yazar/giris paneli /koseyazari/giris adresine 301 gider; kamu yazar sayfası kalır", () => {
+  assert.equal(koseyazariPanelRedirectPath("/yazar/giris"), "/koseyazari/giris");
+  assert.equal(koseyazariPanelRedirectPath("/yazar/haberler"), "/koseyazari/haberler");
+  assert.equal(koseyazariPanelRedirectPath("/yazar/haber/yeni"), "/koseyazari/haber/yeni");
+  assert.equal(koseyazariPanelRedirectPath("/tr/asg/yazar/giris"), "/tr/asg/koseyazari/giris");
+  assert.equal(koseyazariPanelRedirectPath("/yazar/a526"), null);
+  assert.equal(koseyazariPanelRedirectPath("/yazarlar"), null);
+  const res = koseyazariPanelRedirectResponse(
+    new Request("https://yesilvatan.gen.tr/yazar/giris"),
+    new URL("https://yesilvatan.gen.tr/yazar/giris"),
+  );
+  assert.ok(res);
+  assert.equal(res.status, 301);
+  assert.equal(res.headers.get("location"), "https://yesilvatan.gen.tr/koseyazari/giris");
 });

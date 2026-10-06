@@ -229,7 +229,7 @@ export function HmPublicSiteFooter({
       newsRssEnabled: showRssLinks,
     });
   }, [isCorporateTheme, hasCustomFooterMenu, layoutPrefs, h, slug, locPath, effectiveShowVideoTvLink, showRssLinks]);
-  const authorLoginLink: FooterLinkItem = { key: "author-login", label: "Köşe yazarı girişi", href: h("/yazar/giris") };
+  const authorLoginLink: FooterLinkItem = { key: "author-login", label: "Köşe yazarı girişi", href: h("/koseyazari/giris") };
   const defaultPageLinks: FooterLinkItem[] = [
     { key: "home", label: "Ana sayfa", href: home },
     ...(showRssLinks ? [{ key: "rss", label: "RSS", href: h("/rss-baglantilari"), rss: true }] : []),

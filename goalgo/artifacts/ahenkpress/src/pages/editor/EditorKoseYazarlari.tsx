@@ -315,12 +315,12 @@ export default function EditorKoseYazarlari() {
           Giriş adresi:{" "}
           {site?.slug ? (
             <Link
-              href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}/yazar/giris`}
+              href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(site.slug)}/koseyazari/giris`}
               className="text-red-600 font-semibold hover:underline"
               target="_blank"
               rel="noreferrer"
             >
-              /{HM_SITE_PUBLIC_PREFIX}/{site.slug}/yazar/giris
+              /{HM_SITE_PUBLIC_PREFIX}/{site.slug}/koseyazari/giris
             </Link>
           ) : (
             "—"

@@ -499,7 +499,7 @@ export default function EditorGiris() {
 
                 <Link
 
-                  href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug.trim().toLowerCase())}/yazar/giris`}
+                  href={`/${HM_SITE_PUBLIC_PREFIX}/${encodeURIComponent(slug.trim().toLowerCase())}/koseyazari/giris`}
 
                   className="text-amber-300/90 hover:underline"
 
