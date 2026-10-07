@@ -243,6 +243,7 @@ export async function edgeUpsertNews(sql, row) {
         is_featured = ${isFeatured},
         is_breaking = ${isBreaking},
         is_site_manset = ${isSiteManset},
+        is_tepe_manset = ${isTepeManset},
         is_editor_manual = ${isEditorManual},
         site_only = ${siteOnly},
         owner_site_id = ${ownerSiteId},
@@ -259,11 +260,11 @@ export async function edgeUpsertNews(sql, row) {
       await sql`
         INSERT INTO news (
           id, title, slug, spot, content, image_url, category_id, author_id,
-          status, is_featured, is_breaking, is_site_manset, tags,
+          status, is_featured, is_breaking, is_site_manset, is_tepe_manset, tags,
           site_id, is_editor_manual, site_only, owner_site_id, created_at, updated_at
         ) VALUES (
           ${id}, ${title}, ${slug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
-          ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${tags},
+          ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${isTepeManset}, ${tags},
           ${siteId}, ${isEditorManual}, ${siteOnly}, ${ownerSiteId}, ${createdAt}, ${updatedAt}
         )
       `;
@@ -291,6 +292,7 @@ export async function edgeUpsertNews(sql, row) {
           is_featured = ${isFeatured},
           is_breaking = ${isBreaking},
           is_site_manset = ${isSiteManset},
+          is_tepe_manset = ${isTepeManset},
           is_editor_manual = ${isEditorManual},
           site_only = ${siteOnly},
           owner_site_id = ${ownerSiteId},
@@ -306,11 +308,11 @@ export async function edgeUpsertNews(sql, row) {
   const inserted = await sql`
     INSERT INTO news (
       title, slug, spot, content, image_url, category_id, author_id,
-      status, is_featured, is_breaking, is_site_manset, tags,
+      status, is_featured, is_breaking, is_site_manset, is_tepe_manset, tags,
       site_id, is_editor_manual, site_only, owner_site_id, created_at, updated_at
     ) VALUES (
       ${title}, ${slug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
-      ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${tags},
+      ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${isTepeManset}, ${tags},
       ${siteId}, ${isEditorManual}, ${siteOnly}, ${ownerSiteId}, ${createdAt}, ${updatedAt}
     )
     RETURNING id
@@ -398,21 +400,31 @@ export async function edgeDeleteAuthor(sql, idOrRow) {
 /**
  * @returns {Promise<{mirrored: boolean, via?: string, reason?: string, id?: number}>}
  */
+function isReadOnlyTxError(err) {
+  const msg = String(err?.message || err || "");
+  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only/i.test(msg);
+}
+
 export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
   if (!sql) return { mirrored: false, reason: "no-news-sql" };
   try {
     if (table === "hm_makaleler") {
-      return op === "delete" ? edgeDeleteHmMakale(sql, rowOrId) : edgeUpsertHmMakale(sql, rowOrId);
+      return await (op === "delete" ? edgeDeleteHmMakale(sql, rowOrId) : edgeUpsertHmMakale(sql, rowOrId));
     }
     if (table === "news") {
-      return op === "delete" ? edgeDeleteNews(sql, rowOrId) : edgeUpsertNews(sql, rowOrId);
+      return await (op === "delete" ? edgeDeleteNews(sql, rowOrId) : edgeUpsertNews(sql, rowOrId));
     }
     if (table === "authors") {
-      return op === "delete" ? edgeDeleteAuthor(sql, rowOrId) : edgeUpsertAuthor(sql, rowOrId);
+      return await (op === "delete" ? edgeDeleteAuthor(sql, rowOrId) : edgeUpsertAuthor(sql, rowOrId));
     }
     return { mirrored: false, reason: "table" };
   } catch (err) {
-    console.error("[hm-php-dual-write]", table, op, String(err?.message || err).slice(0, 180));
-    return { mirrored: false, reason: String(err?.message || err).slice(0, 120) };
+    const msg = String(err?.message || err).slice(0, 180);
+    if (isReadOnlyTxError(err)) {
+      console.warn("[hm-php-dual-write] NEWS_DATABASE_URL read-only — mirror atlandı", table, op, msg.slice(0, 120));
+      return { mirrored: false, reason: "news-db-read-only" };
+    }
+    console.error("[hm-php-dual-write]", table, op, msg);
+    return { mirrored: false, reason: msg.slice(0, 120) };
   }
 }
