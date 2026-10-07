@@ -3118,8 +3118,29 @@ export default {
         incoming,
       );
       if (profileEdge) return profileEdge;
+      if (edgePath === "/api/hm/editor/login" && edgeMethod === "POST") {
+        return new Response(JSON.stringify({ error: "Güvenlik doğrulaması hatalı veya süresi doldu." }), {
+          status: 400,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "private, no-store, max-age=0, must-revalidate",
+            "x-yekpare-frontend": "cloudflare-editor-profile-edge",
+          },
+        });
+      }
     } catch (err) {
       console.error("[hm-editor-profile-edge]", String(err?.message || err).slice(0, 200));
+      const failPath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+      if (failPath === "/api/hm/editor/login" && String(request.method || "GET").toUpperCase() === "POST") {
+        return new Response(JSON.stringify({ error: "E-posta, kullanıcı adı veya şifre hatalı" }), {
+          status: 401,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "private, no-store, max-age=0, must-revalidate",
+            "x-yekpare-frontend": "cloudflare-editor-profile-edge",
+          },
+        });
+      }
     }
 
     // Askıya al / Aktif — Container 120 sn beklenmeden Neon. Tam site formu null kalır.
