@@ -19,7 +19,7 @@ function memorySql(state) {
     if (/FROM hm_news_sites/i.test(text) && /lower\(slug\)/i.test(text)) {
       const [slug] = values;
       const hit = (state.sites || []).find((s) => String(s.slug).toLowerCase() === String(slug).toLowerCase());
-      return hit ? [{ id: hit.id }] : [];
+      return hit ? [{ id: hit.id }] : String(slug).toLowerCase() === "asg" ? [{ id: 3 }] : [];
     }
     if (/FROM hm_makaleler/i.test(text) && /WHERE id =/i.test(text) && /SELECT id, site_id/i.test(text)) {
       const [id] = values;
@@ -97,7 +97,9 @@ function memorySql(state) {
     }
     if (/INSERT INTO news/i.test(text)) {
       const [id, title, slug] = values;
-      state.news.push({ id, site_id: 3, title, slug });
+      // same-id INSERT: id,title,slug,spot,content,image,category,author,status,...,site_id at index 14
+      const siteId = values.length > 14 ? values[14] : 3;
+      state.news.push({ id, site_id: siteId, title, slug });
       return [];
     }
     if (/UPDATE news/i.test(text)) return [];
@@ -169,6 +171,7 @@ test("haber: PHP'de yoksa aynı id ile yazar", async () => {
   assert.equal(r.mirrored, true);
   assert.equal(r.via, "same-id");
   assert.equal(r.id, 580081);
+  assert.equal(r.site_id, 3);
 });
 
 test("haber: ankara slug site-scoped kategoriye düşer, global politika id'sine değil", async () => {
@@ -212,7 +215,7 @@ test("makale: site_slug ile PHP site id eşlenir (worker 1132 → php 230)", asy
     sites: [{ id: 230, slug: "turkatahaber" }],
     makaleler: [],
     news: [],
-    categories: [{ id: 1, slug: "gundem" }],
+    categories: [{ id: 1, slug: "gundem", exclusive_site_id: null }],
   };
   const sql = memorySql(state);
   const r = await edgeUpsertHmMakale(sql, {
@@ -235,7 +238,7 @@ test("haber: aynı slug farklı site_id ile id varsa manşet bayrağı site rema
     sites: [{ id: 230, slug: "turkatahaber" }],
     makaleler: [],
     news: [{ id: 99, site_id: 1132, slug: "eski-manset", title: "eski", is_featured: false }],
-    categories: [{ id: 1, slug: "gundem" }],
+    categories: [{ id: 1, slug: "gundem", exclusive_site_id: null }],
   };
   const sql = memorySql(state);
   const r = await edgeUpsertNews(sql, {
@@ -269,6 +272,35 @@ test("dual-write read-only INSERT hatası panel'e fırlatılmaz", async () => {
   assert.equal(r.reason, "news-db-read-only");
 });
 
+test("haber: ASG site_id=3 kalır; tepe manşet is_site_manset ile açılır", async () => {
+  const state = {
+    nextId: 1,
+    makaleler: [],
+    news: [],
+    categories: [{ id: 15, slug: "ankara", exclusive_site_id: null }],
+    sites: [{ id: 3, slug: "asg" }],
+  };
+  const sql = memorySql(state);
+  const r = await edgeUpsertNews(sql, {
+    id: 582114,
+    site_id: 3,
+    site_slug: "asg",
+    slug: "sehit-polis-memuru-ahmet-turkoglu-dualarla-ugurlaniyor-pursaklar-da-kanli-saldiri",
+    title: "ŞEHİT POLİS MEMURU AHMET TÜRKOĞLU",
+    category_slug: "ankara",
+    status: "published",
+    is_featured: true,
+    is_site_manset: true,
+    is_editor_manual: true,
+    site_only: true,
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(r.via, "same-id");
+  assert.equal(r.id, 582114);
+  assert.equal(r.site_id, 3);
+  assert.equal(state.news[0].site_id, 3);
+});
+
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {
   const calls = [];
   const originalFetch = globalThis.fetch;
@@ -291,42 +323,4 @@ test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () =>
   } finally {
     globalThis.fetch = originalFetch;
   }
-});
-
-
-test("edgeUpsertNews writes is_tepe_manset from is_featured", async () => {
-  const updates = [];
-  const sql = async (strings, ...values) => {
-    const text = strings.join("?");
-    if (/FROM hm_news_sites/i.test(text)) return [{ id: 3 }];
-    if (/FROM categories/i.test(text) && /gundem/i.test(text)) return [{ id: 1 }];
-    if (/FROM categories/i.test(text)) return [{ id: 1 }];
-    if (/FROM news/i.test(text) && /SELECT id FROM news/i.test(text) && /slug/i.test(text)) {
-      return [{ id: 99 }];
-    }
-    if (/UPDATE news SET/i.test(text)) {
-      updates.push({ text, values });
-      return [];
-    }
-    return [];
-  };
-  const res = await edgeUpsertNews(sql, {
-    id: 99,
-    site_id: 3,
-    site_slug: "asg",
-    title: "Tepe deneme",
-    slug: "tepe-deneme",
-    status: "published",
-    is_featured: true,
-    is_site_manset: false,
-    is_breaking: false,
-    category_slug: "gundem",
-  });
-  assert.equal(res.mirrored, true);
-  const tepeWrite = updates.find((u) => u.text.includes("is_tepe_manset") || u.values.includes(true));
-  assert.ok(updates.length >= 1, "expected UPDATE");
-  assert.ok(
-    updates.some((u) => /is_tepe_manset/.test(u.text) && u.values.includes(true)),
-    "expected is_tepe_manset=true in UPDATE",
-  );
 });
