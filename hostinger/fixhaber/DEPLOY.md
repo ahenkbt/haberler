@@ -3,6 +3,8 @@
 HM slug: **`fixhaber`** · displayName: **Fix Haber** · tema: Yenişafak PHP (`phpTheme` + `frontend: "php"`).
 
 Repo kataloğu: `goalgo/artifacts/api-server/src/lib/hm-fixhaber-site.ts`  
+Odak: **teknoloji & bilim** kategorileri + RSS kampanyası (`FIXHABER_RSS_FEEDS`: NTV/Birgün/Diriliş/TRT teknoloji, Ars Technica, The Verge, TechCrunch). Yazarlar: turkatahaber.com havuzundan seed (`ensureTurkataAuthorsOnRegionalSite`).
+
 Neon seed (merge sonrası):
 
 ```bash

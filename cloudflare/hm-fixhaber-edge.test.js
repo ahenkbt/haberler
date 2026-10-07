@@ -14,7 +14,7 @@ describe("hm-fixhaber-edge catalog", () => {
     assert.equal(layout.phpTheme, true);
     assert.equal(layout.frontend, "php");
     assert.equal(layout.hmVitrinTheme, "yenisafak");
-    assert.equal(layout.hmYsSlogan, "Fix Haber");
+    assert.equal(layout.hmYsSlogan, "Teknoloji ve bilim haberleri");
     assert.equal(layout.logoUrl, "/fix/fix-haber-logo.png");
     assert.equal(layout.faviconUrl, "/fix/fix-haber-favicon.png");
     assert.doesNotMatch(String(layout.logoUrl), /^data:/);
@@ -65,7 +65,7 @@ describe("ensureFixHaberBrandMetaOnSql", () => {
           domain2: null,
           domain3: null,
           display_name: "Fix Haber",
-          description: "Fix Haber — Türkiye gündemini Türkçe aktaran dijital haber sitesi.",
+          description: "Fix Haber — teknoloji, bilim ve dijital dünyanın Türkçe haber merkezi.",
           contact_json: "{}",
           layout_json: JSON.stringify(buildFixHaberLayoutJson()),
           active: true,
