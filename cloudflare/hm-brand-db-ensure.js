@@ -13,7 +13,7 @@ import {
   HM_SITE_RSS_DEFAULTS_REV,
   cloneDefaultHmSiteRssFeedRows,
 } from "./hm-site-rss-defaults.js";
-import { ensureFixHaberBrandMetaOnSql } from "./hm-fixhaber-edge.js";
+import { ensureFixHaberBrandMetaOnNeon } from "./hm-fixhaber-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -1504,7 +1504,7 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
 
   if (binding.slug === "fixhaber" || host === "fix.tc") {
     try {
-      return await ensureFixHaberBrandMetaOnSql(sql);
+      return await ensureFixHaberBrandMetaOnNeon(env);
     } catch (err) {
       console.error("[hm-brand-db-ensure] fixhaber", String(err?.message || err).slice(0, 240));
       return null;

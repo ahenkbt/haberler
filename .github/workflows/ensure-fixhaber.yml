@@ -37,10 +37,15 @@ jobs:
         working-directory: goalgo
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+          NEWS_DB_WRITE: dual
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::DATABASE_URL secret missing — cannot seed fix.tc in Neon."
             echo "Manual: cd goalgo && DATABASE_URL='postgresql://…@….neon.tech/neondb?sslmode=require' pnpm --filter @workspace/api-server run ensure:fixhaber"
             exit 1
+          fi
+          if [ -z "$NEWS_DATABASE_URL" ]; then
+            echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine may stay empty; set secret for dual-write."
           fi
           pnpm --filter @workspace/api-server run ensure:fixhaber

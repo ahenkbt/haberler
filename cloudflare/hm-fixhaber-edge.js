@@ -3,6 +3,7 @@
  * Katalog: goalgo/artifacts/api-server/src/lib/hm-fixhaber-site.ts ile hizalı.
  */
 import bcrypt from "bcryptjs";
+import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 
 export const FIXHABER_SLUG = "fixhaber";
 export const FIXHABER_DOMAIN = "fix.tc";
@@ -417,6 +418,34 @@ export async function ensureFixHaberBrandMetaOnSql(sql) {
     console.error("[hm-fixhaber-edge] extras", String(err?.message || err).slice(0, 200));
   }
   return { meta: serializeMetaRow(row), action: upserted.action || "fixhaber_ensure" };
+}
+
+/**
+ * Worker env: DATABASE_URL (panel) + NEWS_DATABASE_URL (PHP twilight-pine) — ikisine de yazar.
+ * @returns {Promise<{ meta: object, action: string } | null>}
+ */
+export async function ensureFixHaberBrandMetaOnNeon(env) {
+  const mainSql = neonSqlClient(env);
+  const newsSql = neonNewsSqlClient(env);
+  if (!mainSql && !newsSql) return null;
+
+  let last = null;
+  if (newsSql) {
+    try {
+      last = await ensureFixHaberBrandMetaOnSql(newsSql);
+    } catch (err) {
+      console.error("[hm-fixhaber-edge] news db", String(err?.message || err).slice(0, 200));
+    }
+  }
+  if (mainSql) {
+    try {
+      const main = await ensureFixHaberBrandMetaOnSql(mainSql);
+      last = main || last;
+    } catch (err) {
+      console.error("[hm-fixhaber-edge] main db", String(err?.message || err).slice(0, 200));
+    }
+  }
+  return last;
 }
 
 export function isFixHaberHost(hostname) {
