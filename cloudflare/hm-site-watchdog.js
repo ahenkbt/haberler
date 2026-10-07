@@ -5,9 +5,12 @@
  * POST /api/hm/admin/site-watchdog/run
  * POST /api/hm/admin/site-watchdog/sync-site  { siteId }
  * POST /api/hm/admin/site-watchdog/sync-all   { limit? }
+ *
+ * Önemli: PHP Neon eşitleme ≠ HTTP probe. Self-fetch aynı Worker rotasına
+ * gidince Cloudflare origin'e düşer — PHP temada /editor SPA 404 (yanlış kritik).
  */
 import { neonSqlClient, neonNewsSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import { resolveApiOrigin } from "./api-upstream.js";
+import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 import { syncSiteToPhpNeon } from "./hm-php-neon-sync-edge.js";
 import {
   loadPanelSession,
@@ -15,6 +18,11 @@ import {
   sessionGrantsHmSites,
   unsignConnectSid,
 } from "./hm-admin-site-edge.js";
+import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
+import {
+  isPhpCorporateThemeHost,
+  isPhpThemePublicHost,
+} from "./php-theme-legacy-redirect.js";
 
 const KV_KEY = "hm-site-watchdog:last";
 
@@ -82,6 +90,72 @@ async function probeUrl(url, ms = 8000) {
   }
 }
 
+/** Container healthz — public fetch değil (self-fetch origin/cold FAIL). */
+async function probeContainerHealthz(env, origin, ms = 8000) {
+  const url = `${origin}/api/healthz`;
+  const started = Date.now();
+  try {
+    const res = await Promise.race([
+      fetchApi(env, url, {
+        method: "GET",
+        headers: { "user-agent": "yekpare-hm-watchdog/1.0" },
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+    ]);
+    const status = res?.status ?? 0;
+    return {
+      url,
+      status,
+      ms: Date.now() - started,
+      ok: status >= 200 && status < 400,
+      header: String(res?.headers?.get("x-yekpare-frontend") || "").slice(0, 80),
+    };
+  } catch (err) {
+    return {
+      url,
+      status: 0,
+      ms: Date.now() - started,
+      ok: false,
+      error: String(err?.message || err).slice(0, 120),
+    };
+  }
+}
+
+/**
+ * Kenar /api/healthz/live — Worker içinde doğrudan handler.
+ * Public fetch aynı zone'da origin/Container'a düşer ve soğukken FAIL eder;
+ * panel ise kenardan 200 alır.
+ */
+async function probeEdgeLive(env, origin) {
+  const url = `${origin}/api/healthz/live`;
+  const started = Date.now();
+  try {
+    const res = await handleEdgeHealthzLive(
+      new Request(url, { method: "GET", headers: { "user-agent": "yekpare-hm-watchdog/1.0" } }),
+      env,
+      null,
+    );
+    if (!res) {
+      return { url, status: 0, ms: Date.now() - started, ok: false, error: "edge handler yok" };
+    }
+    return {
+      url,
+      status: res.status,
+      ms: Date.now() - started,
+      ok: res.status >= 200 && res.status < 400,
+      header: String(res.headers?.get("x-yekpare-frontend") || "").slice(0, 80),
+    };
+  } catch (err) {
+    return {
+      url,
+      status: 0,
+      ms: Date.now() - started,
+      ok: false,
+      error: String(err?.message || err).slice(0, 120),
+    };
+  }
+}
+
 function hostOf(site) {
   const raw = String(site.domain || site.domain2 || site.domain3 || "").trim();
   return raw
@@ -93,6 +167,78 @@ function hostOf(site) {
 
 function siteDisplayName(site) {
   return String(site.name || site.display_name || site.slug || "").trim() || `site-${site.id}`;
+}
+
+/**
+ * PHP tema origin'de /editor SPA yok (Worker rotası). Self-fetch origin 404 verir;
+ * tarayıcı Cloudflare üzerinden 200 alır. Köşe yazarı PHP'de de olabilir.
+ */
+export function siteProbePaths(host) {
+  const h = String(host || "").toLowerCase();
+  const phpTheme = isPhpThemePublicHost(h);
+  return {
+    home: `https://${h}/`,
+    // PHP temada editor Worker-only; probe yine /editor/giris (dışarıdan 200),
+    // classifySiteProbeIssues origin 404'ü soft sayar.
+    editor: `https://${h}/editor/giris`,
+    kose: `https://${h}/koseyazari/giris`,
+    phpTheme,
+    corporate: isPhpCorporateThemeHost(h),
+  };
+}
+
+/**
+ * @param {{ home?: {ok?:boolean,status?:number,ms?:number}, editor?: {ok?:boolean,status?:number}, kose?: {ok?:boolean,status?:number}, phpTheme?: boolean, corporate?: boolean, dualWriteReady?: boolean }} p
+ * @returns {{ hard: string[], soft: string[] }}
+ */
+export function classifySiteProbeIssues(p = {}) {
+  const hard = [];
+  const soft = [];
+  const homeOk = Boolean(p.home?.ok);
+  const editorOk = Boolean(p.editor?.ok);
+  const koseOk = Boolean(p.kose?.ok);
+  const phpTheme = Boolean(p.phpTheme);
+  const corporate = Boolean(p.corporate);
+  const dualWriteReady = Boolean(p.dualWriteReady);
+
+  if (corporate && !homeOk) {
+    soft.push(
+      "Hostinger php-kurumsal yüklenmemiş veya origin yanıt vermiyor (hostinger/php-kurumsal/DEPLOY.md); /editor Worker’da kalır — haber twin’leri etkilenmez",
+    );
+    return { hard, soft };
+  }
+
+  if (!homeOk) hard.push("anasayfa açılmıyor");
+
+  if (!editorOk) {
+    const editor404 = Number(p.editor?.status) === 404;
+    // PHP tema: Worker self-fetch origin'e düşer → /editor 404; home 200 + dual-write ise soft.
+    if (phpTheme && editor404 && homeOk && dualWriteReady) {
+      soft.push(
+        "editör /editor/giris kenar self-fetch’te origin 404 (SPA Worker rotası; tarayıcıda açılır) — eşitleme ile ilgili değil",
+      );
+    } else if (phpTheme && editor404 && homeOk) {
+      soft.push(
+        "editör /editor/giris kenar self-fetch’te origin 404 (SPA Worker rotası; tarayıcıda açılır)",
+      );
+    } else {
+      hard.push("editör girişi açılmıyor");
+    }
+  }
+
+  if (!koseOk) {
+    if (phpTheme && homeOk && Number(p.kose?.status) === 404) {
+      soft.push("köşe yazarı girişi origin’de yok veya Worker rotası self-fetch 404");
+    } else {
+      hard.push("köşe yazarı girişi açılmıyor");
+    }
+  }
+
+  if (homeOk && Number(p.home?.ms) > 5000) {
+    soft.push(`yavaş anasayfa (${p.home.ms}ms)`);
+  }
+
+  return { hard, soft };
 }
 
 /**
@@ -128,15 +274,15 @@ export async function runHmSiteWatchdog(env, opts = {}) {
   const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
 
   const [apiLive, apiFull] = await Promise.all([
-    probeUrl(`${origin}/api/healthz/live`, 6000),
-    probeUrl(`${origin}/api/healthz`, 8000),
+    probeEdgeLive(env, origin),
+    probeContainerHealthz(env, origin, 8000),
   ]);
 
   if (!apiLive.ok) {
     issues.push({
       kind: "api",
       severity: "high",
-      message: `${origin.replace(/^https?:\/\//, "")} /api/healthz/live yanıt vermiyor`,
+      message: `${origin.replace(/^https?:\/\//, "")} /api/healthz/live kenar handler yanıt vermiyor`,
     });
   }
   // Full healthz Container'a gider — soğuk başlangıç uyarısı (live OK ise panel çalışır).
@@ -145,7 +291,7 @@ export async function runHmSiteWatchdog(env, opts = {}) {
       kind: "api",
       severity: apiLive.ok ? "medium" : "high",
       message: apiLive.ok
-        ? `${origin.replace(/^https?:\/\//, "")} /api/healthz soğuk veya meşgul (kenar live OK — panel oturumu kenardan okunur)`
+        ? `${origin.replace(/^https?:\/\//, "")} /api/healthz soğuk veya meşgul (kenar live OK — panel oturumu kenardan okunur; eşitleme ile ilgili değil)`
         : `${origin.replace(/^https?:\/\//, "")} /api/healthz zaman aşımı veya hata (Sunucu hatası buradan gelir)`,
     });
   }
@@ -187,29 +333,56 @@ export async function runHmSiteWatchdog(env, opts = {}) {
           home: null,
           editor: null,
           kose: null,
-          siteIssues: ["domain yok"],
+          hard: ["domain yok"],
+          soft: [],
+          phpTheme: false,
+          corporate: false,
         };
       }
+      const paths = siteProbePaths(host);
       const [home, editor, kose] = await Promise.all([
-        probeUrl(`https://${host}/`, 9000),
-        probeUrl(`https://${host}/editor/giris`, 9000),
-        probeUrl(`https://${host}/koseyazari/giris`, 9000),
+        probeUrl(paths.home, 9000),
+        probeUrl(paths.editor, 9000),
+        probeUrl(paths.kose, 9000),
       ]);
-      const siteIssues = [];
-      if (!home.ok) siteIssues.push("anasayfa açılmıyor");
-      if (!editor.ok) siteIssues.push("editör girişi açılmıyor");
-      if (!kose.ok) siteIssues.push("köşe yazarı girişi açılmıyor");
-      if (home.ms > 5000) siteIssues.push(`yavaş anasayfa (${home.ms}ms)`);
-      return { site, host, home, editor, kose, siteIssues };
+      const { hard, soft } = classifySiteProbeIssues({
+        home,
+        editor,
+        kose,
+        phpTheme: paths.phpTheme,
+        corporate: paths.corporate,
+        dualWriteReady,
+      });
+      return {
+        site,
+        host,
+        home,
+        editor,
+        kose,
+        hard,
+        soft,
+        phpTheme: paths.phpTheme,
+        corporate: paths.corporate,
+      };
     }),
   );
 
   for (const row of probed) {
     const label = siteDisplayName(row.site);
-    for (const msg of row.siteIssues) {
+    for (const msg of row.hard) {
+      const homeDown = !row.home?.ok;
       issues.push({
         kind: "site",
-        severity: row.home?.ok ? "medium" : "high",
+        severity: homeDown && !row.corporate ? "high" : "medium",
+        siteId: row.site.id,
+        slug: row.site.slug,
+        message: `${label}: ${msg}`,
+      });
+    }
+    for (const msg of row.soft) {
+      issues.push({
+        kind: "site",
+        severity: "low",
         siteId: row.site.id,
         slug: row.site.slug,
         message: `${label}: ${msg}`,
@@ -223,7 +396,11 @@ export async function runHmSiteWatchdog(env, opts = {}) {
       home: row.home,
       editor: row.editor,
       kose: row.kose,
-      ok: row.siteIssues.length === 0,
+      phpTheme: row.phpTheme,
+      corporate: row.corporate,
+      // Soft (self-fetch 404 / Hostinger bekleyen) SORUN sayılmaz.
+      ok: row.hard.length === 0,
+      softIssues: row.soft,
       canSync: dualWriteReady,
     });
   }
@@ -235,8 +412,10 @@ export async function runHmSiteWatchdog(env, opts = {}) {
     api: { live: apiLive, healthz: apiFull },
     sites,
     issues,
-    // Yalnızca high severity → sağlıksız (soğuk Container medium kalır).
+    // Yalnızca high severity → sağlıksız (soğuk Container / soft probe medium|low kalır).
     healthy: issues.filter((i) => i.severity === "high").length === 0,
+    note:
+      "PHP Neon eşitleme içerik DB’sini doldurur; HTTP probe (editör 404 / healthz) ayrı konudur. Soft uyarılar eşitleme başarısızlığı değildir.",
   };
 
   try {
@@ -357,6 +536,7 @@ export async function handleHmSiteWatchdogEdge(request, env, incoming) {
       ok: true,
       synced: results.length,
       results,
+      note: "Eşitleme PHP Neon içeriğini doldurur. Kalan SORUN çoğu zaman kenar probe (editör SPA / healthz) — «Şimdi tara» ile soft/kritik ayrımını görün.",
     });
   }
 

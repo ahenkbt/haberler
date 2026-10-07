@@ -8,6 +8,7 @@ Bu paket `vatankahramanlari.org` (VKD) ve `trafikdernegi.com` / `tgd.tc` (TGD) �
 2. PHP 8.1+ (tercihen 8.3), `mod_rewrite` açık, `allow_url_fopen` veya `curl` açık.
 3. İsteğe bağlı: `HK_API_BASE=https://ahenk.net.tr` — aynı origin `/api` henüz Worker’a gitmiyorsa meta için portal API.
 4. Smoke: `https://DOMAIN/` → `X-HM-Frontend: php-kurumsal` ve `X-Powered-By: PHP/…`.
+5. **Bekçi notu:** Dosyalar yüklenmeden apex `/` Cloudflare üzerinden 9s timeout / origin 404 verir. Panel «Haber AI Bekçi» bunu soft uyarı sayar (haber twin’lerini kırmaz). PHP Neon eşitleme bu paketi deploy etmez — ayrı adım.
 
 ## 2) Cloudflare DNS
 
