@@ -27,6 +27,11 @@ export const PHP_THEME_ZONES = [
   "turksav.org",
   "dunyasaglik.org",
   "yesilvatan.gen.tr",
+  // Kurumsal PHP (Hostinger php-kurumsal) — catch-all Worker route yok
+  "vatankahramanlari.org",
+  "vatankahramanlari.org.tr",
+  "trafikdernegi.com",
+  "tgd.tc",
 ];
 
 export function isPhpThemeZone(name) {
