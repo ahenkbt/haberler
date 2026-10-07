@@ -10,8 +10,8 @@ DNS A kayıtları Proxied → `187.77.84.201`. Neon seed (#390/#391) hazır.
 | Registrar NS | Cloudflare (`kiki` / `paul`) — NS değiştirmeye gerek yok |
 | Public DNS (`1.1.1.1` / `8.8.8.8`) | `@`, `www`, `ege`…`kibris` → CF anycast (`104.21…` / `172.67…`) |
 | Kullanıcı `DNS_PROBE_FINISHED_NXDOMAIN` | Genelde **yerel/ISP önbellek** veya eski negatif TTL — kayıtlar zone’da var |
-| Apex / bölgesel `/` 404 `page not found` | **VPS Traefik**’te `Host()` router yok (DEFAULT CERT + Go 404). DNS değil. |
-| Kenar | Apex: Worker bridge → turkatahaber PHP. Bölgesel: **SPA yok** — orange → origin PHP (Traefik Host zorunlu) |
+| Apex / bölgesel `/` 404 `page not found` | **Çözüldü (2026-10-07):** `/docker/traefik/dynamic/gundemi.yml` → `127.0.0.1:8095` (php-theme-yenisafak). |
+| Kenar | Apex: Worker bridge veya Traefik Host. Bölgesel: **SPA yok** (#395) — orange → origin PHP |
 
 **Kullanıcı (NXDOMAIN görüyorsa):** Windows `ipconfig /flushdns`, tarayıcı önbelleği temizle, mümkünse DNS’i `1.1.1.1` yap, gizli pencere dene. `nslookup ege.gundemi.org 1.1.1.1` CF IP dönmeli.
 
@@ -66,23 +66,38 @@ Her satır **Proxied (turuncu bulut)** → Hostinger VPS.
 
 Doğrulama: `dig @1.1.1.1 +short ege.gundemi.org A` → CF anycast; boş / NXDOMAIN olmamalı.
 
-## Traefik gap (asıl 404 kök nedeni)
+## Traefik (VPS — uygulandı 2026-10-07)
 
-Origin `187.77.84.201` TLS: **TRAEFIK DEFAULT CERT**.  
-`Host: turkatahaber.com` → PHP 200; `Host: gundemi.org` / `ege.gundemi.org` → `404 page not found`.
+| Öğe | Değer |
+|-----|--------|
+| Host | `187.77.84.201` (`turkatav`) |
+| Container | `traefik-traefik-1` (`traefik:latest` v3.7) |
+| Compose | `/docker/traefik/docker-compose.yml` |
+| Dynamic dir | **`/docker/traefik/dynamic/`** → container `/dynamic` (watch=true) |
+| Live file | `/docker/traefik/dynamic/gundemi.yml` |
+| Docker service (labels) | `php-tema` on container `php-theme-yenisafak` |
+| File-provider upstream | **`http://127.0.0.1:8095`** (same as `origin-tth.yml`) |
+| File service name | `gundemi-php-theme` |
 
-1. VPS’te [`traefik-gundemi.yml`](./traefik-gundemi.yml) HostRegexp / Host() → turkatahaber ile **aynı Yenişafak PHP service**.  
-2. `config/sites.php` / Neon `meta/by-domain` host eşlemesi (apex = turkatahaber).  
-3. Worker’da bölgesel SPA catch-all **yok** (`*.gundemi.org/*` silindi). Apex `gundemi.org/*` bridge Traefik Host(apex) sonrası silinir.
+Doğrulama (VPS’ten, 2026-10-07):
 
-### VPS’te hızlı uygula (root)
+| Host | HTTP | `X-Powered-By` | `<title>` |
+|------|------|----------------|-----------|
+| `ege.gundemi.org` | 200 | PHP/8.3.35 | Ege Gündemi |
+| `gundemi.org` | 200 | PHP/8.3.35 | TÜRKATA HABER AJANSI |
+| `marmara.gundemi.org` | 200 | PHP/8.3.35 | Marmara Gündemi |
+| `akdeniz.gundemi.org` | 200 | PHP/8.3.35 | Akdeniz Gündemi |
+
+Neon / by-domain zaten doğru (PHP tarafı ek patch gerekmedi).  
+Worker bölgesel SPA catch-all kaldırıldı (#395 merged). Apex `gundemi.org/*` bridge isteğe bağlı kalabilir.
+
+### VPS’te yeniden uygula / güncelle (root)
 
 ```bash
-# Traefik dynamic dosya yolunu kendi kurulumuna göre düzelt
-install -m 644 hostinger/gundemi-bolge/traefik-gundemi.yml /etc/traefik/dynamic/gundemi.yml
-# veya: docker cp … && docker kill -s HUP traefik
-curl -sk --resolve ege.gundemi.org:443:127.0.0.1 https://ege.gundemi.org/ | head -c 200
-# Beklenen: X-Powered-By: PHP  (plain "404 page not found" olmamalı)
+install -m 644 hostinger/gundemi-bolge/traefik-gundemi.yml /docker/traefik/dynamic/gundemi.yml
+# file.watch=true → HUP gerekmez; gerekirse: docker kill -s HUP traefik-traefik-1
+curl -sk --resolve ege.gundemi.org:443:127.0.0.1 -D- https://ege.gundemi.org/ | head -40
+# Beklenen: HTTP/2 200 + X-Powered-By: PHP/… + <title>Ege Gündemi
 ```
 
 ## Worker kenar (PHP only — SPA yok)
@@ -152,7 +167,7 @@ Editör: `https://ege.gundemi.org/editor`
 - [x] DNS A Proxied (public resolvers)
 - [x] NS = Cloudflare
 - [ ] Kullanıcı DNS flush (NXDOMAIN önbelleği)
-- [x] Worker: bölgesel SPA catch-all kaldırıldı; apex PHP bridge
-- [ ] VPS Traefik HostRegexp + Yenişafak PHP (`traefik-gundemi.yml`) ← **şimdi bunu uygula**
-- [ ] `https://ege.gundemi.org/` → `X-Powered-By: PHP` (SPA değil)
-- [ ] `https://gundemi.org/` turkatahaber içeriği (bridge veya Traefik)
+- [x] Worker: bölgesel SPA catch-all kaldırıldı (#395); apex PHP bridge
+- [x] VPS Traefik `/docker/traefik/dynamic/gundemi.yml` → `127.0.0.1:8095`
+- [x] Origin `ege` / `gundemi` / `marmara` / `akdeniz` → PHP 200 + doğru `<title>`
+- [ ] Public CF path smoke (tarayıcı); kullanıcı DNS flush (NXDOMAIN önbelleği)
