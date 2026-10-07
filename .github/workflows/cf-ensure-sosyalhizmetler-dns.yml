@@ -1,0 +1,65 @@
+# sosyalhizmetler.tr (Marmara Gündemi domain2) — Proxied A → Hostinger PHP (187.77.84.201)
+# Secrets: CLOUDFLARE_API_TOKEN or CLOUDFLAREDNS_API_TOKEN (Zone DNS Edit), CLOUDFLARE_ACCOUNT_ID
+name: Ensure sosyalhizmetler.tr PHP DNS
+
+on:
+  workflow_dispatch:
+    inputs:
+      apex_zone:
+        description: "Apex zone (default sosyalhizmetler.tr)"
+        required: false
+        default: sosyalhizmetler.tr
+  repository_dispatch:
+    types: [cf-ensure-sosyalhizmetler-dns]
+
+concurrency:
+  group: cf-ensure-sosyalhizmetler-dns
+  cancel-in-progress: false
+
+jobs:
+  ensure-dns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check CF token
+        id: cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLAREDNS_API_TOKEN: ${{ secrets.CLOUDFLAREDNS_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] && [ -z "${CLOUDFLAREDNS_API_TOKEN:-}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLAREDNS_API_TOKEN missing — cannot create DNS. Add Proxied A @ + www in Dashboard or fix secrets and re-run."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "CLOUDFLARE_ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
+          else
+            echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-node@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          node-version: 22
+
+      - name: Ensure Proxied A records (@ + www)
+        if: steps.cf.outputs.enabled == 'true'
+        continue-on-error: true
+        id: ensure
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLAREDNS_API_TOKEN: ${{ secrets.CLOUDFLAREDNS_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          HM_APEX_ZONE: ${{ github.event.inputs.apex_zone || 'sosyalhizmetler.tr' }}
+        run: node scripts/cf-ensure-sosyalhizmetler-dns.mjs
+
+      - name: Auth / DNS note
+        if: steps.cf.outputs.enabled == 'true' && steps.ensure.outcome == 'failure'
+        run: |
+          echo "::error::DNS ensure failed — check logs for code 10000 (token needs Zone → DNS → Edit on the apex zone)."
+          echo "Add Proxied A @ + www → 187.77.84.201 in Dashboard, or fix CLOUDFLAREDNS_API_TOKEN and re-run."
+          echo "See hostinger/gundemi-bolge/DEPLOY.md (custom domain2)"

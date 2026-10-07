@@ -122,6 +122,11 @@ import {
   type GundemiProvisionReport,
 } from "../lib/hm-gundemi-provision.js";
 import {
+  collectCustomPhpApexZones,
+  provisionCustomPhpApexForSiteDomains,
+  type CustomApexProvisionReport,
+} from "../lib/hm-custom-apex-provision.js";
+import {
   assertHmLayoutJsonSize,
   hmLayoutTabIconUrl,
   mergeHmLayoutPatch,
@@ -630,6 +635,25 @@ async function maybeProvisionGundemiOrg(domains: {
   } catch (e) {
     console.warn(
       "[gundemi-provision] soft-fail",
+      e instanceof Error ? e.message : e,
+    );
+    return null;
+  }
+}
+
+async function maybeProvisionCustomPhpApex(domains: {
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+}): Promise<CustomApexProvisionReport | null> {
+  if (collectCustomPhpApexZones(domains.domain, domains.domain2, domains.domain3).length === 0) {
+    return null;
+  }
+  try {
+    return await provisionCustomPhpApexForSiteDomains(domains);
+  } catch (e) {
+    console.warn(
+      "[custom-apex-provision] soft-fail",
       e instanceof Error ? e.message : e,
     );
     return null;
@@ -1619,15 +1643,22 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     const finalRow = await getHmNewsSiteByIdCompat(id);
     const siteOut = finalRow ?? row;
     let gundemiProvision: GundemiProvisionReport | null = null;
+    let customApexProvision: CustomApexProvisionReport | null = null;
     if ("domain" in b || "domain2" in b || "domain3" in b) {
-      gundemiProvision = await maybeProvisionGundemiOrg({
+      const domainTriad = {
         domain: siteOut?.domain ?? null,
         domain2: siteOut?.domain2 ?? null,
         domain3: siteOut?.domain3 ?? null,
-      });
+      };
+      gundemiProvision = await maybeProvisionGundemiOrg(domainTriad);
+      customApexProvision = await maybeProvisionCustomPhpApex(domainTriad);
     }
-    if (gundemiProvision) {
-      res.json({ ...siteOut, gundemiProvision });
+    if (gundemiProvision || customApexProvision) {
+      res.json({
+        ...siteOut,
+        ...(gundemiProvision ? { gundemiProvision } : {}),
+        ...(customApexProvision ? { customApexProvision } : {}),
+      });
       return;
     }
     res.json(siteOut);

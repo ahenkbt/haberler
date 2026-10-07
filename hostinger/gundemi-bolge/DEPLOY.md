@@ -146,6 +146,26 @@ API: `POST /api/hm/sites` / `PATCH` otomatik; yeniden deneme `POST /api/hm/sites
 
 Token yoksa soft-fail (site kaydı yine başarılı; NXDOMAIN kalır). Bölgesel PHP için VPS Traefik HostRegexp **zorunlu**.
 
+## Harici apex (domain2 / domain3 — örn. sosyalhizmetler.tr)
+
+Marmara Gündemi: `domain=marmara.gundemi.org`, `domain2=sosyalhizmetler.tr` → Neon `by-domain` slug `marmara-gundemi`.
+
+| Katman | Ne yapılır |
+|--------|------------|
+| DNS | Proxied **A** `@` + **`www`** → `187.77.84.201` (www yoksa tarayıcı NXDOMAIN) |
+| Worker | `sosyalhizmetler.tr` zone: panel/API/assets/`/tr`/`/hm` only — **`sosyalhizmetler.tr/*` catch-all yok** (`wrangler.toml`) |
+| VPS Traefik | `hostinger/gundemi-bolge/traefik-sosyalhizmetler.yml` → `/docker/traefik/dynamic/sosyalhizmetler.yml` |
+| Panel save | `PATCH /api/hm/sites/:id` → `customApexProvision` (token varsa @+www A) |
+
+```bash
+CLOUDFLAREDNS_API_TOKEN=... node scripts/cf-ensure-sosyalhizmetler-dns.mjs
+# veya HM_APEX_ZONE=ornek.com ...
+```
+
+GitHub Actions: **Ensure sosyalhizmetler.tr PHP DNS** (`workflow_dispatch` veya `repository_dispatch` → `cf-ensure-sosyalhizmetler-dns`).
+
+Zone bu Cloudflare hesabında değilse: NS’i buraya taşıyın veya zone sahibi hesapta aynı Proxied A kayıtlarını elle ekleyin.
+
 ## One-shot API (katalog / manuel)
 
 Token: **Zone → DNS → Edit**, **Zone → Workers Routes → Edit**, Zone → Zone → Read; zone `gundemi.org`.  
