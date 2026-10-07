@@ -1,14 +1,16 @@
 /**
  * gundemi.org 8 bölgesel HM sitesini idempotent oluşturur / günceller:
- * site satırı, editör, özel kategoriler, örnek haberler, RSS kampanyası.
+ * site satırı, editör, künye/hakkımızda, turkatahaber yazarları, kategoriler, örnek haberler, RSS.
  */
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
+  authorsTable,
   categoriesTable,
   dualWriteInsert,
   dualWriteUpdate,
   getNewsDbForRead,
+  hmMakalelerTable,
   hmNewsSitesTable,
   hmSiteEditorsTable,
   newsTable,
@@ -22,6 +24,7 @@ import {
   GUNDEMI_REGIONAL_CAMPAIGN_TAG,
   GUNDEMI_REGIONAL_SITES,
   TURKATA_HM_SLUG,
+  TURKATA_YS_KUNYE,
   type GundemiRegionalSiteDef,
 } from "./hm-gundemi-regional-sites.js";
 
@@ -32,6 +35,7 @@ export type GundemiRegionalSeedSiteResult = {
   action: "created" | "updated" | "unchanged" | "error";
   categories: number;
   sampleNews: number;
+  authors: number;
   campaignId: number | null;
   detail?: string;
 };
@@ -72,6 +76,7 @@ export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSe
       action: "error",
       categories: 0,
       sampleNews: 0,
+      authors: 0,
       campaignId: null,
       detail: "turkatahaber site row missing — bind gundemi.org domain2 after site exists",
     };
@@ -89,6 +94,7 @@ export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSe
       action: "unchanged",
       categories: 0,
       sampleNews: 0,
+      authors: 0,
       campaignId: null,
       detail: "apex alias already on turkatahaber",
     };
@@ -141,6 +147,7 @@ export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSe
     action: "updated",
     categories: 0,
     sampleNews: 0,
+    authors: 0,
     campaignId: null,
     detail: `turkatahaber.${bind.domain2 ? "domain2" : "domain3"}=${alias}`,
   };
@@ -167,10 +174,11 @@ async function upsertSite(def: GundemiRegionalSiteDef): Promise<{
   action: "created" | "updated" | "unchanged";
 }> {
   const layoutJson = JSON.stringify(buildGundemiRegionalLayoutJson(def));
+  /** İletişim / künye — turkatahaber.com ile aynı. */
   const contactJson = JSON.stringify({
-    email: `editor@${def.domain}`,
-    phone: "",
-    address: def.displayName,
+    email: TURKATA_YS_KUNYE.email,
+    phone: TURKATA_YS_KUNYE.phone,
+    address: TURKATA_YS_KUNYE.address,
   });
   const rows = await getNewsDbForRead()
     .select({
@@ -422,6 +430,127 @@ async function ensureRegionalCampaign(
   return inserted?.id ?? null;
 }
 
+function makeRegionalAuthorCopySlug(
+  base: string | null | undefined,
+  targetSiteId: number,
+  sourceId: number,
+): string {
+  const raw = String(base ?? "makale")
+    .toLowerCase()
+    .replace(/[ğ]/g, "g")
+    .replace(/[ü]/g, "u")
+    .replace(/[ş]/g, "s")
+    .replace(/[ı]/g, "i")
+    .replace(/[ö]/g, "o")
+    .replace(/[ç]/g, "c")
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+  return `${raw || "makale"}-hm${targetSiteId}-src${sourceId}`;
+}
+
+/**
+ * turkatahaber yazarlarını (+ yayınlanmış makaleleri) bölge sitesine kopyalar.
+ * Havuz `POST .../authors/:id/publish` ile aynı: isim dedupe.
+ */
+export async function ensureTurkataAuthorsOnRegionalSite(targetSiteId: number): Promise<number> {
+  const [turkata] = await getNewsDbForRead()
+    .select({ id: hmNewsSitesTable.id })
+    .from(hmNewsSitesTable)
+    .where(eq(hmNewsSitesTable.slug, TURKATA_HM_SLUG))
+    .limit(1);
+  if (!turkata?.id || turkata.id === targetSiteId) return 0;
+
+  const sourceAuthors = await getNewsDbForRead()
+    .select()
+    .from(authorsTable)
+    .where(eq(authorsTable.hmSiteId, turkata.id))
+    .orderBy(asc(authorsTable.hmSortOrder), asc(authorsTable.id));
+
+  let ensured = 0;
+  for (const source of sourceAuthors) {
+    const normalizedName = String(source.name ?? "")
+      .replace(/\s+/g, " ")
+      .toLocaleLowerCase("tr-TR");
+    if (!normalizedName) continue;
+
+    let [targetAuthor] = await getNewsDbForRead()
+      .select()
+      .from(authorsTable)
+      .where(
+        and(
+          eq(authorsTable.hmSiteId, targetSiteId),
+          sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`,
+        ),
+      )
+      .limit(1);
+
+    if (!targetAuthor) {
+      const [maxRow] = await getNewsDbForRead()
+        .select({ m: sql<number>`coalesce(max(${authorsTable.hmSortOrder}), 0)::int` })
+        .from(authorsTable)
+        .where(eq(authorsTable.hmSiteId, targetSiteId));
+      [targetAuthor] = await dualWriteInsert(authorsTable, {
+        name: source.name,
+        title: source.title ?? null,
+        avatarUrl: source.avatarUrl ?? null,
+        bio: source.bio ?? null,
+        hmSiteId: targetSiteId,
+        hmSortOrder: (maxRow?.m ?? 0) + 1,
+        email: null,
+        passwordHash: null,
+      });
+    } else {
+      await dualWriteUpdate(
+        authorsTable,
+        {
+          title: source.title ?? targetAuthor.title ?? null,
+          avatarUrl: source.avatarUrl ?? targetAuthor.avatarUrl ?? null,
+          bio: source.bio ?? targetAuthor.bio ?? null,
+        },
+        eq(authorsTable.id, targetAuthor.id),
+      );
+    }
+    if (!targetAuthor?.id) continue;
+    ensured += 1;
+
+    const sourcePosts = await getNewsDbForRead()
+      .select()
+      .from(hmMakalelerTable)
+      .where(
+        and(
+          eq(hmMakalelerTable.siteId, source.hmSiteId!),
+          eq(hmMakalelerTable.authorId, source.id),
+          eq(hmMakalelerTable.status, "published"),
+        ),
+      )
+      .orderBy(asc(hmMakalelerTable.createdAt))
+      .limit(500);
+
+    for (const post of sourcePosts) {
+      const slug = makeRegionalAuthorCopySlug(post.slug || post.title, targetSiteId, post.id);
+      const [exists] = await getNewsDbForRead()
+        .select({ id: hmMakalelerTable.id })
+        .from(hmMakalelerTable)
+        .where(and(eq(hmMakalelerTable.siteId, targetSiteId), eq(hmMakalelerTable.slug, slug)))
+        .limit(1);
+      if (exists) continue;
+      await dualWriteInsert(hmMakalelerTable, {
+        siteId: targetSiteId,
+        authorId: targetAuthor.id,
+        title: post.title,
+        slug,
+        spot: post.spot,
+        content: post.content,
+        imageUrl: post.imageUrl,
+        status: "published",
+      });
+    }
+  }
+  return ensured;
+}
+
 export async function ensureGundemiRegionalSites(): Promise<GundemiRegionalSeedSiteResult[]> {
   const results: GundemiRegionalSeedSiteResult[] = [];
   try {
@@ -436,6 +565,7 @@ export async function ensureGundemiRegionalSites(): Promise<GundemiRegionalSeedS
       action: "error",
       categories: 0,
       sampleNews: 0,
+      authors: 0,
       campaignId: null,
       detail,
     });
@@ -446,6 +576,7 @@ export async function ensureGundemiRegionalSites(): Promise<GundemiRegionalSeedS
       await ensureEditor(siteId, def);
       const cats = await ensureCategories(siteId, def);
       const sampleNews = await ensureSampleNews(siteId, def, cats);
+      const authors = await ensureTurkataAuthorsOnRegionalSite(siteId);
       const campaignId = await ensureRegionalCampaign(siteId, def);
       results.push({
         slug: def.slug,
@@ -454,6 +585,7 @@ export async function ensureGundemiRegionalSites(): Promise<GundemiRegionalSeedS
         action,
         categories: cats.size,
         sampleNews,
+        authors,
         campaignId,
       });
     } catch (e) {
@@ -466,6 +598,7 @@ export async function ensureGundemiRegionalSites(): Promise<GundemiRegionalSeedS
         action: "error",
         categories: 0,
         sampleNews: 0,
+        authors: 0,
         campaignId: null,
         detail,
       });

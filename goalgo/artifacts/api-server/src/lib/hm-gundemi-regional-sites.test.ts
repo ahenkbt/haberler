@@ -7,7 +7,9 @@ import {
   GUNDEMI_ZONE,
   listGundemiRegionalDomains,
   listGundemiRegionalSlugs,
+  TURKATA_HAKKIMIZDA_HTML,
   TURKATA_HM_SLUG,
+  TURKATA_YS_KUNYE,
 } from "./hm-gundemi-regional-sites.js";
 
 describe("gundemi regional catalog", () => {
@@ -49,6 +51,21 @@ describe("gundemi regional catalog", () => {
     }
     expect(presets.size).toBeGreaterThanOrEqual(4);
     expect(colors.size).toBe(8);
+  });
+
+  it("künye ve hakkımızda turkatahaber.com ile aynı", () => {
+    expect(TURKATA_YS_KUNYE.genelMudur).toBe("Nail Türkoğlu");
+    expect(TURKATA_YS_KUNYE.yayinYonetmeni).toBe("Mustafa ÖZDEMİR");
+    expect(TURKATA_YS_KUNYE.yaziIsleri).toBe("Melek Acar");
+    expect(TURKATA_YS_KUNYE.email).toBe("bilgi@turkatahaber.com");
+    expect(TURKATA_YS_KUNYE.address).toContain("Çankaya");
+    expect(TURKATA_HAKKIMIZDA_HTML).toContain("TÜRKATA HABER AJANSI");
+    expect(TURKATA_HAKKIMIZDA_HTML).toContain("yayin-ilkeleri");
+    for (const site of GUNDEMI_REGIONAL_SITES) {
+      const layout = buildGundemiRegionalLayoutJson(site);
+      expect(layout.hmYsKunye).toEqual({ ...TURKATA_YS_KUNYE });
+      expect(layout.hmFooterAboutHtml).toBe(TURKATA_HAKKIMIZDA_HTML);
+    }
   });
 
   it("find by slug or domain", () => {
