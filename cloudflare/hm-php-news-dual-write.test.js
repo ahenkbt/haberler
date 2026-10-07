@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import { edgeMirrorNewsDbWrite, edgeUpsertHmMakale, edgeUpsertNews } from "./hm-php-news-dual-write.js";
+import {
+  edgeMirrorNewsDbWrite,
+  edgeUpsertHmMakale,
+  edgeUpsertNews,
+  isReadonlyDbError,
+} from "./hm-php-news-dual-write.js";
 
 function memorySql(state) {
   const sql = async (strings, ...values) => {
@@ -145,6 +150,28 @@ test("haber: PHP'de yoksa aynı id ile yazar", async () => {
   assert.equal(r.mirrored, true);
   assert.equal(r.via, "same-id");
   assert.equal(r.id, 580081);
+});
+
+test("isReadonlyDbError Postgres RO mesajlarını tanır", () => {
+  assert.equal(isReadonlyDbError(new Error("cannot execute INSERT in a read-only transaction")), true);
+  assert.equal(isReadonlyDbError(new Error("cannot execute UPDATE in a read-only transaction")), true);
+  assert.equal(isReadonlyDbError(new Error("unique violation")), false);
+});
+
+test("ayna RO INSERT: edgeMirrorNewsDbWrite throw etmez, mirrored:false + readonly", async () => {
+  const sql = async () => {
+    throw new Error("cannot execute INSERT in a read-only transaction");
+  };
+  const r = await edgeMirrorNewsDbWrite(sql, "news", "upsert", {
+    id: 582114,
+    site_id: 3,
+    slug: "sehit-polis",
+    title: "ŞEHİT POLİS",
+    status: "published",
+  });
+  assert.equal(r.mirrored, false);
+  assert.equal(r.readonly, true);
+  assert.match(String(r.reason), /read-only/i);
 });
 
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mirrorNewsDbWrite, setNewsMirrorEnv } from "./hm-editor-kh-data-edge.js";
+import {
+  __resetNewsMirrorReadonlySkipForTests,
+  mirrorNewsDbWrite,
+  setNewsMirrorEnv,
+} from "./hm-editor-kh-data-edge.js";
 import { buildContainerEnv } from "./container-env.js";
+import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
 
 test("env yoksa ayna isteği atılmaz (false)", async () => {
   setNewsMirrorEnv(null);
@@ -60,6 +65,28 @@ test("NEWS_DB_WRITE / NEWS_DB_READ Worker secret'ı Container'a iletilir; yoksa 
   assert.equal(dual.NEWS_DB_WRITE, "dual");
   assert.equal(dual.NEWS_DB_READ, "main");
   assert.equal(dual.NEWS_DATABASE_URL, "postgres://u:p@h/db");
+});
+
+test("mirrorNewsDbWrite asla throw etmez (fatal soft)", async () => {
+  setNewsMirrorEnv(null);
+  __resetNewsMirrorReadonlySkipForTests();
+  await assert.doesNotReject(async () => {
+    assert.equal(await mirrorNewsDbWrite("news", "upsert", { id: 582114 }), false);
+  });
+});
+
+test("edge RO INSERT sonrası mirrorNewsDbWrite false; panel yolu bozulmaz", async () => {
+  const sql = async () => {
+    throw new Error("cannot execute INSERT in a read-only transaction");
+  };
+  const r = await edgeMirrorNewsDbWrite(sql, "news", "upsert", {
+    id: 582114,
+    siteId: 3,
+    slug: "x",
+    title: "Y",
+  });
+  assert.equal(r.mirrored, false);
+  assert.equal(r.readonly, true);
 });
 
 test("Container ayna kapalı dönerse (mirrored:false) false döner ve nedeni loglanır", async () => {

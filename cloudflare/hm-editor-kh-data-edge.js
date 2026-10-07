@@ -3,7 +3,7 @@
  * Tanımsız rotalar: null → Worker Container vekili.
  */
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
+import { edgeMirrorNewsDbWrite, isReadonlyDbError } from "./hm-php-news-dual-write.js";
 import {
   loadPhpSiteAuthors,
   loadPhpSiteCategories,
@@ -289,73 +289,96 @@ function apiOrigin(env, incoming) {
 const MIRROR_BUDGET_MS = 2500;
 /** Aynı isolate içinde env nesnesi tek olduğundan istek girişinde set edilir; handler imzaları değişmez. */
 let mirrorEnv = null;
+/** NEWS_DATABASE_URL RO ise isolate boyunca kenar/Container aynasını atla (panel yazımı bozulmasın). */
+let newsMirrorReadonlySkip = false;
 
 export function setNewsMirrorEnv(env) {
   mirrorEnv = env || null;
+  newsMirrorReadonlySkip = false;
+}
+
+/** @internal test */
+export function __resetNewsMirrorReadonlySkipForTests() {
+  newsMirrorReadonlySkip = false;
 }
 
 /**
  * Neon yazımından sonra PHP tema DB'sine (NEWS_DATABASE_URL) kopya.
  * 1) Kenar ikinci Neon istemcisi — Container'a ihtiyaç yok.
  * 2) Container /api/hm/bridge/mirror yedek (NEWS_DB_WRITE=dual).
- * Hata/zaman aşımı yutulur; panel yanıtı etkilenmez.
+ * Hata/zaman aşımı/RO yutulur; asla throw etmez — panel yanıtı etkilenmez.
  * @param {"hm_makaleler"|"news"|"authors"} table
  * @param {"upsert"|"delete"} op
  * @param {Record<string, unknown>|number} rowOrId
  */
 export async function mirrorNewsDbWrite(table, op, rowOrId) {
-  const env = mirrorEnv;
-  if (!env) return false;
+  try {
+    const env = mirrorEnv;
+    if (!env || newsMirrorReadonlySkip) return false;
 
-  if (shouldEdgeDualWriteNewsDb(env)) {
-    const newsSql = neonNewsSqlClient(env);
-    if (newsSql) {
-      let payload = rowOrId;
-      if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
-        const workerSql = sqlClient(env);
-        const sid = asPositiveInt(payload.site_id ?? payload.siteId);
-        if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
-          try {
-            const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
-            if (s?.[0]?.slug) payload = { ...payload, site_slug: s[0].slug };
-          } catch (err) {
-            console.error("[hm-news-mirror-slug]", String(err?.message || err).slice(0, 120));
+    if (shouldEdgeDualWriteNewsDb(env)) {
+      const newsSql = neonNewsSqlClient(env);
+      if (newsSql) {
+        let payload = rowOrId;
+        if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
+          const workerSql = sqlClient(env);
+          const sid = asPositiveInt(payload.site_id ?? payload.siteId);
+          if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
+            try {
+              const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
+              if (s?.[0]?.slug) payload = { ...payload, site_slug: s[0].slug };
+            } catch (err) {
+              console.error("[hm-news-mirror-slug]", String(err?.message || err).slice(0, 120));
+            }
           }
         }
+        const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
+        if (direct?.mirrored === true) return true;
+        const reason = String(direct?.reason || "unknown");
+        console.warn("[hm-news-mirror] kenar dual-write atlandı", table, op, reason);
+        if (direct?.readonly === true || isReadonlyDbError(reason)) {
+          newsMirrorReadonlySkip = true;
+          console.warn("[hm-news-mirror] NEWS_DATABASE_URL salt-okunur — ayna bu isolate'da kapatıldı");
+          return false;
+        }
       }
-      const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
-      if (direct?.mirrored === true) return true;
-      console.warn("[hm-news-mirror] kenar dual-write atlandı", table, op, String(direct?.reason || "unknown"));
     }
-  }
 
-  if (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim()) return false;
-  const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
-  if (!secret) return false;
-  const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
-  try {
-    const res = await Promise.race([
-      fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-yekpare-hm-edge-bridge": secret,
-        },
-        body: JSON.stringify(payload),
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("mirror-timeout")), MIRROR_BUDGET_MS)),
-    ]);
-    if (!res?.ok) {
-      console.error("[hm-news-mirror]", table, op, res?.status);
+    if (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim()) return false;
+    const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
+    if (!secret) return false;
+    const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
+    try {
+      const res = await Promise.race([
+        fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-yekpare-hm-edge-bridge": secret,
+          },
+          body: JSON.stringify(payload),
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("mirror-timeout")), MIRROR_BUDGET_MS)),
+      ]);
+      if (!res?.ok) {
+        console.error("[hm-news-mirror]", table, op, res?.status);
+        return false;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data?.mirrored !== true) {
+        const reason = String(data?.reason || "unknown");
+        console.warn("[hm-news-mirror] atlandı", table, op, reason);
+        if (isReadonlyDbError(reason)) newsMirrorReadonlySkip = true;
+      }
+      return data?.mirrored === true;
+    } catch (err) {
+      if (isReadonlyDbError(err)) newsMirrorReadonlySkip = true;
+      console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
       return false;
     }
-    const data = await res.json().catch(() => ({}));
-    if (data?.mirrored !== true) {
-      console.warn("[hm-news-mirror] atlandı", table, op, String(data?.reason || "unknown"));
-    }
-    return data?.mirrored === true;
   } catch (err) {
-    console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
+    if (isReadonlyDbError(err)) newsMirrorReadonlySkip = true;
+    console.error("[hm-news-mirror] fatal-soft", table, op, String(err?.message || err).slice(0, 120));
     return false;
   }
 }
@@ -1285,6 +1308,7 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
   let lastErr = "";
   for (let i = 0; i < 8; i += 1) {
     const trySlug = slugCandidate(slug, i);
+    let created = null;
     try {
       // Aynı site köşe yazısı (hm_makaleler) bu slug'ı kullanıyorsa /haber/:slug onu gölgelemesin.
       if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
@@ -1305,88 +1329,95 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
         return jsonResponse(200, serializeNewsRow(hit, hit.category_slug || categorySlug));
       }
 
-      const rows = await sql`
-        INSERT INTO news (
-          title, slug, spot, content, image_url, category_id, author_id,
-          sender_full_name, sender_email, sender_phone,
-          status, is_featured, is_site_manset, is_breaking, tags,
-          site_id, is_editor_manual, site_only, owner_site_id,
-          is_food_recipe, food_recipe_category_slug,
-          created_at, updated_at
-        ) VALUES (
-          ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
-          ${senderFullName}, ${senderEmail}, ${senderPhone},
-          ${status}, ${isFeatured}, ${isSiteManset}, ${isBreaking}, ${tagsLiteral}::text[],
-          ${siteId}, true, true, ${siteId},
-          ${isFoodRecipe}, ${foodRecipeCategorySlug},
-          NOW(), NOW()
-        )
-        RETURNING *
-      `;
-      const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
-      if (!row) return createFailResponse("INSERT boş döndü");
-      await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
-      await upsertMakaleFromAuthorNews(sql, row);
-      return jsonResponse(201, serializeNewsRow(row, categorySlug));
+      try {
+        const rows = await sql`
+          INSERT INTO news (
+            title, slug, spot, content, image_url, category_id, author_id,
+            sender_full_name, sender_email, sender_phone,
+            status, is_featured, is_site_manset, is_breaking, tags,
+            site_id, is_editor_manual, site_only, owner_site_id,
+            is_food_recipe, food_recipe_category_slug,
+            created_at, updated_at
+          ) VALUES (
+            ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
+            ${senderFullName}, ${senderEmail}, ${senderPhone},
+            ${status}, ${isFeatured}, ${isSiteManset}, ${isBreaking}, ${tagsLiteral}::text[],
+            ${siteId}, true, true, ${siteId},
+            ${isFoodRecipe}, ${foodRecipeCategorySlug},
+            NOW(), NOW()
+          )
+          RETURNING *
+        `;
+        created = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+      } catch (err) {
+        const msg = String(err?.message || err);
+        lastErr = msg;
+        // Silinmiş yazar FK'si — yazarsız tekrar dene
+        if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
+          if (opts.lockAuthorId != null) {
+            return jsonResponse(400, {
+              error: "Köşe yazarı kaydı bulunamadı. Editör panelinden yazarın bu siteye bağlı olduğundan emin olun.",
+            });
+          }
+          authorId = null;
+          i -= 1;
+          continue;
+        }
+        if (/unique|duplicate/i.test(msg) && i < 7) continue;
+        // Eksik kolon kalmış olabilir — ensure tekrar + sade INSERT
+        if (/column .* does not exist/i.test(msg)) {
+          newsColumnsEnsured = false;
+          await ensureNewsWritableColumns(sql);
+          try {
+            const rows = await sql`
+              INSERT INTO news (
+                title, slug, spot, content, image_url, category_id, author_id,
+                status, is_featured, is_breaking, tags,
+                site_id, is_editor_manual, created_at, updated_at
+              ) VALUES (
+                ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
+                ${status}, ${isFeatured}, ${isBreaking}, ${tagsLiteral}::text[],
+                ${siteId}, true, NOW(), NOW()
+              )
+              RETURNING *
+            `;
+            created = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+            if (created) {
+              try {
+                await sql`
+                  UPDATE news SET
+                    is_site_manset = ${isSiteManset},
+                    is_breaking = ${isBreaking},
+                    site_only = true,
+                    owner_site_id = ${siteId},
+                    updated_at = NOW()
+                  WHERE id = ${created.id}
+                `;
+              } catch {
+                /* kolon yoksa yok say */
+              }
+            }
+          } catch (err2) {
+            lastErr = String(err2?.message || err2);
+            created = null;
+          }
+        }
+        if (!created) {
+          console.error("[kh-news-create]", msg.slice(0, 200));
+          return createFailResponse(msg);
+        }
+      }
     } catch (err) {
       const msg = String(err?.message || err);
       lastErr = msg;
-      // Silinmiş yazar FK'si — yazarsız tekrar dene
-      if (/author_id|authors/i.test(msg) && /foreign key|violates/i.test(msg) && authorId != null) {
-        if (opts.lockAuthorId != null) {
-          return jsonResponse(400, {
-            error: "Köşe yazarı kaydı bulunamadı. Editör panelinden yazarın bu siteye bağlı olduğundan emin olun.",
-          });
-        }
-        authorId = null;
-        i -= 1;
-        continue;
-      }
-      if (/unique|duplicate/i.test(msg) && i < 7) continue;
-      // Eksik kolon kalmış olabilir — ensure tekrar + sade INSERT
-      if (/column .* does not exist/i.test(msg)) {
-        newsColumnsEnsured = false;
-        await ensureNewsWritableColumns(sql);
-        try {
-          const rows = await sql`
-            INSERT INTO news (
-              title, slug, spot, content, image_url, category_id, author_id,
-              status, is_featured, is_breaking, tags,
-              site_id, is_editor_manual, created_at, updated_at
-            ) VALUES (
-              ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
-              ${status}, ${isFeatured}, ${isBreaking}, ${tagsLiteral}::text[],
-              ${siteId}, true, NOW(), NOW()
-            )
-            RETURNING *
-          `;
-          const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
-          if (row) {
-            // site_only / manşet bayraklarını mümkünse sonradan yaz
-            try {
-              await sql`
-                UPDATE news SET
-                  is_site_manset = ${isSiteManset},
-                  is_breaking = ${isBreaking},
-                  site_only = true,
-                  owner_site_id = ${siteId},
-                  updated_at = NOW()
-                WHERE id = ${row.id}
-              `;
-            } catch {
-              /* kolon yoksa yok say */
-            }
-            await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
-            await upsertMakaleFromAuthorNews(sql, row);
-            return jsonResponse(201, serializeNewsRow(row, categorySlug));
-          }
-        } catch (err2) {
-          lastErr = String(err2?.message || err2);
-        }
-      }
       console.error("[kh-news-create]", msg.slice(0, 200));
       return createFailResponse(msg);
     }
+    if (!created) return createFailResponse(lastErr || "INSERT boş döndü");
+    // Ana Neon yazımı bitti — PHP ayna (RO dahil) panel 201'ini bozamaz.
+    await mirrorNewsDbWrite("news", "upsert", { ...created, category_slug: categorySlug });
+    await upsertMakaleFromAuthorNews(sql, created);
+    return jsonResponse(201, serializeNewsRow(created, categorySlug));
   }
   return createFailResponse(lastErr || "slug çakışması");
 }
@@ -1431,6 +1462,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
   const isBreaking =
     typeof body?.isBreaking === "boolean" ? body.isBreaking : existing.is_breaking === true;
 
+  let row;
   try {
     const rows = await sql`
       UPDATE news SET
@@ -1454,11 +1486,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
       WHERE id = ${id}
       RETURNING *
     `;
-    const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
-    if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
-    await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
-    await upsertMakaleFromAuthorNews(sql, row);
-    return jsonResponse(200, serializeNewsRow(row, categorySlug));
+    row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
   } catch (err) {
     const msg = String(err?.message || err);
     console.error("[kh-news-update]", msg.slice(0, 200));
@@ -1467,6 +1495,11 @@ async function handleUpdateNews(sql, siteId, id, body) {
       detail: msg.slice(0, 160),
     });
   }
+  if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
+  // Ayna (NEWS_DATABASE_URL) RO olsa bile ana Neon güncellemesi başarılı — yanıt bozulmaz.
+  await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+  await upsertMakaleFromAuthorNews(sql, row);
+  return jsonResponse(200, serializeNewsRow(row, categorySlug));
 }
 
 async function handlePatchNewsFlags(sql, siteId, id, body) {
@@ -1609,6 +1642,7 @@ export async function handleCreateMakale(sql, siteId, body) {
     // /haber/:slug önce news'ten çözülür; news veya başka bir makale bu slug'ı aldıysa -2, -3 … ekle.
     if (await newsSlugTaken(sql, siteId, trySlug)) continue;
     if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
+    let row;
     try {
       const rows = await sql`
         INSERT INTO hm_makaleler (
@@ -1618,10 +1652,7 @@ export async function handleCreateMakale(sql, siteId, body) {
         )
         RETURNING *
       `;
-      const row = rows?.[0];
-      if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
-      await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
-      return jsonResponse(201, serializeMakaleRow(row));
+      row = rows?.[0];
     } catch (err) {
       const msg = String(err?.message || err);
       lastErr = msg;
@@ -1638,6 +1669,9 @@ export async function handleCreateMakale(sql, siteId, body) {
       console.error("[hm-makale-create]", msg.slice(0, 200));
       return jsonResponse(500, { error: "Kayıt oluşturulamadı", detail: msg.slice(0, 160) });
     }
+    if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+    await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
+    return jsonResponse(201, serializeMakaleRow(row));
   }
   return jsonResponse(500, {
     error: lastErr ? `Kayıt oluşturulamadı: ${lastErr.slice(0, 160)}` : "Kayıt oluşturulamadı",
@@ -1696,6 +1730,7 @@ async function handleUpdateMakale(sql, siteId, id, body) {
   const status =
     body?.status === "published" || body?.status === "draft" ? body.status : existing.status;
 
+  let row;
   try {
     const rows = await sql`
       UPDATE hm_makaleler SET
@@ -1710,10 +1745,7 @@ async function handleUpdateMakale(sql, siteId, id, body) {
       WHERE id = ${id} AND site_id = ${siteId}
       RETURNING *
     `;
-    const row = rows?.[0];
-    if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
-    await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
-    return jsonResponse(200, serializeMakaleRow(row));
+    row = rows?.[0];
   } catch (err) {
     const msg = String(err?.message || err);
     if (/unique|duplicate/i.test(msg)) {
@@ -1734,15 +1766,19 @@ async function handleUpdateMakale(sql, siteId, id, body) {
           WHERE id = ${id} AND site_id = ${siteId}
           RETURNING *
         `;
-        const row = rows?.[0];
-        if (row) return jsonResponse(200, serializeMakaleRow(row));
+        row = rows?.[0];
       } catch (err2) {
         console.error("[hm-makale-update-retry]", String(err2?.message || err2).slice(0, 200));
       }
     }
-    console.error("[hm-makale-update]", msg.slice(0, 200));
-    return jsonResponse(500, { error: "Güncellenemedi", detail: msg.slice(0, 160) });
+    if (!row) {
+      console.error("[hm-makale-update]", msg.slice(0, 200));
+      return jsonResponse(500, { error: "Güncellenemedi", detail: msg.slice(0, 160) });
+    }
   }
+  if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
+  await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
+  return jsonResponse(200, serializeMakaleRow(row));
 }
 
 async function handleDeleteMakale(sql, siteId, id) {
