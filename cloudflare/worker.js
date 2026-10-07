@@ -922,15 +922,25 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       else html = ready + html;
     }
     out.set("x-yekpare-hm-admin-boot", "1");
-    // Giriş sayfası açılırken Container'ı arka planda ısıt — "Sunucu meşgul" azalır.
+    // Giriş sayfası açılırken Container'ı arka planda ısıt — DO reset / cold start.
     if (typeof waitUntil === "function" && env) {
       const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
       waitUntil(
-        fetchApi(env, `${origin}/api/healthz`)
-          .then((r) => r?.text?.().catch(() => null))
-          .catch((err) => {
-            console.error("[admin-html-wake]", String(err?.message || err).slice(0, 160));
-          }),
+        (async () => {
+          for (let i = 0; i < 4; i += 1) {
+            try {
+              const r = await fetchApi(env, `${origin}/api/healthz`);
+              const text = r ? await r.text().catch(() => "") : "";
+              if (r?.ok) return;
+              if (!/Failed to start|Durable Object reset|provisioning/i.test(text) && r && r.status < 500) {
+                return;
+              }
+            } catch (err) {
+              console.error("[admin-html-wake]", String(err?.message || err).slice(0, 160));
+            }
+            await new Promise((resolve) => setTimeout(resolve, 2000 * (i + 1)));
+          }
+        })(),
       );
     }
   }
@@ -1602,8 +1612,8 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
   return { cacheTtl: 0, cacheEverything: false };
 }
 
-async function fetchUpstreamWithRetry(env, url, init, cfOpts, retries = 2) {
-  return fetchApiWithRetry(env, url, { ...init, cf: cfOpts }, retries);
+async function fetchUpstreamWithRetry(env, url, init, cfOpts, retries = 2, delayMs = 250) {
+  return fetchApiWithRetry(env, url, { ...init, cf: cfOpts }, retries, delayMs);
 }
 
 async function maybeRecoverNewsPageBundle(env, origin, init, incoming, upstream) {
@@ -3371,19 +3381,26 @@ export default {
       const cfOpts = upstreamCfCacheOptions(upstreamPath, apiRequest.method, incoming.search || "");
       const proxyOpts = proxyInit(apiRequest, origin, incoming);
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
-      // Cold container boot after CONTAINER_ROLL often exceeds 20ÔÇô60s; keep warm path fast via edge cache.
-      const originMs = isYektubeDedicatedHost(incoming.hostname)
-        ? 120_000
-        : cacheablePublicApi
-          ? HM_ORIGIN_BUDGET_MS
-          : 120_000;
+      // Cold container boot after CONTAINER_ROLL often exceeds 20–60s; keep warm path fast via edge cache.
+      // Admin login / session: Container portReadyTimeoutMS=180s + DO reset — daha uzun bütçe ve retry.
+      const authSession = isAuthSessionApiPath(upstreamPath);
+      const originMs = authSession
+        ? 180_000
+        : isYektubeDedicatedHost(incoming.hostname)
+          ? 120_000
+          : cacheablePublicApi
+            ? HM_ORIGIN_BUDGET_MS
+            : 120_000;
+      const upstreamRetries = authSession ? 4 : pageBundleRetries;
+      const upstreamRetryDelay = authSession ? 2000 : 250;
       const upstream = await withBudget(
         fetchUpstreamWithRetry(
           env,
           target.toString(),
           proxyOpts,
           cfOpts,
-          pageBundleRetries,
+          upstreamRetries,
+          upstreamRetryDelay,
         ),
         originMs,
       );

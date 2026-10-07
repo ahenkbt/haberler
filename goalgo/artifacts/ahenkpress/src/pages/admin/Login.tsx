@@ -5,6 +5,44 @@ import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { adminFetchErrorHint, adminPanelCookieApiPath, hmEditorEntryPathForHost, portalCanonicalAdminPath } from "@/lib/apiBase";
 import { invalidateAdminRouteVerificationCache } from "@/lib/adminRouteAuthCache";
 
+const LOGIN_MAX_ATTEMPTS = 8;
+
+function isLoginBusy(status: number, data: { error?: string; ok?: boolean }): boolean {
+  if (status === 503 || status === 502 || status === 504) return true;
+  return /uyanıyor|meşgul|Failed to start|Durable Object reset|provisioning|timeout|origin-budget/i.test(
+    String(data.error || ""),
+  );
+}
+
+function loginRetryDelayMs(attempt: number): number {
+  return Math.min(15_000, 2000 * Math.max(1, attempt));
+}
+
+/** Edge /live ısıtır; gerçek /healthz Container hazır olana kadar bekler. */
+async function wakeAndWaitForApi(signal?: { cancelled?: boolean }): Promise<boolean> {
+  const live = adminPanelCookieApiPath("/api/healthz/live");
+  const healthz = adminPanelCookieApiPath("/api/healthz");
+  void fetch(live, { cache: "no-store" }).catch(() => null);
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    if (signal?.cancelled) return false;
+    try {
+      const res = await fetch(healthz, { cache: "no-store" });
+      if (res.ok) return true;
+      const text = await res.text().catch(() => "");
+      if (!/Failed to start|Durable Object reset|meşgul|provisioning/i.test(text) && res.status < 500) {
+        // Beklenmeyen 4xx — ısıtmayı bırakma, yine de login denenecek
+        return false;
+      }
+    } catch {
+      /* cold / network */
+    }
+    void fetch(live, { cache: "no-store" }).catch(() => null);
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+  return false;
+}
+
 export default function Login() {
   const { markPanelAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -25,8 +63,12 @@ export default function Login() {
     if (/^https?:\/\//i.test(canonical) && canonical !== window.location.href) {
       window.location.replace(canonical);
     }
-    // Soğuk Container: /live kenarda uyanır, asıl /healthz Container'ı ısıtır.
-    void fetch(adminPanelCookieApiPath("/api/healthz/live"), { cache: "no-store" }).catch(() => null);
+    // Soğuk Container: sayfa açılır açılmaz ısıt.
+    const signal = { cancelled: false };
+    void wakeAndWaitForApi(signal);
+    return () => {
+      signal.cancelled = true;
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,42 +91,56 @@ export default function Login() {
       setPassword(pass);
 
       // apiFetch 401'de oturum yenileme denemesi yapar — giriş POST'unda kullanma.
-      // Cold Container "Sunucu meşgul" (503) verir; birkaç kez dene.
+      // Cold Container "Sunucu meşgul" (503) / DO reset verir; healthz hazır olana kadar dene.
       let res: Response | null = null;
-      let data: { success?: boolean; error?: string } = {};
-      for (let attempt = 0; attempt < 4; attempt++) {
+      let data: { success?: boolean; error?: string; ok?: boolean } = {};
+      let lastBusy = false;
+
+      for (let attempt = 0; attempt < LOGIN_MAX_ATTEMPTS; attempt++) {
         if (attempt > 0) {
           setError("Sunucu uyanıyor, tekrar deneniyor…");
-          await new Promise((r) => setTimeout(r, 1500 * attempt));
+          await new Promise((r) => setTimeout(r, loginRetryDelayMs(attempt)));
+          await wakeAndWaitForApi();
+        } else {
           void fetch(adminPanelCookieApiPath("/api/healthz/live"), { cache: "no-store" }).catch(() => null);
         }
-        res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-session"), {
-          method: "POST",
-          credentials: "include",
-          cache: "no-store",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({ username: user, password: pass }),
-        });
-        data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
-        const busy =
-          res.status === 503 ||
-          res.status === 502 ||
-          res.status === 504 ||
-          /meşgul|Failed to start container|provisioning|timeout/i.test(String(data.error || ""));
+
+        try {
+          res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-session"), {
+            method: "POST",
+            credentials: "include",
+            cache: "no-store",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ username: user, password: pass }),
+          });
+          data = (await res.json().catch(() => ({}))) as {
+            success?: boolean;
+            error?: string;
+            ok?: boolean;
+          };
+        } catch {
+          lastBusy = true;
+          res = null;
+          data = { error: "Sunucu meşgul" };
+          continue;
+        }
+
+        const busy = isLoginBusy(res.status, data);
+        lastBusy = busy;
         if (!busy || res.ok || data.success) break;
       }
+
       if (!res || !res.ok || !data.success) {
         logout();
-        if (data.error?.trim()) {
-          const msg = data.error.trim();
-          if (/meşgul|Failed to start|provisioning/i.test(msg)) {
-            setError("Sunucu henüz uyanıyor. 15–20 sn bekleyip tekrar Giriş Yap’a basın.");
-          } else {
-            setError(msg.slice(0, 200) + adminFetchErrorHint(String(res?.status || "")));
-          }
+        if (lastBusy || isLoginBusy(res?.status ?? 503, data)) {
+          setError(
+            "Sunucu henüz uyanıyor. 15–20 sn bekleyip tekrar Giriş Yap’a basın. Sürekli olursa Cloudflare Container’ın ayakta olduğundan emin olun.",
+          );
+        } else if (data.error?.trim()) {
+          setError(data.error.trim().slice(0, 200) + adminFetchErrorHint(String(res?.status || "")));
         } else if (res?.status === 400) {
           setError("Kullanıcı adı ve şifre gerekli.");
         } else if ((res?.status ?? 0) >= 500) {
@@ -93,7 +149,9 @@ export default function Login() {
               adminFetchErrorHint(String(res?.status)),
           );
         } else if (res?.status === 401) {
-          setError("Kullanıcı adı veya şifre hatalı. Şifreyi elle yazıp tekrar deneyin (otomatik doldurma bazen eski şifre gönderir).");
+          setError(
+            "Kullanıcı adı veya şifre hatalı. Şifreyi elle yazıp tekrar deneyin. Hâlâ olmazsa Cloudflare’de ADMIN_PANEL_USERNAMES / ADMIN_PANEL_PASSWORD secret’larını kontrol edin.",
+          );
         } else {
           setError("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.");
         }
