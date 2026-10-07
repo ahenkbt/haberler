@@ -290,16 +290,24 @@ function apiOrigin(env, incoming) {
 const MIRROR_BUDGET_MS = 2500;
 /** Aynı isolate içinde env nesnesi tek olduğundan istek girişinde set edilir; handler imzaları değişmez. */
 let mirrorEnv = null;
+/** NEWS_DATABASE_URL RO ise isolate boyunca kenar/Container aynasını atla (panel yazımı bozulmasın). */
+let newsMirrorReadonlySkip = false;
 
 export function setNewsMirrorEnv(env) {
   mirrorEnv = env || null;
+  newsMirrorReadonlySkip = false;
+}
+
+/** @internal test */
+export function __resetNewsMirrorReadonlySkipForTests() {
+  newsMirrorReadonlySkip = false;
 }
 
 /**
  * Neon yazımından sonra PHP tema DB'sine (NEWS_DATABASE_URL) kopya.
  * 1) Kenar ikinci Neon istemcisi — Container'a ihtiyaç yok.
  * 2) Container /api/hm/bridge/mirror yedek (NEWS_DB_WRITE=dual).
- * Hata/zaman aşımı yutulur; panel yanıtı etkilenmez.
+ * Hata/zaman aşımı/RO yutulur; asla throw etmez — panel yanıtı etkilenmez.
  * @param {"hm_makaleler"|"news"|"authors"} table
  * @param {"upsert"|"delete"} op
  * @param {Record<string, unknown>|number} rowOrId
@@ -309,10 +317,10 @@ export function setNewsMirrorEnv(env) {
  * bozmaz — false döner; çağıran yalnızca primary hatasında 5xx vermeli.
  */
 export async function mirrorNewsDbWrite(table, op, rowOrId) {
-  const env = mirrorEnv;
-  if (!env) return false;
-
   try {
+    const env = mirrorEnv;
+    if (!env || newsMirrorReadonlySkip) return false;
+
     if (shouldEdgeDualWriteNewsDb(env)) {
       const newsSql = neonNewsSqlClient(env);
       if (newsSql) {
@@ -336,13 +344,18 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
         }
         const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
         if (direct?.mirrored === true) return true;
-        // Dual RO/ayna hatası primary'yi bozmaz; bridge fallback dene.
+        const reason = String(direct?.reason || "unknown");
         console.warn(
           "[hm-news-mirror] kenar dual-write atlandı (primary OK)",
           table,
           op,
-          String(direct?.reason || "unknown").slice(0, 160),
+          reason.slice(0, 160),
         );
+        if (direct?.readonly === true || reason === "news-db-read-only" || isReadonlyDbError(reason)) {
+          newsMirrorReadonlySkip = true;
+          console.warn("[hm-news-mirror] NEWS_DATABASE_URL salt-okunur — ayna bu isolate'da kapatıldı");
+          return false;
+        }
       }
     }
 
@@ -350,36 +363,50 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
     if (!secret) return false;
     const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
-    const res = await Promise.race([
-      fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-yekpare-hm-edge-bridge": secret,
-        },
-        body: JSON.stringify(payload),
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("mirror-timeout")), MIRROR_BUDGET_MS)),
-    ]);
-    if (!res?.ok) {
-      console.error("[hm-news-mirror]", table, op, res?.status);
+    try {
+      const res = await Promise.race([
+        fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-yekpare-hm-edge-bridge": secret,
+          },
+          body: JSON.stringify(payload),
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("mirror-timeout")), MIRROR_BUDGET_MS)),
+      ]);
+      if (!res?.ok) {
+        console.error("[hm-news-mirror]", table, op, res?.status);
+        return false;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data?.mirrored !== true) {
+        const reason = String(data?.reason || "unknown");
+        console.warn("[hm-news-mirror] atlandı", table, op, reason);
+        if (isReadonlyDbError(reason)) newsMirrorReadonlySkip = true;
+      }
+      return data?.mirrored === true;
+    } catch (err) {
+      if (isReadonlyDbError(err)) newsMirrorReadonlySkip = true;
+      console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
       return false;
     }
-    const data = await res.json().catch(() => ({}));
-    if (data?.mirrored !== true) {
-      console.warn("[hm-news-mirror] atlandı", table, op, String(data?.reason || "unknown"));
-    }
-    return data?.mirrored === true;
   } catch (err) {
-    const msg = String(err?.message || err).slice(0, 120);
-    if (/read-only transaction|news-db-read-only/i.test(msg)) {
-      console.warn("[hm-news-mirror] PHP dual-write read-only — panel yanıtı etkilenmez", table, op, msg);
+    if (isReadonlyDbError(err)) {
+      newsMirrorReadonlySkip = true;
+      console.warn(
+        "[hm-news-mirror] PHP dual-write read-only — panel yanıtı etkilenmez",
+        table,
+        op,
+        String(err?.message || err).slice(0, 120),
+      );
       return false;
     }
-    console.error("[hm-news-mirror]", table, op, msg);
+    console.error("[hm-news-mirror] fatal-soft", table, op, String(err?.message || err).slice(0, 120));
     return false;
   }
 }
+
 
 function serializeAuthor(row) {
   return {
@@ -899,6 +926,11 @@ function isEditorNewsWritePath(path, method) {
     return true;
   }
   if (/^\/api\/hm\/editor\/news\/\d+\/flags$/.test(path) && method === "PATCH") return true;
+  if (path === "/api/hm/editor/makale" && method === "POST") return true;
+  if (/^\/api\/hm\/editor\/makale\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
+    return true;
+  }
+  if (path === "/api/hm/editor/makale/bulk-delete" && method === "POST") return true;
   if (path === "/api/hm/editor/makaleler" && method === "POST") return true;
   if (/^\/api\/hm\/editor\/makaleler\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
     return true;
@@ -1794,6 +1826,7 @@ export async function handleCreateMakale(sql, siteId, body) {
     // /haber/:slug önce news'ten çözülür; news veya başka bir makale bu slug'ı aldıysa -2, -3 … ekle.
     if (await newsSlugTaken(sql, siteId, trySlug)) continue;
     if (await makaleSlugTaken(sql, siteId, trySlug)) continue;
+    let row;
     try {
       const rows = await sql`
         INSERT INTO hm_makaleler (
@@ -1803,10 +1836,7 @@ export async function handleCreateMakale(sql, siteId, body) {
         )
         RETURNING *
       `;
-      const row = rows?.[0];
-      if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
-      await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
-      return jsonResponse(201, serializeMakaleRow(row));
+      row = rows?.[0];
     } catch (err) {
       const msg = String(err?.message || err);
       lastErr = msg;
@@ -1823,6 +1853,9 @@ export async function handleCreateMakale(sql, siteId, body) {
       console.error("[hm-makale-create]", msg.slice(0, 200));
       return jsonResponse(500, { error: "Kayıt oluşturulamadı", detail: msg.slice(0, 160) });
     }
+    if (!row) return jsonResponse(500, { error: "Kayıt oluşturulamadı" });
+    await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
+    return jsonResponse(201, serializeMakaleRow(row));
   }
   return jsonResponse(500, {
     error: lastErr ? `Kayıt oluşturulamadı: ${lastErr.slice(0, 160)}` : "Kayıt oluşturulamadı",
@@ -1881,6 +1914,7 @@ async function handleUpdateMakale(sql, siteId, id, body) {
   const status =
     body?.status === "published" || body?.status === "draft" ? body.status : existing.status;
 
+  let row;
   try {
     const rows = await sql`
       UPDATE hm_makaleler SET
@@ -1895,10 +1929,7 @@ async function handleUpdateMakale(sql, siteId, id, body) {
       WHERE id = ${id} AND site_id = ${siteId}
       RETURNING *
     `;
-    const row = rows?.[0];
-    if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
-    await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
-    return jsonResponse(200, serializeMakaleRow(row));
+    row = rows?.[0];
   } catch (err) {
     const msg = String(err?.message || err);
     if (/unique|duplicate/i.test(msg)) {
@@ -1919,15 +1950,19 @@ async function handleUpdateMakale(sql, siteId, id, body) {
           WHERE id = ${id} AND site_id = ${siteId}
           RETURNING *
         `;
-        const row = rows?.[0];
-        if (row) return jsonResponse(200, serializeMakaleRow(row));
+        row = rows?.[0];
       } catch (err2) {
         console.error("[hm-makale-update-retry]", String(err2?.message || err2).slice(0, 200));
       }
     }
-    console.error("[hm-makale-update]", msg.slice(0, 200));
-    return jsonResponse(500, { error: "Güncellenemedi", detail: msg.slice(0, 160) });
+    if (!row) {
+      console.error("[hm-makale-update]", msg.slice(0, 200));
+      return jsonResponse(500, { error: "Güncellenemedi", detail: msg.slice(0, 160) });
+    }
   }
+  if (!row) return jsonResponse(404, { error: "Makale bulunamadı" });
+  await mirrorNewsDbWrite("hm_makaleler", "upsert", row);
+  return jsonResponse(200, serializeMakaleRow(row));
 }
 
 async function handleDeleteMakale(sql, siteId, id) {
