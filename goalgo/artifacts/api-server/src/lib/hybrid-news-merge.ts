@@ -107,6 +107,9 @@ export type HybridNewsItem = {
   feedLabel: string | null;
   authorName: string | null;
   isFeatured: boolean;
+  /** Site / tepe manşet — PHP LiveBridge tepeManset merge reads these. */
+  isSiteManset?: boolean;
+  isTepeManset?: boolean;
   isBreaking: boolean;
   views: number;
   isEditorManual?: boolean;
@@ -237,6 +240,8 @@ function dbToHybrid(item: DbSerialized, source: "db" | "author" = "db", rssImage
     feedLabel: null,
     authorName: item.authorName,
     isFeatured: item.isFeatured,
+    isSiteManset: item.isSiteManset === true,
+    isTepeManset: item.isTepeManset === true,
     isBreaking: item.isBreaking,
     views: item.views ?? 0,
     isEditorManual: item.isEditorManual ?? false,
