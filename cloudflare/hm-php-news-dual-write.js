@@ -239,6 +239,7 @@ export async function edgeUpsertNews(sql, row) {
         is_featured = ${isFeatured},
         is_breaking = ${isBreaking},
         is_site_manset = ${isSiteManset},
+        is_tepe_manset = ${isTepeManset},
         is_editor_manual = ${isEditorManual},
         site_only = ${siteOnly},
         owner_site_id = ${ownerSiteId},
@@ -255,11 +256,11 @@ export async function edgeUpsertNews(sql, row) {
       await sql`
         INSERT INTO news (
           id, title, slug, spot, content, image_url, category_id, author_id,
-          status, is_featured, is_breaking, is_site_manset, tags,
+          status, is_featured, is_breaking, is_site_manset, is_tepe_manset, tags,
           site_id, is_editor_manual, site_only, owner_site_id, created_at, updated_at
         ) VALUES (
           ${id}, ${title}, ${slug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
-          ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${tags},
+          ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${isTepeManset}, ${tags},
           ${siteId}, ${isEditorManual}, ${siteOnly}, ${ownerSiteId}, ${createdAt}, ${updatedAt}
         )
       `;
@@ -281,6 +282,7 @@ export async function edgeUpsertNews(sql, row) {
           is_featured = ${isFeatured},
           is_breaking = ${isBreaking},
           is_site_manset = ${isSiteManset},
+          is_tepe_manset = ${isTepeManset},
           is_editor_manual = ${isEditorManual},
           site_only = ${siteOnly},
           owner_site_id = ${ownerSiteId},
@@ -295,11 +297,11 @@ export async function edgeUpsertNews(sql, row) {
   const inserted = await sql`
     INSERT INTO news (
       title, slug, spot, content, image_url, category_id, author_id,
-      status, is_featured, is_breaking, is_site_manset, tags,
+      status, is_featured, is_breaking, is_site_manset, is_tepe_manset, tags,
       site_id, is_editor_manual, site_only, owner_site_id, created_at, updated_at
     ) VALUES (
       ${title}, ${slug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
-      ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${tags},
+      ${status}, ${isFeatured}, ${isBreaking}, ${isSiteManset}, ${isTepeManset}, ${tags},
       ${siteId}, ${isEditorManual}, ${siteOnly}, ${ownerSiteId}, ${createdAt}, ${updatedAt}
     )
     RETURNING id
