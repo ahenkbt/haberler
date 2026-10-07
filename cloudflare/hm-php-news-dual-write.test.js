@@ -1,12 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import {
-  edgeMirrorNewsDbWrite,
-  edgeUpsertHmMakale,
-  edgeUpsertNews,
-  isReadonlyDbError,
-} from "./hm-php-news-dual-write.js";
+import { edgeMirrorNewsDbWrite, edgeUpsertHmMakale, edgeUpsertNews } from "./hm-php-news-dual-write.js";
 
 function memorySql(state) {
   const sql = async (strings, ...values) => {
@@ -21,10 +16,15 @@ function memorySql(state) {
       );
       return hit ? [{ id: hit.id }] : [];
     }
+    if (/FROM hm_news_sites/i.test(text) && /lower\(slug\)/i.test(text)) {
+      const [slug] = values;
+      const hit = (state.sites || []).find((s) => String(s.slug).toLowerCase() === String(slug).toLowerCase());
+      return hit ? [{ id: hit.id }] : [];
+    }
     if (/FROM hm_makaleler/i.test(text) && /WHERE id =/i.test(text) && /SELECT id, site_id/i.test(text)) {
       const [id] = values;
       const hit = state.makaleler.find((m) => Number(m.id) === Number(id));
-      return hit ? [{ id: hit.id, site_id: hit.site_id }] : [];
+      return hit ? [{ id: hit.id, site_id: hit.site_id, slug: hit.slug }] : [];
     }
     if (/UPDATE hm_makaleler/i.test(text)) {
       const id = values[values.length - 1];
@@ -43,23 +43,37 @@ function memorySql(state) {
       state.makaleler.push({ id, site_id: siteId, author_id: authorId, title, slug });
       return [];
     }
-    if (/FROM hm_news_sites/i.test(text) && /lower\(slug\)/i.test(text)) {
-      const [slug] = values;
-      const hit = (state.sites || []).find((s) => s.slug === String(slug).toLowerCase());
-      return hit ? [{ id: hit.id }] : slug === "asg" ? [{ id: 3 }] : [];
-    }
-    if (/FROM categories/i.test(text) && /gundem/i.test(text)) {
-      return [{ id: 1 }];
-    }
     if (/FROM categories/i.test(text) && /lower\(slug\)/i.test(text)) {
-      const [slug] = values;
-      const hit = state.categories.find((c) => c.slug === String(slug).toLowerCase());
-      return hit ? [{ id: hit.id }] : [];
+      const slug = String(values[0] || "").toLowerCase();
+      const siteId = values.length > 1 ? values[1] : null;
+      let rows = (state.categories || []).filter((c) => c.slug === slug);
+      if (siteId != null && /exclusive_site_id/i.test(text)) {
+        rows = rows.filter((c) => c.exclusive_site_id == null || Number(c.exclusive_site_id) === Number(siteId));
+        rows.sort((a, b) => {
+          const as = Number(a.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          const bs = Number(b.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          return as - bs || a.id - b.id;
+        });
+      } else if (/exclusive_site_id IS NULL/i.test(text)) {
+        rows = rows.filter((c) => c.exclusive_site_id == null);
+      }
+      const hit = rows[0];
+      return hit ? [{ id: hit.id, slug: hit.slug }] : [];
     }
     if (/FROM categories/i.test(text) && /WHERE id/i.test(text)) {
       const [id] = values;
-      const hit = state.categories.find((c) => Number(c.id) === Number(id));
-      return hit ? [{ id: hit.id }] : [];
+      const siteId = values.length > 1 ? values[1] : null;
+      let rows = (state.categories || []).filter((c) => Number(c.id) === Number(id));
+      if (siteId != null && /exclusive_site_id/i.test(text)) {
+        rows = rows.filter((c) => c.exclusive_site_id == null || Number(c.exclusive_site_id) === Number(siteId));
+        rows.sort((a, b) => {
+          const as = Number(a.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          const bs = Number(b.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          return as - bs || a.id - b.id;
+        });
+      }
+      const hit = rows[0];
+      return hit ? [{ id: hit.id, slug: hit.slug }] : [];
     }
     if (/FROM news/i.test(text) && /SELECT id FROM news/i.test(text) && /site_id/i.test(text) && /slug/i.test(text)) {
       const [siteId, slug] = values;
@@ -71,7 +85,7 @@ function memorySql(state) {
     if (/FROM news/i.test(text) && /SELECT id, site_id/i.test(text)) {
       const [id] = values;
       const hit = state.news.find((n) => Number(n.id) === Number(id));
-      return hit ? [{ id: hit.id, site_id: hit.site_id }] : [];
+      return hit ? [{ id: hit.id, site_id: hit.site_id, slug: hit.slug }] : [];
     }
     if (/INSERT INTO news/i.test(text) && /RETURNING id/i.test(text)) {
       const title = values[0];
@@ -141,7 +155,7 @@ test("makale: aynı slug+yazar güncellenir; PK çakışınca yeni id", async ()
 });
 
 test("haber: PHP'de yoksa aynı id ile yazar", async () => {
-  const state = { nextId: 1, makaleler: [], news: [], categories: [{ id: 1, slug: "gundem" }] };
+  const state = { nextId: 1, makaleler: [], news: [], categories: [{ id: 1, slug: "gundem", exclusive_site_id: null }] };
   const sql = memorySql(state);
   const r = await edgeUpsertNews(sql, {
     id: 580081,
@@ -155,13 +169,88 @@ test("haber: PHP'de yoksa aynı id ile yazar", async () => {
   assert.equal(r.mirrored, true);
   assert.equal(r.via, "same-id");
   assert.equal(r.id, 580081);
-  assert.equal(r.site_id, 3);
 });
 
-test("isReadonlyDbError Postgres RO mesajlarını tanır", () => {
-  assert.equal(isReadonlyDbError(new Error("cannot execute INSERT in a read-only transaction")), true);
-  assert.equal(isReadonlyDbError(new Error("cannot execute UPDATE in a read-only transaction")), true);
-  assert.equal(isReadonlyDbError(new Error("unique violation")), false);
+test("haber: ankara slug site-scoped kategoriye düşer, global politika id'sine değil", async () => {
+  const state = {
+    nextId: 1,
+    makaleler: [],
+    news: [],
+    categories: [
+      // Duplicate id twin (real twilight-pine shape): id=4 is Yerel global AND Politika@site8
+      { id: 4, slug: "yerel", exclusive_site_id: null },
+      { id: 4, slug: "politika", exclusive_site_id: 8 },
+      { id: 12, slug: "politika", exclusive_site_id: null },
+      { id: 15, slug: "ankara", exclusive_site_id: null },
+    ],
+  };
+  let capturedCategoryId = null;
+  const base = memorySql(state);
+  const sql = async (strings, ...values) => {
+    const text = strings.join("?");
+    if (/INSERT INTO news/i.test(text) && !/RETURNING id/i.test(text)) {
+      capturedCategoryId = values[6]; // category_id position in same-id INSERT
+    }
+    return base(strings, ...values);
+  };
+  const r = await edgeUpsertNews(sql, {
+    id: 582114,
+    siteId: 3,
+    slug: "sehit-polis-memuru-ahmet-turkoglu-dualarla-ugurlaniyor-pursaklar-da-kanli-saldiri",
+    title: "PURSAKLAR'DA KANLI SALDIRI",
+    categorySlug: "ankara",
+    status: "published",
+    isEditorManual: true,
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(capturedCategoryId, 15);
+});
+
+test("makale: site_slug ile PHP site id eşlenir (worker 1132 → php 230)", async () => {
+  const state = {
+    nextId: 1,
+    sites: [{ id: 230, slug: "turkatahaber" }],
+    makaleler: [],
+    news: [],
+    categories: [{ id: 1, slug: "gundem" }],
+  };
+  const sql = memorySql(state);
+  const r = await edgeUpsertHmMakale(sql, {
+    id: 40001,
+    site_id: 1132,
+    site_slug: "turkatahaber",
+    author_id: 10,
+    slug: "huseyin-yazisi",
+    title: "Hüseyin yazısı",
+    status: "published",
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(r.via, "same-id");
+  assert.equal(state.makaleler[0].site_id, 230);
+});
+
+test("haber: aynı slug farklı site_id ile id varsa manşet bayrağı site remap ile yazılır", async () => {
+  const state = {
+    nextId: 1,
+    sites: [{ id: 230, slug: "turkatahaber" }],
+    makaleler: [],
+    news: [{ id: 99, site_id: 1132, slug: "eski-manset", title: "eski", is_featured: false }],
+    categories: [{ id: 1, slug: "gundem" }],
+  };
+  const sql = memorySql(state);
+  const r = await edgeUpsertNews(sql, {
+    id: 99,
+    site_id: 1132,
+    site_slug: "turkatahaber",
+    slug: "eski-manset",
+    title: "Yeni manşet",
+    categorySlug: "gundem",
+    status: "published",
+    is_featured: true,
+    is_site_manset: true,
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(r.via, "id-update-remap-site");
 });
 
 test("dual-write read-only INSERT hatası panel'e fırlatılmaz", async () => {
@@ -170,38 +259,14 @@ test("dual-write read-only INSERT hatası panel'e fırlatılmaz", async () => {
   };
   sql.query = sql;
   const r = await edgeMirrorNewsDbWrite(sql, "news", "upsert", {
-    id: 582114,
+    id: 1,
     site_id: 3,
-    slug: "sehit-polis",
-    title: "ŞEHİT POLİS",
+    slug: "x",
+    title: "X",
     status: "published",
   });
   assert.equal(r.mirrored, false);
-  assert.equal(r.readonly, true);
   assert.equal(r.reason, "news-db-read-only");
-});
-
-test("haber: ASG site_id=3 kalır; tepe manşet is_site_manset ile açılır", async () => {
-  const state = { nextId: 1, makaleler: [], news: [], categories: [{ id: 15, slug: "ankara" }] };
-  const sql = memorySql(state);
-  const r = await edgeUpsertNews(sql, {
-    id: 582114,
-    site_id: 3,
-    site_slug: "asg",
-    slug: "sehit-polis-memuru-ahmet-turkoglu-dualarla-ugurlaniyor-pursaklar-da-kanli-saldiri",
-    title: "ŞEHİT POLİS MEMURU AHMET TÜRKOĞLU",
-    category_slug: "ankara",
-    status: "published",
-    is_featured: true,
-    is_site_manset: true,
-    is_editor_manual: true,
-    site_only: true,
-  });
-  assert.equal(r.mirrored, true);
-  assert.equal(r.via, "same-id");
-  assert.equal(r.id, 582114);
-  assert.equal(r.site_id, 3);
-  assert.equal(state.news[0].site_id, 3);
 });
 
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {
@@ -226,4 +291,42 @@ test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () =>
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test("edgeUpsertNews writes is_tepe_manset from is_featured", async () => {
+  const updates = [];
+  const sql = async (strings, ...values) => {
+    const text = strings.join("?");
+    if (/FROM hm_news_sites/i.test(text)) return [{ id: 3 }];
+    if (/FROM categories/i.test(text) && /gundem/i.test(text)) return [{ id: 1 }];
+    if (/FROM categories/i.test(text)) return [{ id: 1 }];
+    if (/FROM news/i.test(text) && /SELECT id FROM news/i.test(text) && /slug/i.test(text)) {
+      return [{ id: 99 }];
+    }
+    if (/UPDATE news SET/i.test(text)) {
+      updates.push({ text, values });
+      return [];
+    }
+    return [];
+  };
+  const res = await edgeUpsertNews(sql, {
+    id: 99,
+    site_id: 3,
+    site_slug: "asg",
+    title: "Tepe deneme",
+    slug: "tepe-deneme",
+    status: "published",
+    is_featured: true,
+    is_site_manset: false,
+    is_breaking: false,
+    category_slug: "gundem",
+  });
+  assert.equal(res.mirrored, true);
+  const tepeWrite = updates.find((u) => u.text.includes("is_tepe_manset") || u.values.includes(true));
+  assert.ok(updates.length >= 1, "expected UPDATE");
+  assert.ok(
+    updates.some((u) => /is_tepe_manset/.test(u.text) && u.values.includes(true)),
+    "expected is_tepe_manset=true in UPDATE",
+  );
 });
