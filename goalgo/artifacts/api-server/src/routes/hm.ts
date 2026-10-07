@@ -115,6 +115,7 @@ import {
   isHmCorporateLikeTheme,
   resolveDefaultHmNewsSiteLayoutTheme,
 } from "../lib/hm-corporate-like-theme.js";
+import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
 import {
   assertHmLayoutJsonSize,
   hmLayoutTabIconUrl,
@@ -605,7 +606,8 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmCorporateRssBandEnabled: false,
     ...inc,
   };
-  return applyHmRssNewsPolicyToLayout(base);
+  // Yeni HM siteleri Hostinger PHP (Yenişafak) şablonuna işaretlenir; wrangler listesi gerekmez.
+  return applyHmRssNewsPolicyToLayout(ensurePhpThemeLayoutDefaults(base));
 }
 
 function donationText(raw: unknown, fallback: string, max = 240): string {
@@ -1383,7 +1385,34 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         ...(inc.hmCategoryColors as Record<string, unknown>),
       };
     }
-    patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(merged, inc)));
+    // phpTheme yalnızca create veya domain atamasında varsayılanlanır; burada açık gelen değer korunur.
+    const withPhp =
+      "phpTheme" in inc || "frontend" in inc ? ensurePhpThemeLayoutDefaults(merged) : merged;
+    patch.layoutJson = JSON.stringify(
+      applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(withPhp, inc)),
+    );
+  } else if ("domain" in b || "domain2" in b || "domain3" in b) {
+    // Domain atanınca PHP şablon bayrağı yoksa otomatik işaretle (opt-out hariç).
+    const [prevRow] = await newsReadDb()
+      .select({ layoutJson: hmNewsSitesTable.layoutJson })
+      .from(hmNewsSitesTable)
+      .where(eq(hmNewsSitesTable.id, id));
+    let prev: Record<string, unknown> = {};
+    try {
+      const rawPrev = prevRow?.layoutJson;
+      if (rawPrev != null && String(rawPrev).trim()) {
+        const j = JSON.parse(String(rawPrev)) as unknown;
+        if (j && typeof j === "object" && !Array.isArray(j)) prev = j as Record<string, unknown>;
+      }
+    } catch {
+      prev = {};
+    }
+    if (!layoutMarksPhpTheme(prev) && prev.phpTheme !== false) {
+      const next = ensurePhpThemeLayoutDefaults(prev);
+      if (layoutMarksPhpTheme(next)) {
+        patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(next));
+      }
+    }
   }
   if (typeof b.active === "boolean") patch.active = b.active;
 
