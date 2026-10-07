@@ -25,6 +25,8 @@ import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
+import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
+import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
   hybridEdgeFillHttpStatus,
@@ -3181,6 +3183,10 @@ export default {
         const adminSite = await handleHmAdminSiteEdge(request.clone(), env, { ...incoming, pathname: edgePath });
         if (adminSite) return adminSite;
       }
+      const adminSync = await handleAdminPhpNeonSyncEdge(request.clone(), env, { ...incoming, pathname: edgePath });
+      if (adminSync) return adminSync;
+      const watchdog = await handleHmSiteWatchdogEdge(request.clone(), env, { ...incoming, pathname: edgePath });
+      if (watchdog) return watchdog;
     } catch (err) {
       console.error("[hm-admin-site-edge]", String(err?.message || err).slice(0, 200));
     }
@@ -3194,6 +3200,7 @@ export default {
         (edgePath === "/api/hm/editor/authors" ||
           edgePath === "/api/hm/editor/authors/bulk-delete" ||
           edgePath === "/api/hm/editor/authors/order" ||
+          edgePath === "/api/hm/editor/php-neon-sync" ||
           edgePath === "/api/hm/editor/news" ||
           edgePath === "/api/hm/editor/makale" ||
           edgePath === "/api/hm/editor/makale/bulk-delete" ||
@@ -3562,6 +3569,11 @@ export default {
           });
         } catch (err) {
           console.error("[hm-keepalive/warm]", String(err?.message || err).slice(0, 160));
+        }
+        try {
+          await runHmSiteWatchdog(env, { limit: 10 });
+        } catch (err) {
+          console.error("[hm-site-watchdog]", String(err?.message || err).slice(0, 160));
         }
       })(),
     );

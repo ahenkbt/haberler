@@ -190,7 +190,7 @@ export async function applyAdminSitePatch(sql, siteId, patch) {
   return { status: 200, body: { ok: true, hmPublicSuspended: patch.suspended } };
 }
 
-async function loadPanelSession(env, sid) {
+export async function loadPanelSession(env, sid) {
   const { neonSqlClient } = await import("./neon-edge-db.js");
   const sql = neonSqlClient(env);
   if (!sql) return { sql: null, sess: null };

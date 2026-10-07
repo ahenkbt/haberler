@@ -28,6 +28,8 @@ import {
 import { DEFAULT_GEMINI_MODEL } from "../lib/geminiSearchService.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "../lib/aiNewsPrompts.js";
 import { finalizeAiNewsArticle } from "../lib/aiNewsArticle.js";
+import { callChatWithLlmChain } from "../lib/hm-llm-chat.js";
+import { resolveLlmAttempts } from "../lib/hm-llm-store.js";
 const router: IRouter = Router();
 
 /* — helpers ──────────────────────────────────────────────────────── */
@@ -185,11 +187,39 @@ router.put("/ai/settings", async (req, res): Promise<void> => {
 /* — POST /ai/test ─────────────────────────────────────────────────── */
 router.post("/ai/test", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenanceAny(req, res, ["haberler", "site_ayarlari"])) return;
+
+  // Önce Evren / HM LLM zinciri (Yapay Zeka paneli anahtarları)
+  try {
+    const llm = await callChatWithLlmChain({
+      siteId: null,
+      system: "Sen bir test asistanısın.",
+      user: 'Sadece tam olarak şu iki harfi büyük harfle yaz: OK (başka kelime veya noktalama ekleme).',
+      temperature: 0.1,
+    });
+    const llmText = (llm.text ?? "").trim();
+    const llmOk = /\bOK\b/i.test(llmText) || /^OK\b/i.test(llmText.replace(/^[`"'“]+/, ""));
+    if (llmOk) {
+      res.json({
+        ok: true,
+        model: llm.model || llm.llmProvider || "llm-chain",
+        provider: llm.llmProvider || "evren",
+        scope: llm.scope,
+      });
+      return;
+    }
+  } catch {
+    /* legacy anahtarlara düş */
+  }
+
   const s = await getAiSettings();
   const siteKeys = await getSiteIntegrationKeys();
   const chatKeys = mergeChatKeysFromAiAndSite(s, siteKeys);
   if (!hasChatApiKeyForProvider(chatKeys, chatKeys.preferredProvider)) {
-    res.status(400).json({ ok: false, error: missingProviderKeyMessage(chatKeys.preferredProvider) });
+    res.status(400).json({
+      ok: false,
+      error:
+        "Evren/NVIDIA/Gemini/OpenAI anahtarı yok. Haber Siteleri → Yapay Zeka veya Genel Ayarlar → Yapay zekâ.",
+    });
     return;
   }
   const model = chatKeys.openaiModel;
@@ -951,7 +981,22 @@ async function buildAiProviderStatus() {
 router.get("/ai/status", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
   const status = await buildAiProviderStatus();
-  res.json({ ok: true, ...status });
+  let evrenConfigured = false;
+  let llmChainReady = false;
+  try {
+    const attempts = await resolveLlmAttempts(null);
+    llmChainReady = attempts.length > 0;
+    evrenConfigured = attempts.some((a) => a.provider === "evren");
+  } catch {
+    /* ignore */
+  }
+  res.json({
+    ok: true,
+    ...status,
+    evrenConfigured,
+    llmChainReady,
+    hasAnyAiKey: status.hasAnyAiKey || llmChainReady,
+  });
 });
 
 /* — GET /ai/stats ──────────────────────────────────────────────────── */

@@ -11,6 +11,7 @@ import {
   syncPhpAuthorsToWorker,
   syncPhpCategoriesToWorker,
 } from "./hm-php-editor-sync.js";
+import { runEditorPhpNeonSync } from "./hm-php-neon-sync-edge.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
@@ -311,9 +312,11 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     const newsSql = neonNewsSqlClient(env);
     if (newsSql) {
       let payload = rowOrId;
-      if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
+      if (op !== "delete" && payload && typeof payload === "object") {
         const workerSql = sqlClient(env);
-        const sid = asPositiveInt(payload.site_id ?? payload.siteId);
+        const sid = asPositiveInt(
+          payload.site_id ?? payload.siteId ?? payload.hm_site_id ?? payload.hmSiteId,
+        );
         if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
           try {
             const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
@@ -2578,6 +2581,10 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   if (path === "/api/hm/editor/categories" && method === "GET") {
     return handleCategories(sql, ctx.siteId, env);
+  }
+
+  if (path === "/api/hm/editor/php-neon-sync" && method === "POST") {
+    return runEditorPhpNeonSync(env, ctx.siteId, await readJsonBody(request));
   }
 
   if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") {

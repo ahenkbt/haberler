@@ -26,29 +26,28 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 }
 
 async function probeOnce(signal: AbortSignal): Promise<"ok" | "limited" | "down"> {
-  const ctrl = new AbortController();
-  const onParentAbort = () => ctrl.abort();
-  signal.addEventListener("abort", onParentAbort, { once: true });
-  const tid = window.setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);
-
-  try {
-    for (const path of PROBE_PATHS) {
-      if (signal.aborted) return "down";
-      try {
-        const r = await fetch(apiUrl(path), { signal: ctrl.signal, cache: "no-store" });
-        if (r.status === 429) return "limited";
-        if (r.ok) return "ok";
-        if (path === "/api/healthz/live" && r.status === 404) continue;
-        if (r.status >= 500) return "down";
-      } catch {
-        if (path === "/api/healthz/live") continue;
-      }
+  // /live hızlı kenar yanıtı; ağır /healthz zaman aşımı yüzünden paneli "Sunucu hatası" göstermesin.
+  for (const path of PROBE_PATHS) {
+    if (signal.aborted) return "down";
+    const ctrl = new AbortController();
+    const onParentAbort = () => ctrl.abort();
+    signal.addEventListener("abort", onParentAbort, { once: true });
+    const timeoutMs = path === "/api/healthz/live" ? 5_000 : PROBE_TIMEOUT_MS;
+    const tid = window.setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const r = await fetch(apiUrl(path), { signal: ctrl.signal, cache: "no-store" });
+      if (r.status === 429) return "limited";
+      if (r.ok) return "ok";
+      if (path === "/api/healthz/live" && r.status === 404) continue;
+      if (r.status >= 500 && path !== "/api/healthz/live") return "down";
+    } catch {
+      if (path === "/api/healthz/live") continue;
+    } finally {
+      window.clearTimeout(tid);
+      signal.removeEventListener("abort", onParentAbort);
     }
-    return "down";
-  } finally {
-    window.clearTimeout(tid);
-    signal.removeEventListener("abort", onParentAbort);
   }
+  return "down";
 }
 
 async function probeApiReachable(signal: AbortSignal): Promise<"ok" | "limited" | "down"> {

@@ -16,10 +16,15 @@ function memorySql(state) {
       );
       return hit ? [{ id: hit.id }] : [];
     }
+    if (/FROM hm_news_sites/i.test(text) && /lower\(slug\)/i.test(text)) {
+      const [slug] = values;
+      const hit = (state.sites || []).find((s) => String(s.slug).toLowerCase() === String(slug).toLowerCase());
+      return hit ? [{ id: hit.id }] : [];
+    }
     if (/FROM hm_makaleler/i.test(text) && /WHERE id =/i.test(text) && /SELECT id, site_id/i.test(text)) {
       const [id] = values;
       const hit = state.makaleler.find((m) => Number(m.id) === Number(id));
-      return hit ? [{ id: hit.id, site_id: hit.site_id }] : [];
+      return hit ? [{ id: hit.id, site_id: hit.site_id, slug: hit.slug }] : [];
     }
     if (/UPDATE hm_makaleler/i.test(text)) {
       const id = values[values.length - 1];
@@ -61,7 +66,7 @@ function memorySql(state) {
     if (/FROM news/i.test(text) && /SELECT id, site_id/i.test(text)) {
       const [id] = values;
       const hit = state.news.find((n) => Number(n.id) === Number(id));
-      return hit ? [{ id: hit.id, site_id: hit.site_id }] : [];
+      return hit ? [{ id: hit.id, site_id: hit.site_id, slug: hit.slug }] : [];
     }
     if (/INSERT INTO news/i.test(text) && /RETURNING id/i.test(text)) {
       const title = values[0];
@@ -145,6 +150,53 @@ test("haber: PHP'de yoksa aynı id ile yazar", async () => {
   assert.equal(r.mirrored, true);
   assert.equal(r.via, "same-id");
   assert.equal(r.id, 580081);
+});
+
+test("makale: site_slug ile PHP site id eşlenir (worker 1132 → php 230)", async () => {
+  const state = {
+    nextId: 1,
+    sites: [{ id: 230, slug: "turkatahaber" }],
+    makaleler: [],
+    news: [],
+    categories: [{ id: 1, slug: "gundem" }],
+  };
+  const sql = memorySql(state);
+  const r = await edgeUpsertHmMakale(sql, {
+    id: 40001,
+    site_id: 1132,
+    site_slug: "turkatahaber",
+    author_id: 10,
+    slug: "huseyin-yazisi",
+    title: "Hüseyin yazısı",
+    status: "published",
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(r.via, "same-id");
+  assert.equal(state.makaleler[0].site_id, 230);
+});
+
+test("haber: aynı slug farklı site_id ile id varsa manşet bayrağı site remap ile yazılır", async () => {
+  const state = {
+    nextId: 1,
+    sites: [{ id: 230, slug: "turkatahaber" }],
+    makaleler: [],
+    news: [{ id: 99, site_id: 1132, slug: "eski-manset", title: "eski", is_featured: false }],
+    categories: [{ id: 1, slug: "gundem" }],
+  };
+  const sql = memorySql(state);
+  const r = await edgeUpsertNews(sql, {
+    id: 99,
+    site_id: 1132,
+    site_slug: "turkatahaber",
+    slug: "eski-manset",
+    title: "Yeni manşet",
+    categorySlug: "gundem",
+    status: "published",
+    is_featured: true,
+    is_site_manset: true,
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(r.via, "id-update-remap-site");
 });
 
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {
