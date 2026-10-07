@@ -1,0 +1,39 @@
+# Traefik dynamic config — sosyalhizmetler.tr (Marmara Gündemi domain2) on VPS 187.77.84.201
+#
+# Install path:
+#   /docker/traefik/dynamic/sosyalhizmetler.yml
+#
+# Upstream: Yenişafak PHP (:8095) — Host header → by-domain slug marmara-gundemi
+# Worker: panel/API/assets routes only — NO sosyalhizmetler.tr/* catch-all
+#
+# Rollback: rm /docker/traefik/dynamic/sosyalhizmetler.yml
+
+http:
+  routers:
+    hm-sosyalhizmetler:
+      rule: "Host(`sosyalhizmetler.tr`) || Host(`www.sosyalhizmetler.tr`)"
+      entryPoints: ["websecure"]
+      service: hm-sosyalhizmetler-php
+      tls:
+        certResolver: letsencrypt
+      priority: 20
+
+    hm-sosyalhizmetler-http:
+      rule: "Host(`sosyalhizmetler.tr`) || Host(`www.sosyalhizmetler.tr`)"
+      entryPoints: ["web"]
+      service: hm-sosyalhizmetler-php
+      middlewares: ["hm-sosyalhizmetler-https-redirect"]
+      priority: 20
+
+  middlewares:
+    hm-sosyalhizmetler-https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    hm-sosyalhizmetler-php:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://127.0.0.1:8095"
