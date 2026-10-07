@@ -15,6 +15,9 @@ describe("hm-fixhaber-edge catalog", () => {
     assert.equal(layout.frontend, "php");
     assert.equal(layout.hmVitrinTheme, "yenisafak");
     assert.equal(layout.hmYsSlogan, "Fix Haber");
+    assert.equal(layout.logoUrl, "/fix/fix-haber-logo.png");
+    assert.equal(layout.faviconUrl, "/fix/fix-haber-favicon.png");
+    assert.doesNotMatch(String(layout.logoUrl), /^data:/);
   });
 
   it("detects fix.tc host", () => {
