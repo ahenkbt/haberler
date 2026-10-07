@@ -10,6 +10,8 @@ import { sitemapFailXml, toGscWebSitemapXml } from "./sitemap-fail-xml.js";
 export const TURKATA_APEX_HOST = "turkatahaber.com";
 export const TURKATA_WWW_HOST = "www.turkatahaber.com";
 export const TURKATA_ORIGIN = "https://turkatahaber.com";
+/** Apex host alias’ları — aynı HM site (turkatahaber); kanonik SEO kökü yine TURKATA_ORIGIN. */
+export const TURKATA_ALIAS_APEX_HOSTS = Object.freeze(["gundemi.org"]);
 export const TURKATA_BRAND = "TÜRKATA HABER AJANSI";
 export const TURKATA_FOUNDATION = "Türk Kültürünü Araştırma ve Tanıtma Vakfı";
 export const TURKATA_FOUNDATION_URL = "https://turkatav.org";
@@ -92,21 +94,39 @@ export function normalizeTurkataHost(hostname) {
     .replace(/^www\./, "");
 }
 
+function isTurkataAliasApex(apex) {
+  return TURKATA_ALIAS_APEX_HOSTS.includes(String(apex || ""));
+}
+
 export function isTurkataHaberHost(hostname) {
   const raw = String(hostname || "")
     .trim()
     .toLowerCase()
     .split(":")[0];
-  return raw === TURKATA_APEX_HOST || raw === TURKATA_WWW_HOST || normalizeTurkataHost(raw) === TURKATA_APEX_HOST;
+  if (!raw) return false;
+  if (raw === TURKATA_APEX_HOST || raw === TURKATA_WWW_HOST) return true;
+  const apex = normalizeTurkataHost(raw);
+  return apex === TURKATA_APEX_HOST || isTurkataAliasApex(apex);
 }
 
+/** www.turkatahaber.com veya www.<alias> (ör. www.gundemi.org) → ilgili apex. */
 export function isTurkataWwwHost(hostname) {
-  return (
-    String(hostname || "")
-      .trim()
-      .toLowerCase()
-      .split(":")[0] === TURKATA_WWW_HOST
-  );
+  const raw = String(hostname || "")
+    .trim()
+    .toLowerCase()
+    .split(":")[0];
+  if (!raw.startsWith("www.")) return false;
+  return isTurkataHaberHost(raw);
+}
+
+/**
+ * Tarayıcıda görünen kök: alias host’ta kal (gundemi.org), kanonik turkatahaber değil.
+ * SEO canonical URL’leri hâlâ TURKATA_ORIGIN kullanır.
+ */
+export function turkataPublicOrigin(hostname) {
+  const apex = normalizeTurkataHost(hostname);
+  if (isTurkataAliasApex(apex)) return `https://${apex}`;
+  return TURKATA_ORIGIN;
 }
 
 export function normalizeTurkataPath(pathname) {

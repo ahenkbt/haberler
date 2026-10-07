@@ -5,7 +5,7 @@ Zone `gundemi.org` Cloudflare’de. Ön yüz **Yenişafak PHP** (VPS `187.77.84.
 Repo kataloğu: `goalgo/artifacts/api-server/src/lib/hm-gundemi-regional-sites.ts`  
 Logolar: `assets/logos/` (ve SPA `goalgo/artifacts/ahenkpress/public/gundemi/logos/`)  
 Neon seed: `pnpm --filter @workspace/api-server run ensure:gundemi-bolge`  
-DNS otomasyon: `scripts/cf-ensure-gundemi-php-dns.mjs`
+DNS otomasyon: `scripts/cf-ensure-gundemi-php-dns.mjs` (manuel Actions: **workflow_dispatch**)
 
 ## Apex = TürkAta (turkatahaber) alias (#391)
 
@@ -14,7 +14,10 @@ DNS otomasyon: `scripts/cf-ensure-gundemi-php-dns.mjs`
 | `gundemi.org` / `www.gundemi.org` | **turkatahaber.com** ile aynı site | slug `turkatahaber`, `domain2=gundemi.org` |
 | `ege` … `kibris`.gundemi.org | 8 bölgesel Yenişafak sitesi | ayrı slug’lar (`ege-gundemi` …) |
 
-Apex için **9. boş gundemi sitesi yok**. `www.gundemi.org` → `https://gundemi.org/…` (turkatahaber.com’a zorla yönlendirmez).
+Apex için **9. boş gundemi sitesi yok**. Worker: `turkata-haber.js` → `TURKATA_ALIAS_APEX_HOSTS` / `isTurkataHaberHost`.  
+`www.gundemi.org` → `https://gundemi.org/…` (turkatahaber.com’a zorla yönlendirmez).
+
+VPS: `gundemi.org` + `www.gundemi.org` ServerAlias → turkatahaber Yenişafak vhost **veya** Neon `meta/by-domain` (`domain2`).
 
 ## Bölgesel siteler
 
@@ -50,6 +53,8 @@ Her satır **Proxied (turuncu bulut)** → Hostinger VPS.
 **Yapmayın:** `*.gundemi.org/*` / `gundemi.org/*` catch-all Worker route (ön yüzü SPA’ya çeker).  
 `wrangler.toml` yalnızca `*.gundemi.org/editor*`, `/api/*`, `/admin*`, `/tr/*`, `/hm/*`, yazar paneli vb. + apex panel yolları ekler.
 
+Deploy sonrası: Cloudflare → Workers → `haberler` → Routes’ta `*.gundemi.org/editor*` vb. göründüğünü kontrol edin (`main` merge → `cloudflare-production` workflow).
+
 ### Belirti: `DNS_PROBE_FINISHED_NXDOMAIN`
 
 Tarayıcıda `ege.gundemi.org` (veya diğer alt alan) açılmıyorsa zone’da A kaydı yoktur. Zone NS’leri Cloudflare’de olsa bile kayıt eklenmeden çözülmez.
@@ -77,7 +82,7 @@ DRY_RUN=1 node scripts/cf-ensure-gundemi-php-dns.mjs
 ```
 
 GitHub Actions: **Actions → “Ensure gundemi.org PHP DNS” → Run workflow**  
-(`.github/workflows/cf-ensure-gundemi-dns.yml`). Secret aynı yetkilere sahip olmalı.
+(`.github/workflows/cf-ensure-gundemi-dns.yml` — yalnızca `workflow_dispatch`; push/PR’da çalışmaz, token yetkisi yokken check’i kırmızıya çekmez). Secret aynı yetkilere sahip olmalı.
 
 Script:
 
@@ -134,7 +139,7 @@ cp goalgo/artifacts/ahenkpress/public/gundemi/logos/*-gundemi.png hostinger/gund
 
 ## Kontrol listesi
 
-- [ ] DNS A Proxied (`@`/`www` + 8 alt alan) — script veya Dashboard
+- [ ] DNS A Proxied (`@`/`www` + 8 alt alan) — Dashboard veya script (token’a Zone DNS Edit gerekir)
 - [ ] `dig` / tarayıcı: NXDOMAIN yok
 - [ ] Catch-all Worker route yok; panel routes var
 - [ ] VPS vhost + Yenişafak PHP

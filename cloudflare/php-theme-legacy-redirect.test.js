@@ -24,12 +24,15 @@ test("PHP tema hostları: ASG + Ekim 2026 twin'ler + kurumsal PHP; askı kapıs�
   assert.ok(apex.includes("turksav.org"));
   assert.ok(apex.includes("dunyasaglik.org"));
   assert.ok(apex.includes("yerel.net.tr"));
+  assert.ok(apex.includes("gundemi.org"));
   assert.ok(apex.includes("ege.gundemi.org"));
   assert.ok(apex.includes("akdeniz.gundemi.org"));
   assert.ok(apex.includes("kibris.gundemi.org"));
   assert.ok(apex.includes("vatankahramanlari.org"));
   assert.ok(apex.includes("trafikdernegi.com"));
   assert.ok(apex.includes("tgd.tc"));
+  assert.equal(isPhpThemePublicHost("gundemi.org"), true);
+  assert.equal(isPhpThemePublicHost("www.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("ege.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("icanadolu.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("ankarasehirgazetesi.com"), true);

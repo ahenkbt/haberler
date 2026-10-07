@@ -5,6 +5,12 @@
   "phpTheme": true,
   "hmVitrinTheme": "yenisafak",
   "logoPublicBase": "/gundemi/logos",
+  "apexAlias": {
+    "hosts": ["gundemi.org", "www.gundemi.org"],
+    "hmSlug": "turkatahaber",
+    "canonicalNewsHost": "turkatahaber.com",
+    "note": "Apex serves turkatahaber HM row via domain2; not a 9th empty site"
+  },
   "sites": [
     {
       "slug": "ege-gundemi",

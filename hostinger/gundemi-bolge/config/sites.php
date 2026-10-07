@@ -3,10 +3,20 @@
  * gundemi.org bölgesel Yenişafak HM siteleri — host → site eşlemesi.
  * VPS (187.77.84.201) vhost / PHP tema bu listeyi veya Neon meta/by-domain kullanır.
  * Logos: ../assets/logos/{slug}-gundemi.png
+ *
+ * Apex gundemi.org / www → turkatahaber (domain2 alias); bölgesel alt alanlar ayrı.
  */
 declare(strict_types=1);
 
 $sites = [
+    'gundemi.org' => [
+        'slug' => 'turkatahaber',
+        'apex' => 'gundemi.org',
+        'displayName' => 'TÜRKATA HABER AJANSI',
+        'theme' => 'yenisafak',
+        'aliasOf' => 'turkatahaber.com',
+        'tagline' => 'Yerelin Sesini Geleceğe Taşıyan Güvenilir Haber Ağı',
+    ],
     'ege.gundemi.org' => [
         'slug' => 'ege-gundemi',
         'apex' => 'ege.gundemi.org',

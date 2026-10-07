@@ -90,7 +90,13 @@ export const TURKATA_ABOUT_CLOSE =
   "Türk Kültürünü Araştırma ve Tanıtma Vakfı güvencesiyle, Türkiye'nin her köşesindeki emeği, hizmeti ve değeri kamuoyuyla buluşturmaya gururla devam ediyoruz.";
 export const TURKATA_FOOTER_ABOUT_HTML = `<p><strong>${TURKATA_ABOUT_TAGLINE}</strong></p><p>${TURKATA_ABOUT_INTRO[0]}</p>`;
 
-const HOSTS = new Set(["turkatahaber.com", "www.turkatahaber.com"]);
+const HOSTS = new Set([
+  "turkatahaber.com",
+  "www.turkatahaber.com",
+  "gundemi.org",
+  "www.gundemi.org",
+]);
+const ALIAS_APEX = new Set(["gundemi.org"]);
 
 export function isTurkataHaberHost(host?: string | null): boolean {
   const raw = String(
@@ -101,7 +107,8 @@ export function isTurkataHaberHost(host?: string | null): boolean {
     .split(":")[0];
   if (!raw) return false;
   if (HOSTS.has(raw)) return true;
-  return raw.replace(/^www\./, "") === "turkatahaber.com";
+  const apex = raw.replace(/^www\./, "");
+  return apex === "turkatahaber.com" || ALIAS_APEX.has(apex);
 }
 
 export function normalizeTurkataPath(path: string): string {
