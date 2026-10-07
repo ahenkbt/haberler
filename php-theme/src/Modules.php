@@ -147,4 +147,82 @@ final class Modules
         $value = preg_replace('/[^a-z0-9]+/', '-', $value) ?? '';
         return trim($value, '-');
     }
+
+    /**
+     * Category bar. A stored `hmNavOnlyCategorySlugs` array limits the bar to that list.
+     * Missing key keeps the canonical categories plus database-only rows.
+     *
+     * @param array<string, mixed> $layout
+     * @param array<string, string> $dbNames
+     * @param array<string, string> $canonical
+     * @return list<array{slug: string, name: string}>
+     */
+    public static function navCategories(array $layout, array $dbNames, array $canonical): array
+    {
+        $hidden = [];
+        if (is_array($layout['hmNavHiddenCategorySlugs'] ?? null)) {
+            foreach ($layout['hmNavHiddenCategorySlugs'] as $slug) {
+                $hidden[self::slug((string) $slug)] = true;
+            }
+        }
+        $names = $canonical;
+        foreach ($dbNames as $slug => $name) {
+            $key = self::slug((string) $slug);
+            if ($key !== '') {
+                $names[$key] = (string) $name;
+            }
+        }
+        if (is_array($layout['hmNewsExtraCategories'] ?? null)) {
+            foreach ($layout['hmNewsExtraCategories'] as $row) {
+                if (!is_array($row) || count($row) < 2) {
+                    continue;
+                }
+                $slug = self::slug((string) $row[0]);
+                $name = trim((string) $row[1]);
+                if ($slug === '' || $name === '') {
+                    continue;
+                }
+                $names[$slug] = $name;
+            }
+        }
+        $categories = [];
+        $only = $layout['hmNavOnlyCategorySlugs'] ?? null;
+        if (is_array($only)) {
+            $seen = [];
+            foreach ($only as $slug) {
+                $key = self::slug((string) $slug);
+                if ($key === '' || isset($hidden[$key]) || isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+                $categories[] = ['slug' => $key, 'name' => $names[$key] ?? $key];
+            }
+        } else {
+            foreach ($canonical as $slug => $name) {
+                if (isset($hidden[$slug])) {
+                    continue;
+                }
+                $categories[] = ['slug' => $slug, 'name' => $names[$slug] ?? $name];
+            }
+            foreach ($dbNames as $slug => $name) {
+                $key = self::slug((string) $slug);
+                if ($key === '' || isset($hidden[$key]) || isset($canonical[$key])) {
+                    continue;
+                }
+                $categories[] = ['slug' => $key, 'name' => (string) $name];
+            }
+        }
+        $sort = [];
+        if (is_array($layout['hmCategorySortSlugs'] ?? null)) {
+            foreach ($layout['hmCategorySortSlugs'] as $index => $slug) {
+                $sort[self::slug((string) $slug)] = (int) $index;
+            }
+        }
+        if ($sort !== []) {
+            usort($categories, static function (array $a, array $b) use ($sort): int {
+                return ($sort[$a['slug']] ?? 1000) <=> ($sort[$b['slug']] ?? 1000);
+            });
+        }
+        return $categories;
+    }
 }

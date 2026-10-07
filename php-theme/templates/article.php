@@ -33,4 +33,18 @@ $cat = (string) ($story['category'] ?? '');
   <?php elseif (($story['body'] ?? '') !== ''): ?>
     <div class="ys-body"><?= Html::sanitize((string) $story['body']) ?></div>
   <?php endif; ?>
+  <?php if ($site->shareEnabled()): ?>
+    <?php
+      $shareUrl = $site->canonical('/haber/' . rawurlencode((string) ($story['slug'] ?? '')));
+      $shareTitle = rawurlencode((string) ($story['title'] ?? ''));
+      $shareLink = rawurlencode($shareUrl);
+    ?>
+    <p class="ys-share">
+      <span>Paylaş</span>
+      <a href="https://twitter.com/intent/tweet?url=<?= Html::e($shareLink) ?>&text=<?= Html::e($shareTitle) ?>" rel="noopener noreferrer">X</a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=<?= Html::e($shareLink) ?>" rel="noopener noreferrer">Facebook</a>
+      <a href="https://wa.me/?text=<?= Html::e($shareTitle) ?>%20<?= Html::e($shareLink) ?>" rel="noopener noreferrer">WhatsApp</a>
+      <a href="https://t.me/share/url?url=<?= Html::e($shareLink) ?>&text=<?= Html::e($shareTitle) ?>" rel="noopener noreferrer">Telegram</a>
+    </p>
+  <?php endif; ?>
 </article>

@@ -8,6 +8,24 @@ use Yenisafak\Html;
 /** @var list<array<string, mixed>> $sections */
 ?>
 <div class="ys-home">
+<?php
+$renderAd = static function (Yenisafak\Site $site, string $key): void {
+    $ad = $site->adSlot($key);
+    if ($ad === null) {
+        return;
+    }
+    echo '<div class="ys-wrap ys-ad" data-ad-slot="' . Html::e($key) . '">';
+    if ($ad['href'] !== '') {
+        echo '<a href="' . Html::e($ad['href']) . '" rel="noopener sponsored">';
+    }
+    echo '<img src="' . Html::e(Html::src($site->basePath, $ad['image'])) . '" alt="" width="728" height="90">';
+    if ($ad['href'] !== '') {
+        echo '</a>';
+    }
+    echo '</div>';
+};
+?>
+<?php $stripShown = false; ?>
 <?php foreach ($sections as $section): ?>
   <?php if ($section['type'] === 'ysTicker'): ?>
     <div class="ys-ticker" aria-label="Son dakika">
@@ -18,6 +36,7 @@ use Yenisafak\Html;
         <?php endforeach; ?>
       </div>
     </div>
+    <?php $renderAd($site, 'block_strip'); $stripShown = true; ?>
   <?php elseif ($section['type'] === 'hero'): ?>
     <section class="ys-wrap ys-hero" aria-label="Manşet">
       <div class="ys-slider" data-ys-slider>
@@ -109,4 +128,6 @@ use Yenisafak\Html;
     </section>
   <?php endif; ?>
 <?php endforeach; ?>
+<?php if (!$stripShown) { $renderAd($site, 'block_strip'); } ?>
+<?php $renderAd($site, 'home_block_fill'); ?>
 </div>

@@ -10,9 +10,30 @@ $contact = $site->contact;
 $phone = (string) ($contact['phone'] ?? ($site->isTurkata() ? '0532 229 18 92' : ''));
 $email = (string) ($contact['email'] ?? ($site->isTurkata() ? 'bilgi@turkatahaber.com' : ''));
 $address = (string) ($contact['address'] ?? ($site->isTurkata() ? 'Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara' : ''));
+$kunye = $site->kunye();
 ?>
 <div class="ys-wrap ys-static">
-  <?php if ($page === 'kunye'): ?>
+  <?php if ($page === 'kunye' && $kunye !== []): ?>
+    <h1>Künye</h1>
+    <?php if (($kunye['lead'] ?? '') !== ''): ?><p class="ys-spot"><?= Html::e($kunye['lead']) ?></p><?php endif; ?>
+    <ul>
+      <?php if (($kunye['yayin'] ?? '') !== ''): ?><li>Yayın: <?= Html::e($kunye['yayin']) ?></li><?php endif; ?>
+      <?php if (($kunye['genelMudur'] ?? '') !== ''): ?><li>Genel Müdür: <?= Html::e($kunye['genelMudur']) ?></li><?php endif; ?>
+      <?php if (($kunye['yayinYonetmeni'] ?? '') !== ''): ?><li>Genel Yayın Yönetmeni: <?= Html::e($kunye['yayinYonetmeni']) ?></li><?php endif; ?>
+      <?php if (($kunye['yaziIsleri'] ?? '') !== ''): ?><li>Yazı İşleri Müdürü: <?= Html::e($kunye['yaziIsleri']) ?></li><?php endif; ?>
+      <?php if (($kunye['address'] ?? '') !== ''): ?><li>Genel Müdürlük: <?= Html::e($kunye['address']) ?></li><?php endif; ?>
+      <?php if (($kunye['phone'] ?? '') !== ''): ?><li>Telefon: <?= Html::e($kunye['phone']) ?></li><?php endif; ?>
+      <?php if (($kunye['email'] ?? '') !== ''): ?><li>E-posta: <?= Html::e($kunye['email']) ?></li><?php endif; ?>
+      <?php if (($kunye['tuzel'] ?? '') !== ''): ?><li>Tüzel kişilik: <?= Html::e($kunye['tuzel']) ?></li><?php endif; ?>
+    </ul>
+    <?php if (($kunye['yayinIlkeleri'] ?? '') !== ''): ?>
+      <h2 id="yayin-ilkeleri">Yayın ilkeleri</h2>
+      <p><?= Html::e($kunye['yayinIlkeleri']) ?></p>
+    <?php endif; ?>
+  <?php elseif ($page === 'kunye' && $site->pageHtml('kunye') !== ''): ?>
+    <h1>Künye</h1>
+    <div class="ys-body"><?= $site->pageHtml('kunye') ?></div>
+  <?php elseif ($page === 'kunye'): ?>
     <h1>Künye</h1>
     <?php if ($site->isTurkata()): ?>
       <p class="ys-spot">THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.</p>
@@ -33,6 +54,9 @@ $address = (string) ($contact['address'] ?? ($site->isTurkata() ? 'Sağlık Mah.
       <?php if ($address !== ''): ?><p><?= Html::e($address) ?></p><?php endif; ?>
       <?php if ($email !== ''): ?><p><?= Html::e($email) ?></p><?php endif; ?>
     <?php endif; ?>
+  <?php elseif ($page === 'hakkimizda' && $site->aboutHtml() !== ''): ?>
+    <h1>Hakkımızda</h1>
+    <div class="ys-body"><?= $site->aboutHtml() ?></div>
   <?php elseif ($page === 'hakkimizda'): ?>
     <h1>Hakkımızda</h1>
     <?php if ($site->isTurkata()): ?>
@@ -41,6 +65,9 @@ $address = (string) ($contact['address'] ?? ($site->isTurkata() ? 'Sağlık Mah.
     <?php else: ?>
       <p><?= Html::e($site->description !== '' ? $site->description : $site->name) ?></p>
     <?php endif; ?>
+  <?php elseif ($site->pageHtml('iletisim') !== ''): ?>
+    <h1>İletişim</h1>
+    <div class="ys-body"><?= $site->pageHtml('iletisim') ?></div>
   <?php else: ?>
     <h1>İletişim</h1>
     <ul>
