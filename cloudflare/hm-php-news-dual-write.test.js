@@ -170,3 +170,41 @@ test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () =>
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("edgeUpsertNews writes is_tepe_manset from is_featured", async () => {
+  const updates = [];
+  const sql = async (strings, ...values) => {
+    const text = strings.join("?");
+    if (/FROM hm_news_sites/i.test(text)) return [{ id: 3 }];
+    if (/FROM categories/i.test(text) && /gundem/i.test(text)) return [{ id: 1 }];
+    if (/FROM categories/i.test(text)) return [{ id: 1 }];
+    if (/FROM news/i.test(text) && /SELECT id FROM news/i.test(text) && /slug/i.test(text)) {
+      return [{ id: 99 }];
+    }
+    if (/UPDATE news SET/i.test(text)) {
+      updates.push({ text, values });
+      return [];
+    }
+    return [];
+  };
+  const res = await edgeUpsertNews(sql, {
+    id: 99,
+    site_id: 3,
+    site_slug: "asg",
+    title: "Tepe deneme",
+    slug: "tepe-deneme",
+    status: "published",
+    is_featured: true,
+    is_site_manset: false,
+    is_breaking: false,
+    category_slug: "gundem",
+  });
+  assert.equal(res.mirrored, true);
+  const tepeWrite = updates.find((u) => u.text.includes("is_tepe_manset") || u.values.includes(true));
+  assert.ok(updates.length >= 1, "expected UPDATE");
+  assert.ok(
+    updates.some((u) => /is_tepe_manset/.test(u.text) && u.values.includes(true)),
+    "expected is_tepe_manset=true in UPDATE",
+  );
+});
