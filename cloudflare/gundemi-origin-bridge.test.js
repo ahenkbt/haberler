@@ -170,4 +170,15 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
   });
+
+  it("fix.tc theme.css proxies shared PHP pack (Worker assets route)", async () => {
+    const incoming = new URL("https://fix.tc/assets/theme.css");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { method: "GET" }),
+      incoming,
+    );
+    assert.ok(res);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
+  });
 });
