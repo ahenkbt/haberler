@@ -88,8 +88,18 @@ export function isGundemiApexBridgeHost(hostname) {
   return host === GUNDEMI_ZONE;
 }
 
+export function isFixHaberBridgeHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return host === "fix.tc";
+}
+
 export function isGundemiBridgeCatchAllHost(hostname) {
   return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
+}
+
+/** Worker-owned PHP theme paths (gundemi + fix.tc assets route). */
+export function isPhpThemeOriginBridgeHost(hostname) {
+  return isGundemiBridgeCatchAllHost(hostname) || isFixHaberBridgeHost(hostname);
 }
 
 /** Regional logos ship in Worker ASSETS (ahenkpress public/gundemi/logos). */
@@ -299,7 +309,7 @@ async function proxyRegionalPhpThemeAsset(request, incoming) {
  * @returns {Promise<Response|null>}
  */
 export async function gundemiApexPhpBridgeResponse(request, incoming) {
-  if (!isGundemiBridgeCatchAllHost(incoming.hostname)) return null;
+  if (!isPhpThemeOriginBridgeHost(incoming.hostname)) return null;
   if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
 

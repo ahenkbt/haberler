@@ -1,0 +1,51 @@
+# Neon seed: Fix Haber (fix.tc) site row + editor + categories + sample news + RSS.
+# Secrets: DATABASE_URL (Neon haber DB — same as cloudflare-production.yml)
+name: Ensure Fix Haber Neon seed
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ensure-fixhaber]
+
+concurrency:
+  group: ensure-fixhaber
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install goalgo dependencies
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+
+      - name: ensure:fixhaber
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+          NEWS_DB_WRITE: dual
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret missing — cannot seed fix.tc in Neon."
+            echo "Manual: cd goalgo && DATABASE_URL='postgresql://…@….neon.tech/neondb?sslmode=require' pnpm --filter @workspace/api-server run ensure:fixhaber"
+            exit 1
+          fi
+          if [ -z "$NEWS_DATABASE_URL" ]; then
+            echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine may stay empty; set secret for dual-write."
+          fi
+          pnpm --filter @workspace/api-server run ensure:fixhaber

@@ -37,6 +37,14 @@ DRY_RUN=1 CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
 
 GitHub Actions: **Ensure fix.tc PHP DNS** (`workflow_dispatch` veya `repository_dispatch` event `cf-ensure-fixhaber-dns`).
 
+Neon seed (site satırı + editör + kategoriler + örnek haber + RSS):
+
+```bash
+cd goalgo && DATABASE_URL='postgresql://…@….neon.tech/neondb?sslmode=require' pnpm --filter @workspace/api-server run ensure:fixhaber
+```
+
+GitHub Actions: **Ensure Fix Haber Neon seed** (`workflow_dispatch` veya `repository_dispatch` event `ensure-fixhaber`). Secret: `DATABASE_URL`.
+
 **Repo secret (en az biri):** `CLOUDFLAREDNS_API_TOKEN` (tercih) veya `CLOUDFLARE_API_TOKEN`.
 
 **Token şablonu (Cloudflare Dashboard → My Profile → API Tokens → Create):**
@@ -95,7 +103,7 @@ Public DNS A kaydı eklenene kadar dışarıdan erişim CF anycast’e düşmez;
 
 - [ ] CF: Proxied A `@` + `www` → `187.77.84.201` (`cf-ensure-fixhaber-dns.mjs` veya Dashboard)
 - [x] VPS: `/docker/traefik/dynamic/fixhaber.yml` (2026-10-07)
-- [ ] Merge sonrası: `ensure:fixhaber` (Neon — site satırı + editör + kategoriler + örnek haber + RSS)
+- [ ] Neon: `ensure:fixhaber` veya workflow **Ensure Fix Haber Neon seed** (Worker kenarı da ilk meta 404’te seed eder — deploy sonrası)
 - [ ] Worker deploy: `wrangler.toml` panel/API routes
 - [ ] `https://fix.tc/` PHP 200 + Fix Haber markası; `https://fix.tc/editor` Worker panel
 - [ ] Root SSH parolasını rotate et (sohbette paylaşıldı; repoya yazılmaz)
