@@ -126,6 +126,9 @@ final class App
         $origin = in_array($bare, ['turkatahaber.com', 'ahenk.net.tr'], true) || (string) $row['slug'] === 'turkatahaber'
             ? 'https://turkatahaber.com'
             : 'https://' . ((string) ($row['domain'] ?: $bare));
+        // Merge live HM Editör lists (Worker public API) so new dual-write misses still appear.
+        $bridge = LiveBridge::forDomain((string) parse_url($origin, PHP_URL_HOST));
+        $this->repo->setBridge($bridge);
         return new Site(
             (int) $row['id'],
             (string) $row['slug'],

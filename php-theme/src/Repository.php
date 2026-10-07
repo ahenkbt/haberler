@@ -109,8 +109,8 @@ SQL;
 
     /**
      * TEPE MANŞET: news the site's editor wrote by hand in HM Editör and marked
-     * "Tepe manşet" (is_featured / is_tepe_manset) or site manşet (is_site_manset).
-     * RSS imports never qualify. Newest first; $maxAgeDays = 0 keeps them until unflagged.
+     * "manşette göster" / tepe manşet (is_site_manset / is_tepe_manset). RSS imports never
+     * qualify. Newest first; $maxAgeDays = 0 keeps them until the editor unflags them.
      * TODO(hm-editor): this reads the editor tables of the shared Neon DB (news.*).
      * When HM Editör exposes its own "tepe manşet" list/API, switch this query to it.
      * @return list<array<string, mixed>>
@@ -126,14 +126,13 @@ SQL;
                 LEFT JOIN categories c ON c.id = n.category_id
                 LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site%MI_JOIN%
                 WHERE n.status = \'published\'
-                  AND (n.site_id = :site OR n.owner_site_id = :site OR (n.site_id IS NULL AND (n.is_tepe_manset OR n.is_featured)))
+                  AND (n.site_id = :site OR n.owner_site_id = :site OR (n.site_id IS NULL AND n.is_tepe_manset))
                   AND (n.is_editor_manual OR COALESCE(n.rss_source_url, \'\') = \'\')
-                  AND (n.is_tepe_manset OR n.is_featured OR n.is_site_manset)';
+                  AND (n.is_tepe_manset OR n.is_site_manset)';
         if ($maxAgeDays > 0) {
             $sql .= ' AND n.created_at > now() - make_interval(days => ' . min(3650, $maxAgeDays) . ')';
         }
-        // HM Editör "Tepe manşet" → is_featured; dual-write also sets is_tepe_manset.
-        $sql .= ' ORDER BY n.is_tepe_manset DESC, n.is_featured DESC, n.created_at DESC LIMIT :lim';
+        $sql .= ' ORDER BY n.is_tepe_manset DESC, n.created_at DESC LIMIT :lim';
         $db = $this->mapList($this->withMansetImages($sql, ['site' => $siteId, 'lim' => max(1, min(24, $limit))]));
         $live = array_values(array_filter(self::recent($this->live('', 100), $maxAgeDays),
             static fn (array $s): bool => !empty($s['liveManual']) && !empty($s['liveFeatured'])));
@@ -415,8 +414,9 @@ SQL;
                 FROM news n
                 LEFT JOIN categories c ON c.id = n.category_id
                 LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site%MI_JOIN%
-                WHERE n.status = \'published\' AND (n.site_id IS NULL OR n.site_id = :site)
-                  AND (n.is_tepe_manset OR n.is_featured OR (n.is_site_manset AND (n.owner_site_id IS NULL OR n.owner_site_id = :site)))
+                WHERE n.status = \'published\'
+                  AND (n.site_id IS NULL OR n.site_id = :site OR n.owner_site_id = :site)
+                  AND (n.is_tepe_manset OR n.is_featured OR n.is_site_manset)
                   AND n.created_at > now() - make_interval(days => :age)
                   AND (COALESCE(n.rss_source_url, \'\') = \'\' OR ' . $this->turkishOnly('COALESCE(o.title, n.title)', 'c.slug', "''") . ')
                 ORDER BY n.is_tepe_manset DESC, n.created_at DESC
@@ -552,7 +552,7 @@ SQL;
              LEFT JOIN authors a ON a.id = n.author_id
              LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site
              WHERE n.slug = :slug AND n.status = \'published\'
-               AND (n.site_id IS NULL OR n.site_id = :site)
+               AND (n.site_id IS NULL OR n.site_id = :site OR n.owner_site_id = :site)
                AND (COALESCE(n.rss_source_url, \'\') = \'\' OR ' . $this->turkishOnly('COALESCE(o.title, n.title)', 'c.slug', "''") . ')
              LIMIT 1'
         );
@@ -774,7 +774,8 @@ SQL;
                 FROM news n
                 LEFT JOIN categories c ON c.id = n.category_id
                 LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site
-                WHERE n.status = \'published\' AND (n.site_id IS NULL OR n.site_id = :site)
+                WHERE n.status = \'published\'
+                  AND (n.site_id IS NULL OR n.site_id = :site OR n.owner_site_id = :site)
                   AND (COALESCE(n.rss_source_url, \'\') = \'\' OR ' . $this->turkishOnly('COALESCE(o.title, n.title)', 'c.slug', "''") . ')';
         if ($category !== '') {
             $sql .= ' AND c.slug = :cat';
@@ -1058,7 +1059,9 @@ SQL;
             FROM news n
             LEFT JOIN categories c ON c.id = n.category_id
             LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site
-            WHERE n.status = 'published' AND (n.site_id IS NULL OR n.site_id = :site) {$catNews} AND {$trNews}
+            WHERE n.status = 'published'
+              AND (n.site_id IS NULL OR n.site_id = :site OR n.owner_site_id = :site)
+              {$catNews} AND {$trNews}
         ) stories";
     }
 
