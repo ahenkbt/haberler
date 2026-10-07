@@ -1,6 +1,11 @@
 /**
  * gundemi.org 8 bölgesel HM sitesini idempotent oluşturur / günceller:
  * site satırı, editör, künye/hakkımızda, turkatahaber yazarları, kategoriler, örnek haberler, RSS.
+ *
+ * Varsayılan HM editör girişi (seed — panelden değiştirilebilir):
+ * - apex gundemi.org → bilgi@gundemi.org / şifre = e-posta (bilgi@gundemi.org)
+ * - bölgesel *.gundemi.org → editor@{domain} / Gundemi!{slug}-{siteId}
+ *   (bkz. gundemiHmEditorEmail / gundemiHmEditorSeedPassword)
  */
 import { and, asc, eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -29,6 +34,8 @@ import {
   GUNDEMI_REGIONAL_SITES,
   TURKATA_HM_SLUG,
   TURKATA_YS_KUNYE,
+  gundemiHmEditorEmail,
+  gundemiHmEditorSeedPassword,
   type GundemiRegionalSiteDef,
 } from "./hm-gundemi-regional-sites.js";
 
@@ -316,7 +323,9 @@ async function upsertSite(def: GundemiRegionalSiteDef): Promise<{
 }
 
 async function ensureEditor(siteId: number, def: GundemiRegionalSiteDef): Promise<void> {
-  const email = `editor@${def.domain}`;
+  const email = gundemiHmEditorEmail(def);
+  const passwordPlain = gundemiHmEditorSeedPassword(email, def, siteId);
+  const passwordHash = await bcrypt.hash(passwordPlain, 10);
   const [existing] = await getNewsDbForRead()
     .select({ id: hmSiteEditorsTable.id })
     .from(hmSiteEditorsTable)
@@ -326,6 +335,8 @@ async function ensureEditor(siteId: number, def: GundemiRegionalSiteDef): Promis
     await dualWriteUpdate(
       hmSiteEditorsTable,
       {
+        username: email,
+        passwordHash,
         displayName: `${def.displayName} Editör`,
         isActive: true,
         updatedAt: new Date(),
@@ -334,10 +345,10 @@ async function ensureEditor(siteId: number, def: GundemiRegionalSiteDef): Promis
     );
     return;
   }
-  const passwordHash = await bcrypt.hash(`Gundemi!${def.slug}-${siteId}`, 10);
   await dualWriteInsert(hmSiteEditorsTable, {
     siteId,
     email,
+    username: email,
     passwordHash,
     displayName: `${def.displayName} Editör`,
     isActive: true,

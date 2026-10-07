@@ -157,6 +157,8 @@ import {
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite, isKhNewsHost, isKhNewsSlug, KH_SITE_SLUG } from "../lib/hm-kh-site-ensure.js";
+import { isFixHaberHost } from "../lib/hm-fixhaber-site.js";
+import { ensureFixHaberSite } from "../lib/hm-fixhaber-seed.js";
 import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import {
@@ -1101,6 +1103,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
       row = await getActiveHmNewsSiteBySlugCompat(slug);
     }
   }
+  if ((!row || !row.active) && (slug === "fixhaber" || isFixHaberHost(queryDomain))) {
+    await ensureFixHaberSite().catch(() => null);
+    row = await getActiveHmNewsSiteBySlugCompat("fixhaber");
+  }
   if (!row || !row.active) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
@@ -1125,6 +1131,13 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
     if (!row) {
       row = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
+    }
+  }
+  if (!row && isFixHaberHost(host)) {
+    await ensureFixHaberSite().catch(() => null);
+    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+    if (!row) {
+      row = await getActiveHmNewsSiteBySlugCompat("fixhaber");
     }
   }
   if (!row) {
@@ -2282,6 +2295,25 @@ router.post("/hm/admin/bind-brand-domains", async (req, res): Promise<void> => {
 });
 
 /** Yönetim: /tr/kirsehirhaber + Kırşehir domainlerini oluştur/bağla (Su'ya dokunmaz; kh yeniden yaratılmaz). */
+router.post("/hm/admin/ensure-fixhaber-site", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await ensureFixHaberSite();
+    res.json({
+      ...result,
+      ok: result.action !== "error",
+      message:
+        result.action === "created"
+          ? `Fix Haber (fix.tc) oluşturuldu #${result.siteId}`
+          : result.action === "updated"
+            ? `Fix Haber (fix.tc) güncellendi #${result.siteId}`
+            : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
 router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {

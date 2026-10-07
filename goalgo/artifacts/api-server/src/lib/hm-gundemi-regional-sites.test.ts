@@ -12,6 +12,8 @@ import {
   GUNDEMI_APEX_SLUG,
   GUNDEMI_APEX_YS_KUNYE,
   GUNDEMI_REGIONAL_SITES,
+  gundemiHmEditorEmail,
+  gundemiHmEditorSeedPassword,
   GUNDEMI_ZONE,
   listGundemiRegionalDomains,
   listGundemiRegionalSlugs,
@@ -110,5 +112,20 @@ describe("gundemi regional catalog", () => {
     expect(String(layout.hmFooterAboutHtml)).not.toContain("TÜRKATA HABER AJANSI");
     expect(GUNDEMI_APEX_SITE.hmYsSlogan).toBe(GUNDEMI_APEX_SLOGAN);
     expect(GUNDEMI_APEX_SITE.logoPath).toBe(GUNDEMI_APEX_LOGO_PATH);
+  });
+
+  it("apex editör bilgi@ + şifre e-posta (fixhaber)", () => {
+    expect(gundemiHmEditorEmail(GUNDEMI_APEX_SITE)).toBe("bilgi@gundemi.org");
+    expect(gundemiHmEditorSeedPassword("bilgi@gundemi.org", GUNDEMI_APEX_SITE, 42)).toBe(
+      "bilgi@gundemi.org",
+    );
+  });
+
+  it("bölgesel editör editor@ + siteId parolası", () => {
+    const ege = GUNDEMI_REGIONAL_SITES[0]!;
+    expect(gundemiHmEditorEmail(ege)).toBe(`editor@${ege.domain}`);
+    expect(gundemiHmEditorSeedPassword("editor@ege.gundemi.org", ege, 7)).toBe(
+      `Gundemi!${ege.slug}-7`,
+    );
   });
 });

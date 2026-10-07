@@ -11,7 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
+import {
+  adminFetchErrorHint,
+  apiFetch,
+  apiUrl,
+  ensureAdminPanelBootstrap,
+  wakeAdminApiContainer,
+} from "@/lib/apiBase";
 import { collectGundemiOrgDomainsFromForm } from "@/lib/gundemiOrgDomain";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
@@ -97,10 +103,28 @@ const emptyForm: SiteForm = {
 
 async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
   await ensureAdminPanelBootstrap();
-  const r = await apiFetch(apiUrl("/api/hm/sites"), { cache: "no-store" });
+  let r: Response;
+  try {
+    r = await apiFetch(apiUrl("/api/hm/sites"), { cache: "no-store" });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Haber siteleri yüklenemedi";
+    throw new Error(msg + adminFetchErrorHint(msg));
+  }
   const text = await r.text();
-  const j = text ? JSON.parse(text) as { items?: HmSiteRow[]; error?: string } : {};
-  if (!r.ok) throw new Error(j.error || text || "Haber siteleri yüklenemedi");
+  let j: { items?: HmSiteRow[]; error?: string } = {};
+  if (text) {
+    try {
+      j = JSON.parse(text) as { items?: HmSiteRow[]; error?: string };
+    } catch {
+      throw new Error(
+        (r.ok ? "Sunucu yanıtı okunamadı" : `HTTP ${r.status}`) + adminFetchErrorHint(text),
+      );
+    }
+  }
+  if (!r.ok) {
+    const errMsg = j.error || text || "Haber siteleri yüklenemedi";
+    throw new Error(errMsg + adminFetchErrorHint(errMsg));
+  }
   const items = Array.isArray(j.items)
     ? j.items.map((site) => {
         const layout = parseNewsSiteLayoutFromJson(site.layoutJson ?? null, site.slug ?? null);
@@ -233,10 +257,11 @@ export default function HaberSiteleri() {
   const [query, setQuery] = useState("");
   const [suspendingId, setSuspendingId] = useState<number | null>(null);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["/api/hm/sites", "admin-panel"],
     queryFn: fetchHmSites,
-    retry: false,
+    retry: 1,
+    retryDelay: 1500,
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
@@ -316,6 +341,7 @@ export default function HaberSiteleri() {
 
     setSaving(true);
     try {
+      void wakeAdminApiContainer();
       await ensureAdminPanelBootstrap();
       const current = editingId ? sites.find((s) => s.id === editingId) : undefined;
       const editorId = primaryHmSiteEditor(current)?.id;
@@ -847,8 +873,14 @@ export default function HaberSiteleri() {
               <div className="m-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 {(error as Error).message}
               </div>
-            ) : isLoading ? (
-              <div className="p-5 text-sm text-gray-500">Haber siteleri yükleniyor...</div>
+            ) : isLoading || (isFetching && sites.length === 0 && !error) ? (
+              <div className="p-5 text-sm text-gray-500">
+                Haber siteleri yükleniyor…
+                <span className="mt-1 block text-xs text-gray-400">
+                  İlk yükleme soğuk sunucuda bir dakikaya kadar sürebilir; zaman aşımında kırmızı uyarı ve Yenile
+                  görünür.
+                </span>
+              </div>
             ) : filteredSites.length === 0 ? (
               <div className="p-8 text-center text-sm text-gray-500">Kayıt bulunamadı.</div>
             ) : (

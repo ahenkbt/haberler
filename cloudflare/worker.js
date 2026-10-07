@@ -33,6 +33,7 @@ import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
 import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import { handleAdminPanelStatusEdge } from "./hm-admin-panel-status-edge.js";
+import { isHmAdminPanelHeavyApiPath, wakeApiContainerBackground } from "./hm-admin-panel-wake.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
   hybridEdgeFillHttpStatus,
@@ -1613,8 +1614,8 @@ function upstreamCfCacheOptions(pathname, method, search = "") {
   if (isStaticAssetPath(pathname)) {
     return { cacheTtl: 86400, cacheEverything: true };
   }
-  // Admin / oturum ÔÇö asla kenar ├Ânbelle─şi yok.
-  if (isAuthSessionApiPath(pathname)) {
+  // Admin / oturum / HM site panel CRUD ÔÇö asla kenar ├Ânbelle─şi yok.
+  if (isAuthSessionApiPath(pathname) || isHmAdminPanelHeavyApiPath(pathname, method)) {
     return { cacheTtl: 0, cacheEverything: false };
   }
   // Tema/layout meta ÔÇö k─▒sa kenar ├Ânbelle─şi (edit├Âr yay─▒n─▒nda purgeHmSitePublicEdgeCache).
@@ -2956,6 +2957,12 @@ export default {
       console.error("[admin-panel-status-edge]", String(err?.message || err).slice(0, 120));
     }
 
+    const pathEarly = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+    const methodEarly = String(request.method || "GET").toUpperCase();
+    if (isHmAdminPanelHeavyApiPath(pathEarly, methodEarly)) {
+      wakeApiContainerBackground(env, ctx);
+    }
+
     // ahenk.net.tr/panel → /admin (eski kısayol; SPA'da /panel rotası yok → beyaz ekran)
     {
       const earlyBare = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
@@ -3425,7 +3432,8 @@ export default {
       const pageBundleRetries = isNewsPageBundlePath(incoming.pathname) ? 0 : 2;
       // Cold container boot after CONTAINER_ROLL often exceeds 20–60s; keep warm path fast via edge cache.
       // Admin login / session: Container portReadyTimeoutMS=180s + DO reset — daha uzun bütçe ve retry.
-      const authSession = isAuthSessionApiPath(upstreamPath);
+      const panelHeavyApi = isHmAdminPanelHeavyApiPath(upstreamPath, apiRequest.method);
+      const authSession = isAuthSessionApiPath(upstreamPath) || panelHeavyApi;
       const originMs = authSession
         ? 180_000
         : isYektubeDedicatedHost(incoming.hostname)
@@ -3524,7 +3532,7 @@ export default {
         if (!out.get("cache-control")) {
           out.set("cache-control", "public, max-age=86400, immutable");
         }
-      } else if (isAuthSessionApiPath(upstreamPath)) {
+      } else if (isAuthSessionApiPath(upstreamPath) || panelHeavyApi) {
         out.set("cache-control", "private, no-store, max-age=0, must-revalidate");
         out.set("cdn-cache-control", "no-store");
         out.set("vary", "Origin, Authorization, Cookie");

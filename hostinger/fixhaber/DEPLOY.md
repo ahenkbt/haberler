@@ -103,7 +103,8 @@ Public DNS A kaydı eklenene kadar dışarıdan erişim CF anycast’e düşmez;
 
 - [ ] CF: Proxied A `@` + `www` → `187.77.84.201` (`cf-ensure-fixhaber-dns.mjs` veya Dashboard)
 - [x] VPS: `/docker/traefik/dynamic/fixhaber.yml` (2026-10-07)
-- [ ] Neon: `ensure:fixhaber` veya workflow **Ensure Fix Haber Neon seed** (Worker kenarı da ilk meta 404’te seed eder — deploy sonrası)
-- [ ] Worker deploy: `wrangler.toml` panel/API routes
-- [ ] `https://fix.tc/` PHP 200 + Fix Haber markası; `https://fix.tc/editor` Worker panel
+- [x] CF DNS `@` + `www` → `187.77.84.201` (2026-10-07)
+- [x] Neon: `ensure:fixhaber` — slug `fixhaber`, domain `fix.tc` (site #1142)
+- [x] Worker: fix.tc `/assets/theme.css` + `/fix/*` routes
+- [x] `https://fix.tc/` Fix Haber + styled theme; `https://fix.tc/editor` panel
 - [ ] Root SSH parolasını rotate et (sohbette paylaşıldı; repoya yazılmaz)
