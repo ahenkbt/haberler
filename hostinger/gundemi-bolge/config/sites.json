@@ -1,0 +1,90 @@
+{
+  "zone": "gundemi.org",
+  "phpOriginIp": "187.77.84.201",
+  "frontend": "php",
+  "phpTheme": true,
+  "hmVitrinTheme": "yenisafak",
+  "logoPublicBase": "/gundemi/logos",
+  "sites": [
+    {
+      "slug": "ege-gundemi",
+      "domain": "ege.gundemi.org",
+      "displayName": "Ege Gündemi",
+      "regionLabel": "ege",
+      "hmYsMansetPreset": "odatv",
+      "hmPrimaryColor": "#0a6b7a",
+      "hmSecondaryColor": "#c00005",
+      "logoFile": "ege-gundemi.png"
+    },
+    {
+      "slug": "marmara-gundemi",
+      "domain": "marmara.gundemi.org",
+      "displayName": "Marmara Gündemi",
+      "regionLabel": "marmara",
+      "hmYsMansetPreset": "sabah",
+      "hmPrimaryColor": "#0b2d5c",
+      "hmSecondaryColor": "#c00005",
+      "logoFile": "marmara-gundemi.png"
+    },
+    {
+      "slug": "karadeniz-gundemi",
+      "domain": "karadeniz.gundemi.org",
+      "displayName": "Karadeniz Gündemi",
+      "regionLabel": "karadeniz",
+      "hmYsMansetPreset": "takvim",
+      "hmPrimaryColor": "#0d4f3c",
+      "hmSecondaryColor": "#c00005",
+      "logoFile": "karadeniz-gundemi.png"
+    },
+    {
+      "slug": "icanadolu-gundemi",
+      "domain": "icanadolu.gundemi.org",
+      "displayName": "İç Anadolu Gündemi",
+      "regionLabel": "iç anadolu",
+      "hmYsMansetPreset": "mynet",
+      "hmPrimaryColor": "#8b5a2b",
+      "hmSecondaryColor": "#0b3362",
+      "logoFile": "icanadolu-gundemi.png"
+    },
+    {
+      "slug": "doguanadolu-gundemi",
+      "domain": "doguanadolu.gundemi.org",
+      "displayName": "Doğu Anadolu Gündemi",
+      "regionLabel": "doğu anadolu",
+      "hmYsMansetPreset": "nefes",
+      "hmPrimaryColor": "#1a3a5c",
+      "hmSecondaryColor": "#c00005",
+      "logoFile": "doguanadolu-gundemi.png"
+    },
+    {
+      "slug": "guneydogu-gundemi",
+      "domain": "guneydogu.gundemi.org",
+      "displayName": "Güneydoğu Gündemi",
+      "regionLabel": "güneydoğu",
+      "hmYsMansetPreset": "odatv",
+      "hmPrimaryColor": "#6b2d3c",
+      "hmSecondaryColor": "#0b3362",
+      "logoFile": "guneydogu-gundemi.png"
+    },
+    {
+      "slug": "akdeniz-gundemi",
+      "domain": "akdeniz.gundemi.org",
+      "displayName": "Akdeniz Gündemi",
+      "regionLabel": "akdeniz",
+      "hmYsMansetPreset": "sabah",
+      "hmPrimaryColor": "#0c4a6e",
+      "hmSecondaryColor": "#e85d04",
+      "logoFile": "akdeniz-gundemi.png"
+    },
+    {
+      "slug": "kibris-gundemi",
+      "domain": "kibris.gundemi.org",
+      "displayName": "Kıbrıs Gündemi",
+      "regionLabel": "kıbrıs",
+      "hmYsMansetPreset": "takvim",
+      "hmPrimaryColor": "#0b4f6c",
+      "hmSecondaryColor": "#c9a227",
+      "logoFile": "kibris-gundemi.png"
+    }
+  ]
+}

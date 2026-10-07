@@ -23,6 +23,15 @@ const PHP_THEME_PUBLIC_APEX = Object.freeze([
   "turksav.org",
   "dunyasaglik.org",
   "yesilvatan.gen.tr",
+  // gundemi.org bölgesel Yenişafak siteleri (her alt alan kendi kanonik hostu)
+  "ege.gundemi.org",
+  "marmara.gundemi.org",
+  "karadeniz.gundemi.org",
+  "icanadolu.gundemi.org",
+  "doguanadolu.gundemi.org",
+  "guneydogu.gundemi.org",
+  "akdeniz.gundemi.org",
+  "kibris.gundemi.org",
 ]);
 
 /** Kurumsal (Vatan) PHP — Hostinger php-kurumsal; haber Yenişafak twin değil. */

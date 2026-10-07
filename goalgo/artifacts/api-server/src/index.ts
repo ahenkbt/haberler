@@ -33,6 +33,7 @@ import { ensurePortalRssItemViewsSchema } from "./lib/portal-rss-store.js";
 import { bootstrapRssAutomationFromSettings } from "./lib/rss-automation-control.js";
 import { startRssCampaignMidnightScheduler } from "./lib/rss-campaign-midnight-scheduler.js";
 import { ensureHmSharedRssCampaigns } from "./lib/hm-rss-campaign-seed.js";
+import { ensureGundemiRegionalSites } from "./lib/hm-gundemi-regional-seed.js";
 import { startHmPoolAutoScheduler } from "./lib/hmPoolAutoScheduler";
 import { bootstrapKesfetNightScraperFromSettings } from "./routes/map";
 import { scheduleInsaatfirmalarimAutoImport, startInsaatfirmalarimQueueWatchdog } from "./lib/insaatfirmalarim-jobs.js";
@@ -355,6 +356,16 @@ const server = app.listen(port, listenHost, (err) => {
     }, 18_000).unref();
   } else {
     logger.info("[hm-rss-midnight] HM_RSS_MIDNIGHT_SYNC=0 — 00:00 TR SHA/Vatanhaber kapalı");
+  }
+
+  if (envJobFlag("GUNDEMI_BOLGE_SEED", true)) {
+    setTimeout(() => {
+      void ensureGundemiRegionalSites()
+        .then((r) => logger.info({ count: r.length }, "[gundemi-bolge] bölgesel siteler seed"))
+        .catch((err) => logger.warn({ err }, "[gundemi-bolge] seed atlandı"));
+    }, 22_000).unref();
+  } else {
+    logger.info("[gundemi-bolge] GUNDEMI_BOLGE_SEED=0 — bölgesel site seed kapalı");
   }
 
   schedulerStops.push(startHmPoolAutoScheduler(logger, 90_000));

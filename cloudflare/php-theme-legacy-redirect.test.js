@@ -24,9 +24,14 @@ test("PHP tema hostları: ASG + Ekim 2026 twin'ler + kurumsal PHP; askı kapıs�
   assert.ok(apex.includes("turksav.org"));
   assert.ok(apex.includes("dunyasaglik.org"));
   assert.ok(apex.includes("yerel.net.tr"));
+  assert.ok(apex.includes("ege.gundemi.org"));
+  assert.ok(apex.includes("akdeniz.gundemi.org"));
+  assert.ok(apex.includes("kibris.gundemi.org"));
   assert.ok(apex.includes("vatankahramanlari.org"));
   assert.ok(apex.includes("trafikdernegi.com"));
   assert.ok(apex.includes("tgd.tc"));
+  assert.equal(isPhpThemePublicHost("ege.gundemi.org"), true);
+  assert.equal(isPhpThemePublicHost("icanadolu.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("ankarasehirgazetesi.com"), true);
   assert.equal(isPhpThemePublicHost("WWW.yesilvatan.gen.tr"), true);
   assert.equal(isPhpThemePublicHost("sehitgazi.org.tr"), true);
@@ -52,6 +57,16 @@ test("eski SPA haber linki PHP /haber/:slug adresine 301 gider ve siteId silinir
     "https://ankarasehirgazetesi.com/haber/ayaklariyla-uretilen-eserlerden-basi-onde-gecisler-sergisi-ankara-da-acildi-sana",
   );
   assert.equal(res.headers.get("x-yekpare-frontend"), "php-theme-legacy-redirect");
+});
+
+test("gundemi bölgesel alt alan eski SPA yolu PHP /haber adresine 301", () => {
+  const ege = run("https://ege.gundemi.org/tr/ege-gundemi/haber/izmir-korfezi?siteId=99");
+  assert.ok(ege);
+  assert.equal(ege.status, 301);
+  assert.equal(ege.headers.get("location"), "https://ege.gundemi.org/haber/izmir-korfezi");
+  const ak = run("https://akdeniz.gundemi.org/hm/akdeniz-gundemi/kategori/gundemi-akdeniz-antalya");
+  assert.ok(ak);
+  assert.equal(ak.headers.get("location"), "https://akdeniz.gundemi.org/kategori/gundemi-akdeniz-antalya");
 });
 
 test("yesilvatan / sehitgazi eski SPA yolları apex PHP adresine 301", () => {
