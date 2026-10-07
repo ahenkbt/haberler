@@ -101,6 +101,7 @@ Haber Siteleri panelinde domain `yeni.gundemi.org` gibi `*.gundemi.org` yazıld�
 1. `layout_json.phpTheme` + `frontend: "php"` (opt-out yoksa)
 2. Cloudflare Proxied **A** → `187.77.84.201` (idempotent)
 3. Traefik HostRegexp yeni alt alanı otomatik karşılar (Worker SPA catch-all yok)
+
 API: `POST /api/hm/sites` / `PATCH` otomatik; yeniden deneme `POST /api/hm/sites/:id/ensure-gundemi`.
 
 **Secret adı:** `CLOUDFLARE_API_TOKEN` (Worker secret veya API Container env; `CF_API_TOKEN` de okunur).
