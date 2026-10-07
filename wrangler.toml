@@ -1902,6 +1902,15 @@ zone_name = "fix.tc"
 pattern = "www.fix.tc/assets/*"
 zone_name = "fix.tc"
 
+# Fix Haber marka PNG (goalgo/artifacts/ahenkpress/public/fix → Worker ASSETS)
+[[routes]]
+pattern = "fix.tc/fix/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/fix/*"
+zone_name = "fix.tc"
+
 [[routes]]
 pattern = "fix.tc/sw.js"
 zone_name = "fix.tc"

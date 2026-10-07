@@ -28,6 +28,14 @@ rmSync(distDest, { recursive: true, force: true });
 mkdirSync(distDest, { recursive: true });
 cpSync(distSrc, distDest, { recursive: true });
 
+const fixBrandSrc = join(goalgo, "artifacts/ahenkpress/public/fix");
+const fixBrandDest = join(distDest, "fix");
+if (existsSync(fixBrandSrc)) {
+  mkdirSync(fixBrandDest, { recursive: true });
+  cpSync(fixBrandSrc, fixBrandDest, { recursive: true });
+  console.log(`cloudflare-root-build fix brand assets → ${fixBrandDest}`);
+}
+
 const yektube = ensureYektubeCloudflareAssets(distDest, [
   join(distSrc, "yektube-v2"),
   join(goalgo, "artifacts/ahenkpress/public/yektube-v2"),
