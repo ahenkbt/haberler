@@ -184,18 +184,42 @@ export async function edgeDeleteHmMakale(sql, id) {
   return { mirrored: true, id: n, via: "delete" };
 }
 
+/** Worker hm_news_sites.id → PHP twilight-pine id (ASG=3 stays 3). */
+const WORKER_TO_PHP_SITE_ID = Object.freeze({
+  1: 1,
+  2: 2,
+  3: 3, // ankarasehirgazetesi.com
+  8: 8,
+  1087: 231,
+  1088: 232,
+  1089: 233,
+  1090: 236,
+  1091: 237,
+  1132: 230,
+});
+
 export async function edgeUpsertNews(sql, row) {
   let siteId = asPositiveInt(pick(row, "site_id", "siteId"));
+  const workerSiteId = siteId;
   const siteSlug = String(pick(row, "site_slug", "siteSlug") || "")
     .trim()
     .toLowerCase();
+  let remappedBySlug = false;
   if (sql && siteSlug) {
     try {
       const hit = await sql`SELECT id FROM hm_news_sites WHERE lower(slug) = ${siteSlug} LIMIT 1`;
-      if (hit?.[0]?.id) siteId = Number(hit[0].id);
+      if (hit?.[0]?.id) {
+        siteId = Number(hit[0].id);
+        remappedBySlug = true;
+      }
     } catch {
       /* keep worker site id */
     }
+  }
+  // ASG Worker id 3 → PHP id 3; diverging sites (turkata 1132→230) need the static map
+  // when site_slug was not attached to the mirror payload.
+  if (!remappedBySlug && workerSiteId && WORKER_TO_PHP_SITE_ID[workerSiteId]) {
+    siteId = WORKER_TO_PHP_SITE_ID[workerSiteId];
   }
   const title = String(pick(row, "title") || "").trim();
   const slug = String(pick(row, "slug") || "").trim();
@@ -210,11 +234,15 @@ export async function edgeUpsertNews(sql, row) {
   const isFeatured = asBool(pick(row, "is_featured", "isFeatured"));
   const isBreaking = asBool(pick(row, "is_breaking", "isBreaking"));
   const isSiteManset = asBool(pick(row, "is_site_manset", "isSiteManset"));
-  const isTepeManset = asBool(pick(row, "is_tepe_manset", "isTepeManset", "is_featured", "isFeatured"));
+  // Editor "tepe manşet" may set is_featured and/or is_site_manset without is_tepe_manset.
+  const isTepeManset =
+    asBool(pick(row, "is_tepe_manset", "isTepeManset")) ||
+    isFeatured ||
+    isSiteManset;
   const isEditorManual = asBool(pick(row, "is_editor_manual", "isEditorManual"), true);
   const siteOnly = asBool(pick(row, "site_only", "siteOnly"), true);
   let ownerSiteId = asPositiveInt(pick(row, "owner_site_id", "ownerSiteId")) || siteId;
-  if (siteSlug) ownerSiteId = siteId;
+  if (siteSlug || WORKER_TO_PHP_SITE_ID[workerSiteId]) ownerSiteId = siteId;
   const createdAt = tsOrNow(pick(row, "created_at", "createdAt"));
   const updatedAt = tsOrNow(pick(row, "updated_at", "updatedAt"));
   const id = asPositiveInt(pick(row, "id"));
@@ -247,7 +275,7 @@ export async function edgeUpsertNews(sql, row) {
       WHERE id = ${bySlug[0].id}
     `;
     await applyTepeManset(sql, bySlug[0].id, isTepeManset);
-    return { mirrored: true, id: Number(bySlug[0].id), via: "slug" };
+    return { mirrored: true, id: Number(bySlug[0].id), via: "slug", site_id: siteId };
   }
 
   if (id) {
@@ -265,9 +293,9 @@ export async function edgeUpsertNews(sql, row) {
         )
       `;
       await applyTepeManset(sql, id, isTepeManset);
-      return { mirrored: true, id, via: "same-id" };
+      return { mirrored: true, id, via: "same-id", site_id: siteId };
     }
-    if (Number(byId[0].site_id) === siteId) {
+    if (Number(byId[0].site_id) === siteId || byId[0].site_id == null) {
       await sql`
         UPDATE news SET
           title = ${title},
@@ -285,12 +313,13 @@ export async function edgeUpsertNews(sql, row) {
           is_tepe_manset = ${isTepeManset},
           is_editor_manual = ${isEditorManual},
           site_only = ${siteOnly},
+          site_id = ${siteId},
           owner_site_id = ${ownerSiteId},
           updated_at = ${updatedAt}
         WHERE id = ${id}
       `;
       await applyTepeManset(sql, id, isTepeManset);
-      return { mirrored: true, id, via: "id-update" };
+      return { mirrored: true, id, via: "id-update", site_id: siteId };
     }
   }
 
@@ -307,7 +336,7 @@ export async function edgeUpsertNews(sql, row) {
     RETURNING id
   `;
   await applyTepeManset(sql, inserted?.[0]?.id, isTepeManset);
-  return { mirrored: true, id: Number(inserted?.[0]?.id), via: "new-id" };
+  return { mirrored: true, id: Number(inserted?.[0]?.id), via: "new-id", site_id: siteId };
 }
 
 export async function edgeDeleteNews(sql, id) {
