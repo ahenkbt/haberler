@@ -15,6 +15,11 @@ import {
   normalizePanelPermissionsInput,
   type PanelPermissionKey,
 } from "../lib/panel-permissions.js";
+import {
+  resolveAdminPanelPassword,
+  resolveAdminPanelUsernames,
+  verifyAdminPanelCredentialsEnv,
+} from "../lib/admin-panel-credentials.js";
 
 const router = Router();
 
@@ -88,18 +93,18 @@ function ensurePanelAdminUsersSchema(): Promise<void> {
   return panelAdminSchemaPromise;
 }
 
-/** Eski kurulum: tablo boşsa env’deki ADMIN_PANEL_* ile ilk kayıtları oluşturur (aynı şifre). */
+/** Eski kurulum: tablo boşsa ADMIN_PANEL_* (veya bootstrap varsayılan) ile ilk kayıtları oluşturur. */
 async function seedPanelAdminsFromEnvIfEmpty(): Promise<void> {
   await ensurePanelAdminUsersSchema();
   const padb = panelAdminWriteDb();
   const [cntRow] = await padb.select({ c: count() }).from(panelAdminUsersTable);
   if (Number(cntRow?.c ?? 0) > 0) return;
-  const pass = String(process.env["ADMIN_PANEL_PASSWORD"] ?? "").trim();
-  const usersRaw = String(process.env["ADMIN_PANEL_USERNAMES"] ?? "").trim();
-  if (!pass || !usersRaw) return;
-  const allowed = usersRaw.split(",").map((s) => s.trim()).filter(Boolean);
+  const pass = resolveAdminPanelPassword(process.env["ADMIN_PANEL_PASSWORD"]);
+  const allowed = resolveAdminPanelUsernames(process.env["ADMIN_PANEL_USERNAMES"]);
+  // Tek kanonik kullanıcı adı seed et (ahenbt yazımını ahenkbt olarak birleştir).
+  const seedNames = [...new Set(allowed.map((a) => (a.toLowerCase() === "ahenbt" ? "ahenkbt" : a)))];
   const hash = await bcrypt.hash(pass, 10);
-  for (const a of allowed) {
+  for (const a of seedNames) {
     const email = a.includes("@") ? a.trim().toLowerCase() : null;
     const username = email ?? a;
     try {
@@ -113,19 +118,6 @@ async function seedPanelAdminsFromEnvIfEmpty(): Promise<void> {
       /* unique vs race */
     }
   }
-}
-
-/** Sunucuda tanımlı yönetici listesi + düz şifre (yedek; DB kullanıcıları önceliklidir). */
-function verifyAdminPanelCredentialsEnv(username: string, password: string): boolean {
-  const pass = String(process.env["ADMIN_PANEL_PASSWORD"] ?? "").trim();
-  const usersRaw = String(process.env["ADMIN_PANEL_USERNAMES"] ?? "").trim();
-  if (!pass || !usersRaw) return false;
-  const allowed = usersRaw.split(",").map((s) => s.trim()).filter(Boolean);
-  const u = username.trim();
-  const userOk = allowed.some((a) =>
-    a.includes("@") ? a.toLowerCase() === u.toLowerCase() : a.toLowerCase() === u.toLowerCase(),
-  );
-  return userOk && password === pass;
 }
 
 async function verifyAdminPanelCredentials(username: string, password: string): Promise<boolean> {
@@ -156,25 +148,30 @@ async function mapDbRowToPanelLogin(
 
 async function resolvePanelLogin(username: string, password: string): Promise<PanelLoginResult | null> {
   const u = username.trim();
-  // Render ortam değişkeni girişi — DB havuzu doluyken bile anında yanıt
+  // Env / bootstrap şifre — DB havuzu doluyken bile anında yanıt (Pages ile aynı varsayılanlar).
   if (verifyAdminPanelCredentialsEnv(u, password)) return { kind: "full" };
 
   try {
     await seedPanelAdminsFromEnvIfEmpty();
     const uLower = u.toLowerCase();
+    // ahenbt yazımı DB'de ahenkbt olarak da aransın
+    const aliasLower = uLower === "ahenbt" ? "ahenkbt" : uLower === "ahenkbt" ? "ahenbt" : null;
+    const identityMatch = aliasLower
+      ? or(
+          eq(panelAdminUsersTable.username, u),
+          drizzleSql`lower(${panelAdminUsersTable.username}) = ${uLower}`,
+          drizzleSql`lower(${panelAdminUsersTable.email}) = ${uLower}`,
+          drizzleSql`lower(${panelAdminUsersTable.username}) = ${aliasLower}`,
+        )
+      : or(
+          eq(panelAdminUsersTable.username, u),
+          drizzleSql`lower(${panelAdminUsersTable.username}) = ${uLower}`,
+          drizzleSql`lower(${panelAdminUsersTable.email}) = ${uLower}`,
+        );
     const rows = await panelAdminReadDb()
       .select()
       .from(panelAdminUsersTable)
-      .where(
-        and(
-          eq(panelAdminUsersTable.isActive, true),
-          or(
-            eq(panelAdminUsersTable.username, u),
-            drizzleSql`lower(${panelAdminUsersTable.username}) = ${uLower}`,
-            drizzleSql`lower(${panelAdminUsersTable.email}) = ${uLower}`,
-          ),
-        ),
-      )
+      .where(and(eq(panelAdminUsersTable.isActive, true), identityMatch))
       .limit(5);
     for (const row of rows) {
       const mapped = await mapDbRowToPanelLogin(row, password);
@@ -190,7 +187,8 @@ async function resolvePanelLogin(username: string, password: string): Promise<Pa
 /**
  * POST /api/members/admin-panel-session
  * Yönetim paneli (VITE_ADMIN_*) ile girişten sonra çağrılır; express-session’a panel bayrağı yazar.
- * Production’da Railway’de ADMIN_PANEL_PASSWORD ve ADMIN_PANEL_USERNAMES zorunlu (Vercel ile aynı değerler).
+ * Production’da Cloudflare Worker secret: ADMIN_PANEL_PASSWORD + ADMIN_PANEL_USERNAMES
+ * (yoksa bootstrap: ahenkbt / Ahenk2006*; ahenbt yazımı da kabul).
  */
 /**
  * PATCH /api/members/admin/:memberId/listing-tier

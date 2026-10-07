@@ -108,20 +108,21 @@ export async function fetchApi(env, url, init = {}) {
   throw new Error("api_unavailable");
 }
 
-export async function fetchApiWithRetry(env, url, init = {}, retries = 2) {
+export async function fetchApiWithRetry(env, url, init = {}, retries = 2, delayMs = 250) {
+  const baseDelay = Math.max(50, Number(delayMs) || 250);
   let lastErr = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const res = await fetchApi(env, url, init);
       if ([502, 503, 504].includes(res.status) && attempt < retries) {
-        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, Math.min(12_000, baseDelay * (attempt + 1))));
         continue;
       }
       return res;
     } catch (err) {
       lastErr = err;
       if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, Math.min(12_000, baseDelay * (attempt + 1))));
       }
     }
   }
