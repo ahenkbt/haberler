@@ -15,6 +15,7 @@ import {
 } from "@workspace/db";
 import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
 import { logger } from "./logger.js";
+import { ensureTurkataAuthorsOnRegionalSite } from "./hm-gundemi-regional-seed.js";
 import {
   buildFixHaberLayoutJson,
   FIXHABER_CAMPAIGN_TAG,
@@ -32,6 +33,7 @@ export type FixHaberSeedResult = {
   action: "created" | "updated" | "unchanged" | "error";
   categories: number;
   sampleNews: number;
+  authors: number;
   campaignId: number | null;
   detail?: string;
 };
@@ -311,7 +313,7 @@ async function ensureCampaign(siteId: number, def: FixHaberSiteDef): Promise<num
     name,
     active: true,
     postType: "news",
-    categorySlug: def.categories[0]?.slug || "gundem",
+    categorySlug: def.categories[0]?.slug || "fixhaber-haberler",
     tags: [FIXHABER_CAMPAIGN_TAG, tag, "require-image"],
     feeds: def.rssFeeds,
     sourceType: "rss",
@@ -369,8 +371,9 @@ export async function ensureFixHaberSite(): Promise<FixHaberSeedResult> {
     await ensureEditor(siteId, def);
     const cats = await ensureCategories(siteId, def);
     const sampleNews = await ensureSampleNews(siteId, def, cats);
+    const authors = await ensureTurkataAuthorsOnRegionalSite(siteId);
     const campaignId = await ensureCampaign(siteId, def);
-    logger.info({ siteId, action, slug: FIXHABER_SLUG }, "[fixhaber] site hazır");
+    logger.info({ siteId, action, slug: FIXHABER_SLUG, authors }, "[fixhaber] site hazır");
     return {
       slug: FIXHABER_SLUG,
       domain: FIXHABER_DOMAIN,
@@ -378,6 +381,7 @@ export async function ensureFixHaberSite(): Promise<FixHaberSeedResult> {
       action,
       categories: cats.size,
       sampleNews,
+      authors,
       campaignId,
     };
   } catch (e) {
@@ -390,6 +394,7 @@ export async function ensureFixHaberSite(): Promise<FixHaberSeedResult> {
       action: "error",
       categories: 0,
       sampleNews: 0,
+      authors: 0,
       campaignId: null,
       detail,
     };
