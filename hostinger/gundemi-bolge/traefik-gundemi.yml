@@ -1,11 +1,11 @@
 # Traefik dynamic config — apply on VPS 187.77.84.201
-# Root cause of apex/regional plain "404 page not found": Traefik DEFAULT CERT
-# + no Host() router for these names (Go net/http 404).
+# Root cause of regional SPA / apex Traefik 404: no Host() router for these names.
 #
-# After routers exist and PHP sites.php / Neon by-domain resolve hosts:
-# 1) Remove temporary Worker catch-alls in wrangler.toml
-#    (gundemi.org/*, www.gundemi.org/*, *.gundemi.org/* bridge routes)
-# 2) Redeploy haberler Worker
+# After this file is live:
+# 1) Worker must NOT catch-all `*.gundemi.org/*` (SPA) — panel/API routes only
+#    (see wrangler.toml; ankarasehirgazetesi.com pattern)
+# 2) Apex may keep temporary gundemi.org/* bridge → turkatahaber PHP until
+#    Host(`gundemi.org`) below is confirmed
 #
 # Point http services at the same Yenişafak PHP upstream used by turkatahaber.com.
 
@@ -16,54 +16,72 @@ http:
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 20
 
+    # All regional + future admin-created *.gundemi.org → same Yenişafak PHP
+    gundemi-wild:
+      rule: "HostRegexp(`^[a-z0-9-]+\\.gundemi\\.org$`) || HostRegexp(`^www\\.[a-z0-9-]+\\.gundemi\\.org$`)"
+      entryPoints: ["websecure"]
+      service: yenisafak-php
+      tls: {}
+      priority: 10
+
+    # Explicit seed hosts (optional if HostRegexp works; kept for older Traefik)
     gundemi-ege:
       rule: "Host(`ege.gundemi.org`) || Host(`www.ege.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-marmara:
       rule: "Host(`marmara.gundemi.org`) || Host(`www.marmara.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-karadeniz:
       rule: "Host(`karadeniz.gundemi.org`) || Host(`www.karadeniz.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-icanadolu:
       rule: "Host(`icanadolu.gundemi.org`) || Host(`www.icanadolu.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-doguanadolu:
       rule: "Host(`doguanadolu.gundemi.org`) || Host(`www.doguanadolu.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-guneydogu:
       rule: "Host(`guneydogu.gundemi.org`) || Host(`www.guneydogu.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-akdeniz:
       rule: "Host(`akdeniz.gundemi.org`) || Host(`www.akdeniz.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
     gundemi-kibris:
       rule: "Host(`kibris.gundemi.org`) || Host(`www.kibris.gundemi.org`)"
       entryPoints: ["websecure"]
       service: yenisafak-php
       tls: {}
+      priority: 30
 
   # services.yenisafak-php — reuse existing turkatahaber / AHG PHP service name on the VPS.
   # Example only; replace loadBalancer.servers.url with the real upstream:

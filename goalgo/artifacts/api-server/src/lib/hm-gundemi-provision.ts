@@ -1,9 +1,10 @@
 /**
- * *.gundemi.org HM siteleri — panel create/PATCH sonrası otomatik DNS + Worker catch-all.
+ * *.gundemi.org HM siteleri — panel create/PATCH sonrası otomatik DNS + apex Worker bridge.
  *
  * - layout phpTheme: ensurePhpThemeLayoutDefaults (çağıran taraf)
  * - Cloudflare Proxied A → 187.77.84.201 (CLOUDFLARE_API_TOKEN gerekir)
- * - Worker route `*.gundemi.org/*` (Traefik Host() yokken SPA/bridge)
+ * - Apex Worker routes `gundemi.org/*` / `www` (turkatahaber PHP bridge)
+ * - Bölgesel `*.gundemi.org/*` SPA catch-all YOK — orange cloud → Traefik Yenişafak PHP
  *
  * Token yoksa soft-fail (site kaydı yine başarılı).
  * Gerekli CF yetkileri: Zone DNS Edit (+ Workers Routes Edit), zone gundemi.org.
@@ -17,9 +18,11 @@ import {
 const CF_API = "https://api.cloudflare.com/client/v4";
 const WORKER_SCRIPT = "haberler";
 
-/** Geçici Traefik-gap catch-all — yeni alt alanlar wrangler.toml düzenlemeden açılır. */
+/**
+ * Apex-only Traefik-gap bridge routes (turkatahaber PHP).
+ * Do not include `*.gundemi.org/*` — that forced SPA; regionals use origin PHP.
+ */
 export const GUNDEMI_CATCHALL_ROUTE_PATTERNS = Object.freeze([
-  "*.gundemi.org/*",
   "gundemi.org/*",
   "www.gundemi.org/*",
 ]);

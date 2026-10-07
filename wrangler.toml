@@ -1716,13 +1716,11 @@ zone_name = "tukav.org"
 pattern = "www.tukav.org/api/stk*"
 zone_name = "tukav.org"
 
-# gundemi.org — apex/www = turkatahaber HM alias (domain2); herhangi bir *.gundemi.org alt alan
-# (seed 8 bölge + admin panelden yeni açılanlar). Zone: gundemi.org.
+# gundemi.org — apex/www = turkatahaber HM alias (domain2); *.gundemi.org = bölgesel PHP.
 # DNS A→187.77.84.201 (proxied); panel create/PATCH auto-provisions via CLOUDFLARE_API_TOKEN.
-# Traefik Host() on VPS may still be missing → origin "404 page not found".
-# Temporary catch-alls: gundemi-origin-bridge.js (apex → turkatahaber PHP) + SPA for subdomains.
-# After Traefik: delete gundemi.org/* / www.gundemi.org/* / *.gundemi.org/* and redeploy.
-# Ops: hostinger/gundemi-bolge/DEPLOY.md — wildcard routes cover NEW subdomains without per-site edits.
+# Bölgesel kamu sayfaları: SPA catch-all YOK (ankarasehirgazetesi.com modeli) → origin Yenişafak PHP.
+# VPS Traefik HostRegexp: hostinger/gundemi-bolge/traefik-gundemi.yml (zorunlu).
+# Apex geçici catch-all: gundemi-origin-bridge.js → turkatahaber PHP (Traefik Host gundemi.org sonrası sil).
 
 [[routes]]
 pattern = "*.gundemi.org/editor*"
@@ -1845,18 +1843,15 @@ zone_name = "gundemi.org"
 pattern = "www.gundemi.org/hm/*"
 zone_name = "gundemi.org"
 
-# Temporary Traefik-gap catch-alls (2026-10-07) — gundemi-origin-bridge.js
-# Remove when VPS Host(`gundemi.org`) / Host(`ege.gundemi.org`) … routers exist.
+# Temporary apex-only Traefik-gap catch-all — gundemi-origin-bridge.js → turkatahaber PHP.
+# DO NOT add *.gundemi.org/* (that forced SPA). Regionals = orange cloud → origin PHP.
+# Remove gundemi.org/* + www when VPS Host(`gundemi.org`) is live.
 [[routes]]
 pattern = "gundemi.org/*"
 zone_name = "gundemi.org"
 
 [[routes]]
 pattern = "www.gundemi.org/*"
-zone_name = "gundemi.org"
-
-[[routes]]
-pattern = "*.gundemi.org/*"
 zone_name = "gundemi.org"
 
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi

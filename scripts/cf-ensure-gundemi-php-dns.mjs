@@ -2,10 +2,10 @@
  * gundemi.org — Proxied A → Hostinger PHP origin (187.77.84.201).
  *
  * Fixes DNS_PROBE_FINISHED_NXDOMAIN for regional subdomains + apex/www.
- * Attaches temporary Traefik-gap catch-all Worker routes (gundemi.org/*,
- * www.gundemi.org/*, *.gundemi.org/*) so apex can PHP-bridge via turkatahaber
- * and regionals can serve SPA until VPS Host() routers exist.
- * Remove those routes after traefik-gundemi.yml is applied on 187.77.84.201.
+ * Attaches apex Traefik-gap bridge routes (gundemi.org/*, www.gundemi.org/*)
+ * → turkatahaber PHP. Does NOT attach `*.gundemi.org/*` (that forced SPA).
+ * Regionals: orange cloud → origin Yenişafak PHP (Traefik HostRegexp required).
+ * Removes leftover `*.gundemi.org/*` SPA catch-all if present.
  *
  * Usage:
  *   CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-gundemi-php-dns.mjs
@@ -161,16 +161,34 @@ const PANEL_ROUTE_PATTERNS = [
   "www.gundemi.org/api/*",
   "www.gundemi.org/tr/*",
   "www.gundemi.org/hm/*",
-  // Traefik gap bridge — remove after hostinger/gundemi-bolge/traefik-gundemi.yml is live
+  // Apex Traefik-gap bridge only — never *.gundemi.org/* (SPA)
   "gundemi.org/*",
   "www.gundemi.org/*",
-  "*.gundemi.org/*",
 ];
+
+/** Legacy SPA catch-all — delete so regionals hit origin PHP. */
+const REMOVE_SPA_CATCHALL_PATTERNS = Object.freeze(["*.gundemi.org/*"]);
 
 async function ensurePanelRoutes(zoneId) {
   const list = await cf(`/zones/${zoneId}/workers/routes`);
   const existing = list.json?.result || [];
   const byPattern = new Map(existing.map((r) => [r.pattern, r]));
+
+  for (const pattern of REMOVE_SPA_CATCHALL_PATTERNS) {
+    const row = byPattern.get(pattern);
+    if (!row?.id) continue;
+    if (DRY_RUN) {
+      console.log(`[dry-run] DELETE workers route ${pattern}`);
+      continue;
+    }
+    const del = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, { method: "DELETE" });
+    if (del.ok) {
+      console.log(`removed SPA catch-all ${pattern}`);
+      byPattern.delete(pattern);
+    } else {
+      console.warn(`failed to remove ${pattern}:`, del.json?.errors?.[0]?.message || del.status);
+    }
+  }
 
   let created = 0;
   let ok = 0;
