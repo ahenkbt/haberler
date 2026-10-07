@@ -1,0 +1,43 @@
+# Traefik dynamic config — Fix Haber (fix.tc) on VPS 187.77.84.201
+#
+# Install path (file provider watches this dir):
+#   /docker/traefik/dynamic/fixhaber.yml
+# Compose: /docker/traefik/docker-compose.yml
+# Container: traefik-traefik-1  (--providers.file.directory=/dynamic --providers.file.watch=true)
+#
+# Upstream: same Yenişafak PHP as turkatahaber / ankarasehir
+#   Docker labels on php-theme-yenisafak → Traefik service name `php-tema`
+#   Published host port: 127.0.0.1:8095
+#
+# Worker must NOT catch-all `fix.tc/*` — panel/API routes only (ankarasehir model).
+#
+# Rollback: rm /docker/traefik/dynamic/fixhaber.yml
+
+http:
+  routers:
+    fixhaber-apex:
+      rule: "Host(`fix.tc`) || Host(`www.fix.tc`)"
+      entryPoints: ["websecure"]
+      service: fixhaber-php-theme
+      tls:
+        certResolver: letsencrypt
+      priority: 20
+
+    fixhaber-apex-http:
+      rule: "Host(`fix.tc`) || Host(`www.fix.tc`)"
+      entryPoints: ["web"]
+      service: fixhaber-php-theme
+      middlewares: ["fixhaber-https-redirect"]
+      priority: 20
+
+  middlewares:
+    fixhaber-https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    fixhaber-php-theme:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8095"

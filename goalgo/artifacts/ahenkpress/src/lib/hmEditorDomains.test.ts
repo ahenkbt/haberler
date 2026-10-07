@@ -5,6 +5,10 @@ describe("resolveKnownHmEditorSlug", () => {
   it("maps PHP-theme news hosts", () => {
     expect(resolveKnownHmEditorSlug("yesilvatan.gen.tr")).toBe("yesilvatan");
     expect(resolveKnownHmEditorSlug("www.ankarasehirgazetesi.com")).toBe("asg");
+    expect(resolveKnownHmEditorSlug("fix.tc")).toBe("fixhaber");
+    expect(resolveKnownHmEditorSlug("www.fix.tc")).toBe("fixhaber");
+    expect(resolveKnownHmEditorSlug("gundemi.org")).toBe("gundemi");
+    expect(resolveKnownHmEditorSlug("www.gundemi.org")).toBe("gundemi");
   });
 
   it("maps turkatahaber.com to the HM author-panel slug", () => {
