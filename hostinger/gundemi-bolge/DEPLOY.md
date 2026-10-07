@@ -56,10 +56,18 @@ Tarayıcıda `ege.gundemi.org` (veya diğer alt alan) açılmıyorsa zone’da A
 
 ## One-shot API (önerilen)
 
-GitHub secret `CLOUDFLARE_API_TOKEN` (Zone DNS Edit + Workers Routes Edit) ile:
+Token gereksinimleri (yoksa API `10000 Authentication error` — zone okunur, A yazılamaz):
+
+| | |
+|--|--|
+| Permissions | **Zone → DNS → Edit**, **Zone → Workers Routes → Edit**, Zone → Zone → Read |
+| Zone Resources | **Include → Specific zone → `gundemi.org`** (veya All zones) |
+| Account | `16f5b996194174624e7969a3658bd2bb` (Ahenk) |
+
+Deploy token’ı yalnızca Workers Edit ise DNS oluşturamaz; token’a `gundemi.org` DNS Edit ekleyin **veya** Dashboard adımlarını kullanın.
 
 ```bash
-# Yerel / agent
+# Yerel — DNS Edit yetkili token
 export CLOUDFLARE_API_TOKEN=...   # veya CF_API_TOKEN
 # isteğe bağlı: export CLOUDFLARE_ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb
 node scripts/cf-ensure-gundemi-php-dns.mjs
@@ -69,7 +77,7 @@ DRY_RUN=1 node scripts/cf-ensure-gundemi-php-dns.mjs
 ```
 
 GitHub Actions: **Actions → “Ensure gundemi.org PHP DNS” → Run workflow**  
-(`.github/workflows/cf-ensure-gundemi-dns.yml` — `workflow_dispatch` + bu branch/main push).
+(`.github/workflows/cf-ensure-gundemi-dns.yml`). Secret aynı yetkilere sahip olmalı.
 
 Script:
 
@@ -78,19 +86,18 @@ Script:
 3. Panel/API route’larını `haberler` Worker’a bağlar (catch-all eklemez)  
 4. DoH ile kısa probe yazar  
 
-## Cloudflare Dashboard (token yoksa)
+## Cloudflare Dashboard (token yoksa / NXDOMAIN acil)
 
 1. [dash.cloudflare.com](https://dash.cloudflare.com) → hesap **Ahenk** → zone **`gundemi.org`**
-2. Sol menü **DNS** → **Records**
-3. Her satır için **Add record**:
+2. Sol menü **DNS** → **Records** → **Add record**
+3. Her satır için:
    - **Type:** `A`
-   - **Name:** tablodaki Name (`@`, `www`, `ege`, …)
+   - **Name:** `@` / `www` / `ege` / `marmara` / `karadeniz` / `icanadolu` / `doguanadolu` / `guneydogu` / `akdeniz` / `kibris`
    - **IPv4 address:** `187.77.84.201`
    - **Proxy status:** **Proxied** (turuncu bulut) — DNS only değil
-   - **TTL:** Auto
-   - **Save**
-4. 10 satır bitince: `dig +short ege.gundemi.org A` → Cloudflare anycast IP (ör. `104.x` / `172.x`); ham `187.77.84.201` görünmez (proxied).
-5. **Workers & Pages** → `haberler` → **Triggers / Routes**: `*.gundemi.org/editor*` vb. var mı kontrol (`main` merge → `cloudflare-production`). Catch-all `*.gundemi.org/*` **olmamalı**.
+   - **TTL:** Auto → **Save**
+4. Doğrulama: `dig +short ege.gundemi.org A` → CF anycast (`104.x` / `172.x`); boş / NXDOMAIN olmamalı. Ham `187.77.84.201` proxied iken görünmez.
+5. **Workers & Pages** → `haberler` → **Triggers / Routes**: `*.gundemi.org/editor*` vb. var mı (`main` → `cloudflare-production`). Catch-all `*.gundemi.org/*` **olmamalı**.
 
 ## Hostinger / VPS (187.77.84.201)
 

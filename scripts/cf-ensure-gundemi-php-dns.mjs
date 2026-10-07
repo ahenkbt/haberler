@@ -103,7 +103,7 @@ async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }) {
     return { action: "kept", fqdn, name, ip };
   }
 
-  const body = { type: "A", name, content: ip, proxied: true, ttl: 1, comment: `gundemi PHP origin — ${serves}` };
+  const body = { type: "A", name, content: ip, proxied: true, ttl: 1 };
   if (DRY_RUN) {
     console.log(`[dry-run] create A ${name} → ${ip} (proxied) — ${serves}`);
     return { action: "would-create", fqdn, name, ip };
@@ -113,7 +113,17 @@ async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }) {
     `[gundemi-dns] create A ${name} → ${ip} (proxied) ok=${created.ok} — ${serves}`,
     JSON.stringify(created.json?.errors || created.json?.result?.id || {}),
   );
-  if (!created.ok) throw new Error(`Failed to create A ${fqdn}: ${JSON.stringify(created.json?.errors)}`);
+  if (!created.ok) {
+    const err = created.json?.errors?.[0] || {};
+    return {
+      action: "error",
+      fqdn,
+      name,
+      ip,
+      code: err.code,
+      message: err.message || `HTTP ${created.status}`,
+    };
+  }
   return { action: "created", fqdn, name, ip };
 }
 
@@ -240,7 +250,11 @@ async function main() {
     results.push(await ensureProxiedA(zone.id, { ...rec, ip: catalog.ip }));
   }
 
-  await ensurePanelRoutes(zone.id);
+  try {
+    await ensurePanelRoutes(zone.id);
+  } catch (e) {
+    console.warn("[gundemi-dns] panel routes skipped:", e?.message || e);
+  }
 
   console.log("\n[gundemi-dns] DoH probe (may lag a few minutes after create):");
   for (const rec of catalog.records) {
@@ -250,7 +264,33 @@ async function main() {
 
   const created = results.filter((r) => r.action === "created" || r.action === "would-create").length;
   const ok = results.filter((r) => r.action === "ok" || r.action === "kept").length;
-  console.log(`\n[gundemi-dns] done: ${ok} ok, ${created} created/planned, total ${results.length}`);
+  const errors = results.filter((r) => r.action === "error");
+  console.log(`\n[gundemi-dns] done: ${ok} ok, ${created} created/planned, ${errors.length} errors, total ${results.length}`);
+
+  if (errors.length) {
+    const auth = errors.some((e) => e.code === 10000 || /Authentication/i.test(String(e.message)));
+    if (auth) {
+      console.error(
+        "[gundemi-dns] CLOUDFLARE_API_TOKEN can read the zone but cannot create DNS (code 10000).",
+      );
+      console.error(
+        "[gundemi-dns] Fix: Cloudflare → My Profile → API Tokens → edit token →",
+      );
+      console.error(
+        "  Permissions: Zone → DNS → Edit (+ Zone → Workers Routes → Edit).",
+      );
+      console.error(
+        "  Zone Resources: Include → Specific zone → gundemi.org (or All zones).",
+      );
+      console.error(
+        "[gundemi-dns] Or add the 10 Proxied A records in Dashboard — see hostinger/gundemi-bolge/DEPLOY.md",
+      );
+    }
+    for (const e of errors) {
+      console.error(`  FAIL ${e.name}: ${e.code || ""} ${e.message}`);
+    }
+    process.exitCode = 1;
+  }
 }
 
 main().catch((e) => {

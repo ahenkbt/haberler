@@ -1,5 +1,6 @@
 # gundemi.org NXDOMAIN → Proxied A → Hostinger PHP (187.77.84.201)
-# Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# Secrets: CLOUDFLARE_API_TOKEN (Zone DNS Edit on gundemi.org), CLOUDFLARE_ACCOUNT_ID
+# Token yalnızca Workers Edit ise job fail + Dashboard adımları: hostinger/gundemi-bolge/DEPLOY.md
 name: Ensure gundemi.org PHP DNS
 
 on:
