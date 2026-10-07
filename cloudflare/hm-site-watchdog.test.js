@@ -19,6 +19,7 @@ test("listActiveHmSites display_name kullanır (name kolonu yok)", async () => {
         domain2: null,
         domain3: null,
         active: true,
+        layout_json: { phpTheme: true },
       },
     ];
   };
@@ -26,10 +27,31 @@ test("listActiveHmSites display_name kullanır (name kolonu yok)", async () => {
   assert.equal(rows.length, 1);
   assert.equal(rows[0].name, "Ankara");
   assert.equal(rows[0].slug, "asg");
+  assert.equal(rows[0].phpTheme, true);
   assert.match(seen, /display_name/);
+  assert.match(seen, /layout_json/);
   // Şemada `name` yok — SELECT listesinde çıplak name olmamalı.
   const withoutDisplay = seen.replace(/display_name/gi, "");
   assert.doesNotMatch(withoutDisplay, /\bname\b/);
+});
+
+test("listActiveHmSites layout_json phpTheme bayrağını okur (static list dışı)", async () => {
+  const sql = async () => [
+    {
+      id: 1200,
+      slug: "yeni",
+      display_name: "Yeni",
+      domain: "yeni-panel-site.test",
+      domain2: null,
+      domain3: null,
+      active: true,
+      layout_json: JSON.stringify({ phpTheme: true, frontend: "php" }),
+    },
+  ];
+  const rows = await listActiveHmSites(sql);
+  assert.equal(rows[0].phpTheme, true);
+  const paths = siteProbePaths(rows[0].domain, { phpTheme: rows[0].phpTheme });
+  assert.equal(paths.phpTheme, true);
 });
 
 test("listActiveHmSites sql yoksa boş dizi", async () => {
@@ -46,6 +68,10 @@ test("siteProbePaths PHP tema hostlarını işaretler", () => {
   const vkd = siteProbePaths("vatankahramanlari.org");
   assert.equal(vkd.phpTheme, true);
   assert.equal(vkd.corporate, true);
+
+  const flagged = siteProbePaths("bilinmeyen-yeni.test", { phpTheme: true });
+  assert.equal(flagged.phpTheme, true);
+  assert.equal(siteProbePaths("bilinmeyen-yeni.test").phpTheme, false);
 });
 
 test("PHP tema editor 404 + home 200 + dual-write → soft, hard yok", () => {

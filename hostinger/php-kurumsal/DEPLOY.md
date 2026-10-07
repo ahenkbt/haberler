@@ -23,7 +23,7 @@ Her zone için (apex + www):
 
 ## 3) Worker deploy (bu PR)
 
-`wrangler.toml` VKD/TGD catch-all’ları kaldırır; panel/API + legacy `/tr|/*` `/hm/*` route’ları bırakır. `php-theme-legacy-redirect.js` kurumsal host’ları listeler.
+`wrangler.toml` VKD/TGD catch-all’ları kaldırır; panel/API + legacy `/tr|/*` `/hm/*` route’ları bırakır. `php-theme-legacy-redirect.js` kurumsal host’ları listeler; **yeni panel siteleri** `layout_json.phpTheme` / `frontend:"php"` ile otomatik işaretlenir ve Neon’dan host set’ine eklenir (wrangler’a site satırı eklemeye gerek yok). Zone catch-all kaldırma + DNS + Hostinger upload hâlâ ayrı ops adımlarıdır.
 
 Sıra:
 

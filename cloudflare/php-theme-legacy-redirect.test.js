@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildPhpThemeHostsFromSiteRows,
+  clearPhpThemeDynamicHosts,
   isPhpThemePublicHost,
   isPhpCorporateThemeHost,
+  layoutMarksPhpTheme,
   listPhpThemePublicApexHosts,
   listPhpCorporateThemeApexHosts,
   phpThemeLegacyRedirectPath,
   phpThemeLegacyRedirectResponse,
+  registerPhpThemeDynamicHosts,
   koseyazariPanelRedirectPath,
   koseyazariPanelRedirectResponse,
 } from "./php-theme-legacy-redirect.js";
@@ -116,6 +120,36 @@ test("PHP temada karşılığı olmayan yollar ve GET dışı istekler dokunulma
   assert.equal(phpThemeLegacyRedirectPath("/haber/x"), null);
   assert.equal(phpThemeLegacyRedirectPath("/tr/asg/yazar/giris"), null);
   assert.equal(run("https://ankarasehirgazetesi.com/tr/asg/haber/x", "POST"), null);
+});
+
+test("layoutMarksPhpTheme ve Neon satırlarından dinamik host → redirect", () => {
+  clearPhpThemeDynamicHosts();
+  assert.equal(layoutMarksPhpTheme({ phpTheme: true }), true);
+  assert.equal(layoutMarksPhpTheme({ frontend: "php" }), true);
+  assert.equal(layoutMarksPhpTheme({ phpTheme: false }), false);
+  assert.equal(isPhpThemePublicHost("yeni-ornek-gazete.test"), false);
+
+  const map = buildPhpThemeHostsFromSiteRows([
+    {
+      domain: "yeni-ornek-gazete.test",
+      domain2: "www.yeni-ornek-gazete.test",
+      layout_json: { phpTheme: true, frontend: "php" },
+    },
+    {
+      domain: "spa-eski.test",
+      layout_json: { frontend: "spa" },
+    },
+  ]);
+  registerPhpThemeDynamicHosts(map);
+  assert.equal(isPhpThemePublicHost("yeni-ornek-gazete.test"), true);
+  assert.equal(isPhpThemePublicHost("WWW.yeni-ornek-gazete.test"), true);
+  assert.equal(isPhpThemePublicHost("spa-eski.test"), false);
+
+  const res = run("https://www.yeni-ornek-gazete.test/tr/yeni/haber/ornek-haber?siteId=99");
+  assert.ok(res);
+  assert.equal(res.status, 301);
+  assert.equal(res.headers.get("location"), "https://yeni-ornek-gazete.test/haber/ornek-haber");
+  clearPhpThemeDynamicHosts();
 });
 
 test("/yazar/giris paneli /koseyazari/giris adresine 301 gider; kamu yazar sayfası kalır", () => {

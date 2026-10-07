@@ -23,7 +23,10 @@ import {
 } from "./hm-editor-kh-data-edge.js";
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
-import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
+import {
+  koseyazariPanelRedirectResponse,
+  phpThemeLegacyRedirectResponseAsync,
+} from "./php-theme-legacy-redirect.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
@@ -3009,7 +3012,8 @@ export default {
     if (koseyazariPanel) return koseyazariPanel;
 
     // PHP tema siteleri: eski SPA linkleri (/tr/asg/haber/:s?siteId=3) PHP adresine 301; yazar paneli SPA'da kalır.
-    const phpThemeLegacy = phpThemeLegacyRedirectResponse(request, incoming);
+    // Host set = static seed + Neon layout_json phpTheme (yeni panel siteleri wrangler edit gerektirmez).
+    const phpThemeLegacy = await phpThemeLegacyRedirectResponseAsync(request, incoming, env);
     if (phpThemeLegacy) return phpThemeLegacy;
 
     const tukavContact = await handleTukavContactEdge(request);

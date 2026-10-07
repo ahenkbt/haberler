@@ -22,6 +22,7 @@ import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import {
   isPhpCorporateThemeHost,
   isPhpThemePublicHost,
+  layoutMarksPhpTheme,
 } from "./php-theme-legacy-redirect.js";
 
 const KV_KEY = "hm-site-watchdog:last";
@@ -172,10 +173,12 @@ function siteDisplayName(site) {
 /**
  * PHP tema origin'de /editor SPA yok (Worker rotası). Self-fetch origin 404 verir;
  * tarayıcı Cloudflare üzerinden 200 alır. Köşe yazarı PHP'de de olabilir.
+ * @param {string} host
+ * @param {{ phpTheme?: boolean }} [opts] — Neon layout_json bayrağı (static list dışı yeni siteler)
  */
-export function siteProbePaths(host) {
+export function siteProbePaths(host, opts = {}) {
   const h = String(host || "").toLowerCase();
-  const phpTheme = isPhpThemePublicHost(h);
+  const phpTheme = opts.phpTheme === true || isPhpThemePublicHost(h);
   return {
     home: `https://${h}/`,
     // PHP temada editor Worker-only; probe yine /editor/giris (dışarıdan 200),
@@ -241,28 +244,50 @@ export function classifySiteProbeIssues(p = {}) {
   return { hard, soft };
 }
 
+function parseSiteLayout(raw) {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(String(raw || ""));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
 /**
  * hm_news_sites.display_name (şemada `name` kolonu yok).
- * @returns {Promise<Array<{id:number,slug:string,name:string,domain?:string,domain2?:string,domain3?:string,active?:boolean}>>}
+ * phpTheme: layout_json bayrağı veya static PHP host listesi.
+ * @returns {Promise<Array<{id:number,slug:string,name:string,domain?:string,domain2?:string,domain3?:string,active?:boolean,phpTheme?:boolean}>>}
  */
 export async function listActiveHmSites(sql) {
   if (!sql) return [];
   const rows = await sql`
-    SELECT id, slug, display_name, domain, domain2, domain3, active
+    SELECT id, slug, display_name, domain, domain2, domain3, active, layout_json
     FROM hm_news_sites
     WHERE active IS DISTINCT FROM false
     ORDER BY id ASC
     LIMIT 40
   `;
-  return (rows || []).map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    name: String(row.display_name || row.slug || "").trim(),
-    domain: row.domain,
-    domain2: row.domain2,
-    domain3: row.domain3,
-    active: row.active,
-  }));
+  return (rows || []).map((row) => {
+    const layout = parseSiteLayout(row.layout_json);
+    const host = String(row.domain || row.domain2 || row.domain3 || "")
+      .replace(/^https?:\/\//i, "")
+      .split("/")[0]
+      .replace(/^www\./i, "")
+      .toLowerCase();
+    const phpTheme = layoutMarksPhpTheme(layout) || (host ? isPhpThemePublicHost(host) : false);
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: String(row.display_name || row.slug || "").trim(),
+      domain: row.domain,
+      domain2: row.domain2,
+      domain3: row.domain3,
+      active: row.active,
+      phpTheme,
+    };
+  });
 }
 
 export async function runHmSiteWatchdog(env, opts = {}) {
@@ -339,7 +364,7 @@ export async function runHmSiteWatchdog(env, opts = {}) {
           corporate: false,
         };
       }
-      const paths = siteProbePaths(host);
+      const paths = siteProbePaths(host, { phpTheme: site.phpTheme === true });
       const [home, editor, kose] = await Promise.all([
         probeUrl(paths.home, 9000),
         probeUrl(paths.editor, 9000),

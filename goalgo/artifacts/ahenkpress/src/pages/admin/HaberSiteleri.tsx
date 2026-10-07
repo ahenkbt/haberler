@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
-import { isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
+import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
 type HmEditor = {
   id: number;
@@ -43,6 +43,8 @@ type HmSiteRow = {
   layoutJson?: string | null;
   hybridRssEnabled?: boolean;
   publicSuspended?: boolean;
+  /** layout_json phpTheme / frontend — Hostinger PHP şablon */
+  phpTheme?: boolean;
   contact?: { phone?: string; email?: string; address?: string; notes?: string };
   seoVerification?: SeoVerification | null;
   editors?: HmEditor[];
@@ -67,6 +69,8 @@ type SiteForm = {
   editorPassword: string;
   active: boolean;
   hybridRssEnabled: boolean;
+  /** Yeni sitelerde varsayılan açık — Hostinger PHP (Yenişafak) şablonu */
+  phpTheme: boolean;
 };
 
 const emptyForm: SiteForm = {
@@ -87,6 +91,7 @@ const emptyForm: SiteForm = {
   editorPassword: "",
   active: true,
   hybridRssEnabled: true,
+  phpTheme: true,
 };
 
 async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
@@ -102,6 +107,7 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
           ...site,
           hybridRssEnabled: layout.hybridRssEnabled === true,
           publicSuspended: isHmPublicSuspended(layout),
+          phpTheme: isHmPhpThemeSite(layout),
         };
       })
     : [];
@@ -162,10 +168,15 @@ function formFromSite(site: HmSiteRow): SiteForm {
     editorPassword: "",
     active: site.active !== false,
     hybridRssEnabled: site.hybridRssEnabled === true,
+    phpTheme: site.phpTheme === true,
   };
 }
 
-function payloadFromForm(form: SiteForm, editorId?: number) {
+function payloadFromForm(
+  form: SiteForm,
+  editorId?: number,
+  opts?: { includePhpThemeFlag?: boolean },
+) {
   const body: Record<string, unknown> = {
     slug: form.slug,
     displayName: form.displayName,
@@ -185,6 +196,12 @@ function payloadFromForm(form: SiteForm, editorId?: number) {
     },
     active: form.active,
   };
+  // Yeni site: her zaman bayrak. Düzenlemede yalnızca kullanıcı değiştirdiyse (eski static-list siteleri yanlışlıkla spa yazılmasın).
+  if (opts?.includePhpThemeFlag) {
+    body.layoutJson = form.phpTheme
+      ? { phpTheme: true, frontend: "php" }
+      : { phpTheme: false, frontend: "spa" };
+  }
   if (editorId) body.editorId = editorId;
   if (form.editorDisplayName) body.editorDisplayName = form.editorDisplayName;
   if (form.editorEmail) body.editorEmail = form.editorEmail;
@@ -296,10 +313,12 @@ export default function HaberSiteleri() {
       await ensureAdminPanelBootstrap();
       const current = editingId ? sites.find((s) => s.id === editingId) : undefined;
       const editorId = primaryHmSiteEditor(current)?.id;
+      const includePhpThemeFlag =
+        !editingId || form.phpTheme !== (current?.phpTheme === true);
       const r = await apiFetch(apiUrl(editingId ? `/api/hm/sites/${editingId}` : "/api/hm/sites"), {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadFromForm(form, editorId)),
+        body: JSON.stringify(payloadFromForm(form, editorId, { includePhpThemeFlag })),
       });
       const text = await r.text();
       const j = text ? JSON.parse(text) as { error?: string } : {};
@@ -717,6 +736,26 @@ export default function HaberSiteleri() {
                 «Site aktif» yalnızca vitrini açar. Editör girişi için sağ listedeki hesap «(pasif)» olmamalı.
               </p>
 
+              <label className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+                <span className="text-sm font-semibold text-emerald-950">PHP şablon (Hostinger Yenişafak)</span>
+                <Switch checked={form.phpTheme} onCheckedChange={(v) => update("phpTheme", Boolean(v))} />
+              </label>
+              <div className="rounded-xl border border-emerald-100 bg-white px-3 py-2 text-[11px] leading-relaxed text-slate-600">
+                <p className="font-semibold text-emerald-900">Yeni sitelerde varsayılan açık</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  <li>
+                    Panel kaydı <code className="rounded bg-slate-100 px-1">layout_json.phpTheme</code> bayrağını yazar;
+                    bekçi ve eski SPA → PHP yönlendirmeleri domain’i listeler (wrangler.toml’a site eklemeniz gerekmez).
+                  </li>
+                  <li>
+                    Hostinger’a PHP dosya yükleme + DNS A (proxied) ayrı adımdır — bakınız{" "}
+                    <code className="rounded bg-slate-100 px-1">hostinger/php-kurumsal/DEPLOY.md</code> /
+                    haber twin şablonu.
+                  </li>
+                  <li>Cloudflare zone catch-all kaldırma / route hâlâ ops gerektirir.</li>
+                </ul>
+              </div>
+
               <Button type="button" disabled={saving} onClick={saveSite} className="w-full bg-[#e61e25] hover:bg-[#c91820]">
                 <Save className="mr-2 h-4 w-4" /> {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : "Site Oluştur"}
               </Button>
@@ -764,6 +803,11 @@ export default function HaberSiteleri() {
                             <h3 className="text-base font-black text-gray-900">{site.displayName}</h3>
                             <Badge variant={site.active ? "default" : "secondary"}>{site.active ? "Aktif" : "Pasif"}</Badge>
                             {site.publicSuspended ? <Badge variant="outline">Askıda</Badge> : null}
+                            {site.phpTheme ? (
+                              <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800">
+                                PHP şablon
+                              </Badge>
+                            ) : null}
                             {site.hasOwnLlmKeys ? (
                               <Badge variant="outline">Kendi API{(site.ownLlmProviders ?? []).length ? `: ${(site.ownLlmProviders ?? []).join(", ")}` : ""}</Badge>
                             ) : (
