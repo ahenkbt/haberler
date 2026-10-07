@@ -22,6 +22,9 @@ type SiteRow = {
   host?: string | null;
   ok?: boolean;
   canSync?: boolean;
+  phpTheme?: boolean;
+  corporate?: boolean;
+  softIssues?: string[];
   home?: Probe;
   editor?: Probe;
   kose?: Probe;
@@ -40,6 +43,7 @@ type Report = {
   finishedAt?: string;
   dualWriteReady?: boolean;
   healthy?: boolean;
+  note?: string;
   api?: { live?: Probe; healthz?: Probe };
   sites?: SiteRow[];
   issues?: Issue[];
@@ -105,10 +109,17 @@ export default function HaberSiteleriBekci() {
           })),
         );
       }
-      const high = (data.report?.issues || []).filter((i: Issue) => i.severity === "high").length;
+      const issues = data.report?.issues || [];
+      const high = issues.filter((i: Issue) => i.severity === "high").length;
+      const soft = issues.filter((i: Issue) => i.severity === "low").length;
       toast({
         title: data.report?.healthy ? "Siteler sağlıklı" : "Sorunlar bulundu",
-        description: high > 0 ? `${high} kritik uyarı` : `${(data.report?.issues || []).length} uyarı (kritik yok)`,
+        description:
+          high > 0
+            ? `${high} kritik uyarı`
+            : soft > 0
+              ? `${soft} soft uyarı (eşitleme/probe ayrımı — kritik yok)`
+              : `${issues.length} uyarı (kritik yok)`,
       });
     } catch (e) {
       toast({ title: "Tarama başarısız", description: String(e).slice(0, 180), variant: "destructive" });
@@ -129,7 +140,7 @@ export default function HaberSiteleriBekci() {
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       toast({
         title: `Site #${siteId} PHP Neon’a eşitlendi`,
-        description: `yazar ${data.authors || 0}, haber ${data.news || 0}, makale ${data.makaleler || 0} → phpSiteId ${data.phpSiteId ?? "?"}`,
+        description: `yazar ${data.authors || 0}, haber ${data.news || 0}, makale ${data.makaleler || 0} → phpSiteId ${data.phpSiteId ?? "?"}. Kalan editör/healthz uyarısı probe’dur; eşitleme başarısız değil.`,
       });
     } catch (e) {
       toast({ title: "Eşitleme başarısız", description: String(e).slice(0, 180), variant: "destructive" });
@@ -150,7 +161,7 @@ export default function HaberSiteleriBekci() {
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       toast({
         title: "Toplu eşitleme tamam",
-        description: `${data.synced || 0} site PHP Neon’a aktarıldı`,
+        description: `${data.synced || 0} site PHP Neon’a aktarıldı. Eşitleme ≠ HTTP probe: kalan SORUN çoğu zaman editör SPA self-fetch 404 veya soğuk healthz — «Şimdi tara» ile soft/kritik ayrımını görün.`,
       });
     } catch (e) {
       toast({ title: "Toplu eşitleme başarısız", description: String(e).slice(0, 180), variant: "destructive" });
@@ -174,6 +185,12 @@ export default function HaberSiteleriBekci() {
             <p className="mt-1 text-sm text-gray-600 max-w-2xl">
               Sitelerin anasayfa / editör / köşe yazarı girişini tarar. Panel Neon (bitter-mouse) ile PHP Neon
               (twilight-pine) kopuksa manşet ve köşe yazıları canlıya geçmez — burada tek tıkla eşitlersiniz.
+            </p>
+            <p className="mt-2 text-sm text-amber-900/90 max-w-2xl rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+              <strong className="text-amber-950">Eşitleme ≠ probe:</strong> «PHP Neon’a eşitle» yalnızca DB
+              içeriğini aktarır. Tarama hâlâ uyarı verebilir (PHP temada editör SPA self-fetch 404, soğuk
+              Container healthz, Hostinger’da henüz yüklenmemiş kurumsal paket). Soft uyarılar eşitleme
+              başarısızlığı değildir; gerçek kesinti (anasayfa down) ayrı işaretlenir.
             </p>
             <p className="mt-2 text-sm text-gray-500 max-w-2xl">
               <strong className="text-gray-700">Bekçi ≠ İçerik Robotu:</strong> Bekçi sağlık + Neon eşitleme;
@@ -231,8 +248,10 @@ export default function HaberSiteleriBekci() {
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 space-y-2">
             <h2 className="text-lg font-black text-emerald-950">Hızlı onarım</h2>
             <p className="text-sm text-emerald-900">
-              Tarama uyarı verse bile dual-write açıksa siteleri PHP Neon’a eşitleyebilirsiniz. API healthz
-              soğuk Container’da FAIL olabilir; kenar live OK ise panel oturumu çalışır.
+              Tarama uyarı verse bile dual-write açıksa siteleri PHP Neon’a eşitleyebilirsiniz. Eşitleme
+              tamamlandıktan sonra kalan SORUN çoğu zaman probe/routing’dir (editör SPA, healthz) — DB
+              aktarımı başarısız demek değildir. API healthz soğuk Container’da FAIL olabilir; kenar live OK
+              ise panel oturumu çalışır.
             </p>
             <Button type="button" onClick={() => void syncAll()} disabled={busy || running}>
               <Database className="mr-2 h-4 w-4" />
@@ -265,15 +284,18 @@ export default function HaberSiteleriBekci() {
                     API live: {report.api?.live?.ok ? "OK" : "FAIL"} ({report.api?.live?.ms ?? "?"}ms) · healthz:{" "}
                     {report.api?.healthz?.ok ? "OK" : "FAIL"} ({report.api?.healthz?.ms ?? "?"}ms)
                     {report.api?.live?.ok && !report.api?.healthz?.ok ? (
-                      <span className="text-gray-500"> — Container soğuk olabilir (kritik değil)</span>
+                      <span className="text-gray-500"> — Container soğuk olabilir (kritik değil; eşitleme ile ilgili değil)</span>
                     ) : null}
                   </p>
+                  {report.note ? <p className="text-xs text-gray-500">{report.note}</p> : null}
                   {(report.issues || []).length > 0 && (
                     <ul className="list-disc pl-5 space-y-1 text-amber-900">
                       {(report.issues || []).map((issue, i) => (
                         <li key={`${issue.message}-${i}`}>
                           {issue.severity === "high" ? (
                             <span className="font-semibold text-red-800">[kritik] </span>
+                          ) : issue.severity === "low" ? (
+                            <span className="font-semibold text-slate-600">[soft] </span>
                           ) : null}
                           {issue.message}
                         </li>
@@ -296,7 +318,10 @@ export default function HaberSiteleriBekci() {
                       <div className="font-semibold text-gray-900">
                         #{site.id} {site.name || site.slug}{" "}
                         {site.ok === true ? (
-                          <span className="text-emerald-600 text-xs">OK</span>
+                          <span className="text-emerald-600 text-xs">
+                            OK
+                            {site.softIssues && site.softIssues.length > 0 ? " · soft uyarı" : ""}
+                          </span>
                         ) : site.ok === false ? (
                           <span className="text-red-600 text-xs">SORUN</span>
                         ) : (
@@ -310,9 +335,16 @@ export default function HaberSiteleriBekci() {
                             {" "}
                             · home {site.home?.status}/{site.home?.ms}ms · editor {site.editor?.status}/
                             {site.editor?.ms}ms · köşe {site.kose?.status}/{site.kose?.ms}ms
+                            {site.phpTheme ? " · PHP tema" : ""}
+                            {site.corporate ? " · kurumsal" : ""}
                           </>
                         ) : null}
                       </div>
+                      {site.ok === true && site.softIssues && site.softIssues.length > 0 ? (
+                        <div className="text-xs text-slate-600 mt-1">
+                          Soft (eşitleme dışı): {site.softIssues.join("; ")}
+                        </div>
+                      ) : null}
                     </div>
                     <Button
                       type="button"
