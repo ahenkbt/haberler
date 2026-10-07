@@ -24,6 +24,7 @@ import {
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
+import { gundemiApexPhpBridgeResponse } from "./gundemi-origin-bridge.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
@@ -3335,6 +3336,11 @@ export default {
 
     const edgeRssPreview = await serveEdgeRssPreview(request, env, incoming);
     if (edgeRssPreview) return edgeRssPreview;
+
+    // Traefik gap: gundemi.org hosts resolve in DNS but VPS has no Host() router yet
+    // (plain "404 page not found"). Apex → turkatahaber PHP via edge bridge.
+    const gundemiPhpBridge = await gundemiApexPhpBridgeResponse(request, incoming);
+    if (gundemiPhpBridge) return gundemiPhpBridge;
 
     const fromAssets = await tryServeAssets(
       request,
