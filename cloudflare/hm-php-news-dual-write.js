@@ -63,28 +63,68 @@ async function applyTepeManset(sql, newsId, flag) {
   }
 }
 
+/**
+ * Map editor/Worker category → PHP twilight-pine category id.
+ * Prefer site-scoped rows (exclusive_site_id = php site) over globals so
+ * "ankara" never collapses onto another site's politika twin with the same id.
+ */
 async function resolvePhpCategoryId(sql, row) {
+  const siteId = asPositiveInt(pick(row, "site_id", "siteId"));
   const slug = String(pick(row, "category_slug", "categorySlug") || "")
     .trim()
     .toLowerCase();
-  if (slug) {
-    const hit = await sql`
+
+  async function bySlug(want) {
+    if (!want) return null;
+    if (siteId) {
+      const scoped = await sql`
+        SELECT id FROM categories
+        WHERE lower(slug) = ${want}
+          AND (exclusive_site_id IS NULL OR exclusive_site_id = ${siteId})
+        ORDER BY CASE WHEN exclusive_site_id = ${siteId} THEN 0 ELSE 1 END, id ASC
+        LIMIT 1
+      `;
+      if (scoped?.[0]?.id) return Number(scoped[0].id);
+    }
+    const any = await sql`
       SELECT id FROM categories
-      WHERE lower(slug) = ${slug}
+      WHERE lower(slug) = ${want}
+        AND exclusive_site_id IS NULL
       ORDER BY id ASC
       LIMIT 1
     `;
-    if (hit?.[0]?.id) return Number(hit[0].id);
+    return any?.[0]?.id ? Number(any[0].id) : null;
   }
+
+  const fromSlug = await bySlug(slug);
+  if (fromSlug) return fromSlug;
+
   const given = asPositiveInt(pick(row, "category_id", "categoryId"));
   if (given) {
-    const ok = await sql`SELECT id FROM categories WHERE id = ${given} LIMIT 1`;
-    if (ok?.[0]?.id) return given;
+    // IDs are not unique across exclusive twins — resolve via that row's slug when possible.
+    const meta = siteId
+      ? await sql`
+          SELECT id, slug FROM categories
+          WHERE id = ${given}
+            AND (exclusive_site_id IS NULL OR exclusive_site_id = ${siteId})
+          ORDER BY CASE WHEN exclusive_site_id = ${siteId} THEN 0 ELSE 1 END, id ASC
+          LIMIT 1
+        `
+      : await sql`
+          SELECT id, slug FROM categories
+          WHERE id = ${given} AND exclusive_site_id IS NULL
+          ORDER BY id ASC
+          LIMIT 1
+        `;
+    if (meta?.[0]?.slug) {
+      const via = await bySlug(String(meta[0].slug).toLowerCase());
+      if (via) return via;
+    }
+    if (meta?.[0]?.id) return Number(meta[0].id);
   }
-  const gundem = await sql`
-    SELECT id FROM categories WHERE lower(slug) = 'gundem' ORDER BY id ASC LIMIT 1
-  `;
-  return gundem?.[0]?.id ? Number(gundem[0].id) : given;
+
+  const gundem = await bySlug("gundem");
+  return gundem ?? given;
 }
 
 async function resolvePhpSiteIdFromRow(sql, row) {
@@ -400,9 +440,16 @@ export async function edgeDeleteAuthor(sql, idOrRow) {
 /**
  * @returns {Promise<{mirrored: boolean, via?: string, reason?: string, id?: number}>}
  */
-function isReadOnlyTxError(err) {
+/** Postgres / Neon: salt-okunur oturum veya replica. */
+export function isReadonlyDbError(err) {
   const msg = String(err?.message || err || "");
-  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only/i.test(msg);
+  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only|readonly|read only/i.test(
+    msg,
+  );
+}
+
+function isReadOnlyTxError(err) {
+  return isReadonlyDbError(err);
 }
 
 export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
@@ -422,9 +469,9 @@ export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
     const msg = String(err?.message || err).slice(0, 180);
     if (isReadOnlyTxError(err)) {
       console.warn("[hm-php-dual-write] NEWS_DATABASE_URL read-only — mirror atlandı", table, op, msg.slice(0, 120));
-      return { mirrored: false, reason: "news-db-read-only" };
+      return { mirrored: false, reason: "news-db-read-only", readonly: true };
     }
     console.error("[hm-php-dual-write]", table, op, msg);
-    return { mirrored: false, reason: msg.slice(0, 120) };
+    return { mirrored: false, reason: msg.slice(0, 120), readonly: false };
   }
 }

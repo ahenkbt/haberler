@@ -3,7 +3,7 @@
  * Tanımsız rotalar: null → Worker Container vekili.
  */
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
+import { edgeMirrorNewsDbWrite, isReadonlyDbError } from "./hm-php-news-dual-write.js";
 import {
   loadPhpSiteAuthors,
   loadPhpSiteCategories,
@@ -291,9 +291,16 @@ function apiOrigin(env, incoming) {
 const MIRROR_BUDGET_MS = 2500;
 /** Aynı isolate içinde env nesnesi tek olduğundan istek girişinde set edilir; handler imzaları değişmez. */
 let mirrorEnv = null;
+/** NEWS_DATABASE_URL RO ise isolate boyunca kenar/Container aynasını atla (panel yazımı bozulmasın). */
+let newsMirrorReadonlySkip = false;
 
 export function setNewsMirrorEnv(env) {
   mirrorEnv = env || null;
+  newsMirrorReadonlySkip = false;
+}
+
+export function __resetNewsMirrorReadonlySkipForTests() {
+  newsMirrorReadonlySkip = false;
 }
 
 /**
@@ -311,7 +318,7 @@ export function setNewsMirrorEnv(env) {
  */
 export async function mirrorNewsDbWrite(table, op, rowOrId) {
   const env = mirrorEnv;
-  if (!env) return false;
+  if (!env || newsMirrorReadonlySkip) return false;
 
   try {
     if (shouldEdgeDualWriteNewsDb(env)) {
@@ -339,13 +346,13 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
         }
         const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
         if (direct?.mirrored === true) return true;
+        const reason = String(direct?.reason || "unknown");
         // Dual RO/ayna hatası primary'yi bozmaz; bridge fallback dene.
-        console.warn(
-          "[hm-news-mirror] kenar dual-write atlandı (primary OK)",
-          table,
-          op,
-          String(direct?.reason || "unknown").slice(0, 160),
-        );
+        console.warn("[hm-news-mirror] kenar dual-write atlandı (primary OK)", table, op, reason.slice(0, 160));
+        if (direct?.readonly === true || reason === "news-db-read-only" || isReadonlyDbError(reason)) {
+          newsMirrorReadonlySkip = true;
+          console.warn("[hm-news-mirror] NEWS_DATABASE_URL salt-okunur — ayna bu isolate'da kapatıldı");
+        }
       }
     }
 
@@ -370,12 +377,15 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     }
     const data = await res.json().catch(() => ({}));
     if (data?.mirrored !== true) {
-      console.warn("[hm-news-mirror] atlandı", table, op, String(data?.reason || "unknown"));
+      const reason = String(data?.reason || "unknown");
+      console.warn("[hm-news-mirror] atlandı", table, op, reason);
+      if (isReadonlyDbError(reason)) newsMirrorReadonlySkip = true;
     }
     return data?.mirrored === true;
   } catch (err) {
     const msg = String(err?.message || err).slice(0, 120);
-    if (/read-only transaction|news-db-read-only/i.test(msg)) {
+    if (isReadonlyDbError(err) || /news-db-read-only/i.test(msg)) {
+      newsMirrorReadonlySkip = true;
       console.warn("[hm-news-mirror] PHP dual-write read-only — panel yanıtı etkilenmez", table, op, msg);
       return false;
     }
