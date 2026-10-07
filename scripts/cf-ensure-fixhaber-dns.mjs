@@ -6,6 +6,7 @@
  *
  * Usage:
  *   CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
+ *   CLOUDFLAREDNS_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
  *   DRY_RUN=1 CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
  *
  * Docs: hostinger/fixhaber/DEPLOY.md
@@ -22,7 +23,12 @@ const RECORDS = [
 ];
 
 function token() {
-  return process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";
+  return (
+    process.env.CLOUDFLAREDNS_API_TOKEN ||
+    process.env.CLOUDFLARE_API_TOKEN ||
+    process.env.CF_API_TOKEN ||
+    ""
+  );
 }
 
 async function cf(path, { method = "GET", body } = {}) {
@@ -118,7 +124,9 @@ async function main() {
   console.log(`[fixhaber-dns] zone=${ZONE} origin=${ORIGIN_IP} records=${RECORDS.length} dryRun=${DRY_RUN}`);
 
   if (!token()) {
-    console.error("[fixhaber-dns] CLOUDFLARE_API_TOKEN missing — cannot create DNS via API.");
+    console.error(
+      "[fixhaber-dns] CLOUDFLARE_API_TOKEN / CLOUDFLAREDNS_API_TOKEN missing — cannot create DNS via API.",
+    );
     console.error("[fixhaber-dns] Dashboard steps: hostinger/fixhaber/DEPLOY.md");
     process.exitCode = 2;
     return;
