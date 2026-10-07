@@ -1,0 +1,59 @@
+# gundemi.org NXDOMAIN → Proxied A → Hostinger PHP (187.77.84.201)
+# Secrets: CLOUDFLARE_API_TOKEN (Zone DNS Edit on gundemi.org), CLOUDFLARE_ACCOUNT_ID
+# Manual only — push/PR must not fail when token lacks Zone DNS Edit.
+# Dashboard steps: hostinger/gundemi-bolge/DEPLOY.md
+name: Ensure gundemi.org PHP DNS
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: cf-ensure-gundemi-dns
+  cancel-in-progress: false
+
+jobs:
+  ensure-dns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check CF token
+        id: cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLOUDFLARE_API_TOKEN missing — cannot create gundemi.org DNS. Add records in Dashboard (DEPLOY.md) or grant Zone DNS Edit and re-run."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "CLOUDFLARE_ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
+          else
+            echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-node@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          node-version: 22
+
+      # Soft-fail: token often has Workers Edit but not Zone DNS Edit (API 10000).
+      # Required DNS still must be added manually or after granting DNS Edit — see DEPLOY.md.
+      - name: Ensure Proxied A records + panel routes
+        if: steps.cf.outputs.enabled == 'true'
+        continue-on-error: true
+        id: ensure
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cf-ensure-gundemi-php-dns.mjs
+
+      - name: Auth / DNS note
+        if: steps.cf.outputs.enabled == 'true' && steps.ensure.outcome == 'failure'
+        run: |
+          echo "::warning::DNS ensure failed (likely missing Zone DNS Edit). Job stays green so PRs are not blocked."
+          echo "Add 10 Proxied A → 187.77.84.201 in Dashboard, or grant Zone DNS Edit and re-run this workflow."
+          echo "See hostinger/gundemi-bolge/DEPLOY.md"
