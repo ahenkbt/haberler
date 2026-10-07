@@ -14,7 +14,7 @@ import {
 } from "./gundemi-origin-bridge.js";
 
 describe("gundemi-origin-bridge hosts", () => {
-  it("detects apex alias vs any *.gundemi.org subdomain (incl. new sites)", () => {
+  it("detects apex (own site) vs any *.gundemi.org subdomain", () => {
     assert.equal(isGundemiApexBridgeHost("gundemi.org"), true);
     assert.equal(isGundemiApexBridgeHost("www.gundemi.org"), true);
     assert.equal(isGundemiApexBridgeHost("ege.gundemi.org"), false);
@@ -30,7 +30,7 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isGundemiBridgeCatchAllHost("gundemi.org"), true);
   });
 
-  it("bridges PHP theme assets and HTML, not SPA panel/assets", () => {
+  it("bridges PHP theme assets and HTML paths (not SPA panel/assets)", () => {
     assert.equal(shouldBridgeGundemiApexPath("/"), true);
     assert.equal(shouldBridgeGundemiApexPath("/haber/foo"), true);
     assert.equal(shouldBridgeGundemiApexPath("/assets/theme.css"), true);
@@ -43,6 +43,7 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isPhpThemeAssetPath("/assets/theme.css"), true);
     assert.equal(isPhpThemeAssetPath("/assets/index.js"), false);
     assert.equal(isGundemiLogoAssetPath("/gundemi/logos/akdeniz-gundemi.png"), true);
+    assert.equal(isGundemiLogoAssetPath("/gundemi/logos/gundemi-org.png"), true);
     assert.equal(shouldProxyRegionalPhpThemeAsset("/assets/theme.css"), true);
     assert.equal(shouldProxyRegionalPhpThemeAsset("/assets/theme.js"), true);
     assert.equal(shouldProxyRegionalPhpThemeAsset("/brand/turkata/logo.png"), true);
@@ -138,18 +139,29 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(res, null);
   });
 
-  it("proxies apex home and rewrites turkatahaber host", async () => {
+  it("apex home is Traefik-gap (own site), NOT turkatahaber HTML bridge", async () => {
     const incoming = new URL("https://gundemi.org/");
     const res = await gundemiApexPhpBridgeResponse(
       new Request(incoming.toString(), { headers: { accept: "text/html" } }),
       incoming,
     );
     assert.ok(res);
-    assert.equal(res.status, 200);
-    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-bridge");
+    assert.equal(res.status, 503);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-traefik-gap");
     const html = await res.text();
-    assert.match(html, /TÜRKATA|TürkAta|turkata/i);
-    assert.equal(html.includes("https://turkatahaber.com/"), false);
-    assert.match(html, /https:\/\/gundemi\.org/);
+    assert.match(html, /PHP tema bekleniyor|Traefik/i);
+    assert.match(html, /turkatahaber alias değil/i);
+    assert.equal(html.includes("https://turkatahaber.com"), false);
+  });
+
+  it("apex theme.css still proxies shared PHP pack", async () => {
+    const incoming = new URL("https://gundemi.org/assets/theme.css");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { method: "GET" }),
+      incoming,
+    );
+    assert.ok(res);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
   });
 });

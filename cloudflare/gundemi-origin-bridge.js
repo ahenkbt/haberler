@@ -1,25 +1,20 @@
 /**
  * gundemi.org Traefik gap bridge — PHP only (no SPA public UI).
  *
- * DNS A→187.77.84.201 (proxied) is live, but VPS Traefik may lack Host() routers →
- * origin returns plain "404 page not found".
+ * DNS A→187.77.84.201 (proxied). VPS Traefik Host(`gundemi.org`) + HostRegexp
+ * → Yenişafak PHP (`127.0.0.1:8095`). Apex is its OWN HM site (slug `gundemi`),
+ * NOT a turkatahaber.com alias — do not reverse-proxy apex HTML to turkatahaber.
  *
- * Apex (turkatahaber domain2 alias): reverse-proxy PHP from turkatahaber.com and
- * keep the public host as gundemi.org.
- *
- * Regionals (*.gundemi.org): never serve SPA ASSETS for public HTML. Orange cloud
- * → Traefik Host / HostRegexp for `/`. Worker still owns `*.gundemi.org/assets/*`
- * because /editor lazy-loads many hashed chunks (`index-*`, `vendor-*`, route
- * modules) — do NOT delete that route. PHP `theme.css` / `theme.js` hit the same
- * pattern, so the bridge proxies them from turkatahaber (same Yenişafak pack as
- * VPS `:8095`) instead of Traefik-gap 503 HTML. Direct resolveOverride to the VPS
- * is unreliable (Traefik default/self-signed cert on raw IP).
+ * Apex + regionals: orange cloud → Traefik when Worker catch-all is absent.
+ * If Worker still owns a path (assets/theme, leftover catch-all):
+ *   - theme.css/js → shared Yenişafak pack (turkatahaber origin bytes, no host rewrite)
+ *   - public HTML → Traefik-gap page (never SPA, never turkatahaber rewrite)
  * Logos: ASSETS `/gundemi/logos/*` (also on VPS `:8095` as backup).
  *
  * Ops: hostinger/gundemi-bolge/traefik-gundemi.yml + DEPLOY.md
  */
 
-import { TURKATA_ORIGIN, isTurkataHaberHost, turkataPublicOrigin } from "./turkata-haber.js";
+import { TURKATA_ORIGIN } from "./turkata-haber.js";
 
 /** Seed / docs catalog — known regionals (any new *.gundemi.org also works). */
 const GUNDEMI_REGIONAL_APEX = Object.freeze([
@@ -84,12 +79,13 @@ export function isGundemiRegionalHost(hostname) {
   return isGundemiOrgSubdomainHost(hostname);
 }
 
-/** Apex alias only (gundemi.org / www) — turkatahaber PHP bridge. */
+/**
+ * Apex gundemi.org / www — own HM site (not turkatahaber).
+ * Used for SPA-block + Traefik-gap / theme-asset handling when Worker still sees the path.
+ */
 export function isGundemiApexBridgeHost(hostname) {
-  const host = normalizeHostname(hostname);
-  if (!host) return false;
-  if (isGundemiOrgSubdomainHost(host)) return false;
-  return isTurkataHaberHost(host) && normalizeHostname(host).replace(/^www\./, "") === GUNDEMI_ZONE;
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return host === GUNDEMI_ZONE;
 }
 
 export function isGundemiBridgeCatchAllHost(hostname) {
@@ -141,9 +137,8 @@ function isSpaPanelPath(pathname) {
 }
 
 /**
- * Apex paths that must be fetched from turkatahaber PHP (not SPA ASSETS).
- * Non-theme /assets/* stay on Worker ASSETS for the editor bundle.
- * Regional logos are served from ASSETS (not bridged).
+ * Paths that must leave Worker ASSETS / panel alone.
+ * Logos stay on ASSETS; hashed SPA /assets/* stay for /editor.
  */
 export function shouldBridgeGundemiApexPath(pathname) {
   const p = String(pathname || "").split("?")[0] || "/";
@@ -154,8 +149,8 @@ export function shouldBridgeGundemiApexPath(pathname) {
 }
 
 /**
- * Regional Worker-owned paths that must pull shared PHP theme bytes (not 503 gap HTML).
- * Kept for /assets/theme.* while `*.gundemi.org/assets/*` exists for /editor bundles.
+ * Worker-owned theme paths that must pull shared PHP theme bytes (not 503 gap HTML).
+ * Kept for /assets/theme.* while `*.gundemi.org/assets/*` (and apex assets) exist for /editor.
  */
 export function shouldProxyRegionalPhpThemeAsset(pathname) {
   const p = String(pathname || "").split("?")[0] || "/";
@@ -163,32 +158,6 @@ export function shouldProxyRegionalPhpThemeAsset(pathname) {
   if (!isPhpThemeAssetPath(p)) return false;
   // Only paths the Worker still intercepts (assets route). brand/manset go orange→origin.
   return p.startsWith("/assets/") || p.startsWith("/brand/");
-}
-
-function rewriteTurkataPublicUrls(text, publicOrigin) {
-  if (!text || !publicOrigin) return text;
-  const apex = publicOrigin.replace(/^https:\/\//, "");
-  return String(text)
-    .replaceAll("https://turkatahaber.com", publicOrigin)
-    .replaceAll("http://turkatahaber.com", publicOrigin)
-    .replaceAll("//turkatahaber.com", `//${apex}`)
-    .replaceAll("https://www.turkatahaber.com", publicOrigin)
-    .replaceAll("http://www.turkatahaber.com", publicOrigin)
-    .replaceAll("//www.turkatahaber.com", `//${apex}`);
-}
-
-function rewriteLocationHeader(location, publicOrigin) {
-  if (!location) return location;
-  try {
-    const url = new URL(location, TURKATA_ORIGIN);
-    const host = normalizeHostname(url.hostname);
-    if (host === "turkatahaber.com" || host === "www.turkatahaber.com") {
-      return `${publicOrigin}${url.pathname}${url.search}${url.hash}`;
-    }
-  } catch {
-    /* keep */
-  }
-  return location;
 }
 
 const HOP_BY_HOP = new Set([
@@ -224,22 +193,19 @@ code{background:#f2f4f7;padding:.1rem .35rem;border-radius:4px}
 <h1>PHP tema bekleniyor</h1>
 <p><strong>${h}</strong> için SPA kapalı. VPS Traefik’te <code>Host()</code> / <code>HostRegexp</code> yoksa origin <code>404 page not found</code> döner.</p>
 <p>Uygula: <code>hostinger/gundemi-bolge/traefik-gundemi.yml</code> → Yenişafak PHP service.</p>
+<p>Apex <code>gundemi.org</code> kendi HM sitesidir (turkatahaber alias değil).</p>
 <p>Panel: <a href="/editor">/editor</a></p>
 </body>
 </html>`;
 }
 
 /**
- * Reverse-proxy a path from live turkatahaber.com PHP (shared Yenişafak pack).
- * @param {{ rewriteHost: boolean, frontendTag: string }} opts
+ * Fetch shared Yenişafak theme bytes from live turkatahaber.com PHP pack
+ * (same container as VPS :8095). No public-host rewrite — theme assets are host-agnostic.
  * @returns {Promise<Response>}
  */
-async function proxyTurkataPhpPath(request, incoming, opts) {
-  const rewriteHost = opts?.rewriteHost !== false;
-  const frontendTag = opts?.frontendTag || "gundemi-php-bridge";
-  const publicOrigin = rewriteHost
-    ? turkataPublicOrigin(incoming.hostname)
-    : `https://${normalizeHostname(incoming.hostname)}`;
+async function proxySharedPhpThemePath(request, incoming, opts) {
+  const frontendTag = opts?.frontendTag || "gundemi-php-theme-asset";
   const upstreamUrl = new URL(incoming.pathname + incoming.search, TURKATA_ORIGIN);
 
   const headers = new Headers();
@@ -281,38 +247,25 @@ async function proxyTurkataPhpPath(request, incoming, opts) {
     const k = key.toLowerCase();
     if (HOP_BY_HOP.has(k)) continue;
     if (k === "content-encoding" || k === "content-length") continue;
-    // Avoid leaking upstream CDN age onto regional theme responses.
     if (k === "age" || k === "cf-cache-status") continue;
-    if (k === "location") {
-      out.set("Location", rewriteLocationHeader(value, publicOrigin));
-      continue;
-    }
     out.append(key, value);
   }
   out.set("x-yekpare-frontend", frontendTag);
   out.set("x-yekpare-bridge-upstream", "turkatahaber.com");
 
-  const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
   if (request.method === "HEAD") {
     return new Response(null, { status: upstream.status, headers: out });
-  }
-
-  // theme.css/js: no host rewrite needed; HTML/JSON on apex still rewrite.
-  if (rewriteHost && (ct.includes("text/html") || ct.includes("text/css") || ct.includes("javascript") || ct.includes("json"))) {
-    const body = rewriteTurkataPublicUrls(await upstream.text(), publicOrigin);
-    return new Response(body, { status: upstream.status, headers: out });
   }
 
   return new Response(upstream.body, { status: upstream.status, headers: out });
 }
 
 /**
- * Regional theme under Worker `*.gundemi.org/assets/*`. Never emit Traefik-gap HTML
+ * Theme under Worker `*.gundemi.org/assets/*` (and apex assets). Never emit Traefik-gap HTML
  * (browsers would treat 503 HTML as CSS → unstyled sites).
  */
 async function proxyRegionalPhpThemeAsset(request, incoming) {
-  const res = await proxyTurkataPhpPath(request, incoming, {
-    rewriteHost: false,
+  const res = await proxySharedPhpThemePath(request, incoming, {
     frontendTag: "gundemi-php-theme-asset",
   });
   const ct = String(res.headers.get("content-type") || "").toLowerCase();
@@ -341,51 +294,42 @@ async function proxyRegionalPhpThemeAsset(request, incoming) {
 }
 
 /**
- * Reverse-proxy gundemi.org public pages to live turkatahaber.com PHP.
- * Regionals: theme assets on Worker assets-route → shared PHP origin; logos → ASSETS;
- * leftover catch-all → Traefik-gap page (never SPA).
+ * Apex + regionals: theme assets from shared PHP pack; public HTML → Traefik-gap
+ * (never SPA, never turkatahaber HTML rewrite). Prefer orange→origin when catch-all removed.
  * @returns {Promise<Response|null>}
  */
 export async function gundemiApexPhpBridgeResponse(request, incoming) {
-  if (isGundemiOrgSubdomainHost(incoming.hostname)) {
-    if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
-    if (request.method !== "GET" && request.method !== "HEAD") return null;
-    // Worker still owns *.gundemi.org/assets/* for /editor bundles. Theme CSS/JS
-    // must come from Yenişafak PHP (Hostinger origin / turkatahaber), never 503 gap HTML.
-    if (shouldProxyRegionalPhpThemeAsset(incoming.pathname)) {
-      return proxyRegionalPhpThemeAsset(request, incoming);
-    }
-    // Defensive: theme-shaped paths must never fall through to gap HTML (unstyled sites).
-    if (isPhpThemeAssetPath(incoming.pathname) && String(incoming.pathname).startsWith("/assets/")) {
-      return new Response(
-        JSON.stringify({ error: "gundemi_php_theme_asset_unrouted", path: incoming.pathname }),
-        {
-          status: 502,
-          headers: {
-            "content-type": "application/json; charset=utf-8",
-            "cache-control": "no-store",
-            "x-yekpare-frontend": "gundemi-php-theme-asset-error",
-          },
-        },
-      );
-    }
-    // SPA catch-all removed; if a catch-all still hits the Worker, never serve ASSETS.
-    return new Response(traefikGapHtml(normalizeHostname(incoming.hostname).replace(/^www\./, "")), {
-      status: 503,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "x-yekpare-frontend": "gundemi-php-traefik-gap",
-      },
-    });
-  }
-
-  if (!isGundemiApexBridgeHost(incoming.hostname)) return null;
+  if (!isGundemiBridgeCatchAllHost(incoming.hostname)) return null;
   if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
 
-  return proxyTurkataPhpPath(request, incoming, {
-    rewriteHost: true,
-    frontendTag: "gundemi-php-bridge",
+  // Worker still owns */assets/* for /editor bundles. Theme CSS/JS
+  // must come from Yenişafak PHP pack, never 503 gap HTML.
+  if (shouldProxyRegionalPhpThemeAsset(incoming.pathname)) {
+    return proxyRegionalPhpThemeAsset(request, incoming);
+  }
+  // Defensive: theme-shaped paths must never fall through to gap HTML (unstyled sites).
+  if (isPhpThemeAssetPath(incoming.pathname) && String(incoming.pathname).startsWith("/assets/")) {
+    return new Response(
+      JSON.stringify({ error: "gundemi_php_theme_asset_unrouted", path: incoming.pathname }),
+      {
+        status: 502,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "no-store",
+          "x-yekpare-frontend": "gundemi-php-theme-asset-error",
+        },
+      },
+    );
+  }
+
+  // Public HTML: never proxy to turkatahaber. Traefik Host should serve own Neon site.
+  return new Response(traefikGapHtml(normalizeHostname(incoming.hostname).replace(/^www\./, "")), {
+    status: 503,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-yekpare-frontend": "gundemi-php-traefik-gap",
+    },
   });
 }

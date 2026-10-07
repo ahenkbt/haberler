@@ -42,9 +42,9 @@ describe("gundemi domain detection", () => {
     expect(collectGundemiOrgHosts("asg.com", null, null)).toEqual([]);
   });
 
-  it("apex bridge routes only — no regional SPA catch-all", () => {
-    expect(GUNDEMI_CATCHALL_ROUTE_PATTERNS).toContain("gundemi.org/*");
-    expect(GUNDEMI_CATCHALL_ROUTE_PATTERNS).toContain("www.gundemi.org/*");
+  it("no SPA catch-all (apex + regionals → Traefik PHP)", () => {
+    expect(GUNDEMI_CATCHALL_ROUTE_PATTERNS).toEqual([]);
+    expect(GUNDEMI_CATCHALL_ROUTE_PATTERNS).not.toContain("gundemi.org/*");
     expect(GUNDEMI_CATCHALL_ROUTE_PATTERNS).not.toContain("*.gundemi.org/*");
     expect(GUNDEMI_ZONE).toBe("gundemi.org");
     expect(GUNDEMI_PHP_ORIGIN_IP).toBe("187.77.84.201");

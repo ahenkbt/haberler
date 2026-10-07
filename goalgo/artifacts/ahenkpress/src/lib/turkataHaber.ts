@@ -93,10 +93,9 @@ export const TURKATA_FOOTER_ABOUT_HTML = `<p><strong>${TURKATA_ABOUT_TAGLINE}</s
 const HOSTS = new Set([
   "turkatahaber.com",
   "www.turkatahaber.com",
-  "gundemi.org",
-  "www.gundemi.org",
 ]);
-const ALIAS_APEX = new Set(["gundemi.org"]);
+/** gundemi.org is its own HM site — not a turkatahaber alias. */
+const ALIAS_APEX = new Set<string>([]);
 
 export function isTurkataHaberHost(host?: string | null): boolean {
   const raw = String(

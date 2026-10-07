@@ -33,8 +33,13 @@ const LOGO = (slug: string) => `/gundemi/logos/${slug}-gundemi.png`;
 export const GUNDEMI_ZONE = "gundemi.org";
 export const GUNDEMI_PHP_ORIGIN_IP = "187.77.84.201";
 export const GUNDEMI_REGIONAL_CAMPAIGN_TAG = "gundemi-bolge";
-/** Apex + www → turkatahaber HM satırı (domain2); 9. boş site değil. */
-export const GUNDEMI_APEX_TURKATA_ALIAS = "gundemi.org";
+/** Apex host — kendi HM sitesi (turkatahaber alias değil). */
+export const GUNDEMI_APEX_DOMAIN = "gundemi.org";
+/** @deprecated Use GUNDEMI_APEX_DOMAIN — apex is no longer a turkatahaber alias. */
+export const GUNDEMI_APEX_TURKATA_ALIAS = GUNDEMI_APEX_DOMAIN;
+export const GUNDEMI_APEX_SLUG = "gundemi";
+export const GUNDEMI_APEX_SLOGAN = "ilkeli iffetli isabetli haber";
+export const GUNDEMI_APEX_LOGO_PATH = "/gundemi/logos/gundemi-org.png";
 export const TURKATA_HM_SLUG = "turkatahaber";
 
 /**
@@ -65,6 +70,76 @@ export const TURKATA_HAKKIMIZDA_HTML = [
   '<h2 id="yayin-ilkeleri">Yayın ilkeleri</h2>',
   `<p>${TURKATA_YS_KUNYE.yayinIlkeleri}</p>`,
 ].join("\n");
+
+
+/**
+ * Apex gundemi.org — kendi markası (künye/hakkımızda turkatahaber kopyası değil).
+ * İletişim bilgileri ajans ağı ile uyumlu kalabilir.
+ */
+export const GUNDEMI_APEX_YS_KUNYE = Object.freeze({
+  lead: "gundemi.org — ilkeli iffetli isabetli haber.",
+  yayin: "GÜNDEMİ.ORG",
+  genelMudur: TURKATA_YS_KUNYE.genelMudur,
+  yayinYonetmeni: TURKATA_YS_KUNYE.yayinYonetmeni,
+  yaziIsleri: TURKATA_YS_KUNYE.yaziIsleri,
+  address: TURKATA_YS_KUNYE.address,
+  phone: TURKATA_YS_KUNYE.phone,
+  email: "bilgi@gundemi.org",
+  tuzel: TURKATA_YS_KUNYE.tuzel,
+  yayinIlkeleri:
+    "İlkeli, iffetli ve isabetli habercilik: başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.",
+});
+
+export const GUNDEMI_APEX_HAKKIMIZDA_HTML = [
+  `<p><strong>${GUNDEMI_APEX_SLOGAN}</strong></p>`,
+  "<p>gundemi.org, Türkiye ve bölgelerinin güncel haberlerini Yenişafak vitrininde sunan bağımsız bir dijital haber platformudur. Bölgesel alt alanlar (ege, marmara, karadeniz ve diğerleri) aynı marka ağı altındadır.</p>",
+  "<p>Amacımız: okura ilkeli, iffetli ve isabetli haber sunmak; yerel ve ulusal gündemi net, kaynaklı ve düzenli aktarmak.</p>",
+  '<h2 id="yayin-ilkeleri">Yayın ilkeleri</h2>',
+  `<p>${GUNDEMI_APEX_YS_KUNYE.yayinIlkeleri}</p>`,
+].join("\n");
+
+/** Apex HM site — slug `gundemi`, domain `gundemi.org` (turkatahaber değil). */
+export const GUNDEMI_APEX_SITE: GundemiRegionalSiteDef = {
+  slug: GUNDEMI_APEX_SLUG,
+  domain: GUNDEMI_APEX_DOMAIN,
+  displayName: "Gündemi.org",
+  regionLabel: "ulusal",
+  description:
+    "gundemi.org — Türkiye gündemi. Slogan: ilkeli iffetli isabetli haber. Bölgesel alt alanlar aynı marka ağıdır.",
+  hmYsMansetPreset: "odatv",
+  hmPrimaryColor: "#0b3362",
+  hmSecondaryColor: "#c00005",
+  hmYsSlogan: GUNDEMI_APEX_SLOGAN,
+  logoPath: GUNDEMI_APEX_LOGO_PATH,
+  regionalCategories: [
+    { slug: "gundemi-apex-gundem", name: "Gündem", color: "#0b3362" },
+    { slug: "gundemi-apex-turkiye", name: "Türkiye", color: "#c00005" },
+    { slug: "gundemi-apex-dunya", name: "Dünya", color: "#1a5a7a" },
+    { slug: "gundemi-apex-ekonomi", name: "Ekonomi", color: "#0a6b7a" },
+  ],
+  sampleHeadlines: [
+    {
+      title: "Türkiye gündeminde öne çıkan başlıklar",
+      spot: "Günün özeti: ilkeli, iffetli ve isabetli haber akışı gundemi.org’da.",
+      categorySlug: "gundemi-apex-gundem",
+      featured: true,
+    },
+    {
+      title: "Bölgesel gündem ağından seçilenler",
+      spot: "Ege’den Kıbrıs’a gundemi.org bölgesel siteleri aynı marka altında yayın yapar.",
+      categorySlug: "gundemi-apex-turkiye",
+    },
+    {
+      title: "Uluslararası gelişmeler yakından izleniyor",
+      spot: "Dünya haberleri özet ve kaynak bağlantısıyla aktarılır.",
+      categorySlug: "gundemi-apex-dunya",
+    },
+  ],
+  rssFeeds: [
+    "https://www.dirilispostasi.com/rss/gundem",
+    "https://www.dirilispostasi.com/rss/yerel-haber",
+  ],
+};
 
 export const GUNDEMI_REGIONAL_SITES: readonly GundemiRegionalSiteDef[] = [
   {
@@ -405,8 +480,25 @@ export function findGundemiRegionalSite(slugOrDomain: string): GundemiRegionalSi
   return GUNDEMI_REGIONAL_SITES.find((s) => s.slug === key || s.domain === key);
 }
 
-/** layout_json iskeleti — phpTheme + yenisafak + bölge renkleri + turkatahaber künye/hakkımızda. */
-export function buildGundemiRegionalLayoutJson(site: GundemiRegionalSiteDef): Record<string, unknown> {
+export function findGundemiCatalogSite(slugOrDomain: string): GundemiRegionalSiteDef | undefined {
+  const key = String(slugOrDomain || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
+  if (
+    key === GUNDEMI_APEX_SITE.slug ||
+    key === GUNDEMI_APEX_SITE.domain ||
+    key === GUNDEMI_APEX_DOMAIN
+  ) {
+    return GUNDEMI_APEX_SITE;
+  }
+  return findGundemiRegionalSite(key);
+}
+
+function buildGundemiLayoutCore(
+  site: GundemiRegionalSiteDef,
+  opts: { kunye: Record<string, unknown>; footerAboutHtml: string },
+): Record<string, unknown> {
   const categorySlugs = site.regionalCategories.map((c) => c.slug);
   return {
     phpTheme: true,
@@ -418,9 +510,8 @@ export function buildGundemiRegionalLayoutJson(site: GundemiRegionalSiteDef): Re
     logoUrl: site.logoPath,
     faviconUrl: site.logoPath,
     hmYsSlogan: site.hmYsSlogan,
-    /** Künye + Hakkımızda = turkatahaber.com ile aynı (ajans ağı). */
-    hmYsKunye: { ...TURKATA_YS_KUNYE },
-    hmFooterAboutHtml: TURKATA_HAKKIMIZDA_HTML,
+    hmYsKunye: { ...opts.kunye },
+    hmFooterAboutHtml: opts.footerAboutHtml,
     hmNewsYsTickerEnabled: true,
     hmNewsYsMansetEnabled: true,
     hmNewsYsSideHeadlinesEnabled: true,
@@ -439,4 +530,22 @@ export function buildGundemiRegionalLayoutJson(site: GundemiRegionalSiteDef): Re
     hybridRssEnabled: true,
     showPlatformNav: false,
   };
+}
+
+/** layout_json iskeleti — phpTheme + yenisafak + bölge renkleri + turkatahaber künye/hakkımızda. */
+export function buildGundemiRegionalLayoutJson(site: GundemiRegionalSiteDef): Record<string, unknown> {
+  return buildGundemiLayoutCore(site, {
+    kunye: { ...TURKATA_YS_KUNYE },
+    footerAboutHtml: TURKATA_HAKKIMIZDA_HTML,
+  });
+}
+
+/** Apex gundemi.org layout — kendi slogan/künye/logo (turkatahaber alias değil). */
+export function buildGundemiApexLayoutJson(
+  site: GundemiRegionalSiteDef = GUNDEMI_APEX_SITE,
+): Record<string, unknown> {
+  return buildGundemiLayoutCore(site, {
+    kunye: { ...GUNDEMI_APEX_YS_KUNYE },
+    footerAboutHtml: GUNDEMI_APEX_HAKKIMIZDA_HTML,
+  });
 }

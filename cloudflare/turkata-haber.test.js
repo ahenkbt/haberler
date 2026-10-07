@@ -48,15 +48,15 @@ const SHELL = `<!DOCTYPE html>
 </html>`;
 
 describe("turkata haber host", () => {
-  it("detects apex, www and gundemi.org alias", () => {
+  it("detects apex and www; gundemi.org is NOT an alias", () => {
     assert.equal(isTurkataHaberHost("turkatahaber.com"), true);
     assert.equal(isTurkataHaberHost("WWW.turkatahaber.com"), true);
-    assert.equal(isTurkataHaberHost("gundemi.org"), true);
-    assert.equal(isTurkataHaberHost("www.gundemi.org"), true);
-    assert.equal(isTurkataWwwHost("www.gundemi.org"), true);
+    assert.equal(isTurkataHaberHost("gundemi.org"), false);
+    assert.equal(isTurkataHaberHost("www.gundemi.org"), false);
+    assert.equal(isTurkataWwwHost("www.turkatahaber.com"), true);
+    assert.equal(isTurkataWwwHost("www.gundemi.org"), false);
     assert.equal(isTurkataWwwHost("gundemi.org"), false);
-    assert.equal(turkataPublicOrigin("gundemi.org"), "https://gundemi.org");
-    assert.equal(turkataPublicOrigin("www.gundemi.org"), "https://gundemi.org");
+    assert.equal(turkataPublicOrigin("gundemi.org"), TURKATA_ORIGIN);
     assert.equal(turkataPublicOrigin("turkatahaber.com"), TURKATA_ORIGIN);
     assert.equal(isTurkataHaberHost("ege.gundemi.org"), false);
     assert.equal(isTurkataHaberHost("ahenk.net.tr"), false);

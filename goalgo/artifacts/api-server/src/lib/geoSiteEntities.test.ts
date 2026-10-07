@@ -27,11 +27,16 @@ describe("geoSiteEntities", () => {
     expect(geoEntityByDomain("www.turkatahaber.com")?.officialName).toBe("TÜRKATA HABER AJANSI");
     expect(geoEntityBySlug("turkata")?.foundingDate).toBe("1998");
     expect(geoEntityBySlug("turkata")?.alternateName).toContain("THA");
+    expect(geoEntityBySlug("turkata")?.alternateName).not.toContain("gundemi.org");
     expect(geoEntityBySlug("turkata")?.legalName).toBe("Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.");
     expect(geoEntityBySlug("turkata")?.address?.streetAddress).toBe("Sağlık Mah. Aksu Cad. 13/5");
     expect(geoEntityBySlug("turkata")?.legalAddress?.streetAddress).toBe("Meşrutiyet Mah. Karanfil Sok. 4/91");
     expect(geoEntityBySlug("turkata")?.vendor?.address?.streetAddress).toBe("Başak Mah. Özalp Cad. 5/2");
     expect(geoEntityBySlug("turkata")?.vendor?.address?.addressLocality).toBe("Mamak");
+    expect(geoEntityByDomain("gundemi.org")?.slug).toBe("gundemi");
+    expect(geoEntityByDomain("www.gundemi.org")?.officialName).toBe("Gündemi.org");
+    expect(geoEntityBySlug("gundemi")?.alternateName).toContain("ilkeli iffetli isabetli haber");
+    expect(geoEntityByDomain("gundemi.org")?.domain).not.toBe("turkatahaber.com");
   });
 
   it("builds TGD NGO JSON-LD and titles for ChatGPT/Gemini GEO", () => {

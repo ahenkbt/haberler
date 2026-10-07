@@ -19,8 +19,12 @@ import {
 import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
 import { logger } from "./logger.js";
 import {
+  buildGundemiApexLayoutJson,
   buildGundemiRegionalLayoutJson,
-  GUNDEMI_APEX_TURKATA_ALIAS,
+  GUNDEMI_APEX_DOMAIN,
+  GUNDEMI_APEX_SITE,
+  GUNDEMI_APEX_SLUG,
+  GUNDEMI_APEX_YS_KUNYE,
   GUNDEMI_REGIONAL_CAMPAIGN_TAG,
   GUNDEMI_REGIONAL_SITES,
   TURKATA_HM_SLUG,
@@ -51,15 +55,17 @@ function normalizeDomainHost(raw: string | null | undefined): string {
 }
 
 /**
- * Apex gundemi.org (+ www) → turkatahaber HM satırının domain2’si.
- * 9. boş gundemi sitesi oluşturulmaz; bölgesel alt alanlar ayrı kalır.
+ * turkatahaber domain2/domain3 üzerinden gundemi.org alias’ını kaldırır.
+ * Apex artık kendi HM satırı (`slug=gundemi`).
  */
-export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSeedSiteResult> {
-  const alias = GUNDEMI_APEX_TURKATA_ALIAS;
+export async function clearTurkataGundemiApexAlias(): Promise<{
+  cleared: boolean;
+  detail: string;
+}> {
+  const alias = GUNDEMI_APEX_DOMAIN;
   const [turkata] = await getNewsDbForRead()
     .select({
       id: hmNewsSitesTable.id,
-      slug: hmNewsSitesTable.slug,
       domain: hmNewsSitesTable.domain,
       domain2: hmNewsSitesTable.domain2,
       domain3: hmNewsSitesTable.domain3,
@@ -69,61 +75,66 @@ export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSe
     .limit(1);
 
   if (!turkata?.id) {
-    return {
-      slug: TURKATA_HM_SLUG,
-      domain: alias,
-      siteId: null,
-      action: "error",
-      categories: 0,
-      sampleNews: 0,
-      authors: 0,
-      campaignId: null,
-      detail: "turkatahaber site row missing — bind gundemi.org domain2 after site exists",
-    };
+    return { cleared: false, detail: "turkatahaber row missing — nothing to clear" };
   }
 
-  const already =
-    normalizeDomainHost(turkata.domain) === alias ||
-    normalizeDomainHost(turkata.domain2) === alias ||
-    normalizeDomainHost(turkata.domain3) === alias;
-  if (already) {
-    return {
-      slug: TURKATA_HM_SLUG,
-      domain: alias,
-      siteId: turkata.id,
-      action: "unchanged",
-      categories: 0,
-      sampleNews: 0,
-      authors: 0,
-      campaignId: null,
-      detail: "apex alias already on turkatahaber",
-    };
+  const patch: { domain2?: null; domain3?: null; updatedAt: Date } = { updatedAt: new Date() };
+  let touch = false;
+  // domain (primary) turkatahaber.com kalmalı — sadece domain2/3 alias temizlenir
+  if (normalizeDomainHost(turkata.domain2) === alias) {
+    patch.domain2 = null;
+    touch = true;
   }
+  if (normalizeDomainHost(turkata.domain3) === alias) {
+    patch.domain3 = null;
+    touch = true;
+  }
+  if (!touch) {
+    return { cleared: false, detail: "turkatahaber had no gundemi.org domain2/3" };
+  }
+  await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, turkata.id));
+  return { cleared: true, detail: "cleared gundemi.org from turkatahaber domain2/3" };
+}
 
-  // Alias başka sitede ise serbest bırak (bölgesel ege.* dokunulmaz — farklı host).
+/**
+ * Apex gundemi.org — bağımsız HM sitesi (turkatahaber alias değil).
+ * Idempotent: slug `gundemi`, domain `gundemi.org`, phpTheme + slogan + logo.
+ */
+export async function ensureGundemiApexSite(): Promise<GundemiRegionalSeedSiteResult> {
+  const clear = await clearTurkataGundemiApexAlias();
+  const def = GUNDEMI_APEX_SITE;
+  const layoutJson = JSON.stringify(buildGundemiApexLayoutJson(def));
+  const contactJson = JSON.stringify({
+    email: GUNDEMI_APEX_YS_KUNYE.email,
+    phone: GUNDEMI_APEX_YS_KUNYE.phone,
+    address: GUNDEMI_APEX_YS_KUNYE.address,
+  });
+
+  // Başka sitede apex domain tutan satırları serbest bırak (turkatahaber zaten temizlendi).
   const claimants = await getNewsDbForRead()
     .select({
       id: hmNewsSitesTable.id,
+      slug: hmNewsSitesTable.slug,
       domain: hmNewsSitesTable.domain,
       domain2: hmNewsSitesTable.domain2,
       domain3: hmNewsSitesTable.domain3,
     })
     .from(hmNewsSitesTable);
   for (const row of claimants) {
-    if (row.id === turkata.id) continue;
+    if (row.slug === GUNDEMI_APEX_SLUG) continue;
     const patch: { domain?: null; domain2?: null; domain3?: null; updatedAt: Date } = {
       updatedAt: new Date(),
     };
     let touch = false;
-    if (normalizeDomainHost(row.domain) === alias) {
+    if (normalizeDomainHost(row.domain) === GUNDEMI_APEX_DOMAIN) {
       patch.domain = null;
       touch = true;
     }
-    if (normalizeDomainHost(row.domain2) === alias) {
+    if (normalizeDomainHost(row.domain2) === GUNDEMI_APEX_DOMAIN) {
       patch.domain2 = null;
       touch = true;
     }
-    if (normalizeDomainHost(row.domain3) === alias) {
+    if (normalizeDomainHost(row.domain3) === GUNDEMI_APEX_DOMAIN) {
       patch.domain3 = null;
       touch = true;
     }
@@ -132,25 +143,93 @@ export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSe
     }
   }
 
-  const d2 = normalizeDomainHost(turkata.domain2);
-  const d3 = normalizeDomainHost(turkata.domain3);
-  const bind: { domain2?: string; domain3?: string; updatedAt: Date } = { updatedAt: new Date() };
-  if (!d2) bind.domain2 = alias;
-  else if (!d3) bind.domain3 = alias;
-  else bind.domain2 = alias; // domain2 doluysa da apex alias öncelikli
+  const rows = await getNewsDbForRead()
+    .select({
+      id: hmNewsSitesTable.id,
+      domain: hmNewsSitesTable.domain,
+      domain2: hmNewsSitesTable.domain2,
+      displayName: hmNewsSitesTable.displayName,
+      description: hmNewsSitesTable.description,
+      layoutJson: hmNewsSitesTable.layoutJson,
+      active: hmNewsSitesTable.active,
+    })
+    .from(hmNewsSitesTable)
+    .where(eq(hmNewsSitesTable.slug, def.slug))
+    .limit(1);
+  const existing = rows[0];
 
-  await dualWriteUpdate(hmNewsSitesTable, bind, eq(hmNewsSitesTable.id, turkata.id));
+  let siteId: number;
+  let action: "created" | "updated" | "unchanged";
+  if (!existing) {
+    const [created] = await dualWriteInsert(hmNewsSitesTable, {
+      slug: def.slug,
+      domain: def.domain,
+      domain2: "www.gundemi.org",
+      domain3: null,
+      displayName: def.displayName,
+      description: def.description,
+      contactJson,
+      layoutJson,
+      verificationJson: null,
+      active: true,
+    });
+    if (!created?.id) throw new Error(`Site insert failed: ${def.slug}`);
+    siteId = created.id;
+    action = "created";
+  } else {
+    const needs =
+      existing.domain !== def.domain ||
+      normalizeDomainHost(existing.domain2) !== "www.gundemi.org" ||
+      existing.displayName !== def.displayName ||
+      existing.description !== def.description ||
+      existing.active !== true ||
+      String(existing.layoutJson || "") !== layoutJson;
+    if (needs) {
+      await dualWriteUpdate(
+        hmNewsSitesTable,
+        {
+          domain: def.domain,
+          domain2: "www.gundemi.org",
+          displayName: def.displayName,
+          description: def.description,
+          contactJson,
+          layoutJson,
+          active: true,
+          updatedAt: new Date(),
+        },
+        eq(hmNewsSitesTable.id, existing.id),
+      );
+      action = "updated";
+    } else {
+      action = "unchanged";
+    }
+    siteId = existing.id;
+  }
+
+  await ensureEditor(siteId, def);
+  const cats = await ensureCategories(siteId, def);
+  const sampleNews = await ensureSampleNews(siteId, def, cats);
+  const authors = await ensureTurkataAuthorsOnRegionalSite(siteId);
+  const campaignId = await ensureRegionalCampaign(siteId, def);
+
   return {
-    slug: TURKATA_HM_SLUG,
-    domain: alias,
-    siteId: turkata.id,
-    action: "updated",
-    categories: 0,
-    sampleNews: 0,
-    authors: 0,
-    campaignId: null,
-    detail: `turkatahaber.${bind.domain2 ? "domain2" : "domain3"}=${alias}`,
+    slug: def.slug,
+    domain: def.domain,
+    siteId,
+    action,
+    categories: cats.size,
+    sampleNews,
+    authors,
+    campaignId,
+    detail: clear.cleared
+      ? `${clear.detail}; apex site ${action}`
+      : `apex site ${action} (${clear.detail})`,
   };
+}
+
+/** @deprecated Apex is a dedicated site — prefer ensureGundemiApexSite. */
+export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSeedSiteResult> {
+  return ensureGundemiApexSite();
 }
 
 function slugifyTitle(title: string): string {
@@ -554,13 +633,13 @@ export async function ensureTurkataAuthorsOnRegionalSite(targetSiteId: number): 
 export async function ensureGundemiRegionalSites(): Promise<GundemiRegionalSeedSiteResult[]> {
   const results: GundemiRegionalSeedSiteResult[] = [];
   try {
-    results.push(await ensureTurkataGundemiApexAlias());
+    results.push(await ensureGundemiApexSite());
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    logger.warn({ err: e }, "[gundemi-bolge] turkatahaber apex alias failed");
+    logger.warn({ err: e }, "[gundemi-bolge] gundemi apex site seed failed");
     results.push({
-      slug: TURKATA_HM_SLUG,
-      domain: GUNDEMI_APEX_TURKATA_ALIAS,
+      slug: GUNDEMI_APEX_SLUG,
+      domain: GUNDEMI_APEX_DOMAIN,
       siteId: null,
       action: "error",
       categories: 0,

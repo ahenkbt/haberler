@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildGundemiApexLayoutJson,
   buildGundemiRegionalLayoutJson,
+  findGundemiCatalogSite,
   findGundemiRegionalSite,
-  GUNDEMI_APEX_TURKATA_ALIAS,
+  GUNDEMI_APEX_DOMAIN,
+  GUNDEMI_APEX_HAKKIMIZDA_HTML,
+  GUNDEMI_APEX_LOGO_PATH,
+  GUNDEMI_APEX_SITE,
+  GUNDEMI_APEX_SLOGAN,
+  GUNDEMI_APEX_SLUG,
+  GUNDEMI_APEX_YS_KUNYE,
   GUNDEMI_REGIONAL_SITES,
   GUNDEMI_ZONE,
   listGundemiRegionalDomains,
@@ -53,7 +61,7 @@ describe("gundemi regional catalog", () => {
     expect(colors.size).toBe(8);
   });
 
-  it("künye ve hakkımızda turkatahaber.com ile aynı", () => {
+  it("künye ve hakkımızda turkatahaber.com ile aynı (bölgeseller)", () => {
     expect(TURKATA_YS_KUNYE.genelMudur).toBe("Nail Türkoğlu");
     expect(TURKATA_YS_KUNYE.yayinYonetmeni).toBe("Mustafa ÖZDEMİR");
     expect(TURKATA_YS_KUNYE.yaziIsleri).toBe("Melek Acar");
@@ -74,10 +82,33 @@ describe("gundemi regional catalog", () => {
     expect(findGundemiRegionalSite("www.kibris.gundemi.org")?.slug).toBe("kibris-gundemi");
   });
 
-  it("apex is turkatahaber alias, not a 9th regional site", () => {
-    expect(GUNDEMI_APEX_TURKATA_ALIAS).toBe("gundemi.org");
+  it("apex is dedicated gundemi site, not turkatahaber alias", () => {
+    expect(GUNDEMI_APEX_DOMAIN).toBe("gundemi.org");
+    expect(GUNDEMI_APEX_SLUG).toBe("gundemi");
+    expect(GUNDEMI_APEX_SLOGAN).toBe("ilkeli iffetli isabetli haber");
+    expect(GUNDEMI_APEX_LOGO_PATH).toBe("/gundemi/logos/gundemi-org.png");
     expect(TURKATA_HM_SLUG).toBe("turkatahaber");
     expect(listGundemiRegionalDomains()).not.toContain("gundemi.org");
+    expect(listGundemiRegionalSlugs()).not.toContain("gundemi");
     expect(listGundemiRegionalSlugs()).not.toContain("turkatahaber");
+    expect(findGundemiCatalogSite("gundemi.org")?.slug).toBe("gundemi");
+    expect(findGundemiCatalogSite("www.gundemi.org")?.slug).toBe("gundemi");
+    expect(findGundemiCatalogSite("gundemi")?.domain).toBe("gundemi.org");
+  });
+
+  it("apex layout: phpTheme + slogan + logo + gundemi branding", () => {
+    const layout = buildGundemiApexLayoutJson(GUNDEMI_APEX_SITE);
+    expect(layout.phpTheme).toBe(true);
+    expect(layout.frontend).toBe("php");
+    expect(layout.hmVitrinTheme).toBe("yenisafak");
+    expect(layout.hmYsSlogan).toBe("ilkeli iffetli isabetli haber");
+    expect(layout.logoUrl).toBe("/gundemi/logos/gundemi-org.png");
+    expect(layout.faviconUrl).toBe("/gundemi/logos/gundemi-org.png");
+    expect(layout.hmYsKunye).toEqual({ ...GUNDEMI_APEX_YS_KUNYE });
+    expect(layout.hmFooterAboutHtml).toBe(GUNDEMI_APEX_HAKKIMIZDA_HTML);
+    expect(String(layout.hmFooterAboutHtml)).toContain("ilkeli iffetli isabetli haber");
+    expect(String(layout.hmFooterAboutHtml)).not.toContain("TÜRKATA HABER AJANSI");
+    expect(GUNDEMI_APEX_SITE.hmYsSlogan).toBe(GUNDEMI_APEX_SLOGAN);
+    expect(GUNDEMI_APEX_SITE.logoPath).toBe(GUNDEMI_APEX_LOGO_PATH);
   });
 });

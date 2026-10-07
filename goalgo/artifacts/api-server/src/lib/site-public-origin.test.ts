@@ -18,7 +18,7 @@ describe("resolvePortalRequestOrigin", () => {
     expect(resolvePortalRequestOrigin(req("www.turkatahaber.com"))).toBe("https://turkatahaber.com");
   });
 
-  it("keeps gundemi.org apex alias as request origin (turkatahaber content)", () => {
+  it("keeps gundemi.org as its own request origin", () => {
     expect(resolvePortalRequestOrigin(req("gundemi.org"))).toBe("https://gundemi.org");
     expect(resolvePortalRequestOrigin(req("www.gundemi.org"))).toBe("https://gundemi.org");
   });
