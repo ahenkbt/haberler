@@ -5,18 +5,16 @@
  * Köşe yazarı paneli SPA'da kalır: /tr/:slug/yazar/giris, /yazar/haberler,
  * /yazar/haber/yeni, /yazar/sifre … yönlendirilmez (YazarPanelNav / YazarGiris yolları).
  * kirsehirhaber.org ailesi bilerek yok: kamu sayfaları askı kapısındadır (hm-public-suspended.js).
+ *
+ * Kurumsal SPA (VKD / TGD — vatankahramanlari.org, trafikdernegi.com) burada yok:
+ * Vatan/kurumsal React kabuğu Worker catch-all ile yayınlanır; PHP Yenişafak temasına
+ * çevrilmez. Haber tarzı PHP twin'ler (yesilvatan, sehitgazi, …) listededir.
  */
 
-/** host → kanonik PHP tema hostu (www zaten VPS'te apex'e 301; tek sıçrama için burada da apex). */
-const PHP_THEME_PUBLIC_HOSTS = new Map([
-  ["ankarasehirgazetesi.com", "ankarasehirgazetesi.com"],
-  ["www.ankarasehirgazetesi.com", "ankarasehirgazetesi.com"],
-]);
-
-/** PHP origin siteleri — /yazar/giris* Worker rotası var, /koseyazari/* henüz yok. */
-const PHP_KOSE_ORIGIN_HOSTS = new Set([
-  "ankarahabergundemi.com",
+/** Apex host → kanonik PHP tema hostu (www zaten VPS'te apex'e 301; tek sıçrama için burada da apex). */
+const PHP_THEME_PUBLIC_APEX = Object.freeze([
   "ankarasehirgazetesi.com",
+  "ankarahabergundemi.com",
   "vatanhaber.net",
   "suhaber.net",
   "turkatahaber.com",
@@ -27,6 +25,17 @@ const PHP_KOSE_ORIGIN_HOSTS = new Set([
   "yesilvatan.gen.tr",
 ]);
 
+/** host → kanonik PHP tema hostu */
+const PHP_THEME_PUBLIC_HOSTS = new Map(
+  PHP_THEME_PUBLIC_APEX.flatMap((apex) => [
+    [apex, apex],
+    [`www.${apex}`, apex],
+  ]),
+);
+
+/** PHP origin siteleri — /yazar/giris* Worker rotası var, /koseyazari/* henüz yok. */
+const PHP_KOSE_ORIGIN_HOSTS = new Set(PHP_THEME_PUBLIC_APEX);
+
 /** Eski SPA yollarında site slug'ından önce gelen önekler. */
 const LEGACY_PREFIXES = new Set(["tr", "hm"]);
 
@@ -36,6 +45,10 @@ function normalizeHostname(raw) {
     .toLowerCase()
     .split(":")[0]
     .replace(/\.$/, "");
+}
+
+export function listPhpThemePublicApexHosts() {
+  return [...PHP_THEME_PUBLIC_APEX];
 }
 
 export function isPhpThemePublicHost(hostname) {

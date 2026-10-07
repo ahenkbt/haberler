@@ -171,6 +171,23 @@ zone_name = "ankarahabergundemi.com"
 pattern = "www.ankarahabergundemi.com/koseyazari/haber*"
 zone_name = "ankarahabergundemi.com"
 
+# Eski SPA /tr|/hm yolları → PHP tema 301 (php-theme-legacy-redirect.js). Catch-all bilinçli yok.
+[[routes]]
+pattern = "ankarahabergundemi.com/tr/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/tr/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/hm/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/hm/*"
+zone_name = "ankarahabergundemi.com"
+
 
 # yektube.com zone route'ları burada YOK: sahibi `yektube` Worker'ı (wrangler.yektube.toml). /api oradan API_ORIGIN ile ahenk.net.tr'ye gider.
 # ankarasehirgazetesi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
@@ -286,6 +303,14 @@ zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "www.ankarasehirgazetesi.com/tr/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/hm/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/hm/*"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
@@ -411,6 +436,22 @@ zone_name = "vatanhaber.net"
 pattern = "www.vatanhaber.net/koseyazari/haber*"
 zone_name = "vatanhaber.net"
 
+[[routes]]
+pattern = "vatanhaber.net/tr/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/tr/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "vatanhaber.net/hm/*"
+zone_name = "vatanhaber.net"
+
+[[routes]]
+pattern = "www.vatanhaber.net/hm/*"
+zone_name = "vatanhaber.net"
+
 
 # Su Haber ├ö├ç├Â kanonik Google alanÔöÇÔûÆ suhaber.net (suhaberajansi.com iptal, detach).
 # Zone CF'de ve A/CNAME kayÔöÇÔûÆtlarÔöÇÔûÆ var: custom_domain 100117 ile wrangler deploy kÔöÇÔûÆrÔöÇÔûÆlÔöÇÔûÆr.
@@ -504,6 +545,22 @@ zone_name = "suhaber.net"
 
 [[routes]]
 pattern = "www.suhaber.net/koseyazari/haber*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/tr/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/tr/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "suhaber.net/hm/*"
+zone_name = "suhaber.net"
+
+[[routes]]
+pattern = "www.suhaber.net/hm/*"
 zone_name = "suhaber.net"
 
 
@@ -730,6 +787,22 @@ zone_name = "turkatahaber.com"
 pattern = "www.turkatahaber.com/koseyazari/haber*"
 zone_name = "turkatahaber.com"
 
+[[routes]]
+pattern = "turkatahaber.com/tr/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/tr/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/hm/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/hm/*"
+zone_name = "turkatahaber.com"
+
 
 
 [[routes]]
@@ -740,6 +813,7 @@ zone_name = "turkatahaber.com"
 # Apex + www→apex 301 ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca HM Editör panel/API yollarını alır.
 # apex/www custom_domain ve "<alan>/*", "www.<alan>/*" catch-all BİLEREK yok (deploy geri eklerse site PHP temasından düşer).
 # "<alan>/assets/theme.*" route'u (Worker'sız, PHP temanın CSS/JS'i) Cloudflare panelinden yönetilir.
+# Eski SPA /tr|/hm/* Worker 301'leri php-theme-legacy-redirect.js ile apex PHP yollarına gider (ASG ile aynı).
 
 # sehitgazi.org.tr
 [[routes]]
@@ -829,6 +903,23 @@ zone_name = "sehitgazi.org.tr"
 
 [[routes]]
 pattern = "www.sehitgazi.org.tr/koseyazari/haber*"
+zone_name = "sehitgazi.org.tr"
+
+# Eski SPA /tr|/hm → PHP 301 (ASG ile aynı; catch-all bilinçli yok).
+[[routes]]
+pattern = "sehitgazi.org.tr/tr/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/tr/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "sehitgazi.org.tr/hm/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/hm/*"
 zone_name = "sehitgazi.org.tr"
 
 
@@ -922,6 +1013,22 @@ zone_name = "yerel.net.tr"
 pattern = "www.yerel.net.tr/koseyazari/haber*"
 zone_name = "yerel.net.tr"
 
+[[routes]]
+pattern = "yerel.net.tr/tr/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/tr/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/hm/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/hm/*"
+zone_name = "yerel.net.tr"
+
 
 # turksav.org
 [[routes]]
@@ -1011,6 +1118,22 @@ zone_name = "turksav.org"
 
 [[routes]]
 pattern = "www.turksav.org/koseyazari/haber*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/tr/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/tr/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/hm/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/hm/*"
 zone_name = "turksav.org"
 
 
@@ -1104,6 +1227,22 @@ zone_name = "dunyasaglik.org"
 pattern = "www.dunyasaglik.org/koseyazari/haber*"
 zone_name = "dunyasaglik.org"
 
+[[routes]]
+pattern = "dunyasaglik.org/tr/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/tr/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "dunyasaglik.org/hm/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/hm/*"
+zone_name = "dunyasaglik.org"
+
 
 # yesilvatan.gen.tr
 [[routes]]
@@ -1195,7 +1334,24 @@ zone_name = "yesilvatan.gen.tr"
 pattern = "www.yesilvatan.gen.tr/koseyazari/haber*"
 zone_name = "yesilvatan.gen.tr"
 
+[[routes]]
+pattern = "yesilvatan.gen.tr/tr/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/tr/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/hm/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/hm/*"
+zone_name = "yesilvatan.gen.tr"
+
 # Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc
+# Kurumsal SPA (Vatan); PHP Yenişafak twin değil. Catch-all Worker'da kalır.
 [[routes]]
 pattern = "trafikdernegi.com"
 zone_name = "trafikdernegi.com"

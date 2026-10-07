@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   isPhpThemePublicHost,
+  listPhpThemePublicApexHosts,
   phpThemeLegacyRedirectPath,
   phpThemeLegacyRedirectResponse,
   koseyazariPanelRedirectPath,
@@ -13,13 +14,25 @@ function run(url, method = "GET") {
   return phpThemeLegacyRedirectResponse(new Request(url, { method }), incoming);
 }
 
-test("yalnızca PHP tema hostları (ASG apex + www); kirsehirhaber.org askı kapısında kalır", () => {
+test("PHP tema hostları: ASG + Ekim 2026 twin'ler; kurumsal SPA ve askı kapısı hariç", () => {
+  const apex = listPhpThemePublicApexHosts();
+  assert.ok(apex.includes("ankarasehirgazetesi.com"));
+  assert.ok(apex.includes("yesilvatan.gen.tr"));
+  assert.ok(apex.includes("sehitgazi.org.tr"));
+  assert.ok(apex.includes("turksav.org"));
+  assert.ok(apex.includes("dunyasaglik.org"));
+  assert.ok(apex.includes("yerel.net.tr"));
   assert.equal(isPhpThemePublicHost("ankarasehirgazetesi.com"), true);
-  assert.equal(isPhpThemePublicHost("WWW.ankarasehirgazetesi.com"), true);
+  assert.equal(isPhpThemePublicHost("WWW.yesilvatan.gen.tr"), true);
+  assert.equal(isPhpThemePublicHost("sehitgazi.org.tr"), true);
   assert.equal(isPhpThemePublicHost("kirsehirhaber.org"), false);
   assert.equal(isPhpThemePublicHost("ahenk.net.tr"), false);
+  // VKD / TGD kurumsal SPA — PHP Yenişafak listesinde değil
+  assert.equal(isPhpThemePublicHost("vatankahramanlari.org"), false);
+  assert.equal(isPhpThemePublicHost("trafikdernegi.com"), false);
   assert.equal(run("https://ahenk.net.tr/tr/asg/haber/x"), null);
   assert.equal(run("https://kirsehirhaber.org/tr/kirsehirhaber/haber/x"), null);
+  assert.equal(run("https://vatankahramanlari.org/tr/vkd/haber/x"), null);
 });
 
 test("eski SPA haber linki PHP /haber/:slug adresine 301 gider ve siteId silinir", () => {
@@ -33,6 +46,17 @@ test("eski SPA haber linki PHP /haber/:slug adresine 301 gider ve siteId silinir
     "https://ankarasehirgazetesi.com/haber/ayaklariyla-uretilen-eserlerden-basi-onde-gecisler-sergisi-ankara-da-acildi-sana",
   );
   assert.equal(res.headers.get("x-yekpare-frontend"), "php-theme-legacy-redirect");
+});
+
+test("yesilvatan / sehitgazi eski SPA yolları apex PHP adresine 301", () => {
+  const yv = run("https://www.yesilvatan.gen.tr/tr/yesilvatan/haber/orman-yangini?siteId=1090");
+  assert.ok(yv);
+  assert.equal(yv.status, 301);
+  assert.equal(yv.headers.get("location"), "https://yesilvatan.gen.tr/haber/orman-yangini");
+
+  const sg = run("https://sehitgazi.org.tr/hm/sehitgazi/kategori/sehit-gazi");
+  assert.ok(sg);
+  assert.equal(sg.headers.get("location"), "https://sehitgazi.org.tr/kategori/sehit-gazi");
 });
 
 test("www ve /hm/ öneki de apex PHP adresine gider; siteId dışındaki sorgu korunur", () => {
