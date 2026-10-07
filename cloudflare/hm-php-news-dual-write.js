@@ -2,7 +2,17 @@
  * Kenar dual-write: Worker Neon (DATABASE_URL) satırını PHP'nin okuduğu
  * Neon'a (NEWS_DATABASE_URL / twilight-pine) kopyalar. Container köprüsüne
  * ihtiyaç duymaz. Tüm HM siteleri — site_id satırdan gelir, ASG hardcode yok.
+ *
+ * Ayna hedefi RO / erişilemez olsa bile hata yutulur — panel yanıtı bozulmaz.
  */
+
+/** Postgres / Neon: salt-okunur oturum veya replica. */
+export function isReadonlyDbError(err) {
+  const msg = String(err?.message || err || "");
+  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only|readonly|read only/i.test(
+    msg,
+  );
+}
 
 function asInt(v) {
   const n = typeof v === "number" ? v : Number(v);
@@ -395,23 +405,29 @@ export async function edgeDeleteAuthor(sql, idOrRow) {
 }
 
 /**
- * @returns {Promise<{mirrored: boolean, via?: string, reason?: string, id?: number}>}
+ * @returns {Promise<{mirrored: boolean, via?: string, reason?: string, id?: number, readonly?: boolean}>}
  */
 export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
   if (!sql) return { mirrored: false, reason: "no-news-sql" };
   try {
+    // await zorunlu: return promise catch'i atlar; RO INSERT panel 500 yapıyordu.
     if (table === "hm_makaleler") {
-      return op === "delete" ? edgeDeleteHmMakale(sql, rowOrId) : edgeUpsertHmMakale(sql, rowOrId);
+      return await (op === "delete" ? edgeDeleteHmMakale(sql, rowOrId) : edgeUpsertHmMakale(sql, rowOrId));
     }
     if (table === "news") {
-      return op === "delete" ? edgeDeleteNews(sql, rowOrId) : edgeUpsertNews(sql, rowOrId);
+      return await (op === "delete" ? edgeDeleteNews(sql, rowOrId) : edgeUpsertNews(sql, rowOrId));
     }
     if (table === "authors") {
-      return op === "delete" ? edgeDeleteAuthor(sql, rowOrId) : edgeUpsertAuthor(sql, rowOrId);
+      return await (op === "delete" ? edgeDeleteAuthor(sql, rowOrId) : edgeUpsertAuthor(sql, rowOrId));
     }
     return { mirrored: false, reason: "table" };
   } catch (err) {
-    console.error("[hm-php-dual-write]", table, op, String(err?.message || err).slice(0, 180));
-    return { mirrored: false, reason: String(err?.message || err).slice(0, 120) };
+    const msg = String(err?.message || err).slice(0, 180);
+    if (isReadonlyDbError(err)) {
+      console.warn("[hm-php-dual-write] NEWS_DATABASE_URL read-only — mirror atlandı", table, op, msg.slice(0, 120));
+      return { mirrored: false, reason: "news-db-read-only", readonly: true };
+    }
+    console.error("[hm-php-dual-write]", table, op, msg);
+    return { mirrored: false, reason: msg.slice(0, 120), readonly: false };
   }
 }
