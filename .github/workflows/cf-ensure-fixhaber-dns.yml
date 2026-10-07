@@ -6,6 +6,8 @@ name: Ensure fix.tc PHP DNS
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [cf-ensure-fixhaber-dns]
 
 concurrency:
   group: cf-ensure-fixhaber-dns
