@@ -58,7 +58,13 @@ Public DNS A kaydı eklenene kadar dışarıdan erişim CF anycast’e düşmez;
 
 ## Logo / slogan
 
-Logo sağlanmadı → metin marka (displayName **Fix Haber**); `hmYsSlogan`: **Fix Haber**. Yenişafak varsayılanları.
+| Öğe | Yol |
+|-----|-----|
+| Banner logo | `goalgo/artifacts/ahenkpress/public/fix/fix-haber-logo.png` → `/fix/fix-haber-logo.png` |
+| Favicon (küre) | `goalgo/artifacts/ahenkpress/public/fix/fix-haber-favicon.png` → `/fix/fix-haber-favicon.png` |
+| Hostinger pack | `hostinger/fixhaber/assets/logos/` (aynı dosyalar) |
+
+`layout_json`: `logoUrl` + `faviconUrl`; renkler `hmPrimaryColor` **#002B5C** (navy), `hmSecondaryColor` **#D20000** (kırmızı). `hmYsSlogan`: **Fix Haber**.
 
 ## Ops checklist
 

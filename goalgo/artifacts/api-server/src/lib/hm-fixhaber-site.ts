@@ -9,6 +9,11 @@ export const FIXHABER_ZONE = "fix.tc";
 export const FIXHABER_PHP_ORIGIN_IP = "187.77.84.201";
 export const FIXHABER_CAMPAIGN_TAG = "fixhaber";
 
+/** Statik logo (SPA assets + Hostinger pack). */
+export const FIXHABER_LOGO_PATH = "/fix/fix-haber-logo.png";
+/** Globe crop — favicon / app icon. */
+export const FIXHABER_FAVICON_PATH = "/fix/fix-haber-favicon.png";
+
 export type FixHaberSiteDef = {
   slug: typeof FIXHABER_SLUG;
   domain: typeof FIXHABER_DOMAIN;
@@ -18,6 +23,10 @@ export type FixHaberSiteDef = {
   hmPrimaryColor: string;
   hmSecondaryColor: string;
   hmYsSlogan: string;
+  /** Statik logo yolu (SPA assets + Hostinger pack). */
+  logoPath: string;
+  /** Favicon (küre kırpımı). */
+  faviconPath: string;
   categories: Array<{ slug: string; name: string; color: string }>;
   sampleHeadlines: Array<{ title: string; spot: string; categorySlug: string; featured?: boolean }>;
   rssFeeds: string[];
@@ -29,14 +38,18 @@ export const FIXHABER_SITE: FixHaberSiteDef = {
   displayName: "Fix Haber",
   description: "Fix Haber — Türkiye gündemini Türkçe aktaran dijital haber sitesi.",
   hmYsMansetPreset: "odatv",
-  hmPrimaryColor: "#0b3d5c",
-  hmSecondaryColor: "#c00005",
+  /** Logo navy (#002048 band) — Fix Haber marka. */
+  hmPrimaryColor: "#002B5C",
+  /** Logo accent red. */
+  hmSecondaryColor: "#D20000",
   hmYsSlogan: "Fix Haber",
+  logoPath: FIXHABER_LOGO_PATH,
+  faviconPath: FIXHABER_FAVICON_PATH,
   categories: [
-    { slug: "fixhaber-gundem", name: "Gündem", color: "#0b3d5c" },
+    { slug: "fixhaber-gundem", name: "Gündem", color: "#002B5C" },
     { slug: "fixhaber-ekonomi", name: "Ekonomi", color: "#1a5a3a" },
     { slug: "fixhaber-dunya", name: "Dünya", color: "#1a4a7a" },
-    { slug: "fixhaber-spor", name: "Spor", color: "#c00005" },
+    { slug: "fixhaber-spor", name: "Spor", color: "#D20000" },
     { slug: "fixhaber-teknoloji", name: "Teknoloji", color: "#0a5a6e" },
     { slug: "fixhaber-yasam", name: "Yaşam", color: "#6b4c2a" },
   ],
@@ -108,7 +121,7 @@ export function findFixHaberSite(slugOrDomain: string): FixHaberSiteDef | undefi
   return undefined;
 }
 
-/** layout_json — phpTheme + yenisafak; logo yok (metin marka / PHP varsayılanı). */
+/** layout_json — phpTheme + yenisafak + logo/favicon + marka renkleri. */
 export function buildFixHaberLayoutJson(site: FixHaberSiteDef = FIXHABER_SITE): Record<string, unknown> {
   const categorySlugs = site.categories.map((c) => c.slug);
   return {
@@ -118,6 +131,8 @@ export function buildFixHaberLayoutJson(site: FixHaberSiteDef = FIXHABER_SITE): 
     hmYsMansetPreset: site.hmYsMansetPreset,
     hmPrimaryColor: site.hmPrimaryColor,
     hmSecondaryColor: site.hmSecondaryColor,
+    logoUrl: site.logoPath,
+    faviconUrl: site.faviconPath,
     hmYsSlogan: site.hmYsSlogan,
     hmYsKunye: { ...FIXHABER_KUNYE },
     hmFooterAboutHtml: FIXHABER_HAKKIMIZDA_HTML,
