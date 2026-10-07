@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Activity, RefreshCw, Database } from "lucide-react";
-import AdminLayout from "@/components/AdminLayout";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/apiBase";
 import { useToast } from "@/hooks/use-toast";

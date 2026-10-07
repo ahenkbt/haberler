@@ -27,6 +27,7 @@ import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from 
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
+import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
   hybridEdgeFillHttpStatus,
@@ -76,6 +77,7 @@ import {
   hmHomeSlugFromPath,
   isHmAuthorPanelPath,
   isHmEditorPanelPath,
+  isAdminPanelPath,
   shouldRewriteSpaShellOgForPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
@@ -910,6 +912,16 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       html = injectHmEditorPanelBoot(html, editorSlug, editorHost);
       out.set("x-yekpare-hm-editor-boot", editorSlug);
     }
+  }
+  // Portal /admin|/panel — vitrin overlay'i spa-ready ile kaldır (beyaz ekran)
+  if (incoming && isAdminPanelPath(incoming.pathname) && !isHmEditorPanelPath(incoming.pathname)) {
+    if (!html.includes("hm-editor-spa-ready") && !html.includes("hm-admin-spa-ready")) {
+      const ready =
+        '<script data-yekpare="hm-admin-spa-ready">(function(){try{document.documentElement.classList.add("hm-spa-ready");window.__YEKPARE_SPA_READY__=true;}catch(e){}})();</script>';
+      if (html.includes("</head>")) html = html.replace("</head>", `${ready}\n</head>`);
+      else html = ready + html;
+    }
+    out.set("x-yekpare-hm-admin-boot", "1");
   }
   if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
     const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
@@ -2878,6 +2890,36 @@ export default {
   async fetch(request, env, ctx) {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
+
+    // Container kapalıyken panel «ulaşılamıyor» olmasın — kenar live + arka planda ısıt.
+    try {
+      const live = await handleEdgeHealthzLive(request, env, ctx);
+      if (live) return live;
+    } catch (err) {
+      console.error("[edge-healthz]", String(err?.message || err).slice(0, 120));
+    }
+
+    // ahenk.net.tr/panel → /admin (eski kısayol; SPA'da /panel rotası yok → beyaz ekran)
+    {
+      const earlyBare = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+      if (
+        isPortalHost(incoming.hostname) &&
+        (request.method === "GET" || request.method === "HEAD") &&
+        (earlyBare === "/panel" || earlyBare.startsWith("/panel/"))
+      ) {
+        const dest = new URL(incoming.href);
+        dest.pathname = earlyBare === "/panel" ? "/admin" : `/admin${earlyBare.slice("/panel".length)}`;
+        return new Response(null, {
+          status: 302,
+          headers: {
+            location: dest.toString(),
+            "cache-control": "no-store",
+            "x-yekpare-frontend": "cloudflare-worker",
+            "x-yekpare-panel-to-admin": "1",
+          },
+        });
+      }
+    }
 
     // Köşe yazarı girişi + editör listeleri: Container / askı zincirinden önce.
     const earlyPath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
