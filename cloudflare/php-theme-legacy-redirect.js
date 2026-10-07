@@ -143,6 +143,7 @@ export function buildPhpThemeHostsFromSiteRows(rows) {
 export function clearPhpThemeDynamicHosts() {
   DYNAMIC_PHP_THEME_HOSTS.clear();
   dynamicHostsCache = { at: 0, promise: null };
+  PHP_KOSE_ORIGIN_HOSTS.clear();
   for (const apex of [...PHP_THEME_PUBLIC_APEX, ...PHP_CORPORATE_THEME_APEX]) {
     PHP_KOSE_ORIGIN_HOSTS.add(apex);
   }
