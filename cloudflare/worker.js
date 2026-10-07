@@ -24,7 +24,10 @@ import {
 import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js";
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
-import { gundemiApexPhpBridgeResponse } from "./gundemi-origin-bridge.js";
+import {
+  gundemiApexPhpBridgeResponse,
+  shouldBlockGundemiSpaAssets,
+} from "./gundemi-origin-bridge.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
@@ -1257,6 +1260,8 @@ async function serveTurkataSeo(request, env, incoming) {
 async function tryServeAssets(request, env, incoming, waitUntil) {
   if (!env.ASSETS) return null;
   if (isApiPath(incoming.pathname)) return null;
+  // gundemi.org / *.gundemi.org kamu yüzü yalnızca PHP — SPA index.html ASSETS yasak.
+  if (shouldBlockGundemiSpaAssets(incoming.hostname, incoming.pathname)) return null;
 
   const oneShotPurge = shouldOneShotPurge(request, incoming.hostname);
   const purgeCookie = purgeCookieName(incoming.hostname);

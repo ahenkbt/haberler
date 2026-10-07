@@ -99,7 +99,12 @@ export function listPhpCorporateThemeApexHosts() {
 }
 
 export function isPhpThemePublicHost(hostname) {
-  return PHP_THEME_PUBLIC_HOSTS.has(normalizeHostname(hostname));
+  const host = normalizeHostname(hostname);
+  if (PHP_THEME_PUBLIC_HOSTS.has(host)) return true;
+  // Admin-created *.gundemi.org (katalog dışı) — PHP tema, SPA değil.
+  const apex = host.replace(/^www\./, "");
+  if (apex !== "gundemi.org" && apex.endsWith(".gundemi.org")) return true;
+  return false;
 }
 
 export function isPhpCorporateThemeHost(hostname) {

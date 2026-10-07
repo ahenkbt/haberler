@@ -1,14 +1,17 @@
 /**
- * gundemi.org Traefik gap bridge.
+ * gundemi.org Traefik gap bridge — PHP only (no SPA public UI).
  *
- * DNS A→187.77.84.201 (proxied) is live, but VPS Traefik has no Host() routers for
- * gundemi.org / *.gundemi.org yet → origin returns plain "404 page not found".
+ * DNS A→187.77.84.201 (proxied) is live, but VPS Traefik may lack Host() routers →
+ * origin returns plain "404 page not found".
  *
  * Apex (turkatahaber domain2 alias): reverse-proxy PHP from turkatahaber.com and
  * keep the public host as gundemi.org.
- * Any *.gundemi.org subdomain (seed regionals + admin-created): caller serves SPA
- * assets until Traefik Host() rules exist (see hostinger/gundemi-bolge/traefik-gundemi.yml).
- * Catch-all Worker route `*.gundemi.org/*` covers new hosts without wrangler.toml edits.
+ *
+ * Regionals (*.gundemi.org): never serve SPA ASSETS. Public HTML/CSS goes to the
+ * PHP origin (orange cloud → Traefik Host / HostRegexp). Worker catch-all for
+ * subdomains is removed (ankarasehirgazetesi pattern); panel/API routes stay.
+ *
+ * Ops: hostinger/gundemi-bolge/traefik-gundemi.yml + DEPLOY.md
  */
 
 import { TURKATA_ORIGIN, isTurkataHaberHost, turkataPublicOrigin } from "./turkata-haber.js";
@@ -63,7 +66,7 @@ export function listGundemiRegionalApexHosts() {
 /**
  * Any subdomain under gundemi.org (not apex).
  * New admin-created hosts (e.g. yeni.gundemi.org) work without wrangler.toml edits
- * when DNS + `*.gundemi.org/*` Worker route exist.
+ * when DNS + Traefik HostRegexp exist (no Worker SPA catch-all).
  */
 export function isGundemiOrgSubdomainHost(hostname) {
   const host = normalizeHostname(hostname).replace(/^www\./, "");
@@ -86,6 +89,20 @@ export function isGundemiApexBridgeHost(hostname) {
 
 export function isGundemiBridgeCatchAllHost(hostname) {
   return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
+}
+
+/**
+ * Public gundemi hosts must never get SPA index.html from ASSETS.
+ * Panel paths stay on Worker.
+ */
+export function shouldBlockGundemiSpaAssets(hostname, pathname) {
+  if (!isGundemiBridgeCatchAllHost(hostname)) return false;
+  const p = String(pathname || "").split("?")[0] || "/";
+  if (isSpaPanelPath(p)) return false;
+  // Hashed SPA bundles under /assets/index-* may still be needed for /editor;
+  // public theme paths and HTML navigations are blocked from SPA fallback.
+  if (p.startsWith("/assets/") && !isPhpThemeAssetPath(p)) return false;
+  return true;
 }
 
 export function isPhpThemeAssetPath(pathname) {
@@ -163,11 +180,49 @@ const HOP_BY_HOP = new Set([
   "true-client-ip",
 ]);
 
+function traefikGapHtml(host) {
+  const h = String(host || "gundemi.org");
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHP origin — ${h}</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;line-height:1.5;color:#122}
+code{background:#f2f4f7;padding:.1rem .35rem;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>PHP tema bekleniyor</h1>
+<p><strong>${h}</strong> için SPA kapalı. VPS Traefik’te <code>Host()</code> / <code>HostRegexp</code> yoksa origin <code>404 page not found</code> döner.</p>
+<p>Uygula: <code>hostinger/gundemi-bolge/traefik-gundemi.yml</code> → Yenişafak PHP service.</p>
+<p>Panel: <a href="/editor">/editor</a></p>
+</body>
+</html>`;
+}
+
 /**
  * Reverse-proxy gundemi.org public pages to live turkatahaber.com PHP.
+ * Regionals: no SPA — return Traefik-gap page if this catch-all is still routed
+ * (subdomain catch-all should be removed; orange cloud → origin PHP).
  * @returns {Promise<Response|null>}
  */
 export async function gundemiApexPhpBridgeResponse(request, incoming) {
+  if (isGundemiOrgSubdomainHost(incoming.hostname)) {
+    if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
+    if (request.method !== "GET" && request.method !== "HEAD") return null;
+    // SPA catch-all removed; if a catch-all still hits the Worker, never serve ASSETS.
+    return new Response(traefikGapHtml(normalizeHostname(incoming.hostname).replace(/^www\./, "")), {
+      status: 503,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "x-yekpare-frontend": "gundemi-php-traefik-gap",
+      },
+    });
+  }
+
   if (!isGundemiApexBridgeHost(incoming.hostname)) return null;
   if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
