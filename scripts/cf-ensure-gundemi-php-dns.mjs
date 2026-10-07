@@ -136,6 +136,8 @@ const PANEL_ROUTE_PATTERNS = [
   "*.gundemi.org/admin*",
   "*.gundemi.org/panel*",
   "*.gundemi.org/haber-merkezi*",
+  // KEEP broad assets/* — editor lazy chunks are not only index-*/vendor-*.
+  // theme.css/js on this route are bridged in gundemi-origin-bridge.js (not 503 gap).
   "*.gundemi.org/assets/*",
   "*.gundemi.org/gundemi/logos/*",
   "*.gundemi.org/sw.js",

@@ -81,7 +81,7 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(html.includes("cloudflare-assets"), false);
   });
 
-  it("proxies regional theme.css from shared PHP origin (not 503 gap)", async () => {
+  it("proxies regional theme.css from PHP origin (not 503 gap)", async () => {
     const incoming = new URL("https://akdeniz.gundemi.org/assets/theme.css");
     const res = await gundemiApexPhpBridgeResponse(
       new Request(incoming.toString(), { method: "GET" }),
@@ -98,7 +98,7 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(body.includes("PHP tema bekleniyor"), false);
   });
 
-  it("proxies regional theme.js from shared PHP origin", async () => {
+  it("proxies regional theme.js from PHP origin", async () => {
     const incoming = new URL("https://marmara.gundemi.org/assets/theme.js");
     const res = await gundemiApexPhpBridgeResponse(
       new Request(incoming.toString(), { method: "HEAD" }),
@@ -107,6 +107,17 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.ok(res);
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
+  });
+
+  it("never returns Traefik-gap HTML for regional theme.css", async () => {
+    const incoming = new URL("https://ege.gundemi.org/assets/theme.css");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { method: "GET" }),
+      incoming,
+    );
+    assert.ok(res);
+    assert.notEqual(res.headers.get("x-yekpare-frontend"), "gundemi-php-traefik-gap");
+    assert.notEqual(res.status, 503);
   });
 
   it("returns null for regional logos so Worker ASSETS can serve them", async () => {

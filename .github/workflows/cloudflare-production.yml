@@ -173,6 +173,15 @@ jobs:
             attempt=$((attempt + 1))
           done
 
+      # Regional PHP theme.css must not stay on Traefik-gap 503 after wrangler
+      # (Workers Builds "success" ≠ production route live; secrets sync can lag).
+      - name: Smoke gundemi regional theme.css / theme.js
+        if: steps.cf.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
+          sleep 8
+          node scripts/smoke-gundemi-assets.mjs
+
       # wrangler secret put production'a yazar. versions secret put yeni bir
       # sürüm üretir; onu @100% yapmak eski Neon DATABASE_URL'i geri getirir
       # (32356785593 → 5807ec05). Canlı Neon ise DATABASE_URL secret put atlanır
