@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useHmEditor } from "@/contexts/HmEditorContext";
-import { hmEditorJson, hmEditorRequest } from "@/lib/hmEditorApi";
+import { hmEditorJson, hmEditorRunRssCampaign } from "@/lib/hmEditorApi";
 import { HM_EDITOR_CATEGORIES_QUERY_KEY, HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY } from "@/lib/hmEditorQueryKeys";
 
 const quickSources = [
@@ -206,12 +206,8 @@ export default function EditorRssKampanyaEditor() {
       toast({ title: "Kampanya kaydedildi" });
       await queryClient.invalidateQueries({ queryKey: [...HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY] });
       if (runNow && saved?.id) {
-        const res = await hmEditorRequest(`/api/hm/editor/rss/campaigns/${saved.id}/run`, {
-          method: "POST",
-          body: "{}",
-        });
-        const runJson = (await res.json().catch(() => ({}))) as { added?: number; message?: string; error?: string };
-        if (res.ok) {
+        const { ok, data: runJson } = await hmEditorRunRssCampaign(saved.id);
+        if (ok) {
           toast({
             title: (runJson.added ?? 0) > 0 ? "Çalıştırıldı" : "Arka planda çalıştırılıyor",
             description:
