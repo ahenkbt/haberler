@@ -2909,6 +2909,22 @@ export default {
             },
           });
         }
+        // Yazar sil/ekle/sıra — Container origin-budget yerine kenar JSON.
+        if (
+          earlyPath === "/api/hm/editor/authors/bulk-delete" ||
+          earlyPath === "/api/hm/editor/authors" ||
+          earlyPath === "/api/hm/editor/authors/order" ||
+          /^\/api\/hm\/editor\/authors\/\d+$/.test(earlyPath)
+        ) {
+          return new Response(JSON.stringify({ error: "Yazar işlemi başarısız." }), {
+            status: 500,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "private, no-store",
+              "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+            },
+          });
+        }
       }
     }
 

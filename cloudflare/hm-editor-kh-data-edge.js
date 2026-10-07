@@ -734,6 +734,7 @@ async function handleUpdateAuthor(sql, siteId, id, body) {
     `;
     const row = rows?.[0];
     if (!row) return jsonResponse(404, { error: "Yazar bulunamadı" });
+    await mirrorNewsDbWrite("authors", "upsert", row);
     return jsonResponse(200, serializeAuthor(row));
   } catch (err) {
     const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
@@ -818,10 +819,37 @@ async function handlePoolAuthorPublish(sql, siteId, sourceId) {
   return jsonResponse(201, { author: serializeAuthor(targetAuthor), copied });
 }
 
-/** Neon ANY(array) güvenilir değil — satır satır sil. */
-async function handleBulkDelete(sql, siteId, body) {
+function authorNameKey(name) {
+  return String(name || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("tr-TR");
+}
+
+/** Editör yazar yazma uçları — Container origin-budget'a asla düşmesin. */
+function isEditorAuthorWritePath(path, method) {
+  if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") return true;
+  if (path === "/api/hm/editor/authors" && method === "POST") return true;
+  if (path === "/api/hm/editor/authors/order" && method === "PATCH") return true;
+  if (/^\/api\/hm\/editor\/authors\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Neon ANY(array) güvenilir değil — satır satır sil.
+ * UI çoğu zaman PHP twilight-pine id gönderir; Worker + PHP site-scoped silinir.
+ */
+async function handleBulkDelete(sql, siteId, body, env, hostname) {
   const clearAll = body?.all === true || body?.clearAll === true;
   let ownedIds = [];
+  let requestIds = [];
+
+  const newsSql = shouldEdgeDualWriteNewsDb(env) ? neonNewsSqlClient(env) : null;
+  const phpSiteId = newsSql
+    ? (await resolvePhpSiteId(newsSql, sql, siteId, hostname)) || siteId
+    : null;
 
   if (clearAll) {
     const all = await sql`SELECT id FROM authors WHERE hm_site_id = ${siteId}`;
@@ -835,27 +863,39 @@ async function handleBulkDelete(sql, siteId, body) {
         )
       : [];
     if (!ids.length) return jsonResponse(400, { error: "Silinecek yazar seçilmedi." });
+    requestIds = ids;
+
+    const nameKeys = new Set();
+    // PHP listesinden gelen id'ler → isim anahtarı (Worker id eşleşmese bile)
+    if (newsSql && phpSiteId) {
+      for (const id of ids) {
+        try {
+          const hit = await newsSql`
+            SELECT id, name FROM authors
+            WHERE id = ${id} AND hm_site_id = ${phpSiteId}
+            LIMIT 1
+          `;
+          const key = authorNameKey(hit?.[0]?.name);
+          if (key) nameKeys.add(key);
+        } catch (err) {
+          console.error("[hm-author-bulk-php-lookup]", String(err?.message || err).slice(0, 120));
+        }
+      }
+    }
 
     const localAuthors = await sql`
       SELECT id, name FROM authors WHERE hm_site_id = ${siteId}
     `;
     const localById = new Map((localAuthors || []).map((a) => [a.id, a]));
-    const nameKeys = new Set();
     for (const id of ids) {
       const row = localById.get(id);
       if (!row) continue;
       ownedIds.push(id);
-      const key = String(row.name || "")
-        .trim()
-        .replace(/\s+/g, " ")
-        .toLocaleLowerCase("tr-TR");
+      const key = authorNameKey(row.name);
       if (key) nameKeys.add(key);
     }
     for (const a of localAuthors || []) {
-      const key = String(a.name || "")
-        .trim()
-        .replace(/\s+/g, " ")
-        .toLocaleLowerCase("tr-TR");
+      const key = authorNameKey(a.name);
       if (key && nameKeys.has(key) && !ownedIds.includes(a.id)) ownedIds.push(a.id);
     }
   }
@@ -876,7 +916,53 @@ async function handleBulkDelete(sql, siteId, body) {
     const r = await sql`DELETE FROM authors WHERE hm_site_id = ${siteId} AND id = ${id} RETURNING id`;
     if (r?.length) deleted += 1;
   }
-  return jsonResponse(200, { ok: true, deleted, detached: 0 });
+
+  // PHP Neon dual-write — yalnızca JWT sitesinin phpSiteId'si; başka site yazarına dokunma.
+  let phpDeleted = 0;
+  if (newsSql && phpSiteId) {
+    let phpIds = [];
+    if (clearAll) {
+      try {
+        const allPhp = await newsSql`SELECT id FROM authors WHERE hm_site_id = ${phpSiteId}`;
+        phpIds = (allPhp || []).map((r) => Number(r.id)).filter((n) => Number.isFinite(n) && n > 0);
+      } catch (err) {
+        console.error("[hm-author-bulk-php-all]", String(err?.message || err).slice(0, 120));
+      }
+    } else {
+      phpIds = Array.from(new Set(requestIds));
+    }
+    for (const id of phpIds) {
+      try {
+        const owned = await newsSql`
+          SELECT id FROM authors WHERE id = ${id} AND hm_site_id = ${phpSiteId} LIMIT 1
+        `;
+        if (!owned?.[0]) continue;
+        try {
+          await newsSql`DELETE FROM hm_makaleler WHERE site_id = ${phpSiteId} AND author_id = ${id}`;
+        } catch {
+          /* ignore */
+        }
+        try {
+          await newsSql`UPDATE news SET author_id = NULL WHERE site_id = ${phpSiteId} AND author_id = ${id}`;
+        } catch {
+          /* ignore */
+        }
+        const del = await newsSql`
+          DELETE FROM authors WHERE id = ${id} AND hm_site_id = ${phpSiteId} RETURNING id
+        `;
+        if (del?.length) phpDeleted += 1;
+      } catch (err) {
+        console.error("[hm-author-bulk-php-del]", id, String(err?.message || err).slice(0, 120));
+      }
+    }
+  }
+
+  return jsonResponse(200, {
+    ok: true,
+    deleted: Math.max(deleted, phpDeleted),
+    detached: 0,
+    phpDeleted,
+  });
 }
 
 async function handlePoolAuthors(sql, siteId, url) {
@@ -2464,28 +2550,38 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     return null;
   }
 
+  const authorWrite = isEditorAuthorWritePath(path, method);
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    if (!auth.startsWith("Bearer ")) {
+    // Yazar yazma: Container origin-budget 503 yerine hızlı 401.
+    if (!auth.startsWith("Bearer ") || authorWrite) {
       return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
     }
-    return null; // Render imzalı JWT → Render proxy
+    return null; // Render imzalı JWT → Render proxy (okuma uçları)
   }
 
   const sql = sqlClient(env);
-  if (!sql) return null;
+  if (!sql) {
+    if (authorWrite) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+    return null;
+  }
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
-  // Eski Render-bridge JWT: eid Neon'da yoksa 401 yerine Render proxy (oturum düşmesin).
-  if (!editor) return auth.startsWith("Bearer ") ? null : jsonResponse(401, { error: "Geçersiz oturum" });
+  // Yazar yazma asla Container'a düşmesin. Diğer uçlar: eski Render-bridge JWT → proxy.
+  if (!editor) {
+    if (authorWrite || !auth.startsWith("Bearer ")) {
+      return jsonResponse(401, { error: "Geçersiz oturum" });
+    }
+    return null;
+  }
 
   if (path === "/api/hm/editor/categories" && method === "GET") {
     return handleCategories(sql, ctx.siteId, env);
   }
 
   if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") {
-    return handleBulkDelete(sql, ctx.siteId, await readJsonBody(request));
+    return handleBulkDelete(sql, ctx.siteId, await readJsonBody(request), env, incomingUrl?.hostname);
   }
 
   if (path === "/api/hm/editor/authors" && method === "POST") {
@@ -2497,6 +2593,11 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     const id = asPositiveInt(authorIdMatch[1]);
     if (id == null) return jsonResponse(400, { error: "Geçersiz id" });
     return handleUpdateAuthor(sql, ctx.siteId, id, await readJsonBody(request));
+  }
+  if (authorIdMatch && method === "DELETE") {
+    const id = asPositiveInt(authorIdMatch[1]);
+    if (id == null) return jsonResponse(400, { error: "Geçersiz id" });
+    return handleBulkDelete(sql, ctx.siteId, { ids: [id] }, env, incomingUrl?.hostname);
   }
 
   const poolPublishMatch = path.match(/^\/api\/hm\/editor\/pool\/authors\/(\d+)\/publish$/);
@@ -2569,12 +2670,29 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
       ? body.ids.map((x) => parseInt(String(x), 10)).filter((n) => Number.isFinite(n) && n > 0)
       : [];
     if (!ids.length) return jsonResponse(400, { error: "Yazar sırası için ids gerekli." });
+    const newsSql = shouldEdgeDualWriteNewsDb(env) ? neonNewsSqlClient(env) : null;
+    const phpSiteId = newsSql
+      ? (await resolvePhpSiteId(newsSql, sql, ctx.siteId, incomingUrl?.hostname)) || ctx.siteId
+      : null;
     let order = 0;
     for (const id of ids) {
-      await sql`
+      const updated = await sql`
         UPDATE authors SET hm_sort_order = ${order}
         WHERE id = ${id} AND hm_site_id = ${ctx.siteId}
+        RETURNING id, name, title, avatar_url, bio, hm_site_id, hm_sort_order, email
       `;
+      if (updated?.[0]) await mirrorNewsDbWrite("authors", "upsert", updated[0]);
+      // UI id'leri çoğu zaman PHP — Worker'da yoksa doğrudan PHP site-scoped sıra.
+      if (newsSql && phpSiteId) {
+        try {
+          await newsSql`
+            UPDATE authors SET hm_sort_order = ${order}
+            WHERE id = ${id} AND hm_site_id = ${phpSiteId}
+          `;
+        } catch (err) {
+          console.error("[hm-author-order-php]", String(err?.message || err).slice(0, 120));
+        }
+      }
       order += 1;
     }
     return jsonResponse(200, { ok: true });

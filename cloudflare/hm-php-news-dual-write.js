@@ -344,11 +344,23 @@ export async function edgeUpsertAuthor(sql, row) {
   return { mirrored: true, id, via: "author-insert" };
 }
 
-export async function edgeDeleteAuthor(sql, id) {
-  const n = asPositiveInt(id);
-  if (!sql || !n) return { mirrored: false, reason: "id" };
-  await sql`DELETE FROM authors WHERE id = ${n}`;
-  return { mirrored: true, id: n, via: "delete" };
+/**
+ * PHP Neon yazar silme — hm_site_id zorunlu (başka site / PHP-only yazarları silme).
+ * @param {number|{id?:unknown,hm_site_id?:unknown,hmSiteId?:unknown}} idOrRow
+ */
+export async function edgeDeleteAuthor(sql, idOrRow) {
+  let id;
+  let hmSiteId = null;
+  if (idOrRow && typeof idOrRow === "object") {
+    id = asPositiveInt(pick(idOrRow, "id"));
+    hmSiteId = asPositiveInt(pick(idOrRow, "hm_site_id", "hmSiteId"));
+  } else {
+    id = asPositiveInt(idOrRow);
+  }
+  if (!sql || !id) return { mirrored: false, reason: "id" };
+  if (!hmSiteId) return { mirrored: false, reason: "hm-site-id-required" };
+  await sql`DELETE FROM authors WHERE id = ${id} AND hm_site_id = ${hmSiteId}`;
+  return { mirrored: true, id, via: "delete-site-scoped" };
 }
 
 /**
