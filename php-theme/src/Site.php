@@ -248,15 +248,15 @@ final class Site
             ];
         }
         $hasAuthorLogin = false;
-        foreach ($items as $item) {
-            if (str_contains((string) ($item['href'] ?? ''), '/koseyazari/giris')
-                || str_contains((string) ($item['href'] ?? ''), '/yazar/giris')) {
+        foreach ($items as $i => $item) {
+            $href = (string) ($item['href'] ?? '');
+            if (str_contains($href, '/koseyazari/giris') || str_contains($href, '/yazar/giris')) {
+                $items[$i]['href'] = '/koseyazari/giris';
                 $hasAuthorLogin = true;
-                break;
             }
         }
         if (!$hasAuthorLogin) {
-            $items[] = ['label' => 'Köşe yazarı girişi', 'href' => $this->path('/koseyazari/giris')];
+            $items[] = ['label' => 'Köşe yazarı girişi', 'href' => '/koseyazari/giris'];
         }
         foreach ($this->menuFlat('hmNewsSidebarMenuItems') as $extra) {
             $items[] = $extra;
