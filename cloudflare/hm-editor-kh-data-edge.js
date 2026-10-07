@@ -3,7 +3,7 @@
  * Tanımsız rotalar: null → Worker Container vekili.
  */
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
+import { edgeMirrorNewsDbWrite, isReadonlyDbError } from "./hm-php-news-dual-write.js";
 import {
   loadPhpSiteAuthors,
   loadPhpSiteCategories,
@@ -513,6 +513,7 @@ async function resolveCategoryId(sql, siteId, categorySlug) {
 }
 
 async function loadNewsWithCategory(sql, siteId, id) {
+  if (!sql) return null;
   await ensureNewsWritableColumns(sql);
   try {
     const rows = await sql`
@@ -538,6 +539,39 @@ async function loadNewsWithCategory(sql, siteId, id) {
     `;
     return rows?.[0] || null;
   }
+}
+
+/**
+ * PHP tema haberleri çoğu zaman yalnızca twilight-pine (NEWS_DATABASE_URL) üzerindedir.
+ * Önce Worker primary (bitter-mouse), yoksa yazılabilir NEWS Neon.
+ * @returns {Promise<{writeSql: any, existing: any, source: "primary"|"news"|null, siteId: number}>}
+ */
+async function resolveEditorNewsTarget(sql, env, siteId, id, hostname = null) {
+  const primary = sql ? await loadNewsWithCategory(sql, siteId, id) : null;
+  if (primary) return { writeSql: sql, existing: primary, source: "primary", siteId };
+
+  const newsSql = neonNewsSqlClient(env);
+  if (!newsSql) return { writeSql: sql, existing: null, source: null, siteId };
+
+  let phpSiteId = siteId;
+  try {
+    phpSiteId = (await resolvePhpSiteId(newsSql, sql, siteId, hostname)) || siteId;
+  } catch (err) {
+    console.error("[kh-news-php-site]", String(err?.message || err).slice(0, 120));
+  }
+  let phpRow = await loadNewsWithCategory(newsSql, phpSiteId, id);
+  if (!phpRow && phpSiteId !== siteId) {
+    phpRow = await loadNewsWithCategory(newsSql, siteId, id);
+  }
+  if (phpRow) {
+    return {
+      writeSql: newsSql,
+      existing: phpRow,
+      source: "news",
+      siteId: asPositiveInt(phpRow.site_id) || phpSiteId || siteId,
+    };
+  }
+  return { writeSql: sql, existing: null, source: null, siteId };
 }
 
 /**
@@ -1448,10 +1482,12 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
   return createFailResponse(lastErr || "slug çakışması");
 }
 
-async function handleUpdateNews(sql, siteId, id, body) {
-  await ensureNewsWritableColumns(sql);
-  const existing = await loadNewsWithCategory(sql, siteId, id);
-  if (!existing) return jsonResponse(404, { error: "Haber bulunamadı" });
+async function handleUpdateNews(sql, siteId, id, body, env = null, hostname = null) {
+  const target = await resolveEditorNewsTarget(sql, env, siteId, id, hostname);
+  const writeSql = target.writeSql || sql;
+  const existing = target.existing;
+  if (!existing || !writeSql) return jsonResponse(404, { error: "Haber bulunamadı" });
+  const writeSiteId = target.siteId || siteId;
 
   const title = body?.title != null ? String(body.title).trim() : existing.title;
   if (!title) return jsonResponse(400, { error: "Başlık gerekli" });
@@ -1459,7 +1495,10 @@ async function handleUpdateNews(sql, siteId, id, body) {
   let categorySlug = existing.category_slug;
   if (body?.categorySlug != null) {
     categorySlug = String(body.categorySlug).trim();
-    categoryId = await resolveCategoryId(sql, siteId, categorySlug);
+    categoryId = await resolveCategoryId(writeSql, writeSiteId, categorySlug);
+    if (!categoryId && sql && writeSql !== sql) {
+      categoryId = await resolveCategoryId(sql, siteId, categorySlug);
+    }
     if (!categoryId) return jsonResponse(400, { error: "Kategori bulunamadı" });
   }
   const slug =
@@ -1488,10 +1527,12 @@ async function handleUpdateNews(sql, siteId, id, body) {
   const isBreaking =
     typeof body?.isBreaking === "boolean" ? body.isBreaking : existing.is_breaking === true;
 
+  let row;
   try {
+    await ensureNewsWritableColumns(writeSql);
     let rows;
     try {
-      rows = await sql`
+      rows = await writeSql`
         UPDATE news SET
           title = ${title},
           slug = ${slug},
@@ -1508,8 +1549,8 @@ async function handleUpdateNews(sql, siteId, id, body) {
           tags = ${tagsLiteral}::text[],
           is_editor_manual = true,
           site_only = true,
-          owner_site_id = ${siteId},
-          site_id = ${siteId},
+          owner_site_id = ${writeSiteId},
+          site_id = ${writeSiteId},
           updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
@@ -1517,7 +1558,7 @@ async function handleUpdateNews(sql, siteId, id, body) {
     } catch (colErr) {
       const cm = String(colErr?.message || colErr);
       if (!/column .* does not exist/i.test(cm)) throw colErr;
-      rows = await sql`
+      rows = await writeSql`
         UPDATE news SET
           title = ${title},
           slug = ${slug},
@@ -1537,8 +1578,26 @@ async function handleUpdateNews(sql, siteId, id, body) {
         RETURNING *
       `;
     }
-    const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
-    if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
+    row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.error("[kh-news-update]", target.source, msg.slice(0, 200));
+    // Yazım hedefi RO ise yapılandırma hatası; dual-write RO buraya düşmez (mirror yutar).
+    if (isReadonlyDbError(err)) {
+      return jsonResponse(500, {
+        error: "Güncellenemedi: veritabanı yazma yapılandırması (read-only). NEWS_DATABASE_URL neondb_owner olmalı.",
+        detail: "news-db-read-only",
+      });
+    }
+    return jsonResponse(500, {
+      error: msg ? `Güncellenemedi: ${msg.slice(0, 160)}` : "Güncellenemedi",
+      detail: msg.slice(0, 160),
+    });
+  }
+  if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
+
+  // Primary yazıldıysa PHP ayna (RO olsa bile panel 200). PHP-only yazıldıysa primary'e kopya dene.
+  if (target.source === "primary") {
     await mirrorNewsDbWrite("news", "upsert", {
       ...row,
       category_slug: categorySlug,
@@ -1548,15 +1607,27 @@ async function handleUpdateNews(sql, siteId, id, body) {
       is_breaking: isBreaking,
     });
     await upsertMakaleFromAuthorNews(sql, row);
-    return jsonResponse(200, serializeNewsRow(row, categorySlug));
-  } catch (err) {
-    const msg = String(err?.message || err);
-    console.error("[kh-news-update]", msg.slice(0, 200));
-    return jsonResponse(500, {
-      error: msg ? `Güncellenemedi: ${msg.slice(0, 160)}` : "Güncellenemedi",
-      detail: msg.slice(0, 160),
-    });
+  } else if (target.source === "news" && sql) {
+    try {
+      await ensureNewsWritableColumns(sql);
+      await edgeMirrorNewsDbWrite(sql, "news", "upsert", {
+        ...row,
+        site_id: siteId,
+        owner_site_id: siteId,
+        category_slug: categorySlug,
+        is_tepe_manset: isFeatured,
+        is_featured: isFeatured,
+        is_site_manset: isSiteManset,
+        is_breaking: isBreaking,
+      });
+    } catch (err) {
+      console.warn("[kh-news-update-primary-copy]", String(err?.message || err).slice(0, 140));
+    }
+    await upsertMakaleFromAuthorNews(writeSql, row);
+  } else {
+    await upsertMakaleFromAuthorNews(writeSql, row);
   }
+  return jsonResponse(200, serializeNewsRow(row, categorySlug));
 }
 
 async function handlePatchNewsFlags(sql, siteId, id, body) {
@@ -2581,10 +2652,17 @@ async function handleAuthorArticleEdge(request, env, incomingUrl, path, method) 
       authorId: _authorId,
       ...authorUpdate
     } = body || {};
-    return handleUpdateNews(sql, author.siteId, id, {
-      ...authorUpdate,
-      authorId: author.authorId,
-    });
+    return handleUpdateNews(
+      sql,
+      author.siteId,
+      id,
+      {
+        ...authorUpdate,
+        authorId: author.authorId,
+      },
+      env,
+      incomingUrl?.hostname,
+    );
   }
   if (method === "DELETE") return handleAuthorNewsDelete(sql, author.siteId, author.authorId, id);
   return jsonResponse(405, { error: "Yöntem desteklenmiyor" });
@@ -2740,12 +2818,19 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
     const id = asPositiveInt(newsIdMatch[1]);
     if (id == null) return jsonResponse(400, { error: "id" });
     if (method === "GET") {
-      const row = await loadNewsWithCategory(sql, ctx.siteId, id);
-      if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
-      return jsonResponse(200, serializeNewsRow(row, row.category_slug));
+      const target = await resolveEditorNewsTarget(sql, env, ctx.siteId, id, incomingUrl?.hostname);
+      if (!target.existing) return jsonResponse(404, { error: "Haber bulunamadı" });
+      return jsonResponse(200, serializeNewsRow(target.existing, target.existing.category_slug));
     }
     if (method === "PUT") {
-      return handleUpdateNews(sql, ctx.siteId, id, await readJsonBody(request));
+      return handleUpdateNews(
+        sql,
+        ctx.siteId,
+        id,
+        await readJsonBody(request),
+        env,
+        incomingUrl?.hostname,
+      );
     }
     if (method === "DELETE") {
       return handleDeleteNews(sql, ctx.siteId, id);
