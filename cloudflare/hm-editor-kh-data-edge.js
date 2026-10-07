@@ -14,6 +14,11 @@ import {
 import { runEditorPhpNeonSync } from "./hm-php-neon-sync-edge.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
+import {
+  isRssCampaignRunBusyStatus,
+  normalizeRssCampaignRunUpstreamResponse,
+  rssCampaignRunRetryDelayMs,
+} from "./hm-editor-rss-campaign-run.js";
 
 const JWT_TYP = "hm_editor";
 const JWT_TYP_AUTHOR = "hm_author";
@@ -2324,6 +2329,18 @@ async function handleEditorRssCampaignDelete(sql, siteId, id) {
   }
 }
 
+async function wakeApiContainerForRssRun(env) {
+  const origin = apiOrigin(env);
+  try {
+    const res = await fetchApi(env, `${origin}/api/healthz`);
+    await res.text().catch(() => null);
+    return res.ok;
+  } catch (err) {
+    console.error("[hm-rss-campaign-wake]", String(err?.message || err).slice(0, 160));
+    return false;
+  }
+}
+
 async function handleEditorRssCampaignRun(sql, env, request, siteId, id) {
   try {
     await ensureRssCampaignColumns(sql);
@@ -2335,27 +2352,52 @@ async function handleEditorRssCampaignRun(sql, env, request, siteId, id) {
       WHERE id = ${id}
     `;
     const origin = apiOrigin(env);
-    const res = await fetchApi(env, `${origin}/api/hm/editor/rss/campaigns/${id}/run`, {
-      method: "POST",
-      headers: {
-        Authorization: request.headers.get("authorization") || "",
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "x-yekpare-rss-run-proxy": "1",
-      },
-      body: "{}",
-    });
-    const text = await res.text();
-    const headers = {
-      "content-type": res.headers.get("content-type") || "application/json; charset=utf-8",
-      "cache-control": "private, no-store, max-age=0, must-revalidate",
-      "cdn-cache-control": "no-store",
-      "x-yekpare-frontend": "cloudflare-kh-editor-data-edge",
+    const runUrl = `${origin}/api/hm/editor/rss/campaigns/${id}/run`;
+    const runHeaders = {
+      Authorization: request.headers.get("authorization") || "",
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "x-yekpare-rss-run-proxy": "1",
     };
-    return new Response(text, { status: res.status, headers });
+
+    // Cold Container: önce ısıt, 503/provisioning'te birkaç kez dene.
+    await wakeApiContainerForRssRun(env);
+
+    let lastStatus = 503;
+    let lastText = "";
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, rssCampaignRunRetryDelayMs(attempt)));
+        await wakeApiContainerForRssRun(env);
+      }
+      try {
+        const res = await fetchApi(env, runUrl, {
+          method: "POST",
+          headers: runHeaders,
+          body: "{}",
+        });
+        lastStatus = res.status;
+        lastText = await res.text();
+        if (!isRssCampaignRunBusyStatus(lastStatus, lastText)) break;
+        if (res.ok) break;
+      } catch (err) {
+        lastStatus = 503;
+        lastText = String(err?.message || err);
+        console.error("[hm-rss-campaign-run-attempt]", lastText.slice(0, 160));
+      }
+    }
+
+    const normalized = normalizeRssCampaignRunUpstreamResponse(lastStatus, lastText);
+    return jsonResponse(normalized.status, normalized.body);
   } catch (err) {
     const msg = String(err?.message || err);
     console.error("[hm-rss-campaign-run]", msg.slice(0, 200));
+    if (isRssCampaignRunBusyStatus(503, msg)) {
+      return jsonResponse(503, {
+        accepted: false,
+        error: "Sunucu uyanıyor. 15–20 sn bekleyip tekrar Çalıştır’a basın.",
+      });
+    }
     return jsonResponse(500, { error: "Kampanya çalıştırılamadı" });
   }
 }

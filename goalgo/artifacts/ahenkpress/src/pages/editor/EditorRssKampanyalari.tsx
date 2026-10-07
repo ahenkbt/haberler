@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useHmEditor } from "@/contexts/HmEditorContext";
-import { hmEditorJson, hmEditorRequest } from "@/lib/hmEditorApi";
+import { hmEditorJson, hmEditorRunRssCampaign } from "@/lib/hmEditorApi";
 import { HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY } from "@/lib/hmEditorQueryKeys";
 
 type RssCampaignRow = {
@@ -93,37 +93,23 @@ export default function EditorRssKampanyalari() {
     }
     setRunning(id);
     try {
-      const res = await hmEditorRequest(`/api/hm/editor/rss/campaigns/${id}/run`, {
-        method: "POST",
-        body: "{}",
-      });
-      let dataJson: { added?: number; skipped?: number; message?: string; error?: string; accepted?: boolean } = {};
-      try {
-        dataJson = (await res.json()) as typeof dataJson;
-      } catch {
-        toast({
-          title: "Bağlantı hatası",
-          description: `Sunucu yanıtı okunamadı (HTTP ${res.status}).`,
-          variant: "destructive",
-        });
-        return;
-      }
-      if (res.ok) {
-        const accepted = res.status === 202 || dataJson.accepted === true;
+      const { ok, status, data } = await hmEditorRunRssCampaign(id);
+      if (ok) {
+        const accepted = status === 202 || data.accepted === true;
         toast({
           title: accepted ? `"${name}" arka planda çalıştırılıyor` : `"${name}" kampanyası çalıştırıldı`,
           description:
-            dataJson.message ||
+            data.message ||
             (accepted
               ? "Sonuç için birkaç dakika sonra İşlem Logları ve EKLENEN sütununu kontrol edin."
-              : `${dataJson.added ?? 0} yeni haber eklendi.`),
+              : `${data.added ?? 0} yeni haber eklendi.`),
         });
         if (!accepted) void refetch();
         else setTimeout(() => void refetch(), 8000);
       } else {
         toast({
           title: "Hata",
-          description: dataJson.error || dataJson.message || "Kampanya çalıştırılamadı.",
+          description: data.error || data.message || "Kampanya çalıştırılamadı.",
           variant: "destructive",
         });
       }
