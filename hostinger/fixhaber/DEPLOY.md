@@ -24,16 +24,27 @@ Ankara Şehir Gazetesi modeli: kamu sayfaları **origin PHP** (VPS `187.77.84.20
 | PHP upstream | `http://127.0.0.1:8095` (`php-theme-yenisafak` / `php-tema`) |
 | Worker routes | `wrangler.toml` — `editor*`, `api/*`, `admin*`, `panel*`, `haber-merkezi*`, `assets/*`, `sw.js`, `llms.txt`, `ai.txt`, `manifest.json`, yazar paneli, `/tr/*`, `/hm/*` |
 
-## DNS (Dashboard — A kaydı henüz yok)
+## DNS (Proxied A — kök neden: zone CF NS’te ama A yok)
 
-Public DNS’te (2026-10-07): NS Cloudflare’de; **A kaydı yok** → Dashboard’dan ekle:
+Public DNS’te: `kiki.ns.cloudflare.com` / `paul.ns.cloudflare.com` — zone Cloudflare’de; **apex/www A kaydı yok** → tarayıcı `DNS_PROBE_FINISHED_NXDOMAIN` (veya boş A).
+
+### Otomasyon (tercih)
+
+```bash
+CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
+DRY_RUN=1 CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
+```
+
+GitHub Actions: **Ensure fix.tc PHP DNS** (`workflow_dispatch`) — repo secret `CLOUDFLARE_API_TOKEN` (Zone → DNS → Edit, zone `fix.tc`).
+
+Token yoksa veya zone bu Cloudflare hesabında değilse → Dashboard’dan elle:
 
 | Type | Name | Content | Proxy |
 |------|------|---------|-------|
 | A | `@` | `187.77.84.201` | Proxied (turuncu) |
 | A | `www` | `187.77.84.201` | Proxied (turuncu) |
 
-Doğrulama: `dig @1.1.1.1 +short fix.tc A` → CF anycast.
+Doğrulama: `dig @1.1.1.1 +short fix.tc A` → CF anycast (ör. `104.21.x.x` / `172.67.x.x`).
 
 `cf-fix-originless-dns.mjs` bu zone’a **dokunmaz** (`PHP_THEME_APEX` / `PHP_THEME_ZONES`). Apex catch-all Worker route ekleme.
 
@@ -68,7 +79,7 @@ Public DNS A kaydı eklenene kadar dışarıdan erişim CF anycast’e düşmez;
 
 ## Ops checklist
 
-- [ ] CF Dashboard: Proxied A `@` + `www` → `187.77.84.201` (zone NS hazır; A yok)
+- [ ] CF: Proxied A `@` + `www` → `187.77.84.201` (`cf-ensure-fixhaber-dns.mjs` veya Dashboard)
 - [x] VPS: `/docker/traefik/dynamic/fixhaber.yml` (2026-10-07)
 - [ ] Merge sonrası: `ensure:fixhaber` (Neon — site satırı + editör + kategoriler + örnek haber + RSS)
 - [ ] Worker deploy: `wrangler.toml` panel/API routes
