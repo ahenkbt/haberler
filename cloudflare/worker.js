@@ -118,6 +118,7 @@ import {
   rewriteTurkataSpaHtml,
   turkataArticleSlug,
   turkataDynamicSeoBody,
+  turkataPublicOrigin,
   turkataSitemapFromUpstream,
   turkataStaticSeoBody,
   turkataUpstreamSitemapApiPath,
@@ -3020,7 +3021,8 @@ export default {
     if (isTurkataWwwHost(incoming.hostname)) {
       const bare = incoming.pathname.replace(/\/+$/, "") || "/";
       const path = haberlerArticleAlias || (bare === "/haberler" ? "/" : incoming.pathname);
-      const dest = new URL(path + incoming.search, TURKATA_ORIGIN);
+      // www.turkatahaber.com → turkatahaber.com; www.gundemi.org → gundemi.org (alias, aynı site).
+      const dest = new URL(path + incoming.search, turkataPublicOrigin(incoming.hostname));
       return new Response(null, {
         status: 301,
         headers: {
@@ -3035,10 +3037,11 @@ export default {
       (request.method === "GET" || request.method === "HEAD") &&
       (incoming.pathname.replace(/\/+$/, "") || "/") === "/haberler"
     ) {
+      const listingOrigin = turkataPublicOrigin(incoming.hostname);
       return new Response(null, {
         status: 301,
         headers: {
-          Location: `${TURKATA_ORIGIN}/`,
+          Location: `${listingOrigin}/`,
           "cache-control": "public, max-age=3600",
           "x-yekpare-frontend": "canonical-turkata-listing",
         },

@@ -1716,11 +1716,11 @@ zone_name = "tukav.org"
 pattern = "www.tukav.org/api/stk*"
 zone_name = "tukav.org"
 
-# gundemi.org — 8 bölgesel Yenişafak HM siteleri (ege/marmara/karadeniz/icanadolu/doguanadolu/guneydogu/akdeniz/kibris).
-# Zone: gundemi.org (kullanıcı Cloudflare'e ekledi). Ön yüz VPS PHP A→187.77.84.201 (proxied).
+# gundemi.org — apex/www = turkatahaber HM alias (domain2); 8 bölgesel alt alan ayrı Yenişafak siteleri.
+# Zone: gundemi.org. Ön yüz VPS PHP A→187.77.84.201 (proxied).
 # Catch-all "*.gundemi.org/*" ve apex custom_domain BİLEREK yok (deploy geri eklerse PHP temadan düşer).
-# DNS: her alt alan A 187.77.84.201 proxied — bakınız hostinger/gundemi-bolge/DEPLOY.md
-# Wildcard panel/API yolları tüm *.gundemi.org alt alanlarını kapsar.
+# DNS: @/www → turkatahaber içeriği; ege/marmara/… → bölgesel — hostinger/gundemi-bolge/DEPLOY.md
+# Wildcard panel/API yolları tüm *.gundemi.org alt alanlarını kapsar; apex panel yolları turkatahaber editörü.
 
 [[routes]]
 pattern = "*.gundemi.org/editor*"
@@ -1794,7 +1794,7 @@ zone_name = "gundemi.org"
 pattern = "*.gundemi.org/hm/*"
 zone_name = "gundemi.org"
 
-# Apex gundemi.org — panel/API (hub veya yönlendirme VPS'te); catch-all yok.
+# Apex gundemi.org — turkatahaber alias panel/API; catch-all yok (ön yüz VPS PHP).
 [[routes]]
 pattern = "gundemi.org/editor*"
 zone_name = "gundemi.org"

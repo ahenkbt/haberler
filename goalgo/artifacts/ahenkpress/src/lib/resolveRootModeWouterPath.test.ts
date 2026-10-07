@@ -36,6 +36,8 @@ describe("resolveRootModeWouterPath", () => {
       expect(resolveRootModeWouterPath("www.ahenk.net.tr", path)).toBe(path);
       expect(resolveRootModeWouterPath("turkatahaber.com", path)).toBe(path);
       expect(resolveRootModeWouterPath("www.turkatahaber.com", path)).toBe(path);
+      expect(resolveRootModeWouterPath("gundemi.org", path)).toBe(path);
+      expect(resolveRootModeWouterPath("www.gundemi.org", path)).toBe(path);
     }
   });
 
@@ -43,6 +45,7 @@ describe("resolveRootModeWouterPath", () => {
     expect(usesPortalHybridNewsDetail("ahenk.net.tr")).toBe(true);
     expect(usesPortalHybridNewsDetail("turkatahaber.com")).toBe(true);
     expect(usesPortalHybridNewsDetail("www.turkatahaber.com")).toBe(true);
+    expect(usesPortalHybridNewsDetail("gundemi.org")).toBe(true);
     expect(usesPortalHybridNewsDetail("ankarasehirgazetesi.com")).toBe(false);
     expect(usesPortalHybridNewsDetail("kirsehirhaber.org")).toBe(false);
   });

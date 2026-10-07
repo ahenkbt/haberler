@@ -18,6 +18,11 @@ describe("resolvePortalRequestOrigin", () => {
     expect(resolvePortalRequestOrigin(req("www.turkatahaber.com"))).toBe("https://turkatahaber.com");
   });
 
+  it("keeps gundemi.org apex alias as request origin (turkatahaber content)", () => {
+    expect(resolvePortalRequestOrigin(req("gundemi.org"))).toBe("https://gundemi.org");
+    expect(resolvePortalRequestOrigin(req("www.gundemi.org"))).toBe("https://gundemi.org");
+  });
+
   it("keeps the agency portal origin on ahenk.net.tr", () => {
     expect(resolvePortalRequestOrigin(req("ahenk.net.tr"))).toBe("https://ahenk.net.tr");
   });

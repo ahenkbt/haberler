@@ -6,7 +6,19 @@ Repo kataloğu: `goalgo/artifacts/api-server/src/lib/hm-gundemi-regional-sites.t
 Logolar: `assets/logos/` (ve SPA `goalgo/artifacts/ahenkpress/public/gundemi/logos/`)  
 Neon seed: `pnpm --filter @workspace/api-server run ensure:gundemi-bolge`
 
-## Siteler
+## Apex = TürkAta (turkatahaber) alias
+
+| Host | İçerik | HM |
+|------|--------|-----|
+| `gundemi.org` / `www.gundemi.org` | **turkatahaber.com** ile aynı site | slug `turkatahaber`, `domain2=gundemi.org` |
+| `ege` … `kibris`.gundemi.org | 8 bölgesel Yenişafak sitesi | ayrı slug’lar (`ege-gundemi` …) |
+
+Apex için **9. boş gundemi sitesi yok**. Worker: `turkata-haber.js` → `TURKATA_ALIAS_APEX_HOSTS` / `isTurkataHaberHost`.  
+`www.gundemi.org` → `https://gundemi.org/…` (turkatahaber.com’a zorla yönlendirmez).
+
+VPS: `gundemi.org` + `www.gundemi.org` ServerAlias → turkatahaber Yenişafak vhost **veya** Neon `meta/by-domain` (`domain2`).
+
+## Bölgesel siteler
 
 | Alt alan | Slug | Tema (manset) | Primary |
 |----------|------|---------------|---------|
@@ -21,41 +33,39 @@ Neon seed: `pnpm --filter @workspace/api-server run ensure:gundemi-bolge`
 
 ## Cloudflare DNS (Dashboard — zone: gundemi.org)
 
-Her satır **Proxied (turuncu bulut)**. Apex zaten eklendiyse sadece alt alanları ekleyin.
+Her satır **Proxied (turuncu bulut)**.
 
-| Type | Name | Content | Proxy |
-|------|------|---------|-------|
-| A | `@` | `187.77.84.201` | Proxied |
-| A | `www` | `187.77.84.201` | Proxied |
-| A | `ege` | `187.77.84.201` | Proxied |
-| A | `marmara` | `187.77.84.201` | Proxied |
-| A | `karadeniz` | `187.77.84.201` | Proxied |
-| A | `icanadolu` | `187.77.84.201` | Proxied |
-| A | `doguanadolu` | `187.77.84.201` | Proxied |
-| A | `guneydogu` | `187.77.84.201` | Proxied |
-| A | `akdeniz` | `187.77.84.201` | Proxied |
-| A | `kibris` | `187.77.84.201` | Proxied |
+| Type | Name | Content | Proxy | Serves |
+|------|------|---------|-------|--------|
+| A | `@` | `187.77.84.201` | Proxied | **turkatahaber** (apex alias) |
+| A | `www` | `187.77.84.201` | Proxied | **turkatahaber** → apex |
+| A | `ege` | `187.77.84.201` | Proxied | Ege Gündemi |
+| A | `marmara` | `187.77.84.201` | Proxied | Marmara Gündemi |
+| A | `karadeniz` | `187.77.84.201` | Proxied | Karadeniz Gündemi |
+| A | `icanadolu` | `187.77.84.201` | Proxied | İç Anadolu Gündemi |
+| A | `doguanadolu` | `187.77.84.201` | Proxied | Doğu Anadolu Gündemi |
+| A | `guneydogu` | `187.77.84.201` | Proxied | Güneydoğu Gündemi |
+| A | `akdeniz` | `187.77.84.201` | Proxied | Akdeniz Gündemi |
+| A | `kibris` | `187.77.84.201` | Proxied | Kıbrıs Gündemi |
 
 **Yapmayın:** `*.gundemi.org/*` catch-all Worker route (ön yüzü SPA’ya çeker).  
-`wrangler.toml` yalnızca `*.gundemi.org/editor*`, `/api/*`, `/admin*`, `/tr/*`, `/hm/*`, yazar paneli vb. ekler.
+`wrangler.toml` yalnızca `*.gundemi.org/editor*`, `/api/*`, `/admin*`, `/tr/*`, `/hm/*`, yazar paneli vb. + apex panel yolları ekler.
 
 Deploy sonrası: Cloudflare → Workers → `haberler` → Routes’ta `*.gundemi.org/editor*` vb. göründüğünü kontrol edin (`main` merge → `cloudflare-production` workflow).
 
 ## Hostinger / VPS (187.77.84.201)
 
-Diğer Yenişafak twin’ler (yesilvatan, sehitgazi, …) ile aynı model:
-
-1. Her alt alan için vhost / ServerAlias ekleyin (`ege.gundemi.org` … `kibris.gundemi.org`).
-2. Document root = mevcut Yenişafak PHP tema kökü (ASG/AHG ile aynı paket).
-3. `config/sites.php` içeriğini PHP tema host haritasına ekleyin **veya** host’u Neon `hm_news_sites.domain` üzerinden `meta/by-domain` ile çözün.
-4. Logo dosyalarını tema `assets` veya public logos klasörüne kopyalayın:
-   - Kaynak: `hostinger/gundemi-bolge/assets/logos/*-gundemi.png`
-   - SPA yolu (layout_json `logoUrl`): `/gundemi/logos/{region}-gundemi.png`
-5. SSL: Cloudflare Full (strict) veya VPS Let’s Encrypt; turuncu bulut açıkken CF kenar sertifikası yeter.
+1. **Apex:** `gundemi.org` / `www.gundemi.org` → turkatahaber Yenişafak document root (ServerAlias) veya Neon domain2 çözümlemesi.
+2. **Bölgesel:** her alt alan için vhost (`ege.gundemi.org` … `kibris.gundemi.org`), aynı Yenişafak paket; `config/sites.php` veya `meta/by-domain`.
+3. Logo dosyaları: `hostinger/gundemi-bolge/assets/logos/*-gundemi.png` → layout `logoUrl` `/gundemi/logos/…`.
+4. SSL: Cloudflare Full (strict); turuncu bulut açıkken CF kenar sertifikası yeter.
 
 ## Neon / seed
 
-Container boot’ta `GUNDEMI_BOLGE_SEED` (varsayılan açık) 8 site + kategoriler + örnek haber + RSS kampanyası yazar.
+Container boot’ta `GUNDEMI_BOLGE_SEED` (varsayılan açık):
+
+1. `turkatahaber.domain2 = gundemi.org` (apex alias)
+2. 8 bölgesel site + kategoriler + örnek haber + RSS kampanyası
 
 Manuel:
 

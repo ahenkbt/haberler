@@ -23,6 +23,8 @@ const PHP_THEME_PUBLIC_APEX = Object.freeze([
   "turksav.org",
   "dunyasaglik.org",
   "yesilvatan.gen.tr",
+  // gundemi.org apex → turkatahaber HM alias (domain2); bölgesel alt alanlar ayrı siteler
+  "gundemi.org",
   // gundemi.org bölgesel Yenişafak siteleri (her alt alan kendi kanonik hostu)
   "ege.gundemi.org",
   "marmara.gundemi.org",
