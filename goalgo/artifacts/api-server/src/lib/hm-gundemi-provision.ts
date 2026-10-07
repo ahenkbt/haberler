@@ -326,7 +326,7 @@ export async function ensureGundemiCatchAllWorkerRoutes(): Promise<GundemiRouteE
 }
 
 /**
- * Site domain’leri için gundemi.org DNS + catch-all route provision.
+ * Site domain’leri için gundemi.org DNS + apex Worker bridge routes.
  * Soft-fail: hata fırlatmaz; rapor döner.
  */
 export async function provisionGundemiOrgForSiteDomains(input: {
