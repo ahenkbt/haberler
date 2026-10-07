@@ -99,6 +99,29 @@ export const GUNDEMI_APEX_HAKKIMIZDA_HTML = [
 ].join("\n");
 
 /** Apex HM site — slug `gundemi`, domain `gundemi.org` (turkatahaber değil). */
+/** HM editör giriş e-postası — apex künye (`bilgi@`); bölgesel siteler `editor@`. */
+export function gundemiHmEditorEmail(def: GundemiRegionalSiteDef): string {
+  if (def.slug === GUNDEMI_APEX_SLUG) {
+    return GUNDEMI_APEX_YS_KUNYE.email;
+  }
+  return `editor@${def.domain}`;
+}
+
+/**
+ * Idempotent seed şifresi — apex fixhaber ile aynı (düz metin = e-posta);
+ * bölgesel siteler siteId’ye bağlı varsayılan parola.
+ */
+export function gundemiHmEditorSeedPassword(
+  email: string,
+  def: GundemiRegionalSiteDef,
+  siteId: number,
+): string {
+  if (def.slug === GUNDEMI_APEX_SLUG) {
+    return email;
+  }
+  return `Gundemi!${def.slug}-${siteId}`;
+}
+
 export const GUNDEMI_APEX_SITE: GundemiRegionalSiteDef = {
   slug: GUNDEMI_APEX_SLUG,
   domain: GUNDEMI_APEX_DOMAIN,

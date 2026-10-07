@@ -422,6 +422,11 @@ export function hasLocalAdminAuthFlag(): boolean {
 /** Soğuk Container'da asılı kalmayı önler (kenar status gelmezse). */
 const ADMIN_PANEL_STATUS_TIMEOUT_MS = 8_000;
 
+/** Panel GET — Cloudflare Container soğuk başlangıçta yanıt gecikebilir; sonsuz spinner önlenir. */
+export const ADMIN_API_FETCH_TIMEOUT_MS = 22_000;
+const ADMIN_API_FETCH_MAX_ATTEMPTS = 3;
+const ADMIN_API_FETCH_RETRYABLE_HTTP = new Set([502, 503, 504, 524]);
+
 async function fetchAdminPanelStatus(timeoutMs = ADMIN_PANEL_STATUS_TIMEOUT_MS): Promise<Response> {
   const ctrl = new AbortController();
   const tid = window.setTimeout(() => ctrl.abort(), timeoutMs);
@@ -511,10 +516,63 @@ async function fetchWithAdminRetry(input: string | URL, init?: RequestInit): Pro
     }
     return headers;
   };
-  let res = await fetch(input, { credentials: "include", ...init, headers: mergeHeaders() });
+  const method = String(init?.method ?? "GET").toUpperCase();
+  const applyTimeout = (method === "GET" || method === "HEAD") && !init?.signal;
+
+  const doFetch = async (): Promise<Response> => {
+    const timeoutController = applyTimeout ? new AbortController() : null;
+    const timeoutId = timeoutController
+      ? window.setTimeout(() => timeoutController.abort(), ADMIN_API_FETCH_TIMEOUT_MS)
+      : undefined;
+    const signal = init?.signal ?? timeoutController?.signal;
+    try {
+      return await fetch(input, {
+        credentials: "include",
+        ...init,
+        signal,
+        headers: mergeHeaders(),
+      });
+    } finally {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    }
+  };
+
+  let lastTimedOut = false;
+  let res: Response | undefined;
+  for (let attempt = 0; attempt < ADMIN_API_FETCH_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      res = await doFetch();
+    } catch (err) {
+      const aborted =
+        err instanceof DOMException && err.name === "AbortError" && applyTimeout;
+      if (aborted) {
+        lastTimedOut = true;
+        if (attempt + 1 < ADMIN_API_FETCH_MAX_ATTEMPTS) {
+          await new Promise((r) => window.setTimeout(r, 600 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(
+          "API yanıt vermedi (zaman aşımı). Sunucu uyanıyor olabilir — birkaç saniye sonra Yenile’ye basın.",
+        );
+      }
+      throw err;
+    }
+    if (ADMIN_API_FETCH_RETRYABLE_HTTP.has(res.status) && attempt + 1 < ADMIN_API_FETCH_MAX_ATTEMPTS) {
+      await new Promise((r) => window.setTimeout(r, 800 * (attempt + 1)));
+      continue;
+    }
+    break;
+  }
+  if (!res) {
+    throw new Error(
+      lastTimedOut
+        ? "API yanıt vermedi (zaman aşımı). Sunucu uyanıyor olabilir — birkaç saniye sonra Yenile’ye basın."
+        : "API isteği başarısız",
+    );
+  }
   if (res.status === 401) {
     await ensureAdminPanelBootstrap();
-    res = await fetch(input, { credentials: "include", ...init, headers: mergeHeaders() });
+    res = await doFetch();
   }
   return res;
 }
