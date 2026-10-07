@@ -52,18 +52,42 @@ export class GoalgoApiContainer extends Container {
           fingerprint,
         });
       });
-      await this.startAndWaitForPorts({
-        ports: [this.defaultPort],
-        startOptions: {
-          envVars,
-          enableInternet: true,
-        },
-        cancellationOptions: {
-          instanceGetTimeoutMS: 120_000,
-          portReadyTimeoutMS: 180_000,
-          waitInterval: 500,
-        },
-      });
+
+      let lastErr = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          if (typeof this.start === "function" && !this.container?.running) {
+            await this.start({
+              envVars,
+              enableInternet: true,
+            });
+          }
+          await this.startAndWaitForPorts({
+            ports: [this.defaultPort],
+            startOptions: {
+              envVars,
+              enableInternet: true,
+            },
+            cancellationOptions: {
+              instanceGetTimeoutMS: 120_000,
+              portReadyTimeoutMS: 180_000,
+              waitInterval: 500,
+            },
+          });
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          const msg = err instanceof Error ? err.message : String(err);
+          // Slot / not-running yarışı: kısa bekle, yeniden dene
+          if (!/not running|try again|no container instance|provisioning/i.test(msg) || attempt === 2) {
+            throw err;
+          }
+          await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        }
+      }
+      if (lastErr) throw lastErr;
+
       await rememberContainerEnvFingerprint(this.ctx.storage, fingerprint);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

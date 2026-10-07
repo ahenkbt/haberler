@@ -107,6 +107,53 @@ export async function resolvePhpSiteId(newsSql, workerSql, siteId, hostname) {
   return sid;
 }
 
+function layoutCategorySlugs(obj) {
+  const menuHrefs = []
+    .concat(obj?.hmCorporateMenuItems || [])
+    .concat(obj?.hmNewsFooterMenuItems || [])
+    .map((x) => x?.href || x?.slug)
+    .filter(Boolean);
+  return []
+    .concat(obj?.hmCategorySortSlugs || [])
+    .concat(obj?.hmNavOnlyCategorySlugs || [])
+    .concat(obj?.hmNewsCategoryBarItems || [])
+    .concat(obj?.hmNewsNavItems || [])
+    .concat(obj?.hmNewsExtraCategories || [])
+    .concat(obj?.hmClassicAraMansetCategorySlugs || [])
+    .concat(obj?.hmNewsFeaturedCategoryStripSlugs || [])
+    .concat(obj?.hmYekpareKategorilerKutusuSlugs || [])
+    .concat(menuHrefs)
+    .flatMap((x) => {
+      if (typeof x === "string") return [x];
+      if (Array.isArray(x)) return [x[0]];
+      return [x?.slug, x?.href];
+    })
+    .map((s) => String(s || "").replace(/^\/kategori\//, "").trim().toLowerCase())
+    .filter((s) => s && !s.includes("/") && s !== "anasayfa");
+}
+
+/** Deduplicate category rows by slug; prefer this site's exclusive row. */
+function preferSiteCategoryRows(rows, phpSiteId) {
+  const best = new Map();
+  for (const r of rows || []) {
+    const slug = String(r.slug || "")
+      .trim()
+      .toLowerCase();
+    if (!slug) continue;
+    const prev = best.get(slug);
+    if (!prev) {
+      best.set(slug, r);
+      continue;
+    }
+    const prevExclusive = prev.exclusive_site_id ?? prev.exclusiveSiteId ?? null;
+    const nextExclusive = r.exclusive_site_id ?? r.exclusiveSiteId ?? null;
+    const prevScore = Number(prevExclusive) === Number(phpSiteId) ? 0 : prevExclusive == null ? 1 : 2;
+    const nextScore = Number(nextExclusive) === Number(phpSiteId) ? 0 : nextExclusive == null ? 1 : 2;
+    if (nextScore < prevScore) best.set(slug, r);
+  }
+  return [...best.values()];
+}
+
 export async function loadPhpSiteCategories(newsSql, siteId, workerSql) {
   const phpSiteId = (await resolvePhpSiteId(newsSql, workerSql, siteId)) || asPositiveInt(siteId);
   if (!newsSql || !phpSiteId) return [];
@@ -116,45 +163,44 @@ export async function loadPhpSiteCategories(newsSql, siteId, workerSql) {
     WHERE exclusive_site_id = ${phpSiteId}
     ORDER BY sort_order ASC, id ASC
   `;
-  if (exclusive?.length) return exclusive;
+  let layoutRows = [];
   try {
     const layout = await newsSql`
       SELECT layout_json FROM hm_news_sites WHERE id = ${phpSiteId} LIMIT 1
     `;
     const raw = layout?.[0]?.layout_json;
     const obj = typeof raw === "string" ? JSON.parse(raw) : raw || {};
-    const slugs = []
-      .concat(obj.hmNavOnlyCategorySlugs || [])
-      .concat(obj.hmNewsCategoryBarItems || [])
-      .concat(obj.hmNewsNavItems || [])
-      .concat(obj.hmNewsExtraCategories || [])
-      .flatMap((x) => {
-        if (typeof x === "string") return [x];
-        if (Array.isArray(x)) return [x[0]];
-        return [x?.slug, x?.href];
-      })
-      .map((s) => String(s || "").replace(/^\/kategori\//, "").trim().toLowerCase())
-      .filter((s) => s && !s.includes("/"));
-    const unique = [...new Set(slugs)];
+    const unique = [...new Set(layoutCategorySlugs(obj))];
     if (unique.length) {
       const rows = await newsSql`
         SELECT id, name, slug, color, exclusive_site_id, sort_order
         FROM categories
         WHERE lower(slug) = ANY(${unique})
-        ORDER BY sort_order ASC, id ASC
+          AND (exclusive_site_id IS NULL OR exclusive_site_id = ${phpSiteId})
+        ORDER BY CASE WHEN exclusive_site_id = ${phpSiteId} THEN 0 ELSE 1 END, sort_order ASC, id ASC
       `;
-      if (rows?.length) return rows;
+      layoutRows = preferSiteCategoryRows(rows, phpSiteId);
     }
   } catch (err) {
     console.error("[php-cat-layout]", String(err?.message || err).slice(0, 140));
   }
+  // Exclusive site cats first; merge layout slugs (ASG: ankara from menu/sort) so editor matches PHP nav.
+  if (exclusive?.length) {
+    const bySlug = new Map(preferSiteCategoryRows(exclusive, phpSiteId).map((r) => [String(r.slug).toLowerCase(), r]));
+    for (const r of layoutRows) {
+      const s = String(r.slug || "").toLowerCase();
+      if (s && !bySlug.has(s)) bySlug.set(s, r);
+    }
+    return [...bySlug.values()];
+  }
+  if (layoutRows.length) return layoutRows;
   const shared = await newsSql`
     SELECT id, name, slug, color, exclusive_site_id, sort_order
     FROM categories
     WHERE exclusive_site_id IS NULL OR exclusive_site_id = ${phpSiteId}
     ORDER BY CASE WHEN exclusive_site_id = ${phpSiteId} THEN 0 ELSE 1 END, sort_order ASC, id ASC
   `;
-  return shared || [];
+  return preferSiteCategoryRows(shared, phpSiteId);
 }
 
 export async function syncPhpCategoriesToWorker(workerSql, newsSql, siteId) {

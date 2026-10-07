@@ -472,6 +472,9 @@ export default function HaberSiteleri() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href="/admin/haber-siteleri-bekci" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100">
+              Haber AI Bekçi + PHP Neon eşitle
+            </Link>
             <Link href="/admin/icerik-havuzu" className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
               İçerik Havuzu
             </Link>

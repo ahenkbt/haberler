@@ -189,12 +189,32 @@ export function isHmEditorPanelPath(pathname) {
   return p === "/editor" || p.startsWith("/editor/");
 }
 
+/** Yekpare / Ahenk yönetici paneli — vitrin boot overlay uygulanmaz. */
+export function isAdminPanelPath(pathname) {
+  const p = String(pathname || "")
+    .split("?")[0]
+    .replace(/\/+$/, "")
+    .toLowerCase() || "/";
+  return (
+    p === "/admin" ||
+    p.startsWith("/admin/") ||
+    p === "/panel" ||
+    p.startsWith("/panel/") ||
+    p === "/giris" ||
+    p === "/login"
+  );
+}
+
 /**
  * Anasayfa OG + `hm-news-boot` kabuğu (beyaz overlay, #root clip) panel HTML'ine
  * uygulanmaz; aksi halde /editor giriş formu spa-ready olana kadar beyaz kalır.
  */
 export function shouldRewriteSpaShellOgForPath(pathname) {
-  return !isHmEditorPanelPath(pathname) && !isHmAuthorPanelPath(pathname);
+  return (
+    !isHmEditorPanelPath(pathname) &&
+    !isHmAuthorPanelPath(pathname) &&
+    !isAdminPanelPath(pathname)
+  );
 }
 
 /** Editör SPA — slug boot, vitrin boyası yok. index.html `hm-news-boot` eklese de overlay kalkar. */

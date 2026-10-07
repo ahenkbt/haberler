@@ -73,32 +73,112 @@ async function applyTepeManset(sql, newsId, flag) {
   }
 }
 
+/**
+ * Map editor/Worker category → PHP twilight-pine category id.
+ * Prefer site-scoped rows (exclusive_site_id = php site) over globals so
+ * "ankara" never collapses onto another site's politika twin with the same id.
+ */
 async function resolvePhpCategoryId(sql, row) {
+  const siteId = asPositiveInt(pick(row, "site_id", "siteId"));
   const slug = String(pick(row, "category_slug", "categorySlug") || "")
     .trim()
     .toLowerCase();
-  if (slug) {
-    const hit = await sql`
+
+  async function bySlug(want) {
+    if (!want) return null;
+    if (siteId) {
+      const scoped = await sql`
+        SELECT id FROM categories
+        WHERE lower(slug) = ${want}
+          AND (exclusive_site_id IS NULL OR exclusive_site_id = ${siteId})
+        ORDER BY CASE WHEN exclusive_site_id = ${siteId} THEN 0 ELSE 1 END, id ASC
+        LIMIT 1
+      `;
+      if (scoped?.[0]?.id) return Number(scoped[0].id);
+    }
+    const any = await sql`
       SELECT id FROM categories
-      WHERE lower(slug) = ${slug}
+      WHERE lower(slug) = ${want}
+        AND exclusive_site_id IS NULL
       ORDER BY id ASC
       LIMIT 1
     `;
-    if (hit?.[0]?.id) return Number(hit[0].id);
+    return any?.[0]?.id ? Number(any[0].id) : null;
   }
+
+  const fromSlug = await bySlug(slug);
+  if (fromSlug) return fromSlug;
+
   const given = asPositiveInt(pick(row, "category_id", "categoryId"));
   if (given) {
-    const ok = await sql`SELECT id FROM categories WHERE id = ${given} LIMIT 1`;
-    if (ok?.[0]?.id) return given;
+    // IDs are not unique across exclusive twins — resolve via that row's slug when possible.
+    const meta = siteId
+      ? await sql`
+          SELECT id, slug FROM categories
+          WHERE id = ${given}
+            AND (exclusive_site_id IS NULL OR exclusive_site_id = ${siteId})
+          ORDER BY CASE WHEN exclusive_site_id = ${siteId} THEN 0 ELSE 1 END, id ASC
+          LIMIT 1
+        `
+      : await sql`
+          SELECT id, slug FROM categories
+          WHERE id = ${given} AND exclusive_site_id IS NULL
+          ORDER BY id ASC
+          LIMIT 1
+        `;
+    if (meta?.[0]?.slug) {
+      const via = await bySlug(String(meta[0].slug).toLowerCase());
+      if (via) return via;
+    }
+    if (meta?.[0]?.id) return Number(meta[0].id);
   }
-  const gundem = await sql`
-    SELECT id FROM categories WHERE lower(slug) = 'gundem' ORDER BY id ASC LIMIT 1
-  `;
-  return gundem?.[0]?.id ? Number(gundem[0].id) : given;
+
+  const gundem = await bySlug("gundem");
+  return gundem ?? given;
+}
+
+/** Worker hm_news_sites.id → PHP twilight-pine id (ASG=3 stays 3). */
+const WORKER_TO_PHP_SITE_ID = Object.freeze({
+  1: 1,
+  2: 2,
+  3: 3, // ankarasehirgazetesi.com
+  8: 8,
+  1087: 231,
+  1088: 232,
+  1089: 233,
+  1090: 236,
+  1091: 237,
+  1132: 230,
+});
+
+async function resolvePhpSiteIdFromRow(sql, row) {
+  const workerSiteId = asPositiveInt(pick(row, "site_id", "siteId"));
+  let siteId = workerSiteId;
+  const siteSlug = String(pick(row, "site_slug", "siteSlug") || "")
+    .trim()
+    .toLowerCase();
+  let remappedBySlug = false;
+  if (sql && siteSlug) {
+    try {
+      const hit = await sql`SELECT id FROM hm_news_sites WHERE lower(slug) = ${siteSlug} LIMIT 1`;
+      if (hit?.[0]?.id) {
+        siteId = Number(hit[0].id);
+        remappedBySlug = true;
+      }
+    } catch {
+      /* keep worker site id */
+    }
+  }
+  // ASG Worker id 3 → PHP id 3; diverging sites (turkata 1132→230) need the static map
+  // when site_slug was not attached to the mirror payload.
+  if (!remappedBySlug && workerSiteId && WORKER_TO_PHP_SITE_ID[workerSiteId]) {
+    siteId = WORKER_TO_PHP_SITE_ID[workerSiteId];
+  }
+  return siteId;
 }
 
 export async function edgeUpsertHmMakale(sql, row) {
-  const siteId = asPositiveInt(pick(row, "site_id", "siteId"));
+  const siteId = await resolvePhpSiteIdFromRow(sql, row);
   const title = String(pick(row, "title") || "").trim();
   const slug = String(pick(row, "slug") || "").trim();
   if (!sql || !siteId || !title || !slug) return { mirrored: false, reason: "makale-row" };
@@ -135,7 +215,7 @@ export async function edgeUpsertHmMakale(sql, row) {
   }
 
   if (id) {
-    const byId = await sql`SELECT id, site_id FROM hm_makaleler WHERE id = ${id} LIMIT 1`;
+    const byId = await sql`SELECT id, site_id, slug FROM hm_makaleler WHERE id = ${id} LIMIT 1`;
     if (!byId?.[0]) {
       await sql`
         INSERT INTO hm_makaleler (
@@ -147,9 +227,15 @@ export async function edgeUpsertHmMakale(sql, row) {
       `;
       return { mirrored: true, id, via: "same-id" };
     }
-    if (Number(byId[0].site_id) === siteId) {
+    const sameSite = Number(byId[0].site_id) === siteId;
+    const sameSlug =
+      String(byId[0].slug || "")
+        .trim()
+        .toLowerCase() === slug.toLowerCase();
+    if (sameSite || sameSlug) {
       await sql`
         UPDATE hm_makaleler SET
+          site_id = ${siteId},
           author_id = ${authorId},
           title = ${title},
           slug = ${slug},
@@ -161,7 +247,7 @@ export async function edgeUpsertHmMakale(sql, row) {
           updated_at = ${updatedAt}
         WHERE id = ${id}
       `;
-      return { mirrored: true, id, via: "id-update" };
+      return { mirrored: true, id, via: sameSite ? "id-update" : "id-update-remap-site" };
     }
   }
 
@@ -184,47 +270,16 @@ export async function edgeDeleteHmMakale(sql, id) {
   return { mirrored: true, id: n, via: "delete" };
 }
 
-/** Worker hm_news_sites.id → PHP twilight-pine id (ASG=3 stays 3). */
-const WORKER_TO_PHP_SITE_ID = Object.freeze({
-  1: 1,
-  2: 2,
-  3: 3, // ankarasehirgazetesi.com
-  8: 8,
-  1087: 231,
-  1088: 232,
-  1089: 233,
-  1090: 236,
-  1091: 237,
-  1132: 230,
-});
-
 export async function edgeUpsertNews(sql, row) {
-  let siteId = asPositiveInt(pick(row, "site_id", "siteId"));
-  const workerSiteId = siteId;
+  const workerSiteId = asPositiveInt(pick(row, "site_id", "siteId"));
   const siteSlug = String(pick(row, "site_slug", "siteSlug") || "")
     .trim()
     .toLowerCase();
-  let remappedBySlug = false;
-  if (sql && siteSlug) {
-    try {
-      const hit = await sql`SELECT id FROM hm_news_sites WHERE lower(slug) = ${siteSlug} LIMIT 1`;
-      if (hit?.[0]?.id) {
-        siteId = Number(hit[0].id);
-        remappedBySlug = true;
-      }
-    } catch {
-      /* keep worker site id */
-    }
-  }
-  // ASG Worker id 3 → PHP id 3; diverging sites (turkata 1132→230) need the static map
-  // when site_slug was not attached to the mirror payload.
-  if (!remappedBySlug && workerSiteId && WORKER_TO_PHP_SITE_ID[workerSiteId]) {
-    siteId = WORKER_TO_PHP_SITE_ID[workerSiteId];
-  }
+  const siteId = await resolvePhpSiteIdFromRow(sql, row);
   const title = String(pick(row, "title") || "").trim();
   const slug = String(pick(row, "slug") || "").trim();
   if (!sql || !siteId || !title || !slug) return { mirrored: false, reason: "news-row" };
-  const categoryId = await resolvePhpCategoryId(sql, row);
+  const categoryId = await resolvePhpCategoryId(sql, { ...row, site_id: siteId, siteId });
   const authorId = asPositiveInt(pick(row, "author_id", "authorId"));
   const spot = asText(pick(row, "spot"));
   const content = asText(pick(row, "content"));
@@ -279,7 +334,7 @@ export async function edgeUpsertNews(sql, row) {
   }
 
   if (id) {
-    const byId = await sql`SELECT id, site_id FROM news WHERE id = ${id} LIMIT 1`;
+    const byId = await sql`SELECT id, site_id, slug FROM news WHERE id = ${id} LIMIT 1`;
     if (!byId?.[0]) {
       await sql`
         INSERT INTO news (
@@ -295,7 +350,13 @@ export async function edgeUpsertNews(sql, row) {
       await applyTepeManset(sql, id, isTepeManset);
       return { mirrored: true, id, via: "same-id", site_id: siteId };
     }
-    if (Number(byId[0].site_id) === siteId || byId[0].site_id == null) {
+    const sameSite = Number(byId[0].site_id) === siteId;
+    const sameSlug =
+      String(byId[0].slug || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^\/+|\/+$/g, "") === slug.toLowerCase().replace(/^\/+|\/+$/g, "");
+    if (sameSite || sameSlug || byId[0].site_id == null) {
       await sql`
         UPDATE news SET
           title = ${title},
@@ -319,7 +380,12 @@ export async function edgeUpsertNews(sql, row) {
         WHERE id = ${id}
       `;
       await applyTepeManset(sql, id, isTepeManset);
-      return { mirrored: true, id, via: "id-update", site_id: siteId };
+      return {
+        mirrored: true,
+        id,
+        via: sameSite ? "id-update" : "id-update-remap-site",
+        site_id: siteId,
+      };
     }
   }
 
@@ -349,7 +415,18 @@ export async function edgeDeleteNews(sql, id) {
 export async function edgeUpsertAuthor(sql, row) {
   const id = asPositiveInt(pick(row, "id"));
   const name = String(pick(row, "name") || "").trim();
-  const hmSiteId = asPositiveInt(pick(row, "hm_site_id", "hmSiteId"));
+  let hmSiteId = asPositiveInt(pick(row, "hm_site_id", "hmSiteId"));
+  const siteSlug = String(pick(row, "site_slug", "siteSlug") || "")
+    .trim()
+    .toLowerCase();
+  if (sql && siteSlug) {
+    try {
+      const hit = await sql`SELECT id FROM hm_news_sites WHERE lower(slug) = ${siteSlug} LIMIT 1`;
+      if (hit?.[0]?.id) hmSiteId = Number(hit[0].id);
+    } catch {
+      /* keep */
+    }
+  }
   if (!sql || !id || !name) return { mirrored: false, reason: "author-row" };
   const title = asText(pick(row, "title"));
   const avatarUrl = asText(pick(row, "avatar_url", "avatarUrl"));

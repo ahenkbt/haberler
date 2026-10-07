@@ -11,6 +11,7 @@ import {
   syncPhpAuthorsToWorker,
   syncPhpCategoriesToWorker,
 } from "./hm-php-editor-sync.js";
+import { runEditorPhpNeonSync } from "./hm-php-neon-sync-edge.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
@@ -290,9 +291,16 @@ function apiOrigin(env, incoming) {
 const MIRROR_BUDGET_MS = 2500;
 /** Aynı isolate içinde env nesnesi tek olduğundan istek girişinde set edilir; handler imzaları değişmez. */
 let mirrorEnv = null;
+/** NEWS_DATABASE_URL RO ise isolate boyunca kenar/Container aynasını atla (panel yazımı bozulmasın). */
+let newsMirrorReadonlySkip = false;
 
 export function setNewsMirrorEnv(env) {
   mirrorEnv = env || null;
+  newsMirrorReadonlySkip = false;
+}
+
+export function __resetNewsMirrorReadonlySkipForTests() {
+  newsMirrorReadonlySkip = false;
 }
 
 /**
@@ -310,16 +318,18 @@ export function setNewsMirrorEnv(env) {
  */
 export async function mirrorNewsDbWrite(table, op, rowOrId) {
   const env = mirrorEnv;
-  if (!env) return false;
+  if (!env || newsMirrorReadonlySkip) return false;
 
   try {
     if (shouldEdgeDualWriteNewsDb(env)) {
       const newsSql = neonNewsSqlClient(env);
       if (newsSql) {
         let payload = rowOrId;
-        if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
+        if (op !== "delete" && payload && typeof payload === "object") {
           const workerSql = sqlClient(env);
-          const sid = asPositiveInt(payload.site_id ?? payload.siteId);
+          const sid = asPositiveInt(
+            payload.site_id ?? payload.siteId ?? payload.hm_site_id ?? payload.hmSiteId,
+          );
           if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
             try {
               const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
@@ -329,20 +339,20 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
             }
           }
           // Tepe manşet: Editör isFeatured → PHP is_tepe_manset (+ is_featured)
-          if (payload.is_tepe_manset == null && payload.isTepeManset == null) {
+          if (table === "news" && payload.is_tepe_manset == null && payload.isTepeManset == null) {
             const feat = payload.is_featured === true || payload.isFeatured === true;
             payload = { ...payload, is_tepe_manset: feat, isTepeManset: feat };
           }
         }
         const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
         if (direct?.mirrored === true) return true;
+        const reason = String(direct?.reason || "unknown");
         // Dual RO/ayna hatası primary'yi bozmaz; bridge fallback dene.
-        console.warn(
-          "[hm-news-mirror] kenar dual-write atlandı (primary OK)",
-          table,
-          op,
-          String(direct?.reason || "unknown").slice(0, 160),
-        );
+        console.warn("[hm-news-mirror] kenar dual-write atlandı (primary OK)", table, op, reason.slice(0, 160));
+        if (direct?.readonly === true || reason === "news-db-read-only" || isReadonlyDbError(reason)) {
+          newsMirrorReadonlySkip = true;
+          console.warn("[hm-news-mirror] NEWS_DATABASE_URL salt-okunur — ayna bu isolate'da kapatıldı");
+        }
       }
     }
 
@@ -367,12 +377,15 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     }
     const data = await res.json().catch(() => ({}));
     if (data?.mirrored !== true) {
-      console.warn("[hm-news-mirror] atlandı", table, op, String(data?.reason || "unknown"));
+      const reason = String(data?.reason || "unknown");
+      console.warn("[hm-news-mirror] atlandı", table, op, reason);
+      if (isReadonlyDbError(reason)) newsMirrorReadonlySkip = true;
     }
     return data?.mirrored === true;
   } catch (err) {
     const msg = String(err?.message || err).slice(0, 120);
-    if (/read-only transaction|news-db-read-only/i.test(msg)) {
+    if (isReadonlyDbError(err) || /news-db-read-only/i.test(msg)) {
+      newsMirrorReadonlySkip = true;
       console.warn("[hm-news-mirror] PHP dual-write read-only — panel yanıtı etkilenmez", table, op, msg);
       return false;
     }
@@ -2772,6 +2785,10 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   if (path === "/api/hm/editor/categories" && method === "GET") {
     return handleCategories(sql, ctx.siteId, env);
+  }
+
+  if (path === "/api/hm/editor/php-neon-sync" && method === "POST") {
+    return runEditorPhpNeonSync(env, ctx.siteId, await readJsonBody(request));
   }
 
   if (path === "/api/hm/editor/authors/bulk-delete" && method === "POST") {

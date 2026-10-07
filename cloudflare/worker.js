@@ -25,6 +25,9 @@ import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
+import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
+import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
+import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
   hybridEdgeFillHttpStatus,
@@ -74,6 +77,7 @@ import {
   hmHomeSlugFromPath,
   isHmAuthorPanelPath,
   isHmEditorPanelPath,
+  isAdminPanelPath,
   shouldRewriteSpaShellOgForPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
@@ -908,6 +912,16 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       html = injectHmEditorPanelBoot(html, editorSlug, editorHost);
       out.set("x-yekpare-hm-editor-boot", editorSlug);
     }
+  }
+  // Portal /admin|/panel — vitrin overlay'i spa-ready ile kaldır (beyaz ekran)
+  if (incoming && isAdminPanelPath(incoming.pathname) && !isHmEditorPanelPath(incoming.pathname)) {
+    if (!html.includes("hm-editor-spa-ready") && !html.includes("hm-admin-spa-ready")) {
+      const ready =
+        '<script data-yekpare="hm-admin-spa-ready">(function(){try{document.documentElement.classList.add("hm-spa-ready");window.__YEKPARE_SPA_READY__=true;}catch(e){}})();</script>';
+      if (html.includes("</head>")) html = html.replace("</head>", `${ready}\n</head>`);
+      else html = ready + html;
+    }
+    out.set("x-yekpare-hm-admin-boot", "1");
   }
   if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
     const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
@@ -2877,6 +2891,36 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
+    // Container kapalıyken panel «ulaşılamıyor» olmasın — kenar live + arka planda ısıt.
+    try {
+      const live = await handleEdgeHealthzLive(request, env, ctx);
+      if (live) return live;
+    } catch (err) {
+      console.error("[edge-healthz]", String(err?.message || err).slice(0, 120));
+    }
+
+    // ahenk.net.tr/panel → /admin (eski kısayol; SPA'da /panel rotası yok → beyaz ekran)
+    {
+      const earlyBare = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
+      if (
+        isPortalHost(incoming.hostname) &&
+        (request.method === "GET" || request.method === "HEAD") &&
+        (earlyBare === "/panel" || earlyBare.startsWith("/panel/"))
+      ) {
+        const dest = new URL(incoming.href);
+        dest.pathname = earlyBare === "/panel" ? "/admin" : `/admin${earlyBare.slice("/panel".length)}`;
+        return new Response(null, {
+          status: 302,
+          headers: {
+            location: dest.toString(),
+            "cache-control": "no-store",
+            "x-yekpare-frontend": "cloudflare-worker",
+            "x-yekpare-panel-to-admin": "1",
+          },
+        });
+      }
+    }
+
     // Köşe yazarı girişi + editör listeleri: Container / askı zincirinden önce.
     const earlyPath = String(incoming.pathname || "").replace(/\/+$/, "") || "/";
     const earlyMethod = String(request.method || "").toUpperCase();
@@ -3181,6 +3225,10 @@ export default {
         const adminSite = await handleHmAdminSiteEdge(request.clone(), env, { ...incoming, pathname: edgePath });
         if (adminSite) return adminSite;
       }
+      const adminSync = await handleAdminPhpNeonSyncEdge(request.clone(), env, { ...incoming, pathname: edgePath });
+      if (adminSync) return adminSync;
+      const watchdog = await handleHmSiteWatchdogEdge(request.clone(), env, { ...incoming, pathname: edgePath });
+      if (watchdog) return watchdog;
     } catch (err) {
       console.error("[hm-admin-site-edge]", String(err?.message || err).slice(0, 200));
     }
@@ -3194,6 +3242,7 @@ export default {
         (edgePath === "/api/hm/editor/authors" ||
           edgePath === "/api/hm/editor/authors/bulk-delete" ||
           edgePath === "/api/hm/editor/authors/order" ||
+          edgePath === "/api/hm/editor/php-neon-sync" ||
           edgePath === "/api/hm/editor/news" ||
           edgePath === "/api/hm/editor/makale" ||
           edgePath === "/api/hm/editor/makale/bulk-delete" ||
@@ -3562,6 +3611,11 @@ export default {
           });
         } catch (err) {
           console.error("[hm-keepalive/warm]", String(err?.message || err).slice(0, 160));
+        }
+        try {
+          await runHmSiteWatchdog(env, { limit: 10 });
+        } catch (err) {
+          console.error("[hm-site-watchdog]", String(err?.message || err).slice(0, 160));
         }
       })(),
     );

@@ -1924,6 +1924,8 @@ export default function App() {
       <Route path="/pbx">{() => <AgentLogin />}</Route>
 
       {/* Admin login */}
+      <Route path="/panel">{() => <Redirect to="/admin" />}</Route>
+      <Route path="/panel/giris">{() => <Redirect to="/admin/giris" />}</Route>
       <Route path="/admin/login">{() => <Redirect to="/admin/giris" />}</Route>
       <Route path="/admin/giris" component={Login} />
 

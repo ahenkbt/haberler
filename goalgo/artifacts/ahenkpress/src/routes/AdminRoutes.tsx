@@ -69,6 +69,7 @@ import KasiyerAdmin from "../pages/admin/KasiyerAdmin";
 import DestekTalepleri from "../pages/admin/DestekTalepleri";
 import IcerikHavuzu from "../pages/admin/IcerikHavuzu";
 import HaberSiteleri from "../pages/admin/HaberSiteleri";
+import HaberSiteleriBekci from "../pages/admin/HaberSiteleriBekci";
 import AdminHmStaticPages from "../pages/admin/AdminHmStaticPages";
 import HmKoseIceAktar from "../pages/admin/HmKoseIceAktar";
 import HmHaberIceAktar from "../pages/admin/HmHaberIceAktar";
@@ -89,6 +90,9 @@ export default function AdminRoutes() {
       </Route>
       <Route path="/admin/haber-siteleri">
         {() => <ProtectedAdminRoute component={HaberSiteleri} />}
+      </Route>
+      <Route path="/admin/haber-siteleri-bekci">
+        {() => <ProtectedAdminRoute component={HaberSiteleriBekci} />}
       </Route>
       <Route path="/admin/hm-telif-sayfalari">
         {() => <ProtectedAdminRoute component={AdminHmStaticPages} />}
