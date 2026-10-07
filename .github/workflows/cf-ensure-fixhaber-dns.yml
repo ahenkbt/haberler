@@ -26,9 +26,6 @@ jobs:
           CLOUDFLAREDNS_API_TOKEN: ${{ secrets.CLOUDFLAREDNS_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLAREDNS_API_TOKEN" ]; then
-            echo "CLOUDFLARE_API_TOKEN=$CLOUDFLAREDNS_API_TOKEN" >> "$GITHUB_ENV"
-          fi
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] && [ -z "${CLOUDFLAREDNS_API_TOKEN:-}" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLAREDNS_API_TOKEN missing — cannot create fix.tc DNS. Add records in Dashboard (DEPLOY.md) or grant Zone DNS Edit and re-run."
@@ -59,6 +56,6 @@ jobs:
       - name: Auth / DNS note
         if: steps.cf.outputs.enabled == 'true' && steps.ensure.outcome == 'failure'
         run: |
-          echo "::warning::DNS ensure failed (likely missing Zone DNS Edit). Job stays green so PRs are not blocked."
-          echo "Add Proxied A @ + www → 187.77.84.201 in Dashboard, or grant Zone DNS Edit and re-run this workflow."
+          echo "::error::DNS ensure failed — check logs for code 10000 (token needs Zone → DNS → Edit on fix.tc, not Workers-only)."
+          echo "Add Proxied A @ + www → 187.77.84.201 in Dashboard, or fix CLOUDFLAREDNS_API_TOKEN / CLOUDFLARE_API_TOKEN and re-run."
           echo "See hostinger/fixhaber/DEPLOY.md"
