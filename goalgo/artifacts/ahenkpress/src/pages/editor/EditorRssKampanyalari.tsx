@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useHmEditor } from "@/contexts/HmEditorContext";
-import { hmEditorJson, hmEditorRequest, hmEditorRunRssCampaign } from "@/lib/hmEditorApi";
+import { hmEditorJson, hmEditorRunRssCampaign } from "@/lib/hmEditorApi";
 import { HM_EDITOR_RSS_CAMPAIGNS_QUERY_KEY } from "@/lib/hmEditorQueryKeys";
 
 type RssCampaignRow = {
