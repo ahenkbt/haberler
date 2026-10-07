@@ -1716,11 +1716,11 @@ zone_name = "tukav.org"
 pattern = "www.tukav.org/api/stk*"
 zone_name = "tukav.org"
 
-# gundemi.org — apex/www = turkatahaber HM alias (domain2); *.gundemi.org = bölgesel PHP.
+# gundemi.org — apex = kendi HM sitesi (slug `gundemi`); *.gundemi.org = bölgesel PHP.
 # DNS A→187.77.84.201 (proxied); panel create/PATCH auto-provisions via CLOUDFLARE_API_TOKEN.
-# Bölgesel kamu sayfaları: SPA catch-all YOK (ankarasehirgazetesi.com modeli) → origin Yenişafak PHP.
-# VPS Traefik HostRegexp: hostinger/gundemi-bolge/traefik-gundemi.yml (zorunlu).
-# Apex geçici catch-all: gundemi-origin-bridge.js → turkatahaber PHP (Traefik Host gundemi.org sonrası sil).
+# Apex + bölgesel kamu: SPA catch-all YOK → orange cloud → Traefik Yenişafak PHP.
+# VPS Traefik Host(`gundemi.org`) + HostRegexp: hostinger/gundemi-bolge/traefik-gundemi.yml.
+# Neon by-domain → slug `gundemi` (turkatahaber domain2 alias kaldırıldı).
 # *.gundemi.org/assets/*: KEEP — /editor loads index-*, vendor-*, and many lazy chunks.
 # Do NOT delete this route (theme.css shares /assets/*; bridge proxies theme to PHP origin).
 # Logos: /gundemi/logos/* → ASSETS (+ VPS :8095 backup).
@@ -1801,7 +1801,7 @@ zone_name = "gundemi.org"
 pattern = "*.gundemi.org/hm/*"
 zone_name = "gundemi.org"
 
-# Apex gundemi.org — turkatahaber alias panel/API.
+# Apex gundemi.org — panel/API/assets (kamu / → Traefik PHP; catch-all YOK).
 [[routes]]
 pattern = "gundemi.org/editor*"
 zone_name = "gundemi.org"
@@ -1827,6 +1827,10 @@ pattern = "gundemi.org/assets/*"
 zone_name = "gundemi.org"
 
 [[routes]]
+pattern = "gundemi.org/gundemi/logos/*"
+zone_name = "gundemi.org"
+
+[[routes]]
 pattern = "gundemi.org/tr/*"
 zone_name = "gundemi.org"
 
@@ -1843,6 +1847,14 @@ pattern = "www.gundemi.org/api/*"
 zone_name = "gundemi.org"
 
 [[routes]]
+pattern = "www.gundemi.org/assets/*"
+zone_name = "gundemi.org"
+
+[[routes]]
+pattern = "www.gundemi.org/gundemi/logos/*"
+zone_name = "gundemi.org"
+
+[[routes]]
 pattern = "www.gundemi.org/tr/*"
 zone_name = "gundemi.org"
 
@@ -1850,15 +1862,6 @@ zone_name = "gundemi.org"
 pattern = "www.gundemi.org/hm/*"
 zone_name = "gundemi.org"
 
-# Temporary apex-only Traefik-gap catch-all — gundemi-origin-bridge.js → turkatahaber PHP.
-# DO NOT add *.gundemi.org/* (that forced SPA). Regionals = orange cloud → origin PHP.
-# Remove gundemi.org/* + www when VPS Host(`gundemi.org`) is live.
-[[routes]]
-pattern = "gundemi.org/*"
-zone_name = "gundemi.org"
-
-[[routes]]
-pattern = "www.gundemi.org/*"
-zone_name = "gundemi.org"
+# DO NOT add gundemi.org/* or *.gundemi.org/* — orange cloud → Traefik PHP.
 
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi

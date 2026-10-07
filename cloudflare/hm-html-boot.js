@@ -71,6 +71,8 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.dunyasaglik.org": "dunyasaglik",
   "turksav.org": "turksav",
   "www.turksav.org": "turksav",
+  "fix.tc": "fixhaber",
+  "www.fix.tc": "fixhaber",
 };
 
 export function normalizeHmBootHost(hostname) {
@@ -783,7 +785,7 @@ export const SEO_BOOT_SHELL_MARKUP =
 
 /** Marka kabuğunu kaldırır. İlk boyayı ekrana klonlamaz. */
 export function buildSeoBootReleaseScript() {
-  return `<script>(function(){var root=document.getElementById("root");if(root&&document.documentElement.classList.contains("hm-news-boot"))root.setAttribute("aria-hidden","true");var mark=document.getElementById("seo-boot-mark");var logo=document.getElementById("seo-boot-logo");var host=(location.hostname||"").toLowerCase().replace(/^www\\./,"").split(":")[0];var brand=document.documentElement.getAttribute("data-boot-brand")||"";if(!brand){var t=(document.title||"").split("|")[0].split("\\u2014")[0].trim();if(t&&t!=="Ahenk Bilgi Teknolojileri")brand=t;}if(mark&&brand&&!mark.textContent)mark.textContent=brand;if(logo&&(host==="turkatahaber.com"||host==="gundemi.org")){logo.src="/turkata/turkata-logo.webp";logo.alt=brand||"TÜRKATA HABER AJANSI";logo.addEventListener("load",function(){if(mark)mark.hidden=true;});logo.addEventListener("error",function(){logo.hidden=true;if(mark)mark.hidden=false;});logo.hidden=false;}window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;document.documentElement.classList.add("hm-spa-ready");var shell=document.getElementById("seo-boot-shell");if(shell&&shell.parentNode)shell.parentNode.removeChild(shell);var hold=document.getElementById("hm-first-paint-hold");if(hold&&hold.parentNode)hold.parentNode.removeChild(hold);var live=document.getElementById("root");if(live)live.removeAttribute("aria-hidden");document.documentElement.removeAttribute("data-hm-spa-pending");};setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
+  return `<script>(function(){var root=document.getElementById("root");if(root&&document.documentElement.classList.contains("hm-news-boot"))root.setAttribute("aria-hidden","true");var mark=document.getElementById("seo-boot-mark");var logo=document.getElementById("seo-boot-logo");var host=(location.hostname||"").toLowerCase().replace(/^www\\./,"").split(":")[0];var brand=document.documentElement.getAttribute("data-boot-brand")||"";if(!brand){var t=(document.title||"").split("|")[0].split("\\u2014")[0].trim();if(t&&t!=="Ahenk Bilgi Teknolojileri")brand=t;}if(mark&&brand&&!mark.textContent)mark.textContent=brand;if(logo&&host==="turkatahaber.com"){logo.src="/turkata/turkata-logo.webp";logo.alt=brand||"TÜRKATA HABER AJANSI";logo.addEventListener("load",function(){if(mark)mark.hidden=true;});logo.addEventListener("error",function(){logo.hidden=true;if(mark)mark.hidden=false;});logo.hidden=false;}window.__YEKPARE_HM_RELEASE_FIRST_PAINT__=function(){if(window.__YEKPARE_SPA_READY__)return;window.__YEKPARE_SPA_READY__=true;document.documentElement.classList.add("hm-spa-ready");var shell=document.getElementById("seo-boot-shell");if(shell&&shell.parentNode)shell.parentNode.removeChild(shell);var hold=document.getElementById("hm-first-paint-hold");if(hold&&hold.parentNode)hold.parentNode.removeChild(hold);var live=document.getElementById("root");if(live)live.removeAttribute("aria-hidden");document.documentElement.removeAttribute("data-hm-spa-pending");};setTimeout(function(){try{window.__YEKPARE_HM_RELEASE_FIRST_PAINT__();}catch(e){}},12000);})();</script>`;
 }
 
 /** @deprecated Klonlanan overlay kalktı; kabuk bırakma betiği duruyor. */
@@ -959,6 +961,7 @@ const HM_SLUG_DISPLAY_NAMES = {
   kirsehir: "Kırşehir Haber",
   trafik: "Trafik Güvenliği Derneği",
   tgd: "Trafik Güvenliği Derneği",
+  fixhaber: "Fix Haber",
 };
 
 const GEO_AI_USER_AGENTS = [

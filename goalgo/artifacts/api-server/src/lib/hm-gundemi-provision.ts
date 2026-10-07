@@ -1,10 +1,10 @@
 /**
- * *.gundemi.org HM siteleri — panel create/PATCH sonrası otomatik DNS + apex Worker bridge.
+ * *.gundemi.org HM siteleri — panel create/PATCH sonrası otomatik DNS.
  *
  * - layout phpTheme: ensurePhpThemeLayoutDefaults (çağıran taraf)
  * - Cloudflare Proxied A → 187.77.84.201 (CLOUDFLARE_API_TOKEN gerekir)
- * - Apex Worker routes `gundemi.org/*` / `www` (turkatahaber PHP bridge)
- * - Bölgesel `*.gundemi.org/*` SPA catch-all YOK — orange cloud → Traefik Yenişafak PHP
+ * - Apex + bölgesel: SPA catch-all YOK — orange cloud → Traefik Yenişafak PHP
+ * - Apex slug `gundemi` (turkatahaber alias değil); by-domain Neon’dan çözülür
  *
  * Token yoksa soft-fail (site kaydı yine başarılı).
  * Gerekli CF yetkileri: Zone DNS Edit (+ Workers Routes Edit), zone gundemi.org.
@@ -19,13 +19,10 @@ const CF_API = "https://api.cloudflare.com/client/v4";
 const WORKER_SCRIPT = "haberler";
 
 /**
- * Apex-only Traefik-gap bridge routes (turkatahaber PHP).
- * Do not include `*.gundemi.org/*` — that forced SPA; regionals use origin PHP.
+ * Apex/regional SPA catch-all YOK — Traefik Host(`gundemi.org`) canlı.
+ * Boş liste: provision catch-all oluşturmaz (turkatahaber bridge kaldırıldı).
  */
-export const GUNDEMI_CATCHALL_ROUTE_PATTERNS = Object.freeze([
-  "gundemi.org/*",
-  "www.gundemi.org/*",
-]);
+export const GUNDEMI_CATCHALL_ROUTE_PATTERNS = Object.freeze([]);
 
 export type GundemiDnsAction =
   | "ok"
@@ -326,7 +323,8 @@ export async function ensureGundemiCatchAllWorkerRoutes(): Promise<GundemiRouteE
 }
 
 /**
- * Site domain’leri için gundemi.org DNS + apex Worker bridge routes.
+ * Site domain’leri için gundemi.org DNS (proxied A).
+ * Catch-all Worker route oluşturulmaz — Traefik Host → PHP.
  * Soft-fail: hata fırlatmaz; rapor döner.
  */
 export async function provisionGundemiOrgForSiteDomains(input: {
@@ -356,16 +354,20 @@ export async function provisionGundemiOrgForSiteDomains(input: {
     }
   }
 
-  try {
-    report.routes = await ensureGundemiCatchAllWorkerRoutes();
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    console.warn(`[gundemi-provision] routes exception:`, message);
-    report.routes = GUNDEMI_CATCHALL_ROUTE_PATTERNS.map((pattern) => ({
-      action: "error" as const,
-      pattern,
-      message,
-    }));
+  // Catch-all yok (apex/regionals = orange → Traefik). Eski gundemi.org/* route’ları
+  // wrangler deploy ile kaldırılır; provision yeniden oluşturmaz.
+  if (GUNDEMI_CATCHALL_ROUTE_PATTERNS.length > 0) {
+    try {
+      report.routes = await ensureGundemiCatchAllWorkerRoutes();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.warn(`[gundemi-provision] routes exception:`, message);
+      report.routes = GUNDEMI_CATCHALL_ROUTE_PATTERNS.map((pattern) => ({
+        action: "error" as const,
+        pattern,
+        message,
+      }));
+    }
   }
 
   return report;

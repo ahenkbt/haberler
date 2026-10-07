@@ -5,7 +5,7 @@
 # Compose: /docker/traefik/docker-compose.yml
 # Container: traefik-traefik-1  (--providers.file.directory=/dynamic --providers.file.watch=true)
 #
-# Upstream: same Yenişafak PHP as turkatahaber.com
+# Upstream: Yenişafak PHP (:8095) — apex slug gundemi + regionals
 #   Docker labels on php-theme-yenisafak → Traefik service name `php-tema`
 #   Published host port: 127.0.0.1:8095  (file routers use this URL, matching origin-tth.yml)
 #

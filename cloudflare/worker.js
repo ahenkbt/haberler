@@ -3342,8 +3342,7 @@ export default {
     const edgeRssPreview = await serveEdgeRssPreview(request, env, incoming);
     if (edgeRssPreview) return edgeRssPreview;
 
-    // Traefik gap: gundemi.org hosts resolve in DNS but VPS has no Host() router yet
-    // (plain "404 page not found"). Apex → turkatahaber PHP via edge bridge.
+    // Traefik gap / theme assets: gundemi.org apex + regionals → own PHP (not turkatahaber HTML).
     const gundemiPhpBridge = await gundemiApexPhpBridgeResponse(request, incoming);
     if (gundemiPhpBridge) return gundemiPhpBridge;
 

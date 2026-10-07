@@ -10,8 +10,8 @@ import { sitemapFailXml, toGscWebSitemapXml } from "./sitemap-fail-xml.js";
 export const TURKATA_APEX_HOST = "turkatahaber.com";
 export const TURKATA_WWW_HOST = "www.turkatahaber.com";
 export const TURKATA_ORIGIN = "https://turkatahaber.com";
-/** Apex host alias’ları — aynı HM site (turkatahaber); kanonik SEO kökü yine TURKATA_ORIGIN. */
-export const TURKATA_ALIAS_APEX_HOSTS = Object.freeze(["gundemi.org"]);
+/** Apex host alias’ları — aynı HM site (turkatahaber). gundemi.org artık kendi sitesi (slug `gundemi`). */
+export const TURKATA_ALIAS_APEX_HOSTS = Object.freeze([]);
 export const TURKATA_BRAND = "TÜRKATA HABER AJANSI";
 export const TURKATA_FOUNDATION = "Türk Kültürünü Araştırma ve Tanıtma Vakfı";
 export const TURKATA_FOUNDATION_URL = "https://turkatav.org";

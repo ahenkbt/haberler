@@ -161,16 +161,16 @@ const HM: GeoSiteEntity[] = [
   {
     slug: "turkata",
     domain: "turkatahaber.com",
-    extraDomains: ["www.turkatahaber.com", "gundemi.org", "www.gundemi.org"],
+    extraDomains: ["www.turkatahaber.com"],
     officialName: "TÜRKATA HABER AJANSI",
-    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "gundemi.org", "TÜRKATA"],
+    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "TÜRKATA"],
     type: "NewsMediaOrganization",
     description:
       "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",
     email: "bilgi@turkatahaber.com",
     telephone: "+905322291892",
     disambiguatingDescription:
-      "turkatahaber.com, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. ahenk.net.tr/haberler aynı akışın eski adresidir; kanonik site turkatahaber.com’dur.",
+      "turkatahaber.com, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. ahenk.net.tr/haberler aynı akışın eski adresidir; kanonik site turkatahaber.com’dur. gundemi.org ayrı bir haber sitesidir.",
     aboutPath: "/hakkimizda",
     faq: [
       {
@@ -182,6 +182,32 @@ const HM: GeoSiteEntity[] = [
         question: "TÜRKATA HABER AJANSI kime bağlıdır?",
         answer:
           "Türk Kültürünü Araştırma ve Tanıtma Vakfı’na bağlıdır. Vakıf 1998’de kurulmuştur. Vakıf siteleri turkatav.org ve tukav.org adresleridir.",
+      },
+    ],
+  },
+  {
+    slug: "gundemi",
+    domain: "gundemi.org",
+    extraDomains: ["www.gundemi.org"],
+    officialName: "Gündemi.org",
+    alternateName: ["gundemi.org", "Gündemi", "ilkeli iffetli isabetli haber"],
+    type: "NewsMediaOrganization",
+    description:
+      "gundemi.org — ilkeli iffetli isabetli haber. Türkiye ve bölgesel gündemi Yenişafak vitrininde sunan dijital haber platformu.",
+    email: "bilgi@gundemi.org",
+    telephone: "+905322291892",
+    disambiguatingDescription:
+      "gundemi.org bağımsız bir haber sitesidir; turkatahaber.com ile aynı site değildir.",
+    aboutPath: "/hakkimizda",
+    faq: [
+      {
+        question: "gundemi.org nedir?",
+        answer:
+          "gundemi.org, sloganı «ilkeli iffetli isabetli haber» olan dijital haber platformudur.",
+      },
+      {
+        question: "gundemi.org turkatahaber.com ile aynı mıdır?",
+        answer: "Hayır. gundemi.org kendi haber sitesidir.",
       },
     ],
   },
@@ -213,6 +239,30 @@ const HM: GeoSiteEntity[] = [
       {
         question: "trafikdernegi.com kimin sitesi?",
         answer: "Trafik Güvenliği Derneği'nin resmi kurumsal web sitesidir.",
+      },
+    ],
+  },
+  {
+    slug: "fixhaber",
+    domain: "fix.tc",
+    extraDomains: ["www.fix.tc"],
+    officialName: "Fix Haber",
+    alternateName: ["fix.tc", "Fix Haber", "FIXHABER"],
+    type: "NewsMediaOrganization",
+    description:
+      "Fix Haber (fix.tc), Türkiye genelinde Türkçe yayın yapan dijital haber sitesidir. Resmi alan adı fix.tc'dir.",
+    disambiguatingDescription: "fix.tc, Fix Haber resmi haber sitesidir.",
+    aboutPath: "/hakkinda",
+    email: "bilgi@fix.tc",
+    telephone: "+90 532 229 18 92",
+    faq: [
+      {
+        question: "Fix Haber nedir?",
+        answer: "Fix Haber (fix.tc), Türkiye genelinde Türkçe yayın yapan resmi haber sitesidir.",
+      },
+      {
+        question: "fix.tc kimin sitesi?",
+        answer: "fix.tc, Fix Haber resmi haber sitesinin kanonik alan adıdır.",
       },
     ],
   },

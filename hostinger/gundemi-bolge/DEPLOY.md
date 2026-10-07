@@ -11,7 +11,7 @@ DNS A kayıtları Proxied → `187.77.84.201`. Neon seed (#390/#391) hazır.
 | Public DNS (`1.1.1.1` / `8.8.8.8`) | `@`, `www`, `ege`…`kibris` → CF anycast (`104.21…` / `172.67…`) |
 | Kullanıcı `DNS_PROBE_FINISHED_NXDOMAIN` | Genelde **yerel/ISP önbellek** veya eski negatif TTL — kayıtlar zone’da var |
 | Apex / bölgesel `/` 404 `page not found` | **Çözüldü (2026-10-07):** `/docker/traefik/dynamic/gundemi.yml` → `127.0.0.1:8095` (php-theme-yenisafak). |
-| Kenar | Apex: Worker bridge veya Traefik Host. Bölgesel: **SPA yok** (#395) — orange → origin PHP |
+| Kenar | Apex + bölgesel: **SPA yok** — orange → Traefik PHP; Neon by-domain → `gundemi` / bölge slug |
 
 **Kullanıcı (NXDOMAIN görüyorsa):** Windows `ipconfig /flushdns`, tarayıcı önbelleği temizle, mümkünse DNS’i `1.1.1.1` yap, gizli pencere dene. `nslookup ege.gundemi.org 1.1.1.1` CF IP dönmeli.
 
@@ -21,17 +21,17 @@ Neon seed: `pnpm --filter @workspace/api-server run ensure:gundemi-bolge`
 DNS otomasyon: `scripts/cf-ensure-gundemi-php-dns.mjs` (manuel Actions: **workflow_dispatch**)  
 Traefik şablon: [`traefik-gundemi.yml`](./traefik-gundemi.yml)
 
-## Apex = TürkAta (turkatahaber) alias (#391)
+## Apex = kendi HM sitesi (slug `gundemi`)
 
 | Host | İçerik | HM |
 |------|--------|-----|
-| `gundemi.org` / `www.gundemi.org` | **turkatahaber.com** ile aynı site | slug `turkatahaber`, `domain2=gundemi.org` |
+| `gundemi.org` / `www.gundemi.org` | **Gündemi.org** (yenişafak PHP) | slug `gundemi`, slogan `ilkeli iffetli isabetli haber` |
 | `ege` … `kibris`.gundemi.org | 8 bölgesel Yenişafak sitesi | ayrı slug’lar (`ege-gundemi` …) |
 
-Apex için **9. boş gundemi sitesi yok**. Worker: `turkata-haber.js` → `TURKATA_ALIAS_APEX_HOSTS` / `isTurkataHaberHost`.  
-`www.gundemi.org` → `https://gundemi.org/…` (turkatahaber.com’a zorla yönlendirmez).
+Apex **turkatahaber alias değildir**. `TURKATA_ALIAS_APEX_HOSTS` boş; `ensure:gundemi-bolge` turkatahaber `domain2` temizler ve `gundemi` satırını upsert eder.  
+Logo: `/gundemi/logos/gundemi-org.png`. Neon `by-domain` → slug `gundemi`.
 
-Kalıcı VPS hedefi: `gundemi.org` + `www.gundemi.org` Traefik `Host()` → turkatahaber Yenişafak upstream; Neon `domain2` zaten `gundemi.org`.
+VPS: `gundemi.org` + `www` Traefik `Host()` → Yenişafak PHP (`:8095`); Worker catch-all `gundemi.org/*` yok (orange → origin).
 
 ## Bölgesel siteler
 
@@ -53,8 +53,8 @@ Her satır **Proxied (turuncu bulut)** → Hostinger VPS.
 
 | Type | Name | Content | Proxy | Serves |
 |------|------|---------|-------|--------|
-| A | `@` | `187.77.84.201` | Proxied | **turkatahaber** (apex alias) |
-| A | `www` | `187.77.84.201` | Proxied | **turkatahaber** → apex |
+| A | `@` | `187.77.84.201` | Proxied | **gundemi** (apex site) |
+| A | `www` | `187.77.84.201` | Proxied | **gundemi** → apex |
 | A | `ege` | `187.77.84.201` | Proxied | Ege Gündemi |
 | A | `marmara` | `187.77.84.201` | Proxied | Marmara Gündemi |
 | A | `karadeniz` | `187.77.84.201` | Proxied | Karadeniz Gündemi |
@@ -84,12 +84,12 @@ Doğrulama (VPS’ten, 2026-10-07):
 | Host | HTTP | `X-Powered-By` | `<title>` |
 |------|------|----------------|-----------|
 | `ege.gundemi.org` | 200 | PHP/8.3.35 | Ege Gündemi |
-| `gundemi.org` | 200 | PHP/8.3.35 | TÜRKATA HABER AJANSI |
+| `gundemi.org` | 200 | PHP/8.3.35 | Gündemi.org (seed sonrası) |
 | `marmara.gundemi.org` | 200 | PHP/8.3.35 | Marmara Gündemi |
 | `akdeniz.gundemi.org` | 200 | PHP/8.3.35 | Akdeniz Gündemi |
 
 Neon / by-domain zaten doğru (PHP tarafı ek patch gerekmedi).  
-Worker bölgesel SPA catch-all kaldırıldı (#395 merged). Apex `gundemi.org/*` bridge isteğe bağlı kalabilir.
+Worker bölgesel + apex SPA catch-all yok. Apex turkatahaber HTML bridge kaldırıldı; orange → Traefik PHP + Neon `gundemi`.
 
 ### VPS’te yeniden uygula / güncelle (root)
 
@@ -104,7 +104,7 @@ curl -sk --resolve ege.gundemi.org:443:127.0.0.1 -D- https://ege.gundemi.org/ | 
 
 `cloudflare/gundemi-origin-bridge.js` + wrangler:
 
-- `gundemi.org` / `www` → turkatahaber.com PHP bridge (geçici)
+- `gundemi.org` / `www` → **kendi** PHP sitesi (slug `gundemi`; turkatahaber bridge yok)
 - **`*.gundemi.org` kamu `/` → SPA ASSETS yok** — Cloudflare orange cloud → origin Yenişafak PHP  
   (Traefik HostRegexp şart; yoksa origin `404 page not found`)
 - Panel/API: `/editor*`, `/api/*`, … Worker’da kalır (ankarasehirgazetesi.com modeli)

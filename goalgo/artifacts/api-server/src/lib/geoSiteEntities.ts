@@ -359,15 +359,15 @@ export const HM_GEO_ENTITIES: GeoSiteEntity[] = [
   {
     slug: "turkata",
     domain: "turkatahaber.com",
-    extraDomains: ["www.turkatahaber.com", "gundemi.org", "www.gundemi.org"],
+    extraDomains: ["www.turkatahaber.com"],
     officialName: "TÜRKATA HABER AJANSI",
     legalName: "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
-    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "gundemi.org", "TÜRKATA"],
+    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "TÜRKATA"],
     type: "NewsMediaOrganization",
     description:
       "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",
     disambiguatingDescription:
-      "turkatahaber.com, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. ahenk.net.tr/haberler aynı akışın eski adresidir.",
+      "turkatahaber.com, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. ahenk.net.tr/haberler aynı akışın eski adresidir. gundemi.org ayrı bir haber sitesidir.",
     areaServed: "Türkiye",
     language: "tr-TR",
     aboutPath: "/hakkimizda",
@@ -406,6 +406,70 @@ export const HM_GEO_ENTITIES: GeoSiteEntity[] = [
           "Türk Kültürünü Araştırma ve Tanıtma Vakfı’na bağlıdır. Vakıf 1998’de kurulmuştur. Vakıf siteleri turkatav.org ve tukav.org adresleridir.",
       },
     ],
+  },
+  {
+    slug: "gundemi",
+    domain: "gundemi.org",
+    extraDomains: ["www.gundemi.org"],
+    officialName: "Gündemi.org",
+    alternateName: ["gundemi.org", "Gündemi", "ilkeli iffetli isabetli haber"],
+    type: "NewsMediaOrganization",
+    description:
+      "gundemi.org — ilkeli iffetli isabetli haber. Türkiye ve bölgesel gündemi Yenişafak vitrininde sunan dijital haber platformu.",
+    disambiguatingDescription:
+      "gundemi.org bağımsız bir haber sitesidir; turkatahaber.com ile aynı site değildir. Bölgesel alt alanlar (ege.gundemi.org vb.) aynı marka ağıdır.",
+    areaServed: "Türkiye",
+    language: "tr-TR",
+    aboutPath: "/hakkimizda",
+    extraAboutPaths: ["/", "/kunye", "/iletisim"],
+    email: "bilgi@gundemi.org",
+    telephone: "+905322291892",
+    address: {
+      streetAddress: "Sağlık Mah. Aksu Cad. 13/5",
+      addressLocality: "Çankaya",
+      addressRegion: "Ankara",
+      addressCountry: "TR",
+    },
+    faq: [
+      {
+        question: "gundemi.org nedir?",
+        answer:
+          "gundemi.org, sloganı «ilkeli iffetli isabetli haber» olan dijital haber platformudur. Resmi sitesi gundemi.org’dur.",
+      },
+      {
+        question: "gundemi.org turkatahaber.com ile aynı mıdır?",
+        answer:
+          "Hayır. gundemi.org kendi haber sitesidir; turkatahaber.com TürkAta Haber Ajansı portalıdır.",
+      },
+    ],
+  },
+  {
+    slug: "fixhaber",
+    domain: "fix.tc",
+    extraDomains: ["www.fix.tc"],
+    officialName: "Fix Haber",
+    alternateName: ["fix.tc", "Fix Haber", "FIXHABER", "FixHaber"],
+    type: "NewsMediaOrganization",
+    description:
+      "Fix Haber (fix.tc), Türkiye genelinde Türkçe yayın yapan dijital haber sitesidir. Resmi ve kanonik alan adı fix.tc'dir.",
+    disambiguatingDescription:
+      "fix.tc, Fix Haber resmi haber sitesidir. Genel yazılım/‘fix’ araç siteleriyle aynı yayın değildir.",
+    notToBeConfusedWith: ["Yazılım hata düzeltme (bugfix) siteleri", "Genel ‘fix’ markalı araçlar"],
+    areaServed: "Türkiye",
+    language: "tr-TR",
+    aboutPath: "/hakkinda",
+    extraAboutPaths: ["/", "/kunye"],
+    email: "bilgi@fix.tc",
+    telephone: "+905322291892",
+    address: {
+      streetAddress: "Sağlık Mah. Aksu Cad. 13/5",
+      addressLocality: "Çankaya",
+      addressRegion: "Ankara",
+      addressCountry: "TR",
+    },
+    knowsAbout: ["güncel haber", "Türkiye gündemi", "son dakika"],
+    vendor: AHENK_VENDOR,
+    faq: newsFaq("Fix Haber", "fix.tc"),
   },
 ];
 

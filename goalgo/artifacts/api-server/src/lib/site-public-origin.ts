@@ -52,7 +52,7 @@ export function resolvePortalRequestOrigin(req: Request): string {
   const host = normalizePortalHostKey(rawHost);
   // Canonical news host. Keep this origin on sitemap <loc> values.
   if (host === "turkatahaber.com") return "https://turkatahaber.com";
-  // Apex alias — aynı turkatahaber içeriği; sitemap <loc> istek hostunda kalsın.
+  // Apex gundemi.org — kendi HM sitesi; sitemap <loc> istek hostunda kalsın.
   if (host === "gundemi.org") return "https://gundemi.org";
   if (host && isPortalHostname(host)) {
     const proto = String(req.get("x-forwarded-proto") ?? "https").split(",")[0]?.trim() || "https";
