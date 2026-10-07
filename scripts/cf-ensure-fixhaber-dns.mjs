@@ -6,6 +6,7 @@
  *
  * Usage:
  *   CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
+ *   CLOUDFLAREDNS_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
  *   DRY_RUN=1 CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
  *
  * Docs: hostinger/fixhaber/DEPLOY.md
@@ -22,7 +23,12 @@ const RECORDS = [
 ];
 
 function token() {
-  return process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";
+  return (
+    process.env.CLOUDFLARE_API_TOKEN ||
+    process.env.CLOUDFLAREDNS_API_TOKEN ||
+    process.env.CF_API_TOKEN ||
+    ""
+  );
 }
 
 async function cf(path, { method = "GET", body } = {}) {
