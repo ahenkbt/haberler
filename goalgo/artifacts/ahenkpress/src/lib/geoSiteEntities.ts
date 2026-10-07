@@ -161,9 +161,9 @@ const HM: GeoSiteEntity[] = [
   {
     slug: "turkata",
     domain: "turkatahaber.com",
-    extraDomains: ["www.turkatahaber.com"],
+    extraDomains: ["www.turkatahaber.com", "gundemi.org", "www.gundemi.org"],
     officialName: "TÜRKATA HABER AJANSI",
-    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "TÜRKATA"],
+    alternateName: ["THA", "TürkAta Haber Ajansı", "turkatahaber.com", "gundemi.org", "TÜRKATA"],
     type: "NewsMediaOrganization",
     description:
       "TÜRKATA HABER AJANSI (THA), Türk Kültürünü Araştırma ve Tanıtma Vakfı bünyesinde 1998’den bu yana yayın yapan haber ajansıdır. THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",

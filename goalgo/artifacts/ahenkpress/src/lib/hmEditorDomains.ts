@@ -25,6 +25,8 @@ export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "dunyasaglik.org": "dunyasaglik",
   "turksav.org": "turksav",
   "turkatahaber.com": "turkatahaber",
+  /** Apex alias — turkatahaber HM satırı (domain2); bölgesel alt alanlar ayrı slug. */
+  "gundemi.org": "turkatahaber",
 };
 
 function normalizeHostKey(host: string): string {

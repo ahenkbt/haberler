@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildGundemiRegionalLayoutJson,
   findGundemiRegionalSite,
+  GUNDEMI_APEX_TURKATA_ALIAS,
   GUNDEMI_REGIONAL_SITES,
   GUNDEMI_ZONE,
   listGundemiRegionalDomains,
   listGundemiRegionalSlugs,
+  TURKATA_HM_SLUG,
 } from "./hm-gundemi-regional-sites.js";
 
 describe("gundemi regional catalog", () => {
@@ -53,5 +55,12 @@ describe("gundemi regional catalog", () => {
     expect(findGundemiRegionalSite("ege-gundemi")?.domain).toBe("ege.gundemi.org");
     expect(findGundemiRegionalSite("akdeniz.gundemi.org")?.slug).toBe("akdeniz-gundemi");
     expect(findGundemiRegionalSite("www.kibris.gundemi.org")?.slug).toBe("kibris-gundemi");
+  });
+
+  it("apex is turkatahaber alias, not a 9th regional site", () => {
+    expect(GUNDEMI_APEX_TURKATA_ALIAS).toBe("gundemi.org");
+    expect(TURKATA_HM_SLUG).toBe("turkatahaber");
+    expect(listGundemiRegionalDomains()).not.toContain("gundemi.org");
+    expect(listGundemiRegionalSlugs()).not.toContain("turkatahaber");
   });
 });

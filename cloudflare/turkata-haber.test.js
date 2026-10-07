@@ -12,12 +12,14 @@ import {
   isAhenkNewsMirrorPath,
   isRecentGoogleNewsItem,
   isTurkataHaberHost,
+  isTurkataWwwHost,
   portalHaberlerArticleAliasPath,
   isTurkataAuthorPanelPath,
   rewriteAhenkNewsCanonicalHtml,
   rewriteTurkataSpaHtml,
   turkataCanonicalUrl,
   turkataPageKind,
+  turkataPublicOrigin,
   turkataSitemapFromUpstream,
   turkataUpstreamSitemapApiPath,
 } from "./turkata-haber.js";
@@ -46,9 +48,17 @@ const SHELL = `<!DOCTYPE html>
 </html>`;
 
 describe("turkata haber host", () => {
-  it("detects apex and www only", () => {
+  it("detects apex, www and gundemi.org alias", () => {
     assert.equal(isTurkataHaberHost("turkatahaber.com"), true);
     assert.equal(isTurkataHaberHost("WWW.turkatahaber.com"), true);
+    assert.equal(isTurkataHaberHost("gundemi.org"), true);
+    assert.equal(isTurkataHaberHost("www.gundemi.org"), true);
+    assert.equal(isTurkataWwwHost("www.gundemi.org"), true);
+    assert.equal(isTurkataWwwHost("gundemi.org"), false);
+    assert.equal(turkataPublicOrigin("gundemi.org"), "https://gundemi.org");
+    assert.equal(turkataPublicOrigin("www.gundemi.org"), "https://gundemi.org");
+    assert.equal(turkataPublicOrigin("turkatahaber.com"), TURKATA_ORIGIN);
+    assert.equal(isTurkataHaberHost("ege.gundemi.org"), false);
     assert.equal(isTurkataHaberHost("ahenk.net.tr"), false);
     assert.equal(isTurkataHaberHost("kirsehirhaber.org"), false);
   });

@@ -33,6 +33,9 @@ const LOGO = (slug: string) => `/gundemi/logos/${slug}-gundemi.png`;
 export const GUNDEMI_ZONE = "gundemi.org";
 export const GUNDEMI_PHP_ORIGIN_IP = "187.77.84.201";
 export const GUNDEMI_REGIONAL_CAMPAIGN_TAG = "gundemi-bolge";
+/** Apex + www → turkatahaber HM satırı (domain2); 9. boş site değil. */
+export const GUNDEMI_APEX_TURKATA_ALIAS = "gundemi.org";
+export const TURKATA_HM_SLUG = "turkatahaber";
 
 export const GUNDEMI_REGIONAL_SITES: readonly GundemiRegionalSiteDef[] = [
   {
