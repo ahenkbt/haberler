@@ -137,6 +137,7 @@ const PANEL_ROUTE_PATTERNS = [
   "*.gundemi.org/panel*",
   "*.gundemi.org/haber-merkezi*",
   "*.gundemi.org/assets/*",
+  "*.gundemi.org/gundemi/logos/*",
   "*.gundemi.org/sw.js",
   "*.gundemi.org/llms.txt",
   "*.gundemi.org/ai.txt",

@@ -7,9 +7,10 @@
  * Apex (turkatahaber domain2 alias): reverse-proxy PHP from turkatahaber.com and
  * keep the public host as gundemi.org.
  *
- * Regionals (*.gundemi.org): never serve SPA ASSETS. Public HTML/CSS goes to the
- * PHP origin (orange cloud → Traefik Host / HostRegexp). Worker catch-all for
- * subdomains is removed (ankarasehirgazetesi pattern); panel/API routes stay.
+ * Regionals (*.gundemi.org): never serve SPA ASSETS for public HTML. Orange cloud
+ * → Traefik Host / HostRegexp for `/`. Worker still owns `*.gundemi.org/assets/*`
+ * for /editor SPA bundles — PHP theme.css/js must NOT 503; bridge them to the
+ * shared Yenişafak PHP origin (turkatahaber). Logos: ASSETS `/gundemi/logos/*`.
  *
  * Ops: hostinger/gundemi-bolge/traefik-gundemi.yml + DEPLOY.md
  */
@@ -91,14 +92,22 @@ export function isGundemiBridgeCatchAllHost(hostname) {
   return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
 }
 
+/** Regional logos ship in Worker ASSETS (ahenkpress public/gundemi/logos). */
+export function isGundemiLogoAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/gundemi/logos/");
+}
+
 /**
  * Public gundemi hosts must never get SPA index.html from ASSETS.
- * Panel paths stay on Worker.
+ * Panel paths + hashed /assets/index-* + /gundemi/logos stay on Worker ASSETS.
  */
 export function shouldBlockGundemiSpaAssets(hostname, pathname) {
   if (!isGundemiBridgeCatchAllHost(hostname)) return false;
   const p = String(pathname || "").split("?")[0] || "/";
   if (isSpaPanelPath(p)) return false;
+  // Logos: CF ASSETS (same files as ahenk.net.tr/gundemi/logos/…).
+  if (isGundemiLogoAssetPath(p)) return false;
   // Hashed SPA bundles under /assets/index-* may still be needed for /editor;
   // public theme paths and HTML navigations are blocked from SPA fallback.
   if (p.startsWith("/assets/") && !isPhpThemeAssetPath(p)) return false;
@@ -111,7 +120,7 @@ export function isPhpThemeAssetPath(pathname) {
   if (p.startsWith("/brand/")) return true;
   if (p.startsWith("/manset/")) return true;
   if (p.startsWith("/uploads/")) return true;
-  if (p.startsWith("/gundemi/logos/")) return true;
+  if (isGundemiLogoAssetPath(p)) return true;
   return false;
 }
 
@@ -130,12 +139,26 @@ function isSpaPanelPath(pathname) {
 /**
  * Apex paths that must be fetched from turkatahaber PHP (not SPA ASSETS).
  * Non-theme /assets/* stay on Worker ASSETS for the editor bundle.
+ * Regional logos are served from ASSETS (not bridged).
  */
 export function shouldBridgeGundemiApexPath(pathname) {
   const p = String(pathname || "").split("?")[0] || "/";
   if (isSpaPanelPath(p)) return false;
+  if (isGundemiLogoAssetPath(p)) return false;
   if (p.startsWith("/assets/")) return isPhpThemeAssetPath(p);
   return true;
+}
+
+/**
+ * Regional Worker-owned paths that must pull shared PHP theme bytes (not 503 gap HTML).
+ * Kept for /assets/theme.* while `*.gundemi.org/assets/*` exists for /editor bundles.
+ */
+export function shouldProxyRegionalPhpThemeAsset(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  if (isGundemiLogoAssetPath(p)) return false;
+  if (!isPhpThemeAssetPath(p)) return false;
+  // Only paths the Worker still intercepts (assets route). brand/manset go orange→origin.
+  return p.startsWith("/assets/") || p.startsWith("/brand/");
 }
 
 function rewriteTurkataPublicUrls(text, publicOrigin) {
@@ -203,31 +226,16 @@ code{background:#f2f4f7;padding:.1rem .35rem;border-radius:4px}
 }
 
 /**
- * Reverse-proxy gundemi.org public pages to live turkatahaber.com PHP.
- * Regionals: no SPA — return Traefik-gap page if this catch-all is still routed
- * (subdomain catch-all should be removed; orange cloud → origin PHP).
- * @returns {Promise<Response|null>}
+ * Reverse-proxy a path from live turkatahaber.com PHP (shared Yenişafak pack).
+ * @param {{ rewriteHost: boolean, frontendTag: string }} opts
+ * @returns {Promise<Response>}
  */
-export async function gundemiApexPhpBridgeResponse(request, incoming) {
-  if (isGundemiOrgSubdomainHost(incoming.hostname)) {
-    if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
-    if (request.method !== "GET" && request.method !== "HEAD") return null;
-    // SPA catch-all removed; if a catch-all still hits the Worker, never serve ASSETS.
-    return new Response(traefikGapHtml(normalizeHostname(incoming.hostname).replace(/^www\./, "")), {
-      status: 503,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "x-yekpare-frontend": "gundemi-php-traefik-gap",
-      },
-    });
-  }
-
-  if (!isGundemiApexBridgeHost(incoming.hostname)) return null;
-  if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
-  if (request.method !== "GET" && request.method !== "HEAD") return null;
-
-  const publicOrigin = turkataPublicOrigin(incoming.hostname);
+async function proxyTurkataPhpPath(request, incoming, opts) {
+  const rewriteHost = opts?.rewriteHost !== false;
+  const frontendTag = opts?.frontendTag || "gundemi-php-bridge";
+  const publicOrigin = rewriteHost
+    ? turkataPublicOrigin(incoming.hostname)
+    : `https://${normalizeHostname(incoming.hostname)}`;
   const upstreamUrl = new URL(incoming.pathname + incoming.search, TURKATA_ORIGIN);
 
   const headers = new Headers();
@@ -274,7 +282,7 @@ export async function gundemiApexPhpBridgeResponse(request, incoming) {
     }
     out.append(key, value);
   }
-  out.set("x-yekpare-frontend", "gundemi-php-bridge");
+  out.set("x-yekpare-frontend", frontendTag);
   out.set("x-yekpare-bridge-upstream", "turkatahaber.com");
 
   const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
@@ -282,10 +290,50 @@ export async function gundemiApexPhpBridgeResponse(request, incoming) {
     return new Response(null, { status: upstream.status, headers: out });
   }
 
-  if (ct.includes("text/html") || ct.includes("text/css") || ct.includes("javascript") || ct.includes("json")) {
+  // theme.css/js: no host rewrite needed; HTML/JSON on apex still rewrite.
+  if (rewriteHost && (ct.includes("text/html") || ct.includes("text/css") || ct.includes("javascript") || ct.includes("json"))) {
     const body = rewriteTurkataPublicUrls(await upstream.text(), publicOrigin);
     return new Response(body, { status: upstream.status, headers: out });
   }
 
   return new Response(upstream.body, { status: upstream.status, headers: out });
+}
+
+/**
+ * Reverse-proxy gundemi.org public pages to live turkatahaber.com PHP.
+ * Regionals: theme assets on Worker assets-route → shared PHP origin; logos → ASSETS;
+ * leftover catch-all → Traefik-gap page (never SPA).
+ * @returns {Promise<Response|null>}
+ */
+export async function gundemiApexPhpBridgeResponse(request, incoming) {
+  if (isGundemiOrgSubdomainHost(incoming.hostname)) {
+    if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
+    if (request.method !== "GET" && request.method !== "HEAD") return null;
+    // Worker still owns *.gundemi.org/assets/* for /editor bundles. Theme CSS/JS
+    // must come from Yenişafak PHP (same bytes as turkatahaber / VPS :8095), not 503 gap HTML.
+    if (shouldProxyRegionalPhpThemeAsset(incoming.pathname)) {
+      return proxyTurkataPhpPath(request, incoming, {
+        rewriteHost: false,
+        frontendTag: "gundemi-php-theme-asset",
+      });
+    }
+    // SPA catch-all removed; if a catch-all still hits the Worker, never serve ASSETS.
+    return new Response(traefikGapHtml(normalizeHostname(incoming.hostname).replace(/^www\./, "")), {
+      status: 503,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "x-yekpare-frontend": "gundemi-php-traefik-gap",
+      },
+    });
+  }
+
+  if (!isGundemiApexBridgeHost(incoming.hostname)) return null;
+  if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+
+  return proxyTurkataPhpPath(request, incoming, {
+    rewriteHost: true,
+    frontendTag: "gundemi-php-bridge",
+  });
 }
