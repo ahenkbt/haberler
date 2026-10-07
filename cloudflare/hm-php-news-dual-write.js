@@ -9,7 +9,9 @@
 /** Postgres / Neon: salt-okunur oturum veya replica. */
 export function isReadonlyDbError(err) {
   const msg = String(err?.message || err || "");
-  return /read-only transaction|cannot execute \w+ in a read-only|readonly|read only/i.test(msg);
+  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only|readonly|read only/i.test(
+    msg,
+  );
 }
 
 function asInt(v) {
@@ -389,12 +391,12 @@ export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
     }
     return { mirrored: false, reason: "table" };
   } catch (err) {
-    const reason = String(err?.message || err).slice(0, 120);
-    console.error("[hm-php-dual-write]", table, op, reason.slice(0, 180));
-    return {
-      mirrored: false,
-      reason,
-      readonly: isReadonlyDbError(err),
-    };
+    const msg = String(err?.message || err).slice(0, 180);
+    if (isReadonlyDbError(err)) {
+      console.warn("[hm-php-dual-write] NEWS_DATABASE_URL read-only — mirror atlandı", table, op, msg.slice(0, 120));
+      return { mirrored: false, reason: "news-db-read-only", readonly: true };
+    }
+    console.error("[hm-php-dual-write]", table, op, msg);
+    return { mirrored: false, reason: msg.slice(0, 120), readonly: false };
   }
 }

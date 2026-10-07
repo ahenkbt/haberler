@@ -171,7 +171,7 @@ test("ayna RO INSERT: edgeMirrorNewsDbWrite throw etmez, mirrored:false + readon
   });
   assert.equal(r.mirrored, false);
   assert.equal(r.readonly, true);
-  assert.match(String(r.reason), /read-only/i);
+  assert.equal(r.reason, "news-db-read-only");
 });
 
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {

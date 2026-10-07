@@ -336,7 +336,7 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
         if (direct?.mirrored === true) return true;
         const reason = String(direct?.reason || "unknown");
         console.warn("[hm-news-mirror] kenar dual-write atlandı", table, op, reason);
-        if (direct?.readonly === true || isReadonlyDbError(reason)) {
+        if (direct?.readonly === true || reason === "news-db-read-only" || isReadonlyDbError(reason)) {
           newsMirrorReadonlySkip = true;
           console.warn("[hm-news-mirror] NEWS_DATABASE_URL salt-okunur — ayna bu isolate'da kapatıldı");
           return false;
