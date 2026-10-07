@@ -2,8 +2,10 @@
  * gundemi.org — Proxied A → Hostinger PHP origin (187.77.84.201).
  *
  * Fixes DNS_PROBE_FINISHED_NXDOMAIN for regional subdomains + apex/www.
- * Does NOT attach apex/www Worker custom domains or catch-all routes
- * (PHP theme twin pattern — same as yesilvatan / turkatahaber).
+ * Attaches temporary Traefik-gap catch-all Worker routes (gundemi.org/*,
+ * www.gundemi.org/*, *.gundemi.org/*) so apex can PHP-bridge via turkatahaber
+ * and regionals can serve SPA until VPS Host() routers exist.
+ * Remove those routes after traefik-gundemi.yml is applied on 187.77.84.201.
  *
  * Usage:
  *   CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-gundemi-php-dns.mjs
@@ -127,7 +129,7 @@ async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }) {
   return { action: "created", fqdn, name, ip };
 }
 
-/** Panel/API routes only — never catch-all `*.gundemi.org/*` or apex `gundemi.org/*`. */
+/** Panel/API + temporary Traefik-gap catch-alls (see gundemi-origin-bridge.js). */
 const PANEL_ROUTE_PATTERNS = [
   "*.gundemi.org/editor*",
   "*.gundemi.org/api/*",
@@ -159,24 +161,16 @@ const PANEL_ROUTE_PATTERNS = [
   "www.gundemi.org/api/*",
   "www.gundemi.org/tr/*",
   "www.gundemi.org/hm/*",
+  // Traefik gap bridge — remove after hostinger/gundemi-bolge/traefik-gundemi.yml is live
+  "gundemi.org/*",
+  "www.gundemi.org/*",
+  "*.gundemi.org/*",
 ];
 
 async function ensurePanelRoutes(zoneId) {
   const list = await cf(`/zones/${zoneId}/workers/routes`);
   const existing = list.json?.result || [];
   const byPattern = new Map(existing.map((r) => [r.pattern, r]));
-
-  // Refuse catch-all if present (would steal PHP home)
-  for (const bad of ["*.gundemi.org/*", "gundemi.org/*", "www.gundemi.org/*", "gundemi.org", "www.gundemi.org"]) {
-    const row = byPattern.get(bad);
-    if (!row) continue;
-    if (DRY_RUN) {
-      console.log(`[dry-run] would delete catch-all route ${bad} → ${row.script}`);
-      continue;
-    }
-    const del = await cf(`/zones/${zoneId}/workers/routes/${row.id}`, { method: "DELETE" });
-    console.log(`[gundemi-dns] delete catch-all ${bad} ok=${del.ok}`);
-  }
 
   let created = 0;
   let ok = 0;

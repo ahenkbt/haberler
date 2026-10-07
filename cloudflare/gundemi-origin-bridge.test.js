@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  isGundemiApexBridgeHost,
+  isGundemiBridgeCatchAllHost,
+  isGundemiRegionalHost,
+  isPhpThemeAssetPath,
+  shouldBridgeGundemiApexPath,
+  gundemiApexPhpBridgeResponse,
+} from "./gundemi-origin-bridge.js";
+
+describe("gundemi-origin-bridge hosts", () => {
+  it("detects apex alias vs regional", () => {
+    assert.equal(isGundemiApexBridgeHost("gundemi.org"), true);
+    assert.equal(isGundemiApexBridgeHost("www.gundemi.org"), true);
+    assert.equal(isGundemiApexBridgeHost("ege.gundemi.org"), false);
+    assert.equal(isGundemiApexBridgeHost("turkatahaber.com"), false);
+    assert.equal(isGundemiRegionalHost("ege.gundemi.org"), true);
+    assert.equal(isGundemiRegionalHost("www.ege.gundemi.org"), true);
+    assert.equal(isGundemiRegionalHost("gundemi.org"), false);
+    assert.equal(isGundemiBridgeCatchAllHost("akdeniz.gundemi.org"), true);
+    assert.equal(isGundemiBridgeCatchAllHost("gundemi.org"), true);
+  });
+
+  it("bridges PHP theme assets and HTML, not SPA panel/assets", () => {
+    assert.equal(shouldBridgeGundemiApexPath("/"), true);
+    assert.equal(shouldBridgeGundemiApexPath("/haber/foo"), true);
+    assert.equal(shouldBridgeGundemiApexPath("/assets/theme.css"), true);
+    assert.equal(shouldBridgeGundemiApexPath("/assets/theme.js"), true);
+    assert.equal(shouldBridgeGundemiApexPath("/brand/turkata/logo.png"), true);
+    assert.equal(shouldBridgeGundemiApexPath("/assets/index-abc123.js"), false);
+    assert.equal(shouldBridgeGundemiApexPath("/editor"), false);
+    assert.equal(shouldBridgeGundemiApexPath("/api/hm/meta/by-domain"), false);
+    assert.equal(isPhpThemeAssetPath("/assets/theme.css"), true);
+    assert.equal(isPhpThemeAssetPath("/assets/index.js"), false);
+  });
+});
+
+describe("gundemiApexPhpBridgeResponse", () => {
+  it("returns null for regional hosts", async () => {
+    const incoming = new URL("https://ege.gundemi.org/");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString()),
+      incoming,
+    );
+    assert.equal(res, null);
+  });
+
+  it("returns null for SPA panel paths on apex", async () => {
+    const incoming = new URL("https://gundemi.org/editor");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString()),
+      incoming,
+    );
+    assert.equal(res, null);
+  });
+
+  it("proxies apex home and rewrites turkatahaber host", async () => {
+    const incoming = new URL("https://gundemi.org/");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { headers: { accept: "text/html" } }),
+      incoming,
+    );
+    assert.ok(res);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-bridge");
+    const html = await res.text();
+    assert.match(html, /TÜRKATA|TürkAta|turkata/i);
+    assert.equal(html.includes("https://turkatahaber.com/"), false);
+    assert.match(html, /https:\/\/gundemi\.org/);
+  });
+});
