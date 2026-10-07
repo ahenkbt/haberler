@@ -630,8 +630,9 @@ export default function AiIcerikRobotu() {
         <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="text-sm font-bold text-slate-900">Hedef haber merkezi siteleri</h3>
           <p className="mt-1 text-xs text-slate-600">
-            İşaretlemezseniz üretilen haberler merkez akışa yazılır. Site seçtiğinizde yalnızca o sitelere yazılır;
-            merkez akışa düşmez. Aynı RSS bağlantısı zaten kayıtlıysa (hangi sitede olursa) tekrar üretilmez.
+            İşaretlemezseniz üretilen haberler merkez akışa yazılır. Birden fazla site seçerseniz her haber sırayla
+            boş bir siteye dağılır; aynı olay (farklı RSS kaynakları / yakın başlık) bir sitede en fazla bir kez
+            çıkar. Aynı RSS bağlantısı herhangi bir sitede varsa tekrar üretilmez.
           </p>
           <ul className="mt-3 flex max-h-40 flex-col gap-2 overflow-y-auto text-sm">
             {hmSitesList.map((s) => {

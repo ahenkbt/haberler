@@ -6,7 +6,11 @@ import {
   categoriesTable,
   hmNewsSitesTable,
 } from "@workspace/db";
-import { normalizeRssSourceUrl, rssArticleAlreadyImported } from "./rssImportDedupe";
+import {
+  normalizeRssSourceUrl,
+  pickHmSiteWithoutRssStory,
+  uniqueNonEmptyTitles,
+} from "./rssImportDedupe";
 import { coerceNewsPublishedAt } from "./rssPublishedDate.js";
 import { fetchRssFeedXml } from "./rssFeedFetch.js";
 import {
@@ -22,6 +26,10 @@ import {
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "./aiNewsPrompts.js";
 import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { parseFeedItems } from "./rssFeedParse.js";
+
+function siteBagKey(siteId: number | null): string {
+  return siteId == null ? "null" : String(siteId);
+}
 
 async function getAiSettingsRow() {
   const rows = await db.select().from(aiSettingsTable).limit(1);
@@ -121,6 +129,9 @@ export async function executeAiRssRun(opts: {
   let lastAiError: string | undefined;
   let openAiQuotaHit = false;
   let geminiFallbackAttempted = false;
+  /** Bu koşuda siteye yazılan başlıklar — aynı koşudaki çapraz kaynak kopyalarını engeller. */
+  const batchTitlesBySite = new Map<string, string[]>();
+  let siteRotateIndex = 0;
 
   for (const line of lines) {
     if (allNews.length >= count) break;
@@ -186,42 +197,56 @@ export async function executeAiRssRun(opts: {
         });
 
         const sourceKey = normalizeRssSourceUrl(item.link);
-        for (const siteId of siteTargets) {
-          if (allNews.length >= count) break;
-          if (await rssArticleAlreadyImported(siteId, sourceKey, parsed.baslik)) {
-            continue;
-          }
-          try {
-            const publishedAt = coerceNewsPublishedAt(item.publishedAt);
-            const [created] = await db
-              .insert(newsTable)
-              .values({
-                title: parsed.baslik,
-                slug: makeSlug(parsed.baslik) + (siteId != null ? `-s${siteId}` : ""),
-                spot: parsed.spot || null,
-                content: finalized.content,
-                imageUrl: finalized.imageUrl,
-                categoryId: catId,
-                status: s.postStatus as "draft" | "published",
-                isFeatured: false,
-                isBreaking: false,
-                tags: parsed.etiketler || [],
-                views: 0,
-                isAiGenerated: true,
-                siteId: siteId ?? null,
-                rssSourceUrl: sourceKey,
-                isEditorManual: false,
-                createdAt: publishedAt,
-                updatedAt: publishedAt,
-              })
-              .returning();
+        // AI başlığı + kaynak başlığı — farklı ajansların aynı olayı yakalanır.
+        const storyTitles = uniqueNonEmptyTitles(parsed.baslik, item.title);
+        const picked = await pickHmSiteWithoutRssStory({
+          siteTargets,
+          startIndex: siteRotateIndex,
+          sourceUrl: sourceKey,
+          titles: storyTitles,
+          extraTitlesBySite: batchTitlesBySite,
+        });
+        if (!picked) {
+          // Tüm hedef sitelerde (veya merkezde) aynı olay zaten var.
+          continue;
+        }
+        siteRotateIndex = picked.nextIndex;
+        const siteId = picked.siteId;
 
-            allNews.push({ title: created.title, id: created.id });
-          } catch (e: unknown) {
-            const uniqueViolation =
-              e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505";
-            if (!uniqueViolation) throw e;
-          }
+        try {
+          const publishedAt = coerceNewsPublishedAt(item.publishedAt);
+          const [created] = await db
+            .insert(newsTable)
+            .values({
+              title: parsed.baslik,
+              slug: makeSlug(parsed.baslik) + (siteId != null ? `-s${siteId}` : ""),
+              spot: parsed.spot || null,
+              content: finalized.content,
+              imageUrl: finalized.imageUrl,
+              categoryId: catId,
+              status: s.postStatus as "draft" | "published",
+              isFeatured: false,
+              isBreaking: false,
+              tags: parsed.etiketler || [],
+              views: 0,
+              isAiGenerated: true,
+              siteId: siteId ?? null,
+              rssSourceUrl: sourceKey,
+              isEditorManual: false,
+              createdAt: publishedAt,
+              updatedAt: publishedAt,
+            })
+            .returning();
+
+          allNews.push({ title: created.title, id: created.id });
+          const bagKey = siteBagKey(siteId);
+          const bag = batchTitlesBySite.get(bagKey) ?? [];
+          bag.push(...storyTitles);
+          batchTitlesBySite.set(bagKey, bag);
+        } catch (e: unknown) {
+          const uniqueViolation =
+            e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505";
+          if (!uniqueViolation) throw e;
         }
       }
     } catch (e) {
