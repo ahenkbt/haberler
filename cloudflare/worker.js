@@ -28,6 +28,7 @@ import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
 import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
+import { handleAdminPanelStatusEdge } from "./hm-admin-panel-status-edge.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import {
   hybridEdgeFillHttpStatus,
@@ -2918,6 +2919,14 @@ export default {
       if (live) return live;
     } catch (err) {
       console.error("[edge-healthz]", String(err?.message || err).slice(0, 120));
+    }
+
+    // Panel oturum durumu — Neon kenardan; soğuk Container «Oturum doğrulanıyor» asılı kalmasın.
+    try {
+      const panelStatus = await handleAdminPanelStatusEdge(request, env, ctx);
+      if (panelStatus) return panelStatus;
+    } catch (err) {
+      console.error("[admin-panel-status-edge]", String(err?.message || err).slice(0, 120));
     }
 
     // ahenk.net.tr/panel → /admin (eski kısayol; SPA'da /panel rotası yok → beyaz ekran)
