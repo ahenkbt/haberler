@@ -180,6 +180,46 @@ export function isHmAuthorPanelPath(pathname) {
   );
 }
 
+/** Haber sitesi editör paneli — kamu vitrini değil. */
+export function isHmEditorPanelPath(pathname) {
+  const p = String(pathname || "")
+    .split("?")[0]
+    .replace(/\/+$/, "")
+    .toLowerCase() || "/";
+  return p === "/editor" || p.startsWith("/editor/");
+}
+
+/**
+ * Anasayfa OG + `hm-news-boot` kabuğu (beyaz overlay, #root clip) panel HTML'ine
+ * uygulanmaz; aksi halde /editor giriş formu spa-ready olana kadar beyaz kalır.
+ */
+export function shouldRewriteSpaShellOgForPath(pathname) {
+  return !isHmEditorPanelPath(pathname) && !isHmAuthorPanelPath(pathname);
+}
+
+/** Editör SPA — slug boot, vitrin boyası yok. index.html `hm-news-boot` eklese de overlay kalkar. */
+export function injectHmEditorPanelBoot(html, slug, host) {
+  const s = String(slug || "").trim();
+  if (!html || !s) return html;
+  let out = injectHmHtmlBoot(html, {
+    slug: s,
+    host: String(host || "")
+      .toLowerCase()
+      .replace(/^www\./, ""),
+    skipPaint: true,
+  });
+  if (out.includes("hm-editor-spa-ready")) return out;
+  const ready =
+    '<script data-yekpare="hm-editor-spa-ready">(function(){try{document.documentElement.classList.add("hm-spa-ready");window.__YEKPARE_SPA_READY__=true;}catch(e){}})();</script>';
+  const charset = out.match(/<meta charset=["']UTF-8["']\s*\/?>/i);
+  if (charset && charset.index != null) {
+    const at = charset.index + charset[0].length;
+    return `${out.slice(0, at)}\n${ready}${out.slice(at)}`;
+  }
+  if (out.includes("</head>")) return out.replace("</head>", `${ready}\n</head>`);
+  return ready + out;
+}
+
 export function hmHomeSlugFromPath(pathname, hostname) {
   const path = String(pathname || "").replace(/\/+$/, "") || "/";
   const m = path.match(/^\/tr\/([^/]+)/i) || path.match(/^\/hm\/([^/]+)/i);

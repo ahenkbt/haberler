@@ -73,9 +73,12 @@ import {
   hmDomainSlugFallback,
   hmHomeSlugFromPath,
   isHmAuthorPanelPath,
+  isHmEditorPanelPath,
+  shouldRewriteSpaShellOgForPath,
   hmSlugDisplayName,
   injectHmHtmlBoot,
   injectHmAuthorPanelBoot,
+  injectHmEditorPanelBoot,
   isCorporateHmHtmlBoot,
   isAhenkAgencyGeoPath,
   isAhenkAgencyHost,
@@ -896,20 +899,32 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
   }
   let html = rewriteHtml(await assetResp.text(), { oneShotPurge, purgeCookie });
   const hmHostSlug = hmDomainSlugFallback(hostname);
+  const editorHost = String(hostname || "")
+    .toLowerCase()
+    .replace(/^www\./, "");
+  if (incoming && isHmEditorPanelPath(incoming.pathname)) {
+    const editorSlug = hmHostSlug || hmHomeSlugFromPath(incoming.pathname, incoming.hostname);
+    if (editorSlug) {
+      html = injectHmEditorPanelBoot(html, editorSlug, editorHost);
+      out.set("x-yekpare-hm-editor-boot", editorSlug);
+    }
+  }
   if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
     const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
     if (authorSlug) {
       html = injectHmAuthorPanelBoot(
         html,
         authorSlug,
-        String(hostname || "")
-          .toLowerCase()
-          .replace(/^www\./, ""),
+        editorHost,
       );
       out.set("x-yekpare-hm-author-boot", authorSlug);
     }
   }
-  if (hmHostSlug && !isAhenkAgencyHost(hostname)) {
+  if (
+    hmHostSlug &&
+    !isAhenkAgencyHost(hostname) &&
+    shouldRewriteSpaShellOgForPath(incoming?.pathname || "/")
+  ) {
     const ogOrigin = incoming?.origin || `https://${String(hostname || "").replace(/^www\./, "")}`;
     html = rewriteSpaShellOgForHmHost(html, hostname, ogOrigin);
     out.set("x-yekpare-hm-og-rewrite", hmHostSlug);
