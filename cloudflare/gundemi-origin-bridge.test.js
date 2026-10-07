@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
   isGundemiApexBridgeHost,
   isGundemiBridgeCatchAllHost,
+  isFixHaberBridgeHost,
+  isPhpThemeOriginBridgeHost,
   isGundemiLogoAssetPath,
   isGundemiOrgSubdomainHost,
   isGundemiRegionalHost,
@@ -28,6 +30,10 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isGundemiBridgeCatchAllHost("akdeniz.gundemi.org"), true);
     assert.equal(isGundemiBridgeCatchAllHost("yeni.gundemi.org"), true);
     assert.equal(isGundemiBridgeCatchAllHost("gundemi.org"), true);
+    assert.equal(isFixHaberBridgeHost("fix.tc"), true);
+    assert.equal(isFixHaberBridgeHost("www.fix.tc"), true);
+    assert.equal(isPhpThemeOriginBridgeHost("fix.tc"), true);
+    assert.equal(isPhpThemeOriginBridgeHost("ege.gundemi.org"), true);
   });
 
   it("bridges PHP theme assets and HTML paths (not SPA panel/assets)", () => {

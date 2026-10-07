@@ -13,6 +13,7 @@ import {
   HM_SITE_RSS_DEFAULTS_REV,
   cloneDefaultHmSiteRssFeedRows,
 } from "./hm-site-rss-defaults.js";
+import { ensureFixHaberBrandMetaOnSql } from "./hm-fixhaber-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -116,6 +117,14 @@ export const HM_BRAND_DB_BINDINGS = [
     slug: "gundemi",
     displayName: "Gündemi",
     description: "ilkeli iffetli isabetli haber",
+  },
+  /** Fix Haber — fix.tc Yenişafak PHP; Neon satırı yoksa kenar seed. */
+  {
+    domain: "fix.tc",
+    domains: ["fix.tc", "www.fix.tc"],
+    slug: "fixhaber",
+    displayName: "Fix Haber",
+    description: "Fix Haber — Türkiye gündemini Türkçe aktaran dijital haber sitesi.",
   },
 ];
 
@@ -1489,6 +1498,15 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       return await ensureKhBrandMetaOnSql(sql);
     } catch (err) {
       console.error("[hm-brand-db-ensure] kh canonical", String(err?.message || err).slice(0, 240));
+      return null;
+    }
+  }
+
+  if (binding.slug === "fixhaber" || host === "fix.tc") {
+    try {
+      return await ensureFixHaberBrandMetaOnSql(sql);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] fixhaber", String(err?.message || err).slice(0, 240));
       return null;
     }
   }
