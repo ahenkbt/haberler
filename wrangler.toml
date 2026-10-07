@@ -1721,8 +1721,9 @@ zone_name = "tukav.org"
 # Bölgesel kamu sayfaları: SPA catch-all YOK (ankarasehirgazetesi.com modeli) → origin Yenişafak PHP.
 # VPS Traefik HostRegexp: hostinger/gundemi-bolge/traefik-gundemi.yml (zorunlu).
 # Apex geçici catch-all: gundemi-origin-bridge.js → turkatahaber PHP (Traefik Host gundemi.org sonrası sil).
-# *.gundemi.org/assets/*: /editor SPA bundles. theme.css/js → gundemi-origin-bridge PHP proxy
-# (do NOT remove without another path for /assets/index-*.js). Logos: /gundemi/logos/* → ASSETS.
+# *.gundemi.org/assets/*: KEEP — /editor loads index-*, vendor-*, and many lazy chunks.
+# Do NOT delete this route (theme.css shares /assets/*; bridge proxies theme to PHP origin).
+# Logos: /gundemi/logos/* → ASSETS (+ VPS :8095 backup).
 
 [[routes]]
 pattern = "*.gundemi.org/editor*"

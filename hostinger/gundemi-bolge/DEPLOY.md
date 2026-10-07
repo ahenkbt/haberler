@@ -108,11 +108,13 @@ curl -sk --resolve ege.gundemi.org:443:127.0.0.1 -D- https://ege.gundemi.org/ | 
 - **`*.gundemi.org` kamu `/` → SPA ASSETS yok** — Cloudflare orange cloud → origin Yenişafak PHP  
   (Traefik HostRegexp şart; yoksa origin `404 page not found`)
 - Panel/API: `/editor*`, `/api/*`, … Worker’da kalır (ankarasehirgazetesi.com modeli)
-- **`*.gundemi.org/assets/*`**: `/editor` SPA `index-*.js` için Worker’da kalır.  
-  `/assets/theme.css` + `theme.js` Worker’a düşünce **503 gap değil** — bridge shared Yenişafak PHP  
-  (`x-yekpare-frontend: gundemi-php-theme-asset`, upstream turkatahaber / aynı pack as `:8095`).
+- **`*.gundemi.org/assets/*`**: **silme** — `/editor` `index-*` / `vendor-*` / lazy chunk’lar için şart.  
+  Aynı pattern altına düşen `/assets/theme.css` + `theme.js` → bridge PHP  
+  (`x-yekpare-frontend: gundemi-php-theme-asset`, upstream turkatahaber = `:8095` pack;  
+  **asla** `gundemi-php-traefik-gap` 503 HTML).  
+  Deploy sonrası: `node scripts/smoke-gundemi-assets.mjs` (Cloudflare Production Deploy adımı).
 - **`*.gundemi.org/gundemi/logos/*`**: Worker ASSETS (`goalgo/artifacts/ahenkpress/public/gundemi/logos/`).  
-  Origin PHP image’da `/gundemi/logos` yoksa logo 404 olur; ASSETS route şart.
+  Origin’de de olmalı (`:8095` backup). ASSETS route şart.
   Ops (kalıcı image yoksa, container recreate sonrası tekrar):
 
 ```bash
