@@ -22,17 +22,22 @@ const RECORDS = [
   { name: "www", fqdn: `www.${ZONE}`, serves: "Fix Haber PHP (www → apex via Traefik)" },
 ];
 
-function token() {
-  return (
-    process.env.CLOUDFLARE_API_TOKEN ||
-    process.env.CLOUDFLAREDNS_API_TOKEN ||
-    process.env.CF_API_TOKEN ||
-    ""
-  );
+/** Unique non-empty tokens; DNS-specific secret first, then general CF token. */
+function tokens() {
+  const raw = [
+    process.env.CLOUDFLAREDNS_API_TOKEN,
+    process.env.CLOUDFLARE_API_TOKEN,
+    process.env.CF_API_TOKEN,
+  ].map((s) => String(s || "").trim());
+  return [...new Set(raw.filter(Boolean))];
 }
 
-async function cf(path, { method = "GET", body } = {}) {
-  const t = token();
+function token() {
+  return tokens()[0] || "";
+}
+
+async function cf(path, { method = "GET", body, bearer } = {}) {
+  const t = bearer || token();
   if (!t) throw new Error("CLOUDFLARE_API_TOKEN missing");
   const res = await fetch(`${API}${path}`, {
     method,
@@ -46,18 +51,46 @@ async function cf(path, { method = "GET", body } = {}) {
   return { ok: res.ok && json.success !== false, status: res.status, json };
 }
 
+function isAuthError(result) {
+  const err = result?.json?.errors?.[0];
+  return err?.code === 10000 || /Authentication/i.test(String(err?.message || ""));
+}
+
+/** Try each token for mutating calls when the first returns CF code 10000. */
+async function cfMutate(path, { method, body }) {
+  const list = tokens();
+  if (!list.length) throw new Error("CLOUDFLARE_API_TOKEN missing");
+  let last = null;
+  for (let i = 0; i < list.length; i += 1) {
+    const bearer = list[i];
+    const result = await cf(path, { method, body, bearer });
+    if (result.ok || !isAuthError(result)) {
+      return { ...result, tokenIndex: i, tokenCount: list.length };
+    }
+    last = result;
+    if (i < list.length - 1) {
+      console.warn(
+        `[fixhaber-dns] token ${i + 1}/${list.length} lacks DNS write (10000) — trying next secret`,
+      );
+    }
+  }
+  return { ...last, tokenIndex: list.length - 1, tokenCount: list.length };
+}
+
 async function getZone(name) {
   const r = await cf(`/zones?name=${encodeURIComponent(name)}&account.id=${ACCOUNT_ID}`);
   return r.json?.result?.[0] || null;
 }
 
-async function listDns(zoneId, fqdn) {
-  const r = await cf(`/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`);
+async function listDns(zoneId, fqdn, bearer) {
+  const r = await cf(`/zones/${zoneId}/dns_records?name=${encodeURIComponent(fqdn)}&per_page=100`, {
+    bearer,
+  });
   return r.json?.result || [];
 }
 
-async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }) {
-  const records = await listDns(zoneId, fqdn);
+async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }, readBearer) {
+  const records = await listDns(zoneId, fqdn, readBearer);
   const addressRecords = records.filter((rec) => ["A", "AAAA", "CNAME"].includes(rec.type));
   const good = addressRecords.find(
     (rec) => rec.type === "A" && String(rec.content) === ip && rec.proxied === true,
@@ -73,7 +106,7 @@ async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }) {
     if (DRY_RUN) {
       console.log(`[dry-run] ${msg}`);
     } else {
-      const del = await cf(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE" });
+      const del = await cfMutate(`/zones/${zoneId}/dns_records/${rec.id}`, { method: "DELETE" });
       console.log(msg, `ok=${del.ok}`, JSON.stringify(del.json?.errors || {}));
     }
   }
@@ -88,7 +121,7 @@ async function ensureProxiedA(zoneId, { name, fqdn, ip, serves }) {
     console.log(`[dry-run] create A ${name} → ${ip} (proxied) — ${serves}`);
     return { action: "would-create", fqdn, name, ip };
   }
-  const created = await cf(`/zones/${zoneId}/dns_records`, { method: "POST", body });
+  const created = await cfMutate(`/zones/${zoneId}/dns_records`, { method: "POST", body });
   console.log(
     `[fixhaber-dns] create A ${name} → ${ip} (proxied) ok=${created.ok} — ${serves}`,
     JSON.stringify(created.json?.errors || created.json?.result?.id || {}),
@@ -123,12 +156,17 @@ async function publicDnsProbe(fqdn) {
 async function main() {
   console.log(`[fixhaber-dns] zone=${ZONE} origin=${ORIGIN_IP} records=${RECORDS.length} dryRun=${DRY_RUN}`);
 
-  if (!token()) {
-    console.error("[fixhaber-dns] CLOUDFLARE_API_TOKEN missing — cannot create DNS via API.");
+  const tokenList = tokens();
+  if (!tokenList.length) {
+    console.error(
+      "[fixhaber-dns] CLOUDFLARE_API_TOKEN / CLOUDFLAREDNS_API_TOKEN missing — cannot create DNS via API.",
+    );
     console.error("[fixhaber-dns] Dashboard steps: hostinger/fixhaber/DEPLOY.md");
     process.exitCode = 2;
     return;
   }
+
+  console.log(`[fixhaber-dns] auth tokens configured: ${tokenList.length} (names only, not values)`);
 
   const zone = await getZone(ZONE);
   if (!zone?.id) {
@@ -143,7 +181,7 @@ async function main() {
 
   const results = [];
   for (const rec of RECORDS) {
-    results.push(await ensureProxiedA(zone.id, { ...rec, ip: ORIGIN_IP }));
+    results.push(await ensureProxiedA(zone.id, { ...rec, ip: ORIGIN_IP }, tokenList[0]));
   }
 
   console.log("\n[fixhaber-dns] DoH probe (may lag a few minutes after create):");
@@ -163,9 +201,13 @@ async function main() {
     const auth = errors.some((e) => e.code === 10000 || /Authentication/i.test(String(e.message)));
     if (auth) {
       console.error(
-        "[fixhaber-dns] CLOUDFLARE_API_TOKEN can read the zone but cannot create DNS (code 10000).",
+        "[fixhaber-dns] No configured token can create DNS (code 10000). Workers-only or read-only tokens fail here.",
       );
-      console.error("[fixhaber-dns] Grant Zone → DNS → Edit on fix.tc, or add records in Dashboard.");
+      console.error(
+        "[fixhaber-dns] Create API token: Zone → DNS → Edit, zone fix.tc. Store as CLOUDFLAREDNS_API_TOKEN (preferred) or CLOUDFLARE_API_TOKEN.",
+      );
+      console.error("[fixhaber-dns] If both secrets exist, script tries each until one can write.");
+      console.error("[fixhaber-dns] Dashboard: Proxied A @ + www → 187.77.84.201 — hostinger/fixhaber/DEPLOY.md");
     }
     for (const e of errors) {
       console.error(`  FAIL ${e.name}: ${e.code || ""} ${e.message}`);
