@@ -27,6 +27,8 @@ export const PHP_THEME_ZONES = [
   "turksav.org",
   "dunyasaglik.org",
   "yesilvatan.gen.tr",
+  // gundemi.org — apex/www turkatahaber alias + 8 bölgesel PHP alt alan (Hostinger)
+  "gundemi.org",
   // Kurumsal PHP (Hostinger php-kurumsal) — catch-all Worker route yok
   "vatankahramanlari.org",
   "vatankahramanlari.org.tr",

@@ -1,0 +1,54 @@
+# gundemi.org NXDOMAIN → Proxied A → Hostinger PHP (187.77.84.201)
+# Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+name: Ensure gundemi.org PHP DNS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - cursor/gundemi-dns-nxdomain-4349
+    paths:
+      - "scripts/cf-ensure-gundemi-php-dns.mjs"
+      - "hostinger/gundemi-bolge/config/sites.json"
+      - ".github/workflows/cf-ensure-gundemi-dns.yml"
+
+concurrency:
+  group: cf-ensure-gundemi-dns
+  cancel-in-progress: false
+
+jobs:
+  ensure-dns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check CF token
+        id: cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::error::CLOUDFLARE_API_TOKEN missing — cannot create gundemi.org DNS."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "CLOUDFLARE_ACCOUNT_ID=16f5b996194174624e7969a3658bd2bb" >> "$GITHUB_ENV"
+          else
+            echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-node@v6
+        if: steps.cf.outputs.enabled == 'true'
+        with:
+          node-version: 22
+
+      - name: Ensure Proxied A records + panel routes
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cf-ensure-gundemi-php-dns.mjs
