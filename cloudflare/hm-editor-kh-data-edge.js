@@ -199,6 +199,7 @@ async function ensureNewsWritableColumns(sql) {
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS sender_email text",
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS sender_phone text",
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_site_manset boolean NOT NULL DEFAULT false",
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_tepe_manset boolean NOT NULL DEFAULT false",
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_editor_manual boolean NOT NULL DEFAULT false",
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS site_only boolean NOT NULL DEFAULT false",
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS owner_site_id integer",
@@ -303,6 +304,10 @@ export function setNewsMirrorEnv(env) {
  * @param {"upsert"|"delete"} op
  * @param {Record<string, unknown>|number} rowOrId
  */
+/**
+ * PHP Neon (NEWS_DATABASE_URL) ayna. Dual RO / başarısız olsa bile primary kaydı
+ * bozmaz — false döner; çağıran yalnızca primary hatasında 5xx vermeli.
+ */
 export async function mirrorNewsDbWrite(table, op, rowOrId) {
   const env = mirrorEnv;
   if (!env) return false;
@@ -322,10 +327,17 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
             console.error("[hm-news-mirror-slug]", String(err?.message || err).slice(0, 120));
           }
         }
+        // Tepe manşet: Editör isFeatured → PHP is_tepe_manset (+ is_featured)
+        if (payload.is_tepe_manset == null && payload.isTepeManset == null) {
+          const feat = payload.is_featured === true || payload.isFeatured === true;
+          payload = { ...payload, is_tepe_manset: feat, isTepeManset: feat };
+        }
       }
       const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
       if (direct?.mirrored === true) return true;
-      console.warn("[hm-news-mirror] kenar dual-write atlandı", table, op, String(direct?.reason || "unknown"));
+      const reason = String(direct?.reason || "unknown");
+      // Dual RO/ayna hatası primary'yi bozmaz; bridge fallback dene.
+      console.warn("[hm-news-mirror] kenar dual-write atlandı (primary OK)", table, op, reason.slice(0, 160));
     }
   }
 
@@ -1309,14 +1321,14 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
         INSERT INTO news (
           title, slug, spot, content, image_url, category_id, author_id,
           sender_full_name, sender_email, sender_phone,
-          status, is_featured, is_site_manset, is_breaking, tags,
+          status, is_featured, is_site_manset, is_breaking, is_tepe_manset, tags,
           site_id, is_editor_manual, site_only, owner_site_id,
           is_food_recipe, food_recipe_category_slug,
           created_at, updated_at
         ) VALUES (
           ${title}, ${trySlug}, ${spot}, ${content}, ${imageUrl}, ${categoryId}, ${authorId},
           ${senderFullName}, ${senderEmail}, ${senderPhone},
-          ${status}, ${isFeatured}, ${isSiteManset}, ${isBreaking}, ${tagsLiteral}::text[],
+          ${status}, ${isFeatured}, ${isSiteManset}, ${isBreaking}, ${isFeatured}, ${tagsLiteral}::text[],
           ${siteId}, true, true, ${siteId},
           ${isFoodRecipe}, ${foodRecipeCategorySlug},
           NOW(), NOW()
@@ -1325,7 +1337,15 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
       `;
       const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
       if (!row) return createFailResponse("INSERT boş döndü");
-      await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+      // Dual-write PHP Neon; RO/ayna hatası primary kaydını düşürmez.
+      await mirrorNewsDbWrite("news", "upsert", {
+        ...row,
+        category_slug: categorySlug,
+        is_tepe_manset: isFeatured,
+        is_featured: isFeatured,
+        is_site_manset: isSiteManset,
+        is_breaking: isBreaking,
+      });
       await upsertMakaleFromAuthorNews(sql, row);
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
@@ -1432,31 +1452,64 @@ async function handleUpdateNews(sql, siteId, id, body) {
     typeof body?.isBreaking === "boolean" ? body.isBreaking : existing.is_breaking === true;
 
   try {
-    const rows = await sql`
-      UPDATE news SET
-        title = ${title},
-        slug = ${slug},
-        spot = ${spot},
-        content = ${content},
-        image_url = ${imageUrl},
-        category_id = ${categoryId},
-        author_id = ${authorId},
-        status = ${status},
-        is_featured = ${isFeatured},
-        is_site_manset = ${isSiteManset},
-        is_breaking = ${isBreaking},
-        tags = ${tagsLiteral}::text[],
-        is_editor_manual = true,
-        site_only = true,
-        owner_site_id = ${siteId},
-        site_id = ${siteId},
-        updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING *
-    `;
+    let rows;
+    try {
+      rows = await sql`
+        UPDATE news SET
+          title = ${title},
+          slug = ${slug},
+          spot = ${spot},
+          content = ${content},
+          image_url = ${imageUrl},
+          category_id = ${categoryId},
+          author_id = ${authorId},
+          status = ${status},
+          is_featured = ${isFeatured},
+          is_site_manset = ${isSiteManset},
+          is_breaking = ${isBreaking},
+          is_tepe_manset = ${isFeatured},
+          tags = ${tagsLiteral}::text[],
+          is_editor_manual = true,
+          site_only = true,
+          owner_site_id = ${siteId},
+          site_id = ${siteId},
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    } catch (colErr) {
+      const cm = String(colErr?.message || colErr);
+      if (!/column .* does not exist/i.test(cm)) throw colErr;
+      rows = await sql`
+        UPDATE news SET
+          title = ${title},
+          slug = ${slug},
+          spot = ${spot},
+          content = ${content},
+          image_url = ${imageUrl},
+          category_id = ${categoryId},
+          author_id = ${authorId},
+          status = ${status},
+          is_featured = ${isFeatured},
+          is_breaking = ${isBreaking},
+          is_tepe_manset = ${isFeatured},
+          tags = ${tagsLiteral}::text[],
+          is_editor_manual = true,
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    }
     const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
-    await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+    await mirrorNewsDbWrite("news", "upsert", {
+      ...row,
+      category_slug: categorySlug,
+      is_tepe_manset: isFeatured,
+      is_featured: isFeatured,
+      is_site_manset: isSiteManset,
+      is_breaking: isBreaking,
+    });
     await upsertMakaleFromAuthorNews(sql, row);
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
@@ -1486,19 +1539,43 @@ async function handlePatchNewsFlags(sql, siteId, id, body) {
   ) {
     return jsonResponse(400, { error: "isFeatured, isSiteManset veya isBreaking gerekli" });
   }
-  const rows = await sql`
-    UPDATE news SET
-      is_featured = ${isFeatured},
-      is_site_manset = ${isSiteManset},
-      is_breaking = ${isBreaking},
-      is_editor_manual = true,
-      updated_at = NOW()
-    WHERE id = ${id}
-    RETURNING *
-  `;
+  let rows;
+  try {
+    rows = await sql`
+      UPDATE news SET
+        is_featured = ${isFeatured},
+        is_site_manset = ${isSiteManset},
+        is_breaking = ${isBreaking},
+        is_tepe_manset = ${isFeatured},
+        is_editor_manual = true,
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+  } catch (colErr) {
+    const cm = String(colErr?.message || colErr);
+    if (!/column .* does not exist/i.test(cm)) throw colErr;
+    rows = await sql`
+      UPDATE news SET
+        is_featured = ${isFeatured},
+        is_breaking = ${isBreaking},
+        is_tepe_manset = ${isFeatured},
+        is_editor_manual = true,
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+  }
   const row = rows?.[0];
   if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
-  await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: existing.category_slug });
+  await mirrorNewsDbWrite("news", "upsert", {
+    ...row,
+    category_slug: existing.category_slug,
+    is_tepe_manset: isFeatured,
+    is_featured: isFeatured,
+    is_site_manset: isSiteManset,
+    is_breaking: isBreaking,
+  });
   return jsonResponse(200, serializeNewsRow(row, existing.category_slug));
 }
 
