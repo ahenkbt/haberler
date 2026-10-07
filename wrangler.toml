@@ -1716,13 +1716,13 @@ zone_name = "tukav.org"
 pattern = "www.tukav.org/api/stk*"
 zone_name = "tukav.org"
 
-# gundemi.org — apex/www = turkatahaber HM alias (domain2); 8 bölgesel alt alan ayrı Yenişafak siteleri.
-# Zone: gundemi.org. DNS A→187.77.84.201 (proxied) live; Traefik Host() routers on VPS still missing
-# → origin plain "404 page not found". Temporary catch-alls below drive gundemi-origin-bridge.js
-# (apex → turkatahaber PHP) + SPA assets for regionals until traefik-gundemi.yml is applied.
-# After Traefik routers exist: delete gundemi.org/* / www.gundemi.org/* / *.gundemi.org/* and redeploy.
-# DNS + ops: hostinger/gundemi-bolge/DEPLOY.md
-# Wildcard panel/API yolları tüm *.gundemi.org alt alanlarını kapsar; apex panel yolları turkatahaber editörü.
+# gundemi.org — apex/www = turkatahaber HM alias (domain2); herhangi bir *.gundemi.org alt alan
+# (seed 8 bölge + admin panelden yeni açılanlar). Zone: gundemi.org.
+# DNS A→187.77.84.201 (proxied); panel create/PATCH auto-provisions via CLOUDFLARE_API_TOKEN.
+# Traefik Host() on VPS may still be missing → origin "404 page not found".
+# Temporary catch-alls: gundemi-origin-bridge.js (apex → turkatahaber PHP) + SPA for subdomains.
+# After Traefik: delete gundemi.org/* / www.gundemi.org/* / *.gundemi.org/* and redeploy.
+# Ops: hostinger/gundemi-bolge/DEPLOY.md — wildcard routes cover NEW subdomains without per-site edits.
 
 [[routes]]
 pattern = "*.gundemi.org/editor*"

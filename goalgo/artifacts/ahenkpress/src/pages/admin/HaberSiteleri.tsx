@@ -12,8 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
+import { collectGundemiOrgDomainsFromForm } from "@/lib/gundemiOrgDomain";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
-import { isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
+import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
 type HmEditor = {
   id: number;
@@ -43,6 +44,8 @@ type HmSiteRow = {
   layoutJson?: string | null;
   hybridRssEnabled?: boolean;
   publicSuspended?: boolean;
+  /** layout_json phpTheme / frontend — Hostinger PHP şablon */
+  phpTheme?: boolean;
   contact?: { phone?: string; email?: string; address?: string; notes?: string };
   seoVerification?: SeoVerification | null;
   editors?: HmEditor[];
@@ -67,6 +70,8 @@ type SiteForm = {
   editorPassword: string;
   active: boolean;
   hybridRssEnabled: boolean;
+  /** Yeni sitelerde varsayılan açık — Hostinger PHP (Yenişafak) şablonu */
+  phpTheme: boolean;
 };
 
 const emptyForm: SiteForm = {
@@ -87,6 +92,7 @@ const emptyForm: SiteForm = {
   editorPassword: "",
   active: true,
   hybridRssEnabled: true,
+  phpTheme: true,
 };
 
 async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
@@ -102,6 +108,7 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
           ...site,
           hybridRssEnabled: layout.hybridRssEnabled === true,
           publicSuspended: isHmPublicSuspended(layout),
+          phpTheme: isHmPhpThemeSite(layout),
         };
       })
     : [];
@@ -162,10 +169,15 @@ function formFromSite(site: HmSiteRow): SiteForm {
     editorPassword: "",
     active: site.active !== false,
     hybridRssEnabled: site.hybridRssEnabled === true,
+    phpTheme: site.phpTheme === true,
   };
 }
 
-function payloadFromForm(form: SiteForm, editorId?: number) {
+function payloadFromForm(
+  form: SiteForm,
+  editorId?: number,
+  opts?: { includePhpThemeFlag?: boolean },
+) {
   const body: Record<string, unknown> = {
     slug: form.slug,
     displayName: form.displayName,
@@ -185,6 +197,12 @@ function payloadFromForm(form: SiteForm, editorId?: number) {
     },
     active: form.active,
   };
+  // Yeni site: her zaman bayrak. Düzenlemede yalnızca kullanıcı değiştirdiyse.
+  if (opts?.includePhpThemeFlag) {
+    body.layoutJson = form.phpTheme
+      ? { phpTheme: true, frontend: "php" }
+      : { phpTheme: false, frontend: "spa" };
+  }
   if (editorId) body.editorId = editorId;
   if (form.editorDisplayName) body.editorDisplayName = form.editorDisplayName;
   if (form.editorEmail) body.editorEmail = form.editorEmail;
@@ -224,6 +242,11 @@ export default function HaberSiteleri() {
   });
 
   const sites = data?.items ?? [];
+
+  const gundemiHostsInForm = useMemo(
+    () => collectGundemiOrgDomainsFromForm(form),
+    [form.domain, form.domain2, form.domain3],
+  );
 
   /** Aynı e-posta birden fazla sitede aktif — VKD+KH karışıklığı uyarısı */
   const duplicateEditorEmails = useMemo(() => {
@@ -296,20 +319,69 @@ export default function HaberSiteleri() {
       await ensureAdminPanelBootstrap();
       const current = editingId ? sites.find((s) => s.id === editingId) : undefined;
       const editorId = primaryHmSiteEditor(current)?.id;
+      const includePhpThemeFlag =
+        !editingId || form.phpTheme !== (current?.phpTheme === true);
+      const gundemiHosts = collectGundemiOrgDomainsFromForm(form);
       const r = await apiFetch(apiUrl(editingId ? `/api/hm/sites/${editingId}` : "/api/hm/sites"), {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadFromForm(form, editorId)),
+        body: JSON.stringify(payloadFromForm(form, editorId, { includePhpThemeFlag })),
       });
       const text = await r.text();
-      const j = text ? JSON.parse(text) as { error?: string } : {};
+      const j = text
+        ? (JSON.parse(text) as {
+            error?: string;
+            site?: { id?: number };
+            id?: number;
+            gundemiProvision?: {
+              tokenPresent?: boolean;
+              dns?: Array<{ action?: string; fqdn?: string }>;
+            };
+          })
+        : {};
       if (!r.ok) throw new Error(j.error || text || "Kaydedilemedi");
+
+      const siteId =
+        editingId ??
+        (typeof j.site?.id === "number" ? j.site.id : typeof j.id === "number" ? j.id : null);
+
+      let gundemiNote = "";
+      if (gundemiHosts.length > 0 && siteId) {
+        try {
+          const er = await apiFetch(apiUrl(`/api/hm/sites/${siteId}/ensure-gundemi`), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          });
+          const ej = (await er.json().catch(() => ({}))) as {
+            error?: string;
+            gundemiProvision?: { tokenPresent?: boolean; dns?: Array<{ action?: string }> };
+            tokenHint?: string;
+          };
+          if (er.ok) {
+            const actions = (ej.gundemiProvision?.dns ?? []).map((d) => d.action).filter(Boolean);
+            gundemiNote = ej.gundemiProvision?.tokenPresent
+              ? ` · gundemi.org DNS: ${actions.join(", ") || "ok"}`
+              : " · gundemi.org DNS: token yok (CLOUDFLARE_API_TOKEN) — soft-fail";
+          } else {
+            gundemiNote = ` · gundemi ensure: ${ej.error || "başarısız"}`;
+          }
+        } catch {
+          gundemiNote = " · gundemi ensure çağrısı başarısız";
+        }
+      } else if (j.gundemiProvision) {
+        const actions = (j.gundemiProvision.dns ?? []).map((d) => d.action).filter(Boolean);
+        gundemiNote = j.gundemiProvision.tokenPresent
+          ? ` · gundemi.org DNS: ${actions.join(", ") || "ok"}`
+          : " · gundemi.org DNS: token yok — soft-fail";
+      }
+
       const wasPassiveEditor = primaryEditorIsPassive(current);
       toast({
         title: editingId ? "Haber sitesi güncellendi" : "Haber sitesi oluşturuldu",
         description: wasPassiveEditor
-          ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}`
-          : `Slug: /${form.slug.trim()} · kaydı yenileniyor…`,
+          ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}${gundemiNote}`
+          : `Slug: /${form.slug.trim()}${gundemiNote} · kaydı yenileniyor…`,
       });
       resetForm();
       await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
@@ -654,6 +726,19 @@ export default function HaberSiteleri() {
                   <Input value={form.domain3} onChange={(e) => update("domain3", e.target.value)} placeholder="alternatif.com" />
                 </div>
               </div>
+              {gundemiHostsInForm.length > 0 ? (
+                <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-[11px] leading-relaxed text-sky-950">
+                  <p className="font-semibold text-sky-900">*.gundemi.org otomatik açılış</p>
+                  <p className="mt-1">
+                    Kayıtta DNS (Proxied A → 187.77.84.201) + PHP şablon bayrağı + Worker{" "}
+                    <code className="rounded bg-white/80 px-1">*.gundemi.org/*</code> catch-all
+                    otomatik denenir ({gundemiHostsInForm.join(", ")}). Token:{" "}
+                    <code className="rounded bg-white/80 px-1">CLOUDFLARE_API_TOKEN</code> (Zone DNS
+                    Edit, gundemi.org). Origin PHP için VPS Traefik Host() hâlâ opsiyonel — Worker
+                    yolu Traefik olmadan siteyi açar.
+                  </p>
+                </div>
+              ) : null}
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <div className="space-y-1.5">
@@ -717,6 +802,24 @@ export default function HaberSiteleri() {
                 «Site aktif» yalnızca vitrini açar. Editör girişi için sağ listedeki hesap «(pasif)» olmamalı.
               </p>
 
+              <label className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+                <span className="text-sm font-semibold text-emerald-950">PHP şablon (Hostinger Yenişafak)</span>
+                <Switch checked={form.phpTheme} onCheckedChange={(v) => update("phpTheme", Boolean(v))} />
+              </label>
+              <div className="rounded-xl border border-emerald-100 bg-white px-3 py-2 text-[11px] leading-relaxed text-slate-600">
+                <p className="font-semibold text-emerald-900">Yeni sitelerde varsayılan açık</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  <li>
+                    Panel kaydı <code className="rounded bg-slate-100 px-1">layout_json.phpTheme</code>{" "}
+                    bayrağını yazar; bekçi / Worker host listesi wrangler.toml düzenlemesi gerektirmez.
+                  </li>
+                  <li>
+                    <code className="rounded bg-slate-100 px-1">*.gundemi.org</code> domain’lerinde DNS +
+                    Worker catch-all da otomatik denenir (yukarıdaki mavi kutu).
+                  </li>
+                </ul>
+              </div>
+
               <Button type="button" disabled={saving} onClick={saveSite} className="w-full bg-[#e61e25] hover:bg-[#c91820]">
                 <Save className="mr-2 h-4 w-4" /> {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : "Site Oluştur"}
               </Button>
@@ -764,6 +867,11 @@ export default function HaberSiteleri() {
                             <h3 className="text-base font-black text-gray-900">{site.displayName}</h3>
                             <Badge variant={site.active ? "default" : "secondary"}>{site.active ? "Aktif" : "Pasif"}</Badge>
                             {site.publicSuspended ? <Badge variant="outline">Askıda</Badge> : null}
+                            {site.phpTheme ? (
+                              <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800">
+                                PHP şablon
+                              </Badge>
+                            ) : null}
                             {site.hasOwnLlmKeys ? (
                               <Badge variant="outline">Kendi API{(site.ownLlmProviders ?? []).length ? `: ${(site.ownLlmProviders ?? []).join(", ")}` : ""}</Badge>
                             ) : (

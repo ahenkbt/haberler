@@ -6,12 +6,14 @@
  *
  * Apex (turkatahaber domain2 alias): reverse-proxy PHP from turkatahaber.com and
  * keep the public host as gundemi.org.
- * Regionals: caller should serve SPA assets until Traefik Host() rules exist
- * (see hostinger/gundemi-bolge/traefik-gundemi.yml).
+ * Any *.gundemi.org subdomain (seed regionals + admin-created): caller serves SPA
+ * assets until Traefik Host() rules exist (see hostinger/gundemi-bolge/traefik-gundemi.yml).
+ * Catch-all Worker route `*.gundemi.org/*` covers new hosts without wrangler.toml edits.
  */
 
 import { TURKATA_ORIGIN, isTurkataHaberHost, turkataPublicOrigin } from "./turkata-haber.js";
 
+/** Seed / docs catalog — known regionals (any new *.gundemi.org also works). */
 const GUNDEMI_REGIONAL_APEX = Object.freeze([
   "ege.gundemi.org",
   "marmara.gundemi.org",
@@ -23,9 +25,7 @@ const GUNDEMI_REGIONAL_APEX = Object.freeze([
   "kibris.gundemi.org",
 ]);
 
-const GUNDEMI_REGIONAL_HOSTS = new Set(
-  GUNDEMI_REGIONAL_APEX.flatMap((apex) => [apex, `www.${apex}`]),
-);
+const GUNDEMI_ZONE = "gundemi.org";
 
 /** Panel / API paths already bound to Worker — never PHP-bridge these. */
 const SPA_PANEL_PREFIXES = Object.freeze([
@@ -60,20 +60,32 @@ export function listGundemiRegionalApexHosts() {
   return [...GUNDEMI_REGIONAL_APEX];
 }
 
+/**
+ * Any subdomain under gundemi.org (not apex).
+ * New admin-created hosts (e.g. yeni.gundemi.org) work without wrangler.toml edits
+ * when DNS + `*.gundemi.org/*` Worker route exist.
+ */
+export function isGundemiOrgSubdomainHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  if (!host || host === GUNDEMI_ZONE) return false;
+  return host.endsWith(`.${GUNDEMI_ZONE}`);
+}
+
+/** @deprecated Prefer isGundemiOrgSubdomainHost — kept for callers/tests. */
 export function isGundemiRegionalHost(hostname) {
-  return GUNDEMI_REGIONAL_HOSTS.has(normalizeHostname(hostname));
+  return isGundemiOrgSubdomainHost(hostname);
 }
 
 /** Apex alias only (gundemi.org / www) — turkatahaber PHP bridge. */
 export function isGundemiApexBridgeHost(hostname) {
   const host = normalizeHostname(hostname);
   if (!host) return false;
-  if (isGundemiRegionalHost(host)) return false;
-  return isTurkataHaberHost(host) && normalizeHostname(host).replace(/^www\./, "") === "gundemi.org";
+  if (isGundemiOrgSubdomainHost(host)) return false;
+  return isTurkataHaberHost(host) && normalizeHostname(host).replace(/^www\./, "") === GUNDEMI_ZONE;
 }
 
 export function isGundemiBridgeCatchAllHost(hostname) {
-  return isGundemiApexBridgeHost(hostname) || isGundemiRegionalHost(hostname);
+  return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
 }
 
 export function isPhpThemeAssetPath(pathname) {
