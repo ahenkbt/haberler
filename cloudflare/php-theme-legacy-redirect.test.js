@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   isPhpThemePublicHost,
+  isPhpCorporateThemeHost,
   listPhpThemePublicApexHosts,
+  listPhpCorporateThemeApexHosts,
   phpThemeLegacyRedirectPath,
   phpThemeLegacyRedirectResponse,
   koseyazariPanelRedirectPath,
@@ -14,7 +16,7 @@ function run(url, method = "GET") {
   return phpThemeLegacyRedirectResponse(new Request(url, { method }), incoming);
 }
 
-test("PHP tema hostları: ASG + Ekim 2026 twin'ler; kurumsal SPA ve askı kapısı hariç", () => {
+test("PHP tema hostları: ASG + Ekim 2026 twin'ler + kurumsal PHP; askı kapısı hariç", () => {
   const apex = listPhpThemePublicApexHosts();
   assert.ok(apex.includes("ankarasehirgazetesi.com"));
   assert.ok(apex.includes("yesilvatan.gen.tr"));
@@ -22,17 +24,21 @@ test("PHP tema hostları: ASG + Ekim 2026 twin'ler; kurumsal SPA ve askı kapıs
   assert.ok(apex.includes("turksav.org"));
   assert.ok(apex.includes("dunyasaglik.org"));
   assert.ok(apex.includes("yerel.net.tr"));
+  assert.ok(apex.includes("vatankahramanlari.org"));
+  assert.ok(apex.includes("trafikdernegi.com"));
+  assert.ok(apex.includes("tgd.tc"));
   assert.equal(isPhpThemePublicHost("ankarasehirgazetesi.com"), true);
   assert.equal(isPhpThemePublicHost("WWW.yesilvatan.gen.tr"), true);
   assert.equal(isPhpThemePublicHost("sehitgazi.org.tr"), true);
+  assert.equal(isPhpThemePublicHost("vatankahramanlari.org"), true);
+  assert.equal(isPhpThemePublicHost("trafikdernegi.com"), true);
+  assert.equal(isPhpCorporateThemeHost("vatankahramanlari.org"), true);
+  assert.equal(isPhpCorporateThemeHost("www.trafikdernegi.com"), true);
+  assert.equal(isPhpCorporateThemeHost("yesilvatan.gen.tr"), false);
   assert.equal(isPhpThemePublicHost("kirsehirhaber.org"), false);
   assert.equal(isPhpThemePublicHost("ahenk.net.tr"), false);
-  // VKD / TGD kurumsal SPA — PHP Yenişafak listesinde değil
-  assert.equal(isPhpThemePublicHost("vatankahramanlari.org"), false);
-  assert.equal(isPhpThemePublicHost("trafikdernegi.com"), false);
   assert.equal(run("https://ahenk.net.tr/tr/asg/haber/x"), null);
   assert.equal(run("https://kirsehirhaber.org/tr/kirsehirhaber/haber/x"), null);
-  assert.equal(run("https://vatankahramanlari.org/tr/vkd/haber/x"), null);
 });
 
 test("eski SPA haber linki PHP /haber/:slug adresine 301 gider ve siteId silinir", () => {
@@ -57,6 +63,31 @@ test("yesilvatan / sehitgazi eski SPA yolları apex PHP adresine 301", () => {
   const sg = run("https://sehitgazi.org.tr/hm/sehitgazi/kategori/sehit-gazi");
   assert.ok(sg);
   assert.equal(sg.headers.get("location"), "https://sehitgazi.org.tr/kategori/sehit-gazi");
+});
+
+test("VKD / TGD kurumsal SPA yolları apex PHP sayfa yollarına 301", () => {
+  const corporate = listPhpCorporateThemeApexHosts();
+  assert.deepEqual(corporate.sort(), ["tgd.tc", "trafikdernegi.com", "vatankahramanlari.org"].sort());
+
+  const vkd = run("https://www.vatankahramanlari.org/tr/vkd/hakkimizda");
+  assert.ok(vkd);
+  assert.equal(vkd.status, 301);
+  assert.equal(vkd.headers.get("location"), "https://vatankahramanlari.org/hakkimizda");
+
+  const vkdRoot = run("https://vatankahramanlari.org.tr/hm/vkd");
+  assert.ok(vkdRoot);
+  assert.equal(vkdRoot.headers.get("location"), "https://vatankahramanlari.org/");
+
+  const tgd = run("https://trafikdernegi.com/tr/trafik/iletisim");
+  assert.ok(tgd);
+  assert.equal(tgd.headers.get("location"), "https://trafikdernegi.com/iletisim");
+
+  const tgdAlias = run("https://www.tgd.tc/tr/trafik/bagis");
+  assert.ok(tgdAlias);
+  assert.equal(tgdAlias.headers.get("location"), "https://trafikdernegi.com/bagis");
+
+  assert.equal(phpThemeLegacyRedirectPath("/tr/vkd/hakkimizda", { corporate: true }), "/hakkimizda");
+  assert.equal(phpThemeLegacyRedirectPath("/tr/vkd/hakkimizda", { corporate: false }), null);
 });
 
 test("www ve /hm/ öneki de apex PHP adresine gider; siteId dışındaki sorgu korunur", () => {

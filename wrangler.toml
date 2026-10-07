@@ -313,36 +313,198 @@ zone_name = "ankarasehirgazetesi.com"
 pattern = "www.ankarasehirgazetesi.com/hm/*"
 zone_name = "ankarasehirgazetesi.com"
 
+# vatankahramanlari.org (+ org.tr) — kurumsal PHP (Hostinger php-kurumsal, VPS 187.77.84.201 proxied A).
+# Worker yalnızca panel/API + eski SPA /tr|/hm 301. Catch-all apex/www BİLEREK yok.
 [[routes]]
-pattern = "vatankahramanlari.org/*"
+pattern = "vatankahramanlari.org/editor*"
 zone_name = "vatankahramanlari.org"
 
 [[routes]]
-pattern = "vatankahramanlari.org"
+pattern = "vatankahramanlari.org/api/*"
 zone_name = "vatankahramanlari.org"
 
 [[routes]]
-pattern = "www.vatankahramanlari.org/*"
+pattern = "vatankahramanlari.org/admin*"
 zone_name = "vatankahramanlari.org"
 
 [[routes]]
-pattern = "www.vatankahramanlari.org"
+pattern = "vatankahramanlari.org/panel*"
 zone_name = "vatankahramanlari.org"
 
 [[routes]]
-pattern = "vatankahramanlari.org.tr/*"
+pattern = "vatankahramanlari.org/haber-merkezi*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/assets/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/sw.js"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/llms.txt"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/ai.txt"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/manifest.json"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/tr/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org/hm/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/editor*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/api/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/admin*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/panel*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/haber-merkezi*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/assets/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/sw.js"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/llms.txt"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/ai.txt"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/manifest.json"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/tr/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/hm/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/editor*"
 zone_name = "vatankahramanlari.org.tr"
 
 [[routes]]
-pattern = "vatankahramanlari.org.tr"
+pattern = "vatankahramanlari.org.tr/api/*"
 zone_name = "vatankahramanlari.org.tr"
 
 [[routes]]
-pattern = "www.vatankahramanlari.org.tr/*"
+pattern = "vatankahramanlari.org.tr/admin*"
 zone_name = "vatankahramanlari.org.tr"
 
 [[routes]]
-pattern = "www.vatankahramanlari.org.tr"
+pattern = "vatankahramanlari.org.tr/panel*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/haber-merkezi*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/assets/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/sw.js"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/llms.txt"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/ai.txt"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/manifest.json"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/tr/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/hm/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/editor*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/api/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/admin*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/panel*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/haber-merkezi*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/assets/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/sw.js"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/llms.txt"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/ai.txt"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/manifest.json"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/tr/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/hm/*"
 zone_name = "vatankahramanlari.org.tr"
 
 # vatanhaber.net (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
@@ -1350,38 +1512,198 @@ zone_name = "yesilvatan.gen.tr"
 pattern = "www.yesilvatan.gen.tr/hm/*"
 zone_name = "yesilvatan.gen.tr"
 
-# Trafik Guvenligi Dernegi (/tr/trafik) — trafikdernegi.com + tgd.tc
-# Kurumsal SPA (Vatan); PHP Yenişafak twin değil. Catch-all Worker'da kalır.
+# Trafik Guvenligi Dernegi — kurumsal PHP (Hostinger php-kurumsal, VPS 187.77.84.201 proxied A).
+# trafikdernegi.com + tgd.tc: Worker panel/API + /tr|/hm 301; catch-all BİLEREK yok.
 [[routes]]
-pattern = "trafikdernegi.com"
+pattern = "trafikdernegi.com/editor*"
 zone_name = "trafikdernegi.com"
 
 [[routes]]
-pattern = "www.trafikdernegi.com"
+pattern = "trafikdernegi.com/api/*"
 zone_name = "trafikdernegi.com"
 
 [[routes]]
-pattern = "trafikdernegi.com/*"
+pattern = "trafikdernegi.com/admin*"
 zone_name = "trafikdernegi.com"
 
 [[routes]]
-pattern = "www.trafikdernegi.com/*"
+pattern = "trafikdernegi.com/panel*"
 zone_name = "trafikdernegi.com"
 
 [[routes]]
-pattern = "tgd.tc"
+pattern = "trafikdernegi.com/haber-merkezi*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/assets/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/sw.js"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/llms.txt"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/ai.txt"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/manifest.json"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/tr/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "trafikdernegi.com/hm/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/editor*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/api/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/admin*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/panel*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/haber-merkezi*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/assets/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/sw.js"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/llms.txt"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/ai.txt"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/manifest.json"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/tr/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/hm/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "tgd.tc/editor*"
 zone_name = "tgd.tc"
 
 [[routes]]
-pattern = "www.tgd.tc"
+pattern = "tgd.tc/api/*"
 zone_name = "tgd.tc"
 
 [[routes]]
-pattern = "tgd.tc/*"
+pattern = "tgd.tc/admin*"
 zone_name = "tgd.tc"
 
 [[routes]]
-pattern = "www.tgd.tc/*"
+pattern = "tgd.tc/panel*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/haber-merkezi*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/assets/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/sw.js"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/llms.txt"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/ai.txt"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/manifest.json"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/tr/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "tgd.tc/hm/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/editor*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/api/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/admin*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/panel*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/haber-merkezi*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/assets/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/sw.js"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/llms.txt"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/ai.txt"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/manifest.json"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/tr/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/hm/*"
 zone_name = "tgd.tc"
 
 # tukav.org iletişim kaydı goalgo.org STK API'sinden gelir. Yalnızca /api/stk
