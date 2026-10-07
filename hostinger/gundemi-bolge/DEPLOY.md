@@ -11,7 +11,7 @@ DNS A kayıtları Proxied → `187.77.84.201`. Neon seed (#390/#391) hazır.
 | Public DNS (`1.1.1.1` / `8.8.8.8`) | `@`, `www`, `ege`…`kibris` → CF anycast (`104.21…` / `172.67…`) |
 | Kullanıcı `DNS_PROBE_FINISHED_NXDOMAIN` | Genelde **yerel/ISP önbellek** veya eski negatif TTL — kayıtlar zone’da var |
 | Apex / bölgesel `/` 404 `page not found` | **VPS Traefik**’te `Host()` router yok (DEFAULT CERT + Go 404). DNS değil. |
-| Geçici kenar köprüsü | Worker catch-all + `gundemi-origin-bridge.js`: apex → turkatahaber PHP; bölgesel → SPA ta ki Traefik hazır |
+| Kenar | Apex: Worker bridge → turkatahaber PHP. Bölgesel: **SPA yok** — orange → origin PHP (Traefik Host zorunlu) |
 
 **Kullanıcı (NXDOMAIN görüyorsa):** Windows `ipconfig /flushdns`, tarayıcı önbelleği temizle, mümkünse DNS’i `1.1.1.1` yap, gizli pencere dene. `nslookup ege.gundemi.org 1.1.1.1` CF IP dönmeli.
 
@@ -71,21 +71,28 @@ Doğrulama: `dig @1.1.1.1 +short ege.gundemi.org A` → CF anycast; boş / NXDOM
 Origin `187.77.84.201` TLS: **TRAEFIK DEFAULT CERT**.  
 `Host: turkatahaber.com` → PHP 200; `Host: gundemi.org` / `ege.gundemi.org` → `404 page not found`.
 
-1. VPS’te [`traefik-gundemi.yml`](./traefik-gundemi.yml) Host() router’larını turkatahaber ile **aynı Yenişafak PHP service**’e bağla.  
+1. VPS’te [`traefik-gundemi.yml`](./traefik-gundemi.yml) HostRegexp / Host() → turkatahaber ile **aynı Yenişafak PHP service**.  
 2. `config/sites.php` / Neon `meta/by-domain` host eşlemesi (apex = turkatahaber).  
-3. Traefik canlı olduktan sonra `wrangler.toml` içindeki geçici  
-   `gundemi.org/*`, `www.gundemi.org/*`, `*.gundemi.org/*` route’larını **sil** ve Worker’ı redeploy et.
+3. Worker’da bölgesel SPA catch-all **yok** (`*.gundemi.org/*` silindi). Apex `gundemi.org/*` bridge Traefik Host(apex) sonrası silinir.
 
-## Geçici Worker köprüsü (bu PR)
+### VPS’te hızlı uygula (root)
 
-`cloudflare/gundemi-origin-bridge.js` + catch-all routes:
+```bash
+# Traefik dynamic dosya yolunu kendi kurulumuna göre düzelt
+install -m 644 hostinger/gundemi-bolge/traefik-gundemi.yml /etc/traefik/dynamic/gundemi.yml
+# veya: docker cp … && docker kill -s HUP traefik
+curl -sk --resolve ege.gundemi.org:443:127.0.0.1 https://ege.gundemi.org/ | head -c 200
+# Beklenen: X-Powered-By: PHP  (plain "404 page not found" olmamalı)
+```
 
-- `gundemi.org` / `www` → turkatahaber.com PHP (URL’ler `gundemi.org` olarak yeniden yazılır)
-- **Herhangi bir** `*.gundemi.org` alt alan (seed 8 bölge + panelden yeni açılanlar) → SPA ASSETS  
-  (Neon `meta/by-domain` eşleşmesi; PHP Traefik sonrası origin’e geçer)
-- wrangler.toml’da site başına route gerekmez — `*.gundemi.org/*` yeterli
+## Worker kenar (PHP only — SPA yok)
 
-Panel/API route’ları (`/editor*`, `/api/*`, …) daha spesifik kalır.
+`cloudflare/gundemi-origin-bridge.js` + wrangler:
+
+- `gundemi.org` / `www` → turkatahaber.com PHP bridge (geçici)
+- **`*.gundemi.org` kamu `/` → SPA ASSETS yok** — Cloudflare orange cloud → origin Yenişafak PHP  
+  (Traefik HostRegexp şart; yoksa origin `404 page not found`)
+- Panel/API: `/editor*`, `/api/*`, … Worker’da kalır (ankarasehirgazetesi.com modeli)
 
 ## Admin panel — yeni `*.gundemi.org` site (otomatik)
 
@@ -93,8 +100,7 @@ Haber Siteleri panelinde domain `yeni.gundemi.org` gibi `*.gundemi.org` yazıld�
 
 1. `layout_json.phpTheme` + `frontend: "php"` (opt-out yoksa)
 2. Cloudflare Proxied **A** → `187.77.84.201` (idempotent)
-3. Worker catch-all `*.gundemi.org/*` (Traefik Host() olmadan SPA/bridge ile açılır)
-
+3. Traefik HostRegexp yeni alt alanı otomatik karşılar (Worker SPA catch-all yok)
 API: `POST /api/hm/sites` / `PATCH` otomatik; yeniden deneme `POST /api/hm/sites/:id/ensure-gundemi`.
 
 **Secret adı:** `CLOUDFLARE_API_TOKEN` (Worker secret veya API Container env; `CF_API_TOKEN` de okunur).
@@ -104,10 +110,10 @@ API: `POST /api/hm/sites` / `PATCH` otomatik; yeniden deneme `POST /api/hm/sites
 | Permission | Neden |
 |------------|--------|
 | Zone → DNS → **Edit** | Alt alan A kaydı oluşturma |
-| Zone → Workers Routes → **Edit** | `*.gundemi.org/*` catch-all |
+| Zone → Workers Routes → **Edit** | Apex bridge + SPA catch-all silme |
 | Zone → Zone → **Read** | Zone id çözümü |
 
-Token yoksa soft-fail (site kaydı yine başarılı; NXDOMAIN kalır). Pure origin PHP için VPS Traefik `Host()` hâlâ opsiyonel — Worker yolu yeni siteleri Traefik olmadan açar.
+Token yoksa soft-fail (site kaydı yine başarılı; NXDOMAIN kalır). Bölgesel PHP için VPS Traefik HostRegexp **zorunlu**.
 
 ## One-shot API (katalog / manuel)
 
@@ -126,7 +132,7 @@ Actions: **Ensure gundemi.org PHP DNS** → Run workflow (`workflow_dispatch` on
 
 1. Zone **`gundemi.org`** → **DNS** → **Records**  
 2. Yukarıdaki 10 A kaydı Proxied → `187.77.84.201`  
-3. Workers → `haberler` → Routes: panel + (geçici) catch-all bridge
+3. Workers → `haberler` → Routes: panel + apex bridge; **`*.gundemi.org/*` olmamalı**
 
 ## Neon / seed
 
@@ -145,8 +151,7 @@ Editör: `https://ege.gundemi.org/editor`
 - [x] DNS A Proxied (public resolvers)
 - [x] NS = Cloudflare
 - [ ] Kullanıcı DNS flush (NXDOMAIN önbelleği)
-- [x] Geçici Worker bridge (apex PHP / bölgesel SPA)
-- [ ] VPS Traefik Host() + Yenişafak PHP (`traefik-gundemi.yml`)
-- [ ] Traefik sonrası catch-all Worker route’larını kaldır
-- [ ] `https://ege.gundemi.org/` PHP home; `/editor` Worker SPA
+- [x] Worker: bölgesel SPA catch-all kaldırıldı; apex PHP bridge
+- [ ] VPS Traefik HostRegexp + Yenişafak PHP (`traefik-gundemi.yml`) ← **şimdi bunu uygula**
+- [ ] `https://ege.gundemi.org/` → `X-Powered-By: PHP` (SPA değil)
 - [ ] `https://gundemi.org/` turkatahaber içeriği (bridge veya Traefik)

@@ -35,6 +35,8 @@ test("PHP tema hostları: ASG + Ekim 2026 twin'ler + kurumsal PHP; askı kapıs�
   assert.equal(isPhpThemePublicHost("www.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("ege.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("icanadolu.gundemi.org"), true);
+  assert.equal(isPhpThemePublicHost("yeni.gundemi.org"), true);
+  assert.equal(isPhpThemePublicHost("www.yeni.gundemi.org"), true);
   assert.equal(isPhpThemePublicHost("ankarasehirgazetesi.com"), true);
   assert.equal(isPhpThemePublicHost("WWW.yesilvatan.gen.tr"), true);
   assert.equal(isPhpThemePublicHost("sehitgazi.org.tr"), true);

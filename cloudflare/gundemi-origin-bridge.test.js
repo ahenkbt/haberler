@@ -6,6 +6,7 @@ import {
   isGundemiOrgSubdomainHost,
   isGundemiRegionalHost,
   isPhpThemeAssetPath,
+  shouldBlockGundemiSpaAssets,
   shouldBridgeGundemiApexPath,
   gundemiApexPhpBridgeResponse,
 } from "./gundemi-origin-bridge.js";
@@ -39,16 +40,31 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isPhpThemeAssetPath("/assets/theme.css"), true);
     assert.equal(isPhpThemeAssetPath("/assets/index.js"), false);
   });
+
+  it("blocks SPA ASSETS for regional public pages; keeps panel", () => {
+    assert.equal(shouldBlockGundemiSpaAssets("ege.gundemi.org", "/"), true);
+    assert.equal(shouldBlockGundemiSpaAssets("ege.gundemi.org", "/haber/x"), true);
+    assert.equal(shouldBlockGundemiSpaAssets("ege.gundemi.org", "/assets/theme.css"), true);
+    assert.equal(shouldBlockGundemiSpaAssets("ege.gundemi.org", "/editor"), false);
+    assert.equal(shouldBlockGundemiSpaAssets("ege.gundemi.org", "/assets/index-abc.js"), false);
+    assert.equal(shouldBlockGundemiSpaAssets("gundemi.org", "/"), true);
+    assert.equal(shouldBlockGundemiSpaAssets("ahenk.net.tr", "/"), false);
+  });
 });
 
 describe("gundemiApexPhpBridgeResponse", () => {
-  it("returns null for regional hosts", async () => {
+  it("returns Traefik-gap PHP page for regional hosts (never SPA)", async () => {
     const incoming = new URL("https://ege.gundemi.org/");
     const res = await gundemiApexPhpBridgeResponse(
       new Request(incoming.toString()),
       incoming,
     );
-    assert.equal(res, null);
+    assert.ok(res);
+    assert.equal(res.status, 503);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-traefik-gap");
+    const html = await res.text();
+    assert.match(html, /PHP tema bekleniyor|Traefik/i);
+    assert.equal(html.includes("cloudflare-assets"), false);
   });
 
   it("returns null for SPA panel paths on apex", async () => {
