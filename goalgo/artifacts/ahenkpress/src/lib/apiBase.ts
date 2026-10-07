@@ -419,17 +419,31 @@ export function hasLocalAdminAuthFlag(): boolean {
   return localStorage.getItem(ADMIN_AUTH_STORAGE_KEY) === "1";
 }
 
+/** Soğuk Container'da asılı kalmayı önler (kenar status gelmezse). */
+const ADMIN_PANEL_STATUS_TIMEOUT_MS = 8_000;
+
+async function fetchAdminPanelStatus(timeoutMs = ADMIN_PANEL_STATUS_TIMEOUT_MS): Promise<Response> {
+  const ctrl = new AbortController();
+  const tid = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(adminPanelCookieApiPath("/api/members/admin-panel-status"), {
+      credentials: "include",
+      cache: "no-store",
+      signal: ctrl.signal,
+      headers: { Accept: "application/json", "Cache-Control": "no-cache" },
+    });
+  } finally {
+    window.clearTimeout(tid);
+  }
+}
+
 /**
  * Panel oturum çerezini doğrular.
- * `transient` = ağ/502/429; oturumu silmeyin, yerel bayrağa güvenin.
+ * `transient` = ağ/502/429/timeout; oturumu silmeyin, yerel bayrağa güvenin.
  */
 export async function verifyAdminPanelSession(): Promise<"ok" | "denied" | "transient"> {
   try {
-    const res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-status"), {
-      credentials: "include",
-      cache: "no-store",
-      headers: { Accept: "application/json", "Cache-Control": "no-cache" },
-    });
+    const res = await fetchAdminPanelStatus();
     if (res.status === 401) return "denied";
     if (res.status === 429 || res.status >= 500) return "transient";
     if (!res.ok) return "transient";
@@ -443,13 +457,49 @@ export async function verifyAdminPanelSession(): Promise<"ok" | "denied" | "tran
 export async function ensureAdminPanelBootstrap(): Promise<void> {
   if (typeof window === "undefined") return;
   try {
-    const st = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-status"), {
-      credentials: "include",
-    });
+    const st = await fetchAdminPanelStatus();
     const j = (await st.json().catch(() => ({}))) as { panelBootstrap?: boolean };
     if (j.panelBootstrap === true) return;
   } catch {
     /* ignore */
+  }
+}
+
+/** AdminLayout izin yükleme — timeout/hata durumunda yerel bayrakla devam. */
+export async function loadAdminPanelAccessStatus(): Promise<{
+  panelBootstrap: boolean;
+  panelFullAdmin: boolean;
+  permissions: string[] | null;
+  transient: boolean;
+}> {
+  try {
+    const st = await fetchAdminPanelStatus();
+    if (st.status === 429 || st.status >= 500) {
+      return {
+        panelBootstrap: hasLocalAdminAuthFlag(),
+        panelFullAdmin: true,
+        permissions: null,
+        transient: true,
+      };
+    }
+    const j = (await st.json().catch(() => ({}))) as {
+      panelBootstrap?: boolean;
+      panelFullAdmin?: boolean;
+      permissions?: string[] | null;
+    };
+    return {
+      panelBootstrap: j.panelBootstrap === true,
+      panelFullAdmin: j.panelFullAdmin === true,
+      permissions: Array.isArray(j.permissions) ? j.permissions : null,
+      transient: false,
+    };
+  } catch {
+    return {
+      panelBootstrap: hasLocalAdminAuthFlag(),
+      panelFullAdmin: true,
+      permissions: null,
+      transient: true,
+    };
   }
 }
 

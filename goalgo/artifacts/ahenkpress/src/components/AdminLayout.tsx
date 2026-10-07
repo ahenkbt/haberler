@@ -4,7 +4,7 @@ import { ChevronDown, Globe, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetSiteSettings } from "@workspace/api-client-react";
-import { adminPanelCookieApiPath, apiFetch, apiUrl } from "@/lib/apiBase";
+import { loadAdminPanelAccessStatus } from "@/lib/apiBase";
 import {
   type AdminNavSection,
   adminNavItemIsActive,
@@ -172,26 +172,14 @@ export function AdminLayout({ children, title }: { children: React.ReactNode; ti
     if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
-      try {
-        const st = await apiFetch(adminPanelCookieApiPath("/api/members/admin-panel-status"), {
-          credentials: "include",
-        });
-        const j = (await st.json().catch(() => ({}))) as {
-          panelBootstrap?: boolean;
-          panelFullAdmin?: boolean;
-          permissions?: string[] | null;
-        };
-        if (!cancelled) {
-          setAccess({
-            loaded: true,
-            panelBootstrap: j.panelBootstrap === true,
-            panelFullAdmin: j.panelFullAdmin === true,
-            permissions: Array.isArray(j.permissions) ? j.permissions : null,
-          });
-        }
-      } catch {
-        if (!cancelled) setAccess((a) => ({ ...a, loaded: true }));
-      }
+      const status = await loadAdminPanelAccessStatus();
+      if (cancelled) return;
+      setAccess({
+        loaded: true,
+        panelBootstrap: status.panelBootstrap,
+        panelFullAdmin: status.panelFullAdmin,
+        permissions: status.permissions,
+      });
     })();
     return () => {
       cancelled = true;
