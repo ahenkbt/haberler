@@ -35,7 +35,9 @@ CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
 DRY_RUN=1 CLOUDFLARE_API_TOKEN=... node scripts/cf-ensure-fixhaber-dns.mjs
 ```
 
-GitHub Actions: **Ensure fix.tc PHP DNS** (`workflow_dispatch`) — repo secret `CLOUDFLARE_API_TOKEN` (Zone → DNS → Edit, zone `fix.tc`).
+GitHub Actions: **Ensure fix.tc PHP DNS** (`workflow_dispatch`) — repo secret `CLOUDFLARE_API_TOKEN` or `CLOUDFLAREDNS_API_TOKEN` (Zone → DNS → Edit, zone `fix.tc`).
+
+Cloud Agent environment secret `CLOUDFLAREDNS_API_TOKEN` is injected only on **new agent runs** after saving the secret (not mid-conversation).
 
 Token yoksa veya zone bu Cloudflare hesabında değilse → Dashboard’dan elle:
 
