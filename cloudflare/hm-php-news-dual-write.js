@@ -2,7 +2,17 @@
  * Kenar dual-write: Worker Neon (DATABASE_URL) satırını PHP'nin okuduğu
  * Neon'a (NEWS_DATABASE_URL / twilight-pine) kopyalar. Container köprüsüne
  * ihtiyaç duymaz. Tüm HM siteleri — site_id satırdan gelir, ASG hardcode yok.
+ *
+ * Ayna hedefi RO / erişilemez olsa bile hata yutulur — panel yanıtı bozulmaz.
  */
+
+/** Postgres / Neon: salt-okunur oturum veya replica. */
+export function isReadonlyDbError(err) {
+  const msg = String(err?.message || err || "");
+  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only|readonly|read only/i.test(
+    msg,
+  );
+}
 
 function asInt(v) {
   const n = typeof v === "number" ? v : Number(v);
@@ -472,20 +482,8 @@ export async function edgeDeleteAuthor(sql, idOrRow) {
 }
 
 /**
- * @returns {Promise<{mirrored: boolean, via?: string, reason?: string, id?: number}>}
+ * @returns {Promise<{mirrored: boolean, via?: string, reason?: string, id?: number, readonly?: boolean}>}
  */
-/** Postgres / Neon: salt-okunur oturum veya replica. */
-export function isReadonlyDbError(err) {
-  const msg = String(err?.message || err || "");
-  return /read-only transaction|cannot execute \w+ in a read-only|default_transaction_read_only|readonly|read only/i.test(
-    msg,
-  );
-}
-
-function isReadOnlyTxError(err) {
-  return isReadonlyDbError(err);
-}
-
 export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
   if (!sql) return { mirrored: false, reason: "no-news-sql" };
   try {
@@ -502,7 +500,7 @@ export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
     return { mirrored: false, reason: "table" };
   } catch (err) {
     const msg = String(err?.message || err).slice(0, 180);
-    if (isReadOnlyTxError(err)) {
+    if (isReadonlyDbError(err)) {
       console.warn("[hm-php-dual-write] NEWS_DATABASE_URL read-only — mirror atlandı", table, op, msg.slice(0, 120));
       return { mirrored: false, reason: "news-db-read-only", readonly: true };
     }
