@@ -922,6 +922,17 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       else html = ready + html;
     }
     out.set("x-yekpare-hm-admin-boot", "1");
+    // Giriş sayfası açılırken Container'ı arka planda ısıt — "Sunucu meşgul" azalır.
+    if (typeof waitUntil === "function" && env) {
+      const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
+      waitUntil(
+        fetchApi(env, `${origin}/api/healthz`)
+          .then((r) => r?.text?.().catch(() => null))
+          .catch((err) => {
+            console.error("[admin-html-wake]", String(err?.message || err).slice(0, 160));
+          }),
+      );
+    }
   }
   if (incoming && isHmAuthorPanelPath(incoming.pathname)) {
     const authorSlug = hmHomeSlugFromPath(incoming.pathname, incoming.hostname) || hmHostSlug;
@@ -3397,7 +3408,7 @@ export default {
         if (isHmYektubeCatalogPath(upstreamPath)) {
           return hmYektubeCatalogVideosOrRss(upstreamPath, incoming.searchParams, "timeout");
         }
-        return new Response(JSON.stringify({ ok: false, error: "Sunucu me┼şgul" }), {
+        return new Response(JSON.stringify({ ok: false, error: "Sunucu meşgul" }), {
           status: 503,
           headers: {
             "content-type": "application/json; charset=utf-8",

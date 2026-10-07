@@ -25,6 +25,8 @@ export default function Login() {
     if (/^https?:\/\//i.test(canonical) && canonical !== window.location.href) {
       window.location.replace(canonical);
     }
+    // Soğuk Container: /live kenarda uyanır, asıl /healthz Container'ı ısıtır.
+    void fetch(adminPanelCookieApiPath("/api/healthz/live"), { cache: "no-store" }).catch(() => null);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -47,29 +49,50 @@ export default function Login() {
       setPassword(pass);
 
       // apiFetch 401'de oturum yenileme denemesi yapar — giriş POST'unda kullanma.
-      const res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-session"), {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ username: user, password: pass }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
-      if (!res.ok || !data.success) {
+      // Cold Container "Sunucu meşgul" (503) verir; birkaç kez dene.
+      let res: Response | null = null;
+      let data: { success?: boolean; error?: string } = {};
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (attempt > 0) {
+          setError("Sunucu uyanıyor, tekrar deneniyor…");
+          await new Promise((r) => setTimeout(r, 1500 * attempt));
+          void fetch(adminPanelCookieApiPath("/api/healthz/live"), { cache: "no-store" }).catch(() => null);
+        }
+        res = await fetch(adminPanelCookieApiPath("/api/members/admin-panel-session"), {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ username: user, password: pass }),
+        });
+        data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
+        const busy =
+          res.status === 503 ||
+          res.status === 502 ||
+          res.status === 504 ||
+          /meşgul|Failed to start container|provisioning|timeout/i.test(String(data.error || ""));
+        if (!busy || res.ok || data.success) break;
+      }
+      if (!res || !res.ok || !data.success) {
         logout();
         if (data.error?.trim()) {
-          setError(data.error.trim().slice(0, 200) + adminFetchErrorHint(String(res.status)));
-        } else if (res.status === 400) {
+          const msg = data.error.trim();
+          if (/meşgul|Failed to start|provisioning/i.test(msg)) {
+            setError("Sunucu henüz uyanıyor. 15–20 sn bekleyip tekrar Giriş Yap’a basın.");
+          } else {
+            setError(msg.slice(0, 200) + adminFetchErrorHint(String(res?.status || "")));
+          }
+        } else if (res?.status === 400) {
           setError("Kullanıcı adı ve şifre gerekli.");
-        } else if (res.status >= 500) {
+        } else if ((res?.status ?? 0) >= 500) {
           setError(
-            `Sunucu hatası (${res.status}). Oturum kaydedilemedi veya API geçici olarak yanıt vermiyor.` +
-              adminFetchErrorHint(String(res.status)),
+            `Sunucu hatası (${res?.status}). Oturum kaydedilemedi veya API geçici olarak yanıt vermiyor.` +
+              adminFetchErrorHint(String(res?.status)),
           );
-        } else if (res.status === 401) {
+        } else if (res?.status === 401) {
           setError("Kullanıcı adı veya şifre hatalı. Şifreyi elle yazıp tekrar deneyin (otomatik doldurma bazen eski şifre gönderir).");
         } else {
           setError("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.");
