@@ -918,6 +918,26 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
       html = injectHmEditorPanelBoot(html, editorSlug, editorHost);
       out.set("x-yekpare-hm-editor-boot", editorSlug);
     }
+    if (typeof waitUntil === "function" && env) {
+      const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
+      waitUntil(
+        (async () => {
+          for (let i = 0; i < 4; i += 1) {
+            try {
+              const r = await fetchApi(env, `${origin}/api/healthz`);
+              const text = r ? await r.text().catch(() => "") : "";
+              if (r?.ok) return;
+              if (!/Failed to start|Durable Object reset|provisioning/i.test(text) && r && r.status < 500) {
+                return;
+              }
+            } catch (err) {
+              console.error("[editor-html-wake]", String(err?.message || err).slice(0, 160));
+            }
+            await new Promise((resolve) => setTimeout(resolve, 2000 * (i + 1)));
+          }
+        })(),
+      );
+    }
   }
   // Portal /admin|/panel — vitrin overlay'i spa-ready ile kaldır (beyaz ekran)
   if (incoming && isAdminPanelPath(incoming.pathname) && !isHmEditorPanelPath(incoming.pathname)) {
@@ -3446,6 +3466,15 @@ export default {
         if (isSitemapFailSoftPath(incoming.pathname)) return sitemapEdgeFailResponse(request, incoming);
         if (isHmYektubeCatalogPath(upstreamPath)) {
           return hmYektubeCatalogVideosOrRss(upstreamPath, incoming.searchParams, "timeout");
+        }
+        if (isHmMetaApiPath(incoming.pathname)) {
+          const brandMeta = await maybeEnsureBrandMetaResponse(
+            env,
+            incoming,
+            { ok: false, status: 404 },
+            { waitUntil },
+          );
+          if (brandMeta) return rememberPublicApi(brandMeta);
         }
         return new Response(JSON.stringify({ ok: false, error: "Sunucu meşgul" }), {
           status: 503,
