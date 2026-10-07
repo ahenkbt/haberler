@@ -109,6 +109,14 @@ export const HM_BRAND_DB_BINDINGS = [
     displayName: "KIRŞEHİR HABER PORTALI",
     description: "Kırşehir’in dijital haber platformu",
   },
+  /** Apex gundemi.org — kendi HM sitesi (slug gundemi); Container soğukken meta Neon fallback. */
+  {
+    domain: "gundemi.org",
+    domains: ["gundemi.org"],
+    slug: "gundemi",
+    displayName: "Gündemi",
+    description: "ilkeli iffetli isabetli haber",
+  },
 ];
 
 const PROTECTED_SLUGS = new Set([

@@ -10,6 +10,7 @@ import {
   readHmHtmlBootFromCache,
   storeHmHtmlBootInCache,
 } from "./hm-edge-cache.js";
+import { gundemiHmSlugFromHost } from "./hm-gundemi-domain-slug.js";
 
 export const HM_HTML_BOOT_BUDGET_MS = 280;
 /** WhatsApp/Facebook crawler ÔÇö og-html container 15sn+ as─▒l─▒ kalmas─▒n. */
@@ -73,6 +74,16 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.turksav.org": "turksav",
   "fix.tc": "fixhaber",
   "www.fix.tc": "fixhaber",
+  "gundemi.org": "gundemi",
+  "www.gundemi.org": "gundemi",
+  "ege.gundemi.org": "ege-gundemi",
+  "marmara.gundemi.org": "marmara-gundemi",
+  "karadeniz.gundemi.org": "karadeniz-gundemi",
+  "icanadolu.gundemi.org": "icanadolu-gundemi",
+  "doguanadolu.gundemi.org": "doguanadolu-gundemi",
+  "guneydogu.gundemi.org": "guneydogu-gundemi",
+  "akdeniz.gundemi.org": "akdeniz-gundemi",
+  "kibris.gundemi.org": "kibris-gundemi",
 };
 
 export function normalizeHmBootHost(hostname) {
@@ -89,9 +100,11 @@ export function hmDomainSlugFallback(hostname) {
     .split(":")[0]
     .trim();
   if (!h) return "";
-  return (
-    String(HM_DOMAIN_SLUG_FALLBACKS[h] || HM_DOMAIN_SLUG_FALLBACKS[`www.${h}`] || "").trim() || ""
-  );
+  const fromTable = String(
+    HM_DOMAIN_SLUG_FALLBACKS[h] || HM_DOMAIN_SLUG_FALLBACKS[`www.${h}`] || "",
+  ).trim();
+  if (fromTable) return fromTable;
+  return gundemiHmSlugFromHost(h);
 }
 
 /** Cron ─▒s─▒nd─▒rma + kenar cache ÔÇö www tekrar─▒ yok. */
@@ -962,6 +975,15 @@ const HM_SLUG_DISPLAY_NAMES = {
   trafik: "Trafik Güvenliği Derneği",
   tgd: "Trafik Güvenliği Derneği",
   fixhaber: "Fix Haber",
+  gundemi: "Gündemi",
+  "ege-gundemi": "Ege Gündemi",
+  "marmara-gundemi": "Marmara Gündemi",
+  "karadeniz-gundemi": "Karadeniz Gündemi",
+  "icanadolu-gundemi": "İç Anadolu Gündemi",
+  "doguanadolu-gundemi": "Doğu Anadolu Gündemi",
+  "guneydogu-gundemi": "Güneydoğu Gündemi",
+  "akdeniz-gundemi": "Akdeniz Gündemi",
+  "kibris-gundemi": "Kıbrıs Gündemi",
 };
 
 const GEO_AI_USER_AGENTS = [
