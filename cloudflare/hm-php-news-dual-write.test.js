@@ -38,18 +38,37 @@ function memorySql(state) {
       state.makaleler.push({ id, site_id: siteId, author_id: authorId, title, slug });
       return [];
     }
-    if (/FROM categories/i.test(text) && /gundem/i.test(text)) {
-      return [{ id: 1 }];
-    }
     if (/FROM categories/i.test(text) && /lower\(slug\)/i.test(text)) {
-      const [slug] = values;
-      const hit = state.categories.find((c) => c.slug === String(slug).toLowerCase());
-      return hit ? [{ id: hit.id }] : [];
+      const slug = String(values[0] || "").toLowerCase();
+      const siteId = values.length > 1 ? values[1] : null;
+      let rows = state.categories.filter((c) => c.slug === slug);
+      if (siteId != null && /exclusive_site_id/i.test(text)) {
+        rows = rows.filter((c) => c.exclusive_site_id == null || Number(c.exclusive_site_id) === Number(siteId));
+        rows.sort((a, b) => {
+          const as = Number(a.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          const bs = Number(b.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          return as - bs || a.id - b.id;
+        });
+      } else if (/exclusive_site_id IS NULL/i.test(text)) {
+        rows = rows.filter((c) => c.exclusive_site_id == null);
+      }
+      const hit = rows[0];
+      return hit ? [{ id: hit.id, slug: hit.slug }] : [];
     }
     if (/FROM categories/i.test(text) && /WHERE id/i.test(text)) {
       const [id] = values;
-      const hit = state.categories.find((c) => Number(c.id) === Number(id));
-      return hit ? [{ id: hit.id }] : [];
+      const siteId = values.length > 1 ? values[1] : null;
+      let rows = state.categories.filter((c) => Number(c.id) === Number(id));
+      if (siteId != null && /exclusive_site_id/i.test(text)) {
+        rows = rows.filter((c) => c.exclusive_site_id == null || Number(c.exclusive_site_id) === Number(siteId));
+        rows.sort((a, b) => {
+          const as = Number(a.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          const bs = Number(b.exclusive_site_id) === Number(siteId) ? 0 : 1;
+          return as - bs || a.id - b.id;
+        });
+      }
+      const hit = rows[0];
+      return hit ? [{ id: hit.id, slug: hit.slug }] : [];
     }
     if (/FROM news/i.test(text) && /SELECT id FROM news/i.test(text) && /site_id/i.test(text) && /slug/i.test(text)) {
       const [siteId, slug] = values;
@@ -131,7 +150,7 @@ test("makale: aynı slug+yazar güncellenir; PK çakışınca yeni id", async ()
 });
 
 test("haber: PHP'de yoksa aynı id ile yazar", async () => {
-  const state = { nextId: 1, makaleler: [], news: [], categories: [{ id: 1, slug: "gundem" }] };
+  const state = { nextId: 1, makaleler: [], news: [], categories: [{ id: 1, slug: "gundem", exclusive_site_id: null }] };
   const sql = memorySql(state);
   const r = await edgeUpsertNews(sql, {
     id: 580081,
@@ -145,6 +164,57 @@ test("haber: PHP'de yoksa aynı id ile yazar", async () => {
   assert.equal(r.mirrored, true);
   assert.equal(r.via, "same-id");
   assert.equal(r.id, 580081);
+});
+
+test("haber: ankara slug site-scoped kategoriye düşer, global politika id'sine değil", async () => {
+  const state = {
+    nextId: 1,
+    makaleler: [],
+    news: [],
+    categories: [
+      // Duplicate id twin (real twilight-pine shape): id=4 is Yerel global AND Politika@site8
+      { id: 4, slug: "yerel", exclusive_site_id: null },
+      { id: 4, slug: "politika", exclusive_site_id: 8 },
+      { id: 12, slug: "politika", exclusive_site_id: null },
+      { id: 15, slug: "ankara", exclusive_site_id: null },
+    ],
+  };
+  let capturedCategoryId = null;
+  const base = memorySql(state);
+  const sql = async (strings, ...values) => {
+    const text = strings.join("?");
+    if (/INSERT INTO news/i.test(text) && !/RETURNING id/i.test(text)) {
+      capturedCategoryId = values[6]; // category_id position in same-id INSERT
+    }
+    return base(strings, ...values);
+  };
+  const r = await edgeUpsertNews(sql, {
+    id: 582114,
+    siteId: 3,
+    slug: "sehit-polis-memuru-ahmet-turkoglu-dualarla-ugurlaniyor-pursaklar-da-kanli-saldiri",
+    title: "PURSAKLAR'DA KANLI SALDIRI",
+    categorySlug: "ankara",
+    status: "published",
+    isEditorManual: true,
+  });
+  assert.equal(r.mirrored, true);
+  assert.equal(capturedCategoryId, 15);
+});
+
+test("dual-write read-only INSERT soft-fail döner, throw etmez", async () => {
+  const sql = async () => {
+    throw new Error("cannot execute INSERT in a read-only transaction");
+  };
+  const r = await edgeMirrorNewsDbWrite(sql, "news", "upsert", {
+    id: 1,
+    siteId: 3,
+    slug: "x",
+    title: "X",
+    categorySlug: "ankara",
+  });
+  assert.equal(r.mirrored, false);
+  assert.equal(r.readOnly, true);
+  assert.equal(r.reason, "read-only");
 });
 
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {

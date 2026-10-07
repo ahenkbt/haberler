@@ -312,40 +312,53 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
   const env = mirrorEnv;
   if (!env) return false;
 
-  if (shouldEdgeDualWriteNewsDb(env)) {
-    const newsSql = neonNewsSqlClient(env);
-    if (newsSql) {
-      let payload = rowOrId;
-      if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
-        const workerSql = sqlClient(env);
-        const sid = asPositiveInt(payload.site_id ?? payload.siteId);
-        if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
-          try {
-            const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
-            if (s?.[0]?.slug) payload = { ...payload, site_slug: s[0].slug };
-          } catch (err) {
-            console.error("[hm-news-mirror-slug]", String(err?.message || err).slice(0, 120));
+  try {
+    if (shouldEdgeDualWriteNewsDb(env)) {
+      const newsSql = neonNewsSqlClient(env);
+      if (newsSql) {
+        let payload = rowOrId;
+        if (table === "news" && op !== "delete" && payload && typeof payload === "object") {
+          const workerSql = sqlClient(env);
+          const sid = asPositiveInt(payload.site_id ?? payload.siteId);
+          if (workerSql && sid && !payload.site_slug && !payload.siteSlug) {
+            try {
+              const s = await workerSql`SELECT slug FROM hm_news_sites WHERE id = ${sid} LIMIT 1`;
+              if (s?.[0]?.slug) payload = { ...payload, site_slug: s[0].slug };
+            } catch (err) {
+              console.error("[hm-news-mirror-slug]", String(err?.message || err).slice(0, 120));
+            }
           }
         }
         // Tepe manşet: Editör isFeatured → PHP is_tepe_manset (+ is_featured)
-        if (payload.is_tepe_manset == null && payload.isTepeManset == null) {
+        if (
+          table === "news" &&
+          op !== "delete" &&
+          payload &&
+          typeof payload === "object" &&
+          payload.is_tepe_manset == null &&
+          payload.isTepeManset == null
+        ) {
           const feat = payload.is_featured === true || payload.isFeatured === true;
           payload = { ...payload, is_tepe_manset: feat, isTepeManset: feat };
         }
+        const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
+        if (direct?.mirrored === true) return true;
+        const reason = String(direct?.reason || "unknown");
+        // Dual RO/ayna hatası primary'yi bozmaz; bridge fallback dene.
+        console.warn(
+          "[hm-news-mirror] kenar dual-write atlandı (primary OK)",
+          table,
+          op,
+          reason.slice(0, 160),
+          direct?.readOnly ? "(read-only)" : "",
+        );
       }
-      const direct = await edgeMirrorNewsDbWrite(newsSql, table, op, payload);
-      if (direct?.mirrored === true) return true;
-      const reason = String(direct?.reason || "unknown");
-      // Dual RO/ayna hatası primary'yi bozmaz; bridge fallback dene.
-      console.warn("[hm-news-mirror] kenar dual-write atlandı (primary OK)", table, op, reason.slice(0, 160));
     }
-  }
 
-  if (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim()) return false;
-  const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
-  if (!secret) return false;
-  const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
-  try {
+    if (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim()) return false;
+    const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
+    if (!secret) return false;
+    const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
     const res = await Promise.race([
       fetchApi(env, `${apiOrigin(env)}/api/hm/bridge/mirror`, {
         method: "POST",
@@ -1502,18 +1515,36 @@ async function handleUpdateNews(sql, siteId, id, body) {
     }
     const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
     if (!row) return jsonResponse(404, { error: "Haber bulunamadı" });
-    await mirrorNewsDbWrite("news", "upsert", {
-      ...row,
-      category_slug: categorySlug,
-      is_tepe_manset: isFeatured,
-      is_featured: isFeatured,
-      is_site_manset: isSiteManset,
-      is_breaking: isBreaking,
-    });
-    await upsertMakaleFromAuthorNews(sql, row);
+    // Primary Worker write already succeeded — dual-write / makale mirror must not 500 the editor
+    // (NEWS_DATABASE_URL may be php_theme_ro → "read-only transaction").
+    try {
+      await mirrorNewsDbWrite("news", "upsert", {
+        ...row,
+        category_slug: categorySlug,
+        is_tepe_manset: isFeatured,
+        is_featured: isFeatured,
+        is_site_manset: isSiteManset,
+        is_breaking: isBreaking,
+      });
+    } catch (mirrorErr) {
+      console.error("[kh-news-update-mirror]", String(mirrorErr?.message || mirrorErr).slice(0, 160));
+    }
+    try {
+      await upsertMakaleFromAuthorNews(sql, row);
+    } catch (makaleErr) {
+      console.error("[kh-news-update-makale]", String(makaleErr?.message || makaleErr).slice(0, 160));
+    }
     return jsonResponse(200, serializeNewsRow(row, categorySlug));
   } catch (err) {
     const msg = String(err?.message || err);
+    // Defensive: never surface dual-write RO failures as Güncelle errors.
+    if (/read-only transaction|cannot execute \w+ in a read-only/i.test(msg)) {
+      console.error("[kh-news-update-ro-ignored]", msg.slice(0, 200));
+      const existingAfter = await loadNewsWithCategory(sql, siteId, id).catch(() => null);
+      if (existingAfter) {
+        return jsonResponse(200, serializeNewsRow(existingAfter, categorySlug || existingAfter.category_slug));
+      }
+    }
     console.error("[kh-news-update]", msg.slice(0, 200));
     return jsonResponse(500, {
       error: msg ? `Güncellenemedi: ${msg.slice(0, 160)}` : "Güncellenemedi",

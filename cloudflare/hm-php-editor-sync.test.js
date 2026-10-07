@@ -11,7 +11,18 @@ import {
 function memorySql(tables) {
   const sql = async (strings, ...values) => {
     const text = strings.join("?");
-    if (/FROM categories/i.test(text) && /exclusive_site_id =/i.test(text) && /SELECT id, name, slug/i.test(text) && values.length === 1) {
+    if (/FROM hm_news_sites/i.test(text) && /layout_json/i.test(text)) {
+      const [id] = values;
+      const hit = (tables.sites || []).find((s) => Number(s.id) === Number(id));
+      return hit ? [{ layout_json: hit.layout_json }] : [];
+    }
+    if (
+      /FROM categories/i.test(text) &&
+      /exclusive_site_id =/i.test(text) &&
+      /SELECT id, name, slug/i.test(text) &&
+      values.length === 1 &&
+      !/lower\(slug\)/i.test(text)
+    ) {
       const [siteId] = values;
       const rows = tables.categories.filter((c) => Number(c.exclusive_site_id) === Number(siteId));
       return rows;
@@ -21,6 +32,15 @@ function memorySql(tables) {
       const row = { id: tables.nextId++, name, slug, color, exclusive_site_id: exclusive, sort_order: sort };
       tables.categories.push(row);
       return [row];
+    }
+    if (/FROM categories/i.test(text) && /lower\(slug\) = ANY/i.test(text)) {
+      const slugs = (values[0] || []).map((s) => String(s).toLowerCase());
+      const siteId = values[1];
+      return tables.categories.filter((c) => {
+        if (!slugs.includes(String(c.slug).toLowerCase())) return false;
+        if (siteId == null) return true;
+        return c.exclusive_site_id == null || Number(c.exclusive_site_id) === Number(siteId);
+      });
     }
     if (/FROM categories/i.test(text) && /lower\(slug\)/i.test(text)) {
       const [slug] = values;
@@ -88,6 +108,33 @@ test("PHP kategorileri Worker'a kopyalanır", async () => {
   assert.equal(out.length, 1);
   assert.equal(out[0].slug, "cevre");
   assert.equal(worker.categories.length, 1);
+});
+
+test("ASG layout hmCategorySortSlugs ankara editör listesine girer", async () => {
+  const php = {
+    categories: [
+      { id: 15, name: "Ankara", slug: "ankara", color: "#e61e25", exclusive_site_id: null, sort_order: 1 },
+      { id: 12, name: "Politika", slug: "politika", color: "#7c3aed", exclusive_site_id: null, sort_order: 2 },
+      { id: 4, name: "Politika", slug: "politika", color: "#7c3aed", exclusive_site_id: 8, sort_order: 4 },
+      { id: 1, name: "Gündem", slug: "gundem", color: "#e61e25", exclusive_site_id: null, sort_order: 0 },
+    ],
+    sites: [
+      {
+        id: 3,
+        slug: "asg",
+        layout_json: {
+          hmCategorySortSlugs: ["ankara", "gundem", "politika"],
+          hmCorporateMenuItems: [{ href: "/kategori/ankara", label: "Ankara" }],
+        },
+      },
+    ],
+    authors: [],
+    nextId: 100,
+  };
+  const rows = await loadPhpSiteCategories(memorySql(php), 3);
+  assert.ok(rows.some((r) => r.slug === "ankara"));
+  assert.equal(rows.filter((r) => r.slug === "politika").length, 1);
+  assert.equal(rows.find((r) => r.slug === "politika")?.exclusive_site_id ?? null, null);
 });
 
 test("Worker site id 1090 PHP slug ile 236 olur", async () => {
