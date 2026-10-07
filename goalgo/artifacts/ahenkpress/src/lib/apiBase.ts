@@ -424,8 +424,47 @@ const ADMIN_PANEL_STATUS_TIMEOUT_MS = 8_000;
 
 /** Panel GET — Cloudflare Container soğuk başlangıçta yanıt gecikebilir; sonsuz spinner önlenir. */
 export const ADMIN_API_FETCH_TIMEOUT_MS = 22_000;
+/** PATCH/POST (HM site Güncelle vb.) — Worker 180s origin bütçesi ile uyumlu. */
+export const ADMIN_MUTATION_FETCH_TIMEOUT_MS = 120_000;
 const ADMIN_API_FETCH_MAX_ATTEMPTS = 3;
+const ADMIN_MUTATION_FETCH_MAX_ATTEMPTS = 5;
 const ADMIN_API_FETCH_RETRYABLE_HTTP = new Set([502, 503, 504, 524]);
+
+export function isAdminApiBusyStatus(status: number, data: { error?: string }): boolean {
+  if (status === 503 || status === 502 || status === 504) return true;
+  return /uyanıyor|meşgul|Failed to start|Durable Object reset|provisioning|timeout|origin-budget/i.test(
+    String(data.error || ""),
+  );
+}
+
+function adminApiRetryDelayMs(attempt: number): number {
+  return Math.min(15_000, 2000 * Math.max(1, attempt));
+}
+
+/** Edge /live + /healthz — Container hazır olana kadar (panel girişi ile aynı). */
+export async function wakeAdminApiContainer(signal?: { cancelled?: boolean }): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  const live = adminPanelCookieApiPath("/api/healthz/live");
+  const healthz = adminPanelCookieApiPath("/api/healthz");
+  void fetch(live, { cache: "no-store" }).catch(() => null);
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    if (signal?.cancelled) return false;
+    try {
+      const res = await fetch(healthz, { cache: "no-store" });
+      if (res.ok) return true;
+      const text = await res.text().catch(() => "");
+      if (!/Failed to start|Durable Object reset|meşgul|provisioning/i.test(text) && res.status < 500) {
+        return false;
+      }
+    } catch {
+      /* cold / network */
+    }
+    void fetch(live, { cache: "no-store" }).catch(() => null);
+    await new Promise((r) => window.setTimeout(r, 2500));
+  }
+  return false;
+}
 
 async function fetchAdminPanelStatus(timeoutMs = ADMIN_PANEL_STATUS_TIMEOUT_MS): Promise<Response> {
   const ctrl = new AbortController();
@@ -517,12 +556,15 @@ async function fetchWithAdminRetry(input: string | URL, init?: RequestInit): Pro
     return headers;
   };
   const method = String(init?.method ?? "GET").toUpperCase();
-  const applyTimeout = (method === "GET" || method === "HEAD") && !init?.signal;
+  const isMutation = method !== "GET" && method !== "HEAD";
+  const applyTimeout = !init?.signal;
+  const timeoutMs = isMutation ? ADMIN_MUTATION_FETCH_TIMEOUT_MS : ADMIN_API_FETCH_TIMEOUT_MS;
+  const maxAttempts = isMutation ? ADMIN_MUTATION_FETCH_MAX_ATTEMPTS : ADMIN_API_FETCH_MAX_ATTEMPTS;
 
   const doFetch = async (): Promise<Response> => {
     const timeoutController = applyTimeout ? new AbortController() : null;
     const timeoutId = timeoutController
-      ? window.setTimeout(() => timeoutController.abort(), ADMIN_API_FETCH_TIMEOUT_MS)
+      ? window.setTimeout(() => timeoutController.abort(), timeoutMs)
       : undefined;
     const signal = init?.signal ?? timeoutController?.signal;
     try {
@@ -539,7 +581,13 @@ async function fetchWithAdminRetry(input: string | URL, init?: RequestInit): Pro
 
   let lastTimedOut = false;
   let res: Response | undefined;
-  for (let attempt = 0; attempt < ADMIN_API_FETCH_MAX_ATTEMPTS; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (isMutation && attempt > 0) {
+      await wakeAdminApiContainer();
+      await new Promise((r) => window.setTimeout(r, adminApiRetryDelayMs(attempt)));
+    } else if (isMutation && attempt === 0) {
+      void fetch(adminPanelCookieApiPath("/api/healthz/live"), { cache: "no-store" }).catch(() => null);
+    }
     try {
       res = await doFetch();
     } catch (err) {
@@ -547,7 +595,7 @@ async function fetchWithAdminRetry(input: string | URL, init?: RequestInit): Pro
         err instanceof DOMException && err.name === "AbortError" && applyTimeout;
       if (aborted) {
         lastTimedOut = true;
-        if (attempt + 1 < ADMIN_API_FETCH_MAX_ATTEMPTS) {
+        if (attempt + 1 < maxAttempts) {
           await new Promise((r) => window.setTimeout(r, 600 * (attempt + 1)));
           continue;
         }
@@ -557,8 +605,15 @@ async function fetchWithAdminRetry(input: string | URL, init?: RequestInit): Pro
       }
       throw err;
     }
-    if (ADMIN_API_FETCH_RETRYABLE_HTTP.has(res.status) && attempt + 1 < ADMIN_API_FETCH_MAX_ATTEMPTS) {
-      await new Promise((r) => window.setTimeout(r, 800 * (attempt + 1)));
+    const bodyPeek = await res
+      .clone()
+      .json()
+      .catch(() => ({} as { error?: string }));
+    const busy =
+      ADMIN_API_FETCH_RETRYABLE_HTTP.has(res.status) ||
+      (isMutation && isAdminApiBusyStatus(res.status, bodyPeek));
+    if (busy && attempt + 1 < maxAttempts) {
+      await new Promise((r) => window.setTimeout(r, isMutation ? adminApiRetryDelayMs(attempt + 1) : 800 * (attempt + 1)));
       continue;
     }
     break;

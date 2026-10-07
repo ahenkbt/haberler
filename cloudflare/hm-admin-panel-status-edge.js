@@ -3,7 +3,7 @@
  * Panel «Oturum doğrulanıyor / bilgisi yükleniyor» soğuk Container'da asılı kalmasın.
  * Arka planda Container ısıtılır (waitUntil).
  */
-import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
+import { wakeApiContainerBackground } from "./hm-admin-panel-wake.js";
 import { loadPanelSession, readCookie, unsignConnectSid } from "./hm-admin-site-edge.js";
 
 const COOKIE_NAME = "connect.sid";
@@ -41,19 +41,6 @@ function jsonResponse(status, body) {
   });
 }
 
-function wakeContainer(env, ctx) {
-  const waitUntil = typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : null;
-  if (!waitUntil) return;
-  const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
-  waitUntil(
-    fetchApi(env, `${origin}/api/healthz`)
-      .then((r) => r?.text?.().catch(() => null))
-      .catch((err) => {
-        console.error("[admin-panel-status-wake]", String(err?.message || err).slice(0, 160));
-      }),
-  );
-}
-
 /**
  * @returns {Promise<Response|null>}
  */
@@ -62,7 +49,7 @@ export async function handleAdminPanelStatusEdge(request, env, ctx) {
   const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
   if (!isAdminPanelStatusPath(path)) return null;
 
-  wakeContainer(env, ctx);
+  wakeApiContainerBackground(env, ctx);
 
   const secret = String(env?.SESSION_SECRET || "").trim();
   if (!secret) {

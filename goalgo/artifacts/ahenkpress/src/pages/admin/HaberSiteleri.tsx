@@ -11,7 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { adminFetchErrorHint, apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
+import {
+  adminFetchErrorHint,
+  apiFetch,
+  apiUrl,
+  ensureAdminPanelBootstrap,
+  wakeAdminApiContainer,
+} from "@/lib/apiBase";
 import { collectGundemiOrgDomainsFromForm } from "@/lib/gundemiOrgDomain";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
@@ -335,6 +341,7 @@ export default function HaberSiteleri() {
 
     setSaving(true);
     try {
+      void wakeAdminApiContainer();
       await ensureAdminPanelBootstrap();
       const current = editingId ? sites.find((s) => s.id === editingId) : undefined;
       const editorId = primaryHmSiteEditor(current)?.id;

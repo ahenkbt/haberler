@@ -1,6 +1,11 @@
 /**
  * gundemi.org 8 bölgesel HM sitesini idempotent oluşturur / günceller:
  * site satırı, editör, künye/hakkımızda, turkatahaber yazarları, kategoriler, örnek haberler, RSS.
+ *
+ * Varsayılan HM editör girişi (seed — panelden değiştirilebilir):
+ * - apex gundemi.org → bilgi@gundemi.org / şifre = e-posta (bilgi@gundemi.org)
+ * - bölgesel *.gundemi.org → editor@{domain} / Gundemi!{slug}-{siteId}
+ *   (bkz. gundemiHmEditorEmail / gundemiHmEditorSeedPassword)
  */
 import { and, asc, eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
