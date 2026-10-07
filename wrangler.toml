@@ -1861,4 +1861,123 @@ zone_name = "gundemi.org"
 pattern = "www.gundemi.org/*"
 zone_name = "gundemi.org"
 
+# fix.tc (Fix Haber) — Yenişafak PHP ön yüz (VPS 187.77.84.201, proxied A).
+# Worker yalnızca panel/API + /tr|/hm 301. Apex/www custom_domain ve "fix.tc/*" catch-all BİLEREK yok.
+[[routes]]
+pattern = "fix.tc/editor*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/editor*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/api/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/api/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/admin*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/panel*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/haber-merkezi*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/assets/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/assets/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/sw.js"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/llms.txt"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/ai.txt"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/manifest.json"
+zone_name = "fix.tc"
+# fix.tc köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "fix.tc/yazar/giris*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/koseyazari/giris*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/yazar/sifre*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/koseyazari/sifre*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/yazar/haber*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/koseyazari/haber*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/yazar/giris*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/koseyazari/giris*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/yazar/sifre*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/koseyazari/sifre*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/yazar/haber*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/koseyazari/haber*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/tr/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/tr/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "fix.tc/hm/*"
+zone_name = "fix.tc"
+
+[[routes]]
+pattern = "www.fix.tc/hm/*"
+zone_name = "fix.tc"
+
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi

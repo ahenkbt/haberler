@@ -34,6 +34,7 @@ const PHP_THEME_PUBLIC_APEX = Object.freeze([
   "guneydogu.gundemi.org",
   "akdeniz.gundemi.org",
   "kibris.gundemi.org",
+  "fix.tc",
 ]);
 
 /** Kurumsal (Vatan) PHP — Hostinger php-kurumsal; haber Yenişafak twin değil. */

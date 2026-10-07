@@ -216,6 +216,30 @@ const HM: GeoSiteEntity[] = [
       },
     ],
   },
+  {
+    slug: "fixhaber",
+    domain: "fix.tc",
+    extraDomains: ["www.fix.tc"],
+    officialName: "Fix Haber",
+    alternateName: ["fix.tc", "Fix Haber", "FIXHABER"],
+    type: "NewsMediaOrganization",
+    description:
+      "Fix Haber (fix.tc), Türkiye genelinde Türkçe yayın yapan dijital haber sitesidir. Resmi alan adı fix.tc'dir.",
+    disambiguatingDescription: "fix.tc, Fix Haber resmi haber sitesidir.",
+    aboutPath: "/hakkinda",
+    email: "bilgi@fix.tc",
+    telephone: "+90 532 229 18 92",
+    faq: [
+      {
+        question: "Fix Haber nedir?",
+        answer: "Fix Haber (fix.tc), Türkiye genelinde Türkçe yayın yapan resmi haber sitesidir.",
+      },
+      {
+        question: "fix.tc kimin sitesi?",
+        answer: "fix.tc, Fix Haber resmi haber sitesinin kanonik alan adıdır.",
+      },
+    ],
+  },
 ];
 
 function normHost(host: string | null | undefined): string {

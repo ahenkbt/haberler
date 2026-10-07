@@ -50,6 +50,8 @@ describe("hm-html-boot", () => {
     assert.equal(hmDomainSlugFallback("www.suhaber.net"), "su");
     assert.equal(hmDomainSlugFallback("yesilvatan.gen.tr"), "yesilvatan");
     assert.equal(hmDomainSlugFallback("yerel.net.tr"), "yerelnet");
+    assert.equal(hmDomainSlugFallback("fix.tc"), "fixhaber");
+    assert.equal(hmDomainSlugFallback("www.fix.tc"), "fixhaber");
     assert.equal(hmDomainSlugFallback("turk.eco"), "");
     assert.equal(hmDomainSlugFallback("ahenk.net.tr"), "");
   });
@@ -497,6 +499,7 @@ describe("hm-html-boot", () => {
 
   it("builds Trafik Güvenliği Derneği GEO entity for AI crawlers", () => {
     assert.equal(hmSlugDisplayName("trafik"), "Trafik Güvenliği Derneği");
+    assert.equal(hmSlugDisplayName("fixhaber"), "Fix Haber");
     const html = buildHmSiteEntityHtml("trafik", "https://trafikdernegi.com", "/");
     assert.match(html, /Trafik Güvenliği Derneği — trafikdernegi\.com/);
     assert.match(html, /"@type":\["NGO","Organization"\]/);
