@@ -214,7 +214,24 @@ test("dual-write read-only INSERT soft-fail döner, throw etmez", async () => {
   });
   assert.equal(r.mirrored, false);
   assert.equal(r.readOnly, true);
-  assert.equal(r.reason, "read-only");
+  assert.equal(r.reason, "news-db-read-only");
+});
+
+test("dual-write read-only INSERT hatası panel'e fırlatılmaz", async () => {
+  const sql = async () => {
+    throw new Error("cannot execute INSERT in a read-only transaction");
+  };
+  sql.query = sql;
+  const r = await edgeMirrorNewsDbWrite(sql, "news", "upsert", {
+    id: 1,
+    site_id: 3,
+    slug: "x",
+    title: "X",
+    status: "published",
+  });
+  assert.equal(r.mirrored, false);
+  assert.equal(r.reason, "news-db-read-only");
+  assert.equal(r.readOnly, true);
 });
 
 test("NEWS_DATABASE_URL varken kenar dual-write Container'a gitmez", async () => {

@@ -428,12 +428,16 @@ export async function edgeMirrorNewsDbWrite(sql, table, op, rowOrId) {
     return { mirrored: false, reason: "table" };
   } catch (err) {
     const msg = String(err?.message || err);
-    const readOnly = isReadOnlyDbError(err);
+    if (isReadOnlyDbError(err)) {
+      console.warn(
+        "[hm-php-dual-write] NEWS_DATABASE_URL read-only — mirror atlandı",
+        table,
+        op,
+        msg.slice(0, 120),
+      );
+      return { mirrored: false, reason: "news-db-read-only", readOnly: true };
+    }
     console.error("[hm-php-dual-write]", table, op, msg.slice(0, 180));
-    return {
-      mirrored: false,
-      reason: readOnly ? "read-only" : msg.slice(0, 120),
-      readOnly,
-    };
+    return { mirrored: false, reason: msg.slice(0, 120), readOnly: false };
   }
 }

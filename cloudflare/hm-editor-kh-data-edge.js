@@ -380,7 +380,12 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     }
     return data?.mirrored === true;
   } catch (err) {
-    console.error("[hm-news-mirror]", table, op, String(err?.message || err).slice(0, 120));
+    const msg = String(err?.message || err).slice(0, 120);
+    if (/read-only transaction|news-db-read-only/i.test(msg)) {
+      console.warn("[hm-news-mirror] PHP dual-write read-only — panel yanıtı etkilenmez", table, op, msg);
+      return false;
+    }
+    console.error("[hm-news-mirror]", table, op, msg);
     return false;
   }
 }
@@ -857,6 +862,20 @@ function isEditorAuthorWritePath(path, method) {
   if (path === "/api/hm/editor/authors" && method === "POST") return true;
   if (path === "/api/hm/editor/authors/order" && method === "PATCH") return true;
   if (/^\/api\/hm\/editor\/authors\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
+    return true;
+  }
+  return false;
+}
+
+/** Haber/makale yazmaları Container'a (eski NEWS RO secret) düşmesin — kenarda kal. */
+function isEditorNewsWritePath(path, method) {
+  if (path === "/api/hm/editor/news" && method === "POST") return true;
+  if (/^\/api\/hm\/editor\/news\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
+    return true;
+  }
+  if (/^\/api\/hm\/editor\/news\/\d+\/flags$/.test(path) && method === "PATCH") return true;
+  if (path === "/api/hm/editor/makaleler" && method === "POST") return true;
+  if (/^\/api\/hm\/editor\/makaleler\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
     return true;
   }
   return false;
@@ -1350,15 +1369,22 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
       `;
       const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
       if (!row) return createFailResponse("INSERT boş döndü");
-      // Dual-write PHP Neon; RO/ayna hatası primary kaydını düşürmez.
-      await mirrorNewsDbWrite("news", "upsert", {
-        ...row,
-        category_slug: categorySlug,
-        is_tepe_manset: isFeatured,
-        is_featured: isFeatured,
-        is_site_manset: isSiteManset,
-        is_breaking: isBreaking,
-      });
+      // Primary (DATABASE_URL) başarılı — PHP mirror RO olsa bile 201 dön.
+      try {
+        await mirrorNewsDbWrite("news", "upsert", {
+          ...row,
+          category_slug: categorySlug,
+          is_tepe_manset: isFeatured,
+          is_featured: isFeatured,
+          is_site_manset: isSiteManset,
+          is_breaking: isBreaking,
+        });
+      } catch (mirrorErr) {
+        console.warn(
+          "[kh-news-create-mirror]",
+          String(mirrorErr?.message || mirrorErr).slice(0, 160),
+        );
+      }
       await upsertMakaleFromAuthorNews(sql, row);
       return jsonResponse(201, serializeNewsRow(row, categorySlug));
     } catch (err) {
@@ -1409,7 +1435,14 @@ async function handleCreateNews(sql, siteId, body, opts = {}) {
             } catch {
               /* kolon yoksa yok say */
             }
-            await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+            try {
+              await mirrorNewsDbWrite("news", "upsert", { ...row, category_slug: categorySlug });
+            } catch (mirrorErr) {
+              console.warn(
+                "[kh-news-create-mirror]",
+                String(mirrorErr?.message || mirrorErr).slice(0, 160),
+              );
+            }
             await upsertMakaleFromAuthorNews(sql, row);
             return jsonResponse(201, serializeNewsRow(row, categorySlug));
           }
@@ -2659,11 +2692,13 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   }
 
   const authorWrite = isEditorAuthorWritePath(path, method);
+  const newsWrite = isEditorNewsWritePath(path, method);
+  const edgeWrite = authorWrite || newsWrite;
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    // Yazar yazma: Container origin-budget 503 yerine hızlı 401.
-    if (!auth.startsWith("Bearer ") || authorWrite) {
+    // Yazar/haber yazma: Container origin-budget 503 / RO NEWS yerine hızlı 401.
+    if (!auth.startsWith("Bearer ") || edgeWrite) {
       return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
     }
     return null; // Render imzalı JWT → Render proxy (okuma uçları)
@@ -2671,14 +2706,14 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   const sql = sqlClient(env);
   if (!sql) {
-    if (authorWrite) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+    if (edgeWrite) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
     return null;
   }
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
-  // Yazar yazma asla Container'a düşmesin. Diğer uçlar: eski Render-bridge JWT → proxy.
+  // Yazar/haber yazma asla Container'a (eski NEWS RO) düşmesin. Diğer uçlar: eski Render-bridge JWT → proxy.
   if (!editor) {
-    if (authorWrite || !auth.startsWith("Bearer ")) {
+    if (edgeWrite || !auth.startsWith("Bearer ")) {
       return jsonResponse(401, { error: "Geçersiz oturum" });
     }
     return null;
