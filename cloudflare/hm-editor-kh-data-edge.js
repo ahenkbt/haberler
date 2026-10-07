@@ -860,6 +860,21 @@ function isEditorAuthorWritePath(path, method) {
   return false;
 }
 
+/** Haber/makale yazmaları Container'a (eski NEWS RO) düşmesin — kenarda kal. */
+function isEditorNewsWritePath(path, method) {
+  if (path === "/api/hm/editor/news" && method === "POST") return true;
+  if (/^\/api\/hm\/editor\/news\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
+    return true;
+  }
+  if (/^\/api\/hm\/editor\/news\/\d+\/flags$/.test(path) && method === "PATCH") return true;
+  if (path === "/api/hm/editor/makale" && method === "POST") return true;
+  if (/^\/api\/hm\/editor\/makale\/\d+$/.test(path) && (method === "PUT" || method === "DELETE")) {
+    return true;
+  }
+  if (path === "/api/hm/editor/makale/bulk-delete" && method === "POST") return true;
+  return false;
+}
+
 /**
  * Neon ANY(array) güvenilir değil — satır satır sil.
  * UI çoğu zaman PHP twilight-pine id gönderir; Worker + PHP site-scoped silinir.
@@ -2587,11 +2602,13 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   }
 
   const authorWrite = isEditorAuthorWritePath(path, method);
+  const newsWrite = isEditorNewsWritePath(path, method);
+  const edgeWrite = authorWrite || newsWrite;
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    // Yazar yazma: Container origin-budget 503 yerine hızlı 401.
-    if (!auth.startsWith("Bearer ") || authorWrite) {
+    // Yazar/haber yazma: Container origin-budget 503 / RO NEWS yerine hızlı 401.
+    if (!auth.startsWith("Bearer ") || edgeWrite) {
       return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
     }
     return null; // Render imzalı JWT → Render proxy (okuma uçları)
@@ -2599,14 +2616,14 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
 
   const sql = sqlClient(env);
   if (!sql) {
-    if (authorWrite) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+    if (edgeWrite) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
     return null;
   }
 
   const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
-  // Yazar yazma asla Container'a düşmesin. Diğer uçlar: eski Render-bridge JWT → proxy.
+  // Yazar/haber yazma asla Container'a (eski NEWS RO) düşmesin. Diğer uçlar: eski Render-bridge JWT → proxy.
   if (!editor) {
-    if (authorWrite || !auth.startsWith("Bearer ")) {
+    if (edgeWrite || !auth.startsWith("Bearer ")) {
       return jsonResponse(401, { error: "Geçersiz oturum" });
     }
     return null;
