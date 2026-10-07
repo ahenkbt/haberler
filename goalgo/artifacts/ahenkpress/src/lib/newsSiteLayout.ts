@@ -939,6 +939,10 @@ export type NewsSiteLayoutPrefs = {
    * bu bayrak siteyi açık tutup girişe sabit metni basar.
    */
   hmPublicSuspended?: boolean;
+  /** Hostinger PHP (Yenişafak) şablon bayrağı — panel create/gundemi provision yazar. */
+  phpTheme?: boolean;
+  /** Ön yüz motoru: `"php"` | `"spa"` vb. `phpTheme` ile birlikte kullanılır. */
+  frontend?: string | null;
   /** Footer sloganı. PHP tema `hmYsSlogan` doluysa site açıklamasının yerine bunu basar. */
   hmYsSlogan?: string | null;
   /** Haber sayfası paylaş düğmeleri. Tanımsızsa PHP tema açık kabul eder. */
@@ -3227,6 +3231,20 @@ export function isHmPublicSuspended(layout: { hmPublicSuspended?: unknown } | nu
   return layout?.hmPublicSuspended === true;
 }
 
+/** layout_json phpTheme / frontend → Hostinger PHP şablon sitesi. */
+export function isHmPhpThemeSite(
+  layout: { phpTheme?: unknown; frontend?: unknown } | null | undefined,
+): boolean {
+  if (!layout) return false;
+  if (layout.phpTheme === false) return false;
+  if (layout.phpTheme === true) return true;
+  const frontend = String(layout.frontend ?? "")
+    .trim()
+    .toLowerCase();
+  if (frontend === "spa" || frontend === "react" || frontend === "worker") return false;
+  return frontend === "php";
+}
+
 export function parseNewsSiteLayoutFromJson(
   raw: string | null | undefined,
   siteSlug?: string | null,
@@ -3548,6 +3566,11 @@ export function parseNewsSiteLayoutFromJson(
     const parsed: NewsSiteLayoutPrefs = {
       ...merged,
       hmPublicSuspended: merged.hmPublicSuspended === true,
+      phpTheme: merged.phpTheme === true ? true : merged.phpTheme === false ? false : undefined,
+      frontend:
+        typeof merged.frontend === "string" && merged.frontend.trim()
+          ? merged.frontend.trim()
+          : undefined,
       mansetVariant,
       mansetCategorySlug,
       logoUrl: logoUrl ?? undefined,

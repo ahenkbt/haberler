@@ -81,11 +81,35 @@ Origin `187.77.84.201` TLS: **TRAEFIK DEFAULT CERT**.
 `cloudflare/gundemi-origin-bridge.js` + catch-all routes:
 
 - `gundemi.org` / `www` → turkatahaber.com PHP (URL’ler `gundemi.org` olarak yeniden yazılır)
-- `ege`…`kibris` → SPA ASSETS (Neon siteleri hazır; PHP Traefik sonrası)
+- **Herhangi bir** `*.gundemi.org` alt alan (seed 8 bölge + panelden yeni açılanlar) → SPA ASSETS  
+  (Neon `meta/by-domain` eşleşmesi; PHP Traefik sonrası origin’e geçer)
+- wrangler.toml’da site başına route gerekmez — `*.gundemi.org/*` yeterli
 
 Panel/API route’ları (`/editor*`, `/api/*`, …) daha spesifik kalır.
 
-## One-shot API
+## Admin panel — yeni `*.gundemi.org` site (otomatik)
+
+Haber Siteleri panelinde domain `yeni.gundemi.org` gibi `*.gundemi.org` yazıldığında kayıt sonrası:
+
+1. `layout_json.phpTheme` + `frontend: "php"` (opt-out yoksa)
+2. Cloudflare Proxied **A** → `187.77.84.201` (idempotent)
+3. Worker catch-all `*.gundemi.org/*` (Traefik Host() olmadan SPA/bridge ile açılır)
+
+API: `POST /api/hm/sites` / `PATCH` otomatik; yeniden deneme `POST /api/hm/sites/:id/ensure-gundemi`.
+
+**Secret adı:** `CLOUDFLARE_API_TOKEN` (Worker secret veya API Container env; `CF_API_TOKEN` de okunur).
+
+**Gerekli CF token yetkileri (zone `gundemi.org`):**
+
+| Permission | Neden |
+|------------|--------|
+| Zone → DNS → **Edit** | Alt alan A kaydı oluşturma |
+| Zone → Workers Routes → **Edit** | `*.gundemi.org/*` catch-all |
+| Zone → Zone → **Read** | Zone id çözümü |
+
+Token yoksa soft-fail (site kaydı yine başarılı; NXDOMAIN kalır). Pure origin PHP için VPS Traefik `Host()` hâlâ opsiyonel — Worker yolu yeni siteleri Traefik olmadan açar.
+
+## One-shot API (katalog / manuel)
 
 Token: **Zone → DNS → Edit**, **Zone → Workers Routes → Edit**, Zone → Zone → Read; zone `gundemi.org`.  
 GitHub secret’taki token çoğu zaman Workers Edit-only → API `10000` (DNS yazamaz); Dashboard veya DNS Edit’li token gerekir.

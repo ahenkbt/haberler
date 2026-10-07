@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   isGundemiApexBridgeHost,
   isGundemiBridgeCatchAllHost,
+  isGundemiOrgSubdomainHost,
   isGundemiRegionalHost,
   isPhpThemeAssetPath,
   shouldBridgeGundemiApexPath,
@@ -10,7 +11,7 @@ import {
 } from "./gundemi-origin-bridge.js";
 
 describe("gundemi-origin-bridge hosts", () => {
-  it("detects apex alias vs regional", () => {
+  it("detects apex alias vs any *.gundemi.org subdomain (incl. new sites)", () => {
     assert.equal(isGundemiApexBridgeHost("gundemi.org"), true);
     assert.equal(isGundemiApexBridgeHost("www.gundemi.org"), true);
     assert.equal(isGundemiApexBridgeHost("ege.gundemi.org"), false);
@@ -18,7 +19,11 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isGundemiRegionalHost("ege.gundemi.org"), true);
     assert.equal(isGundemiRegionalHost("www.ege.gundemi.org"), true);
     assert.equal(isGundemiRegionalHost("gundemi.org"), false);
+    assert.equal(isGundemiOrgSubdomainHost("yeni.gundemi.org"), true);
+    assert.equal(isGundemiOrgSubdomainHost("www.yeni.gundemi.org"), true);
+    assert.equal(isGundemiOrgSubdomainHost("gundemi.org"), false);
     assert.equal(isGundemiBridgeCatchAllHost("akdeniz.gundemi.org"), true);
+    assert.equal(isGundemiBridgeCatchAllHost("yeni.gundemi.org"), true);
     assert.equal(isGundemiBridgeCatchAllHost("gundemi.org"), true);
   });
 

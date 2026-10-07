@@ -37,6 +37,35 @@ export const GUNDEMI_REGIONAL_CAMPAIGN_TAG = "gundemi-bolge";
 export const GUNDEMI_APEX_TURKATA_ALIAS = "gundemi.org";
 export const TURKATA_HM_SLUG = "turkatahaber";
 
+/**
+ * turkatahaber.com PHP `/kunye` — `hmYsKunye` alanları (canlı site ile aynı).
+ * Bölgesel gundemi siteleri bu künyeyi paylaşır.
+ */
+export const TURKATA_YS_KUNYE = Object.freeze({
+  lead: "THA – TürkAta Haber Ajansı, TürkAta Vakfı kuruluşu ve markasıdır.",
+  yayin: "TÜRKATA HABER AJANSI",
+  genelMudur: "Nail Türkoğlu",
+  yayinYonetmeni: "Mustafa ÖZDEMİR",
+  yaziIsleri: "Melek Acar",
+  address: "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara",
+  phone: "0532 229 18 92",
+  email: "bilgi@turkatahaber.com",
+  tuzel: "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
+  yayinIlkeleri:
+    "Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.",
+});
+
+/**
+ * turkatahaber.com `/hakkimizda` spot + slogan + yayın ilkeleri (PHP vitrin metni).
+ * `hmFooterAboutHtml` hem Hakkımızda sayfası hem alt bilgi için kullanılır.
+ */
+export const TURKATA_HAKKIMIZDA_HTML = [
+  "<p>TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. 1998’den bu yana yerel yönetimler, kamu kurumları ile sivil toplum ve sektör gündemini Türkçe olarak kamuoyuna aktarır.</p>",
+  "<p>Yerelin Sesini Geleceğe Taşıyan Güvenilir Haber Ağı.</p>",
+  '<h2 id="yayin-ilkeleri">Yayın ilkeleri</h2>',
+  `<p>${TURKATA_YS_KUNYE.yayinIlkeleri}</p>`,
+].join("\n");
+
 export const GUNDEMI_REGIONAL_SITES: readonly GundemiRegionalSiteDef[] = [
   {
     slug: "ege-gundemi",
@@ -376,7 +405,7 @@ export function findGundemiRegionalSite(slugOrDomain: string): GundemiRegionalSi
   return GUNDEMI_REGIONAL_SITES.find((s) => s.slug === key || s.domain === key);
 }
 
-/** layout_json iskeleti — phpTheme + yenisafak + bölge renkleri. */
+/** layout_json iskeleti — phpTheme + yenisafak + bölge renkleri + turkatahaber künye/hakkımızda. */
 export function buildGundemiRegionalLayoutJson(site: GundemiRegionalSiteDef): Record<string, unknown> {
   const categorySlugs = site.regionalCategories.map((c) => c.slug);
   return {
@@ -389,7 +418,9 @@ export function buildGundemiRegionalLayoutJson(site: GundemiRegionalSiteDef): Re
     logoUrl: site.logoPath,
     faviconUrl: site.logoPath,
     hmYsSlogan: site.hmYsSlogan,
-    hmFooterAboutHtml: site.description,
+    /** Künye + Hakkımızda = turkatahaber.com ile aynı (ajans ağı). */
+    hmYsKunye: { ...TURKATA_YS_KUNYE },
+    hmFooterAboutHtml: TURKATA_HAKKIMIZDA_HTML,
     hmNewsYsTickerEnabled: true,
     hmNewsYsMansetEnabled: true,
     hmNewsYsSideHeadlinesEnabled: true,

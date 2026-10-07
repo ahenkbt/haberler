@@ -115,6 +115,12 @@ import {
   isHmCorporateLikeTheme,
   resolveDefaultHmNewsSiteLayoutTheme,
 } from "../lib/hm-corporate-like-theme.js";
+import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
+import {
+  collectGundemiOrgHosts,
+  provisionGundemiOrgForSiteDomains,
+  type GundemiProvisionReport,
+} from "../lib/hm-gundemi-provision.js";
 import {
   assertHmLayoutJsonSize,
   hmLayoutTabIconUrl,
@@ -605,7 +611,27 @@ function defaultHmNewsSiteLayout(incoming: unknown): Record<string, unknown> {
     hmCorporateRssBandEnabled: false,
     ...inc,
   };
-  return applyHmRssNewsPolicyToLayout(base);
+  // Yeni HM siteleri Hostinger PHP (Yenişafak) şablonuna işaretlenir; wrangler listesi gerekmez.
+  return applyHmRssNewsPolicyToLayout(ensurePhpThemeLayoutDefaults(base));
+}
+
+async function maybeProvisionGundemiOrg(domains: {
+  domain?: string | null;
+  domain2?: string | null;
+  domain3?: string | null;
+}): Promise<GundemiProvisionReport | null> {
+  if (collectGundemiOrgHosts(domains.domain, domains.domain2, domains.domain3).length === 0) {
+    return null;
+  }
+  try {
+    return await provisionGundemiOrgForSiteDomains(domains);
+  } catch (e) {
+    console.warn(
+      "[gundemi-provision] soft-fail",
+      e instanceof Error ? e.message : e,
+    );
+    return null;
+  }
 }
 
 function donationText(raw: unknown, fallback: string, max = 240): string {
@@ -1277,11 +1303,18 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
 
     const freshSite = (await getActiveHmNewsSiteBySlugCompat(slug)) ?? site;
 
+    const gundemiProvision = await maybeProvisionGundemiOrg({
+      domain: freshSite.domain ?? domain,
+      domain2: freshSite.domain2 ?? domain2,
+      domain3: freshSite.domain3 ?? domain3,
+    });
+
     res.status(201).json({
       site: freshSite,
       editor: editor
         ? { id: editor.id, email: editor.email, displayName: editor.displayName, createdAt: editor.createdAt }
         : null,
+      ...(gundemiProvision ? { gundemiProvision } : {}),
     });
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);
@@ -1383,7 +1416,34 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
         ...(inc.hmCategoryColors as Record<string, unknown>),
       };
     }
-    patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(merged, inc)));
+    // phpTheme yalnızca create veya domain atamasında varsayılanlanır; burada açık gelen değer korunur.
+    const withPhp =
+      "phpTheme" in inc || "frontend" in inc ? ensurePhpThemeLayoutDefaults(merged) : merged;
+    patch.layoutJson = JSON.stringify(
+      applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(withPhp, inc)),
+    );
+  } else if ("domain" in b || "domain2" in b || "domain3" in b) {
+    // Domain atanınca PHP şablon bayrağı yoksa otomatik işaretle (opt-out hariç).
+    const [prevRow] = await newsReadDb()
+      .select({ layoutJson: hmNewsSitesTable.layoutJson })
+      .from(hmNewsSitesTable)
+      .where(eq(hmNewsSitesTable.id, id));
+    let prev: Record<string, unknown> = {};
+    try {
+      const rawPrev = prevRow?.layoutJson;
+      if (rawPrev != null && String(rawPrev).trim()) {
+        const j = JSON.parse(String(rawPrev)) as unknown;
+        if (j && typeof j === "object" && !Array.isArray(j)) prev = j as Record<string, unknown>;
+      }
+    } catch {
+      prev = {};
+    }
+    if (!layoutMarksPhpTheme(prev) && prev.phpTheme !== false) {
+      const next = ensurePhpThemeLayoutDefaults(prev);
+      if (layoutMarksPhpTheme(next)) {
+        patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(next));
+      }
+    }
   }
   if (typeof b.active === "boolean") patch.active = b.active;
 
@@ -1544,7 +1604,20 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     }
 
     const finalRow = await getHmNewsSiteByIdCompat(id);
-    res.json(finalRow ?? row);
+    const siteOut = finalRow ?? row;
+    let gundemiProvision: GundemiProvisionReport | null = null;
+    if ("domain" in b || "domain2" in b || "domain3" in b) {
+      gundemiProvision = await maybeProvisionGundemiOrg({
+        domain: siteOut?.domain ?? null,
+        domain2: siteOut?.domain2 ?? null,
+        domain3: siteOut?.domain3 ?? null,
+      });
+    }
+    if (gundemiProvision) {
+      res.json({ ...siteOut, gundemiProvision });
+      return;
+    }
+    res.json(siteOut);
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);
     if (/hm_site_editors_site_id_email|editör.*zaten|editor.*already/i.test(msg)) {
@@ -1556,6 +1629,75 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       return;
     }
     res.status(500).json({ error: msg });
+  }
+});
+
+/** *.gundemi.org DNS + Worker catch-all yeniden dene (admin). */
+router.post("/hm/sites/:id/ensure-gundemi", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  const id = parseInt(String(req.params.id), 10);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: "id" });
+    return;
+  }
+  try {
+    const site = await getHmNewsSiteByIdCompat(id);
+    if (!site) {
+      res.status(404).json({ error: "Bulunamadı" });
+      return;
+    }
+    const hosts = collectGundemiOrgHosts(site.domain, site.domain2, site.domain3);
+    if (hosts.length === 0) {
+      res.status(400).json({
+        error: "Bu sitede *.gundemi.org domain yok",
+        hint: "Domain alanına örn. yeni.gundemi.org yazıp kaydedin.",
+      });
+      return;
+    }
+
+    // phpTheme bayrağı yoksa işaretle
+    let layoutTouched = false;
+    let layout: Record<string, unknown> = {};
+    try {
+      const raw = site.layoutJson;
+      if (raw != null && String(raw).trim()) {
+        const j = JSON.parse(String(raw)) as unknown;
+        if (j && typeof j === "object" && !Array.isArray(j)) layout = j as Record<string, unknown>;
+      }
+    } catch {
+      layout = {};
+    }
+    if (!layoutMarksPhpTheme(layout) && layout.phpTheme !== false) {
+      const next = ensurePhpThemeLayoutDefaults(layout);
+      await dualWriteUpdate(
+        hmNewsSitesTable,
+        {
+          layoutJson: JSON.stringify(applyHmRssNewsPolicyToLayout(next)),
+          updatedAt: new Date(),
+        },
+        eq(hmNewsSitesTable.id, id),
+      );
+      layoutTouched = true;
+    }
+
+    const gundemiProvision = await provisionGundemiOrgForSiteDomains({
+      domain: site.domain,
+      domain2: site.domain2,
+      domain3: site.domain3,
+    });
+    res.json({
+      ok: true,
+      siteId: id,
+      hosts,
+      phpThemeEnsured: layoutTouched || layoutMarksPhpTheme(layout),
+      gundemiProvision,
+      tokenHint:
+        gundemiProvision.tokenPresent
+          ? undefined
+          : "CLOUDFLARE_API_TOKEN (Worker secret veya API env) — Zone DNS Edit on gundemi.org",
+    });
+  } catch (e: unknown) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
