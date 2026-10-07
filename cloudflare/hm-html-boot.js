@@ -71,6 +71,8 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.dunyasaglik.org": "dunyasaglik",
   "turksav.org": "turksav",
   "www.turksav.org": "turksav",
+  "fix.tc": "fixhaber",
+  "www.fix.tc": "fixhaber",
 };
 
 export function normalizeHmBootHost(hostname) {
@@ -959,6 +961,7 @@ const HM_SLUG_DISPLAY_NAMES = {
   kirsehir: "Kırşehir Haber",
   trafik: "Trafik Güvenliği Derneği",
   tgd: "Trafik Güvenliği Derneği",
+  fixhaber: "Fix Haber",
 };
 
 const GEO_AI_USER_AGENTS = [

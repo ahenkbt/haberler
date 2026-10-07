@@ -34,6 +34,7 @@ export const PHP_THEME_ZONES = [
   "vatankahramanlari.org.tr",
   "trafikdernegi.com",
   "tgd.tc",
+  "fix.tc",
 ];
 
 export function isPhpThemeZone(name) {

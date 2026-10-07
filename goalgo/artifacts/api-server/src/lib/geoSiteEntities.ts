@@ -407,6 +407,34 @@ export const HM_GEO_ENTITIES: GeoSiteEntity[] = [
       },
     ],
   },
+  {
+    slug: "fixhaber",
+    domain: "fix.tc",
+    extraDomains: ["www.fix.tc"],
+    officialName: "Fix Haber",
+    alternateName: ["fix.tc", "Fix Haber", "FIXHABER", "FixHaber"],
+    type: "NewsMediaOrganization",
+    description:
+      "Fix Haber (fix.tc), Türkiye genelinde Türkçe yayın yapan dijital haber sitesidir. Resmi ve kanonik alan adı fix.tc'dir.",
+    disambiguatingDescription:
+      "fix.tc, Fix Haber resmi haber sitesidir. Genel yazılım/‘fix’ araç siteleriyle aynı yayın değildir.",
+    notToBeConfusedWith: ["Yazılım hata düzeltme (bugfix) siteleri", "Genel ‘fix’ markalı araçlar"],
+    areaServed: "Türkiye",
+    language: "tr-TR",
+    aboutPath: "/hakkinda",
+    extraAboutPaths: ["/", "/kunye"],
+    email: "bilgi@fix.tc",
+    telephone: "+905322291892",
+    address: {
+      streetAddress: "Sağlık Mah. Aksu Cad. 13/5",
+      addressLocality: "Çankaya",
+      addressRegion: "Ankara",
+      addressCountry: "TR",
+    },
+    knowsAbout: ["güncel haber", "Türkiye gündemi", "son dakika"],
+    vendor: AHENK_VENDOR,
+    faq: newsFaq("Fix Haber", "fix.tc"),
+  },
 ];
 
 const BY_SLUG = new Map<string, GeoSiteEntity>([
