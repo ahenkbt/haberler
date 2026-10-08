@@ -32,7 +32,7 @@ describe("hm-kamu-yerel-layout-lock", () => {
       canonical,
     );
     expect(patched.hmNavOnlyCategorySlugs).toEqual(listKamuYerelNavTopCategorySlugs());
-    expect(patched.logoUrl).toBe("/brand/turkata/turkata-logo-light.png");
+    expect(patched.logoUrl).toBe("/turkata/turkata-logo.webp");
   });
 
   it("stripKamuYerelLockedLayoutIncoming blocks nav overwrite on save", () => {
@@ -46,7 +46,7 @@ describe("hm-kamu-yerel-layout-lock", () => {
 
   it("accepts canonical yerel logo path", () => {
     const layout = buildKamuYerelLayoutJson(YERELNET_SITE);
-    expect(layout.logoUrl).toBe("/brand/turkata/turkata-mark.png");
+    expect(layout.logoUrl).toBe("/turkata/turkata-mark.png");
     expect(
       kamuYerelLayoutNeedsCatalogRepair(JSON.stringify(layout), kamuYerelLogoExpectation(YERELNET_SITE)),
     ).toBe(false);

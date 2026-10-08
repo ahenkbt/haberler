@@ -91,9 +91,10 @@ export function kamuYerelLogoNeedsRepair(
     const layout = JSON.parse(raw) as { logoUrl?: unknown; faviconUrl?: unknown };
     const logoUrl = String(layout?.logoUrl ?? "").trim();
     const faviconUrl = String(layout?.faviconUrl ?? "").trim();
-    if (!logoUrl || logoUrl.startsWith("/turkata/")) return true;
+    if (!logoUrl || logoUrl.toLowerCase().startsWith("data:image/")) return true;
+    if (logoUrl.startsWith("/brand/turkata/")) return true;
     if (logoUrl !== expect.logoPath) return true;
-    if (faviconUrl && faviconUrl !== expect.faviconPath && !faviconUrl.startsWith("/brand/turkata/")) {
+    if (faviconUrl && faviconUrl !== expect.faviconPath && faviconUrl.startsWith("/brand/turkata/")) {
       return true;
     }
   } catch {

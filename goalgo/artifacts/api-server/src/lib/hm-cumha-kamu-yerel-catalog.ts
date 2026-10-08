@@ -185,6 +185,36 @@ const CUMHA_KAMU_PARENT_SLUG: Partial<Record<string, string>> = {
   "avrupa-birligi": "daha",
 };
 
+const KAMU_YEREL_HM_SITE_SLUGS = new Set(["turkatahaber", "yerelnet"]);
+
+export function isKamuYerelHmSiteSlug(siteSlug?: string | null): boolean {
+  return KAMU_YEREL_HM_SITE_SLUGS.has(
+    String(siteSlug ?? "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+/**
+ * Tepe menü üst slug'ları (ör. `daha`, `siyasi-partiler`) — alt RSS kategori slug'larını birleştirir.
+ * Haberler yalnızca alt slug ile etiketlendiğinde üst menü sayfası boş kalmasın.
+ */
+export function expandKamuYerelListingCategorySlugs(
+  categorySlug: string | null | undefined,
+  siteSlug?: string | null,
+): string[] {
+  const slug = String(categorySlug ?? "")
+    .trim()
+    .toLowerCase();
+  if (!slug) return [];
+  if (!isKamuYerelHmSiteSlug(siteSlug)) return [slug];
+  const children = Object.entries(CUMHA_KAMU_PARENT_SLUG)
+    .filter(([, parent]) => parent === slug)
+    .map(([child]) => child);
+  if (!children.length) return [slug];
+  return [slug, ...children];
+}
+
 /** Tepe menü — Cumha.com.tr kamu-yerel üst kategorileri (+ yerel manşet). */
 export const KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS = [
   "yerel",

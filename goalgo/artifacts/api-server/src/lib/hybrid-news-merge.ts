@@ -53,6 +53,17 @@ import {
   normalizePortalCategorySlug,
 } from "./portal-category-slug.js";
 import { rssCategorySlugsMatch } from "./hm-rss-category-aliases.js";
+
+function resolveEditorListingCategorySlugs(
+  categorySlug: string | undefined,
+  siteSlug: string | undefined,
+): string[] {
+  const sha = expandShaListingCategorySlugs(categorySlug, siteSlug);
+  const kamu = expandKamuYerelListingCategorySlugs(categorySlug, siteSlug);
+  const merged = [...new Set([...sha, ...kamu].map((s) => s.trim().toLowerCase()).filter(Boolean))];
+  return merged.length ? merged : sha;
+}
+import { expandKamuYerelListingCategorySlugs } from "./hm-cumha-kamu-yerel-catalog.js";
 import { expandShaListingCategorySlugs } from "./hm-sha-rss-feeds.js";
 import { portalRssTitleKey, portalRssInternalHref, type PortalRssItem } from "./portal-rss-fetch.js";
 import {
@@ -476,8 +487,8 @@ export async function loadEditorScopedDbNews(opts: {
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
   const publicFreshnessWindow = opts.publicFreshnessWindow === true;
-  const listingSlugs = expandShaListingCategorySlugs(opts.categorySlug, opts.siteSlug);
-  const categorySlugs = listingSlugs.length > 1 ? listingSlugs : undefined;
+  const listingSlugs = resolveEditorListingCategorySlugs(opts.categorySlug, opts.siteSlug);
+  const categorySlugs = listingSlugs.length ? listingSlugs : undefined;
   const groupSiteIds = await resolveHmPublishGroupSiteIds(opts.siteId);
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
   const [portal, editor] = await Promise.all([
@@ -532,7 +543,8 @@ export async function loadEditorScopedDbNews(opts: {
     items.sort((a, b) => editorScopedNewsRecencyMs(b) - editorScopedNewsRecencyMs(a));
     const wantSlug = String(opts.categorySlug ?? "").trim().toLowerCase();
     if (wantSlug && wantSlug !== HM_GLOBAL_NEWS_CATEGORY_SLUG) {
-      items = items.filter((item) => rssCategorySlugsMatch(item.categorySlug, wantSlug));
+      const slugFilter = listingSlugs.length ? listingSlugs : [wantSlug];
+      items = items.filter((item) => slugFilter.some((s) => rssCategorySlugsMatch(item.categorySlug, s)));
     }
     if (wantSlug === HM_GLOBAL_NEWS_CATEGORY_SLUG) {
       items = filterGlobalCategoryNewsItems(items);
