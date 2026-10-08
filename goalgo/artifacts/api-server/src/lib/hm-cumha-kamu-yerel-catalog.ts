@@ -349,6 +349,43 @@ export function listKamuYerelCampaignFeedUrls(): string[] {
   return buildKamuYerelHmNewsSiteRssFeedRows().map((r) => r.url);
 }
 
+function normalizeCumhaFeedUrl(raw: string): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\/+$/, "");
+}
+
+const CUMHA_FEED_URL_TO_CATEGORY = new Map<string, string>(
+  buildKamuYerelHmNewsSiteRssFeedRows().map((r) => [normalizeCumhaFeedUrl(r.url), r.categoryKey]),
+);
+
+/** RSS kampanya çalıştırma — Cumha kategori/lokasyon feed → site kategori slug. */
+export function categorySlugFromCumhaFeed(feedUrl: string): string | null {
+  const key = normalizeCumhaFeedUrl(feedUrl);
+  if (!key) return null;
+  const direct = CUMHA_FEED_URL_TO_CATEGORY.get(key);
+  if (direct) return direct;
+  try {
+    const u = new URL(key.startsWith("http") ? key : `https://${key}`);
+    const pathKey = normalizeCumhaFeedUrl(`${u.hostname}${u.pathname}`);
+    const fromPath = CUMHA_FEED_URL_TO_CATEGORY.get(pathKey);
+    if (fromPath) return fromPath;
+    const loc = u.pathname.match(/\/rss\/lokasyon\/([^/]+)/i);
+    if (loc?.[1]) return loc[1].toLowerCase();
+    const cat = u.pathname.match(/\/rss\/category\/([^/]+)/i);
+    if (cat?.[1]) {
+      const cumhaSlug = cat[1].toLowerCase();
+      for (const row of buildKamuYerelHmNewsSiteRssFeedRows()) {
+        if (row.url.includes(cumhaSlug)) return row.categoryKey;
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export type KamuYerelCorporateMenuItem = {
   id: string;
   label: string;

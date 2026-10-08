@@ -5,6 +5,11 @@
 import { inArray } from "drizzle-orm";
 import { categoriesTable, getNewsDbForRead } from "@workspace/db";
 import { listKamuYerelNavTopCategorySlugs } from "./hm-cumha-kamu-yerel-catalog.js";
+import {
+  kamuYerelLayoutNeedsCatalogRepair,
+  kamuYerelLogoExpectation,
+  parseLayoutNavSlugs,
+} from "./hm-kamu-yerel-layout-lock.js";
 import { ensureKamuYerelSites } from "./hm-kamu-yerel-seed.js";
 import {
   buildKamuYerelLayoutJson,
@@ -26,38 +31,9 @@ function normalizeSlug(raw: string | null | undefined): string {
     .toLowerCase();
 }
 
-function parseLayoutNavSlugs(layoutJson: string | null | undefined): string[] | null {
-  const raw = String(layoutJson ?? "").trim();
-  if (!raw) return null;
-  try {
-    const layout = JSON.parse(raw) as { hmNavOnlyCategorySlugs?: unknown };
-    const nav = layout?.hmNavOnlyCategorySlugs;
-    if (!Array.isArray(nav)) return null;
-    return nav.map((s) => String(s).trim()).filter(Boolean);
-  } catch {
-    return null;
-  }
-}
-
 /** Tepe menü yalnızca İller/yerel kalır — Cumha hmNavOnly eksik veya eski. */
 export function turkataLayoutNeedsCatalogRepair(layoutJson: string | null | undefined): boolean {
-  const nav = parseLayoutNavSlugs(layoutJson);
-  if (!nav || nav.length === 0) return true;
-  const expected = listKamuYerelNavTopCategorySlugs();
-  if (nav.length !== expected.length) return true;
-  for (let i = 0; i < expected.length; i += 1) {
-    if (nav[i] !== expected[i]) return true;
-  }
-  const logoUrl = (() => {
-    try {
-      const layout = JSON.parse(String(layoutJson ?? "")) as { logoUrl?: unknown };
-      return String(layout?.logoUrl ?? "").trim();
-    } catch {
-      return "";
-    }
-  })();
-  if (logoUrl.startsWith("/turkata/")) return true;
-  return false;
+  return kamuYerelLayoutNeedsCatalogRepair(layoutJson, kamuYerelLogoExpectation(TURKATAHABER_SITE));
 }
 
 export async function countTurkataNavCategories(): Promise<number> {
@@ -98,3 +74,5 @@ export async function wakeTurkatahaberCatalogRepair(siteId?: number): Promise<{
 export function isTurkatahaberSiteRow(row: TurkataSiteRowLike | null | undefined): boolean {
   return normalizeSlug(row?.slug ?? "") === TURKATAHABER_SLUG;
 }
+
+export { parseLayoutNavSlugs };

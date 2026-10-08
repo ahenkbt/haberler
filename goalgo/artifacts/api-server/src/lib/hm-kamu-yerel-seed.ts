@@ -24,6 +24,11 @@ import {
   type KamuYerelSiteDef,
 } from "./hm-kamu-yerel-sites.js";
 import { hmLayoutLogoUsesInlineDataUrl } from "./hm-domain-lookup.js";
+import {
+  applyKamuYerelLayoutLock,
+  kamuYerelLayoutNeedsCatalogRepair,
+  kamuYerelLogoExpectation,
+} from "./hm-kamu-yerel-layout-lock.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
 
 export type KamuYerelSeedSiteResult = {
@@ -70,11 +75,25 @@ function normalizeDomainHost(raw: string | null | undefined): string {
   );
 }
 
+function buildLockedKamuYerelLayoutJson(
+  def: KamuYerelSiteDef,
+  existingLayoutJson: string | null | undefined,
+): string {
+  const canonicalLayout = buildKamuYerelLayoutJson(def);
+  const raw = String(existingLayoutJson ?? "").trim();
+  if (!raw) return JSON.stringify(canonicalLayout);
+  try {
+    const prev = JSON.parse(raw) as Record<string, unknown>;
+    return JSON.stringify(applyKamuYerelLayoutLock(prev, canonicalLayout));
+  } catch {
+    return JSON.stringify(canonicalLayout);
+  }
+}
+
 async function upsertSite(def: KamuYerelSiteDef): Promise<{
   siteId: number;
   action: "created" | "updated" | "unchanged";
 }> {
-  const layoutJson = JSON.stringify(buildKamuYerelLayoutJson(def));
   const contactJson = JSON.stringify({
     email: def.kunyeEmail,
     phone: TURKATA_CONTACT.phone,
@@ -104,6 +123,8 @@ async function upsertSite(def: KamuYerelSiteDef): Promise<{
   if (!existing) {
     existing = claimants.find((r) => String(r.slug || "").toLowerCase() === def.slug);
   }
+
+  const layoutJson = buildLockedKamuYerelLayoutJson(def, existing?.layoutJson);
 
   if (!existing) {
     const [created] = await dualWriteInsert(hmNewsSitesTable, {
@@ -145,6 +166,7 @@ async function upsertSite(def: KamuYerelSiteDef): Promise<{
     }
   }
 
+  const logoExpect = kamuYerelLogoExpectation(def);
   const needs =
     normalizeDomainHost(existing.domain) !== def.domain ||
     existing.displayName !== def.displayName ||
@@ -152,6 +174,7 @@ async function upsertSite(def: KamuYerelSiteDef): Promise<{
     existing.active !== true ||
     String(existing.layoutJson || "") !== layoutJson ||
     hmLayoutLogoUsesInlineDataUrl(existing.layoutJson) ||
+    kamuYerelLayoutNeedsCatalogRepair(existing.layoutJson, logoExpect) ||
     String(existing.slug || "").toLowerCase() !== def.slug;
   if (needs) {
     await dualWriteUpdate(
