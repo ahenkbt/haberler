@@ -12,5 +12,7 @@ Live in `php-theme-yenisafak:/app` (docker cp, php -l, no restart). Host tree `/
   render-time so new sites (81 il sites included) get it automatically. Not on vatanhaber.net
   (user rule 2026-10-09 00:06 TRT: footer link only), or when layout_json `hmTanitimMainNav` = false.
   Marker `tanitim mainnav 2026-10-09`.
+- `patch-mainnav-drawer.py` — the same rule for the mobile main menu (hamburger "Menü" list). Marker
+  `tanitim mainnav-drawer 2026-10-09`.
 
 Backups on the VPS: `/docker/php-theme/backups/tanitim-20261008/`, `/docker/php-theme/backups/tanitim-mainnav-20261009/`.
