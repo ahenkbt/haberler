@@ -1,5 +1,5 @@
 --- ai_editor.py.bak-20261008-curate	2026-10-04 16:57:55.000000000 +0000
-+++ ai_editor.py	2026-10-08 16:59:05.401353320 +0000
++++ ai_editor.py	2026-10-08 17:17:23.490427078 +0000
 @@ -31,6 +31,11 @@
  POOL_HOURS = int(os.environ.get("AI_POOL_HOURS", "30"))
  POOL_MAX_HOURS = int(os.environ.get("AI_POOL_MAX_HOURS", "72"))  # older items only with a score penalty
@@ -59,7 +59,7 @@
          sst.update(target=target, allowed_cumulative=allowed, published_today=published_today, todo=todo)
 +        blocked_re = None
 +        try:
-+            pats = [r[0] for r in con.execute("SELECT pattern FROM hm_site_blocked_terms WHERE site_id=%s", (cn.site_id,))]
++            pats = [r[0] for r in con.execute("SELECT pattern FROM hm_site_blocked_terms WHERE site_id=%s OR (%s IN (1,230) AND site_id=1)", (cn.site_id, cn.site_id))]  # 230 pool is read by vatanhaber
 +            if pats:
 +                blocked_re = re.compile("|".join("(?:%s)" % x for x in pats), re.I)
 +        except Exception as ex:
