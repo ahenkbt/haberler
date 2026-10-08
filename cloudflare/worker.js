@@ -86,6 +86,7 @@ import {
   buildHmLlmsTxtFallback,
   buildHmNewsArticleOgHtml,
   buildHmSiteEntityHtml,
+  finalizeHmShareOgHtml,
   firstHmBootImageUrl,
   findHmBundleHeadlineBySlug,
   hmDomainSlugFallback,
@@ -2177,7 +2178,7 @@ function socialOgHtmlResponse(request, html, ogTag) {
     "x-robots-tag": "index, follow, max-image-preview:large, max-snippet:-1",
   });
   if (request.method === "HEAD") return new Response(null, { status: 200, headers });
-  return new Response(html, { status: 200, headers });
+  return new Response(finalizeHmShareOgHtml(html, new URL(request.url).hostname), { status: 200, headers }); // og-preview 2026-10-08
 }
 
 function articleFieldsFromJson(json) {
@@ -2303,6 +2304,10 @@ async function socialPreviewOgHtml(request, env, incoming) {
       const text = sanitizeOgShareImages(await upstream.text(), incoming.origin);
       if (/\/apple-touch-icon\.png/.test(text)) headers.set("x-yekpare-og-image-fix", "1");
       return new Response(text, { status: upstream.status, headers });
+    }
+    if (isAhenkAgencyPath) {
+      // og-preview 2026-10-08: ahenk.net.tr share card instead of the 1 MB generic icon
+      return new Response(finalizeHmShareOgHtml(await upstream.text(), incoming.hostname), { status: upstream.status, headers });
     }
     return new Response(upstream.body, { status: upstream.status, headers });
   } catch {
