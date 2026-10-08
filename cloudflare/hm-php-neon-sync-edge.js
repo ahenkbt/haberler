@@ -8,6 +8,7 @@
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
 import { resolvePhpSiteId } from "./hm-php-editor-sync.js";
+import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
 import {
   loadPanelSession,
   readCookie,
@@ -128,6 +129,7 @@ export async function syncSiteToPhpNeon(env, workerSiteId, opts = {}) {
     news: 0,
     makaleler: 0,
     categories: 0,
+    layoutMirrored: false,
     phpSiteId: null,
     errors: [],
     full,
@@ -147,6 +149,26 @@ export async function syncSiteToPhpNeon(env, workerSiteId, opts = {}) {
   const phpSiteId = (await resolvePhpSiteId(newsSql, workerSql, siteId)) || siteId;
   out.phpSiteId = phpSiteId;
   const slug = await siteSlugFor(workerSql, siteId);
+
+  try {
+    const layoutRows = await workerSql`
+      SELECT layout_json FROM hm_news_sites WHERE id = ${siteId} LIMIT 1
+    `;
+    const layoutRaw = layoutRows?.[0]?.layout_json;
+    const layoutStr =
+      layoutRaw == null
+        ? ""
+        : typeof layoutRaw === "string"
+          ? layoutRaw
+          : JSON.stringify(layoutRaw);
+    const layoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, siteId, layoutStr);
+    out.layoutMirrored = layoutMirror.mirrored === true;
+    if (!layoutMirror.mirrored && layoutMirror.reason) {
+      out.errors.push(`layout_json: ${layoutMirror.reason}`);
+    }
+  } catch (err) {
+    out.errors.push(`layout_json: ${String(err?.message || err).slice(0, 120)}`);
+  }
 
   if (syncCategories) {
     try {
