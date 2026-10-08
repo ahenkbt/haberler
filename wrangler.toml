@@ -2029,6 +2029,15 @@ zone_name = "sosyalhizmetler.tr"
 pattern = "www.sosyalhizmetler.tr/assets/*"
 zone_name = "sosyalhizmetler.tr"
 
+# Sosyal Hizmetler marka PNG (goalgo/artifacts/ahenkpress/public/sh → Worker ASSETS)
+[[routes]]
+pattern = "sosyalhizmetler.tr/sh/*"
+zone_name = "sosyalhizmetler.tr"
+
+[[routes]]
+pattern = "www.sosyalhizmetler.tr/sh/*"
+zone_name = "sosyalhizmetler.tr"
+
 [[routes]]
 pattern = "sosyalhizmetler.tr/sw.js"
 zone_name = "sosyalhizmetler.tr"
@@ -2109,6 +2118,7 @@ zone_name = "sosyalhizmetler.tr"
 pattern = "www.sosyalhizmetler.tr/hm/*"
 zone_name = "sosyalhizmetler.tr"
 
+# redeploy trigger 2026-10-08T06:15:00Z — sosyalhizmetler.tr /sh/* + theme.css bridge
 # redeploy trigger 2026-10-07T22:30:00Z — sosyalhizmetler.tr worker routes (domain2 Marmara Gündemi)
 
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi
