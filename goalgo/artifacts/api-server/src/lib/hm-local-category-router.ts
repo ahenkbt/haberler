@@ -13,7 +13,7 @@
  */
 
 import { eq, isNull, or } from "drizzle-orm";
-import { categoriesTable, getNewsDbForRead } from "@workspace/db";
+import { categoriesTable, db } from "@workspace/db";
 import { categorySlugIsAnkara } from "./hm-vatanhaber-ankara-sync.js";
 import { looksLikeSportsContent } from "./rss-spor-category-guard.js";
 
@@ -643,7 +643,8 @@ export async function loadHmSiteCategoryCatalog(siteId: number): Promise<HmSiteC
   if (!Number.isFinite(siteId) || siteId <= 0) return [];
   const cached = siteCategoryCatalogCache.get(siteId);
   if (cached) return cached;
-  const rows = await getNewsDbForRead()
+  // Panel Neon — exclusive_site_id is Worker id (1132), not PHP (230).
+  const rows = await db
     .select({ slug: categoriesTable.slug, name: categoriesTable.name })
     .from(categoriesTable)
     .where(
