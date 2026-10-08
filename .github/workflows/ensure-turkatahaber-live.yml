@@ -1,0 +1,76 @@
+# turkatahaber.com — Cumha menü/logo + PHP Neon layout + isteğe bağlı RSS kampanyası (#422 / site 230).
+name: Ensure Turkatahaber live
+
+on:
+  workflow_dispatch:
+    inputs:
+      sync_php_layout:
+        description: "twilight-pine layout+kategori aynası (true/false)"
+        required: false
+        default: "true"
+      run_rss_campaign:
+        description: "Cumha RSS kampanyasını çalıştır (true/false)"
+        required: false
+        default: "true"
+      rss_campaign_id:
+        description: "Kampanya id (ör. 1021) — boşsa seed id"
+        required: false
+        default: "1021"
+  repository_dispatch:
+    types: [ensure-turkatahaber-live]
+
+concurrency:
+  group: ensure-turkatahaber-live
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install goalgo dependencies
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+
+      - name: News DB migrations (slug indexes)
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+        run: |
+          set -euo pipefail
+          pnpm --filter @workspace/api-server run db:migrate:news || true
+
+      - name: ensure:turkata-live
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'news' }}
+          NEWS_DB_WRITE: dual
+          SYNC_PHP_LAYOUT: "1"
+          RUN_RSS_CAMPAIGN: "1"
+          RSS_CAMPAIGN_ID: "1021"
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL secret missing."
+            exit 1
+          fi
+          if [ -z "${NEWS_DATABASE_URL:-}" ]; then
+            echo "::error::NEWS_DATABASE_URL secret missing — PHP twilight-pine hedefi gerekli."
+            exit 1
+          fi
+          pnpm --filter @workspace/api-server run ensure:turkata-live

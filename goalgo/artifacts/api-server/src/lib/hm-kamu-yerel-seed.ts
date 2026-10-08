@@ -24,6 +24,7 @@ import {
   type KamuYerelSiteDef,
 } from "./hm-kamu-yerel-sites.js";
 import { hmLayoutLogoUsesInlineDataUrl } from "./hm-domain-lookup.js";
+import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
 
 export type KamuYerelSeedSiteResult = {
   slug: string;
@@ -371,6 +372,13 @@ async function ensureOneSite(def: KamuYerelSiteDef): Promise<KamuYerelSeedSiteRe
     const sampleNews = await ensureSampleNews(siteId, def, cats);
     const authors = def.slug === "turkatahaber" ? await ensureTurkataAuthorsOnRegionalSite(siteId) : 0;
     const campaignId = await ensureCampaign(siteId, def);
+    const layoutJson = JSON.stringify(buildKamuYerelLayoutJson(def));
+    await mirrorHmSiteLayoutJsonToPhpNeon(siteId, layoutJson).catch((err: unknown) => {
+      logger.warn(
+        { siteId, slug: def.slug, err: err instanceof Error ? err.message : String(err) },
+        "[kamu-yerel] php layout mirror",
+      );
+    });
     logger.info({ siteId, action, slug: def.slug }, "[kamu-yerel] site hazır");
     return {
       slug: def.slug,

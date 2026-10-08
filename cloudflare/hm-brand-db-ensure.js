@@ -14,6 +14,7 @@ import {
   cloneDefaultHmSiteRssFeedRows,
 } from "./hm-site-rss-defaults.js";
 import { ensureFixHaberBrandMetaOnNeon } from "./hm-fixhaber-edge.js";
+import { syncTurkatahaberLayoutMainToPhpNeon } from "./hm-turkatahaber-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -125,6 +126,14 @@ export const HM_BRAND_DB_BINDINGS = [
     slug: "fixhaber",
     displayName: "Fix Haber",
     description: "Fix Haber — Türkiye gündemini Türkçe aktaran dijital haber sitesi.",
+  },
+  /** TÜRKATA — PHP twilight-pine layout drift onarımı (panel meta / API). */
+  {
+    domain: "turkatahaber.com",
+    domains: ["turkatahaber.com", "www.turkatahaber.com"],
+    slug: "turkatahaber",
+    displayName: "TÜRKATA HABER AJANSI",
+    description: "Kamu ve yerel haber ağı",
   },
 ];
 
@@ -1508,6 +1517,14 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     } catch (err) {
       console.error("[hm-brand-db-ensure] fixhaber", String(err?.message || err).slice(0, 240));
       return null;
+    }
+  }
+
+  if (binding.slug === "turkatahaber" || host === "turkatahaber.com") {
+    try {
+      await syncTurkatahaberLayoutMainToPhpNeon(env);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] turkata layout", String(err?.message || err).slice(0, 240));
     }
   }
 

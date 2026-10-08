@@ -2426,6 +2426,26 @@ router.post("/hm/admin/ensure-kamu-yerel-sites", async (req, res): Promise<void>
   }
 });
 
+router.post("/hm/admin/wake-turkatahaber-live", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const { wakeTurkatahaberCatalogRepair } = await import("../lib/hm-turkatahaber-repair.js");
+    const body = (req.body ?? {}) as { siteId?: number };
+    const siteId = body.siteId != null ? Number(body.siteId) : undefined;
+    const result = await wakeTurkatahaberCatalogRepair(siteId);
+    const ok = result.seed.sites.every((s) => s.action !== "error") && result.layoutMirror.mirrored !== false;
+    res.json({
+      ok,
+      ...result,
+      message: ok
+        ? `turkatahaber PHP layout aynalandı (phpSiteId=${result.layoutMirror.phpSiteId ?? "?"})`
+        : result.layoutMirror.reason ?? "onarım tamamlanamadı",
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
 router.post("/hm/admin/ensure-kh-site", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
