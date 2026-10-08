@@ -70,6 +70,13 @@ export function buildHmSitePublicCacheUrls(env, input) {
     }
   }
 
+  // Extra page URLs on the site's own hosts (e.g. /kategori/x, /haber/y after a per-site override).
+  for (const path of Array.isArray(input.extraPaths) ? input.extraPaths.slice(0, 20) : []) {
+    const p = String(path || "");
+    if (!p.startsWith("/") || p.startsWith("//")) continue;
+    for (const host of hosts) for (const h of hostVariants(host)) urls.add(`https://${h}${p}`);
+  }
+
   const siteId = Number(input.siteId);
   if (Number.isFinite(siteId) && siteId > 0) {
     urls.add(`${portal}/api/hm/home-bundle?siteId=${siteId}`);

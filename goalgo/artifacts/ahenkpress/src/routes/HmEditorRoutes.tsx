@@ -29,6 +29,7 @@ import EditorProfil from "@/pages/editor/EditorProfil";
 import EditorRssKampanyalari from "@/pages/editor/EditorRssKampanyalari";
 import EditorRssKampanyaEditor from "@/pages/editor/EditorRssKampanyaEditor";
 import EditorRssLoglar from "@/pages/editor/EditorRssLoglar";
+import EditorRssHaberler from "@/pages/editor/EditorRssHaberler";
 
 /** HM özel alanı — editör yüzeyi ayrı chunk (haber vitrini 4MB portal yığınını çekmez). */
 export default function HmEditorRoutes() {
@@ -81,6 +82,13 @@ export default function HmEditorRoutes() {
         {() => (
           <HmEditorRoute>
             <EditorHaberler />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/rss-haberler">
+        {() => (
+          <HmEditorRoute>
+            <EditorRssHaberler />
           </HmEditorRoute>
         )}
       </Route>

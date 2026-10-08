@@ -17,6 +17,7 @@ import {
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
+import { handleHmEditorSiteOverridesEdge, isHmEditorSiteOverridesPath } from "./hm-editor-site-overrides-edge.js";
 import {
   handleKhEditorDataEdge,
   injectKhNeonNewsIntoPublicResponse,
@@ -3361,6 +3362,20 @@ export default {
       if (mediaEdge) return mediaEdge;
     } catch (err) {
       console.error("[hm-editor-media-edge]", String(err?.message || err).slice(0, 200));
+    }
+
+    // Per-site overrides (RSS Haberler Aktif/Pasif, kategori aç/kapa) — kenarda TP Neon.
+    if (isHmEditorSiteOverridesPath(incoming.pathname)) {
+      try {
+        const ov = await handleHmEditorSiteOverridesEdge(request, env, incoming);
+        if (ov) return ov;
+      } catch (err) {
+        console.error("[hm-editor-site-overrides]", String(err?.message || err).slice(0, 200));
+        return new Response(JSON.stringify({ error: "Geçici hata, tekrar deneyin." }), {
+          status: 500,
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
     }
 
     // Edit├Âr login + /me + profil + layout ÔÇö kenarda Neon (t├╝m HM siteleri).
