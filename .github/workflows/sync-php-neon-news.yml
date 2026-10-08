@@ -1,0 +1,91 @@
+# Panel Neon → PHP Neon (twilight-pine) geriye dönük haber/makale eşitlemesi.
+# Secrets: DATABASE_URL + NEWS_DATABASE_URL (GitHub Environment: DATABASE_URL)
+name: Sync PHP Neon news backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_slug:
+        description: "hm_news_sites slug (ör. asg, fixhaber, gundemi) — boş + all_sites=true tüm aktif siteler"
+        required: false
+        default: ""
+      site_id:
+        description: "Worker site id (slug yerine)"
+        required: false
+        default: ""
+      all_sites:
+        description: "Tüm aktif siteleri eşitle (true/false)"
+        required: false
+        default: "false"
+      batch:
+        description: "Batch boyutu (50–500)"
+        required: false
+        default: "200"
+      dry_run:
+        description: "Yalnızca sayım (true/false)"
+        required: false
+        default: "false"
+
+concurrency:
+  group: sync-php-neon-news
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install goalgo dependencies
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+
+      - name: sync:php-neon-news
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL secret missing — cannot backfill from panel Neon."
+            exit 1
+          fi
+          if [ -z "${NEWS_DATABASE_URL:-}" ]; then
+            echo "::error::NEWS_DATABASE_URL secret missing — PHP twilight-pine hedefi yok."
+            exit 1
+          fi
+          BATCH="${{ github.event.inputs.batch }}"
+          DRY="${{ github.event.inputs.dry_run }}"
+          SLUG="${{ github.event.inputs.site_slug }}"
+          SID="${{ github.event.inputs.site_id }}"
+          ALL="${{ github.event.inputs.all_sites }}"
+          ARGS=(--batch="$BATCH")
+          if [ "$DRY" = "true" ]; then
+            ARGS=(--dry-run "${ARGS[@]}")
+          else
+            ARGS=(--apply "${ARGS[@]}")
+          fi
+          if [ "$ALL" = "true" ]; then
+            ARGS=(--all-php-sites "${ARGS[@]}")
+          elif [ -n "$SID" ]; then
+            ARGS=(--site-id="$SID" "${ARGS[@]}")
+          elif [ -n "$SLUG" ]; then
+            ARGS=(--site-slug="$SLUG" "${ARGS[@]}")
+          else
+            echo "::error::site_slug, site_id veya all_sites=true gerekli."
+            exit 1
+          fi
+          pnpm --filter @workspace/api-server run sync:php-neon-news -- "${ARGS[@]}"
