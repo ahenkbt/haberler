@@ -1,11 +1,16 @@
 /**
- * turkatahaber.com canlı onarım — kamu-yerel seed, PHP Neon layout, isteğe bağlı RSS.
+ * turkatahaber.com canlı onarım — kamu-yerel seed, PHP Neon layout, isteğe bağlı RSS + kapak backfill.
  *
  *   cd goalgo && SYNC_PHP_LAYOUT=1 RUN_RSS_CAMPAIGN=1 RSS_CAMPAIGN_ID=1021 \
  *     pnpm --filter @workspace/api-server run ensure:turkata-live
  */
 import { wakeTurkatahaberCatalogRepair } from "../src/lib/hm-turkatahaber-repair.js";
 
+<<<<<<< HEAD
+=======
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+
+>>>>>>> 4fccb365 (fix(turkata): RSS covers from Cumha enclosure/content + R2 mirror)
 async function main() {
   process.env.SYNC_PHP_LAYOUT = process.env.SYNC_PHP_LAYOUT ?? "1";
   const { seed, layoutMirror } = await wakeTurkatahaberCatalogRepair();
@@ -19,10 +24,29 @@ async function main() {
       Number.isFinite(fromEnv) && fromEnv > 0 ? Math.trunc(fromEnv) : (turkata?.campaignId ?? null);
     if (id) {
       const { executeRssCampaignRun } = await import("../src/lib/rssCampaignRun.js");
+<<<<<<< HEAD
       const result = await executeRssCampaignRun(id);
       console.log("[ensure:turkata-live] rss", { campaignId: id, ...result });
     }
   }
+=======
+      const forceHmSiteId = turkata?.siteId ?? undefined;
+      const result = await executeRssCampaignRun(id, forceHmSiteId ? { forceHmSiteId } : undefined);
+      console.log("[ensure:turkata-live] rss", { campaignId: id, forceHmSiteId, ...result });
+    }
+  }
+
+  if (process.env.BACKFILL_RSS_COVERS !== "0") {
+    const cover = spawnSync(
+      process.execPath,
+      ["--import", "tsx", path.join(scriptDir, "backfill-turkata-rss-covers.ts"), "--apply", "--limit=80"],
+      { cwd: scriptDir, stdio: "inherit", env: process.env },
+    );
+    if (cover.status !== 0) {
+      console.warn("[ensure:turkata-live] cover backfill exit", cover.status);
+    }
+  }
+>>>>>>> 4fccb365 (fix(turkata): RSS covers from Cumha enclosure/content + R2 mirror)
 }
 
 main().catch((err) => {

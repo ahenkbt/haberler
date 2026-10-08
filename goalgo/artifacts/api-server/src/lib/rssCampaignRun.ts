@@ -1,5 +1,6 @@
 import { and, eq, gte, inArray, isNull, isNotNull, or } from "drizzle-orm";
 import {
+  db,
   getNewsDbForRead,
   dualWriteInsert,
   dualWriteUpdate,
@@ -26,6 +27,7 @@ import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
 import { resolveHmEditorCategoryId } from "./hm-editor-categories.js";
 import { categorySlugFromCumhaFeed } from "./hm-cumha-kamu-yerel-catalog.js";
 import { categorySlugFromShaFeed } from "./hm-sha-rss-feeds.js";
+import { expandHmSiteIdAliases, preferWorkerSiteId } from "./hm-php-site-id-map.js";
 import {
   campaignRequiresCoverImage,
   campaignWritesPerHmSite,
@@ -142,14 +144,16 @@ async function resolveCampaignCategoryId(
   slug: string,
   cache: Map<string, number | null>,
 ): Promise<number | null> {
-  const key = `${siteId ?? "central"}:${slug}`;
+  const workerSiteId = preferWorkerSiteId(siteId) ?? siteId;
+  const key = `${workerSiteId ?? "central"}:${slug}`;
   if (cache.has(key)) return cache.get(key) ?? null;
   let id: number | null = null;
-  if (siteId != null) {
-    id = await resolveHmEditorCategoryId(siteId, slug);
+  if (workerSiteId != null) {
+    // Panel category ids (Worker Neon) — NEWS_DB_READ=news PHP ids diverge (1132 vs 230).
+    id = await resolveHmEditorCategoryId(workerSiteId, slug);
   }
   if (id == null) {
-    const [cat] = await getNewsDbForRead()
+    const [cat] = await db
       .select({ id: categoriesTable.id })
       .from(categoriesTable)
       .where(eq(categoriesTable.slug, slug));
@@ -166,24 +170,34 @@ async function resolveRssCampaignTargets(
   },
   opts?: { forceHmSiteId?: number },
 ): Promise<(number | null)[]> {
-  const forced = Number(opts?.forceHmSiteId);
+  const forcedRaw = Number(opts?.forceHmSiteId);
+  const forced = preferWorkerSiteId(forcedRaw) ?? forcedRaw;
   if (Number.isFinite(forced) && forced > 0) {
-    const [exists] = await getNewsDbForRead()
+    // Validate against panel DB — PHP twilight-pine ids (230) are not Worker ids (1132).
+    const [exists] = await db
       .select({ id: hmNewsSitesTable.id })
       .from(hmNewsSitesTable)
       .where(eq(hmNewsSitesTable.id, forced));
     return exists?.id ? [exists.id] : [];
   }
-  const parsedHm = normalizeHmSiteIds(campaign.hmSiteIds);
+  const parsedHm = expandHmSiteIdAliases(normalizeHmSiteIds(campaign.hmSiteIds));
   const existing =
     parsedHm.length === 0
       ? []
-      : await getNewsDbForRead()
+      : await db
           .select({ id: hmNewsSitesTable.id })
           .from(hmNewsSitesTable)
           .where(inArray(hmNewsSitesTable.id, parsedHm));
   const ok = new Set(existing.map((r) => r.id));
-  const filteredHm = parsedHm.filter((id) => ok.has(id));
+  // Prefer panel/worker ids when both 230 and 1132 appear in the expanded set.
+  const filteredHm = [
+    ...new Set(
+      parsedHm
+        .filter((id) => ok.has(id))
+        .map((id) => preferWorkerSiteId(id) ?? id)
+        .filter((id) => ok.has(id)),
+    ),
+  ];
   const includeCentral = campaign.includeYekpareHaber === true;
   const siteTargets: (number | null)[] = [];
   if (includeCentral) siteTargets.push(null);
@@ -297,6 +311,7 @@ export async function executeRssCampaignRun(
     title: string;
     description: string;
     contentEncoded: string;
+    rawInner?: string;
     link: string;
     imageUrl: string | null;
     publishedAt: Date;
@@ -422,6 +437,7 @@ export async function executeRssCampaignRun(
           title: item.title,
           description: item.descHtml || item.desc,
           contentEncoded: extractRssContentEncoded(item.rawInner),
+          rawInner: item.rawInner,
           link: item.link,
           imageUrl:
             extractRssCoverImage(item.rawInner, item.descHtml || item.desc, item.link) ?? null,
@@ -474,9 +490,12 @@ export async function executeRssCampaignRun(
         const publishedAt = item.publishedAt;
         const resolvedCover = await resolveRssImportCoverImage({
           existing: item.imageUrl,
+          rawItem: item.rawInner ?? item.contentEncoded ?? null,
           descriptionHtml: item.description,
+          contentHtml,
           link: item.link,
         });
+        // downloadImages=true → media-edge / R2 upload path (Cumha kamu-yerel seed default).
         const imageUrl = await mirrorRssImportImageUrl(resolvedCover, cleanTitle, {
           force: campaign.downloadImages === true,
         });

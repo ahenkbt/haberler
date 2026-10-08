@@ -32,6 +32,7 @@ import {
 } from "./gundemi-origin-bridge.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
+import { handleTurkataRssCoversRepairEdge } from "./hm-turkata-rss-covers-edge.js";
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
 import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import { handleAdminPanelStatusEdge } from "./hm-admin-panel-status-edge.js";
@@ -3405,6 +3406,11 @@ export default {
       }
       const adminSync = await handleAdminPhpNeonSyncEdge(request.clone(), env, { ...incoming, pathname: edgePath });
       if (adminSync) return adminSync;
+      const turkataCovers = await handleTurkataRssCoversRepairEdge(request.clone(), env, {
+        ...incoming,
+        pathname: edgePath,
+      });
+      if (turkataCovers) return turkataCovers;
       const watchdog = await handleHmSiteWatchdogEdge(request.clone(), env, { ...incoming, pathname: edgePath });
       if (watchdog) return watchdog;
     } catch (err) {

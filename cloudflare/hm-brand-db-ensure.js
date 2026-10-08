@@ -15,6 +15,7 @@ import {
 } from "./hm-site-rss-defaults.js";
 import { ensureFixHaberBrandMetaOnNeon } from "./hm-fixhaber-edge.js";
 import { syncTurkatahaberLayoutMainToPhpNeon } from "./hm-turkatahaber-edge.js";
+import { backfillTurkataRssCoversOnEdge } from "./hm-turkata-rss-covers-edge.js";
 import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
 import { ensureTurksavLogoOnNeon } from "./hm-turksav-edge.js";
 import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
@@ -1561,6 +1562,9 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     } catch (err) {
       console.error("[hm-brand-db-ensure] turkata layout", String(err?.message || err).slice(0, 240));
     }
+    void backfillTurkataRssCoversOnEdge(env, { limit: 24, mirrorToR2: true }).catch((err) => {
+      console.error("[hm-brand-db-ensure] turkata covers", String(err?.message || err).slice(0, 240));
+    });
   }
 
   if (binding.slug === "yesilvatan" || host === "yesilvatan.gen.tr") {

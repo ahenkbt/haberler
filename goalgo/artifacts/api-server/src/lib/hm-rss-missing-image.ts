@@ -3,6 +3,7 @@ import { db as mainDb, dualWriteUpdate, getNewsDbForRead, newsTable, portalRssIt
 import { fetchArticlePageImageUrl } from "./articlePageImage.js";
 import { listHmNewsSitesCompat } from "./hm-site-compat.js";
 import { isMissingNewsCoverImage } from "./hm-tepe-manset-select.js";
+import { mirrorRssImportImageUrl } from "./portal-rss-image-mirror.js";
 import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
 import { extractRssCoverImage } from "./rssItemMedia.js";
 
@@ -12,6 +13,7 @@ export type RssMissingImageRow = {
   title?: string | null;
   slug?: string | null;
   imageUrl?: string | null;
+  content?: string | null;
   rssSourceUrl?: string | null;
   isEditorManual?: boolean | null;
   tags?: string[] | null;
@@ -59,14 +61,23 @@ export function pickRssBackfillImageUrl(opts: {
   return null;
 }
 
-export async function persistNewsImageUrl(newsId: number, imageUrl: string): Promise<void> {
-  const next = String(imageUrl ?? "").trim();
-  if (!newsId || !next || isMissingNewsCoverImage(next)) return;
+export async function persistNewsImageUrl(
+  newsId: number,
+  imageUrl: string,
+  opts?: { title?: string | null; mirrorToR2?: boolean },
+): Promise<string | null> {
+  let next = String(imageUrl ?? "").trim();
+  if (!newsId || !next || isMissingNewsCoverImage(next)) return null;
+  if (opts?.mirrorToR2 !== false) {
+    const mirrored = await mirrorRssImportImageUrl(next, String(opts?.title ?? ""), { force: true });
+    if (mirrored && !isMissingNewsCoverImage(mirrored)) next = mirrored;
+  }
   await dualWriteUpdate(
     newsTable,
     { imageUrl: next, updatedAt: new Date() },
     eq(newsTable.id, newsId),
   );
+  return next;
 }
 
 export type HmRssImageBackfillResult = {
@@ -127,10 +138,12 @@ export async function backfillHmRssMissingImages(opts?: {
   limit?: number;
   dryRun?: boolean;
   scrape?: boolean;
+  mirrorToR2?: boolean;
 }): Promise<HmRssImageBackfillResult> {
   const limit = Math.min(Math.max(opts?.limit ?? 80, 1), 400);
   const dryRun = opts?.dryRun === true;
   const scrape = opts?.scrape !== false;
+  const mirrorToR2 = opts?.mirrorToR2 !== false;
   const readDb = getNewsDbForRead();
 
   const siteIds: number[] = [];
@@ -152,6 +165,7 @@ export async function backfillHmRssMissingImages(opts?: {
         title: newsTable.title,
         slug: newsTable.slug,
         imageUrl: newsTable.imageUrl,
+        content: newsTable.content,
         rssSourceUrl: newsTable.rssSourceUrl,
         isEditorManual: newsTable.isEditorManual,
         tags: newsTable.tags,
@@ -179,7 +193,6 @@ export async function backfillHmRssMissingImages(opts?: {
     if (rows.length >= limit) break;
   }
 
-  // Anasayfa featured çoğu merkez havuz (site_id NULL) — site-yerel tarama bunları kaçırır.
   if (rows.length < limit) {
     const found = await readDb
       .select({
@@ -188,6 +201,7 @@ export async function backfillHmRssMissingImages(opts?: {
         title: newsTable.title,
         slug: newsTable.slug,
         imageUrl: newsTable.imageUrl,
+        content: newsTable.content,
         rssSourceUrl: newsTable.rssSourceUrl,
         isEditorManual: newsTable.isEditorManual,
         tags: newsTable.tags,
@@ -236,6 +250,7 @@ export async function backfillHmRssMissingImages(opts?: {
       pageUrl,
       cachedImageUrl: cached.get(cacheKey) ?? null,
       scrapedImageUrl: scraped,
+      descriptionHtml: String(row.content ?? ""),
     });
     if (!next) {
       skipped += 1;
@@ -246,7 +261,7 @@ export async function backfillHmRssMissingImages(opts?: {
       continue;
     }
     try {
-      await persistNewsImageUrl(row.id, next);
+      await persistNewsImageUrl(row.id, next, { title: row.title, mirrorToR2 });
       updated += 1;
     } catch {
       failed += 1;
@@ -259,6 +274,6 @@ export async function backfillHmRssMissingImages(opts?: {
     updated,
     skipped,
     failed,
-    detail: `${rows.length} resimsiz RSS tarandı, ${updated} güncellendi${dryRun ? " (dry-run)" : ""}`,
+    detail: `${rows.length} resimsiz RSS tarandı, ${updated} güncellendi${dryRun ? " (dry-run)" : ""}${mirrorToR2 ? " (R2 mirror)" : ""}`,
   };
 }
