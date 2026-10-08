@@ -48,7 +48,6 @@ async function main() {
       const forceHmSiteId = turkata?.siteId ?? undefined;
       const result = await executeRssCampaignRun(id, forceHmSiteId ? { forceHmSiteId } : undefined);
       console.log("[ensure:turkata-live] rss", { campaignId: id, forceHmSiteId, ...result });
-<<<<<<< HEAD
     }
   }
 
@@ -64,14 +63,8 @@ async function main() {
     );
     if (cover.status !== 0) {
       console.warn("[ensure:turkata-live] cover backfill exit", cover.status);
-=======
->>>>>>> origin/main
     }
   }
-
-  // Full news mirror (orphan 230→1132 rebound + category_slug edge upsert) so PHP
-  // /kategori pages fill even when the campaign only skipped already-ingested items.
-  syncPhpNewsFull("turkatahaber");
 }
 
 main().catch((err) => {
