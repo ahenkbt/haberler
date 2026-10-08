@@ -100,6 +100,28 @@ function addrRegex(box) {
   return `(^|[^a-z0-9._%+-])${reEscape(box)}($|[^a-z0-9.-])`;
 }
 
+/** Some stored bodies are still quoted-printable (=C3=B6...); decode for display when clearly encoded. */
+export function decodeQpIfEncoded(raw) {
+  const s = String(raw ?? "");
+  if (!s || /[^\x00-\x7f]/.test(s)) return s;
+  const hits = s.match(/=[0-9A-F]{2}/g);
+  if (!hits || hits.length < 2) return s;
+  try {
+    const bytes = [];
+    const src = s.replace(/=\r?\n/g, "");
+    for (let i = 0; i < src.length; i++) {
+      const c = src[i];
+      if (c === "=" && /^[0-9A-Fa-f]{2}$/.test(src.slice(i + 1, i + 3))) {
+        bytes.push(parseInt(src.slice(i + 1, i + 3), 16));
+        i += 2;
+      } else bytes.push(c.charCodeAt(0) & 0xff);
+    }
+    return new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(bytes));
+  } catch {
+    return s;
+  }
+}
+
 async function readJson(request) {
   try {
     return await request.json();
@@ -315,7 +337,8 @@ async function listMessages(msql, box, folder, q, limit, offset) {
     `SELECT count(*)::int AS n FROM mailbox_messages WHERE ${boxMatchSql(1)} AND direction = 'in' AND NOT is_read AND NOT is_trashed`,
     [box, like],
   );
-  return { messages: rows || [], unread: unread?.[0]?.n ?? 0 };
+  const messages = (rows || []).map((r) => ({ ...r, snippet: decodeQpIfEncoded(r.snippet) }));
+  return { messages, unread: unread?.[0]?.n ?? 0 };
 }
 
 async function messageForBoxes(msql, id, boxes) {
@@ -366,12 +389,14 @@ async function sendMail(env, msql, site, account, body) {
   }
   const messageId = String(data?.result?.message_id || "").slice(0, 300);
   const fromDisp = fromName ? `${fromName} <${account.address}>` : account.address;
+  // imap_uid "out:<Message-ID>": a self-send's incoming copy carries the bare Message-ID, so the two rows
+  // never hit the (mailbox_address, imap_uid) unique index.
   try {
     await msql`
       INSERT INTO mailbox_messages (scope, hm_site_id, direction, from_addr, to_addr, subject, body_text, body_html,
                                     is_read, imap_uid, mailbox_address, mail_account_id)
       VALUES ('hm', ${account.hm_site_id ?? null}, 'out', ${fromDisp}, ${[...to, ...cc].join(", ") || bcc.join(", ")},
-              ${subject}, ${text || null}, ${html || null}, true, ${messageId || `out-${account.id}-${Date.now()}`},
+              ${subject}, ${text || null}, ${html || null}, true, ${messageId ? `out:${messageId}` : `out-${account.id}-${Date.now()}`},
               ${account.address}, ${account.id})
     `;
   } catch (err) {
@@ -521,12 +546,15 @@ export async function handleHmSiteMailEdge(request, env, incoming) {
           from: m.from_addr,
           to: m.to_addr,
           subject: m.subject,
-          text: m.body_text,
-          html: m.body_html,
+          text: decodeQpIfEncoded(m.body_text),
+          html: decodeQpIfEncoded(m.body_html),
           isStarred: !!m.is_starred,
           isTrashed: !!m.is_trashed,
           createdAt: m.created_at,
-          messageId: m.imap_uid && String(m.imap_uid).startsWith("<") ? m.imap_uid : null,
+          messageId: (() => {
+            const id = String(m.imap_uid || "").replace(/^out:/, "");
+            return id.startsWith("<") ? id : null;
+          })(),
           box: found.box,
         },
       });
