@@ -5,6 +5,7 @@
 
 import { expandRssCategorySlugCandidates } from "./hm-rss-category-aliases.js";
 import { expandShaListingCategorySlugs } from "./hm-sha-rss-feeds.js";
+import { isHmPlaceCategorySlug } from "./hm-local-category-router.js";
 import { loadPortalDbNews } from "./hybrid-news-merge.js";
 import {
   mergeUniqueHomepageItems,
@@ -31,6 +32,11 @@ export async function ensureHmCategoryListingNotEmpty<T extends SerializedNewsLi
   const localFirst = reorderListingPreferringLocal(opts.items, pref, opts.siteId);
   if (localFirst.length > 0 || opts.corporate) {
     return localFirst.slice(0, Math.max(localFirst.length, 0));
+  }
+
+  /** Ankara / il / yerel: boş kalsın; karışık ulusal haber doldurma. */
+  if (isHmPlaceCategorySlug(opts.categorySlug, opts.siteSlug)) {
+    return [];
   }
 
   const wanted = expandShaListingCategorySlugs(opts.categorySlug, opts.siteSlug);

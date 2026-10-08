@@ -515,6 +515,16 @@ export function pickHmLocalCategorySlug(
   return findYerelCategorySlug(rows);
 }
 
+export function isHmPlaceCategorySlug(
+  categorySlug: string | null | undefined,
+  siteSlug?: string | null,
+): boolean {
+  const slug = normalizeCatalogSlug(categorySlug);
+  if (!slug) return false;
+  if (isLocalBucketSlug(slug)) return true;
+  return slugLocalityKey(slug, siteSlug) != null;
+}
+
 function slugLocalityKey(
   slug: string,
   siteSlug?: string | null,
