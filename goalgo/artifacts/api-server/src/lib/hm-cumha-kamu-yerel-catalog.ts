@@ -47,6 +47,24 @@ const REGION_SEED_TO_ID: Record<string, KamuYerelRegionId> = {
 /** Cumha kategori RSS — https://cumha.com.tr/rss/category/{slug} */
 export const CUMHA_KAMU_CATEGORY_FEEDS = [
   {
+    slug: "cumhurbaskanligi",
+    cumhaSlug: "cumhurbaskanligi",
+    name: "Cumhurbaşkanlığı",
+    color: "#8b0000",
+  },
+  {
+    slug: "bakanliklar",
+    cumhaSlug: "bakanliklar",
+    name: "Bakanlıklar",
+    color: "#7c1d1d",
+  },
+  {
+    slug: "tbmm",
+    cumhaSlug: "tbmm",
+    name: "TBMM",
+    color: "#5c1a1a",
+  },
+  {
     slug: "kamu-kurumlari",
     cumhaSlug: "kamu-kurumlari-ve-ust-kurullar",
     name: "Kamu Kurumları",
@@ -120,6 +138,57 @@ export const CUMHA_KAMU_CATEGORY_FEEDS = [
   },
 ] as const;
 
+/** Cumha «Daha» menüsü — uluslararası kuruluş / dış politika RSS. */
+export const CUMHA_DAHA_CATEGORY_FEEDS = [
+  { slug: "nato", cumhaSlug: "nato", name: "NATO", color: "#1e3a5f" },
+  {
+    slug: "uluslararasi-kuruluslar",
+    cumhaSlug: "uluslararasi-kuruluslar",
+    name: "Uluslararası Kuruluşlar",
+    color: "#234e70",
+  },
+  {
+    slug: "birlesmis-milletler",
+    cumhaSlug: "birlesmis-milletler",
+    name: "Birleşmiş Milletler",
+    color: "#2a5580",
+  },
+  {
+    slug: "avrupa-birligi",
+    cumhaSlug: "avrupa-birligi",
+    name: "Avrupa Birliği",
+    color: "#315f90",
+  },
+] as const;
+
+const CUMHA_KAMU_PARENT_SLUG: Partial<Record<string, string>> = {
+  "genel-merkez": "siyasi-partiler",
+  "il-ilce-baskanliklari": "siyasi-partiler",
+  "buyuksehir-ve-iller": "yerel-yonetimler",
+  ilceler: "yerel-yonetimler",
+  valilikler: "mulki-idare",
+  kaymakamliklar: "mulki-idare",
+  nato: "daha",
+  "uluslararasi-kuruluslar": "daha",
+  "birlesmis-milletler": "daha",
+  "avrupa-birligi": "daha",
+};
+
+/** Tepe menü — Cumha.com.tr kamu-yerel üst kategorileri (+ yerel manşet). */
+export const KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS = [
+  "yerel",
+  "cumhurbaskanligi",
+  "bakanliklar",
+  "tbmm",
+  "siyasi-partiler",
+  "yerel-yonetimler",
+  "mulki-idare",
+  "toplum-ve-yasam",
+  "daha",
+  "sivil-toplum-kuruluslari",
+  "kamu-kurumlari",
+] as const;
+
 export const KAMU_YEREL_SECONDARY_CATEGORIES: readonly KamuYerelCategoryDef[] = [
   { slug: "yerel", name: "Yerel", color: "#c00005" },
   { slug: "saglik", name: "Sağlık", color: "#991b1b" },
@@ -177,27 +246,22 @@ export function listKamuYerelProvinces(): KamuYerelProvinceDef[] {
 }
 
 export function buildKamuYerelCategories(): KamuYerelCategoryDef[] {
-  const kamu = CUMHA_KAMU_CATEGORY_FEEDS.map((c) => ({
+  const kamu = [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS].map((c) => ({
     slug: c.slug,
     name: c.name,
     color: c.color,
   }));
+  const dahaNav: KamuYerelCategoryDef = { slug: "daha", name: "Daha", color: "#1e3a5f" };
   const provinces = listKamuYerelProvinces().map((p) => ({
     slug: p.slug,
     name: p.name,
     color: "#0b3362",
   }));
-  return [...KAMU_YEREL_SECONDARY_CATEGORIES, ...kamu, ...provinces];
+  return [...KAMU_YEREL_SECONDARY_CATEGORIES, dahaNav, ...kamu, ...provinces];
 }
 
 export function listKamuYerelNavTopCategorySlugs(): string[] {
-  return [
-    "yerel",
-    ...CUMHA_KAMU_CATEGORY_FEEDS.slice(0, 6).map((c) => c.slug),
-    "saglik",
-    "teknoloji",
-    "yasam",
-  ];
+  return [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS];
 }
 
 export function listKamuYerelNavHiddenCategorySlugs(): string[] {
@@ -211,6 +275,8 @@ export function listKamuYerelNavHiddenCategorySlugs(): string[] {
 export function listKamuYerelMansetPoolCategorySlugs(): string[] {
   const slugs = new Set<string>(["yerel"]);
   for (const c of CUMHA_KAMU_CATEGORY_FEEDS) slugs.add(c.slug);
+  for (const c of CUMHA_DAHA_CATEGORY_FEEDS) slugs.add(c.slug);
+  slugs.add("daha");
   for (const c of KAMU_YEREL_SECONDARY_CATEGORIES) slugs.add(c.slug);
   for (const p of listKamuYerelProvinces()) slugs.add(p.slug);
   return [...slugs];
@@ -225,7 +291,7 @@ export type HmNewsSiteRssFeedRow = {
 
 export function buildKamuYerelHmNewsSiteRssFeedRows(): HmNewsSiteRssFeedRow[] {
   const rows: HmNewsSiteRssFeedRow[] = [];
-  for (const cat of CUMHA_KAMU_CATEGORY_FEEDS) {
+  for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
     rows.push({
       id: `cumha-cat-${cat.slug}`,
       label: cat.name,
@@ -293,11 +359,19 @@ export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[]
       });
     }
   }
-  for (const cat of CUMHA_KAMU_CATEGORY_FEEDS) {
+  items.push({
+    id: "ky-cat-daha",
+    label: "Daha",
+    href: "/kategori/daha",
+    enabled: true,
+  });
+  for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
+    const parentSlug = CUMHA_KAMU_PARENT_SLUG[cat.slug];
     items.push({
       id: `ky-cat-${cat.slug}`,
       label: cat.name,
       href: `/kategori/${cat.slug}`,
+      parentId: parentSlug ? `ky-cat-${parentSlug}` : undefined,
       enabled: true,
     });
   }
