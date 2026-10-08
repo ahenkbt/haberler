@@ -273,8 +273,10 @@ jobs:
 
       - name: Sync media R2/S3 Worker secrets
         id: media_secrets
+        continue-on-error: true
         # Neon skip_secrets=true DATABASE_URL put'unu atlar; medya anahtarları yine yazılmalı.
         # MEDIA_BUCKET binding yok (16f5 R2 kapalı); upload S3 API veya R2_CF_API_TOKEN ister.
+        # Eksik secret deploy'u kırmasın (continue-on-error) — eksik adı net basılır.
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -284,6 +286,7 @@ jobs:
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || vars.S3_SECRET_ACCESS_KEY || '' }}
         run: |
           set -euo pipefail
+          echo "synced=false" >> "$GITHUB_OUTPUT"
           put_secret() {
             local name="$1"
             local value="$2"
@@ -307,6 +310,7 @@ jobs:
           }
           have_s3=0
           have_cf=0
+          # Pair required: half-pair (secret without access key id) cannot upload.
           if [ -n "${S3_ACCESS_KEY_ID}" ] && [ -n "${S3_SECRET_ACCESS_KEY}" ]; then
             put_secret S3_ACCESS_KEY_ID "$S3_ACCESS_KEY_ID"
             put_secret S3_SECRET_ACCESS_KEY "$S3_SECRET_ACCESS_KEY"
@@ -316,7 +320,10 @@ jobs:
             missing=""
             [ -z "${S3_ACCESS_KEY_ID}" ] && missing="${missing} S3_ACCESS_KEY_ID"
             [ -z "${S3_SECRET_ACCESS_KEY}" ] && missing="${missing} S3_SECRET_ACCESS_KEY"
-            echo "::warning::Media S3 secret(s) absent in GitHub Environment DATABASE_URL:${missing}"
+            present=""
+            [ -n "${S3_ACCESS_KEY_ID}" ] && present="${present} S3_ACCESS_KEY_ID"
+            [ -n "${S3_SECRET_ACCESS_KEY}" ] && present="${present} S3_SECRET_ACCESS_KEY"
+            echo "::warning::Media S3 absent:${missing:- (none)} present:${present:- (none)}"
           fi
           if [ -n "${R2_CF_API_TOKEN}" ]; then
             put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
@@ -326,9 +333,10 @@ jobs:
             echo "::warning::R2_CF_API_TOKEN absent in GitHub Environment DATABASE_URL"
           fi
           if [ "$have_s3" -eq 0 ] && [ "$have_cf" -eq 0 ]; then
-            echo "::error::Editor media upload will stay ready:false — set S3_ACCESS_KEY_ID+S3_SECRET_ACCESS_KEY (or R2_CF_API_TOKEN) on Environment DATABASE_URL, then re-run this workflow."
+            echo "::error::MISSING_SECRET=S3_ACCESS_KEY_ID (S3_SECRET_ACCESS_KEY may exist; R2_CF_API_TOKEN absent). Add S3_ACCESS_KEY_ID to Environment DATABASE_URL (fb9f R2 S3 API token id for yekpare-media), then re-run Cloudflare Production Deploy. media-edge stays ready:false until then."
             exit 1
           fi
+          echo "synced=true" >> "$GITHUB_OUTPUT"
 
       - name: Sync YEKTUBE Worker secrets
         id: yektube_secrets
@@ -440,6 +448,7 @@ jobs:
 
       - name: Verify media-edge ready
         if: steps.cf.outputs.enabled == 'true'
+        continue-on-error: true
         run: |
           set -euo pipefail
           UA="Mozilla/5.0 (compatible; Haberler-CI/1.0; +https://github.com/ahenkbt/haberler)"
@@ -453,7 +462,7 @@ jobs:
             fi
             sleep 10
           done
-          echo "::error::media-edge still ready:false — Worker missing S3_ACCESS_KEY_ID/S3_SECRET_ACCESS_KEY or R2_CF_API_TOKEN (see Sync media R2/S3 step)."
+          echo "::error::media-edge still ready:false — MISSING_SECRET=S3_ACCESS_KEY_ID (or R2_CF_API_TOKEN). See Sync media R2/S3 step."
           printf '%s\n' "$body"
           exit 1
 
