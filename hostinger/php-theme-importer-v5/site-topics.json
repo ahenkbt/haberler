@@ -1,0 +1,728 @@
+{
+ "version": "2026-10-08",
+ "owner": "importer-v5 (catfill executor); consumers: AI Haber Editörü (f8c22352), menus (98199ef5)",
+ "corporate_never": {
+  "site_ids": [
+   7,
+   11,
+   61
+  ],
+  "names": [
+   "TÜRKATA Vakfı (tukav/tr)",
+   "Vatan Kahramanları Derneği (vkd)",
+   "Trafik Güvenliği Derneği (trafik)"
+  ],
+  "themes": [
+   "php-kurumsal",
+   "VKD",
+   "VATAN"
+  ]
+ },
+ "suspended": [
+  229
+ ],
+ "vatanhaber_ban": {
+  "site_id": 1,
+  "rule": "never Hüseyin Akın, Anadolu Çınarları Partisi, AÇI Partisi; hm_site_blocked_terms of site 1 are applied to everything written to sites 1 and 230 (230 is read by vatanhaber)"
+ },
+ "general_sites": {
+  "ids": [
+   230,
+   1,
+   1141
+  ],
+  "shared_pool": 230,
+  "note": "rows in portal_rss_items.site_id=230 show on every theme site whose layout_json has no hmNewsRssSources (turkatahaber, vatanhaber, ...). Topic/regional/local sites get hmNewsRssSources=[] so they show only their own rows.",
+  "category_tree": {
+   "siyaset": [
+    "cumhurbaskanligi",
+    "bakanliklar",
+    "tbmm",
+    "siyasi-partiler",
+    "genel-merkez",
+    "il-ilce-baskanliklari"
+   ],
+   "kamu": [
+    "kamu-kurumlari",
+    "mulki-idare",
+    "valilikler",
+    "kaymakamliklar"
+   ],
+   "stk": [
+    "toplum-ve-yasam",
+    "sivil-toplum-kuruluslari"
+   ],
+   "yerel-yonetimler": [
+    "buyuksehir-ve-iller",
+    "ilceler",
+    "belediye",
+    "muhtar"
+   ],
+   "dunya": [
+    "nato",
+    "uluslararasi-kuruluslar",
+    "birlesmis-milletler",
+    "avrupa-birligi"
+   ],
+   "yerel": "region tabs -> province categories (see provinces); item category_slug = province slug, portal_rss_items.region_key = 'tr-<province>', region_label = province name"
+  },
+  "min_items_per_category": 10
+ },
+ "topic_sites": {
+  "232": {
+   "host": "sehitgazi.org.tr",
+   "only": "şehit, gazi, asker, MSB, TSK, emniyet/jandarma/polis/güvenlik güçleri, şehit aileleri, gaziler ve dernekleri",
+   "classifier_topics": [
+    "guvenlik",
+    "savunma"
+   ]
+  },
+  "233": {
+   "host": "turksav.org",
+   "only": "savunma sanayii, MSB, Genelkurmay, savunma haberleri",
+   "classifier_topics": [
+    "savunma"
+   ]
+  },
+  "236": {
+   "host": "yesilvatan.gen.tr",
+   "only": "doğa, ekoloji, orman, tarım, yenilenebilir enerji, çevre",
+   "classifier_topics": [
+    "cevre"
+   ]
+  },
+  "237": {
+   "host": "dunyasaglik.org",
+   "only": "sağlık",
+   "classifier_topics": [
+    "saglik"
+   ]
+  },
+  "1142": {
+   "host": "fix.tc",
+   "only": "teknoloji (haberler, mobil, donanım, incelemeler, yazılım, oyun)"
+  },
+  "231": {
+   "host": "yerel.net.tr",
+   "only": "yerel haber (il/ilçe adı veya belediye/muhtar/vali/kaymakam); menu = region tabs + province sub-tabs"
+  },
+  "1145": {
+   "host": "sosyalhizmetler.tr",
+   "only": "sosyal hizmetler (not yet filled)"
+  }
+ },
+ "regional_sites": {
+  "1133": {
+   "region": "ege",
+   "provinces": [
+    "Afyonkarahisar",
+    "Aydın",
+    "Denizli",
+    "İzmir",
+    "Kütahya",
+    "Manisa",
+    "Muğla",
+    "Uşak"
+   ]
+  },
+  "1134": {
+   "region": "marmara",
+   "provinces": [
+    "Balıkesir",
+    "Bilecik",
+    "Bursa",
+    "Çanakkale",
+    "Edirne",
+    "İstanbul",
+    "Kırklareli",
+    "Kocaeli",
+    "Sakarya",
+    "Tekirdağ",
+    "Yalova"
+   ]
+  },
+  "1143": {
+   "region": "marmara",
+   "provinces": [
+    "Balıkesir",
+    "Bilecik",
+    "Bursa",
+    "Çanakkale",
+    "Edirne",
+    "İstanbul",
+    "Kırklareli",
+    "Kocaeli",
+    "Sakarya",
+    "Tekirdağ",
+    "Yalova"
+   ]
+  },
+  "1144": {
+   "region": "marmara",
+   "provinces": [
+    "Balıkesir",
+    "Bilecik",
+    "Bursa",
+    "Çanakkale",
+    "Edirne",
+    "İstanbul",
+    "Kırklareli",
+    "Kocaeli",
+    "Sakarya",
+    "Tekirdağ",
+    "Yalova"
+   ]
+  },
+  "1135": {
+   "region": "karadeniz",
+   "provinces": [
+    "Amasya",
+    "Artvin",
+    "Bartın",
+    "Bayburt",
+    "Bolu",
+    "Çorum",
+    "Düzce",
+    "Giresun",
+    "Gümüşhane",
+    "Karabük",
+    "Kastamonu",
+    "Ordu",
+    "Rize",
+    "Samsun",
+    "Sinop",
+    "Tokat",
+    "Trabzon",
+    "Zonguldak"
+   ]
+  },
+  "1136": {
+   "region": "icanadolu",
+   "provinces": [
+    "Aksaray",
+    "Ankara",
+    "Çankırı",
+    "Eskişehir",
+    "Karaman",
+    "Kayseri",
+    "Kırıkkale",
+    "Kırşehir",
+    "Konya",
+    "Nevşehir",
+    "Niğde",
+    "Sivas",
+    "Yozgat"
+   ]
+  },
+  "1137": {
+   "region": "doguanadolu",
+   "provinces": [
+    "Ağrı",
+    "Ardahan",
+    "Bingöl",
+    "Bitlis",
+    "Elazığ",
+    "Erzincan",
+    "Erzurum",
+    "Hakkari",
+    "Iğdır",
+    "Kars",
+    "Malatya",
+    "Muş",
+    "Tunceli",
+    "Van"
+   ]
+  },
+  "1138": {
+   "region": "guneydogu",
+   "provinces": [
+    "Adıyaman",
+    "Batman",
+    "Diyarbakır",
+    "Gaziantep",
+    "Kilis",
+    "Mardin",
+    "Siirt",
+    "Şanlıurfa",
+    "Şırnak"
+   ]
+  },
+  "1139": {
+   "region": "akdeniz",
+   "provinces": [
+    "Adana",
+    "Antalya",
+    "Burdur",
+    "Hatay",
+    "Isparta",
+    "Kahramanmaraş",
+    "Mersin",
+    "Osmaniye"
+   ]
+  },
+  "1140": {
+   "region": "kibris",
+   "provinces": [
+    "Lefkoşa",
+    "Girne",
+    "Gazimağusa",
+    "Mağusa",
+    "Güzelyurt",
+    "İskele",
+    "Lefke",
+    "KKTC",
+    "Kıbrıs"
+   ]
+  }
+ },
+ "turkatahaber_rules": {
+  "yerel-yonetimler": "ONLY belediye/büyükşehir/muhtar news; sources Cumha RSS, haberler.com/belediye, haberler.com/muhtar (credit source)",
+  "strict_category_rules": "classifier.CAT_RULES"
+ },
+ "provinces": {
+  "balikesir": {
+   "name": "Balıkesir",
+   "region": "marmara",
+   "region_key": "tr-balikesir"
+  },
+  "bilecik": {
+   "name": "Bilecik",
+   "region": "marmara",
+   "region_key": "tr-bilecik"
+  },
+  "bursa": {
+   "name": "Bursa",
+   "region": "marmara",
+   "region_key": "tr-bursa"
+  },
+  "canakkale": {
+   "name": "Çanakkale",
+   "region": "marmara",
+   "region_key": "tr-canakkale"
+  },
+  "edirne": {
+   "name": "Edirne",
+   "region": "marmara",
+   "region_key": "tr-edirne"
+  },
+  "istanbul": {
+   "name": "İstanbul",
+   "region": "marmara",
+   "region_key": "tr-istanbul"
+  },
+  "kirklareli": {
+   "name": "Kırklareli",
+   "region": "marmara",
+   "region_key": "tr-kirklareli"
+  },
+  "kocaeli": {
+   "name": "Kocaeli",
+   "region": "marmara",
+   "region_key": "tr-kocaeli"
+  },
+  "sakarya": {
+   "name": "Sakarya",
+   "region": "marmara",
+   "region_key": "tr-sakarya"
+  },
+  "tekirdag": {
+   "name": "Tekirdağ",
+   "region": "marmara",
+   "region_key": "tr-tekirdag"
+  },
+  "yalova": {
+   "name": "Yalova",
+   "region": "marmara",
+   "region_key": "tr-yalova"
+  },
+  "afyonkarahisar": {
+   "name": "Afyonkarahisar",
+   "region": "ege",
+   "region_key": "tr-afyonkarahisar"
+  },
+  "aydin": {
+   "name": "Aydın",
+   "region": "ege",
+   "region_key": "tr-aydin"
+  },
+  "denizli": {
+   "name": "Denizli",
+   "region": "ege",
+   "region_key": "tr-denizli"
+  },
+  "izmir": {
+   "name": "İzmir",
+   "region": "ege",
+   "region_key": "tr-izmir"
+  },
+  "kutahya": {
+   "name": "Kütahya",
+   "region": "ege",
+   "region_key": "tr-kutahya"
+  },
+  "manisa": {
+   "name": "Manisa",
+   "region": "ege",
+   "region_key": "tr-manisa"
+  },
+  "mugla": {
+   "name": "Muğla",
+   "region": "ege",
+   "region_key": "tr-mugla"
+  },
+  "usak": {
+   "name": "Uşak",
+   "region": "ege",
+   "region_key": "tr-usak"
+  },
+  "adana": {
+   "name": "Adana",
+   "region": "akdeniz",
+   "region_key": "tr-adana"
+  },
+  "antalya": {
+   "name": "Antalya",
+   "region": "akdeniz",
+   "region_key": "tr-antalya"
+  },
+  "burdur": {
+   "name": "Burdur",
+   "region": "akdeniz",
+   "region_key": "tr-burdur"
+  },
+  "hatay": {
+   "name": "Hatay",
+   "region": "akdeniz",
+   "region_key": "tr-hatay"
+  },
+  "isparta": {
+   "name": "Isparta",
+   "region": "akdeniz",
+   "region_key": "tr-isparta"
+  },
+  "kahramanmaras": {
+   "name": "Kahramanmaraş",
+   "region": "akdeniz",
+   "region_key": "tr-kahramanmaras"
+  },
+  "mersin": {
+   "name": "Mersin",
+   "region": "akdeniz",
+   "region_key": "tr-mersin"
+  },
+  "osmaniye": {
+   "name": "Osmaniye",
+   "region": "akdeniz",
+   "region_key": "tr-osmaniye"
+  },
+  "aksaray": {
+   "name": "Aksaray",
+   "region": "ic-anadolu",
+   "region_key": "tr-aksaray"
+  },
+  "ankara": {
+   "name": "Ankara",
+   "region": "ic-anadolu",
+   "region_key": "tr-ankara"
+  },
+  "cankiri": {
+   "name": "Çankırı",
+   "region": "ic-anadolu",
+   "region_key": "tr-cankiri"
+  },
+  "eskisehir": {
+   "name": "Eskişehir",
+   "region": "ic-anadolu",
+   "region_key": "tr-eskisehir"
+  },
+  "karaman": {
+   "name": "Karaman",
+   "region": "ic-anadolu",
+   "region_key": "tr-karaman"
+  },
+  "kayseri": {
+   "name": "Kayseri",
+   "region": "ic-anadolu",
+   "region_key": "tr-kayseri"
+  },
+  "kirikkale": {
+   "name": "Kırıkkale",
+   "region": "ic-anadolu",
+   "region_key": "tr-kirikkale"
+  },
+  "kirsehir": {
+   "name": "Kırşehir",
+   "region": "ic-anadolu",
+   "region_key": "tr-kirsehir"
+  },
+  "konya": {
+   "name": "Konya",
+   "region": "ic-anadolu",
+   "region_key": "tr-konya"
+  },
+  "nevsehir": {
+   "name": "Nevşehir",
+   "region": "ic-anadolu",
+   "region_key": "tr-nevsehir"
+  },
+  "nigde": {
+   "name": "Niğde",
+   "region": "ic-anadolu",
+   "region_key": "tr-nigde"
+  },
+  "sivas": {
+   "name": "Sivas",
+   "region": "ic-anadolu",
+   "region_key": "tr-sivas"
+  },
+  "yozgat": {
+   "name": "Yozgat",
+   "region": "ic-anadolu",
+   "region_key": "tr-yozgat"
+  },
+  "amasya": {
+   "name": "Amasya",
+   "region": "karadeniz",
+   "region_key": "tr-amasya"
+  },
+  "artvin": {
+   "name": "Artvin",
+   "region": "karadeniz",
+   "region_key": "tr-artvin"
+  },
+  "bartin": {
+   "name": "Bartın",
+   "region": "karadeniz",
+   "region_key": "tr-bartin"
+  },
+  "bayburt": {
+   "name": "Bayburt",
+   "region": "karadeniz",
+   "region_key": "tr-bayburt"
+  },
+  "bolu": {
+   "name": "Bolu",
+   "region": "karadeniz",
+   "region_key": "tr-bolu"
+  },
+  "corum": {
+   "name": "Çorum",
+   "region": "karadeniz",
+   "region_key": "tr-corum"
+  },
+  "duzce": {
+   "name": "Düzce",
+   "region": "karadeniz",
+   "region_key": "tr-duzce"
+  },
+  "giresun": {
+   "name": "Giresun",
+   "region": "karadeniz",
+   "region_key": "tr-giresun"
+  },
+  "gumushane": {
+   "name": "Gümüşhane",
+   "region": "karadeniz",
+   "region_key": "tr-gumushane"
+  },
+  "karabuk": {
+   "name": "Karabük",
+   "region": "karadeniz",
+   "region_key": "tr-karabuk"
+  },
+  "kastamonu": {
+   "name": "Kastamonu",
+   "region": "karadeniz",
+   "region_key": "tr-kastamonu"
+  },
+  "ordu": {
+   "name": "Ordu",
+   "region": "karadeniz",
+   "region_key": "tr-ordu"
+  },
+  "rize": {
+   "name": "Rize",
+   "region": "karadeniz",
+   "region_key": "tr-rize"
+  },
+  "samsun": {
+   "name": "Samsun",
+   "region": "karadeniz",
+   "region_key": "tr-samsun"
+  },
+  "sinop": {
+   "name": "Sinop",
+   "region": "karadeniz",
+   "region_key": "tr-sinop"
+  },
+  "tokat": {
+   "name": "Tokat",
+   "region": "karadeniz",
+   "region_key": "tr-tokat"
+  },
+  "trabzon": {
+   "name": "Trabzon",
+   "region": "karadeniz",
+   "region_key": "tr-trabzon"
+  },
+  "zonguldak": {
+   "name": "Zonguldak",
+   "region": "karadeniz",
+   "region_key": "tr-zonguldak"
+  },
+  "agri": {
+   "name": "Ağrı",
+   "region": "dogu-anadolu",
+   "region_key": "tr-agri"
+  },
+  "ardahan": {
+   "name": "Ardahan",
+   "region": "dogu-anadolu",
+   "region_key": "tr-ardahan"
+  },
+  "bingol": {
+   "name": "Bingöl",
+   "region": "dogu-anadolu",
+   "region_key": "tr-bingol"
+  },
+  "bitlis": {
+   "name": "Bitlis",
+   "region": "dogu-anadolu",
+   "region_key": "tr-bitlis"
+  },
+  "elazig": {
+   "name": "Elazığ",
+   "region": "dogu-anadolu",
+   "region_key": "tr-elazig"
+  },
+  "erzincan": {
+   "name": "Erzincan",
+   "region": "dogu-anadolu",
+   "region_key": "tr-erzincan"
+  },
+  "erzurum": {
+   "name": "Erzurum",
+   "region": "dogu-anadolu",
+   "region_key": "tr-erzurum"
+  },
+  "hakkari": {
+   "name": "Hakkari",
+   "region": "dogu-anadolu",
+   "region_key": "tr-hakkari"
+  },
+  "igdir": {
+   "name": "Iğdır",
+   "region": "dogu-anadolu",
+   "region_key": "tr-igdir"
+  },
+  "kars": {
+   "name": "Kars",
+   "region": "dogu-anadolu",
+   "region_key": "tr-kars"
+  },
+  "malatya": {
+   "name": "Malatya",
+   "region": "dogu-anadolu",
+   "region_key": "tr-malatya"
+  },
+  "mus": {
+   "name": "Muş",
+   "region": "dogu-anadolu",
+   "region_key": "tr-mus"
+  },
+  "tunceli": {
+   "name": "Tunceli",
+   "region": "dogu-anadolu",
+   "region_key": "tr-tunceli"
+  },
+  "van": {
+   "name": "Van",
+   "region": "dogu-anadolu",
+   "region_key": "tr-van"
+  },
+  "adiyaman": {
+   "name": "Adıyaman",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-adiyaman"
+  },
+  "batman": {
+   "name": "Batman",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-batman"
+  },
+  "diyarbakir": {
+   "name": "Diyarbakır",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-diyarbakir"
+  },
+  "gaziantep": {
+   "name": "Gaziantep",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-gaziantep"
+  },
+  "kilis": {
+   "name": "Kilis",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-kilis"
+  },
+  "mardin": {
+   "name": "Mardin",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-mardin"
+  },
+  "siirt": {
+   "name": "Siirt",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-siirt"
+  },
+  "sanliurfa": {
+   "name": "Şanlıurfa",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-sanliurfa"
+  },
+  "sirnak": {
+   "name": "Şırnak",
+   "region": "guneydogu-anadolu",
+   "region_key": "tr-sirnak"
+  }
+ },
+ "cross_distribution": {
+  "rule": "items on topic sites are copied to the shared general pool (site 230) under the matching category; dedupe per site; never corporate; vatanhaber ban applies",
+  "map": {
+   "232": {
+    "default": "gundem",
+    "dunya_topic": "dunya"
+   },
+   "233": {
+    "default": "gundem",
+    "dunya_topic": "nato|dunya"
+   },
+   "236": {
+    "default": "gundem",
+    "ekonomi_topic": "ekonomi"
+   },
+   "237": {
+    "default": "saglik"
+   },
+   "1142": {
+    "default": "teknoloji"
+   },
+   "231": {
+    "default": "<province slug> (+region_key tr-<province>)",
+    "civic": "belediye|muhtar|valilikler|kaymakamliklar|ilceler|buyuksehir-ve-iller via CAT_RULES"
+   }
+  }
+ },
+ "classifier": {
+  "module": "/docker/php-theme/importer-v5/classifier.py (repo: importer-v5/classifier.py)",
+  "entry_points": [
+   "decide(cat, site_cats, title, spot, lead, site_id, ai)",
+   "site_topic_ok(site_id, title, spot)",
+   "cat_rule_ok(cat, title, spot)",
+   "mentions_city(province, title, spot)",
+   "best_topic(title, spot, lead)",
+   "ai_choose(title, spot, choices)"
+  ],
+  "order": "keyword+source rules -> city/region rule (title/spot must name the province or a district) -> AI chain evren -> nvidia -> gemini -> openai (cheap classify models) only when ambiguous"
+ }
+}
