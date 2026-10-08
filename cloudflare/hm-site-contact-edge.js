@@ -367,7 +367,8 @@ export async function contactNewsMessage(msql, contact, mailRow) {
   const imgs = [];
   for (const a of att.filter((x) => x.kind === "image").slice(0, 6)) {
     const f = (await msql`SELECT mime, encode(data, 'base64') AS b64 FROM hm_site_contact_files WHERE id = ${a.id} AND contact_id = ${contact.id} LIMIT 1`)?.[0];
-    if (f?.b64) imgs.push(`<img src="data:${f.mime};base64,${f.b64}" alt="">`);
+    // Postgres encode(...,'base64') wraps every 76 chars; data: URLs must be one line for the R2 copy.
+    if (f?.b64) imgs.push(`<img src="data:${f.mime};base64,${String(f.b64).replace(/\s+/g, "")}" alt="">`);
   }
   return {
     id: mailRow.id,
