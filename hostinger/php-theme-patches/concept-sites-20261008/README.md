@@ -1,11 +1,11 @@
 # Concept sites + spor.gundemi.org (2026-10-08)
 
-User rule (22:15 TRT): concept/topic sites (yeşilvatan, turksav, şehitgazi, yerel, dünyasağlık, fix.tc, all regional
+User rule (22:15 TRT): concept/topic sites (yeşilvatan, turksav, şehitgazi, dünyasağlık, fix.tc, all regional
 *.gundemi.org incl. Kıbrıs) show no Süper Lig table and no burçlar. General news sites keep them. A sports concept
 site keeps Süper Lig.
 
 ## Per-site setting (TP + panel layout_json)
-- `hmConceptSite: true`, `hmConceptTopic: "<topic>"` (spor | savunma | sehit-gazi | cevre | saglik | teknoloji | yerel | bolge | diger)
+- `hmConceptSite: true`, `hmConceptTopic: "<topic>"` (spor | savunma | sehit-gazi | cevre | saglik | teknoloji | bolge | diger)
 - Explicit switches too: `hmNewsYsHoroscopeEnabled:false`, `hmNewsYsStandingsEnabled:false` (true for spor), `hmNewsYsSportsHoroscopeEnabled`.
 - New sites: `/admin/haber-siteleri` → "Konsept site" switch + topic (create only) → `conceptSiteLayoutDefaults()` in
   api-server `lib/hm-site-kind.ts`, used by `POST /hm/sites`.
