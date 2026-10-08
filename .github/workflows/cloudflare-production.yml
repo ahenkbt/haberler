@@ -7,6 +7,8 @@
 # Optional: AGENTLABS_URL, HM_EDITOR_JWT_SECRET, ADMIN_MAINTENANCE_SECRET,
 #           R2_CF_API_TOKEN (fb9f hesap API token; 16f5 CLOUDFLARE_API_TOKEN değil)
 #           S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY (fb9f R2 S3 API; R2_CF_API_TOKEN yoksa)
+# Media S3/R2 secrets: "Sync media R2/S3 Worker secrets" — Neon skip_secrets'ten bağımsız
+# (aksi halde canli dbProvider=neon iken editor upload ready:false kalir).
 # S3_ENDPOINT secret olarak YAZILMAZ (wrangler.toml [vars] ile çakışır, code 10053).
 # Eski "versions secret put S3_ENDPOINT → versions deploy @100%" DATABASE_URL'i
 # Neon kopyasına geri alıyordu (run 32356785593, version 5807ec05).
@@ -227,9 +229,6 @@ jobs:
           SESSION_SECRET: ${{ secrets.SESSION_SECRET || vars.SESSION_SECRET }}
           HM_EDITOR_JWT_SECRET: ${{ secrets.HM_EDITOR_JWT_SECRET || '' }}
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
-          R2_CF_API_TOKEN: ${{ secrets.R2_CF_API_TOKEN || '' }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID || '' }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || '' }}
         run: |
           set -euo pipefail
           put_secret() {
@@ -269,16 +268,67 @@ jobs:
           if [ -n "${AGENTLABS_URL}" ]; then
             put_secret AGENTLABS_URL "$AGENTLABS_URL"
           fi
+          # R2/S3 media secrets: Sync media R2/S3 adımında (skip_secrets bağımsız)
+          echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
+
+      - name: Sync media R2/S3 Worker secrets
+        id: media_secrets
+        # Neon skip_secrets=true DATABASE_URL put'unu atlar; medya anahtarları yine yazılmalı.
+        # MEDIA_BUCKET binding yok (16f5 R2 kapalı); upload S3 API veya R2_CF_API_TOKEN ister.
+        if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.ACCOUNT_ID }}
+          R2_CF_API_TOKEN: ${{ secrets.R2_CF_API_TOKEN || vars.R2_CF_API_TOKEN || '' }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID || vars.S3_ACCESS_KEY_ID || '' }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || vars.S3_SECRET_ACCESS_KEY || '' }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="$2"
+            [ -n "$value" ] || return 0
+            local attempt=1
+            local max=4
+            while true; do
+              out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || true
+              printf '%s\n' "$out"
+              if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
+                return 0
+              fi
+              if [ "$attempt" -ge "$max" ]; then
+                echo "::error::$name wrangler secret put failed after ${max} attempts"
+                return 1
+              fi
+              echo "$name secret put retry ${attempt}/${max} in $((attempt * 8))s"
+              sleep $((attempt * 8))
+              attempt=$((attempt + 1))
+            done
+          }
+          have_s3=0
+          have_cf=0
+          if [ -n "${S3_ACCESS_KEY_ID}" ] && [ -n "${S3_SECRET_ACCESS_KEY}" ]; then
+            put_secret S3_ACCESS_KEY_ID "$S3_ACCESS_KEY_ID"
+            put_secret S3_SECRET_ACCESS_KEY "$S3_SECRET_ACCESS_KEY"
+            have_s3=1
+            echo "::notice::S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY Worker'a yazıldı (değer basılmaz)."
+          else
+            missing=""
+            [ -z "${S3_ACCESS_KEY_ID}" ] && missing="${missing} S3_ACCESS_KEY_ID"
+            [ -z "${S3_SECRET_ACCESS_KEY}" ] && missing="${missing} S3_SECRET_ACCESS_KEY"
+            echo "::warning::Media S3 secret(s) absent in GitHub Environment DATABASE_URL:${missing}"
+          fi
           if [ -n "${R2_CF_API_TOKEN}" ]; then
             put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
+            have_cf=1
+            echo "::notice::R2_CF_API_TOKEN Worker'a yazıldı (değer basılmaz)."
+          else
+            echo "::warning::R2_CF_API_TOKEN absent in GitHub Environment DATABASE_URL"
           fi
-          if [ -n "${S3_ACCESS_KEY_ID}" ]; then
-            put_secret S3_ACCESS_KEY_ID "$S3_ACCESS_KEY_ID"
+          if [ "$have_s3" -eq 0 ] && [ "$have_cf" -eq 0 ]; then
+            echo "::error::Editor media upload will stay ready:false — set S3_ACCESS_KEY_ID+S3_SECRET_ACCESS_KEY (or R2_CF_API_TOKEN) on Environment DATABASE_URL, then re-run this workflow."
+            exit 1
           fi
-          if [ -n "${S3_SECRET_ACCESS_KEY}" ]; then
-            put_secret S3_SECRET_ACCESS_KEY "$S3_SECRET_ACCESS_KEY"
-          fi
-          echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
 
       - name: Sync YEKTUBE Worker secrets
         id: yektube_secrets
@@ -386,6 +436,25 @@ jobs:
           echo "::error::ahenk.net.tr/api/healthz hâlâ dbProvider=${provider:-unknown} (neon bekleniyor). DATABASE_URL / Container env kontrol edin."
           printf '%s\n' "$body" | head -c 400
           echo
+          exit 1
+
+      - name: Verify media-edge ready
+        if: steps.cf.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
+          UA="Mozilla/5.0 (compatible; Haberler-CI/1.0; +https://github.com/ahenkbt/haberler)"
+          for i in 1 2 3 4 5 6; do
+            body=$(curl -fsS -m 20 -A "$UA" "https://turkatahaber.com/api/healthz/media-edge" || true)
+            echo "attempt=$i media-edge=$body"
+            ready=$(printf '%s' "$body" | sed -n 's/.*"ready":\s*\(true\|false\).*/\1/p' | head -1)
+            if [ "$ready" = "true" ]; then
+              echo "media-edge ready:true"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::media-edge still ready:false — Worker missing S3_ACCESS_KEY_ID/S3_SECRET_ACCESS_KEY or R2_CF_API_TOKEN (see Sync media R2/S3 step)."
+          printf '%s\n' "$body"
           exit 1
 
       - name: Repair ASG Ankara category misfits (Neon)
