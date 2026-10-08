@@ -19,6 +19,7 @@ import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
 import { handleHmEditorSiteOverridesEdge, isHmEditorSiteOverridesPath } from "./hm-editor-site-overrides-edge.js";
 import { handleHmSiteMailEdge, isHmSiteMailPath } from "./hm-site-mail-edge.js";
+import { handleHmSiteContactEdge, isHmSiteContactPath } from "./hm-site-contact-edge.js";
 import {
   handleKhEditorDataEdge,
   injectKhNeonNewsIntoPublicResponse,
@@ -3168,6 +3169,20 @@ export default {
             },
           });
         }
+      }
+    }
+
+    // Haber siteleri /iletisim formu (POST /api/hm/public/contact) + editör paneli "İletişim" kutusu (/api/hm/editor/site-contact).
+    if (isHmSiteContactPath(earlyPath)) {
+      try {
+        const contactRes = await handleHmSiteContactEdge(request, env, incoming);
+        if (contactRes) return contactRes;
+      } catch (err) {
+        console.error("[site-contact]", String(err?.message || err).slice(0, 200));
+        return new Response(JSON.stringify({ error: "İletişim formu geçici olarak çalışmıyor, lütfen tekrar deneyin." }), {
+          status: 500,
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+        });
       }
     }
 

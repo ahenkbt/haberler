@@ -4,6 +4,7 @@
  */
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 import { listPublicNewsSites, renderNewsSitesGrid } from "./hm-public-news-sites.js";
+import { renderTanitimIntro } from "./hm-tanitim-text.js";
 
 export const KAMU_YEREL_EXTRA_PAGE_HOSTS = Object.freeze([
   "turkatahaber.com",
@@ -258,6 +259,12 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
     } catch (err) {
       console.error("[kamu-yerel-extra-logos]", String(err?.message || err).slice(0, 160));
     }
+  }
+
+  // Tanıtım metni (kullanıcı 2026-10-08 23:35): /daha giriş yazısı "Toplu Basın Bülteni ve Tanıtım Haberi Dağıtım Beyanı".
+  if (page.slug === "daha") {
+    const intro = /<section\b[^>]*id=["']daha-hakkimizda["'][^>]*>[\s\S]*?<\/section>/i;
+    if (intro.test(page.bodyHtml)) page = { ...page, bodyHtml: page.bodyHtml.replace(intro, () => renderTanitimIntro()) };
   }
 
   const brand =
