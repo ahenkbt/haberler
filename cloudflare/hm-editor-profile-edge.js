@@ -10,6 +10,7 @@ import { isNeonServerlessUrl } from "./neon-edge-url.js";
 import { neonSqlClient } from "./neon-edge-db.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
 import { markLayoutRecordUserSave } from "./hm-layout-user-save.js";
+import { loadPanelSession, readCookie, unsignConnectSid } from "./hm-admin-site-edge.js";
 import { purgeHmSitePublicEdgeCache } from "./hm-public-cache-purge-edge.js";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
@@ -1558,6 +1559,37 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
  * 2) Container /api/media/upload (Bearer JWT)
  * 3) Container /api/media/edge-upload (HMAC köprüsü)
  */
+/** Panel (express-session cookie, panelBootstrap) media upload at the edge → R2 only; clear error on failure. */
+async function handleAdminSessionMediaUploadEdge(request, env) {
+  const secret = String(env?.SESSION_SECRET || "").trim();
+  if (!secret) return null;
+  const sid = await unsignConnectSid(readCookie(request.headers.get("cookie"), "connect.sid"), secret);
+  if (!sid) return null;
+  let sess = null;
+  try {
+    sess = (await loadPanelSession(env, sid)).sess;
+  } catch {
+    return null;
+  }
+  if (!sess || sess.panelBootstrap !== true) return null;
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse(400, { error: "Geçersiz JSON" });
+  }
+  const dataUrl = typeof body?.dataUrl === "string" ? body.dataUrl.trim() : "";
+  if (!dataUrl) return jsonResponse(400, { error: "dataUrl gerekli" });
+  const saved = await saveMediaDataUrlToS3(env, dataUrl, typeof body?.title === "string" ? body.title : undefined);
+  if (saved.url) return jsonResponse(200, { url: saved.url });
+  console.error("[hm-admin-media-r2]", String(saved.error || "unknown").slice(0, 200));
+  const tooBig = /büyük|large|size/i.test(String(saved.error || ""));
+  return jsonResponse(tooBig ? 413 : 502, {
+    error: tooBig ? "Dosya çok büyük" : "Medya yüklenemedi: depolama (R2) yazılamadı. Lütfen tekrar deneyin.",
+    detail: String(saved.error || "").slice(0, 200),
+  });
+}
+
 export async function handleHmEditorMediaUploadEdge(request, env) {
   const path = String(new URL(request.url).pathname || "").replace(/\/+$/, "") || "/";
   const method = String(request.method || "GET").toUpperCase();
@@ -1567,7 +1599,10 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
   const auth = String(request.headers.get("authorization") || "").trim();
   const ctx = await parseEditorJwt(request, env);
   if (!ctx) {
-    // turk.eco /admin oturumu — çerez ile Render'a ilet (HM JWT yok).
+    // 2026-10-08: ahenk.net.tr /admin (connect.sid panel session) uploads are saved here at the edge straight
+    // to R2. The container path could fall back to its local disk, which is lost on every roll (dead images).
+    const adminUpload = await handleAdminSessionMediaUploadEdge(request, env);
+    if (adminUpload) return adminUpload;
     return null;
   }
 
