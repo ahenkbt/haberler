@@ -1,0 +1,46 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { logoVersion, publicNewsSitesFromRows, renderNewsSitesGrid } from "./hm-public-news-sites.js";
+
+const L = (o) => JSON.stringify(o);
+
+describe("hm-public-news-sites", () => {
+  const rows = [
+    { id: 1, slug: "vatanhaber", domain: "vatanhaber.net", display_name: "Vatan Haber", active: true, layout_json: L({ logoUrl: "https://vatanhaber.net/media/logos/x.png" }) },
+    { id: 7, slug: "vkd", domain: "vatankahramanlari.org", display_name: "VKD", active: true, layout_json: L({ logoUrl: "/v.png" }) },
+    { id: 11, slug: "trafik", domain: "trafik.gd", display_name: "TGD", active: true, layout_json: L({ logoUrl: "/t.png" }) },
+    { id: 61, slug: "tr", domain: "tukav.org", display_name: "Vakıf", active: true, layout_json: "{}" },
+    { id: 229, slug: "kirsehirhaber", domain: "kirsehirhaber.org", display_name: "KH", active: true, layout_json: L({ hmPublicSuspended: true, logoUrl: "data:image/png;base64,AAAA" }) },
+    { id: 230, slug: "turkatahaber", domain: "turkatahaber.com", display_name: "TÜRKATA", active: true, layout_json: L({ logoUrl: "/turkata/l.webp" }) },
+    { id: 233, slug: "turksav", domain: "turksav.org", display_name: "TürkSav", active: true, layout_json: L({ logoUrl: "/turksav/l.png", hmLogoBarBackground: "#071422" }) },
+    { id: 1134, slug: "marmara-gundemi", domain: "marmara.gundemi.org", display_name: "Marmara", active: false, layout_json: L({ logoUrl: "/a.png" }) },
+    { id: 1144, slug: "marmara-gundemi", domain: "marmara.gundemi.org", display_name: "Marmara", active: true, layout_json: L({ logoUrl: "/g.png" }) },
+    { id: 1143, slug: "marmara-gundemi", domain: "marmara.gundemi.org", display_name: "Marmara", active: true, layout_json: L({ logoUrl: "/g.png" }) },
+    { id: 9999, slug: "yeni", domain: "yeni.gundemi.org", display_name: "Yeni Site", active: true, layout_json: null },
+  ];
+
+  it("keeps active news sites; drops corporate 7/11/61, suspended and inactive; one tile per domain", () => {
+    const out = publicNewsSitesFromRows(rows);
+    assert.deepEqual(out.map((s) => s.id), [1, 230, 233, 1143, 9999]);
+    assert.equal(out.find((s) => s.id === 233).logoBg, "#071422");
+    assert.equal(out.find((s) => s.id === 9999).logoRaw, "");
+    assert.equal(out[0].url, "https://vatanhaber.net/");
+  });
+
+  it("logo version changes with the logo setting", () => {
+    assert.notEqual(logoVersion("/a.png"), logoVersion("/b.png"));
+    assert.equal(logoVersion("/a.png"), logoVersion("/a.png"));
+  });
+
+  it("renders a linked grid with names; no corporate links", () => {
+    const html = renderNewsSitesGrid([
+      { id: 1, name: "Vatan <Haber>", domain: "vatanhaber.net", url: "https://vatanhaber.net/", logo: "/api/hm/public/news-sites/1/logo?v=1", logoBg: "" },
+      { id: 9, name: "Yeni", domain: "yeni.gundemi.org", url: "https://yeni.gundemi.org/", logo: "", logoBg: "#000" },
+    ]);
+    assert.match(html, /id="daha-haber-siteleri"/);
+    assert.match(html, /href="https:\/\/vatanhaber\.net\/"/);
+    assert.match(html, /Vatan &lt;Haber&gt;/);
+    assert.match(html, /hm-ns-initial">Yeni</);
+    assert.doesNotMatch(html, /tukav|vatankahramanlari|trafik/);
+  });
+});
