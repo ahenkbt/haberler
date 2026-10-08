@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { logoVersion, publicNewsSitesFromRows, renderNewsSitesGrid } from "./hm-public-news-sites.js";
+import { logoVersion, publicNewsSitesFromRows, renderIlSitesGrid, renderNewsSitesGrid } from "./hm-public-news-sites.js";
 
 const L = (o) => JSON.stringify(o);
 
@@ -42,5 +42,23 @@ describe("hm-public-news-sites", () => {
     assert.match(html, /Vatan &lt;Haber&gt;/);
     assert.match(html, /hm-ns-initial">Yeni</);
     assert.doesNotMatch(html, /tukav|vatankahramanlari|trafik/);
+  });
+
+  it("81 İl: il siteleri (hmIl81) ana listede yok, ayrı il listesinde plaka sırasıyla", () => {
+    const il = [
+      ...rows,
+      { id: 1150, slug: "izmir", domain: "izmir.fix.tc", display_name: "İzmir Gündemi", active: true, layout_json: L({ logoUrl: "/gundemi/logos/izmir-gundemi.png", hmIl81: { slug: "izmir", il: "İzmir", plate: "35", region: "ege" } }) },
+      { id: 1154, slug: "adana", domain: "adana.fix.tc", display_name: "Adana Gündemi", active: true, layout_json: L({ logoUrl: "/gundemi/logos/adana-gundemi.png", hmIl81: { slug: "adana", il: "Adana", plate: "01", region: "akdeniz" } }) },
+      { id: 1160, slug: "hatay", domain: "hatay.fix.tc", display_name: "Hatay Gündemi", active: false, layout_json: L({ hmIl81: { slug: "hatay", il: "Hatay", plate: "31" } }) },
+    ];
+    assert.deepEqual(publicNewsSitesFromRows(il).map((s) => s.id), [1, 230, 233, 1143, 9999]);
+    const out = publicNewsSitesFromRows(il, { group: "il" });
+    assert.deepEqual(out.map((s) => s.id), [1154, 1150]);
+    assert.equal(out[0].il, "Adana");
+    assert.equal(out[1].region, "ege");
+    const html = renderIlSitesGrid([{ id: 1150, name: "İzmir Gündemi", domain: "izmir.fix.tc", url: "https://izmir.fix.tc/", logo: "", logoBg: "" }]);
+    assert.match(html, /id="daha-il-siteleri"/);
+    assert.match(html, /İl Siteleri/);
+    assert.match(html, /\/iller/);
   });
 });

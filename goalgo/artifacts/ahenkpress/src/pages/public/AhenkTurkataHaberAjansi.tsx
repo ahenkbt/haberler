@@ -15,60 +15,86 @@ type PublicNewsSite = {
   url: string;
   logo: string;
   logoBg?: string;
+  il?: string;
+  plate?: string;
+  region?: string;
 };
+
+type PublicNewsSitesBody = { sites?: PublicNewsSite[]; ilSites?: PublicNewsSite[] };
 
 const THA_SUBSCRIBER_HEADING =
   "Ahenk Bilgi Teknolojileri Haber Alt yapısını kullanan THA TürkAta Haber Ajansı abonesi haber siteleri";
+/** 81 İl Haber Ağı (2026-10-09): il siteleri (<il>.fix.tc) ayrı grup. */
+const THA_IL_SITES_HEADING = "İl Siteleri";
+
+function SiteLogoGrid({ sites }: { sites: PublicNewsSite[] }) {
+  // Logo dosyası henüz yoksa (404) kartta site adı görünsün.
+  const [brokenLogos, setBrokenLogos] = useState<Record<number, true>>({});
+  return (
+    <ul className="ahenk-subscriber-logos">
+      {sites.map((site) => (
+        <li key={site.id}>
+          <a className="ahenk-subscriber-logo" href={site.url} target="_blank" rel="noopener noreferrer">
+            <span className="ahenk-subscriber-mark" style={site.logoBg ? { background: site.logoBg } : undefined}>
+              {site.logo && !brokenLogos[site.id] ? (
+                <img
+                  src={site.logo}
+                  alt={`${site.name} logosu`}
+                  loading="lazy"
+                  decoding="async"
+                  onError={() => setBrokenLogos((prev) => ({ ...prev, [site.id]: true }))}
+                />
+              ) : (
+                <span className="ahenk-subscriber-initial">{site.name}</span>
+              )}
+            </span>
+            <span className="ahenk-subscriber-name">{site.name}</span>
+            <span className="ahenk-subscriber-domain">{site.domain}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function ThaSubscriberSites() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["/api/hm/public/news-sites"],
     queryFn: async () => {
-      const { ok, status, data: body } = await fetchPublicJson<{ sites?: PublicNewsSite[] }>(
-        apiUrl("/api/hm/public/news-sites"),
-      );
+      const { ok, status, data: body } = await fetchPublicJson<PublicNewsSitesBody>(apiUrl("/api/hm/public/news-sites"));
       if (!ok) throw new Error(`HTTP ${status}`);
-      return Array.isArray(body?.sites) ? body.sites : [];
+      return {
+        sites: Array.isArray(body?.sites) ? body.sites : [],
+        ilSites: Array.isArray(body?.ilSites) ? body.ilSites : [],
+      };
     },
     staleTime: 60_000,
     retry: 2,
   });
-  const sites = data ?? [];
-  // Logo dosyası henüz yoksa (404) kartta site adı görünsün.
-  const [brokenLogos, setBrokenLogos] = useState<Record<number, true>>({});
+  const sites = data?.sites ?? [];
+  const ilSites = data?.ilSites ?? [];
 
   return (
-    <section className="ahenk-section" aria-labelledby="tha-subscriber-sites">
-      <h2 id="tha-subscriber-sites" className="ahenk-subscriber-heading">{THA_SUBSCRIBER_HEADING}</h2>
-      {isLoading ? <p className="ahenk-lead">Yükleniyor…</p> : null}
-      {isError ? <p className="ahenk-lead">Haber siteleri şu anda listelenemedi.</p> : null}
-      {!isLoading && !isError && sites.length === 0 ? <p className="ahenk-lead">Yayında haber sitesi yok.</p> : null}
-      {sites.length > 0 ? (
-        <ul className="ahenk-subscriber-logos">
-          {sites.map((site) => (
-            <li key={site.id}>
-              <a className="ahenk-subscriber-logo" href={site.url} target="_blank" rel="noopener noreferrer">
-                <span className="ahenk-subscriber-mark" style={site.logoBg ? { background: site.logoBg } : undefined}>
-                  {site.logo && !brokenLogos[site.id] ? (
-                    <img
-                      src={site.logo}
-                      alt={`${site.name} logosu`}
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => setBrokenLogos((prev) => ({ ...prev, [site.id]: true }))}
-                    />
-                  ) : (
-                    <span className="ahenk-subscriber-initial">{site.name}</span>
-                  )}
-                </span>
-                <span className="ahenk-subscriber-name">{site.name}</span>
-                <span className="ahenk-subscriber-domain">{site.domain}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
+    <>
+      <section className="ahenk-section" aria-labelledby="tha-subscriber-sites">
+        <h2 id="tha-subscriber-sites" className="ahenk-subscriber-heading">{THA_SUBSCRIBER_HEADING}</h2>
+        {isLoading ? <p className="ahenk-lead">Yükleniyor…</p> : null}
+        {isError ? <p className="ahenk-lead">Haber siteleri şu anda listelenemedi.</p> : null}
+        {!isLoading && !isError && sites.length === 0 ? <p className="ahenk-lead">Yayında haber sitesi yok.</p> : null}
+        {sites.length > 0 ? <SiteLogoGrid sites={sites} /> : null}
+      </section>
+      {ilSites.length > 0 ? (
+        <section className="ahenk-section" aria-labelledby="tha-il-sites">
+          <h2 id="tha-il-sites" className="ahenk-subscriber-heading">{THA_IL_SITES_HEADING}</h2>
+          <SiteLogoGrid sites={ilSites} />
+          <p className="ahenk-lead">
+            <a href="https://gundemi.org/iller" target="_blank" rel="noopener noreferrer">
+              81 İl Haber Ağı — tüm iller
+            </a>
+          </p>
+        </section>
       ) : null}
-    </section>
+    </>
   );
 }
 

@@ -22,6 +22,7 @@ import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
 import { ensureDunyaSaglikLogoOnNeon } from "./hm-dunyasaglik-edge.js";
 import { SPOR_GUNDEMI_DESCRIPTION, SPOR_GUNDEMI_DISPLAY_NAME, SPOR_GUNDEMI_HOSTS, ensureSporGundemiSiteOnSql } from "./hm-spor-gundemi-edge.js";
 import { NEWSITES25_BINDINGS, ensureNewsites25SiteOnSql, newsites25ForHost, newsites25ForSlug } from "./hm-newsites25-edge.js";
+import { IL81_BINDINGS, ensureIl81SiteOnSql, il81ForHost, il81ForSlug } from "./hm-il81-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -123,7 +124,8 @@ export const HM_BRAND_DB_BINDINGS = [
     domain: "gundemi.org",
     domains: ["gundemi.org"],
     slug: "gundemi",
-    displayName: "Gündemi",
+    /** 2026-10-09 (81 İl Haber Ağı): gundemi.org = "Gündem İstanbul" (TP 1141 yeniden markalandı). */
+    displayName: "Gündem İstanbul",
     description: "ilkeli iffetli isabetli haber",
   },
   /** spor.gundemi.org — spor konsept sitesi (2026-10-08); panel satırı yoksa kenar seed (hm-spor-gundemi-edge.js). */
@@ -136,6 +138,8 @@ export const HM_BRAND_DB_BINDINGS = [
   },
   /** newsites25 (2026-10-08): memur.gundemi.org, turkdunyasi.gundemi.org, world.fix.tc; panel satırı yoksa kenar seed (hm-newsites25-edge.js). */
   ...NEWSITES25_BINDINGS,
+  /** 81 İl Haber Ağı (2026-10-09): <il>.fix.tc il siteleri; panel satırı yoksa kenar seed (hm-il81-edge.js). */
+  ...IL81_BINDINGS,
   /** Fix Haber — fix.tc Yenişafak PHP; Neon satırı yoksa kenar seed. */
   {
     domain: "fix.tc",
@@ -1577,6 +1581,19 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
         return r?.row ? { meta: serializeMetaRow(r.row), action: r.action } : null;
       } catch (err) {
         console.error("[hm-brand-db-ensure] newsites25", ns25.slug, String(err?.message || err).slice(0, 240));
+        return null;
+      }
+    }
+  }
+
+  {
+    const il81 = il81ForHost(host) || il81ForSlug(binding.slug);
+    if (il81) {
+      try {
+        const r = await ensureIl81SiteOnSql(sql, il81);
+        return r?.row ? { meta: serializeMetaRow(r.row), action: r.action } : null;
+      } catch (err) {
+        console.error("[hm-brand-db-ensure] il81", il81.slug, String(err?.message || err).slice(0, 240));
         return null;
       }
     }
