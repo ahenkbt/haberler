@@ -1030,6 +1030,14 @@ pattern = "sehitgazi.org.tr/assets/*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
+pattern = "sehitgazi.org.tr/sehitgazi/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/sehitgazi/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
 pattern = "sehitgazi.org.tr/sw.js"
 zone_name = "sehitgazi.org.tr"
 
@@ -1164,6 +1172,14 @@ pattern = "www.yerel.net.tr/turkata/*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
+pattern = "yerel.net.tr/yerel/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/yerel/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
 pattern = "yerel.net.tr/sw.js"
 zone_name = "yerel.net.tr"
 
@@ -1268,6 +1284,14 @@ zone_name = "turksav.org"
 
 [[routes]]
 pattern = "turksav.org/assets/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "turksav.org/turksav/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/turksav/*"
 zone_name = "turksav.org"
 
 [[routes]]

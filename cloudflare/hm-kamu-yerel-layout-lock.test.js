@@ -21,11 +21,22 @@ test("repairKamuYerelLayoutAfterMerge fixes yerel logo and generic nav", () => {
     logoUrl: null,
     hmNavOnlyCategorySlugs: ["yerel", "ankara", "gundem", "ekonomi"],
   });
-  assert.equal(out.logoUrl, "/turkata/turkata-mark.png");
+  assert.equal(out.logoUrl, "/yerel/yerel-logo.png");
+  assert.equal(out.faviconUrl, "/yerel/yerel-logo.png");
   assert.deepEqual(out.hmNavOnlyCategorySlugs, [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS]);
 });
 
 test("isKamuYerelHmSlug", () => {
   assert.equal(isKamuYerelHmSlug("turkatahaber"), true);
   assert.equal(isKamuYerelHmSlug("asg"), false);
+});
+
+test("repairKamuYerelLayoutAfterMerge rewrites turkata-mark on yerel", () => {
+  const out = repairKamuYerelLayoutAfterMerge("yerelnet", {
+    logoUrl: "/turkata/turkata-mark.png",
+    faviconUrl: "/turkata/turkata-mark.png",
+    hmNavOnlyCategorySlugs: [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS],
+  });
+  assert.equal(out.logoUrl, "/yerel/yerel-logo.png");
+  assert.equal(out.faviconUrl, "/yerel/yerel-logo.png");
 });

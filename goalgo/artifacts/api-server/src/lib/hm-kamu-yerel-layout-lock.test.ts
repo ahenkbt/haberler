@@ -46,10 +46,28 @@ describe("hm-kamu-yerel-layout-lock", () => {
 
   it("accepts canonical yerel logo path", () => {
     const layout = buildKamuYerelLayoutJson(YERELNET_SITE);
-    expect(layout.logoUrl).toBe("/turkata/turkata-mark.png");
+    expect(layout.logoUrl).toBe("/yerel/yerel-logo.png");
     expect(
       kamuYerelLayoutNeedsCatalogRepair(JSON.stringify(layout), kamuYerelLogoExpectation(YERELNET_SITE)),
     ).toBe(false);
+  });
+
+  it("flags yerel when still pointing at Turkata mark", () => {
+    expect(
+      kamuYerelLayoutNeedsCatalogRepair(
+        JSON.stringify({
+          hmNavOnlyCategorySlugs: listKamuYerelNavTopCategorySlugs(),
+          logoUrl: "/turkata/turkata-mark.png",
+          faviconUrl: "/turkata/turkata-mark.png",
+          hmExtraPages: [
+            { slug: "daha", title: "Daha", bodyHtml: "", enabled: true },
+            { slug: "iller", title: "İller", bodyHtml: "", enabled: true },
+          ],
+          hmCorporateMenuItems: [{ id: "ky-cat-daha", href: "/daha" }],
+        }),
+        kamuYerelLogoExpectation(YERELNET_SITE),
+      ),
+    ).toBe(true);
   });
 
   it("flags layouts missing /daha or /iller extra pages", () => {

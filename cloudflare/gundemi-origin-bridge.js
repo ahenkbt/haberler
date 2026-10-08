@@ -135,12 +135,33 @@ export function isYesilVatanBrandAssetPath(pathname) {
   return p.startsWith("/yesilvatan/");
 }
 
+/** TürkSav marka dosyaları — Worker ASSETS (`public/turksav/*`). */
+export function isTurksavBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/turksav/");
+}
+
+/** Yerel Haber marka dosyaları — Worker ASSETS (`public/yerel/*`). */
+export function isYerelBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/yerel/");
+}
+
+/** Şehit Gazi marka dosyaları — Worker ASSETS (`public/sehitgazi/*`). */
+export function isSehitgaziBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/sehitgazi/");
+}
+
 export function isWorkerBrandStaticAssetPath(pathname) {
   return (
     isGundemiLogoAssetPath(pathname) ||
     isFixHaberBrandAssetPath(pathname) ||
     isSosyalHizmetlerBrandAssetPath(pathname) ||
-    isYesilVatanBrandAssetPath(pathname)
+    isYesilVatanBrandAssetPath(pathname) ||
+    isTurksavBrandAssetPath(pathname) ||
+    isYerelBrandAssetPath(pathname) ||
+    isSehitgaziBrandAssetPath(pathname)
   );
 }
 
