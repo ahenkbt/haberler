@@ -66,12 +66,17 @@ export function stripKamuYerelLockedLayoutIncoming(slug, incoming) {
   return out;
 }
 
+/**
+ * PHP uses hmNavOnly as /kategori page allowlist — must include tepe + bolge-*.
+ * Never shrink a fuller allowlist back to tepe-only (that 404s /kategori/bolge-*).
+ */
 function navMatchesCatalog(nav) {
-  if (!Array.isArray(nav) || nav.length !== KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS.length) return false;
-  for (let i = 0; i < KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS.length; i += 1) {
-    if (String(nav[i]) !== KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS[i]) return false;
+  if (!Array.isArray(nav) || nav.length < KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS.length) return false;
+  const set = new Set(nav.map((s) => String(s ?? "").trim().toLowerCase()).filter(Boolean));
+  for (const slug of KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS) {
+    if (!set.has(slug)) return false;
   }
-  return true;
+  return [...set].some((s) => s.startsWith("bolge-"));
 }
 
 /** Kayıt sonrası: inline logo veya generic menüyü düzelt. */
@@ -104,7 +109,13 @@ export function repairKamuYerelLayoutAfterMerge(slug, merged) {
     next.faviconUrl = brand.faviconUrl;
   }
   if (!navMatchesCatalog(next.hmNavOnlyCategorySlugs)) {
-    next.hmNavOnlyCategorySlugs = [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS];
+    // Ensure seed / sync owns the full page allowlist; only guarantee tepe markers here.
+    const cur = Array.isArray(next.hmNavOnlyCategorySlugs)
+      ? next.hmNavOnlyCategorySlugs.map((s) => String(s ?? "").trim().toLowerCase()).filter(Boolean)
+      : [];
+    const set = new Set(cur);
+    for (const slug of KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS) set.add(slug);
+    next.hmNavOnlyCategorySlugs = [...set];
   }
   return next;
 }

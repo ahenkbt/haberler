@@ -252,8 +252,22 @@ async function syncCategories(mainSql: PgSql, newsSql: PgSql, workerSiteId: numb
       .trim()
       .toLowerCase();
     if (!slug) continue;
+    // twilight-pine categories often lack UNIQUE/PK on id and slug — never use ON CONFLICT.
     try {
-      // twilight-pine categories may lack PK on id — slug is UNIQUE in schema.
+      const updated = await newsSql`
+        UPDATE categories
+        SET name = ${row.name},
+            color = ${row.color ?? "#e61e25"},
+            exclusive_site_id = ${phpEx},
+            sort_order = ${row.sort_order ?? 0}
+        WHERE lower(slug) = ${slug}
+          AND exclusive_site_id IS NULL
+        RETURNING id
+      `;
+      if (updated?.[0]?.id) {
+        copied += 1;
+        continue;
+      }
       await newsSql`
         INSERT INTO categories (name, slug, color, exclusive_site_id, sort_order)
         VALUES (
@@ -263,47 +277,14 @@ async function syncCategories(mainSql: PgSql, newsSql: PgSql, workerSiteId: numb
           ${phpEx},
           ${row.sort_order ?? 0}
         )
-        ON CONFLICT (slug) DO UPDATE SET
-          name = EXCLUDED.name,
-          color = EXCLUDED.color,
-          exclusive_site_id = EXCLUDED.exclusive_site_id,
-          sort_order = EXCLUDED.sort_order
       `;
       copied += 1;
     } catch (err) {
-      // Fallback: update-by-slug then insert without id if conflict target missing.
-      try {
-        const updated = await newsSql`
-          UPDATE categories
-          SET name = ${row.name},
-              color = ${row.color ?? "#e61e25"},
-              exclusive_site_id = ${phpEx},
-              sort_order = ${row.sort_order ?? 0}
-          WHERE lower(slug) = ${slug}
-          RETURNING id
-        `;
-        if (updated?.[0]?.id) {
-          copied += 1;
-          continue;
-        }
-        await newsSql`
-          INSERT INTO categories (name, slug, color, exclusive_site_id, sort_order)
-          VALUES (
-            ${row.name},
-            ${slug},
-            ${row.color ?? "#e61e25"},
-            ${phpEx},
-            ${row.sort_order ?? 0}
-          )
-        `;
-        copied += 1;
-      } catch (err2) {
-        console.warn(
-          "[sync-php-neon-news/categories]",
-          slug,
-          String(err2 instanceof Error ? err2.message : err instanceof Error ? err.message : err2),
-        );
-      }
+      console.warn(
+        "[sync-php-neon-news/categories]",
+        slug,
+        String(err instanceof Error ? err.message : err),
+      );
     }
   }
   return copied;

@@ -328,6 +328,27 @@ export function listKamuYerelNavHiddenCategorySlugs(): string[] {
     .filter((slug) => !top.has(slug));
 }
 
+/**
+ * PHP Yenişafak `hmNavOnlyCategorySlugs` is also the /kategori/:slug page allowlist.
+ * Put every kamu-yerel category here; keep tepe menü compact via hmNavHiddenCategorySlugs.
+ */
+export function listKamuYerelCategoryPageAllowSlugs(): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const slug of [
+    ...listKamuYerelNavTopCategorySlugs(),
+    ...buildKamuYerelCategories().map((c) => c.slug),
+  ]) {
+    const key = String(slug || "")
+      .trim()
+      .toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
 /** Tepe manşet / yerel havuz eşleşmesi — politika/gündem dışı kamu-yerel kategorileri. */
 export function listKamuYerelMansetPoolCategorySlugs(): string[] {
   const slugs = new Set<string>(["yerel"]);

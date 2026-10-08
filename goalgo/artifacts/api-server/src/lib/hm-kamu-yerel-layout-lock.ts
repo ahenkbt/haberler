@@ -5,6 +5,7 @@
 import {
   KAMU_YEREL_DAHA_PAGE_SLUG,
   KAMU_YEREL_ILLER_PAGE_SLUG,
+  listKamuYerelCategoryPageAllowSlugs,
   listKamuYerelNavHiddenCategorySlugs,
   listKamuYerelNavTopCategorySlugs,
 } from "./hm-cumha-kamu-yerel-catalog.js";
@@ -75,10 +76,15 @@ export function isLegacyGenericHmNav(nav: string[] | null | undefined): boolean 
 
 export function navSlugsMatchCatalog(nav: string[] | null | undefined): boolean {
   if (!nav?.length) return false;
-  const expected = listKamuYerelNavTopCategorySlugs();
+  // PHP page allowlist must include every kamu-yerel slug (bolge-* + iller), not only tepe menü.
+  const expected = listKamuYerelCategoryPageAllowSlugs();
   if (nav.length !== expected.length) return false;
   for (let i = 0; i < expected.length; i += 1) {
     if (nav[i] !== expected[i]) return false;
+  }
+  const top = listKamuYerelNavTopCategorySlugs();
+  for (const slug of top) {
+    if (!nav.includes(slug)) return false;
   }
   return true;
 }

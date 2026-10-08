@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { listKamuYerelNavTopCategorySlugs } from "./hm-cumha-kamu-yerel-catalog.js";
+import {
+  listKamuYerelCategoryPageAllowSlugs,
+  listKamuYerelNavTopCategorySlugs,
+} from "./hm-cumha-kamu-yerel-catalog.js";
 import {
   applyKamuYerelLayoutLock,
   isLegacyGenericHmNav,
@@ -31,7 +34,7 @@ describe("hm-kamu-yerel-layout-lock", () => {
       { hmNavOnlyCategorySlugs: ["gundem", "spor"], logoUrl: "data:image/png;base64,abc" },
       canonical,
     );
-    expect(patched.hmNavOnlyCategorySlugs).toEqual(listKamuYerelNavTopCategorySlugs());
+    expect(patched.hmNavOnlyCategorySlugs).toEqual(listKamuYerelCategoryPageAllowSlugs());
     expect(patched.logoUrl).toBe("/turkata/turkata-logo.webp");
   });
 
@@ -68,7 +71,7 @@ describe("hm-kamu-yerel-layout-lock", () => {
     expect(
       kamuYerelLayoutNeedsCatalogRepair(
         JSON.stringify({
-          hmNavOnlyCategorySlugs: listKamuYerelNavTopCategorySlugs(),
+          hmNavOnlyCategorySlugs: listKamuYerelCategoryPageAllowSlugs(),
           logoUrl: "/turkata/turkata-mark.png",
           faviconUrl: "/turkata/turkata-mark.png",
           hmExtraPages: [

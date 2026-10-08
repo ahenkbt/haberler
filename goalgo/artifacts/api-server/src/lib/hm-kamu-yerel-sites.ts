@@ -8,6 +8,7 @@ import {
   buildKamuYerelHmNewsSiteRssFeedRows,
   buildKamuYerelIllerExtraPage,
   listKamuYerelCampaignFeedUrls,
+  listKamuYerelCategoryPageAllowSlugs,
   listKamuYerelNavHiddenCategorySlugs,
   listKamuYerelNavTopCategorySlugs,
   type KamuYerelCategoryDef,
@@ -203,7 +204,9 @@ export function buildKamuYerelLayoutJson(site: KamuYerelSiteDef): Record<string,
     hmNewsFooterEnabled: true,
     hmNewsCategorySectionsEnabled: true,
     hmCategorySortSlugs: categorySlugs,
-    hmNavOnlyCategorySlugs: listKamuYerelNavTopCategorySlugs(),
+    // PHP uses hmNavOnly as /kategori page allowlist — include bolge-* + 81 il.
+    // Tepe menü stays compact via hmNavHiddenCategorySlugs (non-top slugs).
+    hmNavOnlyCategorySlugs: listKamuYerelCategoryPageAllowSlugs(),
     hmNavHiddenCategorySlugs: listKamuYerelNavHiddenCategorySlugs(),
     hmCorporateMenuItems: buildKamuYerelCorporateMenuItems(),
     hmExtraPages: [buildKamuYerelDahaExtraPage(), buildKamuYerelIllerExtraPage()],

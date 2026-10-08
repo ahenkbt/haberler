@@ -18,14 +18,27 @@ test("stripKamuYerelLockedLayoutIncoming removes nav and colors from editor patc
   assert.equal(inc.hmNavOnlyCategorySlugs, undefined);
 });
 
-test("repairKamuYerelLayoutAfterMerge fixes yerel logo and generic nav", () => {
+test("repairKamuYerelLayoutAfterMerge fixes yerel logo and merges tepe into page allowlist", () => {
   const out = repairKamuYerelLayoutAfterMerge("yerelnet", {
     logoUrl: null,
     hmNavOnlyCategorySlugs: ["yerel", "ankara", "gundem", "ekonomi"],
   });
   assert.equal(out.logoUrl, "/yerel/yerel-logo.png");
   assert.equal(out.faviconUrl, "/yerel/yerel-logo.png");
-  assert.deepEqual(out.hmNavOnlyCategorySlugs, [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS]);
+  for (const slug of KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS) {
+    assert.ok(out.hmNavOnlyCategorySlugs.includes(slug), `missing tepe slug ${slug}`);
+  }
+  assert.ok(out.hmNavOnlyCategorySlugs.includes("ankara"));
+});
+
+test("repairKamuYerelLayoutAfterMerge keeps fuller page allowlist with bolge-*", () => {
+  const allow = [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS, "bolge-marmara", "ankara"];
+  const out = repairKamuYerelLayoutAfterMerge("turkatahaber", {
+    logoUrl: "/turkata/turkata-logo.webp",
+    faviconUrl: "/turkata/favicon.ico",
+    hmNavOnlyCategorySlugs: allow,
+  });
+  assert.deepEqual(out.hmNavOnlyCategorySlugs, allow);
 });
 
 test("isKamuYerelHmSlug", () => {

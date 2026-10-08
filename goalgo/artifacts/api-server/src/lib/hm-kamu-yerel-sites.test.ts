@@ -29,4 +29,14 @@ describe("hm-kamu-yerel-sites", () => {
     const pages = layout.hmExtraPages as Array<{ slug: string }>;
     expect(pages.map((p) => p.slug)).toEqual(expect.arrayContaining(["daha", "iller"]));
   });
+
+  it("hmNavOnly allowlists bolge-* + il pages while hmNavHidden keeps tepe menü compact", () => {
+    const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
+    const allow = layout.hmNavOnlyCategorySlugs as string[];
+    const hidden = layout.hmNavHiddenCategorySlugs as string[];
+    expect(allow).toEqual(expect.arrayContaining(["yerel", "bolge-marmara", "ankara", "izmir"]));
+    expect(allow.filter((s) => s.startsWith("bolge-"))).toHaveLength(7);
+    expect(hidden).toEqual(expect.arrayContaining(["bolge-marmara", "ankara"]));
+    expect(hidden).not.toContain("yerel");
+  });
 });

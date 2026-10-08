@@ -91,27 +91,39 @@ async function syncCategoriesForSite(workerSql, newsSql, workerSiteId, phpSiteId
   for (const row of rows || []) {
     const ex = row.exclusive_site_id != null ? Number(row.exclusive_site_id) : null;
     const phpEx = ex === workerSiteId ? phpSiteId : ex;
+    const slug = String(row.slug || "")
+      .trim()
+      .toLowerCase();
+    if (!slug) continue;
+    // twilight-pine categories often lack UNIQUE/PK — UPDATE by slug then INSERT.
     try {
+      const updated = await newsSql`
+        UPDATE categories
+        SET name = ${row.name},
+            color = ${row.color ?? "#e61e25"},
+            exclusive_site_id = ${phpEx},
+            sort_order = ${row.sort_order ?? 0}
+        WHERE lower(slug) = ${slug}
+          AND exclusive_site_id IS NULL
+        RETURNING id
+      `;
+      if (updated?.[0]?.id) {
+        copied += 1;
+        continue;
+      }
       await newsSql`
-        INSERT INTO categories (id, name, slug, color, exclusive_site_id, sort_order)
+        INSERT INTO categories (name, slug, color, exclusive_site_id, sort_order)
         VALUES (
-          ${row.id},
           ${row.name},
-          ${row.slug},
+          ${slug},
           ${row.color ?? "#e61e25"},
           ${phpEx},
           ${row.sort_order ?? 0}
         )
-        ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name,
-          slug = EXCLUDED.slug,
-          color = EXCLUDED.color,
-          exclusive_site_id = EXCLUDED.exclusive_site_id,
-          sort_order = EXCLUDED.sort_order
       `;
       copied += 1;
     } catch (err) {
-      console.warn("[php-neon-sync/categories]", row.id, String(err?.message || err).slice(0, 100));
+      console.warn("[php-neon-sync/categories]", slug, String(err?.message || err).slice(0, 100));
     }
   }
   return copied;

@@ -40,10 +40,13 @@ export function turkataLayoutNeedsRepair(layoutJsonRaw) {
   try {
     const layout = JSON.parse(raw);
     const nav = layout?.hmNavOnlyCategorySlugs;
-    if (!Array.isArray(nav) || nav.length !== NAV_TOP.length) return true;
-    for (let i = 0; i < NAV_TOP.length; i += 1) {
-      if (nav[i] !== NAV_TOP[i]) return true;
+    // Page allowlist must include tepe menü + at least one bolge-* (PHP /kategori gate).
+    if (!Array.isArray(nav) || nav.length < NAV_TOP.length) return true;
+    const set = new Set(nav.map((s) => String(s ?? "").trim().toLowerCase()).filter(Boolean));
+    for (const slug of NAV_TOP) {
+      if (!set.has(slug)) return true;
     }
+    if (![...set].some((s) => s.startsWith("bolge-"))) return true;
     const logo = String(layout?.logoUrl ?? "").trim();
     if (!logo || logo.toLowerCase().startsWith("data:image/")) return true;
     if (logo.startsWith("/brand/turkata/")) return true;

@@ -12,7 +12,29 @@ describe("hm-turkatahaber-edge", () => {
     assert.equal(turkataLayoutNeedsRepair(""), true);
   });
 
-  it("accepts cumha tepe menü", () => {
+  it("accepts cumha page allowlist with bolge-*", () => {
+    const layout = {
+      hmNavOnlyCategorySlugs: [
+        "yerel",
+        "cumhurbaskanligi",
+        "bakanliklar",
+        "tbmm",
+        "siyasi-partiler",
+        "yerel-yonetimler",
+        "mulki-idare",
+        "toplum-ve-yasam",
+        "daha",
+        "sivil-toplum-kuruluslari",
+        "kamu-kurumlari",
+        "bolge-marmara",
+        "ankara",
+      ],
+      logoUrl: "/turkata/turkata-logo.webp",
+    };
+    assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), false);
+  });
+
+  it("flags tepe-only allowlist missing bolge-*", () => {
     const layout = {
       hmNavOnlyCategorySlugs: [
         "yerel",
@@ -29,7 +51,7 @@ describe("hm-turkatahaber-edge", () => {
       ],
       logoUrl: "/turkata/turkata-logo.webp",
     };
-    assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), false);
+    assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), true);
   });
 
   it("host match", () => {
