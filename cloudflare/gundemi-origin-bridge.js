@@ -93,13 +93,22 @@ export function isFixHaberBridgeHost(hostname) {
   return host === "fix.tc";
 }
 
+export function isSosyalHizmetlerBridgeHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return host === "sosyalhizmetler.tr";
+}
+
 export function isGundemiBridgeCatchAllHost(hostname) {
   return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
 }
 
-/** Worker-owned PHP theme paths (gundemi + fix.tc assets route). */
+/** Worker-owned PHP theme paths (gundemi + custom PHP apex assets routes). */
 export function isPhpThemeOriginBridgeHost(hostname) {
-  return isGundemiBridgeCatchAllHost(hostname) || isFixHaberBridgeHost(hostname);
+  return (
+    isGundemiBridgeCatchAllHost(hostname) ||
+    isFixHaberBridgeHost(hostname) ||
+    isSosyalHizmetlerBridgeHost(hostname)
+  );
 }
 
 /** Regional logos ship in Worker ASSETS (ahenkpress public/gundemi/logos). */

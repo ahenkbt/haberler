@@ -4,6 +4,7 @@ import {
   isGundemiApexBridgeHost,
   isGundemiBridgeCatchAllHost,
   isFixHaberBridgeHost,
+  isSosyalHizmetlerBridgeHost,
   isPhpThemeOriginBridgeHost,
   isGundemiLogoAssetPath,
   isGundemiOrgSubdomainHost,
@@ -32,7 +33,10 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isGundemiBridgeCatchAllHost("gundemi.org"), true);
     assert.equal(isFixHaberBridgeHost("fix.tc"), true);
     assert.equal(isFixHaberBridgeHost("www.fix.tc"), true);
+    assert.equal(isSosyalHizmetlerBridgeHost("sosyalhizmetler.tr"), true);
+    assert.equal(isSosyalHizmetlerBridgeHost("www.sosyalhizmetler.tr"), true);
     assert.equal(isPhpThemeOriginBridgeHost("fix.tc"), true);
+    assert.equal(isPhpThemeOriginBridgeHost("sosyalhizmetler.tr"), true);
     assert.equal(isPhpThemeOriginBridgeHost("ege.gundemi.org"), true);
   });
 
@@ -173,6 +177,17 @@ describe("gundemiApexPhpBridgeResponse", () => {
 
   it("fix.tc theme.css proxies shared PHP pack (Worker assets route)", async () => {
     const incoming = new URL("https://fix.tc/assets/theme.css");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { method: "GET" }),
+      incoming,
+    );
+    assert.ok(res);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
+  });
+
+  it("sosyalhizmetler.tr theme.css proxies shared PHP pack (Worker assets route)", async () => {
+    const incoming = new URL("https://sosyalhizmetler.tr/assets/theme.css");
     const res = await gundemiApexPhpBridgeResponse(
       new Request(incoming.toString(), { method: "GET" }),
       incoming,

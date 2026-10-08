@@ -146,14 +146,15 @@ API: `POST /api/hm/sites` / `PATCH` otomatik; yeniden deneme `POST /api/hm/sites
 
 Token yoksa soft-fail (site kaydı yine başarılı; NXDOMAIN kalır). Bölgesel PHP için VPS Traefik HostRegexp **zorunlu**.
 
-## Harici apex (domain2 / domain3 — örn. sosyalhizmetler.tr)
+## Harici apex — sosyalhizmetler.tr (Sosyal Hizmetler Haber)
 
-Marmara Gündemi: `domain=marmara.gundemi.org`, `domain2=sosyalhizmetler.tr` → Neon `by-domain` slug `marmara-gundemi`.
+**Ayrı HM sitesi** (`slug=sosyalhizmetler`, `domain=sosyalhizmetler.tr`) — Marmara Gündemi `domain2` alias değil. Seed: `ensure:sosyalhizmetler` · runbook: [`hostinger/sosyalhizmetler/DEPLOY.md`](../sosyalhizmetler/DEPLOY.md).
 
 | Katman | Ne yapılır |
 |--------|------------|
-| DNS | Proxied **A** `@` + **`www`** → `187.77.84.201` (www yoksa tarayıcı NXDOMAIN) |
-| Worker | `sosyalhizmetler.tr` zone: panel/API/assets/`/tr`/`/hm` only — **`sosyalhizmetler.tr/*` catch-all yok** (`wrangler.toml`) |
+| Neon | `pnpm --filter @workspace/api-server run ensure:sosyalhizmetler` veya Actions **Ensure Sosyal Hizmetler Neon seed** |
+| DNS | Proxied **A** `@` + **`www`** → `187.77.84.201` |
+| Worker | panel/API/assets/`/sh`/`/tr`/`/hm` — **`sosyalhizmetler.tr/*` catch-all yok**; `/assets/theme.css` PHP pack proxy |
 | VPS Traefik | `hostinger/gundemi-bolge/traefik-sosyalhizmetler.yml` → `/docker/traefik/dynamic/sosyalhizmetler.yml` |
 | Panel save | `PATCH /api/hm/sites/:id` → `customApexProvision` (token varsa @+www A) |
 
