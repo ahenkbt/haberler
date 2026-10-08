@@ -18,6 +18,7 @@ import {
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
 import { handleHmEditorSiteOverridesEdge, isHmEditorSiteOverridesPath } from "./hm-editor-site-overrides-edge.js";
+import { handleHmSiteMailEdge, isHmSiteMailPath } from "./hm-site-mail-edge.js";
 import {
   handleKhEditorDataEdge,
   injectKhNeonNewsIntoPublicResponse,
@@ -3371,6 +3372,20 @@ export default {
       if (mediaEdge) return mediaEdge;
     } catch (err) {
       console.error("[hm-editor-media-edge]", String(err?.message || err).slice(0, 200));
+    }
+
+    // Site posta kutusu (editör paneli + admin "yeni mail adresi aç") — kenarda, şifresiz (editör JWT / panel oturumu).
+    if (isHmSiteMailPath(incoming.pathname)) {
+      try {
+        const mailRes = await handleHmSiteMailEdge(request, env, incoming);
+        if (mailRes) return mailRes;
+      } catch (err) {
+        console.error("[hm-site-mail]", String(err?.message || err).slice(0, 200));
+        return new Response(JSON.stringify({ error: "Posta kutusu geçici olarak açılamadı, tekrar deneyin." }), {
+          status: 500,
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
     }
 
     // Per-site overrides (RSS Haberler Aktif/Pasif, kategori aç/kapa) — kenarda TP Neon.

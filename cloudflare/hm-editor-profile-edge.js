@@ -14,6 +14,7 @@ import { markLayoutRecordUserSave } from "./hm-layout-user-save.js";
 import { loadPanelSession, readCookie, unsignConnectSid } from "./hm-admin-site-edge.js";
 import { purgeHmSitePublicEdgeCache } from "./hm-public-cache-purge-edge.js";
 import bcrypt from "bcryptjs";
+import { conventionalAddressesForSite, isHmNewsSite } from "./hm-site-mail-convention.js";
 import { SignJWT, jwtVerify } from "jose";
 import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
@@ -1001,6 +1002,30 @@ async function handleEditorLogin(request, env, incomingUrl) {
   }
 }
 
+/** Editor login convention account (news sites only). Returns the new row or null. */
+export async function ensureConventionEditorOnLogin(sql, site, loginRaw) {
+  if (!site?.id || !isHmNewsSite(site)) return null;
+  const login = String(loginRaw || "").trim().toLowerCase();
+  if (!conventionalAddressesForSite(site).includes(login)) return null;
+  const existing = await sql`
+    SELECT id FROM hm_site_editors
+    WHERE site_id = ${site.id}
+      AND (lower(email) = ${login} OR lower(coalesce(username, '')) = ${login})
+    LIMIT 1
+  `;
+  if (existing?.[0]) return null;
+  const passwordHash = await bcrypt.hash(login, 10);
+  const displayName = `${String(site.display_name || site.slug || login).trim()} Editör`.slice(0, 200);
+  const rows = await sql`
+    INSERT INTO hm_site_editors (site_id, email, username, password_hash, display_name, is_active, created_at, updated_at)
+    VALUES (${site.id}, ${login}, ${login}, ${passwordHash}, ${displayName}, true, NOW(), NOW())
+    ON CONFLICT DO NOTHING
+    RETURNING id, site_id, email, username, display_name, password_hash, is_active, created_at
+  `;
+  if (rows?.[0]) console.log("[hm-editor-convention] created", site.id, login);
+  return rows?.[0] || null;
+}
+
 async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b) {
   const loginRaw = String(b.login ?? b.email ?? b.username ?? "")
     .trim()
@@ -1094,6 +1119,16 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
   if (!editor?.password_hash && loginIsEmail && isAsgSharedEditorEmail(loginRaw) && isAsgHmSiteRow(site)) {
     const repaired = await repairAsgEditorForLoginEdge(sql, loginRaw, site.id);
     if (repaired?.password_hash) editor = repaired;
+  }
+  // Haber sitesi editör kuralı (2026-10-08): bilgi@<domain> / <alt>@<üst-domain>, şifre = kullanıcı adı.
+  // Hesap yoksa (aktif ya da pasif hiç satır yoksa) ilk girişte açılır; var olan hesaba dokunulmaz.
+  if (!editor?.password_hash && loginIsEmail && password === loginRaw) {
+    try {
+      const created = await ensureConventionEditorOnLogin(sql, site, loginRaw);
+      if (created?.password_hash) editor = created;
+    } catch (err) {
+      console.error("[hm-editor-convention]", String(err?.message || err).slice(0, 200));
+    }
   }
   if (!editor?.password_hash) {
     if (loginIsEmail) {

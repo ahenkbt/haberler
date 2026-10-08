@@ -23,6 +23,7 @@ import Medya from "../pages/admin/Medya";
 import AiIcerikRobotu from "../pages/admin/AiIcerikRobotu";
 import GenelAyarlar from "../pages/admin/GenelAyarlar";
 import AdminPostaVeDuyurular from "../pages/admin/AdminPostaVeDuyurular";
+import AdminHaberPostaKutulari from "../pages/admin/AdminHaberPostaKutulari";
 import PanelHesaplari from "../pages/admin/PanelHesaplari";
 import TopluIceAktar from "../pages/admin/TopluIceAktar";
 import OdemeAyarlari from "../pages/admin/OdemeAyarlari";
@@ -374,6 +375,9 @@ export default function AdminRoutes() {
       </Route>
       <Route path="/admin/posta-ve-duyurular">
         {() => <ProtectedAdminRoute component={AdminPostaVeDuyurular} />}
+      </Route>
+      <Route path="/admin/haber-posta-kutulari">
+        {() => <ProtectedAdminRoute component={AdminHaberPostaKutulari} />}
       </Route>
       <Route path="/admin/panel-hesaplari">
         {() => <ProtectedAdminRoute component={PanelHesaplari} />}

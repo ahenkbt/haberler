@@ -67,7 +67,57 @@ export type HmAdSlotDef = {
   themePlacements?: string[];
 };
 
+/** PHP haber teması (canlı sitelerin tümü) bu anahtarları okur: Ads.php `data-ad-slot`. */
+export const HM_PHP_AD_SLOT_KEYS = [
+  "header",
+  "block_strip",
+  "home_block_fill",
+  "sidebar",
+  "article_inline",
+  "article_between",
+] as const;
+
+export function isPhpAdSlotKey(key: string): boolean {
+  return (HM_PHP_AD_SLOT_KEYS as readonly string[]).includes(key);
+}
+
 export const HM_EDITOR_AD_SLOT_DEFS: HmAdSlotDef[] = [
+  {
+    slotKey: "header",
+    name: "Üst reklam (logo yanı)",
+    description: "Sitenin en üstündeki «Bu alana reklam verin» alanı (728x90). Reklam yoksa ilan yazısı görünür.",
+    themePlacements: ["Haber teması — logo yanı / üst şerit"],
+  },
+  {
+    slotKey: "block_strip",
+    name: "Kategori blokları arası şerit",
+    description: "Anasayfada kategori blokları arasındaki geniş reklam şeridi.",
+    themePlacements: ["Haber teması — anasayfa blok arası"],
+  },
+  {
+    slotKey: "home_block_fill",
+    name: "Anasayfa kutu dolgusu",
+    description: "Kısa kalan kategori kutularının altındaki boşluğu dolduran reklam.",
+    themePlacements: ["Haber teması — anasayfa kategori kutuları"],
+  },
+  {
+    slotKey: "sidebar",
+    name: "Yan kolon",
+    description: "Kategori ve haber sayfalarında sağ kolon reklamı.",
+    themePlacements: ["Haber teması — sağ kolon"],
+  },
+  {
+    slotKey: "article_inline",
+    name: "Haber metni içi",
+    description: "Haber detay sayfasında metnin arasında.",
+    themePlacements: ["Haber teması — haber detay"],
+  },
+  {
+    slotKey: "article_between",
+    name: "Haber altı",
+    description: "Haber detay sayfasında metnin bitiminde (reklam yoksa ilan yazısı).",
+    themePlacements: ["Haber teması — haber detay altı"],
+  },
   {
     slotKey: "header_top",
     name: "Header Üst Banner",
@@ -117,12 +167,6 @@ export const HM_EDITOR_AD_SLOT_DEFS: HmAdSlotDef[] = [
     ],
   },
   {
-    slotKey: "article_inline",
-    name: "Makale İçi",
-    description: "Haber detayda yazı arası HTML",
-    themePlacements: ["Haber detay — gövde metni içi"],
-  },
-  {
     slotKey: "footer",
     name: "Footer Banner",
     description: "Sayfa sonu banner",
@@ -166,7 +210,10 @@ export function mergeHmAdSlots(saved: HmAdSlotState[] | null | undefined): HmAdS
       imageClickUrl,
     });
   }
-  return HM_EDITOR_AD_SLOT_DEFS.map((d) => {
+  const known = new Set(HM_EDITOR_AD_SLOT_DEFS.map((d) => d.slotKey));
+  // Kayıtta tanımı olmayan slotlar (ör. eski / başka sayfanın anahtarı) silinmesin diye sona eklenir.
+  const extras = [...byKey.values()].filter((s) => !known.has(s.slotKey));
+  return [...HM_EDITOR_AD_SLOT_DEFS.map((d): HmAdSlotState => {
     const cur = byKey.get(d.slotKey);
     return {
       slotKey: d.slotKey,
@@ -176,7 +223,7 @@ export function mergeHmAdSlots(saved: HmAdSlotState[] | null | undefined): HmAdS
       imageMediaUrl: cur?.imageMediaUrl ?? null,
       imageClickUrl: cur?.imageClickUrl ?? null,
     };
-  });
+  }), ...extras];
 }
 
 /** Kayıt öncesi: görsel modunda güvenli HTML üret; HTML modunda sadece sınırlı temizlik (yetim `</a>` vb.). */

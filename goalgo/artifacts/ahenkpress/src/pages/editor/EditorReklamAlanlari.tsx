@@ -15,13 +15,34 @@ import {
   mergeHmAdSlots,
   buildHmAdSlotImageHtml,
   normalizeHmAdSlotsForSave,
+  isPhpAdSlotKey,
 } from "@/lib/hmEditorAdSlots";
 import { resolveClientMediaSrc } from "@/lib/apiBase";
 import { uploadYekpareMediaFile } from "@/lib/yekpareMediaLibrary";
-import { Code2, Image as ImageIcon, Loader2, Upload } from "lucide-react";
+import { Code2, Image as ImageIcon, Loader2, Megaphone, Upload } from "lucide-react";
+
+/** Varsayılan reklam iletişim adresi: bilgi@<domain>, alt alan adı sitelerde <alt>@<üst> (ör. kibris@gundemi.org). */
+function conventionalAdEmail(domain: string | null | undefined): string {
+  const h = String(domain ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0];
+  if (!h || !h.includes(".")) return "";
+  const parts = h.split(".");
+  const multi = /^(com|net|org|gen|gov|edu|k12|bel|av|biz|info|web|tv)\.tr$/;
+  const regLen = parts.length > 2 && multi.test(parts.slice(-2).join(".")) ? 3 : 2;
+  if (parts.length <= regLen) return `bilgi@${h}`;
+  return `${parts.slice(0, -regLen).join(".")}@${parts.slice(-regLen).join(".")}`;
+}
 
 export default function EditorReklamAlanlari() {
-  const { newsLayoutPrefs, saveNewsSiteLayout } = useHmEditor();
+  const { newsLayoutPrefs, saveNewsSiteLayout, site } = useHmEditor();
+  const [house, setHouse] = useState<boolean>(newsLayoutPrefs.hmNewsAdHouse !== false);
+  const [adEmail, setAdEmail] = useState<string>(String(newsLayoutPrefs.hmNewsAdContact?.email ?? ""));
+  const [adPhone, setAdPhone] = useState<string>(String(newsLayoutPrefs.hmNewsAdContact?.phone ?? ""));
+  const defaultAdEmail = conventionalAdEmail(site?.domain);
   const { toast } = useToast();
   const [p, setP] = useState<NewsSiteLayoutPrefs>(newsLayoutPrefs);
   const [slots, setSlots] = useState<HmAdSlotState[]>(() => mergeHmAdSlots(newsLayoutPrefs.hmAdSlots));
@@ -33,6 +54,9 @@ export default function EditorReklamAlanlari() {
   useEffect(() => {
     setP(newsLayoutPrefs);
     setSlots(mergeHmAdSlots(newsLayoutPrefs.hmAdSlots));
+    setHouse(newsLayoutPrefs.hmNewsAdHouse !== false);
+    setAdEmail(String(newsLayoutPrefs.hmNewsAdContact?.email ?? ""));
+    setAdPhone(String(newsLayoutPrefs.hmNewsAdContact?.phone ?? ""));
   }, [newsLayoutPrefs]);
 
   const metaByKey = useMemo(() => new Map(HM_EDITOR_AD_SLOT_DEFS.map((d) => [d.slotKey, d])), []);
@@ -43,7 +67,17 @@ export default function EditorReklamAlanlari() {
     const next: NewsSiteLayoutPrefs = { ...p, hmAdSlots };
     setP(next);
     setSlots(hmAdSlots);
-    const result = await saveNewsSiteLayout(newsLayoutPrefs, { layoutPatch: { hmAdSlots } });
+    const email = adEmail.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setSaving(false);
+      toast({ title: "E-posta adresi geçersiz", variant: "destructive" });
+      return;
+    }
+    const phone = adPhone.trim().slice(0, 40);
+    const hmNewsAdContact = email || phone ? { email: email || null, phone: phone || null } : null;
+    const result = await saveNewsSiteLayout(newsLayoutPrefs, {
+      layoutPatch: { hmAdSlots, hmNewsAdContact, hmNewsAdHouse: house },
+    });
     setSaving(false);
     if (!result.ok) {
       toast({
@@ -112,10 +146,9 @@ export default function EditorReklamAlanlari() {
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <p className="text-sm text-slate-600 max-w-2xl">
-            Yekpare yönetimindeki <strong>Reklam Alanları</strong> ile aynı slot isimleri; yalnızca{" "}
-            <strong>bu haber merkezi</strong> vitrininde kullanılır. Boş slotlarda genel portal reklamı (varsa)
-            kalır. <strong>Resim yükle</strong> ile güvenli banner HTML’i oluşturabilir veya{" "}
-            <strong>HTML veya kod</strong> ile üçüncü taraf script / özel HTML yapıştırabilirsiniz.
+            Sitenizdeki reklam alanlarını buradan yönetin. Her alan için <strong>Resim yükle</strong> (görsel + tıklama
+            adresi) ya da <strong>HTML veya kod</strong> (reklam ağı kodu) seçip <strong>Aktif</strong> yapın. Kayıttan
+            sonra birkaç saniye içinde siteye yansır. Boş alanlarda «Bu alana reklam verin» ilanı görünür.
           </p>
           <Button type="button" className="bg-red-600 hover:bg-red-700 text-white shrink-0" disabled={saving} onClick={() => void saveAll()}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
@@ -123,9 +156,58 @@ export default function EditorReklamAlanlari() {
           </Button>
         </div>
 
+        <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <Megaphone className="mt-0.5 h-4 w-4 text-red-600" />
+              <div>
+                <p className="font-bold text-slate-900">«Bu alana reklam verin» ilanı</p>
+                <p className="text-xs text-slate-500">
+                  Reklam konmamış alanlarda sitenin kendi reklam ilanı görünür. Kapatırsanız boş alanlar hiç yer kaplamaz.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">{house ? "Açık" : "Kapalı"}</span>
+              <Switch checked={house} disabled={saving} onCheckedChange={(c) => setHouse(!!c)} aria-label="Reklam ilanı açık" />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-700">Reklam için e-posta</Label>
+              <Input
+                type="email"
+                value={adEmail}
+                disabled={saving}
+                placeholder={defaultAdEmail ? `Boş bırakılırsa: ${defaultAdEmail}` : "reklam@siteniz.com"}
+                onChange={(e) => setAdEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-700">Reklam için telefon (isteğe bağlı)</Label>
+              <Input value={adPhone} disabled={saving} placeholder="0 5xx xxx xx xx" onChange={(e) => setAdPhone(e.target.value)} />
+            </div>
+          </div>
+        </section>
+
+        <p className="text-sm font-bold text-slate-900">Sitede görünen reklam alanları</p>
         <Accordion type="multiple" className="w-full space-y-3">
-          {slots.map((slot) => {
-            const meta = metaByKey.get(slot.slotKey);
+          {slots.filter((slot) => isPhpAdSlotKey(slot.slotKey)).map((slot) => renderSlot(slot))}
+        </Accordion>
+        <details className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+            Eski tema alanları (yeni haber temasında görünmez)
+          </summary>
+          <Accordion type="multiple" className="mt-3 w-full space-y-3">
+            {slots.filter((slot) => !isPhpAdSlotKey(slot.slotKey)).map((slot) => renderSlot(slot))}
+          </Accordion>
+        </details>
+      </div>
+    </EditorLayout>
+  );
+
+  function renderSlot(slot: HmAdSlotState) {
+            const meta = metaByKey.get(slot.slotKey) ?? { slotKey: slot.slotKey, name: slot.slotKey, description: "" };
             const tabValue = slot.contentMode === "image" ? "image" : "html";
             return (
               <AccordionItem key={slot.slotKey} value={slot.slotKey} className="border rounded-lg px-3 bg-white">
@@ -274,9 +356,5 @@ export default function EditorReklamAlanlari() {
                 </AccordionContent>
               </AccordionItem>
             );
-          })}
-        </Accordion>
-      </div>
-    </EditorLayout>
-  );
+  }
 }
