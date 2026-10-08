@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26 -19 352 352" width="512" height="512"><title>Marmara Gündemi</title><defs><linearGradient id="bgimarmara" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a63ad"/><stop offset="1" stop-color="#0b2d5c"/></linearGradient><clipPath id="climarmara"><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z"/></clipPath></defs><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H122 L64,298 Q58,301 59,295 L68,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z" fill="url(#bgimarmara)"/><g clip-path="url(#climarmara)"><path d="M-30.0,212.0 Q-17.5,205.0 -5.0,212.0 Q7.5,219.0 20.0,212.0 Q32.5,205.0 45.0,212.0 Q57.5,219.0 70.0,212.0 Q82.5,205.0 95.0,212.0 Q107.5,219.0 120.0,212.0 Q132.5,205.0 145.0,212.0 Q157.5,219.0 170.0,212.0 Q182.5,205.0 195.0,212.0 Q207.5,219.0 220.0,212.0 Q232.5,205.0 245.0,212.0 Q257.5,219.0 270.0,212.0 Q282.5,205.0 295.0,212.0 Q307.5,219.0 320.0,212.0 Q332.5,205.0 345.0,212.0 L330.0,270.0 L-30.0,270.0 Z" fill="rgba(255,255,255,0.22)"/>
+<path d="M-55.0,234.0 Q-42.5,227.0 -30.0,234.0 Q-17.5,241.0 -5.0,234.0 Q7.5,227.0 20.0,234.0 Q32.5,241.0 45.0,234.0 Q57.5,227.0 70.0,234.0 Q82.5,241.0 95.0,234.0 Q107.5,227.0 120.0,234.0 Q132.5,241.0 145.0,234.0 Q157.5,227.0 170.0,234.0 Q182.5,241.0 195.0,234.0 Q207.5,227.0 220.0,234.0 Q232.5,241.0 245.0,234.0 Q257.5,227.0 270.0,234.0 Q282.5,241.0 295.0,234.0 Q307.5,227.0 320.0,234.0 Q332.5,241.0 345.0,234.0 L330.0,270.0 L-55.0,270.0 Z" fill="rgba(255,255,255,0.45)"/>
+<path d="M92,58 Q150,196 208,58" stroke="#fff" stroke-width="6" fill="none"/>
+<path d="M92,58 Q40,152 -10,176" stroke="#fff" stroke-width="6" fill="none"/>
+<path d="M208,58 Q260,152 310,176" stroke="#fff" stroke-width="6" fill="none"/>
+<line x1="104" y1="83.6" x2="104" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="116" y1="103.3" x2="116" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="128" y1="117.1" x2="128" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="140" y1="124.9" x2="140" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="152" y1="126.9" x2="152" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="164" y1="123.0" x2="164" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="176" y1="113.1" x2="176" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="188" y1="97.4" x2="188" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="200" y1="75.7" x2="200" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="80" y1="78.8" x2="80" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="68" y1="97.8" x2="68" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="56" y1="115.0" x2="56" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="44" y1="130.4" x2="44" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="32" y1="143.9" x2="32" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="20" y1="155.5" x2="20" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="8" y1="165.1" x2="8" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="220" y1="78.8" x2="220" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="232" y1="97.8" x2="232" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="244" y1="115.0" x2="244" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="256" y1="130.4" x2="256" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="268" y1="143.9" x2="268" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="280" y1="155.5" x2="280" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<line x1="292" y1="165.1" x2="292" y2="182" stroke="#fff" stroke-width="2.4" opacity=".9"/>
+<path d="M83,52 H101 L103,226 H81 Z" fill="#e30a17" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+<rect x="80" y="92" width="24" height="7" fill="#fff"/>
+<path d="M199,52 H217 L219,226 H197 Z" fill="#e30a17" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+<rect x="196" y="92" width="24" height="7" fill="#fff"/>
+<rect x="-10" y="182" width="320" height="10" fill="#fff"/></g></svg>

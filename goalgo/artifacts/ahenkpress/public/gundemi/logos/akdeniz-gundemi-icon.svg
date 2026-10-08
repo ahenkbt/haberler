@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26 -19 352 352" width="512" height="512"><title>Akdeniz Gündemi</title><defs><linearGradient id="bgiakdeniz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1478b8"/><stop offset="1" stop-color="#0a3b5c"/></linearGradient><clipPath id="cliakdeniz"><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z"/></clipPath></defs><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H122 L64,298 Q58,301 59,295 L68,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z" fill="url(#bgiakdeniz)"/><g clip-path="url(#cliakdeniz)"><defs><linearGradient id="sunA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#f26b1d"/></linearGradient></defs>
+<circle cx="150" cy="168" r="82" fill="url(#sunA)"/>
+<path d="M196,62 q10,-10 20,0 q10,-10 20,0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M226,92 q7,-7 14,0 q7,-7 14,0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M-10,168 H310 V270 H-10 Z" fill="#1478b8"/>
+<path d="M-10,168 H310 V270 H-10 Z" fill="url(#bgiakdeniz)" opacity=".0"/>
+<rect x="85.0" y="186" width="130" height="8" rx="4" fill="#ffb347" opacity="0.95"/>
+<rect x="102.0" y="204" width="96" height="8" rx="4" fill="#ffb347" opacity="0.80"/>
+<rect x="118.0" y="222" width="64" height="8" rx="4" fill="#ffb347" opacity="0.65"/>
+<rect x="132.0" y="240" width="36" height="8" rx="4" fill="#ffb347" opacity="0.50"/>
+<path d="M-20.0,168.0 Q-7.5,168.0 5.0,168.0 Q17.5,168.0 30.0,168.0 Q42.5,168.0 55.0,168.0 Q67.5,168.0 80.0,168.0 Q92.5,168.0 105.0,168.0 Q117.5,168.0 130.0,168.0 Q142.5,168.0 155.0,168.0 Q167.5,168.0 180.0,168.0 Q192.5,168.0 205.0,168.0 Q217.5,168.0 230.0,168.0 Q242.5,168.0 255.0,168.0 Q267.5,168.0 280.0,168.0 Q292.5,168.0 305.0,168.0 Q317.5,168.0 330.0,168.0" stroke="#fff" stroke-width="5" fill="none"/>
+<path d="M-30.0,238.0 Q-17.5,231.0 -5.0,238.0 Q7.5,245.0 20.0,238.0 Q32.5,231.0 45.0,238.0 Q57.5,245.0 70.0,238.0 Q82.5,231.0 95.0,238.0 Q107.5,245.0 120.0,238.0 Q132.5,231.0 145.0,238.0 Q157.5,245.0 170.0,238.0 Q182.5,231.0 195.0,238.0 Q207.5,245.0 220.0,238.0 Q232.5,231.0 245.0,238.0 Q257.5,245.0 270.0,238.0 Q282.5,231.0 295.0,238.0 Q307.5,245.0 320.0,238.0 Q332.5,231.0 345.0,238.0 L330.0,270.0 L-30.0,270.0 Z" fill="rgba(255,255,255,0.85)"/></g></svg>

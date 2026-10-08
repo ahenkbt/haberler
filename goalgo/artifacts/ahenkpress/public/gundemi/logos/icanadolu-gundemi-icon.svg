@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26 -19 352 352" width="512" height="512"><title>İç Anadolu Gündemi</title><defs><linearGradient id="bgiicanadolu" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c0843f"/><stop offset="1" stop-color="#6b4117"/></linearGradient><clipPath id="cliicanadolu"><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z"/></clipPath></defs><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H122 L64,298 Q58,301 59,295 L68,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z" fill="url(#bgiicanadolu)"/><g clip-path="url(#cliicanadolu)"><path d="M222,32 C252,32 256,64 248,80 C240,96 230,104 228,112 H216 C214,104 204,96 196,80 C188,64 192,32 222,32 Z" fill="#e30a17"/>
+<path d="M222,32 C232,40 234,90 226,112 H218 C210,90 212,40 222,32 Z" fill="#fff"/>
+<rect x="216" y="118" width="12" height="10" rx="2" fill="#fff"/>
+<path d="M216,112 L217,118 M228,112 L227,118" stroke="#fff" stroke-width="2"/>
+<path d="M-10,230 C60,214 120,222 170,214 C220,206 260,214 310,208 V270 H-10 Z" fill="rgba(255,255,255,0.25)"/>
+<path d="M156,226 C166.2,182.8 178.1,149.2 180.48,130 L199.52,130 C201.9,149.2 213.8,182.8 224,226 Z" fill="#fff4e2"/><path d="M168,132 C168,110.2 212,110.2 212,132 Z" fill="#6b4117" stroke="#fff4e2" stroke-width="4" stroke-linejoin="round"/>
+<path d="M42,228 C54.6,166.8 69.3,119.19999999999999 72.24,92 L95.76,92 C98.7,119.19999999999999 113.4,166.8 126,228 Z" fill="#fff4e2"/><path d="M57,94 C57,67.7 111,67.7 111,94 Z" fill="#6b4117" stroke="#fff4e2" stroke-width="4" stroke-linejoin="round"/>
+<path d="M106,230 C115.0,198.5 125.5,174.0 127.6,160 L144.4,160 C146.5,174.0 157.0,198.5 166,230 Z" fill="#fff4e2"/><path d="M117,162 C117,142.9 155,142.9 155,162 Z" fill="#6b4117" stroke="#fff4e2" stroke-width="4" stroke-linejoin="round"/>
+<path d="M-10,236 C70,226 140,232 200,226 C250,222 280,226 310,224 V270 H-10 Z" fill="#fff4e2"/>
+<rect x="78" y="168" width="10" height="14" rx="5" fill="#6b4117"/><rect x="186" y="186" width="9" height="12" rx="4.5" fill="#6b4117"/></g></svg>
