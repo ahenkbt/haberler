@@ -1,6 +1,7 @@
 /**
  * Cumha.com.tr kamu + yerel RSS katalogu — turkatahaber.com & yerel.net.tr paylaşır.
  */
+import { TURKATA_HAKKIMIZDA_HTML } from "./hm-gundemi-regional-sites.js";
 import { TURKEY_CITIES } from "./seed-popular-locations.js";
 
 type TurkeyCitySeed = {
@@ -636,17 +637,182 @@ export function buildKamuYerelIllerExtraPage(): KamuYerelIllerExtraPage {
   };
 }
 
+/** Ajans ağı siteleri — `/daha` sol sütun logo ızgarası (canlı marka asset URL’leri). */
+export type KamuYerelDahaNetworkSite = {
+  name: string;
+  href: string;
+  logoUrl: string;
+};
+
+export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] = [
+  {
+    name: "TürAta Haber",
+    href: "https://turkatahaber.com/",
+    logoUrl: "https://turkatahaber.com/turkata/turkata-logo.webp",
+  },
+  {
+    name: "Yerel Net",
+    href: "https://yerel.net.tr/",
+    logoUrl: "https://yerel.net.tr/yerel/yerel-logo.png",
+  },
+  {
+    name: "Yeşil Vatan",
+    href: "https://yesilvatan.gen.tr/",
+    logoUrl: "https://yesilvatan.gen.tr/yesilvatan/yesilvatan-logo.png",
+  },
+  {
+    name: "TürkSav",
+    href: "https://turksav.org/",
+    logoUrl: "https://turksav.org/turksav/turksav-logo.png",
+  },
+  {
+    name: "Şehit Gazi",
+    href: "https://sehitgazi.org.tr/",
+    logoUrl: "https://sehitgazi.org.tr/sehitgazi/sehitgazi-logo.png",
+  },
+  {
+    name: "Dünya Sağlık",
+    href: "https://dunyasaglik.org/",
+    logoUrl: "https://dunyasaglik.org/dunyasaglik/dunyasaglik-logo.png",
+  },
+  {
+    name: "Fix Haber",
+    href: "https://fix.tc/",
+    logoUrl: "https://fix.tc/fix/fix-haber-logo.png",
+  },
+  {
+    name: "TÜKAV",
+    href: "https://tukav.org/",
+    logoUrl: "https://tukav.org/tukav/tukav-logo.png",
+  },
+  {
+    name: "Ankara Şehir Gazetesi",
+    href: "https://ankarasehirgazetesi.com/",
+    logoUrl: "https://ankarasehirgazetesi.com/favicon.ico",
+  },
+  {
+    name: "Ankara Haber Gündemi",
+    href: "https://ankarahabergundemi.com/",
+    logoUrl: "https://ankarahabergundemi.com/favicon.ico",
+  },
+  {
+    name: "Vatan Haber",
+    href: "https://vatanhaber.net/",
+    logoUrl: "https://vatanhaber.net/media/logos/vatanhaber.net-logo.png",
+  },
+  {
+    name: "Gündemi.org",
+    href: "https://gundemi.org/",
+    logoUrl: "https://gundemi.org/gundemi/logos/gundemi-org.png",
+  },
+] as const;
+
+/** `/daha` gövdesinde tanıtım bloğu var mı? (layout lock / seed onarım işareti) */
+export const KAMU_YEREL_DAHA_PROMO_MARKER = "hm-daha-proje";
+
+const KAMU_YEREL_DAHA_PAGE_STYLE = `<style>
+.ys-extra-page.ys-page:has(.hm-daha-page){grid-template-columns:minmax(0,1fr);gap:8px}
+.hm-daha-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:32px;align-items:start;max-width:none;margin:0;padding:0 0 36px;color:var(--ys-text,#1a1a1a)}
+.hm-daha-main{min-width:0}
+.hm-daha-about{font-size:1.02rem;line-height:1.65;margin:0 0 1.5rem}
+.hm-daha-about p{margin:0 0 .85rem}
+.hm-daha-about h2{font-size:1.15rem;margin:1.25rem 0 .55rem;color:var(--ys-navy,#0b3362)}
+.hm-daha-section-title{font-size:1.2rem;margin:0 0 .75rem;padding-bottom:.35rem;border-bottom:1px solid var(--ys-line,rgba(0,0,0,.12));color:var(--ys-navy,#0b3362)}
+.hm-daha-concept{margin:0 0 1.75rem;padding:1rem 1.1rem;background:linear-gradient(135deg,rgba(11,51,98,.06),rgba(11,51,98,.02));border-left:3px solid var(--ys-navy,#0b3362);border-radius:0 8px 8px 0;line-height:1.6}
+.hm-daha-concept p{margin:0}
+.hm-daha-sites{margin:0 0 2rem}
+.hm-daha-site-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.85rem}
+.hm-daha-site-link{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;min-height:108px;padding:.75rem .6rem;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--ys-line,rgba(0,0,0,.1));border-radius:8px;transition:border-color .15s ease,box-shadow .15s ease}
+.hm-daha-site-link:hover{border-color:rgba(11,51,98,.35);box-shadow:0 4px 14px rgba(11,51,98,.08)}
+.hm-daha-site-link img{max-width:112px;max-height:48px;width:auto;height:auto;object-fit:contain}
+.hm-daha-site-name{font-size:.78rem;font-weight:700;text-align:center;line-height:1.25;color:var(--ys-navy,#0b3362)}
+.hm-daha-proje{margin:0 0 1rem;padding:1.25rem 1.35rem;background:#fff;border:1px solid var(--ys-line,rgba(0,0,0,.1));border-radius:10px;box-shadow:0 1px 0 rgba(11,51,98,.04)}
+.hm-daha-proje-title{font-size:clamp(1.25rem,2.2vw,1.55rem);margin:0 0 .35rem;line-height:1.25;color:var(--ys-navy,#0b3362);font-weight:900}
+.hm-daha-proje-sub{margin:0 0 1.15rem;font-size:.95rem;line-height:1.5;opacity:.88}
+.hm-daha-proje h3{font-size:1.05rem;margin:1.15rem 0 .45rem;color:var(--ys-navy,#0b3362)}
+.hm-daha-proje p{margin:0 0 .75rem;line-height:1.65;font-size:.98rem}
+.hm-daha-proje ul{margin:.25rem 0 .85rem;padding:0 0 0 1.15rem;line-height:1.6}
+.hm-daha-proje li{margin:0 0 .45rem}
+.hm-daha-aside{display:grid;gap:1.25rem;min-width:0;position:sticky;top:62px;padding:1rem 1.05rem;background:rgba(11,51,98,.03);border:1px solid var(--ys-line,rgba(0,0,0,.08));border-radius:10px}
+.hm-daha-lead{font-size:.95rem;line-height:1.5;margin:0;opacity:.9}
+.hm-daha-intl,.hm-daha-bolgeler,.hm-daha-region{margin:0}
+.hm-daha-aside .hm-daha-section-title,.hm-daha-aside .hm-daha-region-title{font-size:1.05rem;margin:0 0 .55rem;padding-bottom:.3rem;border-bottom:1px solid var(--ys-line,rgba(0,0,0,.12))}
+.hm-daha-province-grid,.hm-daha-cat-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.4rem .5rem}
+.hm-daha-il-link,.hm-daha-cat-link{display:block;padding:.4rem .55rem;border-radius:6px;text-decoration:none;color:inherit;background:rgba(255,255,255,.85);border:1px solid transparent;font-size:.9rem}
+.hm-daha-il-link:hover,.hm-daha-cat-link:hover{background:#fff;border-color:rgba(11,51,98,.2)}
+.hm-daha-bolgeler{display:grid;gap:1rem}
+@media (max-width:900px){
+  .hm-daha-page{grid-template-columns:minmax(0,1fr);gap:1.5rem}
+  .hm-daha-aside{position:static}
+}
+</style>`;
+
+function escapeDahaAttr(raw: string): string {
+  return String(raw ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function buildKamuYerelDahaNetworkSitesHtml(): string {
+  const items = KAMU_YEREL_DAHA_NETWORK_SITES.map((site) => {
+    const name = escapeDahaAttr(site.name);
+    return `<li><a class="hm-daha-site-link" href="${escapeDahaAttr(site.href)}" target="_blank" rel="noopener noreferrer"><img src="${escapeDahaAttr(site.logoUrl)}" alt="${name}" width="120" height="48" loading="lazy" decoding="async"><span class="hm-daha-site-name">${name}</span></a></li>`;
+  }).join("");
+  return `<section id="daha-haber-siteleri" class="hm-daha-sites"><h2 class="hm-daha-section-title">TürAta Haber Ajansı Haber sitelerimiz</h2><ul class="hm-daha-site-grid">${items}</ul></section>`;
+}
+
+function buildKamuYerelDahaProjeHtml(): string {
+  return [
+    `<section id="daha-81-il-projesi" class="hm-daha-proje ${KAMU_YEREL_DAHA_PROMO_MARKER}">`,
+    `<h2 class="hm-daha-proje-title">81 İl 81 Haber Sitesi Projesi</h2>`,
+    `<p class="hm-daha-proje-sub">TürkAta Haber Ajansı &amp; Türk Kültürünü Araştırma ve Tanıtma Vakfı İş Birliğiyle</p>`,
+    `<h3>Proje Amacı</h3>`,
+    `<p>81 İl 81 Haber Sitesi Projesi; Türkiye’nin her bir köşesini, köklü tarihini, zengin kültürünü ve eşsiz güzelliklerini il il, ilçe ilçe ve mahalle mahalle tüm dünyaya tanıtmak amacıyla hayata geçirilmiş milli bir yayıncılık ve kültür hareketidir.</p>`,
+    `<p>TürkAta Haber Ajansı’nın güçlü habercilik altyapısı ile Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın akademik ve kültürel birikimini bir araya getiren bu proje, yerel değerlerimizi ulusal ve uluslararası alanda hak ettiği noktaya taşımayı hedefler.</p>`,
+    `<h3>Projenin Temel Kapsamı</h3>`,
+    `<ul>`,
+    `<li><strong>Yerel Kültür ve Envanter:</strong> Her ilin, ilçenin ve mahallenin kendine özgü tarihi dokusunu, mimarisini, sözlü kültürünü, geleneklerini ve el sanatlarını dijital kayıt altına almak.</li>`,
+    `<li><strong>Turizm ve Gastronomi Tanıtımı:</strong> Bölgesel lezzetleri, doğal güzellikleri, tarihi ören yerlerini ve tescilli coğrafi işaretli ürünleri detaylı rehberlerle öne çıkarmak.</li>`,
+    `<li><strong>Doğru ve Tarafsız Yerel Habercilik:</strong> Her ilin kendi yerel dinamiklerini, başarılarını, sosyal ve kültürel etkinliklerini tarafsız habercilik anlayışıyla dijital mecralara taşımak.</li>`,
+    `<li><strong>Sözlü Tarih ve Yerel Portreler:</strong> Mahallelerimizin ve köylerimizin hafızası olan yaşlılarımızın, yerel zanaatkârlarımızın ve değerlerimizin hikâyelerini gelecek nesillere aktarmak.</li>`,
+    `</ul>`,
+    `<h3>Proje Odak Noktaları</h3>`,
+    `<ul>`,
+    `<li><strong>81 İl Genel Tanıtımı:</strong> İllerin tarihi gelişimi, sosyo-ekonomik yapısı ve genel kültür profili.</li>`,
+    `<li><strong>İlçe Rehberleri:</strong> Her ilçenin öne çıkan simgeleri, gezilecek yerleri ve ekonomik değerleri.</li>`,
+    `<li><strong>Mahalle ve Köy Biyografileri:</strong> Unutulmaya yüz tutmuş mahalle kültürleri, yerel isimlerin hikâyeleri ve mikro kültür çalışmaları.</li>`,
+    `<li><strong>Kültür Etkinlikleri ve Haber:</strong> Yerel festivaller, fuarlar, sergiler ve anma günlerinin anlık takibi.</li>`,
+    `</ul>`,
+    `</section>`,
+  ].join("");
+}
+
 /**
- * `/daha` — premium hub: 7 bölge / 81 il.
- * Uluslararası (NATO/BM/AB) «Dünya» tepe kategorisi altında.
+ * `/daha` — sol: ajans tanıtımı + site logoları + 81 İl projesi; sağ: uluslararası + 81 il.
+ * Tepe menü «Daha» bu sayfaya gider. Uluslararası (NATO/BM/AB) «Dünya» tepe kategorisi altında.
  */
 export function buildKamuYerelDahaExtraPage(): KamuYerelIllerExtraPage {
+  const intlLinks = CUMHA_DAHA_CATEGORY_FEEDS.map(
+    (c) =>
+      `<li><a href="/kategori/${c.slug}" class="hm-daha-cat-link">${c.name}</a></li>`,
+  ).join("");
   const sections: string[] = [
-    `<div class="hm-daha-page">`,
-    `<p class="hm-daha-lead">Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin. Uluslararası kuruluş haberleri için <a href="/kategori/dunya">Dünya</a> kategorisine bakın.</p>`,
+    KAMU_YEREL_DAHA_PAGE_STYLE,
+    `<div class="hm-daha-page hm-extra-page-root">`,
+    `<div class="hm-daha-main">`,
+    `<section id="daha-hakkimizda" class="hm-daha-about">${TURKATA_HAKKIMIZDA_HTML}</section>`,
+    buildKamuYerelDahaNetworkSitesHtml(),
+    `<section id="daha-konsept" class="hm-daha-concept"><p>TürAta Haber Ajansı kamu ve yerel gündemi bir arada sunar: cumhurbaşkanlığı, bakanlıklar, TBMM ve kamu kurumlarından belediye, valilik ve 81 il haberine — yerelin sesini ulusal ve uluslararası okura taşıyan güvenilir bir yayın ağı.</p></section>`,
+    buildKamuYerelDahaProjeHtml(),
+    `</div>`,
+    `<aside class="hm-daha-aside ys-aside" aria-label="Uluslararası ve iller">`,
+    `<p class="hm-daha-lead">Uluslararası kuruluşlar, dış politika ve Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin. Tepe menüde <a href="/kategori/dunya">Dünya</a> altında da listelenir.</p>`,
+    `<section id="daha-uluslararasi" class="hm-daha-intl"><h2 class="hm-daha-section-title">Uluslararası</h2><ul class="hm-daha-cat-grid">${intlLinks}</ul></section>`,
     `<section id="daha-bolgeler" class="hm-daha-bolgeler"><h2 class="hm-daha-section-title">Bölgeler ve iller</h2>`,
     ...buildKamuYerelRegionProvinceSections("hm-daha"),
-    `</section></div>`,
+    `</section></aside></div>`,
   ];
   return {
     id: "ky-page-daha",

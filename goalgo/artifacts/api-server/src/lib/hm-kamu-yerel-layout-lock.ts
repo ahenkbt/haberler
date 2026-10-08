@@ -4,6 +4,7 @@
  */
 import {
   KAMU_YEREL_DAHA_PAGE_SLUG,
+  KAMU_YEREL_DAHA_PROMO_MARKER,
   KAMU_YEREL_ILLER_PAGE_SLUG,
   listKamuYerelCategoryPageAllowSlugs,
   listKamuYerelNavHiddenCategorySlugs,
@@ -146,6 +147,19 @@ function kamuYerelExtraPagesNeedRepair(layoutJson: string | null | undefined): b
         .filter(Boolean),
     );
     if (!slugs.has(KAMU_YEREL_DAHA_PAGE_SLUG) || !slugs.has(KAMU_YEREL_ILLER_PAGE_SLUG)) return true;
+    const dahaPage = pages.find(
+      (p) =>
+        !!p &&
+        typeof p === "object" &&
+        !Array.isArray(p) &&
+        String((p as { slug?: unknown }).slug ?? "")
+          .trim()
+          .toLowerCase() === KAMU_YEREL_DAHA_PAGE_SLUG,
+    ) as { bodyHtml?: unknown } | undefined;
+    const dahaBody = String(dahaPage?.bodyHtml ?? "");
+    if (!dahaBody.includes(KAMU_YEREL_DAHA_PROMO_MARKER) || !dahaBody.includes("hm-daha-site-grid")) {
+      return true;
+    }
     const menu = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
     const daha = menu.find(
       (m) =>
