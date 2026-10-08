@@ -222,6 +222,12 @@ export function cumhaProvinceSlugFromName(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+export const KAMU_YEREL_ILLER_PAGE_SLUG = "iller";
+
+export function kamuYerelRegionCategorySlug(regionId: KamuYerelRegionId): string {
+  return `bolge-${regionId}`;
+}
+
 export type KamuYerelProvinceDef = {
   slug: string;
   name: string;
@@ -252,12 +258,22 @@ export function buildKamuYerelCategories(): KamuYerelCategoryDef[] {
     color: c.color,
   }));
   const dahaNav: KamuYerelCategoryDef = { slug: "daha", name: "Daha", color: "#1e3a5f" };
-  const provinces = listKamuYerelProvinces().map((p) => ({
-    slug: p.slug,
-    name: p.name,
-    color: "#0b3362",
-  }));
-  return [...KAMU_YEREL_SECONDARY_CATEGORIES, dahaNav, ...kamu, ...provinces];
+  const provincesByRegion: KamuYerelCategoryDef[] = [];
+  for (const regionId of KAMU_YEREL_REGION_ORDER) {
+    provincesByRegion.push({
+      slug: kamuYerelRegionCategorySlug(regionId),
+      name: KAMU_YEREL_REGION_LABELS[regionId],
+      color: "#0b3362",
+    });
+    for (const p of listKamuYerelProvinces().filter((row) => row.regionId === regionId)) {
+      provincesByRegion.push({
+        slug: p.slug,
+        name: p.name,
+        color: "#0b3362",
+      });
+    }
+  }
+  return [...KAMU_YEREL_SECONDARY_CATEGORIES, dahaNav, ...kamu, ...provincesByRegion];
 }
 
 export function listKamuYerelNavTopCategorySlugs(): string[] {
@@ -330,14 +346,14 @@ export type KamuYerelCorporateMenuItem = {
   enabled?: boolean;
 };
 
-/** 7 bölge + 81 il — PHP vitrin menüsü (editör normalize 40 sınırına takılmaz). */
+/** Tepe menü — İller + 7 bölge (81 il yalnızca `/iller` sayfasında; editör 40 kayıt sınırına sığar). */
 export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[] {
   const items: KamuYerelCorporateMenuItem[] = [];
   const illerRoot = "ky-menu-iller";
   items.push({
     id: illerRoot,
     label: "İller",
-    href: "/kategori/yerel",
+    href: `/${KAMU_YEREL_ILLER_PAGE_SLUG}`,
     enabled: true,
   });
   for (const regionId of KAMU_YEREL_REGION_ORDER) {
@@ -345,19 +361,10 @@ export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[]
     items.push({
       id: regionMenuId,
       label: KAMU_YEREL_REGION_LABELS[regionId],
-      href: "/kategori/yerel",
+      href: `/${KAMU_YEREL_ILLER_PAGE_SLUG}#${regionId}`,
       parentId: illerRoot,
       enabled: true,
     });
-    for (const prov of listKamuYerelProvinces().filter((p) => p.regionId === regionId)) {
-      items.push({
-        id: `ky-il-${prov.slug}`,
-        label: prov.name,
-        href: `/kategori/${prov.slug}`,
-        parentId: regionMenuId,
-        enabled: true,
-      });
-    }
   }
   items.push({
     id: "ky-cat-daha",
@@ -384,4 +391,42 @@ export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[]
     });
   }
   return items;
+}
+
+export type KamuYerelIllerExtraPage = {
+  id: string;
+  title: string;
+  slug: string;
+  bodyHtml: string;
+  enabled: boolean;
+  fullWidth: boolean;
+};
+
+/** `/iller` — bölge başlıkları altında il kategori bağlantıları (PHP + SPA hmExtraPages). */
+export function buildKamuYerelIllerExtraPage(): KamuYerelIllerExtraPage {
+  const sections: string[] = [
+    `<div class="hm-iller-page"><p class="hm-iller-lead">Türkiye&#39;nin 81 ilinde kamu ve yerel gündem haberleri — il başlığına tıklayarak il kategorisindeki haberlere ulaşın.</p>`,
+  ];
+  for (const regionId of KAMU_YEREL_REGION_ORDER) {
+    const label = KAMU_YEREL_REGION_LABELS[regionId];
+    const links = listKamuYerelProvinces()
+      .filter((p) => p.regionId === regionId)
+      .map(
+        (p) =>
+          `<li><a href="/kategori/${p.slug}" class="hm-iller-il-link">${p.name}</a></li>`,
+      )
+      .join("");
+    sections.push(
+      `<section id="${regionId}" class="hm-iller-region"><h2 class="hm-iller-region-title">${label}</h2><ul class="hm-iller-province-grid">${links}</ul></section>`,
+    );
+  }
+  sections.push("</div>");
+  return {
+    id: "ky-page-iller",
+    title: "İller",
+    slug: KAMU_YEREL_ILLER_PAGE_SLUG,
+    bodyHtml: sections.join(""),
+    enabled: true,
+    fullWidth: true,
+  };
 }
