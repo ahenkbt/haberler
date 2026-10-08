@@ -245,6 +245,18 @@ import { recategorizeMisclassifiedSporBatch } from "../lib/recategorizeMisclassi
 import { recategorizeMisclassifiedAnkaraBatch } from "../lib/recategorizeMisclassifiedAnkara.js";
 import { repairRssNumericSlugsBatch } from "../lib/repairRssNumericSlugs.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "../lib/hm-global-news-category.js";
+import {
+  corporateDomainError,
+  isPlatformAliasHost as isPlatformAliasHostForConflict,
+  normalizeHmSiteKind,
+  orderSiteDomains,
+  parseLayoutObject,
+  planNewsSiteDomains,
+  resolveHmSiteKind,
+  siteKindLayoutDefaults,
+  siteKindPatchError,
+  type HmSiteKind,
+} from "../lib/hm-site-kind.js";
 
 const router: IRouter = Router();
 
@@ -441,6 +453,26 @@ async function releaseDomainFromOtherSites(host: string | null, keepSiteId: numb
     released.push(row.id);
   }
   return released;
+}
+
+/** Yeni haber sitesi: otomatik <slug>.gundemi.org / <slug>.fix.tc başka sitede kayıtlıysa sessizce taşınmasın. */
+async function platformAliasConflicts(hosts: Array<string | null>): Promise<string[]> {
+  const aliases = hosts.filter((h): h is string => Boolean(h) && isPlatformAliasHostForConflict(h));
+  if (aliases.length === 0) return [];
+  const rows = await newsReadDb()
+    .select({
+      id: hmNewsSitesTable.id,
+      domain: hmNewsSitesTable.domain,
+      domain2: hmNewsSitesTable.domain2,
+      domain3: hmNewsSitesTable.domain3,
+    })
+    .from(hmNewsSitesTable);
+  const out: string[] = [];
+  for (const alias of aliases) {
+    const owner = rows.find((r) => [r.domain, r.domain2, r.domain3].some((d) => domainsMatch(d, alias)));
+    if (owner) out.push(`${alias} (Site #${owner.id})`);
+  }
+  return out;
 }
 
 /** Aynı formdaki domain slotları çakışmasın (www = apex). */
@@ -1316,7 +1348,10 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
     await ensureHmNewsSiteWritableColumns().catch(() => undefined);
-    const sites = dedupeHmSitesById(await listHmNewsSitesCompat()).sort((a, b) => a.id - b.id);
+    const kindFilter = normalizeHmSiteKind(req.query.kind);
+    const sites = dedupeHmSitesById(await listHmNewsSitesCompat())
+      .filter((s) => !kindFilter || resolveHmSiteKind(s) === kindFilter)
+      .sort((a, b) => a.id - b.id);
     const editors = await newsReadDb().select().from(hmSiteEditorsTable);
     const bySite = new Map<number, typeof editors>();
     for (const e of editors) {
@@ -1335,6 +1370,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
     res.json({
       items: sites.map((s) => ({
         ...s,
+        siteKind: resolveHmSiteKind(s),
         ownLlmProviders: ownLlm.get(s.id) ?? [],
         hasOwnLlmKeys: (ownLlm.get(s.id) ?? []).length > 0,
         editors: (bySite.get(s.id) ?? []).map((e) => ({
@@ -1376,7 +1412,14 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     editorDisplayName?: string;
     editorEmail?: string;
     editorPassword?: string;
+    /** "news" (default, /admin/haber-siteleri) | "corporate" (/admin/hm-kurumsal). Locked after create. */
+    siteKind?: string;
+    /** News only: <slug>.gundemi.org / <slug>.fix.tc aliases (default both on). */
+    platformAliases?: { gundemi?: boolean; fixTc?: boolean };
+    /** Corporate only: "corporate" (VKD Tema) | "vatan". */
+    corporateTheme?: string;
   };
+  const siteKind: HmSiteKind = normalizeHmSiteKind(b.siteKind) ?? "news";
   const slug = normalizeSlug(String(b.slug ?? ""));
   if (!slug || slug.length < 2) {
     res.status(400).json({ error: "Geçerli bir slug girin (en az 2 karakter, küçük harf, tire)." });
@@ -1397,9 +1440,33 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Editör şifresi en az 6 karakter olmalı" });
     return;
   }
-  const domain = normalizeDomain(b.domain ?? null);
-  const domain2 = normalizeDomain(b.domain2 ?? null);
-  const domain3 = normalizeDomain(b.domain3 ?? null);
+  let domain = normalizeDomain(b.domain ?? null);
+  let domain2 = normalizeDomain(b.domain2 ?? null);
+  let domain3 = normalizeDomain(b.domain3 ?? null);
+  if (siteKind === "news") {
+    // Haber sitesi: <slug>.gundemi.org + <slug>.fix.tc otomatik; kendi domaini varsa canonical odur (ilk sıra).
+    const plan = planNewsSiteDomains({ slug, domain, domain2, domain3, aliases: b.platformAliases ?? null });
+    if (plan.error) {
+      res.status(400).json({ error: plan.error });
+      return;
+    }
+    domain = normalizeDomain(plan.triad.domain);
+    domain2 = normalizeDomain(plan.triad.domain2);
+    domain3 = normalizeDomain(plan.triad.domain3);
+    const taken = await platformAliasConflicts([domain, domain2, domain3]);
+    if (taken.length > 0) {
+      res.status(409).json({
+        error: `Bu adres başka bir sitede kullanılıyor: ${taken.join(", ")}. Farklı bir slug seçin veya o adresi kapatın.`,
+      });
+      return;
+    }
+  } else {
+    const corpErr = corporateDomainError({ domain, domain2, domain3 });
+    if (corpErr) {
+      res.status(400).json({ error: corpErr });
+      return;
+    }
+  }
   const domainErr = await assertHmDomainsAvailable(domain, domain2, domain3);
   if (domainErr) {
     res.status(409).json({ error: domainErr });
@@ -1407,7 +1474,13 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   }
   const description = normalizeHmDescription(b.description);
   const contactJson = JSON.stringify(b.contact ?? {});
-  const layoutJson = JSON.stringify(defaultHmNewsSiteLayout(b.layoutJson));
+  const incomingLayout = parseLayoutObject(b.layoutJson);
+  const layoutJson = JSON.stringify(
+    defaultHmNewsSiteLayout({
+      ...incomingLayout,
+      ...siteKindLayoutDefaults(siteKind, b.corporateTheme ?? incomingLayout.hmVitrinTheme),
+    }),
+  );
   const seoVerification = normalizeHmSeoVerification(b.seoVerification);
 
   try {
@@ -1455,7 +1528,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     const customApexProvision = await maybeProvisionCustomPhpApex(domainTriad);
 
     res.status(201).json({
-      site: freshSite,
+      site: { ...freshSite, siteKind },
       editor: editor
         ? { id: editor.id, email: editor.email, displayName: editor.displayName, createdAt: editor.createdAt }
         : null,
@@ -1496,6 +1569,29 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     editorPassword: string;
   }>;
   const patch: Partial<typeof hmNewsSitesTable.$inferInsert> = {};
+  const [kindRow] = await newsReadDb()
+    .select({
+      slug: hmNewsSitesTable.slug,
+      domain: hmNewsSitesTable.domain,
+      domain2: hmNewsSitesTable.domain2,
+      domain3: hmNewsSitesTable.domain3,
+      layoutJson: hmNewsSitesTable.layoutJson,
+    })
+    .from(hmNewsSitesTable)
+    .where(eq(hmNewsSitesTable.id, id));
+  if (!kindRow) {
+    res.status(404).json({ error: "Bulunamadı" });
+    return;
+  }
+  // Site türü kilitli: haber ↔ kurumsal dönüşüm ve tema/modül karışması reddedilir.
+  const currentKind: HmSiteKind = resolveHmSiteKind(kindRow);
+  if (b.layoutJson !== undefined) {
+    const kindErr = siteKindPatchError(currentKind, parseLayoutObject(b.layoutJson));
+    if (kindErr) {
+      res.status(409).json({ error: kindErr });
+      return;
+    }
+  }
   if (typeof b.slug === "string") {
     const next = normalizeSlug(b.slug);
     if (!next || next.length < 2) {
@@ -1518,9 +1614,37 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       })
       .from(hmNewsSitesTable)
       .where(eq(hmNewsSitesTable.id, id));
-    const nextDomain = "domain" in patch ? patch.domain : normalizeDomain(cur?.domain ?? null);
-    const nextDomain2 = "domain2" in patch ? patch.domain2 : normalizeDomain(cur?.domain2 ?? null);
-    const nextDomain3 = "domain3" in patch ? patch.domain3 : normalizeDomain(cur?.domain3 ?? null);
+    let nextDomain = "domain" in patch ? patch.domain : normalizeDomain(cur?.domain ?? null);
+    let nextDomain2 = "domain2" in patch ? patch.domain2 : normalizeDomain(cur?.domain2 ?? null);
+    let nextDomain3 = "domain3" in patch ? patch.domain3 : normalizeDomain(cur?.domain3 ?? null);
+    if (currentKind === "news") {
+      // Canonical = ilk domain: kendi domaini → <slug>.gundemi.org → <slug>.fix.tc.
+      const ordered = orderSiteDomains([nextDomain, nextDomain2, nextDomain3]);
+      if (ordered.error) {
+        res.status(400).json({ error: ordered.error });
+        return;
+      }
+      if (!ordered.triad.domain) {
+        res.status(400).json({ error: "Haber sitesinde en az bir domain kalmalı (gundemi.org, fix.tc veya kendi domaini)." });
+        return;
+      }
+      nextDomain = normalizeDomain(ordered.triad.domain);
+      nextDomain2 = normalizeDomain(ordered.triad.domain2);
+      nextDomain3 = normalizeDomain(ordered.triad.domain3);
+      patch.domain = nextDomain;
+      patch.domain2 = nextDomain2;
+      patch.domain3 = nextDomain3;
+    } else {
+      const corpErr = corporateDomainError({
+        domain: nextDomain ?? null,
+        domain2: nextDomain2 ?? null,
+        domain3: nextDomain3 ?? null,
+      });
+      if (corpErr) {
+        res.status(400).json({ error: corpErr });
+        return;
+      }
+    }
     const domainErr = await assertHmDomainsAvailable(
       nextDomain ?? null,
       nextDomain2 ?? null,
@@ -1555,7 +1679,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       b.layoutJson && typeof b.layoutJson === "object" && !Array.isArray(b.layoutJson)
         ? (b.layoutJson as Record<string, unknown>)
         : {};
-    const merged: Record<string, unknown> = { ...prev, ...inc };
+    const merged: Record<string, unknown> = { ...prev, ...inc, hmSiteKind: currentKind };
     if (prev.hmCategoryColors && inc.hmCategoryColors && typeof inc.hmCategoryColors === "object" && !Array.isArray(inc.hmCategoryColors)) {
       merged.hmCategoryColors = {
         ...(prev.hmCategoryColors as Record<string, unknown>),
@@ -1584,8 +1708,9 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     } catch {
       prev = {};
     }
-    if (!layoutMarksPhpTheme(prev) && prev.phpTheme !== false) {
-      const next = ensurePhpThemeLayoutDefaults(prev);
+    // Yalnızca haber siteleri: kurumsal site domain değişikliğinde PHP haber temasına geçmez.
+    if (currentKind === "news" && !layoutMarksPhpTheme(prev) && prev.phpTheme !== false) {
+      const next = ensurePhpThemeLayoutDefaults({ ...prev, hmSiteKind: "news" });
       if (layoutMarksPhpTheme(next)) {
         patch.layoutJson = JSON.stringify(applyHmRssNewsPolicyToLayout(next));
       }
@@ -1820,6 +1945,10 @@ router.post("/hm/sites/:id/ensure-gundemi", async (req, res): Promise<void> => {
     } catch {
       layout = {};
     }
+    if (resolveHmSiteKind(site) === "corporate") {
+      res.status(409).json({ error: "Kurumsal sitelere gundemi.org haber adresi açılmaz." });
+      return;
+    }
     if (!layoutMarksPhpTheme(layout) && layout.phpTheme !== false) {
       const next = ensurePhpThemeLayoutDefaults(layout);
       await dualWriteUpdate(
@@ -1852,6 +1981,68 @@ router.post("/hm/sites/:id/ensure-gundemi", async (req, res): Promise<void> => {
   } catch (e: unknown) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
+});
+
+/**
+ * Domain / SSL kontrolü (admin): her domain için https://<host>/robots.txt — DNS + Cloudflare SSL + VPS Traefik +
+ * PHP tema site eşleşmesi tek istekte doğrulanır; robots.txt içindeki Sitemap satırı canonical hostu gösterir.
+ */
+router.post("/hm/sites/:id/domain-check", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  const id = parseInt(String(req.params.id), 10);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: "id" });
+    return;
+  }
+  const site = await getHmNewsSiteByIdCompat(id);
+  if (!site) {
+    res.status(404).json({ error: "Bulunamadı" });
+    return;
+  }
+  const hosts = [site.domain, site.domain2, site.domain3]
+    .map((d) => normalizeDomain(d ?? null))
+    .filter((d): d is string => Boolean(d));
+  const canonicalHost = hosts[0] ?? null;
+  const results = await Promise.all(
+    hosts.map(async (host) => {
+      const started = Date.now();
+      try {
+        const r = await fetch(`https://${host}/robots.txt`, {
+          redirect: "manual",
+          signal: AbortSignal.timeout(9000),
+          headers: { "user-agent": "HM-Panel-DomainCheck/1.0" },
+        });
+        const text = r.status === 200 ? (await r.text()).slice(0, 4000) : "";
+        const sitemap = /^sitemap:\s*(\S+)/im.exec(text)?.[1] ?? null;
+        let sitemapHost: string | null = null;
+        try {
+          sitemapHost = sitemap ? new URL(sitemap).hostname : null;
+        } catch {
+          sitemapHost = null;
+        }
+        return {
+          host,
+          ok: r.status === 200 && Boolean(sitemap),
+          status: r.status,
+          ssl: true,
+          sitemap,
+          canonicalOk: sitemapHost !== null && canonicalHost !== null && sitemapHost === canonicalHost,
+          ms: Date.now() - started,
+        };
+      } catch (e) {
+        return {
+          host,
+          ok: false,
+          status: 0,
+          ssl: false,
+          error: (e instanceof Error ? e.message : String(e)).slice(0, 200),
+          ms: Date.now() - started,
+        };
+      }
+    }),
+  );
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ siteId: id, siteKind: resolveHmSiteKind(site), canonicalHost, results });
 });
 
 router.delete("/hm/sites/:id", async (req, res): Promise<void> => {

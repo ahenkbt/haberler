@@ -18,8 +18,7 @@ import {
   ensureAdminPanelBootstrap,
   wakeAdminApiContainer,
 } from "@/lib/apiBase";
-import { collectGundemiOrgDomainsFromForm } from "@/lib/gundemiOrgDomain";
-import { HM_PLATFORM_APEX_HELP, suggestHmPlatformSubdomains } from "@/lib/hmPlatformApex";
+import { suggestHmPlatformSubdomains } from "@/lib/hmPlatformApex";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
@@ -37,9 +36,24 @@ type SeoVerification = {
   yandexVerification?: string;
 };
 
+export type HmSiteKind = "news" | "corporate";
+
+type DomainCheckResult = {
+  host: string;
+  ok: boolean;
+  status: number;
+  ssl: boolean;
+  sitemap?: string | null;
+  canonicalOk?: boolean;
+  error?: string;
+  ms?: number;
+};
+
 type HmSiteRow = {
   id: number;
   slug: string;
+  /** API: layout_json.hmSiteKind (kilitli) veya kurumsal tema/slug çıkarımı */
+  siteKind?: HmSiteKind;
   domain?: string | null;
   domain2?: string | null;
   domain3?: string | null;
@@ -79,6 +93,16 @@ type SiteForm = {
   hybridRssEnabled: boolean;
   /** Yeni sitelerde varsayılan açık — Hostinger PHP (Yenişafak) şablonu */
   phpTheme: boolean;
+  /** Haber: kendi domainleri (en fazla 2; ilki canonical) */
+  customDomain: string;
+  customDomain2: string;
+  /** Haber: <slug>.gundemi.org / <slug>.fix.tc açık mı + mevcut host (slugdan farklı olabilir) */
+  gundemiAlias: boolean;
+  gundemiHost: string;
+  fixAlias: boolean;
+  fixHost: string;
+  /** Kurumsal: VKD Tema (corporate) | VATAN */
+  corporateTheme: "corporate" | "vatan";
 };
 
 const emptyForm: SiteForm = {
@@ -100,13 +124,84 @@ const emptyForm: SiteForm = {
   active: true,
   hybridRssEnabled: true,
   phpTheme: true,
+  customDomain: "",
+  customDomain2: "",
+  gundemiAlias: true,
+  gundemiHost: "",
+  fixAlias: true,
+  fixHost: "",
+  corporateTheme: "corporate",
 };
 
-async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
+const PLATFORM_ZONES = ["gundemi.org", "fix.tc"] as const;
+
+function bareHost(raw: string | null | undefined): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+    .split(/[/?#]/)[0]
+    .replace(/:\d+$/, "")
+    .replace(/\.$/, "")
+    .replace(/^www\./, "");
+}
+
+/** <label>.gundemi.org / <label>.fix.tc — platform adresi (apex gerçek sitedir). */
+function platformZoneOf(raw: string | null | undefined): (typeof PLATFORM_ZONES)[number] | null {
+  const h = bareHost(raw);
+  for (const z of PLATFORM_ZONES) {
+    if (h.endsWith(`.${z}`) && /^[a-z0-9-]+$/.test(h.slice(0, -(z.length + 1)))) return z;
+  }
+  return null;
+}
+
+/** API eskiyse (siteKind yok) sunucudaki kuralın aynısı. */
+function inferSiteKind(site: HmSiteRow): HmSiteKind {
+  if (site.siteKind === "news" || site.siteKind === "corporate") return site.siteKind;
+  let layout: Record<string, unknown> = {};
+  try {
+    layout = site.layoutJson ? (JSON.parse(site.layoutJson) as Record<string, unknown>) : {};
+  } catch {
+    layout = {};
+  }
+  const k = String(layout.hmSiteKind ?? "").toLowerCase();
+  if (k === "news" || k === "corporate") return k;
+  const theme = String(layout.hmVitrinTheme ?? "").toLowerCase();
+  if (["corporate", "kurumsal", "vatan"].includes(theme)) return "corporate";
+  const slug = String(site.slug ?? "").toLowerCase();
+  if (["vkd", "vatankahramanlari", "trafik", "tr", "tukav", "turkatavakfi"].includes(slug)) return "corporate";
+  if (slug.includes("vatankahramanlari") || slug.includes("trafikdernegi")) return "corporate";
+  const domains = [site.domain, site.domain2, site.domain3].map(bareHost);
+  if (domains.some((d) => /(^|\.)(tukav\.org|vatankahramanlari\.org(\.tr)?|trafik\.gd|tgd\.tc|trafikdernegi\.com)$/.test(d))) {
+    return "corporate";
+  }
+  return "news";
+}
+
+/** Haber formu → domain/domain2/domain3: kendi domainleri önce (canonical), sonra gundemi.org, sonra fix.tc. */
+function composeNewsDomains(form: SiteForm): { list: string[]; error?: string } {
+  const aliases = suggestHmPlatformSubdomains(form.slug);
+  const list: string[] = [];
+  for (const raw of [form.customDomain, form.customDomain2]) {
+    const h = bareHost(raw);
+    if (!h) continue;
+    if (platformZoneOf(h)) {
+      return { list, error: `${h} platform adresidir; aşağıdaki gundemi.org / fix.tc anahtarlarını kullanın.` };
+    }
+    if (!list.includes(h)) list.push(h);
+  }
+  if (form.gundemiAlias) list.push(bareHost(form.gundemiHost) || aliases.gundemiOrg);
+  if (form.fixAlias) list.push(bareHost(form.fixHost) || aliases.fixTc);
+  if (list.length === 0) return { list, error: "En az bir adres açık kalmalı (gundemi.org, fix.tc veya kendi domaini)." };
+  if (list.length > 3) return { list, error: "En fazla 3 adres: kendi domaini + gundemi.org + fix.tc." };
+  return { list };
+}
+
+async function fetchHmSites(kind: HmSiteKind): Promise<{ items: HmSiteRow[] }> {
   await ensureAdminPanelBootstrap();
   let r: Response;
   try {
-    r = await apiFetch(apiUrl("/api/hm/sites"), { cache: "no-store" });
+    r = await apiFetch(apiUrl(`/api/hm/sites?kind=${kind}`), { cache: "no-store" });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Haber siteleri yüklenemedi";
     throw new Error(msg + adminFetchErrorHint(msg));
@@ -137,7 +232,8 @@ async function fetchHmSites(): Promise<{ items: HmSiteRow[] }> {
         };
       })
     : [];
-  return { items: [...items].sort((a, b) => a.id - b.id) };
+  // Sunucu ?kind ile süzer; eski API için istemcide de süz (haber ↔ kurumsal karışmasın).
+  return { items: items.filter((site) => inferSiteKind(site) === kind).sort((a, b) => a.id - b.id) };
 }
 
 /** Form için birincil editör — önce aktif; yoksa pasif kayıt (güncelleme ile yeniden aktif edilir). */
@@ -176,7 +272,25 @@ function editorSummary(site: HmSiteRow): string {
 
 function formFromSite(site: HmSiteRow): SiteForm {
   const editor = primaryHmSiteEditor(site);
+  const triad = [site.domain, site.domain2, site.domain3].map(bareHost).filter(Boolean);
+  const customs = triad.filter((h) => !platformZoneOf(h));
+  const gundemiHost = triad.find((h) => platformZoneOf(h) === "gundemi.org") ?? "";
+  const fixHost = triad.find((h) => platformZoneOf(h) === "fix.tc") ?? "";
+  let corporateTheme: "corporate" | "vatan" = "corporate";
+  try {
+    const l = site.layoutJson ? (JSON.parse(site.layoutJson) as Record<string, unknown>) : {};
+    if (String(l.hmVitrinTheme ?? "").toLowerCase() === "vatan") corporateTheme = "vatan";
+  } catch {
+    /* ignore */
+  }
   return {
+    customDomain: customs[0] ?? "",
+    customDomain2: customs[1] ?? "",
+    gundemiAlias: Boolean(gundemiHost),
+    gundemiHost,
+    fixAlias: Boolean(fixHost),
+    fixHost,
+    corporateTheme,
     slug: site.slug ?? "",
     displayName: site.displayName ?? "",
     description: site.description ?? "",
@@ -201,15 +315,17 @@ function formFromSite(site: HmSiteRow): SiteForm {
 function payloadFromForm(
   form: SiteForm,
   editorId?: number,
-  opts?: { includePhpThemeFlag?: boolean },
+  opts?: { includePhpThemeFlag?: boolean; kind?: HmSiteKind; isCreate?: boolean; newsDomains?: string[] },
 ) {
+  const kind = opts?.kind ?? "news";
+  const domains = kind === "news" && opts?.newsDomains ? opts.newsDomains : [form.domain, form.domain2, form.domain3];
   const body: Record<string, unknown> = {
     slug: form.slug,
     displayName: form.displayName,
     description: form.description || null,
-    domain: form.domain || null,
-    domain2: form.domain2 || null,
-    domain3: form.domain3 || null,
+    domain: domains[0] || null,
+    domain2: domains[1] || null,
+    domain3: domains[2] || null,
     contact: {
       phone: form.contactPhone,
       email: form.contactEmail,
@@ -222,11 +338,17 @@ function payloadFromForm(
     },
     active: form.active,
   };
-  // Yeni site: her zaman bayrak. Düzenlemede yalnızca kullanıcı değiştirdiyse.
-  if (opts?.includePhpThemeFlag) {
-    body.layoutJson = form.phpTheme
-      ? { phpTheme: true, frontend: "php" }
-      : { phpTheme: false, frontend: "spa" };
+  // Site türü sunucuda kilitli: haber = PHP (Yenişafak), kurumsal = VKD/VATAN. Tür yalnızca oluşturmada yazılır.
+  if (opts?.isCreate) {
+    body.siteKind = kind;
+    if (kind === "news") {
+      body.platformAliases = { gundemi: form.gundemiAlias, fixTc: form.fixAlias };
+    } else {
+      body.corporateTheme = form.corporateTheme;
+    }
+  }
+  if (opts?.includePhpThemeFlag && kind === "news") {
+    body.layoutJson = { phpTheme: true, frontend: "php" };
   }
   if (editorId) body.editorId = editorId;
   if (form.editorDisplayName) body.editorDisplayName = form.editorDisplayName;
@@ -248,7 +370,9 @@ function normalizeSlugInput(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export default function HaberSiteleri() {
+export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } = {}) {
+  const isNews = kind === "news";
+  const noun = isNews ? "Haber sitesi" : "Kurumsal site";
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState<SiteForm>(emptyForm);
@@ -257,10 +381,12 @@ export default function HaberSiteleri() {
   const [repairing, setRepairing] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [suspendingId, setSuspendingId] = useState<number | null>(null);
+  const [checkingId, setCheckingId] = useState<number | null>(null);
+  const [domainChecks, setDomainChecks] = useState<Record<number, DomainCheckResult[]>>({});
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["/api/hm/sites", "admin-panel"],
-    queryFn: fetchHmSites,
+    queryKey: ["/api/hm/sites", "admin-panel", kind],
+    queryFn: () => fetchHmSites(kind),
     retry: 1,
     retryDelay: 1500,
     staleTime: 0,
@@ -268,11 +394,6 @@ export default function HaberSiteleri() {
   });
 
   const sites = data?.items ?? [];
-
-  const gundemiHostsInForm = useMemo(
-    () => collectGundemiOrgDomainsFromForm(form),
-    [form.domain, form.domain2, form.domain3],
-  );
 
   const platformSubdomains = useMemo(
     () => suggestHmPlatformSubdomains(form.slug),
@@ -351,13 +472,19 @@ export default function HaberSiteleri() {
       await ensureAdminPanelBootstrap();
       const current = editingId ? sites.find((s) => s.id === editingId) : undefined;
       const editorId = primaryHmSiteEditor(current)?.id;
-      const includePhpThemeFlag =
-        !editingId || form.phpTheme !== (current?.phpTheme === true);
-      const gundemiHosts = collectGundemiOrgDomainsFromForm(form);
+      const includePhpThemeFlag = isNews && (!editingId || current?.phpTheme !== true);
+      let newsDomains: string[] | undefined;
+      if (isNews) {
+        const composed = composeNewsDomains(form);
+        if (composed.error) throw new Error(composed.error);
+        newsDomains = composed.list;
+      }
       const r = await apiFetch(apiUrl(editingId ? `/api/hm/sites/${editingId}` : "/api/hm/sites"), {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadFromForm(form, editorId, { includePhpThemeFlag })),
+        body: JSON.stringify(
+          payloadFromForm(form, editorId, { includePhpThemeFlag, kind, isCreate: !editingId, newsDomains }),
+        ),
       });
       const text = await r.text();
       const j = text
@@ -377,46 +504,20 @@ export default function HaberSiteleri() {
         editingId ??
         (typeof j.site?.id === "number" ? j.site.id : typeof j.id === "number" ? j.id : null);
 
-      let gundemiNote = "";
-      if (gundemiHosts.length > 0 && siteId) {
-        try {
-          const er = await apiFetch(apiUrl(`/api/hm/sites/${siteId}/ensure-gundemi`), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: "{}",
-          });
-          const ej = (await er.json().catch(() => ({}))) as {
-            error?: string;
-            gundemiProvision?: { tokenPresent?: boolean; dns?: Array<{ action?: string }> };
-            tokenHint?: string;
-          };
-          if (er.ok) {
-            const actions = (ej.gundemiProvision?.dns ?? []).map((d) => d.action).filter(Boolean);
-            gundemiNote = ej.gundemiProvision?.tokenPresent
-              ? ` · gundemi.org DNS: ${actions.join(", ") || "ok"}`
-              : " · gundemi.org DNS: token yok (CLOUDFLARE_API_TOKEN) — soft-fail";
-          } else {
-            gundemiNote = ` · gundemi ensure: ${ej.error || "başarısız"}`;
-          }
-        } catch {
-          gundemiNote = " · gundemi ensure çağrısı başarısız";
-        }
-      } else if (j.gundemiProvision) {
-        const actions = (j.gundemiProvision.dns ?? []).map((d) => d.action).filter(Boolean);
-        gundemiNote = j.gundemiProvision.tokenPresent
-          ? ` · gundemi.org DNS: ${actions.join(", ") || "ok"}`
-          : " · gundemi.org DNS: token yok — soft-fail";
-      }
+      const savedSite = (j as { site?: { domain?: string | null } }).site;
+      const savedDomain = bareHost(savedSite?.domain ?? (newsDomains ? newsDomains[0] : form.domain));
+      const gundemiNote = isNews && savedDomain ? ` · yayında: https://${savedDomain}` : "";
+      void siteId;
 
       const wasPassiveEditor = primaryEditorIsPassive(current);
       toast({
-        title: editingId ? "Haber sitesi güncellendi" : "Haber sitesi oluşturuldu",
+        title: editingId ? `${noun} güncellendi` : `${noun} oluşturuldu`,
         description: wasPassiveEditor
           ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}${gundemiNote}`
           : `Slug: /${form.slug.trim()}${gundemiNote} · kaydı yenileniyor…`,
       });
       resetForm();
-      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
       await refetch();
     } catch (e) {
       toast({
@@ -448,7 +549,7 @@ export default function HaberSiteleri() {
         title: label,
         description: String(j.message ?? "Tamamlandı").slice(0, 480),
       });
-      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
       await refetch();
     } catch (e) {
       toast({
@@ -480,7 +581,7 @@ export default function HaberSiteleri() {
         title: "TGD arşiv yükleme",
         description: "Trafik Güvenliği Derneği sayfaları ve anasayfa kopyası güncellendi",
       });
-      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
       await refetch();
     } catch (e) {
       toast({
@@ -494,7 +595,7 @@ export default function HaberSiteleri() {
   }
 
   function patchSiteList(siteId: number, patch: Partial<HmSiteRow>) {
-    qc.setQueryData<{ items: HmSiteRow[] }>(["/api/hm/sites", "admin-panel"], (old) => {
+    qc.setQueryData<{ items: HmSiteRow[] }>(["/api/hm/sites", "admin-panel", kind], (old) => {
       if (!old?.items) return old;
       return {
         ...old,
@@ -519,7 +620,7 @@ export default function HaberSiteleri() {
         title: next ? "Site askıya alındı" : "Site yayına alındı",
         description: next ? "Ziyaretçiler Ahenk askı sayfasını görür." : `${site.displayName} yeniden açıldı.`,
       });
-      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
     } catch (e) {
       toast({ title: "Askı durumu değişmedi", description: String(e).slice(0, 180), variant: "destructive" });
     } finally {
@@ -538,29 +639,49 @@ export default function HaberSiteleri() {
       });
       if (!r.ok) throw new Error(await r.text());
       patchSiteList(site.id, { active: next });
-      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
     } catch (e) {
       toast({ title: "Durum değiştirilemedi", description: String(e).slice(0, 180), variant: "destructive" });
     }
   }
 
   async function deleteSite(site: HmSiteRow) {
-    if (!window.confirm(`${site.displayName} haber sitesini silmek istediğinize emin misiniz?`)) return;
+    if (!window.confirm(`${site.displayName} ${isNews ? "haber sitesini" : "kurumsal siteyi"} silmek istediğinize emin misiniz?`)) return;
     try {
       await ensureAdminPanelBootstrap();
       const r = await apiFetch(apiUrl(`/api/hm/sites/${site.id}`), { method: "DELETE" });
       if (!r.ok && r.status !== 204) throw new Error(await r.text());
-      toast({ title: "Haber sitesi silindi" });
+      toast({ title: `${noun} silindi` });
       if (editingId === site.id) resetForm();
-      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel"] });
+      await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
     } catch (e) {
       toast({ title: "Silinemedi", description: String(e).slice(0, 180), variant: "destructive" });
     }
   }
 
+  async function checkDomains(site: HmSiteRow) {
+    setCheckingId(site.id);
+    try {
+      await ensureAdminPanelBootstrap();
+      const r = await apiFetch(apiUrl(`/api/hm/sites/${site.id}/domain-check`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const j = (await r.json().catch(() => ({}))) as { results?: DomainCheckResult[]; error?: string };
+      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+      setDomainChecks((prev) => ({ ...prev, [site.id]: j.results ?? [] }));
+    } catch (e) {
+      toast({ title: "Domain kontrolü yapılamadı", description: String(e).slice(0, 180), variant: "destructive" });
+    } finally {
+      setCheckingId(null);
+    }
+  }
+
   return (
-    <AdminLayout title="Haber Siteleri">
+    <AdminLayout title={isNews ? "Haber Siteleri" : "HM Kurumsal"}>
       <div className="space-y-6">
+        {isNews ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="text-lg font-black text-gray-900">Haber Merkezi yapay zekâ anahtarları</h2>
           <p className="mt-1 mb-4 text-sm text-gray-600">
@@ -568,13 +689,23 @@ export default function HaberSiteleri() {
           </p>
           <LlmProviderKeysPanel mode="global" />
         </div>
+        ) : null}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">Haber Siteleri</h1>
+            <h1 className="text-2xl font-black text-gray-900">{isNews ? "Haber Siteleri" : "HM Kurumsal"}</h1>
             <p className="mt-1 text-sm text-gray-600">
-              Haber merkezi sitelerini, domainleri, editör hesaplarını ve SEO doğrulamalarını yönetin.
+              {isNews
+                ? "Haber sitelerini (PHP tema), adreslerini, editör hesaplarını ve SEO doğrulamalarını yönetin. Kurumsal siteler HM Kurumsal bölümünde."
+                : "Vakıf ve dernek sitelerini (VKD / VATAN kurumsal tema) yönetin. Kurumsal siteye haber modülü ve haber teması verilmez."}
             </p>
+            <Link
+              href={isNews ? "/admin/hm-kurumsal" : "/admin/haber-siteleri"}
+              className="mt-1 inline-block text-xs font-semibold text-red-700 hover:underline"
+            >
+              {isNews ? "→ HM Kurumsal (vakıf / dernek siteleri)" : "→ Haber Siteleri"}
+            </Link>
           </div>
+          {isNews ? (
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/haber-siteleri-bekci" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100">
               Haber AI Bekçi + PHP Neon eşitle
@@ -673,6 +804,9 @@ export default function HaberSiteleri() {
             >
               {repairing === "/api/hm/admin/repair-editor-cross-site" ? "Onarılıyor…" : "Çift e-posta onar"}
             </Button>
+          </div>
+          ) : (
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -683,6 +817,7 @@ export default function HaberSiteleri() {
               {repairing === "/api/hm/admin/tgd-restore-pages" ? "Yükleniyor…" : "TGD arşiv yükle"}
             </Button>
           </div>
+          )}
         </div>
 
         {duplicateEditorEmails.length > 0 ? (
@@ -708,7 +843,9 @@ export default function HaberSiteleri() {
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-black text-gray-900">
-                  {editingId ? "Haber Sitesini Düzenle" : "Yeni Haber Sitesi"}
+                  {isNews
+                    ? editingId ? "Haber Sitesini Düzenle" : "Yeni Haber Sitesi"
+                    : editingId ? "Kurumsal Siteyi Düzenle" : "Yeni Kurumsal Site"}
                 </h2>
                 {editingId ? (
                   <p className="mt-1 text-sm font-bold text-gray-900">
@@ -717,10 +854,16 @@ export default function HaberSiteleri() {
                   </p>
                 ) : null}
                 <p className="mt-1 text-xs text-gray-500">
-                  Slug portal yoludur: <code>/tr/slug</code>. Domain alanlarına çıplak alan adını yazın.
-                  Varsayılan platform önerileri:{" "}
-                  <code className="rounded bg-gray-100 px-1">{platformSubdomains.fixTc}</code>,{" "}
-                  <code className="rounded bg-gray-100 px-1">{platformSubdomains.gundemiOrg}</code>.
+                  {isNews ? (
+                    <>
+                      Site oluşunca hemen{" "}
+                      <code className="rounded bg-gray-100 px-1">{platformSubdomains.gundemiOrg}</code> ve{" "}
+                      <code className="rounded bg-gray-100 px-1">{platformSubdomains.fixTc}</code> adreslerinde PHP
+                      temayla yayına girer.
+                    </>
+                  ) : (
+                    <>Kurumsal site kendi domainleriyle yayın yapar (gundemi.org / fix.tc haber adresi verilmez).</>
+                  )}
                 </p>
               </div>
               {editingId ? (
@@ -747,38 +890,74 @@ export default function HaberSiteleri() {
                 <Textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={3} placeholder="Kısa site açıklaması" />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                <div className="space-y-1.5">
-                  <Label>Domain 1</Label>
-                  <Input value={form.domain} onChange={(e) => update("domain", e.target.value)} placeholder="ornek.com" />
+              {isNews ? (
+                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                  <div className="text-xs font-black uppercase tracking-wide text-emerald-800">Yayın adresleri</div>
+                  <label className="flex items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2">
+                    <span className="min-w-0 text-sm font-semibold text-gray-800">
+                      <code className="break-all">{bareHost(form.gundemiHost) || platformSubdomains.gundemiOrg}</code>
+                    </span>
+                    <Switch checked={form.gundemiAlias} onCheckedChange={(v) => update("gundemiAlias", Boolean(v))} />
+                  </label>
+                  <label className="flex items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2">
+                    <span className="min-w-0 text-sm font-semibold text-gray-800">
+                      <code className="break-all">{bareHost(form.fixHost) || platformSubdomains.fixTc}</code>
+                    </span>
+                    <Switch checked={form.fixAlias} onCheckedChange={(v) => update("fixAlias", Boolean(v))} />
+                  </label>
+                  <div className="space-y-1.5">
+                    <Label>Kendi domaini (isteğe bağlı)</Label>
+                    <Input value={form.customDomain} onChange={(e) => update("customDomain", e.target.value)} placeholder="adanahaber.com" />
+                  </div>
+                  {form.customDomain2 || form.customDomain ? (
+                    <div className="space-y-1.5">
+                      <Label>Ek domain (isteğe bağlı)</Label>
+                      <Input value={form.customDomain2} onChange={(e) => update("customDomain2", e.target.value)} placeholder="adanahaber.com.tr" />
+                    </div>
+                  ) : null}
+                  <ul className="list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-emerald-950">
+                    <li>
+                      Kendi domaini varsa canonical, sitemap.xml, robots.txt, SEO/GEO, OG ve RSS o domaini gösterir;
+                      yoksa <code>{bareHost(form.gundemiHost) || platformSubdomains.gundemiOrg}</code>.
+                    </li>
+                    <li>gundemi.org / fix.tc adresini kapatabilirsiniz; site açık kalan adreslerde yayına devam eder.</li>
+                    <li>
+                      Kendi domaininin DNS kaydı: <code>A 187.77.84.201</code> (Cloudflare&apos;da turuncu bulut). Sunucu
+                      yönlendirmesi bir dakika içinde kendiliğinden açılır; listedeki «Adresleri kontrol et» ile doğrulayın.
+                    </li>
+                  </ul>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Domain 2</Label>
-                  <Input value={form.domain2} onChange={(e) => update("domain2", e.target.value)} placeholder="www.ornek.com" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Domain 3</Label>
-                  <Input value={form.domain3} onChange={(e) => update("domain3", e.target.value)} placeholder="alternatif.com" />
-                </div>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-[11px] leading-relaxed text-emerald-950">
-                <p className="font-semibold text-emerald-900">Domain 2 / 3 otomatik aktivasyon</p>
-                <p className="mt-1">{HM_PLATFORM_APEX_HELP}</p>
-              </div>
-
-              {gundemiHostsInForm.length > 0 ? (
-                <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-[11px] leading-relaxed text-sky-950">
-                  <p className="font-semibold text-sky-900">*.gundemi.org otomatik açılış</p>
-                  <p className="mt-1">
-                    Kayıtta DNS (Proxied A → 187.77.84.201) + PHP şablon bayrağı + Worker{" "}
-                    <code className="rounded bg-white/80 px-1">*.gundemi.org/*</code> catch-all
-                    otomatik denenir ({gundemiHostsInForm.join(", ")}). Token:{" "}
-                    <code className="rounded bg-white/80 px-1">CLOUDFLARE_API_TOKEN</code> (Zone DNS
-                    Edit, gundemi.org). Origin PHP için VPS Traefik Host() hâlâ opsiyonel — Worker
-                    yolu Traefik olmadan siteyi açar.
-                  </p>
-                </div>
-              ) : null}
+              ) : (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                    <div className="space-y-1.5">
+                      <Label>Domain 1</Label>
+                      <Input value={form.domain} onChange={(e) => update("domain", e.target.value)} placeholder="ornek.org" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Domain 2</Label>
+                      <Input value={form.domain2} onChange={(e) => update("domain2", e.target.value)} placeholder="ornek.org.tr" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Domain 3</Label>
+                      <Input value={form.domain3} onChange={(e) => update("domain3", e.target.value)} placeholder="alternatif.org" />
+                    </div>
+                  </div>
+                  {!editingId ? (
+                    <div className="space-y-1.5">
+                      <Label>Kurumsal tema</Label>
+                      <select
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={form.corporateTheme}
+                        onChange={(e) => update("corporateTheme", e.target.value === "vatan" ? "vatan" : "corporate")}
+                      >
+                        <option value="corporate">VKD Tema (kurumsal)</option>
+                        <option value="vatan">VATAN tema</option>
+                      </select>
+                    </div>
+                  ) : null}
+                </>
+              )}
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <div className="space-y-1.5">
@@ -842,26 +1021,22 @@ export default function HaberSiteleri() {
                 «Site aktif» yalnızca vitrini açar. Editör girişi için sağ listedeki hesap «(pasif)» olmamalı.
               </p>
 
-              <label className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
-                <span className="text-sm font-semibold text-emerald-950">PHP şablon (Hostinger Yenişafak)</span>
-                <Switch checked={form.phpTheme} onCheckedChange={(v) => update("phpTheme", Boolean(v))} />
-              </label>
-              <div className="rounded-xl border border-emerald-100 bg-white px-3 py-2 text-[11px] leading-relaxed text-slate-600">
-                <p className="font-semibold text-emerald-900">Yeni sitelerde varsayılan açık</p>
-                <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                  <li>
-                    Panel kaydı <code className="rounded bg-slate-100 px-1">layout_json.phpTheme</code>{" "}
-                    bayrağını yazar; bekçi / Worker host listesi wrangler.toml düzenlemesi gerektirmez.
-                  </li>
-                  <li>
-                    <code className="rounded bg-slate-100 px-1">*.gundemi.org</code> domain’lerinde DNS +
-                    Worker catch-all da otomatik denenir (yukarıdaki mavi kutu).
-                  </li>
-                </ul>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-600">
+                {isNews ? (
+                  <>
+                    <span className="font-semibold text-slate-800">Tema: PHP (Yenişafak) — haber siteleri için sabit.</span>{" "}
+                    Site türü kilitlidir; haber sitesi kurumsal siteye dönüştürülemez.
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold text-slate-800">Tema: kurumsal (VKD / VATAN).</span> Site türü
+                    kilitlidir; kurumsal site haber sitesine dönüştürülemez, haber modülleri bu sitelerde görünmez.
+                  </>
+                )}
               </div>
 
               <Button type="button" disabled={saving} onClick={saveSite} className="w-full bg-[#e61e25] hover:bg-[#c91820]">
-                <Save className="mr-2 h-4 w-4" /> {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : "Site Oluştur"}
+                <Save className="mr-2 h-4 w-4" /> {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : isNews ? "Haber Sitesi Oluştur" : "Kurumsal Site Oluştur"}
               </Button>
             </div>
           </section>
@@ -869,7 +1044,7 @@ export default function HaberSiteleri() {
           <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg font-black text-gray-900">Kayıtlı Haber Siteleri</h2>
+                <h2 className="text-lg font-black text-gray-900">{isNews ? "Kayıtlı Haber Siteleri" : "Kayıtlı Kurumsal Siteler"}</h2>
                 <p className="text-xs text-gray-500">{sites.length} site · Site ID (1, 2, 3…) listede</p>
                 <p className="mt-1 max-w-xl text-xs text-gray-500">
                   Askıya al, site girişine Ahenk Bilgi Teknolojileri askı sayfasını yazar. Aktif anahtarı siteyi gizler.
@@ -902,6 +1077,7 @@ export default function HaberSiteleri() {
                 {filteredSites.map((site) => {
                   const publicHref = hmPublicHomeHref(site);
                   const domains = [site.domain, site.domain2, site.domain3].filter(Boolean) as string[];
+                  const canonicalDomain = domains[0] ?? null;
                   return (
                     <article key={`${site.id}-${site.slug}`} className="p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -933,12 +1109,26 @@ export default function HaberSiteleri() {
                             {domains.map((domain) => (
                               <a key={domain} href={`https://${domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-200">
                                 <Globe2 className="h-3 w-3" /> {domain}
+                                {isNews && domain === canonicalDomain && domains.length > 1 ? (
+                                  <span className="ml-1 rounded bg-emerald-100 px-1 text-[10px] text-emerald-800">canonical</span>
+                                ) : null}
                               </a>
                             ))}
                             {domains.length === 0 ? (
                               <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">Domain tanımlı değil</span>
                             ) : null}
                           </div>
+                          {domainChecks[site.id]?.length ? (
+                            <ul className="mt-2 space-y-1 text-xs">
+                              {domainChecks[site.id].map((c) => (
+                                <li key={c.host} className={c.ok ? "text-emerald-700" : "text-red-700"}>
+                                  {c.ok ? "✓" : "✗"} <code>{c.host}</code> — {c.ok ? "DNS + SSL + PHP tema açık" : c.error ? `bağlanamadı (${c.error})` : `HTTP ${c.status}`}
+                                  {c.sitemap ? ` · sitemap: ${c.sitemap}` : ""}
+                                  {c.ok && c.canonicalOk === false ? " · canonical farklı" : ""}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
                           {site.editors?.length ? (
                             <div className="mt-3 text-xs text-gray-500">
                               Editör: {editorSummary(site)}
@@ -962,6 +1152,15 @@ export default function HaberSiteleri() {
                             Aktif
                             <Switch checked={site.active} onCheckedChange={() => toggleActive(site)} />
                           </label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={checkingId === site.id || domains.length === 0}
+                            onClick={() => void checkDomains(site)}
+                          >
+                            {checkingId === site.id ? "Kontrol ediliyor…" : "Adresleri kontrol et"}
+                          </Button>
                           <Button type="button" variant="outline" size="sm" onClick={() => startEdit(site)}>
                             <Pencil className="mr-1 h-4 w-4" /> Düzenle
                           </Button>

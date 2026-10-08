@@ -2223,6 +2223,65 @@ zone_name = "fix.tc"
 pattern = "www.fix.tc/hm/*"
 zone_name = "fix.tc"
 
+# *.fix.tc — HM panel haber sitesi takma adları (<slug>.fix.tc; 2026-10-08). DNS *.fix.tc A→187.77.84.201 (proxied),
+# VPS Traefik fixtc-wild.yml → PHP; tanımsız slug PHP'de 404. Worker yalnızca panel/API yolları; catch-all YOK.
+[[routes]]
+pattern = "*.fix.tc/editor*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/api/*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/admin*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/panel*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/haber-merkezi*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/assets/*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/fix/*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/sw.js"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/llms.txt"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/ai.txt"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/manifest.json"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/yazar/giris*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/koseyazari/giris*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/yazar/sifre*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/koseyazari/sifre*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/yazar/haber*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/koseyazari/haber*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/tr/*"
+zone_name = "fix.tc"
+[[routes]]
+pattern = "*.fix.tc/hm/*"
+zone_name = "fix.tc"
 # sosyalhizmetler.tr (Marmara Gündemi domain2) — panel/API only; public PHP via origin (fix.tc model).
 [[routes]]
 pattern = "sosyalhizmetler.tr/editor*"

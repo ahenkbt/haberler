@@ -223,7 +223,16 @@ export const ADMIN_SEARCH_INDEX: AdminSearchEntry[] = [
     href: "/admin/haber-siteleri",
     icon: Globe,
     section: "Haber Merkezi",
-    keywords: ["haber merkezi", "hm", "ozel alan", "domain"],
+    keywords: ["haber merkezi", "hm", "ozel alan", "domain", "gundemi.org", "fix.tc"],
+  }),
+  entry({
+    id: "hm-kurumsal",
+    title: "HM Kurumsal",
+    description: "Kurumsal siteler (vakıf, dernek): TÜRKATA Vakfı, Vatan Kahramanları, Trafik Güvenliği",
+    href: "/admin/hm-kurumsal",
+    icon: Globe,
+    section: "Haber Merkezi",
+    keywords: ["kurumsal", "vakif", "dernek", "vkd", "tgd", "tukav"],
   }),
   entry({
     id: "hm-telif-sayfalari",
