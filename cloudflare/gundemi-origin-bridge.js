@@ -197,6 +197,10 @@ export function appendYsLogoHeaderCssFix(cssText) {
   return `${raw.trimEnd()}\n\n${YS_LOGO_HEADER_CSS_FIX}`;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/cursor/logo-trim-header-size-4349
 /**
  * Public gundemi hosts must never get SPA index.html from ASSETS.
  * Panel paths + hashed /assets/index-* + /gundemi/logos stay on Worker ASSETS.
