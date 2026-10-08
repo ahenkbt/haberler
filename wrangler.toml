@@ -889,11 +889,19 @@ pattern = "turkatahaber.com/assets/theme.css"
 zone_name = "turkatahaber.com"
 
 [[routes]]
+pattern = "turkatahaber.com/assets/theme.js"
+zone_name = "turkatahaber.com"
+
+[[routes]]
 pattern = "www.turkatahaber.com/assets/*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
 pattern = "www.turkatahaber.com/assets/theme.css"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/assets/theme.js"
 zone_name = "turkatahaber.com"
 
 
@@ -1013,7 +1021,9 @@ zone_name = "turkatahaber.com"
 # Yeni PHP tema haber siteleri (04.10.2026): sehitgazi.org.tr, yerel.net.tr, turksav.org, dunyasaglik.org, yesilvatan.gen.tr.
 # Apex + www→apex 301 ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca HM Editör panel/API yollarını alır.
 # apex/www custom_domain ve "<alan>/*", "www.<alan>/*" catch-all BİLEREK yok (deploy geri eklerse site PHP temasından düşer).
-# "<alan>/assets/theme.*" route'u (Worker'sız, PHP temanın CSS/JS'i) Cloudflare panelinden yönetilir.
+# /assets/* Worker'da; Dashboard'daki Worker'sız theme.* exclusion'ları KALDIRILDI —
+# exact /assets/theme.css (+ theme.js) route'ları decoratePhpThemeCss / concept chrome için zorunlu.
+# Post-deploy: scripts/cf-ensure-php-theme-css-routes.mjs rebind + smoke-php-concept-theme.mjs.
 # Eski SPA /tr|/hm/* Worker 301'leri php-theme-legacy-redirect.js ile apex PHP yollarına gider (ASG ile aynı).
 
 # sehitgazi.org.tr
@@ -1046,11 +1056,19 @@ pattern = "sehitgazi.org.tr/assets/theme.css"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
+pattern = "sehitgazi.org.tr/assets/theme.js"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
 pattern = "www.sehitgazi.org.tr/assets/*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
 pattern = "www.sehitgazi.org.tr/assets/theme.css"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/assets/theme.js"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
@@ -1192,11 +1210,19 @@ pattern = "yerel.net.tr/assets/theme.css"
 zone_name = "yerel.net.tr"
 
 [[routes]]
+pattern = "yerel.net.tr/assets/theme.js"
+zone_name = "yerel.net.tr"
+
+[[routes]]
 pattern = "www.yerel.net.tr/assets/*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
 pattern = "www.yerel.net.tr/assets/theme.css"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/assets/theme.js"
 zone_name = "yerel.net.tr"
 
 [[routes]]
@@ -1327,11 +1353,19 @@ pattern = "turksav.org/assets/theme.css"
 zone_name = "turksav.org"
 
 [[routes]]
+pattern = "turksav.org/assets/theme.js"
+zone_name = "turksav.org"
+
+[[routes]]
 pattern = "www.turksav.org/assets/*"
 zone_name = "turksav.org"
 
 [[routes]]
 pattern = "www.turksav.org/assets/theme.css"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/assets/theme.js"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -1454,11 +1488,19 @@ pattern = "dunyasaglik.org/assets/theme.css"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
+pattern = "dunyasaglik.org/assets/theme.js"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
 pattern = "www.dunyasaglik.org/assets/*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
 pattern = "www.dunyasaglik.org/assets/theme.css"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/assets/theme.js"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
@@ -1581,11 +1623,19 @@ pattern = "yesilvatan.gen.tr/assets/theme.css"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
+pattern = "yesilvatan.gen.tr/assets/theme.js"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
 pattern = "www.yesilvatan.gen.tr/assets/*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
 pattern = "www.yesilvatan.gen.tr/assets/theme.css"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/assets/theme.js"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -2288,3 +2338,4 @@ zone_name = "sosyalhizmetler.tr"
 
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi
 # overnight-theme-css-routes 2026-10-08T12:50:00Z — explicit theme.css Worker routes for PHP brand hosts
+# theme-css-bridge-rebind 2026-10-08T13:05:00Z — ensure script + theme.js + smoke concept colors
