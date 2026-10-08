@@ -265,11 +265,24 @@ async function syncSiteBatch(
     LIMIT ${batch} OFFSET ${offset}
   `;
   for (const row of news) {
+    let categorySlug = row.category_slug != null ? String(row.category_slug) : "";
+    // Orphans written under PHP site_id often keep twilight-pine category ids that
+    // do not join on panel Neon — recover slug from NEWS_DATABASE_URL.
+    if (!categorySlug && row.category_id != null) {
+      try {
+        const fromNews = await newsSql`
+          SELECT slug FROM categories WHERE id = ${Number(row.category_id)} LIMIT 1
+        `;
+        categorySlug = fromNews?.[0]?.slug != null ? String(fromNews[0].slug) : "";
+      } catch {
+        categorySlug = "";
+      }
+    }
     const r = await mirror("news", "upsert", {
       ...row,
       site_slug: slug,
       site_id: workerSiteId,
-      category_slug: row.category_slug,
+      category_slug: categorySlug || null,
     });
     if (r?.mirrored) out.news += 1;
     else if (r?.reason) out.errors.push(`news ${row.id}: ${r.reason}`);
