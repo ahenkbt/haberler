@@ -345,7 +345,7 @@ async function ensureCampaign(siteId: number, def: KamuYerelSiteDef): Promise<nu
     feeds,
     sourceType: "rss",
     intervalMinutes: 180,
-    dailyLimit: 60,
+    dailyLimit: 200,
     downloadImages: true,
     headline: false,
     hmSiteIds: [siteId],
@@ -358,6 +358,8 @@ async function ensureCampaign(siteId: number, def: KamuYerelSiteDef): Promise<nu
       existing.name !== values.name ||
       existing.active !== values.active ||
       existing.categorySlug !== values.categorySlug ||
+      Number(existing.dailyLimit) !== values.dailyLimit ||
+      existing.downloadImages !== values.downloadImages ||
       !existingTargets.includes(siteId) ||
       existingTargets.some((id) => id !== siteId) ||
       JSON.stringify(existing.feeds) !== JSON.stringify(values.feeds);

@@ -25,7 +25,10 @@ import { logger } from "./logger";
 import { ensureRssCampaignSchema } from "./ensure-rss-campaign-schema.js";
 import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
 import { resolveHmEditorCategoryId } from "./hm-editor-categories.js";
-import { categorySlugFromCumhaFeed } from "./hm-cumha-kamu-yerel-catalog.js";
+import {
+  categorySlugFromCumhaFeed,
+  categorySlugFromCumhaItemRaw,
+} from "./hm-cumha-kamu-yerel-catalog.js";
 import { categorySlugFromShaFeed } from "./hm-sha-rss-feeds.js";
 import { expandHmSiteIdAliases, preferWorkerSiteId } from "./hm-php-site-id-map.js";
 import {
@@ -458,11 +461,6 @@ export async function executeRssCampaignRun(
           skipped++;
           continue;
         }
-        if (requireImage && !newsHasCoverImage(item.imageUrl)) {
-          skipped++;
-          continue;
-        }
-
         const rssSpot =
           item.description.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().slice(0, 500) ||
           (isHaberlerComUrl(feedUrl) ? "Haberler.com'dan kazınmıştır." : "RSS'ten aktarılmıştır.");
@@ -486,7 +484,8 @@ export async function executeRssCampaignRun(
         if (targetsToAdd.length === 0 && targetsToUpgrade.length === 0) continue;
 
         const contentHtml = resolveCampaignRssContent({ ...item, rssSpot });
-        const baseFeedCategorySlug = feedCategorySlug;
+        const itemCumhaSlug = categorySlugFromCumhaItemRaw(item.rawInner ?? item.contentEncoded ?? "");
+        const baseFeedCategorySlug = itemCumhaSlug || feedCategorySlug;
         const publishedAt = item.publishedAt;
         const resolvedCover = await resolveRssImportCoverImage({
           existing: item.imageUrl,
@@ -499,6 +498,10 @@ export async function executeRssCampaignRun(
         const imageUrl = await mirrorRssImportImageUrl(resolvedCover, cleanTitle, {
           force: campaign.downloadImages === true,
         });
+        if (requireImage && !newsHasCoverImage(imageUrl)) {
+          skipped++;
+          continue;
+        }
         const sharedFeed = rssCampaignSharedFeedConfig({
           campaignId,
           categorySlug: String(campaign.categorySlug || "gundem"),

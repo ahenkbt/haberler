@@ -87,6 +87,13 @@ describe("RSS kampanya dedupe + görsel yükseltme", () => {
     expect(campaignWritesPerHmSite({ tags: ["vatanhaber-ankara"], feeds: [] })).toBe(true);
     expect(
       campaignWritesPerHmSite({
+        tags: ["kamu-yerel-cumha"],
+        feeds: ["https://cumha.com.tr/rss/category/nato"],
+        name: "TÜRKATA HABER AJANSI — Cumha kamu-yerel RSS",
+      }),
+    ).toBe(true);
+    expect(
+      campaignWritesPerHmSite({
         tags: ["ntv"],
         feeds: ["https://www.ntv.com.tr/gundem.rss"],
         name: "NTV",

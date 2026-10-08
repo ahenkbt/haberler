@@ -170,6 +170,14 @@ export const CUMHA_DAHA_CATEGORY_FEEDS = [
     name: "Avrupa Birliği",
     color: "#315f90",
   },
+  { slug: "dunya", cumhaSlug: "dunya", name: "Dünya", color: "#1a3558" },
+] as const;
+
+/** Cumha rss-feeds — katalogda eksik latest + lokasyon. */
+export const CUMHA_EXTRA_RSS_FEEDS = [
+  { id: "cumha-latest-posts", label: "Cumha Son Haberler", url: "https://cumha.com.tr/rss/latest-posts", categoryKey: "yerel" },
+  { id: "cumha-lokasyon-turkiye", label: "Türkiye", url: "https://cumha.com.tr/rss/lokasyon/turkiye", categoryKey: "turkiye" },
+  { id: "cumha-lokasyon-dunya", label: "Dünya", url: "https://cumha.com.tr/rss/lokasyon/dunya", categoryKey: "dunya" },
 ] as const;
 
 const CUMHA_KAMU_PARENT_SLUG: Partial<Record<string, string>> = {
@@ -183,7 +191,13 @@ const CUMHA_KAMU_PARENT_SLUG: Partial<Record<string, string>> = {
   "uluslararasi-kuruluslar": "daha",
   "birlesmis-milletler": "daha",
   "avrupa-birligi": "daha",
+  dunya: "daha",
+  turkiye: "yerel",
 };
+
+const CUMHA_SLUG_TO_SITE: Record<string, string> = Object.fromEntries(
+  [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS].map((c) => [c.cumhaSlug, c.slug]),
+);
 
 const KAMU_YEREL_HM_SITE_SLUGS = new Set(["turkatahaber", "yerelnet"]);
 
@@ -211,8 +225,13 @@ export function expandKamuYerelListingCategorySlugs(
   const children = Object.entries(CUMHA_KAMU_PARENT_SLUG)
     .filter(([, parent]) => parent === slug)
     .map(([child]) => child);
-  if (!children.length) return [slug];
-  return [slug, ...children];
+  if (children.length) return [slug, ...children];
+  const parent = CUMHA_KAMU_PARENT_SLUG[slug];
+  if (!parent) return [slug];
+  const siblings = Object.entries(CUMHA_KAMU_PARENT_SLUG)
+    .filter(([, p]) => p === parent)
+    .map(([child]) => child);
+  return [...new Set([slug, parent, ...siblings])];
 }
 
 /** Tepe menü — Cumha.com.tr kamu-yerel üst kategorileri (+ yerel manşet). */
@@ -299,6 +318,7 @@ export function buildKamuYerelCategories(): KamuYerelCategoryDef[] {
     color: c.color,
   }));
   const dahaNav: KamuYerelCategoryDef = { slug: "daha", name: "Daha", color: "#1e3a5f" };
+  const turkiyeNav: KamuYerelCategoryDef = { slug: "turkiye", name: "Türkiye", color: "#0b3362" };
   const provincesByRegion: KamuYerelCategoryDef[] = [];
   for (const regionId of KAMU_YEREL_REGION_ORDER) {
     provincesByRegion.push({
@@ -314,7 +334,7 @@ export function buildKamuYerelCategories(): KamuYerelCategoryDef[] {
       });
     }
   }
-  return [...KAMU_YEREL_SECONDARY_CATEGORIES, dahaNav, ...kamu, ...provincesByRegion];
+  return [...KAMU_YEREL_SECONDARY_CATEGORIES, dahaNav, turkiyeNav, ...kamu, ...provincesByRegion];
 }
 
 export function listKamuYerelNavTopCategorySlugs(): string[] {
@@ -370,6 +390,7 @@ export type HmNewsSiteRssFeedRow = {
 export function buildKamuYerelHmNewsSiteRssFeedRows(): HmNewsSiteRssFeedRow[] {
   const rows: HmNewsSiteRssFeedRow[] = [];
   for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
+    if (cat.slug === "dunya") continue;
     rows.push({
       id: `cumha-cat-${cat.slug}`,
       label: cat.name,
@@ -383,6 +404,14 @@ export function buildKamuYerelHmNewsSiteRssFeedRows(): HmNewsSiteRssFeedRow[] {
       label: prov.name,
       url: cumhaLocationRssUrl(prov.slug),
       categoryKey: prov.slug,
+    });
+  }
+  for (const extra of CUMHA_EXTRA_RSS_FEEDS) {
+    rows.push({
+      id: extra.id,
+      label: extra.label,
+      url: extra.url,
+      categoryKey: extra.categoryKey,
     });
   }
   for (const sup of KAMU_YEREL_SUPPLEMENTAL_RSS) {
@@ -422,11 +451,13 @@ export function categorySlugFromCumhaFeed(feedUrl: string): string | null {
     const pathKey = normalizeCumhaFeedUrl(`${u.hostname}${u.pathname}`);
     const fromPath = CUMHA_FEED_URL_TO_CATEGORY.get(pathKey);
     if (fromPath) return fromPath;
+    if (/\/rss\/latest-posts\/?$/i.test(u.pathname)) return "yerel";
     const loc = u.pathname.match(/\/rss\/lokasyon\/([^/]+)/i);
     if (loc?.[1]) return loc[1].toLowerCase();
     const cat = u.pathname.match(/\/rss\/category\/([^/]+)/i);
     if (cat?.[1]) {
       const cumhaSlug = cat[1].toLowerCase();
+      if (CUMHA_SLUG_TO_SITE[cumhaSlug]) return CUMHA_SLUG_TO_SITE[cumhaSlug];
       for (const row of buildKamuYerelHmNewsSiteRssFeedRows()) {
         if (row.url.includes(cumhaSlug)) return row.categoryKey;
       }
@@ -434,6 +465,22 @@ export function categorySlugFromCumhaFeed(feedUrl: string): string | null {
   } catch {
     return null;
   }
+  return null;
+}
+
+export function categorySlugFromCumhaItemRaw(rawInner: string | null | undefined): string | null {
+  const raw = String(rawInner ?? "");
+  if (!raw) return null;
+  const m =
+    raw.match(/<cumha:category_slug>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/cumha:category_slug>/i) ??
+    raw.match(/<category_slug>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/category_slug>/i);
+  const cumhaSlug = String(m?.[1] ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+|\/+$/g, "");
+  if (!cumhaSlug) return null;
+  if (CUMHA_SLUG_TO_SITE[cumhaSlug]) return CUMHA_SLUG_TO_SITE[cumhaSlug];
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(cumhaSlug)) return cumhaSlug;
   return null;
 }
 
