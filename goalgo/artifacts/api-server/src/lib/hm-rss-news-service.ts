@@ -55,7 +55,10 @@ import {
   readHmPublicLayout,
 } from "./hm-public-layout.js";
 import { buildRssImportNewsSlug } from "./rss-import-slug.js";
-import { resolveAnkaraImportCategorySlug } from "./rss-ankara-category-guard.js";
+import {
+  loadHmSiteCategoryCatalog,
+  resolveHmImportCategorySlug,
+} from "./hm-local-category-router.js";
 
 export type HmRssNewsListItem = {
   id: string;
@@ -456,7 +459,21 @@ export async function importHmRssNewsToSite(
     (spot ? `<p>${spot}</p>` : `<p>${title}</p>`);
   const rawCategorySlug =
     String(input.categorySlug ?? item.categorySlug).trim().toLowerCase() || item.categorySlug;
-  const categorySlug = resolveAnkaraImportCategorySlug(rawCategorySlug, title, spot, content);
+  let siteSlug: string | null = null;
+  let siteCategories = null as Awaited<ReturnType<typeof loadHmSiteCategoryCatalog>> | null;
+  if (siteId != null) {
+    siteCategories = await loadHmSiteCategoryCatalog(siteId);
+    const [siteRow] = await getNewsDbForRead()
+      .select({ slug: hmNewsSitesTable.slug })
+      .from(hmNewsSitesTable)
+      .where(eq(hmNewsSitesTable.id, siteId))
+      .limit(1);
+    siteSlug = siteRow?.slug ?? null;
+  }
+  const categorySlug = resolveHmImportCategorySlug(rawCategorySlug, title, spot, content, {
+    siteCategories,
+    siteSlug,
+  });
   const categoryId = await resolveCategoryIdForSiteImport(siteId, categorySlug);
   const status = input.status === "draft" ? "draft" : "published";
 

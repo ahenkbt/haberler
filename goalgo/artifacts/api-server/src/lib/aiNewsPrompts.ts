@@ -1,4 +1,7 @@
-import { ASG_ANKARA_EDITOR_AI_RULES } from "./rss-ankara-category-guard.js";
+import {
+  ASG_ANKARA_EDITOR_AI_RULES,
+  HM_LOCAL_CATEGORY_EDITOR_AI_RULES,
+} from "./hm-local-category-router.js";
 
 /** AI haber üretiminde `icerik` alanı için ortak HTML kuralları. */
 export const AI_NEWS_ICERIK_HTML_RULES =
@@ -19,12 +22,16 @@ export function aiNewsSystemPrompt(opts: {
   extra?: string;
   /** ASG/AHG Ankara kategorisi için ek kurallar */
   ankaraLocalOnly?: boolean;
+  /** HM yerel kategori yönlendirme kuralı (tüm haber siteleri) */
+  hmLocalCategoryRules?: boolean;
 }): string {
   const extra = opts.extra ? `${opts.extra.trim()} ` : "";
   const trStyle = /türkçe|turkish/i.test(opts.langInstruction) ? `${AI_NEWS_TR_STYLE_RULES} ` : "";
+  const hmLocal =
+    opts.hmLocalCategoryRules === true ? `${HM_LOCAL_CATEGORY_EDITOR_AI_RULES} ` : "";
   const ankara = opts.ankaraLocalOnly === true ? `${ASG_ANKARA_EDITOR_AI_RULES} ` : "";
   return (
-    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${ankara}${extra}` +
+    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${hmLocal}${ankara}${extra}` +
     `Özgün, bilgilendirici haber metni yaz (makale veya essay değil). Yalnızca JSON döndür. ${AI_NEWS_ICERIK_HTML_RULES}`
   );
 }

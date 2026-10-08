@@ -12,7 +12,7 @@
 import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
 import { normalizeNewsCategorySlug } from "./categorySort.js";
 import { looksLikeSportsContent } from "./rss-spor-category-guard.js";
-import { looksLikeAnkaraLocalContent } from "./rss-ankara-category-guard.js";
+import { isMisclassifiedPlaceCategoryItem } from "./hm-local-category-router.js";
 import { canonicalizeRssCategorySlug, rssCategorySlugsMatch } from "./hm-rss-category-aliases.js";
 
 const STANDARD_CATEGORY_SLUGS = new Set(
@@ -198,13 +198,10 @@ export function passesHmCategoryContentGuard(item: CategoryGuardItem, wantCatego
       String(item?.content ?? ""),
     );
   }
-  if (want === "ankara" || want.endsWith("-ankara")) {
-    return looksLikeAnkaraLocalContent(
-      String(item?.title ?? ""),
-      String(item?.spot ?? ""),
-      String(item?.content ?? ""),
-    );
-  }
+  const title = String(item?.title ?? "");
+  const spot = String(item?.spot ?? "");
+  const content = String(item?.content ?? "");
+  if (isMisclassifiedPlaceCategoryItem(want, title, spot, content)) return false;
   return true;
 }
 
