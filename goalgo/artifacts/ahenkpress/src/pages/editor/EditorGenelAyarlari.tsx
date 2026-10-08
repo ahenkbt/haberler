@@ -818,7 +818,7 @@ export default function EditorGenelAyarlari() {
                     className="h-9 w-12 cursor-pointer rounded border border-slate-200 bg-white p-0.5"
                     disabled={saving}
                     value={colorPickerValue(p.hmNavBarBackground, "#0f172a")}
-                    onChange={(e) => void commit({ ...p, hmNavBarBackground: e.target.value })}
+                    onChange={(e) => void commit({ ...p, hmNavBarBackground: e.target.value, hmThemeGradient: null })}
                   />
                   <Input
                     className="font-mono text-xs"
@@ -837,7 +837,7 @@ export default function EditorGenelAyarlari() {
                         setP({ ...p, hmNavBarBackground: newsLayoutPrefs.hmNavBarBackground ?? null });
                         return;
                       }
-                      void commit({ ...p, hmNavBarBackground: normalizePickerHex(v, "#0f172a") });
+                      void commit({ ...p, hmNavBarBackground: normalizePickerHex(v, "#0f172a"), hmThemeGradient: null });
                     }}
                   />
                 </div>
