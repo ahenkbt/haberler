@@ -8,6 +8,8 @@
  *
  * Önemli: PHP Neon eşitleme ≠ HTTP probe. Self-fetch aynı Worker rotasına
  * gidince Cloudflare origin'e düşer — PHP temada /editor SPA 404 (yanlış kritik).
+ * Anasayfa self-fetch de CDN’i atlar; yavaş PHP origin timeout’u tarayıcı 200
+ * iken [kritik] üretmesin diye soft sınıflanır (gerçek 5xx hard kalır).
  */
 import { neonSqlClient, neonNewsSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
@@ -90,8 +92,35 @@ async function probeUrl(url, ms = 8000) {
   }
 }
 
+/** Worker self-fetch timeout / network fail (status 0) — CDN cache’i atlar. */
+export function isProbeTimeout(p) {
+  if (!p || p.ok) return false;
+  if (Number(p.status) === 0) return true;
+  return /timeout/i.test(String(p.error || ""));
+}
+
+/**
+ * Site probe’larını sınırlı eşzamanlılıkla çalıştır — tüm PHP origin’e
+ * aynı anda stampede etmesin (yavaş VPS → yanlış kritik timeout).
+ */
+export async function mapPool(items, concurrency, fn) {
+  const list = Array.isArray(items) ? items : [];
+  const limit = Math.max(1, Math.min(Number(concurrency) || 1, list.length || 1));
+  const out = new Array(list.length);
+  let next = 0;
+  async function worker() {
+    for (;;) {
+      const idx = next++;
+      if (idx >= list.length) return;
+      out[idx] = await fn(list[idx], idx);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, list.length) }, () => worker()));
+  return out;
+}
+
 /** Container healthz — public fetch değil (self-fetch origin/cold FAIL). */
-async function probeContainerHealthz(env, origin, ms = 8000) {
+async function probeContainerHealthz(env, origin, ms = 20000) {
   const url = `${origin}/api/healthz`;
   const started = Date.now();
   try {
@@ -188,7 +217,7 @@ export function siteProbePaths(host) {
 }
 
 /**
- * @param {{ home?: {ok?:boolean,status?:number,ms?:number}, editor?: {ok?:boolean,status?:number}, kose?: {ok?:boolean,status?:number}, phpTheme?: boolean, corporate?: boolean, dualWriteReady?: boolean }} p
+ * @param {{ home?: {ok?:boolean,status?:number,ms?:number,error?:string}, editor?: {ok?:boolean,status?:number,error?:string}, kose?: {ok?:boolean,status?:number,error?:string}, phpTheme?: boolean, corporate?: boolean, dualWriteReady?: boolean }} p
  * @returns {{ hard: string[], soft: string[] }}
  */
 export function classifySiteProbeIssues(p = {}) {
@@ -208,27 +237,37 @@ export function classifySiteProbeIssues(p = {}) {
     return { hard, soft };
   }
 
-  if (!homeOk) hard.push("anasayfa açılmıyor");
+  if (!homeOk) {
+    // Worker self-fetch PHP origin’e gider (CDN HIT yok). Soğuk/yavaş VPS timeout ≠ tarayıcı kesintisi.
+    if (phpTheme && isProbeTimeout(p.home)) {
+      soft.push(
+        "anasayfa Worker self-fetch zaman aşımı (PHP origin CDN’i atlar; tarayıcıda 200 ise kritik değil)",
+      );
+    } else {
+      hard.push("anasayfa açılmıyor");
+    }
+  }
 
   if (!editorOk) {
     const editor404 = Number(p.editor?.status) === 404;
-    // PHP tema: Worker self-fetch origin'e düşer → /editor 404; home 200 + dual-write ise soft.
-    if (phpTheme && editor404 && homeOk && dualWriteReady) {
+    // PHP tema: Worker self-fetch origin'e düşer → /editor 404. home timeout olsa bile soft
+    // (aksi halde yavaş origin → home fail + editor 404 zinciri yanlış [kritik] üretir).
+    if (phpTheme && editor404) {
       soft.push(
-        "editör /editor/giris kenar self-fetch’te origin 404 (SPA Worker rotası; tarayıcıda açılır) — eşitleme ile ilgili değil",
+        dualWriteReady
+          ? "editör /editor/giris kenar self-fetch’te origin 404 (SPA Worker rotası; tarayıcıda açılır) — eşitleme ile ilgili değil"
+          : "editör /editor/giris kenar self-fetch’te origin 404 (SPA Worker rotası; tarayıcıda açılır)",
       );
-    } else if (phpTheme && editor404 && homeOk) {
-      soft.push(
-        "editör /editor/giris kenar self-fetch’te origin 404 (SPA Worker rotası; tarayıcıda açılır)",
-      );
+    } else if (phpTheme && isProbeTimeout(p.editor)) {
+      soft.push("editör probe zaman aşımı (PHP tema; /editor Worker rotası tarayıcıda açılır)");
     } else {
       hard.push("editör girişi açılmıyor");
     }
   }
 
   if (!koseOk) {
-    if (phpTheme && homeOk && Number(p.kose?.status) === 404) {
-      soft.push("köşe yazarı girişi origin’de yok veya Worker rotası self-fetch 404");
+    if (phpTheme && (Number(p.kose?.status) === 404 || isProbeTimeout(p.kose))) {
+      soft.push("köşe yazarı girişi origin’de yok veya Worker rotası self-fetch 404/timeout");
     } else {
       hard.push("köşe yazarı girişi açılmıyor");
     }
@@ -273,10 +312,13 @@ export async function runHmSiteWatchdog(env, opts = {}) {
   const sites = [];
   const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
 
-  const [apiLive, apiFull] = await Promise.all([
-    probeEdgeLive(env, origin),
-    probeContainerHealthz(env, origin, 8000),
-  ]);
+  // Önce kenar live (hızlı); ardından Container’ı ısıtıp uzun timeout ile healthz.
+  const apiLive = await probeEdgeLive(env, origin);
+  // probeEdgeLive ctx=null → waitUntil yok; açıkça ısıt, sonra ölç.
+  void fetchApi(env, `${origin}/api/healthz`)
+    .then((r) => r?.text?.().catch(() => null))
+    .catch(() => null);
+  const apiFull = await probeContainerHealthz(env, origin, 20000);
 
   if (!apiLive.ok) {
     issues.push({
@@ -322,50 +364,50 @@ export async function runHmSiteWatchdog(env, opts = {}) {
 
   const maxSites = Math.min(asPositiveLimit(opts.limit) || 12, 24);
   const slice = (rows || []).slice(0, maxSites);
-  // Site probe'ları paralel — sıralı 9s×3×N tarama paneli kilitlemesin.
-  const probed = await Promise.all(
-    slice.map(async (site) => {
-      const host = hostOf(site);
-      if (!host) {
-        return {
-          site,
-          host: "",
-          home: null,
-          editor: null,
-          kose: null,
-          hard: ["domain yok"],
-          soft: [],
-          phpTheme: false,
-          corporate: false,
-        };
-      }
-      const paths = siteProbePaths(host);
-      const [home, editor, kose] = await Promise.all([
-        probeUrl(paths.home, 9000),
-        probeUrl(paths.editor, 9000),
-        probeUrl(paths.kose, 9000),
-      ]);
-      const { hard, soft } = classifySiteProbeIssues({
-        home,
-        editor,
-        kose,
-        phpTheme: paths.phpTheme,
-        corporate: paths.corporate,
-        dualWriteReady,
-      });
+  // Sınırlı eşzamanlılık: tüm PHP origin’e stampede → yanlış timeout kritiklerini önler.
+  const probed = await mapPool(slice, 3, async (site) => {
+    const host = hostOf(site);
+    if (!host) {
       return {
         site,
-        host,
-        home,
-        editor,
-        kose,
-        hard,
-        soft,
-        phpTheme: paths.phpTheme,
-        corporate: paths.corporate,
+        host: "",
+        home: null,
+        editor: null,
+        kose: null,
+        hard: ["domain yok"],
+        soft: [],
+        phpTheme: false,
+        corporate: false,
       };
-    }),
-  );
+    }
+    const paths = siteProbePaths(host);
+    // PHP tema anasayfa origin’e gider (CDN bypass) — daha uzun süre tanı.
+    const homeMs = paths.phpTheme ? 15000 : 9000;
+    const [home, editor, kose] = await Promise.all([
+      probeUrl(paths.home, homeMs),
+      probeUrl(paths.editor, 9000),
+      probeUrl(paths.kose, 9000),
+    ]);
+    const { hard, soft } = classifySiteProbeIssues({
+      home,
+      editor,
+      kose,
+      phpTheme: paths.phpTheme,
+      corporate: paths.corporate,
+      dualWriteReady,
+    });
+    return {
+      site,
+      host,
+      home,
+      editor,
+      kose,
+      hard,
+      soft,
+      phpTheme: paths.phpTheme,
+      corporate: paths.corporate,
+    };
+  });
 
   for (const row of probed) {
     const label = siteDisplayName(row.site);
