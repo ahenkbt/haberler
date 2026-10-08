@@ -55,8 +55,9 @@ export const TURKATAHABER_SITE: KamuYerelSiteDef = {
   hmPrimaryColor: "#0b3362",
   hmSecondaryColor: "#c00005",
   hmYsSlogan: "Yerelin sesini geleceğe taşıyan güvenilir haber ağı",
-  logoPath: "/turkata/turkata-logo.png",
-  faviconPath: "/turkata/turkata-mark.png",
+  /** PHP VPS `/brand/turkata/*` — `/turkata/*` SPA yolu canlıda 404. */
+  logoPath: "/brand/turkata/turkata-logo-light.png",
+  faviconPath: "/brand/turkata/favicon.ico",
   kunyeEmail: TURKATA_YS_KUNYE.email,
   footerAboutHtml: TURKATA_HAKKIMIZDA_HTML,
   categories: KAMU_YEREL_SHARED_CATEGORIES,
@@ -91,8 +92,8 @@ export const YERELNET_SITE: KamuYerelSiteDef = {
   hmPrimaryColor: "#0b6e4f",
   hmSecondaryColor: "#c45c00",
   hmYsSlogan: "Türkiye'nin kamu ve yerel haber ağı",
-  logoPath: "/turkata/turkata-mark.png",
-  faviconPath: "/turkata/turkata-mark.png",
+  logoPath: "/brand/turkata/turkata-mark.png",
+  faviconPath: "/brand/turkata/turkata-mark.png",
   kunyeEmail: "bilgi@yerel.net.tr",
   footerAboutHtml:
     "<p>Türkiye'nin yerel haber ağı: il, ilçe, kamu kurumları ve yerel yönetim haberleri. Birincil RSS kaynağı Cumhur Haber Ajansı (cumha.com.tr) kategori ve lokasyon beslemeleridir.</p>",

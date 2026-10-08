@@ -5,6 +5,7 @@ import { HM_RSS_SOURCE_PACKS_ALL_OFF } from "./hm-rss-source-packs.js";
 describe("hm-kamu-yerel-sites", () => {
   it("layout uses cumha RSS only — karma paketleri kapalı", () => {
     const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
+    expect(layout.logoUrl).toBe("/brand/turkata/turkata-logo-light.png");
     expect(layout.mansetCategorySlug).toBe("yerel");
     expect(layout.hmRssSourcePacks).toEqual(HM_RSS_SOURCE_PACKS_ALL_OFF);
     const rows = layout.hmNewsSiteRssFeedRows as Array<{ url: string }>;
