@@ -1324,6 +1324,77 @@ function escHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * og-preview 2026-10-08: 1200x630 JPEG share cards for Worker-served corporate hosts. The generic
+ * /apple-touch-icon.png is a ~1 MB 810x820 app icon: WhatsApp drops images that big, so
+ * previews showed only the domain. Other hosts keep their current behaviour.
+ */
+const HM_BRAND_SHARE_CARDS = [
+  { re: /(^|\.)vatankahramanlari\.org(\.tr)?$/, path: "/hm/share/vkd-og.jpg", alt: "Vatan Kahramanları Derneği" },
+  { re: /(^|\.)(trafikdernegi\.com|tgd\.tc|trafik\.gd)$/, path: "/hm/share/tgd-og.jpg", alt: "Trafik Güvenliği Derneği" },
+  { re: /(^|\.)ahenk\.net\.tr$/, path: "/hm/share/ahenk-og.jpg", alt: "Ahenk Bilgi Teknolojileri" },
+  { re: /(^|\.)tukav\.org$/, path: "/tukav/tukav-og.png", alt: "TUKAV — Türk Kültürünü Araştırma ve Tanıtma Vakfı", type: "image/png" },
+];
+
+/** og-preview 2026-10-08: { url, width, height, type, alt } for a host/origin, or null. */
+export function hmBrandShareImage(hostOrOrigin) {
+  const raw = String(hostOrOrigin || "").trim().toLowerCase();
+  const host = raw.replace(/^https?:\/\//, "").split(/[/:]/)[0].replace(/^www\./, "");
+  if (!host) return null;
+  const card = HM_BRAND_SHARE_CARDS.find((c) => c.re.test(host));
+  if (!card) return null;
+  return { url: `https://${host}${card.path}`, width: 1200, height: 630, type: card.type || "image/jpeg", alt: card.alt };
+}
+
+/** Generic icons that must never be a corporate share image. */
+const HM_GENERIC_SHARE_ICON_RE = /\/(?:apple-touch-icon|icon-512|icon-192|favicon[^/"']*)\.(?:png|svg|ico)(?:\?[^"']*)?$/i;
+
+function metaContent(html, attr, key) {
+  const a = new RegExp(`<meta\\s+[^>]*${attr}=["']${key}["'][^>]*content=["']([^"']*)["']`, "i").exec(html);
+  if (a) return a[1];
+  const b = new RegExp(`<meta\\s+[^>]*content=["']([^"']*)["'][^>]*${attr}=["']${key}["']`, "i").exec(html);
+  return b ? b[1] : null;
+}
+
+/**
+ * og-preview 2026-10-08: final pass on share HTML for corporate hosts: generic icon / missing og:image ->
+ * the brand card, plus og:image:width/height/type/alt and twitter:card=summary_large_image.
+ * Real story images are kept. Hosts without a brand card are returned unchanged.
+ */
+export function finalizeHmShareOgHtml(html, hostOrOrigin) {
+  let out = String(html || "");
+  const brand = hmBrandShareImage(hostOrOrigin);
+  if (!brand || !/<head\b/i.test(out)) return out;
+  const cur = metaContent(out, "property", "og:image");
+  const useBrand = !cur || !/^https:\/\//i.test(cur) || HM_GENERIC_SHARE_ICON_RE.test(cur);
+  const tags = [];
+  if (useBrand || cur === brand.url) {
+    for (const [attr, key] of [["property", "og:image"], ["property", "og:image:secure_url"], ["name", "twitter:image"]]) {
+      if (metaContent(out, attr, key) !== null) out = replaceMetaByKey(out, attr, key, brand.url);
+      else tags.push(`<meta ${attr}="${key}" content="${escHtml(brand.url)}"/>`);
+    }
+    for (const [key, val] of [["og:image:width", String(brand.width)], ["og:image:height", String(brand.height)], ["og:image:type", brand.type]]) {
+      if (metaContent(out, "property", key) !== null) out = replaceMetaByKey(out, "property", key, val);
+      else tags.push(`<meta property="${key}" content="${escHtml(val)}"/>`);
+    }
+  }
+  if (metaContent(out, "property", "og:image:alt") === null) {
+    const t = metaContent(out, "property", "og:title");
+    tags.push(`<meta property="og:image:alt" content="${escHtml(useBrand ? brand.alt : t || brand.alt)}"/>`);
+  }
+  if (metaContent(out, "name", "twitter:card") === null) tags.push('<meta name="twitter:card" content="summary_large_image"/>');
+  else out = replaceMetaByKey(out, "name", "twitter:card", "summary_large_image");
+  if (tags.length) {
+    const block = tags.join("\n");
+    if (/<meta\s+[^>]*property=["']og:image["'][^>]*>/i.test(out)) {
+      out = out.replace(/(<meta\s+[^>]*property=["']og:image["'][^>]*>)/i, `$1\n${block}`);
+    } else {
+      out = out.replace(/<\/head>/i, `${block}\n</head>`);
+    }
+  }
+  return out;
+}
+
 function replaceMetaByKey(html, attr, key, value) {
   const escVal = escHtml(value);
   const rePropFirst = new RegExp(
@@ -1359,7 +1430,7 @@ export function rewriteSpaShellOgForHmHost(html, hostname, origin) {
   const desc = isTgd
     ? `${name} (TGD, ${host}); Türkiye merkezli sivil toplum kuruluşudur. Sloganı: Yolumuz Hayat, Önceliğimiz Güvenlik. Resmi alan adı ${host}.`
     : `${name} resmi haber sitesi. Türkiye genelinde Türkçe yayın. Resmi alan adı ${host}.`;
-  const image = `${o}/apple-touch-icon.png`;
+  const image = hmBrandShareImage(host)?.url || `${o}/apple-touch-icon.png`; // og-preview 2026-10-08
   const url = `${o}/`;
   let out = String(html || "");
   out = out.replace(/<title>[^<]*<\/title>/i, `<title>${escHtml(title)}</title>`);
@@ -1400,7 +1471,7 @@ export function rewriteSpaShellOgForHmHost(html, hostname, origin) {
     );
     out = out.replace(/<\/head>/i, `${ldTag}\n</head>`);
   }
-  return markHmNewsBootHtml(out);
+  return markHmNewsBootHtml(finalizeHmShareOgHtml(out, host)); // og-preview 2026-10-08
 }
 
 /** HM / turkata belgesi: SEO metni klipslenir, marka kabuğu #root dışında kalır. */
@@ -1433,7 +1504,11 @@ export function markHmNewsBootHtml(html) {
 /** Container eskiyse data: logo origin'e yap─▒┼ş─▒r; payla┼ş─▒m g├Ârseli ge├ğersiz kal─▒r. */
 export function sanitizeOgShareImages(html, origin) {
   const o = String(origin || "").replace(/\/+$/, "");
-  const fallback = `${o}/apple-touch-icon.png`;
+  const fallback = hmBrandShareImage(o)?.url || `${o}/apple-touch-icon.png`; // og-preview 2026-10-08
+  return finalizeHmShareOgHtml(sanitizeOgDataImages(html, fallback), o);
+}
+
+function sanitizeOgDataImages(html, fallback) {
   return String(html || "")
     .replace(
       /(<meta\s+[^>]*(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'][^>]*content=["'])(?:https?:\/\/[^"']+\/)?data:[^"']*(["'])/gi,
@@ -1453,7 +1528,8 @@ export function buildHmNewsArticleOgHtml(opts) {
   const siteName = String(opts?.siteName || "").trim() || "Haber";
   const title = String(opts?.title || "").trim() || siteName;
   const description = String(opts?.description || "").trim() || title;
-  const image = absHmOgImageUrl(origin, opts?.image);
+  const rawImage = absHmOgImageUrl(origin, opts?.image);
+  const image = HM_GENERIC_SHARE_ICON_RE.test(rawImage) ? hmBrandShareImage(origin)?.url || rawImage : rawImage; // og-preview 2026-10-08
   const canonical = `${origin}${path}`;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -1470,7 +1546,7 @@ export function buildHmNewsArticleOgHtml(opts) {
       url: `${origin}/`,
     },
   };
-  return `<!DOCTYPE html>
+  const shareHtml = `<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="utf-8"/>
@@ -1500,6 +1576,7 @@ export function buildHmNewsArticleOgHtml(opts) {
 </article>
 </body>
 </html>`;
+  return finalizeHmShareOgHtml(shareHtml, origin); // og-preview 2026-10-08
 }
 
 export function buildHmSiteEntityHtml(slug, origin, pathname) {
@@ -1526,7 +1603,7 @@ export function buildHmSiteEntityHtml(slug, origin, pathname) {
   const desc = isTgd
     ? `${name} (TGD, ${host}); Türkiye merkezli sivil toplum kuruluşudur. Sloganı: Yolumuz Hayat, Önceliğimiz Güvenlik. Trafik Güvenliği Uzmanlığı (TGU) mesleğini tanımlar. Resmi alan adı ${host}.`
     : `${name} resmi haber sitesi. Türkiye genelinde Türkçe yayın. Resmi alan adı ${host}.`;
-  const image = `${o}/apple-touch-icon.png`;
+  const image = hmBrandShareImage(o)?.url || `${o}/apple-touch-icon.png`; // og-preview 2026-10-08
   const canonical = path === "/" ? `${o}/` : `${o}${path}`;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -1574,7 +1651,7 @@ export function buildHmSiteEntityHtml(slug, origin, pathname) {
 <li><a href="${o}/trafik-guvenligi-dernegi-tuzugu">Tüzük</a></li>
 </ul>`
       : "";
-  return `<!DOCTYPE html>
+  const shareHtml = `<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="utf-8"/>
@@ -1613,6 +1690,7 @@ ${extraNote}
 </article>
 </body>
 </html>`;
+  return finalizeHmShareOgHtml(shareHtml, o); // og-preview 2026-10-08
 }
 
 export function buildAhenkAgencyEntityHtml(pathname) {
@@ -1620,14 +1698,16 @@ export function buildAhenkAgencyEntityHtml(pathname) {
   const path = String(pathname || "/").replace(/\/+$/, "") || "/";
   const title =
     path === "/hakkimizda"
-      ? "Hakk─▒m─▒zda ÔÇö Ahenk Bilgi Teknolojileri"
+      ? "Hakkımızda — Ahenk Bilgi Teknolojileri"
       : path === "/hizmetler"
-        ? "Hizmetler ÔÇö Ahenk Bilgi Teknolojileri"
+        ? "Hizmetler — Ahenk Bilgi Teknolojileri"
+        : path === "/turkata-haber-ajansi" // og-preview 2026-10-08
+          ? "TürkAta Haber Ajansı — Haber Sitelerimiz | Ahenk Bilgi Teknolojileri"
         : path === "/iletisim"
-          ? "─░leti┼şim ÔÇö Ahenk Bilgi Teknolojileri"
-          : "Ahenk Bilgi Teknolojileri ÔÇö ahenk.net.tr";
+          ? "İletişim — Ahenk Bilgi Teknolojileri"
+          : "Ahenk Bilgi Teknolojileri — ahenk.net.tr";
   const desc =
-    "Ahenk Bilgi Teknolojileri (ahenk.net.tr); ajans, m├╝┼şteri hizmetleri, insan kaynaklar─▒, e-ticaret operasyonu ve kurumsal ├ğ├Âz├╝mler sunan bilgi teknolojileri ┼şirketidir. Resmi kurumsal sitesi ahenk.net.tr adresidir.";
+    "Ahenk Bilgi Teknolojileri (ahenk.net.tr); ajans, müşteri hizmetleri, insan kaynakları, e-ticaret operasyonu ve kurumsal çözümler sunan bilgi teknolojileri şirketidir. Resmi kurumsal sitesi ahenk.net.tr adresidir.";
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": ["Organization", "ProfessionalService"],
@@ -1637,14 +1717,14 @@ export function buildAhenkAgencyEntityHtml(pathname) {
     url: `${origin}/`,
     description: desc,
     disambiguatingDescription:
-      "ahenk.net.tr, Ahenk Bilgi Teknolojileri'nin resmi kurumsal alan ad─▒d─▒r. Yekpare bu ┼şirketin ├╝r├╝n├╝d├╝r.",
+      "ahenk.net.tr, Ahenk Bilgi Teknolojileri'nin resmi kurumsal alan adıdır. Yekpare bu şirketin ürünüdür.",
     telephone: "+90 541 313 62 45",
     email: "ahenkbilgiteknoloji@gmail.com",
-    areaServed: { "@type": "Country", name: "T├╝rkiye" },
+    areaServed: { "@type": "Country", name: "Türkiye" },
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Me┼şrutiyet Mah. Karanfil Sokak 4/91",
-      addressLocality: "├çankaya",
+      streetAddress: "Meşrutiyet Mah. Karanfil Sokak 4/91",
+      addressLocality: "Çankaya",
       addressRegion: "Ankara",
       addressCountry: "TR",
     },
@@ -1669,7 +1749,7 @@ export function buildAhenkAgencyEntityHtml(pathname) {
       },
     ],
   };
-  return `<!DOCTYPE html>
+  const shareHtml = `<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="utf-8"/>
@@ -1685,6 +1765,10 @@ export function buildAhenkAgencyEntityHtml(pathname) {
 <meta property="og:title" content="${escHtml(title)}"/>
 <meta property="og:description" content="${escHtml(desc)}"/>
 <meta property="og:site_name" content="Ahenk Bilgi Teknolojileri"/>
+<meta property="og:image" content="${origin}/hm/share/ahenk-og.jpg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${escHtml(title)}"/>
+<meta name="twitter:description" content="${escHtml(desc)}"/>
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <script type="application/ld+json">${JSON.stringify(faq)}</script>
 </head>
@@ -1692,15 +1776,16 @@ export function buildAhenkAgencyEntityHtml(pathname) {
 <article>
 <h1>${escHtml(title)}</h1>
 <p>${escHtml(desc)}</p>
-<p>Resmi ad: <strong>Ahenk Bilgi Teknolojileri</strong>. Resmi alan ad─▒: <strong>ahenk.net.tr</strong>.</p>
-<p>Yekpare, Ahenk Bilgi Teknolojileri'nin ├╝r├╝n├╝d├╝r; k├Âk sayfa ┼şirket vitrinidir.</p>
+<p>Resmi ad: <strong>Ahenk Bilgi Teknolojileri</strong>. Resmi alan adı: <strong>ahenk.net.tr</strong>.</p>
+<p>Yekpare, Ahenk Bilgi Teknolojileri'nin ürünüdür; kök sayfa şirket vitrinidir.</p>
 <ul>
 <li><a href="${origin}/">Anasayfa</a></li>
-<li><a href="${origin}/hakkimizda">Hakk─▒m─▒zda</a></li>
+<li><a href="${origin}/hakkimizda">Hakkımızda</a></li>
 <li><a href="${origin}/hizmetler">Hizmetler</a></li>
-<li><a href="${origin}/iletisim">─░leti┼şim</a></li>
+<li><a href="${origin}/iletisim">İletişim</a></li>
 </ul>
 </article>
 </body>
 </html>`;
+  return finalizeHmShareOgHtml(shareHtml, origin); // og-preview 2026-10-08
 }
