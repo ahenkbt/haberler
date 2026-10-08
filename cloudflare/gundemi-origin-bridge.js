@@ -94,6 +94,18 @@ export function isFixHaberBridgeHost(hostname) {
   return host === "fix.tc";
 }
 
+/**
+ * `<il>.fix.tc` (Fix <İl> Haber), spor/memur/world/turkdunyasi.fix.tc — PHP HTML via orange→origin,
+ * but zone route `*.fix.tc/assets/*` sends theme.css/theme.js to the Worker. Without this,
+ * theme.js fell to SPA 404 HTML (no slider autoplay / JS) and theme.css was a stale ASSETS copy.
+ * Only theme assets are bridged; HTML/API/editor untouched.
+ */
+export function isFixTcSubdomainPhpHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  if (!host || host === "fix.tc") return false;
+  return host.endsWith(".fix.tc");
+}
+
 export function isSosyalHizmetlerBridgeHost(hostname) {
   const host = normalizeHostname(hostname).replace(/^www\./, "");
   return host === "sosyalhizmetler.tr";
@@ -122,7 +134,8 @@ export function isPhpThemeOriginBridgeHost(hostname) {
     isGundemiBridgeCatchAllHost(hostname) ||
     isFixHaberBridgeHost(hostname) ||
     isSosyalHizmetlerBridgeHost(hostname) ||
-    isPhpConceptNewsThemeHost(hostname)
+    isPhpConceptNewsThemeHost(hostname) ||
+    isFixTcSubdomainPhpHost(hostname)
   );
 }
 
@@ -562,8 +575,8 @@ export async function gundemiApexPhpBridgeResponse(request, incoming, opts) {
     return proxyRegionalPhpThemeAsset(request, incoming, opts);
   }
 
-  // Concept news hosts: only theme assets are bridged (HTML stays orange→PHP origin).
-  if (isPhpConceptNewsThemeHost(incoming.hostname)) {
+  // Concept news hosts + *.fix.tc: only theme assets are bridged (HTML stays orange→PHP origin).
+  if (isPhpConceptNewsThemeHost(incoming.hostname) || isFixTcSubdomainPhpHost(incoming.hostname)) {
     return null;
   }
 
