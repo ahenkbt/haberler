@@ -25,7 +25,7 @@ test("newsites25 layouts: news kind, concept, no Süper Lig/burç, own rows, wor
     assert.equal(Boolean(s.layout.hmWorldDateline), s.slug === "world");
   }
   const world = NEWSITES25.find((s) => s.slug === "world");
-  assert.deepEqual(world.hosts, ["world.fix.tc"]);
+  assert.deepEqual(world.hosts, ["world.fix.tc", "dunya.gundemi.org"]);
   assert.deepEqual(world.layout.hmCorporateMenuItems.slice(0, 7).map((m) => m.label),
     ["Avrupa", "Asya", "Orta Doğu", "Afrika", "Kuzey Amerika", "Güney Amerika", "Okyanusya"]);
 });

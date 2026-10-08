@@ -19,7 +19,7 @@ M_FEEDS_GEN = ["https://rss.haberler.com/rss.asp?kategori=ekonomi", "https://rss
     "https://www.trthaber.com/egitim_articles.rss", "https://www.ntv.com.tr/turkiye.rss", "https://www.ntv.com.tr/egitim.rss",
     "https://www.aa.com.tr/tr/rss/default?cat=guncel", "https://www.aa.com.tr/tr/rss/default?cat=ekonomi", "https://www.sabah.com.tr/rss/ekonomi.xml",
     "https://www.sabah.com.tr/rss/gundem.xml", "https://www.star.com.tr/rss/ekonomi.xml", "https://www.dirilispostasi.com/rss/ekonomi"]
-M_FEEDS = M_FEEDS_CORE + M_FEEDS_GEN
+M_FEEDS = M_FEEDS_CORE + [S("memur-zammi"), S("hakem-kurulu"), S("memur-sen")] + M_FEEDS_GEN  # thin-fill 2026-10-08
 MEMUR = (r"memur|kamu (?:personel|çal[ıi]şan|görevli|işçi)|devlet memur|4/[ABCD]\b|4-[ABCD]\b|sözleşmeli personel|toplu sözleşme|KPSS|ÖSYM|"
          r"657 say[ıi]l[ıi]|aday memur|DPB\b|Devlet Personel|öğretmen|polis memur|hemşire|ebe\b|imam|kamu kurum|bakanl[ıi]k personel|"
          r"Memur-?Sen|Kamu-?Sen|KESK|Eğitim-?B[iİ]r-?Sen|Eğitim-?Sen|Eğitim-?İş|Sağl[ıi]k-?Sen|Diyanet-?Sen|Hizmet-?Sen|Ali Yalç[ıi]n|Önder Kahveci|"
@@ -63,7 +63,7 @@ T_FEEDS_GEN = ["https://www.trthaber.com/dunya_articles.rss", "https://www.aa.co
     "https://www.star.com.tr/rss/dunya.xml", "https://www.ahaber.com.tr/rss/dunya.xml", "https://www.tgrthaber.com/rss/dunya", "https://www.dirilispostasi.com/rss/dunya",
     "https://www.haberturk.com/rss/kategori/dunya.xml", "https://www.yenisafak.com/rss?xml=gundem", "https://rss.dw.com/rdf/rss-tur-all",
     "https://feeds.bbci.co.uk/turkce/rss.xml", "https://www.indyturk.com/rss.xml", "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"]
-T_FEEDS = T_FEEDS_CORE + T_FEEDS_GEN
+T_FEEDS = T_FEEDS_CORE + [S("uygur")] + T_FEEDS_GEN  # thin-fill 2026-10-08
 T_EX = "|".join([r"Süper L[iİ]g|\bmaç(?:ta|ı|ın|a)?\b|teknik direktör|transfer|\bgol\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\b|fragman|\bbölüm\b|burç|loto|kaç yaş|evli mi|nereli",
                   r"öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\b", r"\bmaç"])
 def tt(cat, match, mn=14, cap=14, per=3, age=30, feeds=T_FEEDS):
@@ -72,7 +72,7 @@ turk = [
     tt("tdt", r"Türk Devletleri Teşkilat|\bTDT\b|Türk Konseyi|TÜRKSOY|TÜRKPA|Türk Akademisi|Türk Kültür ve Miras Vakf|Türk Devletleri İşbirliği|Türk Yatırım Fonu|Türk dünyası zirve|Türk Devletleri Zirve", mn=12, cap=12, age=45),
     tt("azerbaycan", r"Azerbaycan|Bakü|Aliyev|Karabağ|Nahçıvan|Hankendi|Şuşa|Ağdam|Gence\b|Zengezur"),
     tt("orta-asya", r"Kazakistan|Astana|Almat[ıi]|Tokayev|Özbekistan|Taşkent|Semerkant|Buhara|Mirziyoyev|K[ıi]rg[ıi]zistan|Bişkek|Caparov|Japarov|Türkmenistan|Aşkabat|Berdimuhamedov|Orta Asya|Türkistan\b"),
-    tt("dogu-turkistan", r"Doğu Türkistan|Uygur Türk|Uygurlar|Uygur bölge|Uygur|Sincan|Urumçi|Kaşgar", mn=10, cap=10, age=120),
+    tt("dogu-turkistan", r"Doğu Türkistan|Uygur Türk|Uygurlar|Uygur bölge|Uygur|Sincan Uygur|Urumçi|Kaşgar", mn=10, cap=10, age=120),
     tt("kirim-kafkasya", r"K[ıi]r[ıi]m Tatar|K[ıi]r[ıi]m'|K[ıi]r[ıi]m Yar[ıi]mada|Gagavuz|Komrat|Tataristan|Başkurdistan|Başkurt|Çuvaş|Yakutistan|Saha Cumhuriyeti|Ah[ıi]ska|Karaçay|Balkar|Kumuk|Nogay|Kuzey Kafkasya|Dağ[ıi]stan|Kafkasya|Çerkes", mn=10, cap=10, age=60),
     tt("balkanlar", r"Balkan|Bosna|Saraybosna|Kosova|Priştine|Prizren|Arnavutluk|Kuzey Makedonya|Üsküp|Sancak|Novi Pazar|Karadağ|Bat[ıi] Trakya|Gümülcine|İskeçe|"
        r"Bulgaristan Türk|K[ıi]rcaali|Deliorman|Dobruca|Boşnak|Srebrenitsa|Vucic|Sırbistan"),
@@ -95,6 +95,7 @@ W_FEEDS = ["https://www.trthaber.com/dunya_articles.rss", "https://www.aa.com.tr
     "https://www.dirilispostasi.com/rss/dunya", "https://www.cumhuriyet.com.tr/rss/dunya", "https://www.tgrthaber.com/rss/dunya",
     "https://www.ahaber.com.tr/rss/dunya.xml", "https://rss.dw.com/rdf/rss-tur-all", "https://feeds.bbci.co.uk/turkce/rss.xml",
     "https://www.indyturk.com/rss.xml", "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"]
+W_FEEDS = W_FEEDS + [S(x) for x in ("brezilya", "arjantin", "venezuela", "kolombiya", "sili", "peru", "kuba", "ekvador", "bolivya", "avustralya", "yeni-zelanda")]  # thin-fill 2026-10-08
 W_ECON_FEEDS = ["https://www.bloomberght.com/rss", "https://www.ekonomim.com/rss", "https://www.trthaber.com/ekonomi_articles.rss", "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
     "https://www.haberturk.com/rss/ekonomi.xml", "https://www.hurriyet.com.tr/rss/ekonomi", "https://www.sozcu.com.tr/feeds-rss-category-ekonomi", "https://www.yenisafak.com/rss?xml=ekonomi",
     "https://www.milliyet.com.tr/rss/rssnew/ekonomi.xml", "https://www.ahaber.com.tr/rss/ekonomi.xml"] + W_FEEDS[:6]

@@ -6,7 +6,7 @@
  * news-site logo grid (/api/hm/public/news-sites) know the site. Idempotent; an existing row is never rewritten.
  *   memur.gundemi.org (+ memur.fix.tc)              Memur Gündemi         concept: memur (kamu personeli)
  *   turkdunyasi.gundemi.org (+ turkdunyasi.fix.tc)  Türk Dünyası Gündemi  concept: turk-dunyasi
- *   world.fix.tc (canonical)                         Dünya Gündemi         continents menu + hmWorldDateline
+ *   world.fix.tc (canonical, + dunya.gundemi.org)    Dünya Gündemi         continents menu + hmWorldDateline
  */
 export const NEWSITES25 = [
   {
@@ -440,7 +440,8 @@ export const NEWSITES25 = [
   {
     "slug": "world",
     "hosts": [
-      "world.fix.tc"
+      "world.fix.tc",
+      "dunya.gundemi.org"
     ],
     "displayName": "Dünya Gündemi",
     "description": "Avrupa’dan Asya’ya, Orta Doğu’dan Amerika’ya kıta kıta dünya gündemi: TurkAta News dünya haberleri.",
