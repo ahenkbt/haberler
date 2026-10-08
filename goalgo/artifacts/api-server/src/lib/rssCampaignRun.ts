@@ -24,6 +24,7 @@ import { logger } from "./logger";
 import { ensureRssCampaignSchema } from "./ensure-rss-campaign-schema.js";
 import { normalizeHmSiteIds } from "./hm-rss-campaigns.js";
 import { resolveHmEditorCategoryId } from "./hm-editor-categories.js";
+import { categorySlugFromCumhaFeed } from "./hm-cumha-kamu-yerel-catalog.js";
 import { categorySlugFromShaFeed } from "./hm-sha-rss-feeds.js";
 import {
   campaignRequiresCoverImage,
@@ -431,7 +432,8 @@ export async function executeRssCampaignRun(
 
     // Eskiden yeniye — createdAt/publishedAt feed tarihinden gelir.
     campaignItems = sortByPublishedAtAsc(campaignItems);
-    let feedCategorySlug = categorySlugFromShaFeed(feedUrl) ?? campaign.categorySlug;
+    let feedCategorySlug =
+      categorySlugFromCumhaFeed(feedUrl) ?? categorySlugFromShaFeed(feedUrl) ?? campaign.categorySlug;
 
     for (const item of campaignItems) {
       try {

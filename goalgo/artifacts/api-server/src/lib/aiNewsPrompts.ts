@@ -1,6 +1,7 @@
 import {
   ASG_ANKARA_EDITOR_AI_RULES,
   HM_LOCAL_CATEGORY_EDITOR_AI_RULES,
+  KAMU_YEREL_CUMHA_EDITOR_AI_RULES,
 } from "./hm-local-category-router.js";
 
 /** AI haber üretiminde `icerik` alanı için ortak HTML kuralları. */
@@ -24,14 +25,17 @@ export function aiNewsSystemPrompt(opts: {
   ankaraLocalOnly?: boolean;
   /** HM yerel kategori yönlendirme kuralı (tüm haber siteleri) */
   hmLocalCategoryRules?: boolean;
+  /** turkatahaber.com / yerel.net.tr Cumha taksonomisi */
+  kamuYerelCumhaRules?: boolean;
 }): string {
   const extra = opts.extra ? `${opts.extra.trim()} ` : "";
   const trStyle = /türkçe|turkish/i.test(opts.langInstruction) ? `${AI_NEWS_TR_STYLE_RULES} ` : "";
   const hmLocal =
     opts.hmLocalCategoryRules === true ? `${HM_LOCAL_CATEGORY_EDITOR_AI_RULES} ` : "";
+  const kamuYerel = opts.kamuYerelCumhaRules === true ? `${KAMU_YEREL_CUMHA_EDITOR_AI_RULES} ` : "";
   const ankara = opts.ankaraLocalOnly === true ? `${ASG_ANKARA_EDITOR_AI_RULES} ` : "";
   return (
-    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${hmLocal}${ankara}${extra}` +
+    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${hmLocal}${kamuYerel}${ankara}${extra}` +
     `Özgün, bilgilendirici haber metni yaz (makale veya essay değil). Yalnızca JSON döndür. ${AI_NEWS_ICERIK_HTML_RULES}`
   );
 }

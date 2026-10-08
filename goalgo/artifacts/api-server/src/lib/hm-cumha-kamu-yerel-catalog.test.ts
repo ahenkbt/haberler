@@ -4,6 +4,7 @@ import {
   buildKamuYerelHmNewsSiteRssFeedRows,
   buildKamuYerelCorporateMenuItems,
   buildKamuYerelIllerExtraPage,
+  categorySlugFromCumhaFeed,
   cumhaLocationRssUrl,
   cumhaProvinceSlugFromName,
   kamuYerelRegionCategorySlug,
@@ -19,6 +20,11 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(provinces).toHaveLength(81);
     expect(cumhaProvinceSlugFromName("Afyonkarahisar")).toBe("afyonkarahisar");
     expect(cumhaLocationRssUrl("ankara")).toBe("https://cumha.com.tr/rss/lokasyon/ankara");
+  });
+
+  it("maps cumha RSS URLs to site category slugs", () => {
+    expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/lokasyon/izmir")).toBe("izmir");
+    expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/category/yerel-yonetimler")).toBe("yerel-yonetimler");
   });
 
   it("builds cumha-primary site RSS rows (19 kategori + 81 il + tamamlayıcı)", () => {

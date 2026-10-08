@@ -19,6 +19,7 @@ import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { isCorporateHmSiteRow } from "./hm-yekpare-news-sync.js";
 import { categorySlugIsAnkara } from "./hm-vatanhaber-ankara-sync.js";
 import { isAsgHmNewsSiteRow } from "./hm-asg-editor-repair.js";
+import { isKamuYerelHmSlug } from "./hm-kamu-yerel-sites.js";
 
 const db = getNewsDbForRead();
 
@@ -256,6 +257,7 @@ export async function processOneHmAiJob(jobId: number): Promise<{ ok: boolean; n
       ai.language === "tr" ? "Metni Türkçe yaz." : "Write in English.";
     let ankaraLocalOnly = false;
     let hmLocalCategoryRules = true;
+    const kamuYerelCumhaRules = isKamuYerelHmSlug(targetSite.slug);
     if (src.categoryId != null) {
       const [cat] = await db
         .select({ slug: categoriesTable.slug })
@@ -270,6 +272,7 @@ export async function processOneHmAiJob(jobId: number): Promise<{ ok: boolean; n
       langInstruction,
       extra: "Metni tamamen özgünleştir.",
       hmLocalCategoryRules,
+      kamuYerelCumhaRules,
       ankaraLocalOnly,
     });
     const user = `Kaynak başlık: ${src.title}\nÖzet: ${(src.spot ?? "").slice(0, 400)}\nİçerik:\n${(src.content ?? "").slice(0, 6000)}\n\n${aiNewsUserJsonHint(ai.wordCount)}`;

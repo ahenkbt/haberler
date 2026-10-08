@@ -618,6 +618,13 @@ export const ASG_ANKARA_EDITOR_AI_RULES =
   "Borsa, ekonomi, dünya, teknoloji, sağlık, siyaset, spor gibi ulusal veya uluslararası konuları Ankara kategorisine ekleme; " +
   "uygun kategoriyi kullan (gündem, ekonomi, dünya, spor, teknoloji, sağlık, siyaset).";
 
+/** turkatahaber.com & yerel.net.tr — Cumha kamu-yerel taksonomisi. */
+export const KAMU_YEREL_CUMHA_EDITOR_AI_RULES =
+  "Türkata Haber / Yerel.net (Cumha kamu-yerel): haberi Cumha RSS kategori ve lokasyon slug'larına göre sınıflandır " +
+  "(kamu kurumları, yerel yönetimler, valilik/kaymakamlık, il-ilçe teşkilatları, 81 il veya tepe kamu-yerel menü kategorileri). " +
+  "Ulusal gündem/siyaset/spor/ekonomi haberlerini yalnızca yerel/kamu sinyali varsa ilgili il veya kamu kategorisine yaz; aksi halde uygun ulusal kategoriyi seç. " +
+  "Aynı Cumha kaynağını tekrar yazma; özgünleştir ve kaynak RSS kategorisiyle tutarlı kal.";
+
 const siteCategoryCatalogCache = new Map<number, HmSiteCategoryCatalogRow[]>();
 
 /** Site kategori katalogu (slug + ad) — yerel yönlendirme için. */
