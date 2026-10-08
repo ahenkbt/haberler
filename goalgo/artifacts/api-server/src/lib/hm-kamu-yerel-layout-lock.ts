@@ -11,6 +11,7 @@ import {
   listKamuYerelNavTopCategorySlugs,
 } from "./hm-cumha-kamu-yerel-catalog.js";
 import { hmLayoutLogoUsesInlineDataUrl } from "./hm-domain-lookup.js";
+import { isValidLayoutHexColor } from "./hm-php-concept-colors.js";
 import type { KamuYerelSiteDef } from "./hm-kamu-yerel-sites.js";
 import { YERELNET_SLUG } from "./hm-kamu-yerel-sites.js";
 
@@ -29,10 +30,13 @@ export const KAMU_YEREL_LAYOUT_LOCK_KEYS = [
   "hmExtraPages",
   "portalHybridRssFeeds",
   "hmNewsBreakingRssFeedRows",
-  "hmPrimaryColor",
-  "hmSecondaryColor",
+  // 2026-10-08: hmPrimaryColor / hmSecondaryColor kilitli DEĞİL — editörün "Site rengi"
+  // seçimi korunur; applyKamuYerelLayoutLock yalnızca eksik/geçersizse kanonik rengi yazar.
   "hmVitrinTheme",
 ] as const;
+
+/** Konsept renkleri: kilit değil, yalnızca eksik/geçersizse onarılır. */
+export const KAMU_YEREL_COLOR_FILL_KEYS = ["hmPrimaryColor", "hmSecondaryColor"] as const;
 
 const LEGACY_GENERIC_NAV = new Set([
   "gundem",
@@ -203,6 +207,14 @@ export function applyKamuYerelLayoutLock(
   const merged = { ...existing };
   for (const key of KAMU_YEREL_LAYOUT_LOCK_KEYS) {
     if (Object.prototype.hasOwnProperty.call(canonical, key)) {
+      merged[key] = canonical[key];
+    }
+  }
+  for (const key of KAMU_YEREL_COLOR_FILL_KEYS) {
+    if (
+      Object.prototype.hasOwnProperty.call(canonical, key) &&
+      !isValidLayoutHexColor(merged[key])
+    ) {
       merged[key] = canonical[key];
     }
   }
