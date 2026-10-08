@@ -85,7 +85,8 @@ function refineFixHaberTopicSlug(
   spot: string | null | undefined,
   content: string | null | undefined,
 ): string {
-  const text = `${title ?? ""} ${spot ?? ""} ${content ?? ""}`.toLocaleLowerCase("tr-TR");
+  // tr-TR lowercases ASCII I → ı; normalize for Latin brand tokens (OpenAI, iPhone, …).
+  const text = normalizeSlug(`${title ?? ""} ${spot ?? ""} ${content ?? ""}`).replace(/-/g, " ");
   if (/\b(yapay zeka|openai|chatgpt|llm|gemini|claude)\b/i.test(text)) return "fixhaber-yapay-zeka";
   if (/\b(oyun|playstation|xbox|steam|nintendo|espor)\b/i.test(text)) return "fixhaber-oyun";
   if (/\b(kripto|bitcoin|ethereum|blockchain)\b/i.test(text)) return "fixhaber-kripto-blockchain";
@@ -112,9 +113,9 @@ export function resolveFixHaberImportCategorySlug(
 
   const generic = new Set(["fixhaber-haberler", "fixhaber-gundem", "fixhaber-teknoloji"]);
   const refined = refineFixHaberTopicSlug(title, spot, content);
-  if (!generic.has(refined) && (generic.has(slug) || slug === refined)) {
+  if (generic.has(slug) && refined !== slug && !generic.has(refined)) {
     slug = refined;
-  } else if (generic.has(slug) && slug === "fixhaber-haberler" && !generic.has(refined)) {
+  } else if (!generic.has(refined) && (generic.has(slug) || slug === refined)) {
     slug = refined;
   }
 
