@@ -15,6 +15,7 @@ import {
   expandFeedIdsForSharedPoolQuery,
 } from "./portal-rss-shared-pool.js";
 import { isMisclassifiedSporItem } from "./rss-spor-category-guard.js";
+import { resolveAnkaraImportCategorySlug } from "./rss-ankara-category-guard.js";
 import { mirrorPortalRssItemsImages } from "./portal-rss-image-mirror.js";
 import { isLikelyTurkishHeadline, shouldMoveNewsToGlobalCategory } from "./turkishContent.js";
 
@@ -94,6 +95,7 @@ function resolvePortalRssStoredCategorySlug(item: PortalRssItem, feed: PortalHyb
   if (isMisclassifiedSporItem(resolved, item.title, item.spot, content)) {
     resolved = "gundem";
   }
+  resolved = resolveAnkaraImportCategorySlug(resolved, item.title, item.spot, content);
   return resolved;
 }
 

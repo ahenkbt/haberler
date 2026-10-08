@@ -12,11 +12,20 @@ export const AI_NEWS_TR_STYLE_RULES =
   "Kaynakta geçmeyen yabancı ülke/örnek (Vietnam, Çin vb.) ekleme; konu Türkiye veya kaynak başlığındaki olayla sınırlı kalsın. " +
   "Spekülasyon ve 'gelecekte olabilir' tarzı yorumları en aza indir; doğrulanmış bilgiyi aktar.";
 
-export function aiNewsSystemPrompt(opts: { langInstruction: string; extra?: string }): string {
+export function aiNewsSystemPrompt(opts: {
+  langInstruction: string;
+  extra?: string;
+  /** ASG/AHG Ankara kategorisi için ek kurallar */
+  ankaraLocalOnly?: boolean;
+}): string {
   const extra = opts.extra ? `${opts.extra.trim()} ` : "";
   const trStyle = /türkçe|turkish/i.test(opts.langInstruction) ? `${AI_NEWS_TR_STYLE_RULES} ` : "";
+  const ankara =
+    opts.ankaraLocalOnly === true
+      ? "Ankara kategorisi yalnızca Ankara-yerel haber içindir; ulusal/uluslararası haberleri bu kategoriye yazma. "
+      : "";
   return (
-    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${extra}` +
+    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${ankara}${extra}` +
     `Özgün, bilgilendirici haber metni yaz (makale veya essay değil). Yalnızca JSON döndür. ${AI_NEWS_ICERIK_HTML_RULES}`
   );
 }

@@ -7,7 +7,7 @@ import {
   hmNewsSitesTable,
   newsTable,
 } from "@workspace/db";
-import { slugify, loadNewsContext } from "./news-context.js";
+import { loadNewsContext } from "./news-context.js";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
 import {
   enabledPortalHybridRssFeeds,
@@ -54,6 +54,8 @@ import {
   hiddenHmRssItemIdsFromLayout,
   readHmPublicLayout,
 } from "./hm-public-layout.js";
+import { buildRssImportNewsSlug } from "./rss-import-slug.js";
+import { resolveAnkaraImportCategorySlug } from "./rss-ankara-category-guard.js";
 
 export type HmRssNewsListItem = {
   id: string;
@@ -205,12 +207,6 @@ function resolveRssContentHtml(item: PortalRssItem): string {
     normalizePortalRssCachedContentHtml(item.contentHtml) ||
     (item.spot ? `<p>${decodeHtmlEntities(item.spot.replace(/…$/, "").trim())}</p>` : "");
   return raw ? stripExternalAnchorsFromHtml(raw) : "";
-}
-
-function makeImportSlug(title: string, siteId: number | null): string {
-  const base = slugify(title).slice(0, 80) || "haber";
-  const suffix = siteId != null ? `-${siteId}` : "";
-  return `${base}${suffix}-${Date.now().toString(36)}`;
 }
 
 async function loadImportedNewsMap(
@@ -453,13 +449,15 @@ export async function importHmRssNewsToSite(
     };
   }
 
-  const categorySlug = String(input.categorySlug ?? item.categorySlug).trim().toLowerCase() || item.categorySlug;
-  const categoryId = await resolveCategoryIdForSiteImport(siteId, categorySlug);
   const spot = String(input.spot ?? item.spot ?? "").trim() || null;
   const content =
     String(input.content ?? "").trim() ||
     resolveRssContentHtml(item) ||
     (spot ? `<p>${spot}</p>` : `<p>${title}</p>`);
+  const rawCategorySlug =
+    String(input.categorySlug ?? item.categorySlug).trim().toLowerCase() || item.categorySlug;
+  const categorySlug = resolveAnkaraImportCategorySlug(rawCategorySlug, title, spot, content);
+  const categoryId = await resolveCategoryIdForSiteImport(siteId, categorySlug);
   const status = input.status === "draft" ? "draft" : "published";
 
   const publishedAt = new Date(item.publishedAt);
@@ -477,7 +475,7 @@ export async function importHmRssNewsToSite(
 
   const [created] = await dualWriteInsert(newsTable, {
     title: decodeHtmlEntities(title),
-    slug: makeImportSlug(title, siteId),
+    slug: await buildRssImportNewsSlug({ title, sourceUrl, siteId }),
     spot,
     content,
     imageUrl,

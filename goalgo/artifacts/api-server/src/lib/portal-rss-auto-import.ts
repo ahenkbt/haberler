@@ -1,10 +1,8 @@
-import { createHash } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { dualWriteInsert, dualWriteUpdate, getNewsDbForRead, newsTable } from "@workspace/db";
 import type { PortalHybridRssFeedConfig } from "./portal-hybrid-config.js";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
 import { stripExternalAnchorsFromHtml } from "./hybrid-news-merge.js";
-import { slugify } from "./news-context.js";
 import {
   normalizePortalRssCachedContentHtml,
   type PortalRssItem,
@@ -21,6 +19,12 @@ import { deriveRssImportNewsTags } from "./newsAutoTags.js";
 import { scheduleGoogleNewsIndexing } from "./google-news-indexing.js";
 import { removeNewsSlugRedirect } from "./news-slug-redirect.js";
 import { isMisclassifiedSporItem } from "./rss-spor-category-guard.js";
+import { resolveAnkaraImportCategorySlug } from "./rss-ankara-category-guard.js";
+import {
+  buildRssImportNewsSlug,
+  ensureUniqueNewsSlug,
+  stableRssNewsSlug,
+} from "./rss-import-slug.js";
 
 export { isPortalRssMirrorImagesEnabled } from "./portal-rss-image-mirror.js";
 
@@ -29,27 +33,12 @@ export function isPortalRssSyncToNewsEnabled(): boolean {
   return process.env.PORTAL_RSS_SYNC_TO_NEWS?.trim() !== "0";
 }
 
-/** Kararlı SEO slug: başlık + kaynak URL hash (yeniden içe aktarmada değişmez). */
+/** @deprecated use stableRssNewsSlug from rss-import-slug.js */
 export function stablePortalRssNewsSlug(title: string, sourceUrl: string | null): string {
-  const base = slugify(decodeHtmlEntities(title)).slice(0, 72).replace(/-+$/, "") || "haber";
-  if (!sourceUrl) return `${base}-rss`;
-  const hash = createHash("sha1").update(sourceUrl).digest("hex").slice(0, 10);
-  return `${base}-${hash}`;
+  return stableRssNewsSlug(title, sourceUrl, null);
 }
 
-async function ensureUniqueNewsSlug(candidate: string): Promise<string> {
-  let slug = candidate;
-  for (let n = 0; n < 20; n += 1) {
-    const [hit] = await getNewsDbForRead()
-      .select({ id: newsTable.id })
-      .from(newsTable)
-      .where(eq(newsTable.slug, slug))
-      .limit(1);
-    if (!hit) return slug;
-    slug = `${candidate}-${n + 1}`;
-  }
-  return `${candidate}-${Date.now().toString(36)}`;
-}
+export { ensureUniqueNewsSlug };
 
 function resolveRssContentHtml(item: PortalRssItem): string {
   const raw =
@@ -147,6 +136,12 @@ export async function syncPortalRssItemsToNewsTable(
     if (isMisclassifiedSporItem(effectiveCategorySlug, title, spot, content)) {
       effectiveCategorySlug = "gundem";
     }
+    effectiveCategorySlug = resolveAnkaraImportCategorySlug(
+      effectiveCategorySlug,
+      title,
+      spot,
+      content,
+    );
     const categoryRow = await findPortalGlobalCategoryBySlug(effectiveCategorySlug);
     const categoryId = categoryRow?.id ?? null;
 
@@ -157,7 +152,7 @@ export async function syncPortalRssItemsToNewsTable(
       continue;
     }
 
-    const slug = await ensureUniqueNewsSlug(stablePortalRssNewsSlug(title, sourceUrl));
+    const slug = await buildRssImportNewsSlug({ title, sourceUrl, siteId: null });
     const publishedAt = new Date(item.publishedAt);
     const ts = Number.isFinite(publishedAt.getTime()) ? publishedAt : new Date();
 

@@ -9,7 +9,6 @@ import {
   categoriesTable,
   hmNewsSitesTable,
 } from "@workspace/db";
-import { slugify } from "./news-context";
 import { normalizeRssSourceUrl } from "./rssImportDedupe";
 import { isHaberlerComUrl, scrapeHaberlerComCampaignItems } from "./haberlerComScraper.js";
 import { fetchArticleContentHtml } from "./rssArticleContent.js";
@@ -43,6 +42,8 @@ import {
 import { upsertPortalRssItems } from "./portal-rss-store.js";
 import { portalRssTitleKey } from "./portal-rss-fetch.js";
 import { createHash } from "node:crypto";
+import { resolveAnkaraImportCategorySlug } from "./rss-ankara-category-guard.js";
+import { buildRssImportNewsSlug } from "./rss-import-slug.js";
 
 export type RssCampaignRunResult = {
   added: number;
@@ -422,7 +423,7 @@ export async function executeRssCampaignRun(
 
     // Eskiden yeniye — createdAt/publishedAt feed tarihinden gelir.
     campaignItems = sortByPublishedAtAsc(campaignItems);
-    const feedCategorySlug = categorySlugFromShaFeed(feedUrl) ?? campaign.categorySlug;
+    let feedCategorySlug = categorySlugFromShaFeed(feedUrl) ?? campaign.categorySlug;
 
     for (const item of campaignItems) {
       try {
@@ -459,6 +460,12 @@ export async function executeRssCampaignRun(
         if (targetsToAdd.length === 0 && targetsToUpgrade.length === 0) continue;
 
         const contentHtml = resolveCampaignRssContent({ ...item, rssSpot });
+        feedCategorySlug = resolveAnkaraImportCategorySlug(
+          feedCategorySlug,
+          cleanTitle,
+          rssSpot,
+          contentHtml,
+        );
         const publishedAt = item.publishedAt;
         const resolvedCover = await resolveRssImportCoverImage({
           existing: item.imageUrl,
@@ -517,10 +524,14 @@ export async function executeRssCampaignRun(
 
         for (const siteId of targetsToAdd) {
           const categoryId = await resolveCampaignCategoryId(siteId, feedCategorySlug, categoryCache);
-          const slugSuffix = `${Date.now()}-${added}-${siteId ?? "m"}-${Math.random().toString(36).slice(2, 7)}`;
+          const slug = await buildRssImportNewsSlug({
+            title: cleanTitle,
+            sourceUrl: sourceKey,
+            siteId,
+          });
           await dualWriteInsert(newsTable, {
             title: cleanTitle,
-            slug: `${slugify(cleanTitle)}-${slugSuffix}`,
+            slug,
             spot: rssSpot,
             content: contentHtml,
             imageUrl: imageUrl ?? null,
