@@ -50,6 +50,12 @@ export const PORTAL_RETIRED_ADMIN_MENU_HREFS = new Set<string>([
   "/admin/anasayfa-modulleri",
   "/admin/anasayfa-tasarim",
   "/admin/resmi-ilanlar",
+  // 2026-10-08 (user request: declutter): one-off migration tools and super-app leftovers.
+  // Menu only; the routes still work by direct URL. Revert = delete these lines.
+  "/admin/hm-kose-ice-aktar",
+  "/admin/hm-haber-ice-aktar",
+  "/admin/platform-duyurular",
+  "/admin/lisans",
 ]);
 
 /** Public rotalar — HM özel alan ve /tr/{slug} hariç portalda kapatılır. */

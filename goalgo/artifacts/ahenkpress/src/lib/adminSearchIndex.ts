@@ -127,6 +127,15 @@ export const ADMIN_SEARCH_INDEX: AdminSearchEntry[] = [
     keywords: ["openai", "gpt", "icerik robotu", "haber ai", "ai haber editoru", "evren"],
   }),
   entry({
+    id: "ozel-haber-ekle",
+    title: "Röportaj / Özel Haber ekle",
+    description: "Başlık, metin, görsel, video; seçilen haber sitelerinin Özel Haber bölümünde yayımlanır",
+    href: "/admin/ozel-haber-ekle",
+    icon: Bot,
+    section: "Yapay zekâ",
+    keywords: ["ozel haber", "roportaj", "röportaj", "özel haber", "tum sitelerde yayinla"],
+  }),
+  entry({
     id: "haber-ai-bekci",
     title: "AI Bekçi",
     description: "Site sağlığı, PHP Neon eşitleme, manşet/yazar sync",

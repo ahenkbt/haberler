@@ -1,1 +1,6 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 */2 * * * * root flock -n -o /run/php-theme-bekci-runner.lock timeout 110 /docker/php-theme/bekci/runner.sh
+3-53/10 * * * * root flock -n /run/php-theme-bekci-tick.lock timeout 290 /docker/php-theme/bekci/tick.sh bekci
+19 3,8,13,18 * * * root /docker/php-theme/bekci/tick.sh ai_fetch
+49 5,10,15,20 * * * root /docker/php-theme/bekci/tick.sh ai_nofetch

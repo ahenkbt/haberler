@@ -1,16 +1,48 @@
 --- ai_editor.py.bak-20261008-curate	2026-10-04 16:57:55.000000000 +0000
-+++ ai_editor.py	2026-10-08 16:21:20.909602393 +0000
-@@ -31,6 +31,9 @@
++++ ai_editor.py	2026-10-08 17:17:23.490427078 +0000
+@@ -31,6 +31,11 @@
  POOL_HOURS = int(os.environ.get("AI_POOL_HOURS", "30"))
  POOL_MAX_HOURS = int(os.environ.get("AI_POOL_MAX_HOURS", "72"))  # older items only with a score penalty
  DAILY_ARTICLE_CAP = int(os.environ.get("AI_DAILY_ARTICLE_CAP", "60"))
 +# 2026-10-08 user rule: no AI-written news. Default = curate mode: original sourced text + source link;
 +# AI (Evren > NVIDIA > Gemini > OpenAI, site key > global key > env) only picks the manşet and the category.
 +REWRITE = os.environ.get("AI_EDITOR_REWRITE", "0") == "1"
++# 2026-10-08 user rule: strict per-site topics. Off-topic items are never placed.
++STRICT_TOPIC = os.environ.get("AI_STRICT_TOPIC", "1") == "1"
  REPORT_DIR = os.environ.get("AI_EDITOR_REPORT_DIR", "/reports")
  POOL_SITE_SLUG = os.environ.get("AI_POOL_SITE_SLUG", "turkatahaber")
  IMPORTER_FEEDS = os.environ.get("AI_IMPORTER_FEEDS", "/importer/feeds.json")
-@@ -527,11 +530,24 @@
+@@ -377,6 +382,8 @@
+             s += 4; near = True; why.append("komşu-il")
+         if cn.need_place and not hits and not near:
+             return 0, ["yer yok"], False
++        if STRICT_TOPIC and cn.concept_type == "regional" and not ({"yer:başlık", "yer:spot", "yer:feed"} & set(why)):
++            return 0, ["yer yok (katı: başlık/spot/feed)"], False
+     if cn.kw_re:
+         lt, ls, lb = lowfold(title), lowfold(spot), lowfold(head)
+         kt = len(set(cn.kw_re.findall(lt)))
+@@ -387,6 +394,11 @@
+         if kb: s += 0.5 * min(4, kb)
+         if cn.concept_type == "topical" and not (kt or ks) and it["category_slug"] not in cn.categories:
+             return 0, ["konu yok"], False
++        if STRICT_TOPIC and cn.concept_type in ("topical", "kamu_yerel") and not (kt or ks):
++            return 0, ["konu yok (katı: başlık/spot)"], False
++        if STRICT_TOPIC and cn.concept_type == "kamu_yerel" and PROV_RE and not PROV_RE.search(fold(title + " " + spot + " " + head)) \
++                and not (cn.place_re and cn.place_re.search(fold(title + " " + spot))):
++            return 0, ["yerel değil (il/ilçe yok)"], False
+         if cn.concept_type == "kamu_yerel" and not (kt or ks) and it["category_slug"] not in ("yerel", "ankara"):
+             s -= 3
+     if it["category_slug"] in cn.categories:
+@@ -419,7 +431,7 @@
+ def load_sites(con, args):
+     cols = [d for d in ("site_id", "site_slug", "domain", "concept_type", "cities", "districts", "regions",
+                         "nearby_cities", "keywords", "exclude_keywords", "categories", "exclude_categories",
+-                        "exclusive_group", "daily_manset_target", "min_score", "enabled", "keyword_groups", "preferred_sources")]
++                        "exclusive_group", "daily_manset_target", "min_score", "enabled", "keyword_groups", "preferred_sources", "topic_rule")]
+     rows = [dict(zip(cols, r)) for r in con.execute("SELECT %s FROM hm_ai_editor_sites ORDER BY site_id" % ",".join(cols))]
+     if args.sites:
+         want = set(args.sites.split(","))
+@@ -527,11 +539,24 @@
          near_today = sum(1 for p in prev if p[2] == "published" and p[4] == today and "komşu-il" in (p[5] or []))
          attempts_today = sum(1 for p in prev if p[4] == today)
          target = cn.daily_manset_target
@@ -27,7 +59,7 @@
          sst.update(target=target, allowed_cumulative=allowed, published_today=published_today, todo=todo)
 +        blocked_re = None
 +        try:
-+            pats = [r[0] for r in con.execute("SELECT pattern FROM hm_site_blocked_terms WHERE site_id=%s", (cn.site_id,))]
++            pats = [r[0] for r in con.execute("SELECT pattern FROM hm_site_blocked_terms WHERE site_id=%s OR (%s IN (1,230) AND site_id=1)", (cn.site_id, cn.site_id))]  # 230 pool is read by vatanhaber
 +            if pats:
 +                blocked_re = re.compile("|".join("(?:%s)" % x for x in pats), re.I)
 +        except Exception as ex:
@@ -36,7 +68,7 @@
          scored = []
          for it in pool:
              if it["id"] in used or (cn.exclusive_group and it["id"] in group_used[cn.exclusive_group]):
-@@ -540,6 +556,9 @@
+@@ -540,6 +565,9 @@
                  continue  # another site of the same group already has this event
              if (it["category_slug"] or "") in cn.exclude_categories:
                  continue
@@ -46,7 +78,7 @@
              s, why, near = score_item(cn, it, now)
              if s >= float(cn.min_score):
                  if cn.groups:
-@@ -562,8 +581,9 @@
+@@ -562,8 +590,9 @@
              sst.setdefault("dedupe", Counter())[decision + ":" + reason.split(" ")[0]] += 1
              log("  [%s] %s item %d (%s; %s): %s" % (cn.site_slug, decision, it["id"], reason, matched, it["title"][:70]))
  
@@ -57,18 +89,18 @@
                  break
              info = clusters.get(it["id"]) or {"cluster": 0, "role": "primary"}
              cl = info["cluster"]
-@@ -671,6 +691,10 @@
+@@ -671,6 +700,10 @@
                  report.append(dict(site=cn.site_slug, score=s, why=why, source_item_id=it["id"], title=it["title"],
                                     cluster=clusters.get(it["id"], {}).get("cluster"), development=dev))
              continue
-+        if not REWRITE and not args.no_ai and len(picks) > todo:
++        if not REWRITE and not args.no_ai and picks and (len(picks) > todo or STRICT_TOPIC):
 +            picks = ai_pick_manset(cfg, cn, picks, todo, sst)
 +        elif len(picks) > todo:
 +            picks = picks[:todo]
          for s, it, why, near, dev in picks:
              if ai_fail_streak >= 3:
                  log("  AI circuit open (3 consecutive errors); stopping AI for this run")
-@@ -681,8 +705,9 @@
+@@ -681,8 +714,9 @@
                  break
              t0 = time.time()
              try:
@@ -80,7 +112,7 @@
                  ai_fail_streak = 0
              except lib.AIError as ex:
                  ai_fail_streak += 1
-@@ -718,13 +743,13 @@
+@@ -718,13 +752,13 @@
                       match_reasons, ai_model, prompt_version, checks, error, run_id,
                       story_cluster_id, source_canonical, title_norm, image_key, is_development, development_note,
                       previous_ref, previous_title, previous_path)
@@ -96,7 +128,7 @@
                                     len("\n\n".join(res["paragraphs"])), round(s, 2), why, res["model"],
                                     lib.PROMPT_VERSION, json.dumps(dict(res["checks"], key_source=cfg["source"])),
                                     None if res["ok"] else "; ".join(res["checks"].get("problems") or []), run_id,
-@@ -755,6 +780,57 @@
+@@ -755,6 +789,62 @@
      return report
  
  
@@ -116,7 +148,9 @@
 +    cats = sorted(set(list(cn.categories or []) + CATEGORY_ORDER))
 +    lines = ["%d) [%s] %s — %s" % (i + 1, p[1]["category_slug"] or "-", (p[1]["title"] or "")[:160], (p[1]["spot"] or "")[:200])
 +             for i, p in enumerate(picks)]
-+    user = ("Site: %s (konsept: %s; öncelikli kategoriler: %s; konular: %s)\n"
++    rule = (getattr(cn, "topic_rule", None) or "").strip()
++    user = (("KESİN KONU KURALI: %s\nBu kurala uymayan adayı ASLA seçme; uygun aday azsa daha az seç, hiç yoksa boş liste döndür.\n\n" % rule) if (STRICT_TOPIC and rule) else "") + \
++           ("Site: %s (konsept: %s; öncelikli kategoriler: %s; konular: %s)\n"
 +            "Bu siteye en uygun, en güçlü ve en yeni %d haberi manşet için önem sırasıyla seç.\n"
 +            "Kategori listesi: %s\n\nAdaylar:\n%s" % (
 +                cn.domain, cn.concept_type, ", ".join(cn.categories or []), ", ".join(list(cn.keywords or [])[:15]),
@@ -137,6 +171,9 @@
 +            order.append(i)
 +    if not order:
 +        sst["ai_pick"] = "empty"
++        if STRICT_TOPIC and isinstance(d, dict) and isinstance(d.get("secim"), list):
++            log("  [%s] AI: konuya uygun aday yok (katı kural) — manşet eklenmedi" % cn.site_slug)
++            return []
 +        return picks[:todo]
 +    catmap = d.get("kategori") or {}
 +    out = []

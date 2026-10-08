@@ -5,6 +5,7 @@
 // /api/bekci/* (AI Haber Editörü page API), /admin* (HTML passthrough + shortcut bar; /admin/ai-icerik-robotu page).
 // Never: container restart, deleting data, pbx.goalgo.org / goalgo / turkatav-platform changes.
 import { neon } from "@neondatabase/serverless";
+import { ozelSites, ozelCreate, ozelList, ozelSetStatus, ozelMedia, ozelPage, OZEL_CAT_SLUG } from "./ozel.js";
 
 const UA = "Mozilla/5.0 (compatible; AhenkBekci/2.0; +https://ahenk.net.tr/admin/haber-siteleri-bekci)";
 const SUSPENDED = new Set(["kirsehirhaber.org"]);
@@ -18,7 +19,16 @@ const IMPORTER_MAX_MIN = { "importer": 40, "importer-sha-asg": 75, "importer-sha
 const PURGE_COOLDOWN_MIN = 60, IMPORT_COOLDOWN_MIN = 180, STALE_WARN_H = 6, STALE_CRIT_H = 24, MANSET_STUCK_H = 10;
 
 // ---------------------------------------------------------------- helpers
-async function timed(url, { method = "GET", headers = {}, body, ms = 15000, noBody = false, maxBody = 600000 } = {}) {
+// Workers allow only 6 simultaneous open connections per invocation; queued fetches would burn their own timeout
+// and show up as false "zaman aşımı" / broken images. Gate all probe fetches through a small semaphore.
+let _active = 0; const _waiters = [];
+const _acquire = () => _active < 5 ? (_active++, Promise.resolve()) : new Promise((r) => _waiters.push(r));
+const _release = () => { const n = _waiters.shift(); if (n) n(); else _active--; };
+async function timed(url, opts = {}) {
+  await _acquire();
+  try { return await _timed(url, opts); } finally { _release(); }
+}
+async function _timed(url, { method = "GET", headers = {}, body, ms = 15000, noBody = false, maxBody = 600000 } = {}) {
   const t0 = Date.now();
   try {
     const r = await fetch(url, { method, body, redirect: "follow", headers: { "user-agent": UA, accept: "text/html,application/xml,*/*", ...headers }, signal: AbortSignal.timeout(ms) });
@@ -99,9 +109,9 @@ async function checkImages(base, html) {
   const res = await Promise.all(srcs.map(async (s) => {
     let u; try { u = new URL(s.replace(/&amp;/g, "&"), base).toString(); } catch { return { u: s, status: 0, ok: false }; }
     const r = await timed(u, { headers: { range: "bytes=0-2047", accept: "image/*" }, noBody: true, ms: 10000 });
-    return { u, status: r.status, ok: (r.status === 200 || r.status === 206) && /image|octet/i.test(r.ctype) };
+    return { u, status: r.status, err: r.err, ok: (r.status === 200 || r.status === 206) && /image|octet/i.test(r.ctype) };
   }));
-  return { checked: res.length, broken: res.filter((x) => !x.ok).map((x) => ({ u: x.u.slice(0, 160), status: x.status })) };
+  return { checked: res.length, broken: res.filter((x) => !x.ok).map((x) => ({ u: x.u.slice(0, 160), status: x.status, err: x.err })) };
 }
 const P = (r) => r ? { url: r.url, status: r.status, ms: r.ms, ok: r.status >= 200 && r.status < 400, error: r.err } : null;
 
@@ -208,6 +218,12 @@ async function purgeUrls(env, site, out) {
   const r = await fetch(`https://api.cloudflare.com/client/v4/zones/${z}/purge_cache`, { method: "POST", headers: { authorization: `Bearer ${env.CF_API_TOKEN}`, "content-type": "application/json" }, body: JSON.stringify({ files }) });
   const d = await r.json().catch(() => ({})); return { ok: !!d.success, files: files.length, err: d.success ? null : JSON.stringify(d.errors || r.status).slice(0, 160) };
 }
+async function purgeOzel(env, siteIds, sql) {
+  try {
+    const sites = (await loadSites(sql)).filter((x) => siteIds.includes(x.id));
+    await Promise.all(sites.map((x) => purgeUrls(env, x, { kategori: { path: "/kategori/" + OZEL_CAT_SLUG } })));
+  } catch (e) { console.error("[ozel-purge]", e?.message || e); }
+}
 async function enqueue(sql, kind, slug, reason) {
   const ex = await sql.query(`SELECT id FROM hm_bekci_requests WHERE kind=$1 AND coalesce(site_slug,'')=coalesce($2,'') AND status IN ('pending','running') AND at > now()-interval '3 hours' LIMIT 1`, [kind, slug]);
   if (ex.length) return { queued: false, id: Number(ex[0].id) };
@@ -247,6 +263,10 @@ async function autoFix(env, sql, site, out, state, actions) {
 export async function runOnce(env, { manual = false, cookie = null } = {}) {
   const sql = db(env);
   const startedAt = new Date().toISOString();
+  if (!manual) {   // CF cron + VPS tick may both fire: at most one automatic pass per ~5 min
+    const [last] = await sql.query(`SELECT extract(epoch from now()-max(at))::int AS age FROM hm_bekci_runs`);
+    if (last?.age != null && last.age < 300) return { skipped: true, generatedAt: null };
+  }
   const state = (await getState(sql, "main")) || {};
   state.fixes ||= {}; state.prev ||= {}; state.sig ||= {}; state.sync ||= {}; state.syncCursor ||= 0;
   const importers = await getState(sql, "importers");
@@ -414,13 +434,13 @@ const json = (s, b) => new Response(JSON.stringify(b), { status: s, headers: { "
 
 const INJECT = `<script id="hm-bekci-bar">(function(){try{
 var L="AI Haber Editörü",R=/Haber AI \\((AI )?İçerik Robotu\\)|AI İçerik Robotu/;
-function ren(){var as=document.querySelectorAll('a[href="/admin/ai-icerik-robotu"]');for(var i=0;i<as.length;i++){var a=as[i];if(!a.__bk){a.__bk=1;a.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();location.href="/admin/ai-icerik-robotu";},true);}
+function ren(){var as=document.querySelectorAll('a[href="/admin/ai-icerik-robotu"],a[href="/admin/ozel-haber-ekle"]');for(var i=0;i<as.length;i++){var a=as[i];if(!a.__bk){a.__bk=1;a.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();location.href=this.getAttribute("href");},true);}
 var w=document.createTreeWalker(a,NodeFilter.SHOW_TEXT),n;while(n=w.nextNode()){if(R.test(n.nodeValue))n.nodeValue=n.nodeValue.replace(R,L);}}}
 function bar(){var p=location.pathname,b=document.getElementById("hm-bk-bar");var show=p.indexOf("/admin")===0&&p.indexOf("/admin/giris")!==0;
-if(p.indexOf("/admin/ai-icerik-robotu")===0&&!window.__BK_PAGE){location.reload();return;}
+if((p==="/admin/ai-icerik-robotu"||p==="/admin/ozel-haber-ekle")&&!window.__BK_PAGE){if(!sessionStorage.getItem("bkR"+p)){sessionStorage.setItem("bkR"+p,"1");location.reload();}return;}
 if(!show){if(b)b.style.display="none";return;}
 if(!b){b=document.createElement("div");b.id="hm-bk-bar";b.style.cssText="position:fixed;right:14px;bottom:14px;z-index:2147483000;display:flex;gap:8px;font:600 13px system-ui,sans-serif";
-b.innerHTML='<a href="/admin/ai-icerik-robotu" style="background:#0B2A5B;color:#fff;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0003">🤖 AI Haber Editörü</a><a href="/admin/haber-siteleri-bekci" style="background:#e61e25;color:#fff;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0003">🛡️ AI Bekçi</a>';document.body.appendChild(b);}
+b.innerHTML='<a href="/admin/ozel-haber-ekle" style="background:#fff;color:#0B2A5B;border:1px solid #c9d3e3;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0002">📝 Özel Haber ekle</a><a href="/admin/ai-icerik-robotu" style="background:#0B2A5B;color:#fff;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0003">🤖 AI Haber Editörü</a><a href="/admin/haber-siteleri-bekci" style="background:#e61e25;color:#fff;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0003">🛡️ AI Bekçi</a>';document.body.appendChild(b);}
 b.style.display="flex";}
 var t=0;new MutationObserver(function(){if(t)return;t=setTimeout(function(){t=0;ren();},300);}).observe(document.documentElement,{childList:true,subtree:true});
 setInterval(bar,1000);document.addEventListener("DOMContentLoaded",function(){ren();bar();});
@@ -446,9 +466,36 @@ async function handleFetch(req, env) {
     return json(200, { ok: true, report });
   }
   if (path.startsWith("/api/hm/admin/site-watchdog")) return fetch(req);   // sync-site / sync-all: existing handlers
+  if (path.startsWith("/api/bekci/media/") && req.method === "GET") {
+    const m = /^\/api\/bekci\/media\/(\d{1,12})(?:\.(?:webp|jpg|jpeg|png))?$/.exec(path);
+    if (!m) return new Response("yok", { status: 404 });
+    return ozelMedia(db(env), m[1]);
+  }
+  if (path === "/api/bekci/tick" && req.method === "POST") {      // VPS-driven schedule (CF cron fallback)
+    if (!env.BEKCI_TICK_TOKEN || req.headers.get("x-bekci-token") !== env.BEKCI_TICK_TOKEN) return json(403, { ok: false });
+    const kind = u.searchParams.get("kind") || "bekci";
+    if (kind === "bekci") { const r = await runOnce(env); return json(200, { ok: true, skipped: !!r?.skipped, at: r?.generatedAt || null }); }
+    if (kind === "ai_fetch" || kind === "ai_nofetch") return json(200, { ok: true, ...(await enqueue(db(env), "ai_editor_run", kind === "ai_fetch" ? "fetch" : "nofetch", "zamanlanmış (VPS tick)")) });
+    return json(400, { ok: false });
+  }
   if (path.startsWith("/api/bekci/")) {
     const s = await adminSession(req); if (!s) return json(401, { ok: false, error: "Yönetici girişi gerekli" });
     const sql = db(env);
+    if (path === "/api/bekci/ozel-haber" && req.method === "GET") return json(200, { ok: true, sites: await ozelSites(sql), items: await ozelList(sql) });
+    if (path === "/api/bekci/ozel-haber" && req.method === "POST") {
+      const b = await req.json().catch(() => null); if (!b) return json(400, { ok: false, error: "geçersiz istek" });
+      try {
+        const r = await ozelCreate(sql, b, { who: s.full ? "admin" : "editor" });
+        await logEvent(sql, { domain: "ahenk.net.tr", kind: "ozel_haber", severity: "info", message: `Özel haber yayımlandı: "${String(b.title).slice(0, 80)}" → ${r.rows.length} site`, detail: { group: r.group, ids: r.rows.map((x) => x.id) } });
+        await purgeOzel(env, r.rows.map((x) => x.siteId), sql);
+        return json(200, { ok: true, ...r });
+      } catch (e) { return json(400, { ok: false, error: String(e.message || e).slice(0, 200) }); }
+    }
+    if (path === "/api/bekci/ozel-haber/status" && req.method === "POST") {
+      const b = await req.json().catch(() => ({}));
+      try { const r = await ozelSetStatus(sql, b.group, !!b.live); await logEvent(sql, { domain: "ahenk.net.tr", kind: "ozel_haber", severity: "info", message: `Özel haber ${b.live ? "yayına alındı" : "gizlendi"} (${b.group}, ${r.n} satır)` }); await purgeOzel(env, r.siteIds, sql); return json(200, { ok: true, ...r }); }
+      catch (e) { return json(400, { ok: false, error: String(e.message || e).slice(0, 200) }); }
+    }
     if (path === "/api/bekci/ai-editor" && req.method === "GET") return json(200, { ok: true, ...(await editorData(sql)) });
     if (path === "/api/bekci/ai-editor/toggle" && req.method === "POST") {
       const b = await req.json().catch(() => ({})); const id = Number(b.siteId);
@@ -461,6 +508,11 @@ async function handleFetch(req, env) {
     if (path === "/api/bekci/ai-editor/run" && req.method === "POST") return json(200, { ok: true, ...(await enqueue(sql, "ai_editor_run", "fetch", "panel: Şimdi çalıştır")) });
     if (path === "/api/bekci/ai-test" && req.method === "GET") return json(200, await aiChat(env, "Tek cümleyle yanıt ver: Türkiye'nin başkenti neresidir?"));
     return json(404, { ok: false, error: "yok" });
+  }
+  if (path === "/admin/ozel-haber-ekle") {
+    const s = await adminSession(req);
+    if (!s) return new Response(null, { status: 302, headers: { location: "/admin/giris?next=/admin/ozel-haber-ekle", "cache-control": "no-store" } });
+    return new Response(ozelPage() + INJECT, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store" } });
   }
   if (path === "/admin/ai-icerik-robotu" || path.startsWith("/admin/ai-icerik-robotu/")) {
     const s = await adminSession(req);
@@ -486,7 +538,7 @@ export default {
     catch (e) {
       console.error("[bekci-fetch]", e?.stack || e);
       const p = new URL(req.url).pathname;
-      if (p.startsWith("/admin") && p !== "/admin/ai-icerik-robotu" && !p.startsWith("/admin/ai-icerik-robotu/")) return fetch(req);   // never break the panel
+      if (p.startsWith("/admin") && p !== "/admin/ai-icerik-robotu" && p !== "/admin/ozel-haber-ekle" && !p.startsWith("/admin/ai-icerik-robotu/")) return fetch(req);   // never break the panel
       return json(500, { ok: false, error: "bekçi hatası: " + String(e?.message || e).slice(0, 160) });
     }
   },
