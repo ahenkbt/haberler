@@ -6,6 +6,13 @@ import {
   ownedMailDomainsForSite,
   isHmNewsSite,
 } from "./hm-site-mail-convention.js";
+import { decodeQpIfEncoded } from "./hm-site-mail-edge.js";
+
+test("quoted-printable bodies are decoded for display only when clearly encoded", () => {
+  assert.equal(decodeQpIfEncoded("Edit=C3=B6r paneli =C3=A7ok"), "Editör paneli çok");
+  assert.equal(decodeQpIfEncoded("a=b and c=d"), "a=b and c=d");
+  assert.equal(decodeQpIfEncoded("Editör"), "Editör");
+});
 
 test("convention: subdomain sites use <sub>@<parent>, apex domains bilgi@<domain>", () => {
   assert.equal(conventionalAddressForHost("kibris.gundemi.org"), "kibris@gundemi.org");
