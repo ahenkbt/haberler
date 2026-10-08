@@ -40,6 +40,40 @@ function json(status, body) {
 }
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
+// PHP theme App::CANONICAL_CATEGORIES: always in the nav even without a categories row for the site.
+export const CANONICAL_CATEGORIES = {
+  gundem: "Gündem", ekonomi: "Ekonomi", dunya: "Dünya", politika: "Politika", spor: "Spor", teknoloji: "Teknoloji",
+  "kultur-sanat": "Kültür-Sanat", saglik: "Sağlık", yasam: "Yaşam", egitim: "Eğitim", yerel: "Yerel", ankara: "Ankara",
+};
+
+/** Categories an editor can switch: canonical + categories rows (global/site) + slugs used by the site's feed. */
+async function siteCategoryList(news, siteId, pools) {
+  const rows = await news.query(
+    `WITH used AS (
+       SELECT category_slug AS slug, count(*)::int AS n FROM portal_rss_items
+       WHERE (site_id IS NULL OR site_id = $1 OR site_id = ANY($2::int[])) AND published_at > now() - interval '14 days'
+         AND category_slug IS NOT NULL AND category_slug <> ''
+       GROUP BY 1),
+     cats AS (
+       SELECT slug, min(name) AS name, bool_or(exclusive_site_id = $1) AS own FROM categories
+       WHERE (exclusive_site_id IS NULL OR exclusive_site_id = $1) AND slug IS NOT NULL GROUP BY slug),
+     allslugs AS (SELECT slug FROM cats UNION SELECT slug FROM used UNION SELECT unnest($3::text[]))
+     SELECT a.slug, c.name, COALESCE(c.own, false) AS own, COALESCE(u.n, 0) AS recent,
+            (SELECT co.active FROM hm_site_category_overrides co WHERE co.site_id = $1 AND co.category_slug = a.slug) AS active
+     FROM allslugs a LEFT JOIN cats c ON c.slug = a.slug LEFT JOIN used u ON u.slug = a.slug
+     ORDER BY COALESCE(u.n, 0) DESC, a.slug`,
+    [siteId, pools, Object.keys(CANONICAL_CATEGORIES)],
+  );
+  return rows
+    .filter((r) => SLUG_RE.test(String(r.slug || "")))
+    .map((r) => ({
+      slug: r.slug,
+      name: r.name || CANONICAL_CATEGORIES[r.slug] || r.slug,
+      own: !!r.own,
+      recent: Number(r.recent),
+      active: r.active !== false,
+    }));
+}
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Shared RSS pools the PHP theme reads for this site (App::rssSharedFor): layout hmNewsRssSources, default [230]. */
@@ -291,34 +325,16 @@ export async function handleHmEditorSiteOverridesEdge(request, env, incomingUrl)
   }
 
   if (path === "/api/hm/editor/site-categories" && method === "GET") {
-    const pools = rssSourcesFromLayout(site.layout_json);
-    const rows = await news.query(
-      `WITH used AS (
-         SELECT category_slug AS slug, count(*)::int AS n FROM portal_rss_items
-         WHERE (site_id IS NULL OR site_id = $1 OR site_id = ANY($2::int[])) AND published_at > now() - interval '14 days'
-         GROUP BY 1)
-       SELECT c.slug, min(c.name) AS name, bool_or(c.exclusive_site_id = $1) AS own, COALESCE(max(u.n), 0) AS recent,
-              (SELECT co.active FROM hm_site_category_overrides co WHERE co.site_id = $1 AND co.category_slug = c.slug) AS active
-       FROM categories c LEFT JOIN used u ON u.slug = c.slug
-       WHERE (c.exclusive_site_id IS NULL OR c.exclusive_site_id = $1) AND c.slug IS NOT NULL
-       GROUP BY c.slug ORDER BY COALESCE(max(u.n), 0) DESC, min(c.name)`,
-      [siteId, pools],
-    );
-    return json(200, {
-      siteId,
-      categories: rows.map((r) => ({ slug: r.slug, name: r.name, own: !!r.own, recent: Number(r.recent), active: r.active !== false })),
-    });
+    const categories = await siteCategoryList(news, siteId, rssSourcesFromLayout(site.layout_json));
+    return json(200, { siteId, categories });
   }
 
   if (path === "/api/hm/editor/site-categories/state" && method === "POST") {
     const b = await readBody(request);
     const slug = String(b.slug || "").trim().toLowerCase();
     if (!SLUG_RE.test(slug)) return json(400, { error: "Geçersiz kategori" });
-    const exists = await news.query(
-      `SELECT 1 FROM categories WHERE slug = $1 AND (exclusive_site_id IS NULL OR exclusive_site_id = $2) LIMIT 1`,
-      [slug, siteId],
-    );
-    if (!exists.length) return json(404, { error: "Kategori bulunamadı" });
+    const known = (await siteCategoryList(news, siteId, rssSourcesFromLayout(site.layout_json))).some((c) => c.slug === slug);
+    if (!known) return json(404, { error: "Kategori bulunamadı" });
     if (b.active === false) {
       await news.query(
         `INSERT INTO hm_site_category_overrides (site_id, category_slug, active, updated_at, updated_by)
