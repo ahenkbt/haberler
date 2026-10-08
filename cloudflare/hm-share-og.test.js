@@ -39,6 +39,14 @@ describe("corporate share cards", () => {
     assert.match(noImg, /vkd-og\.jpg/);
   });
 
+  it("home/site pages always use the brand card", () => {
+    const out = finalizeHmShareOgHtml(
+      '<html><head><meta property="og:type" content="website"/><meta property="og:image" content="https://cdn.example.com/news.webp"/></head></html>',
+      "vatankahramanlari.org.tr",
+    );
+    assert.match(out, /og:image" content="https:\/\/vatankahramanlari\.org\.tr\/hm\/share\/vkd-og\.jpg"/);
+  });
+
   it("leaves non-corporate hosts unchanged", () => {
     const html = '<html><head><meta property="og:image" content="https://vatanhaber.net/apple-touch-icon.png"/></head></html>';
     assert.equal(finalizeHmShareOgHtml(html, "vatanhaber.net"), html);
