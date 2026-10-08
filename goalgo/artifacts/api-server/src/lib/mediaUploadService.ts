@@ -14,7 +14,7 @@ import {
   noteS3RuntimeFailure,
   shouldReadS3ForMediaIo,
 } from "./mediaStorageConfig";
-import { getS3ObjectStream, putS3Object, s3ObjectExists } from "./mediaObjectStorage";
+import { getS3ObjectStream, putS3Object, putS3ObjectViaWorkerProxy, s3ObjectExists } from "./mediaObjectStorage";
 import { logger } from "./logger";
 import { optimizeNewsImageBuffer, shouldOptimizeNewsImage } from "./newsImageOptimize.js";
 import { newsCoverFilenameStem, sanitizeMediaFilenameStem } from "./newsCoverFilename.js";
@@ -138,6 +138,48 @@ export async function verifyMediaUploadReadable(
   throw new Error(`Medya dosyası depolamada doğrulanamadı: ${name}`);
 }
 
+function mediaPublicOrigin(): string {
+  const raw = String(process.env.MEDIA_WORKER_ORIGIN || process.env.SITE_PUBLIC_ORIGIN || "https://ahenk.net.tr")
+    .trim()
+    .replace(/\/+$/, "");
+  return raw || "https://ahenk.net.tr";
+}
+
+/** HEAD through the public media path the news sites use (Worker → R2). */
+async function isPublicMediaReachable(fname: string, attempts = 5): Promise<boolean> {
+  const url = `${mediaPublicOrigin()}/api/media/uploads/${encodeURIComponent(fname)}`;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(8000) });
+      if (res.ok) return true;
+    } catch {
+      /* retry */
+    }
+    await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+  }
+  return false;
+}
+
+async function putMediaToR2Verified(fname: string, buf: Buffer, mime: string): Promise<void> {
+  let firstErr: unknown = null;
+  try {
+    await putS3Object(fname, buf, mime);
+  } catch (e) {
+    firstErr = e;
+    noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
+    logger.error({ err: e, fname }, "[media-upload] S3 put failed — Worker R2 proxy denenecek");
+  }
+  if (!firstErr && (await isPublicMediaReachable(fname))) return;
+  try {
+    await putS3ObjectViaWorkerProxy(fname, buf, mime);
+  } catch (e) {
+    const msg = (firstErr ?? e) instanceof Error ? ((firstErr ?? e) as Error).message : String(firstErr ?? e);
+    throw new Error(`Medya deposuna (R2) yazılamadı: ${msg.slice(0, 160)}`);
+  }
+  if (await isPublicMediaReachable(fname)) return;
+  throw new Error(`Medya deposuna yazıldı ama dosya yayında doğrulanamadı: ${fname}`);
+}
+
 export async function saveMediaBuffer(
   buf: Buffer,
   opts: SaveMediaBufferOpts,
@@ -161,28 +203,14 @@ export async function saveMediaBuffer(
   const fname = stem
     ? `${stem}.${ext}`
     : `${prefix}${Date.now()}-${randomBytes(8).toString("hex")}.${ext}`;
-  if (getMediaStorageMode() === "s3") {
-    try {
-      await putS3Object(fname, outBuf, mime);
-    } catch (e) {
-      logger.error({ err: e, fname }, "[media-upload] S3 put failed");
-      noteS3RuntimeFailure(e instanceof Error ? e.message : String(e));
-      if (!hasPersistentVolumeMount()) {
-        throw e instanceof Error ? e : new Error(String(e ?? "S3 put failed"));
-      }
-      await writeLocalMediaFile(fname, outBuf);
-      logger.warn(
-        {
-          fname,
-          root: getMediaUploadRoot(),
-          persistent: true,
-        },
-        "[media-upload] S3 başarısız — dosya kalıcı volume'a yazıldı",
-      );
-    }
-  } else {
-    await writeLocalMediaFile(fname, outBuf);
+  // 2026-10-08: never park an upload on the container's local disk (lost on every container roll; that left
+  // dead /api/media/uploads/… URLs). Without a real persistent volume the file must land in R2 and be
+  // reachable through the public media path, else the upload fails with a clear error.
+  if (getMediaStorageMode() === "s3" || !hasPersistentVolumeMount()) {
+    await putMediaToR2Verified(fname, outBuf, mime);
+    return { fname, url: publicUploadUrl(fname) };
   }
+  await writeLocalMediaFile(fname, outBuf);
   await verifyMediaUploadReadable(fname);
   return { fname, url: publicUploadUrl(fname) };
 }
