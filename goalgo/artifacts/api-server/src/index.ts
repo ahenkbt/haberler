@@ -8,7 +8,8 @@ const entryDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(entryDir, "../../../.env") });
 dotenv.config({ path: path.resolve(entryDir, "../.env") });
 
-import { logYektubeDbStartupHint, pool } from "@workspace/db";
+import { db as mainDbForGuard, logYektubeDbStartupHint, newsDb as newsDbForGuard, pool } from "@workspace/db";
+import { ensureHmLayoutGuard } from "./lib/hm-layout-guard.js";
 import { logger } from "./lib/logger";
 import { ensureSessionStoreTable } from "./lib/sessionStore.js";
 import {
@@ -282,6 +283,18 @@ const server = app.listen(port, listenHost, (err) => {
       logger.info("[media-migrate] boot taşıması bitti — MEDIA_MIGRATE_ON_BOOT değişkenini kaldırın");
     })();
   }
+
+  // Layout guard (redo of #445): automatic jobs can no longer overwrite panel-saved logos/menus/layout.
+  // Installed before the delayed repair jobs below (they start at >= 17 s). HM_LAYOUT_GUARD=0 removes it.
+  void ensureHmLayoutGuard(
+    [
+      { name: "main", db: mainDbForGuard },
+      { name: "news", db: newsDbForGuard },
+    ],
+    envJobFlag("HM_LAYOUT_GUARD", true),
+  )
+    .then((r) => logger.info(r, "[hm-layout-guard] trigger"))
+    .catch((err) => logger.error({ err }, "[hm-layout-guard] kurulamadı"));
 
   void ensureMapVendorColumnPatches(logger).catch((e) =>
     logger.error({ err: e }, "ensureMapVendorColumnPatches başarısız — DB şeması uyumsuz olabilir"),

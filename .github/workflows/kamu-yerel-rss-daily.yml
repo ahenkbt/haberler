@@ -37,21 +37,8 @@ jobs:
         working-directory: goalgo
         run: pnpm install --frozen-lockfile
 
-      - name: ensure:kamu-yerel
-        working-directory: goalgo
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
-          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'news' }}
-          NEWS_DB_WRITE: dual
-        run: |
-          set -euo pipefail
-          if [ -z "${DATABASE_URL:-}" ]; then
-            echo "::error::DATABASE_URL secret missing."
-            exit 1
-          fi
-          pnpm --filter @workspace/api-server run ensure:kamu-yerel
-
+      # 2026-10-08: ensure:kamu-yerel removed from the daily run; it rewrote turkatahaber/yerel layouts
+      # (logos, menus, Daha). Site setup is a manual one-off (workflow ensure-kamu-yerel.yml).
       - name: run:kamu-yerel-rss-daily
         working-directory: goalgo
         env:
