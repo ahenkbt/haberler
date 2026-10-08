@@ -207,15 +207,26 @@ const TURKATA_CONTACT = {
 async function ensureEditor(siteId: number, def: KamuYerelSiteDef): Promise<void> {
   const email = def.kunyeEmail;
   const passwordHash = await bcrypt.hash(email, 10);
-  const [existing] = await getNewsDbForRead()
+  // Panel DB only — NEWS_DB_READ=news misses PHP-absent editors and dualWriteInsert
+  // then hits hm_site_editors_site_id_username_key on the panel row.
+  const [byEmail] = await db
     .select({ id: hmSiteEditorsTable.id })
     .from(hmSiteEditorsTable)
     .where(and(eq(hmSiteEditorsTable.siteId, siteId), eq(hmSiteEditorsTable.email, email)))
     .limit(1);
+  const [byUsername] = byEmail
+    ? [null]
+    : await db
+        .select({ id: hmSiteEditorsTable.id })
+        .from(hmSiteEditorsTable)
+        .where(and(eq(hmSiteEditorsTable.siteId, siteId), eq(hmSiteEditorsTable.username, email)))
+        .limit(1);
+  const existing = byEmail ?? byUsername;
   if (existing) {
     await dualWriteUpdate(
       hmSiteEditorsTable,
       {
+        email,
         username: email,
         passwordHash,
         displayName: `${def.displayName} Editör`,
@@ -226,14 +237,20 @@ async function ensureEditor(siteId: number, def: KamuYerelSiteDef): Promise<void
     );
     return;
   }
-  await dualWriteInsert(hmSiteEditorsTable, {
-    siteId,
-    email,
-    username: email,
-    passwordHash,
-    displayName: `${def.displayName} Editör`,
-    isActive: true,
-  });
+  try {
+    await dualWriteInsert(hmSiteEditorsTable, {
+      siteId,
+      email,
+      username: email,
+      passwordHash,
+      displayName: `${def.displayName} Editör`,
+      isActive: true,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/hm_site_editors_site_id_username_key|duplicate key/i.test(msg)) throw err;
+    logger.warn({ siteId, email }, "[kamu-yerel] editor insert race — treating as existing");
+  }
 }
 
 async function ensureCategories(siteId: number, def: KamuYerelSiteDef): Promise<Map<string, number>> {
