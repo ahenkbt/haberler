@@ -2,7 +2,12 @@
  * turkatahaber.com & yerel.net.tr — layout_json alanları Cumha kamu-yerel kataloğuna kilitlenir.
  * Editör kaydı veya eski PHP migration menüsü bu alanları ezmemeli.
  */
-import { listKamuYerelNavHiddenCategorySlugs, listKamuYerelNavTopCategorySlugs } from "./hm-cumha-kamu-yerel-catalog.js";
+import {
+  KAMU_YEREL_DAHA_PAGE_SLUG,
+  KAMU_YEREL_ILLER_PAGE_SLUG,
+  listKamuYerelNavHiddenCategorySlugs,
+  listKamuYerelNavTopCategorySlugs,
+} from "./hm-cumha-kamu-yerel-catalog.js";
 import { hmLayoutLogoUsesInlineDataUrl } from "./hm-domain-lookup.js";
 import type { KamuYerelSiteDef } from "./hm-kamu-yerel-sites.js";
 import { YERELNET_SLUG } from "./hm-kamu-yerel-sites.js";
@@ -103,6 +108,44 @@ export function kamuYerelLogoNeedsRepair(
   return false;
 }
 
+function kamuYerelExtraPagesNeedRepair(layoutJson: string | null | undefined): boolean {
+  const raw = String(layoutJson ?? "").trim();
+  if (!raw) return true;
+  try {
+    const layout = JSON.parse(raw) as {
+      hmExtraPages?: unknown;
+      hmCorporateMenuItems?: unknown;
+    };
+    const pages = Array.isArray(layout.hmExtraPages) ? layout.hmExtraPages : [];
+    const slugs = new Set(
+      pages
+        .filter((p): p is Record<string, unknown> => !!p && typeof p === "object" && !Array.isArray(p))
+        .map((p) =>
+          String(p.slug ?? "")
+            .trim()
+            .toLowerCase(),
+        )
+        .filter(Boolean),
+    );
+    if (!slugs.has(KAMU_YEREL_DAHA_PAGE_SLUG) || !slugs.has(KAMU_YEREL_ILLER_PAGE_SLUG)) return true;
+    const menu = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
+    const daha = menu.find(
+      (m) =>
+        !!m &&
+        typeof m === "object" &&
+        !Array.isArray(m) &&
+        String((m as { id?: unknown }).id ?? "").toLowerCase() === "ky-cat-daha",
+    ) as { href?: unknown } | undefined;
+    const href = String(daha?.href ?? "")
+      .trim()
+      .toLowerCase();
+    if (href !== `/${KAMU_YEREL_DAHA_PAGE_SLUG}`) return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 /** Tepe menü / logo / RSS katalog dışına çıktı mı? */
 export function kamuYerelLayoutNeedsCatalogRepair(
   layoutJson: string | null | undefined,
@@ -112,6 +155,7 @@ export function kamuYerelLayoutNeedsCatalogRepair(
   if (!navSlugsMatchCatalog(nav)) return true;
   if (isLegacyGenericHmNav(nav)) return true;
   if (kamuYerelLogoNeedsRepair(layoutJson, expect)) return true;
+  if (kamuYerelExtraPagesNeedRepair(layoutJson)) return true;
   return false;
 }
 

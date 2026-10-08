@@ -39,7 +39,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
-          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'news' }}
+          # Prefer panel Neon (main) so dual-write updates Worker site ids; PHP sync resolves by slug.
+          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'main' }}
           NEWS_DB_WRITE: dual
         run: |
           if [ -z "$DATABASE_URL" ]; then

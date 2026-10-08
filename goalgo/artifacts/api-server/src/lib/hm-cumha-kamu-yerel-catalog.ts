@@ -424,13 +424,15 @@ export type KamuYerelCorporateMenuItem = {
   enabled?: boolean;
 };
 
-/** Tepe menü — kamu/yerel kategoriler (81 il yalnızca `/iller` sayfasında; ana menüde il/bölge yok). */
+export const KAMU_YEREL_DAHA_PAGE_SLUG = "daha";
+
+/** Tepe menü — kamu/yerel kategoriler (81 il `/iller` + premium `/daha`; ana menüde il/bölge yok). */
 export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[] {
   const items: KamuYerelCorporateMenuItem[] = [];
   items.push({
     id: "ky-cat-daha",
     label: "Daha",
-    href: "/kategori/daha",
+    href: `/${KAMU_YEREL_DAHA_PAGE_SLUG}`,
     enabled: true,
   });
   for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
@@ -463,29 +465,62 @@ export type KamuYerelIllerExtraPage = {
   fullWidth: boolean;
 };
 
-/** `/iller` — bölge başlıkları altında il kategori bağlantıları (PHP + SPA hmExtraPages). */
-export function buildKamuYerelIllerExtraPage(): KamuYerelIllerExtraPage {
-  const sections: string[] = [
-    `<div class="hm-iller-page"><p class="hm-iller-lead">Türkiye&#39;nin 81 ilinde kamu ve yerel gündem haberleri — il başlığına tıklayarak il kategorisindeki haberlere ulaşın.</p>`,
-  ];
+function buildKamuYerelRegionProvinceSections(pageClass: string): string[] {
+  const sections: string[] = [];
   for (const regionId of KAMU_YEREL_REGION_ORDER) {
     const label = KAMU_YEREL_REGION_LABELS[regionId];
     const links = listKamuYerelProvinces()
       .filter((p) => p.regionId === regionId)
       .map(
         (p) =>
-          `<li><a href="/kategori/${p.slug}" class="hm-iller-il-link">${p.name}</a></li>`,
+          `<li><a href="/kategori/${p.slug}" class="${pageClass}-il-link">${p.name}</a></li>`,
       )
       .join("");
     sections.push(
-      `<section id="${regionId}" class="hm-iller-region"><h2 class="hm-iller-region-title">${label}</h2><ul class="hm-iller-province-grid">${links}</ul></section>`,
+      `<section id="${regionId}" class="${pageClass}-region"><h2 class="${pageClass}-region-title">${label}</h2><ul class="${pageClass}-province-grid">${links}</ul></section>`,
     );
   }
-  sections.push("</div>");
+  return sections;
+}
+
+/** `/iller` — bölge başlıkları altında il kategori bağlantıları (PHP + SPA hmExtraPages). */
+export function buildKamuYerelIllerExtraPage(): KamuYerelIllerExtraPage {
+  const sections: string[] = [
+    `<div class="hm-iller-page"><p class="hm-iller-lead">Türkiye&#39;nin 81 ilinde kamu ve yerel gündem haberleri — il başlığına tıklayarak il kategorisindeki haberlere ulaşın.</p>`,
+    ...buildKamuYerelRegionProvinceSections("hm-iller"),
+    "</div>",
+  ];
   return {
     id: "ky-page-iller",
     title: "İller",
     slug: KAMU_YEREL_ILLER_PAGE_SLUG,
+    bodyHtml: sections.join(""),
+    enabled: true,
+    fullWidth: true,
+  };
+}
+
+/**
+ * `/daha` — premium hub: uluslararası «Daha» kategorileri + 7 bölge / 81 il.
+ * Tepe menü «Daha» bu sayfaya gider; alt RSS kategorileri menüde parent olarak kalır.
+ */
+export function buildKamuYerelDahaExtraPage(): KamuYerelIllerExtraPage {
+  const intlLinks = CUMHA_DAHA_CATEGORY_FEEDS.map(
+    (c) =>
+      `<li><a href="/kategori/${c.slug}" class="hm-daha-cat-link">${c.name}</a></li>`,
+  ).join("");
+  const sections: string[] = [
+    `<div class="hm-daha-page">`,
+    `<p class="hm-daha-lead">Uluslararası kuruluşlar, dış politika ve Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin.</p>`,
+    `<section id="daha-uluslararasi" class="hm-daha-intl"><h2 class="hm-daha-section-title">Uluslararası</h2><ul class="hm-daha-cat-grid">${intlLinks}</ul></section>`,
+    `<section id="daha-bolgeler" class="hm-daha-bolgeler"><h2 class="hm-daha-section-title">Bölgeler ve iller</h2>`,
+    ...buildKamuYerelRegionProvinceSections("hm-daha"),
+    `</section></div>`,
+  ];
+  return {
+    id: "ky-page-daha",
+    title: "Daha",
+    slug: KAMU_YEREL_DAHA_PAGE_SLUG,
     bodyHtml: sections.join(""),
     enabled: true,
     fullWidth: true,

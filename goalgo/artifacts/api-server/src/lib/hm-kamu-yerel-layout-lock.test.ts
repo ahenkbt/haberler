@@ -51,4 +51,15 @@ describe("hm-kamu-yerel-layout-lock", () => {
       kamuYerelLayoutNeedsCatalogRepair(JSON.stringify(layout), kamuYerelLogoExpectation(YERELNET_SITE)),
     ).toBe(false);
   });
+
+  it("flags layouts missing /daha or /iller extra pages", () => {
+    const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
+    const withoutDaha = {
+      ...layout,
+      hmExtraPages: [{ slug: "iller", title: "İller", bodyHtml: "", enabled: true, fullWidth: true }],
+    };
+    expect(
+      kamuYerelLayoutNeedsCatalogRepair(JSON.stringify(withoutDaha), kamuYerelLogoExpectation(TURKATAHABER_SITE)),
+    ).toBe(true);
+  });
 });

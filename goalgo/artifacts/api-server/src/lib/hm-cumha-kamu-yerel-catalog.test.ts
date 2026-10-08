@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildKamuYerelCategories,
+  buildKamuYerelDahaExtraPage,
   buildKamuYerelHmNewsSiteRssFeedRows,
   buildKamuYerelCorporateMenuItems,
   buildKamuYerelIllerExtraPage,
@@ -9,6 +10,7 @@ import {
   cumhaProvinceSlugFromName,
   expandKamuYerelListingCategorySlugs,
   kamuYerelRegionCategorySlug,
+  KAMU_YEREL_DAHA_PAGE_SLUG,
   KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS,
   KAMU_YEREL_REGION_ORDER,
   listKamuYerelNavTopCategorySlugs,
@@ -51,11 +53,13 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(listKamuYerelNavTopCategorySlugs()).toContain("daha");
   });
 
-  it("corporate menu excludes iller/bolge (iller only on /iller page)", () => {
+  it("corporate menu excludes iller/bolge; Daha points to /daha hub", () => {
     const menu = buildKamuYerelCorporateMenuItems();
     expect(menu.length).toBeLessThanOrEqual(40);
     expect(menu.some((m) => m.id === "ky-menu-iller" || m.id.startsWith("ky-region-"))).toBe(false);
     expect(menu.some((m) => m.id.startsWith("ky-il-"))).toBe(false);
+    const daha = menu.find((m) => m.id === "ky-cat-daha");
+    expect(daha?.href).toBe(`/${KAMU_YEREL_DAHA_PAGE_SLUG}`);
     const genelMerkez = menu.find((m) => m.id === "ky-cat-genel-merkez");
     expect(genelMerkez?.parentId).toBe("ky-cat-siyasi-partiler");
     const nato = menu.find((m) => m.id === "ky-cat-nato");
@@ -79,3 +83,12 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml.match(/hm-iller-il-link/g)?.length).toBe(81);
   });
 });
+
+  it("daha premium hub lists intl categories + 81 provinces under regions", () => {
+    const page = buildKamuYerelDahaExtraPage();
+    expect(page.slug).toBe(KAMU_YEREL_DAHA_PAGE_SLUG);
+    expect(page.bodyHtml).toContain('href="/kategori/nato"');
+    expect(page.bodyHtml).toContain('href="/kategori/avrupa-birligi"');
+    expect(page.bodyHtml).toContain('id="marmara"');
+    expect(page.bodyHtml.match(/hm-daha-il-link/g)?.length).toBe(81);
+  });

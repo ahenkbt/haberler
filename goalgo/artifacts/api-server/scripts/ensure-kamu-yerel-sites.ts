@@ -22,14 +22,19 @@ import { buildKamuYerelHmNewsSiteRssFeedRows } from "../src/lib/hm-cumha-kamu-ye
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
-async function maybeSyncPhpLayout(siteIds: number[]) {
+async function maybeSyncPhpLayout(slugs: string[]) {
   if (process.env.SYNC_PHP_LAYOUT !== "1") return;
   if (!process.env.NEWS_DATABASE_URL?.trim()) {
     console.warn("[ensure:kamu-yerel] SYNC_PHP_LAYOUT=1 ama NEWS_DATABASE_URL yok — atlandı");
     return;
   }
-  for (const siteId of siteIds) {
-    if (!siteId) continue;
+  // Always resolve by slug: NEWS_DB_READ=news returns PHP ids (230) that are not
+  // Worker panel ids (1132); --site-id would read empty layout from the wrong row.
+  for (const slug of slugs) {
+    const key = String(slug || "")
+      .trim()
+      .toLowerCase();
+    if (!key) continue;
     const sync = spawnSync(
       process.execPath,
       [
@@ -38,7 +43,7 @@ async function maybeSyncPhpLayout(siteIds: number[]) {
         path.join(scriptDir, "sync-php-neon-news.ts"),
         "--apply",
         "--layout-only",
-        `--site-id=${siteId}`,
+        `--site-slug=${key}`,
       ],
       { cwd: scriptDir, stdio: "inherit" },
     );
@@ -81,8 +86,8 @@ async function main() {
   console.log(JSON.stringify(row, null, 2));
   if (row.sites.some((s) => s.action === "error")) process.exitCode = 1;
 
-  const siteIds = row.sites.map((s) => s.siteId).filter((id): id is number => id != null && id > 0);
-  await maybeSyncPhpLayout(siteIds);
+  const slugs = row.sites.map((s) => s.slug).filter((s) => String(s || "").trim());
+  await maybeSyncPhpLayout(slugs);
 
   const turkataCampaign = row.sites.find((s) => s.slug === TURKATAHABER_SLUG)?.campaignId ?? null;
   await maybeRunRssCampaign(turkataCampaign);

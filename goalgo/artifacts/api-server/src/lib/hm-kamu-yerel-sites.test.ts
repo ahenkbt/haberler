@@ -20,11 +20,12 @@ describe("hm-kamu-yerel-sites", () => {
     expect(Array.isArray(layout.hmCorporateMenuItems)).toBe(true);
   });
 
-  it("layout includes /iller extra page and compact nav menu", () => {
+  it("layout includes /daha + /iller extra pages and compact nav menu", () => {
     const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
-    const menu = layout.hmCorporateMenuItems as unknown[];
+    const menu = layout.hmCorporateMenuItems as Array<{ id: string; href: string }>;
     expect(menu.length).toBeLessThanOrEqual(40);
+    expect(menu.find((m) => m.id === "ky-cat-daha")?.href).toBe("/daha");
     const pages = layout.hmExtraPages as Array<{ slug: string }>;
-    expect(pages.some((p) => p.slug === "iller")).toBe(true);
+    expect(pages.map((p) => p.slug)).toEqual(expect.arrayContaining(["daha", "iller"]));
   });
 });
