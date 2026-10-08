@@ -29,7 +29,6 @@ const ANKARA_LOCAL_TERMS = [
   "polatli",
   "akyurt",
   "kahramankazan",
-  "kazan",
   "nallıhan",
   "nallihan",
   "beypazarı",
