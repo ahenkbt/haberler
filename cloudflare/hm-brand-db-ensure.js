@@ -18,6 +18,7 @@ import { syncTurkatahaberLayoutMainToPhpNeon } from "./hm-turkatahaber-edge.js";
 import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
 import { ensureTurksavLogoOnNeon } from "./hm-turksav-edge.js";
 import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
+import { ensureDunyaSaglikLogoOnNeon } from "./hm-dunyasaglik-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -160,6 +161,14 @@ export const HM_BRAND_DB_BINDINGS = [
     slug: "sehitgazi",
     displayName: "Şehit Gazi",
     description: "Şehitlerimiz, gazilerimiz ve Türk Silahlı Kuvvetleri haberleri",
+  },
+  /** Dünya Sağlık — logo/favicon ASSETS yolu Neon layout_json. */
+  {
+    domain: "dunyasaglik.org",
+    domains: ["dunyasaglik.org", "www.dunyasaglik.org"],
+    slug: "dunyasaglik",
+    displayName: "Dünya Sağlık",
+    description: "Sağlık haberleri, hastalıklar, tedavi ve sağlık politikaları",
   },
 ];
 
@@ -1575,6 +1584,14 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       await ensureSehitGaziLogoOnNeon(env);
     } catch (err) {
       console.error("[hm-brand-db-ensure] sehitgazi logo", String(err?.message || err).slice(0, 240));
+    }
+  }
+
+  if (binding.slug === "dunyasaglik" || host === "dunyasaglik.org") {
+    try {
+      await ensureDunyaSaglikLogoOnNeon(env);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] dunyasaglik logo", String(err?.message || err).slice(0, 240));
     }
   }
 

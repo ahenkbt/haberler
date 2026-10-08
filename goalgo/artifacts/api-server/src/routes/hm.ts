@@ -172,6 +172,8 @@ import { isTurksavHost, isTurksavSlug, TURKSAV_SLUG } from "../lib/hm-turksav-si
 import { ensureTurksavLogo } from "../lib/hm-turksav-logo-repair.js";
 import { isSehitGaziHost, isSehitGaziSlug, SEHITGAZI_SLUG } from "../lib/hm-sehitgazi-site.js";
 import { ensureSehitGaziLogo } from "../lib/hm-sehitgazi-logo-repair.js";
+import { isDunyaSaglikHost, isDunyaSaglikSlug, DUNYASAGLIK_SLUG } from "../lib/hm-dunyasaglik-site.js";
+import { ensureDunyaSaglikLogo } from "../lib/hm-dunyasaglik-logo-repair.js";
 import { isSosyalHizmetlerHost } from "../lib/hm-sosyalhizmetler-site.js";
 import { ensureSosyalHizmetlerSite } from "../lib/hm-sosyalhizmetler-seed.js";
 import { isTurkatahaberHost, isYerelnetHost, TURKATAHABER_SLUG, YERELNET_SLUG } from "../lib/hm-kamu-yerel-sites.js";
@@ -1169,6 +1171,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     await ensureSehitGaziLogo().catch(() => null);
     row = (await getActiveHmNewsSiteBySlugCompat(SEHITGAZI_SLUG)) ?? row;
   }
+  if (isDunyaSaglikSlug(slug) || isDunyaSaglikHost(queryDomain)) {
+    await ensureDunyaSaglikLogo().catch(() => null);
+    row = (await getActiveHmNewsSiteBySlugCompat(DUNYASAGLIK_SLUG)) ?? row;
+  }
   if (
     (!row || !row.active) &&
     (slug === TURKATAHABER_SLUG ||
@@ -1240,6 +1246,13 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     row =
       (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ??
       (await getActiveHmNewsSiteBySlugCompat(SEHITGAZI_SLUG)) ??
+      row;
+  }
+  if (isDunyaSaglikHost(host)) {
+    await ensureDunyaSaglikLogo().catch(() => null);
+    row =
+      (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ??
+      (await getActiveHmNewsSiteBySlugCompat(DUNYASAGLIK_SLUG)) ??
       row;
   }
   if (!row && isSosyalHizmetlerHost(host)) {
@@ -2494,6 +2507,25 @@ router.post("/hm/admin/ensure-sehitgazi-logo", async (req, res): Promise<void> =
           ? `Şehit Gazi logo güncellendi #${result.siteId}`
           : result.action === "unchanged"
             ? `Şehit Gazi logo zaten doğru #${result.siteId}`
+            : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+router.post("/hm/admin/ensure-dunyasaglik-logo", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await ensureDunyaSaglikLogo();
+    res.json({
+      ...result,
+      ok: result.action !== "error" && result.action !== "missing",
+      message:
+        result.action === "updated"
+          ? `Dünya Sağlık logo güncellendi #${result.siteId}`
+          : result.action === "unchanged"
+            ? `Dünya Sağlık logo zaten doğru #${result.siteId}`
             : result.detail || result.action,
     });
   } catch (e) {

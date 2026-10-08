@@ -1402,6 +1402,14 @@ pattern = "dunyasaglik.org/assets/*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
+pattern = "dunyasaglik.org/dunyasaglik/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/dunyasaglik/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
 pattern = "dunyasaglik.org/sw.js"
 zone_name = "dunyasaglik.org"
 
