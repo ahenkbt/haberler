@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
         with:
-          version: 9
-      - uses: actions/setup-node@v4
+          version: 9.15.5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -29,9 +29,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Ensure concept colors
         working-directory: goalgo
+        environment: DATABASE_URL
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'news' }}
+          NEWS_DB_WRITE: dual
         run: |
           if [ -z "${DATABASE_URL:-}" ]; then
             echo "::error::DATABASE_URL secret missing"

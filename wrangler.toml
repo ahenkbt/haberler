@@ -884,6 +884,18 @@ zone_name = "turkatahaber.com"
 pattern = "turkatahaber.com/assets/*"
 zone_name = "turkatahaber.com"
 
+[[routes]]
+pattern = "turkatahaber.com/assets/theme.css"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/assets/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/assets/theme.css"
+zone_name = "turkatahaber.com"
+
 
 # Kamu-yerel premium hub pages (hmExtraPages) — apex is PHP; Worker serves /daha|/iller only.
 [[routes]]
@@ -1030,6 +1042,18 @@ pattern = "sehitgazi.org.tr/assets/*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
+pattern = "sehitgazi.org.tr/assets/theme.css"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/assets/*"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
+pattern = "www.sehitgazi.org.tr/assets/theme.css"
+zone_name = "sehitgazi.org.tr"
+
+[[routes]]
 pattern = "sehitgazi.org.tr/sehitgazi/*"
 zone_name = "sehitgazi.org.tr"
 
@@ -1164,6 +1188,18 @@ pattern = "yerel.net.tr/assets/*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
+pattern = "yerel.net.tr/assets/theme.css"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/assets/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/assets/theme.css"
+zone_name = "yerel.net.tr"
+
+[[routes]]
 pattern = "yerel.net.tr/turkata/*"
 zone_name = "yerel.net.tr"
 
@@ -1287,6 +1323,18 @@ pattern = "turksav.org/assets/*"
 zone_name = "turksav.org"
 
 [[routes]]
+pattern = "turksav.org/assets/theme.css"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/assets/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/assets/theme.css"
+zone_name = "turksav.org"
+
+[[routes]]
 pattern = "turksav.org/turksav/*"
 zone_name = "turksav.org"
 
@@ -1402,6 +1450,18 @@ pattern = "dunyasaglik.org/assets/*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
+pattern = "dunyasaglik.org/assets/theme.css"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/assets/*"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
+pattern = "www.dunyasaglik.org/assets/theme.css"
+zone_name = "dunyasaglik.org"
+
+[[routes]]
 pattern = "dunyasaglik.org/dunyasaglik/*"
 zone_name = "dunyasaglik.org"
 
@@ -1514,6 +1574,18 @@ zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
 pattern = "yesilvatan.gen.tr/assets/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "yesilvatan.gen.tr/assets/theme.css"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/assets/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/assets/theme.css"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -2215,3 +2287,4 @@ zone_name = "sosyalhizmetler.tr"
 # redeploy trigger 2026-10-07T22:30:00Z — sosyalhizmetler.tr worker routes (domain2 Marmara Gündemi)
 
 # redeploy trigger 2026-08-18T15:20:00Z ├ö├ç├Â r2.dev public URL + boÔö╝┼ş bucket gerÔö£─şeÔöÇ┼şi
+# overnight-theme-css-routes 2026-10-08T12:50:00Z — explicit theme.css Worker routes for PHP brand hosts
