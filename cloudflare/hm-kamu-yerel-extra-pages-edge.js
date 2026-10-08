@@ -140,6 +140,8 @@ function fallbackDahaNetworkSitesHtml() {
     ["Fix Haber", "https://fix.tc/", "https://fix.tc/fix/fix-haber-logo.png"],
     ["TÜKAV", "https://tukav.org/", "https://tukav.org/tukav/tukav-logo.png"],
     ["Ankara Şehir Gazetesi", "https://ankarasehirgazetesi.com/", "https://ankarasehirgazetesi.com/favicon.ico"],
+    ["Ankara Haber Gündemi", "https://ankarahabergundemi.com/", "https://ankarahabergundemi.com/favicon.ico"],
+    ["Vatan Haber", "https://vatanhaber.net/", "https://vatanhaber.net/media/logos/vatanhaber.net-logo.png"],
     ["Gündemi.org", "https://gundemi.org/", "https://gundemi.org/gundemi/logos/gundemi-org.png"],
   ];
   const items = sites

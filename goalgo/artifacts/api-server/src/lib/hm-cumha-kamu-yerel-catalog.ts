@@ -576,6 +576,16 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     logoUrl: "https://ankarasehirgazetesi.com/favicon.ico",
   },
   {
+    name: "Ankara Haber Gündemi",
+    href: "https://ankarahabergundemi.com/",
+    logoUrl: "https://ankarahabergundemi.com/favicon.ico",
+  },
+  {
+    name: "Vatan Haber",
+    href: "https://vatanhaber.net/",
+    logoUrl: "https://vatanhaber.net/media/logos/vatanhaber.net-logo.png",
+  },
+  {
     name: "Gündemi.org",
     href: "https://gundemi.org/",
     logoUrl: "https://gundemi.org/gundemi/logos/gundemi-org.png",

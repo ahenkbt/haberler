@@ -92,6 +92,10 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml).toContain("hm-daha-site-grid");
     expect(page.bodyHtml).toContain("https://turkatahaber.com/turkata/turkata-logo.webp");
     expect(page.bodyHtml).toContain("https://yerel.net.tr/yerel/yerel-logo.png");
+    expect(page.bodyHtml).toContain("Ankara Haber Gündemi");
+    expect(page.bodyHtml).toContain("https://ankarahabergundemi.com/");
+    expect(page.bodyHtml).toContain("Vatan Haber");
+    expect(page.bodyHtml).toContain("https://vatanhaber.net/");
     expect(page.bodyHtml).toContain("TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma");
     expect(page.bodyHtml).toContain('href="/kategori/nato"');
     expect(page.bodyHtml).toContain('href="/kategori/avrupa-birligi"');
