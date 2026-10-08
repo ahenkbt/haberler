@@ -134,13 +134,13 @@ export default function HaberSiteleriBekci() {
       const res = await apiFetch("/api/hm/admin/site-watchdog/sync-site", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ siteId, limit: 120 }),
+        body: JSON.stringify({ siteId, full: true, limit: 300 }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       toast({
         title: `Site #${siteId} PHP Neon’a eşitlendi`,
-        description: `yazar ${data.authors || 0}, haber ${data.news || 0}, makale ${data.makaleler || 0} → phpSiteId ${data.phpSiteId ?? "?"}. Kalan editör/healthz uyarısı probe’dur; eşitleme başarısız değil.`,
+        description: `yazar ${data.authors || 0}, haber ${data.news || 0}, makale ${data.makaleler || 0}, kategori ${data.categories ?? 0} → phpSiteId ${data.phpSiteId ?? "?"}. Tam geçmiş için GitHub «Sync PHP Neon news backfill» workflow veya tekrar eşitle (hasMore).`,
       });
     } catch (e) {
       toast({ title: "Eşitleme başarısız", description: String(e).slice(0, 180), variant: "destructive" });
@@ -155,7 +155,7 @@ export default function HaberSiteleriBekci() {
       const res = await apiFetch("/api/hm/admin/site-watchdog/sync-all", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ limit: 24, perSiteLimit: 120 }),
+        body: JSON.stringify({ limit: 24, perSiteLimit: 300, full: true }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
