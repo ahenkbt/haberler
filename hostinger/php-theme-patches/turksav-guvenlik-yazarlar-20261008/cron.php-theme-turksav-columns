@@ -1,0 +1,7 @@
+# turksav.org (233) defense columnists: 10 fictional persona analysts, 3 days a week each (hm_ai_columnists site_id=233),
+# defense/security concept columns only (turksav concept 2026-10-08). VPS clock is UTC: 04:25 UTC = 07:25 TRT, 13:25 UTC = catch-up.
+# Disable: delete this file.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+25 4 * * * root flock -n /run/php-theme-turksav-columns.lock timeout 2400 /docker/php-theme/ai-editor/ops/turksav-columns.sh write >> /var/log/php-theme/turksav-columns.log 2>&1
+25 13 * * * root flock -n /run/php-theme-turksav-columns.lock timeout 2400 /docker/php-theme/ai-editor/ops/turksav-columns.sh write >> /var/log/php-theme/turksav-columns.log 2>&1
