@@ -1,5 +1,5 @@
 --- ai_editor.py.bak-20261008-curate	2026-10-04 16:57:55.000000000 +0000
-+++ ai_editor.py	2026-10-08 17:17:23.490427078 +0000
++++ ai_editor.py	2026-10-08 17:28:58.564579468 +0000
 @@ -31,6 +31,11 @@
  POOL_HOURS = int(os.environ.get("AI_POOL_HOURS", "30"))
  POOL_MAX_HOURS = int(os.environ.get("AI_POOL_MAX_HOURS", "72"))  # older items only with a score penalty
@@ -42,7 +42,7 @@
      rows = [dict(zip(cols, r)) for r in con.execute("SELECT %s FROM hm_ai_editor_sites ORDER BY site_id" % ",".join(cols))]
      if args.sites:
          want = set(args.sites.split(","))
-@@ -527,11 +539,24 @@
+@@ -527,19 +539,48 @@
          near_today = sum(1 for p in prev if p[2] == "published" and p[4] == today and "komşu-il" in (p[5] or []))
          attempts_today = sum(1 for p in prev if p[4] == today)
          target = cn.daily_manset_target
@@ -65,10 +65,24 @@
 +        except Exception as ex:
 +            log("  [%s] blocked terms unreadable (%s): site skipped (fail closed)" % (cn.site_slug, ex))
 +            continue
++        # per-site editor overrides (user rules 2026-10-08 20:23): category off / item pasif on THIS site only
++        off_cats, hidden_slugs = set(), set()
++        try:
++            off_cats = {r[0] for r in con.execute("SELECT category_slug FROM hm_site_category_overrides WHERE site_id=%s AND active=false", (cn.site_id,))}
++            hidden_slugs = {r[0] for r in con.execute("SELECT public_slug FROM hm_site_content_hidden WHERE site_id=%s AND public_slug LIKE %s", (cn.site_id, "rss-%"))}
++        except Exception as ex:
++            log("  [%s] site overrides unreadable (%s)" % (cn.site_slug, ex))
          scored = []
          for it in pool:
              if it["id"] in used or (cn.exclusive_group and it["id"] in group_used[cn.exclusive_group]):
-@@ -540,6 +565,9 @@
+                 continue
++            if (it["category_slug"] or "") in off_cats:
++                sst["category_off"] = sst.get("category_off", 0) + 1
++                continue
++            if ("rss-%d" % it["id"]) in hidden_slugs:
++                sst["site_hidden"] = sst.get("site_hidden", 0) + 1
++                continue
+             if cn.exclusive_group and clusters.get(it["id"], {}).get("cluster") in group_clusters[cn.exclusive_group]:
                  continue  # another site of the same group already has this event
              if (it["category_slug"] or "") in cn.exclude_categories:
                  continue
@@ -78,7 +92,7 @@
              s, why, near = score_item(cn, it, now)
              if s >= float(cn.min_score):
                  if cn.groups:
-@@ -562,8 +590,9 @@
+@@ -562,8 +603,9 @@
              sst.setdefault("dedupe", Counter())[decision + ":" + reason.split(" ")[0]] += 1
              log("  [%s] %s item %d (%s; %s): %s" % (cn.site_slug, decision, it["id"], reason, matched, it["title"][:70]))
  
@@ -89,7 +103,7 @@
                  break
              info = clusters.get(it["id"]) or {"cluster": 0, "role": "primary"}
              cl = info["cluster"]
-@@ -671,6 +700,10 @@
+@@ -671,6 +713,10 @@
                  report.append(dict(site=cn.site_slug, score=s, why=why, source_item_id=it["id"], title=it["title"],
                                     cluster=clusters.get(it["id"], {}).get("cluster"), development=dev))
              continue
@@ -100,7 +114,7 @@
          for s, it, why, near, dev in picks:
              if ai_fail_streak >= 3:
                  log("  AI circuit open (3 consecutive errors); stopping AI for this run")
-@@ -681,8 +714,9 @@
+@@ -681,8 +727,9 @@
                  break
              t0 = time.time()
              try:
@@ -112,7 +126,7 @@
                  ai_fail_streak = 0
              except lib.AIError as ex:
                  ai_fail_streak += 1
-@@ -718,13 +752,13 @@
+@@ -718,13 +765,13 @@
                       match_reasons, ai_model, prompt_version, checks, error, run_id,
                       story_cluster_id, source_canonical, title_norm, image_key, is_development, development_note,
                       previous_ref, previous_title, previous_path)
@@ -128,7 +142,7 @@
                                     len("\n\n".join(res["paragraphs"])), round(s, 2), why, res["model"],
                                     lib.PROMPT_VERSION, json.dumps(dict(res["checks"], key_source=cfg["source"])),
                                     None if res["ok"] else "; ".join(res["checks"].get("problems") or []), run_id,
-@@ -755,6 +789,62 @@
+@@ -755,6 +802,62 @@
      return report
  
  

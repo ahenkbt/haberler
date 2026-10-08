@@ -83,7 +83,7 @@ function asPositiveInt(value) {
   return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
 }
 
-async function parseEditorJwt(request, env) {
+export async function parseEditorJwt(request, env) {
   const h = String(request.headers.get("authorization") || "").trim();
   const token = h.startsWith("Bearer ") ? h.slice(7).trim() : "";
   if (!token) return null;
@@ -808,7 +808,7 @@ async function resolveSiteBySlug(sql, slugRaw) {
   return rows?.[0] || null;
 }
 
-async function loadActiveEditor(sql, editorId, siteId) {
+export async function loadActiveEditor(sql, editorId, siteId) {
   const rows = await sql`
     SELECT id, site_id, email, username, display_name, password_hash, is_active, created_at
     FROM hm_site_editors

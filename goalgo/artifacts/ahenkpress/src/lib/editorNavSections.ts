@@ -36,6 +36,7 @@ export const editorNavItems: EditorNavItem[] = [
   { name: "Vitrin ayarları", icon: LayoutGrid, href: "/editor/vitrin" },
   { name: "Tepe Manşet", icon: Sparkles, href: "/editor/manset", corporateOnly: true },
   { name: "Haberler", icon: Newspaper, href: "/editor/haberler" },
+  { name: "RSS Haberler", icon: Rss, href: "/editor/rss-haberler", newsOnly: true },
   { name: "RSS Kampanyaları", icon: Rss, href: "/editor/rss-kampanyalari" },
   { name: "İletişim", icon: Mail, href: "/editor/iletisim" },
   { name: "Posta kutusu", icon: Inbox, href: "/editor/posta-kutusu" },

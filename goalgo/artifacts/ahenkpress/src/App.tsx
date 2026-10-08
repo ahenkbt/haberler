@@ -203,6 +203,7 @@ import EditorProfil from "./pages/editor/EditorProfil";
 import EditorRssKampanyalari from "./pages/editor/EditorRssKampanyalari";
 import EditorRssKampanyaEditor from "./pages/editor/EditorRssKampanyaEditor";
 import EditorRssLoglar from "./pages/editor/EditorRssLoglar";
+import EditorRssHaberler from "./pages/editor/EditorRssHaberler";
 import SiteneEkle from "./pages/public/SiteneEkle";
 import HmOrPortalHaberDetailRoute from "./pages/public/HmOrPortalHaberDetailRoute";
 import HmPublicHaberDetayRoute from "./pages/public/HmPublicHaberDetayRoute";
@@ -1976,6 +1977,13 @@ export default function App() {
         {() => (
           <HmEditorRoute>
             <EditorHaberler />
+          </HmEditorRoute>
+        )}
+      </Route>
+      <Route path="/editor/rss-haberler">
+        {() => (
+          <HmEditorRoute>
+            <EditorRssHaberler />
           </HmEditorRoute>
         )}
       </Route>
