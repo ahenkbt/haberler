@@ -24,7 +24,7 @@ describe("sosyalhizmetler catalog", () => {
     expect(layout.phpTheme).toBe(true);
     expect(layout.frontend).toBe("php");
     expect(layout.hmVitrinTheme).toBe("yenisafak");
-    expect(layout.logoUrl).toBe("/sh/sosyal-hizmetler-logo.png");
+    expect(layout.logoUrl).toBe("/sosyalhizmetler/sosyalhizmetler-logo.webp");
     expect(String(layout.hmFooterAboutHtml)).toContain(SOSYALHIZMETLER_INTRO.slice(0, 40));
     const navOnly = layout.hmNavOnlyCategorySlugs as string[];
     expect(navOnly.every((s) => s.startsWith("sh-"))).toBe(true);
