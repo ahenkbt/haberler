@@ -195,6 +195,9 @@ function scoreExtraPages(pages) {
     const body = String(page.bodyHtml ?? "");
     if (slug === "daha" || slug === "iller") score += 10;
     if (body.includes("hm-daha-proje") || body.includes("hm-daha-site-grid")) score += 100;
+    // Prefer layouts that include sister brands on the network grid.
+    if (body.includes("ankarahabergundemi.com")) score += 40;
+    if (body.includes("vatanhaber.net")) score += 40;
     if (body.includes("hm-daha-aside") || body.includes("hm-iller-page")) score += 5;
     score += Math.min(20, Math.floor(body.length / 2000));
   }
@@ -333,13 +336,17 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
   // Yalnızca bilinen kamu-yerel extra slug'ları veya Neon layout'ta tanımlı sayfalar.
   const pages = await fetchLayoutPagesForHost(env, incoming.hostname);
   let page = findEnabledExtraPage(pages, slug);
-  // Stale PHP Neon layouts often keep an old /daha body (intl+iller only). Prefer
-  // the in-worker promo hub until twilight-pine layout_json can be rewritten.
+  // Stale PHP Neon layouts often keep an old /daha body (intl+iller only or
+  // missing sister brands). Prefer the in-worker promo hub until layout_json
+  // can be rewritten on twilight-pine.
+  const dahaBody = String(page?.bodyHtml || "");
   if (
     slug === "daha" &&
     page &&
-    !String(page.bodyHtml || "").includes("hm-daha-proje") &&
-    !String(page.bodyHtml || "").includes("hm-daha-site-grid")
+    (!dahaBody.includes("hm-daha-proje") ||
+      !dahaBody.includes("hm-daha-site-grid") ||
+      !dahaBody.includes("ankarahabergundemi.com") ||
+      !dahaBody.includes("vatanhaber.net"))
   ) {
     page = fallbackDahaPage();
   }
