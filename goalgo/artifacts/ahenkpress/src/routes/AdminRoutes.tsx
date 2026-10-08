@@ -93,6 +93,20 @@ function AiHaberEditoruEdge() {
   return <ProtectedAdminRoute component={AiIcerikRobotu} />;
 }
 
+/** Page served only at the edge (hm-bekci). Full load once; if the edge route is missing, show a notice (no loop). */
+function EdgeOnlyPage({ path }: { path: string }) {
+  if (typeof window !== "undefined") {
+    const k = "hmEdgeReload:" + path;
+    if (!window.sessionStorage.getItem(k)) {
+      window.sessionStorage.setItem(k, String(Date.now()));
+      window.location.assign(path);
+      return null;
+    }
+    window.sessionStorage.removeItem(k);
+  }
+  return <div className="p-6 text-sm text-gray-600">Bu sayfa şu anda yüklenemedi. Lütfen sayfayı yenileyin.</div>;
+}
+
 export default function AdminRoutes() {
   return (
     <Switch>
@@ -153,6 +167,9 @@ export default function AdminRoutes() {
       </Route>
       <Route path="/admin/ai-icerik-robotu">
         {() => <AiHaberEditoruEdge />}
+      </Route>
+      <Route path="/admin/ozel-haber-ekle">
+        {() => <EdgeOnlyPage path="/admin/ozel-haber-ekle" />}
       </Route>
       <Route path="/admin/ai-icerik-robotu-eski">
         {() => <ProtectedAdminRoute component={AiIcerikRobotu} />}
