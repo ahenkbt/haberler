@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   classifySiteProbeIssues,
+  isProbeTimeout,
   listActiveHmSites,
+  mapPool,
   siteProbePaths,
 } from "./hm-site-watchdog.js";
 
@@ -62,6 +64,34 @@ test("PHP tema editor 404 + home 200 + dual-write → soft, hard yok", () => {
   assert.match(soft[0], /self-fetch|SPA Worker/i);
 });
 
+test("PHP tema home timeout + editor/kose 404 → soft zincir, hard yok (yanlış kritik)", () => {
+  const { hard, soft } = classifySiteProbeIssues({
+    home: { ok: false, status: 0, ms: 9000, error: "timeout" },
+    editor: { ok: false, status: 404 },
+    kose: { ok: false, status: 404 },
+    phpTheme: true,
+    corporate: false,
+    dualWriteReady: true,
+  });
+  assert.deepEqual(hard, []);
+  assert.ok(soft.some((m) => /zaman aşımı|self-fetch/i.test(m)));
+  assert.ok(soft.some((m) => /editör/i.test(m)));
+  assert.ok(soft.some((m) => /köşe/i.test(m)));
+});
+
+test("PHP tema gerçek 5xx anasayfa → hard kalır", () => {
+  const { hard, soft } = classifySiteProbeIssues({
+    home: { ok: false, status: 502, ms: 200 },
+    editor: { ok: false, status: 404 },
+    kose: { ok: false, status: 404 },
+    phpTheme: true,
+    corporate: false,
+    dualWriteReady: true,
+  });
+  assert.ok(hard.includes("anasayfa açılmıyor"));
+  assert.ok(soft.some((m) => /editör/i.test(m)));
+});
+
 test("SPA olmayan sitede editor 404 → hard", () => {
   const { hard, soft } = classifySiteProbeIssues({
     home: { ok: true, status: 200, ms: 100 },
@@ -100,4 +130,21 @@ test("gerçek anasayfa kesintisi hard kalır", () => {
   });
   assert.ok(hard.includes("anasayfa açılmıyor"));
   assert.ok(hard.includes("editör girişi açılmıyor"));
+});
+
+test("isProbeTimeout status 0 / error timeout", () => {
+  assert.equal(isProbeTimeout({ ok: false, status: 0, error: "timeout" }), true);
+  assert.equal(isProbeTimeout({ ok: false, status: 502 }), false);
+  assert.equal(isProbeTimeout({ ok: true, status: 200 }), false);
+});
+
+test("mapPool concurrency sırayı korur", async () => {
+  const seen = [];
+  const out = await mapPool([1, 2, 3, 4, 5], 2, async (n) => {
+    seen.push(n);
+    await new Promise((r) => setTimeout(r, 5));
+    return n * 10;
+  });
+  assert.deepEqual(out, [10, 20, 30, 40, 50]);
+  assert.equal(seen.length, 5);
 });
