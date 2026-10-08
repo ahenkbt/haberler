@@ -217,14 +217,40 @@ REGION_SITES = {1133: "ege", 1134: "marmara", 1143: "marmara", 1144: "marmara", 
 LOCAL_SITES = {231}
 LOCAL_WORDS = _rx(r"ilçe", r"köy", r"mahalle", r"kaymakam", r"vali\b", r"valisi", r"valiliği", r"belediye", r"muhtar", r"il genel meclis", r"esnaf", r"il müdür", r"ilimiz", r"kent\b", r"kentte", r"kentin")  # yerel.net.tr: local news only (any province/district or belediye/muhtar/vali/kaymakam)
 
+# Yeşil Vatan (and any "cevre" topic site): stricter lexicon than TOPICS["cevre"]. No bare "çevre" prefix (çevresinde),
+# "yaban" (yabancı), "toprak" (surname), "baraj" (seçim barajı), "orman" alone in a person/club context, "fon", "mantar fabrikası".
+CEVRE_STRICT = _rx(r"çevre(?:ci|cil|sel|yi|ye|nin|\b(?! yolu))", r"iklim", r"orman(?:\b|lar|ları|ın|da|dan|a\b|ı\b|cı|cılık|ı?n? yangın|lık alan)",
+    r"orman genel müdür", r"tarım ve orman", r"ağaç", r"(?<!hakan )fidan(?:lar|lık|ı\b)", r"doğa\b", r"doğa(?:l hayat|l alan|l yaşam|yı|da|nın|ya|sever|severler)",
+    r"ekoloj", r"tarım", r"çiftçi", r"hasat", r"sulama", r"tohum", r"hayvancılık", r"yenilenebilir", r"güneş enerji", r"rüzgar enerji",
+    r"rüzgar santral", r"güneş santral", r"\bges\b", r"\bres\b", r"biyoçeşitlilik", r"yaban hayat", r"yaban hayvan", r"yabani", r"milli park",
+    r"sulak alan", r"kuraklık", r"baraj\S* (?:doluluk|su seviye)", r"yaban (?:domuz|keçi|hayat|hayvan)", r"geyik", r"bozayı", r"1,5 derece", r"küresel sıcaklık", r"yeşil (?:alan|nefes|dönüşüm|enerji|şehir|kuşak)", r"doluluk oranı", r"geri dönüşüm", r"sıfır atık", r"karbon (?:emisyon|ayak|nötr|salım)",
+    r"emisyon", r"sera gaz", r"ağaçlandırma", r"tema vakf", r"arıcı", r"zeytin", r"hububat", r"buğday", r"meyve", r"sebze", r"cop\d",
+    r"endemik", r"nesli", r"müsilaj", r"kirliliğ?i?", r"gübre", r"erozyon", r"tarımsal", r"tarla", r"bitki", r"çiçek açt", r"su samuru",
+    r"bağ bozumu", r"üzüm hasad", r"fındık", r"pamuk", r"sokak hayvan", r"hayvan hak", r"hayvanlar", r"hayvan(?:ı|ları) (?:koru|tedavi)", r"kuş(?:lar|ları| göç)",
+    r"göçmen kuş", r"balıkçı", r"av yasağı", r"deniz (?:kirlili|canlı|ekosistem|suyu sıcaklı|çayır)", r"sürdürülebilir", r"temiz enerji", r"enerji verimlili",
+    r"şap (?:hastalı|aşı|alarm)", r"veteriner", r"dkmp", r"doğa koruma", r"yangın.{0,40}orman", r"orman.{0,40}yangın", r"hayvan pazar", r"küçükbaş|büyükbaş",
+    r"ekosistem", r"iklim değişikli", r"küresel ısın", r"orman köylü", r"mera", r"su kaynak", r"kuraklı", r"su tasarruf", r"atık su", r"arıtma")
+_NOT_GREEN = re.compile(B + r"(?:fon\b|fonu|fonları|bakan göktaş|transfer|maç\b|maçı|süper lig|seçim|anket|cinayet|tutukla|gözaltı|silahlı saldırı|dizi\b|bölüm(?:ü|de)? |steam|husi|trump)")
+
 def site_topic_ok(site_id, title, spot="", lead=""):
     if site_id in SITE_RULES:
         name, topics = SITE_RULES[site_id]
         tl, sl = tr_lower(title), tr_lower(spot or "")
         if TOPICS["magazin"].search(tl):
             return False, name
+        if "cevre" in topics:
+            hits_t = CEVRE_STRICT.findall(tl); hits_s = CEVRE_STRICT.findall(sl)
+            if _NOT_GREEN.search(tl) and len(hits_t) < 2:
+                return False, name
+            top, v, conf = best_topic(title, spot, lead)
+            if top in ("spor", "siyaset", "asayis", "magazin", "dunya", "teknoloji") and conf and not hits_t:
+                return False, name
+            if hits_t or len(hits_s) >= 2:
+                return True, name
+            if len(topics) == 1:
+                return False, name
         for t in topics:
-            if TOPICS[t].search(tl) or len(TOPICS[t].findall(sl)) >= (1 if t in ("savunma", "guvenlik") else 2):
+            if TOPICS[t].search(tl) or len(TOPICS[t].findall(sl)) >= 2:   # 21:30: spot-only needs 2 hits (a "polis" in the spot is not security news)
                 return True, name
         return False, name
     if site_id in REGION_SITES:
@@ -448,3 +474,68 @@ def decide(cat, site_cats, title, spot="", lead="", site_id=None, ai=True):
         return dict(action="keep", to=None, reason="topic_weak_ok")
     to, why = target()
     return dict(action="move", to=to, reason="wrong_topic:" + why) if to else dict(action="keep", to=None, reason="no_target")
+
+# ---------------------------------------------------------------- 2026-10-08 21:00 "dağıt, gizleme": redistribution helpers
+# An item that is off-topic for a topic/regional/local site is MOVED to the shared general pool (site 230) under pool_target().
+# Hidden only for: duplicate (same story already in the pool), no_image, banned (vatanhaber terms), junk/spam.
+BAN_RX = re.compile(r"(anadolu\s+[çÇ][ıIiİ]narlar|(^|[^a-zA-ZçğıöşüÇĞİÖŞÜ])a[çÇ][ıIiİ]\s+part[ıIiİ]|(^|[^a-zA-ZçğıöşüÇĞİÖŞÜ])AÇİP([^a-zA-ZçğıöşüÇĞİÖŞÜ]|$)|h[üÜuU]sey[iİıI]n\s+ak[ıIiİ]n)", re.I)
+JUNK_RX = re.compile(r"(full ?hd|\bizle\b|izleme linki|fragman|son bölüm|tek parça|canlı izle|kimdir\b|kaç yaşında|nereli|evli mi|burç yorum|hangi kanalda|ne zaman başlıyor|saat kaçta|bahis|casino|kumar sitesi|escort)", re.I)
+_LOOSE = {"ilceler", "buyuksehir-ve-iller", "stk", "kamu-kurumlari", "bakanliklar", "kamu", "siyaset", "guvenlik"}
+_SUB = {"siyaset": ["cumhurbaskanligi", "tbmm", "genel-merkez", "il-ilce-baskanliklari", "siyasi-partiler"] + list(MINISTRIES) + ["bakanliklar"],
+        "kamu": ["valilikler", "kaymakamliklar", "mulki-idare", "kamu-kurumlari"],
+        "yerel": ["muhtar", "belediye", "yerel-yonetimler"],
+        "guvenlik": ["jandarma", "emniyet", "tsk", "savunma-sanayi", "guvenlik"],
+        "savunma": ["tsk", "savunma-sanayi"],
+        "dunya": ["nato", "birlesmis-milletler", "avrupa-birligi", "uluslararasi-kuruluslar"]}
+_DATE_DAY = re.compile(r"(\d{1,2}\s+(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)(\s+\d{4})?\s+)?(Pazartesi|Salı|Çarşamba|Perşembe|Cuma|Cumartesi|Pazar)(\s+günü)?(?=[\s?!.,]|$)")
+_CB = re.compile(r"erdoğan|külliye|cumhurbaşkanlığı|cumhurbaşkanı yardımcısı|cevdet yılmaz|beştepe")
+
+def pool_target(cat, title, spot, lead, cats):
+    """Best category for an item moved into the general pool (cats = the pool's category slugs). Returns (slug, why)."""
+    low = tr_lower(title or "")
+    top, v, conf = best_topic(title, spot, lead)
+    if top and conf:
+        for c in _SUB.get(top, []):
+            if c in cats and CAT_RULES.get(c) is not None and CAT_RULES[c].search(low):
+                if c == "cumhurbaskanligi" and not _CB.search(low): continue
+                return c, "sub:" + top
+        s = topic_slug_for(top, cats)
+        if s: return s, "topic:" + top
+    for c in CAT_ORDER:
+        if c in cats and c not in _LOOSE and CAT_RULES.get(c) is not None and CAT_RULES[c].search(low):
+            if c == "cumhurbaskanligi" and not _CB.search(low): continue
+            return c, "title_rule"
+    t2 = _DATE_DAY.sub(" ", title or "")   # "8 Ekim Perşembe" is a date, not the Ordu district Perşembe
+    cities = [c for c in cats if city_of_slug(c) and mentions_city(city_of_slug(c), t2, "")]
+    if len(cities) == 1: return cities[0], "city"
+    if cat in cats and not city_of_slug(cat) and cat not in CAT_RULES and cat not in ("ozel-haber", "yerel"): return cat, "same"
+    return "gundem", "general"
+
+def keep_hidden_reason(title, spot="", lead=""):
+    """Allowed hide reasons that do not depend on the DB: banned / junk. (duplicate and no_image are checked by the caller.)"""
+    if BAN_RX.search(" ".join((title or "", spot or "", lead or ""))): return "banned"
+    if JUNK_RX.search(title or ""): return "junk"
+    return None
+
+
+# ---- spor-kibris executor 2026-10-08 21:15 TRT, re-applied 21:30 (append-only block; PLEASE KEEP when rewriting this file; see /workspace/turkata/status.md) ----
+# 1) Spor branch categories (children of `spor` in the theme CategoryTree) count as topic "spor" so recat keeps them.
+SPOR_BRANCHES = ("futbol", "basketbol", "voleybol", "hentbol", "gures", "atletizm", "tenis", "yuzme", "motor-sporlari",
+                 "dovus-sporlari", "e-spor", "amator-spor", "engelli-sporlari", "kibris-spor")
+for _s in SPOR_BRANCHES:
+    SLUG_TOPIC[_s] = "spor"
+# 2) Kıbrıs/KKTC news on general sites belongs under Dünya (user 2026-10-08 20:56).
+TOPICS["dunya"] = re.compile(TOPICS["dunya"].pattern + "|" + _rx(r"kktc", r"kıbrıs", r"lefkoşa", r"girne", r"gazimağusa", r"rum kesimi").pattern)
+# 3) kibris.gundemi.org (1140): own Kıbrıs categories stay as filed (Kıbrıs feeds), and its Türkiye/Dünya sections are
+#    open (not limited by the region:kibris rule). Everything else falls through to the original decide().
+REGION_OPEN_CATS = {1140: {"turkiye", "dunya"}}
+REGION_OWN_PREFIX = {1140: ("kibris-", "gundemi-kibris-")}
+_decide_base = decide
+def decide(cat, site_cats, title, spot="", lead="", site_id=None, ai=True):
+    if site_id in REGION_OPEN_CATS and cat in REGION_OPEN_CATS[site_id]:
+        return dict(action="keep", to=None, reason="region_open_cat")
+    if site_id in REGION_OWN_PREFIX and (cat or "").startswith(REGION_OWN_PREFIX[site_id]):
+        # filed by Kıbrıs-only feeds (spor-kibris targets): local outlets often omit place names in headlines
+        return dict(action="keep", to=None, reason="region_own_cat")
+    return _decide_base(cat, site_cats, title, spot, lead, site_id=site_id, ai=ai)
+# ---- end spor-kibris block ----
