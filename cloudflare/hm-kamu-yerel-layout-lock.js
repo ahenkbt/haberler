@@ -2,6 +2,7 @@
  * turkatahaber.com & yerel.net.tr — editör layout kaydında kilitli alanlar.
  * Katalog: goalgo/.../hm-kamu-yerel-layout-lock.ts ile hizalı.
  */
+import { applyPhpConceptColorsToLayout, phpConceptPaletteForSlug } from "./hm-php-concept-colors.js";
 
 export const KAMU_YEREL_LAYOUT_LOCK_KEYS = Object.freeze([
   "hmNavOnlyCategorySlugs",
@@ -18,8 +19,8 @@ export const KAMU_YEREL_LAYOUT_LOCK_KEYS = Object.freeze([
   "hmExtraPages",
   "portalHybridRssFeeds",
   "hmNewsBreakingRssFeedRows",
-  "hmPrimaryColor",
-  "hmSecondaryColor",
+  // 2026-10-08: hmPrimaryColor / hmSecondaryColor kilitli DEĞİL — editörün "Site rengi"
+  // seçimi korunur; yalnızca eksik/geçersizse konsept rengi doldurulur (repair aşağıda).
   "hmVitrinTheme",
 ]);
 
@@ -117,5 +118,8 @@ export function repairKamuYerelLayoutAfterMerge(slug, merged) {
     for (const slug of KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS) set.add(slug);
     next.hmNavOnlyCategorySlugs = [...set];
   }
+  // Konsept renk: yalnızca eksik/geçersizse doldur; geçerli editör rengi asla ezilmez.
+  const palette = phpConceptPaletteForSlug(key);
+  if (palette) return applyPhpConceptColorsToLayout(next, palette).layout;
   return next;
 }

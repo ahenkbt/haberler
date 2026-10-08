@@ -38,23 +38,30 @@ describe("hm-kamu-yerel-layout-lock", () => {
     expect(patched.logoUrl).toBe("/turkata/turkata-logo.webp");
   });
 
-  it("stripKamuYerelLockedLayoutIncoming blocks nav and color overwrite on save", () => {
+  it("stripKamuYerelLockedLayoutIncoming blocks nav but keeps editor colors", () => {
     const inc = stripKamuYerelLockedLayoutIncoming("yerelnet", {
       hmPrimaryColor: "#111",
       hmSecondaryColor: "#222",
       hmNavOnlyCategorySlugs: ["gundem"],
     });
-    expect(inc.hmPrimaryColor).toBeUndefined();
-    expect(inc.hmSecondaryColor).toBeUndefined();
+    expect(inc.hmPrimaryColor).toBe("#111");
+    expect(inc.hmSecondaryColor).toBe("#222");
     expect(inc.hmNavOnlyCategorySlugs).toBeUndefined();
   });
 
-  it("applyKamuYerelLayoutLock restores concept colors", () => {
+  it("applyKamuYerelLayoutLock keeps a valid editor color", () => {
     const canonical = buildKamuYerelLayoutJson(YERELNET_SITE);
     const patched = applyKamuYerelLayoutLock(
       { hmPrimaryColor: "#0b2a5b", hmSecondaryColor: "#c8102e" },
       canonical,
     );
+    expect(patched.hmPrimaryColor).toBe("#0b2a5b");
+    expect(patched.hmSecondaryColor).toBe("#c8102e");
+  });
+
+  it("applyKamuYerelLayoutLock fills missing/invalid concept colors", () => {
+    const canonical = buildKamuYerelLayoutJson(YERELNET_SITE);
+    const patched = applyKamuYerelLayoutLock({ hmPrimaryColor: "", hmSecondaryColor: "red" }, canonical);
     expect(patched.hmPrimaryColor).toBe("#0b6e4f");
     expect(patched.hmSecondaryColor).toBe("#c45c00");
   });
