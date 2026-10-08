@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useListNews } from "@workspace/api-client-react";
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useYekpareMediaNewsImages } from "@/lib/useYekpareMediaNewsImages";
 import { useToast } from "@/hooks/use-toast";
 import { ImagePlus, Search, Copy, Grid3X3, LayoutList, ExternalLink, Upload, Loader2 } from "lucide-react";
 import {
@@ -18,7 +18,7 @@ import {
  * Özel yüklemeler `localStorage`; haber kapakları API’den — hepsi tek havuzda birleşir.
  */
 export function YekpareMediaBrowser() {
-  const { data: news, isLoading } = useListNews();
+  const { data: news, isLoading } = useYekpareMediaNewsImages();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -151,7 +151,7 @@ export function YekpareMediaBrowser() {
               </div>
             </div>
 
-            {isLoading ? (
+            {isLoading && filtered.length === 0 ? (
               <div className="p-12 text-center text-gray-500">Yükleniyor...</div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center gap-3 p-16 text-center">

@@ -1596,16 +1596,22 @@ export async function handleHmEditorMediaUploadEdge(request, env) {
 
   const uploadSteps = [];
 
-  // 1) Doğrudan R2 — Container gerekmez.
-  if (s3MediaEnvReady(env)) {
-    const direct = await saveMediaDataUrlToS3(env, dataUrl, typeof body?.title === "string" ? body.title : undefined);
-    if (direct.url) {
-      return jsonResponse(200, { url: direct.url });
-    }
-    uploadSteps.push(`s3:${direct.error || "failed"}`);
-    console.error("[hm-editor-media-s3]", String(direct.error || "unknown").slice(0, 200));
-  } else {
-    uploadSteps.push("s3:not-configured");
+  // 1) Doğrudan R2 — Container gerekmez (binding, CF API token veya S3 anahtarları).
+  const direct = await saveMediaDataUrlToS3(env, dataUrl, typeof body?.title === "string" ? body.title : undefined);
+  if (direct.url) {
+    return jsonResponse(200, { url: direct.url });
+  }
+  uploadSteps.push(`s3:${direct.error || "failed"}`);
+  console.error("[hm-editor-media-s3]", String(direct.error || "unknown").slice(0, 200));
+
+  // Kimlik bilgisi yokken Container köprüsü 60–180 sn bekletir; hemen net hata dön.
+  if (!s3MediaEnvReady(env)) {
+    return jsonResponse(503, {
+      error: "Medya yükleme geçici olarak kullanılamıyor",
+      detail: uploadSteps.join("; "),
+      hint:
+        "Cloudflare Worker secret: R2_CF_API_TOKEN (fb9f R2 hesabı) veya S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY. wrangler.toml S3_ENDPOINT/S3_BUCKET tek başına yetmez.",
+    });
   }
 
   const origin = apiOriginFromEnv(env);

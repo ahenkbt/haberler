@@ -265,6 +265,7 @@ async function fetchR2ObjectViaCfApi(env, method, fname, body, mime) {
 }
 
 export function s3MediaEnvReady(env) {
+  if (r2Binding(env)) return true;
   if (s3BucketName(env) && r2CfApiToken(env)) return true;
   return Boolean(s3BucketName(env) && s3CredentialSets(env).length > 0 && s3Endpoint(env));
 }
@@ -445,6 +446,17 @@ const UPLOAD_VERIFY_DELAY_MS = 250;
 export async function verifyMediaUploadOnEdge(env, fname) {
   const name = String(fname ?? "").trim();
   if (!name || name.includes("..") || name.includes("/")) return false;
+  const bound = r2Binding(env);
+  if (bound && typeof bound.head === "function") {
+    for (const key of listMediaObjectKeys(env, name)) {
+      try {
+        const head = await bound.head(key);
+        if (head) return true;
+      } catch {
+        /* fall through to public/S3 verify */
+      }
+    }
+  }
   for (let attempt = 0; attempt < UPLOAD_VERIFY_RETRIES; attempt += 1) {
     const hit = await handleMediaGetFromR2(
       new Request(`https://media-edge.local/api/media/uploads/${encodeURIComponent(name)}`, { method: "HEAD" }),
@@ -470,6 +482,7 @@ export function mediaEdgeHealthPayload(env) {
   const endpoints = s3EndpointCandidates(env);
   return {
     ready: s3MediaEnvReady(env),
+    r2Binding: Boolean(r2Binding(env)),
     bucket: Boolean(s3BucketName(env)),
     accessKey: Boolean(coerceS3AccessKeyId(env?.S3_ACCESS_KEY_ID, blob)),
     secret: Boolean(coerceS3SecretAccessKey(env?.S3_SECRET_ACCESS_KEY, blob)),
