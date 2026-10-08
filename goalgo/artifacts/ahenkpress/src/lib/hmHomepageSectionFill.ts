@@ -52,6 +52,40 @@ const SLUG_TO_SITE_ID: Record<string, number> = {
   kh: KIRSEHIR_HABER_SITE_ID,
 };
 
+const KAMU_YEREL_SITE_SLUGS = new Set(["turkatahaber", "yerelnet"]);
+
+/** Keep in sync with api-server `listKamuYerelMansetPoolCategorySlugs`. */
+const KAMU_YEREL_MANSET_CATEGORY_SLUGS = [
+  "yerel",
+  "kamu-kurumlari",
+  "siyasi-partiler",
+  "genel-merkez",
+  "il-ilce-baskanliklari",
+  "yerel-yonetimler",
+  "buyuksehir-ve-iller",
+  "ilceler",
+  "mulki-idare",
+  "valilikler",
+  "kaymakamliklar",
+  "toplum-ve-yasam",
+  "sivil-toplum-kuruluslari",
+  "saglik",
+  "teknoloji",
+  "yasam",
+] as const;
+
+function kamuYerelPrefForViewer(siteId?: number | null): HmHomepageLocalPref {
+  const id = Number.isFinite(siteId) && (siteId as number) > 0 ? Math.trunc(siteId as number) : 0;
+  const cats = KAMU_YEREL_MANSET_CATEGORY_SLUGS as readonly string[];
+  return {
+    cityKey: "kamu-yerel",
+    siteId: id,
+    cityKeywords: [],
+    categorySlugs: cats,
+    ownedCategorySlugs: cats,
+  };
+}
+
 export function foldHmNewsText(value: unknown): string {
   return String(value ?? "")
     .toLocaleLowerCase("tr-TR")
@@ -86,6 +120,7 @@ export function resolveHomepageLocalPref(
   void _layout;
   if (siteId === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
   if (SLUG_TO_SITE_ID[normalizeSiteSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
+  if (KAMU_YEREL_SITE_SLUGS.has(normalizeSiteSlug(siteSlug))) return kamuYerelPrefForViewer(siteId);
   return null;
 }
 

@@ -41,6 +41,7 @@ import {
 } from "./portal-rss-shared-pool.js";
 import { upsertPortalRssItems } from "./portal-rss-store.js";
 import { portalRssTitleKey } from "./portal-rss-fetch.js";
+import { filterBlockedHmRssFeedUrls } from "./rssBlockedFeeds.js";
 import { createHash } from "node:crypto";
 import {
   loadHmSiteCategoryCatalog,
@@ -202,7 +203,7 @@ export async function preflightRssCampaignRun(
   if (!campaign) {
     return { ok: false, message: "Kampanya bulunamadı" };
   }
-  const feedUrls = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
+  const feedUrls = filterBlockedHmRssFeedUrls((campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean));
   if (feedUrls.length === 0) {
     return {
       ok: false,
@@ -235,7 +236,9 @@ export async function executeRssCampaignRun(
     return { added: 0, skipped: 0, upgraded: 0, errors: 1, message: "Kampanya bulunamadı" };
   }
 
-  const feedUrls: string[] = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
+  const feedUrls: string[] = filterBlockedHmRssFeedUrls(
+    (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean),
+  );
   const siteTargets = await resolveRssCampaignTargets(campaign, opts);
   const categoryCache = new Map<string, number | null>();
   const siteCatalogCache = new Map<number, Awaited<ReturnType<typeof loadHmSiteCategoryCatalog>>>();

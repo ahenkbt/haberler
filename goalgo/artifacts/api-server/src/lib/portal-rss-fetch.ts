@@ -7,6 +7,7 @@ import {
   sanitizeCumhaRssPortalFields,
   stripCumhaDisclaimerHtml,
 } from "./rssCumhaExclude.js";
+import { isBlockedHmRssFeedUrl } from "./rssBlockedFeeds.js";
 import { isExcludedNtvEvergreenDepremRssItem } from "./rssNtvExclude.js";
 import { extractRssContentEncoded, extractRssCoverImage } from "./rssItemMedia.js";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
@@ -180,7 +181,7 @@ export async function fetchPortalRssItems(opts: {
     Math.max(1, Number(opts.maxItems ?? PORTAL_RSS_DEFAULT_MAX_ITEMS) || PORTAL_RSS_DEFAULT_MAX_ITEMS),
   );
   const feedUrl = String(opts.url ?? "").trim();
-  if (!feedUrl || isExcludedCumhaKoeseFeedUrl(feedUrl)) return [];
+  if (!feedUrl || isExcludedCumhaKoeseFeedUrl(feedUrl) || isBlockedHmRssFeedUrl(feedUrl)) return [];
 
   const isCumhaFeed = /cumha\.com\.tr/i.test(feedUrl);
   const fetchItemLimit = isCumhaFeed ? Math.min(PORTAL_RSS_MAX_ITEMS_CAP * 4, maxItems * 6) : maxItems;

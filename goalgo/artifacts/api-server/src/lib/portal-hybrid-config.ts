@@ -4,6 +4,7 @@ import { parseHmLayoutRecord } from "./hm-layout-json.js";
 import { allowCrossSiteManualNewsFromLayout, hiddenHmPoolNewsIdsFromLayout, hiddenHmRssItemIdsFromLayout, hmRssIntegrationModeFromLayout, yekparePoolReceiveEnabledFromLayout, yekparePoolSendEnabledFromLayout } from "./hm-public-layout.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isExcludedCumhaKoeseFeedUrl } from "./rssCumhaExclude.js";
+import { isBlockedHmRssFeedUrl } from "./rssBlockedFeeds.js";
 import {
   canonicalizeRssCategorySlug,
   expandRssCategorySlugCandidates,
@@ -108,7 +109,7 @@ export function normalizePortalHybridRssFeeds(raw: unknown): PortalHybridRssFeed
       : PORTAL_RSS_MAX_ITEMS;
 
     if (!categorySlug || !url) continue;
-    if (isExcludedCumhaKoeseFeedUrl(url)) continue;
+    if (isExcludedCumhaKoeseFeedUrl(url) || isBlockedHmRssFeedUrl(url)) continue;
     out.push({ id, categorySlug, label, url, enabled, maxItems });
   }
 
@@ -264,7 +265,7 @@ function normalizeHmBreakingRssRows(
     const localId = normalizeId(rawId, `rss-${index + 1}`);
     const url = normalizeRssUrl(rawUrl);
     if (!localId || !url || seen.has(localId)) return;
-    if (isExcludedCumhaKoeseFeedUrl(url)) return;
+    if (isExcludedCumhaKoeseFeedUrl(url) || isBlockedHmRssFeedUrl(url)) return;
     seen.add(localId);
     const categorySlug = resolveFeedCategorySlug(rawCategoryKey, rawId, rawLabel, categorySlugLookup, index);
     const label = String(rawLabel ?? "").trim().slice(0, 80) || categorySlug;

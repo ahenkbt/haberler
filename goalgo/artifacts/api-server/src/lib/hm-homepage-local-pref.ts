@@ -16,6 +16,8 @@ import {
   serializeNewsListItem,
   type SerializedNewsListItem,
 } from "./serializers.js";
+import { listKamuYerelMansetPoolCategorySlugs } from "./hm-cumha-kamu-yerel-catalog.js";
+import { isKamuYerelHmSlug } from "./hm-kamu-yerel-sites.js";
 
 /** Live Neon `hm_news_sites.id` for kirsehirhaber.org */
 export const KIRSEHIR_HABER_SITE_ID = 494;
@@ -60,6 +62,19 @@ const SLUG_TO_SITE_ID: Record<string, number> = {
   kh: KIRSEHIR_HABER_SITE_ID,
 };
 
+const KAMU_YEREL_MANSET_CATEGORIES = listKamuYerelMansetPoolCategorySlugs();
+
+function kamuYerelPrefForViewer(siteId?: number | null): HmHomepageLocalPref {
+  const id = Number.isFinite(siteId) && (siteId as number) > 0 ? Math.trunc(siteId as number) : 0;
+  return {
+    cityKey: "kamu-yerel",
+    siteId: id,
+    cityKeywords: [],
+    categorySlugs: KAMU_YEREL_MANSET_CATEGORIES,
+    ownedCategorySlugs: KAMU_YEREL_MANSET_CATEGORIES,
+  };
+}
+
 export function foldHmNewsText(value: unknown): string {
   return String(value ?? "")
     .toLocaleLowerCase("tr-TR")
@@ -86,7 +101,7 @@ function khPrefForViewer(siteId?: number | null): HmHomepageLocalPref {
   return id === KIRSEHIR_HABER_SITE_ID ? KIRSEHIR_PREF : { ...KIRSEHIR_PREF, siteId: id };
 }
 
-/** Kırşehir Haber only — layout overrides on other slugs are ignored. Viewer siteId wins when provided. */
+/** Kırşehir + kamu-yerel siteler — layout overrides on other slugs are ignored. Viewer siteId wins when provided. */
 export function resolveHomepageLocalPref(
   siteSlug: string | null | undefined,
   _layout?: Record<string, unknown> | null,
@@ -95,6 +110,7 @@ export function resolveHomepageLocalPref(
   void _layout;
   if (siteId === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
   if (SLUG_TO_SITE_ID[normalizeSlug(siteSlug)] === KIRSEHIR_HABER_SITE_ID) return khPrefForViewer(siteId);
+  if (isKamuYerelHmSlug(normalizeSlug(siteSlug))) return kamuYerelPrefForViewer(siteId);
   return null;
 }
 

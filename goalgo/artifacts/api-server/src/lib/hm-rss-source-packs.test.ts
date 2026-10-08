@@ -13,7 +13,7 @@ import {
 describe("hm rss source packs", () => {
   it("Diriliş / Birgün / yerel URL’leri paketlerde durur", () => {
     expect(HM_RSS_SOURCE_PACKS.dirilis.feeds.some((f) => f.url.includes("/rss/gundem"))).toBe(true);
-    expect(HM_RSS_SOURCE_PACKS.birgun.feeds.some((f) => f.url.includes("siyaset-8"))).toBe(true);
+    expect(HM_RSS_SOURCE_PACKS.birgun.feeds.some((f) => f.url.includes("siyaset-8"))).toBe(false);
     expect(HM_RSS_SOURCE_PACKS.yerel.feeds.filter((f) => f.categoryKey === "ankara").length).toBeGreaterThan(3);
     expect(HM_RSS_SOURCE_PACKS.yerel.feeds.filter((f) => f.categoryKey === "yerel").length).toBeGreaterThan(3);
   });

@@ -167,6 +167,8 @@ import { isFixHaberHost } from "../lib/hm-fixhaber-site.js";
 import { ensureFixHaberSite } from "../lib/hm-fixhaber-seed.js";
 import { isSosyalHizmetlerHost } from "../lib/hm-sosyalhizmetler-site.js";
 import { ensureSosyalHizmetlerSite } from "../lib/hm-sosyalhizmetler-seed.js";
+import { isTurkatahaberHost, isYerelnetHost, TURKATAHABER_SLUG, YERELNET_SLUG } from "../lib/hm-kamu-yerel-sites.js";
+import { ensureKamuYerelSites } from "../lib/hm-kamu-yerel-seed.js";
 import { sanitizeHmPublicLayoutRecord } from "../lib/hm-layout-sanitize.js";
 import { repairHmSiteIdCollisions } from "../lib/hm-site-id-collision-repair.js";
 import {
@@ -1143,6 +1145,20 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     await ensureFixHaberSite().catch(() => null);
     row = await getActiveHmNewsSiteBySlugCompat("fixhaber");
   }
+  if (
+    (!row || !row.active) &&
+    (slug === TURKATAHABER_SLUG ||
+      slug === YERELNET_SLUG ||
+      isTurkatahaberHost(queryDomain) ||
+      isYerelnetHost(queryDomain))
+  ) {
+    await ensureKamuYerelSites().catch(() => null);
+    row =
+      (await getActiveHmNewsSiteBySlugCompat(slug)) ??
+      (isTurkatahaberHost(queryDomain) || slug === TURKATAHABER_SLUG
+        ? await getActiveHmNewsSiteBySlugCompat(TURKATAHABER_SLUG)
+        : await getActiveHmNewsSiteBySlugCompat(YERELNET_SLUG));
+  }
   if (!row || !row.active) {
     res.status(404).json({ error: "Site bulunamadı" });
     return;
@@ -1181,6 +1197,13 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
     if (!row) {
       row = await getActiveHmNewsSiteBySlugCompat("sosyalhizmetler");
+    }
+  }
+  if (!row && (isTurkatahaberHost(host) || isYerelnetHost(host))) {
+    await ensureKamuYerelSites().catch(() => null);
+    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+    if (!row) {
+      row = await getActiveHmNewsSiteBySlugCompat(isTurkatahaberHost(host) ? TURKATAHABER_SLUG : YERELNET_SLUG);
     }
   }
   if (!row) {
@@ -2380,6 +2403,23 @@ router.post("/hm/admin/ensure-sosyalhizmetler-site", async (req, res): Promise<v
           : result.action === "updated"
             ? `Sosyal Hizmetler Haber (sosyalhizmetler.tr) güncellendi #${result.siteId}`
             : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+router.post("/hm/admin/ensure-kamu-yerel-sites", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await ensureKamuYerelSites();
+    const ok = result.sites.every((s) => s.action !== "error");
+    res.json({
+      ...result,
+      ok,
+      message: ok
+        ? `Kamu-yerel siteler güncellendi: ${result.sites.map((s) => `${s.slug}#${s.siteId}`).join(", ")}`
+        : result.sites.find((s) => s.detail)?.detail ?? "seed error",
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
