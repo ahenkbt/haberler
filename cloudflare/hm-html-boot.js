@@ -1366,7 +1366,9 @@ export function finalizeHmShareOgHtml(html, hostOrOrigin) {
   const brand = hmBrandShareImage(hostOrOrigin);
   if (!brand || !/<head\b/i.test(out)) return out;
   const cur = metaContent(out, "property", "og:image");
-  const useBrand = !cur || !/^https:\/\//i.test(cur) || HM_GENERIC_SHARE_ICON_RE.test(cur);
+  // Site/home/other pages (og:type website) always show the brand card (site name + description + logo); articles keep their own image.
+  const isWebsite = (metaContent(out, "property", "og:type") || "website").toLowerCase() !== "article";
+  const useBrand = isWebsite || !cur || !/^https:\/\//i.test(cur) || HM_GENERIC_SHARE_ICON_RE.test(cur);
   const tags = [];
   if (useBrand || cur === brand.url) {
     for (const [attr, key] of [["property", "og:image"], ["property", "og:image:secure_url"], ["name", "twitter:image"]]) {
