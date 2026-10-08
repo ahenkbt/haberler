@@ -4,6 +4,8 @@
  *   cd goalgo && pnpm --filter @workspace/api-server run ensure:fixhaber
  *   DRY_RUN=1 … (yalnızca katalog yazdırır; DB gerekmez)
  */
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   buildFixHaberLayoutJson,
   FIXHABER_DOMAIN,
@@ -36,9 +38,29 @@ async function main() {
     return;
   }
   const { ensureFixHaberSite } = await import("../src/lib/hm-fixhaber-seed.js");
+  const { wakeFixHaberCatalogRepair } = await import("../src/lib/hm-fixhaber-repair.js");
   const row = await ensureFixHaberSite();
+  if (row.siteId) {
+    await wakeFixHaberCatalogRepair(row.siteId);
+  }
   console.log(JSON.stringify(row, null, 2));
   if (row.action === "error") process.exitCode = 1;
+  if (row.siteId && process.env.NEWS_DATABASE_URL?.trim()) {
+    const { spawnSync } = await import("node:child_process");
+    const sync = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "./scripts/sync-php-neon-news.ts",
+        "--apply",
+        `--site-id=${row.siteId}`,
+        "--batch=200",
+      ],
+      { cwd: path.dirname(fileURLToPath(import.meta.url)), stdio: "inherit" },
+    );
+    if (sync.status !== 0) process.exitCode = sync.status ?? 1;
+  }
 }
 
 main().catch((err) => {
