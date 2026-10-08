@@ -1,0 +1,51 @@
+# Neon: Şehit Gazi (sehitgazi.org.tr) logoUrl/faviconUrl + PHP twilight-pine sync.
+# Secrets: DATABASE_URL, NEWS_DATABASE_URL (same as cloudflare-production.yml)
+name: Ensure Şehit Gazi logo
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ensure-sehitgazi-logo]
+
+concurrency:
+  group: ensure-sehitgazi-logo
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install goalgo dependencies
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+
+      - name: ensure:sehitgazi-logo
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'news' }}
+          NEWS_DB_WRITE: dual
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret missing — cannot patch sehitgazi.org.tr logo in Neon."
+            exit 1
+          fi
+          if [ -z "$NEWS_DATABASE_URL" ]; then
+            echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine logo may stay text-only."
+          fi
+          pnpm --filter @workspace/api-server run ensure:sehitgazi-logo

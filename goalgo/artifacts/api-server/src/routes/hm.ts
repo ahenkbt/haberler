@@ -168,6 +168,8 @@ import { ensureFixHaberSite } from "../lib/hm-fixhaber-seed.js";
 import { fixHaberSiteNeedsCatalogRepair, wakeFixHaberCatalogRepair } from "../lib/hm-fixhaber-repair.js";
 import { isYesilVatanHost, isYesilVatanSlug, YESILVATAN_SLUG } from "../lib/hm-yesilvatan-site.js";
 import { ensureYesilVatanLogo } from "../lib/hm-yesilvatan-logo-repair.js";
+import { isSehitGaziHost, isSehitGaziSlug, SEHITGAZI_SLUG } from "../lib/hm-sehitgazi-site.js";
+import { ensureSehitGaziLogo } from "../lib/hm-sehitgazi-logo-repair.js";
 import { isSosyalHizmetlerHost } from "../lib/hm-sosyalhizmetler-site.js";
 import { ensureSosyalHizmetlerSite } from "../lib/hm-sosyalhizmetler-seed.js";
 import { isTurkatahaberHost, isYerelnetHost, TURKATAHABER_SLUG, YERELNET_SLUG } from "../lib/hm-kamu-yerel-sites.js";
@@ -1157,6 +1159,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     await ensureYesilVatanLogo().catch(() => null);
     row = (await getActiveHmNewsSiteBySlugCompat(YESILVATAN_SLUG)) ?? row;
   }
+  if (isSehitGaziSlug(slug) || isSehitGaziHost(queryDomain)) {
+    await ensureSehitGaziLogo().catch(() => null);
+    row = (await getActiveHmNewsSiteBySlugCompat(SEHITGAZI_SLUG)) ?? row;
+  }
   if (
     (!row || !row.active) &&
     (slug === TURKATAHABER_SLUG ||
@@ -1214,6 +1220,13 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
     row =
       (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ??
       (await getActiveHmNewsSiteBySlugCompat(YESILVATAN_SLUG)) ??
+      row;
+  }
+  if (isSehitGaziHost(host)) {
+    await ensureSehitGaziLogo().catch(() => null);
+    row =
+      (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ??
+      (await getActiveHmNewsSiteBySlugCompat(SEHITGAZI_SLUG)) ??
       row;
   }
   if (!row && isSosyalHizmetlerHost(host)) {
@@ -2429,6 +2442,25 @@ router.post("/hm/admin/ensure-yesilvatan-logo", async (req, res): Promise<void> 
           ? `Yeşil Vatan logo güncellendi #${result.siteId}`
           : result.action === "unchanged"
             ? `Yeşil Vatan logo zaten doğru #${result.siteId}`
+            : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+router.post("/hm/admin/ensure-sehitgazi-logo", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await ensureSehitGaziLogo();
+    res.json({
+      ...result,
+      ok: result.action !== "error" && result.action !== "missing",
+      message:
+        result.action === "updated"
+          ? `Şehit Gazi logo güncellendi #${result.siteId}`
+          : result.action === "unchanged"
+            ? `Şehit Gazi logo zaten doğru #${result.siteId}`
             : result.detail || result.action,
     });
   } catch (e) {

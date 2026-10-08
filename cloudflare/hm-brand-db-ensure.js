@@ -16,6 +16,7 @@ import {
 import { ensureFixHaberBrandMetaOnNeon } from "./hm-fixhaber-edge.js";
 import { syncTurkatahaberLayoutMainToPhpNeon } from "./hm-turkatahaber-edge.js";
 import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
+import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -143,6 +144,14 @@ export const HM_BRAND_DB_BINDINGS = [
     slug: "yesilvatan",
     displayName: "Yeşil Vatan",
     description: "Çevre, orman, iklim ve ağaçlandırma haberleri — Yeşil Vatan Türkiye Ağaçlandırma Merkezi",
+  },
+  /** Şehit Gazi — logo/favicon ASSETS yolu Neon layout_json. */
+  {
+    domain: "sehitgazi.org.tr",
+    domains: ["sehitgazi.org.tr", "www.sehitgazi.org.tr"],
+    slug: "sehitgazi",
+    displayName: "Şehit Gazi",
+    description: "Şehitlerimiz, gazilerimiz ve Türk Silahlı Kuvvetleri haberleri",
   },
 ];
 
@@ -1542,6 +1551,14 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       await ensureYesilVatanLogoOnNeon(env);
     } catch (err) {
       console.error("[hm-brand-db-ensure] yesilvatan logo", String(err?.message || err).slice(0, 240));
+    }
+  }
+
+  if (binding.slug === "sehitgazi" || host === "sehitgazi.org.tr") {
+    try {
+      await ensureSehitGaziLogoOnNeon(env);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] sehitgazi logo", String(err?.message || err).slice(0, 240));
     }
   }
 

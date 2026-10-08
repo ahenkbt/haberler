@@ -135,12 +135,19 @@ export function isYesilVatanBrandAssetPath(pathname) {
   return p.startsWith("/yesilvatan/");
 }
 
+/** Şehit Gazi marka dosyaları — Worker ASSETS (`public/sehitgazi/*`). */
+export function isSehitGaziBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/sehitgazi/");
+}
+
 export function isWorkerBrandStaticAssetPath(pathname) {
   return (
     isGundemiLogoAssetPath(pathname) ||
     isFixHaberBrandAssetPath(pathname) ||
     isSosyalHizmetlerBrandAssetPath(pathname) ||
-    isYesilVatanBrandAssetPath(pathname)
+    isYesilVatanBrandAssetPath(pathname) ||
+    isSehitGaziBrandAssetPath(pathname)
   );
 }
 
