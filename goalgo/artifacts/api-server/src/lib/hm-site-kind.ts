@@ -249,3 +249,47 @@ export function defaultEditorLoginForSite(triad: Partial<HmDomainTriad>) {
   const first = [triad.domain, triad.domain2, triad.domain3].find((h) => normalizeAliasHost(h));
   return first ? defaultEditorLoginForHost(first) : null;
 }
+
+/**
+ * "Konsept site" (2026-10-08, /admin/haber-siteleri new-site form). Stored in layout_json:
+ *   hmConceptSite: true | false, hmConceptTopic: "spor" | "savunma" | "cevre" | ... (concept sites only).
+ * The PHP theme (Widgets::on, concept sites 2026-10-08) never shows burçlar on a concept site and shows the
+ * Süper Lig table only when the topic is "spor". General sites (flag off) keep every general-interest widget.
+ * Topic "spor" also gets the Spor category tree, the Spor menu and pool 230 limited to the Spor categories.
+ */
+export const HM_CONCEPT_TOPICS = ["spor", "savunma", "sehit-gazi", "cevre", "saglik", "teknoloji", "yerel", "bolge", "diger"] as const;
+export type HmConceptTopic = (typeof HM_CONCEPT_TOPICS)[number];
+
+export const HM_SPOR_CATEGORY_SLUGS = [
+  "spor", "futbol", "basketbol", "voleybol", "hentbol", "gures", "atletizm", "tenis", "yuzme",
+  "motor-sporlari", "dovus-sporlari", "e-spor", "amator-spor", "engelli-sporlari",
+] as const;
+
+export function normalizeHmConceptTopic(raw: unknown): HmConceptTopic | null {
+  const t = String(raw ?? "").trim().toLowerCase();
+  return (HM_CONCEPT_TOPICS as readonly string[]).includes(t) ? (t as HmConceptTopic) : null;
+}
+
+export function conceptSiteLayoutDefaults(conceptRaw: unknown, topicRaw?: unknown): Record<string, unknown> {
+  const concept = conceptRaw === true || conceptRaw === "true" || conceptRaw === 1 || conceptRaw === "1";
+  if (!concept) return { hmConceptSite: false };
+  const topic = normalizeHmConceptTopic(topicRaw) ?? "diger";
+  const sports = topic === "spor";
+  const out: Record<string, unknown> = {
+    hmConceptSite: true,
+    hmConceptTopic: topic,
+    hmNewsYsHoroscopeEnabled: false,
+    hmNewsYsStandingsEnabled: sports,
+    hmNewsYsSportsHoroscopeEnabled: sports,
+  };
+  if (sports) {
+    const slugs = [...HM_SPOR_CATEGORY_SLUGS];
+    out.hmCatTree = "spor";
+    out.hmNewsRssSources = [230];
+    out.hmNewsRssCategoryOnly = slugs;
+    out.hmNavOnlyCategorySlugs = [...slugs, "ozel-haber"];
+    out.hmCategorySortSlugs = slugs;
+    out.hmNewsHomeModuleCategorySlugs = { ysMostRead: "futbol", ysGallery: "spor" };
+  }
+  return out;
+}
