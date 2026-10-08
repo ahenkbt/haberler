@@ -1744,7 +1744,18 @@ pattern = "www.yesilvatan.gen.tr/hm/*"
 zone_name = "yesilvatan.gen.tr"
 
 # Trafik Guvenligi Dernegi — kurumsal PHP (Hostinger php-kurumsal, VPS 187.77.84.201 proxied A).
-# trafikdernegi.com + tgd.tc: Worker panel/API + /tr|/hm 301; catch-all BİLEREK yok.
+# trafikdernegi.com + tgd.tc: Worker panel/API + /tr|/hm 301; ön yüz catch-all aşağıda (og-preview 2026-10-08).
+# og-preview 2026-10-08: trafikdernegi.com ön yüzü Worker'dan (VPS'te php-kurumsal yok, DNS 192.0.2.1). Catch-all burada
+# olmazsa her wrangler deploy cf-fix-hm-dns cron'unun eklediği "trafikdernegi.com/*" route'unu siler ve kök 522 verir
+# (2026-10-08 23:40 TRT yaşandı). php-kurumsal canlıya alınınca bu 2 catch-all kaldırılmalı.
+[[routes]]
+pattern = "trafikdernegi.com/*"
+zone_name = "trafikdernegi.com"
+
+[[routes]]
+pattern = "www.trafikdernegi.com/*"
+zone_name = "trafikdernegi.com"
+
 [[routes]]
 pattern = "trafikdernegi.com/editor*"
 zone_name = "trafikdernegi.com"
@@ -1840,6 +1851,17 @@ zone_name = "trafikdernegi.com"
 [[routes]]
 pattern = "www.trafikdernegi.com/hm/*"
 zone_name = "trafikdernegi.com"
+
+# og-preview 2026-10-08: tgd.tc ön yüzü Worker'dan (VPS'te php-kurumsal yok, DNS 192.0.2.1). Catch-all burada
+# olmazsa her wrangler deploy cf-fix-hm-dns cron'unun eklediği "tgd.tc/*" route'unu siler ve kök 522 verir
+# (2026-10-08 23:40 TRT yaşandı). php-kurumsal canlıya alınınca bu 2 catch-all kaldırılmalı.
+[[routes]]
+pattern = "tgd.tc/*"
+zone_name = "tgd.tc"
+
+[[routes]]
+pattern = "www.tgd.tc/*"
+zone_name = "tgd.tc"
 
 [[routes]]
 pattern = "tgd.tc/editor*"
