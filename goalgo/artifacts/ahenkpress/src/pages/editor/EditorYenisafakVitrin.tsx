@@ -8,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useHmEditor } from "@/contexts/HmEditorContext";
+import {
+  HM_GRADIENT_FAMILIES,
+  HM_TOPIC_PREVIEW,
+  findHmGradientPreset,
+  hmGradientCss,
+  type HmGradientFamily,
+  type HmGradientPreset,
+} from "@/lib/hmThemeGradients";
 import { useToast } from "@/hooks/use-toast";
 import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import {
@@ -43,12 +51,26 @@ export default function EditorYenisafakVitrin() {
   const [draft, setDraft] = useState<YsEditorSnapshot>(loaded);
   const [persisted, setPersisted] = useState<YsEditorSnapshot>(loaded);
   const [saving, setSaving] = useState(false);
+  const [familyId, setFamilyId] = useState<string>(() => findHmGradientPreset(loaded.gradient?.id)?.family.id ?? "mavi");
+  const [matchAccent, setMatchAccent] = useState(true);
   const dirty = useMemo(() => !ysEditorSnapshotsEqual(draft, persisted), [draft, persisted]);
 
   useEffect(() => {
     setDraft(loaded);
     setPersisted(loaded);
+    const fam = findHmGradientPreset(loaded.gradient?.id)?.family.id;
+    if (fam) setFamilyId(fam);
   }, [loaded]);
+
+  const family: HmGradientFamily = HM_GRADIENT_FAMILIES.find((f) => f.id === familyId) ?? HM_GRADIENT_FAMILIES[0]!;
+  const pickGradient = (fam: HmGradientFamily, preset: HmGradientPreset) =>
+    setDraft((prev) => ({
+      ...prev,
+      gradient: { id: preset.id, from: preset.from, to: preset.to },
+      primaryColor: matchAccent ? fam.accent : prev.primaryColor,
+    }));
+  const previewGradient = draft.gradient ?? { from: "#143d7a", to: "#0a1f44" };
+  const previewAccent = /^#[0-9a-f]{6}$/i.test(draft.primaryColor) ? draft.primaryColor : "#c8102e";
 
   const save = async (next: YsEditorSnapshot) => {
     if (ysEditorSnapshotsEqual(next, persisted)) return;
@@ -152,11 +174,158 @@ export default function EditorYenisafakVitrin() {
           </div>
         </section>
 
+        <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4" id="site-renkleri">
+          <div>
+            <Label className="font-semibold text-slate-900">Site rengi: menü çubuğu (geçişli)</Label>
+            <p className="mt-1 text-xs text-slate-500">
+              Önce bir ana renk seçin, sonra o rengin koyu tonuna giden geçişlerden birini seçin. Menü çubuğu, mobil alt şerit,
+              başlık tonu ve reklam bandı bu renge döner. Anasayfa kutuları konusuna göre kendi rengini alır (Siyaset, Ekonomi,
+              Spor…). Kaydettikten sonra canlı sitede en geç 1 dakikada görünür.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Ana renk">
+            {HM_GRADIENT_FAMILIES.map((fam) => {
+              const active = fam.id === family.id;
+              return (
+                <button
+                  key={fam.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={saving}
+                  onClick={() => setFamilyId(fam.id)}
+                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                    active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                  }`}
+                >
+                  <span
+                    className="h-4 w-4 rounded-full border border-white/60 shadow-sm"
+                    style={{ background: hmGradientCss({ from: fam.presets[0]!.from, to: fam.presets[0]!.to }) }}
+                    aria-hidden
+                  />
+                  {fam.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {family.presets.map((preset) => {
+              const active = draft.gradient?.id === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  disabled={saving}
+                  onClick={() => pickGradient(family, preset)}
+                  className={`overflow-hidden rounded-lg border text-left transition ${
+                    active ? "border-slate-900 ring-2 ring-slate-900" : "border-slate-200 hover:border-slate-400"
+                  }`}
+                >
+                  <span className="flex h-9 items-center gap-1 px-2 text-[11px] font-bold text-white" style={{ background: hmGradientCss(preset) }}>
+                    <span className="rounded px-1.5 py-0.5" style={{ background: matchAccent ? family.accent : previewAccent }}>
+                      Anasayfa
+                    </span>
+                    <span className="px-1">Gündem</span>
+                    <span className="px-1">Ekonomi</span>
+                    <span className="px-1">Spor</span>
+                  </span>
+                  <span className="flex items-center justify-between gap-2 bg-white px-2 py-1.5">
+                    <span className="text-xs font-semibold text-slate-800">{preset.label}</span>
+                    <span className="font-mono text-[10px] text-slate-500">
+                      {preset.from} → {preset.to}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-slate-600">
+            <Switch checked={matchAccent} onCheckedChange={setMatchAccent} disabled={saving} aria-label="Vurgu rengini uyumlu seç" />
+            Vurgu rengini de bu renge uyumlu seç (aktif menü, rozetler, başlık çizgisi)
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Kendi geçişim: başlangıç</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  aria-label="Geçiş başlangıç rengi"
+                  className="h-10 w-14 cursor-pointer rounded border border-slate-200 bg-white p-0.5"
+                  value={draft.gradient?.from ?? "#143d7a"}
+                  disabled={saving}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      gradient: { id: "ozel", from: e.target.value.toLowerCase(), to: prev.gradient?.to ?? "#0a1f44" },
+                    }))
+                  }
+                />
+                <span className="font-mono text-xs text-slate-500">{draft.gradient?.from ?? "tema"}</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Kendi geçişim: bitiş (koyu ton)</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  aria-label="Geçiş bitiş rengi"
+                  className="h-10 w-14 cursor-pointer rounded border border-slate-200 bg-white p-0.5"
+                  value={draft.gradient?.to ?? "#0a1f44"}
+                  disabled={saving}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      gradient: { id: "ozel", from: prev.gradient?.from ?? "#143d7a", to: e.target.value.toLowerCase() },
+                    }))
+                  }
+                />
+                <span className="font-mono text-xs text-slate-500">{draft.gradient?.to ?? "tema"}</span>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Önizleme</p>
+            <div className="flex h-10 items-center gap-1 rounded px-2 text-xs font-bold text-white" style={{ background: hmGradientCss(previewGradient), borderBottom: `3px solid ${previewAccent}` }}>
+              <span className="rounded px-2 py-1" style={{ background: previewAccent }}>Anasayfa</span>
+              <span className="px-2">Siyaset</span>
+              <span className="px-2">Kamu</span>
+              <span className="px-2">Yerel</span>
+              <span className="px-2">Dünya</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {HM_TOPIC_PREVIEW.map((topic) => (
+                <span
+                  key={topic.label}
+                  className="rounded-md border-t-[3px] bg-white px-2 py-1 text-[11px] font-black uppercase shadow-sm"
+                  style={{ borderTopColor: topic.color, color: topic.color }}
+                >
+                  {topic.label}
+                </span>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Kutu renklerini tek tek değiştirmek için: Genel ayarlar &gt; Kategori renkleri.
+              {draft.gradient == null ? " Şu an sitenin varsayılan rengi kullanılıyor." : ""}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={saving || draft.gradient == null}
+              onClick={() => setDraft((prev) => ({ ...prev, gradient: null }))}
+            >
+              Site varsayılan rengine dön
+            </Button>
+          </div>
+        </section>
+
         <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-          <Label className="font-semibold text-slate-900">Renkler</Label>
+          <Label className="font-semibold text-slate-900">Vurgu renkleri</Label>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs">Ana vurgu (hmPrimaryColor)</Label>
+              <Label className="text-xs">Vurgu rengi (aktif menü, rozet, başlık çizgisi)</Label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"

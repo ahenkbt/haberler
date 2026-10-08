@@ -3,6 +3,7 @@
  * Anahtarlar `php-theme/src/Modules.php` ile aynı: ys anahtarı varsa o kazanır,
  * yoksa eski vitrin anahtarı, o da yoksa modül açık kalır.
  */
+import { normalizeHmThemeGradient, type HmThemeGradient } from "./hmThemeGradients";
 import type { HmAdSlotState, HmCorporatePageHtml, HmYsKunye, NewsSiteLayoutPrefs } from "./newsSiteLayout";
 
 export const YS_MANSET_PRESETS = [
@@ -148,6 +149,10 @@ export const PHP_THEME_LAYOUT_KEYS = [
   "hmYsMansetPreset",
   "hmNewsYsMansetLayout",
   "hmSecondaryColor",
+  // Theme.php (site colors 2026-10-08)
+  "hmThemeGradient",
+  "hmNavBarBackground",
+  "hmCategoryColors",
   "hmYsSlogan",
   "hmYsKunye",
   "hmAdSlots",
@@ -379,6 +384,8 @@ export type YsEditorSnapshot = {
   preset: YsMansetPresetId | null;
   primaryColor: string;
   secondaryColor: string;
+  /** Menü çubuğu geçişi (`hmThemeGradient`); null = tema/site varsayılanı. */
+  gradient: HmThemeGradient | null;
   slogan: string;
   logoUrl: string;
   kunye: HmYsKunye;
@@ -407,6 +414,7 @@ function stableYsEditorSnapshot(snapshot: YsEditorSnapshot): string {
     preset: snapshot.preset,
     primaryColor: snapshot.primaryColor.trim().toLowerCase(),
     secondaryColor: snapshot.secondaryColor.trim().toLowerCase(),
+    gradient: normalizeHmThemeGradient(snapshot.gradient),
     slogan: snapshot.slogan.trim(),
     logoUrl: snapshot.logoUrl.trim(),
     kunye: normalizeYsKunye(snapshot.kunye) ?? {},
@@ -426,6 +434,7 @@ export function readYsEditorSnapshot(prefs: NewsSiteLayoutPrefs | null | undefin
     preset: readYsMansetPreset(prefs),
     primaryColor: (prefs?.hmPrimaryColor ?? "").trim(),
     secondaryColor: (prefs?.hmSecondaryColor ?? "").trim(),
+    gradient: normalizeHmThemeGradient(prefs?.hmThemeGradient),
     slogan: (prefs?.hmYsSlogan ?? "").trim(),
     logoUrl: (prefs?.logoUrl ?? "").trim(),
     kunye: readYsKunye(prefs),
@@ -455,8 +464,11 @@ export function buildYenisafakLayoutPatch(
     hmYsKunye: normalizeYsKunye(snapshot.kunye),
     hmPrimaryColor: hexOrNull(snapshot.primaryColor),
     hmSecondaryColor: hexOrNull(snapshot.secondaryColor),
+    hmThemeGradient: normalizeHmThemeGradient(snapshot.gradient),
     logoUrl: snapshot.logoUrl.trim() || null,
   };
+  // Geçiş seçildiyse eski düz "menü şeridi" rengi geçişi ezmesin (Genel Ayarlar'daki şerit rengi).
+  if (patch.hmThemeGradient) patch.hmNavBarBackground = null;
 
   const order = snapshot.modules.map((row) => row.id);
   const slugs: Record<string, string> = { ...(prefs.hmNewsHomeModuleCategorySlugs ?? {}) };

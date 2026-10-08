@@ -600,6 +600,8 @@ export type NewsSiteLayoutPrefs = {
   hmSecondaryColor?: string | null;
   /** Kategori slug ÔåÆ vitrin çubuşu / etiket rengi (#rrggbb). îrn. magazin, gundem, dunya, spor */
   hmCategoryColors?: Record<string, string> | null;
+  /** PHP haber teması: menü çubuğu geçişi { id, from, to } (Vitrin ayarları > Renkler). */
+  hmThemeGradient?: { id: string; from: string; to: string } | null;
   /** HM site: manşet bloğunun hemen altında gösterilecek güvenli HTML (isteğe başlı) */
   hmMansetBelowAdHtml?: string | null;
   /** HABER teması: manşet altı reklam slot modülü; tanımsızsa açık kabul edilir. */
