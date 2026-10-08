@@ -1,0 +1,23 @@
+# <slug>.fix.tc -> php-theme-yenisafak (HM panel news-site aliases; same upstream as gundemi-wild).
+# Installed 2026-10-08 by provisioning executor. DNS: *.fix.tc A 187.77.84.201 (proxied, CF SSL "full").
+# Unknown slugs answer 404 "Site bulunamadı" in the theme (App.php platformSub).
+# Rollback: rm /docker/traefik/dynamic/fixtc-wild.yml
+http:
+  routers:
+    fixtc-wild:
+      rule: "HostRegexp(`^[a-z0-9-]+\\.fix\\.tc$`) || HostRegexp(`^www\\.[a-z0-9-]+\\.fix\\.tc$`)"
+      entryPoints: ["websecure"]
+      service: fixtc-wild-php
+      tls: {}
+      priority: 10
+    fixtc-wild-http:
+      rule: "HostRegexp(`^[a-z0-9-]+\\.fix\\.tc$`)"
+      entryPoints: ["web"]
+      service: fixtc-wild-php
+      priority: 10
+  services:
+    fixtc-wild-php:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://127.0.0.1:8095"
