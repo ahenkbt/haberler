@@ -386,6 +386,39 @@ export type YsEditorSnapshot = {
   ads: Record<YsAdSlotKey, HmAdSlotState>;
 };
 
+function stableYsEditorSnapshot(snapshot: YsEditorSnapshot): string {
+  const modules = snapshot.modules.map((row) => ({
+    id: row.id,
+    enabled: row.enabled,
+    category: row.category.trim().toLowerCase(),
+    count: clampYsCount(row.count),
+  }));
+  const ads = YS_AD_SLOTS.map((slot) => {
+    const row = snapshot.ads[slot.slotKey];
+    return {
+      slotKey: slot.slotKey,
+      enabled: row?.enabled === true,
+      imageMediaUrl: (row?.imageMediaUrl ?? "").trim(),
+      imageClickUrl: (row?.imageClickUrl ?? "").trim(),
+      contentMode: row?.contentMode === "html" ? "html" : "image",
+    };
+  });
+  return JSON.stringify({
+    preset: snapshot.preset,
+    primaryColor: snapshot.primaryColor.trim().toLowerCase(),
+    secondaryColor: snapshot.secondaryColor.trim().toLowerCase(),
+    slogan: snapshot.slogan.trim(),
+    logoUrl: snapshot.logoUrl.trim(),
+    kunye: normalizeYsKunye(snapshot.kunye) ?? {},
+    modules,
+    ads,
+  });
+}
+
+export function ysEditorSnapshotsEqual(a: YsEditorSnapshot, b: YsEditorSnapshot): boolean {
+  return stableYsEditorSnapshot(a) === stableYsEditorSnapshot(b);
+}
+
 export function readYsEditorSnapshot(prefs: NewsSiteLayoutPrefs | null | undefined): YsEditorSnapshot {
   const ads = {} as Record<YsAdSlotKey, HmAdSlotState>;
   for (const slot of YS_AD_SLOTS) ads[slot.slotKey] = readYsAdSlot(prefs, slot.slotKey);

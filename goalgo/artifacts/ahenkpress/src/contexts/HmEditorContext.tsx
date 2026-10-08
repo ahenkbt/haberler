@@ -33,7 +33,7 @@ import {
 } from "@/lib/newsSiteLayout";
 import type { HmSeoVerification } from "@/lib/pageSeo";
 import { clearHmNestedMetaCache } from "@/lib/hmNestedMetaCache";
-import { clearHmSitePublicBrowserCaches } from "@/lib/hmSitePublicCacheClear";
+import { clearHmSitePublicBrowserCaches, purgeHmSitePublicEdgeCache } from "@/lib/hmSitePublicCacheClear";
 import { dispatchHmLayoutUpdated } from "@/lib/hmLayoutUpdatedEvent";
 
 type HmEditorContextType = {
@@ -269,6 +269,7 @@ export function HmEditorProvider({ children }: { children: ReactNode }) {
         });
         clearHmNestedMetaCache(site.slug);
         dispatchHmLayoutUpdated(site.slug);
+        void purgeHmSitePublicEdgeCache().catch(() => undefined);
       }
       /** `/me` tekrar çağrılırsa bazen eski `layoutJson` ile üzerine yazma riski; layout PATCH yanıtından güncellendi. */
       return { ok: true };

@@ -3250,6 +3250,7 @@ export default {
             edgePath === "/api/hm/editor/me/password" ||
             edgePath === "/api/hm/editor/site-layout" ||
             edgePath === "/api/hm/editor/site-home-module-order" ||
+            edgePath === "/api/hm/editor/purge-public-cache" ||
             edgePath === "/api/hm/editor/authors/bulk-delete" ||
             edgePath === "/api/hm/editor/authors/order"
           : false;

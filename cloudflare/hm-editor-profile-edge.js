@@ -8,6 +8,8 @@
  */
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 import { neonSqlClient } from "./neon-edge-db.js";
+import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
+import { purgeHmSitePublicEdgeCache } from "./hm-public-cache-purge-edge.js";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
@@ -197,6 +199,24 @@ function mergeLayoutPatch(prev, incoming, opts = {}) {
     };
   }
   return mirrorLiveMansetLayout(merged, inc);
+}
+
+/** Worker + PHP Neon layout_json ve ziyaretçi kenar önbelleği — kayıt sonrası. */
+async function finalizeHmSiteLayoutPersist(env, workerSql, ctx, siteRow, layoutJsonRaw) {
+  void mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, ctx.siteId, layoutJsonRaw).catch((err) => {
+    console.error("[php-layout-sync]", String(err?.message || err).slice(0, 160));
+  });
+  const slug = String(siteRow?.slug ?? "").trim();
+  if (!slug) return;
+  void purgeHmSitePublicEdgeCache(env, {
+    siteId: ctx.siteId,
+    slug,
+    domain: siteRow?.domain,
+    domain2: siteRow?.domain2,
+    domain3: siteRow?.domain3,
+  }).catch((err) => {
+    console.error("[hm-layout-purge]", String(err?.message || err).slice(0, 160));
+  });
 }
 
 async function isKhEditorSite(sql, siteId) {
@@ -530,7 +550,7 @@ async function handleHmSiteLayoutPatch(request, env) {
   }
 
   const sites = await sql`
-    SELECT id, layout_json
+    SELECT id, slug, domain, domain2, domain3, layout_json
     FROM hm_news_sites
     WHERE id = ${ctx.siteId}
     LIMIT 1
@@ -590,6 +610,8 @@ async function handleHmSiteLayoutPatch(request, env) {
     `;
   }
 
+  await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
+
   return jsonResponse(200, { ok: true, layoutJson: raw });
 }
 
@@ -630,7 +652,7 @@ async function handleHmSiteHomeModuleOrderPatch(request, env) {
   }
 
   const sites = await sql`
-    SELECT id, layout_json
+    SELECT id, slug, domain, domain2, domain3, layout_json
     FROM hm_news_sites
     WHERE id = ${ctx.siteId}
     LIMIT 1
@@ -671,7 +693,56 @@ async function handleHmSiteHomeModuleOrderPatch(request, env) {
     `;
   }
 
+  await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
+
   return jsonResponse(200, { ok: true, layoutJson: raw });
+}
+
+async function handleHmEditorPurgePublicCache(request, env) {
+  const auth = String(request.headers.get("authorization") || "").trim();
+  const ctx = await parseEditorJwt(request, env);
+  if (!ctx) {
+    if (auth.startsWith("Bearer ")) return null;
+    return jsonResponse(401, { error: "Editör oturumu gerekli (Bearer token)." });
+  }
+
+  const sql = sqlClient(env);
+  if (!sql) return jsonResponse(503, { error: "Veritabanı yapılandırması eksik." });
+
+  const editor = await loadActiveEditor(sql, ctx.editorId, ctx.siteId);
+  if (!editor) return jsonResponse(401, { error: "Geçersiz oturum" });
+
+  const sites = await sql`
+    SELECT id, slug, domain, domain2, domain3
+    FROM hm_news_sites
+    WHERE id = ${ctx.siteId}
+    LIMIT 1
+  `;
+  const site = sites?.[0];
+  if (!site) return jsonResponse(404, { error: "Site bulunamadı" });
+
+  try {
+    const result = await purgeHmSitePublicEdgeCache(env, {
+      siteId: ctx.siteId,
+      slug: String(site.slug ?? ""),
+      domain: site.domain,
+      domain2: site.domain2,
+      domain3: site.domain3,
+    });
+    return jsonResponse(200, {
+      ok: true,
+      message:
+        result.cfPurged > 0
+          ? `Kenar önbellek temizlendi (${result.cfPurged} URL). Siteyi yenileyin.`
+          : "Meta önbelleği artık kenarda tutulmuyor; tarayıcı önbelleğini temizleyip siteyi yenileyin.",
+      ...result,
+    });
+  } catch (e) {
+    return jsonResponse(500, {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
 }
 
 async function resolveSiteByHost(sql, host) {
@@ -1448,6 +1519,9 @@ export async function handleHmEditorProfileEdge(request, env, incomingUrl) {
   }
   if (path === "/api/hm/editor/site-home-module-order" && method === "PATCH") {
     return handleHmSiteHomeModuleOrderPatch(request, env);
+  }
+  if (path === "/api/hm/editor/purge-public-cache" && method === "POST") {
+    return handleHmEditorPurgePublicCache(request, env);
   }
   return null;
 }
