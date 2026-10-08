@@ -501,6 +501,7 @@ function isStaticAssetPath(pathname) {
     /\.(js|mjs|cjs|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif|webmanifest)(\?|$)/i.test(p) ||
     p.startsWith("/assets/") ||
     p.startsWith("/turkata/") ||
+    p.startsWith("/yesilvatan/") ||
     p.startsWith("/yektube-v2/assets/") ||
     p.includes("/public/assets/")
   );
@@ -1541,10 +1542,30 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     slugKey === "fixhaber" ||
     normalizeHost(domain) === "fix.tc";
 
+  const isYesilVatanBrand =
+    binding.slug === "yesilvatan" ||
+    slugKey === "yesilvatan" ||
+    normalizeHost(domain) === "yesilvatan.gen.tr";
+
   // Fix Haber: site satırı var ama kategoriler/PHP Neon eksik → arka planda idempotent seed.
   if (isFixHaberBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "fixhaber" }).catch((err) => {
       console.error("[hm-brand-db-ensure/fixhaber-catalog]", String(err?.message || err).slice(0, 200));
+    });
+    if (typeof opts.waitUntil === "function") {
+      opts.waitUntil(job);
+    } else {
+      try {
+        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))]);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  // Yeşil Vatan: logoUrl/faviconUrl ASSETS yolu — arka planda Neon (panel + PHP) hizala.
+  if (isYesilVatanBrand && upstream.ok) {
+    const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "yesilvatan" }).catch((err) => {
+      console.error("[hm-brand-db-ensure/yesilvatan-logo]", String(err?.message || err).slice(0, 200));
     });
     if (typeof opts.waitUntil === "function") {
       opts.waitUntil(job);

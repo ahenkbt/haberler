@@ -15,6 +15,7 @@ import {
 } from "./hm-site-rss-defaults.js";
 import { ensureFixHaberBrandMetaOnNeon } from "./hm-fixhaber-edge.js";
 import { syncTurkatahaberLayoutMainToPhpNeon } from "./hm-turkatahaber-edge.js";
+import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -134,6 +135,14 @@ export const HM_BRAND_DB_BINDINGS = [
     slug: "turkatahaber",
     displayName: "TÜRKATA HABER AJANSI",
     description: "Kamu ve yerel haber ağı",
+  },
+  /** Yeşil Vatan — logo/favicon ASSETS yolu Neon layout_json. */
+  {
+    domain: "yesilvatan.gen.tr",
+    domains: ["yesilvatan.gen.tr", "www.yesilvatan.gen.tr"],
+    slug: "yesilvatan",
+    displayName: "Yeşil Vatan",
+    description: "Çevre, orman, iklim ve ağaçlandırma haberleri — Yeşil Vatan Türkiye Ağaçlandırma Merkezi",
   },
 ];
 
@@ -1525,6 +1534,14 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       await syncTurkatahaberLayoutMainToPhpNeon(env);
     } catch (err) {
       console.error("[hm-brand-db-ensure] turkata layout", String(err?.message || err).slice(0, 240));
+    }
+  }
+
+  if (binding.slug === "yesilvatan" || host === "yesilvatan.gen.tr") {
+    try {
+      await ensureYesilVatanLogoOnNeon(env);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] yesilvatan logo", String(err?.message || err).slice(0, 240));
     }
   }
 

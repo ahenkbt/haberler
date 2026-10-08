@@ -129,11 +129,18 @@ export function isSosyalHizmetlerBrandAssetPath(pathname) {
   return p.startsWith("/sh/");
 }
 
+/** Yeşil Vatan marka dosyaları — Worker ASSETS (`public/yesilvatan/*`). */
+export function isYesilVatanBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/yesilvatan/");
+}
+
 export function isWorkerBrandStaticAssetPath(pathname) {
   return (
     isGundemiLogoAssetPath(pathname) ||
     isFixHaberBrandAssetPath(pathname) ||
-    isSosyalHizmetlerBrandAssetPath(pathname)
+    isSosyalHizmetlerBrandAssetPath(pathname) ||
+    isYesilVatanBrandAssetPath(pathname)
   );
 }
 

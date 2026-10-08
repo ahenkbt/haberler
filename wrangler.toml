@@ -1449,6 +1449,14 @@ pattern = "yesilvatan.gen.tr/assets/*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
+pattern = "yesilvatan.gen.tr/yesilvatan/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
+pattern = "www.yesilvatan.gen.tr/yesilvatan/*"
+zone_name = "yesilvatan.gen.tr"
+
+[[routes]]
 pattern = "yesilvatan.gen.tr/sw.js"
 zone_name = "yesilvatan.gen.tr"
 

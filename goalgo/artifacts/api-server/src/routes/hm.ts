@@ -166,6 +166,8 @@ import { ensureKhNewsSite, isKhNewsHost, isKhNewsSlug, KH_SITE_SLUG } from "../l
 import { isFixHaberHost, FIXHABER_SLUG } from "../lib/hm-fixhaber-site.js";
 import { ensureFixHaberSite } from "../lib/hm-fixhaber-seed.js";
 import { fixHaberSiteNeedsCatalogRepair, wakeFixHaberCatalogRepair } from "../lib/hm-fixhaber-repair.js";
+import { isYesilVatanHost, isYesilVatanSlug, YESILVATAN_SLUG } from "../lib/hm-yesilvatan-site.js";
+import { ensureYesilVatanLogo } from "../lib/hm-yesilvatan-logo-repair.js";
 import { isSosyalHizmetlerHost } from "../lib/hm-sosyalhizmetler-site.js";
 import { ensureSosyalHizmetlerSite } from "../lib/hm-sosyalhizmetler-seed.js";
 import { isTurkatahaberHost, isYerelnetHost, TURKATAHABER_SLUG, YERELNET_SLUG } from "../lib/hm-kamu-yerel-sites.js";
@@ -1151,6 +1153,10 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
       row = (await getActiveHmNewsSiteBySlugCompat(FIXHABER_SLUG)) ?? row;
     }
   }
+  if (isYesilVatanSlug(slug) || isYesilVatanHost(queryDomain)) {
+    await ensureYesilVatanLogo().catch(() => null);
+    row = (await getActiveHmNewsSiteBySlugCompat(YESILVATAN_SLUG)) ?? row;
+  }
   if (
     (!row || !row.active) &&
     (slug === TURKATAHABER_SLUG ||
@@ -1202,6 +1208,13 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
       await wakeFixHaberCatalogRepair(row.id);
       row = (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ?? row;
     }
+  }
+  if (isYesilVatanHost(host)) {
+    await ensureYesilVatanLogo().catch(() => null);
+    row =
+      (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ??
+      (await getActiveHmNewsSiteBySlugCompat(YESILVATAN_SLUG)) ??
+      row;
   }
   if (!row && isSosyalHizmetlerHost(host)) {
     await ensureSosyalHizmetlerSite().catch(() => null);
@@ -2397,6 +2410,25 @@ router.post("/hm/admin/ensure-fixhaber-site", async (req, res): Promise<void> =>
           ? `Fix Haber (fix.tc) oluşturuldu #${result.siteId}`
           : result.action === "updated"
             ? `Fix Haber (fix.tc) güncellendi #${result.siteId}`
+            : result.detail || result.action,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+router.post("/hm/admin/ensure-yesilvatan-logo", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
+  try {
+    const result = await ensureYesilVatanLogo();
+    res.json({
+      ...result,
+      ok: result.action !== "error" && result.action !== "missing",
+      message:
+        result.action === "updated"
+          ? `Yeşil Vatan logo güncellendi #${result.siteId}`
+          : result.action === "unchanged"
+            ? `Yeşil Vatan logo zaten doğru #${result.siteId}`
             : result.detail || result.action,
     });
   } catch (e) {
