@@ -9,6 +9,7 @@
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 import { neonSqlClient } from "./neon-edge-db.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
+import { markLayoutRecordUserSave } from "./hm-layout-user-save.js";
 import { purgeHmSitePublicEdgeCache } from "./hm-public-cache-purge-edge.js";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
@@ -605,7 +606,7 @@ async function handleHmSiteLayoutPatch(request, env) {
   const merged = mergeLayoutPatch(prev, inc, { vitrinOnly: b?.vitrinOnly === true, siteSlug });
   let raw;
   try {
-    raw = JSON.stringify(merged);
+    raw = JSON.stringify(markLayoutRecordUserSave(merged));
   } catch (e) {
     return jsonResponse(400, {
       error: "layout JSON'a çevrilemedi",
@@ -689,7 +690,7 @@ async function handleHmSiteHomeModuleOrderPatch(request, env) {
   const merged = mergeLayoutPatch(prev, patch, { vitrinOnly: true });
   let raw;
   try {
-    raw = JSON.stringify(merged);
+    raw = JSON.stringify(markLayoutRecordUserSave(merged));
   } catch (e) {
     return jsonResponse(400, {
       error: "layout JSON'a çevrilemedi",

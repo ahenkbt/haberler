@@ -117,6 +117,7 @@ import {
 } from "../lib/hm-corporate-like-theme.js";
 import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "../lib/hm-php-layout-sync.js";
+import { markHmLayoutUserSave } from "../lib/hm-layout-guard.js";
 import {
   collectGundemiOrgHosts,
   provisionGundemiOrgForSiteDomains,
@@ -1564,8 +1565,8 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     // phpTheme yalnızca create veya domain atamasında varsayılanlanır; burada açık gelen değer korunur.
     const withPhp =
       "phpTheme" in inc || "frontend" in inc ? ensurePhpThemeLayoutDefaults(merged) : merged;
-    patch.layoutJson = JSON.stringify(
-      applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(withPhp, inc)),
+    patch.layoutJson = markHmLayoutUserSave(
+      JSON.stringify(applyHmRssNewsPolicyToLayout(mirrorHmLiveMansetLayout(withPhp, inc))),
     );
   } else if ("domain" in b || "domain2" in b || "domain3" in b) {
     // Domain atanınca PHP şablon bayrağı yoksa otomatik işaretle (opt-out hariç).
@@ -3918,6 +3919,7 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
     return;
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
+  raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
   const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw).catch((err: unknown) => ({
     mirrored: false as const,
@@ -4024,6 +4026,7 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
     return;
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
+  raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
   const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw).catch((err: unknown) => ({
     mirrored: false as const,
@@ -4298,6 +4301,7 @@ router.post("/hm/editor/wordpress-template-pages/save", async (req, res): Promis
     return;
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
+  raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
 
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
 
@@ -4365,6 +4369,7 @@ router.patch("/hm/editor/categories/order", async (req, res): Promise<void> => {
     return;
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
+  raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
   res.json({ ok: true, slugs: ordered, layoutJson: raw });
 });
