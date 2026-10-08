@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26 -19 352 352" width="512" height="512"><title>Türk Dünyası Gündemi</title><defs><linearGradient id="bgiturkdunyasi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22a6d4"/><stop offset="1" stop-color="#075a7a"/></linearGradient><clipPath id="cliturkdunyasi"><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z"/></clipPath></defs><path d="M60,0 H240 A60,60 0 0 1 300,60 V202 A60,60 0 0 1 240,262 H122 L64,298 Q58,301 59,295 L68,262 H60 A60,60 0 0 1 0,202 V60 A60,60 0 0 1 60,0 Z" fill="url(#bgiturkdunyasi)"/><g clip-path="url(#cliturkdunyasi)"><defs><radialGradient id="sunTiturkdunyasi" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#f2b705"/></radialGradient></defs>
+<path d="M88.0,150.0 L52.0,150.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M88.3,143.7 L66.4,141.5" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M89.3,137.5 L54.0,130.3" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M90.8,131.4 L69.9,124.9" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M93.0,125.5 L59.9,111.4" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M95.8,119.9 L76.6,109.2" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M99.1,114.6 L69.6,94.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M103.0,109.6 L86.3,95.3" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M107.3,105.1 L82.5,79.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M112.0,101.0 L98.6,83.6" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M117.2,97.4 L98.2,66.8" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M122.7,94.3 L113.0,74.6" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M128.5,91.9 L116.0,58.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M134.5,90.0 L128.9,68.7" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M140.6,88.7 L135.2,53.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M146.9,88.1 L145.7,66.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M153.1,88.1 L155.0,52.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M159.4,88.7 L162.7,67.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M165.5,90.0 L174.6,55.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M171.5,91.9 L179.2,71.2" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M177.3,94.3 L193.2,62.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M182.8,97.4 L194.4,78.7" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M188.0,101.0 L210.0,72.5" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M192.7,105.1 L207.9,89.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M197.0,109.6 L224.4,86.2" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M200.9,114.6 L218.9,102.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M204.2,119.9 L235.7,102.4" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M207.0,125.5 L227.2,116.9" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M209.2,131.4 L243.5,120.7" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M210.7,137.5 L232.3,133.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M211.7,143.7 L247.5,140.1" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<path d="M212.0,150.0 L234.0,150.0" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/>
+<circle cx="150" cy="150" r="54" fill="url(#sunTiturkdunyasi)"/>
+<path d="M-10,196 L46,140 L78,168 L124,112 L168,160 L206,124 L252,170 L282,146 L320,186 V270 H-10 Z" fill="#fff"/>
+<path d="M124,112 L108,130 L124,124 L138,132 Z M206,124 L194,138 L206,134 L216,140 Z" fill="#cfe9f3"/>
+<path d="M-6,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M38,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M46,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M90,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M98,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M142,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M150,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M194,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M202,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M246,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M254,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M298,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M306,238 c0,-16 22,-16 22,0 c0,10 -12,10 -12,2 M350,238 c0,-16 -22,-16 -22,0 c0,10 12,10 12,2" stroke="#075a7a" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M-10,218 H320" stroke="#075a7a" stroke-width="3" opacity=".6"/></g></svg>

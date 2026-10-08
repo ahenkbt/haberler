@@ -21,6 +21,7 @@ import { ensureTurksavLogoOnNeon } from "./hm-turksav-edge.js";
 import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
 import { ensureDunyaSaglikLogoOnNeon } from "./hm-dunyasaglik-edge.js";
 import { SPOR_GUNDEMI_DESCRIPTION, SPOR_GUNDEMI_DISPLAY_NAME, SPOR_GUNDEMI_HOSTS, ensureSporGundemiSiteOnSql } from "./hm-spor-gundemi-edge.js";
+import { NEWSITES25_BINDINGS, ensureNewsites25SiteOnSql, newsites25ForHost, newsites25ForSlug } from "./hm-newsites25-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -133,6 +134,8 @@ export const HM_BRAND_DB_BINDINGS = [
     displayName: SPOR_GUNDEMI_DISPLAY_NAME,
     description: SPOR_GUNDEMI_DESCRIPTION,
   },
+  /** newsites25 (2026-10-08): memur.gundemi.org, turkdunyasi.gundemi.org, world.fix.tc; panel satırı yoksa kenar seed (hm-newsites25-edge.js). */
+  ...NEWSITES25_BINDINGS,
   /** Fix Haber — fix.tc Yenişafak PHP; Neon satırı yoksa kenar seed. */
   {
     domain: "fix.tc",
@@ -1563,6 +1566,19 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
     } catch (err) {
       console.error("[hm-brand-db-ensure] spor.gundemi.org", String(err?.message || err).slice(0, 240));
       return null;
+    }
+  }
+
+  {
+    const ns25 = newsites25ForHost(host) || newsites25ForSlug(binding.slug);
+    if (ns25) {
+      try {
+        const r = await ensureNewsites25SiteOnSql(sql, ns25);
+        return r?.row ? { meta: serializeMetaRow(r.row), action: r.action } : null;
+      } catch (err) {
+        console.error("[hm-brand-db-ensure] newsites25", ns25.slug, String(err?.message || err).slice(0, 240));
+        return null;
+      }
     }
   }
 
