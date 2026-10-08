@@ -145,8 +145,12 @@ export function kamuYerelLogoNeedsRepair(
     const logoUrl = String(layout?.logoUrl ?? "").trim();
     if (!logoUrl || logoUrl.toLowerCase().startsWith("data:image/")) return true;
     if (logoUrl.startsWith("/brand/turkata/") && !logoUrl.includes("turkata-logo")) return true;
-    // Preserve working https:// and relative brand logos even if path ≠ catalog default.
-    if (isUsableKamuYerelLogoUrl(logoUrl)) return false;
+    // Preserve working https:// brand URLs. Relative paths must match catalog ASSETS path
+    // (e.g. .png vs .webp still needs repair on PHP hosts).
+    if (logoUrl.toLowerCase().startsWith("https://") || logoUrl.toLowerCase().startsWith("http://")) {
+      return false;
+    }
+    if (logoUrl === expect.logoPath) return false;
     if (logoUrl !== expect.logoPath) return true;
   } catch {
     return true;
@@ -239,7 +243,11 @@ export function applyKamuYerelLayoutLock(
     : null;
   const preserveNav = isHealthyLiveMergedNav(existingNav);
   const existingLogo = String(existing.logoUrl ?? "").trim();
-  const preserveLogo = isUsableKamuYerelLogoUrl(existingLogo);
+  const preserveLogo =
+    existingLogo.toLowerCase().startsWith("https://") ||
+    existingLogo.toLowerCase().startsWith("http://") ||
+    (isUsableKamuYerelLogoUrl(existingLogo) &&
+      existingLogo === String(canonical.logoUrl ?? "").trim());
   const existingPages = parseExtraPages(existing);
   const existingBody = dahaBodyFromPages(existingPages);
   const existingDahaOk =
