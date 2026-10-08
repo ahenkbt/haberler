@@ -38,6 +38,7 @@ import { handleTurkataRssCoversRepairEdge } from "./hm-turkata-rss-covers-edge.j
 import { handleHmSiteWatchdogEdge, runHmSiteWatchdog } from "./hm-site-watchdog.js";
 import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import { handleAdminPanelStatusEdge } from "./hm-admin-panel-status-edge.js";
+import { handleAdminPanelSessionEdge } from "./hm-admin-login-edge.js";
 import { isHmAdminPanelHeavyApiPath, wakeApiContainerBackground } from "./hm-admin-panel-wake.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
 import { isTukavHost, rewriteSpaShellOgForTukav } from "./tukav-brand-edge.js";
@@ -3066,6 +3067,14 @@ export default {
       if (live) return live;
     } catch (err) {
       console.error("[edge-healthz]", String(err?.message || err).slice(0, 120));
+    }
+
+    // Admin login at the edge: cold/rolling container must not block /admin/giris.
+    try {
+      const adminLogin = await handleAdminPanelSessionEdge(request, env, ctx);
+      if (adminLogin) return adminLogin;
+    } catch (err) {
+      console.error("[admin-login-edge]", String(err?.message || err).slice(0, 120));
     }
 
     // Panel oturum durumu — Neon kenardan; soğuk Container «Oturum doğrulanıyor» asılı kalmasın.
