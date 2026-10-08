@@ -211,3 +211,41 @@ export function siteKindLayoutDefaults(kind: HmSiteKind, corporateTheme?: unknow
   }
   return { hmSiteKind: "news", hmVitrinTheme: "yenisafak", phpTheme: true, frontend: "php" };
 }
+
+/** İki etiketli kamu sonekleri (bilgi@<kayıtlı-alan> için). */
+const MULTI_LABEL_SUFFIXES = new Set([
+  "com.tr", "net.tr", "org.tr", "gov.tr", "edu.tr", "k12.tr", "gen.tr", "bel.tr", "av.tr", "dr.tr",
+  "web.tr", "biz.tr", "info.tr", "tv.tr", "name.tr", "pol.tr", "tsk.tr", "bbs.tr", "tel.tr", "kep.tr",
+  "nc.tr", "co.uk", "org.uk", "com.cy", "net.cy", "org.cy", "com.de",
+]);
+
+/**
+ * Yeni sitenin varsayılan editör hesabı (kural, 2026-10-08):
+ *  - alt alan adı siteler → <alt>@<üst>  (kibris.gundemi.org → kibris@gundemi.org)
+ *  - normal domain        → bilgi@<domain> (ornekhaber.com → bilgi@ornekhaber.com)
+ * Kullanıcı adı = e-posta, şifre = kullanıcı adı.
+ */
+export function defaultEditorLoginForHost(raw: unknown): { email: string; username: string; password: string } | null {
+  const host = normalizeAliasHost(raw);
+  if (!host || !host.includes(".")) return null;
+  const labels = host.split(".").filter(Boolean);
+  if (labels.length < 2 || labels.some((l) => !/^[a-z0-9-]+$/.test(l))) return null;
+  const lastTwo = labels.slice(-2).join(".");
+  const registrableLen = MULTI_LABEL_SUFFIXES.has(lastTwo) ? 3 : 2;
+  let email: string;
+  // Aynı kural: cloudflare/hm-site-mail-convention.js conventionalAddressForHost (a.b.ornek.com → a.b@ornek.com).
+  if (labels.length > registrableLen) {
+    email = `${labels.slice(0, -registrableLen).join(".")}@${labels.slice(-registrableLen).join(".")}`;
+  } else if (labels.length === registrableLen) {
+    email = `bilgi@${host}`;
+  } else {
+    return null;
+  }
+  return { email, username: email, password: email };
+}
+
+/** Sitenin canonical (ilk) domaininden varsayılan editör hesabı. */
+export function defaultEditorLoginForSite(triad: Partial<HmDomainTriad>) {
+  const first = [triad.domain, triad.domain2, triad.domain3].find((h) => normalizeAliasHost(h));
+  return first ? defaultEditorLoginForHost(first) : null;
+}
