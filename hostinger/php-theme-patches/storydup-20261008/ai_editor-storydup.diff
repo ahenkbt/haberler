@@ -1,0 +1,30 @@
+--- aied/ai_editor.py.orig	2026-10-08 21:48:24.874430568 +0300
++++ aied/ai_editor.py	2026-10-08 21:48:24.886430542 +0300
+@@ -564,6 +564,17 @@
+             hidden_slugs = {r[0] for r in con.execute("SELECT public_slug FROM hm_site_content_hidden WHERE site_id=%s AND public_slug LIKE %s", (cn.site_id, "rss-%"))}
+         except Exception as ex:
+             log("  [%s] site overrides unreadable (%s)" % (cn.site_slug, ex))
++        # story dedupe 2026-10-08 (storydup job): only the story variant assigned to THIS site is a candidate; variants of a
++        # story the site already lists (its editor news, its own AI article or another source's copy) are never picked.
++        dup_slugs = set()
++        try:
++            dup_slugs = {r[0] for r in con.execute("SELECT public_slug FROM hm_story_dup_hidden WHERE site_id=%s AND public_slug LIKE %s", (cn.site_id, "rss-%"))}
++        except Exception as ex:
++            log("  [%s] story dedupe table unreadable (%s)" % (cn.site_slug, str(ex)[:80]))
++            try:
++                con.rollback()
++            except Exception:
++                pass
+         scored = []
+         for it in pool:
+             if it["id"] in used or (cn.exclusive_group and it["id"] in group_used[cn.exclusive_group]):
+@@ -574,6 +585,9 @@
+             if ("rss-%d" % it["id"]) in hidden_slugs:
+                 sst["site_hidden"] = sst.get("site_hidden", 0) + 1
+                 continue
++            if ("rss-%d" % it["id"]) in dup_slugs:
++                sst["story_dup"] = sst.get("story_dup", 0) + 1
++                continue
+             if cn.exclusive_group and clusters.get(it["id"], {}).get("cluster") in group_clusters[cn.exclusive_group]:
+                 continue  # another site of the same group already has this event
+             if (it["category_slug"] or "") in cn.exclude_categories:

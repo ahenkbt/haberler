@@ -1,0 +1,97 @@
+--- deploy/Repository.php.orig	2026-10-08 21:47:36.542536517 +0300
++++ deploy/Repository.php	2026-10-08 21:54:03.225696405 +0300
+@@ -194,6 +194,9 @@
+         if ($maxAgeDays > 0) {
+             $sql .= ' AND published_at > now() - make_interval(days => ' . min(3650, $maxAgeDays) . ')';
+         }
++        if ($this->dupOn()) { // story dedupe 2026-10-08: an older AI article of a story the site already shows
++            $sql .= ' AND NOT EXISTS (SELECT 1 FROM hm_story_dup_hidden dh WHERE dh.site_id = :site AND dh.public_slug = hm_ai_manset_v.public_slug)';
++        }
+         $sql .= ' ORDER BY published_at DESC, manset_rank ASC NULLS LAST LIMIT :lim';
+         try {
+             $stmt = $this->pdo->prepare($sql);
+@@ -1148,6 +1151,12 @@
+         $offNews = $offList !== '' ? " AND COALESCE(c.slug, '') NOT IN ({$offList})" : '';
+         $pasifRss = $this->currentSite > 0 ? " AND NOT EXISTS (SELECT 1 FROM hm_site_content_hidden h WHERE h.site_id = :site AND h.public_slug = 'rss-' || portal_rss_items.id::text)" : '';
+         $pasifNews = $this->currentSite > 0 ? " AND NOT EXISTS (SELECT 1 FROM hm_site_content_hidden h WHERE h.site_id = :site AND h.public_slug = n.slug AND (h.title IN (n.title, COALESCE(o.title, n.title)) OR (h.kind = 'news' AND h.ref_id = n.id)))" : '';
++        // story dedupe 2026-10-08 (storydup job): duplicate variants of a story already listed on this site (hm_story_dup_hidden)
++        // are never listed; editor/manual news is never suppressed. Story pages stay reachable.
++        if ($this->dupOn()) {
++            $pasifRss .= " AND NOT EXISTS (SELECT 1 FROM hm_story_dup_hidden dh WHERE dh.site_id = :site AND dh.public_slug = 'rss-' || portal_rss_items.id::text)";
++            $pasifNews .= " AND (n.is_editor_manual OR COALESCE(n.rss_source_url, '') = '' OR NOT EXISTS (SELECT 1 FROM hm_story_dup_hidden dh WHERE dh.site_id = :site AND dh.public_slug = n.slug))";
++        }
+         return "SELECT * FROM (
+             SELECT 'rss-' || id::text AS public_slug, title, spot, image_url,
+                    COALESCE(source_name, '') AS credit, COALESCE(link, '') AS source_url,
+@@ -1179,8 +1188,62 @@
+      */
+     private function mapList(array $rows): array
+     {
+-        return Dedupe::filter($this->dropBlocked(array_map([$this, 'mapStory'], $rows)));
++        return Dedupe::filter($this->dropDup($this->dropBlocked(array_map([$this, 'mapStory'], $rows))));
++    }
++
++    // story dedupe 2026-10-08 (storydup job) ------------------------------------------------------------
++    /** @var array{on: bool, s: array<string, true>}|null */
++    private ?array $dup = null;
++
++    /** Per-site duplicate-variant slugs (hm_story_dup_hidden), APCu 60 s. STORY_DUP_DISABLED=1 = off. */
++    private function dupState(): array
++    {
++        if ($this->dup !== null) {
++            return $this->dup;
++        }
++        $this->dup = ['on' => false, 's' => []];
++        if ($this->currentSite <= 0 || getenv('STORY_DUP_DISABLED') === '1') {
++            return $this->dup;
++        }
++        $k = 'storydup:' . $this->currentSite;
++        if (function_exists('apcu_fetch')) {
++            $v = apcu_fetch($k, $ok);
++            if ($ok && is_array($v)) {
++                return $this->dup = $v;
++            }
++        }
++        try {
++            $stmt = $this->pdo->prepare('SELECT public_slug FROM hm_story_dup_hidden WHERE site_id = :site');
++            $stmt->execute(['site' => $this->currentSite]);
++            $set = [];
++            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $slug) {
++                $set[(string) $slug] = true;
++            }
++            $this->dup = ['on' => true, 's' => $set];
++        } catch (\PDOException) {
++            $this->dup = ['on' => false, 's' => []]; // table missing (dev DB): no effect
++        }
++        if (function_exists('apcu_store')) {
++            apcu_store($k, $this->dup, 60);
++        }
++        return $this->dup;
++    }
++
++    private function dupOn(): bool
++    {
++        return $this->dupState()['on'];
++    }
++
++    /** @param list<array<string, mixed>> $items @return list<array<string, mixed>> */
++    private function dropDup(array $items): array
++    {
++        $set = $this->dupState()['s'];
++        if ($set === []) {
++            return $items;
++        }
++        return array_values(array_filter($items, static fn (array $s): bool => !isset($set[(string) ($s['slug'] ?? '')])));
+     }
++    // ---------------------------------------------------------------------------------------------------
+ 
+     /** @var array<string, array<int, int>> */
+     private array $hiddenCache = [];
+@@ -1191,6 +1254,7 @@
+     {
+         $this->currentSite = $siteId;
+         $this->block = null;
++        $this->dup = null; // story dedupe 2026-10-08
+         $this->catOff = null;
+     }
+ 
