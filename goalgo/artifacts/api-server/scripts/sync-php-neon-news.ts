@@ -98,14 +98,16 @@ async function resolvePhpSiteId(main: pg.Pool, news: pg.Pool, workerSiteId: numb
   return workerSiteId;
 }
 
-async function countForSite(main: pg.Pool, siteId: number) {
+async function countForSite(main: pg.Pool, siteId: number, phpSiteId?: number) {
+  const ids = [...new Set([siteId, phpSiteId].filter((n): n is number => Number.isFinite(n) && (n as number) > 0))];
   const [news, mak, auth] = await Promise.all([
     main.query(
       `SELECT count(*)::int AS c FROM news
-       WHERE site_id = $1 OR (site_only = true AND owner_site_id = $1)`,
-      [siteId],
+       WHERE site_id = ANY($1::int[])
+          OR (site_only = true AND owner_site_id = ANY($1::int[]))`,
+      [ids],
     ),
-    main.query(`SELECT count(*)::int AS c FROM hm_makaleler WHERE site_id = $1`, [siteId]),
+    main.query(`SELECT count(*)::int AS c FROM hm_makaleler WHERE site_id = ANY($1::int[])`, [ids]),
     main.query(`SELECT count(*)::int AS c FROM authors WHERE hm_site_id = $1`, [siteId]),
   ]);
   return {
@@ -113,6 +115,56 @@ async function countForSite(main: pg.Pool, siteId: number) {
     makaleler: mak.rows[0]?.c ?? 0,
     authors: auth.rows[0]?.c ?? 0,
   };
+}
+
+/** Rebind orphan news written under PHP site id (230) onto panel id (1132). */
+async function rebindOrphanNewsSiteIds(
+  main: pg.Pool,
+  workerSiteId: number,
+  phpSiteId: number,
+  siteSlug: string | null,
+): Promise<number> {
+  if (!phpSiteId || phpSiteId === workerSiteId) return 0;
+  const atPhp = await main.query(`SELECT lower(slug) AS slug FROM hm_news_sites WHERE id = $1 LIMIT 1`, [
+    phpSiteId,
+  ]);
+  const phpSlug = atPhp.rows[0]?.slug ? String(atPhp.rows[0].slug) : null;
+  const wantSlug = String(siteSlug || "")
+    .trim()
+    .toLowerCase();
+  // Full rebind only when main has no row at phpSiteId, or that row is the same site slug.
+  const safeFull = !phpSlug || (wantSlug && phpSlug === wantSlug);
+  if (safeFull) {
+    const r = await main.query(
+      `UPDATE news
+       SET site_id = $1,
+           owner_site_id = CASE WHEN owner_site_id = $2 THEN $1 ELSE owner_site_id END,
+           updated_at = NOW()
+       WHERE site_id = $2
+       RETURNING id`,
+      [workerSiteId, phpSiteId],
+    );
+    return r.rowCount ?? 0;
+  }
+  // Different site owns phpSiteId on panel — only move Cumha/kamu-yerel tagged rows.
+  const r = await main.query(
+    `UPDATE news
+     SET site_id = $1,
+         owner_site_id = CASE WHEN owner_site_id = $2 THEN $1 ELSE owner_site_id END,
+         updated_at = NOW()
+     WHERE site_id = $2
+       AND (
+         'kamu-yerel-cumha' = ANY(tags)
+         OR EXISTS (
+           SELECT 1 FROM unnest(tags) t
+           WHERE lower(t) LIKE '%turkatahaber%' OR lower(t) LIKE '%kamu-yerel%'
+         )
+         OR coalesce(rss_source_url, '') ILIKE '%cumha.com.tr%'
+       )
+     RETURNING id`,
+    [workerSiteId, phpSiteId],
+  );
+  return r.rowCount ?? 0;
 }
 
 async function syncLayoutJson(
@@ -200,17 +252,25 @@ async function syncSiteBatch(
     else if (r?.reason) out.errors.push(`author ${row.id}: ${r.reason}`);
   }
 
+  // Include legacy PHP-id orphans (site_id=230) when panel id is 1132 — Cumha RSS
+  // historically wrote NEWS_DB_READ=news targets before panel rebind.
   const news = await mainSql`
     SELECT n.*, c.slug AS category_slug
     FROM news n
     LEFT JOIN categories c ON c.id = n.category_id
     WHERE n.site_id = ${workerSiteId}
-       OR (n.site_only = true AND n.owner_site_id = ${workerSiteId})
+       OR n.site_id = ${phpSiteId}
+       OR (n.site_only = true AND n.owner_site_id IN (${workerSiteId}, ${phpSiteId}))
     ORDER BY n.updated_at DESC NULLS LAST, n.id DESC
     LIMIT ${batch} OFFSET ${offset}
   `;
   for (const row of news) {
-    const r = await mirror("news", "upsert", { ...row, site_slug: slug, site_id: workerSiteId });
+    const r = await mirror("news", "upsert", {
+      ...row,
+      site_slug: slug,
+      site_id: workerSiteId,
+      category_slug: row.category_slug,
+    });
     if (r?.mirrored) out.news += 1;
     else if (r?.reason) out.errors.push(`news ${row.id}: ${r.reason}`);
   }
@@ -314,9 +374,15 @@ async function runSite(
       .trim()
       .toLowerCase() || null;
   const phpSiteId = await resolvePhpSiteId(mainPool, newsPool, workerSiteId);
-  const counts = await countForSite(mainPool, workerSiteId);
+  const orphanRebound = opts.dryRun
+    ? 0
+    : await rebindOrphanNewsSiteIds(mainPool, workerSiteId, phpSiteId, slug);
+  if (orphanRebound > 0) {
+    console.log("[sync-php-neon-news] rebound orphan news", { workerSiteId, phpSiteId, orphanRebound });
+  }
+  const counts = await countForSite(mainPool, workerSiteId, phpSiteId);
   console.log("[sync-php-neon-news] site", { workerSiteId, phpSiteId, slug, counts, dryRun: opts.dryRun });
-  if (opts.dryRun) return { workerSiteId, phpSiteId, slug, counts, synced: null };
+  if (opts.dryRun) return { workerSiteId, phpSiteId, slug, counts, synced: null, orphanRebound };
 
   const { edgeMirrorNewsDbWrite } = await import("../../../../cloudflare/hm-php-news-dual-write.js");
   const mirror = (table: string, op: string, row: Record<string, unknown>) =>
@@ -334,6 +400,7 @@ async function runSite(
       phpSiteId,
       slug,
       counts,
+      orphanRebound,
       synced: { authors: 0, news: 0, makaleler: 0, categories, layoutMirrored: layoutMirror.mirrored },
     };
   }

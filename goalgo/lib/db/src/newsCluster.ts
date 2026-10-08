@@ -1,10 +1,13 @@
-import { eq, getTableColumns, type SQL } from "drizzle-orm";
+import { and, eq, getTableColumns, isNull, type SQL } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { db } from "./connection";
 import { isNewsDatabaseConfigured, newsDb } from "./newsDb";
 import * as schema from "./schema";
 import { hmNewsSitesTable } from "./schema/hm";
+import { newsTable } from "./schema/news";
+import { categoriesTable } from "./schema/categories";
+import { phpSiteIdFromWorker } from "./phpSiteIdMap";
 
 export type NewsDbReadMode = "main" | "news";
 export type NewsDbWriteMode = "main" | "news" | "dual";
@@ -106,11 +109,92 @@ function isUniqueViolation(err: unknown): boolean {
   return typeof err === "object" && err !== null && "code" in err && (err as { code: string }).code === "23505";
 }
 
+async function resolvePhpCategoryIdForMirror(
+  cluster: NewsDatabase,
+  phpSiteId: number | null,
+  workerCategoryId: number | null | undefined,
+): Promise<number | null> {
+  const catId = Number(workerCategoryId);
+  if (!Number.isFinite(catId) || catId <= 0) return null;
+  const [workerCat] = await db
+    .select({ slug: categoriesTable.slug })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.id, catId))
+    .limit(1);
+  const slug = String(workerCat?.slug ?? "")
+    .trim()
+    .toLowerCase();
+  if (!slug) return catId;
+  if (phpSiteId) {
+    const [scoped] = await cluster
+      .select({ id: categoriesTable.id })
+      .from(categoriesTable)
+      .where(and(eq(categoriesTable.slug, slug), eq(categoriesTable.exclusiveSiteId, phpSiteId)))
+      .limit(1);
+    if (scoped?.id) return Number(scoped.id);
+  }
+  const [global] = await cluster
+    .select({ id: categoriesTable.id })
+    .from(categoriesTable)
+    .where(and(eq(categoriesTable.slug, slug), isNull(categoriesTable.exclusiveSiteId)))
+    .limit(1);
+  if (global?.id) return Number(global.id);
+  const [any] = await cluster
+    .select({ id: categoriesTable.id })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.slug, slug))
+    .limit(1);
+  return any?.id != null ? Number(any.id) : null;
+}
+
+/**
+ * Remap Worker site/category ids → PHP twilight-pine before mirror insert.
+ * turkatahaber 1132→230; raw id copy leaves PHP category pages empty.
+ */
+async function remapNewsRowForPhpMirror(
+  cluster: NewsDatabase,
+  row: typeof newsTable.$inferSelect,
+): Promise<typeof newsTable.$inferSelect> {
+  const workerSiteId = row.siteId != null ? Number(row.siteId) : null;
+  let phpSiteId = phpSiteIdFromWorker(workerSiteId);
+  if (workerSiteId && phpSiteId === workerSiteId) {
+    const [w] = await db
+      .select({ slug: hmNewsSitesTable.slug })
+      .from(hmNewsSitesTable)
+      .where(eq(hmNewsSitesTable.id, workerSiteId))
+      .limit(1);
+    const slug = String(w?.slug ?? "")
+      .trim()
+      .toLowerCase();
+    if (slug) {
+      const [php] = await cluster
+        .select({ id: hmNewsSitesTable.id })
+        .from(hmNewsSitesTable)
+        .where(eq(hmNewsSitesTable.slug, slug))
+        .limit(1);
+      if (php?.id) phpSiteId = Number(php.id);
+    }
+  }
+  const categoryId = await resolvePhpCategoryIdForMirror(cluster, phpSiteId, row.categoryId);
+  const ownerWorker = row.ownerSiteId != null ? Number(row.ownerSiteId) : null;
+  const ownerPhp = phpSiteIdFromWorker(ownerWorker) ?? phpSiteId;
+  return {
+    ...row,
+    siteId: phpSiteId,
+    ownerSiteId: ownerPhp,
+    categoryId,
+  };
+}
+
 async function mirrorRowsToNewsDb<T extends PgTable>(table: T, rows: T["$inferSelect"][]): Promise<void> {
   if (!isNewsDatabaseConfigured || !newsDb || rows.length === 0) return;
   const cluster = newsDb as NewsDatabase;
   const isHmNewsSites = table === (hmNewsSitesTable as unknown as T);
-  for (const row of rows) {
+  const isNews = table === (newsTable as unknown as T);
+  for (const raw of rows) {
+    const row = isNews
+      ? ((await remapNewsRowForPhpMirror(cluster, raw as typeof newsTable.$inferSelect)) as T["$inferSelect"])
+      : raw;
     try {
       await cluster.insert(table).values(row as T["$inferInsert"]);
     } catch (err) {
@@ -151,6 +235,30 @@ async function mirrorRowsToNewsDb<T extends PgTable>(table: T, rows: T["$inferSe
             await cluster.insert(hmNewsSitesTable).values(rest as typeof hmNewsSitesTable.$inferInsert);
           }
           continue;
+        }
+      }
+
+      // news: same Worker id may already exist under PHP site_id — upsert by site+slug too.
+      if (isNews) {
+        const newsRow = row as typeof newsTable.$inferSelect;
+        const siteId = newsRow.siteId != null ? Number(newsRow.siteId) : null;
+        const slug = String(newsRow.slug ?? "")
+          .trim()
+          .toLowerCase()
+          .replace(/^\/+|\/+$/g, "");
+        if (siteId && slug) {
+          const bySlug = await cluster
+            .select({ id: newsTable.id })
+            .from(newsTable)
+            .where(and(eq(newsTable.siteId, siteId), eq(newsTable.slug, newsRow.slug)))
+            .limit(1);
+          if (bySlug[0]?.id) {
+            await cluster
+              .update(newsTable)
+              .set(rest as unknown as Partial<typeof newsTable.$inferInsert>)
+              .where(eq(newsTable.id, bySlug[0].id));
+            continue;
+          }
         }
       }
 

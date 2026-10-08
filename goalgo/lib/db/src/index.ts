@@ -27,6 +27,7 @@ export {
   type NewsDbReadMode,
   type NewsDbWriteMode,
 } from "./newsCluster";
+export { WORKER_TO_PHP_SITE_ID, phpSiteIdFromWorker } from "./phpSiteIdMap";
 export {
   getYektubeDbForRead,
   getYektubeDbInstance,

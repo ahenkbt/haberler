@@ -1,5 +1,5 @@
 import { and, eq, isNull, or, type SQL } from "drizzle-orm";
-import { categoriesTable, getNewsDbForRead, hmNewsSitesTable } from "@workspace/db";
+import { categoriesTable, db, hmNewsSitesTable } from "@workspace/db";
 import { normalizeNewsCategorySlug } from "./categorySort";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG, isHmOptInNewsCategorySlug } from "./hm-global-news-category.js";
 import { HM_STANDARD_NEWS_CATEGORIES } from "./hm-standard-news-categories.js";
@@ -163,7 +163,8 @@ export async function resolveHmEditorCategoryId(
   if (!slug) return null;
   if (opts?.siteExclusiveOnly && slug === HM_GLOBAL_NEWS_CATEGORY_SLUG) return null;
 
-  const [siteRow] = await getNewsDbForRead()
+  // Panel Neon only — NEWS_DB_READ=news would look up PHP ids (230) for Worker sites (1132).
+  const [siteRow] = await db
     .select({ slug: hmNewsSitesTable.slug })
     .from(hmNewsSitesTable)
     .where(eq(hmNewsSitesTable.id, siteId))
@@ -174,7 +175,7 @@ export async function resolveHmEditorCategoryId(
   const slugCandidates = [...new Set([slug, cleanSlug].filter(Boolean))];
 
   for (const candidate of slugCandidates) {
-    const [siteCat] = await getNewsDbForRead()
+    const [siteCat] = await db
       .select({ id: categoriesTable.id })
       .from(categoriesTable)
       .where(and(eq(categoriesTable.slug, candidate), eq(categoriesTable.exclusiveSiteId, siteId)))
@@ -185,7 +186,7 @@ export async function resolveHmEditorCategoryId(
   if (opts?.siteExclusiveOnly) return null;
 
   for (const candidate of slugCandidates) {
-    const [globalCat] = await getNewsDbForRead()
+    const [globalCat] = await db
       .select({ id: categoriesTable.id })
       .from(categoriesTable)
       .where(and(eq(categoriesTable.slug, candidate), isNull(categoriesTable.exclusiveSiteId)))

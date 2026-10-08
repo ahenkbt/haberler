@@ -66,14 +66,19 @@ async function main() {
   if (!shouldRunStep("SKIP_PHP_SYNC")) return;
   if (!process.env.NEWS_DATABASE_URL?.trim()) return;
 
-  const siteIds = new Set<number>();
-  const ensureSites = summary.ensure as { sites?: Array<{ siteId: number | null }> };
+  // Always sync by slug: SKIP_ENSURE leaves siteIds empty, and --site-id=230 (PHP)
+  // reads the wrong panel row (Worker id is 1132 for turkatahaber).
+  const slugs = new Set<string>(["turkatahaber", "yerelnet"]);
+  const ensureSites = summary.ensure as { sites?: Array<{ slug?: string | null }> };
   for (const s of ensureSites.sites ?? []) {
-    if (s.siteId) siteIds.add(s.siteId);
+    const slug = String(s.slug ?? "")
+      .trim()
+      .toLowerCase();
+    if (slug) slugs.add(slug);
   }
   const { spawnSync } = await import("node:child_process");
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-  for (const siteId of siteIds) {
+  for (const siteSlug of slugs) {
     const sync = spawnSync(
       process.execPath,
       [
@@ -81,7 +86,7 @@ async function main() {
         "tsx",
         path.join(scriptDir, "sync-php-neon-news.ts"),
         "--apply",
-        `--site-id=${siteId}`,
+        `--site-slug=${siteSlug}`,
         "--batch=200",
       ],
       { cwd: scriptDir, stdio: "inherit" },
