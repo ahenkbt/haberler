@@ -1356,11 +1356,13 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
 
     const freshSite = (await getActiveHmNewsSiteBySlugCompat(slug)) ?? site;
 
-    const gundemiProvision = await maybeProvisionGundemiOrg({
+    const domainTriad = {
       domain: freshSite.domain ?? domain,
       domain2: freshSite.domain2 ?? domain2,
       domain3: freshSite.domain3 ?? domain3,
-    });
+    };
+    const gundemiProvision = await maybeProvisionGundemiOrg(domainTriad);
+    const customApexProvision = await maybeProvisionCustomPhpApex(domainTriad);
 
     res.status(201).json({
       site: freshSite,
@@ -1368,6 +1370,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         ? { id: editor.id, email: editor.email, displayName: editor.displayName, createdAt: editor.createdAt }
         : null,
       ...(gundemiProvision ? { gundemiProvision } : {}),
+      ...(customApexProvision ? { customApexProvision } : {}),
     });
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);

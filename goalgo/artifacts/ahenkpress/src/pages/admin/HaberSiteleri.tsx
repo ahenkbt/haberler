@@ -19,6 +19,7 @@ import {
   wakeAdminApiContainer,
 } from "@/lib/apiBase";
 import { collectGundemiOrgDomainsFromForm } from "@/lib/gundemiOrgDomain";
+import { HM_PLATFORM_APEX_HELP, suggestHmPlatformSubdomains } from "@/lib/hmPlatformApex";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
 import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
@@ -271,6 +272,11 @@ export default function HaberSiteleri() {
   const gundemiHostsInForm = useMemo(
     () => collectGundemiOrgDomainsFromForm(form),
     [form.domain, form.domain2, form.domain3],
+  );
+
+  const platformSubdomains = useMemo(
+    () => suggestHmPlatformSubdomains(form.slug),
+    [form.slug],
   );
 
   /** Aynı e-posta birden fazla sitede aktif — VKD+KH karışıklığı uyarısı */
@@ -712,6 +718,9 @@ export default function HaberSiteleri() {
                 ) : null}
                 <p className="mt-1 text-xs text-gray-500">
                   Slug portal yoludur: <code>/tr/slug</code>. Domain alanlarına çıplak alan adını yazın.
+                  Varsayılan platform önerileri:{" "}
+                  <code className="rounded bg-gray-100 px-1">{platformSubdomains.fixTc}</code>,{" "}
+                  <code className="rounded bg-gray-100 px-1">{platformSubdomains.gundemiOrg}</code>.
                 </p>
               </div>
               {editingId ? (
@@ -752,6 +761,11 @@ export default function HaberSiteleri() {
                   <Input value={form.domain3} onChange={(e) => update("domain3", e.target.value)} placeholder="alternatif.com" />
                 </div>
               </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-[11px] leading-relaxed text-emerald-950">
+                <p className="font-semibold text-emerald-900">Domain 2 / 3 otomatik aktivasyon</p>
+                <p className="mt-1">{HM_PLATFORM_APEX_HELP}</p>
+              </div>
+
               {gundemiHostsInForm.length > 0 ? (
                 <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-[11px] leading-relaxed text-sky-950">
                   <p className="font-semibold text-sky-900">*.gundemi.org otomatik açılış</p>

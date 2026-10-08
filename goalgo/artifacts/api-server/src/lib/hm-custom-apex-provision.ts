@@ -10,8 +10,16 @@
 
 import { GUNDEMI_PHP_ORIGIN_IP } from "./hm-gundemi-regional-sites.js";
 import { isGundemiOrgManagedHost, normalizeGundemiHostname } from "./hm-gundemi-provision.js";
+import { syncTraefikDynamicForCustomApexZone, type TraefikSyncResult } from "./hm-vps-traefik-sync.js";
 
 const CF_API = "https://api.cloudflare.com/client/v4";
+const WORKER_SCRIPT = "haberler";
+
+/** Marka statik dosya öneki (Worker ASSETS) — wrangler ile uyumlu. */
+const CUSTOM_APEX_BRAND_ASSET_PREFIX: Record<string, string> = {
+  "fix.tc": "fix",
+  "sosyalhizmetler.tr": "sh",
+};
 
 export type CustomApexDnsAction =
   | "ok"
@@ -32,12 +40,86 @@ export type CustomApexDnsResult = {
   code?: number;
 };
 
+export type CustomApexRouteAction =
+  | "ok"
+  | "created"
+  | "rebound"
+  | "skipped"
+  | "error"
+  | "no_token"
+  | "no_zone";
+
+export type CustomApexRouteResult = {
+  action: CustomApexRouteAction;
+  zone: string;
+  pattern: string;
+  message?: string;
+};
+
+export type CustomApexWorkerDomainAction =
+  | "ok"
+  | "skipped"
+  | "error"
+  | "no_token"
+  | "external_dns";
+
+export type CustomApexWorkerDomainResult = {
+  action: CustomApexWorkerDomainAction;
+  hostname: string;
+  message?: string;
+};
+
 export type CustomApexProvisionReport = {
   originIp: string;
   zones: string[];
   dns: CustomApexDnsResult[];
+  routes: CustomApexRouteResult[];
+  workerDomains: CustomApexWorkerDomainResult[];
+  traefik: TraefikSyncResult[];
   tokenPresent: boolean;
 };
+
+const PANEL_PATH_SUFFIXES = [
+  "editor*",
+  "api/*",
+  "admin*",
+  "panel*",
+  "haber-merkezi*",
+  "assets/*",
+  "sw.js",
+  "llms.txt",
+  "ai.txt",
+  "manifest.json",
+  "yazar/giris*",
+  "koseyazari/giris*",
+  "yazar/sifre*",
+  "koseyazari/sifre*",
+  "yazar/haber*",
+  "koseyazari/haber*",
+  "tr/*",
+  "hm/*",
+] as const;
+
+/** Panel/API yolları — public `/` PHP origin (fix.tc modeli). Catch-all YOK. */
+export function customApexPanelWorkerRoutePatterns(
+  zone: string,
+  opts?: { brandAssetPrefix?: string | null },
+): string[] {
+  const z = String(zone || "")
+    .trim()
+    .toLowerCase();
+  if (!z) return [];
+  const prefix = opts?.brandAssetPrefix ?? CUSTOM_APEX_BRAND_ASSET_PREFIX[z] ?? null;
+  const suffixes = prefix ? [...PANEL_PATH_SUFFIXES, `${prefix}/*`] : [...PANEL_PATH_SUFFIXES];
+  const hosts = [z, `www.${z}`];
+  const out: string[] = [];
+  for (const host of hosts) {
+    for (const suffix of suffixes) {
+      out.push(`${host}/${suffix}`);
+    }
+  }
+  return out;
+}
 
 function cfTokens(): string[] {
   const raw = [
@@ -219,6 +301,101 @@ export function resetCustomApexProvisionCaches(): void {
   zoneIdByName.clear();
 }
 
+async function ensureCustomApexPanelRoutesForZone(zone: string): Promise<CustomApexRouteResult[]> {
+  const results: CustomApexRouteResult[] = [];
+  const tokens = cfTokens();
+  if (!tokens.length) {
+    for (const pattern of customApexPanelWorkerRoutePatterns(zone)) {
+      results.push({ action: "no_token", zone, pattern, message: "CLOUDFLARE_API_TOKEN missing" });
+    }
+    return results;
+  }
+  const zoneId = await resolveZoneId(zone);
+  if (!zoneId) {
+    for (const pattern of customApexPanelWorkerRoutePatterns(zone)) {
+      results.push({
+        action: "no_zone",
+        zone,
+        pattern,
+        message: `zone ${zone} not in Cloudflare account`,
+      });
+    }
+    return results;
+  }
+
+  const list = await cfFetch(`/zones/${zoneId}/workers/routes`);
+  const existing = Array.isArray(list.json.result)
+    ? (list.json.result as Array<{ id?: string; pattern?: string; script?: string }>)
+    : [];
+  const byPattern = new Map(existing.map((r) => [String(r.pattern || ""), r]));
+
+  for (const pattern of customApexPanelWorkerRoutePatterns(zone)) {
+    const row = byPattern.get(pattern);
+    if (row?.script === WORKER_SCRIPT) {
+      results.push({ action: "ok", zone, pattern });
+      continue;
+    }
+    if (row?.id) {
+      const r = await cfMutate(`/zones/${zoneId}/workers/routes/${row.id}`, {
+        method: "PUT",
+        body: { pattern, script: WORKER_SCRIPT },
+      });
+      results.push(
+        r.ok
+          ? { action: "rebound", zone, pattern }
+          : {
+              action: "error",
+              zone,
+              pattern,
+              message: r.json.errors?.[0]?.message || `HTTP ${r.status}`,
+            },
+      );
+      continue;
+    }
+    const r = await cfMutate(`/zones/${zoneId}/workers/routes`, {
+      method: "POST",
+      body: { pattern, script: WORKER_SCRIPT },
+    });
+    results.push(
+      r.ok
+        ? { action: "created", zone, pattern }
+        : {
+            action: "error",
+            zone,
+            pattern,
+            message: r.json.errors?.[0]?.message || `HTTP ${r.status}`,
+          },
+    );
+  }
+  return results;
+}
+
+async function ensureWorkerCustomDomain(hostname: string): Promise<CustomApexWorkerDomainResult> {
+  const host = normalizeGundemiHostname(hostname);
+  if (!host) return { action: "skipped", hostname: String(hostname || ""), message: "empty_host" };
+  const tokens = cfTokens();
+  if (!tokens.length) {
+    return { action: "no_token", hostname: host, message: "CLOUDFLARE_API_TOKEN missing" };
+  }
+  const account = cfAccountId();
+  const r = await cfMutate(`/accounts/${account}/workers/domains`, {
+    method: "PUT",
+    body: { hostname: host, service: WORKER_SCRIPT, environment: "production" },
+  });
+  const err = r.json.errors?.[0];
+  if (!r.ok && err?.code === 100117) {
+    return { action: "external_dns", hostname: host, message: String(err.message || "external_dns") };
+  }
+  if (!r.ok) {
+    return {
+      action: "error",
+      hostname: host,
+      message: err?.message || `HTTP ${r.status}`,
+    };
+  }
+  return { action: "ok", hostname: host };
+}
+
 export async function provisionCustomPhpApexForSiteDomains(input: {
   domain?: string | null;
   domain2?: string | null;
@@ -231,6 +408,9 @@ export async function provisionCustomPhpApexForSiteDomains(input: {
     originIp: ip,
     zones,
     dns: [],
+    routes: [],
+    workerDomains: [],
+    traefik: [],
     tokenPresent,
   };
   if (zones.length === 0) return report;
@@ -250,6 +430,31 @@ export async function provisionCustomPhpApexForSiteDomains(input: {
           message,
         });
       }
+    }
+    try {
+      report.routes.push(...(await ensureCustomApexPanelRoutesForZone(zone)));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      report.routes.push({
+        action: "error",
+        zone,
+        pattern: `${zone}/*`,
+        message,
+      });
+    }
+    for (const hostname of [zone, `www.${zone}`]) {
+      try {
+        report.workerDomains.push(await ensureWorkerCustomDomain(hostname));
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        report.workerDomains.push({ action: "error", hostname, message });
+      }
+    }
+    try {
+      report.traefik.push(await syncTraefikDynamicForCustomApexZone(zone));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      report.traefik.push({ action: "error", zone, message });
     }
   }
   return report;

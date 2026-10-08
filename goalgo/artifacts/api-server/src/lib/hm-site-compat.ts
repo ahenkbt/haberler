@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { executeNewsDbWrite, getNewsDbForRead, hmNewsSitesTable } from "@workspace/db";
+import { pickHmNewsSiteByDomainPriority } from "./hm-domain-lookup.js";
 
 export type HmNewsSiteCompatRow = typeof hmNewsSitesTable.$inferSelect;
 
@@ -336,15 +337,15 @@ export async function getActiveHmNewsSiteByDomainCompat(
           .select()
           .from(hmNewsSitesTable)
           .where(and(eq(hmNewsSitesTable.active, true), domainWhere))
-          .limit(1),
+          .orderBy(hmNewsSitesTable.id),
       () =>
         getNewsDbForRead()
           .select(hmNewsSiteLegacyColumns)
           .from(hmNewsSitesTable)
           .where(and(eq(hmNewsSitesTable.active, true), domainWhere))
-          .limit(1),
+          .orderBy(hmNewsSitesTable.id),
     );
-    return rows[0];
+    return pickHmNewsSiteByDomainPriority(rows, domains);
   } catch (e) {
     if (!isMissingHmDomain2ColumnError(e)) throw e;
     const rows = await withSeoColumnFallback(

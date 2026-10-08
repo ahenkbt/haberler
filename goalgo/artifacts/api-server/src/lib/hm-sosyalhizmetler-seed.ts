@@ -25,6 +25,7 @@ import {
   SOSYALHIZMETLER_SLUG,
   type SosyalHizmetlerSiteDef,
 } from "./hm-sosyalhizmetler-site.js";
+import { hmLayoutLogoUsesInlineDataUrl } from "./hm-domain-lookup.js";
 
 export type SosyalHizmetlerSeedResult = {
   slug: string;
@@ -149,6 +150,7 @@ async function upsertSite(def: SosyalHizmetlerSiteDef): Promise<{
     existing.description !== def.description ||
     existing.active !== true ||
     String(existing.layoutJson || "") !== layoutJson ||
+    hmLayoutLogoUsesInlineDataUrl(existing.layoutJson) ||
     String(existing.slug || "").toLowerCase() !== def.slug;
   if (needs) {
     await dualWriteUpdate(

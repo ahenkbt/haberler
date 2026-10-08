@@ -48,7 +48,12 @@ export function normalizeHmLayoutMediaUrls(layout: unknown): unknown {
   const out: Record<string, unknown> = { ...(layout as Record<string, unknown>) };
   for (const key of ["logoUrl", "logo", "faviconUrl", "favicon"]) {
     if (typeof out[key] === "string") {
-      const n = normalizePublicMediaUrl(out[key]);
+      const raw = out[key].trim();
+      if (/^data:image\//i.test(raw)) {
+        delete out[key];
+        continue;
+      }
+      const n = normalizePublicMediaUrl(raw);
       if (n) out[key] = n;
     }
   }

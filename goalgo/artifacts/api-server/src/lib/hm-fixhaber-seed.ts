@@ -25,6 +25,7 @@ import {
   FIXHABER_SLUG,
   type FixHaberSiteDef,
 } from "./hm-fixhaber-site.js";
+import { hmLayoutLogoUsesInlineDataUrl } from "./hm-domain-lookup.js";
 
 export type FixHaberSeedResult = {
   slug: string;
@@ -149,6 +150,7 @@ async function upsertSite(def: FixHaberSiteDef): Promise<{
     existing.description !== def.description ||
     existing.active !== true ||
     String(existing.layoutJson || "") !== layoutJson ||
+    hmLayoutLogoUsesInlineDataUrl(existing.layoutJson) ||
     String(existing.slug || "").toLowerCase() !== def.slug;
   if (needs) {
     await dualWriteUpdate(

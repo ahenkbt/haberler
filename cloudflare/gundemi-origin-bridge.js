@@ -117,6 +117,26 @@ export function isGundemiLogoAssetPath(pathname) {
   return p.startsWith("/gundemi/logos/");
 }
 
+/** Fix Haber marka dosyaları — Worker ASSETS (`public/fix/*`). */
+export function isFixHaberBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/fix/");
+}
+
+/** Sosyal Hizmetler marka dosyaları — Worker ASSETS (`public/sh/*`). */
+export function isSosyalHizmetlerBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/sh/");
+}
+
+export function isWorkerBrandStaticAssetPath(pathname) {
+  return (
+    isGundemiLogoAssetPath(pathname) ||
+    isFixHaberBrandAssetPath(pathname) ||
+    isSosyalHizmetlerBrandAssetPath(pathname)
+  );
+}
+
 /**
  * Public gundemi hosts must never get SPA index.html from ASSETS.
  * Panel paths + hashed /assets/index-* + /gundemi/logos stay on Worker ASSETS.
@@ -139,7 +159,7 @@ export function isPhpThemeAssetPath(pathname) {
   if (p.startsWith("/brand/")) return true;
   if (p.startsWith("/manset/")) return true;
   if (p.startsWith("/uploads/")) return true;
-  if (isGundemiLogoAssetPath(p)) return true;
+  if (isWorkerBrandStaticAssetPath(p)) return true;
   return false;
 }
 
@@ -162,7 +182,7 @@ function isSpaPanelPath(pathname) {
 export function shouldBridgeGundemiApexPath(pathname) {
   const p = String(pathname || "").split("?")[0] || "/";
   if (isSpaPanelPath(p)) return false;
-  if (isGundemiLogoAssetPath(p)) return false;
+  if (isWorkerBrandStaticAssetPath(p)) return false;
   if (p.startsWith("/assets/")) return isPhpThemeAssetPath(p);
   return true;
 }

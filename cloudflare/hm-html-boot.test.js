@@ -99,6 +99,8 @@ describe("hm-html-boot", () => {
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "ahenk.net.tr"), false);
     assert.equal(shouldInstantHmRootRedirect("POST", "/", "vatanhaber.net"), false);
     assert.equal(shouldInstantHmRootRedirect("GET", "/", "suhaber.net"), true);
+    assert.equal(shouldInstantHmRootRedirect("GET", "/", "sosyalhizmetler.tr"), true);
+    assert.equal(hmHomeSlugFromPath("/", "sosyalhizmetler.tr"), "sosyalhizmetler");
     assert.equal(hmHomeSlugFromPath("/", "suhaber.net"), "su");
   });
 
