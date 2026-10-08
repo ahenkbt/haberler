@@ -235,12 +235,16 @@ jobs:
             local name="$1"
             local value="$2"
             local attempt=1
-            local max=4
+            local max=6
             while true; do
               out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || true
               printf '%s\n' "$out"
               if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
                 return 0
+              fi
+              if printf '%s' "$out" | grep -qi 'latest version of your Worker isn.t currently deployed'; then
+                echo "::notice::$name: latest Worker version not deployed — wrangler deploy then retry secret put"
+                pnpm exec wrangler deploy || true
               fi
               if [ "$attempt" -ge "$max" ]; then
                 echo "::error::$name wrangler secret put failed after ${max} attempts"
@@ -277,6 +281,7 @@ jobs:
         # Neon skip_secrets=true DATABASE_URL put'unu atlar; medya anahtarları yine yazılmalı.
         # MEDIA_BUCKET binding yok (16f5 R2 kapalı); upload S3 API veya R2_CF_API_TOKEN ister.
         # Eksik secret deploy'u kırmasın (continue-on-error) — eksik adı net basılır.
+        # Workers Builds can race after wrangler deploy: secret put needs latest == deployed.
         if: steps.cf.outputs.enabled == 'true' && steps.cf.outputs.sync_secrets == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -292,12 +297,18 @@ jobs:
             local value="$2"
             [ -n "$value" ] || return 0
             local attempt=1
-            local max=4
+            local max=6
             while true; do
               out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || true
               printf '%s\n' "$out"
               if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
                 return 0
+              fi
+              # Workers Builds may upload a newer version after wrangler deploy;
+              # secret put requires latest version == currently deployed (not versions secret put).
+              if printf '%s' "$out" | grep -qi 'latest version of your Worker isn.t currently deployed'; then
+                echo "::notice::$name: latest Worker version not deployed — wrangler deploy then retry secret put"
+                pnpm exec wrangler deploy || true
               fi
               if [ "$attempt" -ge "$max" ]; then
                 echo "::error::$name wrangler secret put failed after ${max} attempts"
@@ -310,10 +321,14 @@ jobs:
           }
           have_s3=0
           have_cf=0
-          # Pair required: half-pair (secret without access key id) cannot upload.
+          # Pair required: half-pair (accessKey without secret, or vice versa) cannot upload.
           if [ -n "${S3_ACCESS_KEY_ID}" ] && [ -n "${S3_SECRET_ACCESS_KEY}" ]; then
-            put_secret S3_ACCESS_KEY_ID "$S3_ACCESS_KEY_ID"
+            # Align deployed version before first put — avoids ACCESS succeeding and SECRET failing mid-pair.
+            echo "::notice::Pre-aligning Worker deploy before S3 secret put (Workers Builds race)."
+            pnpm exec wrangler deploy || true
+            # Put SECRET first so a mid-pair failure cannot leave accessKey:true secret:false briefly.
             put_secret S3_SECRET_ACCESS_KEY "$S3_SECRET_ACCESS_KEY"
+            put_secret S3_ACCESS_KEY_ID "$S3_ACCESS_KEY_ID"
             have_s3=1
             echo "::notice::S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY Worker'a yazıldı (değer basılmaz)."
           else
@@ -324,6 +339,7 @@ jobs:
             [ -n "${S3_ACCESS_KEY_ID}" ] && present="${present} S3_ACCESS_KEY_ID"
             [ -n "${S3_SECRET_ACCESS_KEY}" ] && present="${present} S3_SECRET_ACCESS_KEY"
             echo "::warning::Media S3 absent:${missing:- (none)} present:${present:- (none)}"
+            echo "::error::MISSING_SECRET=$(echo ${missing} | xargs | tr ' ' ',') — add to GitHub Environment DATABASE_URL (and Cloudflare Worker secrets if putting manually). Both S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY required."
           fi
           if [ -n "${R2_CF_API_TOKEN}" ]; then
             put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
@@ -333,7 +349,7 @@ jobs:
             echo "::warning::R2_CF_API_TOKEN absent in GitHub Environment DATABASE_URL"
           fi
           if [ "$have_s3" -eq 0 ] && [ "$have_cf" -eq 0 ]; then
-            echo "::error::MISSING_SECRET=S3_ACCESS_KEY_ID (S3_SECRET_ACCESS_KEY may exist; R2_CF_API_TOKEN absent). Add S3_ACCESS_KEY_ID to Environment DATABASE_URL (fb9f R2 S3 API token id for yekpare-media), then re-run Cloudflare Production Deploy. media-edge stays ready:false until then."
+            echo "::error::Editor media upload stays ready:false until S3_ACCESS_KEY_ID+S3_SECRET_ACCESS_KEY (or R2_CF_API_TOKEN) are on Worker via this step or Dashboard secret put."
             exit 1
           fi
           echo "synced=true" >> "$GITHUB_OUTPUT"
@@ -357,12 +373,16 @@ jobs:
             local value="$2"
             [ -n "$value" ] || return 0
             local attempt=1
-            local max=4
+            local max=6
             while true; do
               out=$(printf '%s' "$value" | pnpm exec wrangler secret put "$name" 2>&1) || true
               printf '%s\n' "$out"
               if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
                 return 0
+              fi
+              if printf '%s' "$out" | grep -qi 'latest version of your Worker isn.t currently deployed'; then
+                echo "::notice::$name: latest Worker version not deployed — wrangler deploy then retry secret put"
+                pnpm exec wrangler deploy || true
               fi
               if [ "$attempt" -ge "$max" ]; then
                 echo "::error::$name wrangler secret put failed after ${max} attempts"
@@ -462,7 +482,7 @@ jobs:
             fi
             sleep 10
           done
-          echo "::error::media-edge still ready:false — MISSING_SECRET=S3_ACCESS_KEY_ID (or R2_CF_API_TOKEN). See Sync media R2/S3 step."
+          echo "::error::media-edge still ready:false — Worker needs S3_ACCESS_KEY_ID+S3_SECRET_ACCESS_KEY both true (or R2_CF_API_TOKEN). See Sync media R2/S3 step; if GitHub Env has both but accessKey/secret stay false, wrangler secret put failed (Workers Builds version race) — re-run deploy or Dashboard → haberler Worker → Settings → Variables → add both secrets."
           printf '%s\n' "$body"
           exit 1
 
