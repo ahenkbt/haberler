@@ -8,6 +8,8 @@
  *
  * Önemli: PHP Neon eşitleme ≠ HTTP probe. Self-fetch aynı Worker rotasına
  * gidince Cloudflare origin'e düşer — PHP temada /editor SPA 404 (yanlış kritik).
+ * Anasayfa self-fetch de CDN’i atlar; yavaş PHP origin timeout’u tarayıcı 200
+ * iken [kritik] üretmesin diye soft sınıflanır (gerçek 5xx hard kalır).
  */
 import { neonSqlClient, neonNewsSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
