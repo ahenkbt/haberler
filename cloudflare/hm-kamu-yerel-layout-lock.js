@@ -18,6 +18,9 @@ export const KAMU_YEREL_LAYOUT_LOCK_KEYS = Object.freeze([
   "hmExtraPages",
   "portalHybridRssFeeds",
   "hmNewsBreakingRssFeedRows",
+  "hmPrimaryColor",
+  "hmSecondaryColor",
+  "hmVitrinTheme",
 ]);
 
 /** Cumha tepe menü — hm-cumha-kamu-yerel-catalog KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS */

@@ -18,10 +18,12 @@ describe("hm-dunyasaglik-site", () => {
     expect(layout.hmPrimaryColor).toBe("#0a7ea4");
   });
 
-  it("is idempotent when logo already correct", () => {
+  it("is idempotent when logo and colors already correct", () => {
     const { layout, changed } = applyDunyaSaglikLogoToLayout({
       logoUrl: DUNYASAGLIK_LOGO_PATH,
       faviconUrl: DUNYASAGLIK_FAVICON_PATH,
+      hmPrimaryColor: "#0a7ea4",
+      hmSecondaryColor: "#0d6b5c",
     });
     expect(changed).toBe(false);
     expect(layout.logoUrl).toBe(DUNYASAGLIK_LOGO_PATH);

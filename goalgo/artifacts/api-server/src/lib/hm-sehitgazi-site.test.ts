@@ -18,10 +18,12 @@ describe("hm-sehitgazi-site", () => {
     expect(layout.hmPrimaryColor).toBe("#a50e1e");
   });
 
-  it("is idempotent when logo already correct", () => {
+  it("is idempotent when logo and colors already correct", () => {
     const { layout, changed } = applySehitGaziLogoToLayout({
       logoUrl: SEHITGAZI_LOGO_PATH,
       faviconUrl: SEHITGAZI_FAVICON_PATH,
+      hmPrimaryColor: "#a50e1e",
+      hmSecondaryColor: "#7a0b16",
     });
     expect(changed).toBe(false);
     expect(layout.logoUrl).toBe(SEHITGAZI_LOGO_PATH);

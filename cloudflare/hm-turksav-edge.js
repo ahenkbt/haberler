@@ -3,6 +3,7 @@
  * Katalog: goalgo/artifacts/api-server/src/lib/hm-turksav-site.ts ile hizalı.
  * Yerel / Yeşil Vatan satırlarına dokunmaz.
  */
+import { applyPhpConceptColorsToLayout } from "./hm-php-concept-colors.js";
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 
 export const TURKSAV_SLUG = "turksav";
@@ -10,6 +11,7 @@ export const TURKSAV_DOMAIN = "turksav.org";
 export const TURKSAV_LOGO_PATH = "/turksav/turksav-logo.png";
 export const TURKSAV_FAVICON_PATH = "/turksav/turksav-logo.png";
 export const TURKSAV_PRIMARY_COLOR = "#1f3b63";
+export const TURKSAV_SECONDARY_COLOR = "#c8102e";
 
 function normalizeHost(raw) {
   return (
@@ -27,6 +29,7 @@ function normalizeHost(raw) {
 export function applyTurksavLogoToLayout(layout) {
   const next =
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
+  let changed = false;
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
   const needsLogo =
@@ -35,13 +38,19 @@ export function applyTurksavLogoToLayout(layout) {
     !favicon ||
     favicon.toLowerCase().startsWith("data:image/") ||
     favicon !== TURKSAV_FAVICON_PATH;
-  if (!needsLogo && !needsFavicon) {
-    return { layout: next, changed: false };
+  if (needsLogo) {
+    next.logoUrl = TURKSAV_LOGO_PATH;
+    changed = true;
   }
-  next.logoUrl = TURKSAV_LOGO_PATH;
-  next.faviconUrl = TURKSAV_FAVICON_PATH;
-  if (!next.hmPrimaryColor) next.hmPrimaryColor = TURKSAV_PRIMARY_COLOR;
-  return { layout: next, changed: true };
+  if (needsFavicon) {
+    next.faviconUrl = TURKSAV_FAVICON_PATH;
+    changed = true;
+  }
+  const colors = applyPhpConceptColorsToLayout(next, {
+    primary: TURKSAV_PRIMARY_COLOR,
+    secondary: TURKSAV_SECONDARY_COLOR,
+  });
+  return { layout: colors.layout, changed: changed || colors.changed };
 }
 
 export function turksavLayoutNeedsLogoRepair(layoutJsonRaw) {

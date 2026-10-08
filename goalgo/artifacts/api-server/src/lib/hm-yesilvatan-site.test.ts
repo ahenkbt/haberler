@@ -11,17 +11,20 @@ import { isYesilVatanSiteRef } from "./hm-yesilvatan-logo-repair.js";
 
 describe("hm-yesilvatan-site", () => {
   it("applies logo paths when missing", () => {
-    const { layout, changed } = applyYesilVatanLogoToLayout({ hmPrimaryColor: "#2e7d32" });
+    const { layout, changed } = applyYesilVatanLogoToLayout({ hmPrimaryColor: "#0b2a5b" });
     expect(changed).toBe(true);
     expect(layout.logoUrl).toBe(YESILVATAN_LOGO_PATH);
     expect(layout.faviconUrl).toBe(YESILVATAN_FAVICON_PATH);
-    expect(layout.hmPrimaryColor).toBe("#2e7d32");
+    expect(layout.hmPrimaryColor).toBe("#0b6e4f");
+    expect(layout.hmSecondaryColor).toBe("#2e7d32");
   });
 
-  it("is idempotent when logo already correct", () => {
+  it("is idempotent when logo and colors already correct", () => {
     const { layout, changed } = applyYesilVatanLogoToLayout({
       logoUrl: YESILVATAN_LOGO_PATH,
       faviconUrl: YESILVATAN_FAVICON_PATH,
+      hmPrimaryColor: "#0b6e4f",
+      hmSecondaryColor: "#2e7d32",
     });
     expect(changed).toBe(false);
     expect(layout.logoUrl).toBe(YESILVATAN_LOGO_PATH);

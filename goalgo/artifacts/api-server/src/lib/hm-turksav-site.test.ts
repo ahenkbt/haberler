@@ -18,10 +18,12 @@ describe("hm-turksav-site", () => {
     expect(layout.hmPrimaryColor).toBe("#1f3b63");
   });
 
-  it("is idempotent when logo already correct", () => {
+  it("is idempotent when logo and colors already correct", () => {
     const { layout, changed } = applyTurksavLogoToLayout({
       logoUrl: TURKSAV_LOGO_PATH,
       faviconUrl: TURKSAV_FAVICON_PATH,
+      hmPrimaryColor: "#1f3b63",
+      hmSecondaryColor: "#c8102e",
     });
     expect(changed).toBe(false);
     expect(layout.logoUrl).toBe(TURKSAV_LOGO_PATH);

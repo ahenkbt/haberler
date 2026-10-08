@@ -14,6 +14,7 @@
  * Ops: hostinger/gundemi-bolge/traefik-gundemi.yml + DEPLOY.md
  */
 
+import { phpThemeChromeCssPrefix } from "./hm-php-concept-colors.js";
 import { TURKATA_ORIGIN } from "./turkata-haber.js";
 
 /** Seed / docs catalog — known regionals (any new *.gundemi.org also works). */
@@ -102,12 +103,26 @@ export function isGundemiBridgeCatchAllHost(hostname) {
   return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
 }
 
+/** Concept Yenişafak PHP news hosts — Worker `/assets/*` may proxy theme.css. */
+export function isPhpConceptNewsThemeHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return (
+    host === "yesilvatan.gen.tr" ||
+    host === "yerel.net.tr" ||
+    host === "turkatahaber.com" ||
+    host === "sehitgazi.org.tr" ||
+    host === "turksav.org" ||
+    host === "dunyasaglik.org"
+  );
+}
+
 /** Worker-owned PHP theme paths (gundemi + custom PHP apex assets routes). */
 export function isPhpThemeOriginBridgeHost(hostname) {
   return (
     isGundemiBridgeCatchAllHost(hostname) ||
     isFixHaberBridgeHost(hostname) ||
-    isSosyalHizmetlerBridgeHost(hostname)
+    isSosyalHizmetlerBridgeHost(hostname) ||
+    isPhpConceptNewsThemeHost(hostname)
   );
 }
 
@@ -170,6 +185,14 @@ export function isWorkerBrandStaticAssetPath(pathname) {
     isSehitgaziBrandAssetPath(pathname) ||
     isDunyaSaglikBrandAssetPath(pathname)
   );
+}
+
+/** Prepend host concept chrome vars onto proxied `/assets/theme.css` (nav/navy). */
+export function decoratePhpThemeCss(cssText, hostname) {
+  const chrome = phpThemeChromeCssPrefix(hostname);
+  const body = String(cssText || "");
+  if (!chrome || body.includes("hm-php-concept-colors:")) return body;
+  return `${chrome}${body}`;
 }
 
 /**
@@ -331,6 +354,17 @@ async function proxySharedPhpThemePath(request, incoming, opts) {
     return new Response(null, { status: upstream.status, headers: out });
   }
 
+  const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
+  const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
+  if (/theme\.css$/i.test(pathOnly) && upstream.ok && ct.includes("text/css")) {
+    const body = decoratePhpThemeCss(await upstream.text(), incoming.hostname);
+    out.set("content-type", "text/css; charset=utf-8");
+    if (phpThemeChromeCssPrefix(incoming.hostname)) {
+      out.set("x-yekpare-ys-chrome-colors", "v1");
+    }
+    return new Response(body, { status: upstream.status, headers: out });
+  }
+
   return new Response(upstream.body, { status: upstream.status, headers: out });
 }
 
@@ -382,6 +416,12 @@ export async function gundemiApexPhpBridgeResponse(request, incoming) {
   if (shouldProxyRegionalPhpThemeAsset(incoming.pathname)) {
     return proxyRegionalPhpThemeAsset(request, incoming);
   }
+
+  // Concept news hosts: only theme assets are bridged (HTML stays orange→PHP origin).
+  if (isPhpConceptNewsThemeHost(incoming.hostname)) {
+    return null;
+  }
+
   // Defensive: theme-shaped paths must never fall through to gap HTML (unstyled sites).
   if (isPhpThemeAssetPath(incoming.pathname) && String(incoming.pathname).startsWith("/assets/")) {
     return new Response(

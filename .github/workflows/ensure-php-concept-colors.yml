@@ -1,0 +1,43 @@
+# Neon + PHP twilight-pine: konsept hmPrimaryColor/hmSecondaryColor kilidi.
+name: ensure-php-concept-colors
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ensure-php-concept-colors]
+
+concurrency:
+  group: ensure-php-concept-colors
+  cancel-in-progress: true
+
+jobs:
+  ensure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+      - name: Install
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+      - name: Ensure concept colors
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL secret missing"
+            exit 1
+          fi
+          if [ -z "${NEWS_DATABASE_URL:-}" ]; then
+            echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine may stay out of sync."
+          fi
+          pnpm --filter @workspace/api-server run ensure:php-concept-colors

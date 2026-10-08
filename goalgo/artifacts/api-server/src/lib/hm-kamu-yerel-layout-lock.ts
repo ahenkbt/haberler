@@ -27,6 +27,9 @@ export const KAMU_YEREL_LAYOUT_LOCK_KEYS = [
   "hmExtraPages",
   "portalHybridRssFeeds",
   "hmNewsBreakingRssFeedRows",
+  "hmPrimaryColor",
+  "hmSecondaryColor",
+  "hmVitrinTheme",
 ] as const;
 
 const LEGACY_GENERIC_NAV = new Set([
