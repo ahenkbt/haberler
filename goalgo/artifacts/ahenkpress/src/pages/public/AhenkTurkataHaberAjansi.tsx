@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
@@ -33,6 +34,8 @@ function ThaSubscriberSites() {
     retry: 2,
   });
   const sites = data ?? [];
+  // Logo dosyası henüz yoksa (404) kartta site adı görünsün.
+  const [brokenLogos, setBrokenLogos] = useState<Record<number, true>>({});
 
   return (
     <section className="ahenk-section" aria-labelledby="tha-subscriber-sites">
@@ -46,8 +49,14 @@ function ThaSubscriberSites() {
             <li key={site.id}>
               <a className="ahenk-subscriber-logo" href={site.url} target="_blank" rel="noopener noreferrer">
                 <span className="ahenk-subscriber-mark" style={site.logoBg ? { background: site.logoBg } : undefined}>
-                  {site.logo ? (
-                    <img src={site.logo} alt={`${site.name} logosu`} loading="lazy" decoding="async" />
+                  {site.logo && !brokenLogos[site.id] ? (
+                    <img
+                      src={site.logo}
+                      alt={`${site.name} logosu`}
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setBrokenLogos((prev) => ({ ...prev, [site.id]: true }))}
+                    />
                   ) : (
                     <span className="ahenk-subscriber-initial">{site.name}</span>
                   )}
