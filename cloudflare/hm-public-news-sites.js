@@ -192,8 +192,9 @@ export function renderNewsSitesGrid(sites, { heading = "Haber sitelerimiz" } = {
   const items = (sites || [])
     .map((s) => {
       const bg = s.logoBg ? ` style="background:${escapeHtml(s.logoBg)}"` : "";
+      // Logo henüz yüklenmemişse (404) kart boş kalmasın: site adı görünür.
       const img = s.logo
-        ? `<img src="${escapeHtml(s.logo)}" alt="${escapeHtml(s.name)} logosu" loading="lazy" decoding="async">`
+        ? `<img src="${escapeHtml(s.logo)}" alt="${escapeHtml(s.name)} logosu" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="hm-ns-initial" style="display:none">${escapeHtml(s.name)}</span>`
         : `<span class="hm-ns-initial">${escapeHtml(s.name)}</span>`;
       return `<li><a class="hm-ns-card hm-daha-site-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener" title="${escapeHtml(s.name)}"><span class="hm-ns-logo"${bg}>${img}</span><span class="hm-ns-name hm-daha-site-name">${escapeHtml(s.name)}</span><span class="hm-ns-domain">${escapeHtml(s.domain)}</span></a></li>`;
     })
