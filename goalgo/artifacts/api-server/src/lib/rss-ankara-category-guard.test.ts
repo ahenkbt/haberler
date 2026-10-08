@@ -40,6 +40,15 @@ describe("rss-ankara-category-guard", () => {
     expect(isMisclassifiedAnkaraItem("gundem", "Fenerbahçe")).toBe(false);
   });
 
+  it("ignores site-name Ankara noise in HTML body when headline is national sports", () => {
+    const title =
+      "Cristiano Ronaldo'dan Arjantin Formasıyla Son Tangosunu Yapan Messi'ye Duygusal Mesaj";
+    const spot = "Portekizli yıldız duygusal bir mesaj paylaştı.";
+    const content =
+      "<footer>Ankara Şehir Gazetesi — Sağlık Mah. Aksu Cad. 13/5 Çankaya Ankara</footer>";
+    expect(isMisclassifiedAnkaraItem("ankara", title, spot, content)).toBe(true);
+  });
+
   it("flags rss-342598-style international football as Ankara misfit", () => {
     const title =
       "Cristiano Ronaldo'dan Arjantin Formasıyla Son Tangosunu Yapan Messi'ye Duygusal Mesaj";

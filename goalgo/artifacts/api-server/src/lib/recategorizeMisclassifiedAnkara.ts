@@ -128,9 +128,22 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
       siteSlugs,
       defaultByCanonical,
     );
-    if (targetCategoryId == null) continue;
-    updates.push({ id: row.id, targetCategoryId, targetSlug, row });
-    byTargetSlug[targetSlug] = (byTargetSlug[targetSlug] ?? 0) + 1;
+    let resolvedCategoryId = targetCategoryId;
+    if (resolvedCategoryId == null) {
+      resolvedCategoryId =
+        resolveCategoryIdForSite(siteId, "gundem", cats, siteSlugs, defaultByCanonical) ??
+        defaultByCanonical.get("gundem") ??
+        null;
+    }
+    if (resolvedCategoryId == null) continue;
+    const effectiveSlug = targetCategoryId == null ? "gundem" : targetSlug;
+    updates.push({
+      id: row.id,
+      targetCategoryId: resolvedCategoryId,
+      targetSlug: effectiveSlug,
+      row,
+    });
+    byTargetSlug[effectiveSlug] = (byTargetSlug[effectiveSlug] ?? 0) + 1;
   }
 
   let updated = 0;
