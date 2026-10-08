@@ -166,6 +166,40 @@ const SAGLIK_TERMS = [
   "tedavi",
 ];
 
+const ENTERTAINMENT_SUPERHERO_TERMS = [
+  "spider-man",
+  "spiderman",
+  "super kahraman",
+  "superhero",
+  "marvel",
+  "dc comics",
+  "batman",
+  "superman",
+  "iron man",
+  "avengers",
+  "mcu",
+  "sinema",
+  "gişe",
+  "gise",
+  "box office",
+  "beyaz perde",
+  "fragman",
+  "dizi",
+  "netflix",
+  "disney+",
+  "disney plus",
+  "magazin",
+  "ünlü",
+  "unlu",
+  "hollywood",
+  "oscar",
+  "konser",
+  "video oyun",
+  "playstation",
+  "xbox",
+  "nintendo",
+];
+
 const SIYASET_TERMS = [
   "siyaset",
   "cumhurbaskani",
@@ -233,6 +267,7 @@ const TOPIC_SLUG_RULES: ReadonlyArray<{ slug: string; terms: readonly string[] }
   { slug: "teknoloji", terms: TEKNOLOJI_TERMS },
   { slug: "saglik", terms: SAGLIK_TERMS },
   { slug: "siyaset", terms: SIYASET_TERMS },
+  { slug: "gundem", terms: ENTERTAINMENT_SUPERHERO_TERMS },
 ];
 
 function containsAnyTerm(text: string, terms: readonly string[]): boolean {
@@ -249,6 +284,18 @@ function combinedText(
   content?: string | null,
 ): string {
   return TR_LOWER([title, spot, content].filter(Boolean).join(" "));
+}
+
+/** Sinema / süper kahraman / magazin — Ankara yerel değil. */
+export function looksLikeEntertainmentOrSuperheroContent(
+  title: string | null | undefined,
+  spot?: string | null,
+  content?: string | null,
+): boolean {
+  const text = combinedText(title, spot, content);
+  if (!text.trim()) return false;
+  if (looksLikeAnkaraLocalContent(title, spot, content)) return false;
+  return containsAnyTerm(text, ENTERTAINMENT_SUPERHERO_TERMS);
 }
 
 /** Başlık/gövdede Ankara-yerel sinyali var mı? */
@@ -271,6 +318,7 @@ export function looksLikeNationalOrInternationalContent(
   const text = combinedText(title, spot, content);
   if (!text.trim()) return false;
   if (looksLikeAnkaraLocalContent(title, spot, content)) return false;
+  if (looksLikeEntertainmentOrSuperheroContent(title, spot, content)) return true;
   if (looksLikeSportsContent(title, spot, content)) return true;
   return containsAnyTerm(text, NATIONAL_OR_WORLD_TERMS);
 }
@@ -284,6 +332,7 @@ export function resolveAnkaraReplacementCategorySlug(
   spot?: string | null,
   content?: string | null,
 ): string {
+  if (looksLikeEntertainmentOrSuperheroContent(title, spot, content)) return "gundem";
   if (looksLikeSportsContent(title, spot, content)) return "spor";
   const text = combinedText(title, spot, content);
   for (const rule of TOPIC_SLUG_RULES) {
