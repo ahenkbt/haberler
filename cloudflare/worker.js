@@ -27,6 +27,7 @@ import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { serveKamuYerelExtraPage } from "./hm-kamu-yerel-extra-pages-edge.js";
+import { handlePublicNewsSites } from "./hm-public-news-sites.js";
 import { kamuYerelDunyaRedirectResponse } from "./hm-kamu-yerel-dunya-redirect.js";
 import {
   gundemiApexPhpBridgeResponse,
@@ -3162,6 +3163,23 @@ export default {
             },
           });
         }
+      }
+    }
+
+    // Canlı haber sitesi listesi + logo (turkatahaber.com/daha ve ahenk.net.tr/turkata-haber-ajansi).
+    if (
+      earlyPath === "/api/hm/public/news-sites" ||
+      /^\/api\/hm\/public\/news-sites\/\d{1,9}\/logo$/.test(earlyPath)
+    ) {
+      try {
+        const newsSites = await handlePublicNewsSites(request, env, incoming);
+        if (newsSites) return newsSites;
+      } catch (err) {
+        console.error("[public-news-sites]", String(err?.message || err).slice(0, 160));
+        return new Response(JSON.stringify({ error: "Haber siteleri listelenemedi." }), {
+          status: 500,
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+        });
       }
     }
 

@@ -3,6 +3,7 @@
  * sayfalarını sunar; hmExtraPages (/iller, /daha) Worker kenarında layout'tan basılır.
  */
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
+import { listPublicNewsSites, renderNewsSitesGrid } from "./hm-public-news-sites.js";
 
 export const KAMU_YEREL_EXTRA_PAGE_HOSTS = Object.freeze([
   "turkatahaber.com",
@@ -236,6 +237,28 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
     page = fallbackPageForSlug(slug);
   }
   if (!page) return null;
+
+  // /daha: haber sitesi logo ızgarası her istekte canlı listeden (hm-public-news-sites).
+  // Kayıtlı gövdedeki sabit liste yenisiyle değiştirilir; kurumsal ve askıdaki siteler yok.
+  if (page.slug === "daha") {
+    try {
+      const sites = await listPublicNewsSites(env, {
+        origin: `${incoming.protocol}//${incoming.host}`,
+        exclude: normalizeHost(incoming.hostname),
+      });
+      if (sites.length) {
+        const grid = renderNewsSitesGrid(sites);
+        const section = /<section\b[^>]*id=["']daha-haber-siteleri["'][^>]*>[\s\S]*?<\/section>/i;
+        let body = page.bodyHtml;
+        if (section.test(body)) body = body.replace(section, grid);
+        else if (/<div class="hm-daha-main">/i.test(body)) body = body.replace(/<div class="hm-daha-main">/i, `<div class="hm-daha-main">${grid}`);
+        else body = grid + body;
+        page = { ...page, bodyHtml: body };
+      }
+    } catch (err) {
+      console.error("[kamu-yerel-extra-logos]", String(err?.message || err).slice(0, 160));
+    }
+  }
 
   const brand =
     normalizeHost(incoming.hostname) === "yerel.net.tr" ? "Yerel Net" : "TÜRKATA HABER AJANSI";

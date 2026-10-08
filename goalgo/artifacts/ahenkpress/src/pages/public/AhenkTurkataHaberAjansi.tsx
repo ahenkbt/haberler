@@ -4,19 +4,30 @@ import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/Ahen
 import { TurkataAboutBody } from "@/pages/public/TurkataStaticPages";
 import { apiUrl } from "@/lib/apiBase";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
-import { thaSubscriberHref, thaSubscriberSites, type ThaShowcaseSite } from "@/lib/thaSubscriberSites";
 import { TURKATA_ABOUT_INTRO, TURKATA_ABOUT_TAGLINE, TURKATA_ABOUT_TITLE, TURKATA_ORIGIN } from "@/lib/turkataHaber";
+
+type PublicNewsSite = {
+  id: number;
+  slug: string;
+  name: string;
+  domain: string;
+  url: string;
+  logo: string;
+  logoBg?: string;
+};
 
 const THA_SUBSCRIBER_HEADING =
   "Ahenk Bilgi Teknolojileri Haber Alt yapısını kullanan THA TürkAta Haber Ajansı abonesi haber siteleri";
 
 function ThaSubscriberSites() {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["/api/hm/showcase-sites", "tha-subscribers"],
+    queryKey: ["/api/hm/public/news-sites"],
     queryFn: async () => {
-      const { ok, status, data: body } = await fetchPublicJson<ThaShowcaseSite[]>(apiUrl("/api/hm/showcase-sites"));
+      const { ok, status, data: body } = await fetchPublicJson<{ sites?: PublicNewsSite[] }>(
+        apiUrl("/api/hm/public/news-sites"),
+      );
       if (!ok) throw new Error(`HTTP ${status}`);
-      return thaSubscriberSites(Array.isArray(body) ? body : []);
+      return Array.isArray(body?.sites) ? body.sites : [];
     },
     staleTime: 60_000,
     retry: 2,
@@ -32,9 +43,17 @@ function ThaSubscriberSites() {
       {sites.length > 0 ? (
         <ul className="ahenk-subscriber-logos">
           {sites.map((site) => (
-            <li key={site.slug}>
-              <a className="ahenk-subscriber-logo" href={thaSubscriberHref(site)}>
-                {site.displayName}
+            <li key={site.id}>
+              <a className="ahenk-subscriber-logo" href={site.url} target="_blank" rel="noopener noreferrer">
+                <span className="ahenk-subscriber-mark" style={site.logoBg ? { background: site.logoBg } : undefined}>
+                  {site.logo ? (
+                    <img src={site.logo} alt={`${site.name} logosu`} loading="lazy" decoding="async" />
+                  ) : (
+                    <span className="ahenk-subscriber-initial">{site.name}</span>
+                  )}
+                </span>
+                <span className="ahenk-subscriber-name">{site.name}</span>
+                <span className="ahenk-subscriber-domain">{site.domain}</span>
               </a>
             </li>
           ))}
