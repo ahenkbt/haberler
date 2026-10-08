@@ -1,0 +1,161 @@
+--- orig/src/Widgets.php	2026-10-08 19:27:27.054134680 +0000
++++ work/src/Widgets.php	2026-10-08 19:27:27.195134081 +0000
+@@ -91,6 +91,9 @@
+         if (getenv('WIDGETS_DISABLED') === '1') {
+             return false;
+         }
++        if (self::conceptOff($site, $widget)) { // concept sites 2026-10-08
++            return false;
++        }
+         $key = self::TOGGLES[$widget] ?? '';
+         if ($key === '' || !array_key_exists($key, $site->layout)) {
+             return true;
+@@ -99,6 +102,36 @@
+         return $v === true || $v === 1 || $v === '1' || $v === 'true';
+     }
+ 
++    /**
++     * concept sites 2026-10-08: layout_json hmConceptSite=true marks a concept/topic site (set by the "Konsept site"
++     * option of /admin/haber-siteleri or by hand). Concept sites never show burçlar; the Süper Lig table only
++     * when hmConceptTopic = "spor". Sites without the flag (general news sites) are unchanged.
++     */
++    public static function isConcept(Site $site): bool
++    {
++        $v = $site->layout['hmConceptSite'] ?? null;
++        return $v === true || $v === 1 || $v === '1' || $v === 'true';
++    }
++
++    public static function conceptTopic(Site $site): string
++    {
++        return strtolower(trim((string) ($site->layout['hmConceptTopic'] ?? '')));
++    }
++
++    private static function conceptOff(Site $site, string $widget): bool
++    {
++        if (!self::isConcept($site)) {
++            return false;
++        }
++        if ($widget === 'horoscope') {
++            return true;
++        }
++        if ($widget === 'standings') {
++            return self::conceptTopic($site) !== 'spor';
++        }
++        return false;
++    }
++
+     public static function city(string $slug): string
+     {
+         $slug = Modules::slug($slug);
+--- orig/src/CategoryTree.php	2026-10-08 19:27:27.082134561 +0000
++++ work/src/CategoryTree.php	2026-10-08 19:27:27.196134076 +0000
+@@ -170,7 +170,7 @@
+     public static function mode(Site $site): string
+     {
+         $v = $site->layout['hmCatTree'] ?? null;
+-        if (is_string($v) && in_array($v, ['full', 'yerel', 'off', 'savunma'], true)) { // turksav tree 2026-10-08: + savunma
++        if (is_string($v) && in_array($v, ['full', 'yerel', 'off', 'savunma', 'spor'], true) /* concept sites 2026-10-08: + spor */) { // turksav tree 2026-10-08: + savunma
+             return $v;
+         }
+         if (in_array($site->id, self::SAVUNMA_SITES, true)) { // turksav tree 2026-10-08
+@@ -194,6 +194,7 @@
+             'full' => self::MAIN,
+             'yerel' => ['yerel'],
+             'savunma' => self::SAVUNMA_MAIN, // turksav tree 2026-10-08
++            'spor' => ['spor'], // concept sites 2026-10-08: sports concept site (hmCatTree = spor)
+             default => [],
+         };
+         return array_values(array_filter($mains, static fn (string $m): bool => !self::isOff($m)));
+@@ -311,6 +312,18 @@
+      */
+     public static function homeOrder(Site $site, array $categories): array
+     {
++        if (self::mode($site) === 'spor') { // concept sites 2026-10-08: Spor (all branches) + one block per branch (+ Özel Haber when listed)
++            $out = [];
++            if (in_array('ozel-haber', array_column($categories, 'slug'), true) && !self::isOff('ozel-haber')) {
++                $out[] = ['slug' => 'ozel-haber', 'name' => 'Özel Haber'];
++            }
++            foreach (array_merge(['spor'], self::SPOR) as $s) {
++                if (!self::isOff($s)) {
++                    $out[] = ['slug' => $s, 'name' => self::name($s, $site)];
++                }
++            }
++            return $out;
++        }
+         if (self::mode($site) === 'savunma') { // turksav tree 2026-10-08: fixed defense block order (+ Özel Haber when listed)
+             $out = [];
+             foreach (array_merge(['ozel-haber'], self::SAVUNMA_HOME) as $s) {
+--- orig/src/Repository.php	2026-10-08 19:27:27.115134421 +0000
++++ work/src/Repository.php	2026-10-08 19:27:27.197134072 +0000
+@@ -97,8 +97,27 @@
+         $this->rssShared = array_values(array_unique(array_filter(array_map('intval', $siteIds), static fn (int $id): bool => $id > 0)));
+     }
+ 
++    /** @var list<string> concept sites 2026-10-08: layout_json hmNewsRssCategoryOnly (shared pool rows limited to these categories) */
++    private array $rssCatOnly = [];
++
++    /** concept sites 2026-10-08: e.g. spor.gundemi.org reads pool 230 but only its Spor categories. [] = no limit. @param list<string> $slugs */
++    public function setRssCategoryOnly(array $slugs): void
++    {
++        $this->rssCatOnly = array_values(array_unique(array_filter(array_map(static fn ($v): string => strtolower(trim((string) $v)), $slugs),
++            static fn (string $v): bool => preg_match('/^[a-z0-9-]{1,80}$/', $v) === 1)));
++    }
++
++    private function rssCatOnlyList(): string
++    {
++        return implode(',', array_map(static fn (string $v): string => "'" . $v . "'", $this->rssCatOnly));
++    }
++
+     private function rssScope(): string
+     {
++        if ($this->rssCatOnly !== []) { // concept sites 2026-10-08: own rows always; shared/pool rows only in the listed categories
++            $shared = 'site_id IS NULL' . ($this->rssShared !== [] ? ' OR site_id IN (' . implode(',', $this->rssShared) . ')' : '');
++            return '(site_id = :site OR ((' . $shared . ") AND COALESCE(category_slug, '') IN (" . $this->rssCatOnlyList() . ')))';
++        }
+         $scope = '(site_id IS NULL OR site_id = :site';
+         if ($this->rssShared !== []) {
+             // ints only, validated in setRssShared()
+@@ -1149,6 +1168,9 @@
+         $offList = $this->categoryOffSql();
+         $offRss = $offList !== '' ? " AND COALESCE(category_slug, '') NOT IN ({$offList})" : '';
+         $offNews = $offList !== '' ? " AND COALESCE(c.slug, '') NOT IN ({$offList})" : '';
++        if ($this->rssCatOnly !== []) { // concept sites 2026-10-08: network pool news limited to the site's categories too
++            $offNews .= " AND (n.site_id = :site OR n.owner_site_id = :site OR COALESCE(c.slug, '') IN (" . $this->rssCatOnlyList() . '))';
++        }
+         $pasifRss = $this->currentSite > 0 ? " AND NOT EXISTS (SELECT 1 FROM hm_site_content_hidden h WHERE h.site_id = :site AND h.public_slug = 'rss-' || portal_rss_items.id::text)" : '';
+         $pasifNews = $this->currentSite > 0 ? " AND NOT EXISTS (SELECT 1 FROM hm_site_content_hidden h WHERE h.site_id = :site AND h.public_slug = n.slug AND (h.title IN (n.title, COALESCE(o.title, n.title)) OR (h.kind = 'news' AND h.ref_id = n.id)))" : '';
+         // story dedupe 2026-10-08 (storydup job): duplicate variants of a story already listed on this site (hm_story_dup_hidden)
+--- orig/src/App.php	2026-10-08 19:27:27.141134310 +0000
++++ work/src/App.php	2026-10-08 19:27:27.198134068 +0000
+@@ -274,6 +274,7 @@
+     {
+         Repository::$mediaBase = self::mediaBase($site);
+         $this->repo->setRssShared(self::rssSharedFor($site));
++        $this->repo->setRssCategoryOnly(is_array($site->layout['hmNewsRssCategoryOnly'] ?? null) ? array_values($site->layout['hmNewsRssCategoryOnly']) : []); // concept sites 2026-10-08
+         $this->repo->setSite($site->id);
+         if (preg_match('#^/yazar/a(\d+)/foto$#', $path, $m) === 1) {
+             $this->authorPhoto((int) $m[1]);
+--- orig/templates/layout.php	2026-10-08 19:27:27.171134183 +0000
++++ work/templates/layout.php	2026-10-08 19:27:27.196134076 +0000
+@@ -291,8 +291,8 @@
+               <div><h3>Hizmetler</h3>
+                 <a href="<?= Html::e($site->path('/hava-durumu')) ?>">Hava durumu</a>
+                 <a href="<?= Html::e($site->path('/namaz-vakitleri')) ?>">Namaz vakitleri</a>
+-                <a href="<?= Html::e($site->path('/puan-durumu')) ?>">Puan durumu</a>
+-                <a href="<?= Html::e($site->path('/burclar')) ?>">Burçlar</a>
++                <?php if (\Yenisafak\Widgets::on($site, 'standings')): /* concept sites 2026-10-08 */ ?><a href="<?= Html::e($site->path('/puan-durumu')) ?>">Puan durumu</a><?php endif; ?>
++                <?php if (\Yenisafak\Widgets::on($site, 'horoscope')): /* concept sites 2026-10-08 */ ?><a href="<?= Html::e($site->path('/burclar')) ?>">Burçlar</a><?php endif; ?>
+                 <a href="<?= Html::e($site->path('/nobetci-eczane')) ?>">Nöbetçi eczane</a>
+                 <a href="<?= Html::e($site->path('/videolar')) ?>">Videolar</a>
+               </div>
+@@ -332,8 +332,8 @@
+       <?php if (!$headerMenuOn): ?>
+       <div class="ys-tools">
+         <a href="<?= Html::e($site->path('/videolar')) ?>"<?= ($current ?? '') === '/videolar' ? ' aria-current="page"' : '' ?>>Videolar</a>
+-        <a href="<?= Html::e($site->path('/burclar')) ?>">Burçlar</a>
+-        <a href="<?= Html::e($site->path('/puan-durumu')) ?>">Puan durumu</a>
++        <?php if (\Yenisafak\Widgets::on($site, 'horoscope')): /* concept sites 2026-10-08 */ ?><a href="<?= Html::e($site->path('/burclar')) ?>">Burçlar</a><?php endif; ?>
++        <?php if (\Yenisafak\Widgets::on($site, 'standings')): /* concept sites 2026-10-08 */ ?><a href="<?= Html::e($site->path('/puan-durumu')) ?>">Puan durumu</a><?php endif; ?>
+       </div>
+       <?php endif; ?>
+       <button class="ys-theme-toggle" type="button" data-ys-theme aria-label="Koyu temaya geç" title="Açık / koyu tema">

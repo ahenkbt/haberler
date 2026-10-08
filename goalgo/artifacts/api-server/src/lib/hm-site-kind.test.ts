@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  conceptSiteLayoutDefaults,
   corporateDomainError,
   defaultEditorLoginForHost,
   defaultEditorLoginForSite,
   isPlatformAliasHost,
+  normalizeHmConceptTopic,
   orderSiteDomains,
   planNewsSiteDomains,
   platformAliasesForSlug,
@@ -124,5 +126,32 @@ describe("default editor account", () => {
   it("uses the canonical (first) domain", () => {
     expect(defaultEditorLoginForSite({ domain: "adanahaber.com", domain2: "adana.gundemi.org" })?.email).toBe("bilgi@adanahaber.com");
     expect(defaultEditorLoginForSite({ domain: null, domain2: "adana.gundemi.org" })?.email).toBe("adana@gundemi.org");
+  });
+});
+
+describe("concept site flag", () => {
+  it("general site: flag false, widgets untouched", () => {
+    expect(conceptSiteLayoutDefaults(false)).toEqual({ hmConceptSite: false });
+    expect(conceptSiteLayoutDefaults(undefined, "spor")).toEqual({ hmConceptSite: false });
+  });
+  it("concept site: no burç, no Süper Lig unless sports", () => {
+    const d = conceptSiteLayoutDefaults(true, "cevre");
+    expect(d.hmConceptSite).toBe(true);
+    expect(d.hmConceptTopic).toBe("cevre");
+    expect(d.hmNewsYsHoroscopeEnabled).toBe(false);
+    expect(d.hmNewsYsStandingsEnabled).toBe(false);
+    expect(d.hmCatTree).toBeUndefined();
+  });
+  it("sports concept site keeps Süper Lig and gets the Spor tree", () => {
+    const d = conceptSiteLayoutDefaults(true, "spor");
+    expect(d.hmNewsYsStandingsEnabled).toBe(true);
+    expect(d.hmNewsYsSportsHoroscopeEnabled).toBe(true);
+    expect(d.hmNewsYsHoroscopeEnabled).toBe(false);
+    expect(d.hmCatTree).toBe("spor");
+    expect(d.hmNewsRssCategoryOnly).toContain("engelli-sporlari");
+  });
+  it("unknown topic falls back to diger", () => {
+    expect(conceptSiteLayoutDefaults("true", "xyz").hmConceptTopic).toBe("diger");
+    expect(normalizeHmConceptTopic("SPOR")).toBe("spor");
   });
 });

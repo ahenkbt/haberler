@@ -103,7 +103,22 @@ type SiteForm = {
   fixHost: string;
   /** Kurumsal: VKD Tema (corporate) | VATAN */
   corporateTheme: "corporate" | "vatan";
+  /** Haber (yalnız oluşturma): konsept site — Süper Lig/burç vb. genel kutular olmaz; spor konseptinde Süper Lig kalır */
+  conceptSite: boolean;
+  conceptTopic: string;
 };
+
+const CONCEPT_TOPICS: { value: string; label: string }[] = [
+  { value: "spor", label: "Spor (Süper Lig + branşlar)" },
+  { value: "savunma", label: "Savunma" },
+  { value: "sehit-gazi", label: "Şehit / Gazi" },
+  { value: "cevre", label: "Çevre / Doğa" },
+  { value: "saglik", label: "Sağlık" },
+  { value: "teknoloji", label: "Teknoloji" },
+  { value: "yerel", label: "Yerel" },
+  { value: "bolge", label: "Bölge (il / bölge gündemi)" },
+  { value: "diger", label: "Diğer konsept" },
+];
 
 const emptyForm: SiteForm = {
   slug: "",
@@ -131,6 +146,8 @@ const emptyForm: SiteForm = {
   fixAlias: true,
   fixHost: "",
   corporateTheme: "corporate",
+  conceptSite: false,
+  conceptTopic: "diger",
 };
 
 const PLATFORM_ZONES = ["gundemi.org", "fix.tc"] as const;
@@ -291,9 +308,13 @@ function formFromSite(site: HmSiteRow): SiteForm {
   const gundemiHost = triad.find((h) => platformZoneOf(h) === "gundemi.org") ?? "";
   const fixHost = triad.find((h) => platformZoneOf(h) === "fix.tc") ?? "";
   let corporateTheme: "corporate" | "vatan" = "corporate";
+  let conceptSite = false;
+  let conceptTopic = "diger";
   try {
     const l = site.layoutJson ? (JSON.parse(site.layoutJson) as Record<string, unknown>) : {};
     if (String(l.hmVitrinTheme ?? "").toLowerCase() === "vatan") corporateTheme = "vatan";
+    conceptSite = l.hmConceptSite === true;
+    if (typeof l.hmConceptTopic === "string" && l.hmConceptTopic) conceptTopic = l.hmConceptTopic;
   } catch {
     /* ignore */
   }
@@ -305,6 +326,8 @@ function formFromSite(site: HmSiteRow): SiteForm {
     fixAlias: Boolean(fixHost),
     fixHost,
     corporateTheme,
+    conceptSite,
+    conceptTopic,
     slug: site.slug ?? "",
     displayName: site.displayName ?? "",
     description: site.description ?? "",
@@ -357,6 +380,8 @@ function payloadFromForm(
     body.siteKind = kind;
     if (kind === "news") {
       body.platformAliases = { gundemi: form.gundemiAlias, fixTc: form.fixAlias };
+      body.conceptSite = form.conceptSite;
+      if (form.conceptSite) body.conceptTopic = form.conceptTopic || "diger";
     } else {
       body.corporateTheme = form.corporateTheme;
     }
@@ -938,6 +963,34 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                     <div className="space-y-1.5">
                       <Label>Ek domain (isteğe bağlı)</Label>
                       <Input value={form.customDomain2} onChange={(e) => update("customDomain2", e.target.value)} placeholder="adanahaber.com.tr" />
+                    </div>
+                  ) : null}
+                  {!editingId ? (
+                    <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2">
+                      <label className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-gray-800">Konsept site</span>
+                        <Switch checked={form.conceptSite} onCheckedChange={(v) => update("conceptSite", Boolean(v))} />
+                      </label>
+                      {form.conceptSite ? (
+                        <select
+                          className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                          value={form.conceptTopic}
+                          onChange={(e) => update("conceptTopic", e.target.value)}
+                        >
+                          {CONCEPT_TOPICS.map((t) => (
+                            <option key={t.value} value={t.value}>
+                              {t.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                      <p className="text-[11px] leading-relaxed text-amber-900">
+                        {form.conceptSite
+                          ? form.conceptTopic === "spor"
+                            ? "Spor konsepti: Süper Lig puan durumu ve spor branşları açık; burçlar kapalı."
+                            : "Konsept site: Süper Lig, burçlar ve diğer genel kutular gösterilmez; site yalnızca kendi konusunu yayınlar."
+                          : "Kapalı = genel haber sitesi: Süper Lig, burçlar ve tüm genel kutular açık."}
+                      </p>
                     </div>
                   ) : null}
                   <ul className="list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-emerald-950">

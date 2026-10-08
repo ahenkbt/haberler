@@ -20,6 +20,7 @@ import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
 import { ensureTurksavLogoOnNeon } from "./hm-turksav-edge.js";
 import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
 import { ensureDunyaSaglikLogoOnNeon } from "./hm-dunyasaglik-edge.js";
+import { SPOR_GUNDEMI_DESCRIPTION, SPOR_GUNDEMI_DISPLAY_NAME, SPOR_GUNDEMI_HOSTS, ensureSporGundemiSiteOnSql } from "./hm-spor-gundemi-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -123,6 +124,14 @@ export const HM_BRAND_DB_BINDINGS = [
     slug: "gundemi",
     displayName: "Gündemi",
     description: "ilkeli iffetli isabetli haber",
+  },
+  /** spor.gundemi.org — spor konsept sitesi (2026-10-08); panel satırı yoksa kenar seed (hm-spor-gundemi-edge.js). */
+  {
+    domain: SPOR_GUNDEMI_HOSTS[0],
+    domains: [...SPOR_GUNDEMI_HOSTS],
+    slug: "spor",
+    displayName: SPOR_GUNDEMI_DISPLAY_NAME,
+    description: SPOR_GUNDEMI_DESCRIPTION,
   },
   /** Fix Haber — fix.tc Yenişafak PHP; Neon satırı yoksa kenar seed. */
   {
@@ -1543,6 +1552,16 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       return await ensureKhBrandMetaOnSql(sql);
     } catch (err) {
       console.error("[hm-brand-db-ensure] kh canonical", String(err?.message || err).slice(0, 240));
+      return null;
+    }
+  }
+
+  if (binding.slug === "spor" || SPOR_GUNDEMI_HOSTS.includes(host)) {
+    try {
+      const r = await ensureSporGundemiSiteOnSql(sql);
+      return r?.row ? { meta: serializeMetaRow(r.row), action: r.action } : null;
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] spor.gundemi.org", String(err?.message || err).slice(0, 240));
       return null;
     }
   }

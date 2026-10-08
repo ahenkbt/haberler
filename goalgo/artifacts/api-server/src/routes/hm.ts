@@ -258,6 +258,7 @@ import {
   siteKindLayoutDefaults,
   siteKindPatchError,
   type HmSiteKind,
+  conceptSiteLayoutDefaults,
 } from "../lib/hm-site-kind.js";
 
 const router: IRouter = Router();
@@ -1420,6 +1421,9 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     platformAliases?: { gundemi?: boolean; fixTc?: boolean };
     /** Corporate only: "corporate" (VKD Tema) | "vatan". */
     corporateTheme?: string;
+    /** News only: "Konsept site" (topic site: no burç / general widgets; Süper Lig only for "spor"). */
+    conceptSite?: boolean;
+    conceptTopic?: string;
   };
   const siteKind: HmSiteKind = normalizeHmSiteKind(b.siteKind) ?? "news";
   const slug = normalizeSlug(String(b.slug ?? ""));
@@ -1496,6 +1500,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     defaultHmNewsSiteLayout({
       ...incomingLayout,
       ...siteKindLayoutDefaults(siteKind, b.corporateTheme ?? incomingLayout.hmVitrinTheme),
+      ...(siteKind === "news" ? conceptSiteLayoutDefaults(b.conceptSite, b.conceptTopic) : {}),
     }),
   );
   const seoVerification = normalizeHmSeoVerification(b.seoVerification);
