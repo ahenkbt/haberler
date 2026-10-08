@@ -5,7 +5,7 @@ import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/Ahen
 import { apiUrl } from "@/lib/apiBase";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
 import { TURKATA_ABOUT_INTRO, TURKATA_ABOUT_TAGLINE, TURKATA_ABOUT_TITLE, TURKATA_ORIGIN } from "@/lib/turkataHaber";
-import { TANITIM_TEXT } from "@/lib/tanitimBulteni";
+import { tanitimTextWithCount } from "@/lib/tanitimBulteni";
 
 type PublicNewsSite = {
   id: number;
@@ -20,7 +20,7 @@ type PublicNewsSite = {
   region?: string;
 };
 
-type PublicNewsSitesBody = { sites?: PublicNewsSite[]; ilSites?: PublicNewsSite[] };
+type PublicNewsSitesBody = { sites?: PublicNewsSite[]; ilSites?: PublicNewsSite[]; total?: number };
 
 const THA_SUBSCRIBER_HEADING =
   "Ahenk Bilgi Teknolojileri Haber Alt yapısını kullanan THA TürkAta Haber Ajansı abonesi haber siteleri";
@@ -28,19 +28,20 @@ const THA_SUBSCRIBER_HEADING =
 const THA_IL_SITES_HEADING = "İl Siteleri";
 
 function SiteLogoGrid({ sites }: { sites: PublicNewsSite[] }) {
-  // Logo dosyası henüz yoksa (404) kartta site adı görünsün.
+  // logogrid 2026-10-09: logos render immediately (eager); the logo endpoint itself falls back to the site's
+  // header logo and then a text logo, so a tile only shows the name if the image request fails entirely.
   const [brokenLogos, setBrokenLogos] = useState<Record<number, true>>({});
   return (
     <ul className="ahenk-subscriber-logos">
       {sites.map((site) => (
         <li key={site.id}>
-          <a className="ahenk-subscriber-logo" href={site.url} target="_blank" rel="noopener noreferrer">
+          <a className="ahenk-subscriber-logo" href={site.url} target="_blank" rel="noopener noreferrer" title={site.name}>
             <span className="ahenk-subscriber-mark" style={site.logoBg ? { background: site.logoBg } : undefined}>
               {site.logo && !brokenLogos[site.id] ? (
                 <img
                   src={site.logo}
                   alt={`${site.name} logosu`}
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                   onError={() => setBrokenLogos((prev) => ({ ...prev, [site.id]: true }))}
                 />
@@ -57,50 +58,51 @@ function SiteLogoGrid({ sites }: { sites: PublicNewsSite[] }) {
   );
 }
 
-function ThaSubscriberSites() {
-  const { data, isLoading, isError } = useQuery({
+function usePublicNewsSites() {
+  return useQuery({
     queryKey: ["/api/hm/public/news-sites"],
     queryFn: async () => {
       const { ok, status, data: body } = await fetchPublicJson<PublicNewsSitesBody>(apiUrl("/api/hm/public/news-sites"));
       if (!ok) throw new Error(`HTTP ${status}`);
-      return {
-        sites: Array.isArray(body?.sites) ? body.sites : [],
-        ilSites: Array.isArray(body?.ilSites) ? body.ilSites : [],
-      };
+      const sites = Array.isArray(body?.sites) ? body.sites : [];
+      const ilSites = Array.isArray(body?.ilSites) ? body.ilSites : [];
+      return { sites, ilSites, total: Number(body?.total) || sites.length + ilSites.length };
     },
     staleTime: 60_000,
     retry: 2,
   });
+}
+
+/** Sağ sütun: haber siteleri, altında ayrı "İl Siteleri" grubu (Gündem İstanbul ilk sırada). */
+function ThaSubscriberSites({ query }: { query: ReturnType<typeof usePublicNewsSites> }) {
+  const { data, isLoading, isError } = query;
   const sites = data?.sites ?? [];
   const ilSites = data?.ilSites ?? [];
-
   return (
-    <>
-      <section className="ahenk-section" aria-labelledby="tha-subscriber-sites">
-        <h2 id="tha-subscriber-sites" className="ahenk-subscriber-heading">{THA_SUBSCRIBER_HEADING}</h2>
-        {isLoading ? <p className="ahenk-lead">Yükleniyor…</p> : null}
-        {isError ? <p className="ahenk-lead">Haber siteleri şu anda listelenemedi.</p> : null}
-        {!isLoading && !isError && sites.length === 0 ? <p className="ahenk-lead">Yayında haber sitesi yok.</p> : null}
-        {sites.length > 0 ? <SiteLogoGrid sites={sites} /> : null}
-      </section>
+    <aside className="ahenk-tanitim-logos" aria-labelledby="tha-subscriber-sites">
+      <h2 id="tha-subscriber-sites" className="ahenk-subscriber-heading">{THA_SUBSCRIBER_HEADING}</h2>
+      {isLoading ? <p className="ahenk-lead">Yükleniyor…</p> : null}
+      {isError ? <p className="ahenk-lead">Haber siteleri şu anda listelenemedi.</p> : null}
+      {!isLoading && !isError && sites.length === 0 ? <p className="ahenk-lead">Yayında haber sitesi yok.</p> : null}
+      {sites.length > 0 ? <SiteLogoGrid sites={sites} /> : null}
       {ilSites.length > 0 ? (
-        <section className="ahenk-section" aria-labelledby="tha-il-sites">
-          <h2 id="tha-il-sites" className="ahenk-subscriber-heading">{THA_IL_SITES_HEADING}</h2>
+        <>
+          <h2 id="tha-il-sites" className="ahenk-subscriber-heading ahenk-il-heading">{THA_IL_SITES_HEADING}</h2>
           <SiteLogoGrid sites={ilSites} />
-          <p className="ahenk-lead">
+          <p className="ahenk-lead ahenk-il-more">
             <a href="https://gundemi.org/iller" target="_blank" rel="noopener noreferrer">
               81 İl Haber Ağı — tüm iller
             </a>
           </p>
-        </section>
+        </>
       ) : null}
-    </>
+    </aside>
   );
 }
 
-/** Tanıtım metni (kullanıcı 2026-10-08): ajans sayfasının giriş yazısı, logo ızgarası altında. */
-function TanitimBulteni() {
-  const t = TANITIM_TEXT;
+/** Tanıtım metni (kullanıcı 2026-10-08): sol sütun; site sayısı canlı. */
+function TanitimBulteni({ count }: { count: number }) {
+  const t = tanitimTextWithCount(count);
   return (
     <div className="ahenk-tanitim">
       <span className="ahenk-tanitim-eyebrow">Tanıtım</span>
@@ -128,6 +130,7 @@ function TanitimBulteni() {
 }
 
 export default function AhenkTurkataHaberAjansi() {
+  const newsSites = usePublicNewsSites();
   return (
     <AhenkAgencyChrome title="TürkAta Haber Ajansı | Ahenk Bilgi Teknolojileri" description={TURKATA_ABOUT_INTRO[0]}>
       <AhenkPageHero
@@ -139,17 +142,18 @@ export default function AhenkTurkataHaberAjansi() {
         title={TURKATA_ABOUT_TITLE}
         lead={TURKATA_ABOUT_TAGLINE}
       />
-      <section className="ahenk-section ahenk-detail ahenk-detail-single">
-        <div>
-          <TanitimBulteni />
+      {/* logogrid 2026-10-09 (user 00:35): text left, logo grid right (5 per row); no second grid below. */}
+      <section className="ahenk-section ahenk-tanitim-split">
+        <div className="ahenk-tanitim-text">
+          <TanitimBulteni count={newsSites.data?.total ?? 0} />
           <p>
             <a className="ahenk-btn" href={TURKATA_ORIGIN}>
               turkatahaber.com — resmi site
             </a>
           </p>
         </div>
+        <ThaSubscriberSites query={newsSites} />
       </section>
-      <ThaSubscriberSites />
       <section className="ahenk-cta">
         <div className="ahenk-cta-inner">
           <div>

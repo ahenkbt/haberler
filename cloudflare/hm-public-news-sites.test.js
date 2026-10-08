@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { logoVersion, publicNewsSitesFromRows, renderIlSitesGrid, renderNewsSitesGrid } from "./hm-public-news-sites.js";
+import { logoVersion, publicNewsSitesFromRows, renderIlSitesGrid, renderNewsSitesGrid, textLogoSvg } from "./hm-public-news-sites.js";
 
 const L = (o) => JSON.stringify(o);
 
@@ -65,7 +65,28 @@ describe("hm-public-news-sites", () => {
   it("hmDisplayNameOverride wins over display_name", () => {
     const out = publicNewsSitesFromRows([
       { id: 1141, slug: "gundemi", domain: "gundemi.org", display_name: "Gündemi.org", active: true, layout_json: L({ logoUrl: "/gundemi/logos/gundem-istanbul.png", hmDisplayNameOverride: "Gündem İstanbul" }) },
-    ]);
+    ], { group: "il" });
     assert.equal(out[0].name, "Gündem İstanbul");
+  });
+
+  it("logogrid: Gündem İstanbul (gundemi.org) is FIRST in İl Siteleri and not in the main group", () => {
+    const rows = [
+      { id: 1154, slug: "adana", domain: "adana.fix.tc", display_name: "Adana Gündemi", active: true, layout_json: L({ logoUrl: "/a.png", hmIl81: { il: "Adana", plate: "01" } }) },
+      { id: 1141, slug: "gundemi", domain: "gundemi.org", display_name: "Gündemi.org", active: true, layout_json: L({ logoUrl: "/gundemi/logos/gundem-istanbul.png" }) },
+      { id: 2, slug: "su", domain: "suhaber.net", display_name: "Su", active: true, layout_json: L({ logoUrl: "/s.png" }) },
+    ];
+    const il = publicNewsSitesFromRows(rows, { group: "il" });
+    assert.deepEqual(il.map((s) => s.domain), ["gundemi.org", "adana.fix.tc"]);
+    assert.equal(il[0].name, "Gündem İstanbul");
+    assert.equal(il[0].plate, "34");
+    assert.deepEqual(publicNewsSitesFromRows(rows).map((s) => s.domain), ["suhaber.net"]);
+  });
+
+  it("logogrid: text logo fallback is an SVG in the site colour", () => {
+    const svg = textLogoSvg("Yeşil Vatan", "#1d7a3a", "yesilvatan.gen.tr");
+    assert.match(svg, /^<svg /);
+    assert.match(svg, /#1d7a3a/);
+    assert.match(svg, /YEŞİL/);
+    assert.match(svg, /yesilvatan\.gen\.tr/);
   });
 });
