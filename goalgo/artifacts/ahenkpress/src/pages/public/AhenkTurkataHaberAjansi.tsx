@@ -113,7 +113,7 @@ export default function AhenkTurkataHaberAjansi() {
         title={TURKATA_ABOUT_TITLE}
         lead={TURKATA_ABOUT_TAGLINE}
       />
-      <section className="ahenk-section ahenk-detail">
+      <section className="ahenk-section ahenk-detail ahenk-detail-single">
         <div>
           <TanitimBulteni />
           <p>
