@@ -12,7 +12,7 @@ describe("hm-turkatahaber-edge", () => {
     assert.equal(turkataLayoutNeedsRepair(""), true);
   });
 
-  it("accepts cumha page allowlist with bolge-* and /daha tanıtım", () => {
+  it("accepts cumha page allowlist with bolge-* and gundemi /daha logos", () => {
     const layout = {
       hmNavOnlyCategorySlugs: [
         "yerel",
@@ -34,15 +34,15 @@ describe("hm-turkatahaber-edge", () => {
         {
           slug: "daha",
           bodyHtml:
-            '<div class="hm-daha-proje">x</div> ankarahabergundemi.com vatanhaber.net',
+            '<div class="hm-daha-proje hm-daha-site-grid"><a href="https://ankarahabergundemi.com/">AHG</a><a href="https://vatanhaber.net/">Vatan</a><a href="https://ege.gundemi.org/">Ege</a><a href="https://doguanadolu.gundemi.org/">Doğu</a><a href="https://guneydogu.gundemi.org/">Güneydoğu</a></div>',
         },
       ],
     };
     assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), false);
   });
 
-  it("flags layouts missing Ankara Haber Gündemi / Vatan Haber on /daha", () => {
-    const layout = {
+  it("flags /daha layouts missing gundemi regionals or still listing TUKAV", () => {
+    const base = {
       hmNavOnlyCategorySlugs: [
         "yerel",
         "cumhurbaskanligi",
@@ -58,9 +58,31 @@ describe("hm-turkatahaber-edge", () => {
         "bolge-marmara",
       ],
       logoUrl: "/turkata/turkata-logo.webp",
-      hmExtraPages: [{ slug: "daha", bodyHtml: '<div class="hm-daha-page">eski</div>' }],
     };
-    assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), true);
+    assert.equal(
+      turkataLayoutNeedsRepair(
+        JSON.stringify({
+          ...base,
+          hmExtraPages: [{ slug: "daha", bodyHtml: '<div class="hm-daha-proje hm-daha-site-grid"></div>' }],
+        }),
+      ),
+      true,
+    );
+    assert.equal(
+      turkataLayoutNeedsRepair(
+        JSON.stringify({
+          ...base,
+          hmExtraPages: [
+            {
+              slug: "daha",
+              bodyHtml:
+                '<div class="hm-daha-proje hm-daha-site-grid"><a href="https://ege.gundemi.org/">Ege</a><a href="https://doguanadolu.gundemi.org/">Doğu</a><a href="https://guneydogu.gundemi.org/">Güneydoğu</a><a href="https://tukav.org/">TÜKAV</a></div>',
+            },
+          ],
+        }),
+      ),
+      true,
+    );
   });
 
   it("flags tepe-only allowlist missing bolge-*", () => {

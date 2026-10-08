@@ -51,24 +51,18 @@ export function turkataLayoutNeedsRepair(layoutJsonRaw) {
     if (!logo || logo.toLowerCase().startsWith("data:image/")) return true;
     if (logo.startsWith("/brand/turkata/")) return true;
     if (logo !== "/turkata/turkata-logo.webp") return true;
-    // /daha tanıtım: sister brands + promo hub must stay in hmExtraPages.
-    const pages = Array.isArray(layout?.hmExtraPages) ? layout.hmExtraPages : [];
-    const daha = pages.find(
-      (p) =>
-        p &&
-        typeof p === "object" &&
-        String(p.slug ?? "")
-          .trim()
-          .toLowerCase() === "daha",
-    );
-    const dahaBody = String(daha?.bodyHtml ?? "");
+    // /daha Haber sitelerimiz: AHG/Vatan + gundemi regionals on; TUKAV off the grid.
+    if (!raw.includes("hm-daha-proje") || !raw.includes("hm-daha-site-grid")) return true;
     if (
-      !dahaBody.includes("hm-daha-proje") ||
-      !dahaBody.includes("ankarahabergundemi.com") ||
-      !dahaBody.includes("vatanhaber.net")
+      !raw.includes("ankarahabergundemi.com") ||
+      !raw.includes("vatanhaber.net") ||
+      !raw.includes("ege.gundemi.org") ||
+      !raw.includes("doguanadolu.gundemi.org") ||
+      !raw.includes("guneydogu.gundemi.org")
     ) {
       return true;
     }
+    if (raw.includes("tukav.org")) return true;
     return false;
   } catch {
     return true;

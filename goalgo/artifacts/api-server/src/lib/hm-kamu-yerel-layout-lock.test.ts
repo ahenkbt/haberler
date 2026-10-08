@@ -116,4 +116,27 @@ describe("hm-kamu-yerel-layout-lock", () => {
       kamuYerelLayoutNeedsCatalogRepair(JSON.stringify(staleDaha), kamuYerelLogoExpectation(TURKATAHABER_SITE)),
     ).toBe(true);
   });
+
+  it("flags /daha pages missing gundemi regionals", () => {
+    const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
+    const staleDaha = {
+      ...layout,
+      hmExtraPages: [
+        {
+          slug: "daha",
+          title: "Daha",
+          bodyHtml:
+            '<div class="hm-daha-proje hm-daha-site-grid">promo without regionals</div>',
+          enabled: true,
+          fullWidth: true,
+        },
+        { slug: "iller", title: "İller", bodyHtml: "", enabled: true, fullWidth: true },
+      ],
+      hmCorporateMenuItems: [{ id: "ky-cat-daha", href: "/daha" }],
+    };
+    expect(
+      kamuYerelLayoutNeedsCatalogRepair(JSON.stringify(staleDaha), kamuYerelLogoExpectation(TURKATAHABER_SITE)),
+    ).toBe(true);
+  });
+
 });

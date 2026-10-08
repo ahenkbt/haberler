@@ -54,4 +54,30 @@ describe("hm-kamu-yerel-extra-pages-edge", () => {
     assert.match(html, /hm-daha-aside/);
     assert.equal(typeof serveKamuYerelExtraPage, "function");
   });
+
+  it("daha edge fallback lists gundemi regionals and omits TUKAV", async () => {
+    const { serveKamuYerelExtraPage } = await import("./hm-kamu-yerel-extra-pages-edge.js");
+    const prevFetch = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response("<!DOCTYPE html><html><head><title>X</title></head><body><main id=\"icerik\"></main></body></html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    try {
+      const req = new Request("https://turkatahaber.com/daha", { method: "GET" });
+      const res = await serveKamuYerelExtraPage(req, {}, new URL("https://turkatahaber.com/daha"));
+      assert.ok(res);
+      const html = await res.text();
+      assert.match(html, /ege\.gundemi\.org/);
+      assert.match(html, /marmara\.gundemi\.org/);
+      assert.match(html, /karadeniz\.gundemi\.org/);
+      assert.match(html, /doguanadolu\.gundemi\.org/);
+      assert.match(html, /guneydogu\.gundemi\.org/);
+      assert.match(html, /Ege Gündemi/);
+      assert.match(html, /sosyalhizmetler\.tr/);
+      assert.doesNotMatch(html, /tukav\.org/);
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
+  });
 });

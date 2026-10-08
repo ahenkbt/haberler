@@ -9,8 +9,9 @@ export const SOSYALHIZMETLER_ZONE = "sosyalhizmetler.tr";
 export const SOSYALHIZMETLER_PHP_ORIGIN_IP = "187.77.84.201";
 export const SOSYALHIZMETLER_CAMPAIGN_TAG = "sosyalhizmetler";
 
-export const SOSYALHIZMETLER_LOGO_PATH = "/sh/sosyal-hizmetler-logo.png";
-export const SOSYALHIZMETLER_FAVICON_PATH = "/sh/sosyal-hizmetler-favicon.png";
+/** Worker ASSETS — `public/sosyalhizmetler/*` (legacy `/sh/*` copies kept in sync). */
+export const SOSYALHIZMETLER_LOGO_PATH = "/sosyalhizmetler/sosyalhizmetler-logo.webp";
+export const SOSYALHIZMETLER_FAVICON_PATH = "/sosyalhizmetler/sosyalhizmetler-favicon.png";
 
 export type SosyalHizmetlerCategoryDef = { slug: string; name: string; color: string };
 

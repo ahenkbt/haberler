@@ -151,6 +151,17 @@ function kamuYerelExtraPagesNeedRepair(layoutJson: string | null | undefined): b
     if (!dahaBody.includes(KAMU_YEREL_DAHA_PROMO_MARKER) || !dahaBody.includes("hm-daha-site-grid")) {
       return true;
     }
+    // Sister brands + regional gundemi.org on the network grid; TUKAV stays off.
+    if (
+      !dahaBody.includes("ankarahabergundemi.com") ||
+      !dahaBody.includes("vatanhaber.net") ||
+      !dahaBody.includes("ege.gundemi.org") ||
+      !dahaBody.includes("doguanadolu.gundemi.org") ||
+      !dahaBody.includes("guneydogu.gundemi.org")
+    ) {
+      return true;
+    }
+    if (dahaBody.includes("tukav.org")) return true;
     const menu = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];
     const daha = menu.find(
       (m) =>
