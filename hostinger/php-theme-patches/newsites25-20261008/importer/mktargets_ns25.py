@@ -19,7 +19,7 @@ M_FEEDS_GEN = ["https://rss.haberler.com/rss.asp?kategori=ekonomi", "https://rss
     "https://www.trthaber.com/egitim_articles.rss", "https://www.ntv.com.tr/turkiye.rss", "https://www.ntv.com.tr/egitim.rss",
     "https://www.aa.com.tr/tr/rss/default?cat=guncel", "https://www.aa.com.tr/tr/rss/default?cat=ekonomi", "https://www.sabah.com.tr/rss/ekonomi.xml",
     "https://www.sabah.com.tr/rss/gundem.xml", "https://www.star.com.tr/rss/ekonomi.xml", "https://www.dirilispostasi.com/rss/ekonomi"]
-M_FEEDS = M_FEEDS_CORE + [S("memur-zammi"), S("hakem-kurulu"), S("memur-sen")] + M_FEEDS_GEN  # thin-fill 2026-10-08
+M_FEEDS = M_FEEDS_CORE + [S("memur-zammi"), S("hakem-kurulu"), S("memur-sen"), HT("toplu%20s%C3%B6zle%C5%9Fme"), HT("resmi%20gazete")] + M_FEEDS_GEN  # thin-fill 2026-10-08
 MEMUR = (r"memur|kamu (?:personel|çal[ıi]şan|görevli|işçi)|devlet memur|4/[ABCD]\b|4-[ABCD]\b|sözleşmeli personel|toplu sözleşme|KPSS|ÖSYM|"
          r"657 say[ıi]l[ıi]|aday memur|DPB\b|Devlet Personel|öğretmen|polis memur|hemşire|ebe\b|imam|kamu kurum|bakanl[ıi]k personel|"
          r"Memur-?Sen|Kamu-?Sen|KESK|Eğitim-?B[iİ]r-?Sen|Eğitim-?Sen|Eğitim-?İş|Sağl[ıi]k-?Sen|Diyanet-?Sen|Hizmet-?Sen|Ali Yalç[ıi]n|Önder Kahveci|"
