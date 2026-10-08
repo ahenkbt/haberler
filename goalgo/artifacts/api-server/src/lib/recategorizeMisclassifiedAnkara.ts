@@ -44,6 +44,7 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
   siteId?: number;
   limit?: number;
   dryRun?: boolean;
+  slugs?: string[];
 }): Promise<{
   scanned: number;
   updated: number;
@@ -89,6 +90,8 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
     throw new Error("gundem kategori bulunamadı");
   }
 
+  const slugFilter =
+    options?.slugs?.map((s) => String(s).trim()).filter(Boolean) ?? [];
   const rows = await getNewsDbForRead()
     .select({
       id: newsTable.id,
@@ -105,6 +108,7 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
         inArray(newsTable.siteId, targetSiteIds),
         inArray(newsTable.categoryId, ankaraCategoryIds),
         eq(newsTable.status, "published"),
+        ...(slugFilter.length > 0 ? [inArray(newsTable.slug, slugFilter)] : []),
       ),
     )
     .orderBy(desc(newsTable.id))

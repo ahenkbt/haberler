@@ -40,6 +40,38 @@ describe("rss-ankara-category-guard", () => {
     expect(isMisclassifiedAnkaraItem("gundem", "Fenerbahçe")).toBe(false);
   });
 
+  it("flags rss-342598-style international football as Ankara misfit", () => {
+    const title =
+      "Cristiano Ronaldo'dan Arjantin Formasıyla Son Tangosunu Yapan Messi'ye Duygusal Mesaj";
+    const spot =
+      "Futbol tarihinin iki büyük yıldızı Cristiano Ronaldo ve Lionel Messi bir kez daha aynı hikâyenin içinde buluştu.";
+    expect(looksLikeAnkaraLocalContent(title, spot)).toBe(false);
+    expect(isMisclassifiedAnkaraItem("ankara", title, spot)).toBe(true);
+    expect(resolveAnkaraImportCategorySlug("ankara", title, spot)).toBe("spor");
+  });
+
+  it("does not treat kazandı as Kahramankazan local signal", () => {
+    expect(looksLikeAnkaraLocalContent("Galatasaray deplasmanda farklı kazandı", null, null)).toBe(
+      false,
+    );
+  });
+
+  it("Spider-Man / gişe sinema haberi Ankara'dan gündeme", () => {
+    const title = "Gişe Rekortmeni Spider-Man: Brand New Day Beyaz Perde Yolculuğunu Noktaladı";
+    const spot =
+      "Rekor gişe geliriyle dikkat çeken Spider-Man: Brand New Day, sinema macerasını tamamlayarak dijital platformlara geçiş yaptı.";
+    expect(isMisclassifiedAnkaraItem("ankara", title, spot)).toBe(true);
+    expect(resolveAnkaraImportCategorySlug("ankara", title, spot)).toBe("gundem");
+  });
+
+  it("Spider-Man / gişe sinema haberi Ankara'dan gündeme", () => {
+    const title = "Gişe Rekortmeni Spider-Man: Brand New Day Beyaz Perde Yolculuğunu Noktaladı";
+    const spot =
+      "Rekor gişe geliriyle dikkat çeken Spider-Man: Brand New Day, sinema macerasını tamamlayarak dijital platformlara geçiş yaptı.";
+    expect(isMisclassifiedAnkaraItem("ankara", title, spot)).toBe(true);
+    expect(resolveAnkaraImportCategorySlug("ankara", title, spot)).toBe("gundem");
+  });
+
   it("resolveAnkaraReplacementCategorySlug picks canonical slugs", () => {
     expect(resolveAnkaraReplacementCategorySlug("Yapay zeka düzenlemesi Meclis'te", null, null)).toBe(
       "teknoloji",

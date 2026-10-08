@@ -379,6 +379,19 @@ jobs:
           echo
           exit 1
 
+      - name: Repair ASG Ankara category misfits (Neon)
+        if: steps.cf.outputs.enabled == 'true'
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::warning::DATABASE_URL missing — ASG Ankara repair skipped."
+            exit 0
+          fi
+          pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --apply
+
   deploy-yektube:
     name: Deploy Yektube Worker
     needs: deploy
