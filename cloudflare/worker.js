@@ -37,6 +37,7 @@ import { handleEdgeHealthzLive } from "./hm-edge-healthz.js";
 import { handleAdminPanelStatusEdge } from "./hm-admin-panel-status-edge.js";
 import { isHmAdminPanelHeavyApiPath, wakeApiContainerBackground } from "./hm-admin-panel-wake.js";
 import { handleTukavContactEdge } from "./tukav-contact-edge.js";
+import { isTukavHost, rewriteSpaShellOgForTukav } from "./tukav-brand-edge.js";
 import {
   hybridEdgeFillHttpStatus,
   HM_SITE_RSS_EDGE_FETCH_TIMEOUT_MS,
@@ -998,6 +999,13 @@ async function respondAssetHtml(request, assetResp, { oneShotPurge, purgeCookie,
     const ogOrigin = incoming?.origin || `https://${String(hostname || "").replace(/^www\./, "")}`;
     html = rewriteSpaShellOgForHmHost(html, hostname, ogOrigin);
     out.set("x-yekpare-hm-og-rewrite", hmHostSlug);
+  } else if (
+    isTukavHost(hostname) &&
+    shouldRewriteSpaShellOgForPath(incoming?.pathname || "/")
+  ) {
+    const ogOrigin = incoming?.origin || "https://tukav.org";
+    html = rewriteSpaShellOgForTukav(html, ogOrigin);
+    out.set("x-tukav-og-brand", "1");
   }
   const homeHtml = incoming && isHmPublicHomeHtmlPath(incoming.pathname, incoming.hostname);
   if (homeHtml && hmHostSlug) {
