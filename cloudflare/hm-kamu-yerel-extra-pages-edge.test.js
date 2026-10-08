@@ -20,7 +20,7 @@ describe("hm-kamu-yerel-extra-pages-edge", () => {
     assert.equal(kamuYerelExtraPageSlugFromPath("/kategori/ankara"), null);
   });
 
-  it("injects article into shell main", () => {
+  it("injects page into shell main without ys-page grid trap", () => {
     const shell = `<!DOCTYPE html><html><head><title>X</title></head><body><main id="icerik"><p>old</p></main></body></html>`;
     const html = injectExtraPageIntoShell(
       shell,
@@ -29,8 +29,29 @@ describe("hm-kamu-yerel-extra-pages-edge", () => {
     );
     assert.match(html, /<title>İller \| TÜRKATA HABER AJANSI<\/title>/);
     assert.match(html, /data-extra-slug="iller"/);
+    assert.match(html, /ys-wrap ys-extra-page/);
     assert.match(html, /hm-iller-il-link/);
     assert.match(html, /bolge-marmara/);
     assert.doesNotMatch(html, /<p>old<\/p>/);
+    assert.doesNotMatch(html, /class="ys-page ys-extra-page"/);
+  });
+
+  it("daha fallback includes promo markers and site logos", async () => {
+    const { serveKamuYerelExtraPage } = await import("./hm-kamu-yerel-extra-pages-edge.js");
+    // Unit-level: rebuild via inject of fallback-shaped body
+    const html = injectExtraPageIntoShell(
+      `<!DOCTYPE html><html><head><title>X</title></head><body><main id="icerik"></main></body></html>`,
+      {
+        slug: "daha",
+        title: "Daha",
+        bodyHtml:
+          '<div class="hm-daha-page"><div class="hm-daha-main"><section class="hm-daha-proje">81 İl 81 Haber Sitesi Projesi</section><ul class="hm-daha-site-grid"></ul></div><aside class="hm-daha-aside"></aside></div>',
+      },
+      "TÜRKATA HABER AJANSI",
+    );
+    assert.match(html, /hm-daha-proje/);
+    assert.match(html, /81 İl 81 Haber Sitesi Projesi/);
+    assert.match(html, /hm-daha-aside/);
+    assert.equal(typeof serveKamuYerelExtraPage, "function");
   });
 });

@@ -82,13 +82,21 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml).toContain('href="/kategori/ankara"');
     expect(page.bodyHtml.match(/hm-iller-il-link/g)?.length).toBe(81);
   });
-});
 
-  it("daha premium hub lists intl categories + 81 provinces under regions", () => {
+  it("daha premium hub lists promo, logos, intl categories + 81 provinces", () => {
     const page = buildKamuYerelDahaExtraPage();
     expect(page.slug).toBe(KAMU_YEREL_DAHA_PAGE_SLUG);
+    expect(page.bodyHtml).toContain("hm-daha-proje");
+    expect(page.bodyHtml).toContain("81 İl 81 Haber Sitesi Projesi");
+    expect(page.bodyHtml).toContain("TürAta Haber Ajansı Haber sitelerimiz");
+    expect(page.bodyHtml).toContain("hm-daha-site-grid");
+    expect(page.bodyHtml).toContain("https://turkatahaber.com/turkata/turkata-logo.webp");
+    expect(page.bodyHtml).toContain("https://yerel.net.tr/yerel/yerel-logo.png");
+    expect(page.bodyHtml).toContain("TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma");
     expect(page.bodyHtml).toContain('href="/kategori/nato"');
     expect(page.bodyHtml).toContain('href="/kategori/avrupa-birligi"');
     expect(page.bodyHtml).toContain('id="marmara"');
-    expect(page.bodyHtml.match(/hm-daha-il-link/g)?.length).toBe(81);
+    expect(page.bodyHtml).toContain("hm-daha-aside");
+    expect(page.bodyHtml.match(/class="hm-daha-il-link"/g)?.length).toBe(81);
   });
+});
