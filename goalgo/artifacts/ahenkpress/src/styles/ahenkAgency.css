@@ -1682,6 +1682,13 @@
   white-space: nowrap;
 }
 
+/* Sticky .ahenk-header (77px desktop / 71px mobile) must not cover the logo-grid heading
+   when the section is scrolled to (anchor, scrollIntoView). */
+.ahenk-section[aria-labelledby="tha-subscriber-sites"],
+#tha-subscriber-sites {
+  scroll-margin-top: 96px;
+}
+
 .ahenk-subscriber-logos {
   list-style: none;
   margin: 28px 0 0;
