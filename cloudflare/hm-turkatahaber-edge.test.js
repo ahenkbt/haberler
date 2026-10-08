@@ -12,7 +12,7 @@ describe("hm-turkatahaber-edge", () => {
     assert.equal(turkataLayoutNeedsRepair(""), true);
   });
 
-  it("accepts cumha page allowlist with bolge-*", () => {
+  it("accepts cumha page allowlist with bolge-* and /daha tanıtım", () => {
     const layout = {
       hmNavOnlyCategorySlugs: [
         "yerel",
@@ -30,8 +30,37 @@ describe("hm-turkatahaber-edge", () => {
         "ankara",
       ],
       logoUrl: "/turkata/turkata-logo.webp",
+      hmExtraPages: [
+        {
+          slug: "daha",
+          bodyHtml:
+            '<div class="hm-daha-proje">x</div> ankarahabergundemi.com vatanhaber.net',
+        },
+      ],
     };
     assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), false);
+  });
+
+  it("flags layouts missing Ankara Haber Gündemi / Vatan Haber on /daha", () => {
+    const layout = {
+      hmNavOnlyCategorySlugs: [
+        "yerel",
+        "cumhurbaskanligi",
+        "bakanliklar",
+        "tbmm",
+        "siyasi-partiler",
+        "yerel-yonetimler",
+        "mulki-idare",
+        "toplum-ve-yasam",
+        "daha",
+        "sivil-toplum-kuruluslari",
+        "kamu-kurumlari",
+        "bolge-marmara",
+      ],
+      logoUrl: "/turkata/turkata-logo.webp",
+      hmExtraPages: [{ slug: "daha", bodyHtml: '<div class="hm-daha-page">eski</div>' }],
+    };
+    assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), true);
   });
 
   it("flags tepe-only allowlist missing bolge-*", () => {
