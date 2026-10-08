@@ -1,2 +1,2 @@
-# importer-v5 off-topic guard for live HM items + editor news (cannot be moved): hides via hm_site_content_hidden, never deletes
+# importer-v5 live guard v2: keeps only off-topic NETWORK rss-sync items off topic sites (editor/author content never hidden); never deletes
 */20 * * * * root flock -n /run/php-theme-guard.lock timeout 600 nice -n 10 docker run --rm --name php-theme-guard --cpus 0.5 --memory 384m --env-file /docker/php-theme/importer.env -v /docker/php-theme/importer-v5:/app5:ro -v /docker/php-theme/data/bridge:/bridge:ro php-theme-importer:4 python /app5/guard_live.py >> /var/log/php-theme/guard-live.log 2>&1

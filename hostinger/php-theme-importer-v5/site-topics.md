@@ -66,3 +66,21 @@ These sites have layout_json.hmNewsRssSources = [], so they show only their own 
   - Targets come from mktargets.py → targets.json. Target keys: cat_rule, city, region, topic, src_cats; feeds can be "db:<site>" or "scrape:<listing url>".
 - recat_job.py: hourly at :17 (/etc/cron.d/php-theme-recat). Moves and hides rss rows. Log: /var/log/php-theme/recat.log.
 - guard_live.py: every 20 min (/etc/cron.d/php-theme-guard). Hides off-topic live HM items and editor news. Log: /var/log/php-theme/guard-live.log.
+
+## Spor branches + kibris.gundemi.org (spor-kibris executor, 2026-10-08)
+- General sites: Spor has 13 branch tabs (CategoryTree::SPOR): futbol, basketbol, voleybol, hentbol, gures, atletizm, tenis, yuzme, motor-sporlari, dovus-sporlari, e-spor, amator-spor, engelli-sporlari. /kategori/spor aggregates all branches.
+  - classifier topic = spor for every branch. Branch regexes live in /docker/php-theme/spor-kibris/targets-spk.json. Hourly :37 spk_redistribute.py moves pool `spor` rows into a branch (MOVE only).
+  - Do NOT recat a branch row back to `spor`.
+- 1140 kibris.gundemi.org: own categories kibris-gundem, kibris-ekonomi, kibris-guney, kibris-spor, kibris-egitim, kibris-kultur-sanat, plus the 4 gundemi-kibris-* cities. It also has open sections `turkiye` and `dunya`, filled by spor-kibris targets.
+  - All of these are keep (classifier block "spor-kibris", REGION_OPEN_CATS/REGION_OWN_PREFIX). Never TO_POOL them.
+  - Manşet = Kıbrıs only (hm_ai_editor_sites topic_rule; Topic priority keywords).
+  - Kıbrıs/KKTC news is also copied into pool 230 `dunya` for general sites.
+
+## 2026-10-08 21:00–21:35 — "Dağıt, gizleme" (redistribute, don't hide) — applies to importers, recategorizer, guard and AI Haber Editörü
+- An item that is off-topic for a topic/regional/local site (sehitgazi 232, turksav 233, yesilvatan 236, dunyasaglik 237, yerel.net.tr 231, regional gundemi.org 1133–1140) is **moved** to the shared general pool (portal_rss_items.site_id = 230) under its correct category (classifier.pool_target): topic → sub-category (Siyaset/Kamu/Güvenlik/Dünya trees, ministries), province category for single-province local news (region_key/label set), else Gündem. General news sites show it; the topic site does not.
+- **Allowed hide reasons only:** duplicate (same story already in the pool), no image (after an og:image retry), banned (vatanhaber terms: Hüseyin Akın / Anadolu Çınarları / AÇI Partisi / AÇİP), junk/spam (dizi izle/fragman/kimdir/kaç yaşında/bahis…). Reasons are stored as `recat_keep:<reason>` / `unhide_keep:<reason>`.
+- **Never hidden:** a site's own editor content (is_editor_manual, authored items, columns/köşe yazıları) and Yazarlar content. On topic sites, network items (site NULL) and fan-out copies from other sites that are off-topic are kept off that site only (`offsite_network:*`); they stay visible on the general sites.
+- **Importer topic gate:** per-site panel importer runs for topic/regional/local sites go through importer-v5/gate_run.py, which skips off-topic items before insert (haberler.com tag feeds fall back to general news when the tag is quiet).
+- **Yeşil Vatan strict lexicon** (classifier.CEVRE_STRICT): doğa, çevre, ekoloji, orman, iklim, tarım/çiftçi/hayvancılık, deniz/balıkçılık, yenilenebilir enerji, sürdürülebilirlik. Excluded false positives: bare "çevre" prefix (çevresinde), "yaban" (yabancı), "toprak" (surname), "baraj" (seçim barajı), "fon", politics, sport, crime and series. An item with a strong sport/politics/crime/world/tech topic and no green term in the title is rejected.
+- sehitgazi/turksav: spot-only matches need 2 hits (one "polis" in the spot is not security news).
+- 'Amatör Spor Haftası' stories → pool 230, category amator-spor (spor-kibris block).
