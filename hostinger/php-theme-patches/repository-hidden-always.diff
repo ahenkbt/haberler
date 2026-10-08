@@ -1,0 +1,30 @@
+--- a/src/Repository.php	2026-10-08 20:00:02.289815621 +0300
++++ b/src/Repository.php	2026-10-08 20:00:02.305815586 +0300
+@@ -1157,7 +1157,8 @@
+                     $this->block['patterns'][] = $re;
+                 }
+             }
+-            if ($this->block['patterns'] !== []) {
++            {
++                // per-site hidden pairs apply even without regex rules (off-topic hides by importer-v5 guard)
+                 $stmt = $this->pdo->prepare('SELECT public_slug, title FROM hm_site_content_hidden WHERE site_id = :site');
+                 $stmt->execute(['site' => $this->currentSite]);
+                 foreach ($stmt->fetchAll() as $r) {
+@@ -1179,7 +1180,7 @@
+     private function isBlocked(array $s, bool $withBody = false): bool
+     {
+         $b = $this->blockRules();
+-        if ($b['patterns'] === []) {
++        if ($b['patterns'] === [] && $b['slugs'] === []) {
+             return false;
+         }
+         $slug = (string) ($s['slug'] ?? '');
+@@ -1204,7 +1205,7 @@
+     /** @param list<array<string, mixed>> $items @return list<array<string, mixed>> */
+     private function dropBlocked(array $items): array
+     {
+-        if ($this->blockRules()['patterns'] === []) {
++        if ($this->blockRules()['patterns'] === [] && $this->blockRules()['slugs'] === []) {
+             return $items;
+         }
+         return array_values(array_filter($items, fn (array $s): bool => !$this->isBlocked($s)));

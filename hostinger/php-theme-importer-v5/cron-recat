@@ -1,0 +1,2 @@
+# importer-v5 recategorizer: strict classifier over the last 3 h of portal_rss_items (moves + off-topic hides); AI chain only for ambiguous items
+17 * * * * root flock -n /run/php-theme-recat.lock timeout 900 nice -n 10 docker run --rm --name php-theme-recat --cpus 0.5 --memory 384m --env-file /docker/php-theme/importer.env --env-file /docker/php-theme/ai-editor.env -e RECAT_HOURS=3 -v /docker/php-theme/importer-v5:/app5:ro php-theme-importer:4 python /app5/recat_job.py >> /var/log/php-theme/recat.log 2>&1

@@ -1,0 +1,6972 @@
+[
+ {
+  "site": 230,
+  "cat": "siyaset",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://www.lidergundem.com.tr/rss/siyaset.xml",
+   {
+    "url": "https://www.trthaber.com/gundem_articles.rss",
+    "match": "(parti|milletvekili|TBMM|meclis|genel başkan|il başkan|ilçe başkan|AK Parti|CHP|MHP|İYİ Parti|DEM Parti|Yeni Parti|DEVA|Saadet|Yeniden Refah|BBP|muhalefet|iktidar|kanun teklifi|seçim)"
+   },
+   {
+    "url": "https://www.hurriyet.com.tr/rss/gundem",
+    "match": "(parti|milletvekili|TBMM|meclis|genel başkan|il başkan|ilçe başkan|AK Parti|CHP|MHP|İYİ Parti|DEM Parti|Yeni Parti|DEVA|Saadet|Yeniden Refah|BBP|muhalefet|iktidar|kanun teklifi|seçim)"
+   },
+   {
+    "url": "https://www.yenisafak.com/rss?xml=gundem",
+    "match": "(parti|milletvekili|TBMM|meclis|genel başkan|il başkan|ilçe başkan|AK Parti|CHP|MHP|İYİ Parti|DEM Parti|Yeni Parti|DEVA|Saadet|Yeniden Refah|BBP|muhalefet|iktidar|kanun teklifi|seçim)"
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 15,
+  "per_run": 5,
+  "max_age": 21,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "kamu",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/kamu-kurumlari-ve-ust-kurullar",
+    "match": null
+   },
+   {
+    "url": "https://cumha.com.tr/rss/category/bakanliklar",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=memur",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sgk",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.ntv.com.tr/turkiye.rss"
+  ],
+  "match": "(memur|kamu |kamuda|kamu personel|SGK|emekli|bakanlığı|bakanlık|Resmi Gazete|TÜİK|ÖSYM|KPSS|atama|personel alım|e-Devlet|Diyanet|AFAD|TOKİ|İŞKUR|asgari ücret|vergi|maaş|zam|genelge|yönetmelik)",
+  "exclude": null,
+  "min": 15,
+  "per_run": 5,
+  "max_age": 21,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "stk",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/sivil-toplum-kuruluslari",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=dernek",
+    "match": "(dernek|vakf|vakıf|sivil toplum|STK|federasyon|konfederasyon|oda başkan|odası|birliği|gönüllü|yardım kampanya|Kızılay|Yeşilay|TEMA|LÖSEV|İHH|TOBB|TESK)"
+   },
+   {
+    "url": "https://www.trthaber.com/gundem_articles.rss",
+    "match": "(dernek|vakf|vakıf|sivil toplum|STK|Kızılay|Yeşilay|gönüllü)"
+   },
+   {
+    "url": "https://www.hurriyet.com.tr/rss/gundem",
+    "match": "(dernek|vakf|vakıf|sivil toplum|STK|Kızılay|Yeşilay|gönüllü)"
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 15,
+  "per_run": 5,
+  "max_age": 21,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "belediye",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=belediye",
+    "match": null
+   },
+   "https://cumha.com.tr/rss/category/yerel-yonetimler",
+   "https://cumha.com.tr/rss/category/buyuksehir-ve-iller",
+   "https://cumha.com.tr/rss/category/ilceler",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.ntv.com.tr/turkiye.rss"
+  ],
+  "match": "belediye",
+  "exclude": null,
+  "min": 15,
+  "per_run": 5,
+  "max_age": 21,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "uluslararasi-kuruluslar",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=dunya",
+   "https://www.hurriyet.com.tr/rss/dunya",
+   "https://www.trthaber.com/dunya_articles.rss",
+   "https://www.ntv.com.tr/dunya.rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://cumha.com.tr/rss/lokasyon/dunya",
+   "https://www.cnnturk.com/feed/rss/dunya/news",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem"
+  ],
+  "match": "(\\bBM\\b|Birleşmiş Milletler|NATO|\\bAB\\b|Avrupa Birliği|AGİT|İslam İşbirliği|\\bİİT\\b|Türk Devletleri Teşkilatı|\\bTDT\\b|DSÖ|Dünya Sağlık Örgütü|UNESCO|UNICEF|UNHCR|\\bIMF\\b|Dünya Bankası|\\bG20\\b|\\bG7\\b|OECD|Avrupa Konseyi|Uluslararası Ceza|Uluslararası Adalet|Arap Birliği|ASEAN|Şanghay)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "birlesmis-milletler",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=dunya",
+   "https://www.hurriyet.com.tr/rss/dunya",
+   "https://www.trthaber.com/dunya_articles.rss",
+   "https://www.ntv.com.tr/dunya.rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://cumha.com.tr/rss/lokasyon/dunya",
+   "https://www.cnnturk.com/feed/rss/dunya/news",
+   "https://www.aa.com.tr/tr/rss/default?cat=dunya",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bm",
+    "match": null
+   }
+  ],
+  "match": "(\\bBM\\b|BM'|Birleşmiş Milletler|UNICEF|UNESCO|UNHCR|UNRWA|DSÖ|Dünya Sağlık Örgütü|Guterres|Güvenlik Konseyi|Dünya Gıda Programı)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 60,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "avrupa-birligi",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=dunya",
+   "https://www.hurriyet.com.tr/rss/dunya",
+   "https://www.trthaber.com/dunya_articles.rss",
+   "https://www.ntv.com.tr/dunya.rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://cumha.com.tr/rss/lokasyon/dunya",
+   "https://www.cnnturk.com/feed/rss/dunya/news",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.trthaber.com/ekonomi_articles.rss",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=avrupa%20birli%C4%9Fi",
+    "match": null
+   }
+  ],
+  "match": "(\\bAB\\b|AB'|Avrupa Birliği|Avrupa Komisyonu|Avrupa Parlamentosu|Brüksel|von der Leyen|Kallas|Avrupa Konseyi Başkanı|Schengen|Gümrük Birliği)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "nato",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=dunya",
+   "https://www.hurriyet.com.tr/rss/dunya",
+   "https://www.trthaber.com/dunya_articles.rss",
+   "https://www.ntv.com.tr/dunya.rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://cumha.com.tr/rss/lokasyon/dunya",
+   "https://www.cnnturk.com/feed/rss/dunya/news",
+   "https://www.aa.com.tr/tr/rss/default?cat=dunya",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   {
+    "url": "https://cumha.com.tr/rss/category/nato",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=nato",
+    "match": "NATO|Rutte|ittifak"
+   }
+  ],
+  "match": "(NATO|Rutte)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 60,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "roportajlar",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://cumha.com.tr/rss/category/toplum-ve-yasam",
+   "https://cumha.com.tr/rss/category/sivil-toplum-kuruluslari",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.trthaber.com/manset_articles.rss"
+  ],
+  "match": "(röportaj|söyleşi|AA muhabirine|muhabirimize|ile konuştu|sorularını yanıtladı|özel açıklama|^[^:]{12,110}: [“\\\"])",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "cumhurbaskanligi",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/cumhurbaskanligi",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.ntv.com.tr/turkiye.rss"
+  ],
+  "match": "(Cumhurbaşkanı|Erdoğan|Cumhurbaşkanlığı|Külliye|İletişim Başkan|Cevdet Yılmaz)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "genel-merkez",
+  "feeds": [
+   "https://www.aa.com.tr/tr/rss/default?cat=dunya",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   {
+    "url": "https://cumha.com.tr/rss/category/genel-merkez",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika"
+  ],
+  "match": "(Genel Başkan|genel merkez|Genel Sekreter|parti sözcüsü|Parti Sözcüsü|MYK|MKYK)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "il-ilce-baskanliklari",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/il-ilce-baskanliklari",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika"
+  ],
+  "match": "(il başkan|ilçe başkan|İl Başkan|İlçe Başkan)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "siyasi-partiler",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/siyasi-partiler",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://www.lidergundem.com.tr/rss/siyaset.xml"
+  ],
+  "match": "(parti|milletvekili|TBMM|meclis|genel başkan|il başkan|ilçe başkan|AK Parti|CHP|MHP|İYİ Parti|DEM Parti|Yeni Parti|DEVA|Saadet|Yeniden Refah|BBP|muhalefet|iktidar|kanun teklifi|seçim)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "mulki-idare",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/mulki-idare",
+    "match": null
+   },
+   {
+    "url": "https://cumha.com.tr/rss/category/valilikler",
+    "match": null
+   },
+   {
+    "url": "https://cumha.com.tr/rss/category/kaymakamliklar",
+    "match": null
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem"
+  ],
+  "match": "(vali|kaymakam|valilik|valiliği)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "valilikler",
+  "feeds": [
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   {
+    "url": "https://cumha.com.tr/rss/category/valilikler",
+    "match": null
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss"
+  ],
+  "match": "(Vali |Valisi|Valiliği|valilik)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "kaymakamliklar",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kaymakam",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   {
+    "url": "https://cumha.com.tr/rss/category/kaymakamliklar",
+    "match": null
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem"
+  ],
+  "match": "(Kaymakam)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "muhtar",
+  "feeds": [
+   "https://www.aa.com.tr/tr/rss/default?cat=dunya",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=muhtar",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://cumha.com.tr/rss/category/yerel-yonetimler",
+   "https://cumha.com.tr/rss/category/ilceler",
+   "https://rss.haberler.com/RssNew.aspx?kategori=belediye"
+  ],
+  "match": "muhtar",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "buyuksehir-ve-iller",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   {
+    "url": "https://cumha.com.tr/rss/category/buyuksehir-ve-iller",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel"
+  ],
+  "match": "Büyükşehir",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "ilceler",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   {
+    "url": "https://cumha.com.tr/rss/category/ilceler",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": "(ilçe|ilçesinde|ilçesi|ilçemiz)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "kamu-kurumlari",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/kamu-kurumlari-ve-ust-kurullar",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "bakanliklar",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/bakanliklar",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem"
+  ],
+  "match": "(Bakanı|Bakanlığı)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "tbmm",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/tbmm",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(TBMM|Meclis|milletvekili|Genel Kurul|kanun teklifi)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 230,
+  "cat": "sivil-toplum-kuruluslari",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/category/sivil-toplum-kuruluslari",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=dernek",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel"
+  ],
+  "match": "(dernek|vakf|vakıf|sivil toplum|STK|federasyon|konfederasyon|Kızılay|Yeşilay|gönüllü)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1133,
+  "cat": "gundemi-ege-izmir",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/izmir",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=izmir",
+    "match": "(?-i:\\bİzmir)"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\bİzmir)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1133,
+  "cat": "gundemi-ege-manisa",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/manisa",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=manisa",
+    "match": "(?-i:\\bManisa)"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\bManisa)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1133,
+  "cat": "gundemi-ege-mugla",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/mugla",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mu%C4%9Fla",
+    "match": "(?-i:\\b(Muğla|Bodrum|Marmaris|Fethiye|Datça|Milas))"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\b(Muğla|Bodrum|Marmaris|Fethiye|Datça|Milas))",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1133,
+  "cat": "gundemi-ege-aydin",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/aydin",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ayd%C4%B1n",
+    "match": "(?-i:\\b(Aydın|Kuşadası|Didim|Nazilli|Söke)\\b)"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\b(Aydın|Kuşadası|Didim|Nazilli|Söke)\\b)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1138,
+  "cat": "gundemi-guneydogu-diyarbakir",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/diyarbakir",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=diyarbak%C4%B1r",
+    "match": "(?-i:\\bDiyarbakır)"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\bDiyarbakır)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1138,
+  "cat": "gundemi-guneydogu-mardin",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/mardin",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mardin",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "Mardin",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 1139,
+  "cat": "gundemi-akdeniz-adana",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/adana",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=adana",
+    "match": "(?-i:\\bAdana)"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\bAdana)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1139,
+  "cat": "gundemi-akdeniz-mersin",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/mersin",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mersin",
+    "match": "(?-i:\\bMersin)"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\bMersin)",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1139,
+  "cat": "gundemi-akdeniz-hatay",
+  "feeds": [
+   {
+    "url": "https://cumha.com.tr/rss/lokasyon/hatay",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hatay",
+    "match": "(?-i:\\b(Hatay|Antakya|İskenderun))"
+   },
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.trthaber.com/gundem_articles.rss"
+  ],
+  "match": "(?-i:\\b(Hatay|Antakya|İskenderun))",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false
+ },
+ {
+  "site": 1140,
+  "cat": "gundemi-kibris-lefkosa",
+  "feeds": [
+   "https://www.detaykibris.com/rss",
+   "https://www.kibrisgercek.com/rss",
+   "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1br%C4%B1s",
+   "https://www.yeniduzen.com/rss",
+   "https://www.kibrisgazetesi.com/rss",
+   "https://www.gundemkibris.com/rss",
+   "https://www.kibrisgenctv.com/rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.trthaber.com/dunya_articles.rss"
+  ],
+  "match": "Lefkoşa",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 1140,
+  "cat": "gundemi-kibris-girne",
+  "feeds": [
+   "https://www.detaykibris.com/rss",
+   "https://www.kibrisgercek.com/rss",
+   "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1br%C4%B1s",
+   "https://www.yeniduzen.com/rss",
+   "https://www.kibrisgazetesi.com/rss",
+   "https://www.gundemkibris.com/rss",
+   "https://www.kibrisgenctv.com/rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.trthaber.com/dunya_articles.rss"
+  ],
+  "match": "Girne",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 1140,
+  "cat": "gundemi-kibris-gazimagusa",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=gazima%C4%9Fusa",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ma%C4%9Fusa",
+    "match": null
+   },
+   "https://www.detaykibris.com/rss",
+   "https://www.kibrisgercek.com/rss",
+   "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1br%C4%B1s",
+   "https://www.yeniduzen.com/rss",
+   "https://www.kibrisgazetesi.com/rss",
+   "https://www.gundemkibris.com/rss",
+   "https://www.kibrisgenctv.com/rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.trthaber.com/dunya_articles.rss"
+  ],
+  "match": "Gazimağusa|Gazi Mağusa",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 1140,
+  "cat": "gundemi-kibris-magosa",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=iskele",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ma%C4%9Fusa",
+    "match": null
+   },
+   "https://www.detaykibris.com/rss",
+   "https://www.kibrisgercek.com/rss",
+   "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1br%C4%B1s",
+   "https://www.yeniduzen.com/rss",
+   "https://www.kibrisgazetesi.com/rss",
+   "https://www.gundemkibris.com/rss",
+   "https://www.kibrisgenctv.com/rss",
+   "https://www.yenisafak.com/rss?xml=dunya",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.trthaber.com/dunya_articles.rss"
+  ],
+  "match": "Mağusa|Magosa|İskele|Karpaz",
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 45,
+  "title_only": false
+ },
+ {
+  "site": 1141,
+  "cat": "gundemi-apex-gundem",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.trthaber.com/manset_articles.rss"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 7,
+  "title_only": false
+ },
+ {
+  "site": 1141,
+  "cat": "gundemi-apex-turkiye",
+  "feeds": [
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 7,
+  "title_only": false
+ },
+ {
+  "site": 1141,
+  "cat": "gundemi-apex-dunya",
+  "feeds": [
+   "https://www.trthaber.com/dunya_articles.rss",
+   "https://www.ntv.com.tr/dunya.rss",
+   "https://www.yenisafak.com/rss?xml=dunya"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 7,
+  "title_only": false
+ },
+ {
+  "site": 1141,
+  "cat": "gundemi-apex-ekonomi",
+  "feeds": [
+   "https://www.trthaber.com/ekonomi_articles.rss",
+   "https://www.ntv.com.tr/ekonomi.rss"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 12,
+  "per_run": 3,
+  "max_age": 7,
+  "title_only": false
+ },
+ {
+  "site": 1142,
+  "cat": "fixhaber-haberler",
+  "feeds": [
+   "https://www.webtekno.com/rss.xml",
+   "https://www.donanimhaber.com/rss/tum/",
+   "https://www.technopat.net/feed/",
+   "https://www.chip.com.tr/rss",
+   "https://shiftdelete.net/feed"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 18,
+  "per_run": 4,
+  "max_age": 10,
+  "title_only": false
+ },
+ {
+  "site": 1142,
+  "cat": "fixhaber-mobil",
+  "feeds": [
+   {
+    "url": "https://shiftdelete.net/mobil/feed",
+    "match": null
+   },
+   "https://www.webtekno.com/rss.xml",
+   "https://www.donanimhaber.com/rss/tum/",
+   "https://www.technopat.net/feed/",
+   "https://www.chip.com.tr/rss",
+   "https://www.log.com.tr/feed/",
+   "https://www.donanimgunlugu.com/feed/",
+   "https://www.teknoblog.com/feed/"
+  ],
+  "match": "(telefon|iPhone|Android|Galaxy|Xiaomi|Huawei|Pixel|OnePlus|Oppo|Vivo|Realme|Honor|tablet|iPad|akıllı saat|Watch|iOS|mobil)",
+  "exclude": null,
+  "min": 18,
+  "per_run": 4,
+  "max_age": 14,
+  "title_only": true
+ },
+ {
+  "site": 1142,
+  "cat": "fixhaber-donanim",
+  "feeds": [
+   {
+    "url": "https://shiftdelete.net/donanim/feed",
+    "match": null
+   },
+   "https://www.webtekno.com/rss.xml",
+   "https://www.donanimhaber.com/rss/tum/",
+   "https://www.technopat.net/feed/",
+   "https://www.chip.com.tr/rss",
+   "https://www.log.com.tr/feed/",
+   "https://www.donanimgunlugu.com/feed/",
+   "https://www.teknoblog.com/feed/"
+  ],
+  "match": "(işlemci|ekran kartı|\\bGPU|\\bCPU|\\bRTX|Radeon|NVIDIA|\\bAMD\\b|Intel|Ryzen|Snapdragon|\\bRAM\\b|\\bSSD|anakart|laptop|dizüstü|notebook|monitör|MacBook|Mac mini|masaüstü|donanım|klavye|kulaklık|router|modem)",
+  "exclude": null,
+  "min": 18,
+  "per_run": 4,
+  "max_age": 14,
+  "title_only": true
+ },
+ {
+  "site": 1142,
+  "cat": "fixhaber-incelemeler",
+  "feeds": [
+   {
+    "url": "https://shiftdelete.net/inceleme/feed",
+    "match": null
+   },
+   "https://www.webtekno.com/rss.xml",
+   "https://www.donanimhaber.com/rss/tum/",
+   "https://www.technopat.net/feed/",
+   "https://www.chip.com.tr/rss",
+   "https://www.log.com.tr/feed/",
+   "https://www.donanimgunlugu.com/feed/",
+   "https://www.teknoblog.com/feed/",
+   "https://shiftdelete.net/mobil/feed",
+   "https://shiftdelete.net/donanim/feed"
+  ],
+  "match": "(inceleme|incelemesi|kutu açılış|test ettik|ilk bakış|deneyimledik|karşılaştırma|hangisi daha|kullanıcı deneyimi|performans testi)",
+  "exclude": null,
+  "min": 18,
+  "per_run": 4,
+  "max_age": 30,
+  "title_only": true
+ },
+ {
+  "site": 1142,
+  "cat": "fixhaber-yazilim",
+  "feeds": [
+   {
+    "url": "https://shiftdelete.net/yazilim/feed",
+    "match": null
+   },
+   "https://www.webtekno.com/rss.xml",
+   "https://www.donanimhaber.com/rss/tum/",
+   "https://www.technopat.net/feed/",
+   "https://www.chip.com.tr/rss",
+   "https://www.log.com.tr/feed/",
+   "https://www.donanimgunlugu.com/feed/",
+   "https://www.teknoblog.com/feed/"
+  ],
+  "match": "(yazılım|uygulama|güncelleme|Windows|macOS|Linux|Android \\d|iOS \\d|WhatsApp|Instagram|Chrome|Google|yapay zeka|ChatGPT|Gemini|Copilot|Microsoft|uygulaması)",
+  "exclude": null,
+  "min": 18,
+  "per_run": 4,
+  "max_age": 14,
+  "title_only": true
+ },
+ {
+  "site": 1142,
+  "cat": "fixhaber-oyun",
+  "feeds": [
+   {
+    "url": "https://www.atarita.com/feed/",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=playstation",
+    "match": "(oyun|PlayStation|PS5|Xbox|Nintendo|Switch|Steam|Epic Games|GTA|FIFA|EA Sports|Valorant|League of Legends)"
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=xbox",
+    "match": "(oyun|PlayStation|PS5|Xbox|Nintendo|Switch|Steam|Epic Games|GTA|FIFA|EA Sports|Valorant|League of Legends)"
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=steam",
+    "match": "(oyun|PlayStation|PS5|Xbox|Nintendo|Switch|Steam|Epic Games|GTA|FIFA|EA Sports|Valorant|League of Legends)"
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=oyun",
+    "match": "(oyun|PlayStation|PS5|Xbox|Nintendo|Switch|Steam|Epic Games|GTA|FIFA|EA Sports|Valorant|League of Legends)"
+   },
+   {
+    "url": "https://shiftdelete.net/oyun/feed",
+    "match": null
+   },
+   "https://www.webtekno.com/rss.xml",
+   "https://www.donanimhaber.com/rss/tum/",
+   "https://www.technopat.net/feed/",
+   "https://www.chip.com.tr/rss",
+   "https://www.log.com.tr/feed/",
+   "https://www.donanimgunlugu.com/feed/",
+   "https://www.teknoblog.com/feed/"
+  ],
+  "match": "(oyun|PlayStation|PS5|Xbox|Nintendo|Switch|Steam|Epic Games|GTA|FIFA|EA Sports|Valorant|League of Legends)",
+  "exclude": null,
+  "min": 18,
+  "per_run": 4,
+  "max_age": 14,
+  "title_only": true
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-aile",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aile",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sosyal%20hizmetler",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-aile"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-saglik",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sa%C4%9Fl%C4%B1k%20bakanl%C4%B1%C4%9F%C4%B1",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sa%C4%9Fl%C4%B1k",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-saglik"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-milli-egitim",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=milli%20e%C4%9Fitim",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=meb",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-milli-egitim"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-icisleri",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=i%C3%A7i%C5%9Fleri",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yerlikaya",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-icisleri"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-adalet",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=adalet%20bakanl%C4%B1%C4%9F%C4%B1",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yarg%C4%B1",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-adalet"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-disisleri",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=d%C4%B1%C5%9Fi%C5%9Fleri",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hakan%20fidan",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-disisleri"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-hazine",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mehmet%20%C5%9Fim%C5%9Fek",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hazine",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-hazine"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-calisma",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7al%C4%B1%C5%9Fma%20bakanl%C4%B1%C4%9F%C4%B1",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sgk",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-calisma"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-tarim",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tar%C4%B1m",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yumakl%C4%B1",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-tarim"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-ulastirma",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ula%C5%9Ft%C4%B1rma",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=uralo%C4%9Flu",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-ulastirma"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-enerji",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=enerji",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=alparslan%20bayraktar",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-enerji"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-sanayi",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sanayi",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kac%C4%B1r",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-sanayi"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-cevre",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=murat%20kurum",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7evre",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-cevre"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-ticaret",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ticaret%20bakanl%C4%B1%C4%9F%C4%B1",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%B6mer%20bolat",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-ticaret"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-kultur-turizm",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=turizm",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C3%BClt%C3%BCr",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-kultur-turizm"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-genclik-spor",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=gen%C3%A7lik%20ve%20spor",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=osman%20a%C5%9Fk%C4%B1n%20bak",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-genclik-spor"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-msb",
+  "feeds": [
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=msb",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=milli%20savunma",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "bakanlik-msb"
+ },
+ {
+  "site": 230,
+  "cat": "guvenlik",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=jandarma",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=emniyet",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=polis",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tsk",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=msb",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=savunma%20sanayii",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aselsan",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.savunmasanayist.com/feed/",
+   "https://www.defenceturk.net/feed",
+   "db:233",
+   "db:232",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": true,
+  "cat_rule": "guvenlik"
+ },
+ {
+  "site": 230,
+  "cat": "tsk",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=jandarma",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=emniyet",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=polis",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tsk",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=msb",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=savunma%20sanayii",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aselsan",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.savunmasanayist.com/feed/",
+   "https://www.defenceturk.net/feed",
+   "db:233",
+   "db:232",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": true,
+  "cat_rule": "tsk"
+ },
+ {
+  "site": 230,
+  "cat": "emniyet",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=jandarma",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=emniyet",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=polis",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tsk",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=msb",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=savunma%20sanayii",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aselsan",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.savunmasanayist.com/feed/",
+   "https://www.defenceturk.net/feed",
+   "db:233",
+   "db:232",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": true,
+  "cat_rule": "emniyet"
+ },
+ {
+  "site": 230,
+  "cat": "jandarma",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=jandarma",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=emniyet",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=polis",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tsk",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=msb",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=savunma%20sanayii",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aselsan",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.savunmasanayist.com/feed/",
+   "https://www.defenceturk.net/feed",
+   "db:233",
+   "db:232",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": true,
+  "cat_rule": "jandarma"
+ },
+ {
+  "site": 230,
+  "cat": "savunma-sanayi",
+  "feeds": [
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=jandarma",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=emniyet",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=polis",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tsk",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=msb",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=savunma%20sanayii",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aselsan",
+    "match": null
+   },
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.savunmasanayist.com/feed/",
+   "https://www.defenceturk.net/feed",
+   "db:233",
+   "db:232",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.trthaber.com/turkiye_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.ntv.com.tr/turkiye.rss",
+   "https://www.yenisafak.com/rss?xml=gundem",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://rss.haberler.com/RssNew.aspx?kategori=politika",
+   "https://cumha.com.tr/rss/category/bakanliklar",
+   "https://cumha.com.tr/rss/category/latest-posts",
+   "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+   "https://www.aa.com.tr/tr/rss/default?cat=politika",
+   "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "cat_rule": "savunma-sanayi"
+ },
+ {
+  "site": 230,
+  "cat": "toplum-ve-yasam",
+  "feeds": [
+   "https://cumha.com.tr/rss/category/toplum-ve-yasam",
+   "https://rss.haberler.com/RssNew.aspx?kategori=guncel",
+   "https://www.trthaber.com/gundem_articles.rss",
+   "https://www.hurriyet.com.tr/rss/gundem",
+   "https://www.yenisafak.com/rss?xml=gundem"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "cat_rule": null,
+  "topic": "kultur"
+ },
+ {
+  "site": 230,
+  "cat": "saglik",
+  "feeds": [
+   "db:237",
+   "https://www.trthaber.com/saglik_articles.rss"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 7,
+  "title_only": false,
+  "cat_rule": null
+ },
+ {
+  "site": 230,
+  "cat": "teknoloji",
+  "feeds": [
+   "db:1142"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 7,
+  "title_only": false,
+  "cat_rule": null
+ },
+ {
+  "site": 230,
+  "cat": "gundem",
+  "feeds": [
+   "db:236"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 0,
+  "per_run": 2,
+  "max_age": 5,
+  "title_only": false,
+  "cat_rule": null,
+  "topic": "cevre"
+ },
+ {
+  "site": 230,
+  "cat": "bakanlik-tarim",
+  "feeds": [
+   "db:236"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 0,
+  "per_run": 2,
+  "max_age": 7,
+  "title_only": false,
+  "cat_rule": "bakanlik-tarim"
+ },
+ {
+  "site": 230,
+  "cat": "balikesir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/balikesir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bal%C4%B1kesir",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Balıkesir",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "balikesir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/balikesir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bal%C4%B1kesir",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Balıkesir",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bilecik",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bilecik",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bilecik",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bilecik",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bilecik",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bilecik",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bilecik",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bilecik",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bursa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bursa",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bursa",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bursa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bursa",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bursa",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "canakkale",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/canakkale",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7anakkale",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Çanakkale",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "canakkale",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/canakkale",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7anakkale",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Çanakkale",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "edirne",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/edirne",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=edirne",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Edirne",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "edirne",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/edirne",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=edirne",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Edirne",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "istanbul",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=istanbul",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "İstanbul",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "istanbul",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=istanbul",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "İstanbul",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kirklareli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirklareli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1rklareli",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kırklareli",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kirklareli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirklareli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1rklareli",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kırklareli",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kocaeli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kocaeli",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kocaeli",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kocaeli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kocaeli",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kocaeli",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "sakarya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sakarya",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Sakarya",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "sakarya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sakarya",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Sakarya",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "tekirdag",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tekirdag",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tekirda%C4%9F",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Tekirdağ",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "tekirdag",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tekirdag",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tekirda%C4%9F",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Tekirdağ",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "yalova",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/yalova",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yalova",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Yalova",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "yalova",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/yalova",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yalova",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Yalova",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-marmara",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/balikesir",
+   "https://cumha.com.tr/rss/lokasyon/bilecik",
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   "https://cumha.com.tr/rss/lokasyon/canakkale",
+   "https://cumha.com.tr/rss/lokasyon/edirne",
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   "https://cumha.com.tr/rss/lokasyon/kirklareli",
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   "https://cumha.com.tr/rss/lokasyon/tekirdag",
+   "https://cumha.com.tr/rss/lokasyon/yalova",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "marmara",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-marmara",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/balikesir",
+   "https://cumha.com.tr/rss/lokasyon/bilecik",
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   "https://cumha.com.tr/rss/lokasyon/canakkale",
+   "https://cumha.com.tr/rss/lokasyon/edirne",
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   "https://cumha.com.tr/rss/lokasyon/kirklareli",
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   "https://cumha.com.tr/rss/lokasyon/tekirdag",
+   "https://cumha.com.tr/rss/lokasyon/yalova",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "marmara",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "afyonkarahisar",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/afyonkarahisar",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=afyonkarahisar",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Afyonkarahisar",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "afyonkarahisar",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/afyonkarahisar",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=afyonkarahisar",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Afyonkarahisar",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "aydin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aydin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ayd%C4%B1n",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Aydın",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "aydin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aydin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ayd%C4%B1n",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Aydın",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "denizli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=denizli",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Denizli",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "denizli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=denizli",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Denizli",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "izmir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=izmir",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "İzmir",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "izmir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=izmir",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "İzmir",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kutahya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kutahya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C3%BCtahya",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kütahya",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kutahya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kutahya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C3%BCtahya",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kütahya",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "manisa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/manisa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=manisa",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Manisa",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "manisa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/manisa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=manisa",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Manisa",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "mugla",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mugla",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mu%C4%9Fla",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Muğla",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "mugla",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mugla",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mu%C4%9Fla",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Muğla",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "usak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/usak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=u%C5%9Fak",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Uşak",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "usak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/usak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=u%C5%9Fak",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Uşak",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-ege",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/afyonkarahisar",
+   "https://cumha.com.tr/rss/lokasyon/aydin",
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   "https://cumha.com.tr/rss/lokasyon/kutahya",
+   "https://cumha.com.tr/rss/lokasyon/manisa",
+   "https://cumha.com.tr/rss/lokasyon/mugla",
+   "https://cumha.com.tr/rss/lokasyon/usak",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "ege",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-ege",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/afyonkarahisar",
+   "https://cumha.com.tr/rss/lokasyon/aydin",
+   "https://cumha.com.tr/rss/lokasyon/denizli",
+   "https://cumha.com.tr/rss/lokasyon/izmir",
+   "https://cumha.com.tr/rss/lokasyon/kutahya",
+   "https://cumha.com.tr/rss/lokasyon/manisa",
+   "https://cumha.com.tr/rss/lokasyon/mugla",
+   "https://cumha.com.tr/rss/lokasyon/usak",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "ege",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "adana",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=adana",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Adana",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "adana",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=adana",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Adana",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "antalya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=antalya",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Antalya",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "antalya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=antalya",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Antalya",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "burdur",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/burdur",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=burdur",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Burdur",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "burdur",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/burdur",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=burdur",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Burdur",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "hatay",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/hatay",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hatay",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Hatay",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "hatay",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/hatay",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hatay",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Hatay",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "isparta",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/isparta",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C4%B1sparta",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Isparta",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "isparta",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/isparta",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C4%B1sparta",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Isparta",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kahramanmaras",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kahramanmaras",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kahramanmara%C5%9F",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kahramanmaraş",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kahramanmaras",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kahramanmaras",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kahramanmara%C5%9F",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kahramanmaraş",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "mersin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mersin",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Mersin",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "mersin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mersin",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Mersin",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "osmaniye",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/osmaniye",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=osmaniye",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Osmaniye",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "osmaniye",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/osmaniye",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=osmaniye",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Osmaniye",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-akdeniz",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   "https://cumha.com.tr/rss/lokasyon/burdur",
+   "https://cumha.com.tr/rss/lokasyon/hatay",
+   "https://cumha.com.tr/rss/lokasyon/isparta",
+   "https://cumha.com.tr/rss/lokasyon/kahramanmaras",
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   "https://cumha.com.tr/rss/lokasyon/osmaniye",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "akdeniz",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-akdeniz",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adana",
+   "https://cumha.com.tr/rss/lokasyon/antalya",
+   "https://cumha.com.tr/rss/lokasyon/burdur",
+   "https://cumha.com.tr/rss/lokasyon/hatay",
+   "https://cumha.com.tr/rss/lokasyon/isparta",
+   "https://cumha.com.tr/rss/lokasyon/kahramanmaras",
+   "https://cumha.com.tr/rss/lokasyon/mersin",
+   "https://cumha.com.tr/rss/lokasyon/osmaniye",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "akdeniz",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "aksaray",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aksaray",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aksaray",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Aksaray",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "aksaray",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aksaray",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aksaray",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Aksaray",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "ankara",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ankara",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ankara",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "ankara",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ankara",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ankara",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "cankiri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/cankiri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7ank%C4%B1r%C4%B1",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Çankırı",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "cankiri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/cankiri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7ank%C4%B1r%C4%B1",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Çankırı",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "eskisehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=eski%C5%9Fehir",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Eskişehir",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "eskisehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=eski%C5%9Fehir",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Eskişehir",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "karaman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/karaman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=karaman",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Karaman",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "karaman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/karaman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=karaman",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Karaman",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kayseri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kayseri",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kayseri",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kayseri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kayseri",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kayseri",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kirikkale",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirikkale",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1r%C4%B1kkale",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kırıkkale",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kirikkale",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirikkale",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1r%C4%B1kkale",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kırıkkale",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kirsehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirsehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1r%C5%9Fehir",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kırşehir",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kirsehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirsehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1r%C5%9Fehir",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kırşehir",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "konya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=konya",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Konya",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "konya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=konya",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Konya",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "nevsehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/nevsehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=nev%C5%9Fehir",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Nevşehir",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "nevsehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/nevsehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=nev%C5%9Fehir",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Nevşehir",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "nigde",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/nigde",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ni%C4%9Fde",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Niğde",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "nigde",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/nigde",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ni%C4%9Fde",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Niğde",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "sivas",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sivas",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sivas",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Sivas",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "sivas",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sivas",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sivas",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Sivas",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "yozgat",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/yozgat",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yozgat",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Yozgat",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "yozgat",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/yozgat",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yozgat",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Yozgat",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-ic-anadolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aksaray",
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   "https://cumha.com.tr/rss/lokasyon/cankiri",
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   "https://cumha.com.tr/rss/lokasyon/karaman",
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   "https://cumha.com.tr/rss/lokasyon/kirikkale",
+   "https://cumha.com.tr/rss/lokasyon/kirsehir",
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   "https://cumha.com.tr/rss/lokasyon/nevsehir",
+   "https://cumha.com.tr/rss/lokasyon/nigde",
+   "https://cumha.com.tr/rss/lokasyon/sivas",
+   "https://cumha.com.tr/rss/lokasyon/yozgat",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "icanadolu",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-ic-anadolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aksaray",
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   "https://cumha.com.tr/rss/lokasyon/cankiri",
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   "https://cumha.com.tr/rss/lokasyon/karaman",
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   "https://cumha.com.tr/rss/lokasyon/kirikkale",
+   "https://cumha.com.tr/rss/lokasyon/kirsehir",
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   "https://cumha.com.tr/rss/lokasyon/nevsehir",
+   "https://cumha.com.tr/rss/lokasyon/nigde",
+   "https://cumha.com.tr/rss/lokasyon/sivas",
+   "https://cumha.com.tr/rss/lokasyon/yozgat",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "icanadolu",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "amasya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/amasya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=amasya",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Amasya",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "amasya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/amasya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=amasya",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Amasya",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "artvin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/artvin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=artvin",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Artvin",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "artvin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/artvin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=artvin",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Artvin",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bartin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bartin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bart%C4%B1n",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bartın",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bartin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bartin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bart%C4%B1n",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bartın",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bayburt",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bayburt",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bayburt",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bayburt",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bayburt",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bayburt",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bayburt",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bayburt",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bolu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bolu",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bolu",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bolu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bolu",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bolu",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "corum",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/corum",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7orum",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Çorum",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "corum",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/corum",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7orum",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Çorum",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "duzce",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/duzce",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=d%C3%BCzce",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Düzce",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "duzce",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/duzce",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=d%C3%BCzce",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Düzce",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "giresun",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/giresun",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=giresun",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Giresun",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "giresun",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/giresun",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=giresun",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Giresun",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "gumushane",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/gumushane",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=g%C3%BCm%C3%BC%C5%9Fhane",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Gümüşhane",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "gumushane",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/gumushane",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=g%C3%BCm%C3%BC%C5%9Fhane",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Gümüşhane",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "karabuk",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/karabuk",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=karab%C3%BCk",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Karabük",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "karabuk",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/karabuk",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=karab%C3%BCk",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Karabük",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kastamonu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kastamonu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kastamonu",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kastamonu",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kastamonu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kastamonu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kastamonu",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kastamonu",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "ordu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ordu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ordu",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ordu",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "ordu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ordu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ordu",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ordu",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "rize",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/rize",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=rize",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Rize",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "rize",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/rize",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=rize",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Rize",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "samsun",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=samsun",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Samsun",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "samsun",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=samsun",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Samsun",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "sinop",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sinop",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sinop",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Sinop",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "sinop",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sinop",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sinop",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Sinop",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "tokat",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tokat",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tokat",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Tokat",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "tokat",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tokat",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tokat",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Tokat",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "trabzon",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=trabzon",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Trabzon",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "trabzon",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=trabzon",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Trabzon",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "zonguldak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/zonguldak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=zonguldak",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Zonguldak",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "zonguldak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/zonguldak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=zonguldak",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Zonguldak",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-karadeniz",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/amasya",
+   "https://cumha.com.tr/rss/lokasyon/artvin",
+   "https://cumha.com.tr/rss/lokasyon/bartin",
+   "https://cumha.com.tr/rss/lokasyon/bayburt",
+   "https://cumha.com.tr/rss/lokasyon/bolu",
+   "https://cumha.com.tr/rss/lokasyon/corum",
+   "https://cumha.com.tr/rss/lokasyon/duzce",
+   "https://cumha.com.tr/rss/lokasyon/giresun",
+   "https://cumha.com.tr/rss/lokasyon/gumushane",
+   "https://cumha.com.tr/rss/lokasyon/karabuk",
+   "https://cumha.com.tr/rss/lokasyon/kastamonu",
+   "https://cumha.com.tr/rss/lokasyon/ordu",
+   "https://cumha.com.tr/rss/lokasyon/rize",
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   "https://cumha.com.tr/rss/lokasyon/sinop",
+   "https://cumha.com.tr/rss/lokasyon/tokat",
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   "https://cumha.com.tr/rss/lokasyon/zonguldak",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "karadeniz",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-karadeniz",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/amasya",
+   "https://cumha.com.tr/rss/lokasyon/artvin",
+   "https://cumha.com.tr/rss/lokasyon/bartin",
+   "https://cumha.com.tr/rss/lokasyon/bayburt",
+   "https://cumha.com.tr/rss/lokasyon/bolu",
+   "https://cumha.com.tr/rss/lokasyon/corum",
+   "https://cumha.com.tr/rss/lokasyon/duzce",
+   "https://cumha.com.tr/rss/lokasyon/giresun",
+   "https://cumha.com.tr/rss/lokasyon/gumushane",
+   "https://cumha.com.tr/rss/lokasyon/karabuk",
+   "https://cumha.com.tr/rss/lokasyon/kastamonu",
+   "https://cumha.com.tr/rss/lokasyon/ordu",
+   "https://cumha.com.tr/rss/lokasyon/rize",
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   "https://cumha.com.tr/rss/lokasyon/sinop",
+   "https://cumha.com.tr/rss/lokasyon/tokat",
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   "https://cumha.com.tr/rss/lokasyon/zonguldak",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "karadeniz",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "agri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/agri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=a%C4%9Fr%C4%B1",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ağrı",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "agri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/agri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=a%C4%9Fr%C4%B1",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ağrı",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "ardahan",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ardahan",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ardahan",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ardahan",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "ardahan",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ardahan",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ardahan",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Ardahan",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bingol",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bingol",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bing%C3%B6l",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bingöl",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bingol",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bingol",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bing%C3%B6l",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bingöl",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bitlis",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bitlis",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bitlis",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bitlis",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bitlis",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bitlis",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bitlis",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Bitlis",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "elazig",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/elazig",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=elaz%C4%B1%C4%9F",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Elazığ",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "elazig",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/elazig",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=elaz%C4%B1%C4%9F",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Elazığ",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "erzincan",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/erzincan",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=erzincan",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Erzincan",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "erzincan",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/erzincan",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=erzincan",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Erzincan",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "erzurum",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/erzurum",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=erzurum",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Erzurum",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "erzurum",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/erzurum",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=erzurum",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Erzurum",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "hakkari",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/hakkari",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hakkari",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Hakkari",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "hakkari",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/hakkari",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hakkari",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Hakkari",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "igdir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/igdir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C4%B1%C4%9Fd%C4%B1r",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Iğdır",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "igdir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/igdir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C4%B1%C4%9Fd%C4%B1r",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Iğdır",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kars",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kars",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kars",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kars",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kars",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kars",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kars",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kars",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "malatya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/malatya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=malatya",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Malatya",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "malatya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/malatya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=malatya",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Malatya",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "mus",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mus",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mu%C5%9F",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Muş",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "mus",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mus",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mu%C5%9F",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Muş",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "tunceli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tunceli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tunceli",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Tunceli",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "tunceli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tunceli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tunceli",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Tunceli",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "van",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/van",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=van",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Van",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "van",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/van",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=van",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Van",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-dogu-anadolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/agri",
+   "https://cumha.com.tr/rss/lokasyon/ardahan",
+   "https://cumha.com.tr/rss/lokasyon/bingol",
+   "https://cumha.com.tr/rss/lokasyon/bitlis",
+   "https://cumha.com.tr/rss/lokasyon/elazig",
+   "https://cumha.com.tr/rss/lokasyon/erzincan",
+   "https://cumha.com.tr/rss/lokasyon/erzurum",
+   "https://cumha.com.tr/rss/lokasyon/hakkari",
+   "https://cumha.com.tr/rss/lokasyon/igdir",
+   "https://cumha.com.tr/rss/lokasyon/kars",
+   "https://cumha.com.tr/rss/lokasyon/malatya",
+   "https://cumha.com.tr/rss/lokasyon/mus",
+   "https://cumha.com.tr/rss/lokasyon/tunceli",
+   "https://cumha.com.tr/rss/lokasyon/van",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "doguanadolu",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-dogu-anadolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/agri",
+   "https://cumha.com.tr/rss/lokasyon/ardahan",
+   "https://cumha.com.tr/rss/lokasyon/bingol",
+   "https://cumha.com.tr/rss/lokasyon/bitlis",
+   "https://cumha.com.tr/rss/lokasyon/elazig",
+   "https://cumha.com.tr/rss/lokasyon/erzincan",
+   "https://cumha.com.tr/rss/lokasyon/erzurum",
+   "https://cumha.com.tr/rss/lokasyon/hakkari",
+   "https://cumha.com.tr/rss/lokasyon/igdir",
+   "https://cumha.com.tr/rss/lokasyon/kars",
+   "https://cumha.com.tr/rss/lokasyon/malatya",
+   "https://cumha.com.tr/rss/lokasyon/mus",
+   "https://cumha.com.tr/rss/lokasyon/tunceli",
+   "https://cumha.com.tr/rss/lokasyon/van",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "doguanadolu",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "adiyaman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adiyaman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ad%C4%B1yaman",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Adıyaman",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "adiyaman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adiyaman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ad%C4%B1yaman",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Adıyaman",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "batman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/batman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=batman",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Batman",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "batman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/batman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=batman",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Batman",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "diyarbakir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/diyarbakir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=diyarbak%C4%B1r",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Diyarbakır",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "diyarbakir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/diyarbakir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=diyarbak%C4%B1r",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Diyarbakır",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "gaziantep",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=gaziantep",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Gaziantep",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "gaziantep",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=gaziantep",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Gaziantep",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "kilis",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kilis",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kilis",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kilis",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "kilis",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kilis",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kilis",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Kilis",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "mardin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mardin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mardin",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Mardin",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "mardin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mardin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mardin",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Mardin",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "siirt",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/siirt",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=siirt",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Siirt",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "siirt",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/siirt",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=siirt",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Siirt",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "sanliurfa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sanliurfa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C5%9Fanl%C4%B1urfa",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Şanlıurfa",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "sanliurfa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sanliurfa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C5%9Fanl%C4%B1urfa",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Şanlıurfa",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "sirnak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sirnak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C5%9F%C4%B1rnak",
+    "match": null
+   },
+   "db:231",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Şırnak",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "sirnak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sirnak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C5%9F%C4%B1rnak",
+    "match": null
+   },
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 30,
+  "title_only": false,
+  "city": "Şırnak",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "bolge-guneydogu-anadolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adiyaman",
+   "https://cumha.com.tr/rss/lokasyon/batman",
+   "https://cumha.com.tr/rss/lokasyon/diyarbakir",
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   "https://cumha.com.tr/rss/lokasyon/kilis",
+   "https://cumha.com.tr/rss/lokasyon/mardin",
+   "https://cumha.com.tr/rss/lokasyon/siirt",
+   "https://cumha.com.tr/rss/lokasyon/sanliurfa",
+   "https://cumha.com.tr/rss/lokasyon/sirnak",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "guneydogu",
+  "fill_cap": 10
+ },
+ {
+  "site": 231,
+  "cat": "bolge-guneydogu-anadolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/adiyaman",
+   "https://cumha.com.tr/rss/lokasyon/batman",
+   "https://cumha.com.tr/rss/lokasyon/diyarbakir",
+   "https://cumha.com.tr/rss/lokasyon/gaziantep",
+   "https://cumha.com.tr/rss/lokasyon/kilis",
+   "https://cumha.com.tr/rss/lokasyon/mardin",
+   "https://cumha.com.tr/rss/lokasyon/siirt",
+   "https://cumha.com.tr/rss/lokasyon/sanliurfa",
+   "https://cumha.com.tr/rss/lokasyon/sirnak",
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 10,
+  "per_run": 3,
+  "max_age": 21,
+  "title_only": false,
+  "region": "guneydogu",
+  "fill_cap": 10
+ },
+ {
+  "site": 230,
+  "cat": "yerel-yonetimler",
+  "feeds": [
+   "scrape:https://www.haberler.com/belediye/",
+   "scrape:https://www.haberler.com/muhtar/",
+   "https://cumha.com.tr/rss/category/yerel-yonetimler",
+   "https://cumha.com.tr/rss/category/belediye",
+   "https://cumha.com.tr/rss/category/muhtar",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=belediye",
+    "match": null
+   },
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=muhtar",
+    "match": null
+   }
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 20,
+  "per_run": 4,
+  "max_age": 21,
+  "title_only": false,
+  "cat_rule": "yerel-yonetimler"
+ },
+ {
+  "site": 1134,
+  "cat": "balikesir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/balikesir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bal%C4%B1kesir",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Balıkesir",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "bilecik",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bilecik",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bilecik",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bilecik",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "bursa",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bursa",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bursa",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bursa",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "canakkale",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/canakkale",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7anakkale",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Çanakkale",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "edirne",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/edirne",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=edirne",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Edirne",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "istanbul",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/istanbul",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=istanbul",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "İstanbul",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "kirklareli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirklareli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1rklareli",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kırklareli",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "kocaeli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kocaeli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kocaeli",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kocaeli",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "sakarya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sakarya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sakarya",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Sakarya",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "tekirdag",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tekirdag",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tekirda%C4%9F",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Tekirdağ",
+  "fill_cap": 6
+ },
+ {
+  "site": 1134,
+  "cat": "yalova",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/yalova",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yalova",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Yalova",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "amasya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/amasya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=amasya",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Amasya",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "artvin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/artvin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=artvin",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Artvin",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "bartin",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bartin",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bart%C4%B1n",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bartın",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "bayburt",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bayburt",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bayburt",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bayburt",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "bolu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bolu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bolu",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bolu",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "corum",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/corum",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7orum",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Çorum",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "duzce",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/duzce",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=d%C3%BCzce",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Düzce",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "giresun",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/giresun",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=giresun",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Giresun",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "gumushane",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/gumushane",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=g%C3%BCm%C3%BC%C5%9Fhane",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Gümüşhane",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "karabuk",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/karabuk",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=karab%C3%BCk",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Karabük",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "kastamonu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kastamonu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kastamonu",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kastamonu",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "ordu",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ordu",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ordu",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Ordu",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "rize",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/rize",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=rize",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Rize",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "samsun",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/samsun",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=samsun",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Samsun",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "sinop",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sinop",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sinop",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Sinop",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "tokat",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tokat",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tokat",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Tokat",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "trabzon",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/trabzon",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=trabzon",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Trabzon",
+  "fill_cap": 6
+ },
+ {
+  "site": 1135,
+  "cat": "zonguldak",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/zonguldak",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=zonguldak",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Zonguldak",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "aksaray",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/aksaray",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=aksaray",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Aksaray",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "ankara",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ankara",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ankara",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Ankara",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "cankiri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/cankiri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C3%A7ank%C4%B1r%C4%B1",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Çankırı",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "eskisehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/eskisehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=eski%C5%9Fehir",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Eskişehir",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "karaman",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/karaman",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=karaman",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Karaman",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "kayseri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kayseri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kayseri",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kayseri",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "kirikkale",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirikkale",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1r%C4%B1kkale",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kırıkkale",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "kirsehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kirsehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=k%C4%B1r%C5%9Fehir",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kırşehir",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "konya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/konya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=konya",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Konya",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "nevsehir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/nevsehir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=nev%C5%9Fehir",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Nevşehir",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "nigde",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/nigde",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ni%C4%9Fde",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Niğde",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "sivas",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/sivas",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=sivas",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Sivas",
+  "fill_cap": 6
+ },
+ {
+  "site": 1136,
+  "cat": "yozgat",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/yozgat",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=yozgat",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Yozgat",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "agri",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/agri",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=a%C4%9Fr%C4%B1",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Ağrı",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "ardahan",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/ardahan",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=ardahan",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Ardahan",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "bingol",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bingol",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bing%C3%B6l",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bingöl",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "bitlis",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/bitlis",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=bitlis",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Bitlis",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "elazig",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/elazig",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=elaz%C4%B1%C4%9F",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Elazığ",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "erzincan",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/erzincan",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=erzincan",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Erzincan",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "erzurum",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/erzurum",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=erzurum",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Erzurum",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "hakkari",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/hakkari",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=hakkari",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Hakkari",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "igdir",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/igdir",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=%C4%B1%C4%9Fd%C4%B1r",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Iğdır",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "kars",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/kars",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=kars",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Kars",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "malatya",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/malatya",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=malatya",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Malatya",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "mus",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/mus",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=mu%C5%9F",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Muş",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "tunceli",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/tunceli",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=tunceli",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Tunceli",
+  "fill_cap": 6
+ },
+ {
+  "site": 1137,
+  "cat": "van",
+  "feeds": [
+   "https://cumha.com.tr/rss/lokasyon/van",
+   {
+    "url": "https://rss.haberler.com/RssNew.aspx?kategori=van",
+    "match": null
+   },
+   "https://rss.haberler.com/RssNew.aspx?kategori=yerel",
+   "db:231"
+  ],
+  "match": null,
+  "exclude": null,
+  "min": 6,
+  "per_run": 2,
+  "max_age": 21,
+  "title_only": false,
+  "city": "Van",
+  "fill_cap": 6
+ }
+]
