@@ -7,6 +7,7 @@ import {
   categorySlugFromCumhaFeed,
   cumhaLocationRssUrl,
   cumhaProvinceSlugFromName,
+  expandKamuYerelListingCategorySlugs,
   kamuYerelRegionCategorySlug,
   KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS,
   KAMU_YEREL_REGION_ORDER,
@@ -34,6 +35,14 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(rows.some((r) => r.url.includes("cumha.com.tr/rss/category/cumhurbaskanligi"))).toBe(true);
     expect(rows.some((r) => r.url.includes("cumha.com.tr/rss/category/nato"))).toBe(true);
     expect(rows.every((r) => !r.url.includes("birgun.net/rss/kategori/siyaset-8"))).toBe(true);
+  });
+
+  it("expands kamu-yerel parent nav slugs for category listings", () => {
+    expect(expandKamuYerelListingCategorySlugs("daha", "turkatahaber")).toEqual(
+      expect.arrayContaining(["daha", "nato", "avrupa-birligi"]),
+    );
+    expect(expandKamuYerelListingCategorySlugs("gundem", "turkatahaber")).toEqual(["gundem"]);
+    expect(expandKamuYerelListingCategorySlugs("daha", "asg")).toEqual(["daha"]);
   });
 
   it("exposes Cumha-aligned top nav category slugs", () => {

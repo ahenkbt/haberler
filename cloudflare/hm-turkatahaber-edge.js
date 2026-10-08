@@ -45,7 +45,9 @@ export function turkataLayoutNeedsRepair(layoutJsonRaw) {
       if (nav[i] !== NAV_TOP[i]) return true;
     }
     const logo = String(layout?.logoUrl ?? "").trim();
-    if (logo.startsWith("/turkata/")) return true;
+    if (!logo || logo.toLowerCase().startsWith("data:image/")) return true;
+    if (logo.startsWith("/brand/turkata/")) return true;
+    if (logo !== "/turkata/turkata-logo.webp") return true;
     return false;
   } catch {
     return true;

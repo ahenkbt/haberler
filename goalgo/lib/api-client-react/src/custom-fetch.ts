@@ -16,6 +16,8 @@ export type AuthTokenGetter = () => Promise<string | null> | string | null;
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
+/** Panel ile aynı bütçe — soğuk Container’da sonsuz spinner önlenir. */
+const DEFAULT_GET_FETCH_TIMEOUT_MS = 22_000;
 
 function retryDelayMs(attempt: number): number {
   const base = Math.min(800 * 2 ** attempt, 8_000);
@@ -397,22 +399,46 @@ export async function customFetch<T = unknown>(
   const maxRetries = method === "GET" || method === "HEAD" ? 3 : 0;
   let attempt = 0;
 
+  const canTimeout = !init.signal && (method === "GET" || method === "HEAD");
+
   while (true) {
     let response: Response;
+    const timeoutController = canTimeout ? new AbortController() : null;
+    const timeoutId =
+      timeoutController != null
+        ? setTimeout(() => timeoutController.abort(), DEFAULT_GET_FETCH_TIMEOUT_MS)
+        : undefined;
+    const signal = init.signal ?? timeoutController?.signal;
     try {
       response = await fetch(input, {
         ...init,
         method,
         headers,
+        signal,
         credentials: init.credentials ?? "include",
       });
     } catch (err) {
+      if (timeoutId != null) clearTimeout(timeoutId);
+      const timedOut =
+        canTimeout && err instanceof DOMException && err.name === "AbortError";
+      if (timedOut && attempt < maxRetries) {
+        await sleep(retryDelayMs(attempt));
+        attempt += 1;
+        continue;
+      }
+      if (timedOut) {
+        throw new Error(
+          "API yanıt vermedi (zaman aşımı). Sunucu uyanıyor olabilir — birkaç saniye sonra yenileyin.",
+        );
+      }
       if (attempt < maxRetries) {
         await sleep(retryDelayMs(attempt));
         attempt += 1;
         continue;
       }
       throw err;
+    } finally {
+      if (timeoutId != null) clearTimeout(timeoutId);
     }
 
     if (RETRYABLE_STATUS.has(response.status) && attempt < maxRetries) {

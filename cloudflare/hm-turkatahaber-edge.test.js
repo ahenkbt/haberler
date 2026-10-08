@@ -27,7 +27,7 @@ describe("hm-turkatahaber-edge", () => {
         "sivil-toplum-kuruluslari",
         "kamu-kurumlari",
       ],
-      logoUrl: "/brand/turkata/turkata-logo-light.png",
+      logoUrl: "/turkata/turkata-logo.webp",
     };
     assert.equal(turkataLayoutNeedsRepair(JSON.stringify(layout)), false);
   });

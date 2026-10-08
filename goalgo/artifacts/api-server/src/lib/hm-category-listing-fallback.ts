@@ -4,6 +4,7 @@
  */
 
 import { expandRssCategorySlugCandidates } from "./hm-rss-category-aliases.js";
+import { expandKamuYerelListingCategorySlugs } from "./hm-cumha-kamu-yerel-catalog.js";
 import { expandShaListingCategorySlugs } from "./hm-sha-rss-feeds.js";
 import { isHmPlaceCategorySlug } from "./hm-local-category-router.js";
 import { loadPortalDbNews } from "./hybrid-news-merge.js";
@@ -39,7 +40,12 @@ export async function ensureHmCategoryListingNotEmpty<T extends SerializedNewsLi
     return [];
   }
 
-  const wanted = expandShaListingCategorySlugs(opts.categorySlug, opts.siteSlug);
+  const wanted = [
+    ...new Set([
+      ...expandShaListingCategorySlugs(opts.categorySlug, opts.siteSlug),
+      ...expandKamuYerelListingCategorySlugs(opts.categorySlug, opts.siteSlug),
+    ]),
+  ];
   const aliasSlugs = expandRssCategorySlugCandidates(opts.categorySlug, ...wanted);
   const slugs = [...new Set([...wanted, ...aliasSlugs].map((s) => String(s).trim().toLowerCase()).filter(Boolean))];
 

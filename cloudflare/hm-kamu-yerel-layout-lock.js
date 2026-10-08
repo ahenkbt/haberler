@@ -39,12 +39,12 @@ const KAMU_YEREL_SLUGS = new Set(["turkatahaber", "yerelnet"]);
 
 const LOGO_BY_SLUG = Object.freeze({
   turkatahaber: {
-    logoUrl: "/brand/turkata/turkata-logo-light.png",
-    faviconUrl: "/brand/turkata/favicon.ico",
+    logoUrl: "/turkata/turkata-logo.webp",
+    faviconUrl: "/turkata/favicon.ico",
   },
   yerelnet: {
-    logoUrl: "/brand/turkata/turkata-mark.png",
-    faviconUrl: "/brand/turkata/turkata-mark.png",
+    logoUrl: "/turkata/turkata-mark.png",
+    faviconUrl: "/turkata/turkata-mark.png",
   },
 });
 
@@ -80,7 +80,12 @@ export function repairKamuYerelLayoutAfterMerge(slug, merged) {
   const next = { ...merged };
   const brand = LOGO_BY_SLUG[key];
   const logoUrl = String(next.logoUrl ?? "").trim();
-  if (!logoUrl || logoUrl.toLowerCase().startsWith("data:image/") || logoUrl.startsWith("/turkata/")) {
+  if (
+    !logoUrl ||
+    logoUrl.toLowerCase().startsWith("data:image/") ||
+    logoUrl.startsWith("/brand/turkata/") ||
+    logoUrl.startsWith("/turkata/turkata-logo.png")
+  ) {
     next.logoUrl = brand.logoUrl;
     next.faviconUrl = brand.faviconUrl;
   }

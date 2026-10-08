@@ -21,7 +21,7 @@ test("repairKamuYerelLayoutAfterMerge fixes yerel logo and generic nav", () => {
     logoUrl: null,
     hmNavOnlyCategorySlugs: ["yerel", "ankara", "gundem", "ekonomi"],
   });
-  assert.equal(out.logoUrl, "/brand/turkata/turkata-mark.png");
+  assert.equal(out.logoUrl, "/turkata/turkata-mark.png");
   assert.deepEqual(out.hmNavOnlyCategorySlugs, [...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS]);
 });
 
