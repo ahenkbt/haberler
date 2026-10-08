@@ -884,6 +884,15 @@ zone_name = "turkatahaber.com"
 pattern = "turkatahaber.com/assets/*"
 zone_name = "turkatahaber.com"
 
+# Kamu-yerel marka (goalgo/artifacts/ahenkpress/public/turkata → Worker ASSETS)
+[[routes]]
+pattern = "turkatahaber.com/turkata/*"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/turkata/*"
+zone_name = "turkatahaber.com"
+
 [[routes]]
 pattern = "turkatahaber.com/sw.js"
 zone_name = "turkatahaber.com"
@@ -1108,6 +1117,14 @@ zone_name = "yerel.net.tr"
 
 [[routes]]
 pattern = "yerel.net.tr/assets/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/turkata/*"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/turkata/*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
