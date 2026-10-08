@@ -52,7 +52,7 @@ async function main() {
       [
         "--import",
         "tsx",
-        "./sync-php-neon-news.ts",
+        path.join(path.dirname(fileURLToPath(import.meta.url)), "sync-php-neon-news.ts"),
         "--apply",
         `--site-id=${row.siteId}`,
         "--batch=200",

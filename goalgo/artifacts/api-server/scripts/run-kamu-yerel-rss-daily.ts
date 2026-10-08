@@ -69,7 +69,14 @@ async function main() {
   for (const siteId of siteIds) {
     const sync = spawnSync(
       process.execPath,
-      ["--import", "tsx", "./sync-php-neon-news.ts", "--apply", `--site-id=${siteId}`, "--batch=200"],
+      [
+        "--import",
+        "tsx",
+        path.join(scriptDir, "sync-php-neon-news.ts"),
+        "--apply",
+        `--site-id=${siteId}`,
+        "--batch=200",
+      ],
       { cwd: scriptDir, stdio: "inherit" },
     );
     if (sync.status !== 0) process.exitCode = sync.status ?? 1;

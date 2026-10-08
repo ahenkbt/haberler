@@ -35,7 +35,7 @@ async function maybeSyncPhpLayout(siteIds: number[]) {
       [
         "--import",
         "tsx",
-        "./sync-php-neon-news.ts",
+        path.join(scriptDir, "sync-php-neon-news.ts"),
         "--apply",
         "--layout-only",
         `--site-id=${siteId}`,
