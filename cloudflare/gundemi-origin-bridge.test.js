@@ -4,6 +4,7 @@ import {
   isGundemiApexBridgeHost,
   isGundemiBridgeCatchAllHost,
   isFixHaberBridgeHost,
+  isFixTcSubdomainPhpHost,
   isSosyalHizmetlerBridgeHost,
   isSosyalHizmetlerBrandAssetPath,
   isPhpThemeOriginBridgeHost,
@@ -124,6 +125,34 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(body.includes("PHP tema bekleniyor"), false);
     assert.match(body, /ys-logo-header-fix:v1/);
     assert.match(body, /object-fit:\s*contain/);
+  });
+
+  it("*.fix.tc il/concept subdomains bridge only PHP theme assets", async () => {
+    assert.equal(isFixTcSubdomainPhpHost("sanliurfa.fix.tc"), true);
+    assert.equal(isFixTcSubdomainPhpHost("www.adana.fix.tc"), true);
+    assert.equal(isFixTcSubdomainPhpHost("fix.tc"), false);
+    assert.equal(isFixTcSubdomainPhpHost("www.fix.tc"), false);
+    assert.equal(isFixTcSubdomainPhpHost("evilfix.tc"), false);
+    assert.equal(isFixTcSubdomainPhpHost("gundemi.org"), false);
+    assert.equal(isPhpThemeOriginBridgeHost("sanliurfa.fix.tc"), true);
+    for (const path of ["/", "/haber/x", "/api/hm/site-meta", "/editor", "/assets/index-abc.js", "/fix/logo.png"]) {
+      const incoming = new URL(`https://sanliurfa.fix.tc${path}`);
+      const res = await gundemiApexPhpBridgeResponse(
+        new Request(incoming.toString(), { method: "GET" }),
+        incoming,
+      );
+      assert.equal(res, null, path);
+    }
+  });
+
+  it("proxies *.fix.tc theme.js from PHP origin (slider JS)", async () => {
+    const incoming = new URL("https://sanliurfa.fix.tc/assets/theme.js?v=test");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { method: "HEAD" }),
+      incoming,
+    );
+    assert.ok(res);
+    assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
   });
 
   it("appendYsLogoHeaderCssFix is idempotent", () => {
