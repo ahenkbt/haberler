@@ -20,6 +20,7 @@ import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
 import { ensureTurksavLogoOnNeon } from "./hm-turksav-edge.js";
 import { ensureSehitGaziLogoOnNeon } from "./hm-sehitgazi-edge.js";
 import { ensureDunyaSaglikLogoOnNeon } from "./hm-dunyasaglik-edge.js";
+import { ensureGundemiLogoOnNeon, isGundemiBrandHost } from "./hm-gundemi-edge.js";
 
 const KH_YEKEPARE_EDITOR = {
   email: "yekpare@gmail.com",
@@ -1596,6 +1597,14 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       await ensureDunyaSaglikLogoOnNeon(env);
     } catch (err) {
       console.error("[hm-brand-db-ensure] dunyasaglik logo", String(err?.message || err).slice(0, 240));
+    }
+  }
+
+  if (isGundemiBrandHost(host) || binding.slug === "gundemi" || String(binding.slug || "").endsWith("-gundemi")) {
+    try {
+      await ensureGundemiLogoOnNeon(env, host || binding.domain);
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] gundemi logo", String(err?.message || err).slice(0, 240));
     }
   }
 

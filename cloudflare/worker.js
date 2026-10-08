@@ -27,9 +27,11 @@ import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from 
 import { serveKamuYerelExtraPage } from "./hm-kamu-yerel-extra-pages-edge.js";
 import {
   gundemiApexPhpBridgeResponse,
+  isGundemiBridgeCatchAllHost,
   phpNewsBrandThemeCssBridgeResponse,
   shouldBlockGundemiSpaAssets,
 } from "./gundemi-origin-bridge.js";
+import { ensureGundemiLogoOnNeon } from "./hm-gundemi-edge.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
 import { handleAdminPhpNeonSyncEdge } from "./hm-php-neon-sync-edge.js";
 import { handleTurkataRssCoversRepairEdge } from "./hm-turkata-rss-covers-edge.js";
@@ -3500,6 +3502,12 @@ export default {
     if (phpBrandThemeCss) return phpBrandThemeCss;
 
     // Traefik gap / theme assets: gundemi.org apex + regionals → own PHP (not turkatahaber HTML).
+    if (isGundemiBridgeCatchAllHost(incoming.hostname)) {
+      const logoJob = ensureGundemiLogoOnNeon(env, incoming.hostname).catch((err) => {
+        console.error("[hm-gundemi-edge/logo]", String(err?.message || err).slice(0, 200));
+      });
+      if (typeof ctx?.waitUntil === "function") ctx.waitUntil(logoJob);
+    }
     const gundemiPhpBridge = await gundemiApexPhpBridgeResponse(request, incoming);
     if (gundemiPhpBridge) return gundemiPhpBridge;
 

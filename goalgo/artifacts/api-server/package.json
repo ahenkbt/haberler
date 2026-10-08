@@ -33,6 +33,7 @@
     "repair:asg-ankara-rss": "node --import tsx ./scripts/repair-asg-ankara-rss.ts",
     "sync:php-neon-news": "node --import tsx ./scripts/sync-php-neon-news.ts",
     "ensure:gundemi-bolge": "node --import tsx ./scripts/ensure-gundemi-regional-sites.ts",
+    "ensure:gundemi-logos": "node --import tsx ./scripts/ensure-gundemi-logos.ts",
     "ensure:fixhaber": "node --import tsx ./scripts/ensure-fixhaber-site.ts",
     "ensure:yesilvatan-logo": "node --import tsx ./scripts/ensure-yesilvatan-logo.ts",
     "ensure:php-concept-colors": "node --import tsx ./scripts/ensure-php-concept-colors.ts",
