@@ -390,17 +390,51 @@ async function editorData(sql) {
     queue: reqs,
   };
 }
+// ---------------------------------------------------------------- AI kota (manset5 2026-10-08)
+const PROV_ORDER = ["evren", "nvidia", "gemini", "openai", "openrouter"];
+const PROV_NAME = { evren: "Evren.ai", nvidia: "NVIDIA NIM", gemini: "Google Gemini", openai: "OpenAI", openrouter: "OpenRouter" };
+export async function quotaData(sql) {
+  const [q, st, use, keys, ev, m5, gen] = await Promise.all([
+    sql.query(`SELECT scope, provider, site_id, model, status, remaining, http, error, checked_at, status_since FROM hm_ai_provider_quota`),
+    sql.query(`SELECT provider AS breaker, open_until, last_reason, credits_remaining FROM hm_ai_provider_state`),
+    sql.query(`SELECT provider, sum(calls)::int calls, sum(failed)::int failed, sum(prompt_tokens+completion_tokens)::bigint tokens FROM hm_ai_provider_usage WHERE day = (now() AT TIME ZONE 'Europe/Istanbul')::date GROUP BY 1`),
+    sql.query(`SELECT k.site_id, k.provider, k.enabled, k.usage_count, k.last_used_at, left(coalesce(k.last_error,''),160) last_error, (SELECT s.domain FROM hm_news_sites s WHERE s.id = k.site_id LIMIT 1) domain FROM hm_llm_provider_keys k WHERE k.site_id IS NOT NULL ORDER BY k.site_id, k.priority`),
+    sql.query(`SELECT id, at, severity, message FROM hm_bekci_events WHERE kind IN ('ai_quota','ai_manset5') AND at > now() - interval '3 days' ORDER BY id DESC LIMIT 8`),
+    sql.query(`SELECT site_id, count(*) FILTER (WHERE is_ai_manset AND status='published' AND coalesce(ai_model,'')<>'curate')::int AS orig, max(created_at) FILTER (WHERE coalesce(ai_model,'')<>'curate') AS last FROM hm_ai_editor_articles WHERE manset_date = (now() AT TIME ZONE 'Europe/Istanbul')::date GROUP BY 1`),
+    sql.query(`SELECT site_id, domain, daily_manset_target FROM hm_ai_manset5_sites_v ORDER BY site_id`),
+  ]);
+  const brk = Object.fromEntries(st.map((r) => [r.breaker, r]));
+  const now = Date.now();
+  const shared = q.filter((r) => !r.scope.startsWith("site:")).map((r) => {
+    const b = brk[r.scope === "env" ? r.provider : `${r.scope}:${r.provider}`];
+    const open = b?.open_until && new Date(b.open_until).getTime() > now;
+    return { ...r, breakerOpenUntil: open ? b.open_until : null, breakerReason: open ? b.last_reason : null, usable: r.status === "ok" && !open };
+  }).sort((a, b) => (a.scope === b.scope ? 0 : a.scope === "global" ? -1 : 1) || PROV_ORDER.indexOf(a.provider) - PROV_ORDER.indexOf(b.provider));
+  const active = shared.find((r) => r.usable) || null;
+  const siteQ = q.filter((r) => r.scope.startsWith("site:"));
+  const own = keys.map((k) => { const p = siteQ.find((r) => Number(r.site_id) === Number(k.site_id) && r.provider === k.provider); return { ...k, status: p?.status || (k.enabled ? "bilinmiyor" : "kapalı"), remaining: p?.remaining || {}, checked_at: p?.checked_at || null }; });
+  const m = Object.fromEntries(m5.map((r) => [Number(r.site_id), r]));
+  return {
+    shared, active: active ? { provider: active.provider, scope: active.scope } : null,
+    exhausted: shared.filter((r) => !r.usable).map((r) => ({ provider: r.provider, scope: r.scope, status: r.status, breakerOpenUntil: r.breakerOpenUntil })),
+    usage: use, own, alerts: ev,
+    manset5: gen.map((g) => ({ site_id: g.site_id, domain: g.domain, target: Math.max(5, g.daily_manset_target), orig: m[Number(g.site_id)]?.orig || 0, last: m[Number(g.site_id)]?.last || null })),
+    checkedAt: q.reduce((a, r) => (!a || r.checked_at > a ? r.checked_at : a), null),
+  };
+}
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 function editorPage() {
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>AI Haber Editörü — Yönetim</title>
 <style>body{font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#f5f6f8;color:#1b2430}header{background:#0B2A5B;color:#fff;padding:12px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}header a{color:#cfe0ff;text-decoration:none}main{padding:16px 18px;max-width:1200px;margin:auto}.card{background:#fff;border-radius:14px;box-shadow:0 1px 3px #0001;padding:16px 18px;margin-bottom:16px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:0 0 10px}table{border-collapse:collapse;width:100%}th,td{padding:7px 8px;border-bottom:1px solid #eceff3;text-align:left;font-size:13px;vertical-align:top}th{color:#556;font-weight:600}.b{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600}.on{background:#d9f5e3;color:#11683a}.off{background:#eee;color:#666}.err{background:#ffd9d9;color:#a01515}button{background:#e61e25;color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600}button.sec{background:#fff;color:#0B2A5B;border:1px solid #c9d3e3}.sw{cursor:pointer}.m{color:#667;font-size:12px}ul{margin:6px 0 0 18px;padding:0}</style></head><body>
 <header><b style="font-size:17px">🤖 AI Haber Editörü</b><span class="m" style="color:#cfe0ff">Haber sitelerini otomatik günceller · kurumsal siteler hariç</span><span style="flex:1"></span><a href="/admin/haber-siteleri-bekci">🛡️ AI Bekçi</a><a href="/admin">← Yönetim paneli</a></header>
 <main>
+<div class="card" id="kota" style="border:2px solid #0B2A5B"><h2>🔋 AI sağlayıcı kotaları <span id="qact" class="m"></span></h2><div id="quota" class="m">Yükleniyor…</div></div>
+<div class="card"><h2>📰 Bugün özgün AI manşet (genel siteler, hedef ≥5, her site farklı haber)</h2><div id="m5" class="m">Yükleniyor…</div></div>
 <div class="card"><h1>Ne yapar?</h1><ul>
 <li>Günde 8 kez (yaklaşık 2,5 saatte bir, 06:17 – 23:47 arası) <b>kendiliğinden</b> çalışır. Bütün haber siteleri varsayılan olarak <b>açık</b>; istemediğiniz siteyi aşağıdan kapatabilirsiniz.</li>
 <li>Kayıtlı RSS kaynaklarından ve konuya uygun kaynaklardan yeni haberleri çeker; görselsiz, mükerrer ve aynı olayın tekrarı olan haberleri eler.</li>
 <li>Manşeti en yeni, görselli ve güçlü haberlerle yeniler. Yapay zekâ (önce Evren, sonra NVIDIA, Gemini, OpenAI; ucuz modeller) <b>yalnızca</b> manşet seçimi ve kategori ataması için kullanılır.</li>
-<li><b>Haber yazmaz, uydurmaz:</b> haber metni kaynağındaki gibi yayımlanır ve kaynak bağlantısı gösterilir. Vatan Haber yasak listesi (Hüseyin Akın, Anadolu Çınarları, AÇI Partisi) uygulanır.</li>
+<li><b>Genel haber siteleri:</b> her gün en az 5 manşet haberi yapay zekâ ile <b>özgün olarak yeniden yazılır</b> (gün boyuna yayılır; Evren → NVIDIA → Gemini → OpenAI, sitenin kendi AI anahtarı varsa önce o). Aynı haber iki sitede AI manşeti olmaz. Konsept sitelerde manşet seçimi kaynağındaki metinle yapılır. Haber uydurulmaz; Vatan Haber yasak listesi (Hüseyin Akın, Anadolu Çınarları, AÇI Partisi) uygulanır.</li>
 </ul><p style="margin-top:12px"><button id="run">▶ Şimdi çalıştır</button> <span id="runmsg" class="m"></span></p></div>
 <div class="card"><h2>Siteler</h2><table id="sites"><tr><td class="m">Yükleniyor…</td></tr></table></div>
 <div class="card"><h2>Son çalışmalar</h2><div id="runs" class="m">Yükleniyor…</div></div>
@@ -416,7 +450,18 @@ async function load(){try{const d=await f("/api/bekci/ai-editor");
  document.getElementById("runs").innerHTML=(q.length?"<p><b>Sırada / çalışıyor:</b> "+q.map(x=>"#"+x.id+" "+x.status+" ("+tr(x.at)+")").join(", ")+"</p>":"")+"<table><tr><th>Başladı</th><th>Bitti</th><th>Durum</th><th>Kaynak taraması</th><th>Site başına sonuç</th></tr>"+d.runs.map(r=>"<tr><td>"+tr(r.started_at)+"</td><td>"+tr(r.finished_at)+"</td><td>"+(r.status==="ok"?'<span class="b on">tamam</span>':'<span class="b err">'+e(r.status||"?")+"</span> "+e(r.error||""))+"</td><td>"+(r.fetch?(r.fetch.feeds+" kaynak · "+r.fetch.inserted+" yeni · "+r.fetch.dup+" mükerrer elendi"):"çekim yok (havuzdan)")+"</td><td>"+(r.perSite.filter(p=>p.made||p.todo).map(p=>e(p.site)+": "+p.made+" manşet"+(p.ai_pick?' <span class=m>(AI: '+e(p.ai_pick)+")</span>":"")).join("<br>")||'<span class=m>bu turda yeni manşet gerekmedi</span>')+"</td></tr>").join("")+"</table>";
 }catch(x){document.getElementById("sites").innerHTML='<tr><td class="b err">'+e(x.message)+"</td></tr>";}}
 document.getElementById("run").onclick=async()=>{const m=document.getElementById("runmsg");m.textContent="Sıraya alınıyor…";try{const d=await f("/api/bekci/ai-editor/run",{method:"POST"});m.textContent=d.queued?("Sıraya alındı (iş #"+d.id+"). 2 dakika içinde başlar; tam tur ~20 dk sürer."):("Zaten sırada/çalışıyor (iş #"+d.id+").");load();}catch(x){m.textContent=x.message;}};
-load();setInterval(load,60000);</script></body></html>`;
+const fmt=n=>n==null?"–":(n>=1e6?(n/1e6).toFixed(1).replace(".",",")+" M":n>=1e4?Math.round(n/1e3)+" B":Math.round(n).toLocaleString("tr-TR"));
+const ST={ok:'<span class="b on">çalışıyor</span>',exhausted:'<span class="b err">KOTA BİTTİ</span>',auth_error:'<span class="b err">anahtar hatalı</span>',rate_limited:'<span class="b err">hız sınırı</span>',error:'<span class="b err">hata</span>'};
+function rem(p){const r=p.remaining||{},o=[];if(r.credits!=null)o.push("kredi: <b>"+fmt(r.credits)+"</b>");if(r.daily_tokens_left!=null)o.push("bugün kalan: <b>"+fmt(r.daily_tokens_left)+"</b> / "+fmt(r.daily_tokens_limit)+" token");if(r.rl_tokens_left!=null&&p.provider!=="evren")o.push("dakikalık sınır: "+fmt(r.rl_tokens_left)+" token, "+fmt(r.rl_requests_left)+" istek");return o.join(" · ")||'<span class=m>sağlayıcı kalan kotayı bildirmiyor (erişim kontrol edildi)</span>';}
+async function loadQ(){try{const d=await f("/api/bekci/ai-quota");const u=Object.fromEntries((d.usage||[]).map(x=>[x.provider,x]));
+ document.getElementById("qact").innerHTML=d.active?(' — şu an kullanılan: <b style="color:#11683a">'+e(({evren:"Evren.ai",nvidia:"NVIDIA NIM",gemini:"Google Gemini",openai:"OpenAI"})[d.active.provider]||d.active.provider)+"</b>"):' — <b style="color:#a01515">kullanılabilir sağlayıcı yok!</b>';
+ let h="<table><tr><th>Sıra</th><th>Sağlayıcı</th><th>Durum</th><th>Kalan kota</th><th>Bugün kullanım</th><th>Son kontrol</th></tr>"+d.shared.map((p,i)=>"<tr"+(d.active&&d.active.provider===p.provider&&d.active.scope===p.scope?' style="background:#eefaf2"':"")+"><td>"+(i+1)+"</td><td><b>"+e(({evren:"Evren.ai",nvidia:"NVIDIA NIM",gemini:"Google Gemini",openai:"OpenAI"})[p.provider]||p.provider)+"</b><br><span class=m>"+e(p.scope==="global"?"ortak (Haber Merkezi)":"yedek (sunucu)")+" · "+e(p.model||"")+"</span></td><td>"+(p.breakerOpenUntil?'<span class="b err">devre dışı → '+tr(p.breakerOpenUntil)+"</span>":(ST[p.status]||e(p.status)))+(p.error?"<br><span class=m>"+e(p.error).slice(0,140)+"</span>":"")+"</td><td>"+rem(p)+"</td><td>"+(p.scope==="global"&&u[p.provider]?(u[p.provider].calls+" çağrı · "+fmt(+u[p.provider].tokens)+" token"+(u[p.provider].failed?" · "+u[p.provider].failed+" hata":"")):"–")+"</td><td>"+tr(p.checked_at)+"</td></tr>").join("")+"</table>";
+ h+='<h2 style="margin-top:14px">🔑 Sitelerin kendi AI anahtarları</h2>'+(d.own.length?"<table><tr><th>Site</th><th>Sağlayıcı</th><th>Durum</th><th>Kalan kota</th><th>Kullanım</th></tr>"+d.own.map(k=>"<tr><td>"+e(k.domain||("#"+k.site_id))+"</td><td>"+e(k.provider)+"</td><td>"+(ST[k.status]||e(k.status))+(k.last_error?"<br><span class=m>"+e(k.last_error)+"</span>":"")+"</td><td>"+rem(k)+"</td><td>"+(k.usage_count||0)+" çağrı · son "+tr(k.last_used_at)+"</td></tr>").join("")+"</table>":'<p class=m>Henüz hiçbir editör kendi AI anahtarını eklemedi. Bir site editör panelinden kendi anahtarını eklerse o sitenin manşet/yeniden yazım işleri önce o anahtarla yapılır; anahtar yoksa veya kotası biterse ortak sıraya (Evren → NVIDIA → Gemini → OpenAI) geçilir.</p>');
+ h+=(d.alerts.length?'<h2 style="margin-top:14px">⚠️ Uyarılar</h2><ul>'+d.alerts.map(a=>'<li><span class="b '+(a.severity==="high"?"err":"on")+'">'+tr(a.at)+"</span> "+e(a.message)+"</li>").join("")+"</ul>":'<p class=m style="margin-top:10px">Son 3 günde kota uyarısı yok. Kotalar 30 dakikada bir kontrol edilir.</p>');
+ document.getElementById("quota").innerHTML=h;
+ document.getElementById("m5").innerHTML="<table><tr><th>Site</th><th>Bugün özgün AI manşet</th><th>Hedef</th><th>Son</th></tr>"+d.manset5.map(s=>"<tr><td><b>"+e(s.domain)+"</b></td><td>"+(s.orig>=5?'<span class="b on">'+s.orig+"</span>":'<span class="b err">'+s.orig+"</span>")+"</td><td>"+s.target+"</td><td>"+tr(s.last)+"</td></tr>").join("")+"</table>";
+}catch(x){document.getElementById("quota").innerHTML='<span class="b err">'+e(x.message)+"</span>";}}
+load();loadQ();setInterval(load,60000);setInterval(loadQ,120000);</script></body></html>`;
 }
 
 // ---------------------------------------------------------------- auth + routing
@@ -441,7 +486,8 @@ if((p==="/admin/ai-icerik-robotu"||p==="/admin/ozel-haber-ekle")&&!window.__BK_P
 if(!show){if(b)b.style.display="none";return;}
 if(!b){b=document.createElement("div");b.id="hm-bk-bar";b.style.cssText="position:fixed;right:14px;bottom:14px;z-index:2147483000;display:flex;gap:8px;font:600 13px system-ui,sans-serif";
 b.innerHTML='<a href="/admin/ozel-haber-ekle" style="background:#fff;color:#0B2A5B;border:1px solid #c9d3e3;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0002">📝 Özel Haber ekle</a><a href="/admin/ai-icerik-robotu" style="background:#0B2A5B;color:#fff;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0003">🤖 AI Haber Editörü</a><a href="/admin/haber-siteleri-bekci" style="background:#e61e25;color:#fff;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0003">🛡️ AI Bekçi</a>';document.body.appendChild(b);}
-b.style.display="flex";}
+b.style.display="flex";if(!b.__q){b.__q=1;var c=document.createElement("a");c.id="hm-bk-quota";c.href="/admin/ai-icerik-robotu#kota";c.style.cssText="background:#fff;color:#11683a;border:1px solid #c9d3e3;padding:9px 13px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px #0002";c.textContent="🔋 AI kota …";b.insertBefore(c,b.firstChild);
+var lq=function(){fetch("/api/bekci/ai-quota/summary",{credentials:"include",cache:"no-store"}).then(function(r){return r.json()}).then(function(d){if(!d||!d.ok){c.style.display="none";return;}var n={evren:"Evren",nvidia:"NVIDIA",gemini:"Gemini",openai:"OpenAI"};var t="🔋 AI: "+(d.active?(n[d.active.provider]||d.active.provider):"YOK");if(d.evrenLeft!=null)t+=" · Evren "+(d.evrenLeft/1e6).toFixed(1).replace(".",",")+"M token";if(d.exhausted)t+=" · ⚠️ "+d.exhausted+" kota bitti";c.textContent=t;var bad=!d.active||d.exhausted||(d.active&&d.active.provider!=="evren");c.style.color=bad?"#a01515":"#11683a";c.style.borderColor=bad?"#e8a3a3":"#c9d3e3";}).catch(function(){c.style.display="none";});};lq();setInterval(lq,300000);}}
 var t=0;new MutationObserver(function(){if(t)return;t=setTimeout(function(){t=0;ren();},300);}).observe(document.documentElement,{childList:true,subtree:true});
 setInterval(bar,1000);document.addEventListener("DOMContentLoaded",function(){ren();bar();});
 }catch(e){}})();</script>`;
@@ -497,6 +543,11 @@ async function handleFetch(req, env) {
       catch (e) { return json(400, { ok: false, error: String(e.message || e).slice(0, 200) }); }
     }
     if (path === "/api/bekci/ai-editor" && req.method === "GET") return json(200, { ok: true, ...(await editorData(sql)) });
+    if (path === "/api/bekci/ai-quota" && req.method === "GET") return json(200, { ok: true, ...(await quotaData(sql)) });
+    if (path === "/api/bekci/ai-quota/summary" && req.method === "GET") {
+      const d = await quotaData(sql); const ev = d.shared.find((p) => p.provider === "evren" && p.scope === "global");
+      return json(200, { ok: true, active: d.active, exhausted: d.exhausted.length, evrenLeft: ev?.remaining?.daily_tokens_left ?? null, ownKeys: d.own.length, low: d.manset5.filter((s) => s.orig < 5).length });
+    }
     if (path === "/api/bekci/ai-editor/toggle" && req.method === "POST") {
       const b = await req.json().catch(() => ({})); const id = Number(b.siteId);
       if (!id) return json(400, { ok: false, error: "siteId gerekli" });
