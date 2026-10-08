@@ -240,7 +240,8 @@ async function ensureCategories(siteId: number, def: KamuYerelSiteDef): Promise<
   const map = new Map<string, number>();
   let order = 10;
   for (const cat of def.categories) {
-    const [existing] = await getNewsDbForRead()
+    // Panel Neon slug kimliği — NEWS_DB_READ=news PHP id ile dual-write sapmasını önler.
+    const [existing] = await db
       .select({
         id: categoriesTable.id,
         exclusiveSiteId: categoriesTable.exclusiveSiteId,
