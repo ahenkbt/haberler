@@ -36,14 +36,10 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(listKamuYerelNavTopCategorySlugs()).toContain("daha");
   });
 
-  it("regional il menu has 7 regions under İller (81 il menüde değil — 40 kayıt sınırı)", () => {
+  it("corporate menu excludes iller/bolge (iller only on /iller page)", () => {
     const menu = buildKamuYerelCorporateMenuItems();
     expect(menu.length).toBeLessThanOrEqual(40);
-    const iller = menu.find((m) => m.id === "ky-menu-iller");
-    expect(iller?.href).toBe("/iller");
-    const regions = menu.filter((m) => m.parentId === "ky-menu-iller");
-    expect(regions).toHaveLength(7);
-    expect(regions[0]?.href).toMatch(/^\/iller#/);
+    expect(menu.some((m) => m.id === "ky-menu-iller" || m.id.startsWith("ky-region-"))).toBe(false);
     expect(menu.some((m) => m.id.startsWith("ky-il-"))).toBe(false);
     const genelMerkez = menu.find((m) => m.id === "ky-cat-genel-merkez");
     expect(genelMerkez?.parentId).toBe("ky-cat-siyasi-partiler");

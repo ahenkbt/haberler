@@ -357,26 +357,9 @@ export type KamuYerelCorporateMenuItem = {
   enabled?: boolean;
 };
 
-/** Tepe menü — İller + 7 bölge (81 il yalnızca `/iller` sayfasında; editör 40 kayıt sınırına sığar). */
+/** Tepe menü — kamu/yerel kategoriler (81 il yalnızca `/iller` sayfasında; ana menüde il/bölge yok). */
 export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[] {
   const items: KamuYerelCorporateMenuItem[] = [];
-  const illerRoot = "ky-menu-iller";
-  items.push({
-    id: illerRoot,
-    label: "İller",
-    href: `/${KAMU_YEREL_ILLER_PAGE_SLUG}`,
-    enabled: true,
-  });
-  for (const regionId of KAMU_YEREL_REGION_ORDER) {
-    const regionMenuId = `ky-region-${regionId}`;
-    items.push({
-      id: regionMenuId,
-      label: KAMU_YEREL_REGION_LABELS[regionId],
-      href: `/${KAMU_YEREL_ILLER_PAGE_SLUG}#${regionId}`,
-      parentId: illerRoot,
-      enabled: true,
-    });
-  }
   items.push({
     id: "ky-cat-daha",
     label: "Daha",
