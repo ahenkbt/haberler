@@ -6,9 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiUrl } from "@/lib/apiBase";
 import { readHmJwt } from "@/lib/hmSession";
+import { Link, useLocation } from "wouter";
 import {
   AlertTriangle,
   ArrowLeft,
+  CheckCircle2,
+  Newspaper,
+  Sparkles,
   Inbox,
   Loader2,
   MailPlus,
@@ -41,6 +45,7 @@ type MsgRow = {
   is_trashed: boolean;
   created_at: string;
   snippet: string | null;
+  converted_news_id?: number | null;
 };
 type MsgFull = {
   id: number;
@@ -55,6 +60,7 @@ type MsgFull = {
   createdAt: string;
   messageId: string | null;
   box: string;
+  convertedNewsId?: number | null;
 };
 
 const FOLDERS: { id: Folder; label: string }[] = [
@@ -130,6 +136,8 @@ export default function EditorPostaKutusu() {
   const [newDomain, setNewDomain] = useState("");
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [converting, setConverting] = useState<"" | "plain" | "ai">("");
+  const [, setLocation] = useLocation();
 
   const currentBox = useMemo(() => boxes.find((b) => b.address === box) ?? null, [boxes, box]);
 
@@ -239,6 +247,26 @@ export default function EditorPostaKutusu() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSending(false);
+    }
+  }
+
+  /** "Habere dönüştür": taslak haber açılır (asla otomatik yayın yok), editör haber formunda gözden geçirip yayınlar. */
+  async function convertToNews(msg: MsgFull, ai: boolean) {
+    setConverting(ai ? "ai" : "plain");
+    setError("");
+    try {
+      const d = await mailFetch<{ newsId: number; editUrl: string; images: number; aiUsed: boolean; notes?: string[] }>(
+        `/api/hm/editor/site-mail/messages/${msg.id}/to-news`,
+        { method: "POST", body: JSON.stringify({ ai }) },
+      );
+      setOpen({ ...msg, convertedNewsId: d.newsId });
+      const extra = [d.images ? `${d.images} görsel eklendi` : "", ...(d.notes ?? [])].filter(Boolean).join(" · ");
+      setInfo(`Taslak haber oluşturuldu${extra ? ` (${extra})` : ""}. Haber formu açılıyor…`);
+      window.setTimeout(() => setLocation(d.editUrl), 900);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setConverting("");
     }
   }
 
@@ -409,6 +437,24 @@ export default function EditorPostaKutusu() {
                     <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void patchMessage(open.id, { isStarred: !open.isStarred })}>
                       <Star className={`h-4 w-4 ${open.isStarred ? "fill-amber-400 text-amber-500" : ""}`} /> {open.isStarred ? "Yıldızı kaldır" : "Yıldızla"}
                     </Button>
+                    {open.direction === "in" ? (
+                      open.convertedNewsId ? (
+                        <Link href={`/editor/haberler/${open.convertedNewsId}/duzenle`}>
+                          <span className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">
+                            <CheckCircle2 className="h-4 w-4" /> Habere dönüştürüldü · taslağı aç
+                          </span>
+                        </Link>
+                      ) : (
+                        <>
+                          <Button type="button" size="sm" className="gap-1.5 bg-red-700 text-white hover:bg-red-800" disabled={!!converting} onClick={() => void convertToNews(open, false)}>
+                            {converting === "plain" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Newspaper className="h-4 w-4" />} Habere dönüştür
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={!!converting} onClick={() => void convertToNews(open, true)} title="Evren AI başlık, spot ve metni haber diline çevirir; taslak olarak kaydedilir.">
+                            {converting === "ai" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} AI ile düzenle
+                          </Button>
+                        </>
+                      )
+                    ) : null}
                     {open.isTrashed ? (
                       <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void patchMessage(open.id, { isTrashed: false })}>
                         <Undo2 className="h-4 w-4" /> Geri al
@@ -425,6 +471,11 @@ export default function EditorPostaKutusu() {
                       {open.direction === "out" ? "Kime" : "Kimden"}: {open.direction === "out" ? open.to : open.from} · {new Date(open.createdAt).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}
                     </p>
                   </div>
+                  {open.direction === "in" && !open.convertedNewsId ? (
+                    <p className="text-[11px] text-slate-500">
+                      Habere dönüştür: konu başlık, metin haber gövdesi olur (imza/yasal uyarı ayıklanır), e-postadaki görseller kapak ve galeriye eklenir, kategori önerilir. Haber <strong>taslak</strong> kaydedilir; yayını siz yaparsınız.
+                    </p>
+                  ) : null}
                   {open.html ? <HtmlBody html={open.html} /> : <pre className="whitespace-pre-wrap break-words text-sm text-slate-800">{open.text || ""}</pre>}
                 </div>
               ) : (
@@ -463,6 +514,11 @@ export default function EditorPostaKutusu() {
                             <span className="flex shrink-0 flex-col items-end gap-1 text-[11px] text-slate-400">
                               {fmtDate(m.created_at)}
                               {m.is_starred ? <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> : null}
+                              {m.converted_news_id ? (
+                                <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 text-[10px] font-semibold text-emerald-700">
+                                  <CheckCircle2 className="h-3 w-3" /> Habere dönüştürüldü
+                                </span>
+                              ) : null}
                             </span>
                           </button>
                         </li>
