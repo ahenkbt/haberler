@@ -1535,6 +1535,26 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     slugKey === "asg" ||
     normalizeHost(domain).includes("ankarasehirgazetesi");
 
+  const isFixHaberBrand =
+    binding.slug === "fixhaber" ||
+    slugKey === "fixhaber" ||
+    normalizeHost(domain) === "fix.tc";
+
+  // Fix Haber: site satırı var ama kategoriler/PHP Neon eksik → arka planda idempotent seed.
+  if (isFixHaberBrand && upstream.ok) {
+    const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "fixhaber" }).catch((err) => {
+      console.error("[hm-brand-db-ensure/fixhaber-catalog]", String(err?.message || err).slice(0, 200));
+    });
+    if (typeof opts.waitUntil === "function") {
+      opts.waitUntil(job);
+    } else {
+      try {
+        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))]);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   // ASG: yazar + k├Â┼şe yaz─▒s─▒n─▒ arka planda hizala (makale kopyas─▒ meta yan─▒t─▒n─▒ geciktirmesin).
   if (isAsgBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "asg" }).catch((err) => {

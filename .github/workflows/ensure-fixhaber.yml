@@ -47,6 +47,7 @@ jobs:
             exit 1
           fi
           if [ -z "$NEWS_DATABASE_URL" ]; then
-            echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine may stay empty; set secret for dual-write."
+            echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine menü/kategoriler boş kalır; secret zorunlu."
           fi
           pnpm --filter @workspace/api-server run ensure:fixhaber
+          # ensure:fixhaber NEWS_DATABASE_URL varsa sync-php-neon-news (--site-id) de çalıştırır.
