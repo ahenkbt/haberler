@@ -1,0 +1,1286 @@
+{
+"map": [
+[
+"Almanya",
+"Germany"
+],
+[
+"Alman",
+"Germany"
+],
+[
+"Berlin",
+"Germany"
+],
+[
+"Merz",
+"Germany"
+],
+[
+"Fransa",
+"France"
+],
+[
+"Fransız",
+"France"
+],
+[
+"Paris",
+"France"
+],
+[
+"Macron",
+"France"
+],
+[
+"Elysee",
+"France"
+],
+[
+"İngiltere",
+"United Kingdom"
+],
+[
+"Birleşik Krallık",
+"United Kingdom"
+],
+[
+"İngiliz",
+"United Kingdom"
+],
+[
+"Londra",
+"United Kingdom"
+],
+[
+"Starmer",
+"United Kingdom"
+],
+[
+"İskoçya",
+"United Kingdom"
+],
+[
+"İtalya",
+"Italy"
+],
+[
+"Roma",
+"Italy"
+],
+[
+"Meloni",
+"Italy"
+],
+[
+"İspanya",
+"Spain"
+],
+[
+"Madrid",
+"Spain"
+],
+[
+"Portekiz",
+"Portugal"
+],
+[
+"Lizbon",
+"Portugal"
+],
+[
+"Hollanda",
+"Netherlands"
+],
+[
+"Lahey",
+"Netherlands"
+],
+[
+"Amsterdam",
+"Netherlands"
+],
+[
+"Belçika",
+"Belgium"
+],
+[
+"Brüksel",
+"Belgium"
+],
+[
+"İsviçre",
+"Switzerland"
+],
+[
+"Cenevre",
+"Switzerland"
+],
+[
+"Avusturya",
+"Austria"
+],
+[
+"Viyana",
+"Austria"
+],
+[
+"Polonya",
+"Poland"
+],
+[
+"Varşova",
+"Poland"
+],
+[
+"Çekya",
+"Czechia"
+],
+[
+"Çek Cumhuriyeti",
+"Czechia"
+],
+[
+"Slovakya",
+"Slovakia"
+],
+[
+"Macaristan",
+"Hungary"
+],
+[
+"Budapeşte",
+"Hungary"
+],
+[
+"Orban",
+"Hungary"
+],
+[
+"Romanya",
+"Romania"
+],
+[
+"Bükreş",
+"Romania"
+],
+[
+"Bulgaristan",
+"Bulgaria"
+],
+[
+"Sofya",
+"Bulgaria"
+],
+[
+"Yunanistan",
+"Greece"
+],
+[
+"Atina",
+"Greece"
+],
+[
+"Yunan",
+"Greece"
+],
+[
+"Miçotakis",
+"Greece"
+],
+[
+"Sırbistan",
+"Serbia"
+],
+[
+"Belgrad",
+"Serbia"
+],
+[
+"Hırvatistan",
+"Croatia"
+],
+[
+"Bosna",
+"Bosnia and Herzegovina"
+],
+[
+"Saraybosna",
+"Bosnia and Herzegovina"
+],
+[
+"Kosova",
+"Kosovo"
+],
+[
+"Arnavutluk",
+"Albania"
+],
+[
+"Kuzey Makedonya",
+"North Macedonia"
+],
+[
+"Karadağ",
+"Montenegro"
+],
+[
+"Slovenya",
+"Slovenia"
+],
+[
+"Moldova",
+"Moldova"
+],
+[
+"Ukrayna",
+"Ukraine"
+],
+[
+"Kiev",
+"Ukraine"
+],
+[
+"Kyiv",
+"Ukraine"
+],
+[
+"Zelenskiy",
+"Ukraine"
+],
+[
+"Zelenski",
+"Ukraine"
+],
+[
+"Rusya",
+"Russia"
+],
+[
+"Rus",
+"Russia"
+],
+[
+"Moskova",
+"Russia"
+],
+[
+"Kremlin",
+"Russia"
+],
+[
+"Putin",
+"Russia"
+],
+[
+"Lavrov",
+"Russia"
+],
+[
+"Peskov",
+"Russia"
+],
+[
+"Belarus",
+"Belarus"
+],
+[
+"Beyaz Rusya",
+"Belarus"
+],
+[
+"Litvanya",
+"Lithuania"
+],
+[
+"Letonya",
+"Latvia"
+],
+[
+"Estonya",
+"Estonia"
+],
+[
+"Finlandiya",
+"Finland"
+],
+[
+"İsveç",
+"Sweden"
+],
+[
+"Norveç",
+"Norway"
+],
+[
+"Danimarka",
+"Denmark"
+],
+[
+"İzlanda",
+"Iceland"
+],
+[
+"İrlanda",
+"Ireland"
+],
+[
+"Güney Kıbrıs",
+"Cyprus"
+],
+[
+"Rum Kesimi",
+"Cyprus"
+],
+[
+"KKTC",
+"Northern Cyprus"
+],
+[
+"Kuzey Kıbrıs",
+"Northern Cyprus"
+],
+[
+"Lefkoşa",
+"Northern Cyprus"
+],
+[
+"Malta",
+"Malta"
+],
+[
+"Lüksemburg",
+"Luxembourg"
+],
+[
+"ABD",
+"United States"
+],
+[
+"Amerika Birleşik Devletleri",
+"United States"
+],
+[
+"Amerikan",
+"United States"
+],
+[
+"Amerika",
+"United States"
+],
+[
+"Washington",
+"United States"
+],
+[
+"Beyaz Saray",
+"United States"
+],
+[
+"Trump",
+"United States"
+],
+[
+"Pentagon",
+"United States"
+],
+[
+"New York",
+"United States"
+],
+[
+"Kaliforniya",
+"United States"
+],
+[
+"Teksas",
+"United States"
+],
+[
+"Rubio",
+"United States"
+],
+[
+"Vance",
+"United States"
+],
+[
+"Kanada",
+"Canada"
+],
+[
+"Ottawa",
+"Canada"
+],
+[
+"Carney",
+"Canada"
+],
+[
+"Meksika",
+"Mexico"
+],
+[
+"Küba",
+"Cuba"
+],
+[
+"Haiti",
+"Haiti"
+],
+[
+"Panama",
+"Panama"
+],
+[
+"Guatemala",
+"Guatemala"
+],
+[
+"Honduras",
+"Honduras"
+],
+[
+"Nikaragua",
+"Nicaragua"
+],
+[
+"Kosta Rika",
+"Costa Rica"
+],
+[
+"Grönland",
+"Greenland"
+],
+[
+"Brezilya",
+"Brazil"
+],
+[
+"Lula",
+"Brazil"
+],
+[
+"Arjantin",
+"Argentina"
+],
+[
+"Buenos Aires",
+"Argentina"
+],
+[
+"Milei",
+"Argentina"
+],
+[
+"Şili",
+"Chile"
+],
+[
+"Kolombiya",
+"Colombia"
+],
+[
+"Venezuela",
+"Venezuela"
+],
+[
+"Maduro",
+"Venezuela"
+],
+[
+"Caracas",
+"Venezuela"
+],
+[
+"Peru",
+"Peru"
+],
+[
+"Ekvador",
+"Ecuador"
+],
+[
+"Bolivya",
+"Bolivia"
+],
+[
+"Paraguay",
+"Paraguay"
+],
+[
+"Uruguay",
+"Uruguay"
+],
+[
+"Çin",
+"China"
+],
+[
+"Pekin",
+"China"
+],
+[
+"Şi Cinping",
+"China"
+],
+[
+"Şanghay",
+"China"
+],
+[
+"Hong Kong",
+"Hong Kong"
+],
+[
+"Tayvan",
+"Taiwan"
+],
+[
+"Taipei",
+"Taiwan"
+],
+[
+"Japonya",
+"Japan"
+],
+[
+"Tokyo",
+"Japan"
+],
+[
+"Güney Kore",
+"South Korea"
+],
+[
+"Seul",
+"South Korea"
+],
+[
+"Kuzey Kore",
+"North Korea"
+],
+[
+"Pyongyang",
+"North Korea"
+],
+[
+"Kim Jong",
+"North Korea"
+],
+[
+"Hindistan",
+"India"
+],
+[
+"Yeni Delhi",
+"India"
+],
+[
+"Modi",
+"India"
+],
+[
+"Pakistan",
+"Pakistan"
+],
+[
+"İslamabad",
+"Pakistan"
+],
+[
+"Afganistan",
+"Afghanistan"
+],
+[
+"Kabil",
+"Afghanistan"
+],
+[
+"Taliban",
+"Afghanistan"
+],
+[
+"Bangladeş",
+"Bangladesh"
+],
+[
+"Sri Lanka",
+"Sri Lanka"
+],
+[
+"Nepal",
+"Nepal"
+],
+[
+"Myanmar",
+"Myanmar"
+],
+[
+"Tayland",
+"Thailand"
+],
+[
+"Vietnam",
+"Vietnam"
+],
+[
+"Kamboçya",
+"Cambodia"
+],
+[
+"Malezya",
+"Malaysia"
+],
+[
+"Endonezya",
+"Indonesia"
+],
+[
+"Cakarta",
+"Indonesia"
+],
+[
+"Filipinler",
+"Philippines"
+],
+[
+"Singapur",
+"Singapore"
+],
+[
+"Moğolistan",
+"Mongolia"
+],
+[
+"Kazakistan",
+"Kazakhstan"
+],
+[
+"Astana",
+"Kazakhstan"
+],
+[
+"Tokayev",
+"Kazakhstan"
+],
+[
+"Özbekistan",
+"Uzbekistan"
+],
+[
+"Taşkent",
+"Uzbekistan"
+],
+[
+"Mirziyoyev",
+"Uzbekistan"
+],
+[
+"Kırgızistan",
+"Kyrgyzstan"
+],
+[
+"Bişkek",
+"Kyrgyzstan"
+],
+[
+"Türkmenistan",
+"Turkmenistan"
+],
+[
+"Aşkabat",
+"Turkmenistan"
+],
+[
+"Tacikistan",
+"Tajikistan"
+],
+[
+"Azerbaycan",
+"Azerbaijan"
+],
+[
+"Bakü",
+"Azerbaijan"
+],
+[
+"Aliyev",
+"Azerbaijan"
+],
+[
+"Gürcistan",
+"Georgia"
+],
+[
+"Tiflis",
+"Georgia"
+],
+[
+"Ermenistan",
+"Armenia"
+],
+[
+"Erivan",
+"Armenia"
+],
+[
+"Paşinyan",
+"Armenia"
+],
+[
+"İran",
+"Iran"
+],
+[
+"Tahran",
+"Iran"
+],
+[
+"Pezeşkiyan",
+"Iran"
+],
+[
+"Hamaney",
+"Iran"
+],
+[
+"Arakçi",
+"Iran"
+],
+[
+"Irak",
+"Iraq"
+],
+[
+"Bağdat",
+"Iraq"
+],
+[
+"Erbil",
+"Iraq"
+],
+[
+"Kerkük",
+"Iraq"
+],
+[
+"Suriye",
+"Syria"
+],
+[
+"Şam",
+"Syria"
+],
+[
+"Halep",
+"Syria"
+],
+[
+"Şara",
+"Syria"
+],
+[
+"Lübnan",
+"Lebanon"
+],
+[
+"Beyrut",
+"Lebanon"
+],
+[
+"Hizbullah",
+"Lebanon"
+],
+[
+"İsrail",
+"Israel"
+],
+[
+"Tel Aviv",
+"Israel"
+],
+[
+"Netanyahu",
+"Israel"
+],
+[
+"Filistin",
+"Palestine"
+],
+[
+"Gazze",
+"Palestine"
+],
+[
+"Batı Şeria",
+"Palestine"
+],
+[
+"Hamas",
+"Palestine"
+],
+[
+"Kudüs",
+"Palestine"
+],
+[
+"Ürdün",
+"Jordan"
+],
+[
+"Amman",
+"Jordan"
+],
+[
+"Suudi Arabistan",
+"Saudi Arabia"
+],
+[
+"Riyad",
+"Saudi Arabia"
+],
+[
+"Suudi",
+"Saudi Arabia"
+],
+[
+"Katar",
+"Qatar"
+],
+[
+"Doha",
+"Qatar"
+],
+[
+"Birleşik Arap Emirlikleri",
+"United Arab Emirates"
+],
+[
+"BAE",
+"United Arab Emirates"
+],
+[
+"Dubai",
+"United Arab Emirates"
+],
+[
+"Abu Dabi",
+"United Arab Emirates"
+],
+[
+"Kuveyt",
+"Kuwait"
+],
+[
+"Bahreyn",
+"Bahrain"
+],
+[
+"Umman",
+"Oman"
+],
+[
+"Yemen",
+"Yemen"
+],
+[
+"Husi",
+"Yemen"
+],
+[
+"Mısır",
+"Egypt"
+],
+[
+"Kahire",
+"Egypt"
+],
+[
+"Sisi",
+"Egypt"
+],
+[
+"Libya",
+"Libya"
+],
+[
+"Trablus",
+"Libya"
+],
+[
+"Tunus",
+"Tunisia"
+],
+[
+"Cezayir",
+"Algeria"
+],
+[
+"Fas",
+"Morocco"
+],
+[
+"Rabat",
+"Morocco"
+],
+[
+"Sudan",
+"Sudan"
+],
+[
+"Hartum",
+"Sudan"
+],
+[
+"Güney Sudan",
+"South Sudan"
+],
+[
+"Etiyopya",
+"Ethiopia"
+],
+[
+"Somali",
+"Somalia"
+],
+[
+"Mogadişu",
+"Somalia"
+],
+[
+"Kenya",
+"Kenya"
+],
+[
+"Nairobi",
+"Kenya"
+],
+[
+"Tanzanya",
+"Tanzania"
+],
+[
+"Uganda",
+"Uganda"
+],
+[
+"Ruanda",
+"Rwanda"
+],
+[
+"Kongo",
+"DR Congo"
+],
+[
+"Nijerya",
+"Nigeria"
+],
+[
+"Nijer",
+"Niger"
+],
+[
+"Mali",
+"Mali"
+],
+[
+"Burkina Faso",
+"Burkina Faso"
+],
+[
+"Çad",
+"Chad"
+],
+[
+"Senegal",
+"Senegal"
+],
+[
+"Gana",
+"Ghana"
+],
+[
+"Fildişi",
+"Ivory Coast"
+],
+[
+"Kamerun",
+"Cameroon"
+],
+[
+"Angola",
+"Angola"
+],
+[
+"Mozambik",
+"Mozambique"
+],
+[
+"Zimbabve",
+"Zimbabwe"
+],
+[
+"Zambiya",
+"Zambia"
+],
+[
+"Güney Afrika",
+"South Africa"
+],
+[
+"Madagaskar",
+"Madagascar"
+],
+[
+"Cibuti",
+"Djibouti"
+],
+[
+"Eritre",
+"Eritrea"
+],
+[
+"Avustralya",
+"Australia"
+],
+[
+"Sidney",
+"Australia"
+],
+[
+"Canberra",
+"Australia"
+],
+[
+"Yeni Zelanda",
+"New Zealand"
+],
+[
+"Papua Yeni Gine",
+"Papua New Guinea"
+],
+[
+"Fiji",
+"Fiji"
+],
+[
+"Vatikan",
+"Vatican"
+],
+[
+"Papa",
+"Vatican"
+],
+[
+"Çinli",
+"China"
+],
+[
+"Japon",
+"Japan"
+],
+[
+"İsrailli",
+"Israel"
+],
+[
+"Filistinli",
+"Palestine"
+]
+],
+"strict": [
+"Papa",
+"Şam",
+"Çad",
+"Modi",
+"Mali",
+"Roma",
+"Fas",
+"Rus",
+"Çin",
+"Gana",
+"Peru",
+"Sisi",
+"Şara",
+"Husi",
+"Merz",
+"Lula",
+"Kiev",
+"Seul",
+"Rabat",
+"Doha",
+"Erbil",
+"Fiji",
+"Malta",
+"Haiti",
+"Panama",
+"Amman",
+"Vance",
+"Rubio",
+"Orban",
+"Nepal",
+"Alman",
+"Yunan",
+"Japon",
+"Suudi",
+"Kongo",
+"Nijer",
+"Somali",
+"Umman",
+"Sudan",
+"Kenya",
+"Sofya",
+"Lahey",
+"Fransız",
+"İngiliz",
+"Amerikan",
+"Hamas",
+"Taliban",
+"Pentagon"
+],
+"continent": {
+"Bosnia and Herzegovina": "avrupa",
+"North Macedonia": "avrupa",
+"Northern Cyprus": "avrupa",
+"United Kingdom": "avrupa",
+"Switzerland": "avrupa",
+"Netherlands": "avrupa",
+"Montenegro": "avrupa",
+"Luxembourg": "avrupa",
+"Lithuania": "avrupa",
+"Slovenia": "avrupa",
+"Slovakia": "avrupa",
+"Bulgaria": "avrupa",
+"Portugal": "avrupa",
+"Germany": "avrupa",
+"Moldova": "avrupa",
+"Estonia": "avrupa",
+"Czechia": "avrupa",
+"Denmark": "avrupa",
+"Croatia": "avrupa",
+"Albania": "avrupa",
+"Belgium": "avrupa",
+"Finland": "avrupa",
+"Romania": "avrupa",
+"Iceland": "avrupa",
+"Hungary": "avrupa",
+"Belarus": "avrupa",
+"Vatican": "avrupa",
+"Austria": "avrupa",
+"Ireland": "avrupa",
+"Ukraine": "avrupa",
+"Sweden": "avrupa",
+"Serbia": "avrupa",
+"Cyprus": "avrupa",
+"Norway": "avrupa",
+"Russia": "avrupa",
+"Greece": "avrupa",
+"France": "avrupa",
+"Latvia": "avrupa",
+"Kosovo": "avrupa",
+"Poland": "avrupa",
+"Italy": "avrupa",
+"Malta": "avrupa",
+"Spain": "avrupa",
+"Turkmenistan": "asya",
+"South Korea": "asya",
+"North Korea": "asya",
+"Afghanistan": "asya",
+"Philippines": "asya",
+"Tajikistan": "asya",
+"Kyrgyzstan": "asya",
+"Kazakhstan": "asya",
+"Bangladesh": "asya",
+"Azerbaijan": "asya",
+"Uzbekistan": "asya",
+"Hong Kong": "asya",
+"Singapore": "asya",
+"Sri Lanka": "asya",
+"Indonesia": "asya",
+"Malaysia": "asya",
+"Pakistan": "asya",
+"Thailand": "asya",
+"Mongolia": "asya",
+"Cambodia": "asya",
+"Vietnam": "asya",
+"Armenia": "asya",
+"Georgia": "asya",
+"Myanmar": "asya",
+"Taiwan": "asya",
+"China": "asya",
+"India": "asya",
+"Nepal": "asya",
+"Japan": "asya",
+"United Arab Emirates": "orta-dogu",
+"Saudi Arabia": "orta-dogu",
+"Palestine": "orta-dogu",
+"Bahrain": "orta-dogu",
+"Lebanon": "orta-dogu",
+"Kuwait": "orta-dogu",
+"Israel": "orta-dogu",
+"Jordan": "orta-dogu",
+"Qatar": "orta-dogu",
+"Egypt": "orta-dogu",
+"Syria": "orta-dogu",
+"Yemen": "orta-dogu",
+"Iran": "orta-dogu",
+"Oman": "orta-dogu",
+"Iraq": "orta-dogu",
+"South Africa": "afrika",
+"Burkina Faso": "afrika",
+"South Sudan": "afrika",
+"Ivory Coast": "afrika",
+"Madagascar": "afrika",
+"Mozambique": "afrika",
+"Ethiopia": "afrika",
+"Cameroon": "afrika",
+"Zimbabwe": "afrika",
+"Tanzania": "afrika",
+"Djibouti": "afrika",
+"DR Congo": "afrika",
+"Algeria": "afrika",
+"Senegal": "afrika",
+"Tunisia": "afrika",
+"Eritrea": "afrika",
+"Nigeria": "afrika",
+"Somalia": "afrika",
+"Morocco": "afrika",
+"Angola": "afrika",
+"Zambia": "afrika",
+"Uganda": "afrika",
+"Rwanda": "afrika",
+"Niger": "afrika",
+"Libya": "afrika",
+"Ghana": "afrika",
+"Kenya": "afrika",
+"Sudan": "afrika",
+"Mali": "afrika",
+"Chad": "afrika",
+"United States": "kuzey-amerika",
+"Costa Rica": "kuzey-amerika",
+"Greenland": "kuzey-amerika",
+"Nicaragua": "kuzey-amerika",
+"Guatemala": "kuzey-amerika",
+"Honduras": "kuzey-amerika",
+"Panama": "kuzey-amerika",
+"Mexico": "kuzey-amerika",
+"Canada": "kuzey-amerika",
+"Haiti": "kuzey-amerika",
+"Cuba": "kuzey-amerika",
+"Argentina": "guney-amerika",
+"Venezuela": "guney-amerika",
+"Paraguay": "guney-amerika",
+"Colombia": "guney-amerika",
+"Ecuador": "guney-amerika",
+"Bolivia": "guney-amerika",
+"Uruguay": "guney-amerika",
+"Brazil": "guney-amerika",
+"Chile": "guney-amerika",
+"Peru": "guney-amerika",
+"Papua New Guinea": "okyanusya",
+"New Zealand": "okyanusya",
+"Australia": "okyanusya",
+"Fiji": "okyanusya"
+}
+}
