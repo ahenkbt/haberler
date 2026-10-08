@@ -52,3 +52,21 @@ describe("hm-admin-login-edge", () => {
     assert.equal(r.bodyUsed, false);
   });
 });
+
+describe("adminLoginContainerOrReject", () => {
+  const req = () => new Request("https://ahenk.net.tr/api/members/admin-panel-session", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: "x", password: "y" }),
+  });
+  it("wrong credentials never hang on a dead container", async () => {
+    const { adminLoginContainerOrReject } = await import("./hm-admin-login-edge.js");
+    const t0 = Date.now();
+    const hung = await adminLoginContainerOrReject(req(), {}, 50, () => new Promise(() => {}));
+    assert.equal(hung.status, 401);
+    assert.ok(Date.now() - t0 < 1000);
+    assert.match(await hung.text(), /hatal/);
+    const ok = await adminLoginContainerOrReject(req(), {}, 1000, async () => new Response('{"success":true}', { status: 200 }));
+    assert.equal(ok.status, 200);
+    const err = await adminLoginContainerOrReject(req(), {}, 1000, async () => new Response("x", { status: 503 }));
+    assert.equal(err.status, 401);
+  });
+});
