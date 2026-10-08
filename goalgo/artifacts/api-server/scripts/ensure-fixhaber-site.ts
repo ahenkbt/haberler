@@ -52,7 +52,7 @@ async function main() {
       [
         "--import",
         "tsx",
-        "./scripts/sync-php-neon-news.ts",
+        "./sync-php-neon-news.ts",
         "--apply",
         `--site-id=${row.siteId}`,
         "--batch=200",
