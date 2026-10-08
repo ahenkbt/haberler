@@ -8,7 +8,7 @@ on:
       slugs:
         description: "Virgülle ayrılmış rss slug listesi (boş = tüm rss-\\d+)"
         required: false
-        default: "rss-340170,rss-340174,rss-340313,rss-340479,rss-340482"
+        default: "rss-340482,rss-340313,rss-340312,rss-340052,rss-339918,rss-339832,rss-339539,rss-339451,rss-338735,rss-339059,rss-337969,rss-337933,rss-337940,rss-337815,rss-337817,rss-341569,rss-342598"
       dry_run:
         description: "Yalnızca dry-run (true/false)"
         required: false
@@ -52,9 +52,12 @@ jobs:
           fi
           SLUGS="${{ github.event.inputs.slugs }}"
           DRY="${{ github.event.inputs.dry_run }}"
-          EXTRA=""
+          SLUG_ARGS=()
+          if [ -n "$SLUGS" ]; then
+            SLUG_ARGS=(--slugs="$SLUGS")
+          fi
           if [ "$DRY" = "true" ]; then
-            pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --dry-run --slugs="$SLUGS"
+            pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --dry-run "${SLUG_ARGS[@]}"
           else
-            pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --apply --slugs="$SLUGS"
+            pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --apply "${SLUG_ARGS[@]}"
           fi

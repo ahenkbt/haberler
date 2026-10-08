@@ -1,3 +1,5 @@
+import { ASG_ANKARA_EDITOR_AI_RULES } from "./rss-ankara-category-guard.js";
+
 /** AI haber üretiminde `icerik` alanı için ortak HTML kuralları. */
 export const AI_NEWS_ICERIK_HTML_RULES =
   'Alan "icerik" yalnızca geçerli HTML olsun (Markdown yasak: **bold** veya ## başlık kullanma; <strong> ve <h3> kullan). ' +
@@ -20,10 +22,7 @@ export function aiNewsSystemPrompt(opts: {
 }): string {
   const extra = opts.extra ? `${opts.extra.trim()} ` : "";
   const trStyle = /türkçe|turkish/i.test(opts.langInstruction) ? `${AI_NEWS_TR_STYLE_RULES} ` : "";
-  const ankara =
-    opts.ankaraLocalOnly === true
-      ? "Ankara kategorisi yalnızca Ankara-yerel haber içindir; ulusal/uluslararası haberleri bu kategoriye yazma. "
-      : "";
+  const ankara = opts.ankaraLocalOnly === true ? `${ASG_ANKARA_EDITOR_AI_RULES} ` : "";
   return (
     `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${ankara}${extra}` +
     `Özgün, bilgilendirici haber metni yaz (makale veya essay değil). Yalnızca JSON döndür. ${AI_NEWS_ICERIK_HTML_RULES}`

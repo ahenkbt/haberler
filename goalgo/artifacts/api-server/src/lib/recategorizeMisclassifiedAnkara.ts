@@ -8,10 +8,37 @@ import {
 } from "@workspace/db";
 import { categorySlugIsAnkara } from "./hm-vatanhaber-ankara-sync.js";
 import { isAsgHmNewsSiteRow } from "./hm-asg-editor-repair.js";
-import { isMisclassifiedAnkaraItem } from "./rss-ankara-category-guard.js";
-import { findAllCategoryIdsByCanonicalSlug } from "./portal-category-slug.js";
+import {
+  isMisclassifiedAnkaraItem,
+  resolveAnkaraReplacementCategorySlug,
+} from "./rss-ankara-category-guard.js";
+import {
+  findAllCategoryIdsByCanonicalSlug,
+  loadHmSiteSlugPrefixes,
+  normalizePortalCategorySlug,
+  resolveCanonicalPortalCategorySlug,
+} from "./portal-category-slug.js";
 import { invalidateNewsPageBundleCache } from "./news-page-bundle.js";
 import { invalidateNewsContextCache } from "./news-context.js";
+
+type CategoryRow = { id: number; slug: string; exclusiveSiteId: number | null };
+
+function resolveCategoryIdForSite(
+  siteId: number,
+  canonicalSlug: string,
+  allCats: CategoryRow[],
+  siteSlugs: string[],
+  defaultByCanonical: Map<string, number>,
+): number | null {
+  const normalizedTarget = normalizePortalCategorySlug(canonicalSlug);
+  const siteExclusive = allCats.find(
+    (c) =>
+      c.exclusiveSiteId === siteId &&
+      resolveCanonicalPortalCategorySlug(c.slug, siteSlugs) === normalizedTarget,
+  );
+  if (siteExclusive) return siteExclusive.id;
+  return defaultByCanonical.get(normalizedTarget) ?? defaultByCanonical.get("gundem") ?? null;
+}
 
 export async function recategorizeMisclassifiedAnkaraBatch(options?: {
   siteId?: number;
@@ -22,9 +49,11 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
   updated: number;
   dryRun: boolean;
   siteIds: number[];
+  byTargetSlug: Record<string, number>;
 }> {
   const limit = Math.min(10_000, Math.max(1, options?.limit ?? 2000));
   const dryRun = options?.dryRun === true;
+  const byTargetSlug: Record<string, number> = {};
 
   const sites = await getNewsDbForRead().select().from(hmNewsSitesTable);
   let targetSiteIds = sites.filter((s) => isAsgHmNewsSiteRow(s)).map((s) => s.id);
@@ -32,22 +61,31 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
     targetSiteIds = targetSiteIds.filter((id) => id === options.siteId);
   }
   if (targetSiteIds.length === 0) {
-    return { scanned: 0, updated: 0, dryRun, siteIds: [] };
+    return { scanned: 0, updated: 0, dryRun, siteIds: [], byTargetSlug };
   }
 
+  const siteSlugs = await loadHmSiteSlugPrefixes();
   const cats = await getNewsDbForRead()
-    .select({ id: categoriesTable.id, slug: categoriesTable.slug })
+    .select({
+      id: categoriesTable.id,
+      slug: categoriesTable.slug,
+      exclusiveSiteId: categoriesTable.exclusiveSiteId,
+    })
     .from(categoriesTable);
   const ankaraCategoryIds = cats
     .filter((c) => categorySlugIsAnkara(c.slug, "asg"))
     .map((c) => c.id);
   if (ankaraCategoryIds.length === 0) {
-    return { scanned: 0, updated: 0, dryRun, siteIds: targetSiteIds };
+    return { scanned: 0, updated: 0, dryRun, siteIds: targetSiteIds, byTargetSlug };
   }
 
-  const gundemIds = await findAllCategoryIdsByCanonicalSlug("gundem");
-  const defaultGundemId = gundemIds[0];
-  if (defaultGundemId == null) {
+  const canonicalSlugs = ["gundem", "ekonomi", "dunya", "spor", "teknoloji", "saglik", "siyaset"];
+  const defaultByCanonical = new Map<string, number>();
+  for (const slug of canonicalSlugs) {
+    const ids = await findAllCategoryIdsByCanonicalSlug(slug);
+    if (ids[0] != null) defaultByCanonical.set(normalizePortalCategorySlug(slug), ids[0]);
+  }
+  if (!defaultByCanonical.has("gundem")) {
     throw new Error("gundem kategori bulunamadı");
   }
 
@@ -72,36 +110,43 @@ export async function recategorizeMisclassifiedAnkaraBatch(options?: {
     .orderBy(desc(newsTable.id))
     .limit(limit);
 
-  const toUpdate: number[] = [];
+  const updates: Array<{ id: number; targetCategoryId: number; targetSlug: string; row: (typeof rows)[0] }> =
+    [];
   for (const row of rows) {
     const catSlug = cats.find((c) => c.id === row.categoryId)?.slug ?? "ankara";
-    if (isMisclassifiedAnkaraItem(catSlug, row.title, row.spot, row.content)) {
-      toUpdate.push(row.id);
-    }
+    if (!isMisclassifiedAnkaraItem(catSlug, row.title, row.spot, row.content)) continue;
+    const targetSlug = resolveAnkaraReplacementCategorySlug(row.title, row.spot, row.content);
+    const siteId = row.siteId ?? 0;
+    const targetCategoryId = resolveCategoryIdForSite(
+      siteId,
+      targetSlug,
+      cats,
+      siteSlugs,
+      defaultByCanonical,
+    );
+    if (targetCategoryId == null) continue;
+    updates.push({ id: row.id, targetCategoryId, targetSlug, row });
+    byTargetSlug[targetSlug] = (byTargetSlug[targetSlug] ?? 0) + 1;
   }
 
   let updated = 0;
-  if (!dryRun && toUpdate.length > 0) {
-    const siteGundem = new Map<number, number>();
-    for (const siteId of targetSiteIds) {
-      const [exclusive] = await getNewsDbForRead()
-        .select({ id: categoriesTable.id })
-        .from(categoriesTable)
-        .where(and(eq(categoriesTable.slug, "gundem"), eq(categoriesTable.exclusiveSiteId, siteId)))
-        .limit(1);
-      siteGundem.set(siteId, exclusive?.id ?? defaultGundemId);
-    }
-
-    for (const row of rows.filter((r) => toUpdate.includes(r.id))) {
-      const gundemId = siteGundem.get(row.siteId ?? 0) ?? defaultGundemId;
-      await dualWriteUpdate(newsTable, { categoryId: gundemId }, eq(newsTable.id, row.id));
+  if (!dryRun && updates.length > 0) {
+    for (const item of updates) {
+      await dualWriteUpdate(
+        newsTable,
+        { categoryId: item.targetCategoryId },
+        eq(newsTable.id, item.id),
+      );
       updated += 1;
-      invalidateNewsPageBundleCache({ slug: row.slug ?? undefined, siteId: row.siteId ?? null });
+      invalidateNewsPageBundleCache({
+        slug: item.row.slug ?? undefined,
+        siteId: item.row.siteId ?? null,
+      });
     }
     invalidateNewsContextCache();
   } else {
-    updated = toUpdate.length;
+    updated = updates.length;
   }
 
-  return { scanned: rows.length, updated, dryRun, siteIds: targetSiteIds };
+  return { scanned: rows.length, updated, dryRun, siteIds: targetSiteIds, byTargetSlug };
 }

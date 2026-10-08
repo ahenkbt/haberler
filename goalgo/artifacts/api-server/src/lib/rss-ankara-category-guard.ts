@@ -4,6 +4,7 @@
  */
 
 import { categorySlugIsAnkara } from "./hm-vatanhaber-ankara-sync.js";
+import { looksLikeSportsContent } from "./rss-spor-category-guard.js";
 
 const TR_LOWER = (value: unknown): string => String(value ?? "").toLocaleLowerCase("tr-TR");
 
@@ -63,7 +64,7 @@ const ANKARA_LOCAL_TERMS = [
   "cankaya belediye",
 ];
 
-const NATIONAL_OR_WORLD_TERMS = [
+const DUNYA_TERMS = [
   "dunya",
   "dünya",
   "uluslararasi",
@@ -90,6 +91,107 @@ const NATIONAL_OR_WORLD_TERMS = [
   "iran ",
   "lubnan",
   "lübnan",
+  "dünya bankası",
+  "dunya bankasi",
+];
+
+const EKONOMI_TERMS = [
+  "borsa",
+  "bist",
+  "ekonomi",
+  "enflasyon",
+  "faiz",
+  "dolar",
+  "euro",
+  "tcmb",
+  "merkez bankasi",
+  "merkez bankası",
+  "borsa istanbul",
+  "hisse",
+  "kur ",
+  "altin fiyat",
+  "altın fiyat",
+  "tüfe",
+  "tufe",
+  "cari acik",
+  "cari açık",
+  "ihracat",
+  "ithalat",
+  "vergi",
+  "bütçe",
+  "butce",
+];
+
+const TEKNOLOJI_TERMS = [
+  "teknoloji",
+  "yazilim",
+  "yazılım",
+  "yapay zeka",
+  "artificial intelligence",
+  "siber",
+  "hack",
+  "apple",
+  "google",
+  "microsoft",
+  "iphone",
+  "android",
+  "chip",
+  "yapay zeka",
+  "startup",
+  "dijital",
+  "internet",
+  "sosyal medya",
+  "meta ",
+  "openai",
+  "chatgpt",
+];
+
+const SAGLIK_TERMS = [
+  "saglik",
+  "sağlık",
+  "hastane",
+  "doktor",
+  "hekim",
+  "ameliyat",
+  "hastalik",
+  "hastalık",
+  "ilac",
+  "ilaç",
+  "asi ",
+  "aşı ",
+  "saglik bakanligi",
+  "sağlık bakanlığı",
+  "pandemi",
+  "virus",
+  "kanser",
+  "tedavi",
+];
+
+const SIYASET_TERMS = [
+  "siyaset",
+  "cumhurbaskani",
+  "cumhurbaşkanı",
+  "bakan ",
+  "bakanlık",
+  "bakanlik",
+  "parti ",
+  "milletvekili",
+  "secim",
+  "seçim",
+  "hukumet",
+  "hükümet",
+  "muhalefet",
+  "tbmm",
+  "meclis",
+  "anayasa",
+  "yargitay",
+  "yargıtay",
+  "danistay",
+  "danıştay",
+];
+
+const NATIONAL_OR_WORLD_TERMS = [
+  ...DUNYA_TERMS,
   "super lig",
   "süper lig",
   "galatasaray",
@@ -119,9 +221,19 @@ const NATIONAL_OR_WORLD_TERMS = [
   "81 il",
   "milli egitim bakanligi",
   "milli eğitim bakanlığı",
-  "tcmb",
-  "merkez bankasi",
-  "merkez bankası",
+  ...EKONOMI_TERMS,
+  ...TEKNOLOJI_TERMS,
+  ...SAGLIK_TERMS,
+  ...SIYASET_TERMS,
+];
+
+/** Öncelik sırası: ilk eşleşen canonical slug döner. */
+const TOPIC_SLUG_RULES: ReadonlyArray<{ slug: string; terms: readonly string[] }> = [
+  { slug: "dunya", terms: DUNYA_TERMS },
+  { slug: "ekonomi", terms: EKONOMI_TERMS },
+  { slug: "teknoloji", terms: TEKNOLOJI_TERMS },
+  { slug: "saglik", terms: SAGLIK_TERMS },
+  { slug: "siyaset", terms: SIYASET_TERMS },
 ];
 
 function containsAnyTerm(text: string, terms: readonly string[]): boolean {
@@ -160,10 +272,36 @@ export function looksLikeNationalOrInternationalContent(
   const text = combinedText(title, spot, content);
   if (!text.trim()) return false;
   if (looksLikeAnkaraLocalContent(title, spot, content)) return false;
+  if (looksLikeSportsContent(title, spot, content)) return true;
   return containsAnyTerm(text, NATIONAL_OR_WORLD_TERMS);
 }
 
-/** `ankara` kategorisinde ama ulusal/uluslararası veya yerel sinyal yok → gündem'e taşınmalı. */
+/**
+ * Ankara dışına taşınacak haber için hedef kategori slug'ı (ASG/AHG canonical).
+ * Pozitif Ankara-yerel sinyal yoksa spor/ekonomi/dünya vb. anahtar kelimeye göre eşler.
+ */
+export function resolveAnkaraReplacementCategorySlug(
+  title: string | null | undefined,
+  spot?: string | null,
+  content?: string | null,
+): string {
+  if (looksLikeSportsContent(title, spot, content)) return "spor";
+  const text = combinedText(title, spot, content);
+  for (const rule of TOPIC_SLUG_RULES) {
+    if (containsAnyTerm(text, rule.terms)) return rule.slug;
+  }
+  return "gundem";
+}
+
+function isAnkaraLikeCategorySlug(slug: string): boolean {
+  return (
+    categorySlugIsAnkara(slug, "asg") || slug === "yerel" || slug.endsWith("-yerel")
+  );
+}
+
+/**
+ * `ankara` kategorisinde ama pozitif Ankara-yerel sinyal yok → uygun genel kategoriye taşınmalı.
+ */
 export function isMisclassifiedAnkaraItem(
   categorySlug: string | null | undefined,
   title: string | null | undefined,
@@ -171,14 +309,12 @@ export function isMisclassifiedAnkaraItem(
   content?: string | null,
 ): boolean {
   const slug = String(categorySlug ?? "").trim().toLowerCase();
-  if (!categorySlugIsAnkara(slug, "asg") && slug !== "yerel" && !slug.endsWith("-yerel")) return false;
-  if (looksLikeAnkaraLocalContent(title, spot, content)) return false;
-  return looksLikeNationalOrInternationalContent(title, spot, content);
+  if (!isAnkaraLikeCategorySlug(slug)) return false;
+  return !looksLikeAnkaraLocalContent(title, spot, content);
 }
 
 /**
  * RSS içe aktarım / kampanya: hedef `ankara` ise yerel değilse alternatif slug döner.
- * `null` = haber atlanmalı (aşırı belirsiz).
  */
 export function resolveAnkaraImportCategorySlug(
   wantCategorySlug: string | null | undefined,
@@ -187,19 +323,16 @@ export function resolveAnkaraImportCategorySlug(
   content?: string | null,
 ): string {
   const want = String(wantCategorySlug ?? "").trim().toLowerCase();
-  if (!categorySlugIsAnkara(want, "asg") && want !== "yerel" && !want.endsWith("-yerel")) {
+  if (!isAnkaraLikeCategorySlug(want)) {
     return want || "gundem";
   }
   if (looksLikeAnkaraLocalContent(title, spot, content)) return "ankara";
-  if (looksLikeNationalOrInternationalContent(title, spot, content)) {
-    const text = combinedText(title, spot, content);
-    if (containsAnyTerm(text, ["dunya", "dünya", "yurtdisi", "yurtdışı"])) return "dunya";
-    return "gundem";
-  }
-  return "gundem";
+  return resolveAnkaraReplacementCategorySlug(title, spot, content);
 }
 
 /** ASG/AHG editör + AI için kısa kural metni. */
 export const ASG_ANKARA_EDITOR_AI_RULES =
-  "Ankara kategorisine YALNIZCA Ankara ili / ilçeleri / başkent yerel haberleri yaz. " +
-  "Ulusal siyaset, spor, ekonomi ve uluslararası haberleri Ankara kategorisine ekleme; uygun genel kategoriyi kullan (gündem, dünya, spor vb.).";
+  "Ankara kategorisine YALNIZCA Ankara ili, ilçeleri veya başkentle doğrudan ilgili YEREL haberleri yaz; " +
+  "metinde Ankara/başkent/ilçe veya yerel kurum sinyali olmalı. " +
+  "Borsa, ekonomi, dünya, teknoloji, sağlık, siyaset, spor gibi ulusal veya uluslararası konuları Ankara kategorisine ekleme; " +
+  "uygun kategoriyi kullan (gündem, ekonomi, dünya, spor, teknoloji, sağlık, siyaset).";

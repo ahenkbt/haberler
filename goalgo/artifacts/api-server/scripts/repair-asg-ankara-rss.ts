@@ -28,7 +28,7 @@ async function main() {
   console.log("[repair-asg-ankara-rss]", { dryRun, slugs: slugs ?? "(all rss-\\d+)" });
 
   const cat = await recategorizeMisclassifiedAnkaraBatch({ dryRun, limit: 5000 });
-  console.log("ankara→gundem", cat);
+  console.log("ankara recategorize", cat);
 
   const slug = await repairRssNumericSlugsBatch({ dryRun, limit: 2000, slugs });
   console.log("rss slug repair", slug);
