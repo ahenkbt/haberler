@@ -124,9 +124,27 @@ async function syncLayoutJson(
     SELECT layout_json FROM hm_news_sites WHERE id = ${workerSiteId} LIMIT 1
   `;
   const raw = rows[0]?.layout_json;
-  const layoutStr =
+  let layoutStr =
     raw == null ? "" : typeof raw === "string" ? raw : JSON.stringify(raw);
   if (!layoutStr.trim()) return { mirrored: false, reason: "layout boş" };
+  try {
+    const parsed = JSON.parse(layoutStr) as Record<string, unknown>;
+    const presets = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+    const norm = (v: unknown) => {
+      const p = String(v ?? "")
+        .trim()
+        .toLowerCase();
+      return presets.has(p) ? p : null;
+    };
+    const chosen = norm(parsed.hmYsMansetPreset) ?? norm(parsed.hmNewsYsMansetLayout);
+    if (chosen) {
+      parsed.hmYsMansetPreset = chosen;
+      parsed.hmNewsYsMansetLayout = chosen;
+      layoutStr = JSON.stringify(parsed);
+    }
+  } catch {
+    /* keep raw */
+  }
   try {
     await newsSql`
       UPDATE hm_news_sites

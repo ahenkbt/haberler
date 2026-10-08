@@ -7,6 +7,34 @@ export type PhpLayoutMirrorResult = {
   reason?: string;
 };
 
+const HM_LIVE_MANSET_PRESETS = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+
+function normalizeMansetPreset(value: unknown): string | null {
+  if (value == null) return null;
+  const preset = String(value).trim().toLowerCase();
+  return HM_LIVE_MANSET_PRESETS.has(preset) ? preset : null;
+}
+
+/** PHP App.php önce hmYsMansetPreset, sonra hmNewsYsMansetLayout okur. */
+export function normalizeLayoutJsonMansetKeysForPhp(layoutJsonRaw: string): string {
+  const raw = String(layoutJsonRaw ?? "").trim();
+  if (!raw) return raw;
+  try {
+    const layout = JSON.parse(raw) as Record<string, unknown>;
+    if (!layout || typeof layout !== "object" || Array.isArray(layout)) return raw;
+    const chosen =
+      normalizeMansetPreset(layout.hmYsMansetPreset) ??
+      normalizeMansetPreset(layout.hmNewsYsMansetLayout);
+    if (chosen) {
+      layout.hmYsMansetPreset = chosen;
+      layout.hmNewsYsMansetLayout = chosen;
+    }
+    return JSON.stringify(layout);
+  } catch {
+    return raw;
+  }
+}
+
 function shouldMirrorLayoutToPhpNeon(): boolean {
   return isNewsDatabaseConfigured && !!newsDb;
 }
@@ -77,7 +105,7 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(
   if (!shouldMirrorLayoutToPhpNeon()) {
     return { mirrored: false, reason: "NEWS_DATABASE_URL yok" };
   }
-  const raw = String(layoutJsonRaw ?? "").trim();
+  const raw = normalizeLayoutJsonMansetKeysForPhp(layoutJsonRaw);
   if (!raw) {
     return { mirrored: false, reason: "layout boş" };
   }
