@@ -3,6 +3,17 @@
  */
 import { TURKEY_CITIES } from "./seed-popular-locations.js";
 
+type TurkeyCitySeed = {
+  name: string;
+  nameTr?: string;
+  lat: number;
+  lng: number;
+  region?: string;
+};
+
+/** Seed array is inferred with required `nameTr`; optional typing keeps display-name fallback valid. */
+const TURKEY_CITY_SEED = TURKEY_CITIES as unknown as readonly TurkeyCitySeed[];
+
 export type KamuYerelCategoryDef = { slug: string; name: string; color: string };
 
 export type KamuYerelRegionId =
@@ -237,9 +248,9 @@ export type KamuYerelProvinceDef = {
 };
 
 export function listKamuYerelProvinces(): KamuYerelProvinceDef[] {
-  return TURKEY_CITIES.map((city) => {
+  return TURKEY_CITY_SEED.map((city) => {
     const name = String(city.nameTr ?? city.name).trim();
-    const regionRaw = String((city as { region?: string }).region ?? "").trim();
+    const regionRaw = String(city.region ?? "").trim();
     const regionId = REGION_SEED_TO_ID[regionRaw] ?? "ic-anadolu";
     return {
       slug: cumhaProvinceSlugFromName(name),
