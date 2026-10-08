@@ -1,5 +1,5 @@
 /**
- * turkatahaber.com canlı onarım — kamu-yerel seed, PHP Neon layout, isteğe bağlı RSS.
+ * turkatahaber.com canlı onarım — kamu-yerel seed, PHP Neon layout, isteğe bağlı RSS + kapak backfill.
  *
  *   cd goalgo && SYNC_PHP_LAYOUT=1 RUN_RSS_CAMPAIGN=1 RSS_CAMPAIGN_ID=1021 \
  *     pnpm --filter @workspace/api-server run ensure:turkata-live
@@ -54,6 +54,17 @@ async function main() {
   // Full news mirror (orphan 230→1132 rebound + category_slug edge upsert) so PHP
   // /kategori pages fill even when the campaign only skipped already-ingested items.
   syncPhpNewsFull("turkatahaber");
+
+  if (process.env.BACKFILL_RSS_COVERS !== "0") {
+    const cover = spawnSync(
+      process.execPath,
+      ["--import", "tsx", path.join(scriptDir, "backfill-turkata-rss-covers.ts"), "--apply", "--limit=80"],
+      { cwd: scriptDir, stdio: "inherit", env: process.env },
+    );
+    if (cover.status !== 0) {
+      console.warn("[ensure:turkata-live] cover backfill exit", cover.status);
+    }
+  }
 }
 
 main().catch((err) => {

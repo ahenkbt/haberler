@@ -23,6 +23,7 @@
     "backfill:news-keywords": "node --import tsx ./scripts/backfill-news-keywords.ts",
     "backfill:rss-images-webp": "node --import tsx ./scripts/backfill-rss-images-webp.ts",
     "backfill:hm-rss-missing-images": "node --import tsx ./scripts/backfill-hm-rss-missing-images.ts",
+    "backfill:turkata-rss-covers": "node --import tsx ./scripts/backfill-turkata-rss-covers.ts",
     "repair:hm-manual-images": "node --import tsx ./scripts/repair-hm-manual-images.ts",
     "repair:corporate-manual-images": "node --import tsx ./scripts/repair-corporate-manual-images.ts",
     "repair:corporate-manual-images:prod": "node --import tsx ./scripts/repair-corporate-manual-images.ts",
