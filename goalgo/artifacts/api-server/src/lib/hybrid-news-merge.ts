@@ -487,7 +487,10 @@ export async function loadEditorScopedDbNews(opts: {
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
   const publicFreshnessWindow = opts.publicFreshnessWindow === true;
-  const listingSlugs = resolveEditorListingCategorySlugs(opts.categorySlug, opts.siteSlug);
+  const listingSlugs = resolveEditorListingCategorySlugs(
+    opts.categorySlug,
+    opts.siteSlug ?? undefined,
+  );
   const categorySlugs = listingSlugs.length ? listingSlugs : undefined;
   const groupSiteIds = await resolveHmPublishGroupSiteIds(opts.siteId);
   const corporateSiteIds = excludeCentralPool ? new Set<number>() : await loadCorporateHmSiteIds();
