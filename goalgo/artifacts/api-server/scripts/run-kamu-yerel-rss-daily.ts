@@ -53,8 +53,15 @@ async function main() {
 
   console.log(JSON.stringify(summary, null, 2));
 
-  const runErrors = runs.some((r) => r.result.errors > 0 && r.result.added === 0);
-  if (runErrors && campaignIds.length > 0) process.exitCode = 1;
+  // Soft-fail for cron: feed-level errors with skips/upgrades are expected (stale URLs,
+  // already-ingested items). Only hard-fail when a campaign produced zero progress.
+  const hardRssFail = runs.some((r) => {
+    const { errors, added, skipped, upgraded } = r.result;
+    if (errors <= 0) return false;
+    const progressed = added > 0 || skipped > 0 || upgraded > 0;
+    return !progressed;
+  });
+  if (hardRssFail) process.exitCode = 1;
 
   if (!shouldRunStep("SKIP_PHP_SYNC")) return;
   if (!process.env.NEWS_DATABASE_URL?.trim()) return;
