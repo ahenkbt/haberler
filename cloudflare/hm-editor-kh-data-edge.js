@@ -3,6 +3,7 @@
  * Tanımsız rotalar: null → Worker Container vekili.
  */
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
+import { hmEdgeBridgeSecret } from "./hm-edge-bridge-secret.js";
 import { edgeMirrorNewsDbWrite, isReadonlyDbError } from "./hm-php-news-dual-write.js";
 import {
   loadPhpSiteAuthors,
@@ -362,7 +363,7 @@ export async function mirrorNewsDbWrite(table, op, rowOrId) {
     }
 
     if (!env.GOALGO_API && !String(env.API_ORIGIN || "").trim()) return false;
-    const secret = String(env.HM_EDGE_BRIDGE_SECRET || "").trim();
+    const secret = hmEdgeBridgeSecret(env);
     if (!secret) return false;
     const payload = op === "delete" ? { table, op, id: Number(rowOrId) } : { table, op: "upsert", row: rowOrId };
     const res = await Promise.race([

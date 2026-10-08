@@ -364,7 +364,7 @@ describe("hm-editor-media-s3-edge", () => {
         },
         body: new Uint8Array([1, 2, 3]),
       }),
-      { HM_EDGE_BRIDGE_SECRET: "test-secret" },
+      { HM_EDGE_BRIDGE_KEY: "test-secret" },
     );
     assert.equal(res.status, 401);
   });

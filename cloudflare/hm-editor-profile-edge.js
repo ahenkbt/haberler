@@ -7,6 +7,7 @@
  * Container geride kalsa bile giriş + oturum doğrulama çalışır.
  */
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
+import { hmEdgeBridgeSecret } from "./hm-edge-bridge-secret.js";
 import { neonSqlClient } from "./neon-edge-db.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
 import { markLayoutRecordUserSave } from "./hm-layout-user-save.js";
@@ -1174,10 +1175,8 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
   });
 }
 
-const HM_EDGE_BRIDGE_SECRET_FALLBACK = "yekpare-hm-kh-bridge-20260727-v1";
-
 function edgeBridgeSecret(env) {
-  return String(env?.HM_EDGE_BRIDGE_SECRET || HM_EDGE_BRIDGE_SECRET_FALLBACK).trim();
+  return hmEdgeBridgeSecret(env);
 }
 
 async function hmacSha256Base64Url(secret, message) {

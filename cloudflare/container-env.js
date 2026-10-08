@@ -50,7 +50,6 @@ const FORWARD_KEYS = [
   "R2_API_TOKEN",
   "R2_ACCOUNT_ID",
   "HM_EDITOR_JWT_SECRET",
-  "HM_EDGE_BRIDGE_SECRET",
   "HM_LLM_KEY_SECRET",
   "ADMIN_BOOTSTRAP_EMAIL",
   "ADMIN_BOOTSTRAP_PASSWORD",
@@ -97,6 +96,9 @@ export function buildContainerEnv(workerEnv = {}) {
     const value = workerEnv[key];
     if (nonEmptyString(value)) vars[key] = value;
   }
+  // Bridge HMAC key: Worker secret HM_EDGE_BRIDGE_KEY -> container process.env.HM_EDGE_BRIDGE_SECRET.
+  const bridgeKey = String(workerEnv.HM_EDGE_BRIDGE_KEY ?? "").trim();
+  if (bridgeKey) vars.HM_EDGE_BRIDGE_SECRET = bridgeKey;
   const blob = [vars.S3_ENDPOINT, vars.R2_ENDPOINT, vars.S3_BUCKET, vars.S3_ACCESS_KEY_ID, vars.S3_PUBLIC_BASE_URL]
     .map((v) => String(v ?? ""))
     .join("\n");

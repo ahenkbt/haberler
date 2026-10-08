@@ -2,6 +2,7 @@
  * HM editör medya yükleme — Worker → Cloudflare R2.
  */
 import { AwsClient } from "aws4fetch";
+import { hmEdgeBridgeSecret } from "./hm-edge-bridge-secret.js";
 
 const MAX_BYTES_IMAGE = 6 * 1024 * 1024;
 const MAX_BYTES_PDF = 12 * 1024 * 1024;
@@ -550,8 +551,7 @@ export async function handleMediaEdgeHealth(request, env) {
 }
 
 function edgeBridgeSecret(env) {
-  const s = String(env?.HM_EDGE_BRIDGE_SECRET || "").trim();
-  return s || "yekpare-hm-kh-bridge-20260727-v1";
+  return hmEdgeBridgeSecret(env);
 }
 
 async function hmacSha256Base64Url(secret, message) {
@@ -613,8 +613,15 @@ export async function handleMediaR2PutProxy(request, env) {
       headers: { "content-type": "application/json; charset=utf-8" },
     });
   }
+  const bridgeSecret = edgeBridgeSecret(env);
+  if (!bridgeSecret) {
+    return new Response(JSON.stringify({ error: "Köprü anahtarı tanımlı değil" }), {
+      status: 503,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    });
+  }
   const canonical = `r2-put\n${exp}\n${nonce}\n${fname}\n${mime}\n${bytes.length}`;
-  const expected = await hmacSha256Base64Url(edgeBridgeSecret(env), canonical);
+  const expected = await hmacSha256Base64Url(bridgeSecret, canonical);
   if (!timingSafeEqualString(sig, expected)) {
     return new Response(JSON.stringify({ error: "Kimlik doğrulama gerekli" }), {
       status: 401,

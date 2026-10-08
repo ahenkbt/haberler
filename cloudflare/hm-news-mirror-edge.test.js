@@ -21,7 +21,7 @@ test("Neon satırı Container köprüsüne gizli anahtarla POST edilir", async (
     });
   };
   try {
-    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_SECRET: "test-secret" });
+    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_KEY: "test-secret" });
     const row = { id: 35920, site_id: 3, author_id: 526, slug: "temiz-siyaset-temiz-toplum-2", status: "published" };
     assert.equal(await mirrorNewsDbWrite("hm_makaleler", "upsert", row), true);
     assert.equal(calls.length, 1);
@@ -44,7 +44,7 @@ test("köprü hatası panel yanıtını bozmaz (false döner)", async () => {
     throw new Error("container down");
   };
   try {
-    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_SECRET: "s" });
+    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_KEY: "s" });
     assert.equal(await mirrorNewsDbWrite("news", "upsert", { id: 1 }), false);
   } finally {
     globalThis.fetch = originalFetch;
@@ -73,7 +73,7 @@ test("Container ayna kapalı dönerse (mirrored:false) false döner ve nedeni lo
     });
   console.warn = (...args) => warnings.push(args.map(String).join(" "));
   try {
-    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_SECRET: "s" });
+    setNewsMirrorEnv({ API_ORIGIN: "https://ahenk.net.tr", HM_EDGE_BRIDGE_KEY: "s" });
     assert.equal(await mirrorNewsDbWrite("hm_makaleler", "upsert", { id: 35921 }), false);
     assert.equal(warnings.length, 1);
     assert.match(warnings[0], /hm_makaleler upsert no-news-database-url/);

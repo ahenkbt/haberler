@@ -33,7 +33,7 @@ const MIRROR_TABLES: Record<string, PgTable> = {
 function bridgeSecretOk(headerValue: string | undefined): boolean {
   const given = Buffer.from(String(headerValue ?? "").trim());
   const expected = Buffer.from(getHmEdgeBridgeSecret());
-  return given.length > 0 && given.length === expected.length && timingSafeEqual(given, expected);
+  return given.length > 0 && expected.length > 0 && given.length === expected.length && timingSafeEqual(given, expected);
 }
 
 router.post("/hm/bridge/mirror", async (req, res): Promise<void> => {
