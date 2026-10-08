@@ -1,0 +1,400 @@
+--- a/src/App.php
++++ b/src/App.php
+@@ -105,7 +105,10 @@
+         if ($logo === '' && (string) $row['slug'] === 'turkatahaber') {
+             $logo = '/brand/turkata/logo-h128.png';
+         }
+-        $hidden = [];
++        // Per-site category off switches (hm_site_category_overrides): hidden in every menu, tab and home block,
++        // their items are dropped from lists (Repository) and /kategori/<slug> answers 404.
++        CategoryTree::$off = $this->repo->siteCategoryOff((int) $row['id']);
++        $hidden = CategoryTree::$off;
+         if (is_array($layout['hmNavHiddenCategorySlugs'] ?? null)) {
+             foreach ($layout['hmNavHiddenCategorySlugs'] as $slug) {
+                 $hidden[Modules::slug((string) $slug)] = true;
+@@ -149,7 +152,7 @@
+             $categories = [];
+             foreach ($layout['hmNavOnlyCategorySlugs'] as $os) {
+                 $os = Modules::slug((string) $os);
+-                if ($os !== '' && isset($names[$os])) {
++                if ($os !== '' && isset($names[$os]) && !CategoryTree::isOff($os)) {
+                     $categories[] = ['slug' => $os, 'name' => $names[$os]];
+                 }
+             }
+@@ -411,7 +414,7 @@
+         if (isset($byId['ysCategories'])) {
+             $perCategory = $this->repo->latestPerCategory(
+                 $site->id,
+-                array_column($site->categories, 'slug'),
++                array_column(CategoryTree::homeOrder($site, $site->categories), 'slug'),
+                 $byId['ysCategories']['count'] + 32
+             );
+         }
+@@ -971,7 +974,7 @@
+             $blocks = [];
+             $index = 0;
+             $styleUse = [];
+-            foreach ($site->categories as $cat) {
++            foreach (CategoryTree::homeOrder($site, $site->categories) as $cat) {
+                 $style = Blocks::style($site, $cat['slug'], $styleUse);
+                 $styleUse[$style] = ($styleUse[$style] ?? 0) + 1;
+                 [, $want, $min] = Blocks::STYLES[$style];
+@@ -1191,9 +1194,9 @@
+ 
+     private function category(Site $site, string $slug): void
+     {
+-        $known = $slug === 'ozel-haber' && !isset($this->repo->siteCategoryOff($site->id)['ozel-haber']);
++        $known = !CategoryTree::isOff($slug) && ($slug === 'ozel-haber' || CategoryTree::has($site, $slug));
+         foreach ($site->categories as $cat) {
+-            if ($cat['slug'] === $slug) {
++            if ($cat['slug'] === $slug && !CategoryTree::isOff($slug)) {
+                 $known = true;
+                 break;
+             }
+@@ -1207,12 +1210,22 @@
+         // "Özel haber": everything the site's editor added by hand, any category.
+         $items = $slug === 'ozel-haber'
+             ? $this->repo->editorNews((int) (getenv('TEPE_MANSET_SITE_ID') ?: $site->id), $per + 1, ($page - 1) * $per)
+-            : $this->repo->stories($site->id, $slug, $per + 1, ($page - 1) * $per);
++            : (CategoryTree::has($site, $slug)
++                ? $this->repo->storiesIn($site->id, CategoryTree::descendants($slug), $per + 1, ($page - 1) * $per)
++                : $this->repo->stories($site->id, $slug, $per + 1, ($page - 1) * $per));
+         $hasMore = count($items) > $per;
+         $items = array_slice($items, 0, $per);
+-        $name = $slug === 'ozel-haber' ? 'Özel haber' : $site->categoryName($slug);
++        $treePath = CategoryTree::pathTo($site, $slug);
++        $name = $slug === 'ozel-haber' ? 'Özel haber' : ($treePath !== [] ? CategoryTree::name($slug, $site) : $site->categoryName($slug));
+         $path = '/kategori/' . $slug;
+-        $this->seoCtx = ['breadcrumbs' => [['Ana Sayfa', '/'], [$name, $path]]];
++        $crumbs = [['Ana Sayfa', '/']];
++        foreach ($treePath as $node) {
++            $crumbs[] = [CategoryTree::name($node, $site), '/kategori/' . $node];
++        }
++        if ($treePath === []) {
++            $crumbs[] = [$name, $path];
++        }
++        $this->seoCtx = ['breadcrumbs' => $crumbs];
+         $this->html(
+             $site,
+             $name . ' | ' . $site->name,
+@@ -1224,6 +1237,7 @@
+                 'items' => $items,
+                 'page' => $page,
+                 'hasMore' => $hasMore,
++                'tabRows' => CategoryTree::tabRows($site, $slug),
+                 'ads' => Ads::forSite($site),
+                 'latest' => $this->asideStories($site, '', array_column($items, 'slug'), $slug),
+                 'widgets' => $this->asideWidgets($site),
+--- a/src/Repository.php
++++ b/src/Repository.php
+@@ -132,7 +132,7 @@
+             ) c ON TRUE
+                 LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site%MI_JOIN%
+                 WHERE n.status = \'published\'
+-                  AND (n.site_id = :site OR n.owner_site_id = :site OR (n.site_id IS NULL AND n.is_tepe_manset))
++                  AND (n.site_id = :site OR n.owner_site_id = :site) -- per-site manşet: a pool item is manşet only on its owner site
+                   AND (n.is_editor_manual OR COALESCE(n.rss_source_url, \'\') = \'\')
+                   AND (n.is_tepe_manset OR n.is_site_manset)';
+         if ($maxAgeDays > 0) {
+@@ -352,6 +352,49 @@
+     }
+ 
+     /**
++     * Stories of several categories at once (category tree parents list their descendants too, see CategoryTree).
++     * @param list<string> $categories
++     * @return list<array<string, mixed>>
++     */
++    public function storiesIn(int $siteId, array $categories, int $limit, int $offset = 0): array
++    {
++        $cats = array_values(array_unique(array_filter(array_map('strval', $categories), static fn (string $c): bool => $c !== '')));
++        if (count($cats) <= 1) {
++            return $this->stories($siteId, $cats[0] ?? '', $limit, $offset);
++        }
++        $cats = array_slice($cats, 0, 150);
++        $limit = max(1, min(60, $limit));
++        $offset = max(0, $offset);
++        $live = [];
++        if ($this->bridge !== null) {
++            $want = array_flip($cats);
++            $live = array_values(array_filter($this->live('', 200), static fn (array $s): bool => isset($want[(string) ($s['category'] ?? '')])));
++            $live = array_slice($live, 0, $offset + $limit);
++        }
++        $in = [];
++        foreach ($cats as $i => $c) {
++            $in[] = ':t' . $i;
++        }
++        $list = implode(',', $in);
++        $sql = str_replace(
++            [' AND c.slug = :cat', ' AND category_slug = :cat'],
++            [' AND c.slug IN (' . $list . ')', ' AND category_slug IN (' . $list . ')'],
++            $this->storySql(true)
++        );
++        $sql .= ' ORDER BY published_at DESC LIMIT :lim OFFSET :off';
++        $stmt = $this->pdo->prepare($sql);
++        $stmt->bindValue('site', $siteId, PDO::PARAM_INT);
++        foreach ($cats as $i => $c) {
++            $stmt->bindValue('t' . $i, $c);
++        }
++        $stmt->bindValue('lim', $live === [] ? $limit : $offset + $limit, PDO::PARAM_INT);
++        $stmt->bindValue('off', $live === [] ? $offset : 0, PDO::PARAM_INT);
++        $stmt->execute();
++        $db = $this->mapList($stmt->fetchAll());
++        return $live === [] ? $db : $this->mergeLive($db, $live, $limit, $offset);
++    }
++
++    /**
+      * Stories of the last $days days, newest first (no bridge merge). Topic priority candidates (see Topic::extend()).
+      * @return list<array<string, mixed>>
+      */
+@@ -1084,12 +1127,19 @@
+         $rssScope = $this->rssScope();
+         $hidden = $this->rssHiddenSql();
+         $trNews = "(COALESCE(n.rss_source_url, '') = '' OR " . $this->turkishOnly('COALESCE(o.title, n.title)', 'c.slug', "''") . ')';
++        // per-site overrides 2026-10-08 (98199ef5): Pasif rows (hm_site_content_hidden, any reason) and switched-off
++        // categories are also dropped IN SQL, so lists still fill to their limit (isBlocked() stays as the safety net).
++        $offList = $this->categoryOffSql();
++        $offRss = $offList !== '' ? " AND COALESCE(category_slug, '') NOT IN ({$offList})" : '';
++        $offNews = $offList !== '' ? " AND COALESCE(c.slug, '') NOT IN ({$offList})" : '';
++        $pasifRss = $this->currentSite > 0 ? " AND NOT EXISTS (SELECT 1 FROM hm_site_content_hidden h WHERE h.site_id = :site AND h.public_slug = 'rss-' || portal_rss_items.id::text)" : '';
++        $pasifNews = $this->currentSite > 0 ? " AND NOT EXISTS (SELECT 1 FROM hm_site_content_hidden h WHERE h.site_id = :site AND h.public_slug = n.slug AND (h.title IN (n.title, COALESCE(o.title, n.title)) OR (h.kind = 'news' AND h.ref_id = n.id)))" : '';
+         return "SELECT * FROM (
+             SELECT 'rss-' || id::text AS public_slug, title, spot, image_url,
+                    COALESCE(source_name, '') AS credit, COALESCE(link, '') AS source_url,
+                    category_slug, published_at, 0 AS views, 'rss' AS kind
+             FROM portal_rss_items
+-            WHERE {$rssScope} {$catRss} AND {$trRss}{$hidden}
++            WHERE {$rssScope} {$catRss} AND {$trRss}{$hidden}{$offRss}{$pasifRss}
+             UNION ALL
+             SELECT n.slug, COALESCE(o.title, n.title), COALESCE(o.spot, n.spot), COALESCE(o.image_url, n.image_url),
+                    '' AS credit, COALESCE(n.rss_source_url, '') AS source_url,
+@@ -1105,7 +1155,7 @@
+             LEFT JOIN news_site_overrides o ON o.article_id = n.id AND o.site_id = :site
+             WHERE n.status = 'published'
+               AND (n.site_id IS NULL OR n.site_id = :site OR n.owner_site_id = :site)
+-              {$catNews} AND {$trNews}
++              {$catNews} AND {$trNews}{$offNews}{$pasifNews}
+         ) stories";
+     }
+ 
+@@ -1151,7 +1201,14 @@
+             $stmt = $this->pdo->prepare('SELECT category_slug FROM hm_site_category_overrides WHERE site_id = :site AND active = false');
+             $stmt->execute(['site' => $siteId]);
+             foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $slug) {
+-                $out[Modules::slug((string) $slug)] = true;
++                $slug = Modules::slug((string) $slug);
++                if ($slug === '') {
++                    continue;
++                }
++                // category tree (98199ef5): a switched-off parent also hides its descendants (kamu -> guvenlik, tsk...)
++                foreach (CategoryTree::descendants($slug) as $d) {
++                    $out[$d] = true;
++                }
+             }
+         } catch (\PDOException) {
+             // table missing: no override
+@@ -1204,6 +1261,18 @@
+         return $this->block;
+     }
+ 
++    /** Quoted SQL list of the current site's switched-off slugs ('' when none); slugs are [a-z0-9-] only. */
++    private function categoryOffSql(): string
++    {
++        $q = [];
++        foreach (array_keys($this->siteCategoryOff($this->currentSite)) as $slug) {
++            if (preg_match('/^[a-z0-9-]+$/', (string) $slug) === 1) {
++                $q[] = "'" . $slug . "'";
++            }
++        }
++        return implode(',', $q);
++    }
++
+     private static function blockKey(string $title): string
+     {
+         return preg_replace('/\s+/u', ' ', trim(html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8'))) ?? $title;
+--- a/src/Menu.php
++++ b/src/Menu.php
+@@ -41,6 +41,11 @@
+             if ($href === '') {
+                 $href = '#';
+             }
++            // Category switched off on this site (hm_site_category_overrides): no menu item for it.
++            if (CategoryTree::$off !== [] && preg_match('#/kategori/([a-z0-9-]+)/?(?:[?\#].*)?$#', strtolower($href), $cm) === 1
++                && CategoryTree::isOff($cm[1])) {
++                continue;
++            }
+             $parentId = trim((string) ($row['parentId'] ?? ''));
+             $icon = trim((string) ($row['icon'] ?? ''));
+             if (function_exists('mb_substr')) {
+--- a/templates/category.php
++++ b/templates/category.php
+@@ -14,6 +14,30 @@
+ /** @var list<array<string, mixed>> $latest */
+ ?>
+ <header class="ys-cat-hero"><h1><?= Html::e($name) ?></h1></header>
++<?php $tabRows = isset($tabRows) && is_array($tabRows) ? $tabRows : []; ?>
++<?php if ($tabRows !== []): ?>
++<style>
++.ys-ctabs{width:min(var(--ys-max,1200px),calc(100% - 32px));margin:10px auto 0;display:grid;gap:6px}
++.ys-ctabs-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;-webkit-overflow-scrolling:touch}
++.ys-ctabs-row::-webkit-scrollbar{display:none}
++.ys-ctabs-row a{flex:0 0 auto;padding:7px 12px;border:1px solid #d6dbe3;border-radius:999px;font-size:13.5px;font-weight:700;white-space:nowrap;color:inherit;background:#fff}
++.ys-ctabs-row a:hover{border-color:var(--ys-accent);color:var(--ys-accent)}
++.ys-ctabs-row a[aria-current="page"]{background:var(--ys-accent);border-color:var(--ys-accent);color:#fff}
++.ys-ctabs-row + .ys-ctabs-row a{font-size:12.5px;padding:5px 10px}
++[data-theme="dark"] .ys-ctabs-row a{background:transparent;border-color:#3a4150}
++@media (max-width:640px){.ys-ctabs{width:calc(100% - 24px)}}
++</style>
++<nav class="ys-ctabs" aria-label="Alt kategoriler">
++  <?php foreach ($tabRows as $row): ?>
++    <div class="ys-ctabs-row">
++      <a href="<?= Html::e($site->path('/kategori/' . $row['parent'])) ?>"<?= $row['active'] === $row['parent'] ? ' aria-current="page"' : '' ?>>Tümü</a>
++      <?php foreach ($row['tabs'] as $tab): ?>
++        <a href="<?= Html::e($site->path('/kategori/' . $tab['slug'])) ?>"<?= $row['active'] === $tab['slug'] ? ' aria-current="page"' : '' ?>><?= Html::e($tab['name']) ?></a>
++      <?php endforeach; ?>
++    </div>
++  <?php endforeach; ?>
++</nav>
++<?php endif; ?>
+ <div class="ys-wrap ys-page">
+ <div class="ys-category">
+   <?php if ($items === []): ?>
+--- a/templates/layout.php
++++ b/templates/layout.php
+@@ -25,6 +25,68 @@
+ $headerMenuItems = \Yenisafak\Menu::items($site, 'hmCorporateMenuItems');
+ $headerMenuRoots = \Yenisafak\Menu::roots($site, 'hmCorporateMenuItems');
+ $headerMenuOn = $headerMenuRoots !== [];
++// Category tree (general sites): main categories always in the menu, with dropdowns (CategoryTree).
++$treeMode = \Yenisafak\CategoryTree::mode($site);
++$treeOn = $treeMode !== 'off';
++if ($treeMode === 'full' && $headerMenuOn) {
++    $presentTree = [];
++    $homeIdx = -1;
++    foreach ($headerMenuRoots as $ri => $root) {
++        $rh = \Yenisafak\Menu::href($site, $root['href']);
++        $rp = rtrim((string) (parse_url($rh, PHP_URL_PATH) ?: ''), '/');
++        if ($rp === '' || $rp === rtrim($site->path('/'), '/')) {
++            $homeIdx = $homeIdx < 0 ? $ri : $homeIdx;
++        }
++        if (preg_match('#/kategori/([a-z0-9-]+)$#', $rp, $rm) === 1) {
++            $presentTree[$rm[1]] = true;
++        }
++    }
++    $missing = [];
++    foreach (\Yenisafak\CategoryTree::mains($site) as $mainSlug) {
++        if (!isset($presentTree[$mainSlug])) {
++            $missing[] = ['id' => 'ys-tree-' . $mainSlug, 'label' => \Yenisafak\CategoryTree::name($mainSlug, $site), 'href' => '/kategori/' . $mainSlug, 'parentId' => '', 'enabled' => true, 'icon' => ''];
++        }
++    }
++    if ($missing !== []) {
++        array_splice($headerMenuRoots, $homeIdx + 1, 0, $missing);
++    }
++}
++/** Dropdown panel (desktop) for a tree node: children, and their children as sub-links. */
++$treePanel = static function (string $slug) use ($site): string {
++    $h = '<div class="ys-dd-panel" role="menu">';
++    foreach (\Yenisafak\CategoryTree::children($slug) as $kid) {
++        $h .= '<div class="ys-dd-col"><a class="ys-dd-h" role="menuitem" href="' . Html::e($site->path('/kategori/' . $kid)) . '">' . Html::e(\Yenisafak\CategoryTree::name($kid, $site)) . '</a>';
++        $grand = \Yenisafak\CategoryTree::children($kid);
++        if ($grand !== []) {
++            $h .= '<div class="ys-dd-sub">';
++            foreach ($grand as $g) {
++                $h .= '<a role="menuitem" href="' . Html::e($site->path('/kategori/' . $g)) . '">' . Html::e(\Yenisafak\CategoryTree::name($g, $site)) . '</a>';
++            }
++            $h .= '</div>';
++        }
++        $h .= '</div>';
++    }
++    return $h . '</div>';
++};
++/** Drawer (mobile) list for a tree node. */
++$treeDrawer = static function (string $slug, string $label, string $href) use ($site): string {
++    $h = '<details class="ys-tdraw"><summary><a href="' . Html::e($href) . '">' . Html::e($label) . '</a></summary>';
++    foreach (\Yenisafak\CategoryTree::children($slug) as $kid) {
++        $grand = \Yenisafak\CategoryTree::children($kid);
++        $kh = Html::e($site->path('/kategori/' . $kid));
++        $kn = Html::e(\Yenisafak\CategoryTree::name($kid, $site));
++        if ($grand === []) {
++            $h .= '<a class="ys-tdraw-l1" href="' . $kh . '">' . $kn . '</a>';
++            continue;
++        }
++        $h .= '<details class="ys-tdraw ys-tdraw-l1"><summary><a href="' . $kh . '">' . $kn . '</a></summary><div class="ys-tdraw-g">';
++        foreach ($grand as $g) {
++            $h .= '<a href="' . Html::e($site->path('/kategori/' . $g)) . '">' . Html::e(\Yenisafak\CategoryTree::name($g, $site)) . '</a>';
++        }
++        $h .= '</div></details>';
++    }
++    return $h . '</details>';
++};
+ $footerMenuItems = \Yenisafak\Menu::items($site, 'hmNewsFooterMenuItems');
+ $footerMenuOn = $footerMenuItems !== [];
+ $stripMenuItems = \Yenisafak\Menu::items($site, 'hmNewsStripMenuItems');
+@@ -182,6 +244,8 @@
+                 <?php foreach ($headerMenuRoots as $root):
+                   $rootHref = \Yenisafak\Menu::href($site, $root['href']);
+                   $kids = \Yenisafak\Menu::childrenOf($headerMenuItems, $root['id']);
++                  $ddSlug = $treeOn ? \Yenisafak\CategoryTree::dropdownSlug($site, $rootHref) : '';
++                  if ($ddSlug !== '') { echo $treeDrawer($ddSlug, (string) $root['label'], $rootHref); continue; }
+                 ?>
+                   <a href="<?= Html::e($rootHref) ?>"<?= \Yenisafak\Menu::isCurrent($current, $rootHref) ? ' aria-current="page"' : '' ?>><?= Html::e($root['label']) ?></a>
+                   <?php foreach ($kids as $kid):
+@@ -193,7 +257,8 @@
+               </div>
+             <?php else: ?>
+               <div><h3>Kategoriler</h3>
+-                <?php foreach ($site->categories as $cat): ?><a href="<?= Html::e($site->path('/kategori/' . $cat['slug'])) ?>"><?= Html::e($cat['name']) ?></a><?php endforeach; ?>
++                <?php if ($treeOn): foreach (\Yenisafak\CategoryTree::mains($site) as $mainSlug) { echo $treeDrawer($mainSlug, \Yenisafak\CategoryTree::name($mainSlug, $site), $site->path('/kategori/' . $mainSlug)); } endif; ?>
++                <?php foreach ($site->categories as $cat): if ($treeOn && \Yenisafak\CategoryTree::has($site, $cat['slug'])) { continue; } ?><a href="<?= Html::e($site->path('/kategori/' . $cat['slug'])) ?>"><?= Html::e($cat['name']) ?></a><?php endforeach; ?>
+               </div>
+               <div><h3>Hizmetler</h3>
+                 <a href="<?= Html::e($site->path('/hava-durumu')) ?>">Hava durumu</a>
+@@ -221,11 +286,17 @@
+         <?php if ($headerMenuOn): ?>
+           <?php foreach ($headerMenuRoots as $root):
+             $rootHref = \Yenisafak\Menu::href($site, $root['href']);
++            $ddSlug = $treeOn ? \Yenisafak\CategoryTree::dropdownSlug($site, $rootHref) : '';
+           ?>
+-            <a href="<?= Html::e($rootHref) ?>"<?= \Yenisafak\Menu::isCurrent($current, $rootHref) ? ' aria-current="page"' : '' ?>><?= Html::e($root['label']) ?></a>
++            <?php if ($ddSlug !== ''): ?><span class="ys-dd"><?php endif; ?>
++            <a href="<?= Html::e($rootHref) ?>"<?= \Yenisafak\Menu::isCurrent($current, $rootHref) ? ' aria-current="page"' : '' ?><?= $ddSlug !== '' ? ' aria-haspopup="true"' : '' ?>><?= Html::e($root['label']) ?></a>
++            <?php if ($ddSlug !== ''): ?><?= $treePanel($ddSlug) ?></span><?php endif; ?>
+           <?php endforeach; ?>
+         <?php else: ?>
+-          <?php foreach ($site->categories as $cat): ?>
++          <?php if ($treeOn): foreach (\Yenisafak\CategoryTree::mains($site) as $mainSlug): $mh = $site->path('/kategori/' . $mainSlug); ?>
++            <span class="ys-dd"><a href="<?= Html::e($mh) ?>"<?= $current === '/kategori/' . $mainSlug ? ' aria-current="page"' : '' ?> aria-haspopup="true"><?= Html::e(\Yenisafak\CategoryTree::name($mainSlug, $site)) ?></a><?= $treePanel($mainSlug) ?></span>
++          <?php endforeach; endif; ?>
++          <?php foreach ($site->categories as $cat): if ($treeOn && \Yenisafak\CategoryTree::has($site, $cat['slug'])) { continue; } ?>
+             <a href="<?= Html::e($site->path('/kategori/' . $cat['slug'])) ?>"<?= $current === '/kategori/' . $cat['slug'] ? ' aria-current="page"' : '' ?>><?= Html::e($cat['name']) ?></a>
+           <?php endforeach; ?>
+         <?php endif; ?>
+@@ -243,6 +314,29 @@
+       </button>
+     </div>
+   </nav>
++  <?php if ($treeOn): ?>
++  <style>
++  .ys-dd{display:inline-flex;flex:0 0 auto;position:static}
++  .ys-dd-panel{display:none;position:fixed;z-index:60;min-width:220px;max-width:min(960px,calc(100vw - 24px));max-height:72vh;overflow:auto;padding:14px 16px;gap:10px 22px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));background:#fff;color:#14213d;border-top:3px solid var(--ys-accent);border-radius:0 0 8px 8px;box-shadow:0 18px 40px rgba(0,0,0,.22)}
++  .ys-dd:hover>.ys-dd-panel,.ys-dd:focus-within>.ys-dd-panel{display:grid}
++  .ys-cats .ys-dd-panel a{display:block;padding:4px 6px;font-size:13.5px;font-weight:600;border-radius:3px;white-space:normal;color:inherit;background:none}
++  .ys-cats .ys-dd-panel a:hover{background:var(--ys-accent);color:#fff}
++  .ys-cats .ys-dd-panel a.ys-dd-h{font-weight:800;font-size:14px}
++  .ys-dd-sub{display:grid;gap:0;margin:2px 0 4px 6px;border-left:2px solid #e3e7ee;padding-left:6px}
++  .ys-cats .ys-dd-sub a{font-weight:500;font-size:12.5px;padding:2px 6px}
++  [data-theme="dark"] .ys-dd-panel{background:#151a23;color:#e8ecf3}
++  .ys-tdraw summary{cursor:pointer;list-style:revert}
++  .ys-tdraw summary a{display:inline!important;padding:0!important}
++  .ys-tdraw-l1{padding-left:14px!important}
++  .ys-tdraw-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding-left:24px}
++  .ys-tdraw-g a{font-size:13px;padding:4px 0!important}
++  </style>
++  <script>
++  (function(){var dds=document.querySelectorAll('.ys-dd');function place(dd){var p=dd.querySelector('.ys-dd-panel');if(!p)return;var r=dd.getBoundingClientRect();p.style.top=Math.round(r.bottom)+'px';p.style.left='12px';requestAnimationFrame(function(){var w=p.offsetWidth||320;var left=Math.min(Math.max(12,r.left),window.innerWidth-w-12);p.style.left=Math.round(Math.max(12,left))+'px';});}
++  for(var i=0;i<dds.length;i++){(function(dd){dd.addEventListener('mouseenter',function(){place(dd);});dd.addEventListener('focusin',function(){place(dd);});})(dds[i]);}
++  window.addEventListener('scroll',function(){var a=document.querySelector('.ys-dd:hover');if(a)place(a);},{passive:true});})();
++  </script>
++  <?php endif; ?>
+   <?php if ($headerAd !== '' && $tickerHtml !== ''): ?>
+     <div class="ys-sd-row"><div class="ys-wrap"><?= $tickerHtml ?></div></div>
+   <?php endif; ?>
