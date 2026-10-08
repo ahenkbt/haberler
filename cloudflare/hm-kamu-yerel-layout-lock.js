@@ -25,17 +25,17 @@ export const KAMU_YEREL_LAYOUT_LOCK_KEYS = Object.freeze([
 
 /** Cumha tepe menü — hm-cumha-kamu-yerel-catalog KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS */
 export const KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS = Object.freeze([
-  "yerel",
-  "cumhurbaskanligi",
-  "bakanliklar",
-  "tbmm",
-  "siyasi-partiler",
+  "siyaset",
+  "kamu",
+  "stk",
   "yerel-yonetimler",
-  "mulki-idare",
-  "toplum-ve-yasam",
-  "daha",
-  "sivil-toplum-kuruluslari",
-  "kamu-kurumlari",
+  "yerel",
+  "gundem",
+  "dunya",
+  "spor",
+  "teknoloji",
+  "saglik",
+  "roportajlar",
 ]);
 
 const KAMU_YEREL_SLUGS = new Set(["turkatahaber", "yerelnet"]);

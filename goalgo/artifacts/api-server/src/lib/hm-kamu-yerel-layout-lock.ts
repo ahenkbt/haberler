@@ -47,6 +47,15 @@ const LEGACY_GENERIC_NAV = new Set([
 ]);
 
 const CUMHA_NAV_MARKERS = new Set([
+  // Birleşik tepe (gundem/dunya/spor LEGACY_GENERIC'de — buraya koyma)
+  "siyaset",
+  "kamu",
+  "stk",
+  "yerel-yonetimler",
+  "roportajlar",
+  // legacy Cumha tepe slug'ları (eski layout'lar)
+  "daha",
+  "toplum-ve-yasam",
   "cumhurbaskanligi",
   "bakanliklar",
   "tbmm",
@@ -148,7 +157,12 @@ function kamuYerelExtraPagesNeedRepair(layoutJson: string | null | undefined): b
           .toLowerCase() === KAMU_YEREL_DAHA_PAGE_SLUG,
     ) as { bodyHtml?: unknown } | undefined;
     const dahaBody = String(dahaPage?.bodyHtml ?? "");
-    if (!dahaBody.includes(KAMU_YEREL_DAHA_PROMO_MARKER) || !dahaBody.includes("hm-daha-site-grid")) {
+    if (
+      !dahaBody.includes(KAMU_YEREL_DAHA_PROMO_MARKER) ||
+      !dahaBody.includes("hm-daha-site-grid") ||
+      !dahaBody.includes("ankarahabergundemi.com") ||
+      !dahaBody.includes("vatanhaber.net")
+    ) {
       return true;
     }
     const menu = Array.isArray(layout.hmCorporateMenuItems) ? layout.hmCorporateMenuItems : [];

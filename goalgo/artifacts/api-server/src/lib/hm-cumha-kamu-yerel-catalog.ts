@@ -150,7 +150,7 @@ export const CUMHA_KAMU_CATEGORY_FEEDS = [
   },
 ] as const;
 
-/** Cumha «Daha» menüsü — uluslararası kuruluş / dış politika RSS. */
+/** Cumha uluslararası kuruluş / dış politika RSS — Dünya altında. */
 export const CUMHA_DAHA_CATEGORY_FEEDS = [
   { slug: "nato", cumhaSlug: "nato", name: "NATO", color: "#1e3a5f" },
   {
@@ -173,17 +173,49 @@ export const CUMHA_DAHA_CATEGORY_FEEDS = [
   },
 ] as const;
 
+/**
+ * Tepe menü şemsiye kategorileri — Cumha alt RSS slug'larını birleştirir.
+ * Siyaset = CB+bakanlık+TBMM+partiler; Kamu = mülki idare+kamu kurumları;
+ * STK = sivil toplum; Dünya = NATO/BM/AB; Röportajlar = editöryel.
+ */
+export const KAMU_YEREL_UMBRELLA_CATEGORIES: readonly KamuYerelCategoryDef[] = [
+  { slug: "siyaset", name: "Siyaset", color: "#8b0000" },
+  { slug: "kamu", name: "Kamu", color: "#0b3362" },
+  { slug: "stk", name: "STK", color: "#1a5a3a" },
+  { slug: "dunya", name: "Dünya", color: "#1e3a5f" },
+  { slug: "roportajlar", name: "Röportajlar", color: "#7c2d12" },
+];
+
+/**
+ * Alt kategori → tepe/şemsiye parent.
+ * Listing expand transitive: ara parent'lar da şemsiyeye açılır.
+ */
 const CUMHA_KAMU_PARENT_SLUG: Partial<Record<string, string>> = {
-  "genel-merkez": "siyasi-partiler",
-  "il-ilce-baskanliklari": "siyasi-partiler",
+  // Siyaset ← cumhurbaşkanlığı + bakanlıklar + tbmm + siyasi partiler
+  cumhurbaskanligi: "siyaset",
+  bakanliklar: "siyaset",
+  tbmm: "siyaset",
+  "siyasi-partiler": "siyaset",
+  "genel-merkez": "siyaset",
+  "il-ilce-baskanliklari": "siyaset",
+  // Kamu ← mülki idare + kamu kurumları
+  "mulki-idare": "kamu",
+  "kamu-kurumlari": "kamu",
+  valilikler: "kamu",
+  kaymakamliklar: "kamu",
+  // STK ← sivil toplum (+ toplum ve yaşam)
+  "sivil-toplum-kuruluslari": "stk",
+  "toplum-ve-yasam": "stk",
+  // Yerel Yönetimler ← belediye + muhtar + büyükşehir/ilçe
   "buyuksehir-ve-iller": "yerel-yonetimler",
   ilceler: "yerel-yonetimler",
-  valilikler: "mulki-idare",
-  kaymakamliklar: "mulki-idare",
-  nato: "daha",
-  "uluslararasi-kuruluslar": "daha",
-  "birlesmis-milletler": "daha",
-  "avrupa-birligi": "daha",
+  belediye: "yerel-yonetimler",
+  muhtar: "yerel-yonetimler",
+  // Dünya ← NATO / BM / AB / uluslararası kuruluşlar
+  nato: "dunya",
+  "uluslararasi-kuruluslar": "dunya",
+  "birlesmis-milletler": "dunya",
+  "avrupa-birligi": "dunya",
 };
 
 const KAMU_YEREL_HM_SITE_SLUGS = new Set(["turkatahaber", "yerelnet"]);
@@ -197,8 +229,9 @@ export function isKamuYerelHmSiteSlug(siteSlug?: string | null): boolean {
 }
 
 /**
- * Tepe menü üst slug'ları (ör. `daha`, `siyasi-partiler`) — alt RSS kategori slug'larını birleştirir.
- * Haberler yalnızca alt slug ile etiketlendiğinde üst menü sayfası boş kalmasın.
+ * Tepe menü üst slug'ları (ör. `siyaset`, `dunya`) — alt RSS kategori slug'larını
+ * geçişli (transitive) birleştirir. Haberler yalnızca alt slug ile etiketlendiğinde
+ * üst menü sayfası boş kalmasın.
  */
 export function expandKamuYerelListingCategorySlugs(
   categorySlug: string | null | undefined,
@@ -209,40 +242,83 @@ export function expandKamuYerelListingCategorySlugs(
     .toLowerCase();
   if (!slug) return [];
   if (!isKamuYerelHmSiteSlug(siteSlug)) return [slug];
-  const children = Object.entries(CUMHA_KAMU_PARENT_SLUG)
-    .filter(([, parent]) => parent === slug)
-    .map(([child]) => child);
-  if (!children.length) return [slug];
-  return [slug, ...children];
+  const out: string[] = [slug];
+  const seen = new Set<string>([slug]);
+  const queue = [slug];
+  while (queue.length) {
+    const parent = queue.shift()!;
+    for (const [child, p] of Object.entries(CUMHA_KAMU_PARENT_SLUG)) {
+      if (p !== parent || seen.has(child)) continue;
+      seen.add(child);
+      out.push(child);
+      queue.push(child);
+    }
+  }
+  return out;
 }
 
-/** Tepe menü — Cumha.com.tr kamu-yerel üst kategorileri (+ yerel manşet). */
+/**
+ * Tepe menü — birleşik kamu-yerel + genel haber kategorileri.
+ * `/daha` ve `/iller` sayfa olarak corporate menu / hmExtraPages'te kalır.
+ */
 export const KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS = [
-  "yerel",
-  "cumhurbaskanligi",
-  "bakanliklar",
-  "tbmm",
-  "siyasi-partiler",
+  "siyaset",
+  "kamu",
+  "stk",
   "yerel-yonetimler",
-  "mulki-idare",
-  "toplum-ve-yasam",
-  "daha",
-  "sivil-toplum-kuruluslari",
-  "kamu-kurumlari",
+  "yerel",
+  "gundem",
+  "dunya",
+  "spor",
+  "teknoloji",
+  "saglik",
+  "roportajlar",
 ] as const;
 
+/** Genel / tamamlayıcı tepe kategorileri (+ yerel manşet). */
 export const KAMU_YEREL_SECONDARY_CATEGORIES: readonly KamuYerelCategoryDef[] = [
   { slug: "yerel", name: "Yerel", color: "#c00005" },
-  { slug: "saglik", name: "Sağlık", color: "#991b1b" },
+  { slug: "gundem", name: "Gündem", color: "#b91c1c" },
+  { slug: "spor", name: "Spor", color: "#166534" },
   { slug: "teknoloji", name: "Teknoloji", color: "#4c1d95" },
-  { slug: "yasam", name: "Yaşam", color: "#b45309" },
+  { slug: "saglik", name: "Sağlık", color: "#991b1b" },
+  { slug: "belediye", name: "Belediye", color: "#0a6b7a" },
+  { slug: "muhtar", name: "Muhtar", color: "#0d6b5c" },
 ];
 
-/** NTV — kamu-yerel kavramına uygun tamamlayıcı (isteğe bağlı seed). */
+/** Haberler.com Muhtar — belediye/muhtarlık; yerel-yonetimler listing'e yazılır. */
+export const HABERLER_MUHTAR_CATEGORY_SLUG = "muhtar";
+export const HABERLER_MUHTAR_RSS_URL = "https://rss.haberler.com/rss.asp?kategori=muhtar";
+export const HABERLER_MUHTAR_LISTING_BASE = "https://www.haberler.com/muhtar/";
+
+/**
+ * robots.txt eski sayısal sayfalama (/muhtar/4/) engeller; sN biçimi serbest.
+ * Sayfa başına ~20–30 haber — 8 sayfa ≈ 100+ hedef.
+ */
+export function listHaberlerMuhtarListingPages(pageCount = 8): string[] {
+  const n = Math.max(1, Math.min(12, Math.trunc(pageCount) || 8));
+  const pages = [HABERLER_MUHTAR_LISTING_BASE];
+  for (let i = 2; i <= n; i++) {
+    pages.push(`https://www.haberler.com/muhtar/s${i}/`);
+  }
+  return pages;
+}
+
+/** NTV Atom + Haberler Muhtar — genel haber / yerel yönetim tamamlayıcı. */
 export const KAMU_YEREL_SUPPLEMENTAL_RSS = [
-  { url: "https://www.ntv.com.tr/saglik.rss", categoryKey: "saglik", label: "Sağlık" },
-  { url: "https://www.ntv.com.tr/teknoloji.rss", categoryKey: "teknoloji", label: "Teknoloji" },
-  { url: "https://www.ntv.com.tr/yasam.rss", categoryKey: "yasam", label: "Yaşam" },
+  { id: "sup-gundem", url: "https://www.ntv.com.tr/gundem.rss", categoryKey: "gundem", label: "Gündem" },
+  { id: "sup-turkiye", url: "https://www.ntv.com.tr/turkiye.rss", categoryKey: "gundem", label: "Türkiye" },
+  { id: "sup-dunya", url: "https://www.ntv.com.tr/dunya.rss", categoryKey: "dunya", label: "Dünya" },
+  { id: "sup-spor", url: "https://www.ntv.com.tr/sporskor.rss", categoryKey: "spor", label: "Spor" },
+  { id: "sup-teknoloji", url: "https://www.ntv.com.tr/teknoloji.rss", categoryKey: "teknoloji", label: "Teknoloji" },
+  { id: "sup-saglik", url: "https://www.ntv.com.tr/saglik.rss", categoryKey: "saglik", label: "Sağlık" },
+  {
+    id: "sup-muhtar",
+    url: HABERLER_MUHTAR_RSS_URL,
+    // PHP /kategori/yerel-yonetimler tek category_id ile sorgular — muhtar haberleri buraya yazılır.
+    categoryKey: "yerel-yonetimler",
+    label: "Muhtar",
+  },
 ] as const;
 
 export function cumhaCategoryRssUrl(cumhaSlug: string): string {
@@ -315,7 +391,13 @@ export function buildKamuYerelCategories(): KamuYerelCategoryDef[] {
       });
     }
   }
-  return [...KAMU_YEREL_SECONDARY_CATEGORIES, dahaNav, ...kamu, ...provincesByRegion];
+  return [
+    ...KAMU_YEREL_SECONDARY_CATEGORIES,
+    ...KAMU_YEREL_UMBRELLA_CATEGORIES,
+    dahaNav,
+    ...kamu,
+    ...provincesByRegion,
+  ];
 }
 
 export function listKamuYerelNavTopCategorySlugs(): string[] {
@@ -355,6 +437,7 @@ export function listKamuYerelMansetPoolCategorySlugs(): string[] {
   const slugs = new Set<string>(["yerel"]);
   for (const c of CUMHA_KAMU_CATEGORY_FEEDS) slugs.add(c.slug);
   for (const c of CUMHA_DAHA_CATEGORY_FEEDS) slugs.add(c.slug);
+  for (const c of KAMU_YEREL_UMBRELLA_CATEGORIES) slugs.add(c.slug);
   slugs.add("daha");
   for (const c of KAMU_YEREL_SECONDARY_CATEGORIES) slugs.add(c.slug);
   for (const p of listKamuYerelProvinces()) slugs.add(p.slug);
@@ -370,12 +453,21 @@ export type HmNewsSiteRssFeedRow = {
 
 export function buildKamuYerelHmNewsSiteRssFeedRows(): HmNewsSiteRssFeedRow[] {
   const rows: HmNewsSiteRssFeedRow[] = [];
-  for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
+  for (const cat of CUMHA_KAMU_CATEGORY_FEEDS) {
     rows.push({
       id: `cumha-cat-${cat.slug}`,
       label: cat.name,
       url: cumhaCategoryRssUrl(cat.cumhaSlug),
       categoryKey: cat.slug,
+    });
+  }
+  // Cumha nato / BM / AB / uluslararası → site «dunya» (alt slug menü + expand).
+  for (const cat of CUMHA_DAHA_CATEGORY_FEEDS) {
+    rows.push({
+      id: `cumha-cat-${cat.slug}`,
+      label: cat.name,
+      url: cumhaCategoryRssUrl(cat.cumhaSlug),
+      categoryKey: "dunya",
     });
   }
   for (const prov of listKamuYerelProvinces()) {
@@ -388,7 +480,7 @@ export function buildKamuYerelHmNewsSiteRssFeedRows(): HmNewsSiteRssFeedRow[] {
   }
   for (const sup of KAMU_YEREL_SUPPLEMENTAL_RSS) {
     rows.push({
-      id: `sup-${sup.categoryKey}`,
+      id: sup.id,
       label: sup.label,
       url: sup.url,
       categoryKey: sup.categoryKey,
@@ -448,9 +540,24 @@ export type KamuYerelCorporateMenuItem = {
 
 export const KAMU_YEREL_DAHA_PAGE_SLUG = "daha";
 
-/** Tepe menü — kamu/yerel kategoriler (81 il `/iller` + premium `/daha`; ana menüde il/bölge yok). */
+/** Tepe menü — birleşik nav (81 il `/daha`/`/iller`; ana menüde il/bölge yok). */
 export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[] {
   const items: KamuYerelCorporateMenuItem[] = [];
+  const labelBySlug = new Map<string, string>([
+    ...KAMU_YEREL_UMBRELLA_CATEGORIES.map((c) => [c.slug, c.name] as const),
+    ...KAMU_YEREL_SECONDARY_CATEGORIES.map((c) => [c.slug, c.name] as const),
+    ["yerel-yonetimler", "Yerel Yönetimler"],
+    ["daha", "Daha"],
+  ]);
+  for (const slug of KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS) {
+    items.push({
+      id: `ky-cat-${slug}`,
+      label: labelBySlug.get(slug) ?? slug,
+      href: `/kategori/${slug}`,
+      enabled: true,
+    });
+  }
+  // /daha hub — tepe kategori değil; corporate menüde ayrı sayfa linki
   items.push({
     id: "ky-cat-daha",
     label: "Daha",
@@ -458,6 +565,7 @@ export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[]
     enabled: true,
   });
   for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
+    if (labelBySlug.has(cat.slug)) continue;
     const parentSlug = CUMHA_KAMU_PARENT_SLUG[cat.slug];
     items.push({
       id: `ky-cat-${cat.slug}`,
@@ -467,14 +575,21 @@ export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[]
       enabled: true,
     });
   }
-  for (const cat of KAMU_YEREL_SECONDARY_CATEGORIES) {
-    items.push({
-      id: `ky-cat-${cat.slug}`,
-      label: cat.name,
-      href: `/kategori/${cat.slug}`,
-      enabled: true,
-    });
-  }
+  // Belediye / Muhtar — Yerel Yönetimler altında
+  items.push({
+    id: "ky-cat-belediye",
+    label: "Belediye",
+    href: "/kategori/belediye",
+    parentId: "ky-cat-yerel-yonetimler",
+    enabled: true,
+  });
+  items.push({
+    id: "ky-cat-muhtar",
+    label: "Muhtar",
+    href: "/kategori/muhtar",
+    parentId: "ky-cat-yerel-yonetimler",
+    enabled: true,
+  });
   return items;
 }
 
@@ -675,14 +790,10 @@ function buildKamuYerelDahaProjeHtml(): string {
 }
 
 /**
- * `/daha` — sol: ajans tanıtımı + site logoları + 81 İl projesi; sağ: uluslararası + 81 il.
- * Tepe menü «Daha» bu sayfaya gider; alt RSS kategorileri menüde parent olarak kalır.
+ * `/daha` — ajans tanıtımı + site logoları + 81 İl projesi; iller yan sütunda.
+ * Uluslararası (NATO/BM/AB) tepe «Dünya» altında — /daha gövdesinde ayrı nato link yok.
  */
 export function buildKamuYerelDahaExtraPage(): KamuYerelIllerExtraPage {
-  const intlLinks = CUMHA_DAHA_CATEGORY_FEEDS.map(
-    (c) =>
-      `<li><a href="/kategori/${c.slug}" class="hm-daha-cat-link">${c.name}</a></li>`,
-  ).join("");
   const sections: string[] = [
     KAMU_YEREL_DAHA_PAGE_STYLE,
     `<div class="hm-daha-page hm-extra-page-root">`,
@@ -692,9 +803,8 @@ export function buildKamuYerelDahaExtraPage(): KamuYerelIllerExtraPage {
     `<section id="daha-konsept" class="hm-daha-concept"><p>TürAta Haber Ajansı kamu ve yerel gündemi bir arada sunar: cumhurbaşkanlığı, bakanlıklar, TBMM ve kamu kurumlarından belediye, valilik ve 81 il haberine — yerelin sesini ulusal ve uluslararası okura taşıyan güvenilir bir yayın ağı.</p></section>`,
     buildKamuYerelDahaProjeHtml(),
     `</div>`,
-    `<aside class="hm-daha-aside ys-aside" aria-label="Uluslararası ve iller">`,
-    `<p class="hm-daha-lead">Uluslararası kuruluşlar, dış politika ve Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin.</p>`,
-    `<section id="daha-uluslararasi" class="hm-daha-intl"><h2 class="hm-daha-section-title">Uluslararası</h2><ul class="hm-daha-cat-grid">${intlLinks}</ul></section>`,
+    `<aside class="hm-daha-aside ys-aside" aria-label="Bölgeler ve iller">`,
+    `<p class="hm-daha-lead">Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin. Uluslararası kuruluş haberleri için <a href="/kategori/dunya">Dünya</a> kategorisine bakın (NATO, BM, AB, Uluslararası).</p>`,
     `<section id="daha-bolgeler" class="hm-daha-bolgeler"><h2 class="hm-daha-section-title">Bölgeler ve iller</h2>`,
     ...buildKamuYerelRegionProvinceSections("hm-daha"),
     `</section></aside></div>`,
