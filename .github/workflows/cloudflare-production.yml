@@ -6,6 +6,7 @@
 #   SESSION_SECRET        (min 16 chars)
 # Optional: AGENTLABS_URL, HM_EDITOR_JWT_SECRET, ADMIN_MAINTENANCE_SECRET,
 #           R2_CF_API_TOKEN (fb9f hesap API token; 16f5 CLOUDFLARE_API_TOKEN değil)
+#           S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY (fb9f R2 S3 API; R2_CF_API_TOKEN yoksa)
 # S3_ENDPOINT secret olarak YAZILMAZ (wrangler.toml [vars] ile çakışır, code 10053).
 # Eski "versions secret put S3_ENDPOINT → versions deploy @100%" DATABASE_URL'i
 # Neon kopyasına geri alıyordu (run 32356785593, version 5807ec05).
@@ -227,6 +228,8 @@ jobs:
           HM_EDITOR_JWT_SECRET: ${{ secrets.HM_EDITOR_JWT_SECRET || '' }}
           AGENTLABS_URL: ${{ secrets.AGENTLABS_URL || '' }}
           R2_CF_API_TOKEN: ${{ secrets.R2_CF_API_TOKEN || '' }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID || '' }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || '' }}
         run: |
           set -euo pipefail
           put_secret() {
@@ -268,6 +271,12 @@ jobs:
           fi
           if [ -n "${R2_CF_API_TOKEN}" ]; then
             put_secret R2_CF_API_TOKEN "$R2_CF_API_TOKEN"
+          fi
+          if [ -n "${S3_ACCESS_KEY_ID}" ]; then
+            put_secret S3_ACCESS_KEY_ID "$S3_ACCESS_KEY_ID"
+          fi
+          if [ -n "${S3_SECRET_ACCESS_KEY}" ]; then
+            put_secret S3_SECRET_ACCESS_KEY "$S3_SECRET_ACCESS_KEY"
           fi
           echo "::notice::S3_ENDPOINT Worker secret olarak yazılmıyor (wrangler.toml [vars])."
 

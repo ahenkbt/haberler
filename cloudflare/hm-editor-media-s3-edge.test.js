@@ -89,6 +89,17 @@ describe("hm-editor-media-s3-edge", () => {
     }
   });
 
+  it("treats MEDIA_BUCKET binding as ready without S3 API keys", () => {
+    const env = {
+      MEDIA_BUCKET: {
+        get: async () => null,
+        head: async () => null,
+        put: async () => undefined,
+      },
+    };
+    assert.equal(s3MediaEnvReady(env), true);
+  });
+
   it("serves GET from the native R2 bucket binding without S3 API", async () => {
     const fname = "1786401635611-a8d116dd0f19d485.webp";
     const env = {

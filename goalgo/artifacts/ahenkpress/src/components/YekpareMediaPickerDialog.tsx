@@ -7,8 +7,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useListNews } from "@workspace/api-client-react";
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useYekpareMediaNewsImages } from "@/lib/useYekpareMediaNewsImages";
 import { Search, Upload, Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -40,7 +40,7 @@ export function YekpareMediaPickerDialog({
   onConfirm,
   inlineUpload,
 }: Props) {
-  const { data: news, isLoading } = useListNews();
+  const { data: news, isLoading } = useYekpareMediaNewsImages();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [custom, setCustom] = useState<YekpareMediaItem[]>([]);
@@ -178,7 +178,7 @@ export function YekpareMediaPickerDialog({
           </div>
         </div>
         <div className="min-h-[220px] flex-1 overflow-y-auto px-6 py-4">
-          {isLoading ? (
+          {isLoading && filtered.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">Yükleniyor…</div>
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
