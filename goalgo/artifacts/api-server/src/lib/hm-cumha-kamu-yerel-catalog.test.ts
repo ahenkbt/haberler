@@ -28,6 +28,7 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
   it("maps cumha RSS URLs to site category slugs", () => {
     expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/lokasyon/izmir")).toBe("izmir");
     expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/category/yerel-yonetimler")).toBe("yerel-yonetimler");
+    expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/category/nato")).toBe("dunya");
   });
 
   it("builds cumha-primary site RSS rows (19 kategori + 81 il + tamamlayıcı)", () => {
@@ -40,30 +41,33 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
   });
 
   it("expands kamu-yerel parent nav slugs for category listings", () => {
-    expect(expandKamuYerelListingCategorySlugs("daha", "turkatahaber")).toEqual(
-      expect.arrayContaining(["daha", "nato", "avrupa-birligi"]),
+    expect(expandKamuYerelListingCategorySlugs("dunya", "turkatahaber")).toEqual(
+      expect.arrayContaining(["dunya", "nato", "avrupa-birligi", "birlesmis-milletler"]),
     );
-    expect(expandKamuYerelListingCategorySlugs("gundem", "turkatahaber")).toEqual(["gundem"]);
-    expect(expandKamuYerelListingCategorySlugs("daha", "asg")).toEqual(["daha"]);
+    expect(expandKamuYerelListingCategorySlugs("siyaset", "turkatahaber")).toEqual(
+      expect.arrayContaining(["siyaset", "cumhurbaskanligi", "bakanliklar", "tbmm"]),
+    );
+    expect(expandKamuYerelListingCategorySlugs("dunya", "asg")).toEqual(["dunya"]);
   });
 
-  it("exposes Cumha-aligned top nav category slugs", () => {
+  it("exposes merged top nav category slugs", () => {
     expect(listKamuYerelNavTopCategorySlugs()).toEqual([...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS]);
-    expect(listKamuYerelNavTopCategorySlugs()).toContain("tbmm");
-    expect(listKamuYerelNavTopCategorySlugs()).toContain("daha");
+    expect(listKamuYerelNavTopCategorySlugs()).toContain("siyaset");
+    expect(listKamuYerelNavTopCategorySlugs()).toContain("dunya");
+    expect(listKamuYerelNavTopCategorySlugs()).not.toContain("daha");
   });
 
   it("corporate menu excludes iller/bolge; Daha points to /daha hub", () => {
     const menu = buildKamuYerelCorporateMenuItems();
-    expect(menu.length).toBeLessThanOrEqual(40);
+    expect(menu.length).toBeLessThanOrEqual(50);
     expect(menu.some((m) => m.id === "ky-menu-iller" || m.id.startsWith("ky-region-"))).toBe(false);
     expect(menu.some((m) => m.id.startsWith("ky-il-"))).toBe(false);
     const daha = menu.find((m) => m.id === "ky-cat-daha");
     expect(daha?.href).toBe(`/${KAMU_YEREL_DAHA_PAGE_SLUG}`);
-    const genelMerkez = menu.find((m) => m.id === "ky-cat-genel-merkez");
-    expect(genelMerkez?.parentId).toBe("ky-cat-siyasi-partiler");
+    expect(menu.find((m) => m.id === "ky-cat-siyaset")?.label).toBe("Siyaset");
+    expect(menu.find((m) => m.id === "ky-cat-dunya")?.label).toBe("Dünya");
     const nato = menu.find((m) => m.id === "ky-cat-nato");
-    expect(nato?.parentId).toBe("ky-cat-daha");
+    expect(nato?.parentId).toBe("ky-cat-dunya");
   });
 
   it("categories group 81 il under 7 bolge-* parent slugs in sort order", () => {
@@ -97,8 +101,12 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml).toContain("Vatan Haber");
     expect(page.bodyHtml).toContain("https://vatanhaber.net/");
     expect(page.bodyHtml).toContain("TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma");
-    expect(page.bodyHtml).toContain('href="/kategori/nato"');
-    expect(page.bodyHtml).toContain('href="/kategori/avrupa-birligi"');
+    expect(page.bodyHtml).toContain('href="/kategori/dunya"');
+    expect(page.bodyHtml).not.toContain('id="daha-uluslararasi"');
+    expect(page.bodyHtml).not.toContain('href="/kategori/nato"');
+    expect(page.bodyHtml).toContain("sosyalhizmetler.tr");
+    expect(page.bodyHtml).toContain("ege.gundemi.org");
+    expect(page.bodyHtml).not.toContain("tukav.org");
     expect(page.bodyHtml).toContain('id="marmara"');
     expect(page.bodyHtml).toContain("hm-daha-aside");
     expect(page.bodyHtml.match(/class="hm-daha-il-link"/g)?.length).toBe(81);

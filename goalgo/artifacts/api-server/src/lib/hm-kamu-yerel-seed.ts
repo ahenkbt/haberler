@@ -41,6 +41,7 @@ export type KamuYerelSeedSiteResult = {
   sampleNews: number;
   authors: number;
   campaignId: number | null;
+  layoutJson?: string;
   detail?: string;
 };
 
@@ -94,6 +95,7 @@ function buildLockedKamuYerelLayoutJson(
 async function upsertSite(def: KamuYerelSiteDef): Promise<{
   siteId: number;
   action: "created" | "updated" | "unchanged";
+  layoutJson: string;
 }> {
   const contactJson = JSON.stringify({
     email: def.kunyeEmail,
@@ -143,7 +145,7 @@ async function upsertSite(def: KamuYerelSiteDef): Promise<{
       active: true,
     });
     if (!created?.id) throw new Error(`Site insert failed: ${def.slug}`);
-    return { siteId: created.id, action: "created" };
+    return { siteId: created.id, action: "created", layoutJson };
   }
 
   for (const row of claimants) {
@@ -194,9 +196,9 @@ async function upsertSite(def: KamuYerelSiteDef): Promise<{
       },
       eq(hmNewsSitesTable.id, existing.id),
     );
-    return { siteId: existing.id, action: "updated" };
+    return { siteId: existing.id, action: "updated", layoutJson };
   }
-  return { siteId: existing.id, action: "unchanged" };
+  return { siteId: existing.id, action: "unchanged", layoutJson };
 }
 
 const TURKATA_CONTACT = {
@@ -396,19 +398,23 @@ async function ensureCampaign(siteId: number, def: KamuYerelSiteDef): Promise<nu
 
 async function ensureOneSite(def: KamuYerelSiteDef): Promise<KamuYerelSeedSiteResult> {
   try {
-    const { siteId, action } = await upsertSite(def);
+    const { siteId, action, layoutJson } = await upsertSite(def);
     await ensureEditor(siteId, def);
     const cats = await ensureCategories(siteId, def);
     const sampleNews = await ensureSampleNews(siteId, def, cats);
     const authors = def.slug === "turkatahaber" ? await ensureTurkataAuthorsOnRegionalSite(siteId) : 0;
     const campaignId = await ensureCampaign(siteId, def);
-    const layoutJson = JSON.stringify(buildKamuYerelLayoutJson(def));
-    await mirrorHmSiteLayoutJsonToPhpNeon(siteId, layoutJson).catch((err: unknown) => {
-      logger.warn(
-        { siteId, slug: def.slug, err: err instanceof Error ? err.message : String(err) },
-        "[kamu-yerel] php layout mirror",
-      );
-    });
+    // STABILIZE: mirror locked layout — never raw canonical (wiped logos/nav/daha).
+    if (String(process.env.SKIP_LAYOUT_MIRROR ?? "").trim() !== "1") {
+      await mirrorHmSiteLayoutJsonToPhpNeon(siteId, layoutJson).catch((err: unknown) => {
+        logger.warn(
+          { siteId, slug: def.slug, err: err instanceof Error ? err.message : String(err) },
+          "[kamu-yerel] php layout mirror",
+        );
+      });
+    } else {
+      logger.info({ siteId, slug: def.slug }, "[kamu-yerel] SKIP_LAYOUT_MIRROR=1 — php mirror atlandı");
+    }
     logger.info({ siteId, action, slug: def.slug }, "[kamu-yerel] site hazır");
     return {
       slug: def.slug,
@@ -419,6 +425,7 @@ async function ensureOneSite(def: KamuYerelSiteDef): Promise<KamuYerelSeedSiteRe
       sampleNews,
       authors,
       campaignId,
+      layoutJson,
     };
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
