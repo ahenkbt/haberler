@@ -590,6 +590,31 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     href: "https://gundemi.org/",
     logoUrl: "https://gundemi.org/gundemi/logos/gundemi-org.png",
   },
+  {
+    name: "Ege Gündemi",
+    href: "https://ege.gundemi.org/",
+    logoUrl: "https://ege.gundemi.org/gundemi/logos/ege-gundemi.png",
+  },
+  {
+    name: "Marmara Gündemi",
+    href: "https://marmara.gundemi.org/",
+    logoUrl: "https://marmara.gundemi.org/gundemi/logos/marmara-gundemi.png",
+  },
+  {
+    name: "Karadeniz Gündemi",
+    href: "https://karadeniz.gundemi.org/",
+    logoUrl: "https://karadeniz.gundemi.org/gundemi/logos/karadeniz-gundemi.png",
+  },
+  {
+    name: "Doğu Anadolu Gündemi",
+    href: "https://doguanadolu.gundemi.org/",
+    logoUrl: "https://doguanadolu.gundemi.org/gundemi/logos/doguanadolu-gundemi.png",
+  },
+  {
+    name: "Güneydoğu Gündemi",
+    href: "https://guneydogu.gundemi.org/",
+    logoUrl: "https://guneydogu.gundemi.org/gundemi/logos/guneydogu-gundemi.png",
+  },
 ] as const;
 
 /** `/daha` gövdesinde tanıtım bloğu var mı? (layout lock / seed onarım işareti) */
