@@ -15,6 +15,13 @@ describe("hm-yesilvatan-site", () => {
     expect(changed).toBe(true);
     expect(layout.logoUrl).toBe(YESILVATAN_LOGO_PATH);
     expect(layout.faviconUrl).toBe(YESILVATAN_FAVICON_PATH);
+    // Editörün geçerli rengi korunur; yalnızca eksik ikinci renk onarılır (2026-10-08).
+    expect(layout.hmPrimaryColor).toBe("#0b2a5b");
+    expect(layout.hmSecondaryColor).toBe("#2e7d32");
+  });
+
+  it("repairs missing or invalid colors to the concept palette", () => {
+    const { layout } = applyYesilVatanLogoToLayout({ hmPrimaryColor: "mavi" });
     expect(layout.hmPrimaryColor).toBe("#0b6e4f");
     expect(layout.hmSecondaryColor).toBe("#2e7d32");
   });
