@@ -20,7 +20,8 @@ test("subject: Re/Fwd/YNT/İLT prefixes removed", () => {
 
 test("body: signature, disclaimer, quoted reply trimmed; forwarded part used", () => {
   const t = "Merhaba,\n\nİlçemizde yeni park açıldı.\n\nSaygılarımla\nAli Veli\nBu e-posta gizlidir.";
-  assert.equal(trimMailText(t), "Merhaba,\n\nİlçemizde yeni park açıldı.");
+  assert.equal(trimMailText(t), "İlçemizde yeni park açıldı.");
+  assert.equal(trimMailText("Sayın Editör,\n\nHaber metni."), "Haber metni.");
   const fwd = "bilginize\n\n---------- Forwarded message ---------\nFrom: A <a@b.c>\nDate: 8 Eki\nSubject: X\nTo: b@c.d\n\nHaber metni burada.\n\n> eski yanıt";
   assert.equal(trimMailText(fwd), "Haber metni burada.");
   assert.equal(trimMailText("Metin\n\nOn Thu, Oct 8, 2026 Ali <a@b.c> wrote:\n> alıntı"), "Metin");

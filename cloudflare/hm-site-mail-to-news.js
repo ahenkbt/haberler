@@ -90,7 +90,10 @@ export function trimMailText(raw) {
     if (/^>/.test(t)) continue;
     out.push(line.replace(/\s+$/, ""));
   }
-  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  const paras = out.join("\n").replace(/\n{3,}/g, "\n\n").trim().split("\n\n");
+  // A lone greeting ("Merhaba,", "Sayın Editör,") is not part of the story.
+  if (paras.length > 1 && /^(?:merhaba|selam(?:lar)?|iyi günler|sayın\s.{0,60}|değerli\s.{0,60}|hello|hi|dear\s.{0,60})[,!.:]?$/i.test(paras[0].trim())) paras.shift();
+  return paras.join("\n\n").trim();
 }
 
 export function escapeHtml(s) {
@@ -344,6 +347,7 @@ export async function convertMailToNews(request, env, { msql, site, editor, mess
       if (u) images.push(u);
     }
     if (urls.length && !images.length) notes.push("E-postadaki görseller alınamadı.");
+    else if (images.length < urls.length) notes.push(`${urls.length - images.length} görsel alınamadı.`);
     if (images.length > 1) {
       content += `\n${images.slice(1).map((u) => `<figure class="hm-mail-gallery"><img src="${escapeHtml(u)}" alt="${escapeHtml(title)}" loading="lazy"></figure>`).join("\n")}`;
     }
