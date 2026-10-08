@@ -53,9 +53,9 @@ async function mapPool(items, n, fn) { const out = new Array(items.length); let 
 
 // ---------------------------------------------------------------- AI chain (Evren → NVIDIA → Gemini → OpenAI, cheap models)
 const SYS = "Sen Ahenk haber sitelerinin teknik bekçisisin. Kısa, net, Türkçe yaz. Uydurma yapma; yalnızca verilen ölçümlere dayan.";
-async function oaiCompat(url, key, model, prompt, extra = {}) {
+async function oaiCompat(url, key, model, prompt, extra = {}, maxTokens = 1200) {
   const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model, temperature: 0.2, max_tokens: 1200, messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }], ...extra }), signal: AbortSignal.timeout(40000) });
+    body: JSON.stringify({ model, temperature: 0.2, max_tokens: maxTokens, messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }], ...extra }), signal: AbortSignal.timeout(40000) });
   const d = await r.json().catch(() => ({}));
   const t = String(d?.choices?.[0]?.message?.content || "").trim();
   if (!r.ok || !t) throw new Error(`HTTP ${r.status} ${d?.error?.message || d?.detail || "boş yanıt"}`.slice(0, 160));
@@ -64,7 +64,7 @@ async function oaiCompat(url, key, model, prompt, extra = {}) {
 export async function aiChat(env, prompt) {
   const errors = [];
   const chain = [
-    ["evren", env.EVREN_API_KEY, () => oaiCompat("https://evren-llmapi.ssyz.org.tr/v1/chat/completions", env.EVREN_API_KEY, env.EVREN_MODEL || "deepseek-v4-flash", prompt)],
+    ["evren", env.EVREN_API_KEY, () => oaiCompat("https://evren-llmapi.ssyz.org.tr/v1/chat/completions", env.EVREN_API_KEY, env.EVREN_MODEL || "deepseek-v4-flash", prompt, {}, 4000)],   // reasoning model: leave room for thinking tokens
     ["nvidia", env.NVIDIA_API_KEY, () => oaiCompat("https://integrate.api.nvidia.com/v1/chat/completions", env.NVIDIA_API_KEY, env.NVIDIA_MODEL, prompt, { chat_template_kwargs: { enable_thinking: false } })],
     ["gemini", env.GEMINI_API_KEY, async () => {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent`, { method: "POST",
@@ -126,7 +126,7 @@ async function checkSite(site, ctx) {
   const art = pickLinks(home.body, 'href="((?:https?://[^"]+)?/haber/[^"#]+)"')[0] || items[0]?.link;
   const [catR, artR] = await Promise.all([cat ? timed(base + cat, { ms: 15000, noBody: true }) : null, art ? timed(new URL(art, base).toString(), { ms: 15000, noBody: true }) : null]);
   out.kategori = catR ? { ...P(catR), path: cat } : null; out.haber = artR ? { ...P(artR), path: new URL(art, base).pathname } : null;
-  if (!cat) out.soft.push("anasayfada kategori linki yok");
+  if (!cat) out.info.push("anasayfada /kategori/ linki yok (menü)");
   else if (down(catR) || catR.status >= 400) out.hard.push(`kategori ${cat} ${catR.status || "zaman aşımı"}`);
   else if (catR.ms > 8000) out.soft.push(`kategori yavaş ${(catR.ms / 1000).toFixed(1)} sn`);
   if (!art) out.soft.push("anasayfada haber linki yok");
@@ -167,8 +167,10 @@ async function dbChecks(sql, site, out, importers) {
     if (ageMin > (IMPORTER_MAX_MIN[logName] || 75)) out.soft.push(`RSS içe aktarıcı ${fmtMin(ageMin)} önce çalıştı (beklenen ≤${IMPORTER_MAX_MIN[logName] || 75} dk)`);
     else if (importers[logName].recentErrors > 3) out.soft.push(`RSS içe aktarıcı son çalışmasında hata verdi`);
   } else out.m.importer = { note: "kendi içe aktarıcısı yok (havuz / AI editör ile beslenir)" };
-  const d = await sql.query(`SELECT lower(btrim(title)) AS k, array_agg(id ORDER BY id) AS ids FROM news WHERE site_id=$1 AND status='published' AND created_at > now()-interval '72 hours' GROUP BY 1 HAVING count(*)>1 LIMIT 25`, [site.id]);
-  out.m.dupRows = d.map((x) => ({ k: String(x.k).slice(0, 90), ids: x.ids.map(Number) }));
+  // NOTE: news.id is NOT unique in TP (sync artifacts: same id inserted twice). Rows are addressed by (id, created_at),
+  // and a group is only auto-hidden when every row has a distinct id (otherwise report only).
+  const d = await sql.query(`SELECT lower(btrim(title)) AS k, array_agg(id ORDER BY created_at, id) AS ids, array_agg(to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') ORDER BY created_at, id) AS ats FROM news WHERE site_id=$1 AND status='published' AND created_at > now()-interval '72 hours' GROUP BY 1 HAVING count(*)>1 LIMIT 25`, [site.id]);
+  out.m.dupRows = d.map((x) => { const ids = x.ids.map(Number); return { k: String(x.k).slice(0, 90), ids, ats: x.ats, sameId: new Set(ids).size !== ids.length }; });
   if (out.m.dupRows.length) out.soft.push(`${out.m.dupRows.length} mükerrer haber satırı (DB, 72 sa)`);
 }
 
@@ -231,10 +233,13 @@ async function autoFix(env, sql, site, out, state, actions) {
     actions.push({ domain: site.domain, kind: "fix_rss_import", severity: "info", message: `RSS içe aktarıcı yeniden tetiklendi (${IMPORTER_SLUG[site.id]}, iş #${q.id}${q.queued ? "" : " zaten sırada"})`, detail: q });
   }
   if (out.m.dupRows?.length) {
-    const hide = out.m.dupRows.flatMap((d) => d.ids.slice(1)).slice(0, 25);
-    const u = hide.length ? await sql.query(`UPDATE news SET status='draft', updated_at=now() WHERE id = ANY($1::bigint[]) AND site_id=$2 AND status='published' RETURNING id`, [hide, site.id]) : [];
-    const ids = u.map((x) => Number(x.id));
-    if (ids.length) actions.push({ domain: site.domain, kind: "fix_dedupe", severity: "info", message: `${ids.length} mükerrer haber gizlendi (taslağa alındı, silinmedi; ilk kopya yayında)`, detail: { ids, rollback: `UPDATE news SET status='published' WHERE id IN (${ids.join(",")});` } });
+    const safe = out.m.dupRows.filter((d) => !d.sameId);
+    const hide = safe.flatMap((d) => d.ids.slice(1).map((id, j) => [id, d.ats[j + 1]])).slice(0, 25);
+    const u = hide.length ? await sql.query(`UPDATE news SET status='draft', updated_at=now() WHERE site_id=$1 AND status='published' AND (id, created_at) IN (SELECT * FROM unnest($2::bigint[], $3::timestamptz[])) RETURNING id, created_at`, [site.id, hide.map((h) => h[0]), hide.map((h) => h[1])]) : [];
+    const rows = u.map((x) => [Number(x.id), new Date(x.created_at).toISOString()]);
+    if (rows.length) actions.push({ domain: site.domain, kind: "fix_dedupe", severity: "info", message: `${rows.length} mükerrer haber gizlendi (taslağa alındı, silinmedi; ilk kopya yayında)`, detail: { ids: rows.map((r) => r[0]), rows, rollback: rows.map((r) => `UPDATE news SET status='published' WHERE site_id=${site.id} AND id=${r[0]} AND created_at='${r[1]}';`).join(" ") } });
+    const same = out.m.dupRows.filter((d) => d.sameId).length;
+    if (same) out.info.push(`${same} başlıkta aynı id iki kez var (eşitleme artığı) — otomatik gizlenmedi`);
   }
 }
 
@@ -472,9 +477,9 @@ async function handleFetch(req, env) {
 export default {
   async scheduled(event, env, ctx) {
     const sql = db(env);
-    if (event.cron === "*/10 * * * *") { ctx.waitUntil(runOnce(env).catch((e) => console.error("[bekci]", e?.message || e))); return; }
+    if (event.cron === "*/10 * * * *") { try { await runOnce(env); } catch (e) { console.error("[bekci]", e?.stack || e); } return; }   // await: waitUntil after return is cut at 30 s
     const nofetch = /^47 /.test(event.cron);
-    ctx.waitUntil(enqueue(sql, "ai_editor_run", nofetch ? "nofetch" : "fetch", `zamanlanmış (${event.cron})`).catch((e) => console.error("[ai-editor-schedule]", e?.message || e)));
+    try { await enqueue(sql, "ai_editor_run", nofetch ? "nofetch" : "fetch", `zamanlanmış (${event.cron})`); } catch (e) { console.error("[ai-editor-schedule]", e?.message || e); }
   },
   async fetch(req, env, ctx) {
     try { return await handleFetch(req, env); }
