@@ -66,19 +66,24 @@ export const TURKATAHABER_SITE: KamuYerelSiteDef = {
   sampleHeadlines: [
     {
       title: "Yerel yönetimlerde günün öne çıkan kararları",
-      spot: "Belediye meclisleri ve il genel meclislerinde alınan başlıca kararlar özetlendi.",
+      spot: "Belediye meclisleri ve muhtarlıklarda alınan başlıca kararlar özetlendi.",
       categorySlug: "yerel-yonetimler",
       featured: true,
     },
     {
       title: "Kamu kurumlarında atama ve duyuru gündemi",
       spot: "Merkezi ve yerel kamu kurumlarından güncel duyurular aktarıldı.",
-      categorySlug: "kamu-kurumlari",
+      categorySlug: "kamu",
     },
     {
-      title: "Ankara’da yerel gündemden seçilenler",
-      spot: "Başkentte valilik, belediye ve STK haberleri.",
-      categorySlug: "ankara",
+      title: "Mahalle muhtarlarından günün notları",
+      spot: "Muhtarlık hizmetleri ve mahalle gündeminden seçilenler.",
+      categorySlug: "yerel-yonetimler",
+    },
+    {
+      title: "Ajans röportajı: yerelin sesi",
+      spot: "Kamu ve sivil toplum temsilcileriyle yapılan röportajlardan bir seçki.",
+      categorySlug: "roportajlar",
     },
   ],
   rssFeeds: listKamuYerelCampaignFeedUrls(),

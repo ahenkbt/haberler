@@ -25,6 +25,7 @@ import { maybeFilterHmPublicNewsUpstream } from "./hm-public-news-edge-filter.js
 import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { serveKamuYerelExtraPage } from "./hm-kamu-yerel-extra-pages-edge.js";
+import { kamuYerelDunyaRedirectResponse } from "./hm-kamu-yerel-dunya-redirect.js";
 import {
   gundemiApexPhpBridgeResponse,
   phpNewsBrandThemeCssBridgeResponse,
@@ -3162,6 +3163,10 @@ export default {
     // PHP tema siteleri: eski SPA linkleri (/tr/asg/haber/:s?siteId=3) PHP adresine 301; yazar paneli SPA'da kalır.
     const phpThemeLegacy = phpThemeLegacyRedirectResponse(request, incoming);
     if (phpThemeLegacy) return phpThemeLegacy;
+
+    // turkata / yerel: /kategori/nato|bm|ab|uluslararasi → /kategori/dunya
+    const kamuYerelDunya = kamuYerelDunyaRedirectResponse(request, incoming);
+    if (kamuYerelDunya) return kamuYerelDunya;
 
     const kamuYerelExtra = await serveKamuYerelExtraPage(request, env, incoming);
     if (kamuYerelExtra) return kamuYerelExtra;

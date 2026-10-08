@@ -57,6 +57,18 @@ const KAMU_YEREL_SITE_SLUGS = new Set(["turkatahaber", "yerelnet"]);
 /** Keep in sync with api-server `listKamuYerelMansetPoolCategorySlugs`. */
 const KAMU_YEREL_MANSET_CATEGORY_SLUGS = [
   "yerel",
+  "siyaset",
+  "kamu",
+  "stk",
+  "roportajlar",
+  "gundem",
+  "dunya",
+  "spor",
+  "muhtar",
+  "belediye",
+  "cumhurbaskanligi",
+  "bakanliklar",
+  "tbmm",
   "kamu-kurumlari",
   "siyasi-partiler",
   "genel-merkez",
@@ -69,9 +81,12 @@ const KAMU_YEREL_MANSET_CATEGORY_SLUGS = [
   "kaymakamliklar",
   "toplum-ve-yasam",
   "sivil-toplum-kuruluslari",
+  "nato",
+  "uluslararasi-kuruluslar",
+  "birlesmis-milletler",
+  "avrupa-birligi",
   "saglik",
   "teknoloji",
-  "yasam",
 ] as const;
 
 function kamuYerelPrefForViewer(siteId?: number | null): HmHomepageLocalPref {
