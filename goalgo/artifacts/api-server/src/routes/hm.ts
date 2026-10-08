@@ -163,8 +163,9 @@ import {
 } from "../lib/hm-stale-su-brand-repair.js";
 import { repairSuHaberDomainOwnership } from "../lib/hm-su-domain-repair.js";
 import { ensureKhNewsSite, isKhNewsHost, isKhNewsSlug, KH_SITE_SLUG } from "../lib/hm-kh-site-ensure.js";
-import { isFixHaberHost } from "../lib/hm-fixhaber-site.js";
+import { isFixHaberHost, FIXHABER_SLUG } from "../lib/hm-fixhaber-site.js";
 import { ensureFixHaberSite } from "../lib/hm-fixhaber-seed.js";
+import { fixHaberSiteNeedsCatalogRepair, wakeFixHaberCatalogRepair } from "../lib/hm-fixhaber-repair.js";
 import { isSosyalHizmetlerHost } from "../lib/hm-sosyalhizmetler-site.js";
 import { ensureSosyalHizmetlerSite } from "../lib/hm-sosyalhizmetler-seed.js";
 import { isTurkatahaberHost, isYerelnetHost, TURKATAHABER_SLUG, YERELNET_SLUG } from "../lib/hm-kamu-yerel-sites.js";
@@ -1141,9 +1142,14 @@ router.get("/hm/meta/by-slug/:slug", async (req, res): Promise<void> => {
     await ensureSosyalHizmetlerSite().catch(() => null);
     row = await getActiveHmNewsSiteBySlugCompat("sosyalhizmetler");
   }
-  if ((!row || !row.active) && (slug === "fixhaber" || isFixHaberHost(queryDomain))) {
-    await ensureFixHaberSite().catch(() => null);
-    row = await getActiveHmNewsSiteBySlugCompat("fixhaber");
+  if (slug === FIXHABER_SLUG || isFixHaberHost(queryDomain)) {
+    if (!row || !row.active) {
+      await ensureFixHaberSite().catch(() => null);
+      row = await getActiveHmNewsSiteBySlugCompat(FIXHABER_SLUG);
+    } else if (await fixHaberSiteNeedsCatalogRepair(row)) {
+      await wakeFixHaberCatalogRepair(row.id);
+      row = (await getActiveHmNewsSiteBySlugCompat(FIXHABER_SLUG)) ?? row;
+    }
   }
   if (
     (!row || !row.active) &&
@@ -1185,11 +1191,16 @@ router.get("/hm/meta/by-domain", async (req, res): Promise<void> => {
       row = await getActiveHmNewsSiteBySlugCompat(KH_SITE_SLUG);
     }
   }
-  if (!row && isFixHaberHost(host)) {
-    await ensureFixHaberSite().catch(() => null);
-    row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+  if (isFixHaberHost(host)) {
     if (!row) {
-      row = await getActiveHmNewsSiteBySlugCompat("fixhaber");
+      await ensureFixHaberSite().catch(() => null);
+      row = await getActiveHmNewsSiteByDomainCompat(domainCandidates);
+      if (!row) {
+        row = await getActiveHmNewsSiteBySlugCompat(FIXHABER_SLUG);
+      }
+    } else if (await fixHaberSiteNeedsCatalogRepair(row)) {
+      await wakeFixHaberCatalogRepair(row.id);
+      row = (await getActiveHmNewsSiteByDomainCompat(domainCandidates)) ?? row;
     }
   }
   if (!row && isSosyalHizmetlerHost(host)) {
@@ -2375,6 +2386,9 @@ router.post("/hm/admin/ensure-fixhaber-site", async (req, res): Promise<void> =>
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
     const result = await ensureFixHaberSite();
+    if (result.siteId) {
+      await wakeFixHaberCatalogRepair(result.siteId).catch(() => null);
+    }
     res.json({
       ...result,
       ok: result.action !== "error",
