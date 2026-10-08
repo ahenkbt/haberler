@@ -7,6 +7,9 @@
  *   memur.gundemi.org (+ memur.fix.tc)              Memur Gündemi         concept: memur (kamu personeli)
  *   turkdunyasi.gundemi.org (+ turkdunyasi.fix.tc)  Türk Dünyası Gündemi  concept: turk-dunyasi
  *   world.fix.tc (canonical, + dunya.gundemi.org)    Dünya Gündemi         continents menu + hmWorldDateline
+ * newsites27 (2026-10-09, user request): same pattern, TP ids 1170 / 1171 (layout = TP layout_json at creation):
+ *   emlak.gundemi.org                               Emlak Gündemi         concept: emlak (konut, kentsel dönüşüm, TOKİ, kira, kredi, imar)
+ *   isdunyasi.gundemi.org                           İş Dünyası Gündemi    concept: isdunyasi (sanayi, ihracat, lojistik, esnaf ve KOBİ)
  */
 export const NEWSITES25 = [
   {
@@ -622,6 +625,522 @@ export const NEWSITES25 = [
       },
       "hmNewsSites25": "newsites25-20261008",
       "hmWorldDateline": true
+    }
+  },
+  {
+    "slug": "emlak",
+    "hosts": [
+      "emlak.gundemi.org"
+    ],
+    "displayName": "Emlak Gündemi",
+    "description": "Konut piyasası, kentsel dönüşüm, TOKİ, kira, konut kredisi, arsa ve imar, inşaat, ticari gayrimenkul, emlak hukuku ve piyasa verileri: Türkiye'nin emlak gündemi.",
+    "contact": {
+      "email": "emlak@gundemi.org",
+      "phone": "0532 229 18 92",
+      "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara"
+    },
+    "editorEmail": "emlak@gundemi.org",
+    "layout": {
+      "logoUrl": "/gundemi/logos/emlak-gundemi.png",
+      "frontend": "php",
+      "phpTheme": true,
+      "hmCatTree": "off",
+      "hmYsKunye": {
+        "lead": "Konuttan arsaya, kiradan krediye emlağın gündemi.",
+        "email": "emlak@gundemi.org",
+        "phone": "0532 229 18 92",
+        "tuzel": "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
+        "yayin": "EMLAK GÜNDEMİ",
+        "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara",
+        "genelMudur": "Nail Türkoğlu",
+        "yaziIsleri": "Melek Acar",
+        "yayinIlkeleri": "Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.",
+        "yayinYonetmeni": "Mustafa ÖZDEMİR"
+      },
+      "faviconUrl": "/gundemi/logos/emlak-gundemi-icon-192.png",
+      "hmSiteKind": "news",
+      "hmYsSlogan": "Konuttan arsaya, kiradan krediye emlağın gündemi.",
+      "hmConceptSite": true,
+      "hmNewsSites27": "newsites27-20261009",
+      "hmVitrinTheme": "yenisafak",
+      "hmConceptTopic": "emlak",
+      "hmPrimaryColor": "#0e4d64",
+      "hmYsMansetStil": "bolunmus",
+      "showPlatformNav": false,
+      "hmNewsRssSources": [
+        0
+      ],
+      "hmSecondaryColor": "#e07a1f",
+      "hmYsMansetPreset": "mynet",
+      "hybridRssEnabled": false,
+      "hmFooterAboutHtml": "<p>TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. 1998’den bu yana yerel yönetimler, kamu kurumları ile sivil toplum ve sektör gündemini Türkçe olarak kamuoyuna aktarır.</p>\n<p>Yerelin Sesini Geleceğe Taşıyan Güvenilir Haber Ağı.</p>\n<h2 id=\"yayin-ilkeleri\">Yayın ilkeleri</h2>\n<p>Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.</p>",
+      "hmYsMansetStilBase": "mynet",
+      "hmCategorySortSlugs": [
+        "emlak-piyasa",
+        "emlak-kentsel-donusum",
+        "emlak-toki",
+        "emlak-kira",
+        "emlak-kredi",
+        "emlak-arsa-imar",
+        "emlak-projeler",
+        "emlak-insaat",
+        "emlak-ticari",
+        "emlak-hukuk",
+        "emlak-mimari"
+      ],
+      "hmLayoutSanitizeRev": "hm-layout-sanitize-20260727a",
+      "hmNewsFooterEnabled": true,
+      "hmNewsSliderEnabled": true,
+      "hmNewsTopicPriority": {
+        "days": 3,
+        "blocks": true,
+        "keywords": [
+          "emlak",
+          "konut",
+          "kira",
+          "kentsel dönüşüm",
+          "toki",
+          "konut kredisi",
+          "arsa",
+          "imar",
+          "inşaat",
+          "gayrimenkul",
+          "tapu"
+        ],
+        "categories": [
+          "emlak-piyasa",
+          "emlak-kentsel-donusum",
+          "emlak-toki",
+          "emlak-kira",
+          "emlak-kredi",
+          "emlak-arsa-imar",
+          "emlak-projeler",
+          "emlak-insaat",
+          "emlak-ticari",
+          "emlak-hukuk",
+          "emlak-mimari"
+        ]
+      },
+      "hmCorporateMenuItems": [
+        {
+          "id": "m1",
+          "href": "/kategori/emlak-piyasa",
+          "label": "Piyasa",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m2",
+          "href": "/kategori/emlak-kentsel-donusum",
+          "label": "Kentsel Dönüşüm",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m3",
+          "href": "/kategori/emlak-toki",
+          "label": "TOKİ",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m4",
+          "href": "/kategori/emlak-kira",
+          "label": "Kira",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m5",
+          "href": "/kategori/emlak-kredi",
+          "label": "Kredi ve Finans",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m6",
+          "href": "/kategori/emlak-arsa-imar",
+          "label": "Arsa ve İmar",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m7",
+          "href": "/kategori/emlak-projeler",
+          "label": "Projeler",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m8",
+          "href": "/kategori/emlak-insaat",
+          "label": "İnşaat",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m9",
+          "href": "/kategori/emlak-ticari",
+          "label": "Ticari Gayrimenkul",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m10",
+          "href": "/kategori/emlak-hukuk",
+          "label": "Emlak Hukuku",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m11",
+          "href": "/kategori/emlak-mimari",
+          "label": "Mimari",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m12",
+          "href": "/kategori/ozel-haber",
+          "label": "Özel Haber",
+          "enabled": true,
+          "parentId": ""
+        }
+      ],
+      "hmNewsAuthorsEnabled": true,
+      "hmNewsYsMansetLayout": "mynet",
+      "hmSehitSearchEnabled": false,
+      "hmSiteRssDefaultsRev": "20260727site1",
+      "hmTepeMansetOptInRev": "tepe-manset-default-on-v2",
+      "hmNewsRssCategoryOnly": [
+        "emlak-piyasa",
+        "emlak-kentsel-donusum",
+        "emlak-toki",
+        "emlak-kira",
+        "emlak-kredi",
+        "emlak-arsa-imar",
+        "emlak-projeler",
+        "emlak-insaat",
+        "emlak-ticari",
+        "emlak-hukuk",
+        "emlak-mimari"
+      ],
+      "hmNewsYsMansetEnabled": true,
+      "hmNewsYsTickerEnabled": true,
+      "hmRssKarmaDefaultsRev": "rss-karma-default-v1",
+      "hmNavOnlyCategorySlugs": [
+        "emlak-piyasa",
+        "emlak-kentsel-donusum",
+        "emlak-toki",
+        "emlak-kira",
+        "emlak-kredi",
+        "emlak-arsa-imar",
+        "emlak-projeler",
+        "emlak-insaat",
+        "emlak-ticari",
+        "emlak-hukuk",
+        "emlak-mimari",
+        "ozel-haber"
+      ],
+      "hmNewsYsAuthorsEnabled": true,
+      "hmNewsYsGalleryEnabled": true,
+      "hmNewsHeaderMenuEnabled": true,
+      "hmNewsTepeMansetEnabled": true,
+      "hmNewsYsMostReadEnabled": true,
+      "hmNewsYsHoroscopeEnabled": false,
+      "hmNewsYsStandingsEnabled": false,
+      "hmNewsYsVideoBandEnabled": true,
+      "hmNewsBreakingBandEnabled": true,
+      "sadeNewsAtaturkBandEnabled": false,
+      "hmNewsYsSideHeadlinesEnabled": true,
+      "hmCorporateWarsSectionEnabled": false,
+      "hmNewsCategorySectionsEnabled": true,
+      "hmNewsHomeModuleCategorySlugs": {
+        "ysGallery": "emlak-projeler",
+        "ysMostRead": "emlak-piyasa"
+      },
+      "hmNewsYsCategoryBlocksEnabled": true,
+      "hmNewsYsSportsHoroscopeEnabled": false,
+      "hmCorporateAtaturkCornerEnabled": false,
+      "hmCorporateCulturePortalBandEnabled": false,
+      "hmCorporateNationalDaysSectionEnabled": false,
+      "sadeNewsHistoryNationalDaysBandEnabled": false
+    }
+  },
+  {
+    "slug": "isdunyasi",
+    "hosts": [
+      "isdunyasi.gundemi.org"
+    ],
+    "displayName": "İş Dünyası Gündemi",
+    "description": "Sanayi, ihracat, lojistik, finans ve yatırım, şirketler, atamalar, röportajlar ile esnaf, KOBİ, odalar ve borsalar, teşvik ve mevzuat: iş dünyasının ve esnafın gündemi.",
+    "contact": {
+      "email": "isdunyasi@gundemi.org",
+      "phone": "0532 229 18 92",
+      "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara"
+    },
+    "editorEmail": "isdunyasi@gundemi.org",
+    "layout": {
+      "logoUrl": "/gundemi/logos/isdunyasi-gundemi.png",
+      "frontend": "php",
+      "phpTheme": true,
+      "hmCatTree": "off",
+      "hmYsKunye": {
+        "lead": "Patrondan esnafa, iş dünyasının gündemi.",
+        "email": "isdunyasi@gundemi.org",
+        "phone": "0532 229 18 92",
+        "tuzel": "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
+        "yayin": "İŞ DÜNYASI GÜNDEMİ",
+        "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara",
+        "genelMudur": "Nail Türkoğlu",
+        "yaziIsleri": "Melek Acar",
+        "yayinIlkeleri": "Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.",
+        "yayinYonetmeni": "Mustafa ÖZDEMİR"
+      },
+      "faviconUrl": "/gundemi/logos/isdunyasi-gundemi-icon-192.png",
+      "hmSiteKind": "news",
+      "hmYsSlogan": "Patrondan esnafa, iş dünyasının gündemi.",
+      "hmConceptSite": true,
+      "hmNewsSites27": "newsites27-20261009",
+      "hmVitrinTheme": "yenisafak",
+      "hmConceptTopic": "isdunyasi",
+      "hmPrimaryColor": "#1b2a40",
+      "hmYsMansetStil": "kapak",
+      "showPlatformNav": false,
+      "hmNewsRssSources": [
+        0
+      ],
+      "hmSecondaryColor": "#c8962e",
+      "hmYsMansetPreset": "nefes",
+      "hybridRssEnabled": false,
+      "hmFooterAboutHtml": "<p>TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. 1998’den bu yana yerel yönetimler, kamu kurumları ile sivil toplum ve sektör gündemini Türkçe olarak kamuoyuna aktarır.</p>\n<p>Yerelin Sesini Geleceğe Taşıyan Güvenilir Haber Ağı.</p>\n<h2 id=\"yayin-ilkeleri\">Yayın ilkeleri</h2>\n<p>Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.</p>",
+      "hmYsMansetStilBase": "nefes",
+      "hmCategorySortSlugs": [
+        "isd-sanayi",
+        "isd-ihracat",
+        "isd-lojistik",
+        "isd-finans",
+        "isd-esnaf-kobi",
+        "isd-odalar",
+        "isd-sirketler",
+        "isd-atamalar",
+        "isd-girisim",
+        "isd-roportaj",
+        "isd-teknoloji",
+        "isd-enerji",
+        "isd-tarim-ekonomisi",
+        "isd-mevzuat"
+      ],
+      "hmLayoutSanitizeRev": "hm-layout-sanitize-20260727a",
+      "hmNewsFooterEnabled": true,
+      "hmNewsSliderEnabled": true,
+      "hmNewsTopicPriority": {
+        "days": 3,
+        "blocks": true,
+        "keywords": [
+          "sanayi",
+          "ihracat",
+          "lojistik",
+          "yatırım",
+          "şirket",
+          "esnaf",
+          "kobi",
+          "kosgeb",
+          "tobb",
+          "tesk",
+          "atama",
+          "teşvik",
+          "girişim",
+          "enerji"
+        ],
+        "categories": [
+          "isd-sanayi",
+          "isd-ihracat",
+          "isd-lojistik",
+          "isd-finans",
+          "isd-esnaf-kobi",
+          "isd-odalar",
+          "isd-sirketler",
+          "isd-atamalar",
+          "isd-girisim",
+          "isd-roportaj",
+          "isd-teknoloji",
+          "isd-enerji",
+          "isd-tarim-ekonomisi",
+          "isd-mevzuat"
+        ]
+      },
+      "hmCorporateMenuItems": [
+        {
+          "id": "m1",
+          "href": "/kategori/isd-sanayi",
+          "label": "Sanayi",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m2",
+          "href": "/kategori/isd-ihracat",
+          "label": "İhracat",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m3",
+          "href": "/kategori/isd-lojistik",
+          "label": "Lojistik",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m4",
+          "href": "/kategori/isd-finans",
+          "label": "Finans",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m5",
+          "href": "/kategori/isd-esnaf-kobi",
+          "label": "Esnaf ve KOBİ",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m6",
+          "href": "/kategori/isd-odalar",
+          "label": "Odalar ve Borsalar",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m7",
+          "href": "/kategori/isd-sirketler",
+          "label": "Şirketler",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m8",
+          "href": "/kategori/isd-atamalar",
+          "label": "Atamalar",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m9",
+          "href": "/kategori/isd-girisim",
+          "label": "Girişimcilik",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m10",
+          "href": "/kategori/isd-roportaj",
+          "label": "Röportaj",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m11",
+          "href": "/kategori/isd-teknoloji",
+          "label": "Teknoloji",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m12",
+          "href": "/kategori/isd-enerji",
+          "label": "Enerji",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m13",
+          "href": "/kategori/isd-tarim-ekonomisi",
+          "label": "Tarım Ekonomisi",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m14",
+          "href": "/kategori/isd-mevzuat",
+          "label": "Mevzuat ve Teşvik",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m15",
+          "href": "/kategori/ozel-haber",
+          "label": "Özel Haber",
+          "enabled": true,
+          "parentId": ""
+        }
+      ],
+      "hmNewsAuthorsEnabled": true,
+      "hmNewsYsMansetLayout": "nefes",
+      "hmSehitSearchEnabled": false,
+      "hmSiteRssDefaultsRev": "20260727site1",
+      "hmTepeMansetOptInRev": "tepe-manset-default-on-v2",
+      "hmNewsRssCategoryOnly": [
+        "isd-sanayi",
+        "isd-ihracat",
+        "isd-lojistik",
+        "isd-finans",
+        "isd-esnaf-kobi",
+        "isd-odalar",
+        "isd-sirketler",
+        "isd-atamalar",
+        "isd-girisim",
+        "isd-roportaj",
+        "isd-teknoloji",
+        "isd-enerji",
+        "isd-tarim-ekonomisi",
+        "isd-mevzuat"
+      ],
+      "hmNewsYsMansetEnabled": true,
+      "hmNewsYsTickerEnabled": true,
+      "hmRssKarmaDefaultsRev": "rss-karma-default-v1",
+      "hmNavOnlyCategorySlugs": [
+        "isd-sanayi",
+        "isd-ihracat",
+        "isd-lojistik",
+        "isd-finans",
+        "isd-esnaf-kobi",
+        "isd-odalar",
+        "isd-sirketler",
+        "isd-atamalar",
+        "isd-girisim",
+        "isd-roportaj",
+        "isd-teknoloji",
+        "isd-enerji",
+        "isd-tarim-ekonomisi",
+        "isd-mevzuat",
+        "ozel-haber"
+      ],
+      "hmNewsYsAuthorsEnabled": true,
+      "hmNewsYsGalleryEnabled": true,
+      "hmNewsHeaderMenuEnabled": true,
+      "hmNewsTepeMansetEnabled": true,
+      "hmNewsYsMostReadEnabled": true,
+      "hmNewsYsHoroscopeEnabled": false,
+      "hmNewsYsStandingsEnabled": false,
+      "hmNewsYsVideoBandEnabled": true,
+      "hmNewsBreakingBandEnabled": true,
+      "sadeNewsAtaturkBandEnabled": false,
+      "hmNewsYsSideHeadlinesEnabled": true,
+      "hmCorporateWarsSectionEnabled": false,
+      "hmNewsCategorySectionsEnabled": true,
+      "hmNewsHomeModuleCategorySlugs": {
+        "ysGallery": "isd-sanayi",
+        "ysMostRead": "isd-sirketler"
+      },
+      "hmNewsYsCategoryBlocksEnabled": true,
+      "hmNewsYsSportsHoroscopeEnabled": false,
+      "hmCorporateAtaturkCornerEnabled": false,
+      "hmCorporateCulturePortalBandEnabled": false,
+      "hmCorporateNationalDaysSectionEnabled": false,
+      "sadeNewsHistoryNationalDaysBandEnabled": false
     }
   }
 ];
