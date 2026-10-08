@@ -134,7 +134,7 @@ function fallbackDahaPage() {
   return {
     slug: "daha",
     title: "Daha",
-    bodyHtml: `<div class="hm-daha-page"><p class="hm-daha-lead">Uluslararası kuruluşlar, dış politika ve Türkiye'nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin.</p><section id="daha-uluslararasi" class="hm-daha-intl"><h2 class="hm-daha-section-title">Uluslararası</h2><ul class="hm-daha-cat-grid"><li><a href="/kategori/nato" class="hm-daha-cat-link">NATO</a></li><li><a href="/kategori/uluslararasi-kuruluslar" class="hm-daha-cat-link">Uluslararası Kuruluşlar</a></li><li><a href="/kategori/birlesmis-milletler" class="hm-daha-cat-link">Birleşmiş Milletler</a></li><li><a href="/kategori/avrupa-birligi" class="hm-daha-cat-link">Avrupa Birliği</a></li></ul></section><section id="daha-bolgeler" class="hm-daha-bolgeler"><h2 class="hm-daha-section-title">Bölgeler ve iller</h2>${iller.bodyHtml.replace('class="hm-iller-page"', 'class="hm-daha-inner"').replace(/hm-iller-/g, "hm-daha-")}</section></div>`,
+    bodyHtml: `<div class="hm-daha-page"><p class="hm-daha-lead">Türkiye'nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin. Uluslararası kuruluş haberleri için <a href="/kategori/dunya">Dünya</a> kategorisine bakın.</p><section id="daha-bolgeler" class="hm-daha-bolgeler"><h2 class="hm-daha-section-title">Bölgeler ve iller</h2>${iller.bodyHtml.replace('class="hm-iller-page"', 'class="hm-daha-inner"').replace(/hm-iller-/g, "hm-daha-")}</section></div>`,
   };
 }
 

@@ -452,12 +452,21 @@ export type HmNewsSiteRssFeedRow = {
 
 export function buildKamuYerelHmNewsSiteRssFeedRows(): HmNewsSiteRssFeedRow[] {
   const rows: HmNewsSiteRssFeedRow[] = [];
-  for (const cat of [...CUMHA_KAMU_CATEGORY_FEEDS, ...CUMHA_DAHA_CATEGORY_FEEDS]) {
+  for (const cat of CUMHA_KAMU_CATEGORY_FEEDS) {
     rows.push({
       id: `cumha-cat-${cat.slug}`,
       label: cat.name,
       url: cumhaCategoryRssUrl(cat.cumhaSlug),
       categoryKey: cat.slug,
+    });
+  }
+  // Cumha nato / BM / AB / uluslararası → site «dunya» (alt slug menü + expand).
+  for (const cat of CUMHA_DAHA_CATEGORY_FEEDS) {
+    rows.push({
+      id: `cumha-cat-${cat.slug}`,
+      label: cat.name,
+      url: cumhaCategoryRssUrl(cat.cumhaSlug),
+      categoryKey: "dunya",
     });
   }
   for (const prov of listKamuYerelProvinces()) {
@@ -628,18 +637,13 @@ export function buildKamuYerelIllerExtraPage(): KamuYerelIllerExtraPage {
 }
 
 /**
- * `/daha` — premium hub: uluslararası kategoriler + 7 bölge / 81 il.
- * Tepe menü «Daha» bu sayfaya gider; Dünya altında NATO/BM/AB de listelenir.
+ * `/daha` — premium hub: 7 bölge / 81 il.
+ * Uluslararası (NATO/BM/AB) «Dünya» tepe kategorisi altında.
  */
 export function buildKamuYerelDahaExtraPage(): KamuYerelIllerExtraPage {
-  const intlLinks = CUMHA_DAHA_CATEGORY_FEEDS.map(
-    (c) =>
-      `<li><a href="/kategori/${c.slug}" class="hm-daha-cat-link">${c.name}</a></li>`,
-  ).join("");
   const sections: string[] = [
     `<div class="hm-daha-page">`,
-    `<p class="hm-daha-lead">Uluslararası kuruluşlar, dış politika ve Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin.</p>`,
-    `<section id="daha-uluslararasi" class="hm-daha-intl"><h2 class="hm-daha-section-title">Uluslararası</h2><ul class="hm-daha-cat-grid">${intlLinks}</ul></section>`,
+    `<p class="hm-daha-lead">Türkiye&#39;nin 81 ili — bölge ve il başlıklarından yerel gündeme geçin. Uluslararası kuruluş haberleri için <a href="/kategori/dunya">Dünya</a> kategorisine bakın.</p>`,
     `<section id="daha-bolgeler" class="hm-daha-bolgeler"><h2 class="hm-daha-section-title">Bölgeler ve iller</h2>`,
     ...buildKamuYerelRegionProvinceSections("hm-daha"),
     `</section></div>`,

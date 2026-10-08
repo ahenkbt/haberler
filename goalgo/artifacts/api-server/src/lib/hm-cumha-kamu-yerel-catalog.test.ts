@@ -27,58 +27,76 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
 
   it("maps cumha RSS URLs to site category slugs", () => {
     expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/lokasyon/izmir")).toBe("izmir");
-    expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/category/yerel-yonetimler")).toBe("yerel-yonetimler");
+    expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/category/yerel-yonetimler")).toBe(
+      "yerel-yonetimler",
+    );
+    expect(categorySlugFromCumhaFeed("https://cumha.com.tr/rss/category/nato")).toBe("dunya");
   });
 
   it("builds cumha-primary site RSS rows (19 kategori + 81 il + tamamlayıcı)", () => {
     const rows = buildKamuYerelHmNewsSiteRssFeedRows();
-    expect(rows.length).toBe(19 + 81 + 4);
+    // 15 kamu + 4 dünya/Cumha-intl + 81 il + 7 supplemental (NTV×6 + muhtar)
+    expect(rows.length).toBe(19 + 81 + 7);
     expect(rows.some((r) => r.url.includes("kamu-kurumlari-ve-ust-kurullar"))).toBe(true);
     expect(rows.some((r) => r.url.includes("cumha.com.tr/rss/category/cumhurbaskanligi"))).toBe(true);
     expect(rows.some((r) => r.url.includes("cumha.com.tr/rss/category/nato"))).toBe(true);
+    expect(rows.find((r) => r.url.includes("/rss/category/nato"))?.categoryKey).toBe("dunya");
+    expect(rows.some((r) => r.url.includes("ntv.com.tr/gundem.rss"))).toBe(true);
     expect(rows.some((r) => r.url.includes("rss.haberler.com/rss.asp?kategori=muhtar"))).toBe(true);
-    expect(
-      rows.find((r) => r.url.includes("kategori=muhtar"))?.categoryKey,
-    ).toBe("yerel-yonetimler");
+    expect(rows.find((r) => r.url.includes("kategori=muhtar"))?.categoryKey).toBe("yerel-yonetimler");
     expect(rows.every((r) => !r.url.includes("birgun.net/rss/kategori/siyaset-8"))).toBe(true);
   });
 
   it("expands kamu-yerel parent nav slugs for category listings", () => {
-    expect(expandKamuYerelListingCategorySlugs("daha", "turkatahaber")).toEqual(
-      expect.arrayContaining(["daha", "nato", "avrupa-birligi"]),
+    expect(expandKamuYerelListingCategorySlugs("dunya", "turkatahaber")).toEqual(
+      expect.arrayContaining(["dunya", "nato", "avrupa-birligi", "birlesmis-milletler"]),
     );
     expect(expandKamuYerelListingCategorySlugs("yerel-yonetimler", "turkatahaber")).toEqual(
-      expect.arrayContaining(["yerel-yonetimler", "muhtar", "ilceler", "buyuksehir-ve-iller"]),
+      expect.arrayContaining(["yerel-yonetimler", "muhtar", "belediye", "ilceler", "buyuksehir-ve-iller"]),
     );
     expect(expandKamuYerelListingCategorySlugs("siyaset", "turkatahaber")).toEqual(
-      expect.arrayContaining(["siyaset", "siyasi-partiler", "genel-merkez"]),
+      expect.arrayContaining([
+        "siyaset",
+        "cumhurbaskanligi",
+        "bakanliklar",
+        "tbmm",
+        "siyasi-partiler",
+        "genel-merkez",
+      ]),
     );
     expect(expandKamuYerelListingCategorySlugs("kamu", "turkatahaber")).toEqual(
-      expect.arrayContaining(["kamu", "cumhurbaskanligi", "bakanliklar", "mulki-idare"]),
+      expect.arrayContaining(["kamu", "mulki-idare", "kamu-kurumlari", "valilikler"]),
+    );
+    expect(expandKamuYerelListingCategorySlugs("kamu", "turkatahaber")).not.toEqual(
+      expect.arrayContaining(["cumhurbaskanligi"]),
     );
     expect(expandKamuYerelListingCategorySlugs("stk", "turkatahaber")).toEqual(
-      expect.arrayContaining(["stk", "sivil-toplum-kuruluslari"]),
+      expect.arrayContaining(["stk", "sivil-toplum-kuruluslari", "toplum-ve-yasam"]),
     );
     expect(expandKamuYerelListingCategorySlugs("gundem", "turkatahaber")).toEqual(["gundem"]);
-    expect(expandKamuYerelListingCategorySlugs("daha", "asg")).toEqual(["daha"]);
+    expect(expandKamuYerelListingCategorySlugs("dunya", "asg")).toEqual(["dunya"]);
   });
 
   it("exposes merged top nav category slugs", () => {
     expect(listKamuYerelNavTopCategorySlugs()).toEqual([...KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS]);
     expect(listKamuYerelNavTopCategorySlugs()).toEqual([
-      "daha",
       "siyaset",
       "kamu",
       "stk",
       "yerel-yonetimler",
+      "yerel",
+      "gundem",
+      "dunya",
+      "spor",
+      "teknoloji",
+      "saglik",
       "roportajlar",
-      "toplum-ve-yasam",
     ]);
   });
 
   it("corporate menu excludes iller/bolge; Daha points to /daha hub", () => {
     const menu = buildKamuYerelCorporateMenuItems();
-    expect(menu.length).toBeLessThanOrEqual(40);
+    expect(menu.length).toBeLessThanOrEqual(50);
     expect(menu.some((m) => m.id === "ky-menu-iller" || m.id.startsWith("ky-region-"))).toBe(false);
     expect(menu.some((m) => m.id.startsWith("ky-il-"))).toBe(false);
     const daha = menu.find((m) => m.id === "ky-cat-daha");
@@ -86,12 +104,15 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(menu.find((m) => m.id === "ky-cat-siyaset")?.label).toBe("Siyaset");
     expect(menu.find((m) => m.id === "ky-cat-kamu")?.label).toBe("Kamu");
     expect(menu.find((m) => m.id === "ky-cat-stk")?.label).toBe("STK");
+    expect(menu.find((m) => m.id === "ky-cat-dunya")?.label).toBe("Dünya");
+    expect(menu.find((m) => m.id === "ky-cat-gundem")?.label).toBe("Gündem");
     expect(menu.find((m) => m.id === "ky-cat-roportajlar")?.label).toBe("Röportajlar");
     const genelMerkez = menu.find((m) => m.id === "ky-cat-genel-merkez");
     expect(genelMerkez?.parentId).toBe("ky-cat-siyaset");
     const nato = menu.find((m) => m.id === "ky-cat-nato");
-    expect(nato?.parentId).toBe("ky-cat-daha");
+    expect(nato?.parentId).toBe("ky-cat-dunya");
     expect(menu.find((m) => m.id === "ky-cat-muhtar")?.parentId).toBe("ky-cat-yerel-yonetimler");
+    expect(menu.find((m) => m.id === "ky-cat-belediye")?.parentId).toBe("ky-cat-yerel-yonetimler");
   });
 
   it("categories group 81 il under 7 bolge-* parent slugs in sort order", () => {
@@ -110,13 +131,13 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml).toContain('href="/kategori/ankara"');
     expect(page.bodyHtml.match(/hm-iller-il-link/g)?.length).toBe(81);
   });
-});
 
-  it("daha premium hub lists intl categories + 81 provinces under regions", () => {
+  it("daha hub keeps 81 provinces and points intl to Dünya", () => {
     const page = buildKamuYerelDahaExtraPage();
     expect(page.slug).toBe(KAMU_YEREL_DAHA_PAGE_SLUG);
-    expect(page.bodyHtml).toContain('href="/kategori/nato"');
-    expect(page.bodyHtml).toContain('href="/kategori/avrupa-birligi"');
+    expect(page.bodyHtml).toContain('href="/kategori/dunya"');
+    expect(page.bodyHtml).not.toContain('href="/kategori/nato"');
     expect(page.bodyHtml).toContain('id="marmara"');
     expect(page.bodyHtml.match(/hm-daha-il-link/g)?.length).toBe(81);
   });
+});
