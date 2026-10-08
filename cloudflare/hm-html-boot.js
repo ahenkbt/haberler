@@ -74,6 +74,8 @@ const HM_DOMAIN_SLUG_FALLBACKS = {
   "www.turksav.org": "turksav",
   "fix.tc": "fixhaber",
   "www.fix.tc": "fixhaber",
+  "sosyalhizmetler.tr": "sosyalhizmetler",
+  "www.sosyalhizmetler.tr": "sosyalhizmetler",
   "gundemi.org": "gundemi",
   "www.gundemi.org": "gundemi",
   "ege.gundemi.org": "ege-gundemi",

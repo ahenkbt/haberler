@@ -227,7 +227,14 @@ async function upsertFixHaberSiteRow(sql) {
     WHERE lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${FIXHABER_DOMAIN}
        OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${FIXHABER_DOMAIN}
        OR lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) = ${FIXHABER_DOMAIN}
-    ORDER BY id ASC
+    ORDER BY
+      CASE
+        WHEN lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${FIXHABER_DOMAIN} THEN 0
+        WHEN lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${FIXHABER_DOMAIN} THEN 1
+        WHEN lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) = ${FIXHABER_DOMAIN} THEN 2
+        ELSE 3
+      END,
+      id ASC
     LIMIT 1
   `;
   if (byDomain?.[0]?.id) {

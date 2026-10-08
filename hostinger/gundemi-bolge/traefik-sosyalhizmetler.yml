@@ -1,9 +1,9 @@
-# Traefik dynamic config — sosyalhizmetler.tr (Marmara Gündemi domain2) on VPS 187.77.84.201
+# Traefik dynamic config — sosyalhizmetler.tr (dedicated HM site) on VPS 187.77.84.201
 #
 # Install path:
 #   /docker/traefik/dynamic/sosyalhizmetler.yml
 #
-# Upstream: Yenişafak PHP (:8095) — Host header → by-domain slug marmara-gundemi
+# Upstream: Yenişafak PHP (:8095) — Host header → by-domain slug sosyalhizmetler
 # Worker: panel/API/assets routes only — NO sosyalhizmetler.tr/* catch-all
 #
 # Rollback: rm /docker/traefik/dynamic/sosyalhizmetler.yml

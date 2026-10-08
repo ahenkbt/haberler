@@ -1520,7 +1520,14 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
       WHERE lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${host}
          OR lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${host}
          OR lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) = ${host}
-      ORDER BY id ASC
+      ORDER BY
+        CASE
+          WHEN lower(regexp_replace(coalesce(domain, ''), '^www\\.', '')) = ${host} THEN 0
+          WHEN lower(regexp_replace(coalesce(domain2, ''), '^www\\.', '')) = ${host} THEN 1
+          WHEN lower(regexp_replace(coalesce(domain3, ''), '^www\\.', '')) = ${host} THEN 2
+          ELSE 3
+        END,
+        id ASC
       LIMIT 1
     `;
     if (byDomain?.[0] && !PROTECTED_SLUGS.has(normalizeSlug(byDomain[0].slug))) {

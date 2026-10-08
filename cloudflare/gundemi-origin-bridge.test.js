@@ -140,6 +140,15 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(res, null);
   });
 
+  it("returns null for fix.tc brand assets (Worker /fix/* route)", async () => {
+    const incoming = new URL("https://fix.tc/fix/fix-haber-logo.png");
+    const res = await gundemiApexPhpBridgeResponse(
+      new Request(incoming.toString(), { method: "GET" }),
+      incoming,
+    );
+    assert.equal(res, null);
+  });
+
   it("returns null for SPA panel paths on apex", async () => {
     const incoming = new URL("https://gundemi.org/editor");
     const res = await gundemiApexPhpBridgeResponse(
