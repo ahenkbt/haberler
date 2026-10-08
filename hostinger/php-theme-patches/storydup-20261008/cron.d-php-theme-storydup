@@ -1,0 +1,5 @@
+# storydup (2026-10-08): same story from several sources -> one per site, variants spread over sites. Lists only, nothing deleted.
+# Code /docker/php-theme/storydup (storyclust.py rules + Evren for borderline pairs). Disable: comment the line + TRUNCATE hm_story_dup_hidden.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+2-59/10 * * * * root flock -n /run/php-theme-storydup.lock timeout 600 nice -n 10 docker run --rm --name php-theme-storydup --cpus 1 --memory 768m --env-file /docker/php-theme/importer.env --env-file /docker/php-theme/ai-editor.env -e DUP_AI_MAX_PAIRS=800 -e DUP_AI_THREADS=3 -v /docker/php-theme/storydup:/app6:ro php-theme-importer:4 python /app6/storydup_job.py >> /var/log/php-theme/storydup.log 2>&1
