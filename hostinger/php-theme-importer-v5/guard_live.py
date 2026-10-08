@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Off-topic guard for items the recategorizer cannot move: live HM items (LiveBridge cache, /api/news/hybrid) and editor
-news rows. Topic/regional/local sites: hide what fails classifier.site_topic_ok(). General sites: hide live items that sit in a
-strict category (CAT_RULES / city category) they do not belong to (live categories come from the HM DB and cannot be moved
-from here). Writes hm_site_content_hidden (reason off_topic:* / live_wrong_cat:*). Never deletes."""
+"""Live-item guard (v2, 2026-10-08 user rule "dağıt, gizleme"). Live HM items cannot be moved from here, so this guard only
+keeps NETWORK RSS-sync items (rssSourceUrl set, not editor-manual, no author, not published by a site editor, not a column) off
+topic/regional/local sites when they are off-topic there. Such an item stays visible on the general news sites through the
+network feed, so nothing disappears. Editor/author content is NEVER hidden; general sites are never touched; editor `news`
+rows are never touched. Reason: 'offsite_network:<rule>'. Never deletes."""
 import glob, json, os, sys, re
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -29,27 +30,40 @@ for uf in glob.glob(os.path.join(BRIDGE, "*.json.url")):
         d = json.load(open(uf[:-4]))
     except Exception:
         continue
+    if sid not in restricted: continue
     for it in d.get("items") or []:
-        slug, title, spot, cat = it.get("slug") or "", it.get("title") or "", it.get("spot") or "", it.get("categorySlug") or ""
-        if not slug or not title or slug.startswith("rss-"): continue   # rss- rows are handled by recat_job
-        if sid in restricted:
-            ok, rule = C.site_topic_ok(sid, title, spot)
-            if not ok: out.append((sid, slug, title, "off_topic:" + rule))
-            continue
-        city = C.city_of_slug(cat)
-        if city and not C.mentions_city(city, title, spot):
-            out.append((sid, slug, title, "live_wrong_cat:%s" % cat))
-        elif cat in C.CAT_RULES and not C.cat_rule_ok(cat, title, spot):
-            out.append((sid, slug, title, "live_wrong_cat:%s" % cat))
-# editor news rows visible on restricted sites (site NULL = network-wide)
+        slug, title, spot = it.get("slug") or "", it.get("title") or "", it.get("spot") or ""
+        if not slug or not title or slug.startswith("rss-"): continue   # rss- rows are handled by recat_job (moved, not hidden)
+        src = (it.get("rssSourceUrl") or "").lower()
+        # own editor content: editor-manual / authored / column, or no source URL, or the source URL is this very site
+        editor = bool(it.get("isEditorManual") or it.get("authorId") or it.get("authorName")
+                      or not src or host in src or (it.get("contentKind") or "") not in ("", "news"))
+        if editor: continue
+        ok, rule = C.site_topic_ok(sid, title, spot)
+        if not ok: out.append((sid, slug, title, "offsite_network:" + rule))
+# TP news rows on restricted sites: network items (site NULL) and copies syndicated from another site (rss_source_url set).
+# A site's OWN editor content (site_id/owner = this site and editor-manual or not a copy) is never hidden.
+news_out = []
 try:
+    # titles fanned out to 2+ sites in the window = syndicated copies (e.g. a vatanhaber editor item copied to every site)
+    fanned = {r[0] for r in cur.execute("""SELECT lower(title) FROM news WHERE status='published' AND created_at > now() - make_interval(days => %s)
+              GROUP BY 1 HAVING count(DISTINCT coalesce(site_id, 0)) > 1""", (int(os.environ.get('GUARD_NEWS_DAYS', '30')),)).fetchall()}
     for sid in restricted:
-        for slug, title, spot in cur.execute("""SELECT slug, title, coalesce(spot,'') FROM news WHERE status='published'
-                AND (site_id IS NULL OR site_id = %s OR owner_site_id = %s) AND created_at > now() - interval '10 days'""", (sid, sid)).fetchall():
-            if slug and title and not C.site_topic_ok(sid, title, spot)[0]:
-                out.append((sid, slug, title, "off_topic:news"))
+        for slug, title, spot, s_id, o_id, ed, src in cur.execute("""SELECT slug, title, coalesce(spot,''), site_id, owner_site_id,
+                coalesce(is_editor_manual,false), coalesce(rss_source_url,'') FROM news WHERE status='published'
+                AND (site_id IS NULL OR site_id = %s OR owner_site_id = %s) AND created_at > now() - make_interval(days => %s)""",
+                (sid, sid, int(os.environ.get('GUARD_NEWS_DAYS', '30')))).fetchall():
+            own = (s_id == sid or o_id == sid) and (ed or (not src and (title or "").lower() not in fanned))
+            if own or not slug or not title: continue
+            ok, rule = C.site_topic_ok(sid, title, spot)
+            if not ok: news_out.append((sid, slug, title, "offsite_network:news:" + rule))
 except psycopg.Error as e:
     log("news read skipped:", str(e).splitlines()[0])
+news_out = list({(a, b, c): r for a, b, c, r in news_out}.items())
+if not DRY and news_out:
+    cur.executemany("""INSERT INTO hm_site_content_hidden (site_id, public_slug, title, kind, reason) VALUES (%s,%s,%s,'news',%s)
+                       ON CONFLICT DO NOTHING""", [(a, b, c, r[:120]) for (a, b, c), r in news_out])
+log("news_hidden_candidates=%d" % len(news_out))
 out = list({(a, b, c): r for a, b, c, r in out}.items())
 if not DRY and out:
     cur.executemany("""INSERT INTO hm_site_content_hidden (site_id, public_slug, title, kind, reason) VALUES (%s,%s,%s,'live',%s)
