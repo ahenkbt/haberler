@@ -1,0 +1,12 @@
+--- a/src/Menu.php	2026-10-08 22:17:00.109332694 +0300
++++ b/src/Menu.php	2026-10-08 22:17:44.305202754 +0300
+@@ -65,6 +65,9 @@
+                 break;
+             }
+         }
++        if ($key === 'hmCorporateMenuItems') { // turksav guvenlik 2026-10-08: TSK/MSB/Jandarma/Emniyet -> one "Güvenlik Güçleri" root (defense tree only)
++            $out = CategoryTree::foldSavunmaMenu($out);
++        }
+         return $out;
+     }
+ 

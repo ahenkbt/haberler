@@ -1,0 +1,74 @@
+--- a/src/CategoryTree.php	2026-10-08 22:12:33.518164091 +0300
++++ b/src/CategoryTree.php	2026-10-08 22:17:44.305202754 +0300
+@@ -27,9 +27,9 @@
+ 
+     /** Defense tree sites (mode "savunma" by default). turksav tree 2026-10-08 */
+     public const SAVUNMA_SITES = [233];
+-    private const SAVUNMA_MAIN = ['savunma-sanayi', 'tsk', 'msb', 'emniyet', 'jandarma', 'dunya', 'analiz']; // turksav tree 2026-10-08
++    private const SAVUNMA_MAIN = ['savunma-sanayi', 'guvenlik-gucleri', 'dunya', 'analiz']; // turksav tree 2026-10-08; turksav guvenlik 2026-10-08: TSK/MSB/Jandarma/Emniyet under Güvenlik Güçleri
+     /** Parents whose home block reads all their descendants. turksav tree 2026-10-08 */
+-    public const SAVUNMA_AGG = ['savunma-sanayi', 'tsk', 'dunya'];
++    public const SAVUNMA_AGG = ['savunma-sanayi', 'tsk', 'dunya', 'guvenlik-gucleri']; // turksav guvenlik 2026-10-08: + guvenlik-gucleri
+     /** Home block order of the defense tree. turksav tree 2026-10-08 */
+     private const SAVUNMA_HOME = ['savunma-sanayi', 'havacilik-ve-uzay', 'kara-sistemleri', 'deniz-sistemleri', 'hava-savunma-ve-silah-sistemleri',
+         'tsk', 'deniz-kuvvetleri', 'msb', 'emniyet', 'jandarma', 'dunya', 'analiz', 'komuta-kontrol-ve-haberlesme', 'tedarik-ve-ar-ge'];
+@@ -39,6 +39,7 @@
+             'seyrusefer-ve-aviyonik', 'modernizasyon-projeleri', 'tedarik-ve-ar-ge'],
+         'tsk' => ['kara-kuvvetleri', 'hava-kuvvetleri', 'deniz-kuvvetleri', 'sahil-guvenlik', 'genelkurmay'],
+         'dunya' => ['nato', 'dunya-savunma'],
++        'guvenlik-gucleri' => ['tsk', 'msb', 'jandarma', 'emniyet'], // turksav guvenlik 2026-10-08
+     ];
+     private const SAVUNMA_NAMES = [ // turksav tree 2026-10-08
+         'savunma-sanayi' => 'Savunma Sanayi', 'kara-sistemleri' => 'Kara Sistemleri', 'deniz-sistemleri' => 'Deniz Sistemleri',
+@@ -50,6 +51,7 @@
+         'deniz-kuvvetleri' => 'Deniz Kuvvetleri / Türk Donanması', 'sahil-guvenlik' => 'Sahil Güvenlik', 'genelkurmay' => 'Genelkurmay',
+         'msb' => 'MSB', 'emniyet' => 'Emniyet', 'jandarma' => 'Jandarma', 'dunya' => 'Dünya', 'nato' => 'NATO', 'dunya-savunma' => 'Dünya Savunma',
+         'analiz' => 'Analiz / İncelemeler',
++        'guvenlik-gucleri' => 'Güvenlik Güçleri', // turksav guvenlik 2026-10-08
+     ];
+     /** Tree mode of the current request (set in App::buildSite next to $off). turksav tree 2026-10-08 */
+     public static string $treeMode = '';
+@@ -372,6 +374,43 @@
+         return array_values(array_unique($out));
+     }
+ 
++    /**
++     * turksav guvenlik 2026-10-08: on the defense tree, saved header-menu roots pointing at TSK / MSB / Jandarma / Emniyet are
++     * folded into ONE "Güvenlik Güçleri" root (its dropdown lists the four). Render time only; the saved menu is not touched.
++     * @param list<array{id: string, label: string, href: string, parentId: string, enabled: bool, icon?: string}> $items
++     * @return list<array{id: string, label: string, href: string, parentId: string, enabled: bool, icon?: string}>
++     */
++    public static function foldSavunmaMenu(array $items): array
++    {
++        if (self::$treeMode !== 'savunma' || self::isOff('guvenlik-gucleri')) {
++            return $items;
++        }
++        $group = self::SAVUNMA_CHILDREN['guvenlik-gucleri'];
++        $out = [];
++        $placed = false;
++        $dropped = [];
++        foreach ($items as $it) {
++            $p = preg_match('#/kategori/([a-z0-9-]+)/?(?:[?\#].*)?$#', strtolower((string) $it['href']), $m) === 1 ? $m[1] : '';
++            if ($p === 'guvenlik-gucleri') {
++                if ($placed) {
++                    continue;
++                }
++                $placed = true;
++            } elseif ($it['parentId'] === '' && in_array($p, $group, true)) {
++                $dropped[$it['id']] = true;
++                if ($placed) {
++                    continue;
++                }
++                $it = ['id' => 'ts-guvenlik-gucleri', 'label' => 'Güvenlik Güçleri', 'href' => '/kategori/guvenlik-gucleri', 'parentId' => '',
++                    'enabled' => true, 'icon' => ''];
++                $placed = true;
++            }
++            $out[] = $it;
++        }
++        // sub-items saved under a folded root would otherwise surface as roots (Menu::roots); the tree dropdown covers them
++        return $dropped === [] ? $out : array_values(array_filter($out, static fn (array $it): bool => !isset($dropped[$it['parentId']])));
++    }
++
+     /** "/kategori/<slug>" → slug when it is a tree node with children, else ''. */
+     public static function dropdownSlug(Site $site, string $resolvedHref): string
+     {

@@ -1,0 +1,77 @@
+--- a/ai-editor/network_columns.py	2026-10-08 22:14:36.961767717 +0300
++++ b/ai-editor/network_columns.py	2026-10-08 22:20:54.772661044 +0300
+@@ -26,7 +26,8 @@
+ # Per-person site exclusions (user decision 05.10.2026): Mustafa Özdemir and Melek Acar removed from ASG (3) and AHG (8).
+ # kirsehirhaber.org (229): today's authors hidden (05.10.2026); the owner adds his own columnists from the panel,
+ # so only the three network persons stop writing there (no site-wide switch).
+-PERSON_EXCLUDED_SITES = {"mustafa-ozdemir": {3, 8, 229}, "melek-acar": {3, 8, 229}, "nail-turkoglu": {229}}
++# turksav.org (233, user 08.10.2026: defense site, concept-only columns): Melek Acar (health) does not write there (her row is hidden there).
++PERSON_EXCLUDED_SITES = {"mustafa-ozdemir": {3, 8, 229}, "melek-acar": {3, 8, 229, 233}, "nail-turkoglu": {229}}  # turksav concept 2026-10-08
+ # Per-site reader focus (primary domain). "local" sites lean into their city where it fits naturally (never forced).
+ SITE_FOCUS = {
+     "turkatahaber.com": dict(local="", note="Ulusal haber sitesi: konu Türkiye genelindeki okura hitap etsin."),
+@@ -42,8 +43,9 @@
+         "Anadolu'nun şehirlerine dokunsun; belirli bir şehir zorunlu değil."),
+     "sehitgazi.org.tr": dict(local="", note="Şehit ve gazi aileleri sitesi, millî ve manevi değerler odaklı: uygun düşüyorsa konuyu şehitlik, "
+         "gazilik, vefa, millî birlik ve kahramanlık geleneğiyle ilişkilendir."),
+-    "turksav.org": dict(local="", note="Savunma sanayii odaklı site: uygun düşüyorsa konuyu yerli ve millî savunma sanayii, mühendislik, "
+-        "teknoloji ve bağımsızlık bilinciyle ilişkilendir (doğrulanamayacak ürün/proje/rakam yok)."),
++    "turksav.org": dict(local="", note="Savunma ve güvenlik sitesi (yalnızca konsept yazılar): konu MUTLAKA savunma, güvenlik, savunma sanayii, "
++        "TSK, deniz/hava/kara gücü, Mavi Vatan, iç güvenlik ya da askerî tarih alanında olsun; bu alanların dışında konu SEÇME "
++        "(doğrulanamayacak ürün/proje/rakam yok)."),  # turksav concept 2026-10-08
+     "yesilvatan.gen.tr": dict(local="", note="Çevre, doğa ve ağaçlandırma sitesi: uygun düşüyorsa konuyu orman, fidan, ağaç sevgisi, "
+         "toprak, su ve doğa koruma bilinciyle ilişkilendir."),
+     "dunyasaglik.org": dict(local="", note="Sağlık sitesi: uygun düşüyorsa konuyu sağlıklı yaşam, koruyucu sağlık, beden ve ruh sağlığıyla "
+@@ -52,7 +54,9 @@
+ # turkatahaber's own columnists (not the 3 network persons) are SHOWN on these sites as copies of their existing columns
+ # (external_key share:<source id>; the theme sets the canonical to the source URL and hides a copy whose source is gone).
+ SHARE_SOURCE_SITE = 230
+-SHARE_TARGET_DOMAINS = {"yerel.net.tr", "sehitgazi.org.tr", "turksav.org", "yesilvatan.gen.tr", "dunyasaglik.org"}
++# turksav.org removed (08.10.2026): it has its own defense columnists (hm_ai_columnists site 233, ai-editor/turksav_columns.py);
++# its old share author rows 615-624 were renamed to those personas, so nothing may be copied there any more.
++SHARE_TARGET_DOMAINS = {"yerel.net.tr", "sehitgazi.org.tr", "yesilvatan.gen.tr", "dunyasaglik.org"}  # turksav concept 2026-10-08
+ BRAND_BIO = re.compile(r"(?i)(t[üu]rk\s?ata|t[üu]kav|\bTHA\b|\bvak[ıi]f|\bvakf[ıi])")
+ SIBLING_GROUPS = [{"ankarasehirgazetesi.com", "ankarahabergundemi.com"}]  # must never share a topic
+ TITLE_SIM = 0.4  # lib.similar threshold for "too similar" titles (stemmed-token overlap)
+@@ -115,6 +119,24 @@
+     return out
+ 
+ 
++# Concept-only sites (turksav concept 2026-10-08): the column must clearly sit in the site's concept (distinct concept terms).
++CONCEPT_SITES = {
++    "turksav.org": (re.compile(r"(?i)(savunma|güvenlik|asker|askerî|askeri|ordu|harp|harb|muharebe|cephe|komuta|donanma|deniz kuvvet|deniz gücü|mavi vatan|"
++                               r"hava kuvvet|hava gücü|kara kuvvet|jandarma|emniyet teşkilat|silahlı kuvvet|mehmetçik|caydırıcı|strateji|zırh|füze|"
++                               r"mühimmat|silah|savunma sanayi|insansız|tatbikat|harekât|harekat|tersane|fırkateyn|denizaltı|sınır güvenliği|istihbarat|"
++                               r"kahramanlık|şehit|gazi|zafer|seferberlik)"), 4,
++                    "Bu yazı savunma ve güvenlik sitesinde yayımlanacak: konu ve içerik açıkça savunma, güvenlik, askerî tarih ya da savunma sanayii alanında olsun."),
++}
++
++
++def concept_problems(domain, text):
++    rule = CONCEPT_SITES.get((domain or "").lower())
++    if not rule:
++        return []
++    found = {m.group(0).lower() for m in rule[0].finditer(text)}
++    return [] if len(found) >= rule[1] else ["konsept dışı (%s): %d farklı konsept terimi" % (domain, len(found))]
++
++
+ CENTENNIAL = re.compile(r"(?i)(y[üu]z[üu]nc[üu]\s+y[ıi]l|\b100\.\s*y[ıi]l)")  # "100th year" only valid for events of (year - 100)
+ SELF_AI = re.compile(r"(?i)(yapay\s+zek|\bAI\b|dil\s+modeli|language model|chatgpt|deepseek|gemini)")
+ 
+@@ -501,6 +523,7 @@
+             problems.append("yıl dönümü hatalı: %s (bugün %d)" % (CENTENNIAL.search(text).group(0), today.year))
+         if no_brand and BRAND.search(text):
+             problems.append("marka adı geçiyor: %s" % BRAND.search(text).group(0))
++        problems += concept_problems(domain, text)  # turksav concept 2026-10-08
+         if not problems:
+             problems += experience_problems(cfg, text)
+         if not problems:
+@@ -525,6 +548,8 @@
+                      "görüş dili (bence, inanıyorum) ve biz/milletimiz düzeyinde değerlendirme kullan.")
+         if "benziyor" in reason:
+             hint += " Başlık ve bakış açısı tamamen farklı olsun."
++        if "konsept dışı" in reason:  # turksav concept 2026-10-08
++            hint += " " + CONCEPT_SITES[(domain or "").lower()][2]
+         user += "\n\nÖNCEKİ DENEME REDDEDİLDİ (%s). Kurallara kesin uy.%s" % (reason, hint)
+     return status, reason, res, dict(hooks=hooks, headlines=heads if not topic else [], topic=topic, domain=domain)
+ 
