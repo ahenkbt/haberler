@@ -138,7 +138,7 @@ function fallbackDahaNetworkSitesHtml() {
     ["Şehit Gazi", "https://sehitgazi.org.tr/", "https://sehitgazi.org.tr/sehitgazi/sehitgazi-logo.png"],
     ["Dünya Sağlık", "https://dunyasaglik.org/", "https://dunyasaglik.org/dunyasaglik/dunyasaglik-logo.png"],
     ["Fix Haber", "https://fix.tc/", "https://fix.tc/fix/fix-haber-logo.png"],
-    ["TÜKAV", "https://tukav.org/", "https://tukav.org/tukav/tukav-logo.png"],
+    ["Sosyal Hizmetler Haber Sitesi", "https://sosyalhizmetler.tr/", "https://sosyalhizmetler.tr/sosyalhizmetler/sosyalhizmetler-logo.webp"],
     ["Ankara Şehir Gazetesi", "https://ankarasehirgazetesi.com/", "https://ankarasehirgazetesi.com/favicon.ico"],
     ["Ankara Haber Gündemi", "https://ankarahabergundemi.com/", "https://ankarahabergundemi.com/favicon.ico"],
     ["Vatan Haber", "https://vatanhaber.net/", "https://vatanhaber.net/media/logos/vatanhaber.net-logo.png"],
@@ -198,6 +198,9 @@ function scoreExtraPages(pages) {
     // Prefer layouts that include sister brands on the network grid.
     if (body.includes("ankarahabergundemi.com")) score += 40;
     if (body.includes("vatanhaber.net")) score += 40;
+    if (body.includes("sosyalhizmetler.tr")) score += 40;
+    // TUKAV is the foundation site, not a Haber sitelerimiz network brand.
+    if (body.includes("tukav.org")) score -= 40;
     if (body.includes("hm-daha-aside") || body.includes("hm-iller-page")) score += 5;
     score += Math.min(20, Math.floor(body.length / 2000));
   }
@@ -346,7 +349,9 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
     (!dahaBody.includes("hm-daha-proje") ||
       !dahaBody.includes("hm-daha-site-grid") ||
       !dahaBody.includes("ankarahabergundemi.com") ||
-      !dahaBody.includes("vatanhaber.net"))
+      !dahaBody.includes("vatanhaber.net") ||
+      !dahaBody.includes("sosyalhizmetler.tr") ||
+      dahaBody.includes("tukav.org"))
   ) {
     page = fallbackDahaPage();
   }

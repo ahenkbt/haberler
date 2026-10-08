@@ -96,6 +96,11 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml).toContain("https://ankarahabergundemi.com/");
     expect(page.bodyHtml).toContain("Vatan Haber");
     expect(page.bodyHtml).toContain("https://vatanhaber.net/");
+    expect(page.bodyHtml).toContain("Sosyal Hizmetler Haber Sitesi");
+    expect(page.bodyHtml).toContain("https://sosyalhizmetler.tr/");
+    expect(page.bodyHtml).toContain("sosyalhizmetler-logo.webp");
+    expect(page.bodyHtml).not.toContain("tukav.org");
+    expect(page.bodyHtml).not.toContain("TÜKAV");
     expect(page.bodyHtml).toContain("TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma");
     expect(page.bodyHtml).toContain('href="/kategori/nato"');
     expect(page.bodyHtml).toContain('href="/kategori/avrupa-birligi"');

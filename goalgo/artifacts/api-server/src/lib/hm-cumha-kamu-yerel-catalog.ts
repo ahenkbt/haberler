@@ -566,9 +566,9 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     logoUrl: "https://fix.tc/fix/fix-haber-logo.png",
   },
   {
-    name: "TÜKAV",
-    href: "https://tukav.org/",
-    logoUrl: "https://tukav.org/tukav/tukav-logo.png",
+    name: "Sosyal Hizmetler Haber Sitesi",
+    href: "https://sosyalhizmetler.tr/",
+    logoUrl: "https://sosyalhizmetler.tr/sosyalhizmetler/sosyalhizmetler-logo.webp",
   },
   {
     name: "Ankara Şehir Gazetesi",
