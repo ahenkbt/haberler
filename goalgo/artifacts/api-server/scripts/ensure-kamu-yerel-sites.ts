@@ -3,9 +3,15 @@
  *
  *   cd goalgo && pnpm --filter @workspace/api-server run ensure:kamu-yerel
  *   DRY_RUN=1 … (katalog özeti; DB gerekmez)
+ *
+ * Ops (canlı onarım):
+ *   SYNC_PHP_LAYOUT=1 … — twilight-pine layout + kategori aynası (--layout-only)
+ *   RUN_RSS_CAMPAIGN=1 … — turkata Cumha kampanyasını bir kez çalıştır
+ *   RSS_CAMPAIGN_ID=1021 … — belirli kampanya id (yoksa seed dönen id)
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 import {
   buildKamuYerelLayoutJson,
   KAMU_YEREL_SITES,
@@ -13,6 +19,45 @@ import {
   TURKATAHABER_SLUG,
 } from "../src/lib/hm-kamu-yerel-sites.js";
 import { buildKamuYerelHmNewsSiteRssFeedRows } from "../src/lib/hm-cumha-kamu-yerel-catalog.js";
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+
+async function maybeSyncPhpLayout(siteIds: number[]) {
+  if (process.env.SYNC_PHP_LAYOUT !== "1") return;
+  if (!process.env.NEWS_DATABASE_URL?.trim()) {
+    console.warn("[ensure:kamu-yerel] SYNC_PHP_LAYOUT=1 ama NEWS_DATABASE_URL yok — atlandı");
+    return;
+  }
+  for (const siteId of siteIds) {
+    if (!siteId) continue;
+    const sync = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "./scripts/sync-php-neon-news.ts",
+        "--apply",
+        "--layout-only",
+        `--site-id=${siteId}`,
+      ],
+      { cwd: scriptDir, stdio: "inherit" },
+    );
+    if (sync.status !== 0) process.exitCode = sync.status ?? 1;
+  }
+}
+
+async function maybeRunRssCampaign(campaignId: number | null) {
+  if (process.env.RUN_RSS_CAMPAIGN !== "1") return;
+  const fromEnv = Number(process.env.RSS_CAMPAIGN_ID || "");
+  const id = Number.isFinite(fromEnv) && fromEnv > 0 ? Math.trunc(fromEnv) : campaignId;
+  if (!id) {
+    console.warn("[ensure:kamu-yerel] RUN_RSS_CAMPAIGN=1 ama kampanya id yok");
+    return;
+  }
+  const { executeRssCampaignRun } = await import("../src/lib/rssCampaignRun.js");
+  const result = await executeRssCampaignRun(id);
+  console.log("[ensure:kamu-yerel] rss campaign", { campaignId: id, ...result });
+}
 
 async function main() {
   if (process.env.DRY_RUN === "1") {
@@ -32,33 +77,15 @@ async function main() {
     return;
   }
   const { ensureKamuYerelSites } = await import("../src/lib/hm-kamu-yerel-seed.js");
-  const { mirrorHmSiteLayoutJsonToPhpNeon } = await import("../src/lib/hm-php-layout-sync.js");
   const row = await ensureKamuYerelSites();
-  for (const site of row.sites) {
-    if (!site.siteId) continue;
-    const def = KAMU_YEREL_SITES.find((s) => s.slug === site.slug);
-    if (!def) continue;
-    const layoutJson = JSON.stringify(buildKamuYerelLayoutJson(def));
-    const mirror = await mirrorHmSiteLayoutJsonToPhpNeon(site.siteId, layoutJson).catch((err: unknown) => ({
-      mirrored: false,
-      reason: err instanceof Error ? err.message : String(err),
-    }));
-    console.log("[ensure:kamu-yerel] php layout mirror", { slug: site.slug, siteId: site.siteId, ...mirror });
-  }
   console.log(JSON.stringify(row, null, 2));
   if (row.sites.some((s) => s.action === "error")) process.exitCode = 1;
-  if (!process.env.NEWS_DATABASE_URL?.trim()) return;
-  const { spawnSync } = await import("node:child_process");
-  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-  for (const site of row.sites) {
-    if (!site.siteId) continue;
-    const sync = spawnSync(
-      process.execPath,
-      ["--import", "tsx", "./scripts/sync-php-neon-news.ts", "--apply", `--site-id=${site.siteId}`, "--batch=200"],
-      { cwd: scriptDir, stdio: "inherit" },
-    );
-    if (sync.status !== 0) process.exitCode = sync.status ?? 1;
-  }
+
+  const siteIds = row.sites.map((s) => s.siteId).filter((id): id is number => id != null && id > 0);
+  await maybeSyncPhpLayout(siteIds);
+
+  const turkataCampaign = row.sites.find((s) => s.slug === TURKATAHABER_SLUG)?.campaignId ?? null;
+  await maybeRunRssCampaign(turkataCampaign);
 }
 
 main().catch((err) => {

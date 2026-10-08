@@ -50,4 +50,6 @@ jobs:
           if [ -z "$NEWS_DATABASE_URL" ]; then
             echo "::warning::NEWS_DATABASE_URL missing — PHP twilight-pine may stay empty; set secret for dual-write."
           fi
+          SYNC_PHP_LAYOUT="${{ github.event.client_payload.sync_php_layout || '1' }}"
+          export SYNC_PHP_LAYOUT
           pnpm --filter @workspace/api-server run ensure:kamu-yerel

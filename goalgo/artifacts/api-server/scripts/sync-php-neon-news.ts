@@ -51,10 +51,11 @@ function parseArgs() {
   const siteIdArg = args.find((a) => a.startsWith("--site-id="));
   const siteSlugArg = args.find((a) => a.startsWith("--site-slug="));
   const batchArg = args.find((a) => a.startsWith("--batch="));
+  const layoutOnly = args.includes("--layout-only");
   const siteId = siteIdArg ? Number(siteIdArg.slice("--site-id=".length)) : NaN;
   const siteSlug = siteSlugArg ? siteSlugArg.slice("--site-slug=".length).trim().toLowerCase() : "";
   const batch = batchArg ? Math.min(Math.max(Number(batchArg.slice("--batch=".length)) || 200, 50), 500) : 200;
-  return { dryRun, allPhp, siteId, siteSlug, batch };
+  return { dryRun, allPhp, siteId, siteSlug, batch, layoutOnly };
 }
 
 async function resolveWorkerSiteId(main: pg.Pool, siteId: number, siteSlug: string): Promise<number | null> {
@@ -277,7 +278,7 @@ async function runSite(
   mainPool: pg.Pool,
   newsPool: pg.Pool,
   workerSiteId: number,
-  opts: { dryRun: boolean; batch: number },
+  opts: { dryRun: boolean; batch: number; layoutOnly: boolean },
 ) {
   const mainSql = pgSql(mainPool);
   const newsSql = pgSql(newsPool);
@@ -301,6 +302,15 @@ async function runSite(
   }
 
   const categories = await syncCategories(mainSql, newsSql, workerSiteId, phpSiteId);
+  if (opts.layoutOnly) {
+    return {
+      workerSiteId,
+      phpSiteId,
+      slug,
+      counts,
+      synced: { authors: 0, news: 0, makaleler: 0, categories, layoutMirrored: layoutMirror.mirrored },
+    };
+  }
   let offset = 0;
   let totals = { authors: 0, news: 0, makaleler: 0, categories, layoutMirrored: layoutMirror.mirrored };
   const allErrors: string[] = [];
@@ -333,7 +343,7 @@ async function runSite(
 }
 
 async function main() {
-  const { dryRun, allPhp, siteId, siteSlug, batch } = parseArgs();
+  const { dryRun, allPhp, siteId, siteSlug, batch, layoutOnly } = parseArgs();
   const mainUrl = resolveUrl(["DATABASE_URL", "DATABASE_PRIVATE_URL", "DATABASE_PUBLIC_URL"]);
   const newsUrl = resolveUrl(["NEWS_DATABASE_URL", "NEWS_DATABASE_PRIVATE_URL", "NEWS_DATABASE_PUBLIC_URL"]);
   if (!mainUrl) {
@@ -353,7 +363,7 @@ async function main() {
       const sites = await listActiveSiteIds(mainPool);
       const results = [];
       for (const s of sites) {
-        results.push(await runSite(mainPool, newsPool, s.id, { dryRun, batch }));
+        results.push(await runSite(mainPool, newsPool, s.id, { dryRun, batch, layoutOnly }));
       }
       console.log("[sync-php-neon-news] all sites", JSON.stringify(results, null, 2));
       return;
@@ -364,7 +374,7 @@ async function main() {
       console.error("[sync-php-neon-news] --site-id veya --site-slug gerekli (veya --all-php-sites).");
       process.exit(1);
     }
-    const result = await runSite(mainPool, newsPool, workerSiteId, { dryRun, batch });
+    const result = await runSite(mainPool, newsPool, workerSiteId, { dryRun, batch, layoutOnly });
     console.log("[sync-php-neon-news] done", JSON.stringify(result, null, 2));
   } finally {
     await mainPool.end();
