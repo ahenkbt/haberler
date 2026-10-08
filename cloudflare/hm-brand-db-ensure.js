@@ -15,6 +15,7 @@ import {
 } from "./hm-site-rss-defaults.js";
 import { ensureFixHaberBrandMetaOnNeon } from "./hm-fixhaber-edge.js";
 import { syncTurkatahaberLayoutMainToPhpNeon } from "./hm-turkatahaber-edge.js";
+import { syncKamuYerelSiteLayoutMainToPhpNeon } from "./hm-kamu-yerel-layout-sync-edge.js";
 import { backfillTurkataRssCoversOnEdge } from "./hm-turkata-rss-covers-edge.js";
 import { ensureYesilVatanLogoOnNeon } from "./hm-yesilvatan-edge.js";
 import { ensureTurksavLogoOnNeon } from "./hm-turksav-edge.js";
@@ -1558,13 +1559,28 @@ export async function ensureBrandHmSiteMeta(env, { domain, slug } = {}) {
 
   if (binding.slug === "turkatahaber" || host === "turkatahaber.com") {
     try {
-      await syncTurkatahaberLayoutMainToPhpNeon(env);
+      await syncKamuYerelSiteLayoutMainToPhpNeon(env, "turkatahaber");
     } catch (err) {
-      console.error("[hm-brand-db-ensure] turkata layout", String(err?.message || err).slice(0, 240));
+      try {
+        await syncTurkatahaberLayoutMainToPhpNeon(env);
+      } catch (err2) {
+        console.error(
+          "[hm-brand-db-ensure] turkata layout",
+          String(err2?.message || err?.message || err).slice(0, 240),
+        );
+      }
     }
     void backfillTurkataRssCoversOnEdge(env, { limit: 24, mirrorToR2: true }).catch((err) => {
       console.error("[hm-brand-db-ensure] turkata covers", String(err?.message || err).slice(0, 240));
     });
+  }
+
+  if (binding.slug === "yerelnet" || host === "yerel.net.tr") {
+    try {
+      await syncKamuYerelSiteLayoutMainToPhpNeon(env, "yerelnet");
+    } catch (err) {
+      console.error("[hm-brand-db-ensure] yerelnet layout", String(err?.message || err).slice(0, 240));
+    }
   }
 
   if (binding.slug === "yesilvatan" || host === "yesilvatan.gen.tr") {

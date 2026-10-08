@@ -27,6 +27,10 @@ import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from 
 import { serveKamuYerelExtraPage } from "./hm-kamu-yerel-extra-pages-edge.js";
 import { kamuYerelDunyaRedirectResponse } from "./hm-kamu-yerel-dunya-redirect.js";
 import {
+  isKamuYerelHost,
+  syncKamuYerelSiteLayoutMainToPhpNeon,
+} from "./hm-kamu-yerel-layout-sync-edge.js";
+import {
   gundemiApexPhpBridgeResponse,
   phpNewsBrandThemeCssBridgeResponse,
   shouldBlockGundemiSpaAssets,
@@ -3167,6 +3171,18 @@ export default {
     // turkata / yerel: /kategori/nato|bm|ab|uluslararasi → /kategori/dunya
     const kamuYerelDunya = kamuYerelDunyaRedirectResponse(request, incoming);
     if (kamuYerelDunya) return kamuYerelDunya;
+
+    // Panel Neon merged nav → PHP twilight-pine (writable NEWS_DATABASE_URL only).
+    if (isKamuYerelHost(incoming.hostname) && (incoming.pathname === "/" || incoming.pathname === "")) {
+      const host = String(incoming.hostname || "")
+        .toLowerCase()
+        .replace(/^www\./, "");
+      const slug = host === "yerel.net.tr" ? "yerelnet" : "turkatahaber";
+      const job = syncKamuYerelSiteLayoutMainToPhpNeon(env, slug).catch((err) => {
+        console.error("[kamu-yerel-layout-sync]", String(err?.message || err).slice(0, 160));
+      });
+      if (typeof ctx?.waitUntil === "function") ctx.waitUntil(job);
+    }
 
     const kamuYerelExtra = await serveKamuYerelExtraPage(request, env, incoming);
     if (kamuYerelExtra) return kamuYerelExtra;
