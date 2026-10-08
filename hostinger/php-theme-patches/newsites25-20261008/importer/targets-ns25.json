@@ -458,13 +458,16 @@
    "https://www.sabah.com.tr/rss/ekonomi.xml",
    "https://www.sabah.com.tr/rss/gundem.xml",
    "https://www.star.com.tr/rss/ekonomi.xml",
-   "https://www.dirilispostasi.com/rss/ekonomi"
+   "https://www.dirilispostasi.com/rss/ekonomi",
+   "scrape:https://www.haberler.com/resmi-gazete/",
+   "scrape:https://www.haberler.com/genelge/",
+   "scrape:https://www.haberler.com/yonetmelik/"
   ],
-  "match": "(?s)^(?=.*(?<!\\w)(?:memur|kamu görevli|kamu personel|kamu çal[ıi]şan|öğretmen|sözleşmeli personel|personel (?:yönetmeli|kanun|mevzuat)|657 say|DPB\\b|Devlet Personel|kamu kurum))(?=.*(?<!\\w)(?:Resmi Gazete|Resmî Gazete|yönetmelik|genelge|Cumhurbaşkanl[ıi]ğ[ıi] Karar|kanun teklif|torba yasa|kanun değişik|düzenleme yap[ıi]ld|mevzuat|tebliğ))",
+  "match": "(?s)^(?=.*(?<!\\w)(?:memur|kamu görevli|kamu personel|kamu çal[ıi]şan|öğretmen|sözleşmeli personel|personel|657 say|DPB\\b|Devlet Personel|kamu kurum|polis|hemşire|sağl[ıi]k çal[ıi]şan|akademisyen))(?=.*(?<!\\w)(?:Resmi Gazete|Resmî Gazete|yönetmelik|genelge|Cumhurbaşkanl[ıi]ğ[ıi] Karar|kanun teklif|torba yasa|kanun değişik|düzenleme yap[ıi]ld|mevzuat|tebliğ))",
   "exclude": "öldür|cinayet|silahl[ıi] sald[ıi]r|vuruldu|vurulmuş|bıçak|ceset|cesed|tutukland|gözalt|kaza(?:da|s[ıi])|yaral[ıi]|intihar|taciz|istismar|tecavüz|uyuşturucu|rüşvet|dolandır|operasyon|firari|hapis cezas|kaptırd|vurgun|yang[ıi]n|alev ald|patlama|çöktü|hayat[ıi]n[ıi] kaybet|Süper L[iİ]g|futbol|\\bmaç|transfer|teknik direktör|Galatasaray|Fenerbahçe|Beşiktaş|Trabzonspor|milli tak[ıi]m|Ronaldo|hakem(?!\\s*kurul)|basketbol|voleybol|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|şark[ıi]c[ıi]|oyuncu|burç|loto|piyango|çekiliş|kaç yaş|evli mi|nereli|kimdir|(Fransa|Almanya|İngiltere|ABD|Amerika|Yunanistan|İtalya|İspanya|Rusya|Çin|Japonya|Belçika|Hollanda|Arjantin|Brezilya)'(?:da|de|ta|te|n[ıi]n)|ATAMA KARARLARI|Bugünün kararları",
   "min": 12,
   "per_run": 3,
-  "max_age": 21,
+  "max_age": 30,
   "fill_cap": 12
  },
  {
@@ -524,7 +527,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Türk Devletleri Teşkilat|\\bTDT\\b|Türk Konseyi|TÜRKSOY|TÜRKPA|Türk Akademisi|Türk Kültür ve Miras Vakf|Türk Devletleri İşbirliği|Türk Yatırım Fonu|Türk dünyası zirve|Türk Devletleri Zirve)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 12,
   "per_run": 3,
   "max_age": 45,
@@ -587,7 +590,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Azerbaycan|Bakü|Aliyev|Karabağ|Nahçıvan|Hankendi|Şuşa|Ağdam|Gence\\b|Zengezur)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 14,
   "per_run": 3,
   "max_age": 30,
@@ -650,7 +653,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Kazakistan|Astana|Almat[ıi]|Tokayev|Özbekistan|Taşkent|Semerkant|Buhara|Mirziyoyev|K[ıi]rg[ıi]zistan|Bişkek|Caparov|Japarov|Türkmenistan|Aşkabat|Berdimuhamedov|Orta Asya|Türkistan\\b)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 14,
   "per_run": 3,
   "max_age": 30,
@@ -713,7 +716,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Doğu Türkistan|Uygur Türk|Uygurlar|Uygur bölge|Uygur|Sincan|Urumçi|Kaşgar)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 10,
   "per_run": 3,
   "max_age": 120,
@@ -776,7 +779,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:K[ıi]r[ıi]m Tatar|K[ıi]r[ıi]m'|K[ıi]r[ıi]m Yar[ıi]mada|Gagavuz|Komrat|Tataristan|Başkurdistan|Başkurt|Çuvaş|Yakutistan|Saha Cumhuriyeti|Ah[ıi]ska|Karaçay|Balkar|Kumuk|Nogay|Kuzey Kafkasya|Dağ[ıi]stan|Kafkasya|Çerkes)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 10,
   "per_run": 3,
   "max_age": 60,
@@ -839,7 +842,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Balkan|Bosna|Saraybosna|Kosova|Priştine|Prizren|Arnavutluk|Kuzey Makedonya|Üsküp|Sancak|Novi Pazar|Karadağ|Bat[ıi] Trakya|Gümülcine|İskeçe|Bulgaristan Türk|K[ıi]rcaali|Deliorman|Dobruca|Boşnak|Srebrenitsa|Vucic|Sırbistan)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 14,
   "per_run": 3,
   "max_age": 30,
@@ -902,7 +905,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Avrupa(?:'daki)? Türk|Almanya(?:'daki)? Türk|Türk as[ıi]ll[ıi]|Türk kökenli|gurbetçi|Türk toplumu|Türk diaspora|Hollanda(?:'daki)? Türk|Fransa(?:'daki)? Türk|Avusturya(?:'daki)? Türk|Belçika(?:'daki)? Türk|İsviçre(?:'daki)? Türk|DİTİB|\\bUID\\b|Yurtd[ıi]ş[ıi] Türkler|\\bYTB\\b|çifte vatandaş.{0,60}(?:Türk|Bulgaristan)|mavi kart|Türk işçi|Türk göç)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 10,
   "per_run": 3,
   "max_age": 45,
@@ -965,7 +968,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Türk devletleri|Türk dünyas[ıi]|Türk cumhuriyetleri|KKTC|Kuzey K[ıi]br[ıi]s|Lefkoşa|Erhürman|Türk soylu|soydaş|Türkmeneli|Irak Türkmen|Kerkük)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 12,
   "per_run": 3,
   "max_age": 30,
@@ -1028,7 +1031,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Osmanl[ıi] (?:dönem|İmparatorluğ|Devlet|padişah|sultan|ar[sş]iv|eser|miras|tarih|mimari|Türkçe|köprü|cami|kal[ıi]nt|hanedan|belge|döneminden|eseri|yap[ıi]s)|Osmanl[ıi]'(?:dan|nın|n[ıi]n|da)|Selçuklu (?:Devlet|İmparatorluğ|dönem|eser|mimari|sultan|cami|medrese|kümbet|hanedan|miras)|Selçuklular|Büyük Selçuklu|Göktürk|Orhun|Kül Tigin|Bilge Kağan|Hunlar|Hun İmparatorluğu|Türk tarih|Türk Tarih Kurumu|Malazgirt|Çanakkale Zafer|Kurtuluş Savaş|Anadolu Selçuklu|Beylikler dönem|Timurlu|Babür İmparator|Alt[ıi]n Orda|Karahanl[ıi]|Gazneli|Harezm|Akkoyunlu|Karakoyunlu|Memlük|Ertuğrul Gazi|Fatih Sultan Mehmet(?! Köprü)|Kanuni Sultan Süleyman(?! Cad)|Yavuz Sultan Selim(?! Köprü)|Mimar Sinan(?! Güzel)|tarihi (?:cami|han\\b|hamam|köprü|kervansaray|kale|medrese)|kervansaray|padişah|arkeolojik kaz[ıi]|höyük|Türk arkeoloj)",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 12,
   "per_run": 3,
   "max_age": 30,
@@ -1091,7 +1094,7 @@
    "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"
   ],
   "match": "(?<!\\w)(?:Türk kültür|Türk müziğ|Türk mutfağ|Nevruz|halk oyun|Âş[ıi]k Veysel|aş[ıi]kl[ıi]k geleneğ|ozanlar|destan[ıi]?\\b|Dede Korkut|Manas Destan|Köroğlu|Nasreddin Hoca|Yunus Emre|Hac[ıi] Bektaş|Mevlana|ebru sanat|hat sanat|çini sanat|kilim|keçe sanat|geleneksel okçuluk|okçuluk|cirit|kökbörü|Etnospor|Yunus Emre Enstitüsü|\\bTİKA\\b|türkü|bağlama|el sanatlar|Türk dili|Türk Dil Kurumu|\\bTDK\\b|ortak alfabe|Türk Dünyas[ıi] Kültür Başkent|somut olmayan kültürel miras|UNESCO.{0,40}(?:Türk|miras)|geleneksel (?:Türk|el sanat|spor oyun|okçuluk|halk))",
-  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k|\\bmaç",
+  "exclude": "Süper L[iİ]g|\\bmaç(?:ta|ı|ın|a)?\\b|teknik direktör|transfer|\\bgol\\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\\b|fragman|\\bbölüm\\b|burç|loto|kaç yaş|evli mi|nereli|öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\\b|\\bmaç",
   "min": 12,
   "per_run": 3,
   "max_age": 30,

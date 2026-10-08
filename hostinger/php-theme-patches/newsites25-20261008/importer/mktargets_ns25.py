@@ -47,8 +47,8 @@ memur = [
     mt("ozluk-haklari", r"özlük hak|yan ödeme|fazla mesai|nöbet ücret|ek ders|y[ıi]ll[ıi]k izin|mazeret izn|doğum izn|babal[ıi]k izn|süt izn|disiplin (?:ceza|yönetmeli|kurulu)|"
          r"görevde yükselme|unvan değişikliği|kademe ilerle|derece ilerlem|lojman|kreş|esnek mesai|esnek çal[ıi]şma|uzaktan çal[ıi]şma|yar[ıi] zamanl[ıi] çal[ıi]şma|giyim yard[ıi]m|aile yard[ıi]m|"
          r"ölüm yard[ıi]m|harc[ıi]rah|seyyanen|iş güvencesi|mobbing|kamu görevlileri etik", mn=12, cap=12),
-    mt("personel-mevzuati", both(r"memur|kamu görevli|kamu personel|kamu çal[ıi]şan|öğretmen|sözleşmeli personel|personel (?:yönetmeli|kanun|mevzuat)|657 say|DPB\b|Devlet Personel|kamu kurum",
-                                 r"Resmi Gazete|Resmî Gazete|yönetmelik|genelge|Cumhurbaşkanl[ıi]ğ[ıi] Karar|kanun teklif|torba yasa|kanun değişik|düzenleme yap[ıi]ld|mevzuat|tebliğ"), mn=12, cap=12, ex=r"|ATAMA KARARLARI|Bugünün kararları"),
+    mt("personel-mevzuati", both(r"memur|kamu görevli|kamu personel|kamu çal[ıi]şan|öğretmen|sözleşmeli personel|personel|657 say|DPB\b|Devlet Personel|kamu kurum|polis|hemşire|sağl[ıi]k çal[ıi]şan|akademisyen",
+                                 r"Resmi Gazete|Resmî Gazete|yönetmelik|genelge|Cumhurbaşkanl[ıi]ğ[ıi] Karar|kanun teklif|torba yasa|kanun değişik|düzenleme yap[ıi]ld|mevzuat|tebliğ"), mn=12, cap=12, age=30, ex=r"|ATAMA KARARLARI|Bugünün kararları", feeds=M_FEEDS + [S("resmi-gazete"), S("genelge"), S("yonetmelik")]),
 ]
 
 # ---------------- TÜRK DÜNYASI
@@ -65,7 +65,7 @@ T_FEEDS_GEN = ["https://www.trthaber.com/dunya_articles.rss", "https://www.aa.co
     "https://feeds.bbci.co.uk/turkce/rss.xml", "https://www.indyturk.com/rss.xml", "https://tr.euronews.com/rss?format=mrss&level=theme&name=news"]
 T_FEEDS = T_FEEDS_CORE + T_FEEDS_GEN
 T_EX = "|".join([r"Süper L[iİ]g|\bmaç(?:ta|ı|ın|a)?\b|teknik direktör|transfer|\bgol\b|Qarabağ|UEFA|halı saha|dizi(?:si|nin)?\b|fragman|\bbölüm\b|burç|loto|kaç yaş|evli mi|nereli",
-                  r"öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|çarpışt|yaraland|alev ald|yang[ıi]n ç[ıi]k", r"\bmaç"])
+                  r"öldür|cinayet|bıçak|tutuklan|gözalt|uyuşturucu|uyruklu|kaçak göçmen|düzensiz göçmen|fuhuş|dolandır|hırsız|naaş|cansız beden|cesed|ceset|kazas[ıi]|kazada|kaza\b|çarpışt|çarpt[ıi]|yaraland|yaral[ıi]\b|alev ald|yang[ıi]n ç[ıi]k|son yolculu|toprağa ver|cenaze|vefat|hayat[ıi]n[ıi] kaybet|filmi\b", r"\bmaç"])
 def tt(cat, match, mn=14, cap=14, per=3, age=30, feeds=T_FEEDS):
     return dict(site=T, cat=cat, feeds=feeds, match=wb(match), exclude=T_EX, min=mn, per_run=per, max_age=age, fill_cap=cap)
 turk = [
