@@ -3501,11 +3501,16 @@ export default {
     if (edgeRssPreview) return edgeRssPreview;
 
     // PHP news brands: inject concept chrome + logo size into /assets/theme.css (HTML stays on origin).
-    const phpBrandThemeCss = await phpNewsBrandThemeCssBridgeResponse(request, incoming);
+    const themeEdgeWaitUntil = typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : undefined;
+    const phpBrandThemeCss = await phpNewsBrandThemeCssBridgeResponse(request, incoming, {
+      waitUntil: themeEdgeWaitUntil,
+    });
     if (phpBrandThemeCss) return phpBrandThemeCss;
 
     // Traefik gap / theme assets: gundemi.org apex + regionals → own PHP (not turkatahaber HTML).
-    const gundemiPhpBridge = await gundemiApexPhpBridgeResponse(request, incoming);
+    const gundemiPhpBridge = await gundemiApexPhpBridgeResponse(request, incoming, {
+      waitUntil: themeEdgeWaitUntil,
+    });
     if (gundemiPhpBridge) return gundemiPhpBridge;
 
     const fromAssets = await tryServeAssets(
