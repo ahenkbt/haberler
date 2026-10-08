@@ -11,6 +11,7 @@ import {
   phpEnabledModules,
   phpModuleIsOn,
   readYsEditorSnapshot,
+  buildYenisafakLayoutDiffPatch,
   readYsMansetPreset,
   ysEditorSnapshotsEqual,
   YS_AD_SLOTS,
@@ -295,5 +296,35 @@ describe("PHP tema anahtar sözleşmesi", () => {
     for (const key of PHP_THEME_LEGACY_ONLY_LAYOUT_KEYS) {
       expect(PHP_THEME_LAYOUT_KEYS as readonly string[]).not.toContain(key);
     }
+  });
+});
+
+describe("Vitrin kaydı yalnızca değişen alanları gönderir", () => {
+  it("yalnızca geçiş değişince modül anahtarları, sıra, reklam ve tema değeri gönderilmez", () => {
+    const prefs = { ...defaultNewsSiteLayoutPrefs };
+    const before = readYsEditorSnapshot(prefs);
+    const after = { ...before, gradient: { id: "yesil-2", from: "#0b6e4f", to: "#023022" } };
+    const patch = buildYenisafakLayoutDiffPatch(prefs, before, after);
+    expect(patch.hmThemeGradient).toEqual({ id: "yesil-2", from: "#0b6e4f", to: "#023022" });
+    expect(patch).not.toHaveProperty("hmVitrinTheme");
+    expect(patch).not.toHaveProperty("hmNewsHomeModuleOrder");
+    expect(patch).not.toHaveProperty("hmAdSlots");
+    expect(Object.keys(patch).some((k) => /Enabled$/.test(k))).toBe(false);
+  });
+
+  it("hiçbir şey değişmediyse boş yama", () => {
+    const prefs = { ...defaultNewsSiteLayoutPrefs };
+    const snap = readYsEditorSnapshot(prefs);
+    expect(buildYenisafakLayoutDiffPatch(prefs, snap, snap)).toEqual({});
+  });
+
+  it("tek modül kapatılınca yalnızca o modülün anahtarları gider", () => {
+    const prefs = { ...defaultNewsSiteLayoutPrefs };
+    const before = readYsEditorSnapshot(prefs);
+    const modules = before.modules.map((m, i) => (i === 0 ? { ...m, enabled: !m.enabled } : m));
+    const patch = buildYenisafakLayoutDiffPatch(prefs, before, { ...before, modules });
+    const keys = Object.keys(patch);
+    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.every((k) => /Enabled$/.test(k))).toBe(true);
   });
 });

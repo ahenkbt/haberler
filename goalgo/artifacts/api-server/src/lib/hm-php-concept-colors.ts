@@ -84,7 +84,14 @@ export function phpConceptPaletteForSlug(
   return HM_PHP_CONCEPT_PALETTES.find((p) => p.slug === key);
 }
 
-/** layout_json üzerine kanonik primary/secondary yazar (seed/ensure drift kilidi). */
+/**
+ * layout_json'da primary/secondary eksik veya geçersizse kanonik konsept rengini yazar.
+ * 2026-10-08: editörün seçtiği geçerli renk (#rgb / #rrggbb) asla ezilmez — yalnızca onarım.
+ */
+export function isValidLayoutHexColor(raw: unknown): boolean {
+  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(raw ?? "").trim());
+}
+
 export function applyPhpConceptColorsToLayout(
   layout: Record<string, unknown> | null | undefined,
   palette: Pick<PhpConceptPalette, "primary" | "secondary">,
@@ -92,19 +99,11 @@ export function applyPhpConceptColorsToLayout(
   const next: Record<string, unknown> =
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
   let changed = false;
-  const primary = String(next.hmPrimaryColor ?? "")
-    .trim()
-    .toLowerCase();
-  const secondary = String(next.hmSecondaryColor ?? "")
-    .trim()
-    .toLowerCase();
-  const wantPrimary = palette.primary.toLowerCase();
-  const wantSecondary = palette.secondary.toLowerCase();
-  if (primary !== wantPrimary) {
+  if (!isValidLayoutHexColor(next.hmPrimaryColor)) {
     next.hmPrimaryColor = palette.primary;
     changed = true;
   }
-  if (secondary !== wantSecondary) {
+  if (!isValidLayoutHexColor(next.hmSecondaryColor)) {
     next.hmSecondaryColor = palette.secondary;
     changed = true;
   }

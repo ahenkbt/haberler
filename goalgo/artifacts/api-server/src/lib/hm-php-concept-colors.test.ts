@@ -21,16 +21,20 @@ describe("hm-php-concept-colors", () => {
     expect(p?.secondary).toBe("#c00005");
   });
 
-  it("forces wrong navy primary back to concept green", () => {
+  it("keeps the editor's valid colors and only repairs missing/invalid ones", () => {
     const palette = phpConceptPaletteForSlug("yesilvatan")!;
-    const { layout, changed } = applyPhpConceptColorsToLayout(
+    const kept = applyPhpConceptColorsToLayout(
       { hmPrimaryColor: "#0b2a5b", hmSecondaryColor: "#c8102e", logoUrl: "/x.png" },
       palette,
     );
-    expect(changed).toBe(true);
-    expect(layout.hmPrimaryColor).toBe("#0b6e4f");
-    expect(layout.hmSecondaryColor).toBe("#2e7d32");
-    expect(layout.logoUrl).toBe("/x.png");
+    expect(kept.changed).toBe(false);
+    expect(kept.layout.hmPrimaryColor).toBe("#0b2a5b");
+    expect(kept.layout.hmSecondaryColor).toBe("#c8102e");
+    const repaired = applyPhpConceptColorsToLayout({ hmPrimaryColor: "", logoUrl: "/x.png" }, palette);
+    expect(repaired.changed).toBe(true);
+    expect(repaired.layout.hmPrimaryColor).toBe("#0b6e4f");
+    expect(repaired.layout.hmSecondaryColor).toBe("#2e7d32");
+    expect(repaired.layout.logoUrl).toBe("/x.png");
   });
 
   it("is idempotent when colors already match", () => {

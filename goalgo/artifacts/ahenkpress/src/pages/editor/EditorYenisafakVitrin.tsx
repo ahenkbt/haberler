@@ -23,7 +23,7 @@ import {
   YS_KUNYE_FIELDS,
   YS_MANSET_PRESETS,
   YS_MODULES,
-  buildYenisafakLayoutPatch,
+  buildYenisafakLayoutDiffPatch,
   readYsEditorSnapshot,
   ysEditorSnapshotsEqual,
   type YsAdSlotKey,
@@ -76,7 +76,13 @@ export default function EditorYenisafakVitrin() {
     if (ysEditorSnapshotsEqual(next, persisted)) return;
     setDraft(next);
     setSaving(true);
-    const patch = buildYenisafakLayoutPatch(newsLayoutPrefs, next);
+    // Yalnızca değişen alanlar (modül anahtarları/sıra/reklam/tema değeri ellenmez).
+    const patch = buildYenisafakLayoutDiffPatch(newsLayoutPrefs, persisted, next);
+    if (Object.keys(patch).length === 0) {
+      setSaving(false);
+      setPersisted(next);
+      return;
+    }
     const result = await saveNewsSiteLayout(newsLayoutPrefs, {
       layoutPatch: patch as Partial<NewsSiteLayoutPrefs>,
       vitrinOnly: true,

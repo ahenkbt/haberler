@@ -1,10 +1,14 @@
 import { eq, or, sql } from "drizzle-orm";
 import { db, hmNewsSitesTable, isNewsDatabaseConfigured, newsDb } from "@workspace/db";
+import { buildPartialLayoutForMirror } from "./hm-layout-merge-guard.js";
 
 export type PhpLayoutMirrorResult = {
   mirrored: boolean;
   phpSiteId?: number;
   reason?: string;
+  merged?: "changed-keys" | "full-merge";
+  changedKeys?: string[];
+  skipped?: string;
 };
 
 const HM_LIVE_MANSET_PRESETS = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
@@ -97,10 +101,13 @@ async function resolvePhpSiteId(workerSiteId: number): Promise<number | null> {
 
 /**
  * Panel Neon layout_json → PHP Neon (twilight-pine). Canlı PHP tema buradan okur.
+ * 2026-10-08: tam üzerine yazma yok. `opts.changedKeys` verilirse yalnızca o anahtarlar jsonb ile
+ * birleştirilir; verilmezse tam layout mevcut TP layout'u ile birleştirilir. TP-only anahtarlar korunur.
  */
 export async function mirrorHmSiteLayoutJsonToPhpNeon(
   workerSiteId: number,
   layoutJsonRaw: string,
+  opts: { changedKeys?: readonly string[] } = {},
 ): Promise<PhpLayoutMirrorResult> {
   if (!shouldMirrorLayoutToPhpNeon()) {
     return { mirrored: false, reason: "NEWS_DATABASE_URL yok" };
@@ -109,16 +116,50 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(
   if (!raw) {
     return { mirrored: false, reason: "layout boş" };
   }
+  let setObj: Record<string, unknown>;
+  let removeKeys: string[] = [];
+  const changedKeys = Array.isArray(opts.changedKeys) ? opts.changedKeys.map(String) : null;
+  try {
+    const full = JSON.parse(raw) as Record<string, unknown>;
+    if (!full || typeof full !== "object" || Array.isArray(full)) throw new Error("layout nesne değil");
+    if (changedKeys) {
+      const keys = new Set(changedKeys);
+      if (keys.has("hmYsMansetPreset") || keys.has("hmNewsYsMansetLayout")) {
+        keys.add("hmYsMansetPreset");
+        keys.add("hmNewsYsMansetLayout");
+      }
+      const part = buildPartialLayoutForMirror(full, [...keys]);
+      setObj = part.set;
+      removeKeys = part.remove;
+      const meaningful = Object.keys(setObj).filter((k) => k !== "_hmUserSavedAt").length + removeKeys.length;
+      if (meaningful === 0) return { mirrored: true, skipped: "değişiklik yok", changedKeys: [] };
+    } else {
+      setObj = full;
+    }
+  } catch {
+    return { mirrored: false, reason: "layout JSON çözülemedi" };
+  }
   const phpSiteId = await resolvePhpSiteId(workerSiteId);
   if (!phpSiteId) {
     return { mirrored: false, reason: "PHP site id çözülemedi" };
   }
+  const setJson = JSON.stringify(setObj);
+  const removeArr = sql`ARRAY[${sql.join(
+    removeKeys.map((k) => sql`${k}`),
+    sql`, `,
+  )}]::text[]`;
+  const removeExpr = removeKeys.length > 0 ? removeArr : sql`ARRAY[]::text[]`;
   try {
     await newsDb!
       .update(hmNewsSitesTable)
-      .set({ layoutJson: raw, updatedAt: new Date() })
+      .set({
+        layoutJson: sql`((COALESCE(NULLIF(btrim(${hmNewsSitesTable.layoutJson}::text), ''), '{}')::jsonb - ${removeExpr}) || ${setJson}::jsonb)`, // jsonb → text sütunda atama dönüşümü; jsonb sütunda doğrudan
+        updatedAt: new Date(),
+      })
       .where(eq(hmNewsSitesTable.id, phpSiteId));
-    return { mirrored: true, phpSiteId };
+    return changedKeys
+      ? { mirrored: true, phpSiteId, merged: "changed-keys", changedKeys: Object.keys(setObj).concat(removeKeys) }
+      : { mirrored: true, phpSiteId, merged: "full-merge" };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { mirrored: false, phpSiteId, reason: `PHP layout_json yazılamadı: ${msg.slice(0, 160)}` };
