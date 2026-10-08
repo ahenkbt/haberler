@@ -115,6 +115,29 @@ function resolveFilenameStem(opts: SaveMediaBufferOpts): string | undefined {
   return undefined;
 }
 
+const UPLOAD_VERIFY_RETRIES = 6;
+const UPLOAD_VERIFY_DELAY_MS = 250;
+
+/** S3/R2 yazması sonrası dosyanın gerçekten okunabildiğini doğrular (sahte 200 / geçici disk yanılgısını önler). */
+export async function verifyMediaUploadReadable(
+  fname: string,
+  opts?: { retries?: number; delayMs?: number },
+): Promise<void> {
+  const name = String(fname ?? "").trim().split("?")[0] ?? "";
+  if (!name || name.includes("..") || name.includes("/")) {
+    throw new Error("Geçersiz medya dosya adı");
+  }
+  const retries = Math.max(1, opts?.retries ?? UPLOAD_VERIFY_RETRIES);
+  const delayMs = Math.max(50, opts?.delayMs ?? UPLOAD_VERIFY_DELAY_MS);
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    if (await mediaObjectExists(name)) return;
+    if (attempt < retries - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs * (attempt + 1)));
+    }
+  }
+  throw new Error(`Medya dosyası depolamada doğrulanamadı: ${name}`);
+}
+
 export async function saveMediaBuffer(
   buf: Buffer,
   opts: SaveMediaBufferOpts,
@@ -160,6 +183,7 @@ export async function saveMediaBuffer(
   } else {
     await writeLocalMediaFile(fname, outBuf);
   }
+  await verifyMediaUploadReadable(fname);
   return { fname, url: publicUploadUrl(fname) };
 }
 

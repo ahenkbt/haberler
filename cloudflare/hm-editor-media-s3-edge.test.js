@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, handleMediaGetFromR2, handleMediaEdgeHealth, handleMediaR2PutProxy, mediaEdgeHealthPayload, r2Binding } from "./hm-editor-media-s3-edge.js";
+import { parseMediaUploadFname, s3MediaEnvReady, coerceR2S3Endpoint, coerceS3Bucket, coerceS3AccessKeyId, listR2S3EndpointCandidates, listR2PublicBaseCandidates, listMediaObjectKeys, RENDER_R2_S3_ENDPOINT, CF_ACCOUNT_R2_S3_ENDPOINT, R2_MEDIA_PUBLIC_BASE, handleMediaGetFromR2, handleMediaEdgeHealth, handleMediaR2PutProxy, mediaEdgeHealthPayload, r2Binding } from "./hm-editor-media-s3-edge.js";
 
 describe("hm-editor-media-s3-edge", () => {
   it("parses safe upload filenames", () => {
@@ -112,6 +112,11 @@ describe("hm-editor-media-s3-edge", () => {
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-media"), "r2-binding");
     assert.equal(res.headers.get("content-type"), "image/webp");
+  });
+
+  it("always includes the canonical yekpare-media r2.dev base for public GET fallback", () => {
+    const listed = listR2PublicBaseCandidates({});
+    assert.ok(listed.includes(R2_MEDIA_PUBLIC_BASE));
   });
 
   it("extracts r2.dev public bases from S3_PUBLIC_BASE_URL and a pasted endpoint blob", () => {
