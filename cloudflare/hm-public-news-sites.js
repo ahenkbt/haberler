@@ -104,7 +104,11 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     const site = {
       id: Number(row.id),
       slug: String(row.slug ?? "").trim(),
-      name: String(row.display_name ?? row.displayName ?? row.slug ?? host).trim() || host,
+      // 81il 2026-10-09: layout hmDisplayNameOverride wins (gundemi.org = "Gündem İstanbul"; the panel->TP sync rewrites display_name).
+      name:
+        (typeof layout.hmDisplayNameOverride === "string" && layout.hmDisplayNameOverride.trim()) ||
+        String(row.display_name ?? row.displayName ?? row.slug ?? host).trim() ||
+        host,
       domain: host,
       url: `https://${host}/`,
       logoRaw,

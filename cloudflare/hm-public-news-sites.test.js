@@ -61,4 +61,11 @@ describe("hm-public-news-sites", () => {
     assert.match(html, /İl Siteleri/);
     assert.match(html, /\/iller/);
   });
+
+  it("hmDisplayNameOverride wins over display_name", () => {
+    const out = publicNewsSitesFromRows([
+      { id: 1141, slug: "gundemi", domain: "gundemi.org", display_name: "Gündemi.org", active: true, layout_json: L({ logoUrl: "/gundemi/logos/gundem-istanbul.png", hmDisplayNameOverride: "Gündem İstanbul" }) },
+    ]);
+    assert.equal(out[0].name, "Gündem İstanbul");
+  });
 });

@@ -189,11 +189,11 @@ const HM: GeoSiteEntity[] = [
     slug: "gundemi",
     domain: "gundemi.org",
     extraDomains: ["www.gundemi.org"],
-    officialName: "Gündemi.org",
-    alternateName: ["gundemi.org", "Gündemi", "ilkeli iffetli isabetli haber"],
+    officialName: "Gündem İstanbul",
+    alternateName: ["gundemi.org", "Gündemi.org", "Gündemi", "ilkeli iffetli isabetli haber"],
     type: "NewsMediaOrganization",
     description:
-      "gundemi.org — ilkeli iffetli isabetli haber. Türkiye ve bölgesel gündemi Yenişafak vitrininde sunan dijital haber platformu.",
+      "Gündem İstanbul (gundemi.org) — ilkeli iffetli isabetli haber. İstanbul ve Türkiye gündemi; 81 İl Haber Ağı üyesi.",
     email: "bilgi@gundemi.org",
     telephone: "+905322291892",
     disambiguatingDescription:
