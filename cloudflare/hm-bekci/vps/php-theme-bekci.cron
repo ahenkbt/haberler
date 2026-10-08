@@ -1,0 +1,1 @@
+*/2 * * * * root flock -n -o /run/php-theme-bekci-runner.lock timeout 110 /docker/php-theme/bekci/runner.sh

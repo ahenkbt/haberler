@@ -1,0 +1,156 @@
+--- ai_editor.py.bak-20261008-curate	2026-10-04 16:57:55.000000000 +0000
++++ ai_editor.py	2026-10-08 16:21:20.909602393 +0000
+@@ -31,6 +31,9 @@
+ POOL_HOURS = int(os.environ.get("AI_POOL_HOURS", "30"))
+ POOL_MAX_HOURS = int(os.environ.get("AI_POOL_MAX_HOURS", "72"))  # older items only with a score penalty
+ DAILY_ARTICLE_CAP = int(os.environ.get("AI_DAILY_ARTICLE_CAP", "60"))
++# 2026-10-08 user rule: no AI-written news. Default = curate mode: original sourced text + source link;
++# AI (Evren > NVIDIA > Gemini > OpenAI, site key > global key > env) only picks the manşet and the category.
++REWRITE = os.environ.get("AI_EDITOR_REWRITE", "0") == "1"
+ REPORT_DIR = os.environ.get("AI_EDITOR_REPORT_DIR", "/reports")
+ POOL_SITE_SLUG = os.environ.get("AI_POOL_SITE_SLUG", "turkatahaber")
+ IMPORTER_FEEDS = os.environ.get("AI_IMPORTER_FEEDS", "/importer/feeds.json")
+@@ -527,11 +530,24 @@
+         near_today = sum(1 for p in prev if p[2] == "published" and p[4] == today and "komşu-il" in (p[5] or []))
+         attempts_today = sum(1 for p in prev if p[4] == today)
+         target = cn.daily_manset_target
+-        allowed = math.ceil(target * slot / 3)
++        frac = slot / 3
++        if os.environ.get("AI_SLOT_MODE") == "hourly" and not args.slot:
++            # 2026-10-08: runs every ~2.5 h; spread the daily target over the day (06:00-23:00 TRT)
++            _t = lib.trt_now()
++            frac = min(1.0, max(0.15, (_t.hour + _t.minute / 60.0 - 5) / 18.0))
++        allowed = math.ceil(target * frac)
+         todo = max(0, allowed - published_today)
+         if args.max_per_site is not None:
+             todo = min(todo, args.max_per_site)
+         sst.update(target=target, allowed_cumulative=allowed, published_today=published_today, todo=todo)
++        blocked_re = None
++        try:
++            pats = [r[0] for r in con.execute("SELECT pattern FROM hm_site_blocked_terms WHERE site_id=%s", (cn.site_id,))]
++            if pats:
++                blocked_re = re.compile("|".join("(?:%s)" % x for x in pats), re.I)
++        except Exception as ex:
++            log("  [%s] blocked terms unreadable (%s): site skipped (fail closed)" % (cn.site_slug, ex))
++            continue
+         scored = []
+         for it in pool:
+             if it["id"] in used or (cn.exclusive_group and it["id"] in group_used[cn.exclusive_group]):
+@@ -540,6 +556,9 @@
+                 continue  # another site of the same group already has this event
+             if (it["category_slug"] or "") in cn.exclude_categories:
+                 continue
++            if blocked_re and blocked_re.search(" ".join([it["title"] or "", it["spot"] or ""] + list(it["paras"] or []))):
++                sst["blocked_terms"] = sst.get("blocked_terms", 0) + 1
++                continue
+             s, why, near = score_item(cn, it, now)
+             if s >= float(cn.min_score):
+                 if cn.groups:
+@@ -562,8 +581,9 @@
+             sst.setdefault("dedupe", Counter())[decision + ":" + reason.split(" ")[0]] += 1
+             log("  [%s] %s item %d (%s; %s): %s" % (cn.site_slug, decision, it["id"], reason, matched, it["title"][:70]))
+ 
++        pick_cap = todo if REWRITE or args.no_ai else min(todo * 2, todo + 6)
+         for s, it, why, near in scored:
+-            if len(picks) >= todo:
++            if len(picks) >= pick_cap:
+                 break
+             info = clusters.get(it["id"]) or {"cluster": 0, "role": "primary"}
+             cl = info["cluster"]
+@@ -671,6 +691,10 @@
+                 report.append(dict(site=cn.site_slug, score=s, why=why, source_item_id=it["id"], title=it["title"],
+                                    cluster=clusters.get(it["id"], {}).get("cluster"), development=dev))
+             continue
++        if not REWRITE and not args.no_ai and len(picks) > todo:
++            picks = ai_pick_manset(cfg, cn, picks, todo, sst)
++        elif len(picks) > todo:
++            picks = picks[:todo]
+         for s, it, why, near, dev in picks:
+             if ai_fail_streak >= 3:
+                 log("  AI circuit open (3 consecutive errors); stopping AI for this run")
+@@ -681,8 +705,9 @@
+                 break
+             t0 = time.time()
+             try:
+-                res = lib.rewrite(cfg, it["title"], it["spot"], it["paras"],
+-                                  focus=(dev["title"], dev["note"]) if dev and dev.get("note") else None)
++                res = (lib.rewrite(cfg, it["title"], it["spot"], it["paras"],
++                                   focus=(dev["title"], dev["note"]) if dev and dev.get("note") else None)
++                       if REWRITE else curate_result(it))
+                 ai_fail_streak = 0
+             except lib.AIError as ex:
+                 ai_fail_streak += 1
+@@ -718,13 +743,13 @@
+                      match_reasons, ai_model, prompt_version, checks, error, run_id,
+                      story_cluster_id, source_canonical, title_norm, image_key, is_development, development_note,
+                      previous_ref, previous_title, previous_path)
+-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,false,%s,now(),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
++                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,now(),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                             %s,%s,%s,%s,%s,%s,%s,%s,%s)
+                     ON CONFLICT DO NOTHING RETURNING id""",
+                                   (cn.site_id, it["id"], it["dedupe_key"], it["link"],
+                                    lib.source_display(it["link"], it["source_name"]), status, res["ok"],
+                                    today, rank, res["title"], res["spot"], lib.paras_html(res["paragraphs"]),
+-                                   it["image_url"], credit, it["category_slug"], it["title"], it["spot"], it["chars"],
++                                   it["image_url"], credit, (not REWRITE), it["category_slug"], it["title"], it["spot"], it["chars"],
+                                    len("\n\n".join(res["paragraphs"])), round(s, 2), why, res["model"],
+                                    lib.PROMPT_VERSION, json.dumps(dict(res["checks"], key_source=cfg["source"])),
+                                    None if res["ok"] else "; ".join(res["checks"].get("problems") or []), run_id,
+@@ -755,6 +780,57 @@
+     return report
+ 
+ 
++
++# ============================================================ curate mode (no AI writing)
++PICK_SYSTEM = ("Sen bir haber sitesinin manşet editörüsün. Sana başka kaynaklarda yayımlanmış GERÇEK haber adayları verilir. "
++               "Haber uydurma, metin yazma, başlık değiştirme. Yalnızca seçim yap ve her seçilene listeden bir kategori ata. "
++               'Yalnızca JSON döndür: {"secim": [aday numaraları önem sırasıyla], "kategori": {"<aday no>": "<kategori-slug>"}}')
++
++
++def curate_result(it):
++    return dict(ok=True, title=it["title"], spot=it["spot"], paragraphs=list(it["paras"]),
++                checks={"mode": "curate", "problems": []}, model="curate", ratio=1.0)
++
++
++def ai_pick_manset(cfg, cn, picks, todo, sst):
++    cats = sorted(set(list(cn.categories or []) + CATEGORY_ORDER))
++    lines = ["%d) [%s] %s — %s" % (i + 1, p[1]["category_slug"] or "-", (p[1]["title"] or "")[:160], (p[1]["spot"] or "")[:200])
++             for i, p in enumerate(picks)]
++    user = ("Site: %s (konsept: %s; öncelikli kategoriler: %s; konular: %s)\n"
++            "Bu siteye en uygun, en güçlü ve en yeni %d haberi manşet için önem sırasıyla seç.\n"
++            "Kategori listesi: %s\n\nAdaylar:\n%s" % (
++                cn.domain, cn.concept_type, ", ".join(cn.categories or []), ", ".join(list(cn.keywords or [])[:15]),
++                todo, ", ".join(cats), "\n".join(lines)))
++    try:
++        d, model, _ = lib.chat_json(cfg, PICK_SYSTEM, user, max_tokens=600, temperature=0, task="classify")
++    except Exception as ex:
++        log("  [%s] AI manşet seçimi başarısız (%s): puan sırası kullanılıyor" % (cn.site_slug, str(ex)[:120]))
++        sst["ai_pick"] = "fail"
++        return picks[:todo]
++    order = []
++    for x in (d.get("secim") or []) if isinstance(d, dict) else []:
++        try:
++            i = int(x) - 1
++        except Exception:
++            continue
++        if 0 <= i < len(picks) and i not in order:
++            order.append(i)
++    if not order:
++        sst["ai_pick"] = "empty"
++        return picks[:todo]
++    catmap = d.get("kategori") or {}
++    out = []
++    for i in order[:todo]:
++        sc, it, why, near, dev = picks[i]
++        c = str(catmap.get(str(i + 1)) or "").strip().lower()
++        if c in cats and c != (it["category_slug"] or ""):
++            it = dict(it, category_slug=c)
++            why = why + ["ai-kategori:" + c]
++        out.append((sc, it, why + ["ai-seçim"], near, dev))
++    sst["ai_pick"] = "%s %d/%d" % (model, len(out), len(picks))
++    log("  [%s] AI manşet seçimi (%s): %s" % (cn.site_slug, model, [i + 1 for i in order[:todo]]))
++    return out
++
+ # ============================================================ manşet images
+ MEDIA_BASE = os.environ.get("MEDIA_BASE_URL", "https://ankarasehirgazetesi.com").rstrip("/")
+ 
