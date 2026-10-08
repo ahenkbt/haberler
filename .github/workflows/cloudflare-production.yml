@@ -299,6 +299,12 @@ jobs:
               if printf '%s' "$out" | grep -qi 'Uploaded secret'; then
                 return 0
               fi
+              # Workers Builds may upload a newer version after wrangler deploy;
+              # secret put requires latest version == currently deployed (not versions secret put).
+              if printf '%s' "$out" | grep -qi 'latest version of your Worker isn.t currently deployed'; then
+                echo "::notice::$name: latest Worker version not deployed — wrangler deploy then retry secret put"
+                pnpm exec wrangler deploy || true
+              fi
               if [ "$attempt" -ge "$max" ]; then
                 echo "::error::$name wrangler secret put failed after ${max} attempts"
                 return 1
