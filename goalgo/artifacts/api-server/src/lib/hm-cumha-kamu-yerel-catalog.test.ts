@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildKamuYerelCategories,
   buildKamuYerelHmNewsSiteRssFeedRows,
   buildKamuYerelCorporateMenuItems,
+  buildKamuYerelIllerExtraPage,
   cumhaLocationRssUrl,
   cumhaProvinceSlugFromName,
+  kamuYerelRegionCategorySlug,
   KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS,
+  KAMU_YEREL_REGION_ORDER,
   listKamuYerelNavTopCategorySlugs,
   listKamuYerelProvinces,
 } from "./hm-cumha-kamu-yerel-catalog.js";
@@ -32,15 +36,31 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(listKamuYerelNavTopCategorySlugs()).toContain("daha");
   });
 
-  it("regional il menu has 7 regions under İller", () => {
+  it("corporate menu excludes iller/bolge (iller only on /iller page)", () => {
     const menu = buildKamuYerelCorporateMenuItems();
-    const regions = menu.filter((m) => m.parentId === "ky-menu-iller");
-    expect(regions).toHaveLength(7);
-    const ankara = menu.find((m) => m.id === "ky-il-ankara");
-    expect(ankara?.href).toBe("/kategori/ankara");
+    expect(menu.length).toBeLessThanOrEqual(40);
+    expect(menu.some((m) => m.id === "ky-menu-iller" || m.id.startsWith("ky-region-"))).toBe(false);
+    expect(menu.some((m) => m.id.startsWith("ky-il-"))).toBe(false);
     const genelMerkez = menu.find((m) => m.id === "ky-cat-genel-merkez");
     expect(genelMerkez?.parentId).toBe("ky-cat-siyasi-partiler");
     const nato = menu.find((m) => m.id === "ky-cat-nato");
     expect(nato?.parentId).toBe("ky-cat-daha");
+  });
+
+  it("categories group 81 il under 7 bolge-* parent slugs in sort order", () => {
+    const cats = buildKamuYerelCategories();
+    for (const regionId of KAMU_YEREL_REGION_ORDER) {
+      expect(cats.some((c) => c.slug === kamuYerelRegionCategorySlug(regionId))).toBe(true);
+    }
+    expect(cats.filter((c) => c.slug.startsWith("bolge-"))).toHaveLength(7);
+    expect(cats.filter((c) => listKamuYerelProvinces().some((p) => p.slug === c.slug))).toHaveLength(81);
+  });
+
+  it("iller landing lists all provinces under regions", () => {
+    const page = buildKamuYerelIllerExtraPage();
+    expect(page.slug).toBe("iller");
+    expect(page.bodyHtml).toContain('id="marmara"');
+    expect(page.bodyHtml).toContain('href="/kategori/ankara"');
+    expect(page.bodyHtml.match(/hm-iller-il-link/g)?.length).toBe(81);
   });
 });

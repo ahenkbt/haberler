@@ -17,4 +17,12 @@ describe("hm-kamu-yerel-sites", () => {
     expect(layout.hmVitrinTheme).toBe("esen");
     expect(Array.isArray(layout.hmCorporateMenuItems)).toBe(true);
   });
+
+  it("layout includes /iller extra page and compact nav menu", () => {
+    const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
+    const menu = layout.hmCorporateMenuItems as unknown[];
+    expect(menu.length).toBeLessThanOrEqual(40);
+    const pages = layout.hmExtraPages as Array<{ slug: string }>;
+    expect(pages.some((p) => p.slug === "iller")).toBe(true);
+  });
 });
