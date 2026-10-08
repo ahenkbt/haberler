@@ -524,18 +524,6 @@ function isLocalBucketSlug(slug: string): boolean {
   return slugLocalityKey(s) != null;
 }
 
-function contentMatchesSlugLocality(
-  slug: string,
-  title: string | null | undefined,
-  spot?: string | null,
-  content?: string | null,
-  siteSlug?: string | null,
-): boolean {
-  const key = slugLocalityKey(slug, siteSlug);
-  if (!key) return false;
-  return detectHmLocalityKey(title, spot, content) === key;
-}
-
 export function isMisclassifiedPlaceCategoryItem(
   categorySlug: string | null | undefined,
   title: string | null | undefined,
