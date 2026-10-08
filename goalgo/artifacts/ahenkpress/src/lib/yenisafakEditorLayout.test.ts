@@ -273,6 +273,23 @@ describe("PHP tema anahtar sözleşmesi", () => {
     }
   });
 
+  it("menü çubuğu geçişi hmThemeGradient olarak yazılır ve düz şerit rengini temizler", () => {
+    const base = readYsEditorSnapshot(defaultNewsSiteLayoutPrefs);
+    expect(base.gradient).toBeNull();
+    const none = buildYenisafakLayoutPatch(defaultNewsSiteLayoutPrefs, base);
+    expect(none.hmThemeGradient).toBeNull();
+    expect(Object.prototype.hasOwnProperty.call(none, "hmNavBarBackground")).toBe(false);
+    const patch = buildYenisafakLayoutPatch(defaultNewsSiteLayoutPrefs, {
+      ...base,
+      gradient: { id: "mavi-1", from: "#1D5FBF", to: "#0a1f44" },
+    });
+    expect(patch.hmThemeGradient).toEqual({ id: "mavi-1", from: "#1d5fbf", to: "#0a1f44" });
+    expect(patch.hmNavBarBackground).toBeNull();
+    const back = readYsEditorSnapshot({ ...defaultNewsSiteLayoutPrefs, hmThemeGradient: { id: "x", from: "#111111", to: "nope" } });
+    expect(back.gradient).toBeNull();
+    expect(ysEditorSnapshotsEqual(base, { ...base, gradient: { id: "a", from: "#000000", to: "#111111" } })).toBe(false);
+  });
+
   it("PHP anahtar listesi tekrarsızdır ve eski-yalnız anahtarla kesişmez", () => {
     expect(new Set(PHP_THEME_LAYOUT_KEYS).size).toBe(PHP_THEME_LAYOUT_KEYS.length);
     for (const key of PHP_THEME_LEGACY_ONLY_LAYOUT_KEYS) {
