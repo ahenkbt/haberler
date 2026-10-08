@@ -1,0 +1,16 @@
+/* ys-logo-header-fix:v1 */
+.ys-logo img,
+.ys-logo .ys-logo-img {
+  height: auto !important;
+  max-height: 64px;
+  width: auto;
+  max-width: min(280px, 46vw);
+  object-fit: contain;
+  display: block;
+}
+.ys-bar { padding-top: 6px; padding-bottom: 6px; min-height: 72px; }
+.ys-preset-nefes .ys-logo img { max-height: 72px; }
+@media (max-width: 900px) {
+  .ys-logo img, .ys-logo .ys-logo-img { max-height: 48px; }
+  .ys-bar.has-ad .ys-logo img { max-height: 44px; max-width: 42vw; }
+}

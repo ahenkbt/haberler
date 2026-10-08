@@ -172,6 +172,32 @@ export function isWorkerBrandStaticAssetPath(pathname) {
   );
 }
 
+/** Appended to proxied `/assets/theme.css` so header logos fill ~48–72px without canvas padding. */
+export const YS_LOGO_HEADER_CSS_FIX = `/* ys-logo-header-fix:v1 */
+.ys-logo img,
+.ys-logo .ys-logo-img {
+  height: auto !important;
+  max-height: 64px;
+  width: auto;
+  max-width: min(280px, 46vw);
+  object-fit: contain;
+  display: block;
+}
+.ys-bar { padding-top: 6px; padding-bottom: 6px; min-height: 72px; }
+.ys-preset-nefes .ys-logo img { max-height: 72px; }
+@media (max-width: 900px) {
+  .ys-logo img, .ys-logo .ys-logo-img { max-height: 48px; }
+  .ys-bar.has-ad .ys-logo img { max-height: 44px; max-width: 42vw; }
+}
+`;
+
+export function appendYsLogoHeaderCssFix(cssText) {
+  const raw = String(cssText || "");
+  if (raw.includes("ys-logo-header-fix:v1")) return raw;
+  return `${raw.trimEnd()}\n\n${YS_LOGO_HEADER_CSS_FIX}`;
+}
+
+
 /**
  * Public gundemi hosts must never get SPA index.html from ASSETS.
  * Panel paths + hashed /assets/index-* + /gundemi/logos stay on Worker ASSETS.
@@ -329,6 +355,15 @@ async function proxySharedPhpThemePath(request, incoming, opts) {
 
   if (request.method === "HEAD") {
     return new Response(null, { status: upstream.status, headers: out });
+  }
+
+  const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
+  const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
+  if (/theme\.css$/i.test(pathOnly) && upstream.ok && ct.includes("text/css")) {
+    const body = appendYsLogoHeaderCssFix(await upstream.text());
+    out.set("content-type", "text/css; charset=utf-8");
+    out.set("x-yekpare-ys-logo-fix", "v1");
+    return new Response(body, { status: upstream.status, headers: out });
   }
 
   return new Response(upstream.body, { status: upstream.status, headers: out });

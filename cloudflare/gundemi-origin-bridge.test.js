@@ -16,6 +16,7 @@ import {
   isYerelBrandAssetPath,
   isSehitgaziBrandAssetPath,
   isDunyaSaglikBrandAssetPath,
+  appendYsLogoHeaderCssFix,
   shouldBlockGundemiSpaAssets,
   shouldBridgeGundemiApexPath,
   shouldProxyRegionalPhpThemeAsset,
@@ -108,11 +109,20 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
     assert.equal(res.headers.get("x-yekpare-bridge-upstream"), "turkatahaber.com");
+    assert.equal(res.headers.get("x-yekpare-ys-logo-fix"), "v1");
     const ct = String(res.headers.get("content-type") || "").toLowerCase();
     assert.match(ct, /text\/css/);
     const body = await res.text();
     assert.ok(body.length > 1000);
     assert.equal(body.includes("PHP tema bekleniyor"), false);
+    assert.match(body, /ys-logo-header-fix:v1/);
+    assert.match(body, /object-fit:\s*contain/);
+  });
+
+  it("appendYsLogoHeaderCssFix is idempotent", () => {
+    const once = appendYsLogoHeaderCssFix(".ys-logo img{height:64px}");
+    const twice = appendYsLogoHeaderCssFix(once);
+    assert.equal(once, twice);
   });
 
   it("proxies regional theme.js from PHP origin", async () => {
