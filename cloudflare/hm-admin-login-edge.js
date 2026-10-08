@@ -16,6 +16,10 @@ import { neon } from "@neondatabase/serverless";
 import { neonSqlClient } from "./neon-edge-db.js";
 import { isNeonServerlessUrl, preferNeonDirectWriteUrl } from "./neon-edge-url.js";
 import { wakeApiContainerBackground } from "./hm-admin-panel-wake.js";
+import { fetchApi } from "./api-upstream.js";
+
+/** Wrong credentials (checked definitively at the edge) wait at most this long for the container's own answer. */
+export const ADMIN_LOGIN_CONTAINER_WAIT_MS = 12000;
 
 const COOKIE_NAME = "connect.sid";
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -84,9 +88,10 @@ function panelAdminSql(env) {
   return neonSqlClient(env);
 }
 
+/** @returns {Promise<{ login: object|null, definitive: boolean }>} definitive = the DB was really asked. */
 async function verifyDbAdminCredentials(env, username, password) {
   const sql = panelAdminSql(env);
-  if (!sql) return null;
+  if (!sql) return { login: null, definitive: false };
   const u = String(username).trim();
   const ul = u.toLowerCase();
   const alias = ALIASES[ul]?.[0] ?? null;
@@ -101,9 +106,9 @@ async function verifyDbAdminCredentials(env, username, password) {
   for (const row of rows || []) {
     const hash = String(row?.password_hash || "");
     if (!hash) continue;
-    if (await bcrypt.compare(password, hash)) return permissionsFromJson(row?.permissions_json);
+    if (await bcrypt.compare(password, hash)) return { login: permissionsFromJson(row?.permissions_json), definitive: true };
   }
-  return null;
+  return { login: null, definitive: true };
 }
 
 function bytesToBase64NoPad(bytes) {
@@ -158,6 +163,32 @@ function jsonResponse(status, body, extraHeaders) {
   return new Response(JSON.stringify(body), { status, headers: h });
 }
 
+/**
+ * Credentials matched neither the env secrets nor panel_admin_users. The container may still accept legacy logins,
+ * so ask it, but never hang: a cold/rolling container answers within ADMIN_LOGIN_CONTAINER_WAIT_MS or the user gets
+ * the container's own "wrong credentials" message instead of "Sunucuya şu an ulaşılamıyor".
+ */
+export async function adminLoginContainerOrReject(request, env, waitMs = ADMIN_LOGIN_CONTAINER_WAIT_MS, fetcher = fetchApi) {
+  let timer;
+  try {
+    const body = await request.clone().text();
+    const headers = new Headers(request.headers);
+    headers.delete("content-length");
+    const upstream = await Promise.race([
+      fetcher(env, request.url, { method: "POST", headers, body }).catch(() => null),
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(null), waitMs);
+      }),
+    ]);
+    if (upstream && upstream.status < 500) return upstream;
+  } catch (err) {
+    console.error("[admin-login-edge] container", String(err?.message || err).slice(0, 160));
+  } finally {
+    clearTimeout(timer);
+  }
+  return jsonResponse(401, { success: false, error: "Kullanıcı adı veya şifre hatalı.", edge: true });
+}
+
 /** @returns {Promise<Response|null>} */
 export async function handleAdminPanelSessionEdge(request, env, ctx) {
   if (String(request.method || "").toUpperCase() !== "POST") return null;
@@ -178,14 +209,18 @@ export async function handleAdminPanelSessionEdge(request, env, ctx) {
   wakeApiContainerBackground(env, ctx);
 
   let login = null;
+  let definitive = false;
   try {
     if (verifyEnvAdminCredentials(env, username, password)) login = { kind: "full" };
-    else login = await verifyDbAdminCredentials(env, username, password);
+    else ({ login, definitive } = await verifyDbAdminCredentials(env, username, password));
   } catch (err) {
     console.error("[admin-login-edge] verify", String(err?.message || err).slice(0, 160));
     return null;
   }
-  if (!login) return null;
+  if (!login) {
+    if (!definitive) return null;
+    return adminLoginContainerOrReject(request, env);
+  }
 
   const main = neonSqlClient(env);
   if (!main) return null;
