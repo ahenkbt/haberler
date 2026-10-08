@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
   categoriesTable,
+  db,
   dualWriteInsert,
   dualWriteUpdate,
   getNewsDbForRead,
@@ -100,7 +101,9 @@ async function upsertSite(def: KamuYerelSiteDef): Promise<{
     address: TURKATA_CONTACT.address,
   });
 
-  const claimants = await getNewsDbForRead()
+  // Panel Neon (DATABASE_URL) kimliği kullan — NEWS_DB_READ=news iken PHP id 230
+  // bulunup dual-write yanlış ana satırı (veya 1132'yi atlayarak) güncelliyordu.
+  const claimants = await db
     .select({
       id: hmNewsSitesTable.id,
       slug: hmNewsSitesTable.slug,

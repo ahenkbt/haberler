@@ -120,13 +120,23 @@ async function syncLayoutJson(
   newsSql: PgSql,
   workerSiteId: number,
   phpSiteId: number,
+  siteSlug?: string | null,
 ): Promise<{ mirrored: boolean; reason?: string }> {
-  const rows = await mainSql`
+  let rows = await mainSql`
     SELECT layout_json FROM hm_news_sites WHERE id = ${workerSiteId} LIMIT 1
   `;
-  const raw = rows[0]?.layout_json;
+  let raw = rows[0]?.layout_json;
   let layoutStr =
     raw == null ? "" : typeof raw === "string" ? raw : JSON.stringify(raw);
+  // PHP id ile çağrıldığında (eski ensure NEWS_DB_READ=news) panel satırı boş olabilir —
+  // slug ile Worker Neon layout'unu bul.
+  if (!layoutStr.trim() && siteSlug) {
+    rows = await mainSql`
+      SELECT layout_json FROM hm_news_sites WHERE lower(slug) = ${siteSlug} LIMIT 1
+    `;
+    raw = rows[0]?.layout_json;
+    layoutStr = raw == null ? "" : typeof raw === "string" ? raw : JSON.stringify(raw);
+  }
   if (!layoutStr.trim()) return { mirrored: false, reason: "layout boş" };
   try {
     const parsed = JSON.parse(layoutStr) as Record<string, unknown>;
@@ -296,7 +306,7 @@ async function runSite(
   const mirror = (table: string, op: string, row: Record<string, unknown>) =>
     edgeMirrorNewsDbWrite(newsSql, table, op, row);
 
-  const layoutMirror = await syncLayoutJson(mainSql, newsSql, workerSiteId, phpSiteId);
+  const layoutMirror = await syncLayoutJson(mainSql, newsSql, workerSiteId, phpSiteId, slug);
   if (!layoutMirror.mirrored && layoutMirror.reason) {
     console.warn("[sync-php-neon-news] layout_json", layoutMirror.reason);
   }
