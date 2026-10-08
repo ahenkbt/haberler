@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   corporateDomainError,
+  defaultEditorLoginForHost,
+  defaultEditorLoginForSite,
   isPlatformAliasHost,
   orderSiteDomains,
   planNewsSiteDomains,
@@ -103,5 +105,23 @@ describe("site kind", () => {
   it("create defaults", () => {
     expect(siteKindLayoutDefaults("news")).toMatchObject({ hmSiteKind: "news", phpTheme: true, frontend: "php" });
     expect(siteKindLayoutDefaults("corporate", "vatan")).toMatchObject({ hmSiteKind: "corporate", hmVitrinTheme: "vatan", phpTheme: false });
+  });
+});
+
+describe("default editor account", () => {
+  it("subdomain sites -> <sub>@<parent>", () => {
+    expect(defaultEditorLoginForHost("kibris.gundemi.org")?.email).toBe("kibris@gundemi.org");
+    expect(defaultEditorLoginForHost("www.adana.fix.tc")?.email).toBe("adana@fix.tc");
+    expect(defaultEditorLoginForHost("spor.suhaber.com.tr")?.email).toBe("spor@suhaber.com.tr");
+  });
+  it("normal domains -> bilgi@<domain>, password = username", () => {
+    const a = defaultEditorLoginForHost("https://www.OrnekHaber.com/");
+    expect(a).toEqual({ email: "bilgi@ornekhaber.com", username: "bilgi@ornekhaber.com", password: "bilgi@ornekhaber.com" });
+    expect(defaultEditorLoginForHost("suhaber.com.tr")?.email).toBe("bilgi@suhaber.com.tr");
+    expect(defaultEditorLoginForHost("localhost")).toBeNull();
+  });
+  it("uses the canonical (first) domain", () => {
+    expect(defaultEditorLoginForSite({ domain: "adanahaber.com", domain2: "adana.gundemi.org" })?.email).toBe("bilgi@adanahaber.com");
+    expect(defaultEditorLoginForSite({ domain: null, domain2: "adana.gundemi.org" })?.email).toBe("adana@gundemi.org");
   });
 });

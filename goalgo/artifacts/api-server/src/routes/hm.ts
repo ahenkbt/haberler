@@ -247,6 +247,7 @@ import { repairRssNumericSlugsBatch } from "../lib/repairRssNumericSlugs.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "../lib/hm-global-news-category.js";
 import {
   corporateDomainError,
+  defaultEditorLoginForSite,
   isPlatformAliasHost as isPlatformAliasHostForConflict,
   normalizeHmSiteKind,
   orderSiteDomains,
@@ -1430,14 +1431,10 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Site görünen adı gerekli" });
     return;
   }
-  const editorEmail = String(b.editorEmail ?? "").trim().toLowerCase();
-  const editorPassword = String(b.editorPassword ?? "");
-  if (!editorEmail || !editorEmail.includes("@")) {
-    res.status(400).json({ error: "Editör e-postası gerekli" });
-    return;
-  }
-  if (editorPassword.length < 6) {
-    res.status(400).json({ error: "Editör şifresi en az 6 karakter olmalı" });
+  let editorEmail = String(b.editorEmail ?? "").trim().toLowerCase();
+  let editorPassword = String(b.editorPassword ?? "");
+  if (editorEmail && !editorEmail.includes("@")) {
+    res.status(400).json({ error: "Editör e-postası geçersiz" });
     return;
   }
   let domain = normalizeDomain(b.domain ?? null);
@@ -1470,6 +1467,25 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   const domainErr = await assertHmDomainsAvailable(domain, domain2, domain3);
   if (domainErr) {
     res.status(409).json({ error: domainErr });
+    return;
+  }
+  // Varsayılan editör: <alt>@<üst> (alt alan adı) / bilgi@<domain>; şifre = kullanıcı adı.
+  const defaultEditor = defaultEditorLoginForSite({ domain, domain2, domain3 });
+  let editorAuto = false;
+  if (!editorEmail) {
+    if (!defaultEditor) {
+      res.status(400).json({ error: "Editör e-postası gerekli (domain yok, otomatik hesap çıkarılamadı)" });
+      return;
+    }
+    editorEmail = defaultEditor.email;
+    editorAuto = true;
+  }
+  if (!editorPassword && defaultEditor && editorEmail === defaultEditor.email) {
+    editorPassword = defaultEditor.password;
+    editorAuto = true;
+  }
+  if (editorPassword.length < 6) {
+    res.status(400).json({ error: "Editör şifresi en az 6 karakter olmalı" });
     return;
   }
   const description = normalizeHmDescription(b.description);
@@ -1507,9 +1523,11 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     }
 
     const hash = await bcrypt.hash(editorPassword, 10);
+    await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
     const [editor] = await dualWriteInsert(hmSiteEditorsTable, {
         siteId: site.id,
         email: editorEmail,
+        username: editorAuto ? editorEmail : null,
         passwordHash: hash,
         displayName: String(b.editorDisplayName ?? "").trim() || null,
         isActive: true,
@@ -1530,7 +1548,14 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     res.status(201).json({
       site: { ...freshSite, siteKind },
       editor: editor
-        ? { id: editor.id, email: editor.email, displayName: editor.displayName, createdAt: editor.createdAt }
+        ? {
+            id: editor.id,
+            email: editor.email,
+            displayName: editor.displayName,
+            createdAt: editor.createdAt,
+            auto: editorAuto,
+            ...(editorAuto ? { loginHint: "Şifre = kullanıcı adı (e-posta). İlk girişte değiştirin." } : {}),
+          }
         : null,
       ...(gundemiProvision ? { gundemiProvision } : {}),
       ...(customApexProvision ? { customApexProvision } : {}),
@@ -1867,6 +1892,38 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       }
     }
 
+    // Yeni canonical domain (ör. sonradan eklenen kendi domaini) → varsayılan editör hesabı yoksa oluştur.
+    // Var olan hesaplara dokunulmaz (şifre/aktiflik değişmez).
+    let defaultEditorCreated: string | null = null;
+    if (("domain" in b || "domain2" in b || "domain3" in b) && "domain" in patch) {
+      const prevCanonical = normalizeDomain(kindRow.domain ?? null);
+      const nextCanonical = patch.domain ?? null;
+      const login = nextCanonical && nextCanonical !== prevCanonical ? defaultEditorLoginForSite({ domain: nextCanonical }) : null;
+      if (login) {
+        try {
+          const [exists] = await newsReadDb()
+            .select({ id: hmSiteEditorsTable.id })
+            .from(hmSiteEditorsTable)
+            .where(and(eq(hmSiteEditorsTable.siteId, id), sql`lower(${hmSiteEditorsTable.email}) = ${login.email}`))
+            .limit(1);
+          if (!exists) {
+            await ensureHmSiteEditorUsernameColumn().catch(() => undefined);
+            await dualWriteInsert(hmSiteEditorsTable, {
+              siteId: id,
+              email: login.email,
+              username: login.username,
+              passwordHash: await bcrypt.hash(login.password, 10),
+              displayName: null,
+              isActive: true,
+            });
+            defaultEditorCreated = login.email;
+          }
+        } catch {
+          /* best-effort: editör hesabı sonra Editörler bölümünden eklenebilir */
+        }
+      }
+    }
+
     // Kayıt sonrası: Su Haber şablon artığı menü/marka izlerini temizle (kirsehir vb.)
     try {
       await repairStaleSuBrandForSiteId(id);
@@ -1887,15 +1944,12 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       gundemiProvision = await maybeProvisionGundemiOrg(domainTriad);
       customApexProvision = await maybeProvisionCustomPhpApex(domainTriad);
     }
-    if (gundemiProvision || customApexProvision) {
-      res.json({
-        ...siteOut,
-        ...(gundemiProvision ? { gundemiProvision } : {}),
-        ...(customApexProvision ? { customApexProvision } : {}),
-      });
-      return;
-    }
-    res.json(siteOut);
+    res.json({
+      ...siteOut,
+      ...(gundemiProvision ? { gundemiProvision } : {}),
+      ...(customApexProvision ? { customApexProvision } : {}),
+      ...(defaultEditorCreated ? { defaultEditorCreated } : {}),
+    });
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);
     if (/hm_site_editors_site_id_email|editör.*zaten|editor.*already/i.test(msg)) {

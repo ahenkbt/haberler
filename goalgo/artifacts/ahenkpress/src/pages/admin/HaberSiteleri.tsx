@@ -197,6 +197,20 @@ function composeNewsDomains(form: SiteForm): { list: string[]; error?: string } 
   return { list };
 }
 
+const MULTI_LABEL_SUFFIXES = new Set(["com.tr", "net.tr", "org.tr", "gov.tr", "edu.tr", "k12.tr", "gen.tr", "bel.tr", "av.tr", "web.tr", "biz.tr", "info.tr", "tv.tr", "co.uk"]);
+
+/** Varsayılan editör (sunucu ile aynı kural): alt alan adı → <alt>@<üst>, normal domain → bilgi@<domain>; şifre = kullanıcı adı. */
+function defaultEditorEmailForHost(raw: string | null | undefined): string | null {
+  const h = bareHost(raw ?? "");
+  if (!h) return null;
+  const labels = h.split(".").filter(Boolean);
+  if (labels.length < 2) return null;
+  const reg = MULTI_LABEL_SUFFIXES.has(labels.slice(-2).join(".")) ? 3 : 2;
+  if (labels.length > reg) return `${labels[0]}@${labels.slice(1).join(".")}`;
+  if (labels.length === reg) return `bilgi@${h}`;
+  return null;
+}
+
 async function fetchHmSites(kind: HmSiteKind): Promise<{ items: HmSiteRow[] }> {
   await ensureAdminPanelBootstrap();
   let r: Response;
@@ -439,6 +453,10 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const autoEditorEmail = defaultEditorEmailForHost(
+    isNews ? composeNewsDomains(form).list[0] : form.domain,
+  );
+
   function resetForm() {
     setEditingId(null);
     setForm(emptyForm);
@@ -449,8 +467,8 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
       toast({ title: "Slug ve site adı gerekli", variant: "destructive" });
       return;
     }
-    if (!editingId && (!form.editorEmail.trim() || form.editorPassword.length < 8)) {
-      toast({ title: "Yeni site için editör e-postası ve en az 8 karakter şifre gerekli", variant: "destructive" });
+    if (!editingId && form.editorEmail.trim() && form.editorPassword && form.editorPassword.length < 6) {
+      toast({ title: "Editör şifresi en az 6 karakter olmalı (boş bırakırsanız şifre = kullanıcı adı)", variant: "destructive" });
       return;
     }
     if (editingId) {
@@ -509,12 +527,19 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
       const gundemiNote = isNews && savedDomain ? ` · yayında: https://${savedDomain}` : "";
       void siteId;
 
+      const createdEditor = (j as { editor?: { email?: string; auto?: boolean } | null }).editor;
+      const createdDefault = (j as { defaultEditorCreated?: string }).defaultEditorCreated;
+      const editorNote = createdEditor?.auto && createdEditor.email
+        ? ` · editör: ${createdEditor.email} (şifre = kullanıcı adı)`
+        : createdDefault
+          ? ` · yeni editör: ${createdDefault} (şifre = kullanıcı adı)`
+          : "";
       const wasPassiveEditor = primaryEditorIsPassive(current);
       toast({
         title: editingId ? `${noun} güncellendi` : `${noun} oluşturuldu`,
         description: wasPassiveEditor
-          ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}${gundemiNote}`
-          : `Slug: /${form.slug.trim()}${gundemiNote} · kaydı yenileniyor…`,
+          ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}${gundemiNote}${editorNote}`
+          : `Slug: /${form.slug.trim()}${gundemiNote}${editorNote} · kaydı yenileniyor…`,
       });
       resetForm();
       await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
@@ -999,14 +1024,26 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                 ) : null}
                 <div className="space-y-3">
                   <Input value={form.editorDisplayName} onChange={(e) => update("editorDisplayName", e.target.value)} placeholder="Editör adı" />
-                  <Input value={form.editorEmail} onChange={(e) => update("editorEmail", e.target.value)} placeholder="editor@ornek.com" />
+                  {!editingId ? (
+                    <p className="text-[11px] font-semibold leading-relaxed text-indigo-800">
+                      Boş bırakın → otomatik hesap:{" "}
+                      <code className="rounded bg-white px-1">{autoEditorEmail ?? "<alt>@<üst> / bilgi@<domain>"}</code>, şifre = kullanıcı adı.
+                    </p>
+                  ) : null}
+                  <Input
+                    value={form.editorEmail}
+                    onChange={(e) => update("editorEmail", e.target.value)}
+                    placeholder={!editingId && autoEditorEmail ? autoEditorEmail : "editor@ornek.com"}
+                  />
                   <Input
                     value={form.editorPassword}
                     onChange={(e) => update("editorPassword", e.target.value)}
                     placeholder={
                       editingId && primaryHmSiteEditor(sites.find((s) => s.id === editingId))
                         ? "Yeni şifre (boş bırak: değişmesin)"
-                        : "En az 8 karakter şifre"
+                        : !editingId
+                          ? "Şifre (boş: kullanıcı adı ile aynı)"
+                          : "En az 8 karakter şifre"
                     }
                     type="password"
                   />
