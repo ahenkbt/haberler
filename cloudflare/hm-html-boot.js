@@ -971,7 +971,7 @@ const HM_SLUG_DISPLAY_NAMES = {
   trafik: "Trafik Güvenliği Derneği",
   tgd: "Trafik Güvenliği Derneği",
   fixhaber: "Fix Haber",
-  gundemi: "Gündemi",
+  gundemi: "Gündem İstanbul",
   "ege-gundemi": "Ege Gündemi",
   "marmara-gundemi": "Marmara Gündemi",
   "karadeniz-gundemi": "Karadeniz Gündemi",

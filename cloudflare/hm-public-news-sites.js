@@ -10,6 +10,9 @@
  * (TÜRKATA Vakfı 61, Vatan Kahramanları Derneği 7, Trafik Güvenliği Derneği 11) and publicly
  * suspended sites (layout_json.hmPublicSuspended = true, e.g. kirsehirhaber.org) never appear.
  * A new row in hm_news_sites shows up automatically (≤ 60 s isolate cache + short HTTP cache).
+ *
+ * 81 İl Haber Ağı (2026-10-09): il siteleri (<il>.fix.tc, layout_json.hmIl81) ana `sites` listesine GİRMEZ
+ * (25 ana logo kalır); ayrı `ilSites` listesinde döner ve /daha + ajans sayfasında ayrı "İl Siteleri" grubu olur.
  */
 import { neon } from "@neondatabase/serverless";
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
@@ -85,7 +88,7 @@ function safeColor(v) {
  * Pure filter/shape step (tested). rows: hm_news_sites rows (id, slug, domain, display_name, active, layout_json).
  * @returns {{ id:number, slug:string, name:string, domain:string, url:string, logoRaw:string, logoBg:string }[]}
  */
-export function publicNewsSitesFromRows(rows) {
+export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
   const byHost = new Map();
   for (const row of rows || []) {
     if (!row || row.active === false || row.active === "f") continue;
@@ -95,6 +98,8 @@ export function publicNewsSitesFromRows(rows) {
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true) continue;
     if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
+    const isIl = Boolean(layout.hmIl81 && typeof layout.hmIl81 === "object");
+    if (group === "il" ? !isIl : isIl) continue;
     const logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
     const site = {
       id: Number(row.id),
@@ -104,6 +109,7 @@ export function publicNewsSitesFromRows(rows) {
       url: `https://${host}/`,
       logoRaw,
       logoBg: safeColor(layout.hmLogoBarBackground),
+      ...(isIl ? { il: String(layout.hmIl81.il || ""), plate: String(layout.hmIl81.plate || ""), region: String(layout.hmIl81.region || "") } : {}),
     };
     const prev = byHost.get(host);
     // One tile per domain: keep the lowest id that has a logo (duplicate rows such as marmara.gundemi.org).
@@ -111,7 +117,10 @@ export function publicNewsSitesFromRows(rows) {
       byHost.set(host, site);
     }
   }
-  return [...byHost.values()].sort((a, b) => a.id - b.id);
+  const out = [...byHost.values()];
+  // İl siteleri plaka sırasıyla (01 Adana … 81 Düzce), ana liste id sırasıyla.
+  if (group === "il") return out.sort((a, b) => Number(a.plate) - Number(b.plate) || a.id - b.id);
+  return out.sort((a, b) => a.id - b.id);
 }
 
 function readClients(env) {
@@ -150,10 +159,10 @@ async function loadRows(env) {
 }
 
 /** Live list for server-side renderers (e.g. /daha). logo = absolute URL on `origin`. */
-export async function listPublicNewsSites(env, { origin = "", exclude = "" } = {}) {
+export async function listPublicNewsSites(env, { origin = "", exclude = "", group = "main" } = {}) {
   const ex = normalizeSiteHost(exclude);
   const o = String(origin || "").replace(/\/+$/, "");
-  return publicNewsSitesFromRows(await loadRows(env))
+  return publicNewsSitesFromRows(await loadRows(env), { group })
     .filter((s) => !ex || s.domain !== ex)
     .map((s) => ({
       id: s.id,
@@ -163,6 +172,7 @@ export async function listPublicNewsSites(env, { origin = "", exclude = "" } = {
       url: s.url,
       logo: s.logoRaw ? `${o}${NEWS_SITES_LIST_PATH}/${s.id}/logo?v=${logoVersion(s.logoRaw)}` : "",
       logoBg: s.logoBg,
+      ...(s.il ? { il: s.il, plate: s.plate, region: s.region } : {}),
     }));
 }
 
@@ -188,7 +198,7 @@ export const NEWS_SITES_GRID_STYLE = `<style>
 </style>`;
 
 /** Server-rendered grid HTML (same data as the JSON endpoint). */
-export function renderNewsSitesGrid(sites, { heading = "Haber sitelerimiz" } = {}) {
+export function renderNewsSitesGrid(sites, { heading = "Haber sitelerimiz", sectionId = "daha-haber-siteleri", footerHtml = "" } = {}) {
   const items = (sites || [])
     .map((s) => {
       const bg = s.logoBg ? ` style="background:${escapeHtml(s.logoBg)}"` : "";
@@ -199,7 +209,18 @@ export function renderNewsSitesGrid(sites, { heading = "Haber sitelerimiz" } = {
       return `<li><a class="hm-ns-card hm-daha-site-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener" title="${escapeHtml(s.name)}"><span class="hm-ns-logo"${bg}>${img}</span><span class="hm-ns-name hm-daha-site-name">${escapeHtml(s.name)}</span><span class="hm-ns-domain">${escapeHtml(s.domain)}</span></a></li>`;
     })
     .join("");
-  return `<section id="daha-haber-siteleri" class="hm-daha-sites hm-ns-sites" data-count="${(sites || []).length}">${NEWS_SITES_GRID_STYLE}<h2 class="hm-daha-section-title">${escapeHtml(heading)}</h2><ul class="hm-ns-grid hm-daha-site-grid">${items}</ul></section>`;
+  return `<section id="${escapeHtml(sectionId)}" class="hm-daha-sites hm-ns-sites" data-count="${(sites || []).length}">${NEWS_SITES_GRID_STYLE}<h2 class="hm-daha-section-title">${escapeHtml(heading)}</h2><ul class="hm-ns-grid hm-daha-site-grid">${items}</ul>${footerHtml}</section>`;
+}
+
+export const IL_SITES_HEADING = "İl Siteleri";
+
+/** /daha "İl Siteleri" grubu (81 İl Haber Ağı). Tam liste ve "yakında" iller her haber sitesinin /iller sayfasında. */
+export function renderIlSitesGrid(sites) {
+  return renderNewsSitesGrid(sites, {
+    heading: IL_SITES_HEADING,
+    sectionId: "daha-il-siteleri",
+    footerHtml: `<p class="hm-ns-more"><a href="https://gundemi.org/iller" target="_blank" rel="noopener">81 İl Haber Ağı — tüm iller</a></p>`,
+  });
 }
 
 function decodeDataUri(uri) {
@@ -234,17 +255,22 @@ export async function handlePublicNewsSites(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = String(incoming.pathname || "").replace(/\/+$/, "");
   if (path === NEWS_SITES_LIST_PATH) {
-    const sites = await listPublicNewsSites(env, {
+    const opts = {
       origin: `${incoming.protocol}//${incoming.host}`,
       exclude: incoming.searchParams.get("exclude") || "",
-    });
-    const body = JSON.stringify({ count: sites.length, sites });
+    };
+    const sites = await listPublicNewsSites(env, opts);
+    const ilSites = await listPublicNewsSites(env, { ...opts, group: "il" });
+    const body = JSON.stringify({ count: sites.length, sites, ilCount: ilSites.length, ilSites });
     return new Response(request.method === "HEAD" ? null : body, { status: 200, headers: JSON_HEADERS });
   }
   const m = LOGO_PATH_RE.exec(path);
   if (!m) return null;
   const id = Number(m[1]);
-  const site = publicNewsSitesFromRows(await loadRows(env)).find((s) => s.id === id);
+  const rows = await loadRows(env);
+  const site =
+    publicNewsSitesFromRows(rows).find((s) => s.id === id) ||
+    publicNewsSitesFromRows(rows, { group: "il" }).find((s) => s.id === id);
   const shortCache = "public, max-age=300, s-maxage=300";
   if (!site || !site.logoRaw) {
     return new Response("logo yok", {
