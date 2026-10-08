@@ -47,3 +47,15 @@ test("paths", () => {
   assert.ok(isHmSiteContactPath("/api/hm/editor/site-contact/3/files/4"));
   assert.ok(!isHmSiteContactPath("/api/hm/editor/site-mail"));
 });
+
+test("contactNewsMessage: wrapped Postgres base64 becomes a one-line data: URL", async () => {
+  const { contactNewsMessage } = await import("./hm-site-contact-edge.js");
+  const { extractImageUrls } = await import("./hm-site-mail-to-news.js");
+  const b64 = "/9j/4AAQSkZJRgABAQ".repeat(10);
+  const wrapped = b64.match(/.{1,76}/g).join("\n");
+  const msql = async () => [{ mime: "image/jpeg", b64: wrapped }];
+  const m = await contactNewsMessage(msql, { id: 1, attachments: [{ id: 1, kind: "image" }], message: "Merhaba dünya, test mesajı.", title: "T", name: "A", email: "a@b.c" }, { id: 5 });
+  const urls = extractImageUrls(m.body_html);
+  assert.equal(urls.length, 1);
+  assert.equal(urls[0], `data:image/jpeg;base64,${b64}`);
+});

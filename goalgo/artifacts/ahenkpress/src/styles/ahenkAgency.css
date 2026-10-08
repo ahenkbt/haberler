@@ -1795,3 +1795,5 @@
 .ahenk-tanitim-outro p { margin: 0 0 0.5rem; }
 .ahenk-tanitim-outro p:last-child { margin: 0; font-style: italic; }
 @media (max-width: 860px) { .ahenk-tanitim-cards { grid-template-columns: 1fr; } }
+/* Tanıtım bülteni tek sütun: iki sütunlu .ahenk-detail ızgarasında tek çocuk dar kalıyordu. */
+.ahenk-detail.ahenk-detail-single { grid-template-columns: minmax(0, 1fr); max-width: 1080px; margin-left: auto; margin-right: auto; }
