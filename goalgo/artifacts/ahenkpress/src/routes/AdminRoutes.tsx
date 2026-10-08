@@ -75,6 +75,24 @@ import HmKoseIceAktar from "../pages/admin/HmKoseIceAktar";
 import HmHaberIceAktar from "../pages/admin/HmHaberIceAktar";
 import HmKoseMakaleler from "../pages/admin/HmKoseMakaleler";
 
+/**
+ * /admin/ai-icerik-robotu = "AI Haber Editörü". The page is served at the edge by the `hm-bekci` Worker
+ * (cloudflare/hm-bekci). Client-side navigation here does a full load once so the edge page appears.
+ * If the edge route is missing, the second visit falls back to the old React page (no reload loop).
+ */
+function AiHaberEditoruEdge() {
+  if (typeof window !== "undefined") {
+    const k = "hmAiEditorEdgeReload";
+    if (!window.sessionStorage.getItem(k)) {
+      window.sessionStorage.setItem(k, String(Date.now()));
+      window.location.assign(window.location.pathname + window.location.search);
+      return null;
+    }
+    window.sessionStorage.removeItem(k);
+  }
+  return <ProtectedAdminRoute component={AiIcerikRobotu} />;
+}
+
 export default function AdminRoutes() {
   return (
     <Switch>
@@ -134,6 +152,9 @@ export default function AdminRoutes() {
         {() => <ProtectedAdminRoute component={Medya} />}
       </Route>
       <Route path="/admin/ai-icerik-robotu">
+        {() => <AiHaberEditoruEdge />}
+      </Route>
+      <Route path="/admin/ai-icerik-robotu-eski">
         {() => <ProtectedAdminRoute component={AiIcerikRobotu} />}
       </Route>
       <Route path="/admin/rss-haberleri">
