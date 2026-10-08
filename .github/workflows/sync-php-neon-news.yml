@@ -3,6 +3,8 @@
 name: Sync PHP Neon news backfill
 
 on:
+  repository_dispatch:
+    types: [sync-php-neon-news]
   workflow_dispatch:
     inputs:
       site_slug:
@@ -67,11 +69,24 @@ jobs:
             echo "::error::NEWS_DATABASE_URL secret missing — PHP twilight-pine hedefi yok."
             exit 1
           fi
-          BATCH="${{ github.event.inputs.batch }}"
-          DRY="${{ github.event.inputs.dry_run }}"
-          SLUG="${{ github.event.inputs.site_slug }}"
-          SID="${{ github.event.inputs.site_id }}"
-          ALL="${{ github.event.inputs.all_sites }}"
+          BATCH="200"
+          DRY="false"
+          SLUG=""
+          SID=""
+          ALL="false"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BATCH="${{ github.event.inputs.batch }}"
+            DRY="${{ github.event.inputs.dry_run }}"
+            SLUG="${{ github.event.inputs.site_slug }}"
+            SID="${{ github.event.inputs.site_id }}"
+            ALL="${{ github.event.inputs.all_sites }}"
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            BATCH="${{ github.event.client_payload.batch || '200' }}"
+            DRY="${{ github.event.client_payload.dry_run || 'false' }}"
+            SLUG="${{ github.event.client_payload.site_slug || '' }}"
+            SID="${{ github.event.client_payload.site_id || '' }}"
+            ALL="${{ github.event.client_payload.all_sites || 'false' }}"
+          fi
           ARGS=(--batch="$BATCH")
           if [ "$DRY" = "true" ]; then
             ARGS=(--dry-run "${ARGS[@]}")
