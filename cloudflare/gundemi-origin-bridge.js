@@ -153,6 +153,12 @@ export function isSehitgaziBrandAssetPath(pathname) {
   return p.startsWith("/sehitgazi/");
 }
 
+/** Dünya Sağlık marka dosyaları — Worker ASSETS (`public/dunyasaglik/*`). */
+export function isDunyaSaglikBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/dunyasaglik/");
+}
+
 export function isWorkerBrandStaticAssetPath(pathname) {
   return (
     isGundemiLogoAssetPath(pathname) ||
@@ -161,7 +167,8 @@ export function isWorkerBrandStaticAssetPath(pathname) {
     isYesilVatanBrandAssetPath(pathname) ||
     isTurksavBrandAssetPath(pathname) ||
     isYerelBrandAssetPath(pathname) ||
-    isSehitgaziBrandAssetPath(pathname)
+    isSehitgaziBrandAssetPath(pathname) ||
+    isDunyaSaglikBrandAssetPath(pathname)
   );
 }
 

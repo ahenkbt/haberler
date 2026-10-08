@@ -15,6 +15,7 @@ import {
   isTurksavBrandAssetPath,
   isYerelBrandAssetPath,
   isSehitgaziBrandAssetPath,
+  isDunyaSaglikBrandAssetPath,
   shouldBlockGundemiSpaAssets,
   shouldBridgeGundemiApexPath,
   shouldProxyRegionalPhpThemeAsset,
@@ -169,6 +170,11 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(isYerelBrandAssetPath("/yerel/yerel-logo.png"), true);
     assert.equal(isWorkerBrandStaticAssetPath("/sehitgazi/sehitgazi-logo.png"), true);
     assert.equal(isSehitgaziBrandAssetPath("/sehitgazi/sehitgazi-logo.png"), true);
+  });
+
+  it("treats /dunyasaglik/* as Worker brand static path", () => {
+    assert.equal(isWorkerBrandStaticAssetPath("/dunyasaglik/dunyasaglik-logo.png"), true);
+    assert.equal(isDunyaSaglikBrandAssetPath("/dunyasaglik/dunyasaglik-logo.png"), true);
   });
 
   it("returns null for SPA panel paths on apex", async () => {

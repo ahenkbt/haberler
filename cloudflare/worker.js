@@ -506,6 +506,7 @@ function isStaticAssetPath(pathname) {
     p.startsWith("/yesilvatan/") ||
     p.startsWith("/turksav/") ||
     p.startsWith("/sehitgazi/") ||
+    p.startsWith("/dunyasaglik/") ||
     p.startsWith("/yektube-v2/assets/") ||
     p.includes("/public/assets/")
   );
@@ -1561,6 +1562,11 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     slugKey === "sehitgazi" ||
     normalizeHost(domain) === "sehitgazi.org.tr";
 
+  const isDunyaSaglikBrand =
+    binding.slug === "dunyasaglik" ||
+    slugKey === "dunyasaglik" ||
+    normalizeHost(domain) === "dunyasaglik.org";
+
   // Fix Haber: site satırı var ama kategoriler/PHP Neon eksik → arka planda idempotent seed.
   if (isFixHaberBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "fixhaber" }).catch((err) => {
@@ -1610,6 +1616,21 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
   if (isSehitGaziBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "sehitgazi" }).catch((err) => {
       console.error("[hm-brand-db-ensure/sehitgazi-logo]", String(err?.message || err).slice(0, 200));
+    });
+    if (typeof opts.waitUntil === "function") {
+      opts.waitUntil(job);
+    } else {
+      try {
+        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))]);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  // Dünya Sağlık: logoUrl/faviconUrl ASSETS yolu — arka planda Neon (panel + PHP) hizala.
+  if (isDunyaSaglikBrand && upstream.ok) {
+    const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "dunyasaglik" }).catch((err) => {
+      console.error("[hm-brand-db-ensure/dunyasaglik-logo]", String(err?.message || err).slice(0, 200));
     });
     if (typeof opts.waitUntil === "function") {
       opts.waitUntil(job);
