@@ -34,6 +34,7 @@
     "ensure:gundemi-bolge": "node --import tsx ./scripts/ensure-gundemi-regional-sites.ts",
     "ensure:fixhaber": "node --import tsx ./scripts/ensure-fixhaber-site.ts",
     "ensure:sosyalhizmetler": "node --import tsx ./scripts/ensure-sosyalhizmetler-site.ts",
+    "ensure:kamu-yerel": "node --import tsx ./scripts/ensure-kamu-yerel-sites.ts",
     "purge:incomplete-contacts": "node --import tsx ./scripts/purge-incomplete-contacts.ts",
     "cleanup:video-tv": "node --env-file=../../.env --import tsx ./scripts/cleanup-video-tv.ts",
     "sync:yektube-remote": "node --env-file=../../.env --env-file=.env ./scripts/sync-yektube-remote.mjs",

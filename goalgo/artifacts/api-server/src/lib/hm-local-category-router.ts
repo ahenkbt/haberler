@@ -252,6 +252,18 @@ const EKONOMI_TERMS = [
   "butce",
 ];
 
+/** Sinema / gişe — "dijital platform" gibi ifadeler teknoloji kuralına düşmesin. */
+const GISE_SINEMA_TERMS = [
+  "gişe",
+  "gise",
+  "sinema",
+  "beyaz perde",
+  "vizyondan",
+  "box office",
+  "film festival",
+  "film festivali",
+];
+
 const TEKNOLOJI_TERMS = [
   "teknoloji",
   "yazilim",
@@ -438,6 +450,7 @@ export function resolveHmTopicCategorySlug(
 ): string {
   if (looksLikeSportsContent(title, spot, content)) return "spor";
   const text = combinedText(title, spot, content);
+  if (containsAnyTerm(text, GISE_SINEMA_TERMS)) return "gundem";
   for (const rule of TOPIC_SLUG_RULES) {
     if (containsAnyTerm(text, rule.terms)) return rule.slug;
   }

@@ -4,6 +4,7 @@
  */
 
 import { isHmCorporateLikeTheme } from "./hm-corporate-like-theme.js";
+import { isBlockedHmRssFeedUrl } from "./rssBlockedFeeds.js";
 
 export type HmRssSourcePackId = "ntv" | "dirilis" | "birgun" | "yerel";
 
@@ -71,7 +72,6 @@ const BIRGUN: HmRssSourcePackFeed[] = [
   { id: "birgun-guncel", label: "Gündem", url: "https://www.birgun.net/rss/kategori/guncel-7", categoryKey: "gundem" },
   { id: "birgun-kultur", label: "Kültür Sanat", url: "https://www.birgun.net/rss/kategori/kultur-sanat-11", categoryKey: "kultur-sanat" },
   { id: "birgun-saglik", label: "Sağlık", url: "https://www.birgun.net/rss/kategori/saglik-27", categoryKey: "saglik" },
-  { id: "birgun-siyaset", label: "Siyaset", url: "https://www.birgun.net/rss/kategori/siyaset-8", categoryKey: "politika" },
   { id: "birgun-spor", label: "Spor", url: "https://www.birgun.net/rss/kategori/spor-12", categoryKey: "spor" },
   { id: "birgun-yerel", label: "Yerel", url: "https://www.birgun.net/rss/kategori/yerel-38", categoryKey: "yerel" },
   { id: "birgun-teknoloji", label: "Teknoloji", url: "https://www.birgun.net/rss/kategori/teknoloji-28", categoryKey: "teknoloji" },
@@ -218,6 +218,7 @@ export function listEnabledHmRssSourcePackFeeds(flags: HmRssSourcePackFlags): Hm
   for (const id of ["ntv", "dirilis", "birgun", "yerel"] as const) {
     if (flags[id] !== true) continue;
     for (const feed of HM_RSS_SOURCE_PACKS[id].feeds) {
+      if (isBlockedHmRssFeedUrl(feed.url)) continue;
       const url = feed.url.trim().toLowerCase();
       if (!url || seen.has(url)) continue;
       seen.add(url);
