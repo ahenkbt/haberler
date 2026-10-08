@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isHmPlaceCategorySlug,
   pickHmLocalCategorySlug,
   resolveHmImportCategorySlug,
   type HmSiteCategoryCatalogRow,
@@ -30,6 +31,12 @@ const BOLGE_FALLBACK: HmSiteCategoryCatalogRow[] = [
 ];
 
 describe("hm-local-category-router", () => {
+  it("isHmPlaceCategorySlug: il/yerel slug'ları karışık doldurma dışı", () => {
+    expect(isHmPlaceCategorySlug("ankara", "asg")).toBe(true);
+    expect(isHmPlaceCategorySlug("yerel")).toBe(true);
+    expect(isHmPlaceCategorySlug("gundem")).toBe(false);
+  });
+
   it("pickHmLocalCategorySlug: şehir → bölge → yerel önceliği", () => {
     expect(pickHmLocalCategorySlug(ASG_CATALOG, "ankara", "asg")).toBe("ankara");
     expect(pickHmLocalCategorySlug(BOLGE_FALLBACK, "izmir")).toBe("bolge-haber");

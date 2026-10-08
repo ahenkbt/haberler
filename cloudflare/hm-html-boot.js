@@ -493,12 +493,6 @@ function bootHeadlineItems(bundle, origin, opts) {
       if (items.length >= limit) return items;
     }
   }
-  if (wantCat && items.length < Math.min(8, limit)) {
-    for (const row of unmatched) {
-      items.push(row);
-      if (items.length >= limit) break;
-    }
-  }
   return items;
 }
 

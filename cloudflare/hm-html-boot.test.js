@@ -226,6 +226,7 @@ describe("hm-html-boot", () => {
     assert.match(html, /Ankara haberi/);
     assert.match(html, /\/haber\/ankara-1/);
     assert.match(html, /İkinci Ankara/);
+    assert.equal(html.includes("Spor haberi"), false);
     const article = buildHmClassicArticlePaintHtml({
       slug: "asg",
       host: "ankarasehirgazetesi.com",
