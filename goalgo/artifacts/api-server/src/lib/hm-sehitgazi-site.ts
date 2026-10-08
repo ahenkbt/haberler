@@ -36,6 +36,19 @@ export function isSehitGaziSlug(raw: string | null | undefined): boolean {
   );
 }
 
+/** Kırık / yasak yollar — kullanıcı https veya marka dışı geçerli statik yolu ezme. */
+export function brandLogoUrlNeedsRepair(raw: string | null | undefined, brandPath: string): boolean {
+  const t = String(raw ?? "").trim();
+  if (!t) return true;
+  if (t === brandPath) return false;
+  const lower = t.toLowerCase();
+  if (lower.startsWith("data:image/")) return true;
+  if (t.includes("/api/media")) return true;
+  if (/^https?:\/\/[^/]+\/data:image\//i.test(t)) return true;
+  if (t.startsWith("/turkata/") || t.startsWith("/brand/turkata/")) return true;
+  return false;
+}
+
 /** layout_json üzerine logo/favicon yazar (mevcut alanları korur). */
 export function applySehitGaziLogoToLayout(
   layout: Record<string, unknown> | null | undefined,
@@ -44,17 +57,13 @@ export function applySehitGaziLogoToLayout(
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
-  const needsLogo =
-    !logo || logo.toLowerCase().startsWith("data:image/") || logo !== SEHITGAZI_LOGO_PATH;
-  const needsFavicon =
-    !favicon ||
-    favicon.toLowerCase().startsWith("data:image/") ||
-    favicon !== SEHITGAZI_FAVICON_PATH;
+  const needsLogo = brandLogoUrlNeedsRepair(logo, SEHITGAZI_LOGO_PATH);
+  const needsFavicon = brandLogoUrlNeedsRepair(favicon, SEHITGAZI_FAVICON_PATH);
   if (!needsLogo && !needsFavicon) {
     return { layout: next, changed: false };
   }
-  next.logoUrl = SEHITGAZI_LOGO_PATH;
-  next.faviconUrl = SEHITGAZI_FAVICON_PATH;
+  if (needsLogo) next.logoUrl = SEHITGAZI_LOGO_PATH;
+  if (needsFavicon) next.faviconUrl = SEHITGAZI_FAVICON_PATH;
   if (!next.hmPrimaryColor) next.hmPrimaryColor = SEHITGAZI_PRIMARY_COLOR;
   return { layout: next, changed: true };
 }

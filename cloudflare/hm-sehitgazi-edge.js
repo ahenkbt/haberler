@@ -23,22 +23,31 @@ function normalizeHost(raw) {
   );
 }
 
+/** Kırık / yasak yollar — kullanıcı https veya geçerli statik yolu ezme. */
+export function brandLogoUrlNeedsRepair(raw, brandPath) {
+  const t = String(raw ?? "").trim();
+  if (!t) return true;
+  if (t === brandPath) return false;
+  const lower = t.toLowerCase();
+  if (lower.startsWith("data:image/")) return true;
+  if (t.includes("/api/media")) return true;
+  if (/^https?:\/\/[^/]+\/data:image\//i.test(t)) return true;
+  if (t.startsWith("/turkata/") || t.startsWith("/brand/turkata/")) return true;
+  return false;
+}
+
 export function applySehitGaziLogoToLayout(layout) {
   const next =
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
-  const needsLogo =
-    !logo || logo.toLowerCase().startsWith("data:image/") || logo !== SEHITGAZI_LOGO_PATH;
-  const needsFavicon =
-    !favicon ||
-    favicon.toLowerCase().startsWith("data:image/") ||
-    favicon !== SEHITGAZI_FAVICON_PATH;
+  const needsLogo = brandLogoUrlNeedsRepair(logo, SEHITGAZI_LOGO_PATH);
+  const needsFavicon = brandLogoUrlNeedsRepair(favicon, SEHITGAZI_FAVICON_PATH);
   if (!needsLogo && !needsFavicon) {
     return { layout: next, changed: false };
   }
-  next.logoUrl = SEHITGAZI_LOGO_PATH;
-  next.faviconUrl = SEHITGAZI_FAVICON_PATH;
+  if (needsLogo) next.logoUrl = SEHITGAZI_LOGO_PATH;
+  if (needsFavicon) next.faviconUrl = SEHITGAZI_FAVICON_PATH;
   if (!next.hmPrimaryColor) next.hmPrimaryColor = SEHITGAZI_PRIMARY_COLOR;
   return { layout: next, changed: true };
 }
