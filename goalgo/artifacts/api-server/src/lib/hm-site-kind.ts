@@ -216,7 +216,7 @@ export function siteKindLayoutDefaults(kind: HmSiteKind, corporateTheme?: unknow
 const MULTI_LABEL_SUFFIXES = new Set([
   "com.tr", "net.tr", "org.tr", "gov.tr", "edu.tr", "k12.tr", "gen.tr", "bel.tr", "av.tr", "dr.tr",
   "web.tr", "biz.tr", "info.tr", "tv.tr", "name.tr", "pol.tr", "tsk.tr", "bbs.tr", "tel.tr", "kep.tr",
-  "nc.tr", "co.uk", "org.uk", "com.cy", "com.de",
+  "nc.tr", "co.uk", "org.uk", "com.cy", "net.cy", "org.cy", "com.de",
 ]);
 
 /**
@@ -233,8 +233,9 @@ export function defaultEditorLoginForHost(raw: unknown): { email: string; userna
   const lastTwo = labels.slice(-2).join(".");
   const registrableLen = MULTI_LABEL_SUFFIXES.has(lastTwo) ? 3 : 2;
   let email: string;
+  // Aynı kural: cloudflare/hm-site-mail-convention.js conventionalAddressForHost (a.b.ornek.com → a.b@ornek.com).
   if (labels.length > registrableLen) {
-    email = `${labels[0]}@${labels.slice(1).join(".")}`;
+    email = `${labels.slice(0, -registrableLen).join(".")}@${labels.slice(-registrableLen).join(".")}`;
   } else if (labels.length === registrableLen) {
     email = `bilgi@${host}`;
   } else {

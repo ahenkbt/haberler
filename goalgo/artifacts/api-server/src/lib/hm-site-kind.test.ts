@@ -113,6 +113,7 @@ describe("default editor account", () => {
     expect(defaultEditorLoginForHost("kibris.gundemi.org")?.email).toBe("kibris@gundemi.org");
     expect(defaultEditorLoginForHost("www.adana.fix.tc")?.email).toBe("adana@fix.tc");
     expect(defaultEditorLoginForHost("spor.suhaber.com.tr")?.email).toBe("spor@suhaber.com.tr");
+    expect(defaultEditorLoginForHost("a.b.ornek.com")?.email).toBe("a.b@ornek.com");
   });
   it("normal domains -> bilgi@<domain>, password = username", () => {
     const a = defaultEditorLoginForHost("https://www.OrnekHaber.com/");

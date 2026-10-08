@@ -197,7 +197,7 @@ function composeNewsDomains(form: SiteForm): { list: string[]; error?: string } 
   return { list };
 }
 
-const MULTI_LABEL_SUFFIXES = new Set(["com.tr", "net.tr", "org.tr", "gov.tr", "edu.tr", "k12.tr", "gen.tr", "bel.tr", "av.tr", "web.tr", "biz.tr", "info.tr", "tv.tr", "co.uk"]);
+const MULTI_LABEL_SUFFIXES = new Set(["com.tr", "net.tr", "org.tr", "gov.tr", "edu.tr", "k12.tr", "gen.tr", "bel.tr", "av.tr", "web.tr", "biz.tr", "info.tr", "tv.tr", "dr.tr", "bbs.tr", "name.tr", "tel.tr", "pol.tr", "tsk.tr", "kep.tr", "co.uk", "org.uk", "com.cy", "net.cy", "org.cy", "com.de"]);
 
 /** Varsayılan editör (sunucu ile aynı kural): alt alan adı → <alt>@<üst>, normal domain → bilgi@<domain>; şifre = kullanıcı adı. */
 function defaultEditorEmailForHost(raw: string | null | undefined): string | null {
@@ -206,7 +206,7 @@ function defaultEditorEmailForHost(raw: string | null | undefined): string | nul
   const labels = h.split(".").filter(Boolean);
   if (labels.length < 2) return null;
   const reg = MULTI_LABEL_SUFFIXES.has(labels.slice(-2).join(".")) ? 3 : 2;
-  if (labels.length > reg) return `${labels[0]}@${labels.slice(1).join(".")}`;
+  if (labels.length > reg) return `${labels.slice(0, -reg).join(".")}@${labels.slice(-reg).join(".")}`;
   if (labels.length === reg) return `bilgi@${h}`;
   return null;
 }
