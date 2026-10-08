@@ -183,9 +183,29 @@ function fallbackPageForSlug(slug) {
   return null;
 }
 
+function scoreExtraPages(pages) {
+  let score = 0;
+  for (const page of pages) {
+    if (!page || typeof page !== "object") continue;
+    const slug = String(page.slug ?? "")
+      .trim()
+      .toLowerCase();
+    const body = String(page.bodyHtml ?? "");
+    if (slug === "daha" || slug === "iller") score += 10;
+    if (body.includes("hm-daha-proje") || body.includes("hm-daha-site-grid")) score += 100;
+    if (body.includes("hm-daha-aside") || body.includes("hm-iller-page")) score += 5;
+    score += Math.min(20, Math.floor(body.length / 2000));
+  }
+  return score;
+}
+
 async function fetchLayoutPagesForHost(env, hostname) {
   const host = normalizeHost(hostname);
-  const clients = [neonNewsSqlClient(env), neonSqlClient(env)].filter(Boolean);
+  // Panel Neon (DATABASE_URL) often has fresher hmExtraPages; PHP NEWS role may be
+  // unable to UPDATE hm_news_sites.layout_json — pick the richer layout.
+  const clients = [neonSqlClient(env), neonNewsSqlClient(env)].filter(Boolean);
+  let best = [];
+  let bestScore = -1;
   for (const sql of clients) {
     try {
       const rows = await sql`
@@ -199,12 +219,17 @@ async function fetchLayoutPagesForHost(env, hostname) {
         LIMIT 1
       `;
       const pages = parseLayoutPages(rows?.[0]?.layout_json);
-      if (pages.length) return pages;
+      if (!pages.length) continue;
+      const score = scoreExtraPages(pages);
+      if (score > bestScore) {
+        best = pages;
+        bestScore = score;
+      }
     } catch (err) {
       console.error("[kamu-yerel-extra]", String(err?.message || err).slice(0, 160));
     }
   }
-  return [];
+  return best;
 }
 
 const PAGE_STYLE = `<style>
@@ -306,6 +331,16 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
   // Yalnızca bilinen kamu-yerel extra slug'ları veya Neon layout'ta tanımlı sayfalar.
   const pages = await fetchLayoutPagesForHost(env, incoming.hostname);
   let page = findEnabledExtraPage(pages, slug);
+  // Stale PHP Neon layouts often keep an old /daha body (intl+iller only). Prefer
+  // the in-worker promo hub until twilight-pine layout_json can be rewritten.
+  if (
+    slug === "daha" &&
+    page &&
+    !String(page.bodyHtml || "").includes("hm-daha-proje") &&
+    !String(page.bodyHtml || "").includes("hm-daha-site-grid")
+  ) {
+    page = fallbackDahaPage();
+  }
   if (!page) {
     page = fallbackPageForSlug(slug);
   }
