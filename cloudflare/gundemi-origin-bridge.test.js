@@ -20,6 +20,7 @@ import {
   shouldBridgeGundemiApexPath,
   shouldProxyRegionalPhpThemeAsset,
   gundemiApexPhpBridgeResponse,
+  appendYsLogoHeaderCssFix,
 } from "./gundemi-origin-bridge.js";
 
 describe("gundemi-origin-bridge hosts", () => {
@@ -232,5 +233,15 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.ok(res);
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
+  });
+});
+
+describe("ys logo header css fix", () => {
+  it("appends once", () => {
+    const once = appendYsLogoHeaderCssFix(":root{--ys-accent:#c8102e}");
+    assert.match(once, /ys-logo-header-fix:v1/);
+    assert.match(once, /max-height:\s*64px/);
+    const twice = appendYsLogoHeaderCssFix(once);
+    assert.equal(twice, once);
   });
 });
