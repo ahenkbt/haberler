@@ -311,6 +311,7 @@ export async function executeRssCampaignRun(
     title: string;
     description: string;
     contentEncoded: string;
+    rawInner?: string;
     link: string;
     imageUrl: string | null;
     publishedAt: Date;
@@ -436,6 +437,7 @@ export async function executeRssCampaignRun(
           title: item.title,
           description: item.descHtml || item.desc,
           contentEncoded: extractRssContentEncoded(item.rawInner),
+          rawInner: item.rawInner,
           link: item.link,
           imageUrl:
             extractRssCoverImage(item.rawInner, item.descHtml || item.desc, item.link) ?? null,
@@ -488,9 +490,12 @@ export async function executeRssCampaignRun(
         const publishedAt = item.publishedAt;
         const resolvedCover = await resolveRssImportCoverImage({
           existing: item.imageUrl,
+          rawItem: item.rawInner ?? item.contentEncoded ?? null,
           descriptionHtml: item.description,
+          contentHtml,
           link: item.link,
         });
+        // downloadImages=true → media-edge / R2 upload path (Cumha kamu-yerel seed default).
         const imageUrl = await mirrorRssImportImageUrl(resolvedCover, cleanTitle, {
           force: campaign.downloadImages === true,
         });
