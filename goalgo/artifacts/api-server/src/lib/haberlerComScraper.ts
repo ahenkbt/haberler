@@ -93,6 +93,7 @@ async function fetchHtml(url: string, timeoutMs: number): Promise<string> {
 function extractHaberlerCards(html: string, baseUrl: string, limit: number): HaberlerListingLink[] {
   const items: HaberlerListingLink[] = [];
   const seen = new Set<string>();
+  // Kapaklı kartlar
   const cardRe =
     /<a\s+href="([^"]+-haberi\/?)"[^>]*title="([^"]*)"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/gi;
   let m: RegExpExecArray | null;
@@ -109,6 +110,21 @@ function extractHaberlerCards(html: string, baseUrl: string, limit: number): Hab
     if (title.length < 8) continue;
     const imageUrl = m[3]?.startsWith("http") ? m[3]! : null;
     items.push({ title, link, imageUrl });
+  }
+  // Başlıklı ama img'siz / farklı DOM — title öznitelikli tüm -haberi linkleri
+  const titledRe = /<a\s+href="([^"]+-haberi\/?)"[^>]*title="([^"]+)"/gi;
+  while ((m = titledRe.exec(html)) !== null && items.length < limit * 2) {
+    let link: string;
+    try {
+      link = new URL(m[1]!, baseUrl).href;
+    } catch {
+      continue;
+    }
+    if (seen.has(link)) continue;
+    seen.add(link);
+    const title = decodeHtmlEntities(m[2] ?? "").slice(0, 400);
+    if (title.length < 8) continue;
+    items.push({ title, link, imageUrl: null });
   }
   return items;
 }
@@ -142,8 +158,8 @@ export function parseHaberlerListingLinks(
   pageUrl: string,
   opts?: { limit?: number; topicFilterTags?: string[] },
 ): HaberlerListingLink[] {
-  // Tek sayfa üst sınırı — toplu içe aktarımda (ör. Muhtar ×4 sayfa) 40'a kadar.
-  const limit = Math.max(1, Math.min(40, opts?.limit ?? 20));
+  // Tek sayfa üst sınırı — Muhtar kategori listesinde ~60+ unique kart olabilir.
+  const limit = Math.max(1, Math.min(80, opts?.limit ?? 20));
   const filterTags = opts?.topicFilterTags?.filter((t) => t.trim()) ?? [];
   const merged: HaberlerListingLink[] = [];
   const seen = new Set<string>();
@@ -265,7 +281,7 @@ export async function scrapeHaberlerComCampaignItems(
   pageUrl: string,
   opts?: { limit?: number; timeoutMs?: number; topicFilterTags?: string[] },
 ): Promise<HaberlerScrapedArticle[]> {
-  const limit = Math.max(1, Math.min(40, opts?.limit ?? 15));
+  const limit = Math.max(1, Math.min(80, opts?.limit ?? 15));
   const timeoutMs = opts?.timeoutMs ?? 15_000;
   const filterTags = opts?.topicFilterTags?.map((t) => t.trim().toLowerCase()).filter(Boolean) ?? [];
 
@@ -310,7 +326,7 @@ export async function scrapeHaberlerComListingPages(
   opts?: { limit?: number; timeoutMs?: number; topicFilterTags?: string[]; perPageLimit?: number },
 ): Promise<HaberlerScrapedArticle[]> {
   const totalLimit = Math.max(1, Math.min(200, opts?.limit ?? 100));
-  const perPage = Math.max(1, Math.min(40, opts?.perPageLimit ?? 30));
+  const perPage = Math.max(1, Math.min(80, opts?.perPageLimit ?? 40));
   const timeoutMs = opts?.timeoutMs ?? 15_000;
   const filterTags = opts?.topicFilterTags?.map((t) => t.trim().toLowerCase()).filter(Boolean) ?? [];
   const seenLinks = new Set<string>();

@@ -247,10 +247,10 @@ export const HABERLER_MUHTAR_LISTING_BASE = "https://www.haberler.com/muhtar/";
 
 /**
  * robots.txt eski sayısal sayfalama (/muhtar/4/) engeller; sN biçimi serbest.
- * Sayfa başına ~20–30 haber — 4 sayfa ≈ 100 hedef.
+ * Sayfa başına ~20–30 haber — 8 sayfa ≈ 100+ hedef (liste örtüşmesi için pay).
  */
-export function listHaberlerMuhtarListingPages(pageCount = 4): string[] {
-  const n = Math.max(1, Math.min(10, Math.trunc(pageCount) || 4));
+export function listHaberlerMuhtarListingPages(pageCount = 8): string[] {
+  const n = Math.max(1, Math.min(12, Math.trunc(pageCount) || 8));
   const pages = [HABERLER_MUHTAR_LISTING_BASE];
   for (let i = 2; i <= n; i++) {
     pages.push(`https://www.haberler.com/muhtar/s${i}/`);

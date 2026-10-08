@@ -40,14 +40,14 @@ function configureDualWriteForProd(): void {
   }
 }
 
-export function buildTurkataMuhtarCampaignFeeds(pageCount = 4): string[] {
+export function buildTurkataMuhtarCampaignFeeds(pageCount = 8): string[] {
   return listHaberlerMuhtarListingPages(pageCount);
 }
 
 export async function ensureTurkataMuhtarCampaign(siteId: number): Promise<number | null> {
   const tag = TURKATA_MUHTAR_CAMPAIGN_TAG;
   const name = "Türkata — Haberler.com Muhtar (100)";
-  const feeds = buildTurkataMuhtarCampaignFeeds(4);
+  const feeds = buildTurkataMuhtarCampaignFeeds(8);
   const rows = await getNewsDbForRead().select().from(rssCampaignsTable);
   const existing = rows.find((r: { name: string; tags: string[] | null }) => {
     const tags = Array.isArray(r.tags) ? r.tags.map((t: string) => String(t).toLowerCase()) : [];
@@ -59,17 +59,12 @@ export async function ensureTurkataMuhtarCampaign(siteId: number): Promise<numbe
     active: true,
     postType: "news",
     categorySlug: HABERLER_MUHTAR_CATEGORY_SLUG,
-    tags: [
-      KAMU_YEREL_CAMPAIGN_TAG,
-      tag,
-      HABERLER_MUHTAR_CATEGORY_SLUG,
-      "require-image",
-      TURKATAHABER_SLUG,
-    ],
+    // Kapak tercih edilir (downloadImages); require-image kaynakta ~20–30 ile sınırlı kalmasın.
+    tags: [KAMU_YEREL_CAMPAIGN_TAG, tag, HABERLER_MUHTAR_CATEGORY_SLUG, TURKATAHABER_SLUG],
     feeds,
     sourceType: "haberler",
     intervalMinutes: 360,
-    dailyLimit: 30,
+    dailyLimit: 40,
     downloadImages: true,
     headline: false,
     hmSiteIds: [siteId],

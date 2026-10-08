@@ -55,16 +55,32 @@ export function campaignWritesPerHmSite(campaign: {
   if (
     tags.includes("midnight-tr") ||
     tags.includes("sehirhaberajansi") ||
-    tags.includes(VATANHABER_ANKARA_CAMPAIGN_TAG)
+    tags.includes(VATANHABER_ANKARA_CAMPAIGN_TAG) ||
+    // Kamu-yerel / Türkata Muhtar: shared pool (site_id=null) PHP kategori sayfalarını boş bırakır.
+    tags.includes("kamu-yerel-cumha") ||
+    tags.includes("turkata-muhtar-haberler") ||
+    tags.includes("turkatahaber")
   ) {
     return true;
   }
   const name = String(campaign.name ?? "");
-  if (name.includes("Şehir Haber Ajansı") || name.includes("Vatanhaber Ankara")) return true;
+  if (
+    name.includes("Şehir Haber Ajansı") ||
+    name.includes("Vatanhaber Ankara") ||
+    name.includes("Türkata") ||
+    name.includes("kamu-yerel")
+  ) {
+    return true;
+  }
   const feeds = Array.isArray(campaign.feeds) ? campaign.feeds : [];
   return feeds.some((f) => {
     const u = String(f ?? "").toLowerCase();
-    return u.includes("sehirhaberajansi.com.tr") || (u.includes("vatanhaber.net") && u.includes("ankara"));
+    return (
+      u.includes("sehirhaberajansi.com.tr") ||
+      (u.includes("vatanhaber.net") && u.includes("ankara")) ||
+      u.includes("haberler.com/muhtar") ||
+      u.includes("cumha.com.tr/rss/")
+    );
   });
 }
 

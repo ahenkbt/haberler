@@ -281,11 +281,14 @@ export async function executeRssCampaignRun(
     return { added: 0, skipped: 0, upgraded: 0, errors: 1, message: "Kampanyaya RSS feed URL'i eklenmemiş." };
   }
 
-  // SHA/Vatanhaber: ASG+AHG (ve diğer hedefler) için ayrı siteId satırı.
-  // Diğer kampanyalar: shared RSS havuzuna tek merkez satır.
-  const publishTargets = campaignWritesPerHmSite(campaign)
-    ? siteTargets
-    : resolveRssCampaignSharedPublishTargets(siteTargets);
+  // SHA/Vatanhaber/kamu-yerel/Türkata: ayrı siteId satırı (PHP /kategori sayfaları için zorunlu).
+  // forceHmSiteId verilmişse de shared pool'a (site_id=null) düşme.
+  const forcePerSite =
+    Number.isFinite(Number(opts?.forceHmSiteId)) && Number(opts?.forceHmSiteId) > 0;
+  const publishTargets =
+    forcePerSite || campaignWritesPerHmSite(campaign)
+      ? siteTargets
+      : resolveRssCampaignSharedPublishTargets(siteTargets);
   const existingBySite = await loadExistingNewsBySite(publishTargets);
 
   const itemLimit = rssCampaignItemLimit(campaign.dailyLimit);
