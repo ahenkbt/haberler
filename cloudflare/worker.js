@@ -500,6 +500,7 @@ function isStaticAssetPath(pathname) {
   return (
     /\.(js|mjs|cjs|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif|webmanifest)(\?|$)/i.test(p) ||
     p.startsWith("/assets/") ||
+    p.startsWith("/turkata/") ||
     p.startsWith("/yektube-v2/assets/") ||
     p.includes("/public/assets/")
   );
