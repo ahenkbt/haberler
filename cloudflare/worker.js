@@ -29,6 +29,7 @@ import { khPublicSuspensionResponse } from "./hm-public-suspended.js";
 import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from "./php-theme-legacy-redirect.js";
 import { serveKamuYerelExtraPage } from "./hm-kamu-yerel-extra-pages-edge.js";
 import { handlePublicNewsSites } from "./hm-public-news-sites.js";
+import { il81ForHost, il81ForSlug } from "./hm-il81-edge.js";
 import { kamuYerelDunyaRedirectResponse } from "./hm-kamu-yerel-dunya-redirect.js";
 import {
   gundemiApexPhpBridgeResponse,
@@ -1518,6 +1519,9 @@ function isHmMetaApiPath(pathname) {
   return p.startsWith("/api/hm/meta/");
 }
 
+/** fixil-brand 2026-10-09: il81 panel rebrand check, once per isolate per site. */
+const _il81BrandChecked = new Set();
+
 /** Su markas─▒: domain onar─▒m─▒n─▒ uygula ve kanonik /tr/su metas─▒n─▒ tercih et. Di─şer markalar: yaln─▒z 404.
  * @param {{ waitUntil?: (p: Promise<unknown>) => void }} [opts]
  */
@@ -1583,6 +1587,20 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     binding.slug === "dunyasaglik" ||
     slugKey === "dunyasaglik" ||
     normalizeHost(domain) === "dunyasaglik.org";
+
+  // fixil-brand 2026-10-09: il sitesi (<il>.fix.tc) panel satırı hâlâ eski "<İl> Gündemi" adındaysa arka planda bir kez
+  // "Fix <İl> Haber" + marka anahtarları (merge) — hm-il81-edge.js rebrandIl81RowOnSql. İzolat başına site başına tek deneme.
+  const il81Site = il81ForHost(domain) || il81ForSlug(binding.slug);
+  if (il81Site && upstream.ok) {
+    if (!_il81BrandChecked.has(il81Site.slug)) {
+      _il81BrandChecked.add(il81Site.slug);
+      const job = ensureBrandHmSiteMeta(env, { domain: il81Site.hosts[0], slug: il81Site.slug }).catch((err) => {
+        console.error("[hm-brand-db-ensure/il81-brand]", String(err?.message || err).slice(0, 200));
+      });
+      if (typeof opts.waitUntil === "function") opts.waitUntil(job);
+    }
+    return null;
+  }
 
   // Fix Haber: site satırı var ama kategoriler/PHP Neon eksik → arka planda idempotent seed.
   if (isFixHaberBrand && upstream.ok) {
