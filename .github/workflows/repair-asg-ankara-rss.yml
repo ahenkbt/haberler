@@ -1,0 +1,60 @@
+# Neon: ASG Ankara kategori + rss-{id} slug onarımı (PR #415 sonrası prod).
+# Secrets: DATABASE_URL (GitHub Environment: DATABASE_URL)
+name: Repair ASG Ankara RSS
+
+on:
+  workflow_dispatch:
+    inputs:
+      slugs:
+        description: "Virgülle ayrılmış rss slug listesi (boş = tüm rss-\\d+)"
+        required: false
+        default: "rss-340170,rss-340174,rss-340313,rss-340479,rss-340482"
+      dry_run:
+        description: "Yalnızca dry-run (true/false)"
+        required: false
+        default: "false"
+
+concurrency:
+  group: repair-asg-ankara-rss
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install goalgo dependencies
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+
+      - name: repair:asg-ankara-rss
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL secret missing — cannot repair ASG in Neon."
+            exit 1
+          fi
+          SLUGS="${{ github.event.inputs.slugs }}"
+          DRY="${{ github.event.inputs.dry_run }}"
+          EXTRA=""
+          if [ "$DRY" = "true" ]; then
+            pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --dry-run --slugs="$SLUGS"
+          else
+            pnpm --filter @workspace/api-server run repair:asg-ankara-rss -- --apply --slugs="$SLUGS"
+          fi
