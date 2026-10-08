@@ -239,13 +239,14 @@ export function isPhpNewsBrandThemeHost(hostname) {
  * Does not own HTML (orange→PHP origin stays intact).
  * @returns {Promise<Response|null>}
  */
-export async function phpNewsBrandThemeCssBridgeResponse(request, incoming) {
+export async function phpNewsBrandThemeCssBridgeResponse(request, incoming, opts) {
   if (!isPhpNewsBrandThemeHost(incoming.hostname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
   if (!/\/assets\/theme\.css$/i.test(pathOnly)) return null;
-  return proxySharedPhpThemePath(request, incoming, {
+  return cachedSharedPhpThemePath(request, incoming, {
     frontendTag: "php-news-brand-theme-css",
+    waitUntil: opts?.waitUntil,
   });
 }
 
@@ -426,12 +427,99 @@ async function proxySharedPhpThemePath(request, incoming, opts) {
 }
 
 /**
+ * Edge cache for per-host theme.css / theme.js (2026-10-08).
+ * Before: every request re-fetched turkatahaber.com/assets/theme.* from the PHP origin and re-decorated it
+ * (0.3–0.9 s). Now: caches.default, key per host (+query), fresh for THEME_EDGE_TTL_S, then served stale
+ * for up to THEME_EDGE_SWR_S while one background refresh runs. Only 200 + css/js bodies are stored.
+ */
+export const THEME_EDGE_TTL_S = 120;
+export const THEME_EDGE_SWR_S = 86400;
+const THEME_EDGE_CACHED_AT = "x-hm-edge-cached-at";
+const themeEdgeRefreshing = new Set();
+
+export function themeEdgeCacheKeyUrl(incoming) {
+  const host = normalizeHostname(incoming.hostname).replace(/^www\./, "");
+  const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
+  const u = new URL(`https://${host}${pathOnly}`);
+  u.search = String(incoming.search || "");
+  u.searchParams.set("__hm_theme_edge", "v1");
+  return u.toString();
+}
+
+function themeEdgeCacheable(request, incoming) {
+  if (request.method !== "GET") return false;
+  if (typeof caches === "undefined" || !caches?.default) return false;
+  const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
+  return /\/assets\/theme\.(css|js)$/i.test(pathOnly);
+}
+
+function themeEdgeStorable(res) {
+  if (!res || res.status !== 200) return false;
+  const ct = String(res.headers.get("content-type") || "").toLowerCase();
+  return ct.includes("text/css") || ct.includes("javascript") || ct.includes("ecmascript");
+}
+
+function withThemeEdgeHeaders(res, state, ageS) {
+  const h = new Headers(res.headers);
+  h.delete(THEME_EDGE_CACHED_AT);
+  h.set("x-hm-edge-cache", state);
+  if (ageS != null) h.set("x-hm-edge-age", String(Math.max(0, Math.round(ageS))));
+  h.set("cache-control", `public, max-age=${THEME_EDGE_TTL_S}, stale-while-revalidate=${THEME_EDGE_SWR_S}`);
+  return new Response(res.body, { status: res.status, headers: h });
+}
+
+async function themeEdgeFetchAndStore(request, incoming, opts, key) {
+  const res = await proxySharedPhpThemePath(request, incoming, opts);
+  if (!themeEdgeStorable(res)) return { res, stored: false };
+  try {
+    const copy = res.clone();
+    const h = new Headers(copy.headers);
+    h.set(THEME_EDGE_CACHED_AT, String(Date.now()));
+    h.set("cache-control", `public, max-age=${THEME_EDGE_TTL_S + THEME_EDGE_SWR_S}`);
+    h.delete("set-cookie");
+    await caches.default.put(key, new Response(copy.body, { status: 200, headers: h }));
+    return { res, stored: true };
+  } catch {
+    return { res, stored: false };
+  }
+}
+
+async function cachedSharedPhpThemePath(request, incoming, opts) {
+  if (!themeEdgeCacheable(request, incoming)) return proxySharedPhpThemePath(request, incoming, opts);
+  const key = themeEdgeCacheKeyUrl(incoming);
+  let hit = null;
+  try {
+    hit = await caches.default.match(key);
+  } catch {
+    hit = null;
+  }
+  if (hit) {
+    const cachedAt = Number(hit.headers.get(THEME_EDGE_CACHED_AT) || 0);
+    const ageS = cachedAt > 0 ? (Date.now() - cachedAt) / 1000 : Number.POSITIVE_INFINITY;
+    if (ageS < THEME_EDGE_TTL_S) return withThemeEdgeHeaders(hit, "HIT", ageS);
+    if (ageS < THEME_EDGE_TTL_S + THEME_EDGE_SWR_S) {
+      if (!themeEdgeRefreshing.has(key)) {
+        themeEdgeRefreshing.add(key);
+        const job = themeEdgeFetchAndStore(new Request(request.url, { method: "GET", headers: request.headers }), incoming, opts, key)
+          .catch(() => null)
+          .finally(() => themeEdgeRefreshing.delete(key));
+        if (typeof opts?.waitUntil === "function") opts.waitUntil(job);
+      }
+      return withThemeEdgeHeaders(hit, "STALE", ageS);
+    }
+  }
+  const { res, stored } = await themeEdgeFetchAndStore(request, incoming, opts, key);
+  return stored ? withThemeEdgeHeaders(res, "MISS", 0) : res;
+}
+
+/**
  * Theme under Worker `*.gundemi.org/assets/*` (and apex assets). Never emit Traefik-gap HTML
  * (browsers would treat 503 HTML as CSS → unstyled sites).
  */
-async function proxyRegionalPhpThemeAsset(request, incoming) {
-  const res = await proxySharedPhpThemePath(request, incoming, {
+async function proxyRegionalPhpThemeAsset(request, incoming, opts) {
+  const res = await cachedSharedPhpThemePath(request, incoming, {
     frontendTag: "gundemi-php-theme-asset",
+    waitUntil: opts?.waitUntil,
   });
   const ct = String(res.headers.get("content-type") || "").toLowerCase();
   const p = String(incoming.pathname || "").split("?")[0] || "/";
@@ -463,7 +551,7 @@ async function proxyRegionalPhpThemeAsset(request, incoming) {
  * (never SPA, never turkatahaber HTML rewrite). Prefer orange→origin when catch-all removed.
  * @returns {Promise<Response|null>}
  */
-export async function gundemiApexPhpBridgeResponse(request, incoming) {
+export async function gundemiApexPhpBridgeResponse(request, incoming, opts) {
   if (!isPhpThemeOriginBridgeHost(incoming.hostname)) return null;
   if (!shouldBridgeGundemiApexPath(incoming.pathname)) return null;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -471,7 +559,7 @@ export async function gundemiApexPhpBridgeResponse(request, incoming) {
   // Worker still owns */assets/* for /editor bundles. Theme CSS/JS
   // must come from Yenişafak PHP pack, never 503 gap HTML.
   if (shouldProxyRegionalPhpThemeAsset(incoming.pathname)) {
-    return proxyRegionalPhpThemeAsset(request, incoming);
+    return proxyRegionalPhpThemeAsset(request, incoming, opts);
   }
 
   // Concept news hosts: only theme assets are bridged (HTML stays orange→PHP origin).

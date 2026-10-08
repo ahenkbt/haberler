@@ -295,3 +295,60 @@ describe("ys logo header css fix", () => {
     assert.equal(twice, once);
   });
 });
+
+describe("theme asset edge cache", () => {
+  it("MISS stores per host, then HIT without upstream; STALE triggers one refresh", async () => {
+    const store = new Map();
+    const prevCaches = globalThis.caches;
+    const prevFetch = globalThis.fetch;
+    let upstreamCalls = 0;
+    globalThis.caches = {
+      default: {
+        async match(key) {
+          const v = store.get(String(key));
+          return v ? new Response(v.body, { status: 200, headers: v.headers }) : undefined;
+        },
+        async put(key, res) {
+          store.set(String(key), { body: await res.text(), headers: new Headers(res.headers) });
+        },
+      },
+    };
+    globalThis.fetch = async () => {
+      upstreamCalls += 1;
+      return new Response(":root{--ys-accent:#c8102e}", { status: 200, headers: { "content-type": "text/css" } });
+    };
+    try {
+      const mk = (u) => {
+        const incoming = new URL(u);
+        return gundemiApexPhpBridgeResponse(new Request(incoming.toString(), { method: "GET" }), incoming);
+      };
+      const a = await mk("https://ege.gundemi.org/assets/theme.css");
+      assert.equal(a.headers.get("x-hm-edge-cache"), "MISS");
+      assert.equal(upstreamCalls, 1);
+      const b = await mk("https://ege.gundemi.org/assets/theme.css");
+      assert.equal(b.headers.get("x-hm-edge-cache"), "HIT");
+      assert.equal(upstreamCalls, 1);
+      assert.match(await b.text(), /ys-accent/);
+      assert.match(b.headers.get("cache-control"), /stale-while-revalidate/);
+      // Per-host key: another host misses.
+      const c = await mk("https://fix.tc/assets/theme.css");
+      assert.equal(c.headers.get("x-hm-edge-cache"), "MISS");
+      assert.equal(upstreamCalls, 2);
+      // Age the ege entry past TTL -> STALE + background refresh.
+      for (const [k, v] of store) {
+        if (k.includes("ege.gundemi.org")) v.headers.set("x-hm-edge-cached-at", String(Date.now() - 10 * 60_000));
+      }
+      const jobs = [];
+      const incoming = new URL("https://ege.gundemi.org/assets/theme.css");
+      const d = await gundemiApexPhpBridgeResponse(new Request(incoming.toString()), incoming, {
+        waitUntil: (p) => jobs.push(p),
+      });
+      assert.equal(d.headers.get("x-hm-edge-cache"), "STALE");
+      await Promise.all(jobs);
+      assert.equal(upstreamCalls, 3);
+    } finally {
+      globalThis.caches = prevCaches;
+      globalThis.fetch = prevFetch;
+    }
+  });
+});
