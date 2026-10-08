@@ -14,6 +14,10 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
+import {
+  repairKamuYerelLayoutAfterMerge,
+  stripKamuYerelLockedLayoutIncoming,
+} from "./hm-kamu-yerel-layout-lock.js";
 
 const JWT_TYP = "hm_editor";
 const JWT_TTL = "7d";
@@ -178,7 +182,10 @@ function mirrorLiveMansetLayout(merged, incoming) {
 }
 
 function mergeLayoutPatch(prev, incoming, opts = {}) {
-  const inc = opts.vitrinOnly ? stripNonVitrinLayoutKeys(incoming) : incoming;
+  let inc = opts.vitrinOnly ? stripNonVitrinLayoutKeys(incoming) : incoming;
+  if (opts.siteSlug) {
+    inc = stripKamuYerelLockedLayoutIncoming(opts.siteSlug, inc);
+  }
   const merged = { ...prev, ...inc };
   if (
     Array.isArray(inc.hmCorporateMenuItems) &&
@@ -198,7 +205,11 @@ function mergeLayoutPatch(prev, incoming, opts = {}) {
       ...inc.hmCategoryColors,
     };
   }
-  return mirrorLiveMansetLayout(merged, inc);
+  let next = mirrorLiveMansetLayout(merged, inc);
+  if (opts.siteSlug) {
+    next = repairKamuYerelLayoutAfterMerge(opts.siteSlug, next);
+  }
+  return next;
 }
 
 /** Worker + PHP Neon layout_json ve ziyaretçi kenar önbelleği — kayıt sonrası. */
@@ -590,7 +601,8 @@ async function handleHmSiteLayoutPatch(request, env) {
     }
   }
 
-  const merged = mergeLayoutPatch(prev, inc, { vitrinOnly: b?.vitrinOnly === true });
+  const siteSlug = String(site.slug ?? "").trim();
+  const merged = mergeLayoutPatch(prev, inc, { vitrinOnly: b?.vitrinOnly === true, siteSlug });
   let raw;
   try {
     raw = JSON.stringify(merged);
