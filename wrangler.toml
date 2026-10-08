@@ -313,8 +313,25 @@ zone_name = "ankarasehirgazetesi.com"
 pattern = "www.ankarasehirgazetesi.com/hm/*"
 zone_name = "ankarasehirgazetesi.com"
 
-# vatankahramanlari.org (+ org.tr) — kurumsal PHP (Hostinger php-kurumsal, VPS 187.77.84.201 proxied A).
-# Worker yalnızca panel/API + eski SPA /tr|/hm 301. Catch-all apex/www BİLEREK yok.
+# vatankahramanlari.org (+ org.tr) — kurumsal PHP planlandı (php-kurumsal), ancak 2026-10-08 itibarıyla VPS'te
+# php-kurumsal servisi yok (traefik 404) ve DNS 192.0.2.1 → ön yüz Worker'dan. .org catch-all canlıda vardı;
+# .org.tr catch-all eksikti (kök 522). php-kurumsal canlıya alınınca bu 4 catch-all kaldırılmalı.
+[[routes]]
+pattern = "vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org/*"
+zone_name = "vatankahramanlari.org"
+
+[[routes]]
+pattern = "vatankahramanlari.org.tr/*"
+zone_name = "vatankahramanlari.org.tr"
+
+[[routes]]
+pattern = "www.vatankahramanlari.org.tr/*"
+zone_name = "vatankahramanlari.org.tr"
+
 [[routes]]
 pattern = "vatankahramanlari.org/editor*"
 zone_name = "vatankahramanlari.org"
