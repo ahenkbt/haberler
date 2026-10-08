@@ -14,6 +14,7 @@
  *   PATCH /api/hm/editor/site-mail/messages/:id         {isRead?, isStarred?, isTrashed?}
  *   POST  /api/hm/editor/site-mail/send                 {from, to, cc?, bcc?, subject, text, html?}
  *   POST  /api/hm/editor/site-mail/boxes                {localPart, domain, displayName?}
+ *   POST  /api/hm/editor/site-mail/messages/:id/to-news {ai?}  incoming mail -> DRAFT news (hm-site-mail-to-news.js)
  * Admin (panel session cookie, hm_sites permission):
  *   GET   /api/hm/admin/site-mail/boxes                 all news sites with their boxes
  *   POST  /api/hm/admin/site-mail/boxes                 {siteId, localPart, domain, displayName?}
@@ -36,6 +37,7 @@ import {
   registrableDomain,
   siteHosts,
 } from "./hm-site-mail-convention.js";
+import { conversionsFor, convertMailToNews } from "./hm-site-mail-to-news.js";
 
 const CF_ACCOUNT_ID = "16f5b996194174624e7969a3658bd2bb";
 const INBOUND_WORKER = "yekpare-mailbox-email";
@@ -529,7 +531,19 @@ export async function handleHmSiteMailEdge(request, env, incoming) {
     const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 50));
     const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
     const r = await listMessages(msql, box, folder, q, limit, offset);
+    const conv = await conversionsFor(msql, site.id, r.messages.map((m) => m.id));
+    r.messages = r.messages.map((m) => ({ ...m, converted_news_id: conv.get(Number(m.id))?.newsId ?? null }));
     return json(200, { box, folder, ...r });
+  }
+
+  // "Habere dönüştür": incoming mail -> draft news of this site (never published automatically).
+  const toNewsMatch = path.match(/^\/api\/hm\/editor\/site-mail\/messages\/(\d+)\/to-news$/);
+  if (toNewsMatch && method === "POST") {
+    const found = await messageForBoxes(msql, Number(toNewsMatch[1]), allowedBoxes);
+    if (!found) return json(404, { error: "Mesaj bulunamadı" });
+    const b = await readJson(request);
+    const r = await convertMailToNews(request, env, { msql, site, editor, message: found.message, ai: b?.ai === true });
+    return json(r.status, r.body);
   }
 
   const idMatch = path.match(/^\/api\/hm\/editor\/site-mail\/messages\/(\d+)$/);
@@ -539,6 +553,7 @@ export async function handleHmSiteMailEdge(request, env, incoming) {
     if (method === "GET") {
       const m = found.message;
       if (!m.is_read && m.direction === "in") await msql`UPDATE mailbox_messages SET is_read = true WHERE id = ${m.id}`;
+      const conv = (await conversionsFor(msql, site.id, [m.id])).get(Number(m.id)) || null;
       return json(200, {
         message: {
           id: m.id,
@@ -556,6 +571,7 @@ export async function handleHmSiteMailEdge(request, env, incoming) {
             return id.startsWith("<") ? id : null;
           })(),
           box: found.box,
+          convertedNewsId: conv?.newsId ?? null,
         },
       });
     }
