@@ -481,7 +481,7 @@ export default {
     catch (e) {
       console.error("[bekci-fetch]", e?.stack || e);
       const p = new URL(req.url).pathname;
-      if (p.startsWith("/admin") && !p.startsWith("/admin/ai-icerik-robotu")) return fetch(req);   // never break the panel
+      if (p.startsWith("/admin") && p !== "/admin/ai-icerik-robotu" && !p.startsWith("/admin/ai-icerik-robotu/")) return fetch(req);   // never break the panel
       return json(500, { ok: false, error: "bekçi hatası: " + String(e?.message || e).slice(0, 160) });
     }
   },
