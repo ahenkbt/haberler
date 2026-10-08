@@ -141,8 +141,7 @@ const PANEL_ROUTE_PATTERNS = [
   "*.gundemi.org/assets/*",
   "*.gundemi.org/gundemi/logos/*",
   "*.gundemi.org/sw.js",
-  "*.gundemi.org/llms.txt",
-  "*.gundemi.org/ai.txt",
+  // seo-geo 2026-10-09: /llms.txt + /ai.txt are served by the PHP theme (no Worker route) — do not rebind them here.
   "*.gundemi.org/manifest.json",
   "*.gundemi.org/yazar/giris*",
   "*.gundemi.org/koseyazari/giris*",
