@@ -6,14 +6,15 @@
 - Tepe menüde yalnızca **İller** (`/kategori/yerel`): PHP Neon `layout_json` eski; Cumha `hmNavOnlyCategorySlugs` yok.
 - Logo `/turkata/*` → **404**; PHP tema `/brand/turkata/*` kullanır.
 - `/iller` (ve `/daha`) **404 Sayfa bulunamadı**: Yenişafak PHP yalnızca `hakkimizda|kunye|iletisim` sunar; `hmExtraPages` Worker kenarında (`hm-kamu-yerel-extra-pages-edge.js`).
-- `/kategori/bolge-*` 404: kategori satırları PHP Neon'a gelmemiş (ensure + sync-php categories).
+- `/kategori/bolge-*` (ve il slug’ları) 404 **Kategori bulunamadı**: satırlar twilight-pine’da olsa bile PHP `hmNavOnlyCategorySlugs`’i sayfa beyaz listesi sanır; tepe-only liste bolge/il’i keser.
 
 ## Kök nedenler
 
 1. **PHP okur twilight-pine** (`NEWS_DATABASE_URL`, site id **230**), panel Neon (**1132**) ayrı — layout/kategoriler aynalanmadan kaldı.
 2. **ensure NEWS_DB_READ=news** PHP id (230) ile dual-write yapınca panel **1132** atlanır; `sync-php --site-id=230` layout boş okur. **Slug ile sync** (`--site-slug=turkatahaber`) kullan.
-3. **`news(slug)` indeks yok** — büyük RSS backfill sonrası haber detayı yavaşlar.
-4. **RSS kampanyası** (ör. id **1021**) ingest edilmediyse vitrin eski ulusal RSS içeriği gösterir.
+3. **`hmNavOnlyCategorySlugs` tepe-only** iken PHP `/kategori/:slug` 404 döner; allowlist tüm kamu-yerel slug’larını (bolge-* + 81 il) içermeli, tepe menü `hmNavHiddenCategorySlugs` ile dar kalır.
+4. **`news(slug)` indeks yok** — büyük RSS backfill sonrası haber detayı yavaşlar.
+5. **RSS kampanyası** (ör. id **1021**) ingest edilmediyse vitrin eski ulusal RSS içeriği gösterir.
 
 ## Prod aksiyonları (sıra)
 
