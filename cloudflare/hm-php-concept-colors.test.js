@@ -20,15 +20,26 @@ describe("hm-php-concept-colors", () => {
     assert.equal(phpThemeChromeCssPrefix("example.com"), "");
   });
 
-  it("repairs layout colors for sehitgazi", () => {
+  it("repairs missing/invalid layout colors for sehitgazi", () => {
     const palette = phpConceptPaletteForHost("sehitgazi.org.tr");
     const { layout, changed } = applyPhpConceptColorsToLayout(
-      { hmPrimaryColor: "#0b2a5b" },
+      { hmPrimaryColor: "not-a-color" },
       palette,
     );
     assert.equal(changed, true);
     assert.equal(layout.hmPrimaryColor, "#a50e1e");
     assert.equal(layout.hmSecondaryColor, "#7a0b16");
+  });
+
+  it("keeps the editor's chosen valid accent colors (repair only)", () => {
+    const palette = phpConceptPaletteForHost("sehitgazi.org.tr");
+    const { layout, changed } = applyPhpConceptColorsToLayout(
+      { hmPrimaryColor: "#0b2a5b", hmSecondaryColor: "#c8102e" },
+      palette,
+    );
+    assert.equal(changed, false);
+    assert.equal(layout.hmPrimaryColor, "#0b2a5b");
+    assert.equal(layout.hmSecondaryColor, "#c8102e");
   });
 
   it("builds body style with navy chrome + red accent for turkata", () => {

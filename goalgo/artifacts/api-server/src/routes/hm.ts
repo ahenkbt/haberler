@@ -117,6 +117,7 @@ import {
 } from "../lib/hm-corporate-like-theme.js";
 import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "../lib/hm-php-layout-sync.js";
+import { changedLayoutKeys, sanitizeEditorLayoutIncoming } from "../lib/hm-layout-merge-guard.js";
 import { markHmLayoutUserSave } from "../lib/hm-layout-guard.js";
 import {
   collectGundemiOrgHosts,
@@ -4122,6 +4123,8 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
       delete inc.hmCorporatePageHtml;
     }
   }
+  // 2026-10-08: yalnızca değişen alanlar; modül anahtarları boşaltılmaz, hmVitrinTheme yazılmaz.
+  inc = sanitizeEditorLayoutIncoming(prev, inc).inc;
   const siteSlug = String(row?.slug ?? "").trim().toLowerCase();
   const mergedPatch = mergeHmLayoutPatch(prev, inc, {
     vitrinOnly: b.vitrinOnly === true,
@@ -4155,6 +4158,11 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   if (touchesTgdEditorContent) {
     merged[TGD_EDITOR_TOUCHED_KEY] = new Date().toISOString();
   }
+  const changedKeys = changedLayoutKeys(prev, merged).filter((k) => !k.startsWith("_"));
+  if (changedKeys.length === 0) {
+    res.json({ ok: true, layoutJson: JSON.stringify(prev), changedKeys: [], unchanged: true });
+    return;
+  }
   let raw: string;
   try {
     raw = stringifyHmLayoutMerged(merged);
@@ -4166,7 +4174,7 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   if (!assertHmLayoutJsonSize(raw, res)) return;
   raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
-  const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw).catch((err: unknown) => ({
+  const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw, { changedKeys }).catch((err: unknown) => ({
     mirrored: false as const,
     reason: (err instanceof Error ? err.message : String(err)).slice(0, 160),
   }));
@@ -4257,11 +4265,16 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
     .where(eq(hmNewsSitesTable.id, ctx.siteId));
   const prev = parseHmLayoutRecord(row?.layoutJson != null ? String(row.layoutJson) : null);
   const merged = applyHmRssNewsPolicyToLayout(
-    mergeHmLayoutPatch(prev, patch, {
+    mergeHmLayoutPatch(prev, sanitizeEditorLayoutIncoming(prev, patch).inc, {
       vitrinOnly: true,
       siteSlug: row?.slug != null ? String(row.slug) : null,
     }),
   );
+  const changedKeys = changedLayoutKeys(prev, merged).filter((k) => !k.startsWith("_"));
+  if (changedKeys.length === 0) {
+    res.json({ ok: true, layoutJson: JSON.stringify(prev), changedKeys: [], unchanged: true });
+    return;
+  }
   let raw: string;
   try {
     raw = stringifyHmLayoutMerged(merged);
@@ -4273,7 +4286,7 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
   if (!assertHmLayoutJsonSize(raw, res)) return;
   raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
-  const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw).catch((err: unknown) => ({
+  const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw, { changedKeys }).catch((err: unknown) => ({
     mirrored: false as const,
     reason: (err instanceof Error ? err.message : String(err)).slice(0, 160),
   }));

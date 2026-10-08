@@ -510,6 +510,37 @@ export function buildYenisafakLayoutPatch(
   return patch;
 }
 
+function stableLayoutValue(value: unknown): string {
+  if (value === undefined) return "undefined";
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableLayoutValue).join(",")}]`;
+  const obj = value as Record<string, unknown>;
+  return `{${Object.keys(obj)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${stableLayoutValue(obj[k])}`)
+    .join(",")}}`;
+}
+
+/**
+ * 2026-10-08: Vitrin kaydı yalnızca editörün gerçekten değiştirdiği alanları gönderir.
+ * Açılıştaki snapshot ile yeni snapshot'ın yamaları karşılaştırılır; aynı kalan anahtarlar
+ * (modül anahtarları, sıra, reklam alanları …) hiç yazılmaz. `hmVitrinTheme` asla gönderilmez.
+ */
+export function buildYenisafakLayoutDiffPatch(
+  prefs: NewsSiteLayoutPrefs,
+  before: YsEditorSnapshot,
+  after: YsEditorSnapshot,
+): Record<string, unknown> {
+  const a = buildYenisafakLayoutPatch(prefs, before);
+  const b = buildYenisafakLayoutPatch(prefs, after);
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(b)) {
+    if (key === "hmVitrinTheme") continue;
+    if (stableLayoutValue(a[key]) !== stableLayoutValue(b[key])) out[key] = b[key];
+  }
+  return out;
+}
+
 /** PHP `Modules::enabled` sırası ve açık/kapalı sonucu. Test, tema dosyasındaki kuralla aynıdır. */
 export function phpEnabledModules(layout: Record<string, unknown>): Array<{ id: string; category: string; count: number }> {
   const order = Array.isArray(layout.hmNewsHomeModuleOrder) ? layout.hmNewsHomeModuleOrder.map(String) : [];

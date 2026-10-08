@@ -10,6 +10,7 @@ import { isNeonServerlessUrl } from "./neon-edge-url.js";
 import { hmEdgeBridgeSecret } from "./hm-edge-bridge-secret.js";
 import { neonSqlClient } from "./neon-edge-db.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
+import { sanitizeEditorLayoutIncoming, changedLayoutKeys } from "./hm-layout-merge-guard.js";
 import { markLayoutRecordUserSave } from "./hm-layout-user-save.js";
 import { loadPanelSession, readCookie, unsignConnectSid } from "./hm-admin-site-edge.js";
 import { purgeHmSitePublicEdgeCache } from "./hm-public-cache-purge-edge.js";
@@ -217,10 +218,10 @@ function mergeLayoutPatch(prev, incoming, opts = {}) {
 }
 
 /** Worker + PHP Neon layout_json ve ziyaretçi kenar önbelleği — kayıt sonrası. */
-async function finalizeHmSiteLayoutPersist(env, workerSql, ctx, siteRow, layoutJsonRaw) {
+async function finalizeHmSiteLayoutPersist(env, workerSql, ctx, siteRow, layoutJsonRaw, mirrorOpts = {}) {
   let phpLayoutMirror = { mirrored: false, reason: "atlanmadı" };
   try {
-    phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, ctx.siteId, layoutJsonRaw);
+    phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, ctx.siteId, layoutJsonRaw, mirrorOpts);
     if (!phpLayoutMirror.mirrored) {
       console.warn("[php-layout-sync]", String(phpLayoutMirror.reason || "mirror failed").slice(0, 160));
     }
@@ -605,8 +606,21 @@ async function handleHmSiteLayoutPatch(request, env) {
     }
   }
 
+  // 2026-10-08: yalnızca değişen alanlar; modül anahtarları boşaltılmaz, hmVitrinTheme yazılmaz.
+  inc = sanitizeEditorLayoutIncoming(prev, inc).inc;
+
   const siteSlug = String(site.slug ?? "").trim();
   const merged = mergeLayoutPatch(prev, inc, { vitrinOnly: b?.vitrinOnly === true, siteSlug });
+  const changedKeys = changedLayoutKeys(prev, merged).filter((k) => !k.startsWith("_"));
+  if (changedKeys.length === 0) {
+    let currentRaw = "";
+    try {
+      currentRaw = JSON.stringify(prev);
+    } catch {
+      /* ignore */
+    }
+    return jsonResponse(200, { ok: true, layoutJson: currentRaw, changedKeys: [], unchanged: true });
+  }
   let raw;
   try {
     raw = JSON.stringify(markLayoutRecordUserSave(merged));
@@ -639,9 +653,9 @@ async function handleHmSiteLayoutPatch(request, env) {
     `;
   }
 
-  const persist = await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
+  const persist = await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw, { changedKeys });
 
-  return jsonResponse(200, { ok: true, layoutJson: raw, ...persist });
+  return jsonResponse(200, { ok: true, layoutJson: raw, changedKeys, ...persist });
 }
 
 async function handleHmSiteHomeModuleOrderPatch(request, env) {
@@ -690,7 +704,8 @@ async function handleHmSiteHomeModuleOrderPatch(request, env) {
   if (!site) return jsonResponse(404, { error: "Site bulunamadı" });
 
   const prev = parseLayoutRecord(site.layout_json);
-  const merged = mergeLayoutPatch(prev, patch, { vitrinOnly: true });
+  const merged = mergeLayoutPatch(prev, sanitizeEditorLayoutIncoming(prev, patch).inc, { vitrinOnly: true });
+  const changedKeys = changedLayoutKeys(prev, merged).filter((k) => !k.startsWith("_"));
   let raw;
   try {
     raw = JSON.stringify(markLayoutRecordUserSave(merged));
@@ -722,7 +737,7 @@ async function handleHmSiteHomeModuleOrderPatch(request, env) {
     `;
   }
 
-  const persist = await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
+  const persist = await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw, { changedKeys });
 
   return jsonResponse(200, { ok: true, layoutJson: raw, ...persist });
 }

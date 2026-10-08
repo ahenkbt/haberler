@@ -4,6 +4,7 @@
  */
 import { neonNewsSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { resolvePhpSiteId } from "./hm-php-editor-sync.js";
+import { buildPartialLayoutForMirror } from "./hm-layout-merge-guard.js";
 
 const HM_LIVE_MANSET_PRESETS = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
 
@@ -37,8 +38,12 @@ export function normalizeLayoutJsonMansetKeysForPhp(layoutJsonRaw) {
  * @param {import("@neondatabase/serverless").NeonQueryFunction} workerSql
  * @param {string} layoutJsonRaw stringified layout JSON
  * @returns {Promise<{ mirrored: boolean; phpSiteId?: number; reason?: string }>}
+ *
+ * 2026-10-08: TP'ye tam üzerine yazma yok. `opts.changedKeys` verilirse yalnızca o anahtarlar
+ * jsonb ile birleştirilir (silinenler `-` ile kaldırılır); verilmezse tam layout mevcut TP
+ * layout'u ile birleştirilir — tema tarafına özel anahtarlar (TP-only) her iki durumda korunur.
  */
-export async function mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, workerSiteId, layoutJsonRaw) {
+export async function mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, workerSiteId, layoutJsonRaw, opts = {}) {
   if (!shouldEdgeDualWriteNewsDb(env)) {
     return { mirrored: false, reason: "NEWS_DB_WRITE=main veya NEWS_DATABASE_URL yok" };
   }
@@ -55,6 +60,31 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, workerSite
     return { mirrored: false, reason: "layout boş" };
   }
 
+  let setObj;
+  let removeKeys = [];
+  const changedKeys = Array.isArray(opts?.changedKeys) ? opts.changedKeys.map(String) : null;
+  try {
+    const full = JSON.parse(raw);
+    if (!full || typeof full !== "object" || Array.isArray(full)) throw new Error("layout nesne değil");
+    if (changedKeys) {
+      const keys = new Set(changedKeys);
+      if (keys.has("hmYsMansetPreset") || keys.has("hmNewsYsMansetLayout")) {
+        keys.add("hmYsMansetPreset");
+        keys.add("hmNewsYsMansetLayout");
+      }
+      const part = buildPartialLayoutForMirror(full, [...keys]);
+      setObj = part.set;
+      removeKeys = part.remove;
+      const meaningful = Object.keys(setObj).filter((k) => k !== "_hmUserSavedAt").length + removeKeys.length;
+      if (meaningful === 0) return { mirrored: true, skipped: "değişiklik yok", changedKeys: [] };
+    } else {
+      setObj = full;
+    }
+  } catch {
+    return { mirrored: false, reason: "layout JSON çözülemedi" };
+  }
+  const setJson = JSON.stringify(setObj);
+
   const phpSiteId = await resolvePhpSiteId(newsSql, workerSql, siteId);
   if (!phpSiteId) {
     return { mirrored: false, reason: "PHP site id çözülemedi" };
@@ -63,14 +93,20 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, workerSite
   try {
     await newsSql`
       UPDATE hm_news_sites
-      SET layout_json = ${raw}::jsonb, updated_at = now()
+      SET layout_json = (
+            COALESCE(NULLIF(btrim(layout_json::text), ''), '{}')::jsonb - ${removeKeys}::text[]
+          ) || ${setJson}::jsonb,
+          updated_at = now()
       WHERE id = ${phpSiteId}
     `;
   } catch (err) {
     try {
       await newsSql`
         UPDATE hm_news_sites
-        SET layout_json = ${raw}, updated_at = now()
+        SET layout_json = ((
+              COALESCE(NULLIF(btrim(layout_json::text), ''), '{}')::jsonb - ${removeKeys}::text[]
+            ) || ${setJson}::jsonb)::text,
+            updated_at = now()
         WHERE id = ${phpSiteId}
       `;
     } catch (err2) {
@@ -82,5 +118,9 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, workerSite
     }
   }
 
-  return { mirrored: true, phpSiteId };
+  if (changedKeys) {
+    return { mirrored: true, phpSiteId, merged: "changed-keys", changedKeys: Object.keys(setObj).concat(removeKeys) };
+  }
+
+  return { mirrored: true, phpSiteId, merged: "full-merge" };
 }

@@ -65,14 +65,20 @@ function EditorSidebar({ onClose }: { onClose?: () => void }) {
                 <Link
                   href={item.href}
                   onClick={onClose}
+                  aria-current={active ? "page" : undefined}
+                  // Etkin öğe: genel bir `a` kuralı text-white'ı eziyordu (yazı arka planla aynı renk) — açık renk zorunlu.
+                  style={active ? { color: "#ffffff" } : undefined}
                   className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors ${
                     active
                       ? "bg-slate-900 text-white font-semibold"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  <item.icon className={`w-4 h-4 shrink-0 ${active ? "text-slate-200" : "text-slate-400"}`} />
-                  {item.name}
+                  <item.icon
+                    className={`w-4 h-4 shrink-0 ${active ? "text-slate-200" : "text-slate-400"}`}
+                    style={active ? { color: "#e2e8f0" } : undefined}
+                  />
+                  <span style={active ? { color: "#ffffff" } : undefined}>{item.name}</span>
                 </Link>
               </li>
             );
