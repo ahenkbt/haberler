@@ -31,3 +31,13 @@ PHP_DB_URL (role hm_bekci), EVREN_API_KEY, NVIDIA_API_KEY, GEMINI_API_KEY, OPENA
 - **Röportaj / Özel Haber ekle** (`/admin/ozel-haber-ekle`, `src/ozel.js`): title, spot, body, images (resized in the browser, stored in TP `hm_ozel_media`, served from `/api/bekci/media/<id>.webp`), optional YouTube/mp4 video, "Tüm sitelerde yayınla" or per-site checkboxes. It writes TP `news` rows (ids ≥ 2,000,000,000, category `ozel-haber`, `site_only`) and purges the home and category pages. "Gizle" sets status=draft.
 - **Strict topics** (`vps/patch_strict.py`, env `AI_STRICT_TOPIC=1` default): topical/kamu_yerel sites need a keyword hit in the title or spot, kamu_yerel also needs a province mention, and regional sites need the place in the title, spot or feed. The AI pick gets the site's `hm_ai_editor_sites.topic_rule` as a hard rule; an empty AI selection means nothing is placed.
 - **vatanhaber ban on the shared pool**: ai-editor also applies site 1 `hm_site_blocked_terms` to site 230 (turkatahaber), because vatanhaber reads the 230 pool (`vps/ai_editor-curate.patch` holds the full diff against the pre-curate file).
+
+## Per-site overrides (user rules 2026-10-08 20:23)
+- Model: one shared pool (portal_rss_items + pool news). Site-specific items: AI-editor manşet copies (news.site_id = X), editor news, columns. On X the source item is manşet; on other sites it stays a normal item in its category.
+- Editor UI: `/editor/rss-haberler`. Edge API: `cloudflare/hm-editor-site-overrides-edge.js`.
+- Storage (TP):
+  - `hm_site_content_hidden` (reason `editor_pasif`) for item Pasif;
+  - `hm_site_category_overrides` for category off;
+  - `hm_site_override_rev` for cache invalidation.
+- PHP theme read side: `vps/theme_overrides_patch.py` (first version, deployed 20:30 TRT). The theme owner then extended it (CategoryTree/Menu). Rollback copies: `/docker/php-theme/backups/overrides-20261008/*.orig` on the VPS.
+- The ai-editor skips items that are pasif, or in a category that is off, for the site in question.

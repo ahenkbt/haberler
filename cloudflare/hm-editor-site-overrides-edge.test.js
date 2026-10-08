@@ -28,3 +28,9 @@ test("feed query is parameterised and scoped to the site", () => {
   assert.ok(!rssOnly.text.includes("FROM news n"));
   assert.match(rssOnly.text, /interval '14 days'/);
 });
+
+test("canonical categories mirror the PHP theme", async () => {
+  const { CANONICAL_CATEGORIES } = await import("./hm-editor-site-overrides-edge.js");
+  assert.equal(CANONICAL_CATEGORIES.teknoloji, "Teknoloji");
+  assert.equal(Object.keys(CANONICAL_CATEGORIES).length, 12);
+});
