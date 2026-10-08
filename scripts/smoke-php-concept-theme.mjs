@@ -23,7 +23,7 @@ const EXPECT_NAV = Object.freeze({
   "fix.tc": "#002B5C",
 });
 
-async function check(host) {
+async function checkOnce(host) {
   const url = `https://${host}/assets/theme.css?smoke=${Date.now()}`;
   const res = await fetch(url, {
     method: "GET",
@@ -63,6 +63,22 @@ async function check(host) {
     problems,
     snippet: body.slice(0, 160).replace(/\s+/g, " "),
   };
+}
+
+const RETRIES = Math.max(1, Number(process.env.SMOKE_RETRIES || 8) || 8);
+const RETRY_MS = Math.max(1000, Number(process.env.SMOKE_RETRY_MS || 8000) || 8000);
+
+async function check(host) {
+  let last = null;
+  for (let i = 1; i <= RETRIES; i += 1) {
+    last = await checkOnce(host);
+    if (last.ok) return last;
+    if (i < RETRIES) {
+      console.warn(`retry ${i}/${RETRIES} ${host}: ${last.problems.join("; ")}`);
+      await new Promise((r) => setTimeout(r, RETRY_MS));
+    }
+  }
+  return last;
 }
 
 async function main() {

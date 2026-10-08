@@ -352,11 +352,14 @@ async function ensureCampaign(siteId: number, def: KamuYerelSiteDef): Promise<nu
     includeYekpareHaber: false,
   };
   if (existing) {
+    const existingTargets = normalizeHmSiteIds(existing.hmSiteIds);
+    // Drop legacy PHP-only targets (230) so campaign always binds panel id (1132).
     const needs =
       existing.name !== values.name ||
       existing.active !== values.active ||
       existing.categorySlug !== values.categorySlug ||
-      !normalizeHmSiteIds(existing.hmSiteIds).includes(siteId) ||
+      !existingTargets.includes(siteId) ||
+      existingTargets.some((id) => id !== siteId) ||
       JSON.stringify(existing.feeds) !== JSON.stringify(values.feeds);
     if (needs) {
       await dualWriteUpdate(

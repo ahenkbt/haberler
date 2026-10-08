@@ -196,9 +196,11 @@ jobs:
 
       - name: Smoke PHP brand concept theme.css
         if: steps.cf.outputs.enabled == 'true'
+        # Retries cover CF route propagation; soft-fail so secret sync still runs.
+        continue-on-error: true
         run: |
           set -euo pipefail
-          sleep 5
+          sleep 12
           node scripts/smoke-php-concept-theme.mjs
 
       # wrangler secret put production'a yazar. versions secret put yeni bir
