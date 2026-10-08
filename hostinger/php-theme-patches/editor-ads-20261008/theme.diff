@@ -1,0 +1,118 @@
+--- Ads.orig.php	2026-10-08 21:16:25.334827457 +0300
++++ Ads.php	2026-10-08 21:17:00.470751150 +0300
+@@ -60,9 +60,19 @@
+                 }
+             }
+             // 3. HM Editör Yenişafak vitrin: layout_json "hmAdSlots" list; an enabled image entry wins for its slot.
+-            foreach (['header', 'block_strip', 'home_block_fill'] as $edSlot) {
++            // editor ads 2026-10-08: every PHP slot (plus home_<kategori>_alti keys) and HTML-mode entries too.
++            $edKeys = array_merge(self::SLOTS, ['home_block_fill']);
++            foreach ((is_array($site->layout['hmAdSlots'] ?? null) ? $site->layout['hmAdSlots'] : []) as $edRow) {
++                $k = is_array($edRow) ? (string) ($edRow['slotKey'] ?? '') : '';
++                if (preg_match('/^home_[a-z0-9-]+_alti$/', $k) === 1) {
++                    $edKeys[] = $k;
++                }
++            }
++            foreach (array_unique($edKeys) as $edSlot) {
+                 $ed = $site->adSlot($edSlot);
+-                if ($ed !== null) {
++                if ($ed !== null && ($ed['html'] ?? '') !== '') {
++                    $config[$edSlot] = ['html' => $ed['html']];
++                } elseif ($ed !== null) {
+                     $config[$edSlot] = [
+                         'image' => str_starts_with($ed['image'], '//') ? 'https:' . $ed['image'] : $ed['image'],
+                         'link' => str_starts_with($ed['href'], '//') ? 'https:' . $ed['href'] : $ed['href'],
+@@ -72,8 +82,10 @@
+             }
+             // Per-block filler slots (home_{category}_alti, e.g. home_spor_alti) plus the generic home_block_fill.
+             $dynamic = array_filter(array_keys($config), static fn ($k): bool => is_string($k) && preg_match('/^home_[a-z0-9-]+_alti$/', $k) === 1);
++            // editor ads 2026-10-08: layout_json hmNewsAdHouse=false (editör paneli anahtarı) -> no "Bu alana reklam verin".
++            $house = !(array_key_exists('hmNewsAdHouse', $site->layout) && in_array($site->layout['hmNewsAdHouse'], [false, 0, '0', 'false'], true));
+             foreach (array_merge(self::SLOTS, ['home_block_fill'], $dynamic) as $slot) {
+-                $ads = self::normalize($config[$slot] ?? null);
++                $ads = self::normalize($config[$slot] ?? null, $house);
+                 if ($ads !== []) {
+                     $slots[$slot] = $ads;
+                 }
+@@ -111,7 +123,7 @@
+     }
+ 
+     /** @return list<array<string, mixed>> */
+-    private static function normalize(mixed $value): array
++    private static function normalize(mixed $value, bool $house = true): array
+     {
+         if (!is_array($value) || $value === []) {
+             return [];
+@@ -122,7 +134,7 @@
+             if (!is_array($ad) || ($ad['enabled'] ?? true) === false) {
+                 continue;
+             }
+-            if (($ad['house'] ?? false) === true
++            if ((($ad['house'] ?? false) === true && $house)
+                 || (is_string($ad['html'] ?? null) && trim($ad['html']) !== '')
+                 || (is_string($ad['image'] ?? null) && preg_match('#^(https?://|/)#', $ad['image']) === 1)) {
+                 $out[] = $ad;
+--- Site.orig.php	2026-10-08 21:16:25.334827457 +0300
++++ Site.php	2026-10-08 21:17:00.470751150 +0300
+@@ -84,7 +84,7 @@
+             $dom = strtolower(trim($this->domain !== '' ? $this->domain : $this->host));
+             $dom = (string) preg_replace('#^(https?://)?(www\.)?#', '', $dom);
+             $dom = (string) preg_replace('#[/:].*$#', '', $dom);
+-            $email = $dom !== '' ? 'bilgi@' . $dom : '';
++            $email = self::conventionEmail($dom); // editor ads 2026-10-08: kibris.gundemi.org -> kibris@gundemi.org
+         }
+         $phone = trim((string) ($cfg['phone'] ?? ''));
+         $digits = (string) preg_replace('/\D+/', '', $phone);
+@@ -101,6 +101,29 @@
+         return ['email' => $email, 'phone' => $tel !== '' ? $phone : '', 'tel' => $tel];
+     }
+ 
++    /**
++     * editor ads 2026-10-08: site mail convention (same as the panel editor login / mailbox):
++     * sub.parent.tld -> sub@parent.tld, apex domains (incl. com.tr, gen.tr ...) -> bilgi@domain.
++     */
++    public static function conventionEmail(string $dom): string
++    {
++        $dom = strtolower(trim($dom, ". \t"));
++        if ($dom === '' || str_ends_with($dom, '.pages.dev') || str_ends_with($dom, '.workers.dev') || !str_contains($dom, '.')) {
++            return $dom !== '' && str_contains($dom, '.') ? 'bilgi@' . $dom : '';
++        }
++        $labels = explode('.', $dom);
++        $n = count($labels);
++        $two = $n >= 2 ? $labels[$n - 2] . '.' . $labels[$n - 1] : $dom;
++        $multi = ['com.tr', 'net.tr', 'org.tr', 'gen.tr', 'web.tr', 'biz.tr', 'info.tr', 'av.tr', 'bel.tr', 'gov.tr', 'edu.tr', 'k12.tr', 'pol.tr', 'tsk.tr', 'tv.tr', 'name.tr', 'tel.tr', 'bbs.tr', 'dr.tr', 'co.uk', 'org.uk', 'com.cy', 'com.de'];
++        $regLabels = in_array($two, $multi, true) ? 3 : 2;
++        if ($n <= $regLabels) {
++            return 'bilgi@' . $dom;
++        }
++        $registrable = implode('.', array_slice($labels, $n - $regLabels));
++        $sub = $labels[$n - $regLabels - 1];
++        return $sub . '@' . $registrable;
++    }
++
+     /** Site language (layout_json hmNewsLang, default tr). */
+     public function lang(): string
+     {
+@@ -149,7 +172,7 @@
+     /**
+      * Enabled image ad from the editor's `hmAdSlots` list (Ads::forSite overlays it on the slot).
+      *
+-     * @return array{image: string, href: string}|null
++     * @return array{image: string, href: string, html?: string}|null
+      */
+     public function adSlot(string $slotKey): ?array
+     {
+@@ -165,7 +188,13 @@
+             if ($enabled !== true && $enabled !== 1 && $enabled !== '1' && $enabled !== 'true') {
+                 return null;
+             }
++            // editor ads 2026-10-08: HTML / kod modu (editör paneli "HTML / kod") -> {html}
++            $mode = (string) ($slot['contentMode'] ?? '');
++            $html = trim((string) ($slot['html'] ?? ''));
+             $image = trim((string) ($slot['imageMediaUrl'] ?? ''));
++            if ($mode !== 'image' && $html !== '' && ($mode === 'html' || $image === '')) {
++                return ['html' => $html, 'image' => '', 'href' => ''];
++            }
+             if ($image === '' || preg_match('#^(https?:)?//|^/#', $image) !== 1) {
+                 return null;
+             }

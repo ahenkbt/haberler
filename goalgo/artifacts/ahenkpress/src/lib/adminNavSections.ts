@@ -81,6 +81,7 @@ export const adminNavSections: AdminNavSection[] = [
       { name: "İçerik Havuzu", icon: Layers, href: "/admin/icerik-havuzu", permission: "hm_sites" },
       { name: "Haber siteleri (HM)", icon: Globe, href: "/admin/haber-siteleri", permission: "hm_sites" },
       { name: "HM Kurumsal", icon: Building2, href: "/admin/hm-kurumsal", permission: "hm_sites" },
+      { name: "Haber siteleri posta kutuları", icon: Mail, href: "/admin/haber-posta-kutulari", permission: "hm_sites" },
       { name: "HM telif sayfaları", icon: ScrollText, href: "/admin/hm-telif-sayfalari", permission: "haberler", anyPermissions: ["hm_sites", "haberler"] },
       { name: "Haberler", icon: Newspaper, href: "/admin/haberler", permission: "haberler" },
       { name: "Röportaj / Özel Haber ekle", icon: PenLine, href: "/admin/ozel-haber-ekle", permission: "haberler" },

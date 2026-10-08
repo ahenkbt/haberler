@@ -614,6 +614,10 @@ export type NewsSiteLayoutPrefs = {
   hmSidebarAdHtml?: string | null;
   /** Siteye özel reklam slotları (Yekpare Reklam Alanları ile aynı slotKey'ler) */
   hmAdSlots?: HmAdSlotState[] | null;
+  /** «Bu alana reklam verin» ilanı: iletişim (PHP Site::adContact). */
+  hmNewsAdContact?: { email?: string | null; phone?: string | null } | null;
+  /** false = boş reklam alanlarında «Bu alana reklam verin» ilanı gösterilmez. */
+  hmNewsAdHouse?: boolean | null;
   /** îzel sayfalar — `/tr/{site}/{slug}` */
   hmExtraPages?: HmExtraPage[] | null;
   /** Vitrin alt bilgi (Site hakkında) — güvenli HTML, kısa metin */

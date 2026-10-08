@@ -1,226 +1,240 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { EditorLayout } from "@/components/EditorLayout";
-import { GmailInboxPanel } from "@/components/admin/GmailInboxPanel";
-import { GmailMailCompose } from "@/components/admin/GmailMailCompose";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { apiUrl } from "@/lib/apiBase";
 import { readHmJwt } from "@/lib/hmSession";
-import { Loader2, PenSquare, Settings2, Wifi } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Inbox,
+  Loader2,
+  MailPlus,
+  PenSquare,
+  RefreshCw,
+  Reply,
+  Search,
+  Send,
+  Star,
+  Trash2,
+  Undo2,
+} from "lucide-react";
 
-type MailMsg = {
+/**
+ * Site posta kutusu — editör panelinin içinde, şifre sormadan.
+ * Kenar API: /api/hm/editor/site-mail/* (editör oturumu hangi kutulara erişileceğini belirler).
+ * Aynı kutular yekpare.net/posta ile ortaktır (Cloudflare Email Routing → Yekpare Posta).
+ */
+
+type Box = { address: string; displayName: string; isDefault: boolean; canReceive: boolean | null; note: string; missing?: boolean };
+type Folder = "inbox" | "sent" | "starred" | "trash";
+type MsgRow = {
   id: number;
   direction: string;
   from_addr: string;
   to_addr: string;
   subject: string | null;
-  body_text: string | null;
   is_read: boolean;
+  is_starred: boolean;
+  is_trashed: boolean;
   created_at: string;
+  snippet: string | null;
+};
+type MsgFull = {
+  id: number;
+  direction: string;
+  from: string;
+  to: string;
+  subject: string | null;
+  text: string | null;
+  html: string | null;
+  isStarred: boolean;
+  isTrashed: boolean;
+  createdAt: string;
+  messageId: string | null;
+  box: string;
 };
 
-type MailboxConfig = {
-  address: string;
-  fromDisplay: string;
-  smtpConfigured: boolean;
-  imapConfigured: boolean;
-  ready: boolean;
-  smtpHost: string | null;
-  imapHost: string | null;
-  imapFolder: string;
-};
+const FOLDERS: { id: Folder; label: string }[] = [
+  { id: "inbox", label: "Gelen kutusu" },
+  { id: "sent", label: "Gönderilen" },
+  { id: "starred", label: "Yıldızlı" },
+  { id: "trash", label: "Çöp kutusu" },
+];
 
-async function hmEditorFetch(path: string, init?: RequestInit) {
+async function mailFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = readHmJwt();
-  if (!token) throw new Error("Oturum yok");
+  if (!token) throw new Error("Oturum yok, lütfen yeniden giriş yapın.");
   const res = await fetch(apiUrl(path), {
     ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { ...(init?.headers ?? {}), Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
   });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error || res.statusText);
-  }
-  return res.json();
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) throw new Error(data?.error || res.statusText);
+  return data;
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = new Date();
+  const same = d.toDateString() === today.toDateString();
+  return same
+    ? d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Istanbul" })
+    : d.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric", timeZone: "Europe/Istanbul" });
+}
+
+function shortAddr(raw: string): string {
+  const m = String(raw ?? "").match(/^\s*"?([^"<]+?)"?\s*<[^>]+>/);
+  return (m?.[1] || raw || "").trim();
+}
+
+function replyAddress(raw: string): string {
+  const m = String(raw ?? "").match(/<([^>]+)>/);
+  return (m?.[1] || raw || "").trim();
+}
+
+/** HTML gövde: script çalışmayan, ayrı bir iframe içinde. */
+function HtmlBody({ html }: { html: string }) {
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>body{font:14px/1.5 system-ui,sans-serif;color:#0f172a;margin:0;padding:12px;word-wrap:break-word}img{max-width:100%;height:auto}</style></head><body>${html}</body></html>`;
+  return <iframe title="E-posta" sandbox="allow-popups allow-popups-to-escape-sandbox" srcDoc={doc} className="h-[60vh] w-full rounded border border-slate-200 bg-white" />;
 }
 
 export default function EditorPostaKutusu() {
-  const [messages, setMessages] = useState<MailMsg[]>([]);
-  const [mailboxConfig, setMailboxConfig] = useState<MailboxConfig | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [createDomains, setCreateDomains] = useState<string[]>([]);
+  const [canSend, setCanSend] = useState(true);
+  const [box, setBox] = useState<string>("");
+  const [folder, setFolder] = useState<Folder>("inbox");
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<MsgRow[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [open, setOpen] = useState<MsgFull | null>(null);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [testingConn, setTestingConn] = useState(false);
-  const [connStatus, setConnStatus] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
-
-  const [smtpHost, setSmtpHost] = useState("");
-  const [smtpPort, setSmtpPort] = useState("587");
-  const [smtpUser, setSmtpUser] = useState("");
-  const [smtpPass, setSmtpPass] = useState("");
-  const [smtpFrom, setSmtpFrom] = useState("");
-  const [imapHost, setImapHost] = useState("");
-  const [imapPort, setImapPort] = useState("993");
-  const [imapUser, setImapUser] = useState("");
-  const [imapPass, setImapPass] = useState("");
-  const [imapFolder, setImapFolder] = useState("INBOX");
+  const [listLoading, setListLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const [composeOpen, setComposeOpen] = useState(false);
-  const [composeTo, setComposeTo] = useState("");
-  const [composeCc, setComposeCc] = useState("");
-  const [composeBcc, setComposeBcc] = useState("");
-  const [composeSubj, setComposeSubj] = useState("");
-  const [composeBody, setComposeBody] = useState("");
+  const [cTo, setCTo] = useState("");
+  const [cCc, setCCc] = useState("");
+  const [cSubj, setCSubj] = useState("");
+  const [cBody, setCBody] = useState("");
+  const [cReplyId, setCReplyId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
 
-  const loadMail = useCallback(async () => {
-    const d = (await hmEditorFetch("/api/hm/editor/mailbox?limit=60")) as {
-      messages?: MailMsg[];
-      config?: MailboxConfig;
-    };
-    setMessages(Array.isArray(d.messages) ? d.messages : []);
-    if (d.config && typeof d.config === "object") setMailboxConfig(d.config);
-  }, []);
+  const [newOpen, setNewOpen] = useState(false);
+  const [newLocal, setNewLocal] = useState("");
+  const [newDomain, setNewDomain] = useState("");
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
 
-  const loadSettings = useCallback(async () => {
-    const d = (await hmEditorFetch("/api/hm/editor/mail-settings")) as {
-      settings?: Record<string, unknown> | null;
-      config?: MailboxConfig;
-    };
-    const st = d.settings ?? null;
-    if (st) {
-      setSmtpHost(String(st.smtp_host ?? ""));
-      setSmtpPort(String(st.smtp_port ?? "587"));
-      setSmtpUser(String(st.smtp_user ?? ""));
-      setSmtpFrom(String(st.smtp_from ?? ""));
-      setImapHost(String(st.imap_host ?? ""));
-      setImapPort(String(st.imap_port ?? "993"));
-      setImapUser(String(st.imap_user ?? ""));
-      setImapFolder(String(st.imap_folder ?? "INBOX"));
-      if (st.has_smtp_pass) setSmtpPass("***");
-      if (st.has_imap_pass) setImapPass("***");
-    }
-    if (d.config) setMailboxConfig(d.config);
-  }, []);
+  const currentBox = useMemo(() => boxes.find((b) => b.address === box) ?? null, [boxes, box]);
 
-  const loadAll = useCallback(async () => {
+  const loadBoxes = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      await Promise.all([loadMail(), loadSettings()]);
+      const d = await mailFetch<{ boxes: Box[]; createDomains: string[]; canSend: boolean }>("/api/hm/editor/site-mail");
+      setBoxes(d.boxes ?? []);
+      setCreateDomains(d.createDomains ?? []);
+      setCanSend(d.canSend !== false);
+      setNewDomain((prev) => prev || d.createDomains?.[0] || "");
+      setBox((prev) => (prev && d.boxes.some((b) => b.address === prev) ? prev : d.boxes.find((b) => !b.missing)?.address || ""));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, [loadMail, loadSettings]);
-
-  useEffect(() => {
-    void loadAll();
-  }, [loadAll]);
-
-  useEffect(() => {
-    const t = window.setInterval(() => {
-      void syncImap(true);
-    }, 180_000);
-    return () => window.clearInterval(t);
   }, []);
 
-  function extractReplyEmail(from: string): string {
-    const m = from.match(/<([^>]+)>/);
-    if (m?.[1]) return m[1].trim();
-    if (from.includes("@")) return from.trim();
-    return from.trim();
+  const loadList = useCallback(async () => {
+    if (!box || currentBox?.missing) {
+      setRows([]);
+      return;
+    }
+    setListLoading(true);
+    try {
+      const params = new URLSearchParams({ box, folder, limit: "60" });
+      if (q.trim()) params.set("q", q.trim());
+      const d = await mailFetch<{ messages: MsgRow[]; unread: number }>(`/api/hm/editor/site-mail/messages?${params}`);
+      setRows(d.messages ?? []);
+      setUnread(d.unread ?? 0);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setListLoading(false);
+    }
+  }, [box, folder, q, currentBox?.missing]);
+
+  useEffect(() => {
+    void loadBoxes();
+  }, [loadBoxes]);
+
+  useEffect(() => {
+    setOpen(null);
+    void loadList();
+  }, [box, folder]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const t = window.setInterval(() => void loadList(), 60_000);
+    return () => window.clearInterval(t);
+  }, [loadList]);
+
+  async function openMessage(id: number) {
+    try {
+      const d = await mailFetch<{ message: MsgFull }>(`/api/hm/editor/site-mail/messages/${id}`);
+      setOpen(d.message);
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, is_read: true } : r)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }
 
-  function clearCompose() {
-    setComposeTo("");
-    setComposeCc("");
-    setComposeBcc("");
-    setComposeSubj("");
-    setComposeBody("");
+  async function patchMessage(id: number, patch: { isRead?: boolean; isStarred?: boolean; isTrashed?: boolean }) {
+    await mailFetch(`/api/hm/editor/site-mail/messages/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    if (patch.isTrashed !== undefined) setOpen(null);
+    else if (open?.id === id && patch.isStarred !== undefined) setOpen({ ...open, isStarred: patch.isStarred });
+    await loadList();
   }
 
-  function replyToMessage(m: MailMsg) {
-    const addr = extractReplyEmail(m.from_addr);
-    const subj = m.subject?.startsWith("Re:") ? m.subject : `Re: ${m.subject ?? ""}`.trim();
+  function startCompose(reply?: MsgFull) {
+    if (reply) {
+      setCTo(replyAddress(reply.direction === "out" ? reply.to : reply.from));
+      const s = reply.subject ?? "";
+      setCSubj(/^(re|ynt):/i.test(s) ? s : `Re: ${s}`.trim());
+      const quoted = (reply.text || (reply.html ?? "").replace(/<[^>]+>/g, " ")).slice(0, 4000).split("\n").map((l) => `> ${l}`).join("\n");
+      setCBody(`\n\n${fmtDate(reply.createdAt)} tarihinde ${reply.from} yazdı:\n${quoted}`);
+      setCReplyId(reply.messageId);
+    } else {
+      setCTo("");
+      setCSubj("");
+      setCBody("");
+      setCReplyId(null);
+    }
+    setCCc("");
     setComposeOpen(true);
-    setComposeTo(addr);
-    setComposeCc("");
-    setComposeBcc("");
-    setComposeSubj(subj);
-    setComposeBody(
-      `\n\n---\n${new Date(m.created_at).toLocaleString("tr-TR")} · ${m.from_addr}\n${(m.body_text ?? "").slice(0, 4000)}`,
-    );
-    setSelectedId(m.id);
   }
 
-  async function testConnection() {
-    setTestingConn(true);
-    setConnStatus(null);
-    try {
-      const d = (await hmEditorFetch("/api/hm/editor/mailbox/test-connection", { method: "POST" })) as {
-        smtp?: { ok?: boolean; error?: string };
-        imap?: { ok?: boolean; error?: string };
-      };
-      setConnStatus(
-        `SMTP: ${d.smtp?.ok ? "OK" : d.smtp?.error ?? "hata"} · IMAP: ${d.imap?.ok ? "OK" : d.imap?.error ?? "hata"}`,
-      );
-    } catch (err) {
-      setConnStatus(err instanceof Error ? err.message : String(err));
-    } finally {
-      setTestingConn(false);
-    }
-  }
-
-  async function markMailRead(id: number) {
-    await hmEditorFetch(`/api/hm/editor/mailbox/${id}/read`, { method: "PATCH" });
-    await loadMail();
-  }
-
-  async function syncImap(silent = false) {
-    if (syncing) return;
-    setSyncing(true);
-    try {
-      const d = (await hmEditorFetch("/api/hm/editor/mailbox/sync-imap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ max: 40 }),
-      })) as { fetched?: number; inserted?: number; error?: string };
-      if (!silent && (d.fetched ?? 0) > 0) {
-        // sessiz arka plan senkronunda uyarı gösterme
-      }
-      await loadMail();
-    } catch (err) {
-      if (!silent) setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  async function sendMail() {
+  async function send() {
     setSending(true);
+    setError("");
     try {
-      const recipients = [composeTo.trim(), ...composeCc.split(/[,;]/).map((s) => s.trim())].filter(Boolean).join(", ");
-      await hmEditorFetch("/api/hm/editor/mailbox/send", {
+      const html = cBody
+        .split("\n")
+        .map((l) => l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))
+        .join("<br>");
+      await mailFetch("/api/hm/editor/site-mail/send", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: recipients,
-          subject: composeSubj,
-          bodyHtml: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#202124">${composeBody.replace(/\n/g, "<br/>")}</div>`,
-          bodyText: composeBody,
-        }),
+        body: JSON.stringify({ from: box, to: cTo, cc: cCc, subject: cSubj, text: cBody, html, inReplyTo: cReplyId }),
       });
-      clearCompose();
       setComposeOpen(false);
-      await loadMail();
+      setInfo("E-posta gönderildi.");
+      window.setTimeout(() => setInfo(""), 4000);
+      if (folder === "sent") void loadList();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -228,210 +242,236 @@ export default function EditorPostaKutusu() {
     }
   }
 
-  async function saveMailSettings() {
-    setSavingSettings(true);
+  async function createBox() {
+    setCreating(true);
     setError("");
     try {
-      await hmEditorFetch("/api/hm/editor/mail-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          smtpHost,
-          smtpPort,
-          smtpUser,
-          smtpPass: smtpPass || undefined,
-          smtpFrom,
-          imapHost,
-          imapPort,
-          imapUser,
-          imapPass: imapPass || undefined,
-          imapFolder,
-        }),
+      const d = await mailFetch<{ address: string; canReceive: boolean | null; note: string }>("/api/hm/editor/site-mail/boxes", {
+        method: "POST",
+        body: JSON.stringify({ localPart: newLocal, domain: newDomain, displayName: newName }),
       });
-      await loadAll();
-      setSettingsOpen(false);
+      setNewOpen(false);
+      setNewLocal("");
+      setNewName("");
+      setInfo(`${d.address} açıldı.${d.note ? ` ${d.note}` : ""}`);
+      window.setTimeout(() => setInfo(""), 6000);
+      await loadBoxes();
+      setBox(d.address);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setSavingSettings(false);
+      setCreating(false);
     }
   }
 
   return (
     <EditorLayout title="Posta kutusu">
-      <div className="max-w-5xl">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Posta kutusu</h1>
-        <p className="text-sm text-slate-600 mb-4">
-          Site e-posta hesabınızdan gelen kutusunu okuyun ve yanıt gönderin. Gelen kutusu IMAP ile senkron edilir;
-          gönderim aynı hesabın SMTP bilgilerini kullanır.
-        </p>
-
-        {error ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
-        ) : null}
-
-        {mailboxConfig ? (
-          <div className="mb-4 rounded-xl border bg-gradient-to-r from-sky-50 to-white p-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Site posta kutusu</p>
-              <p className="text-lg font-bold text-slate-900">{mailboxConfig.address}</p>
-              <p className="text-xs text-slate-600 mt-1">
-                Gönderen: {mailboxConfig.fromDisplay}
-                {mailboxConfig.smtpHost ? ` · SMTP ${mailboxConfig.smtpHost}` : null}
-                {mailboxConfig.imapHost ? ` · IMAP ${mailboxConfig.imapHost}` : null}
-              </p>
-              {!mailboxConfig.ready ? (
-                <p className="text-xs text-amber-700 mt-1">
-                  SMTP ve IMAP ayarlarını aşağıdan kaydedin (Gmail: smtp.gmail.com / imap.gmail.com, uygulama şifresi).
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <Button type="button" variant="outline" size="sm" onClick={() => setSettingsOpen((v) => !v)}>
-                <Settings2 className="w-4 h-4 mr-1" />
-                {settingsOpen ? "Ayarları gizle" : "Posta ayarları"}
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => void testConnection()} disabled={testingConn}>
-                {testingConn ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4 mr-1" />}
-                Bağlantı testi
-              </Button>
-              {connStatus ? <span className="text-xs text-slate-600 max-w-xs">{connStatus}</span> : null}
-            </div>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="min-w-0">
+            <p className="font-black text-slate-900">Sitenin e-posta kutusu</p>
+            <p className="text-xs text-slate-500">
+              Şifre gerekmez; editör girişinizle sitenizin kutuları açılır. Aynı kutular yekpare.net/posta ile ortaktır.
+            </p>
           </div>
-        ) : null}
-
-        {settingsOpen ? (
-          <div className="mb-6 rounded-xl border bg-white p-5 space-y-4">
-            <h2 className="font-semibold text-slate-900">SMTP / IMAP ayarları</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>SMTP sunucu</Label>
-                <Input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.gmail.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>SMTP port</Label>
-                <Input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} placeholder="587" />
-              </div>
-              <div className="space-y-2">
-                <Label>SMTP kullanıcı</Label>
-                <Input value={smtpUser} onChange={(e) => setSmtpUser(e.target.value)} placeholder="info@siteniz.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>SMTP şifre</Label>
-                <Input type="password" value={smtpPass} onChange={(e) => setSmtpPass(e.target.value)} placeholder="***" />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Gönderen (From)</Label>
-                <Input value={smtpFrom} onChange={(e) => setSmtpFrom(e.target.value)} placeholder="Site Adı <info@siteniz.com>" />
-              </div>
-              <div className="space-y-2">
-                <Label>IMAP sunucu</Label>
-                <Input value={imapHost} onChange={(e) => setImapHost(e.target.value)} placeholder="imap.gmail.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>IMAP port</Label>
-                <Input value={imapPort} onChange={(e) => setImapPort(e.target.value)} placeholder="993" />
-              </div>
-              <div className="space-y-2">
-                <Label>IMAP kullanıcı</Label>
-                <Input value={imapUser} onChange={(e) => setImapUser(e.target.value)} placeholder="Boş = SMTP kullanıcı" />
-              </div>
-              <div className="space-y-2">
-                <Label>IMAP şifre</Label>
-                <Input type="password" value={imapPass} onChange={(e) => setImapPass(e.target.value)} placeholder="Boş = SMTP şifre" />
-              </div>
-              <div className="space-y-2">
-                <Label>IMAP klasör</Label>
-                <Input value={imapFolder} onChange={(e) => setImapFolder(e.target.value)} placeholder="INBOX" />
-              </div>
-            </div>
-            <Button onClick={() => void saveMailSettings()} disabled={savingSettings}>
-              {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Kaydet
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void loadList()} disabled={listLoading || !box}>
+              {listLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Yenile
             </Button>
+            {createDomains.length > 0 ? (
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setNewOpen((v) => !v)}>
+                <MailPlus className="h-4 w-4" />
+                Yeni mail adresi aç
+              </Button>
+            ) : null}
+            <Button type="button" size="sm" className="gap-1.5 bg-slate-900 text-white" onClick={() => startCompose()} disabled={!box || !canSend || !!currentBox?.missing}>
+              <PenSquare className="h-4 w-4" />
+              Yeni e-posta
+            </Button>
+          </div>
+        </div>
+
+        {error ? <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+        {info ? <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{info}</p> : null}
+
+        {newOpen ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <p className="font-semibold text-slate-900">Yeni mail adresi aç</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Adres</Label>
+                <Input value={newLocal} onChange={(e) => setNewLocal(e.target.value.toLowerCase())} placeholder="haber" className="w-40" />
+              </div>
+              <span className="pb-2 text-slate-500">@</span>
+              <div className="space-y-1">
+                <Label className="text-xs">Alan adı</Label>
+                <select value={newDomain} onChange={(e) => setNewDomain(e.target.value)} className="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm">
+                  {createDomains.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Görünen ad (isteğe bağlı)</Label>
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Haber Masası" className="w-48" />
+              </div>
+              <Button type="button" className="bg-slate-900 text-white" disabled={creating || !newLocal.trim()} onClick={() => void createBox()}>
+                {creating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+                Aç
+              </Button>
+            </div>
           </div>
         ) : null}
 
         {loading ? (
-          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Posta kutusu açılıyor…
+          </div>
         ) : (
-          <div className="relative">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="rounded-2xl bg-[#c2e7ff] px-5 text-[#001d35] shadow-sm hover:bg-[#a8daff]"
-                onClick={() => {
-                  clearCompose();
-                  setComposeOpen(true);
-                }}
-              >
-                <PenSquare className="mr-2 h-4 w-4" />
-                Yeni ileti
-              </Button>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
-              <GmailInboxPanel
-                messages={messages}
-                selectedId={selectedId}
-                syncing={syncing}
-                onRefresh={() => void loadMail()}
-                onSync={() => void syncImap()}
-                onSelect={(id, isRead) => {
-                  setSelectedId(id);
-                  if (!isRead) void markMailRead(id);
-                }}
-                onReply={replyToMessage}
-              />
-            </div>
-
-            {composeOpen ? (
-              <GmailMailCompose
-                className="fixed bottom-0 right-4 z-50 hidden sm:flex lg:right-8"
-                fromAddress={mailboxConfig?.address}
-                to={composeTo}
-                cc={composeCc}
-                bcc={composeBcc}
-                subject={composeSubj}
-                body={composeBody}
-                sending={sending}
-                onToChange={setComposeTo}
-                onCcChange={setComposeCc}
-                onBccChange={setComposeBcc}
-                onSubjectChange={setComposeSubj}
-                onBodyChange={setComposeBody}
-                onSend={() => void sendMail()}
-                onDiscard={() => {
-                  clearCompose();
-                  setComposeOpen(false);
-                }}
-              />
-            ) : null}
-
-            {composeOpen ? (
-              <div className="mt-4 sm:hidden">
-                <GmailMailCompose
-                  fromAddress={mailboxConfig?.address}
-                  to={composeTo}
-                  cc={composeCc}
-                  bcc={composeBcc}
-                  subject={composeSubj}
-                  body={composeBody}
-                  sending={sending}
-                  onToChange={setComposeTo}
-                  onCcChange={setComposeCc}
-                  onBccChange={setComposeBcc}
-                  onSubjectChange={setComposeSubj}
-                  onBodyChange={setComposeBody}
-                  onSend={() => void sendMail()}
-                  onDiscard={() => {
-                    clearCompose();
-                    setComposeOpen(false);
-                  }}
-                />
+          <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <aside className="space-y-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-2">
+                {boxes.map((b) => (
+                  <button
+                    key={b.address}
+                    type="button"
+                    onClick={() => setBox(b.address)}
+                    className={`block w-full rounded-lg px-2 py-2 text-left text-sm ${box === b.address ? "bg-slate-900 text-white" : "hover:bg-slate-50"}`}
+                  >
+                    <span className="block truncate font-semibold">{b.address}</span>
+                    {b.canReceive === false ? (
+                      <span className={`mt-0.5 flex items-center gap-1 text-[11px] ${box === b.address ? "text-amber-200" : "text-amber-700"}`}>
+                        <AlertTriangle className="h-3 w-3" /> E-posta alamıyor
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+                {boxes.length === 0 ? <p className="p-2 text-xs text-slate-500">Bu sitede posta kutusu yok.</p> : null}
               </div>
-            ) : null}
+              <div className="rounded-xl border border-slate-200 bg-white p-2">
+                {FOLDERS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFolder(f.id)}
+                    className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm ${folder === f.id ? "bg-slate-100 font-bold" : "hover:bg-slate-50"}`}
+                  >
+                    {f.label}
+                    {f.id === "inbox" && unread > 0 ? <span className="rounded-full bg-red-600 px-2 text-[11px] font-bold text-white">{unread}</span> : null}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <section className="min-w-0 space-y-3">
+              {currentBox?.note ? (
+                <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  {currentBox.note}
+                </p>
+              ) : null}
+
+              {composeOpen ? (
+                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+                  <p className="text-xs text-slate-500">
+                    Gönderen: <strong>{box}</strong>
+                  </p>
+                  <Input value={cTo} onChange={(e) => setCTo(e.target.value)} placeholder="Kime (virgülle birden fazla)" />
+                  <Input value={cCc} onChange={(e) => setCCc(e.target.value)} placeholder="Bilgi (CC, isteğe bağlı)" />
+                  <Input value={cSubj} onChange={(e) => setCSubj(e.target.value)} placeholder="Konu" />
+                  <Textarea value={cBody} onChange={(e) => setCBody(e.target.value)} className="min-h-[220px]" placeholder="Mesajınız…" />
+                  <div className="flex gap-2">
+                    <Button type="button" className="gap-1.5 bg-slate-900 text-white" disabled={sending || !cTo.trim() || !cSubj.trim()} onClick={() => void send()}>
+                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Gönder
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setComposeOpen(false)}>
+                      Vazgeç
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              {open ? (
+                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(null)}>
+                      <ArrowLeft className="h-4 w-4" /> Listeye dön
+                    </Button>
+                    {canSend ? (
+                      <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => startCompose(open)}>
+                        <Reply className="h-4 w-4" /> Yanıtla
+                      </Button>
+                    ) : null}
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void patchMessage(open.id, { isStarred: !open.isStarred })}>
+                      <Star className={`h-4 w-4 ${open.isStarred ? "fill-amber-400 text-amber-500" : ""}`} /> {open.isStarred ? "Yıldızı kaldır" : "Yıldızla"}
+                    </Button>
+                    {open.isTrashed ? (
+                      <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void patchMessage(open.id, { isTrashed: false })}>
+                        <Undo2 className="h-4 w-4" /> Geri al
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => void patchMessage(open.id, { isTrashed: true })}>
+                        <Trash2 className="h-4 w-4" /> Çöpe at
+                      </Button>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-lg font-black text-slate-900">{open.subject || "(konu yok)"}</p>
+                    <p className="text-xs text-slate-500">
+                      {open.direction === "out" ? "Kime" : "Kimden"}: {open.direction === "out" ? open.to : open.from} · {new Date(open.createdAt).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}
+                    </p>
+                  </div>
+                  {open.html ? <HtmlBody html={open.html} /> : <pre className="whitespace-pre-wrap break-words text-sm text-slate-800">{open.text || ""}</pre>}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 bg-white">
+                  <form
+                    className="flex items-center gap-2 border-b border-slate-100 p-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void loadList();
+                    }}
+                  >
+                    <Search className="h-4 w-4 text-slate-400" />
+                    <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Postalarda ara" className="h-8 border-0 shadow-none focus-visible:ring-0" />
+                  </form>
+                  {listLoading && rows.length === 0 ? (
+                    <div className="flex items-center gap-2 p-4 text-sm text-slate-500">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Yükleniyor…
+                    </div>
+                  ) : rows.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 p-10 text-sm text-slate-500">
+                      <Inbox className="h-8 w-8 text-slate-300" />
+                      Bu klasörde e-posta yok.
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-slate-100">
+                      {rows.map((m) => (
+                        <li key={m.id}>
+                          <button type="button" onClick={() => void openMessage(m.id)} className={`flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-slate-50 ${m.is_read ? "" : "bg-blue-50/40"}`}>
+                            <span className="min-w-0 flex-1">
+                              <span className={`block truncate text-sm ${m.is_read ? "text-slate-700" : "font-bold text-slate-900"}`}>
+                                {folder === "sent" ? `Kime: ${m.to_addr}` : shortAddr(m.from_addr)}
+                              </span>
+                              <span className={`block truncate text-sm ${m.is_read ? "text-slate-600" : "font-semibold text-slate-900"}`}>{m.subject || "(konu yok)"}</span>
+                              <span className="block truncate text-xs text-slate-400">{(m.snippet ?? "").replace(/\s+/g, " ")}</span>
+                            </span>
+                            <span className="flex shrink-0 flex-col items-end gap-1 text-[11px] text-slate-400">
+                              {fmtDate(m.created_at)}
+                              {m.is_starred ? <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> : null}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </section>
           </div>
         )}
       </div>
