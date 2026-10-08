@@ -160,7 +160,9 @@ export function suggestCategory(text, categories) {
   if (!cats.length) return "";
   const hay = ` ${trLower(text)} `;
   const bySlug = new Map(cats.map((c) => [trLower(c.slug), c.slug]));
-  const scored = TOPIC_KEYWORDS.map(([topic, words]) => [topic, words.reduce((n, w) => n + (hay.split(w).length - 1), 0)]).sort((a, b) => b[1] - a[1]);
+  // Word-start match ("maç" matches "maçı", but "çin" never matches "için").
+  const count = (w) => (hay.match(new RegExp(`(?<![\\p{L}\\p{N}])${w.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "gu")) || []).length;
+  const scored = TOPIC_KEYWORDS.map(([topic, words]) => [topic, words.reduce((n, w) => n + count(w), 0)]).sort((a, b) => b[1] - a[1]);
   for (const [topic, score] of scored) {
     if (score <= 0) break;
     for (const alias of SLUG_ALIASES[topic] || [topic]) {
@@ -203,6 +205,9 @@ function bytesToBase64(bytes) {
 
 async function copyImageToR2(env, src) {
   try {
+    // Already in our R2 (an HM site's /api/media/uploads/<file>): reuse it, no copy and no self-fetch.
+    const own = String(src).match(/^https?:\/\/[^/]+(\/api\/media\/uploads\/[A-Za-z0-9._-]+)(?:[?#].*)?$/);
+    if (own) return own[1];
     if (/^data:image\//i.test(src)) {
       if (src.length > 12_000_000) return null;
       const r = await saveMediaDataUrlToS3(env, src, "posta");
