@@ -42,7 +42,10 @@ import {
 import { upsertPortalRssItems } from "./portal-rss-store.js";
 import { portalRssTitleKey } from "./portal-rss-fetch.js";
 import { createHash } from "node:crypto";
-import { resolveAnkaraImportCategorySlug } from "./rss-ankara-category-guard.js";
+import {
+  loadHmSiteCategoryCatalog,
+  resolveHmImportCategorySlug,
+} from "./hm-local-category-router.js";
 import { buildRssImportNewsSlug } from "./rss-import-slug.js";
 
 export type RssCampaignRunResult = {
@@ -235,6 +238,8 @@ export async function executeRssCampaignRun(
   const feedUrls: string[] = (campaign.feeds ?? []).map((u) => String(u).trim()).filter(Boolean);
   const siteTargets = await resolveRssCampaignTargets(campaign, opts);
   const categoryCache = new Map<string, number | null>();
+  const siteCatalogCache = new Map<number, Awaited<ReturnType<typeof loadHmSiteCategoryCatalog>>>();
+  const siteSlugCache = new Map<number, string | null>();
   const requireImage = campaignRequiresCoverImage(
     Array.isArray(campaign.tags) ? (campaign.tags as string[]) : [],
     campaign.feeds,
@@ -460,12 +465,7 @@ export async function executeRssCampaignRun(
         if (targetsToAdd.length === 0 && targetsToUpgrade.length === 0) continue;
 
         const contentHtml = resolveCampaignRssContent({ ...item, rssSpot });
-        feedCategorySlug = resolveAnkaraImportCategorySlug(
-          feedCategorySlug,
-          cleanTitle,
-          rssSpot,
-          contentHtml,
-        );
+        const baseFeedCategorySlug = feedCategorySlug;
         const publishedAt = item.publishedAt;
         const resolvedCover = await resolveRssImportCoverImage({
           existing: item.imageUrl,
@@ -523,7 +523,38 @@ export async function executeRssCampaignRun(
         }
 
         for (const siteId of targetsToAdd) {
-          const categoryId = await resolveCampaignCategoryId(siteId, feedCategorySlug, categoryCache);
+          let perSiteSlug = baseFeedCategorySlug;
+          if (siteId != null) {
+            if (!siteCatalogCache.has(siteId)) {
+              siteCatalogCache.set(siteId, await loadHmSiteCategoryCatalog(siteId));
+            }
+            if (!siteSlugCache.has(siteId)) {
+              const [siteRow] = await getNewsDbForRead()
+                .select({ slug: hmNewsSitesTable.slug })
+                .from(hmNewsSitesTable)
+                .where(eq(hmNewsSitesTable.id, siteId))
+                .limit(1);
+              siteSlugCache.set(siteId, siteRow?.slug ?? null);
+            }
+            perSiteSlug = resolveHmImportCategorySlug(
+              baseFeedCategorySlug,
+              cleanTitle,
+              rssSpot,
+              contentHtml,
+              {
+                siteCategories: siteCatalogCache.get(siteId) ?? [],
+                siteSlug: siteSlugCache.get(siteId) ?? null,
+              },
+            );
+          } else {
+            perSiteSlug = resolveHmImportCategorySlug(
+              baseFeedCategorySlug,
+              cleanTitle,
+              rssSpot,
+              contentHtml,
+            );
+          }
+          const categoryId = await resolveCampaignCategoryId(siteId, perSiteSlug, categoryCache);
           const slug = await buildRssImportNewsSlug({
             title: cleanTitle,
             sourceUrl: sourceKey,

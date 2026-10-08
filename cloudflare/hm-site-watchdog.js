@@ -495,7 +495,11 @@ export async function handleHmSiteWatchdogEdge(request, env, incoming) {
     }
     const siteId = asPositiveLimit(body?.siteId ?? body?.site_id);
     if (!siteId) return jsonResponse(400, { ok: false, error: "siteId gerekli" });
-    const result = await syncSiteToPhpNeon(env, siteId, { limit: body?.limit || 120 });
+    const result = await syncSiteToPhpNeon(env, siteId, {
+      limit: body?.limit,
+      full: body?.full,
+      offset: body?.offset,
+    });
     return jsonResponse(200, { ok: true, ...result });
   }
 
@@ -524,7 +528,11 @@ export async function handleHmSiteWatchdogEdge(request, env, incoming) {
     const maxSites = Math.min(asPositiveLimit(body?.limit) || 24, 40);
     const results = [];
     for (const site of catalog.slice(0, maxSites)) {
-      const result = await syncSiteToPhpNeon(env, site.id, { limit: body?.perSiteLimit || 120 });
+      const result = await syncSiteToPhpNeon(env, site.id, {
+        limit: body?.perSiteLimit,
+        full: body?.full,
+        offset: body?.offset,
+      });
       results.push({
         siteId: site.id,
         slug: site.slug,
