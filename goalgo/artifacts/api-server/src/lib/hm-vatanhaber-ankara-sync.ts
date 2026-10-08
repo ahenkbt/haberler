@@ -22,7 +22,7 @@ import {
   parseHmLayoutJson,
   resolveHmEditorCategoryId,
 } from "./hm-editor-categories.js";
-import { slugify } from "./news-context.js";
+import { buildRssImportNewsSlug } from "./rss-import-slug.js";
 import { logger } from "./logger.js";
 import {
   findDuplicateNews,
@@ -258,10 +258,14 @@ export async function copyVatanhaberAnkaraNewsToHmSites(): Promise<VatanhaberAnk
         continue;
       }
 
-      const slugSuffix = `${Date.now()}-${copied}-${dest.id}-${Math.random().toString(36).slice(2, 7)}`;
+      const slug = await buildRssImportNewsSlug({
+        title: item.title,
+        sourceUrl: sourceKey,
+        siteId: dest.id,
+      });
       await dualWriteInsert(newsTable, {
         title: item.title,
-        slug: `${slugify(item.title)}-${slugSuffix}`,
+        slug,
         spot: item.spot,
         content: item.content,
         imageUrl: item.imageUrl,

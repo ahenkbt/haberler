@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
 import {
   db as mainDb,
   aiSettingsTable,
+  categoriesTable,
   dualWriteDelete,
   dualWriteInsert,
   dualWriteUpdate,
@@ -16,6 +17,8 @@ import { resolveLlmAttempts } from "./hm-llm-store.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "./aiNewsPrompts.js";
 import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { isCorporateHmSiteRow } from "./hm-yekpare-news-sync.js";
+import { categorySlugIsAnkara } from "./hm-vatanhaber-ankara-sync.js";
+import { isAsgHmNewsSiteRow } from "./hm-asg-editor-repair.js";
 
 const db = getNewsDbForRead();
 
@@ -251,7 +254,22 @@ export async function processOneHmAiJob(jobId: number): Promise<{ ok: boolean; n
 
     const langInstruction =
       ai.language === "tr" ? "Metni Türkçe yaz." : "Write in English.";
-    const system = aiNewsSystemPrompt({ langInstruction, extra: "Metni tamamen özgünleştir." });
+    let ankaraLocalOnly = false;
+    if (src.categoryId != null && isAsgHmNewsSiteRow({ slug: targetSite.slug })) {
+      const [cat] = await db
+        .select({ slug: categoriesTable.slug })
+        .from(categoriesTable)
+        .where(eq(categoriesTable.id, src.categoryId))
+        .limit(1);
+      if (cat && categorySlugIsAnkara(cat.slug, targetSite.slug)) {
+        ankaraLocalOnly = true;
+      }
+    }
+    const system = aiNewsSystemPrompt({
+      langInstruction,
+      extra: "Metni tamamen özgünleştir.",
+      ankaraLocalOnly,
+    });
     const user = `Kaynak başlık: ${src.title}\nÖzet: ${(src.spot ?? "").slice(0, 400)}\nİçerik:\n${(src.content ?? "").slice(0, 6000)}\n\n${aiNewsUserJsonHint(ai.wordCount)}`;
 
     const aiOut = await callChatWithLlmChain({

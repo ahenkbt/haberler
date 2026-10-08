@@ -29,6 +29,7 @@
     "repair:manual-news-site-only": "node --import tsx ./scripts/repair-manual-news-site-only.ts",
     "repair:stale-su-brand": "node --import tsx ./scripts/repair-stale-su-brand.ts",
     "repair:hm-brand-domains": "node --import tsx ./scripts/repair-hm-brand-domains.ts",
+    "repair:asg-ankara-rss": "node --import tsx ./scripts/repair-asg-ankara-rss.ts",
     "ensure:gundemi-bolge": "node --import tsx ./scripts/ensure-gundemi-regional-sites.ts",
     "ensure:fixhaber": "node --import tsx ./scripts/ensure-fixhaber-site.ts",
     "ensure:sosyalhizmetler": "node --import tsx ./scripts/ensure-sosyalhizmetler-site.ts",

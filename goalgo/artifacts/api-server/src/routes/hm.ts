@@ -229,6 +229,8 @@ import {
 import { repairCorporateSiteLocalManualImages } from "../lib/hm-corporate-manual-image-repair.js";
 import { repairManualEditorNewsSiteOnly } from "../lib/hm-manual-news-site-only.js";
 import { recategorizeMisclassifiedSporBatch } from "../lib/recategorizeMisclassifiedSpor.js";
+import { recategorizeMisclassifiedAnkaraBatch } from "../lib/recategorizeMisclassifiedAnkara.js";
+import { repairRssNumericSlugsBatch } from "../lib/repairRssNumericSlugs.js";
 import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "../lib/hm-global-news-category.js";
 
 const router: IRouter = Router();
@@ -2426,6 +2428,43 @@ router.post("/hm/admin/repair-hm-site-id-collisions", async (req, res): Promise<
 });
 
 /** Yönetim: sehirgazetesiankara@gmail.com → ASG + AHB ortak hesap + username. */
+/** ASG/AHG: Ankara kategorisindeki ulusal/uluslararası haberleri gündem'e taşır. */
+router.post("/hm/admin/repair-asg-ankara-categories", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
+  const body = (req.body ?? {}) as { limit?: number; dryRun?: boolean; siteId?: number };
+  const dryRun = body.dryRun === true;
+  const limit = Math.min(10_000, Math.max(1, Number(body.limit) || 2000));
+  try {
+    const result = await recategorizeMisclassifiedAnkaraBatch({
+      siteId: body.siteId,
+      limit,
+      dryRun,
+    });
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+/** ASG/AHG: `rss-{id}` slug → başlık tabanlı slug (+ yönlendirme kaydı). */
+router.post("/hm/admin/repair-asg-rss-slugs", async (req, res): Promise<void> => {
+  if (!denyUnlessAdminMaintenance(req, res, "haberler")) return;
+  const body = (req.body ?? {}) as { limit?: number; dryRun?: boolean; siteId?: number; slugs?: string[] };
+  const dryRun = body.dryRun === true;
+  const limit = Math.min(5000, Math.max(1, Number(body.limit) || 500));
+  try {
+    const result = await repairRssNumericSlugsBatch({
+      siteId: body.siteId,
+      limit,
+      dryRun,
+      slugs: body.slugs,
+    });
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
 router.post("/hm/admin/repair-asg-editor", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
@@ -5431,6 +5470,49 @@ router.post("/hm/editor/news/repair-site-only", async (req, res): Promise<void> 
   } catch (err) {
     res.status(500).json({
       error: err instanceof Error ? err.message : "Manuel haber site-only onarımı başarısız",
+    });
+  }
+});
+
+/** Ankara kategorisinde ulusal/uluslararası (yerel olmayan) haberleri gündem'e taşır — ASG/AHG editör. */
+router.post("/hm/editor/news/reclassify-ankara-misfits", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  const body = (req.body ?? {}) as { limit?: number; dryRun?: boolean };
+  const dryRun = body.dryRun === true;
+  const limit = Math.min(10_000, Math.max(1, Number(body.limit) || 2000));
+  try {
+    const result = await recategorizeMisclassifiedAnkaraBatch({
+      siteId: ctx.siteId,
+      limit,
+      dryRun,
+    });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : "Ankara→gündem düzeltmesi başarısız",
+    });
+  }
+});
+
+/** `rss-{id}` slug'larını başlık tabanlı slug'a çevirir + eski URL yönlendirmesi — ASG/AHG editör. */
+router.post("/hm/editor/news/repair-rss-numeric-slugs", async (req, res): Promise<void> => {
+  const ctx = denyUnlessHmEditor(req, res);
+  if (!ctx) return;
+  const body = (req.body ?? {}) as { limit?: number; dryRun?: boolean; slugs?: string[] };
+  const dryRun = body.dryRun === true;
+  const limit = Math.min(5000, Math.max(1, Number(body.limit) || 500));
+  try {
+    const result = await repairRssNumericSlugsBatch({
+      siteId: ctx.siteId,
+      limit,
+      dryRun,
+      slugs: body.slugs,
+    });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : "RSS slug onarımı başarısız",
     });
   }
 });
