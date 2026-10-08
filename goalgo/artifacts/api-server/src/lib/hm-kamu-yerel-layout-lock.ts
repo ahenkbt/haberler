@@ -46,14 +46,15 @@ const LEGACY_GENERIC_NAV = new Set([
 ]);
 
 const CUMHA_NAV_MARKERS = new Set([
+  // Birleşik tepe (gundem/dunya/spor LEGACY_GENERIC'de — buraya koyma)
   "siyaset",
   "kamu",
   "stk",
   "yerel-yonetimler",
   "roportajlar",
+  // legacy Cumha tepe slug'ları (eski layout'lar)
   "daha",
   "toplum-ve-yasam",
-  // legacy Cumha tepe slug'ları (eski layout'lar)
   "cumhurbaskanligi",
   "bakanliklar",
   "tbmm",
