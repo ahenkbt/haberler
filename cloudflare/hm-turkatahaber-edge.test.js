@@ -15,17 +15,13 @@ describe("hm-turkatahaber-edge", () => {
   it("accepts cumha page allowlist with bolge-*", () => {
     const layout = {
       hmNavOnlyCategorySlugs: [
-        "yerel",
-        "cumhurbaskanligi",
-        "bakanliklar",
-        "tbmm",
-        "siyasi-partiler",
-        "yerel-yonetimler",
-        "mulki-idare",
-        "toplum-ve-yasam",
         "daha",
-        "sivil-toplum-kuruluslari",
-        "kamu-kurumlari",
+        "siyaset",
+        "kamu",
+        "stk",
+        "yerel-yonetimler",
+        "roportajlar",
+        "toplum-ve-yasam",
         "bolge-marmara",
         "ankara",
       ],
@@ -37,17 +33,13 @@ describe("hm-turkatahaber-edge", () => {
   it("flags tepe-only allowlist missing bolge-*", () => {
     const layout = {
       hmNavOnlyCategorySlugs: [
-        "yerel",
-        "cumhurbaskanligi",
-        "bakanliklar",
-        "tbmm",
-        "siyasi-partiler",
-        "yerel-yonetimler",
-        "mulki-idare",
-        "toplum-ve-yasam",
         "daha",
-        "sivil-toplum-kuruluslari",
-        "kamu-kurumlari",
+        "siyaset",
+        "kamu",
+        "stk",
+        "yerel-yonetimler",
+        "roportajlar",
+        "toplum-ve-yasam",
       ],
       logoUrl: "/turkata/turkata-logo.webp",
     };

@@ -46,6 +46,14 @@ const LEGACY_GENERIC_NAV = new Set([
 ]);
 
 const CUMHA_NAV_MARKERS = new Set([
+  "siyaset",
+  "kamu",
+  "stk",
+  "yerel-yonetimler",
+  "roportajlar",
+  "daha",
+  "toplum-ve-yasam",
+  // legacy Cumha tepe slug'ları (eski layout'lar)
   "cumhurbaskanligi",
   "bakanliklar",
   "tbmm",

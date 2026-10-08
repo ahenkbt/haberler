@@ -8,17 +8,13 @@ export const TURKATAHABER_SLUG = "turkatahaber";
 export const TURKATAHABER_DOMAIN = "turkatahaber.com";
 
 const NAV_TOP = Object.freeze([
-  "yerel",
-  "cumhurbaskanligi",
-  "bakanliklar",
-  "tbmm",
-  "siyasi-partiler",
-  "yerel-yonetimler",
-  "mulki-idare",
-  "toplum-ve-yasam",
   "daha",
-  "sivil-toplum-kuruluslari",
-  "kamu-kurumlari",
+  "siyaset",
+  "kamu",
+  "stk",
+  "yerel-yonetimler",
+  "roportajlar",
+  "toplum-ve-yasam",
 ]);
 
 function normalizeHost(raw) {

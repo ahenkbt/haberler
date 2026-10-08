@@ -57,6 +57,11 @@ const KAMU_YEREL_SITE_SLUGS = new Set(["turkatahaber", "yerelnet"]);
 /** Keep in sync with api-server `listKamuYerelMansetPoolCategorySlugs`. */
 const KAMU_YEREL_MANSET_CATEGORY_SLUGS = [
   "yerel",
+  "siyaset",
+  "kamu",
+  "stk",
+  "roportajlar",
+  "muhtar",
   "kamu-kurumlari",
   "siyasi-partiler",
   "genel-merkez",
