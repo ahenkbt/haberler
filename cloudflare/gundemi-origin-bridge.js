@@ -14,6 +14,7 @@
  * Ops: hostinger/gundemi-bolge/traefik-gundemi.yml + DEPLOY.md
  */
 
+import { phpThemeChromeCssPrefix } from "./hm-php-concept-colors.js";
 import { TURKATA_ORIGIN } from "./turkata-haber.js";
 
 /** Seed / docs catalog — known regionals (any new *.gundemi.org also works). */
@@ -197,10 +198,35 @@ export function appendYsLogoHeaderCssFix(cssText) {
   return `${raw.trimEnd()}\n\n${YS_LOGO_HEADER_CSS_FIX}`;
 }
 
-<<<<<<< HEAD
-=======
+/** PHP news brand hosts that share Yenişafak `/assets/theme.css` (not Traefik-gap HTML). */
+export function isPhpNewsBrandThemeHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return (
+    host === "yesilvatan.gen.tr" ||
+    host === "yerel.net.tr" ||
+    host === "turksav.org" ||
+    host === "sehitgazi.org.tr" ||
+    host === "dunyasaglik.org" ||
+    host === "turkatahaber.com" ||
+    host === "fix.tc"
+  );
+}
 
->>>>>>> origin/cursor/logo-trim-header-size-4349
+/**
+ * Only `/assets/theme.css` for PHP news brands — inject concept chrome + logo size fix.
+ * Does not own HTML (orange→PHP origin stays intact).
+ * @returns {Promise<Response|null>}
+ */
+export async function phpNewsBrandThemeCssBridgeResponse(request, incoming) {
+  if (!isPhpNewsBrandThemeHost(incoming.hostname)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
+  if (!/\/assets\/theme\.css$/i.test(pathOnly)) return null;
+  return proxySharedPhpThemePath(request, incoming, {
+    frontendTag: "php-news-brand-theme-css",
+  });
+}
+
 /**
  * Public gundemi hosts must never get SPA index.html from ASSETS.
  * Panel paths + hashed /assets/index-* + /gundemi/logos stay on Worker ASSETS.
@@ -363,9 +389,12 @@ async function proxySharedPhpThemePath(request, incoming, opts) {
   const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
   const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
   if (/theme\.css$/i.test(pathOnly) && upstream.ok && ct.includes("text/css")) {
-    const body = appendYsLogoHeaderCssFix(await upstream.text());
+    const chrome = phpThemeChromeCssPrefix(incoming.hostname);
+    const body = appendYsLogoHeaderCssFix(`${chrome}${await upstream.text()}`);
     out.set("content-type", "text/css; charset=utf-8");
     out.set("x-yekpare-ys-logo-fix", "v1");
+    if (chrome) out.set("x-yekpare-php-concept-colors", "v1");
+    out.set("cache-control", "public, max-age=300");
     return new Response(body, { status: upstream.status, headers: out });
   }
 

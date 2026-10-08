@@ -17,11 +17,13 @@ import {
   isSehitgaziBrandAssetPath,
   isDunyaSaglikBrandAssetPath,
   appendYsLogoHeaderCssFix,
+  YS_LOGO_HEADER_CSS_FIX,
+  isPhpNewsBrandThemeHost,
+  phpNewsBrandThemeCssBridgeResponse,
   shouldBlockGundemiSpaAssets,
   shouldBridgeGundemiApexPath,
   shouldProxyRegionalPhpThemeAsset,
   gundemiApexPhpBridgeResponse,
-  appendYsLogoHeaderCssFix,
 } from "./gundemi-origin-bridge.js";
 
 describe("gundemi-origin-bridge hosts", () => {
@@ -186,6 +188,44 @@ describe("gundemiApexPhpBridgeResponse", () => {
   it("treats /dunyasaglik/* as Worker brand static path", () => {
     assert.equal(isWorkerBrandStaticAssetPath("/dunyasaglik/dunyasaglik-logo.png"), true);
     assert.equal(isDunyaSaglikBrandAssetPath("/dunyasaglik/dunyasaglik-logo.png"), true);
+  });
+
+  it("appends ys-logo-header-fix once to theme.css text", () => {
+    const once = appendYsLogoHeaderCssFix(".ys-logo img{height:64px}");
+    assert.match(once, /ys-logo-header-fix:v1/);
+    assert.match(once, /max-height:\s*64px/);
+    const twice = appendYsLogoHeaderCssFix(once);
+    assert.equal(twice.split("ys-logo-header-fix:v1").length - 1, 1);
+    assert.match(YS_LOGO_HEADER_CSS_FIX, /object-fit:\s*contain/);
+  });
+
+  it("detects PHP news brand theme hosts without owning HTML bridge", () => {
+    assert.equal(isPhpNewsBrandThemeHost("yesilvatan.gen.tr"), true);
+    assert.equal(isPhpNewsBrandThemeHost("www.yerel.net.tr"), true);
+    assert.equal(isPhpNewsBrandThemeHost("dunyasaglik.org"), true);
+    assert.equal(isPhpNewsBrandThemeHost("ege.gundemi.org"), false);
+  });
+
+  it("bridges only theme.css for yesilvatan brand host", async () => {
+    const theme = new URL("https://yesilvatan.gen.tr/assets/theme.css");
+    const themeRes = await phpNewsBrandThemeCssBridgeResponse(
+      new Request(theme.toString()),
+      theme,
+    );
+    assert.ok(themeRes);
+    assert.equal(themeRes.status, 200);
+    assert.equal(themeRes.headers.get("x-yekpare-ys-logo-fix"), "v1");
+    assert.equal(themeRes.headers.get("x-yekpare-php-concept-colors"), "v1");
+    const css = await themeRes.text();
+    assert.match(css, /hm-php-concept-colors:yesilvatan/);
+    assert.match(css, /ys-logo-header-fix:v1/);
+
+    const home = new URL("https://yesilvatan.gen.tr/");
+    const homeRes = await phpNewsBrandThemeCssBridgeResponse(
+      new Request(home.toString()),
+      home,
+    );
+    assert.equal(homeRes, null);
   });
 
   it("returns null for SPA panel paths on apex", async () => {
