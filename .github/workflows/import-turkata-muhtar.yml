@@ -1,0 +1,76 @@
+# turkatahaber.com — Haberler.com /muhtar/ → kategori muhtar (~100 haber + kapak mirror + PHP sync)
+name: Import Turkata Muhtar news
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_seed:
+        description: "SKIP_SEED=1 (yalnızca kampanya çalıştır)"
+        required: false
+        default: "false"
+      skip_run:
+        description: "SKIP_RUN=1 (yalnızca seed + kampanya upsert)"
+        required: false
+        default: "false"
+      sync_php:
+        description: "PHP Neon news sync (true/false)"
+        required: false
+        default: "true"
+  repository_dispatch:
+    types: [import-turkata-muhtar]
+
+concurrency:
+  group: import-turkata-muhtar
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: DATABASE_URL
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: goalgo/pnpm-lock.yaml
+
+      - name: Install goalgo dependencies
+        working-directory: goalgo
+        run: pnpm install --frozen-lockfile
+
+      - name: import:turkata-muhtar
+        working-directory: goalgo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
+          NEWS_DB_READ: ${{ secrets.NEWS_DB_READ || 'main' }}
+          NEWS_DB_WRITE: dual
+          SKIP_SEED: ${{ github.event.inputs.skip_seed == 'true' && '1' || github.event.client_payload.skip_seed || '0' }}
+          SKIP_RUN: ${{ github.event.inputs.skip_run == 'true' && '1' || github.event.client_payload.skip_run || '0' }}
+          SYNC_PHP: ${{ github.event.inputs.sync_php == 'false' && '0' || '1' }}
+          # Kapakları R2/media-edge'e yaz (ready path)
+          PORTAL_RSS_MIRROR_IMAGES: "1"
+          MEDIA_STORAGE_MODE: ${{ secrets.MEDIA_STORAGE_MODE || 's3' }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT || '' }}
+          S3_REGION: ${{ secrets.S3_REGION || 'auto' }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET || '' }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID || '' }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY || '' }}
+          S3_PUBLIC_URL: ${{ secrets.S3_PUBLIC_URL || '' }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL secret missing."
+            exit 1
+          fi
+          if [ -z "${NEWS_DATABASE_URL:-}" ]; then
+            echo "::error::NEWS_DATABASE_URL secret missing — PHP dual-write gerekli."
+            exit 1
+          fi
+          pnpm --filter @workspace/api-server run import:turkata-muhtar

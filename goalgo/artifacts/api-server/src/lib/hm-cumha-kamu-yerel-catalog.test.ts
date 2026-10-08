@@ -32,16 +32,21 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
 
   it("builds cumha-primary site RSS rows (19 kategori + 81 il + tamamlayıcı)", () => {
     const rows = buildKamuYerelHmNewsSiteRssFeedRows();
-    expect(rows.length).toBe(19 + 81 + 3);
+    // NTV×3 + Haberler.com Muhtar RSS
+    expect(rows.length).toBe(19 + 81 + 4);
     expect(rows.some((r) => r.url.includes("kamu-kurumlari-ve-ust-kurullar"))).toBe(true);
     expect(rows.some((r) => r.url.includes("cumha.com.tr/rss/category/cumhurbaskanligi"))).toBe(true);
     expect(rows.some((r) => r.url.includes("cumha.com.tr/rss/category/nato"))).toBe(true);
+    expect(rows.some((r) => r.url.includes("rss.haberler.com/rss.asp?kategori=muhtar"))).toBe(true);
     expect(rows.every((r) => !r.url.includes("birgun.net/rss/kategori/siyaset-8"))).toBe(true);
   });
 
   it("expands kamu-yerel parent nav slugs for category listings", () => {
     expect(expandKamuYerelListingCategorySlugs("daha", "turkatahaber")).toEqual(
       expect.arrayContaining(["daha", "nato", "avrupa-birligi"]),
+    );
+    expect(expandKamuYerelListingCategorySlugs("yerel-yonetimler", "turkatahaber")).toEqual(
+      expect.arrayContaining(["yerel-yonetimler", "muhtar", "ilceler"]),
     );
     expect(expandKamuYerelListingCategorySlugs("gundem", "turkatahaber")).toEqual(["gundem"]);
     expect(expandKamuYerelListingCategorySlugs("daha", "asg")).toEqual(["daha"]);

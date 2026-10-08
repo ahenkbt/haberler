@@ -34,9 +34,11 @@ describe("hm-kamu-yerel-sites", () => {
     const layout = buildKamuYerelLayoutJson(TURKATAHABER_SITE);
     const allow = layout.hmNavOnlyCategorySlugs as string[];
     const hidden = layout.hmNavHiddenCategorySlugs as string[];
-    expect(allow).toEqual(expect.arrayContaining(["yerel", "bolge-marmara", "ankara", "izmir"]));
+    expect(allow).toEqual(
+      expect.arrayContaining(["yerel", "muhtar", "bolge-marmara", "ankara", "izmir"]),
+    );
     expect(allow.filter((s) => s.startsWith("bolge-"))).toHaveLength(7);
-    expect(hidden).toEqual(expect.arrayContaining(["bolge-marmara", "ankara"]));
+    expect(hidden).toEqual(expect.arrayContaining(["bolge-marmara", "ankara", "muhtar"]));
     expect(hidden).not.toContain("yerel");
   });
 });

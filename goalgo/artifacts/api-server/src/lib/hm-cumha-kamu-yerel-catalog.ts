@@ -177,6 +177,8 @@ const CUMHA_KAMU_PARENT_SLUG: Partial<Record<string, string>> = {
   "il-ilce-baskanliklari": "siyasi-partiler",
   "buyuksehir-ve-iller": "yerel-yonetimler",
   ilceler: "yerel-yonetimler",
+  /** Haberler.com Muhtar — yerel yönetim / mahalle muhtarlığı. */
+  muhtar: "yerel-yonetimler",
   valilikler: "mulki-idare",
   kaymakamliklar: "mulki-idare",
   nato: "daha",
@@ -232,16 +234,40 @@ export const KAMU_YEREL_NAV_TOP_CATEGORY_SLUGS = [
 
 export const KAMU_YEREL_SECONDARY_CATEGORIES: readonly KamuYerelCategoryDef[] = [
   { slug: "yerel", name: "Yerel", color: "#c00005" },
+  { slug: "muhtar", name: "Muhtar", color: "#0a5c4a" },
   { slug: "saglik", name: "Sağlık", color: "#991b1b" },
   { slug: "teknoloji", name: "Teknoloji", color: "#4c1d95" },
   { slug: "yasam", name: "Yaşam", color: "#b45309" },
 ];
 
-/** NTV — kamu-yerel kavramına uygun tamamlayıcı (isteğe bağlı seed). */
+/** Haberler.com Muhtar kategori — RSS (kısa) + HTML liste sayfaları (toplu kazıma). */
+export const HABERLER_MUHTAR_CATEGORY_SLUG = "muhtar";
+export const HABERLER_MUHTAR_RSS_URL = "https://rss.haberler.com/rss.asp?kategori=muhtar";
+export const HABERLER_MUHTAR_LISTING_BASE = "https://www.haberler.com/muhtar/";
+
+/**
+ * robots.txt eski sayısal sayfalama (/muhtar/4/) engeller; sN biçimi serbest.
+ * Sayfa başına ~20–30 haber — 4 sayfa ≈ 100 hedef.
+ */
+export function listHaberlerMuhtarListingPages(pageCount = 4): string[] {
+  const n = Math.max(1, Math.min(10, Math.trunc(pageCount) || 4));
+  const pages = [HABERLER_MUHTAR_LISTING_BASE];
+  for (let i = 2; i <= n; i++) {
+    pages.push(`https://www.haberler.com/muhtar/s${i}/`);
+  }
+  return pages;
+}
+
+/** NTV + Haberler Muhtar — kamu-yerel kavramına uygun tamamlayıcı (isteğe bağlı seed). */
 export const KAMU_YEREL_SUPPLEMENTAL_RSS = [
   { url: "https://www.ntv.com.tr/saglik.rss", categoryKey: "saglik", label: "Sağlık" },
   { url: "https://www.ntv.com.tr/teknoloji.rss", categoryKey: "teknoloji", label: "Teknoloji" },
   { url: "https://www.ntv.com.tr/yasam.rss", categoryKey: "yasam", label: "Yaşam" },
+  {
+    url: HABERLER_MUHTAR_RSS_URL,
+    categoryKey: HABERLER_MUHTAR_CATEGORY_SLUG,
+    label: "Muhtar",
+  },
 ] as const;
 
 export function cumhaCategoryRssUrl(cumhaSlug: string): string {
@@ -467,10 +493,12 @@ export function buildKamuYerelCorporateMenuItems(): KamuYerelCorporateMenuItem[]
     });
   }
   for (const cat of KAMU_YEREL_SECONDARY_CATEGORIES) {
+    const parentSlug = CUMHA_KAMU_PARENT_SLUG[cat.slug];
     items.push({
       id: `ky-cat-${cat.slug}`,
       label: cat.name,
       href: `/kategori/${cat.slug}`,
+      parentId: parentSlug ? `ky-cat-${parentSlug}` : undefined,
       enabled: true,
     });
   }

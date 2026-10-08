@@ -142,7 +142,8 @@ export function parseHaberlerListingLinks(
   pageUrl: string,
   opts?: { limit?: number; topicFilterTags?: string[] },
 ): HaberlerListingLink[] {
-  const limit = Math.max(1, Math.min(30, opts?.limit ?? 20));
+  // Tek sayfa üst sınırı — toplu içe aktarımda (ör. Muhtar ×4 sayfa) 40'a kadar.
+  const limit = Math.max(1, Math.min(40, opts?.limit ?? 20));
   const filterTags = opts?.topicFilterTags?.filter((t) => t.trim()) ?? [];
   const merged: HaberlerListingLink[] = [];
   const seen = new Set<string>();
@@ -264,7 +265,7 @@ export async function scrapeHaberlerComCampaignItems(
   pageUrl: string,
   opts?: { limit?: number; timeoutMs?: number; topicFilterTags?: string[] },
 ): Promise<HaberlerScrapedArticle[]> {
-  const limit = Math.max(1, Math.min(30, opts?.limit ?? 15));
+  const limit = Math.max(1, Math.min(40, opts?.limit ?? 15));
   const timeoutMs = opts?.timeoutMs ?? 15_000;
   const filterTags = opts?.topicFilterTags?.map((t) => t.trim().toLowerCase()).filter(Boolean) ?? [];
 
@@ -296,6 +297,61 @@ export async function scrapeHaberlerComCampaignItems(
 
   if (articles.length === 0) {
     throw new Error("Haber sayfaları kazınamadı (içerik boş veya erişim engellendi)");
+  }
+  return articles;
+}
+
+/**
+ * Birden fazla Haberler.com liste sayfasını sırayla kazar (ör. /muhtar/ + /muhtar/s2/…).
+ * Tekilleştirilmiş linkler; toplam `limit` makale.
+ */
+export async function scrapeHaberlerComListingPages(
+  pageUrls: readonly string[],
+  opts?: { limit?: number; timeoutMs?: number; topicFilterTags?: string[]; perPageLimit?: number },
+): Promise<HaberlerScrapedArticle[]> {
+  const totalLimit = Math.max(1, Math.min(200, opts?.limit ?? 100));
+  const perPage = Math.max(1, Math.min(40, opts?.perPageLimit ?? 30));
+  const timeoutMs = opts?.timeoutMs ?? 15_000;
+  const filterTags = opts?.topicFilterTags?.map((t) => t.trim().toLowerCase()).filter(Boolean) ?? [];
+  const seenLinks = new Set<string>();
+  const articles: HaberlerScrapedArticle[] = [];
+
+  for (const pageUrl of pageUrls) {
+    if (articles.length >= totalLimit) break;
+    if (!isHaberlerComUrl(pageUrl)) continue;
+    let listHtml: string;
+    try {
+      listHtml = await fetchHtml(pageUrl, timeoutMs);
+    } catch {
+      continue;
+    }
+    const need = Math.min(perPage, totalLimit - articles.length);
+    const links = parseHaberlerListingLinks(listHtml, pageUrl, {
+      limit: need + 5,
+      topicFilterTags: filterTags,
+    }).filter((row) => {
+      if (seenLinks.has(row.link)) return false;
+      seenLinks.add(row.link);
+      return true;
+    });
+
+    for (let i = 0; i < links.length && articles.length < totalLimit; i++) {
+      const row = links[i]!;
+      if (articles.length > 0 || i > 0) await sleep(ARTICLE_FETCH_GAP_MS);
+      const article = await scrapeHaberlerArticle(row.link, {
+        timeoutMs,
+        listingTitle: row.title,
+        listingImage: row.imageUrl,
+      });
+      if (!article) continue;
+      const topicCheck = `${article.title} ${article.spot}`;
+      if (filterTags.length > 0 && !matchesHaberlerTopicTags(topicCheck, filterTags)) continue;
+      articles.push(article);
+    }
+  }
+
+  if (articles.length === 0) {
+    throw new Error("Haberler.com liste sayfalarında haber bulunamadı");
   }
   return articles;
 }
