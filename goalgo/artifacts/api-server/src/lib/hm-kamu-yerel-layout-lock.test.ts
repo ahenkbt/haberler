@@ -35,13 +35,25 @@ describe("hm-kamu-yerel-layout-lock", () => {
     expect(patched.logoUrl).toBe("/turkata/turkata-logo.webp");
   });
 
-  it("stripKamuYerelLockedLayoutIncoming blocks nav overwrite on save", () => {
+  it("stripKamuYerelLockedLayoutIncoming blocks nav and color overwrite on save", () => {
     const inc = stripKamuYerelLockedLayoutIncoming("yerelnet", {
       hmPrimaryColor: "#111",
+      hmSecondaryColor: "#222",
       hmNavOnlyCategorySlugs: ["gundem"],
     });
-    expect(inc.hmPrimaryColor).toBe("#111");
+    expect(inc.hmPrimaryColor).toBeUndefined();
+    expect(inc.hmSecondaryColor).toBeUndefined();
     expect(inc.hmNavOnlyCategorySlugs).toBeUndefined();
+  });
+
+  it("applyKamuYerelLayoutLock restores concept colors", () => {
+    const canonical = buildKamuYerelLayoutJson(YERELNET_SITE);
+    const patched = applyKamuYerelLayoutLock(
+      { hmPrimaryColor: "#0b2a5b", hmSecondaryColor: "#c8102e" },
+      canonical,
+    );
+    expect(patched.hmPrimaryColor).toBe("#0b6e4f");
+    expect(patched.hmSecondaryColor).toBe("#c45c00");
   });
 
   it("accepts canonical yerel logo path", () => {

@@ -7,12 +7,14 @@ import {
   stripKamuYerelLockedLayoutIncoming,
 } from "./hm-kamu-yerel-layout-lock.js";
 
-test("stripKamuYerelLockedLayoutIncoming removes nav from editor patch", () => {
+test("stripKamuYerelLockedLayoutIncoming removes nav and colors from editor patch", () => {
   const inc = stripKamuYerelLockedLayoutIncoming("turkatahaber", {
     hmPrimaryColor: "#000",
+    hmSecondaryColor: "#111",
     hmNavOnlyCategorySlugs: ["gundem", "spor"],
   });
-  assert.equal(inc.hmPrimaryColor, "#000");
+  assert.equal(inc.hmPrimaryColor, undefined);
+  assert.equal(inc.hmSecondaryColor, undefined);
   assert.equal(inc.hmNavOnlyCategorySlugs, undefined);
 });
 

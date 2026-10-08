@@ -103,12 +103,26 @@ export function isGundemiBridgeCatchAllHost(hostname) {
   return isGundemiApexBridgeHost(hostname) || isGundemiOrgSubdomainHost(hostname);
 }
 
+/** Concept Yenişafak PHP news hosts — Worker `/assets/*` may proxy theme.css. */
+export function isPhpConceptNewsThemeHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return (
+    host === "yesilvatan.gen.tr" ||
+    host === "yerel.net.tr" ||
+    host === "turkatahaber.com" ||
+    host === "sehitgazi.org.tr" ||
+    host === "turksav.org" ||
+    host === "dunyasaglik.org"
+  );
+}
+
 /** Worker-owned PHP theme paths (gundemi + custom PHP apex assets routes). */
 export function isPhpThemeOriginBridgeHost(hostname) {
   return (
     isGundemiBridgeCatchAllHost(hostname) ||
     isFixHaberBridgeHost(hostname) ||
-    isSosyalHizmetlerBridgeHost(hostname)
+    isSosyalHizmetlerBridgeHost(hostname) ||
+    isPhpConceptNewsThemeHost(hostname)
   );
 }
 
@@ -196,6 +210,14 @@ export function appendYsLogoHeaderCssFix(cssText) {
   const raw = String(cssText || "");
   if (raw.includes("ys-logo-header-fix:v1")) return raw;
   return `${raw.trimEnd()}\n\n${YS_LOGO_HEADER_CSS_FIX}`;
+}
+
+/** Prepend host concept chrome vars onto proxied `/assets/theme.css` (nav/navy). */
+export function decoratePhpThemeCss(cssText, hostname) {
+  const chrome = phpThemeChromeCssPrefix(hostname);
+  const body = String(cssText || "");
+  if (!chrome || body.includes("hm-php-concept-colors:")) return body;
+  return `${chrome}${body}`;
 }
 
 /** PHP news brand hosts that share Yenişafak `/assets/theme.css` (not Traefik-gap HTML). */
@@ -390,7 +412,9 @@ async function proxySharedPhpThemePath(request, incoming, opts) {
   const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
   if (/theme\.css$/i.test(pathOnly) && upstream.ok && ct.includes("text/css")) {
     const chrome = phpThemeChromeCssPrefix(incoming.hostname);
-    const body = appendYsLogoHeaderCssFix(`${chrome}${await upstream.text()}`);
+    const body = appendYsLogoHeaderCssFix(
+      decoratePhpThemeCss(await upstream.text(), incoming.hostname),
+    );
     out.set("content-type", "text/css; charset=utf-8");
     out.set("x-yekpare-ys-logo-fix", "v1");
     if (chrome) out.set("x-yekpare-php-concept-colors", "v1");
@@ -449,6 +473,12 @@ export async function gundemiApexPhpBridgeResponse(request, incoming) {
   if (shouldProxyRegionalPhpThemeAsset(incoming.pathname)) {
     return proxyRegionalPhpThemeAsset(request, incoming);
   }
+
+  // Concept news hosts: only theme assets are bridged (HTML stays orange→PHP origin).
+  if (isPhpConceptNewsThemeHost(incoming.hostname)) {
+    return null;
+  }
+
   // Defensive: theme-shaped paths must never fall through to gap HTML (unstyled sites).
   if (isPhpThemeAssetPath(incoming.pathname) && String(incoming.pathname).startsWith("/assets/")) {
     return new Response(

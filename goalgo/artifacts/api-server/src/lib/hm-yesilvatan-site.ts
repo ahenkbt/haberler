@@ -3,6 +3,8 @@
  * Logo Worker ASSETS: `public/yesilvatan/*`.
  */
 
+import { applyPhpConceptColorsToLayout } from "./hm-php-concept-colors.js";
+
 export const YESILVATAN_SLUG = "yesilvatan";
 export const YESILVATAN_DOMAIN = "yesilvatan.gen.tr";
 
@@ -11,7 +13,8 @@ export const YESILVATAN_LOGO_PATH = "/yesilvatan/yesilvatan-logo.png";
 /** Aynı marka dosyası favicon / apple-touch için. */
 export const YESILVATAN_FAVICON_PATH = "/yesilvatan/yesilvatan-logo.png";
 
-export const YESILVATAN_PRIMARY_COLOR = "#2e7d32";
+export const YESILVATAN_PRIMARY_COLOR = "#0b6e4f";
+export const YESILVATAN_SECONDARY_COLOR = "#2e7d32";
 
 export function listYesilVatanDomains(): string[] {
   return [YESILVATAN_DOMAIN, `www.${YESILVATAN_DOMAIN}`];
@@ -36,12 +39,13 @@ export function isYesilVatanSlug(raw: string | null | undefined): boolean {
   );
 }
 
-/** layout_json üzerine logo/favicon yazar (mevcut alanları korur). */
+/** layout_json üzerine logo/favicon + konsept renkleri yazar. */
 export function applyYesilVatanLogoToLayout(
   layout: Record<string, unknown> | null | undefined,
 ): { layout: Record<string, unknown>; changed: boolean } {
   const next: Record<string, unknown> =
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
+  let changed = false;
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
   const needsLogo =
@@ -50,13 +54,19 @@ export function applyYesilVatanLogoToLayout(
     !favicon ||
     favicon.toLowerCase().startsWith("data:image/") ||
     favicon !== YESILVATAN_FAVICON_PATH;
-  if (!needsLogo && !needsFavicon) {
-    return { layout: next, changed: false };
+  if (needsLogo) {
+    next.logoUrl = YESILVATAN_LOGO_PATH;
+    changed = true;
   }
-  next.logoUrl = YESILVATAN_LOGO_PATH;
-  next.faviconUrl = YESILVATAN_FAVICON_PATH;
-  if (!next.hmPrimaryColor) next.hmPrimaryColor = YESILVATAN_PRIMARY_COLOR;
-  return { layout: next, changed: true };
+  if (needsFavicon) {
+    next.faviconUrl = YESILVATAN_FAVICON_PATH;
+    changed = true;
+  }
+  const colors = applyPhpConceptColorsToLayout(next, {
+    primary: YESILVATAN_PRIMARY_COLOR,
+    secondary: YESILVATAN_SECONDARY_COLOR,
+  });
+  return { layout: colors.layout, changed: changed || colors.changed };
 }
 
 export function yesilVatanLayoutNeedsLogoRepair(layoutJsonRaw: string | null | undefined): boolean {

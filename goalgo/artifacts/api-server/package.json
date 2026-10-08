@@ -34,6 +34,7 @@
     "ensure:gundemi-bolge": "node --import tsx ./scripts/ensure-gundemi-regional-sites.ts",
     "ensure:fixhaber": "node --import tsx ./scripts/ensure-fixhaber-site.ts",
     "ensure:yesilvatan-logo": "node --import tsx ./scripts/ensure-yesilvatan-logo.ts",
+    "ensure:php-concept-colors": "node --import tsx ./scripts/ensure-php-concept-colors.ts",
     "ensure:turksav-logo": "node --import tsx ./scripts/ensure-turksav-logo.ts",
     "ensure:sehitgazi-logo": "node --import tsx ./scripts/ensure-sehitgazi-logo.ts",
     "ensure:dunyasaglik-logo": "node --import tsx ./scripts/ensure-dunyasaglik-logo.ts",

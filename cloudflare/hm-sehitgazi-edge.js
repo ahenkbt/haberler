@@ -2,6 +2,7 @@
  * Şehit Gazi (sehitgazi.org.tr) — Worker kenarı logo/favicon layout onarımı.
  * Katalog: goalgo/artifacts/api-server/src/lib/hm-sehitgazi-site.ts ile hizalı.
  */
+import { applyPhpConceptColorsToLayout } from "./hm-php-concept-colors.js";
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 
 export const SEHITGAZI_SLUG = "sehitgazi";
@@ -9,6 +10,7 @@ export const SEHITGAZI_DOMAIN = "sehitgazi.org.tr";
 export const SEHITGAZI_LOGO_PATH = "/sehitgazi/sehitgazi-logo.png";
 export const SEHITGAZI_FAVICON_PATH = "/sehitgazi/sehitgazi-logo.png";
 export const SEHITGAZI_PRIMARY_COLOR = "#a50e1e";
+export const SEHITGAZI_SECONDARY_COLOR = "#7a0b16";
 
 function normalizeHost(raw) {
   return (
@@ -26,6 +28,7 @@ function normalizeHost(raw) {
 export function applySehitGaziLogoToLayout(layout) {
   const next =
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
+  let changed = false;
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
   const needsLogo =
@@ -34,13 +37,19 @@ export function applySehitGaziLogoToLayout(layout) {
     !favicon ||
     favicon.toLowerCase().startsWith("data:image/") ||
     favicon !== SEHITGAZI_FAVICON_PATH;
-  if (!needsLogo && !needsFavicon) {
-    return { layout: next, changed: false };
+  if (needsLogo) {
+    next.logoUrl = SEHITGAZI_LOGO_PATH;
+    changed = true;
   }
-  next.logoUrl = SEHITGAZI_LOGO_PATH;
-  next.faviconUrl = SEHITGAZI_FAVICON_PATH;
-  if (!next.hmPrimaryColor) next.hmPrimaryColor = SEHITGAZI_PRIMARY_COLOR;
-  return { layout: next, changed: true };
+  if (needsFavicon) {
+    next.faviconUrl = SEHITGAZI_FAVICON_PATH;
+    changed = true;
+  }
+  const colors = applyPhpConceptColorsToLayout(next, {
+    primary: SEHITGAZI_PRIMARY_COLOR,
+    secondary: SEHITGAZI_SECONDARY_COLOR,
+  });
+  return { layout: colors.layout, changed: changed || colors.changed };
 }
 
 export function sehitGaziLayoutNeedsLogoRepair(layoutJsonRaw) {

@@ -2,13 +2,15 @@
  * Yeşil Vatan (yesilvatan.gen.tr) — Worker kenarı logo/favicon layout onarımı.
  * Katalog: goalgo/artifacts/api-server/src/lib/hm-yesilvatan-site.ts ile hizalı.
  */
+import { applyPhpConceptColorsToLayout } from "./hm-php-concept-colors.js";
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 
 export const YESILVATAN_SLUG = "yesilvatan";
 export const YESILVATAN_DOMAIN = "yesilvatan.gen.tr";
 export const YESILVATAN_LOGO_PATH = "/yesilvatan/yesilvatan-logo.png";
 export const YESILVATAN_FAVICON_PATH = "/yesilvatan/yesilvatan-logo.png";
-export const YESILVATAN_PRIMARY_COLOR = "#2e7d32";
+export const YESILVATAN_PRIMARY_COLOR = "#0b6e4f";
+export const YESILVATAN_SECONDARY_COLOR = "#2e7d32";
 
 function normalizeHost(raw) {
   return (
@@ -26,6 +28,7 @@ function normalizeHost(raw) {
 export function applyYesilVatanLogoToLayout(layout) {
   const next =
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
+  let changed = false;
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
   const needsLogo =
@@ -34,13 +37,19 @@ export function applyYesilVatanLogoToLayout(layout) {
     !favicon ||
     favicon.toLowerCase().startsWith("data:image/") ||
     favicon !== YESILVATAN_FAVICON_PATH;
-  if (!needsLogo && !needsFavicon) {
-    return { layout: next, changed: false };
+  if (needsLogo) {
+    next.logoUrl = YESILVATAN_LOGO_PATH;
+    changed = true;
   }
-  next.logoUrl = YESILVATAN_LOGO_PATH;
-  next.faviconUrl = YESILVATAN_FAVICON_PATH;
-  if (!next.hmPrimaryColor) next.hmPrimaryColor = YESILVATAN_PRIMARY_COLOR;
-  return { layout: next, changed: true };
+  if (needsFavicon) {
+    next.faviconUrl = YESILVATAN_FAVICON_PATH;
+    changed = true;
+  }
+  const colors = applyPhpConceptColorsToLayout(next, {
+    primary: YESILVATAN_PRIMARY_COLOR,
+    secondary: YESILVATAN_SECONDARY_COLOR,
+  });
+  return { layout: colors.layout, changed: changed || colors.changed };
 }
 
 export function yesilVatanLayoutNeedsLogoRepair(layoutJsonRaw) {
