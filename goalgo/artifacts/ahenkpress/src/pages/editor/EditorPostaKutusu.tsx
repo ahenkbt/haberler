@@ -33,7 +33,7 @@ import {
  */
 
 type Box = { address: string; displayName: string; isDefault: boolean; canReceive: boolean | null; note: string; missing?: boolean };
-type Folder = "inbox" | "sent" | "starred" | "trash";
+type Folder = "inbox" | "contact" | "sent" | "starred" | "trash";
 type MsgRow = {
   id: number;
   direction: string;
@@ -65,6 +65,7 @@ type MsgFull = {
 
 const FOLDERS: { id: Folder; label: string }[] = [
   { id: "inbox", label: "Gelen kutusu" },
+  { id: "contact", label: "İletişimden gelenler" },
   { id: "sent", label: "Gönderilen" },
   { id: "starred", label: "Yıldızlı" },
   { id: "trash", label: "Çöp kutusu" },

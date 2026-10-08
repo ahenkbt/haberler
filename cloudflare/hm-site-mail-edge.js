@@ -9,7 +9,7 @@
  *
  * Editor (Authorization: Bearer <editor JWT>):
  *   GET   /api/hm/editor/site-mail                      boxes of the site (+ default box auto-created)
- *   GET   /api/hm/editor/site-mail/messages?box=&folder=inbox|sent|starred|trash&q=&limit=&offset=
+ *   GET   /api/hm/editor/site-mail/messages?box=&folder=inbox|sent|starred|trash|contact&q=&limit=&offset=
  *   GET   /api/hm/editor/site-mail/messages/:id
  *   PATCH /api/hm/editor/site-mail/messages/:id         {isRead?, isStarred?, isTrashed?}
  *   POST  /api/hm/editor/site-mail/send                 {from, to, cc?, bcc?, subject, text, html?}
@@ -38,6 +38,7 @@ import {
   siteHosts,
 } from "./hm-site-mail-convention.js";
 import { conversionsFor, convertMailToNews } from "./hm-site-mail-to-news.js";
+import { contactNewsMessageForMail } from "./hm-site-contact-edge.js";
 
 const CF_ACCOUNT_ID = "16f5b996194174624e7969a3658bd2bb";
 const INBOUND_WORKER = "yekpare-mailbox-email";
@@ -322,6 +323,8 @@ async function listMessages(msql, box, folder, q, limit, offset) {
   if (folder === "sent") where += " AND direction = 'out' AND NOT is_trashed";
   else if (folder === "starred") where += " AND is_starred AND NOT is_trashed";
   else if (folder === "trash") where += " AND is_trashed";
+  // "İletişimden gelenler": copies of the site's /iletisim form messages (hm-site-contact-edge.js, imap_uid contact:<id>).
+  else if (folder === "contact") where += " AND direction = 'in' AND NOT is_trashed AND imap_uid LIKE 'contact:%'";
   else where += " AND direction = 'in' AND NOT is_trashed";
   if (q) {
     params.push(`%${likeEscape(q)}%`);
@@ -542,7 +545,9 @@ export async function handleHmSiteMailEdge(request, env, incoming) {
     const found = await messageForBoxes(msql, Number(toNewsMatch[1]), allowedBoxes);
     if (!found) return json(404, { error: "Mesaj bulunamadı" });
     const b = await readJson(request);
-    const r = await convertMailToNews(request, env, { msql, site, editor, message: found.message, ai: b?.ai === true });
+    // Contact-form copy: convert the visitor's text + image attachments (not the meta table of the mailbox copy).
+    const contactMsg = await contactNewsMessageForMail(msql, found.message).catch(() => null);
+    const r = await convertMailToNews(request, env, { msql, site, editor, message: contactMsg || found.message, ai: b?.ai === true });
     return json(r.status, r.body);
   }
 

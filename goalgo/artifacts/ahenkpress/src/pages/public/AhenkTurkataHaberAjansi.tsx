@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AhenkAgencyChrome, AhenkPageHero } from "@/components/ahenk-agency/AhenkAgencyChrome";
-import { TurkataAboutBody } from "@/pages/public/TurkataStaticPages";
 import { apiUrl } from "@/lib/apiBase";
 import { fetchPublicJson } from "@/lib/fetchPublicJson";
 import { TURKATA_ABOUT_INTRO, TURKATA_ABOUT_TAGLINE, TURKATA_ABOUT_TITLE, TURKATA_ORIGIN } from "@/lib/turkataHaber";
+import { TANITIM_TEXT } from "@/lib/tanitimBulteni";
 
 type PublicNewsSite = {
   id: number;
@@ -72,6 +72,35 @@ function ThaSubscriberSites() {
   );
 }
 
+/** Tanıtım metni (kullanıcı 2026-10-08): ajans sayfasının giriş yazısı, logo ızgarası altında. */
+function TanitimBulteni() {
+  const t = TANITIM_TEXT;
+  return (
+    <div className="ahenk-tanitim">
+      <span className="ahenk-tanitim-eyebrow">Tanıtım</span>
+      <h2>{t.title}</h2>
+      <p className="ahenk-tanitim-sal">{t.salutation}</p>
+      {t.intro.map((p) => (
+        <p key={p}>{p}</p>
+      ))}
+      <h3>{t.advTitle}</h3>
+      <ul className="ahenk-tanitim-cards">
+        {t.advantages.map(([h, p]) => (
+          <li key={h}>
+            <strong>{h}</strong>
+            <span>{p}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="ahenk-tanitim-outro">
+        {t.outro.map((p) => (
+          <p key={p}>{p}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AhenkTurkataHaberAjansi() {
   return (
     <AhenkAgencyChrome title="TürkAta Haber Ajansı | Ahenk Bilgi Teknolojileri" description={TURKATA_ABOUT_INTRO[0]}>
@@ -86,7 +115,7 @@ export default function AhenkTurkataHaberAjansi() {
       />
       <section className="ahenk-section ahenk-detail">
         <div>
-          <TurkataAboutBody />
+          <TanitimBulteni />
           <p>
             <a className="ahenk-btn" href={TURKATA_ORIGIN}>
               turkatahaber.com — resmi site
