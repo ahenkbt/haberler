@@ -57,6 +57,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEWS_DATABASE_URL: ${{ secrets.NEWS_DATABASE_URL || '' }}
           NEWS_DB_WRITE: dual
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '16f5b996194174624e7969a3658bd2bb' }}
         run: |
           set -euo pipefail
           if [ -z "${DATABASE_URL:-}" ]; then

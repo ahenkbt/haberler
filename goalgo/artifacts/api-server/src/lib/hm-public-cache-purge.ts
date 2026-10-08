@@ -44,6 +44,8 @@ export function buildHmSitePublicCacheUrls(input: {
   domain2?: string | null;
   domain3?: string | null;
   siteId?: number;
+  /** ASG onarımı: ziyaretçi /haber/{slug} ve kategori sayfaları. */
+  newsSlugs?: string[];
 }): string[] {
   const slug = String(input.slug ?? "")
     .trim()
@@ -66,6 +68,9 @@ export function buildHmSitePublicCacheUrls(input: {
     .map(normalizeHost)
     .filter((h): h is string => Boolean(h));
 
+  const newsSlugs = (input.newsSlugs ?? [])
+    .map((s) => String(s).trim())
+    .filter(Boolean);
   for (const host of hosts) {
     for (const h of hostVariants(host)) {
       for (const portal of portalOrigins) {
@@ -73,6 +78,13 @@ export function buildHmSitePublicCacheUrls(input: {
       }
       urls.add(`https://${h}/api/hm/meta/by-domain?domain=${encodeURIComponent(h)}`);
       urls.add(`https://${h}/`);
+      if (newsSlugs.length > 0) {
+        urls.add(`https://${h}/kategori/ankara`);
+        urls.add(`https://${h}/kategori/gundem`);
+        for (const newsSlug of newsSlugs) {
+          urls.add(`https://${h}/haber/${encodeURIComponent(newsSlug)}`);
+        }
+      }
       if (slug) {
         urls.add(`https://${h}/tr/${encodeURIComponent(slug)}`);
         urls.add(`https://${h}/tr/${encodeURIComponent(slug)}/`);
@@ -155,6 +167,7 @@ export async function purgeHmSitePublicEdgeCache(input: {
   domain?: string | null;
   domain2?: string | null;
   domain3?: string | null;
+  newsSlugs?: string[];
 }): Promise<HmPublicCachePurgeResult> {
   const urls = buildHmSitePublicCacheUrls(input);
   const token = cfToken();

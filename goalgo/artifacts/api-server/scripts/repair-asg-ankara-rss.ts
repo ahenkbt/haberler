@@ -12,6 +12,9 @@
  *
  * Prod: DATABASE_URL + NEWS_DATABASE_URL; NEWS_DB_WRITE=dual (PHP twilight-pine aynası).
  */
+import { getNewsDbForRead, hmNewsSitesTable } from "@workspace/db";
+import { isAsgHmNewsSiteRow } from "../src/lib/hm-asg-editor-repair.js";
+import { purgeHmSitePublicEdgeCache } from "../src/lib/hm-public-cache-purge.js";
 import { recategorizeMisclassifiedAnkaraBatch } from "../src/lib/recategorizeMisclassifiedAnkara.js";
 import { repairRssNumericSlugsBatch } from "../src/lib/repairRssNumericSlugs.js";
 
@@ -76,6 +79,26 @@ async function main() {
 
   const slug = await repairRssNumericSlugsBatch({ dryRun, limit: 2000, slugs });
   console.log("rss slug repair", slug);
+
+  if (!dryRun) {
+    const sites = (await getNewsDbForRead().select().from(hmNewsSitesTable)).filter(isAsgHmNewsSiteRow);
+    const purgeSlugs = slugs?.length ? slugs : undefined;
+    for (const site of sites) {
+      const purge = await purgeHmSitePublicEdgeCache({
+        siteId: site.id,
+        slug: site.slug,
+        domain: site.domain,
+        domain2: site.domain2,
+        domain3: site.domain3,
+        newsSlugs: purgeSlugs,
+      });
+      console.log("visitor cache purge", site.slug, {
+        cfPurged: purge.cfPurged,
+        urlCount: purge.urls.length,
+        cfSkippedReason: purge.cfSkippedReason,
+      });
+    }
+  }
 }
 
 main().catch((err) => {
