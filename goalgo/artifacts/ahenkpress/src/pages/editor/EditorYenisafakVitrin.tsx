@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { ArrowDown, ArrowUp, Loader2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Save } from "lucide-react";
 import { EditorLayout } from "@/components/EditorLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
   YS_MODULES,
   buildYenisafakLayoutPatch,
   readYsEditorSnapshot,
+  ysEditorSnapshotsEqual,
   type YsAdSlotKey,
   type YsEditorSnapshot,
   type YsMansetPresetId,
@@ -40,18 +41,23 @@ export default function EditorYenisafakVitrin() {
   const { toast } = useToast();
   const loaded = useMemo(() => readYsEditorSnapshot(newsLayoutPrefs), [newsLayoutPrefs]);
   const [draft, setDraft] = useState<YsEditorSnapshot>(loaded);
+  const [persisted, setPersisted] = useState<YsEditorSnapshot>(loaded);
   const [saving, setSaving] = useState(false);
+  const dirty = useMemo(() => !ysEditorSnapshotsEqual(draft, persisted), [draft, persisted]);
 
   useEffect(() => {
     setDraft(loaded);
+    setPersisted(loaded);
   }, [loaded]);
 
   const save = async (next: YsEditorSnapshot) => {
+    if (ysEditorSnapshotsEqual(next, persisted)) return;
     setDraft(next);
     setSaving(true);
     const patch = buildYenisafakLayoutPatch(newsLayoutPrefs, next);
     const result = await saveNewsSiteLayout(newsLayoutPrefs, {
       layoutPatch: patch as Partial<NewsSiteLayoutPrefs>,
+      vitrinOnly: true,
       allowStockLayoutReset: true,
     });
     setSaving(false);
@@ -61,10 +67,14 @@ export default function EditorYenisafakVitrin() {
         description: result.error.slice(0, 220) || "Sunucuya yazılamadı.",
         variant: "destructive",
       });
-      setDraft(loaded);
+      setDraft(persisted);
       return;
     }
-    toast({ title: "Yenişafak ayarları kaydedildi", description: site?.displayName ?? undefined });
+    setPersisted(next);
+    toast({
+      title: "Vitrin ayarları kaydedildi",
+      description: "Canlı site önbelleği temizlendi. Ana sayfayı Ctrl+F5 ile yenileyin.",
+    });
   };
 
   const setAd = (slotKey: YsAdSlotKey, patch: Partial<YsEditorSnapshot["ads"][YsAdSlotKey]>) => {
@@ -77,6 +87,24 @@ export default function EditorYenisafakVitrin() {
   return (
     <EditorLayout title="Vitrin ayarları">
       <div className="max-w-3xl space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="min-w-0">
+            <p className="font-black text-slate-900">Kaydet</p>
+            <p className="text-xs text-slate-500">
+              Manşet yerleşimi ve renkler kayıt sonrası PHP temaya ve kenar önbelleğe yansır.
+            </p>
+          </div>
+          <Button
+            type="button"
+            className="gap-2 bg-slate-900 text-white"
+            disabled={saving || !dirty}
+            onClick={() => void save(draft)}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? "Kaydediliyor…" : "Kaydet"}
+          </Button>
+        </div>
+
         <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
           <p className="text-base font-black text-slate-900">Yenişafak tema</p>
           <p className="text-sm text-slate-600">
@@ -409,9 +437,9 @@ export default function EditorYenisafakVitrin() {
           })}
         </section>
 
-        <Button type="button" className="bg-slate-900 text-white" disabled={saving} onClick={() => void save(draft)}>
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Yenişafak ayarlarını kaydet
+        <Button type="button" className="bg-slate-900 text-white" disabled={saving || !dirty} onClick={() => void save(draft)}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          {saving ? "Kaydediliyor…" : "Kaydet"}
         </Button>
       </div>
     </EditorLayout>

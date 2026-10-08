@@ -12,6 +12,7 @@ import {
   phpModuleIsOn,
   readYsEditorSnapshot,
   readYsMansetPreset,
+  ysEditorSnapshotsEqual,
   YS_AD_SLOTS,
   YS_MANSET_PRESETS,
   YS_MODULES,
@@ -103,6 +104,13 @@ describe("Yenişafak layout contract", () => {
     const rows = readYsEditorSnapshot(parsed).modules;
     expect(rows[0]?.id).toBe("ysGallery");
     expect(rows.find((row) => row.id === "ysManset")?.count).toBe(5);
+  });
+
+  it("ysEditorSnapshotsEqual manşet preset değişimini algılar", () => {
+    const base = readYsEditorSnapshot(defaultNewsSiteLayoutPrefs);
+    const changed = { ...base, preset: "sabah" as const };
+    expect(ysEditorSnapshotsEqual(base, base)).toBe(true);
+    expect(ysEditorSnapshotsEqual(base, changed)).toBe(false);
   });
 
   it("eski hmNewsYsMansetLayout manşet önayarını açar ve kayıt iki anahtarı da yazar", () => {
