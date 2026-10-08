@@ -33,4 +33,13 @@ describe("hm-sehitgazi-edge", () => {
       false,
     );
   });
+
+  it("preserves user https logos", () => {
+    const { changed, layout } = applySehitGaziLogoToLayout({
+      logoUrl: "https://cdn.example/custom.png",
+      faviconUrl: "https://cdn.example/custom.png",
+    });
+    assert.equal(changed, false);
+    assert.equal(layout.logoUrl, "https://cdn.example/custom.png");
+  });
 });

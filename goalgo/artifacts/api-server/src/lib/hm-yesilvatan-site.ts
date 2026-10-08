@@ -44,17 +44,23 @@ export function applyYesilVatanLogoToLayout(
     layout && typeof layout === "object" && !Array.isArray(layout) ? { ...layout } : {};
   const logo = String(next.logoUrl ?? "").trim();
   const favicon = String(next.faviconUrl ?? "").trim();
-  const needsLogo =
-    !logo || logo.toLowerCase().startsWith("data:image/") || logo !== YESILVATAN_LOGO_PATH;
-  const needsFavicon =
-    !favicon ||
-    favicon.toLowerCase().startsWith("data:image/") ||
-    favicon !== YESILVATAN_FAVICON_PATH;
+  const broken = (u: string, brand: string) => {
+    if (!u) return true;
+    if (u === brand) return false;
+    const lower = u.toLowerCase();
+    if (lower.startsWith("data:image/")) return true;
+    if (u.includes("/api/media")) return true;
+    if (/^https?:\/\/[^/]+\/data:image\//i.test(u)) return true;
+    if (u.startsWith("/turkata/") || u.startsWith("/brand/turkata/")) return true;
+    return false;
+  };
+  const needsLogo = broken(logo, YESILVATAN_LOGO_PATH);
+  const needsFavicon = broken(favicon, YESILVATAN_FAVICON_PATH);
   if (!needsLogo && !needsFavicon) {
     return { layout: next, changed: false };
   }
-  next.logoUrl = YESILVATAN_LOGO_PATH;
-  next.faviconUrl = YESILVATAN_FAVICON_PATH;
+  if (needsLogo) next.logoUrl = YESILVATAN_LOGO_PATH;
+  if (needsFavicon) next.faviconUrl = YESILVATAN_FAVICON_PATH;
   if (!next.hmPrimaryColor) next.hmPrimaryColor = YESILVATAN_PRIMARY_COLOR;
   return { layout: next, changed: true };
 }

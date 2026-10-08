@@ -33,6 +33,24 @@ describe("hm-sehitgazi-site", () => {
     );
   });
 
+  it("preserves user https logos (does not force brand path)", () => {
+    const { layout, changed } = applySehitGaziLogoToLayout({
+      logoUrl: "https://cdn.example/custom-logo.png",
+      faviconUrl: "https://cdn.example/custom-logo.png",
+    });
+    expect(changed).toBe(false);
+    expect(layout.logoUrl).toBe("https://cdn.example/custom-logo.png");
+  });
+
+  it("repairs /api/media and turkata mark paths", () => {
+    expect(
+      applySehitGaziLogoToLayout({ logoUrl: "/api/media/uploads/x.png" }).layout.logoUrl,
+    ).toBe(SEHITGAZI_LOGO_PATH);
+    expect(
+      applySehitGaziLogoToLayout({ logoUrl: "/turkata/turkata-mark.png" }).layout.logoUrl,
+    ).toBe(SEHITGAZI_LOGO_PATH);
+  });
+
   it("recognizes site refs without touching turksav/yerel/yesilvatan", () => {
     expect(isSehitGaziSiteRef(SEHITGAZI_SLUG)).toBe(true);
     expect(isSehitGaziSiteRef(SEHITGAZI_DOMAIN)).toBe(true);

@@ -636,7 +636,9 @@ export default function EditorGenelAyarlari() {
             </p>
             <p className="text-xs text-slate-500 mt-1 mb-2">
               Görseli «Dosya yükle» ile ekleyin. Kayıt sitede saklanır; kırık <code className="text-slate-600">/api/media</code> adresi
-              kullanılmaz. Eski logo görünmüyorsa dosyayı yeniden yükleyin.
+              kullanılmaz. PHP kamu temalarında inline <code className="text-slate-600">data:</code> logo yerine Worker ASSETS
+              yolu (<code className="text-slate-600">/sehitgazi/*</code>, <code className="text-slate-600">/turksav/*</code>…)
+              tercih edilir — aksi halde JSON-LD / vitrin kırılabilir. Eski logo görünmüyorsa dosyayı yeniden yükleyin.
             </p>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(ev) => void onPickLogo(ev)} />
             <div className="flex flex-wrap gap-2">
