@@ -502,8 +502,10 @@ function isStaticAssetPath(pathname) {
     /\.(js|mjs|cjs|css|woff2?|ttf|eot|png|jpe?g|gif|webp|svg|ico|map|avif|webmanifest)(\?|$)/i.test(p) ||
     p.startsWith("/assets/") ||
     p.startsWith("/turkata/") ||
+    p.startsWith("/yerel/") ||
     p.startsWith("/yesilvatan/") ||
     p.startsWith("/turksav/") ||
+    p.startsWith("/sehitgazi/") ||
     p.startsWith("/yektube-v2/assets/") ||
     p.includes("/public/assets/")
   );
@@ -1554,6 +1556,11 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
     slugKey === "turksav" ||
     normalizeHost(domain) === "turksav.org";
 
+  const isSehitGaziBrand =
+    binding.slug === "sehitgazi" ||
+    slugKey === "sehitgazi" ||
+    normalizeHost(domain) === "sehitgazi.org.tr";
+
   // Fix Haber: site satırı var ama kategoriler/PHP Neon eksik → arka planda idempotent seed.
   if (isFixHaberBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "fixhaber" }).catch((err) => {
@@ -1588,6 +1595,21 @@ async function maybeEnsureBrandMetaResponse(env, incoming, upstream, opts = {}) 
   if (isTurksavBrand && upstream.ok) {
     const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "turksav" }).catch((err) => {
       console.error("[hm-brand-db-ensure/turksav-logo]", String(err?.message || err).slice(0, 200));
+    });
+    if (typeof opts.waitUntil === "function") {
+      opts.waitUntil(job);
+    } else {
+      try {
+        await Promise.race([job, new Promise((r) => setTimeout(r, 2500))]);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  // Şehit Gazi: logoUrl/faviconUrl ASSETS yolu — arka planda Neon (panel + PHP) hizala.
+  if (isSehitGaziBrand && upstream.ok) {
+    const job = ensureBrandHmSiteMeta(env, { domain, slug: binding.slug || "sehitgazi" }).catch((err) => {
+      console.error("[hm-brand-db-ensure/sehitgazi-logo]", String(err?.message || err).slice(0, 200));
     });
     if (typeof opts.waitUntil === "function") {
       opts.waitUntil(job);

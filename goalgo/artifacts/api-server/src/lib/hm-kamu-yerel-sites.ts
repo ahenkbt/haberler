@@ -93,8 +93,9 @@ export const YERELNET_SITE: KamuYerelSiteDef = {
   hmPrimaryColor: "#0b6e4f",
   hmSecondaryColor: "#c45c00",
   hmYsSlogan: "Türkiye'nin kamu ve yerel haber ağı",
-  logoPath: "/turkata/turkata-mark.png",
-  faviconPath: "/turkata/turkata-mark.png",
+  /** Cloudflare SPA static assets — `public/yerel/*` (not Turkata mark). */
+  logoPath: "/yerel/yerel-logo.png",
+  faviconPath: "/yerel/yerel-logo.png",
   kunyeEmail: "bilgi@yerel.net.tr",
   footerAboutHtml:
     "<p>Türkiye'nin yerel haber ağı: il, ilçe, kamu kurumları ve yerel yönetim haberleri. Birincil RSS kaynağı Cumhur Haber Ajansı (cumha.com.tr) kategori ve lokasyon beslemeleridir.</p>",

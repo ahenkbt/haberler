@@ -16,7 +16,8 @@ describe("hm-kamu-yerel-sites", () => {
   it("yerel.net.tr shares kamu-yerel taxonomy", () => {
     const layout = buildKamuYerelLayoutJson(YERELNET_SITE);
     expect(layout.hmVitrinTheme).toBe("esen");
-    expect(layout.logoUrl).toBe("/turkata/turkata-mark.png");
+    expect(layout.logoUrl).toBe("/yerel/yerel-logo.png");
+    expect(layout.faviconUrl).toBe("/yerel/yerel-logo.png");
     expect(Array.isArray(layout.hmCorporateMenuItems)).toBe(true);
   });
 

@@ -43,8 +43,8 @@ const LOGO_BY_SLUG = Object.freeze({
     faviconUrl: "/turkata/favicon.ico",
   },
   yerelnet: {
-    logoUrl: "/turkata/turkata-mark.png",
-    faviconUrl: "/turkata/turkata-mark.png",
+    logoUrl: "/yerel/yerel-logo.png",
+    faviconUrl: "/yerel/yerel-logo.png",
   },
 });
 
@@ -80,13 +80,24 @@ export function repairKamuYerelLayoutAfterMerge(slug, merged) {
   const next = { ...merged };
   const brand = LOGO_BY_SLUG[key];
   const logoUrl = String(next.logoUrl ?? "").trim();
+  const faviconUrl = String(next.faviconUrl ?? "").trim();
+  // Always pin brand assets — never leave Turkata mark/paths on yerel.net.tr.
   if (
     !logoUrl ||
+    logoUrl !== brand.logoUrl ||
     logoUrl.toLowerCase().startsWith("data:image/") ||
     logoUrl.startsWith("/brand/turkata/") ||
-    logoUrl.startsWith("/turkata/turkata-logo.png")
+    (key === "yerelnet" && logoUrl.startsWith("/turkata/"))
   ) {
     next.logoUrl = brand.logoUrl;
+  }
+  if (
+    !faviconUrl ||
+    faviconUrl !== brand.faviconUrl ||
+    faviconUrl.toLowerCase().startsWith("data:image/") ||
+    faviconUrl.startsWith("/brand/turkata/") ||
+    (key === "yerelnet" && faviconUrl.startsWith("/turkata/"))
+  ) {
     next.faviconUrl = brand.faviconUrl;
   }
   if (!navMatchesCatalog(next.hmNavOnlyCategorySlugs)) {
