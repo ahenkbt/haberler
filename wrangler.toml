@@ -884,6 +884,24 @@ zone_name = "turkatahaber.com"
 pattern = "turkatahaber.com/assets/*"
 zone_name = "turkatahaber.com"
 
+
+# Kamu-yerel premium hub pages (hmExtraPages) — apex is PHP; Worker serves /daha|/iller only.
+[[routes]]
+pattern = "turkatahaber.com/daha"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "turkatahaber.com/iller"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/daha"
+zone_name = "turkatahaber.com"
+
+[[routes]]
+pattern = "www.turkatahaber.com/iller"
+zone_name = "turkatahaber.com"
+
 # Kamu-yerel marka (goalgo/artifacts/ahenkpress/public/turkata → Worker ASSETS)
 [[routes]]
 pattern = "turkatahaber.com/turkata/*"
@@ -1093,6 +1111,24 @@ zone_name = "sehitgazi.org.tr"
 pattern = "www.sehitgazi.org.tr/hm/*"
 zone_name = "sehitgazi.org.tr"
 
+
+
+# Kamu-yerel premium hub pages (hmExtraPages) — apex is PHP; Worker serves /daha|/iller only.
+[[routes]]
+pattern = "yerel.net.tr/daha"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "yerel.net.tr/iller"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/daha"
+zone_name = "yerel.net.tr"
+
+[[routes]]
+pattern = "www.yerel.net.tr/iller"
+zone_name = "yerel.net.tr"
 
 # yerel.net.tr
 [[routes]]
