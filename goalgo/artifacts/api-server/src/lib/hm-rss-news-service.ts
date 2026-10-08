@@ -484,6 +484,7 @@ export async function importHmRssNewsToSite(
     existing: item.imageUrl,
     link: item.link,
     descriptionHtml: item.spot,
+    contentHtml: content,
   });
   if (imageUrl && /^https?:\/\//i.test(String(imageUrl))) {
     const mirrored = await mirrorMediaUrlToDisk(String(imageUrl), { title, hashSeed: String(imageUrl) });
