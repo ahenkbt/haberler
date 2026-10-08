@@ -298,6 +298,7 @@ export async function putS3ObjectViaWorkerProxy(
   contentType: string,
 ): Promise<void> {
   const secret = getHmEdgeBridgeSecret();
+  if (!secret) throw new Error("HM_EDGE_BRIDGE_SECRET missing (Worker secret HM_EDGE_BRIDGE_KEY not forwarded)");
   const exp = String(Date.now() + 90_000);
   const nonce = randomBytes(16).toString("hex");
   const mime = contentType || "application/octet-stream";

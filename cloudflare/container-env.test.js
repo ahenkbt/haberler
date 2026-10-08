@@ -247,3 +247,12 @@ describe("container-env", () => {
   });
 
 });
+
+describe("bridge key forwarding", () => {
+  it("maps Worker secret HM_EDGE_BRIDGE_KEY to container HM_EDGE_BRIDGE_SECRET; no plain var passthrough", () => {
+    const withKey = buildContainerEnv({ HM_EDGE_BRIDGE_KEY: "k-123" });
+    assert.equal(withKey.HM_EDGE_BRIDGE_SECRET, "k-123");
+    const legacyOnly = buildContainerEnv({ HM_EDGE_BRIDGE_SECRET: "old-public" });
+    assert.equal(legacyOnly.HM_EDGE_BRIDGE_SECRET, undefined);
+  });
+});

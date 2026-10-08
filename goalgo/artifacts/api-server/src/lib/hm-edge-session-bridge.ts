@@ -1,14 +1,12 @@
 import crypto from "node:crypto";
 
 /**
- * Worker kenar girişi → Render JWT köprüsü.
- * wrangler.toml [vars].HM_EDGE_BRIDGE_SECRET ile aynı fallback.
+ * Worker kenar girişi → API JWT köprüsü.
+ * Key comes only from process.env.HM_EDGE_BRIDGE_SECRET (forwarded from the Worker secret
+ * HM_EDGE_BRIDGE_KEY). No fallback: empty key = every bridge check fails closed.
  */
-export const HM_EDGE_BRIDGE_SECRET_FALLBACK = "yekpare-hm-kh-bridge-20260727-v1";
-
 export function getHmEdgeBridgeSecret(): string {
-  const s = String(process.env["HM_EDGE_BRIDGE_SECRET"] ?? "").trim();
-  return s || HM_EDGE_BRIDGE_SECRET_FALLBACK;
+  return String(process.env["HM_EDGE_BRIDGE_SECRET"] ?? "").trim();
 }
 
 export type HmEdgeSessionBridgePayload = {
@@ -72,6 +70,7 @@ export function verifyHmEdgeBridgeSignature(
   const sig = String(signatureRaw ?? "").trim();
   if (!sig || !payload) return false;
   const secret = getHmEdgeBridgeSecret();
+  if (!secret) return false;
   const expected = crypto
     .createHmac("sha256", secret)
     .update(hmEdgeBridgeCanonical(payload), "utf8")

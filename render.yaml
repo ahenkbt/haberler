@@ -43,9 +43,9 @@ services:
         value: production
       - key: SESSION_SECRET
         generateValue: true
-      # KH Worker kenar login → Render JWT (wrangler.toml HM_EDGE_BRIDGE_SECRET ile aynı)
+      # HM_EDGE_BRIDGE_SECRET: set as a secret in the host env (no value in the repo).
       - key: HM_EDGE_BRIDGE_SECRET
-        value: "yekpare-hm-kh-bridge-20260727-v1"
+        sync: false
       # Cloudflare R2 — medya birincil depo (GitHub/Render secret olarak ekleyin)
       - key: MEDIA_STORAGE_MODE
         value: s3

@@ -20,7 +20,7 @@ run_worker_first = true
 API_ORIGIN = "https://ahenk.net.tr"
 SITE_PUBLIC_ORIGIN = "https://yektube.com"
 CONTAINER_ROLL = "yektube-api-via-ahenk-20260912"
-HM_EDGE_BRIDGE_SECRET = "yekpare-hm-kh-bridge-20260727-v1"
+# HM_EDGE_BRIDGE_SECRET removed 2026-10-08: bridge key is the Worker secret HM_EDGE_BRIDGE_KEY (rotated; never in this file).
 S3_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 R2_ENDPOINT = "https://fb9fc9dc1991b7cc17ba58ab3c2e8726.r2.cloudflarestorage.com"
 S3_BUCKET = "yekpare-media"

@@ -41,6 +41,7 @@ export function verifyHmEdgeMediaBridgeSignature(
   const sig = String(signatureRaw ?? "").trim();
   if (!sig || !payload) return false;
   const secret = getHmEdgeBridgeSecret();
+  if (!secret) return false;
   const expected = crypto
     .createHmac("sha256", secret)
     .update(hmEdgeMediaBridgeCanonical(payload), "utf8")
