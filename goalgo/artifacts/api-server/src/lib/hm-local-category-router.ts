@@ -557,6 +557,17 @@ export function isMisclassifiedPlaceCategoryItem(
   const slug = normalizeCatalogSlug(categorySlug);
   const placeKey = slugLocalityKey(slug, opts?.siteSlug);
   if (!placeKey) return false;
+
+  const headlineText = combinedText(title, spot, null);
+  if (headlineText.trim()) {
+    const headlineKey = detectHmLocalityKey(title, spot, null);
+    if (headlineKey === placeKey) return false;
+    if (headlineKey != null) return true;
+    if (looksLikeSportsContent(title, spot, null)) return true;
+    if (looksLikeNationalOrInternationalContent(title, spot, null)) return true;
+    return true;
+  }
+
   return detectHmLocalityKey(title, spot, content) !== placeKey;
 }
 
