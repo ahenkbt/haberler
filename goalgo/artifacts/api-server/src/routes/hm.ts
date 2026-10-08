@@ -116,6 +116,7 @@ import {
   resolveDefaultHmNewsSiteLayoutTheme,
 } from "../lib/hm-corporate-like-theme.js";
 import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
+import { mirrorHmSiteLayoutJsonToPhpNeon } from "../lib/hm-php-layout-sync.js";
 import {
   collectGundemiOrgHosts,
   provisionGundemiOrgForSiteDomains,
@@ -3715,9 +3716,13 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw).catch((err: unknown) => ({
+    mirrored: false as const,
+    reason: (err instanceof Error ? err.message : String(err)).slice(0, 160),
+  }));
   // Ziyaretçi kenar önbelleğini temizle (tema/menü değişikliği).
   void purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId).catch(() => undefined);
-  res.json({ ok: true, layoutJson: raw });
+  res.json({ ok: true, layoutJson: raw, phpLayoutMirror });
 });
 
 router.patch("/hm/editor/site-contact", async (req, res): Promise<void> => {
@@ -3817,8 +3822,12 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw).catch((err: unknown) => ({
+    mirrored: false as const,
+    reason: (err instanceof Error ? err.message : String(err)).slice(0, 160),
+  }));
   void purgeHmSitePublicEdgeCacheBySiteId(ctx.siteId).catch(() => undefined);
-  res.json({ ok: true, layoutJson: raw });
+  res.json({ ok: true, layoutJson: raw, phpLayoutMirror });
 });
 
 /** Editör haber formu: aktif Yekpare kategorileri + siteye özel kategoriler. */

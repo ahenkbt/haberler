@@ -5,6 +5,34 @@
 import { neonNewsSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { resolvePhpSiteId } from "./hm-php-editor-sync.js";
 
+const HM_LIVE_MANSET_PRESETS = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+
+function normalizeMansetPreset(value) {
+  if (value == null) return null;
+  const preset = String(value).trim().toLowerCase();
+  return HM_LIVE_MANSET_PRESETS.has(preset) ? preset : null;
+}
+
+/** PHP App.php önce hmYsMansetPreset, sonra hmNewsYsMansetLayout okur — ikisini eşitle. */
+export function normalizeLayoutJsonMansetKeysForPhp(layoutJsonRaw) {
+  const raw = String(layoutJsonRaw ?? "").trim();
+  if (!raw) return raw;
+  try {
+    const layout = JSON.parse(raw);
+    if (!layout || typeof layout !== "object" || Array.isArray(layout)) return raw;
+    const fromEditor = normalizeMansetPreset(layout.hmYsMansetPreset);
+    const fromLive = normalizeMansetPreset(layout.hmNewsYsMansetLayout);
+    const chosen = fromEditor ?? fromLive;
+    if (chosen) {
+      layout.hmYsMansetPreset = chosen;
+      layout.hmNewsYsMansetLayout = chosen;
+    }
+    return JSON.stringify(layout);
+  } catch {
+    return raw;
+  }
+}
+
 /**
  * @param {import("@neondatabase/serverless").NeonQueryFunction} workerSql
  * @param {string} layoutJsonRaw stringified layout JSON
@@ -22,7 +50,7 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, workerSite
   if (!Number.isFinite(siteId) || siteId <= 0) {
     return { mirrored: false, reason: "siteId geçersiz" };
   }
-  const raw = String(layoutJsonRaw ?? "").trim();
+  const raw = normalizeLayoutJsonMansetKeysForPhp(layoutJsonRaw);
   if (!raw) {
     return { mirrored: false, reason: "layout boş" };
   }

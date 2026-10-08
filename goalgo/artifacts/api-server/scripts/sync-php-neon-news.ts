@@ -114,6 +114,59 @@ async function countForSite(main: pg.Pool, siteId: number) {
   };
 }
 
+async function syncLayoutJson(
+  mainSql: PgSql,
+  newsSql: PgSql,
+  workerSiteId: number,
+  phpSiteId: number,
+): Promise<{ mirrored: boolean; reason?: string }> {
+  const rows = await mainSql`
+    SELECT layout_json FROM hm_news_sites WHERE id = ${workerSiteId} LIMIT 1
+  `;
+  const raw = rows[0]?.layout_json;
+  let layoutStr =
+    raw == null ? "" : typeof raw === "string" ? raw : JSON.stringify(raw);
+  if (!layoutStr.trim()) return { mirrored: false, reason: "layout boş" };
+  try {
+    const parsed = JSON.parse(layoutStr) as Record<string, unknown>;
+    const presets = new Set(["odatv", "sabah", "takvim", "mynet", "nefes"]);
+    const norm = (v: unknown) => {
+      const p = String(v ?? "")
+        .trim()
+        .toLowerCase();
+      return presets.has(p) ? p : null;
+    };
+    const chosen = norm(parsed.hmYsMansetPreset) ?? norm(parsed.hmNewsYsMansetLayout);
+    if (chosen) {
+      parsed.hmYsMansetPreset = chosen;
+      parsed.hmNewsYsMansetLayout = chosen;
+      layoutStr = JSON.stringify(parsed);
+    }
+  } catch {
+    /* keep raw */
+  }
+  try {
+    await newsSql`
+      UPDATE hm_news_sites
+      SET layout_json = ${layoutStr}::jsonb, updated_at = now()
+      WHERE id = ${phpSiteId}
+    `;
+    return { mirrored: true };
+  } catch (err) {
+    try {
+      await newsSql`
+        UPDATE hm_news_sites
+        SET layout_json = ${layoutStr}, updated_at = now()
+        WHERE id = ${phpSiteId}
+      `;
+      return { mirrored: true };
+    } catch (err2) {
+      const msg = err2 instanceof Error ? err2.message : String(err2);
+      return { mirrored: false, reason: msg.slice(0, 160) };
+    }
+  }
+}
+
 async function syncSiteBatch(
   mainSql: PgSql,
   newsSql: PgSql,
@@ -242,9 +295,14 @@ async function runSite(
   const mirror = (table: string, op: string, row: Record<string, unknown>) =>
     edgeMirrorNewsDbWrite(newsSql, table, op, row);
 
+  const layoutMirror = await syncLayoutJson(mainSql, newsSql, workerSiteId, phpSiteId);
+  if (!layoutMirror.mirrored && layoutMirror.reason) {
+    console.warn("[sync-php-neon-news] layout_json", layoutMirror.reason);
+  }
+
   const categories = await syncCategories(mainSql, newsSql, workerSiteId, phpSiteId);
   let offset = 0;
-  let totals = { authors: 0, news: 0, makaleler: 0, categories };
+  let totals = { authors: 0, news: 0, makaleler: 0, categories, layoutMirrored: layoutMirror.mirrored };
   const allErrors: string[] = [];
   for (let page = 0; page < 500; page += 1) {
     const batch = await syncSiteBatch(

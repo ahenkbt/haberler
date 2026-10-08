@@ -203,20 +203,33 @@ function mergeLayoutPatch(prev, incoming, opts = {}) {
 
 /** Worker + PHP Neon layout_json ve ziyaretçi kenar önbelleği — kayıt sonrası. */
 async function finalizeHmSiteLayoutPersist(env, workerSql, ctx, siteRow, layoutJsonRaw) {
-  void mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, ctx.siteId, layoutJsonRaw).catch((err) => {
+  let phpLayoutMirror = { mirrored: false, reason: "atlanmadı" };
+  try {
+    phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(env, workerSql, ctx.siteId, layoutJsonRaw);
+    if (!phpLayoutMirror.mirrored) {
+      console.warn("[php-layout-sync]", String(phpLayoutMirror.reason || "mirror failed").slice(0, 160));
+    }
+  } catch (err) {
     console.error("[php-layout-sync]", String(err?.message || err).slice(0, 160));
-  });
+    phpLayoutMirror = { mirrored: false, reason: String(err?.message || err).slice(0, 160) };
+  }
+
   const slug = String(siteRow?.slug ?? "").trim();
-  if (!slug) return;
-  void purgeHmSitePublicEdgeCache(env, {
-    siteId: ctx.siteId,
-    slug,
-    domain: siteRow?.domain,
-    domain2: siteRow?.domain2,
-    domain3: siteRow?.domain3,
-  }).catch((err) => {
-    console.error("[hm-layout-purge]", String(err?.message || err).slice(0, 160));
-  });
+  let cachePurge = null;
+  if (slug) {
+    try {
+      cachePurge = await purgeHmSitePublicEdgeCache(env, {
+        siteId: ctx.siteId,
+        slug,
+        domain: siteRow?.domain,
+        domain2: siteRow?.domain2,
+        domain3: siteRow?.domain3,
+      });
+    } catch (err) {
+      console.error("[hm-layout-purge]", String(err?.message || err).slice(0, 160));
+    }
+  }
+  return { phpLayoutMirror, cachePurge };
 }
 
 async function isKhEditorSite(sql, siteId) {
@@ -610,9 +623,9 @@ async function handleHmSiteLayoutPatch(request, env) {
     `;
   }
 
-  await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
+  const persist = await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
 
-  return jsonResponse(200, { ok: true, layoutJson: raw });
+  return jsonResponse(200, { ok: true, layoutJson: raw, ...persist });
 }
 
 async function handleHmSiteHomeModuleOrderPatch(request, env) {
@@ -693,9 +706,9 @@ async function handleHmSiteHomeModuleOrderPatch(request, env) {
     `;
   }
 
-  await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
+  const persist = await finalizeHmSiteLayoutPersist(env, sql, ctx, site, raw);
 
-  return jsonResponse(200, { ok: true, layoutJson: raw });
+  return jsonResponse(200, { ok: true, layoutJson: raw, ...persist });
 }
 
 async function handleHmEditorPurgePublicCache(request, env) {
