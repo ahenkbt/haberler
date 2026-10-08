@@ -5,6 +5,7 @@ import {
   isGundemiBridgeCatchAllHost,
   isFixHaberBridgeHost,
   isSosyalHizmetlerBridgeHost,
+  isSosyalHizmetlerBrandAssetPath,
   isPhpThemeOriginBridgeHost,
   isGundemiLogoAssetPath,
   isGundemiOrgSubdomainHost,
@@ -45,6 +46,9 @@ describe("gundemi-origin-bridge hosts", () => {
     assert.equal(isFixHaberBridgeHost("www.fix.tc"), true);
     assert.equal(isSosyalHizmetlerBridgeHost("sosyalhizmetler.tr"), true);
     assert.equal(isSosyalHizmetlerBridgeHost("www.sosyalhizmetler.tr"), true);
+    assert.equal(isSosyalHizmetlerBrandAssetPath("/sosyalhizmetler/sosyalhizmetler-logo.webp"), true);
+    assert.equal(isSosyalHizmetlerBrandAssetPath("/sh/sosyal-hizmetler-logo.png"), true);
+    assert.equal(isWorkerBrandStaticAssetPath("/sosyalhizmetler/sosyalhizmetler-logo.webp"), true);
     assert.equal(isPhpThemeOriginBridgeHost("fix.tc"), true);
     assert.equal(isPhpThemeOriginBridgeHost("sosyalhizmetler.tr"), true);
     assert.equal(isPhpThemeOriginBridgeHost("ege.gundemi.org"), true);

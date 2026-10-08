@@ -138,10 +138,10 @@ export function isFixHaberBrandAssetPath(pathname) {
   return p.startsWith("/fix/");
 }
 
-/** Sosyal Hizmetler marka dosyaları — Worker ASSETS (`public/sh/*`). */
+/** Sosyal Hizmetler marka dosyaları — Worker ASSETS (`public/sosyalhizmetler/*`, legacy `public/sh/*`). */
 export function isSosyalHizmetlerBrandAssetPath(pathname) {
   const p = String(pathname || "").split("?")[0] || "/";
-  return p.startsWith("/sh/");
+  return p.startsWith("/sosyalhizmetler/") || p.startsWith("/sh/");
 }
 
 /** Yeşil Vatan marka dosyaları — Worker ASSETS (`public/yesilvatan/*`). */

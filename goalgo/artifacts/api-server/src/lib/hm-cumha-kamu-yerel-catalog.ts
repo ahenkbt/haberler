@@ -681,9 +681,9 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     logoUrl: "https://fix.tc/fix/fix-haber-logo.png",
   },
   {
-    name: "TÜKAV",
-    href: "https://tukav.org/",
-    logoUrl: "https://tukav.org/tukav/tukav-logo.png",
+    name: "Sosyal Hizmetler Haber Sitesi",
+    href: "https://sosyalhizmetler.tr/",
+    logoUrl: "https://sosyalhizmetler.tr/sosyalhizmetler/sosyalhizmetler-logo.webp",
   },
   {
     name: "Ankara Şehir Gazetesi",
@@ -704,6 +704,31 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     name: "Gündemi.org",
     href: "https://gundemi.org/",
     logoUrl: "https://gundemi.org/gundemi/logos/gundemi-org.png",
+  },
+  {
+    name: "Ege Gündemi",
+    href: "https://ege.gundemi.org/",
+    logoUrl: "https://ege.gundemi.org/gundemi/logos/ege-gundemi.png",
+  },
+  {
+    name: "Marmara Gündemi",
+    href: "https://marmara.gundemi.org/",
+    logoUrl: "https://marmara.gundemi.org/gundemi/logos/marmara-gundemi.png",
+  },
+  {
+    name: "Karadeniz Gündemi",
+    href: "https://karadeniz.gundemi.org/",
+    logoUrl: "https://karadeniz.gundemi.org/gundemi/logos/karadeniz-gundemi.png",
+  },
+  {
+    name: "Doğu Anadolu Gündemi",
+    href: "https://doguanadolu.gundemi.org/",
+    logoUrl: "https://doguanadolu.gundemi.org/gundemi/logos/doguanadolu-gundemi.png",
+  },
+  {
+    name: "Güneydoğu Gündemi",
+    href: "https://guneydogu.gundemi.org/",
+    logoUrl: "https://guneydogu.gundemi.org/gundemi/logos/guneydogu-gundemi.png",
   },
 ] as const;
 
