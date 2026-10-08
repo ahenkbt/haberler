@@ -110,14 +110,6 @@ pattern = "ankarahabergundemi.com/sw.js"
 zone_name = "ankarahabergundemi.com"
 
 [[routes]]
-pattern = "ankarahabergundemi.com/llms.txt"
-zone_name = "ankarahabergundemi.com"
-
-[[routes]]
-pattern = "ankarahabergundemi.com/ai.txt"
-zone_name = "ankarahabergundemi.com"
-
-[[routes]]
 pattern = "ankarahabergundemi.com/manifest.json"
 zone_name = "ankarahabergundemi.com"
 # ankarahabergundemi.com köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
@@ -229,14 +221,6 @@ zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
 pattern = "ankarasehirgazetesi.com/sw.js"
-zone_name = "ankarasehirgazetesi.com"
-
-[[routes]]
-pattern = "ankarasehirgazetesi.com/llms.txt"
-zone_name = "ankarasehirgazetesi.com"
-
-[[routes]]
-pattern = "ankarasehirgazetesi.com/ai.txt"
 zone_name = "ankarasehirgazetesi.com"
 
 [[routes]]
@@ -554,14 +538,6 @@ pattern = "vatanhaber.net/sw.js"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "vatanhaber.net/llms.txt"
-zone_name = "vatanhaber.net"
-
-[[routes]]
-pattern = "vatanhaber.net/ai.txt"
-zone_name = "vatanhaber.net"
-
-[[routes]]
 pattern = "vatanhaber.net/manifest.json"
 zone_name = "vatanhaber.net"
 # vatanhaber.net köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
@@ -662,14 +638,6 @@ zone_name = "suhaber.net"
 
 [[routes]]
 pattern = "suhaber.net/sw.js"
-zone_name = "suhaber.net"
-
-[[routes]]
-pattern = "suhaber.net/llms.txt"
-zone_name = "suhaber.net"
-
-[[routes]]
-pattern = "suhaber.net/ai.txt"
 zone_name = "suhaber.net"
 
 [[routes]]
@@ -1100,14 +1068,6 @@ pattern = "sehitgazi.org.tr/sw.js"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
-pattern = "sehitgazi.org.tr/llms.txt"
-zone_name = "sehitgazi.org.tr"
-
-[[routes]]
-pattern = "sehitgazi.org.tr/ai.txt"
-zone_name = "sehitgazi.org.tr"
-
-[[routes]]
 pattern = "sehitgazi.org.tr/manifest.json"
 zone_name = "sehitgazi.org.tr"
 # sehitgazi.org.tr köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
@@ -1262,14 +1222,6 @@ pattern = "yerel.net.tr/sw.js"
 zone_name = "yerel.net.tr"
 
 [[routes]]
-pattern = "yerel.net.tr/llms.txt"
-zone_name = "yerel.net.tr"
-
-[[routes]]
-pattern = "yerel.net.tr/ai.txt"
-zone_name = "yerel.net.tr"
-
-[[routes]]
 pattern = "yerel.net.tr/manifest.json"
 zone_name = "yerel.net.tr"
 # yerel.net.tr köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
@@ -1394,14 +1346,6 @@ zone_name = "turksav.org"
 
 [[routes]]
 pattern = "turksav.org/sw.js"
-zone_name = "turksav.org"
-
-[[routes]]
-pattern = "turksav.org/llms.txt"
-zone_name = "turksav.org"
-
-[[routes]]
-pattern = "turksav.org/ai.txt"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -1532,14 +1476,6 @@ pattern = "dunyasaglik.org/sw.js"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
-pattern = "dunyasaglik.org/llms.txt"
-zone_name = "dunyasaglik.org"
-
-[[routes]]
-pattern = "dunyasaglik.org/ai.txt"
-zone_name = "dunyasaglik.org"
-
-[[routes]]
 pattern = "dunyasaglik.org/manifest.json"
 zone_name = "dunyasaglik.org"
 # dunyasaglik.org köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
@@ -1664,14 +1600,6 @@ zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
 pattern = "yesilvatan.gen.tr/sw.js"
-zone_name = "yesilvatan.gen.tr"
-
-[[routes]]
-pattern = "yesilvatan.gen.tr/llms.txt"
-zone_name = "yesilvatan.gen.tr"
-
-[[routes]]
-pattern = "yesilvatan.gen.tr/ai.txt"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -2011,14 +1939,6 @@ pattern = "*.gundemi.org/sw.js"
 zone_name = "gundemi.org"
 
 [[routes]]
-pattern = "*.gundemi.org/llms.txt"
-zone_name = "gundemi.org"
-
-[[routes]]
-pattern = "*.gundemi.org/ai.txt"
-zone_name = "gundemi.org"
-
-[[routes]]
 pattern = "*.gundemi.org/manifest.json"
 zone_name = "gundemi.org"
 
@@ -2169,14 +2089,6 @@ pattern = "fix.tc/sw.js"
 zone_name = "fix.tc"
 
 [[routes]]
-pattern = "fix.tc/llms.txt"
-zone_name = "fix.tc"
-
-[[routes]]
-pattern = "fix.tc/ai.txt"
-zone_name = "fix.tc"
-
-[[routes]]
 pattern = "fix.tc/manifest.json"
 zone_name = "fix.tc"
 # fix.tc köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
@@ -2272,12 +2184,6 @@ zone_name = "fix.tc"
 pattern = "*.fix.tc/sw.js"
 zone_name = "fix.tc"
 [[routes]]
-pattern = "*.fix.tc/llms.txt"
-zone_name = "fix.tc"
-[[routes]]
-pattern = "*.fix.tc/ai.txt"
-zone_name = "fix.tc"
-[[routes]]
 pattern = "*.fix.tc/manifest.json"
 zone_name = "fix.tc"
 [[routes]]
@@ -2352,14 +2258,6 @@ zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
 pattern = "sosyalhizmetler.tr/sw.js"
-zone_name = "sosyalhizmetler.tr"
-
-[[routes]]
-pattern = "sosyalhizmetler.tr/llms.txt"
-zone_name = "sosyalhizmetler.tr"
-
-[[routes]]
-pattern = "sosyalhizmetler.tr/ai.txt"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
