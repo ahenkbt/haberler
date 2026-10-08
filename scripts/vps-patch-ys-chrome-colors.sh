@@ -18,6 +18,7 @@ if marker in text:
     print("layout.php already has ys-chrome-colors:v1")
     raise SystemExit(0)
 
+# Ensure secondary is read (older templates already do this).
 if "$secondary = $site->secondaryColor()" not in text:
     text = text.replace(
         "$preset = $site->mansetPreset();",
@@ -42,6 +43,7 @@ new = (
 )
 
 if not old_re.search(text):
+    # Broader fallback: any body.ys with only --ys-accent
     old_re = re.compile(
         r'<body class="ys[^"]*" style="--ys-accent: <\?= Html::e\(\$site->accent\) \?>[^"]*"'
     )

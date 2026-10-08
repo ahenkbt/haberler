@@ -187,12 +187,66 @@ export function isWorkerBrandStaticAssetPath(pathname) {
   );
 }
 
+/** Appended to proxied `/assets/theme.css` so header logos fill ~48–72px without canvas padding. */
+export const YS_LOGO_HEADER_CSS_FIX = `/* ys-logo-header-fix:v1 */
+.ys-logo img,
+.ys-logo .ys-logo-img {
+  height: auto !important;
+  max-height: 64px;
+  width: auto;
+  max-width: min(280px, 46vw);
+  object-fit: contain;
+  display: block;
+}
+.ys-bar { padding-top: 6px; padding-bottom: 6px; min-height: 72px; }
+.ys-preset-nefes .ys-logo img { max-height: 72px; }
+@media (max-width: 900px) {
+  .ys-logo img, .ys-logo .ys-logo-img { max-height: 48px; }
+  .ys-bar.has-ad .ys-logo img { max-height: 44px; max-width: 42vw; }
+}
+`;
+
+export function appendYsLogoHeaderCssFix(cssText) {
+  const raw = String(cssText || "");
+  if (raw.includes("ys-logo-header-fix:v1")) return raw;
+  return `${raw.trimEnd()}\n\n${YS_LOGO_HEADER_CSS_FIX}`;
+}
+
 /** Prepend host concept chrome vars onto proxied `/assets/theme.css` (nav/navy). */
 export function decoratePhpThemeCss(cssText, hostname) {
   const chrome = phpThemeChromeCssPrefix(hostname);
   const body = String(cssText || "");
   if (!chrome || body.includes("hm-php-concept-colors:")) return body;
   return `${chrome}${body}`;
+}
+
+/** PHP news brand hosts that share Yenişafak `/assets/theme.css` (not Traefik-gap HTML). */
+export function isPhpNewsBrandThemeHost(hostname) {
+  const host = normalizeHostname(hostname).replace(/^www\./, "");
+  return (
+    host === "yesilvatan.gen.tr" ||
+    host === "yerel.net.tr" ||
+    host === "turksav.org" ||
+    host === "sehitgazi.org.tr" ||
+    host === "dunyasaglik.org" ||
+    host === "turkatahaber.com" ||
+    host === "fix.tc"
+  );
+}
+
+/**
+ * Only `/assets/theme.css` for PHP news brands — inject concept chrome + logo size fix.
+ * Does not own HTML (orange→PHP origin stays intact).
+ * @returns {Promise<Response|null>}
+ */
+export async function phpNewsBrandThemeCssBridgeResponse(request, incoming) {
+  if (!isPhpNewsBrandThemeHost(incoming.hostname)) return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
+  if (!/\/assets\/theme\.css$/i.test(pathOnly)) return null;
+  return proxySharedPhpThemePath(request, incoming, {
+    frontendTag: "php-news-brand-theme-css",
+  });
 }
 
 /**
@@ -357,11 +411,14 @@ async function proxySharedPhpThemePath(request, incoming, opts) {
   const pathOnly = String(incoming.pathname || "").split("?")[0] || "/";
   const ct = String(upstream.headers.get("content-type") || "").toLowerCase();
   if (/theme\.css$/i.test(pathOnly) && upstream.ok && ct.includes("text/css")) {
-    const body = decoratePhpThemeCss(await upstream.text(), incoming.hostname);
+    const chrome = phpThemeChromeCssPrefix(incoming.hostname);
+    const body = appendYsLogoHeaderCssFix(
+      decoratePhpThemeCss(await upstream.text(), incoming.hostname),
+    );
     out.set("content-type", "text/css; charset=utf-8");
-    if (phpThemeChromeCssPrefix(incoming.hostname)) {
-      out.set("x-yekpare-ys-chrome-colors", "v1");
-    }
+    out.set("x-yekpare-ys-logo-fix", "v1");
+    if (chrome) out.set("x-yekpare-php-concept-colors", "v1");
+    out.set("cache-control", "public, max-age=300");
     return new Response(body, { status: upstream.status, headers: out });
   }
 

@@ -27,6 +27,7 @@ import { koseyazariPanelRedirectResponse, phpThemeLegacyRedirectResponse } from 
 import { serveKamuYerelExtraPage } from "./hm-kamu-yerel-extra-pages-edge.js";
 import {
   gundemiApexPhpBridgeResponse,
+  phpNewsBrandThemeCssBridgeResponse,
   shouldBlockGundemiSpaAssets,
 } from "./gundemi-origin-bridge.js";
 import { handleHmAdminSiteEdge } from "./hm-admin-site-edge.js";
@@ -3479,6 +3480,10 @@ export default {
 
     const edgeRssPreview = await serveEdgeRssPreview(request, env, incoming);
     if (edgeRssPreview) return edgeRssPreview;
+
+    // PHP news brands: inject concept chrome + logo size into /assets/theme.css (HTML stays on origin).
+    const phpBrandThemeCss = await phpNewsBrandThemeCssBridgeResponse(request, incoming);
+    if (phpBrandThemeCss) return phpBrandThemeCss;
 
     // Traefik gap / theme assets: gundemi.org apex + regionals → own PHP (not turkatahaber HTML).
     const gundemiPhpBridge = await gundemiApexPhpBridgeResponse(request, incoming);

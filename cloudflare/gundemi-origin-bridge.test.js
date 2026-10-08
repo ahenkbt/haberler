@@ -16,6 +16,10 @@ import {
   isYerelBrandAssetPath,
   isSehitgaziBrandAssetPath,
   isDunyaSaglikBrandAssetPath,
+  appendYsLogoHeaderCssFix,
+  YS_LOGO_HEADER_CSS_FIX,
+  isPhpNewsBrandThemeHost,
+  phpNewsBrandThemeCssBridgeResponse,
   shouldBlockGundemiSpaAssets,
   shouldBridgeGundemiApexPath,
   shouldProxyRegionalPhpThemeAsset,
@@ -108,11 +112,20 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
     assert.equal(res.headers.get("x-yekpare-bridge-upstream"), "turkatahaber.com");
+    assert.equal(res.headers.get("x-yekpare-ys-logo-fix"), "v1");
     const ct = String(res.headers.get("content-type") || "").toLowerCase();
     assert.match(ct, /text\/css/);
     const body = await res.text();
     assert.ok(body.length > 1000);
     assert.equal(body.includes("PHP tema bekleniyor"), false);
+    assert.match(body, /ys-logo-header-fix:v1/);
+    assert.match(body, /object-fit:\s*contain/);
+  });
+
+  it("appendYsLogoHeaderCssFix is idempotent", () => {
+    const once = appendYsLogoHeaderCssFix(".ys-logo img{height:64px}");
+    const twice = appendYsLogoHeaderCssFix(once);
+    assert.equal(once, twice);
   });
 
   it("proxies regional theme.js from PHP origin", async () => {
@@ -177,6 +190,44 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.equal(isDunyaSaglikBrandAssetPath("/dunyasaglik/dunyasaglik-logo.png"), true);
   });
 
+  it("appends ys-logo-header-fix once to theme.css text", () => {
+    const once = appendYsLogoHeaderCssFix(".ys-logo img{height:64px}");
+    assert.match(once, /ys-logo-header-fix:v1/);
+    assert.match(once, /max-height:\s*64px/);
+    const twice = appendYsLogoHeaderCssFix(once);
+    assert.equal(twice.split("ys-logo-header-fix:v1").length - 1, 1);
+    assert.match(YS_LOGO_HEADER_CSS_FIX, /object-fit:\s*contain/);
+  });
+
+  it("detects PHP news brand theme hosts without owning HTML bridge", () => {
+    assert.equal(isPhpNewsBrandThemeHost("yesilvatan.gen.tr"), true);
+    assert.equal(isPhpNewsBrandThemeHost("www.yerel.net.tr"), true);
+    assert.equal(isPhpNewsBrandThemeHost("dunyasaglik.org"), true);
+    assert.equal(isPhpNewsBrandThemeHost("ege.gundemi.org"), false);
+  });
+
+  it("bridges only theme.css for yesilvatan brand host", async () => {
+    const theme = new URL("https://yesilvatan.gen.tr/assets/theme.css");
+    const themeRes = await phpNewsBrandThemeCssBridgeResponse(
+      new Request(theme.toString()),
+      theme,
+    );
+    assert.ok(themeRes);
+    assert.equal(themeRes.status, 200);
+    assert.equal(themeRes.headers.get("x-yekpare-ys-logo-fix"), "v1");
+    assert.equal(themeRes.headers.get("x-yekpare-php-concept-colors"), "v1");
+    const css = await themeRes.text();
+    assert.match(css, /hm-php-concept-colors:yesilvatan/);
+    assert.match(css, /ys-logo-header-fix:v1/);
+
+    const home = new URL("https://yesilvatan.gen.tr/");
+    const homeRes = await phpNewsBrandThemeCssBridgeResponse(
+      new Request(home.toString()),
+      home,
+    );
+    assert.equal(homeRes, null);
+  });
+
   it("returns null for SPA panel paths on apex", async () => {
     const incoming = new URL("https://gundemi.org/editor");
     const res = await gundemiApexPhpBridgeResponse(
@@ -232,5 +283,15 @@ describe("gundemiApexPhpBridgeResponse", () => {
     assert.ok(res);
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-yekpare-frontend"), "gundemi-php-theme-asset");
+  });
+});
+
+describe("ys logo header css fix", () => {
+  it("appends once", () => {
+    const once = appendYsLogoHeaderCssFix(":root{--ys-accent:#c8102e}");
+    assert.match(once, /ys-logo-header-fix:v1/);
+    assert.match(once, /max-height:\s*64px/);
+    const twice = appendYsLogoHeaderCssFix(once);
+    assert.equal(twice, once);
   });
 });
