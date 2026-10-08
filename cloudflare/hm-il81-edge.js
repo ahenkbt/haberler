@@ -1,6 +1,6 @@
 /**
  * 81 İl Haber Ağı (2026-10-09, kullanıcı talebi "81 il için <il>.fix.tc il haber siteleri"): il haber siteleri
- * "<İl> Gündemi" (PHP Yenişafak teması). TP (twilight-pine) satırları önceden oluşturuldu (faz 1: id 1150–1169).
+ * "Fix <İl> Haber" (fixil-brand 2026-10-09; önce "<İl> Gündemi") (PHP Yenişafak teması). TP (twilight-pine) satırları önceden oluşturuldu (faz 1: id 1150–1169).
  * Bu kenar yardımcısı, hm-newsites25-edge.js gibi, by-domain araması ıskaladığında eşleşen PANEL satırını
  * (DATABASE_URL) bir kez oluşturur; böylece HM Editör girişi (<il>@fix.tc, şifre = kullanıcı adı, ilk girişte açılır),
  * yönetim listesi ve public haber-sitesi listesi (/api/hm/public/news-sites → ilSites) siteyi tanır.
@@ -181,16 +181,36 @@ export const IL81_ROWS = [
 
 const trUpper = (s) => String(s).replace(/i/g, "İ").toUpperCase();
 
+/**
+ * fixil-brand 2026-10-09 (kullanıcı): il siteleri "Fix <İl> Haber", logo FIX / <İL> / HABER
+ * (/gundemi/logos/fix-<slug>-haber*.png, PHP konteynerde logos + marka ailesi), künye yayın "FIX <İL> HABER",
+ * il gündem kategorisi "<İl> Haberleri" (slug <il>-gundem değişmez). Eski ad yalnız mevcut panel satırını tanımak için.
+ */
+export const IL81_BRAND_REV = "fixil-brand-20261009";
+export const il81BrandName = (il) => `Fix ${il} Haber`;
+export const il81LegacyName = (il) => `${il} Gündemi`;
+export const il81KunyeYayin = (il) => `FIX ${trUpper(il)} HABER`;
+export const il81LogoUrl = (slug) => `/gundemi/logos/fix-${slug}-haber.png`;
+export const il81FaviconUrl = (slug) => `/gundemi/logos/fix-${slug}-haber-icon-192.png`;
+/** İl kategori adları (TP categories, exclusive_site_id = site): <il>-gundem = "<İl> Haberleri". */
+const IL81_CAT_NAMES = { gundem: "Haberleri", asayis: "Asayiş", yerel: "Belediye", ekonomi: "Ekonomi", egitim: "Eğitim", saglik: "Sağlık", spor: "Spor", kultur: "Kültür Sanat" };
+export function il81Categories(slug, il) {
+  return IL81_CATS.map(([c], i) => ({ slug: `${slug}-${c}`, name: `${il} ${IL81_CAT_NAMES[c] || c}`, sortOrder: i + 1 }));
+}
+/** Layout anahtarları (mevcut satıra MERGE edilir; hmDisplayNameOverride panel->TP senkronu display_name'i ezse de korunur). */
+export function il81BrandLayoutPatch(slug, il) {
+  const name = il81BrandName(il);
+  return { logoUrl: il81LogoUrl(slug), faviconUrl: il81FaviconUrl(slug), hmDisplayNameOverride: name, hmFixIlBrand: { rev: IL81_BRAND_REV, name } };
+}
+
 export function il81Layout(r) {
   const [slug, il, plate, region, primary, secondary, preset, stil, phase, keywords] = r;
-  const name = `${il} Gündemi`;
   const email = `${slug}@fix.tc`;
   const catSlugs = IL81_CATS.map(([c]) => `${slug}-${c}`);
   const lead = `${il} ve ilçelerinin gündemi.`;
   return {
     ...IL81_BASE_LAYOUT,
-    logoUrl: `/gundemi/logos/${slug}-gundemi.png`,
-    faviconUrl: `/gundemi/logos/${slug}-gundemi-icon-192.png`,
+    ...il81BrandLayoutPatch(slug, il),
     hmYsSlogan: lead,
     hmPrimaryColor: primary,
     hmSecondaryColor: secondary,
@@ -206,7 +226,7 @@ export function il81Layout(r) {
     })),
     hmNewsHomeModuleCategorySlugs: { ysMostRead: `${slug}-gundem`, ysGallery: `${slug}-kultur` },
     hmNewsTopicPriority: { days: 3, blocks: true, categories: [...catSlugs], keywords: [...keywords] },
-    hmYsKunye: { ...IL81_BASE_KUNYE, lead, email, yayin: trUpper(name) },
+    hmYsKunye: { ...IL81_BASE_KUNYE, lead, email, yayin: il81KunyeYayin(il) },
     hmIl81: { slug, il, plate, region, phase, rev: IL81_REV },
   };
 }
@@ -229,10 +249,11 @@ export const IL81 = IL81_ROWS.map((r) => {
     plate,
     region,
     hosts: [`${slug}.fix.tc`],
-    displayName: `${il} Gündemi`,
+    displayName: il81BrandName(il),
     description: `${il} ve ilçelerinden son dakika yerel haberler: asayiş, belediye, ekonomi, eğitim, sağlık, spor ve kültür-sanat. 81 İl Haber Ağı üyesi.`,
     contact: { ...IL81_CONTACT, email: `${slug}@fix.tc` },
     editorEmail: `${slug}@fix.tc`,
+    categories: il81Categories(slug, il),
     layout: il81Layout(r),
   };
 });
@@ -273,7 +294,10 @@ export async function ensureIl81SiteOnSql(sql, site) {
     ORDER BY id ASC
     LIMIT 1
   `;
-  if (existing?.[0]) return { row: existing[0], action: "il81_lookup" };
+  if (existing?.[0]) {
+    const rebranded = await rebrandIl81RowOnSql(sql, existing[0], site);
+    return rebranded ? { row: rebranded, action: "il81_rebranded" } : { row: existing[0], action: "il81_lookup" };
+  }
   const rows = await sql`
     INSERT INTO hm_news_sites (slug, domain, domain2, domain3, display_name, description, contact_json, layout_json, active, created_at, updated_at)
     VALUES (${site.slug}, ${h1}, NULL, NULL, ${site.displayName}, ${site.description},
@@ -282,4 +306,36 @@ export async function ensureIl81SiteOnSql(sql, site) {
   `;
   if (rows?.[0]) console.log("[hm-il81] panel site created", site.slug, rows[0].id);
   return { row: rows?.[0] || null, action: "il81_created" };
+}
+
+/**
+ * fixil-brand 2026-10-09: phase-1 panel rows were seeded as "<İl> Gündemi". Rename such a row ONCE to
+ * "Fix <İl> Haber" and MERGE the brand keys into its layout (never a full layout write). Rows whose name was
+ * changed by an editor (anything other than the exact legacy name) are left alone. Layout guard is switched off
+ * only inside this one transaction when the driver supports transactions.
+ * @returns {Promise<object|null>} updated row, or null when nothing changed
+ */
+export async function rebrandIl81RowOnSql(sql, row, site) {
+  if (!row || !site || String(row.display_name ?? "").trim() !== il81LegacyName(site.il)) return null;
+  const name = il81BrandName(site.il);
+  const patch = JSON.stringify(il81BrandLayoutPatch(site.slug, site.il));
+  const yayin = il81KunyeYayin(site.il);
+  const legacy = il81LegacyName(site.il);
+  const update = sql`
+    UPDATE hm_news_sites
+    SET display_name = ${name}, updated_at = NOW(),
+        layout_json = jsonb_set(coalesce(nullif(btrim(layout_json::text), '')::jsonb, '{}'::jsonb) || ${patch}::jsonb,
+                                '{hmYsKunye,yayin}', to_jsonb(${yayin}::text), true)
+    WHERE id = ${row.id} AND display_name = ${legacy}
+    RETURNING id, slug, domain, domain2, domain3, display_name, description, contact_json, layout_json, active, created_at, updated_at
+  `;
+  let rows;
+  if (typeof sql.transaction === "function") {
+    const res = await sql.transaction([sql`SELECT set_config('hm.layout_guard', 'off', true)`, update]);
+    rows = res?.[1];
+  } else {
+    rows = await update;
+  }
+  if (rows?.[0]) console.log("[hm-il81] panel site rebranded", site.slug, rows[0].id);
+  return rows?.[0] || null;
 }
