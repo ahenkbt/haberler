@@ -18,6 +18,8 @@ import { neon } from "@neondatabase/serverless";
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 
 export const NEWS_SITES_LIST_PATH = "/api/hm/public/news-sites";
+/** Bump to bust every grid logo URL at once (browser + edge caches). */
+const LOGO_RULES_REV = "lg2";
 const LOGO_PATH_RE = /^\/api\/hm\/public\/news-sites\/(\d{1,9})\/logo$/;
 
 /** Corporate (kurumsal) sites — never in the news-site grid. */
@@ -32,6 +34,12 @@ const CORPORATE_HOSTS = new Set([
   "tukav.org",
   "turkatav.org",
 ]);
+
+/**
+ * logogrid 2026-10-09 (user 00:41): gundemi.org = "Gündem İstanbul" (plaka 34). It stays a general news site but is
+ * listed FIRST in the "İl Siteleri" group of every logo grid (and not twice in the main group).
+ */
+export const IL_FEATURED = Object.freeze({ "gundemi.org": { il: "İstanbul", plate: "34", region: "marmara", name: "Gündem İstanbul" } });
 
 const CACHE_MS = 60_000;
 let rowsCache = { at: 0, rows: /** @type {any[] | null} */ (null) };
@@ -98,7 +106,8 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true) continue;
     if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
-    const isIl = Boolean(layout.hmIl81 && typeof layout.hmIl81 === "object");
+    const featured = IL_FEATURED[host] || null;
+    const isIl = Boolean(featured || (layout.hmIl81 && typeof layout.hmIl81 === "object"));
     if (group === "il" ? !isIl : isIl) continue;
     const logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
     const site = {
@@ -107,13 +116,19 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
       // 81il 2026-10-09: layout hmDisplayNameOverride wins (gundemi.org = "Gündem İstanbul"; the panel->TP sync rewrites display_name).
       name:
         (typeof layout.hmDisplayNameOverride === "string" && layout.hmDisplayNameOverride.trim()) ||
+        (featured ? featured.name : "") ||
         String(row.display_name ?? row.displayName ?? row.slug ?? host).trim() ||
         host,
       domain: host,
       url: `https://${host}/`,
       logoRaw,
       logoBg: safeColor(layout.hmLogoBarBackground),
-      ...(isIl ? { il: String(layout.hmIl81.il || ""), plate: String(layout.hmIl81.plate || ""), region: String(layout.hmIl81.region || "") } : {}),
+      color: safeColor(layout.hmPrimaryColor) || safeColor(layout.hmNewsAccentColor) || "",
+      ...(featured
+        ? { il: featured.il, plate: featured.plate, region: featured.region, featured: true }
+        : isIl
+          ? { il: String(layout.hmIl81.il || ""), plate: String(layout.hmIl81.plate || ""), region: String(layout.hmIl81.region || "") }
+          : {}),
     };
     const prev = byHost.get(host);
     // One tile per domain: keep the lowest id that has a logo (duplicate rows such as marmara.gundemi.org).
@@ -123,7 +138,8 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
   }
   const out = [...byHost.values()];
   // İl siteleri plaka sırasıyla (01 Adana … 81 Düzce), ana liste id sırasıyla.
-  if (group === "il") return out.sort((a, b) => Number(a.plate) - Number(b.plate) || a.id - b.id);
+  if (group === "il")
+    return out.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || Number(a.plate) - Number(b.plate) || a.id - b.id);
   return out.sort((a, b) => a.id - b.id);
 }
 
@@ -174,10 +190,18 @@ export async function listPublicNewsSites(env, { origin = "", exclude = "", grou
       name: s.name,
       domain: s.domain,
       url: s.url,
-      logo: s.logoRaw ? `${o}${NEWS_SITES_LIST_PATH}/${s.id}/logo?v=${logoVersion(s.logoRaw)}` : "",
+      // logogrid 2026-10-09: always an image URL — the endpoint falls back to the site's header logo, then a text logo.
+      logo: `${o}${NEWS_SITES_LIST_PATH}/${s.id}/logo?v=${logoVersion(`${s.logoRaw}|${s.name}|${LOGO_RULES_REV}`)}`,
       logoBg: s.logoBg,
       ...(s.il ? { il: s.il, plate: s.plate, region: s.region } : {}),
+      ...(s.featured ? { featured: true } : {}),
     }));
+}
+
+/** logogrid 2026-10-09: live total of active news sites (main + il), for the Tanıtım text. */
+export async function countPublicNewsSites(env) {
+  const rows = await loadRows(env);
+  return publicNewsSitesFromRows(rows).length + publicNewsSitesFromRows(rows, { group: "il" }).length;
 }
 
 function escapeHtml(raw) {
@@ -189,7 +213,10 @@ function escapeHtml(raw) {
 }
 
 export const NEWS_SITES_GRID_STYLE = `<style>
-.hm-ns-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.hm-ns-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.hm-ns-sites + .hm-ns-sites{margin-top:28px}
+@media (max-width:1100px){.hm-ns-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:860px){.hm-ns-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .hm-ns-grid li{margin:0;padding:0}
 .hm-ns-card{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:10px;height:100%;padding:16px 12px 12px;border:1px solid var(--ys-line,rgba(0,0,0,.12));border-radius:12px;background:#fff;color:inherit;text-decoration:none;transition:box-shadow .15s,transform .15s,border-color .15s}
 .hm-ns-card:hover{box-shadow:0 8px 22px rgba(0,0,0,.12);transform:translateY(-2px);border-color:rgba(0,0,0,.2)}
@@ -208,7 +235,7 @@ export function renderNewsSitesGrid(sites, { heading = "Haber sitelerimiz", sect
       const bg = s.logoBg ? ` style="background:${escapeHtml(s.logoBg)}"` : "";
       // Logo henüz yüklenmemişse (404) kart boş kalmasın: site adı görünür.
       const img = s.logo
-        ? `<img src="${escapeHtml(s.logo)}" alt="${escapeHtml(s.name)} logosu" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="hm-ns-initial" style="display:none">${escapeHtml(s.name)}</span>`
+        ? `<img src="${escapeHtml(s.logo)}" alt="${escapeHtml(s.name)} logosu" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="hm-ns-initial" style="display:none">${escapeHtml(s.name)}</span>`
         : `<span class="hm-ns-initial">${escapeHtml(s.name)}</span>`;
       return `<li><a class="hm-ns-card hm-daha-site-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener" title="${escapeHtml(s.name)}"><span class="hm-ns-logo"${bg}>${img}</span><span class="hm-ns-name hm-daha-site-name">${escapeHtml(s.name)}</span><span class="hm-ns-domain">${escapeHtml(s.domain)}</span></a></li>`;
     })
@@ -265,7 +292,8 @@ export async function handlePublicNewsSites(request, env, incoming) {
     };
     const sites = await listPublicNewsSites(env, opts);
     const ilSites = await listPublicNewsSites(env, { ...opts, group: "il" });
-    const body = JSON.stringify({ count: sites.length, sites, ilCount: ilSites.length, ilSites });
+    // total = every active news site incl. il siteleri (Tanıtım metnindeki canlı sayı).
+    const body = JSON.stringify({ count: sites.length, sites, ilCount: ilSites.length, ilSites, total: sites.length + ilSites.length });
     return new Response(request.method === "HEAD" ? null : body, { status: 200, headers: JSON_HEADERS });
   }
   const m = LOGO_PATH_RE.exec(path);
@@ -276,42 +304,120 @@ export async function handlePublicNewsSites(request, env, incoming) {
     publicNewsSitesFromRows(rows).find((s) => s.id === id) ||
     publicNewsSitesFromRows(rows, { group: "il" }).find((s) => s.id === id);
   const shortCache = "public, max-age=300, s-maxage=300";
-  if (!site || !site.logoRaw) {
+  if (!site) {
     return new Response("logo yok", {
       status: 404,
       headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=60" },
     });
   }
   const raw = site.logoRaw;
+  const imgHeaders = (type, cache) => ({
+    "content-type": type,
+    "cache-control": cache,
+    "access-control-allow-origin": "*",
+    "x-content-type-options": "nosniff",
+    "x-yekpare-frontend": "hm-public-news-sites-logo",
+  });
   if (/^data:/i.test(raw)) {
     const d = decodeDataUri(raw);
-    if (d) {
-      return new Response(request.method === "HEAD" ? null : d.bytes, {
-        status: 200,
-        headers: {
-          "content-type": d.type,
-          "cache-control": shortCache,
-          "access-control-allow-origin": "*",
-          "x-content-type-options": "nosniff",
-          "x-yekpare-frontend": "hm-public-news-sites-logo",
-        },
-      });
-    }
+    if (d) return new Response(request.method === "HEAD" ? null : d.bytes, { status: 200, headers: imgHeaders(d.type, shortCache) });
   }
-  let target = "";
-  if (/^https?:\/\//i.test(raw)) target = raw;
-  else if (raw.startsWith("//")) target = `https:${raw}`;
-  else if (raw.startsWith("/")) target = `https://${site.domain}${raw}`;
-  if (!target) {
-    return new Response("logo yok", { status: 404, headers: { "cache-control": "public, max-age=60" } });
+  // logogrid 2026-10-09: serve the image bytes from here (same origin for every grid) instead of a 302 to the
+  // site's own host — a slow/missing file on that host used to leave the tile with only the site name.
+  // Chain: layout logo → logo the site shows in its own header → generated text logo in the site colour.
+  const longCache = "public, max-age=3600, s-maxage=86400";
+  const target = absoluteLogoUrl(raw, site.domain);
+  const selfHost = normalizeSiteHost(incoming.host);
+  if (target && normalizeSiteHost(new URL(target).host) === selfHost) {
+    // Same zone: a Worker subrequest would skip the Worker (assets), so let the browser load it directly.
+    return new Response(null, { status: 302, headers: { location: target, "cache-control": shortCache, "access-control-allow-origin": "*", "x-yekpare-frontend": "hm-public-news-sites-logo" } });
   }
-  return new Response(null, {
-    status: 302,
-    headers: {
-      location: target,
-      "cache-control": shortCache,
-      "access-control-allow-origin": "*",
-      "x-yekpare-frontend": "hm-public-news-sites-logo",
-    },
+  const tried = new Set();
+  for (const url of [target, null]) {
+    let u = url;
+    if (u === null) u = await headerLogoUrl(site.domain).catch(() => "");
+    if (!u || tried.has(u)) continue;
+    tried.add(u);
+    const img = await fetchImage(u);
+    if (img) return new Response(request.method === "HEAD" ? null : img.body, { status: 200, headers: imgHeaders(img.type, longCache) });
+  }
+  const svg = textLogoSvg(site.name, site.color || site.logoBg || "#0b3362", site.domain);
+  return new Response(request.method === "HEAD" ? null : svg, {
+    status: 200,
+    headers: { ...imgHeaders("image/svg+xml; charset=utf-8", shortCache), "x-hm-logo-fallback": "text" },
   });
+}
+
+function absoluteLogoUrl(raw, domain) {
+  const r = String(raw || "").trim();
+  if (!r || /^data:/i.test(r)) return "";
+  if (/^https?:\/\//i.test(r)) return r;
+  if (r.startsWith("//")) return `https:${r}`;
+  if (r.startsWith("/")) return `https://${domain}${r}`;
+  return "";
+}
+
+const IMG_MAX_BYTES = 2_500_000;
+
+/** @returns {Promise<{ body: ArrayBuffer, type: string } | null>} */
+async function fetchImage(url) {
+  try {
+    const res = await fetch(url, {
+      headers: { accept: "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8", "user-agent": "TurkataLogoGrid/1.0" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(6000),
+      cf: { cacheTtl: 3600, cacheEverything: true },
+    });
+    if (!res.ok) return null;
+    const type = String(res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!/^image\//.test(type)) return null;
+    const body = await res.arrayBuffer();
+    if (!body.byteLength || body.byteLength > IMG_MAX_BYTES) return null;
+    return { body, type };
+  } catch {
+    return null;
+  }
+}
+
+/** The <img> inside the site's header logo link (PHP theme: a.ys-logo img). */
+async function headerLogoUrl(domain) {
+  const res = await fetch(`https://${domain}/`, {
+    headers: { accept: "text/html", "user-agent": "TurkataLogoGrid/1.0" },
+    redirect: "follow",
+    signal: AbortSignal.timeout(6000),
+    cf: { cacheTtl: 600, cacheEverything: true },
+  });
+  if (!res.ok) return "";
+  const html = (await res.text()).slice(0, 400_000);
+  const m =
+    /<a[^>]+class=["'][^"']*\bys-logo\b[^"']*["'][^>]*>[\s\S]{0,600}?<img[^>]+src=["']([^"']+)["']/i.exec(html) ||
+    /<img[^>]+class=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i.exec(html) ||
+    /<img[^>]+src=["']([^"']+)["'][^>]*class=["'][^"']*logo[^"']*["']/i.exec(html);
+  if (!m) return "";
+  const src = m[1].replace(/&amp;/g, "&");
+  if (/^data:/i.test(src)) return "";
+  try {
+    return new URL(src, `https://${domain}/`).toString();
+  } catch {
+    return "";
+  }
+}
+
+/** Clean text logo (site colour), same proportions as the network logos (~3.2:1). */
+export function textLogoSvg(name, color, domain) {
+  const c = safeColor(color) || "#0b3362";
+  const words = String(name || domain || "").trim().split(/\s+/).filter(Boolean);
+  const first = words.length > 1 ? words.slice(0, -1).join(" ") : words[0] || "";
+  const second = words.length > 1 ? words[words.length - 1] : "";
+  const up = (v) => v.toLocaleUpperCase("tr-TR");
+  const fs1 = Math.max(54, Math.min(120, Math.floor(880 / Math.max(4, up(first).length * 0.62))));
+  const fs2 = Math.max(40, Math.min(76, Math.floor(560 / Math.max(4, up(second).length * 0.62))));
+  const t = (v) => escapeHtml(v);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 320" width="1024" height="320" role="img" aria-label="${t(name)}">
+<rect x="14" y="20" width="250" height="250" rx="40" fill="${c}"/><path d="M70 270 L60 312 L120 270 Z" fill="${c}"/>
+<text x="139" y="200" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-weight="900" font-size="150" fill="#fff">${t(up(first).charAt(0))}</text>
+<text x="300" y="${second ? 165 : 200}" font-family="Arial Black,Arial,Helvetica,sans-serif" font-weight="900" font-size="${fs1}" fill="${c}">${t(up(first))}</text>
+${second ? `<text x="300" y="262" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="${fs2}" fill="${c}" opacity=".85">${t(up(second))}</text>` : ""}
+<text x="1010" y="300" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="34" fill="#5b6474">${t(domain || "")}</text>
+</svg>`;
 }

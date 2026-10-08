@@ -1797,3 +1797,23 @@
 @media (max-width: 860px) { .ahenk-tanitim-cards { grid-template-columns: 1fr; } }
 /* Tanıtım bülteni tek sütun: iki sütunlu .ahenk-detail ızgarasında tek çocuk dar kalıyordu. */
 .ahenk-detail.ahenk-detail-single { grid-template-columns: minmax(0, 1fr); max-width: 1080px; margin-left: auto; margin-right: auto; }
+
+/* logogrid 2026-10-09 (user 00:35/00:38): Tanıtım text LEFT, logo cards RIGHT (5 per row), İl Siteleri below the
+   news sites in the same column; stacked (text, then logos) on narrow screens. */
+.ahenk-section.ahenk-tanitim-split { max-width: 1440px; display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.5fr); gap: 36px; align-items: start; }
+.ahenk-tanitim-split .ahenk-tanitim-cards { grid-template-columns: 1fr; }
+.ahenk-tanitim-split .ahenk-subscriber-heading { white-space: normal; font-size: 17px; margin: 0; }
+.ahenk-tanitim-split .ahenk-il-heading { margin-top: 30px; font-size: 22px; }
+.ahenk-tanitim-split .ahenk-il-more { margin-top: 14px; }
+.ahenk-tanitim-split .ahenk-subscriber-logos { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.ahenk-tanitim-split a.ahenk-subscriber-logo { min-height: 118px; padding: 10px 8px; gap: 6px; }
+.ahenk-tanitim-split .ahenk-subscriber-mark { height: 50px; padding: 2px 4px; }
+.ahenk-tanitim-split .ahenk-subscriber-mark img { max-height: 46px; }
+.ahenk-tanitim-split .ahenk-subscriber-name { font-size: 12.5px; }
+.ahenk-tanitim-split .ahenk-subscriber-domain { font-size: 10.5px; }
+@media (min-width: 1500px) { .ahenk-tanitim-split .ahenk-subscriber-logos { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (max-width: 1100px) {
+  .ahenk-section.ahenk-tanitim-split { grid-template-columns: 1fr; }
+  .ahenk-tanitim-split .ahenk-subscriber-logos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) { .ahenk-tanitim-split .ahenk-subscriber-logos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

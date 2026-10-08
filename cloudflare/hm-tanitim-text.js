@@ -2,18 +2,23 @@
  * "Toplu Basın Bülteni ve Tanıtım Haberi Dağıtım Beyanı" (user text 2026-10-08 23:35, verbatim).
  * Used by turkatahaber.com/daha (intro section) — the PHP news sites carry the same text on /tanitim (src/Tanitim.php).
  */
+/**
+ * logogrid 2026-10-09 (user): the site count is LIVE — "{N}" = every active news site incl. il siteleri
+ * (GET /api/hm/public/news-sites → total; corporate 7/11/61 and suspended kirsehirhaber.org excluded there).
+ */
+export const TANITIM_COUNT_FALLBACK = 25;
 export const TANITIM_TEXT = Object.freeze({
   "title": "Toplu Basın Bülteni ve Tanıtım Haberi Dağıtım Beyanı",
   "salutation": "İş ortaklarımızın ve ajanslarımızın dikkatine;",
   "intro": [
-    "Bünyemizde faaliyet gösteren 25 farklı haber ve yayın portalımız üzerinden yürütülen tanıtım haberi, basın bülteni ve dijital PR çalışmalarında, içeriğinizin dijital görünürlüğünü en üst seviyeye çıkarmak adına senkronize bir yayın süreci uygulanmaktadır.",
-    "Tarafımıza iletilen ve yayın onayından geçen tanıtım haberiniz, dijital yayın ağımızda yer alan 25 haber sitemizin tamamında eksiksiz ve eş zamanlı olarak yayınlanmıştır."
+    "Bünyemizde faaliyet gösteren {N} farklı haber ve yayın portalımız üzerinden yürütülen tanıtım haberi, basın bülteni ve dijital PR çalışmalarında, içeriğinizin dijital görünürlüğünü en üst seviyeye çıkarmak adına senkronize bir yayın süreci uygulanmaktadır.",
+    "Tarafımıza iletilen ve yayın onayından geçen tanıtım haberiniz, dijital yayın ağımızda yer alan {N} haber sitemizin tamamında eksiksiz ve eş zamanlı olarak yayınlanmıştır."
   ],
   "advTitle": "Yayın Süreci ve Sağlanan Avantajlar",
   "advantages": [
     [
       "Eksiksiz Ağ Kapsamı",
-      "Gönderilen metin ve görsel materyaller, 25 haber portalımızın tamamında özgün yayın standartlarına uygun şekilde okuyuculara sunulmuştur."
+      "Gönderilen metin ve görsel materyaller, {N} haber portalımızın tamamında özgün yayın standartlarına uygun şekilde okuyuculara sunulmuştur."
     ],
     [
       "SEO ve Arama Motoru İndeksi",
@@ -29,6 +34,21 @@ export const TANITIM_TEXT = Object.freeze({
     "Markanızın iletişim ve PR süreçlerinde ağımızı tercih ettiğiniz için teşekkür eder, başarılı çalışmalar dileriz."
   ]
 });
+
+/** TANITIM_TEXT with "{N}" replaced by the live site count. */
+export function tanitimTextWithCount(count) {
+  const n = Number(count) > 0 ? String(Math.floor(Number(count))) : String(TANITIM_COUNT_FALLBACK);
+  const f = (v) => String(v).split("{N}").join(n);
+  const t = TANITIM_TEXT;
+  return {
+    title: t.title,
+    salutation: t.salutation,
+    intro: t.intro.map(f),
+    advTitle: t.advTitle,
+    advantages: t.advantages.map((a) => [a[0], f(a[1])]),
+    outro: t.outro.map(f),
+  };
+}
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -60,7 +80,7 @@ export const TANITIM_STYLE = `<style>
 </style>`;
 
 /** Premium intro block (replaces the /daha "hakkımızda" intro; the live logo grid follows it). */
-export function renderTanitimIntro({ id = "daha-hakkimizda", contactHref = "/iletisim" } = {}) {
-  const t = TANITIM_TEXT;
+export function renderTanitimIntro({ id = "daha-hakkimizda", contactHref = "/iletisim", count = 0 } = {}) {
+  const t = tanitimTextWithCount(count);
   return `${TANITIM_STYLE}<section id="${esc(id)}" class="hm-daha-about tn-intro"><span class="tn-eyebrow">Tanıtım</span><h2 class="tn-title">${esc(t.title)}</h2><p class="tn-sal">${esc(t.salutation)}</p><div class="tn-lead">${t.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div><h3 class="tn-h">${esc(t.advTitle)}</h3><ul class="tn-adv">${t.advantages.map((a, i) => `<li><span class="tn-ic">${ICONS[i] || ICONS[0]}</span><h4>${esc(a[0])}</h4><p>${esc(a[1])}</p></li>`).join("")}</ul><div class="tn-outro">${t.outro.map((p) => `<p>${esc(p)}</p>`).join("")}</div><p style="margin:18px 0 0"><a href="${esc(contactHref)}">Bize iletişim sayfamızdan ulaşabilirsiniz →</a></p></section>`;
 }

@@ -184,23 +184,25 @@ export async function ensureGundemiApexSite(): Promise<GundemiRegionalSeedSiteRe
     siteId = created.id;
     action = "created";
   } else {
+    // logogrid 2026-10-09: fill-only (see mergeSeedLayout) — never reset a live site's name/logo/layout.
+    const lay = mergeSeedLayout(existing.layoutJson, JSON.parse(layoutJson) as Record<string, unknown>);
+    const displayName = keepText(existing.displayName, def.displayName);
+    const description = keepText(existing.description, def.description ?? "");
     const needs =
       existing.domain !== def.domain ||
       normalizeDomainHost(existing.domain2) !== "www.gundemi.org" ||
-      existing.displayName !== def.displayName ||
-      existing.description !== def.description ||
+      existing.displayName !== displayName ||
       existing.active !== true ||
-      String(existing.layoutJson || "") !== layoutJson;
+      lay.changed;
     if (needs) {
       await dualWriteUpdate(
         hmNewsSitesTable,
         {
           domain: def.domain,
           domain2: "www.gundemi.org",
-          displayName: def.displayName,
-          description: def.description,
-          contactJson,
-          layoutJson,
+          displayName,
+          description,
+          layoutJson: lay.json,
           active: true,
           updatedAt: new Date(),
         },
@@ -237,6 +239,32 @@ export async function ensureGundemiApexSite(): Promise<GundemiRegionalSeedSiteRe
 /** @deprecated Apex is a dedicated site — prefer ensureGundemiApexSite. */
 export async function ensureTurkataGundemiApexAlias(): Promise<GundemiRegionalSeedSiteResult> {
   return ensureGundemiApexSite();
+}
+
+/**
+ * logogrid 2026-10-09: seed is CREATE-or-FILL only. It runs on every api-server boot (each Cloudflare container
+ * start), so it must never overwrite what editors/agents set on a live site (e.g. gundemi.org → "Gündem İstanbul":
+ * logo, name, İstanbul priority were wiped on every deploy). Existing layout keys win; the catalog only fills
+ * MISSING keys. Name/description are kept when already set.
+ */
+function mergeSeedLayout(existingRaw: unknown, catalog: Record<string, unknown>): { json: string; changed: boolean } {
+  let current: Record<string, unknown> = {};
+  try {
+    const v = typeof existingRaw === "string" ? JSON.parse(existingRaw || "{}") : existingRaw;
+    if (v && typeof v === "object" && !Array.isArray(v)) current = v as Record<string, unknown>;
+  } catch {
+    current = {};
+  }
+  const missing = Object.keys(catalog).filter((k) => !(k in current));
+  if (missing.length === 0) return { json: String(existingRaw ?? ""), changed: false };
+  const merged: Record<string, unknown> = { ...current };
+  for (const k of missing) merged[k] = catalog[k];
+  return { json: JSON.stringify(merged), changed: true };
+}
+
+function keepText(existing: string | null | undefined, fallback: string): string {
+  const v = String(existing ?? "").trim();
+  return v ? String(existing) : fallback;
 }
 
 function slugifyTitle(title: string): string {
@@ -297,21 +325,23 @@ async function upsertSite(def: GundemiRegionalSiteDef): Promise<{
     return { siteId: created.id, action: "created" };
   }
 
+  // logogrid 2026-10-09: fill-only (see mergeSeedLayout) — never reset a live site's name/logo/layout.
+  const lay = mergeSeedLayout(existing.layoutJson, JSON.parse(layoutJson) as Record<string, unknown>);
+  const displayName = keepText(existing.displayName, def.displayName);
+  const description = keepText(existing.description, def.description ?? "");
   const needs =
     existing.domain !== def.domain ||
-    existing.displayName !== def.displayName ||
-    existing.description !== def.description ||
+    existing.displayName !== displayName ||
     existing.active !== true ||
-    String(existing.layoutJson || "") !== layoutJson;
+    lay.changed;
   if (needs) {
     await dualWriteUpdate(
       hmNewsSitesTable,
       {
         domain: def.domain,
-        displayName: def.displayName,
-        description: def.description,
-        contactJson,
-        layoutJson,
+        displayName,
+        description,
+        layoutJson: lay.json,
         active: true,
         updatedAt: new Date(),
       },

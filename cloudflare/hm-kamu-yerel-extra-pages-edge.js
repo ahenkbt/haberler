@@ -3,7 +3,7 @@
  * sayfalarını sunar; hmExtraPages (/iller, /daha) Worker kenarında layout'tan basılır.
  */
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
-import { listPublicNewsSites, renderIlSitesGrid, renderNewsSitesGrid } from "./hm-public-news-sites.js";
+import { countPublicNewsSites, listPublicNewsSites, renderIlSitesGrid, renderNewsSitesGrid } from "./hm-public-news-sites.js";
 import { renderTanitimIntro } from "./hm-tanitim-text.js";
 
 export const KAMU_YEREL_EXTRA_PAGE_HOSTS = Object.freeze([
@@ -275,7 +275,14 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
   // Tanıtım metni (kullanıcı 2026-10-08 23:35): /daha giriş yazısı "Toplu Basın Bülteni ve Tanıtım Haberi Dağıtım Beyanı".
   if (page.slug === "daha") {
     const intro = /<section\b[^>]*id=["']daha-hakkimizda["'][^>]*>[\s\S]*?<\/section>/i;
-    if (intro.test(page.bodyHtml)) page = { ...page, bodyHtml: page.bodyHtml.replace(intro, () => renderTanitimIntro()) };
+    // logogrid 2026-10-09: live site count in the text (no hard-coded "25").
+    let count = 0;
+    try {
+      count = await countPublicNewsSites(env);
+    } catch {
+      count = 0;
+    }
+    if (intro.test(page.bodyHtml)) page = { ...page, bodyHtml: page.bodyHtml.replace(intro, () => renderTanitimIntro({ count })) };
   }
 
   const brand =
