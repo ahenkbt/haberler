@@ -432,7 +432,30 @@ export function listR2PublicBaseCandidates(env) {
       /* ignore */
     }
   }
+  if (!out.includes(R2_MEDIA_PUBLIC_BASE)) {
+    add(R2_MEDIA_PUBLIC_BASE);
+  }
   return out;
+}
+
+const UPLOAD_VERIFY_RETRIES = 6;
+const UPLOAD_VERIFY_DELAY_MS = 250;
+
+/** PUT sonrası R2 binding / public / S3 üzerinden okunabilirliği doğrular. */
+export async function verifyMediaUploadOnEdge(env, fname) {
+  const name = String(fname ?? "").trim();
+  if (!name || name.includes("..") || name.includes("/")) return false;
+  for (let attempt = 0; attempt < UPLOAD_VERIFY_RETRIES; attempt += 1) {
+    const hit = await handleMediaGetFromR2(
+      new Request(`https://media-edge.local/api/media/uploads/${encodeURIComponent(name)}`, { method: "HEAD" }),
+      env,
+    );
+    if (hit && hit.ok) return true;
+    if (attempt < UPLOAD_VERIFY_RETRIES - 1) {
+      await new Promise((r) => setTimeout(r, UPLOAD_VERIFY_DELAY_MS * (attempt + 1)));
+    }
+  }
+  return false;
 }
 
 /** wrangler.toml `MEDIA_BUCKET` — S3 API TLS (alert 40) olmadan aynı hesaptaki nesneler. */
@@ -744,13 +767,23 @@ export async function handleMediaGetFromR2(request, env, diag) {
   return null;
 }
 
+async function finalizeR2Put(env, fname, result) {
+  if (result.error) return result;
+  const ok = await verifyMediaUploadOnEdge(env, fname);
+  if (!ok) {
+    console.error("[media-r2-put-verify]", fname);
+    return { error: "Yükleme R2 üzerinde doğrulanamadı" };
+  }
+  return result;
+}
+
 async function putBytesToR2(env, fname, bytes, mime) {
   const key = objectKey(env, fname);
   const bound = r2Binding(env);
   if (bound && typeof bound.put === "function") {
     try {
       await bound.put(key, bytes, { httpMetadata: { contentType: mime } });
-      return { url: publicUploadUrl(fname) };
+      return finalizeR2Put(env, fname, { url: publicUploadUrl(fname) });
     } catch (err) {
       console.error("[media-r2-put]", String(err?.message || err).slice(0, 160));
     }
@@ -758,7 +791,7 @@ async function putBytesToR2(env, fname, bytes, mime) {
 
   const cfPut = await fetchR2ObjectViaCfApi(env, "PUT", fname, bytesForS3Body(bytes), mime);
   if (cfPut && cfPut.ok) {
-    return { url: publicUploadUrl(fname) };
+    return finalizeR2Put(env, fname, { url: publicUploadUrl(fname) });
   }
   if (cfPut && !cfPut.ok) {
     const detail = (await cfPut.text()).trim().slice(0, 160);
@@ -796,7 +829,7 @@ async function putBytesToR2(env, fname, bytes, mime) {
       }
 
       if (res.ok) {
-        return { url: publicUploadUrl(fname) };
+        return finalizeR2Put(env, fname, { url: publicUploadUrl(fname) });
       }
       const detail = (await res.text()).trim().slice(0, 160);
       lastDetail = `${hostPrefix4(endpoint)}:HTTP ${res.status}${detail ? `: ${detail}` : ""}`;

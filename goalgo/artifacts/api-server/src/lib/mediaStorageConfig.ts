@@ -451,6 +451,9 @@ export function listR2PublicBaseCandidates(): string[] {
       /* ignore */
     }
   }
+  if (!out.includes(R2_MEDIA_PUBLIC_BASE)) {
+    add(R2_MEDIA_PUBLIC_BASE);
+  }
   return out;
 }
 
