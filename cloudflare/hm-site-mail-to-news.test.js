@@ -43,6 +43,8 @@ test("category suggestion uses the site's own categories", () => {
   assert.equal(suggestCategory("Galatasaray maçı 3 gol ile kazandı, teknik direktör açıklama yaptı", cats), "spor");
   assert.equal(suggestCategory("Asgari ücret ve enflasyon açıklandı", cats), "ekonomi");
   assert.equal(suggestCategory("Belediye yeni park açtı", cats), "gundem");
+  assert.equal(suggestCategory("Su tasarrufu için kampanya; maçı izledi", cats), "spor");
+  assert.equal(suggestCategory("Tasarruf için yeni kampanya", [...cats, { slug: "dunya", name: "Dünya" }]), "gundem");
   assert.equal(suggestCategory("x", []), "");
 });
 
