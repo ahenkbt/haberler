@@ -135,12 +135,19 @@ export function isYesilVatanBrandAssetPath(pathname) {
   return p.startsWith("/yesilvatan/");
 }
 
+/** TürkSav marka dosyaları — Worker ASSETS (`public/turksav/*`). */
+export function isTurksavBrandAssetPath(pathname) {
+  const p = String(pathname || "").split("?")[0] || "/";
+  return p.startsWith("/turksav/");
+}
+
 export function isWorkerBrandStaticAssetPath(pathname) {
   return (
     isGundemiLogoAssetPath(pathname) ||
     isFixHaberBrandAssetPath(pathname) ||
     isSosyalHizmetlerBrandAssetPath(pathname) ||
-    isYesilVatanBrandAssetPath(pathname)
+    isYesilVatanBrandAssetPath(pathname) ||
+    isTurksavBrandAssetPath(pathname)
   );
 }
 

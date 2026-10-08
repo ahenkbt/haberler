@@ -1235,6 +1235,14 @@ pattern = "turksav.org/assets/*"
 zone_name = "turksav.org"
 
 [[routes]]
+pattern = "turksav.org/turksav/*"
+zone_name = "turksav.org"
+
+[[routes]]
+pattern = "www.turksav.org/turksav/*"
+zone_name = "turksav.org"
+
+[[routes]]
 pattern = "turksav.org/sw.js"
 zone_name = "turksav.org"
 

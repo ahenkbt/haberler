@@ -34,6 +34,7 @@
     "ensure:gundemi-bolge": "node --import tsx ./scripts/ensure-gundemi-regional-sites.ts",
     "ensure:fixhaber": "node --import tsx ./scripts/ensure-fixhaber-site.ts",
     "ensure:yesilvatan-logo": "node --import tsx ./scripts/ensure-yesilvatan-logo.ts",
+    "ensure:turksav-logo": "node --import tsx ./scripts/ensure-turksav-logo.ts",
     "ensure:sosyalhizmetler": "node --import tsx ./scripts/ensure-sosyalhizmetler-site.ts",
     "ensure:kamu-yerel": "node --import tsx ./scripts/ensure-kamu-yerel-sites.ts",
     "run:kamu-yerel-rss-daily": "node --import tsx ./scripts/run-kamu-yerel-rss-daily.ts",
