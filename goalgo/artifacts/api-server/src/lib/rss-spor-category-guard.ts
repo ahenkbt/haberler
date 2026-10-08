@@ -62,10 +62,23 @@ const SPORTS_TERMS = [
   "buz hokey",
 ];
 
+/** Kısa terimler — kelime sınırı (ör. "macera" ≠ maç). */
+const SPORTS_WORD_BOUNDARY_TERMS = ["mac", "maç", "gol", "lig", "stat", "forma", "moto", "puan"] as const;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function containsAnyTerm(text: string, terms: readonly string[]): boolean {
   if (!text) return false;
   for (const term of terms) {
-    if (term && text.includes(term)) return true;
+    if (!term) continue;
+    if (SPORTS_WORD_BOUNDARY_TERMS.includes(term as (typeof SPORTS_WORD_BOUNDARY_TERMS)[number])) {
+      const re = new RegExp(`(?:^|[^\\p{L}])${escapeRegExp(term)}(?:[^\\p{L}]|$)`, "u");
+      if (re.test(text)) return true;
+      continue;
+    }
+    if (text.includes(term)) return true;
   }
   return false;
 }

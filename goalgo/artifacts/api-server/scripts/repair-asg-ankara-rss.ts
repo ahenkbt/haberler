@@ -1,14 +1,16 @@
 /**
  * ankarasehirgazetesi.com (ASG) + AHG prod temizlik:
- * 1) Ankara kategorisindeki ulusal/uluslararası haberleri gündem'e taşır
+ * 1) Ankara kategorisindeki ulusal/uluslararası haberleri uygun kategoriye taşır
  * 2) rss-{id} slug'larını başlık tabanlı slug'a çevirir
  *
  * Dry-run:
  *   cd goalgo/artifacts/api-server && node --import tsx ./scripts/repair-asg-ankara-rss.ts --dry-run
  * Uygula:
  *   cd goalgo/artifacts/api-server && node --import tsx ./scripts/repair-asg-ankara-rss.ts --apply
- * Belirli slug'lar:
- *   ... --apply --slugs=rss-340170,rss-340174
+ * Belirli slug'lar (önce hedef, sonra tam tarama):
+ *   ... --apply --slugs=rss-341569,rss-342598
+ *
+ * Prod: DATABASE_URL + NEWS_DATABASE_URL; NEWS_DB_WRITE=dual (PHP twilight-pine aynası).
  */
 import { recategorizeMisclassifiedAnkaraBatch } from "../src/lib/recategorizeMisclassifiedAnkara.js";
 import { repairRssNumericSlugsBatch } from "../src/lib/repairRssNumericSlugs.js";
@@ -24,11 +26,53 @@ const slugs = slugsArg
       .filter(Boolean)
   : undefined;
 
-async function main() {
-  console.log("[repair-asg-ankara-rss]", { dryRun, slugs: slugs ?? "(all rss-\\d+)" });
+function configureDualWriteForProd(): void {
+  if (process.env.NEWS_DATABASE_URL?.trim() && !process.env.NEWS_DB_WRITE?.trim()) {
+    process.env.NEWS_DB_WRITE = "dual";
+  }
+}
 
-  const cat = await recategorizeMisclassifiedAnkaraBatch({ dryRun, limit: 5000 });
-  console.log("ankara recategorize", cat);
+async function runRecategorizePass(label: string, slugList?: string[]) {
+  const cat = await recategorizeMisclassifiedAnkaraBatch({
+    dryRun,
+    limit: 5000,
+    slugs: slugList,
+  });
+  console.log(label, cat);
+  return cat;
+}
+
+async function main() {
+  configureDualWriteForProd();
+  console.log("[repair-asg-ankara-rss]", {
+    dryRun,
+    slugs: slugs ?? "(all rss-\\d+ for slug repair)",
+    newsDbWrite: process.env.NEWS_DB_WRITE ?? "main",
+    hasNewsDb: Boolean(process.env.NEWS_DATABASE_URL?.trim()),
+  });
+
+  if (slugs?.length) {
+    await runRecategorizePass("ankara recategorize (target slugs, main DB)", slugs);
+  }
+  await runRecategorizePass("ankara recategorize (full, main DB)");
+
+  if (process.env.NEWS_DATABASE_URL?.trim()) {
+    const prevRead = process.env.NEWS_DB_READ;
+    const prevWrite = process.env.NEWS_DB_WRITE;
+    process.env.NEWS_DB_READ = "news";
+    process.env.NEWS_DB_WRITE = "news";
+    try {
+      if (slugs?.length) {
+        await runRecategorizePass("ankara recategorize (target slugs, PHP/news DB)", slugs);
+      }
+      await runRecategorizePass("ankara recategorize (full, PHP/news DB)");
+    } finally {
+      if (prevRead === undefined) delete process.env.NEWS_DB_READ;
+      else process.env.NEWS_DB_READ = prevRead;
+      if (prevWrite === undefined) delete process.env.NEWS_DB_WRITE;
+      else process.env.NEWS_DB_WRITE = prevWrite;
+    }
+  }
 
   const slug = await repairRssNumericSlugsBatch({ dryRun, limit: 2000, slugs });
   console.log("rss slug repair", slug);
