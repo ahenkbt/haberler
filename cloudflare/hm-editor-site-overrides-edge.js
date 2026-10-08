@@ -272,9 +272,15 @@ export async function handleHmEditorSiteOverridesEdge(request, env, incomingUrl)
         [siteId, publicSlug, title, kind, refId],
       );
     } else {
-      // Aktif: removes the editor's own hide and the importer's off-topic hide for this site (never blocked_terms).
+      // Aktif removes only the editor's own hide. Strict-topic hides (off_topic:*, live_wrong_cat:*, not_city:*) and
+      // blocked_terms stay: the importer guard would re-hide them anyway (user rule: off-topic is never placed).
+      const other = await news.query(
+        `SELECT reason FROM hm_site_content_hidden WHERE site_id = $1 AND public_slug = $2 AND title = $3 AND reason <> 'editor_pasif' LIMIT 1`,
+        [siteId, publicSlug, title],
+      );
+      if (other.length) return json(409, { error: `Bu haber otomatik kuralla gizli (${other[0].reason}); editör açamaz.` });
       await news.query(
-        `DELETE FROM hm_site_content_hidden WHERE site_id = $1 AND public_slug = $2 AND title = $3 AND reason <> 'blocked_terms'`,
+        `DELETE FROM hm_site_content_hidden WHERE site_id = $1 AND public_slug = $2 AND title = $3 AND reason = 'editor_pasif'`,
         [siteId, publicSlug, title],
       );
     }

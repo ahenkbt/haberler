@@ -221,7 +221,7 @@ export default function EditorRssHaberler() {
                           <span className="text-xs">{it.active ? "Aktif" : "Pasif"}</span>
                           <Switch
                             checked={!it.hiddenReason}
-                            disabled={setItem.isPending || it.hiddenReason === "blocked_terms"}
+                            disabled={setItem.isPending || (!!it.hiddenReason && it.hiddenReason !== "editor_pasif")}
                             onCheckedChange={(v) => setItem.mutate({ it, active: v })}
                           />
                         </div>
