@@ -73,7 +73,7 @@ describe("orderSiteDomains", () => {
   it("ASG and AHG drop deleted apexes and sehir.gundemi.org", () => {
     expect(orderSiteDomains(["ankarasehirgazetesi.com", "ankara.fix.tc"]).triad).toEqual({
       domain: "ankara.fix.tc",
-      domain2: "ankarasehirgazetesi.com",
+      domain2: null,
       domain3: null,
     });
     expect(orderSiteDomains(["sehir.gundemi.org", "ankara.fix.tc"]).triad).toEqual({
@@ -85,8 +85,8 @@ describe("orderSiteDomains", () => {
       orderSiteDomains(["ankarahabergundemi.com", "ankara.gundemi.org", "gundem.fix.tc"]).triad,
     ).toEqual({
       domain: "gundem.fix.tc",
-      domain2: "ankarahabergundemi.com",
-      domain3: "ankara.gundemi.org",
+      domain2: "ankara.gundemi.org",
+      domain3: null,
     });
   });
   it("keeps existing multi-custom sites stable", () => {
