@@ -164,16 +164,16 @@ async function applyAsgAhgRebrandDomains(env) {
       await sql`
         UPDATE hm_news_sites
         SET domain = ${spec.domain},
-            domain2 = NULL,
-            domain3 = NULL,
+            domain2 = ${spec.domain2},
+            domain3 = ${spec.domain3},
             display_name = ${spec.displayName},
             active = true,
             updated_at = now()
         WHERE (lower(slug) = ${spec.slugs[0]} OR lower(slug) = ${spec.slugs[1]})
           AND (
             lower(coalesce(domain, '')) IS DISTINCT FROM ${spec.domain}
-            OR domain2 IS NOT NULL
-            OR domain3 IS NOT NULL
+            OR lower(coalesce(domain2, '')) IS DISTINCT FROM ${spec.domain2 || ""}
+            OR lower(coalesce(domain3, '')) IS DISTINCT FROM ${spec.domain3 || ""}
             OR display_name IS DISTINCT FROM ${spec.displayName}
             OR active IS DISTINCT FROM true
           )
