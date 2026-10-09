@@ -2328,6 +2328,112 @@ zone_name = "sosyalhizmetler.tr"
 pattern = "www.sosyalhizmetler.tr/hm/*"
 zone_name = "sosyalhizmetler.tr"
 
+# harikaolacak.com.tr (TP 1172, 2026-10-09) — panel/editör/API Worker route'ları; wrangler deploy listede olmayan route'ları sildiği için burada.
+# llms.txt / ai.txt route YOK (#495) — PHP sunar.
+[[routes]]
+pattern = "harikaolacak.com.tr/editor*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/api/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/admin*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/panel*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/haber-merkezi*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/assets/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/sw.js"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/manifest.json"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/yazar/giris*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/koseyazari/giris*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/yazar/sifre*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/koseyazari/sifre*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/yazar/haber*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/koseyazari/haber*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/tr/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "harikaolacak.com.tr/hm/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/api/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/assets/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/yazar/giris*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/koseyazari/giris*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/yazar/sifre*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/koseyazari/sifre*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/yazar/haber*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/koseyazari/haber*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/tr/*"
+zone_name = "harikaolacak.com.tr"
+
+[[routes]]
+pattern = "www.harikaolacak.com.tr/hm/*"
+zone_name = "harikaolacak.com.tr"
+
 # redeploy trigger 2026-10-08T06:15:00Z — sosyalhizmetler.tr /sh/* + theme.css bridge
 # redeploy trigger 2026-10-07T22:30:00Z — sosyalhizmetler.tr worker routes (domain2 Marmara Gündemi)
 
