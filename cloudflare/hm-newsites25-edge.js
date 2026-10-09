@@ -10,6 +10,7 @@
  * newsites27 (2026-10-09, user request): same pattern, TP ids 1170 / 1171 (layout = TP layout_json at creation):
  *   emlak.gundemi.org                               Emlak Gündemi         concept: emlak (konut, kentsel dönüşüm, TOKİ, kira, kredi, imar)
  *   isdunyasi.gundemi.org                           İş Dünyası Gündemi    concept: isdunyasi (sanayi, ihracat, lojistik, esnaf ve KOBİ)
+ * harikaolacak (2026-10-09, user request): harikaolacak.com.tr, TP 1172, Harika Olacak — positive Gen-Z social news + lifestyle concept site.
  */
 export const NEWSITES25 = [
   {
@@ -1134,6 +1135,357 @@ export const NEWSITES25 = [
       "hmNewsHomeModuleCategorySlugs": {
         "ysGallery": "isd-sanayi",
         "ysMostRead": "isd-sirketler"
+      },
+      "hmNewsYsCategoryBlocksEnabled": true,
+      "hmNewsYsSportsHoroscopeEnabled": false,
+      "hmCorporateAtaturkCornerEnabled": false,
+      "hmCorporateCulturePortalBandEnabled": false,
+      "hmCorporateNationalDaysSectionEnabled": false,
+      "sadeNewsHistoryNationalDaysBandEnabled": false
+    }
+  },
+  {
+    "slug": "harikaolacak",
+    "hosts": [
+      "harikaolacak.com.tr",
+      "www.harikaolacak.com.tr"
+    ],
+    "displayName": "Harika Olacak",
+    "description": "Z kuşağı için sadece iyi ve pozitif haberler: trendler, müzik, dizi-film, kültür-sanat, etkinlikler, gezi, mekanlar, yeme-içme, sağlık, güzellik, moda, kampüs, oyun ve teknoloji. Suç, kaza, siyaset ve kötü haber yok. Harika Olacak!",
+    "contact": {
+      "email": "bilgi@harikaolacak.com.tr",
+      "phone": "0532 229 18 92",
+      "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara"
+    },
+    "editorEmail": "bilgi@harikaolacak.com.tr",
+    "layout": {
+      "logoUrl": "/brand/harikaolacak/harikaolacak.png",
+      "frontend": "php",
+      "phpTheme": true,
+      "hmCatTree": "off",
+      "hmYsKunye": {
+        "lead": "Z kuşağının pozitif gündemi: trendler, etkinlikler, gezi ve iyi haberler.",
+        "email": "bilgi@harikaolacak.com.tr",
+        "phone": "0532 229 18 92",
+        "tuzel": "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
+        "yayin": "HARİKA OLACAK",
+        "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara",
+        "genelMudur": "Nail Türkoğlu",
+        "yaziIsleri": "Melek Acar",
+        "yayinIlkeleri": "Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.",
+        "yayinYonetmeni": "Mustafa ÖZDEMİR"
+      },
+      "faviconUrl": "/brand/harikaolacak/harikaolacak-icon-192.png",
+      "hmSiteKind": "news",
+      "hmYsSlogan": "Z kuşağının pozitif gündemi: trendler, etkinlikler, gezi ve iyi haberler.",
+      "hmConceptSite": true,
+      "hmVitrinTheme": "yenisafak",
+      "hmConceptTopic": "harikaolacak",
+      "hmHarikaOlacak": "harikaolacak-20261009",
+      "hmPrimaryColor": "#7c3aed",
+      "hmYsMansetStil": "izgara",
+      "showPlatformNav": false,
+      "hmNewsRssSources": [
+        0
+      ],
+      "hmSecondaryColor": "#ff3d8b",
+      "hmYsMansetPreset": "mynet",
+      "hybridRssEnabled": false,
+      "hmFooterAboutHtml": "<p><strong>Harika Olacak</strong>, Z kuşağı için hazırlanan pozitif sosyal haber ve yaşam sitesidir: trendler, müzik, dizi-film, kültür-sanat, etkinlikler, gezi, mekanlar, sağlık, güzellik, moda, kampüs, oyun ve teknoloji. Suç, kaza, siyaset ve kötü haber yok; sadece ilham veren, eğlendiren ve iyi hissettiren haberler.</p>\n<p>TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. 1998’den bu yana yerel yönetimler, kamu kurumları ile sivil toplum ve sektör gündemini Türkçe olarak kamuoyuna aktarır.</p>\n<p>Yerelin Sesini Geleceğe Taşıyan Güvenilir Haber Ağı.</p>\n<h2 id=\"yayin-ilkeleri\">Yayın ilkeleri</h2>\n<p>Ajans, başlık, özet ve kaynak bağlantısıyla sınırlı besleme kayıtlarını olduğu gibi gösterir. Tam metin, kaynağın kendi sayfasındadır. Editörün yazdığı haberler bu sitede yayımlanır.</p>",
+      "hmYsMansetStilBase": "mynet",
+      "hmCategorySortSlugs": [
+        "ho-iyi-haber",
+        "ho-trendler",
+        "ho-eglence",
+        "ho-muzik",
+        "ho-dizi-film",
+        "ho-kultur-sanat",
+        "ho-etkinlikler",
+        "ho-gezi",
+        "ho-mekanlar",
+        "ho-yeme-icme",
+        "ho-saglik",
+        "ho-yasam",
+        "ho-guzellik",
+        "ho-moda",
+        "ho-kadin",
+        "ho-oyun-teknoloji",
+        "ho-kampus"
+      ],
+      "hmLayoutSanitizeRev": "hm-layout-sanitize-20260727a",
+      "hmNewsFooterEnabled": true,
+      "hmNewsSliderEnabled": true,
+      "hmNewsTopicPriority": {
+        "days": 3,
+        "blocks": true,
+        "exclude": [
+          "süper lig",
+          "maç",
+          "transfer",
+          "loto",
+          "burç",
+          "kurultay",
+          "yeni parti",
+          "öldü",
+          "hayatını kaybetti",
+          "kaza",
+          "cinayet",
+          "gözaltı",
+          "tutuklandı",
+          "deprem",
+          "yangın",
+          "savaş",
+          "saldırı",
+          "skandal",
+          "seçim",
+          "milletvekili",
+          "zam",
+          "enflasyon",
+          "intihar",
+          "taciz",
+          "şiddet"
+        ],
+        "keywords": [
+          "konser",
+          "festival",
+          "etkinlik",
+          "sergi",
+          "tiyatro",
+          "gezi",
+          "tatil",
+          "kafe",
+          "tarif",
+          "trend",
+          "tiktok",
+          "instagram",
+          "kampüs",
+          "öğrenci",
+          "güzellik",
+          "moda",
+          "müzik",
+          "dizi",
+          "film",
+          "oyun",
+          "yapay zeka",
+          "iyi haber",
+          "başarı",
+          "ödül",
+          "gönüllü",
+          "sahiplen"
+        ],
+        "categories": [
+          "ho-iyi-haber",
+          "ho-trendler",
+          "ho-eglence",
+          "ho-muzik",
+          "ho-dizi-film",
+          "ho-kultur-sanat",
+          "ho-etkinlikler",
+          "ho-gezi",
+          "ho-mekanlar",
+          "ho-yeme-icme",
+          "ho-saglik",
+          "ho-yasam",
+          "ho-guzellik",
+          "ho-moda",
+          "ho-kadin",
+          "ho-oyun-teknoloji",
+          "ho-kampus"
+        ]
+      },
+      "hmCorporateMenuItems": [
+        {
+          "id": "m1",
+          "href": "/kategori/ho-iyi-haber",
+          "label": "İyi Haber",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m2",
+          "href": "/kategori/ho-trendler",
+          "label": "Trendler",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m3",
+          "href": "/kategori/ho-eglence",
+          "label": "Eğlence",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m4",
+          "href": "/kategori/ho-muzik",
+          "label": "Müzik",
+          "enabled": true,
+          "parentId": "m3"
+        },
+        {
+          "id": "m5",
+          "href": "/kategori/ho-dizi-film",
+          "label": "Dizi & Film",
+          "enabled": true,
+          "parentId": "m3"
+        },
+        {
+          "id": "m6",
+          "href": "/kategori/ho-kultur-sanat",
+          "label": "Kültür & Sanat",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m7",
+          "href": "/kategori/ho-etkinlikler",
+          "label": "Etkinlikler",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m8",
+          "href": "/kategori/ho-gezi",
+          "label": "Gezi",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m9",
+          "href": "/kategori/ho-mekanlar",
+          "label": "Mekanlar",
+          "enabled": true,
+          "parentId": "m8"
+        },
+        {
+          "id": "m10",
+          "href": "/kategori/ho-yeme-icme",
+          "label": "Yeme & İçme",
+          "enabled": true,
+          "parentId": "m8"
+        },
+        {
+          "id": "m11",
+          "href": "/kategori/ho-saglik",
+          "label": "Sağlık",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m12",
+          "href": "/kategori/ho-yasam",
+          "label": "Yaşam",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m13",
+          "href": "/kategori/ho-guzellik",
+          "label": "Güzellik",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m14",
+          "href": "/kategori/ho-moda",
+          "label": "Moda",
+          "enabled": true,
+          "parentId": "m13"
+        },
+        {
+          "id": "m15",
+          "href": "/kategori/ho-kadin",
+          "label": "Kadın",
+          "enabled": true,
+          "parentId": "m13"
+        },
+        {
+          "id": "m16",
+          "href": "/kategori/ho-oyun-teknoloji",
+          "label": "Oyun & Teknoloji",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m17",
+          "href": "/kategori/ho-kampus",
+          "label": "Kampüs",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m18",
+          "href": "/kategori/ozel-haber",
+          "label": "Özel Haber",
+          "enabled": true,
+          "parentId": ""
+        }
+      ],
+      "hmNewsAuthorsEnabled": true,
+      "hmNewsYsMansetLayout": "mynet",
+      "hmSehitSearchEnabled": false,
+      "hmSiteRssDefaultsRev": "20260727site1",
+      "hmTepeMansetOptInRev": "tepe-manset-default-on-v2",
+      "hmNewsRssCategoryOnly": [
+        "ho-iyi-haber",
+        "ho-trendler",
+        "ho-eglence",
+        "ho-muzik",
+        "ho-dizi-film",
+        "ho-kultur-sanat",
+        "ho-etkinlikler",
+        "ho-gezi",
+        "ho-mekanlar",
+        "ho-yeme-icme",
+        "ho-saglik",
+        "ho-yasam",
+        "ho-guzellik",
+        "ho-moda",
+        "ho-kadin",
+        "ho-oyun-teknoloji",
+        "ho-kampus"
+      ],
+      "hmNewsYsMansetEnabled": true,
+      "hmNewsYsTickerEnabled": true,
+      "hmRssKarmaDefaultsRev": "rss-karma-default-v1",
+      "hmNavOnlyCategorySlugs": [
+        "ho-iyi-haber",
+        "ho-trendler",
+        "ho-eglence",
+        "ho-muzik",
+        "ho-dizi-film",
+        "ho-kultur-sanat",
+        "ho-etkinlikler",
+        "ho-gezi",
+        "ho-mekanlar",
+        "ho-yeme-icme",
+        "ho-saglik",
+        "ho-yasam",
+        "ho-guzellik",
+        "ho-moda",
+        "ho-kadin",
+        "ho-oyun-teknoloji",
+        "ho-kampus",
+        "ozel-haber"
+      ],
+      "hmNewsYsAuthorsEnabled": true,
+      "hmNewsYsGalleryEnabled": true,
+      "hmConceptAsideTopicOnly": true,
+      "hmNewsHeaderMenuEnabled": true,
+      "hmNewsTepeMansetEnabled": true,
+      "hmNewsYsMostReadEnabled": true,
+      "hmNewsYsHoroscopeEnabled": false,
+      "hmNewsYsStandingsEnabled": false,
+      "hmNewsYsVideoBandEnabled": false,
+      "hmNewsBreakingBandEnabled": false,
+      "hmConceptMostReadTopicOnly": true,
+      "sadeNewsAtaturkBandEnabled": false,
+      "hmNewsYsSideHeadlinesEnabled": true,
+      "hmCorporateWarsSectionEnabled": false,
+      "hmNewsCategorySectionsEnabled": true,
+      "hmNewsHomeModuleCategorySlugs": {
+        "ysGallery": "ho-gezi",
+        "ysMostRead": "ho-trendler"
       },
       "hmNewsYsCategoryBlocksEnabled": true,
       "hmNewsYsSportsHoroscopeEnabled": false,
