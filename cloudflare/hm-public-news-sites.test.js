@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { logoVersion, publicNewsSitesFromRows, renderIlSitesGrid, renderNewsSitesGrid, textLogoSvg } from "./hm-public-news-sites.js";
+import { logoVersion, publicNewsSitesFromRows, rebrandAssignmentForSlug, renderIlSitesGrid, renderNewsSitesGrid, replacedPublicHost, textLogoSvg } from "./hm-public-news-sites.js";
 
 const L = (o) => JSON.stringify(o);
 
@@ -80,6 +80,23 @@ describe("hm-public-news-sites", () => {
     assert.equal(il[0].name, "Gündem İstanbul");
     assert.equal(il[0].plate, "34");
     assert.deepEqual(publicNewsSitesFromRows(rows).map((s) => s.domain), ["suhaber.net"]);
+  });
+
+  it("ASG and AHG stay on the tanıtım grid under ankara.fix.tc and gundem.fix.tc", () => {
+    const rows = [
+      { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "Ankara Şehir Gazetesi", active: false, layout_json: L({ logoUrl: "data:image/png;base64,AAAA" }) },
+      { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "Ankara Haber Gündemi", active: true, layout_json: L({ logoUrl: "/ahg.png", hmPublicSuspended: true }) },
+    ];
+    const main = publicNewsSitesFromRows(rows);
+    assert.deepEqual(main.map((s) => s.domain), ["ankara.fix.tc", "gundem.fix.tc"]);
+    assert.equal(publicNewsSitesFromRows(rows, { group: "il" }).length, 0);
+    assert.equal(replacedPublicHost(rows[0], "ankarasehirgazetesi.com"), "ankara.fix.tc");
+    assert.equal(rebrandAssignmentForSlug("asg").domain, "ankara.fix.tc");
+    assert.equal(rebrandAssignmentForSlug("asg").domain2, "ankarasehirgazetesi.com");
+    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain, "gundem.fix.tc");
+    assert.equal(rebrandAssignmentForSlug("ahg").domain3, "ankara.gundemi.org");
+    assert.equal(rebrandAssignmentForSlug("vatanhaber"), null);
+    assert.doesNotMatch(main.map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
   });
 
   it("logogrid: text logo fallback is an SVG in the site colour", () => {

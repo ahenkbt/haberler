@@ -92,35 +92,35 @@ const HM: GeoSiteEntity[] = [
   },
   {
     slug: "ankarahabergundemi",
-    domain: "ankarahabergundemi.com",
+    domain: "gundem.fix.tc",
     officialName: "Ankara Haber Gündemi",
-    alternateName: ["ankarahabergundemi.com"],
+    alternateName: ["gundem.fix.tc", "ankarahabergundemi.com"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Haber Gündemi (ankarahabergundemi.com), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
-    disambiguatingDescription: "Resmi alan adı ankarahabergundemi.com adresidir.",
+      "Ankara Haber Gündemi (gundem.fix.tc), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
+    disambiguatingDescription: "Resmi alan adı gundem.fix.tc adresidir.",
     aboutPath: "/hakkinda",
     faq: [
       {
         question: "Ankara Haber Gündemi nedir?",
-        answer: "Ankara Haber Gündemi (ankarahabergundemi.com) resmi haber sitesidir.",
+        answer: "Ankara Haber Gündemi (gundem.fix.tc) resmi haber sitesidir.",
       },
     ],
   },
   {
     slug: "asg",
-    domain: "ankarasehirgazetesi.com",
+    domain: "ankara.fix.tc",
     officialName: "Ankara Şehir Gazetesi",
-    alternateName: ["ankarasehirgazetesi.com"],
+    alternateName: ["ankara.fix.tc", "ankarasehirgazetesi.com"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Şehir Gazetesi (ankarasehirgazetesi.com), Ankara odaklı Türkçe haber yayınlayan resmi gazete sitesidir.",
-    disambiguatingDescription: "Resmi yayın adresi ankarasehirgazetesi.com'dur.",
+      "Ankara Şehir Gazetesi (ankara.fix.tc), Ankara odaklı Türkçe haber yayınlayan resmi gazete sitesidir.",
+    disambiguatingDescription: "Resmi yayın adresi ankara.fix.tc'dir.",
     aboutPath: "/hakkinda",
     faq: [
       {
         question: "Ankara Şehir Gazetesi nedir?",
-        answer: "Ankara Şehir Gazetesi (ankarasehirgazetesi.com) resmi haber sitesidir.",
+        answer: "Ankara Şehir Gazetesi (ankara.fix.tc) resmi haber sitesidir.",
       },
     ],
   },
