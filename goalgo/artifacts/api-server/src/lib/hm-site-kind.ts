@@ -115,15 +115,12 @@ export type HmDomainTriad = { domain: string | null; domain2: string | null; dom
  * Live production otherwise sorts *.gundemi.org ahead of *.fix.tc.
  */
 const REBRAND_CANONICAL_HOST = new Map<string, string>([
+  ["sehir.gundemi.org", "ankara.fix.tc"],
   ["ankara.gundemi.org", "gundem.fix.tc"],
 ]);
 
-/** Never persist these. The two apexes were deleted in Cloudflare; sehir.gundemi.org was never a saved ASG host. */
-const RETIRED_REBRAND_APEXES = new Set([
-  "ankarasehirgazetesi.com",
-  "ankarahabergundemi.com",
-  "sehir.gundemi.org",
-]);
+/** Cloudflare zones deleted 2026-10-09. Never persist these as domain/domain2/domain3. */
+const RETIRED_REBRAND_APEXES = new Set(["ankarasehirgazetesi.com", "ankarahabergundemi.com"]);
 
 function preferRebrandCanonical(hosts: string[]): string[] {
   const keys = new Set(hosts.map((h) => normalizeAliasHost(h)));

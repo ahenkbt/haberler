@@ -70,7 +70,7 @@ describe("orderSiteDomains", () => {
   it("removing the custom domain falls back to gundemi canonical", () => {
     expect(orderSiteDomains([null, "adana.gundemi.org", "adana.fix.tc"]).triad.domain).toBe("adana.gundemi.org");
   });
-  it("ASG and AHG drop the deleted apexes and keep fix.tc canonical", () => {
+  it("ASG and AHG keep fix.tc canonical ahead of the gundemi.org alias and drop deleted apexes", () => {
     expect(orderSiteDomains(["ankarasehirgazetesi.com", "ankara.fix.tc"]).triad).toEqual({
       domain: "ankara.fix.tc",
       domain2: null,
@@ -78,7 +78,7 @@ describe("orderSiteDomains", () => {
     });
     expect(orderSiteDomains(["sehir.gundemi.org", "ankara.fix.tc"]).triad).toEqual({
       domain: "ankara.fix.tc",
-      domain2: null,
+      domain2: "sehir.gundemi.org",
       domain3: null,
     });
     expect(

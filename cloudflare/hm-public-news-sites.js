@@ -91,7 +91,7 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. The saved host is only the new address.
+ * PHP canonical is the first domain. fix.tc stays first; the gundemi.org alias is domain2.
  * ankarasehirgazetesi.com and ankarahabergundemi.com were deleted in Cloudflare;
  * do not write them back as domain, domain2, or domain3.
  */
@@ -99,16 +99,16 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: null,
+    domain2: "sehir.gundemi.org",
     domain3: null,
-    displayName: "Ankara Şehir Gazetesi",
+    displayName: "Ankara Şehir Fix Haber",
   },
   {
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: null,
+    domain2: "ankara.gundemi.org",
     domain3: null,
-    displayName: "Ankara Haber Gündemi",
+    displayName: "Ankara Gündem Fix Haber",
   },
 ]);
 
@@ -150,8 +150,7 @@ async function applyAsgAhgRebrandDomains(env) {
             active = true,
             layout_json = CASE
               WHEN jsonb_typeof(layout_json) = 'object'
-                THEN (layout_json - 'hmFixAnkaraWordmark')
-                  || jsonb_build_object('hmDisplayNameOverride', ${spec.displayName}::text)
+                THEN layout_json || jsonb_build_object('hmDisplayNameOverride', ${spec.displayName}::text)
               ELSE layout_json
             END,
             updated_at = now()
@@ -163,7 +162,6 @@ async function applyAsgAhgRebrandDomains(env) {
             OR display_name IS DISTINCT FROM ${spec.displayName}
             OR coalesce(layout_json->>'hmDisplayNameOverride', '') IS DISTINCT FROM ${spec.displayName}
             OR active IS DISTINCT FROM true
-            OR layout_json ? 'hmFixAnkaraWordmark'
           )
       `;
     }

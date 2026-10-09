@@ -26,14 +26,14 @@ const SPECS: Spec[] = [
     label: "ASG",
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: null,
+    domain2: "sehir.gundemi.org",
     domain3: null,
   },
   {
     label: "AHG",
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: null,
+    domain2: "ankara.gundemi.org",
     domain3: null,
   },
 ];
