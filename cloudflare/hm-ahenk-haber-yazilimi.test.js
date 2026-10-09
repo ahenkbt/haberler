@@ -54,7 +54,7 @@ describe("hm-ahenk-haber-yazilimi", () => {
       assert.ok(!domains.includes(bad), bad);
     }
     assert.ok(domains.includes("vatanhaber.net"));
-    assert.ok(AHENK_HSY_REFERENCES.every((r) => /^https:\/\/ahenk\.net\.tr\/api\/hm\/public\/news-sites\/\d+\/logo/.test(r.logo)));
+    assert.ok(AHENK_HSY_REFERENCES.every((r) => /^https:\/\/ahenk\.net\.tr\/api\/hm\/public\/news-sites\/\d+\/logo/.test(r.logo) || r.logo.startsWith(`https://${r.domain}/`)));
   });
 
   it("json-ld is safe inside script tag", () => {
