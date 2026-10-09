@@ -92,35 +92,35 @@ const HM: GeoSiteEntity[] = [
   },
   {
     slug: "ankarahabergundemi",
-    domain: "gundem.fix.tc",
+    domain: "ankarahabergundemi.com",
     officialName: "Ankara Haber Gündemi",
-    alternateName: ["gundem.fix.tc", "Ankara Haber Gündemi"],
+    alternateName: ["ankarahabergundemi.com"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Haber Gündemi (gundem.fix.tc), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
-    disambiguatingDescription: "Resmi alan adı gundem.fix.tc adresidir.",
+      "Ankara Haber Gündemi (ankarahabergundemi.com), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
+    disambiguatingDescription: "Resmi alan adı ankarahabergundemi.com adresidir.",
     aboutPath: "/hakkinda",
     faq: [
       {
         question: "Ankara Haber Gündemi nedir?",
-        answer: "Ankara Haber Gündemi (gundem.fix.tc) resmi haber sitesidir.",
+        answer: "Ankara Haber Gündemi (ankarahabergundemi.com) resmi haber sitesidir.",
       },
     ],
   },
   {
     slug: "asg",
-    domain: "ankara.fix.tc",
+    domain: "ankarasehirgazetesi.com",
     officialName: "Ankara Şehir Gazetesi",
-    alternateName: ["ankara.fix.tc", "Ankara Şehir Gazetesi"],
+    alternateName: ["ankarasehirgazetesi.com"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Şehir Gazetesi (ankara.fix.tc), Ankara odaklı Türkçe haber yayınlayan resmi gazete sitesidir.",
-    disambiguatingDescription: "Resmi yayın adresi ankara.fix.tc'dir.",
+      "Ankara Şehir Gazetesi (ankarasehirgazetesi.com), Ankara odaklı Türkçe haber yayınlayan resmi gazete sitesidir.",
+    disambiguatingDescription: "Resmi yayın adresi ankarasehirgazetesi.com'dur.",
     aboutPath: "/hakkinda",
     faq: [
       {
         question: "Ankara Şehir Gazetesi nedir?",
-        answer: "Ankara Şehir Gazetesi (ankara.fix.tc) resmi haber sitesidir.",
+        answer: "Ankara Şehir Gazetesi (ankarasehirgazetesi.com) resmi haber sitesidir.",
       },
     ],
   },

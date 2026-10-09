@@ -76,8 +76,8 @@ function siteHosts(site: {
 
 /** Domain fallback when a row’s slug is missing — never the invented short code `ahg`. */
 function hostMatchesLiveSlug(host: string, slug: string): boolean {
-  if (slug === "asg") return host.includes("ankarasehirgazetesi") || host === "ankara.fix.tc";
-  if (slug === "ankarahabergundemi") return host.includes("ankarahabergundemi") || host === "gundem.fix.tc";
+  if (slug === "asg") return host.includes("ankarasehirgazetesi");
+  if (slug === "ankarahabergundemi") return host.includes("ankarahabergundemi");
   return false;
 }
 

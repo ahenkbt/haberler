@@ -17,7 +17,6 @@ import { isAsgHmNewsSiteRow } from "../src/lib/hm-asg-editor-repair.js";
 import { purgeHmSitePublicEdgeCache } from "../src/lib/hm-public-cache-purge.js";
 import { recategorizeMisclassifiedAnkaraBatch } from "../src/lib/recategorizeMisclassifiedAnkara.js";
 import { repairRssNumericSlugsBatch } from "../src/lib/repairRssNumericSlugs.js";
-import { ensureAsgAhgLiveDomains } from "./ensure-asg-ahg-rebrand-domains.js";
 
 const args = process.argv.slice(2);
 const dryRun = !args.includes("--apply");
@@ -47,16 +46,6 @@ async function runRecategorizePass(label: string, slugList?: string[]) {
 }
 
 async function main() {
-  // Existing Repair ASG workflow: --slugs=rebrand-asg-ahg-domains writes both Neons and stops.
-  // It must not recategorize or rewrite news slugs.
-  if (slugs?.length === 1 && slugs[0] === "rebrand-asg-ahg-domains") {
-    if (dryRun) {
-      console.log("[repair-asg-ankara-rss] rebrand dry-run (no writes)");
-      return;
-    }
-    await ensureAsgAhgLiveDomains();
-    return;
-  }
   configureDualWriteForProd();
   console.log("[repair-asg-ankara-rss]", {
     dryRun,
