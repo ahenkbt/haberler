@@ -749,14 +749,6 @@ pattern = "kirsehirhaber.org/sw.js"
 zone_name = "kirsehirhaber.org"
 
 [[routes]]
-pattern = "kirsehirhaber.org/llms.txt"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/ai.txt"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
 pattern = "kirsehirhaber.org/manifest.json"
 zone_name = "kirsehirhaber.org"
 
