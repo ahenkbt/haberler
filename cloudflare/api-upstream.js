@@ -57,9 +57,32 @@ export function apiContainerInstanceNames(env, count = API_CONTAINER_INSTANCES) 
   return Array.from({ length: n }, (_, i) => `${roll}-${i}`.slice(0, 63));
 }
 
+/**
+ * `<roll>-0` runs the boot repairs, resyncs and schedulers (YK_BACKGROUND_JOBS=1, see
+ * GoalgoApiContainer). Its pool is busy for minutes after every boot, so normal traffic goes
+ * to the other instances and `-0` is only the last failover (2026-10-09: 1 in 3 GETs ~15 s).
+ */
+export function apiRequestInstanceNames(env) {
+  const names = apiContainerInstanceNames(env);
+  return names.length > 1 ? names.slice(1) : names;
+}
+
+export function apiJobsInstanceName(env) {
+  return apiContainerInstanceNames(env)[0];
+}
+
+/** Cron keepalive: `-0` gets no normal traffic, so keep it awake for its schedulers. */
+export async function pingJobsInstance(env, url) {
+  const stub = await getApiStub(env, apiJobsInstanceName(env));
+  if (!stub) return null;
+  const res = await stub.fetch(new Request(String(url)));
+  await res.body?.cancel?.().catch?.(() => {});
+  return res.status;
+}
+
 export async function getApiStub(env, preferredName) {
   if (!env?.GOALGO_API) return null;
-  const names = apiContainerInstanceNames(env);
+  const names = apiRequestInstanceNames(env);
   const name = preferredName || names[Math.floor(Math.random() * names.length)];
   if (typeof env.GOALGO_API.getByName === "function") {
     return env.GOALGO_API.getByName(name);
@@ -119,11 +142,13 @@ export const GET_ATTEMPT_TIMEOUT_MS = 8_000;
 const RETRYABLE_GET_STATUS = new Set([500, 502, 503, 504]);
 
 function shuffledNames(env) {
-  const names = apiContainerInstanceNames(env);
+  const all = apiContainerInstanceNames(env);
+  const names = apiRequestInstanceNames(env).slice();
   for (let i = names.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [names[i], names[j]] = [names[j], names[i]];
   }
+  if (all.length > 1) names.push(all[0]);
   return names;
 }
 

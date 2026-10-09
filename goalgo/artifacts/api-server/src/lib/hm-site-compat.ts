@@ -74,6 +74,21 @@ export function postgresErrorMeta(err: unknown): { code?: string; message?: stri
   return { message: fallback };
 }
 
+function causeChainText(err: unknown): string {
+  const parts: string[] = [];
+  let cur: unknown = err;
+  for (let depth = 0; depth < 8 && cur && typeof cur === "object"; depth++) {
+    const o = cur as Record<string, unknown>;
+    if (typeof o.message === "string" && !/^Failed query:/i.test(o.message)) parts.push(o.message);
+    cur = o.cause ?? o.originalError ?? o.error;
+  }
+  return parts.join(" | ");
+}
+
+export function isHmSitesDbBusyMessage(msg: string): boolean {
+  return /Veritabanı şu an yoğun/.test(msg);
+}
+
 export function formatHmSitesDbError(err: unknown, maxLen = 400): string {
   const { code, message } = postgresErrorMeta(err);
   const top = err instanceof Error ? err.message : String(err);
@@ -85,8 +100,14 @@ export function formatHmSitesDbError(err: unknown, maxLen = 400): string {
   if (code === "42703" || /does not exist/i.test(withCode)) {
     return `Eksik sütun: ${detail}`.slice(0, maxLen);
   }
-  if (code === "23505" || /unique|duplicate/i.test(withCode)) {
+  // Only a real unique violation. The Drizzle text ("Failed query: <sql> params: <layout JSON>")
+  // was matched too, so a pool timeout on a re-save with "unique"/"duplicate" anywhere in the
+  // SQL or params came back as 409 "zaten kayıtlı" (2026-10-09, sites 1131 and 8).
+  if (code === "23505" || /duplicate key value violates unique constraint/i.test(message || "")) {
     return "Bu slug veya domain zaten kayıtlı.";
+  }
+  if (/timeout exceeded when trying to connect|Query read timeout|Connection terminated|statement timeout/i.test(`${message ?? ""} ${causeChainText(err)}`)) {
+    return "Veritabanı şu an yoğun (bağlantı zaman aşımı). Birkaç saniye sonra tekrar kaydedin.";
   }
   return withCode.slice(0, maxLen);
 }
