@@ -49,6 +49,7 @@ let plaintextUpgrade: Promise<void> | null = null;
 
 const STALE_EMPTY_MODELS: Record<LlmProviderId, readonly string[]> = {
   evren: ["auto"],
+  evren2: ["auto"],
   nvidia: ["meta/llama-3.1-8b-instruct"],
   gemini: ["gemini-2.0-flash-lite"],
   openai: ["gpt-4o-mini"],
@@ -443,6 +444,12 @@ function envChainRows(): LlmChainRow[] {
       key: pick("EVREN_LLM_API_KEY", "EVREN_API_KEY"),
       model: pick("EVREN_MODEL") || defaultLlmModel("evren"),
       priority: 10,
+    },
+    {
+      provider: "evren2",
+      key: pick("EVREN_LLM_API_KEY_2", "EVREN_API_KEY_2"),
+      model: pick("EVREN_MODEL") || defaultLlmModel("evren2"),
+      priority: 15,
     },
     {
       provider: "nvidia",

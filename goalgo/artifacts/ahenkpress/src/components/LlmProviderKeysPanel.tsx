@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
 import { hmEditorJson } from "@/lib/hmEditorApi";
 
-type ProviderId = "evren" | "nvidia" | "gemini" | "openai";
+type ProviderId = "evren" | "evren2" | "nvidia" | "gemini" | "openai";
 
 type ProviderRow = {
   provider: ProviderId;
@@ -35,7 +35,16 @@ async function readJson<T>(res: Response): Promise<T> {
   return data;
 }
 
-export function LlmProviderKeysPanel({ mode }: { mode: "global" | "editor" }) {
+export type LlmProviderSummaryRow = { provider: ProviderId; label: string; enabled: boolean; hasKey: boolean };
+
+export function LlmProviderKeysPanel({
+  mode,
+  onSummary,
+}: {
+  mode: "global" | "editor";
+  /** Called after every load/save with the provider list (no key material). */
+  onSummary?: (rows: LlmProviderSummaryRow[]) => void;
+}) {
   const { toast } = useToast();
   const [rows, setRows] = useState<ProviderRow[]>([]);
   const [statusText, setStatusText] = useState("");
@@ -54,6 +63,12 @@ export function LlmProviderKeysPanel({ mode }: { mode: "global" | "editor" }) {
         .map((p) => ({ ...p, apiKeyDraft: "" })),
     );
     setStatusText(data.statusText ?? "");
+    onSummary?.(
+      (data.providers ?? [])
+        .slice()
+        .sort((a, b) => a.priority - b.priority)
+        .map((p) => ({ provider: p.provider, label: p.label, enabled: p.enabled, hasKey: p.hasKey })),
+    );
   }
 
   async function load() {

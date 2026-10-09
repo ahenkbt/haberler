@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ExternalLink, Globe2, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
-import { LlmProviderKeysPanel } from "@/components/LlmProviderKeysPanel";
+import { LlmProviderKeysPanel, type LlmProviderSummaryRow } from "@/components/LlmProviderKeysPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -412,6 +412,7 @@ function normalizeSlugInput(value: string): string {
 export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } = {}) {
   const isNews = kind === "news";
   const noun = isNews ? "Haber sitesi" : "Kurumsal site";
+  const [llmSummary, setLlmSummary] = useState<LlmProviderSummaryRow[] | null>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState<SiteForm>(emptyForm);
@@ -732,13 +733,21 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
     <AdminLayout title={isNews ? "Haber Siteleri" : "HM Kurumsal"}>
       <div className="space-y-6">
         {isNews ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="text-lg font-black text-gray-900">Haber Merkezi yapay zekâ anahtarları</h2>
-          <p className="mt-1 mb-4 text-sm text-gray-600">
+        <details className="group rounded-2xl border border-slate-200 bg-white p-5">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+            <span className="text-lg font-black text-gray-900">Haber Merkezi yapay zekâ anahtarları</span>
+            <span className="flex items-center gap-2 text-sm text-gray-600">
+              {llmSummary
+                ? llmSummary.map((r) => `${r.label.replace(/ NIM$/, "").replace(/^Google /, "")} ${r.hasKey && r.enabled ? "✓" : "✗"}`).join(", ")
+                : "…"}
+              <span className="text-gray-400 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+            </span>
+          </summary>
+          <p className="mt-3 mb-4 text-sm text-gray-600">
             Merkez anahtarları tüm haber sitelerinin yedeğidir. Sitenin kendi anahtarı varsa önce o kullanılır.
           </p>
-          <LlmProviderKeysPanel mode="global" />
-        </div>
+          <LlmProviderKeysPanel mode="global" onSummary={setLlmSummary} />
+        </details>
         ) : null}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -365,8 +365,16 @@ export async function ensureKhNewsSite(opts?: { dryRun?: boolean }): Promise<KhS
   }
 
   await retireExtraKhRows(sites, target.id);
-  await releaseKhDomainsFromOthers(target.id);
-  await bindKhDomains(target.id);
+  // 2026-10-09: Kırşehir moved to kirsehir.gundemi.org and kirsehirhaber.org stays closed.
+  // Once the panel gave the row a host outside KH_DOMAINS, boot must not pull it back.
+  const panelOwnsDomains = [target.domain, target.domain2, target.domain3].some((d) => {
+    const h = String(d ?? "").trim().toLowerCase().replace(/^www\./, "");
+    return h !== "" && !(KH_DOMAINS as readonly string[]).includes(h);
+  });
+  if (!panelOwnsDomains) {
+    await releaseKhDomainsFromOthers(target.id);
+    await bindKhDomains(target.id);
+  }
 
   let layoutJson = target.layoutJson;
   try {
