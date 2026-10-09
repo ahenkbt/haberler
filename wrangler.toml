@@ -45,7 +45,10 @@ S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
 [[containers]]
 class_name = "GoalgoApiContainer"
 image = "./goalgo/Dockerfile.cloudflare"
-max_instances = 3
+# 6, not 3: the Worker routes to 3 named DOs (CONTAINER_ROLL-0..2). When the roll
+# name changes, the old names keep their containers until sleepAfter and hold
+# slots; with 3 slots the new names got no instance and /api hung (2026-10-09).
+max_instances = 6
 instance_type = "standard-3"
 
 [[durable_objects.bindings]]
