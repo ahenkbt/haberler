@@ -11,7 +11,6 @@ import {
   phpEnabledModules,
   phpModuleIsOn,
   readYsEditorSnapshot,
-  readYsModuleRows,
   buildYenisafakLayoutDiffPatch,
   readYsMansetPreset,
   ysEditorSnapshotsEqual,
@@ -224,12 +223,6 @@ const PHP_MODULE_DEFS: Record<
     toggles: ["hmNewsYsGalleryEnabled", "hmNewsMediaDarkBlockEnabled"],
     aliases: ["ysGallery", "mediaDarkBlock", "culturePortal"],
   },
-  ysOzelHaber: {
-    category: "",
-    count: 8,
-    toggles: ["hmNewsYsOzelHaberEnabled"],
-    aliases: ["ysOzelHaber", "ozelHaber"],
-  },
 };
 
 describe("PHP tema anahtar sözleşmesi", () => {
@@ -241,7 +234,7 @@ describe("PHP tema anahtar sözleşmesi", () => {
       expect(def.defaultCategory).toBe(php.category);
       expect(def.defaultCount).toBe(php.count);
       expect(php.toggles[0]).toBe(def.toggleKey);
-      expect(php.toggles[1] ?? php.toggles[0]).toBe(def.legacyToggleKey);
+      expect(php.toggles[1]).toBe(def.legacyToggleKey);
       for (const toggle of php.toggles) {
         expect(PHP_THEME_LAYOUT_KEYS).toContain(toggle);
       }
@@ -333,14 +326,5 @@ describe("Vitrin kaydı yalnızca değişen alanları gönderir", () => {
     const keys = Object.keys(patch);
     expect(keys.length).toBeGreaterThan(0);
     expect(keys.every((k) => /Enabled$/.test(k))).toBe(true);
-  });
-});
-
-describe("Özel haber bloğu (PHP Modules::OPT_IN)", () => {
-  it("anahtar yoksa kapalı, yalnız true iken açık", () => {
-    expect(phpEnabledModules({}).map((row) => row.id)).not.toContain("ysOzelHaber");
-    expect(readYsModuleRows({} as never).find((row) => row.id === "ysOzelHaber")?.enabled).toBe(false);
-    expect(phpEnabledModules({ hmNewsYsOzelHaberEnabled: true }).map((row) => row.id)).toContain("ysOzelHaber");
-    expect(phpEnabledModules({ hmNewsYsOzelHaberEnabled: false }).map((row) => row.id)).not.toContain("ysOzelHaber");
   });
 });
