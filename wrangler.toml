@@ -81,6 +81,7 @@ zone_name = "ahenk.net.tr"
 # HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
 # ankarasehirgazetesi.com and ankarahabergundemi.com were deleted in Cloudflare (2026-10-09).
 # Do not add routes or custom domains for those zones. ASG is ankara.fix.tc; AHG is gundem.fix.tc.
+# kirsehirhaber.org is not a Cloudflare zone; do not add routes for it.
 [[routes]]
 pattern = "vatankahramanlari.org/*"
 zone_name = "vatankahramanlari.org"
@@ -502,118 +503,6 @@ zone_name = "suhaber.net"
 # kirsehirhaber.org (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A).
 # "kirsehirhaber.org/*" php-edge-cache Worker'ındadır; haberler'e alınamaz (10020).
 # Askı yazısı aşağıdaki dar kalıplardan (/, /haber*, /kategori*) gelir. Apex custom_domain yine yok.
-[[routes]]
-pattern = "kirsehirhaber.org/editor*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/api/*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/admin*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/panel*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/haber-merkezi*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/assets/*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/sw.js"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/manifest.json"
-zone_name = "kirsehirhaber.org"
-
-# php-edge-cache zaten "kirsehirhaber.org/*" ve "www.kirsehirhaber.org/*" sahibi.
-# Aynı kalıp 10020 verir ve haberler deploy'u düşer. Daha dar kalıplar o catch-all'dan önceliklidir.
-[[routes]]
-pattern = "kirsehirhaber.org/"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/haber*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/kategori*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/kunye*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/hakkimizda*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/iletisim*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/video*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/videolar*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/yazar*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/burc*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/burclar*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/hava-durumu*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/puan-durumu*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/rss.xml"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "kirsehirhaber.org/sitemap.xml"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "www.kirsehirhaber.org/"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "www.kirsehirhaber.org/haber*"
-zone_name = "kirsehirhaber.org"
-
-[[routes]]
-pattern = "www.kirsehirhaber.org/kategori*"
-zone_name = "kirsehirhaber.org"
-
-# TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.
-# custom_domain Worker hostname + anycast A kaydı oluşturur (kirsehirhaber.org ile aynı).
-# turkatahaber.com (apex) ön yüzü 04.10.2026'dan beri PHP temasında (VPS, A 187.77.84.201 proxied).
-# Worker yalnızca panel/API yollarını alır. Apex custom_domain ve "turkatahaber.com/*" catch-all route'u
-# BİLEREK yok: wrangler deploy bunları geri eklerse site eski ön yüze döner. /assets/theme.* route'u
-# (Worker'sız) Cloudflare panelinden yönetilir.
 [[routes]]
 pattern = "www.turkatahaber.com"
 custom_domain = true
