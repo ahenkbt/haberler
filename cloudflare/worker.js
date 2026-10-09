@@ -18,6 +18,7 @@ import {
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { serveAhenkHaberSitesiYazilimi } from "./hm-ahenk-haber-yazilimi.js"; // hsy-landing 2026-10-09
 import { serveGoalgoComTr } from "./hm-goalgo-com-tr.js"; // goalgo-site 2026-10-09
+import { serveAlladdinApp } from "./hm-alladdin-app.js"; // alladdin-site 2026-10-09
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
 import { handleHmEditorSiteOverridesEdge, isHmEditorSiteOverridesPath } from "./hm-editor-site-overrides-edge.js";
 import { handleHmSiteMailEdge, isHmSiteMailPath } from "./hm-site-mail-edge.js";
@@ -3148,6 +3149,16 @@ export default {
         if (gg) return gg;
       } catch (err) {
         console.error("[goalgo-site]", String(err?.message || err).slice(0, 160));
+      }
+    }
+
+    // alladdin-site 2026-10-09: alladdin.app marketing site (separate from goalgo.com.tr). /editor, /api/*, /assets/* → null.
+    if (hostKeyEarly === "alladdin.app") {
+      try {
+        const al = await serveAlladdinApp(request, incoming, env);
+        if (al) return al;
+      } catch (err) {
+        console.error("[alladdin-site]", String(err?.message || err).slice(0, 160));
       }
     }
 

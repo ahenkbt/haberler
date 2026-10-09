@@ -13,6 +13,7 @@
  * harikaolacak (2026-10-09, user request): harikaolacak.com.tr, TP 1172, Harika Olacak — positive Gen-Z social news + lifestyle concept site.
  * goalgohaber (2026-10-09, user request): goalgo.com.tr, TP 1173, Goalgo Haber Yazılımı — CORPORATE marketing site (front end = Worker
  *   hm-goalgo-com-tr.js); panel row only for /editor (convention editor bilgi@goalgo.com.tr via hmConventionEditorEnabled) + contact inbox.
+ * alladdinhaber (2026-10-09, user request): alladdin.app, Alladdin Haber Sitesi Yazılımı — separate CORPORATE marketing site (hm-alladdin-app.js), same pattern.
  */
 export const NEWSITES25 = [
   {
@@ -1535,6 +1536,38 @@ export const SEED_CORPORATE_SITES = [
       "faviconUrl": "/goalgo-haber/icon-48.png",
       "hmPrimaryColor": "#7c5cff",
       "hmSecondaryColor": "#22d3ee"
+    }
+  },
+  {
+    "slug": "alladdinhaber",
+    "hosts": [
+      "alladdin.app",
+      "www.alladdin.app"
+    ],
+    "displayName": "Alladdin Haber Sitesi Yazılımı",
+    "description": "Alladdin Haber Sitesi Yazılımı tanıtım sitesi (kurumsal; haber/RSS yok). Ön yüz Worker'da (hm-alladdin-app.js); bu satır yalnızca /editor paneli ve iletişim kutusu içindir.",
+    "contact": {
+      "email": "bilgi@alladdin.app",
+      "phone": "0532 229 18 92",
+      "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara"
+    },
+    "editorEmail": "bilgi@alladdin.app",
+    "layout": {
+      "hmSiteKind": "corporate",
+      "hmNewsSiteKind": "corporate",
+      "hmCorporateSite": true,
+      "hmNewsRssSources": [
+        0
+      ],
+      "hybridRssEnabled": false,
+      "showPlatformNav": false,
+      "hmContactFormEnabled": true,
+      "hmConventionEditorEnabled": true,
+      "hmAlladdinSite": "alladdin-20261009",
+      "logoUrl": "/alladdin/logo.svg",
+      "faviconUrl": "/alladdin/icon-48.png",
+      "hmPrimaryColor": "#2a1468",
+      "hmSecondaryColor": "#f5b83d"
     }
   }
 ];

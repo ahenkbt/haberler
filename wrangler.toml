@@ -2426,6 +2426,16 @@ zone_name = "harikaolacak.com.tr"
 pattern = "www.harikaolacak.com.tr/hm/*"
 zone_name = "harikaolacak.com.tr"
 
+# alladdin.app (alladdin-site 2026-10-09) — "Alladdin Haber Sitesi Yazılımı" (hm-alladdin-app.js), goalgo.com.tr'den AYRI site.
+# Apex DNS: CNAME → goalgo.pages.dev (proxied, dokunulmadı); Worker route önce çalışır. www DNS kaydı yok (route hazır).
+[[routes]]
+pattern = "alladdin.app/*"
+zone_name = "alladdin.app"
+
+[[routes]]
+pattern = "www.alladdin.app/*"
+zone_name = "alladdin.app"
+
 # goalgo.com.tr (goalgo-site 2026-10-09) — "Goalgo Haber Yazılımı" tanıtım sitesi Worker'da (hm-goalgo-com-tr.js); /editor + /api HM akışı.
 # NOT goalgo.org / pbx.goalgo.org (ayrı zone, dokunulmaz).
 [[routes]]
