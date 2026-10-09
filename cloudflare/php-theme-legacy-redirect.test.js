@@ -155,10 +155,17 @@ test("/yazar/giris paneli /koseyazari/giris adresine 301 gider; kamu yazar sayfa
   assert.ok(portal);
   assert.equal(portal.status, 301);
   assert.equal(portal.headers.get("location"), "https://ahenk.net.tr/tr/asg/koseyazari/giris");
+  const phpLogin = koseyazariPanelRedirectResponse(
+    new Request("https://yesilvatan.gen.tr/yazar/giris"),
+    new URL("https://yesilvatan.gen.tr/yazar/giris"),
+  );
+  assert.ok(phpLogin);
+  assert.equal(phpLogin.status, 301);
+  assert.equal(phpLogin.headers.get("location"), "https://yesilvatan.gen.tr/koseyazari/giris");
   assert.equal(
     koseyazariPanelRedirectResponse(
-      new Request("https://yesilvatan.gen.tr/yazar/giris"),
-      new URL("https://yesilvatan.gen.tr/yazar/giris"),
+      new Request("https://vatanhaber.net/yazar/haberler"),
+      new URL("https://vatanhaber.net/yazar/haberler"),
     ),
     null,
   );
