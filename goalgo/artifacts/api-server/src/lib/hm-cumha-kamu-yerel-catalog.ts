@@ -687,13 +687,13 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
   },
   {
     name: "Ankara Şehir Gazetesi",
-    href: "https://ankara.fix.tc/",
-    logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/3/logo",
+    href: "https://ankarasehirgazetesi.com/",
+    logoUrl: "https://ankarasehirgazetesi.com/favicon.ico",
   },
   {
     name: "Ankara Haber Gündemi",
-    href: "https://gundem.fix.tc/",
-    logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/8/logo",
+    href: "https://ankarahabergundemi.com/",
+    logoUrl: "https://ankarahabergundemi.com/favicon.ico",
   },
   {
     name: "Vatan Haber",

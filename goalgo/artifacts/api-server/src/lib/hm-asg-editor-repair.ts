@@ -68,7 +68,6 @@ export function isAsgHmNewsSiteRow(site: {
   for (const raw of [site.domain, site.domain2, site.domain3]) {
     const h = normHost(raw);
     if (h.includes("ankarasehirgazetesi") || h.includes("ankarahabergundemi")) return true;
-    if (h === "ankara.fix.tc" || h === "gundem.fix.tc") return true;
   }
   return false;
 }

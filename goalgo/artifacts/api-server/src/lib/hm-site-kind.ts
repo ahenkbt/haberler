@@ -6,8 +6,6 @@
  *   resolves the host against hm_news_sites.domain/domain2/domain3 (dual-written to twilight-pine).
  * - Canonical / sitemap / robots / OG / RSS use the FIRST domain (PHP App.php origin = https://<domain>).
  *   So the order is: custom domain(s) first, then <slug>.gundemi.org, then <slug>.fix.tc.
- *   Exception: ankarasehirgazetesi.com + ankara.fix.tc, and ankarahabergundemi.com + gundem.fix.tc,
- *   keep the new host first so PHP canonical stays on the rebrand.
  * - Corporate sites (/admin/hm-kurumsal) never get platform aliases (those hosts route to the news theme).
  * - The type is locked once created (layout_json.hmSiteKind); news ↔ corporate conversion is refused.
  */
@@ -111,31 +109,6 @@ export function platformAliasesForSlug(slug: string): { gundemi: string; fixTc: 
 export type HmDomainTriad = { domain: string | null; domain2: string | null; domain3: string | null };
 
 /**
- * ASG / AHG rebrand: when the retired apex and the new host are both on the row,
- * the new host is canonical (PHP uses the first domain). The old apex stays an alias
- * so it does not fall through to another site.
- */
-const REBRAND_CANONICAL_HOST = new Map<string, string>([
-  ["ankarasehirgazetesi.com", "ankara.fix.tc"],
-  ["ankarahabergundemi.com", "gundem.fix.tc"],
-]);
-
-function preferRebrandCanonical(hosts: string[]): string[] {
-  const keys = new Set(hosts.map((h) => normalizeAliasHost(h)));
-  let preferred = "";
-  for (const [retired, next] of REBRAND_CANONICAL_HOST) {
-    if (keys.has(retired) && keys.has(next)) {
-      preferred = next;
-      break;
-    }
-  }
-  if (!preferred) return hosts;
-  const rest = hosts.filter((h) => normalizeAliasHost(h) !== preferred);
-  const hit = hosts.find((h) => normalizeAliasHost(h) === preferred);
-  return hit ? [hit, ...rest] : hosts;
-}
-
-/**
  * Orders domains for the PHP canonical rule: custom domains first (their relative order kept), then the
  * gundemi.org alias, then the fix.tc alias. Dedupes (www-insensitive). More than 3 → error.
  */
@@ -154,7 +127,7 @@ export function orderSiteDomains(hosts: Array<string | null | undefined>): { tri
     else if (zone === "fix.tc") fix.push(key);
     else custom.push(original.replace(/^[a-z][a-z0-9+.-]*:\/\//, "").split(/[/?#]/)[0] ?? key);
   }
-  const all = preferRebrandCanonical([...custom, ...gundemi, ...fix]);
+  const all = [...custom, ...gundemi, ...fix];
   const triad: HmDomainTriad = { domain: all[0] ?? null, domain2: all[1] ?? null, domain3: all[2] ?? null };
   if (all.length > 3) {
     return { triad, error: "Bir sitede en fazla 3 domain olabilir (kendi domaini + gundemi.org + fix.tc)." };

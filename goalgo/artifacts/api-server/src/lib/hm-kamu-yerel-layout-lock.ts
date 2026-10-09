@@ -164,8 +164,7 @@ function kamuYerelExtraPagesNeedRepair(layoutJson: string | null | undefined): b
     if (
       !dahaBody.includes(KAMU_YEREL_DAHA_PROMO_MARKER) ||
       !dahaBody.includes("hm-daha-site-grid") ||
-      !dahaBody.includes("gundem.fix.tc") ||
-      !dahaBody.includes("ankara.fix.tc") ||
+      !dahaBody.includes("ankarahabergundemi.com") ||
       !dahaBody.includes("vatanhaber.net")
     ) {
       return true;

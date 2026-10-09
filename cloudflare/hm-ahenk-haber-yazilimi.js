@@ -43,18 +43,6 @@ export const AHENK_HSY_REFERENCES = [
     "logo": "https://ahenk.net.tr/api/hm/public/news-sites/230/logo?v=fe323461"
   },
   {
-    "name": "Ankara Şehir Gazetesi",
-    "domain": "ankara.fix.tc",
-    "url": "https://ankara.fix.tc/",
-    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/3/logo?v=50d43fb4"
-  },
-  {
-    "name": "Ankara Haber Gündemi",
-    "domain": "gundem.fix.tc",
-    "url": "https://gundem.fix.tc/",
-    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/8/logo?v=178b741f"
-  },
-  {
     "name": "Gündem İstanbul",
     "domain": "gundemi.org",
     "url": "https://gundemi.org/",

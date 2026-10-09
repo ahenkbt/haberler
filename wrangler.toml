@@ -62,10 +62,6 @@ new_sqlite_classes = ["GoalgoApiContainer"]
 # Ana portal ├ö├ç├Â zone DNS kaydÔöÇÔûÆ boÔö╝┼ş (A/AAAA yok ├ö├Ñ├å tarayÔöÇÔûÆcÔöÇÔûÆ NXDOMAIN).
 # custom_domain Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur; zone_name/* trafiÔöÇ┼şi karÔö╝┼şÔöÇÔûÆlar.
 # DNS kaydÔöÇÔûÆ varken custom_domain 100117 verir; Ôö╝┼şu an kayÔöÇÔûÆt yok.
-# ankarasehirgazetesi.com, ankarahabergundemi.com and kirsehirhaber.org are not zones
-# on this Cloudflare account (2026-10-09, API 10083). Their [[routes]] were removed so
-# wrangler deploy can succeed. Those apexes are served by PHP on the VPS from hm_news_sites.
-
 [[routes]]
 pattern = "ahenk.net.tr"
 custom_domain = true
@@ -83,6 +79,226 @@ pattern = "www.ahenk.net.tr/*"
 zone_name = "ahenk.net.tr"
 
 # HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
+# ankarahabergundemi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "ankarahabergundemi.com/*", "www.ankarahabergundemi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
+[[routes]]
+pattern = "ankarahabergundemi.com/editor*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/api/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/admin*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/panel*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/haber-merkezi*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/assets/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/sw.js"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/manifest.json"
+zone_name = "ankarahabergundemi.com"
+# ankarahabergundemi.com köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "ankarahabergundemi.com/yazar/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/koseyazari/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/yazar/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/koseyazari/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/yazar/haber*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/koseyazari/haber*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/yazar/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/koseyazari/giris*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/yazar/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/koseyazari/sifre*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/yazar/haber*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/koseyazari/haber*"
+zone_name = "ankarahabergundemi.com"
+
+# Eski SPA /tr|/hm yolları → PHP tema 301 (php-theme-legacy-redirect.js). Catch-all bilinçli yok.
+[[routes]]
+pattern = "ankarahabergundemi.com/tr/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/tr/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "ankarahabergundemi.com/hm/*"
+zone_name = "ankarahabergundemi.com"
+
+[[routes]]
+pattern = "www.ankarahabergundemi.com/hm/*"
+zone_name = "ankarahabergundemi.com"
+
+
+# yektube.com zone route'ları burada YOK: sahibi `yektube` Worker'ı (wrangler.yektube.toml). /api oradan API_ORIGIN ile ahenk.net.tr'ye gider.
+# ankarasehirgazetesi.com (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A). Worker yalnızca panel/API yollarını alır;
+# apex/www custom_domain ve "ankarasehirgazetesi.com/*", "www.ankarasehirgazetesi.com/*" catch-all BİLEREK yok (deploy geri eklerse site eski ön yüze döner).
+[[routes]]
+pattern = "ankarasehirgazetesi.com/editor*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/editor*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/api/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/api/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/admin*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/panel*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/haber-merkezi*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/assets/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/assets/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/sw.js"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/manifest.json"
+zone_name = "ankarasehirgazetesi.com"
+# ankarasehirgazetesi.com köşe yazarı paneli — SPA; /yazar/a* PHP'de kalır
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/yazar/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/koseyazari/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/yazar/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/koseyazari/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/yazar/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/koseyazari/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/yazar/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/koseyazari/giris*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/yazar/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/koseyazari/sifre*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/yazar/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/koseyazari/haber*"
+zone_name = "ankarasehirgazetesi.com"
+
+
+# Eski SPA linkleri (/tr/asg/haber/:slug?siteId=3) PHP temada 404 veriyordu. Worker bunları
+# php-theme-legacy-redirect.js ile /haber/:slug vb. adreslere 301 atar; /tr/asg/yazar/giris|haberler|haber/*
+# (köşe yazarı paneli) SPA'da kalır. Catch-all "ankarasehirgazetesi.com/*" yine BİLEREK yok.
+[[routes]]
+pattern = "ankarasehirgazetesi.com/tr/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/tr/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "ankarasehirgazetesi.com/hm/*"
+zone_name = "ankarasehirgazetesi.com"
+
+[[routes]]
+pattern = "www.ankarasehirgazetesi.com/hm/*"
+zone_name = "ankarasehirgazetesi.com"
+
+# vatankahramanlari.org (+ org.tr) — kurumsal PHP planlandı (php-kurumsal), ancak 2026-10-08 itibarıyla VPS'te
+# php-kurumsal servisi yok (traefik 404) ve DNS 192.0.2.1 → ön yüz Worker'dan. .org catch-all canlıda vardı;
+# .org.tr catch-all eksikti (kök 522). php-kurumsal canlıya alınınca bu 4 catch-all kaldırılmalı.
 [[routes]]
 pattern = "vatankahramanlari.org/*"
 zone_name = "vatankahramanlari.org"
@@ -501,7 +717,121 @@ zone_name = "suhaber.net"
 # Zone CF hesabÔöÇÔûÆnda (id 52d54697├ö├ç─Ş) ama A/AAAA yok ├ö├Ñ├å tarayÔöÇÔûÆcÔöÇÔûÆ NXDOMAIN.
 # custom_domain, ahenk.net.tr gibi Worker hostname + anycast A kaydÔöÇÔûÆ oluÔö╝┼şturur.
 # kirsehri.com Natro park; kirsehir.net zone/kayÔöÇÔûÆt yok ├ö├ç├Â bu worker'a baÔöÇ┼şlama.
+# kirsehirhaber.org (apex + www→apex 301) ön yüzü PHP temasında (VPS 187.77.84.201, proxied A).
+# "kirsehirhaber.org/*" php-edge-cache Worker'ındadır; haberler'e alınamaz (10020).
 # Askı yazısı aşağıdaki dar kalıplardan (/, /haber*, /kategori*) gelir. Apex custom_domain yine yok.
+[[routes]]
+pattern = "kirsehirhaber.org/editor*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/api/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/admin*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/panel*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/haber-merkezi*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/assets/*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/sw.js"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/manifest.json"
+zone_name = "kirsehirhaber.org"
+
+# php-edge-cache zaten "kirsehirhaber.org/*" ve "www.kirsehirhaber.org/*" sahibi.
+# Aynı kalıp 10020 verir ve haberler deploy'u düşer. Daha dar kalıplar o catch-all'dan önceliklidir.
+[[routes]]
+pattern = "kirsehirhaber.org/"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/haber*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/kategori*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/kunye*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/hakkimizda*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/iletisim*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/video*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/videolar*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/yazar*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/burc*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/burclar*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/hava-durumu*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/puan-durumu*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/rss.xml"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "kirsehirhaber.org/sitemap.xml"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/haber*"
+zone_name = "kirsehirhaber.org"
+
+[[routes]]
+pattern = "www.kirsehirhaber.org/kategori*"
+zone_name = "kirsehirhaber.org"
+
+# TÜRKATA HABER AJANSI — zone CF'de, A/AAAA yok.
+# custom_domain Worker hostname + anycast A kaydı oluşturur (kirsehirhaber.org ile aynı).
+# turkatahaber.com (apex) ön yüzü 04.10.2026'dan beri PHP temasında (VPS, A 187.77.84.201 proxied).
+# Worker yalnızca panel/API yollarını alır. Apex custom_domain ve "turkatahaber.com/*" catch-all route'u
+# BİLEREK yok: wrangler deploy bunları geri eklerse site eski ön yüze döner. /assets/theme.* route'u
+# (Worker'sız) Cloudflare panelinden yönetilir.
 [[routes]]
 pattern = "www.turkatahaber.com"
 custom_domain = true
@@ -659,6 +989,7 @@ pattern = "www.turkatahaber.com/hm/*"
 zone_name = "turkatahaber.com"
 
 
+
 [[routes]]
 pattern = "www.turkatahaber.com/*"
 zone_name = "turkatahaber.com"
@@ -797,6 +1128,7 @@ zone_name = "sehitgazi.org.tr"
 [[routes]]
 pattern = "www.sehitgazi.org.tr/hm/*"
 zone_name = "sehitgazi.org.tr"
+
 
 
 # Kamu-yerel premium hub pages (hmExtraPages) — apex is PHP; Worker serves /daha|/iller only.
