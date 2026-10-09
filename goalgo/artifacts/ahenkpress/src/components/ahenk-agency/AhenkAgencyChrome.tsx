@@ -504,8 +504,8 @@ export const AHENK_HSY_HREF = "/haber-sitesi-yazilimi";
 const AHENK_HSY_PROMO_LOGOS: { name: string; src: string }[] = [
   { name: "Vatan Haber", src: "/api/hm/public/news-sites/1/logo" },
   { name: "TürkAta Haber Ajansı", src: "/api/hm/public/news-sites/230/logo" },
-  { name: "Ankara Şehir Gazetesi", src: "/api/hm/public/news-sites/3/logo" },
-  { name: "Ankara Haber Gündemi", src: "/api/hm/public/news-sites/8/logo" },
+  { name: "Ankara Şehir Fix Haber", src: "/api/hm/public/news-sites/3/logo" },
+  { name: "Ankara Gündem Fix Haber", src: "/api/hm/public/news-sites/8/logo" },
   { name: "Gündem İstanbul", src: "/api/hm/public/news-sites/1141/logo" },
   { name: "Harika Olacak", src: "https://harikaolacak.com.tr/brand/harikaolacak/harikaolacak.png" },
 ];

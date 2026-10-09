@@ -93,34 +93,34 @@ const HM: GeoSiteEntity[] = [
   {
     slug: "ankarahabergundemi",
     domain: "gundem.fix.tc",
-    officialName: "Ankara Haber Gündemi",
-    alternateName: ["gundem.fix.tc", "Ankara Haber Gündemi"],
+    officialName: "Ankara Gündem Fix Haber",
+    alternateName: ["gundem.fix.tc", "Ankara Gündem Fix Haber"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Haber Gündemi (gundem.fix.tc), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
+      "Ankara Gündem Fix Haber (gundem.fix.tc), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
     disambiguatingDescription: "Resmi alan adı gundem.fix.tc adresidir.",
     aboutPath: "/hakkinda",
     faq: [
       {
-        question: "Ankara Haber Gündemi nedir?",
-        answer: "Ankara Haber Gündemi (gundem.fix.tc) resmi haber sitesidir.",
+        question: "Ankara Gündem Fix Haber nedir?",
+        answer: "Ankara Gündem Fix Haber (gundem.fix.tc) resmi haber sitesidir.",
       },
     ],
   },
   {
     slug: "asg",
     domain: "ankara.fix.tc",
-    officialName: "Ankara Şehir Gazetesi",
-    alternateName: ["ankara.fix.tc", "Ankara Şehir Gazetesi"],
+    officialName: "Ankara Şehir Fix Haber",
+    alternateName: ["ankara.fix.tc", "Ankara Şehir Fix Haber"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Şehir Gazetesi (ankara.fix.tc), Ankara odaklı Türkçe haber yayınlayan resmi gazete sitesidir.",
+      "Ankara Şehir Fix Haber (ankara.fix.tc), Ankara odaklı Türkçe haber yayınlayan resmi gazete sitesidir.",
     disambiguatingDescription: "Resmi yayın adresi ankara.fix.tc'dir.",
     aboutPath: "/hakkinda",
     faq: [
       {
-        question: "Ankara Şehir Gazetesi nedir?",
-        answer: "Ankara Şehir Gazetesi (ankara.fix.tc) resmi haber sitesidir.",
+        question: "Ankara Şehir Fix Haber nedir?",
+        answer: "Ankara Şehir Fix Haber (ankara.fix.tc) resmi haber sitesidir.",
       },
     ],
   },

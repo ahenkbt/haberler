@@ -96,8 +96,8 @@ describe("hm-public-news-sites", () => {
     assert.equal(il.find((s) => s.id === 8).name, "Ankara Gündem Fix Haber");
     assert.equal(il.find((s) => s.id === 3).url, "https://ankara.fix.tc/");
     assert.equal(il.find((s) => s.id === 8).url, "https://gundem.fix.tc/");
-    assert.match(il.find((s) => s.id === 3).logoRaw, /^data:image\/png;base64,iVBORw0KGgo/);
-    assert.match(il.find((s) => s.id === 8).logoRaw, /^data:image\/png;base64,iVBORw0KGgo/);
+    assert.match(il.find((s) => s.id === 3).logoRaw, /^data:image\/webp;base64,UklGR/);
+    assert.match(il.find((s) => s.id === 8).logoRaw, /^data:image\/webp;base64,UklGR/);
     assert.doesNotMatch(il.map((s) => s.url).join(" "), /ankarasehirgazetesi\.com|ankarahabergundemi\.com/);
     const kept = publicNewsSitesFromRows(
       [

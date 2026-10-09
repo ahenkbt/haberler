@@ -2,8 +2,8 @@
  * Named HM editor publish group — one news row, visible on every member site.
  *
  * Confirmed ahenk.net.tr/admin Haber Siteleri (2026-09-12):
- *   siteId 3 — Ankara Şehir Gazetesi — slug `asg` — ankarasehirgazetesi.com
- *   siteId 8 — Ankara Haber Gündemi — slug `ankarahabergundemi` — ankarahabergundemi.com
+ *   siteId 3 — Ankara Şehir Fix Haber — slug `asg` — ankara.fix.tc
+ *   siteId 8 — Ankara Gündem Fix Haber — slug `ankarahabergundemi` — gundem.fix.tc
  * VKD is siteId 7 — never a member. Do not treat `ahg` as a slug.
  *
  * Resolve by those stable ids first; slug/domain from hm_news_sites is fallback
