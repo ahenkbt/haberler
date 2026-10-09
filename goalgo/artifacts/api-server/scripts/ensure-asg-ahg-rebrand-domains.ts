@@ -16,9 +16,10 @@ import pg from "pg";
 type Spec = {
   label: string;
   slugs: string[];
-  domain: string;
+    domain: string;
   domain2: string | null;
   domain3: string | null;
+  displayName: string;
 };
 
 const SPECS: Spec[] = [
@@ -28,6 +29,7 @@ const SPECS: Spec[] = [
     domain: "ankara.fix.tc",
     domain2: "ankarasehirgazetesi.com",
     domain3: null,
+    displayName: "Ankara Şehir Gazetesi",
   },
   {
     label: "AHG",
@@ -35,6 +37,7 @@ const SPECS: Spec[] = [
     domain: "gundem.fix.tc",
     domain2: "ankarahabergundemi.com",
     domain3: "ankara.gundemi.org",
+    displayName: "Ankara Haber Gündemi",
   },
 ];
 
@@ -136,6 +139,10 @@ export function patchRebrandLayout(raw: string | null, logoUrl: string): { json:
     delete layout.hmSiteKind;
     notes.push("cleared hmSiteKind");
   }
+  if ("hmDisplayNameOverride" in layout) {
+    delete layout.hmDisplayNameOverride;
+    notes.push("cleared hmDisplayNameOverride");
+  }
   const current = String(layout.logoUrl ?? "").trim();
   if (logoUrl && logoUrl !== current) {
     layout.logoUrl = logoUrl;
@@ -213,9 +220,9 @@ async function applyDb(
       const patched = patchRebrandLayout(target.layout_json, logos.get(spec.label) || "");
       await client.query(
         `UPDATE hm_news_sites
-         SET domain = $1, domain2 = $2, domain3 = $3, active = true, layout_json = $4, updated_at = now()
-         WHERE id = $5`,
-        [spec.domain, spec.domain2, spec.domain3, patched.json, target.id],
+         SET domain = $1, domain2 = $2, domain3 = $3, display_name = $4, active = true, layout_json = $5, updated_at = now()
+         WHERE id = $6`,
+        [spec.domain, spec.domain2, spec.domain3, spec.displayName, patched.json, target.id],
       );
       const after = (await client.query(
         `SELECT id, slug, domain, domain2, domain3, active, layout_json FROM hm_news_sites WHERE id = $1`,

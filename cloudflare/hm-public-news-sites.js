@@ -91,13 +91,24 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. The saved host is only the new address.
- * ankarasehirgazetesi.com and ankarahabergundemi.com were deleted in Cloudflare;
- * do not write them back as domain, domain2, or domain3.
+ * PHP canonical is the first domain. ankara.fix.tc and gundem.fix.tc stay first.
+ * The old apexes stay on domain2/domain3 so the VPS does not fall back to TurkAta.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
-  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: "ankarasehirgazetesi.com", domain3: null },
-  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: "ankarahabergundemi.com", domain3: "ankara.gundemi.org" },
+  {
+    slugs: ["asg", "ankarasehirgazetesi"],
+    domain: "ankara.fix.tc",
+    domain2: "ankarasehirgazetesi.com",
+    domain3: null,
+    displayName: "Ankara Şehir Gazetesi",
+  },
+  {
+    slugs: ["ankarahabergundemi", "ahg"],
+    domain: "gundem.fix.tc",
+    domain2: "ankarahabergundemi.com",
+    domain3: "ankara.gundemi.org",
+    displayName: "Ankara Haber Gündemi",
+  },
 ]);
 
 export function rebrandAssignmentForSlug(slug) {
@@ -129,21 +140,37 @@ async function applyAsgAhgRebrandDomains(env) {
   }
   for (const sql of clients) {
     for (const spec of ASG_AHG_REBRAND_ROWS) {
-      const slug = spec.slugs[0];
+      const hosts = [spec.domain, spec.domain2, spec.domain3].filter(Boolean);
+      for (const host of hosts) {
+        await sql`
+          UPDATE hm_news_sites
+          SET domain = CASE WHEN lower(btrim(domain)) = ${host} THEN NULL ELSE domain END,
+              domain2 = CASE WHEN lower(btrim(domain2)) = ${host} THEN NULL ELSE domain2 END,
+              domain3 = CASE WHEN lower(btrim(domain3)) = ${host} THEN NULL ELSE domain3 END,
+              updated_at = now()
+          WHERE lower(slug) <> ${spec.slugs[0]}
+            AND lower(slug) <> ${spec.slugs[1]}
+            AND (
+              lower(btrim(coalesce(domain, ''))) = ${host}
+              OR lower(btrim(coalesce(domain2, ''))) = ${host}
+              OR lower(btrim(coalesce(domain3, ''))) = ${host}
+            )
+        `;
+      }
       await sql`
         UPDATE hm_news_sites
         SET domain = ${spec.domain},
             domain2 = ${spec.domain2},
             domain3 = ${spec.domain3},
+            display_name = ${spec.displayName},
             active = true,
+            layout_json = CASE
+              WHEN layout_json IS NULL OR btrim(layout_json) = '' THEN layout_json
+              ELSE ((layout_json::jsonb) - 'hmDisplayNameOverride')::text
+            END,
             updated_at = now()
-        WHERE lower(slug) = ${slug}
-          AND (
-            lower(coalesce(domain, '')) IS DISTINCT FROM ${spec.domain}
-            OR lower(coalesce(domain2, '')) IS DISTINCT FROM ${spec.domain2 ?? ""}
-            OR lower(coalesce(domain3, '')) IS DISTINCT FROM ${spec.domain3 ?? ""}
-            OR active IS DISTINCT FROM true
-          )
+        WHERE lower(slug) = ${spec.slugs[0]}
+           OR lower(slug) = ${spec.slugs[1]}
       `;
     }
   }
