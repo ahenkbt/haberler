@@ -680,21 +680,15 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     href: "https://fix.tc/",
     logoUrl: "https://fix.tc/fix/fix-haber-logo.png",
   },
+
+
   {
     name: "Sosyal Hizmetler Haber Sitesi",
     href: "https://sosyalhizmetler.tr/",
     logoUrl: "https://sosyalhizmetler.tr/sosyalhizmetler/sosyalhizmetler-logo.webp",
   },
-  {
-    name: "Ankara Şehir Gazetesi",
-    href: "https://ankara.fix.tc/",
-    logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/3/logo",
-  },
-  {
-    name: "Ankara Haber Gündemi",
-    href: "https://gundem.fix.tc/",
-    logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/8/logo",
-  },
+
+
   {
     name: "Vatan Haber",
     href: "https://vatanhaber.net/",
@@ -729,6 +723,21 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     name: "Güneydoğu Gündemi",
     href: "https://guneydogu.gundemi.org/",
     logoUrl: "https://guneydogu.gundemi.org/gundemi/logos/guneydogu-gundemi.png",
+  },
+] as const;
+
+/** İl Siteleri fallback. Ankara Fix siteleri ana logo ızgarasında, fix.tc adresleriyle. */
+/** İl Siteleri fallback. Ankara Fix siteleri ana 25 logo ızgarasında değil. */
+export const KAMU_YEREL_DAHA_IL_SITES: readonly KamuYerelDahaNetworkSite[] = [
+  {
+    name: "Ankara Şehir Fix Haber",
+    href: "https://ankara.fix.tc/",
+    logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/3/logo",
+  },
+  {
+    name: "Ankara Gündem Fix Haber",
+    href: "https://gundem.fix.tc/",
+    logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/8/logo",
   },
 ] as const;
 
@@ -788,6 +797,14 @@ function buildKamuYerelDahaNetworkSitesHtml(): string {
   return `<section id="daha-haber-siteleri" class="hm-daha-sites"><h2 class="hm-daha-section-title">TürAta Haber Ajansı Haber sitelerimiz</h2><ul class="hm-daha-site-grid">${items}</ul></section>`;
 }
 
+function buildKamuYerelDahaIlSitesHtml(): string {
+  const items = KAMU_YEREL_DAHA_IL_SITES.map((site) => {
+    const name = escapeDahaAttr(site.name);
+    return `<li><a class="hm-daha-site-link" href="${escapeDahaAttr(site.href)}" target="_blank" rel="noopener noreferrer"><img src="${escapeDahaAttr(site.logoUrl)}" alt="${name}" width="120" height="48" loading="lazy" decoding="async"><span class="hm-daha-site-name">${name}</span></a></li>`;
+  }).join("");
+  return `<section id="daha-il-siteleri" class="hm-daha-sites"><h2 class="hm-daha-section-title">İl Siteleri</h2><ul class="hm-daha-site-grid">${items}</ul></section>`;
+}
+
 function buildKamuYerelDahaProjeHtml(): string {
   return [
     `<section id="daha-81-il-projesi" class="hm-daha-proje ${KAMU_YEREL_DAHA_PROMO_MARKER}">`,
@@ -825,6 +842,7 @@ export function buildKamuYerelDahaExtraPage(): KamuYerelIllerExtraPage {
     `<div class="hm-daha-main">`,
     `<section id="daha-hakkimizda" class="hm-daha-about">${TURKATA_HAKKIMIZDA_HTML}</section>`,
     buildKamuYerelDahaNetworkSitesHtml(),
+    buildKamuYerelDahaIlSitesHtml(),
     `<section id="daha-konsept" class="hm-daha-concept"><p>TürAta Haber Ajansı kamu ve yerel gündemi bir arada sunar: cumhurbaşkanlığı, bakanlıklar, TBMM ve kamu kurumlarından belediye, valilik ve 81 il haberine — yerelin sesini ulusal ve uluslararası okura taşıyan güvenilir bir yayın ağı.</p></section>`,
     buildKamuYerelDahaProjeHtml(),
     `</div>`,

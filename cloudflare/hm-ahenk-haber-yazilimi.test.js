@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   AHENK_HSY_FAQS,
+  AHENK_HSY_IL_REFERENCES,
   AHENK_HSY_REFERENCES,
   buildAhenkHsyHtml,
   buildAhenkHsyJsonLd,
@@ -54,6 +55,12 @@ describe("hm-ahenk-haber-yazilimi", () => {
       assert.ok(!domains.includes(bad), bad);
     }
     assert.ok(domains.includes("vatanhaber.net"));
+    assert.ok(!domains.includes("ankara.fix.tc") && !domains.includes("gundem.fix.tc"));
+    const ankara = AHENK_HSY_IL_REFERENCES.filter((r) => r.domain === "ankara.fix.tc" || r.domain === "gundem.fix.tc");
+    assert.deepEqual(ankara.map((r) => r.name), ["Ankara Şehir Fix Haber", "Ankara Gündem Fix Haber"]);
+    assert.deepEqual(ankara.map((r) => r.url), ["https://ankara.fix.tc/", "https://gundem.fix.tc/"]);
+    assert.match(ankara[0].logo, /\/news-sites\/3\/logo/);
+    assert.match(ankara[1].logo, /\/news-sites\/8\/logo/);
     assert.ok(AHENK_HSY_REFERENCES.every((r) => /^https:\/\/ahenk\.net\.tr\/api\/hm\/public\/news-sites\/\d+\/logo/.test(r.logo) || r.logo.startsWith(`https://${r.domain}/`)));
   });
 

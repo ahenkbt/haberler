@@ -15,6 +15,7 @@
  * (25 ana logo kalır); ayrı `ilSites` listesinde döner ve /daha + ajans sayfasında ayrı "İl Siteleri" grubu olur.
  */
 import { neon } from "@neondatabase/serverless";
+import { fixAnkaraLogoDataUri, fixAnkaraPublicName, fixAnkaraSite, layoutHasFixAnkaraWordmark } from "./hm-fix-ankara-wordmarks.js";
 import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 
@@ -91,13 +92,13 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. The saved host is only the new address.
+ * PHP canonical is the first domain. fix.tc stays first; the gundemi.org alias is domain2.
  * ankarasehirgazetesi.com and ankarahabergundemi.com were deleted in Cloudflare;
  * do not write them back as domain, domain2, or domain3.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
-  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: null, domain3: null },
-  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: null, domain3: null },
+  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: "sehir.gundemi.org", domain3: null },
+  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: "ankara.gundemi.org", domain3: null },
 ]);
 
 export function rebrandAssignmentForSlug(slug) {
@@ -175,6 +176,37 @@ function safeColor(v) {
   return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : "";
 }
 
+const FIX_ANKARA_PUBLIC_NAME = {
+  asg: "Ankara Şehir Fix Haber",
+  ankarasehirgazetesi: "Ankara Şehir Fix Haber",
+  ankarahabergundemi: "Ankara Gündem Fix Haber",
+  ahg: "Ankara Gündem Fix Haber",
+};
+
+function retiredAnkaraBrandName(name) {
+  const folded = String(name ?? "").trim().toLocaleLowerCase("tr-TR");
+  return (
+    folded === "ankara şehir gazetesi" ||
+    folded === "ankara sehir gazetesi" ||
+    folded === "ankara haber gündemi" ||
+    folded === "ankara haber gundemi" ||
+    folded === "asg" ||
+    folded === "ahg"
+  );
+}
+
+/** New Fix names on the public grid. A non-retired stored name is left as-is. */
+function publicGridName(layout, row, featured, host, slug) {
+  const override = typeof layout.hmDisplayNameOverride === "string" ? layout.hmDisplayNameOverride.trim() : "";
+  if (override && !retiredAnkaraBrandName(override)) return override;
+  const stored = String(row.display_name ?? row.displayName ?? "").trim();
+  const fixName = FIX_ANKARA_PUBLIC_NAME[String(slug || "").trim().toLowerCase()] || "";
+  if (fixName && (!stored || retiredAnkaraBrandName(stored))) return fixName;
+  if (stored) return stored;
+  if (featured?.name) return featured.name;
+  return String(slug || host).trim() || host;
+}
+
 /**
  * Pure filter/shape step (tested). rows: hm_news_sites rows (id, slug, domain, display_name, active, layout_json).
  * @returns {{ id:number, slug:string, name:string, domain:string, url:string, logoRaw:string, logoBg:string }[]}
@@ -192,19 +224,23 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true && !movedHost) continue;
     if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
-    const featured = movedHost ? null : IL_FEATURED[host] || null;
-    const isIl = Boolean(!movedHost && (featured || (layout.hmIl81 && typeof layout.hmIl81 === "object")));
+    // Ankara Şehir / Gündem Fix Haber stay on the main tanıtım grid, linked to fix.tc.
+    const fix = fixAnkaraSite(row);
+    const featured = fix || movedHost ? null : IL_FEATURED[host] || null;
+    const isIl = Boolean(!fix && (featured || (!movedHost && layout.hmIl81 && typeof layout.hmIl81 === "object")));
     if (group === "il" ? !isIl : isIl) continue;
-    const logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
+    let logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
+    if (fix && !layoutHasFixAnkaraWordmark(layout, fix)) logoRaw = fixAnkaraLogoDataUri(fix);
     const site = {
       id: Number(row.id),
       slug: String(row.slug ?? "").trim(),
       // 81il 2026-10-09: layout hmDisplayNameOverride wins (gundemi.org = "Gündem İstanbul"; the panel->TP sync rewrites display_name).
-      name:
-        (typeof layout.hmDisplayNameOverride === "string" && layout.hmDisplayNameOverride.trim()) ||
-        (featured ? featured.name : "") ||
-        String(row.display_name ?? row.displayName ?? row.slug ?? host).trim() ||
-        host,
+      name: fix
+        ? fixAnkaraPublicName(layout, row, fix)
+        : (typeof layout.hmDisplayNameOverride === "string" && layout.hmDisplayNameOverride.trim()) ||
+          (featured ? featured.name : "") ||
+          String(row.display_name ?? row.displayName ?? row.slug ?? host).trim() ||
+          host,
       domain: host,
       url: `https://${host}/`,
       logoRaw,

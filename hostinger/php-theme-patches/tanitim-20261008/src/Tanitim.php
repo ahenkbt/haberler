@@ -41,7 +41,7 @@ final class Tanitim
     ];
 
     private const API = 'https://turkatahaber.com/api/hm/public/news-sites';
-    private const CACHE_FILE = '/tmp/ys-bridge/tanitim-news-sites.json';
+    private const CACHE_FILE = '/tmp/ys-bridge/tanitim-news-sites-v2.json';
     private const TTL = 600;
 
     /** Site's own information mailbox (convention: bilgi@<domain>, <sub>@gundemi.org / fix.tc). */
@@ -54,29 +54,47 @@ final class Tanitim
     }
 
     /**
-     * Live list of news sites: [{id,name,domain,url,logo,logoBg}]. APCu 10 min, file copy kept as stale fallback.
+     * Live main grid. İl Siteleri is ilSites() from the same payload.
      * @return list<array<string, mixed>>
      */
     public static function sites(): array
     {
+        return self::bundle()['sites'];
+    }
+
+    /**
+     * İl Siteleri logo grid (Ankara Şehir Fix Haber and Ankara Gündem Fix Haber included).
+     * @return list<array<string, mixed>>
+     */
+    public static function ilSites(): array
+    {
+        return self::bundle()['ilSites'];
+    }
+
+    /**
+     * @return array{sites: list<array<string, mixed>>, ilSites: list<array<string, mixed>>}
+     */
+    private static function bundle(): array
+    {
+        $empty = ['sites' => [], 'ilSites' => []];
         if (function_exists('apcu_fetch')) {
-            $hit = apcu_fetch('tanitim:sites', $ok);
-            if ($ok && is_array($hit)) {
+            $hit = apcu_fetch('tanitim:bundle:v2', $ok);
+            if ($ok && is_array($hit) && is_array($hit['sites'] ?? null) && is_array($hit['ilSites'] ?? null)) {
                 return $hit;
             }
         }
         $stale = null;
         if (is_file(self::CACHE_FILE)) {
             $j = json_decode((string) @file_get_contents(self::CACHE_FILE), true);
-            if (is_array($j) && is_array($j['sites'] ?? null)) {
-                $stale = $j['sites'];
+            if (is_array($j) && is_array($j['sites'] ?? null) && is_array($j['ilSites'] ?? null)) {
+                $stale = ['sites' => $j['sites'], 'ilSites' => $j['ilSites']];
                 if ((time() - (int) ($j['at'] ?? 0)) < self::TTL) {
                     self::remember($stale, 120);
                     return $stale;
                 }
             }
         }
-        $sites = null;
+        $bundle = null;
         if (function_exists('curl_init')) {
             $ch = curl_init(self::API);
             curl_setopt_array($ch, [
@@ -92,37 +110,55 @@ final class Tanitim
             if (is_string($raw) && $code === 200) {
                 $j = json_decode($raw, true);
                 if (is_array($j) && is_array($j['sites'] ?? null) && $j['sites'] !== []) {
-                    $sites = [];
-                    foreach ($j['sites'] as $s) {
-                        if (!is_array($s) || (string) ($s['domain'] ?? '') === '') {
-                            continue;
-                        }
-                        $sites[] = [
-                            'id' => (int) ($s['id'] ?? 0),
-                            'name' => (string) ($s['name'] ?? $s['domain']),
-                            'domain' => (string) $s['domain'],
-                            'url' => (string) ($s['url'] ?? ('https://' . $s['domain'] . '/')),
-                            'logo' => (string) ($s['logo'] ?? ''),
-                            'logoBg' => (string) ($s['logoBg'] ?? ''),
-                        ];
-                    }
-                    @file_put_contents(self::CACHE_FILE, json_encode(['at' => time(), 'sites' => $sites], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
+                    $bundle = [
+                        'sites' => self::shapeList($j['sites']),
+                        'ilSites' => self::shapeList(is_array($j['ilSites'] ?? null) ? $j['ilSites'] : []),
+                    ];
+                    @file_put_contents(
+                        self::CACHE_FILE,
+                        json_encode(['at' => time(), 'sites' => $bundle['sites'], 'ilSites' => $bundle['ilSites']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        LOCK_EX
+                    );
                 }
             }
         }
-        if ($sites === null) {
-            $sites = $stale ?? [];
-            self::remember($sites, 60);
-            return $sites;
+        if ($bundle === null) {
+            $bundle = $stale ?? $empty;
+            self::remember($bundle, 60);
+            return $bundle;
         }
-        self::remember($sites, self::TTL);
-        return $sites;
+        self::remember($bundle, self::TTL);
+        return $bundle;
     }
 
-    private static function remember(array $sites, int $ttl): void
+    /**
+     * @param list<mixed> $rows
+     * @return list<array<string, mixed>>
+     */
+    private static function shapeList(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $s) {
+            if (!is_array($s) || (string) ($s['domain'] ?? '') === '') {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) ($s['id'] ?? 0),
+                'name' => (string) ($s['name'] ?? $s['domain']),
+                'domain' => (string) $s['domain'],
+                'url' => (string) ($s['url'] ?? ('https://' . $s['domain'] . '/')),
+                'logo' => (string) ($s['logo'] ?? ''),
+                'logoBg' => (string) ($s['logoBg'] ?? ''),
+            ];
+        }
+        return $out;
+    }
+
+    /** @param array{sites: list<array<string, mixed>>, ilSites: list<array<string, mixed>>} $bundle */
+    private static function remember(array $bundle, int $ttl): void
     {
         if (function_exists('apcu_store')) {
-            apcu_store('tanitim:sites', $sites, $ttl);
+            apcu_store('tanitim:bundle:v2', $bundle, $ttl);
         }
     }
 

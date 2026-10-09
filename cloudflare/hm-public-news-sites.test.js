@@ -86,19 +86,47 @@ describe("hm-public-news-sites", () => {
     const rows = [
       { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "Ankara Şehir Gazetesi", active: false, layout_json: L({ logoUrl: "data:image/png;base64,AAAA" }) },
       { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "Ankara Haber Gündemi", active: true, layout_json: L({ logoUrl: "/ahg.png", hmPublicSuspended: true }) },
+      { id: 2, slug: "su", domain: "suhaber.net", display_name: "Su", active: true, layout_json: L({ logoUrl: "/s.png" }) },
+      { id: 1154, slug: "adana", domain: "adana.fix.tc", display_name: "Adana", active: true, layout_json: L({ logoUrl: "/a.png", hmIl81: { il: "Adana", plate: "01" } }) },
     ];
     const main = publicNewsSitesFromRows(rows);
-    assert.deepEqual(main.map((s) => s.domain), ["ankara.fix.tc", "gundem.fix.tc"]);
-    assert.equal(publicNewsSitesFromRows(rows, { group: "il" }).length, 0);
+    assert.deepEqual(main.map((s) => s.domain), ["suhaber.net", "ankara.fix.tc", "gundem.fix.tc"]);
+    assert.deepEqual(publicNewsSitesFromRows(rows, { group: "il" }).map((s) => s.domain), ["adana.fix.tc"]);
+    assert.equal(main.find((s) => s.id === 3).name, "Ankara Şehir Fix Haber");
+    assert.equal(main.find((s) => s.id === 8).name, "Ankara Gündem Fix Haber");
+    assert.equal(main.find((s) => s.id === 3).url, "https://ankara.fix.tc/");
+    assert.equal(main.find((s) => s.id === 8).url, "https://gundem.fix.tc/");
+    assert.match(main.find((s) => s.id === 3).logoRaw, /^data:image\/png;base64,iVBORw0KGgo/);
+    assert.match(main.find((s) => s.id === 8).logoRaw, /^data:image\/png;base64,iVBORw0KGgo/);
+    assert.doesNotMatch(main.map((s) => s.url).join(" "), /ankarasehirgazetesi\.com|ankarahabergundemi\.com|gundemi\.org/);
+    const kept = publicNewsSitesFromRows(
+      [
+        {
+          id: 3,
+          slug: "asg",
+          domain: "ankara.fix.tc",
+          display_name: "Ankara Şehir Fix Haber",
+          active: true,
+          layout_json: L({
+            logoUrl: "/brand/fix-ankara/ankara-sehir-fix-haber.png",
+            hmFixAnkaraWordmark: "ankara-sehir-fix-haber",
+            hmDisplayNameOverride: "Ankara Şehir Fix Haber",
+          }),
+        },
+      ],
+      { group: "main" },
+    );
+    assert.equal(kept[0].logoRaw, "/brand/fix-ankara/ankara-sehir-fix-haber.png");
+    assert.equal(kept[0].name, "Ankara Şehir Fix Haber");
     assert.equal(replacedPublicHost(rows[0], "ankarasehirgazetesi.com"), "ankara.fix.tc");
     assert.equal(rebrandAssignmentForSlug("asg").domain, "ankara.fix.tc");
-    assert.equal(rebrandAssignmentForSlug("asg").domain2, null);
+    assert.equal(rebrandAssignmentForSlug("asg").domain2, "sehir.gundemi.org");
     assert.equal(rebrandAssignmentForSlug("asg").domain3, null);
     assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain, "gundem.fix.tc");
-    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, null);
+    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, "ankara.gundemi.org");
     assert.equal(rebrandAssignmentForSlug("ahg").domain3, null);
     assert.equal(rebrandAssignmentForSlug("vatanhaber"), null);
-    assert.doesNotMatch(main.map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
+    assert.doesNotMatch(publicNewsSitesFromRows(rows).map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
   });
 
   it("logogrid: text logo fallback is an SVG in the site colour", () => {

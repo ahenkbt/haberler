@@ -42,18 +42,8 @@ export const AHENK_HSY_REFERENCES = [
     "url": "https://turkatahaber.com/",
     "logo": "https://ahenk.net.tr/api/hm/public/news-sites/230/logo?v=fe323461"
   },
-  {
-    "name": "Ankara Şehir Gazetesi",
-    "domain": "ankara.fix.tc",
-    "url": "https://ankara.fix.tc/",
-    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/3/logo?v=50d43fb4"
-  },
-  {
-    "name": "Ankara Haber Gündemi",
-    "domain": "gundem.fix.tc",
-    "url": "https://gundem.fix.tc/",
-    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/8/logo?v=178b741f"
-  },
+
+
   {
     "name": "Gündem İstanbul",
     "domain": "gundemi.org",
@@ -201,6 +191,18 @@ export const AHENK_HSY_REFERENCES = [
 ];
 
 export const AHENK_HSY_IL_REFERENCES = [
+  {
+    "name": "Ankara Şehir Fix Haber",
+    "domain": "ankara.fix.tc",
+    "url": "https://ankara.fix.tc/",
+    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/3/logo?v=8746ab12"
+  },
+  {
+    "name": "Ankara Gündem Fix Haber",
+    "domain": "gundem.fix.tc",
+    "url": "https://gundem.fix.tc/",
+    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/8/logo?v=13d707d7"
+  },
   {
     "name": "Fix Adana Haber",
     "domain": "adana.fix.tc",
