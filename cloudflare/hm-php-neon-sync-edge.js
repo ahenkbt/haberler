@@ -9,6 +9,7 @@ import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./n
 import { edgeMirrorNewsDbWrite } from "./hm-php-news-dual-write.js";
 import { resolvePhpSiteId } from "./hm-php-editor-sync.js";
 import { mirrorHmSiteLayoutJsonToPhpNeon } from "./hm-php-layout-sync.js";
+import { isHiddenColumnRow, loadHiddenColumnKeys } from "./hm-hidden-columns.js";
 import {
   loadPanelSession,
   readCookie,
@@ -259,7 +260,14 @@ export async function syncSiteToPhpNeon(env, workerSiteId, opts = {}) {
       LIMIT ${limit} OFFSET ${offset}
     `;
     out.hasMore.makaleler = (makaleler || []).length >= limit;
+    // Gizlenen / kosedup ile taşınan köşe yazıları PHP tarafına geri basılmasın (ASG/AHG kopya dalgası 2026-10-09).
+    const hidden = await loadHiddenColumnKeys(newsSql, phpSiteId);
+    out.makalelerSkippedHidden = 0;
     for (const row of makaleler || []) {
+      if (isHiddenColumnRow(hidden, row)) {
+        out.makalelerSkippedHidden += 1;
+        continue;
+      }
       const r = await edgeMirrorNewsDbWrite(newsSql, "hm_makaleler", "upsert", {
         ...row,
         site_slug: slug,
