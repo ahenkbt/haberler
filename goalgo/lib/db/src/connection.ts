@@ -33,6 +33,11 @@ pool.on("error", (err) => {
 });
 export const db = drizzle(pool, { schema });
 
+/** A connection outside the pool, same settings (advisory locks held for a whole job). Caller ends it. */
+export function newDedicatedClient(): pg.Client {
+  return new pg.Client(pool.options as pg.ClientConfig);
+}
+
 export function mainPoolStats(): { total: number; idle: number; waiting: number } {
   return { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
 }

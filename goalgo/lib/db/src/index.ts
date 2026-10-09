@@ -1,4 +1,4 @@
-export { pool, db, ensureHmNewsSiteSeoColumns, pingDatabase, pingDatabaseDetailed, mainPoolStats } from "./connection";
+export { pool, db, ensureHmNewsSiteSeoColumns, pingDatabase, pingDatabaseDetailed, mainPoolStats, newDedicatedClient } from "./connection";
 export type { PingDatabaseResult } from "./connection";
 export * from "./schema";
 export {

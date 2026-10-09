@@ -1,5 +1,4 @@
-import pg from "pg";
-import { pool } from "@workspace/db";
+import { newDedicatedClient } from "@workspace/db";
 
 /**
  * Tek replica cron — PostgreSQL advisory lock (P1.2).
@@ -7,7 +6,7 @@ import { pool } from "@workspace/db";
  * and each held one of the 15 request slots for the whole run (2026-10-09 pool exhaustion).
  */
 export async function withPgAdvisoryLock<T>(lockId: number, fn: () => Promise<T>): Promise<T | undefined> {
-  const client = new pg.Client(pool.options as pg.ClientConfig);
+  const client = newDedicatedClient();
   client.on("error", () => {
     /* lock connection dropped: the session lock is gone with it */
   });
