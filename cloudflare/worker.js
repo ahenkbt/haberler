@@ -17,6 +17,7 @@ import {
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
 import { serveAhenkHaberSitesiYazilimi } from "./hm-ahenk-haber-yazilimi.js"; // hsy-landing 2026-10-09
+import { serveGoalgoComTr } from "./hm-goalgo-com-tr.js"; // goalgo-site 2026-10-09
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
 import { handleHmEditorSiteOverridesEdge, isHmEditorSiteOverridesPath } from "./hm-editor-site-overrides-edge.js";
 import { handleHmSiteMailEdge, isHmSiteMailPath } from "./hm-site-mail-edge.js";
@@ -3137,6 +3138,16 @@ export default {
             "x-yekpare-panel-to-admin": "1",
           },
         });
+      }
+    }
+
+    // goalgo-site 2026-10-09: goalgo.com.tr marketing site (server-rendered). /editor, /api/*, /assets/* → null (normal HM flow).
+    if (hostKeyEarly === "goalgo.com.tr") {
+      try {
+        const gg = await serveGoalgoComTr(request, incoming, env);
+        if (gg) return gg;
+      } catch (err) {
+        console.error("[goalgo-site]", String(err?.message || err).slice(0, 160));
       }
     }
 
