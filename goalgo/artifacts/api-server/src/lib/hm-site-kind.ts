@@ -115,14 +115,12 @@ export type HmDomainTriad = { domain: string | null; domain2: string | null; dom
  * Live production otherwise sorts *.gundemi.org ahead of *.fix.tc.
  */
 const REBRAND_CANONICAL_HOST = new Map<string, string>([
+  ["ankarasehirgazetesi.com", "ankara.fix.tc"],
+  ["ankarahabergundemi.com", "gundem.fix.tc"],
   ["ankara.gundemi.org", "gundem.fix.tc"],
 ]);
 
-const RETIRED_REBRAND_APEXES = new Set([
-  "ankarasehirgazetesi.com",
-  "ankarahabergundemi.com",
-  "sehir.gundemi.org",
-]);
+const RETIRED_REBRAND_APEXES = new Set(["sehir.gundemi.org"]);
 
 function preferRebrandCanonical(hosts: string[]): string[] {
   const keys = new Set(hosts.map((h) => normalizeAliasHost(h)));
