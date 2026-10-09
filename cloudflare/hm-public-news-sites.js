@@ -92,14 +92,14 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. ankara.fix.tc and gundem.fix.tc stay first.
- * The old apexes stay on domain2/domain3 so the VPS does not fall back to TurkAta.
+ * PHP canonical is the first domain. Only ankara.fix.tc and gundem.fix.tc are stored.
+ * The deleted apexes are not written back.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: "ankarasehirgazetesi.com",
+    domain2: null,
     domain3: null,
     displayName: "Ankara Şehir Gazetesi",
     logoDataUri: ASG_ORIGINAL_LOGO,
@@ -107,8 +107,8 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: "ankarahabergundemi.com",
-    domain3: "ankara.gundemi.org",
+    domain2: null,
+    domain3: null,
     displayName: "Ankara Haber Gündemi",
     logoDataUri: AHG_ORIGINAL_LOGO,
   },
