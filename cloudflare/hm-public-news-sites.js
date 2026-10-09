@@ -99,7 +99,7 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: "ankarasehirgazetesi.com",
+    domain2: null,
     domain3: null,
     displayName: "Ankara Şehir Gazetesi",
     logoDataUri: ASG_ORIGINAL_LOGO,
@@ -107,8 +107,8 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: "ankarahabergundemi.com",
-    domain3: "ankara.gundemi.org",
+    domain2: null,
+    domain3: null,
     displayName: "Ankara Haber Gündemi",
     logoDataUri: AHG_ORIGINAL_LOGO,
   },
