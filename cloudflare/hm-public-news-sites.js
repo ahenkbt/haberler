@@ -15,6 +15,7 @@
  * (25 ana logo kalır); ayrı `ilSites` listesinde döner ve /daha + ajans sayfasında ayrı "İl Siteleri" grubu olur.
  */
 import { neon } from "@neondatabase/serverless";
+import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 
 export const NEWS_SITES_LIST_PATH = "/api/hm/public/news-sites";
@@ -24,11 +25,6 @@ const LOGO_PATH_RE = /^\/api\/hm\/public\/news-sites\/(\d{1,9})\/logo$/;
 
 /** Corporate (kurumsal) sites — never in the news-site grid. */
 export const CORPORATE_SITE_IDS = new Set([7, 11, 61]);
-/**
- * promo-hide 2026-10-09 (user 11:39): ASG (3) + AHG (8) never in tanıtım/daha logo grids. They move to ankara.fix.tc /
- * gundem.fix.tc; re-add (remove from this set) only once those hosts + new Fix logos are live.
- */
-export const PROMO_HIDDEN_SITE_IDS = new Set([3, 8]);
 const CORPORATE_SLUGS = new Set(["vkd", "vatankahramanlari", "trafik", "tr", "tukav", "turkatav"]);
 const CORPORATE_HOSTS = new Set([
   "vatankahramanlari.org",
@@ -72,6 +68,87 @@ function parseLayout(raw) {
   }
 }
 
+/**
+ * ASG / AHG public identity (2026-10-09): ankarasehirgazetesi.com → ankara.fix.tc,
+ * ankarahabergundemi.com → gundem.fix.tc. Tanıtım and referans grids show only the new host.
+ * Rows stay listed even when the panel `active` flag is off, so the logo does not vanish.
+ */
+const REPLACED_PUBLIC_HOST_BY_SLUG = new Map([
+  ["asg", "ankara.fix.tc"],
+  ["ankarasehirgazetesi", "ankara.fix.tc"],
+  ["ankarahabergundemi", "gundem.fix.tc"],
+  ["ahg", "gundem.fix.tc"],
+]);
+const RETIRED_PUBLIC_HOSTS = new Map([
+  ["ankarasehirgazetesi.com", "ankara.fix.tc"],
+  ["ankarahabergundemi.com", "gundem.fix.tc"],
+]);
+
+export function replacedPublicHost(row, host) {
+  const slug = String(row?.slug ?? "").trim().toLowerCase();
+  if (REPLACED_PUBLIC_HOST_BY_SLUG.has(slug)) return REPLACED_PUBLIC_HOST_BY_SLUG.get(slug);
+  return RETIRED_PUBLIC_HOSTS.get(host) || "";
+}
+
+/**
+ * PHP canonical is the first domain. Keep the new host first and the retired apex
+ * as an alias so the old hostname still resolves to the same site.
+ */
+export const ASG_AHG_REBRAND_ROWS = Object.freeze([
+  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: "ankarasehirgazetesi.com", domain3: null },
+  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: "ankarahabergundemi.com", domain3: "ankara.gundemi.org" },
+]);
+
+export function rebrandAssignmentForSlug(slug) {
+  const key = String(slug ?? "").trim().toLowerCase();
+  return ASG_AHG_REBRAND_ROWS.find((row) => row.slugs.includes(key)) || null;
+}
+
+/** @type {Promise<void> | null} */
+let rebrandEnsure = null;
+
+/** One successful attempt per isolate: panel Neon + PHP Neon (when the news URL is writable). */
+export function ensureAsgAhgRebrandDomains(env) {
+  if (!rebrandEnsure) {
+    rebrandEnsure = applyAsgAhgRebrandDomains(env).catch((err) => {
+      rebrandEnsure = null;
+      throw err;
+    });
+  }
+  return rebrandEnsure;
+}
+
+async function applyAsgAhgRebrandDomains(env) {
+  const clients = [];
+  const panel = neonSqlClient(env);
+  if (panel) clients.push(panel);
+  if (shouldEdgeDualWriteNewsDb(env)) {
+    const news = neonNewsSqlClient(env);
+    if (news) clients.push(news);
+  }
+  for (const sql of clients) {
+    for (const spec of ASG_AHG_REBRAND_ROWS) {
+      const slug = spec.slugs[0];
+      await sql`
+        UPDATE hm_news_sites
+        SET domain = ${spec.domain},
+            domain2 = ${spec.domain2},
+            domain3 = ${spec.domain3},
+            active = true,
+            updated_at = now()
+        WHERE lower(slug) = ${slug}
+          AND (
+            lower(coalesce(domain, '')) IS DISTINCT FROM ${spec.domain}
+            OR lower(coalesce(domain2, '')) IS DISTINCT FROM ${spec.domain2}
+            OR lower(coalesce(domain3, '')) IS DISTINCT FROM ${spec.domain3 ?? ""}
+            OR active IS DISTINCT FROM true
+          )
+      `;
+    }
+  }
+  rowsCache = { at: 0, rows: null };
+}
+
 function isCorporate(row, host) {
   const id = Number(row?.id);
   if (CORPORATE_SITE_IDS.has(id)) return true;
@@ -104,16 +181,18 @@ function safeColor(v) {
 export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
   const byHost = new Map();
   for (const row of rows || []) {
-    if (!row || row.active === false || row.active === "f") continue;
-    const host = normalizeSiteHost(row.domain);
+    if (!row) continue;
+    const storedHost = normalizeSiteHost(row.domain);
+    const movedHost = replacedPublicHost(row, storedHost);
+    if ((row.active === false || row.active === "f") && !movedHost) continue;
+    const host = movedHost || storedHost;
     if (!host) continue;
     if (isCorporate(row, host)) continue;
-    if (PROMO_HIDDEN_SITE_IDS.has(Number(row.id))) continue;
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
-    if (layout.hmPublicSuspended === true) continue;
+    if (layout.hmPublicSuspended === true && !movedHost) continue;
     if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
-    const featured = IL_FEATURED[host] || null;
-    const isIl = Boolean(featured || (layout.hmIl81 && typeof layout.hmIl81 === "object"));
+    const featured = movedHost ? null : IL_FEATURED[host] || null;
+    const isIl = Boolean(!movedHost && (featured || (layout.hmIl81 && typeof layout.hmIl81 === "object")));
     if (group === "il" ? !isIl : isIl) continue;
     const logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
     const site = {
@@ -292,6 +371,9 @@ export async function handlePublicNewsSites(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = String(incoming.pathname || "").replace(/\/+$/, "");
   if (path === NEWS_SITES_LIST_PATH) {
+    await ensureAsgAhgRebrandDomains(env).catch((err) => {
+      console.error("[public-news-sites] rebrand", String(err?.message || err).slice(0, 160));
+    });
     const opts = {
       origin: `${incoming.protocol}//${incoming.host}`,
       exclude: incoming.searchParams.get("exclude") || "",
