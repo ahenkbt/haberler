@@ -1845,3 +1845,6 @@
   .ahenk-hsy-promo { grid-template-columns: 1fr; margin: 24px 12px; padding: 20px; }
   .ahenk-hsy-promo-logos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.ahenk-hsy-promo h2 { font-size: clamp(24px, 3vw, 34px); line-height: 1.2; font-weight: 800; color: #fff; }
+.ahenk-hsy-promo ul { list-style: disc; }
+.ahenk-hsy-promo li { margin: 4px 0; }
