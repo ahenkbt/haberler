@@ -733,6 +733,17 @@ export function serveAhenkHaberSitesiYazilimi(request, incoming) {
   const host = String(incoming.hostname || "").toLowerCase().replace(/^www\./, "");
   if (host !== "ahenk.net.tr") return null;
   const path = (incoming.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+  // 2026-10-09: ahenk.net.tr/referanslar (and /referans) → the live reference grid on the HSY page.
+  if (path === "/referanslar" || path === "/referans") {
+    return new Response(null, {
+      status: 301,
+      headers: {
+        location: `${ORIGIN}${AHENK_HSY_PATH}#referanslar`,
+        "cache-control": "public, max-age=3600",
+        "x-yekpare-frontend": "cloudflare-ahenk-hsy-redirect",
+      },
+    });
+  }
   if (AHENK_HSY_ALIASES.has(path)) {
     return new Response(null, {
       status: 301,
