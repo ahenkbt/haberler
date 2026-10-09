@@ -224,7 +224,7 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true && !movedHost) continue;
     if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
-    // Ankara Şehir / Gündem Fix Haber stay on the main tanıtım grid, linked to fix.tc.
+    // Ankara Şehir / Gündem Fix Haber sit in İl Siteleri (plate 06), not the main 25-logo grid.
     const fix = fixAnkaraSite(row);
     const featured = fix || movedHost ? null : IL_FEATURED[host] || null;
     const isIl = Boolean(fix || featured || (!movedHost && layout.hmIl81 && typeof layout.hmIl81 === "object"));
@@ -246,11 +246,13 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
       logoRaw,
       logoBg: safeColor(layout.hmLogoBarBackground),
       color: safeColor(layout.hmPrimaryColor) || safeColor(layout.hmNewsAccentColor) || "",
-      ...(featured
-        ? { il: featured.il, plate: featured.plate, region: featured.region, featured: true }
-        : isIl
-          ? { il: String(layout.hmIl81.il || ""), plate: String(layout.hmIl81.plate || ""), region: String(layout.hmIl81.region || "") }
-          : {}),
+      ...(fix
+        ? { il: fix.il, plate: fix.plate, region: fix.region }
+        : featured
+          ? { il: featured.il, plate: featured.plate, region: featured.region, featured: true }
+          : isIl
+            ? { il: String(layout.hmIl81?.il || ""), plate: String(layout.hmIl81?.plate || ""), region: String(layout.hmIl81?.region || "") }
+            : {}),
     };
     const prev = byHost.get(host);
     // One tile per domain: keep the lowest id that has a logo (duplicate rows such as marmara.gundemi.org).
