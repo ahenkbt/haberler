@@ -91,14 +91,13 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. ankara.fix.tc and gundem.fix.tc stay first.
- * Aliases are sehir.gundemi.org and ankara.gundemi.org.
+ * PHP canonical is the first domain. The saved host is only the new address.
  * ankarasehirgazetesi.com and ankarahabergundemi.com were deleted in Cloudflare;
  * do not write them back as domain, domain2, or domain3.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
-  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: "sehir.gundemi.org", domain3: null },
-  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: "ankara.gundemi.org", domain3: null },
+  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: null, domain3: null },
+  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: null, domain3: null },
 ]);
 
 export function rebrandAssignmentForSlug(slug) {

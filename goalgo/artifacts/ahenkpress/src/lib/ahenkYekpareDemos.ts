@@ -24,7 +24,7 @@ export const YEKPARE_SERVICE_DEMOS: AhenkDemoLink[] = [
 export const HM_EDITOR_DEMOS: AhenkDemoLink[] = [
   {
     href: "https://ankara.fix.tc/",
-    title: "Ankara Şehir Fix Haber",
+    title: "Ankara Şehir Gazetesi",
     note: "HM editör sitesi",
   },
   {

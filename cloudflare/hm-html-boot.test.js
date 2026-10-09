@@ -52,8 +52,6 @@ describe("hm-html-boot", () => {
     assert.equal(hmDomainSlugFallback("yerel.net.tr"), "yerelnet");
     assert.equal(hmDomainSlugFallback("fix.tc"), "fixhaber");
     assert.equal(hmDomainSlugFallback("www.fix.tc"), "fixhaber");
-    assert.equal(hmDomainSlugFallback("sehir.gundemi.org"), "asg");
-    assert.equal(hmDomainSlugFallback("ankara.gundemi.org"), "ankarahabergundemi");
     assert.equal(hmDomainSlugFallback("gundemi.org"), "gundemi");
     assert.equal(hmDomainSlugFallback("www.gundemi.org"), "gundemi");
     assert.equal(hmDomainSlugFallback("ege.gundemi.org"), "ege-gundemi");
