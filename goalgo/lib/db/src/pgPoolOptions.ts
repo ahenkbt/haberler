@@ -64,6 +64,23 @@ function envMs(name: string): number | undefined {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined;
 }
 
+/** pg_stat_activity label for the API pools, e.g. "yk-api-main-1" (instance from YK_INSTANCE). */
+export function pgAppName(kind: "main" | "news"): string {
+  const inst = String(process.env.YK_INSTANCE ?? "").replace(/[^0-9a-z]/gi, "").slice(0, 8);
+  return `yk-api-${kind}${inst ? `-${inst}` : ""}`;
+}
+
+/** Neon endpoint id (e.g. "ep-bitter-mouse-…" → "ep-bitter-mouse") or the host's first label; never credentials. */
+export function dbEndpointLabel(connectionString: string): string | null {
+  try {
+    const host = new URL(connectionString).hostname;
+    const ep = /^(ep-[a-z]+-[a-z]+)/.exec(host);
+    return ep ? ep[1] : host.split(".")[0].slice(0, 24) || null;
+  } catch {
+    return null;
+  }
+}
+
 export function pgPoolConfig(connectionString: string, extra: PoolConfig = {}): PoolConfig {
   const ssl = pgSslOption(connectionString);
   // 2026-10-09: on Cloudflare Containers one instance kept hanging on every DB-bound request

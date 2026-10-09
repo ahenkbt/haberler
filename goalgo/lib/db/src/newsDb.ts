@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 import { resolveNewsDatabaseUrl } from "./databaseUrl";
-import { pgPoolConfig } from "./pgPoolOptions";
+import { pgAppName, pgPoolConfig } from "./pgPoolOptions";
 
 const { Pool } = pg;
 
@@ -23,8 +23,19 @@ export const newsPool: pg.Pool | null = newsDatabaseUrl
         max: poolInt("NEWS_PG_POOL_MAX", 4),
         idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
         connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", 5_000),
+        application_name: pgAppName("news"),
       }),
     )
   : null;
 
 export const newsDb = newsPool ? drizzle(newsPool, { schema }) : null;
+
+export function newsPoolStats(): { max: number; total: number; idle: number; waiting: number } | null {
+  if (!newsPool) return null;
+  return {
+    max: Number(newsPool.options.max ?? 0),
+    total: newsPool.totalCount,
+    idle: newsPool.idleCount,
+    waiting: newsPool.waitingCount,
+  };
+}

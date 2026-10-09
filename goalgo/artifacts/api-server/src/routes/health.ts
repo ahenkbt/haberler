@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { HealthCheckResponse } from "@workspace/api-zod";
-import { pingDatabaseDetailed, databaseProvider, resolveDatabaseUrl, mainPoolStats } from "@workspace/db";
+import { pingDatabaseDetailed, databaseProvider, resolveDatabaseUrl, resolveNewsDatabaseUrl, mainPoolStats, newsPoolStats, dbEndpointLabel } from "@workspace/db";
 import {
   getMediaStorageMode,
   getMediaStoragePreference,
@@ -108,6 +108,11 @@ const poolDiag = async (_req: Request, res: Response) => {
     backgroundJobs: process.env.YK_BACKGROUND_JOBS ?? "unset",
     uptimeS: Math.round(process.uptime()),
     pool: mainPoolStats(),
+    newsPool: newsPoolStats(),
+    db: {
+      main: dbEndpointLabel(resolveDatabaseUrl()),
+      news: dbEndpointLabel(resolveNewsDatabaseUrl()),
+    },
     pingMs: Date.now() - t0,
     ping: ping.ok ? "ok" : ping.error,
     loopLagMs,

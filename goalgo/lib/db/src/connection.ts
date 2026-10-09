@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "./schema";
 import { requireDatabaseUrl } from "./databaseUrl";
-import { applyHostingerIpv4First, isNeonServerlessUrl, pgPoolConfig } from "./pgPoolOptions";
+import { applyHostingerIpv4First, isNeonServerlessUrl, pgAppName, pgPoolConfig } from "./pgPoolOptions";
 
 const { Pool } = pg;
 
@@ -25,6 +25,7 @@ export const pool = new Pool(
     max: poolInt("PG_POOL_MAX", isNeon || isRender ? 5 : isProd ? 20 : 10),
     idleTimeoutMillis: poolInt("PG_POOL_IDLE_TIMEOUT_MS", 30_000),
     connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", 10_000),
+    application_name: pgAppName("main"),
   }),
 );
 // An idle client that errors (socket reset by Neon/NAT) must not take the process down.
