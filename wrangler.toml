@@ -51,6 +51,13 @@ image = "./goalgo/Dockerfile.cloudflare"
 max_instances = 6
 instance_type = "standard-3"
 
+# Run the API next to its Neon database (eu-central-1, Frankfurt) and the users (TR).
+# Without this, containers start "nearest to the incoming request": CI and US crawlers
+# placed them in lax/dfw, every query paid ~150 ms RTT, pools starved and /api hung or
+# returned "Failed query" 500s on about half the requests (2026-10-09).
+[containers.constraints]
+regions = ["WEUR", "EEUR"]
+
 [[durable_objects.bindings]]
 name = "GOALGO_API"
 class_name = "GoalgoApiContainer"
