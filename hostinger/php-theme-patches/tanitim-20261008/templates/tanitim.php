@@ -9,7 +9,6 @@ use Yenisafak\Tanitim;
 /** @var Yenisafak\Site $site */
 /** @var list<array<string, mixed>> $sites */
 $t = Tanitim::TEXT;
-$ilSites = Tanitim::ilSites();
 $mail = Tanitim::email($site);
 $selfHost = strtolower((string) preg_replace('#^www\.#', '', $site->domain !== '' ? $site->domain : $site->host));
 $count = count($sites);
@@ -125,27 +124,6 @@ $icons = [
       </ul>
     </section>
 
-    <section class="tn-net" id="il-siteleri" aria-labelledby="tn-il-h">
-      <div class="tn-net-head">
-        <h2 class="tn-h2" id="tn-il-h">İl Siteleri</h2>
-        <p><?= count($ilSites) > 0 ? (int) count($ilSites) . ' il sitesi' : 'İl haber siteleri' ?></p>
-      </div>
-      <ul class="tn-grid" data-tn-il-grid="<?= $ilSites === [] ? 'empty' : 'ok' ?>">
-        <?php foreach ($ilSites as $s):
-          $isSelf = strtolower((string) $s['domain']) === $selfHost; ?>
-          <li><a href="<?= Html::e((string) $s['url']) ?>" target="_blank" rel="noopener" title="<?= Html::e((string) $s['name']) ?>">
-            <?php if ($isSelf): ?><span class="tn-self">Bu site</span><?php endif; ?>
-            <span class="tn-logo"<?= (string) $s['logoBg'] !== '' ? ' style="background:' . Html::e((string) $s['logoBg']) . '"' : '' ?>>
-              <?php if ((string) $s['logo'] !== ''): ?><img src="<?= Html::e((string) $s['logo']) ?>" alt="<?= Html::e((string) $s['name']) ?> logosu" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><?php endif; ?>
-              <b<?= (string) $s['logo'] === '' ? ' style="display:block"' : '' ?>><?= Html::e((string) $s['name']) ?></b>
-            </span>
-            <strong><?= Html::e((string) $s['name']) ?></strong>
-            <small><?= Html::e((string) $s['domain']) ?></small>
-          </a></li>
-        <?php endforeach; ?>
-      </ul>
-    </section>
-
     <section class="tn-cta" aria-label="İletişim">
       <div>
         <h2><?= Html::e($site->name) ?> Haber Merkezi</h2>
@@ -159,17 +137,8 @@ $icons = [
     </section>
   </div>
 </div>
-<?php if ($sites === [] || $ilSites === []): /* list not reachable from the server: load it in the browser (same-origin Worker route) */ ?>
+<?php if ($sites === []): /* list not reachable from the server: load it in the browser (same-origin Worker route) */ ?>
 <script>
-(function(){
-  var main=document.querySelector('[data-tn-grid="empty"]');
-  var il=document.querySelector('[data-tn-il-grid="empty"]');
-  if((!main&&!il)||!window.fetch)return;
-  var card=function(s){var e=function(v){return String(v||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};return '<li><a href="'+e(s.url)+'" target="_blank" rel="noopener"><span class="tn-logo">'+(s.logo?'<img src="'+e(s.logo)+'" alt="'+e(s.name)+' logosu" loading="lazy">':'<b style="display:block">'+e(s.name)+'</b>')+'</span><strong>'+e(s.name)+'</strong><small>'+e(s.domain)+'</small></a></li>'};
-  fetch('/api/hm/public/news-sites').then(function(r){return r.json()}).then(function(j){
-    if(main){var h='';(j.sites||[]).forEach(function(s){h+=card(s)});main.innerHTML=h}
-    if(il){var h2='';(j.ilSites||[]).forEach(function(s){h2+=card(s)});il.innerHTML=h2}
-  }).catch(function(){})
-})();
+(function(){var g=document.querySelector('[data-tn-grid="empty"]');if(!g||!window.fetch)return;fetch('/api/hm/public/news-sites').then(function(r){return r.json()}).then(function(j){var h='';(j.sites||[]).forEach(function(s){var e=function(v){return String(v||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};h+='<li><a href="'+e(s.url)+'" target="_blank" rel="noopener"><span class="tn-logo">'+(s.logo?'<img src="'+e(s.logo)+'" alt="'+e(s.name)+' logosu" loading="lazy">':'<b style="display:block">'+e(s.name)+'</b>')+'</span><strong>'+e(s.name)+'</strong><small>'+e(s.domain)+'</small></a></li>'});g.innerHTML=h}).catch(function(){})})();
 </script>
 <?php endif; ?>

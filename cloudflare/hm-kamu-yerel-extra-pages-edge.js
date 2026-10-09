@@ -261,7 +261,7 @@ export async function serveKamuYerelExtraPage(request, env, incoming) {
           console.error("[kamu-yerel-extra-il-sites]", String(err?.message || err).slice(0, 160));
         }
         const section = /<section\b[^>]*id=["']daha-haber-siteleri["'][^>]*>[\s\S]*?<\/section>/i;
-        let body = page.bodyHtml.replace(/<section\b[^>]*id=["\']daha-il-siteleri["\'][^>]*>[\s\S]*?<\/section>/gi, "");
+        let body = page.bodyHtml;
         if (section.test(body)) body = body.replace(section, () => grid);
         else if (/<div class="hm-daha-main">/i.test(body)) body = body.replace(/<div class="hm-daha-main">/i, `<div class="hm-daha-main">${grid}`);
         else body = grid + body;
