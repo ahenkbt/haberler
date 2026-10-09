@@ -18,6 +18,26 @@ import {
   stopContainerIfEnvFingerprintChanged,
 } from "./container-env.js";
 
+/**
+ * Boot repairs, resyncs and schedulers run only on instance index 0 ("<roll>-0").
+ * Unknown name (unnamed DO) keeps the old behaviour (jobs on).
+ */
+export function instanceRoleEnv(name) {
+  const m = String(name ?? "").match(/-(\d+)$/);
+  if (!m) return {};
+  return { YK_BACKGROUND_JOBS: m[1] === "0" ? "1" : "0", YK_INSTANCE: m[1] };
+}
+
+function withInstanceRole(vars, ctx) {
+  let name = "";
+  try {
+    name = ctx?.id?.name || "";
+  } catch {
+    name = "";
+  }
+  return { ...vars, ...instanceRoleEnv(name) };
+}
+
 export class GoalgoApiContainer extends Container {
   defaultPort = CONTAINER_PORT;
   requiredPorts = [CONTAINER_PORT];
@@ -26,7 +46,7 @@ export class GoalgoApiContainer extends Container {
 
   constructor(ctx, env) {
     super(ctx, env);
-    this.envVars = buildContainerEnv(env);
+    this.envVars = withInstanceRole(buildContainerEnv(env), ctx);
   }
 
   /**
@@ -78,7 +98,7 @@ export class GoalgoApiContainer extends Container {
       );
     }
 
-    const envVars = buildContainerEnv(this.env);
+    const envVars = withInstanceRole(buildContainerEnv(this.env), this.ctx);
     this.envVars = envVars;
     const fingerprint = containerEnvFingerprint(envVars);
 
