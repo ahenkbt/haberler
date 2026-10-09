@@ -507,7 +507,7 @@ const AHENK_HSY_PROMO_LOGOS: { name: string; src: string }[] = [
   { name: "Ankara Şehir Gazetesi", src: "/api/hm/public/news-sites/3/logo" },
   { name: "Ankara Haber Gündemi", src: "/api/hm/public/news-sites/8/logo" },
   { name: "Gündem İstanbul", src: "/api/hm/public/news-sites/1141/logo" },
-  { name: "Harika Olacak", src: "/api/hm/public/news-sites/1172/logo" },
+  { name: "Harika Olacak", src: "https://harikaolacak.com.tr/brand/harikaolacak/harikaolacak.png" },
 ];
 
 export function AhenkHsyPromo({ id = "haber-sitesi-yazilimi" }: { id?: string }) {
