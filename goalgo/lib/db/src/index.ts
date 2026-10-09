@@ -5,7 +5,9 @@ export {
   isNewsDatabaseConfigured,
   newsDb,
   newsPool,
+  newsPoolStats,
 } from "./newsDb";
+export { dbEndpointLabel } from "./pgPoolOptions";
 export {
   isYektubeDatabaseConfigured,
   yektubeDb,
