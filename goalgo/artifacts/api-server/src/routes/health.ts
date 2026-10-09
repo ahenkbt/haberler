@@ -104,6 +104,8 @@ const poolDiag = async (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store");
   res.json({
     bootId: BOOT_ID,
+    instance: process.env.YK_INSTANCE ?? null,
+    backgroundJobs: process.env.YK_BACKGROUND_JOBS ?? "unset",
     uptimeS: Math.round(process.uptime()),
     pool: mainPoolStats(),
     pingMs: Date.now() - t0,

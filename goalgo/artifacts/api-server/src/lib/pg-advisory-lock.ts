@@ -1,8 +1,17 @@
+import pg from "pg";
 import { pool } from "@workspace/db";
 
-/** Tek replica cron — PostgreSQL advisory lock (P1.2). */
+/**
+ * Tek replica cron — PostgreSQL advisory lock (P1.2).
+ * The lock lives on its own connection, not a pool slot: jobs (portal RSS, AI RSS...) run for minutes
+ * and each held one of the 15 request slots for the whole run (2026-10-09 pool exhaustion).
+ */
 export async function withPgAdvisoryLock<T>(lockId: number, fn: () => Promise<T>): Promise<T | undefined> {
-  const client = await pool.connect();
+  const client = new pg.Client(pool.options as pg.ClientConfig);
+  client.on("error", () => {
+    /* lock connection dropped: the session lock is gone with it */
+  });
+  await client.connect();
   try {
     const { rows } = await client.query<{ ok: boolean }>("SELECT pg_try_advisory_lock($1::bigint) AS ok", [lockId]);
     if (!rows[0]?.ok) return undefined;
@@ -13,7 +22,7 @@ export async function withPgAdvisoryLock<T>(lockId: number, fn: () => Promise<T>
     } catch {
       /* başka oturum kilidi bıraktı */
     }
-    client.release();
+    await client.end().catch(() => {});
   }
 }
 

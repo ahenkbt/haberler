@@ -203,7 +203,7 @@ const server = app.listen(port, listenHost, (err) => {
     }, 10_000).unref();
   }
 
-  startSiteMailboxAutoSync(logger);
+  if (process.env.YK_BACKGROUND_JOBS !== "0") startSiteMailboxAutoSync(logger);
 
   const schedulerStops: Array<() => void> = [];
 
@@ -307,6 +307,15 @@ const server = app.listen(port, listenHost, (err) => {
   void ensurePortalRssItemViewsSchema().catch((e) =>
     logger.error({ err: e }, "ensurePortalRssItemViewsSchema başarısız — RSS okunma sayacı çalışmayabilir"),
   );
+
+  // 2026-10-09: every container instance ran all boot repairs, map/vendor resyncs and schedulers at once.
+  // /api/healthz/pool showed 15/15 pool clients busy and 150-400 queries queued on all three instances
+  // for minutes after each boot, so ~1 in 3 requests waited 8-15 s. Only the instance the Worker marks
+  // with YK_BACKGROUND_JOBS=1 (index 0) runs them now; the others only serve requests.
+  if (process.env.YK_BACKGROUND_JOBS === "0") {
+    logger.info("[boot] YK_BACKGROUND_JOBS=0 — boot repairs, resyncs and schedulers run on instance 0 only");
+    return;
+  }
 
   if (envJobFlag("HM_YEKPARE_STARTUP_SYNC", !isRenderHosting())) {
     setTimeout(() => {

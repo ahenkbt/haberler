@@ -166,6 +166,58 @@ export async function mirrorHmSiteLayoutJsonToPhpNeon(
   }
 }
 
+/**
+ * kh-alias 2026-10-09: admin site save → live PHP row when the PHP (twilight-pine) row has another id than the panel row
+ * (Kırşehir: panel 1131, PHP 229; resolvePhpSiteId matches by slug, then domain). dualWriteUpdate mirrors by id, so these
+ * saves never reached the live site. Name/description are copied, contact is merged key by key (TP-only keys such as
+ * `hakkimizda` stay; blank panel fields do not erase live values), layout goes through mirrorHmSiteLayoutJsonToPhpNeon
+ * with the keys the save sent. No-op when the ids match: dual-write already covered that row.
+ */
+export async function mirrorHmSiteRowToPhpAlias(
+  workerSiteId: number,
+  patch: {
+    displayName?: string | null;
+    description?: string | null;
+    contactJson?: string | null;
+    layoutJson?: string | null;
+  },
+  layoutChangedKeys?: readonly string[],
+): Promise<{ mirrored: boolean; phpSiteId?: number; reason?: string }> {
+  if (!shouldMirrorLayoutToPhpNeon()) return { mirrored: false, reason: "NEWS_DATABASE_URL yok" };
+  const sid = Math.trunc(workerSiteId);
+  const phpSiteId = await resolvePhpSiteId(sid);
+  if (!phpSiteId || phpSiteId === sid) return { mirrored: false, phpSiteId: phpSiteId ?? undefined, reason: "aynı id" };
+  const set: Partial<typeof hmNewsSitesTable.$inferInsert> = {};
+  if (typeof patch.displayName === "string" && patch.displayName.trim()) set.displayName = patch.displayName;
+  if (patch.description !== undefined) set.description = patch.description;
+  if (typeof patch.contactJson === "string" && patch.contactJson.trim()) {
+    try {
+      const parsed = JSON.parse(patch.contactJson) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const filled = Object.fromEntries(
+          Object.entries(parsed as Record<string, unknown>).filter(
+            ([, v]) => v !== null && v !== undefined && !(typeof v === "string" && v.trim() === ""),
+          ),
+        );
+        if (Object.keys(filled).length > 0) {
+          set.contactJson = sql`(COALESCE(NULLIF(btrim(${hmNewsSitesTable.contactJson}::text), ''), '{}')::jsonb || ${JSON.stringify(filled)}::jsonb)` as unknown as string;
+        }
+      }
+    } catch {
+      /* contact JSON çözülemedi: atla */
+    }
+  }
+  if (Object.keys(set).length > 0) {
+    set.updatedAt = new Date();
+    await newsDb!.update(hmNewsSitesTable).set(set).where(eq(hmNewsSitesTable.id, phpSiteId));
+  }
+  // Only the keys this save sent; never a full-layout merge (TP-only keys and other writers' changes stay).
+  if (typeof patch.layoutJson === "string" && patch.layoutJson.trim() && layoutChangedKeys && layoutChangedKeys.length > 0) {
+    await mirrorHmSiteLayoutJsonToPhpNeon(sid, patch.layoutJson, { changedKeys: layoutChangedKeys });
+  }
+  return { mirrored: true, phpSiteId };
+}
+
 /** Bekçi / drift: manşet anahtarları karşılaştırması. */
 export function extractYsMansetLayoutKeys(layoutJson: string | null | undefined): {
   hmYsMansetPreset: string | null;
