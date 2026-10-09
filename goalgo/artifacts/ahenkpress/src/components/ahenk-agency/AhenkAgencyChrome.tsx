@@ -334,15 +334,28 @@ export function AhenkAgencyChrome({
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <nav className={`ahenk-nav ${open ? "is-open" : ""}`}>
-            {nav.map((item) => (
-              <Link
-                key={item.id || item.href}
-                href={item.href}
-                className={navActive(path, item.href) ? "is-active" : ""}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {nav.map((item) =>
+              item.href === "/hizmetlerimiz" || item.id === "services" ? (
+                // hsy-landing 2026-10-09: Hizmetlerimiz altında Haber Sitesi Yazılımı (Worker sayfası, tam yükleme)
+                <span key={item.id || item.href} className="ahenk-nav-dd">
+                  <Link href={item.href} className={navActive(path, item.href) ? "is-active" : ""}>
+                    {item.label}
+                  </Link>
+                  <span className="ahenk-nav-sub">
+                    <a href={AHENK_HSY_HREF}>Haber Sitesi Yazılımı</a>
+                    <Link href="/hizmetlerimiz">Tüm hizmetlerimiz</Link>
+                  </span>
+                </span>
+              ) : (
+                <Link
+                  key={item.id || item.href}
+                  href={item.href}
+                  className={navActive(path, item.href) ? "is-active" : ""}
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
             <a className="ahenk-nav-cta" href={wa} target="_blank" rel="noreferrer">
               WhatsApp
             </a>
@@ -448,6 +461,7 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
             <Link href="/asistan-ai">Ahenk Asistan AI</Link>
             <Link href="/whatsapp-cagri-merkezi">WhatsApp çağrı merkezi</Link>
             <Link href="/polis-ai">Polis AI</Link>
+            <a href={AHENK_HSY_HREF}>Haber Sitesi Yazılımı</a>
             <Link href="/haber-merkezi">Haber Merkezi</Link>
             <Link href="/yektube">YekTube</Link>
             <Link href="/turkata-haber-ajansi">TürkAta Haber Ajansı</Link>
@@ -481,5 +495,52 @@ function AhenkAgencyFooter({ site }: { site: AhenkAgencySite }) {
         © {new Date().getFullYear()} {site.brandName}. Tüm hakları saklıdır.
       </div>
     </footer>
+  );
+}
+
+/** hsy-landing 2026-10-09: ahenk.net.tr/haber-sitesi-yazilimi Worker'da sunucu tarafında üretilir; SPA içinden tam yükleme ile açılır. */
+export const AHENK_HSY_HREF = "/haber-sitesi-yazilimi";
+
+const AHENK_HSY_PROMO_LOGOS: { name: string; src: string }[] = [
+  { name: "Vatan Haber", src: "/api/hm/public/news-sites/1/logo" },
+  { name: "TürkAta Haber Ajansı", src: "/api/hm/public/news-sites/230/logo" },
+  { name: "Ankara Şehir Gazetesi", src: "/api/hm/public/news-sites/3/logo" },
+  { name: "Ankara Haber Gündemi", src: "/api/hm/public/news-sites/8/logo" },
+  { name: "Gündem İstanbul", src: "/api/hm/public/news-sites/1141/logo" },
+  { name: "Harika Olacak", src: "/api/hm/public/news-sites/1172/logo" },
+];
+
+export function AhenkHsyPromo({ id = "haber-sitesi-yazilimi" }: { id?: string }) {
+  return (
+    <section className="ahenk-hsy-promo" id={id}>
+      <div className="ahenk-hsy-promo-copy">
+        <span className="ahenk-kicker">Anında kurulum · Siteniz dolu dolu hazır</span>
+        <h2>Haber Sitesi Yazılımı</h2>
+        <p>
+          PHP haber sitesi, editör paneli ve yapay zekâ editörü tek pakette. Haberler otomatik gelir, kategorilenir ve
+          özgünleştirilir; siteniz ilk günden manşeti ve güncel haberleriyle yayında.
+        </p>
+        <ul>
+          <li>Otomatik RSS haber akışı, AI editör ve AI köşe yazarları</li>
+          <li>Google News sitemap, IndexNow, Cloudflare hızı</li>
+          <li>Aylık 3.000 TL · Yıllık 27.000 TL (%25 indirim) · Barındırma dahil</li>
+        </ul>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
+          <a href={AHENK_HSY_HREF} className="ahenk-btn">
+            Haber Sitesi Yazılımı
+          </a>
+          <a href={`${AHENK_HSY_HREF}#referanslar`} className="ahenk-btn ahenk-btn-ghost">
+            Referanslar
+          </a>
+        </div>
+      </div>
+      <a className="ahenk-hsy-promo-logos" href={`${AHENK_HSY_HREF}#referanslar`} aria-label="Referans haber siteleri">
+        {AHENK_HSY_PROMO_LOGOS.map((l) => (
+          <span key={l.src} className="ahenk-hsy-logo">
+            <img src={l.src} alt={`${l.name} logosu`} loading="lazy" decoding="async" />
+          </span>
+        ))}
+      </a>
+    </section>
   );
 }

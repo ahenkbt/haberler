@@ -31,7 +31,7 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 - Kurumsal web sitesi: https://ahenk.net.tr/kurumsal-web-sitesi
 - Haber sitesi yazılımı: https://ahenk.net.tr/haber-sitesi-yazilimi
 - Haber sitesi başvuru: https://ahenk.net.tr/ucretsiz-haber-sitesi
-- Haber scripti: https://ahenk.net.tr/haber-scripti
+- Haber scripti / PHP haber sitesi (aylık 3.000 TL, yıllık 27.000 TL; barındırma ve AI editör dahil): https://ahenk.net.tr/haber-sitesi-yazilimi
 - Avukat sitesi: https://ahenk.net.tr/avukat-sitesi
 - Doktor sitesi: https://ahenk.net.tr/doktor-sitesi
 - Restoran sitesi (QR menü, POS, kasiyer, garson, kurye, stok): https://ahenk.net.tr/restoran-sitesi

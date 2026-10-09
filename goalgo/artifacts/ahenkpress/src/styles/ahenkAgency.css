@@ -1817,3 +1817,31 @@
   .ahenk-tanitim-split .ahenk-subscriber-logos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) { .ahenk-tanitim-split .ahenk-subscriber-logos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* hsy-landing 2026-10-09: Hizmetlerimiz alt menü + Haber Sitesi Yazılımı tanıtım bloğu */
+.ahenk-nav-dd { position: relative; display: inline-flex; }
+.ahenk-nav-sub {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 60; min-width: 230px;
+  flex-direction: column; gap: 2px; padding: 6px; background: #050910;
+  border: 1px solid var(--ahenk-line); border-radius: 12px; box-shadow: 0 14px 30px rgba(0,0,0,.45);
+}
+.ahenk-nav-dd:hover .ahenk-nav-sub, .ahenk-nav-dd:focus-within .ahenk-nav-sub { display: flex; }
+.ahenk-nav-sub a { border-radius: 8px; }
+@media (max-width: 760px) {
+  .ahenk-nav-dd { display: flex; flex-direction: column; }
+  .ahenk-nav-sub { display: flex; position: static; box-shadow: none; border: 0; background: transparent; padding: 0 0 0 14px; min-width: 0; }
+}
+.ahenk-hsy-promo {
+  max-width: 1180px; margin: 36px auto; padding: 28px; display: grid; gap: 26px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center;
+  background: linear-gradient(135deg, var(--ahenk-navy-2), #10294a); border: 1px solid var(--ahenk-gold); border-radius: 20px;
+}
+.ahenk-hsy-promo h2 { margin: 8px 0 10px; }
+.ahenk-hsy-promo ul { margin: 12px 0 0; padding-left: 20px; color: #c7d1df; }
+.ahenk-hsy-promo-logos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ahenk-hsy-logo { background: #fff; border-radius: 12px; height: 72px; display: flex; align-items: center; justify-content: center; padding: 8px; }
+.ahenk-hsy-logo img { max-height: 54px; max-width: 100%; object-fit: contain; }
+@media (max-width: 760px) {
+  .ahenk-hsy-promo { grid-template-columns: 1fr; margin: 24px 12px; padding: 20px; }
+  .ahenk-hsy-promo-logos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

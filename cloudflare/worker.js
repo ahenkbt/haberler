@@ -16,6 +16,7 @@ import {
   purgeAhgRssCampaignNewsOnNeon,
 } from "./hm-brand-db-ensure.js";
 import { cloneDefaultHmSiteRssFeedRows } from "./hm-site-rss-defaults.js";
+import { serveAhenkHaberSitesiYazilimi } from "./hm-ahenk-haber-yazilimi.js"; // hsy-landing 2026-10-09
 import { handleHmEditorProfileEdge, handleHmEditorMediaUploadEdge } from "./hm-editor-profile-edge.js";
 import { handleHmEditorSiteOverridesEdge, isHmEditorSiteOverridesPath } from "./hm-editor-site-overrides-edge.js";
 import { handleHmSiteMailEdge, isHmSiteMailPath } from "./hm-site-mail-edge.js";
@@ -3560,6 +3561,10 @@ export default {
     }
 
     const apiRequest = request;
+
+    // hsy-landing 2026-10-09: ahenk.net.tr/haber-sitesi-yazilimi server-rendered for every UA (+ alias 301s).
+    const ahenkHsy = serveAhenkHaberSitesiYazilimi(request, incoming);
+    if (ahenkHsy) return ahenkHsy;
 
     // Sosyal / Googlebot k├Âkte 308'e d├╝┼şmeden site ad─▒+logo OG g├Ârs├╝n.
     const ogHtml = await socialPreviewOgHtml(request, env, incoming);

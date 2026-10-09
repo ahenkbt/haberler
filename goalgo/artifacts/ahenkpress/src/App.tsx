@@ -100,6 +100,7 @@ import AhenkDestek from "./pages/public/AhenkDestek";
 import { AhenkAgencyChrome } from "./components/ahenk-agency/AhenkAgencyChrome";
 import AhenkAgencyYazilim from "./pages/public/AhenkAgencyYazilim";
 import AhenkAgencyYazilimDetail from "./pages/public/AhenkAgencyYazilimDetail";
+import AhenkHsyHardNav, { AHENK_HSY_SPA_PATHS } from "./pages/public/AhenkHsyHardNav";
 import AhenkAgencyHaberMerkezi from "./pages/public/AhenkAgencyHaberMerkezi";
 import AhenkAgencyYekpare from "./pages/public/AhenkAgencyYekpare";
 import AhenkHaberSitesiLanding from "./pages/public/AhenkHaberSitesiLanding";
@@ -884,6 +885,11 @@ export default function App() {
       {AHENK_HUB_PATHS.map((p) => (
         <Route key={p} path={p}>
           {() => (isAhenkAgencyHost() ? <AhenkAgencyYazilim /> : <Redirect to="/haberler" />)}
+        </Route>
+      ))}
+      {AHENK_HSY_SPA_PATHS.map((p) => (
+        <Route key={`hsy-${p}`} path={p}>
+          {() => (isAhenkAgencyHost() ? <AhenkHsyHardNav /> : <Redirect to="/haberler" />)}
         </Route>
       ))}
       {Object.keys(AHENK_SLUG_ALIASES).map((p) => (
