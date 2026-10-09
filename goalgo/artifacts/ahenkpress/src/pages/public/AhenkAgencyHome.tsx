@@ -6,6 +6,7 @@ import {
   AhenkFaqList,
   AhenkFeatureChips,
   AhenkSmartLink,
+  AhenkHsyPromo,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
 import { useAhenkAgencySite } from "@/hooks/useAhenkAgencySite";
 import { ahenkWhatsAppHref } from "@/lib/ahenkAgencySeo";
@@ -148,6 +149,8 @@ export default function AhenkAgencyHome() {
   return (
     <AhenkAgencyChrome title={site.seoTitle} description={site.seoDescription}>
       <AhenkHomeSlider slides={site.slides} phone={site.phone} wa={wa} />
+
+      <AhenkHsyPromo />
 
       <section className="ahenk-polis-home ahenk-split-promo" id="asistan-ai">
         <div className="ahenk-polis-home-visual" aria-hidden>

@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import {
   AhenkAgencyChrome,
+  AhenkHsyPromo,
   AhenkMediaCard,
   AhenkPageHero,
 } from "@/components/ahenk-agency/AhenkAgencyChrome";
@@ -56,6 +57,7 @@ export default function AhenkAgencyHizmetler() {
         lead="Uluslararası kuruluş ve ödeme danışmanlığı, dijital göçebe / e-Residency, ajans stüdyosu ve çağrı merkezi operasyonu."
         image={site.servicesHeroImage || site.agencyOffers[0]?.image}
       />
+      <AhenkHsyPromo />
       <section className="ahenk-section">
         <div className="ahenk-grid">
           {items.map((item) => (
