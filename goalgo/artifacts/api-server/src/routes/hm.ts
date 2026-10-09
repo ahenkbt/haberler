@@ -116,7 +116,7 @@ import {
   resolveDefaultHmNewsSiteLayoutTheme,
 } from "../lib/hm-corporate-like-theme.js";
 import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
-import { mirrorHmSiteLayoutJsonToPhpNeon } from "../lib/hm-php-layout-sync.js";
+import { mirrorHmSiteLayoutJsonToPhpNeon, mirrorHmSiteRowToPhpAlias } from "../lib/hm-php-layout-sync.js";
 import { changedLayoutKeys, sanitizeEditorLayoutIncoming } from "../lib/hm-layout-merge-guard.js";
 import { markHmLayoutUserSave } from "../lib/hm-layout-guard.js";
 import {
@@ -1617,6 +1617,8 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
     editorPassword: string;
   }>;
   const patch: Partial<typeof hmNewsSitesTable.$inferInsert> = {};
+  /** kh-alias 2026-10-09: layout keys this save sent (for the PHP alias-row mirror below). */
+  let layoutChangedKeys: string[] | undefined;
   const [kindRow] = await newsReadDb()
     .select({
       slug: hmNewsSitesTable.slug,
@@ -1729,6 +1731,7 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       b.layoutJson && typeof b.layoutJson === "object" && !Array.isArray(b.layoutJson)
         ? (b.layoutJson as Record<string, unknown>)
         : {};
+    layoutChangedKeys = Object.keys(inc);
     const merged: Record<string, unknown> = { ...prev, ...inc, hmSiteKind: currentKind };
     if (prev.hmCategoryColors && inc.hmCategoryColors && typeof inc.hmCategoryColors === "object" && !Array.isArray(inc.hmCategoryColors)) {
       merged.hmCategoryColors = {
@@ -1826,6 +1829,20 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
         return;
       }
       row = await getHmNewsSiteByIdCompat(id);
+      // kh-alias 2026-10-09: the live PHP row can have another id (Kırşehir: panel 1131 -> PHP 229, matched by
+      // slug/domain). dualWriteUpdate mirrors by id only, so name/description/contact/layout never reached it.
+      await mirrorHmSiteRowToPhpAlias(
+        id,
+        {
+          displayName: patch.displayName,
+          description: patch.description,
+          contactJson: patch.contactJson,
+          layoutJson: patch.layoutJson,
+        },
+        layoutChangedKeys,
+      ).catch((err: unknown) => {
+        console.error("[hm-sites] php alias mirror", err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200));
+      });
     } else {
       const existing = await getHmNewsSiteByIdCompat(id);
       row = existing;
