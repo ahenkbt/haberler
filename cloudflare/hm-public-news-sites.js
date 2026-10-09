@@ -99,7 +99,7 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: "ankarasehirgazetesi.com",
+    domain2: null,
     domain3: null,
     displayName: "Ankara Şehir Gazetesi",
     logoDataUri: ASG_ORIGINAL_LOGO,
@@ -107,8 +107,8 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: "ankarahabergundemi.com",
-    domain3: "ankara.gundemi.org",
+    domain2: null,
+    domain3: null,
     displayName: "Ankara Haber Gündemi",
     logoDataUri: AHG_ORIGINAL_LOGO,
   },
@@ -138,11 +138,12 @@ export function ensureAsgAhgRebrandDomains(env) {
 async function applyAsgAhgRebrandDomains(env) {
   const clients = [];
   const panel = neonSqlClient(env);
-  if (panel) clients.push(panel);
+  if (panel) clients.push(["panel", panel]);
   // PHP reads NEWS_DATABASE_URL even when NEWS_DB_WRITE=main skips the container mirror.
   const news = neonNewsSqlClient(env);
-  if (news) clients.push(news);
-  for (const sql of clients) {
+  if (news) clients.push(["news", news]);
+  const notes = [];
+  for (const [label, sql] of clients) {
     for (const spec of ASG_AHG_REBRAND_ROWS) {
       const hosts = [spec.domain, spec.domain2, spec.domain3].filter(Boolean);
       for (const host of hosts) {
@@ -161,7 +162,7 @@ async function applyAsgAhgRebrandDomains(env) {
             )
         `;
       }
-      await sql`
+      const updated = await sql`
         UPDATE hm_news_sites
         SET domain = ${spec.domain},
             domain2 = ${spec.domain2},
@@ -177,7 +178,9 @@ async function applyAsgAhgRebrandDomains(env) {
             OR display_name IS DISTINCT FROM ${spec.displayName}
             OR active IS DISTINCT FROM true
           )
+        RETURNING id
       `;
+      notes.push(`${label}:${spec.slugs[0]}=${Array.isArray(updated) ? updated.length : 0}`);
       if (!spec.logoDataUri) continue;
       try {
         await sql`
@@ -210,6 +213,7 @@ async function applyAsgAhgRebrandDomains(env) {
     }
   }
   rowsCache = { at: 0, rows: null };
+  return notes.join(",") || "noclient";
 }
 
 function isCorporate(row, host) {
@@ -437,8 +441,9 @@ export async function handlePublicNewsSites(request, env, incoming) {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const path = String(incoming.pathname || "").replace(/\/+$/, "");
   if (path === NEWS_SITES_LIST_PATH) {
-    await ensureAsgAhgRebrandDomains(env).catch((err) => {
+    const rebrandNote = await ensureAsgAhgRebrandDomains(env).catch((err) => {
       console.error("[public-news-sites] rebrand", String(err?.message || err).slice(0, 160));
+      return "err";
     });
     const opts = {
       origin: `${incoming.protocol}//${incoming.host}`,
@@ -448,7 +453,9 @@ export async function handlePublicNewsSites(request, env, incoming) {
     const ilSites = await listPublicNewsSites(env, { ...opts, group: "il" });
     // total = every active news site incl. il siteleri (Tanıtım metnindeki canlı sayı).
     const body = JSON.stringify({ count: sites.length, sites, ilCount: ilSites.length, ilSites, total: sites.length + ilSites.length });
-    return new Response(request.method === "HEAD" ? null : body, { status: 200, headers: JSON_HEADERS });
+    const headers = new Headers(JSON_HEADERS);
+    headers.set("x-asg-rebrand", String(rebrandNote || "").slice(0, 180));
+    return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
   }
   const m = LOGO_PATH_RE.exec(path);
   if (!m) return null;
