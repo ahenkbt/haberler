@@ -13,6 +13,7 @@ import {
   syncPhpCategoriesToWorker,
 } from "./hm-php-editor-sync.js";
 import { runEditorPhpNeonSync } from "./hm-php-neon-sync-edge.js";
+import { isHiddenColumnRow, loadHiddenColumnKeys } from "./hm-hidden-columns.js";
 import bcrypt from "bcryptjs";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 import {
@@ -1779,15 +1780,28 @@ function parseMakaleAuthorId(body) {
   return undefined;
 }
 
-async function handleEditorMakale(sql, siteId, url) {
+async function handleEditorMakale(sql, siteId, url, env) {
   const limit = Math.min(Number(url.searchParams.get("limit") || 200) || 200, 500);
+  // Gizleme listesi (hm_site_content_hidden + kosedup taşınanları) PHP Neon'da; editör listesi de saymalı.
+  let hidden = null;
+  try {
+    const newsSql = env ? neonNewsSqlClient(env) : null;
+    if (newsSql) {
+      const phpSiteId = (await resolvePhpSiteId(newsSql, sql, siteId)) || siteId;
+      hidden = await loadHiddenColumnKeys(newsSql, phpSiteId);
+    }
+  } catch (err) {
+    console.error("[hm-editor-makale/hidden]", String(err?.message || err).slice(0, 160));
+  }
+  const fetchLimit = hidden?.size ? Math.min(limit * 4, 2000) : limit;
   const rows = await sql`
     SELECT * FROM hm_makaleler
     WHERE site_id = ${siteId}
     ORDER BY created_at DESC
-    LIMIT ${limit}
+    LIMIT ${fetchLimit}
   `;
-  const items = (rows || []).map((r) => serializeMakaleRow(r));
+  const visible = (rows || []).filter((r) => !isHiddenColumnRow(hidden, r)).slice(0, limit);
+  const items = visible.map((r) => serializeMakaleRow(r));
   return jsonResponse(200, { items, total: items.length });
 }
 
@@ -2930,7 +2944,7 @@ export async function handleKhEditorDataEdge(request, env, incomingUrl) {
   }
 
   if (path === "/api/hm/editor/makale" && method === "GET") {
-    return handleEditorMakale(sql, ctx.siteId, incomingUrl);
+    return handleEditorMakale(sql, ctx.siteId, incomingUrl, env);
   }
 
   if (path === "/api/hm/editor/makale" && method === "POST") {
