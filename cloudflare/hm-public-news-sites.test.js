@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { logoVersion, publicNewsSitesFromRows, renderIlSitesGrid, renderNewsSitesGrid, textLogoSvg } from "./hm-public-news-sites.js";
+import { logoVersion, publicNewsSitesFromRows, rebrandAssignmentForSlug, renderIlSitesGrid, renderNewsSitesGrid, replacedPublicHost, textLogoSvg } from "./hm-public-news-sites.js";
 
 const L = (o) => JSON.stringify(o);
 
@@ -82,6 +82,25 @@ describe("hm-public-news-sites", () => {
     assert.deepEqual(publicNewsSitesFromRows(rows).map((s) => s.domain), ["suhaber.net"]);
   });
 
+  it("ASG and AHG stay on the tanıtım grid under ankara.fix.tc and gundem.fix.tc", () => {
+    const rows = [
+      { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "Ankara Şehir Gazetesi", active: false, layout_json: L({ logoUrl: "data:image/png;base64,AAAA" }) },
+      { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "Ankara Haber Gündemi", active: true, layout_json: L({ logoUrl: "/ahg.png", hmPublicSuspended: true }) },
+    ];
+    const main = publicNewsSitesFromRows(rows);
+    assert.deepEqual(main.map((s) => s.domain), ["ankara.fix.tc", "gundem.fix.tc"]);
+    assert.equal(publicNewsSitesFromRows(rows, { group: "il" }).length, 0);
+    assert.equal(replacedPublicHost(rows[0], "ankarasehirgazetesi.com"), "ankara.fix.tc");
+    assert.equal(rebrandAssignmentForSlug("asg").domain, "ankara.fix.tc");
+    assert.equal(rebrandAssignmentForSlug("asg").domain2, null);
+    assert.equal(rebrandAssignmentForSlug("asg").domain3, null);
+    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain, "gundem.fix.tc");
+    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, null);
+    assert.equal(rebrandAssignmentForSlug("ahg").domain3, null);
+    assert.equal(rebrandAssignmentForSlug("vatanhaber"), null);
+    assert.doesNotMatch(main.map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
+  });
+
   it("logogrid: text logo fallback is an SVG in the site colour", () => {
     const svg = textLogoSvg("Yeşil Vatan", "#1d7a3a", "yesilvatan.gen.tr");
     assert.match(svg, /^<svg /);
@@ -89,16 +108,4 @@ describe("hm-public-news-sites", () => {
     assert.match(svg, /YEŞİL/);
     assert.match(svg, /yesilvatan\.gen\.tr/);
   });
-});
-
-import { PROMO_HIDDEN_SITE_IDS } from "./hm-public-news-sites.js";
-it("promo-hide: ASG (3) and AHG (8) are not in the public grid", () => {
-  const rows = [
-    { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "ASG", active: true, layout_json: "{}" },
-    { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "AHG", active: true, layout_json: "{}" },
-    { id: 1, slug: "vatanhaber", domain: "vatanhaber.net", display_name: "Vatan", active: true, layout_json: "{}" },
-  ];
-  const out = publicNewsSitesFromRows(rows);
-  assert.deepEqual(out.map((s) => s.id), [1]);
-  assert.ok(PROMO_HIDDEN_SITE_IDS.has(3) && PROMO_HIDDEN_SITE_IDS.has(8));
 });
