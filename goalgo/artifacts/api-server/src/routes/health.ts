@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { HealthCheckResponse } from "@workspace/api-zod";
-import { pingDatabaseDetailed, databaseProvider, resolveDatabaseUrl } from "@workspace/db";
+import { pingDatabaseDetailed, databaseProvider, resolveDatabaseUrl, mainPoolStats } from "@workspace/db";
 import {
   getMediaStorageMode,
   getMediaStoragePreference,
@@ -93,7 +93,28 @@ const ok = async (_req: Request, res: Response) => {
 };
 
 /** Railway / Render / ters vekil bazen `/api/health` kullanır; yalnızca `healthz` olunca 404 ile yeniden başlatma döngüsü oluşabilir. */
+/** Per-instance diagnostics (no secrets): pool usage, DB ping time, event-loop lag. */
+const BOOT_ID = Math.random().toString(36).slice(2, 10);
+const poolDiag = async (_req: Request, res: Response) => {
+  const lagStart = Date.now();
+  await new Promise((r) => setImmediate(r));
+  const loopLagMs = Date.now() - lagStart;
+  const t0 = Date.now();
+  const ping = await pingDatabaseDetailed(5_000);
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    bootId: BOOT_ID,
+    uptimeS: Math.round(process.uptime()),
+    pool: mainPoolStats(),
+    pingMs: Date.now() - t0,
+    ping: ping.ok ? "ok" : ping.error,
+    loopLagMs,
+    rssMb: Math.round(process.memoryUsage().rss / 1048576),
+  });
+};
+
 router.get("/healthz/live", live);
+router.get("/healthz/pool", poolDiag);
 router.get("/healthz/media", mediaProbe);
 router.get("/healthz", ok);
 router.get("/health", ok);

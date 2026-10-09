@@ -62,7 +62,7 @@ import {
   newsPageBundleSlug,
   wrapArticleAsPageBundle,
 } from "./hm-news-article-edge.js";
-import { fetchApi, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
+import { fetchApi, fetchApiInstancePool, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
 import {
   hmYektubeCatalogDegradeResponse,
   hmYektubeCatalogJsonResponse,
@@ -3089,6 +3089,10 @@ export default {
   async fetch(request, env, ctx) {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
+
+    if (incoming.pathname === "/api/healthz/pool" && incoming.searchParams.has("instance")) {
+      return fetchApiInstancePool(env, incoming.searchParams.get("instance"));
+    }
 
     // Container kapalıyken panel «ulaşılamıyor» olmasın — kenar live + arka planda ısıt.
     try {

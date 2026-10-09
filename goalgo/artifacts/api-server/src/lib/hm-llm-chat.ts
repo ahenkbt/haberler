@@ -62,6 +62,8 @@ async function callOpenAiCompatible(opts: {
   user: string;
   temperature: number;
   provider: LlmProviderId;
+  extraBody?: Record<string, unknown>;
+  timeoutMs?: number;
 }): Promise<ChatCallResult> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (opts.auth === "bearer") headers.Authorization = `Bearer ${opts.apiKey}`;
@@ -77,8 +79,9 @@ async function callOpenAiCompatible(opts: {
           { role: "system", content: opts.system },
           { role: "user", content: opts.user },
         ],
+        ...(opts.extraBody ?? {}),
       }),
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 25_000),
     });
     const data = (await res.json().catch(() => ({}))) as {
       choices?: { message?: { content?: string } }[];
@@ -123,6 +126,10 @@ export async function callLlmAttempt(
       user: opts.user,
       temperature,
       provider: "nvidia",
+      // Nemotron 3.5 is a reasoning model: without this it spends ~250 tokens "thinking"
+      // (16-20 s) and the visible answer can miss the expected text.
+      extraBody: /nemotron/i.test(attempt.model) ? { chat_template_kwargs: { enable_thinking: false } } : undefined,
+      timeoutMs: 45_000,
     });
     return result.text ? { ...result, provider: "openai" } : result;
   }

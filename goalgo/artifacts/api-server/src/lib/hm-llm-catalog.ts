@@ -56,8 +56,8 @@ const CATALOG: Record<
   },
   nvidia: {
     label: "NVIDIA NIM",
-    description: "Ucuz NIM modeli. Varsayılan: nvidia/nemotron-3.5-lightning.",
-    model: "nvidia/nemotron-3.5-lightning",
+    description: "Ucuz NIM modeli. Varsayılan: nvidia/nemotron-3.5-lightning-30b-a3b.",
+    model: "nvidia/nemotron-3.5-lightning-30b-a3b",
     priority: 20,
   },
   gemini: {

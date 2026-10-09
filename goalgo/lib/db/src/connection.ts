@@ -27,7 +27,15 @@ export const pool = new Pool(
     connectionTimeoutMillis: poolInt("PG_POOL_CONNECTION_TIMEOUT_MS", 10_000),
   }),
 );
+// An idle client that errors (socket reset by Neon/NAT) must not take the process down.
+pool.on("error", (err) => {
+  console.error("[pg-pool] idle client error", err instanceof Error ? err.message : String(err));
+});
 export const db = drizzle(pool, { schema });
+
+export function mainPoolStats(): { total: number; idle: number; waiting: number } {
+  return { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
+}
 
 export type PingDatabaseResult = { ok: true } | { ok: false; error: "timeout" | "reset" | "refused" | "dns" | "error" };
 

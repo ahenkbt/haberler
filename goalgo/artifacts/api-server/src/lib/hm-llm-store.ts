@@ -50,7 +50,7 @@ let plaintextUpgrade: Promise<void> | null = null;
 const STALE_EMPTY_MODELS: Record<LlmProviderId, readonly string[]> = {
   evren: ["auto"],
   evren2: ["auto"],
-  nvidia: ["meta/llama-3.1-8b-instruct"],
+  nvidia: ["meta/llama-3.1-8b-instruct", "nvidia/nemotron-3.5-lightning"],
   gemini: ["gemini-2.0-flash-lite"],
   openai: ["gpt-4o-mini"],
 };
