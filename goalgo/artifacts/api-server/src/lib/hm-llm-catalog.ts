@@ -3,7 +3,8 @@
  * GET API'leri anahtarın tamamını döndürmez; yalnızca son 4 karakter maskelenir.
  */
 
-export const LLM_PROVIDER_IDS = ["evren", "nvidia", "gemini", "openai"] as const;
+/** evren2 = backup Evren key (same gateway), tried after the primary and before NVIDIA. */
+export const LLM_PROVIDER_IDS = ["evren", "evren2", "nvidia", "gemini", "openai"] as const;
 export type LlmProviderId = (typeof LLM_PROVIDER_IDS)[number];
 export type LlmKeyScope = "site" | "global" | "env";
 
@@ -46,6 +47,12 @@ const CATALOG: Record<
     description: "Yerli Evren LLM geçidi. Varsayılan: deepseek-v4-flash.",
     model: "deepseek-v4-flash",
     priority: 10,
+  },
+  evren2: {
+    label: "Evren (yedek anahtar)",
+    description: "İkinci Evren anahtarı: birincisi kotaya takılır veya hata verirse NVIDIA'dan önce denenir.",
+    model: "deepseek-v4-flash",
+    priority: 15,
   },
   nvidia: {
     label: "NVIDIA NIM",

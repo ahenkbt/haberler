@@ -986,7 +986,7 @@ router.get("/ai/status", async (req, res): Promise<void> => {
   try {
     const attempts = await resolveLlmAttempts(null);
     llmChainReady = attempts.length > 0;
-    evrenConfigured = attempts.some((a) => a.provider === "evren");
+    evrenConfigured = attempts.some((a) => a.provider === "evren" || a.provider === "evren2");
   } catch {
     /* ignore */
   }

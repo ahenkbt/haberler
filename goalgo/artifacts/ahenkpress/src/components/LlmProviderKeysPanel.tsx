@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiFetch, apiUrl, ensureAdminPanelBootstrap } from "@/lib/apiBase";
 import { hmEditorJson } from "@/lib/hmEditorApi";
 
-type ProviderId = "evren" | "nvidia" | "gemini" | "openai";
+type ProviderId = "evren" | "evren2" | "nvidia" | "gemini" | "openai";
 
 type ProviderRow = {
   provider: ProviderId;
