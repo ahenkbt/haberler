@@ -2,6 +2,7 @@
  * AHB (`__tbl_ky_yazarlar__` / `__ky_makaleler__`) JSON → HM site köşe yazarları + `hm_makaleler` köşe yazıları.
  */
 import { downloadExternalImageToMediaDetailed } from "./mediaUploadService";
+import { sqlNormTextEq } from "./sql-norm-text.js";
 
 export type AhbYazarItem = {
   id: string;
@@ -790,9 +791,9 @@ export async function runHmAhbKoseImport(params: {
       .where(
         and(
           eq(hmMakalelerTable.siteId, siteId),
-          sql`lower(regexp_replace(btrim(${hmMakalelerTable.title}), '\s+', ' ', 'g')) = ${title
+          sqlNormTextEq(hmMakalelerTable.title, title
             .replace(/\s+/g, " ")
-            .toLocaleLowerCase("tr-TR")}`,
+            .toLocaleLowerCase("tr-TR")),
         ),
       )
       .limit(1);

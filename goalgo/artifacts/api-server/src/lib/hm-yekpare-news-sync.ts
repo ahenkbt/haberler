@@ -30,6 +30,7 @@ import { runConsolidateSitePrefixCategories } from "./consolidate-site-prefix-ca
 import { isHmCorporateLayout, parseHmLayoutJson } from "./hm-editor-categories.js";
 import { yekparePoolSendEnabledFromLayout } from "./hm-public-layout.js";
 import { mirrorHmSiteSourceRowsToNewsDb } from "./hm-news-db-source-mirror.js";
+import { sqlNormTextEq } from "./sql-norm-text.js";
 
 /** Kurumsal vitrin siteleri Yekpare merkez havuzuna senkron edilmez. */
 export function isCorporateHmSiteRow(site: Pick<HmNewsSiteRow, "layoutJson">): boolean {
@@ -408,7 +409,7 @@ async function findCentralArticleFallback(params: {
 
   const baseConds = [
     isNull(newsTable.siteId),
-    sql`lower(regexp_replace(btrim(${newsTable.title}), '\s+', ' ', 'g')) = ${titleNorm}`,
+    sqlNormTextEq(newsTable.title, titleNorm),
   ];
   if (params.authorId != null) {
     const [hit] = await db
