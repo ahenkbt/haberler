@@ -15,7 +15,8 @@
  * (25 ana logo kalır); ayrı `ilSites` listesinde döner ve /daha + ajans sayfasında ayrı "İl Siteleri" grubu olur.
  */
 import { neon } from "@neondatabase/serverless";
-import { neonNewsSqlClient, neonSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
+import { AHG_ORIGINAL_LOGO, ASG_ORIGINAL_LOGO } from "./asg-ahg-original-logos.js";
+import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 
 export const NEWS_SITES_LIST_PATH = "/api/hm/public/news-sites";
@@ -101,6 +102,7 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
     domain2: "ankarasehirgazetesi.com",
     domain3: null,
     displayName: "Ankara Şehir Gazetesi",
+    logoDataUri: ASG_ORIGINAL_LOGO,
   },
   {
     slugs: ["ankarahabergundemi", "ahg"],
@@ -108,6 +110,7 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
     domain2: "ankarahabergundemi.com",
     domain3: "ankara.gundemi.org",
     displayName: "Ankara Haber Gündemi",
+    logoDataUri: AHG_ORIGINAL_LOGO,
   },
 ]);
 
@@ -136,10 +139,9 @@ async function applyAsgAhgRebrandDomains(env) {
   const clients = [];
   const panel = neonSqlClient(env);
   if (panel) clients.push(panel);
-  if (shouldEdgeDualWriteNewsDb(env)) {
-    const news = neonNewsSqlClient(env);
-    if (news) clients.push(news);
-  }
+  // PHP reads NEWS_DATABASE_URL even when NEWS_DB_WRITE=main skips the container mirror.
+  const news = neonNewsSqlClient(env);
+  if (news) clients.push(news);
   for (const sql of clients) {
     for (const spec of ASG_AHG_REBRAND_ROWS) {
       const hosts = [spec.domain, spec.domain2, spec.domain3].filter(Boolean);
@@ -166,15 +168,45 @@ async function applyAsgAhgRebrandDomains(env) {
             domain3 = ${spec.domain3},
             display_name = ${spec.displayName},
             active = true,
-            layout_json = CASE
-              WHEN layout_json IS NULL OR btrim(layout_json) = '' THEN layout_json
-              ELSE (((layout_json::jsonb) - 'hmDisplayNameOverride' - 'hmIl81' - 'hmPublicSuspended' - 'hmCorporateSite')
-                - CASE WHEN (layout_json::jsonb)->>'hmSiteKind' = 'kurumsal' THEN 'hmSiteKind' ELSE '' END)::text
-            END,
             updated_at = now()
-        WHERE lower(slug) = ${spec.slugs[0]}
-           OR lower(slug) = ${spec.slugs[1]}
+        WHERE (lower(slug) = ${spec.slugs[0]} OR lower(slug) = ${spec.slugs[1]})
+          AND (
+            lower(coalesce(domain, '')) IS DISTINCT FROM ${spec.domain}
+            OR lower(coalesce(domain2, '')) IS DISTINCT FROM ${spec.domain2 ?? ""}
+            OR lower(coalesce(domain3, '')) IS DISTINCT FROM ${spec.domain3 ?? ""}
+            OR display_name IS DISTINCT FROM ${spec.displayName}
+            OR active IS DISTINCT FROM true
+          )
       `;
+      if (!spec.logoDataUri) continue;
+      try {
+        await sql`
+          UPDATE hm_news_sites
+          SET layout_json = (
+                jsonb_set(
+                  ((layout_json::jsonb) - 'hmDisplayNameOverride' - 'hmIl81' - 'hmPublicSuspended' - 'hmCorporateSite')
+                    - CASE WHEN (layout_json::jsonb)->>'hmSiteKind' = 'kurumsal' THEN 'hmSiteKind' ELSE '' END,
+                  '{logoUrl}',
+                  to_jsonb(${spec.logoDataUri}::text),
+                  true
+                )
+              )::text,
+              updated_at = now()
+          WHERE (lower(slug) = ${spec.slugs[0]} OR lower(slug) = ${spec.slugs[1]})
+            AND layout_json IS NOT NULL
+            AND btrim(layout_json) <> ''
+            AND (
+              coalesce(layout_json::jsonb->>'logoUrl', '') IS DISTINCT FROM ${spec.logoDataUri}
+              OR coalesce(layout_json::jsonb->>'hmDisplayNameOverride', '') <> ''
+              OR layout_json::jsonb ? 'hmIl81'
+              OR coalesce(layout_json::jsonb->>'hmPublicSuspended', '') = 'true'
+              OR coalesce(layout_json::jsonb->>'hmCorporateSite', '') = 'true'
+              OR layout_json::jsonb->>'hmSiteKind' = 'kurumsal'
+            )
+        `;
+      } catch (err) {
+        console.error("[public-news-sites] logo", String(err?.message || err).slice(0, 160));
+      }
     }
   }
   rowsCache = { at: 0, rows: null };
