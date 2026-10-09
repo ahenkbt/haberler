@@ -101,7 +101,8 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
     domain: "ankara.fix.tc",
     domain2: "ankarasehirgazetesi.com",
     domain3: null,
-    displayName: "Ankara Şehir Gazetesi",
+    // Renamed by the owner on 2026-10-09; this loop rewrites display_name on every list request.
+    displayName: "Ankara Şehir Haber",
     logoDataUri: ASG_ORIGINAL_LOGO,
   },
   {
