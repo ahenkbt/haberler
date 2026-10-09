@@ -1,8 +1,9 @@
 /**
  * Live ASG / AHG domain + logo repair on panel Neon and PHP Neon.
  *
- * PHP canonical is the first domain column. Only ankara.fix.tc and gundem.fix.tc
- * are stored. The deleted apexes are not written back.
+ * PHP canonical is the first domain column. ankara.fix.tc and gundem.fix.tc stay
+ * first. Aliases are sehir.gundemi.org and ankara.gundemi.org. The deleted apexes
+ * are not written back.
  * The public logo grid reads NEWS_DATABASE_URL first and skips inactive or
  * suspended rows, so both databases are updated and the panel data-URI logo is
  * copied across when the other row has none.
@@ -26,14 +27,14 @@ const SPECS: Spec[] = [
     label: "ASG",
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: null,
+    domain2: "sehir.gundemi.org",
     domain3: null,
   },
   {
     label: "AHG",
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: null,
+    domain2: "ankara.gundemi.org",
     domain3: null,
   },
 ];
@@ -137,9 +138,9 @@ export function patchRebrandLayout(raw: string | null, logoUrl: string): { json:
     notes.push("cleared hmSiteKind");
   }
   const current = String(layout.logoUrl ?? "").trim();
-  if (logoUrl && logoUrl !== current) {
+  if (logoUrl && !current) {
     layout.logoUrl = logoUrl;
-    notes.push(`logo ${current.length} -> ${logoUrl.length}`);
+    notes.push("logo filled");
   }
   if (!notes.length) return { json: original, changed: false, notes };
   return { json: JSON.stringify(layout), changed: true, notes };
