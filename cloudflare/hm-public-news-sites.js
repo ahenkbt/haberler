@@ -165,8 +165,8 @@ async function applyAsgAhgRebrandDomains(env) {
       const updated = await sql`
         UPDATE hm_news_sites
         SET domain = ${spec.domain},
-            domain2 = ${spec.domain2},
-            domain3 = ${spec.domain3},
+            domain2 = NULL,
+            domain3 = NULL,
             display_name = ${spec.displayName},
             active = true,
             updated_at = now()
