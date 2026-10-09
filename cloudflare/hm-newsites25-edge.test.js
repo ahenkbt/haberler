@@ -10,6 +10,8 @@ test("newsites25: hosts + brand bindings", () => {
   assert.equal(newsites25ForHost("world.fix.tc")?.slug, "world");
   assert.equal(newsites25ForHost("spor.gundemi.org"), null);
   assert.equal(newsites25ForHost("emlak.gundemi.org")?.slug, "emlak");
+  assert.equal(newsites25ForHost("harikaolacak.com.tr")?.slug, "harikaolacak");
+  assert.equal(matchBrandBinding({ domain: "harikaolacak.com.tr" })?.slug, "harikaolacak");
   assert.equal(newsites25ForHost("www.isdunyasi.gundemi.org")?.slug, "isdunyasi");
   assert.equal(matchBrandBinding({ domain: "emlak.gundemi.org" })?.slug, "emlak");
   assert.equal(matchBrandBinding({ domain: "isdunyasi.gundemi.org" })?.slug, "isdunyasi");
