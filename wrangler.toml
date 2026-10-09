@@ -2426,6 +2426,16 @@ zone_name = "harikaolacak.com.tr"
 pattern = "www.harikaolacak.com.tr/hm/*"
 zone_name = "harikaolacak.com.tr"
 
+# goalgo.com.tr (goalgo-site 2026-10-09) — "Goalgo Haber Yazılımı" tanıtım sitesi Worker'da (hm-goalgo-com-tr.js); /editor + /api HM akışı.
+# NOT goalgo.org / pbx.goalgo.org (ayrı zone, dokunulmaz).
+[[routes]]
+pattern = "goalgo.com.tr/*"
+zone_name = "goalgo.com.tr"
+
+[[routes]]
+pattern = "www.goalgo.com.tr/*"
+zone_name = "goalgo.com.tr"
+
 # redeploy trigger 2026-10-08T06:15:00Z — sosyalhizmetler.tr /sh/* + theme.css bridge
 # redeploy trigger 2026-10-07T22:30:00Z — sosyalhizmetler.tr worker routes (domain2 Marmara Gündemi)
 

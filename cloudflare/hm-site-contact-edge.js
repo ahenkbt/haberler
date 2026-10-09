@@ -199,8 +199,10 @@ async function siteForHost(sql, host) {
     ORDER BY id ASC LIMIT 1
   `;
   const site = rows?.[0];
-  if (!site || CORPORATE_IDS.has(Number(site.id)) || !isHmNewsSite(site)) return null;
+  if (!site || CORPORATE_IDS.has(Number(site.id))) return null;
   const layout = parseLayout(site.layout_json);
+  // goalgo-site 2026-10-09: corporate/marketing sites may opt in to the contact form explicitly.
+  if (!isHmNewsSite(site) && layout.hmContactFormEnabled !== true) return null;
   if (layout.hmPublicSuspended === true) return null;
   return site;
 }
