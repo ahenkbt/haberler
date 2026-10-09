@@ -227,7 +227,7 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     // Ankara Şehir / Gündem Fix Haber stay on the main tanıtım grid, linked to fix.tc.
     const fix = fixAnkaraSite(row);
     const featured = fix || movedHost ? null : IL_FEATURED[host] || null;
-    const isIl = Boolean(!fix && (featured || (!movedHost && layout.hmIl81 && typeof layout.hmIl81 === "object")));
+    const isIl = Boolean(fix || featured || (!movedHost && layout.hmIl81 && typeof layout.hmIl81 === "object"));
     if (group === "il" ? !isIl : isIl) continue;
     let logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
     if (fix && !layoutHasFixAnkaraWordmark(layout, fix)) logoRaw = fixAnkaraLogoDataUri(fix);
