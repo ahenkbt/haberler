@@ -21,7 +21,6 @@ Ahenk (https://ahenk.net.tr) Ankara merkezli Ahenk Bilgi Teknolojileri’dir. An
 - Hukuk: https://yekpare.net/hukuk
 - İmece mağaza: https://yekpare.net/alisveris/magaza/imece
 - Kafe Bazar: https://yekpare.net/siparis/satici/kafe-bazar
-- Ankara Şehir Gazetesi (HM editör): https://ankarasehirgazetesi.com/
 - Vatan Kahramanları (HM editör): https://vatankahramanlari.org/
 
 ## Web yazılımı (öncelik)
