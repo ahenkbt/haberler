@@ -20,6 +20,8 @@ test("newsites25: hosts + brand bindings", () => {
   assert.equal(matchBrandBinding({ domain: "spor.fix.tc" })?.slug, "spor");
   assert.equal(newsites25ForHost("www.goalgo.com.tr")?.slug, "goalgohaber");
   assert.equal(matchBrandBinding({ domain: "goalgo.com.tr" })?.slug, "goalgohaber");
+  assert.equal(newsites25ForHost("www.alladdin.app")?.slug, "alladdinhaber");
+  assert.equal(matchBrandBinding({ domain: "alladdin.app" })?.slug, "alladdinhaber");
 });
 
 test("corporate seed sites: corporate kind, no RSS, editor + contact opt-in", () => {
