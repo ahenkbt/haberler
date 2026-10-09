@@ -24,6 +24,11 @@ const LOGO_PATH_RE = /^\/api\/hm\/public\/news-sites\/(\d{1,9})\/logo$/;
 
 /** Corporate (kurumsal) sites — never in the news-site grid. */
 export const CORPORATE_SITE_IDS = new Set([7, 11, 61]);
+/**
+ * promo-hide 2026-10-09 (user 11:39): ASG (3) + AHG (8) never in tanıtım/daha logo grids. They move to ankara.fix.tc /
+ * gundem.fix.tc; re-add (remove from this set) only once those hosts + new Fix logos are live.
+ */
+export const PROMO_HIDDEN_SITE_IDS = new Set([3, 8]);
 const CORPORATE_SLUGS = new Set(["vkd", "vatankahramanlari", "trafik", "tr", "tukav", "turkatav"]);
 const CORPORATE_HOSTS = new Set([
   "vatankahramanlari.org",
@@ -103,6 +108,7 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     const host = normalizeSiteHost(row.domain);
     if (!host) continue;
     if (isCorporate(row, host)) continue;
+    if (PROMO_HIDDEN_SITE_IDS.has(Number(row.id))) continue;
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true) continue;
     if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
