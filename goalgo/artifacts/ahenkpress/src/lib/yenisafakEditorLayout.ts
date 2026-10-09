@@ -44,7 +44,8 @@ export type YsModuleId =
   | "ysVideo"
   | "ysAuthors"
   | "ysMostRead"
-  | "ysGallery";
+  | "ysGallery"
+  | "ysOzelHaber";
 
 export type YsModuleDef = {
   id: YsModuleId;
@@ -57,6 +58,8 @@ export type YsModuleDef = {
   aliases: readonly string[];
   defaultCategory: string;
   defaultCount: number;
+  /** Anahtar hiç yoksa modül açık mı? PHP ile aynı (Özel haber: false). */
+  defaultEnabled?: boolean;
 };
 
 export const YS_MODULES: readonly YsModuleDef[] = [
@@ -132,6 +135,17 @@ export const YS_MODULES: readonly YsModuleDef[] = [
     defaultCategory: "kultur-sanat",
     defaultCount: 6,
   },
+  {
+    // Editörün elle eklediği haberler (Röportaj / Özel Haber formu dahil). Varsayılan kapalı.
+    id: "ysOzelHaber",
+    label: "Özel haber",
+    toggleKey: "hmNewsYsOzelHaberEnabled",
+    legacyToggleKey: "hmNewsYsOzelHaberEnabled",
+    aliases: ["ysOzelHaber", "ozelHaber"],
+    defaultCategory: "",
+    defaultCount: 8,
+    defaultEnabled: false,
+  },
 ] as const;
 
 /**
@@ -187,6 +201,7 @@ export const PHP_THEME_LAYOUT_KEYS = [
   "hmNewsYsMostReadEnabled",
   "hmNewsAhenkPopulerHaberlerEnabled",
   "hmNewsYsGalleryEnabled",
+  "hmNewsYsOzelHaberEnabled",
   "hmNewsMediaDarkBlockEnabled",
   // Modules.php → navCategories
   "hmNavHiddenCategorySlugs",
@@ -229,13 +244,13 @@ function layoutFlag(value: unknown): boolean | null {
 }
 
 /** PHP `Modules::isOn`: listedeki ilk mevcut anahtar kazanır, hiçbiri yoksa açık. */
-export function phpModuleIsOn(layout: Record<string, unknown>, keys: readonly string[]): boolean {
+export function phpModuleIsOn(layout: Record<string, unknown>, keys: readonly string[], defaultOn = true): boolean {
   for (const key of keys) {
     if (Object.prototype.hasOwnProperty.call(layout, key)) {
       return layoutFlag(layout[key]) === true;
     }
   }
-  return true;
+  return defaultOn;
 }
 
 export function normalizeYsMansetPreset(value: unknown): YsMansetPresetId | null {
@@ -331,7 +346,7 @@ export function readYsModuleRows(prefs: NewsSiteLayoutPrefs | null | undefined):
     const count = clampYsCount(readMappedCount(counts, def.aliases) ?? def.defaultCount);
     return {
       id: def.id,
-      enabled: phpModuleIsOn(layout, [def.toggleKey, def.legacyToggleKey]),
+      enabled: phpModuleIsOn(layout, [def.toggleKey, def.legacyToggleKey], def.defaultEnabled ?? true),
       category,
       count,
       rank,
@@ -549,7 +564,7 @@ export function phpEnabledModules(layout: Record<string, unknown>): Array<{ id: 
   const slugMap = slugs && typeof slugs === "object" && !Array.isArray(slugs) ? (slugs as Record<string, unknown>) : {};
   const countMap = counts && typeof counts === "object" && !Array.isArray(counts) ? (counts as Record<string, unknown>) : {};
   const rows = YS_MODULES.map((def, index) => {
-    if (!phpModuleIsOn(layout, [String(def.toggleKey), String(def.legacyToggleKey)])) return null;
+    if (!phpModuleIsOn(layout, [String(def.toggleKey), String(def.legacyToggleKey)], def.defaultEnabled ?? true)) return null;
     let rank = 1000 + (index + 1) * 10;
     order.forEach((key, orderIndex) => {
       if (def.aliases.includes(key)) rank = Math.min(rank, orderIndex);

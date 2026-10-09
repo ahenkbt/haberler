@@ -964,6 +964,8 @@ export type NewsSiteLayoutPrefs = {
   hmNewsYsAuthorsEnabled?: boolean;
   hmNewsYsMostReadEnabled?: boolean;
   hmNewsYsGalleryEnabled?: boolean;
+  /** Anasayfa "Özel haber" bloğu. Varsayılan KAPALI: yalnız true iken görünür (PHP Modules::OPT_IN). */
+  hmNewsYsOzelHaberEnabled?: boolean;
   /** Kurumsal temada gövde genişlişi: `full` kenardan kenara, `contained` ortalı/max-width. */
   hmCorporateLayoutWidth?: HmCorporateLayoutWidth | null;
   /**
