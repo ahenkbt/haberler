@@ -77,7 +77,7 @@ const PHP_CORPORATE_THEME_HOSTS = new Set(
   ].map((h) => normalizeHostname(h)),
 );
 
-/** PHP origin siteleri — /yazar/giris* Worker rotası var, /koseyazari/* henüz yok. */
+/** PHP origin siteleri — /koseyazari/giris PHP temada; /koseyazari/haber*|sifre* Worker (SPA panel). */
 const PHP_KOSE_ORIGIN_HOSTS = new Set([...PHP_THEME_PUBLIC_APEX, ...PHP_CORPORATE_THEME_APEX]);
 
 /** Eski SPA yollarında site slug'ından önce gelen önekler. */
@@ -187,8 +187,9 @@ export function koseyazariPanelRedirectResponse(request, incoming) {
   const nextPath = koseyazariPanelRedirectPath(incoming.pathname);
   if (!nextPath) return null;
   const host = normalizeHostname(incoming.hostname).replace(/^www\./, "");
-  // PHP tema origin'inde /koseyazari/* henüz Worker rotası değil — 301 origin 404 yapar.
-  if (PHP_KOSE_ORIGIN_HOSTS.has(host)) return null;
+  // PHP tema siteleri: /koseyazari/giris artık PHP temada (Worker rotası yok, 2026-10-09).
+  // Eski /yazar/giris bağlantısı oraya gider; panelin geri kalanı (/yazar/haber*, /yazar/sifre*) SPA'da kalır.
+  if (PHP_KOSE_ORIGIN_HOSTS.has(host) && nextPath !== "/koseyazari/giris") return null;
   const dest = new URL(incoming.href);
   dest.pathname = nextPath;
   return new Response(null, {
