@@ -11,6 +11,8 @@
  *   emlak.gundemi.org                               Emlak Gündemi         concept: emlak (konut, kentsel dönüşüm, TOKİ, kira, kredi, imar)
  *   isdunyasi.gundemi.org                           İş Dünyası Gündemi    concept: isdunyasi (sanayi, ihracat, lojistik, esnaf ve KOBİ)
  * harikaolacak (2026-10-09, user request): harikaolacak.com.tr, TP 1172, Harika Olacak — positive Gen-Z social news + lifestyle concept site.
+ * goalgohaber (2026-10-09, user request): goalgo.com.tr, TP 1173, Goalgo Haber Yazılımı — CORPORATE marketing site (front end = Worker
+ *   hm-goalgo-com-tr.js); panel row only for /editor (convention editor bilgi@goalgo.com.tr via hmConventionEditorEnabled) + contact inbox.
  */
 export const NEWSITES25 = [
   {
@@ -1497,22 +1499,65 @@ export const NEWSITES25 = [
   }
 ];
 
+/**
+ * Corporate (non-news) marketing sites that only need a PANEL row for /editor + the contact inbox.
+ * Front end is served by the Worker; layout is corporate (excluded from news fan-out and public news-site lists).
+ * Convention editor (bilgi@<domain>, password = e-mail, user decision) via layout.hmConventionEditorEnabled.
+ */
+export const SEED_CORPORATE_SITES = [
+  {
+    "slug": "goalgohaber",
+    "hosts": [
+      "goalgo.com.tr",
+      "www.goalgo.com.tr"
+    ],
+    "displayName": "Goalgo Haber Yazılımı",
+    "description": "Goalgo Haber Yazılımı tanıtım sitesi (kurumsal; haber/RSS yok). Ön yüz Worker'da (hm-goalgo-com-tr.js); bu satır yalnızca /editor paneli ve iletişim kutusu içindir.",
+    "contact": {
+      "email": "bilgi@goalgo.com.tr",
+      "phone": "0532 229 18 92",
+      "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara"
+    },
+    "editorEmail": "bilgi@goalgo.com.tr",
+    "layout": {
+      "hmSiteKind": "corporate",
+      "hmNewsSiteKind": "corporate",
+      "hmCorporateSite": true,
+      "hmNewsRssSources": [
+        0
+      ],
+      "hybridRssEnabled": false,
+      "showPlatformNav": false,
+      "hmContactFormEnabled": true,
+      "hmConventionEditorEnabled": true,
+      "hmGoalgoSite": "goalgo-20261009",
+      "logoUrl": "/goalgo-haber/logo.svg",
+      "faviconUrl": "/goalgo-haber/icon-48.png",
+      "hmPrimaryColor": "#7c5cff",
+      "hmSecondaryColor": "#22d3ee"
+    }
+  }
+];
+
+const ALL_SEED_SITES = [...NEWSITES25, ...SEED_CORPORATE_SITES];
+
+
 function normHost(h) {
   return String(h || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0].replace(/^www\./, "").replace(/\.$/, "");
 }
 
 export function newsites25ForHost(host) {
   const h = normHost(host);
-  return NEWSITES25.find((s) => s.hosts.includes(h)) || null;
+  return ALL_SEED_SITES.find((s) => s.hosts.includes(h)) || null;
 }
 
 export function newsites25ForSlug(slug) {
   const s = String(slug || "").trim().toLowerCase().replace(/^\/+|\/+$/g, "");
-  return NEWSITES25.find((x) => x.slug === s) || null;
+  return ALL_SEED_SITES.find((x) => x.slug === s) || null;
 }
 
 /** Brand bindings (hm-brand-db-ensure.js HM_BRAND_DB_BINDINGS). */
-export const NEWSITES25_BINDINGS = NEWSITES25.map((s) => ({
+export const NEWSITES25_BINDINGS = ALL_SEED_SITES.map((s) => ({
   domain: s.hosts[0],
   domains: [...s.hosts],
   slug: s.slug,

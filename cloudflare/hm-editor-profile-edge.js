@@ -1017,9 +1017,23 @@ async function handleEditorLogin(request, env, incomingUrl) {
   }
 }
 
-/** Editor login convention account (news sites only). Returns the new row or null. */
+function hmConventionEditorOptIn(site) {
+  let layout = site?.layout_json ?? site?.layoutJson;
+  if (typeof layout === "string") {
+    try {
+      layout = JSON.parse(layout);
+    } catch {
+      layout = null;
+    }
+  }
+  return !!(layout && typeof layout === "object" && layout.hmConventionEditorEnabled === true);
+}
+
+/** Editor login convention account (news sites, or corporate sites with hmConventionEditorEnabled). Returns the new row or null. */
 export async function ensureConventionEditorOnLogin(sql, site, loginRaw) {
-  if (!site?.id || !isHmNewsSite(site)) return null;
+  if (!site?.id) return null;
+  // goalgo-site 2026-10-09: corporate sites may opt in explicitly (layout.hmConventionEditorEnabled === true).
+  if (!isHmNewsSite(site) && !hmConventionEditorOptIn(site)) return null;
   const login = String(loginRaw || "").trim().toLowerCase();
   if (!conventionalAddressesForSite(site).includes(login)) return null;
   const existing = await sql`
