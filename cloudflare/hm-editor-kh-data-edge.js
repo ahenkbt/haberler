@@ -213,7 +213,20 @@ async function ensureNewsWritableColumns(sql) {
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS is_food_recipe boolean NOT NULL DEFAULT false",
     "ALTER TABLE news ADD COLUMN IF NOT EXISTS food_recipe_category_slug text",
   ];
+  // yazar-vh 2026-10-09: ALTER TABLE ... IF NOT EXISTS still takes an ACCESS EXCLUSIVE lock on news (queues every reader
+  // behind it -> PHP statement-timeout bursts). Only ALTER columns that are really missing (catalog read, no lock).
+  let have = null;
+  try {
+    const rows = await sql.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'news'"
+    );
+    have = new Set((Array.isArray(rows) ? rows : rows?.rows || []).map((r) => String(r.column_name)));
+  } catch (err) {
+    console.error("[kh-news-ensure-col]", String(err?.message || err).slice(0, 140));
+  }
   for (const q of stmts) {
+    const col = /ADD COLUMN IF NOT EXISTS (\w+)/.exec(q)?.[1];
+    if (have && col && have.has(col)) continue;
     try {
       await sql.query(q);
     } catch (err) {
@@ -258,7 +271,19 @@ let authorsSortColumnEnsured = false;
 async function ensureAuthorsSortOrderColumn(sql) {
   if (authorsSortColumnEnsured || !sql) return;
   try {
-    await raceTimeout(sql.query("ALTER TABLE authors ADD COLUMN IF NOT EXISTS hm_sort_order INTEGER"), 700, "authors-col");
+    // yazar-vh 2026-10-09: catalog check first; the ALTER (ACCESS EXCLUSIVE lock on authors, not cancelled by the JS
+    // race) only runs when the column is really missing.
+    const rows = await raceTimeout(
+      sql.query(
+        "SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'authors' AND column_name = 'hm_sort_order' LIMIT 1"
+      ),
+      1500,
+      "authors-col-check"
+    );
+    const found = (Array.isArray(rows) ? rows : rows?.rows || []).length > 0;
+    if (!found) {
+      await raceTimeout(sql.query("ALTER TABLE authors ADD COLUMN IF NOT EXISTS hm_sort_order INTEGER"), 700, "authors-col");
+    }
   } catch (err) {
     console.error("[hm-authors-ensure-col]", String(err?.message || err).slice(0, 140));
   }
