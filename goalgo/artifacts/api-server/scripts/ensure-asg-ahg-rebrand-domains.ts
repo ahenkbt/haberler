@@ -1,8 +1,8 @@
 /**
  * Live ASG / AHG domain + logo repair on panel Neon and PHP Neon.
  *
- * PHP canonical is the first domain column. Only ankara.fix.tc and gundem.fix.tc
- * are stored. The deleted apexes are not written back.
+ * PHP canonical is the first domain column. ankara.fix.tc and gundem.fix.tc
+ * stay first. The old apexes stay attached so the VPS does not fall back to TurkAta.
  * The public logo grid reads NEWS_DATABASE_URL first and skips inactive or
  * suspended rows, so both databases are updated and the panel data-URI logo is
  * copied across when the other row has none.
@@ -26,15 +26,15 @@ const SPECS: Spec[] = [
     label: "ASG",
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: null,
+    domain2: "ankarasehirgazetesi.com",
     domain3: null,
   },
   {
     label: "AHG",
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: null,
-    domain3: null,
+    domain2: "ankarahabergundemi.com",
+    domain3: "ankara.gundemi.org",
   },
 ];
 

@@ -96,8 +96,8 @@ export function replacedPublicHost(row, host) {
  * do not write them back as domain, domain2, or domain3.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
-  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: null, domain3: null },
-  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: null, domain3: null },
+  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: "ankarasehirgazetesi.com", domain3: null },
+  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: "ankarahabergundemi.com", domain3: "ankara.gundemi.org" },
 ]);
 
 export function rebrandAssignmentForSlug(slug) {

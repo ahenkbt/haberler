@@ -92,11 +92,11 @@ describe("hm-public-news-sites", () => {
     assert.equal(publicNewsSitesFromRows(rows, { group: "il" }).length, 0);
     assert.equal(replacedPublicHost(rows[0], "ankarasehirgazetesi.com"), "ankara.fix.tc");
     assert.equal(rebrandAssignmentForSlug("asg").domain, "ankara.fix.tc");
-    assert.equal(rebrandAssignmentForSlug("asg").domain2, null);
+    assert.equal(rebrandAssignmentForSlug("asg").domain2, "ankarasehirgazetesi.com");
     assert.equal(rebrandAssignmentForSlug("asg").domain3, null);
     assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain, "gundem.fix.tc");
-    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, null);
-    assert.equal(rebrandAssignmentForSlug("ahg").domain3, null);
+    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, "ankarahabergundemi.com");
+    assert.equal(rebrandAssignmentForSlug("ahg").domain3, "ankara.gundemi.org");
     assert.equal(rebrandAssignmentForSlug("vatanhaber"), null);
     assert.doesNotMatch(main.map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
   });
