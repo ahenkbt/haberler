@@ -51,10 +51,24 @@ export class GoalgoApiContainer extends Container {
 
   /**
    * Self-heal (2026-10-09): the Worker calls this when a GET to this instance timed out.
-   * If the container does not answer /api/healthz/live within 5 s, or /api/healthz (DB ping) within 8 s, it is stuck (seen live:
+   * If the container does not answer /api/healthz/live within 5 s, or /api/healthz (DB ping) within 8 s while its pool is not queueing, it is stuck (seen live:
    * one of three instances hung every request while the others answered in 1-3 s), so
    * destroy it; the next request boots a fresh one. At most once per 10 minutes.
    */
+  async poolSnapshot(ms) {
+    try {
+      const res = await Promise.race([
+        this.containerFetch(new Request("http://container/api/healthz/pool"), this.defaultPort),
+        new Promise((r) => setTimeout(() => r(null), ms)),
+      ]);
+      if (!res || res.status !== 200) return null;
+      const body = await res.json().catch(() => null);
+      return body?.pool ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async probeAndRecycle() {
     if (!this.container?.running) return "not-running";
     const last = Number((await this.ctx.storage.get("yk-last-recycle")) || 0);
@@ -75,6 +89,12 @@ export class GoalgoApiContainer extends Container {
       // on this one instance while the others answer in 1-3 s. Check the DB path too.
       const db = await probeStatus("/api/healthz", 8_000);
       if (db === 200) return "healthy";
+      // A full pool with a queue is load, not a stuck connection: destroying it moved the whole
+      // queue to the other instance plus a cold boot, and both kept recycling every few minutes
+      // (2026-10-09 evening). Recycle only when the pool is not queueing (stuck connection) or
+      // the diagnostics do not answer at all.
+      const pool = await this.poolSnapshot(7_000); // /healthz/pool pings with a 5 s cap
+      if (pool && Number(pool.waiting) > 0) return `busy:waiting=${pool.waiting}`;
       status = `db:${db}`;
     }
     await this.ctx.storage.put("yk-last-recycle", Date.now());
