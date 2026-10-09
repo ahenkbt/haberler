@@ -90,3 +90,15 @@ describe("hm-public-news-sites", () => {
     assert.match(svg, /yesilvatan\.gen\.tr/);
   });
 });
+
+import { PROMO_HIDDEN_SITE_IDS } from "./hm-public-news-sites.js";
+it("promo-hide: ASG (3) and AHG (8) are not in the public grid", () => {
+  const rows = [
+    { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "ASG", active: true, layout_json: "{}" },
+    { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "AHG", active: true, layout_json: "{}" },
+    { id: 1, slug: "vatanhaber", domain: "vatanhaber.net", display_name: "Vatan", active: true, layout_json: "{}" },
+  ];
+  const out = publicNewsSitesFromRows(rows);
+  assert.deepEqual(out.map((s) => s.id), [1]);
+  assert.ok(PROMO_HIDDEN_SITE_IDS.has(3) && PROMO_HIDDEN_SITE_IDS.has(8));
+});
