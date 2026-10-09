@@ -31,7 +31,7 @@ export class GoalgoApiContainer extends Container {
 
   /**
    * Self-heal (2026-10-09): the Worker calls this when a GET to this instance timed out.
-   * If the container does not answer /api/healthz/live within 5 s it is stuck (seen live:
+   * If the container does not answer /api/healthz/live within 5 s, or /api/healthz (DB ping) within 8 s, it is stuck (seen live:
    * one of three instances hung every request while the others answered in 1-3 s), so
    * destroy it; the next request boots a fresh one. At most once per 10 minutes.
    */
@@ -39,11 +39,24 @@ export class GoalgoApiContainer extends Container {
     if (!this.container?.running) return "not-running";
     const last = Number((await this.ctx.storage.get("yk-last-recycle")) || 0);
     if (Date.now() - last < 10 * 60_000) return "cooldown";
-    const probe = this.containerFetch(new Request("http://container/api/healthz/live"), this.defaultPort)
-      .then((r) => r.status)
-      .catch(() => 0);
-    const status = await Promise.race([probe, new Promise((r) => setTimeout(() => r(-1), 5_000))]);
-    if (status === 200) return "healthy";
+    const probeStatus = (path, ms) =>
+      Promise.race([
+        this.containerFetch(new Request(`http://container${path}`), this.defaultPort)
+          .then((r) => {
+            r.body?.cancel?.().catch?.(() => {});
+            return r.status;
+          })
+          .catch(() => 0),
+        new Promise((r) => setTimeout(() => r(-1), ms)),
+      ]);
+    let status = await probeStatus("/api/healthz/live", 5_000);
+    if (status === 200) {
+      // Seen live after #517: /live answers but every DB-bound request (incl. /api/healthz) hangs
+      // on this one instance while the others answer in 1-3 s. Check the DB path too.
+      const db = await probeStatus("/api/healthz", 8_000);
+      if (db === 200) return "healthy";
+      status = `db:${db}`;
+    }
     await this.ctx.storage.put("yk-last-recycle", Date.now());
     try {
       await this.destroy();
