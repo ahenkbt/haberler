@@ -199,21 +199,21 @@ export const HM_GEO_ENTITIES: GeoSiteEntity[] = [
   },
   {
     slug: "ankarahabergundemi",
-    domain: "gundem.fix.tc",
-    officialName: "Ankara Haber Gündemi",
-    alternateName: ["gundem.fix.tc", "Ankara Haber Gündemi", "AHG"],
+    domain: "ankara.gundemi.org",
+    officialName: "Ankara Gündemi",
+    alternateName: ["ankara.gundemi.org", "gundem.fix.tc", "Ankara Haber Gündemi", "AHG"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Haber Gündemi (gundem.fix.tc), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
+      "Ankara Gündemi (ankara.gundemi.org), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
     disambiguatingDescription:
-      "gundem.fix.tc, Ankara Haber Gündemi resmi haber sitesidir. Resmi alan adı gundem.fix.tc adresidir.",
+      "ankara.gundemi.org, Ankara Gündemi resmi haber sitesidir. Resmi alan adı ankara.gundemi.org adresidir; gundem.fix.tc buraya yönlenir.",
     areaServed: "Türkiye",
     language: "tr-TR",
     aboutPath: "/hakkinda",
     extraAboutPaths: ["/", "/kunye"],
     knowsAbout: ["Ankara haber", "yerel gündem", "Türkiye haberi"],
     vendor: AHENK_VENDOR,
-    faq: newsFaq("Ankara Haber Gündemi", "gundem.fix.tc"),
+    faq: newsFaq("Ankara Gündemi", "ankara.gundemi.org"),
   },
   {
     slug: "asg",

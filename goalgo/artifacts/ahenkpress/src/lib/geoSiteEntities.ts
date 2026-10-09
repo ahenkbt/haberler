@@ -92,18 +92,18 @@ const HM: GeoSiteEntity[] = [
   },
   {
     slug: "ankarahabergundemi",
-    domain: "gundem.fix.tc",
-    officialName: "Ankara Haber Gündemi",
-    alternateName: ["gundem.fix.tc", "Ankara Haber Gündemi"],
+    domain: "ankara.gundemi.org",
+    officialName: "Ankara Gündemi",
+    alternateName: ["ankara.gundemi.org", "gundem.fix.tc", "Ankara Haber Gündemi"],
     type: "NewsMediaOrganization",
     description:
-      "Ankara Haber Gündemi (gundem.fix.tc), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
-    disambiguatingDescription: "Resmi alan adı gundem.fix.tc adresidir.",
+      "Ankara Gündemi (ankara.gundemi.org), Ankara ve Türkiye gündemini Türkçe aktaran resmi haber sitesidir.",
+    disambiguatingDescription: "Resmi alan adı ankara.gundemi.org adresidir; gundem.fix.tc buraya yönlenir.",
     aboutPath: "/hakkinda",
     faq: [
       {
-        question: "Ankara Haber Gündemi nedir?",
-        answer: "Ankara Haber Gündemi (gundem.fix.tc) resmi haber sitesidir.",
+        question: "Ankara Gündemi nedir?",
+        answer: "Ankara Gündemi (ankara.gundemi.org) resmi haber sitesidir.",
       },
     ],
   },

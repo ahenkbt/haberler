@@ -139,13 +139,13 @@ describe("hm-cumha-kamu-yerel-catalog", () => {
     expect(page.bodyHtml).not.toContain('href="/kategori/nato"');
     expect(page.bodyHtml).toContain("hm-daha-proje");
     expect(page.bodyHtml).toContain("hm-daha-site-grid");
-    expect(page.bodyHtml).toContain("gundem.fix.tc");
+    expect(page.bodyHtml).toContain("ankara.gundemi.org");
     expect(page.bodyHtml).toContain("ankara.fix.tc");
     expect(page.bodyHtml).not.toContain("ankarahabergundemi.com");
     expect(page.bodyHtml).not.toContain("ankarasehirgazetesi.com");
     expect(page.bodyHtml).toContain("vatanhaber.net");
     expect(page.bodyHtml).toContain("gundemi.org");
-    expect(page.bodyHtml).toContain("Ankara Haber Gündemi");
+    expect(page.bodyHtml).toContain("Ankara Gündemi");
     expect(page.bodyHtml).toContain("Sosyal Hizmetler Haber Sitesi");
     expect(page.bodyHtml).toContain("https://sosyalhizmetler.tr/");
     expect(page.bodyHtml).toContain("sosyalhizmetler-logo.webp");

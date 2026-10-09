@@ -64,7 +64,7 @@ export function turkataLayoutNeedsRepair(layoutJsonRaw) {
     const dahaBody = String(daha?.bodyHtml ?? "");
     if (
       !dahaBody.includes("hm-daha-proje") ||
-      !dahaBody.includes("gundem.fix.tc") ||
+      !dahaBody.includes("ankara.gundemi.org") ||
       !dahaBody.includes("ankara.fix.tc") ||
       !dahaBody.includes("vatanhaber.net")
     ) {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sniffFile, safeFileName, validateContact, contactMailBodies, isHmSiteContactPath } from "./hm-site-contact-edge.js";
+import { sniffFile, safeFileName, validateContact, contactMailBodies, isHmSiteContactPath, handleHmSiteContactEdge } from "./hm-site-contact-edge.js";
 
 const bytes = (...a) => new Uint8Array([...a, ...new Array(16).fill(0)]);
 
@@ -58,4 +58,9 @@ test("contactNewsMessage: wrapped Postgres base64 becomes a one-line data: URL",
   const urls = extractImageUrls(m.body_html);
   assert.equal(urls.length, 1);
   assert.equal(urls[0], `data:image/jpeg;base64,${b64}`);
+});
+
+test("PATCH /api/hm/editor/site-contact (İletişim bilgilerini kaydet) falls through to the API", async () => {
+  const req = new Request("https://ankara.gundemi.org/api/hm/editor/site-contact", { method: "PATCH", body: "{}" });
+  assert.equal(await handleHmSiteContactEdge(req, {}, new URL(req.url)), null);
 });

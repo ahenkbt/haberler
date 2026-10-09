@@ -49,9 +49,9 @@ export const AHENK_HSY_REFERENCES = [
     "logo": "https://ahenk.net.tr/api/hm/public/news-sites/3/logo?v=50d43fb4"
   },
   {
-    "name": "Ankara Haber Gündemi",
-    "domain": "gundem.fix.tc",
-    "url": "https://gundem.fix.tc/",
+    "name": "Ankara Gündemi",
+    "domain": "ankara.gundemi.org",
+    "url": "https://ankara.gundemi.org/",
     "logo": "https://ahenk.net.tr/api/hm/public/news-sites/8/logo?v=178b741f"
   },
   {

@@ -691,8 +691,8 @@ export const KAMU_YEREL_DAHA_NETWORK_SITES: readonly KamuYerelDahaNetworkSite[] 
     logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/3/logo",
   },
   {
-    name: "Ankara Haber Gündemi",
-    href: "https://gundem.fix.tc/",
+    name: "Ankara Gündemi",
+    href: "https://ankara.gundemi.org/",
     logoUrl: "https://turkatahaber.com/api/hm/public/news-sites/8/logo",
   },
   {

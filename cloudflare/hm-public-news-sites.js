@@ -15,7 +15,7 @@
  * (25 ana logo kalır); ayrı `ilSites` listesinde döner ve /daha + ajans sayfasında ayrı "İl Siteleri" grubu olur.
  */
 import { neon } from "@neondatabase/serverless";
-import { AHG_ORIGINAL_LOGO, ASG_ORIGINAL_LOGO } from "./asg-ahg-original-logos.js";
+import { ASG_ORIGINAL_LOGO } from "./asg-ahg-original-logos.js";
 import { neonNewsSqlClient, neonSqlClient } from "./neon-edge-db.js";
 import { isNeonServerlessUrl } from "./neon-edge-url.js";
 
@@ -71,18 +71,19 @@ function parseLayout(raw) {
 
 /**
  * ASG / AHG public identity (2026-10-09): ankarasehirgazetesi.com → ankara.fix.tc,
- * ankarahabergundemi.com → gundem.fix.tc. Tanıtım and referans grids show only the new host.
+ * ankarahabergundemi.com → gundem.fix.tc → ankara.gundemi.org ("Ankara Gündemi", owner 2026-10-09 evening). Tanıtım and referans grids show only the new host.
  * Rows stay listed even when the panel `active` flag is off, so the logo does not vanish.
  */
 const REPLACED_PUBLIC_HOST_BY_SLUG = new Map([
   ["asg", "ankara.fix.tc"],
   ["ankarasehirgazetesi", "ankara.fix.tc"],
-  ["ankarahabergundemi", "gundem.fix.tc"],
-  ["ahg", "gundem.fix.tc"],
+  ["ankarahabergundemi", "ankara.gundemi.org"],
+  ["ahg", "ankara.gundemi.org"],
 ]);
 const RETIRED_PUBLIC_HOSTS = new Map([
   ["ankarasehirgazetesi.com", "ankara.fix.tc"],
-  ["ankarahabergundemi.com", "gundem.fix.tc"],
+  ["ankarahabergundemi.com", "ankara.gundemi.org"],
+  ["gundem.fix.tc", "ankara.gundemi.org"],
 ]);
 
 export function replacedPublicHost(row, host) {
@@ -92,7 +93,8 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. Only ankara.fix.tc and gundem.fix.tc are stored.
+ * PHP canonical is the first domain. ASG: ankara.fix.tc first. AHG: ankara.gundemi.org only (gundem.fix.tc is
+ * 301-redirected by the Worker and the PHP theme; ankarahabergundemi.com was deleted from Cloudflare).
  * The deleted apexes are not written back.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
@@ -107,11 +109,13 @@ export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   },
   {
     slugs: ["ankarahabergundemi", "ahg"],
-    domain: "gundem.fix.tc",
-    domain2: "ankarahabergundemi.com",
-    domain3: "ankara.gundemi.org",
-    displayName: "Ankara Haber Gündemi",
-    logoDataUri: AHG_ORIGINAL_LOGO,
+    domain: "ankara.gundemi.org",
+    // gundem.fix.tc switched off by the owner in the panel; the Worker and PHP 301 it to ankara.gundemi.org.
+    domain2: null,
+    domain3: null,
+    // Renamed and moved by the owner on 2026-10-09. The logo is the one the owner sets in the panel: never forced.
+    displayName: "Ankara Gündemi",
+    logoDataUri: null,
   },
 ]);
 

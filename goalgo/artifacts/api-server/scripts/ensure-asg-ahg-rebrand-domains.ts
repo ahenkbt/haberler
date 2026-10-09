@@ -34,10 +34,10 @@ const SPECS: Spec[] = [
   {
     label: "AHG",
     slugs: ["ankarahabergundemi", "ahg"],
-    domain: "gundem.fix.tc",
-    domain2: "ankarahabergundemi.com",
-    domain3: "ankara.gundemi.org",
-    displayName: "Ankara Haber Gündemi",
+    domain: "ankara.gundemi.org",
+    domain2: null,
+    domain3: null,
+    displayName: "Ankara Gündemi",
   },
 ];
 
@@ -260,7 +260,7 @@ async function purgeCaches(): Promise<void> {
     "https://ahenk.net.tr/api/hm/public/news-sites/3/logo",
     "https://ahenk.net.tr/api/hm/public/news-sites/8/logo",
     "https://ankara.fix.tc/",
-    "https://gundem.fix.tc/",
+    "https://ankara.gundemi.org/",
   ];
   const zoneCache = new Map<string, string | null>();
   async function zoneId(host: string): Promise<string | null> {
