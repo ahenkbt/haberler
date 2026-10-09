@@ -4229,6 +4229,8 @@ router.patch("/hm/editor/site-contact", async (req, res): Promise<void> => {
   const ctx = denyUnlessHmEditor(req, res);
   if (!ctx) return;
   const b = req.body as { phone?: unknown; email?: unknown; address?: unknown };
+  // 2026-10-09: a DB error used to reach the global handler as a bare 500 "Sunucu hatası"; say what failed.
+  try {
   const [row] = await newsReadDb()
     .select({ contactJson: hmNewsSitesTable.contactJson })
     .from(hmNewsSitesTable)
@@ -4257,6 +4259,10 @@ router.patch("/hm/editor/site-contact", async (req, res): Promise<void> => {
     eq(hmNewsSitesTable.id, ctx.siteId),
   );
   res.json({ ok: true, contact: { phone: next.phone, email: next.email, address: next.address } });
+  } catch (e: unknown) {
+    if (res.headersSent) return;
+    res.status(500).json({ error: `İletişim bilgileri kaydedilemedi: ${formatHmSitesDbError(e)}` });
+  }
 });
 
 /** Editör: vitrin/tema/meta kenar + tarayıcı önbelleğini boşalt. */
