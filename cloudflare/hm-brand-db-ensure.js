@@ -1028,6 +1028,10 @@ async function bindKhDomainsOnRow(sql, row) {
     have[1] === KH_CANONICAL_DOMAINS[1] &&
     have[2] === KH_CANONICAL_DOMAINS[2];
   if (alreadyBound && normalizeSlug(row.slug) === "kirsehirhaber" && isActiveSiteRow(row)) return row;
+  // 2026-10-09: Kırşehir moved to kirsehir.gundemi.org; kirsehirhaber.org stays closed (PHP
+  // closed page). Once the row has any other host, the panel owns the domains: do not
+  // pull the row back onto the retired kirsehirhaber.org triad.
+  if (have.some((h) => h && !KH_CANONICAL_DOMAINS.includes(h))) return row;
 
   await releaseKhDomainsFromOthers(sql, row.id);
 
