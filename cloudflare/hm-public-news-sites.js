@@ -41,6 +41,12 @@ const CORPORATE_HOSTS = new Set([
  * logogrid 2026-10-09 (user 00:41): gundemi.org = "Gündem İstanbul" (plaka 34). It stays a general news site but is
  * listed FIRST in the "İl Siteleri" group of every logo grid (and not twice in the main group).
  */
+/**
+ * 2026-10-09 (owner): rows flagged hmCorporateSite for theme reasons that still belong on the tanıtım / logo grids
+ * ("Yayın ağımız"). Listing only; the flag and every other behavior (AI columns, theme) stay as they are.
+ */
+export const PUBLIC_LIST_ALWAYS_SLUGS = new Set(["harikaolacak"]);
+
 export const IL_FEATURED = Object.freeze({ "gundemi.org": { il: "İstanbul", plate: "34", region: "marmara", name: "Gündem İstanbul" } });
 
 const CACHE_MS = 60_000;
@@ -262,7 +268,8 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     if (isCorporate(row, host)) continue;
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true && !movedHost) continue;
-    if (!movedHost && (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal")) continue;
+    const alwaysListed = PUBLIC_LIST_ALWAYS_SLUGS.has(String(row.slug ?? "").trim().toLowerCase());
+    if (!movedHost && !alwaysListed && (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal")) continue;
     const featured = movedHost ? null : IL_FEATURED[host] || null;
     const isIl = Boolean(!movedHost && (featured || (layout.hmIl81 && typeof layout.hmIl81 === "object")));
     if (group === "il" ? !isIl : isIl) continue;

@@ -113,3 +113,17 @@ describe("hm-public-news-sites", () => {
     assert.match(svg, /yesilvatan\.gen\.tr/);
   });
 });
+
+describe("tanıtım list keeps harikaolacak", () => {
+  it("lists harikaolacak.com.tr even though its row carries hmCorporateSite", () => {
+    const rows = [
+      { id: 1172, slug: "harikaolacak", domain: "harikaolacak.com.tr", display_name: "Harika Olacak", active: true, layout_json: JSON.stringify({ hmCorporateSite: true, hmSiteKind: "news", logoUrl: "/brand/harikaolacak/harikaolacak.png" }) },
+      { id: 7, slug: "vkd", domain: "vatankahramanlari.org", display_name: "VKD", active: true, layout_json: JSON.stringify({ hmCorporateSite: true }) },
+      { id: 9999, slug: "x", domain: "x.example", display_name: "X", active: true, layout_json: JSON.stringify({ hmCorporateSite: true }) },
+    ];
+    const out = publicNewsSitesFromRows(rows);
+    assert.deepEqual(out.map((s) => s.domain), ["harikaolacak.com.tr"]);
+    assert.equal(out[0].name, "Harika Olacak");
+    assert.equal(out[0].logoRaw, "/brand/harikaolacak/harikaolacak.png");
+  });
+});
