@@ -11,6 +11,7 @@
  *   emlak.gundemi.org                               Emlak Gündemi         concept: emlak (konut, kentsel dönüşüm, TOKİ, kira, kredi, imar)
  *   isdunyasi.gundemi.org                           İş Dünyası Gündemi    concept: isdunyasi (sanayi, ihracat, lojistik, esnaf ve KOBİ)
  * harikaolacak (2026-10-09, user request): harikaolacak.com.tr, TP 1172, Harika Olacak — positive Gen-Z social news + lifestyle concept site.
+ * yenitc (2026-10-09, user request): yeni.tc, TP 1174, Yeni.tc — Gençlerin Hayal Ettiği Türkiye; Gen-Z future/vision magazine (own PHP shell, src/YeniTc.php).
  * goalgohaber (2026-10-09, user request): goalgo.com.tr, TP 1173, Goalgo Haber Yazılımı — CORPORATE marketing site (front end = Worker
  *   hm-goalgo-com-tr.js); panel row only for /editor (convention editor bilgi@goalgo.com.tr via hmConventionEditorEnabled) + contact inbox.
  * alladdinhaber (2026-10-09, user request): alladdin.app, Alladdin Haber Sitesi Yazılımı — separate CORPORATE marketing site (hm-alladdin-app.js), same pattern.
@@ -1496,6 +1497,174 @@ export const NEWSITES25 = [
       "hmCorporateCulturePortalBandEnabled": false,
       "hmCorporateNationalDaysSectionEnabled": false,
       "sadeNewsHistoryNationalDaysBandEnabled": false
+    }
+  },
+  {
+    "slug": "yenitc",
+    "hosts": [
+      "yeni.tc",
+      "www.yeni.tc"
+    ],
+    "displayName": "Yeni.tc",
+    "description": "Yeni.tc – Gençlerin Hayal Ettiği Türkiye. Z kuşağının gelecek ve vizyon platformu: yeni ekonomi ve kariyer, yeni eğitim, katılım, iklim, kültür-sanat ve dijital ifade. Şikâyet değil çözüm; partiler ve isimler değil, fikirler.",
+    "contact": {
+      "email": "bilgi@yeni.tc",
+      "phone": "0532 229 18 92",
+      "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara"
+    },
+    "editorEmail": "bilgi@yeni.tc",
+    "layout": {
+      "hmYeniTc": "yenitc-20261009",
+      "logoUrl": "/brand/yenitc/yenitc-logo-h128.png",
+      "faviconUrl": "/brand/yenitc/yenitc-icon-512.png",
+      "frontend": "php",
+      "phpTheme": true,
+      "hmCatTree": "off",
+      "hmSiteKind": "news",
+      "hmConceptSite": true,
+      "hmConceptTopic": "yenitc",
+      "hmVitrinTheme": "yenisafak",
+      "hmPrimaryColor": "#FF3D2E",
+      "hmSecondaryColor": "#5B5BFF",
+      "hmYsSlogan": "Gençlerin Hayal Ettiği Türkiye",
+      "hmYsKunye": {
+        "lead": "Gençlerin Hayal Ettiği Türkiye: Z kuşağının gelecek ve vizyon platformu.",
+        "email": "bilgi@yeni.tc",
+        "phone": "0532 229 18 92",
+        "tuzel": "Tükav Gaziler Eğitim Kültür Hizmetleri Ltd. Şti.",
+        "yayin": "YENİ.TC",
+        "address": "Sağlık Mah. Aksu Cad. 13/5 Çankaya - Ankara",
+        "genelMudur": "Nail Türkoğlu",
+        "yaziIsleri": "Melek Acar",
+        "yayinYonetmeni": "Mustafa ÖZDEMİR",
+        "yayinIlkeleri": "Yeni.tc bir haber ajansı akışı değildir; özgün, çözüm odaklı yazılar ve okur katkıları yayımlar. Siyasi parti, aday ya da siyasetçi propagandası yapılmaz; kişiler değil fikirler tartışılır. Okur yazıları editör onayından sonra yayımlanır. Yapay zekâ destekli taslaklar editör tarafından kontrol edilir; görseller açık lisanslı kaynaklardan, kaynak ve lisans belirtilerek kullanılır."
+      },
+      "hmFooterAboutHtml": "<p><strong>Yeni.tc – Gençlerin Hayal Ettiği Türkiye</strong>, Z kuşağının gelecek ve vizyon platformudur. Yeni ekonomi ve kariyer, yeni eğitim, sosyal yaşam ve katılım, sürdürülebilirlik ve iklim, kültür-sanat ve dijital ifade başlıklarında özgün, çözüm odaklı yazılar yayımlar; haftalık <em>Değiştir</em> anketi ve <em>Nasıl Bir Türkiye?</em> vizyon haritasıyla gençlerin sesini görünür kılar.</p><p>Şikâyet değil çözüm; gürültü değil fikir. Partiler ve isimler değil, hepimizin yaşayacağı Türkiye.</p><p>TÜRKATA HABER AJANSI, Türk Kültürünü Araştırma ve Tanıtma Vakfı’nın haber ajansıdır. 1998’den bu yana yerel yönetimler, kamu kurumları ile sivil toplum ve sektör gündemini Türkçe olarak kamuoyuna aktarır.</p><h2 id=\"yayin-ilkeleri\">Yayın ilkeleri</h2><p>Yeni.tc bir haber ajansı akışı değildir; özgün, çözüm odaklı yazılar ve okur katkıları yayımlar. Siyasi parti, aday ya da siyasetçi propagandası yapılmaz; kişiler değil fikirler tartışılır. Okur yazıları editör onayından sonra yayımlanır. Yapay zekâ destekli taslaklar editör tarafından kontrol edilir; görseller açık lisanslı kaynaklardan, kaynak ve lisans belirtilerek kullanılır.</p>",
+      "showPlatformNav": false,
+      "hmNewsRssSources": [
+        0
+      ],
+      "hybridRssEnabled": false,
+      "hmNewsRssCategoryOnly": [
+        "yn-ekonomi-kariyer",
+        "yn-egitim",
+        "yn-katilim",
+        "yn-iklim",
+        "yn-kultur-dijital",
+        "yn-nasil-bir-turkiye",
+        "yn-senin-sesin"
+      ],
+      "hmNavOnlyCategorySlugs": [
+        "yn-ekonomi-kariyer",
+        "yn-egitim",
+        "yn-katilim",
+        "yn-iklim",
+        "yn-kultur-dijital",
+        "yn-nasil-bir-turkiye",
+        "yn-senin-sesin"
+      ],
+      "hmCategorySortSlugs": [
+        "yn-ekonomi-kariyer",
+        "yn-egitim",
+        "yn-katilim",
+        "yn-iklim",
+        "yn-kultur-dijital",
+        "yn-nasil-bir-turkiye",
+        "yn-senin-sesin"
+      ],
+      "hmCorporateMenuItems": [
+        {
+          "id": "m1",
+          "href": "/kategori/yn-ekonomi-kariyer",
+          "label": "Yeni Ekonomi & Kariyer",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m2",
+          "href": "/kategori/yn-egitim",
+          "label": "Yeni Eğitim",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m3",
+          "href": "/kategori/yn-katilim",
+          "label": "Sosyal Yaşam & Katılım",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m4",
+          "href": "/kategori/yn-iklim",
+          "label": "Sürdürülebilirlik & İklim",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m5",
+          "href": "/kategori/yn-kultur-dijital",
+          "label": "Kültür, Sanat & Dijital İfade",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m6",
+          "href": "/kategori/yn-nasil-bir-turkiye",
+          "label": "Nasıl Bir Türkiye?",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m7",
+          "href": "/kategori/yn-senin-sesin",
+          "label": "Senin Sesin",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m8",
+          "href": "/nasil-bir-turkiye",
+          "label": "Vizyon Kur",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m9",
+          "href": "/anket",
+          "label": "Değiştir Anketi",
+          "enabled": true,
+          "parentId": ""
+        },
+        {
+          "id": "m10",
+          "href": "/senin-sesin",
+          "label": "Senin Sesin",
+          "enabled": true,
+          "parentId": ""
+        }
+      ],
+      "hmLayoutSanitizeRev": "hm-layout-sanitize-20260727a",
+      "hmSiteRssDefaultsRev": "20260727site1",
+      "hmRssKarmaDefaultsRev": "rss-karma-default-v1",
+      "hmTepeMansetOptInRev": "tepe-manset-default-on-v2",
+      "hmNewsTepeMansetEnabled": false,
+      "hmNewsBreakingBandEnabled": false,
+      "hmNewsYsTickerEnabled": false,
+      "hmNewsYsHoroscopeEnabled": false,
+      "hmNewsYsStandingsEnabled": false,
+      "hmNewsYsVideoBandEnabled": false,
+      "hmSehitSearchEnabled": false,
+      "hmCorporateAtaturkCornerEnabled": false,
+      "sadeNewsAtaturkBandEnabled": false,
+      "hmCorporateWarsSectionEnabled": false,
+      "hmCorporateNationalDaysSectionEnabled": false,
+      "sadeNewsHistoryNationalDaysBandEnabled": false,
+      "hmCorporateCulturePortalBandEnabled": false,
+      "hmNewsAuthorsEnabled": true,
+      "hmConceptAsideTopicOnly": true,
+      "hmConceptMostReadTopicOnly": true,
+      "hmOzelHaberMenu": false
     }
   }
 ];

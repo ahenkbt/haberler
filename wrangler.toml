@@ -2012,6 +2012,104 @@ zone_name = "harikaolacak.com.tr"
 pattern = "www.harikaolacak.com.tr/hm/*"
 zone_name = "harikaolacak.com.tr"
 
+# yeni.tc (TP 1174, 2026-10-09) — Gençlerin Hayal Ettiği Türkiye; panel/editör/API Worker route'ları (harikaolacak deseni).
+# llms.txt / ai.txt route YOK (#495) — PHP sunar. /anket/oy, /senin-sesin, /nasil-bir-turkiye PHP'de (route yok).
+[[routes]]
+pattern = "yeni.tc/editor*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/api/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/admin*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/panel*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/haber-merkezi*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/assets/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/sw.js"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/manifest.json"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/yazar/giris*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/yazar/sifre*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/koseyazari/sifre*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/yazar/haber*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/koseyazari/haber*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/tr/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "yeni.tc/hm/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/api/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/assets/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/yazar/giris*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/yazar/sifre*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/koseyazari/sifre*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/yazar/haber*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/koseyazari/haber*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/tr/*"
+zone_name = "yeni.tc"
+
+[[routes]]
+pattern = "www.yeni.tc/hm/*"
+zone_name = "yeni.tc"
+
 # alladdin.app (alladdin-site 2026-10-09) — "Alladdin Haber Sitesi Yazılımı" (hm-alladdin-app.js), goalgo.com.tr'den AYRI site.
 # Apex DNS: CNAME → goalgo.pages.dev (proxied, dokunulmadı); Worker route önce çalışır. www DNS kaydı yok (route hazır).
 [[routes]]

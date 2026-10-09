@@ -12,6 +12,8 @@ test("newsites25: hosts + brand bindings", () => {
   assert.equal(newsites25ForHost("emlak.gundemi.org")?.slug, "emlak");
   assert.equal(newsites25ForHost("harikaolacak.com.tr")?.slug, "harikaolacak");
   assert.equal(matchBrandBinding({ domain: "harikaolacak.com.tr" })?.slug, "harikaolacak");
+  assert.equal(newsites25ForHost("www.yeni.tc")?.slug, "yenitc");
+  assert.equal(matchBrandBinding({ domain: "yeni.tc" })?.slug, "yenitc");
   assert.equal(newsites25ForHost("www.isdunyasi.gundemi.org")?.slug, "isdunyasi");
   assert.equal(matchBrandBinding({ domain: "emlak.gundemi.org" })?.slug, "emlak");
   assert.equal(matchBrandBinding({ domain: "isdunyasi.gundemi.org" })?.slug, "isdunyasi");
@@ -42,7 +44,9 @@ test("newsites25 layouts: news kind, concept, no Süper Lig/burç, own rows, wor
     assert.equal(s.layout.hmNewsYsStandingsEnabled, false);
     assert.equal(s.layout.hmNewsYsHoroscopeEnabled, false);
     assert.deepEqual(s.layout.hmNewsRssSources, [0]);
-    assert.ok(s.layout.hmNavOnlyCategorySlugs.includes("ozel-haber"));
+    // yenitc: own magazine sections (yn-*), no network "ozel-haber" nav slot.
+    if (s.slug === "yenitc") assert.ok(s.layout.hmNavOnlyCategorySlugs.includes("yn-senin-sesin"));
+    else assert.ok(s.layout.hmNavOnlyCategorySlugs.includes("ozel-haber"));
     assert.equal(Boolean(s.layout.hmWorldDateline), s.slug === "world");
   }
   const world = NEWSITES25.find((s) => s.slug === "world");
