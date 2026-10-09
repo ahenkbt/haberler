@@ -145,6 +145,9 @@ async function fetchIdempotentWithFailover(env, url, reqInit) {
           ]);
       if (!res) {
         pending.then((r) => r?.body?.cancel?.()).catch(() => {});
+        // Ask the slow instance to check itself; it destroys its container only when
+        // /api/healthz/live does not answer either (see GoalgoApiContainer.probeAndRecycle).
+        stub.fetch(new Request("http://container/__yk_internal/probe-recycle")).catch(() => {});
         continue;
       }
       if (!isLast && RETRYABLE_GET_STATUS.has(res.status)) {

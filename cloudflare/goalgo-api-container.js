@@ -29,7 +29,34 @@ export class GoalgoApiContainer extends Container {
     this.envVars = buildContainerEnv(env);
   }
 
+  /**
+   * Self-heal (2026-10-09): the Worker calls this when a GET to this instance timed out.
+   * If the container does not answer /api/healthz/live within 5 s it is stuck (seen live:
+   * one of three instances hung every request while the others answered in 1-3 s), so
+   * destroy it; the next request boots a fresh one. At most once per 10 minutes.
+   */
+  async probeAndRecycle() {
+    if (!this.container?.running) return "not-running";
+    const last = Number((await this.ctx.storage.get("yk-last-recycle")) || 0);
+    if (Date.now() - last < 10 * 60_000) return "cooldown";
+    const probe = this.containerFetch(new Request("http://container/api/healthz/live"), this.defaultPort)
+      .then((r) => r.status)
+      .catch(() => 0);
+    const status = await Promise.race([probe, new Promise((r) => setTimeout(() => r(-1), 5_000))]);
+    if (status === 200) return "healthy";
+    await this.ctx.storage.put("yk-last-recycle", Date.now());
+    try {
+      await this.destroy();
+    } catch (err) {
+      return `destroy-failed:${String(err?.message || err).slice(0, 80)}`;
+    }
+    return `recycled:${status}`;
+  }
+
   async fetch(request) {
+    if (new URL(request.url).pathname === "/__yk_internal/probe-recycle") {
+      return new Response(await this.probeAndRecycle(), { status: 200 });
+    }
     const missing = missingContainerBootSecrets(this.env);
     if (missing.length > 0) {
       return new Response(
