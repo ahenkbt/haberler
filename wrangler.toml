@@ -45,7 +45,10 @@ S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
 [[containers]]
 class_name = "GoalgoApiContainer"
 image = "./goalgo/Dockerfile.cloudflare"
-max_instances = 3
+# 6, not 3: the Worker routes to 3 named DOs (CONTAINER_ROLL-0..2). When the roll
+# name changes, the old names keep their containers until sleepAfter and hold
+# slots; with 3 slots the new names got no instance and /api hung (2026-10-09).
+max_instances = 6
 instance_type = "standard-3"
 
 [[durable_objects.bindings]]
@@ -330,10 +333,6 @@ pattern = "vatanhaber.net/yazar/giris*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "vatanhaber.net/koseyazari/giris*"
-zone_name = "vatanhaber.net"
-
-[[routes]]
 pattern = "vatanhaber.net/yazar/sifre*"
 zone_name = "vatanhaber.net"
 
@@ -351,10 +350,6 @@ zone_name = "vatanhaber.net"
 
 [[routes]]
 pattern = "www.vatanhaber.net/yazar/giris*"
-zone_name = "vatanhaber.net"
-
-[[routes]]
-pattern = "www.vatanhaber.net/koseyazari/giris*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
@@ -433,10 +428,6 @@ pattern = "suhaber.net/yazar/giris*"
 zone_name = "suhaber.net"
 
 [[routes]]
-pattern = "suhaber.net/koseyazari/giris*"
-zone_name = "suhaber.net"
-
-[[routes]]
 pattern = "suhaber.net/yazar/sifre*"
 zone_name = "suhaber.net"
 
@@ -454,10 +445,6 @@ zone_name = "suhaber.net"
 
 [[routes]]
 pattern = "www.suhaber.net/yazar/giris*"
-zone_name = "suhaber.net"
-
-[[routes]]
-pattern = "www.suhaber.net/koseyazari/giris*"
 zone_name = "suhaber.net"
 
 [[routes]]
@@ -600,10 +587,6 @@ pattern = "turkatahaber.com/yazar/giris*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
-pattern = "turkatahaber.com/koseyazari/giris*"
-zone_name = "turkatahaber.com"
-
-[[routes]]
 pattern = "turkatahaber.com/yazar/sifre*"
 zone_name = "turkatahaber.com"
 
@@ -621,10 +604,6 @@ zone_name = "turkatahaber.com"
 
 [[routes]]
 pattern = "www.turkatahaber.com/yazar/giris*"
-zone_name = "turkatahaber.com"
-
-[[routes]]
-pattern = "www.turkatahaber.com/koseyazari/giris*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
@@ -740,10 +719,6 @@ pattern = "sehitgazi.org.tr/yazar/giris*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
-pattern = "sehitgazi.org.tr/koseyazari/giris*"
-zone_name = "sehitgazi.org.tr"
-
-[[routes]]
 pattern = "sehitgazi.org.tr/yazar/sifre*"
 zone_name = "sehitgazi.org.tr"
 
@@ -761,10 +736,6 @@ zone_name = "sehitgazi.org.tr"
 
 [[routes]]
 pattern = "www.sehitgazi.org.tr/yazar/giris*"
-zone_name = "sehitgazi.org.tr"
-
-[[routes]]
-pattern = "www.sehitgazi.org.tr/koseyazari/giris*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
@@ -894,10 +865,6 @@ pattern = "yerel.net.tr/yazar/giris*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
-pattern = "yerel.net.tr/koseyazari/giris*"
-zone_name = "yerel.net.tr"
-
-[[routes]]
 pattern = "yerel.net.tr/yazar/sifre*"
 zone_name = "yerel.net.tr"
 
@@ -915,10 +882,6 @@ zone_name = "yerel.net.tr"
 
 [[routes]]
 pattern = "www.yerel.net.tr/yazar/giris*"
-zone_name = "yerel.net.tr"
-
-[[routes]]
-pattern = "www.yerel.net.tr/koseyazari/giris*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
@@ -1021,10 +984,6 @@ pattern = "turksav.org/yazar/giris*"
 zone_name = "turksav.org"
 
 [[routes]]
-pattern = "turksav.org/koseyazari/giris*"
-zone_name = "turksav.org"
-
-[[routes]]
 pattern = "turksav.org/yazar/sifre*"
 zone_name = "turksav.org"
 
@@ -1042,10 +1001,6 @@ zone_name = "turksav.org"
 
 [[routes]]
 pattern = "www.turksav.org/yazar/giris*"
-zone_name = "turksav.org"
-
-[[routes]]
-pattern = "www.turksav.org/koseyazari/giris*"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -1148,10 +1103,6 @@ pattern = "dunyasaglik.org/yazar/giris*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
-pattern = "dunyasaglik.org/koseyazari/giris*"
-zone_name = "dunyasaglik.org"
-
-[[routes]]
 pattern = "dunyasaglik.org/yazar/sifre*"
 zone_name = "dunyasaglik.org"
 
@@ -1169,10 +1120,6 @@ zone_name = "dunyasaglik.org"
 
 [[routes]]
 pattern = "www.dunyasaglik.org/yazar/giris*"
-zone_name = "dunyasaglik.org"
-
-[[routes]]
-pattern = "www.dunyasaglik.org/koseyazari/giris*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
@@ -1275,10 +1222,6 @@ pattern = "yesilvatan.gen.tr/yazar/giris*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
-pattern = "yesilvatan.gen.tr/koseyazari/giris*"
-zone_name = "yesilvatan.gen.tr"
-
-[[routes]]
 pattern = "yesilvatan.gen.tr/yazar/sifre*"
 zone_name = "yesilvatan.gen.tr"
 
@@ -1296,10 +1239,6 @@ zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
 pattern = "www.yesilvatan.gen.tr/yazar/giris*"
-zone_name = "yesilvatan.gen.tr"
-
-[[routes]]
-pattern = "www.yesilvatan.gen.tr/koseyazari/giris*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -1610,10 +1549,6 @@ pattern = "*.gundemi.org/yazar/giris*"
 zone_name = "gundemi.org"
 
 [[routes]]
-pattern = "*.gundemi.org/koseyazari/giris*"
-zone_name = "gundemi.org"
-
-[[routes]]
 pattern = "*.gundemi.org/yazar/sifre*"
 zone_name = "gundemi.org"
 
@@ -1761,10 +1696,6 @@ pattern = "fix.tc/yazar/giris*"
 zone_name = "fix.tc"
 
 [[routes]]
-pattern = "fix.tc/koseyazari/giris*"
-zone_name = "fix.tc"
-
-[[routes]]
 pattern = "fix.tc/yazar/sifre*"
 zone_name = "fix.tc"
 
@@ -1782,10 +1713,6 @@ zone_name = "fix.tc"
 
 [[routes]]
 pattern = "www.fix.tc/yazar/giris*"
-zone_name = "fix.tc"
-
-[[routes]]
-pattern = "www.fix.tc/koseyazari/giris*"
 zone_name = "fix.tc"
 
 [[routes]]
@@ -1851,9 +1778,6 @@ pattern = "*.fix.tc/manifest.json"
 zone_name = "fix.tc"
 [[routes]]
 pattern = "*.fix.tc/yazar/giris*"
-zone_name = "fix.tc"
-[[routes]]
-pattern = "*.fix.tc/koseyazari/giris*"
 zone_name = "fix.tc"
 [[routes]]
 pattern = "*.fix.tc/yazar/sifre*"
@@ -1932,10 +1856,6 @@ pattern = "sosyalhizmetler.tr/yazar/giris*"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
-pattern = "sosyalhizmetler.tr/koseyazari/giris*"
-zone_name = "sosyalhizmetler.tr"
-
-[[routes]]
 pattern = "sosyalhizmetler.tr/yazar/sifre*"
 zone_name = "sosyalhizmetler.tr"
 
@@ -1953,10 +1873,6 @@ zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
 pattern = "www.sosyalhizmetler.tr/yazar/giris*"
-zone_name = "sosyalhizmetler.tr"
-
-[[routes]]
-pattern = "www.sosyalhizmetler.tr/koseyazari/giris*"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
@@ -2030,10 +1946,6 @@ pattern = "harikaolacak.com.tr/yazar/giris*"
 zone_name = "harikaolacak.com.tr"
 
 [[routes]]
-pattern = "harikaolacak.com.tr/koseyazari/giris*"
-zone_name = "harikaolacak.com.tr"
-
-[[routes]]
 pattern = "harikaolacak.com.tr/yazar/sifre*"
 zone_name = "harikaolacak.com.tr"
 
@@ -2067,10 +1979,6 @@ zone_name = "harikaolacak.com.tr"
 
 [[routes]]
 pattern = "www.harikaolacak.com.tr/yazar/giris*"
-zone_name = "harikaolacak.com.tr"
-
-[[routes]]
-pattern = "www.harikaolacak.com.tr/koseyazari/giris*"
 zone_name = "harikaolacak.com.tr"
 
 [[routes]]
