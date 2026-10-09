@@ -90,7 +90,7 @@ zone_name = "ahenk.net.tr"
 
 # HM editÔö£├ér siteleri (Cloudflare zone ├ö├Ñ├å Worker ├ö├Ñ├å Container / Neon)
 # ankarasehirgazetesi.com and ankarahabergundemi.com were deleted in Cloudflare (2026-10-09).
-# Do not add routes or custom domains for those zones. ASG is ankara.fix.tc; AHG is gundem.fix.tc.
+# Do not add routes or custom domains for those zones. ASG is ankara.fix.tc; AHG is ankara.gundemi.org (gundem.fix.tc 301s there).
 # kirsehirhaber.org is not a Cloudflare zone; do not add routes for it.
 [[routes]]
 pattern = "vatankahramanlari.org/*"

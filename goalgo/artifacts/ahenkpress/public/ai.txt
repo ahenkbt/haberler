@@ -29,7 +29,7 @@ https://ahenk.net.tr/bilgi/ahenk-bilgi-teknolojileri
 
 - Vatan Haber — https://vatanhaber.net/ (gazetevatan.com / vatanhaber.org ile karıştırılmamalı)
 - Su Haber — https://suhaber.net/
-- Ankara Haber Gündemi — https://gundem.fix.tc/
+- Ankara Gündemi — https://ankara.gundemi.org/
 - Ankara Şehir Gazetesi — https://ankara.fix.tc/
 - Vatan Kahramanları — https://vatankahramanlari.org/
 - Kırşehir Haber — https://kirsehri.com/

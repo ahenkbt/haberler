@@ -29,7 +29,7 @@ describe("hm-turkatahaber-edge", () => {
   const dahaOk = {
     slug: "daha",
     bodyHtml:
-      '<div class="hm-daha-proje"></div><ul class="hm-daha-site-grid"></ul><a href="https://gundem.fix.tc/">AHG</a><a href="https://ankara.fix.tc/">ASG</a><a href="https://vatanhaber.net/">Vatan</a>',
+      '<div class="hm-daha-proje"></div><ul class="hm-daha-site-grid"></ul><a href="https://ankara.gundemi.org/">AHG</a><a href="https://ankara.fix.tc/">ASG</a><a href="https://vatanhaber.net/">Vatan</a>',
   };
 
   it("accepts cumha page allowlist with bolge-* and Dünya", () => {

@@ -14,6 +14,7 @@ export const KNOWN_HM_EDITOR_DOMAIN_SLUGS: Record<string, string> = {
   "kirsehir.net": "kirsehirhaber",
   "ankarahabergundemi.com": "ankarahabergundemi",
   "gundem.fix.tc": "ankarahabergundemi",
+  "ankara.gundemi.org": "ankarahabergundemi",
   "ankarasehirgazetesi.com": "asg",
   "ankara.fix.tc": "asg",
   "vatankahramanlari.org": "vkd",

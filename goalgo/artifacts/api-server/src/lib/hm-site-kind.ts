@@ -7,7 +7,7 @@
  * - Canonical / sitemap / robots / OG / RSS use the FIRST domain (PHP App.php origin = https://<domain>).
  *   So the order is: custom domain(s) first, then <slug>.gundemi.org, then <slug>.fix.tc.
  *   Exception: deleted apexes ankarasehirgazetesi.com and ankarahabergundemi.com, and
- *   sehir.gundemi.org, are never stored. ankara.fix.tc and gundem.fix.tc stay first.
+ *   sehir.gundemi.org, are never stored. ankara.fix.tc (ASG) stays first; AHG is ankara.gundemi.org first since 2026-10-09.
  * - Corporate sites (/admin/hm-kurumsal) never get platform aliases (those hosts route to the news theme).
  * - The type is locked once created (layout_json.hmSiteKind); news ↔ corporate conversion is refused.
  */
@@ -115,7 +115,7 @@ export type HmDomainTriad = { domain: string | null; domain2: string | null; dom
  * Live production otherwise sorts *.gundemi.org ahead of *.fix.tc.
  */
 const REBRAND_CANONICAL_HOST = new Map<string, string>([
-  ["ankara.gundemi.org", "gundem.fix.tc"],
+  // 2026-10-09: AHG moved to ankara.gundemi.org (normal gundemi-before-fix order); no fix.tc preference left.
 ]);
 
 const RETIRED_REBRAND_APEXES = new Set([

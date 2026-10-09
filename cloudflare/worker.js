@@ -3090,6 +3090,15 @@ export default {
     const incoming = new URL(request.url);
     const hostKeyEarly = normalizeHost(incoming.hostname);
 
+    // 2026-10-09: AHG (site 8) moved gundem.fix.tc -> ankara.gundemi.org. Path-preserving 301 for the
+    // Worker-routed paths (/editor, /tr/*, /yazar/*...); /api/* keeps answering so old clients do not break.
+    if (hostKeyEarly === "gundem.fix.tc" && !incoming.pathname.startsWith("/api/") && (request.method === "GET" || request.method === "HEAD")) {
+      return new Response(null, {
+        status: 301,
+        headers: { location: `https://ankara.gundemi.org${incoming.pathname}${incoming.search}`, "cache-control": "public, max-age=3600" },
+      });
+    }
+
     if (incoming.pathname === "/api/healthz/pool" && incoming.searchParams.has("instance")) {
       return fetchApiInstancePool(env, incoming.searchParams.get("instance"));
     }

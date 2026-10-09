@@ -84,8 +84,8 @@ describe("orderSiteDomains", () => {
     expect(
       orderSiteDomains(["ankarahabergundemi.com", "ankara.gundemi.org", "gundem.fix.tc"]).triad,
     ).toEqual({
-      domain: "gundem.fix.tc",
-      domain2: "ankara.gundemi.org",
+      domain: "ankara.gundemi.org",
+      domain2: "gundem.fix.tc",
       domain3: null,
     });
   });

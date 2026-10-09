@@ -522,6 +522,9 @@ export async function handleHmSiteContactEdge(request, env, incoming) {
     if (method !== "POST") return json(405, { error: "Yalnızca POST" }, { allow: "POST" });
     return handlePublicSubmit(request, env, url);
   }
+  // PATCH on the bare path is the editor's "İletişim bilgilerini kaydet" (site contact_json), served by the API
+  // (routes/hm.ts router.patch("/hm/editor/site-contact")). Fall through instead of answering 404 "Bulunamadı".
+  if (path === EDITOR_PREFIX && method !== "GET") return null;
   if (path === EDITOR_PREFIX || path.startsWith(`${EDITOR_PREFIX}/`)) return handleEditor(request, env, url, path, method);
   return null;
 }

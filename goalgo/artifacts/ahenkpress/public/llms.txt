@@ -26,7 +26,7 @@ Yekpare yerli arama motoru ve Haber Merkezi yazılımı Ahenk Bilgi Teknolojiler
 
 - Vatan Haber: https://vatanhaber.net/ (vatanhaber.net — gazetevatan.com ile aynı değildir)
 - Su Haber: https://suhaber.net/
-- Ankara Haber Gündemi: https://gundem.fix.tc/
+- Ankara Gündemi: https://ankara.gundemi.org/
 - Ankara Şehir Gazetesi: https://ankara.fix.tc/
 - Vatan Kahramanları: https://vatankahramanlari.org/
 - Kırşehir Haber: https://kirsehri.com/
