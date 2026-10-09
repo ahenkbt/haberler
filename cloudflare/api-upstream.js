@@ -57,10 +57,10 @@ export function apiContainerInstanceNames(env, count = API_CONTAINER_INSTANCES) 
   return Array.from({ length: n }, (_, i) => `${roll}-${i}`.slice(0, 63));
 }
 
-export async function getApiStub(env) {
+export async function getApiStub(env, preferredName) {
   if (!env?.GOALGO_API) return null;
   const names = apiContainerInstanceNames(env);
-  const name = names[Math.floor(Math.random() * names.length)];
+  const name = preferredName || names[Math.floor(Math.random() * names.length)];
   if (typeof env.GOALGO_API.getByName === "function") {
     return env.GOALGO_API.getByName(name);
   }
@@ -94,18 +94,72 @@ export async function fetchApi(env, url, init = {}) {
     return fetch(`${configured}${parsed.pathname}${parsed.search}`, init);
   }
 
-  const stub = await getApiStub(env);
-  if (stub) {
-    const reqInit = requestInitWithoutCf(init);
-    delete reqInit.signal;
-    const method = String(reqInit.method || "GET").toUpperCase();
-    if (reqInit.body && method !== "GET" && method !== "HEAD") {
-      reqInit.duplex = reqInit.duplex || "half";
-    }
+  if (!env?.GOALGO_API) throw new Error("api_unavailable");
+  const reqInit = requestInitWithoutCf(init);
+  delete reqInit.signal;
+  const method = String(reqInit.method || "GET").toUpperCase();
+  if (reqInit.body && method !== "GET" && method !== "HEAD") {
+    reqInit.duplex = reqInit.duplex || "half";
+  }
+  const idempotent = (method === "GET" || method === "HEAD") && !reqInit.body;
+  if (!idempotent) {
+    const stub = await getApiStub(env);
+    if (!stub) throw new Error("api_unavailable");
     return stub.fetch(new Request(String(url), reqInit));
   }
+  return fetchIdempotentWithFailover(env, String(url), reqInit);
+}
 
-  throw new Error("api_unavailable");
+/**
+ * GET/HEAD: one container can hang (busy pool / stuck boot) while the others answer.
+ * Give each attempt a deadline and move to a different instance name instead of
+ * letting the browser wait 40 s+ (2026-10-09: ~1 in 4 GETs hung or 500'd).
+ */
+export const GET_ATTEMPT_TIMEOUT_MS = 15_000;
+const RETRYABLE_GET_STATUS = new Set([500, 502, 503, 504]);
+
+function shuffledNames(env) {
+  const names = apiContainerInstanceNames(env);
+  for (let i = names.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [names[i], names[j]] = [names[j], names[i]];
+  }
+  return names;
+}
+
+async function fetchIdempotentWithFailover(env, url, reqInit) {
+  const names = shuffledNames(env);
+  let lastRes = null;
+  let lastErr = null;
+  for (let i = 0; i < names.length; i += 1) {
+    const isLast = i === names.length - 1;
+    const stub = await getApiStub(env, names[i]);
+    if (!stub) break;
+    const pending = stub.fetch(new Request(url, reqInit));
+    try {
+      const res = isLast
+        ? await pending
+        : await Promise.race([
+            pending,
+            new Promise((resolve) => setTimeout(() => resolve(null), GET_ATTEMPT_TIMEOUT_MS)),
+          ]);
+      if (!res) {
+        pending.then((r) => r?.body?.cancel?.()).catch(() => {});
+        continue;
+      }
+      if (!isLast && RETRYABLE_GET_STATUS.has(res.status)) {
+        lastRes = res;
+        res.body?.cancel?.().catch?.(() => {});
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (isLast) break;
+    }
+  }
+  if (lastRes) return lastRes;
+  throw lastErr || new Error("api_unavailable");
 }
 
 export async function fetchApiWithRetry(env, url, init = {}, retries = 2, delayMs = 250) {

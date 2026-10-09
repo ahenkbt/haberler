@@ -967,7 +967,7 @@ const HM_SLUG_DISPLAY_NAMES = {
   suhaber: "Su Haber",
   vatanhaber: "Vatan Haber",
   ankarahabergundemi: "Ankara Haber Gündemi",
-  asg: "Ankara Şehir Gazetesi",
+  asg: "Ankara Şehir Haber",
   vkd: "Vatan Kahramanları",
   kirsehirhaber: "Kırşehir Haber",
   kh: "Kırşehir Haber",

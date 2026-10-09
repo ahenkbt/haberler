@@ -97,7 +97,7 @@ describe("hm-public-news-sites", () => {
     assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain, "gundem.fix.tc");
     assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, null);
     assert.equal(rebrandAssignmentForSlug("ahg").domain3, null);
-    assert.equal(main[0].name, "Ankara Şehir Gazetesi");
+    assert.equal(main[0].name, "Ankara Şehir Haber");
     assert.equal(main[1].name, "Ankara Haber Gündemi");
     assert.equal(rebrandAssignmentForSlug("vatanhaber"), null);
     assert.doesNotMatch(main.map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
