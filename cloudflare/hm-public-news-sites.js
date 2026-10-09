@@ -91,22 +91,22 @@ export function replacedPublicHost(row, host) {
 }
 
 /**
- * PHP canonical is the first domain. ankara.fix.tc and gundem.fix.tc stay first.
- * The old apexes stay on domain2/domain3 so the VPS does not fall back to TurkAta.
+ * PHP canonical is the first domain. Only ankara.fix.tc and gundem.fix.tc are stored.
+ * The deleted apexes are not written back.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
   {
     slugs: ["asg", "ankarasehirgazetesi"],
     domain: "ankara.fix.tc",
-    domain2: "ankarasehirgazetesi.com",
+    domain2: null,
     domain3: null,
     displayName: "Ankara Şehir Gazetesi",
   },
   {
     slugs: ["ankarahabergundemi", "ahg"],
     domain: "gundem.fix.tc",
-    domain2: "ankarahabergundemi.com",
-    domain3: "ankara.gundemi.org",
+    domain2: null,
+    domain3: null,
     displayName: "Ankara Haber Gündemi",
   },
 ]);
@@ -119,12 +119,14 @@ export function rebrandAssignmentForSlug(slug) {
 /** @type {Promise<void> | null} */
 let rebrandEnsure = null;
 
-/** One successful attempt per isolate: panel Neon + PHP Neon (when the news URL is writable). */
+/**
+ * Reassert on every list request. A once-per-isolate write loses to a later
+ * panel save that puts a retired host back in front of the fix.tc canonical.
+ */
 export function ensureAsgAhgRebrandDomains(env) {
   if (!rebrandEnsure) {
-    rebrandEnsure = applyAsgAhgRebrandDomains(env).catch((err) => {
+    rebrandEnsure = applyAsgAhgRebrandDomains(env).finally(() => {
       rebrandEnsure = null;
-      throw err;
     });
   }
   return rebrandEnsure;
@@ -166,7 +168,8 @@ async function applyAsgAhgRebrandDomains(env) {
             active = true,
             layout_json = CASE
               WHEN layout_json IS NULL OR btrim(layout_json) = '' THEN layout_json
-              ELSE ((layout_json::jsonb) - 'hmDisplayNameOverride')::text
+              ELSE (((layout_json::jsonb) - 'hmDisplayNameOverride' - 'hmIl81' - 'hmPublicSuspended' - 'hmCorporateSite')
+                - CASE WHEN (layout_json::jsonb)->>'hmSiteKind' = 'kurumsal' THEN 'hmSiteKind' ELSE '' END)::text
             END,
             updated_at = now()
         WHERE lower(slug) = ${spec.slugs[0]}
@@ -218,16 +221,19 @@ export function publicNewsSitesFromRows(rows, { group = "main" } = {}) {
     if (isCorporate(row, host)) continue;
     const layout = parseLayout(row.layout_json ?? row.layoutJson);
     if (layout.hmPublicSuspended === true && !movedHost) continue;
-    if (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal") continue;
+    if (!movedHost && (layout.hmCorporateSite === true || layout.hmSiteKind === "kurumsal")) continue;
     const featured = movedHost ? null : IL_FEATURED[host] || null;
     const isIl = Boolean(!movedHost && (featured || (layout.hmIl81 && typeof layout.hmIl81 === "object")));
     if (group === "il" ? !isIl : isIl) continue;
     const logoRaw = String(layout.logoUrl ?? "").trim() || String(layout.faviconUrl ?? "").trim();
+    const rebrandName = rebrandAssignmentForSlug(row.slug)?.displayName || "";
     const site = {
       id: Number(row.id),
       slug: String(row.slug ?? "").trim(),
       // 81il 2026-10-09: layout hmDisplayNameOverride wins (gundemi.org = "Gündem İstanbul"; the panel->TP sync rewrites display_name).
+      // ASG / AHG keep the original names even when a Fix Haber override is stored.
       name:
+        rebrandName ||
         (typeof layout.hmDisplayNameOverride === "string" && layout.hmDisplayNameOverride.trim()) ||
         (featured ? featured.name : "") ||
         String(row.display_name ?? row.displayName ?? row.slug ?? host).trim() ||

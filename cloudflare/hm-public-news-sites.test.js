@@ -84,19 +84,21 @@ describe("hm-public-news-sites", () => {
 
   it("ASG and AHG stay on the tanıtım grid under ankara.fix.tc and gundem.fix.tc", () => {
     const rows = [
-      { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "Ankara Şehir Gazetesi", active: false, layout_json: L({ logoUrl: "data:image/png;base64,AAAA" }) },
-      { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "Ankara Haber Gündemi", active: true, layout_json: L({ logoUrl: "/ahg.png", hmPublicSuspended: true }) },
+      { id: 3, slug: "asg", domain: "ankarasehirgazetesi.com", display_name: "Ankara Şehir Fix Haber", active: false, layout_json: L({ logoUrl: "data:image/png;base64,AAAA", hmDisplayNameOverride: "Ankara Şehir Fix Haber", hmIl81: { il: "Ankara", plate: "06" }, hmSiteKind: "kurumsal" }) },
+      { id: 8, slug: "ankarahabergundemi", domain: "ankarahabergundemi.com", display_name: "Ankara Gündem Fix Haber", active: true, layout_json: L({ logoUrl: "/ahg.png", hmPublicSuspended: true, hmDisplayNameOverride: "Ankara Gündem Fix Haber" }) },
     ];
     const main = publicNewsSitesFromRows(rows);
     assert.deepEqual(main.map((s) => s.domain), ["ankara.fix.tc", "gundem.fix.tc"]);
     assert.equal(publicNewsSitesFromRows(rows, { group: "il" }).length, 0);
     assert.equal(replacedPublicHost(rows[0], "ankarasehirgazetesi.com"), "ankara.fix.tc");
     assert.equal(rebrandAssignmentForSlug("asg").domain, "ankara.fix.tc");
-    assert.equal(rebrandAssignmentForSlug("asg").domain2, "ankarasehirgazetesi.com");
+    assert.equal(rebrandAssignmentForSlug("asg").domain2, null);
     assert.equal(rebrandAssignmentForSlug("asg").domain3, null);
     assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain, "gundem.fix.tc");
-    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, "ankarahabergundemi.com");
-    assert.equal(rebrandAssignmentForSlug("ahg").domain3, "ankara.gundemi.org");
+    assert.equal(rebrandAssignmentForSlug("ankarahabergundemi").domain2, null);
+    assert.equal(rebrandAssignmentForSlug("ahg").domain3, null);
+    assert.equal(main[0].name, "Ankara Şehir Gazetesi");
+    assert.equal(main[1].name, "Ankara Haber Gündemi");
     assert.equal(rebrandAssignmentForSlug("vatanhaber"), null);
     assert.doesNotMatch(main.map((s) => s.domain).join(" "), /ankarasehirgazetesi|ankarahabergundemi/);
   });
