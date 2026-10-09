@@ -152,6 +152,7 @@ import {
   ensureHmNewsSiteSeoColumns,
   ensureHmNewsSiteWritableColumns,
   formatHmSitesDbError,
+  isHmSitesDbBusyMessage,
   isMissingHmBaseTableError,
   isMissingHmSeoColumnError,
   isMissingHmSiteColumnError,
@@ -1588,7 +1589,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
   } catch (e: unknown) {
     if (res.headersSent) return;
     const msg = formatHmSitesDbError(e);
-    const status = /zaten kayıtlı/i.test(msg) ? 409 : 500;
+    const status = /zaten kayıtlı/i.test(msg) ? 409 : isHmSitesDbBusyMessage(msg) ? 503 : 500;
     res.status(status).json({ error: `Site kaydedilemedi (${step.name}): ${msg}`, step: step.name });
   }
 });

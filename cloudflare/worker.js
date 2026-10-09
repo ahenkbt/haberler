@@ -62,7 +62,7 @@ import {
   newsPageBundleSlug,
   wrapArticleAsPageBundle,
 } from "./hm-news-article-edge.js";
-import { fetchApi, fetchApiInstancePool, fetchApiWithRetry, FRONTEND_TAG, resolveApiOrigin } from "./api-upstream.js";
+import { fetchApi, fetchApiInstancePool, fetchApiWithRetry, FRONTEND_TAG, pingJobsInstance, resolveApiOrigin } from "./api-upstream.js";
 import {
   hmYektubeCatalogDegradeResponse,
   hmYektubeCatalogJsonResponse,
@@ -3964,6 +3964,11 @@ export default {
           await fetchApi(env, `${origin}/api/healthz`);
         } catch (err) {
           console.error("[hm-keepalive/healthz]", String(err?.message || err).slice(0, 160));
+        }
+        try {
+          await pingJobsInstance(env, `${origin}/api/healthz/live`);
+        } catch (err) {
+          console.error("[hm-keepalive/jobs]", String(err?.message || err).slice(0, 160));
         }
         try {
           await warmKnownHmNewsSites(env, {

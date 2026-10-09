@@ -66,3 +66,10 @@ describe("api-upstream", () => {
     );
   });
 });
+
+it("jobs instance -0 is kept off normal traffic", async () => {
+  const { apiRequestInstanceNames, apiJobsInstanceName } = await import("./api-upstream.js");
+  const env = { CONTAINER_ROLL: "roll-a" };
+  assert.deepEqual(apiRequestInstanceNames(env), ["roll-a-1", "roll-a-2"]);
+  assert.equal(apiJobsInstanceName(env), "roll-a-0");
+});
