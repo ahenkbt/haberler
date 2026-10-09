@@ -6,8 +6,8 @@
  *   resolves the host against hm_news_sites.domain/domain2/domain3 (dual-written to twilight-pine).
  * - Canonical / sitemap / robots / OG / RSS use the FIRST domain (PHP App.php origin = https://<domain>).
  *   So the order is: custom domain(s) first, then <slug>.gundemi.org, then <slug>.fix.tc.
- *   Exception: ankarasehirgazetesi.com and ankarahabergundemi.com stay attached
- *   behind ankara.fix.tc and gundem.fix.tc. sehir.gundemi.org is not stored.
+ *   Exception: deleted apexes ankarasehirgazetesi.com and ankarahabergundemi.com, and
+ *   sehir.gundemi.org, are never stored. ankara.fix.tc and gundem.fix.tc stay first.
  * - Corporate sites (/admin/hm-kurumsal) never get platform aliases (those hosts route to the news theme).
  * - The type is locked once created (layout_json.hmSiteKind); news ↔ corporate conversion is refused.
  */
@@ -115,12 +115,14 @@ export type HmDomainTriad = { domain: string | null; domain2: string | null; dom
  * Live production otherwise sorts *.gundemi.org ahead of *.fix.tc.
  */
 const REBRAND_CANONICAL_HOST = new Map<string, string>([
-  ["ankarasehirgazetesi.com", "ankara.fix.tc"],
-  ["ankarahabergundemi.com", "gundem.fix.tc"],
   ["ankara.gundemi.org", "gundem.fix.tc"],
 ]);
 
-const RETIRED_REBRAND_APEXES = new Set(["sehir.gundemi.org"]);
+const RETIRED_REBRAND_APEXES = new Set([
+  "ankarasehirgazetesi.com",
+  "ankarahabergundemi.com",
+  "sehir.gundemi.org",
+]);
 
 function preferRebrandCanonical(hosts: string[]): string[] {
   const keys = new Set(hosts.map((h) => normalizeAliasHost(h)));
