@@ -195,6 +195,7 @@ export function LlmProviderKeysPanel({
                 body: JSON.stringify(body),
               }),
             );
+      if (data.ok === false) throw new Error(data.error || "Bağlantı kurulamadı");
       toast({ title: data.message || "Bağlantı başarılı" });
     } catch (err) {
       toast({

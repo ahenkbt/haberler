@@ -12,7 +12,7 @@ import { decryptLlmApiKey, encryptLlmApiKey } from "./hm-llm-crypto.js";
 describe("hm llm catalog", () => {
   it("uses the cheap default models", () => {
     expect(defaultLlmModel("evren")).toBe("deepseek-v4-flash");
-    expect(defaultLlmModel("nvidia")).toBe("nvidia/nemotron-3.5-lightning");
+    expect(defaultLlmModel("nvidia")).toBe("nvidia/nemotron-3.5-lightning-30b-a3b");
     expect(defaultLlmModel("gemini")).toBe("gemini-3.1-flash-lite");
     expect(defaultLlmModel("openai")).toBe("gpt-5-nano");
   });

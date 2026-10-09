@@ -59,10 +59,23 @@ function ipv4Lookup(
   });
 }
 
+function envMs(name: string): number | undefined {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined;
+}
+
 export function pgPoolConfig(connectionString: string, extra: PoolConfig = {}): PoolConfig {
   const ssl = pgSslOption(connectionString);
+  // 2026-10-09: on Cloudflare Containers one instance kept hanging on every DB-bound request
+  // while /healthz/live answered. Idle pooled sockets were dropped silently on the path to Neon,
+  // and pg waited on them forever. TCP keepalive detects dead sockets; PG_QUERY_TIMEOUT_MS makes
+  // a query on a dead socket fail (and its client get discarded) instead of hanging.
+  const queryTimeout = envMs("PG_QUERY_TIMEOUT_MS");
   return {
     connectionString,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
+    ...(queryTimeout ? { query_timeout: queryTimeout } : {}),
     ...extra,
     ...(ssl === undefined ? {} : { ssl }),
     ...(shouldForceIpv4(connectionString) ? { lookup: ipv4Lookup } : {}),

@@ -177,7 +177,8 @@ async function runTest(req: Request, res: Response, siteId: number | null): Prom
     return;
   }
   const detail = String(result.detail || "Bağlantı kurulamadı").split(apiKey).join("••••");
-  res.status(502).json({
+  // 200 + ok:false: the test itself worked; a 5xx made the Worker treat it as an outage.
+  res.status(200).json({
     ok: false,
     provider,
     error: detail.slice(0, 280),

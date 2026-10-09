@@ -115,7 +115,7 @@ export async function fetchApi(env, url, init = {}) {
  * Give each attempt a deadline and move to a different instance name instead of
  * letting the browser wait 40 s+ (2026-10-09: ~1 in 4 GETs hung or 500'd).
  */
-export const GET_ATTEMPT_TIMEOUT_MS = 15_000;
+export const GET_ATTEMPT_TIMEOUT_MS = 8_000;
 const RETRYABLE_GET_STATUS = new Set([500, 502, 503, 504]);
 
 function shuffledNames(env) {
@@ -125,6 +125,35 @@ function shuffledNames(env) {
     [names[i], names[j]] = [names[j], names[i]];
   }
   return names;
+}
+
+function tagInstance(res, name, attempt) {
+  if (!res || res.status === 101 || res.webSocket) return res;
+  try {
+    const out = new Response(res.body, res);
+    out.headers.set("x-yk-api-instance", `${String(name).split("-").pop()}/${attempt + 1}`);
+    return out;
+  } catch {
+    return res;
+  }
+}
+
+/** Diagnostics: /api/healthz/pool?instance=N hits one named instance (no failover). */
+export async function fetchApiInstancePool(env, index) {
+  const names = apiContainerInstanceNames(env);
+  const i = Math.max(0, Math.min(names.length - 1, Number(index) || 0));
+  const stub = await getApiStub(env, names[i]);
+  if (!stub) return new Response("no container", { status: 503 });
+  const t0 = Date.now();
+  const res = await Promise.race([
+    stub.fetch(new Request("http://container/api/healthz/pool")),
+    new Promise((r) => setTimeout(() => r(null), 12_000)),
+  ]);
+  const body = res ? await res.text().catch(() => "") : "";
+  return new Response(
+    JSON.stringify({ instance: i, name: names[i], ms: Date.now() - t0, status: res?.status ?? "timeout", body: body.slice(0, 600) }),
+    { status: 200, headers: { "content-type": "application/json", "cache-control": "no-store" } },
+  );
 }
 
 async function fetchIdempotentWithFailover(env, url, reqInit) {
@@ -155,7 +184,7 @@ async function fetchIdempotentWithFailover(env, url, reqInit) {
         res.body?.cancel?.().catch?.(() => {});
         continue;
       }
-      return res;
+      return tagInstance(res, names[i], i);
     } catch (err) {
       lastErr = err;
       if (isLast) break;
@@ -168,6 +197,13 @@ async function fetchIdempotentWithFailover(env, url, reqInit) {
 export async function fetchApiWithRetry(env, url, init = {}, retries = 2, delayMs = 250) {
   const baseDelay = Math.max(50, Number(delayMs) || 250);
   let lastErr = null;
+  // A streamed request body (POST/PUT/PATCH proxied from the browser) can be sent once.
+  // Retrying it threw "body used" and the real API answer (e.g. 502 from an LLM test)
+  // was replaced by a generic "Sunucu meşgul" 503.
+  const method = String(init?.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD" && init?.body && typeof init.body !== "string") {
+    retries = 0;
+  }
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const res = await fetchApi(env, url, init);
