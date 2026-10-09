@@ -1576,7 +1576,24 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * Admin site save. Errors before the main try (domain reads, domain transfer, layout read)
+ * used to escape to the global handler as a bare 500 "Sunucu hatası"; the wrapper below
+ * returns the step and the DB message instead (2026-10-09, ASG full-form save).
+ */
 router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
+  const step = { name: "hazırlık" };
+  try {
+    await patchHmSiteHandler(req, res, step);
+  } catch (e: unknown) {
+    if (res.headersSent) return;
+    const msg = formatHmSitesDbError(e);
+    const status = /zaten kayıtlı/i.test(msg) ? 409 : 500;
+    res.status(status).json({ error: `Site kaydedilemedi (${step.name}): ${msg}`, step: step.name });
+  }
+});
+
+async function patchHmSiteHandler(req: Request, res: Response, step: { name: string }): Promise<void> {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   const id = parseInt(String(req.params.id), 10);
   if (!Number.isFinite(id)) {
@@ -1687,7 +1704,9 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
       return;
     }
     // Başka sitedeki aynı domaini temizle — /su'dan silip /suha'ya taşıma çalışsın.
+    step.name = "alan adı taşıma";
     await transferHmDomainsToSite(id, nextDomain ?? null, nextDomain2 ?? null, nextDomain3 ?? null);
+    step.name = "kayıt";
   }
   if (b.contact !== undefined) patch.contactJson = JSON.stringify(b.contact ?? {});
   if (b.seoVerification !== undefined) {
@@ -1788,6 +1807,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
   }
 
   patch.updatedAt = new Date();
+  step.name = "kayıt";
   try {
     await ensureHmNewsSiteWritableColumns();
     let row: typeof hmNewsSitesTable.$inferSelect | undefined;
@@ -1968,7 +1988,7 @@ router.patch("/hm/sites/:id", async (req, res): Promise<void> => {
     }
     res.status(500).json({ error: msg });
   }
-});
+}
 
 /** *.gundemi.org DNS + Worker catch-all yeniden dene (admin). */
 router.post("/hm/sites/:id/ensure-gundemi", async (req, res): Promise<void> => {

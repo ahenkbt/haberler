@@ -774,74 +774,9 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
               variant="outline"
               size="sm"
               disabled={repairing !== null}
-              onClick={() => void runAdminRepair("/api/hm/admin/repair-tepe-manset", "Tepe manşet onarımı")}
-            >
-              {repairing === "/api/hm/admin/repair-tepe-manset" ? "Onarılıyor…" : "Tepe manşet onar"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={repairing !== null}
               onClick={() => void runAdminRepair("/api/hm/admin/backfill-rss-images", "RSS görsel backfill")}
             >
               {repairing === "/api/hm/admin/backfill-rss-images" ? "Onarılıyor…" : "RSS görsellerini doldur"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={repairing !== null}
-              onClick={() => void runAdminRepair("/api/hm/admin/repair-asg-editor", "ASG editör onarımı")}
-            >
-              {repairing === "/api/hm/admin/repair-asg-editor" ? "Onarılıyor…" : "ASG editör onar"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={repairing !== null}
-              onClick={() =>
-                void runAdminRepair(
-                  "/api/hm/admin/repair-asg-authors-from-ahg",
-                  "ASG yazar + köşe yazısı (ankarahabergundemi)",
-                )
-              }
-            >
-              {repairing === "/api/hm/admin/repair-asg-authors-from-ahg"
-                ? "Kopyalanıyor…"
-                : "ASG ← ankarahabergundemi yazar/köşe"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={repairing !== null}
-              onClick={() =>
-                void runAdminRepair("/api/hm/admin/repair-asg-home-modules", "ASG anasayfa Ankara/Spor")
-              }
-            >
-              {repairing === "/api/hm/admin/repair-asg-home-modules" ? "Onarılıyor…" : "ASG anasayfa Ankara/Spor"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={repairing !== null}
-              onClick={() => void runAdminRepair("/api/hm/admin/repair-kh-editor", "Kırşehir editör onarımı")}
-            >
-              {repairing === "/api/hm/admin/repair-kh-editor" ? "Onarılıyor…" : "KH editör onar"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={repairing !== null}
-              onClick={() =>
-                void runAdminRepair("/api/hm/admin/repair-hm-site-id-collisions", "Site ID çakışma onarımı")
-              }
-            >
-              {repairing === "/api/hm/admin/repair-hm-site-id-collisions" ? "Onarılıyor…" : "Site ID onar"}
             </Button>
             <Button
               type="button"
