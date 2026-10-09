@@ -94,7 +94,7 @@ export const AHENK_HSY_REFERENCES = [
     "name": "Harika Olacak",
     "domain": "harikaolacak.com.tr",
     "url": "https://harikaolacak.com.tr/",
-    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/1172/logo?v=71ffd32e"
+    "logo": "https://ahenk.net.tr/api/hm/public/news-sites/1171/logo?v=71ffd32e"
   },
   {
     "name": "TürkSav",
