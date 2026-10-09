@@ -118,8 +118,12 @@ const REBRAND_CANONICAL_HOST = new Map<string, string>([
   ["ankara.gundemi.org", "gundem.fix.tc"],
 ]);
 
-/** Cloudflare zones deleted 2026-10-09. Never persist these as domain/domain2/domain3. */
-const RETIRED_REBRAND_APEXES = new Set(["ankarasehirgazetesi.com", "ankarahabergundemi.com"]);
+/** Never persist these. The two apexes were deleted in Cloudflare; sehir.gundemi.org was never a saved ASG host. */
+const RETIRED_REBRAND_APEXES = new Set([
+  "ankarasehirgazetesi.com",
+  "ankarahabergundemi.com",
+  "sehir.gundemi.org",
+]);
 
 function preferRebrandCanonical(hosts: string[]): string[] {
   const keys = new Set(hosts.map((h) => normalizeAliasHost(h)));

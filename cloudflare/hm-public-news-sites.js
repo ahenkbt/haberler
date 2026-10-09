@@ -96,8 +96,20 @@ export function replacedPublicHost(row, host) {
  * do not write them back as domain, domain2, or domain3.
  */
 export const ASG_AHG_REBRAND_ROWS = Object.freeze([
-  { slugs: ["asg", "ankarasehirgazetesi"], domain: "ankara.fix.tc", domain2: null, domain3: null },
-  { slugs: ["ankarahabergundemi", "ahg"], domain: "gundem.fix.tc", domain2: null, domain3: null },
+  {
+    slugs: ["asg", "ankarasehirgazetesi"],
+    domain: "ankara.fix.tc",
+    domain2: null,
+    domain3: null,
+    displayName: "Ankara Şehir Gazetesi",
+  },
+  {
+    slugs: ["ankarahabergundemi", "ahg"],
+    domain: "gundem.fix.tc",
+    domain2: null,
+    domain3: null,
+    displayName: "Ankara Haber Gündemi",
+  },
 ]);
 
 export function rebrandAssignmentForSlug(slug) {
@@ -111,9 +123,8 @@ let rebrandEnsure = null;
 /** One successful attempt per isolate: panel Neon + PHP Neon (when the news URL is writable). */
 export function ensureAsgAhgRebrandDomains(env) {
   if (!rebrandEnsure) {
-    rebrandEnsure = applyAsgAhgRebrandDomains(env).catch((err) => {
+    rebrandEnsure = applyAsgAhgRebrandDomains(env).finally(() => {
       rebrandEnsure = null;
-      throw err;
     });
   }
   return rebrandEnsure;
@@ -135,14 +146,24 @@ async function applyAsgAhgRebrandDomains(env) {
         SET domain = ${spec.domain},
             domain2 = ${spec.domain2},
             domain3 = ${spec.domain3},
+            display_name = ${spec.displayName},
             active = true,
+            layout_json = CASE
+              WHEN jsonb_typeof(layout_json) = 'object'
+                THEN (layout_json - 'hmFixAnkaraWordmark')
+                  || jsonb_build_object('hmDisplayNameOverride', ${spec.displayName}::text)
+              ELSE layout_json
+            END,
             updated_at = now()
         WHERE lower(slug) = ${slug}
           AND (
             lower(coalesce(domain, '')) IS DISTINCT FROM ${spec.domain}
             OR lower(coalesce(domain2, '')) IS DISTINCT FROM ${spec.domain2 ?? ""}
             OR lower(coalesce(domain3, '')) IS DISTINCT FROM ${spec.domain3 ?? ""}
+            OR display_name IS DISTINCT FROM ${spec.displayName}
+            OR coalesce(layout_json->>'hmDisplayNameOverride', '') IS DISTINCT FROM ${spec.displayName}
             OR active IS DISTINCT FROM true
+            OR layout_json ? 'hmFixAnkaraWordmark'
           )
       `;
     }

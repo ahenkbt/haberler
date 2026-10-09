@@ -76,6 +76,11 @@ describe("orderSiteDomains", () => {
       domain2: null,
       domain3: null,
     });
+    expect(orderSiteDomains(["sehir.gundemi.org", "ankara.fix.tc"]).triad).toEqual({
+      domain: "ankara.fix.tc",
+      domain2: null,
+      domain3: null,
+    });
     expect(
       orderSiteDomains(["ankarahabergundemi.com", "ankara.gundemi.org", "gundem.fix.tc"]).triad,
     ).toEqual({
