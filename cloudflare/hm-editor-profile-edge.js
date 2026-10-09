@@ -16,6 +16,7 @@ import { loadPanelSession, readCookie, unsignConnectSid } from "./hm-admin-site-
 import { purgeHmSitePublicEdgeCache } from "./hm-public-cache-purge-edge.js";
 import bcrypt from "bcryptjs";
 import { conventionalAddressesForSite, isHmNewsSite } from "./hm-site-mail-convention.js";
+import { SEED_CORPORATE_SITES, ensureNewsites25SiteOnSql } from "./hm-newsites25-edge.js";
 import { SignJWT, jwtVerify } from "jose";
 import { saveMediaDataUrlToS3, s3MediaEnvReady } from "./hm-editor-media-s3-edge.js";
 import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
@@ -1070,6 +1071,19 @@ async function completeEditorLoginAfterCaptcha(request, env, incomingUrl, sql, b
   let site = host ? await resolveSiteByHost(sql, host) : null;
   if (!site) {
     site = await resolveSiteBySlug(sql, b.slug);
+  }
+  if (!site && host) {
+    // goalgo-site 2026-10-09: corporate seed sites (goalgo.com.tr, …) get their panel row at login time too,
+    // so /editor works even when the container by-domain path (which normally seeds) is busy.
+    const seed = SEED_CORPORATE_SITES.find((s) => s.hosts.includes(host) || s.hosts.includes(`www.${host}`));
+    if (seed) {
+      try {
+        await ensureNewsites25SiteOnSql(sql, seed);
+        site = await resolveSiteByHost(sql, host);
+      } catch (err) {
+        console.error("[hm-editor-login-seed]", seed.slug, String(err?.message || err).slice(0, 200));
+      }
+    }
   }
   if (!site) {
     return jsonResponse(401, { error: "Site veya hesap bulunamadı" });
