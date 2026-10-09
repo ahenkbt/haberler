@@ -28,6 +28,7 @@ import {
   resolveHmCorporateAuthorsEnabledFromLayout,
 } from "../lib/hm-editor-categories.js";
 import { shouldHideAuthorOnAnkaraHmSite } from "../lib/hm-vatanhaber-author-block.js";
+import { sqlNormTextEq } from "../lib/sql-norm-text.js";
 
 const router: IRouter = Router();
 const newsReadDb = () => getNewsDbForRead();
@@ -409,7 +410,7 @@ router.post("/authors", async (req, res): Promise<void> => {
   const [existing] = await newsReadDb()
     .select()
     .from(authorsTable)
-    .where(and(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalized}`, isNull(authorsTable.hmSiteId)))
+    .where(and(sqlNormTextEq(authorsTable.name, normalized), isNull(authorsTable.hmSiteId)))
     .limit(1);
   if (existing) {
     res.status(200).json(authorPublicJson(existing, true));
@@ -521,8 +522,8 @@ router.post("/authors/bulk-distribute", async (req, res): Promise<void> => {
       .from(authorsTable)
       .where(
         hmSiteId == null
-          ? and(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalized}`, isNull(authorsTable.hmSiteId))
-          : and(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalized}`, eq(authorsTable.hmSiteId, hmSiteId)),
+          ? and(sqlNormTextEq(authorsTable.name, normalized), isNull(authorsTable.hmSiteId))
+          : and(sqlNormTextEq(authorsTable.name, normalized), eq(authorsTable.hmSiteId, hmSiteId)),
       )
       .limit(1);
     if (exists[0]) {

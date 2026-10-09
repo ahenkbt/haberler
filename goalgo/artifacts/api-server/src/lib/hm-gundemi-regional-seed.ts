@@ -38,6 +38,7 @@ import {
   gundemiHmEditorSeedPassword,
   type GundemiRegionalSiteDef,
 } from "./hm-gundemi-regional-sites.js";
+import { sqlNormTextEq } from "./sql-norm-text.js";
 
 export type GundemiRegionalSeedSiteResult = {
   slug: string;
@@ -601,7 +602,7 @@ export async function ensureTurkataAuthorsOnRegionalSite(targetSiteId: number): 
       .where(
         and(
           eq(authorsTable.hmSiteId, targetSiteId),
-          sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`,
+          sqlNormTextEq(authorsTable.name, normalizedName),
         ),
       )
       .limit(1);

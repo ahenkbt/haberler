@@ -6,6 +6,7 @@ import {
   hmMakalelerTable,
   newsTable,
 } from "@workspace/db";
+import { sqlNormTextEq } from "./sql-norm-text.js";
 
 type AuthorRow = typeof authorsTable.$inferSelect;
 type MakaleRow = typeof hmMakalelerTable.$inferSelect;
@@ -141,7 +142,7 @@ async function loadSourceArticles(source: AuthorRow): Promise<SourceArticle[]> {
   const peers = await db
     .select({ id: authorsTable.id, hmSiteId: authorsTable.hmSiteId })
     .from(authorsTable)
-    .where(sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`);
+    .where(sqlNormTextEq(authorsTable.name, normalizedName));
 
   for (const peer of peers) {
     if (peer.id === source.id) continue;

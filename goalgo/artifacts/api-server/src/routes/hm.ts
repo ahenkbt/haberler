@@ -261,6 +261,7 @@ import {
   type HmSiteKind,
   conceptSiteLayoutDefaults,
 } from "../lib/hm-site-kind.js";
+import { sqlNormTextEq } from "../lib/sql-norm-text.js";
 
 const router: IRouter = Router();
 
@@ -5033,7 +5034,7 @@ router.post("/hm/editor/authors", async (req, res): Promise<void> => {
   const [existingName] = await newsReadDb()
     .select()
     .from(authorsTable)
-    .where(and(eq(authorsTable.hmSiteId, ctx.siteId), sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`))
+    .where(and(eq(authorsTable.hmSiteId, ctx.siteId), sqlNormTextEq(authorsTable.name, normalizedName)))
     .limit(1);
   if (existingName) {
     const patch: { avatarUrl?: string; title?: string | null; bio?: string | null } = {};
@@ -5375,7 +5376,7 @@ router.post("/hm/editor/pool/authors/:id/publish", async (req, res): Promise<voi
   let [targetAuthor] = await newsReadDb()
     .select()
     .from(authorsTable)
-    .where(and(eq(authorsTable.hmSiteId, ctx.siteId), sql`lower(regexp_replace(btrim(${authorsTable.name}), '\s+', ' ', 'g')) = ${normalizedName}`))
+    .where(and(eq(authorsTable.hmSiteId, ctx.siteId), sqlNormTextEq(authorsTable.name, normalizedName)))
     .limit(1);
   if (!targetAuthor) {
     const [maxRow] = await newsReadDb()
