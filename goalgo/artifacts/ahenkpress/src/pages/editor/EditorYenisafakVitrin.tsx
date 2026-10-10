@@ -18,6 +18,7 @@ import {
   type HmGradientPreset,
 } from "@/lib/hmThemeGradients";
 import { useToast } from "@/hooks/use-toast";
+import { SgHomeModulesEditor, isSehitGaziSite } from "@/components/SgHomeModulesEditor";
 import type { NewsSiteLayoutPrefs } from "@/lib/newsSiteLayout";
 import {
   YS_AD_SLOTS,
@@ -476,6 +477,24 @@ export default function EditorYenisafakVitrin() {
             })}
           </div>
         </section>
+
+        {isSehitGaziSite([site?.domain, site?.domain2, site?.domain3]) ? (
+          <SgHomeModulesEditor
+            prefs={newsLayoutPrefs}
+            save={async (patch) => {
+              const result = await saveNewsSiteLayout(newsLayoutPrefs, {
+                layoutPatch: patch as Partial<NewsSiteLayoutPrefs>,
+                vitrinOnly: true,
+              });
+              if (!result.ok) {
+                toast({ title: "Kaydedilemedi", description: result.error.slice(0, 220), variant: "destructive" });
+                return false;
+              }
+              toast({ title: "Ana sayfa modülleri kaydedildi", description: "Ana sayfayı Ctrl+F5 ile yenileyin." });
+              return true;
+            }}
+          />
+        ) : null}
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
           <Label className="font-semibold text-slate-900">Logo</Label>
