@@ -1,0 +1,24 @@
+# Local render only. Creates its own Postgres and loads seed/demo.sql.
+# This is not the production database and is not a migration.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: yenisafak
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: yenisafak
+    volumes:
+      - ./seed/demo.sql:/docker-entrypoint-initdb.d/01-demo.sql:ro
+    ports:
+      - "54329:5432"
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgres://yenisafak:demo@db:5432/yenisafak
+      SITE_HOST: turkatahaber.com
+      CACHE_TTL: "60"
+    depends_on:
+      - db
+    ports:
+      - "8088:80"

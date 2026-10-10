@@ -1,0 +1,16 @@
+{
+	frankenphp
+	order php_server before file_server
+}
+
+:80 {
+	root * /app/public
+	encode zstd gzip
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	header /assets/* Cache-Control "public, max-age=86400"
+	php_server
+}

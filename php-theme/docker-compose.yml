@@ -1,0 +1,25 @@
+# Beside the existing stack. Attach the external Traefik network (rename if yours differs).
+# Do not point this file at a MySQL database. DATABASE_URL is the current Postgres.
+
+services:
+  yenisafak-tema:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      CACHE_TTL: "60"
+      YEKTUBE_API_BASE: ${YEKTUBE_API_BASE:-}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.yenisafak.rule=Host(`turkatahaber.com`) || Host(`www.turkatahaber.com`) || (Host(`ahenk.net.tr`) && PathPrefix(`/haberler`))
+      - traefik.http.routers.yenisafak.entrypoints=websecure
+      - traefik.http.routers.yenisafak.tls=true
+      - traefik.http.routers.yenisafak.tls.certresolver=le
+      - traefik.http.services.yenisafak.loadbalancer.server.port=80
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
