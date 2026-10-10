@@ -10,6 +10,7 @@ import {
 import { getHmHiddenCategoryIds, yekparePoolReceiveEnabledFromLayout } from "./hm-public-layout.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { andSiteRssYonelimSql } from "./hm-site-yonelim.js";
+import { normalizeSiteYonelim, prioritizeOppositionForManset } from "./hm-rss-kaynak-yonelim.js";
 import { parseHmLayoutJson, isHmCorporateLayout } from "./hm-editor-categories.js";
 import {
   strictCorporateSiteNewsScopeSql,
@@ -221,6 +222,7 @@ function buildCenterHeadlinesFromItems(
   manual: SerializedNewsListItem[],
   limit: number,
   categorySlug?: string | null,
+  siteYonelim?: unknown,
 ): SerializedNewsListItem[] {
   const slug = normalizeCategorySlug(categorySlug);
   const filterCat = (items: SerializedNewsListItem[]) =>
@@ -228,7 +230,7 @@ function buildCenterHeadlinesFromItems(
   const scoped = filterCat(manual);
   const siteManset = scoped.filter((item) => (item as { isSiteManset?: boolean }).isSiteManset === true);
   const pool = siteManset.length > 0 ? siteManset : scoped;
-  const latest = sortNewsItemsByAddDate(pool);
+  const latest = prioritizeOppositionForManset(sortNewsItemsByAddDate(pool), siteYonelim);
   const target = Math.min(Math.max(limit, 1), 30);
   return latest.slice(0, target);
 }
@@ -344,6 +346,8 @@ export async function buildHmHomeBundle(
   const corporateStrict = isHmCorporateLayout(layout);
   const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
+  const siteYonelim = normalizeSiteYonelim(site?.yonelim);
+  const preferOppositionManset = siteYonelim === "sol";
   const localPref = corporateStrict ? null : resolveHomepageLocalPref(siteSlug, layout, siteId);
   const settle = <T,>(label: string, p: Promise<T[]>) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -414,26 +418,37 @@ export async function buildHmHomeBundle(
     breaking,
     popular,
   );
-  const centerFromLegacy = buildCenterHeadlinesFromItems(featured, manualEditor, limit, categorySlug);
-  const centerHeadlines = localPref
-    ? preferLocalThenFill(
-        mergeUniqueHomepageItems(centerFromLegacy, sectionPool),
-        localPref,
-        siteId,
-        limit,
-      )
-    : centerFromLegacy;
+  const centerFromLegacy = buildCenterHeadlinesFromItems(
+    featured,
+    manualEditor,
+    limit,
+    categorySlug,
+    siteYonelim,
+  );
+  const centerHeadlines = prioritizeOppositionForManset(
+    localPref
+      ? preferLocalThenFill(
+          mergeUniqueHomepageItems(centerFromLegacy, sectionPool),
+          localPref,
+          siteId,
+          limit,
+        )
+      : centerFromLegacy,
+    siteYonelim,
+  );
   const tepeManset = (() => {
     const fallbackPool = [...featured, ...siteMansetEditor, ...latestEditor, ...breaking, ...popular];
-    if (!localPref) return selectTepeMansetItems(fallbackPool, HM_TEPE_MANSET_ITEM_COUNT);
+    if (!localPref) return selectTepeMansetItems(fallbackPool, HM_TEPE_MANSET_ITEM_COUNT, Date.now(), preferOppositionManset);
     const localRows = sectionPool.filter((item) => newsItemMatchesHomepageLocalPref(item, localPref, siteId));
     const flagged = localRows.filter((item) => item.isTepeManset === true);
-    const flaggedPicks = selectTepeMansetItems(flagged, HM_TEPE_MANSET_ITEM_COUNT);
+    const flaggedPicks = selectTepeMansetItems(flagged, HM_TEPE_MANSET_ITEM_COUNT, Date.now(), preferOppositionManset);
     if (flaggedPicks.length >= HM_TEPE_MANSET_ITEM_COUNT) return flaggedPicks;
     const used = new Set(flaggedPicks.map((item) => String(item.id ?? item.slug ?? "")));
     const localRest = selectTepeMansetItems(
       localRows.filter((item) => !used.has(String(item.id ?? item.slug ?? ""))),
       HM_TEPE_MANSET_ITEM_COUNT - flaggedPicks.length,
+      Date.now(),
+      preferOppositionManset,
     );
     const localPicks = [...flaggedPicks, ...localRest];
     if (localPicks.length >= HM_TEPE_MANSET_ITEM_COUNT) return localPicks;
@@ -441,6 +456,8 @@ export async function buildHmHomeBundle(
     const rest = selectTepeMansetItems(
       sectionPool.filter((item) => !used.has(String(item.id ?? item.slug ?? ""))),
       HM_TEPE_MANSET_ITEM_COUNT - localPicks.length,
+      Date.now(),
+      preferOppositionManset,
     );
     return [...localPicks, ...rest];
   })();

@@ -5,8 +5,10 @@ import {
   filterItemsForSiteYonelim,
   isMuhalifRssUrl,
   isMuhalifRssUrlByPattern,
+  isOppositionRssSource,
   normalizeSiteYonelim,
   parseSiteYonelim,
+  prioritizeOppositionForManset,
   rssSourceAllowedForSiteYonelim,
 } from "./hm-rss-kaynak-yonelim.js";
 
@@ -59,25 +61,45 @@ describe("muhalif RSS dağıtımı", () => {
     }
   });
 
-  it("muhalif kaynak yalnız sol siteye gider", () => {
+  it("muhalif kaynak sağ, sol ve karma sitelerde görünür", () => {
     const url = "https://www.birgun.net/haber/ornek";
-    expect(rssSourceAllowedForSiteYonelim({ url }, "sol")).toBe(true);
-    expect(rssSourceAllowedForSiteYonelim({ url }, "sag")).toBe(false);
-    expect(rssSourceAllowedForSiteYonelim({ url }, "karma")).toBe(false);
-    expect(rssSourceAllowedForSiteYonelim({ url, kaynakYonelim: "sol" }, "karma")).toBe(false);
-    expect(rssSourceAllowedForSiteYonelim({ url: "https://www.ntv.com.tr/a", kaynakYonelim: "sol" }, "sag")).toBe(false);
-    expect(rssSourceAllowedForSiteYonelim({ url: "https://www.ntv.com.tr/a", kaynakYonelim: "sol" }, "sol")).toBe(true);
+    for (const yonelim of ["sag", "sol", "karma"] as const) {
+      expect(rssSourceAllowedForSiteYonelim({ url }, yonelim)).toBe(true);
+      expect(rssSourceAllowedForSiteYonelim({ url, kaynakYonelim: "sol" }, yonelim)).toBe(true);
+      expect(rssSourceAllowedForSiteYonelim({ url: "https://www.ntv.com.tr/a", kaynakYonelim: "sol" }, yonelim)).toBe(true);
+    }
+    expect(isOppositionRssSource({ url })).toBe(true);
+    expect(isOppositionRssSource({ url: "https://www.ntv.com.tr/a", kaynakYonelim: "sol" })).toBe(true);
+    expect(isOppositionRssSource({ url: "https://www.ntv.com.tr/a" })).toBe(false);
   });
 
-  it("karma ve sağ listeden muhalif haberi düşürür, sol tutar", () => {
+  it("liste süzgeci muhalif haberi düşürmez", () => {
     const items = [
       { rssSourceUrl: "https://www.ntv.com.tr/haber/1" },
       { rssSourceUrl: "https://www.cumhuriyet.com.tr/haber/2" },
       { rssSourceUrl: null },
     ];
-    expect(filterItemsForSiteYonelim(items, "karma")).toEqual([items[0], items[2]]);
-    expect(filterItemsForSiteYonelim(items, "sag")).toEqual([items[0], items[2]]);
+    expect(filterItemsForSiteYonelim(items, "karma")).toBe(items);
+    expect(filterItemsForSiteYonelim(items, "sag")).toBe(items);
     expect(filterItemsForSiteYonelim(items, "sol")).toBe(items);
+  });
+
+  it("muhalif öncelik yalnız sol manşet seçimindedir", () => {
+    const items = [
+      { rssSourceUrl: "https://www.ntv.com.tr/haber/1", title: "ntv" },
+      { rssSourceUrl: "https://www.cumhuriyet.com.tr/haber/2", title: "cumhuriyet" },
+      { link: "https://www.birgun.net/haber/3", title: "birgun" },
+      { rssSourceUrl: null, title: "yerel" },
+    ];
+    expect(prioritizeOppositionForManset(items, "sag")).toBe(items);
+    expect(prioritizeOppositionForManset(items, "karma")).toBe(items);
+    expect(prioritizeOppositionForManset(items, "sol").map((item) => item.title)).toEqual([
+      "cumhuriyet",
+      "birgun",
+      "ntv",
+      "yerel",
+    ]);
+    expect(prioritizeOppositionForManset([{ title: "tek" }], "sol")).toEqual([{ title: "tek" }]);
   });
 
   it("BirGün paketi ve Fix Haber BirGün satırları sol işaretli, adresleri durur", () => {

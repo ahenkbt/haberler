@@ -12,6 +12,7 @@ export type HmNestedMetaCached = {
   domain2?: string | null;
   domain3?: string | null;
   displayName: string;
+  yonelim?: string | null;
   description?: string | null;
   layout?: unknown;
   contact?: { phone?: string; email?: string; address?: string; notes?: string } | null;

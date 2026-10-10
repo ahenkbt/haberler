@@ -35,7 +35,8 @@ export const rssCampaignsTable = pgTable("rss_campaigns", {
   haberlerFilterByTags: boolean("haberler_filter_by_tags").notNull().default(false),
   /**
    * Kaynak yönelimi. NULL = işaretsiz, mevcut akış (hedefler değişmez).
-   * sol = muhalif kaynak; yalnız yonelim=sol sitelere dağılır.
+   * sol = muhalif kaynak; tüm sitelerde görünür. Sol sitede manşette öncelik,
+   * sağ/karma sitede editör AI daha ılımlı ton kullanır.
    */
   kaynakYonelim: text("kaynak_yonelim"),
   addedCount: integer("added_count").notNull().default(0),

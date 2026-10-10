@@ -1,6 +1,7 @@
 import { deferSimilarNewsItems } from "@/lib/hmNewsTitleSimilarity";
 
 import { isUsableNewsCoverSrc } from "@/lib/hmNewsPlaceholder";
+import { isOppositionNewsItem, prioritizeOppositionHeadlineItems } from "@/lib/hmOppositionSources";
 
 /**
  * Manşet havuzu tazelik kuralları:
@@ -221,7 +222,7 @@ export function tepeMansetDayKey(nowMs = Date.now()): string {
   return new Date(nowMs + TR_TEPE_DAY_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-export function tepeMansetImportanceScore(n: unknown, nowMs = Date.now()): number {
+export function tepeMansetImportanceScore(n: unknown, nowMs = Date.now(), preferOpposition = false): number {
   const item = n as {
     isFeatured?: boolean;
     isBreaking?: boolean;
@@ -229,6 +230,7 @@ export function tepeMansetImportanceScore(n: unknown, nowMs = Date.now()): numbe
     views?: number;
   };
   let score = 0;
+  if (preferOpposition && isOppositionNewsItem(n)) score += 2500;
   if (item.isFeatured === true) score += 1000;
   if (item.isBreaking === true) score += 400;
   if (item.isSiteManset === true) score += 300;
@@ -243,9 +245,10 @@ export function tepeMansetImportanceScore(n: unknown, nowMs = Date.now()): numbe
   return score;
 }
 
-function sortTepeByImportance<T>(items: readonly T[], nowMs: number): T[] {
+function sortTepeByImportance<T>(items: readonly T[], nowMs: number, preferOpposition = false): T[] {
   return [...items].sort((a, b) => {
-    const delta = tepeMansetImportanceScore(b, nowMs) - tepeMansetImportanceScore(a, nowMs);
+    const delta =
+      tepeMansetImportanceScore(b, nowMs, preferOpposition) - tepeMansetImportanceScore(a, nowMs, preferOpposition);
     if (delta !== 0) return delta;
     return newsItemRecencyMs(b) - newsItemRecencyMs(a);
   });
@@ -271,12 +274,13 @@ export function buildTepeMansetPool(opts: {
   items: readonly unknown[];
   limit?: number;
   nowMs?: number;
+  /** Yalnız sol site: görselli muhalif kaynaklar tepeye önce alınır. */
+  preferOppositionSources?: boolean;
 }): any[] {
   const limit = opts.limit ?? 5;
   const nowMs = opts.nowMs ?? Date.now();
+  const preferOpposition = opts.preferOppositionSources === true;
   const withCover = opts.items.filter((item) => tepeMansetCoverOk(item));
-  const manuals = sortTepeByImportance(withCover.filter(isTepeMansetManualEligible), nowMs);
-  const dayKey = tepeMansetDayKey(nowMs);
   const seen = new Set<string>();
   const takeUnique = (pool: readonly unknown[], count: number): unknown[] => {
     const out: unknown[] = [];
@@ -289,25 +293,48 @@ export function buildTepeMansetPool(opts: {
     }
     return out;
   };
+  const oppositionLead = preferOpposition
+    ? takeUnique(
+        sortTepeByImportance(
+          withCover.filter((item) => isOppositionNewsItem(item)),
+          nowMs,
+          false,
+        ),
+        limit,
+      )
+    : [];
+  if (oppositionLead.length >= limit) return oppositionLead;
+  const slotLimit = limit - oppositionLead.length;
+  const manuals = sortTepeByImportance(
+    withCover.filter((item) => isTepeMansetManualEligible(item) && !seen.has(newsKeyOf(item as Parameters<typeof newsKeyOf>[0]))),
+    nowMs,
+    false,
+  );
+  const dayKey = tepeMansetDayKey(nowMs);
 
   if (manuals.length === 0) {
-    const ranked = sortTepeByImportance(withCover, nowMs);
-    const window = ranked.slice(0, Math.max(limit * 3, limit));
-    return takeUnique(rotateByDayKey(window, `${dayKey}:auto`, window.length), limit);
+    const ranked = sortTepeByImportance(
+      withCover.filter((item) => !seen.has(newsKeyOf(item as Parameters<typeof newsKeyOf>[0]))),
+      nowMs,
+      false,
+    );
+    const window = ranked.slice(0, Math.max(slotLimit * 3, slotLimit));
+    return [...oppositionLead, ...takeUnique(rotateByDayKey(window, `${dayKey}:auto`, window.length), slotLimit)];
   }
 
   const featuredManuals = manuals.filter(isHmMansetNewsItem);
   const otherManuals = manuals.filter((item) => !isHmMansetNewsItem(item));
-  const selectedManuals = takeUnique([...featuredManuals, ...otherManuals], limit);
-  const remaining = limit - selectedManuals.length;
-  if (remaining <= 0) return selectedManuals;
+  const selectedManuals = takeUnique([...featuredManuals, ...otherManuals], slotLimit);
+  const remaining = slotLimit - selectedManuals.length;
+  if (remaining <= 0) return [...oppositionLead, ...selectedManuals];
   const autoRanked = sortTepeByImportance(
     withCover.filter((item) => !seen.has(newsKeyOf(item as Parameters<typeof newsKeyOf>[0]))),
     nowMs,
+    false,
   );
   const autoWindow = autoRanked.slice(0, Math.max(remaining * 3, remaining));
   const autoPicks = rotateByDayKey(autoWindow, `${dayKey}:auto`, autoWindow.length);
-  return [...selectedManuals, ...takeUnique(autoPicks, remaining)];
+  return [...oppositionLead, ...selectedManuals, ...takeUnique(autoPicks, remaining)];
 }
 
 export function isYekparePoolNewsItem(n: unknown): boolean {
@@ -363,6 +390,8 @@ export function buildCenterMansetSliderPool(opts: {
   latestItems: unknown[];
   categorySlug?: string | null;
   limit?: number;
+  /** Yalnız sol site: muhalif kaynaklar manşet sırasının önüne alınır. */
+  preferOppositionSources?: boolean;
 }): any[] {
   const limit = opts.limit ?? HM_HOME_HEADLINE_SLIDER_MIN;
   const merged = mergeUniqueNews(
@@ -372,7 +401,8 @@ export function buildCenterMansetSliderPool(opts: {
   const siteManset = filterHmSiteMansetNews(merged);
   const latestFirst = siteManset.length > 0 ? siteManset : merged;
   const scoped = filterHeadlineItemsByCategorySlug(latestFirst, opts.categorySlug);
-  const pool = sortNewsByRecency(preferFreshHeadlineCandidates(scoped));
+  let pool = sortNewsByRecency(preferFreshHeadlineCandidates(scoped));
+  if (opts.preferOppositionSources) pool = prioritizeOppositionHeadlineItems(pool);
   return dedupeHeadlineSliderItems(pool.slice(0, limit));
 }
 
@@ -1127,6 +1157,8 @@ export function buildRssAwareHeadlinePool(opts: {
   /** Hibrit RSS bootstrap tamamlandığında taze RSS manşete öncelik alır. */
   rssBootstrapReady?: boolean;
   visitSeed?: number;
+  /** Yalnız sol site: muhalif RSS manşet havuzunun önüne alınır. Liste akışı değişmez. */
+  preferOppositionSources?: boolean;
 }): any[] {
   const limit = opts.limit ?? HM_HOME_HEADLINE_SLIDER_LIMIT;
   const minTarget = opts.minTarget ?? HM_HOME_HEADLINE_SLIDER_MIN;
@@ -1167,6 +1199,7 @@ export function buildRssAwareHeadlinePool(opts: {
         mergeUniqueNews(pool, manualPool, rss, latestItems.filter(isHeadlineFreshEnough), manualItems.filter(isHeadlineFreshEnough)),
       );
     }
+    if (opts.preferOppositionSources) pool = prioritizeOppositionHeadlineItems(pool);
     const target = resolveHeadlineSliderBuildTarget(pool.length, limit, minTarget);
     return pool.slice(0, target);
   };
@@ -1176,11 +1209,14 @@ export function buildRssAwareHeadlinePool(opts: {
   if (opts.rssBootstrapReady && opts.rssEnabled && rssSorted.length > 0) {
     const rssLead = buildRssHeadlineCandidates(rssSorted, true, limit);
     if (rssLead.length > 0) {
-      pool = sortNewsByRecency(mergeUniqueNews(rssLead, pool)).slice(0, limit);
+      pool = sortNewsByRecency(mergeUniqueNews(rssLead, pool));
+      if (opts.preferOppositionSources) pool = prioritizeOppositionHeadlineItems(pool);
+      pool = pool.slice(0, limit);
     }
   }
 
   pool = dedupeHeadlineSliderItems(deferSimilarNewsItems(pool));
+  if (opts.preferOppositionSources) pool = prioritizeOppositionHeadlineItems(pool);
 
   if (typeof opts.visitSeed === "number") {
     return applyHeadlineVisitRotation(pool, opts.visitSeed);
@@ -1305,14 +1341,16 @@ export function buildClassicHeadlineSliderPool(opts: {
   fallbackGroups: ReadonlyArray<unknown[] | null | undefined>;
   limit?: number;
   minTarget?: number;
+  preferOppositionSources?: boolean;
 }): any[] {
   const limit = opts.limit ?? HM_HOME_HEADLINE_SLIDER_LIMIT;
   const minTarget = opts.minTarget ?? HM_HOME_HEADLINE_SLIDER_MIN;
   const fromSlider = (Array.isArray(opts.sliderItems) ? opts.sliderItems : []).filter(Boolean);
 
-  const merged = sortNewsByRecency(
+  let merged = sortNewsByRecency(
     preferFreshHeadlineCandidates(mergeUniqueNews(fromSlider, ...opts.fallbackGroups)),
   );
+  if (opts.preferOppositionSources) merged = prioritizeOppositionHeadlineItems(merged);
   const target = resolveHeadlineSliderBuildTarget(merged.length, limit, minTarget);
   return dedupeHeadlineSliderItems(merged.slice(0, target)).slice(0, limit);
 }

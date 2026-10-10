@@ -45,8 +45,6 @@ import {
 import { upsertPortalRssItems } from "./portal-rss-store.js";
 import { portalRssTitleKey } from "./portal-rss-fetch.js";
 import { filterBlockedHmRssFeedUrls } from "./rssBlockedFeeds.js";
-import { normalizeSiteYonelim, rssSourceAllowedForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
-import { ensureHmNewsSiteYonelimColumn } from "./hm-site-compat.js";
 import { createHash } from "node:crypto";
 import {
   loadHmSiteCategoryCatalog,
@@ -320,37 +318,7 @@ export async function executeRssCampaignRun(
   };
 
   for (const feedUrl of feedUrls) {
-    const oppositionFeed = !rssSourceAllowedForSiteYonelim(
-      { url: feedUrl, kaynakYonelim: campaign.kaynakYonelim },
-      "karma",
-    );
-    let feedPublishTargets = publishTargets;
-    if (oppositionFeed && campaignWritesPerHmSite(campaign)) {
-      const ids = publishTargets.filter((id): id is number => id != null && id > 0);
-      let solIds = new Set<number>();
-      if (ids.length > 0) {
-        try {
-          await ensureHmNewsSiteYonelimColumn().catch(() => undefined);
-          const rows = await getNewsDbForRead()
-            .select({ id: hmNewsSitesTable.id, yonelim: hmNewsSitesTable.yonelim })
-            .from(hmNewsSitesTable)
-            .where(inArray(hmNewsSitesTable.id, ids));
-          solIds = new Set(rows.filter((row) => normalizeSiteYonelim(row.yonelim) === "sol").map((row) => row.id));
-        } catch {
-          solIds = new Set();
-        }
-      }
-      feedPublishTargets = publishTargets.filter((id) => id != null && solIds.has(id));
-      if (feedPublishTargets.length === 0) {
-        await dualWriteInsert(rssLogsTable, {
-          campaignId,
-          level: "info",
-          action: "run",
-          message: `Muhalif kaynak yalnız sol sitelere gider; bu besleme için sol hedef yok (${feedUrl}).`,
-        });
-        continue;
-      }
-    }
+    const feedPublishTargets = publishTargets;
     let campaignItems: CampaignItem[] = [];
     const newsTags = resolveCampaignNewsTags(
       Array.isArray(campaign.tags) ? (campaign.tags as string[]) : [],

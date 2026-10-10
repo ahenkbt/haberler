@@ -60,7 +60,7 @@ export async function resolveActiveHmTargetSiteIds(rawIds: number[]): Promise<nu
   return uniq.filter((id) => allowed.has(id));
 }
 
-async function loadActiveHmSite(targetSiteId: number): Promise<{ id: number; slug: string; displayName: string } | null> {
+async function loadActiveHmSite(targetSiteId: number): Promise<{ id: number; slug: string; displayName: string; yonelim: string | null } | null> {
   const sid = Number(targetSiteId);
   if (!Number.isFinite(sid) || sid <= 0) return null;
   const [site] = await db
@@ -68,6 +68,7 @@ async function loadActiveHmSite(targetSiteId: number): Promise<{ id: number; slu
       id: hmNewsSitesTable.id,
       slug: hmNewsSitesTable.slug,
       displayName: hmNewsSitesTable.displayName,
+      yonelim: hmNewsSitesTable.yonelim,
     })
     .from(hmNewsSitesTable)
     .where(and(eq(hmNewsSitesTable.id, sid), eq(hmNewsSitesTable.active, true)))
@@ -274,6 +275,7 @@ export async function processOneHmAiJob(jobId: number): Promise<{ ok: boolean; n
       hmLocalCategoryRules,
       kamuYerelCumhaRules,
       ankaraLocalOnly,
+      siteYonelim: targetSite.yonelim ?? "karma",
     });
     const user = `Kaynak başlık: ${src.title}\nÖzet: ${(src.spot ?? "").slice(0, 400)}\nİçerik:\n${(src.content ?? "").slice(0, 6000)}\n\n${aiNewsUserJsonHint(ai.wordCount)}`;
 

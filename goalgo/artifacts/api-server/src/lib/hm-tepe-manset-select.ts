@@ -1,3 +1,5 @@
+import { isOppositionRssSource } from "./hm-rss-kaynak-yonelim.js";
+
 /** Tepe manşet üst band hedef slayt sayısı. */
 export const HM_TEPE_MANSET_ITEM_COUNT = 5;
 
@@ -93,9 +95,15 @@ function itemTimeMs(item: TepeMansetCandidate): number {
 
 /**
  * Önem: manşet etiketi > son dakika > site manşet > editör > görüntülenme > tazelik.
+ * preferOpposition: yalnız sol site manşet seçiminde muhalif kaynağa öncelik.
  */
-export function tepeMansetImportanceScore(item: TepeMansetCandidate, nowMs = Date.now()): number {
+export function tepeMansetImportanceScore(
+  item: TepeMansetCandidate,
+  nowMs = Date.now(),
+  preferOpposition = false,
+): number {
   let score = 0;
+  if (preferOpposition && isOppositionRssSource(item)) score += 2500;
   if (item.isFeatured === true) score += 1000;
   if (item.isBreaking === true) score += 400;
   if (item.isSiteManset === true) score += 300;
@@ -113,9 +121,11 @@ export function tepeMansetImportanceScore(item: TepeMansetCandidate, nowMs = Dat
 export function sortTepeMansetByImportance<T extends TepeMansetCandidate>(
   items: readonly T[],
   nowMs = Date.now(),
+  preferOpposition = false,
 ): T[] {
   return [...items].sort((a, b) => {
-    const delta = tepeMansetImportanceScore(b, nowMs) - tepeMansetImportanceScore(a, nowMs);
+    const delta =
+      tepeMansetImportanceScore(b, nowMs, preferOpposition) - tepeMansetImportanceScore(a, nowMs, preferOpposition);
     if (delta !== 0) return delta;
     return itemTimeMs(b) - itemTimeMs(a);
   });
@@ -147,23 +157,20 @@ function tepeMansetItemKey(item: TepeMansetCandidate): string {
 
 /**
  * Tepe manşet seçimi:
- * 1) Görselli manuel / manşet haberleri önce (isEditorManual, isFeatured, isSiteManset)
- * 2) Manuel varsa karışık slayt: manuel sabit, otomatik slotlar güne göre yenilenir
- * 3) Uygun manuel yoksa tüm slaytlar önem sırasıyla dolar ve günde bir kez kayar
- * 4) Resimsiz manuel asla tepe manşete girmez
+ * 1) Sol sitede (preferOpposition) görselli muhalif kaynaklar önce
+ * 2) Görselli manuel / manşet haberleri (isEditorManual, isFeatured, isSiteManset)
+ * 3) Manuel varsa karışık slayt: manuel sabit, otomatik slotlar güne göre yenilenir
+ * 4) Uygun manuel yoksa tüm slaytlar önem sırasıyla dolar ve günde bir kez kayar
+ * 5) Resimsiz manuel asla tepe manşete girmez
  */
 export function selectTepeMansetItems<T extends TepeMansetCandidate>(
   items: readonly T[],
   limit = HM_TEPE_MANSET_ITEM_COUNT,
   nowMs = Date.now(),
+  preferOpposition = false,
 ): T[] {
   const target = Math.min(Math.max(limit, 1), 12);
   const withCover = items.filter((item) => hasTepeMansetCover(item));
-  const manuals = sortTepeMansetByImportance(
-    withCover.filter((item) => isTepeMansetManualEligible(item)),
-    nowMs,
-  );
-  const dayKey = tepeMansetDayKey(nowMs);
   const seen = new Set<string>();
   const takeUnique = (pool: readonly T[], count: number): T[] => {
     const out: T[] = [];
@@ -176,24 +183,47 @@ export function selectTepeMansetItems<T extends TepeMansetCandidate>(
     }
     return out;
   };
+  const oppositionLead = preferOpposition
+    ? takeUnique(
+        sortTepeMansetByImportance(
+          withCover.filter((item) => isOppositionRssSource(item)),
+          nowMs,
+          false,
+        ),
+        target,
+      )
+    : [];
+  if (oppositionLead.length >= target) return oppositionLead;
+  const slotTarget = target - oppositionLead.length;
+  const manuals = sortTepeMansetByImportance(
+    withCover.filter((item) => isTepeMansetManualEligible(item) && !seen.has(tepeMansetItemKey(item))),
+    nowMs,
+    false,
+  );
+  const dayKey = tepeMansetDayKey(nowMs);
 
   if (manuals.length === 0) {
-    const ranked = sortTepeMansetByImportance(withCover, nowMs);
-    const window = ranked.slice(0, Math.max(target * 3, target));
-    return takeUnique(rotateTepeMansetByDay(window, `${dayKey}:auto`, window.length), target);
+    const ranked = sortTepeMansetByImportance(
+      withCover.filter((item) => !seen.has(tepeMansetItemKey(item))),
+      nowMs,
+      false,
+    );
+    const window = ranked.slice(0, Math.max(slotTarget * 3, slotTarget));
+    return [...oppositionLead, ...takeUnique(rotateTepeMansetByDay(window, `${dayKey}:auto`, window.length), slotTarget)];
   }
 
   const featuredManuals = manuals.filter((item) => item.isFeatured === true);
   const otherManuals = manuals.filter((item) => item.isFeatured !== true);
-  const selectedManuals = takeUnique([...featuredManuals, ...otherManuals], target);
-  const remaining = target - selectedManuals.length;
-  if (remaining <= 0) return selectedManuals;
+  const selectedManuals = takeUnique([...featuredManuals, ...otherManuals], slotTarget);
+  const remaining = slotTarget - selectedManuals.length;
+  if (remaining <= 0) return [...oppositionLead, ...selectedManuals];
 
   const autoRanked = sortTepeMansetByImportance(
     withCover.filter((item) => !seen.has(tepeMansetItemKey(item))),
     nowMs,
+    false,
   );
   const autoWindow = autoRanked.slice(0, Math.max(remaining * 3, remaining));
   const autoPicks = rotateTepeMansetByDay(autoWindow, `${dayKey}:auto`, autoWindow.length);
-  return [...selectedManuals, ...takeUnique(autoPicks, remaining)];
+  return [...oppositionLead, ...selectedManuals, ...takeUnique(autoPicks, remaining)];
 }

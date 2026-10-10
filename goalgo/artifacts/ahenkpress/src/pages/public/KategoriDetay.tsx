@@ -5,6 +5,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Clock, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useHmPublicHref, useHmPublicLinkContextOptional } from "@/contexts/HmPublicLinkContext";
+import { prioritizeOppositionHeadlineItems, sitePrefersOppositionManset } from "@/lib/hmOppositionSources";
 import { applyHmCategoryRssLink, applyHmNewsSiteHomeMeta } from "@/lib/pageSeo";
 import { hmPublicSiteOrigin } from "@/lib/hmPublicLinks";
 import { HM_SITE_PUBLIC_PREFIX } from "@/lib/hmSitePublicPath";
@@ -401,10 +402,13 @@ export default function KategoriDetay() {
     mansetPoolRef.current = [];
   }, [normalizedSlug, siteIdEff, superligTeamKey]);
   const mansetNews = useMemo(() => {
-    const next = pickCategoryMansetPool(sortedNews, mansetPoolRef.current);
+    const mansetSource = sitePrefersOppositionManset(hmCtx?.yonelim)
+      ? prioritizeOppositionHeadlineItems(sortedNews)
+      : sortedNews;
+    const next = pickCategoryMansetPool(mansetSource, mansetPoolRef.current);
     mansetPoolRef.current = next;
     return next;
-  }, [sortedNews]);
+  }, [sortedNews, hmCtx?.yonelim]);
 
   const gridNewsAll = useMemo(
     () => excludeHeadlineSliderItems(sortedNews, mansetNews),

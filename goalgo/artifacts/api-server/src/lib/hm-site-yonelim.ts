@@ -1,16 +1,11 @@
 /**
- * hm_news_sites.yonelim okuma ve liste SQL süzgeci.
+ * hm_news_sites.yonelim okuma.
+ * Muhalif RSS okuma anında gizlenmez; sağ, sol ve karma aynı haber satırını görür.
  * Sütun yoksa veya okuma düşerse karma sayılır; haber listesi 500 olmaz.
  */
-import { and, sql, type SQL } from "drizzle-orm";
-import { newsTable } from "@workspace/db";
+import type { SQL } from "drizzle-orm";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
-import {
-  muhalifRssUrlPatternSource,
-  normalizeSiteYonelim,
-  rssSourceAllowedForSiteYonelim,
-  type SiteYonelim,
-} from "./hm-rss-kaynak-yonelim.js";
+import { normalizeSiteYonelim, type SiteYonelim } from "./hm-rss-kaynak-yonelim.js";
 
 export async function getHmSiteYonelim(siteId: number): Promise<SiteYonelim> {
   if (!Number.isFinite(siteId) || siteId <= 0) return "karma";
@@ -22,19 +17,28 @@ export async function getHmSiteYonelim(siteId: number): Promise<SiteYonelim> {
   }
 }
 
-/** Sol sitede süzgeç yok. Sağ ve karma muhalif rss_source_url satırını görmez. */
-export function excludeMuhalifRssSourceSql(): SQL {
-  const pattern = muhalifRssUrlPatternSource();
-  return sql`NOT (lower(btrim(coalesce(${newsTable.rssSourceUrl}, ''))) ~ ${pattern})`;
+export async function loadHmSiteYonelimMap(
+  siteIds: readonly (number | null | undefined)[],
+): Promise<Map<number, SiteYonelim>> {
+  const ids = [...new Set(siteIds.filter((id): id is number => typeof id === "number" && Number.isFinite(id) && id > 0))];
+  const map = new Map<number, SiteYonelim>();
+  await Promise.all(
+    ids.map(async (id) => {
+      map.set(id, await getHmSiteYonelim(id));
+    }),
+  );
+  return map;
 }
 
-export async function andSiteRssYonelimSql(siteId: number, scope: SQL): Promise<SQL> {
-  const yonelim = await getHmSiteYonelim(siteId);
-  if (yonelim === "sol") return scope;
-  return and(scope, excludeMuhalifRssSourceSql())!;
+/** Eski süzgeç kaldırıldı. Kapsam aynen döner; mevcut liste sorguları bozulmaz. */
+export async function andSiteRssYonelimSql(_siteId: number, scope: SQL): Promise<SQL> {
+  return scope;
 }
 
-export async function newsRssVisibleOnSite(rssSourceUrl: string | null | undefined, siteId: number): Promise<boolean> {
-  const yonelim = await getHmSiteYonelim(siteId);
-  return rssSourceAllowedForSiteYonelim({ url: rssSourceUrl }, yonelim);
+/** Muhalif rss_source_url satırı her sitede görünür. */
+export async function newsRssVisibleOnSite(
+  _rssSourceUrl: string | null | undefined,
+  _siteId: number,
+): Promise<boolean> {
+  return true;
 }

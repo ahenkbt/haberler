@@ -13,6 +13,7 @@ import {
 import { coerceNewsPublishedAt } from "./rssPublishedDate.js";
 import { callChatWithLlmChain } from "./hm-llm-chat.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "./aiNewsPrompts.js";
+import { loadHmSiteYonelimMap } from "./hm-site-yonelim.js";
 import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { fetchTopicNewsItems, probeTopicItemImages } from "./topicNewsFetcher.js";
 
@@ -109,6 +110,7 @@ export async function executeAiTopicRun(opts: {
     siteTargets = filtered.length > 0 ? filtered : [null];
   }
 
+  const yonelimBySite = await loadHmSiteYonelimMap(siteTargets);
   const langCode = String(opts.lang ?? s.language ?? "tr").toLowerCase();
   const hl = langCode.startsWith("en") ? "en" : "tr";
   const gl = hl === "en" ? "US" : "TR";
@@ -145,13 +147,26 @@ export async function executeAiTopicRun(opts: {
       await probeTopicItemImages(item, singleArticle ? 4_000 : 5_000);
     }
 
+    const articleLink = item.resolvedLink || item.link;
+    const sourceKey = normalizeRssSourceUrl(articleLink || `${topic}:${item.title}`);
+    const preTitles = uniqueNonEmptyTitles(item.title);
+    const picked = await pickHmSiteWithoutRssStory({
+      siteTargets,
+      startIndex: siteRotateIndex,
+      sourceUrl: sourceKey,
+      titles: preTitles,
+      extraTitlesBySite: batchTitlesBySite,
+    });
+    if (!picked) continue;
+    const siteId = picked.siteId;
+    const chainSiteId = siteId;
     const systemPrompt = aiNewsSystemPrompt({
       langInstruction,
       extra: `Konu: ${topic}. Kaynak başlık ve özetten ilham al; metni tamamen özgün yaz.`,
+      siteYonelim: siteId != null ? yonelimBySite.get(siteId) : undefined,
     });
     const userPrompt = `Güncel haber konusu: "${topic}"\nKaynak başlık: "${item.title}"\nÖzet: "${item.desc.slice(0, 600)}"\n\nBu gelişmeyi özgün bir haber olarak yeniden yaz (makale veya deneme değil; ters piramit, kısa paragraflar).\n${aiNewsUserJsonHint(s.wordCount)}`;
 
-    const chainSiteId = siteTargets.length === 1 && siteTargets[0] != null ? siteTargets[0] : null;
     const aiOut = await callChatWithLlmChain({
       siteId: chainSiteId,
       system: systemPrompt,
@@ -168,7 +183,6 @@ export async function executeAiTopicRun(opts: {
     } | null;
     if (!parsed?.baslik || !parsed?.icerik) continue;
 
-    const articleLink = item.resolvedLink || item.link;
     const finalized = await finalizeAiNewsArticle({
       icerikRaw: parsed.icerik,
       rssItemRaw: item.rawInner,
@@ -179,18 +193,8 @@ export async function executeAiTopicRun(opts: {
       sourceImageUrl: item.previewImageUrl,
     });
 
-    const sourceKey = normalizeRssSourceUrl(articleLink || `${topic}:${item.title}`);
-    const storyTitles = uniqueNonEmptyTitles(parsed.baslik, item.title);
-    const picked = await pickHmSiteWithoutRssStory({
-      siteTargets,
-      startIndex: siteRotateIndex,
-      sourceUrl: sourceKey,
-      titles: storyTitles,
-      extraTitlesBySite: batchTitlesBySite,
-    });
-    if (!picked) continue;
     siteRotateIndex = picked.nextIndex;
-    const siteId = picked.siteId;
+    const storyTitles = uniqueNonEmptyTitles(parsed.baslik, item.title);
 
     const publishedAt = coerceNewsPublishedAt(item.publishedAt);
     const [created] = await db

@@ -332,23 +332,25 @@ export function buildTepeMansetPoolPreferringLocal(opts: {
   localPref?: HmHomepageLocalPref | null;
   siteId?: number | null;
   limit?: number;
+  preferOppositionSources?: boolean;
 }): any[] {
   const limit = opts.limit ?? 5;
+  const preferOppositionSources = opts.preferOppositionSources === true;
   // Photo slot: drop coverless rows first so KH does not paint a black tepe panel.
   const items = opts.items.filter(itemHasUsableCover);
-  if (!opts.localPref) return buildTepeMansetPool({ items, limit });
+  if (!opts.localPref) return buildTepeMansetPool({ items, limit, preferOppositionSources });
   const local = items.filter((item) =>
     newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
   );
   const flagged = local.filter((item) => (item as { isTepeManset?: boolean }).isTepeManset === true);
-  const flaggedPicks = buildTepeMansetPool({ items: flagged, limit });
+  const flaggedPicks = buildTepeMansetPool({ items: flagged, limit, preferOppositionSources });
   if (flaggedPicks.length >= limit) return flaggedPicks;
-  const localPicks = mergeUniqueNews(flaggedPicks, buildTepeMansetPool({ items: local, limit })).slice(0, limit);
+  const localPicks = mergeUniqueNews(flaggedPicks, buildTepeMansetPool({ items: local, limit, preferOppositionSources })).slice(0, limit);
   if (localPicks.length >= limit) return localPicks;
   const rest = items.filter(
     (item) => !newsItemMatchesHomepageLocalPref(item as Parameters<typeof newsItemMatchesHomepageLocalPref>[0], opts.localPref, opts.siteId),
   );
-  return mergeUniqueNews(localPicks, buildTepeMansetPool({ items: rest, limit: limit - localPicks.length })).slice(
+  return mergeUniqueNews(localPicks, buildTepeMansetPool({ items: rest, limit: limit - localPicks.length, preferOppositionSources })).slice(
     0,
     limit,
   );

@@ -1,7 +1,9 @@
 /**
  * Site yönelimi ve RSS kaynak yönelimi.
- * Muhalif (sol) kaynaklar yalnız yonelim=sol sitelere dağılır.
- * İşaretsiz kaynaklar mevcut akışta kalır (sağ, sol, karma).
+ * Muhalif (sol) kaynaklar tüm sitelerde (sağ, sol, karma) görünür.
+ * İşaretsiz kaynaklar mevcut akışta kalır.
+ * Sol sitede muhalif vurgu yalnızca manşet / öne çıkan seçimindedir.
+ * Sağ ve karma sitelerde aynı haberler normal akışta, editör AI ılımlı tonla yeniden yazar.
  */
 
 export const SITE_YONELIM_VALUES = ["sag", "sol", "karma"] as const;
@@ -94,26 +96,58 @@ export function isMuhalifRssUrlByPattern(raw: unknown): boolean {
   return new RegExp(muhalifRssUrlPatternSource(), "i").test(text);
 }
 
-/**
- * sol işaretli veya muhalif host: yalnız sol site.
- * sag/karma işareti ve işaretsiz adres: her site (mevcut akış).
- */
-export function rssSourceAllowedForSiteYonelim(
-  source: { url?: string | null; kaynakYonelim?: unknown },
-  siteYonelim: unknown,
-): boolean {
-  const marked = normalizeRssKaynakYonelim(source.kaynakYonelim);
-  const opposition = marked === "sol" || isMuhalifRssUrl(source.url);
-  if (!opposition) return true;
-  return normalizeSiteYonelim(siteYonelim) === "sol";
+export type OppositionSourceRef = {
+  url?: string | null;
+  link?: string | null;
+  href?: string | null;
+  rssSourceUrl?: string | null;
+  feedUrl?: string | null;
+  originUrl?: string | null;
+  externalUrl?: string | null;
+  kaynakYonelim?: unknown;
+};
+
+/** sol işaret veya muhalif host. Görünürlüğü kesmez; manşet önceliği ve ton için. */
+export function isOppositionRssSource(source: OppositionSourceRef | null | undefined): boolean {
+  if (!source) return false;
+  if (normalizeRssKaynakYonelim(source.kaynakYonelim) === "sol") return true;
+  return [source.url, source.rssSourceUrl, source.link, source.href, source.feedUrl, source.originUrl, source.externalUrl].some(
+    (raw) => isMuhalifRssUrl(raw),
+  );
 }
 
+/**
+ * Muhalif kaynaklar her yönde açıktır. Eski çağrılar gizleme için kullanıyordu;
+ * gizleme kaldırıldı, imza durur.
+ */
+export function rssSourceAllowedForSiteYonelim(
+  _source: { url?: string | null; kaynakYonelim?: unknown },
+  _siteYonelim: unknown,
+): boolean {
+  return true;
+}
+
+/** Liste süzgeci yok. Dönen dizi aynı referanstır (mevcut akış sırası bozulmaz). */
 export function filterItemsForSiteYonelim<T extends { rssSourceUrl?: string | null; link?: string | null }>(
   items: T[],
-  siteYonelim: unknown,
+  _siteYonelim: unknown,
 ): T[] {
-  if (normalizeSiteYonelim(siteYonelim) === "sol") return items;
-  return items.filter((item) =>
-    rssSourceAllowedForSiteYonelim({ url: item.rssSourceUrl || item.link || null }, siteYonelim),
-  );
+  return items;
+}
+
+/**
+ * Yalnız yonelim=sol manşet / öne çıkan seçimi: muhalif kaynaklar öne alınır,
+ * grupların kendi sırası korunur. Diğer yönlerde ve muhalif yoksa dizi aynen döner.
+ * Normal haber listesine uygulanmaz.
+ */
+export function prioritizeOppositionForManset<T>(items: readonly T[], siteYonelim: unknown): T[] {
+  if (normalizeSiteYonelim(siteYonelim) !== "sol" || items.length < 2) return items as T[];
+  const lead: T[] = [];
+  const rest: T[] = [];
+  for (const item of items) {
+    if (item && typeof item === "object" && isOppositionRssSource(item as OppositionSourceRef)) lead.push(item);
+    else rest.push(item);
+  }
+  if (lead.length === 0 || rest.length === 0) return items as T[];
+  return [...lead, ...rest];
 }

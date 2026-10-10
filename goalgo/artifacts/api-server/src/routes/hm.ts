@@ -160,7 +160,7 @@ import {
   listHmNewsSitesCompat,
   resetHmNewsSiteColumnEnsureCache,
 } from "../lib/hm-site-compat";
-import { normalizeSiteYonelim, parseSiteYonelim, rssSourceAllowedForSiteYonelim } from "../lib/hm-rss-kaynak-yonelim.js";
+import { normalizeSiteYonelim, parseSiteYonelim } from "../lib/hm-rss-kaynak-yonelim.js";
 import {
   repairStaleSuBrandForSiteId,
   repairStaleSuBrandOnHmSites,
@@ -1051,40 +1051,6 @@ function wantsHmMetaPageContent(req: Request): boolean {
   return req.query.includePageContent === "1" || req.query.includePageContent === "true";
 }
 
-const PUBLIC_RSS_ROW_KEYS = [
-  "hmNewsSiteRssFeedRows",
-  "hmNewsBreakingRssFeedRows",
-  "hmNewsBreakingRssFeeds",
-  "portalHybridRssFeeds",
-] as const;
-
-/** Ziyaretçi layout kopyası. Kayıtlı RSS ayarı durur; muhalif adres sağ/karma vitrinine yazılmaz. */
-function publicLayoutForSiteYonelim(layout: Record<string, unknown>, yonelimRaw: unknown): Record<string, unknown> {
-  const yonelim = normalizeSiteYonelim(yonelimRaw);
-  if (yonelim === "sol") return layout;
-  const out: Record<string, unknown> = { ...layout };
-  const packs = out.hmRssSourcePacks;
-  if (packs && typeof packs === "object" && !Array.isArray(packs)) {
-    out.hmRssSourcePacks = { ...(packs as Record<string, unknown>), birgun: false };
-  }
-  for (const key of PUBLIC_RSS_ROW_KEYS) {
-    const rows = out[key];
-    if (!Array.isArray(rows)) continue;
-    out[key] = rows.filter((row) => {
-      if (!row || typeof row !== "object" || Array.isArray(row)) return true;
-      const url = (row as { url?: unknown }).url;
-      return rssSourceAllowedForSiteYonelim(
-        {
-          url: typeof url === "string" ? url : null,
-          kaynakYonelim: (row as { kaynakYonelim?: unknown }).kaynakYonelim,
-        },
-        yonelim,
-      );
-    });
-  }
-  return out;
-}
-
 function serializeHmMetaRow(row: typeof hmNewsSitesTable.$inferSelect, opts?: { includePageContent?: boolean }) {
   let contact: unknown = null;
   let layout: unknown = null;
@@ -1100,9 +1066,6 @@ function serializeHmMetaRow(row: typeof hmNewsSitesTable.$inferSelect, opts?: { 
       normalized = applyVkdDonationLayoutDefaults(normalized);
     }
     layout = opts?.includePageContent === true ? normalized : stripHmPublicMetaLayoutContent(normalized);
-    if (layout && typeof layout === "object" && !Array.isArray(layout)) {
-      layout = publicLayoutForSiteYonelim(layout as Record<string, unknown>, row.yonelim);
-    }
     layout = normalizeHmLayoutMediaUrls(layout);
     if (layout && typeof layout === "object" && !Array.isArray(layout)) {
       layout = sanitizeHmPublicLayoutRecord(layout as Record<string, unknown>, row.slug);
@@ -1117,6 +1080,7 @@ function serializeHmMetaRow(row: typeof hmNewsSitesTable.$inferSelect, opts?: { 
     domain2: row.domain2 ?? null,
     domain3: row.domain3 ?? null,
     displayName: row.displayName,
+    yonelim: normalizeSiteYonelim(row.yonelim),
     description: row.description,
     contact,
     layout,
