@@ -1,0 +1,137 @@
+/* "Sendika Portal Teması" — emek: güçlü, kırmızı/koyu, tipografi ağırlıklı, kararlı. tema 2026-10-10 */
+@font-face{font-family:'Archivo';font-style:normal;font-weight:100 900;font-display:swap;src:url(/brand/sector/fonts/archivo-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Archivo';font-style:normal;font-weight:100 900;font-display:swap;src:url(/brand/sector/fonts/archivo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+body.sc-sendika{
+  --yn-paper:#F1EEE8;--yn-paper2:#E6E1D7;--yn-card:#FFFFFF;--yn-ink:#111111;--yn-ink2:#2B2B2B;--yn-mute:#595651;--yn-line:rgba(17,17,17,.9);
+  --yn-f:'Archivo',system-ui,'Segoe UI',Arial,sans-serif;--yn-serif:'Archivo',system-ui,Arial,sans-serif;
+  --yn-r:0px;--yn-r-s:0px;--yn-shadow:6px 6px 0 #111;
+  --sd-red:#D7191C;--sd-red2:#A80F12;--sd-black:#111;--sd-yellow:#FFD23F;
+  --yn-hot:#D7191C;--yn-lime:#FFD23F;--yn-violet:#D7191C;--yn-grad:linear-gradient(90deg,#D7191C,#D7191C);
+}
+html[data-theme="dark"] body.sc-sendika{--yn-paper:#0E0E0E;--yn-paper2:#171717;--yn-card:#1A1A1A;--yn-ink:#F5F2EC;--yn-ink2:#DAD6CE;--yn-mute:#A9A59D;--yn-line:rgba(245,242,236,.75);--yn-shadow:6px 6px 0 #D7191C;--yn-hot:#FF4A4D;--yn-violet:#FF4A4D}
+body.sc-sendika h1,body.sc-sendika h2,body.sc-sendika h3,body.sc-sendika .yn-card-t,body.sc-sendika .yn-tile-h,body.sc-sendika .yn-page-h,body.sc-sendika .yn-ah-t,body.sc-sendika .yn-foot-slogan{font-family:var(--yn-f);font-weight:900;letter-spacing:-.03em;text-transform:uppercase;line-height:.98}
+body.sc-sendika .yn-card-t{font-size:1.12rem;line-height:1.08;letter-spacing:-.015em}
+body.sc-sendika .yn-ah-t,body.sc-sendika .yn-page-h{line-height:.94}
+body.sc-sendika :focus-visible{outline:4px solid var(--sd-yellow);outline-offset:2px;border-radius:0}
+body.sc-sendika ::selection{background:var(--sd-red);color:#fff}
+body.sc-sendika .yn-card-a{border:3px solid var(--sd-black);box-shadow:6px 6px 0 var(--sd-black);background:var(--yn-card);transition:transform .2s var(--yn-ease),box-shadow .2s}
+html[data-theme="dark"] body.sc-sendika .yn-card-a{border-color:#F5F2EC;box-shadow:6px 6px 0 var(--sd-red)}
+body.sc-sendika .yn-card-a:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--sd-red)}
+body.sc-sendika .yn-card-media{border-bottom:3px solid var(--sd-black);filter:contrast(1.06) saturate(.92)}
+body.sc-sendika .yn-card-lead .yn-card-media{border:0}
+body.sc-sendika .yn-card-lead .yn-card-media::after{background:linear-gradient(180deg,rgba(0,0,0,.05) 20%,rgba(0,0,0,.7) 58%,rgba(0,0,0,.96))}
+body.sc-sendika .yn-card-lead .yn-card-t{font-size:clamp(1.8rem,4.6vw,3.4rem);line-height:.95}
+body.sc-sendika .yn-card-row .yn-card-a,body.sc-sendika .yn-card-text .yn-card-a{box-shadow:none;border:0;border-bottom:3px solid var(--sd-black);background:transparent}
+html[data-theme="dark"] body.sc-sendika .yn-card-row .yn-card-a,html[data-theme="dark"] body.sc-sendika .yn-card-text .yn-card-a{border-bottom-color:#F5F2EC}
+body.sc-sendika .yn-card-row .yn-card-a:hover,body.sc-sendika .yn-card-text .yn-card-a:hover{box-shadow:none;transform:none;background:color-mix(in srgb,var(--sd-red) 9%,transparent)}
+body.sc-sendika .yn-card-row .yn-card-media{border:3px solid var(--sd-black)}
+body.sc-sendika .yn-card-text .yn-card-a{border-top:0}
+body.sc-sendika .yn-card-n{font-weight:900;font-size:2.6rem;color:var(--sd-red);letter-spacing:-.06em}
+body.sc-sendika .yn-tag{background:var(--sd-black);color:#fff;padding:3px 9px;border-radius:0;font-weight:900;letter-spacing:.1em;font-size:.68rem}
+body.sc-sendika .yn-tag::before{display:none}
+html[data-theme="dark"] body.sc-sendika .yn-tag{background:#F5F2EC;color:#111}
+body.sc-sendika .yn-card-lead .yn-tag,body.sc-sendika .yn-card-a:hover .yn-tag{background:var(--sd-red);color:#fff;backdrop-filter:none}
+body.sc-sendika .yn-card-a:hover .yn-card-t{text-decoration:none}
+body.sc-sendika .yn-card-m{font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem}
+body.sc-sendika .yn-btn{border-radius:0;border:3px solid var(--sd-black);font-weight:900;text-transform:uppercase;letter-spacing:.04em;font-size:.92rem;box-shadow:4px 4px 0 var(--sd-black)}
+html[data-theme="dark"] body.sc-sendika .yn-btn{border-color:#F5F2EC;box-shadow:4px 4px 0 var(--sd-red)}
+body.sc-sendika .yn-btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--sd-black)}
+body.sc-sendika .yn-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--sd-black)}
+body.sc-sendika .yn-btn-hot{background:var(--sd-red);color:#fff}
+body.sc-sendika .yn-btn-hot:hover{background:var(--sd-red2);color:#fff}
+html[data-theme="dark"] body.sc-sendika .yn-btn-hot{background:var(--sd-red);color:#fff}
+body.sc-sendika .yn-btn-ghost{background:#fff;color:#111}
+html[data-theme="dark"] body.sc-sendika .yn-btn-ghost{background:#111;color:#F5F2EC}
+body.sc-sendika .yn-btn-ghost:hover,body.sc-sendika .yn-btn-ghost[aria-current]{background:var(--sd-yellow);color:#111}
+body.sc-sendika .yn-btn-lime{background:var(--sd-yellow);color:#111}
+body.sc-sendika .yn-btn-lime:hover{background:#fff}
+body.sc-sendika .yn-eyebrow{color:var(--sd-red);font-weight:900;letter-spacing:.18em}
+html[data-theme="dark"] body.sc-sendika .yn-eyebrow{color:#FF6B6E}
+body.sc-sendika .yn-dot{border-radius:0;background:var(--sd-red);box-shadow:none}
+/* şerit + başlık */
+body.sc-sendika .sc-topbar{display:block;background:var(--sd-red);color:#fff;font-weight:800;font-size:.76rem;letter-spacing:.12em;text-transform:uppercase}
+body.sc-sendika .sc-topbar-in{width:min(var(--yn-max),100% - 24px);margin:auto;display:flex;justify-content:space-between;gap:4px 18px;padding:7px 0;flex-wrap:wrap}
+body.sc-sendika .sc-tb-msg{display:none}
+body.sc-sendika .sc-tb-nav{display:flex;gap:16px}
+body.sc-sendika .sc-tb-nav a{color:#fff;text-decoration:none;border-bottom:2px solid rgba(255,255,255,.5)}
+body.sc-sendika .sc-tb-nav a:hover{border-bottom-color:var(--sd-yellow)}
+body.sc-sendika .yn-head{background:#111;color:#fff;backdrop-filter:none;border-bottom:4px solid var(--sd-red)}
+body.sc-sendika .yn-head-in{height:68px}
+body.sc-sendika .yn-nav a{color:#fff;border-radius:0;font-weight:800;text-transform:uppercase;font-size:.78rem;letter-spacing:.06em;padding:10px 9px}
+body.sc-sendika .yn-nav a::after{height:4px;background:var(--sd-red);left:0;right:0;bottom:-2px;border-radius:0}
+body.sc-sendika .yn-nav a:hover,body.sc-sendika .yn-nav a[aria-current]{color:#fff;background:#262626}
+body.sc-sendika .yn-head .yn-btn{box-shadow:none;border-color:#fff}
+body.sc-sendika .yn-head .yn-btn-ghost{background:transparent;color:#fff}
+body.sc-sendika .yn-head .yn-btn-ghost:hover{background:#fff;color:#111}
+body.sc-sendika .yn-head .yn-btn-hot{border-color:var(--sd-red)}
+body.sc-sendika .yn-theme,body.sc-sendika .yn-burger{background:#111;border:3px solid #fff;border-radius:0;color:#fff}
+body.sc-sendika .yn-logo-l{display:none!important}body.sc-sendika .yn-logo-d{display:block!important}
+body.sc-sendika .yn-chips{background:#111}
+body.sc-sendika .yn-chips a{background:#111;color:#fff;border:2px solid #fff;border-radius:0;text-transform:uppercase;font-weight:800;font-size:.74rem;letter-spacing:.05em}
+body.sc-sendika .yn-chips a::before{display:none}
+body.sc-sendika .yn-chips a[aria-current]{background:var(--sd-red);border-color:var(--sd-red)}
+body.sc-sendika .yn-sheet-l span{text-transform:uppercase;font-weight:900}
+/* hero: manifesto */
+.sd-hero{position:relative;background:var(--sd-red);color:#fff;overflow:hidden;isolation:isolate;border-bottom:6px solid #111}
+.sd-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(0,0,0,.09) 22px 44px)}
+.sd-hero::after{content:"";position:absolute;right:-8%;top:-30%;width:46vw;height:46vw;max-width:640px;max-height:640px;background:#111;transform:rotate(18deg);z-index:-1;opacity:.92}
+.sd-hero-in{padding:clamp(34px,6vw,84px) 0 clamp(30px,5vw,60px)}
+.sd-eyebrow{display:inline-block;margin:0 0 20px;padding:6px 12px;background:#111;color:var(--sd-yellow);font-weight:900;letter-spacing:.18em;font-size:.78rem;text-transform:uppercase}
+.sd-h1{margin:0;font-weight:900;text-transform:uppercase;font-size:clamp(2.9rem,12.6vw,10.4rem);line-height:.84;letter-spacing:-.055em;color:#fff;text-wrap:balance}
+.sd-h1 span{display:block}
+.sd-h1-3{color:#111;-webkit-text-stroke:0;background:var(--sd-yellow);display:inline-block!important;padding:0 .08em;margin-top:.04em;transform:rotate(-1.2deg)}
+.sd-lower{display:grid;gap:28px;margin-top:clamp(24px,4vw,48px);align-items:end}
+.sd-sub{max-width:36ch;margin:0;font-size:clamp(1.1rem,2.2vw,1.55rem);line-height:1.25;font-weight:700;color:#fff}
+.sd-sub .yn-rotator b{color:#111;background:var(--sd-yellow)}
+.sd-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:24px}
+.sd-hero .yn-btn-hot{background:#111;border-color:#111;color:#fff;box-shadow:5px 5px 0 var(--sd-yellow)}
+.sd-hero .yn-btn-hot:hover{background:#000;box-shadow:7px 7px 0 var(--sd-yellow)}
+.sd-hero .yn-btn-ghost{background:#fff;color:#111;border-color:#111;box-shadow:5px 5px 0 #111}
+.sd-pledge{list-style:none;margin:0;padding:0;display:grid;gap:0;background:#fff;color:#111;border:4px solid #111;box-shadow:8px 8px 0 #111}
+.sd-pledge li+li{border-top:3px solid #111}
+.sd-pledge a{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:14px 16px;text-decoration:none;color:#111;transition:background .2s}
+.sd-pledge a:hover{background:var(--sd-yellow)}
+.sd-n{font-size:2.6rem;font-weight:900;line-height:1;letter-spacing:-.06em;color:var(--sd-red)}
+.sd-pledge b{display:block;text-transform:uppercase;font-weight:900;letter-spacing:-.01em;font-size:1.02rem;line-height:1.1}
+.sd-pledge small{display:block;margin-top:3px;font-size:.84rem;font-weight:500;color:#444;line-height:1.3}
+.sd-ticker{background:#111;color:#fff;overflow:hidden;border-top:4px solid #111}
+.sd-ticker-in{display:flex;width:max-content;animation:yn-marq 46s linear infinite}
+.sd-ticker span{padding:13px 28px;font-weight:900;font-size:clamp(.95rem,1.8vw,1.2rem);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;display:inline-flex;align-items:center;gap:28px}
+.sd-ticker span::after{content:"";width:12px;height:12px;background:var(--sd-red);transform:rotate(45deg)}
+.sd-ticker span:nth-child(3n+1)::after{background:var(--sd-yellow)}
+/* kutucuk + bölümler */
+body.sc-sendika .sc-tiles{padding-top:36px;gap:20px}
+body.sc-sendika .yn-tile{border-radius:0;border:3px solid #111;background:var(--yn-card);box-shadow:6px 6px 0 #111;counter-increment:sdt}
+html[data-theme="dark"] body.sc-sendika .yn-tile{border-color:#F5F2EC;box-shadow:6px 6px 0 var(--sd-red)}
+body.sc-sendika .sc-tiles{counter-reset:sdt}
+body.sc-sendika .yn-tile::before{content:counter(sdt,decimal-leading-zero);position:absolute;right:14px;top:6px;font-weight:900;font-size:3.4rem;letter-spacing:-.06em;line-height:1;color:var(--c);opacity:.9;z-index:2}
+body.sc-sendika .yn-tile-art{border-radius:0;border-bottom:3px solid #111;background:color-mix(in srgb,var(--c) 14%,var(--yn-card));height:100px}
+body.sc-sendika .yn-tile-h{font-size:1.45rem}
+body.sc-sendika .yn-tile:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--sd-red)}
+body.sc-sendika .yn-sec-head{border-bottom:6px solid #111;padding-bottom:12px}
+html[data-theme="dark"] body.sc-sendika .yn-sec-head{border-bottom-color:#F5F2EC}
+body.sc-sendika .yn-sec-art{border-radius:0;border:3px solid #111;background:var(--c);color:#fff}
+body.sc-sendika .yn-sec-head h2{font-size:clamp(1.9rem,5vw,3.6rem);line-height:.9}
+body.sc-sendika .yn-sec-head h2 a{background:linear-gradient(var(--sd-red),var(--sd-red)) 0 100%/0 6px no-repeat}
+body.sc-sendika .yn-sec-head p{font-weight:600}
+body.sc-sendika .yn-more{border-bottom:4px solid var(--sd-red);text-transform:uppercase;font-weight:900;letter-spacing:.06em;font-size:.82rem}
+body.sc-sendika .yn-cover-side .yn-eyebrow{border-bottom:4px solid #111}
+body.sc-sendika .yn-h2{text-transform:uppercase;font-weight:900;letter-spacing:-.03em}
+body.sc-sendika .yn-voice-band{background:var(--sd-red);border-block:6px solid #111;color:#fff}
+body.sc-sendika .yn-voice-band::after{border-radius:0;border:0;width:40vw;height:200%;right:-8vw;top:-50%;background:repeating-linear-gradient(135deg,rgba(0,0,0,.14) 0 16px,transparent 16px 32px);transform:none}
+body.sc-sendika .yn-voice-in h2{font-size:clamp(2.6rem,8vw,6.6rem);max-width:12ch;line-height:.88}
+body.sc-sendika .yn-voice-in .yn-btn-lime{box-shadow:5px 5px 0 #111;border-color:#111}
+body.sc-sendika .sc-res-card,body.sc-sendika .sc-card,body.sc-sendika .sc-dcard,body.sc-sendika .sc-bn{border:3px solid #111;border-radius:0;box-shadow:5px 5px 0 #111}
+html[data-theme="dark"] body.sc-sendika .sc-res-card,html[data-theme="dark"] body.sc-sendika .sc-card,html[data-theme="dark"] body.sc-sendika .sc-dcard,html[data-theme="dark"] body.sc-sendika .sc-bn{border-color:#F5F2EC;box-shadow:5px 5px 0 var(--sd-red)}
+body.sc-sendika .sc-res-card:hover{background:var(--sd-yellow);color:#111}
+body.sc-sendika .sc-res-card:hover span{color:#222}
+body.sc-sendika .sc-bn-n{background:var(--sd-red);border-radius:0;font-weight:900}
+body.sc-sendika .yn-foot{background:#111;border-top:8px solid var(--sd-red)}
+html[data-theme="dark"] body.sc-sendika .yn-foot{background:#050505}
+body.sc-sendika .yn-foot-slogan{font-size:clamp(2rem,5vw,3.6rem);max-width:12ch;line-height:.9;color:#fff}
+body.sc-sendika .yn-foot-col p{color:var(--sd-yellow);font-weight:900}
+@media (min-width:700px){body.sc-sendika .sc-tb-msg{display:inline}}
+@media (min-width:1000px){.sd-lower{grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:60px}body.sc-sendika .yn-nav a{font-size:.74rem;padding:10px 7px}}
+@media (min-width:1180px){body.sc-sendika .yn-nav a{font-size:.8rem;padding:10px 9px}}
+@media (prefers-reduced-motion:reduce){.sd-ticker-in{animation:none}body.sc-sendika .yn-card-a,body.sc-sendika .yn-btn,body.sc-sendika .yn-tile{transition:none}}

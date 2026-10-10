@@ -1,0 +1,9 @@
+/* "Okul Portal Teması" — normal haber sitesi kabuğu (templates/layout.php) için kaplama. tema 2026-10-10 */
+@import url(skin-fonts-okul.css);
+body.ys-skin-okul{--ys-accent:#1F5FD6!important;--ys-nav:#1F5FD6!important;--ys-nav-from:#1F5FD6!important;--ys-nav-to:#174AAB!important;--ys-navy:#14213D!important;--ys-nav-pill:#FF8A1F!important;--ys-bg:#FFF8EC;--ys-surface:#FFEFD6;--ys-text:#14213D;--ys-muted:#53607C;--ys-line:rgba(20,33,61,.14);font-family:'Nunito',ui-rounded,'Segoe UI',system-ui,sans-serif;font-weight:500;background:var(--ys-bg)}
+html[data-theme="dark"] body.ys-skin-okul{--ys-bg:#0B1530;--ys-surface:#101D3E;--ys-card:#14244A;--ys-text:#F4F7FF;--ys-muted:#9FB0D6;--ys-head:#0B1530;--ys-nav:#14244A!important}
+body.ys-skin-okul h1,body.ys-skin-okul h2,body.ys-skin-okul h3,body.ys-skin-okul .ys-card h3,body.ys-skin-okul .ys-bx-h{font-family:'Nunito',ui-rounded,system-ui,sans-serif;font-weight:900;letter-spacing:-.01em}
+body.ys-skin-okul .ys-header{border-bottom:5px solid transparent;border-image:linear-gradient(90deg,#1F5FD6 0 25%,#FF8A1F 25% 50%,#16A34A 50% 75%,#FFC83D 75%) 1}
+body.ys-skin-okul .ys-card,body.ys-skin-okul .ys-box,body.ys-skin-okul .ys-bx,body.ys-skin-okul .ys-tile{border-radius:20px;overflow:hidden;border-bottom:4px solid var(--ys-accent)}
+body.ys-skin-okul .ys-cats a:hover{background:rgba(255,255,255,.18);border-radius:12px}
+body.ys-skin-okul .ys-footer{background:#0F2A66;border-top:6px solid #FF8A1F}

@@ -1,0 +1,9 @@
+/* "Sendika Portal Teması" — normal haber sitesi kabuğu için kaplama (kırmızı/koyu, sert tipografi). tema 2026-10-10 */
+@import url(skin-fonts-sendika.css);
+body.ys-skin-sendika{--ys-accent:#D7191C!important;--ys-nav:#111!important;--ys-nav-from:#111!important;--ys-nav-to:#000!important;--ys-navy:#111!important;--ys-nav-pill:#D7191C!important;--ys-bg:#F1EEE8;--ys-surface:#E6E1D7;--ys-text:#111;--ys-muted:#595651;--ys-line:#111;font-family:'Archivo',system-ui,Arial,sans-serif;background:var(--ys-bg)}
+html[data-theme="dark"] body.ys-skin-sendika{--ys-bg:#0E0E0E;--ys-surface:#171717;--ys-card:#1A1A1A;--ys-text:#F5F2EC;--ys-muted:#A9A59D;--ys-line:rgba(245,242,236,.7);--ys-head:#0E0E0E}
+body.ys-skin-sendika h1,body.ys-skin-sendika h2,body.ys-skin-sendika h3,body.ys-skin-sendika .ys-card h3,body.ys-skin-sendika .ys-bx-h{font-family:'Archivo',Arial,sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1}
+body.ys-skin-sendika .ys-header{border-bottom:4px solid #D7191C}
+body.ys-skin-sendika .ys-card,body.ys-skin-sendika .ys-box,body.ys-skin-sendika .ys-bx,body.ys-skin-sendika .ys-tile{border-radius:0;border:3px solid #111;box-shadow:5px 5px 0 #111}
+html[data-theme="dark"] body.ys-skin-sendika .ys-card,html[data-theme="dark"] body.ys-skin-sendika .ys-box,html[data-theme="dark"] body.ys-skin-sendika .ys-bx{border-color:#F5F2EC;box-shadow:5px 5px 0 #D7191C}
+body.ys-skin-sendika .ys-footer{background:#111;border-top:8px solid #D7191C}
