@@ -30,7 +30,7 @@ export const SG_PROMO_DEFAULTS: SgPromoItem[] = [
   { key: "sss", title: "Sıkça Sorulan Sorular", eyebrow: "Rehber", subtitle: "Haklar, başvurular ve belgeler: en çok sorulanlar, sade ve kaynaklı cevaplarla.", button: "Cevapları bul", href: "/sss", image: "/brand/sector/wiki/tile-sss.jpg" },
   { key: "bilgi", title: "Bilgi Merkezi", eyebrow: "Arşiv", subtitle: "Haklardan millî günlere, kaynaklı ve özgün tüm rehberler tek çatı altında.", button: "Bilgi Merkezi'ne git", href: "/bilgi", image: "/brand/sector/wiki/p-bilgi.jpg" },
   { key: "milli", title: "Millî Günler", eyebrow: "Takvim", subtitle: "18 Mart'tan 30 Ağustos'a, 29 Ekim'den 10 Kasım'a: millî günlerimiz, anlamları ve anma programları.", button: "Millî günleri gör", href: "/milli-gunler", image: "/brand/sector/wiki/29-ekim-1.jpg" },
-  { key: "tsk", title: "TSK Şehitlerimiz", eyebrow: "Rahmetle", subtitle: "Millî Savunma Bakanlığı kayıtlarıyla şehitlerimiz: isim, rütbe, memleket ve şehadet bilgileri.", button: "Şehitlerimizi an", href: "/tsk-sehitlerimiz", image: "/brand/sector/wiki/edirnekapi-sehitligi-1.jpg" },
+  { key: "tsk", title: "TSK Şehitlerimiz", eyebrow: "Rahmetle", subtitle: "Millî Savunma Bakanlığı kayıtlarıyla şehitlerimiz: isim, rütbe, memleket ve şehadet bilgileri.", button: "Şehitlerimizi an", href: "/tsk-sehitlerimiz", image: "/brand/sector/wiki/p-tsk.jpg" },
 ];
 
 export const SG_TILE_DEFAULTS: SgTileItem[] = [
