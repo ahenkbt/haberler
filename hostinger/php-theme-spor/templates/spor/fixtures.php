@@ -14,7 +14,7 @@ foreach ($upcoming as $m) {
     $groups[(string) $m['dayKey']]['rows'][] = $m;
 }
 ?>
-<section class="spor-chero" style="--c:#0e8f3d;--ink:#fff"><div class="spor-wrap">
+<section class="spor-chero" style="--c:#0e8f3d;--on:#fff"><div class="spor-wrap">
   <p class="spor-crumb"><a href="/">Ana Sayfa</a> / Fikstür</p>
   <h1>Süper Lig fikstür</h1>
   <p>Sıradaki maçlar.<?php if (!empty($live['fetchedAt'])): ?> Son okuma <?= Html::e(Spor::clockTr((int) $live['fetchedAt'])) ?> TSİ.<?php endif; ?></p>
