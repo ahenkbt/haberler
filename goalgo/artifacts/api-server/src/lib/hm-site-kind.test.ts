@@ -114,6 +114,9 @@ describe("site kind", () => {
     expect(siteKindPatchError("corporate", { hmSiteKind: "news" })).toMatch(/dönüştürülemez/);
     expect(siteKindPatchError("news", { hmVitrinTheme: "vatan" })).toBeTruthy();
     expect(siteKindPatchError("corporate", { hmVitrinTheme: "yenisafak" })).toBeTruthy();
+    expect(siteKindPatchError("corporate", { hmVitrinTheme: "portal" })).toBeNull();
+    expect(siteKindPatchError("corporate", { hmVitrinTheme: "classic" })).toBeNull();
+    expect(siteKindPatchError("news", { hmVitrinTheme: "portal" })).toBeNull();
     expect(siteKindPatchError("corporate", { phpTheme: true })).toBeTruthy();
     expect(siteKindPatchError("news", { hmSiteKind: "news", phpTheme: true })).toBeNull();
     expect(siteKindPatchError("news", { phpTheme: false, frontend: "spa" })).toMatch(/PHP/);
@@ -123,9 +126,31 @@ describe("site kind", () => {
     expect(corporateDomainError({ domain: "vkd.gundemi.org", domain2: null, domain3: null })).toBeTruthy();
     expect(corporateDomainError({ domain: "tukav.org", domain2: null, domain3: null })).toBeNull();
   });
-  it("create defaults", () => {
-    expect(siteKindLayoutDefaults("news")).toMatchObject({ hmSiteKind: "news", phpTheme: true, frontend: "php" });
-    expect(siteKindLayoutDefaults("corporate", "vatan")).toMatchObject({ hmSiteKind: "corporate", hmVitrinTheme: "vatan", phpTheme: false });
+  it("create defaults — Portal, mevcut tema korunur", () => {
+    const existing = { hmVitrinTheme: "yenisafak", hmPrimaryColor: "#111111", hmSiteKind: "news" };
+    const snapshot = { ...existing };
+    expect(siteKindLayoutDefaults("news")).toMatchObject({
+      hmSiteKind: "news",
+      hmVitrinTheme: "portal",
+      phpTheme: true,
+      frontend: "php",
+    });
+    expect(siteKindLayoutDefaults("news", undefined, "yenisafak")).toMatchObject({ hmVitrinTheme: "yenisafak" });
+    expect(siteKindLayoutDefaults("news", undefined, "klasik")).toMatchObject({ hmVitrinTheme: "portal" });
+    expect(siteKindLayoutDefaults("corporate")).toMatchObject({
+      hmSiteKind: "corporate",
+      hmVitrinTheme: "portal",
+      phpTheme: false,
+      frontend: "spa",
+    });
+    expect(siteKindLayoutDefaults("corporate", "vatan")).toMatchObject({
+      hmSiteKind: "corporate",
+      hmVitrinTheme: "vatan",
+      phpTheme: false,
+    });
+    expect(siteKindLayoutDefaults("corporate", "vatan", "portal")).toMatchObject({ hmVitrinTheme: "portal" });
+    expect(siteKindLayoutDefaults("corporate", undefined, "corporate")).toMatchObject({ hmVitrinTheme: "corporate" });
+    expect(existing).toEqual(snapshot);
   });
 });
 
@@ -153,13 +178,26 @@ describe("concept site flag", () => {
     expect(conceptSiteLayoutDefaults(false)).toEqual({ hmConceptSite: false });
     expect(conceptSiteLayoutDefaults(undefined, "spor")).toEqual({ hmConceptSite: false });
   });
-  it("concept site: no burç, no Süper Lig unless sports", () => {
+  it("concept site: no burç, no Süper Lig unless sports; tema Portal ve renk yazılır", () => {
     const d = conceptSiteLayoutDefaults(true, "cevre");
     expect(d.hmConceptSite).toBe(true);
     expect(d.hmConceptTopic).toBe("cevre");
+    expect(d.hmVitrinTheme).toBe("portal");
+    expect(d.hmConceptPalette).toBe("portal");
+    expect(d.hmPrimaryColor).toBe("#b00020");
+    expect(d.hmSecondaryColor).toBe("#071b34");
     expect(d.hmNewsYsHoroscopeEnabled).toBe(false);
     expect(d.hmNewsYsStandingsEnabled).toBe(false);
     expect(d.hmCatTree).toBeUndefined();
+    const yesil = conceptSiteLayoutDefaults(true, "cevre", { palette: "yesil" });
+    expect(yesil.hmVitrinTheme).toBe("portal");
+    expect(yesil.hmPrimaryColor).toBe("#0b6e4f");
+    expect(yesil.hmSecondaryColor).toBe("#2e7d32");
+    const custom = conceptSiteLayoutDefaults(true, "diger", { palette: "ozel", primary: "#3366ff" });
+    expect(custom.hmConceptPalette).toBe("ozel");
+    expect(custom.hmPrimaryColor).toBe("#3366ff");
+    expect(custom.hmSecondaryColor).toMatch(/^#[0-9a-f]{6}$/);
+    expect(custom.hmSecondaryColor).not.toBe("#3366ff");
   });
   it("sports concept site keeps Süper Lig and gets the Spor tree", () => {
     const d = conceptSiteLayoutDefaults(true, "spor");

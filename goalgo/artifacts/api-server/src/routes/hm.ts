@@ -1425,11 +1425,17 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     siteKind?: string;
     /** News only: <slug>.gundemi.org / <slug>.fix.tc aliases (default both on). */
     platformAliases?: { gundemi?: boolean; fixTc?: boolean };
-    /** Corporate only: "corporate" (VKD Tema) | "vatan". */
+    /** Corporate only: "corporate" (VKD Tema) | "vatan". Eski istemci; yeni form `vitrinTheme` gönderir. */
     corporateTheme?: string;
+    /** Yeni site teması. Boşsa Portal. Konsept sitede sunucu yine Portal yazar. */
+    vitrinTheme?: string;
     /** News only: "Konsept site" (topic site: no burç / general widgets; Süper Lig only for "spor"). */
     conceptSite?: boolean;
     conceptTopic?: string;
+    /** Konsept site renk paleti (`portal`, `kirmizi`, …) veya `ozel`. */
+    conceptPalette?: string;
+    /** Konsept site özel ana rengi (#rgb / #rrggbb). */
+    conceptPrimary?: string;
     /** sag | sol | karma. Boş = karma. Yalnız yönetici. */
     yonelim?: unknown;
   };
@@ -1514,8 +1520,13 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   const layoutJson = JSON.stringify(
     defaultHmNewsSiteLayout({
       ...incomingLayout,
-      ...siteKindLayoutDefaults(siteKind, b.corporateTheme ?? incomingLayout.hmVitrinTheme),
-      ...(siteKind === "news" ? conceptSiteLayoutDefaults(b.conceptSite, b.conceptTopic) : {}),
+      ...siteKindLayoutDefaults(siteKind, b.corporateTheme, b.vitrinTheme),
+      ...(siteKind === "news"
+        ? conceptSiteLayoutDefaults(b.conceptSite, b.conceptTopic, {
+            palette: b.conceptPalette,
+            primary: b.conceptPrimary,
+          })
+        : {}),
     }),
   );
   const seoVerification = normalizeHmSeoVerification(b.seoVerification);

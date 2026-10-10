@@ -20,6 +20,12 @@ import {
 } from "@/lib/apiBase";
 import { suggestHmPlatformSubdomains } from "@/lib/hmPlatformApex";
 import { hmPublicHomeHref } from "@/lib/hmPublicSiteUrl";
+import {
+  HM_CORPORATE_CREATE_THEMES,
+  HM_NEWS_CREATE_THEMES,
+  HM_NEW_SITE_COLOR_PALETTES,
+  HM_NEW_SITE_PORTAL_THEME,
+} from "@/lib/hmNewSiteTheme";
 import { isHmPhpThemeSite, isHmPublicSuspended, parseNewsSiteLayoutFromJson } from "@/lib/newsSiteLayout";
 
 type HmEditor = {
@@ -164,11 +170,16 @@ type SiteForm = {
   gundemiHost: string;
   fixAlias: boolean;
   fixHost: string;
-  /** Kurumsal: VKD Tema (corporate) | VATAN */
+  /** Kurumsal: VKD Tema (corporate) | VATAN — düzenleme formu. Oluşturmada vitrinTheme kullanılır. */
   corporateTheme: "corporate" | "vatan";
+  /** Yeni site teması. Varsayılan Portal. Yalnız oluşturmada sunucuya gider. */
+  vitrinTheme: string;
   /** Haber (yalnız oluşturma): konsept site — Süper Lig/burç vb. genel kutular olmaz; spor konseptinde Süper Lig kalır */
   conceptSite: boolean;
   conceptTopic: string;
+  /** Konsept site paleti. `ozel` = conceptPrimary. */
+  conceptPalette: string;
+  conceptPrimary: string;
   /** null = seçilmedi (yönelim atanmaz, süzgeç yok). */
   yonelim: SiteYonelim | null;
 };
@@ -211,8 +222,11 @@ const emptyForm: SiteForm = {
   fixAlias: true,
   fixHost: "",
   corporateTheme: "corporate",
+  vitrinTheme: HM_NEW_SITE_PORTAL_THEME,
   conceptSite: false,
   conceptTopic: "diger",
+  conceptPalette: "portal",
+  conceptPrimary: "#b00020",
   yonelim: null,
 };
 
@@ -394,8 +408,11 @@ function formFromSite(site: HmSiteRow): SiteForm {
     fixAlias: Boolean(fixHost),
     fixHost,
     corporateTheme,
+    vitrinTheme: HM_NEW_SITE_PORTAL_THEME,
     conceptSite,
     conceptTopic,
+    conceptPalette: "portal",
+    conceptPrimary: "#b00020",
     slug: site.slug ?? "",
     displayName: site.displayName ?? "",
     description: site.description ?? "",
@@ -448,12 +465,18 @@ function payloadFromForm(
   // Site türü sunucuda kilitli: haber = PHP (Yenişafak), kurumsal = VKD/VATAN. Tür yalnızca oluşturmada yazılır.
   if (opts?.isCreate) {
     body.siteKind = kind;
+    const theme = kind === "news" && form.conceptSite ? HM_NEW_SITE_PORTAL_THEME : form.vitrinTheme || HM_NEW_SITE_PORTAL_THEME;
+    body.vitrinTheme = theme;
     if (kind === "news") {
       body.platformAliases = { gundemi: form.gundemiAlias, fixTc: form.fixAlias };
       body.conceptSite = form.conceptSite;
-      if (form.conceptSite) body.conceptTopic = form.conceptTopic || "diger";
-    } else {
-      body.corporateTheme = form.corporateTheme;
+      if (form.conceptSite) {
+        body.conceptTopic = form.conceptTopic || "diger";
+        body.conceptPalette = form.conceptPalette || "portal";
+        body.conceptPrimary = form.conceptPrimary || "";
+      }
+    } else if (theme === "vatan" || theme === "corporate") {
+      body.corporateTheme = theme;
     }
   }
   if (opts?.includePhpThemeFlag && kind === "news") {
@@ -557,6 +580,103 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
   function resetForm() {
     setEditingId(null);
     setForm(emptyForm);
+  }
+
+  function renderCreateThemeField() {
+    if (editingId) return null;
+    const options = isNews ? HM_NEWS_CREATE_THEMES : HM_CORPORATE_CREATE_THEMES;
+    const lockedPortal = isNews && form.conceptSite;
+    const selected = lockedPortal ? HM_NEW_SITE_PORTAL_THEME : form.vitrinTheme || HM_NEW_SITE_PORTAL_THEME;
+    const activePalette = HM_NEW_SITE_COLOR_PALETTES.find((p) => p.id === form.conceptPalette);
+    return (
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+        <div className={lockedPortal ? "grid gap-3 sm:grid-cols-2" : ""}>
+          <div className="space-y-1.5">
+            <Label>Tema</Label>
+            <select
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-80"
+              value={selected}
+              disabled={lockedPortal}
+              onChange={(e) => update("vitrinTheme", e.target.value)}
+            >
+              {options.map((theme) => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] leading-relaxed text-slate-500">
+              {lockedPortal
+                ? "Konsept site Portal temasıyla açılır. Yandaki renk bu temaya yazılır."
+                : "Varsayılan Portal. İsterseniz değiştirin. Kayıtlı sitelerin teması değişmez."}
+            </p>
+          </div>
+          {lockedPortal ? (
+            <div className="space-y-1.5">
+              <Label>Renk</Label>
+              <div className="flex flex-wrap gap-1.5" role="listbox" aria-label="Renk paleti">
+                {HM_NEW_SITE_COLOR_PALETTES.map((palette) => {
+                  const active = form.conceptPalette === palette.id;
+                  return (
+                    <button
+                      key={palette.id}
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      title={`${palette.label} ${palette.primary}`}
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          conceptPalette: palette.id,
+                          conceptPrimary: palette.primary,
+                        }))
+                      }
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold ${
+                        active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <span className="h-3 w-3 rounded-full border border-white/40" style={{ backgroundColor: palette.primary }} />
+                      {palette.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  aria-label="Özel ana renk"
+                  className="h-9 w-12 cursor-pointer rounded border border-slate-200 bg-white p-0.5"
+                  value={/^#[0-9a-fA-F]{6}$/.test(form.conceptPrimary) ? form.conceptPrimary : activePalette?.primary ?? "#b00020"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      conceptPalette: "ozel",
+                      conceptPrimary: e.target.value,
+                    }))
+                  }
+                />
+                <Input
+                  className="h-9 font-mono text-xs"
+                  aria-label="Özel renk kodu"
+                  placeholder="#b00020"
+                  value={form.conceptPrimary}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      conceptPalette: "ozel",
+                      conceptPrimary: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <p className="text-[11px] text-slate-500">
+                {form.conceptPalette === "ozel" ? "Özel renk" : activePalette?.label ?? "Portal"} · Portal temasına kaydedilir.
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   async function saveSite() {
@@ -1005,7 +1125,19 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                     <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2">
                       <label className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-gray-800">Konsept site</span>
-                        <Switch checked={form.conceptSite} onCheckedChange={(v) => update("conceptSite", Boolean(v))} />
+                        <Switch
+                          checked={form.conceptSite}
+                          onCheckedChange={(v) => {
+                            const on = Boolean(v);
+                            setForm((prev) => ({
+                              ...prev,
+                              conceptSite: on,
+                              vitrinTheme: on ? HM_NEW_SITE_PORTAL_THEME : prev.vitrinTheme,
+                              conceptPalette: prev.conceptPalette || "portal",
+                              conceptPrimary: prev.conceptPrimary || "#b00020",
+                            }));
+                          }}
+                        />
                       </label>
                       {form.conceptSite ? (
                         <select
@@ -1029,6 +1161,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                       </p>
                     </div>
                   ) : null}
+                  {renderCreateThemeField()}
                   <ul className="list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-emerald-950">
                     <li>
                       Kendi domaini varsa canonical, sitemap.xml, robots.txt, SEO/GEO, OG ve RSS o domaini gösterir;
@@ -1057,19 +1190,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                       <Input value={form.domain3} onChange={(e) => update("domain3", e.target.value)} placeholder="alternatif.org" />
                     </div>
                   </div>
-                  {!editingId ? (
-                    <div className="space-y-1.5">
-                      <Label>Kurumsal tema</Label>
-                      <select
-                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                        value={form.corporateTheme}
-                        onChange={(e) => update("corporateTheme", e.target.value === "vatan" ? "vatan" : "corporate")}
-                      >
-                        <option value="corporate">VKD Tema (kurumsal)</option>
-                        <option value="vatan">VATAN tema</option>
-                      </select>
-                    </div>
-                  ) : null}
+                  {renderCreateThemeField()}
                 </>
               )}
 
@@ -1161,13 +1282,18 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-600">
                 {isNews ? (
                   <>
-                    <span className="font-semibold text-slate-800">Tema: PHP (Yenişafak) — haber siteleri için sabit.</span>{" "}
-                    Site türü kilitlidir; haber sitesi kurumsal siteye dönüştürülemez.
+                    <span className="font-semibold text-slate-800">
+                      Yeni haber sitesi varsayılan teması Portal.
+                    </span>{" "}
+                    Konsept sitede tema Portal kalır ve seçilen renk bu temaya yazılır. Kayıtlı sitelerin teması
+                    değişmez. Site türü kilitlidir.
                   </>
                 ) : (
                   <>
-                    <span className="font-semibold text-slate-800">Tema: kurumsal (VKD / VATAN).</span> Site türü
-                    kilitlidir; kurumsal site haber sitesine dönüştürülemez, haber modülleri bu sitelerde görünmez.
+                    <span className="font-semibold text-slate-800">
+                      Yeni kurumsal site varsayılan teması Portal.
+                    </span>{" "}
+                    VKD veya VATAN seçilebilir. Kayıtlı sitelerin teması değişmez. Site türü kilitlidir.
                   </>
                 )}
               </div>
