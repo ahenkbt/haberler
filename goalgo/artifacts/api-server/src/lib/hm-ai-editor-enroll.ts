@@ -53,8 +53,9 @@ export function normalizeConceptPrompt(raw: unknown): string | null {
   return s.slice(0, PROMPT_MAX);
 }
 
-export function aiEditorConceptType(conceptSite: boolean): "topical" | "general" {
-  return conceptSite ? "topical" : "general";
+// DB check hm_ai_editor_sites_concept_type_check: city|regional|topical|kamu_yerel|genel ("general" CheckViolation verir, kayıt yazılmaz)
+export function aiEditorConceptType(conceptSite: boolean): "topical" | "genel" {
+  return conceptSite ? "topical" : "genel";
 }
 
 export function keywordsForConceptTopic(conceptSite: boolean, topicRaw: unknown): string[] {
