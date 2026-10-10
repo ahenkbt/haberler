@@ -5,7 +5,7 @@ import { allowCrossSiteManualNewsFromLayout, hiddenHmPoolNewsIdsFromLayout, hidd
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isExcludedCumhaKoeseFeedUrl } from "./rssCumhaExclude.js";
 import { isBlockedHmRssFeedUrl } from "./rssBlockedFeeds.js";
-import { normalizeSiteYonelim, rssSourceAllowedForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
+import { effectiveSiteYonelim, rssSourceAllowedForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
 import {
   canonicalizeRssCategorySlug,
   expandRssCategorySlugCandidates,
@@ -357,7 +357,7 @@ export async function loadPortalHybridRssFeeds(
     const layout = parseHmLayoutRecord(site?.layoutJson ?? null);
     if (isCorporateHmLayout(layout)) return [];
     const id = Math.floor(siteId);
-    const siteYonelim = normalizeSiteYonelim(site?.yonelim);
+    const siteYonelim = effectiveSiteYonelim(site);
     const gateFeeds = (rows: PortalHybridRssFeedConfig[]) =>
       rows.filter((feed) => rssSourceAllowedForSiteYonelim({ url: feed.url }, siteYonelim));
     const categorySlugLookup = await loadHmCategorySlugLookup(id);

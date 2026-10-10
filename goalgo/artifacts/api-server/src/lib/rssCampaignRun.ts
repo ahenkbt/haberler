@@ -45,7 +45,7 @@ import {
 import { upsertPortalRssItems } from "./portal-rss-store.js";
 import { portalRssTitleKey } from "./portal-rss-fetch.js";
 import { filterBlockedHmRssFeedUrls } from "./rssBlockedFeeds.js";
-import { normalizeSiteYonelim, rssSourceAllowedForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
+import { effectiveSiteYonelim, rssSourceAllowedForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
 import { ensureHmNewsSiteYonelimColumn } from "./hm-site-compat.js";
 import { createHash } from "node:crypto";
 import {
@@ -327,26 +327,34 @@ export async function executeRssCampaignRun(
     let feedPublishTargets = publishTargets;
     if (oppositionFeed && campaignWritesPerHmSite(campaign)) {
       const ids = publishTargets.filter((id): id is number => id != null && id > 0);
-      let solIds = new Set<number>();
+      // Yalnız yönelimi açıkça atanmış ve sol olmayan siteler muhalif beslemeden dışlanır.
+      let blockedIds = new Set<number>();
       if (ids.length > 0) {
         try {
           await ensureHmNewsSiteYonelimColumn().catch(() => undefined);
           const rows = await getNewsDbForRead()
-            .select({ id: hmNewsSitesTable.id, yonelim: hmNewsSitesTable.yonelim })
+            .select({ id: hmNewsSitesTable.id, yonelim: hmNewsSitesTable.yonelim, yonelimAktif: hmNewsSitesTable.yonelimAktif })
             .from(hmNewsSitesTable)
             .where(inArray(hmNewsSitesTable.id, ids));
-          solIds = new Set(rows.filter((row) => normalizeSiteYonelim(row.yonelim) === "sol").map((row) => row.id));
+          blockedIds = new Set(
+            rows
+              .filter((row) => {
+                const y = effectiveSiteYonelim(row);
+                return y != null && y !== "sol";
+              })
+              .map((row) => row.id),
+          );
         } catch {
-          solIds = new Set();
+          blockedIds = new Set();
         }
       }
-      feedPublishTargets = publishTargets.filter((id) => id != null && solIds.has(id));
+      feedPublishTargets = publishTargets.filter((id) => id == null || !blockedIds.has(id));
       if (feedPublishTargets.length === 0) {
         await dualWriteInsert(rssLogsTable, {
           campaignId,
           level: "info",
           action: "run",
-          message: `Muhalif kaynak yalnız sol sitelere gider; bu besleme için sol hedef yok (${feedUrl}).`,
+          message: `Muhalif kaynak yönelimi atanmış sol olmayan sitelere gitmez; bu besleme için uygun hedef yok (${feedUrl}).`,
         });
         continue;
       }

@@ -7,22 +7,23 @@ import { newsTable } from "@workspace/db";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import {
   muhalifRssUrlPatternSource,
-  normalizeSiteYonelim,
+  effectiveSiteYonelim,
   rssSourceAllowedForSiteYonelim,
   type SiteYonelim,
 } from "./hm-rss-kaynak-yonelim.js";
 
-export async function getHmSiteYonelim(siteId: number): Promise<SiteYonelim> {
-  if (!Number.isFinite(siteId) || siteId <= 0) return "karma";
+/** null = yönelim atanmamış (mevcut site), süzgeç yok. */
+export async function getHmSiteYonelim(siteId: number): Promise<SiteYonelim | null> {
+  if (!Number.isFinite(siteId) || siteId <= 0) return null;
   try {
     const row = await getHmNewsSiteByIdCompat(siteId);
-    return normalizeSiteYonelim(row?.yonelim);
+    return effectiveSiteYonelim(row);
   } catch {
-    return "karma";
+    return null;
   }
 }
 
-/** Sol sitede süzgeç yok. Sağ ve karma muhalif rss_source_url satırını görmez. */
+/** Atanmamış ve sol sitede süzgeç yok. Sağ ve karma muhalif rss_source_url satırını görmez. */
 export function excludeMuhalifRssSourceSql(): SQL {
   const pattern = muhalifRssUrlPatternSource();
   return sql`NOT (lower(btrim(coalesce(${newsTable.rssSourceUrl}, ''))) ~ ${pattern})`;
@@ -30,7 +31,7 @@ export function excludeMuhalifRssSourceSql(): SQL {
 
 export async function andSiteRssYonelimSql(siteId: number, scope: SQL): Promise<SQL> {
   const yonelim = await getHmSiteYonelim(siteId);
-  if (yonelim === "sol") return scope;
+  if (yonelim == null || yonelim === "sol") return scope;
   return and(scope, excludeMuhalifRssSourceSql())!;
 }
 
