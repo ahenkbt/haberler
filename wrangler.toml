@@ -352,7 +352,7 @@ pattern = "vatanhaber.net/yazar/haber*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "vatanhaber.net/koseyazari/haber*"
+pattern = "vatanhaber.net/koseyazari/haber/*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
@@ -372,7 +372,7 @@ pattern = "www.vatanhaber.net/yazar/haber*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
-pattern = "www.vatanhaber.net/koseyazari/haber*"
+pattern = "www.vatanhaber.net/koseyazari/haber/*"
 zone_name = "vatanhaber.net"
 
 [[routes]]
@@ -447,7 +447,7 @@ pattern = "suhaber.net/yazar/haber*"
 zone_name = "suhaber.net"
 
 [[routes]]
-pattern = "suhaber.net/koseyazari/haber*"
+pattern = "suhaber.net/koseyazari/haber/*"
 zone_name = "suhaber.net"
 
 [[routes]]
@@ -467,7 +467,7 @@ pattern = "www.suhaber.net/yazar/haber*"
 zone_name = "suhaber.net"
 
 [[routes]]
-pattern = "www.suhaber.net/koseyazari/haber*"
+pattern = "www.suhaber.net/koseyazari/haber/*"
 zone_name = "suhaber.net"
 
 [[routes]]
@@ -606,7 +606,7 @@ pattern = "turkatahaber.com/yazar/haber*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
-pattern = "turkatahaber.com/koseyazari/haber*"
+pattern = "turkatahaber.com/koseyazari/haber/*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
@@ -626,7 +626,7 @@ pattern = "www.turkatahaber.com/yazar/haber*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
-pattern = "www.turkatahaber.com/koseyazari/haber*"
+pattern = "www.turkatahaber.com/koseyazari/haber/*"
 zone_name = "turkatahaber.com"
 
 [[routes]]
@@ -738,7 +738,7 @@ pattern = "sehitgazi.org.tr/yazar/haber*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
-pattern = "sehitgazi.org.tr/koseyazari/haber*"
+pattern = "sehitgazi.org.tr/koseyazari/haber/*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
@@ -758,7 +758,7 @@ pattern = "www.sehitgazi.org.tr/yazar/haber*"
 zone_name = "sehitgazi.org.tr"
 
 [[routes]]
-pattern = "www.sehitgazi.org.tr/koseyazari/haber*"
+pattern = "www.sehitgazi.org.tr/koseyazari/haber/*"
 zone_name = "sehitgazi.org.tr"
 
 # Eski SPA /tr|/hm → PHP 301 (ASG ile aynı; catch-all bilinçli yok).
@@ -884,7 +884,7 @@ pattern = "yerel.net.tr/yazar/haber*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
-pattern = "yerel.net.tr/koseyazari/haber*"
+pattern = "yerel.net.tr/koseyazari/haber/*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
@@ -904,7 +904,7 @@ pattern = "www.yerel.net.tr/yazar/haber*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
-pattern = "www.yerel.net.tr/koseyazari/haber*"
+pattern = "www.yerel.net.tr/koseyazari/haber/*"
 zone_name = "yerel.net.tr"
 
 [[routes]]
@@ -1003,7 +1003,7 @@ pattern = "turksav.org/yazar/haber*"
 zone_name = "turksav.org"
 
 [[routes]]
-pattern = "turksav.org/koseyazari/haber*"
+pattern = "turksav.org/koseyazari/haber/*"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -1023,7 +1023,7 @@ pattern = "www.turksav.org/yazar/haber*"
 zone_name = "turksav.org"
 
 [[routes]]
-pattern = "www.turksav.org/koseyazari/haber*"
+pattern = "www.turksav.org/koseyazari/haber/*"
 zone_name = "turksav.org"
 
 [[routes]]
@@ -1122,7 +1122,7 @@ pattern = "dunyasaglik.org/yazar/haber*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
-pattern = "dunyasaglik.org/koseyazari/haber*"
+pattern = "dunyasaglik.org/koseyazari/haber/*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
@@ -1142,7 +1142,7 @@ pattern = "www.dunyasaglik.org/yazar/haber*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
-pattern = "www.dunyasaglik.org/koseyazari/haber*"
+pattern = "www.dunyasaglik.org/koseyazari/haber/*"
 zone_name = "dunyasaglik.org"
 
 [[routes]]
@@ -1241,7 +1241,7 @@ pattern = "yesilvatan.gen.tr/yazar/haber*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
-pattern = "yesilvatan.gen.tr/koseyazari/haber*"
+pattern = "yesilvatan.gen.tr/koseyazari/haber/*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -1261,7 +1261,7 @@ pattern = "www.yesilvatan.gen.tr/yazar/haber*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
-pattern = "www.yesilvatan.gen.tr/koseyazari/haber*"
+pattern = "www.yesilvatan.gen.tr/koseyazari/haber/*"
 zone_name = "yesilvatan.gen.tr"
 
 [[routes]]
@@ -1568,7 +1568,7 @@ pattern = "*.gundemi.org/yazar/haber*"
 zone_name = "gundemi.org"
 
 [[routes]]
-pattern = "*.gundemi.org/koseyazari/haber*"
+pattern = "*.gundemi.org/koseyazari/haber/*"
 zone_name = "gundemi.org"
 
 [[routes]]
@@ -1715,7 +1715,7 @@ pattern = "fix.tc/yazar/haber*"
 zone_name = "fix.tc"
 
 [[routes]]
-pattern = "fix.tc/koseyazari/haber*"
+pattern = "fix.tc/koseyazari/haber/*"
 zone_name = "fix.tc"
 
 [[routes]]
@@ -1735,7 +1735,7 @@ pattern = "www.fix.tc/yazar/haber*"
 zone_name = "fix.tc"
 
 [[routes]]
-pattern = "www.fix.tc/koseyazari/haber*"
+pattern = "www.fix.tc/koseyazari/haber/*"
 zone_name = "fix.tc"
 
 [[routes]]
@@ -1796,7 +1796,7 @@ zone_name = "fix.tc"
 pattern = "*.fix.tc/yazar/haber*"
 zone_name = "fix.tc"
 [[routes]]
-pattern = "*.fix.tc/koseyazari/haber*"
+pattern = "*.fix.tc/koseyazari/haber/*"
 zone_name = "fix.tc"
 [[routes]]
 pattern = "*.fix.tc/tr/*"
@@ -1875,7 +1875,7 @@ pattern = "sosyalhizmetler.tr/yazar/haber*"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
-pattern = "sosyalhizmetler.tr/koseyazari/haber*"
+pattern = "sosyalhizmetler.tr/koseyazari/haber/*"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
@@ -1895,7 +1895,7 @@ pattern = "www.sosyalhizmetler.tr/yazar/haber*"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
-pattern = "www.sosyalhizmetler.tr/koseyazari/haber*"
+pattern = "www.sosyalhizmetler.tr/koseyazari/haber/*"
 zone_name = "sosyalhizmetler.tr"
 
 [[routes]]
@@ -1965,7 +1965,7 @@ pattern = "harikaolacak.com.tr/yazar/haber*"
 zone_name = "harikaolacak.com.tr"
 
 [[routes]]
-pattern = "harikaolacak.com.tr/koseyazari/haber*"
+pattern = "harikaolacak.com.tr/koseyazari/haber/*"
 zone_name = "harikaolacak.com.tr"
 
 [[routes]]
@@ -2001,7 +2001,7 @@ pattern = "www.harikaolacak.com.tr/yazar/haber*"
 zone_name = "harikaolacak.com.tr"
 
 [[routes]]
-pattern = "www.harikaolacak.com.tr/koseyazari/haber*"
+pattern = "www.harikaolacak.com.tr/koseyazari/haber/*"
 zone_name = "harikaolacak.com.tr"
 
 [[routes]]
@@ -2063,7 +2063,7 @@ pattern = "yeni.tc/yazar/haber*"
 zone_name = "yeni.tc"
 
 [[routes]]
-pattern = "yeni.tc/koseyazari/haber*"
+pattern = "yeni.tc/koseyazari/haber/*"
 zone_name = "yeni.tc"
 
 [[routes]]
@@ -2099,7 +2099,7 @@ pattern = "www.yeni.tc/yazar/haber*"
 zone_name = "yeni.tc"
 
 [[routes]]
-pattern = "www.yeni.tc/koseyazari/haber*"
+pattern = "www.yeni.tc/koseyazari/haber/*"
 zone_name = "yeni.tc"
 
 [[routes]]

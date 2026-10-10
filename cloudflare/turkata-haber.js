@@ -186,7 +186,7 @@ export function isTurkataAuthorPanelPath(pathname) {
     p.startsWith("/yazar/haber") ||
     p.startsWith("/koseyazari/giris") ||
     p.startsWith("/koseyazari/sifre") ||
-    p.startsWith("/koseyazari/haber")
+    p.startsWith("/koseyazari/haber/")
   );
 }
 
