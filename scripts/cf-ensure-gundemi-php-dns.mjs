@@ -148,7 +148,7 @@ const PANEL_ROUTE_PATTERNS = [
   "*.gundemi.org/yazar/sifre*",
   "*.gundemi.org/koseyazari/sifre*",
   "*.gundemi.org/yazar/haber*",
-  "*.gundemi.org/koseyazari/haber*",
+  "*.gundemi.org/koseyazari/haber/*",
   "*.gundemi.org/tr/*",
   "*.gundemi.org/hm/*",
   "gundemi.org/editor*",

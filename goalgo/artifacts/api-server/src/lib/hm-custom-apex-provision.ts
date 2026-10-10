@@ -95,7 +95,7 @@ const PANEL_PATH_SUFFIXES = [
   "yazar/sifre*",
   "koseyazari/sifre*",
   "yazar/haber*",
-  "koseyazari/haber*",
+  "koseyazari/haber/*",
   "tr/*",
   "hm/*",
 ] as const;
