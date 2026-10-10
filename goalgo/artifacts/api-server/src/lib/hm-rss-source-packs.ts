@@ -22,6 +22,8 @@ export type HmRssSourcePackFeed = {
   label: string;
   url: string;
   categoryKey: string;
+  /** sol = muhalif kaynak; yalnız sol sitelere dağılır. Boş = mevcut akış. */
+  kaynakYonelim?: "sag" | "sol" | "karma";
 };
 
 export const HM_RSS_KARMA_MAX_ITEMS = 20;
@@ -62,7 +64,7 @@ const DIRILIS: HmRssSourcePackFeed[] = [
   { id: "dirilis-savunma", label: "Savunma Sanayi", url: "https://www.dirilispostasi.com/rss/savunma-sanayi", categoryKey: "savunma-sanayi" },
 ];
 
-const BIRGUN: HmRssSourcePackFeed[] = [
+const BIRGUN_FEEDS: HmRssSourcePackFeed[] = [
   { id: "birgun-avrupa", label: "Dünya", url: "https://www.birgun.net/rss/kategori/avrupa-36", categoryKey: "dunya" },
   { id: "birgun-bilim", label: "Teknoloji", url: "https://www.birgun.net/rss/kategori/bilim-40", categoryKey: "teknoloji" },
   { id: "birgun-bilisim", label: "Teknoloji", url: "https://www.birgun.net/rss/kategori/bilisim-25", categoryKey: "teknoloji" },
@@ -77,6 +79,9 @@ const BIRGUN: HmRssSourcePackFeed[] = [
   { id: "birgun-teknoloji", label: "Teknoloji", url: "https://www.birgun.net/rss/kategori/teknoloji-28", categoryKey: "teknoloji" },
   { id: "birgun-yasam", label: "Yaşam", url: "https://www.birgun.net/rss/kategori/yasam-14", categoryKey: "yasam" },
 ];
+
+/** BirGün muhalif kaynaktır; paket işareti sol. URL listesi ve akış adresleri durur. */
+const BIRGUN: HmRssSourcePackFeed[] = BIRGUN_FEEDS.map((feed) => ({ ...feed, kaynakYonelim: "sol" as const }));
 
 const YEREL: HmRssSourcePackFeed[] = [
   { id: "yerel-ticarihayat-ankara", label: "Ankara", url: "https://www.ticarihayat.com/rss/ankara-haberleri", categoryKey: "ankara" },

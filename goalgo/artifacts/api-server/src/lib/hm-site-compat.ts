@@ -6,7 +6,7 @@ export type HmNewsSiteCompatRow = typeof hmNewsSitesTable.$inferSelect;
 
 type LegacyHmNewsSiteRow = Omit<
   HmNewsSiteCompatRow,
-  "description" | "verificationJson" | "domain2" | "domain3"
+  "description" | "verificationJson" | "domain2" | "domain3" | "yonelim"
 >;
 
 const hmNewsSiteLegacyColumnsNoDomain2 = {
@@ -130,6 +130,7 @@ function withSeoDefaults(row: LegacyHmNewsSiteRow): HmNewsSiteCompatRow {
     domain3: "domain3" in row ? (row as HmNewsSiteCompatRow).domain3 : null,
     description: null,
     verificationJson: null,
+    yonelim: "karma",
   };
 }
 
@@ -190,19 +191,55 @@ export function isMissingHmDomain3ColumnError(e: unknown): boolean {
   return code === "42703" || /domain3.*does not exist/i.test(message || msg);
 }
 
+export function isMissingHmYonelimColumnError(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e);
+  const { code, message } = postgresErrorMeta(e);
+  return code === "42703" && /yonelim/i.test(message || msg);
+}
+
 export function isMissingHmSiteColumnError(e: unknown): boolean {
   return (
     isMissingHmSeoColumnError(e) ||
     isMissingHmDomain2ColumnError(e) ||
-    isMissingHmDomain3ColumnError(e)
+    isMissingHmDomain3ColumnError(e) ||
+    isMissingHmYonelimColumnError(e)
   );
 }
 
-/** PATCH/POST öncesi: SEO + domain2 + domain3 sütunlarını garantile. */
+let hmNewsSiteYonelimColumnPromise: Promise<void> | null = null;
+
+/** Sütun yoksa ekler. Dolu sag/sol/karma değerine dokunmaz; boşları karma yapar. */
+export function ensureHmNewsSiteYonelimColumn(): Promise<void> {
+  if (hmNewsSiteYonelimColumnPromise) return hmNewsSiteYonelimColumnPromise;
+  hmNewsSiteYonelimColumnPromise = (async () => {
+    await executeNewsDbWrite(sql`
+      ALTER TABLE hm_news_sites ADD COLUMN IF NOT EXISTS yonelim text;
+    `);
+    await executeNewsDbWrite(sql`
+      ALTER TABLE hm_news_sites ALTER COLUMN yonelim SET DEFAULT 'karma';
+    `);
+    await executeNewsDbWrite(sql`
+      UPDATE hm_news_sites
+      SET yonelim = 'karma'
+      WHERE yonelim IS NULL
+         OR btrim(yonelim) = ''
+         OR lower(btrim(yonelim)) NOT IN ('sag', 'sol', 'karma');
+    `);
+  })()
+    .then(() => undefined)
+    .catch((e) => {
+      hmNewsSiteYonelimColumnPromise = null;
+      throw e;
+    });
+  return hmNewsSiteYonelimColumnPromise;
+}
+
+/** PATCH/POST öncesi: SEO + domain2 + domain3 + yonelim sütunlarını garantile. */
 export async function ensureHmNewsSiteWritableColumns(): Promise<void> {
   await ensureHmNewsSiteSeoColumns();
   await ensureHmNewsSiteDomain2Column();
   await ensureHmNewsSiteDomain3Column();
+  await ensureHmNewsSiteYonelimColumn();
 }
 
 /** Başarısız ensure sonrası cache'i temizleyip yeniden dene. */
@@ -211,6 +248,7 @@ export function resetHmNewsSiteColumnEnsureCache(): void {
   hmNewsSiteSeoColumnsExistPromise = null;
   hmNewsSiteDomain2ColumnPromise = null;
   hmNewsSiteDomain3ColumnPromise = null;
+  hmNewsSiteYonelimColumnPromise = null;
 }
 
 async function hmNewsSiteSeoColumnsExist(): Promise<boolean> {
@@ -249,9 +287,13 @@ async function withSeoColumnFallback(
     const ensured = await ensureSeoColumnsBestEffort();
     if (!ensured) return (await legacyQuery()).map(withSeoDefaults);
   }
+  await ensureHmNewsSiteYonelimColumn().catch(() => undefined);
   try {
     return await fullQuery();
   } catch (e) {
+    if (isMissingHmYonelimColumnError(e)) {
+      return (await legacyQuery()).map(withSeoDefaults);
+    }
     if (!isMissingHmSeoColumnError(e)) throw e;
     hmNewsSiteSeoColumnsExistPromise = Promise.resolve(false);
     return (await legacyQuery()).map(withSeoDefaults);

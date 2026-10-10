@@ -65,6 +65,7 @@ import {
 } from "../lib/hm-corporate-news-policy.js";
 import { isHmCorporateLayout, parseHmLayoutJson } from "../lib/hm-editor-categories.js";
 import { getHmNewsSiteByIdCompat } from "../lib/hm-site-compat.js";
+import { andSiteRssYonelimSql, newsRssVisibleOnSite } from "../lib/hm-site-yonelim.js";
 import {
   isHmPublishGroupSharedEditorNews,
   publicHmSiteNewsScopeSql,
@@ -83,7 +84,7 @@ async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number): Promi
   // Editör haber siteleri: bu site_id + ASG/AHG publish-group editör satırları.
   // (Havuz onaylı kopyalar zaten site_id = alan site ile yazılır.)
   void readDb;
-  return publicHmSiteNewsScopeSql(siteId);
+  return andSiteRssYonelimSql(siteId, await publicHmSiteNewsScopeSql(siteId));
 }
 
 async function newsRowBelongsToSite(
@@ -92,6 +93,7 @@ async function newsRowBelongsToSite(
   readDb: NewsReadDb,
   isCorporate: boolean,
 ): Promise<boolean> {
+  if (!(await newsRssVisibleOnSite(row.rssSourceUrl, siteId))) return false;
   if (row.siteId === siteId) return true;
   if (row.siteId != null) {
     const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);

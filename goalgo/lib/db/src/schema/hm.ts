@@ -23,6 +23,11 @@ export const hmNewsSitesTable = pgTable("hm_news_sites", {
   contactJson: text("contact_json"),
   layoutJson: text("layout_json"),
   verificationJson: text("verification_json"),
+  /**
+   * Yayın yönelimi (yalnız yönetici). sag = ılımlı, muhalif kaynak yok;
+   * sol = muhalif kaynaklardan beslenir; karma = orta. Ziyaretçi vitrininde dönülmez.
+   */
+  yonelim: text("yonelim").notNull().default("karma"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
