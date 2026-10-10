@@ -31,6 +31,7 @@ export const SG_PROMO_DEFAULTS: SgPromoItem[] = [
   { key: "bilgi", title: "Bilgi Merkezi", eyebrow: "Arşiv", subtitle: "Haklardan millî günlere, kaynaklı ve özgün tüm rehberler tek çatı altında.", button: "Bilgi Merkezi'ne git", href: "/bilgi", image: "/brand/sector/wiki/p-bilgi-u.jpg" },
   { key: "milli", title: "Millî Günler", eyebrow: "Takvim", subtitle: "18 Mart'tan 30 Ağustos'a, 29 Ekim'den 10 Kasım'a: millî günlerimiz, anlamları ve anma programları.", button: "Millî günleri gör", href: "/milli-gunler", image: "/brand/sector/wiki/p-milli-u.jpg" },
   { key: "tsk", title: "TSK Şehitlerimiz", eyebrow: "Rahmetle", subtitle: "Millî Savunma Bakanlığı kayıtlarıyla şehitlerimiz: isim, rütbe, memleket ve şehadet bilgileri.", button: "Şehitlerimizi an", href: "/tsk-sehitlerimiz", image: "/brand/sector/wiki/p-tsk.jpg" },
+  { key: "15temmuz", title: "15 Temmuz Şehitlerimiz", eyebrow: "Demokrasi ve Millî Birlik", subtitle: "15 Temmuz 2016 gecesi tankların önüne göğsünü siper eden, milletin iradesine sahip çıkarken şehit düşen kahramanlarımız.", button: "Şehitlerimizi tanı", href: "/15-temmuz-sehitlerimiz", image: "/brand/sector/wiki/p-15temmuz-u.jpg" },
 ];
 
 export const SG_TILE_DEFAULTS: SgTileItem[] = [
