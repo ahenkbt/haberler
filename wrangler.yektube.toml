@@ -31,15 +31,13 @@ S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
 YEKTUBE_DB_READ = "yektube"
 YEKTUBE_DB_WRITE = "yektube"
 
-[[containers]]
-class_name = "GoalgoApiContainer"
-image = "./goalgo/Dockerfile.cloudflare"
-max_instances = 1
-instance_type = "standard-3"
-
-[[durable_objects.bindings]]
-name = "GOALGO_API"
-class_name = "GoalgoApiContainer"
+# Konteyner yok (2026-10-10). /api, API_ORIGIN üzerinden haberler Worker'ına gider
+# (cloudflare/api-upstream.js: dolu API_ORIGIN, GOALGO_API'den önce kullanılır).
+# Ayrı standard-3 (8 GiB) instance, uyandırılırsa haberler ile aynı GiB-sn fiyatını yazıyordu.
+# Site: bu Worker'ın Assets + worker.js. SPA ve /api yolu durur; yerel Container kalkmaz.
+# Geri almak için [[containers]] + GOALGO_API binding ekleyin. instance_type en fazla
+# basic, max_instances = 1, ve CONTAINER_ROLL adını DEĞİŞTİRMEYİN (eski ad slot tutar).
+# Uygulanmış migration etiketleri silinmez; sınıf hâlâ worker.js'ten export edilir.
 
 [[migrations]]
 tag = "v1"

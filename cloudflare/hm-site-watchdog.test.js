@@ -5,6 +5,7 @@ import {
   isProbeTimeout,
   listActiveHmSites,
   mapPool,
+  runHmSiteWatchdog,
   siteProbePaths,
 } from "./hm-site-watchdog.js";
 
@@ -136,6 +137,32 @@ test("isProbeTimeout status 0 / error timeout", () => {
   assert.equal(isProbeTimeout({ ok: false, status: 0, error: "timeout" }), true);
   assert.equal(isProbeTimeout({ ok: false, status: 502 }), false);
   assert.equal(isProbeTimeout({ ok: true, status: 200 }), false);
+});
+
+test("runHmSiteWatchdog Container /api/healthz çağırmaz", async () => {
+  const hits = [];
+  const env = {
+    GOALGO_API: {
+      getByName() {
+        return {
+          fetch: async (req) => {
+            hits.push(String(req?.url || ""));
+            return new Response("container", { status: 200 });
+          },
+        };
+      },
+    },
+  };
+  const report = await runHmSiteWatchdog(env, { limit: 1 });
+  assert.equal(hits.length, 0);
+  assert.equal(report.api.live.ok, true);
+  assert.equal(report.api.live.url.endsWith("/api/healthz/live"), true);
+  assert.equal(report.api.healthz.ok, true);
+  assert.equal(report.api.healthz.edge, true);
+  assert.equal(report.api.healthz.container, false);
+  assert.equal(report.api.healthz.url.endsWith("/api/healthz"), true);
+  assert.ok(!report.issues.some((issue) => /\/api\/healthz soğuk/.test(issue.message)));
+  assert.equal(report.issues.some((issue) => issue.kind === "db"), true);
 });
 
 test("mapPool concurrency sırayı korur", async () => {

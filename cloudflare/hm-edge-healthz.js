@@ -3,10 +3,10 @@
  * Panel ApiConnectivityBanner /healthz/live'a bakıyor; Container 503/timeout
  * yüzünden tüm panel «Sunucuya ulaşılamıyor» oluyordu.
  *
- * GET /api/healthz/live  → kenar JSON (Container yok)
- * Arka planda Container'ı ısıtır (waitUntil).
+ * GET /api/healthz/live  → kenar JSON (Container yok).
+ * Arka planda /api/healthz ile ısıtma yok: her canlılık yoklaması instance'ı
+ * sleepAfter boyunca sıcak tutup GiB-sn yazıyordu.
  */
-import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
 
 export function isEdgeHealthzLivePath(pathname) {
   const p = String(pathname || "")
@@ -15,28 +15,16 @@ export function isEdgeHealthzLivePath(pathname) {
   return p === "/api/healthz/live";
 }
 
-export async function handleEdgeHealthzLive(request, env, ctx) {
+export async function handleEdgeHealthzLive(request, _env, _ctx) {
   if (String(request.method || "GET").toUpperCase() !== "GET") return null;
   const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
   if (!isEdgeHealthzLivePath(path)) return null;
-
-  const waitUntil = typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : null;
-  if (waitUntil) {
-    const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
-    waitUntil(
-      fetchApi(env, `${origin}/api/healthz`)
-        .then((r) => r?.text?.().catch(() => null))
-        .catch((err) => {
-          console.error("[edge-healthz-wake]", String(err?.message || err).slice(0, 160));
-        }),
-    );
-  }
 
   return new Response(
     JSON.stringify({
       status: "ok",
       edge: true,
-      wokeContainer: Boolean(waitUntil),
+      wokeContainer: false,
       ts: new Date().toISOString(),
     }),
     {

@@ -13,6 +13,8 @@ type Probe = {
   ok?: boolean;
   error?: string;
   header?: string;
+  edge?: boolean;
+  container?: boolean;
 };
 
 type SiteRow = {
@@ -249,9 +251,9 @@ export default function HaberSiteleriBekci() {
             <h2 className="text-lg font-black text-emerald-950">Hızlı onarım</h2>
             <p className="text-sm text-emerald-900">
               Tarama uyarı verse bile dual-write açıksa siteleri PHP Neon’a eşitleyebilirsiniz. Eşitleme
-              tamamlandıktan sonra kalan SORUN çoğu zaman probe/routing’dir (editör SPA, healthz) — DB
-              aktarımı başarısız demek değildir. API healthz soğuk Container’da FAIL olabilir; kenar live OK
-              ise panel oturumu çalışır.
+              tamamlandıktan sonra kalan SORUN çoğu zaman probe/routing’dir (editör SPA) — DB
+              aktarımı başarısız demek değildir. API satırı kenar /api/healthz/live sonucudur; tarama
+              Container’ı uyandırmaz. Panel oturumu kenar live OK ise çalışır.
             </p>
             <Button type="button" onClick={() => void syncAll()} disabled={busy || running}>
               <Database className="mr-2 h-4 w-4" />
@@ -282,8 +284,10 @@ export default function HaberSiteleriBekci() {
                   </p>
                   <p>
                     API live: {report.api?.live?.ok ? "OK" : "FAIL"} ({report.api?.live?.ms ?? "?"}ms) · healthz:{" "}
-                    {report.api?.healthz?.ok ? "OK" : "FAIL"} ({report.api?.healthz?.ms ?? "?"}ms)
-                    {report.api?.live?.ok && !report.api?.healthz?.ok ? (
+                    {report.api?.healthz?.edge
+                      ? "kenar (Container uyandırılmaz)"
+                      : `${report.api?.healthz?.ok ? "OK" : "FAIL"} (${report.api?.healthz?.ms ?? "?"}ms)`}
+                    {!report.api?.healthz?.edge && report.api?.live?.ok && !report.api?.healthz?.ok ? (
                       <span className="text-gray-500"> — Container soğuk olabilir (kritik değil; eşitleme ile ilgili değil)</span>
                     ) : null}
                   </p>

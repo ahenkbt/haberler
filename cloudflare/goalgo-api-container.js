@@ -41,7 +41,8 @@ function withInstanceRole(vars, ctx) {
 export class GoalgoApiContainer extends Container {
   defaultPort = CONTAINER_PORT;
   requiredPorts = [CONTAINER_PORT];
-  sleepAfter = "2h";
+  // 10m: 2h kept every cron/healthz wake billable for two hours (GiB-s).
+  sleepAfter = "10m";
   enableInternet = true;
 
   constructor(ctx, env) {

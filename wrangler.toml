@@ -11,7 +11,8 @@ account_id = "16f5b996194174624e7969a3658bd2bb"
 enabled = true
 
 [triggers]
-crons = ["*/4 * * * *"]
+# Saat başı. */4, healthz + site-watchdog ile Container'ı sleepAfter'dan sık uyandırıyordu.
+crons = ["0 * * * *"]
 
 [assets]
 directory = "artifacts/ahenkpress/dist/public"
@@ -45,11 +46,21 @@ S3_PUBLIC_BASE_URL = "https://pub-c13f0f77c2d140cb89cd2e9b5af2c87e.r2.dev"
 [[containers]]
 class_name = "GoalgoApiContainer"
 image = "./goalgo/Dockerfile.cloudflare"
-# 6, not 3: the Worker routes to 3 named DOs (CONTAINER_ROLL-0..2). When the roll
-# name changes, the old names keep their containers until sleepAfter and hold
-# slots; with 3 slots the new names got no instance and /api hung (2026-10-09).
-max_instances = 6
-instance_type = "standard-3"
+# 3 named DOs (CONTAINER_ROLL-0..2) and 3 slots. Do not change CONTAINER_ROLL:
+# a new name keeps the previous containers until sleepAfter and they hold slots,
+# so the new names get no instance and /api hangs (2026-10-09, when this was 3
+# and the roll changed; max was then raised to 6 as headroom). That headroom
+# doubled the memory cap. Roll stays "panel-site-update-wake-20261007".
+# Stale names are not routed. A running stale container is released by the
+# existing destroy() path (probeAndRecycle when unhealthy, or
+# stopContainerIfEnvFingerprintChanged), then sleepAfter. Do not bump the roll
+# to free a slot.
+max_instances = 3
+# standard-1 = 4 GiB / 0.5 vCPU / 8 GB disk (standard-3 was 8 GiB / 2 vCPU).
+# Dockerfile.cloudflare has no NODE_OPTIONS heap above this; container-env.js
+# does not set a memory limit. Chromium is installed for occasional scrape, not
+# the steady-state process. Image context is well under 8 GB disk.
+instance_type = "standard-1"
 
 # Run the API next to its Neon database (eu-central-1, Frankfurt) and the users (TR).
 # Without this, containers start "nearest to the incoming request": CI and US crawlers
