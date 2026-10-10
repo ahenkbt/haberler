@@ -239,7 +239,44 @@ export function ensureHmNewsSiteYonelimColumn(): Promise<void> {
 }
 
 /** PATCH/POST öncesi: SEO + domain2 + domain3 + yonelim sütunlarını garantile. */
+let hmNewsSiteSchemaCompletePromise: Promise<boolean> | null = null;
+
+/**
+ * Salt-okunur katalog kontrolü: kaydetmek için gereken sütunlar ve domain2/domain3 tekil indeksleri
+ * zaten varsa DDL çalıştırılmaz. ALTER TABLE ... IF NOT EXISTS / SET DEFAULT sütun varken bile
+ * ACCESS EXCLUSIVE kilit ister; PHP tema okuyucuları ve RSS işleri tabloyu tuttuğunda yeni site /
+ * site kaydı bu kilitte bekleyip zaman aşımına düşüyordu (her Container uyanışında bir kez).
+ */
+async function hmNewsSiteSchemaComplete(): Promise<boolean> {
+  if (hmNewsSiteSchemaCompletePromise) return hmNewsSiteSchemaCompletePromise;
+  const probe = (async () => {
+    const cols = await getNewsDbForRead().execute<{ n: number | string }>(sql`
+      SELECT count(*)::int AS n
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = 'hm_news_sites'
+        AND column_name IN ('description', 'verification_json', 'domain2', 'domain3', 'yonelim', 'yonelim_aktif')
+        AND (column_name <> 'yonelim' OR column_default IS NOT NULL);
+    `);
+    if (Number(cols.rows[0]?.n ?? 0) < 6) return false;
+    const idx = await getNewsDbForRead().execute<{ n: number | string }>(sql`
+      SELECT count(*)::int AS n
+      FROM pg_indexes
+      WHERE schemaname = current_schema()
+        AND tablename = 'hm_news_sites'
+        AND indexname IN ('hm_news_sites_domain2_key', 'hm_news_sites_domain3_key');
+    `);
+    return Number(idx.rows[0]?.n ?? 0) >= 2;
+  })().catch((e) => {
+    hmNewsSiteSchemaCompletePromise = null;
+    throw e;
+  });
+  hmNewsSiteSchemaCompletePromise = probe;
+  return probe;
+}
+
 export async function ensureHmNewsSiteWritableColumns(): Promise<void> {
+  if (await hmNewsSiteSchemaComplete().catch(() => false)) return;
   await ensureHmNewsSiteSeoColumns();
   await ensureHmNewsSiteDomain2Column();
   await ensureHmNewsSiteDomain3Column();
@@ -253,6 +290,7 @@ export function resetHmNewsSiteColumnEnsureCache(): void {
   hmNewsSiteDomain2ColumnPromise = null;
   hmNewsSiteDomain3ColumnPromise = null;
   hmNewsSiteYonelimColumnPromise = null;
+  hmNewsSiteSchemaCompletePromise = null;
 }
 
 async function hmNewsSiteSeoColumnsExist(): Promise<boolean> {
