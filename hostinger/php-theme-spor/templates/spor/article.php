@@ -27,7 +27,7 @@ $related = array_values(array_filter($latest, static fn (array $s): bool => ($s[
 $live = SporLive::bundle();
 ?>
 <div class="spor-wrap spor-art-wrap">
-<article class="spor-art" style="--c:<?= Html::e($col) ?>;--ink:<?= Html::e($ink) ?>">
+<article class="spor-art" style="--c:<?= Html::e($col) ?>;--on:<?= Html::e($ink) ?>">
   <header class="spor-art-h">
     <?php if ($sec !== null): ?><a class="spor-tag spor-tag-lg" href="/kategori/<?= Html::e($cat) ?>"><?= Html::e($sec['name']) ?></a><?php elseif ($cat !== ''): ?><a class="spor-tag spor-tag-lg" href="/kategori/<?= Html::e($cat) ?>"><?= Html::e($cat) ?></a><?php endif; ?>
     <h1><?= Html::e($t) ?></h1>
