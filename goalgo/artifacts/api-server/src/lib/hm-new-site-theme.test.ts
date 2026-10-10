@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   companionHexForPrimary,
   findNewSiteColorPalette,
+  HM_NEW_SITE_COLOR_PALETTES,
   normalizeNewSiteHex,
   normalizeNewSiteVitrinTheme,
   resolveConceptPortalColors,
@@ -85,5 +89,18 @@ describe("konsept Portal rengi", () => {
     expect(conceptSiteLayoutDefaults(false, "spor", { palette: "yesil", primary: "#00ff00" })).toEqual({
       hmConceptSite: false,
     });
+  });
+
+  it("panel paleti sunucu paletiyle aynı", () => {
+    const panel = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "../../../ahenkpress/src/lib/hmNewSiteTheme.ts"),
+      "utf8",
+    );
+    expect(panel).toContain('HM_NEW_SITE_PORTAL_THEME = "portal"');
+    for (const palette of HM_NEW_SITE_COLOR_PALETTES) {
+      expect(panel).toContain(`id: "${palette.id}"`);
+      expect(panel).toContain(`primary: "${palette.primary}"`);
+      expect(panel).toContain(`secondary: "${palette.secondary}"`);
+    }
   });
 });
