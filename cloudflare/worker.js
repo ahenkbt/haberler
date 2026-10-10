@@ -3956,6 +3956,9 @@ export default {
     }
   },
   async scheduled(_event, env, ctx) {
+    // Saatlik (wrangler crons). healthz + -0 ping + kenar cache ısıtması Container'a
+    // gider; sleepAfter=10m olduğu için tur bitince instance uyur. Site-watchdog
+    // kendi içinde /api/healthz çağırmaz.
     const waitUntil = typeof ctx?.waitUntil === "function" ? (p) => ctx.waitUntil(p) : async (p) => p;
     waitUntil(
       (async () => {

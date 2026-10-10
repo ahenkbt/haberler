@@ -1,6 +1,7 @@
 /**
  * Haber siteleri sağlık bekçisi (PBX AI Bekçi benzeri, salt okunur + hafif onarım).
- * Cron: Worker scheduled → probe siteler + API.
+ * Cron: Worker scheduled (saatlik) → siteleri yokla. API için yalnız kenar live;
+ * /api/healthz Container'ı uyandırmaz.
  * GET  /api/hm/admin/site-watchdog
  * POST /api/hm/admin/site-watchdog/run
  * POST /api/hm/admin/site-watchdog/sync-site  { siteId }
@@ -12,7 +13,7 @@
  * iken [kritik] üretmesin diye soft sınıflanır (gerçek 5xx hard kalır).
  */
 import { neonSqlClient, neonNewsSqlClient, shouldEdgeDualWriteNewsDb } from "./neon-edge-db.js";
-import { fetchApi, resolveApiOrigin } from "./api-upstream.js";
+import { resolveApiOrigin } from "./api-upstream.js";
 import { syncSiteToPhpNeon } from "./hm-php-neon-sync-edge.js";
 import {
   loadPanelSession,
@@ -119,41 +120,10 @@ export async function mapPool(items, concurrency, fn) {
   return out;
 }
 
-/** Container healthz — public fetch değil (self-fetch origin/cold FAIL). */
-async function probeContainerHealthz(env, origin, ms = 20000) {
-  const url = `${origin}/api/healthz`;
-  const started = Date.now();
-  try {
-    const res = await Promise.race([
-      fetchApi(env, url, {
-        method: "GET",
-        headers: { "user-agent": "yekpare-hm-watchdog/1.0" },
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
-    ]);
-    const status = res?.status ?? 0;
-    return {
-      url,
-      status,
-      ms: Date.now() - started,
-      ok: status >= 200 && status < 400,
-      header: String(res?.headers?.get("x-yekpare-frontend") || "").slice(0, 80),
-    };
-  } catch (err) {
-    return {
-      url,
-      status: 0,
-      ms: Date.now() - started,
-      ok: false,
-      error: String(err?.message || err).slice(0, 120),
-    };
-  }
-}
-
 /**
  * Kenar /api/healthz/live — Worker içinde doğrudan handler.
  * Public fetch aynı zone'da origin/Container'a düşer ve soğukken FAIL eder;
- * panel ise kenardan 200 alır.
+ * panel ise kenardan 200 alır. ctx verilmez: kenar handler Container uyandırmaz.
  */
 async function probeEdgeLive(env, origin) {
   const url = `${origin}/api/healthz/live`;
@@ -312,29 +282,25 @@ export async function runHmSiteWatchdog(env, opts = {}) {
   const sites = [];
   const origin = resolveApiOrigin(env) || "https://ahenk.net.tr";
 
-  // Önce kenar live (hızlı); ardından Container’ı ısıtıp uzun timeout ile healthz.
+  // Yalnızca kenar live. /api/healthz Container'ı uyandırır ve sleepAfter boyunca
+  // GiB-sn yazar; site taraması (anasayfa, editör, köşe, dual-write) buna bağlı değil.
   const apiLive = await probeEdgeLive(env, origin);
-  // probeEdgeLive ctx=null → waitUntil yok; açıkça ısıt, sonra ölç.
-  void fetchApi(env, `${origin}/api/healthz`)
-    .then((r) => r?.text?.().catch(() => null))
-    .catch(() => null);
-  const apiFull = await probeContainerHealthz(env, origin, 20000);
+  const apiFull = {
+    url: `${origin}/api/healthz`,
+    status: apiLive.status,
+    ms: apiLive.ms,
+    ok: apiLive.ok,
+    header: apiLive.header,
+    edge: true,
+    container: false,
+    note: "kenar /api/healthz/live; Container çağrılmaz",
+  };
 
   if (!apiLive.ok) {
     issues.push({
       kind: "api",
       severity: "high",
       message: `${origin.replace(/^https?:\/\//, "")} /api/healthz/live kenar handler yanıt vermiyor`,
-    });
-  }
-  // Full healthz Container'a gider — soğuk başlangıç uyarısı (live OK ise panel çalışır).
-  if (!apiFull.ok) {
-    issues.push({
-      kind: "api",
-      severity: apiLive.ok ? "medium" : "high",
-      message: apiLive.ok
-        ? `${origin.replace(/^https?:\/\//, "")} /api/healthz soğuk veya meşgul (kenar live OK — panel oturumu kenardan okunur; eşitleme ile ilgili değil)`
-        : `${origin.replace(/^https?:\/\//, "")} /api/healthz zaman aşımı veya hata (Sunucu hatası buradan gelir)`,
     });
   }
 
@@ -457,7 +423,7 @@ export async function runHmSiteWatchdog(env, opts = {}) {
     // Yalnızca high severity → sağlıksız (soğuk Container / soft probe medium|low kalır).
     healthy: issues.filter((i) => i.severity === "high").length === 0,
     note:
-      "PHP Neon eşitleme içerik DB’sini doldurur; HTTP probe (editör 404 / healthz) ayrı konudur. Soft uyarılar eşitleme başarısızlığı değildir.",
+      "PHP Neon eşitleme içerik DB’sini doldurur; HTTP probe (editör 404) ayrı konudur. Soft uyarılar eşitleme başarısızlığı değildir. API healthz kenardan okunur; Container uyandırılmaz.",
   };
 
   try {

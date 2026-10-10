@@ -8,7 +8,7 @@ test("healthz/live path tanıma", () => {
   assert.equal(isEdgeHealthzLivePath("/api/healthz"), false);
 });
 
-test("kenar healthz Container beklemeden 200", async () => {
+test("kenar healthz Container beklemeden 200 ve Container uyandırmaz", async () => {
   const woke = [];
   const env = {
     GOALGO_API: {
@@ -35,6 +35,8 @@ test("kenar healthz Container beklemeden 200", async () => {
   const body = await res.json();
   assert.equal(body.status, "ok");
   assert.equal(body.edge, true);
+  assert.equal(body.wokeContainer, false);
   await Promise.all(pending);
-  assert.ok(woke.length >= 1);
+  assert.equal(pending.length, 0);
+  assert.equal(woke.length, 0);
 });

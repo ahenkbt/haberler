@@ -21,7 +21,9 @@ import {
 export class YektubeApiContainer extends Container {
   defaultPort = CONTAINER_PORT;
   requiredPorts = [CONTAINER_PORT];
-  sleepAfter = "2h";
+  // yektube Worker no longer schedules a container (API_ORIGIN). If this class
+  // is bound again, do not sit at 2h.
+  sleepAfter = "5m";
   enableInternet = true;
 
   constructor(ctx, env) {

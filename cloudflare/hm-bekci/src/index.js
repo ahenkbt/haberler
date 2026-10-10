@@ -201,8 +201,13 @@ async function syncCheck(sql, site) {
 }
 
 async function checkPanel() {
-  const [live, full] = await Promise.all([timed("https://ahenk.net.tr/api/healthz/live", { ms: 10000 }), timed("https://ahenk.net.tr/api/healthz", { ms: 15000 })]);
-  return { live: P(live), healthz: P(full) };
+  // /api/healthz Container'ı açar ve sleepAfter boyunca GiB-sn yazar. Kenar live
+  // Worker içindedir; panel ayakta mı sorusunu Container'sız cevaplar.
+  const live = P(await timed("https://ahenk.net.tr/api/healthz/live", { ms: 10000 }));
+  return {
+    live,
+    healthz: { ...live, edge: true, note: "container /api/healthz yoklanmıyor (maliyet); kenar live" },
+  };
 }
 
 // ---------------------------------------------------------------- safe fixes

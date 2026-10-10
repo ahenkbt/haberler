@@ -600,25 +600,10 @@ jobs:
           put SESSION_SECRET "$SESSION_SECRET"
           echo "uploaded=true" >> "$GITHUB_OUTPUT"
 
-      # API_ORIGIN stays https://ahenk.net.tr (no haberler route conflict).
-      # secret put after deploy leaves a warm yektube Container without YEKTUBE_DATABASE_URL.
-      - name: Redeploy yektube Worker so Container picks up YEKTUBE_DATABASE_URL
+      # yektube Worker has no [[containers]]. /api uses API_ORIGIN=https://ahenk.net.tr.
+      # Do not rewrite CONTAINER_ROLL and do not redeploy to "pick up" a container:
+      # a new roll name kept the previous standard-3 instance until sleepAfter.
+      - name: Skip yektube container roll (API is API_ORIGIN)
         if: steps.gate.outputs.skip != 'true' && steps.yt_secrets.outputs.uploaded == 'true'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: "16f5b996194174624e7969a3658bd2bb"
         run: |
-          set -euo pipefail
-          roll="yt-wkr-$(date -u +%Y%m%d%H%M%S)"
-          python3 -c "
-          import pathlib, re, sys
-          p = pathlib.Path('wrangler.yektube.toml')
-          text = p.read_text()
-          roll = sys.argv[1]
-          new, n = re.subn(r'(CONTAINER_ROLL\\s*=\\s*)\"[^\"]+\"', lambda m: m.group(1) + '\"' + roll + '\"', text, count=1)
-          if n != 1:
-              raise SystemExit(f'CONTAINER_ROLL replace failed in {p} (n={n})')
-          p.write_text(new)
-          print(f'CONTAINER_ROLL={roll}')
-          " "$roll"
-          pnpm exec wrangler deploy -c wrangler.yektube.toml
+          echo "yektube container removed; secrets stay on the Worker. CONTAINER_ROLL is unchanged."
