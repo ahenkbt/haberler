@@ -1,0 +1,10 @@
+# ekonomi 2026-10-10: ekonomi.gundemi.org (Ekonomi Gündemi). VPS saati UTC.
+#  - eco_ensure.py: her 5 dk, site kaydı/kategori/AI editör satırı/importer hedefi eksiklerini idempotent tamamlar (panelden açılan kayıt da yakalanır).
+#  - ns28 importer: 3 saatte bir :17 (RSS -> portal_rss_items, rssrewrite sonra yeniden yazar).
+# Kaldırmak için bu dosyayı sil.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+*/5 * * * * root flock -n /run/php-theme-eco-ensure.lock timeout 120 python3 /docker/php-theme/newsites28/eco_ensure.py >> /var/log/php-theme/eco-ensure.log 2>&1
+17 */3 * * * root flock -n /run/php-theme-importer-ns28.lock timeout 1700 nice -n 10 /docker/php-theme/newsites28/run-ns28.sh daily >> /var/log/php-theme/importer-ns28.log 2>&1
+# (C) site açılışında AI Haber Editörü otomatik aktif + konsept senkronu (ai_autoenable.py)
+*/5 * * * * root flock -n /run/php-theme-ai-autoenable.lock timeout 120 python3 /docker/php-theme/newsites28/ai_autoenable.py >> /var/log/php-theme/ai-autoenable.log 2>&1
