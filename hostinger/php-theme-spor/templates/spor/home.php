@@ -143,7 +143,7 @@ $n = 0;
 <?php endif; ?>
 
 <?php if ($futbol !== []): $sec = Spor::section('futbol'); ?>
-<section class="spor-wrap spor-lane" style="--c:<?= Html::e($sec['color']) ?>;--ink:<?= Html::e($sec['ink']) ?>" aria-labelledby="spor-futbol">
+<section class="spor-wrap spor-lane" style="--c:<?= Html::e($sec['color']) ?>;--on:<?= Html::e($sec['ink']) ?>" aria-labelledby="spor-futbol">
   <header class="spor-sec-h">
     <p class="spor-kicker">01</p>
     <h2 id="spor-futbol"><a href="/kategori/futbol"><?= Html::e($sec['name']) ?></a></h2>
@@ -157,7 +157,7 @@ $n = 0;
 <?php endif; ?>
 
 <?php if ($basket !== []): $sec = Spor::section('basketbol'); ?>
-<section class="spor-band" style="--c:<?= Html::e($sec['color']) ?>;--ink:<?= Html::e($sec['ink']) ?>" aria-labelledby="spor-basket">
+<section class="spor-band" style="--c:<?= Html::e($sec['color']) ?>;--on:<?= Html::e($sec['ink']) ?>" aria-labelledby="spor-basket">
   <div class="spor-wrap">
     <header class="spor-sec-h spor-sec-h-light">
       <p class="spor-kicker">02</p>
@@ -170,7 +170,7 @@ $n = 0;
 <?php endif; ?>
 
 <?php if ($voley !== []): $sec = Spor::section('voleybol'); ?>
-<section class="spor-wrap spor-mosaic" style="--c:<?= Html::e($sec['color']) ?>;--ink:<?= Html::e($sec['ink']) ?>" aria-labelledby="spor-voley">
+<section class="spor-wrap spor-mosaic" style="--c:<?= Html::e($sec['color']) ?>;--on:<?= Html::e($sec['ink']) ?>" aria-labelledby="spor-voley">
   <header class="spor-sec-h">
     <p class="spor-kicker">03</p>
     <h2 id="spor-voley"><a href="/kategori/voleybol"><?= Html::e($sec['name']) ?></a></h2>
@@ -188,7 +188,7 @@ $n = 0;
   </header>
   <div class="spor-others-grid">
     <?php foreach ($others as $slug => $items): $sec = Spor::section($slug); ?>
-    <section class="spor-other" style="--c:<?= Html::e($sec['color']) ?>;--ink:<?= Html::e($sec['ink']) ?>">
+    <section class="spor-other" style="--c:<?= Html::e($sec['color']) ?>;--on:<?= Html::e($sec['ink']) ?>">
       <h3><a href="/kategori/<?= Html::e($slug) ?>"><?= Html::e($sec['name']) ?></a></h3>
       <ul>
         <?php foreach ($items as $s): ?><li><a href="/haber/<?= Html::e(rawurlencode((string) $s['slug'])) ?>"><?= Html::e((string) $s['title']) ?></a></li><?php endforeach; ?>
