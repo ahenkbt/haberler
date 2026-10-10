@@ -1470,7 +1470,15 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     domain = normalizeDomain(plan.triad.domain);
     domain2 = normalizeDomain(plan.triad.domain2);
     domain3 = normalizeDomain(plan.triad.domain3);
-    const taken = await platformAliasConflicts([domain, domain2, domain3]);
+    let taken: string[];
+    try {
+      taken = await platformAliasConflicts([domain, domain2, domain3]);
+    } catch (e: unknown) {
+      // Eskiden global handler'a kaçıp çıplak 500 "Sunucu hatası" dönüyordu.
+      const msg = formatHmSitesDbError(e);
+      res.status(isHmSitesDbBusyMessage(msg) ? 503 : 500).json({ error: `Site oluşturulamadı (adres kontrolü): ${msg}` });
+      return;
+    }
     if (taken.length > 0) {
       res.status(409).json({
         error: `Bu adres başka bir sitede kullanılıyor: ${taken.join(", ")}. Farklı bir slug seçin veya o adresi kapatın.`,
@@ -1521,7 +1529,10 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
   const seoVerification = normalizeHmSeoVerification(b.seoVerification);
 
   try {
-    await ensureHmNewsSiteWritableColumns();
+    // Sütunlar hazırsa DDL çalışmaz; DDL kilidi/zaman aşımı kaydı engellemesin (insert eksik sütunda kendisi hata verir).
+    await ensureHmNewsSiteWritableColumns().catch((e: unknown) => {
+      console.warn("[hm-sites] ensure columns skipped:", formatHmSitesDbError(e));
+    });
     // Önce domain'leri diğer sitelerden al (çakışma 409 yerine taşıma).
     // Site id henüz yok — insert sonrası transfer; unique ihlali olmasın diye önce serbest bırak.
     await transferHmDomainsToSite(0, domain, domain2, domain3);
