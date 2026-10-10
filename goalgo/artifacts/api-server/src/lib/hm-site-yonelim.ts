@@ -1,27 +1,29 @@
 /**
  * hm_news_sites.yonelim okuma.
  * Muhalif RSS okuma anında gizlenmez; sağ, sol ve karma aynı haber satırını görür.
- * Sütun yoksa veya okuma düşerse karma sayılır; haber listesi 500 olmaz.
+ * Sütun yoksa veya okuma düşerse yönelim yok sayılır; haber listesi 500 olmaz.
+ * null = yönelim atanmamış (mevcut site): ton ve manşet önceliği uygulanmaz.
  */
 import type { SQL } from "drizzle-orm";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
-import { normalizeSiteYonelim, type SiteYonelim } from "./hm-rss-kaynak-yonelim.js";
+import { effectiveSiteYonelim, type SiteYonelim } from "./hm-rss-kaynak-yonelim.js";
 
-export async function getHmSiteYonelim(siteId: number): Promise<SiteYonelim> {
-  if (!Number.isFinite(siteId) || siteId <= 0) return "karma";
+/** null = yönelim atanmamış (mevcut site). */
+export async function getHmSiteYonelim(siteId: number): Promise<SiteYonelim | null> {
+  if (!Number.isFinite(siteId) || siteId <= 0) return null;
   try {
     const row = await getHmNewsSiteByIdCompat(siteId);
-    return normalizeSiteYonelim(row?.yonelim);
+    return effectiveSiteYonelim(row);
   } catch {
-    return "karma";
+    return null;
   }
 }
 
 export async function loadHmSiteYonelimMap(
   siteIds: readonly (number | null | undefined)[],
-): Promise<Map<number, SiteYonelim>> {
+): Promise<Map<number, SiteYonelim | null>> {
   const ids = [...new Set(siteIds.filter((id): id is number => typeof id === "number" && Number.isFinite(id) && id > 0))];
-  const map = new Map<number, SiteYonelim>();
+  const map = new Map<number, SiteYonelim | null>();
   await Promise.all(
     ids.map(async (id) => {
       map.set(id, await getHmSiteYonelim(id));

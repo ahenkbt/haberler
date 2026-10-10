@@ -10,7 +10,7 @@ import {
 import { getHmHiddenCategoryIds, yekparePoolReceiveEnabledFromLayout } from "./hm-public-layout.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { andSiteRssYonelimSql } from "./hm-site-yonelim.js";
-import { normalizeSiteYonelim, prioritizeOppositionForManset } from "./hm-rss-kaynak-yonelim.js";
+import { effectiveSiteYonelim, prioritizeOppositionForManset } from "./hm-rss-kaynak-yonelim.js";
 import { parseHmLayoutJson, isHmCorporateLayout } from "./hm-editor-categories.js";
 import {
   strictCorporateSiteNewsScopeSql,
@@ -346,7 +346,7 @@ export async function buildHmHomeBundle(
   const corporateStrict = isHmCorporateLayout(layout);
   const poolReceiveEnabled = yekparePoolReceiveEnabledFromLayout(layout);
   const siteSlug = String(site?.slug ?? "").trim().toLowerCase();
-  const siteYonelim = normalizeSiteYonelim(site?.yonelim);
+  const siteYonelim = effectiveSiteYonelim(site);
   const preferOppositionManset = siteYonelim === "sol";
   const localPref = corporateStrict ? null : resolveHomepageLocalPref(siteSlug, layout, siteId);
   const settle = <T,>(label: string, p: Promise<T[]>) => {

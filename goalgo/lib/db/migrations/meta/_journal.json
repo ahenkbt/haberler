@@ -974,6 +974,13 @@
       "when": 1791400000000,
       "tag": "0137_hm_site_yonelim",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1791400001000,
+      "tag": "0138_hm_site_yonelim_aktif",
+      "breakpoints": true
     }
   ]
 }

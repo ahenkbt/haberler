@@ -22,8 +22,6 @@ export const MUHALIF_RSS_HOSTS = [
   "bianet.org",
   "artigercek.com",
   "artigercek.com.tr",
-  "karar.com",
-  "karar.com.tr",
   "sol.org.tr",
   "kronos36.news",
   "kronos36.com",
@@ -82,6 +80,16 @@ export function isMuhalifRssUrl(raw: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Ton ve sol manşet önceliği yalnız yönelimi açıkça atanmış sitelerde (yonelim_aktif=true).
+ * Mevcut siteler (yonelim_aktif=false) ek kural almaz. null = atanmamış.
+ * Muhalif kaynak gizlemesi yok; null bir süzgeç değildir.
+ */
+export function effectiveSiteYonelim(site: { yonelim?: unknown; yonelimAktif?: unknown } | null | undefined): SiteYonelim | null {
+  if (!site || site.yonelimAktif !== true) return null;
+  return normalizeSiteYonelim(site.yonelim);
 }
 
 /** Postgres `~` ile aynı kalıp. İşaretsiz / merkez anahtarları eşleşmez. */

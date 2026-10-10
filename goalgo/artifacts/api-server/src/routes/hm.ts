@@ -160,7 +160,7 @@ import {
   listHmNewsSitesCompat,
   resetHmNewsSiteColumnEnsureCache,
 } from "../lib/hm-site-compat";
-import { normalizeSiteYonelim, parseSiteYonelim } from "../lib/hm-rss-kaynak-yonelim.js";
+import { effectiveSiteYonelim, normalizeSiteYonelim, parseSiteYonelim } from "../lib/hm-rss-kaynak-yonelim.js";
 import {
   repairStaleSuBrandForSiteId,
   repairStaleSuBrandOnHmSites,
@@ -1080,7 +1080,7 @@ function serializeHmMetaRow(row: typeof hmNewsSitesTable.$inferSelect, opts?: { 
     domain2: row.domain2 ?? null,
     domain3: row.domain3 ?? null,
     displayName: row.displayName,
-    yonelim: normalizeSiteYonelim(row.yonelim),
+    yonelim: effectiveSiteYonelim(row),
     description: row.description,
     contact,
     layout,
@@ -1378,6 +1378,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
       items: sites.map((s) => ({
         ...s,
         yonelim: normalizeSiteYonelim(s.yonelim),
+        yonelimAktif: s.yonelimAktif === true,
         siteKind: resolveHmSiteKind(s),
         ownLlmProviders: ownLlm.get(s.id) ?? [],
         hasOwnLlmKeys: (ownLlm.get(s.id) ?? []).length > 0,
@@ -1433,6 +1434,8 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     yonelim?: unknown;
   };
   const siteKind: HmSiteKind = normalizeHmSiteKind(b.siteKind) ?? "news";
+  // Yönelim yalnız açıkça seçilmişse atanır (yonelim_aktif=true); boş = atanmamış, süzgeç yok.
+  const yonelimGiven = b.yonelim != null && String(b.yonelim).trim() !== "";
   const yonelim = parseSiteYonelim(b.yonelim);
   if (yonelim == null) {
     res.status(400).json({ error: "Yönelim sağ, sol veya karma olmalı." });
@@ -1534,6 +1537,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         verificationJson: seoVerification ? JSON.stringify(seoVerification) : null,
         active: true,
         yonelim: siteKind === "news" ? yonelim : "karma",
+        yonelimAktif: siteKind === "news" && yonelimGiven,
       });
 
     if (!site) {
@@ -1791,6 +1795,8 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       return;
     }
     patch.yonelim = yonelim;
+    // Açık seçim = aktif; boş/null = atanmamış (süzgeç yok).
+    patch.yonelimAktif = b.yonelim != null && String(b.yonelim).trim() !== "";
   }
 
   const editorId = Number(b.editorId);

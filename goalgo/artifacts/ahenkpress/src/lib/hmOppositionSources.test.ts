@@ -23,9 +23,13 @@ describe("muhalif manşet önceliği", () => {
   it("muhalif hostu tanır, normal akış sırasını yalnız istenince değiştirir", () => {
     expect(isOppositionNewsItem(birgun)).toBe(true);
     expect(isOppositionNewsItem(ntv)).toBe(false);
+    expect(isOppositionNewsItem({ rssSourceUrl: "https://www.karar.com/haber/1" })).toBe(false);
+    expect(isOppositionNewsItem({ rssSourceUrl: "https://www.karar.com.tr/rss" })).toBe(false);
     expect(sitePrefersOppositionManset("sol")).toBe(true);
     expect(sitePrefersOppositionManset("sag")).toBe(false);
     expect(sitePrefersOppositionManset("karma")).toBe(false);
+    expect(sitePrefersOppositionManset(null)).toBe(false);
+    expect(sitePrefersOppositionManset(undefined)).toBe(false);
     const items = [ntv, birgun];
     expect(prioritizeOppositionHeadlineItems(items).map((item) => item.title)).toEqual(["birgun", "ntv"]);
   });

@@ -6,6 +6,7 @@ import {
   isMuhalifRssUrl,
   isMuhalifRssUrlByPattern,
   isOppositionRssSource,
+  effectiveSiteYonelim,
   normalizeSiteYonelim,
   parseSiteYonelim,
   prioritizeOppositionForManset,
@@ -19,7 +20,6 @@ const MUHALIF = [
   "https://medyascope.tv/feed/",
   "https://bianet.org/rss",
   "https://www.artigercek.com/rss",
-  "https://www.karar.com/rss",
   "https://haber.sol.org.tr/rss",
   "https://kronos36.news/feed/",
   "https://www.cumhuriyet.com.tr/rss/dunya",
@@ -110,5 +110,42 @@ describe("muhalif RSS dağıtımı", () => {
     const fixBirgun = FIXHABER_CAMPAIGN_RSS_FEEDS.filter((feed) => feed.id.startsWith("birgun-"));
     expect(fixBirgun.length).toBeGreaterThan(0);
     expect(fixBirgun.every((feed) => feed.kaynakYonelim === "sol" && feed.url.includes("birgun.net"))).toBe(true);
+  });
+});
+
+describe("yönelim yalnız atanmış sitelerde", () => {
+  it("Karar muhalif listesinde değil", () => {
+    expect(isMuhalifRssUrl("https://www.karar.com/rss")).toBe(false);
+    expect(isMuhalifRssUrl("https://www.karar.com.tr/rss")).toBe(false);
+    expect(isMuhalifRssUrlByPattern("https://www.karar.com/haber/1")).toBe(false);
+    expect(isOppositionRssSource({ url: "https://www.karar.com/haber/1" })).toBe(false);
+  });
+
+  it("yonelim_aktif=false site süzgeçsiz (mevcut davranış)", () => {
+    expect(effectiveSiteYonelim({ yonelim: "karma", yonelimAktif: false })).toBeNull();
+    expect(effectiveSiteYonelim({ yonelim: "sag" })).toBeNull();
+    expect(effectiveSiteYonelim(null)).toBeNull();
+    const items = [
+      { rssSourceUrl: "https://www.birgun.net/haber/1" },
+      { rssSourceUrl: "https://www.cumhuriyet.com.tr/haber/2" },
+    ];
+    expect(filterItemsForSiteYonelim(items, null)).toBe(items);
+    expect(rssSourceAllowedForSiteYonelim({ url: items[0].rssSourceUrl }, null)).toBe(true);
+  });
+
+  it("yonelim_aktif=true süzmez; ton ve manşet için yönelim döner", () => {
+    expect(effectiveSiteYonelim({ yonelim: "karma", yonelimAktif: true })).toBe("karma");
+    expect(effectiveSiteYonelim({ yonelim: "sol", yonelimAktif: true })).toBe("sol");
+    const items = [
+      { rssSourceUrl: "https://www.ntv.com.tr/haber/1", title: "ntv" },
+      { rssSourceUrl: "https://www.birgun.net/haber/1", title: "birgun" },
+    ];
+    const karma = effectiveSiteYonelim({ yonelim: "karma", yonelimAktif: true });
+    expect(filterItemsForSiteYonelim(items, karma)).toBe(items);
+    expect(prioritizeOppositionForManset(items, karma)).toBe(items);
+    const sol = effectiveSiteYonelim({ yonelim: "sol", yonelimAktif: true });
+    expect(filterItemsForSiteYonelim(items, sol)).toBe(items);
+    expect(prioritizeOppositionForManset(items, sol).map((item) => item.title)).toEqual(["birgun", "ntv"]);
+    expect(prioritizeOppositionForManset(items, effectiveSiteYonelim({ yonelim: "sol", yonelimAktif: false }))).toBe(items);
   });
 });

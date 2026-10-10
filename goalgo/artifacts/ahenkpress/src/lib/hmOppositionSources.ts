@@ -11,8 +11,6 @@ export const MUHALIF_RSS_HOSTS = [
   "bianet.org",
   "artigercek.com",
   "artigercek.com.tr",
-  "karar.com",
-  "karar.com.tr",
   "sol.org.tr",
   "kronos36.news",
   "kronos36.com",

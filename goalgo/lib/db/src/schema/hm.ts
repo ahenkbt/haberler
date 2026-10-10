@@ -24,10 +24,16 @@ export const hmNewsSitesTable = pgTable("hm_news_sites", {
   layoutJson: text("layout_json"),
   verificationJson: text("verification_json"),
   /**
-   * Yayın yönelimi (yalnız yönetici). sag = ılımlı, muhalif kaynak yok;
-   * sol = muhalif kaynaklardan beslenir; karma = orta. Ziyaretçi vitrininde dönülmez.
+   * Yayın yönelimi (yalnız yönetici). sag = ılımlı editör tonu;
+   * sol = kaynak tonu ve manşette muhalif öncelik; karma = dengeli ton.
+   * Muhalif kaynaklar her yönde görünür. Ziyaretçi metasında yalnız yonelim_aktif iken döner.
    */
   yonelim: text("yonelim").notNull().default("karma"),
+  /**
+   * true: yönelim açıkça atanmış; ton ve sol manşet önceliği yalnız bu sitelerde.
+   * false: mevcut siteler, ek kural yok.
+   */
+  yonelimAktif: boolean("yonelim_aktif").notNull().default(false),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })

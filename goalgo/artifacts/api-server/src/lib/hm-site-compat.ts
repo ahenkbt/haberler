@@ -6,7 +6,7 @@ export type HmNewsSiteCompatRow = typeof hmNewsSitesTable.$inferSelect;
 
 type LegacyHmNewsSiteRow = Omit<
   HmNewsSiteCompatRow,
-  "description" | "verificationJson" | "domain2" | "domain3" | "yonelim"
+  "description" | "verificationJson" | "domain2" | "domain3" | "yonelim" | "yonelimAktif"
 >;
 
 const hmNewsSiteLegacyColumnsNoDomain2 = {
@@ -131,6 +131,7 @@ function withSeoDefaults(row: LegacyHmNewsSiteRow): HmNewsSiteCompatRow {
     description: null,
     verificationJson: null,
     yonelim: "karma",
+    yonelimAktif: false,
   };
 }
 
@@ -217,6 +218,9 @@ export function ensureHmNewsSiteYonelimColumn(): Promise<void> {
     `);
     await executeNewsDbWrite(sql`
       ALTER TABLE hm_news_sites ALTER COLUMN yonelim SET DEFAULT 'karma';
+    `);
+    await executeNewsDbWrite(sql`
+      ALTER TABLE hm_news_sites ADD COLUMN IF NOT EXISTS yonelim_aktif boolean NOT NULL DEFAULT false;
     `);
     await executeNewsDbWrite(sql`
       UPDATE hm_news_sites
