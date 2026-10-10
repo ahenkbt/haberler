@@ -296,12 +296,12 @@ export function defaultEditorLoginForSite(triad: Partial<HmDomainTriad>) {
 
 /**
  * "Konsept site" (2026-10-08, /admin/haber-siteleri new-site form). Stored in layout_json:
- *   hmConceptSite: true | false, hmConceptTopic: "spor" | "savunma" | "cevre" | ... (concept sites only).
+ *   hmConceptSite: true | false, hmConceptTopic: "spor" | "savunma" | "ekonomi" | "cevre" | ... (concept sites only).
  * The PHP theme (Widgets::on, concept sites 2026-10-08) never shows burçlar on a concept site and shows the
  * Süper Lig table only when the topic is "spor". General sites (flag off) keep every general-interest widget.
  * Topic "spor" also gets the Spor category tree, the Spor menu and pool 230 limited to the Spor categories.
  */
-export const HM_CONCEPT_TOPICS = ["spor", "savunma", "sehit-gazi", "cevre", "saglik", "teknoloji", "yerel", "bolge", "diger"] as const;
+export const HM_CONCEPT_TOPICS = ["spor", "savunma", "sehit-gazi", "cevre", "saglik", "ekonomi", "teknoloji", "yerel", "bolge", "diger"] as const;
 export type HmConceptTopic = (typeof HM_CONCEPT_TOPICS)[number];
 
 export const HM_SPOR_CATEGORY_SLUGS = [

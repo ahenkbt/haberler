@@ -379,7 +379,7 @@ function buildReport({ startedAt, panel, results, actions, ai, prevAi, state }) 
 // ---------------------------------------------------------------- AI Haber Editörü (page + API)
 async function editorData(sql) {
   const [sites, runs, today, reqs] = await Promise.all([
-    sql.query(`SELECT site_id, site_slug, domain, concept_type, enabled, daily_manset_target FROM hm_ai_editor_sites ORDER BY site_id`),
+    sql.query(`SELECT site_id, site_slug, domain, concept_type, enabled, daily_manset_target, concept_prompt, content_mode FROM hm_ai_editor_sites ORDER BY site_id`).catch(() => sql.query(`SELECT site_id, site_slug, domain, concept_type, enabled, daily_manset_target FROM hm_ai_editor_sites ORDER BY site_id`)),
     sql.query(`SELECT id, started_at, finished_at, status, error, stats FROM hm_ai_editor_runs WHERE coalesce(dry_run,false)=false ORDER BY id DESC LIMIT 12`),
     sql.query(`SELECT site_id, count(*) FILTER (WHERE status='published') AS pub, count(*) AS total, max(created_at) AS last FROM hm_ai_editor_articles WHERE manset_date = (now() AT TIME ZONE 'Europe/Istanbul')::date GROUP BY 1`),
     sql.query(`SELECT id, at, kind, site_slug, reason, status, done_at, result FROM hm_bekci_requests WHERE kind='ai_editor_run' ORDER BY id DESC LIMIT 6`),
@@ -441,6 +441,7 @@ function editorPage() {
 <li>Manşeti en yeni, görselli ve güçlü haberlerle yeniler. Yapay zekâ (önce Evren, sonra NVIDIA, Gemini, OpenAI; ucuz modeller) <b>yalnızca</b> manşet seçimi ve kategori ataması için kullanılır.</li>
 <li><b>Genel haber siteleri:</b> her gün en az 5 manşet haberi yapay zekâ ile <b>özgün olarak yeniden yazılır</b> (gün boyuna yayılır; Evren → NVIDIA → Gemini → OpenAI, sitenin kendi AI anahtarı varsa önce o). Aynı haber iki sitede AI manşeti olmaz. Konsept sitelerde manşet seçimi kaynağındaki metinle yapılır. Haber uydurulmaz; Vatan Haber yasak listesi (Hüseyin Akın, Anadolu Çınarları, AÇI Partisi) uygulanır.</li>
 </ul><p style="margin-top:12px"><button id="run">▶ Şimdi çalıştır</button> <span id="runmsg" class="m"></span></p></div>
+<div class="card"><h2>Site konsepti / içerik talimatı</h2><p class="m">AI bu metni konu kuralına ve manşet seçimine ekler. İçerik modu generate değilse haber yeniden yazılmaz (curate: kaynak haber + link).</p><label class="m" for="conceptSite">Site</label><select id="conceptSite" style="display:block;width:100%;max-width:420px;margin:6px 0"></select><textarea id="conceptPrompt" rows="5" style="width:100%;max-width:720px;padding:8px;border:1px solid #c9d3e3;border-radius:8px;font:14px/1.45 system-ui,sans-serif" placeholder="Örn. Yalnızca ekonomi ve piyasa; magazin seçme."></textarea><p style="margin-top:8px"><button id="conceptSave" type="button">Kaydet</button> <span id="conceptMode" class="m"></span> <span id="conceptMsg" class="m"></span></p></div>
 <div class="card"><h2>Siteler</h2><table id="sites"><tr><td class="m">Yükleniyor…</td></tr></table></div>
 <div class="card"><h2>Son çalışmalar</h2><div id="runs" class="m">Yükleniyor…</div></div>
 </main>
@@ -451,6 +452,14 @@ const e=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;
 async function load(){try{const d=await f("/api/bekci/ai-editor");
  document.getElementById("sites").innerHTML="<tr><th>Site</th><th>Durum</th><th>Bugün manşete giren</th><th>Günlük hedef</th><th></th></tr>"+d.sites.map(s=>{const ro=s.corporate||s.suspended;return "<tr><td><b>"+e(s.domain)+"</b><br><span class=m>#"+s.site_id+" · "+e(s.concept_type)+"</span></td><td>"+(s.corporate?'<span class="b off">kurumsal — kapsam dışı</span>':s.suspended?'<span class="b off">site askıda</span>':s.enabled?'<span class="b on">AÇIK</span>':'<span class="b off">KAPALI</span>')+"</td><td>"+(s.today?(s.today.pub+" haber · son "+tr(s.today.last)):"–")+"</td><td>"+s.daily_manset_target+"</td><td>"+(ro?"":'<button class="sec sw" data-id="'+s.site_id+'" data-on="'+(s.enabled?0:1)+'">'+(s.enabled?"Kapat":"Aç")+"</button>")+"</td></tr>"}).join("");
  document.querySelectorAll(".sw").forEach(b=>b.onclick=async()=>{b.disabled=true;try{await f("/api/bekci/ai-editor/toggle",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({siteId:+b.dataset.id,enabled:b.dataset.on==="1"})});load();}catch(x){alert(x.message);b.disabled=false;}});
+ const sel=document.getElementById("conceptSite"),ta=document.getElementById("conceptPrompt"),modeEl=document.getElementById("conceptMode");
+ const editable=d.sites.filter(s=>!s.corporate&&!s.suspended);
+ const prev=sel.value;
+ sel.innerHTML=editable.map(s=>'<option value="'+s.site_id+'">'+e(s.domain||s.site_slug||("#"+s.site_id))+"</option>").join("")||'<option value="">kayıt yok</option>';
+ if(prev&&editable.some(s=>String(s.site_id)===prev))sel.value=prev;
+ function fillConcept(){const s=editable.find(x=>String(x.site_id)===sel.value);const mode=(s&&s.content_mode)||"curate";modeEl.textContent=s?("İçerik modu: "+mode+(mode==="generate"?" — yeniden yazar":" — kaynak haber + link, yeniden yazmaz")):"";if(ta.dataset.dirty==="1"&&ta.dataset.site===sel.value)return;ta.value=(s&&s.concept_prompt)||"";ta.dataset.site=sel.value;ta.dataset.dirty="0";}
+ sel.onchange=function(){ta.dataset.dirty="0";fillConcept();};ta.oninput=function(){ta.dataset.dirty="1";ta.dataset.site=sel.value;};fillConcept();
+ document.getElementById("conceptSave").onclick=async()=>{const m=document.getElementById("conceptMsg");if(!sel.value){m.textContent="Site yok";return;}m.textContent="Kaydediliyor…";try{await f("/api/bekci/ai-editor/concept",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({siteId:+sel.value,conceptPrompt:ta.value})});m.textContent="Kaydedildi";ta.dataset.dirty="0";load();}catch(x){m.textContent=x.message;}};
  const q=d.queue.filter(x=>x.status==="pending"||x.status==="running");
  document.getElementById("runs").innerHTML=(q.length?"<p><b>Sırada / çalışıyor:</b> "+q.map(x=>"#"+x.id+" "+x.status+" ("+tr(x.at)+")").join(", ")+"</p>":"")+"<table><tr><th>Başladı</th><th>Bitti</th><th>Durum</th><th>Kaynak taraması</th><th>Site başına sonuç</th></tr>"+d.runs.map(r=>"<tr><td>"+tr(r.started_at)+"</td><td>"+tr(r.finished_at)+"</td><td>"+(r.status==="ok"?'<span class="b on">tamam</span>':'<span class="b err">'+e(r.status||"?")+"</span> "+e(r.error||""))+"</td><td>"+(r.fetch?(r.fetch.feeds+" kaynak · "+r.fetch.inserted+" yeni · "+r.fetch.dup+" mükerrer elendi"):"çekim yok (havuzdan)")+"</td><td>"+(r.perSite.filter(p=>p.made||p.todo).map(p=>e(p.site)+": "+p.made+" manşet"+(p.ai_pick?' <span class=m>(AI: '+e(p.ai_pick)+")</span>":"")).join("<br>")||'<span class=m>bu turda yeni manşet gerekmedi</span>')+"</td></tr>").join("")+"</table>";
 }catch(x){document.getElementById("sites").innerHTML='<tr><td class="b err">'+e(x.message)+"</td></tr>";}}
@@ -552,6 +561,20 @@ async function handleFetch(req, env) {
     if (path === "/api/bekci/ai-quota/summary" && req.method === "GET") {
       const d = await quotaData(sql); const ev = d.shared.find((p) => p.provider === "evren" && p.scope === "global");
       return json(200, { ok: true, active: d.active, exhausted: d.exhausted.length, exhaustedList: d.exhausted.map((e) => ({ provider: e.provider, scope: e.scope, until: e.breakerOpenUntil })), evrenCheckedAt: ev?.checked_at ?? null, evrenLeft: ev?.remaining?.daily_tokens_left ?? null, ownKeys: d.own.length, low: d.manset5.filter((s) => s.orig < 5).length });
+    }
+    if (path === "/api/bekci/ai-editor/concept" && req.method === "POST") {
+      const b = await req.json().catch(() => ({}));
+      const id = Number(b.siteId);
+      if (!Number.isFinite(id) || id <= 0) return json(400, { ok: false, error: "siteId gerekli" });
+      const prompt = String(b.conceptPrompt ?? "").replace(/\0/g, "").trim().slice(0, 4000);
+      try {
+        const r = await sql.query(`UPDATE hm_ai_editor_sites SET concept_prompt=$2, updated_at=now() WHERE site_id=$1 RETURNING site_id`, [id, prompt || null]);
+        if (!r.length) return json(404, { ok: false, error: "Bu sitenin AI editör kaydı yok" });
+        try { await logEvent(sql, { domain: String(id), kind: "ai_editor_concept", severity: "info", message: `AI editör konsept talimatı site #${id} güncellendi (panel)` }); } catch { /* günlük yazılamazsa talimat durur */ }
+        return json(200, { ok: true, site_id: id, concept_prompt: prompt || null });
+      } catch (e) {
+        return json(500, { ok: false, error: "Konsept talimatı yazılamadı. 0018 migration gerekli." });
+      }
     }
     if (path === "/api/bekci/ai-editor/toggle" && req.method === "POST") {
       const b = await req.json().catch(() => ({})); const id = Number(b.siteId);

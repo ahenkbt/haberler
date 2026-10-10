@@ -20,6 +20,8 @@ import {
   hmContentPoolItemsTable,
   hmAiJobsTable,
   hmMakalelerTable,
+  newsPool,
+  pool,
   newsTable,
   newsSiteOverridesTable,
   authorsTable,
@@ -262,9 +264,22 @@ import {
   type HmSiteKind,
   conceptSiteLayoutDefaults,
 } from "../lib/hm-site-kind.js";
+import {
+  aiEditorSql,
+  enrollNewNewsSiteAiEditor,
+  loadAiEditorEnrollments,
+  normalizeConceptPrompt,
+  parseAiEditorEnabled,
+  patchAiEditorSite,
+  type AiEditorEnrollment,
+} from "../lib/hm-ai-editor-enroll.js";
 import { sqlNormTextEq } from "../lib/sql-norm-text.js";
 
 const router: IRouter = Router();
+
+function hmAiEditorSql() {
+  return aiEditorSql({ news: newsPool, main: pool });
+}
 
 function resolveHmEditorNewsTags(
   newsCtx: Awaited<ReturnType<typeof loadNewsContext>>,
@@ -1373,6 +1388,15 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
     } catch {
       ownLlm = new Map();
     }
+    const enrollment = await loadAiEditorEnrollments(hmAiEditorSql());
+    const aiById = new Map<number, AiEditorEnrollment>();
+    const aiBySlug = new Map<string, AiEditorEnrollment>();
+    if (enrollment.ok) {
+      for (const row of enrollment.rows) {
+        if (Number.isFinite(row.siteId)) aiById.set(row.siteId, row);
+        if (row.siteSlug) aiBySlug.set(row.siteSlug, row);
+      }
+    }
     res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.json({
       items: sites.map((s) => ({
@@ -1382,6 +1406,21 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
         siteKind: resolveHmSiteKind(s),
         ownLlmProviders: ownLlm.get(s.id) ?? [],
         hasOwnLlmKeys: (ownLlm.get(s.id) ?? []).length > 0,
+        ...(enrollment.ok
+          ? {
+              aiEditor: (() => {
+                const row = aiById.get(s.id) ?? aiBySlug.get(s.slug) ?? null;
+                return row
+                  ? {
+                      enabled: row.enabled,
+                      conceptPrompt: row.conceptPrompt,
+                      contentMode: row.contentMode,
+                      autoCreated: row.autoCreated,
+                    }
+                  : null;
+              })(),
+            }
+          : {}),
         editors: (bySite.get(s.id) ?? []).map((e) => ({
           id: e.id,
           email: e.email,
@@ -1438,6 +1477,10 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     conceptPrimary?: string;
     /** sag | sol | karma. Boş = karma. Yalnız yönetici. */
     yonelim?: unknown;
+    /** Haber sitesi: AI editör açık mı. Yoksa true. */
+    aiEditorEnabled?: unknown;
+    /** Haber sitesi: manşet seçiminde kullanılan konsept talimatı. Haberi yeniden yazmaz. */
+    aiConceptPrompt?: unknown;
   };
   const siteKind: HmSiteKind = normalizeHmSiteKind(b.siteKind) ?? "news";
   // Yönelim yalnız açıkça seçilmişse atanır (yonelim_aktif=true); boş = atanmamış, süzgeç yok.
@@ -1579,6 +1622,29 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     const gundemiProvision = await maybeProvisionGundemiOrg(domainTriad);
     const customApexProvision = await maybeProvisionCustomPhpApex(domainTriad);
 
+    let aiEditorWarning: string | undefined;
+    if (siteKind === "news") {
+      let conceptSite = false;
+      let conceptTopic: string | null = null;
+      try {
+        const layout = JSON.parse(layoutJson) as { hmConceptSite?: boolean; hmConceptTopic?: string };
+        conceptSite = layout.hmConceptSite === true;
+        conceptTopic = typeof layout.hmConceptTopic === "string" ? layout.hmConceptTopic : null;
+      } catch {
+        conceptSite = false;
+      }
+      const ai = await enrollNewNewsSiteAiEditor(hmAiEditorSql(), {
+        siteId: Number(freshSite.id),
+        siteSlug: String(freshSite.slug ?? slug),
+        domain: freshSite.domain ?? domain,
+        conceptSite,
+        conceptTopic,
+        conceptPrompt: b.aiConceptPrompt,
+        enabled: b.aiEditorEnabled,
+      });
+      if (!ai.ok && ai.warning) aiEditorWarning = ai.warning;
+    }
+
     res.status(201).json({
       site: { ...freshSite, siteKind },
       editor: editor
@@ -1593,6 +1659,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         : null,
       ...(gundemiProvision ? { gundemiProvision } : {}),
       ...(customApexProvision ? { customApexProvision } : {}),
+      ...(aiEditorWarning ? { aiEditorWarning } : {}),
     });
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);
@@ -1644,6 +1711,10 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
     editorEmail: string;
     editorPassword: string;
     yonelim: unknown;
+    aiEditorEnabled: boolean;
+    aiConceptPrompt: string;
+    conceptSite: boolean | string;
+    conceptTopic: string;
   }>;
   const patch: Partial<typeof hmNewsSitesTable.$inferInsert> = {};
   /** kh-alias 2026-10-09: layout keys this save sent (for the PHP alias-row mirror below). */
@@ -1823,8 +1894,12 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
     typeof b.editorPassword === "string" &&
     b.editorPassword.length >= 6;
   const wantsEditor = wantsEditorUpdate || wantsEditorCreate;
+  const wantsAiEditor =
+    currentKind === "news" &&
+    ("aiEditorEnabled" in b || "aiConceptPrompt" in b || "conceptSite" in b || "conceptTopic" in b);
+  const siteFieldCount = Object.keys(patch).length;
 
-  if (Object.keys(patch).length === 0 && !wantsEditor) {
+  if (siteFieldCount === 0 && !wantsEditor && !wantsAiEditor) {
     res.status(400).json({ error: "Güncellenecek alan yok" });
     return;
   }
@@ -1848,7 +1923,7 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
     }
   }
 
-  patch.updatedAt = new Date();
+  if (siteFieldCount > 0) patch.updatedAt = new Date();
   step.name = "kayıt";
   try {
     await ensureHmNewsSiteWritableColumns();
@@ -2026,11 +2101,31 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       gundemiProvision = await maybeProvisionGundemiOrg(domainTriad);
       customApexProvision = await maybeProvisionCustomPhpApex(domainTriad);
     }
+    let aiEditorWarning: string | undefined;
+    if (wantsAiEditor && siteOut) {
+      const ai = await patchAiEditorSite(hmAiEditorSql(), {
+        siteId: id,
+        siteSlug: String(siteOut.slug ?? kindRow.slug),
+        domain: siteOut.domain ?? null,
+        ...("aiEditorEnabled" in b ? { enabled: parseAiEditorEnabled(b.aiEditorEnabled) } : {}),
+        ...("aiConceptPrompt" in b ? { conceptPrompt: normalizeConceptPrompt(b.aiConceptPrompt) } : {}),
+        ...("conceptSite" in b || "conceptTopic" in b
+          ? {
+              updateConcept: true,
+              conceptSite: b.conceptSite === true || b.conceptSite === "true" || b.conceptSite === "1",
+              conceptTopic: b.conceptTopic,
+            }
+          : {}),
+      });
+      if (ai.warning) aiEditorWarning = ai.warning;
+    }
+
     res.json({
       ...siteOut,
       ...(gundemiProvision ? { gundemiProvision } : {}),
       ...(customApexProvision ? { customApexProvision } : {}),
       ...(defaultEditorCreated ? { defaultEditorCreated } : {}),
+      ...(aiEditorWarning ? { aiEditorWarning } : {}),
     });
   } catch (e: unknown) {
     const msg = formatHmSitesDbError(e);
