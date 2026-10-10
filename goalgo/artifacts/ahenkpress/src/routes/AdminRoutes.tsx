@@ -72,6 +72,8 @@ import IcerikHavuzu from "../pages/admin/IcerikHavuzu";
 import HaberSiteleri from "../pages/admin/HaberSiteleri";
 import HmKurumsal from "../pages/admin/HmKurumsal";
 import HaberSiteleriBekci from "../pages/admin/HaberSiteleriBekci";
+import AiEditorDurum from "../pages/admin/AiEditorDurum";
+import HaberEditoruSohbet from "../pages/admin/HaberEditoruSohbet";
 import AdminHmStaticPages from "../pages/admin/AdminHmStaticPages";
 import HmKoseIceAktar from "../pages/admin/HmKoseIceAktar";
 import HmHaberIceAktar from "../pages/admin/HmHaberIceAktar";
@@ -130,6 +132,12 @@ export default function AdminRoutes() {
       </Route>
       <Route path="/admin/haber-siteleri-bekci">
         {() => <ProtectedAdminRoute component={HaberSiteleriBekci} />}
+      </Route>
+      <Route path="/admin/ai-editor-durum">
+        {() => <ProtectedAdminRoute component={AiEditorDurum} />}
+      </Route>
+      <Route path="/admin/haber-editoru-sohbet">
+        {() => <ProtectedAdminRoute component={HaberEditoruSohbet} />}
       </Route>
       <Route path="/admin/hm-telif-sayfalari">
         {() => <ProtectedAdminRoute component={AdminHmStaticPages} />}

@@ -95,6 +95,8 @@ export const adminNavSections: AdminNavSection[] = [
       { name: "Medya", icon: ImageIcon, href: "/admin/medya", permission: "haberler" },
       { name: "Ansiklopedi", icon: Library, href: "/admin/ansiklopedi-yonetimi", permission: "haberler" },
       { name: "AI Haber Editörü", icon: Bot, href: "/admin/ai-icerik-robotu", permission: "haberler" },
+      { name: "AI Editör Durum Raporu", icon: ClipboardList, href: "/admin/ai-editor-durum", permission: "haberler", anyPermissions: ["haberler", "hm_sites"] },
+      { name: "Haber Editörü Sohbet", icon: MessageCircle, href: "/admin/haber-editoru-sohbet", permission: "haberler", anyPermissions: ["haberler", "hm_sites"] },
       { name: "AI Bekçi", icon: Activity, href: "/admin/haber-siteleri-bekci", permission: "hm_sites" },
       { name: "Köşe makaleleri (HM)", icon: ScrollText, href: "/admin/hm-kose-makaleler", permission: "hm_sites" },
       { name: "AHB köşe içe aktar (HM)", icon: PenLine, href: "/admin/hm-kose-ice-aktar", permission: "hm_sites" },
