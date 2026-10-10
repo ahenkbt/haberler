@@ -79,9 +79,9 @@ describe("konsept konu ve anahtar kelime", () => {
     expect(normalizeHmConceptTopic("Ekonomi")).toBe("ekonomi");
   });
 
-  it("konsept site topical, genel site general", () => {
+  it("konsept site topical, genel site genel", () => {
     expect(aiEditorConceptType(true)).toBe("topical");
-    expect(aiEditorConceptType(false)).toBe("general");
+    expect(aiEditorConceptType(false)).toBe("genel");
   });
 
   it("anahtar kelimeler konudan türer; genel sitede boş", () => {
@@ -131,7 +131,7 @@ describe("hm_ai_editor_sites yazımı", () => {
     expect(calls.some((c) => c.text.startsWith("UPDATE"))).toBe(false);
   });
 
-  it("genel sitede concept_type general ve kelime boş", async () => {
+  it("genel sitede concept_type genel ve kelime boş", async () => {
     const { sql, calls } = fakeSql();
     await enrollNewNewsSiteAiEditor(sql, {
       siteId: 9,
@@ -141,7 +141,7 @@ describe("hm_ai_editor_sites yazımı", () => {
       enabled: false,
     });
     const insert = calls.find((c) => c.text.startsWith("INSERT"));
-    expect(insert?.params[3]).toBe("general");
+    expect(insert?.params[3]).toBe("genel");
     expect(insert?.params[4]).toEqual([]);
     expect(insert?.params[5]).toBe(false);
     expect(insert?.params[6]).toBeNull();
