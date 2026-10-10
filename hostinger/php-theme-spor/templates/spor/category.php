@@ -13,7 +13,7 @@ use Yenisafak\Spor;
 /** @var bool $hasMore */
 $sec = Spor::section($slug) ?? ['name' => $name, 'blurb' => '', 'color' => '#0e8f3d', 'ink' => '#ffffff', 'slug' => $slug, 'short' => $name, 'group' => ''];
 ?>
-<section class="spor-chero" style="--c:<?= Html::e($sec['color']) ?>;--ink:<?= Html::e($sec['ink']) ?>">
+<section class="spor-chero" style="--c:<?= Html::e($sec['color']) ?>;--on:<?= Html::e($sec['ink']) ?>">
   <div class="spor-wrap">
     <p class="spor-crumb"><a href="/">Ana Sayfa</a> / <?= Html::e($sec['name']) ?></p>
     <h1><?= Html::e($sec['name']) ?></h1>
