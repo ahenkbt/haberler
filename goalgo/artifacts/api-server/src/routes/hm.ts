@@ -160,7 +160,7 @@ import {
   listHmNewsSitesCompat,
   resetHmNewsSiteColumnEnsureCache,
 } from "../lib/hm-site-compat";
-import { normalizeSiteYonelim, parseSiteYonelim, rssSourceAllowedForSiteYonelim } from "../lib/hm-rss-kaynak-yonelim.js";
+import { effectiveSiteYonelim, normalizeSiteYonelim, parseSiteYonelim, rssSourceAllowedForSiteYonelim } from "../lib/hm-rss-kaynak-yonelim.js";
 import {
   repairStaleSuBrandForSiteId,
   repairStaleSuBrandOnHmSites,
@@ -1060,6 +1060,7 @@ const PUBLIC_RSS_ROW_KEYS = [
 
 /** Ziyaretçi layout kopyası. Kayıtlı RSS ayarı durur; muhalif adres sağ/karma vitrinine yazılmaz. */
 function publicLayoutForSiteYonelim(layout: Record<string, unknown>, yonelimRaw: unknown): Record<string, unknown> {
+  if (yonelimRaw == null) return layout; // yönelim atanmamış site: layout aynen
   const yonelim = normalizeSiteYonelim(yonelimRaw);
   if (yonelim === "sol") return layout;
   const out: Record<string, unknown> = { ...layout };
@@ -1101,7 +1102,7 @@ function serializeHmMetaRow(row: typeof hmNewsSitesTable.$inferSelect, opts?: { 
     }
     layout = opts?.includePageContent === true ? normalized : stripHmPublicMetaLayoutContent(normalized);
     if (layout && typeof layout === "object" && !Array.isArray(layout)) {
-      layout = publicLayoutForSiteYonelim(layout as Record<string, unknown>, row.yonelim);
+      layout = publicLayoutForSiteYonelim(layout as Record<string, unknown>, effectiveSiteYonelim(row));
     }
     layout = normalizeHmLayoutMediaUrls(layout);
     if (layout && typeof layout === "object" && !Array.isArray(layout)) {
@@ -1414,6 +1415,7 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
       items: sites.map((s) => ({
         ...s,
         yonelim: normalizeSiteYonelim(s.yonelim),
+        yonelimAktif: s.yonelimAktif === true,
         siteKind: resolveHmSiteKind(s),
         ownLlmProviders: ownLlm.get(s.id) ?? [],
         hasOwnLlmKeys: (ownLlm.get(s.id) ?? []).length > 0,
@@ -1469,6 +1471,8 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
     yonelim?: unknown;
   };
   const siteKind: HmSiteKind = normalizeHmSiteKind(b.siteKind) ?? "news";
+  // Yönelim yalnız açıkça seçilmişse atanır (yonelim_aktif=true); boş = atanmamış, süzgeç yok.
+  const yonelimGiven = b.yonelim != null && String(b.yonelim).trim() !== "";
   const yonelim = parseSiteYonelim(b.yonelim);
   if (yonelim == null) {
     res.status(400).json({ error: "Yönelim sağ, sol veya karma olmalı." });
@@ -1570,6 +1574,7 @@ router.post("/hm/sites", async (req, res): Promise<void> => {
         verificationJson: seoVerification ? JSON.stringify(seoVerification) : null,
         active: true,
         yonelim: siteKind === "news" ? yonelim : "karma",
+        yonelimAktif: siteKind === "news" && yonelimGiven,
       });
 
     if (!site) {
@@ -1827,6 +1832,8 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       return;
     }
     patch.yonelim = yonelim;
+    // Açık seçim = aktif; boş/null = atanmamış (süzgeç yok).
+    patch.yonelimAktif = b.yonelim != null && String(b.yonelim).trim() !== "";
   }
 
   const editorId = Number(b.editorId);

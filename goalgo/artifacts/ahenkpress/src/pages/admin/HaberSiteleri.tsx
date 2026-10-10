@@ -60,7 +60,7 @@ function YonelimSecici({
   disabled,
   onChange,
 }: {
-  value: SiteYonelim;
+  value: SiteYonelim | null;
   disabled?: boolean;
   onChange: (next: SiteYonelim) => void;
 }) {
@@ -126,6 +126,8 @@ type HmSiteRow = {
   publicSuspended?: boolean;
   /** sag | sol | karma. Yalnız yönetim listesinde. Varsayılan karma. */
   yonelim?: SiteYonelim | string | null;
+  /** true: yönelim açıkça atanmış. Mevcut siteler false (süzgeç yok). */
+  yonelimAktif?: boolean;
   /** layout_json phpTheme / frontend — Hostinger PHP şablon */
   phpTheme?: boolean;
   contact?: { phone?: string; email?: string; address?: string; notes?: string };
@@ -167,7 +169,8 @@ type SiteForm = {
   /** Haber (yalnız oluşturma): konsept site — Süper Lig/burç vb. genel kutular olmaz; spor konseptinde Süper Lig kalır */
   conceptSite: boolean;
   conceptTopic: string;
-  yonelim: SiteYonelim;
+  /** null = seçilmedi (yönelim atanmaz, süzgeç yok). */
+  yonelim: SiteYonelim | null;
 };
 
 const CONCEPT_TOPICS: { value: string; label: string }[] = [
@@ -210,7 +213,7 @@ const emptyForm: SiteForm = {
   corporateTheme: "corporate",
   conceptSite: false,
   conceptTopic: "diger",
-  yonelim: "karma",
+  yonelim: null,
 };
 
 const PLATFORM_ZONES = ["gundemi.org", "fix.tc"] as const;
@@ -324,6 +327,7 @@ async function fetchHmSites(kind: HmSiteKind): Promise<{ items: HmSiteRow[] }> {
           publicSuspended: isHmPublicSuspended(layout),
           phpTheme: isHmPhpThemeSite(layout),
           yonelim: normalizeYonelim(site.yonelim),
+          yonelimAktif: site.yonelimAktif === true,
         };
       })
     : [];
@@ -410,7 +414,7 @@ function formFromSite(site: HmSiteRow): SiteForm {
     active: site.active !== false,
     hybridRssEnabled: site.hybridRssEnabled === true,
     phpTheme: site.phpTheme === true,
-    yonelim: normalizeYonelim(site.yonelim),
+    yonelim: site.yonelimAktif === true ? normalizeYonelim(site.yonelim) : null,
   };
 }
 
@@ -440,7 +444,7 @@ function payloadFromForm(
     },
     active: form.active,
   };
-  if (kind === "news") body.yonelim = form.yonelim;
+  if (kind === "news" && form.yonelim) body.yonelim = form.yonelim;
   // Site türü sunucuda kilitli: haber = PHP (Yenişafak), kurumsal = VKD/VATAN. Tür yalnızca oluşturmada yazılır.
   if (opts?.isCreate) {
     body.siteKind = kind;
@@ -747,7 +751,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
   }
 
   async function setSiteYonelim(site: HmSiteRow, next: SiteYonelim) {
-    if (normalizeYonelim(site.yonelim) === next) return;
+    if (site.yonelimAktif === true && normalizeYonelim(site.yonelim) === next) return;
     setYonelimSavingId(site.id);
     try {
       await ensureAdminPanelBootstrap();
@@ -757,7 +761,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
         body: JSON.stringify({ yonelim: next }),
       });
       if (!r.ok) throw new Error(await r.text());
-      patchSiteList(site.id, { yonelim: next });
+      patchSiteList(site.id, { yonelim: next, yonelimAktif: true });
       if (editingId === site.id) update("yonelim", next);
       void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
     } catch (e) {
@@ -1141,7 +1145,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                   <YonelimSecici value={form.yonelim} onChange={(next) => update("yonelim", next)} />
                   <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
                     Sağ: ılımlı kaynaklar, muhalif kaynak yok. Sol: muhalif kaynaklardan beslenir. Karma: orta.
-                    Varsayılan Karma. Bu seçim yalnız yönetim panelinde görünür.
+                    Seçilmezse yönelim atanmaz ve süzgeç uygulanmaz. Bu seçim yalnız yönetim panelinde görünür.
                   </p>
                 </div>
               ) : null}
@@ -1304,7 +1308,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                         </div>
                         {isNews ? (
                           <YonelimSecici
-                            value={normalizeYonelim(site.yonelim)}
+                            value={site.yonelimAktif === true ? normalizeYonelim(site.yonelim) : null}
                             disabled={yonelimSavingId === site.id}
                             onChange={(next) => void setSiteYonelim(site, next)}
                           />

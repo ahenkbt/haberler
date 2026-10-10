@@ -28,6 +28,11 @@ export const hmNewsSitesTable = pgTable("hm_news_sites", {
    * sol = muhalif kaynaklardan beslenir; karma = orta. Ziyaretçi vitrininde dönülmez.
    */
   yonelim: text("yonelim").notNull().default("karma"),
+  /**
+   * true: yönelim açıkça atanmış (yalnız yeni siteler / yönetici seçimi); süzgeç ve kampanya
+   * kısıtı yalnız bu sitelerde çalışır. false: mevcut siteler, süzgeç yok.
+   */
+  yonelimAktif: boolean("yonelim_aktif").notNull().default(false),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })

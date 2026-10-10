@@ -20,8 +20,6 @@ export const MUHALIF_RSS_HOSTS = [
   "bianet.org",
   "artigercek.com",
   "artigercek.com.tr",
-  "karar.com",
-  "karar.com.tr",
   "sol.org.tr",
   "kronos36.news",
   "kronos36.com",
@@ -82,6 +80,16 @@ export function isMuhalifRssUrl(raw: unknown): boolean {
   }
 }
 
+/**
+ * Süzgeç yalnız yönelimi AÇIKÇA atanmış sitelerde (yonelim_aktif=true) çalışır.
+ * Mevcut siteler (yonelim_aktif=false) PR #533 öncesi gibi davranır: süzgeç yok.
+ * Dönen null = süzgeç yok.
+ */
+export function effectiveSiteYonelim(site: { yonelim?: unknown; yonelimAktif?: unknown } | null | undefined): SiteYonelim | null {
+  if (!site || site.yonelimAktif !== true) return null;
+  return normalizeSiteYonelim(site.yonelim);
+}
+
 /** Postgres `~` ile aynı kalıp. İşaretsiz / merkez anahtarları eşleşmez. */
 export function muhalifRssUrlPatternSource(): string {
   const alt = MUHALIF_RSS_HOSTS.map((host) => host.replace(/\./g, "\\.")).join("|");
@@ -102,6 +110,7 @@ export function rssSourceAllowedForSiteYonelim(
   source: { url?: string | null; kaynakYonelim?: unknown },
   siteYonelim: unknown,
 ): boolean {
+  if (siteYonelim == null) return true; // yönelim atanmamış site: süzgeç yok
   const marked = normalizeRssKaynakYonelim(source.kaynakYonelim);
   const opposition = marked === "sol" || isMuhalifRssUrl(source.url);
   if (!opposition) return true;
@@ -112,7 +121,7 @@ export function filterItemsForSiteYonelim<T extends { rssSourceUrl?: string | nu
   items: T[],
   siteYonelim: unknown,
 ): T[] {
-  if (normalizeSiteYonelim(siteYonelim) === "sol") return items;
+  if (siteYonelim == null || normalizeSiteYonelim(siteYonelim) === "sol") return items;
   return items.filter((item) =>
     rssSourceAllowedForSiteYonelim({ url: item.rssSourceUrl || item.link || null }, siteYonelim),
   );
