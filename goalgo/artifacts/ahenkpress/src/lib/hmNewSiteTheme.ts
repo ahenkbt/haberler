@@ -11,6 +11,19 @@ export const HM_NEWS_CREATE_THEMES = [
   { id: "yenisafak", label: "Yenişafak" },
   { id: "portal3", label: "Gazete Portal" },
   { id: "esen", label: "Esen" },
+  { id: "yeni", label: "Yeni Portal Teması" },
+  { id: "okul", label: "Okul Portal Teması" },
+  { id: "muhtar", label: "Muhtar Portal Teması" },
+  { id: "sendika", label: "Sendika Portal Teması" },
+] as const;
+
+/** Mevcut sitelerde (vitrin ayarları) seçilebilen Portal teması ailesi. Değer `hmPortalTheme` anahtarına yazılır. */
+export const HM_PORTAL_SKIN_OPTIONS = [
+  { id: "portal", label: "Portal (varsayılan)" },
+  { id: "yeni", label: "Yeni Portal Teması" },
+  { id: "okul", label: "Okul Portal Teması" },
+  { id: "muhtar", label: "Muhtar Portal Teması" },
+  { id: "sendika", label: "Sendika Portal Teması" },
 ] as const;
 
 export const HM_CORPORATE_CREATE_THEMES = [

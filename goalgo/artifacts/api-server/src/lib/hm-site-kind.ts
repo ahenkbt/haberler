@@ -12,7 +12,7 @@
  * - The type is locked once created (layout_json.hmSiteKind); news ↔ corporate conversion is refused.
  */
 
-import { HM_NEW_SITE_PORTAL_THEME, resolveConceptPortalColors, resolveNewSiteVitrinTheme } from "./hm-new-site-theme.js";
+import { HM_NEW_SITE_PORTAL_THEME, portalSkinThemeOf, resolveConceptPortalColors, resolveNewSiteVitrinTheme } from "./hm-new-site-theme.js";
 
 export type HmSiteKind = "news" | "corporate";
 
@@ -253,6 +253,11 @@ export function siteKindLayoutDefaults(
   }
   // Haber sitesi yayını PHP'de kalır (gundemi.org / fix.tc). Portal görünümü SPA'da
   // `hmVitrinTheme: portal` → classic ile açılır; PHP şablon bayrağı değişmez.
+  const skin = portalSkinThemeOf(theme);
+  if (skin) {
+    // Portal teması ailesi: SPA Portal (classic) kalır, PHP tema `hmPortalTheme` ile ayrışır.
+    return { hmSiteKind: "news", hmVitrinTheme: "portal", hmPortalTheme: skin, phpTheme: true, frontend: "php" };
+  }
   return { hmSiteKind: "news", hmVitrinTheme: theme, phpTheme: true, frontend: "php" };
 }
 

@@ -13,7 +13,28 @@
 
 export const HM_NEW_SITE_PORTAL_THEME = "portal";
 
-export const HM_NEWS_CREATE_THEME_IDS = ["portal", "yenisafak", "portal3", "esen"] as const;
+/**
+ * Portal teması ailesi (PHP tema, 2026-10-10): yeni.tc / Okul / Muhtar / Sendika portallarının varsayılan temaları.
+ * Kayıtta SPA tarafı Portal (`hmVitrinTheme: portal`) kalır; seçim `hmPortalTheme` anahtarına yazılır.
+ * `yeni` = yeni.tc'nin mevcut teması (görsel değişiklik yok, yalnız ad/seçenek).
+ * Yeni açılan sitelerin varsayılanı yine "Portal" (`portal`).
+ */
+export const HM_PORTAL_SKIN_THEME_IDS = ["yeni", "okul", "muhtar", "sendika"] as const;
+export type HmPortalSkinThemeId = (typeof HM_PORTAL_SKIN_THEME_IDS)[number];
+export const HM_PORTAL_SKIN_LABELS: Record<HmPortalSkinThemeId, string> = {
+  yeni: "Yeni Portal Teması",
+  okul: "Okul Portal Teması",
+  muhtar: "Muhtar Portal Teması",
+  sendika: "Sendika Portal Teması",
+};
+const PORTAL_SKIN_SET = new Set<string>(HM_PORTAL_SKIN_THEME_IDS);
+
+export function portalSkinThemeOf(raw: unknown): HmPortalSkinThemeId | null {
+  const t = String(raw ?? "").trim().toLowerCase();
+  return PORTAL_SKIN_SET.has(t) ? (t as HmPortalSkinThemeId) : null;
+}
+
+export const HM_NEWS_CREATE_THEME_IDS = ["portal", "yenisafak", "portal3", "esen", ...HM_PORTAL_SKIN_THEME_IDS] as const;
 export const HM_CORPORATE_CREATE_THEME_IDS = ["portal", "corporate", "vatan"] as const;
 
 export type HmNewsCreateThemeId = (typeof HM_NEWS_CREATE_THEME_IDS)[number];

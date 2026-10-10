@@ -953,6 +953,8 @@ export type NewsSiteLayoutPrefs = {
   hmYsSlogan?: string | null;
   /** Haber sayfası paylaş düğmeleri. Tanımsızsa PHP tema açık kabul eder. */
   hmYsShareEnabled?: boolean;
+  /** Portal teması ailesi: `yeni` | `okul` | `muhtar` | `sendika`. Boş = Portal (varsayılan). */
+  hmPortalTheme?: string | null;
   /** Künye alanları. PHP tema `hmYsKunye` doluysa statik künye metninin yerine bunu basar. */
   hmYsKunye?: HmYsKunye | null;
   /** Yenişafak anasayfa modülleri. Doluysa PHP `Modules.php` bu anahtarı eski takma adlardan önce okur. */

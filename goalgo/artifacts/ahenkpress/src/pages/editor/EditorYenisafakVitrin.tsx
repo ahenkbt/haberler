@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { HM_PORTAL_SKIN_OPTIONS } from "@/lib/hmNewSiteTheme";
 import { useHmEditor } from "@/contexts/HmEditorContext";
 import {
   HM_GRADIENT_FAMILIES,
@@ -514,6 +515,28 @@ export default function EditorYenisafakVitrin() {
             <Button type="button" variant="outline" size="sm" asChild>
               <Link href="/editor/genel-ayarlar#hm-footer-settings">Hakkımızda ve sosyal</Link>
             </Button>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Tema</p>
+              <p className="text-[11px] text-slate-500">Portal teması ailesi. Okul, Muhtar ve Sendika temaları renk, yazı tipi, başlık ve alt bilgiyi değiştirir.</p>
+            </div>
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={String(newsLayoutPrefs.hmPortalTheme ?? "portal") || "portal"}
+              disabled={saving}
+              aria-label="Portal teması"
+              onChange={(e) => {
+                const v = e.target.value;
+                void saveNewsSiteLayout(newsLayoutPrefs, { layoutPatch: { hmPortalTheme: v === "portal" ? null : v } });
+              }}
+            >
+              {HM_PORTAL_SKIN_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2">
             <div>
