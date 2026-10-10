@@ -14,6 +14,8 @@ export type HmPublicLinkContextValue = Omit<HmSiteDomainFields, "domain"> & {
   seoVerification?: HmSeoVerification | null;
   layoutPrefs: NewsSiteLayoutPrefs;
   contact: HmPublicSiteContact;
+  /** sag | sol | karma. Eski meta önbelleğinde olmayabilir. */
+  yonelim?: "sag" | "sol" | "karma" | string | null;
 };
 
 const HmPublicLinkContext = createContext<HmPublicLinkContextValue | null>(null);

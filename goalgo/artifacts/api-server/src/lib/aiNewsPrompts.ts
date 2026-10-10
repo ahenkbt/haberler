@@ -3,6 +3,7 @@ import {
   HM_LOCAL_CATEGORY_EDITOR_AI_RULES,
   KAMU_YEREL_CUMHA_EDITOR_AI_RULES,
 } from "./hm-local-category-router.js";
+import { normalizeSiteYonelim, type SiteYonelim } from "./hm-rss-kaynak-yonelim.js";
 
 /** AI haber üretiminde `icerik` alanı için ortak HTML kuralları. */
 export const AI_NEWS_ICERIK_HTML_RULES =
@@ -18,6 +19,34 @@ export const AI_NEWS_TR_STYLE_RULES =
   "Kaynakta geçmeyen yabancı ülke/örnek (Vietnam, Çin vb.) ekleme; konu Türkiye veya kaynak başlığındaki olayla sınırlı kalsın. " +
   "Spekülasyon ve 'gelecekte olabilir' tarzı yorumları en aza indir; doğrulanmış bilgiyi aktar.";
 
+/**
+ * Site yönelimine göre yeniden yazma tonu.
+ * Boş/verilmezse kural eklenmez (eski çağrılar aynı promptu korur).
+ * sol: yeniden yaz, kaynak cümlesini kopyalama, kaynak tonunu koru.
+ * karma: orta ve dengeli. sag: daha ılımlı ve yumuşak.
+ */
+export function editorYonelimRewriteRules(yonelim: unknown): string {
+  const v: SiteYonelim = normalizeSiteYonelim(yonelim);
+  if (v === "sol") {
+    return (
+      "Haberi yeniden yaz; kaynak cümlelerini aynen kopyalama, ifadeyi özgünleştir. " +
+      "Kaynağın net ve açık tonunu koru: yumuşatma, tarafsızlaştırma veya sert dili törpüleme. " +
+      "Olayın kaynağındaki duruş ve netlik yerinde kalsın."
+    );
+  }
+  if (v === "sag") {
+    return (
+      "Haberi yeniden yaz; kaynak cümlelerini aynen kopyalama. " +
+      "Üslup özellikle ılımlı, yumuşak ve tarafsız olsun: sert, suçlayıcı ve kutuplaştırıcı dili çıkar; " +
+      "olayı sakin ve ölçülü aktar."
+    );
+  }
+  return (
+    "Haberi yeniden yaz; kaynak cümlelerini aynen kopyalama. " +
+    "Üslup orta ve dengeli olsun: taraf tutmadan, sert ve kutuplaştırıcı dili yumuşatarak olayı aktar."
+  );
+}
+
 export function aiNewsSystemPrompt(opts: {
   langInstruction: string;
   extra?: string;
@@ -27,6 +56,11 @@ export function aiNewsSystemPrompt(opts: {
   hmLocalCategoryRules?: boolean;
   /** turkatahaber.com / yerel.net.tr Cumha taksonomisi */
   kamuYerelCumhaRules?: boolean;
+  /**
+   * Hedef sitenin yönelimi. Verilmezse ton kuralı eklenmez.
+   * sol = kaynak tonunu koruyarak yeniden yaz, karma = dengeli, sag = ılımlı.
+   */
+  siteYonelim?: unknown;
 }): string {
   const extra = opts.extra ? `${opts.extra.trim()} ` : "";
   const trStyle = /türkçe|turkish/i.test(opts.langInstruction) ? `${AI_NEWS_TR_STYLE_RULES} ` : "";
@@ -34,8 +68,12 @@ export function aiNewsSystemPrompt(opts: {
     opts.hmLocalCategoryRules === true ? `${HM_LOCAL_CATEGORY_EDITOR_AI_RULES} ` : "";
   const kamuYerel = opts.kamuYerelCumhaRules === true ? `${KAMU_YEREL_CUMHA_EDITOR_AI_RULES} ` : "";
   const ankara = opts.ankaraLocalOnly === true ? `${ASG_ANKARA_EDITOR_AI_RULES} ` : "";
+  const tone =
+    opts.siteYonelim == null || String(opts.siteYonelim).trim() === ""
+      ? ""
+      : `${editorYonelimRewriteRules(opts.siteYonelim)} `;
   return (
-    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${hmLocal}${kamuYerel}${ankara}${extra}` +
+    `Sen profesyonel bir haber editörüsün. ${opts.langInstruction} ${trStyle}${hmLocal}${kamuYerel}${ankara}${tone}${extra}` +
     `Özgün, bilgilendirici haber metni yaz (makale veya essay değil). Yalnızca JSON döndür. ${AI_NEWS_ICERIK_HTML_RULES}`
   );
 }

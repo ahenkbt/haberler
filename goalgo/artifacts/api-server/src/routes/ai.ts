@@ -27,6 +27,7 @@ import {
 } from "../lib/aiChatProviders.js";
 import { DEFAULT_GEMINI_MODEL } from "../lib/geminiSearchService.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "../lib/aiNewsPrompts.js";
+import { getHmSiteYonelim } from "../lib/hm-site-yonelim.js";
 import { finalizeAiNewsArticle } from "../lib/aiNewsArticle.js";
 import { callChatWithLlmChain } from "../lib/hm-llm-chat.js";
 import { resolveLlmAttempts } from "../lib/hm-llm-store.js";
@@ -721,11 +722,17 @@ router.post("/ai/uniquify", async (req, res): Promise<void> => {
   const news = rows[0];
 
   const langInstruction = s.language === "tr" ? "Haberi Türkçe yaz." : "Write in English.";
+  const newsSiteId = Number((news as { siteId?: number | null }).siteId);
+  const siteYonelim = Number.isFinite(newsSiteId) && newsSiteId > 0 ? await getHmSiteYonelim(newsSiteId) : undefined;
   const aiOut = await callChatWithOpenAiGeminiFallback({
     openaiApiKey: s.openaiApiKey,
     openaiModel: s.openaiModel,
     geminiApiKey: siteKeys.geminiApiKey,
-    system: aiNewsSystemPrompt({ langInstruction, extra: "Haberi tamamen yeniden yaz." }),
+    system: aiNewsSystemPrompt({
+      langInstruction,
+      extra: "Haberi tamamen yeniden yaz.",
+      siteYonelim,
+    }),
     user: `Başlık: ${news.title}\nİçerik: ${(news.content || "").slice(0, 2000)}\n\n${aiNewsUserJsonHint(s.wordCount, '"baslik","spot","icerik"')}`,
     temperature: 0.8,
   });

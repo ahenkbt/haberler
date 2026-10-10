@@ -670,6 +670,7 @@ export function HmNestedLayout({
     domain2: effectiveData.domain2 ?? null,
     domain3: effectiveData.domain3 ?? null,
     displayName: effectiveData.displayName,
+    yonelim: effectiveData.yonelim ?? null,
     description: effectiveData.description ?? null,
     seoVerification: (effectiveData.seoVerification as HmSeoVerification | null | undefined) ?? null,
     layoutPrefs,

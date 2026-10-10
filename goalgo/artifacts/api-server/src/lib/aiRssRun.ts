@@ -24,6 +24,7 @@ import {
   missingProviderKeyMessage,
 } from "./aiChatProviders.js";
 import { aiNewsSystemPrompt, aiNewsUserJsonHint } from "./aiNewsPrompts.js";
+import { loadHmSiteYonelimMap } from "./hm-site-yonelim.js";
 import { finalizeAiNewsArticle } from "./aiNewsArticle.js";
 import { parseFeedItems } from "./rssFeedParse.js";
 
@@ -122,6 +123,7 @@ export async function executeAiRssRun(opts: {
     siteTargets = filtered.length > 0 ? filtered : [null];
   }
 
+  const yonelimBySite = await loadHmSiteYonelimMap(siteTargets);
   const allNews: { title: string; id: number }[] = [];
   const feedErrors: string[] = [];
   let itemsSeen = 0;
@@ -156,8 +158,22 @@ export async function executeAiRssRun(opts: {
         if (allNews.length >= count) break;
         itemsSeen++;
 
+        const sourceKey = normalizeRssSourceUrl(item.link);
+        const preTitles = uniqueNonEmptyTitles(item.title);
+        const picked = await pickHmSiteWithoutRssStory({
+          siteTargets,
+          startIndex: siteRotateIndex,
+          sourceUrl: sourceKey,
+          titles: preTitles,
+          extraTitlesBySite: batchTitlesBySite,
+        });
+        if (!picked) continue;
+        const siteId = picked.siteId;
         const langInstruction = s.language === "tr" ? "Haberi Türkçe yaz." : "Write in English.";
-        const systemPrompt = aiNewsSystemPrompt({ langInstruction });
+        const systemPrompt = aiNewsSystemPrompt({
+          langInstruction,
+          siteYonelim: siteId != null ? yonelimBySite.get(siteId) : undefined,
+        });
         const userPrompt = `RSS haber başlığı: "${item.title}"\nKısa özet: "${item.desc.slice(0, 500)}"\n\nBu haberi tamamen yeniden yaz; güncel haber dili kullan (makale veya deneme değil).\n${aiNewsUserJsonHint(s.wordCount)}`;
 
         const aiOut = await callChatForPreferredProvider(chatKeys.preferredProvider, {
@@ -196,22 +212,8 @@ export async function executeAiRssRun(opts: {
           topicKeyword: item.title,
         });
 
-        const sourceKey = normalizeRssSourceUrl(item.link);
-        // AI başlığı + kaynak başlığı — farklı ajansların aynı olayı yakalanır.
-        const storyTitles = uniqueNonEmptyTitles(parsed.baslik, item.title);
-        const picked = await pickHmSiteWithoutRssStory({
-          siteTargets,
-          startIndex: siteRotateIndex,
-          sourceUrl: sourceKey,
-          titles: storyTitles,
-          extraTitlesBySite: batchTitlesBySite,
-        });
-        if (!picked) {
-          // Tüm hedef sitelerde (veya merkezde) aynı olay zaten var.
-          continue;
-        }
         siteRotateIndex = picked.nextIndex;
-        const siteId = picked.siteId;
+        const storyTitles = uniqueNonEmptyTitles(parsed.baslik, item.title);
 
         try {
           const publishedAt = coerceNewsPublishedAt(item.publishedAt);

@@ -22,7 +22,7 @@ export type HmRssSourcePackFeed = {
   label: string;
   url: string;
   categoryKey: string;
-  /** sol = muhalif kaynak; yalnız sol sitelere dağılır. Boş = mevcut akış. */
+  /** sol = muhalif kaynak; tüm sitelerde görünür. Boş = mevcut akış. */
   kaynakYonelim?: "sag" | "sol" | "karma";
 };
 
@@ -80,7 +80,7 @@ const BIRGUN_FEEDS: HmRssSourcePackFeed[] = [
   { id: "birgun-yasam", label: "Yaşam", url: "https://www.birgun.net/rss/kategori/yasam-14", categoryKey: "yasam" },
 ];
 
-/** BirGün muhalif kaynaktır; paket işareti sol. URL listesi ve akış adresleri durur. */
+/** BirGün muhalif kaynaktır; paket işareti sol. Adresler durur, hiçbir sitede gizlenmez. */
 const BIRGUN: HmRssSourcePackFeed[] = BIRGUN_FEEDS.map((feed) => ({ ...feed, kaynakYonelim: "sol" as const }));
 
 const YEREL: HmRssSourcePackFeed[] = [

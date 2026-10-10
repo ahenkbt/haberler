@@ -5,7 +5,6 @@ import { allowCrossSiteManualNewsFromLayout, hiddenHmPoolNewsIdsFromLayout, hidd
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
 import { isExcludedCumhaKoeseFeedUrl } from "./rssCumhaExclude.js";
 import { isBlockedHmRssFeedUrl } from "./rssBlockedFeeds.js";
-import { effectiveSiteYonelim, rssSourceAllowedForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
 import {
   canonicalizeRssCategorySlug,
   expandRssCategorySlugCandidates,
@@ -357,9 +356,6 @@ export async function loadPortalHybridRssFeeds(
     const layout = parseHmLayoutRecord(site?.layoutJson ?? null);
     if (isCorporateHmLayout(layout)) return [];
     const id = Math.floor(siteId);
-    const siteYonelim = effectiveSiteYonelim(site);
-    const gateFeeds = (rows: PortalHybridRssFeedConfig[]) =>
-      rows.filter((feed) => rssSourceAllowedForSiteYonelim({ url: feed.url }, siteYonelim));
     const categorySlugLookup = await loadHmCategorySlugLookup(id);
     const boxRows = () =>
       mergeHmScopedRssRows(
@@ -400,9 +396,9 @@ export async function loadPortalHybridRssFeeds(
       return mergeHmScopedRssRows(layoutRows, packRows);
     };
     const portalLayoutRows = () => hmPortalRssRowsFromLayout(layout, id, categorySlugLookup);
-    if (scope === "box") return gateFeeds(boxRows());
-    if (scope === "site") return gateFeeds(mergeHmScopedRssRows(siteRows(), portalLayoutRows()));
-    return gateFeeds(mergeHmScopedRssRows(mergeHmScopedRssRows(siteRows(), boxRows()), portalLayoutRows()));
+    if (scope === "box") return boxRows();
+    if (scope === "site") return mergeHmScopedRssRows(siteRows(), portalLayoutRows());
+    return mergeHmScopedRssRows(mergeHmScopedRssRows(siteRows(), boxRows()), portalLayoutRows());
   }
 
   const [row] = await db.select({ newsLayoutJson: siteSettingsTable.newsLayoutJson }).from(siteSettingsTable).limit(1);

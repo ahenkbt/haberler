@@ -21,8 +21,6 @@ import { normalizeArticleTitle } from "./hm-sync-source.js";
 import { deferSimilarNewsItems } from "./news-title-similarity.js";
 import { normalizeRssSourceUrl } from "./rssImportDedupe.js";
 import { newsRowVisibleOnHmSiteByRssTarget } from "./rss-campaign-target.js";
-import { filterItemsForSiteYonelim } from "./hm-rss-kaynak-yonelim.js";
-import { getHmSiteYonelim } from "./hm-site-yonelim.js";
 import { sanitizeCumhaRssSpot } from "./rssCumhaExclude.js";
 import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
 import { SU_CANONICAL_SITE_ID, suSiteNewsScopeCondition } from "./hm-su-domain-repair.js";
@@ -486,9 +484,6 @@ export async function loadEditorScopedDbNews(opts: {
   publicFreshnessMaxAgeMs?: number;
 }): Promise<{ items: DbSerialized[]; total: number }> {
   const fetchLimit = opts.limit + opts.offset + 100;
-  const siteYonelim = await getHmSiteYonelim(opts.siteId);
-  const applyYonelim = <T extends { rssSourceUrl?: string | null }>(items: T[]) =>
-    filterItemsForSiteYonelim(items, siteYonelim);
   const excludeCentralPool = opts.excludeCentralPool === true;
   const poolReceiveEnabled = opts.yekparePoolReceiveEnabled !== false;
   const publicFreshnessWindow = opts.publicFreshnessWindow === true;
@@ -558,7 +553,6 @@ export async function loadEditorScopedDbNews(opts: {
       items = filterGlobalCategoryNewsItems(items);
     }
     items = excludeKoseFromEditorialNewsList(items);
-    items = applyYonelim(items);
     return { items, total: items.length };
   }
 
@@ -620,7 +614,6 @@ export async function loadEditorScopedDbNews(opts: {
     items = filterGlobalCategoryNewsItems(items);
   }
   items = excludeKoseFromEditorialNewsList(items);
-  items = applyYonelim(items);
   items = await enrichSerializedNewsListImages(items);
   return { items, total: items.length };
 }
