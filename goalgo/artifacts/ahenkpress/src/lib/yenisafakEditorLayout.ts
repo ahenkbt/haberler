@@ -158,6 +158,8 @@ export const PHP_THEME_LAYOUT_KEYS = [
   "hmAdSlots",
   "faviconUrl",
   "hmYsShareEnabled",
+  // Portal teması ailesi (yeni | okul | muhtar | sendika; PHP layout.php / sektör kabuğu)
+  "hmPortalTheme",
   "hmFooterAboutHtml",
   "hmCorporatePageHtml",
   "hmFooterSocial",

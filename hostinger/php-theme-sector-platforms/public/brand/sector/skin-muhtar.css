@@ -1,0 +1,118 @@
+/* "Muhtar Portal Teması" — mahalle / yerel yönetim: sade, güven veren, toprak · kırmızı · lacivert; duyuru panosu. tema 2026-10-10 */
+@font-face{font-family:'Source Serif 4';font-style:normal;font-weight:200 900;font-display:swap;src:url(/brand/sector/fonts/ss4-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Source Serif 4';font-style:normal;font-weight:200 900;font-display:swap;src:url(/brand/sector/fonts/ss4-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:200 900;font-display:swap;src:url(/brand/sector/fonts/sans3-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:200 900;font-display:swap;src:url(/brand/sector/fonts/sans3-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+body.sc-muhtar{
+  --yn-paper:#F4EDE1;--yn-paper2:#EADFCC;--yn-card:#FFFDF8;--yn-ink:#1B2433;--yn-ink2:#37445A;--yn-mute:#5B6475;--yn-line:rgba(27,36,51,.18);
+  --yn-f:'Source Sans 3',system-ui,'Segoe UI',sans-serif;--yn-serif:'Source Serif 4',Georgia,serif;
+  --yn-r:8px;--yn-r-s:6px;--yn-shadow:0 1px 0 rgba(27,36,51,.1),0 8px 18px -12px rgba(27,36,51,.35);
+  --mu-navy:#14305C;--mu-red:#A92A22;--mu-clay:#9C5A34;--mu-cream:#FFFDF8;
+  --yn-hot:#A92A22;--yn-lime:#E9C98B;--yn-violet:#14305C;--yn-grad:linear-gradient(120deg,#14305C,#14305C);
+  font-size:18px;
+}
+html[data-theme="dark"] body.sc-muhtar{--yn-paper:#101722;--yn-paper2:#17202E;--yn-card:#1A2434;--yn-ink:#F2ECE0;--yn-ink2:#D5D0C4;--yn-mute:#A0A8B8;--yn-line:rgba(242,236,224,.17);--yn-hot:#E2685F;--yn-violet:#8FB0E8;--yn-shadow:0 1px 0 rgba(0,0,0,.4),0 10px 22px -14px rgba(0,0,0,.8)}
+body.sc-muhtar h1,body.sc-muhtar h2,body.sc-muhtar h3,body.sc-muhtar .yn-card-t,body.sc-muhtar .yn-tile-h,body.sc-muhtar .yn-page-h,body.sc-muhtar .yn-ah-t,body.sc-muhtar .yn-foot-slogan{font-family:var(--yn-serif);font-weight:700;letter-spacing:-.012em}
+body.sc-muhtar .yn-page-h,body.sc-muhtar .yn-ah-t{line-height:1.05}
+body.sc-muhtar :focus-visible{outline:3px solid var(--mu-red)}
+body.sc-muhtar .yn-card-a{border:1px solid var(--yn-line);border-top:4px solid var(--c);box-shadow:var(--yn-shadow)}
+body.sc-muhtar .yn-card-lead .yn-card-a{border:0;border-top:6px solid var(--mu-red)}
+body.sc-muhtar .yn-card-row .yn-card-a,body.sc-muhtar .yn-card-text .yn-card-a{border:0;border-bottom:1px solid var(--yn-line)}
+body.sc-muhtar .yn-card-text .yn-card-a{border-top:0;border-bottom:1px solid var(--yn-line)}
+body.sc-muhtar .yn-card-media{border-radius:0}
+body.sc-muhtar .yn-card-t{font-size:1.18rem;line-height:1.22}
+body.sc-muhtar .yn-card-lead .yn-card-t{font-weight:700;font-size:clamp(1.6rem,3.8vw,2.7rem);line-height:1.08}
+body.sc-muhtar .yn-tag{font-family:var(--yn-f);font-weight:700;letter-spacing:.1em;color:var(--c);padding:0}
+body.sc-muhtar .yn-tag::before{border-radius:0;width:10px;height:3px;background:var(--c)}
+body.sc-muhtar .yn-card-lead .yn-tag{color:#fff;background:var(--mu-red);padding:4px 10px;border-radius:0}
+body.sc-muhtar .yn-card-lead .yn-tag::before{display:none}
+body.sc-muhtar .yn-card-n{font-family:var(--yn-serif);color:var(--mu-clay)}
+body.sc-muhtar .yn-btn{border-radius:6px;font-weight:700;letter-spacing:.01em}
+body.sc-muhtar .yn-btn-hot{background:var(--mu-red);color:#fff;box-shadow:0 2px 0 #6F1914}
+body.sc-muhtar .yn-btn-hot:hover{background:#8C211A;color:#fff}
+html[data-theme="dark"] body.sc-muhtar .yn-btn-hot{background:#C8453C}
+body.sc-muhtar .yn-btn-ghost{border-color:var(--mu-navy);color:var(--mu-navy)}
+html[data-theme="dark"] body.sc-muhtar .yn-btn-ghost{border-color:#8FB0E8;color:#C9DAF7}
+body.sc-muhtar .yn-btn-ghost:hover{background:var(--mu-navy);color:#fff}
+body.sc-muhtar .yn-btn-lime{background:#E9C98B;color:#2A1D0B;box-shadow:0 2px 0 #B08F4D}
+body.sc-muhtar .yn-btn-lime:hover{background:#F2D9A5}
+body.sc-muhtar .yn-eyebrow{color:var(--mu-clay);letter-spacing:.14em}
+html[data-theme="dark"] body.sc-muhtar .yn-eyebrow{color:#D9A97F}
+/* şerit + başlık: lacivert resmî bar */
+body.sc-muhtar .sc-topbar{display:block;background:#0C2142;color:#D9E3F5;font-size:.82rem}
+body.sc-muhtar .sc-topbar-in{width:min(var(--yn-max),100% - 24px);margin:auto;display:flex;justify-content:space-between;gap:4px 18px;padding:6px 0;flex-wrap:wrap;align-items:center}
+body.sc-muhtar .sc-tb-date{font-weight:700;letter-spacing:.02em}
+body.sc-muhtar .sc-tb-msg{display:none;font-family:var(--yn-serif);font-style:italic;opacity:.9}
+body.sc-muhtar .sc-tb-nav{display:flex;gap:16px}
+body.sc-muhtar .sc-tb-nav a{color:#D9E3F5;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.35)}
+body.sc-muhtar .sc-tb-nav a:hover{color:#fff;text-decoration-color:#E9C98B}
+body.sc-muhtar .yn-head{background:var(--mu-navy);color:#fff;border-bottom:4px solid var(--mu-red);backdrop-filter:none}
+body.sc-muhtar .yn-nav a{color:#DCE6F8;border-radius:4px;font-weight:600;font-size:.92rem;padding:8px 10px}
+body.sc-muhtar .yn-nav a::after{height:3px;background:#E9C98B;border-radius:0;left:8px;right:8px;bottom:0}
+body.sc-muhtar .yn-nav a:hover,body.sc-muhtar .yn-nav a[aria-current]{color:#fff;background:rgba(255,255,255,.08)}
+body.sc-muhtar .yn-head .yn-btn-ghost{border-color:rgba(255,255,255,.55);color:#fff}
+body.sc-muhtar .yn-head .yn-btn-ghost:hover{background:#fff;color:var(--mu-navy)}
+body.sc-muhtar .yn-head .yn-btn-hot{background:#E9C98B;color:#2A1D0B;box-shadow:none}
+body.sc-muhtar .yn-head .yn-btn-hot:hover{background:#fff;color:#2A1D0B}
+body.sc-muhtar .yn-theme,body.sc-muhtar .yn-burger{background:transparent;border-color:rgba(255,255,255,.4);color:#fff}
+body.sc-muhtar .yn-logo-l{display:none!important}body.sc-muhtar .yn-logo-d{display:block!important}
+body.sc-muhtar .yn-chips{background:var(--mu-navy)}
+body.sc-muhtar .yn-chips a{background:transparent;color:#fff;border-color:rgba(255,255,255,.35);border-radius:4px}
+body.sc-muhtar .yn-chips a::before{border-radius:0;background:#E9C98B}
+body.sc-muhtar .yn-chips a[aria-current]{background:#fff;color:var(--mu-navy)}
+/* hero: yazı + duyuru panosu */
+.mu-hero{position:relative;padding:clamp(30px,6vw,72px) 0 clamp(36px,6vw,64px);background:linear-gradient(180deg,var(--yn-paper2),var(--yn-paper));border-bottom:1px solid var(--yn-line)}
+.mu-hero::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 79px,rgba(20,48,92,.05) 79px 80px);pointer-events:none}
+.mu-hero-in{position:relative;display:grid;gap:34px;align-items:start}
+.mu-eyebrow{margin:0 0 14px;font-weight:700;font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mu-red);display:flex;gap:10px;align-items:center}
+.mu-eyebrow::after{content:"";flex:0 1 80px;height:2px;background:var(--mu-red)}
+.mu-h1{margin:0;font-family:var(--yn-serif);font-weight:700;font-size:clamp(2.4rem,7.2vw,5rem);line-height:1.02;letter-spacing:-.025em;color:var(--mu-navy);text-wrap:balance}
+html[data-theme="dark"] .mu-h1{color:#F2ECE0}
+.mu-h1 em{font-style:italic;font-weight:600;color:var(--mu-red);white-space:nowrap}
+html[data-theme="dark"] .mu-h1 em{color:#E9A07A}
+.mu-sub{max-width:44ch;margin:20px 0 0;font-size:clamp(1.1rem,2vw,1.4rem);line-height:1.4;color:var(--yn-ink2)}
+.mu-sub .yn-rotator b{background:linear-gradient(transparent 66%,rgba(233,201,139,.8) 66%);font-weight:700}
+.mu-cta{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0 0}
+.mu-quick{background:var(--mu-navy);border-radius:6px;border-left:6px solid var(--mu-red);margin-top:22px}
+.mu-quick label{color:#E9C98B;font-family:var(--yn-serif)}
+.mu-board{position:relative;padding:18px;border-radius:10px;background:#9B6B43;background-image:radial-gradient(rgba(0,0,0,.14) 1px,transparent 1.4px),linear-gradient(135deg,#A9774C,#8A5C38);background-size:6px 6px,100% 100%;border:10px solid #5D3B22;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25),0 18px 34px -16px rgba(40,22,8,.7)}
+.mu-board-h{margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;color:#FFF3DA;font-weight:800;letter-spacing:.2em;font-size:.82rem}
+.mu-board ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.mu-board li{transform:rotate(var(--r));transition:transform .25s var(--yn-ease)}
+.mu-board li:hover{transform:rotate(0) translateY(-3px)}
+.mu-board a{display:block;position:relative;padding:22px 16px 14px;background:#FFFDF2;color:#1B2433;text-decoration:none;box-shadow:0 8px 14px -8px rgba(0,0,0,.6);border-top:5px solid var(--mu-red)}
+.mu-board li:nth-child(2) a{background:#F6F1DE;border-top-color:var(--mu-navy)}
+.mu-board li:nth-child(3) a{border-top-color:#C98A12}
+.mu-pin{position:absolute;left:50%;top:-9px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9d8f,#A92A22 60%,#5e1410);box-shadow:0 3px 4px rgba(0,0,0,.45)}
+.mu-board small{display:block;font-weight:800;letter-spacing:.14em;font-size:.7rem;color:var(--mu-red);margin-bottom:4px}
+.mu-board b{display:block;font-family:var(--yn-serif);font-size:1.12rem;line-height:1.22;font-weight:700}
+.mu-board a span{display:block;margin-top:6px;font-size:.84rem;color:#5B6475}
+.mu-seal{position:absolute;right:-14px;bottom:-26px;width:92px;height:92px;border-radius:50%;background:var(--mu-red);color:#fff;box-shadow:0 8px 16px -6px rgba(0,0,0,.6);transform:rotate(-12deg);border:3px double rgba(255,255,255,.7)}
+.mu-seal svg{width:100%;height:100%}.mu-seal text{font:700 9.4px var(--yn-f);letter-spacing:.3px;fill:#fff}.mu-seal path{fill:#fff}
+/* kutucuk, bölüm */
+body.sc-muhtar .sc-tiles{padding-top:34px}
+body.sc-muhtar .yn-tile{border-radius:6px;background:var(--yn-card);border:1px solid var(--yn-line);border-left:6px solid var(--c);box-shadow:var(--yn-shadow)}
+body.sc-muhtar .yn-tile-art{border-radius:4px;height:96px;background:color-mix(in srgb,var(--c) 10%,var(--yn-card))}
+body.sc-muhtar .yn-tile-h{font-size:1.45rem}
+body.sc-muhtar .yn-sec-head{border-bottom:2px solid var(--mu-navy);border-top:0;position:relative}
+html[data-theme="dark"] body.sc-muhtar .yn-sec-head{border-color:#8FB0E8}
+body.sc-muhtar .yn-sec-head::after{content:"";position:absolute;left:0;bottom:-6px;width:84px;height:4px;background:var(--mu-red)}
+body.sc-muhtar .yn-sec-art{border-radius:4px}
+body.sc-muhtar .yn-sec-head h2{font-size:clamp(1.6rem,3.6vw,2.4rem)}
+body.sc-muhtar .yn-more{color:var(--mu-navy);border-bottom-width:2px}
+html[data-theme="dark"] body.sc-muhtar .yn-more{color:#C9DAF7}
+body.sc-muhtar .yn-cover-side .yn-eyebrow{border-bottom:2px solid var(--mu-navy)}
+body.sc-muhtar .yn-voice-band{background:var(--mu-navy);border-top:6px solid var(--mu-red)}
+body.sc-muhtar .yn-voice-band::after{display:none}
+body.sc-muhtar .yn-voice-in h2{font-weight:700;max-width:18ch;letter-spacing:-.02em}
+body.sc-muhtar .sc-res-card,body.sc-muhtar .sc-card,body.sc-muhtar .sc-dcard,body.sc-muhtar .sc-bn{border:1px solid var(--yn-line);border-radius:6px;border-top:3px solid var(--mu-navy)}
+body.sc-muhtar .sc-res-card:hover{border-color:var(--mu-red)}
+body.sc-muhtar .sc-bn-n{background:var(--mu-navy);border-radius:4px}
+body.sc-muhtar .yn-foot{background:#0C2142;border-top:6px solid var(--mu-red);color:#E7EAF2}
+html[data-theme="dark"] body.sc-muhtar .yn-foot{background:#0A111C}
+body.sc-muhtar .yn-foot-col p{color:#E9C98B}
+body.sc-muhtar .yn-foot-slogan{font-weight:700;max-width:22ch}
+@media (min-width:700px){body.sc-muhtar .sc-tb-msg{display:inline}}
+@media (min-width:1000px){.mu-hero-in{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:56px}.mu-board{margin-top:10px}}
+@media (prefers-reduced-motion:reduce){.mu-board li,.mu-board li:hover{transform:none;transition:none}}

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   companionHexForPrimary,
   findNewSiteColorPalette,
+  HM_PORTAL_SKIN_LABELS,
   HM_NEW_SITE_COLOR_PALETTES,
   normalizeNewSiteHex,
   normalizeNewSiteVitrinTheme,
@@ -32,6 +33,28 @@ describe("yeni site Portal teması", () => {
     expect(normalizeNewSiteVitrinTheme("vatan", "news")).toBeNull();
     expect(resolveNewSiteVitrinTheme("news", undefined, "ajans")).toBe("portal");
     expect(resolveNewSiteVitrinTheme("corporate", undefined, "esen")).toBe("portal");
+  });
+
+  it("Portal teması ailesi: yeni / okul / muhtar / sendika seçilebilir, kayıtta SPA Portal kalır", () => {
+    for (const id of ["yeni", "okul", "muhtar", "sendika"]) {
+      expect(normalizeNewSiteVitrinTheme(id, "news")).toBe(id);
+      expect(normalizeNewSiteVitrinTheme(id, "corporate")).toBeNull();
+      expect(siteKindLayoutDefaults("news", undefined, id)).toMatchObject({
+        hmSiteKind: "news",
+        hmVitrinTheme: "portal",
+        hmPortalTheme: id,
+        phpTheme: true,
+      });
+    }
+    // varsayılan Portal korunur ve hmPortalTheme yazılmaz
+    expect(siteKindLayoutDefaults("news")).not.toHaveProperty("hmPortalTheme");
+    expect(siteKindLayoutDefaults("news").hmVitrinTheme).toBe("portal");
+    expect(HM_PORTAL_SKIN_LABELS).toEqual({
+      yeni: "Yeni Portal Teması",
+      okul: "Okul Portal Teması",
+      muhtar: "Muhtar Portal Teması",
+      sendika: "Sendika Portal Teması",
+    });
   });
 
   it("eski kurumsal istemci VKD/VATAN gönderirse onu korur", () => {
