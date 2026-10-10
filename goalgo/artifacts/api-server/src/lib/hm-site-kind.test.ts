@@ -211,4 +211,8 @@ describe("concept site flag", () => {
     expect(conceptSiteLayoutDefaults("true", "xyz").hmConceptTopic).toBe("diger");
     expect(normalizeHmConceptTopic("SPOR")).toBe("spor");
   });
+  it("ekonomi is a concept topic", () => {
+    expect(normalizeHmConceptTopic("Ekonomi")).toBe("ekonomi");
+    expect(conceptSiteLayoutDefaults(true, "ekonomi").hmConceptTopic).toBe("ekonomi");
+  });
 });

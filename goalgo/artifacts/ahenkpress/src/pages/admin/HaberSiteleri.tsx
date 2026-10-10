@@ -140,6 +140,13 @@ type HmSiteRow = {
   seoVerification?: SeoVerification | null;
   editors?: HmEditor[];
   createdAt?: string;
+  /** Varsa AI editör kaydı okundu. null = kayıt yok. Alan yoksa liste okunamadı. */
+  aiEditor?: {
+    enabled: boolean;
+    conceptPrompt: string | null;
+    contentMode: string | null;
+    autoCreated: boolean;
+  } | null;
 };
 
 type SiteForm = {
@@ -180,6 +187,10 @@ type SiteForm = {
   /** Konsept site paleti. `ozel` = conceptPrimary. */
   conceptPalette: string;
   conceptPrimary: string;
+  /** Yeni sitede varsayılan açık. Kayıt yoksa düzenlemede kapalı (mevcut siteye satır açılmaz). */
+  aiEditorEnabled: boolean;
+  /** Manşet seçimi talimatı. AI haberi yeniden yazmaz. */
+  aiConceptPrompt: string;
   /** null = seçilmedi (yönelim atanmaz, süzgeç yok). */
   yonelim: SiteYonelim | null;
 };
@@ -190,6 +201,7 @@ const CONCEPT_TOPICS: { value: string; label: string }[] = [
   { value: "sehit-gazi", label: "Şehit / Gazi" },
   { value: "cevre", label: "Çevre / Doğa" },
   { value: "saglik", label: "Sağlık" },
+  { value: "ekonomi", label: "Ekonomi" },
   { value: "teknoloji", label: "Teknoloji" },
   { value: "yerel", label: "Yerel" },
   { value: "bolge", label: "Bölge (il / bölge gündemi)" },
@@ -227,6 +239,8 @@ const emptyForm: SiteForm = {
   conceptTopic: "diger",
   conceptPalette: "portal",
   conceptPrimary: "#b00020",
+  aiEditorEnabled: true,
+  aiConceptPrompt: "",
   yonelim: null,
 };
 
@@ -413,6 +427,8 @@ function formFromSite(site: HmSiteRow): SiteForm {
     conceptTopic,
     conceptPalette: "portal",
     conceptPrimary: "#b00020",
+    aiEditorEnabled: site.aiEditor?.enabled === true,
+    aiConceptPrompt: site.aiEditor?.conceptPrompt ?? "",
     slug: site.slug ?? "",
     displayName: site.displayName ?? "",
     description: site.description ?? "",
@@ -438,7 +454,7 @@ function formFromSite(site: HmSiteRow): SiteForm {
 function payloadFromForm(
   form: SiteForm,
   editorId?: number,
-  opts?: { includePhpThemeFlag?: boolean; kind?: HmSiteKind; isCreate?: boolean; newsDomains?: string[] },
+  opts?: { includePhpThemeFlag?: boolean; kind?: HmSiteKind; isCreate?: boolean; newsDomains?: string[]; includeAiEditor?: boolean },
 ) {
   const kind = opts?.kind ?? "news";
   const domains = kind === "news" && opts?.newsDomains ? opts.newsDomains : [form.domain, form.domain2, form.domain3];
@@ -481,6 +497,10 @@ function payloadFromForm(
   }
   if (opts?.includePhpThemeFlag && kind === "news") {
     body.layoutJson = { phpTheme: true, frontend: "php" };
+  }
+  if (kind === "news" && (opts?.isCreate || opts?.includeAiEditor)) {
+    body.aiEditorEnabled = form.aiEditorEnabled;
+    body.aiConceptPrompt = form.aiConceptPrompt;
   }
   if (editorId) body.editorId = editorId;
   if (form.editorDisplayName) body.editorDisplayName = form.editorDisplayName;
@@ -718,7 +738,13 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          payloadFromForm(form, editorId, { includePhpThemeFlag, kind, isCreate: !editingId, newsDomains }),
+          payloadFromForm(form, editorId, {
+            includePhpThemeFlag,
+            kind,
+            isCreate: !editingId,
+            newsDomains,
+            includeAiEditor: Boolean(current && Object.prototype.hasOwnProperty.call(current, "aiEditor")),
+          }),
         ),
       });
       const text = await r.text();
@@ -752,12 +778,16 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
           ? ` · yeni editör: ${createdDefault} (şifre = kullanıcı adı)`
           : "";
       const wasPassiveEditor = primaryEditorIsPassive(current);
+      const aiEditorWarning = (j as { aiEditorWarning?: string }).aiEditorWarning;
       toast({
         title: editingId ? `${noun} güncellendi` : `${noun} oluşturuldu`,
         description: wasPassiveEditor
           ? `Editör yeniden aktif edildi · slug: /${form.slug.trim()}${gundemiNote}${editorNote}`
           : `Slug: /${form.slug.trim()}${gundemiNote}${editorNote} · kaydı yenileniyor…`,
       });
+      if (aiEditorWarning) {
+        toast({ title: "AI editör uyarısı", description: aiEditorWarning, variant: "destructive" });
+      }
       resetForm();
       await qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
       await refetch();
@@ -1162,6 +1192,30 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                     </div>
                   ) : null}
                   {renderCreateThemeField()}
+                  <div className="space-y-2 rounded-lg border border-sky-200 bg-sky-50/70 px-3 py-2">
+                    <label className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-gray-800">AI editör</span>
+                      <Switch checked={form.aiEditorEnabled} onCheckedChange={(v) => update("aiEditorEnabled", Boolean(v))} />
+                    </label>
+                    <div className="space-y-1.5">
+                      <Label>Site konsepti / içerik talimatı</Label>
+                      <Textarea
+                        value={form.aiConceptPrompt}
+                        onChange={(e) => update("aiConceptPrompt", e.target.value)}
+                        rows={4}
+                        placeholder="Örn. Yalnızca ekonomi ve piyasa haberleri; magazin ve spor seçme."
+                      />
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-sky-950">
+                      AI yalnız manşet seçer ve kategori atar. Haber metnini yeniden yazmaz; kaynak haber ve link kalır
+                      (içerik modu curate).
+                      {editingId &&
+                      Object.prototype.hasOwnProperty.call(sites.find((s) => s.id === editingId) ?? {}, "aiEditor") &&
+                      sites.find((s) => s.id === editingId)?.aiEditor == null
+                        ? " Bu sitede AI editör kaydı yok; mevcut siteler buradan eklenmez."
+                        : ""}
+                    </p>
+                  </div>
                   <ul className="list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-emerald-950">
                     <li>
                       Kendi domaini varsa canonical, sitemap.xml, robots.txt, SEO/GEO, OG ve RSS o domaini gösterir;
