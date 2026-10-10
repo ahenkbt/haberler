@@ -8,7 +8,7 @@ use Yenisafak\SporLive;
 
 /** @var array<string, mixed> $live */
 ?>
-<section class="spor-chero" style="--c:#f5c518;--ink:#12161a"><div class="spor-wrap">
+<section class="spor-chero" style="--c:#f5c518;--on:#12161a"><div class="spor-wrap">
   <p class="spor-crumb"><a href="/">Ana Sayfa</a> / Puan durumu</p>
   <h1>Süper Lig puan durumu</h1>
   <p><?php if (($live['season'] ?? '') !== ''): ?><?= Html::e((string) $live['season']) ?>. <?php endif; ?>

@@ -17,7 +17,7 @@ foreach ($live['matches'] ?? [] as $m) {
 }
 ksort($groups);
 ?>
-<section class="spor-chero" style="--c:#0e8f3d;--ink:#fff"><div class="spor-wrap">
+<section class="spor-chero" style="--c:#0e8f3d;--on:#fff"><div class="spor-wrap">
   <p class="spor-crumb"><a href="/">Ana Sayfa</a> / Canlı skor</p>
   <h1>Canlı skor</h1>
   <p>Süper Lig.<?php if (($live['season'] ?? '') !== ''): ?> Sezon <?= Html::e((string) $live['season']) ?>.<?php endif; ?>

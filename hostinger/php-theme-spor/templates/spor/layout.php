@@ -97,7 +97,7 @@ $more = array_values(array_filter(Spor::otherSlugs(), static fn (string $slug): 
       <div class="spor-wrap spor-nav-in">
         <a href="/"<?= $current === '/' ? ' aria-current="page"' : '' ?>>Ana Sayfa</a>
         <?php foreach (Spor::NAV as $slug): $s = Spor::section($slug); if ($s === null) { continue; } ?>
-          <a href="/kategori/<?= Html::e($slug) ?>" style="--c:<?= Html::e($s['color']) ?>;--ink:<?= Html::e($s['ink']) ?>"<?= $isCur('/kategori/' . $slug) ? ' aria-current="page"' : '' ?>><?= Html::e($s['short']) ?></a>
+          <a href="/kategori/<?= Html::e($slug) ?>" style="--c:<?= Html::e($s['color']) ?>;--on:<?= Html::e($s['ink']) ?>"<?= $isCur('/kategori/' . $slug) ? ' aria-current="page"' : '' ?>><?= Html::e($s['short']) ?></a>
         <?php endforeach; ?>
         <?php if ($more !== []): ?>
         <details class="spor-more">

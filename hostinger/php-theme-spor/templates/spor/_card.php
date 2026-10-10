@@ -18,7 +18,7 @@ $tag = $sec['short'] ?? ($cat !== '' ? $cat : '');
 $lazy = $v === 'slide' || $v === 'feature' ? 'fetchpriority="high"' : 'loading="lazy"';
 $title = (string) ($s['title'] ?? '');
 ?>
-<article class="spor-card spor-card-<?= Html::e($v) ?>" style="--c:<?= Html::e($col) ?>;--ink:<?= Html::e($ink) ?>">
+<article class="spor-card spor-card-<?= Html::e($v) ?>" style="--c:<?= Html::e($col) ?>;--on:<?= Html::e($ink) ?>">
   <a class="spor-card-a" href="<?= Html::e($href) ?>">
     <?php if ($v !== 'row'): ?>
     <span class="spor-card-media<?= $img === '' ? ' is-empty' : '' ?>">

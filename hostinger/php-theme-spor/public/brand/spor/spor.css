@@ -91,7 +91,7 @@ body.spor{margin:0;background:var(--paper);color:var(--text);font:16px/1.5 var(-
 .spor-card-media img{width:100%;height:100%;object-fit:cover;display:block}
 .spor-card-ph{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font:800 64px/1 var(--cond);color:rgba(245,197,24,.7)}
 .spor-card-media.is-empty .spor-card-ph{display:flex}
-.spor-tag{display:inline-block;background:var(--c);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.spor-tag{display:inline-block;background:var(--c);color:var(--on,#12161a);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
 .spor-card-t{display:block;margin-top:6px;font-family:var(--cond);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:.01em}
 .spor-card-a:hover .spor-card-t{color:var(--pitch-deep)}
 .spor-card-s{display:block;margin-top:8px;color:#d5ddd6;font-size:15px}

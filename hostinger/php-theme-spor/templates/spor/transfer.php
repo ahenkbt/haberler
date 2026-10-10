@@ -5,7 +5,7 @@ declare(strict_types=1);
 /** @var Yenisafak\Site $site */
 /** @var list<array<string, mixed>> $items */
 ?>
-<section class="spor-chero" style="--c:#f5c518;--ink:#12161a"><div class="spor-wrap">
+<section class="spor-chero" style="--c:#f5c518;--on:#12161a"><div class="spor-wrap">
   <p class="spor-crumb"><a href="/">Ana Sayfa</a> / Transfer</p>
   <h1>Transfer</h1>
   <p>Başlığında transfer, bonservis veya kiralık geçen haberler. Ayrı bir kategori değildir; futbol ve spor haberlerinin içinden süzülür.</p>
