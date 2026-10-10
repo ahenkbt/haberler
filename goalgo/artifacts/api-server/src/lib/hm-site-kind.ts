@@ -12,6 +12,8 @@
  * - The type is locked once created (layout_json.hmSiteKind); news ↔ corporate conversion is refused.
  */
 
+import { HM_NEW_SITE_PORTAL_THEME, resolveConceptPortalColors, resolveNewSiteVitrinTheme } from "./hm-new-site-theme.js";
+
 export type HmSiteKind = "news" | "corporate";
 
 export const HM_PLATFORM_ALIAS_ZONES = ["gundemi.org", "fix.tc"] as const;
@@ -220,9 +222,10 @@ export function siteKindPatchError(current: HmSiteKind, incomingLayout: Record<s
   if ("hmVitrinTheme" in incomingLayout) {
     const theme = String(incomingLayout.hmVitrinTheme ?? "").trim().toLowerCase();
     const corporateTheme = CORPORATE_THEMES.has(theme);
+    const portalTheme = theme === "portal" || theme === "classic" || theme === "klasik";
     if (current === "news" && corporateTheme) return "Haber sitesine kurumsal tema (VKD/VATAN) verilemez.";
-    if (current === "corporate" && theme && !corporateTheme) {
-      return "Kurumsal siteye haber teması verilemez; yalnızca kurumsal temalar (VKD / VATAN).";
+    if (current === "corporate" && theme && !corporateTheme && !portalTheme) {
+      return "Kurumsal siteye haber teması verilemez; yalnızca kurumsal temalar (VKD / VATAN) veya Portal.";
     }
   }
   if (current === "news" && (incomingLayout.phpTheme === false || ["spa", "react", "worker"].includes(String(incomingLayout.frontend ?? "").toLowerCase()))) {
@@ -234,13 +237,23 @@ export function siteKindPatchError(current: HmSiteKind, incomingLayout: Record<s
   return null;
 }
 
-/** Layout keys written on create, by kind. */
-export function siteKindLayoutDefaults(kind: HmSiteKind, corporateTheme?: unknown): Record<string, unknown> {
+/**
+ * Layout keys written on create, by kind.
+ * Tema boşsa Portal. Eski kurumsal istemci yalnız `corporateTheme=vatan|corporate` gönderirse o tema kalır.
+ * `vitrinTheme` doluysa o kazanır. Mevcut satırlara uygulanmaz.
+ */
+export function siteKindLayoutDefaults(
+  kind: HmSiteKind,
+  corporateTheme?: unknown,
+  vitrinTheme?: unknown,
+): Record<string, unknown> {
+  const theme = resolveNewSiteVitrinTheme(kind, corporateTheme, vitrinTheme);
   if (kind === "corporate") {
-    const t = String(corporateTheme ?? "").trim().toLowerCase();
-    return { hmSiteKind: "corporate", hmVitrinTheme: t === "vatan" ? "vatan" : "corporate", phpTheme: false, frontend: "spa" };
+    return { hmSiteKind: "corporate", hmVitrinTheme: theme, phpTheme: false, frontend: "spa" };
   }
-  return { hmSiteKind: "news", hmVitrinTheme: "yenisafak", phpTheme: true, frontend: "php" };
+  // Haber sitesi yayını PHP'de kalır (gundemi.org / fix.tc). Portal görünümü SPA'da
+  // `hmVitrinTheme: portal` → classic ile açılır; PHP şablon bayrağı değişmez.
+  return { hmSiteKind: "news", hmVitrinTheme: theme, phpTheme: true, frontend: "php" };
 }
 
 /** İki etiketli kamu sonekleri (bilgi@<kayıtlı-alan> için). */
@@ -301,7 +314,11 @@ export function normalizeHmConceptTopic(raw: unknown): HmConceptTopic | null {
   return (HM_CONCEPT_TOPICS as readonly string[]).includes(t) ? (t as HmConceptTopic) : null;
 }
 
-export function conceptSiteLayoutDefaults(conceptRaw: unknown, topicRaw?: unknown): Record<string, unknown> {
+export function conceptSiteLayoutDefaults(
+  conceptRaw: unknown,
+  topicRaw?: unknown,
+  color?: { palette?: unknown; primary?: unknown } | null,
+): Record<string, unknown> {
   const concept = conceptRaw === true || conceptRaw === "true" || conceptRaw === 1 || conceptRaw === "1";
   if (!concept) return { hmConceptSite: false };
   const topic = normalizeHmConceptTopic(topicRaw) ?? "diger";
@@ -309,6 +326,8 @@ export function conceptSiteLayoutDefaults(conceptRaw: unknown, topicRaw?: unknow
   const out: Record<string, unknown> = {
     hmConceptSite: true,
     hmConceptTopic: topic,
+    hmVitrinTheme: HM_NEW_SITE_PORTAL_THEME,
+    ...resolveConceptPortalColors(color),
     hmNewsYsHoroscopeEnabled: false,
     hmNewsYsStandingsEnabled: sports,
     hmNewsYsSportsHoroscopeEnabled: sports,
