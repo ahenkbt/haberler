@@ -18,6 +18,7 @@ import { VatanMilliGunler } from "@/components/vatan/home/VatanMilliGunler";
 import { VatanAtaturkKosesi } from "@/components/vatan/home/VatanAtaturkKosesi";
 import { VatanTarihPanels } from "@/components/vatan/home/VatanTarihPanels";
 import { VatanDestekOl } from "@/components/vatan/home/VatanDestekOl";
+import { VatanSehitGaziPromo } from "@/components/vatan/home/VatanSehitGaziPromo";
 
 const NUMBERED: ReadonlySet<VatanHomeModuleId> = new Set([
   "mosaic",
@@ -82,6 +83,8 @@ export function HmVatanHome({ layoutPrefs, slug }: { layoutPrefs: NewsSiteLayout
             return <VatanTarihPanels key={id} numeral={numerals.get(id)} />;
           case "donation":
             return <VatanDestekOl key={id} layoutPrefs={layoutPrefs} slug={slug} numeral={numerals.get(id)} />;
+          case "sehitGazi":
+            return <VatanSehitGaziPromo key={id} />;
           default:
             return null;
         }
