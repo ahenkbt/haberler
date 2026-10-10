@@ -29,7 +29,7 @@ function fmtChange(
   prev: number | undefined,
   decimals = 2,
 ): { change: string; direction: "up" | "down" | "flat" } {
-  if (prev == null || prev === 0) return { change: "-", direction: "flat" };
+  if (prev == null || !Number.isFinite(prev) || prev === 0) return { change: "-", direction: "flat" };
   const diff = cur - prev;
   if (Math.abs(diff) < 0.005 && decimals >= 2) return { change: "0,00", direction: "flat" };
   if (Math.abs(diff) < 1 && decimals === 0) return { change: "0", direction: "flat" };
@@ -40,7 +40,7 @@ function fmtChange(
   };
 }
 
-async function fetchWithTimeout(
+export async function fetchWithTimeout(
   url: string,
   timeoutMs = 6000,
 ): Promise<unknown> {
@@ -58,6 +58,30 @@ async function fetchWithTimeout(
   }
 }
 
+export type YahooQuote = { price: number; prev: number };
+
+/**
+ * Yahoo Finance chart API (anahtarsız) — son fiyat ve önceki kapanış. Başarısızsa null (değer UYDURULMAZ).
+ * XU100.IS = BIST 100, BZ=F = Brent ham petrol vadeli.
+ */
+export async function fetchYahooQuote(symbol: string, fetchJson: typeof fetchWithTimeout = fetchWithTimeout): Promise<YahooQuote | null> {
+  try {
+    const j = (await fetchJson(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`,
+    )) as { chart?: { result?: Array<{ meta?: Record<string, unknown> }> } };
+    const m = j?.chart?.result?.[0]?.meta;
+    const price = Number(m?.regularMarketPrice);
+    if (!(price > 0)) return null;
+    const pct = Number(m?.regularMarketChangePercent);
+    const chartPrev = Number(m?.chartPreviousClose);
+    const prev = Number.isFinite(pct) && pct > -100 ? price / (1 + pct / 100) : chartPrev > 0 ? chartPrev : NaN;
+    return { price, prev: prev > 0 ? prev : NaN };
+  } catch (e) {
+    logger.warn({ err: e, symbol }, "finance: yahoo quote failed");
+    return null;
+  }
+}
+
 export async function getLiveFinance(): Promise<FinanceItem[]> {
   if (cache && Date.now() - cache.fetchedAt < TTL_MS) {
     return cache.items;
@@ -65,6 +89,7 @@ export async function getLiveFinance(): Promise<FinanceItem[]> {
 
   const prevRates = cache?.prevRates ?? {};
   const nowRates: Record<string, number> = { ...prevRates };
+  const realPrev: Record<string, number> = {};
 
   // --- Fetch USD/EUR/GBP → TRY ---
   try {
@@ -104,72 +129,38 @@ export async function getLiveFinance(): Promise<FinanceItem[]> {
     logger.warn({ err: e }, "finance: coingecko fetch failed — using cache");
   }
 
-  // --- BIST 100 & Brent: no free public API → simulate small drift ---
-  const baseBist = nowRates["BIST"] || 9_872;
-  const baseBrent = nowRates["BRL"] || 65.40;
-  nowRates["BIST"] = baseBist + (Math.random() - 0.5) * 20;
-  nowRates["BRL"] = baseBrent + (Math.random() - 0.5) * 0.15;
+  // --- BIST 100 & Brent: gerçek veri (Yahoo Finance chart API, anahtarsız). Uydurma/rastgele değer YOK. ---
+  const [bist, brent] = await Promise.all([fetchYahooQuote("XU100.IS"), fetchYahooQuote("BZ=F")]);
+  if (bist) {
+    nowRates["BIST"] = bist.price;
+    realPrev["BIST"] = bist.prev;
+  }
+  if (brent) {
+    nowRates["BRL"] = brent.price;
+    realPrev["BRL"] = brent.prev;
+  }
 
-  // Fallbacks if everything fails
-  if (!nowRates["USD"]) nowRates["USD"] = 38.5;
-  if (!nowRates["EUR"]) nowRates["EUR"] = 43.0;
-  if (!nowRates["GBP"]) nowRates["GBP"] = 50.5;
-  if (!nowRates["GA"]) nowRates["GA"] = 3100;
-  if (!nowRates["CA"]) nowRates["CA"] = 5450;
-  if (!nowRates["BTC"]) nowRates["BTC"] = 2_800_000;
-
-  const items: FinanceItem[] = [
-    {
-      symbol: "USD",
-      label: "Dolar",
-      value: fmt(nowRates["USD"], 2),
-      ...fmtChange(nowRates["USD"], prevRates["USD"], 2),
-    },
-    {
-      symbol: "EUR",
-      label: "Euro",
-      value: fmt(nowRates["EUR"], 2),
-      ...fmtChange(nowRates["EUR"], prevRates["EUR"], 2),
-    },
-    {
-      symbol: "GBP",
-      label: "Sterlin",
-      value: fmt(nowRates["GBP"], 2),
-      ...fmtChange(nowRates["GBP"], prevRates["GBP"], 2),
-    },
-    {
-      symbol: "GA",
-      label: "Gram Altın",
-      value: fmt(nowRates["GA"], 0),
-      ...fmtChange(nowRates["GA"], prevRates["GA"], 0),
-    },
-    {
-      symbol: "CA",
-      label: "Çeyrek Altın",
-      value: fmt(nowRates["CA"], 0),
-      ...fmtChange(nowRates["CA"], prevRates["CA"], 0),
-    },
-    {
-      symbol: "BIST",
-      label: "BIST 100",
-      value: fmt(nowRates["BIST"], 0),
-      ...fmtChange(nowRates["BIST"], prevRates["BIST"], 0),
-    },
-    {
-      symbol: "BTC",
-      label: "Bitcoin",
-      value: fmt(nowRates["BTC"], 0),
-      ...fmtChange(nowRates["BTC"], prevRates["BTC"], 0),
-    },
-    {
-      symbol: "BRL",
-      label: "Brent",
-      value: fmt(nowRates["BRL"], 2),
-      ...fmtChange(nowRates["BRL"], prevRates["BRL"], 2),
-    },
+  // Yalnızca gerçek veriyle gelen kalemler yayımlanır; veri yoksa kalem atlanır (varsayılan/uydurma değer yok).
+  const spec: Array<[string, string, string, number, boolean]> = [
+    // [symbol, label, key, decimals, prevIsReal]
+    ["USD", "Dolar", "USD", 2, false],
+    ["EUR", "Euro", "EUR", 2, false],
+    ["GBP", "Sterlin", "GBP", 2, false],
+    ["GA", "Gram Altın", "GA", 0, false],
+    ["CA", "Çeyrek Altın", "CA", 0, false],
+    ["BIST", "BIST 100", "BIST", 0, true],
+    ["BTC", "Bitcoin", "BTC", 0, false],
+    ["BRL", "Brent", "BRL", 2, true],
   ];
+  const items: FinanceItem[] = [];
+  for (const [symbol, label, key, dec, realPrevious] of spec) {
+    const cur = nowRates[key];
+    if (!(cur > 0)) continue;
+    const prev = realPrevious ? realPrev[key] : prevRates[key];
+    items.push({ symbol, label, value: fmt(cur, dec), ...fmtChange(cur, prev, dec) });
+  }
 
   cache = { items, fetchedAt: Date.now(), prevRates: nowRates };
-  logger.info({ usd: nowRates["USD"], btc: nowRates["BTC"] }, "finance: cache refreshed");
+  logger.info({ usd: nowRates["USD"], btc: nowRates["BTC"], bist: nowRates["BIST"], brent: nowRates["BRL"] }, "finance: cache refreshed");
   return items;
 }
