@@ -34,7 +34,12 @@ export const VATAN_HOME_MODULE_ORDER = [
   "donation",
 ] as const;
 
-export type VatanHomeModuleId = (typeof VATAN_HOME_MODULE_ORDER)[number];
+/** Opt-in modules: never auto-appended; shown only when listed in `hmVatanHomeModuleOrder` (sgpromo 2026-10-11). */
+export const VATAN_HOME_OPTIN_MODULES = ["sehitGazi"] as const;
+
+export type VatanHomeModuleId =
+  | (typeof VATAN_HOME_MODULE_ORDER)[number]
+  | (typeof VATAN_HOME_OPTIN_MODULES)[number];
 
 export const VATAN_HOME_MODULE_LABELS: Record<VatanHomeModuleId, string> = {
   hero: "Anasayfa slider (Tepe Manşet)",
@@ -46,6 +51,7 @@ export const VATAN_HOME_MODULE_LABELS: Record<VatanHomeModuleId, string> = {
   ataturk: "Atatürk Köşesi",
   wars: "Tarih panelleri",
   donation: "Destek Ol / IBAN",
+  sehitGazi: "Şehit Gazi tanıtım kutusu",
 };
 
 export type VatanResolvedHero = {
@@ -211,7 +217,7 @@ export function resolveVatanMosaicTiles(prefs: NewsSiteLayoutPrefs, siteSlug?: s
 export function resolveVatanHomeHiddenModules(prefs: NewsSiteLayoutPrefs): Set<VatanHomeModuleId> {
   const hidden = new Set<VatanHomeModuleId>();
   const hasVatanOverrides = Array.isArray(prefs.hmVatanHomeHiddenModules);
-  const allowed = new Set<string>(VATAN_HOME_MODULE_ORDER);
+  const allowed = new Set<string>([...VATAN_HOME_MODULE_ORDER, ...VATAN_HOME_OPTIN_MODULES]);
   for (const raw of prefs.hmVatanHomeHiddenModules ?? []) {
     const id = String(raw ?? "").trim();
     if (allowed.has(id)) hidden.add(id as VatanHomeModuleId);
@@ -226,7 +232,7 @@ export function resolveVatanHomeHiddenModules(prefs: NewsSiteLayoutPrefs): Set<V
 }
 
 export function resolveVatanHomeModuleOrder(prefs: NewsSiteLayoutPrefs): VatanHomeModuleId[] {
-  const allowed = new Set<string>(VATAN_HOME_MODULE_ORDER);
+  const allowed = new Set<string>([...VATAN_HOME_MODULE_ORDER, ...VATAN_HOME_OPTIN_MODULES]);
   const seen = new Set<string>();
   const next: VatanHomeModuleId[] = [];
   for (const raw of prefs.hmVatanHomeModuleOrder ?? []) {

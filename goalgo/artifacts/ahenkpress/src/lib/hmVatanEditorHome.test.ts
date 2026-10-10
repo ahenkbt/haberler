@@ -275,6 +275,15 @@ describe("Vatan editor home bindings", () => {
     expect(resolveVatanVisibleHomeModules(parsed)).toEqual(VATAN_HOME_MODULE_ORDER);
   });
 
+  it("keeps the Şehit Gazi promo opt-in (sgpromo)", () => {
+    expect(resolveVatanVisibleHomeModules(prefs({ hmVatanHomeHiddenModules: [] }))).not.toContain("sehitGazi");
+    const visible = resolveVatanVisibleHomeModules(
+      prefs({ hmVatanHomeHiddenModules: [], hmVatanHomeModuleOrder: ["hero", "mosaic", "sehitGazi"] }),
+    );
+    expect(visible.slice(0, 3)).toEqual(["hero", "mosaic", "sehitGazi"]);
+    expect(visible.filter((id) => id === "sehitGazi")).toHaveLength(1);
+  });
+
   it("builds footer columns from Üst menü groups", () => {
     const groups = buildVatanFooterGroups(
       prefs({
