@@ -10,6 +10,8 @@ export type FixHaberRssFeedDef = {
   label: string;
   url: string;
   categorySlug: string;
+  /** sol = muhalif kaynak. Besleme adresi durur; dağıtım site yönelimine bakar. */
+  kaynakYonelim?: "sol";
 };
 
 function normalizeFeedUrl(raw: string): string {
@@ -34,12 +36,12 @@ export const FIXHABER_CAMPAIGN_RSS_FEEDS: FixHaberRssFeedDef[] = [
   { id: "dirilis-gundem", label: "Gündem", url: "https://www.dirilispostasi.com/rss/gundem", categorySlug: "fixhaber-gundem" },
   { id: "dirilis-dunya", label: "Dünya", url: "https://www.dirilispostasi.com/rss/dunya", categorySlug: "fixhaber-dunya" },
   { id: "dirilis-spor", label: "Spor", url: "https://www.dirilispostasi.com/rss/spor", categorySlug: "fixhaber-spor" },
-  { id: "birgun-teknoloji", label: "Teknoloji", url: "https://www.birgun.net/rss/kategori/teknoloji-28", categorySlug: "fixhaber-teknoloji" },
-  { id: "birgun-bilim", label: "Bilim", url: "https://www.birgun.net/rss/kategori/bilim-40", categorySlug: "fixhaber-bilim" },
-  { id: "birgun-bilisim", label: "Yazılım", url: "https://www.birgun.net/rss/kategori/bilisim-25", categorySlug: "fixhaber-yazilim" },
-  { id: "birgun-gundem", label: "Gündem", url: "https://www.birgun.net/rss/kategori/guncel-7", categorySlug: "fixhaber-gundem" },
-  { id: "birgun-dunya", label: "Dünya", url: "https://www.birgun.net/rss/kategori/dunya-13", categorySlug: "fixhaber-dunya" },
-  { id: "birgun-spor", label: "Spor", url: "https://www.birgun.net/rss/kategori/spor-12", categorySlug: "fixhaber-spor" },
+  { id: "birgun-teknoloji", label: "Teknoloji", url: "https://www.birgun.net/rss/kategori/teknoloji-28", categorySlug: "fixhaber-teknoloji", kaynakYonelim: "sol" },
+  { id: "birgun-bilim", label: "Bilim", url: "https://www.birgun.net/rss/kategori/bilim-40", categorySlug: "fixhaber-bilim", kaynakYonelim: "sol" },
+  { id: "birgun-bilisim", label: "Yazılım", url: "https://www.birgun.net/rss/kategori/bilisim-25", categorySlug: "fixhaber-yazilim", kaynakYonelim: "sol" },
+  { id: "birgun-gundem", label: "Gündem", url: "https://www.birgun.net/rss/kategori/guncel-7", categorySlug: "fixhaber-gundem", kaynakYonelim: "sol" },
+  { id: "birgun-dunya", label: "Dünya", url: "https://www.birgun.net/rss/kategori/dunya-13", categorySlug: "fixhaber-dunya", kaynakYonelim: "sol" },
+  { id: "birgun-spor", label: "Spor", url: "https://www.birgun.net/rss/kategori/spor-12", categorySlug: "fixhaber-spor", kaynakYonelim: "sol" },
   { id: "trt-teknoloji", label: "Teknoloji", url: "https://www.trthaber.com/teknoloji_articles.rss", categorySlug: "fixhaber-teknoloji" },
   { id: "ars-global", label: "Donanım", url: "https://feeds.arstechnica.com/arstechnica/index", categorySlug: "fixhaber-donanim" },
   { id: "verge-global", label: "Teknoloji", url: "https://www.theverge.com/rss/index.xml", categorySlug: "fixhaber-teknoloji" },

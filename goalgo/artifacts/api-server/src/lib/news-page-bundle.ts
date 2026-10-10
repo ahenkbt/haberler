@@ -24,6 +24,7 @@ import { HM_GLOBAL_NEWS_CATEGORY_SLUG } from "./hm-global-news-category.js";
 import { enrichSerializedNewsListImages, isSiteLocalNewsRow, withTimeoutOrFallback } from "./news-list-image-enrich.js";
 import { applyNewsSiteOverrides } from "./hybrid-news-merge.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
+import { andSiteRssYonelimSql, newsRssVisibleOnSite } from "./hm-site-yonelim.js";
 import { isHmCorporateLayout, parseHmLayoutJson, resolveHmCorporateAuthorsEnabledFromLayout } from "./hm-editor-categories.js";
 import { centralNewsRowBelongsToCorporateSite, centralNewsRowVisibleOnHmEditorSite } from "./hm-corporate-news-policy.js";
 import { newsRowVisibleOnHmSiteByRssTarget } from "./rss-campaign-target.js";
@@ -46,8 +47,11 @@ async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number) {
     .from(categoriesTable)
     .where(eq(categoriesTable.exclusiveSiteId, siteId));
   const ownedCategoryIds = ownedCategories.map((row) => row.id).filter((id) => Number.isFinite(id) && id > 0);
-  if (ownedCategoryIds.length === 0) return groupScope;
-  return or(groupScope, and(isNull(newsTable.siteId), inArray(newsTable.categoryId, ownedCategoryIds)))!;
+  const scope =
+    ownedCategoryIds.length === 0
+      ? groupScope
+      : or(groupScope, and(isNull(newsTable.siteId), inArray(newsTable.categoryId, ownedCategoryIds)))!;
+  return andSiteRssYonelimSql(siteId, scope);
 }
 
 async function newsRowBelongsToSite(
@@ -56,6 +60,7 @@ async function newsRowBelongsToSite(
   readDb: NewsReadDb,
   isCorporate: boolean,
 ): Promise<boolean> {
+  if (!(await newsRssVisibleOnSite(row.rssSourceUrl, siteId))) return false;
   if (row.siteId === siteId) return true;
   if (row.siteId != null) {
     const groupSiteIds = await resolveHmPublishGroupSiteIds(siteId);

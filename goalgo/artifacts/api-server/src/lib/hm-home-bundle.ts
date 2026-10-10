@@ -9,6 +9,7 @@ import {
 } from "./serializers.js";
 import { getHmHiddenCategoryIds, yekparePoolReceiveEnabledFromLayout } from "./hm-public-layout.js";
 import { getHmNewsSiteByIdCompat } from "./hm-site-compat.js";
+import { andSiteRssYonelimSql } from "./hm-site-yonelim.js";
 import { parseHmLayoutJson, isHmCorporateLayout } from "./hm-editor-categories.js";
 import {
   strictCorporateSiteNewsScopeSql,
@@ -40,8 +41,10 @@ const CENTER_HEADLINE_DEFAULT_LIMIT = 15;
 /** Haber siteleri public vitrin: bu site_id + publish-group editör satırları. */
 async function newsSiteScopeCondition(readDb: NewsReadDb, siteId: number, corporateStrict = false): Promise<SQL> {
   void readDb;
-  if (corporateStrict) return strictCorporateSiteNewsScopeSql(siteId);
-  return publicHmSiteNewsScopeSql(siteId);
+  const scope = corporateStrict
+    ? strictCorporateSiteNewsScopeSql(siteId)
+    : await publicHmSiteNewsScopeSql(siteId);
+  return andSiteRssYonelimSql(siteId, scope);
 }
 
 function filterPublicEditorNewsItems(

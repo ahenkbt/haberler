@@ -37,6 +37,65 @@ type SeoVerification = {
 };
 
 export type HmSiteKind = "news" | "corporate";
+export type SiteYonelim = "sag" | "sol" | "karma";
+
+const YONELIM_OPTIONS: { id: SiteYonelim; label: string }[] = [
+  { id: "sag", label: "Sağ" },
+  { id: "sol", label: "Sol" },
+  { id: "karma", label: "Karma" },
+];
+
+function normalizeYonelim(raw: unknown): SiteYonelim {
+  const v = String(raw ?? "")
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g");
+  if (v === "sag") return "sag";
+  if (v === "sol") return "sol";
+  return "karma";
+}
+
+function YonelimSecici({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: SiteYonelim;
+  disabled?: boolean;
+  onChange: (next: SiteYonelim) => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Site yönelimi"
+      title="Sağ: ılımlı kaynaklar, muhalif yok. Sol: muhalif kaynaklar. Karma: orta. Yalnız yönetim panelinde görünür."
+      className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5"
+    >
+      {YONELIM_OPTIONS.map((opt) => {
+        const on = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            disabled={disabled}
+            onClick={() => {
+              if (!on) onChange(opt.id);
+            }}
+            className={
+              on
+                ? "rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
+                : "rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            }
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 type DomainCheckResult = {
   host: string;
@@ -65,6 +124,8 @@ type HmSiteRow = {
   layoutJson?: string | null;
   hybridRssEnabled?: boolean;
   publicSuspended?: boolean;
+  /** sag | sol | karma. Yalnız yönetim listesinde. Varsayılan karma. */
+  yonelim?: SiteYonelim | string | null;
   /** layout_json phpTheme / frontend — Hostinger PHP şablon */
   phpTheme?: boolean;
   contact?: { phone?: string; email?: string; address?: string; notes?: string };
@@ -106,6 +167,7 @@ type SiteForm = {
   /** Haber (yalnız oluşturma): konsept site — Süper Lig/burç vb. genel kutular olmaz; spor konseptinde Süper Lig kalır */
   conceptSite: boolean;
   conceptTopic: string;
+  yonelim: SiteYonelim;
 };
 
 const CONCEPT_TOPICS: { value: string; label: string }[] = [
@@ -148,6 +210,7 @@ const emptyForm: SiteForm = {
   corporateTheme: "corporate",
   conceptSite: false,
   conceptTopic: "diger",
+  yonelim: "karma",
 };
 
 const PLATFORM_ZONES = ["gundemi.org", "fix.tc"] as const;
@@ -260,6 +323,7 @@ async function fetchHmSites(kind: HmSiteKind): Promise<{ items: HmSiteRow[] }> {
           hybridRssEnabled: layout.hybridRssEnabled === true,
           publicSuspended: isHmPublicSuspended(layout),
           phpTheme: isHmPhpThemeSite(layout),
+          yonelim: normalizeYonelim(site.yonelim),
         };
       })
     : [];
@@ -346,6 +410,7 @@ function formFromSite(site: HmSiteRow): SiteForm {
     active: site.active !== false,
     hybridRssEnabled: site.hybridRssEnabled === true,
     phpTheme: site.phpTheme === true,
+    yonelim: normalizeYonelim(site.yonelim),
   };
 }
 
@@ -375,6 +440,7 @@ function payloadFromForm(
     },
     active: form.active,
   };
+  if (kind === "news") body.yonelim = form.yonelim;
   // Site türü sunucuda kilitli: haber = PHP (Yenişafak), kurumsal = VKD/VATAN. Tür yalnızca oluşturmada yazılır.
   if (opts?.isCreate) {
     body.siteKind = kind;
@@ -423,6 +489,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
   const [suspendingId, setSuspendingId] = useState<number | null>(null);
   const [checkingId, setCheckingId] = useState<number | null>(null);
   const [domainChecks, setDomainChecks] = useState<Record<number, DomainCheckResult[]>>({});
+  const [yonelimSavingId, setYonelimSavingId] = useState<number | null>(null);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["/api/hm/sites", "admin-panel", kind],
@@ -676,6 +743,27 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
       toast({ title: "Askı durumu değişmedi", description: String(e).slice(0, 180), variant: "destructive" });
     } finally {
       setSuspendingId(null);
+    }
+  }
+
+  async function setSiteYonelim(site: HmSiteRow, next: SiteYonelim) {
+    if (normalizeYonelim(site.yonelim) === next) return;
+    setYonelimSavingId(site.id);
+    try {
+      await ensureAdminPanelBootstrap();
+      const r = await apiFetch(apiUrl(`/api/hm/sites/${site.id}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ yonelim: next }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      patchSiteList(site.id, { yonelim: next });
+      if (editingId === site.id) update("yonelim", next);
+      void qc.invalidateQueries({ queryKey: ["/api/hm/sites", "admin-panel", kind] });
+    } catch (e) {
+      toast({ title: "Yönelim kaydedilemedi", description: String(e).slice(0, 180), variant: "destructive" });
+    } finally {
+      setYonelimSavingId(null);
     }
   }
 
@@ -1047,6 +1135,17 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                 </div>
               </div>
 
+              {isNews ? (
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3">
+                  <div className="mb-2 text-sm font-semibold text-gray-800">Yönelim</div>
+                  <YonelimSecici value={form.yonelim} onChange={(next) => update("yonelim", next)} />
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                    Sağ: ılımlı kaynaklar, muhalif kaynak yok. Sol: muhalif kaynaklardan beslenir. Karma: orta.
+                    Varsayılan Karma. Bu seçim yalnız yönetim panelinde görünür.
+                  </p>
+                </div>
+              ) : null}
+
               <label className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2">
                 <span className="text-sm font-semibold text-gray-800">Site aktif</span>
                 <Switch checked={form.active} onCheckedChange={(v) => update("active", Boolean(v))} />
@@ -1172,6 +1271,7 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                           )}
                         </div>
 
+                        <div className="flex flex-col items-start gap-2 lg:items-end">
                         <div className="flex flex-wrap items-center gap-2">
                           <Button
                             type="button"
@@ -1201,6 +1301,14 @@ export default function HaberSiteleri({ kind = "news" }: { kind?: HmSiteKind } =
                           <Button type="button" variant="outline" size="sm" onClick={() => deleteSite(site)} className="border-red-200 text-red-600 hover:bg-red-50">
                             <Trash2 className="mr-1 h-4 w-4" /> Sil
                           </Button>
+                        </div>
+                        {isNews ? (
+                          <YonelimSecici
+                            value={normalizeYonelim(site.yonelim)}
+                            disabled={yonelimSavingId === site.id}
+                            onChange={(next) => void setSiteYonelim(site, next)}
+                          />
+                        ) : null}
                         </div>
                       </div>
                     </article>

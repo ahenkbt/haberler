@@ -33,6 +33,11 @@ export const rssCampaignsTable = pgTable("rss_campaigns", {
   includeYekpareHaber: boolean("include_yekpare_haber").notNull().default(false),
   /** true: Haberler.com listesinde yalnızca «tags» ile eşleşen başlıklar kazınır. */
   haberlerFilterByTags: boolean("haberler_filter_by_tags").notNull().default(false),
+  /**
+   * Kaynak yönelimi. NULL = işaretsiz, mevcut akış (hedefler değişmez).
+   * sol = muhalif kaynak; yalnız yonelim=sol sitelere dağılır.
+   */
+  kaynakYonelim: text("kaynak_yonelim"),
   addedCount: integer("added_count").notNull().default(0),
   lastRunAt: timestamp("last_run_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
