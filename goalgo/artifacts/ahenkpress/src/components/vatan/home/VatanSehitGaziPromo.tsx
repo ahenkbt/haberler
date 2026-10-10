@@ -14,7 +14,7 @@ const TOPICS = [
   "Millî Günler",
 ];
 
-export function VatanSehitGaziPromo({ numeral }: { numeral?: string }) {
+export function VatanSehitGaziPromo(_props: { numeral?: string }) {
   return (
     <section className="vatan-section vatan-sgpromo" aria-labelledby="vatan-sgpromo-title">
       <div className="vatan-wrap">
@@ -29,11 +29,6 @@ export function VatanSehitGaziPromo({ numeral }: { numeral?: string }) {
             <img src={SG_LOGO} alt="Şehit Gazi" width={260} height={72} loading="lazy" decoding="async" />
           </div>
           <div className="vatan-sgpromo__body">
-            <p className="vatan-eyebrow vatan-sgpromo__eyebrow">
-              {numeral ? <span className="vatan-eyebrow__numeral">{numeral}</span> : null}
-              {numeral ? <span aria-hidden="true">—</span> : null}
-              <span>Türk Kültürünü Araştırma ve Tanıtma Vakfı hizmetidir</span>
-            </p>
             <h2 className="vatan-h2 vatan-sgpromo__title" id="vatan-sgpromo-title">
               Şehit Gazi <em>Vakar · Vefa · Minnet</em>
             </h2>
