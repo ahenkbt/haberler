@@ -8,6 +8,7 @@ import { hmNewsSitesTable } from "./schema/hm";
 import { newsTable } from "./schema/news";
 import { categoriesTable } from "./schema/categories";
 import { phpSiteIdFromWorker } from "./phpSiteIdMap";
+import { resolvePhpSiteForPanelRow, type PanelSiteKeys } from "./phpSiteResolve";
 
 export type NewsDbReadMode = "main" | "news";
 export type NewsDbWriteMode = "main" | "news" | "dual";
@@ -324,24 +325,81 @@ export async function dualWriteInsert<T extends PgTable>(
   return primary;
 }
 
+export type DualWriteUpdateOptions = {
+  /** hm_news_sites only: columns never mirrored to the PHP row (e.g. layoutJson, mirrored by changed keys instead). */
+  skipMirrorColumns?: readonly string[];
+};
+
+/**
+ * brand-shift 2026-10-11: hm_news_sites mirror. Panel ids ≠ PHP ids, so the PHP row is resolved per updated row by
+ * its (pre-update) domain via resolvePhpSiteForPanelRow — never by the same numeric id. Unresolved/ambiguous → skip.
+ * layoutJson is mirrored only when the PHP id equals the panel id AND the domain matched (legacy seeds); other callers
+ * must use mirrorHmSiteLayoutJsonToPhpNeon with changed keys.
+ */
+async function mirrorHmNewsSitesUpdate(
+  before: Array<Record<string, unknown>>,
+  set: Record<string, unknown>,
+  opts: DualWriteUpdateOptions,
+): Promise<void> {
+  if (!newsDb) return;
+  const skip = new Set(opts.skipMirrorColumns ?? []);
+  for (const row of before) {
+    const panelId = Number(row.id);
+    const res = await resolvePhpSiteForPanelRow(row as PanelSiteKeys);
+    if (!res.ok) {
+      console.warn(`[news-db] hm_news_sites mirror atlandı (panel ${panelId}): ${res.reason}`);
+      continue;
+    }
+    const mirrorSet: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(set)) {
+      if (k === "id" || skip.has(k)) continue;
+      if (k === "layoutJson" && res.phpSiteId !== panelId) continue;
+      mirrorSet[k] = v;
+    }
+    if (Object.keys(mirrorSet).length === 0) continue;
+    await (newsDb as NewsDatabase)
+      .update(hmNewsSitesTable)
+      .set(mirrorSet as Partial<typeof hmNewsSitesTable.$inferInsert>)
+      .where(eq(hmNewsSitesTable.id, res.phpSiteId));
+  }
+}
+
 /** UPDATE — hedef bayrağa göre ana ve/veya haber DB. */
 export async function dualWriteUpdate<T extends PgTable>(
   table: T,
   set: Partial<T["$inferInsert"]>,
   where: SQL | undefined,
+  opts: DualWriteUpdateOptions = {},
 ): Promise<T["$inferSelect"][]> {
   const mode = getNewsDbWriteMode();
   const cluster = getNewsDbInstance();
+  const isSites = (table as unknown) === (hmNewsSitesTable as unknown);
 
   if (mode === "news") {
     const rows = await cluster.update(table).set(set).where(where).returning();
     return rows as T["$inferSelect"][];
   }
 
+  const mirror = shouldMirrorMainWriteToNewsDb(mode) && where;
+  // hm_news_sites: remember the pre-update keys (domain may change in this very update).
+  const before =
+    mirror && isSites
+      ? ((await db
+          .select({
+            id: hmNewsSitesTable.id,
+            slug: hmNewsSitesTable.slug,
+            domain: hmNewsSitesTable.domain,
+            domain2: hmNewsSitesTable.domain2,
+            domain3: hmNewsSitesTable.domain3,
+          })
+          .from(hmNewsSitesTable)
+          .where(where)) as Array<Record<string, unknown>>)
+      : [];
   const primary = (await db.update(table).set(set).where(where).returning()) as T["$inferSelect"][];
-  if (shouldMirrorMainWriteToNewsDb(mode) && where) {
+  if (mirror) {
     try {
-      await cluster.update(table).set(set).where(where);
+      if (isSites) await mirrorHmNewsSitesUpdate(before, set as Record<string, unknown>, opts);
+      else await cluster.update(table).set(set).where(where);
     } catch (err) {
       logMirrorFailure("update", err);
     }
@@ -363,6 +421,11 @@ export async function dualWriteDelete<T extends PgTable>(
   }
 
   await db.delete(table).where(where);
+  if ((table as unknown) === (hmNewsSitesTable as unknown)) {
+    // brand-shift 2026-10-11: panel ids ≠ PHP ids — never delete a live PHP site row by the panel id.
+    if (shouldMirrorMainWriteToNewsDb(mode)) console.warn("[news-db] hm_news_sites silme PHP veritabanına yansıtılmadı (id eşlemesi güvenli değil)");
+    return;
+  }
   if (shouldMirrorMainWriteToNewsDb(mode) && where) {
     try {
       await cluster.delete(table).where(where);
