@@ -31,6 +31,15 @@ export {
 } from "./newsCluster";
 export { WORKER_TO_PHP_SITE_ID, phpSiteIdFromWorker } from "./phpSiteIdMap";
 export {
+  matchPhpSiteRow,
+  normalizeSiteHost,
+  resolvePhpSiteForPanelRow,
+  resolvePhpSiteIdForPanelId,
+  type PanelSiteKeys,
+  type PhpSiteCandidate,
+  type PhpSiteResolution,
+} from "./phpSiteResolve";
+export {
   getYektubeDbForRead,
   getYektubeDbInstance,
   getYektubeDbReadMode,

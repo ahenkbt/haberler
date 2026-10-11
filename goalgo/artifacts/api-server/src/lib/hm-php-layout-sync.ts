@@ -1,5 +1,11 @@
-import { eq, or, sql } from "drizzle-orm";
-import { db, hmNewsSitesTable, isNewsDatabaseConfigured, newsDb } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import {
+  hmNewsSitesTable,
+  isNewsDatabaseConfigured,
+  matchPhpSiteRow,
+  newsDb,
+  resolvePhpSiteIdForPanelId,
+} from "@workspace/db";
 import { buildPartialLayoutForMirror } from "./hm-layout-merge-guard.js";
 
 export type PhpLayoutMirrorResult = {
@@ -43,60 +49,92 @@ function shouldMirrorLayoutToPhpNeon(): boolean {
   return isNewsDatabaseConfigured && !!newsDb;
 }
 
+/**
+ * brand-shift 2026-10-11: panel id → PHP id strictly by the panel row's canonical domain (slug only when domainless).
+ * No numeric-id fallback: an unresolved/ambiguous site returns null and the PHP write is refused.
+ */
 async function resolvePhpSiteId(workerSiteId: number): Promise<number | null> {
   if (!newsDb) return null;
-  const sid = Math.trunc(workerSiteId);
-  if (!Number.isFinite(sid) || sid <= 0) return null;
+  const res = await resolvePhpSiteIdForPanelId(workerSiteId);
+  if (!res.ok) {
+    console.warn(`[hm-php-sync] panel ${workerSiteId}: ${res.reason}`);
+    return null;
+  }
+  return res.phpSiteId;
+}
 
-  const [w] = await db
+export type PhpSiteOverlay = {
+  phpSiteId: number;
+  layoutJson: string | null;
+  contactJson: string | null;
+  displayName: string | null;
+  description: string | null;
+};
+
+/**
+ * brand-shift 2026-10-11: the panel shows what the live PHP site really uses. For every panel row the PHP row is
+ * matched by domain (matchPhpSiteRow, one batch query); unmatched rows keep their panel values.
+ */
+export async function loadPhpOverlayForPanelSites(
+  sites: ReadonlyArray<{ id: number; slug?: string | null; domain?: string | null; domain2?: string | null; domain3?: string | null }>,
+): Promise<Map<number, PhpSiteOverlay>> {
+  const out = new Map<number, PhpSiteOverlay>();
+  if (!newsDb || sites.length === 0) return out;
+  const rows = await newsDb
     .select({
+      id: hmNewsSitesTable.id,
       slug: hmNewsSitesTable.slug,
       domain: hmNewsSitesTable.domain,
       domain2: hmNewsSitesTable.domain2,
       domain3: hmNewsSitesTable.domain3,
+      active: hmNewsSitesTable.active,
+      layoutJson: hmNewsSitesTable.layoutJson,
+      contactJson: hmNewsSitesTable.contactJson,
+      displayName: hmNewsSitesTable.displayName,
+      description: hmNewsSitesTable.description,
+    })
+    .from(hmNewsSitesTable);
+  const byId = new Map(rows.map((r) => [Number(r.id), r]));
+  const candidates = rows.map((r) => ({ id: Number(r.id), slug: r.slug, domain: r.domain, domain2: r.domain2, domain3: r.domain3, active: r.active }));
+  for (const s of sites) {
+    const res = matchPhpSiteRow(s, candidates);
+    if (!res.ok) continue;
+    const r = byId.get(res.phpSiteId);
+    if (!r) continue;
+    out.set(s.id, {
+      phpSiteId: res.phpSiteId,
+      layoutJson: r.layoutJson == null ? null : String(r.layoutJson),
+      contactJson: r.contactJson == null ? null : String(r.contactJson),
+      displayName: r.displayName ?? null,
+      description: r.description ?? null,
+    });
+  }
+  return out;
+}
+
+/** Single-site overlay (PATCH uses it as the "previous" layout so changed keys are computed against live values). */
+export async function loadPhpOverlayForPanelSite(panelSiteId: number): Promise<PhpSiteOverlay | null> {
+  if (!newsDb) return null;
+  const phpSiteId = await resolvePhpSiteId(panelSiteId);
+  if (!phpSiteId) return null;
+  const [r] = await newsDb
+    .select({
+      layoutJson: hmNewsSitesTable.layoutJson,
+      contactJson: hmNewsSitesTable.contactJson,
+      displayName: hmNewsSitesTable.displayName,
+      description: hmNewsSitesTable.description,
     })
     .from(hmNewsSitesTable)
-    .where(eq(hmNewsSitesTable.id, sid))
+    .where(eq(hmNewsSitesTable.id, phpSiteId))
     .limit(1);
-
-  const slug = String(w?.slug ?? "")
-    .trim()
-    .toLowerCase();
-  if (slug) {
-    const [php] = await newsDb
-      .select({ id: hmNewsSitesTable.id })
-      .from(hmNewsSitesTable)
-      .where(eq(hmNewsSitesTable.slug, slug))
-      .limit(1);
-    if (php?.id) return Number(php.id);
-  }
-
-  for (const raw of [w?.domain, w?.domain2, w?.domain3]) {
-    const domain = String(raw ?? "")
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .split("/")[0]
-      .replace(/^www\./, "")
-      .replace(/\.$/, "");
-    if (!domain) continue;
-    const domainMatch = sql`lower(regexp_replace(coalesce(${hmNewsSitesTable.domain}, ''), '^www\\.', '')) = ${domain}`;
-    const domain2Match = sql`lower(regexp_replace(coalesce(${hmNewsSitesTable.domain2}, ''), '^www\\.', '')) = ${domain}`;
-    const domain3Match = sql`lower(regexp_replace(coalesce(${hmNewsSitesTable.domain3}, ''), '^www\\.', '')) = ${domain}`;
-    const [phpByHost] = await newsDb
-      .select({ id: hmNewsSitesTable.id })
-      .from(hmNewsSitesTable)
-      .where(or(domainMatch, domain2Match, domain3Match))
-      .limit(1);
-    if (phpByHost?.id) return Number(phpByHost.id);
-  }
-
-  const [same] = await newsDb
-    .select({ id: hmNewsSitesTable.id })
-    .from(hmNewsSitesTable)
-    .where(eq(hmNewsSitesTable.id, sid))
-    .limit(1);
-  return same?.id ? Number(same.id) : sid;
+  if (!r) return null;
+  return {
+    phpSiteId,
+    layoutJson: r.layoutJson == null ? null : String(r.layoutJson),
+    contactJson: r.contactJson == null ? null : String(r.contactJson),
+    displayName: r.displayName ?? null,
+    description: r.description ?? null,
+  };
 }
 
 /**
@@ -183,37 +221,15 @@ export async function mirrorHmSiteRowToPhpAlias(
   },
   layoutChangedKeys?: readonly string[],
 ): Promise<{ mirrored: boolean; phpSiteId?: number; reason?: string }> {
+  // brand-shift 2026-10-11: columns (name/description/contact…) are mirrored by dualWriteUpdate to the domain-resolved
+  // PHP row; layout_json is never copied whole — only the keys this save really changed, for every site (ids equal or not).
   if (!shouldMirrorLayoutToPhpNeon()) return { mirrored: false, reason: "NEWS_DATABASE_URL yok" };
   const sid = Math.trunc(workerSiteId);
   const phpSiteId = await resolvePhpSiteId(sid);
-  if (!phpSiteId || phpSiteId === sid) return { mirrored: false, phpSiteId: phpSiteId ?? undefined, reason: "aynı id" };
-  const set: Partial<typeof hmNewsSitesTable.$inferInsert> = {};
-  if (typeof patch.displayName === "string" && patch.displayName.trim()) set.displayName = patch.displayName;
-  if (patch.description !== undefined) set.description = patch.description;
-  if (typeof patch.contactJson === "string" && patch.contactJson.trim()) {
-    try {
-      const parsed = JSON.parse(patch.contactJson) as unknown;
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        const filled = Object.fromEntries(
-          Object.entries(parsed as Record<string, unknown>).filter(
-            ([, v]) => v !== null && v !== undefined && !(typeof v === "string" && v.trim() === ""),
-          ),
-        );
-        if (Object.keys(filled).length > 0) {
-          set.contactJson = sql`(COALESCE(NULLIF(btrim(${hmNewsSitesTable.contactJson}::text), ''), '{}')::jsonb || ${JSON.stringify(filled)}::jsonb)` as unknown as string;
-        }
-      }
-    } catch {
-      /* contact JSON çözülemedi: atla */
-    }
-  }
-  if (Object.keys(set).length > 0) {
-    set.updatedAt = new Date();
-    await newsDb!.update(hmNewsSitesTable).set(set).where(eq(hmNewsSitesTable.id, phpSiteId));
-  }
-  // Only the keys this save sent; never a full-layout merge (TP-only keys and other writers' changes stay).
+  if (!phpSiteId) return { mirrored: false, reason: "PHP site domain ile eşlenemedi" };
   if (typeof patch.layoutJson === "string" && patch.layoutJson.trim() && layoutChangedKeys && layoutChangedKeys.length > 0) {
-    await mirrorHmSiteLayoutJsonToPhpNeon(sid, patch.layoutJson, { changedKeys: layoutChangedKeys });
+    const r = await mirrorHmSiteLayoutJsonToPhpNeon(sid, patch.layoutJson, { changedKeys: layoutChangedKeys });
+    return { mirrored: r.mirrored, phpSiteId, reason: r.reason };
   }
   return { mirrored: true, phpSiteId };
 }

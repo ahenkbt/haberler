@@ -118,7 +118,13 @@ import {
   resolveDefaultHmNewsSiteLayoutTheme,
 } from "../lib/hm-corporate-like-theme.js";
 import { ensurePhpThemeLayoutDefaults, layoutMarksPhpTheme } from "../lib/hm-php-theme.js";
-import { mirrorHmSiteLayoutJsonToPhpNeon, mirrorHmSiteRowToPhpAlias } from "../lib/hm-php-layout-sync.js";
+import {
+  loadPhpOverlayForPanelSite,
+  loadPhpOverlayForPanelSites,
+  mirrorHmSiteLayoutJsonToPhpNeon,
+  mirrorHmSiteRowToPhpAlias,
+  type PhpSiteOverlay,
+} from "../lib/hm-php-layout-sync.js";
 import { changedLayoutKeys, sanitizeEditorLayoutIncoming } from "../lib/hm-layout-merge-guard.js";
 import { markHmLayoutUserSave } from "../lib/hm-layout-guard.js";
 import {
@@ -1366,6 +1372,19 @@ router.get("/hm/home-bundle", async (req, res): Promise<void> => {
 
 /* —— Admin: sites CRUD ——————————————————————————————————————— */
 
+/** brand-shift 2026-10-11: panel row + live PHP values (layout/contact/name/description) and the PHP id it maps to. */
+function withPhpOverlay<T extends Record<string, unknown>>(row: T, ov: PhpSiteOverlay | null | undefined): T & { phpSiteId: number | null } {
+  if (!ov) return { ...row, phpSiteId: null };
+  return {
+    ...row,
+    ...(ov.layoutJson != null ? { layoutJson: ov.layoutJson } : {}),
+    ...(ov.contactJson != null ? { contactJson: ov.contactJson } : {}),
+    ...(ov.displayName ? { displayName: ov.displayName } : {}),
+    ...(ov.description != null ? { description: ov.description } : {}),
+    phpSiteId: ov.phpSiteId,
+  };
+}
+
 router.get("/hm/sites", async (req, res): Promise<void> => {
   if (!denyUnlessAdminMaintenance(req, res, "hm_sites")) return;
   try {
@@ -1397,10 +1416,15 @@ router.get("/hm/sites", async (req, res): Promise<void> => {
         if (row.siteSlug) aiBySlug.set(row.siteSlug, row);
       }
     }
+    // brand-shift 2026-10-11: show the live PHP row's values (matched by domain, not by id).
+    const phpOverlay = await loadPhpOverlayForPanelSites(sites).catch((err: unknown) => {
+      console.error("[hm-sites] php overlay", err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200));
+      return new Map<number, PhpSiteOverlay>();
+    });
     res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     res.json({
       items: sites.map((s) => ({
-        ...s,
+        ...withPhpOverlay(s, phpOverlay.get(s.id)),
         yonelim: normalizeSiteYonelim(s.yonelim),
         yonelimAktif: s.yonelimAktif === true,
         siteKind: resolveHmSiteKind(s),
@@ -1826,11 +1850,14 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
     const seoVerification = normalizeHmSeoVerification(b.seoVerification);
     patch.verificationJson = seoVerification ? JSON.stringify(seoVerification) : null;
   }
+  // brand-shift 2026-10-11: live PHP row of this panel site (by domain). Used as "previous" values so a save only
+  // carries the keys the user really changed, and those keys go to THIS site's PHP row — never to the same numeric id.
+  const phpOverlay = await loadPhpOverlayForPanelSite(id).catch(() => null);
   if (b.layoutJson !== undefined) {
     const [prevRow] = await newsReadDb().select({ layoutJson: hmNewsSitesTable.layoutJson }).from(hmNewsSitesTable).where(eq(hmNewsSitesTable.id, id));
     let prev: Record<string, unknown> = {};
     try {
-      const rawPrev = prevRow?.layoutJson;
+      const rawPrev = phpOverlay?.layoutJson ?? prevRow?.layoutJson;
       if (rawPrev != null && String(rawPrev).trim()) {
         const j = JSON.parse(String(rawPrev)) as unknown;
         if (j && typeof j === "object" && !Array.isArray(j)) prev = j as Record<string, unknown>;
@@ -1842,7 +1869,8 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       b.layoutJson && typeof b.layoutJson === "object" && !Array.isArray(b.layoutJson)
         ? (b.layoutJson as Record<string, unknown>)
         : {};
-    layoutChangedKeys = Object.keys(inc);
+    // Only keys whose value differs from the live (PHP) layout count as changed.
+    layoutChangedKeys = Object.keys(inc).filter((k) => JSON.stringify(inc[k]) !== JSON.stringify(prev[k]));
     const merged: Record<string, unknown> = { ...prev, ...inc, hmSiteKind: currentKind };
     if (prev.hmCategoryColors && inc.hmCategoryColors && typeof inc.hmCategoryColors === "object" && !Array.isArray(inc.hmCategoryColors)) {
       merged.hmCategoryColors = {
@@ -1939,15 +1967,16 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
   try {
     await ensureHmNewsSiteWritableColumns();
     let row: typeof hmNewsSitesTable.$inferSelect | undefined;
+    let phpMirror: { mirrored: boolean; phpSiteId?: number; reason?: string } | undefined;
     if (Object.keys(patch).length > 0) {
       let updated: typeof hmNewsSitesTable.$inferSelect | undefined;
       try {
-        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id), { skipMirrorColumns: ["layoutJson"] });
       } catch (updateErr) {
         if (!isMissingHmSiteColumnError(updateErr)) throw updateErr;
         resetHmNewsSiteColumnEnsureCache();
         await ensureHmNewsSiteWritableColumns();
-        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id));
+        [updated] = await dualWriteUpdate(hmNewsSitesTable, patch, eq(hmNewsSitesTable.id, id), { skipMirrorColumns: ["layoutJson"] });
       }
       if (!updated) {
         res.status(404).json({ error: "Bulunamadı" });
@@ -1956,7 +1985,7 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       row = await getHmNewsSiteByIdCompat(id);
       // kh-alias 2026-10-09: the live PHP row can have another id (Kırşehir: panel 1131 -> PHP 229, matched by
       // slug/domain). dualWriteUpdate mirrors by id only, so name/description/contact/layout never reached it.
-      await mirrorHmSiteRowToPhpAlias(
+      phpMirror = await mirrorHmSiteRowToPhpAlias(
         id,
         {
           displayName: patch.displayName,
@@ -1966,7 +1995,9 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
         },
         layoutChangedKeys,
       ).catch((err: unknown) => {
-        console.error("[hm-sites] php alias mirror", err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200));
+        const reason = err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200);
+        console.error("[hm-sites] php alias mirror", reason);
+        return { mirrored: false, reason };
       });
     } else {
       const existing = await getHmNewsSiteByIdCompat(id);
@@ -2131,8 +2162,10 @@ async function patchHmSiteHandler(req: Request, res: Response, step: { name: str
       if (ai.warning) aiEditorWarning = ai.warning;
     }
 
+    const liveOverlay = await loadPhpOverlayForPanelSite(id).catch(() => null);
     res.json({
-      ...siteOut,
+      ...(siteOut ? withPhpOverlay(siteOut as unknown as Record<string, unknown>, liveOverlay) : {}),
+      ...(phpMirror ? { phpMirror } : {}),
       ...(gundemiProvision ? { gundemiProvision } : {}),
       ...(customApexProvision ? { customApexProvision } : {}),
       ...(defaultEditorCreated ? { defaultEditorCreated } : {}),
@@ -4360,7 +4393,7 @@ router.patch("/hm/editor/site-layout", async (req, res): Promise<void> => {
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
-  await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId), { skipMirrorColumns: ["layoutJson"] });
   const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw, { changedKeys }).catch((err: unknown) => ({
     mirrored: false as const,
     reason: (err instanceof Error ? err.message : String(err)).slice(0, 160),
@@ -4478,7 +4511,7 @@ router.patch("/hm/editor/site-home-module-order", async (req, res): Promise<void
   }
   if (!assertHmLayoutJsonSize(raw, res)) return;
   raw = markHmLayoutUserSave(raw); // panel save: DB layout guard lets it through
-  await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId));
+  await dualWriteUpdate(hmNewsSitesTable, { layoutJson: raw, updatedAt: new Date() }, eq(hmNewsSitesTable.id, ctx.siteId), { skipMirrorColumns: ["layoutJson"] });
   const phpLayoutMirror = await mirrorHmSiteLayoutJsonToPhpNeon(ctx.siteId, raw, { changedKeys }).catch((err: unknown) => ({
     mirrored: false as const,
     reason: (err instanceof Error ? err.message : String(err)).slice(0, 160),
